@@ -106,7 +106,22 @@ export function useModality(
         if (!path || typeof path !== 'object') return [];
         const p = path as { kind?: string; commands?: unknown; coords?: unknown };
         if (p.kind !== 'polygon' || !(p.commands instanceof Uint8Array) || !(p.coords instanceof Float32Array)) return [];
-        return enumerateAnchors(p as Parameters<typeof enumerateAnchors>[0]);
+        // enumerateAnchors returns coords in the path's local space.
+        // The painter renders in world space, so translate by the node's
+        // pose. Scale and rotation are intentionally ignored for now —
+        // apps/draw's pen-tool paths don't carry independent pose scale,
+        // they live directly in world coords via x/y offset of their AABB.
+        const localAnchors = enumerateAnchors(p as Parameters<typeof enumerateAnchors>[0]);
+        const pose = node.pose as { x?: number; y?: number };
+        const dx = pose.x ?? 0;
+        const dy = pose.y ?? 0;
+        if (dx === 0 && dy === 0) return localAnchors;
+        return localAnchors.map((a) => ({
+          x: a.x + dx,
+          y: a.y + dy,
+          ...(a.controlIn ? { controlIn: { x: a.controlIn.x + dx, y: a.controlIn.y + dy } } : {}),
+          ...(a.controlOut ? { controlOut: { x: a.controlOut.x + dx, y: a.controlOut.y + dy } } : {}),
+        }));
       },
     });
     decorations.register('path-edit', painter);

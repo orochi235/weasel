@@ -353,10 +353,11 @@ html, body, #root {
 .wd-canvas-host[data-mode="free-transform"] { --wd-mode-tint: #f59e0b; }
 .wd-canvas-host[data-mode="crop"]           { --wd-mode-tint: #ef4444; }
 
-/* Tint overlay: sits above the stripe background (z-index 0) and below the
-   canvas (z-index 2). Driven by --wd-mode-tint and --wd-mode-tint-intensity.
-   Default is invisible (transparent tint). Direction defaults to bottom-up;
-   use data-tint-direction="top-down" to invert. */
+/* Tint overlay: sits ABOVE the canvas (which itself renders the workspace
+   stripes + page) at low alpha. Pointer-events: none so it never intercepts
+   clicks. Driven by --wd-mode-tint and --wd-mode-tint-intensity. Default is
+   invisible (transparent tint). Direction defaults to bottom-up; use
+   data-tint-direction="top-down" to invert. */
 .wd-canvas-host::before {
   content: "";
   position: absolute;
@@ -368,7 +369,7 @@ html, body, #root {
     transparent 100%
   );
   transition: background 150ms ease-out;
-  z-index: 1;
+  z-index: 3;
 }
 
 .wd-canvas-host[data-tint-direction="top-down"]::before {
@@ -381,7 +382,7 @@ html, body, #root {
 
 .wd-canvas-host > canvas {
   position: relative;
-  z-index: 2; /* above the ::before tint */
+  z-index: 2; /* establish stacking context; tint pseudo-element sits at z-index 3 above */
 }
 
 .wd-canvas-host canvas {
