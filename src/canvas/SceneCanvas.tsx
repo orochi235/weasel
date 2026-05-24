@@ -59,6 +59,7 @@ import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
+import { createSlopsDebugLayer } from './slopsDebugLayer';
 import type { PenScratch } from 'tools/builtin/usePenTool';
 import type { Tool } from 'tools/types';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
@@ -569,6 +570,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * container/leaf overlap during select-tool work.
      */
     pickHud?: boolean;
+    /**
+     * Dev overlay flags. `slops: true` renders translucent halos at every
+     * affordance hit zone (corner resize handles, rotation handle,
+     * anchor / control-handle markers when editing) so the actual click
+     * targets — not just the visible chrome — are obvious. Off by default.
+     */
+    debug?: {
+      slops?: boolean;
+    };
   };
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
@@ -616,6 +626,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     backgroundFill,
     cursorCoordsHud,
     pickHud,
+    debug,
     ...rest
   } = props;
 
@@ -1005,6 +1016,24 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // staying pinned to its committed position until the drag commits.
   const sceneRefForOverlay = useRef(scene);
   sceneRefForOverlay.current = scene;
+  // Debug: slops viz layer (off by default). Builds the affordance halos
+  // once and reads live state through refs every frame — the same pattern
+  // the chrome layers use. Identity stays stable so wiredLayers below
+  // doesn't churn.
+  const slopsLayer = useMemo(
+    () => createSlopsDebugLayer({
+      selectionRef: selectionRef as unknown as React.RefObject<SelectionApi>,
+      boundsOf: (id) => internalBoundsOf?.(id) ?? null,
+      getEditingId: () => pathEditingIdRef.current || null,
+      getPose: (id) => {
+        const node = sceneRefForOverlay.current?.get(id as never);
+        return (node?.pose ?? null) as never;
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [internalBoundsOf],
+  );
+
   const pathEditingOverlayLayer = useMemo(
     () => createPathEditingOverlayLayer({
       getEditingId: () => pathEditingIdRef.current || null,
@@ -1052,9 +1081,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
       ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
       pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
+      ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
       ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
     };
-  }, [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, backgroundLayer, getSuppressedSelectionIds]);
+  }, [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, backgroundLayer, getSuppressedSelectionIds, debug?.slops, slopsLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
