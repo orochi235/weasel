@@ -33,7 +33,8 @@ export { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
-import type { AnyTool } from 'tools/types';
+import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds } from './toolPreview';
+
 import type { ToolsDispatcher } from 'tools/dispatcher';
 import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
@@ -122,7 +123,15 @@ export type LayerSlotValue<TNode extends { id: string }, TPose> =
 export type LayersMap<TNode extends { id: string }, TPose> = {
   grid?: GridSlotConfig | null;
   scene?: SceneSlotConfig<TNode, TPose> | null;
-  selectionOverlay?: SelectionOverlaySlotConfig<TPose> | null;
+  /** Selection-overlay slot. Canvas constructs the layer from a
+   *  `SelectionOverlaySlotConfig`; pass a `CustomLayerEntry` (`{ layer }`) to
+   *  supply a pre-built layer (e.g. from `<SceneCanvas>`). */
+  selectionOverlay?: SelectionOverlaySlotConfig<TPose> | CustomLayerEntry | null;
+  /** Cell-highlight overlay slot. Canvas falls back to `grid.highlight` when
+   *  this slot is absent. Pass a `CustomLayerEntry` (`{ layer }`) to supply a
+   *  pre-built layer directly, or `null` to suppress even when `grid.highlight`
+   *  is set. */
+  cellHighlight?: CustomLayerEntry | null;
 } & {
   [customKey: string]: LayerSlotValue<TNode, TPose> | undefined;
 };
@@ -347,51 +356,6 @@ export interface CanvasHelpers<TPose> {
 }
 
 // Walks every registered + ambient tool: resize/rotate will register as
-// siblings of select, each publishing its own preview slice.
-function* toolsInPriorityOrder(tools: ToolsApi): IterableIterator<AnyTool> {
-  const seen = new Set<AnyTool>();
-  const hotkey = tools.hotkeyEngaged ? tools.registry[tools.hotkeyEngaged] : undefined;
-  const active = tools.registry[tools.active];
-  for (const t of [hotkey, active]) {
-    if (t && !seen.has(t)) { seen.add(t); yield t; }
-  }
-  for (const t of Object.values(tools.registry)) {
-    if (t && !seen.has(t)) { seen.add(t); yield t; }
-  }
-  for (const t of tools.ambient) {
-    if (t && !seen.has(t)) { seen.add(t); yield t; }
-  }
-}
-
-function firstPreviewPose(tools: ToolsApi | undefined, id: string): unknown {
-  if (!tools) return null;
-  for (const t of toolsInPriorityOrder(tools)) {
-    const p = t.previewPose?.(id);
-    if (p != null) return p;
-  }
-  return null;
-}
-
-function firstPreviewBounds(tools: ToolsApi | undefined, id: string): Bounds | null {
-  if (!tools) return null;
-  for (const t of toolsInPriorityOrder(tools)) {
-    const b = t.previewBounds?.(id);
-    if (b) return b as Bounds;
-  }
-  return null;
-}
-
-function aggregatePreviewIds(tools: ToolsApi | undefined): Set<string> {
-  const out = new Set<string>();
-  if (!tools) return out;
-  for (const t of toolsInPriorityOrder(tools)) {
-    const ids = t.previewIds?.();
-    if (!ids) continue;
-    for (const id of ids) out.add(id);
-  }
-  return out;
-}
-
 function registerShadersOnRenderer(
   renderer: WeaselRenderer,
   shaders: ShaderProgramHandle[] | undefined,
@@ -1183,6 +1147,22 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       }
     }
 
+    // Top-level `cellHighlight` slot: a pre-built CustomLayerEntry wins over
+    // the `grid.highlight` sub-config constructed above. Explicit `null`
+    // suppresses the slot (even when grid.highlight was set).
+    const cellHighlightSlot = layersMap.cellHighlight;
+    if (cellHighlightSlot !== undefined) {
+      if (cellHighlightSlot === null) {
+        standardLayers.cellHighlight = undefined;
+      } else {
+        // isCustomEntry check is redundant since the slot only accepts
+        // CustomLayerEntry | null, but kept for runtime safety.
+        standardLayers.cellHighlight = isCustomEntry(cellHighlightSlot)
+          ? cellHighlightSlot.layer
+          : undefined;
+      }
+    }
+
     const sceneCfg = layersMap.scene as SceneSlotConfig<TNode, TPose> | null | undefined;
     if (
       sceneCfg &&
@@ -1207,9 +1187,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
     const selSlot = layersMap.selectionOverlay as
       | SelectionOverlaySlotConfig<TPose>
+      | CustomLayerEntry
       | null
       | undefined;
-    if (selSlot !== null) {
+    if (isCustomEntry(selSlot)) {
+      // Pre-built layer (e.g. from SceneCanvas) — pass through directly.
+      standardLayers.selectionOverlay = selSlot.layer;
+    } else if (selSlot !== null) {
       const cfg = (selSlot ?? {}) as SelectionOverlaySlotConfig<TPose>;
       // Resolver returns either a real TPose (use geometry.getBounds) or a
       // pre-projected Bounds (multi-union and the bounds-from-overlay path).

@@ -28,7 +28,7 @@ import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
-import type { CanvasProps, LayersMap, CanvasSelectionMode } from './Canvas';
+import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import type { SceneToAdapterOptions } from './sceneAdapter';
@@ -40,6 +40,7 @@ import { sceneFromJSON } from 'core/scene/scene';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { usePublishSelection } from 'features/selection/SelectionContext';
 import type { Bounds } from 'tools/builtin/useSelectTool';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 import { useTools, type ToolsApi } from 'tools/useTools';
 import { useKeybindings } from 'tools/useKeybindings';
 import type { AnyTool } from 'tools/types';
@@ -82,6 +83,11 @@ import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
 import { createNodeKindRegistry, type NodeKind } from '../core/scene/nodeKindRegistry';
+import {
+  createSelectionOverlayLayer,
+} from 'features/selection/overlay';
+import { firstPreviewPose, firstPreviewBounds } from './toolPreview';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -988,12 +994,108 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [shapeTools.pen, baseRequestedTools, trueIds],
   );
 
+  // Selection overlay — constructed here (scene-aware) so Canvas receives a
+  // pre-built RenderLayer via `layers.selectionOverlay` rather than a config
+  // it would wire up itself. Canvas still owns the slot definition and render
+  // ordering; SceneCanvas owns the factory call.
+  //
+  // Reconstructed when selection, bounds, or tools change (mirrors Canvas's
+  // own useMemo dep list for the equivalent block).
+  const selectedIds = selection.current;
+  const multiActive = selectedIds.length > 1;
+  const selectionOverlayLayer = useMemo(() => {
+    const selCfg = mergedLayers.selectionOverlay as
+      | SelectionOverlaySlotConfig<TPose>
+      | null
+      | undefined;
+    if (selCfg === null) return null;
+    const cfg = (selCfg ?? {}) as SelectionOverlaySlotConfig<TPose>;
+
+    // Pose resolver: tools preview wins (tracks in-flight drag pose), then
+    // dispatcher in-flight handles (dispatcher-path actions), then multi-union
+    // AABB synthesis, then adapter committed pose.
+    const poseById =
+      cfg.poseById ??
+      ((id: string): TPose | null => {
+        // Tool preview (legacy tool channel) wins.
+        const tp = firstPreviewPose(tools, id) as TPose | null;
+        if (tp != null) return tp;
+        // Dispatcher-path preview pose.
+        for (const handle of dispatcher.getInFlightHandles()) {
+          const dp = handle.previewPose?.(id);
+          if (dp != null) return dp as TPose;
+        }
+        // Tool preview bounds (pre-projected, used for multi-union and the
+        // MULTI_RESIZE_TARGET_ID synthetic handle).
+        const tb = firstPreviewBounds(tools, id);
+        if (tb != null) return tb as unknown as TPose;
+        // Multi-union fallback: when no tool synthesizes the multi-resize id,
+        // compute union AABB from the live selection ourselves.
+        if (multiActive && id === MULTI_RESIZE_TARGET_ID && internalBoundsOf) {
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          let any = false;
+          for (const sid of selectedIds) {
+            const b = internalBoundsOf(sid);
+            if (!b) continue;
+            any = true;
+            if (b.x < minX) minX = b.x;
+            if (b.y < minY) minY = b.y;
+            if (b.x + b.width > maxX) maxX = b.x + b.width;
+            if (b.y + b.height > maxY) maxY = b.y + b.height;
+          }
+          if (any) {
+            return { x: minX, y: minY, width: maxX - minX, height: maxY - minY } as unknown as TPose;
+          }
+          return null;
+        }
+        // Committed adapter pose (or internalBoundsOf fallback when no adapter).
+        if (!adapter) {
+          if (internalBoundsOf) {
+            const b = internalBoundsOf(id);
+            return (b as unknown as TPose) ?? null;
+          }
+          return null;
+        }
+        try {
+          return adapter.getPose(id);
+        } catch {
+          return null;
+        }
+      });
+
+    const getSelection = multiActive
+      ? (): readonly NodeId[] => [MULTI_RESIZE_TARGET_ID as NodeId]
+      : (): readonly NodeId[] => selectedIds as readonly NodeId[];
+    const getOutlineIds = multiActive
+      ? (): readonly NodeId[] => selectedIds as readonly NodeId[]
+      : undefined;
+
+    return createSelectionOverlayLayer<TPose>({
+      ...cfg,
+      getSelection,
+      ...(getOutlineIds ? { getOutlineIds } : {}),
+      getPose: poseById,
+      getBounds:
+        cfg.getBounds ??
+        ((p: TPose): Bounds => {
+          // Multi-union path returns pre-projected Bounds masquerading as TPose.
+          if (multiActive) return p as unknown as Bounds;
+          return AUTO_POSE_DESCRIPTOR.getBounds(p) as Bounds;
+        }),
+    });
+  }, [mergedLayers.selectionOverlay, selectedIds, multiActive, internalBoundsOf, tools, adapter]);
+
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
+    // Pass the pre-built selection overlay layer so Canvas receives a
+    // CustomLayerEntry and skips its own factory construction for this slot.
+    selectionOverlay: selectionOverlayLayer
+      ? { layer: selectionOverlayLayer }
+      : mergedLayers.selectionOverlay === null ? null : undefined,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
-  }), [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer]);
+  }), [mergedLayers, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`

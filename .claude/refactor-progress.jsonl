@@ -24,3 +24,5 @@
 {"ts": "2026-05-24T15:01:02.956260+00:00", "task": "3.1", "event": "audit complete: no doc-level selection.clear() listener found; multiActive inferred from selection.current.length; selectionMode and selectionOptions removed from CanvasProps; onBackgroundClick not needed (clear-on-empty-click is in tool routing table)"}
 {"ts": "2026-05-24T15:01:41.633651+00:00", "task": "3.2", "event": "failing test written; tests 1+2 pass, test 3 fails as expected"}
 {"ts": "2026-05-24T15:12:44.524930+00:00", "task": "3.2", "event": "impl complete: Canvas.tsx refactored; SceneCanvas.tsx refactored; all tests pass"}
+{"ts": "2026-05-24T15:13:00.258437+00:00", "task": "3.2", "event": "committed: 72403dc4"}
+{"ts":"2026-05-24T11:24:30Z","task":"3.3","event":"done","notes":"selectionOverlay factory moved to SceneCanvas; Canvas accepts CustomLayerEntry in selectionOverlay slot. cellHighlight slot added to LayersMap (CustomLayerEntry|null only). toolPreview.ts extracted. All tests pass."}
