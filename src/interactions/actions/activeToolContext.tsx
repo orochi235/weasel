@@ -4,7 +4,8 @@
  * Holds the currently active tool id and a hotkey stack (tools held active
  * temporarily, e.g. space-for-hand). Read by the gesture dispatcher to
  * determine which tool's bindings are in scope; written by tool-switching
- * actions (`tool.activate:<id>`) and hold-hotkey actions (`tool.hold:<id>`).
+ * actions (`tool.activate`) and sidearm hotkey actions (`tool.sidearm`),
+ * both parametric on `params.toolId`.
  *
  * See `docs/superpowers/specs/2026-05-16-registry-unification-design.md`
  * § "Types" and § "Dispatcher contract".

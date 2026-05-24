@@ -131,21 +131,21 @@ export interface ToolDef<TScratch = void> {
    *  Read off the def via `Tool.def` (the reflection escape hatch). */
   hookName?: string;
   presentation?: ToolPresentation<TScratch>;
-  /** Optional caller-supplied activation key. Most built-in tools register
-   *  their activation key directly via `makeToolShortcutAction` +
-   *  `makeToolActivateAction` at canvas-mount time (keys live in
-   *  `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`); this field is for tools
-   *  that want their activation key to be configurable by the host (currently
-   *  Lasso and Eyedropper). The dynamic loop in `useKeybindings.ts` picks this
-   *  up and registers `tool.activate.<id>` + `tool.shortcut.<id>` actions when
-   *  set. */
+  /** Optional caller-supplied activation key. Most built-in tools have their
+   *  activation key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`;
+   *  this field is for tools that want their activation key to be
+   *  configurable by the host (currently Lasso and Eyedropper). The dynamic
+   *  loop in `useKeybindings.ts` picks this up and appends a binding entry
+   *  to the consolidated `tool.activate` action (with `opts.params.toolId`
+   *  set so the invoker knows which tool to switch to). */
   keybinding?: ToolKeybinding;
   /** Declarative held-key trigger (reflection / inspector only). When set,
    *  signals to the host that this tool can engage via a held key; the host
-   *  must register the activation via `makeToolHoldAction(toolId, key)`. Built-in
-   *  tools declare held keys in `BUILTIN_HOLD_ACTIONS`; configurable-hotkey tools
-   *  rely on the host to wire the action. Setting this field does NOT automatically
-   *  engage the held-key behavior. */
+   *  must register the activation via the consolidated `tool.sidearm` action
+   *  (`makeToolSidearmAction` + `buildToolSidearmBindings`). Built-in tools
+   *  declare held keys in `BUILTIN_SIDEARM_ACTIONS`; configurable-hotkey
+   *  tools rely on the host to wire the binding. Setting this field does NOT
+   *  automatically engage the held-key behavior. */
   hotkey?: HotkeyTrigger;
   onActivate?:   (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;

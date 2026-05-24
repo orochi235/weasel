@@ -40,7 +40,7 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
-  it('registers tool.activate.<id> and tool.shortcut.<id> actions for built-in tools in BUILTIN_SELECT_KEYS', () => {
+  it('registers a single tool.activate action with one binding entry per built-in tool in BUILTIN_SELECT_KEYS', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const pen    = defineTool({ id: 'pen',    initial: {} });
     const { result } = renderHook(() => {
@@ -50,13 +50,19 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const ids = result.current?.list().map((a) => a.id) ?? [];
-    expect(ids).toContain('tool.activate.select');
-    expect(ids).toContain('tool.shortcut.select');
-    expect(ids).toContain('tool.activate.pen');
-    expect(ids).toContain('tool.shortcut.pen');
+    expect(ids).toContain('tool.activate');
+    // No per-tool activate/shortcut actions any more.
+    expect(ids).not.toContain('tool.activate.select');
+    expect(ids).not.toContain('tool.shortcut.select');
+
+    const activate = result.current?.list().find((a) => a.id === 'tool.activate');
+    const bindings = (activate?.defaultBinding ?? []) as unknown as Array<{ opts: { params: { toolId: string } } }>;
+    const toolIds = bindings.map((b) => b.opts.params.toolId);
+    expect(toolIds).toContain('select');
+    expect(toolIds).toContain('pen');
   });
 
-  it('registers tool.activate.<id> and tool.shortcut.<id> actions for tools with a ToolDef keybinding', () => {
+  it('appends an entry for each ToolDef.keybinding to tool.activate.defaultBinding', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const lasso  = defineTool({ id: 'lasso',  keybinding: { key: 'L' }, initial: {} });
     const { result } = renderHook(() => {
@@ -65,16 +71,18 @@ describe('useKeybindings', () => {
       return useActionsRegistry();
     }, { wrapper: makeWrapper('select') });
 
-    const shortcut = result.current?.list().find((a) => a.id === 'tool.shortcut.lasso');
-    expect(shortcut).toBeDefined();
-    expect(shortcut?.defaultBinding).toMatchObject({ kind: 'key', key: 'L' });
-
-    const activate = result.current?.list().find((a) => a.id === 'tool.activate.lasso');
+    const activate = result.current?.list().find((a) => a.id === 'tool.activate');
     expect(activate).toBeDefined();
-    expect(activate?.defaultBinding).toBeUndefined();
+    const bindings = (activate?.defaultBinding ?? []) as unknown as Array<{
+      spec: { kind: string; key: string };
+      opts: { params: { toolId: string } };
+    }>;
+    const lassoEntry = bindings.find((b) => b.opts.params.toolId === 'lasso');
+    expect(lassoEntry).toBeDefined();
+    expect(lassoEntry?.spec).toMatchObject({ kind: 'key', key: 'L' });
   });
 
-  it('registers a tool.hold.hand action in the actions registry (static BUILTIN_HOLD_ACTIONS)', () => {
+  it('registers a single tool.sidearm action with one key-held entry per built-in sidearm tool', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const hand   = defineTool({ id: 'hand',   initial: {} });
     const { result } = renderHook(() => {
@@ -84,26 +92,21 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const ids = result.current?.list().map((a) => a.id) ?? [];
-    expect(ids).toContain('tool.hold.hand');
-    // No hold action for select (not in BUILTIN_HOLD_ACTIONS)
-    expect(ids).not.toContain('tool.hold.select');
+    expect(ids).toContain('tool.sidearm');
+
+    const sidearm = result.current?.list().find((a) => a.id === 'tool.sidearm');
+    const bindings = (sidearm?.defaultBinding ?? []) as unknown as Array<{
+      spec: { kind: string; key: string };
+      opts: { params: { toolId: string } };
+    }>;
+    const handEntry = bindings.find((b) => b.opts.params.toolId === 'hand');
+    expect(handEntry).toBeDefined();
+    expect(handEntry?.spec).toMatchObject({ kind: 'key-held', key: ' ' });
+    // No entry for select (not in BUILTIN_SIDEARM_ACTIONS).
+    expect(bindings.find((b) => b.opts.params.toolId === 'select')).toBeUndefined();
   });
 
-  it('tool.hold.hand action has key-held defaultBinding for Space', () => {
-    const select = defineTool({ id: 'select', initial: {} });
-    const hand   = defineTool({ id: 'hand',   initial: {} });
-    const { result } = renderHook(() => {
-      const tools = useTools({ active: 'select', registry: { select, hand } });
-      useKeybindings(tools);
-      return useActionsRegistry();
-    }, { wrapper: makeWrapper('select') });
-
-    const holdAction = result.current?.list().find((a) => a.id === 'tool.hold.hand');
-    expect(holdAction).toBeDefined();
-    expect(holdAction?.defaultBinding).toMatchObject({ kind: 'key-held', key: ' ' });
-  });
-
-  it('does not register tool.hold.hand when hand tool is absent from the registry', () => {
+  it('does not register tool.sidearm when no sidearm-eligible tool is in the registry', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select } });
@@ -112,7 +115,7 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const ids = result.current?.list().map((a) => a.id) ?? [];
-    expect(ids).not.toContain('tool.hold.hand');
+    expect(ids).not.toContain('tool.sidearm');
   });
 
   it('lets meta/ctrl combos through (system shortcuts like Cmd-R reload)', () => {
@@ -169,7 +172,7 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
-  it('disable: true also skips tool.hold registration', () => {
+  it('disable: true also skips tool.sidearm registration', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const hand   = defineTool({ id: 'hand',   initial: {} });
     const { result } = renderHook(() => {
@@ -180,9 +183,8 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const ids = result.current.map((a) => a.id);
-    expect(ids).not.toContain('tool.hold.hand');
-    expect(ids).not.toContain('tool.activate.select');
-    expect(ids).not.toContain('tool.shortcut.select');
+    expect(ids).not.toContain('tool.sidearm');
+    expect(ids).not.toContain('tool.activate');
   });
 
   it('skips when focus is in an editable element', () => {

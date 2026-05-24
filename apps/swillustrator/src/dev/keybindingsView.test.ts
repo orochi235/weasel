@@ -2,29 +2,56 @@ import { describe, it, expect } from 'vitest';
 import { lookupShortcutByToolId } from './keybindingsView';
 
 describe('lookupShortcutByToolId', () => {
-  it('returns the keyDown spec from the tool.shortcut.<id> action when present', () => {
+  it('returns the key spec from the matching entry in tool.activate.defaultBinding', () => {
     const actions = [
-      { id: 'tool.shortcut.rect', defaultBinding: { kind: 'key', key: 'r' } },
-      { id: 'tool.shortcut.hand', defaultBinding: { kind: 'key', key: 'h' } },
+      {
+        id: 'tool.activate',
+        defaultBinding: [
+          { spec: { kind: 'key', key: 'r' }, opts: { params: { toolId: 'rect' } } },
+          { spec: { kind: 'key', key: 'h' }, opts: { params: { toolId: 'hand' } } },
+        ],
+      },
     ];
     expect(lookupShortcutByToolId('rect', actions as never)).toEqual({ key: 'r' });
     expect(lookupShortcutByToolId('hand', actions as never)).toEqual({ key: 'h' });
   });
 
-  it('returns undefined when no tool.shortcut.* action exists for the id', () => {
+  it('returns undefined when no tool.activate action exists', () => {
     expect(lookupShortcutByToolId('pen', [] as never)).toBeUndefined();
   });
 
-  it('includes modifier flags when set on the action binding', () => {
+  it('returns undefined when no entry matches the given toolId', () => {
     const actions = [
-      { id: 'tool.shortcut.rect', defaultBinding: { kind: 'key', key: 'r', mod: true } },
+      {
+        id: 'tool.activate',
+        defaultBinding: [
+          { spec: { kind: 'key', key: 'r' }, opts: { params: { toolId: 'rect' } } },
+        ],
+      },
+    ];
+    expect(lookupShortcutByToolId('pen', actions as never)).toBeUndefined();
+  });
+
+  it('includes modifier flags when set on the matched entry', () => {
+    const actions = [
+      {
+        id: 'tool.activate',
+        defaultBinding: [
+          { spec: { kind: 'key', key: 'r', mod: true }, opts: { params: { toolId: 'rect' } } },
+        ],
+      },
     ];
     expect(lookupShortcutByToolId('rect', actions as never)).toEqual({ key: 'r', mod: true });
   });
 
-  it('returns undefined when the defaultBinding is not a key spec (e.g. key-held)', () => {
+  it('returns undefined when the matched entry is not a key spec', () => {
     const actions = [
-      { id: 'tool.shortcut.weird', defaultBinding: { kind: 'key-held', key: ' ' } },
+      {
+        id: 'tool.activate',
+        defaultBinding: [
+          { spec: { kind: 'key-held', key: ' ' }, opts: { params: { toolId: 'weird' } } },
+        ],
+      },
     ];
     expect(lookupShortcutByToolId('weird', actions as never)).toBeUndefined();
   });

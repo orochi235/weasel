@@ -18,9 +18,19 @@ export {
 export { deleteAction } from './delete';
 export { groupAction, ungroupAction } from './group';
 export { undoAction, redoAction } from './undoRedo';
-export { makeToolHoldAction } from './toolHold';
-export { makeToolActivateAction } from './toolActivate';
-export { makeToolShortcutAction, type ToolShortcutKeyOpts } from './toolShortcut';
+export {
+  makeToolSidearmAction,
+  buildToolSidearmBindings,
+  TOOL_SIDEARM_ID,
+  type ToolSidearmBindingSpec,
+} from './toolSidearm';
+export {
+  makeToolActivateAction,
+  buildToolActivateBindings,
+  TOOL_ACTIVATE_ID,
+  type ToolActivateKeyOpts,
+  type ToolActivateBindingSpec,
+} from './toolActivate';
 export { moveAction } from './move';
 export { resizeAction } from './resize';
 export { rotateAction } from './rotate';

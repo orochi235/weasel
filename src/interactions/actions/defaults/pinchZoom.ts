@@ -57,6 +57,7 @@ interface PinchScratch {
 export const pinchZoomAction: Action & { requires: string[] } = {
   id: 'viewport.pinchZoom',
   label: 'Pinch Zoom',
+  group: 'viewport',
   defaultBinding: { kind: 'multiTouch', fingers: 2 },
   requires: ['view'],
   invoker: {

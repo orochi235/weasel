@@ -97,10 +97,14 @@ describe('collectRoutingKinds', () => {
 });
 
 describe('collectHotkeyTriggers', () => {
-  it('derives entries from tool.hold.* actions only', () => {
+  it('derives entries from tool.sidearm binding entries only', () => {
     const actions = [
-      { id: 'tool.shortcut.rect', defaultBinding: { kind: 'key', key: 'r' } },
-      { id: 'tool.hold.hand', defaultBinding: { kind: 'key-held', key: ' ' } },
+      { id: 'tool.activate', defaultBinding: [
+        { spec: { kind: 'key', key: 'r' }, opts: { params: { toolId: 'rect' } } },
+      ] },
+      { id: 'tool.sidearm', defaultBinding: [
+        { spec: { kind: 'key-held', key: ' ' }, opts: { params: { toolId: 'hand' } } },
+      ] },
       { id: 'something.else', defaultBinding: { kind: 'key-held', key: 'a' } },
     ];
     const entries = collectHotkeyTriggers(actions);
@@ -109,9 +113,11 @@ describe('collectHotkeyTriggers', () => {
     ]);
   });
 
-  it('skips tool.hold.* entries whose binding is not key-held', () => {
+  it('skips tool.sidearm entries whose spec is not key-held', () => {
     const actions = [
-      { id: 'tool.hold.hand', defaultBinding: { kind: 'key', key: 'h' } },
+      { id: 'tool.sidearm', defaultBinding: [
+        { spec: { kind: 'key', key: 'h' }, opts: { params: { toolId: 'hand' } } },
+      ] },
     ];
     expect(collectHotkeyTriggers(actions)).toHaveLength(0);
   });
@@ -122,7 +128,9 @@ describe('collectHotkeyTriggers', () => {
 
   it('maps Space key to display label "Space"', () => {
     const actions = [
-      { id: 'tool.hold.hand', defaultBinding: { kind: 'key-held', key: ' ' } },
+      { id: 'tool.sidearm', defaultBinding: [
+        { spec: { kind: 'key-held', key: ' ' }, opts: { params: { toolId: 'hand' } } },
+      ] },
     ];
     const [entry] = collectHotkeyTriggers(actions);
     expect(entry?.label).toBe('hand (Space)');

@@ -77,6 +77,7 @@ function reorderSelection(
 export const reorderForwardAction: Action & { requires: string[] } = {
   id: 'reorder.forward',
   label: 'Bring Forward',
+  group: 'reorder',
   defaultBinding: [
     {
       spec: { kind: 'key', key: [']', '}'], mods: { mod: true } },
@@ -111,6 +112,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
 export const reorderBackwardAction: Action & { requires: string[] } = {
   id: 'reorder.backward',
   label: 'Send Backward',
+  group: 'reorder',
   defaultBinding: [
     {
       spec: { kind: 'key', key: ['[', '{'], mods: { mod: true } },

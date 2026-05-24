@@ -29,6 +29,66 @@ const MOD_DISPLAY_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'm
  *  map (no required modifiers) returns undefined; otherwise emits one chip
  *  per modifier in canonical display order, marking optional ones inverted
  *  so the consumer can visually distinguish `?shift` from `+shift`. */
+/** One row in the per-binding params table rendered by `ActionDetail`. */
+interface ActionParamRow {
+  gesture: string;
+  /** JSON-encoded params record, `'(dynamic)'` for thunk-form params, or
+   *  `null` when the binding declares no params at all. */
+  params: string | '(dynamic)' | null;
+}
+
+/** Summarize an Action's `defaultBinding` into (a) the union of parameter
+ *  key names that can be passed to its invoker, and (b) one row per
+ *  registered binding for the per-binding table. Non-array shapes (a bare
+ *  `GestureSpec`, or no binding at all) yield empty results. */
+function summarizeActionParams(
+  defaultBinding: unknown,
+): { paramNames: readonly string[]; rows: readonly ActionParamRow[] } {
+  if (!Array.isArray(defaultBinding)) return { paramNames: [], rows: [] };
+
+  const names = new Set<string>();
+  const rows: ActionParamRow[] = [];
+
+  for (const raw of defaultBinding) {
+    const entry = raw as {
+      kind?: string;
+      key?: unknown;
+      spec?: { kind?: string; key?: unknown };
+      opts?: { params?: Record<string, unknown> | (() => Record<string, unknown>) };
+    };
+    const spec = entry.spec ?? (entry.kind ? { kind: entry.kind, key: entry.key } : undefined);
+    const gesture = describeGestureSpec(spec);
+    const params = entry.opts?.params;
+    if (typeof params === 'function') {
+      rows.push({ gesture, params: '(dynamic)' });
+      continue;
+    }
+    if (params && typeof params === 'object') {
+      for (const k of Object.keys(params)) names.add(k);
+      rows.push({ gesture, params: JSON.stringify(params) });
+      continue;
+    }
+    rows.push({ gesture, params: null });
+  }
+
+  return { paramNames: Array.from(names), rows };
+}
+
+/** One-line, plain-text summary of a `GestureSpec` — `key R`, `key-held
+ *  Space`, `wheel`. Just enough discrimination for the bindings table cell;
+ *  full route rendering lives elsewhere (Powerline). */
+function describeGestureSpec(
+  spec: { kind?: string; key?: unknown } | undefined,
+): string {
+  if (!spec || !spec.kind) return '(unknown)';
+  if (spec.kind === 'key' || spec.kind === 'key-held') {
+    const k = Array.isArray(spec.key) ? (spec.key as readonly unknown[])[0] : spec.key;
+    const label = typeof k === 'string' ? (k === ' ' ? 'Space' : k) : '?';
+    return `${spec.kind} ${label}`;
+  }
+  return spec.kind;
+}
+
 function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefined {
   const keys: KeySpec[] = [];
   for (const name of MOD_DISPLAY_ORDER) {
@@ -356,9 +416,23 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
 function HotkeyTriggerDetail({
   entry, actions,
 }: { entry: HotkeyTriggerEntry; actions: readonly ActionEntry[] }) {
-  const action = actions.find((a) => a.id === `tool.hold.${entry.id}`);
-  const spec = action?.defaultBinding as { kind: string; key?: string } | undefined;
-  const key = spec?.kind === 'key-held' ? spec.key : undefined;
+  const action = actions.find((a) => a.id === 'tool.sidearm');
+  const bindings = action?.defaultBinding;
+  let key: string | undefined;
+  if (Array.isArray(bindings)) {
+    for (const raw of bindings) {
+      const b = raw as {
+        spec?: { kind?: string; key?: string | readonly string[] };
+        opts?: { params?: { toolId?: string } };
+      };
+      if (b.opts?.params?.toolId !== entry.id) continue;
+      if (b.spec?.kind !== 'key-held') break;
+      key = typeof b.spec.key === 'string'
+        ? b.spec.key
+        : Array.isArray(b.spec.key) ? (b.spec.key as readonly string[])[0] : undefined;
+      break;
+    }
+  }
   const route = key !== undefined ? `[*:initial] keyHeld(${key})` : null;
   return (
     <div>
@@ -1076,6 +1150,8 @@ function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
 
 function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: Props['onNavigate'] }) {
   const match = findSourceMatch(entry.id);
+  const { paramNames, rows: paramRows } = summarizeActionParams(entry.defaultBinding);
+  const hasParams = paramNames.length > 0 || paramRows.some((r) => r.params !== null);
   return (
     <div>
       <div className={s.toolHeader}>
@@ -1095,6 +1171,21 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
         )}
         {entry.shortcut && (
           <><dt>shortcut</dt><dd><code>{entry.shortcut}</code></dd></>
+        )}
+        {hasParams && (
+          <>
+            <dt>params</dt>
+            <dd>
+              {paramNames.length > 0
+                ? paramNames.map((name, i) => (
+                    <Fragment key={name}>
+                      {i > 0 && ', '}
+                      <code className={s.tag}>{name}</code>
+                    </Fragment>
+                  ))
+                : <span className={s.empty}>none</span>}
+            </dd>
+          </>
         )}
         {entry.enabled && (
           <>
@@ -1117,6 +1208,34 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
           </>
         )}
       </dl>
+      {paramRows.length > 0 && (
+        <>
+          <h3 className={s.subHeading}>Bindings</h3>
+          <DataGrid
+            rows={paramRows.map((r, i) => ({ id: String(i), ...r }))}
+            columns={[
+              {
+                id: 'gesture',
+                header: 'gesture',
+                accessor: (r) => r.gesture,
+                render: (r) => <code>{r.gesture}</code>,
+              },
+              {
+                id: 'params',
+                header: 'params',
+                accessor: (r) => r.params ?? '',
+                render: (r) =>
+                  r.params === null
+                    ? <span className={s.empty}>—</span>
+                    : r.params === '(dynamic)'
+                      ? <span className={s.empty}>(dynamic)</span>
+                      : <code>{r.params}</code>,
+              },
+            ]}
+            empty="No bindings."
+          />
+        </>
+      )}
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
     </div>
   );

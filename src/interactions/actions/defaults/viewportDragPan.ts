@@ -63,6 +63,7 @@ interface DragPanScratch {
 export const viewportDragPanAction: Action & { requires: string[] } = {
   id: 'viewport.dragPan',
   label: 'Drag to pan viewport',
+  group: 'viewport',
   defaultBinding: { kind: 'drag' },
   requires: ['view'],
   invoker: {

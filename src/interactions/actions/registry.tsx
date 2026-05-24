@@ -198,7 +198,11 @@ export interface ActionsRegistry {
   register(action: Action): () => void;
   unregister(id: string): void;
   list(): readonly Action[];
-  trigger(id: string): boolean;
+  /** Fire an immediate-invoker action by id. The optional `params` arg is
+   *  forwarded to `ImmediateInvoker.run` as its second argument — use it for
+   *  parametric actions (e.g. `trigger('tool.activate', { toolId: 'rect' })`).
+   *  Ongoing-invoker actions are not reachable from `trigger`. */
+  trigger(id: string, params?: Record<string, unknown>): boolean;
   /**
    * Subscribe to registry mutations. The callback fires after any
    * `register`/`unregister` that changes the version. Returns an
@@ -333,7 +337,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         }
       },
       list: () => snapshot(),
-      trigger: (id: string) => {
+      trigger: (id: string, params?: Record<string, unknown>) => {
         const a = actionsRef.current.get(id);
         if (!a) return false;
         try {
@@ -353,7 +357,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
                   booleansAdapter: r.get('booleansAdapter' as DepName),
                 }
               : {};
-            a.invoker.run(deps as never, undefined);
+            a.invoker.run(deps as never, params);
           }
         } catch (err) {
           console.error(`weasel ActionsRegistry: action "${id}" threw`, err);

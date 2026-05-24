@@ -33,6 +33,7 @@ import type { ViewApi } from '../depSchema';
 export const viewportPanAction: Action & { requires: string[] } = {
   id: 'viewport.pan',
   label: 'Pan',
+  group: 'viewport',
   /**
    * Plain wheel (no modifier) → pan.
    * Cmd+wheel is claimed by `viewportZoomAction`; this binding fires only

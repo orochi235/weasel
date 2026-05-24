@@ -119,7 +119,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     // so we pass undefined for now (TODO: defaultBinding-aware formatter).
     shortcutParts: formatShortcutParts(undefined),
     shortcut: a.shortcut,
-    group: a.group ?? idGroup(a.id),
+    group: a.group,
     icon: renderPresentationIcon(a.icon),
     enabled: snapshotEnabled(a.enabled),
     callbacks: collectActionCallbacks(a),
@@ -193,15 +193,6 @@ function summarizePhase(phase: NonNullable<ToolDef<unknown>['initial']>): PhaseS
       claimsAll: has('claimsAll'),
     },
   };
-}
-
-/** Derive a category from a dotted id when the action sets no explicit
- *  `group` (e.g. `align.left` → `align`, `reorder.front` → `reorder`). Returns
- *  undefined for single-segment ids — those tend to be one-offs (`delete`,
- *  `undo`) that don't need a category. */
-function idGroup(id: string): string | undefined {
-  const dot = id.indexOf('.');
-  return dot > 0 ? id.slice(0, dot) : undefined;
 }
 
 /** Invoke an `Action.enabled` predicate and capture the result. Errors are

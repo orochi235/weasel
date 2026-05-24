@@ -242,6 +242,7 @@ function buildExtras(
 export const insertAction: Action & { requires: string[] } = {
   id: 'insert',
   label: 'Insert',
+  group: 'insert',
   defaultBinding: { kind: 'drag' },
   requires: ['insert'],
   invoker: {
@@ -387,6 +388,7 @@ const ROTATION_SENSITIVITY = Math.PI / 720;
 export const insertRotateAction: Action = {
   id: 'insert.adjustRotation',
   label: 'Insert — rotate',
+  group: 'insert',
   invoker: {
     timing: 'immediate' as const,
     run: (_deps, params) => {

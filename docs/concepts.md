@@ -213,29 +213,28 @@ are registered as actions in the actions registry, not as fields on
 `ToolDef`. The factories in `src/interactions/actions/defaults/` produce
 them:
 
-- `makeToolActivateAction(toolId)` — the effect. Registers under id
-  `tool.activate.<toolId>` with no `defaultBinding` and no `scope`. This is
-  the input-agnostic layer: any surface (shortcut, palette, toolbar) invokes
-  it by name to activate the tool.
-- `makeToolShortcutAction(toolId, { key, mod?, alt?, shift? }, trigger)` —
-  the keyboard input binding. Registers under id `tool.shortcut.<toolId>` with
-  `scope: 'hotkey'` and a `keyDown(<key>)` default binding. Its `run` calls
-  `trigger('tool.activate.<toolId>')`, delegating the actual activation to the
-  activate action above. The `trigger` callback is provided by the caller
-  (`useKeybindings` passes `registry.trigger`) so the shortcut factory has no
-  direct dependency on the registry type.
-- `makeToolHoldAction(toolId, key)` — hold-to-activate. Registers as
-  `tool.hold.<toolId>` with a `keyHeld(<key>)` default binding; the
-  dispatcher's existing `inFlightOwners` machinery advances the channel
-  through the same `[initial]` → `[engaged]` → `[initial]` lifecycle that
-  drag uses.
+- `makeToolActivateAction(bindings)` — single parametric action registered
+  under id `tool.activate`. Its `defaultBinding` is a `BoundGesture[]` with
+  one entry per tool; each entry carries `opts.params.toolId`. The invoker
+  reads `params.toolId` and calls `activeTool.setActive(toolId)`. Imperative
+  callers (palette, toolbar) reach the same effect via
+  `registry.trigger('tool.activate', { toolId })`. Build entries with
+  `buildToolActivateBindings(specs)`.
+- `makeToolSidearmAction(bindings)` — single parametric action registered
+  under id `tool.sidearm` for hold-to-engage hotkeys (e.g. Space-for-hand).
+  `defaultBinding` is a `BoundGesture[]` of `keyHeld` specs, each carrying
+  `opts.params.toolId`. On `start` the invoker pushes the tool id onto the
+  active-tool context's hotkey stack; `onEnd` pops it. The dispatcher's
+  existing `inFlightOwners` machinery advances the channel through the same
+  `[initial]` → `[engaged]` → `[initial]` lifecycle that drag uses. Build
+  entries with `buildToolSidearmBindings(specs)`.
 
-Built-in tools wire these via `BUILTIN_SELECT_KEYS` and `BUILTIN_HOLD_ACTIONS`
-maps in `src/tools/useKeybindings.ts`. The `ToolKeybinding` field on `ToolDef`
-is reserved for tools whose activation key is set by the host caller
-(Lasso, Eyedropper); the same `useKeybindings` effect picks up those
-configurable keybindings and registers `tool.activate.<id>` + `tool.shortcut.<id>`
-action pairs for them dynamically.
+Built-in tools wire these via `BUILTIN_SELECT_KEYS` and
+`BUILTIN_SIDEARM_ACTIONS` maps in `src/tools/useKeybindings.ts`. The
+`ToolKeybinding` field on `ToolDef` is reserved for tools whose activation
+key is set by the host caller (Lasso, Eyedropper); the same `useKeybindings`
+effect picks up those configurable keybindings and appends entries to the
+consolidated `tool.activate` action's bindings dynamically.
 
 Inspector surfaces (the ToolPalette's shortcut chips, the HotkeyTrigger
 detail view) read from the action registry — there is no per-tool

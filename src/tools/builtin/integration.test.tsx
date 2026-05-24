@@ -213,7 +213,7 @@ describe('Phase 2b end-to-end: hand tool + Canvas viewport', () => {
   // Soft-fallback removal (2026-05-18): `useKeybindings` no longer ships a
   // bare-Canvas-without-ActionsRegistry path that listens to document
   // keydown/keyup for space-held hotkeys. Hold-hotkeys now route through
-  // `tool.hold.<id>` actions + the gesture dispatcher mounted by
+  // the consolidated `tool.sidearm` action + the gesture dispatcher mounted by
   // `<SceneCanvas>`. Equivalent end-to-end coverage lives in
   // `src/canvas/SceneCanvas.tools.test.tsx`.
   it.skip('space engages momentary hand; release returns to prior tool', () => {
