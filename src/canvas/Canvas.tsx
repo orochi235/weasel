@@ -22,6 +22,7 @@
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
+import type { FillStyle } from 'core/paint-types';
 import { composeOrderedLayers } from './layerOrder';
 import {
   STANDARD_SLOTS,
@@ -287,6 +288,18 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * When omitted, no pinch-zoom listener is attached.
    */
   viewport?: ViewportConfig;
+
+  /**
+   * FillStyle applied to the full canvas surface behind the scene. Accepts the
+   * kit's `FillStyle` union (solid / pattern / linear-gradient / radial-gradient /
+   * conic-gradient) so consumers don't have to author a background node just to
+   * colorize the canvas.
+   *
+   * Rendered as a screen-space layer slotted before `'scene'` — independent of
+   * pan / zoom. Canvas owns this layer; `<SceneCanvas>` forwards its own
+   * `backgroundFill` prop verbatim so consumer apps see no breaking change.
+   */
+  backgroundFill?: FillStyle;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -521,6 +534,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     previewPoseExtra,
     previewBoundsExtra,
     viewport,
+    backgroundFill,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -1070,6 +1084,23 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const selectedIds = effectiveSelection.current;
 
+  // Background-fill layer: screen-space, emits a single full-canvas rect with
+  // the configured FillStyle. Slotted before 'scene' so the scene draws on top.
+  // Independent of pan / zoom — backgrounds are canvas chrome, not world content.
+  const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
+    if (!backgroundFill) return null;
+    return {
+      id: 'scene-background-fill',
+      label: 'Background fill',
+      space: 'screen',
+      draw: (_data, _view, dims) => [{
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: dims.width, height: dims.height },
+        fill: backgroundFill,
+      }],
+    };
+  }, [backgroundFill]);
+
   const layers = useMemo<RenderLayer<unknown>[]>(() => {
     const standardLayers: Partial<
       Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>
@@ -1192,12 +1223,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       });
     }
 
-    const out: RenderLayer<unknown>[] = composeOrderedLayers(layersMap, standardLayers);
+    const effectiveLayersMap = backgroundLayer
+      ? { ...layersMap, backgroundFill: { layer: backgroundLayer, before: 'scene' } }
+      : layersMap;
+    const out: RenderLayer<unknown>[] = composeOrderedLayers(effectiveLayersMap, standardLayers);
     if (tools) {
       out.push(...tools.getActiveOverlays());
     }
     return out;
-  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools]);
+  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in

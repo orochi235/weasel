@@ -29,7 +29,6 @@ import { findShapePainter } from './shapePainters';
 import { CursorCoordsHud } from './CursorCoordsHud';
 import { PickHud } from './PickHud';
 import type { FillStyle } from 'core/paint-types';
-import type { RenderLayer } from 'core/layers/render';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
@@ -940,25 +939,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // paints on top of any displaced ghost silhouettes. Phase 14e.2.5.
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
-  // Background-fill layer: screen-space, emits a single full-canvas rect
-  // with the configured `FillStyle`. Slotted before `'scene'` so the scene
-  // draws on top. Independent of pan / zoom because backgrounds in this
-  // kit are canvas chrome, not world content — consumers that want a
-  // world-space backdrop add their own scene node.
-  const backgroundLayer = useMemo<RenderLayer<unknown> | null>(() => {
-    if (!backgroundFill) return null;
-    return {
-      id: 'scene-background-fill',
-      label: 'Background fill',
-      space: 'screen',
-      draw: (_data, _view, dims) => [{
-        kind: 'path',
-        path: { kind: 'rect', x: 0, y: 0, width: dims.width, height: dims.height },
-        fill: backgroundFill,
-      }],
-    };
-  }, [backgroundFill]);
-
   // Pen preview overlay — reads the pen tool's persistent scratch and draws
   // the in-progress path (anchors, handles, rubber-band, close hint). Only
   // wired when the pen tool is actually registered; otherwise null.
@@ -978,8 +958,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
-    ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
-  }), [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, backgroundLayer]);
+  }), [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
@@ -1031,6 +1010,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         return null;
       }}
       viewport={viewport}
+      backgroundFill={backgroundFill}
       view={effectiveView}
       onViewChange={handleViewChange}
       shaders={shaders}
