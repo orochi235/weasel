@@ -12,7 +12,7 @@ function fakeHistory() {
         cancelled: false,
         suspended: false,
         applyBatch: vi.fn(),
-        commit(label: string) { this.committed = true; },
+        commit(_label: string) { this.committed = true; },
         cancel() { this.cancelled = true; },
         suspend() { this.suspended = true; },
         entries: () => ({ undo: [], redo: [] }),
