@@ -72,7 +72,9 @@ export function createJournalInternal(
       active = false;
     },
     cancel(): void {
-      throw new Error('Journal.cancel not yet implemented');
+      if (!active) throw new Error('Journal already closed');
+      inner.goto(0);
+      active = false;
     },
     suspend(): void {
       throw new Error('Journal.suspend not yet implemented');
