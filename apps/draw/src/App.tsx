@@ -84,7 +84,7 @@ import { parseSvg } from '@orochi235/weasel-svg';
 import { downloadSvg, pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
-import { dispatchDoubleClickEntry, handleBackgroundClick } from './modality';
+import { dispatchDoubleClickEntry } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
 import type { SceneCanvasHit } from '@orochi235/weasel';
@@ -1252,17 +1252,14 @@ function EditorWithSharedScene({
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
 
-  // Background-click composition is wired but currently inert — SceneCanvas
-  // intentionally does not surface `onBackgroundClick` as a consumer prop
-  // because it would interfere with the gesture-dispatcher channel (lasso /
-  // marquee completion). For normal mode the select tool's `clearSelection`
-  // action handles background clicks. Non-normal-mode background-click
-  // composition (text-edit commit, isolation scoped-clear) is a known gap
-  // pending a non-leaky hook into the dispatcher; until then, soft modes
-  // exit via Esc and strict modes via commit/cancel buttons. The handler
-  // below is preserved for the eventual wiring.
-  void handleBackgroundClick;
-  void selection;
+  // TODO(modality): wire non-normal-mode background-click composition
+  // (text-edit commit, isolation scoped-clear) through `handleBackgroundClick`
+  // from `./modality` once we have a non-leaky hook into the dispatcher.
+  // SceneCanvas's `onBackgroundClick` prop is intentionally omitted because
+  // it would race with the gesture-dispatcher channel (marquee, lasso). For
+  // normal mode the select tool's `clearSelection` action already handles
+  // background clicks; soft modes exit via Esc and strict modes via the
+  // breadcrumb's commit/cancel buttons in the interim.
 
   const paper = PAPER_PRESETS[paperSize];
 
