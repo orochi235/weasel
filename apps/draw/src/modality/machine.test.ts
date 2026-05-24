@@ -194,15 +194,15 @@ function makeRealishHistoryStub() {
       committed: false,
       cancelled: false,
       applyBatch: vi.fn(),
-      commit(_label: string) { this.committed = true; },
-      cancel() { this.cancelled = true; },
-      suspend() { this.suspended = true; },
+      commit(_label: string) { j.committed = true; },
+      cancel() { j.cancelled = true; },
+      suspend() { j.suspended = true; },
       entries: () => ({ undo: [], redo: [] }),
       canUndo: () => false,
       canRedo: () => false,
       undo: vi.fn(),
       redo: vi.fn(),
-      isActive: () => !this.committed && !this.cancelled && !this.suspended,
+      isActive: () => !j.committed && !j.cancelled && !j.suspended,
     };
     return j;
   });
