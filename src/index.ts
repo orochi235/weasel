@@ -398,6 +398,7 @@ export {
   pathPoseDescriptor,
   pathOriginProjection,
   createPenPreviewLayer,
+  createPathEditingOverlayLayer,
   pathUnion,
   pathIntersect,
   pathSubtract,
@@ -420,6 +421,8 @@ export type {
   CreatePathLayerOpts,
   CreatePenPreviewLayerOptions,
   PenPreviewStyle,
+  CreatePathEditingOverlayLayerOptions,
+  PathEditingOverlayStyle,
   PathInWorldPose,
 } from './features/paths';
 // ─── Utility: 45° axis constraint ───────────────────────────────────────────

@@ -66,6 +66,11 @@ export {
   type PenPreviewStyle,
 } from './penPreviewLayer';
 export {
+  createPathEditingOverlayLayer,
+  type CreatePathEditingOverlayLayerOptions,
+  type PathEditingOverlayStyle,
+} from './pathEditingOverlayLayer';
+export {
   pathUnion,
   pathIntersect,
   pathSubtract,

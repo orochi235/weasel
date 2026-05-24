@@ -58,6 +58,7 @@ import { useViewportTools } from './SceneCanvas/useViewportTools';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
+import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
 import type { PenScratch } from 'tools/builtin/usePenTool';
 import type { Tool } from 'tools/types';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
@@ -959,13 +960,44 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [shapeTools.pen, baseRequestedTools, trueIds],
   );
 
+  // Path-editing overlay — anchor squares, tangent lines, control-point
+  // dots for the polygon currently in anchor-edit mode. The "edit target"
+  // is computed via the same heuristic as `useEditAnchorsDepSource`: the
+  // first selected node whose pose.kind === 'polygon'. Drawn always when
+  // such a node exists; on non-path selections the layer no-ops.
+  const sceneRefForOverlay = useRef(scene);
+  sceneRefForOverlay.current = scene;
+  const pathEditingOverlayLayer = useMemo(
+    () => createPathEditingOverlayLayer({
+      getEditingId: () => {
+        const sc = sceneRefForOverlay.current;
+        const sel = selectionRef.current?.current;
+        if (!sc || !sel) return null;
+        for (const id of sel) {
+          const node = sc.get(id);
+          if (node && (node.pose as { kind?: string })?.kind === 'polygon') {
+            return id;
+          }
+        }
+        return null;
+      },
+      getPose: (id) => {
+        const node = sceneRefForOverlay.current?.get(id as never);
+        return (node?.pose ?? null) as never;
+      },
+    }),
+    // Stable identity — both closures read live values through refs.
+    [],
+  );
+
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
     previewGhost: { layer: previewLayer, after: 'scene' },
     dispatcherOverlay: { layer: dispatcherOverlay, after: 'previewGhost' },
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
+    pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(backgroundLayer ? { backgroundFill: { layer: backgroundLayer, before: 'scene' } } : {}),
-  }), [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, backgroundLayer]);
+  }), [mergedLayers, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, backgroundLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
