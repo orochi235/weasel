@@ -54,7 +54,7 @@ import type { UseAreaSelectOptions } from 'interactions/actions/area-select/opti
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
-import { useViewportTools } from './SceneCanvas/useViewportTools';
+import { useHandTool } from 'tools/builtin/useHandTool';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
@@ -735,14 +735,30 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(kindClassifier ? { kindOf: kindClassifier } : {}),
   });
 
-  // Viewport tools (hand / keyboard zoom / wheel zoom / pinch zoom). All
-  // hooks run unconditionally; each is a no-op when its config is absent.
-  const { handTool, viewportRegistered } = useViewportTools({
-    viewport,
-    canvasRef: internalCanvasRef,
-    currentView: currentViewRef.current,
-    onViewChange: handleViewChange,
-  });
+  // Viewport tools: Canvas now owns the full `useViewportTools` call (including
+  // pinch zoom via its own canvasRef). SceneCanvas only needs the hand tool for
+  // registry assembly and the `viewportRegistered` flag for the built-in tool
+  // list. Both are derived directly here without going through useViewportTools.
+  //
+  // `viewportRegistered` — same logic as useViewportTools: truthy when the
+  // viewport prop is non-undefined. SceneCanvas's default is pan+zoom enabled
+  // even when the consumer omits the viewport prop (undefined !== false).
+  const viewportRegistered = !!viewport;
+
+  // Extract inertia config for useHandTool — mirrors useViewportTools logic.
+  const inertiaEnabled = !!viewport?.inertia;
+  const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
+  const handToolInertia = inertiaEnabled && inertiaObj
+    ? {
+        friction: inertiaObj.friction,
+        minSpeed: inertiaObj.minSpeed,
+        boundary: inertiaObj.boundary,
+        bounds: inertiaObj.bounds,
+      }
+    : undefined;
+  // useHandTool must always be called (rules of hooks); it is a no-op when
+  // viewport is absent — the tool is simply not added to the registry.
+  const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
 
   // Keyboard zoom and wheel zoom/pan are handled by the viewport.pan and
   // viewport.zoom descriptors via the gesture dispatcher (Phase 8.5).
@@ -1014,6 +1030,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         }
         return null;
       }}
+      viewport={viewport}
       view={effectiveView}
       onViewChange={handleViewChange}
       shaders={shaders}
