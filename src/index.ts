@@ -207,7 +207,7 @@ export type {
 // ─── Canvas + SceneCanvas: top-level renderers ──────────────────────────────
 export { Canvas } from './canvas/Canvas';
 export { SceneCanvas, DEFAULT_HANDLE_SIZE, defaultDrawOne } from './canvas/SceneCanvas';
-export type { SceneCanvasProps } from './canvas/SceneCanvas';
+export type { SceneCanvasProps, SceneCanvasHit } from './canvas/SceneCanvas';
 export { CursorCoordsHud } from './canvas/CursorCoordsHud';
 export type { CursorCoordsHudProps } from './canvas/CursorCoordsHud';
 export { PickHud } from './canvas/PickHud';

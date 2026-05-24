@@ -285,6 +285,13 @@ export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   ],
 };
 
+/** Minimal hit descriptor passed to `onDoubleClick`. Contains the fields
+ *  modality dispatch needs; extends as the kit's `Hit` type evolves. */
+export interface SceneCanvasHit {
+  id: string;
+  kind: string;
+}
+
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<Node<TData, TLayer, TPose>, TPose>,
@@ -293,7 +300,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
     | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
     | 'layers'          // stripped so we can re-add as optional below
-    | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
@@ -622,6 +628,18 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * Defaults to `() => true` (all nodes are interactive).
      */
     isPointerInteractive?: (id: string) => boolean;
+
+    /**
+     * Called when the user double-clicks the canvas. Receives the hit node
+     * (id + kind) at the double-click position, or `null` when the click
+     * lands on empty canvas. Wired internally via a `dblclick` listener on
+     * the canvas element so it doesn't interfere with the pointer-gesture
+     * pipeline.
+     *
+     * Typical use: modality dispatch — enter path-edit on a path node,
+     * isolation on a group, text-edit on a text node.
+     */
+    onDoubleClick?: (hit: SceneCanvasHit | null) => void;
   };
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
@@ -674,6 +692,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     modalityHud,
     alphaFor,
     isPointerInteractive,
+    onDoubleClick,
     ...rest
   } = props;
 
@@ -1025,6 +1044,44 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const onToolsCreatedRef = useRef(onToolsCreated);
   onToolsCreatedRef.current = onToolsCreated;
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools]);
+
+  // Double-click handler: wire a native `dblclick` listener on the canvas
+  // element that converts client coords → world coords, resolves the hit node
+  // via `getNodeAtPoint`, and fires `onDoubleClick`. A native listener (not a
+  // React synthetic event) is used so it doesn't interfere with the pointer-
+  // gesture pipeline (which is fully handled by Canvas via `onPointerDown`
+  // / `onPointerUp` React events and the document-level tracker).
+  //
+  // Uses `tools` as a proxy dep for "canvas is mounted" — mirrors Canvas.tsx's
+  // native wheel listener pattern (`[tools]`). By the time `tools` is stable,
+  // `internalCanvasRef.current` is set.
+  const onDoubleClickRef = useRef(onDoubleClick);
+  onDoubleClickRef.current = onDoubleClick;
+  const getNodeAtPointRef = useRef(getNodeAtPoint);
+  getNodeAtPointRef.current = getNodeAtPoint;
+  useEffect(() => {
+    if (!onDoubleClick) return;
+    const c = internalCanvasRef.current;
+    if (!c) return;
+    const handler = (e: MouseEvent) => {
+      const cb = onDoubleClickRef.current;
+      if (!cb) return;
+      const gnap = getNodeAtPointRef.current;
+      const view = currentViewRef.current;
+      let hit: SceneCanvasHit | null = null;
+      if (gnap) {
+        const rect = c.getBoundingClientRect();
+        const wx = (e.clientX - rect.left) / view.scale.x + view.x;
+        const wy = (e.clientY - rect.top) / view.scale.y + view.y;
+        const result = gnap(wx, wy);
+        if (result) hit = { id: result.id, kind: result.kind };
+      }
+      cb(hit);
+    };
+    c.addEventListener('dblclick', handler);
+    return () => c.removeEventListener('dblclick', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tools, onDoubleClick]);
 
   // (Legacy `gestures` prop removed alongside the consumer-facing action
   // hooks; undo/redo and friends now register via the Actions Registry.)

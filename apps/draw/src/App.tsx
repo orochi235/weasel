@@ -83,6 +83,8 @@ import { parseSvg } from '@orochi235/weasel-svg';
 import { downloadSvg, pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
+import { dispatchDoubleClickEntry, handleBackgroundClick } from './modality';
+import type { SceneCanvasHit } from '@orochi235/weasel';
 import { sceneToSvgString } from './svgExport';
 import type { RecordingProfile } from './recorder';
 
@@ -1138,6 +1140,61 @@ function EditorWithSharedScene({
     return () => clearTimeout(id);
   }, [filename, backgroundColor]);
 
+  // ── Modality keyboard handler ─────────────────────────────────────────────
+  // Runs at capture phase so it intercepts Escape before the kit's
+  // useKeybindings handler (which returns to the default tool). When the
+  // mode is 'normal' we early-return and let the kit's handler run as usual.
+  useEffect(() => {
+    const { machine } = modality;
+    function onKey(e: KeyboardEvent): void {
+      const mode = machine.registry.current();
+      // Only intercept when a non-normal mode is active.
+      if (mode.id === 'normal') return;
+
+      if (e.key === 'Escape') {
+        if (e.metaKey && mode.kind === 'soft') {
+          machine.discardMode();
+          e.stopPropagation();
+          e.preventDefault();
+          return;
+        }
+        if (mode.kind === 'soft') machine.exitMode();
+        else machine.cancelMode();
+        e.stopPropagation();
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'Enter' && mode.kind === 'strict') {
+        machine.commitMode();
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    }
+    // Capture phase: fires before bubble phase so we beat useKeybindings'
+    // document-level bubble handler when a mode is active.
+    window.addEventListener('keydown', onKey, { capture: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
+  }, [modality]);
+
+  // ── Modality SceneCanvas callbacks ────────────────────────────────────────
+  const onDoubleClick = useCallback((hit: SceneCanvasHit | null) => {
+    dispatchDoubleClickEntry(hit, modality.machine);
+  }, [modality.machine]);
+
+  const onBackgroundClick = useCallback(() => {
+    handleBackgroundClick(
+      modality.machine.registry.current().id,
+      {
+        selection: {
+          clear: () => selection.clear(),
+          clearScoped: () => selection.clear(),
+        },
+        commitText: () => { /* no-op: wired in text-edit follow-up */ },
+      },
+      () => modality.machine.exitMode(),
+    );
+  }, [modality.machine, selection]);
+
   const paper = PAPER_PRESETS[paperSize];
 
   // Workspace host: the canvas fills the entire `.wd-canvas-host` area
@@ -1274,6 +1331,8 @@ function EditorWithSharedScene({
             decorationLayer={modality.decorationLayer}
             alphaFor={modality.scopingDim.alphaFor}
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
+            onDoubleClick={onDoubleClick}
+            onBackgroundClick={onBackgroundClick}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
           </SceneCanvas>
