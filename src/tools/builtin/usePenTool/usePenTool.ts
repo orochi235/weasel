@@ -8,7 +8,7 @@ import { meanScale } from 'core/viewport/meanScale';
 import { PenIcon } from '../../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
-import { pathToAnchors, anchorsToPath, type PenAnchor as KitPenAnchor } from 'features/paths/anchors';
+import { pathToAnchors, anchorsToPath, nearestSegmentT, type PenAnchor as KitPenAnchor } from 'features/paths/anchors';
 import { splitCubicAtT } from 'features/paths/cubicMath';
 import { createSetPathOp } from 'core/ops/setPath';
 import { constrainTo45 } from '../../../util/constrainTo45';
@@ -222,36 +222,8 @@ function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.hypot(dx, dy);
 }
 
-/** Sample every segment in `anchors` and return the closest (sub, segIdx, t)
- *  to (wx, wy). Sample count exceeds the hit-test override's 12 because the
- *  caller has already confirmed the click hit the obj — accuracy matters more
- *  than skipping work. */
-function nearestSegmentT(
-  anchors: KitPenAnchor[][],
-  wx: number,
-  wy: number,
-): { sub: number; segIdx: number; t: number } | null {
-  const SAMPLES = 32;
-  let bestD2 = Infinity;
-  let best: { sub: number; segIdx: number; t: number } | null = null;
-  for (let s = 0; s < anchors.length; s++) {
-    const sub = anchors[s];
-    for (let i = 0; i + 1 < sub.length; i++) {
-      const a = sub[i], b = sub[i + 1];
-      const p0 = a, p1 = a.outHandle ?? a, p2 = b.inHandle ?? b, p3 = b;
-      for (let k = 1; k < SAMPLES; k++) {
-        const t = k / SAMPLES;
-        const u = 1 - t;
-        const px = u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x;
-        const py = u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y;
-        const dx = px - wx, dy = py - wy;
-        const d2 = dx*dx + dy*dy;
-        if (d2 < bestD2) { bestD2 = d2; best = { sub: s, segIdx: i, t }; }
-      }
-    }
-  }
-  return best;
-}
+// `nearestSegmentT` lives in features/paths/anchors.ts so the pen tool's
+// alt-click insert and `insertPathAnchorAction` share one implementation.
 
 export interface UsePenToolReturn {
   tool: Tool<PenScratch>;
