@@ -9,3 +9,5 @@ export { createModeDecorations } from './decorations';
 export type { ModeDecorations, ModeDecorationPainter, CreateModeDecorationsOptions, ModeDrawCommand } from './decorations';
 export { eligibleTool, eligibleToolByCapabilities } from './eligibility';
 export type { ToolLike } from './eligibility';
+export { createScopingDim } from './scopingLayer';
+export type { ScopingDim, CreateScopingDimOptions } from './scopingLayer';
