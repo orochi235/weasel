@@ -175,7 +175,7 @@ Six modes, defined in `weasel-modes/presets/default.ts`:
 
 ### Entry
 
-- **Double-click** on a target enters the obvious mode for that target type (path → path-edit, group → isolation, text node → text-edit).
+- **Double-click** on a target enters the obvious mode for that target type (path → path-edit, group → isolation, text node → text-edit). The kind discriminator comes from `Hit.kind` returned by `getNodeAtPoint` at the SceneCanvas level (post-Canvas/SceneCanvas seam refactor; see coordination section below) — not from `adapter.kindOf`.
 - **Keyboard shortcuts** per the table above.
 - **Menu items** as the comprehensive list.
 
@@ -210,6 +210,27 @@ WeaselDraw owns:
 - Wiring entry triggers (double-click handlers, keybinding registrations) to the mode machine.
 
 Kit provides: `Journal`, capability tags, mode definitions, mode-owned decoration layer, eligibility predicate.
+
+### Coordination with the Canvas/SceneCanvas seam refactor
+
+A separate in-flight refactor (`docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`) redraws the boundary between `<Canvas>` (scene-agnostic surface + viewport + pointer routing) and `<SceneCanvas>` (selection, picking, kind registry, tools/actions). The seam work and the modality work are independent but share a few integration points; the modality plan should land *after* the seam refactor, or merge cleanly with it, since modality consumes the new shapes:
+
+- **Hit-kind transport.** Mode entry via double-click reads `Hit.kind` from `getNodeAtPoint`, not from the deprecated `adapter.kindOf` escape hatch. The post-Phase-4 SceneCanvas already routes kind through its own classifier; modality just consumes the existing channel.
+- **Selection ownership.** Post-refactor, `<Canvas>` carries no built-in selection — `<SceneCanvas>` always passes selection in. The mode machine, scoping dim, and journal target-id tracking all consume the SceneCanvas-level selection. There is no "Canvas-internal selection" to coordinate with.
+- **Background-click composition.** Post-refactor, background clicks reach the consumer via Canvas's new `onBackgroundClick` callback, which SceneCanvas wires up. Today SceneCanvas passes `onBackgroundClick={() => selection.clear()}`. The mode machine intercepts this and composes per-mode behavior:
+
+  | Mode | `onBackgroundClick` behavior |
+  |---|---|
+  | `normal` | `selection.clear()` (default) |
+  | `path-edit` | swallow (no selection clear, no exit; clicking nothing inside the workspace shouldn't end an edit session) |
+  | `isolation` | `selection.clear()` *within the isolation scope only*; does not exit isolation |
+  | `text-edit` | commit text and exit the mode |
+  | `free-transform` | swallow (mid-transaction; user must commit/cancel via the chrome) |
+  | `crop` | swallow |
+
+  The mode machine owns this composition table; SceneCanvas just calls the machine's handler in place of `selection.clear()` direct.
+
+- **Stable post-refactor.** `useScene`, `ctx.applyBatch`, the op factory set, op-coalescing keys, and `StandardActionsRegistrar` (undo/redo keybindings) are explicitly untouched by the seam refactor. Modality's `Journal` integration sits behind `applyBatch` and inherits these unchanged.
 
 ## What lives where (file plan)
 
@@ -254,7 +275,7 @@ None blocking. A few that will surface during implementation:
 
 ## Implementation order
 
-This is the suggested phasing for the plan stage:
+This is the suggested phasing for the plan stage. **Sequencing constraint:** the Canvas/SceneCanvas seam refactor (separate plan) should land first, since the modality work consumes its post-refactor shapes (`Hit.kind`, SceneCanvas-owned selection, `onBackgroundClick` callback). If the two land in parallel, the modality plan needs to either merge with the seam tip or rebase onto it before the WeaselDraw integration phase.
 
 1. Extract `History` + serialize into `weasel-history` package. No new behavior.
 2. Build `Journal` in `weasel-history` alongside `History`. Wire `History.beginJournal`. Tests.
