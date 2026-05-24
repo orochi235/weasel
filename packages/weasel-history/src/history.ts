@@ -1,6 +1,6 @@
-import type { Op } from '../ops/types';
-import { rebuildOp } from '../ops/registry';
-import { dwarn, dlog } from '../../debug/flag';
+import type { Op } from 'core/ops/types';
+import { rebuildOp } from 'core/ops/registry';
+import { dwarn, dlog } from 'debug/flag';
 
 interface Entry {
   /** Monotonic id assigned at first push. Stable across coalesce merges

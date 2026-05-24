@@ -37,7 +37,8 @@
       "affordances/*": ["./src/affordances/*"],
       "interactions/*": ["./src/interactions/*"],
       "tools/*": ["./src/tools/*"],
-      "canvas/*": ["./src/canvas/*"]
+      "canvas/*": ["./src/canvas/*"],
+      "debug/*": ["./src/debug/*"]
     }
   },
   "include": ["src", "demo", "apps", "packages/weasel-ui/src", "packages/weasel-hud/src", "packages/weasel-theme/src", "packages/weasel-svg/src"],

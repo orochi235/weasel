@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createHistory } from './history';
-import { createTransformOp } from '../ops/transform';
+import { createTransformOp } from 'core/ops/transform';
 
 interface Pose { x: number; y: number }
 

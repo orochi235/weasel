@@ -1,2 +1,9 @@
-// Public surface populated in Task 2.
-export {};
+export { createHistory } from './history';
+export type {
+  History,
+  CreateHistoryOptions,
+  HistoryEntry,
+  SerializedOp,
+  SerializedHistoryEntry,
+  SerializedHistory,
+} from './history';
