@@ -416,7 +416,7 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
 function HotkeyTriggerDetail({
   entry, actions,
 }: { entry: HotkeyTriggerEntry; actions: readonly ActionEntry[] }) {
-  const action = actions.find((a) => a.id === 'tool.sidearm');
+  const action = actions.find((a) => a.id === 'tool.offhand');
   const bindings = action?.defaultBinding;
   let key: string | undefined;
   if (Array.isArray(bindings)) {

@@ -151,7 +151,7 @@ export interface ActionEntry {
   /** Raw `Action.defaultBinding` snapshot — intentionally typed as `unknown`
    *  so callers must narrow before use. Currently consumed by
    *  `collectHotkeyTriggers` and `HotkeyTriggerDetail` to render
-   *  per-tool entries on the consolidated `tool.sidearm` action as
+   *  per-tool entries on the consolidated `tool.offhand` action as
    *  Powerline strips. */
   defaultBinding?: unknown;
 }
@@ -440,8 +440,8 @@ export function collectHotkeyTriggers(
   actions: readonly { id: string; defaultBinding?: unknown }[],
 ): readonly HotkeyTriggerEntry[] {
   const entries: HotkeyTriggerEntry[] = [];
-  const sidearm = actions.find((a) => a.id === 'tool.sidearm');
-  const bindings = sidearm?.defaultBinding;
+  const offhand = actions.find((a) => a.id === 'tool.offhand');
+  const bindings = offhand?.defaultBinding;
   if (!Array.isArray(bindings)) return entries;
   for (const raw of bindings) {
     const entry = raw as {

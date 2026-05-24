@@ -456,7 +456,7 @@ export function createDispatcher(): Dispatcher {
     // --- Pump: key-held DOWN re-dispatch for an already-engaged key is a
     //     no-op. This is the dispatcher-side defense against autorepeat
     //     keydowns (and any caller that re-dispatches) firing `start()`
-    //     again — each start pushes a sidearm hotkey, only one keyup ever
+    //     again — each start pushes a offhand hotkey, only one keyup ever
     //     fires onEnd, so the stack would leak. Treat as handled (we ARE
     //     holding the key) without re-invoking. ---
     if (event.kind === 'key-held' && event.phase === 'down') {

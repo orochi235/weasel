@@ -72,7 +72,7 @@ describe('Phase 1 integration: define → use → key → canvas', () => {
   // Soft-fallback removal (2026-05-18): `useKeybindings` no longer ships a
   // bare-Canvas-without-ActionsRegistry path that listens to document
   // keydown/keyup for space-held hotkeys. Hold-hotkeys now route through
-  // the consolidated `tool.sidearm` action + the gesture dispatcher mounted by
+  // the consolidated `tool.offhand` action + the gesture dispatcher mounted by
   // `<SceneCanvas>`. Equivalent end-to-end coverage lives in
   // `src/canvas/SceneCanvas.tools.test.tsx`.
   it.skip('modifier-slot tool engages while space is held', () => {

@@ -1,30 +1,30 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
-  makeToolSidearmAction,
-  buildToolSidearmBindings,
-  TOOL_SIDEARM_ID,
-} from './toolSidearm';
+  makeToolOffhandAction,
+  buildToolOffhandBindings,
+  TOOL_OFFHAND_ID,
+} from './toolOffhand';
 
-describe('makeToolSidearmAction', () => {
-  it("declares scope:'hotkey' so the sidearm action beats the active tool", () => {
-    const a = makeToolSidearmAction([]);
+describe('makeToolOffhandAction', () => {
+  it("declares scope:'hotkey' so the offhand action beats the active tool", () => {
+    const a = makeToolOffhandAction([]);
     expect(a.scope).toBe('hotkey');
   });
 
-  it('produces a single Action with id `tool.sidearm` and ongoing timing', () => {
-    const action = makeToolSidearmAction([]);
-    expect(action.id).toBe(TOOL_SIDEARM_ID);
-    expect(action.id).toBe('tool.sidearm');
+  it('produces a single Action with id `tool.offhand` and ongoing timing', () => {
+    const action = makeToolOffhandAction([]);
+    expect(action.id).toBe(TOOL_OFFHAND_ID);
+    expect(action.id).toBe('tool.offhand');
     expect(action.invoker).toBeDefined();
     expect(action.invoker?.timing).toBe('ongoing');
   });
 
   it('carries the supplied bindings as defaultBinding', () => {
-    const bindings = buildToolSidearmBindings([
+    const bindings = buildToolOffhandBindings([
       { toolId: 'hand', key: ' ' },
       { toolId: 'eyedropper', key: 'i' },
     ]);
-    const action = makeToolSidearmAction(bindings);
+    const action = makeToolOffhandAction(bindings);
     expect(Array.isArray(action.defaultBinding)).toBe(true);
     const arr = action.defaultBinding as unknown as Array<{
       spec: { kind: string; key: string | string[] };
@@ -46,7 +46,7 @@ describe('makeToolSidearmAction', () => {
       pushHotkey: pushSpy,
       popHotkey: popSpy,
     };
-    const action = makeToolSidearmAction([]);
+    const action = makeToolOffhandAction([]);
     if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error();
     const handle = action.invoker.start(
       {
@@ -69,7 +69,7 @@ describe('makeToolSidearmAction', () => {
       active: 'select', hotkeyStack: [], setActive: () => {},
       pushHotkey: pushSpy, popHotkey: () => {},
     };
-    const action = makeToolSidearmAction([]);
+    const action = makeToolOffhandAction([]);
     if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error();
     action.invoker.start(
       { deps: { activeTool } } as never,
@@ -79,7 +79,7 @@ describe('makeToolSidearmAction', () => {
   });
 
   it('start is a no-op when activeTool dep is missing', () => {
-    const action = makeToolSidearmAction([]);
+    const action = makeToolOffhandAction([]);
     if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error();
     const handle = action.invoker.start({ deps: {} } as never, { params: { toolId: 'hand' } });
     expect(handle).toEqual({});
@@ -91,7 +91,7 @@ describe('makeToolSidearmAction', () => {
       active: 'select', hotkeyStack: [], setActive: () => {},
       pushHotkey: pushSpy, popHotkey: () => {},
     };
-    const action = makeToolSidearmAction([]);
+    const action = makeToolOffhandAction([]);
     if (!action.invoker || action.invoker.timing !== 'ongoing') throw new Error();
     const handle = action.invoker.start({ deps: { activeTool } } as never, undefined);
     expect(handle).toEqual({});
@@ -99,9 +99,9 @@ describe('makeToolSidearmAction', () => {
   });
 });
 
-describe('buildToolSidearmBindings', () => {
+describe('buildToolOffhandBindings', () => {
   it('produces one key-held BoundGesture per spec with params.toolId set', () => {
-    const bindings = buildToolSidearmBindings([
+    const bindings = buildToolOffhandBindings([
       { toolId: 'hand', key: ' ' },
       { toolId: 'eyedropper', key: 'i' },
     ]);
@@ -113,7 +113,7 @@ describe('buildToolSidearmBindings', () => {
   });
 
   it('supports key arrays', () => {
-    const bindings = buildToolSidearmBindings([
+    const bindings = buildToolOffhandBindings([
       { toolId: 'hand', key: [' ', 'Spacebar'] },
     ]);
     const first = bindings[0] as { spec: { key: string | string[] } };

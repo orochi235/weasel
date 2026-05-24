@@ -2,14 +2,14 @@ import type { Action, BoundGesture } from '../registry';
 import { resolveParams, type InvocationCtx, type BindingOpts } from '../invoker';
 import type { ActiveToolContextValue } from '../activeToolContext';
 
-/** Canonical id of the consolidated tool-sidearm action. One descriptor
+/** Canonical id of the consolidated tool-offhand action. One descriptor
  *  serves every tool; the matched binding supplies `params.toolId` to select
  *  which tool to engage while the key is held. */
-export const TOOL_SIDEARM_ID = 'tool.sidearm';
+export const TOOL_OFFHAND_ID = 'tool.offhand';
 
-/** Per-tool spec consumed by `buildToolSidearmBindings`. The key is the
+/** Per-tool spec consumed by `buildToolOffhandBindings`. The key is the
  *  held-key trigger (e.g. ' ' for Space-for-hand). */
-export interface ToolSidearmBindingSpec {
+export interface ToolOffhandBindingSpec {
   toolId: string;
   key: string | string[];
 }
@@ -18,8 +18,8 @@ export interface ToolSidearmBindingSpec {
  *  `defaultBinding`. Each entry pairs a `key-held` spec with
  *  `opts.params.toolId` so the invoker's `start` can pick out which tool
  *  to engage. */
-export function buildToolSidearmBindings(
-  specs: readonly ToolSidearmBindingSpec[],
+export function buildToolOffhandBindings(
+  specs: readonly ToolOffhandBindingSpec[],
 ): BoundGesture[] {
   return specs.map(({ toolId, key }) => ({
     spec: { kind: 'key-held', key } as never,
@@ -27,16 +27,16 @@ export function buildToolSidearmBindings(
   }));
 }
 
-/** Build the consolidated `tool.sidearm` action — "hold a key to engage a
+/** Build the consolidated `tool.offhand` action — "hold a key to engage a
  *  secondary tool" (e.g. Space-for-hand). `bindings` enumerates one
  *  `{ spec: keyHeld, opts: { params: { toolId } } }` per tool; the invoker
  *  reads `params.toolId` from the matched binding, pushes the tool id onto
  *  the active-tool context's hotkey stack on `start`, and pops it on `onEnd`.
  *  Mirrors the parametric shape of `tool.activate`. */
-export function makeToolSidearmAction(bindings: BoundGesture[]): Action {
+export function makeToolOffhandAction(bindings: BoundGesture[]): Action {
   return {
-    id: TOOL_SIDEARM_ID,
-    label: 'Engage tool (sidearm)',
+    id: TOOL_OFFHAND_ID,
+    label: 'Engage tool (offhand)',
     defaultBinding: bindings,
     scope: 'hotkey',
     invoker: {

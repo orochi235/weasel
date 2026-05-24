@@ -6,10 +6,10 @@ import {
 } from 'interactions/keyHelpers';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import {
-  makeToolSidearmAction,
-  buildToolSidearmBindings,
-  type ToolSidearmBindingSpec,
-} from 'interactions/actions/defaults/toolSidearm';
+  makeToolOffhandAction,
+  buildToolOffhandBindings,
+  type ToolOffhandBindingSpec,
+} from 'interactions/actions/defaults/toolOffhand';
 import {
   makeToolActivateAction,
   buildToolActivateBindings,
@@ -40,11 +40,11 @@ const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
   pen: { key: 'P' },
 };
 
-/** Sidearm-action key bindings for built-in tools that engage while a key
+/** Offhand-action key bindings for built-in tools that engage while a key
  *  is held (e.g. Space-for-hand). Each entry contributes one
- *  `BoundGesture` to the consolidated `tool.sidearm` action's
+ *  `BoundGesture` to the consolidated `tool.offhand` action's
  *  `defaultBinding[]`. */
-const BUILTIN_SIDEARM_ACTIONS: Record<string, string> = {
+const BUILTIN_OFFHAND_ACTIONS: Record<string, string> = {
   hand: ' ',
 };
 
@@ -122,10 +122,10 @@ export function useKeybindings(
     };
   }, []);
 
-  // Tool-sidearm: register one parametric `tool.sidearm` action whose
+  // Tool-offhand: register one parametric `tool.offhand` action whose
   // `defaultBinding[]` carries one key-held entry per built-in tool that
   // engages while a key is held (e.g. Space-for-hand). Keys are declared in
-  // BUILTIN_SIDEARM_ACTIONS rather than on the ToolDef so the registration
+  // BUILTIN_OFFHAND_ACTIONS rather than on the ToolDef so the registration
   // is purely static. `useGestureDispatcher` fires these via key-held
   // bindings; the invoker reads `params.toolId` from the matched binding.
   const registry = useActionsRegistry();
@@ -134,16 +134,16 @@ export function useKeybindings(
     if (optionsRef.current.disable) return;
     if (!registry) return;
 
-    const specs: ToolSidearmBindingSpec[] = [];
-    for (const [toolId, key] of Object.entries(BUILTIN_SIDEARM_ACTIONS)) {
+    const specs: ToolOffhandBindingSpec[] = [];
+    for (const [toolId, key] of Object.entries(BUILTIN_OFFHAND_ACTIONS)) {
       if (toolsRef.current.has(toolId)) {
         specs.push({ toolId, key });
       }
     }
     if (specs.length === 0) return;
 
-    const bindings = buildToolSidearmBindings(specs);
-    return registry.register(makeToolSidearmAction(bindings));
+    const bindings = buildToolOffhandBindings(specs);
+    return registry.register(makeToolOffhandAction(bindings));
   }, [registry, tools]);
 
   // --- Tool-activate: register one parametric `tool.activate` action.

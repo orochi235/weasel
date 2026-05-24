@@ -19,11 +19,11 @@ export { deleteAction } from './delete';
 export { groupAction, ungroupAction } from './group';
 export { undoAction, redoAction } from './undoRedo';
 export {
-  makeToolSidearmAction,
-  buildToolSidearmBindings,
-  TOOL_SIDEARM_ID,
-  type ToolSidearmBindingSpec,
-} from './toolSidearm';
+  makeToolOffhandAction,
+  buildToolOffhandBindings,
+  TOOL_OFFHAND_ID,
+  type ToolOffhandBindingSpec,
+} from './toolOffhand';
 export {
   makeToolActivateAction,
   buildToolActivateBindings,

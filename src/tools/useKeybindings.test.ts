@@ -82,7 +82,7 @@ describe('useKeybindings', () => {
     expect(lassoEntry?.spec).toMatchObject({ kind: 'key', key: 'L' });
   });
 
-  it('registers a single tool.sidearm action with one key-held entry per built-in sidearm tool', () => {
+  it('registers a single tool.offhand action with one key-held entry per built-in offhand tool', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const hand   = defineTool({ id: 'hand',   initial: {} });
     const { result } = renderHook(() => {
@@ -92,21 +92,21 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const ids = result.current?.list().map((a) => a.id) ?? [];
-    expect(ids).toContain('tool.sidearm');
+    expect(ids).toContain('tool.offhand');
 
-    const sidearm = result.current?.list().find((a) => a.id === 'tool.sidearm');
-    const bindings = (sidearm?.defaultBinding ?? []) as unknown as Array<{
+    const offhand = result.current?.list().find((a) => a.id === 'tool.offhand');
+    const bindings = (offhand?.defaultBinding ?? []) as unknown as Array<{
       spec: { kind: string; key: string };
       opts: { params: { toolId: string } };
     }>;
     const handEntry = bindings.find((b) => b.opts.params.toolId === 'hand');
     expect(handEntry).toBeDefined();
     expect(handEntry?.spec).toMatchObject({ kind: 'key-held', key: ' ' });
-    // No entry for select (not in BUILTIN_SIDEARM_ACTIONS).
+    // No entry for select (not in BUILTIN_OFFHAND_ACTIONS).
     expect(bindings.find((b) => b.opts.params.toolId === 'select')).toBeUndefined();
   });
 
-  it('does not register tool.sidearm when no sidearm-eligible tool is in the registry', () => {
+  it('does not register tool.offhand when no offhand-eligible tool is in the registry', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select } });
@@ -115,7 +115,7 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const ids = result.current?.list().map((a) => a.id) ?? [];
-    expect(ids).not.toContain('tool.sidearm');
+    expect(ids).not.toContain('tool.offhand');
   });
 
   it('lets meta/ctrl combos through (system shortcuts like Cmd-R reload)', () => {
@@ -172,7 +172,7 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('select');
   });
 
-  it('disable: true also skips tool.sidearm registration', () => {
+  it('disable: true also skips tool.offhand registration', () => {
     const select = defineTool({ id: 'select', initial: {} });
     const hand   = defineTool({ id: 'hand',   initial: {} });
     const { result } = renderHook(() => {
@@ -183,7 +183,7 @@ describe('useKeybindings', () => {
     }, { wrapper: makeWrapper('select') });
 
     const ids = result.current.map((a) => a.id);
-    expect(ids).not.toContain('tool.sidearm');
+    expect(ids).not.toContain('tool.offhand');
     expect(ids).not.toContain('tool.activate');
   });
 

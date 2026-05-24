@@ -10,9 +10,9 @@ import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
 import { ActiveToolContextProvider, useActiveToolContext, type ActiveToolContextValue } from '../actions/activeToolContext';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import {
-  makeToolSidearmAction,
-  buildToolSidearmBindings,
-} from '../actions/defaults/toolSidearm';
+  makeToolOffhandAction,
+  buildToolOffhandBindings,
+} from '../actions/defaults/toolOffhand';
 
 function Probe({ actionDef, enabled = true }: { actionDef: Action; enabled?: boolean }) {
   const registry = useActionsRegistry();
@@ -132,7 +132,7 @@ describe('useGestureDispatcher', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  describe('tool.sidearm integration via gesture dispatcher', () => {
+  describe('tool.offhand integration via gesture dispatcher', () => {
     it('Space keydown pushes hand to hotkeyStack; keyup pops it', () => {
       let ctxValue!: ActiveToolContextValue;
 
@@ -149,7 +149,7 @@ describe('useGestureDispatcher', () => {
 
       function RegisterToolHold() {
         const r = useActionsRegistry();
-        r?.register(makeToolSidearmAction(buildToolSidearmBindings([
+        r?.register(makeToolOffhandAction(buildToolOffhandBindings([
           { toolId: 'hand', key: ' ' },
         ])));
         return null;

@@ -220,17 +220,17 @@ them:
   callers (palette, toolbar) reach the same effect via
   `registry.trigger('tool.activate', { toolId })`. Build entries with
   `buildToolActivateBindings(specs)`.
-- `makeToolSidearmAction(bindings)` — single parametric action registered
-  under id `tool.sidearm` for hold-to-engage hotkeys (e.g. Space-for-hand).
+- `makeToolOffhandAction(bindings)` — single parametric action registered
+  under id `tool.offhand` for hold-to-engage hotkeys (e.g. Space-for-hand).
   `defaultBinding` is a `BoundGesture[]` of `keyHeld` specs, each carrying
   `opts.params.toolId`. On `start` the invoker pushes the tool id onto the
   active-tool context's hotkey stack; `onEnd` pops it. The dispatcher's
   existing `inFlightOwners` machinery advances the channel through the same
   `[initial]` → `[engaged]` → `[initial]` lifecycle that drag uses. Build
-  entries with `buildToolSidearmBindings(specs)`.
+  entries with `buildToolOffhandBindings(specs)`.
 
 Built-in tools wire these via `BUILTIN_SELECT_KEYS` and
-`BUILTIN_SIDEARM_ACTIONS` maps in `src/tools/useKeybindings.ts`. The
+`BUILTIN_OFFHAND_ACTIONS` maps in `src/tools/useKeybindings.ts`. The
 `ToolKeybinding` field on `ToolDef` is reserved for tools whose activation
 key is set by the host caller (Lasso, Eyedropper); the same `useKeybindings`
 effect picks up those configurable keybindings and appends entries to the
