@@ -198,6 +198,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const requestRedrawRef = useRef(requestRedraw);
   requestRedrawRef.current = requestRedraw;
 
+  // Double-click synthesis state. Lives at hook level (not inside the effect)
+  // so it survives effect re-runs — otherwise HMR / StrictMode / a transient
+  // deps change resets it between the two clicks and the doubleclick never
+  // fires.
+  const lastClickRef = useRef<{ t: number; clientX: number; clientY: number } | null>(null);
+
   // Cancel in-flight ongoing handles when active tool changes (not on initial mount).
   const prevActiveRef = useRef(activeTool.active);
   useEffect(() => {
@@ -283,17 +289,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       shiftKey: boolean;
     }>();
 
-    // Double-click synthesis state. Tracks the timestamp and client coords of
-    // the most recent click; a subsequent click within DOUBLE_CLICK_MAX_MS
-    // and DOUBLE_CLICK_MAX_PX promotes to a `doubleclick` event (emitted
-    // AFTER the second click).
-    // Synthesis thresholds. 600ms matches the upper end of OS double-click
-    // settings; 8px tolerates the natural drift of a real mouse / trackpad
-    // between the two clicks. Tightening these breaks manual double-clicks
-    // even though synthetic ones (Playwright) work fine at 5px / 500ms.
+    // Double-click synthesis thresholds. 600ms matches the upper end of OS
+    // double-click settings; 8px tolerates the natural drift of a real
+    // mouse / trackpad between the two clicks. State (`lastClickRef`)
+    // lives at hook level so it survives effect re-runs.
     const DOUBLE_CLICK_MAX_MS = 600;
     const DOUBLE_CLICK_MAX_PX = 8;
-    let lastClick: { t: number; clientX: number; clientY: number } | null = null;
 
     // -----------------------------------------------------------------------
     // Window key listeners
@@ -618,12 +619,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         dispatch(clickEv);
 
         // Double-click synthesis: emit a `doubleclick` event AFTER the
-        // second click when two clicks land within ~500ms and ~5px of each
-        // other. Reset the tracker after a successful doubleclick so a
-        // third click doesn't compose another one (triple-click semantics
-        // are not modeled).
+        // second click when two clicks land within DOUBLE_CLICK_MAX_MS and
+        // DOUBLE_CLICK_MAX_PX. Reset the tracker after a successful
+        // doubleclick so a third click doesn't compose another one
+        // (triple-click semantics are not modeled).
         const now = Date.now();
-        const prev = lastClick;
+        const prev = lastClickRef.current;
         const dx = e.clientX - (prev?.clientX ?? 0);
         const dy = e.clientY - (prev?.clientY ?? 0);
         if (prev && now - prev.t < DOUBLE_CLICK_MAX_MS && Math.hypot(dx, dy) < DOUBLE_CLICK_MAX_PX) {
@@ -637,9 +638,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
             ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
           };
           dispatch(dblEv);
-          lastClick = null;
+          lastClickRef.current = null;
         } else {
-          lastClick = { t: now, clientX: e.clientX, clientY: e.clientY };
+          lastClickRef.current = { t: now, clientX: e.clientX, clientY: e.clientY };
         }
       }
     };
