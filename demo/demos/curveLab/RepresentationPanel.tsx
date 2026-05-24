@@ -135,6 +135,7 @@ export function RepresentationPanel({
           scene={scene}
           selection={selection}
           defaultTools={['select']}
+          actions={{ enterPathEdit: null, exitPathEdit: null, insertPathAnchor: null }}
           layers={layers as never}
         />
       </div>
