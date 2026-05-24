@@ -71,10 +71,6 @@ Priority tags:
 - `ShapeToolsDemo` visual-regression baseline → [Demos & visual regression](#demos--visual-regression)
 - Drop `Canvas` public export (next minor) → [Demos & visual regression](#demos--visual-regression)
 
-**Release-gate & build hygiene**
-- Demo build not in `prepublishOnly` → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- `src/import-shims/` ↔ `tsup.config.ts` parity test → [Release-gate & build hygiene](#release-gate--build-hygiene)
-
 **Documentation**
 - README pitch sweep → [Documentation](#documentation)
 
@@ -370,10 +366,6 @@ From the WebGL transition spec — all deferred:
 ---
 
 ## Release-gate & build hygiene
-
-- **(P2) Demo build not in `prepublishOnly`.** `prepublishOnly` runs `tsc --noEmit && vitest run && tsup build` but skips `build:demo`. The demo build uses vite (different resolution path: `@orochi235/weasel/<x>` aliases to `src/import-shims/<x>.ts`), and silent drift surfaced 2026-05-14 when `src/import-shims/routing.ts` was missing — tsup happily produced `dist/routing.js` via its own entry config, but vite couldn't resolve the import for the demo. Either chain `build:demo` into `prepublishOnly`, or add a separate CI gate that runs it.
-
-- **(P2) `src/import-shims/` ↔ `tsup.config.ts` parity test.** Every subpath listed in `tsup.config.ts` `entry` (and every key in `package.json` `exports`) needs a matching `src/import-shims/<name>.ts` shim so vite's wildcard alias resolves. A 5-line parity test (read tsup entries, read package.json exports, list `src/import-shims/`, assert sets match) would prevent the drift class above.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
 
