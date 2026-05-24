@@ -164,8 +164,14 @@ export function createDispatcher(): Dispatcher {
    * Per-gesture drag origin, keyed by gestureId.
    * Set when an ongoing drag handle is opened; used to compute deltas for
    * `pointermove` pump events.
+   *
+   * Stores both world (`x`/`y`) and client/screen (`clientX`/`clientY`)
+   * coordinates so we can produce both `drag.delta` (world) and
+   * `drag.screenDelta` (client). View-mutating drag actions (pan, etc.)
+   * must consume `screenDelta` — world deltas are self-referential when
+   * the action itself shifts the view.
    */
-  const dragOrigins = new Map<string, { x: number; y: number }>();
+  const dragOrigins = new Map<string, { x: number; y: number; clientX?: number; clientY?: number }>();
 
   /** Subscribers fired after every state mutation. Layers that read from
    *  `getInFlightHandles()` use this to know when to re-render. */
@@ -232,10 +238,21 @@ export function createDispatcher(): Dispatcher {
       const ox = origin?.x ?? cx;
       const oy = origin?.y ?? cy;
       const points = gestureId ? dragPoints.get(gestureId) : undefined;
+      // Screen-space delta — populated when both the event and origin carry
+      // client coords. View-mutating drag actions must read this rather than
+      // the world `delta` (world deltas are self-referential mid-pan).
+      const eventClientX = event.clientX;
+      const eventClientY = event.clientY;
+      const hasClient =
+        eventClientX !== undefined && eventClientY !== undefined
+        && origin?.clientX !== undefined && origin?.clientY !== undefined;
       base.drag = {
         start: { x: ox, y: oy },
         current: { x: cx, y: cy },
         delta: { x: cx - ox, y: cy - oy },
+        ...(hasClient
+          ? { screenDelta: { x: eventClientX! - origin!.clientX!, y: eventClientY! - origin!.clientY! } }
+          : {}),
         ...(points !== undefined ? { points } : {}),
       };
     } else if (event.kind === 'multitouch') {
@@ -531,7 +548,12 @@ export function createDispatcher(): Dispatcher {
         const gestureId = gestureIdFor(event);
         // Record the drag origin so subsequent pointermove events can compute delta.
         if (event.kind === 'pointerdown') {
-          dragOrigins.set(gestureId, { x: event.x ?? 0, y: event.y ?? 0 });
+          dragOrigins.set(gestureId, {
+            x: event.x ?? 0,
+            y: event.y ?? 0,
+            ...(event.clientX !== undefined ? { clientX: event.clientX } : {}),
+            ...(event.clientY !== undefined ? { clientY: event.clientY } : {}),
+          });
           // Initialize empty drag-points history for the new gesture.
           dragPoints.set(gestureId, [{ x: event.x ?? 0, y: event.y ?? 0 }]);
         }

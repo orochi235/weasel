@@ -16,8 +16,14 @@ export type InputEvent =
   | {
       kind: 'pointerdown';
       target?: unknown;
+      /** World-space coordinates (post view transform). */
       x?: number;
       y?: number;
+      /** Client/screen-space coordinates (raw DOM event). Required for any
+       *  drag action whose effect mutates the view itself — world coords
+       *  shift mid-gesture and produce self-referential deltas. */
+      clientX?: number;
+      clientY?: number;
       altKey: boolean;
       ctrlKey: boolean;
       metaKey: boolean;
@@ -33,8 +39,8 @@ export type InputEvent =
        */
       bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
     }
-  | { kind: 'pointermove'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
-  | { kind: 'pointerup'; x: number; y: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
+  | { kind: 'pointermove'; x: number; y: number; clientX?: number; clientY?: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
+  | { kind: 'pointerup'; x: number; y: number; clientX?: number; clientY?: number; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | { kind: 'pointercancel'; altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }
   | {
       kind: 'click';

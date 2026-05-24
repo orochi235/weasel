@@ -78,11 +78,23 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
       return {
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
-          // drag.delta is in screen space (pixels). Divide by scale to convert to world space.
-          // At any zoom level, screen-space delta must be scaled down by the zoom factor
-          // so that 1 screen pixel at 2x zoom pans 0.5 world units, not 1 world unit.
-          const { x: screenDx, y: screenDy } = moveCtx.drag.delta;
+          // Use `screenDelta` (client/CSS pixels), NOT `delta` (world). Pan
+          // mutates the view itself, so world deltas are self-referential —
+          // after the first commit, `toWorld(currentClient)` returns a
+          // position offset by the just-applied pan, halving the apparent
+          // movement on every subsequent pointermove. Screen coords come
+          // straight from the DOM event and don't drift.
+          //
+          // Fall back to world `delta` only when the dispatcher didn't get
+          // clientX/clientY on the event (legacy harnesses); in that case
+          // panning at scale 1 still works approximately, and zoom-scale
+          // panning will exhibit the lag bug. The fallback exists so old
+          // test fixtures continue to compile.
+          const screen = moveCtx.drag.screenDelta ?? moveCtx.drag.delta;
+          const { x: screenDx, y: screenDy } = screen;
           const sv = scratch.startView;
+          // 1 screen px maps to 1/scale world units (at 2x zoom, 100 px →
+          // 50 world units of pan).
           scratch.view.set({
             ...sv,
             x: sv.x - screenDx / sv.scale.x,

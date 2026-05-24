@@ -368,6 +368,18 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       activePointers.add(e.pointerId);
       pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
+      // Capture the pointer so pointermove/pointerup keep firing on the
+      // canvas after the cursor leaves its rect — critical for drag actions
+      // that continue past the canvas edge (resize handles, area-select,
+      // viewport pan). Browser auto-releases on pointerup/cancel. Wrapped
+      // in try/catch because some test environments (jsdom) don't implement
+      // setPointerCapture; never block the dispatcher path on a missing API.
+      try {
+        canvas?.setPointerCapture?.(e.pointerId);
+      } catch {
+        // ignore — best-effort capture
+      }
+
       // Classify the affordance at the pointerdown world-space position.
       // The thunk is optional — when absent, affordance is undefined (no-op).
       // Both thunks receive world-space coords; SceneCanvas supplies the
@@ -382,6 +394,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         target: e.target,
         x: w.x,
         y: w.y,
+        clientX: e.clientX,
+        clientY: e.clientY,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
@@ -478,6 +492,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         kind: 'pointermove',
         x: w.x,
         y: w.y,
+        clientX: e.clientX,
+        clientY: e.clientY,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
@@ -554,6 +570,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         kind: 'pointerup',
         x: wUp.x,
         y: wUp.y,
+        clientX: e.clientX,
+        clientY: e.clientY,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,

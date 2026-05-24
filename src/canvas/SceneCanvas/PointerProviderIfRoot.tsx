@@ -38,22 +38,48 @@ export function PointerPublisher({
     if (!ctx) return;
     const el = canvasRef.current;
     if (!el) return;
-    const onMove = (e: PointerEvent): void => {
+    const publish = (clientX: number, clientY: number): void => {
       const rect = el.getBoundingClientRect();
       const view = viewRef.current;
       ctx.pointerRef.current = {
-        worldX: (e.clientX - rect.left) / view.scale.x + view.x,
-        worldY: (e.clientY - rect.top) / view.scale.y + view.y,
+        worldX: (clientX - rect.left) / view.scale.x + view.x,
+        worldY: (clientY - rect.top) / view.scale.y + view.y,
       };
     };
-    const onLeave = (): void => {
+    const onMove = (e: PointerEvent): void => publish(e.clientX, e.clientY);
+    const onLeave = (e: PointerEvent): void => {
+      // Don't clear coords mid-drag: any pointer button down means the user
+      // is still actively manipulating the canvas, and downstream consumers
+      // (resize/move/etc.) need the latest world position even when the
+      // cursor leaves the canvas rect. The `useGestureDispatcher`-side
+      // `setPointerCapture` keeps pointermove flowing in that case, so we
+      // get fresh values; this guard just prevents the leave event from
+      // racing in and nulling them between captured moves.
+      if (e.buttons !== 0) {
+        publish(e.clientX, e.clientY);
+        return;
+      }
       ctx.pointerRef.current = null;
+    };
+    // Document-level pointermove backstop so the HUD keeps updating when the
+    // pointer drifts off the canvas during a drag (pointer capture routes
+    // events back to the canvas, but the leave-window edge case is covered
+    // here too). Filter to events whose target isn't the canvas to avoid
+    // double-publishing.
+    const onDocMove = (e: PointerEvent): void => {
+      if (e.target === el) return;
+      // Only forward off-canvas moves during an active drag — idle hover
+      // outside the canvas shouldn't be reported as a canvas pointer position.
+      if (e.buttons === 0) return;
+      publish(e.clientX, e.clientY);
     };
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerleave', onLeave);
+    document.addEventListener('pointermove', onDocMove);
     return () => {
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerleave', onLeave);
+      document.removeEventListener('pointermove', onDocMove);
     };
     // canvasRef + viewRef + ctx identity are all stable across the lifetime
     // of the surrounding provider; effect runs once per mount.

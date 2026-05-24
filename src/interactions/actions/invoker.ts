@@ -66,6 +66,17 @@ export interface InvocationCtx {
     start: Point2;
     current: Point2;
     delta: Point2;
+    /**
+     * Drag delta in client/screen coordinates (CSS pixels from the drag
+     * origin). Use this — never `delta` — for any action whose effect
+     * mutates the viewport itself (pan, view-zoom), because world-space
+     * deltas become self-referential as the view shifts mid-drag.
+     *
+     * Populated when the dispatcher received `clientX`/`clientY` on the
+     * underlying pointer events. Absent for legacy callers that don't
+     * provide them.
+     */
+    screenDelta?: Point2;
     affordance?: AffordanceHit;
     /**
      * Full pointermove history for the current drag, in world space.
