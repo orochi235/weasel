@@ -353,18 +353,22 @@ html, body, #root {
 .wd-canvas-host[data-mode="free-transform"] { --wd-mode-tint: #f59e0b; }
 .wd-canvas-host[data-mode="crop"]           { --wd-mode-tint: #ef4444; }
 
-/* Tint overlay: sits ABOVE the canvas (which itself renders the workspace
-   stripes + page) at low alpha. Pointer-events: none so it never intercepts
-   clicks. Driven by --wd-mode-tint and --wd-mode-tint-intensity. Default is
-   invisible (transparent tint). Direction defaults to bottom-up; use
-   data-tint-direction="top-down" to invert. */
+/* Tint strip: a narrow band at the top edge of the workspace (~120px tall)
+   that fades from tinted color → fully transparent over its height. Sits
+   ABOVE the canvas (z-index 3) with pointer-events: none. Stays out of the
+   document area because the gradient is transparent past 120px from the
+   top, regardless of where the page sits within the workspace. Driven by
+   --wd-mode-tint and --wd-mode-tint-intensity; defaults to invisible. */
 .wd-canvas-host::before {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
   pointer-events: none;
   background: linear-gradient(
-    to top,
+    to bottom,
     color-mix(in srgb, var(--wd-mode-tint) calc(var(--wd-mode-tint-intensity) * 100%), transparent) 0%,
     transparent 100%
   );
@@ -372,9 +376,12 @@ html, body, #root {
   z-index: 3;
 }
 
+/* `data-tint-direction="top-down"` on a mode definition means the colored
+   end is at the bottom of the strip. Default (no attribute or bottom-up)
+   places the colored end at the top, matching the modality-design.md spec. */
 .wd-canvas-host[data-tint-direction="top-down"]::before {
   background: linear-gradient(
-    to bottom,
+    to top,
     color-mix(in srgb, var(--wd-mode-tint) calc(var(--wd-mode-tint-intensity) * 100%), transparent) 0%,
     transparent 100%
   );
