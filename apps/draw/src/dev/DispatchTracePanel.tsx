@@ -124,7 +124,10 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
   const [expanded, setExpanded] = useState<number | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const [showHandled, setShowHandled] = useState<boolean>(true);
-  const [showUnhandled, setShowUnhandled] = useState<boolean>(true);
+  // Unhandled events are noisy by default (every mousemove without an active
+  // gesture, every wheel scroll over chrome). Hidden by default; toggle to
+  // expose them when diagnosing routing problems.
+  const [showUnhandled, setShowUnhandled] = useState<boolean>(false);
   const lastLenRef = useRef<number>(entries.length);
   const lastTsRef = useRef<number>(entries.length ? entries[entries.length - 1]!.ts : 0);
 
