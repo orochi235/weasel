@@ -994,27 +994,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const [pathEditingId, setPathEditingId] = useState<string>('');
   const pathEditingIdRef = useRef(pathEditingId);
   pathEditingIdRef.current = pathEditingId;
-  // In-flight preview polygon during a drag — kept in a ref so updates
-  // don't re-render every pointermove. Read by the chrome layer so the
-  // dragged anchor / handle tracks the cursor live; written by
-  // editAnchorsAction via the dep's setPreviewPath. The dep's source
-  // hook is mounted in StandardActionsRegistrar (a child of this
-  // subtree), so it can't share React state — we lift the ref here.
-  const pathEditingPreviewRef = useRef<{ id: string; worldPath: PolygonPath } | null>(null);
   const editAnchorsExternalState = useMemo(() => ({
     getEditingId: () => pathEditingIdRef.current,
     setEditingId: (id: string | null) => setPathEditingId(id ?? ''),
-    getPreviewPath: (id: string): PolygonPath | null => {
-      const p = pathEditingPreviewRef.current;
-      return p && p.id === id ? p.worldPath : null;
-    },
-    setPreviewPath: (id: string, worldPath: PolygonPath | null) => {
-      pathEditingPreviewRef.current = worldPath ? { id, worldPath } : null;
-      // Drags pump requestRedraw via the dispatcher; this just covers
-      // commit/cancel transitions when the canvas would otherwise sit
-      // on a stale frame.
-      canvasApiRef.current?.requestRedraw?.();
-    },
   }), []);
   // Bump the canvas's redraw whenever edit-mode changes — the chrome layer
   // reads `editingId` via a ref, so without an explicit redraw signal a
@@ -1045,36 +1027,54 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       selectionRef: selectionRef as unknown as React.RefObject<SelectionApi>,
       boundsOf: (id) => internalBoundsOf?.(id) ?? null,
       getEditingId: () => pathEditingIdRef.current || null,
-      getPose: (id) => {
-        // Slops viz visualises the actual hit zones — uses the same
-        // resolved editable polygon the chrome layer reads so the halos
-        // sit on top of the rendered anchors regardless of storage.
-        const preview = pathEditingPreviewRef.current;
-        if (preview && preview.id === id) return preview.worldPath as never;
-        const node = sceneRefForOverlay.current?.get(id as never);
-        return resolveEditablePathOf(node as unknown as { pose: unknown; data: unknown }) as never;
-      },
+      // Halos follow the live (preview-aware) polygon so they sit on
+      // top of the rendered anchors during anchor-edit drags AND when
+      // the whole path is being moved.
+      getPose: (id) => livePathFor(id) as never,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [internalBoundsOf],
   );
 
+  // Resolve the live (preview-aware) world polygon for `id`. Reads from
+  // the dispatcher's in-flight handles first — whichever handle owns
+  // the gesture (editAnchors anchor-drag, move-the-whole-path, etc.)
+  // contributes the previewPose / previewData that we'd otherwise
+  // dispatch separately. Synthesizes a (pose, data) pair and routes it
+  // through `resolveEditablePathOf` so chrome and slops viz follow
+  // *any* in-flight gesture that previews state for the editing id.
+  const livePathFor = (id: string): PolygonPath | null => {
+    const node = sceneRefForOverlay.current?.get(id as never);
+    if (!node) return null;
+    let pose = node.pose as unknown;
+    let data = node.data as unknown;
+    let touched = false;
+    const disp = dispatcherRef.current;
+    if (disp) {
+      for (const handle of disp.getInFlightHandles()) {
+        const previewIds = handle.previewIds?.();
+        if (!previewIds) continue;
+        let owns = false;
+        for (const pid of previewIds) {
+          if (pid === id) { owns = true; break; }
+        }
+        if (!owns) continue;
+        const p = handle.previewPose?.(id);
+        if (p != null && !touched) { pose = p; touched = true; }
+        const d = handle.previewData?.(id);
+        if (d != null) { data = d; touched = true; }
+      }
+    }
+    return resolveEditablePathOf({ pose, data } as { pose: unknown; data: unknown });
+  };
+
   const pathEditingOverlayLayer = useMemo(
     () => createPathEditingOverlayLayer({
       getEditingId: () => pathEditingIdRef.current || null,
-      getPose: (id) => {
-        // Live preview wins — the dep keeps an in-flight world polygon
-        // updated each pointermove during editAnchorsAction drags.
-        const preview = pathEditingPreviewRef.current;
-        if (preview && preview.id === id) return preview.worldPath as never;
-        // Otherwise resolve via the shared storage helper so both
-        // pose-as-polygon (bezier demo) and data.path (WeaselDraw,
-        // kit pen-tool default) nodes render correctly.
-        const node = sceneRefForOverlay.current?.get(id as never);
-        return resolveEditablePathOf(node as unknown as { pose: unknown; data: unknown }) as never;
-      },
+      getPose: (id) => livePathFor(id) as never,
     }),
-    // Stable identity — both closures read live values through refs.
+    // Stable identity — closure reads live state through refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

@@ -241,6 +241,21 @@ export interface OngoingHandle {
    */
   previewIds?(): Iterable<string> | null;
   previewPose?(id: string): unknown | null;
+  /**
+   * Optional per-id preview *data*. Falls back to the committed
+   * `node.data` when null/absent. Use when the gesture mutates
+   * `node.data` (e.g. anchor-edit on nodes that store the polygon on
+   * `data.path`) rather than (or in addition to) the pose. The preview-
+   * ghost layer assembles a synthetic node from `{ ...node, pose:
+   * previewPose ?? node.pose, data: previewData ?? node.data }` before
+   * calling the scene slot's `drawOne`.
+   *
+   * Sources compose first-non-null per axis: an action can emit only
+   * `previewPose` (translation), only `previewData` (data-only edit),
+   * or both (pose + data both change, e.g. anchor drag on a data.path
+   * node where the bounds shift).
+   */
+  previewData?(id: string): unknown | null;
 
   /**
    * Optional chrome surface — Phase 14e.2.5 dispatcher-side overlay layer.

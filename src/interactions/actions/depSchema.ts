@@ -87,7 +87,7 @@ export interface AreaSelectDep {
 }
 
 /**
- * Adapter dep for `editAnchorsAction` (Phase 14b).
+ * Adapter dep for `editAnchorsAction`.
  *
  * Provides narrow read/write access to the editable polygon for a single
  * node. Consumers register this dep so anchor-edit actions can read/write
@@ -95,16 +95,10 @@ export interface AreaSelectDep {
  * pose (`pose.kind === 'polygon'`) or on `node.data.path` (the kit's
  * built-in pen-tool default, also WeaselDraw's shape).
  *
- * `editingId` identifies the node currently in edit mode.
- * `getEditablePath(id)` returns the polygon **in world coordinates** —
- *   chrome renders at these positions, action drags translate in this
- *   space. Returns null for nodes that don't have an editable polygon.
- * `setPreviewPath(id, world)` updates the in-flight uncommitted polygon;
- *   read by `getEditablePath` so the chrome shows live drag state without
- *   relying on dispatcher previewPose (which only carries `pose`, not
- *   `data.path` updates).
- * `applyEdit(id, world, label)` commits a polygon as the new value.
- *   Routes to scene.setPose or scene.update({data}) based on storage.
+ * Note on live previews: in-flight edit state is surfaced through the
+ * dispatcher's standard `OngoingHandle.previewIds/previewPose/previewData`
+ * triple (not this dep), so chrome and preview-ghost stay in lock-step
+ * via one source of truth.
  */
 export interface EditAnchorsDep {
   /** Id of the node currently being edited. Empty string means no node is
@@ -114,14 +108,24 @@ export interface EditAnchorsDep {
    *  string) to exit. `enterPathEditAction` and `exitPathEditAction` call
    *  this; consumers can call it directly to drive edit mode programmatically. */
   setEditingId(id: string | null): void;
-  /** Returns the editable polygon in world coordinates, or null if this
-   *  node has no editable polygon. When a preview path is set for `id`,
-   *  that takes precedence over the committed storage. */
+  /** Returns the COMMITTED editable polygon in world coordinates, or
+   *  null if this node has no editable polygon. Does NOT consult in-
+   *  flight previews — callers that need live state read the dispatcher's
+   *  in-flight handles. */
   getEditablePath(id: string): unknown;
-  /** Update the in-flight uncommitted polygon for `id`. `editAnchorsAction`
-   *  calls this in `onMove`; clear by passing `null`. The chrome layer
-   *  consults this through `getEditablePath` so dragging shows live. */
-  setPreviewPath(id: string, worldPath: unknown | null): void;
+  /** Returns where the polygon is stored — `'pose'` when `node.pose`
+   *  IS the polygon, `'data'` when it lives on `node.data.path` with a
+   *  rect pose, or `null` when the node has no editable polygon. The
+   *  action uses this to know which preview-ghost axis to populate
+   *  (`previewPose` only / `previewData` + `previewPose` for data.path). */
+  getStorageKind(id: string): 'pose' | 'data' | null;
+  /** Returns the node's raw `pose` and `data` so storage-aware actions
+   *  can capture origin state at gesture-start and synthesize a matching
+   *  `previewPose` / `previewData` during `onMove`. Used by
+   *  `editAnchorsAction` for the data.path branch (rect pose + data
+   *  carrying extra fields like fill / stroke that must be preserved
+   *  through the preview). Returns null when the node is gone. */
+  getNodeShape(id: string): { pose: unknown; data: unknown } | null;
   /** Commit `worldPath` as the new value for `id`. Implementation routes
    *  to setPose (when pose IS the polygon) or batched setPose+update
    *  (when the polygon lives on data.path). Records one history entry

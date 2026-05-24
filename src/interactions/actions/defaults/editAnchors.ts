@@ -26,6 +26,8 @@ import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import { withCoord, enumerateAnchors, translateAnchor } from '../edit-anchors/geometry';
+import { boundsOfPath } from 'features/paths/bounds';
+import { translatePath } from 'features/paths/transform';
 // Commit goes through dep.applyEdit (routes setPose or setPose+update
 // based on the node's path-storage shape); no direct op or dispatch
 // helpers needed here.
@@ -76,6 +78,10 @@ interface EditAnchorsScratch {
   anchorOrigin: { x: number; y: number };
   originPose: PolygonPath;
   currentPose: PolygonPath;
+  /** Where the polygon lives on the node — drives which preview-ghost
+   *  axes the handle populates (`previewPose` only for pose-as-polygon,
+   *  `previewPose` + `previewData` for data.path). */
+  storageKind: 'pose' | 'data';
 }
 
 // ---------------------------------------------------------------------------
@@ -141,6 +147,8 @@ export const editAnchorsAction: Action & { requires: string[] } = {
       // anchor world coords match what the user clicked.
       const worldPath = dep.getEditablePath(editingId) as PolygonPath | undefined;
       if (!worldPath || worldPath.kind !== 'polygon') return {};
+      const storageKind = dep.getStorageKind(editingId);
+      if (storageKind !== 'pose' && storageKind !== 'data') return {};
 
       const anchors = enumerateAnchors(worldPath);
       const anchor = anchors[anchorInfo.anchorIndex];
@@ -163,6 +171,14 @@ export const editAnchorsAction: Action & { requires: string[] } = {
           return {};
       }
 
+      // For data.path nodes, we also need the original rect pose + data
+      // so previewPose / previewData can be derived from currentPose.
+      // Captured at start so onMove doesn't re-read the scene.
+      const nodeShape = storageKind === 'data' ? dep.getNodeShape(editingId) : null;
+      const originRectPose =
+        nodeShape ? (nodeShape.pose as { x: number; y: number; width: number; height: number }) : undefined;
+      const originData = nodeShape ? (nodeShape.data as object) : undefined;
+
       const scratch: EditAnchorsScratch = {
         dep,
         id: editingId,
@@ -172,6 +188,7 @@ export const editAnchorsAction: Action & { requires: string[] } = {
         anchorOrigin: { x: anchor.x, y: anchor.y },
         originPose: worldPath,
         currentPose: worldPath,
+        storageKind,
       };
 
       let active = false;
@@ -179,8 +196,6 @@ export const editAnchorsAction: Action & { requires: string[] } = {
       return {
         onMove(moveCtx: InvocationCtx): void {
           if (scratch.part === 'anchor') {
-            // Translate the on-curve point AND its attached handles
-            // together so the surrounding bezier segments don't shear.
             const dx = moveCtx.world.x - scratch.anchorOrigin.x;
             const dy = moveCtx.world.y - scratch.anchorOrigin.y;
             scratch.currentPose = translateAnchor(
@@ -190,8 +205,6 @@ export const editAnchorsAction: Action & { requires: string[] } = {
               dy,
             );
           } else {
-            // Control-handle drag: move only the control to the absolute
-            // world coord under the cursor.
             scratch.currentPose = withCoord(
               scratch.originPose,
               scratch.coordIndex,
@@ -199,37 +212,36 @@ export const editAnchorsAction: Action & { requires: string[] } = {
               moveCtx.world.y,
             );
           }
-          // Publish the in-flight world polygon so chrome (and any other
-          // observer) sees live drag state regardless of where the node
-          // stores its path.
-          scratch.dep.setPreviewPath(scratch.id, scratch.currentPose);
           active = true;
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
-          if (reason === 'cancel') {
-            scratch.dep.setPreviewPath(scratch.id, null);
-            return;
-          }
-          if (scratch.originPose === scratch.currentPose) {
-            scratch.dep.setPreviewPath(scratch.id, null);
-            return;
-          }
+          if (reason === 'cancel') return;
+          if (scratch.originPose === scratch.currentPose) return;
           scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors');
-          // applyEdit clears its own preview, but be defensive in case a
-          // consumer overrode the dep without that hook.
-          scratch.dep.setPreviewPath(scratch.id, null);
         },
-        // Intentionally no previewIds / previewPose. The preview-ghost
-        // system assumes the previewPose is shape-compatible with the
-        // node's stored pose; for data.path nodes (rect pose, polygon
-        // on data) feeding it a polygon pose makes PATH_PAINTER
-        // compute pose.x from a polygon and the renderer infinite-
-        // loops in flatten. We surface the live preview through
-        // dep.setPreviewPath instead — the chrome layer reads it via
-        // dep.getEditablePath, so anchor markers track the cursor
-        // during the drag. The path body snaps to its new position on
-        // commit (consistent across both storage shapes).
+        previewIds: () => (active ? [scratch.id] : null),
+        previewPose: (id: string): unknown | null => {
+          if (!active || id !== scratch.id) return null;
+          if (scratch.storageKind === 'pose') {
+            // Pose IS the polygon — preview pose is the polygon itself.
+            return scratch.currentPose;
+          }
+          // data.path: pose is a rect, derived from the edited polygon's bounds.
+          if (!originRectPose) return null;
+          const b = boundsOfPath(scratch.currentPose);
+          return { ...originRectPose, x: b.x, y: b.y, width: b.width, height: b.height };
+        },
+        previewData: (id: string): unknown | null => {
+          if (!active || id !== scratch.id) return null;
+          if (scratch.storageKind !== 'data') return null;
+          if (!originData) return null;
+          // Align the world polygon to the new pose origin so the kit's
+          // render invariant (`pathAtPose(stored, pose) === world`) holds.
+          const b = boundsOfPath(scratch.currentPose);
+          const aligned = translatePath(scratch.currentPose, -b.x, -b.y);
+          return { ...originData, path: aligned };
+        },
       };
     },
   },

@@ -58,13 +58,8 @@ describe('useEditAnchorsDepSource', () => {
 
     // Pose-as-polygon path: getEditablePath returns the node's pose.
     expect(dep.getEditablePath('poly')).toBe(polyPath);
-
-    // Preview wins over committed storage.
-    const previewPath = { ...polyPath };
-    dep.setPreviewPath('poly', previewPath);
-    expect(dep.getEditablePath('poly')).toBe(previewPath);
-    dep.setPreviewPath('poly', null);
-    expect(dep.getEditablePath('poly')).toBe(polyPath);
+    expect(dep.getStorageKind('poly')).toBe('pose');
+    expect(dep.getNodeShape('poly')).toEqual({ pose: polyPath, data: null });
 
     // applyEdit routes through the adapter's applyOps.
     dep.applyEdit('poly', { ...polyPath }, 'Edit anchors');

@@ -82,7 +82,8 @@ describe('editAnchorsAction descriptor', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: () => {},
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
       getEditablePath: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
       applyEdit: () => {},
     };
@@ -96,7 +97,8 @@ describe('editAnchorsAction descriptor', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: () => {},
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
       getEditablePath: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
       applyEdit: () => {},
     };
@@ -155,7 +157,8 @@ function makeRealCtx(
   const dep: EditAnchorsDep = {
     editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: () => {},
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
     getEditablePath: () => currentPose,
     applyEdit: () => {},
   };
@@ -209,7 +212,8 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: () => {},
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
       getEditablePath: () => triangle,
       applyEdit: () => { applyEditCount++; },
     };
@@ -240,7 +244,8 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: () => {},
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
       getEditablePath: () => triangle,
       applyEdit: () => { opsDispatched = true; },
     };
@@ -263,7 +268,8 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: () => {},
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
       getEditablePath: () => bezier,
       applyEdit: () => {},
     };
@@ -280,13 +286,13 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     expect(handle).toHaveProperty('onEnd');
   });
 
-  it('in-flight preview surfaces through dep.setPreviewPath; cleared after onEnd', () => {
+  it('previewIds + previewPose surface the in-flight polygon; cleared after onEnd', () => {
     const triangle = makeTriangle();
-    const previewCalls: Array<{ id: string; world: PolygonPath | null }> = [];
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: (id, world) => { previewCalls.push({ id, world: world as PolygonPath | null }); },
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
       getEditablePath: () => triangle,
       applyEdit: () => {},
     };
@@ -299,19 +305,22 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
       drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance },
     };
     const handle = invoker.start(startCtx, undefined);
-    expect(previewCalls).toHaveLength(0);
-    handle.onMove!({ ...startCtx, world: { x: 7, y: 8 }, drag: { ...startCtx.drag!, current: { x: 7, y: 8 }, delta: { x: 7, y: 8 } } });
-    expect(previewCalls.length).toBeGreaterThanOrEqual(1);
-    const lastPreview = previewCalls[previewCalls.length - 1]!;
-    expect(lastPreview.id).toBe('node-a');
-    expect(lastPreview.world).not.toBeNull();
-    const preview = lastPreview.world as PolygonPath;
-    expect(preview.coords[0]).toBeCloseTo(7);
-    expect(preview.coords[1]).toBeCloseTo(8);
+    // Before any move: not yet active.
+    expect(handle.previewIds!()).toBeNull();
+    handle.onMove!({
+      ...startCtx,
+      world: { x: 7, y: 8 },
+      drag: { ...startCtx.drag!, current: { x: 7, y: 8 }, delta: { x: 7, y: 8 } },
+    });
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual(['node-a']);
+    // Pose-as-polygon: previewPose is the polygon itself.
+    const previewPose = handle.previewPose!('node-a') as PolygonPath;
+    expect(previewPose.coords[0]).toBeCloseTo(7);
+    expect(previewPose.coords[1]).toBeCloseTo(8);
+    // Pose-as-polygon doesn't emit previewData.
+    expect(handle.previewData!('node-a')).toBeNull();
     handle.onEnd!(startCtx, 'commit');
-    // Final preview clear after commit.
-    const finalPreview = previewCalls[previewCalls.length - 1]!;
-    expect(finalPreview.world).toBeNull();
+    expect(handle.previewIds!()).toBeNull();
   });
 
   it('start returns empty handle when anchor index is out of range', () => {
@@ -319,7 +328,8 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: () => {},
+      getStorageKind: () => 'pose',
+      getNodeShape: () => null,
       getEditablePath: () => triangle,
       applyEdit: () => {},
     };

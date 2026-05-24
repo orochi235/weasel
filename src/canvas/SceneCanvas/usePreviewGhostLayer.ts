@@ -25,6 +25,10 @@ import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 interface PreviewSource {
   previewIds?: () => Iterable<string> | null;
   previewPose?: (id: string) => unknown;
+  /** Optional companion to `previewPose` for actions that mutate node
+   *  data (e.g. anchor-edit on `data.path` nodes). Falls back to
+   *  committed `node.data` when null/absent. */
+  previewData?: (id: string) => unknown;
 }
 
 export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: {
@@ -118,27 +122,44 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         }
         return null;
       };
+      const previewDataFor = (id: string): TData | null => {
+        for (const source of sources) {
+          const d = source.previewData?.(id) as TData | null | undefined;
+          if (d != null) return d;
+        }
+        return null;
+      };
 
       // Build the preview subtree rooted at `id` — mirrors buildSceneTree's
       // structure (container groups carry a clip from their painter's
-      // silhouette) but uses preview poses instead of committed ones, so
-      // children are clipped to the previewed container shape during drag.
+      // silhouette) but uses preview poses (and data) instead of committed
+      // ones, so children are clipped to the previewed container shape
+      // during drag.
       const buildSubtree = (id: string): DrawCommand[] => {
         const node = sc.get(asNodeId(id));
         if (!node) return [];
         const pose = previewPoseFor(id);
-        if (pose == null) return [];
-        const self = drawOne(node, pose, view);
+        const data = previewDataFor(id);
+        // Skip when no source emitted ANYTHING for this id — preview-data-
+        // only edits still light up here, but pure pose-less, data-less
+        // entries don't waste a draw pass.
+        if (pose == null && data == null) return [];
+        const effPose = pose ?? node.pose;
+        // Synthesize a node with the preview data so drawOne sees the
+        // in-flight values for any data fields the painter reads
+        // (path, fill, text, etc.).
+        const effNode = data == null ? node : ({ ...node, data } as typeof node);
+        const self = drawOne(effNode, effPose, view);
         const childCommands: DrawCommand[] = [...self];
         for (const cid of sc.childrenOf(asNodeId(id))) {
           if (!idSet.has(cid)) continue;
           for (const cmd of buildSubtree(cid)) childCommands.push(cmd);
         }
         const group: GroupDrawCommand = { kind: 'group', children: childCommands };
-        if (node.kind === 'container') {
+        if (effNode.kind === 'container') {
           const clip = findShapeSilhouette(
-            node as unknown as Node<unknown, string, TPose>,
-            pose,
+            effNode as unknown as Node<unknown, string, TPose>,
+            effPose,
           );
           if (clip) group.clip = clip;
         }
