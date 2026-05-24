@@ -575,6 +575,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      * container/leaf overlap during select-tool work.
      */
     pickHud?: boolean;
+    /**
+     * Dev HUD: when true (or object), mounts a fixed-position widget below
+     * the pick HUD showing the active modality mode, active-slot tool, and
+     * hotkey stack. Pass `{ modeId }` to populate the mode line.
+     */
+    modalityHud?: boolean | { modeId?: string };
   };
 
 /** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
@@ -618,6 +624,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     backgroundFill,
     cursorCoordsHud,
     pickHud,
+    modalityHud,
     ...rest
   } = props;
 
@@ -1168,6 +1175,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       backgroundFill={backgroundFill}
       cursorCoordsHud={cursorCoordsHud}
       pickHud={pickHud}
+      modalityHud={modalityHud}
       pickBest={internalPickBest}
       view={effectiveView}
       onViewChange={handleViewChange}

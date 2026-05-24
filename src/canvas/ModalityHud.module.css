@@ -1,0 +1,41 @@
+.hud {
+  position: fixed;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.7);
+  color: #e8e8e8;
+  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 6px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  line-height: 1.4;
+  text-align: right;
+  min-width: 120px;
+  max-width: 260px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.label {
+  color: #888;
+}
+
+.value {
+  color: #e8e8e8;
+}
+
+.valueMuted {
+  color: #888;
+  font-style: italic;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: flex-end;
+}

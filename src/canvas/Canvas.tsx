@@ -74,6 +74,7 @@ import { usePinchZoomTool } from 'tools/builtin/usePinchZoomTool';
 import type { ViewportConfig } from './SceneCanvas/useViewportTools';
 import { CursorCoordsHud } from './CursorCoordsHud';
 import { PickHud } from './PickHud';
+import { ModalityHud } from './ModalityHud';
 
 
 
@@ -399,6 +400,15 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   pickHud?: boolean;
 
   /**
+   * Dev HUD: mounts a fixed-position widget below the pick HUD reporting
+   * the active modality mode, the active-slot tool, and the hotkey stack.
+   * Pass `true` to enable with no mode (renders `—` for the mode line —
+   * useful until the modality machine is wired). Pass an object to supply
+   * the current mode id.
+   */
+  modalityHud?: boolean | { modeId?: string };
+
+  /**
    * Optional single-best hit resolver for the `pickHud` — the id this point
    * would select on a bare click. When omitted the HUD skips the bold-best
    * highlight. `<SceneCanvas>` forwards its `internalPickBest` here so the
@@ -604,6 +614,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     backgroundFill,
     cursorCoordsHud,
     pickHud,
+    modalityHud,
     pickBest,
     getNodeAtPoint,
   } = props;
@@ -1470,6 +1481,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           viewRef={viewRef}
           pickEvery={stablePickEveryForHud}
           pickBest={stablePickBestForHud}
+        />
+      )}
+      {modalityHud && (
+        <ModalityHud
+          canvasRef={canvasRef}
+          modeId={typeof modalityHud === 'object' ? modalityHud.modeId : undefined}
         />
       )}
     </>
