@@ -51,6 +51,8 @@ import {
   type RenderLayer,
   fitViewToBounds,
   viewToMat3,
+  ActiveToolContextProvider,
+  useActiveToolContext,
 } from '@orochi235/weasel';
 import { SidebarPanel, ToolPalette } from '@orochi235/weasel-ui';
 
@@ -1173,6 +1175,7 @@ function EditorWithSharedScene({
   }), [paper.width, paper.height, backgroundColor]);
 
   return (
+    <ActiveToolContextProvider>
     <div className="swill-app">
       <Toolbar
         scene={scene}
@@ -1255,6 +1258,41 @@ function EditorWithSharedScene({
           />
         </div>
       </div>
+      <StatusBar scene={scene} selection={selection} view={view} />
+    </div>
+    </ActiveToolContextProvider>
+  );
+}
+
+function StatusBar({
+  scene,
+  selection,
+  view,
+}: {
+  scene: ReturnType<typeof useScene<SwillData, SwillLayer, SwillPose>>;
+  selection: ReturnType<typeof useSelection>;
+  view: View;
+}): ReactElement {
+  const activeTool = useActiveToolContext();
+  const colors = useColorContext();
+  let groupCount = 0;
+  for (const id of scene.renderOrder()) {
+    const n = scene.get(id);
+    if (n && n.kind === 'container') groupCount++;
+  }
+  const paintLabel = (p: ActivePaint): string =>
+    p.kind === 'solid' ? p.color : p.kind;
+  const engaged = activeTool.hotkeyStack[activeTool.hotkeyStack.length - 1];
+  const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
+  return (
+    <div className="swill-statusbar">
+      <span>tool: {toolLabel}</span>
+      <span>sel: {selection.current.length}</span>
+      <span>groups: {groupCount}</span>
+      <span>fill: {paintLabel(colors.fill)}</span>
+      <span>stroke: {paintLabel(colors.stroke)}</span>
+      <span className="swill-statusbar-spacer" />
+      <span>zoom: {(view.scale.x * 100).toFixed(0)}%</span>
     </div>
   );
 }
