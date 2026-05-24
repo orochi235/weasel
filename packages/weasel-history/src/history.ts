@@ -18,6 +18,8 @@ interface Entry {
   label: string;
   /** ms timestamp at last push or coalesce; used to gate the coalesce window. */
   timestamp: number;
+  /** Node ids touched by ops in this entry. See `HistoryEntry.touchedIds`. */
+  touchedIds: ReadonlySet<string>;
 }
 
 /** Wire form of a single op inside a serialized history. The pair
@@ -57,6 +59,12 @@ export interface HistoryEntry {
   label: string;
   /** Push/last-coalesce timestamp (ms). */
   timestamp: number;
+  /** Set of node ids touched by any op in this entry. Populated from ops
+   *  whose `args` carry an `id` field (transform, setPath, reparent) or a
+   *  `node.id` field (insert, delete). Ops without a recognisable id field
+   *  contribute nothing. May be `undefined` for deserialized entries
+   *  restored from an older snapshot that predates this field. */
+  touchedIds?: ReadonlySet<string>;
 }
 
 /** Op-batched undo/redo controller returned by `createHistory`. */
@@ -212,10 +220,17 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       );
       return;
     }
+    const incoming = touchedIdsFromOps(ops);
     const top = undoStack[undoStack.length - 1];
     if (top && canCoalesce(top, ops)) {
       top.forwardOps = ops;
       top.timestamp = now();
+      // Merge incoming touched ids into the coalesced entry's set.
+      if (incoming.size > 0) {
+        const merged = new Set(top.touchedIds);
+        for (const id of incoming) merged.add(id);
+        top.touchedIds = merged;
+      }
       // baseOps + label + id intentionally preserved — undo returns to the
       // pre-edit state, the original label sticks, and the entry id stays
       // stable so React lists keyed on id don't flicker.
@@ -223,7 +238,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       bump();
       return;
     }
-    undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now() });
+    undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: incoming });
     redoStack.length = 0;
     bump();
   }
@@ -258,7 +273,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (had) bump();
     },
     entries() {
-      const toView = (e: Entry): HistoryEntry => ({ id: e.id, label: e.label, timestamp: e.timestamp });
+      const toView = (e: Entry): HistoryEntry => ({ id: e.id, label: e.label, timestamp: e.timestamp, touchedIds: e.touchedIds });
       // redoStack is internally stored newest-on-top (so `pop()` redoes the
       // next-most-recent undo). Reverse on the way out so callers see the
       // entries in chronological order — the user's next redo is the first
@@ -305,7 +320,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     recordEntry(ops: Op[], label: string): void {
       if (ops.length === 0) return;
-      undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now() });
+      undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: touchedIdsFromOps(ops) });
       redoStack.length = 0;
       bump();
     },
@@ -351,6 +366,26 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       bump();
     },
   };
+}
+
+/** Extract node ids from an op's `args`. Handles the common patterns:
+ *  - `args.id` (string) — transform, setPath, reparent
+ *  - `args.node.id` (string) — insert, delete
+ *  Ops that don't match either pattern contribute nothing.
+ *  Exported for in-package test use; not part of the published package API. */
+export function touchedIdsFromOps(ops: Op[]): ReadonlySet<string> {
+  const ids = new Set<string>();
+  for (const op of ops) {
+    if (op.args === null || typeof op.args !== 'object') continue;
+    const a = op.args as Record<string, unknown>;
+    if (typeof a['id'] === 'string') {
+      ids.add(a['id']);
+    } else if (a['node'] !== null && typeof a['node'] === 'object') {
+      const n = a['node'] as Record<string, unknown>;
+      if (typeof n['id'] === 'string') ids.add(n['id']);
+    }
+  }
+  return ids;
 }
 
 /** Project an `Op` to its `(name, args)` wire form. Returns `null` for ops
@@ -423,5 +458,8 @@ function serialToEntry(se: SerializedHistoryEntry): Entry {
     // a within-session concept and a restored entry shouldn't merge with a
     // freshly-typed one regardless of when it was originally pushed.
     timestamp: 0,
+    // Re-derive touchedIds from the rebuilt ops rather than trying to
+    // round-trip the Set through the serialized form (Sets aren't JSON-safe).
+    touchedIds: touchedIdsFromOps(forwardOps),
   };
 }
