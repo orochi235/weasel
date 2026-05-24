@@ -724,6 +724,11 @@ const BASE_LAB_CONTROLS: Record<BadgeBase, LabControl[]> = {
     { key: 'right',      kind: 'select', options: ['flat', 'inward', 'outward'], default: 'outward' },
     { key: 'taperWidth', kind: 'range', min: 0, max: 24, step: 0.5, default: 8 },
   ],
+  'powerline':      [
+    { key: 'leftEdge',  kind: 'select', options: ['flat', 'chevron', 'slant', 'slant-up', 'round', 'scallop', 'concave-chevron'], default: 'flat' },
+    { key: 'rightEdge', kind: 'select', options: ['flat', 'chevron', 'slant', 'slant-up', 'round', 'scallop', 'concave-chevron'], default: 'flat' },
+    { key: 'depth',     kind: 'range',  min: 0, max: 20, step: 0.5, default: 6 },
+  ],
 };
 
 const EFFECT_LAB_CONTROLS: Record<BadgeEffect, LabControl[]> = {
