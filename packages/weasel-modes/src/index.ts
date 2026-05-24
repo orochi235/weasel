@@ -7,3 +7,5 @@ export { createModeRegistry } from './registry';
 export type { ModeRegistry, CreateModeRegistryOptions } from './registry';
 export { createModeDecorations } from './decorations';
 export type { ModeDecorations, ModeDecorationPainter, CreateModeDecorationsOptions, ModeDrawCommand } from './decorations';
+export { eligibleTool, eligibleToolByCapabilities } from './eligibility';
+export type { ToolLike } from './eligibility';
