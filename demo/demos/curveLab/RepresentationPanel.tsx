@@ -134,6 +134,7 @@ export function RepresentationPanel({
           className="ckd-canvas"
           scene={scene}
           selection={selection}
+          defaultTools={['select']}
           layers={layers as never}
         />
       </div>
