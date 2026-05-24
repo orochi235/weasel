@@ -72,4 +72,12 @@ describe('Journal.commit', () => {
     expect(parent.entries().undo.length).toBe(0);
     expect(j.isActive()).toBe(false);
   });
+
+  it('throws when committing a suspended journal', () => {
+    const adapter = { values: [] as number[] };
+    const parent = createHistory(adapter);
+    const j = parent.beginJournal({ label: 'session' });
+    j.suspend();
+    expect(() => j.commit('x')).toThrow();
+  });
 });

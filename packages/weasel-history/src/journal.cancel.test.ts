@@ -55,4 +55,12 @@ describe('Journal.cancel', () => {
     expect(adapter.values).toEqual([5]);
     expect(parent.entries().undo.length).toBe(0);
   });
+
+  it('throws when cancelling a suspended journal', () => {
+    const adapter = { values: [] as number[] };
+    const parent = createHistory(adapter);
+    const j = parent.beginJournal({ label: 'session' });
+    j.suspend();
+    expect(() => j.cancel()).toThrow();
+  });
 });

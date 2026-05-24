@@ -41,6 +41,7 @@ export function createJournalInternal(
   parent: History,
   adapter: unknown,
   opts: BeginJournalOptions,
+  onClose?: () => void,
 ): Journal {
   const inner = createHistory(adapter);
   const forkedAtEntryId = parent.currentEntryId();
@@ -74,23 +75,26 @@ export function createJournalInternal(
       return inner.entries();
     },
     commit(label: string): void {
-      if (state === 'closed') throw new Error('Journal already closed');
+      if (state !== 'active') throw new Error('Journal is not active');
       const netOps = inner.allForwardOps();
       if (netOps.length > 0) {
         parent.recordEntry(netOps, label);
       }
       state = 'closed';
       RESUMERS.delete(journal);
+      onClose?.();
     },
     cancel(): void {
-      if (state === 'closed') throw new Error('Journal already closed');
+      if (state !== 'active') throw new Error('Journal is not active');
       inner.goto(0);
       state = 'closed';
       RESUMERS.delete(journal);
+      onClose?.();
     },
     suspend(): void {
       if (state !== 'active') throw new Error('Journal is not active');
       state = 'suspended';
+      onClose?.();
     },
     isActive(): boolean {
       return state === 'active';

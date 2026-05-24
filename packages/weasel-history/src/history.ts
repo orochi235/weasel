@@ -138,6 +138,7 @@ export interface CreateHistoryOptions {
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
   const undoStack: Entry[] = [];
   const redoStack: Entry[] = [];
+  let activeJournal: Journal | null = null;
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
   let nextEntryId = 1;
@@ -319,10 +320,15 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return nextEntryId;
     },
     beginJournal(opts: BeginJournalOptions): Journal {
+      if (activeJournal !== null && activeJournal.isActive()) {
+        throw new Error('A journal is already active — commit, cancel, or suspend it first');
+      }
       // `adapter` is the closure-captured adapter passed to createHistory.
       // The returned History object's `this` doesn't carry it, so we pass
       // it through to the factory directly.
-      return createJournalInternal(this, adapter, opts);
+      const j = createJournalInternal(this, adapter, opts, () => { activeJournal = null; });
+      activeJournal = j;
+      return j;
     },
     resumeJournal(journal: Journal): void {
       _resumeJournalInternal(journal);
