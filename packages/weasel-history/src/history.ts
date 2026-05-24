@@ -100,6 +100,11 @@ export interface History {
    *  to flush a session's net forward ops to the parent as one entry without
    *  re-mutating the scene. */
   recordEntry(ops: Op[], label: string): void;
+  /** Concatenated forwardOps of every undo-stack entry, in order. Snapshot
+   *  of "what changes are currently applied via this history" — useful for
+   *  Journal.commit to flush to a parent, and for any caller that wants to
+   *  diff against a baseline. */
+  allForwardOps(): Op[];
 }
 
 /** Options for `createHistory`. */
@@ -287,6 +292,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now() });
       redoStack.length = 0;
       bump();
+    },
+    allForwardOps(): Op[] {
+      const out: Op[] = [];
+      for (const e of undoStack) {
+        for (const op of e.forwardOps) out.push(op);
+      }
+      return out;
     },
     restore(snapshot: SerializedHistory): void {
       undoStack.length = 0;
