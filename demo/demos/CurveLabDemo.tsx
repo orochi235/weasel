@@ -62,21 +62,21 @@ export function CurveLabDemo() {
           <input
             type="checkbox"
             checked={overlays.anchors}
-            onChange={(e) => setOverlays((o) => ({ ...o, anchors: e.currentTarget.checked }))}
+            onChange={(e) => { const v = e.currentTarget.checked; setOverlays((o) => ({ ...o, anchors: v })); }}
           />{' '}anchors
         </label>
         <label>
           <input
             type="checkbox"
             checked={overlays.comb}
-            onChange={(e) => setOverlays((o) => ({ ...o, comb: e.currentTarget.checked }))}
+            onChange={(e) => { const v = e.currentTarget.checked; setOverlays((o) => ({ ...o, comb: v })); }}
           />{' '}curvature comb
         </label>
         <label>
           <input
             type="checkbox"
             checked={overlays.inflections}
-            onChange={(e) => setOverlays((o) => ({ ...o, inflections: e.currentTarget.checked }))}
+            onChange={(e) => { const v = e.currentTarget.checked; setOverlays((o) => ({ ...o, inflections: v })); }}
           />{' '}inflections + extrema
         </label>
         <span className="curve-lab-preset-desc">{preset.description}</span>

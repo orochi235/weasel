@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { SceneCanvas, asNodeId, useScene, useSelection } from '@orochi235/weasel';
 import type { DrawCommand } from '../../../src/renderer';
 import type { CurveRepresentation, SharedAnchor } from '../../../src/features/paths/curves';
@@ -47,7 +47,6 @@ export function RepresentationPanel({ rep, anchors, overlays, width, height }: R
   }, [scene, nodeId, rep, anchors]);
 
   const selection = useSelection({ initial: [nodeId], lock: true });
-  const [view, setView] = useState({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   // Stable getter so the layer factories' returned closures don't churn.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,8 +81,6 @@ export function RepresentationPanel({ rep, anchors, overlays, width, height }: R
         className="ckd-canvas"
         scene={scene}
         selection={selection}
-        view={view}
-        onViewChange={setView}
         layers={layers as never}
       />
       <ReadoutHud rep={rep} anchors={anchors} />
