@@ -63,8 +63,13 @@ export function createJournalInternal(
     entries() {
       return inner.entries();
     },
-    commit(_label: string): void {
-      throw new Error('Journal.commit not yet implemented');
+    commit(label: string): void {
+      if (!active) throw new Error('Journal already closed');
+      const netOps = inner.allForwardOps();
+      if (netOps.length > 0) {
+        parent.recordEntry(netOps, label);
+      }
+      active = false;
     },
     cancel(): void {
       throw new Error('Journal.cancel not yet implemented');
