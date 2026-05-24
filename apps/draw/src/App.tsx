@@ -575,6 +575,9 @@ interface ToolbarProps {
   filename: string;
   backgroundColor: string;
   onOpenPrefs: () => void;
+  /** Called at the start of every explicit save/load so stale journal
+   *  caches don't survive across document boundaries. */
+  onClearJournalCache: () => void;
 }
 
 function Toolbar({
@@ -584,6 +587,7 @@ function Toolbar({
   paperSize, setPaperSize,
   filename, backgroundColor,
   onOpenPrefs,
+  onClearJournalCache,
 }: ToolbarProps): ReactElement {
   const registry = useActionsRegistry();
   const trigger = useCallback((id: string) => {
@@ -744,6 +748,7 @@ function Toolbar({
         onDistribute={(axis: DistributeAxis) => trigger(`distribute.${axis}`)}
         onFlip={(_axis: FlipAxis) => trigger('flip')}
         onSaveSvg={() => {
+          onClearJournalCache();
           const paper = PAPER_PRESETS[paperSize];
           const svg = sceneToSvgString(scene, {
             filename,
@@ -764,6 +769,7 @@ function Toolbar({
           void (async () => {
             const text = await pickSvgFile();
             if (text === null) return;
+            onClearJournalCache();
             const parsed = parseSvg(text, { namespaces: SWILL_NAMESPACES });
             for (const w of parsed.warnings) console.warn('[svg import]', w);
             const docPatch = parsedToDoc(parsed);
@@ -1306,6 +1312,7 @@ function EditorWithSharedScene({
         filename={filename}
         backgroundColor={backgroundColor}
         onOpenPrefs={() => setPrefsOpen(true)}
+        onClearJournalCache={() => modality.machine.clearJournalCache()}
       />
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
       <div className="wd-body">
