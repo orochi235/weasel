@@ -1161,6 +1161,31 @@ function EditorWithSharedScene({
 
   // ── Mode id + breadcrumb state ────────────────────────────────────────────
   const modeId = useModeId(modality.machine);
+
+  // ── Alt-held tracking for path-edit cursor stub ──────────────────────────
+  // When path-edit is active and Alt is held, data-alt-held="true" on the
+  // host drives a `cursor: copy` rule — visual stub for the future
+  // add-anchor sub-tool. No hit-test gating (that's the sub-tool's job).
+  // Listener only registers while mode is path-edit to avoid leaking into
+  // other modes.
+  const [altHeld, setAltHeld] = useState(false);
+  useEffect(() => {
+    if (modeId !== 'path-edit') {
+      setAltHeld(false);
+      return;
+    }
+    const onDown = (e: KeyboardEvent): void => { if (e.key === 'Alt') setAltHeld(true); };
+    const onUp   = (e: KeyboardEvent): void => { if (e.key === 'Alt') setAltHeld(false); };
+    const onBlur = (): void => setAltHeld(false);
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup',   onUp);
+    window.addEventListener('blur',    onBlur);
+    return () => {
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup',   onUp);
+      window.removeEventListener('blur',    onBlur);
+    };
+  }, [modeId]);
   const targetLabel = useMemo(() => {
     const tid = modality.machine.getActiveTargetId();
     if (!tid) return null;
@@ -1325,7 +1350,7 @@ function EditorWithSharedScene({
           )}
           <ActiveSwatches />
         </div>
-        <div className="wd-canvas-host" ref={hostRef} data-mode={modeId} data-tint-direction={tintDirection}>
+        <div className="wd-canvas-host" ref={hostRef} data-mode={modeId} data-tint-direction={tintDirection} data-alt-held={altHeld ? 'true' : undefined}>
           <ModeBreadcrumb
             modeId={modeId}
             modeKind={modality.machine.registry.current().kind}

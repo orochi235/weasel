@@ -342,6 +342,12 @@ html, body, #root {
 
 /* Per-mode tint colours — keyed on data-mode attribute set by the mode machine. */
 .wd-canvas-host[data-mode="path-edit"]      { --wd-mode-tint: #3b82f6; }
+
+/* Alt+hover cursor stub for future add-anchor sub-tool.
+ * While in path-edit mode with Alt held, the cursor over the active path
+ * switches to `copy` (the "+" cursor) as a visual affordance. No hit-test
+ * gating is applied here — that's the add-anchor sub-tool's job. */
+.wd-canvas-host[data-mode="path-edit"][data-alt-held="true"] > canvas { cursor: copy; }
 .wd-canvas-host[data-mode="isolation"]      { --wd-mode-tint: #8b5cf6; }
 .wd-canvas-host[data-mode="text-edit"]      { --wd-mode-tint: #10b981; }
 .wd-canvas-host[data-mode="free-transform"] { --wd-mode-tint: #f59e0b; }
