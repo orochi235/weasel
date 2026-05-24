@@ -139,6 +139,15 @@ export interface ToolPresentation<TScratch = unknown> {
 /** Full Tool record. */
 export interface Tool<TScratch = unknown> {
   id: string;
+  /**
+   * App-level capability tags for modality. The `weasel-modes` package's
+   * `eligibleForMode(mode, capabilities)` predicate consumes these to decide
+   * whether the tool is usable in the active mode. Tags are extensible
+   * strings — apps can define their own. Untagged tools are treated as
+   * ineligible by all modes except those whose `allows` list includes
+   * every implicit-or-declared tag (i.e. `normal` in the default preset).
+   */
+  capabilities?: import('@orochi235/weasel-modes').CapabilityTag[];
   /** Optional caller-supplied key. Most built-in tools have their activation
    *  key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`; this field
    *  is for tools that want their activation key to be configurable by the
