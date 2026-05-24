@@ -21,11 +21,12 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Reac
 import { ActionsBar } from '@orochi235/weasel-ui';
 import s from './DispatchTracePanel.module.css';
 
-// Structural copy of `DispatchLogEntry` from
+// Structural copies of the trace entry types from
 // `src/interactions/dispatcher/dispatcher.ts`. Kept local so this panel
-// doesn't pull a non-public symbol across the package boundary; if the
-// kit ever re-exports the type, swap this for the import.
+// doesn't pull non-public symbols across the package boundary; if the
+// kit ever re-exports the types, swap these for the imports.
 interface DispatchLogEntry {
+  kind: 'dispatch';
   ts: number;
   eventKind: string;
   candidates: Array<{
@@ -37,14 +38,25 @@ interface DispatchLogEntry {
   outcome: 'handled' | 'unhandled';
 }
 
+interface ModeSwitchLogEntry {
+  kind: 'mode';
+  ts: number;
+  mode: string;
+  from: string | null;
+  to: string | null;
+  detail?: string;
+}
+
+type TraceLogEntry = DispatchLogEntry | ModeSwitchLogEntry;
+
 interface DispatchLogWindow extends Window {
-  __weaselDispatchLog__?: DispatchLogEntry[];
+  __weaselDispatchLog__?: TraceLogEntry[];
 }
 
 const POLL_MS = 250;
 const DISPLAY_LIMIT = 100;
 
-function readLog(): DispatchLogEntry[] {
+function readLog(): TraceLogEntry[] {
   if (typeof window === 'undefined') return [];
   const w = window as DispatchLogWindow;
   return w.__weaselDispatchLog__ ?? [];
@@ -108,7 +120,7 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
       ro?.disconnect();
     };
   }, [anchorSelector]);
-  const [entries, setEntries] = useState<DispatchLogEntry[]>(() => readLog().slice());
+  const [entries, setEntries] = useState<TraceLogEntry[]>(() => readLog().slice());
   const [expanded, setExpanded] = useState<number | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const [showHandled, setShowHandled] = useState<boolean>(true);
@@ -144,9 +156,13 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
     lastTsRef.current = 0;
   }, []);
 
-  const filtered = entries.filter((e) =>
-    e.outcome === 'unhandled' ? showUnhandled : showHandled,
-  );
+  const filtered = entries.filter((e) => {
+    // Mode-switch entries ride along with the handled-events stream;
+    // hide them when the user has unchecked handled. A dedicated filter
+    // could be added later if mode noise becomes a problem.
+    if (e.kind === 'mode') return showHandled;
+    return e.outcome === 'unhandled' ? showUnhandled : showHandled;
+  });
   const visible = filtered.slice(-DISPLAY_LIMIT).reverse();
   const onToggleCollapse = useCallback(() => setCollapsed((c) => !c), []);
 
@@ -234,11 +250,13 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
                 const rowKey = `${entry.ts}-${idx}`;
                 const isExpanded = expanded === entry.ts;
                 const ageMs = Math.max(0, now - entry.ts);
-                const unhandled = entry.outcome === 'unhandled';
+                const unhandled = entry.kind === 'dispatch' && entry.outcome === 'unhandled';
+                const isMode = entry.kind === 'mode';
                 const rowClass = [
                   s.row,
                   unhandled ? s.rowUnhandled : '',
                   isExpanded ? s.rowExpanded : '',
+                  isMode ? s.rowMode : '',
                 ]
                   .filter(Boolean)
                   .join(' ');
@@ -263,13 +281,31 @@ export function DispatchTracePanel(props: DispatchTracePanelProps = {}): ReactEl
 }
 
 function RowGroup(props: {
-  entry: DispatchLogEntry;
+  entry: TraceLogEntry;
   ageMs: number;
   isExpanded: boolean;
   rowClass: string;
   onToggle: () => void;
 }): ReactElement {
   const { entry, ageMs, isExpanded, rowClass, onToggle } = props;
+  if (entry.kind === 'mode') {
+    // Mode-switch row: single line, no expansion. Render the mode name
+    // in the eventKind column, the transition as outcome, and a marker
+    // ('—') in the candidates column so the table layout stays aligned.
+    return (
+      <tr className={rowClass}>
+        <td>{formatAge(ageMs)}</td>
+        <td>
+          <code>{entry.mode}</code>
+          {entry.detail ? <span className={s.modeDetail}> ({entry.detail})</span> : null}
+        </td>
+        <td>
+          <code>{entry.from ?? '∅'}</code> → <code>{entry.to ?? '∅'}</code>
+        </td>
+        <td>—</td>
+      </tr>
+    );
+  }
   return (
     <>
       <tr className={rowClass} onClick={onToggle}>
