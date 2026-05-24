@@ -9,3 +9,6 @@ export type { BackgroundClickCtx } from './backgroundClickPolicy';
 
 export { dispatchDoubleClickEntry } from './doubleClickEntry';
 export type { HitLike } from './doubleClickEntry';
+
+export { createPathEditPainter } from './pathEditPainter';
+export type { Anchor, AnchorControl, CreatePathEditPainterOptions } from './pathEditPainter';
