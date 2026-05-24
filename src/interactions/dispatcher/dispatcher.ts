@@ -554,7 +554,16 @@ export function createDispatcher(): Dispatcher {
     // For each candidate, check the enabled gate. The first action that is
     // enabled wins. If every candidate is disabled (or missing), the event
     // is unhandled.
+    //
+    // Action-level dedup: `assembleScopedBindings` may push the same binding
+    // twice — once from the active tool's `bindings` and once from the
+    // ambient action-registry walk. Without dedup, an empty-handle fall-
+    // through (`continue` below) would invoke the SAME action's start()
+    // twice. We try each *action* at most once per dispatch.
+    const triedActionIds = new Set<string>();
     for (const match of matches) {
+      if (triedActionIds.has(match.binding.actionId)) continue;
+      triedActionIds.add(match.binding.actionId);
       const action = actionMap.get(match.binding.actionId);
       if (!action) {
         traceCandidates.push({ actionId: match.binding.actionId, scope: match.scope, enabledResult: 'no-such-action' });
