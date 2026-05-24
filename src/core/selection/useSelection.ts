@@ -50,6 +50,12 @@ export interface UseSelectionOptions {
   extend?: SelectionExtendKey;
   /** Default `[]`. */
   initial?: readonly NodeId[];
+  /** When `true`, every mutator (`set`/`add`/`remove`/`toggle`/`clear`/
+   *  `applyClick`) is a no-op — selection stays at whatever `initial`
+   *  pinned it to. Useful for demos that exist to showcase a single
+   *  pre-selected node (e.g. the bezier-edit curve) and don't want a
+   *  stray click to deselect. */
+  lock?: boolean;
 }
 
 /**
@@ -66,14 +72,19 @@ export interface UseSelectionOptions {
  * ```
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
-  const { mode = 'single', extend = 'shift', initial = [] } = opts;
+  const { mode = 'single', extend = 'shift', initial = [], lock = false } = opts;
   const [current, setCurrent] = useState<NodeId[]>(() => [...initial]);
   const ref = useRef<NodeId[]>(current);
   ref.current = current;
+  // Keep the lock flag in a ref so the memoized mutators below don't have to
+  // re-create when it toggles (and reading inside a stable closure is fine).
+  const lockRef = useRef(lock);
+  lockRef.current = lock;
 
   const get = useCallback(() => ref.current, []);
 
   const set = useCallback((ids: NodeId[]) => {
+    if (lockRef.current) return;
     ref.current = ids;
     setCurrent(ids);
   }, []);

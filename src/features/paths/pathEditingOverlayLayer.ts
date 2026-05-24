@@ -44,6 +44,11 @@ export interface PathEditingOverlayStyle {
   anchorFill?: string;
   anchorStroke?: string;
   handleStroke?: string;
+  /** Fill of the control-point circle. Defaults to the handleStroke color
+   *  at 50% alpha — keeps the marker readable but lets the underlying
+   *  curve / background show through, which matches Figma's "translucent
+   *  handle dot" idiom. */
+  handleDotFill?: string;
 }
 
 const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
@@ -55,6 +60,8 @@ const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
   anchorFill: '#ffffff',
   anchorStroke: '#3478f6',
   handleStroke: '#7da7e8',
+  // 50%-opacity handle-stroke color. #7da7e8 → rgba(125, 167, 232, 0.5).
+  handleDotFill: 'rgba(125, 167, 232, 0.5)',
 };
 
 function w2s(wx: number, wy: number, view: View): [number, number] {
@@ -94,7 +101,7 @@ export function createPathEditingOverlayLayer(
             out.push({
               kind: 'path',
               path: circlePath(hx, hy, style.handleDotRadiusPx),
-              fill: { fill: 'solid', color: style.handleStroke },
+              fill: { fill: 'solid', color: style.handleDotFill },
             });
           }
           if (a.outHandle) {
@@ -107,7 +114,7 @@ export function createPathEditingOverlayLayer(
             out.push({
               kind: 'path',
               path: circlePath(hx, hy, style.handleDotRadiusPx),
-              fill: { fill: 'solid', color: style.handleStroke },
+              fill: { fill: 'solid', color: style.handleDotFill },
             });
           }
 

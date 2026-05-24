@@ -50,7 +50,10 @@ export function BezierEditDemo() {
       id: asNodeId(ID),
     }],
   });
-  const selection = useSelection({ initial: [asNodeId(ID)] });
+  // Lock selection to the demo's one curve — this is a focused demo
+  // of path editing, so a stray click on empty workspace shouldn't
+  // deselect (which would also exit edit mode).
+  const selection = useSelection({ initial: [asNodeId(ID)], lock: true });
   const animator = useAnimator();
 
   const [cycleOklch, setCycleOklch] = useState(false);
