@@ -11,6 +11,7 @@ import { QuadtreeDemo } from './demos/QuadtreeDemo';
 import { PathPoseDemo } from './demos/PathPoseDemo';
 import { CompoundPathsDemo } from './demos/CompoundPathsDemo';
 import { BezierEditDemo } from './demos/BezierEditDemo';
+import { CurveLabDemo } from './demos/CurveLabDemo';
 import { BooleanOpsDemo } from './demos/BooleanOpsDemo';
 import { SceneDemo } from './demos/SceneDemo';
 import { PanDemo } from './demos/PanDemo';
@@ -47,6 +48,7 @@ import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
 import BezierEditDemoFull from './demos/BezierEditDemo.tsx?raw';
+import CurveLabDemoFull from './demos/CurveLabDemo.tsx?raw';
 import BooleanOpsDemoFull from './demos/BooleanOpsDemo.tsx?raw';
 import SceneDemoFull from './demos/SceneDemo.tsx?raw';
 import PanDemoFull from './demos/PanDemo.tsx?raw';
@@ -265,6 +267,16 @@ export const DEMOS: DemoEntry[] = [
     Component: BezierEditDemo,
     full: BezierEditDemoFull,
     path: 'demo/demos/BezierEditDemo.tsx',
+  },
+  {
+    id: 'curve-lab',
+    title: 'Curve representations lab',
+    category: 'Geometry',
+    description: 'The same anchor set rendered as cubic Bezier, quadratic Bezier, NURBS, and Spiro (κ-curves v1) side by side. Toggle the curvature comb, inflection marks, and anchor / control chrome to see where the representations diverge. Five seeded presets; pen-tool authoring is v1.1.',
+    hint: 'Switch presets to see the differences; toggle overlays for analysis.',
+    Component: CurveLabDemo,
+    full: CurveLabDemoFull,
+    path: 'demo/demos/CurveLabDemo.tsx',
   },
   {
     id: 'boolean-ops',

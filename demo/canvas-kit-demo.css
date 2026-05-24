@@ -439,3 +439,29 @@ a:hover { text-decoration: underline; }
   column-gap: 8px;
   row-gap: 2px;
 }
+
+.curve-lab-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.curve-lab-toolbar {
+  display: flex;
+  gap: 12px;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  color: #d4c4a8;
+  font-size: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.curve-lab-preset-desc {
+  margin-left: auto;
+  opacity: 0.6;
+}
+.curve-lab-grid {
+  display: grid;
+  grid-template-columns: 360px 360px;
+  grid-auto-rows: min-content;
+  gap: 8px;
+}
