@@ -280,12 +280,13 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     expect(handle).toHaveProperty('onEnd');
   });
 
-  it('previewIds/previewPose expose in-flight edited pose; cleared after onEnd', () => {
+  it('in-flight preview surfaces through dep.setPreviewPath; cleared after onEnd', () => {
     const triangle = makeTriangle();
+    const previewCalls: Array<{ id: string; world: PolygonPath | null }> = [];
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      setPreviewPath: () => {},
+      setPreviewPath: (id, world) => { previewCalls.push({ id, world: world as PolygonPath | null }); },
       getEditablePath: () => triangle,
       applyEdit: () => {},
     };
@@ -298,15 +299,19 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
       drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 }, affordance },
     };
     const handle = invoker.start(startCtx, undefined);
-    // Before any move: not yet active.
-    expect(handle.previewIds!()).toBeNull();
+    expect(previewCalls).toHaveLength(0);
     handle.onMove!({ ...startCtx, world: { x: 7, y: 8 }, drag: { ...startCtx.drag!, current: { x: 7, y: 8 }, delta: { x: 7, y: 8 } } });
-    expect(Array.from(handle.previewIds!() ?? [])).toEqual(['node-a']);
-    const preview = handle.previewPose!('node-a') as PolygonPath;
+    expect(previewCalls.length).toBeGreaterThanOrEqual(1);
+    const lastPreview = previewCalls[previewCalls.length - 1]!;
+    expect(lastPreview.id).toBe('node-a');
+    expect(lastPreview.world).not.toBeNull();
+    const preview = lastPreview.world as PolygonPath;
     expect(preview.coords[0]).toBeCloseTo(7);
     expect(preview.coords[1]).toBeCloseTo(8);
     handle.onEnd!(startCtx, 'commit');
-    expect(handle.previewIds!()).toBeNull();
+    // Final preview clear after commit.
+    const finalPreview = previewCalls[previewCalls.length - 1]!;
+    expect(finalPreview.world).toBeNull();
   });
 
   it('start returns empty handle when anchor index is out of range', () => {

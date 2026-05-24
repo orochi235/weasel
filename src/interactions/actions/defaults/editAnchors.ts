@@ -220,13 +220,16 @@ export const editAnchorsAction: Action & { requires: string[] } = {
           // consumer overrode the dep without that hook.
           scratch.dep.setPreviewPath(scratch.id, null);
         },
-        // previewIds/previewPose stay for the dispatcher-side preview-ghost
-        // layer (used by tool-side render paths). They reflect pose-shaped
-        // previews; data.path nodes get their live preview through
-        // dep.getEditablePath via the path-editing overlay chrome.
-        previewIds: () => (active ? [scratch.id] : null),
-        previewPose: (id: string) =>
-          active && id === scratch.id ? scratch.currentPose : null,
+        // Intentionally no previewIds / previewPose. The preview-ghost
+        // system assumes the previewPose is shape-compatible with the
+        // node's stored pose; for data.path nodes (rect pose, polygon
+        // on data) feeding it a polygon pose makes PATH_PAINTER
+        // compute pose.x from a polygon and the renderer infinite-
+        // loops in flatten. We surface the live preview through
+        // dep.setPreviewPath instead — the chrome layer reads it via
+        // dep.getEditablePath, so anchor markers track the cursor
+        // during the drag. The path body snaps to its new position on
+        // commit (consistent across both storage shapes).
       };
     },
   },
