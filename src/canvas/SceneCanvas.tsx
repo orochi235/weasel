@@ -1032,14 +1032,22 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   const testHookRef = useRef<WeaselTestHook | null>(null);
   useEffect(() => {
-    testHookRef.current = installTestHookIfRequested({
-      getScene: () => testHookSceneRef.current as never,
-      getSelectionIds: () =>
-        (testHookSelectionRef.current?.current as readonly string[] | undefined) ?? [],
-      getView: () => currentViewRef.current,
-      getActiveToolId: () => testHookActiveToolRef.current,
-    });
-    testHookRef.current?._markReady();
+    // Call-site gate: in a consumer's production build, esbuild/webpack/Vite
+    // constant-fold `process.env.NODE_ENV` to `"production"` and DCE this
+    // block, dropping the test-hook references. Same dev-only pattern as
+    // React's invariant warnings. Gating only inside `installTestHookIfRequested`
+    // is not enough — a called function can't be tree-shaken even if its body
+    // is dead, so the gate must sit at the call site too.
+    if (process.env.NODE_ENV !== 'production') {
+      testHookRef.current = installTestHookIfRequested({
+        getScene: () => testHookSceneRef.current as never,
+        getSelectionIds: () =>
+          (testHookSelectionRef.current?.current as readonly string[] | undefined) ?? [],
+        getView: () => currentViewRef.current,
+        getActiveToolId: () => testHookActiveToolRef.current,
+      });
+      testHookRef.current?._markReady();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
