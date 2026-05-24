@@ -1,23 +1,22 @@
 /**
- * Top-level `<Canvas>` component that wraps a single `<canvas>` element with:
- *   - WebGL renderer instantiation (`WeaselRenderer`)
- *   - background fill on every render
- *   - layer-stack composition from a map of named slots + custom layers
- *   - optional `onBackgroundClick` callback (fires when canvas receives a non-tool-handled click)
- *   - pointer/keyboard/wheel routing through `tools.dispatcher`
- *   - keyboard-focus plumbing (`tabIndex` + auto-focus on pointerdown)
+ * Low-level WebGL surface + viewport + pointer routing primitive.
+ * Composes layers into a single GL render pass, applies a view transform,
+ * routes pointer/keyboard events to the supplied `tools.dispatcher`, and
+ * exposes scene-agnostic slot props (`backgroundFill`, `cursorCoordsHud`,
+ * `pickHud`, `onBackgroundClick`, `getNodeAtPoint`).
+ *
+ * Canvas owns NO scene-shaped state — selection, picking, kind registry,
+ * scene-aware overlays — all live in `<SceneCanvas>` (the public consumer
+ * entry point) which wraps `<Canvas>`.
  *
  * The `layers` prop is a map keyed by slot name. Standard slots render at a
  * canonical position; custom entries (any other key, value carrying `.layer`)
  * insert at `after`/`before` an existing slot, defaulting to the top.
  *
  * @internal
- * @deprecated Use `<SceneCanvas>` instead. Bare `<Canvas>` has no
- * scene-mutation signal — the only way to drive 60Hz repaints is forcing
- * React re-renders, which churns the tools machinery enough to wedge after
- * settle. `<SceneCanvas>` over a `useScene()` tree is the consumer entry
- * point; `<Canvas>` is retained as an internal implementation detail and
- * will be removed from the public surface in a future release.
+ * @deprecated Bare `<Canvas>` is not a supported consumer surface.
+ *   Use `<SceneCanvas>` instead. Re-promotion is tracked in
+ *   `docs/TODO.md`.
  */
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
@@ -147,19 +146,38 @@ export type LayersMap<TNode extends { id: string }, TPose> = {
  */
 export type CanvasSelectionMode = 'single' | 'multi' | 'none';
 
-/** Props for the top-level `<Canvas>` component — combines viewport, scene, gesture controllers, and slot overrides. */
+/**
+ * Props for `<Canvas>` — the low-level WebGL surface + viewport +
+ * pointer routing primitive.
+ *
+ * Canvas is scene-agnostic. It owns the GL surface, view state, pointer/
+ * keyboard dispatch, and slot composition. It does NOT own selection state,
+ * picking logic, kind registries, or scene-aware overlays — those belong in
+ * `<SceneCanvas>`.
+ */
 export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
   /** CSS-pixel width. */
   width: number;
   /** CSS-pixel height. */
   height: number;
 
-  /** Combined adapter. Required for the scene slot, default pickEvery/boundsOf,
-   *  and the internal move/resize/rotate controllers. Optional for trivial
-   *  canvases. `<SceneCanvas>` synthesizes this from a `Scene`; bare-`<Canvas>`
-   *  consumers must supply it explicitly. Insert and area-select live entirely
-   *  in `useInsertTool` / `useSelectTool` now; pass those via
-   *  `tools={useTools(...)}` instead. */
+  /**
+   * Combined adapter for scene-slot rendering, bounds computation, and
+   * move/resize/rotate gesture math. Optional — bare-Canvas consumers that
+   * don't need a scene slot may omit it.
+   *
+   * Canvas threads this adapter into layer factories and gesture hooks. It
+   * does NOT read scene-shaped methods (`kindOf`, `getLayers`) directly from
+   * the CanvasProps type — the `buildSceneLayer` path uses an internal cast to
+   * access optional hierarchy methods (`getLayers`, `getChildren`) that are
+   * present on SceneAdapter but absent from the narrow intersection type here.
+   * That cast is a known smell documented in the Phase 5 audit; promoting those
+   * methods to this type would surface a SceneAdapter-specific concern here and
+   * is tracked in docs/TODO.md as a follow-up.
+   *
+   * `<SceneCanvas>` synthesizes this from a `Scene`; bare-`<Canvas>` consumers
+   * must supply it explicitly when using the scene or selection-overlay slots.
+   */
   adapter?: MoveAdapter<TNode, TPose>
     & ResizeAdapter<TNode, TPose>
     & RotateAdapter<TNode, TPose>;
@@ -167,11 +185,15 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   /** Layer map. See module docstring for slot semantics. */
   layers: LayersMap<TNode, TPose>;
 
-  /** The current selection state. Canvas is a pass-through — it owns no
-   *  selection state of its own. When absent, Canvas behaves as if no
-   *  selection exists: no chrome, no select-on-click, no clear-on-background.
-   *  `<SceneCanvas>` always supplies a selection; bare-`<Canvas>` consumers
-   *  may omit it for non-selection use cases. */
+  /**
+   * Current selection state. Canvas is a pure pass-through — it owns no
+   * selection state of its own. When absent, Canvas behaves as if nothing is
+   * selected: no selection chrome, no select-on-click, no clear-on-background.
+   *
+   * `<SceneCanvas>` always supplies this from its internal `useSelection`.
+   * Bare-`<Canvas>` consumers may omit it for non-selection use cases (e.g.
+   * force-graph renderers or read-only viewers).
+   */
   selection?: SelectionApi;
 
   /**
@@ -185,24 +207,61 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   onBackgroundClick?: () => void;
 
-  /** Pose↔bounds projection. When supplied, drives default `pickEvery`,
-   *  `boundsOf`, and the selection-overlay bounds source so non-rect TPose
-   *  (e.g. `Path`) doesn't require per-prop overrides. Defaults to the rect
-   *  identity. */
+  /**
+   * Pose↔bounds projection for non-rect `TPose` types. When supplied, drives
+   * the default `boundsOf` fallback and the selection-overlay bounds source so
+   * non-rect poses (e.g. `Path`) don't require per-prop overrides.
+   * Defaults to the rect identity (`AUTO_POSE_DESCRIPTOR`).
+   *
+   * This is a math helper, not a scene-shaped concern — it converts a pose
+   * value to an AABB and extracts rotation for the selection chrome. Bare-
+   * Canvas consumers that use a non-rect pose type should supply this.
+   */
   geometry?: PoseProjection<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
-  /** Used by `PickHud` to display the list of ids at the cursor.
-   *  NOT used for tool routing — see `getNodeAtPoint`. */
+  /**
+   * Used by `PickHud` to display the list of ids under the cursor.
+   * NOT used for tool routing — see `getNodeAtPoint` for that.
+   * `<SceneCanvas>` passes its internal pick function here so the HUD
+   * stays in sync with the scene's actual hit-test order.
+   */
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
+  /**
+   * Override for committed bounds lookup. When supplied, takes precedence over
+   * the `geometry`-derived fallback. Used by the selection overlay, the
+   * multi-select union AABB, and `helpersRef.getEffectiveBounds`. Optional —
+   * bare-Canvas consumers that use a custom bounds shape should supply this;
+   * `<SceneCanvas>` derives it from its scene adapter and passes it via the
+   * scene-slot layer config rather than this prop.
+   */
   boundsOf?: (id: string) => Bounds | null;
+  /**
+   * Custom pointer-to-world coordinate transform. When supplied, overrides the
+   * default `(clientX - canvasRect.left) / scale + pan` calculation. Useful
+   * for consumers that apply an additional CSS transform to the canvas element.
+   */
   clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
 
   // --- Visuals / DOM passthrough ---
+  /**
+   * @deprecated Use `backgroundFill` instead. This prop accepts a plain CSS
+   * color string and is rendered before the scene as a screen-space rect fill.
+   * `backgroundFill` accepts the full `FillStyle` union (solid, pattern,
+   * gradient) and is the preferred API. Both props may coexist; `background`
+   * is prepended as a raw DrawCommand before `backgroundFill`'s layer.
+   */
   background?: string;
   className?: string;
   style?: React.CSSProperties;
   tabIndex?: number;
+  /**
+   * When `true` (default), the canvas element receives focus on `pointerdown`
+   * so keyboard events (tool hotkeys, undo/redo) are captured without a
+   * separate click-to-focus step. Set to `false` for canvases embedded inside
+   * a larger focus-managed layout where auto-focus would steal focus from
+   * sibling inputs.
+   */
   autoFocusOnPointerDown?: boolean;
 
   /** Opt-in keyboard-driven actions wired against the canvas's effective
@@ -221,17 +280,27 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   /** Fires whenever the viewport changes — in both controlled and
    *  uncontrolled modes. */
   onViewChange?: (next: View) => void;
-  /** Optional world-space rect that constrains pan. When supplied, every
-   *  `setView` call passes through `clampView(next, viewBounds, {width, height})`
-   *  before commit, keeping the visible rect inside `viewBounds`. If the visible
-   *  rect is larger than the bounds along an axis (zoomed out past extent), that
-   *  axis is centered. Has no effect on `scale` — wire `useZoom` bounds for that. */
+  /**
+   * Optional world-space rect that constrains pan. When supplied, every
+   * `setView` call passes through `clampView(next, viewBounds, {width, height})`
+   * before commit, keeping the visible rect inside `viewBounds`. If the visible
+   * rect is larger than the bounds along an axis (zoomed out past extent), that
+   * axis is centered. Has no effect on `scale` — wire `useZoom` bounds for that.
+   *
+   * A viewport concern, not scene-shaped. Consumers that want the pan to stay
+   * inside a document page boundary should wire this with the page dimensions.
+   */
   viewBounds?: { x: number; y: number; width: number; height: number };
-  /** Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
-   *  render. Custom layers can read it from inside their `draw` closure to
-   *  reflect in-flight gestures (move/resize/rotate) instead of the committed
-   *  scene. Both lookups apply when an id is in the active overlay; otherwise
-   *  they fall back to the adapter. */
+  /**
+   * Mutable ref Canvas writes overlay-aware pose/bounds lookups to on every
+   * render. Custom layers can read it from inside their `draw` closure to
+   * reflect in-flight gestures (move/resize/rotate) instead of the committed
+   * scene. Both lookups apply when an id is in the active overlay; otherwise
+   * they fall back to the adapter.
+   *
+   * Useful for custom layers that render scene content outside of the standard
+   * slot system and need to stay in sync with gesture previews.
+   */
   helpersRef?: React.MutableRefObject<CanvasHelpers<TPose> | null>;
 
   /**
