@@ -453,6 +453,19 @@ export function createDispatcher(): Dispatcher {
       return handle ? 'handled' : 'unhandled';
     }
 
+    // --- Pump: key-held DOWN re-dispatch for an already-engaged key is a
+    //     no-op. This is the dispatcher-side defense against autorepeat
+    //     keydowns (and any caller that re-dispatches) firing `start()`
+    //     again — each start pushes a sidearm hotkey, only one keyup ever
+    //     fires onEnd, so the stack would leak. Treat as handled (we ARE
+    //     holding the key) without re-invoking. ---
+    if (event.kind === 'key-held' && event.phase === 'down') {
+      const gestureId = gestureIdFor(event);
+      if (inFlightHandles.has(gestureId)) {
+        return 'handled';
+      }
+    }
+
     // --- Pump: pointermove → onMove on the in-flight drag handle ---
     if (event.kind === 'pointermove') {
       const gestureId = gestureIdFor(event);
