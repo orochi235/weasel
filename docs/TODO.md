@@ -69,7 +69,10 @@ Priority tags:
 
 **Demos & visual regression**
 - `ShapeToolsDemo` visual-regression baseline → [Demos & visual regression](#demos--visual-regression)
-- Drop `Canvas` public export (next minor) → [Demos & visual regression](#demos--visual-regression)
+
+**Canvas / SceneCanvas seam**
+- Decide Canvas's public-surface fate → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
+- Tighten `CanvasProps.adapter` to remove SceneCanvas casts → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
 
 **Documentation**
 - README pitch sweep → [Documentation](#documentation)
