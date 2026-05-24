@@ -2,35 +2,16 @@
  * Pilot for the `bezier-edit` demo. Covers:
  *   1. Probe pins the initial S-curve anchor / handle geometry.
  *   2. The "Add point" button extends the path with a new cubic.
- *   3. Dragging a control handle moves the handle, not the anchor — the
- *      canonical edit-anchors gesture (currently `test.fixme`).
+ *   3. Dragging a control handle moves the handle, not the anchor —
+ *      the canonical edit-anchors gesture.
  *
- * On (3): all of the affordance hit-test wiring works. `affordanceAt` at
- * the control-point's world coord correctly returns `controlOut:N`.
- * `editAnchorsAction` checks `ctx.drag.affordance` at start time and
- * returns a real handle iff the affordance is anchor-kind. The dispatcher
- * now falls through on empty handles (added in this branch).
- *
- * What's still missing: every general-drag ongoing action — moveAction,
- * areaSelectAction, rotateAction, insertAction, insertRotateAction,
- * cloneAction, lassoSelectAction — declares a bare `{ kind: 'drag' }`
- * binding with no affordance gating. They're all registered before
- * editAnchorsAction in `useStandardActions`, and each returns a real
- * (non-empty) handle whenever its preconditions are met (selection
- * non-empty, dep present, etc.). So even with the empty-handle fallthrough,
- * one of them claims every drag — including drags on an anchor — before
- * editAnchorsAction is ever consulted.
- *
- * The systemic fix isn't to teach each action to opt out of every
- * specific-affordance kind (brittle, scales badly). The right move is to
- * have `matchSorted` sort matches by binding specificity within scope, so
- * a binding with a target predicate beats a bare-kind binding regardless
- * of registration order. Then editAnchorsAction.defaultBinding gets a
- * `target` predicate matching anchor-kind affordances, and it wins
- * automatically on anchor drags without any opt-outs needed.
- *
- * The probe + drag input plumbing in this spec is correct and ready —
- * `.fixme` flips to `test` once the dispatcher specificity ordering lands.
+ * (3) works because `editAnchorsAction.defaultBinding` declares a target
+ * predicate matching anchor-kind affordances (`anchor:*`/`controlIn:*`/
+ * `controlOut:*`). `matchSorted` orders matches by specificity within
+ * scope, so editAnchorsAction's `[1, 0, 0, 1]` binding beats moveAction's
+ * bare `[0, 0, 0, 1]` binding on an anchor drag — no opt-outs needed in
+ * the general-drag actions. On non-anchor drags the predicate filters the
+ * binding out entirely; moveAction wins as before.
  */
 
 import { test, expect } from './fixtures';
@@ -87,7 +68,7 @@ test('bezier-edit — Add point extends the path with a new cubic segment', asyn
   expect(after[3].anchor[0]).toBe(after[2].anchor[0] + 80);
 });
 
-test.fixme('bezier-edit — dragging a control handle moves the handle, not the anchor', async ({ demo }) => {
+test('bezier-edit — dragging a control handle moves the handle, not the anchor', async ({ demo }) => {
   await demo.goto('bezier-edit');
 
   const before = (await demo.probe<HandleEntry[]>('handles'))!;

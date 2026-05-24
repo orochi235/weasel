@@ -40,7 +40,16 @@ describe('editAnchorsAction descriptor', () => {
   it('declares id, label, drag defaultBinding, and ongoing timing', () => {
     expect(editAnchorsAction.id).toBe('editAnchors');
     expect(editAnchorsAction.label).toBe('Edit Anchors');
-    expect(editAnchorsAction.defaultBinding).toEqual({ kind: 'drag' });
+    // Binding is a drag with a target predicate filtering for anchor-kind
+    // affordances (`anchor:N` / `controlIn:N` / `controlOut:N`). The predicate
+    // function identity is opaque to the equality check; verify shape + behavior.
+    const binding = editAnchorsAction.defaultBinding as { kind: string; target: { kindOf: (h: unknown) => boolean } };
+    expect(binding.kind).toBe('drag');
+    expect(typeof binding.target.kindOf).toBe('function');
+    expect(binding.target.kindOf({ kind: 'anchor:0' })).toBe(true);
+    expect(binding.target.kindOf({ kind: 'controlOut:3' })).toBe(true);
+    expect(binding.target.kindOf({ kind: 'handle:top-left' })).toBe(false);
+    expect(binding.target.kindOf(undefined)).toBe(false);
     expect(editAnchorsAction.invoker?.timing).toBe('ongoing');
   });
 

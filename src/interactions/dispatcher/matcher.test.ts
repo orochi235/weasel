@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { matchBest, type InputEvent, type ScopedBinding } from './matcher';
+import { matchBest, matchSorted, specificity, type InputEvent, type ScopedBinding } from './matcher';
 import type { GestureBinding } from '../actions/binding';
+import type { GestureSpec } from '@orochi235/weasel-gestures';
 
 const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 // Default wheel event data fields (matcher only reads mods; these are pass-through).
@@ -83,5 +84,120 @@ describe('matchBest (precedence)', () => {
       { binding: binding({ kind: 'wheel', mods: { ctrl: true } }, 'zoom'), scope: 'ambient', ownerToolId: null },
     ];
     expect(matchBest(e, bs, false)?.binding.actionId).toBe('zoom');
+  });
+});
+
+describe('specificity (tuple shape)', () => {
+  it('bare kind: drag → [0, 0, 0, 1]', () => {
+    expect(specificity({ kind: 'drag' } as GestureSpec)).toEqual([0, 0, 0, 1]);
+  });
+
+  it('drag with target predicate → [1, 0, 0, 1]', () => {
+    const spec: GestureSpec = {
+      kind: 'drag',
+      target: { kindOf: () => true },
+    };
+    expect(specificity(spec)).toEqual([1, 0, 0, 1]);
+  });
+
+  it("drag with one required modifier → [0, 1, 0, 1]", () => {
+    expect(specificity({ kind: 'drag', mods: { shift: true } } as GestureSpec))
+      .toEqual([0, 1, 0, 1]);
+  });
+
+  it("mods: { shift: 'optional' } does NOT count toward specificity", () => {
+    expect(specificity({ kind: 'drag', mods: { shift: 'optional' } } as GestureSpec))
+      .toEqual([0, 0, 0, 1]);
+  });
+
+  it('two required modifiers stack → [0, 2, 0, 1]', () => {
+    expect(specificity({
+      kind: 'key',
+      key: 'g',
+      mods: { mod: true, shift: true },
+    } as GestureSpec)).toEqual([0, 2, 0, 1]);
+  });
+
+  it('phase present → [0, 0, 1, 1]', () => {
+    expect(specificity({ kind: 'drag', phase: 'engaged' } as GestureSpec))
+      .toEqual([0, 0, 1, 1]);
+  });
+
+  it('all dimensions stack → [1, 2, 1, 1]', () => {
+    const spec: GestureSpec = {
+      kind: 'drag',
+      target: { kindOf: () => true },
+      mods: { mod: true, shift: true },
+      phase: 'engaged',
+    };
+    expect(specificity(spec)).toEqual([1, 2, 1, 1]);
+  });
+});
+
+describe('matchSorted (specificity ordering)', () => {
+  function binding(spec: any, actionId = 'x'): GestureBinding {
+    return { spec, actionId };
+  }
+
+  it('target predicate beats bare regardless of registration order', () => {
+    const anchorPredicate = (hit: unknown): boolean =>
+      typeof hit === 'object' && hit !== null && (hit as { kind?: string }).kind === 'anchor:0';
+    const e: InputEvent = {
+      kind: 'pointerdown',
+      x: 0, y: 0, ...noMods,
+      affordance: { kind: 'anchor:0' },
+    };
+    const bs: ScopedBinding[] = [
+      // BARE binding registered FIRST.
+      { binding: binding({ kind: 'drag' }, 'move'), scope: 'ambient', ownerToolId: null },
+      // Targeted binding registered SECOND — should still win.
+      {
+        binding: binding({ kind: 'drag', target: { kindOf: anchorPredicate } }, 'editAnchors'),
+        scope: 'ambient',
+        ownerToolId: null,
+      },
+    ];
+    const sorted = matchSorted(e, bs, false);
+    expect(sorted.map((m) => m.binding.actionId)).toEqual(['editAnchors', 'move']);
+  });
+
+  it('equal-specificity bindings retain registration order', () => {
+    const e: InputEvent = { kind: 'pointerdown', x: 0, y: 0, ...noMods };
+    const bs: ScopedBinding[] = [
+      { binding: binding({ kind: 'drag' }, 'a'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'drag' }, 'b'), scope: 'ambient', ownerToolId: null },
+      { binding: binding({ kind: 'drag' }, 'c'), scope: 'ambient', ownerToolId: null },
+    ];
+    const sorted = matchSorted(e, bs, false);
+    expect(sorted.map((m) => m.binding.actionId)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('scope priority dominates specificity (ambient bare beats active targeted only in active scope; hotkey wins overall)', () => {
+    // Three bindings, increasing specificity but decreasing scope priority.
+    // Hotkey bare still beats active targeted because scope wins.
+    const e: InputEvent = {
+      kind: 'pointerdown',
+      x: 0, y: 0, ...noMods,
+      affordance: { kind: 'anchor:0' },
+    };
+    const bs: ScopedBinding[] = [
+      {
+        binding: binding({ kind: 'drag', target: { kindOf: () => true } }, 'ambient-targeted'),
+        scope: 'ambient',
+        ownerToolId: null,
+      },
+      {
+        binding: binding({ kind: 'drag', target: { kindOf: () => true } }, 'active-targeted'),
+        scope: 'active',
+        ownerToolId: 't',
+      },
+      { binding: binding({ kind: 'drag' }, 'hotkey-bare'), scope: 'hotkey', ownerToolId: 't' },
+    ];
+    const sorted = matchSorted(e, bs, false);
+    expect(sorted.map((m) => m.binding.actionId)).toEqual([
+      'hotkey-bare',
+      'active-targeted',
+      'ambient-targeted',
+    ]);
   });
 });

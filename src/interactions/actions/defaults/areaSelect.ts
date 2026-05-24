@@ -81,6 +81,20 @@ export const areaSelectAction: Action & { requires: string[] } = {
       const dep = ctx.deps.areaSelect as AreaSelectDep | undefined;
       if (!dep) return {};
 
+      // Decline on anchor / control-handle affordances: the select tool's
+      // active-scope binding for this action is `{ kind: 'drag', target: 'empty' }`,
+      // which matches whenever `bodyTarget === 'empty'` — including drags
+      // where an anchor was hit on top of empty body. Without this opt-out
+      // areaSelect would beat editAnchors via scope priority. The
+      // dispatcher's empty-handle fallthrough then forwards the gesture.
+      const affordanceKind = ctx.drag?.affordance?.kind;
+      if (
+        typeof affordanceKind === 'string'
+        && /^(anchor|controlIn|controlOut):/.test(affordanceKind)
+      ) {
+        return {};
+      }
+
       // Drag start is the world point at the moment start() is called.
       const scratch: AreaSelectScratch = {
         dep,

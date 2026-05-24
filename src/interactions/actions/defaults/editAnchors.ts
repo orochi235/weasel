@@ -90,7 +90,22 @@ interface EditAnchorsScratch {
 export const editAnchorsAction: Action & { requires: string[] } = {
   id: 'editAnchors',
   label: 'Edit Anchors',
-  defaultBinding: { kind: 'drag' },
+  defaultBinding: {
+    kind: 'drag',
+    // Target predicate: this binding only matches drags whose pointerdown
+    // hit an anchor or control-handle affordance. Higher specificity than
+    // bare `{ kind: 'drag' }` of moveAction et al, so editAnchors wins on
+    // anchor drags via matchSorted's specificity ordering — no opt-out
+    // needed in the general-drag actions.
+    target: {
+      kindOf: (hit: unknown): boolean => {
+        if (typeof hit !== 'object' || hit === null) return false;
+        const kind = (hit as { kind?: unknown }).kind;
+        return typeof kind === 'string'
+          && /^(anchor|controlIn|controlOut):/.test(kind);
+      },
+    },
+  },
   requires: ['selection', 'editAnchors'],
   invoker: {
     timing: 'ongoing',
