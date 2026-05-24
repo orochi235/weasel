@@ -87,6 +87,7 @@ export function CurveLabDemo() {
             key={rep.kind}
             rep={rep}
             anchors={anchors}
+            onAnchorsChange={setAnchors}
             overlays={overlays}
             width={PANEL_W}
             height={PANEL_H}

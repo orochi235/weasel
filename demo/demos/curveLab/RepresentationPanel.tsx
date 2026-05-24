@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SceneCanvas, asNodeId, useScene, useSelection } from '@orochi235/weasel';
 import type { DrawCommand } from '../../../src/renderer';
 import type { CurveRepresentation, SharedAnchor } from '../../../src/features/paths/curves';
@@ -18,16 +18,24 @@ export interface OverlayFlags {
 export interface RepresentationPanelProps {
   rep: CurveRepresentation;
   anchors: SharedAnchor[];
+  onAnchorsChange: (next: SharedAnchor[]) => void;
   overlays: OverlayFlags;
   width: number;
   height: number;
 }
 
-export function RepresentationPanel({ rep, anchors, overlays, width, height }: RepresentationPanelProps) {
+const HIT_SLOP = 10;
+
+export function RepresentationPanel({
+  rep,
+  anchors,
+  onAnchorsChange,
+  overlays,
+  width,
+  height,
+}: RepresentationPanelProps) {
   const nodeId = useMemo(() => asNodeId(`curve-${rep.kind}`), [rep.kind]);
 
-  // Build the initial pose once; subsequent updates flow through setPose in
-  // the effect below.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const initialPath = useMemo(() => rep.toPath(anchors), []);
   const scene = useScene<{ kind: 'curve' }, 'default', ReturnType<CurveRepresentation['toPath']>>({
@@ -41,14 +49,12 @@ export function RepresentationPanel({ rep, anchors, overlays, width, height }: R
     }],
   });
 
-  // Sync the pose to the latest anchors/rep.
   useEffect(() => {
     scene.setPose(nodeId, rep.toPath(anchors));
   }, [scene, nodeId, rep, anchors]);
 
   const selection = useSelection({ initial: [nodeId], lock: true });
 
-  // Stable getter so the layer factories' returned closures don't churn.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const anchorsRef = useMemo(() => ({ current: anchors }), []);
   anchorsRef.current = anchors;
@@ -72,17 +78,65 @@ export function RepresentationPanel({ rep, anchors, overlays, width, height }: R
     ...(overlays.inflections ? { inflectionsOverlay: { layer: inflectionsLayer, after: 'scene' as const } } : {}),
   };
 
+  // Anchor drag: identity view, so world coords == element-relative pixels.
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{ idx: number; sx: number; sy: number; ax: number; ay: number } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    let best = -1;
+    let bestD = Infinity;
+    for (let i = 0; i < anchors.length; i++) {
+      const d = Math.hypot(anchors[i].x - sx, anchors[i].y - sy);
+      if (d < HIT_SLOP && d < bestD) { bestD = d; best = i; }
+    }
+    if (best >= 0) {
+      e.stopPropagation();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      dragRef.current = { idx: best, sx, sy, ax: anchors[best].x, ay: anchors[best].y };
+      setDragging(true);
+    }
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dx = (e.clientX - rect.left) - drag.sx;
+    const dy = (e.clientY - rect.top) - drag.sy;
+    onAnchorsChange(anchors.map((a, i) =>
+      i === drag.idx ? { ...a, x: drag.ax + dx, y: drag.ay + dy } : a,
+    ));
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    dragRef.current = null;
+    setDragging(false);
+  };
+
   return (
     <div className="curve-lab-panel">
       <div className="curve-lab-panel-title">{rep.label}</div>
-      <SceneCanvas
-        width={width}
-        height={height}
-        className="ckd-canvas"
-        scene={scene}
-        selection={selection}
-        layers={layers as never}
-      />
+      <div
+        className={`curve-lab-canvas-wrap${dragging ? ' is-dragging' : ''}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <SceneCanvas
+          width={width}
+          height={height}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          layers={layers as never}
+        />
+      </div>
       <ReadoutHud rep={rep} anchors={anchors} />
     </div>
   );

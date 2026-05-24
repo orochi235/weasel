@@ -3,25 +3,51 @@ import { PATH_M, PATH_Q } from '../types';
 
 const DEFAULT_HANDLE_FRACTION = 1 / 3;
 
-function defaultOutHandle(a: SharedAnchor, b: SharedAnchor): { x: number; y: number } {
+function smoothTangent(anchors: SharedAnchor[], i: number): { x: number; y: number } {
+  const prev = i > 0 ? anchors[i - 1] : null;
+  const next = i + 1 < anchors.length ? anchors[i + 1] : null;
+  if (!prev && next) return { x: next.x - anchors[i].x, y: next.y - anchors[i].y };
+  if (prev && !next) return { x: anchors[i].x - prev.x, y: anchors[i].y - prev.y };
+  if (prev && next) {
+    const inLen = Math.hypot(anchors[i].x - prev.x, anchors[i].y - prev.y) || 1;
+    const outLen = Math.hypot(next.x - anchors[i].x, next.y - anchors[i].y) || 1;
+    return {
+      x: (anchors[i].x - prev.x) / inLen + (next.x - anchors[i].x) / outLen,
+      y: (anchors[i].y - prev.y) / inLen + (next.y - anchors[i].y) / outLen,
+    };
+  }
+  return { x: 0, y: 0 };
+}
+
+function defaultOutHandle(anchors: SharedAnchor[], i: number): { x: number; y: number } {
+  const a = anchors[i];
   if (a.outHandle) return a.outHandle;
+  const next = anchors[i + 1];
+  const edgeLen = Math.hypot(next.x - a.x, next.y - a.y);
+  const t = smoothTangent(anchors, i);
+  const tLen = Math.hypot(t.x, t.y) || 1;
   return {
-    x: a.x + (b.x - a.x) * DEFAULT_HANDLE_FRACTION,
-    y: a.y + (b.y - a.y) * DEFAULT_HANDLE_FRACTION,
+    x: a.x + (t.x / tLen) * edgeLen * DEFAULT_HANDLE_FRACTION,
+    y: a.y + (t.y / tLen) * edgeLen * DEFAULT_HANDLE_FRACTION,
   };
 }
 
-function defaultInHandle(a: SharedAnchor, b: SharedAnchor): { x: number; y: number } {
+function defaultInHandle(anchors: SharedAnchor[], i: number): { x: number; y: number } {
+  const b = anchors[i + 1];
   if (b.inHandle) return b.inHandle;
+  const a = anchors[i];
+  const edgeLen = Math.hypot(b.x - a.x, b.y - a.y);
+  const t = smoothTangent(anchors, i + 1);
+  const tLen = Math.hypot(t.x, t.y) || 1;
   return {
-    x: b.x - (b.x - a.x) * DEFAULT_HANDLE_FRACTION,
-    y: b.y - (b.y - a.y) * DEFAULT_HANDLE_FRACTION,
+    x: b.x - (t.x / tLen) * edgeLen * DEFAULT_HANDLE_FRACTION,
+    y: b.y - (t.y / tLen) * edgeLen * DEFAULT_HANDLE_FRACTION,
   };
 }
 
-function quadControl(a: SharedAnchor, b: SharedAnchor): { x: number; y: number } {
-  const c1 = defaultOutHandle(a, b);
-  const c2 = defaultInHandle(a, b);
+function quadControl(anchors: SharedAnchor[], i: number): { x: number; y: number } {
+  const c1 = defaultOutHandle(anchors, i);
+  const c2 = defaultInHandle(anchors, i);
   return { x: (c1.x + c2.x) / 2, y: (c1.y + c2.y) / 2 };
 }
 
@@ -79,7 +105,7 @@ export const bezierQuadratic: CurveRepresentation = {
     const { segIdx, localT } = segmentAt(anchors, t);
     const a = anchors[segIdx];
     const b = anchors[segIdx + 1];
-    return quadEval(a, quadControl(a, b), b, localT);
+    return quadEval(a, quadControl(anchors, segIdx), b, localT);
   },
   toPath(anchors) {
     if (anchors.length < 2) {
@@ -88,9 +114,8 @@ export const bezierQuadratic: CurveRepresentation = {
     const cmds: number[] = [PATH_M];
     const xs: number[] = [anchors[0].x, anchors[0].y];
     for (let i = 0; i + 1 < anchors.length; i++) {
-      const a = anchors[i];
       const b = anchors[i + 1];
-      const q = quadControl(a, b);
+      const q = quadControl(anchors, i);
       cmds.push(PATH_Q);
       xs.push(q.x, q.y, b.x, b.y);
     }
@@ -106,7 +131,7 @@ export const bezierQuadratic: CurveRepresentation = {
     const { segIdx, localT } = segmentAt(anchors, t);
     const a = anchors[segIdx];
     const b = anchors[segIdx + 1];
-    const p1 = quadControl(a, b);
+    const p1 = quadControl(anchors, segIdx);
     const d1 = quadDeriv1(a, p1, b, localT);
     const d2 = quadDeriv2(a, p1, b);
     const num = d1.x * d2.y - d1.y * d2.x;
