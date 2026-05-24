@@ -11,7 +11,9 @@
  * ## Design notes
  * The invoker switches on `params.kind`:
  * - `'wheel'`: computes factor from deltaY, anchors zoom at (clientX, clientY).
- *   The dispatcher merges wheel event data into params at dispatch time.
+ *   The dispatcher merges wheel event data into params at dispatch time, and
+ *   converts the wheel event's client coords to canvas-local (subtracting the
+ *   canvas's bounding rect) before merging — `zoomAt` expects canvas-local.
  * - `'in'`/`'out'`: step zoom by ×1.25 / ×0.8, anchored at origin (0, 0)
  *   (canvas top-left in screen space). A canvas-center anchor is not available
  *   to immediate invokers because the canvas rect is not in the dep registry.

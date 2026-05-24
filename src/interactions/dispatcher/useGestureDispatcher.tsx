@@ -346,6 +346,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     const onWheel = (e: WheelEvent) => {
+      // Convert client-space cursor to canvas-local: zoomAt() (and any other
+      // wheel consumer of clientX/Y) anchors in canvas-top-left coords, not
+      // viewport coords. Without this, anchored-wheel zoom drifts by the
+      // canvas's offset from the viewport top-left.
+      const rect = canvas?.getBoundingClientRect();
+      const localX = rect ? e.clientX - rect.left : e.clientX;
+      const localY = rect ? e.clientY - rect.top : e.clientY;
       const ev: InputEvent = {
         kind: 'wheel',
         altKey: e.altKey,
@@ -354,8 +361,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         shiftKey: e.shiftKey,
         deltaX: e.deltaX,
         deltaY: e.deltaY,
-        clientX: e.clientX,
-        clientY: e.clientY,
+        clientX: localX,
+        clientY: localY,
       };
       dispatch(ev);
     };
