@@ -10,6 +10,7 @@ import { useEffect, useMemo } from 'react';
 import {
   asNodeId,
   enumerateAnchors,
+  viewToMat3,
   type RenderLayer,
   type DrawCommand,
   type Scene,
@@ -106,36 +107,35 @@ export function useModality(
         if (!path || typeof path !== 'object') return [];
         const p = path as { kind?: string; commands?: unknown; coords?: unknown };
         if (p.kind !== 'polygon' || !(p.commands instanceof Uint8Array) || !(p.coords instanceof Float32Array)) return [];
-        // enumerateAnchors returns coords in the path's local space.
-        // The painter renders in world space, so translate by the node's
-        // pose. Scale and rotation are intentionally ignored for now —
-        // apps/draw's pen-tool paths don't carry independent pose scale,
-        // they live directly in world coords via x/y offset of their AABB.
-        const localAnchors = enumerateAnchors(p as Parameters<typeof enumerateAnchors>[0]);
-        const pose = node.pose as { x?: number; y?: number };
-        const dx = pose.x ?? 0;
-        const dy = pose.y ?? 0;
-        if (dx === 0 && dy === 0) return localAnchors;
-        return localAnchors.map((a) => ({
-          x: a.x + dx,
-          y: a.y + dy,
-          ...(a.controlIn ? { controlIn: { x: a.controlIn.x + dx, y: a.controlIn.y + dy } } : {}),
-          ...(a.controlOut ? { controlOut: { x: a.controlOut.x + dx, y: a.controlOut.y + dy } } : {}),
-        }));
+        // PolygonPath coords are stored in WORLD space by apps/draw's
+        // pen tool (see useBuiltinShapeTools.tsx#wrapPath — pose AABB and
+        // path coords share the same frame). enumerateAnchors returns
+        // those coords directly; no pose translation needed. The
+        // decoration layer's draw() wraps emitted commands in a
+        // view-transformed group, so world coords land at the right
+        // screen position.
+        return enumerateAnchors(p as Parameters<typeof enumerateAnchors>[0]);
       },
     });
     decorations.register('path-edit', painter);
   }, [decorations, machine, scene]);
 
-  // Build a RenderLayer<unknown> whose draw() calls decorations.paint().
-  // The decoration layer sits after the scene slot and before tool overlays
-  // (Canvas already handles the slot ordering when decorationLayer is passed
-  // to SceneCanvas).
+  // Build a RenderLayer<unknown> whose draw() calls decorations.paint() and
+  // wraps the world-space commands in a group with the view transform so
+  // they land at the right screen position. Per `RenderLayer.space` docs,
+  // world-space layers MUST self-wrap with `viewToMat3(view)` — the
+  // renderer doesn't apply the view transform automatically. Without this
+  // wrapper, world-coord anchor dots would render at raw canvas pixel
+  // coordinates (workspace origin) instead of following the view's pan/zoom.
   const decorationLayer = useMemo<RenderLayer<unknown>>(
     () => ({
       id: 'mode-decorations',
       label: 'Mode decorations',
-      draw: (_data, _view) => decorations.paint() as DrawCommand[],
+      draw: (_data, view) => {
+        const children = decorations.paint() as DrawCommand[];
+        if (children.length === 0) return [];
+        return [{ kind: 'group', transform: viewToMat3(view), children }];
+      },
     }),
     [decorations],
   );
