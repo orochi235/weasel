@@ -7,3 +7,4 @@ export type {
   SerializedHistoryEntry,
   SerializedHistory,
 } from './history';
+export type { Journal, BeginJournalOptions } from './journal';

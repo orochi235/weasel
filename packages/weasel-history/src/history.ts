@@ -1,6 +1,7 @@
 import type { Op } from 'core/ops/types';
 import { rebuildOp } from 'core/ops/registry';
 import { dwarn, dlog } from 'debug/flag';
+import { createJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 
 interface Entry {
   /** Monotonic id assigned at first push. Stable across coalesce merges
@@ -105,6 +106,14 @@ export interface History {
    *  Journal.commit to flush to a parent, and for any caller that wants to
    *  diff against a baseline. */
   allForwardOps(): Op[];
+  /** The id that will be assigned to the *next* pushed entry. Stable
+   *  monotonic counter; callers use it to tag a fork point (see Journal). */
+  currentEntryId(): number;
+  /** Open a scoped sub-history. All apply/undo/redo on the returned Journal
+   *  affect the same adapter; on commit, the Journal's net forward ops are
+   *  flushed to this History as one entry. See spec docs/superpowers/specs/
+   *  2026-05-24-modality-design.md for the full lifecycle. */
+  beginJournal(opts: BeginJournalOptions): Journal;
 }
 
 /** Options for `createHistory`. */
@@ -299,6 +308,15 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         for (const op of e.forwardOps) out.push(op);
       }
       return out;
+    },
+    currentEntryId(): number {
+      return nextEntryId;
+    },
+    beginJournal(opts: BeginJournalOptions): Journal {
+      // `adapter` is the closure-captured adapter passed to createHistory.
+      // The returned History object's `this` doesn't carry it, so we pass
+      // it through to the factory directly.
+      return createJournalInternal(this, adapter, opts);
     },
     restore(snapshot: SerializedHistory): void {
       undoStack.length = 0;

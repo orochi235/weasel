@@ -1,0 +1,76 @@
+import type { Op } from 'core/ops/types';
+import { createHistory, type History, type HistoryEntry } from './history';
+
+export interface BeginJournalOptions {
+  label: string;
+  targetId?: string;
+}
+
+export interface Journal {
+  readonly targetId: string | undefined;
+  readonly forkedAtEntryId: number;
+
+  // Same operational surface as History
+  applyBatch(ops: Op[], label: string): void;
+  undo(): void;
+  redo(): void;
+  canUndo(): boolean;
+  canRedo(): boolean;
+  entries(): { undo: HistoryEntry[]; redo: HistoryEntry[] };
+
+  // Lifecycle
+  commit(label: string): void;
+  cancel(): void;
+  suspend(): void;
+  isActive(): boolean;
+}
+
+/** Internal factory used by `createHistory`'s `beginJournal` method.
+ *  Not exported via the package's `index.ts` — callers go through
+ *  `history.beginJournal()`. */
+export function createJournalInternal(
+  parent: History,
+  adapter: unknown,
+  opts: BeginJournalOptions,
+): Journal {
+  const inner = createHistory(adapter);
+  const forkedAtEntryId = parent.currentEntryId();
+  let active = true;
+  const targetId = opts.targetId;
+
+  return {
+    targetId,
+    forkedAtEntryId,
+
+    applyBatch(_ops: Op[], _label: string): void {
+      throw new Error('Journal.applyBatch not yet implemented');
+    },
+    undo(): void {
+      throw new Error('Journal.undo not yet implemented');
+    },
+    redo(): void {
+      throw new Error('Journal.redo not yet implemented');
+    },
+    canUndo(): boolean {
+      return inner.canUndo();
+    },
+    canRedo(): boolean {
+      return inner.canRedo();
+    },
+    entries() {
+      return inner.entries();
+    },
+    commit(_label: string): void {
+      throw new Error('Journal.commit not yet implemented');
+    },
+    cancel(): void {
+      throw new Error('Journal.cancel not yet implemented');
+    },
+    suspend(): void {
+      throw new Error('Journal.suspend not yet implemented');
+    },
+    isActive(): boolean {
+      return active;
+    },
+  };
+}
