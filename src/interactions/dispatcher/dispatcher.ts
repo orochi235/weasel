@@ -57,10 +57,9 @@ const DEV: boolean = (() => {
   }
 })();
 
-/** One entry per `handleInput` call. Populated only in DEV; exposed on
- *  `window.__weaselDispatchLog__` so consumers / agents can `console.table`
- *  it to diagnose "X doesn't fire" complaints without redispatching agents. */
+/** One entry per `handleInput` call. */
 export interface DispatchLogEntry {
+  kind: 'dispatch';
   ts: number;
   eventKind: string;
   candidates: Array<{ actionId: string; scope: BindingScope; enabledResult: boolean | string }>;
@@ -68,17 +67,58 @@ export interface DispatchLogEntry {
   outcome: 'handled' | 'unhandled';
 }
 
-const TRACE_LIMIT = 200;
-const traceLog: DispatchLogEntry[] = [];
-
-if (DEV && typeof window !== 'undefined') {
-  (window as unknown as { __weaselDispatchLog__: DispatchLogEntry[] }).__weaselDispatchLog__ = traceLog;
+/** One entry per "mode change" — a kit state transition that isn't a
+ *  dispatched input event but is load-bearing for understanding why an
+ *  input was (or wasn't) handled later. Pushed via `recordModeSwitch()`;
+ *  consumers include the editAnchors dep (editingId changes), and
+ *  could expand to active-tool / hotkey-stack / focus changes. */
+export interface ModeSwitchLogEntry {
+  kind: 'mode';
+  ts: number;
+  /** Logical mode name, e.g. `'editAnchors.editingId'`. */
+  mode: string;
+  from: string | null;
+  to: string | null;
+  /** Optional free-form context — `'enterPathEdit'`, `'exitPathEdit'`,
+   *  `'selection-dropped target'`, etc. */
+  detail?: string;
 }
 
-function recordTrace(entry: DispatchLogEntry): void {
+export type TraceLogEntry = DispatchLogEntry | ModeSwitchLogEntry;
+
+const TRACE_LIMIT = 200;
+const traceLog: TraceLogEntry[] = [];
+
+if (DEV && typeof window !== 'undefined') {
+  // Single combined log — `__weaselDispatchLog__` is the historical
+  // global; entries are now a union of dispatch + mode-switch records.
+  // Filter via `(e) => e.kind === 'dispatch'` if you only want input
+  // routing.
+  (window as unknown as { __weaselDispatchLog__: TraceLogEntry[] }).__weaselDispatchLog__ = traceLog;
+}
+
+function recordTrace(entry: TraceLogEntry): void {
   if (!DEV) return;
   traceLog.push(entry);
   if (traceLog.length > TRACE_LIMIT) traceLog.shift();
+}
+
+/** Push a mode-switch record into the trace log. Safe to call from
+ *  anywhere; no-ops outside DEV. */
+export function recordModeSwitch(
+  mode: string,
+  from: string | null,
+  to: string | null,
+  detail?: string,
+): void {
+  recordTrace({
+    kind: 'mode',
+    ts: Date.now(),
+    mode,
+    from,
+    to,
+    ...(detail !== undefined ? { detail } : {}),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -487,7 +527,7 @@ export function createDispatcher(): Dispatcher {
     const matches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
     const traceCandidates: DispatchLogEntry['candidates'] = [];
     const finishTrace = (fired: string | null, outcome: 'handled' | 'unhandled') => {
-      recordTrace({ ts: Date.now(), eventKind: event.kind, candidates: traceCandidates, fired, outcome });
+      recordTrace({ kind: 'dispatch', ts: Date.now(), eventKind: event.kind, candidates: traceCandidates, fired, outcome });
     };
     if (matches.length === 0) {
       finishTrace(null, 'unhandled');

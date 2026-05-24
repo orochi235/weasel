@@ -13,7 +13,7 @@ import type { Action } from '../registry';
 import type { ImmediateInvoker } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { Scene, NodeId } from 'core/scene/types';
+import type { NodeId } from 'core/scene/types';
 
 export const enterPathEditAction: Action & { requires: string[] } = {
   id: 'enterPathEdit',
@@ -30,18 +30,19 @@ export const enterPathEditAction: Action & { requires: string[] } = {
         bodyTarget === 'selected-body' || bodyTarget === 'unselected-body',
     },
   },
-  requires: ['editAnchors', 'selection', 'scene'],
+  requires: ['editAnchors', 'selection'],
   invoker: {
     timing: 'immediate',
     run(deps) {
       const editAnchors = deps.editAnchors as EditAnchorsDep | undefined;
       const selection = deps.selection as SelectionApi | undefined;
-      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
-      if (!editAnchors || !selection || !scene) return;
+      if (!editAnchors || !selection) return;
       const ids = selection.get() as NodeId[];
+      // Use the dep's editability check rather than poking at node.pose
+      // directly — the dep knows whether a node has an editable polygon
+      // (pose-as-polygon OR data.path) so this picks up both shapes.
       for (const id of ids) {
-        const node = scene.get(id);
-        if (node && (node.pose as { kind?: string })?.kind === 'polygon') {
+        if (editAnchors.getEditablePath(id)) {
           editAnchors.setEditingId(id);
           return;
         }

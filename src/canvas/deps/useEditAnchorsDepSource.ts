@@ -35,6 +35,7 @@ import type { Path, PolygonPath } from 'features/paths/types';
 import { boundsOfPath } from 'features/paths/bounds';
 import { translatePath } from 'features/paths/transform';
 import { pathAtPose } from 'canvas/shapePainters';
+import { recordModeSwitch } from 'interactions/dispatcher/dispatcher';
 
 interface OpsApplier {
   applyOps(ops: { apply(adapter: unknown): void }[], label?: string): void;
@@ -152,6 +153,15 @@ export function useEditAnchorsDepSource(
     return {
       editingId: effectiveId,
       setEditingId(id: string | null) {
+        const next = id ?? '';
+        if (effectiveId !== next) {
+          recordModeSwitch(
+            'editAnchors.editingId',
+            effectiveId || null,
+            next || null,
+            next ? 'enter' : 'exit',
+          );
+        }
         if (externalRef.current) externalRef.current.setEditingId(id);
         else setLocalEditingIdRef.current(id);
         // Clear any stale preview when edit mode changes targets.

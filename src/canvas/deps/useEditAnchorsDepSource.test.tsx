@@ -33,7 +33,7 @@ describe('useEditAnchorsDepSource', () => {
       update: updateMock,
     } as unknown as Scene<unknown, string, unknown>;
     const sel = { current: ['poly'] as NodeId[], set: () => {} } as unknown as SelectionApi;
-    const applyOps = vi.fn((ops: { apply(a: unknown): void }[]) => {
+    const applyOps = vi.fn((ops: { apply(a: unknown): void }[], _label?: string) => {
       for (const op of ops) op.apply({ setPose: () => {} });
     });
     const adapter = { applyOps };
