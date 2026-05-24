@@ -4,7 +4,6 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-  useHandTool,
   useSimulation,
   ellipsePath,
   linePath,
@@ -217,13 +216,6 @@ export function ForceGraphDemo() {
     [],
   );
 
-  // Wheel pan/zoom and keyboard zoom handled by viewport descriptors (Phase 8.5).
-  const hand = useHandTool();
-  const ambient = useMemo(
-    () => [hand],
-    [hand],
-  );
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -289,7 +281,7 @@ export function ForceGraphDemo() {
           selectionMode="none"
           view={view}
           onViewChange={setView}
-          ambient={ambient}
+          viewport={{}}
           layers={{
             scene: {
               drawOne: (n, p, v): DrawCommand[] => [{

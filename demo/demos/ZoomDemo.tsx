@@ -3,7 +3,6 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-  useHandTool,
   meanScale,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -32,9 +31,6 @@ export function ZoomDemo() {
   const selection = useSelection();
 
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-  // Wheel pan/zoom and keyboard zoom are handled by the viewport.pan /
-  // viewport.zoom descriptors registered in useStandardActions (Phase 8.5).
-  const hand = useHandTool();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -59,7 +55,7 @@ export function ZoomDemo() {
         selection={selection}
         view={view}
         onViewChange={setView}
-        ambient={[hand]}
+        viewport={{}}
         layers={{
           scene: {
             drawOne: (n, p, v): DrawCommand[] => {

@@ -3,7 +3,6 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-  useHandTool,
   fitViewToBounds,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
@@ -29,9 +28,6 @@ export function PerAxisZoomDemo() {
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: -100, y: -100, scale: { x: 1, y: 1 } });
   const [mode, setMode] = useState<'contain' | 'fill' | 'stretch'>('contain');
-
-  // Wheel pan/zoom and keyboard zoom handled by viewport descriptors (Phase 8.5).
-  const hand = useHandTool();
 
   const setScaleX = (sx: number) => setView({ ...view, scale: { ...view.scale, x: sx } });
   const setScaleY = (sy: number) => setView({ ...view, scale: { ...view.scale, y: sy } });
@@ -83,7 +79,7 @@ export function PerAxisZoomDemo() {
         selection={selection}
         view={view}
         onViewChange={setView}
-        ambient={[hand]}
+        viewport={{}}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{

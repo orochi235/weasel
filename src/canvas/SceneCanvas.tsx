@@ -368,18 +368,27 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selection?: SelectionApi;
     selectionOptions?: UseSelectionOptions;
 
-    // --- Tool dispatcher escape hatch ---
-    /** Custom tool registry. When supplied, the internal default
-     *  `useSelectTool` is bypassed and this `tools` value is forwarded to
-     *  Canvas as-is. Consumers needing extra tools (insert, etc.) take this
-     *  path.
+    // --- Tools: extend, override, or take over ---
+    /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
      *
-     *  Keybindings for a consumer-supplied `tools` registry are auto-wired
-     *  by `<SceneCanvas>` (via an internal `useKeybindings(tools)` call) so
-     *  declared `keybinding` / `hotkey` entries on each tool work without
-     *  any extra plumbing. To opt out — e.g. to call `useKeybindings`
-     *  yourself with custom options — pass `enableKeybindings={false}`. */
-    tools?: ToolsApi;
+     *  **Patch form** (`Record<string, AnyTool | true | false>`): merged
+     *  into the built-in registry on top of whatever `defaultTools` /
+     *  `toolBundle` already selected.
+     *    - `true` pulls in the built-in for this id (`'pen'`, `'lasso'`,
+     *      `'rotate'`, …) even when it's outside the active tier — useful
+     *      for `toolBundle: 'minimal'` + `tools={{ pen: true }}`. Unknown
+     *      built-in ids warn in dev and are ignored.
+     *    - `AnyTool` adds a new id or replaces an existing one
+     *      (dev-only warning on replace).
+     *    - `false` omits a bundled tool entirely.
+     *  Auto-wiring (keybindings, dispatcher, action registry) still runs.
+     *
+     *  **Takeover form** (`ToolsApi`): the internal default `useSelectTool`
+     *  is bypassed and this `tools` value is forwarded to Canvas as-is —
+     *  the consumer owns active-slot management. Keybindings are still
+     *  auto-wired against the supplied registry; pass `enableKeybindings={false}`
+     *  to opt out. */
+    tools?: ToolsApi | Record<string, AnyTool | true | false>;
 
     /**
      * Auto-wire `useKeybindings` against the active tool registry. Default
@@ -539,6 +548,14 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      */
     pickHud?: boolean;
   };
+
+/** Discriminate the polymorphic `tools` prop: `ToolsApi` has `setActive`
+ *  / `active` / `registry`; the patch record shape has none of those. */
+function isToolsApi(
+  tools: ToolsApi | Record<string, AnyTool | true | false>,
+): tools is ToolsApi {
+  return typeof (tools as ToolsApi).setActive === 'function';
+}
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose>,
@@ -716,13 +733,41 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Resolve which built-ins to mount. Precedence: explicit `defaultTools` >
   // `toolBundle` preset > legacy default (select/rotate, plus hand
   // when viewport is engaged).
-  const requestedTools: readonly BuiltinToolId[] =
+  const baseRequestedTools: readonly BuiltinToolId[] =
     defaultTools
     ?? (toolBundle ? BUNDLE_TOOLS[toolBundle] : null)
     ?? (viewportRegistered
       ? ['select', 'rotate', 'hand']
       : ['select', 'rotate']);
-  const wants = (id: BuiltinToolId): boolean => requestedTools.includes(id);
+
+  // Patch-form `tools` extras with value `true` widen the requested set
+  // ("pull in this built-in even if it's not in the active tier"). Computed
+  // here so the rest of the if-ladder treats them identically to ids that
+  // came in via `defaultTools` / `toolBundle`.
+  const KNOWN_BUILTIN_IDS: ReadonlySet<BuiltinToolId> = new Set<BuiltinToolId>([
+    'select', 'rotate', 'hand',
+    'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil', 'lasso', 'text',
+  ]);
+  const toolsPatchExtras = (() => {
+    if (!toolsProp || isToolsApi(toolsProp)) return null;
+    return toolsProp;
+  })();
+  const trueIds = new Set<BuiltinToolId>();
+  if (toolsPatchExtras) {
+    for (const [id, value] of Object.entries(toolsPatchExtras)) {
+      if (value !== true) continue;
+      if (!KNOWN_BUILTIN_IDS.has(id as BuiltinToolId)) {
+        if (import.meta.env?.DEV) {
+          // eslint-disable-next-line no-console
+          console.warn(`[SceneCanvas] tools.${id}=true is not a known built-in id; ignoring`);
+        }
+        continue;
+      }
+      trueIds.add(id as BuiltinToolId);
+    }
+  }
+  const wants = (id: BuiltinToolId): boolean =>
+    baseRequestedTools.includes(id) || trueIds.has(id);
 
   // Synthesize the shape/lasso/text/clone tools — always called per React
   // rules-of-hooks; only registered below when requested. Per-tool options
@@ -761,6 +806,32 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   if (wants('lasso'))   internalRegistry.lasso   = shapeTools.lasso;
   if (wants('text'))    internalRegistry.text    = shapeTools.text;
 
+  // Patch-form `tools` prop: merge extras / overrides / omissions into the
+  // internal registry. `false` drops a bundled tool; `true` is already
+  // accounted for above via the `wants()` expansion; `AnyTool` adds or
+  // replaces (dev-only warning on replace). Takeover form (full `ToolsApi`)
+  // is handled below via `toolsProp ?? internalTools`.
+  const toolsPatch = toolsPatchExtras;
+  if (toolsPatch) {
+    for (const [id, value] of Object.entries(toolsPatch)) {
+      if (value === false) {
+        delete internalRegistry[id];
+      } else if (value === true) {
+        // Already pulled in via the `wants()`-driven if-ladder above.
+        continue;
+      } else {
+        if (import.meta.env?.DEV && id in internalRegistry) {
+          // eslint-disable-next-line no-console
+          console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
+        }
+        internalRegistry[id] = value;
+      }
+    }
+  }
+
+  // Takeover form: only when toolsProp is the full ToolsApi shape.
+  const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
+
   const internalTools = useTools({
     active: 'select',
     registry: internalRegistry,
@@ -781,12 +852,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // to the second call when `toolsProp` is absent is a render-stable empty
   // stand-in just to keep the call site valid; it never actually fires
   // because `disable` is true on that branch.
-  useKeybindings(internalTools, { disable: !!toolsProp || !enableKeybindings });
-  useKeybindings(toolsProp ?? internalTools, {
-    disable: !toolsProp || !enableKeybindings,
+  useKeybindings(internalTools, { disable: !!toolsTakeover || !enableKeybindings });
+  useKeybindings(toolsTakeover ?? internalTools, {
+    disable: !toolsTakeover || !enableKeybindings,
   });
 
-  const tools = toolsProp ?? internalTools;
+  const tools = toolsTakeover ?? internalTools;
 
   // Surface the resolved ToolsApi to the introspection callback (the
   // toolkit-builder dev surface uses this to walk `tools.registry` for
@@ -862,9 +933,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       : null),
     // shapeTools.pen identity is stable across renders (returned from a hook
     // that memoizes via defineTool). `wants('pen')` is recomputed each render
-    // from requestedTools — capture by reading at memo time.
+    // from `baseRequestedTools` + patch-form `true` entries — capture both.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [shapeTools.pen, requestedTools],
+    [shapeTools.pen, baseRequestedTools, trueIds],
   );
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({

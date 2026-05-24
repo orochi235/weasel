@@ -230,3 +230,85 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
     expect(captured!.active).toBe('select');
   });
 });
+
+describe('SceneCanvas tools prop patch form', () => {
+  function emptyHarness(toolsProp: Record<string, unknown> | undefined) {
+    let captured: ReturnType<typeof useTools> | null = null;
+    function Harness() {
+      const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      return (
+        <SceneCanvas
+          scene={scene}
+          width={100} height={100}
+          layers={{}}
+          // Cast through unknown: the public type permits `true | false | AnyTool`
+          // per id, but the test wants to exercise all three plus the unknown-id case.
+          tools={toolsProp as never}
+          onToolsCreated={(t) => { captured = t; }}
+        />
+      );
+    }
+    render(<Harness />);
+    return () => captured;
+  }
+
+  it('{ pen: true } pulls in the built-in pen even when not in the default tier', () => {
+    // Default tier (no defaultTools / toolBundle prop, no viewport): ['select', 'rotate'].
+    // 'pen' is in 'exhaustive' only.
+    const get = emptyHarness({ pen: true });
+    expect(get()!.registry).toHaveProperty('pen');
+    expect(get()!.registry).toHaveProperty('select');
+  });
+
+  it('{ pen: false } omits a bundled tool', () => {
+    // 'pen' would be in registry under toolBundle='exhaustive'; turn it off.
+    let captured: ReturnType<typeof useTools> | null = null;
+    function Harness() {
+      const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      return (
+        <SceneCanvas
+          scene={scene}
+          width={100} height={100}
+          layers={{}}
+          toolBundle="exhaustive"
+          tools={{ pen: false } as never}
+          onToolsCreated={(t) => { captured = t; }}
+        />
+      );
+    }
+    render(<Harness />);
+    expect(captured!.registry).not.toHaveProperty('pen');
+    expect(captured!.registry).toHaveProperty('rect');
+  });
+
+  it('{ unknownId: true } warns in dev and is ignored', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const get = emptyHarness({ totallyNotARealTool: true });
+    expect(get()!.registry).not.toHaveProperty('totallyNotARealTool');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('totallyNotARealTool'));
+    warn.mockRestore();
+  });
+
+  it('{ pen: customTool } replaces a bundled tool and warns in dev', () => {
+    const customPen = defineTool({ id: 'pen', initial: {} });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let captured: ReturnType<typeof useTools> | null = null;
+    function Harness() {
+      const scene = useScene<D, L, P>({ systemLayers: [{ id: 'main' }], initial: [] });
+      return (
+        <SceneCanvas
+          scene={scene}
+          width={100} height={100}
+          layers={{}}
+          toolBundle="exhaustive"
+          tools={{ pen: customPen } as never}
+          onToolsCreated={(t) => { captured = t; }}
+        />
+      );
+    }
+    render(<Harness />);
+    expect(captured!.registry.pen).toBe(customPen);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"pen"'));
+    warn.mockRestore();
+  });
+});

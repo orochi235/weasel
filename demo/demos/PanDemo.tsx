@@ -3,7 +3,6 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-  useHandTool,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
@@ -29,7 +28,6 @@ export function PanDemo() {
   const selection = useSelection();
 
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-  const hand = useHandTool();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -46,7 +44,7 @@ export function PanDemo() {
         selection={selection}
         view={view}
         onViewChange={setView}
-        ambient={[hand]}
+        viewport={{}}
         layers={{
           scene: {
             drawOne: (n, p): DrawCommand[] => [{
