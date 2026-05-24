@@ -24,6 +24,10 @@ export interface ViewportConfig {
     | boolean
     | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
   pinchZoom?: boolean | { min?: number; max?: number };
+  /** Wheel pan (plain wheel → pan). Default: `true`. Set `false` to disable. */
+  pan?: boolean;
+  /** Wheel + keyboard zoom (Cmd+wheel, Cmd+=/-/0). Default: `true`. Set `false` to disable. */
+  zoom?: boolean;
 }
 
 export interface UseViewportToolsArgs {

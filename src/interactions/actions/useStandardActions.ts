@@ -55,10 +55,12 @@ import { cloneAction } from './defaults/clone';
 import { editAnchorsAction } from './defaults/editAnchors';
 import { lassoSelectAction } from './defaults/lassoSelect';
 import { pinchZoomAction } from './defaults/pinchZoom';
-import { viewportPanAction } from './defaults/viewportPan';
-import { viewportZoomAction } from './defaults/viewportZoom';
 import { viewportDragPanAction } from './defaults/viewportDragPan';
 import { enterTextEditAction } from './defaults/enterTextEdit';
+
+// viewportPanAction / viewportZoomAction are NOT in KIT_STANDARD_DESCRIPTORS.
+// They are wired conditionally by SceneCanvas via `useViewportActions`
+// based on the `viewport.pan` / `viewport.zoom` flags.
 
 /** @experimental */
 export interface UseStandardActionsOptions {
@@ -84,8 +86,11 @@ export interface UseStandardActionsOptions {
  *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
  *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) +
  *        6 (resize/rotate/areaSelect/insert/insertRotate/clone) + 3 (editAnchors/lassoSelect/pinchZoom) +
- *        2 (viewport.pan/viewport.zoom) + 1 (viewport.dragPan) + 1 (clearSelection) +
- *        1 (enterTextEdit) = 45
+ *        1 (viewport.dragPan) + 1 (clearSelection) + 1 (enterTextEdit) = 43
+ *
+ * `viewport.pan` and `viewport.zoom` are NOT in this list — they're registered
+ * conditionally by SceneCanvas's `useViewportActions` based on the
+ * `viewport.pan` / `viewport.zoom` flags. See `src/canvas/SceneCanvas/useViewportActions.ts`.
  */
 const KIT_STANDARD_DESCRIPTORS: Action[] = [
   escapeAction,
@@ -128,8 +133,6 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   editAnchorsAction,
   lassoSelectAction,
   pinchZoomAction,
-  viewportPanAction,
-  viewportZoomAction,
   viewportDragPanAction,
   clearSelectionAction,
   enterTextEditAction,

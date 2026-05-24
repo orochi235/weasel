@@ -28,10 +28,13 @@ function getImmediateInvoker(action: typeof viewportPanAction) {
 // ---------------------------------------------------------------------------
 
 describe('viewportPanAction descriptor', () => {
-  it('declares id, label, wheel defaultBinding, and immediate timing', () => {
+  it('declares id, label, plain-wheel + shift-wheel bindings, and immediate timing', () => {
     expect(viewportPanAction.id).toBe('viewport.pan');
     expect(viewportPanAction.label).toBe('Pan');
-    expect(viewportPanAction.defaultBinding).toEqual({ kind: 'wheel' });
+    expect(viewportPanAction.defaultBinding).toEqual([
+      { spec: { kind: 'wheel' }, opts: {} },
+      { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true } } },
+    ]);
     expect(viewportPanAction.invoker?.timing).toBe('immediate');
   });
 
@@ -80,6 +83,22 @@ describe('viewportPanAction invoker', () => {
     const invoker = getImmediateInvoker(viewportPanAction);
     invoker.run({ view }, { deltaX: 30, deltaY: 30 });
     expect(view._value.scale).toEqual(scale);
+  });
+
+  it('shift+wheel (swapAxis): routes deltaY into the x axis when deltaX is zero', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    const invoker = getImmediateInvoker(viewportPanAction);
+    invoker.run({ view }, { deltaX: 0, deltaY: 50, swapAxis: true });
+    expect(view._value.x).toBe(50);
+    expect(view._value.y).toBe(0);
+  });
+
+  it('shift+wheel (swapAxis): prefers deltaX when present (trackpad horizontal swipe)', () => {
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    const invoker = getImmediateInvoker(viewportPanAction);
+    invoker.run({ view }, { deltaX: 30, deltaY: 70, swapAxis: true });
+    expect(view._value.x).toBe(30);
+    expect(view._value.y).toBe(0);
   });
 
   it('is a no-op when view dep is absent', () => {

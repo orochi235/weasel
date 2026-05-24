@@ -717,6 +717,11 @@ export type {
   ShaderUniform,
   Mat3,
 } from './renderer';
+// World-space RenderLayer draw functions wrap their commands in a
+// `kind: 'group'` whose transform is `viewToMat3(view)`. Exported here so
+// custom layers in consumer code can construct that wrapper without reaching
+// into the renderer subpath.
+export { viewToMat3 } from './renderer';
 export type { TextureHandle } from './renderer/textures/registerTexture';
 export type {
   LayersMap,

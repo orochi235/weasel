@@ -47,6 +47,10 @@ import {
   type SerializedScene,
   type BooleansAdapter,
   type NodeId,
+  type View,
+  type RenderLayer,
+  fitViewToBounds,
+  viewToMat3,
 } from '@orochi235/weasel';
 import { SidebarPanel, ToolPalette } from '@orochi235/weasel-ui';
 
@@ -104,8 +108,9 @@ interface SwillData {
 
 type SwillLayer = 'default';
 
-/** Paper sizes — viewport-only for now (we don't render a paper background).
- *  Kept so the New menu in the ActionBar has somewhere to dispatch to. */
+/** Paper sizes — the canvas fills the workspace; the page is drawn as a
+ *  world-space layer at `{0,0,paper.width,paper.height}` (see `paperLayer`
+ *  below). Pan/zoom moves the page around within the striped workspace. */
 const PAPER_PRESETS: Record<PaperSizeKey, { width: number; height: number }> = {
   letter: { width: 816, height: 1056 },
   a4:     { width: 794, height: 1123 },
@@ -1114,6 +1119,59 @@ function EditorWithSharedScene({
 
   const paper = PAPER_PRESETS[paperSize];
 
+  // Workspace host: the canvas fills the entire `.swill-canvas-host` area
+  // (diagonal stripes); the document page is drawn as a world-space layer.
+  // Track host CSS dims so we can size the canvas + fit the page on mount /
+  // paper-size change.
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const [hostDims, setHostDims] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = hostRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const r = entries[0]?.contentRect;
+      if (!r) return;
+      setHostDims({ width: r.width, height: r.height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Lifted view state (controlled SceneCanvas). Refit-to-page runs on initial
+  // host-dims sample and on every paperSize change; we deliberately do NOT
+  // refit on subsequent host resizes — that would hijack the user's pan/zoom.
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  const lastFitPaperRef = useRef<PaperSizeKey | null>(null);
+  useEffect(() => {
+    if (hostDims.width === 0 || hostDims.height === 0) return;
+    if (lastFitPaperRef.current === paperSize) return;
+    lastFitPaperRef.current = paperSize;
+    setView(fitViewToBounds(
+      { x: 0, y: 0, width: paper.width, height: paper.height },
+      hostDims,
+      { x: 0, y: 0, scale: { x: 1, y: 1 } },
+      { padding: 24 },
+    ));
+  }, [paperSize, hostDims.width, hostDims.height, paper.width, paper.height]);
+
+  // Document-page layer — a single world-space rect at {0,0,paper.width,paper.height}
+  // filled with the doc's backgroundColor. Replaces the kit-level backgroundFill
+  // (which painted the entire canvas), so the workspace stripes show everywhere
+  // outside the page.
+  const paperLayer = useMemo<RenderLayer<unknown>>(() => ({
+    id: 'paper',
+    label: 'Paper',
+    draw: (_data, v) => [{
+      kind: 'group',
+      transform: viewToMat3(v),
+      children: [{
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: paper.width, height: paper.height },
+        fill: { fill: 'solid', color: backgroundColor },
+      }],
+    }],
+  }), [paper.width, paper.height, backgroundColor]);
+
   return (
     <div className="swill-app">
       <Toolbar
@@ -1132,7 +1190,6 @@ function EditorWithSharedScene({
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
       <div className="swill-body">
         <div className="swill-sidebar left">
-          <ActiveSwatches />
           {tools && (
             <ToolPalette
               tools={tools}
@@ -1140,15 +1197,18 @@ function EditorWithSharedScene({
               lookupShortcut={(id) => lookupShortcutByToolId(id, actionsReg?.list() ?? [])}
             />
           )}
+          <ActiveSwatches />
         </div>
-        <div className="swill-canvas-host">
+        <div className="swill-canvas-host" ref={hostRef}>
+          {hostDims.width > 0 && hostDims.height > 0 && (
           <SceneCanvas<SwillData, SwillLayer, SwillPose>
-            width={paper.width}
-            height={paper.height}
+            width={hostDims.width}
+            height={hostDims.height}
+            view={view}
+            onViewChange={setView}
             scene={scene}
             selection={selection}
             selectionMode="multi"
-            backgroundFill={{ fill: 'solid', color: backgroundColor }}
             toolBundle="exhaustive"
             viewport={{ pinchZoom: true }}
             cursorCoordsHud
@@ -1161,20 +1221,24 @@ function EditorWithSharedScene({
                 y: Math.round(p.y / 20) * 20,
               }),
             } : undefined}
-            layers={gridVisible ? {
-              grid: {
-                spacing: 20,
-                bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
-                accentEvery: 5,
-                style: {
-                  line:   { paint: { fill: 'solid', color: 'rgba(0, 0, 0, 0.08)' }, width: 1 },
-                  accent: { paint: { fill: 'solid', color: 'rgba(0, 0, 0, 0.18)' }, width: 1 },
+            layers={{
+              paper: { layer: paperLayer, before: 'grid' },
+              ...(gridVisible ? {
+                grid: {
+                  spacing: 20,
+                  bounds: () => ({ x: 0, y: 0, width: paper.width, height: paper.height }),
+                  accentEvery: 5,
+                  style: {
+                    line:   { paint: { fill: 'solid', color: 'rgba(0, 0, 0, 0.08)' }, width: 1 },
+                    accent: { paint: { fill: 'solid', color: 'rgba(0, 0, 0, 0.18)' }, width: 1 },
+                  },
                 },
-              },
-            } : {}}
+              } : {}),
+            }}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
           </SceneCanvas>
+          )}
         </div>
         <div className="swill-sidebar right">
           <RightSidebar

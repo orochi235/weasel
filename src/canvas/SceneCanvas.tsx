@@ -75,6 +75,7 @@ import {
   useResizePolicy,
 } from './deps';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
+import { useViewportActions } from './SceneCanvas/useViewportActions';
 import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
@@ -450,13 +451,25 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  ignored — wire `ambient` through your own `useTools` call instead. */
     ambient?: AnyTool[];
 
-    /** Viewport feature wiring. Each sub-key opts a feature in; pass `true`
-     *  for defaults or an object to tune. When omitted, no viewport tools
-     *  (hand, keyboard zoom, pinch) are registered by SceneCanvas. */
+    /** Viewport feature wiring.
+     *
+     *  - `inertia`, `pinchZoom`, `animatedZoom` are opt-in: pass `true`
+     *    for defaults or an object to tune. Omitted means off.
+     *  - `pan` (wheel pan) and `zoom` (Cmd+wheel + Cmd+=/-/0) are opt-OUT:
+     *    on by default; pass `false` to disable. They are wired by registering
+     *    the kit's `viewport.pan` / `viewport.zoom` action descriptors with
+     *    the actions registry — disabling via the `actions` prop
+     *    (`actions: { 'viewport.pan': null }`) also works and runs after this.
+     *
+     *  When omitted entirely, no hand/pinch tools are registered but the
+     *  default wheel pan + Cmd+wheel/key zoom remain wired (canvas-first
+     *  default). Pass `{ pan: false, zoom: false }` to opt out entirely. */
     viewport?: {
       inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
       pinchZoom?: boolean | { min?: number; max?: number };
       animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
+      pan?: boolean;
+      zoom?: boolean;
     };
 
     /**
@@ -637,19 +650,25 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return unsubscribe;
   }, [animator]);
 
-  // Stable ref tracking the latest view for usePinchZoomTool.
-  // Updated synchronously on incoming controlled-prop renders AND via
-  // pinchSetView so the pinch gesture always sees the latest view.
-  const currentViewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
-  if (viewProp !== undefined) currentViewRef.current = viewProp;
+  // SceneCanvas owns the view state so writes from immediate-timing actions
+  // (viewport.pan / viewport.zoom via the dep registry's `view.set`) drive a
+  // re-render of the underlying Canvas. We always render Canvas in controlled
+  // mode (`view={effectiveView}`); Canvas's own internal useState is unused
+  // along this path. When `viewProp` is supplied by the consumer we defer to
+  // it (true external control).
+  const [internalView, setInternalView] = useState<View>(
+    viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
+  );
+  const effectiveView: View = viewProp ?? internalView;
 
-  // Single setView callback used both by the pinch tool and as Canvas's
-  // `onViewChange` — keeps `currentViewRef` in sync (for the uncontrolled-view
-  // path where Canvas owns the state) and forwards to the consumer.
+  // Stable ref tracking the latest view for HUDs / picking / pinch.
+  const currentViewRef = useRef<View>(effectiveView);
+  currentViewRef.current = effectiveView;
+
   const handleViewChange = useCallback((v: View) => {
-    currentViewRef.current = v;
+    if (viewProp === undefined) setInternalView(v);
     onViewChangeProp?.(v);
-  }, [onViewChangeProp]);
+  }, [viewProp, onViewChangeProp]);
 
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
@@ -995,8 +1014,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         }
         return null;
       }}
-      {...(viewProp !== undefined ? { view: viewProp } : {})}
-      {...(defaultView !== undefined ? { defaultView } : {})}
+      view={effectiveView}
       onViewChange={handleViewChange}
       shaders={shaders}
       {...restProps}
@@ -1031,6 +1049,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
             dispatcher={dispatcher}
             pickEvery={internalPickEvery}
+            viewportPanEnabled={viewport?.pan !== false}
+            viewportZoomEnabled={viewport?.zoom !== false}
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
@@ -1254,6 +1274,8 @@ function StandardActionsRegistrar({
   resizeOptions,
   dispatcher,
   pickEvery,
+  viewportPanEnabled,
+  viewportZoomEnabled,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -1273,6 +1295,10 @@ function StandardActionsRegistrar({
   /** World-space picker forwarded so the `nodeAtPoint` dep source can
    *  reuse the same hit-test plumbing the tool dispatcher uses. */
   pickEvery: (worldX: number, worldY: number) => string[];
+  /** Resolved `viewport.pan` flag — default true, false to disable. */
+  viewportPanEnabled: boolean;
+  /** Resolved `viewport.zoom` flag — default true, false to disable. */
+  viewportZoomEnabled: boolean;
 }) {
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
@@ -1285,6 +1311,12 @@ function StandardActionsRegistrar({
   // version / subscribe live on different methods).
   const sceneAsHistory = scene as unknown as Parameters<typeof useStandardActions>[0]['history'];
   useStandardActions({ selection, scene, view, history: sceneAsHistory });
+
+  // viewport.pan / viewport.zoom are SceneCanvas-coupled (need the `view` dep
+  // published just above), so they're registered here rather than in
+  // KIT_STANDARD_DESCRIPTORS. Both default ON; consumer opts out via
+  // `viewport={{ pan: false }}` / `viewport={{ zoom: false }}`.
+  useViewportActions({ pan: viewportPanEnabled, zoom: viewportZoomEnabled });
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.

@@ -3,6 +3,9 @@
  *
  * ## Bindings
  * - Plain wheel (no mod) → pan by deltaX/deltaY
+ * - Shift+wheel → horizontal pan (mouse-wheel users get a horizontal axis
+ *   without a horizontal scroll device). Implemented by routing deltaY into
+ *   the x axis when the spec carries `params.swapAxis: true`.
  *
  * ## Design notes
  * The dispatcher merges wheel event data (deltaX, deltaY, clientX, clientY)
@@ -35,12 +38,15 @@ export const viewportPanAction: Action & { requires: string[] } = {
   label: 'Pan',
   group: 'viewport',
   /**
-   * Plain wheel (no modifier) → pan.
-   * Cmd+wheel is claimed by `viewportZoomAction`; this binding fires only
-   * when ctrlKey is NOT held (handled by the matcher's strict modifier check:
-   * omitting `mods` means no modifiers may be held).
+   * Plain wheel → pan; Shift+wheel → horizontal pan (axis swap).
+   * Cmd+wheel is claimed by `viewportZoomAction`. The matcher's strict
+   * modifier check keeps the bindings exclusive: omitting `mods` forbids
+   * any modifier, and `mods: { shift: true }` forbids the others.
    */
-  defaultBinding: { kind: 'wheel' },
+  defaultBinding: [
+    { spec: { kind: 'wheel' }, opts: {} },
+    { spec: { kind: 'wheel', mods: { shift: true } }, opts: { params: { swapAxis: true } } },
+  ],
   requires: ['view'],
   invoker: {
     timing: 'immediate',
@@ -51,8 +57,12 @@ export const viewportPanAction: Action & { requires: string[] } = {
       const deltaY = (params?.deltaY as number | undefined) ?? 0;
       const current = view.get();
       // Divide by scale so one screen-pixel scroll = one screen-pixel pan.
-      const dx = deltaX / current.scale.x;
-      const dy = deltaY / current.scale.y;
+      // For shift+wheel, route deltaY into the x axis so mouse-wheel users
+      // (who only emit deltaY) get a horizontal pan. Fall back to deltaX
+      // when present so the binding still behaves on trackpad horizontal swipes.
+      const swap = params?.swapAxis === true;
+      const dx = swap ? (deltaX !== 0 ? deltaX : deltaY) / current.scale.x : deltaX / current.scale.x;
+      const dy = swap ? 0 : deltaY / current.scale.y;
       view.set({ ...current, x: current.x + dx, y: current.y + dy });
     },
   },

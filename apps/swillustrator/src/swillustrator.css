@@ -252,12 +252,21 @@ html, body, #root {
 }
 
 .swill-sidebar.left {
-  /* Wider than the bare 88px default so the tool palette and the
-     ActiveSwatches widget (56px square) both breathe. */
-  width: 132px;
+  /* Sized to the ActiveSwatches widget (56px square) — the limiting
+     element. The vertical ToolPalette's 44px buttons fit comfortably
+     inside. */
+  width: 64px;
   align-items: center;
   overflow-y: auto;
   padding: 0;
+}
+
+/* ActiveSwatches sits at the bottom of the left sidebar, below the
+   tool palette. `margin-top: auto` pushes it past any flex gap so the
+   tool buttons stay anchored to the top of the column. */
+.swill-sidebar.left .swill-active-swatches-group {
+  margin-top: auto;
+  padding-bottom: 8px;
 }
 
 .swill-tool-button {
@@ -321,21 +330,20 @@ html, body, #root {
   /* Positioning context for the useTextEdit contenteditable overlay,
      which positions absolutely within its container. */
   position: relative;
+  /* The workspace texture — diagonal stripes outside the document page.
+     Composited under the canvas; the canvas paints with alpha so these
+     stripes show through everywhere the document doesn't cover. */
   background:
     repeating-linear-gradient(45deg, #5a5a5a 0 8px, #626262 8px 16px);
-  /* Center the paper-sized canvas within the host, with overflow scrolling
-     when the paper is larger than the available viewport. */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .swill-canvas-host canvas {
   display: block;
-  /* Honor the canvas's declared width/height (paper.width × paper.height).
-     Don't stretch — the canvas IS the page, centered in the gray host. */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  /* The canvas fills the entire workspace. The document page is drawn as
+     a kit layer in world space and pans/zooms with the view. */
+  width: 100%;
+  height: 100%;
 }
 
 /* Background tint applied when the pen tool is in edit mode (dblclick on a
