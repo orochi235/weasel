@@ -42,7 +42,7 @@ import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
 import { drawLayers, type RenderLayer } from 'core/layers/render';
-import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { WeaselRenderer, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -547,15 +547,12 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
               },
             }
           : a;
-        return [{
-          kind: 'group',
-          transform: viewToMat3(view),
-          children: buildSceneTree(
-            hierarchicalAdapter as Parameters<typeof buildSceneTree>[0],
-            filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
-            view,
-          ),
-        }];
+        // World-space commands; drawLayers wraps in viewToMat3 automatically.
+        return buildSceneTree(
+          hierarchicalAdapter as Parameters<typeof buildSceneTree>[0],
+          filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
+          view,
+        );
       }
       // Flat fallback — keep existing body verbatim.
       const objects = cfg.objects ?? adapter?.getNodes() ?? [];
@@ -580,11 +577,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           debugSink.recordOrigin(obj.id, { x: ox, y: oy });
         }
       }
-      return [{
-        kind: 'group',
-        transform: viewToMat3(view),
-        children,
-      }];
+      // World-space commands; drawLayers wraps in viewToMat3 automatically.
+      return children;
     },
   };
 }

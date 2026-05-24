@@ -52,7 +52,6 @@ import {
   type RenderLayer,
   type NodeKind,
   fitViewToBounds,
-  viewToMat3,
   ActiveToolContextProvider,
   useActiveToolContext,
 } from '@orochi235/weasel';
@@ -1318,14 +1317,11 @@ function EditorWithSharedScene({
   const paperLayer = useMemo<RenderLayer<unknown>>(() => ({
     id: 'paper',
     label: 'Paper',
-    draw: (_data, v) => [{
-      kind: 'group',
-      transform: viewToMat3(v),
-      children: [{
-        kind: 'path',
-        path: { kind: 'rect', x: 0, y: 0, width: paper.width, height: paper.height },
-        fill: { fill: 'solid', color: backgroundColor },
-      }],
+    // World-space commands; drawLayers wraps in viewToMat3 automatically.
+    draw: () => [{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: paper.width, height: paper.height },
+      fill: { fill: 'solid', color: backgroundColor },
     }],
   }), [paper.width, paper.height, backgroundColor]);
 

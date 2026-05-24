@@ -4,7 +4,7 @@
  * a layer sequence.
  */
 
-import { type DrawCommand, viewToMat3 } from '../../renderer';
+import { type DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { type FillStyle } from 'core/paint-types';
 import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
@@ -31,7 +31,7 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
   return {
     id: 'cell-highlight',
     label: 'Cell highlight',
-    draw: (_data, view) => {
+    draw: () => {
       const cell = opts.getCell();
       if (!cell) return [];
       const spacing = resolveUnit(opts.spacing, opts.unitSystem);
@@ -45,7 +45,8 @@ export function createCellHighlightLayer(opts: CellHighlightLayerOpts): RenderLa
           fill,
         },
       ];
-      return [{ kind: 'group', transform: viewToMat3(view), children }];
+      // World-space commands; drawLayers wraps in viewToMat3 automatically.
+      return children;
     },
   };
 }

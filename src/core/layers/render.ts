@@ -1,4 +1,4 @@
-import type { DrawCommand } from '../../renderer';
+import { viewToMat3, type DrawCommand } from '../../renderer';
 import type { View } from 'core/viewport/view';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -26,10 +26,15 @@ export interface RenderLayer<TData> {
   /**
    * Emit a DrawCommand tree for the GL backend to dispatch.
    *
-   * For world-space layers (the default), wrap world-space content in a
-   * `kind: 'group'` whose `transform` is `viewToMat3(view)` so it maps to
-   * screen coords. For screen-space layers (`space: 'screen'`), emit
-   * commands in screen-space CSS pixels directly.
+   * For world-space layers (the default), emit commands in WORLD COORDS —
+   * `drawLayers` automatically wraps them in `{ kind: 'group', transform:
+   * viewToMat3(view), ... }` before handing them to the renderer. Do NOT
+   * apply the view transform yourself.
+   *
+   * For screen-space layers (`space: 'screen'`), emit commands in CSS-pixel
+   * coords directly; `drawLayers` passes them through unchanged. If part
+   * of a screen-space layer's output needs to track the view, wrap that
+   * subset manually with `viewToMat3(view)`.
    */
   draw: (data: TData, view: View, dims: Dims) => DrawCommand[];
   /**
@@ -43,12 +48,15 @@ export interface RenderLayer<TData> {
    */
   alwaysOn?: boolean;
   /**
-   * Coordinate space the layer draws in. World-space layers (default) emit
-   * world-space DrawCommands wrapped in a `kind: 'group'` with
-   * `viewToMat3(view)`. Screen-space layers emit commands in CSS-pixel
-   * coords directly and must call `worldToScreen` for any world-anchored
-   * chrome.
-   * Default: `'world'`.
+   * Coordinate space the layer draws in.
+   *
+   * - `'world'` (default): the layer's `draw` returns world-space commands;
+   *   `drawLayers` wraps them in a `kind: 'group'` with `viewToMat3(view)`
+   *   automatically.
+   * - `'screen'`: the layer's `draw` returns screen-space (CSS-pixel)
+   *   commands; `drawLayers` passes them through unchanged. World-anchored
+   *   chrome inside a screen-space layer must call `worldToScreen` or wrap
+   *   the relevant subset with `viewToMat3(view)` manually.
    */
   space?: 'world' | 'screen';
   /**
@@ -98,9 +106,10 @@ export interface RenderLayer<TData> {
  *   2. Explicit entry in `visibility` map — overrides default.
  *   3. `layer.defaultVisible` — falls back to `true` when absent.
  *
- * No transform composition happens here — each layer's `draw` already wraps
- * world-space content in `kind: 'group'` with `viewToMat3(view)`;
- * screen-space layers emit screen-pixel coords directly.
+ * Transform composition: world-space layers (the default; `space` unset or
+ * `'world'`) have their commands wrapped in a `kind: 'group'` with
+ * `viewToMat3(view)` before they reach the renderer. Screen-space layers
+ * (`space: 'screen'`) pass through unchanged.
  */
 export function drawLayers<TData>(
   layers: RenderLayer<TData>[],
@@ -124,7 +133,14 @@ export function drawLayers<TData>(
     if (!visible) continue;
 
     const cmds = layer.draw(data, v, dims);
-    for (const c of cmds) out.push(c);
+    if (cmds.length === 0) continue;
+
+    const space = layer.space ?? 'world';
+    if (space === 'world') {
+      out.push({ kind: 'group', transform: viewToMat3(v), children: cmds });
+    } else {
+      for (const c of cmds) out.push(c);
+    }
   }
 
   return out;

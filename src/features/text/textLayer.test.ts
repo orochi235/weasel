@@ -22,11 +22,10 @@ describe('createTextLayer', () => {
       getPose: (n) => n.pose,
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+    // drawLayers wraps tree in a viewToMat3 group at orchestration time;
+    // the layer itself emits raw commands.
     expect(tree).toHaveLength(1);
-    const group = tree[0] as unknown as { kind: 'group'; children: Array<Record<string, unknown>> };
-    expect(group.kind).toBe('group');
-    expect(group.children).toHaveLength(1);
-    const cmd = group.children[0] as {
+    const cmd = tree[0] as {
       kind: string;
       x: number;
       y: number;
@@ -53,7 +52,7 @@ describe('createTextLayer', () => {
       getPose: (n) => n.pose,
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
-    const cmd = (tree[0] as { children: Array<{ runs: Array<{ text: string; fontWeight: number }> }> }).children[0];
+    const cmd = tree[0] as { runs: Array<{ text: string; fontWeight: number }> };
     expect(cmd.runs.map((r) => r.text)).toEqual(['a ', 'b']);
     expect(cmd.runs.map((r) => r.fontWeight)).toEqual([400, 700]);
   });
@@ -68,9 +67,9 @@ describe('createTextLayer', () => {
       isHidden: (n) => n.id === 'a',
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
-    const group = tree[0] as { children: Array<{ runs: Array<{ text: string }> }> };
-    expect(group.children).toHaveLength(1);
-    expect(group.children[0].runs[0].text).toBe('B');
+    expect(tree).toHaveLength(1);
+    const cmd = tree[0] as { runs: Array<{ text: string }> };
+    expect(cmd.runs[0].text).toBe('B');
   });
 
   it('throws when runs are present but runsToPlainText(runs) !== text', () => {

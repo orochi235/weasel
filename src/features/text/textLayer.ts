@@ -10,7 +10,7 @@
  * `TextDrawCommand`'s contract).
  */
 
-import { type DrawCommand, viewToMat3 } from '../../renderer';
+import { type DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { resolveRuns } from './runs/resolveRuns';
 import { runsToPlainText, toRuns, type StyledRun } from './runs';
@@ -49,7 +49,7 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
   return {
     id,
     label,
-    draw: (_data, view) => {
+    draw: () => {
       const children: DrawCommand[] = [];
       for (const node of getTexts()) {
         if (isHidden?.(node)) continue;
@@ -83,7 +83,8 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
           children.push(textCmd);
         }
       }
-      return [{ kind: 'group', transform: viewToMat3(view), children }];
+      // World-space commands; drawLayers wraps in viewToMat3 automatically.
+      return children;
     },
   };
 }

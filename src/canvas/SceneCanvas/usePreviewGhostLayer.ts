@@ -9,7 +9,7 @@
  * concern instead of every consumer wiring it.
  */
 import { useEffect, useMemo, useReducer, useRef } from 'react';
-import { viewToMat3, type DrawCommand, type GroupDrawCommand } from '../../renderer';
+import { type DrawCommand, type GroupDrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { LayersMap } from '../Canvas';
 import type { Node, Scene } from 'core/scene/types';
@@ -176,7 +176,9 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         for (const cmd of buildSubtree(id)) children.push(cmd);
       }
       if (children.length === 0) return [];
-      return [{ kind: 'group', transform: viewToMat3(view), alpha: 0.85, children }];
+      // World-space commands; drawLayers wraps in viewToMat3 automatically.
+      // Keep the alpha group so the 0.85 still applies to the ghosts.
+      return [{ kind: 'group', alpha: 0.85, children }];
     },
   }), []);
 }

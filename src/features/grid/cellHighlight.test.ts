@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { GroupDrawCommand } from '../../renderer';
 import { createCellHighlightLayer } from './cellHighlight';
 import { IMPERIAL_INCHES } from 'core/units';
 
@@ -17,9 +16,7 @@ describe('createCellHighlightLayer', () => {
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 200, height: 200 });
     expect(tree).toHaveLength(1);
-    const group = tree[0] as GroupDrawCommand;
-    expect(group.children).toHaveLength(1);
-    expect(group.children[0]).toMatchObject({
+    expect(tree[0]).toMatchObject({
       kind: 'path',
       path: { kind: 'rect', x: 40, y: 60, width: 20, height: 20 },
     });
@@ -38,8 +35,7 @@ describe('createCellHighlightLayer', () => {
       getCell: () => ({ col: 1, row: 1 }),
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
-    const group = tree[0] as GroupDrawCommand;
-    expect(group.children[0]).toMatchObject({
+    expect(tree[0]).toMatchObject({
       kind: 'path',
       path: { kind: 'rect', x: 15, y: 17, width: 10, height: 10 },
     });
@@ -52,8 +48,7 @@ describe('createCellHighlightLayer', () => {
       fill: { fill: 'solid', color: '#123456' },
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
-    const group = tree[0] as GroupDrawCommand;
-    expect(group.children[0]).toMatchObject({
+    expect(tree[0]).toMatchObject({
       kind: 'path',
       fill: { fill: 'solid', color: '#123456' },
     });
@@ -66,9 +61,8 @@ describe('createCellHighlightLayer', () => {
       getCell: () => ({ col: 2, row: 1 }),
     });
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
-    const group = tree[0] as GroupDrawCommand;
     // 1ft = 12in -> rect at (24, 12, 12, 12).
-    expect(group.children[0]).toMatchObject({
+    expect(tree[0]).toMatchObject({
       kind: 'path',
       path: { kind: 'rect', x: 24, y: 12, width: 12, height: 12 },
     });

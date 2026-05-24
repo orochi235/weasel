@@ -8,7 +8,7 @@
  * this one.
  */
 
-import { type DrawCommand, viewToMat3 } from '../../renderer';
+import { type DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { type Stroke } from 'core/paint-types';
 import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
@@ -136,7 +136,8 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
         }
       }
 
-      return [{ kind: 'group', transform: viewToMat3(view), children }];
+      // World-space commands; drawLayers wraps in viewToMat3 automatically.
+      return children;
     },
   };
 }

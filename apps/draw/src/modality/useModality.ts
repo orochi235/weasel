@@ -11,7 +11,6 @@ import {
   asNodeId,
   boundsOfPath,
   enumerateAnchors,
-  viewToMat3,
   type RenderLayer,
   type DrawCommand,
   type Scene,
@@ -134,21 +133,15 @@ export function useModality(
     decorations.register('path-edit', painter);
   }, [decorations, machine, scene]);
 
-  // Build a RenderLayer<unknown> whose draw() calls decorations.paint() and
-  // wraps the world-space commands in a group with the view transform so
-  // they land at the right screen position. Per `RenderLayer.space` docs,
-  // world-space layers MUST self-wrap with `viewToMat3(view)` — the
-  // renderer doesn't apply the view transform automatically. Without this
-  // wrapper, world-coord anchor dots would render at raw canvas pixel
-  // coordinates (workspace origin) instead of following the view's pan/zoom.
+  // Build a RenderLayer<unknown> whose draw() calls decorations.paint().
+  // World-space commands; drawLayers wraps in viewToMat3 automatically
+  // (default `space: 'world'`).
   const decorationLayer = useMemo<RenderLayer<unknown>>(
     () => ({
       id: 'mode-decorations',
       label: 'Mode decorations',
-      draw: (_data, view) => {
-        const children = decorations.paint() as DrawCommand[];
-        if (children.length === 0) return [];
-        return [{ kind: 'group', transform: viewToMat3(view), children }];
+      draw: () => {
+        return decorations.paint() as DrawCommand[];
       },
     }),
     [decorations],

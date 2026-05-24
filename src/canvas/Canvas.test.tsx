@@ -1025,13 +1025,11 @@ describe('buildSceneLayer hierarchical path', () => {
       () => null,
       () => null,
     );
+    // buildSceneLayer emits raw world-space commands; drawLayers wraps in
+    // viewToMat3 at orchestration. The layer's output is the inner subtree.
     const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
     expect(out).toHaveLength(1);
-    const viewGroup = out[0] as { kind: string; transform: unknown; children: DrawCommand[] };
-    expect(viewGroup.kind).toBe('group');
-    expect(viewGroup.transform).toBeDefined();  // viewToMat3(view) is set
-    expect(viewGroup.children).toHaveLength(1);
-    const bgGroup = viewGroup.children[0] as { kind: string; children: DrawCommand[] };
+    const bgGroup = out[0] as { kind: string; children: DrawCommand[] };
     expect(bgGroup.kind).toBe('group');
     expect(bgGroup.children).toHaveLength(1);
     const bedGroup = bgGroup.children[0] as { kind: string; children: DrawCommand[] };
@@ -1086,13 +1084,10 @@ describe('buildSceneLayer hierarchical path', () => {
       () => null,
       () => null,
     );
+    // buildSceneLayer emits raw flat commands when the adapter has no
+    // getLayers; drawLayers wraps in viewToMat3 at orchestration.
     const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
     expect(out).toHaveLength(1);
-    const viewGroup = out[0] as { kind: string; transform: unknown; children: DrawCommand[] };
-    expect(viewGroup.kind).toBe('group');
-    expect(viewGroup.transform).toBeDefined();
-    // Inside the view-transform wrapper: the flat commands
-    expect(viewGroup.children).toHaveLength(1);
-    expect(viewGroup.children[0].kind).toBe('path');
+    expect(out[0].kind).toBe('path');
   });
 });

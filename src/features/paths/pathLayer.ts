@@ -6,7 +6,7 @@
  * separate from the visual style record (the typical scene-graph layout).
  */
 
-import { type DrawCommand, viewToMat3 } from '../../renderer';
+import { type DrawCommand } from '../../renderer';
 import { type FillStyle, type Stroke } from 'core/paint-types';
 import type { RenderLayer } from 'core/layers/render';
 import type { Path } from './types';
@@ -96,7 +96,7 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
   return {
     id,
     label,
-    draw: (_data, view) => {
+    draw: () => {
       const children: DrawCommand[] = [];
       const nodes = getNodes();
       for (let idx = 0; idx < nodes.length; idx++) {
@@ -200,7 +200,8 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
           ...(useVColors != null ? { vertexColors: useVColors as number[] } : {}),
         });
       }
-      return [{ kind: 'group', transform: viewToMat3(view), children }];
+      // World-space commands; drawLayers wraps in viewToMat3 automatically.
+      return children;
     },
   };
 }
