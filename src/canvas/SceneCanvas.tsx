@@ -26,8 +26,6 @@ import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
-import { CursorCoordsHud } from './CursorCoordsHud';
-import { PickHud } from './PickHud';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap } from './Canvas';
@@ -1011,6 +1009,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       }}
       viewport={viewport}
       backgroundFill={backgroundFill}
+      cursorCoordsHud={cursorCoordsHud}
+      pickHud={pickHud}
+      pickBest={internalPickBest}
       view={effectiveView}
       onViewChange={handleViewChange}
       shaders={shaders}
@@ -1023,17 +1024,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       <PointerProviderIfRoot>
         <ActionsProviderIfRoot>
           {canvas}
-          {cursorCoordsHud && (
-            <CursorCoordsHud canvasRef={internalCanvasRef} viewRef={currentViewRef} />
-          )}
-          {pickHud && (
-            <PickHud
-              canvasRef={internalCanvasRef}
-              viewRef={currentViewRef}
-              pickEvery={internalPickEvery}
-              pickBest={internalPickBest}
-            />
-          )}
           <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
           <StandardActionsRegistrar
             selection={selection}

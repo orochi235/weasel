@@ -74,6 +74,8 @@ import { buildSceneTree } from './buildSceneTree';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { usePinchZoomTool } from 'tools/builtin/usePinchZoomTool';
 import type { ViewportConfig } from './SceneCanvas/useViewportTools';
+import { CursorCoordsHud } from './CursorCoordsHud';
+import { PickHud } from './PickHud';
 
 
 
@@ -300,6 +302,30 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * `backgroundFill` prop verbatim so consumer apps see no breaking change.
    */
   backgroundFill?: FillStyle;
+
+  /**
+   * Dev HUD: when true, mounts a fixed-position widget showing live cursor
+   * coords in both viewport (client) and canvas (world) frames. Useful for
+   * diagnosing pointer-coord drift / pan-zoom misalignment without
+   * instrumenting events.
+   */
+  cursorCoordsHud?: boolean;
+
+  /**
+   * Dev HUD: when true, mounts a fixed-position widget just below the
+   * cursor-coords HUD listing the ids returned by `pickEvery(world)` under
+   * the cursor. Useful for diagnosing hit-test order and container/leaf
+   * overlap during select-tool work.
+   */
+  pickHud?: boolean;
+
+  /**
+   * Optional single-best hit resolver for the `pickHud` — the id this point
+   * would select on a bare click. When omitted the HUD skips the bold-best
+   * highlight. `<SceneCanvas>` forwards its `internalPickBest` here so the
+   * HUD shows the same best-candidate SceneCanvas would pick.
+   */
+  pickBest?: (worldX: number, worldY: number) => string | null;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -535,6 +561,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     previewBoundsExtra,
     viewport,
     backgroundFill,
+    cursorCoordsHud,
+    pickHud,
+    pickBest,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -740,6 +769,25 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // the setter on every prop change.
   const pickEveryRef = useRef(pickEvery);
   pickEveryRef.current = pickEvery;
+  const pickBestRef = useRef(pickBest);
+  pickBestRef.current = pickBest;
+  // Stable wrappers for HUD props — read the ref at call time so the HUDs
+  // don't reinstall their useEffect on every render when the prop identity
+  // changes (e.g. when SceneCanvas re-renders with a new lambda reference).
+  const stablePickEveryForHud = useCallback(
+    (wx: number, wy: number): readonly string[] => {
+      const pe = pickEveryRef.current;
+      if (!pe) return [];
+      const raw = pe(wx, wy);
+      if (!raw) return [];
+      return Array.isArray(raw) ? raw : [raw];
+    },
+    [],
+  );
+  const stablePickBestForHud = useCallback(
+    (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
+    [],
+  );
   useEffect(() => {
     if (!tools) return;
     const d = tools.dispatcher as ToolsDispatcher & {
@@ -1329,28 +1377,41 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     : style;
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width}
-      height={height}
-      tabIndex={tabIndex}
-      className={className}
-      style={effectiveStyle}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
-      onPointerLeave={handlePointerLeave}
-      // Suppress the browser's default right-click menu over the canvas.
-      // Canvases are interaction surfaces; the browser's context menu
-      // (Save Image / Inspect Element / etc.) is almost never what the
-      // user wants, and right-click is a useful gesture surface that
-      // tools may consume. Consumers using right-click for their own
-      // gestures should add their own onContextMenu handler — calling
-      // `e.preventDefault()` is the no-op default; calling something
-      // else still works (this handler runs before the default menu).
-      onContextMenu={(e) => e.preventDefault()}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        tabIndex={tabIndex}
+        className={className}
+        style={effectiveStyle}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={handlePointerLeave}
+        // Suppress the browser's default right-click menu over the canvas.
+        // Canvases are interaction surfaces; the browser's context menu
+        // (Save Image / Inspect Element / etc.) is almost never what the
+        // user wants, and right-click is a useful gesture surface that
+        // tools may consume. Consumers using right-click for their own
+        // gestures should add their own onContextMenu handler — calling
+        // `e.preventDefault()` is the no-op default; calling something
+        // else still works (this handler runs before the default menu).
+        onContextMenu={(e) => e.preventDefault()}
+      />
+      {cursorCoordsHud && (
+        <CursorCoordsHud canvasRef={canvasRef} viewRef={viewRef} />
+      )}
+      {pickHud && (
+        <PickHud
+          canvasRef={canvasRef}
+          viewRef={viewRef}
+          pickEvery={stablePickEveryForHud}
+          pickBest={stablePickBestForHud}
+        />
+      )}
+    </>
   );
 }
 

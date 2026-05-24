@@ -17,7 +17,7 @@
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { Canvas } from './Canvas';
 import type { DebugSink, DebugSnapshot } from '../debug/types';
 
@@ -113,5 +113,70 @@ describe('<Canvas> backgroundFill prop', () => {
       expect(snap.layers.find((l) => l.id === 'scene-background-fill')).toBeUndefined();
     }
     expect(document.querySelector('canvas')).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 2.2: <Canvas> cursorCoordsHud / pickHud props
+// ---------------------------------------------------------------------------
+
+describe('<Canvas> HUDs', () => {
+  // CursorCoordsHud returns null until `getBoundingClientRect` runs in a
+  // useEffect and populates `anchor`. Under jsdom getBoundingClientRect returns
+  // all-zero rects, so anchor.top=0 / anchor.right=0, which is NOT null — the
+  // HUD *will* render after effects fire. We use `act` to flush effects.
+
+  it('renders CursorCoordsHud DOM element when cursorCoordsHud is true', async () => {
+    // CursorCoordsHud returns null until its useEffect fires and populates
+    // `anchor`. Under jsdom getBoundingClientRect() returns all-zero rects
+    // (top=0, right=0) which is NOT null, so the HUD renders after effects.
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = render(
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          cursorCoordsHud
+        />,
+      ));
+    });
+    // CursorCoordsHud renders a div containing fps text. The canvas itself
+    // is a <canvas>, not a <div> — so any div inside container came from the HUD.
+    expect(container.querySelectorAll('div').length).toBeGreaterThan(0);
+  });
+
+  it('renders PickHud DOM element when pickHud is true and pickEvery is provided', async () => {
+    const pickEvery = vi.fn((_wx: number, _wy: number): string[] => ['shape-1']);
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = render(
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          pickHud
+          pickEvery={pickEvery}
+        />,
+      ));
+    });
+    // PickHud renders a div with class s.hud containing a header div.
+    expect(container.querySelectorAll('div').length).toBeGreaterThan(0);
+  });
+
+  it('does NOT render extra DOM nodes when HUD flags are absent', async () => {
+    // Baseline: only the <canvas> element, no extra divs from HUDs.
+    let container!: HTMLElement;
+    await act(async () => {
+      ({ container } = render(
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+        />,
+      ));
+    });
+    // No HUD divs inside the Canvas subtree.
+    expect(container.querySelectorAll('div').length).toBe(0);
   });
 });
