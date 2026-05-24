@@ -303,6 +303,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return;
 
+      // Autorepeat for a key that's already engaged a key-held binding is
+      // suppressed entirely — no dispatch (no trace flood) and the
+      // browser default is blocked. Holding Space-for-hand otherwise
+      // streamed an 'unhandled' immediate-`key` trace entry per repeat.
+      // Autorepeat for a key that ISN'T held still dispatches normally,
+      // so things like Cmd+= step-zoom keep auto-repeating.
+      if (e.repeat && heldKeys.has(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
       // Dispatch both key and key-held forms unconditionally. The dispatcher
       // de-dupes naturally because each form uses a different gestureId and
       // different GestureSpec kind. `matchBest` returns 'unhandled' when no
