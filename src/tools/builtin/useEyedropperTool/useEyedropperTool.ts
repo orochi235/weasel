@@ -66,6 +66,7 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
 
     return defineTool<null>({
       id: 'eyedropper',
+      capabilities: ['samples-color'],
       hookName: 'useEyedropperTool',
       keybinding,
       hotkey,

@@ -88,6 +88,7 @@ export function useRectTool<TNode extends { id: string }>(
     () =>
       defineTool<null>({
         id: 'rect',
+        capabilities: ['creates-shapes'],
         hookName: 'useRectTool',
         cursor: 'crosshair',
         presentation: {

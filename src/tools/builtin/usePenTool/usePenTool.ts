@@ -600,6 +600,7 @@ export function usePenTool<TPose>(
 
     return defineTool<PenScratch>({
       id: 'pen',
+      capabilities: ['creates-paths'],
       hookName: 'usePenTool',
       cursor: (ctx) => (ctx.scratch?.closeHintActive ? 'pointer' : 'crosshair'),
       hitOverride: (ctx) => penEditHitOverride({

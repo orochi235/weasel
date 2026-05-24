@@ -4,6 +4,7 @@ import type { View } from '../../core/viewport/view';
 import type { Result } from './result';
 import type { ModifierKey } from './modifiers';
 import type { GestureBinding } from '../../interactions/actions/binding';
+import type { CapabilityTag } from '@orochi235/weasel-modes';
 
 /**
  * Configurable activation-key descriptor for tools that expose their
@@ -124,6 +125,8 @@ export interface PhaseDef<TScratch> {
 
 export interface ToolDef<TScratch = void> {
   id: string;
+  /** Capability tags for modality eligibility. Forwarded onto `Tool.capabilities`. */
+  capabilities?: CapabilityTag[];
   /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
    *  Set by built-in hooks for inspector / debugging. Consumer-authored
    *  tools may set this to surface their hook name; omitted is fine.

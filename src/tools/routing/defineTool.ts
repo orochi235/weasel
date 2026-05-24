@@ -268,6 +268,7 @@ export function defineTool<TScratch = void>(
 
   return {
     id: def.id,
+    capabilities: def.capabilities,
     def,
     presentation: def.presentation,
     keybinding: def.keybinding,

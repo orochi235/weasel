@@ -72,6 +72,7 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
     () =>
       defineTool<null>({
         id: 'star',
+        capabilities: ['creates-shapes'],
         hookName: 'useStarTool',
         cursor: 'crosshair',
         presentation: {

@@ -38,6 +38,7 @@ export function useTextTool<TNode extends { id: string }>(
     () =>
       defineTool<undefined>({
         id: 'text',
+        capabilities: ['creates-text'],
         hookName: 'useTextTool',
         cursor: 'text',
         presentation: PRESENTATION,

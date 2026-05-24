@@ -59,6 +59,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
     () =>
       Object.assign(defineViewportTool<HandScratch>({
         id: 'hand',
+        capabilities: ['navigation'],
         hookName: 'useHandTool',
         presentation: {
           label: 'Hand',
