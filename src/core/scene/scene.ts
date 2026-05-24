@@ -1,3 +1,4 @@
+import type { Journal } from '@orochi235/weasel-history';
 import {
   asNodeId,
   type AddNodeSpec,
@@ -558,6 +559,37 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     recordOp(op) {
       executeAndLog(op.kind, op.payload, op.kind);
+    },
+
+    applyBatch(ops, label, adapter) {
+      const journal: Journal | null = (options.getActiveJournal ?? (() => null))();
+      if (journal) {
+        // Route through the journal. The journal's inner history will track the
+        // ops; the scene's own undo stack must NOT also record them. We reuse
+        // the `replaying` flag (which already suppresses `pushEntry`) to block
+        // scene-side recording while op mutations happen through the adapter.
+        //
+        // We also increment batchDepth to coalesce the per-op notify() calls
+        // (same as scene.batch does), then fire exactly one notify() at the
+        // end — mirroring the single-notification semantics callers expect.
+        replaying = true;
+        batchDepth++;
+        batchDirty = false;
+        try {
+          journal.applyBatch(ops, label);
+        } finally {
+          batchDepth--;
+          replaying = false;
+        }
+        if (batchDirty) {
+          batchDirty = false;
+          for (const listener of listeners) listener();
+        }
+      } else {
+        scene.batch(label, () => {
+          for (const op of ops) op.apply(adapter);
+        });
+      }
     },
 
     undo() {

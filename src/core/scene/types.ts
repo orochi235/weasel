@@ -175,6 +175,17 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
    *  Required only when serializing/deserializing scenes that use function fields. */
   registry?: SceneRegistry<TPose>;
+  /** When supplied, `scene.applyOps(ops, label)` consults this on every call.
+   *  If it returns a non-null `Journal`, ops are routed to the journal's
+   *  `applyBatch` instead of recording a new parent-history entry. The journal
+   *  drives adapter mutation internally (via `op.apply(adapter)`), so the
+   *  scene state changes as normal; only the history tracking differs.
+   *
+   *  The accessor is called on every `applyOps` invocation so the caller can
+   *  swap the active journal in and out by updating the closure's reference
+   *  (e.g., an app's mode machine holds `let activeJournal: Journal | null`
+   *  and the accessor reads that variable). */
+  getActiveJournal?: () => import('@orochi235/weasel-history').Journal | null;
 }
 
 export interface Scene<TData, TLayer extends string, TPose = RectPose> {
@@ -201,6 +212,21 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   // Custom op seam
   registerOp<P>(kind: string, handler: RegisteredOp<P>): void;
   recordOp<P>(op: { kind: string; payload: P }): void;
+
+  /** Apply a batch of ops with journal-aware routing.
+   *
+   *  - **Without active journal** (or no `getActiveJournal` in options):
+   *    equivalent to `scene.batch(label, () => ops.forEach(op => op.apply(adapter)))`.
+   *    Records one undo entry on the scene's own history.
+   *  - **With active journal**: routes ops to `journal.applyBatch(ops, label)`.
+   *    The scene's history recording is suppressed for the duration so the
+   *    journal's inner history — not the scene's undo stack — tracks the batch.
+   *    Mutations still happen on `adapter` / scene state.
+   *
+   *  `adapter` must be the same adapter the ops expect (typically a
+   *  `SceneCanvasAdapter`). Pass `this` from `sceneToAdapter` or a compatible
+   *  adapter. */
+  applyBatch(ops: import('core/ops/types').Op[], label: string, adapter: unknown): void;
 
   // History
   undo(): boolean;

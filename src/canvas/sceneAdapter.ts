@@ -351,14 +351,14 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
         }
       : {}),
     // Unified applyOps: when a label is supplied the ops are wrapped in a
-    // scene.batch checkpoint (history-aware path used by Move/Resize/Rotate/
-    // Insert/Delete tools); without a label the ops are applied transiently
+    // batch checkpoint (history-aware path used by Move/Resize/Rotate/Insert/
+    // Delete tools). When a journal is active (via scene's getActiveJournal
+    // option), scene.applyBatch routes to the journal instead of recording a
+    // new parent-history entry. Without a label the ops are applied transiently
     // via applyOpsTo (AreaSelectAdapter contract — no checkpoint).
     applyOps(ops: Op[], label?: string) {
       if (label !== undefined) {
-        scene.batch(label, () => {
-          for (const op of ops) op.apply(this);
-        });
+        scene.applyBatch(ops, label, this);
       } else {
         applyOpsTo(this, ops);
       }
