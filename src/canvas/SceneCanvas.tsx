@@ -87,6 +87,7 @@ import {
   createSelectionOverlayLayer,
 } from 'features/selection/overlay';
 import { firstPreviewPose, firstPreviewBounds } from './toolPreview';
+import { makeGetNodeAtPoint } from './getNodeAtPoint';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 /**
@@ -775,6 +776,22 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(kindClassifier ? { kindOf: kindClassifier } : {}),
   });
 
+  // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
+  // synthesizes this itself — it accepts it as a prop (Phase 4.1 seam refactor).
+  // The node resolver reads adapter.kindOf (set from kindClassifier when kinds
+  // are registered), getPose, and getNode, matching the old Canvas synthesizer
+  // algorithm exactly (see src/canvas/getNodeAtPoint.ts).
+  const getNodeAtPoint = useMemo(() => {
+    if (!internalPickEvery) return undefined;
+    const nodeResolver = (id: string) => {
+      const kind = (adapter as typeof adapter & { kindOf?: (id: string) => string }).kindOf?.(id) ?? 'unknown';
+      const pose = adapter.getPose(id);
+      const data = (adapter as typeof adapter & { getNode?: (id: string) => unknown }).getNode?.(id) ?? { id };
+      return { kind, pose, data };
+    };
+    return makeGetNodeAtPoint(internalPickEvery, nodeResolver);
+  }, [adapter, internalPickEvery]);
+
   // Viewport tools: Canvas now owns the full `useViewportTools` call (including
   // pinch zoom via its own canvasRef). SceneCanvas only needs the hand tool for
   // registry assembly and the `viewportRegistered` flag for the built-in tool
@@ -1121,6 +1138,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       tools={tools}
       layers={wiredLayers}
       pickEvery={internalPickEvery}
+      getNodeAtPoint={getNodeAtPoint}
       previewIdsExtra={() => {
         // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
         // OngoingHandles and merge each handle's previewIds() so source

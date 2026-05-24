@@ -192,6 +192,8 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   geometry?: PoseProjection<TPose>;
 
   // --- Gesture overrides (escape hatches for non-rect / group-aware apps) ---
+  /** Used by `PickHud` to display the list of ids at the cursor.
+   *  NOT used for tool routing — see `getNodeAtPoint`. */
   pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
   boundsOf?: (id: string) => Bounds | null;
   clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
@@ -334,6 +336,14 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * HUD shows the same best-candidate SceneCanvas would pick.
    */
   pickBest?: (worldX: number, worldY: number) => string | null;
+
+  /** Resolves a single hit (id + kind + pose + data) at world coords for the
+   *  tool dispatcher. `<SceneCanvas>` synthesizes this from its node-kind
+   *  registry and adapter via `makeGetNodeAtPoint`. When omitted, the
+   *  dispatcher receives no hit info and tool routing based on `target.kind`
+   *  will not fire. Bare-`<Canvas>` consumers that need kind-based routing
+   *  should build this with `makeGetNodeAtPoint`. */
+  getNodeAtPoint?: (worldX: number, worldY: number) => { id: string; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> } | null;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -526,6 +536,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     cursorCoordsHud,
     pickHud,
     pickBest,
+    getNodeAtPoint,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -719,19 +730,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     d.__setGetCtx?.(toolsCtxBase);
   }, [tools, toolsCtxBase]);
 
-  // Wire the dispatcher's scene hit-test (ctx.target population on pointer
-  // events). Builds a NodeHit/EmptyHit from the effective pickEvery + adapter
-  // so declarative routing factories can match on `target.kind`
-  // ('rect'/'text'/'path'/'empty') from any pointer event. The closure reads
-  // refs so it always sees the latest pickEvery / adapter without re-installing
-  // the setter on every prop change.
+  // Stable wrappers for HUD props — read the ref at call time so the HUDs
+  // don't reinstall their useEffect on every render when the prop identity
+  // changes (e.g. when SceneCanvas re-renders with a new lambda reference).
+  // pickEvery and pickBest are HUD-only; tool routing uses getNodeAtPoint.
   const pickEveryRef = useRef(pickEvery);
   pickEveryRef.current = pickEvery;
   const pickBestRef = useRef(pickBest);
   pickBestRef.current = pickBest;
-  // Stable wrappers for HUD props — read the ref at call time so the HUDs
-  // don't reinstall their useEffect on every render when the prop identity
-  // changes (e.g. when SceneCanvas re-renders with a new lambda reference).
   const stablePickEveryForHud = useCallback(
     (wx: number, wy: number): readonly string[] => {
       const pe = pickEveryRef.current;
@@ -746,8 +752,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
     [],
   );
+  // Wire the dispatcher's scene hit-test with the supplied getNodeAtPoint prop.
+  // SceneCanvas synthesizes this from its node-kind registry + adapter via
+  // makeGetNodeAtPoint; bare-Canvas consumers may pass their own or omit it.
   useEffect(() => {
-    if (!tools) return;
+    if (!tools || !getNodeAtPoint) return;
     const d = tools.dispatcher as ToolsDispatcher & {
       __setGetNodeAtPoint?: (
         fn: ((worldX: number, worldY: number) =>
@@ -755,31 +764,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           | null) | undefined,
       ) => void;
     };
-    d.__setGetNodeAtPoint?.((wx, wy) => {
-      const pe = pickEveryRef.current;
-      if (!pe) return null;
-      const raw = pe(wx, wy);
-      // Normalize `string | string[] | null` to topmost id (first entry).
-      const id = Array.isArray(raw) ? raw[0] ?? null : raw;
-      if (id == null) return null;
-      // `a.kindOf?.(id)` is populated by SceneCanvas from its `kinds` prop
-      // (see docs/superpowers/specs/2026-05-21-node-kind-registry-design.md).
-      // Bare-Canvas consumers may still set adapter.kindOf directly as a
-      // deprecated escape hatch; the field is typed on SceneCanvasAdapter
-      // as optional and reads `'unknown'` when unset.
-      const a = effectiveAdapterRefForCtx.current as typeof effectiveAdapterRefForCtx.current & {
-        kindOf?: (id: string) => string;
-        getNode?: (id: string) => unknown;
-      };
-      const kind = a.kindOf?.(id) ?? 'unknown';
-      const pose = a.getPose(id);
-      const data = a.getNode?.(id) ?? { id };
-      return { id: id as NodeId, kind, pose, data };
-    });
+    d.__setGetNodeAtPoint?.(getNodeAtPoint as (wx: number, wy: number) => { id: NodeId; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> } | null);
     return () => {
       d.__setGetNodeAtPoint?.(undefined);
     };
-  }, [tools]);
+  }, [tools, getNodeAtPoint]);
 
   // Selection-driven action gestures (delete/nudge/undoRedo/duplicate) used
   // to be wired here via legacy hooks. They now go through the Actions
