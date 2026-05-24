@@ -89,6 +89,7 @@
     "test:visual": "playwright test --config=tests/visual/playwright.config.ts",
     "test:visual:update": "UPDATE_SNAPSHOTS=1 playwright test --config=tests/visual/playwright.config.ts",
     "test:e2e:draw": "playwright test --config=apps/draw/tests-e2e/playwright.config.ts",
+    "test:e2e:demos": "playwright test --config=tests/e2e/playwright.config.ts",
     "lint": "tsc --noEmit",
     "changeset": "changeset",
     "release": "changeset publish",
