@@ -71,11 +71,8 @@ import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
 import { buildSceneTree } from './buildSceneTree';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import {
-  useViewportTools,
-  type ViewportConfig,
-  type UseViewportToolsReturn,
-} from './SceneCanvas/useViewportTools';
+import { usePinchZoomTool } from 'tools/builtin/usePinchZoomTool';
+import type { ViewportConfig } from './SceneCanvas/useViewportTools';
 
 
 
@@ -278,34 +275,18 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   previewBoundsExtra?: (id: string) => Bounds | null;
 
   /**
-   * Viewport pan/zoom tool configuration. When supplied, `<Canvas>` mounts the
-   * hand tool and pinch-zoom tool via `useViewportTools` and writes the result
-   * to `viewportToolsRef` (if provided) so the caller can wire the hand tool
-   * into its own `useTools` registry.
+   * Pinch-zoom DOM listener attachment for the canvas surface. When supplied,
+   * `<Canvas>` calls `usePinchZoomTool` with `canvasRef` so two-finger pinch
+   * events are handled directly on the canvas element.
    *
-   * Bare `<Canvas>` consumers that build their own `tools` prop can read the
-   * `handTool` from `viewportToolsRef.current` and include it in their
-   * `useTools` registry. `<SceneCanvas>` does exactly this to preserve its
-   * default-enabled pan/zoom behavior while delegating the tool wiring to
-   * Canvas.
+   * Hand tool registration, wheel pan/zoom action descriptors, and keyboard
+   * zoom shortcuts are SceneCanvas-level concerns and are NOT owned by Canvas.
+   * Those belong with the tool registry and gesture dispatcher that live in
+   * SceneCanvas.
    *
-   * When omitted, no viewport tools are mounted and `viewportRegistered` is
-   * `false`. `<SceneCanvas>` explicitly passes `viewport={{ pan: true, zoom: true }}`
-   * (or its consumer-supplied `viewport` prop) to preserve its
-   * default-enabled behavior.
+   * When omitted, no pinch-zoom listener is attached.
    */
   viewport?: ViewportConfig;
-
-  /**
-   * Mutable ref that Canvas writes the `useViewportTools` result to on every
-   * render. Callers (primarily `<SceneCanvas>`) read `handTool` from here to
-   * include in their tool registry, and check `viewportRegistered` to decide
-   * whether to add `'hand'` to the built-in tool list.
-   *
-   * Canvas owns the `useViewportTools` call; this ref is the seam through which
-   * SceneCanvas receives the tool artifacts.
-   */
-  viewportToolsRef?: React.MutableRefObject<UseViewportToolsReturn | null>;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -540,7 +521,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     previewPoseExtra,
     previewBoundsExtra,
     viewport,
-    viewportToolsRef,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -609,18 +589,18 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const setViewRef = useRef(setView);
   setViewRef.current = setView;
 
-  // Viewport tools (hand / pinch zoom). Canvas owns the viewport CONFIG and
-  // calls useViewportTools — the result is written to viewportToolsRef so
-  // SceneCanvas (or any other caller that builds its own useTools registry)
-  // can fold the handTool in. Hooks always run unconditionally per React rules;
-  // each is a no-op when viewport is absent.
-  const viewportTools = useViewportTools({
-    viewport,
+  // Pinch-zoom: Canvas owns the DOM listener because it needs canvasRef.
+  // usePinchZoomTool is a no-op when viewport?.pinchZoom is falsy. Hand tool,
+  // wheel pan/zoom, and keyboard zoom are SceneCanvas-level concerns (they
+  // register into the tool registry / gesture dispatcher that lives there).
+  const pinchConfig: { min?: number; max?: number } | null =
+    viewport?.pinchZoom === true ? {} : (viewport?.pinchZoom || null);
+  usePinchZoomTool(
     canvasRef,
-    currentView: effectiveView,
-    onViewChange: setView,
-  });
-  if (viewportToolsRef) viewportToolsRef.current = viewportTools;
+    effectiveView,
+    setView,
+    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null },
+  );
 
   // Internal hooks always run (rules of hooks). They consult a noop adapter
   // when none is supplied; their controllers are then unused because the

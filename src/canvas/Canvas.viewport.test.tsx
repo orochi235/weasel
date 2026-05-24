@@ -1,26 +1,30 @@
 /**
- * Canvas viewport prop coverage (Task 1.1)
+ * Canvas viewport prop coverage (Task 1.1 follow-up)
  *
- * Verifies that `<Canvas>` owns the `viewport` prop and calls `useViewportTools`
- * internally. The hand tool and viewportRegistered flag are surfaced via the
- * `viewportToolsRef` callback so SceneCanvas can fold them into its own
- * `useTools` call.
+ * After the Phase 1 cleanup, `<Canvas>` owns only the pinch-zoom DOM listener
+ * (via `usePinchZoomTool`). The hand tool, wheel pan/zoom action descriptors,
+ * and keyboard zoom shortcuts are SceneCanvas-level concerns — they belong with
+ * the tool registry and gesture dispatcher, not with bare Canvas.
  *
- * Three behavioral cases:
- *   1. `viewport={{ pan: true }}` — viewportToolsRef callback receives a
- *      handTool (object with onPointerDown etc.) and viewportRegistered=true.
- *   2. `viewport={{ pan: true, zoom: true }}` — same as above; zoom config
- *      does not prevent pan from mounting the hand tool.
- *   3. No viewport prop — viewportToolsRef callback receives viewportRegistered=false
- *      (bare Canvas has no pan/zoom enabled; default semantic is opt-in here,
- *      unlike SceneCanvas which defaults to enabled and must explicitly pass
- *      viewport={{ pan: true, zoom: true }} to Canvas to preserve that behavior).
+ * The `viewportToolsRef` seam and the old `useViewportTools` delegation are
+ * gone. There is nothing to assert about "handTool" or "viewportRegistered" on
+ * `<Canvas>` — those concepts live in SceneCanvas.
+ *
+ * What we DO verify here:
+ *   1. `viewport={{ pinchZoom: true }}` — Canvas mounts without error (the
+ *      usePinchZoomTool hook runs, attaches nothing in jsdom but doesn't throw).
+ *   2. No `viewport` prop — Canvas mounts without error; pinch-zoom listener
+ *      is a no-op (enabled=false).
+ *   3. `viewport={{ pinchZoom: { min: 0.5, max: 4 } }}` — Canvas mounts
+ *      without error; pinch-zoom runs with constrained bounds.
+ *
+ * (All three are smoke tests; the deeper pinch-zoom behavior is exercised in
+ * the usePinchZoomTool unit tests.)
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render } from '@testing-library/react';
 import { Canvas } from './Canvas';
-import type { UseViewportToolsReturn } from './SceneCanvas/useViewportTools';
 
 // ---------------------------------------------------------------------------
 // jsdom canvas setup
@@ -47,78 +51,57 @@ beforeAll(() => {
 });
 
 // ---------------------------------------------------------------------------
-// Behavior 1: viewport.pan enabled — viewportToolsRef gets handTool +
-// viewportRegistered=true
+// Behavior 1: viewport.pinchZoom enabled
 // ---------------------------------------------------------------------------
 
-describe('Canvas viewport prop: pan enabled', () => {
-  it('calls viewportToolsRef with handTool and viewportRegistered=true when viewport.pan=true', () => {
-    let result: UseViewportToolsReturn | null = null;
-    const ref = { current: null as UseViewportToolsReturn | null };
-
-    render(
-      <Canvas
-        width={200}
-        height={200}
-        layers={{}}
-        viewport={{ pan: true }}
-        viewportToolsRef={ref}
-      />,
-    );
-
-    result = ref.current;
-    expect(result).not.toBeNull();
-    expect(result!.viewportRegistered).toBe(true);
-    // handTool must be a tool object (has pointer handlers)
-    expect(result!.handTool).toBeDefined();
-    expect(typeof result!.handTool).toBe('object');
+describe('Canvas viewport prop: pinchZoom enabled', () => {
+  it('mounts without error when viewport.pinchZoom=true', () => {
+    expect(() => {
+      render(
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          viewport={{ pinchZoom: true }}
+        />,
+      );
+    }).not.toThrow();
   });
 });
 
 // ---------------------------------------------------------------------------
-// Behavior 2: viewport.pan + zoom both enabled
-// ---------------------------------------------------------------------------
-
-describe('Canvas viewport prop: pan and zoom enabled', () => {
-  it('viewportRegistered=true and handTool present when both pan and zoom are enabled', () => {
-    const ref = { current: null as UseViewportToolsReturn | null };
-
-    render(
-      <Canvas
-        width={200}
-        height={200}
-        layers={{}}
-        viewport={{ pan: true, zoom: true }}
-        viewportToolsRef={ref}
-      />,
-    );
-
-    expect(ref.current).not.toBeNull();
-    expect(ref.current!.viewportRegistered).toBe(true);
-    expect(ref.current!.handTool).toBeDefined();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Behavior 3: no viewport prop — viewportRegistered=false (bare Canvas default
-// is opt-in; SceneCanvas explicitly passes viewport to Canvas to preserve its
-// own default-enabled behavior)
+// Behavior 2: no viewport prop
 // ---------------------------------------------------------------------------
 
 describe('Canvas viewport prop: absent (no viewport prop)', () => {
-  it('viewportRegistered=false when viewport prop is omitted', () => {
-    const ref = { current: null as UseViewportToolsReturn | null };
+  it('mounts without error when viewport prop is omitted', () => {
+    expect(() => {
+      render(
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+        />,
+      );
+    }).not.toThrow();
+  });
+});
 
-    render(
-      <Canvas
-        width={200}
-        height={200}
-        layers={{}}
-        viewportToolsRef={ref}
-      />,
-    );
+// ---------------------------------------------------------------------------
+// Behavior 3: pinchZoom with explicit min/max bounds
+// ---------------------------------------------------------------------------
 
-    expect(ref.current).not.toBeNull();
-    expect(ref.current!.viewportRegistered).toBe(false);
+describe('Canvas viewport prop: pinchZoom with min/max config', () => {
+  it('mounts without error with constrained pinch bounds', () => {
+    expect(() => {
+      render(
+        <Canvas
+          width={200}
+          height={200}
+          layers={{}}
+          viewport={{ pinchZoom: { min: 0.5, max: 4 } }}
+        />,
+      );
+    }).not.toThrow();
   });
 });
