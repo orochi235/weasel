@@ -5,3 +5,5 @@ export type { ModeDefinition, WorkspaceVisual } from './modeDefinition';
 export { DEFAULT_MODES, byId, NORMAL, PATH_EDIT, ISOLATION, FREE_TRANSFORM, TEXT_EDIT, CROP } from './presets/default';
 export { createModeRegistry } from './registry';
 export type { ModeRegistry, CreateModeRegistryOptions } from './registry';
+export { createModeDecorations } from './decorations';
+export type { ModeDecorations, ModeDecorationPainter, CreateModeDecorationsOptions, ModeDrawCommand } from './decorations';
