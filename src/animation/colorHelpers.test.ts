@@ -39,7 +39,9 @@ describe('tweenVertexColors', () => {
     act(() => clock.advance(0));
     act(() => clock.advance(50));
     const mid = result.current.colorOverrides.get('a', 'fill') as number[];
-    expect(mid).toEqual([128, 128, 0, 255]);
+    // lerpColorArray (rgb space) is a pure float lerp — no rounding —
+    // so 255→0 at t=0.5 produces 127.5 exactly, not 128.
+    expect(mid).toEqual([127.5, 127.5, 0, 255]);
   });
 
   it('clears the override and fires onDone when complete', () => {
@@ -254,7 +256,8 @@ describe('staggerVertexColors', () => {
     expect(fn(from, 0)).toEqual(from);
 
     const at50 = fn(from, 50);
-    expect(at50.slice(0, 4)).toEqual([128, 128, 128, 255]);
+    // Float lerp midpoint between 0 and 255 is 127.5 (no rounding).
+    expect(at50.slice(0, 4)).toEqual([127.5, 127.5, 127.5, 255]);
     expect(at50.slice(4, 8)).toEqual([0, 0, 0, 255]);
     expect(at50.slice(8, 12)).toEqual([0, 0, 0, 255]);
 
@@ -303,7 +306,8 @@ describe('staggerVertexColors', () => {
     const fn = result.current.colorOverrides.get('p', 'stroke') as
       (base: readonly number[], tMs: number) => number[];
     const at50 = fn(from, 50);
-    expect(at50.slice(8, 12)).toEqual([128, 128, 128, 255]);
+    // Float lerp midpoint between 0 and 255 is 127.5 (no rounding).
+    expect(at50.slice(8, 12)).toEqual([127.5, 127.5, 127.5, 255]);
     expect(at50.slice(0, 4)).toEqual([0, 0, 0, 255]);
   });
 
