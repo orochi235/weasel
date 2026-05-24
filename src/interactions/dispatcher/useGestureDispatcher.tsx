@@ -377,7 +377,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         clientX: localX,
         clientY: localY,
       };
-      dispatch(ev);
+      const result = dispatch(ev);
+      // When a binding claims the wheel (viewport.zoom on Cmd+wheel, viewport.pan
+      // on plain wheel, etc.), the page must not also scroll. Suppress the
+      // default + bubble so a parent scroll container doesn't move while the
+      // canvas is zooming or panning.
+      if (result === 'handled') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     };
 
     // -----------------------------------------------------------------------
@@ -695,7 +703,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
-    canvas?.addEventListener('wheel', onWheel);
+    canvas?.addEventListener('wheel', onWheel, { passive: false });
     canvas?.addEventListener('pointerdown', onPointerDown);
     canvas?.addEventListener('pointermove', onPointerMove);
     canvas?.addEventListener('pointerup', onPointerUp);
