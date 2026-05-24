@@ -13,6 +13,13 @@ export interface ToolButtonProps {
   /** Disabled state — passes through to the underlying button. */
   disabled?: boolean;
   /**
+   * When true, sets `aria-disabled="true"` on the button without using the
+   * native `disabled` attribute. This keeps the button focusable and reachable
+   * by keyboard (roving-tabindex still applies) while marking it as ineligible
+   * to screen readers. The caller is responsible for making `onClick` a no-op.
+   */
+  ariaDisabled?: boolean;
+  /**
    * Whether this button is the currently tabbable member of its toolbar.
    * Toolbars use roving tabindex: exactly one button has `tabIndex=0` at
    * a time; the rest are `-1`. Caller manages which.
@@ -35,7 +42,7 @@ export interface ToolButtonProps {
  * supplies flex direction via `ToolGroup`). Theme via `--wzl-*` tokens.
  */
 export function ToolButton(props: ToolButtonProps) {
-  const { icon, label, shortcut, active, disabled, tabbable, onClick, title, className } = props;
+  const { icon, label, shortcut, active, disabled, ariaDisabled, tabbable, onClick, title, className } = props;
   const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
@@ -45,6 +52,7 @@ export function ToolButton(props: ToolButtonProps) {
       title={resolvedTitle}
       className={cls}
       aria-current={active ? 'true' : undefined}
+      aria-disabled={ariaDisabled ? 'true' : undefined}
       disabled={disabled}
       onClick={onClick}
     >

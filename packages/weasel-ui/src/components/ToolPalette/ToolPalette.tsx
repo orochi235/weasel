@@ -1,6 +1,7 @@
 import { Fragment, useRef, type ReactNode } from 'react';
 import { UnknownIcon } from '@orochi235/weasel';
 import type { AnyTool, ToolsApi } from '@orochi235/weasel';
+import { eligibleTool, type ModeRegistry } from '@orochi235/weasel-modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
 import s from './ToolPalette.module.css';
@@ -55,10 +56,17 @@ export interface ToolPaletteProps {
    *  Called with the tool's id; return `undefined` to suppress a chip. When
    *  omitted, falls back to `tool.keybinding` (legacy path). */
   lookupShortcut?: (toolId: string) => ShortcutInput | undefined;
+  /**
+   * Optional mode registry. When provided, tools whose `capabilities` do not
+   * match the current mode are rendered greyed-out, aria-disabled, and their
+   * onClick is suppressed. When omitted, all tools are treated as eligible
+   * (preserves existing behaviour in consumers that haven't wired a registry).
+   */
+  modeRegistry?: ModeRegistry;
 }
 
 export function ToolPalette(props: ToolPaletteProps) {
-  const { tools, orientation = 'vertical', className, lookupShortcut } = props;
+  const { tools, orientation = 'vertical', className, lookupShortcut, modeRegistry } = props;
   const list = Object.values(tools.registry);
   const groups = partitionByGroup(list);
   const groupKeys = orderedGroupKeys(groups);
@@ -125,6 +133,11 @@ export function ToolPalette(props: ToolPaletteProps) {
               const label = tool.presentation?.label ?? tool.id;
               const shortcut = tool.presentation?.shortcut
                 ?? formatShortcut(lookupShortcut ? lookupShortcut(tool.id) : tool.keybinding);
+              const enabled = modeRegistry ? eligibleTool(modeRegistry, tool) : true;
+              const modeName = modeRegistry ? modeRegistry.current().id : undefined;
+              const resolvedTitle = !enabled && modeName
+                ? `${label}${shortcut ? ` (${shortcut})` : ''} — disabled in ${modeName} mode`
+                : undefined;
               return (
                 <ToolButton
                   key={tool.id}
@@ -133,7 +146,10 @@ export function ToolPalette(props: ToolPaletteProps) {
                   shortcut={shortcut}
                   active={tools.active === tool.id}
                   tabbable={tool.id === tabbableId}
-                  onClick={() => tools.setActive(tool.id)}
+                  ariaDisabled={!enabled}
+                  className={!enabled ? s.ineligibleBtn : undefined}
+                  title={resolvedTitle}
+                  onClick={enabled ? () => tools.setActive(tool.id) : () => {}}
                 />
               );
             })}

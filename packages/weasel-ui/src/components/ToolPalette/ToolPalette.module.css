@@ -12,6 +12,12 @@
   flex-direction: row;
 }
 
+/* Applied to ineligible tool buttons in the active mode. */
+.ineligibleBtn {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .separator {
   background: var(--wzl-panel-border);
 }

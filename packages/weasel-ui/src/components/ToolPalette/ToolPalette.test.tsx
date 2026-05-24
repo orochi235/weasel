@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ToolPalette } from './ToolPalette';
 import type { AnyTool, ToolsApi } from '@orochi235/weasel';
+import { createModeRegistry } from '@orochi235/weasel-modes';
+import { DEFAULT_MODES } from '@orochi235/weasel-modes/presets/default';
 
 function fakeTool(id: string, group?: string, label?: string): AnyTool {
   return {
@@ -222,5 +224,73 @@ describe('ToolPalette — keyboard nav', () => {
     a.focus();
     fireEvent.keyDown(a, { key: 'ArrowUp' });
     expect(document.activeElement).toBe(e);
+  });
+});
+
+describe('ToolPalette — mode eligibility', () => {
+  /**
+   * Builds a fake AnyTool with capability tags so eligibility works.
+   * The 'selection' tag is allowed in NORMAL but not PATH_EDIT;
+   * 'edits-anchors' is allowed in PATH_EDIT.
+   * 'navigation' (the hand tool) is always allowed.
+   */
+  function toolWithCaps(id: string, capabilities: string[], group = 'select'): AnyTool {
+    return { id, capabilities, presentation: { label: id, group } } as AnyTool;
+  }
+
+  const selectTool = toolWithCaps('select', ['selection']);
+  const anchorTool = toolWithCaps('anchor-edit', ['edits-anchors'], 'draw');
+  const handTool   = toolWithCaps('hand', ['navigation'], 'view');
+
+  function makeTools(...list: AnyTool[]): ToolsApi {
+    const registry: Record<string, AnyTool> = {};
+    for (const t of list) registry[t.id] = t;
+    return { active: list[0]?.id ?? '', registry, setActive: vi.fn() } as unknown as ToolsApi;
+  }
+
+  it('when mode is "normal", select and hand tools are not aria-disabled', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
+    // selectTool ('selection') and handTool ('navigation') are both eligible in normal mode.
+    const tools = makeTools(selectTool, handTool);
+    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    const buttons = screen.getAllByRole('button');
+    for (const btn of buttons) {
+      expect(btn.getAttribute('aria-disabled')).toBeNull();
+      expect((btn as HTMLButtonElement).disabled).toBe(false);
+    }
+  });
+
+  it('when mode is "path-edit", select tool is aria-disabled and ineligible; anchor-edit is not', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+
+    const selectBtn = screen.getByRole('button', { name: /select/i });
+    expect(selectBtn.getAttribute('aria-disabled')).toBe('true');
+    expect(selectBtn.className).toMatch(/ineligible/i);
+
+    const anchorBtn = screen.getByRole('button', { name: /anchor/i });
+    expect(anchorBtn.getAttribute('aria-disabled')).toBeNull();
+    expect(anchorBtn.className).not.toMatch(/ineligible/i);
+  });
+
+  it('ineligible button does not invoke setActive when clicked', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+
+    const selectBtn = screen.getByRole('button', { name: /select/i });
+    fireEvent.click(selectBtn);
+    expect(tools.setActive).not.toHaveBeenCalledWith('select');
+  });
+
+  it('when modeRegistry is omitted, all tools are eligible (fallback behaviour)', () => {
+    // PATH_EDIT would normally disable 'select', but no registry means all eligible.
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    render(<ToolPalette tools={tools} />);
+    const buttons = screen.getAllByRole('button');
+    for (const btn of buttons) {
+      expect(btn.getAttribute('aria-disabled')).toBeNull();
+    }
   });
 });

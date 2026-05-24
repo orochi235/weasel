@@ -18,6 +18,9 @@
     },
     "./package.json": "./package.json"
   },
+  "dependencies": {
+    "@orochi235/weasel-modes": "*"
+  },
   "peerDependencies": {
     "react": ">=18"
   }
