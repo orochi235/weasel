@@ -334,6 +334,41 @@ html, body, #root {
   background:
     repeating-linear-gradient(45deg, #5a5a5a 0 8px, #626262 8px 16px);
   overflow: hidden;
+  /* Workspace tint variables — driven by the mode machine in Task 19.
+     Default transparent means no tint until a mode activates. */
+  --wd-mode-tint: transparent;
+  --wd-mode-tint-intensity: 0.12;
+}
+
+/* Tint overlay: sits above the stripe background (z-index 0) and below the
+   canvas (z-index 2). Driven by --wd-mode-tint and --wd-mode-tint-intensity.
+   Default is invisible (transparent tint). Direction defaults to bottom-up;
+   use data-tint-direction="top-down" to invert. */
+.wd-canvas-host::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--wd-mode-tint) calc(var(--wd-mode-tint-intensity) * 100%), transparent) 0%,
+    transparent 100%
+  );
+  transition: background 150ms ease-out;
+  z-index: 1;
+}
+
+.wd-canvas-host[data-tint-direction="top-down"]::before {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--wd-mode-tint) calc(var(--wd-mode-tint-intensity) * 100%), transparent) 0%,
+    transparent 100%
+  );
+}
+
+.wd-canvas-host > canvas {
+  position: relative;
+  z-index: 2; /* above the ::before tint */
 }
 
 .wd-canvas-host canvas {
