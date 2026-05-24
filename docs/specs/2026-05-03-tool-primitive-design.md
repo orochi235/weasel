@@ -11,7 +11,7 @@ This spec defines a **Tool primitive**: a record describing how a single tool li
 
 The primitive replaces the existing gesture hooks in a phased migration: built-in tools (`select`, `hand`, `insert`) wrap the current implementations behind the new surface; once all demos are on the palette, the legacy hooks are deleted.
 
-The forcing demo is "Swillustrator" — a five-tool palette (select, pen, insert-rect, hand, text) that exercises every slot, every channel, and the tool-internal vs tool-switch modifier distinction.
+The forcing demo is "WeaselDraw" — a five-tool palette (select, pen, insert-rect, hand, text) that exercises every slot, every channel, and the tool-internal vs tool-switch modifier distinction.
 
 ## Goals
 
@@ -175,7 +175,7 @@ Phased — kit ships old hooks alongside the new primitive until parity is reach
 ### Phase 2: built-in tools
 
 - Implement kit-shipped tools as Tool records that wrap the existing hooks: `select`, `hand`, `insert`, always-on action tools.
-- Add Swillustrator demo: select + pen + insert-rect + hand + text from the demo cookbook.
+- Add WeaselDraw demo: select + pen + insert-rect + hand + text from the demo cookbook.
 - Existing demos keep using the legacy hook props.
 
 ### Phase 3: demo migration

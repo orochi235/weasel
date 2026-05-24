@@ -61,7 +61,7 @@ Priority tags:
 - Alignment guides / insert snap-to-existing-edges → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Op coalescing follow-ups (`useScene`, default `coalesceKey`s) → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Clipboard: OS clipboard / cross-reload serialization → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- Swillustrator persistence → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- WeaselDraw persistence → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Plugins & packaging**
 - Plugin/bundling convention v1 (`WeaselPlugin` shape) → [Plugins & packaging](#plugins--packaging)
@@ -173,7 +173,7 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
-- **(P2) Text properties panel** (Character + Paragraph). Surfaced 2026-05-11 while wiring `useTextEdit` into Swillustrator — the kit ships rich `TextStyle` + `StyledRun` data and `useTextEdit` already handles bold/italic via the runs API, but there's no UI surface for any of it. A `@orochi235/weasel-ui` `<TextPropertiesPanel>` (paralleling `<PropertiesPanel>` / `<PathfinderPanel>`) reading from selection and dispatching style/run mutations would close the gap. Coverage to design: font family (system + web fonts), font size, font weight, italic / underline / strikethrough toggles, fill color, caret/selection colors, line height, letter spacing / tracking (new — not on `TextStyle` yet), paragraph alignment, and per-range run styling on the active text-edit selection. Open questions: (a) split into Character vs Paragraph panels (Illustrator-style) or one combined panel for v1; (b) whether the panel binds to selection or to `editingId` (Illustrator binds to both); (c) how to expose run-level mutators publicly; (d) which fields need new `TextStyle` keys (letter-spacing/tracking, decoration). Likely a multi-day spec once a real consumer demands it.
+- **(P2) Text properties panel** (Character + Paragraph). Surfaced 2026-05-11 while wiring `useTextEdit` into WeaselDraw — the kit ships rich `TextStyle` + `StyledRun` data and `useTextEdit` already handles bold/italic via the runs API, but there's no UI surface for any of it. A `@orochi235/weasel-ui` `<TextPropertiesPanel>` (paralleling `<PropertiesPanel>` / `<PathfinderPanel>`) reading from selection and dispatching style/run mutations would close the gap. Coverage to design: font family (system + web fonts), font size, font weight, italic / underline / strikethrough toggles, fill color, caret/selection colors, line height, letter spacing / tracking (new — not on `TextStyle` yet), paragraph alignment, and per-range run styling on the active text-edit selection. Open questions: (a) split into Character vs Paragraph panels (Illustrator-style) or one combined panel for v1; (b) whether the panel binds to selection or to `editingId` (Illustrator binds to both); (c) how to expose run-level mutators publicly; (d) which fields need new `TextStyle` keys (letter-spacing/tracking, decoration). Likely a multi-day spec once a real consumer demands it.
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `src/features/text/atlas/GlyphLayout.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Defer until a real consumer hits a non-Latin language requirement.
 
@@ -243,13 +243,13 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P2) Promote `<ToolPalette>` into `@orochi235/weasel-ui`.** Today it lives at `apps/swillustrator/src/ui/ToolPalette/` — ~140 lines including roving-tabindex keyboard nav. Generic enough for the kit; every consumer rewrites it otherwise. The kit already ships `<ToolButton>` + `<ToolGroup>` building blocks; the palette is the composed shell.
+- **(P2) Promote `<ToolPalette>` into `@orochi235/weasel-ui`.** Today it lives at `apps/draw/src/ui/ToolPalette/` — ~140 lines including roving-tabindex keyboard nav. Generic enough for the kit; every consumer rewrites it otherwise. The kit already ships `<ToolButton>` + `<ToolGroup>` building blocks; the palette is the composed shell.
 
 - **(P2) `<ActionBar>` component in `@orochi235/weasel-ui`.** Generic group-keyed action toolbar, parallel to `<ToolPalette>`. Reads `actions.list().filter(a => a.group === groupKey)` and renders icon-buttons with `Action.label` as title, `Action.shortcut` as keystroke hint, disabled state from `evaluateEnabled`. Replaces the hand-rolled `<PathfinderPanel>` / hypothetical `<AlignPanel>` / `<DistributePanel>` with one composable surface.
 
 - **(P2) Default action icons.** `Action.icon` is in the schema but `defaultAlignActions` / `defaultDistributeActions` don't ship default SVGs. The right move is shipping `defaultBooleanActions` + default-iconed align/distribute factories so a generic `<ActionBar group="pathfinder">` (or `"align"` / `"distribute"`) can render the row without per-app SVGs. ~8 icons to draw (6 align, 2 distribute) plus the 5 boolean icons already inline in `PathfinderPanel`.
 
-- **(P2) Per-kind property-row registry for `<PropertiesPanel>`.** Surfaced 2026-05-13 while wiring object-kind-aware property rows in Swillustrator's selection panel. Today `<PropertiesPanel>` is a presentation slot — every consumer hand-rolls property rows inline and branches on `primary.tool` / ad-hoc feature flags (`hasStrokeProps`, etc.) to decide what to render. Likely shape: kinds register a property-row contributor that takes the current selection + adapter and returns an array of `<PropertyRow>` children; the panel composes contributors for the union of selected kinds. Open questions: (a) registration site — kit-side keyed off the future object-kind registry vs. a consumer-owned `Map<kind, PropertyContributor>` passed to `<PropertiesPanel>` as a prop; (b) interplay with kit-shipped panels like `<TextPropertiesPanel>` / `<PathfinderPanel>`; (c) how to express rows that apply to a subset of the selection; (d) presentation order. Blocked on the object-kind registry. Defer until ≥2 consumer apps want this.
+- **(P2) Per-kind property-row registry for `<PropertiesPanel>`.** Surfaced 2026-05-13 while wiring object-kind-aware property rows in WeaselDraw's selection panel. Today `<PropertiesPanel>` is a presentation slot — every consumer hand-rolls property rows inline and branches on `primary.tool` / ad-hoc feature flags (`hasStrokeProps`, etc.) to decide what to render. Likely shape: kinds register a property-row contributor that takes the current selection + adapter and returns an array of `<PropertyRow>` children; the panel composes contributors for the union of selected kinds. Open questions: (a) registration site — kit-side keyed off the future object-kind registry vs. a consumer-owned `Map<kind, PropertyContributor>` passed to `<PropertiesPanel>` as a prop; (b) interplay with kit-shipped panels like `<TextPropertiesPanel>` / `<PathfinderPanel>`; (c) how to express rows that apply to a subset of the selection; (d) presentation order. Blocked on the object-kind registry. Defer until ≥2 consumer apps want this.
 
 - **(P2) Declarative visibility rules for overlay chrome.** Today, conditional visibility for selection-overlay parts (handles, rotation handle, etc.) is wired imperatively per-call-site or via per-feature `gateLayer` wrappers. A more durable shape would be a small declarative DSL: "don't display rotation handles unless the direct parent has focus", "show alignment guides only when shift is held", "hide handles during an active gesture". Open questions: where the rules live, what state inputs they read, how they compose with kit defaults vs. consumer overrides. Defer until 3+ concrete cases want this.
 
@@ -259,7 +259,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P2) Clipboard: OS clipboard / cross-reload serialization.** Currently the kit's clipboard is in-memory only — copy doesn't reach the system clipboard, and reloading drops the buffer. Needs a serialization shape (likely the same op-log shape useScene wants) plus `navigator.clipboard` plumbing with a JSON wire format.
 
-- **(P2) Swillustrator persistence.** Currently in-memory only — no save/load/export.
+- **(P2) WeaselDraw persistence.** Currently in-memory only — no save/load/export.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@orochi235/weasel-ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
@@ -276,7 +276,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) Printable snapshot mode** — rasterize debug + scene to a single image for bug reports.
 - **(P3) FPS panel extensions** — ms-per-frame readout alongside FPS, draw-call count per frame, per-layer draw-cost breakdown (needs renderer-side instrumentation seams).
 
-### Swillustrator app follow-ups (defer)
+### WeaselDraw app follow-ups (defer)
 
 - **(P3) Stroke-width control** (today hardcoded to 1px).
 - **(P3) Fill-style options beyond solid** (gradient, alpha).

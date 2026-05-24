@@ -19,7 +19,7 @@
 **New files:**
 - `packages/weasel-gestures/src/grammar/gestures.test.ts` — extended to cover `keyHeld` descriptor (existing test file).
 - `src/interactions/actions/defaults/toolSelect.ts` — factory `makeToolSelectAction(toolId, key, opts)` for tap-style tool switches.
-- `apps/swillustrator/src/dev/keybindingsView.ts` — pure helper that derives a "what key activates this tool" lookup from the action registry, replacing direct reads of `ToolDef.keybinding`.
+- `apps/draw/src/dev/keybindingsView.ts` — pure helper that derives a "what key activates this tool" lookup from the action registry, replacing direct reads of `ToolDef.keybinding`.
 
 **Modified — grammar + dispatcher:**
 - `packages/weasel-gestures/src/grammar/gestures.ts` — add `keyHeld` to `GestureName` and `GESTURE_DESCRIPTORS`.
@@ -43,9 +43,9 @@
 **Modified — inspector:**
 - `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx:122` — read shortcut chips from a passed-in `lookupShortcut(toolId)` prop instead of `tool.keybinding`.
 - `packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts` — keep `keyGlyph` + `formatShortcutParts`; drop the `KeyBinding` import dependency by switching to a `{ key, mod, alt, shift }`-shaped input.
-- `apps/swillustrator/src/dev/ToolkitBuilder.tsx:217` — call the new `keybindingsView.lookupShortcut(toolId)` helper.
-- `apps/swillustrator/src/dev/registryData.ts:259, 428-430` — `HotkeyTriggerEntry` now lists each `tool.hold.*` action's `keyHeld` arg, derived from the action registry. (The entry stays — it remains a useful "what global hotkeys exist" facet.)
-- `apps/swillustrator/src/dev/RegistryDetail.tsx:356-358` — `HotkeyTriggerDetail` renders the matching action's route via `RouteBadge` for parity with the rest of the inspector.
+- `apps/draw/src/dev/ToolkitBuilder.tsx:217` — call the new `keybindingsView.lookupShortcut(toolId)` helper.
+- `apps/draw/src/dev/registryData.ts:259, 428-430` — `HotkeyTriggerEntry` now lists each `tool.hold.*` action's `keyHeld` arg, derived from the action registry. (The entry stays — it remains a useful "what global hotkeys exist" facet.)
+- `apps/draw/src/dev/RegistryDetail.tsx:356-358` — `HotkeyTriggerDetail` renders the matching action's route via `RouteBadge` for parity with the rest of the inspector.
 
 ---
 
@@ -248,13 +248,13 @@ git commit -m "feat(gestures): describeRoute phrasing for keyHeld"
 ### Task 4: Inspector rendering for `keyHeld`
 
 **Files:**
-- Modify: `apps/swillustrator/src/dev/RegistryDetail.tsx` (`RouteBadge` and `routeToPowerline` already branch on `desc.arg?.name === 'key'`, so this should be automatic — verify with a story-level snapshot test or visual review).
-- Modify: `apps/swillustrator/src/dev/RoutePowerline.stories.tsx` — add a "Held key gestures" section.
+- Modify: `apps/draw/src/dev/RegistryDetail.tsx` (`RouteBadge` and `routeToPowerline` already branch on `desc.arg?.name === 'key'`, so this should be automatic — verify with a story-level snapshot test or visual review).
+- Modify: `apps/draw/src/dev/RoutePowerline.stories.tsx` — add a "Held key gestures" section.
 
 - [ ] **Step 1: Add the story section**
 
 ```tsx
-// apps/swillustrator/src/dev/RoutePowerline.stories.tsx — insert a new <Section> between
+// apps/draw/src/dev/RoutePowerline.stories.tsx — insert a new <Section> between
 // the existing "Key gestures" and "Multi-touch tap" sections
 <Section
   title="Held key gestures — keyHeld lifecycle (drag-shaped)"
@@ -269,13 +269,13 @@ git commit -m "feat(gestures): describeRoute phrasing for keyHeld"
 
 - [ ] **Step 2: Verify the route renders with a KeyCap and the existing RouteBadge test still passes**
 
-Run: `npx vitest run apps/swillustrator/src/dev/RegistryDetail.test.tsx --reporter=default`
+Run: `npx vitest run apps/draw/src/dev/RegistryDetail.test.tsx --reporter=default`
 Expected: PASS — `argIsKey` is gesture-agnostic, so `keyHeld(Space)` inherits KeyCap rendering for free.
 
 - [ ] **Step 3: Add a focused test for keyHeld + KeyCap rendering**
 
 ```tsx
-// apps/swillustrator/src/dev/RegistryDetail.test.tsx — append to RouteBadge v3 describe
+// apps/draw/src/dev/RegistryDetail.test.tsx — append to RouteBadge v3 describe
 it('renders keyHeld arg as a minimal KeyCap (same path as keyDown)', () => {
   const { container } = render(<RouteBadge route="[initial] keyHeld(Space)" />);
   const cap = container.querySelector('kbd[data-variant="minimal"]');
@@ -285,13 +285,13 @@ it('renders keyHeld arg as a minimal KeyCap (same path as keyDown)', () => {
 
 - [ ] **Step 4: Run tests**
 
-Run: `npx vitest run apps/swillustrator/src/dev/RegistryDetail.test.tsx --reporter=default`
+Run: `npx vitest run apps/draw/src/dev/RegistryDetail.test.tsx --reporter=default`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/swillustrator/src/dev/RoutePowerline.stories.tsx apps/swillustrator/src/dev/RegistryDetail.test.tsx
+git add apps/draw/src/dev/RoutePowerline.stories.tsx apps/draw/src/dev/RegistryDetail.test.tsx
 git commit -m "feat(inspector): keyHeld in route badge, Powerline catalog, story"
 ```
 
@@ -742,7 +742,7 @@ Pre-req: Task 9 complete for every tool. No remaining code reads these fields.
 - [ ] **Step 1: Confirm nothing reads the fields**
 
 Run: `grep -rn "\.keybinding\b\|\.hotkey\b" src/ apps/ packages/ --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v ".test."`
-Expected: only inspector-side reads in `apps/swillustrator/src/dev/ToolkitBuilder.tsx` and `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx` — those are handled in Phase 6.
+Expected: only inspector-side reads in `apps/draw/src/dev/ToolkitBuilder.tsx` and `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx` — those are handled in Phase 6.
 
 If any other read survives, return to Task 9 for that tool.
 
@@ -785,15 +785,15 @@ git commit -m "refactor(tools): drop ToolDef.keybinding / .hotkey / KeyBinding /
 ### Task 11: Derive shortcut chips from the action registry
 
 **Files:**
-- Create: `apps/swillustrator/src/dev/keybindingsView.ts`
-- Modify: `apps/swillustrator/src/dev/ToolkitBuilder.tsx:217`
+- Create: `apps/draw/src/dev/keybindingsView.ts`
+- Modify: `apps/draw/src/dev/ToolkitBuilder.tsx:217`
 - Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx:122` (and its props interface)
 - Modify: `packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts` — drop the `KeyBinding` import; accept a plain `{ key, mod?, alt?, shift? }` object.
 
 - [ ] **Step 1: Write the failing test for `keybindingsView`**
 
 ```ts
-// apps/swillustrator/src/dev/keybindingsView.test.ts — new file
+// apps/draw/src/dev/keybindingsView.test.ts — new file
 import { describe, it, expect } from 'vitest';
 import { lookupShortcutByToolId } from './keybindingsView';
 
@@ -823,7 +823,7 @@ describe('lookupShortcutByToolId', () => {
 - [ ] **Step 2: Implement**
 
 ```ts
-// apps/swillustrator/src/dev/keybindingsView.ts
+// apps/draw/src/dev/keybindingsView.ts
 import type { KeySpec } from '@orochi235/weasel-gestures';
 
 export interface KeyShortcut {
@@ -903,7 +903,7 @@ Find every site that mounts `<ToolPalette>` (`grep -rn "<ToolPalette" apps/ src/
 - [ ] **Step 6: Update `ToolkitBuilder.tsx:217` similarly**
 
 ```tsx
-// apps/swillustrator/src/dev/ToolkitBuilder.tsx:217 — replace
+// apps/draw/src/dev/ToolkitBuilder.tsx:217 — replace
 //   formatShortcutParts(d.keybinding)
 // with
 //   formatShortcutParts(lookupShortcutByToolId(d.id, actions.list()))
@@ -917,7 +917,7 @@ Expected: PASS.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/swillustrator/src/dev/keybindingsView.ts apps/swillustrator/src/dev/keybindingsView.test.ts packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx apps/swillustrator/src/dev/ToolkitBuilder.tsx
+git add apps/draw/src/dev/keybindingsView.ts apps/draw/src/dev/keybindingsView.test.ts packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx apps/draw/src/dev/ToolkitBuilder.tsx
 git commit -m "refactor(inspector): shortcut chips read from action registry, not ToolDef.keybinding"
 ```
 
@@ -926,13 +926,13 @@ git commit -m "refactor(inspector): shortcut chips read from action registry, no
 ### Task 12: `HotkeyTriggerEntry` reflects `tool.hold.*` actions
 
 **Files:**
-- Modify: `apps/swillustrator/src/dev/registryData.ts:259, 428-430`
-- Modify: `apps/swillustrator/src/dev/RegistryDetail.tsx:356-358` — render the action's route as a Powerline.
+- Modify: `apps/draw/src/dev/registryData.ts:259, 428-430`
+- Modify: `apps/draw/src/dev/RegistryDetail.tsx:356-358` — render the action's route as a Powerline.
 
 - [ ] **Step 1: Update `collectHotkeyTriggers`**
 
 ```ts
-// apps/swillustrator/src/dev/registryData.ts:428-430 — replace the static
+// apps/draw/src/dev/registryData.ts:428-430 — replace the static
 // HOTKEY_TRIGGER_KEYS implementation
 export function collectHotkeyTriggers(actions: readonly { id: string; defaultBinding?: unknown }[]): readonly HotkeyTriggerEntry[] {
   return actions
@@ -953,7 +953,7 @@ export function collectHotkeyTriggers(actions: readonly { id: string; defaultBin
 - [ ] **Step 3: `HotkeyTriggerDetail` renders the corresponding Powerline**
 
 ```tsx
-// apps/swillustrator/src/dev/RegistryDetail.tsx:356-358 — extend HotkeyTriggerDetail
+// apps/draw/src/dev/RegistryDetail.tsx:356-358 — extend HotkeyTriggerDetail
 function HotkeyTriggerDetail({ entry, actions }: { entry: HotkeyTriggerEntry; actions: readonly ActionEntry[] }) {
   const action = actions.find((a) => a.id === `tool.hold.${entry.id}`);
   // Derive the route string from the action's keyHeld defaultBinding.
@@ -969,13 +969,13 @@ function HotkeyTriggerDetail({ entry, actions }: { entry: HotkeyTriggerEntry; ac
 
 - [ ] **Step 4: Run tests**
 
-Run: `npx vitest run apps/swillustrator/src/dev/ --reporter=default 2>&1 | tail -10`
+Run: `npx vitest run apps/draw/src/dev/ --reporter=default 2>&1 | tail -10`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add apps/swillustrator/src/dev/registryData.ts apps/swillustrator/src/dev/RegistryDetail.tsx
+git add apps/draw/src/dev/registryData.ts apps/draw/src/dev/RegistryDetail.tsx
 git commit -m "refactor(inspector): HotkeyTriggerEntry sources from tool.hold.* actions"
 ```
 
@@ -1052,7 +1052,7 @@ git commit -m "docs: keybindings-as-routes migration concepts"
 Before declaring the migration done, verify:
 
 - [ ] `grep -rn "ToolDef.keybinding\|ToolDef.hotkey\|interface KeyBinding\|useKeybindings" src/ apps/ packages/ --include="*.ts" --include="*.tsx"` returns no results.
-- [ ] Every previously-bound tool still activates on its key (manual smoke in swillustrator).
+- [ ] Every previously-bound tool still activates on its key (manual smoke in WeaselDraw).
 - [ ] Held Space still pans (Hand tool engages, panning works, releases on keyup).
 - [ ] The inspector's `Route Powerline` story includes a keyHeld section and renders.
 - [ ] `RouteBadge` / `Powerline` render keyHeld(Space) with the KeyCap.

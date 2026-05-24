@@ -1,7 +1,7 @@
 # weasel-den (placeholder)
 
 This directory is a **scaffold marker**, not a working package. The build,
-demo, and swillustrator do not (yet) depend on anything here.
+demo, and WeaselDraw do not (yet) depend on anything here.
 
 ## Why it exists
 
@@ -34,7 +34,7 @@ looks at the file tree and asks "what's weasel-den?"
 - [ ] Implement `useStandardTools`
 - [ ] Implement `useStandardCanvasSetup`
 - [ ] Implement `useDrawingAppPack`
-- [ ] Update demo + swillustrator to consume the den
+- [ ] Update demo + WeaselDraw to consume the den
 
 See `docs/specs/2026-05-03-weasel-den-design.md` for the full plan and
 `docs/TODO.md` (`## weasel-den deferrals`) for tracked follow-ups.

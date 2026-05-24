@@ -2043,7 +2043,7 @@ Expected: FAIL — `LayoutDemo` doesn't exist.
 
 - [ ] **Step 3: Implement LayoutDemo**
 
-Create `demo/demos/LayoutDemo.tsx`. Use `SwillustratorDemo.tsx` as the structural reference for `useSelectTool` + `<Canvas>` wiring. The adapter exposes:
+Create `demo/demos/LayoutDemo.tsx`. Use `WeaselDrawDemo.tsx` as the structural reference for `useSelectTool` + `<Canvas>` wiring. The adapter exposes:
 - Three container objects (`F`, `G`, `S`) and several child objects.
 - `getChildren(id)` returns the children for each container, `[]` for leaves.
 - `getLayout(id)` returns the appropriate strategy for each container.

@@ -85,15 +85,15 @@ export default defineConfig({
   optimizeDeps: {
     include: ['d3-force'],
   },
-  // Proxy `/weasel/swillustrator/*` to the swill dev server (`npm run dev:swill`,
+  // Proxy `/weasel/draw/*` to the WeaselDraw dev server (`npm run dev:draw`,
   // port 5174) so a single localhost:5173 origin mirrors the production Pages
-  // layout where swill is copied into `dist-demo/swillustrator/`. Both servers
-  // need to be running for this to work; swill's `base: '/weasel/swillustrator/'`
+  // layout where WeaselDraw is copied into `dist-demo/draw/`. Both servers
+  // need to be running for this to work; WeaselDraw's `base: '/weasel/draw/'`
   // means we forward the path through unchanged. WebSocket forwarding is enabled
   // so HMR + Vite's dev-server live-reload also work end-to-end via the proxy.
   server: {
     proxy: {
-      '/weasel/swillustrator': {
+      '/weasel/draw': {
         target: 'http://localhost:5174',
         changeOrigin: true,
         ws: true,

@@ -82,31 +82,31 @@ export const TWO_NAMESPACES_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns
   </g>
 </svg>`;
 
-/** Swillustrator-authored fixture: declares the `swill:` namespace, carries
+/** WeaselDraw-authored fixture: declares the `wd:` namespace, carries
  *  document title + paper-size metadata, and a couple of geometry leaves. */
-export const SWILLUSTRATOR_MINIMAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 816 1056" width="816" height="1056" swill:paperSize="letter" swill:units="px">
+export const WEASELDRAW_MINIMAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 816 1056" width="816" height="1056" wd:paperSize="letter" wd:units="px">
   <title>My Doc</title>
   <path d="M 100 100 L 200 100 L 200 200 L 100 200 Z" fill="#3366ff" stroke="none"/>
   <text x="120" y="160" dominant-baseline="text-before-edge" data-weasel-width="60" data-weasel-height="20" font-size="16" font-family="sans-serif" fill="#000000">Hello</text>
 </svg>`;
 
-/** Same shape as SWILLUSTRATOR_MINIMAL_SVG but with the A4 preset, to prove
+/** Same shape as WEASELDRAW_MINIMAL_SVG but with the A4 preset, to prove
  *  the paper-size enum round-trips for non-default values. */
-export const SWILLUSTRATOR_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 794 1123" width="794" height="1123" swill:paperSize="a4" swill:units="px">
+export const WEASELDRAW_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 794 1123" width="794" height="1123" wd:paperSize="a4" wd:units="px">
   <path d="M 10 10 L 50 10 L 50 50 L 10 50 Z" fill="#000000" stroke="none"/>
 </svg>`;
 
-export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 200 100">
-  <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" swill:line-height="1.4">Styled</text>
+export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 200 100">
+  <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" wd:line-height="1.4">Styled</text>
 </svg>`;
 
-export const SWILLUSTRATOR_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 400 400">
-  <g swill:group-id="g1">
+export const WEASELDRAW_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 400 400">
+  <g wd:group-id="g1">
     <path d="M 10 10 L 60 10 L 60 60 L 10 60 Z" fill="#ff0000" stroke="none"/>
     <path d="M 70 10 L 120 10 L 120 60 L 70 60 Z" fill="#00ff00" stroke="none"/>
     <path d="M 130 10 L 180 10 L 180 60 L 130 60 Z" fill="#0000ff" stroke="none"/>
   </g>
-  <g swill:group-id="g2">
+  <g wd:group-id="g2">
     <path d="M 10 100 L 60 100 L 60 150 L 10 150 Z" fill="#ffff00" stroke="none"/>
     <path d="M 70 100 L 120 100 L 120 150 L 70 150 Z" fill="#ff00ff" stroke="none"/>
     <path d="M 130 100 L 180 100 L 180 150 L 130 150 Z" fill="#00ffff" stroke="none"/>

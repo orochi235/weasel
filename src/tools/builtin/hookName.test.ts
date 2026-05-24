@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import * as Builtin from './index';
 
 // Parity check between this list and the kit's barrel exports. The richer
-// "def carries matching hookName" assertion lives in the swillustrator
+// "def carries matching hookName" assertion lives in the WeaselDraw
 // `registryProbe.test.tsx` because the def is only constructed inside a
 // React render — calling these hooks at module scope would violate React's
 // rules of hooks.

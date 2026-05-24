@@ -25,12 +25,12 @@ Demos under `demo/demos/` are **terse and single-purpose** — each one exists t
 
 UI words have specific referents — don't conflate them:
 
-- **workspace** — the striped/gray area surrounding the rendered page. In swillustrator this is `.swill-canvas-host`; in ToolkitBuilder there's no separate host so the `<canvas>` element itself plays this role.
-- **canvas** — the HTML `<canvas>` element. In swillustrator this is sized to the document page (`paper.width × paper.height`) and sits inside the workspace; in ToolkitBuilder the canvas spans the visible area.
-- **document** / **page** — the white paper drawn on the canvas (or, in swillustrator, the canvas itself since it IS sized to the paper). When the user says "document" they mean the page, not the canvas element.
+- **workspace** — the striped/gray area surrounding the rendered page. In WeaselDraw this is `.wd-canvas-host`; in ToolkitBuilder there's no separate host so the `<canvas>` element itself plays this role.
+- **canvas** — the HTML `<canvas>` element. In WeaselDraw this is sized to the document page (`paper.width × paper.height`) and sits inside the workspace; in ToolkitBuilder the canvas spans the visible area.
+- **document** / **page** — the white paper drawn on the canvas (or, in WeaselDraw, the canvas itself since it IS sized to the paper). When the user says "document" they mean the page, not the canvas element.
 - **scene** — the kit-owned tree (`Scene<TData, TLayer, TPose>`). Logical, not visual. Don't say "scene" when you mean "document" or "canvas".
 
-When positioning HUDs / overlays, pick the right anchor: "inside the workspace" means `.swill-canvas-host`'s rect, not the canvas's.
+When positioning HUDs / overlays, pick the right anchor: "inside the workspace" means `.wd-canvas-host`'s rect, not the canvas's.
 
 ## Key concepts
 

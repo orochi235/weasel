@@ -58,7 +58,7 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
     const readAnchor = (): HudState['anchor'] => {
       const canvas = canvasRef.current;
       if (!canvas) return null;
-      // Anchor to the canvas's container (e.g. swill's striped workspace),
+      // Anchor to the canvas's container (e.g. WeaselDraw's striped workspace),
       // falling back to the canvas itself if there's no wrapping parent.
       // The "canvas area" in editor parlance is the workspace, not the page.
       const host = canvas.parentElement ?? canvas;

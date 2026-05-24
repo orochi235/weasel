@@ -187,7 +187,7 @@ describe('applyBooleanOp — operation-specific behavior', () => {
   });
 
   it('passes the op kind to createPathNode as producedBy', () => {
-    // Adapters that want layer-icon provenance (e.g. swillustrator) read
+    // Adapters that want layer-icon provenance (e.g. WeaselDraw) read
     // the second arg of createPathNode to tag the minted node.
     const h = makeAdapter([
       rect('a', 0, 0, 10, 10),

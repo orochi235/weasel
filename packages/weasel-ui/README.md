@@ -2,7 +2,7 @@
 
 UI chrome primitives for weasel-based apps — selection-aware property
 panels, toolbar shells, etc. Sibling to `@orochi235/weasel`; consumed
-today only by the swillustrator demo via a vite alias (no workspaces
+today only by the WeaselDraw demo via a vite alias (no workspaces
 yet).
 
 ## What's here

@@ -32,7 +32,7 @@ export interface NamespaceMeta {
     /**
      * Child elements in this namespace, keyed by local name. Each entry
      * is an array because a namespace can host multiple sibling elements
-     * with the same tag (e.g. `<swill:layer/><swill:layer/>`).
+     * with the same tag (e.g. `<wd:layer/><wd:layer/>`).
      */
     elements?: Record<string, NamespacedElement[]>;
   };

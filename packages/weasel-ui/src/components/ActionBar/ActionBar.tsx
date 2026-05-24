@@ -50,7 +50,7 @@ function resolveTitle(label: string, shortcut: string | undefined): string {
  * swallows clicks while the keybinding — if any — still fires through the
  * registry's keydown listener; that's the registry's contract, not ours).
  *
- * Visual parity with the swillustrator `<PathfinderPanel>` is intentional;
+ * Visual parity with the WeaselDraw `<PathfinderPanel>` is intentional;
  * this is the generic, registry-driven version. No keyboard navigation
  * (roving tabindex) yet — bar consumers today are short flat strips. Add
  * if/when a long bar lands.

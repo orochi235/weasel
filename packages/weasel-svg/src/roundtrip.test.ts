@@ -185,7 +185,7 @@ describe('round-trip', () => {
   });
 
   it('text style: font-size/family/weight/italic/align + fill round-trip', () => {
-    const namespaces = { swill: 'https://swillustrator.app/svg-ext' };
+    const namespaces = { wd: 'https://weaseldraw.app/svg-ext' };
     const first = parseSvg(F.TEXT_STYLE_FULL_SVG, { namespaces });
     expect(first.warnings).toEqual([]);
     expect(first.nodes).toHaveLength(1);
@@ -197,10 +197,10 @@ describe('round-trip', () => {
     expect(t.style?.fontStyle).toBe('italic');
     expect(t.style?.align).toBe('center');
     expect(t.style?.fill).toEqual({ fill: 'solid', color: '#b03030' });
-    // lineHeight rides on meta.swill.attrs['line-height'] — interpreted by
+    // lineHeight rides on meta.wd.attrs['line-height'] — interpreted by
     // svgInterop, not by weasel-svg. From weasel-svg's perspective the
     // value is just a string in the meta bag.
-    expect(t.meta?.swill?.attrs?.['line-height']).toBe('1.4');
+    expect(t.meta?.wd?.attrs?.['line-height']).toBe('1.4');
 
     const out = serializeSvg(first.nodes, {
       viewBox: { x: 0, y: 0, width: 200, height: 100 },
@@ -211,7 +211,7 @@ describe('round-trip', () => {
     expect(out).toContain('font-weight="700"');
     expect(out).toContain('font-style="italic"');
     expect(out).toContain('text-anchor="middle"');
-    expect(out).toContain('swill:line-height="1.4"');
+    expect(out).toContain('wd:line-height="1.4"');
     expect(out).toContain('fill="#b03030"');
     // Legacy attribute is gone — no compat-write either.
     expect(out).not.toContain('data-weasel-line-height');
@@ -220,7 +220,7 @@ describe('round-trip', () => {
     const t2 = second.nodes[0];
     if (t2.kind !== 'text') throw new Error('expected text');
     expect(t2.style).toEqual(t.style);
-    expect(t2.meta?.swill?.attrs?.['line-height']).toBe('1.4');
+    expect(t2.meta?.wd?.attrs?.['line-height']).toBe('1.4');
   });
 
   it('generic namespace pass-through: two declared namespaces stay isolated', () => {
@@ -276,12 +276,12 @@ describe('round-trip', () => {
     expect(g2.children[0].meta).toEqual(leaf.meta);
   });
 
-  it('document-level metadata: viewBox, swill:paperSize, swill:units, title', () => {
-    const namespaces = { swill: 'https://swillustrator.app/svg-ext' };
-    const first = parseSvg(F.SWILLUSTRATOR_MINIMAL_SVG, { namespaces });
+  it('document-level metadata: viewBox, wd:paperSize, wd:units, title', () => {
+    const namespaces = { wd: 'https://weaseldraw.app/svg-ext' };
+    const first = parseSvg(F.WEASELDRAW_MINIMAL_SVG, { namespaces });
     expect(first.viewBox).toEqual({ x: 0, y: 0, width: 816, height: 1056 });
-    expect(first.documentMeta?.swill?.attrs?.paperSize).toBe('letter');
-    expect(first.documentMeta?.swill?.attrs?.units).toBe('px');
+    expect(first.documentMeta?.wd?.attrs?.paperSize).toBe('letter');
+    expect(first.documentMeta?.wd?.attrs?.units).toBe('px');
     expect(first.title).toBe('My Doc');
 
     const out = serializeSvg(first.nodes, {
@@ -292,49 +292,49 @@ describe('round-trip', () => {
       namespaces,
       documentMeta: first.documentMeta,
     });
-    expect(out).toContain('xmlns:swill="https://swillustrator.app/svg-ext"');
+    expect(out).toContain('xmlns:wd="https://weaseldraw.app/svg-ext"');
     expect(out).toContain('width="816"');
     expect(out).toContain('height="1056"');
-    expect(out).toContain('swill:paperSize="letter"');
-    expect(out).toContain('swill:units="px"');
+    expect(out).toContain('wd:paperSize="letter"');
+    expect(out).toContain('wd:units="px"');
     expect(out).toContain('<title>My Doc</title>');
 
     const second = parseSvg(out, { namespaces });
     expect(second.viewBox).toEqual(first.viewBox);
-    expect(second.documentMeta?.swill?.attrs?.paperSize).toBe('letter');
+    expect(second.documentMeta?.wd?.attrs?.paperSize).toBe('letter');
     expect(second.title).toBe('My Doc');
   });
 
   it('paper-size preset: A4', () => {
-    const namespaces = { swill: 'https://swillustrator.app/svg-ext' };
-    const r = parseSvg(F.SWILLUSTRATOR_PAPERS_SVG, { namespaces });
-    expect(r.documentMeta?.swill?.attrs?.paperSize).toBe('a4');
+    const namespaces = { wd: 'https://weaseldraw.app/svg-ext' };
+    const r = parseSvg(F.WEASELDRAW_PAPERS_SVG, { namespaces });
+    expect(r.documentMeta?.wd?.attrs?.paperSize).toBe('a4');
     expect(r.viewBox).toEqual({ x: 0, y: 0, width: 794, height: 1123 });
   });
 
-  it('groups with swill:group-id round-trip', () => {
-    const namespaces = { swill: 'https://swillustrator.app/svg-ext' };
-    const first = parseSvg(F.SWILLUSTRATOR_GROUPS_SVG, { namespaces });
+  it('groups with wd:group-id round-trip', () => {
+    const namespaces = { wd: 'https://weaseldraw.app/svg-ext' };
+    const first = parseSvg(F.WEASELDRAW_GROUPS_SVG, { namespaces });
     expect(first.warnings).toEqual([]);
     expect(first.nodes).toHaveLength(2);
     expect(first.nodes[0].kind).toBe('group');
     const g0 = first.nodes[0];
     if (g0.kind !== 'group') throw new Error('expected group');
-    expect(g0.meta?.swill?.attrs?.['group-id']).toBe('g1');
+    expect(g0.meta?.wd?.attrs?.['group-id']).toBe('g1');
     expect(g0.children).toHaveLength(3);
 
     const out = serializeSvg(first.nodes, {
       viewBox: { x: 0, y: 0, width: 400, height: 400 },
       namespaces,
     });
-    expect(out).toContain('swill:group-id="g1"');
-    expect(out).toContain('swill:group-id="g2"');
+    expect(out).toContain('wd:group-id="g1"');
+    expect(out).toContain('wd:group-id="g2"');
 
     const second = parseSvg(out, { namespaces });
     expect(second.nodes).toHaveLength(2);
     const s0 = second.nodes[0];
     if (s0.kind !== 'group') throw new Error('expected group');
-    expect(s0.meta?.swill?.attrs?.['group-id']).toBe('g1');
+    expect(s0.meta?.wd?.attrs?.['group-id']).toBe('g1');
     expect(s0.children).toHaveLength(3);
   });
 
@@ -442,7 +442,7 @@ describe('rotation round-trip — parse', () => {
     expect(parsed.warnings.some((w) => /rotation/i.test(w))).toBe(true);
   });
 
-  it('save → load → save is byte-identical for a Swillustrator-authored rotated rect', () => {
+  it('save → load → save is byte-identical for a WeaselDraw-authored rotated rect', () => {
     const node: SvgNode = {
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 100, height: 50 },

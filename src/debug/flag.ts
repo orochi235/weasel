@@ -1,7 +1,7 @@
 /**
  * Kit-level debug flag, gated by localStorage.
  *
- * Set `localStorage.setItem('weasel.debug', '1')` (or `'swillustrator.debug'`
+ * Set `localStorage.setItem('weasel.debug', '1')` (or `'weaseldraw.debug'`
  * — both are recognized) in the browser console to enable verbose
  * diagnostics throughout the kit and its consumers:
  *
@@ -18,7 +18,7 @@
  * up a change.
  */
 
-const KEYS = ['weasel.debug', 'swillustrator.debug'] as const;
+const KEYS = ['weasel.debug', 'weaseldraw.debug'] as const;
 
 let cached: boolean | null = null;
 

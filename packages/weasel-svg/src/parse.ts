@@ -743,8 +743,8 @@ function readTextStyle(
   else if (anchor === 'middle') style.align = 'center';
   else if (anchor === 'end') style.align = 'right';
   // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
-  // attribute. Swillustrator carries it through the generic namespace bag
-  // as `meta.swill.attrs['line-height']`; svgInterop lifts it into / out of
+  // attribute. WeaselDraw carries it through the generic namespace bag
+  // as `meta.wd.attrs['line-height']`; svgInterop lifts it into / out of
   // `TextStyle.lineHeight` at the bridge layer. From weasel-svg's POV the
   // value is just an opaque string in `meta`.
   // Edit-overlay-only chrome (`caretColor`, `selectionBackground`,

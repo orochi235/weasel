@@ -17,7 +17,7 @@
 **Out of scope (Phase 2b/2c):**
 - `hand` tool — depends on viewport spec, deferred to Phase 2b.
 - Pen, text, insert-rect cookbook tools — Phase 2c.
-- Swillustrator demo — Phase 2c.
+- WeaselDraw demo — Phase 2c.
 - Migrating existing demos off `gestures={...}` / `tool="select"` props — happens in Phase 3.
 - Removing `useMove` / `useResize` / etc. from public API — Phase 4.
 

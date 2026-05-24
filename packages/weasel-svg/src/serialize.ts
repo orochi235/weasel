@@ -277,8 +277,8 @@ function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Reco
     attrs.push(`text-anchor="${anchor}"`);
   }
   // Note: `lineHeight` is NOT emitted here. The bridge layer (svgInterop)
-  // lifts it into `meta.swill.attrs['line-height']`, which `metaAttrsXml`
-  // below emits as `swill:line-height="..."`. There is no compat write of
+  // lifts it into `meta.wd.attrs['line-height']`, which `metaAttrsXml`
+  // below emits as `wd:line-height="..."`. There is no compat write of
   // `data-weasel-line-height` — per the SVG-native plan's Migration section,
   // no installed base exists to compat against.
   if (style?.fill) {

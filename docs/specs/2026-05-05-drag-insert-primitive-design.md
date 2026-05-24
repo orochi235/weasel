@@ -450,12 +450,12 @@ shared at construction time).
   `onStart`, `applyBatchRef` captures on entry and clears on end/cancel.
 - **`useInsertTool.test.ts` / `useTextTool.test.ts` (preserve):** existing behavior cases
   unchanged — they validate the wrappers preserve their public surfaces.
-- **Integration:** `swillustratorDemo.integration.test.tsx` and the demo apps exercise
+- **Integration:** `WeaseldrawDemo.integration.test.tsx` and the demo apps exercise
   both paths in real DOM — behavioral regressions surface there.
 
 ## Migration
 
-- Swillustrator was already migrated as part of the May 4 work. No further consumer changes.
+- WeaselDraw was already migrated as part of the May 4 work. No further consumer changes.
 - No version-bump considerations (pre-release).
 
 ## Risks

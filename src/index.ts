@@ -668,7 +668,7 @@ export {
 } from './renderer/math/color';
 
 // ─── Built-in tool icons ────────────────────────────────────────────────────
-// Match the convention used by the Pathfinder panel and Swillustrator
+// Match the convention used by the Pathfinder panel and WeaselDraw
 // action-bar icons. Available to any consumer rendering a tool palette
 // today; will back `Tool.presentation.icon` defaults once the
 // tool-palette spec ships.
@@ -691,7 +691,7 @@ export type { IconProps } from './icons';
 
 // ─── Default boolean-op (Pathfinder) icons ──────────────────────────────────
 // Shipped with `defaultBooleanActions`; re-exported so consumers that need to
-// render an op-shaped glyph outside an `<ActionBar>` (e.g. swillustrator's
+// render an op-shaped glyph outside an `<ActionBar>` (e.g. WeaselDraw's
 // layer-row "produced by" badge) don't have to author their own SVGs or reach
 // into a deep path.
 export {

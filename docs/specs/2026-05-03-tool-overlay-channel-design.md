@@ -18,7 +18,7 @@ build functions (`buildInsertOverlayLayer`, `buildAreaSelectOverlayLayer`,
 
 When the Tool wrappers (`useInsertTool`, `useSelectTool`, ...) consume
 those gesture controllers internally, the overlay state has no path
-to Canvas. Result: in any Tool-primitive demo (Swillustrator, ZoomDemo,
+to Canvas. Result: in any Tool-primitive demo (WeaselDraw, ZoomDemo,
 PanDemo), every gesture overlay is invisible — insert preview rect,
 area-select marquee, move ghost, resize ghost, rotate ghost.
 
@@ -159,7 +159,7 @@ each Tool wrapper's defaults.
   - Remove `buildInsertOverlayLayer`, `buildAreaSelectOverlayLayer`.
   - Replace `insert?.overlay`, `move?.overlay`, etc. reads in pose closures with: scene draws committed state only; in-flight ghosts render via Tool overlays.
   - Append `tools.getActiveOverlays()` to layer pipeline after all slot layers resolve.
-- `demo/demos/SwillustratorDemo.tsx`, `demo/demos/ZoomDemo.tsx`, `demo/demos/PanDemo.tsx` — remove now-stale slot config; verify overlays render via the new channel.
+- `demo/demos/WeaselDrawDemo.tsx`, `demo/demos/ZoomDemo.tsx`, `demo/demos/PanDemo.tsx` — remove now-stale slot config; verify overlays render via the new channel.
 
 **Other demos** (PathPoseDemo, BezierEditDemo, CompoundPathsDemo, TextDemo, etc.) that currently pass `move={ctl}`, `resize={ctl}`, etc. via the legacy non-Tool API need migration. Two paths:
 
@@ -175,7 +175,7 @@ each Tool wrapper's defaults.
 - `src/tools/builtin/useInsertTool.test.ts` — Tool's overlay renders when scratch has an active overlay; respects `overlayStyle`; renders nothing when no gesture in flight.
 - `src/tools/builtin/useSelectTool.test.ts` — overlay renders area-select rect during marquee; renders move ghost during move; renders resize ghost during resize; renders rotate ghost during rotate; respects per-mode style options.
 - `src/canvas/Canvas.test.tsx` — replaces `insert={ctl}` / `areaSelect={ctl}` integration tests with Tool-primitive equivalents; verifies `getActiveOverlays()` output lands in the layer pipeline; verifies z-order (overlays render above selection chrome).
-- Demo integration tests (`swillustratorDemo.integration.test.tsx`, `panDemo.integration.test.tsx` if exists, etc.) — extend to assert overlay layers actually appear during a drag.
+- Demo integration tests (`WeaseldrawDemo.integration.test.tsx`, `panDemo.integration.test.tsx` if exists, etc.) — extend to assert overlay layers actually appear during a drag.
 
 ## Tests required
 

@@ -1,7 +1,7 @@
 /**
  * @experimental
  * Default boolean-op (Pathfinder) icons shipped with `defaultBooleanActions`.
- * Lifted verbatim from `apps/swillustrator`'s `<PathfinderPanel>` so
+ * Lifted verbatim from `apps/draw`'s `<PathfinderPanel>` so
  * consumers get a working icon set without having to author or import their
  * own. 20x20 viewBox, `currentColor` so theming is via CSS.
  */

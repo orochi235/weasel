@@ -84,4 +84,4 @@ When this action runs, the dispatcher reads `'color'` and `'selection'` from the
 
 ## Where the kit's templates live
 
-Each file under `src/canvas/deps/` is a one-screen example of the pattern: ref-stabilise the inputs, call `useDepSource`, return. The Swill app's `ColorDepBridge` (in `apps/swillustrator/src/App.tsx`) is the canonical consumer-side example.
+Each file under `src/canvas/deps/` is a one-screen example of the pattern: ref-stabilise the inputs, call `useDepSource`, return. The WeaselDraw app's `ColorDepBridge` (in `apps/draw/src/App.tsx`) is the canonical consumer-side example.

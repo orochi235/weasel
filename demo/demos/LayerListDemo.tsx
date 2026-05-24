@@ -7,10 +7,10 @@ import {
   useSelectTool,
   useTools,
 } from '@orochi235/weasel';
-// `LayerList` + `useLayerList` are Swillustrator-side specializations
-// (kit/app split): they live under `apps/swillustrator/src/ui/`. Imported
+// `LayerList` + `useLayerList` are WeaselDraw-side specializations
+// (kit/app split): they live under `apps/draw/src/ui/`. Imported
 // via relative path because both directories are part of this monorepo.
-import { LayerList, useLayerList } from '../../apps/swillustrator/src/ui/LayerList';
+import { LayerList, useLayerList } from '../../apps/draw/src/ui/LayerList';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }

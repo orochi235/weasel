@@ -16,7 +16,7 @@
 
 - May 4 work shipped: `useInsert` already has `pointInsert`/`clickOnly`/`applyBatch`; `useTextTool` and `useInsertTool` already share `applyHitExistingGate` + `drawMarquee` + `InsertOverlayStyle`; both delegate to `useInsert`.
 - `useAreaSelect` is monolithic — has its own scratch + bounds + overlay code.
-- `swillustrator` migration shipped; no other consumers.
+- `WeaselDraw` migration shipped; no other consumers.
 
 ## Resolved deferrals (from spec)
 
@@ -1353,9 +1353,9 @@ Expected: clean ESM + DTS build.
 
 Start the dev server and exercise:
 - **InsertDemo** — click empty canvas: should not insert (no `pointInsert` wired). Drag a rect: rect appears.
-- **TextDemo** (or swillustrator's text tool) — click empty: text object appears at click point. Drag: text object sized to drag bounds.
+- **TextDemo** (or WeaselDraw's text tool) — click empty: text object appears at click point. Drag: text object sized to drag bounds.
 - **MultiSelectDemo / area-select** — drag-rect to lasso multiple objects: behaviors fire, selection updates.
-- **Swillustrator full** — exercise insert + text + select all in one place, including the text-tool history (undo a click-inserted text).
+- **WeaselDraw full** — exercise insert + text + select all in one place, including the text-tool history (undo a click-inserted text).
 
 Document any visible regressions; do not commit if any appear (re-open the relevant task).
 

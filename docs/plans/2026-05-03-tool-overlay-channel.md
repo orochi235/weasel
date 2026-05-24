@@ -43,7 +43,7 @@ Each task below dispatches a fresh subagent. The subagent should be told:
   - Replace `move?.overlay?.poses.get(id)` etc. in pose-resolution closures: scene draws committed state only.
   - In the `layers` useMemo, append `tools.getActiveOverlays()` after all standard-slot resolution.
 - `src/index.ts` — drop `InsertOverlaySlotConfig`, `AreaSelectOverlaySlotConfig` from re-exports.
-- `demo/demos/SwillustratorDemo.tsx` — remove `insertOverlay: {}` slot.
+- `demo/demos/WeaselDrawDemo.tsx` — remove `insertOverlay: {}` slot.
 - `demo/demos/InsertDemo.tsx` — migrate from `tool="insert"` to `useInsertTool` + `useTools`.
 - `demo/demos/ComposeDemo.tsx` — migrate from `tool={tool}` switch to `useSelectTool` + `useInsertTool` + `useTools`.
 - `demo/demos/NestingDemo.tsx` — migrate from `move={move}` prop to a wrapping Tool (custom `useMoveTool` defined inline, or migrate to `useSelectTool`'s move sub-controller).
@@ -54,7 +54,7 @@ Each task below dispatches a fresh subagent. The subagent should be told:
 - `src/tools/builtin/useInsertTool.test.ts` — overlay layer renders when scratch has overlay state; respects `overlayStyle`; renders nothing when no gesture in flight.
 - `src/tools/builtin/useSelectTool.test.ts` — overlay branches by sub-controller (area / move / resize / rotate).
 - `src/canvas/Canvas.test.tsx` — replace `insert={ctl}` / `areaSelect={ctl}` integration tests with Tool-primitive equivalents; verify `getActiveOverlays()` output lands at the top of the layer pipeline.
-- `demo/demos/swillustratorDemo.integration.test.tsx` — extend to assert insert-rect overlay rect appears mid-drag; area-select marquee appears mid-drag.
+- `demo/demos/WeaseldrawDemo.integration.test.tsx` — extend to assert insert-rect overlay rect appears mid-drag; area-select marquee appears mid-drag.
 
 **Out of scope (deferred — already in spec):**
 - Per-overlay z-positioning (`overlayPosition` field).
@@ -512,15 +512,15 @@ git commit -m "feat(canvas): append tools.getActiveOverlays() to layer pipeline"
 
 ---
 
-## Task 6: Wire Swillustrator demo's tool palette to use the new overlay channel
+## Task 6: Wire WeaselDraw demo's tool palette to use the new overlay channel
 
-This is a verification task — Swillustrator already uses the Tool primitive with `useInsertTool` and `useSelectTool`. After Tasks 3+5, the insert overlay should appear via the new channel. After Task 4, area-select / move / resize / rotate ghosts also appear.
+This is a verification task — WeaselDraw already uses the Tool primitive with `useInsertTool` and `useSelectTool`. After Tasks 3+5, the insert overlay should appear via the new channel. After Task 4, area-select / move / resize / rotate ghosts also appear.
 
 **Files:**
-- Modify: `demo/demos/SwillustratorDemo.tsx`
-- Modify: `demo/demos/swillustratorDemo.integration.test.tsx`
+- Modify: `demo/demos/WeaselDrawDemo.tsx`
+- Modify: `demo/demos/WeaseldrawDemo.integration.test.tsx`
 
-- [ ] **Step 1: Remove the now-redundant `insertOverlay: {}` slot from SwillustratorDemo's `layers` map.**
+- [ ] **Step 1: Remove the now-redundant `insertOverlay: {}` slot from WeaselDrawDemo's `layers` map.**
 
 ```ts
 // Before:
@@ -553,11 +553,11 @@ const select = useSelectTool<Obj, Pose>(adapter, {
 });
 ```
 
-- [ ] **Step 2: Extend integration test** — add assertions to `swillustratorDemo.integration.test.tsx`:
+- [ ] **Step 2: Extend integration test** — add assertions to `WeaseldrawDemo.integration.test.tsx`:
 
 ```ts
 it('shows insert-rect overlay during a drag', async () => {
-  const { container } = render(<SwillustratorDemo />);
+  const { container } = render(<WeaselDrawDemo />);
   // Click "Rect" button.
   fireEvent.click(screen.getByRole('button', { name: /Rect/ }));
   const canvas = container.querySelector('canvas')!;
@@ -580,13 +580,13 @@ Expected: PASS, TS clean.
 
 - [ ] **Step 4: Manual verify in browser**
 
-Run dev server (`npm run dev`), open Swillustrator demo, switch to Rect tool, drag — verify green marquee appears. Switch to Select, drag empty space — verify purple marquee appears. Drag a rect — verify ghost appears. Resize, rotate — verify ghosts appear.
+Run dev server (`npm run dev`), open WeaselDraw demo, switch to Rect tool, drag — verify green marquee appears. Switch to Select, drag empty space — verify purple marquee appears. Drag a rect — verify ghost appears. Resize, rotate — verify ghosts appear.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add demo/demos/SwillustratorDemo.tsx demo/demos/swillustratorDemo.integration.test.tsx
-git commit -m "demo(swillustrator): drop now-redundant insertOverlay slot config"
+git add demo/demos/WeaselDrawDemo.tsx demo/demos/WeaseldrawDemo.integration.test.tsx
+git commit -m "demo(WeaselDraw): drop now-redundant insertOverlay slot config"
 ```
 
 ---
@@ -825,7 +825,7 @@ git commit -m "docs: mark tool overlay channel shipped, log v1 deferrals"
 
 (See spec for the full review pass — this section to be completed after the plan is reviewed.)
 
-**Spec coverage checked:** all bullet points from the spec's "Files to create / modify" section are mapped to tasks above. Sequencing: tasks 1–5 add the new channel non-destructively; task 6 verifies via Swillustrator; tasks 7–9 migrate the legacy-prop demos; tasks 10–11 are the destructive cleanups (props/slot configs first, `tool=` shorthand second); task 12 finalizes docs.
+**Spec coverage checked:** all bullet points from the spec's "Files to create / modify" section are mapped to tasks above. Sequencing: tasks 1–5 add the new channel non-destructively; task 6 verifies via WeaselDraw; tasks 7–9 migrate the legacy-prop demos; tasks 10–11 are the destructive cleanups (props/slot configs first, `tool=` shorthand second); task 12 finalizes docs.
 
 **Type consistency:** `useInsertTool` adds `overlayStyle: { fill, stroke, dash, lineWidth }`; `useSelectTool` adds four parallel options (`areaSelectOverlayStyle`, `moveOverlayStyle`, `resizeOverlayStyle`, `rotateOverlayStyle`). Names match the slot configs they replace.
 

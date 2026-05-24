@@ -1,4 +1,4 @@
-/* `<ActionBar>` shares the segmented widget look of the swillustrator
+/* `<ActionBar>` shares the segmented widget look of the WeaselDraw
  * pathfinder panel — small chrome on the panel surface so a bar of
  * Action buttons reads as a single control. Tokens are theme-driven
  * via `--wzl-*`. Visual parity with `PathfinderPanel.module.css` is

@@ -1,5 +1,5 @@
 // Integration tests for useEyedropperTool through the dispatcher, mirroring
-// the way swillustrator wires it: registry-active (sticky `I`), hotkey-engaged
+// the way WeaselDraw wires it: registry-active (sticky `I`), hotkey-engaged
 // (alt-hold), and a getNodeAtPoint callback that derives `ctx.target.category`.
 //
 // These complement the unit tests in useEyedropperTool.test.ts (which call the
@@ -41,7 +41,7 @@ function pointerEvent(type: string, init: Partial<PointerEventInit> = {}): Point
 }
 
 // A getNodeAtPoint that always returns a single 'rect' node — matches the
-// swillustrator pattern of returning the topmost item under the cursor.
+// WeaselDraw pattern of returning the topmost item under the cursor.
 const getNodeAtPoint = () => ({
   id: 'r1' as NodeId,
   kind: 'rect',
@@ -51,7 +51,7 @@ const getNodeAtPoint = () => ({
 
 describe('useEyedropperTool through the dispatcher', () => {
   it('active-slot click on a rect routes through pickFromNode to onPick', () => {
-    // Mirrors swillustrator after the user presses `I` to switch tools:
+    // Mirrors WeaselDraw after the user presses `I` to switch tools:
     // slots.active = eyedropper, slots.hotkey = null.
     const onPick = vi.fn();
     const colorOf = () => '#7fb069';
@@ -74,7 +74,7 @@ describe('useEyedropperTool through the dispatcher', () => {
   });
 
   it('hotkey-slot click pre-empts an active tool that claims at pointerdown', () => {
-    // Mirrors swillustrator while the user holds Alt: slots.hotkey = eyedropper,
+    // Mirrors WeaselDraw while the user holds Alt: slots.hotkey = eyedropper,
     // slots.active = select-like-tool whose pointer.onDown always claims (the
     // useSelectTool pattern). Without proper priority the select tool would win
     // and the eyedropper would never run — this test pins that down.
@@ -108,7 +108,7 @@ describe('useEyedropperTool through the dispatcher', () => {
   });
 
   it('without getNodeAtPoint, every click is classified as empty → onPick never fires', () => {
-    // Regression guard for the swillustrator bug: omitting `getNodeAtPoint`
+    // Regression guard for the WeaselDraw bug: omitting `getNodeAtPoint`
     // from `useTools` makes the dispatcher fall back to empty hits, which the
     // eyedropper's `pickFromNode` short-circuits on. This test pins down the
     // failure mode so the missing-wiring case stays visible.

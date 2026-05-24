@@ -529,7 +529,7 @@ export const DEMOS: DemoEntry[] = [
 // extras still take precedence (entry order + curated language).
 const RAW_BY_GLOB_KEY = import.meta.glob([
   './demos/**/*.{tsx,ts,json,css}',
-  '../apps/swillustrator/src/**/*.{tsx,ts,css}',
+  '../apps/draw/src/**/*.{tsx,ts,css}',
   '../packages/**/src/**/*.{tsx,ts,css}',
 ], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 

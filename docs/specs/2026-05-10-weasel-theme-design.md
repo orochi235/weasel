@@ -48,7 +48,7 @@ tokens:
 | Theme refresh cadence | Read on every HUD draw | One `getComputedStyle` + ~16 property lookups; sub-millisecond. |
 | Theme refresh trigger | Piggybacks on existing redraw events | Consumer calls `hud.markDirty()` after manual CSS swaps. |
 | Cross-package | weasel-ui's CSS components migrate to `--wzl-*` | Mechanical sed-style rename. |
-| Legacy `--wui-*` | Dropped | Migrate the one swillustrator demo import; this is exploratory work, no published external consumers. |
+| Legacy `--wui-*` | Dropped | Migrate the one WeaselDraw demo import; this is exploratory work, no published external consumers. |
 
 ## Architecture
 
@@ -110,7 +110,7 @@ export type TokenName = keyof typeof DEFAULT_TOKENS;
 - `packages/weasel-ui/src/tokens.css` is **deleted**.
 - All references to `--wui-*` in `packages/weasel-ui/src/*.module.css` are rewritten
   to `--wzl-*`. Mechanical sed-style rename, ~30-50 references.
-- The one demo currently importing `@orochi235/weasel-ui/tokens.css` (swillustrator,
+- The one demo currently importing `@orochi235/weasel-ui/tokens.css` (WeaselDraw,
   per the existing alias in `vite.config.ts`) migrates to
   `@orochi235/weasel-theme/tokens.css`.
 - `package.json`'s `./tokens.css` export entry is removed from weasel-ui.

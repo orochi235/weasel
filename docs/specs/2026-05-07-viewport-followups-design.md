@@ -149,7 +149,7 @@ viewport?: {
 - `pinchZoom` → append `usePinchZoomTool(config)` to ambient.
 - `animatedZoom` → pass `animate: true` + config to the internal `useKeyboardZoomTool`.
 
-**Migration**: all existing demos and `apps/swillustrator/` that pass the old flat props must be updated to the new grouped shape. This is mechanical — search for `moveOptions=`, `resizeOptions=`, `snap=`, `pickEvery=`, `boundsOf=`, `handleHitRadius=`, `commitInsert=`, `insertLayer=` on `<SceneCanvas` and wrap appropriately (`commitInsert`/`insertLayer` wrap into `insertTool={{ create: ..., layer: ... }}`).
+**Migration**: all existing demos and `apps/draw/` that pass the old flat props must be updated to the new grouped shape. This is mechanical — search for `moveOptions=`, `resizeOptions=`, `snap=`, `pickEvery=`, `boundsOf=`, `handleHitRadius=`, `commitInsert=`, `insertLayer=` on `<SceneCanvas` and wrap appropriately (`commitInsert`/`insertLayer` wrap into `insertTool={{ create: ..., layer: ... }}`).
 
 ## 4. SceneCanvas insertTool reshape
 
@@ -210,7 +210,7 @@ src/canvas/SceneCanvas.tsx                (geometry/selectTool/insertTool/viewpo
 src/index.ts                              (new exports)
 ```
 
-No new demo files. Existing `HandToolDemo` or `SwillustratorDemo` validates the happy path.
+No new demo files. Existing `HandToolDemo` or `WeaselDrawDemo` validates the happy path.
 
 ## 6. Exports (barrel additions)
 

@@ -10,7 +10,7 @@ const storybookDir = dirname(fileURLToPath(new URL('./.storybook/main.ts', impor
 
 // One vitest config; named projects per surface. Each project owns its
 // include glob so suites can run independently (`vitest --project=weasel-ui`).
-// Default `npm test` runs the jsdom projects (kit, weasel-ui, swillustrator,
+// Default `npm test` runs the jsdom projects (kit, weasel-ui, WeaselDraw,
 // smoke). Heavy projects (storybook browser tests) are opt-in via
 // `npm run test:stories`. Shared concerns (jsdom env, setup, alias map) live
 // in the per-project block — vitest doesn't currently inherit `resolve` or
@@ -70,11 +70,11 @@ export default defineConfig({
       {
         ...shared,
         test: {
-          name: 'swillustrator',
+          name: 'draw',
           environment: 'jsdom',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
-          include: ['apps/swillustrator/**/*.test.{ts,tsx}'],
+          include: ['apps/draw/**/*.test.{ts,tsx}'],
         },
       },
       // Runs every CSF story as a Vitest test. Requires Playwright

@@ -9,7 +9,7 @@
 Ship `useUserPenTool` — an active-slot Tool that lets a user build a new
 `PolygonPath` from scratch, click-by-click, with Illustrator-style
 click-vs-drag (corner anchor vs smooth anchor with control handles).
-Becomes the fifth tool in Swillustrator and the first non-trivial
+Becomes the fifth tool in WeaselDraw and the first non-trivial
 content-creation tool in the kit.
 
 ## Architecture
@@ -248,7 +248,7 @@ All coords go through `worldToScreen(...)` since the layer runs in
   - All draw calls use screen-px coords (verified by stubbing
     worldToScreen and asserting on outputs)
 
-- Integration smoke in Swillustrator demo: switch to pen, draw a
+- Integration smoke in WeaselDraw demo: switch to pen, draw a
   3-anchor open path, hit Enter, verify a new object lands in items.
 
 ## Deferred / out of scope
@@ -285,6 +285,6 @@ Tracked in `docs/TODO.md` under "Tool primitive follow-ups":
 - Create: `src/util/constrainTo45.test.ts`
 - Modify: `src/tools/builtin/index.ts` (re-export)
 - Modify: `src/index.ts` (re-export)
-- Modify: `demo/demos/SwillustratorDemo.tsx` (add pen tool to palette)
+- Modify: `demo/demos/WeaselDrawDemo.tsx` (add pen tool to palette)
 - Modify: `docs/TODO.md` (move Pen tool entry from "Tool primitive
   follow-ups" to under "shipped"; add the deferred items above)

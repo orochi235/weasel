@@ -19,12 +19,12 @@ function formatRelativeOrIso(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
 }
 // CommandPalette / useCommandPaletteShortcut live in
-// apps/swillustrator/src/ui/ after the kit/app split. The demo harness uses
+// apps/draw/src/ui/ after the kit/app split. The demo harness uses
 // them for its own command-palette chrome via this relative import.
 import {
   CommandPalette,
   useCommandPaletteShortcut,
-} from '../apps/swillustrator/src/ui/CommandPalette';
+} from '../apps/draw/src/ui/CommandPalette';
 // We deliberately don't import @orochi235/weasel-ui/tokens.css here — the
 // demo's own canvas-kit-demo.css supplies dark-theme --wui-* values mapped
 // from --ckd-* tokens. Pulling tokens.css would clobber those with the
@@ -66,7 +66,7 @@ export function WeaselDemos() {
           <p><a href="./api/">API reference →</a></p>
           <p><a href="./api-gestures/">weasel-gestures API →</a></p>
           <p><a href="./docs/ui/storybook/">UI storybook →</a></p>
-          <p><a href="./swillustrator/#/dev/toolkits">Toolkit builder →</a></p>
+          <p><a href="./draw/#/dev/toolkits">Toolkit builder →</a></p>
           <p className="ckd-sidebar-hint">
             Press <kbd>/</kbd> for the command palette.
           </p>

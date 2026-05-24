@@ -49,7 +49,7 @@ describe('kit barrel parity', () => {
     expect(missing, `Op factories defined in src/core/ops/ but not re-exported from src/index.ts: ${missing.join(', ')}`).toEqual([]);
   });
 
-  // The Bundle Inspector (`apps/swillustrator/src/dev/registryData.ts`) used
+  // The Bundle Inspector (`apps/draw/src/dev/registryData.ts`) used
   // to hardcode `SHAPE_KIND_IDS` mirrored from `BuiltinShapeToolId`. The kit
   // is now the source of truth — assert every shape kind the inspector
   // expects is present on the kit-exported tuple. Adding a new builtin shape
@@ -87,7 +87,7 @@ describe('kit barrel parity', () => {
     ).toEqual([]);
   });
 
-  // `apps/swillustrator/src/dev/registryData.ts` previously mirrored
+  // `apps/draw/src/dev/registryData.ts` previously mirrored
   // `BUNDLE_DEFINITIONS` from the kit's internal `BUNDLE_TOOLS` map. Now the
   // kit ships it directly — assert the export exists, names every
   // `ToolBundle` id, and lists tool ids for each.
