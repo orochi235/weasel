@@ -340,6 +340,13 @@ html, body, #root {
   --wd-mode-tint-intensity: 0.12;
 }
 
+/* Per-mode tint colours — keyed on data-mode attribute set by the mode machine. */
+.wd-canvas-host[data-mode="path-edit"]      { --wd-mode-tint: #3b82f6; }
+.wd-canvas-host[data-mode="isolation"]      { --wd-mode-tint: #8b5cf6; }
+.wd-canvas-host[data-mode="text-edit"]      { --wd-mode-tint: #10b981; }
+.wd-canvas-host[data-mode="free-transform"] { --wd-mode-tint: #f59e0b; }
+.wd-canvas-host[data-mode="crop"]           { --wd-mode-tint: #ef4444; }
+
 /* Tint overlay: sits above the stripe background (z-index 0) and below the
    canvas (z-index 2). Driven by --wd-mode-tint and --wd-mode-tint-intensity.
    Default is invisible (transparent tint). Direction defaults to bottom-up;

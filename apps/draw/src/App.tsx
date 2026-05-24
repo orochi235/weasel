@@ -84,6 +84,8 @@ import { downloadSvg, pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
 import { dispatchDoubleClickEntry, handleBackgroundClick } from './modality';
+import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
+import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
 import type { SceneCanvasHit } from '@orochi235/weasel';
 import { sceneToSvgString } from './svgExport';
 import type { RecordingProfile } from './recorder';
@@ -855,6 +857,17 @@ function Toolbar({
   );
 }
 
+// ─── Modality helpers ────────────────────────────────────────────────────────
+
+/** Subscribe to the mode registry and return the current mode id reactively. */
+function useModeId(machine: ModeMachine): string {
+  const [id, setId] = useState(machine.registry.current().id);
+  useEffect(() => {
+    return machine.registry.subscribe(() => setId(machine.registry.current().id));
+  }, [machine]);
+  return id;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /** Restore the persisted scene (if any) from localStorage. Returns the
@@ -1140,6 +1153,21 @@ function EditorWithSharedScene({
     return () => clearTimeout(id);
   }, [filename, backgroundColor]);
 
+  // ── Mode id + breadcrumb state ────────────────────────────────────────────
+  const modeId = useModeId(modality.machine);
+  const targetLabel = useMemo(() => {
+    const tid = modality.machine.getActiveTargetId();
+    if (!tid) return null;
+    // Look up the node's display label from scene data; fall back to the id.
+    const node = scene.get(asNodeId(tid));
+    if (node) {
+      const data = node.data as WeaselDrawData;
+      return data.label ?? data.text ?? tid;
+    }
+    return tid;
+  }, [modality.machine, modeId, scene]);
+  const tintDirection = modality.machine.registry.current().workspace?.gradient ?? 'bottom-up';
+
   // ── Modality keyboard handler ─────────────────────────────────────────────
   // Runs at capture phase so it intercepts Escape before the kit's
   // useKeybindings handler (which returns to the default tool). When the
@@ -1291,7 +1319,15 @@ function EditorWithSharedScene({
           )}
           <ActiveSwatches />
         </div>
-        <div className="wd-canvas-host" ref={hostRef}>
+        <div className="wd-canvas-host" ref={hostRef} data-mode={modeId} data-tint-direction={tintDirection}>
+          <ModeBreadcrumb
+            modeId={modeId}
+            modeKind={modality.machine.registry.current().kind}
+            targetLabel={targetLabel}
+            onExit={() => modality.machine.exitMode()}
+            onCommit={() => modality.machine.commitMode()}
+            onCancel={() => modality.machine.cancelMode()}
+          />
           {hostDims.width > 0 && hostDims.height > 0 && (
           <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>
             width={hostDims.width}
@@ -1353,7 +1389,7 @@ function EditorWithSharedScene({
           />
         </div>
       </div>
-      <StatusBar scene={scene} selection={selection} view={view} />
+      <StatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
     </div>
     </ActiveToolContextProvider>
   );
@@ -1363,11 +1399,14 @@ function StatusBar({
   scene,
   selection,
   view,
+  machine,
 }: {
   scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
   selection: ReturnType<typeof useSelection>;
   view: View;
+  machine: ModeMachine;
 }): ReactElement {
+  const modeId = useModeId(machine);
   const activeTool = useActiveToolContext();
   const colors = useColorContext();
   let groupCount = 0;
@@ -1381,6 +1420,7 @@ function StatusBar({
   const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
   return (
     <div className="wd-statusbar">
+      <ModeStatusIndicator modeId={modeId} />
       <span>tool: {toolLabel}</span>
       <span>sel: {selection.current.length}</span>
       <span>groups: {groupCount}</span>
