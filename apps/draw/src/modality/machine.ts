@@ -55,11 +55,21 @@ export function createModeMachine(opts: CreateModeMachineOptions): ModeMachine {
     if (def.kind === 'soft' && tid !== null) {
       const cached = cache.get(id, tid);
       if (cached) {
-        opts.history.resumeJournal(cached);
-        activeJournal = cached;
-        activeTargetId = tid;
-        registry.setMode(id);
-        return;
+        // Staleness check: discard if any parent-history entry since the
+        // fork point touched the journal's target node.
+        const forkId = cached.forkedAtEntryId;
+        const since = opts.history.entries().undo.filter((e) => e.id >= forkId);
+        const stale = since.some((e) => e.touchedIds?.has(tid));
+        if (stale) {
+          cache.remove(id, tid);
+          // fall through to begin a fresh journal below
+        } else {
+          opts.history.resumeJournal(cached);
+          activeJournal = cached;
+          activeTargetId = tid;
+          registry.setMode(id);
+          return;
+        }
       }
     }
 

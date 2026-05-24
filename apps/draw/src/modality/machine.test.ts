@@ -3,11 +3,13 @@ import { createModeMachine } from './machine';
 import { DEFAULT_MODES } from '@orochi235/weasel-modes';
 
 function fakeHistory() {
+  let nextEntryId = 1;
   const journals: Array<{ committed: boolean; cancelled: boolean; suspended: boolean }> = [];
   return {
-    beginJournal: vi.fn((opts) => {
+    beginJournal: vi.fn((_opts) => {
+      const forkedAtEntryId = nextEntryId;
       const j = {
-        opts,
+        forkedAtEntryId,
         committed: false,
         cancelled: false,
         suspended: false,
@@ -25,6 +27,9 @@ function fakeHistory() {
       return j;
     }),
     resumeJournal: vi.fn(),
+    // entries() returns an empty undo stack — no intervening edits in
+    // fake-history tests, so all cached journals are considered fresh.
+    entries: () => ({ undo: [], redo: [] }),
     journals,
   };
 }
@@ -168,5 +173,96 @@ describe('mode machine + cache', () => {
     m.clearJournalCache();
     m.enterMode('path-edit', { targetId: 'p' });
     expect(history.beginJournal).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// makeRealishHistoryStub — a stub that tracks forkedAtEntryId on journals and
+// supports adding entries with touchedIds after a fork point.
+// ---------------------------------------------------------------------------
+
+function makeRealishHistoryStub() {
+  // Internal mutable entries list, representing the undo stack of the parent.
+  const undoEntries: Array<{ id: number; touchedIds: ReadonlySet<string> }> = [];
+  let nextEntryId = 1;
+
+  const beginJournal = vi.fn((_opts: unknown) => {
+    const forkedAtEntryId = nextEntryId;
+    const j = {
+      forkedAtEntryId,
+      suspended: false,
+      committed: false,
+      cancelled: false,
+      applyBatch: vi.fn(),
+      commit(_label: string) { this.committed = true; },
+      cancel() { this.cancelled = true; },
+      suspend() { this.suspended = true; },
+      entries: () => ({ undo: [], redo: [] }),
+      canUndo: () => false,
+      canRedo: () => false,
+      undo: vi.fn(),
+      redo: vi.fn(),
+      isActive: () => !this.committed && !this.cancelled && !this.suspended,
+    };
+    return j;
+  });
+
+  const resumeJournal = vi.fn();
+
+  const stub = {
+    beginJournal,
+    resumeJournal,
+    entries() {
+      return {
+        undo: undoEntries.map((e) => ({
+          id: e.id,
+          label: 'test',
+          timestamp: 0,
+          touchedIds: e.touchedIds,
+        })),
+        redo: [],
+      };
+    },
+    /** Add a new parent-history entry that touched the given node ids.
+     *  Call this between exitMode and re-enterMode to simulate intervening edits. */
+    advanceEntries(touchedIds: ReadonlySet<string>) {
+      undoEntries.push({ id: nextEntryId++, touchedIds });
+    },
+  };
+
+  return stub;
+}
+
+describe('stale-journal discard', () => {
+  it('discards a cached journal if a parent-history entry since the fork-id touched its target', () => {
+    const history = makeRealishHistoryStub();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+
+    m.enterMode('path-edit', { targetId: 'p' });
+    m.exitMode();
+
+    // Simulate an intervening edit that touched 'p'.
+    history.advanceEntries(new Set(['p']));
+
+    // Re-entry must NOT resume — should begin fresh.
+    m.enterMode('path-edit', { targetId: 'p' });
+    expect(history.beginJournal).toHaveBeenCalledTimes(2);   // fresh
+    expect(history.resumeJournal).toHaveBeenCalledTimes(0);
+  });
+
+  it('resumes a cached journal when intervening entries did NOT touch the target', () => {
+    const history = makeRealishHistoryStub();
+    const m = createModeMachine({ modes: DEFAULT_MODES, history: history as never });
+
+    m.enterMode('path-edit', { targetId: 'p' });
+    m.exitMode();
+
+    // Intervening edit touched an unrelated node.
+    history.advanceEntries(new Set(['unrelated']));
+
+    // Re-entry should resume — target 'p' was not touched.
+    m.enterMode('path-edit', { targetId: 'p' });
+    expect(history.beginJournal).toHaveBeenCalledTimes(1);   // no fresh begin
+    expect(history.resumeJournal).toHaveBeenCalledTimes(1);  // resumed
   });
 });
