@@ -78,7 +78,7 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) Remove `adapter.kindOf` escape hatch.** Shipped 2026-05-21: kit-owned `NodeKindRegistry` per `<SceneCanvas>`, populated via the `kinds` prop, derives `adapter.kindOf` for the dispatcher and Canvas read sites. Spec: `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`. Plan: `docs/superpowers/plans/2026-05-21-node-kind-registry.md`. **Follow-up:** in the next minor, delete the deprecated `adapter.kindOf` escape hatch (the field, the back-compat read at `src/tools/dispatcher.ts:29` and `src/canvas/Canvas.tsx:716`). Audit `demo/` and `apps/` consumers for the field before deletion. Note: deletion isn't field-removal-only — `SceneCanvas` currently transports the registry's classifier *through* `adapter.kindOf`, so both read sites need a new transport (registry threaded into dispatcher options + Canvas's `getNodeAtPoint` synthesizer) at the same time.
+- **(P3) Remove `adapter.kindOf` escape hatch.** Shipped 2026-05-21: kit-owned `NodeKindRegistry` per `<SceneCanvas>`, populated via the `kinds` prop, derives `adapter.kindOf` for the dispatcher and Canvas read sites. Spec: `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`. Plan: `docs/superpowers/plans/2026-05-21-node-kind-registry.md`. **Follow-up:** in the next minor, delete the deprecated `adapter.kindOf` escape hatch. The seam refactor (2026-05-24) deleted the Canvas-side reader; only `src/tools/dispatcher.ts:29` remains. Audit `demo/` and `apps/` consumers for the field before deletion. Kind information now flows via `getNodeAtPoint`'s Hit return value (see `src/canvas/getNodeAtPoint.ts`); the dispatcher could read Hit's `kind` field instead of `adapter.kindOf` as part of the cleanup.
 
 - **(P3) Convergence-target facets.** Each kind-keyed concern (label/icon, propertyRows, bindings, subkinds, serialize/deserialize) lands as its own per-facet registry per the **node-facets reframe** at `docs/superpowers/specs/2026-05-22-node-facets-reframe-design.md`. Tracked individually under the relevant TODO sections (per-kind property-row registry, default action icons, useScene op-log serialization).
 
@@ -344,11 +344,19 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 - **(P3) Demo coverage gaps for submodules.** `@orochi235/weasel-ui` exports `CommandPalette` and `PropertiesPanel` but has no demo card for either (CommandPalette is used in the harness chrome itself — surfacing it as a demo would expose it). `@orochi235/weasel-hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope per demo before writing them.
 
-### Canvas-internal-only migration
+### Canvas / SceneCanvas seam
 
-Surfaced 2026-05-16 building the force-graph demo. Bare `<Canvas>` with a custom RenderLayer reading mutating refs has no scene-mutation signal — the only way to drive 60Hz repaints is forcing React re-renders, which churns the tools machinery enough to wedge the canvas after settle. `Canvas` was marked `@internal` / `@deprecated` (this minor); README no longer points consumers at it.
+Seam refactor landed 2026-05-24 (plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). After the refactor, `<Canvas>` is a coherent scene-agnostic primitive — WebGL surface + viewport (pinch zoom) + pointer routing + slot composition. Selection, picking, kind registry, scene-aware overlays all live in `<SceneCanvas>`. `<Canvas>` remains `@internal` / `@deprecated`; the re-promotion question is intentionally deferred.
 
-- **(P2) Drop the public `Canvas` export entirely** in the next minor. Currently retained for one cycle with a CHANGELOG deprecation note. Internal consumers (`SceneCanvas`, test files) keep importing it directly from `src/canvas/Canvas`.
+- **(P2) Decide Canvas's public-surface fate.** With the seam cleaned up, re-promotion is now a clean decision rather than a re-architecture. Two paths:
+  - Drop the public `Canvas` export entirely in the next minor (originally planned). Internal consumers (`SceneCanvas`, test files) keep importing from `src/canvas/Canvas`.
+  - Re-promote `<Canvas>` as a public scene-agnostic primitive. Surfaced by force-graph-style use cases that wedge on `<SceneCanvas>` because their store isn't `Scene<...>`-shaped.
+
+- **(P3) Remove the `background` prop on `<Canvas>`.** Marked `@deprecated` during the seam refactor (Phase 5) in favor of `backgroundFill`. Three demos still use it; migrate them and delete the prop.
+
+- **(P3) Tighten `CanvasProps.adapter` to remove the `getLayers`/`getChildren` casts in SceneCanvas.** Phase 4/5 left a small type smell where SceneCanvas casts the adapter to access scene-tree methods Canvas's `adapter` type doesn't include. Options: widen `CanvasProps.adapter` to a `SceneLayerAdapter` mixin (clean type, leaks scene-shape into Canvas), or move the `buildSceneLayer` construction out of Canvas (cleaner separation, larger diff). Decide alongside the public-surface fate question above.
+
+- **(P3) `boundsOf` surface inconsistency.** `boundsOf` is kept on `CanvasProps` (still used by Canvas's internal layer composition + bare-Canvas consumers) but explicitly Omitted from `SceneCanvasProps`. Either expose it on SceneCanvas (consistency) or document the asymmetry where it lives.
 
 ---
 
