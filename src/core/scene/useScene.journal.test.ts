@@ -119,4 +119,57 @@ describe('useScene journal routing via scene.applyBatch', () => {
     // One new entry on the scene's stack
     expect(scene.historyEntries().length).toBe(undoBefore + 1);
   });
+
+  it('setActiveJournalAccessor wires the accessor after construction', () => {
+    // Build the scene WITHOUT getActiveJournal in options. This mirrors the
+    // common pattern where the journal source (a mode machine) depends on
+    // the scene itself, creating a circular construction dependency.
+    const { result } = renderHook(() =>
+      useScene<{ label: string }, 'default', Pose>({
+        systemLayers: [{ id: 'default' }],
+        initial: [
+          { kind: 'leaf', layer: 'default', pose: INITIAL_POSE, data: { label: 'node-a' }, id: asNodeId('node-a') },
+        ],
+      }),
+    );
+    const scene = result.current;
+    const adapter = sceneToAdapter(scene);
+
+    // No journal yet — applyOps lands on the scene's own stack.
+    const undoBefore = scene.historyEntries().length;
+    act(() => {
+      adapter.applyOps(
+        [createTransformOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
+        'pre-wire',
+      );
+    });
+    expect(scene.historyEntries().length).toBe(undoBefore + 1);
+
+    // Wire the accessor post-construction. Now applyOps routes to the journal.
+    const history = createHistory(adapter);
+    const journal = history.beginJournal({ label: 'edit' });
+    scene.setActiveJournalAccessor(() => journal);
+
+    const undoAfterWire = scene.historyEntries().length;
+    act(() => {
+      adapter.applyOps(
+        [createTransformOp({ id: 'node-a', from: UPDATED_POSE, to: INITIAL_POSE })],
+        'in-journal',
+      );
+    });
+    // Scene's stack didn't grow — the op went to the journal.
+    expect(scene.historyEntries().length).toBe(undoAfterWire);
+    expect(journal.entries().undo.length).toBe(1);
+
+    // Detach. Subsequent ops go back to the scene.
+    scene.setActiveJournalAccessor(null);
+    const undoAfterDetach = scene.historyEntries().length;
+    act(() => {
+      adapter.applyOps(
+        [createTransformOp({ id: 'node-a', from: INITIAL_POSE, to: UPDATED_POSE })],
+        'post-detach',
+      );
+    });
+    expect(scene.historyEntries().length).toBe(undoAfterDetach + 1);
+  });
 });

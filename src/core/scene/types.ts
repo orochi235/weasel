@@ -184,7 +184,11 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
    *  The accessor is called on every `applyOps` invocation so the caller can
    *  swap the active journal in and out by updating the closure's reference
    *  (e.g., an app's mode machine holds `let activeJournal: Journal | null`
-   *  and the accessor reads that variable). */
+   *  and the accessor reads that variable).
+   *
+   *  When the accessor isn't known at scene-construction time (typical for
+   *  mode machines that depend on `scene.history`), pass nothing here and
+   *  wire it after construction via `scene.setActiveJournalAccessor(fn)`. */
   getActiveJournal?: () => import('@orochi235/weasel-history').Journal | null;
 }
 
@@ -212,6 +216,17 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   // Custom op seam
   registerOp<P>(kind: string, handler: RegisteredOp<P>): void;
   recordOp<P>(op: { kind: string; payload: P }): void;
+
+  /** Install (or clear) the active-journal accessor after scene construction.
+   *  Useful when the journal source (typically a mode machine) is built
+   *  with `scene.history` as a dependency — a chicken-and-egg situation
+   *  where the accessor can't be passed in via `UseSceneOptions`.
+   *
+   *  Pass `null` to detach. Overrides any `getActiveJournal` set in
+   *  `UseSceneOptions`. */
+  setActiveJournalAccessor(
+    fn: (() => import('@orochi235/weasel-history').Journal | null) | null,
+  ): void;
 
   /** Apply a batch of ops with journal-aware routing.
    *

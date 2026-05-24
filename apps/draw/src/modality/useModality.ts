@@ -43,20 +43,14 @@ export interface UseModalityReturn {
 /**
  * Bootstrap the mode machine.
  *
- * Cycle break: `scene.applyOps` must consult the machine's active journal,
- * but the machine is constructed from a History that lives alongside the
- * scene (not from the scene itself). We use a ref so `getActiveJournal` in
- * `useScene`'s options can read `machineRef.current` before the machine
- * exists, and we populate `machineRef.current` in a `useEffect` so it's
- * always fresh.
- *
- * Caller is responsible for setting up `getActiveJournal: () =>
- * machineRef.current?.getActiveJournal() ?? null` in its `useScene` call
- * and returning `machineRef` so the hook can be composed correctly.
+ * The mode machine is constructed from a History that lives alongside the
+ * scene (not derived from the scene itself). `scene.applyOps` must consult
+ * the machine's active journal — wired via `scene.setActiveJournalAccessor`
+ * once the machine exists. No more ref-indirection cycle break needed at
+ * the call site.
  */
 export function useModality(
   scene: Scene<unknown, string, unknown>,
-  machineRef: React.MutableRefObject<ModeMachine | null>,
 ): UseModalityReturn {
   // Create a weasel-history History backed by the scene. Kit ops call
   // op.apply(adapter) — the scene is a valid adapter (it has add/remove/
@@ -70,11 +64,13 @@ export function useModality(
     [history],
   );
 
-  // Keep the ref current so the getActiveJournal closure (in useScene)
-  // always reads the live machine.
+  // Wire the active-journal accessor on the scene. The setter clears any
+  // previous accessor on unmount so a re-mount doesn't leak a stale ref
+  // to a disposed machine.
   useEffect(() => {
-    machineRef.current = machine;
-  }, [machine, machineRef]);
+    scene.setActiveJournalAccessor(() => machine.getActiveJournal());
+    return () => scene.setActiveJournalAccessor(null);
+  }, [scene, machine]);
 
   const decorations = useMemo(
     () => createModeDecorations({ registry: machine.registry }),

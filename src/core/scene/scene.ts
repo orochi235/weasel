@@ -120,6 +120,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // React re-render per op during high-frequency gestures (e.g. snap moves
   // that emit ~10 transform ops per pointer-move).
   let batchDirty = false;
+  // Mutable accessor for the active journal — seeded from options and
+  // swappable via `scene.setActiveJournalAccessor(fn)` so mode machines that
+  // depend on `scene.history` can wire it after construction.
+  let activeJournalAccessor: (() => Journal | null) | null =
+    options.getActiveJournal ?? null;
   function notify(): void {
     version++;
     if (batchDepth > 0) {
@@ -561,8 +566,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       executeAndLog(op.kind, op.payload, op.kind);
     },
 
+    setActiveJournalAccessor(fn) {
+      activeJournalAccessor = fn;
+    },
+
     applyBatch(ops, label, adapter) {
-      const journal: Journal | null = (options.getActiveJournal ?? (() => null))();
+      const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
       if (journal) {
         // Route through the journal. The journal's inner history will track the
         // ops; the scene's own undo stack must NOT also record them. We reuse

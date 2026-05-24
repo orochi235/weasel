@@ -26,7 +26,6 @@
  */
 import {
   useCallback, useEffect, useMemo, useRef, useState, type ReactElement,
-  type MutableRefObject,
 } from 'react';
 import {
   SceneCanvas,
@@ -1061,18 +1060,12 @@ function BooleansAdapterPublisher({
  *  underlying instances are constructed once via `useRef`), so the bridge
  *  closure created here doesn't churn between Editor renders. */
 export function App(): ReactElement {
-  // ── Cycle break: getActiveJournal needs machine, machine needs to be
-  // created after scene. Use a ref so the lazy accessor always reads the
-  // live machine without capturing a stale closure.
-  const machineRef = useRef<ModeMachine | null>(null) as MutableRefObject<ModeMachine | null>;
-
   // Lift scene + selection to share with both Editor and the color
   // context bridge. `useScene` / `useSelection` synthesize stable
   // instances internally, so re-renders here don't recreate them.
   const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: [{ id: 'default' }],
     initial: useMemo(loadInitial, []),
-    getActiveJournal: () => machineRef.current?.getActiveJournal() ?? null,
   });
   const selection = useSelection({ mode: 'multi' });
   const updateSelected = useMemo(
@@ -1080,12 +1073,12 @@ export function App(): ReactElement {
     [scene, selection],
   );
 
-  // Bootstrap the mode machine, decorations, and scoping dim.
-  // machineRef is populated inside useModality so the getActiveJournal
-  // accessor above always reads the live machine.
+  // Bootstrap the mode machine, decorations, and scoping dim. useModality
+  // wires the journal accessor on the scene via
+  // `scene.setActiveJournalAccessor` once the machine is constructed —
+  // no ref dance needed at this layer.
   const modality = useModality(
     scene as unknown as import('@orochi235/weasel').Scene<unknown, string, unknown>,
-    machineRef,
   );
 
   // Persist on every commit. The 300ms debounce coalesces drag bursts so
