@@ -300,6 +300,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
     | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
     | 'layers'          // stripped so we can re-add as optional below
+    | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`

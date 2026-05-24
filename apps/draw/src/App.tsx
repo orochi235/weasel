@@ -1215,19 +1215,17 @@ function EditorWithSharedScene({
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
 
-  const onBackgroundClick = useCallback(() => {
-    handleBackgroundClick(
-      modality.machine.registry.current().id,
-      {
-        selection: {
-          clear: () => selection.clear(),
-          clearScoped: () => selection.clear(),
-        },
-        commitText: () => { /* no-op: wired in text-edit follow-up */ },
-      },
-      () => modality.machine.exitMode(),
-    );
-  }, [modality.machine, selection]);
+  // Background-click composition is wired but currently inert — SceneCanvas
+  // intentionally does not surface `onBackgroundClick` as a consumer prop
+  // because it would interfere with the gesture-dispatcher channel (lasso /
+  // marquee completion). For normal mode the select tool's `clearSelection`
+  // action handles background clicks. Non-normal-mode background-click
+  // composition (text-edit commit, isolation scoped-clear) is a known gap
+  // pending a non-leaky hook into the dispatcher; until then, soft modes
+  // exit via Esc and strict modes via commit/cancel buttons. The handler
+  // below is preserved for the eventual wiring.
+  void handleBackgroundClick;
+  void selection;
 
   const paper = PAPER_PRESETS[paperSize];
 
@@ -1376,7 +1374,6 @@ function EditorWithSharedScene({
             alphaFor={modality.scopingDim.alphaFor}
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
             onDoubleClick={onDoubleClick}
-            onBackgroundClick={onBackgroundClick}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
           </SceneCanvas>
