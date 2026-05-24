@@ -423,6 +423,20 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  will not fire. Bare-`<Canvas>` consumers that need kind-based routing
    *  should build this with `makeGetNodeAtPoint`. */
   getNodeAtPoint?: (worldX: number, worldY: number) => { id: string; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> } | null;
+
+  /**
+   * Optional mode-owned decoration layer. When supplied, Canvas inserts it
+   * between the scene-render slot and the tool-overlay slot so decoration
+   * draw commands (e.g. path-edit anchor dots) paint above scene content but
+   * below tool overlays (drag rects, etc.).
+   *
+   * Slot ordering: scene → (scoping mask, Task 8) → **decoration** → tool overlay → chrome.
+   *
+   * Wired by the modality machine after it activates a mode whose
+   * `ModeDefinition` supplies a `paint()` factory. Omitting this prop is a
+   * no-op — existing consumers are unaffected.
+   */
+  decorationLayer?: RenderLayer<unknown>;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -617,6 +631,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     modalityHud,
     pickBest,
     getNodeAtPoint,
+    decorationLayer,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -1347,11 +1362,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       ? { ...layersMap, backgroundFill: { layer: backgroundLayer, before: 'scene' } }
       : layersMap;
     const out: RenderLayer<unknown>[] = composeOrderedLayers(effectiveLayersMap, standardLayers);
+    // Decoration layer: above scene, below tool overlay (per slot ordering doc).
+    if (decorationLayer) out.push(decorationLayer);
     if (tools) {
       out.push(...tools.getActiveOverlays());
     }
     return out;
-  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer]);
+  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer, decorationLayer]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
