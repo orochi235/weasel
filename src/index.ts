@@ -425,6 +425,20 @@ export type {
   PathEditingOverlayStyle,
   PathInWorldPose,
 } from './features/paths';
+// ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
+export {
+  bezierCubic,
+  bezierQuadratic,
+  nurbs,
+  spiro,
+  CURVE_REPS,
+} from './features/paths/curves';
+export type {
+  SharedAnchor,
+  CurveRepKind,
+  CurveRepresentation,
+  Discriminator,
+} from './features/paths/curves';
 // ─── Utility: 45° axis constraint ───────────────────────────────────────────
 export { constrainTo45 } from './util/constrainTo45';
 
