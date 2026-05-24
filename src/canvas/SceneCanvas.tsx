@@ -85,6 +85,8 @@ import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
 import { createNodeKindRegistry, type NodeKind } from '../core/scene/nodeKindRegistry';
+import { installTestHookIfRequested } from '../test-hook/install';
+import type { WeaselTestHook } from '../test-hook/types';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -1020,6 +1022,26 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       {...restProps}
     />
   );
+
+  // Test hook: opt-in via ?test=1, never in production builds. See src/test-hook.
+  const testHookSceneRef = useRef(scene);
+  const testHookSelectionRef = useRef(selection);
+  const testHookActiveToolRef = useRef<string | null>(null);
+  testHookSceneRef.current = scene;
+  testHookSelectionRef.current = selection;
+
+  const testHookRef = useRef<WeaselTestHook | null>(null);
+  useEffect(() => {
+    testHookRef.current = installTestHookIfRequested({
+      getScene: () => testHookSceneRef.current as never,
+      getSelectionIds: () =>
+        (testHookSelectionRef.current?.current as readonly string[] | undefined) ?? [],
+      getView: () => currentViewRef.current,
+      getActiveToolId: () => testHookActiveToolRef.current,
+    });
+    testHookRef.current?._markReady();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <DepRegistryProviderIfRoot>
