@@ -42,14 +42,17 @@ export function createJournalInternal(
     targetId,
     forkedAtEntryId,
 
-    applyBatch(_ops: Op[], _label: string): void {
-      throw new Error('Journal.applyBatch not yet implemented');
+    applyBatch(ops: Op[], label: string): void {
+      if (!active) throw new Error('Journal is closed; cannot applyBatch');
+      inner.applyOps(ops, label);
     },
     undo(): void {
-      throw new Error('Journal.undo not yet implemented');
+      if (!active) throw new Error('Journal is closed; cannot undo');
+      inner.undo();
     },
     redo(): void {
-      throw new Error('Journal.redo not yet implemented');
+      if (!active) throw new Error('Journal is closed; cannot redo');
+      inner.redo();
     },
     canUndo(): boolean {
       return inner.canUndo();
