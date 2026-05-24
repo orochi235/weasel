@@ -16,18 +16,26 @@ function Capture({ onR }: { onR: (r: DepRegistry) => void }) {
 }
 
 describe('useEditAnchorsDepSource', () => {
-  it('editingId starts empty; setEditingId(id) drives it; getPose + applyOps relay correctly', () => {
+  it('editingId starts empty; setEditingId(id) drives it; getEditablePath reads + setPreviewPath wins', () => {
+    const polyPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([0, 1, 1]), // M L L
+      coords: new Float32Array([0, 0, 10, 0, 10, 10]),
+    };
+    const updateMock = vi.fn();
     const nodes = new Map<string, any>([
-      ['rect', { id: 'rect', kind: 'leaf', pose: { x: 0, y: 0, width: 1, height: 1 }, data: null }],
-      ['poly', { id: 'poly', kind: 'leaf', pose: { kind: 'polygon', points: [] }, data: null }],
+      ['poly', { id: 'poly', kind: 'leaf', pose: polyPath, data: null }],
     ]);
     const scene = {
       layers: [{ id: 'default' }],
-      renderOrder: () => ['rect', 'poly'] as NodeId[],
+      renderOrder: () => ['poly'] as NodeId[],
       get: (id: NodeId) => nodes.get(id as string),
+      update: updateMock,
     } as unknown as Scene<unknown, string, unknown>;
-    const sel = { current: ['rect', 'poly'] as NodeId[], set: () => {} } as unknown as SelectionApi;
-    const applyOps = vi.fn();
+    const sel = { current: ['poly'] as NodeId[], set: () => {} } as unknown as SelectionApi;
+    const applyOps = vi.fn((ops: { apply(a: unknown): void }[]) => {
+      for (const op of ops) op.apply({ setPose: () => {} });
+    });
     const adapter = { applyOps };
     let reg!: DepRegistry;
     function Wire() {
@@ -42,14 +50,27 @@ describe('useEditAnchorsDepSource', () => {
     );
     let dep = (reg.get as any)('editAnchors');
     expect(dep.editingId).toBe('');
-    // Explicit activation enters edit mode.
+
+    // Activate edit mode.
     act(() => { dep.setEditingId('poly'); });
     dep = (reg.get as any)('editAnchors');
     expect(dep.editingId).toBe('poly');
-    expect(dep.getPose('poly')).toEqual({ kind: 'polygon', points: [] });
-    // Pass-through to adapter for ops.
-    dep.applyOps([], 'test');
-    expect(applyOps).toHaveBeenCalledWith([], 'test');
+
+    // Pose-as-polygon path: getEditablePath returns the node's pose.
+    expect(dep.getEditablePath('poly')).toBe(polyPath);
+
+    // Preview wins over committed storage.
+    const previewPath = { ...polyPath };
+    dep.setPreviewPath('poly', previewPath);
+    expect(dep.getEditablePath('poly')).toBe(previewPath);
+    dep.setPreviewPath('poly', null);
+    expect(dep.getEditablePath('poly')).toBe(polyPath);
+
+    // applyEdit routes through the adapter's applyOps.
+    dep.applyEdit('poly', { ...polyPath }, 'Edit anchors');
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    expect(applyOps.mock.calls[0][1]).toBe('Edit anchors');
+
     // setEditingId(null) clears.
     act(() => { dep.setEditingId(null); });
     expect((reg.get as any)('editAnchors').editingId).toBe('');
@@ -57,14 +78,19 @@ describe('useEditAnchorsDepSource', () => {
 
   it('clears the effective editingId when the target leaves the selection', () => {
     const nodes = new Map<string, any>([
-      ['poly', { id: 'poly', kind: 'leaf', pose: { kind: 'polygon', points: [] }, data: null }],
+      ['poly', {
+        id: 'poly',
+        kind: 'leaf',
+        pose: { kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array() },
+        data: null,
+      }],
     ]);
     const scene = {
       layers: [{ id: 'default' }],
       renderOrder: () => ['poly'] as NodeId[],
       get: (id: NodeId) => nodes.get(id as string),
+      update: () => {},
     } as unknown as Scene<unknown, string, unknown>;
-    // Start with poly selected, then drop it.
     const sel = { current: ['poly'] as NodeId[], set: () => {} } as unknown as SelectionApi;
     let reg!: DepRegistry;
     function Wire() {

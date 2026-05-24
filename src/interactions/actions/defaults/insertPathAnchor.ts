@@ -24,11 +24,9 @@
 import type { Action } from '../registry';
 import type { ImmediateInvoker } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
-import type { Path, PolygonPath } from 'features/paths/types';
+import type { PolygonPath } from 'features/paths/types';
 import { pathToAnchors, anchorsToPath, nearestSegmentT } from 'features/paths/anchors';
 import { splitCubicAtT } from 'features/paths/cubicMath';
-import { createTransformOp } from 'core/ops/transform';
-import { dispatchApplyBatch } from 'core/applyOps';
 
 // World-unit slop. If the click is farther than this from the nearest
 // curve point, the action no-ops — the user probably wasn't trying to
@@ -51,9 +49,9 @@ export const insertPathAnchorAction: Action & { requires: string[] } = {
       const wy = params?.worldY as number | undefined;
       if (typeof wx !== 'number' || typeof wy !== 'number') return;
 
-      const pose = dep.getPose(editingId) as Path | undefined;
-      if (!pose || pose.kind !== 'polygon') return;
-      const polygon = pose as PolygonPath;
+      const worldPath = dep.getEditablePath(editingId) as PolygonPath | undefined;
+      if (!worldPath || worldPath.kind !== 'polygon') return;
+      const polygon = worldPath;
 
       const decoded = pathToAnchors(polygon);
       const hit = nearestSegmentT(decoded.anchors, wx, wy);
@@ -89,13 +87,7 @@ export const insertPathAnchorAction: Action & { requires: string[] } = {
       });
 
       const newPath = anchorsToPath(decoded.anchors, decoded.closed);
-      const op = createTransformOp<Path>({
-        id: editingId,
-        from: polygon,
-        to: newPath,
-        label: 'Insert anchor',
-      });
-      dispatchApplyBatch(dep, [op], 'Insert anchor');
+      dep.applyEdit(editingId, newPath, 'Insert anchor');
     },
   } as ImmediateInvoker,
   enabled: () => true,

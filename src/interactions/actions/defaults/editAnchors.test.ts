@@ -82,8 +82,9 @@ describe('editAnchorsAction descriptor', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      getPose: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
-      applyOps: () => {},
+      setPreviewPath: () => {},
+      getEditablePath: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
+      applyEdit: () => {},
     };
     // No affordance in drag → should return {}
     const handle = invoker.start(makeCtx(dep, undefined), undefined);
@@ -95,8 +96,9 @@ describe('editAnchorsAction descriptor', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      getPose: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
-      applyOps: () => {},
+      setPreviewPath: () => {},
+      getEditablePath: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
+      applyEdit: () => {},
     };
     const resizeAffordance: AffordanceHit = { kind: 'handle:bottom-right' };
     const handle = invoker.start(makeCtx(dep, resizeAffordance), undefined);
@@ -153,8 +155,9 @@ function makeRealCtx(
   const dep: EditAnchorsDep = {
     editingId: 'node-a',
       setEditingId: () => {},
-    getPose: () => currentPose,
-    applyOps: () => {},
+      setPreviewPath: () => {},
+    getEditablePath: () => currentPose,
+    applyEdit: () => {},
   };
   const affordance: AffordanceHit = {
     kind: affordanceKind,
@@ -200,14 +203,15 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     // onMove is a live mutation — we verify it doesn't throw and returns void.
   });
 
-  it('onEnd commit dispatches applyOps (pose changed)', () => {
+  it('onEnd commit dispatches applyEdit (pose changed)', () => {
     const triangle = makeTriangle();
-    let dispatchedCount = 0;
+    let applyEditCount = 0;
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      getPose: () => triangle,
-      applyOps: (ops) => { dispatchedCount = ops.length; },
+      setPreviewPath: () => {},
+      getEditablePath: () => triangle,
+      applyEdit: () => { applyEditCount++; },
     };
     const affordance: AffordanceHit = { kind: 'anchor:0', targetIds: ['node-a'] };
     const startCtx: InvocationCtx = {
@@ -227,17 +231,18 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     });
 
     handle.onEnd!(startCtx, 'commit');
-    expect(dispatchedCount).toBeGreaterThan(0);
+    expect(applyEditCount).toBeGreaterThan(0);
   });
 
-  it('onEnd cancel does not dispatch applyOps', () => {
+  it('onEnd cancel does not dispatch applyEdit', () => {
     const triangle = makeTriangle();
     let opsDispatched = false;
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      getPose: () => triangle,
-      applyOps: () => { opsDispatched = true; },
+      setPreviewPath: () => {},
+      getEditablePath: () => triangle,
+      applyEdit: () => { opsDispatched = true; },
     };
     const affordance: AffordanceHit = { kind: 'anchor:0', targetIds: ['node-a'] };
     const startCtx: InvocationCtx = {
@@ -258,8 +263,9 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      getPose: () => bezier,
-      applyOps: () => {},
+      setPreviewPath: () => {},
+      getEditablePath: () => bezier,
+      applyEdit: () => {},
     };
     const affordance: AffordanceHit = { kind: 'controlIn:1', targetIds: ['node-a'] };
     const ctx: InvocationCtx = {
@@ -279,8 +285,9 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      getPose: () => triangle,
-      applyOps: () => {},
+      setPreviewPath: () => {},
+      getEditablePath: () => triangle,
+      applyEdit: () => {},
     };
     const affordance: AffordanceHit = { kind: 'anchor:0', targetIds: ['node-a'] };
     const startCtx: InvocationCtx = {
@@ -307,8 +314,9 @@ describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
     const dep: EditAnchorsDep = {
       editingId: 'node-a',
       setEditingId: () => {},
-      getPose: () => triangle,
-      applyOps: () => {},
+      setPreviewPath: () => {},
+      getEditablePath: () => triangle,
+      applyEdit: () => {},
     };
     const affordance: AffordanceHit = { kind: 'anchor:99', targetIds: ['node-a'] };
     const ctx: InvocationCtx = {

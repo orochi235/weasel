@@ -76,6 +76,8 @@ import {
   useDispatcherDepSource,
   useResizePolicy,
 } from './deps';
+import { resolveEditablePathOf } from './deps/useEditAnchorsDepSource';
+import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { useViewportActions } from './SceneCanvas/useViewportActions';
 import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeToolContext';
@@ -992,9 +994,27 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const [pathEditingId, setPathEditingId] = useState<string>('');
   const pathEditingIdRef = useRef(pathEditingId);
   pathEditingIdRef.current = pathEditingId;
+  // In-flight preview polygon during a drag — kept in a ref so updates
+  // don't re-render every pointermove. Read by the chrome layer so the
+  // dragged anchor / handle tracks the cursor live; written by
+  // editAnchorsAction via the dep's setPreviewPath. The dep's source
+  // hook is mounted in StandardActionsRegistrar (a child of this
+  // subtree), so it can't share React state — we lift the ref here.
+  const pathEditingPreviewRef = useRef<{ id: string; worldPath: PolygonPath } | null>(null);
   const editAnchorsExternalState = useMemo(() => ({
     getEditingId: () => pathEditingIdRef.current,
     setEditingId: (id: string | null) => setPathEditingId(id ?? ''),
+    getPreviewPath: (id: string): PolygonPath | null => {
+      const p = pathEditingPreviewRef.current;
+      return p && p.id === id ? p.worldPath : null;
+    },
+    setPreviewPath: (id: string, worldPath: PolygonPath | null) => {
+      pathEditingPreviewRef.current = worldPath ? { id, worldPath } : null;
+      // Drags pump requestRedraw via the dispatcher; this just covers
+      // commit/cancel transitions when the canvas would otherwise sit
+      // on a stale frame.
+      canvasApiRef.current?.requestRedraw?.();
+    },
   }), []);
   // Bump the canvas's redraw whenever edit-mode changes — the chrome layer
   // reads `editingId` via a ref, so without an explicit redraw signal a
@@ -1026,8 +1046,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       boundsOf: (id) => internalBoundsOf?.(id) ?? null,
       getEditingId: () => pathEditingIdRef.current || null,
       getPose: (id) => {
+        // Slops viz visualises the actual hit zones — uses the same
+        // resolved editable polygon the chrome layer reads so the halos
+        // sit on top of the rendered anchors regardless of storage.
+        const preview = pathEditingPreviewRef.current;
+        if (preview && preview.id === id) return preview.worldPath as never;
         const node = sceneRefForOverlay.current?.get(id as never);
-        return (node?.pose ?? null) as never;
+        return resolveEditablePathOf(node as unknown as { pose: unknown; data: unknown }) as never;
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1038,21 +1063,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     () => createPathEditingOverlayLayer({
       getEditingId: () => pathEditingIdRef.current || null,
       getPose: (id) => {
-        const disp = dispatcherRef.current;
-        if (disp) {
-          for (const handle of disp.getInFlightHandles()) {
-            const previewIds = handle.previewIds?.();
-            if (!previewIds) continue;
-            for (const previewId of previewIds) {
-              if (previewId === id) {
-                const p = handle.previewPose?.(id);
-                if (p != null) return p as never;
-              }
-            }
-          }
-        }
+        // Live preview wins — the dep keeps an in-flight world polygon
+        // updated each pointermove during editAnchorsAction drags.
+        const preview = pathEditingPreviewRef.current;
+        if (preview && preview.id === id) return preview.worldPath as never;
+        // Otherwise resolve via the shared storage helper so both
+        // pose-as-polygon (bezier demo) and data.path (WeaselDraw,
+        // kit pen-tool default) nodes render correctly.
         const node = sceneRefForOverlay.current?.get(id as never);
-        return (node?.pose ?? null) as never;
+        return resolveEditablePathOf(node as unknown as { pose: unknown; data: unknown }) as never;
       },
     }),
     // Stable identity — both closures read live values through refs.
@@ -1287,7 +1306,10 @@ function GestureDispatcherMounter({
     if (!dep) return null;
     return {
       editingId: dep.editingId ?? null,
-      getPose: dep.getPose,
+      // Affordance hit-test reads world-coord anchor positions; route to
+      // the dep's getEditablePath so both pose-as-polygon and data.path
+      // consumers hit-test correctly.
+      getPose: (id) => dep.getEditablePath(id),
     };
   }, []);
 

@@ -26,10 +26,10 @@ import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import { withCoord, enumerateAnchors, translateAnchor } from '../edit-anchors/geometry';
-import { createTransformOp } from 'core/ops/transform';
-import { dispatchApplyBatch } from 'core/applyOps';
+// Commit goes through dep.applyEdit (routes setPose or setPose+update
+// based on the node's path-storage shape); no direct op or dispatch
+// helpers needed here.
 import type { PolygonPath } from 'features/paths/types';
-import type { Path } from 'features/paths/types';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -136,11 +136,13 @@ export const editAnchorsAction: Action & { requires: string[] } = {
       }
 
       const { editingId } = dep;
-      const pose = dep.getPose(editingId) as Path | undefined;
-      if (!pose || pose.kind !== 'polygon') return {};
+      // World-coord polygon. For pose-as-polygon nodes this equals
+      // node.pose; for data.path nodes it's pathAtPose-projected so the
+      // anchor world coords match what the user clicked.
+      const worldPath = dep.getEditablePath(editingId) as PolygonPath | undefined;
+      if (!worldPath || worldPath.kind !== 'polygon') return {};
 
-      // Derive coordIndex from the polygon geometry.
-      const anchors = enumerateAnchors(pose);
+      const anchors = enumerateAnchors(worldPath);
       const anchor = anchors[anchorInfo.anchorIndex];
       if (!anchor) return {};
 
@@ -168,8 +170,8 @@ export const editAnchorsAction: Action & { requires: string[] } = {
         part: anchorInfo.part,
         coordIndex,
         anchorOrigin: { x: anchor.x, y: anchor.y },
-        originPose: pose,
-        currentPose: pose,
+        originPose: worldPath,
+        currentPose: worldPath,
       };
 
       let active = false;
@@ -197,20 +199,31 @@ export const editAnchorsAction: Action & { requires: string[] } = {
               moveCtx.world.y,
             );
           }
+          // Publish the in-flight world polygon so chrome (and any other
+          // observer) sees live drag state regardless of where the node
+          // stores its path.
+          scratch.dep.setPreviewPath(scratch.id, scratch.currentPose);
           active = true;
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           active = false;
-          if (reason === 'cancel') return;
-          if (scratch.originPose === scratch.currentPose) return;
-          const op = createTransformOp<Path>({
-            id: scratch.id,
-            from: scratch.originPose,
-            to: scratch.currentPose,
-            label: 'Edit anchors',
-          });
-          dispatchApplyBatch(scratch.dep, [op], 'Edit anchors');
+          if (reason === 'cancel') {
+            scratch.dep.setPreviewPath(scratch.id, null);
+            return;
+          }
+          if (scratch.originPose === scratch.currentPose) {
+            scratch.dep.setPreviewPath(scratch.id, null);
+            return;
+          }
+          scratch.dep.applyEdit(scratch.id, scratch.currentPose, 'Edit anchors');
+          // applyEdit clears its own preview, but be defensive in case a
+          // consumer overrode the dep without that hook.
+          scratch.dep.setPreviewPath(scratch.id, null);
         },
+        // previewIds/previewPose stay for the dispatcher-side preview-ghost
+        // layer (used by tool-side render paths). They reflect pose-shaped
+        // previews; data.path nodes get their live preview through
+        // dep.getEditablePath via the path-editing overlay chrome.
         previewIds: () => (active ? [scratch.id] : null),
         previewPose: (id: string) =>
           active && id === scratch.id ? scratch.currentPose : null,

@@ -89,12 +89,22 @@ export interface AreaSelectDep {
 /**
  * Adapter dep for `editAnchorsAction` (Phase 14b).
  *
- * Provides narrow read/write of a single polygon node's path pose.
- * The consumer registers this dep when anchor-edit mode is active.
+ * Provides narrow read/write access to the editable polygon for a single
+ * node. Consumers register this dep so anchor-edit actions can read/write
+ * the polygon WITHOUT knowing whether it lives directly on the node's
+ * pose (`pose.kind === 'polygon'`) or on `node.data.path` (the kit's
+ * built-in pen-tool default, also WeaselDraw's shape).
  *
- * `editingId` identifies the polygon currently being edited.
- * `getPose(id)` returns the current path (must be a PolygonPath for editing).
- * `applyOps(ops, label)` commits a transform op to history.
+ * `editingId` identifies the node currently in edit mode.
+ * `getEditablePath(id)` returns the polygon **in world coordinates** —
+ *   chrome renders at these positions, action drags translate in this
+ *   space. Returns null for nodes that don't have an editable polygon.
+ * `setPreviewPath(id, world)` updates the in-flight uncommitted polygon;
+ *   read by `getEditablePath` so the chrome shows live drag state without
+ *   relying on dispatcher previewPose (which only carries `pose`, not
+ *   `data.path` updates).
+ * `applyEdit(id, world, label)` commits a polygon as the new value.
+ *   Routes to scene.setPose or scene.update({data}) based on storage.
  */
 export interface EditAnchorsDep {
   /** Id of the node currently being edited. Empty string means no node is
@@ -104,10 +114,19 @@ export interface EditAnchorsDep {
    *  string) to exit. `enterPathEditAction` and `exitPathEditAction` call
    *  this; consumers can call it directly to drive edit mode programmatically. */
   setEditingId(id: string | null): void;
-  /** Returns the polygon path for the given node. */
-  getPose(id: string): unknown;
-  /** Commits ops to history (erased form; dispatchApplyBatch handles narrowing). */
-  applyOps?(ops: { apply(adapter: unknown): void }[], label?: string): void;
+  /** Returns the editable polygon in world coordinates, or null if this
+   *  node has no editable polygon. When a preview path is set for `id`,
+   *  that takes precedence over the committed storage. */
+  getEditablePath(id: string): unknown;
+  /** Update the in-flight uncommitted polygon for `id`. `editAnchorsAction`
+   *  calls this in `onMove`; clear by passing `null`. The chrome layer
+   *  consults this through `getEditablePath` so dragging shows live. */
+  setPreviewPath(id: string, worldPath: unknown | null): void;
+  /** Commit `worldPath` as the new value for `id`. Implementation routes
+   *  to setPose (when pose IS the polygon) or batched setPose+update
+   *  (when the polygon lives on data.path). Records one history entry
+   *  labelled `label`. */
+  applyEdit(id: string, worldPath: unknown, label: string): void;
 }
 
 /**

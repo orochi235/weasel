@@ -149,7 +149,11 @@ const TEXT_PAINTER: ShapePainter = {
  * Returns the path unchanged when the delta is zero so the fast-path
  * (no allocation, no Float32Array copy for polygons) stays hot.
  */
-function pathAtPose(path: Path, pose: RectPose): Path {
+/** Project a stored path to its rendered world position by translating
+ *  its coords so the path's AABB origin matches the pose origin. Public
+ *  so deps (e.g. useEditAnchorsDepSource) can compute world-space anchor
+ *  positions without duplicating the renderer's translation math. */
+export function pathAtPose(path: Path, pose: RectPose): Path {
   if (path.kind === 'rect') {
     // Rebase the rect onto the pose. Resize updates `pose.width/height` (not
     // the path), so we honor those too — otherwise a corner drag would
