@@ -3,7 +3,7 @@
  *   - WebGL renderer instantiation (`WeaselRenderer`)
  *   - background fill on every render
  *   - layer-stack composition from a map of named slots + custom layers
- *   - internal `useSelection` (overridable)
+ *   - optional `onBackgroundClick` callback (fires when canvas receives a non-tool-handled click)
  *   - pointer/keyboard/wheel routing through `tools.dispatcher`
  *   - keyboard-focus plumbing (`tabIndex` + auto-focus on pointerdown)
  *
@@ -44,9 +44,7 @@ import { clampView } from 'core/viewport/clampView';
 import { drawLayers, type RenderLayer } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
-  useSelection,
   type SelectionApi,
-  type UseSelectionOptions,
 } from 'core/selection/useSelection';
 import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import type {
@@ -130,25 +128,15 @@ export type LayersMap<TNode extends { id: string }, TPose> = {
 };
 
 /**
- * High-level selection semantics. A single switch the consumer flips to
- * pick the click/drag/resize behavior for the canvas:
+ * High-level selection semantics. Kept as a public type for `<SceneCanvas>`
+ * consumers — Canvas itself no longer accepts a `selectionMode` prop.
  *
- *   - `'single'` (default) — click replaces the selection with one id; drag
- *     moves it; resize handles operate on it. Shift-click does nothing extra.
- *   - `'multi'` — shift-click extends/toggles the selection. When the
- *     selection has more than one id, the overlay draws a single union AABB
- *     with corner handles, clicks inside the union (without hitting an
- *     unselected leaf) drag the whole set, and corner handles resize the
- *     union (each member is scaled via the same `geom.remapBounds` path
- *     group resize uses).
- *   - `'none'` — selection state never updates from canvas interactions;
- *     consumers can still do their own picking via the active tool.
- *
- * Escape hatches still apply: explicit `selection`, `pickEvery`, `boundsOf`,
- * or `selectionOptions.mode` override the `selectionMode`-derived defaults.
+ *   - `'single'` (default) — click replaces the selection with one id.
+ *   - `'multi'` — shift-click extends/toggles. Multi-selected objects draw a
+ *     union AABB with corner handles.
+ *   - `'none'` — canvas interactions never update selection state.
  */
 export type CanvasSelectionMode = 'single' | 'multi' | 'none';
-
 
 /** Props for the top-level `<Canvas>` component — combines viewport, scene, gesture controllers, and slot overrides. */
 export interface CanvasProps<TNode extends { id: string } = { id: string }, TPose = unknown> {
@@ -167,15 +155,26 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
     & ResizeAdapter<TNode, TPose>
     & RotateAdapter<TNode, TPose>;
 
-  /** Selection semantics. See {@link CanvasSelectionMode}. Default `'single'`. */
-  selectionMode?: CanvasSelectionMode;
-
   /** Layer map. See module docstring for slot semantics. */
   layers: LayersMap<TNode, TPose>;
 
-  // --- Internal hook configuration ---
+  /** The current selection state. Canvas is a pass-through — it owns no
+   *  selection state of its own. When absent, Canvas behaves as if no
+   *  selection exists: no chrome, no select-on-click, no clear-on-background.
+   *  `<SceneCanvas>` always supplies a selection; bare-`<Canvas>` consumers
+   *  may omit it for non-selection use cases. */
   selection?: SelectionApi;
-  selectionOptions?: UseSelectionOptions;
+
+  /**
+   * Fires when the canvas receives a pointer event that the tool dispatcher
+   * did not handle (no active gesture was started on pointerdown, or the
+   * pointer was released without a gesture). Useful for "click on background
+   * clears selection" — `<SceneCanvas>` wires this to `selection.clear()`.
+   *
+   * The listener is only installed when this callback is supplied. Omitting
+   * the prop means no background-click listener is registered.
+   */
+  onBackgroundClick?: () => void;
 
   /** Pose↔bounds projection. When supplied, drives default `pickEvery`,
    *  `boundsOf`, and the selection-overlay bounds source so non-rect TPose
@@ -534,10 +533,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     width,
     height,
     adapter: adapterProp,
-    selectionMode = 'single',
     layers: layersMap,
-    selection: selectionOverride,
-    selectionOptions,
+    selection,
+    onBackgroundClick,
     boundsOf,
     pickEvery,
     clientToWorld,
@@ -662,32 +660,28 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     & ResizeAdapter<TNode, TPose>
     & RotateAdapter<TNode, TPose>;
 
-  const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
-    const base = selectionOptions ?? {};
-    if (base.mode !== undefined) return base;
-    if (selectionMode === 'multi') return { ...base, mode: 'multi' };
-    return base;
-  }, [selectionOptions, selectionMode]);
-
-  const internalSelection = useSelection(derivedSelectionOptions);
-  const baseSelection: SelectionApi = selectionOverride ?? internalSelection;
-
-  // selectionMode === 'none' wraps the selection so canvas interactions can't
-  // mutate it. Consumers that want the underlying api still use their own
-  // override or read from `useSelection` directly.
-  const effectiveSelection: SelectionApi = useMemo(() => {
-    if (selectionMode !== 'none') return baseSelection;
-    const noopSet = () => {};
-    return {
-      ...baseSelection,
-      set: noopSet,
-      add: noopSet,
-      remove: noopSet,
-      toggle: noopSet,
-      clear: noopSet,
-      applyClick: noopSet,
-    };
-  }, [baseSelection, selectionMode]);
+  // Canvas owns no selection state. The `selection` prop is the sole source.
+  // When absent, behave as if no selection exists (no chrome, no overlay).
+  // A no-op fallback keeps all downstream reads safe without branching.
+  const noopSelection = useMemo<SelectionApi>(
+    () => ({
+      current: [],
+      get: () => [],
+      contains: () => false,
+      set: () => {},
+      add: () => {},
+      remove: () => {},
+      toggle: () => {},
+      clear: () => {},
+      applyClick: () => {},
+      adapterMethods: {
+        getSelection: () => [],
+        setSelection: () => {},
+      },
+    }),
+    [],
+  );
+  const effectiveSelection: SelectionApi = selection ?? noopSelection;
 
   // Build the per-event base ctx the tools dispatcher injects into handlers.
   // Refs so identity stays stable while the underlying values update.
@@ -856,7 +850,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   };
 
   const selectedIdsForWiring = effectiveSelection.current;
-  const multiActive = selectionMode === 'multi' && selectedIdsForWiring.length > 1;
+  // Canvas no longer owns selectionMode. Multi-selection is inferred from the
+  // selection state itself: when more than one id is selected, activate the
+  // union-AABB chrome path. SceneCanvas configures its tools for multi-mode
+  // via selectionOptions; Canvas simply reflects what arrived in the prop.
+  const multiActive = selectedIdsForWiring.length > 1;
 
   // Hold the latest dispatcher-side preview extras in a ref so chromeState's
   // closure reads live values without forcing the memo to rebuild every render.
@@ -1026,6 +1024,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // accepted) and detached on the matching up/cancel. They forward to the
   // dispatcher exactly like the React handlers — endActiveGesture-equivalent
   // logic lives entirely inside the dispatcher's onPointerUp.
+  // Track whether the pointerdown on the canvas started a tool gesture.
+  // Used to determine whether a matching pointerup is a "background click"
+  // (no gesture was claimed → fire onBackgroundClick).
+  const downStartedGestureRef = useRef(false);
+
+  const onBackgroundClickRef = useRef(onBackgroundClick);
+  onBackgroundClickRef.current = onBackgroundClick;
+
   const docListenersRef = useRef<{
     move: (e: PointerEvent) => void;
     up: (e: PointerEvent) => void;
@@ -1062,10 +1068,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (isCanvasTarget(ev)) return; // React onPointerUp already handled it
       dispatcher.onPointerUp(ev);
       detachDocListeners();
+      downStartedGestureRef.current = false;
     };
     const cancel = (_ev: PointerEvent) => {
       dispatcher.cancelGesture();
       detachDocListeners();
+      downStartedGestureRef.current = false;
     };
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
@@ -1075,15 +1083,19 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Detach on unmount (no leaked global listeners if Canvas tears down mid-drag).
   useEffect(() => detachDocListeners, [detachDocListeners]);
 
-  const handlePointerDown = tools
-    ? (e: React.PointerEvent<HTMLCanvasElement>) => {
-        if (autoFocusOnPointerDown) e.currentTarget.focus();
-        tools.dispatcher.onPointerDown(e.nativeEvent);
-        // Only attach if the dispatcher actually started a gesture; otherwise
-        // we'd leak a listener for every empty click on the canvas.
-        if (tools.dispatcher.hasActiveGesture()) attachDocListeners(tools.dispatcher);
-      }
-    : undefined;
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (autoFocusOnPointerDown) e.currentTarget.focus();
+    if (tools) {
+      tools.dispatcher.onPointerDown(e.nativeEvent);
+      const started = tools.dispatcher.hasActiveGesture();
+      downStartedGestureRef.current = started;
+      // Only attach doc listeners if the dispatcher actually started a gesture;
+      // otherwise we'd leak a listener for every empty click on the canvas.
+      if (started) attachDocListeners(tools.dispatcher);
+    } else {
+      downStartedGestureRef.current = false;
+    }
+  };
   const handlePointerMove =
     ((e: React.PointerEvent<HTMLCanvasElement>) => {
       tools?.dispatcher.onPointerMove(e.nativeEvent);
@@ -1110,14 +1122,21 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const handlePointerLeave = (_e: React.PointerEvent<HTMLCanvasElement>) => {
     for (const layer of layersWithDebug) layer.onUncapturedLeave?.();
   };
-  const handlePointerUp = tools
-    ? (e: React.PointerEvent<HTMLCanvasElement>) => {
-        tools.dispatcher.onPointerUp(e.nativeEvent);
-        // The doc-listener up handler also detaches; this branch covers the
-        // common case where the release lands on the canvas itself.
-        detachDocListeners();
-      }
-    : undefined;
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (tools) {
+      tools.dispatcher.onPointerUp(e.nativeEvent);
+      // The doc-listener up handler also detaches; this branch covers the
+      // common case where the release lands on the canvas itself.
+      detachDocListeners();
+    }
+    // Fire background click when no tool gesture was started on the matching
+    // pointerdown (i.e., the dispatcher didn't claim the event, or there is
+    // no dispatcher). This is the "click on empty canvas" signal.
+    if (!downStartedGestureRef.current) {
+      onBackgroundClickRef.current?.();
+    }
+    downStartedGestureRef.current = false;
+  };
   const handlePointerCancel = undefined;
   // Native non-passive wheel listener so tools can call event.preventDefault()
   // (e.g. wheel-zoom holding Ctrl). React attaches `onWheel` as passive, which

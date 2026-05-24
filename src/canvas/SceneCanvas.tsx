@@ -28,7 +28,7 @@ import { textCommand } from 'features/text/textCommand';
 import { findShapePainter } from './shapePainters';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
-import type { CanvasProps, LayersMap } from './Canvas';
+import type { CanvasProps, LayersMap, CanvasSelectionMode } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import type { SceneToAdapterOptions } from './sceneAdapter';
@@ -279,7 +279,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'moveOptions' | 'resizeOptions' | 'rotateOptions'
     | 'snap' | 'pickEvery' | 'boundsOf' | 'handleHitRadius'
     | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
-    | 'layers'   // stripped so we can re-add as optional below
+    | 'layers'          // stripped so we can re-add as optional below
+    | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
@@ -365,6 +366,16 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     // --- Selection ---
     selection?: SelectionApi;
     selectionOptions?: UseSelectionOptions;
+
+    /**
+     * High-level selection semantics. Controls whether canvas interactions
+     * mutate selection and whether multi-select chrome (union AABB) activates.
+     *   - `'single'` (default) — click selects one id.
+     *   - `'multi'` — shift-click extends/toggles.
+     *   - `'none'` — canvas interactions never update selection.
+     * See {@link CanvasSelectionMode}.
+     */
+    selectionMode?: CanvasSelectionMode;
 
     // --- Tools: extend, override, or take over ---
     /** Extra tools or overrides keyed by id, or a full `ToolsApi` takeover.
@@ -580,6 +591,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     kinds,
     selection: selectionProp,
     selectionOptions,
+    selectionMode = 'single',
     tools: toolsProp,
     enableKeybindings = true,
     enableGestureDispatcher = true,
@@ -670,8 +682,33 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
   // the internally-built one is unused but the hook still fires.
-  const internalSelection = useSelection(selectionOptions ?? {});
-  const selection = selectionProp ?? internalSelection;
+  // When selectionMode === 'multi', forward that into the options so the
+  // internal selection hook uses multi-select semantics.
+  const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
+    const base = selectionOptions ?? {};
+    if (base.mode !== undefined) return base;
+    if (selectionMode === 'multi') return { ...base, mode: 'multi' };
+    return base;
+  }, [selectionOptions, selectionMode]);
+  const internalSelection = useSelection(derivedSelectionOptions);
+  const baseSelection = selectionProp ?? internalSelection;
+
+  // selectionMode === 'none' wraps the selection so canvas interactions can't
+  // mutate it. The underlying api is still accessible via the `selection` prop
+  // or `useSelection` directly.
+  const selection: SelectionApi = useMemo(() => {
+    if (selectionMode !== 'none') return baseSelection;
+    const noopSet = () => {};
+    return {
+      ...baseSelection,
+      set: noopSet,
+      add: noopSet,
+      remove: noopSet,
+      toggle: noopSet,
+      clear: noopSet,
+      applyClick: noopSet,
+    };
+  }, [baseSelection, selectionMode]);
 
   // Publish the current selection (with optional per-id kind labels) into any
   // surrounding `<SelectionContextProvider>` so non-canvas UI can read it.
@@ -1015,6 +1052,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       view={effectiveView}
       onViewChange={handleViewChange}
       shaders={shaders}
+      // onBackgroundClick is intentionally NOT wired here. The `clearSelection`
+      // action binding in the select tool handles "click on empty background clears
+      // selection" for all SceneCanvas consumers. Wiring a separate background-click
+      // callback would interfere with the gesture dispatcher (which handles lasso,
+      // marquee, etc.) since tools.dispatcher.hasActiveGesture() only covers the
+      // legacy tool channel, not the gesture dispatcher channel.
       {...restProps}
     />
   );

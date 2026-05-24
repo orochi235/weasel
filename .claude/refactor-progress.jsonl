@@ -15,3 +15,12 @@
 {"ts":"2026-05-24T14:38:00Z","task":"1.1","event":"implementation complete — Canvas has viewport prop + useViewportTools call; SceneCanvas removed useViewportTools, now calls useHandTool directly + computes viewportRegistered=!!viewport inline; SceneCanvas forwards viewport to Canvas"}
 {"ts":"2026-05-24T14:38:30Z","task":"1.1","event":"tests passing — 2774 kit tests pass, 523 ui tests pass, 18 smoke tests pass, 182 swill tests pass; all 15 targeted tests pass"}
 {"ts":"2026-05-24T14:39:00Z","task":"1.1","event":"committed — a9b8d81b"}
+{"ts":"2026-05-24T10:44:00Z","task":"1.1","event":"cleanup: scoped Canvas viewport to pinch-zoom; dead useViewportTools call removed"}
+{"ts":"2026-05-24T14:47:30Z","task":"2.1","event":"test written - 1 failing as expected"}
+{"ts":"2026-05-24T14:50:10Z","task":"2.1","event":"committed - sha ba085337"}
+{"ts":"2026-05-24T00:00:00Z","task":"2.2","event":"start"}
+{"ts":"2026-05-24T00:10:00Z","task":"2.2","event":"done","sha":"f66db1b4"}
+{"ts": "2026-05-24T14:59:24.946071Z", "task": "3.1", "event": "started: audit + impl Phase 3a+3b"}
+{"ts": "2026-05-24T15:01:02.956260+00:00", "task": "3.1", "event": "audit complete: no doc-level selection.clear() listener found; multiActive inferred from selection.current.length; selectionMode and selectionOptions removed from CanvasProps; onBackgroundClick not needed (clear-on-empty-click is in tool routing table)"}
+{"ts": "2026-05-24T15:01:41.633651+00:00", "task": "3.2", "event": "failing test written; tests 1+2 pass, test 3 fails as expected"}
+{"ts": "2026-05-24T15:12:44.524930+00:00", "task": "3.2", "event": "impl complete: Canvas.tsx refactored; SceneCanvas.tsx refactored; all tests pass"}
