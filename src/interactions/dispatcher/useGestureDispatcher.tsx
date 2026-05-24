@@ -319,16 +319,23 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       };
       const keyResult = dispatch(keyEv);
 
-      const heldEv: InputEvent = {
-        kind: 'key-held',
-        key: e.key,
-        phase: 'down',
-        altKey: e.altKey,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        shiftKey: e.shiftKey,
-      };
-      const heldResult = dispatch(heldEv);
+      // Key-repeat keydowns must NOT re-engage a key-held binding. Each
+      // repeat would call `start()` again (pushing another sidearm hotkey,
+      // etc.) while only one keyup eventually fires a single `onEnd`,
+      // leaving the stack permanently populated. Plain `key` (immediate)
+      // bindings still fire per repeat — that's the OS-level autorepeat
+      // semantics consumers expect for things like step-zoom.
+      const heldResult: 'handled' | 'unhandled' = e.repeat
+        ? 'unhandled'
+        : dispatch({
+            kind: 'key-held',
+            key: e.key,
+            phase: 'down',
+            altKey: e.altKey,
+            ctrlKey: e.ctrlKey,
+            metaKey: e.metaKey,
+            shiftKey: e.shiftKey,
+          });
 
       if (heldResult === 'handled') {
         heldKeys.add(e.key);
