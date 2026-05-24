@@ -95,6 +95,11 @@ export interface History {
    *  no-op placeholders so stack ordering survives across kit-version
    *  skew. Bumps `version` and notifies subscribers exactly once. */
   restore(snapshot: SerializedHistory): void;
+  /** Push an entry whose ops have already been applied to the adapter.
+   *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
+   *  to flush a session's net forward ops to the parent as one entry without
+   *  re-mutating the scene. */
+  recordEntry(ops: Op[], label: string): void;
 }
 
 /** Options for `createHistory`. */
@@ -276,6 +281,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
           .filter((e): e is SerializedHistoryEntry => e !== null),
         nextEntryId,
       };
+    },
+    recordEntry(ops: Op[], label: string): void {
+      if (ops.length === 0) return;
+      undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now() });
+      redoStack.length = 0;
+      bump();
     },
     restore(snapshot: SerializedHistory): void {
       undoStack.length = 0;
