@@ -46,7 +46,14 @@ export type TargetSpec =
   | `kind:${string}`
   | `kind:${string}:selected`
   | `affordance:${string}`
-  | { kindOf: (hit: unknown) => boolean };
+  | {
+      /** Predicate. `hit` is the raw target (affordance for drag,
+       *  `e.target` otherwise); `bodyTarget` is the optional body-class
+       *  string ('empty' | 'selected-body' | 'unselected-body') when
+       *  `classifyTarget` is wired. Predicates that only need one of the
+       *  two can ignore the other. */
+      kindOf: (hit: unknown, bodyTarget?: string) => boolean;
+    };
 
 /** Phase qualifier on a gesture spec. Restricts when the spec matches based
  *  on per-tool gesture-lifecycle state.

@@ -18,10 +18,18 @@ import type { Scene, NodeId } from 'core/scene/types';
 export const enterPathEditAction: Action & { requires: string[] } = {
   id: 'enterPathEdit',
   label: 'Edit path anchors',
-  // Double-click on a selected polygon body — matches the Figma/Illustrator
-  // convention. The selected-body target ensures we don't enter edit mode on
-  // empty-canvas double-clicks.
-  defaultBinding: { kind: 'doubleClick', target: 'selected-body' },
+  // Double-click on a polygon body (selected OR unselected) — matches the
+  // Figma/Illustrator convention where double-clicking a path enters edit
+  // mode regardless of prior selection state. The `kindOf` predicate fires
+  // on either body class but not on empty space, so a double-click on
+  // empty canvas doesn't accidentally enter edit mode.
+  defaultBinding: {
+    kind: 'doubleClick',
+    target: {
+      kindOf: (_target: unknown, bodyTarget?: string): boolean =>
+        bodyTarget === 'selected-body' || bodyTarget === 'unselected-body',
+    },
+  },
   requires: ['editAnchors', 'selection', 'scene'],
   invoker: {
     timing: 'immediate',

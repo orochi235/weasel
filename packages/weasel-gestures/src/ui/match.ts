@@ -116,9 +116,10 @@ export function matchKey(eventKey: string, specKey: string | string[]): boolean 
 /**
  * Match a target value + event against a TargetSpec.
  *
- * - `{ kindOf: predicate }` — calls the predicate with the raw target value.
- *   For pointerdown events this is the affordance hit (AffordanceHit | undefined);
- *   for other events it is whatever `target` was set to.
+ * - `{ kindOf: predicate }` — calls the predicate with the raw target value
+ *   (affordance hit on pointerdown; event.target otherwise) AND the
+ *   `bodyTarget` string. Predicates that only need the target can ignore
+ *   the second arg.
  * - `'empty'`, `'selected-body'`, `'unselected-body'` — compared against
  *   `bodyTarget` on the event (populated by `useGestureDispatcher` when a
  *   `classifyTarget` thunk is supplied). Falls back to `false` when absent
@@ -129,14 +130,15 @@ export function matchKey(eventKey: string, specKey: string | string[]): boolean 
 export function matchTarget(target: unknown, specTarget: unknown, bodyTarget?: string): boolean {
   if (specTarget === undefined) return true;
 
-  // kindOf predicate form — receives the raw target (affordance hit for drag, etc.)
+  // kindOf predicate form — receives the raw target (affordance hit for
+  // drag, e.target otherwise) plus the bodyTarget classification.
   if (
     typeof specTarget === 'object' &&
     specTarget !== null &&
     'kindOf' in specTarget &&
     typeof (specTarget as { kindOf: unknown }).kindOf === 'function'
   ) {
-    return (specTarget as { kindOf: (t: unknown) => boolean }).kindOf(target);
+    return (specTarget as { kindOf: (t: unknown, bodyTarget?: string) => boolean }).kindOf(target, bodyTarget);
   }
 
   // String-form: 'empty', 'selected-body', 'unselected-body'

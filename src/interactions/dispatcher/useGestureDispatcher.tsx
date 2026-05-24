@@ -287,8 +287,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // the most recent click; a subsequent click within DOUBLE_CLICK_MAX_MS
     // and DOUBLE_CLICK_MAX_PX promotes to a `doubleclick` event (emitted
     // AFTER the second click).
-    const DOUBLE_CLICK_MAX_MS = 500;
-    const DOUBLE_CLICK_MAX_PX = 5;
+    // Synthesis thresholds. 600ms matches the upper end of OS double-click
+    // settings; 8px tolerates the natural drift of a real mouse / trackpad
+    // between the two clicks. Tightening these breaks manual double-clicks
+    // even though synthetic ones (Playwright) work fine at 5px / 500ms.
+    const DOUBLE_CLICK_MAX_MS = 600;
+    const DOUBLE_CLICK_MAX_PX = 8;
     let lastClick: { t: number; clientX: number; clientY: number } | null = null;
 
     // -----------------------------------------------------------------------
