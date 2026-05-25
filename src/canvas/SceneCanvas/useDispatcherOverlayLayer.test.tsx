@@ -145,4 +145,46 @@ describe('useDispatcherOverlayLayer', () => {
     const paths = collectPaths(result.current.draw(undefined, zoomedView, DIMS));
     expect(paths[0].path).toEqual({ kind: 'rect', x: 0, y: 0, width: 200, height: 200 });
   });
+
+  describe('chrome-caps visibility gate', () => {
+    const data = (allow: Set<string>) => ({
+      getIsVisible: () => (id: string) => allow.has(id),
+    });
+    const marqueeHandle: OngoingHandle = {
+      overlay: (): OngoingOverlay => ({
+        kind: 'marquee', start: { x: 0, y: 0 }, current: { x: 10, y: 10 }, shiftHeld: false,
+      }),
+    };
+    const lassoHandle: OngoingHandle = {
+      overlay: (): OngoingOverlay => ({
+        kind: 'lasso',
+        vertices: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+        current: { x: 10, y: 10 }, shiftHeld: false,
+      }),
+    };
+
+    it('hides the marquee overlay when gesture.marquee reports false', () => {
+      const dispatcher = makeDispatcher([marqueeHandle]);
+      const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+      const allow = data(new Set([])); // nothing visible
+      expect(collectPaths(result.current.draw(allow, VIEW, DIMS))).toHaveLength(0);
+      const allowMarquee = data(new Set(['gesture.marquee']));
+      expect(collectPaths(result.current.draw(allowMarquee, VIEW, DIMS))).toHaveLength(1);
+    });
+
+    it('hides the lasso overlay when gesture.lasso reports false', () => {
+      const dispatcher = makeDispatcher([lassoHandle]);
+      const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+      const allow = data(new Set([]));
+      expect(collectPaths(result.current.draw(allow, VIEW, DIMS))).toHaveLength(0);
+      const allowLasso = data(new Set(['gesture.lasso']));
+      expect(collectPaths(result.current.draw(allowLasso, VIEW, DIMS))).toHaveLength(1);
+    });
+
+    it('absent getIsVisible → every overlay paints (legacy behavior)', () => {
+      const dispatcher = makeDispatcher([marqueeHandle, lassoHandle]);
+      const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+      expect(collectPaths(result.current.draw(undefined, VIEW, DIMS))).toHaveLength(2);
+    });
+  });
 });

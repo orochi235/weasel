@@ -84,6 +84,8 @@ export type ChromeId =
   | 'gesture.marquee'
   | 'gesture.lasso'
   | 'gesture.move-ghosts'
+  | 'gesture.insert-preview'
+  | 'gesture.commands'
   | 'snap.guides'
   | 'snap.targets'
   | 'grid'

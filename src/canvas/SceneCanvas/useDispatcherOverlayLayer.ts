@@ -71,18 +71,27 @@ export function useDispatcherOverlayLayer(args: {
       id: 'dispatcher-overlay',
       label: 'Dispatcher overlay',
       space: 'screen',
-      draw: (_data, view) => {
+      draw: (data, view) => {
         const disp = dispatcherRef.current;
         if (!disp) return [];
         const cfg = { ...DEFAULT_STYLE, ...(styleRef.current ?? {}) };
         const t = viewToTransform(view);
         const out: DrawCommand[] = [];
 
+        // Chrome-caps gate. Mirrors `composeAffordanceLayer` /
+        // `createSelectionOverlayLayer`: pull a visibility predicate off
+        // the data envelope (`<Canvas>` puts it there) and consult it
+        // per overlay before pushing draw commands. Absent envelope →
+        // every overlay paints (legacy callers / tests unchanged).
+        const isVisible = asIsVisible(data);
+        const passes = (id: string) => (isVisible ? isVisible(id) : true);
+
         for (const handle of disp.getInFlightHandles()) {
           const ov = handle.overlay?.();
           if (!ov) continue;
 
           if (ov.kind === 'marquee') {
+            if (!passes('gesture.marquee')) continue;
             // Normalize start/current → AABB, project to screen coords.
             const wx = Math.min(ov.start.x, ov.current.x);
             const wy = Math.min(ov.start.y, ov.current.y);
@@ -106,6 +115,7 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'insertPreview') {
+            if (!passes('gesture.insert-preview')) continue;
             // Build the world-space path using the same builders the
             // commit-time insert factory uses, then project every coord
             // through `worldToScreen` so the screen-space layer can stamp
@@ -239,6 +249,7 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'lasso') {
+            if (!passes('gesture.lasso')) continue;
             // Project every vertex to screen coords; build a single polygon
             // path. The polygon already closes (polygonFromPoints adds Z),
             // which renders as the dashed "close-line" implicit in the
@@ -261,6 +272,7 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'commands') {
+            if (!passes('gesture.commands')) continue;
             // Generic escape hatch — actions emit arbitrary DrawCommands.
             // World-space (default) wraps in viewToMat3 so the commands
             // track the camera; screen-space goes through untouched.
@@ -283,4 +295,14 @@ export function useDispatcherOverlayLayer(args: {
     }),
     [],
   );
+}
+
+/** Pull a chrome-caps visibility predicate off the draw `data` envelope.
+ *  Returns `null` when the caller passed bare data (no `getIsVisible`
+ *  thunk) — the layer then paints every overlay unconditionally,
+ *  matching pre-chrome-caps behavior. */
+function asIsVisible(data: unknown): ((id: string) => boolean) | null {
+  const maybe = data as { getIsVisible?: () => (id: string) => boolean };
+  if (typeof maybe?.getIsVisible === 'function') return maybe.getIsVisible();
+  return null;
 }
