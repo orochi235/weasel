@@ -64,19 +64,26 @@ export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubAr
       return Math.max(fillA, strokeA);
     }
 
+    // Each tick: rewind any prior tick's entry, then write the new state in
+    // a single 'Adjust opacity' batch. Net effect on the history panel: at
+    // most one new entry exists during the session, and it's the same entry
+    // being replaced — not a growing list of intermediate edits.
     function applyLive(session: ScrubSession) {
-      for (const [id, snap] of session.snapshots) {
-        const currentNode = sceneRef.current.get(asNodeId(id));
-        if (!currentNode) continue;
-        const out = computeScrubbedPaints(snap, session.targetAlpha);
-        sceneRef.current.update(asNodeId(id), {
-          data: {
-            ...(currentNode.data as object),
-            fill: out.fill,
-            stroke: out.stroke,
-          },
-        });
-      }
+      sceneRef.current.jumpToHistoryIndex(session.startHistoryIndex);
+      sceneRef.current.batch('Adjust opacity', () => {
+        for (const [id, snap] of session.snapshots) {
+          const currentNode = sceneRef.current.get(asNodeId(id));
+          if (!currentNode) continue;
+          const out = computeScrubbedPaints(snap, session.targetAlpha);
+          sceneRef.current.update(asNodeId(id), {
+            data: {
+              ...(currentNode.data as object),
+              fill: out.fill,
+              stroke: out.stroke,
+            },
+          });
+        }
+      });
     }
 
     function startSession(): boolean {
@@ -112,24 +119,11 @@ export function useOpacityScrub({ scene, selection, hostRef }: UseOpacityScrubAr
       setPercent(null);
       if (!session) return;
 
-      sceneRef.current.jumpToHistoryIndex(session.startHistoryIndex);
-
-      if (!commit) return;
-
-      sceneRef.current.batch('Adjust opacity', () => {
-        for (const [id, snap] of session.snapshots) {
-          const currentNode = sceneRef.current.get(asNodeId(id));
-          if (!currentNode) continue;
-          const out = computeScrubbedPaints(snap, session.targetAlpha);
-          sceneRef.current.update(asNodeId(id), {
-            data: {
-              ...(currentNode.data as object),
-              fill: out.fill,
-              stroke: out.stroke,
-            },
-          });
-        }
-      });
+      // On commit, leave the last `applyLive` batch in place — it is already
+      // the single 'Adjust opacity' history entry. On cancel, rewind it.
+      if (!commit) {
+        sceneRef.current.jumpToHistoryIndex(session.startHistoryIndex);
+      }
     }
 
     function isTypingTarget(t: EventTarget | null): boolean {
