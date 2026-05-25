@@ -211,10 +211,52 @@ describe('chrome-caps / defaults table', () => {
       'action.lasso',
       'action.marquee',
       'action.move-ghosts',
+      'path-edit.anchors',
+      'path-edit.overlay',
       'selection.outline',
       'selection.resize-handles',
       'selection.rotation-handle',
       'snap.guides',
     ]);
+  });
+});
+
+describe('mode-gated defaults', () => {
+  const baseCtx = ctx;
+
+  it('selection.outline is off in path-edit mode even with selection', () => {
+    const c = baseCtx({ selection: [NID('n1')], mode: 'path-edit' });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.outline')).toBe(false);
+  });
+
+  it('selection.resize-handles is off in path-edit mode', () => {
+    const c = baseCtx({ selection: [NID('n1')], mode: 'path-edit' });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.resize-handles')).toBe(false);
+  });
+
+  it('selection.rotation-handle is off in path-edit mode', () => {
+    const c = baseCtx({ selection: [NID('n1')], focused: true, mode: 'path-edit' });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.rotation-handle')).toBe(false);
+  });
+
+  it('selection chrome is ON in normal mode', () => {
+    const c = baseCtx({ selection: [NID('n1')], focused: true, mode: 'normal' });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.outline')).toBe(true);
+    expect(isVisible('selection.resize-handles')).toBe(true);
+    expect(isVisible('selection.rotation-handle')).toBe(true);
+  });
+
+  it('path-edit.anchors is ON only in path-edit mode', () => {
+    expect(resolveVisibility(undefined, baseCtx({ mode: 'path-edit' }))('path-edit.anchors')).toBe(true);
+    expect(resolveVisibility(undefined, baseCtx({ mode: 'normal' }))('path-edit.anchors')).toBe(false);
+  });
+
+  it('path-edit.overlay is ON only in path-edit mode', () => {
+    expect(resolveVisibility(undefined, baseCtx({ mode: 'path-edit' }))('path-edit.overlay')).toBe(true);
+    expect(resolveVisibility(undefined, baseCtx({ mode: 'normal' }))('path-edit.overlay')).toBe(false);
   });
 });
