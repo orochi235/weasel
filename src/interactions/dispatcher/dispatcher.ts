@@ -297,6 +297,24 @@ export function createDispatcher(opts?: {
    *  `beginUiOngoing(sameActionId, …)` arrives. */
   const uiOngoingByAction = new Map<string, string>();
 
+  /** Returns true when a handle carries no gesture-processing callbacks or
+   *  preview data — i.e. the invoker decided at runtime not to engage. */
+  function isEmptyOngoingHandle(h: OngoingHandle): boolean {
+    return !h.onMove && !h.onEnd && !h.overlay && !h.previewIds && !h.previewPose;
+  }
+
+  /** Build a zero-position InvocationCtx for UI-driven invocations (no
+   *  pointer event involved — world/screen coords are irrelevant). */
+  function buildUiInvocationCtx(deps: ActionDeps, params?: Record<string, unknown>): InvocationCtx {
+    return {
+      world: { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps,
+      ...(params !== undefined ? { params } : {}),
+    };
+  }
+
   /** Build a minimal InvocationCtx stub for the given event + deps. */
   function buildInvocationCtx(event: InputEvent, deps: ActionDeps, gestureId?: string): InvocationCtx {
     const modifiers = {
@@ -708,13 +726,7 @@ export function createDispatcher(opts?: {
         // selection kind, etc.). The widely-used early-return-empty pattern
         // depends on the dispatcher falling through to the next match —
         // otherwise the binding silently swallows the gesture.
-        if (
-          !handle.onMove
-          && !handle.onEnd
-          && !handle.overlay
-          && !handle.previewIds
-          && !handle.previewPose
-        ) {
+        if (isEmptyOngoingHandle(handle)) {
           // Clean up the per-gesture state we set above so a later match
           // (still on the same pointerdown) sees a fresh slate.
           if (event.kind === 'pointerdown') {
@@ -761,6 +773,7 @@ export function createDispatcher(opts?: {
     }
     inFlightHandles.clear();
     inFlightOwners.clear();
+    uiOngoingByAction.clear();
     dragOrigins.clear();
     dragPoints.clear();
     pinchStartSpreads.clear();
@@ -817,7 +830,10 @@ export function createDispatcher(opts?: {
     params?: Record<string, unknown>,
   ): UiOngoingControl | null {
     const getAction = opts?.getAction;
-    if (!getAction) return null;
+    if (!getAction) {
+      console.warn('weasel dispatcher: beginUiOngoing called but no getAction was provided to createDispatcher');
+      return null;
+    }
     const action = getAction(actionId);
     if (!action || !action.invoker || action.invoker.timing !== 'ongoing') {
       return null;
@@ -828,13 +844,7 @@ export function createDispatcher(opts?: {
     if (prevGestureId !== undefined) {
       const prevHandle = inFlightHandles.get(prevGestureId);
       if (prevHandle?.onEnd) {
-        const prevCtx: InvocationCtx = {
-          world: { x: 0, y: 0 },
-          screen: { x: 0, y: 0 },
-          modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-          deps,
-        };
-        try { prevHandle.onEnd(prevCtx, 'commit'); }
+        try { prevHandle.onEnd(buildUiInvocationCtx(deps), 'commit'); }
         catch (e) { console.error(`weasel dispatcher: prior UI handle for "${actionId}" threw on auto-commit`, e); }
       }
       inFlightHandles.delete(prevGestureId);
@@ -843,22 +853,18 @@ export function createDispatcher(opts?: {
     }
 
     const gestureId = `ui-${actionId}-${++uiOngoingSeq}`;
-    const startCtx: InvocationCtx = {
-      world: { x: 0, y: 0 },
-      screen: { x: 0, y: 0 },
-      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      deps,
-      params,
-    };
     let handle: OngoingHandle;
     try {
-      handle = action.invoker.start(startCtx, { params });
+      // Pass params via BOTH ctx.params (the UI-driven channel) AND BindingOpts.params
+      // (the gesture-driven channel). Color/opacity actions read ctx.params; future
+      // ongoing actions migrated to UI-driven invocation can rely on either.
+      handle = action.invoker.start(buildUiInvocationCtx(deps, params), { params });
     } catch (e) {
       console.error(`weasel dispatcher: action "${actionId}" threw on start`, e);
       return null;
     }
     // Treat empty handles ({} with no onMove or onEnd) as "did not engage".
-    if (!handle.onMove && !handle.onEnd && !handle.previewIds) {
+    if (isEmptyOngoingHandle(handle)) {
       return null;
     }
 
@@ -873,14 +879,7 @@ export function createDispatcher(opts?: {
       update(nextParams) {
         if (ended) return;
         if (!handle.onMove) return;
-        const moveCtx: InvocationCtx = {
-          world: { x: 0, y: 0 },
-          screen: { x: 0, y: 0 },
-          modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-          deps,
-          params: nextParams,
-        };
-        try { handle.onMove(moveCtx); }
+        try { handle.onMove(buildUiInvocationCtx(deps, nextParams)); }
         catch (e) { console.error(`weasel dispatcher: action "${actionId}" threw on onMove`, e); }
         notify();
       },
@@ -888,13 +887,7 @@ export function createDispatcher(opts?: {
         if (ended) return;
         ended = true;
         if (handle.onEnd) {
-          const endCtx: InvocationCtx = {
-            world: { x: 0, y: 0 },
-            screen: { x: 0, y: 0 },
-            modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-            deps,
-          };
-          try { handle.onEnd(endCtx, reason); }
+          try { handle.onEnd(buildUiInvocationCtx(deps), reason); }
           catch (e) { console.error(`weasel dispatcher: action "${actionId}" threw on onEnd`, e); }
         }
         inFlightHandles.delete(gestureId);

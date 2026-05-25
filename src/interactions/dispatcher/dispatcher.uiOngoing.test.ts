@@ -120,6 +120,30 @@ describe('Dispatcher.beginUiOngoing', () => {
     expect(d.beginUiOngoing('test', {}, {})).toBeNull();
   });
 
+  it('cancelAll fires onEnd with cancel reason and clears uiOngoingByAction so the same actionId can be started fresh', () => {
+    const onEnd = vi.fn();
+    const action = makeOngoingAction('test', { onMove: vi.fn(), onEnd });
+    const d = createDispatcher({ getAction: () => action });
+
+    // Start a UI-driven handle.
+    d.beginUiOngoing('test', {}, { v: 1 });
+    expect([...d.getInFlightHandles()].length).toBe(1);
+
+    // cancelAll should fire onEnd with 'cancel' and clear internal state.
+    d.cancelAll('cancel');
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(onEnd.mock.calls[0][1]).toBe('cancel');
+    expect([...d.getInFlightHandles()].length).toBe(0);
+
+    // Starting the same actionId again must NOT double-fire onEnd (no stale
+    // uiOngoingByAction entry) and must succeed cleanly.
+    const ctrl2 = d.beginUiOngoing('test', {}, { v: 2 });
+    expect(ctrl2).not.toBeNull();
+    expect(onEnd).toHaveBeenCalledOnce(); // still only once
+    ctrl2!.end('commit');
+    expect(onEnd).toHaveBeenCalledTimes(2);
+  });
+
   it('subscribers are notified on begin / update / end', () => {
     const action = makeOngoingAction('test', { onMove: vi.fn(), onEnd: vi.fn() });
     const d = createDispatcher({ getAction: () => action });
