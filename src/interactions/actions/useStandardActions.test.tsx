@@ -83,6 +83,7 @@ const KIT_IDS = [
   'viewport.dragPan', // Phase 14c.2
   'clearSelection', // Phase 14a
   'enterTextEdit', // Phase 14c.3
+  'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity', // Phase 14e Task 8
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -90,7 +91,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 46 kit-standard action descriptors', () => {
+  it('registers all 47 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>
