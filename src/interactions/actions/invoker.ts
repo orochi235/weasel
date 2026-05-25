@@ -104,6 +104,14 @@ export interface InvocationCtx {
     };
   };
   key?: { key: string; repeat: boolean };
+  /**
+   * Per-invocation parameters. Populated by `ActionsRegistry.begin()` for
+   * UI-driven ongoing actions (color picker, opacity slider) so handles can
+   * read the current value on `start` and updated values on `onMove`. The
+   * gesture dispatcher does not populate this field; gesture-driven actions
+   * receive params via `BindingOpts.params` on `start` (the `opts` arg).
+   */
+  params?: Record<string, unknown>;
 }
 
 /** Per-invocation options the dispatcher reads from a `GestureBinding`'s
