@@ -1607,6 +1607,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             pickEvery={internalPickEvery}
             viewRef={currentViewRef}
             dispatcher={dispatcher}
+            getIsVisibleForCanvas={getIsVisibleForCanvas}
           />
           {children}
         </ActionsProviderIfRoot>
@@ -1637,6 +1638,7 @@ function GestureDispatcherMounter({
   pickEvery,
   viewRef,
   dispatcher,
+  getIsVisibleForCanvas,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
@@ -1651,6 +1653,10 @@ function GestureDispatcherMounter({
   /** Pre-created dispatcher to pump events into. When omitted,
    *  `useGestureDispatcher` creates one internally (legacy path). */
   dispatcher?: Dispatcher;
+  /** Chrome-caps visibility resolver factory. Threaded into
+   *  `buildAffordanceAt` so the hit-test pipeline gates corner / rotate /
+   *  anchor affordances on the same chrome ids the renderer uses. */
+  getIsVisibleForCanvas?: () => (id: string) => boolean;
 }) {
   const registry = useActionsRegistry();
   const depRegistry = useDepRegistry();
@@ -1727,9 +1733,15 @@ function GestureDispatcherMounter({
       () => HANDLE_HIT_RADIUS / meanScale(viewRef.current?.scale ?? { x: 1, y: 1 }),
       () => DEFAULT_ROTATION_HANDLE_DISTANCE / meanScale(viewRef.current?.scale ?? { x: 1, y: 1 }),
       getAnchorState,
+      // Chrome-caps resolver: keep the affordance hit-test in sync with what
+      // the renderer is actually painting. Without this, a click on a (no
+      // longer visible) resize handle position still classifies as a resize
+      // handle — e.g. an anchor drag in path-edit mode resizes the path's
+      // bounding box instead of moving the anchor.
+      getIsVisibleForCanvas ? () => getIsVisibleForCanvas() : undefined,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectionRef, boundsOf, viewRef, getAnchorState]);
+  }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas]);
 
   // Build the `classifyTarget` thunk. Converts client coords → world coords
   // internally using the canvas rect + view, then delegates to `buildClassifyTarget`.

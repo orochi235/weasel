@@ -186,35 +186,46 @@ export interface AnchorState {
  *   When provided, the classifier also walks selected polygon paths for
  *   anchor hits. Anchors are always hittable on selected paths; control
  *   handles are only hittable when `editingId` matches the node id.
+ * @param getIsVisible - Optional resolver from chrome-caps. When provided,
+ *   the classifier consults it before claiming an affordance kind — keeps
+ *   the affordance pipeline and the renderer in agreement on which chrome
+ *   is live (e.g., resize handles are gated by `'selection.resize-handles'`,
+ *   rotation by `'selection.rotation-handle'`, anchors by `'path-edit.anchors'`).
+ *   Omitting defaults to always-visible (back-compat).
  */
 export function buildAffordanceAt(
   getChromeState: () => ChromeState,
   hitRadius: number | (() => number) = HANDLE_HIT_RADIUS,
   rotateDistance: number | (() => number) = ROTATE_DISTANCE,
   getAnchorState?: () => AnchorState | null,
+  getIsVisible?: () => (id: string) => boolean,
 ): (worldPoint: { x: number; y: number }) => AffordanceHit | null {
   return function affordanceAt({ x: wx, y: wy }) {
     const state = getChromeState();
+    const isVisible = getIsVisible?.() ?? (() => true);
     const hr = typeof hitRadius === 'function' ? hitRadius() : hitRadius;
     const rd = typeof rotateDistance === 'function' ? rotateDistance() : rotateDistance;
     const r2 = hr * hr;
 
-    // -- Corner resize handles --
-    const resizeTarget = pickResizeTarget(state);
-    if (resizeTarget) {
-      for (const c of cornersFor(resizeTarget.bounds)) {
-        if (dist2(wx, wy, c.worldX, c.worldY) <= r2) {
-          return {
-            kind: c.kind,
-            fixedPoint: { x: c.fixedX, y: c.fixedY },
-            targetIds: [resizeTarget.id],
-            anchor: c.anchor,
-          };
+    // -- Corner resize handles -- gated by 'selection.resize-handles' --
+    if (isVisible('selection.resize-handles')) {
+      const resizeTarget = pickResizeTarget(state);
+      if (resizeTarget) {
+        for (const c of cornersFor(resizeTarget.bounds)) {
+          if (dist2(wx, wy, c.worldX, c.worldY) <= r2) {
+            return {
+              kind: c.kind,
+              fixedPoint: { x: c.fixedX, y: c.fixedY },
+              targetIds: [resizeTarget.id],
+              anchor: c.anchor,
+            };
+          }
         }
       }
     }
 
-    // -- Rotation zone --
+    // -- Rotation zone -- gated by 'selection.rotation-handle' --
+    if (isVisible('selection.rotation-handle')) {
     // The rotation affordance is now an invisible elliptical ring
     // around the selection AABB: smallest ellipse containing the AABB,
     // minus the AABB itself. Hit-test = inside outer ellipse AND
@@ -252,9 +263,11 @@ export function buildAffordanceAt(
         }
       }
     }
+    }
 
     // -- Anchor / control-handle hits (selected polygon paths) --
-    if (getAnchorState) {
+    // Gated by 'path-edit.anchors'.
+    if (isVisible('path-edit.anchors') && getAnchorState) {
       const anchorState = getAnchorState();
       if (anchorState) {
         const { editingId } = anchorState;
