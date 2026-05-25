@@ -451,13 +451,15 @@ function RightSidebar({
             <PropertyRow label="fill">
               <PropertyColorInput
                 value={(firstSelected.data as WeaselDrawData).fill ?? '#000000'}
-                onChange={(fill) => patchSelection({ fill })}
+                colorActionId="setFill"
+                opacityActionId="setFillOpacity"
               />
             </PropertyRow>
             <PropertyRow label="stroke">
               <PropertyColorInput
                 value={(firstSelected.data as WeaselDrawData).stroke ?? '#000000'}
-                onChange={(stroke) => patchSelection({ stroke })}
+                colorActionId="setStroke"
+                opacityActionId="setStrokeOpacity"
               />
             </PropertyRow>
             <PropertyRow label="stroke w">

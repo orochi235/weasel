@@ -1,6 +1,6 @@
-import type { ReactNode, ChangeEvent } from 'react';
+import { useRef, type ReactNode, type ChangeEvent } from 'react';
 import { SidebarPanel, type SidebarPanelProps } from '@orochi235/weasel-ui';
-import { toHex8, getAlpha01, withAlpha01 } from '@orochi235/weasel';
+import { toHex8, getAlpha01, withAlpha01, useActionsRegistry, type UiOngoingControl } from '@orochi235/weasel';
 import s from './PropertiesPanel.module.css';
 
 /** Convenience composition: a `SidebarPanel` whose body is a
@@ -186,22 +186,90 @@ export function PropertyAxisInput(props: {
 /** Color + alpha picker. Native `<input type=color>` only round-trips
  *  `#rrggbb`, so an adjacent range input drives the alpha channel
  *  independently. Both controls write `#rrggbbaa` so every consumer
- *  carries opacity through the same string. */
+ *  carries opacity through the same string.
+ *
+ *  Two prop shapes are supported:
+ *  - Action-based (preferred): pass `colorActionId` + `opacityActionId` to
+ *    dispatch via `registry.begin/update/end`. The color picker sends
+ *    `{ color: string }` params; the opacity slider sends `{ alpha01: number }`.
+ *  - Legacy fallback: pass `onChange` for cases where no registry action
+ *    exists (e.g. local React state). */
 export function PropertyColorInput(props: {
   value: string;
+  colorActionId: string;
+  opacityActionId: string;
+  onChange?: never;
+} | {
+  value: string;
   onChange: (v: string) => void;
+  colorActionId?: never;
+  opacityActionId?: never;
 }) {
+  const actions = useActionsRegistry();
   const hex8 = toHex8(props.value);
   const rgb6 = hex8.startsWith('#') && hex8.length >= 7 ? hex8.slice(0, 7) : '#000000';
   const alpha01 = getAlpha01(hex8);
   const alphaPct = Math.round(alpha01 * 100);
+  const colorCtrlRef = useRef<UiOngoingControl | null>(null);
+  const opacityCtrlRef = useRef<UiOngoingControl | null>(null);
+
+  function dispatchColor(v: string, phase: 'input' | 'change' | 'blur'): void {
+    if ('onChange' in props && props.onChange) {
+      // Legacy path: single onChange call with composed hex8 color
+      if (phase !== 'blur') props.onChange(withAlpha01(v, alpha01));
+      return;
+    }
+    if (phase === 'input') {
+      if (!colorCtrlRef.current) {
+        colorCtrlRef.current = actions?.begin(props.colorActionId, { color: v }) ?? null;
+      } else {
+        colorCtrlRef.current.update({ color: v });
+      }
+      return;
+    }
+    if (colorCtrlRef.current) {
+      colorCtrlRef.current.update({ color: v });
+      colorCtrlRef.current.end('commit');
+      colorCtrlRef.current = null;
+    } else if (phase === 'change') {
+      const ctrl = actions?.begin(props.colorActionId, { color: v });
+      ctrl?.end('commit');
+    }
+  }
+
+  function dispatchOpacity(a: number, phase: 'input' | 'change' | 'blur'): void {
+    if ('onChange' in props && props.onChange) {
+      // Legacy path: single onChange call with composed hex8 color
+      if (phase !== 'blur') props.onChange(withAlpha01(hex8, a));
+      return;
+    }
+    if (phase === 'input') {
+      if (!opacityCtrlRef.current) {
+        opacityCtrlRef.current = actions?.begin(props.opacityActionId, { alpha01: a }) ?? null;
+      } else {
+        opacityCtrlRef.current.update({ alpha01: a });
+      }
+      return;
+    }
+    if (opacityCtrlRef.current) {
+      opacityCtrlRef.current.update({ alpha01: a });
+      opacityCtrlRef.current.end('commit');
+      opacityCtrlRef.current = null;
+    } else if (phase === 'change') {
+      const ctrl = actions?.begin(props.opacityActionId, { alpha01: a });
+      ctrl?.end('commit');
+    }
+  }
+
   return (
     <span className={`${s.colorInputRow} ${s.span12}`}>
       <input
         className={s.colorInput}
         type="color"
         value={rgb6}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => props.onChange(withAlpha01(e.target.value, alpha01))}
+        onInput={(e) => dispatchColor((e.target as HTMLInputElement).value, 'input')}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => dispatchColor(e.target.value, 'change')}
+        onBlur={() => dispatchColor(rgb6, 'blur')}
       />
       <input
         className={s.alphaRange}
@@ -212,7 +280,9 @@ export function PropertyColorInput(props: {
         value={alphaPct}
         title="Opacity"
         aria-label="Opacity"
-        onChange={(e: ChangeEvent<HTMLInputElement>) => props.onChange(withAlpha01(hex8, Number(e.target.value) / 100))}
+        onInput={(e) => dispatchOpacity(Number((e.target as HTMLInputElement).value) / 100, 'input')}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => dispatchOpacity(Number(e.target.value) / 100, 'change')}
+        onBlur={() => dispatchOpacity(alpha01, 'blur')}
       />
       <span className={s.alphaReadout}>{alphaPct}</span>
     </span>
