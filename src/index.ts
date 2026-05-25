@@ -105,6 +105,7 @@ export {
 } from './interactions/actions/registry';
 export type {
   Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
+  UiOngoingControl,
 } from './interactions/actions/registry';
 export { moveAction } from './interactions/actions/defaults/move';
 export { resizeAction } from './interactions/actions/defaults/resize';

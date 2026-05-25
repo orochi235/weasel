@@ -10,7 +10,9 @@
  *   /     set the last-focused swatch to none
  */
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
-import { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '@orochi235/weasel';
+import { useRef } from 'react';
+import { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev, useActionsRegistry } from '@orochi235/weasel';
+import type { UiOngoingControl } from '@orochi235/weasel';
 // Re-exported for backward compat; ColorContextProvider still imports these
 // from here. Remove this block once ColorContextProvider imports from the kit directly.
 export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev };
@@ -51,6 +53,110 @@ function paintClassSuffix(p: ActivePaint): string {
   if (p.kind === 'none') return ' is-none';
   if (p.kind === 'transparent') return ' is-transparent';
   return '';
+}
+
+function FillColorSwatch(props: {
+  fillColor: string;
+  fillPrev: string;
+  setLocal: (color: string) => void;
+}) {
+  const actions = useActionsRegistry();
+  const ctrlRef = useRef<UiOngoingControl | null>(null);
+
+  function dispatch(v: string, phase: 'input' | 'change' | 'blur'): void {
+    if (phase === 'input') {
+      if (!ctrlRef.current) {
+        ctrlRef.current = actions?.begin('setFill', { color: v }) ?? null;
+      } else {
+        ctrlRef.current.update({ color: v });
+      }
+      return;
+    }
+    // change / blur — commit
+    if (ctrlRef.current) {
+      ctrlRef.current.update({ color: v });
+      ctrlRef.current.end('commit');
+      ctrlRef.current = null;
+    } else if (phase === 'change') {
+      // rare: change without input — begin+end in one shot
+      const ctrl = actions?.begin('setFill', { color: v });
+      ctrl?.end('commit');
+    }
+  }
+
+  return (
+    <input
+      type="color"
+      value={props.fillColor}
+      onInput={(e) => {
+        const v = mergeAlphaFromPrev((e.target as HTMLInputElement).value, props.fillPrev);
+        props.setLocal(v);
+        dispatch(v, 'input');
+      }}
+      onChange={(e) => {
+        const v = mergeAlphaFromPrev(e.target.value, props.fillPrev);
+        props.setLocal(v);
+        dispatch(v, 'change');
+      }}
+      onBlur={() => {
+        dispatch(props.fillColor, 'blur');
+      }}
+      className="wd-swatch-input"
+      aria-label="Fill color"
+    />
+  );
+}
+
+function StrokeColorSwatch(props: {
+  strokeColor: string;
+  strokePrev: string;
+  setLocal: (color: string) => void;
+}) {
+  const actions = useActionsRegistry();
+  const ctrlRef = useRef<UiOngoingControl | null>(null);
+
+  function dispatch(v: string, phase: 'input' | 'change' | 'blur'): void {
+    if (phase === 'input') {
+      if (!ctrlRef.current) {
+        ctrlRef.current = actions?.begin('setStroke', { color: v }) ?? null;
+      } else {
+        ctrlRef.current.update({ color: v });
+      }
+      return;
+    }
+    // change / blur — commit
+    if (ctrlRef.current) {
+      ctrlRef.current.update({ color: v });
+      ctrlRef.current.end('commit');
+      ctrlRef.current = null;
+    } else if (phase === 'change') {
+      // rare: change without input — begin+end in one shot
+      const ctrl = actions?.begin('setStroke', { color: v });
+      ctrl?.end('commit');
+    }
+  }
+
+  return (
+    <input
+      type="color"
+      value={props.strokeColor}
+      onInput={(e) => {
+        const v = mergeAlphaFromPrev((e.target as HTMLInputElement).value, props.strokePrev);
+        props.setLocal(v);
+        dispatch(v, 'input');
+      }}
+      onChange={(e) => {
+        const v = mergeAlphaFromPrev(e.target.value, props.strokePrev);
+        props.setLocal(v);
+        dispatch(v, 'change');
+      }}
+      onBlur={() => {
+        dispatch(props.strokeColor, 'blur');
+      }}
+      className="wd-swatch-input"
+      aria-label="Stroke color"
+    />
+  );
 }
 
 export function ActiveSwatches(p: ActiveSwatchesProps) {
@@ -99,12 +205,10 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
           title="Stroke — click to pick · shift-click for none"
           onClick={(e) => onSwatchClick('stroke', e)}
         >
-          <input
-            type="color"
-            value={strokeColor}
-            onChange={(e) => colors.setStroke({ kind: 'solid', color: mergeAlphaFromPrev(e.target.value, strokePrev) })}
-            className="wd-swatch-input"
-            aria-label="Stroke color"
+          <StrokeColorSwatch
+            strokeColor={strokeColor}
+            strokePrev={strokePrev}
+            setLocal={(v) => colors.setStroke({ kind: 'solid', color: v })}
           />
         </button>
         <button
@@ -114,12 +218,10 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
           title="Fill — click to pick · shift-click for none"
           onClick={(e) => onSwatchClick('fill', e)}
         >
-          <input
-            type="color"
-            value={fillColor}
-            onChange={(e) => colors.setFill({ kind: 'solid', color: mergeAlphaFromPrev(e.target.value, fillPrev) })}
-            className="wd-swatch-input"
-            aria-label="Fill color"
+          <FillColorSwatch
+            fillColor={fillColor}
+            fillPrev={fillPrev}
+            setLocal={(v) => colors.setFill({ kind: 'solid', color: v })}
           />
         </button>
       </div>
