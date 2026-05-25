@@ -217,6 +217,25 @@ export type OngoingOverlay =
  *  `onEnd` exactly once (with `'commit'` on natural completion or `'cancel'`
  *  on pointercancel / blur / escape). */
 export interface OngoingHandle {
+  /**
+   * Optional logical gesture kind — a stable, human-readable tag the
+   * dispatcher exposes via `getActiveGesture()` for chrome-visibility
+   * rules and any other surface that wants to react to "what gesture
+   * is currently in flight" without inspecting handles directly.
+   *
+   * Examples: `'marquee'`, `'lasso'`, `'move'`, `'resize'`, `'rotate'`,
+   * `'pan'`, `'pinch'`.
+   *
+   * Distinct from the dispatcher's internal `gestureId` (`pointer-mouse`,
+   * `key-held-Space`, etc.) which keys per-pointer state and is not
+   * meaningful to consumers.
+   *
+   * When omitted, the gesture is "anonymous" — `getActiveGesture().kind`
+   * reports `null` even though a handle is in flight. This is fine for
+   * gestures that don't have visible chrome of their own.
+   */
+  kind?: string;
+
   onMove?(ctx: InvocationCtx): void;
   onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void;
 

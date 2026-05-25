@@ -23,6 +23,7 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
     inFlight: () => map,
     getInFlightHandles: () => map.values(),
     subscribe: () => () => {},
+    getActiveGesture: () => ({ kind: null, id: null }),
   };
 }
 

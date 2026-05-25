@@ -337,6 +337,60 @@ describe('createDispatcher', () => {
       expect(dispatcher.inFlight().size).toBe(0);
     });
 
+    describe('getActiveGesture', () => {
+      it('returns { kind: null, id: null } when nothing in flight', () => {
+        const dispatcher = createDispatcher();
+        expect(dispatcher.getActiveGesture()).toEqual({ kind: null, id: null });
+      });
+
+      it("reports the in-flight handle's kind and the internal gestureId", () => {
+        const handle = { kind: 'marquee', onMove: vi.fn(), onEnd: vi.fn() };
+        const startFn = vi.fn().mockReturnValue(handle);
+        const action = ongoingAction('marquee-action', { kind: 'drag' }, startFn);
+        const registry = makeRegistry([action]);
+        const dispatcher = createDispatcher();
+
+        dispatcher.handleInput(
+          { kind: 'pointerdown', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false },
+          makeCtx({ actions: registry }),
+        );
+        expect(dispatcher.getActiveGesture()).toEqual({ kind: 'marquee', id: 'pointer-mouse' });
+      });
+
+      it('reports kind: null when the in-flight handle did not declare one', () => {
+        const handle = { onMove: vi.fn(), onEnd: vi.fn() };
+        const startFn = vi.fn().mockReturnValue(handle);
+        const action = ongoingAction('anon-action', { kind: 'drag' }, startFn);
+        const registry = makeRegistry([action]);
+        const dispatcher = createDispatcher();
+
+        dispatcher.handleInput(
+          { kind: 'pointerdown', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false },
+          makeCtx({ actions: registry }),
+        );
+        expect(dispatcher.getActiveGesture()).toEqual({ kind: null, id: 'pointer-mouse' });
+      });
+
+      it('clears after pointerup', () => {
+        const handle = { kind: 'marquee', onMove: vi.fn(), onEnd: vi.fn() };
+        const startFn = vi.fn().mockReturnValue(handle);
+        const action = ongoingAction('marquee-action', { kind: 'drag' }, startFn);
+        const registry = makeRegistry([action]);
+        const dispatcher = createDispatcher();
+        const ctx = makeCtx({ actions: registry });
+
+        dispatcher.handleInput(
+          { kind: 'pointerdown', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false },
+          ctx,
+        );
+        dispatcher.handleInput(
+          { kind: 'pointerup', x: 0, y: 0, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false },
+          ctx,
+        );
+        expect(dispatcher.getActiveGesture()).toEqual({ kind: null, id: null });
+      });
+    });
+
     it('key-held down starts a handle; up calls onEnd("commit") and clears', () => {
       const handle = { onEnd: vi.fn() };
       const startFn = vi.fn().mockReturnValue(handle);

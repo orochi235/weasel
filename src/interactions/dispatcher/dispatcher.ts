@@ -180,6 +180,24 @@ export interface Dispatcher {
    * Returns an unsubscribe function.
    */
   subscribe(fn: () => void): () => void;
+
+  /**
+   * Snapshot of the currently active gesture, for surfaces (chrome-caps
+   * visibility rules, debug HUDs) that need to react to "what gesture
+   * is in flight right now."
+   *
+   * - `kind` — the `OngoingHandle.kind` reported by the in-flight
+   *   handle (e.g. `'marquee'`, `'move'`). `null` when no gesture is
+   *   in flight OR the handle didn't declare a kind.
+   * - `id` — the dispatcher's internal `gestureId` (`pointer-mouse`,
+   *   `key-held-Space`, …). `null` when no gesture is in flight.
+   *
+   * When multiple handles are in flight simultaneously (e.g. a key-held
+   * gesture overlapping a pointer gesture), the most-recently-started
+   * handle wins. This matches user intent: the latest interaction is
+   * the one consumers care about.
+   */
+  getActiveGesture(): { kind: string | null; id: string | null };
 }
 
 // ---------------------------------------------------------------------------
@@ -720,6 +738,21 @@ export function createDispatcher(): Dispatcher {
     return () => { subscribers.delete(fn); };
   }
 
+  function getActiveGesture(): { kind: string | null; id: string | null } {
+    // The most-recently-started in-flight handle wins. `Map` preserves
+    // insertion order; each gestureId is set exactly once (any pump
+    // events `set` only on the initial `start`, and `delete` on end),
+    // so iterating to the last entry gives us the latest start.
+    let lastId: string | null = null;
+    let lastHandle: OngoingHandle | null = null;
+    for (const [id, handle] of inFlightHandles) {
+      lastId = id;
+      lastHandle = handle;
+    }
+    if (lastHandle === null) return { kind: null, id: null };
+    return { kind: lastHandle.kind ?? null, id: lastId };
+  }
+
   // Wrap handleInput + cancelAll to notify after every invocation. Done at
   // the boundary (not inside the match loop) so any mutation — start, pump,
   // end, no-op — fires exactly one notify per pump tick.
@@ -739,5 +772,6 @@ export function createDispatcher(): Dispatcher {
     inFlight,
     getInFlightHandles,
     subscribe,
+    getActiveGesture,
   };
 }
