@@ -50,6 +50,7 @@
   "scripts": {
     "dev": "vite",
     "dev:drag": "LABKIT_EXAMPLE=drag-lab vite",
+    "dev:weasel": "LABKIT_EXAMPLE=weasel-lab vite",
     "build": "tsup && npm run build:css",
     "build:css": "lessc src/styles.less dist/styles.css && lessc src/theme/light.less dist/theme-light.css && lessc src/theme/dark.less dist/theme-dark.css",
     "test": "vitest run",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
+    "@orochi235/weasel": "file:../weasel",
     "@storybook/addon-a11y": "^8.4.0",
     "@storybook/addon-essentials": "^8.4.0",
     "@storybook/addon-interactions": "^8.4.0",
