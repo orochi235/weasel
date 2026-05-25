@@ -146,9 +146,6 @@ export interface DispatcherContext {
    * When omitted, no eligibility filtering is applied — preserves
    * backward compatibility for callers (tests, legacy harnesses) that
    * don't wire up chrome-caps state.
-   *
-   * TODO(mode-aware-dispatch Task 13): SceneCanvas supplies
-   * `getRuleCtx` once actions carry `eligible` annotations.
    */
   getRuleCtx?: () => RuleCtx;
 }
