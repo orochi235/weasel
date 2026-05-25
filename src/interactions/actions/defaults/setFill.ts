@@ -97,6 +97,7 @@ export const setFillAction: Action & { requires: string[] } = {
             for (const id of scratch.ids) {
               const prev = scratch.startData.get(id);
               const merged = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? '#ffffffff');
+              // Re-read so concurrent edits to non-fill fields aren't clobbered on commit.
               const nodeNow = scratch.scene.get(id);
               if (!nodeNow) continue;
               scratch.scene.update(id, {

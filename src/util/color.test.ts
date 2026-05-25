@@ -44,8 +44,11 @@ describe('withAlpha01', () => {
 });
 
 describe('mergeAlphaFromPrev', () => {
-  it('keeps explicit alpha from picked when it already has one (length 9)', () => {
+  it('keeps explicit alpha from picked when length is 9 (lowercased)', () => {
     expect(mergeAlphaFromPrev('#aabbcc80', '#000000ff')).toBe('#aabbcc80');
+  });
+  it('lowercases an already-8-char picked color', () => {
+    expect(mergeAlphaFromPrev('#AABBCC80', '#000000ff')).toBe('#aabbcc80');
   });
   it('borrows alpha from prev when picked is 7-char', () => {
     expect(mergeAlphaFromPrev('#aabbcc', '#11223380')).toBe('#aabbcc80');
