@@ -54,7 +54,8 @@ Priority tags:
 
 **Selection, actions & UI panels**
 - Per-kind property-row registry for `<PropertiesPanel>` → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- Declarative visibility rules for overlay chrome → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- chrome-caps: gesture.* rules inert until kit ongoing actions set `OngoingHandle.kind` → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- chrome-caps: dispatcher-overlay layer doesn't gate by chrome id yet → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Alignment guides / insert snap-to-existing-edges → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Op coalescing follow-ups (`useScene`, default `coalesceKey`s) → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Clipboard: OS clipboard / cross-reload serialization → [Selection, actions & UI panels](#selection-actions--ui-panels)
@@ -241,7 +242,10 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P2) Per-kind property-row registry for `<PropertiesPanel>`.** Surfaced 2026-05-13 while wiring object-kind-aware property rows in WeaselDraw's selection panel. Today `<PropertiesPanel>` is a presentation slot — every consumer hand-rolls property rows inline and branches on `primary.tool` / ad-hoc feature flags (`hasStrokeProps`, etc.) to decide what to render. Likely shape: kinds register a property-row contributor that takes the current selection + adapter and returns an array of `<PropertyRow>` children; the panel composes contributors for the union of selected kinds. Open questions: (a) registration site — kit-side keyed off the future object-kind registry vs. a consumer-owned `Map<kind, PropertyContributor>` passed to `<PropertiesPanel>` as a prop; (b) interplay with kit-shipped panels like `<TextPropertiesPanel>` / `<PathfinderPanel>`; (c) how to express rows that apply to a subset of the selection; (d) presentation order. Blocked on the object-kind registry. Defer until ≥2 consumer apps want this.
 
-- **(P2) Declarative visibility rules for overlay chrome.** Today, conditional visibility for selection-overlay parts (handles, rotation handle, etc.) is wired imperatively per-call-site or via per-feature `gateLayer` wrappers. A more durable shape would be a small declarative DSL: "don't display rotation handles unless the direct parent has focus", "show alignment guides only when shift is held", "hide handles during an active gesture". Open questions: where the rules live, what state inputs they read, how they compose with kit defaults vs. consumer overrides. Defer until 3+ concrete cases want this.
+- **(P2) chrome-caps follow-ups.** The chrome-caps module shipped (spec `docs/superpowers/specs/2026-05-24-chrome-caps-design.md`). Two loose ends remain before the `gesture.*` chrome ids carry their weight:
+  - **Built-in ongoing actions don't set `OngoingHandle.kind`.** `gesture.marquee`, `gesture.lasso`, `gesture.move-ghosts` default rules are `gestureIs('marquee'|'lasso'|'move')` — currently no kit action populates the kind, so `dispatcher.getActiveGesture().kind` is always null and the rules never fire. Wire kinds into `areaSelectAction`, `lassoSelectAction`, `moveAction`, `resizeAction`, `rotateAction`, `panAction`, `pinchAction`.
+  - **`useDispatcherOverlayLayer` doesn't gate by chrome id.** The marquee/lasso/insertPreview overlays paint unconditionally from `handle.overlay()` outputs. Add the same `getIsVisible` envelope read used in `composeAffordanceLayer` / `createSelectionOverlayLayer`, mapping each `OngoingOverlay.kind` to its canonical chrome id (`gesture.marquee`, `gesture.lasso`, `gesture.insert-preview` — that last id isn't in the defaults table yet).
+  - Existing `gateLayer`-based per-feature visibility (debug, grid) can migrate to chrome-caps over time but isn't blocked on this work.
 
 - **(P2) Alignment guides / insert snap-to-existing-edges.** Shows snap lines when an inserted/moved object's edge or center aligns with a sibling's. Slot for a new `SnapStrategy` plus an overlay layer. Originally scoped in `docs/specs/2026-04-30-canvas-kit-resize-insert-design.md:278`.
 
