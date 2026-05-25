@@ -204,7 +204,7 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
       <div
         ref={canvasContainerRef}
         className="lk-workspace__canvas-host"
-        style={{ flex: 1, minHeight: 0, display: 'flex' }}
+        style={{ width: '100%', height: '100%', position: 'relative' }}
       >
         <CanvasStack layers={layersWithFeedback} view={record.view} onViewChange={setView} />
         <DragOverlay drag={dragDropResult.drag} />
