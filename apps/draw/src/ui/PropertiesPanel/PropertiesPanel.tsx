@@ -201,6 +201,9 @@ export function PropertyColorInput(props: {
   onChange?: never;
 } | {
   value: string;
+  /** @deprecated Use `colorActionId` + `opacityActionId` instead. Legacy
+   *  path retained only for local-React-state edits (e.g. background color)
+   *  where no scene action applies. */
   onChange: (v: string) => void;
   colorActionId?: never;
   opacityActionId?: never;
