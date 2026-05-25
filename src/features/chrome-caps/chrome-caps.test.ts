@@ -156,6 +156,11 @@ describe('chrome-caps / defaults table', () => {
     expect(resolveVisibility(undefined, gest)('selection.resize-handles')).toBe(false);
   });
 
+  it('selection.resize-handles also visible in multi-mode (union-bounds resize)', () => {
+    const multi = ctx({ selection: [NID('a'), NID('b')], multiActive: true });
+    expect(resolveVisibility(undefined, multi)('selection.resize-handles')).toBe(true);
+  });
+
   it('selection.rotation-handle needs focus + single selection + idle', () => {
     const f = (over: Partial<ChromeCtx>) =>
       resolveVisibility(undefined, ctx({ selection: [NID('a')], focused: true, ...over }))(

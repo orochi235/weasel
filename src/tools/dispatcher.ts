@@ -154,6 +154,11 @@ export interface ToolsDispatcherOptions {
     chromeState: ChromeState;
     view: View;
     dims: { width: number; height: number };
+    /** Chrome-caps visibility predicate, keyed by affordance id. When
+     *  supplied, the dispatcher passes it through to each layer's
+     *  `hitTest` so a hidden chrome element is also unhittable. Absent
+     *  → all affordances are hittable (legacy behavior). */
+    isVisible?: (id: string) => boolean;
   } | null;
   /** Optional. Returns the scene node at the given world coords, or null
    *  for empty. The dispatcher uses this to populate `ctx.target` on
@@ -466,6 +471,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
           hitCtx.chromeState as never,
           hitCtx.view,
           hitCtx.dims,
+          hitCtx.isVisible,
         );
         if (result !== null) {
           startAffordanceGesture(result, e);

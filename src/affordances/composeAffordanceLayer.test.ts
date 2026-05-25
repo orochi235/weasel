@@ -222,4 +222,50 @@ describe('composeAffordanceLayer', () => {
     expect(layer.draw(makeState(), VIEW, DIMS)).toEqual([]);
     expect(layer.hitTest(0, 0, makeState(), VIEW, DIMS)).toBeNull();
   });
+
+  describe('chrome-caps visibility gate', () => {
+    const a: Affordance = {
+      id: 'aff-a',
+      regions: () => [pointRegion({
+        id: 'r-a',
+        shape: { kind: 'point', x: 0, y: 0, hitRadiusPx: 4 },
+        paint: { kind: 'square', sizePx: 4, fill: { color: 'red' } },
+      })],
+    };
+    const b: Affordance = {
+      id: 'aff-b',
+      regions: () => [pointRegion({
+        id: 'r-b',
+        shape: { kind: 'point', x: 10, y: 10, hitRadiusPx: 4 },
+        paint: { kind: 'square', sizePx: 4, fill: { color: 'blue' } },
+      })],
+    };
+
+    it('draw skips affordances whose id reports !isVisible (via data envelope)', () => {
+      const layer = composeAffordanceLayer('x', 'X', [a, b]);
+      const data = {
+        getChromeState: () => makeState(),
+        getIsVisible: () => (id: string) => id !== 'aff-a',
+      };
+      const out = layer.draw(data as unknown as ChromeState, VIEW, DIMS);
+      expect(out).toHaveLength(1);
+      expect((out[0] as { fill: { color: string } }).fill.color).toBe('blue');
+    });
+
+    it('hitTest skips affordances whose id reports !isVisible', () => {
+      const layer = composeAffordanceLayer('x', 'X', [a, b]);
+      const isVisible = (id: string) => id !== 'aff-a';
+      // (0,0) is on aff-a's region; should miss because aff-a is hidden.
+      expect(layer.hitTest(0, 0, makeState(), VIEW, DIMS, isVisible)).toBeNull();
+      // (10,10) is on aff-b's region; still hits.
+      expect(layer.hitTest(10, 10, makeState(), VIEW, DIMS, isVisible)).not.toBeNull();
+    });
+
+    it('absent isVisible → every affordance is drawn AND hittable (legacy)', () => {
+      const layer = composeAffordanceLayer('x', 'X', [a, b]);
+      const out = layer.draw(makeState(), VIEW, DIMS);
+      expect(out).toHaveLength(2);
+      expect(layer.hitTest(0, 0, makeState(), VIEW, DIMS)).not.toBeNull();
+    });
+  });
 });

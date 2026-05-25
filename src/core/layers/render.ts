@@ -75,6 +75,10 @@ export interface RenderLayer<TData> {
     data: TData,
     view: View,
     dims: Dims,
+    /** Chrome-caps visibility predicate. When supplied, the layer must
+     *  not return a hit from any chrome element whose id reports
+     *  `false`. Absent → every element is hittable. */
+    isVisible?: (id: string) => boolean,
   ) => import('../../affordances/types').AffordanceBinding | null;
   /**
    * Called on every pointermove when no gesture is currently captured.

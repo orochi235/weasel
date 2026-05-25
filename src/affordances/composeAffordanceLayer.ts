@@ -40,6 +40,7 @@ export function composeAffordanceLayer(
     state: ChromeState,
     view: View,
     dims: { width: number; height: number },
+    isVisible?: (id: string) => boolean,
   ): AffordanceBinding | null;
 } {
   return {
@@ -49,9 +50,11 @@ export function composeAffordanceLayer(
     draw: (data, view, _dims): DrawCommand[] => {
       const state = asChromeState(data);
       const debug = asDebugSink(data);
+      const isVisible = asIsVisible(data);
       const out: DrawCommand[] = [];
       const t = viewToTransform(view);
       for (const a of affordances) {
+        if (isVisible && !isVisible(a.id)) continue;
         for (const region of a.regions(state)) {
           const xf = transformOf(state, region.targetId);
           if (region.paint) paintRegion(region, xf, view, state, t, out);
@@ -63,11 +66,15 @@ export function composeAffordanceLayer(
       }
       return out;
     },
-    hitTest: (wx, wy, state, view, _dims): AffordanceBinding | null => {
+    hitTest: (wx, wy, state, view, _dims, isVisible): AffordanceBinding | null => {
       // Walk affordances last → first (top → bottom in paint order); within
       // each affordance, walk regions last → first for the same reason.
+      // `isVisible` (when supplied) gates by the same chrome id used at
+      // paint time so a hidden affordance can't be hit either.
       for (let i = affordances.length - 1; i >= 0; i--) {
-        const regs = affordances[i].regions(state);
+        const a = affordances[i];
+        if (isVisible && !isVisible(a.id)) continue;
+        const regs = a.regions(state);
         for (let j = regs.length - 1; j >= 0; j--) {
           const region = regs[j];
           const xf = transformOf(state, region.targetId);
@@ -95,6 +102,15 @@ function asChromeState(data: unknown): ChromeState {
 function asDebugSink(data: unknown): DebugSink | null {
   const maybe = data as { getDebug?: () => DebugSink | null };
   if (typeof maybe?.getDebug === 'function') return maybe.getDebug();
+  return null;
+}
+
+/** Pull a chrome-caps visibility predicate off the data envelope when
+ *  present. When absent (legacy callers / tests passing bare state),
+ *  every affordance renders — preserves pre-chrome-caps behavior. */
+function asIsVisible(data: unknown): ((id: string) => boolean) | null {
+  const maybe = data as { getIsVisible?: () => (id: string) => boolean };
+  if (typeof maybe?.getIsVisible === 'function') return maybe.getIsVisible();
   return null;
 }
 

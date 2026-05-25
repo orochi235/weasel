@@ -646,6 +646,7 @@ describe('dispatcher: affordance hit-test pipeline', () => {
     expect(layerHitTest).toHaveBeenCalledWith(
       expect.any(Number), expect.any(Number),
       expect.anything(), expect.anything(), expect.anything(),
+      undefined,
     );
   });
 

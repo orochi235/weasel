@@ -21,8 +21,10 @@ export const defaultVisibilityRules: VisibilityRules = {
   'selection.outline':         selectionAtLeast(1),
 
   // Handles hide during a gesture so the moving / resizing object
-  // isn't visually crowded; they reappear on commit.
-  'selection.resize-handles':  selectionIs(1).andNot(gesturing),
+  // isn't visually crowded; they reappear on commit. Single mode
+  // shows per-object corners; multi mode shows union-bounds corners
+  // (the affordance's `pickRenderTarget` picks the appropriate target).
+  'selection.resize-handles':  selectionAtLeast(1).andNot(gesturing),
   'selection.rotation-handle': selectionIs(1).and(focused).andNot(gesturing),
 
   // Transient gesture chrome — only shown during the matching gesture.
