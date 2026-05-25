@@ -17,8 +17,6 @@ import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
 import type { ChromeCtx } from './types';
 
-const EMPTY_SUPPRESSED: ReadonlySet<string> = new Set();
-
 export interface BuildChromeCtxArgs {
   focused: boolean;
   selection: readonly NodeId[];
@@ -27,11 +25,17 @@ export interface BuildChromeCtxArgs {
   action: { kind: string | null; id: string | null };
   hover: NodeId | null;
   view: View;
+  /**
+   * @deprecated Removed from ChromeCtx in Phase 2 of the mode-aware
+   * dispatch refactor. Accepted here for backward-compat during the
+   * migration; carried on the returned ctx via a non-typed property
+   * that the deprecated `suppressed(id)` atom reads via cast.
+   */
   suppressedIds?: ReadonlySet<string>;
 }
 
 export function buildChromeCtx(args: BuildChromeCtxArgs): ChromeCtx {
-  return {
+  const ctx: ChromeCtx & { suppressedIds?: ReadonlySet<string> } = {
     focused: args.focused,
     selection: args.selection,
     multiActive: args.multiActive,
@@ -39,6 +43,7 @@ export function buildChromeCtx(args: BuildChromeCtxArgs): ChromeCtx {
     action: args.action,
     hover: args.hover,
     view: args.view,
-    suppressedIds: args.suppressedIds ?? EMPTY_SUPPRESSED,
   };
+  if (args.suppressedIds) ctx.suppressedIds = args.suppressedIds;
+  return ctx;
 }

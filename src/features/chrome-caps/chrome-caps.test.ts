@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { asNodeId, type NodeId } from '../../core/scene/types';
-import type { ChromeCtx, Condition } from './types';
+import type { ChromeCtx, Condition, RuleCtx } from './types';
 import {
   when, and, or, not, always, never,
   focused, gesturing, actionIs,
@@ -11,16 +11,19 @@ import {
 import { defaultVisibilityRules } from './defaults';
 import { resolveVisibility } from './resolve';
 
-function ctx(over: Partial<ChromeCtx> = {}): ChromeCtx {
+type TestCtx = RuleCtx & { suppressedIds?: ReadonlySet<string> };
+
+function ctx(over: Partial<TestCtx> = {}): TestCtx {
   return {
     focused: false,
     selection: [],
     multiActive: false,
-    suppressedIds: new Set(),
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     action: { kind: null, id: null },
     hover: null,
     view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    mode: 'normal',
+    allowedCapabilities: new Set(),
     ...over,
   };
 }

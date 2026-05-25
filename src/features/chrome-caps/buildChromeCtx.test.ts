@@ -26,10 +26,10 @@ describe('buildChromeCtx', () => {
     expect(ctx.action).toEqual({ kind: 'marquee', id: 'pointer-mouse' });
     expect(ctx.hover).toBe('a');
     expect(ctx.view).toBe(VIEW);
-    expect(ctx.suppressedIds.has('x')).toBe(true);
+    expect((ctx as { suppressedIds?: ReadonlySet<string> }).suppressedIds?.has('x')).toBe(true);
   });
 
-  it('defaults suppressedIds to an empty set when omitted', () => {
+  it('omits suppressedIds when not supplied', () => {
     const ctx = buildChromeCtx({
       focused: false,
       selection: [],
@@ -39,6 +39,6 @@ describe('buildChromeCtx', () => {
       hover: null,
       view: VIEW,
     });
-    expect(ctx.suppressedIds.size).toBe(0);
+    expect((ctx as { suppressedIds?: ReadonlySet<string> }).suppressedIds).toBeUndefined();
   });
 });

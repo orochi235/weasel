@@ -1,46 +1,37 @@
 import type { NodeId } from '../../core/scene/types';
 import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
+import type { Rule } from './rule';
+import type { RuleCtx } from './ruleCtx';
+
+export type { Rule };
+export type { RuleCtx } from './ruleCtx';
 
 /**
- * Live state read by chrome-visibility {@link Condition}s. Built once
- * per frame on the rendering side, passed to the resolver, discarded.
- *
- * Extending this struct is an additive change — new fields can be
- * added without touching existing atoms, but every atom that reads a
- * new field must be added to the conditions library before consumers
- * can use it.
+ * Live state read by chrome-visibility {@link Condition}s. Backward-compat
+ * alias for the legacy ChromeCtx shape — kept for consumers that still
+ * import `ChromeCtx`. Subset of `RuleCtx`: legacy ChromeCtx didn't carry
+ * mode/capability info. The resolver builds a `RuleCtx` for evaluation;
+ * surfaces that still operate in `ChromeCtx` shape supply defaults
+ * (mode='normal', empty allowedCapabilities) at the construction site.
  */
 export interface ChromeCtx {
-  /** Live focus state of the canvas surface (`useCanvasFocus`). */
   readonly focused: boolean;
-  /** Current selection. Same value as `ChromeState.selection`. */
   readonly selection: readonly NodeId[];
-  /** True when the selection has been promoted to multi-mode (the
-   *  single-shared union-bounds handle behavior). */
   readonly multiActive: boolean;
-  /** Ids the consumer has flagged as suppressed (e.g. during
-   *  path-edit mode). Predicates can `not(suppressed(id))` to
-   *  honor this. */
-  readonly suppressedIds: ReadonlySet<string>;
-  /** Modifier-key snapshot. */
   readonly modifiers: ModifierState;
-  /** Active action, or `{ kind: null, id: null }` when idle. The
-   *  `kind` is the in-flight action's stable tag (`'move'`,
-   *  `'marquee'`, `'lasso'`, `'resize'`, `'rotate'`, …). */
   readonly action: { readonly kind: string | null; readonly id: string | null };
-  /** Last-hovered node id under the pointer, or null when nothing
-   *  is hovered (pointer outside the canvas, or over empty space). */
   readonly hover: NodeId | null;
-  /** Current viewport transform — needed by view-dependent rules
-   *  (e.g. `zoomAtLeast`). */
   readonly view: View;
 }
 
 /**
- * Composable visibility predicate. Always callable as `(ctx) =>
- * boolean`; the fluent methods (`and` / `or` / `andNot` / `orNot`)
- * return new conditions wrapping the original.
+ * Composable visibility predicate with fluent surface. Carries its underlying
+ * `Rule` tree at `.rule` so the resolver can introspect / share trees with
+ * the affordance pipeline and the dispatcher's eligibility filter.
+ *
+ * Callable form `cond(ctx)` evaluates the tree against ctx. The fluent
+ * methods return new Conditions wrapping new trees.
  *
  * **Chain semantics: strict left-to-right, no precedence.**
  * `a.and(b).or(c)` is `(a && b) || c`; `a.or(b).and(c)` is
@@ -49,15 +40,16 @@ export interface ChromeCtx {
  * subexpression or use the top-level `or(...)`.
  */
 export interface Condition {
-  (ctx: ChromeCtx): boolean;
+  (ctx: RuleCtx): boolean;
+  readonly rule: Rule;
   /** `this && other` */
-  and(other: Condition): Condition;
+  and(other: Condition | Rule): Condition;
   /** `this || other` */
-  or(other: Condition): Condition;
+  or(other: Condition | Rule): Condition;
   /** `this && !other` */
-  andNot(other: Condition): Condition;
+  andNot(other: Condition | Rule): Condition;
   /** `this || !other` */
-  orNot(other: Condition): Condition;
+  orNot(other: Condition | Rule): Condition;
 }
 
 /**
@@ -96,6 +88,7 @@ export type ChromeId =
 /**
  * Consumer override map. Merged on top of the kit's
  * `defaultVisibilityRules`; absent keys fall through to defaults,
- * absent ids fall through to `always`.
+ * absent ids fall through to `always`. Entries may be either fluent
+ * `Condition` instances OR raw `Rule` trees — the resolver normalizes.
  */
-export type VisibilityRules = Partial<Record<ChromeId, Condition>>;
+export type VisibilityRules = Partial<Record<ChromeId, Condition | Rule>>;
