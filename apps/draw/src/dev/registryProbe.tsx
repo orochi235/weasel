@@ -4,11 +4,20 @@ import {
   defaultNodeRouting,
   useActionsRegistry,
   useScene,
+  type GestureSpec,
+  type ModSpec,
   type NodeRoutingEntry,
+  type TargetSpec,
   type ToolsApi,
 } from '@orochi235/weasel';
+import type { PhaseSpec } from '@orochi235/weasel-gestures';
 import { buildActionRegistry, formatRoute, type RegistryEntry } from '@orochi235/weasel/routing';
-import type { ToolDef } from '@orochi235/weasel/routing';
+import type {
+  GestureName,
+  ParsedModifiers,
+  PhaseAtom,
+  ToolDef,
+} from '@orochi235/weasel/routing';
 import { isValidElement, type ReactNode } from 'react';
 import type { PhaseSummary, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
 import { formatShortcutParts } from '@orochi235/weasel-ui';
@@ -60,6 +69,17 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   // after the initial render).
   const actionsList = reg ? reg.list() : [];
 
+  // Stable signature of registered action ids; used to gate memoization of
+  // the tool-entries derivation so binding-route citations refresh exactly
+  // when the action set changes (action object identity is unstable). */
+  const actionsSig = actionsList.map((a) => a.id).sort().join(',');
+  const actionsByID = useMemo(() => {
+    const m = new Map<string, unknown>();
+    for (const a of actionsList) m.set(a.id, a);
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actionsSig]);
+
   const toolEntries: readonly ToolEntry[] = useMemo(() => {
     if (!tools) return [];
     void toolsRegistrySig;
@@ -76,9 +96,12 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
       .filter(({ t }) => (seen.has(t.id) ? false : (seen.add(t.id), true)))
       .map(({ slot, t }): ToolEntry => {
         const def = t.def as ToolDef<unknown> | undefined;
-        const routes = def ? formatRoutes(buildActionRegistry([def])) : [];
+        const routeInfo = def ? collectToolRoutes(def) : { routes: [], bindingActionByRoute: {} };
+        const routes = routeInfo.routes;
         const initial = def ? summarizePhase(def.initial) : EMPTY_PHASE;
         const engaged = def?.engaged ? summarizePhase(def.engaged) : undefined;
+        const phaseTableCallbacks = def ? collectToolCallbacks(def) : [];
+        const bindingCallbacks = synthBindingCallbacks(routeInfo.bindingActionByRoute, actionsByID);
         return {
           kind: 'tool',
           id: t.id,
@@ -105,10 +128,13 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
             onDeactivate: !!def?.onDeactivate,
             hitOverride: !!def?.hitOverride,
           },
-          callbacks: def ? collectToolCallbacks(def) : [],
+          callbacks: [...phaseTableCallbacks, ...bindingCallbacks],
         };
       });
-  }, [tools, toolsRegistrySig]);
+    // `actionsByID` is derived from actionsList; we re-enter the memo when
+    // its signature changes (actionsSig) so binding-route citations refresh
+    // as actions register.
+  }, [tools, toolsRegistrySig, actionsByID]);
 
   const actionEntries: readonly ActionEntry[] = actionsList.map((a): ActionEntry => ({
     kind: 'action',
@@ -162,6 +188,168 @@ function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
     target: e.target,
     modifiers: e.modifiers,
   }));
+}
+
+interface CollectedRoutes {
+  /** Formatted route strings, de-duped, source order: phase-table first,
+   *  then binding-sourced. */
+  routes: readonly string[];
+  /** Route string → owning `actionId` for binding-sourced rows. Lets the
+   *  inspector look up an action's handler source per route. Phase-table
+   *  routes are absent from this map (their callbacks come from the tool's
+   *  PhaseDef function members, tagged directly by the Vite plugin). */
+  bindingActionByRoute: Readonly<Record<string, string>>;
+}
+
+/** Union of phase-table routes (`def.initial` / `def.engaged`) and binding
+ *  routes (`def.bindings`). Built-in tools route most gestures through
+ *  bindings now — without folding them in, the inspector would show tools
+ *  with empty / vestigial route lists. De-duped on the formatted string. */
+function collectToolRoutes(def: ToolDef<unknown>): CollectedRoutes {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of formatRoutes(buildActionRegistry([def]))) {
+    if (!seen.has(r)) { seen.add(r); out.push(r); }
+  }
+  const bindingActionByRoute: Record<string, string> = {};
+  for (const { route, actionId } of bindingRouteRefs(def.bindings)) {
+    if (!seen.has(route)) { seen.add(route); out.push(route); }
+    // First binding wins if multiple bindings produced the same formatted
+    // route (rare; only when two specs collapse to identical strings).
+    if (!(route in bindingActionByRoute)) bindingActionByRoute[route] = actionId;
+  }
+  return { routes: out, bindingActionByRoute };
+}
+
+/** Map of `GestureSpec.kind` → `GestureName` used by the route grammar.
+ *  `multiTouch` has no route-grammar gesture (only its tap synthesis does),
+ *  so specs of that kind are skipped. */
+const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined> = {
+  key: 'keyDown',
+  'key-held': 'keyHeld',
+  wheel: 'wheel',
+  click: 'click',
+  doubleClick: 'dblTap',
+  contextMenu: 'contextMenu',
+  drag: 'drag',
+  multiTouch: undefined,
+  multiTouchTap: 'multiTouchTap',
+};
+
+function bindingRouteRefs(
+  bindings: ToolDef<unknown>['bindings'],
+): readonly { route: string; actionId: string }[] {
+  if (!bindings || bindings.length === 0) return [];
+  const out: { route: string; actionId: string }[] = [];
+  for (const b of bindings) {
+    for (const route of specToRouteStrings(b.spec)) {
+      out.push({ route, actionId: b.actionId });
+    }
+  }
+  return out;
+}
+
+/** Synthesize per-route `CallbackRef`s for binding-sourced routes. The
+ *  Vite source-tag plugin only tags functions, and bindings are plain
+ *  object literals — so binding routes have no native handler source.
+ *  We bridge that gap by pointing each binding-route at its action's first
+ *  invoker callback (the function that actually runs when the route fires).
+ *
+ *  The synthetic `label` is the formatted route string itself; the inspector's
+ *  `findRouteCallback` matches by that exact string ahead of its legacy
+ *  phase-keyed label probes. */
+function synthBindingCallbacks(
+  bindingActionByRoute: Readonly<Record<string, string>>,
+  actionsByID: ReadonlyMap<string, unknown>,
+): readonly CallbackRef[] {
+  const out: CallbackRef[] = [];
+  for (const [route, actionId] of Object.entries(bindingActionByRoute)) {
+    const action = actionsByID.get(actionId);
+    const source = bestActionHandlerSource(action);
+    if (source) out.push({ label: route, source });
+  }
+  return out;
+}
+
+/** Pick the most relevant source-tagged function on an Action: prefer the
+ *  invoker methods in dispatch order (start → run → move → end → cancel),
+ *  fall back to `enabled`. Returns undefined when no member is tagged
+ *  (prod builds, or files outside the Vite plugin's include set). */
+function bestActionHandlerSource(action: unknown): CallbackSource | undefined {
+  if (!action || typeof action !== 'object') return undefined;
+  const a = action as { enabled?: unknown; invoker?: Record<string, unknown> };
+  const inv = a.invoker;
+  if (inv && typeof inv === 'object') {
+    for (const key of ['start', 'run', 'move', 'end', 'cancel'] as const) {
+      const s = sourceOf(inv[key]);
+      if (s) return s;
+    }
+    // Fall through to any other invoker member that happens to be tagged.
+    for (const v of Object.values(inv)) {
+      const s = sourceOf(v);
+      if (s) return s;
+    }
+  }
+  return sourceOf(a.enabled);
+}
+
+function specToRouteStrings(spec: GestureSpec): readonly string[] {
+  const gesture = SPEC_KIND_TO_GESTURE[spec.kind];
+  if (!gesture) return [];
+  const phases = phaseSpecToAtoms(spec.phase);
+  const modifiers = modSpecToParsed(spec.mods);
+
+  let args: readonly (string | undefined)[] = [undefined];
+  let target: string | undefined;
+
+  if (spec.kind === 'wheel') {
+    args = [spec.direction ?? '*'];
+  } else if (spec.kind === 'key' || spec.kind === 'key-held') {
+    args = Array.isArray(spec.key) ? spec.key : [spec.key];
+  } else if (spec.kind === 'multiTouchTap') {
+    args = [String(spec.fingers)];
+  } else if (
+    spec.kind === 'click' || spec.kind === 'doubleClick' ||
+    spec.kind === 'contextMenu' || spec.kind === 'drag'
+  ) {
+    target = targetSpecToString(spec.target);
+  }
+
+  return args.map((arg) => formatRoute({ phases, gesture, arg, target, modifiers }));
+}
+
+function phaseSpecToAtoms(phase: PhaseSpec | undefined): readonly PhaseAtom[] {
+  // Bindings without a `phase` qualifier match in any phase. Surface that as
+  // the explicit `*` atom rather than picking one of initial/engaged
+  // arbitrarily — `formatRoute` renders it as `[*]` so the inspector reads
+  // honestly.
+  if (phase === undefined) return [{ channel: '&', phase: '*' }];
+  if (phase === 'initial' || phase === 'engaged' || phase === '*') {
+    return [{ channel: '&', phase }];
+  }
+  return phase;
+}
+
+function modSpecToParsed(mods: ModSpec | undefined): ParsedModifiers {
+  if (!mods) return {};
+  const out: ParsedModifiers = {};
+  for (const name of ['mod', 'shift', 'alt', 'ctrl', 'meta'] as const) {
+    const v = mods[name];
+    if (v === true) out[name] = 'required';
+    else if (v === 'optional') out[name] = 'optional';
+  }
+  return out;
+}
+
+/** Render a TargetSpec as the route grammar's target token. Predicate
+ *  targets (`{ kindOf }`) collapse to a single sentinel string — the
+ *  predicate body isn't representable in the v3 grammar, but emitting *some*
+ *  target keeps the route in the inspector and groups predicate-bindings
+ *  together under one `routeTarget` entry. */
+function targetSpecToString(target: TargetSpec | undefined): string {
+  if (target === undefined) return '*';
+  if (typeof target === 'string') return target;
+  return 'predicate';
 }
 
 const EMPTY_PHASE: PhaseSummary = {

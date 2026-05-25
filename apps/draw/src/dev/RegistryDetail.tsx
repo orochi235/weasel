@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
-import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keyGlyph, type BadgeProps, type DataGridColumn, type KeySpec, type PowerlineProps } from '@orochi235/weasel-ui';
+import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@orochi235/weasel-ui';
 import type { ParsedModifiers, ModName } from '@orochi235/weasel/routing';
 
 function toKeys(parts: readonly string[] | undefined) {
@@ -22,13 +22,14 @@ function InlineMarkdown({ text }: { text: string }) {
   );
 }
 
-const MOD_GLYPHS: Record<ModName, string> = { mod: '⌘', shift: '⇧', alt: '⌥', ctrl: '⌃', meta: '⌘' };
 const MOD_DISPLAY_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 /** Decompose a `ParsedModifiers` map into KeySpecs for KeySequence. Empty
  *  map (no required modifiers) returns undefined; otherwise emits one chip
  *  per modifier in canonical display order, marking optional ones inverted
- *  so the consumer can visually distinguish `?shift` from `+shift`. */
+ *  so the consumer can visually distinguish `?shift` from `+shift`.
+ *  Delegates to `keySpecsFromMods` so labels are platform-aware
+ *  (e.g. `mod` → ⌘ on macOS, Ctrl on Windows). */
 /** One row in the per-binding params table rendered by `ActionDetail`. */
 interface ActionParamRow {
   gesture: string;
@@ -89,15 +90,28 @@ function describeGestureSpec(
   return spec.kind;
 }
 
+/** Render a `HotkeyTrigger` value (`'space' | 'alt' | 'ctrl' | 'meta' |
+ *  'shift' | ...`) as a single platform-aware `KeySpec`. The four modifier
+ *  triggers flow through `keySpecsFromMods` (so `mod`-flavored entries
+ *  render correctly on every OS); `space` flows through `keySpecFromKey`;
+ *  anything else falls back to an upper-cased label. */
+function hotkeyTriggerToKeySpec(trigger: string): KeySpec {
+  if (trigger === 'shift' || trigger === 'alt' || trigger === 'ctrl'
+      || trigger === 'meta' || trigger === 'mod') {
+    return keySpecsFromMods([{ name: trigger }])[0]!;
+  }
+  if (trigger === 'space' || trigger === ' ') return keySpecFromKey(' ');
+  return { label: trigger.toUpperCase() };
+}
+
 function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefined {
-  const keys: KeySpec[] = [];
+  const specs: LogicalModSpec[] = [];
   for (const name of MOD_DISPLAY_ORDER) {
     const req = modifiers[name];
-    if (req !== undefined) {
-      keys.push({ label: MOD_GLYPHS[name], optional: req === 'optional' });
-    }
+    if (req !== undefined) specs.push({ name, optional: req === 'optional' });
   }
-  return keys.length > 0 ? keys : undefined;
+  if (specs.length === 0) return undefined;
+  return keySpecsFromMods(specs);
 }
 import s from './RegistryInspector.module.css';
 import type {
@@ -106,7 +120,7 @@ import type {
   OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef, TreeCategoryNode,
 } from './registryData';
-import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, HOTKEY_TRIGGER_GLYPHS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
+import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
 import { canonicalModifiers, describeRoute, describeRouteParts, formatPhaseAtom, getGestureDescriptor, ROUTE_FIELD_DEFINITIONS, type GestureName, type RouteFieldName } from '@orochi235/weasel/routing';
 import { collectBundles, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute } from './registryData';
 void GESTURE_CHANNEL_KEYS;
@@ -144,7 +158,7 @@ export function RouteBadge({ route }: { route: string }) {
       <Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>
         {parsed.gesture}
         {hasArg && (argIsKey ? (
-          <> <KeyCap label={keyGlyph(parsed.arg!)} variant="minimal" className={s.routeKeyCap} /></>
+          <> <KeyCap label={keySpecFromKey(parsed.arg!).label} variant="minimal" className={s.routeKeyCap} /></>
         ) : (
           <span className={argIsDefault ? s.routeMuted : undefined}>({parsed.arg})</span>
         ))}
@@ -189,7 +203,7 @@ export function routeToPowerline(route: string): Omit<PowerlineProps, 'className
       argIsKey ? (
         <>
           {parsed.gesture}{' '}
-          <KeyCap label={keyGlyph(parsed.arg!)} variant="minimal" className={s.routeKeyCap} />
+          <KeyCap label={keySpecFromKey(parsed.arg!).label} variant="minimal" className={s.routeKeyCap} />
         </>
       ) : (
         <>
@@ -918,7 +932,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
           <>
             <dt>hotkey</dt>
             <dd>
-              <KeySequence keys={toKeys(HOTKEY_TRIGGER_GLYPHS[entry.hotkey] ?? [entry.hotkey.toUpperCase()])} />
+              <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} />
               <EntryLink kind="hotkeyTrigger" id={entry.hotkey} label={entry.hotkey} onNavigate={onNavigate} />
             </dd>
           </>
@@ -990,7 +1004,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
                 arg: parsed.arg ?? '',
                 target: parsed.target ?? '',
                 modifiers: parsed.modifiers,
-                callback: findRouteCallback(parsed, entry.callbacks ?? []),
+                callback: findRouteCallback(r, parsed, entry.callbacks ?? []),
               };
             })}
             columns={[
@@ -1086,9 +1100,17 @@ function CallbackSourceLink({ callback }: { callback: CallbackRef }) {
  *  uses in `registryProbe.tsx` so a route round-trips to its handler.
  *  Returns `null` when no match (e.g. the dev plugin didn't tag this fn). */
 function findRouteCallback(
+  routeString: string,
   parsed: { phases: readonly { phase: string }[]; gesture: GestureName; target: string | undefined; arg: string | undefined; modifiers: ParsedModifiers },
   callbacks: readonly CallbackRef[],
 ): CallbackRef | null {
+  // Binding-sourced rows: the probe attaches a synthetic CallbackRef whose
+  // `label` is the formatted route string itself, pointing at the owning
+  // action's handler source. Match that first so binding routes get a
+  // citation; the legacy phase-keyed probes below are for phase-table
+  // routes whose handlers the Vite plugin tagged directly.
+  const exact = callbacks.find((c) => c.label === routeString);
+  if (exact) return exact;
   const phase = parsed.phases[0]?.phase;
   if (!phase) return null;
   const g = parsed.gesture;

@@ -52,6 +52,33 @@ describe('RegistryProbe', () => {
     expect(toolIds).toContain('rect');
   });
 
+  // Built-in tools route most gestures through `ToolDef.bindings` rather than
+  // legacy phase-table channels. The probe must reflect both into
+  // `ToolEntry.routes`, otherwise the inspector's per-tool route list shows
+  // empty for tools like `rect` (whose drag flows through insertAction).
+  it('reflects ToolDef.bindings into ToolEntry.routes', async () => {
+    const snapshots: { tools: readonly { id: string; routes: readonly string[] }[] }[] = [];
+    const onSnapshot = (s: {
+      tools: readonly { id: string; routes: readonly string[] }[];
+    }) => { snapshots.push(s); };
+    render(
+      <ActionsProvider>
+        <RegistryProbe onSnapshot={onSnapshot} />
+      </ActionsProvider>,
+    );
+    await waitFor(() => {
+      const last = snapshots[snapshots.length - 1];
+      expect(last).toBeTruthy();
+      expect(last!.tools.length).toBeGreaterThan(3);
+    });
+    const last = snapshots[snapshots.length - 1]!;
+    const rect = last.tools.find((t) => t.id === 'rect');
+    expect(rect, 'rect tool should be probed').toBeTruthy();
+    // rect's only routing path is `bindings: [{ spec: { kind: 'drag' }, ... }]`.
+    // The `[*]` phase + bare drag formats as `[*] drag`.
+    expect(rect!.routes).toContain('[*] drag');
+  });
+
   // Parity: every built-in tool surfaced by the probe must carry the kit
   // barrel's hook name on its def (e.g. id 'rect' → hookName 'useRectTool').
   // Drift here means a hook was renamed without updating the def — surfaces
