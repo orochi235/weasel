@@ -442,6 +442,9 @@ export type {
 // ─── Utility: 45° axis constraint ───────────────────────────────────────────
 export { constrainTo45 } from './util/constrainTo45';
 
+// ─── Utility: hex8 color helpers ────────────────────────────────────────────
+export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './util/color';
+
 // ─── Groups: lasso-style group records, resolve / expand / unionBounds ──────
 export type { Group, GroupAdapter } from './features/groups/types';
 export { resolveToOutermostGroup, expandToLeaves } from './features/groups/resolve';

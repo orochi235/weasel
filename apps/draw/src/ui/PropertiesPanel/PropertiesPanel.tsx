@@ -1,6 +1,6 @@
 import type { ReactNode, ChangeEvent } from 'react';
 import { SidebarPanel, type SidebarPanelProps } from '@orochi235/weasel-ui';
-import { toHex8, getAlpha01, withAlpha01 } from '../../ActiveSwatches';
+import { toHex8, getAlpha01, withAlpha01 } from '@orochi235/weasel';
 import s from './PropertiesPanel.module.css';
 
 /** Convenience composition: a `SidebarPanel` whose body is a
