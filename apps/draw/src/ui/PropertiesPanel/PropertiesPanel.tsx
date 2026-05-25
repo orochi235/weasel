@@ -243,9 +243,9 @@ export function PropertySwatchGrid(props: {
   value: string;
   options: { value: string; label?: string }[];
   onChange: (v: string) => void;
-  /** Right-click handler — fires on contextmenu with the browser menu
-   *  suppressed. Used by the Colors panel to route left-click → fill,
-   *  right-click → stroke. */
+  /** Alt-target handler — fires on right-click (browser menu suppressed)
+   *  AND on shift-click. Used by the Colors panel to route left-click →
+   *  fill, right-click / shift-click → stroke. */
   onAltChange?: (v: string) => void;
   /** Number of columns in the swatch grid (default 6). Visual only —
    *  the grid itself always spans all 12 value columns of the panel. */
@@ -278,7 +278,10 @@ export function PropertySwatchGrid(props: {
           className={`${s.swatch}${o.value === props.value ? ` ${s.swatchActive}` : ''}`}
           style={{ background: o.value }}
           title={o.label ?? o.value}
-          onClick={() => props.onChange(o.value)}
+          onClick={(e) => {
+            if (onAltChange && e.shiftKey) onAltChange(o.value);
+            else props.onChange(o.value);
+          }}
           onContextMenu={onAltChange ? (e) => { e.preventDefault(); onAltChange(o.value); } : undefined}
         />
       ))}
