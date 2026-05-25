@@ -117,7 +117,7 @@ import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
   ShapeKindEntry, RoutingKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
-  OpKindEntry, HotkeyTriggerEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
+  OpKindEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef, TreeCategoryNode,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
@@ -329,7 +329,6 @@ function renderEntryBody(
     case 'gesture':       return <GestureDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'phaseOutput':   return <PhaseOutputDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'opKind':        return <OpKindDetail entry={entry} onNavigate={onNavigate} />;
-    case 'hotkeyTrigger': return <HotkeyTriggerDetail entry={entry} actions={actions} />;
     case 'slot':          return <SlotDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'route':         return <RouteDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'routeTarget':   return <RouteTargetDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -423,37 +422,6 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
-    </div>
-  );
-}
-
-function HotkeyTriggerDetail({
-  entry, actions,
-}: { entry: HotkeyTriggerEntry; actions: readonly ActionEntry[] }) {
-  const action = actions.find((a) => a.id === 'tool.offhand');
-  const bindings = action?.defaultBinding;
-  let key: string | undefined;
-  if (Array.isArray(bindings)) {
-    for (const raw of bindings) {
-      const b = raw as {
-        spec?: { kind?: string; key?: string | readonly string[] };
-        opts?: { params?: { toolId?: string } };
-      };
-      if (b.opts?.params?.toolId !== entry.id) continue;
-      if (b.spec?.kind !== 'key-held') break;
-      key = typeof b.spec.key === 'string'
-        ? b.spec.key
-        : Array.isArray(b.spec.key) ? (b.spec.key as readonly string[])[0] : undefined;
-      break;
-    }
-  }
-  const route = key !== undefined ? `[*:initial] keyHeld(${key})` : null;
-  return (
-    <div>
-      <h2 className={s.detailHeading}>{entry.label}</h2>
-      {route
-        ? <Powerline {...routeToPowerline(route)} />
-        : <p className={s.empty}>No action registered for this trigger.</p>}
     </div>
   );
 }
@@ -930,10 +898,10 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
         )}
         {entry.hotkey && (
           <>
-            <dt>hotkey</dt>
+            <dt>hold to engage</dt>
             <dd>
               <KeySequence keys={[hotkeyTriggerToKeySpec(entry.hotkey)]} />
-              <EntryLink kind="hotkeyTrigger" id={entry.hotkey} label={entry.hotkey} onNavigate={onNavigate} />
+              <Powerline {...routeToPowerline(`[*:initial] keyHeld(${entry.hotkey})`)} />
             </dd>
           </>
         )}

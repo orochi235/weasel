@@ -18,7 +18,6 @@ export type TreeEntry =
   | GestureEntry
   | PhaseOutputEntry
   | OpKindEntry
-  | HotkeyTriggerEntry
   | SlotEntry
   | RouteTargetEntry
   | RouteEntry
@@ -149,10 +148,8 @@ export interface ActionEntry {
    *  `ToolEntry.callbacks` for plugin/source caveats. */
   callbacks?: readonly CallbackRef[];
   /** Raw `Action.defaultBinding` snapshot — intentionally typed as `unknown`
-   *  so callers must narrow before use. Currently consumed by
-   *  `collectHotkeyTriggers` and `HotkeyTriggerDetail` to render
-   *  per-tool entries on the consolidated `tool.offhand` action as
-   *  Powerline strips. */
+   *  so callers must narrow before use. Retained for future inspector
+   *  consumers (action-detail Powerline strips, etc.). */
   defaultBinding?: unknown;
 }
 
@@ -259,8 +256,6 @@ export const OP_KIND_NAMES: readonly string[] = [
 export interface OpKindEntry { kind: 'opKind'; id: string; label: string }
 
 
-export interface HotkeyTriggerEntry { kind: 'hotkeyTrigger'; id: string; label: string }
-
 /** Mounting slot for a tool — `registry` covers active/hotkey routing,
  *  `ambient` is the always-on slot (resize / rotate / wheel-zoom). */
 export const TOOL_SLOTS: readonly ToolEntry['slot'][] = ['registry', 'ambient'];
@@ -292,7 +287,7 @@ export type TreeCategory =
   | 'tools' | 'actions' | 'shape' | 'routing' | 'bundles'
   | 'icons' | 'ops'
   | 'phases' | 'gestures' | 'phaseOutputs'
-  | 'hotkeyTriggers' | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
+  | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
   | 'meta';
 
 export interface TreeCategoryNode {
@@ -394,8 +389,6 @@ export function countForEntry(
       return tools.filter((t) =>
         t.phases.initial.outputs[entry.id] || t.phases.engaged?.outputs[entry.id]
       ).length;
-    case 'hotkeyTrigger':
-      return tools.filter((t) => t.hotkey === entry.id).length;
     case 'slot':
       return tools.filter((t) => t.slot === entry.id).length;
     case 'route':
@@ -426,37 +419,6 @@ export function collectGestures(): readonly GestureEntry[] {
 
 export function collectOpKinds(): readonly OpKindEntry[] {
   return OP_KIND_NAMES.map((id) => ({ kind: 'opKind', id, label: id }));
-}
-
-/** Best-effort display of a key string for the sidebar entry label.
- *  The full inspector view uses routeToPowerline + Powerline for proper
- *  rendering; this label is just the tree entry text. */
-function displayKey(key: string): string {
-  if (key === ' ') return 'Space';
-  return key;
-}
-
-export function collectHotkeyTriggers(
-  actions: readonly { id: string; defaultBinding?: unknown }[],
-): readonly HotkeyTriggerEntry[] {
-  const entries: HotkeyTriggerEntry[] = [];
-  const offhand = actions.find((a) => a.id === 'tool.offhand');
-  const bindings = offhand?.defaultBinding;
-  if (!Array.isArray(bindings)) return entries;
-  for (const raw of bindings) {
-    const entry = raw as {
-      spec?: { kind?: string; key?: string | readonly string[] };
-      opts?: { params?: { toolId?: string } };
-    };
-    if (!entry.spec || entry.spec.kind !== 'key-held') continue;
-    const toolId = entry.opts?.params?.toolId;
-    if (!toolId) continue;
-    const key = typeof entry.spec.key === 'string' ? entry.spec.key
-      : Array.isArray(entry.spec.key) ? (entry.spec.key as readonly string[])[0]
-      : '?';
-    entries.push({ kind: 'hotkeyTrigger', id: toolId, label: `${toolId} (${displayKey(key ?? '?')})` });
-  }
-  return entries;
 }
 
 export function collectSlots(): readonly SlotEntry[] {

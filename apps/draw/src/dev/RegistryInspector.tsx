@@ -7,7 +7,6 @@ import {
   collectBundles,
   collectGestures,
   collectGroups,
-  collectHotkeyTriggers,
   countForEntry,
   collectIcons,
   collectMeta,
@@ -82,7 +81,6 @@ export function RegistryInspector() {
   const gestures = useMemo(() => collectGestures(), []);
   const phaseOutputs = useMemo(() => collectPhaseOutputs(), []);
   const opKinds = useMemo(() => collectOpKinds(), []);
-  const hotkeyTriggers = useMemo(() => collectHotkeyTriggers(runtime.actions), [runtime.actions]);
   const slots = useMemo(() => collectSlots(), []);
   const routes = useMemo(() => collectRoutes(runtime.tools), [runtime.tools]);
   const routeTargets = useMemo(() => collectRouteTargets(runtime.tools), [runtime.tools]);
@@ -118,7 +116,6 @@ export function RegistryInspector() {
       { id: 'phases', label: 'Phases', entries: phases },
       { id: 'gestures', label: 'Gestures', entries: gestures },
       { id: 'phaseOutputs', label: 'Phase outputs', entries: phaseOutputs },
-      { id: 'hotkeyTriggers', label: 'Hotkey triggers', entries: hotkeyTriggers },
       { id: 'slots', label: 'Slots', entries: slots },
       { id: 'routes', label: 'Routes', entries: routes },
       { id: 'routeTargets', label: 'Route targets', entries: routeTargets },
@@ -144,7 +141,7 @@ export function RegistryInspector() {
         if (top !== 0) return top;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
-  }, [runtime, activeBundle, bundles, icons, opFactories, shapeKinds, routingEntries, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routes, routeTargets, modifierSets, groups, meta]);
+  }, [runtime, activeBundle, bundles, icons, opFactories, shapeKinds, routingEntries, phases, gestures, phaseOutputs, opKinds, slots, routes, routeTargets, modifierSets, groups, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();
