@@ -25,6 +25,7 @@
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
+import { isAnchorOrControl } from '../../dispatcher/predicates';
 import { withCoord, enumerateAnchors, translateAnchor } from '../edit-anchors/geometry';
 import { boundsOfPath } from 'features/paths/bounds';
 import { translatePath } from 'features/paths/transform';
@@ -112,15 +113,9 @@ export const editAnchorsAction: Action & { requires: string[] } = {
     // bare `{ kind: 'drag' }` of moveAction et al, so editAnchors wins on
     // anchor drags via matchSorted's specificity ordering — no opt-out
     // needed in the general-drag actions.
-    target: {
-      kindOf: (hit: unknown): boolean => {
-        if (typeof hit !== 'object' || hit === null) return false;
-        const kind = (hit as { kind?: unknown }).kind;
-        return typeof kind === 'string'
-          && /^(anchor|controlIn|controlOut):/.test(kind);
-      },
-    },
+    target: { kindOf: isAnchorOrControl },
   },
+  eligible: { capability: 'edits-anchors' },
   requires: ['selection', 'editAnchors'],
   invoker: {
     timing: 'ongoing',

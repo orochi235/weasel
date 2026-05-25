@@ -89,6 +89,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     label: LABEL_FOR[axis],
     icon: ICON_FOR[axis],
     group: 'distribute',
+    eligible: { capability: 'transforms-selection' },
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',

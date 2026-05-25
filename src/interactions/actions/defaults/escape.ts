@@ -7,6 +7,8 @@ import type { EditAnchorsDep } from '../depSchema';
  * @experimental
  * Static descriptor for the `escape` Action. Clears selection.
  */
+// No `eligible` field → always eligible. Escape works in every mode; the
+// runtime `enabled` thunk handles the path-edit defer-to-exit case.
 export const escapeAction: Action & { requires: string[] } = {
   id: 'escape',
   label: 'Escape',

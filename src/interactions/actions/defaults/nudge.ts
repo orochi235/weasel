@@ -65,6 +65,7 @@ function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
       { spec: { kind: 'key', key: KEY_FOR[dir] },                              opts: { params: { magnitude: 'small' } } },
       { spec: { kind: 'key', key: KEY_FOR[dir], mods: { shift: true } }, opts: { params: { magnitude: 'big' } } },
     ],
+    eligible: { capability: 'transforms-selection' },
     requires: ['selection', 'scene'],
     invoker: {
       timing: 'immediate',

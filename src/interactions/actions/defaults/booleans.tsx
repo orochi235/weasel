@@ -50,6 +50,7 @@ function makePathfinderAction(op: BooleanOp): Action {
     label: LABEL_FOR[op],
     icon: ICON_FOR[op],
     group: 'pathfinder',
+    eligible: { capability: 'creates-shapes' },
     // No default keybindings — there's no industry-standard chord set for
     // boolean ops. Wire bindings explicitly via the actions registry override map.
     invoker: {

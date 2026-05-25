@@ -18,6 +18,7 @@ export const deleteAction: Action & { requires: string[] } = {
     key: ['Delete', 'Backspace'],
     phase: [{ channel: '*', phase: 'initial' }],
   },
+  eligible: { capability: 'edits-page' },
   requires: ['scene', 'selection'],
   invoker: {
     timing: 'immediate',

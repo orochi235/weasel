@@ -88,6 +88,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       opts: { params: { distance: 'extreme' } },
     },
   ],
+  eligible: { capability: 'edits-page' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'immediate',
@@ -123,6 +124,7 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
       opts: { params: { distance: 'extreme' } },
     },
   ],
+  eligible: { capability: 'edits-page' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'immediate',

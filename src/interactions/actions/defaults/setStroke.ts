@@ -48,6 +48,7 @@ function refreshPreviews(scratch: SetStrokeScratch): void {
 export const setStrokeAction: Action & { requires: string[] } = {
   id: 'setStroke',
   label: 'Set stroke',
+  eligible: { capability: 'applies-fill' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

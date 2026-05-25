@@ -118,6 +118,7 @@ export const rotateAction: Action & { requires: string[] } = {
   id: 'rotate',
   label: 'Rotate',
   defaultBinding: { kind: 'drag' },
+  eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

@@ -50,6 +50,7 @@ function refreshPreviews(scratch: SetStrokeOpacityScratch): void {
 export const setStrokeOpacityAction: Action & { requires: string[] } = {
   id: 'setStrokeOpacity',
   label: 'Set stroke opacity',
+  eligible: { capability: 'applies-fill' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

@@ -14,6 +14,7 @@ import type { ImmediateInvoker } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
+import { isBody } from '../../dispatcher/predicates';
 
 export const enterPathEditAction: Action & { requires: string[] } = {
   id: 'enterPathEdit',
@@ -25,11 +26,9 @@ export const enterPathEditAction: Action & { requires: string[] } = {
   // empty canvas doesn't accidentally enter edit mode.
   defaultBinding: {
     kind: 'doubleClick',
-    target: {
-      kindOf: (_target: unknown, bodyTarget?: string): boolean =>
-        bodyTarget === 'selected-body' || bodyTarget === 'unselected-body',
-    },
+    target: { kindOf: isBody },
   },
+  eligible: { mode: { in: ['normal', 'isolation'] } },
   requires: ['editAnchors', 'selection'],
   invoker: {
     timing: 'immediate',

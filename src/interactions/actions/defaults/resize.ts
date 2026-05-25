@@ -266,6 +266,7 @@ export const resizeAction: Action & { requires: string[] } = {
   id: 'resize',
   label: 'Resize',
   defaultBinding: { kind: 'drag' },
+  eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene', 'resizePolicy'],
   invoker: {
     timing: 'ongoing',

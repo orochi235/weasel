@@ -15,6 +15,7 @@ export const exitPathEditAction: Action & { requires: string[] } = {
   id: 'exitPathEdit',
   label: 'Exit path edit',
   defaultBinding: { kind: 'key', key: 'Escape' },
+  eligible: { mode: 'path-edit' },
   requires: ['editAnchors'],
   invoker: {
     timing: 'immediate',

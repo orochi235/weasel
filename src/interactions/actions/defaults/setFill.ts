@@ -48,6 +48,7 @@ function refreshPreviews(scratch: SetFillScratch): void {
 export const setFillAction: Action & { requires: string[] } = {
   id: 'setFill',
   label: 'Set fill',
+  eligible: { capability: 'applies-fill' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

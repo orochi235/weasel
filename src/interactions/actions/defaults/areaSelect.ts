@@ -74,6 +74,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
   id: 'areaSelect',
   label: 'Area Select',
   defaultBinding: { kind: 'drag' },
+  eligible: { capability: 'creates-selection' },
   requires: ['areaSelect'],
   invoker: {
     timing: 'ongoing',

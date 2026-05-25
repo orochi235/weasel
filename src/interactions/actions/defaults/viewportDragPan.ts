@@ -60,6 +60,7 @@ interface DragPanScratch {
  * Translates the viewport by the screen-space drag delta so the canvas content
  * follows the pointer. Produces no scene ops — view changes are not undoable.
  */
+// No `eligible` field → viewport pan is always eligible across all modes.
 export const viewportDragPanAction: Action & { requires: string[] } = {
   id: 'viewport.dragPan',
   label: 'Drag to pan viewport',

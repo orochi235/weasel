@@ -9,6 +9,7 @@ export const selectAllAction: Action & { requires: string[] } = {
   id: 'selectAll',
   label: 'Select All',
   defaultBinding: { kind: 'key', key: 'a', mods: { mod: true } },
+  eligible: { capability: 'creates-selection' },
   requires: ['scene', 'selection'],
   invoker: {
     timing: 'immediate',

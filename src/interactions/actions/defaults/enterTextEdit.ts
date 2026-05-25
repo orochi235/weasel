@@ -111,6 +111,7 @@ export const enterTextEditAction: Action & { requires: string[] } = {
   id: 'enterTextEdit',
   label: 'Enter text edit',
   // No defaultBinding / defaultBinding — fires only via Tool.bindings.
+  eligible: { mode: { in: ['normal', 'isolation'] } },
   requires: ['textEdit', 'selection'],
   invoker: {
     timing: 'immediate',

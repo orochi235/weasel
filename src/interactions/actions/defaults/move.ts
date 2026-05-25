@@ -244,6 +244,7 @@ export const moveAction: Action & { requires: string[] } = {
   id: 'move',
   label: 'Move',
   defaultBinding: { kind: 'drag' },
+  eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

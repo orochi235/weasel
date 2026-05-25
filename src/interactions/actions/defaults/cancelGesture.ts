@@ -10,6 +10,8 @@ import type { Action } from '../registry';
  * has a handle in flight; the unmodified `escape` action retains its
  * idle-phase binding (clears selection) without conflict.
  */
+// No `eligible` field → always eligible. Cancelling an in-flight gesture
+// must work regardless of mode.
 export const cancelGestureAction: Action & { requires: string[] } = {
   id: 'cancelGesture',
   label: 'Cancel gesture',
