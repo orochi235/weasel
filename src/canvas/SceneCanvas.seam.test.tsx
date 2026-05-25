@@ -357,7 +357,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
       </SceneCanvas>,
     );
 
-    expect(capturedIds).toContain('viewport.pan');
+    expect(capturedIds).toContain('viewport.wheelPan');
     expect(capturedIds).toContain('viewport.zoom');
   });
 
@@ -377,7 +377,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
       </SceneCanvas>,
     );
 
-    expect(capturedIds).not.toContain('viewport.pan');
+    expect(capturedIds).not.toContain('viewport.wheelPan');
     expect(capturedIds).toContain('viewport.zoom');
   });
 
@@ -397,7 +397,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
       </SceneCanvas>,
     );
 
-    expect(capturedIds).toContain('viewport.pan');
+    expect(capturedIds).toContain('viewport.wheelPan');
     expect(capturedIds).not.toContain('viewport.zoom');
   });
 
@@ -420,7 +420,7 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
       </SceneCanvas>,
     );
 
-    expect(capturedIds).toContain('viewport.pan');
+    expect(capturedIds).toContain('viewport.wheelPan');
     expect(capturedIds).toContain('viewport.zoom');
   });
 });

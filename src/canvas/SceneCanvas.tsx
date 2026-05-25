@@ -494,7 +494,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *    on by default; pass `false` to disable. They are wired by registering
      *    the kit's `viewport.pan` / `viewport.zoom` action descriptors with
      *    the actions registry — disabling via the `actions` prop
-     *    (`actions: { 'viewport.pan': null }`) also works and runs after this.
+     *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after this.
      *
      *  When omitted entirely, no hand/pinch tools are registered but the
      *  default wheel pan + Cmd+wheel/key zoom remain wired (canvas-first

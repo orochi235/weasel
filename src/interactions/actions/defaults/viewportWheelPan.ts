@@ -1,5 +1,5 @@
 /**
- * `viewportPanAction` — immediate Action descriptor for wheel-based viewport pan.
+ * `viewportWheelPanAction` — immediate Action descriptor for wheel-based viewport pan.
  *
  * ## Bindings
  * - Plain wheel (no mod) → pan by deltaX/deltaY
@@ -29,13 +29,18 @@ import type { ViewApi } from '../depSchema';
 
 /**
  * @experimental
- * Static descriptor for the `viewport.pan` Action.
+ * Static descriptor for the `viewport.wheelPan` Action.
+ *
+ * Companion to `viewport.dragPan` (drag-to-pan via the hand tool /
+ * space-held). This one is the wheel/trackpad path; both share the
+ * same `view` dep but fire on different gesture kinds, so they
+ * coexist without competing.
  *
  * Requires dep-schema entry: `view`.
  */
-export const viewportPanAction: Action & { requires: string[] } = {
-  id: 'viewport.pan',
-  label: 'Pan',
+export const viewportWheelPanAction: Action & { requires: string[] } = {
+  id: 'viewport.wheelPan',
+  label: 'Pan (wheel)',
   group: 'viewport',
   /**
    * Plain wheel → pan; Shift+wheel → horizontal pan (axis swap).

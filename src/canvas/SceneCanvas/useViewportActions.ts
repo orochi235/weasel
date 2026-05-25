@@ -11,7 +11,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry } from 'interactions/actions/registry';
-import { viewportPanAction } from 'interactions/actions/defaults/viewportPan';
+import { viewportWheelPanAction } from 'interactions/actions/defaults/viewportWheelPan';
 import { viewportZoomAction } from 'interactions/actions/defaults/viewportZoom';
 
 export function useViewportActions(args: { pan: boolean; zoom: boolean }): void {
@@ -24,7 +24,7 @@ export function useViewportActions(args: { pan: boolean; zoom: boolean }): void 
     const r = regRef.current;
     if (!r) return;
     const unregisters: Array<() => void> = [];
-    if (pan) unregisters.push(r.register(viewportPanAction));
+    if (pan) unregisters.push(r.register(viewportWheelPanAction));
     if (zoom) unregisters.push(r.register(viewportZoomAction));
     return () => { for (const u of unregisters) u(); };
   }, [pan, zoom]);
