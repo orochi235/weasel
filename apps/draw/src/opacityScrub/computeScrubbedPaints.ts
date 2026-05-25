@@ -1,4 +1,4 @@
-import { toHex8, getAlpha01, withAlpha01 } from '../ActiveSwatches';
+import { toHex8, getAlpha01, withAlpha01 } from '@orochi235/weasel';
 
 export interface PaintSnapshot {
   fill: string | null;

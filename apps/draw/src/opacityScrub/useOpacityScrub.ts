@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { asNodeId } from '@orochi235/weasel';
+import { asNodeId, toHex8, getAlpha01 } from '@orochi235/weasel';
 import {
   computeScrubbedPaints,
   type PaintSnapshot,
 } from './computeScrubbedPaints';
-import { toHex8, getAlpha01 } from '../ActiveSwatches';
 
 interface ScrubSession {
   startHistoryIndex: number;
