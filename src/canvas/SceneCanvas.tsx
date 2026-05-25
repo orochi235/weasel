@@ -590,6 +590,19 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     chromeVisibility?: import('features/chrome-caps').VisibilityRules;
 
     /**
+     * Returns the active mode id + the capability tags the mode allows.
+     * Defaults to `{ id: 'normal', allowedCapabilities: new Set() }` when
+     * omitted. Apps using the modality machine should derive this from
+     * `modality.machine.registry.current()` (mode.id + mode.allows union
+     * with implicit capability tags).
+     *
+     * Threading this through enables mode-aware chrome (selection outline,
+     * resize handles, rotation handle are off in path-edit mode) and the
+     * dispatcher's eligibility filter in later phases.
+     */
+    getActiveMode?: () => { id: string; allowedCapabilities: ReadonlySet<string> };
+
+    /**
      * Optional live focus getter for chrome-caps' `focused` ctx field.
      * SceneCanvas does not own focus state by default — wire this when
      * your visibility rules read the `focused` atom (e.g. the kit's
@@ -727,6 +740,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     isPointerInteractive,
     onDoubleClick,
     chromeVisibility,
+    getActiveMode,
     getFocused: getFocusedProp,
     ...rest
   } = props;
@@ -1192,11 +1206,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // that feed `buildChromeCtx`. The resolver factory below closes over these
   // and is called per draw / per hitTest from Canvas.
   const selectionForCapsRef = useRef<readonly NodeId[]>([]);
-  const suppressedForCapsRef = useRef<ReadonlySet<string> | undefined>(undefined);
   const getFocusedPropRef = useRef(getFocusedProp);
   getFocusedPropRef.current = getFocusedProp;
   const chromeVisibilityRef = useRef(chromeVisibility);
   chromeVisibilityRef.current = chromeVisibility;
+  const getActiveModeRef = useRef(getActiveMode);
+  getActiveModeRef.current = getActiveMode;
 
   // The visibility predicate factory passed to <Canvas>. Called fresh per
   // draw / hitTest; builds ChromeCtx from the live refs and resolves
@@ -1206,6 +1221,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // legacy consumer onto chrome-caps.
   const getIsVisibleForCanvas = useCallback((): (id: string) => boolean => {
     const sel = selectionForCapsRef.current;
+    const modeInfo = getActiveModeRef.current?.() ?? { id: 'normal', allowedCapabilities: new Set<string>() };
     const ctx = buildChromeCtx({
       focused: getFocusedPropRef.current ? getFocusedPropRef.current() : true,
       selection: sel,
@@ -1214,11 +1230,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       action: dispatcher.getActiveAction(),
       hover: getHover(),
       view: currentViewRef.current,
-      ...(suppressedForCapsRef.current !== undefined
-        ? { suppressedIds: suppressedForCapsRef.current }
-        : {}),
     });
-    return resolveVisibility(chromeVisibilityRef.current, ctx);
+    // buildChromeCtx returns a ChromeCtx (legacy shape); resolveVisibility
+    // accepts both ChromeCtx and RuleCtx and supplies defaults when mode/
+    // allowedCapabilities are absent. We attach them inline so the
+    // mode-gated default rules can read them.
+    const ruleCtx = { ...ctx, mode: modeInfo.id, allowedCapabilities: modeInfo.allowedCapabilities } as Parameters<typeof resolveVisibility>[1];
+    return resolveVisibility(chromeVisibilityRef.current, ruleCtx);
   }, [dispatcher, getHover]);
 
   // Pen preview overlay — reads the pen tool's persistent scratch and draws
@@ -1342,10 +1360,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectedIds = selection.current;
   const multiActive = selectedIds.length > 1;
 
-  // Keep chrome-caps live sources in sync with the live selection +
-  // path-edit suppression, both of which change on every relevant render.
+  // Keep chrome-caps live selection source in sync; updates each relevant render.
   selectionForCapsRef.current = selectedIds as readonly NodeId[];
-  suppressedForCapsRef.current = getSuppressedSelectionIds();
   const selectionOverlayLayer = useMemo(() => {
     const selCfg = mergedLayers.selectionOverlay as
       | SelectionOverlaySlotConfig<TPose>
