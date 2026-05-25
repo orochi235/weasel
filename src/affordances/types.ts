@@ -51,17 +51,49 @@ export interface AffordanceRegion<TScratch = unknown> {
    *  (identity transform). */
   targetId: string | null;
 
-  /** Region geometry, expressed in the target's local frame. */
+  /** Region geometry, expressed in the target's local frame.
+   *
+   *  - `point` — circular hit (`hitRadiusPx` is screen-space).
+   *  - `rect`  — axis-aligned rect (target rotation applies).
+   *  - `annulus` — outer ellipse minus inner rect cutout. Used for
+   *    invisible zones that sit *around* the AABB (e.g. rotate-on-
+   *    hover band). The outer ellipse is defined by world-space
+   *    semi-axes `rx` / `ry` around `(cx, cy)`; the inner rect is the
+   *    same target-local rect that defines the AABB. Hit-test:
+   *    inside outer ellipse AND outside inner rect. */
   shape:
-    | { kind: 'point';  x: number; y: number; hitRadiusPx: number }
-    | { kind: 'rect';   x: number; y: number; width: number; height: number };
+    | { kind: 'point';   x: number; y: number; hitRadiusPx: number }
+    | { kind: 'rect';    x: number; y: number; width: number; height: number }
+    | {
+        kind: 'annulus';
+        /** Outer-ellipse center (target-local). */
+        cx: number; cy: number;
+        /** Outer-ellipse semi-axes (target-local). */
+        rx: number; ry: number;
+        /** Inner rect (target-local) — the cutout. Typically the
+         *  selection's AABB. */
+        innerX: number; innerY: number; innerWidth: number; innerHeight: number;
+      };
 
   /** Optional paint. World position is derived from `shape` + target
    *  transform; visual size stays in screen pixels (so handles don't
-   *  warp under zoom or non-uniform scale). Omit for hit-only regions. */
+   *  warp under zoom or non-uniform scale). Omit for hit-only regions.
+   *
+   *  - `square` — small fixed-size square (only valid over `point` shapes).
+   *  - `annulus` — fill + stroke the annulus ring (only valid over
+   *    `annulus` shapes). Uses even-odd fill rule to punch the inner-rect
+   *    cutout.
+   *  - `custom` — emit arbitrary draw commands; receives a {@link CustomPaintContext}. */
   paint?:
-    | { kind: 'square';  sizePx: number;  fill?: FillStyle; stroke?: Stroke }
-    | { kind: 'custom';  draw: (ctx: CustomPaintContext) => DrawCommand[] };
+    | { kind: 'square';   sizePx: number;  fill?: FillStyle; stroke?: Stroke }
+    | { kind: 'annulus';  fill?: FillStyle; stroke?: Stroke }
+    | { kind: 'custom';   draw: (ctx: CustomPaintContext) => DrawCommand[] };
+
+  /** Optional CSS cursor to apply while the pointer hovers this region
+   *  (and no gesture is captured). When unset, the active tool's cursor
+   *  wins. The cursor pump runs the same hit-test the dispatcher uses
+   *  for pointerdown, so cursor + click target stay in sync by construction. */
+  cursor?: string;
 
   /** Drag binding produced when this region is hit. Lazily called so
    *  affordances don't pay binding-construction cost on every paint frame —

@@ -6,6 +6,8 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { meanScale } from 'core/viewport/meanScale';
 import type { DebugSink } from '../debug/types';
+import type { FillStyle, Stroke } from 'core/paint-types';
+import { PATH_M, PATH_C, PATH_Z } from 'features/paths/types';
 import type {
   Affordance,
   AffordanceBinding,
@@ -139,6 +141,33 @@ function recordRegionHitbox(
     });
     return;
   }
+  if (region.shape.kind === 'annulus') {
+    // Approximate the annulus visualization as the outer ellipse's AABB.
+    // The DebugSink's hitbox primitives don't model ring shapes; the
+    // always-visible dev paint (`paint.kind === 'annulus'`) draws the
+    // actual ring. Consumers that want a precise debug overlay can match
+    // against the affordance id and render the annulus themselves.
+    const s = region.shape;
+    const pts = [
+      localToWorld(xf, s.cx + s.rx, s.cy),
+      localToWorld(xf, s.cx - s.rx, s.cy),
+      localToWorld(xf, s.cx, s.cy + s.ry),
+      localToWorld(xf, s.cx, s.cy - s.ry),
+    ];
+    const minX = Math.min(...pts.map((p) => p.x));
+    const minY = Math.min(...pts.map((p) => p.y));
+    const maxX = Math.max(...pts.map((p) => p.x));
+    const maxY = Math.max(...pts.map((p) => p.y));
+    debug.recordHitbox(affordanceId, 'handle', {
+      kind: 'rect',
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+      ...(xf.identity ? {} : { rotation: Math.atan2(xf.sin, xf.cos) }),
+    });
+    return;
+  }
   // rect: axis-aligned in local frame; apply target rotation around the
   // AABB pivot when present.
   const r = region.shape;
@@ -235,6 +264,20 @@ function paintRegion(
     out.push(cmd);
     return;
   }
+  if (paint.kind === 'annulus') {
+    if (region.shape.kind !== 'annulus') return; // type mismatch — silent skip
+    const s = region.shape;
+    // Emit the outer ellipse as a screen-space polygon (4 cubics, kappa-
+    // approx). Project each control point through the target transform
+    // then through the view transform so the ring follows target rotation
+    // and current zoom. Inner-rect cutout is omitted from the paint — the
+    // selection outline already shows the inner boundary; punching a real
+    // hole would need an even-odd PolygonPath with two subpaths, more
+    // surgery than the dev paint warrants.
+    const cmd = ellipseStrokeCommand(s, xf, viewT, paint.fill, paint.stroke);
+    if (cmd) out.push(cmd);
+    return;
+  }
   if (paint.kind === 'custom') {
     const ctx: CustomPaintContext = {
       world: worldOf(region, xf),
@@ -247,10 +290,71 @@ function paintRegion(
   }
 }
 
+/** Build a screen-space stroked-ellipse DrawCommand for the outer ring of
+ *  an annulus region. Returns null when the ellipse degenerates. */
+function ellipseStrokeCommand(
+  shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
+  xf: TargetTransform,
+  viewT: ReturnType<typeof viewToTransform>,
+  fill: FillStyle | undefined,
+  stroke: Stroke | undefined,
+): DrawCommand | null {
+  if (shape.rx <= 0 || shape.ry <= 0) return null;
+  const KAPPA = 0.5522847498307936;
+  const cx = shape.cx;
+  const cy = shape.cy;
+  const rx = shape.rx;
+  const ry = shape.ry;
+  const ox = rx * KAPPA;
+  const oy = ry * KAPPA;
+  // 4 cubic Béziers around the ellipse (CCW from +x). All emitted in
+  // target-local coords; pushed through localToWorld then worldToScreen.
+  const localPts: { x: number; y: number }[] = [
+    { x: cx + rx, y: cy },
+    { x: cx + rx, y: cy + oy }, { x: cx + ox, y: cy + ry }, { x: cx,      y: cy + ry },
+    { x: cx - ox, y: cy + ry }, { x: cx - rx, y: cy + oy }, { x: cx - rx, y: cy      },
+    { x: cx - rx, y: cy - oy }, { x: cx - ox, y: cy - ry }, { x: cx,      y: cy - ry },
+    { x: cx + ox, y: cy - ry }, { x: cx + rx, y: cy - oy }, { x: cx + rx, y: cy      },
+  ];
+  // local → world → screen
+  const coords = new Float32Array(localPts.length * 2);
+  for (let i = 0; i < localPts.length; i++) {
+    const w = localToWorld(xf, localPts[i].x, localPts[i].y);
+    const [sx, sy] = worldToScreen(w.x, w.y, viewT);
+    coords[i * 2] = sx;
+    coords[i * 2 + 1] = sy;
+  }
+  // M, C, C, C, C, Z — 6 path commands.
+  const commands = new Uint8Array([PATH_M, PATH_C, PATH_C, PATH_C, PATH_C, PATH_Z]);
+  return {
+    kind: 'path',
+    path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
+    ...(fill ? { fill } : {}),
+    ...(stroke ? { stroke } : {}),
+  };
+}
+
 function worldOf(region: AffordanceRegion, xf: TargetTransform): CustomPaintContext['world'] {
   if (region.shape.kind === 'point') {
     const w = localToWorld(xf, region.shape.x, region.shape.y);
     return { x: w.x, y: w.y };
+  }
+  if (region.shape.kind === 'annulus') {
+    // Outer ellipse bounding box, in world coords. Map the four cardinal
+    // extrema through the target transform and AABB the result. (Rotated
+    // ellipses are still ellipses; their AABB needs all four points.)
+    const s = region.shape;
+    const pts = [
+      localToWorld(xf, s.cx + s.rx, s.cy),
+      localToWorld(xf, s.cx - s.rx, s.cy),
+      localToWorld(xf, s.cx, s.cy + s.ry),
+      localToWorld(xf, s.cx, s.cy - s.ry),
+    ];
+    const minX = Math.min(...pts.map((p) => p.x));
+    const minY = Math.min(...pts.map((p) => p.y));
+    const maxX = Math.max(...pts.map((p) => p.x));
+    const maxY = Math.max(...pts.map((p) => p.y));
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
   }
   // Rect: map the rect's origin and far corner; width/height under rotation
   // describe the AABB of the rotated rect, which is what custom-paint
@@ -282,6 +386,19 @@ function hitRegion(
     const radiusWorld = region.shape.hitRadiusPx / meanScale(view.scale);
     return Math.abs(local.x - region.shape.x) <= radiusWorld
         && Math.abs(local.y - region.shape.y) <= radiusWorld;
+  }
+  if (region.shape.kind === 'annulus') {
+    const s = region.shape;
+    // Outside the inner-rect cutout?
+    const insideInner =
+      local.x >= s.innerX && local.x <= s.innerX + s.innerWidth &&
+      local.y >= s.innerY && local.y <= s.innerY + s.innerHeight;
+    if (insideInner) return false;
+    // Inside the outer ellipse? `((x-cx)/rx)² + ((y-cy)/ry)² ≤ 1`.
+    if (s.rx <= 0 || s.ry <= 0) return false;
+    const ex = (local.x - s.cx) / s.rx;
+    const ey = (local.y - s.cy) / s.ry;
+    return ex * ex + ey * ey <= 1;
   }
   // rect: axis-aligned in local frame.
   const r = region.shape;

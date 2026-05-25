@@ -209,25 +209,42 @@ export function buildAffordanceAt(
       }
     }
 
-    // -- Rotation handle --
-    // Single selection uses the leaf's own (possibly rotated) bounds;
-    // multi-selection uses the unrotated union AABB. Mirrors
-    // `pickTarget` in `src/affordances/rotationHandle.ts`.
+    // -- Rotation zone --
+    // The rotation affordance is now an invisible elliptical ring
+    // around the selection AABB: smallest ellipse containing the AABB,
+    // minus the AABB itself. Hit-test = inside outer ellipse AND
+    // outside inner rect, both expressed in the bounds' local frame so
+    // the ring follows target rotation. Mirrors the geometry in
+    // `src/affordances/rotationHandle.ts` (semi-axes clamped to
+    // `max(w/√2, w/2 + bandPx)`; `rotateDistance` doubles as `bandPx`).
     const rotateTarget = pickResizeTarget(state);
     if (rotateTarget) {
-      const { x, y, width, rotation = 0 } = rotateTarget.bounds;
-      const cx = x + width / 2;
-      const cy = rotateTarget.bounds.y + rotateTarget.bounds.height / 2;
-      // Handle position: top-center, offset upward by `rotateDistance`.
-      const rawHx = x + width / 2;
-      const rawHy = y - rotateDistance;
-      const hw = rotateAround(rawHx, rawHy, cx, cy, rotation);
-      if (dist2(wx, wy, hw.x, hw.y) <= r2) {
-        return {
-          kind: 'rotate-handle',
-          fixedPoint: { x: cx, y: cy }, // pivot
-          targetIds: [rotateTarget.id],
-        };
+      const { x: bx, y: by, width: bw, height: bh, rotation = 0 } = rotateTarget.bounds;
+      const halfW = bw / 2;
+      const halfH = bh / 2;
+      const centerX = bx + halfW;
+      const centerY = by + halfH;
+      // Inverse-rotate the world point into the bounds' local frame so
+      // the ellipse/rect math stays axis-aligned.
+      const lp = rotation === 0
+        ? { x: wx, y: wy }
+        : rotateAround(wx, wy, centerX, centerY, -rotation);
+      const insideAabb =
+        lp.x >= bx && lp.x <= bx + bw && lp.y >= by && lp.y <= by + bh;
+      if (!insideAabb) {
+        const rx = Math.max(halfW * Math.SQRT2, halfW + rotateDistance);
+        const ry = Math.max(halfH * Math.SQRT2, halfH + rotateDistance);
+        if (rx > 0 && ry > 0) {
+          const ex = (lp.x - centerX) / rx;
+          const ey = (lp.y - centerY) / ry;
+          if (ex * ex + ey * ey <= 1) {
+            return {
+              kind: 'rotate-handle',
+              fixedPoint: { x: centerX, y: centerY }, // pivot
+              targetIds: [rotateTarget.id],
+            };
+          }
+        }
       }
     }
 

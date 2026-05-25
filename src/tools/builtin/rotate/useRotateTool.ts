@@ -3,7 +3,6 @@ import { composeAffordanceLayer } from 'affordances/composeAffordanceLayer';
 import {
   createRotationAffordance,
 } from 'affordances/rotationHandle';
-import type { Affordance, AffordanceBinding, AffordanceRegion } from 'affordances/types';
 import type { RotateAdapter } from 'core/adapters/types';
 import { defineTool } from '../../routing';
 import type { Tool } from '../../types';
@@ -75,51 +74,26 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
   const boundsOfRef = useRef(options.boundsOf);
   boundsOfRef.current = options.boundsOf;
 
-  // Rotation affordance. Defaults to the same `handleHitRadius` /
-  // `rotationHandleDistance` the tool exposes so the affordance's hit math
-  // matches what users configure.
+  // Rotation affordance. The legacy `rotationHandleDistance` /
+  // `handleHitRadius` knobs are no longer used — the affordance is now
+  // an invisible elliptical ring around the selection AABB (see
+  // `createRotationAffordance`). The `bandPx` option is the only knob
+  // exposed for ring thickness, defaulting to 24.
   const rotationAff = useMemo(
-    () => createRotationAffordance({
-      distance: rotationHandleDistance,
-      handleHitRadius,
-    }),
-    [rotationHandleDistance, handleHitRadius],
+    () => createRotationAffordance({ bandPx: rotationHandleDistance }),
+    [rotationHandleDistance],
   );
 
-  // Strip the affordance's per-region paint (the selection-overlay layer
-  // paints the rotation handle separately). Unlike the pre-14e-T3 wrapper,
-  // this no longer overrides `bind()` to swap in a `useRotate` drag
-  // channel — the dispatcher path owns the gesture now. The region's stub
-  // drag is still emitted via `bind()` so the affordance layer can serve
-  // as a hit-test surface for legacy callers, but the new dispatcher
-  // reaches the rotate gesture via the `useSelectTool` binding +
-  // `affordanceAt`-generated `rotate-handle` hits.
-  const rotationAffStripped: Affordance = useMemo(
-    () => ({
-      id: rotationAff.id,
-      regions(state) {
-        const out: AffordanceRegion[] = [];
-        for (const region of rotationAff.regions(state)) {
-          out.push({
-            ...region,
-            paint: undefined,
-            bind: (): AffordanceBinding => region.bind(),
-          });
-        }
-        return out;
-      },
-      decorate: rotationAff.decorate ? (state, view) => rotationAff.decorate!(state, view) : undefined,
-    }),
-    [rotationAff],
-  );
-
-  // Affordance overlay layer. The composer paints `rotationAff.render`
-  // glyphs and routes hit-tests through `rotationAffStripped.hitTest`.
+  // Pass the rotation affordance through to the overlay layer unmodified
+  // — the affordance now carries an `annulus` paint that draws the
+  // hover-band ring directly. Previously the wrapper stripped paint
+  // because the selection-overlay layer painted a separate point handle;
+  // that's no longer the case.
   const affordanceOverlay = useMemo(
     () => composeAffordanceLayer('rotate-affordances', 'Rotate affordances', [
-      rotationAffStripped,
+      rotationAff,
     ]),
-    [rotationAffStripped],
+    [rotationAff],
   );
 
   // Ghost overlay slice. Structural placeholder retained so the tool's
