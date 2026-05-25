@@ -21,7 +21,7 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
-import { type ActionsProp } from 'interactions/actions/registry';
+import { type Action, type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
@@ -1129,6 +1129,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [layers],
   );
 
+  // Stable action-lookup getter threaded into the dispatcher so
+  // beginUiOngoing can resolve action ids at call time. Populated by
+  // StandardActionsRegistrar once it has the registry in scope.
+  const getActionRef = useRef<((id: string) => Action | undefined) | null>(null);
+
   // Shared `Dispatcher` instance — created once per `<SceneCanvas>` and
   // threaded to both the gesture-dispatcher mounter (which pumps input
   // events into it) and the preview-ghost layer (which walks its
@@ -1136,7 +1141,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // ref init keeps identity stable across renders without an effect.
   const dispatcherRef = useRef<Dispatcher | null>(null);
   if (!dispatcherRef.current) {
-    dispatcherRef.current = createDispatcher();
+    dispatcherRef.current = createDispatcher({
+      getAction: (id) => getActionRef.current?.(id),
+    });
   }
   const dispatcher = dispatcherRef.current;
 
@@ -1560,6 +1567,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             onViewChange={handleViewChange}
             resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
             dispatcher={dispatcher}
+            getActionRef={getActionRef}
             pickEvery={internalPickEvery}
             viewportPanEnabled={viewport?.pan !== false}
             viewportZoomEnabled={viewport?.zoom !== false}
@@ -1790,6 +1798,7 @@ function StandardActionsRegistrar({
   onViewChange,
   resizeOptions,
   dispatcher,
+  getActionRef,
   pickEvery,
   viewportPanEnabled,
   viewportZoomEnabled,
@@ -1811,6 +1820,10 @@ function StandardActionsRegistrar({
   /** Forwarded so `cancelGestureAction` and other actions that need to
    *  abort in-flight handles can read the dispatcher's control surface. */
   dispatcher: Dispatcher;
+  /** Ref populated with a live action-lookup function so the dispatcher's
+   *  `getAction` closure can resolve action ids after the registry is
+   *  mounted. Set on first render; cleared on unmount. */
+  getActionRef: React.MutableRefObject<((id: string) => Action | undefined) | null>;
   /** World-space picker forwarded so the `nodeAtPoint` dep source can
    *  reuse the same hit-test plumbing the tool dispatcher uses. */
   pickEvery: (worldX: number, worldY: number) => string[];
@@ -1826,6 +1839,25 @@ function StandardActionsRegistrar({
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('./deps/editAnchors').EditAnchorsStateRef;
 }) {
+  const registry = useActionsRegistry();
+
+  // Wire the dispatcher into the registry so registry.begin() can delegate
+  // to dispatcher.beginUiOngoing() for UI-driven ongoing actions (color,
+  // opacity). Detach on unmount so the registry doesn't hold a stale ref.
+  useEffect(() => {
+    if (!registry) return;
+    registry.setDispatcher(dispatcher);
+    return () => registry.setDispatcher(null);
+  }, [registry, dispatcher]);
+
+  // Populate the action-lookup ref so the dispatcher's getAction closure
+  // can resolve action ids once the registry is in scope.
+  useEffect(() => {
+    if (!registry) return;
+    getActionRef.current = (id: string) => registry.list().find((a) => a.id === id);
+    return () => { getActionRef.current = null; };
+  }, [registry, getActionRef]);
+
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
   // scene, history, pointer, activeTool).

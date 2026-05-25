@@ -16,6 +16,8 @@ import type { GestureSpec, PhaseSpec } from '../gestures/spec';
 import type { ActionDeps, BindingOpts, Invoker } from './invoker';
 import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
+import type { Dispatcher, UiOngoingControl } from '../dispatcher/dispatcher';
+export type { UiOngoingControl } from '../dispatcher/dispatcher';
 
 /**
  * @experimental
@@ -211,6 +213,22 @@ export interface ActionsRegistry {
    * re-render when the action set changes.
    */
   subscribe(listener: () => void): () => void;
+
+  /**
+   * Start an ongoing action driven by UI (color picker, opacity slider).
+   * Returns a control object with `update(params)` and `end(reason)`.
+   *
+   * Returns `null` if no dispatcher is wired into this registry, the
+   * action is unknown, or its invoker is not ongoing.
+   *
+   * See `Dispatcher.beginUiOngoing` for full semantics including
+   * auto-commit when a prior UI handle for the same action is in flight.
+   */
+  begin(id: string, params?: Record<string, unknown>): UiOngoingControl | null;
+
+  /** Wire a dispatcher into the registry so `begin()` can delegate to it.
+   *  Call with `null` to detach. Idempotent. */
+  setDispatcher(d: Dispatcher | null): void;
 }
 
 // ─── Registration-time validation ─────────────────────────────────────────
@@ -285,6 +303,10 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const depReg = useOptionalDepRegistry();
   const depRegRef = useRef<DepRegistry | null>(depReg);
   depRegRef.current = depReg;
+
+  // Dispatcher ref — wired from SceneCanvas via setDispatcher so that
+  // begin() can delegate to beginUiOngoing.
+  const dispatcherRef = useRef<Dispatcher | null>(null);
 
   // Phase 14e Task 7: the legacy keystroke loop that walked every action's
   // `defaultBinding: KeyBinding` and matched against keydown is gone. All
@@ -369,6 +391,26 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         return () => {
           listenersRef.current.delete(listener);
         };
+      },
+      setDispatcher: (d: Dispatcher | null) => {
+        dispatcherRef.current = d;
+      },
+      begin: (id: string, params?: Record<string, unknown>) => {
+        const disp = dispatcherRef.current;
+        if (!disp) return null;
+        const r = depRegRef.current;
+        const deps = r
+          ? {
+              selection: r.get('selection' as DepName),
+              scene: r.get('scene' as DepName),
+              history: r.get('history' as DepName),
+              view: r.get('view' as DepName),
+              pointer: r.get('pointer' as DepName),
+              activeTool: r.get('activeTool' as DepName),
+              booleansAdapter: r.get('booleansAdapter' as DepName),
+            }
+          : {};
+        return disp.beginUiOngoing(id, deps as never, params);
       },
     };
   }, []);
