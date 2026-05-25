@@ -77,7 +77,7 @@ export function createRotationAffordance(
   };
 
   return {
-    id: 'rotation-handle',
+    id: 'selection.rotation-handle',
     regions(state: ChromeState): readonly AffordanceRegion[] {
       const target = pickTarget(state);
       if (!target) return [];
@@ -85,7 +85,7 @@ export function createRotationAffordance(
       const lx = b.x + b.width / 2;
       const ly = b.y - distance;
       const region: AffordanceRegion = {
-        id: 'rotation-handle',
+        id: 'selection.rotation-handle',
         targetId: target.id,
         shape: { kind: 'point', x: lx, y: ly, hitRadiusPx: handleHitRadius },
         paint,

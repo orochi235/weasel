@@ -34,7 +34,7 @@ function stateWithMulti(): ChromeState {
 describe('createCornerResizeAffordance', () => {
   it('exposes a stable id for visibility maps', () => {
     const aff = createCornerResizeAffordance();
-    expect(aff.id).toBe('corner-resize');
+    expect(aff.id).toBe('selection.resize-handles');
   });
 
   it('produces no regions when no selection', () => {

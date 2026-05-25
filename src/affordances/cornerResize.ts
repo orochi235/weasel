@@ -60,7 +60,7 @@ export function createCornerResizeAffordance(
   };
 
   return {
-    id: 'corner-resize',
+    id: 'selection.resize-handles',
     regions(state: ChromeState): readonly AffordanceRegion[] {
       const target = pickRenderTarget(state);
       if (!target) return [];

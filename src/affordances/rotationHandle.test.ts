@@ -20,7 +20,7 @@ function stateWithSingle(rotation = 0): ChromeState {
 
 describe('createRotationAffordance', () => {
   it('exposes a stable id for visibility maps', () => {
-    expect(createRotationAffordance().id).toBe('rotation-handle');
+    expect(createRotationAffordance().id).toBe('selection.rotation-handle');
   });
 
   it('produces no regions when no selection', () => {
