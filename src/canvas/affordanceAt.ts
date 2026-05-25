@@ -29,8 +29,11 @@ import type { PolygonPath } from 'features/paths/types';
 // ---------------------------------------------------------------------------
 
 /** Default hit-test radius in world units. Mirrors DEFAULT_HANDLE_SIZE from
- *  SceneCanvas (8px CSS). In world units at scale=1 these are equivalent;
- *  at other scales the world-unit radius keeps affordances easy to grab. */
+ *  SceneCanvas (8px CSS). Only correct at scale=1; callers that know the
+ *  view scale should pass a thunk that returns `8 / meanScale(view.scale)`
+ *  so the world-unit radius matches the visual handle's screen size across
+ *  zoom. Without that, the hit zone shrinks below the visual handle at
+ *  zoom > 1 and clicks on the handle slip through to body → move. */
 export const HANDLE_HIT_RADIUS = 8;
 
 /** Hit-test radius for anchor and control-handle points in world units.
@@ -186,13 +189,15 @@ export interface AnchorState {
  */
 export function buildAffordanceAt(
   getChromeState: () => ChromeState,
-  hitRadius: number = HANDLE_HIT_RADIUS,
-  rotateDistance: number = ROTATE_DISTANCE,
+  hitRadius: number | (() => number) = HANDLE_HIT_RADIUS,
+  rotateDistance: number | (() => number) = ROTATE_DISTANCE,
   getAnchorState?: () => AnchorState | null,
 ): (worldPoint: { x: number; y: number }) => AffordanceHit | null {
   return function affordanceAt({ x: wx, y: wy }) {
     const state = getChromeState();
-    const r2 = hitRadius * hitRadius;
+    const hr = typeof hitRadius === 'function' ? hitRadius() : hitRadius;
+    const rd = typeof rotateDistance === 'function' ? rotateDistance() : rotateDistance;
+    const r2 = hr * hr;
 
     // -- Corner resize handles --
     const resizeTarget = pickResizeTarget(state);
@@ -232,8 +237,8 @@ export function buildAffordanceAt(
       const insideAabb =
         lp.x >= bx && lp.x <= bx + bw && lp.y >= by && lp.y <= by + bh;
       if (!insideAabb) {
-        const rx = Math.max(halfW * Math.SQRT2, halfW + rotateDistance);
-        const ry = Math.max(halfH * Math.SQRT2, halfH + rotateDistance);
+        const rx = Math.max(halfW * Math.SQRT2, halfW + rd);
+        const ry = Math.max(halfH * Math.SQRT2, halfH + rd);
         if (rx > 0 && ry > 0) {
           const ex = (lp.x - centerX) / rx;
           const ey = (lp.y - centerY) / ry;
@@ -263,7 +268,7 @@ export function buildAffordanceAt(
             // When in edit mode, use hitAnchor which prefers control handles
             // over anchors when both are within radius — matches visual layering
             // (controls render on top).
-            const hit = hitAnchor(polygon, wx, wy, hitRadius);
+            const hit = hitAnchor(polygon, wx, wy, hr);
             if (hit) {
               const kindStr =
                 hit.kind === 'anchor'
@@ -276,7 +281,7 @@ export function buildAffordanceAt(
           } else {
             // Outside edit mode: only test anchor points, not control handles.
             const anchors = enumerateAnchors(polygon);
-            const r2anchor = hitRadius * hitRadius;
+            const r2anchor = hr * hr;
             let best: { d2: number; anchorIndex: number } | null = null;
             for (const a of anchors) {
               const dx = a.x - wx;

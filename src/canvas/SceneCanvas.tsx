@@ -82,7 +82,9 @@ import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeTool
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
 import { useActionsRegistry } from 'interactions/actions/registry';
-import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
+import { buildAffordanceAt, buildClassifyTarget, HANDLE_HIT_RADIUS } from './affordanceAt';
+import { meanScale } from 'core/viewport/meanScale';
+import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
@@ -1701,8 +1703,13 @@ function GestureDispatcherMounter({
           },
         };
       },
-      undefined,
-      undefined,
+      // Hit radius / rotate-band distance in WORLD units, derived from the
+      // screen-px visual size divided by current view scale. Without this
+      // the world-unit radius shrinks below the screen-px handle at zoom > 1
+      // and clicks on the handle slip past affordance hit-test → fall through
+      // to body classification → move binding fires instead of resize.
+      () => HANDLE_HIT_RADIUS / meanScale(viewRef.current?.scale ?? { x: 1, y: 1 }),
+      () => DEFAULT_ROTATION_HANDLE_DISTANCE / meanScale(viewRef.current?.scale ?? { x: 1, y: 1 }),
       getAnchorState,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
