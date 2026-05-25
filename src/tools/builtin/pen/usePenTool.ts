@@ -316,10 +316,9 @@ export function usePenTool<TPose>(
     }
 
     function commitEditAndExit(s: PenScratch): void {
-      const op = commitEditAsOp(s);
-      if (op && optsRef.current.applyOps) {
-        optsRef.current.applyOps([op], 'Edit path');
-      }
+      // Per-gesture entries have already been pushed via the path-edit
+      // Journal. Mode exit is a pure UI transition — the modality machine's
+      // commit/suspend handles the journal lifecycle.
       exitEditMode(s);
       forceRenderRef.current();
     }
@@ -328,8 +327,9 @@ export function usePenTool<TPose>(
       return (ctx: ToolCtx<PenScratch>): Result<PenScratch> => {
         if (ctx.scratch.mode !== 'edit') return none();
         const step = ctx.modifiers.shift ? 10 : 1;
+        captureGestureBaseline(ctx.scratch);
         nudgeSelectedAnchors(ctx.scratch, { dx: dx * step, dy: dy * step });
-        const op = commitEditAsOp(ctx.scratch);
+        const op = commitGestureOp(ctx.scratch, 'Nudge anchor');
         if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Nudge anchor');
         forceRenderRef.current();
         return claim();
@@ -685,8 +685,9 @@ export function usePenTool<TPose>(
             const extra = (ctx.target as { extra: { sub: number; idx: number } }).extra;
             if (ctx.modifiers.alt) {
               // Scissors — only meaningful on a closed subpath; the action no-ops otherwise.
+              captureGestureBaseline(ctx.scratch);
               scissorsAtAnchor(ctx.scratch, extra);
-              const op = commitEditAsOp(ctx.scratch);
+              const op = commitGestureOp(ctx.scratch, 'Scissors');
               if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Scissors');
             } else {
               selectAnchor(ctx.scratch, { sub: extra.sub, idx: extra.idx, additive: ctx.modifiers.shift });
@@ -697,8 +698,9 @@ export function usePenTool<TPose>(
           segment: (ctx) => {
             if (ctx.scratch.mode !== 'edit') return none();
             const extra = (ctx.target as { extra: { sub: number; segIdx: number; t: number } }).extra;
+            captureGestureBaseline(ctx.scratch);
             addAnchorOnSegment(ctx.scratch, extra);
-            const op = commitEditAsOp(ctx.scratch);
+            const op = commitGestureOp(ctx.scratch, 'Add anchor');
             if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Add anchor');
             forceRenderRef.current();
             return claim();
@@ -842,8 +844,9 @@ export function usePenTool<TPose>(
             const s = ctx.scratch;
             if (s.mode !== 'edit' || !s.edit) return none();
             if (s.edit.selectedAnchors.size === 0) return none();
+            captureGestureBaseline(s);
             deleteAnchors(s, [...s.edit.selectedAnchors]);
-            const op = commitEditAsOp(s);
+            const op = commitGestureOp(s, 'Delete anchor');
             if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Delete anchor');
             forceRenderRef.current();
             return claim();
