@@ -121,6 +121,7 @@ export const cloneAction: Action & { requires: string[] } = {
       };
 
       return {
+        kind: 'clone',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
           scratch.currentDelta = {

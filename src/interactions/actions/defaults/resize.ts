@@ -368,6 +368,7 @@ export const resizeAction: Action & { requires: string[] } = {
       };
 
       return {
+        kind: 'resize',
         onMove(mctx: InvocationCtx): void {
           if (!mctx.drag) return;
           const dx = mctx.drag.current.x - scratch.startWorld.x;

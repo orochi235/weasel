@@ -266,6 +266,7 @@ export const insertAction: Action & { requires: string[] } = {
       liveInsertScratch = scratch;
 
       return {
+        kind: 'insert',
         onMove(moveCtx: InvocationCtx): void {
           scratch.currentX = moveCtx.world.x;
           scratch.currentY = moveCtx.world.y;

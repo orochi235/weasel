@@ -107,6 +107,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
       };
 
       return {
+        kind: 'marquee',
         onMove(moveCtx: InvocationCtx): void {
           scratch.currentX = moveCtx.world.x;
           scratch.currentY = moveCtx.world.y;

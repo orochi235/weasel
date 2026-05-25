@@ -76,6 +76,7 @@ export const pinchZoomAction: Action & { requires: string[] } = {
       const scratch: PinchScratch = { view, startSpread };
 
       return {
+        kind: 'pinch',
         onMove(moveCtx: InvocationCtx): void {
           const mt = moveCtx.multiTouch;
           if (!mt?.pinch) return;

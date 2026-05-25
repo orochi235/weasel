@@ -294,6 +294,7 @@ export const moveAction: Action & { requires: string[] } = {
       };
 
       return {
+        kind: 'move',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
           // Track delta in scratch only — no scene writes, no history entries.

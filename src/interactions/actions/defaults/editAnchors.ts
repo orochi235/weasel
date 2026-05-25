@@ -194,6 +194,7 @@ export const editAnchorsAction: Action & { requires: string[] } = {
       let active = false;
 
       return {
+        kind: 'edit-anchors',
         onMove(moveCtx: InvocationCtx): void {
           if (scratch.part === 'anchor') {
             const dx = moveCtx.world.x - scratch.anchorOrigin.x;

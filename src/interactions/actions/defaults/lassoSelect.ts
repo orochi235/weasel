@@ -106,6 +106,7 @@ export const lassoSelectAction: Action & { requires: string[] } = {
       };
 
       return {
+        kind: 'lasso',
         onMove(moveCtx: InvocationCtx): void {
           const { x, y } = moveCtx.world;
           scratch.currentX = x;

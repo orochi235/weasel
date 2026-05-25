@@ -76,6 +76,7 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
       const scratch: DragPanScratch = { startView, view };
 
       return {
+        kind: 'pan',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
           // Use `screenDelta` (client/CSS pixels), NOT `delta` (world). Pan

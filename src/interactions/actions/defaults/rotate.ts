@@ -195,6 +195,7 @@ export const rotateAction: Action & { requires: string[] } = {
       };
 
       return {
+        kind: 'rotate',
         onMove(moveCtx: InvocationCtx): void {
           const pointerAngle = Math.atan2(
             moveCtx.world.y - scratch.unionCenter.y,
