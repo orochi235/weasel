@@ -326,7 +326,7 @@ function renderEntryBody(
     case 'icon':          return <IconDetail entry={entry} />;
     case 'opFactory':     return <OpFactoryDetail entry={entry} />;
     case 'phase':         return <PhaseDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
-    case 'gesture':       return <GestureDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
+    case 'gesture':       return <GestureDetail entry={entry} tools={tools} actions={actions} onNavigate={onNavigate} />;
     case 'phaseOutput':   return <PhaseOutputDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'opKind':        return <OpKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'slot':          return <SlotDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -696,22 +696,158 @@ function PhaseDetail({
   );
 }
 
+/** Two-way mapping between legacy `GestureChannels` keys and modern
+ *  `GestureSpec.kind` values. The legacy phase grammar uses `pointerDown`,
+ *  `dblTap`, `keyDown`+`keyUp`; the dispatcher's `GestureSpec` union uses
+ *  `pointerdown`, `doubleClick`, and splits keys into `key` (initial press)
+ *  and `key-held` (held while something else fires). A gesture catalog
+ *  entry can be either vocabulary; this map normalizes both directions. */
+const SPEC_KIND_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  // Legacy → modern (catalog id is a phase channel; look up actions by these spec kinds).
+  click: ['click'],
+  pointerDown: ['pointerdown'],
+  dblTap: ['doubleClick'],
+  drag: ['drag'],
+  wheel: ['wheel'],
+  keyDown: ['key', 'key-held'],
+  keyUp: [],
+  // Modern → modern identity (catalog id is a GestureSpec.kind).
+  doubleClick: ['doubleClick'],
+  key: ['key'],
+  'key-held': ['key-held'],
+  multiTouch: ['multiTouch'],
+  multiTouchTap: ['multiTouchTap'],
+  pointerdown: ['pointerdown'],
+};
+
+/** Reverse: given a catalog entry id (legacy OR modern), return the legacy
+ *  `GestureChannels` key(s) that map to it, for the phase-grammar tool lookup. */
+const LEGACY_CHANNEL_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  click: ['click'],
+  pointerDown: ['pointerDown'],
+  dblTap: ['dblTap'],
+  drag: ['drag'],
+  wheel: ['wheel'],
+  keyDown: ['keyDown'],
+  keyUp: ['keyUp'],
+  // Modern catalog entries map back to legacy channels where there's an
+  // equivalent. Modern-only entries (multiTouch*, key-held) have none —
+  // phase grammar doesn't model them.
+  doubleClick: ['dblTap'],
+  key: ['keyDown', 'keyUp'],
+  pointerdown: ['pointerDown'],
+};
+
+interface ActionBindingRow {
+  actionId: string;
+  specKind: string;
+  bindingText: string;
+}
+
+function flattenActionBindings(actions: readonly ActionEntry[]): ActionBindingRow[] {
+  const rows: ActionBindingRow[] = [];
+  for (const a of actions) {
+    const raw = a.defaultBinding;
+    if (!raw) continue;
+    // `defaultBinding` is `GestureSpec | BoundGesture | BoundGesture[]`.
+    const entries: unknown[] = Array.isArray(raw) ? raw : [raw];
+    for (const entry of entries) {
+      const obj = entry as { spec?: { kind?: string }; kind?: string };
+      const spec = (obj.spec ?? obj) as { kind?: string };
+      if (!spec || typeof spec.kind !== 'string') continue;
+      rows.push({
+        actionId: a.id,
+        specKind: spec.kind,
+        bindingText: describeBinding(spec as Record<string, unknown>),
+      });
+    }
+  }
+  return rows;
+}
+
+function describeBinding(spec: Record<string, unknown>): string {
+  const parts: string[] = [];
+  const key = spec['key'];
+  if (typeof key === 'string') parts.push(`key=${key === ' ' ? 'Space' : key}`);
+  else if (Array.isArray(key)) parts.push(`key=[${key.join(',')}]`);
+  const mods = spec['mods'];
+  if (mods && typeof mods === 'object') {
+    const active = Object.entries(mods as Record<string, unknown>)
+      .filter(([, v]) => v === true)
+      .map(([k]) => k);
+    if (active.length > 0) parts.push(`+${active.join('+')}`);
+  }
+  const target = spec['target'];
+  if (typeof target === 'string') parts.push(`→ ${target}`);
+  const phase = spec['phase'];
+  if (Array.isArray(phase)) {
+    const p = phase.map((a) => {
+      const at = a as { channel?: string; phase?: string };
+      return at.channel && at.phase ? `${at.channel}:${at.phase}` : '?';
+    }).join(' / ');
+    parts.push(`[${p}]`);
+  }
+  return parts.join(' ');
+}
+
 function GestureDetail({
-  entry, tools, onNavigate,
-}: { entry: GestureEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  const rows = tools.flatMap((t) => {
+  entry, tools, actions, onNavigate,
+}: {
+  entry: GestureEntry;
+  tools: readonly ToolEntry[];
+  actions: readonly ActionEntry[];
+  onNavigate: Props['onNavigate'];
+}) {
+  const legacyChannels = LEGACY_CHANNEL_ALIASES[entry.id] ?? [];
+  const toolRows = tools.flatMap((t) => {
     const phases: ('initial' | 'engaged')[] = [];
-    if (t.phases.initial.gestures[entry.id]) phases.push('initial');
-    if (t.phases.engaged?.gestures[entry.id]) phases.push('engaged');
+    const matchesInitial = legacyChannels.some((c) => (t.phases.initial.gestures as unknown as Record<string, unknown>)[c]);
+    const matchesEngaged = legacyChannels.some((c) => (t.phases.engaged?.gestures as unknown as Record<string, unknown> | undefined)?.[c]);
+    if (matchesInitial) phases.push('initial');
+    if (matchesEngaged) phases.push('engaged');
     return phases.length === 0 ? [] : [{ id: t.id, tool: t, phases }];
   });
+  const aliasSet = new Set(SPEC_KIND_ALIASES[entry.id] ?? []);
+  const actionRows = flattenActionBindings(actions)
+    .filter((r) => aliasSet.has(r.specKind))
+    .map((r) => ({ id: `${r.actionId}::${r.specKind}::${r.bindingText}`, ...r }));
+  const actionEntriesById = new Map(actions.map((a) => [a.id, a] as const));
   return (
     <div>
       <h2 className={s.detailHeading}><Badge {...(GESTURE_BADGE_PROPS as BadgeProps)}>{entry.label}</Badge></h2>
-      <p className={s.empty}>Input channel. Tools below subscribe to it in the listed phase(s).</p>
-      <h3 className={s.subHeading}>Tools</h3>
+      <p className={s.empty}>
+        Input channel. Tools below subscribe to it via the legacy phase
+        grammar; actions below bind to it via the modern dispatcher.
+      </p>
+      <h3 className={s.subHeading}>Actions binding this gesture</h3>
       <DataGrid
-        rows={rows}
+        rows={actionRows}
+        columns={[
+          {
+            id: 'action', header: 'action', sortable: true,
+            accessor: (r) => r.actionId,
+            render: (r) => {
+              const a = actionEntriesById.get(r.actionId);
+              return a
+                ? <EntryLink kind="action" id={a.id} label={a.label ?? a.id} onNavigate={onNavigate} />
+                : <code>{r.actionId}</code>;
+            },
+          },
+          {
+            id: 'spec', header: 'spec.kind', sortable: true,
+            accessor: (r) => r.specKind,
+            render: (r) => <code className={s.tag}>{r.specKind}</code>,
+          },
+          {
+            id: 'detail', header: 'detail', sortable: false,
+            render: (r) => <code>{r.bindingText || '—'}</code>,
+          },
+        ]}
+        empty="No actions bind to this gesture."
+      />
+      <h3 className={s.subHeading}>Tools subscribing (phase grammar)</h3>
+      <DataGrid
+        rows={toolRows}
         columns={[
           toolNameColumn(onNavigate),
           {
@@ -727,7 +863,7 @@ function GestureDetail({
             ),
           },
         ]}
-        empty="No tools declare this channel."
+        empty="No tools subscribe via phase grammar."
       />
     </div>
   );
