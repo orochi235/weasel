@@ -96,10 +96,7 @@ describe('createPenPreviewLayer', () => {
       activeHandle: null,
       dirty: false,
       preConvert: null,
-      original: {
-        path: { kind: 'polygon', commands: new Uint8Array(), coords: new Float32Array(), fillRule: 'nonzero' },
-        closed: false,
-      },
+      gestureBaseline: null,
       marquee: null,
     };
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { enterEditMode, exitEditMode, commitEditAsOp } from './scratch';
+import { enterEditMode, exitEditMode, captureGestureBaseline, commitGestureOp } from './scratch';
 import { PathBuilder } from 'features/paths/builder';
 import type { PenScratch } from '../usePenTool';
 
@@ -68,21 +68,23 @@ describe('exitEditMode', () => {
   });
 });
 
-describe('commitEditAsOp', () => {
+describe('commitGestureOp', () => {
   it('returns null when scratch is not dirty', () => {
     const scratch = freshScratch();
     const path = new PathBuilder().moveTo(0, 0).lineTo(10, 0).build();
     enterEditMode(scratch, { objId: 'a', path, closed: false, params: undefined, isParametric: false });
-    expect(commitEditAsOp(scratch)).toBeNull();
+    captureGestureBaseline(scratch);
+    expect(commitGestureOp(scratch, 'Test edit')).toBeNull();
   });
 
   it('emits a SetPathOp with the current anchor geometry when dirty', () => {
     const scratch = freshScratch();
     const path = new PathBuilder().moveTo(0, 0).lineTo(10, 0).build();
     enterEditMode(scratch, { objId: 'a', path, closed: false, params: undefined, isParametric: false });
+    captureGestureBaseline(scratch);
     scratch.edit!.anchors[0][0] = { x: 5, y: 5 };
     scratch.edit!.dirty = true;
-    const op = commitEditAsOp(scratch);
+    const op = commitGestureOp(scratch, 'Test edit');
     expect(op).not.toBeNull();
     const setPath = vi.fn();
     op!.apply({ setPath });
@@ -96,9 +98,10 @@ describe('commitEditAsOp', () => {
     const scratch = freshScratch();
     const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
     enterEditMode(scratch, { objId: 'a', path, closed: true, params: { sides: 4 } as never, isParametric: true });
+    captureGestureBaseline(scratch);
     scratch.edit!.anchors[0][0] = { x: 1, y: 1 };
     scratch.edit!.dirty = true;
-    const op = commitEditAsOp(scratch);
+    const op = commitGestureOp(scratch, 'Test edit');
     const setPath = vi.fn();
     op!.apply({ setPath });
     const call = setPath.mock.calls[0]?.[1] as { params: unknown; path: { kind: string } };
@@ -107,14 +110,15 @@ describe('commitEditAsOp', () => {
   });
 });
 
-describe('commitEditAsOp: undo correctness', () => {
+describe('commitGestureOp: undo correctness', () => {
   it('op.invert() restores the entry-time path/closed', () => {
     const scratch = freshScratch();
     const path = new PathBuilder().moveTo(0, 0).lineTo(10, 0).build();
     enterEditMode(scratch, { objId: 'a', path, closed: false, params: undefined, isParametric: false });
+    captureGestureBaseline(scratch);
     scratch.edit!.anchors[0][1] = { x: 100, y: 0 };
     scratch.edit!.dirty = true;
-    const op = commitEditAsOp(scratch)!;
+    const op = commitGestureOp(scratch, 'Test edit')!;
     const setPath = vi.fn();
     op.apply({ setPath });
     op.invert().apply({ setPath });

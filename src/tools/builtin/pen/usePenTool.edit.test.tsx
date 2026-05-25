@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { usePenTool } from './usePenTool';
-import { commitEditAsOp } from './penEdit/scratch';
+import { captureGestureBaseline, commitGestureOp } from './penEdit/scratch';
 import { dragAnchor } from './penEdit/actions';
 import { PathBuilder } from 'features/paths/builder';
 import type { ToolCtx } from '../../types';
@@ -166,11 +166,12 @@ describe('pen tool edit-mode integration', () => {
     // Call dragAnchor directly — mirrors what the anchor drag route's
     // onMove does internally.
     // ------------------------------------------------------------------
+    captureGestureBaseline(scratch);
     dragAnchor(scratch, { sub: 0, idx: 1, dx: 0, dy: 5 });
     expect(scratch.edit!.dirty).toBe(true);
 
     // Build the op (same as drag route's onRelease) and apply it.
-    const op = commitEditAsOp(scratch);
+    const op = commitGestureOp(scratch, 'Move anchor');
     expect(op).not.toBeNull();
     history.applyOps([op!], 'Move anchor');
 
@@ -256,11 +257,14 @@ describe('pen tool edit-mode integration', () => {
     expect(scratch.edit!.preConvert).not.toBeNull();
 
     // Drag anchor 0 (top-left corner at (0,0)) down by 5 units.
+    captureGestureBaseline(scratch);
+    expect(scratch.edit!.preConvert).toBeNull();
+    expect(scratch.edit!.gestureBaseline).not.toBeNull();
     dragAnchor(scratch, { sub: 0, idx: 0, dx: 0, dy: 5 });
     expect(scratch.edit!.dirty).toBe(true);
 
     // Build and apply the op.
-    const op = commitEditAsOp(scratch);
+    const op = commitGestureOp(scratch, 'Move anchor');
     expect(op).not.toBeNull();
     history.applyOps([op!], 'Move anchor');
 
@@ -348,5 +352,57 @@ describe('pen tool edit-mode integration', () => {
     // Pen mode unchanged — alt+click is a single-step op, not an edit-mode entry.
     expect(scratch.mode).toBe('create');
     expect(scratch.current).toBeNull();
+  });
+
+  it('two separate anchor drags push two separate undo entries; undo reverts only the most recent', () => {
+    const objId = 'obj-multi-drag';
+    const origPath = new PathBuilder()
+      .moveTo(0, 0).lineTo(10, 0).lineTo(10, 10).build();
+
+    const { tool, adapter, history, scratch } = setupEdit({
+      getPathObj: (id) => id === objId
+        ? { path: origPath, closed: false, params: undefined, tool: 'pen' }
+        : null,
+    });
+
+    scratch._lastClick = { t: performance.now(), x: 0, y: 0 };
+    tool.pointer!.onClick!(pe(), makeCtx(scratch, {
+      worldX: 0,
+      worldY: 0,
+      target: { category: 'node', kind: 'node', id: objId } as ToolCtx['target'],
+    }));
+    expect(scratch.mode).toBe('edit');
+
+    // Gesture A: drag anchor 1 by (0, +5).
+    captureGestureBaseline(scratch);
+    dragAnchor(scratch, { sub: 0, idx: 1, dx: 0, dy: 5 });
+    const opA = commitGestureOp(scratch, 'Move anchor');
+    expect(opA).not.toBeNull();
+    history.applyOps([opA!], 'Move anchor');
+
+    // Gesture B: drag anchor 2 by (-3, 0). Fresh baseline → from = post-A state.
+    captureGestureBaseline(scratch);
+    dragAnchor(scratch, { sub: 0, idx: 2, dx: -3, dy: 0 });
+    const opB = commitGestureOp(scratch, 'Move anchor');
+    expect(opB).not.toBeNull();
+    history.applyOps([opB!], 'Move anchor');
+
+    // Two pushes → two entries.
+    expect(history.entries).toHaveLength(2);
+    expect(adapter.setPath).toHaveBeenCalledTimes(2);
+    const afterB = adapter.setPath.mock.calls[1][1] as { path: PolygonPath };
+
+    // Undo once → reverts to post-A state, NOT origPath.
+    history.undo();
+    expect(adapter.setPath).toHaveBeenCalledTimes(3);
+    const afterUndoB = adapter.setPath.mock.calls[2][1] as { path: PolygonPath };
+    expect(Array.from(afterUndoB.path.coords)).not.toEqual(Array.from(afterB.path.coords));
+    expect(Array.from(afterUndoB.path.coords)).not.toEqual(Array.from(origPath.coords));
+
+    // Undo again → reverts to origPath.
+    history.undo();
+    expect(adapter.setPath).toHaveBeenCalledTimes(4);
+    const afterUndoA = adapter.setPath.mock.calls[3][1] as { path: PolygonPath };
+    expect(Array.from(afterUndoA.path.coords)).toEqual(Array.from(origPath.coords));
   });
 });
