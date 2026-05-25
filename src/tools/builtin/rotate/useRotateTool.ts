@@ -9,7 +9,7 @@ import { defineTool } from '../../routing';
 import type { Tool } from '../../types';
 import type { RenderLayer } from 'core/layers/render';
 import type { ChromeState } from 'core/selection/chromeState';
-import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
+import type { Bounds } from '../shared/selectionTarget';
 
 /** Accept either `CanvasHelpers` (Canvas's runtime call shape) or a bare
  *  `ChromeState` (unit-test call shape) — see useResizeTool for the same helper. */
@@ -87,22 +87,19 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
   );
 
   // Strip the affordance's per-region paint (the selection-overlay layer
-  // paints the rotation handle separately) and skip the multi-target
-  // region (rotate against the synthetic union isn't supported). Unlike
-  // the pre-14e-T3 wrapper, this no longer overrides `bind()` to swap in
-  // a `useRotate` drag channel — the dispatcher path owns the gesture
-  // now. The region's stub drag is still emitted via `bind()` so the
-  // affordance layer can serve as a hit-test surface for legacy callers,
-  // but the new dispatcher reaches the rotate gesture via the
-  // `useSelectTool` binding + `affordanceAt`-generated `rotate-handle`
-  // hits.
+  // paints the rotation handle separately). Unlike the pre-14e-T3 wrapper,
+  // this no longer overrides `bind()` to swap in a `useRotate` drag
+  // channel — the dispatcher path owns the gesture now. The region's stub
+  // drag is still emitted via `bind()` so the affordance layer can serve
+  // as a hit-test surface for legacy callers, but the new dispatcher
+  // reaches the rotate gesture via the `useSelectTool` binding +
+  // `affordanceAt`-generated `rotate-handle` hits.
   const rotationAffStripped: Affordance = useMemo(
     () => ({
       id: rotationAff.id,
       regions(state) {
         const out: AffordanceRegion[] = [];
         for (const region of rotationAff.regions(state)) {
-          if (region.targetId === MULTI_RESIZE_TARGET_ID) continue;
           out.push({
             ...region,
             paint: undefined,

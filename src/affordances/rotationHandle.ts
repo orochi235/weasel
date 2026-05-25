@@ -10,6 +10,7 @@ import {
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { PATH_L, PATH_M } from 'features/paths/types';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/shared/selectionTarget';
 
 export interface RotationAffordanceOptions {
   /** World-pixel distance from the bounds top edge to the handle center.
@@ -148,14 +149,16 @@ function rotateAround(
 }
 
 function pickTarget(state: ChromeState): { id: string; bounds: Bounds } | null {
-  // Rotation handle only renders for a single primary selection — rotating
-  // a multi-selection would need a defined pivot and per-object pose math
-  // that the affordance contract doesn't carry today. Multi-selection
-  // resize still fires (see corner-resize affordance), just not rotate.
   if (state.selection.length === 1) {
     const id = state.selection[0];
     const b = state.boundsOf(id);
     return b ? { id, bounds: b } : null;
+  }
+  // Multi-selection: anchor the rotation handle to the union AABB.
+  // `rotateAction` ignores the synthetic id and pivots at its own union
+  // center (line 156 of `defaults/rotate.ts`).
+  if (state.multiActive && state.unionBounds) {
+    return { id: MULTI_RESIZE_TARGET_ID, bounds: state.unionBounds };
   }
   return null;
 }

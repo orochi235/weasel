@@ -3,6 +3,7 @@ import { createRotationAffordance, type RotationScratch } from './rotationHandle
 import { composeAffordanceLayer } from './composeAffordanceLayer';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/shared/selectionTarget';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -70,6 +71,22 @@ describe('createRotationAffordance', () => {
     const result = layer.hitTest(50, -24, stateWithSingle(), VIEW, DIMS);
     expect(result).not.toBeNull();
     expect(result?.initialScratch as RotationScratch).toMatchObject({ targetId: 'a' });
+  });
+
+  it('produces one region for a multi-selection anchored at unionBounds', () => {
+    const aff = createRotationAffordance();
+    const state: ChromeState = {
+      selection: [asNodeId('a'), asNodeId('b')],
+      multiActive: true,
+      boundsOf: () => null,
+      unionBounds: { x: 10, y: 20, width: 80, height: 60 },
+      modifiers: NO_MOD,
+    };
+    const regions = aff.regions(state);
+    expect(regions).toHaveLength(1);
+    expect(regions[0]!.targetId).toBe(MULTI_RESIZE_TARGET_ID);
+    // Handle at union top-center, distance 24 above: (50, -4).
+    expect(regions[0]!.shape).toMatchObject({ kind: 'point', x: 50, y: -4 });
   });
 
   it('layer hitTest applies bounds rotation', () => {
