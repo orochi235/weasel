@@ -216,10 +216,13 @@ export function PropertyColorInput(props: {
   const colorCtrlRef = useRef<UiOngoingControl | null>(null);
   const opacityCtrlRef = useRef<UiOngoingControl | null>(null);
 
-  function dispatchColor(v: string, phase: 'input' | 'change' | 'blur'): void {
+  /** Color picker commit uses `blur` (fires when the native picker closes
+   *  and focus leaves the input). Chrome fires `change` continuously during
+   *  picker interaction (per HTML spec), so commit-on-change would emit
+   *  one undo entry per tick. */
+  function dispatchColor(v: string, phase: 'input' | 'commit'): void {
     if ('onChange' in props && props.onChange) {
-      // Legacy path: single onChange call with composed hex8 color
-      if (phase !== 'blur') props.onChange(withAlpha01(v, alpha01));
+      if (phase === 'input') props.onChange(withAlpha01(v, alpha01));
       return;
     }
     if (phase === 'input') {
@@ -230,13 +233,10 @@ export function PropertyColorInput(props: {
       }
       return;
     }
+    // commit
     if (colorCtrlRef.current) {
-      colorCtrlRef.current.update({ color: v });
       colorCtrlRef.current.end('commit');
       colorCtrlRef.current = null;
-    } else if (phase === 'change') {
-      const ctrl = actions?.begin(props.colorActionId, { color: v });
-      ctrl?.end('commit');
     }
   }
 
@@ -271,8 +271,7 @@ export function PropertyColorInput(props: {
         type="color"
         value={rgb6}
         onInput={(e) => dispatchColor((e.target as HTMLInputElement).value, 'input')}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => dispatchColor(e.target.value, 'change')}
-        onBlur={() => dispatchColor(rgb6, 'blur')}
+        onBlur={() => dispatchColor(rgb6, 'commit')}
       />
       <input
         className={s.alphaRange}

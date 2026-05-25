@@ -60,7 +60,10 @@ function FillColorSwatch(props: {
   const actions = useActionsRegistry();
   const ctrlRef = useRef<UiOngoingControl | null>(null);
 
-  function dispatch(v: string, phase: 'input' | 'change' | 'blur'): void {
+  /** Commit on `blur` only — Chrome fires `change` per-tick during native
+   *  color-picker interaction (per HTML spec), which would emit one undo
+   *  entry per tick. `blur` fires once when the picker closes. */
+  function dispatch(v: string, phase: 'input' | 'commit'): void {
     if (phase === 'input') {
       if (!ctrlRef.current) {
         ctrlRef.current = actions?.begin('setFill', { color: v }) ?? null;
@@ -69,15 +72,10 @@ function FillColorSwatch(props: {
       }
       return;
     }
-    // change / blur — commit
+    // commit
     if (ctrlRef.current) {
-      ctrlRef.current.update({ color: v });
       ctrlRef.current.end('commit');
       ctrlRef.current = null;
-    } else if (phase === 'change') {
-      // rare: change without input — begin+end in one shot
-      const ctrl = actions?.begin('setFill', { color: v });
-      ctrl?.end('commit');
     }
   }
 
@@ -90,14 +88,7 @@ function FillColorSwatch(props: {
         props.setLocal(v);
         dispatch(v, 'input');
       }}
-      onChange={(e) => {
-        const v = mergeAlphaFromPrev(e.target.value, props.fillPrev);
-        props.setLocal(v);
-        dispatch(v, 'change');
-      }}
-      onBlur={() => {
-        dispatch(props.fillColor, 'blur');
-      }}
+      onBlur={() => dispatch(props.fillColor, 'commit')}
       className="wd-swatch-input"
       aria-label="Fill color"
     />
@@ -112,7 +103,8 @@ function StrokeColorSwatch(props: {
   const actions = useActionsRegistry();
   const ctrlRef = useRef<UiOngoingControl | null>(null);
 
-  function dispatch(v: string, phase: 'input' | 'change' | 'blur'): void {
+  /** Commit on `blur` only — see FillColorSwatch for rationale. */
+  function dispatch(v: string, phase: 'input' | 'commit'): void {
     if (phase === 'input') {
       if (!ctrlRef.current) {
         ctrlRef.current = actions?.begin('setStroke', { color: v }) ?? null;
@@ -121,15 +113,10 @@ function StrokeColorSwatch(props: {
       }
       return;
     }
-    // change / blur — commit
+    // commit
     if (ctrlRef.current) {
-      ctrlRef.current.update({ color: v });
       ctrlRef.current.end('commit');
       ctrlRef.current = null;
-    } else if (phase === 'change') {
-      // rare: change without input — begin+end in one shot
-      const ctrl = actions?.begin('setStroke', { color: v });
-      ctrl?.end('commit');
     }
   }
 
@@ -142,14 +129,7 @@ function StrokeColorSwatch(props: {
         props.setLocal(v);
         dispatch(v, 'input');
       }}
-      onChange={(e) => {
-        const v = mergeAlphaFromPrev(e.target.value, props.strokePrev);
-        props.setLocal(v);
-        dispatch(v, 'change');
-      }}
-      onBlur={() => {
-        dispatch(props.strokeColor, 'blur');
-      }}
+      onBlur={() => dispatch(props.strokeColor, 'commit')}
       className="wd-swatch-input"
       aria-label="Stroke color"
     />
