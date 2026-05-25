@@ -533,6 +533,7 @@ function usePersistedFlag(key: string, initial: boolean): [boolean, (next: boole
 
 function ColorsPanel(): ReactElement {
   const colors = useColorContext();
+  const actions = useActionsRegistry();
   // Highlight tracks the fill swatch — left-click (the primary action)
   // sets fill. Right-click sets stroke; the active-swatches widget
   // reflects the stroke update.
@@ -545,11 +546,13 @@ function ColorsPanel(): ReactElement {
         columns={10}
         onChange={(v) => {
           colors.setFill({ kind: 'solid', color: v });
-          colors.applyFillToSelection(v);
+          const ctrl = actions?.begin('setFill', { color: v });
+          ctrl?.end('commit');
         }}
         onAltChange={(v) => {
           colors.setStroke({ kind: 'solid', color: v });
-          colors.applyStrokeToSelection(v);
+          const ctrl = actions?.begin('setStroke', { color: v });
+          ctrl?.end('commit');
         }}
         leading={{
           active: colors.fill.kind === 'none',
