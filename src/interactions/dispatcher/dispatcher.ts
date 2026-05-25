@@ -140,6 +140,21 @@ export interface DispatcherContext {
   isMac: boolean;
 }
 
+/**
+ * Handle returned by `Dispatcher.beginUiOngoing()` for driving an
+ * ongoing invoker from a UI control (color picker, slider).
+ *
+ *  - `update(params)` rebuilds an `InvocationCtx` with the new params and
+ *    calls the handle's `onMove`. Safe to call many times.
+ *  - `end(reason)` calls `onEnd(ctx, reason)` once and removes the handle
+ *    from the in-flight map. Idempotent — further calls are no-ops.
+ */
+export interface UiOngoingControl {
+  readonly gestureId: string;
+  update(params?: Record<string, unknown>): void;
+  end(reason: 'commit' | 'cancel'): void;
+}
+
 export interface Dispatcher {
   /**
    * Route an input event through the binding pipeline. Returns `'handled'`
@@ -198,6 +213,25 @@ export interface Dispatcher {
    * the one consumers care about.
    */
   getActiveGesture(): { kind: string | null; id: string | null };
+
+  /**
+   * Start an ongoing action driven by UI (not a gesture). Builds an
+   * `InvocationCtx` with the given `deps` and `params`, calls
+   * `action.invoker.start(ctx, { params })`, and registers the returned
+   * handle in the in-flight map so `getInFlightHandles()` reports it —
+   * enabling preview rendering via `SceneCanvas`.
+   *
+   * Returns `null` if `actionId` is unknown, the action's invoker is not
+   * ongoing, or `start` returned an empty handle.
+   *
+   * If a UI-driven handle for the same `actionId` is already in flight,
+   * it is committed (`end('commit')`) before the new one starts.
+   */
+  beginUiOngoing(
+    actionId: string,
+    deps: ActionDeps,
+    params?: Record<string, unknown>,
+  ): UiOngoingControl | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,7 +240,9 @@ export interface Dispatcher {
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
 
-export function createDispatcher(): Dispatcher {
+export function createDispatcher(opts?: {
+  getAction?: (id: string) => Action | undefined;
+}): Dispatcher {
   const inFlightHandles = new Map<string, OngoingHandle>();
   /** gestureId → tool id that owns the binding which opened this handle.
    *  Used to compute the `engagedChannels` PhaseContext for the matcher.
@@ -251,6 +287,15 @@ export function createDispatcher(): Dispatcher {
    * Captured when the multitouch ongoing handle first opens.
    */
   const pinchStartSpreads = new Map<string, number>();
+
+  /** Monotonic counter for synthesizing unique gestureIds for UI-driven
+   *  ongoing handles. Each `beginUiOngoing` call increments this. */
+  let uiOngoingSeq = 0;
+
+  /** actionId → gestureId of the currently in-flight UI-driven handle for
+   *  that action, if any. Used to auto-commit a prior handle when a new
+   *  `beginUiOngoing(sameActionId, …)` arrives. */
+  const uiOngoingByAction = new Map<string, string>();
 
   /** Build a minimal InvocationCtx stub for the given event + deps. */
   function buildInvocationCtx(event: InputEvent, deps: ActionDeps, gestureId?: string): InvocationCtx {
@@ -766,6 +811,102 @@ export function createDispatcher(): Dispatcher {
     notify();
   };
 
+  function beginUiOngoing(
+    actionId: string,
+    deps: ActionDeps,
+    params?: Record<string, unknown>,
+  ): UiOngoingControl | null {
+    const getAction = opts?.getAction;
+    if (!getAction) return null;
+    const action = getAction(actionId);
+    if (!action || !action.invoker || action.invoker.timing !== 'ongoing') {
+      return null;
+    }
+
+    // Auto-commit any prior UI-driven handle for the same action.
+    const prevGestureId = uiOngoingByAction.get(actionId);
+    if (prevGestureId !== undefined) {
+      const prevHandle = inFlightHandles.get(prevGestureId);
+      if (prevHandle?.onEnd) {
+        const prevCtx: InvocationCtx = {
+          world: { x: 0, y: 0 },
+          screen: { x: 0, y: 0 },
+          modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+          deps,
+        };
+        try { prevHandle.onEnd(prevCtx, 'commit'); }
+        catch (e) { console.error(`weasel dispatcher: prior UI handle for "${actionId}" threw on auto-commit`, e); }
+      }
+      inFlightHandles.delete(prevGestureId);
+      inFlightOwners.delete(prevGestureId);
+      uiOngoingByAction.delete(actionId);
+    }
+
+    const gestureId = `ui-${actionId}-${++uiOngoingSeq}`;
+    const startCtx: InvocationCtx = {
+      world: { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps,
+      params,
+    };
+    let handle: OngoingHandle;
+    try {
+      handle = action.invoker.start(startCtx, { params });
+    } catch (e) {
+      console.error(`weasel dispatcher: action "${actionId}" threw on start`, e);
+      return null;
+    }
+    // Treat empty handles ({} with no onMove or onEnd) as "did not engage".
+    if (!handle.onMove && !handle.onEnd && !handle.previewIds) {
+      return null;
+    }
+
+    inFlightHandles.set(gestureId, handle);
+    inFlightOwners.set(gestureId, null);
+    uiOngoingByAction.set(actionId, gestureId);
+    notify();
+
+    let ended = false;
+    return {
+      gestureId,
+      update(nextParams) {
+        if (ended) return;
+        if (!handle.onMove) return;
+        const moveCtx: InvocationCtx = {
+          world: { x: 0, y: 0 },
+          screen: { x: 0, y: 0 },
+          modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+          deps,
+          params: nextParams,
+        };
+        try { handle.onMove(moveCtx); }
+        catch (e) { console.error(`weasel dispatcher: action "${actionId}" threw on onMove`, e); }
+        notify();
+      },
+      end(reason) {
+        if (ended) return;
+        ended = true;
+        if (handle.onEnd) {
+          const endCtx: InvocationCtx = {
+            world: { x: 0, y: 0 },
+            screen: { x: 0, y: 0 },
+            modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+            deps,
+          };
+          try { handle.onEnd(endCtx, reason); }
+          catch (e) { console.error(`weasel dispatcher: action "${actionId}" threw on onEnd`, e); }
+        }
+        inFlightHandles.delete(gestureId);
+        inFlightOwners.delete(gestureId);
+        if (uiOngoingByAction.get(actionId) === gestureId) {
+          uiOngoingByAction.delete(actionId);
+        }
+        notify();
+      },
+    };
+  }
+
   return {
     handleInput: handleInputWithNotify,
     cancelAll: cancelAllWithNotify,
@@ -773,5 +914,6 @@ export function createDispatcher(): Dispatcher {
     getInFlightHandles,
     subscribe,
     getActiveGesture,
+    beginUiOngoing,
   };
 }

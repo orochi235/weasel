@@ -61,6 +61,7 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
     getInFlightHandles: () => map.values(),
     subscribe: () => () => {},
     getActiveGesture: () => ({ kind: null, id: null }),
+    beginUiOngoing: () => null,
   };
 }
 
