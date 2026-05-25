@@ -32,7 +32,7 @@ export const SwatchGrid: Story = {
       '#5ab04a', '#3aa0c6', '#4a6fd4', '#9a4ad4',
       '#d44a9a', '#6a6a6a', '#a4a4a4', '#ffffff',
     ];
-    const [color, setColor] = useState(palette[6]);
+    const [color, setColor] = useState<string | null>(palette[6]);
     return (
       <PropertiesPanel title="Fill swatch">
         <PropertyRow label="Color">
@@ -44,7 +44,7 @@ export const SwatchGrid: Story = {
           />
         </PropertyRow>
         <PropertyRow label="Value">
-          <PropertyReadOnly>{color}</PropertyReadOnly>
+          <PropertyReadOnly>{color ?? '(none)'}</PropertyReadOnly>
         </PropertyRow>
       </PropertiesPanel>
     );

@@ -195,11 +195,23 @@ function loadDoc(): PersistedDoc {
   return { filename: DEFAULT_FILENAME, backgroundColor: DEFAULT_BG_COLOR };
 }
 
-// 99-color palette: 9 neutrals (row 1, alongside the leading transparent
-// swatch) + 9 hue ramps × 10 shades. Renders 10 per row in the Colors
-// panel; total 100 cells including transparent.
-const PALETTE: { value: string; label: string }[] = [
+// 100-cell palette, 10 columns × 10 rows:
+//   row 1: null (transparent) + 9 quick-pick primaries/secondaries
+//   row 2: 10-shade gray ramp (50 → 900)
+//   rows 3–10: 8 hue ramps × 10 shades each (50 → 900)
+const PALETTE: { value: string | null; label: string }[] = [
+  { value: null,        label: 'None' },
   { value: '#ffffffff', label: 'White' },
+  { value: '#000000ff', label: 'Black' },
+  { value: '#ff0000ff', label: 'Red' },
+  { value: '#00ff00ff', label: 'Green' },
+  { value: '#0000ffff', label: 'Blue' },
+  { value: '#00ffffff', label: 'Cyan' },
+  { value: '#ff00ffff', label: 'Magenta' },
+  { value: '#ffff00ff', label: 'Yellow' },
+  { value: '#ff8800ff', label: 'Orange' },
+  { value: '#fafafaff', label: 'Gray 50' },
+  { value: '#f5f5f5ff', label: 'Gray 100' },
   { value: '#e5e5e5ff', label: 'Gray 200' },
   { value: '#d4d4d4ff', label: 'Gray 300' },
   { value: '#a3a3a3ff', label: 'Gray 400' },
@@ -207,7 +219,7 @@ const PALETTE: { value: string; label: string }[] = [
   { value: '#525252ff', label: 'Gray 600' },
   { value: '#404040ff', label: 'Gray 700' },
   { value: '#262626ff', label: 'Gray 800' },
-  { value: '#000000ff', label: 'Black' },
+  { value: '#171717ff', label: 'Gray 900' },
   { value: '#fef2f2ff', label: 'Red 50' },
   { value: '#fee2e2ff', label: 'Red 100' },
   { value: '#fecacaff', label: 'Red 200' },
@@ -537,8 +549,9 @@ function ColorsPanel(): ReactElement {
   const actions = useActionsRegistry();
   // Highlight tracks the fill swatch — left-click (the primary action)
   // sets fill. Right-click sets stroke; the active-swatches widget
-  // reflects the stroke update.
-  const current = colors.fill.kind === 'solid' ? colors.fill.color : '';
+  // reflects the stroke update. `null` is the transparent ("None")
+  // swatch in the first row.
+  const current = colors.fill.kind === 'solid' ? colors.fill.color : null;
   return (
     <PropertiesPanel title="Colors">
       <PropertySwatchGrid
@@ -546,20 +559,22 @@ function ColorsPanel(): ReactElement {
         options={PALETTE}
         columns={10}
         onChange={(v) => {
-          colors.setFill({ kind: 'solid', color: v });
-          const ctrl = actions?.begin('setFill', { color: v });
-          ctrl?.end('commit');
+          if (v === null) {
+            colors.setFill({ kind: 'none' });
+          } else {
+            colors.setFill({ kind: 'solid', color: v });
+            const ctrl = actions?.begin('setFill', { color: v });
+            ctrl?.end('commit');
+          }
         }}
         onAltChange={(v) => {
-          colors.setStroke({ kind: 'solid', color: v });
-          const ctrl = actions?.begin('setStroke', { color: v });
-          ctrl?.end('commit');
-        }}
-        leading={{
-          active: colors.fill.kind === 'none',
-          title: 'None',
-          onClick: () => colors.setFill({ kind: 'none' }),
-          onAltClick: () => colors.setStroke({ kind: 'none' }),
+          if (v === null) {
+            colors.setStroke({ kind: 'none' });
+          } else {
+            colors.setStroke({ kind: 'solid', color: v });
+            const ctrl = actions?.begin('setStroke', { color: v });
+            ctrl?.end('commit');
+          }
         }}
       />
     </PropertiesPanel>

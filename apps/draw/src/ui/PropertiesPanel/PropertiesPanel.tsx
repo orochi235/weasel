@@ -312,53 +312,48 @@ export function PropertySelect<T extends string>(props: {
   );
 }
 
-/** Grid of color swatches. Spans the full row (12 cols). */
+/** Grid of color swatches. Spans the full row (12 cols).
+ *
+ *  A `value: null` entry renders as the transparent/"no paint" swatch
+ *  (checkerboard + red diagonal). The consumer maps null to whatever
+ *  "no fill" / "no stroke" state means in its model. */
 export function PropertySwatchGrid(props: {
-  value: string;
-  options: { value: string; label?: string }[];
-  onChange: (v: string) => void;
+  value: string | null;
+  options: { value: string | null; label?: string }[];
+  onChange: (v: string | null) => void;
   /** Alt-target handler — fires on right-click (browser menu suppressed)
    *  AND on shift-click. Used by the Colors panel to route left-click →
    *  fill, right-click / shift-click → stroke. */
-  onAltChange?: (v: string) => void;
+  onAltChange?: (v: string | null) => void;
   /** Number of columns in the swatch grid (default 6). Visual only —
    *  the grid itself always spans all 12 value columns of the panel. */
   columns?: number;
-  /** Optional leading swatch rendered before the color grid. Used for
-   *  the transparent paint entry, which can't be represented as a color
-   *  string and needs its own onClick. */
-  leading?: { active: boolean; onClick: () => void; onAltClick?: () => void; title?: string };
 }) {
   const cols = props.columns ?? 6;
-  const { onAltChange, leading } = props;
+  const { onAltChange } = props;
   return (
     <div
       className={`${s.swatchGrid} ${s.span12}`}
       style={cols === 6 ? undefined : { gridTemplateColumns: `repeat(${cols}, 1fr)` }}
     >
-      {leading && (
-        <button
-          type="button"
-          className={`${s.swatch} ${s.swatchTransparent}${leading.active ? ` ${s.swatchActive}` : ''}`}
-          title={leading.title ?? 'Transparent'}
-          onClick={leading.onClick}
-          onContextMenu={leading.onAltClick ? (e) => { e.preventDefault(); leading.onAltClick!(); } : undefined}
-        />
-      )}
-      {props.options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          className={`${s.swatch}${o.value === props.value ? ` ${s.swatchActive}` : ''}`}
-          style={{ background: o.value }}
-          title={o.label ?? o.value}
-          onClick={(e) => {
-            if (onAltChange && e.shiftKey) onAltChange(o.value);
-            else props.onChange(o.value);
-          }}
-          onContextMenu={onAltChange ? (e) => { e.preventDefault(); onAltChange(o.value); } : undefined}
-        />
-      ))}
+      {props.options.map((o, i) => {
+        const isNull = o.value === null;
+        const active = o.value === props.value;
+        return (
+          <button
+            key={o.value ?? `__null_${i}`}
+            type="button"
+            className={`${s.swatch}${isNull ? ` ${s.swatchTransparent}` : ''}${active ? ` ${s.swatchActive}` : ''}`}
+            style={isNull ? undefined : { background: o.value! }}
+            title={o.label ?? (isNull ? 'None' : o.value!)}
+            onClick={(e) => {
+              if (onAltChange && e.shiftKey) onAltChange(o.value);
+              else props.onChange(o.value);
+            }}
+            onContextMenu={onAltChange ? (e) => { e.preventDefault(); onAltChange(o.value); } : undefined}
+          />
+        );
+      })}
     </div>
   );
 }
