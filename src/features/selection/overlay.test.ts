@@ -240,6 +240,60 @@ describe('createSelectionOverlayLayer', () => {
     // Outline pass only (handles disabled). One stroke for the selected id.
     expect(tree.filter((c) => c.kind === 'path').length).toBe(1);
   });
+
+  describe('chrome-caps visibility gate', () => {
+    // The data envelope SceneCanvas passes carries a `getIsVisible` thunk
+    // alongside `getChromeState` / `getDebug`. Each of the three passes
+    // gates on its canonical chrome id.
+    const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => [asNodeId('a')],
+      getPose: () => ({ x: 0, y: 0, width: 10, height: 10 }),
+      handles: { size: 8 },
+      rotationHandle: true,
+    });
+    const data = (allow: Set<string>) => ({
+      getIsVisible: () => (id: string) => allow.has(id),
+    });
+
+    it('hides selection.outline when its rule reports false', () => {
+      const withOutline = layer.draw(data(new Set([
+        'selection.outline', 'selection.resize-handles', 'selection.rotation-handle',
+      ])), VIEW, DIMS);
+      const withoutOutline = layer.draw(data(new Set([
+        'selection.resize-handles', 'selection.rotation-handle',
+      ])), VIEW, DIMS);
+      expect(withoutOutline.length).toBeLessThan(withOutline.length);
+    });
+
+    it('hides selection.resize-handles when its rule reports false', () => {
+      const withHandles = layer.draw(data(new Set([
+        'selection.outline', 'selection.resize-handles', 'selection.rotation-handle',
+      ])), VIEW, DIMS);
+      const withoutHandles = layer.draw(data(new Set([
+        'selection.outline', 'selection.rotation-handle',
+      ])), VIEW, DIMS);
+      expect(withoutHandles.length).toBeLessThan(withHandles.length);
+    });
+
+    it('hides selection.rotation-handle when its rule reports false', () => {
+      const withRot = layer.draw(data(new Set([
+        'selection.outline', 'selection.resize-handles', 'selection.rotation-handle',
+      ])), VIEW, DIMS);
+      const withoutRot = layer.draw(data(new Set([
+        'selection.outline', 'selection.resize-handles',
+      ])), VIEW, DIMS);
+      expect(withoutRot.length).toBeLessThan(withRot.length);
+    });
+
+    it('renders everything when no getIsVisible is wired (legacy callers)', () => {
+      const legacy = layer.draw(undefined, VIEW, DIMS);
+      const allOn = layer.draw(data(new Set([
+        'selection.outline', 'selection.resize-handles', 'selection.rotation-handle',
+      ])), VIEW, DIMS);
+      expect(legacy.length).toBe(allOn.length);
+    });
+  });
 });
 
 describe('createSelectionOutlineLayer', () => {

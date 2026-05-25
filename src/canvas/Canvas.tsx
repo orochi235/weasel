@@ -68,6 +68,8 @@ import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
+
+const alwaysVisible = (_id: string): boolean => true;
 import { buildSceneTree } from './buildSceneTree';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
@@ -446,6 +448,20 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * no-op — existing consumers are unaffected.
    */
   decorationLayer?: RenderLayer<unknown>;
+
+  /**
+   * Chrome-caps visibility resolver. When supplied, Canvas:
+   *   - exposes the predicate on `helpersForLayers.getIsVisible` so
+   *     custom layers (notably `composeAffordanceLayer`) can gate
+   *     paint by chrome id;
+   *   - threads it into the affordance-pipeline `HitTestContext.isVisible`
+   *     so the same gate applies to hit-testing.
+   *
+   * Called fresh per draw / per hitTest, so the consumer can return a
+   * predicate that closes over per-frame `ChromeCtx`. Omit to leave
+   * every chrome element visible (pre-chrome-caps behavior).
+   */
+  getIsVisible?: () => (id: string) => boolean;
 }
 
 /** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
@@ -465,6 +481,11 @@ export interface CanvasHelpers<TPose> {
    *  call into this from their `draw` callback. Returns `null` when
    *  debug is off — no-op for production renders. */
   getDebug(): DebugSink | null;
+  /** Chrome-caps visibility predicate, keyed by chrome id. Returns a
+   *  function that affordance/overlay layers can call per-element to
+   *  decide whether to draw / hit-test. When the parent didn't supply
+   *  a resolver, this returns the universal `() => true`. */
+  getIsVisible(): (id: string) => boolean;
 }
 
 // Walks every registered + ambient tool: resize/rotate will register as
@@ -645,6 +666,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     pickBest,
     getNodeAtPoint,
     decorationLayer,
+    getIsVisible,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -970,6 +992,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // drag.onStart. The closure reads refs so it always sees the latest
   // layers / chromeState / view / dims without re-installing on every
   // paint.
+  const getIsVisibleRef = useRef(getIsVisible);
+  getIsVisibleRef.current = getIsVisible;
   const hitTestRefs = useRef({ tools, chromeState, view: effectiveView, width, height });
   hitTestRefs.current = { tools, chromeState, view: effectiveView, width, height };
   useEffect(() => {
@@ -980,6 +1004,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         chromeState: ChromeState;
         view: View;
         dims: { width: number; height: number };
+        isVisible?: (id: string) => boolean;
       } | null) | undefined) => void;
     };
     d.__setHitTestContext?.(() => {
@@ -991,11 +1016,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       const extras = Array.from(extrasRef.current);
       // Top-down walk order: extras first (HUDs on top), then tool overlays
       // (reversed so foreground-most tool's overlays fire before ambient ones).
+      const isVisibleFn = getIsVisibleRef.current?.();
       return {
         layers: [...extras, ...overlays.reverse()],
         chromeState: r.chromeState,
         view: r.view,
         dims: { width: r.width, height: r.height },
+        ...(isVisibleFn ? { isVisible: isVisibleFn } : {}),
       };
     });
     return () => {
@@ -1053,6 +1080,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     },
     getChromeState: () => chromeState,
     getDebug: () => debugSink,
+    getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
   };
   if (helpersRef) helpersRef.current = helpersForLayers;
 

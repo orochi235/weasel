@@ -642,7 +642,7 @@ export function createSelectionOverlayLayer<TPose>(
     id: 'selection-overlay',
     label: 'Selection',
     space: 'screen',
-    draw: (_data, view) => {
+    draw: (data, view) => {
       const allIds = opts.getSelection();
       if (allIds.length === 0) return [];
       const suppressed = opts.getSuppressedIds?.();
@@ -650,15 +650,28 @@ export function createSelectionOverlayLayer<TPose>(
         ? allIds.filter((id) => !suppressed.has(id as unknown as string))
         : allIds;
       if (ids.length === 0) return [];
-      const outlineIdsRaw = opts.getOutlineIds ? opts.getOutlineIds() : ids;
-      const outlineIds = suppressed && suppressed.size > 0
-        ? outlineIdsRaw.filter((id) => !suppressed.has(id as unknown as string))
-        : outlineIdsRaw;
+      // Chrome-caps: gate each of the three passes (outline, resize
+      // handles, rotation handle) on its canonical id. When no
+      // `getIsVisible` is wired (legacy callers / tests), every pass
+      // runs — preserving pre-chrome-caps behavior.
+      const isVisible = asIsVisible(data);
+      const showOutline = isVisible ? isVisible('selection.outline') : true;
+      const showHandles = isVisible ? isVisible('selection.resize-handles') : true;
+      const showRotation = isVisible ? isVisible('selection.rotation-handle') : true;
+
       const out: DrawCommand[] = [];
-      for (const cmd of outlineCommandsFor(outlineIds, resolveBounds, stroke, pad, view)) out.push(cmd);
+      if (showOutline) {
+        const outlineIdsRaw = opts.getOutlineIds ? opts.getOutlineIds() : ids;
+        const outlineIds = suppressed && suppressed.size > 0
+          ? outlineIdsRaw.filter((id) => !suppressed.has(id as unknown as string))
+          : outlineIdsRaw;
+        for (const cmd of outlineCommandsFor(outlineIds, resolveBounds, stroke, pad, view)) out.push(cmd);
+      }
       if (!handles) return out;
-      for (const cmd of handleCommandsFor(ids, resolveBounds, handles, handlesOf, view)) out.push(cmd);
-      if (rotationHandleDistance !== null) {
+      if (showHandles) {
+        for (const cmd of handleCommandsFor(ids, resolveBounds, handles, handlesOf, view)) out.push(cmd);
+      }
+      if (showRotation && rotationHandleDistance !== null) {
         for (const id of ids) {
           const b = resolveBounds(id);
           if (!b) continue;
@@ -670,4 +683,14 @@ export function createSelectionOverlayLayer<TPose>(
       return out;
     },
   };
+}
+
+/** Pull a chrome-caps visibility predicate off the draw `data` envelope.
+ *  Returns `null` when the caller passed bare data (no `getIsVisible`
+ *  thunk) — the layer then renders unconditionally, matching pre-
+ *  chrome-caps behavior. */
+function asIsVisible(data: unknown): ((id: string) => boolean) | null {
+  const maybe = data as { getIsVisible?: () => (id: string) => boolean };
+  if (typeof maybe?.getIsVisible === 'function') return maybe.getIsVisible();
+  return null;
 }

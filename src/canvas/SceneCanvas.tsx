@@ -95,6 +95,11 @@ import {
 } from 'features/selection/overlay';
 import { firstPreviewPose, firstPreviewBounds } from './toolPreview';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
+import {
+  buildChromeCtx,
+  resolveVisibility,
+  useHoverTracking,
+} from 'features/chrome-caps';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 /**
@@ -302,6 +307,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'selection' | 'selectionOptions' | 'tools' | 'geometry'
     | 'layers'          // stripped so we can re-add as optional below
     | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
+    | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
@@ -568,6 +574,29 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     children?: ReactNode;
 
     /**
+     * Chrome-caps visibility overrides, keyed by chrome id (`selection.outline`,
+     * `selection.rotation-handle`, `gesture.marquee`, …). Each entry is a
+     * composable {@link import('features/chrome-caps').Condition} built from the
+     * `cond()` builder. Merged on top of the kit's `defaultVisibilityRules`;
+     * unspecified ids fall through to the defaults.
+     *
+     * Set an id to `never` to suppress a chrome element entirely (also
+     * unhittable). Set to `always` to force-show. Mix `cond(...)` chains
+     * (e.g. `selectionIs(1).and(focused).andNot(gesturing)`) for the in-
+     * between cases.
+     */
+    chromeVisibility?: import('features/chrome-caps').VisibilityRules;
+
+    /**
+     * Optional live focus getter for chrome-caps' `focused` ctx field.
+     * SceneCanvas does not own focus state by default — wire this when
+     * your visibility rules read the `focused` atom (e.g. the kit's
+     * default `selection.rotation-handle` rule requires focus). Omit
+     * to default `focused` to `true` (rule fires regardless of focus).
+     */
+    getFocused?: () => boolean;
+
+    /**
      * Custom shader programs to compile on the renderer. Forwarded directly
      * to `<Canvas shaders={...} />`. See `CanvasProps.shaders` for details.
      */
@@ -695,6 +724,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     alphaFor,
     isPointerInteractive,
     onDoubleClick,
+    chromeVisibility,
+    getFocused: getFocusedProp,
     ...rest
   } = props;
 
@@ -1125,6 +1156,62 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // paints on top of any displaced ghost silhouettes. Phase 14e.2.5.
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
+  // Chrome-caps hover tracking: last-hovered NodeId fed into `ChromeCtx.hover`.
+  // The hook attaches its own pointermove/leave listeners on the canvas and
+  // caches the topmost-id from `getNodeAtPoint` on a ref. No re-renders.
+  const chromeCapsClientToWorld = useCallback((clientX: number, clientY: number): { x: number; y: number } => {
+    const canvas = internalCanvasRef.current;
+    const view = currentViewRef.current;
+    if (!canvas) return { x: clientX, y: clientY };
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left) / view.scale.x + view.x,
+      y: (clientY - rect.top) / view.scale.y + view.y,
+    };
+  }, []);
+  const getHover = useHoverTracking({
+    canvasRef: internalCanvasRef,
+    clientToWorld: chromeCapsClientToWorld,
+    getNodeAtPoint: (wx, wy) => {
+      const hit = getNodeAtPoint?.(wx, wy);
+      return hit ? { id: hit.id as NodeId } : null;
+    },
+    enabled: chromeVisibility !== undefined,
+  });
+
+  // Stable refs for the live selection / view / focus / suppression sources
+  // that feed `buildChromeCtx`. The resolver factory below closes over these
+  // and is called per draw / per hitTest from Canvas.
+  const selectionForCapsRef = useRef<readonly NodeId[]>([]);
+  const suppressedForCapsRef = useRef<ReadonlySet<string> | undefined>(undefined);
+  const getFocusedPropRef = useRef(getFocusedProp);
+  getFocusedPropRef.current = getFocusedProp;
+  const chromeVisibilityRef = useRef(chromeVisibility);
+  chromeVisibilityRef.current = chromeVisibility;
+
+  // The visibility predicate factory passed to <Canvas>. Called fresh per
+  // draw / hitTest; builds ChromeCtx from the live refs and resolves
+  // against the merged rule table. Returns the universal predicate when
+  // no consumer overrides are present AND no hover tracking is needed —
+  // letting the kit's defaults still gate paint without forcing every
+  // legacy consumer onto chrome-caps.
+  const getIsVisibleForCanvas = useCallback((): (id: string) => boolean => {
+    const sel = selectionForCapsRef.current;
+    const ctx = buildChromeCtx({
+      focused: getFocusedPropRef.current ? getFocusedPropRef.current() : true,
+      selection: sel,
+      multiActive: sel.length > 1,
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      gesture: dispatcher.getActiveGesture(),
+      hover: getHover(),
+      view: currentViewRef.current,
+      ...(suppressedForCapsRef.current !== undefined
+        ? { suppressedIds: suppressedForCapsRef.current }
+        : {}),
+    });
+    return resolveVisibility(chromeVisibilityRef.current, ctx);
+  }, [dispatcher, getHover]);
+
   // Pen preview overlay — reads the pen tool's persistent scratch and draws
   // the in-progress path (anchors, handles, rubber-band, close hint). Only
   // wired when the pen tool is actually registered; otherwise null.
@@ -1245,6 +1332,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Layered on top: path-edit suppression from HEAD's branch.
   const selectedIds = selection.current;
   const multiActive = selectedIds.length > 1;
+
+  // Keep chrome-caps live sources in sync with the live selection +
+  // path-edit suppression, both of which change on every relevant render.
+  selectionForCapsRef.current = selectedIds as readonly NodeId[];
+  suppressedForCapsRef.current = getSuppressedSelectionIds();
   const selectionOverlayLayer = useMemo(() => {
     const selCfg = mergedLayers.selectionOverlay as
       | SelectionOverlaySlotConfig<TPose>
@@ -1379,6 +1471,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       layers={wiredLayers}
       pickEvery={internalPickEvery}
       getNodeAtPoint={getNodeAtPoint}
+      getIsVisible={getIsVisibleForCanvas}
       previewIdsExtra={() => {
         // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
         // OngoingHandles and merge each handle's previewIds() so source
