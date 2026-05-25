@@ -13,7 +13,7 @@ import { splitCubicAtT } from 'features/paths/cubicMath';
 import { createSetPathOp } from 'core/ops/setPath';
 import { constrainTo45 } from '../../../util/constrainTo45';
 import { penEditHitOverride } from './penEdit/hitOverride';
-import { commitEditAsOp, exitEditMode, enterEditMode } from './penEdit/scratch';
+import { captureGestureBaseline, commitGestureOp, exitEditMode, enterEditMode } from './penEdit/scratch';
 import {
   dragAnchor, dragHandle, selectAnchor, addAnchorOnSegment,
   deleteAnchors, scissorsAtAnchor, nudgeSelectedAnchors, marqueeSelect,
@@ -717,6 +717,7 @@ export function usePenTool<TPose>(
             if (ctx.scratch.mode !== 'edit') return none();
             const extra = (ctx.target as { extra: { sub: number; idx: number } }).extra;
             let lastX = ctx.worldX, lastY = ctx.worldY;
+            captureGestureBaseline(ctx.scratch);
             return begin<PenScratch>({
               scratch: ctx.scratch,
               onMove: (c) => {
@@ -724,13 +725,18 @@ export function usePenTool<TPose>(
                 const dy = c.worldY - lastY;
                 lastX = c.worldX; lastY = c.worldY;
                 dragAnchor(c.scratch, { sub: extra.sub, idx: extra.idx, dx, dy });
-                const op = commitEditAsOp(c.scratch);
+                forceRenderRef.current();
+                return claim();
+              },
+              onRelease: (c) => {
+                const op = commitGestureOp(c.scratch, 'Move anchor');
                 if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Move anchor');
                 forceRenderRef.current();
                 return claim();
               },
-              onRelease: () => claim(),
-              onCancel: () => {},
+              onCancel: (c) => {
+                if (c.scratch.edit) c.scratch.edit.gestureBaseline = null;
+              },
             });
           },
           empty: (ctx) => {
@@ -774,6 +780,7 @@ export function usePenTool<TPose>(
             if (ctx.scratch.mode !== 'edit' || !ctx.scratch.edit) return none();
             const extra = (ctx.target as { extra: { sub: number; idx: number; side: 'in' | 'out' } }).extra;
             ctx.scratch.edit.activeHandle = { sub: extra.sub, anchor: extra.idx, side: extra.side };
+            captureGestureBaseline(ctx.scratch);
             return begin<PenScratch>({
               scratch: ctx.scratch,
               onMove: (c) => {
@@ -784,17 +791,21 @@ export function usePenTool<TPose>(
                   toX: c.worldX, toY: c.worldY,
                   breakSmoothness: c.modifiers.alt,
                 });
-                const op = commitEditAsOp(c.scratch);
-                if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Move handle');
                 forceRenderRef.current();
                 return claim();
               },
               onRelease: (c) => {
+                const op = commitGestureOp(c.scratch, 'Move handle');
+                if (op && optsRef.current.applyOps) optsRef.current.applyOps([op], 'Move handle');
                 if (c.scratch.edit) c.scratch.edit.activeHandle = null;
+                forceRenderRef.current();
                 return claim();
               },
               onCancel: (c) => {
-                if (c.scratch.edit) c.scratch.edit.activeHandle = null;
+                if (c.scratch.edit) {
+                  c.scratch.edit.activeHandle = null;
+                  c.scratch.edit.gestureBaseline = null;
+                }
               },
             });
           },
