@@ -91,7 +91,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 47 kit-standard action descriptors', () => {
+  it('registers all 50 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>
