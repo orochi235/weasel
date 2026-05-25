@@ -25,7 +25,7 @@ import { type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
-import { findShapePainter } from './shapePainters';
+import { findNodeShape } from './NodeShape';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
@@ -86,7 +86,7 @@ import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
-import { createNodeKindRegistry, type NodeKind } from '../core/scene/nodeKindRegistry';
+import { createNodeRouting, type NodeRoutingEntry } from '../core/scene/NodeRouting';
 import { installTestHookIfRequested } from '../test-hook/install';
 import type { WeaselTestHook } from '../test-hook/types';
 import {
@@ -153,14 +153,14 @@ function recordCoordTrace(entry: CoordTraceEntry): void {
 }
 
 /** Default scene-slot `drawOne` — dispatches through the shape-painter
- *  registry (`./shapePainters`). The kit registers built-in painters for
+ *  registry (`./NodeShape`). The kit registers built-in painters for
  *  text (`kit:text`), paths (`kit:path`), and a rect-from-pose fallback
  *  (`kit:rect-fallback`) at module load, so every shape it ships out of
  *  the box (rect, ellipse, polygon, star, line, pen, pencil, text) paints
  *  without consumer intervention.
  *
  *  To teach the kit about a new kind of shape, register a painter — do
- *  not override `drawOne`. See `registerShapePainter` for the API and
+ *  not override `drawOne`. See `registerNodeShape` for the API and
  *  priority semantics. Override `drawOne` only for cross-cutting
  *  decoration (post-process every node, mix in overlays from outside
  *  the per-node data, etc.).
@@ -173,7 +173,7 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,
 ): DrawCommand[] {
-  const painter = findShapePainter(node);
+  const painter = findNodeShape(node);
   const primary = painter ? painter.paint(node, pose) : [];
 
   // Label overlay — skipped for text nodes (their content is the label).
@@ -324,28 +324,28 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
 
     /**
-     * Node-kind classifiers — list of `NodeKind` entries. The kit constructs
-     * a `NodeKindRegistry` per-`<SceneCanvas>` from this prop, then threads
-     * the resulting classifier into `sceneToAdapter` so the synthesized
-     * adapter exposes `kindOf(id)`. Tool routing tables (e.g.
+     * Routing-trait classifiers — list of `NodeRoutingEntry` entries. The kit
+     * constructs a `NodeRouting` registry per-`<SceneCanvas>` from this prop,
+     * then threads the resulting classifier into `sceneToAdapter` so the
+     * synthesized adapter exposes `kindOf(id)`. Tool routing tables (e.g.
      * `{ target: 'rect', actionId: 'move' }`) match against the produced
      * kind strings.
      *
-     * Pass `defaultNodeKinds` to pick up the kit's built-in shape kinds
+     * Pass `defaultNodeRouting` to pick up the kit's built-in shape kinds
      * (rect, ellipse, polygon, …) for `data: { kind: '<shape>' }` nodes.
      * Spread additional entries for consumer-defined kinds.
      *
-     * See `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`.
+     * See `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md`.
      *
-     * **Memoize the `kinds` value.** The kit memoizes the registry on the
+     * **Memoize the `routing` value.** The kit memoizes the registry on the
      * prop's reference identity. Passing a fresh array each render
-     * (e.g. `kinds={[...defaultNodeKinds, custom]}` inline) rebuilds the
+     * (e.g. `routing={[...defaultNodeRouting, custom]}` inline) rebuilds the
      * registry and cascades into a new adapter, churning gesture state.
      * Define the list as a module-level constant, or wrap it in `useMemo`.
-     * (`defaultNodeKinds` alone is a stable module-level constant; spreading
+     * (`defaultNodeRouting` alone is a stable module-level constant; spreading
      * it with extras is what needs the memo.)
      */
-    kinds?: readonly NodeKind[];
+    routing?: readonly NodeRoutingEntry[];
 
     // --- Geometry: hit-test + bounds overrides consumed by the internal
     //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
@@ -625,7 +625,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolOpts,
     insertTool,
     layouts,
-    kinds,
+    routing,
     selection: selectionProp,
     selectionOptions,
     selectionMode = 'single',
@@ -787,16 +787,16 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectionRef = useRef(selection);
   selectionRef.current = selection;
 
-  // Build a per-instance NodeKindRegistry from the `kinds` prop and expose its
-  // classify() so `sceneToAdapter` can publish `kindOf(id)`. When `kinds` is
-  // absent or empty the classifier is undefined and the adapter omits kindOf
+  // Build a per-instance NodeRouting registry from the `routing` prop and expose
+  // its classify() so `sceneToAdapter` can publish `kindOf(id)`. When `routing`
+  // is absent or empty the classifier is undefined and the adapter omits kindOf
   // (callers without routing-by-kind needs aren't taxed).
   const kindClassifier = useMemo(() => {
-    if (!kinds || kinds.length === 0) return undefined;
-    const registry = createNodeKindRegistry();
-    for (const k of kinds) registry.register(k);
+    if (!routing || routing.length === 0) return undefined;
+    const registry = createNodeRouting();
+    for (const k of routing) registry.register(k);
     return (data: TData) => registry.classify(data);
-  }, [kinds]);
+  }, [routing]);
 
   const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,

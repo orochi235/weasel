@@ -2,7 +2,7 @@ import { useMemo, useRef, createElement } from 'react';
 import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Path } from 'features/paths/types';
-import { findShapeSilhouette } from 'canvas/shapePainters';
+import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';

@@ -12,14 +12,14 @@ import {
   collectIcons,
   collectMeta,
   collectModifierSets,
-  collectRoutingKinds,
+  collectRoutingTrait,
   collectOpFactories,
   collectOpKinds,
   collectPhases,
   collectPhaseOutputs,
   collectRoutes,
   collectRouteTargets,
-  collectShapeKinds,
+  collectShapeTrait,
   collectSlots,
   type TreeCategoryNode,
   type TreeEntry,
@@ -60,7 +60,7 @@ export function RegistryInspector() {
     return () => { document.title = prev; };
   }, []);
 
-  const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routingKinds: [] });
+  const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');
   const [textFilter, setTextFilter] = useState<string>('');
   const [selected, setSelected] = useState<TreeEntry | null>(null);
@@ -76,8 +76,8 @@ export function RegistryInspector() {
   const bundles = useMemo(() => collectBundles(), []);
   const icons = useMemo(() => collectIcons(), []);
   const opFactories = useMemo(() => collectOpFactories(), []);
-  const shapeKinds = useMemo(() => collectShapeKinds(runtime.tools), [runtime.tools]);
-  const routingKinds = useMemo(() => collectRoutingKinds(runtime.routingKinds), [runtime.routingKinds]);
+  const shapeKinds = useMemo(() => collectShapeTrait(runtime.tools), [runtime.tools]);
+  const routingEntries = useMemo(() => collectRoutingTrait(runtime.routing), [runtime.routing]);
   const phases = useMemo(() => collectPhases(), []);
   const gestures = useMemo(() => collectGestures(), []);
   const phaseOutputs = useMemo(() => collectPhaseOutputs(), []);
@@ -110,8 +110,8 @@ export function RegistryInspector() {
         entries: filterByBundle(runtime.tools, activeBundle ? activeBundle.tools : null),
       },
       { id: 'actions', label: 'Actions', entries: runtime.actions },
-      { id: 'shapeKinds', label: 'Shape kinds', group: { id: 'facets', label: 'Facets' }, entries: shapeKinds },
-      { id: 'routingKinds', label: 'Routing kinds', group: { id: 'facets', label: 'Facets' }, entries: routingKinds },
+      { id: 'shape', label: 'Shape', group: { id: 'traits', label: 'Traits' }, entries: shapeKinds },
+      { id: 'routing', label: 'Routing', group: { id: 'traits', label: 'Traits' }, entries: routingEntries },
       { id: 'bundles', label: 'Bundles', entries: bundles },
       { id: 'icons', label: 'Icons', entries: icons },
       { id: 'ops', label: 'Ops', entries: opKinds },
@@ -144,7 +144,7 @@ export function RegistryInspector() {
         if (top !== 0) return top;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
-  }, [runtime, activeBundle, bundles, icons, opFactories, shapeKinds, routingKinds, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routes, routeTargets, modifierSets, groups, meta]);
+  }, [runtime, activeBundle, bundles, icons, opFactories, shapeKinds, routingEntries, phases, gestures, phaseOutputs, opKinds, hotkeyTriggers, slots, routes, routeTargets, modifierSets, groups, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();

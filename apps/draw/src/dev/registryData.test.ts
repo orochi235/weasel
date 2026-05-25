@@ -3,11 +3,11 @@ import {
   collectIcons,
   collectBundles,
   collectHotkeyTriggers,
-  collectRoutingKinds,
+  collectRoutingTrait,
   collectOpFactories,
-  collectShapeKinds,
+  collectShapeTrait,
 } from './registryData';
-import { defaultNodeKinds, type NodeKind } from '@orochi235/weasel';
+import { defaultNodeRouting, type NodeRoutingEntry } from '@orochi235/weasel';
 
 describe('registryData static collectors', () => {
   it('collectIcons returns named entries for action and kind icons', () => {
@@ -38,8 +38,8 @@ describe('registryData static collectors', () => {
     expect(ids).toContain('createTransformOp');
   });
 
-  it('collectShapeKinds returns the built-in shape kind ids', () => {
-    const kinds = collectShapeKinds();
+  it('collectShapeTrait returns the built-in shape kind ids', () => {
+    const kinds = collectShapeTrait();
     const ids = kinds.map((k) => k.id);
     expect(ids).toContain('rect');
     expect(ids).toContain('ellipse');
@@ -50,22 +50,22 @@ describe('registryData static collectors', () => {
   });
 });
 
-describe('collectShapeKinds — facet tag', () => {
-  it('tags every entry with facet: shape', () => {
-    const entries = collectShapeKinds();
+describe('collectShapeTrait — trait tag', () => {
+  it('tags every entry with trait: shape', () => {
+    const entries = collectShapeTrait();
     for (const entry of entries) {
-      expect(entry.facet).toBe('shape');
+      expect(entry.trait).toBe('shape');
     }
   });
 });
 
-describe('collectRoutingKinds', () => {
+describe('collectRoutingTrait', () => {
   it('returns every default kind marked as "default" when no live registry is supplied', () => {
-    const entries = collectRoutingKinds();
-    expect(entries.length).toBe(defaultNodeKinds.length);
+    const entries = collectRoutingTrait();
+    expect(entries.length).toBe(defaultNodeRouting.length);
     for (const entry of entries) {
       expect(entry.kind).toBe('routingKind');
-      expect(entry.facet).toBe('routing');
+      expect(entry.trait).toBe('routing');
       expect(entry.source).toBe('default');
       // Built-in shape kinds in defaults cross-link to a ShapeKindEntry.
       expect(entry.shapeKindId).toBe(entry.id);
@@ -73,8 +73,8 @@ describe('collectRoutingKinds', () => {
   });
 
   it('marks consumer-only kinds with source "consumer" at the end', () => {
-    const custom: NodeKind = { name: 'sticky', matches: (d) => (d as { kind?: string })?.kind === 'sticky' };
-    const entries = collectRoutingKinds([...defaultNodeKinds, custom]);
+    const custom: NodeRoutingEntry = { name: 'sticky', matches: (d) => (d as { kind?: string })?.kind === 'sticky' };
+    const entries = collectRoutingTrait([...defaultNodeRouting, custom]);
     const sticky = entries.find((e) => e.id === 'sticky');
     expect(sticky?.source).toBe('consumer');
     expect(sticky?.shapeKindId).toBeUndefined();
@@ -83,14 +83,14 @@ describe('collectRoutingKinds', () => {
   });
 
   it('marks a default kind with a replaced matches as source "override"', () => {
-    const rectIndex = defaultNodeKinds.findIndex((k) => k.name === 'rect');
+    const rectIndex = defaultNodeRouting.findIndex((k) => k.name === 'rect');
     expect(rectIndex).toBeGreaterThan(-1);
-    const overridden: NodeKind = {
+    const overridden: NodeRoutingEntry = {
       name: 'rect',
       matches: () => false, // different matches reference
     };
-    const live = defaultNodeKinds.map((k, i) => (i === rectIndex ? overridden : k));
-    const entries = collectRoutingKinds(live);
+    const live = defaultNodeRouting.map((k, i) => (i === rectIndex ? overridden : k));
+    const entries = collectRoutingTrait(live);
     const rectEntry = entries.find((e) => e.id === 'rect');
     expect(rectEntry?.source).toBe('override');
   });

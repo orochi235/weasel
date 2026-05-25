@@ -37,7 +37,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { boundsOfPath } from 'features/paths/bounds';
 import { translatePath } from 'features/paths/transform';
-import { pathAtPose } from 'canvas/shapePainters';
+import { pathAtPose } from 'canvas/NodeShape';
 import { recordModeSwitch } from 'interactions/dispatcher/dispatcher';
 
 interface OpsApplier {

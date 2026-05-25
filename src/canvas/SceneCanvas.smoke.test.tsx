@@ -33,8 +33,8 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from 'interactions/actions/registry';
-import { defaultNodeKinds } from '../core/scene/defaultNodeKinds';
-import type { NodeKind } from '../core/scene/nodeKindRegistry';
+import { defaultNodeRouting } from '../core/scene/defaultNodeRouting';
+import type { NodeRoutingEntry } from '../core/scene/NodeRouting';
 import { useTools } from 'tools/useTools';
 import type { AnyTool } from 'tools/types';
 import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
@@ -833,10 +833,10 @@ describe('useLassoTool smoke', () => {
 });
 
 // ---------------------------------------------------------------------------
-// SceneCanvas — kinds prop
+// SceneCanvas — routing prop
 // ---------------------------------------------------------------------------
 
-describe('SceneCanvas — kinds prop', () => {
+describe('SceneCanvas — routing prop', () => {
   // Wrapper that builds a ToolsApi from the probe tool and renders SceneCanvas
   // with it as the active tool. The probe's pointer.onDown captures
   // `ctx.target.kind` so the test can assert the kind classification flowing
@@ -844,10 +844,10 @@ describe('SceneCanvas — kinds prop', () => {
   function Harness(props: {
     scene: Scene<D, L, P>;
     id: NodeId;
-    kinds?: readonly NodeKind[];
+    routing?: readonly NodeRoutingEntry[];
     onTarget: (kind: string | undefined) => void;
   }) {
-    const { scene, id, kinds, onTarget } = props;
+    const { scene, id, routing, onTarget } = props;
     const probe: AnyTool = {
       id: 'kind-probe',
       pointer: {
@@ -864,14 +864,14 @@ describe('SceneCanvas — kinds prop', () => {
         layers={{}}
         width={400}
         height={400}
-        {...(kinds ? { kinds } : {})}
+        {...(routing ? { routing } : {})}
         selectionOptions={{ initial: [id] }}
         tools={tools}
       />
     );
   }
 
-  it('threads kinds into the synthesized adapter so target.kind resolves to "rect"', () => {
+  it('threads routing into the synthesized adapter so target.kind resolves to "rect"', () => {
     const scene = makeScene();
     const id = firstId(scene);
     let captured: string | undefined;
@@ -882,7 +882,7 @@ describe('SceneCanvas — kinds prop', () => {
       <ActiveToolContextProvider><Harness
         scene={scene}
         id={id}
-        kinds={defaultNodeKinds}
+        routing={defaultNodeRouting}
         onTarget={(k) => { captured = k; }}
       /></ActiveToolContextProvider>,
     );
@@ -896,7 +896,7 @@ describe('SceneCanvas — kinds prop', () => {
     expect(captured).toBe('rect');
   });
 
-  it('produces target.kind = "unknown" when kinds prop is omitted', () => {
+  it('produces target.kind = "unknown" when routing prop is omitted', () => {
     const scene = makeScene();
     const id = firstId(scene);
     let captured: string | undefined;

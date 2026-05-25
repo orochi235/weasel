@@ -213,23 +213,23 @@ export type { CursorCoordsHudProps } from './canvas/CursorCoordsHud';
 export { PickHud } from './canvas/PickHud';
 export type { PickHudProps } from './canvas/PickHud';
 export {
-  registerShapePainter,
-  findShapePainter,
+  registerNodeShape,
+  findNodeShape,
   findShapeSilhouette,
-  getShapePainters,
-} from './canvas/shapePainters';
+  getNodeShapes,
+} from './canvas/NodeShape';
 export type {
-  ShapePainter,
-  RegisterShapePainterOptions,
-} from './canvas/shapePainters';
+  NodeShapeEntry,
+  RegisterNodeShapeOptions,
+} from './canvas/NodeShape';
 export { sceneToAdapter, useSceneAdapter } from './canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from './canvas/sceneAdapter';
 export {
-  createNodeKindRegistry,
-  type NodeKind,
-  type NodeKindRegistry,
-} from './core/scene/nodeKindRegistry';
-export { defaultNodeKinds } from './core/scene/defaultNodeKinds';
+  createNodeRouting,
+  type NodeRoutingEntry,
+  type NodeRouting,
+} from './core/scene/NodeRouting';
+export { defaultNodeRouting } from './core/scene/defaultNodeRouting';
 export type {
   CanvasProps,
   CanvasHelpers,

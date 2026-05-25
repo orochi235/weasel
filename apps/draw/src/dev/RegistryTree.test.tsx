@@ -68,31 +68,31 @@ describe('RegistryTree', () => {
 describe('RegistryTree — collapsible group', () => {
   const groupedNodes: readonly TreeCategoryNode[] = [
     {
-      id: 'shapeKinds',
-      label: 'Shape kinds',
-      group: { id: 'facets', label: 'Facets' },
-      entries: [{ kind: 'shapeKind', facet: 'shape', id: 'rect', label: 'rect' }],
+      id: 'shape',
+      label: 'Shape',
+      group: { id: 'traits', label: 'Traits' },
+      entries: [{ kind: 'shapeKind', trait: 'shape', id: 'rect', label: 'rect' }],
     },
     {
-      id: 'routingKinds',
-      label: 'Routing kinds',
-      group: { id: 'facets', label: 'Facets' },
-      entries: [{ kind: 'routingKind', facet: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }],
+      id: 'routing',
+      label: 'Routing',
+      group: { id: 'traits', label: 'Traits' },
+      entries: [{ kind: 'routingKind', trait: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }],
     },
   ];
 
   it('renders the group as a collapsible row; children hidden by default', () => {
     render(<RegistryTree nodes={groupedNodes} selected={null} onSelect={() => {}} />);
-    expect(screen.getByText('Facets')).toBeTruthy();
-    expect(screen.queryByText('Shape kinds')).toBeNull();
-    expect(screen.queryByText('Routing kinds')).toBeNull();
+    expect(screen.getByText('Traits')).toBeTruthy();
+    expect(screen.queryByText('Shape')).toBeNull();
+    expect(screen.queryByText('Routing')).toBeNull();
   });
 
   it('expands the group on click and reveals its child categories', () => {
     render(<RegistryTree nodes={groupedNodes} selected={null} onSelect={() => {}} />);
-    fireEvent.click(screen.getByText('Facets'));
-    expect(screen.getByText('Shape kinds')).toBeTruthy();
-    expect(screen.getByText('Routing kinds')).toBeTruthy();
+    fireEvent.click(screen.getByText('Traits'));
+    expect(screen.getByText('Shape')).toBeTruthy();
+    expect(screen.getByText('Routing')).toBeTruthy();
     // The child categories are themselves collapsible — their entries
     // remain hidden until the child is also expanded.
     expect(screen.queryAllByText('rect').length).toBe(0);
@@ -102,11 +102,11 @@ describe('RegistryTree — collapsible group', () => {
     render(
       <RegistryTree
         nodes={groupedNodes}
-        selected={{ kind: 'routingKind', facet: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }}
+        selected={{ kind: 'routingKind', trait: 'routing', id: 'rect', label: 'rect', source: 'default', shapeKindId: 'rect' }}
         onSelect={() => {}}
       />,
     );
-    expect(screen.getByText('Routing kinds')).toBeTruthy();
+    expect(screen.getByText('Routing')).toBeTruthy();
     // The leaf itself renders since its containing category is open.
     expect(screen.getAllByText('rect').length).toBeGreaterThan(0);
   });
