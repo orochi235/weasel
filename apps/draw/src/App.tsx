@@ -75,6 +75,8 @@ import { HistoryList } from './ui/HistoryList';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { useColorContext } from './tools/colorContext';
+import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
+import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter } from '@orochi235/weasel';
 import type { Obj } from './poseUpdate';
 import { parseSvg } from '@orochi235/weasel-svg';
@@ -1306,6 +1308,12 @@ function EditorWithSharedScene({
     }],
   }), [paper.width, paper.height, backgroundColor]);
 
+  const { percent: opacityScrubPercent } = useOpacityScrub({
+    scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
+    selection,
+    hostRef,
+  });
+
   return (
     <ActiveToolContextProvider>
     <div className="wd-app">
@@ -1337,6 +1345,7 @@ function EditorWithSharedScene({
           <ActiveSwatches />
         </div>
         <div className="wd-canvas-host" ref={hostRef} data-mode={modeId} data-tint-direction={tintDirection} data-alt-held={altHeld ? 'true' : undefined}>
+          <OpacityHud percent={opacityScrubPercent} />
           <ModeBreadcrumb
             modeId={modeId}
             modeKind={modality.machine.registry.current().kind}
