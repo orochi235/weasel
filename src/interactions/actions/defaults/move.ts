@@ -339,9 +339,18 @@ export const moveAction: Action & { requires: string[] } = {
             if (dropTarget) {
               applyReparent(scratch, dropTarget, reparentMode, dx, dy);
             } else {
-              // No reparent — translate-only commit (legacy path). Writes
-              // local poses; descendants follow implicitly.
+              // No reparent — translate-only commit. Under scene v1's
+              // absolute-pose semantics every node stores world coords
+              // independently, so a container drag must explicitly
+              // re-stamp every cascaded descendant by the same dx/dy —
+              // otherwise children stay at their old absolute positions
+              // (visually they snap to the container's former location).
               for (const id of scratch.ids) {
+                const origin = scratch.startPoses.get(id);
+                if (origin === undefined) continue;
+                scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy));
+              }
+              for (const id of scratch.cascadeIds) {
                 const origin = scratch.startPoses.get(id);
                 if (origin === undefined) continue;
                 scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy));

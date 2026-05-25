@@ -328,9 +328,13 @@ describe('moveAction descriptor', () => {
     expect(handle.previewPose!('child')).toMatchObject({ x: 15, y: 15 });
 
     handle.onEnd!(ctx, 'commit');
-    // Only the parent (root) is rewritten — child's local pose unchanged.
+    // Both the parent (root) AND its cascaded child get rewritten — under
+    // scene v1's absolute-pose semantics every node stores world coords
+    // independently, so dragging a container must explicitly re-stamp
+    // descendants by the same dx/dy. Without this they'd stay at their old
+    // absolute positions and visually snap to the container's former parent.
     expect(scene.poses.get('parent')).toMatchObject({ x: 5, y: 5 });
-    expect(scene.poses.get('child')).toEqual({ x: 10, y: 10, width: 20, height: 20 });
+    expect(scene.poses.get('child')).toEqual({ x: 15, y: 15, width: 20, height: 20 });
   });
 
   it('commit applies latest delta (multiple onMove calls, last one wins)', () => {
