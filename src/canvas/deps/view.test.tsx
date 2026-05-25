@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { useRef } from 'react';
-import { useViewDepSource } from './useViewDepSource';
+import { useViewDepSource } from './view';
 import type { View } from 'core/viewport/view';
 
 describe('useViewDepSource', () => {

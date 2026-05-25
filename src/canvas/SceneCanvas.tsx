@@ -39,8 +39,8 @@ import type { NodeId } from 'core/scene/types';
 import { sceneFromJSON } from 'core/scene/scene';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { usePublishSelection } from 'features/selection/SelectionContext';
-import type { Bounds } from 'tools/builtin/useSelectTool';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
+import type { Bounds } from 'tools/builtin/select';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 import { useTools, type ToolsApi } from 'tools/useTools';
 import { useKeybindings } from 'tools/useKeybindings';
 import type { AnyTool } from 'tools/types';
@@ -52,13 +52,13 @@ import type { UseAreaSelectOptions } from 'interactions/actions/area-select/opti
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
-import { useHandTool } from 'tools/builtin/useHandTool';
+import { useHandTool } from 'tools/builtin/hand';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
-import type { PenScratch } from 'tools/builtin/usePenTool';
+import type { PenScratch } from 'tools/builtin/pen';
 import type { Tool } from 'tools/types';
 import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
@@ -74,7 +74,7 @@ import {
   useDispatcherDepSource,
   useResizePolicy,
 } from './deps';
-import { resolveEditablePathOf } from './deps/useEditAnchorsDepSource';
+import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { useViewportActions } from './SceneCanvas/useViewportActions';
@@ -1731,7 +1731,7 @@ function StandardActionsRegistrar({
   viewportRecenter?: () => void;
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
-  editAnchorsExternalState: import('./deps/useEditAnchorsDepSource').EditAnchorsStateRef;
+  editAnchorsExternalState: import('./deps/editAnchors').EditAnchorsStateRef;
 }) {
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,

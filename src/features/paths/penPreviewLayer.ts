@@ -13,7 +13,7 @@
 import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Tool } from 'tools/types';
-import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/usePenTool';
+import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
 import { PATH_C, PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
 import { circlePath } from './markers';
 import { renderPenEditOverlay } from './penEditOverlay';

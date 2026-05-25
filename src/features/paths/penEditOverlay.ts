@@ -10,7 +10,7 @@
 
 import type { DrawCommand } from '../../renderer';
 import { circlePath, linePath, rectMarkerPath, squarePath } from './markers';
-import type { PenScratch } from 'tools/builtin/usePenTool';
+import type { PenScratch } from 'tools/builtin/pen';
 
 interface View { x: number; y: number; scale: { x: number; y: number } }
 

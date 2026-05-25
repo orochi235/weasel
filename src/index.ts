@@ -162,7 +162,7 @@ export type { ResizePolicy } from './interactions/actions/depSchema';
 export {
   useResizePolicy,
   type UseResizePolicyOptions,
-} from './canvas/deps/useResizePolicy';
+} from './canvas/deps/resizePolicy';
 
 // ─── Gesture dispatcher (Phase 3 of registry unification) ───
 export {
@@ -194,7 +194,7 @@ export { usePointerGestures } from './interactions/gestures/usePointerGestures';
 
 // ─── Tools: dispatcher, registry, declarative routing, built-ins ────────────
 export * from './tools';
-export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/usePinchZoomTool';
+export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/pinchZoom';
 // New declarative routing surface — experimental.
 // import { defineTool } from '@orochi235/weasel/routing';
 export * as routing from './tools/routing';
@@ -777,11 +777,11 @@ export type { AnimateToBoundsOptions } from './core/viewport/useViewAnimation';
 export type {
   UseHandToolOptions,
   InertiaConfig as HandToolInertiaConfig,
-} from './tools/builtin/useHandTool/useHandTool';
+} from './tools/builtin/hand/useHandTool';
 // UseWheelPanToolOptions and WheelPanInertiaConfig removed (Phase 8.5: useWheelPanTool dissolved).
-export type { SelectAdapter } from './tools/builtin/useSelectTool/useSelectTool';
-export type { PolygonPoint } from './tools/builtin/usePolygonTool/usePolygonTool';
-export type { StarPoint } from './tools/builtin/useStarTool/useStarTool';
+export type { SelectAdapter } from './tools/builtin/select/useSelectTool';
+export type { PolygonPoint } from './tools/builtin/polygon/usePolygonTool';
+export type { StarPoint } from './tools/builtin/star/useStarTool';
 export type { UseSceneTrivialOptions } from './core/scene/useScene';
 export type {
   DefaultTextData,

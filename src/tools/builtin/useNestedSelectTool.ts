@@ -7,7 +7,7 @@ import {
   useSelectTool,
   type SelectAdapter,
   type UseSelectToolOptions,
-} from './useSelectTool';
+} from './select';
 
 /** Adapter contract: SelectAdapter (Move + AreaSelect) plus the lookups
  *  `nestedHitTester` needs (`getParent` + the existing `getNode`/`getNodes`/`getPose`). */

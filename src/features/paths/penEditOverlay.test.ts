@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderPenEditOverlay } from './penEditOverlay';
-import type { PenScratch } from 'tools/builtin/usePenTool';
+import type { PenScratch } from 'tools/builtin/pen';
 import type { PenAnchor as KitPenAnchor } from './anchors';
 
 const view = { x: 0, y: 0, scale: { x: 1, y: 1 } } as const;

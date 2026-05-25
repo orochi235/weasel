@@ -13,8 +13,8 @@
  * `viewportRegistered` is false and SceneCanvas omits `hand` from the registry.
  */
 import { type RefObject, useMemo } from 'react';
-import { useHandTool } from 'tools/builtin/useHandTool';
-import { usePinchZoomTool } from 'tools/builtin/usePinchZoomTool';
+import { useHandTool } from 'tools/builtin/hand';
+import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
 import type { View } from 'core/viewport/view';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { AnyTool } from 'tools/types';

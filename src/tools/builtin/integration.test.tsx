@@ -9,7 +9,7 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { ActiveToolContextProvider } from '../../interactions/actions/activeToolContext';
 import { useTools, useSelectTool, useKeybindings } from '../';
-import { useHandTool } from './useHandTool';
+import { useHandTool } from './hand';
 import { Canvas } from 'canvas/Canvas';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelection } from 'core/selection/useSelection';

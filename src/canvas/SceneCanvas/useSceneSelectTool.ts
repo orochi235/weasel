@@ -13,9 +13,9 @@
  */
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
-import { useSelectTool, type Bounds } from 'tools/builtin/useSelectTool';
+import { useSelectTool, type Bounds } from 'tools/builtin/select';
 import { pickTopMostHit } from 'tools/builtin/pickTopMostHit';
-import { useRotateTool } from 'tools/builtin/useRotateTool';
+import { useRotateTool } from 'tools/builtin/rotate';
 import type { Node, Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';

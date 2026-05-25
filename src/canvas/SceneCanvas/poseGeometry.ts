@@ -6,7 +6,7 @@
  * for everything else. Used by hit-test, marquee, and bounds extraction so the
  * SceneCanvas defaults work uniformly across rect-shaped and path-shaped poses.
  */
-import type { Bounds } from 'tools/builtin/useSelectTool';
+import type { Bounds } from 'tools/builtin/select';
 import { RECT_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 import { pointInRotatedRect } from 'interactions/actions/rotate/geometry';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';

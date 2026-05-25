@@ -5,7 +5,7 @@ import {
   useDepRegistry,
   type DepRegistry,
 } from 'interactions/actions/depRegistry';
-import { useTextEditDepSource } from './useTextEditDepSource';
+import { useTextEditDepSource } from './textEdit';
 import type { Scene, NodeId } from 'core/scene/types';
 
 function makeScene(text: boolean): Scene<unknown, string, unknown> {

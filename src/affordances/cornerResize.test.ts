@@ -3,7 +3,7 @@ import { createCornerResizeAffordance, type CornerResizeScratch } from './corner
 import { composeAffordanceLayer } from './composeAffordanceLayer';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };

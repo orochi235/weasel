@@ -19,7 +19,7 @@ import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { AffordanceHit } from 'interactions/actions/invoker';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/useSelectTool';
+import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 import { hitAnchor } from 'interactions/actions/edit-anchors/handles';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 import type { PolygonPath } from 'features/paths/types';

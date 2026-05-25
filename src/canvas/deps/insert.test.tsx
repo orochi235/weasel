@@ -5,7 +5,7 @@ import {
   useDepRegistry,
   type DepRegistry,
 } from 'interactions/actions/depRegistry';
-import { useInsertDepSource } from './useInsertDepSource';
+import { useInsertDepSource } from './insert';
 import type { Scene } from 'core/scene/types';
 
 function makeScene(): Scene<unknown, string, unknown> {

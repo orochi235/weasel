@@ -4,15 +4,15 @@
  * `DepSchema` can use these as templates for their own dep modules.
  */
 export { hitTestAABB, type AABBBounds } from './aabbHitTest';
-export { useViewDepSource } from './useViewDepSource';
-export { useAreaSelectDepSource } from './useAreaSelectDepSource';
-export { useNodeAtPointDepSource } from './useNodeAtPointDepSource';
-export { useLassoSelectDepSource } from './useLassoSelectDepSource';
-export { useTextEditDepSource } from './useTextEditDepSource';
-export { useEditAnchorsDepSource } from './useEditAnchorsDepSource';
-export { useInsertDepSource } from './useInsertDepSource';
-export { useDispatcherDepSource } from './useDispatcherDepSource';
+export { useViewDepSource } from './view';
+export { useAreaSelectDepSource } from './areaSelect';
+export { useNodeAtPointDepSource } from './nodeAtPoint';
+export { useLassoSelectDepSource } from './lassoSelect';
+export { useTextEditDepSource } from './textEdit';
+export { useEditAnchorsDepSource } from './editAnchors';
+export { useInsertDepSource } from './insert';
+export { useDispatcherDepSource } from './dispatcher';
 export {
   useResizePolicy,
   type UseResizePolicyOptions,
-} from './useResizePolicy';
+} from './resizePolicy';

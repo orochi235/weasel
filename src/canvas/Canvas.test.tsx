@@ -7,7 +7,7 @@ import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
 import { type NodeId } from 'core/scene/types';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
-import { useSelectTool } from 'tools/builtin/useSelectTool';
+import { useSelectTool } from 'tools/builtin/select';
 import { useTools } from 'tools/useTools';
 import { WeaselProvider } from '../WeaselProvider';
 import type { RenderLayer } from 'core/layers/render';

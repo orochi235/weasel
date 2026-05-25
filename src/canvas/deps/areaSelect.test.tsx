@@ -5,7 +5,7 @@ import {
   useDepRegistry,
   type DepRegistry,
 } from 'interactions/actions/depRegistry';
-import { useAreaSelectDepSource } from './useAreaSelectDepSource';
+import { useAreaSelectDepSource } from './areaSelect';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 

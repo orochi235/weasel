@@ -5,7 +5,7 @@ import {
   useDepRegistry,
   type DepRegistry,
 } from 'interactions/actions/depRegistry';
-import { useEditAnchorsDepSource } from './useEditAnchorsDepSource';
+import { useEditAnchorsDepSource } from './editAnchors';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 
