@@ -7,7 +7,7 @@
  * in `actions.ts`; the state cluster lives here.
  *
  * Mount once near the root:
- *   <ColorContextProvider updateSelected={fn}>
+ *   <ColorContextProvider>
  *     <ColorDepBridge />
  *     <App />
  *   </ColorContextProvider>
@@ -17,15 +17,8 @@
  */
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ActivePaint } from '../../ActiveSwatches';
-import {
-  DEFAULT_FILL,
-  DEFAULT_STROKE,
-  getAlpha01,
-  mergeAlphaFromPrev,
-  toHex8,
-  withAlpha01,
-} from '../../ActiveSwatches';
-import type { Obj } from '../../poseUpdate';
+import { DEFAULT_FILL, DEFAULT_STROKE } from '../../ActiveSwatches';
+import { getAlpha01, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@orochi235/weasel';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -51,18 +44,12 @@ export interface ColorContextValue {
   toggleFocusedNone: () => void;
   toggleFocusedTransparent: () => void;
   reset: () => void;
-  // Scene-write methods
-  applyFillToSelection: (color: string) => void;
-  applyStrokeToSelection: (color: string) => void;
-  applyStrokeWidthToSelection: (w: number) => void;
 }
 
 export interface ColorContextProviderProps {
   initialFill?: ActivePaint;
   initialStroke?: ActivePaint;
   initialFocus?: 'fill' | 'stroke';
-  /** Scene-write seam: matches App.tsx's `updateSelected(patch, label?)`. */
-  updateSelected: (patch: (o: Obj) => Obj, label?: string) => void;
   children: ReactNode;
 }
 
@@ -89,7 +76,6 @@ export function ColorContextProvider({
   initialFill,
   initialStroke,
   initialFocus,
-  updateSelected,
   children,
 }: ColorContextProviderProps) {
   // Combine fill+stroke into one state so `swap` can atomically exchange
@@ -188,56 +174,18 @@ export function ColorContextProvider({
     setPaints({ fill: DEFAULT_FILL, stroke: DEFAULT_STROKE });
   }, []);
 
-  // opts ref so the applyX closures don't re-create when updateSelected
-  // identity changes between renders.
-  const updateSelectedRef = useRef(updateSelected);
-  updateSelectedRef.current = updateSelected;
-
-  const applyFillToSelection = useCallback((color: string) => {
-    const merge = (prev: string | undefined): string =>
-      color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#ffffffff');
-    updateSelectedRef.current((o) => {
-      if (o.tool !== 'text') return { ...o, fill: merge(o.fill) };
-      const prevFill = o.style?.fill;
-      const prevColor = prevFill && prevFill.fill === 'solid' ? prevFill.color : undefined;
-      const next = merge(prevColor);
-      const nextFill = prevFill && prevFill.fill === 'solid'
-        ? { ...prevFill, color: next }
-        : { fill: 'solid' as const, color: next };
-      return { ...o, style: { ...(o.style ?? {}), fill: nextFill } };
-    }, 'Set fill');
-  }, []);
-
-  const applyStrokeToSelection = useCallback((color: string) => {
-    const merge = (prev: string | undefined): string =>
-      color.length === 9 ? color : mergeAlphaFromPrev(color, prev ?? '#000000ff');
-    updateSelectedRef.current(
-      (o) => (o.tool !== 'text' ? { ...o, stroke: merge(o.stroke) } : o),
-      'Set stroke',
-    );
-  }, []);
-
-  const applyStrokeWidthToSelection = useCallback((w: number) => {
-    updateSelectedRef.current(
-      (o) => (o.tool !== 'text' ? { ...o, strokeWidth: w } : o),
-      'Set stroke width',
-    );
-  }, []);
-
   const value = useMemo<ColorContextValue>(() => ({
     fill, stroke, focused,
     setFill, setStroke, setFocused, setFocus,
     setFillColor, setStrokeColor, setFocusedColor,
     focusedAlpha, setFocusedAlpha,
     swap, swapFocus, toggleFocusedNone, toggleFocusedTransparent, reset,
-    applyFillToSelection, applyStrokeToSelection, applyStrokeWidthToSelection,
   }), [
     fill, stroke, focused,
     setFill, setStroke, setFocused,
     setFillColor, setStrokeColor, setFocusedColor,
     focusedAlpha, setFocusedAlpha,
     swap, swapFocus, toggleFocusedNone, toggleFocusedTransparent, reset,
-    applyFillToSelection, applyStrokeToSelection, applyStrokeWidthToSelection,
   ]);
 
   return (

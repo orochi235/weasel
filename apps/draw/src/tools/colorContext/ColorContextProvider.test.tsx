@@ -7,14 +7,11 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { type ReactNode } from 'react';
 import { ColorContextProvider, useColorContext } from './ColorContextProvider';
-import type { Obj } from '../../poseUpdate';
 
-const noopUpdateSelected: (patch: (o: Obj) => Obj, label?: string) => void = () => {};
-
-function makeWrapper(updateSelected: (patch: (o: Obj) => Obj, label?: string) => void = noopUpdateSelected) {
+function makeWrapper() {
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <ColorContextProvider updateSelected={updateSelected}>
+      <ColorContextProvider>
         {children}
       </ColorContextProvider>
     );
@@ -70,49 +67,3 @@ describe('ColorContextProvider — state cluster', () => {
   });
 });
 
-describe('ColorContextProvider — scene-write cluster', () => {
-  it('applyFillToSelection routes through updateSelected with the "Set fill" label', () => {
-    const calls: Array<{ patched: Partial<Obj>; label: string | undefined }> = [];
-    const updateSelected = (patch: (o: Obj) => Obj, label?: string) => {
-      const fake = { id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10, fill: '#ffffffff' } as unknown as Obj;
-      calls.push({ patched: patch(fake), label });
-    };
-    const { result } = renderHook(() => useColorContext(), {
-      wrapper: makeWrapper(updateSelected),
-    });
-    act(() => result.current.applyFillToSelection('#ff0000ff'));
-    expect(calls).toHaveLength(1);
-    expect(calls[0].label).toBe('Set fill');
-    expect((calls[0].patched as { fill?: string }).fill).toBe('#ff0000ff');
-  });
-
-  it('applyFillToSelection on a text obj writes into style.fill.color', () => {
-    const calls: Array<Partial<Obj>> = [];
-    const updateSelected = (patch: (o: Obj) => Obj) => {
-      const fake = {
-        id: 't', tool: 'text', x: 0, y: 0, width: 10, height: 10,
-        style: { fill: { fill: 'solid' as const, color: '#000000ff' } },
-      } as unknown as Obj;
-      calls.push(patch(fake));
-    };
-    const { result } = renderHook(() => useColorContext(), {
-      wrapper: makeWrapper(updateSelected),
-    });
-    act(() => result.current.applyFillToSelection('#00ff00ff'));
-    const next = calls[0] as { style?: { fill?: { color?: string } } };
-    expect(next.style?.fill?.color).toBe('#00ff00ff');
-  });
-
-  it('applyStrokeWidthToSelection writes strokeWidth on non-text', () => {
-    const calls: Array<Partial<Obj>> = [];
-    const updateSelected = (patch: (o: Obj) => Obj) => {
-      const fake = { id: 'a', tool: 'rect', strokeWidth: 1 } as unknown as Obj;
-      calls.push(patch(fake));
-    };
-    const { result } = renderHook(() => useColorContext(), {
-      wrapper: makeWrapper(updateSelected),
-    });
-    act(() => result.current.applyStrokeWidthToSelection(5));
-    expect((calls[0] as { strokeWidth?: number }).strokeWidth).toBe(5);
-  });
-});

@@ -78,7 +78,6 @@ import { useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter } from '@orochi235/weasel';
-import type { Obj } from './poseUpdate';
 import { parseSvg } from '@orochi235/weasel-svg';
 import { downloadSvg, pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
@@ -926,50 +925,6 @@ function loadInitial(): Array<{
   }];
 }
 
-/** Bridge for `<ColorContextProvider updateSelected>` — accepts the legacy
- *  `Obj`-typed patch callback and translates fill/stroke/strokeWidth
- *  writes onto our `WeaselDrawData` leaves. Other patch fields (path geometry,
- *  text) are ignored: the active-color UI only mutates fills/strokes. */
-function buildUpdateSelected(
-  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>,
-  selection: ReturnType<typeof useSelection>,
-): (patch: (o: Obj) => Obj, label?: string) => void {
-  return (patch, label) => {
-    if (selection.current.length === 0) return;
-    scene.batch(label ?? 'Set color', () => {
-      for (const id of selection.current) {
-        const node = scene.get(asNodeId(id));
-        if (!node || node.kind !== 'leaf') continue;
-        // Build a minimal Obj-shaped stub so the caller's patch closure
-        // can read previous fill/stroke/strokeWidth. Tool kind is faked
-        // to match the legacy union; only the color fields round-trip.
-        const stub: Obj = {
-          id,
-          tool: 'rect',
-          x: node.pose.x, y: node.pose.y,
-          width: node.pose.width, height: node.pose.height,
-          path: node.data.path ?? rectPath(node.pose.x, node.pose.y, node.pose.width, node.pose.height),
-          closed: true,
-          fill: node.data.fill ?? '#ffffffff',
-          stroke: node.data.stroke ?? '#000000ff',
-          strokeWidth: node.data.strokeWidth ?? 1,
-        };
-        const next = patch(stub);
-        if (next === stub) continue;
-        if (next.tool === 'text') continue;
-        scene.update(asNodeId(id), {
-          data: {
-            ...node.data,
-            fill: next.fill,
-            stroke: next.stroke,
-            strokeWidth: next.strokeWidth,
-          },
-        });
-      }
-    });
-  };
-}
-
 // ─── Outer App: install the color context so swatches + actions resolve ─────
 
 /** Publishes a `BooleansAdapter` as a dep so the kit's Pathfinder
@@ -1061,24 +1016,12 @@ function BooleansAdapterPublisher({
   return null;
 }
 
-/** Thin wrapper that hoists the scene + selection so the
- *  `ColorContextProvider`'s `updateSelected` bridge can close over them.
- *  Both `useScene` and `useSelection` are stable across renders (their
- *  underlying instances are constructed once via `useRef`), so the bridge
- *  closure created here doesn't churn between Editor renders. */
 export function App(): ReactElement {
-  // Lift scene + selection to share with both Editor and the color
-  // context bridge. `useScene` / `useSelection` synthesize stable
-  // instances internally, so re-renders here don't recreate them.
   const scene = useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>({
     systemLayers: [{ id: 'default' }],
     initial: useMemo(loadInitial, []),
   });
   const selection = useSelection({ mode: 'multi' });
-  const updateSelected = useMemo(
-    () => buildUpdateSelected(scene, selection),
-    [scene, selection],
-  );
 
   // Bootstrap the mode machine, decorations, and scoping dim. useModality
   // wires the journal accessor on the scene via
@@ -1108,7 +1051,6 @@ export function App(): ReactElement {
     <ColorContextProvider
       initialFill={initialFill}
       initialStroke={initialStroke}
-      updateSelected={updateSelected}
     >
       <EditorWithSharedScene scene={scene} selection={selection} modality={modality} />
     </ColorContextProvider>

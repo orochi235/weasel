@@ -11,11 +11,8 @@
  */
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { useRef } from 'react';
-import { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev, useActionsRegistry } from '@orochi235/weasel';
+import { mergeAlphaFromPrev, useActionsRegistry } from '@orochi235/weasel';
 import type { UiOngoingControl } from '@orochi235/weasel';
-// Re-exported for backward compat; ColorContextProvider still imports these
-// from here. Remove this block once ColorContextProvider imports from the kit directly.
-export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev };
 import { useColorContext } from './tools/colorContext';
 
 export type ActivePaint =
