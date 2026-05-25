@@ -17,7 +17,6 @@ describe('buildChromeCtx', () => {
       action: { kind: 'marquee', id: 'pointer-mouse' },
       hover: asNodeId('a'),
       view: VIEW,
-      suppressedIds: new Set(['x']),
     });
     expect(ctx.focused).toBe(true);
     expect(ctx.selection).toEqual([asNodeId('a'), asNodeId('b')]);
@@ -26,19 +25,5 @@ describe('buildChromeCtx', () => {
     expect(ctx.action).toEqual({ kind: 'marquee', id: 'pointer-mouse' });
     expect(ctx.hover).toBe('a');
     expect(ctx.view).toBe(VIEW);
-    expect((ctx as { suppressedIds?: ReadonlySet<string> }).suppressedIds?.has('x')).toBe(true);
-  });
-
-  it('omits suppressedIds when not supplied', () => {
-    const ctx = buildChromeCtx({
-      focused: false,
-      selection: [],
-      multiActive: false,
-      modifiers: MODS,
-      action: { kind: null, id: null },
-      hover: null,
-      view: VIEW,
-    });
-    expect((ctx as { suppressedIds?: ReadonlySet<string> }).suppressedIds).toBeUndefined();
   });
 });

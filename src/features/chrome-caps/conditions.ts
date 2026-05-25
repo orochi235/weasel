@@ -112,21 +112,13 @@ export const selectionAtLeast = (n: number): Condition => cond({ selection: { at
  *  selector-table key. Stable; safe to introspect. */
 export const multiActive: Condition = cond({ when: (c) => c.multiActive });
 
-// ─── Hover / suppression atoms ──────────────────────────────────────
+// ─── Hover atoms ────────────────────────────────────────────────────
 
 /** Pointer is hovering some node. */
 export const hovering: Condition = cond({ hovering: true });
 
 /** Pointer is hovering a node that is currently selected. */
 export const hoveringSelected: Condition = cond({ hoveringSelected: true });
-
-/**
- * @deprecated `suppressedIds` is being removed in Phase 3 of the
- * mode-aware dispatch refactor. New rules should use mode constraints
- * instead. This atom remains only for the duration of the migration.
- */
-export const suppressed = (id: string): Condition =>
-  cond({ when: (c) => (c as RuleCtx & { suppressedIds?: ReadonlySet<string> }).suppressedIds?.has(id) ?? false });
 
 // ─── Modifier atoms ─────────────────────────────────────────────────
 

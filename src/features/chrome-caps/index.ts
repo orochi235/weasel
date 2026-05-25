@@ -35,7 +35,6 @@ export {
   multiActive,
   hovering,
   hoveringSelected,
-  suppressed,
   modifierHeld,
   zoomAtLeast,
   modeIs,

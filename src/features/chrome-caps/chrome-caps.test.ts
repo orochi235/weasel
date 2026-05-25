@@ -5,15 +5,13 @@ import {
   when, and, or, not, always, never,
   focused, gesturing, actionIs,
   selectionEmpty, selectionIs, selectionAtLeast, multiActive,
-  hovering, hoveringSelected, suppressed,
+  hovering, hoveringSelected,
   modifierHeld, zoomAtLeast,
 } from './conditions';
 import { defaultVisibilityRules } from './defaults';
 import { resolveVisibility } from './resolve';
 
-type TestCtx = RuleCtx & { suppressedIds?: ReadonlySet<string> };
-
-function ctx(over: Partial<TestCtx> = {}): TestCtx {
+function ctx(over: Partial<RuleCtx> = {}): RuleCtx {
   return {
     focused: false,
     selection: [],
@@ -63,11 +61,6 @@ describe('chrome-caps / atoms', () => {
     expect(hovering(ctx({ hover: NID('a') }))).toBe(true);
     expect(hoveringSelected(ctx({ hover: NID('a'), selection: [NID('a')] }))).toBe(true);
     expect(hoveringSelected(ctx({ hover: NID('a'), selection: [NID('b')] }))).toBe(false);
-  });
-
-  it('suppressed', () => {
-    expect(suppressed('foo')(ctx({ suppressedIds: new Set(['foo']) }))).toBe(true);
-    expect(suppressed('foo')(ctx({ suppressedIds: new Set(['bar']) }))).toBe(false);
   });
 
   it('modifierHeld', () => {
