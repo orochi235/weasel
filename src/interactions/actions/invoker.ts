@@ -268,6 +268,16 @@ export interface OngoingHandle {
    */
   previewIds?(): Iterable<string> | null;
   previewPose?(id: string): unknown | null;
+
+  /**
+   * When `false`, the preview-ghost layer paints the ghost AND the
+   * source node stays visible at its committed pose. Defaults to
+   * `true` (move/resize/rotate semantics: ghost replaces the source
+   * during the gesture). Clone overrides to `false` so the original
+   * stays put and the ghost appears at the drag target.
+   */
+  previewHidesSource?: boolean;
+
   /**
    * Optional per-id preview *data*. Falls back to the committed
    * `node.data` when null/absent. Use when the gesture mutates

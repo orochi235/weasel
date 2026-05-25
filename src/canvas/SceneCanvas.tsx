@@ -1482,12 +1482,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       previewIdsExtra={() => {
         // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
         // OngoingHandles and merge each handle's previewIds() so source
-        // ids being ghosted by dispatcher-path actions (move, clone,
+        // ids being ghosted by dispatcher-path actions (move, resize,
         // rotate, etc.) get their committed paint hidden under the
         // ghost. Without this, post-Phase-14e-Task-3 the originals
         // would bleed through during drag.
+        //
+        // Handles that set `previewHidesSource: false` (clone, etc.)
+        // opt OUT — their ghost still paints via the preview-ghost
+        // layer, but the source stays visible at its committed home.
         const out: string[] = [];
         for (const handle of dispatcher.getInFlightHandles()) {
+          if (handle.previewHidesSource === false) continue;
           const ids = handle.previewIds?.();
           if (!ids) continue;
           for (const id of ids) out.push(id);
