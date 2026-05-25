@@ -97,6 +97,21 @@ export interface Action {
    * ignore the arg.
    */
   enabled?: (deps?: ActionDeps) => true | ActionDisabledReason;
+  /**
+   * Declarative eligibility rule, evaluated against the current
+   * `RuleCtx` by the dispatcher before invoking `start()`. Omitted =
+   * always eligible.
+   *
+   * Accepts either a fluent `Condition` (callable with `.rule`) or a
+   * raw `Rule` tree; the dispatcher normalizes via `.rule` unwrap.
+   *
+   * Prefer `capability:`-based rules (e.g. `{ capability: 'transforms-selection' }`)
+   * over `mode:` rules — capability rules survive new modes being added
+   * that allow the same capability.
+   */
+  eligible?:
+    | import('../../features/chrome-caps').Rule
+    | import('../../features/chrome-caps').Condition;
 }
 
 /**
