@@ -1,7 +1,7 @@
 import type { VisibilityRules } from './types';
 import {
+  actionIs,
   focused,
-  gestureIs,
   gesturing,
   selectionAtLeast,
 } from './conditions';
@@ -19,7 +19,7 @@ export const defaultVisibilityRules: VisibilityRules = {
   // Static selection chrome — visible while a selection exists.
   'selection.outline':         selectionAtLeast(1),
 
-  // Handles hide during a gesture so the moving / resizing object
+  // Handles hide during an action so the moving / resizing object
   // isn't visually crowded; they reappear on commit. Single mode
   // shows per-object corners; multi mode shows union-bounds corners
   // (the affordance's `pickRenderTarget` picks the appropriate target).
@@ -30,12 +30,12 @@ export const defaultVisibilityRules: VisibilityRules = {
   // `useUnionPivot: ids.length > 1` branch handles the dispatch).
   'selection.rotation-handle': selectionAtLeast(1).and(focused).andNot(gesturing),
 
-  // Transient gesture chrome — only shown during the matching gesture.
-  'gesture.marquee':           gestureIs('marquee'),
-  'gesture.lasso':             gestureIs('lasso'),
-  'gesture.move-ghosts':       gestureIs('move'),
+  // Transient action chrome — only shown during the matching action.
+  'action.marquee':            actionIs('marquee'),
+  'action.lasso':              actionIs('lasso'),
+  'action.move-ghosts':        actionIs('move'),
 
-  // Snap system — guides during any gesture (move/resize/rotate snap
+  // Snap system — guides during any action (move/resize/rotate snap
   // into siblings); targets visible only when a snap is engaged.
   'snap.guides':               gesturing,
   // 'snap.targets' — no default; consumer-driven for now.

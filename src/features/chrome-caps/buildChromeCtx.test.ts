@@ -14,7 +14,7 @@ describe('buildChromeCtx', () => {
       selection: [asNodeId('a'), asNodeId('b')],
       multiActive: true,
       modifiers: MODS,
-      gesture: { kind: 'marquee', id: 'pointer-mouse' },
+      action: { kind: 'marquee', id: 'pointer-mouse' },
       hover: asNodeId('a'),
       view: VIEW,
       suppressedIds: new Set(['x']),
@@ -23,7 +23,7 @@ describe('buildChromeCtx', () => {
     expect(ctx.selection).toEqual([asNodeId('a'), asNodeId('b')]);
     expect(ctx.multiActive).toBe(true);
     expect(ctx.modifiers).toBe(MODS);
-    expect(ctx.gesture).toEqual({ kind: 'marquee', id: 'pointer-mouse' });
+    expect(ctx.action).toEqual({ kind: 'marquee', id: 'pointer-mouse' });
     expect(ctx.hover).toBe('a');
     expect(ctx.view).toBe(VIEW);
     expect(ctx.suppressedIds.has('x')).toBe(true);
@@ -35,7 +35,7 @@ describe('buildChromeCtx', () => {
       selection: [],
       multiActive: false,
       modifiers: MODS,
-      gesture: { kind: null, id: null },
+      action: { kind: null, id: null },
       hover: null,
       view: VIEW,
     });

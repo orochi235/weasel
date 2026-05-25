@@ -1209,7 +1209,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       selection: sel,
       multiActive: sel.length > 1,
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      gesture: dispatcher.getActiveGesture(),
+      action: dispatcher.getActiveAction(),
       hover: getHover(),
       view: currentViewRef.current,
       ...(suppressedForCapsRef.current !== undefined

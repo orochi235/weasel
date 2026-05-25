@@ -25,8 +25,10 @@ export interface ChromeCtx {
   readonly suppressedIds: ReadonlySet<string>;
   /** Modifier-key snapshot. */
   readonly modifiers: ModifierState;
-  /** Active gesture, or `{ kind: null, id: null }` when idle. */
-  readonly gesture: { readonly kind: string | null; readonly id: string | null };
+  /** Active action, or `{ kind: null, id: null }` when idle. The
+   *  `kind` is the in-flight action's stable tag (`'move'`,
+   *  `'marquee'`, `'lasso'`, `'resize'`, `'rotate'`, …). */
+  readonly action: { readonly kind: string | null; readonly id: string | null };
   /** Last-hovered node id under the pointer, or null when nothing
    *  is hovered (pointer outside the canvas, or over empty space). */
   readonly hover: NodeId | null;
@@ -67,9 +69,9 @@ export interface Condition {
  * Naming convention by lifecycle:
  *
  *   - `selection.*` — chrome reflecting committed selection state
- *     (persists between gestures).
- *   - `gesture.*` — chrome that only exists during an in-flight
- *     gesture (vanishes on commit / cancel).
+ *     (persists between actions).
+ *   - `action.*` — chrome that only exists during an in-flight
+ *     action (vanishes on commit / cancel).
  *   - `snap.*` — snapping system chrome (guides, target highlights).
  *   - `grid`, `debug.*` — environment chrome.
  *
@@ -81,11 +83,11 @@ export type ChromeId =
   | 'selection.outline'
   | 'selection.resize-handles'
   | 'selection.rotation-handle'
-  | 'gesture.marquee'
-  | 'gesture.lasso'
-  | 'gesture.move-ghosts'
-  | 'gesture.insert-preview'
-  | 'gesture.commands'
+  | 'action.marquee'
+  | 'action.lasso'
+  | 'action.move-ghosts'
+  | 'action.insert-preview'
+  | 'action.commands'
   | 'snap.guides'
   | 'snap.targets'
   | 'grid'

@@ -197,22 +197,23 @@ export interface Dispatcher {
   subscribe(fn: () => void): () => void;
 
   /**
-   * Snapshot of the currently active gesture, for surfaces (chrome-caps
-   * visibility rules, debug HUDs) that need to react to "what gesture
+   * Snapshot of the currently active action, for surfaces (chrome-caps
+   * visibility rules, debug HUDs) that need to react to "what action
    * is in flight right now."
    *
    * - `kind` — the `OngoingHandle.kind` reported by the in-flight
-   *   handle (e.g. `'marquee'`, `'move'`). `null` when no gesture is
+   *   handle (e.g. `'marquee'`, `'move'`). `null` when no action is
    *   in flight OR the handle didn't declare a kind.
    * - `id` — the dispatcher's internal `gestureId` (`pointer-mouse`,
-   *   `key-held-Space`, …). `null` when no gesture is in flight.
+   *   `key-held-Space`, …) — the pointer/key channel the action rode
+   *   in on. `null` when no action is in flight.
    *
    * When multiple handles are in flight simultaneously (e.g. a key-held
-   * gesture overlapping a pointer gesture), the most-recently-started
+   * action overlapping a pointer action), the most-recently-started
    * handle wins. This matches user intent: the latest interaction is
    * the one consumers care about.
    */
-  getActiveGesture(): { kind: string | null; id: string | null };
+  getActiveAction(): { kind: string | null; id: string | null };
 
   /**
    * Start an ongoing action driven by UI (not a gesture). Builds an
@@ -796,7 +797,7 @@ export function createDispatcher(opts?: {
     return () => { subscribers.delete(fn); };
   }
 
-  function getActiveGesture(): { kind: string | null; id: string | null } {
+  function getActiveAction(): { kind: string | null; id: string | null } {
     // The most-recently-started in-flight handle wins. `Map` preserves
     // insertion order; each gestureId is set exactly once (any pump
     // events `set` only on the initial `start`, and `delete` on end),
@@ -906,7 +907,7 @@ export function createDispatcher(opts?: {
     inFlight,
     getInFlightHandles,
     subscribe,
-    getActiveGesture,
+    getActiveAction,
     beginUiOngoing,
   };
 }
