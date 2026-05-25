@@ -4,7 +4,6 @@ import {
   gestureIs,
   gesturing,
   selectionAtLeast,
-  selectionIs,
 } from './conditions';
 
 /**
@@ -25,7 +24,11 @@ export const defaultVisibilityRules: VisibilityRules = {
   // shows per-object corners; multi mode shows union-bounds corners
   // (the affordance's `pickRenderTarget` picks the appropriate target).
   'selection.resize-handles':  selectionAtLeast(1).andNot(gesturing),
-  'selection.rotation-handle': selectionIs(1).and(focused).andNot(gesturing),
+  // Rotation handle visible whenever any selection is focused — single
+  // mode pivots around the selected node's center; multi mode pivots
+  // around the union AABB center (the rotation action's
+  // `useUnionPivot: ids.length > 1` branch handles the dispatch).
+  'selection.rotation-handle': selectionAtLeast(1).and(focused).andNot(gesturing),
 
   // Transient gesture chrome — only shown during the matching gesture.
   'gesture.marquee':           gestureIs('marquee'),

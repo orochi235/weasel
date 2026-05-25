@@ -161,14 +161,16 @@ describe('chrome-caps / defaults table', () => {
     expect(resolveVisibility(undefined, multi)('selection.resize-handles')).toBe(true);
   });
 
-  it('selection.rotation-handle needs focus + single selection + idle', () => {
+  it('selection.rotation-handle needs focus + at least one selection + idle', () => {
     const f = (over: Partial<ChromeCtx>) =>
       resolveVisibility(undefined, ctx({ selection: [NID('a')], focused: true, ...over }))(
         'selection.rotation-handle',
       );
     expect(f({})).toBe(true);
     expect(f({ focused: false })).toBe(false);
-    expect(f({ selection: [NID('a'), NID('b')] })).toBe(false);
+    // Multi-selection: union-pivot rotation. The rotation action's
+    // `useUnionPivot: ids.length > 1` branch drives it.
+    expect(f({ selection: [NID('a'), NID('b')] })).toBe(true);
     expect(f({ gesture: { kind: 'move', id: 'g1' } })).toBe(false);
   });
 

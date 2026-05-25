@@ -1437,6 +1437,12 @@ function EditorWithSharedScene({
               // Mode tint sits above scene/grid but doesn't paint over the
               // page rect — see workspaceTintLayer above.
               modeTint: { layer: workspaceTintLayer, after: 'grid' },
+              // Selection overlay: opt into the rotation handle. The kit
+              // defaults this to off (only paint corner-resize handles);
+              // apps/draw wants rotate as a first-class affordance in both
+              // single-select and multi-select (chrome-caps gates the
+              // visibility — see `selection.rotation-handle`).
+              selectionOverlay: { handles: { size: 8 }, rotationHandle: true },
             }}
             decorationLayer={modality.decorationLayer}
             alphaFor={modality.scopingDim.alphaFor}
