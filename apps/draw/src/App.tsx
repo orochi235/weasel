@@ -49,7 +49,10 @@ import {
   type NodeId,
   type View,
   type RenderLayer,
+  type DrawCommand,
   fitViewToBounds,
+  viewToTransform,
+  worldToScreen,
   ActiveToolContextProvider,
   useActiveToolContext,
 } from '@orochi235/weasel';
@@ -1153,7 +1156,6 @@ function EditorWithSharedScene({
     }
     return tid;
   }, [modality.machine, modeId, scene]);
-  const tintDirection = modality.machine.registry.current().workspace?.gradient ?? 'bottom-up';
 
   // ── Modality keyboard handler ─────────────────────────────────────────────
   // Runs at capture phase so it intercepts Escape before the kit's
@@ -1276,6 +1278,87 @@ function EditorWithSharedScene({
     hostRef,
   });
 
+  // Mode-tint layer — screen-space wash over the workspace area surrounding
+  // the page, leaving the page itself uncovered. Reads the active mode's
+  // `workspace.tint` from the modality registry on every paint; emits
+  // nothing when the active mode has no tint (normal). The "punch a hole
+  // around the page" pattern is four screen-space rects (top / bottom /
+  // left / right of the page rect's screen-space projection). Each strip
+  // carries a linear gradient that fades from full tint at the outer
+  // canvas edge to transparent at the page edge.
+  const TINT_ALPHA = 0.4; // bolder than the spec's 0.12 default so the
+                          // tint reads clearly through stripe background.
+  const workspaceTintLayer = useMemo<RenderLayer<unknown>>(() => ({
+    id: 'mode-tint',
+    label: 'Mode tint',
+    space: 'screen',
+    draw: (_data, view, dims) => {
+      const tint = modality.machine.registry.current().workspace?.tint;
+      if (!tint || tint === 'transparent') return [];
+
+      // Project the page rect (world (0,0)→(paper.w,paper.h)) into screen.
+      const t = viewToTransform(view);
+      const [sx0, sy0] = worldToScreen(0, 0, t);
+      const [sx1, sy1] = worldToScreen(paper.width, paper.height, t);
+      const px = Math.min(sx0, sx1);
+      const py = Math.min(sy0, sy1);
+      const pw = Math.abs(sx1 - sx0);
+      const ph = Math.abs(sy1 - sy0);
+
+      // Clamp the page rect to the canvas dims so the surrounding rects
+      // don't have negative dimensions when the page is fully off-screen.
+      const pl = Math.max(0, px);
+      const pt = Math.max(0, py);
+      const pr = Math.min(dims.width, px + pw);
+      const pb = Math.min(dims.height, py + ph);
+
+      const fadeStops = [
+        { offset: 0, color: tint },
+        { offset: 1, color: 'transparent' },
+      ];
+      const solid = { fill: 'solid' as const, color: tint, opacity: TINT_ALPHA };
+
+      // If the page is entirely outside the canvas, tint the whole viewport
+      // with solid fill (no edge to fade toward).
+      if (pr <= pl || pb <= pt) {
+        return [
+          { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: dims.width, height: dims.height },
+            fill: solid },
+        ];
+      }
+
+      // Four surround rects, each with a linear gradient fading from the
+      // outer canvas edge (full tint) to the adjacent page edge (transparent).
+      const cmds: DrawCommand[] = [];
+      const pushFade = (
+        x: number, y: number, w: number, h: number,
+        from: { x: number; y: number }, to: { x: number; y: number },
+      ): void => {
+        if (w <= 0 || h <= 0) return;
+        cmds.push({
+          kind: 'path',
+          path: { kind: 'rect', x, y, width: w, height: h },
+          fill: {
+            fill: 'linear-gradient',
+            from,
+            to,
+            stops: fadeStops,
+            opacity: TINT_ALPHA,
+          },
+        });
+      };
+      // top: full → transparent going downward toward the page top
+      pushFade(0, 0, dims.width, pt, { x: 0, y: 0 }, { x: 0, y: pt });
+      // bottom: full → transparent going upward toward the page bottom
+      pushFade(0, pb, dims.width, dims.height - pb, { x: 0, y: dims.height }, { x: 0, y: pb });
+      // left: full → transparent going rightward toward the page left edge
+      pushFade(0, pt, pl, pb - pt, { x: 0, y: 0 }, { x: pl, y: 0 });
+      // right: full → transparent going leftward toward the page right edge
+      pushFade(pr, pt, dims.width - pr, pb - pt, { x: dims.width, y: 0 }, { x: pr, y: 0 });
+      return cmds;
+    },
+  }), [modality.machine, paper.width, paper.height]);
+
   return (
     <ActiveToolContextProvider>
     <div className="wd-app">
@@ -1306,7 +1389,7 @@ function EditorWithSharedScene({
           )}
           <ActiveSwatches />
         </div>
-        <div className="wd-canvas-host" ref={hostRef} data-mode={modeId} data-tint-direction={tintDirection} data-alt-held={altHeld ? 'true' : undefined}>
+        <div className="wd-canvas-host" ref={hostRef} data-mode={modeId} data-alt-held={altHeld ? 'true' : undefined}>
           <OpacityHud percent={opacityScrubPercent} />
           <ModeBreadcrumb
             modeId={modeId}
@@ -1351,6 +1434,9 @@ function EditorWithSharedScene({
                   },
                 },
               } : {}),
+              // Mode tint sits above scene/grid but doesn't paint over the
+              // page rect — see workspaceTintLayer above.
+              modeTint: { layer: workspaceTintLayer, after: 'grid' },
             }}
             decorationLayer={modality.decorationLayer}
             alphaFor={modality.scopingDim.alphaFor}
