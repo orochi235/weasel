@@ -3,7 +3,7 @@
  *  `weasel-modes` itself uses. */
 export const ALL_TAGS = [
   'navigation',
-  'selection',
+  'creates-selection',
   'creates-paths',
   'creates-shapes',
   'creates-text',

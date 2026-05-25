@@ -41,7 +41,7 @@ export function useLassoTool(
   return useMemo(() => {
     return defineTool<undefined>({
       id: 'lasso',
-      capabilities: ['selection'],
+      capabilities: ['creates-selection'],
       hookName: 'useLassoTool',
       ...(options.keybinding === null ? {} : { keybinding: options.keybinding ?? { key: 'L' } }),
       cursor: 'crosshair',

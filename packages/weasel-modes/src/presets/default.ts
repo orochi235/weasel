@@ -4,7 +4,7 @@ export const NORMAL: ModeDefinition = {
   id: 'normal',
   kind: 'soft',
   allows: [
-    'selection',
+    'creates-selection',
     'creates-paths',
     'creates-shapes',
     'creates-text',
@@ -29,7 +29,7 @@ export const ISOLATION: ModeDefinition = {
   id: 'isolation',
   kind: 'soft',
   allows: [
-    'selection',
+    'creates-selection',
     'creates-paths',
     'creates-shapes',
     'creates-text',

@@ -25,9 +25,9 @@ describe('Tool.bindings (Phase 1 additive)', () => {
 
 describe('Tool.capabilities', () => {
   it('accepts CapabilityTag[] and is optional', () => {
-    const tagged: Tool = { id: 'a', capabilities: ['selection'] as CapabilityTag[] };
+    const tagged: Tool = { id: 'a', capabilities: ['creates-selection'] as CapabilityTag[] };
     const untagged: Tool = { id: 'b' };
-    expect(tagged.capabilities).toEqual(['selection']);
+    expect(tagged.capabilities).toEqual(['creates-selection']);
     expect(untagged.capabilities).toBeUndefined();
   });
 });
