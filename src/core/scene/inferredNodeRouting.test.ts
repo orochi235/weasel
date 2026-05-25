@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { inferredNodeKinds, defaultNodeKinds } from './defaultNodeKinds';
-import { createNodeKindRegistry } from './nodeKindRegistry';
+import { inferredNodeRouting, defaultNodeRouting } from './defaultNodeRouting';
+import { createNodeRouting } from './NodeRouting';
 
-describe('inferredNodeKinds', () => {
+describe('inferredNodeRouting', () => {
   function classify(data: unknown): string {
-    const r = createNodeKindRegistry();
-    for (const k of inferredNodeKinds) r.register(k);
+    const r = createNodeRouting();
+    for (const k of inferredNodeRouting) r.register(k);
     return r.classify(data);
   }
 
@@ -34,9 +34,9 @@ describe('inferredNodeKinds', () => {
     expect(classify({ text: undefined })).toBe('unknown');
   });
 
-  it('defaultNodeKinds still matches by data.kind tag', () => {
-    const r = createNodeKindRegistry();
-    for (const k of defaultNodeKinds) r.register(k);
+  it('defaultNodeRouting still matches by data.kind tag', () => {
+    const r = createNodeRouting();
+    for (const k of defaultNodeRouting) r.register(k);
     expect(r.classify({ kind: 'rect' })).toBe('rect');
     expect(r.classify({ kind: 'pen' })).toBe('pen');
   });

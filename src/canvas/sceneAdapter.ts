@@ -34,7 +34,7 @@ import {
   polygonIntersectsRect,
 } from 'features/paths/polygonHitTestRect';
 import type { Path } from 'features/paths/types';
-import { findShapeSilhouette } from './shapePainters';
+import { findShapeSilhouette } from './NodeShape';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';
 import { translateRectPose } from 'features/groups/composePose';
 import type { Bounds } from '../core/viewport/fitViewToBounds';

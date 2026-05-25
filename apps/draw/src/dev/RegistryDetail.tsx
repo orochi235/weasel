@@ -1381,7 +1381,7 @@ function ShapeKindDetail({
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
       <dl className={s.detailList}>
-        <dt>facet</dt><dd><KindBadge label={entry.facet} /></dd>
+        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
         <dt>kind</dt><dd><KindBadge label="shape" /></dd>
         {entry.tool && (
           <>
@@ -1423,7 +1423,7 @@ function RoutingKindDetail({
         <h2 className={s.detailHeading}>{entry.id}</h2>
       </div>
       <dl className={s.detailList}>
-        <dt>facet</dt><dd><KindBadge label={entry.facet} /></dd>
+        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
         <dt>kind</dt><dd><KindBadge label="routing-kind" /></dd>
         <dt>source</dt><dd><KindBadge label={entry.source} /></dd>
         {entry.shapeKindId && (

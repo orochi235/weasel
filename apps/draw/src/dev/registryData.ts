@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@orochi235/weasel';
-import { defaultNodeKinds, type NodeKind } from '@orochi235/weasel';
+import { defaultNodeRouting, type NodeRoutingEntry } from '@orochi235/weasel';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
@@ -158,10 +158,10 @@ export interface ActionEntry {
 
 export interface ShapeKindEntry {
   kind: 'shapeKind';
-  /** Which facet this entry belongs to. Always `'shape'` for ShapeKindEntry —
-   *  the field exists so the inspector can group entries by facet
+  /** Which trait this entry belongs to. Always `'shape'` for ShapeKindEntry —
+   *  the field exists so the inspector can group entries by trait
    *  regardless of `kind`. */
-  facet: 'shape';
+  trait: 'shape';
   id: string;
   label: string;
   /** Id of the tool that mints objects of this kind (`rect` → `rect`).
@@ -176,10 +176,10 @@ export interface ShapeKindEntry {
 
 export interface RoutingKindEntry {
   kind: 'routingKind';
-  facet: 'routing';
+  trait: 'routing';
   id: string;          // the kind name
-  label: string;       // = name (NodeKind v1 has no separate display label)
-  /** Provenance of this entry. `'default'` = present in `defaultNodeKinds`
+  label: string;       // = name (NodeRoutingEntry v1 has no separate display label)
+  /** Provenance of this entry. `'default'` = present in `defaultNodeRouting`
    *  with the same `matches` reference. `'override'` = name present in
    *  defaults but `matches` differs (consumer replaced it). `'consumer'`
    *  = name not in defaults. */
@@ -289,7 +289,7 @@ export function collectMeta(): readonly MetaEntry[] {
 }
 
 export type TreeCategory =
-  | 'tools' | 'actions' | 'shapeKinds' | 'routingKinds' | 'bundles'
+  | 'tools' | 'actions' | 'shape' | 'routing' | 'bundles'
   | 'icons' | 'ops'
   | 'phases' | 'gestures' | 'phaseOutputs'
   | 'hotkeyTriggers' | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
@@ -508,14 +508,14 @@ export function collectGroups(
   return out;
 }
 
-export function collectShapeKinds(
+export function collectShapeTrait(
   tools: readonly ToolEntry[] = [],
 ): readonly ShapeKindEntry[] {
   const hookByToolId = new Map<string, string>();
   for (const t of tools) if (t.hookName) hookByToolId.set(t.id, t.hookName);
   return SHAPE_KIND_IDS.map((id) => ({
     kind: 'shapeKind',
-    facet: 'shape',
+    trait: 'shape',
     id,
     label: id,
     tool: id,
@@ -523,16 +523,16 @@ export function collectShapeKinds(
   }));
 }
 
-export function collectRoutingKinds(
-  live?: readonly NodeKind[],
+export function collectRoutingTrait(
+  live?: readonly NodeRoutingEntry[],
 ): readonly RoutingKindEntry[] {
   const shapeKindSet = new Set<string>(SHAPE_KIND_IDS);
 
   // If no live registry was supplied, every default entry is 'default'.
   if (!live) {
-    return defaultNodeKinds.map((k) => ({
+    return defaultNodeRouting.map((k) => ({
       kind: 'routingKind',
-      facet: 'routing',
+      trait: 'routing',
       id: k.name,
       label: k.name,
       source: 'default',
@@ -542,11 +542,11 @@ export function collectRoutingKinds(
 
   // With a live registry, classify each entry by source.
   const out: RoutingKindEntry[] = [];
-  const liveByName = new Map<string, NodeKind>();
+  const liveByName = new Map<string, NodeRoutingEntry>();
   for (const k of live) liveByName.set(k.name, k);
 
   // Defaults first, in their declared order.
-  for (const def of defaultNodeKinds) {
+  for (const def of defaultNodeRouting) {
     const liveEntry = liveByName.get(def.name);
     let source: RoutingKindEntry['source'];
     if (!liveEntry) source = 'default';                       // not registered live but still part of defaults; surface as 'default'
@@ -554,7 +554,7 @@ export function collectRoutingKinds(
     else source = 'override';
     out.push({
       kind: 'routingKind',
-      facet: 'routing',
+      trait: 'routing',
       id: def.name,
       label: def.name,
       source,
@@ -563,12 +563,12 @@ export function collectRoutingKinds(
   }
 
   // Consumer-only kinds at the end.
-  const defaultNames = new Set(defaultNodeKinds.map((k) => k.name));
+  const defaultNames = new Set(defaultNodeRouting.map((k) => k.name));
   for (const liveK of live) {
     if (defaultNames.has(liveK.name)) continue;
     out.push({
       kind: 'routingKind',
-      facet: 'routing',
+      trait: 'routing',
       id: liveK.name,
       label: liveK.name,
       source: 'consumer',

@@ -62,14 +62,14 @@ describe('RegistryDetail', () => {
   });
 
   it('renders a ShapeKind entry with id', () => {
-    const entry: TreeEntry = { kind: 'shapeKind', id: 'rect', label: 'rect', facet: 'shape' };
+    const entry: TreeEntry = { kind: 'shapeKind', id: 'rect', label: 'rect', trait: 'shape' };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getByText('rect')).toBeTruthy();
   });
 
   it('renders a RoutingKind entry with id and source', () => {
     const entry: TreeEntry = {
-      kind: 'routingKind', id: 'rect', label: 'rect', facet: 'routing', source: 'default', shapeKindId: 'rect',
+      kind: 'routingKind', id: 'rect', label: 'rect', trait: 'routing', source: 'default', shapeKindId: 'rect',
     };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);
     expect(screen.getAllByText('rect').length).toBeGreaterThan(0);

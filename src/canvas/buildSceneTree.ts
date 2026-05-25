@@ -1,6 +1,6 @@
 import type { DrawCommand, GroupDrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
-import { findShapeSilhouette } from './shapePainters';
+import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';
 
 interface HierarchicalAdapter<TNode, TPose> {

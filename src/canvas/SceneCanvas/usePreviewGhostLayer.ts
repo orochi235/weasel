@@ -15,7 +15,7 @@ import type { LayersMap } from '../Canvas';
 import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { ToolsApi } from 'tools/useTools';
-import { findShapeSilhouette } from '../shapePainters';
+import { findShapeSilhouette } from '../NodeShape';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 
 /** A source of in-flight preview state — either a tool from the tools

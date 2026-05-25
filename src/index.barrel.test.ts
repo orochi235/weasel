@@ -75,15 +75,15 @@ describe('kit barrel parity', () => {
     expect(missing, `BuiltinShapeToolId members missing from KIT_SHAPE_KINDS: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('exports defaultNodeKinds covering every KIT_SHAPE_KINDS entry', () => {
-    const kinds = (Barrel as Record<string, unknown>).defaultNodeKinds;
+  it('exports defaultNodeRouting covering every KIT_SHAPE_KINDS entry', () => {
+    const kinds = (Barrel as Record<string, unknown>).defaultNodeRouting;
     const shapeKinds = (Barrel as Record<string, unknown>).KIT_SHAPE_KINDS as readonly string[];
-    expect(Array.isArray(kinds), 'defaultNodeKinds must be exported as an array').toBe(true);
+    expect(Array.isArray(kinds), 'defaultNodeRouting must be exported as an array').toBe(true);
     const names = (kinds as { name: string }[]).map((k) => k.name);
     const missing = shapeKinds.filter((s) => !names.includes(s));
     expect(
       missing,
-      `KIT_SHAPE_KINDS entries missing from defaultNodeKinds: ${missing.join(', ')}`,
+      `KIT_SHAPE_KINDS entries missing from defaultNodeRouting: ${missing.join(', ')}`,
     ).toEqual([]);
   });
 
