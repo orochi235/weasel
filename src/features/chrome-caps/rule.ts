@@ -59,3 +59,58 @@ export function isWhenRule(r: Rule): r is { when: (ctx: RuleCtx) => boolean } {
 export function isSelector(r: Rule): r is Selector {
   return !isAllRule(r) && !isAnyRule(r) && !isNotRule(r) && !isWhenRule(r);
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Evaluator
+// ───────────────────────────────────────────────────────────────────────────
+
+function checkSelection(s: NonNullable<Selector['selection']>, ctx: RuleCtx): boolean {
+  if (s.empty !== undefined && (ctx.selection.length === 0) !== s.empty) return false;
+  if (s.is !== undefined && ctx.selection.length !== s.is) return false;
+  if (s.atLeast !== undefined && ctx.selection.length < s.atLeast) return false;
+  return true;
+}
+
+function checkMode(m: NonNullable<Selector['mode']>, ctx: RuleCtx): boolean {
+  if (typeof m === 'string') return ctx.mode === m;
+  if ('not' in m) return ctx.mode !== m.not;
+  if ('in' in m) return m.in.includes(ctx.mode);
+  return false;
+}
+
+function checkCapability(c: NonNullable<Selector['capability']>, ctx: RuleCtx): boolean {
+  if (typeof c === 'string') return ctx.allowedCapabilities.has(c);
+  if (Array.isArray(c)) return c.every((tag) => ctx.allowedCapabilities.has(tag));
+  if ('in' in c) return c.in.some((tag) => ctx.allowedCapabilities.has(tag));
+  if ('not' in c) return !ctx.allowedCapabilities.has(c.not);
+  return false;
+}
+
+function evaluateSelector(s: Selector, ctx: RuleCtx): boolean {
+  if (s.selection !== undefined && !checkSelection(s.selection, ctx)) return false;
+  if (s.mode !== undefined && !checkMode(s.mode, ctx)) return false;
+  if (s.capability !== undefined && !checkCapability(s.capability, ctx)) return false;
+  if (s.gesturing !== undefined && (ctx.action.kind !== null) !== s.gesturing) return false;
+  if (s.actionIs !== undefined && ctx.action.kind !== s.actionIs) return false;
+  if (s.modifierHeld !== undefined && !ctx.modifiers[s.modifierHeld]) return false;
+  if (s.focused !== undefined && ctx.focused !== s.focused) return false;
+  if (s.hovering !== undefined && (ctx.hover !== null) !== s.hovering) return false;
+  if (s.hoveringSelected !== undefined) {
+    const isHovSel = ctx.hover !== null && ctx.selection.includes(ctx.hover);
+    if (isHovSel !== s.hoveringSelected) return false;
+  }
+  if (s.zoomAtLeast !== undefined) {
+    const sx = ctx.view.scale.x, sy = ctx.view.scale.y;
+    const z = sx === sy ? sx : Math.sqrt(sx * sy);
+    if (z < s.zoomAtLeast) return false;
+  }
+  return true;
+}
+
+export function evaluate(rule: Rule, ctx: RuleCtx): boolean {
+  if (isAllRule(rule)) return rule.all.every((r) => evaluate(r, ctx));
+  if (isAnyRule(rule)) return rule.any.some((r) => evaluate(r, ctx));
+  if (isNotRule(rule)) return !evaluate(rule.not, ctx);
+  if (isWhenRule(rule)) return rule.when(ctx);
+  return evaluateSelector(rule, ctx);
+}
