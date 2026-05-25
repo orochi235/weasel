@@ -16,6 +16,8 @@ export default defineConfig({
     headless: true,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
   },
   // Playwright's built-in snapshot dir is NOT used. diff.ts manages its own
   // baselines/ directory so we have full control over diff thresholds and

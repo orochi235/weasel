@@ -13,6 +13,8 @@ export default defineConfig({
     headless: true,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
   },
   webServer: {
     command: 'npx vite --config vite.config.ts --port 5175',

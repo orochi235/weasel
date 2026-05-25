@@ -96,21 +96,46 @@ test('multi-delete + undo preserves paint order', async ({ page }) => {
   await page.waitForTimeout(300);
 
   const canvasHost = page.locator('.wd-canvas-host');
+  const canvasEl = canvasHost.locator('canvas').first();
+  // Dev HUDs (DispatchTracePanel, CursorCoordsHud, ModeStatusIndicator,
+  // pick-every overlay) are positioned over the canvas and their contents
+  // change between dispatches — Playwright element screenshots are
+  // pixel-clips of the viewport so they get captured regardless of DOM
+  // nesting. Hide every non-canvas sibling inside `.wd-canvas-host`, and
+  // the dispatch trace which lives elsewhere but is positioned over the
+  // canvas via fixed/absolute coords.
+  await page.evaluate(() => {
+    const host = document.querySelector('.wd-canvas-host');
+    if (host) {
+      for (const child of Array.from(host.children)) {
+        if (child.tagName !== 'CANVAS') (child as HTMLElement).style.display = 'none';
+      }
+    }
+    // DispatchTracePanel renders under a CSS-module class containing
+    // "barTitle"; walk up to its widget wrapper.
+    const title = document.querySelector('[class*="barTitle"]');
+    if (title) {
+      let w: HTMLElement | null = title as HTMLElement;
+      while (w && !/widget/i.test(w.className)) w = w.parentElement;
+      if (w) w.style.display = 'none';
+    }
+  });
+  await waitForRepaint(page);
   // Focus the canvas so keyboard input lands in the kit's keybinding handler.
-  await canvasHost.locator('canvas').first().click({ position: { x: 5, y: 5 } });
+  await canvasEl.click({ position: { x: 5, y: 5 } });
   // The click selects under the cursor; clear selection so the "before"
   // screenshot has no selection chrome.
   await page.keyboard.press('Escape');
   await waitForRepaint(page);
 
-  const bufBefore = await canvasHost.screenshot();
+  const bufBefore = await canvasEl.screenshot();
 
   await page.keyboard.press('ControlOrMeta+a');
   await waitForRepaint(page);
   await page.keyboard.press('Delete');
   await waitForRepaint(page);
 
-  const bufCleared = await canvasHost.screenshot();
+  const bufCleared = await canvasEl.screenshot();
   expect(
     Buffer.compare(bufBefore, bufCleared),
     'delete should visibly change the canvas',
@@ -124,7 +149,7 @@ test('multi-delete + undo preserves paint order', async ({ page }) => {
   await waitForRepaint(page);
   await page.waitForTimeout(150);
 
-  const bufAfter = await canvasHost.screenshot();
+  const bufAfter = await canvasEl.screenshot();
 
   // Pixel diff via pixelmatch. Tight tolerance — the fixed code should
   // round-trip perfectly; the regression shifts whole shapes around so
