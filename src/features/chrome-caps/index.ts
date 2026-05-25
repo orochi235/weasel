@@ -15,6 +15,9 @@ export type {
   VisibilityRules,
 } from './types';
 
+export type { Rule, Selector } from './rule';
+export type { RuleCtx, BuildRuleCtxArgs } from './ruleCtx';
+
 export {
   cond,
   when,
@@ -35,8 +38,17 @@ export {
   suppressed,
   modifierHeld,
   zoomAtLeast,
+  modeIs,
+  modeIn,
+  modeNot,
+  capabilityIs,
+  capabilityIn,
+  capabilityAll,
+  capabilityNot,
 } from './conditions';
 
+export { evaluate, ALWAYS, NEVER } from './rule';
+export { buildRuleCtx } from './ruleCtx';
 export { defaultVisibilityRules } from './defaults';
 export { resolveVisibility } from './resolve';
 export { buildChromeCtx, type BuildChromeCtxArgs } from './buildChromeCtx';
