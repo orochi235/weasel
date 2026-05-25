@@ -51,10 +51,12 @@ export interface PenEditState {
   activeHandle: { sub: number; anchor: number; side: 'in' | 'out' } | null;
   dirty: boolean;
   preConvert: { path: unknown; closed: boolean; params: unknown } | null;
-  /** Snapshot of the path-as-it-was on edit-mode entry (already a polygon —
-   *  if the obj was parametric, this is the converted form). Used as the
-   *  op's `from` for plain-path edits so undo restores the entry state. */
-  original: { path: unknown; closed: boolean };
+  /** Snapshot of the path-as-it-was at the start of the current gesture
+   *  (drag, click, or nudge keystroke). Used as the `from` of the
+   *  SetPathOp emitted on gesture completion so each pushed entry rewinds
+   *  only its own gesture, not the whole edit session. Null between
+   *  gestures. */
+  gestureBaseline: { path: unknown; closed: boolean; params: unknown } | null;
   /** In-flight marquee rect (world-space). Null when not dragging. */
   marquee: { x0: number; y0: number; x1: number; y1: number; additive: boolean } | null;
 }
