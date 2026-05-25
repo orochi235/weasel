@@ -240,10 +240,13 @@ export function PropertyColorInput(props: {
     }
   }
 
-  function dispatchOpacity(a: number, phase: 'input' | 'change' | 'blur'): void {
+  /** Slider commit uses pointer/key events rather than `onChange`. The range
+   *  input fires `change` on every value tick (per HTML spec), so commit-on-
+   *  change would emit one undo entry per tick during a drag. Pointer/key
+   *  end events give us true drag-end semantics. */
+  function dispatchOpacity(a: number, phase: 'input' | 'commit'): void {
     if ('onChange' in props && props.onChange) {
-      // Legacy path: single onChange call with composed hex8 color
-      if (phase !== 'blur') props.onChange(withAlpha01(hex8, a));
+      if (phase === 'input') props.onChange(withAlpha01(hex8, a));
       return;
     }
     if (phase === 'input') {
@@ -254,13 +257,10 @@ export function PropertyColorInput(props: {
       }
       return;
     }
+    // commit
     if (opacityCtrlRef.current) {
-      opacityCtrlRef.current.update({ alpha01: a });
       opacityCtrlRef.current.end('commit');
       opacityCtrlRef.current = null;
-    } else if (phase === 'change') {
-      const ctrl = actions?.begin(props.opacityActionId, { alpha01: a });
-      ctrl?.end('commit');
     }
   }
 
@@ -284,8 +284,10 @@ export function PropertyColorInput(props: {
         title="Opacity"
         aria-label="Opacity"
         onInput={(e) => dispatchOpacity(Number((e.target as HTMLInputElement).value) / 100, 'input')}
-        onChange={(e: ChangeEvent<HTMLInputElement>) => dispatchOpacity(Number(e.target.value) / 100, 'change')}
-        onBlur={() => dispatchOpacity(alpha01, 'blur')}
+        onPointerUp={() => dispatchOpacity(alpha01, 'commit')}
+        onPointerCancel={() => dispatchOpacity(alpha01, 'commit')}
+        onKeyUp={() => dispatchOpacity(alpha01, 'commit')}
+        onBlur={() => dispatchOpacity(alpha01, 'commit')}
       />
       <span className={s.alphaReadout}>{alphaPct}</span>
     </span>
