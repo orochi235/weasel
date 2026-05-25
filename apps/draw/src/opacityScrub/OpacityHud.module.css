@@ -1,0 +1,23 @@
+.hud {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  translate: -50% 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(20, 20, 20, 0.78);
+  color: #fff;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 200ms ease;
+}
+
+.hudHidden {
+  opacity: 0;
+}
+
+.hudVisible {
+  opacity: 1;
+}
