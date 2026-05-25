@@ -226,9 +226,9 @@ export type OngoingOverlay =
  *  on pointercancel / blur / escape). */
 export interface OngoingHandle {
   /**
-   * Optional logical gesture kind — a stable, human-readable tag the
-   * dispatcher exposes via `getActiveGesture()` for chrome-visibility
-   * rules and any other surface that wants to react to "what gesture
+   * Optional logical action kind — a stable, human-readable tag the
+   * dispatcher exposes via `getActiveAction()` for chrome-visibility
+   * rules and any other surface that wants to react to "what action
    * is currently in flight" without inspecting handles directly.
    *
    * Examples: `'marquee'`, `'lasso'`, `'move'`, `'resize'`, `'rotate'`,
@@ -238,9 +238,9 @@ export interface OngoingHandle {
    * `key-held-Space`, etc.) which keys per-pointer state and is not
    * meaningful to consumers.
    *
-   * When omitted, the gesture is "anonymous" — `getActiveGesture().kind`
+   * When omitted, the action is "anonymous" — `getActiveAction().kind`
    * reports `null` even though a handle is in flight. This is fine for
-   * gestures that don't have visible chrome of their own.
+   * actions that don't have visible chrome of their own.
    */
   kind?: string;
 
@@ -268,6 +268,16 @@ export interface OngoingHandle {
    */
   previewIds?(): Iterable<string> | null;
   previewPose?(id: string): unknown | null;
+
+  /**
+   * When `false`, the preview-ghost layer paints the ghost AND the
+   * source node stays visible at its committed pose. Defaults to
+   * `true` (move/resize/rotate semantics: ghost replaces the source
+   * during the gesture). Clone overrides to `false` so the original
+   * stays put and the ghost appears at the drag target.
+   */
+  previewHidesSource?: boolean;
+
   /**
    * Optional per-id preview *data*. Falls back to the committed
    * `node.data` when null/absent. Use when the gesture mutates

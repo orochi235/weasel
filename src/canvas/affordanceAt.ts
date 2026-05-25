@@ -209,25 +209,25 @@ export function buildAffordanceAt(
       }
     }
 
-    // -- Rotation handle (single selection only) --
-    if (state.selection.length === 1) {
-      const id = state.selection[0];
-      const b = state.boundsOf(id);
-      if (b) {
-        const { x, y, width, rotation = 0 } = b;
-        const cx = x + width / 2;
-        const cy = b.y + b.height / 2;
-        // Handle position: top-center, offset upward by `rotateDistance`.
-        const rawHx = x + width / 2;
-        const rawHy = y - rotateDistance;
-        const hw = rotateAround(rawHx, rawHy, cx, cy, rotation);
-        if (dist2(wx, wy, hw.x, hw.y) <= r2) {
-          return {
-            kind: 'rotate-handle',
-            fixedPoint: { x: cx, y: cy }, // pivot
-            targetIds: [id],
-          };
-        }
+    // -- Rotation handle --
+    // Single selection uses the leaf's own (possibly rotated) bounds;
+    // multi-selection uses the unrotated union AABB. Mirrors
+    // `pickTarget` in `src/affordances/rotationHandle.ts`.
+    const rotateTarget = pickResizeTarget(state);
+    if (rotateTarget) {
+      const { x, y, width, rotation = 0 } = rotateTarget.bounds;
+      const cx = x + width / 2;
+      const cy = rotateTarget.bounds.y + rotateTarget.bounds.height / 2;
+      // Handle position: top-center, offset upward by `rotateDistance`.
+      const rawHx = x + width / 2;
+      const rawHy = y - rotateDistance;
+      const hw = rotateAround(rawHx, rawHy, cx, cy, rotation);
+      if (dist2(wx, wy, hw.x, hw.y) <= r2) {
+        return {
+          kind: 'rotate-handle',
+          fixedPoint: { x: cx, y: cy }, // pivot
+          targetIds: [rotateTarget.id],
+        };
       }
     }
 

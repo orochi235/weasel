@@ -25,7 +25,7 @@ export {
   never,
   focused,
   gesturing,
-  gestureIs,
+  actionIs,
   selectionEmpty,
   selectionIs,
   selectionAtLeast,

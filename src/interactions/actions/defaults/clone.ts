@@ -122,6 +122,11 @@ export const cloneAction: Action & { requires: string[] } = {
 
       return {
         kind: 'clone',
+        // Clone: source stays visible at its committed pose; the ghost
+        // (rendered via previewIds/previewPose below) appears at the
+        // drag target. Opt out of the default "hide source" behavior
+        // move/resize/rotate use.
+        previewHidesSource: false,
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
           scratch.currentDelta = {

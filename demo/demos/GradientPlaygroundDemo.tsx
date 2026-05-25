@@ -101,6 +101,10 @@ export function GradientPlaygroundDemo() {
           height={H}
           className="ckd-canvas"
           scene={scene}
+          // No moveable scene content here; the demo's interactions are all on
+          // the `<HandleOverlay>` siblings. Disable pan + zoom so a stray drag
+          // doesn't translate the gradient out from under the handles.
+          viewport={{ pan: false, zoom: false }}
           layers={{
             scene: { drawOne: () => [] },
             gradient: { layer, after: 'scene' },

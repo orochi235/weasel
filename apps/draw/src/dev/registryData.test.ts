@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   collectIcons,
   collectBundles,
-  collectHotkeyTriggers,
   collectRoutingTrait,
   collectOpFactories,
   collectShapeTrait,
@@ -96,43 +95,3 @@ describe('collectRoutingTrait', () => {
   });
 });
 
-describe('collectHotkeyTriggers', () => {
-  it('derives entries from tool.offhand binding entries only', () => {
-    const actions = [
-      { id: 'tool.activate', defaultBinding: [
-        { spec: { kind: 'key', key: 'r' }, opts: { params: { toolId: 'rect' } } },
-      ] },
-      { id: 'tool.offhand', defaultBinding: [
-        { spec: { kind: 'key-held', key: ' ' }, opts: { params: { toolId: 'hand' } } },
-      ] },
-      { id: 'something.else', defaultBinding: { kind: 'key-held', key: 'a' } },
-    ];
-    const entries = collectHotkeyTriggers(actions);
-    expect(entries).toEqual([
-      { kind: 'hotkeyTrigger', id: 'hand', label: 'hand (Space)' },
-    ]);
-  });
-
-  it('skips tool.offhand entries whose spec is not key-held', () => {
-    const actions = [
-      { id: 'tool.offhand', defaultBinding: [
-        { spec: { kind: 'key', key: 'h' }, opts: { params: { toolId: 'hand' } } },
-      ] },
-    ];
-    expect(collectHotkeyTriggers(actions)).toHaveLength(0);
-  });
-
-  it('returns empty array when no actions are provided', () => {
-    expect(collectHotkeyTriggers([])).toHaveLength(0);
-  });
-
-  it('maps Space key to display label "Space"', () => {
-    const actions = [
-      { id: 'tool.offhand', defaultBinding: [
-        { spec: { kind: 'key-held', key: ' ' }, opts: { params: { toolId: 'hand' } } },
-      ] },
-    ];
-    const [entry] = collectHotkeyTriggers(actions);
-    expect(entry?.label).toBe('hand (Space)');
-  });
-});

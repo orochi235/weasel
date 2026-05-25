@@ -494,7 +494,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *    on by default; pass `false` to disable. They are wired by registering
      *    the kit's `viewport.pan` / `viewport.zoom` action descriptors with
      *    the actions registry — disabling via the `actions` prop
-     *    (`actions: { 'viewport.pan': null }`) also works and runs after this.
+     *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after this.
      *
      *  When omitted entirely, no hand/pinch tools are registered but the
      *  default wheel pan + Cmd+wheel/key zoom remain wired (canvas-first
@@ -1209,7 +1209,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       selection: sel,
       multiActive: sel.length > 1,
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-      gesture: dispatcher.getActiveGesture(),
+      action: dispatcher.getActiveAction(),
       hover: getHover(),
       view: currentViewRef.current,
       ...(suppressedForCapsRef.current !== undefined
@@ -1482,12 +1482,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       previewIdsExtra={() => {
         // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
         // OngoingHandles and merge each handle's previewIds() so source
-        // ids being ghosted by dispatcher-path actions (move, clone,
+        // ids being ghosted by dispatcher-path actions (move, resize,
         // rotate, etc.) get their committed paint hidden under the
         // ghost. Without this, post-Phase-14e-Task-3 the originals
         // would bleed through during drag.
+        //
+        // Handles that set `previewHidesSource: false` (clone, etc.)
+        // opt OUT — their ghost still paints via the preview-ghost
+        // layer, but the source stays visible at its committed home.
         const out: string[] = [];
         for (const handle of dispatcher.getInFlightHandles()) {
+          if (handle.previewHidesSource === false) continue;
           const ids = handle.previewIds?.();
           if (!ids) continue;
           for (const id of ids) out.push(id);

@@ -58,18 +58,18 @@ export const always: Condition = cond(() => true);
  *  `chromeVisibility={{ 'snap.guides': never }}`. */
 export const never: Condition = cond(() => false);
 
-// ─── Focus / gesture atoms ──────────────────────────────────────────
+// ─── Focus / action atoms ───────────────────────────────────────────
 
 /** Canvas surface currently focused (`useCanvasFocus().getFocused()`). */
 export const focused: Condition = cond((c) => c.focused);
 
-/** Any gesture currently in flight. */
-export const gesturing: Condition = cond((c) => c.gesture.kind !== null);
+/** Any action currently in flight (read: user is gesturing). */
+export const gesturing: Condition = cond((c) => c.action.kind !== null);
 
-/** Active gesture's kind matches `kind` (e.g. `gestureIs('move')`,
- *  `gestureIs('marquee')`). */
-export const gestureIs = (kind: string): Condition =>
-  cond((c) => c.gesture.kind === kind);
+/** Active action's kind matches `kind` (e.g. `actionIs('move')`,
+ *  `actionIs('marquee')`). */
+export const actionIs = (kind: string): Condition =>
+  cond((c) => c.action.kind === kind);
 
 // ─── Selection atoms ────────────────────────────────────────────────
 

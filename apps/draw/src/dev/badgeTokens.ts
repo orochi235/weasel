@@ -184,7 +184,7 @@ export const KIND_BADGE_PROPS: Omit<BadgeProps, 'children'> = {
 
 const KIND_VALUES = [
   'tool', 'action', 'shape', 'bundle', 'icon', 'op factory', 'public export',
-  'phase', 'gesture', 'phase output', 'op kind', 'hotkey trigger', 'slot',
+  'phase', 'gesture', 'phase output', 'op kind', 'slot',
   'route target', 'modifier set', 'group',
 ] as const;
 
@@ -223,38 +223,12 @@ const routeTokenSet: RouteTokenSet = {
   entries: ROUTE_SAMPLES.map((value) => ({ value, props: { route: value } })),
 };
 
-// ── hotkey trigger ─────────────────────────────────────────────────────────
-
-/** Glyph mapping per `HotkeyTrigger`. Drives a `<Keycaps>` so the inspector
- *  renders these the same way as keyboard shortcuts elsewhere in the app. */
-export const HOTKEY_TRIGGER_GLYPHS: Readonly<Record<string, readonly string[]>> = {
-  space: ['␣'],
-  alt: ['⌥'],
-  ctrl: ['⌃'],
-  meta: ['⌘'],
-  shift: ['⇧'],
-};
-
-const hotkeyTriggerTokenSet: KeycapsTokenSet = {
-  kind: 'keycap',
-  id: 'hotkey-trigger',
-  label: 'Hotkey trigger',
-  description:
-    'Press-and-hold trigger keys a `ToolDef.hotkey` may declare. Rendered as '
-    + 'keycaps so they match shortcut formatting elsewhere in the inspector.',
-  entries: Object.entries(HOTKEY_TRIGGER_GLYPHS).map(([value, parts]) => ({
-    value,
-    props: { parts },
-  })),
-};
-
 export const TOKEN_SETS: readonly TokenSet[] = [
   slotTokenSet,
   gestureTokenSet,
   phaseTokenSet,
   routeTokenSet,
   booleanTokenSet,
-  hotkeyTriggerTokenSet,
   bundleTokenSet,
   kindTokenSet,
 ];

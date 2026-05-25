@@ -3,7 +3,7 @@ import { asNodeId, type NodeId } from '../../core/scene/types';
 import type { ChromeCtx, Condition } from './types';
 import {
   when, and, or, not, always, never,
-  focused, gesturing, gestureIs,
+  focused, gesturing, actionIs,
   selectionEmpty, selectionIs, selectionAtLeast, multiActive,
   hovering, hoveringSelected, suppressed,
   modifierHeld, zoomAtLeast,
@@ -18,7 +18,7 @@ function ctx(over: Partial<ChromeCtx> = {}): ChromeCtx {
     multiActive: false,
     suppressedIds: new Set(),
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-    gesture: { kind: null, id: null },
+    action: { kind: null, id: null },
     hover: null,
     view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     ...over,
@@ -33,11 +33,11 @@ describe('chrome-caps / atoms', () => {
     expect(focused(ctx({ focused: false }))).toBe(false);
   });
 
-  it('gesturing / gestureIs', () => {
+  it('gesturing / actionIs', () => {
     expect(gesturing(ctx())).toBe(false);
-    expect(gesturing(ctx({ gesture: { kind: 'move', id: 'g1' } }))).toBe(true);
-    expect(gestureIs('move')(ctx({ gesture: { kind: 'move', id: 'g1' } }))).toBe(true);
-    expect(gestureIs('marquee')(ctx({ gesture: { kind: 'move', id: 'g1' } }))).toBe(false);
+    expect(gesturing(ctx({ action: { kind: 'move', id: 'g1' } }))).toBe(true);
+    expect(actionIs('move')(ctx({ action: { kind: 'move', id: 'g1' } }))).toBe(true);
+    expect(actionIs('marquee')(ctx({ action: { kind: 'move', id: 'g1' } }))).toBe(false);
   });
 
   it('selection atoms', () => {
@@ -136,7 +136,7 @@ describe('chrome-caps / fluent chains', () => {
     expect(rule(ctx({
       selection: [NID('a')],
       focused: true,
-      gesture: { kind: 'move', id: 'g1' },
+      action: { kind: 'move', id: 'g1' },
     }))).toBe(false);
   });
 });
@@ -152,7 +152,7 @@ describe('chrome-caps / defaults table', () => {
   it('selection.resize-handles hidden during gesture', () => {
     const sel = ctx({ selection: [NID('a')], focused: true });
     expect(resolveVisibility(undefined, sel)('selection.resize-handles')).toBe(true);
-    const gest = ctx({ selection: [NID('a')], focused: true, gesture: { kind: 'move', id: 'g1' } });
+    const gest = ctx({ selection: [NID('a')], focused: true, action: { kind: 'move', id: 'g1' } });
     expect(resolveVisibility(undefined, gest)('selection.resize-handles')).toBe(false);
   });
 
@@ -161,20 +161,22 @@ describe('chrome-caps / defaults table', () => {
     expect(resolveVisibility(undefined, multi)('selection.resize-handles')).toBe(true);
   });
 
-  it('selection.rotation-handle needs focus + single selection + idle', () => {
+  it('selection.rotation-handle needs focus + at least one selection + idle', () => {
     const f = (over: Partial<ChromeCtx>) =>
       resolveVisibility(undefined, ctx({ selection: [NID('a')], focused: true, ...over }))(
         'selection.rotation-handle',
       );
     expect(f({})).toBe(true);
     expect(f({ focused: false })).toBe(false);
-    expect(f({ selection: [NID('a'), NID('b')] })).toBe(false);
-    expect(f({ gesture: { kind: 'move', id: 'g1' } })).toBe(false);
+    // Multi-selection: union-pivot rotation. The rotation action's
+    // `useUnionPivot: ids.length > 1` branch drives it.
+    expect(f({ selection: [NID('a'), NID('b')] })).toBe(true);
+    expect(f({ action: { kind: 'move', id: 'g1' } })).toBe(false);
   });
 
-  it('gesture.marquee only visible during marquee gesture', () => {
-    const f = (g: { kind: string | null; id: string | null }) =>
-      resolveVisibility(undefined, ctx({ gesture: g }))('gesture.marquee');
+  it('action.marquee only visible during marquee action', () => {
+    const f = (a: { kind: string | null; id: string | null }) =>
+      resolveVisibility(undefined, ctx({ action: a }))('action.marquee');
     expect(f({ kind: null, id: null })).toBe(false);
     expect(f({ kind: 'marquee', id: 'g1' })).toBe(true);
     expect(f({ kind: 'move', id: 'g1' })).toBe(false);
@@ -203,9 +205,9 @@ describe('chrome-caps / defaults table', () => {
 
   it('defaults table snapshot — keys', () => {
     expect(Object.keys(defaultVisibilityRules).sort()).toEqual([
-      'gesture.lasso',
-      'gesture.marquee',
-      'gesture.move-ghosts',
+      'action.lasso',
+      'action.marquee',
+      'action.move-ghosts',
       'selection.outline',
       'selection.resize-handles',
       'selection.rotation-handle',

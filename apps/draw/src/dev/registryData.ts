@@ -18,7 +18,6 @@ export type TreeEntry =
   | GestureEntry
   | PhaseOutputEntry
   | OpKindEntry
-  | HotkeyTriggerEntry
   | SlotEntry
   | RouteTargetEntry
   | RouteEntry
@@ -149,10 +148,8 @@ export interface ActionEntry {
    *  `ToolEntry.callbacks` for plugin/source caveats. */
   callbacks?: readonly CallbackRef[];
   /** Raw `Action.defaultBinding` snapshot — intentionally typed as `unknown`
-   *  so callers must narrow before use. Currently consumed by
-   *  `collectHotkeyTriggers` and `HotkeyTriggerDetail` to render
-   *  per-tool entries on the consolidated `tool.offhand` action as
-   *  Powerline strips. */
+   *  so callers must narrow before use. Retained for future inspector
+   *  consumers (action-detail Powerline strips, etc.). */
   defaultBinding?: unknown;
 }
 
@@ -231,6 +228,19 @@ export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
   'keyDown', 'keyUp',
 ];
 
+/** Catalog entries for the inspector. Includes both legacy
+ *  `GestureChannels` keys (used by phase-grammar tools) and the modern
+ *  `GestureSpec.kind` values (used by action `defaultBinding`s). Listing
+ *  both lets the inspector surface every binding source on a single
+ *  catalog page. */
+export const GESTURE_CATALOG_KEYS: readonly string[] = [
+  // Legacy phase channels:
+  'click', 'pointerDown', 'dblTap', 'drag', 'wheel',
+  'keyDown', 'keyUp',
+  // Modern action-spec kinds the legacy list doesn't cover:
+  'doubleClick', 'key', 'key-held', 'multiTouch', 'multiTouchTap', 'pointerdown',
+];
+
 /** Non-gesture `PhaseDef` slots — the tool emits/declares these rather than
  *  reacting to them. Strictly typed against `PhaseOutputs`. */
 export const PHASE_OUTPUT_KEYS: readonly (keyof PhaseOutputs)[] = [
@@ -239,7 +249,11 @@ export const PHASE_OUTPUT_KEYS: readonly (keyof PhaseOutputs)[] = [
 
 export interface GestureEntry {
   kind: 'gesture';
-  id: keyof GestureChannels;
+  /** Either a legacy `GestureChannels` key (phase grammar) or a modern
+   *  `GestureSpec.kind` value (action grammar). Strictly typed via a
+   *  union of both vocabularies so the inspector can surface every
+   *  binding source on the catalog page. */
+  id: string;
   label: string;
 }
 
@@ -258,8 +272,6 @@ export const OP_KIND_NAMES: readonly string[] = [
 
 export interface OpKindEntry { kind: 'opKind'; id: string; label: string }
 
-
-export interface HotkeyTriggerEntry { kind: 'hotkeyTrigger'; id: string; label: string }
 
 /** Mounting slot for a tool — `registry` covers active/hotkey routing,
  *  `ambient` is the always-on slot (resize / rotate / wheel-zoom). */
@@ -292,7 +304,7 @@ export type TreeCategory =
   | 'tools' | 'actions' | 'shape' | 'routing' | 'bundles'
   | 'icons' | 'ops'
   | 'phases' | 'gestures' | 'phaseOutputs'
-  | 'hotkeyTriggers' | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
+  | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
   | 'meta';
 
 export interface TreeCategoryNode {
@@ -386,16 +398,45 @@ export function countForEntry(
       return entry.id === 'initial'
         ? tools.length
         : tools.filter((t) => t.phases.engaged !== undefined).length;
-    case 'gesture':
-      return tools.filter((t) =>
-        t.phases.initial.gestures[entry.id] || t.phases.engaged?.gestures[entry.id]
-      ).length;
+    case 'gesture': {
+      // Count both phase-grammar subscribers (legacy channels on tool
+      // PhaseDefs) AND action bindings (modern dispatcher) so the sidebar
+      // reflects every source of bindings.
+      const legacyAliases: Readonly<Record<string, readonly string[]>> = {
+        click: ['click'], pointerDown: ['pointerDown'], dblTap: ['dblTap'],
+        drag: ['drag'], wheel: ['wheel'], keyDown: ['keyDown'], keyUp: ['keyUp'],
+        doubleClick: ['dblTap'], key: ['keyDown', 'keyUp'], pointerdown: ['pointerDown'],
+      };
+      const specAliases: Readonly<Record<string, readonly string[]>> = {
+        click: ['click'], pointerDown: ['pointerdown'], dblTap: ['doubleClick'],
+        drag: ['drag'], wheel: ['wheel'], keyDown: ['key', 'key-held'], keyUp: [],
+        doubleClick: ['doubleClick'], key: ['key'], 'key-held': ['key-held'],
+        multiTouch: ['multiTouch'], multiTouchTap: ['multiTouchTap'], pointerdown: ['pointerdown'],
+      };
+      const channels = legacyAliases[entry.id] ?? [];
+      const specKinds = new Set(specAliases[entry.id] ?? []);
+      const toolCount = tools.filter((t) => {
+        const init = t.phases.initial.gestures as unknown as Record<string, unknown>;
+        const eng = (t.phases.engaged?.gestures ?? {}) as unknown as Record<string, unknown>;
+        return channels.some((c) => init[c] || eng[c]);
+      }).length;
+      let actionCount = 0;
+      for (const a of actions) {
+        const raw = (a as { defaultBinding?: unknown }).defaultBinding;
+        if (!raw) continue;
+        const entries: unknown[] = Array.isArray(raw) ? raw : [raw];
+        for (const e of entries) {
+          const obj = e as { spec?: { kind?: string }; kind?: string };
+          const k = (obj.spec ?? obj).kind;
+          if (typeof k === 'string' && specKinds.has(k)) actionCount += 1;
+        }
+      }
+      return toolCount + actionCount;
+    }
     case 'phaseOutput':
       return tools.filter((t) =>
         t.phases.initial.outputs[entry.id] || t.phases.engaged?.outputs[entry.id]
       ).length;
-    case 'hotkeyTrigger':
-      return tools.filter((t) => t.hotkey === entry.id).length;
     case 'slot':
       return tools.filter((t) => t.slot === entry.id).length;
     case 'route':
@@ -421,42 +462,11 @@ export function collectPhaseOutputs(): readonly PhaseOutputEntry[] {
 }
 
 export function collectGestures(): readonly GestureEntry[] {
-  return GESTURE_CHANNEL_KEYS.map((id) => ({ kind: 'gesture', id, label: id }));
+  return GESTURE_CATALOG_KEYS.map((id) => ({ kind: 'gesture', id, label: id }));
 }
 
 export function collectOpKinds(): readonly OpKindEntry[] {
   return OP_KIND_NAMES.map((id) => ({ kind: 'opKind', id, label: id }));
-}
-
-/** Best-effort display of a key string for the sidebar entry label.
- *  The full inspector view uses routeToPowerline + Powerline for proper
- *  rendering; this label is just the tree entry text. */
-function displayKey(key: string): string {
-  if (key === ' ') return 'Space';
-  return key;
-}
-
-export function collectHotkeyTriggers(
-  actions: readonly { id: string; defaultBinding?: unknown }[],
-): readonly HotkeyTriggerEntry[] {
-  const entries: HotkeyTriggerEntry[] = [];
-  const offhand = actions.find((a) => a.id === 'tool.offhand');
-  const bindings = offhand?.defaultBinding;
-  if (!Array.isArray(bindings)) return entries;
-  for (const raw of bindings) {
-    const entry = raw as {
-      spec?: { kind?: string; key?: string | readonly string[] };
-      opts?: { params?: { toolId?: string } };
-    };
-    if (!entry.spec || entry.spec.kind !== 'key-held') continue;
-    const toolId = entry.opts?.params?.toolId;
-    if (!toolId) continue;
-    const key = typeof entry.spec.key === 'string' ? entry.spec.key
-      : Array.isArray(entry.spec.key) ? (entry.spec.key as readonly string[])[0]
-      : '?';
-    entries.push({ kind: 'hotkeyTrigger', id: toolId, label: `${toolId} (${displayKey(key ?? '?')})` });
-  }
-  return entries;
 }
 
 export function collectSlots(): readonly SlotEntry[] {

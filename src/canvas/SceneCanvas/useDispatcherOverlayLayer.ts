@@ -91,7 +91,7 @@ export function useDispatcherOverlayLayer(args: {
           if (!ov) continue;
 
           if (ov.kind === 'marquee') {
-            if (!passes('gesture.marquee')) continue;
+            if (!passes('action.marquee')) continue;
             // Normalize start/current → AABB, project to screen coords.
             const wx = Math.min(ov.start.x, ov.current.x);
             const wy = Math.min(ov.start.y, ov.current.y);
@@ -115,7 +115,7 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'insertPreview') {
-            if (!passes('gesture.insert-preview')) continue;
+            if (!passes('action.insert-preview')) continue;
             // Build the world-space path using the same builders the
             // commit-time insert factory uses, then project every coord
             // through `worldToScreen` so the screen-space layer can stamp
@@ -249,7 +249,7 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'lasso') {
-            if (!passes('gesture.lasso')) continue;
+            if (!passes('action.lasso')) continue;
             // Project every vertex to screen coords; build a single polygon
             // path. The polygon already closes (polygonFromPoints adds Z),
             // which renders as the dashed "close-line" implicit in the
@@ -272,7 +272,7 @@ export function useDispatcherOverlayLayer(args: {
           }
 
           if (ov.kind === 'commands') {
-            if (!passes('gesture.commands')) continue;
+            if (!passes('action.commands')) continue;
             // Generic escape hatch — actions emit arbitrary DrawCommands.
             // World-space (default) wraps in viewToMat3 so the commands
             // track the camera; screen-space goes through untouched.

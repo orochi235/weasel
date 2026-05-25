@@ -65,7 +65,7 @@ import { setStrokeAction } from './defaults/setStroke';
 import { setFillOpacityAction } from './defaults/setFillOpacity';
 import { setStrokeOpacityAction } from './defaults/setStrokeOpacity';
 
-// viewportPanAction / viewportZoomAction are NOT in KIT_STANDARD_DESCRIPTORS.
+// viewportWheelPanAction / viewportZoomAction are NOT in KIT_STANDARD_DESCRIPTORS.
 // They are wired conditionally by SceneCanvas via `useViewportActions`
 // based on the `viewport.pan` / `viewport.zoom` flags.
 

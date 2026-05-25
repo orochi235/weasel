@@ -23,7 +23,6 @@ Priority tags:
 ### P2 — broad reuse / friction-likely
 
 **Tools & gestures**
-- Multi-mode chrome interaction → [Tools & gestures](#tools--gestures)
 - Phase 5 cleanup of chrome-affordances spec → [Tools & gestures](#tools--gestures)
 - Affordances of registered-but-not-active tools → [Tools & gestures](#tools--gestures)
 - Audit other chrome violations (visible-is-hittable) → [Tools & gestures](#tools--gestures)
@@ -80,8 +79,6 @@ Priority tags:
 - **(P3) Remove `adapter.kindOf` escape hatch.** Shipped 2026-05-21: kit-owned `NodeKindRegistry` per `<SceneCanvas>`, populated via the `kinds` prop, derives `adapter.kindOf` for the dispatcher and Canvas read sites. Spec: `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`. Plan: `docs/superpowers/plans/2026-05-21-node-kind-registry.md`. **Follow-up:** in the next minor, delete the deprecated `adapter.kindOf` escape hatch. The seam refactor (2026-05-24) deleted the Canvas-side reader; only `src/tools/dispatcher.ts:29` remains. Audit `demo/` and `apps/` consumers for the field before deletion. Kind information now flows via `getNodeAtPoint`'s Hit return value (see `src/canvas/getNodeAtPoint.ts`); the dispatcher could read Hit's `kind` field instead of `adapter.kindOf` as part of the cleanup.
 
 - **(P3) Convergence-target facets.** Each kind-keyed concern (label/icon, propertyRows, bindings, subkinds, serialize/deserialize) lands as its own per-facet registry per the **node-facets reframe** at `docs/superpowers/specs/2026-05-22-node-facets-reframe-design.md`. Tracked individually under the relevant TODO sections (per-kind property-row registry, default action icons, useScene op-log serialization).
-
-- **(P2) Multi-mode chrome interaction.** Corner-resize and rotation affordances correctly hit-test for `MULTI_RESIZE_TARGET_ID` in multi-mode, but their drag wrappers return null for the synthetic id because `useResize`/`useRotate` don't natively handle the multi-target. Fix is a multi-target resize path (probably per-leaf scale via remapBounds, mirroring the existing group-resize math) — its own spec.
 
 - **(P2) Phase 5 cleanup of chrome-affordances spec.** The migration in Phase 3-4 left two behaviors split between Canvas and `useSelectTool`: (a) Canvas still synthesizes the multi-resize union via `poseById` + `MULTI_RESIZE_TARGET_ID` for the selection-overlay slot, and (b) `useSelectTool`'s affordances render `[]` to avoid double-rendering with the Canvas slot. Phase 5 should drop the Canvas synthesis (ChromeState.unionBounds replaces it), flip the affordances back to real `render`, and reshape the `selectionOverlay` slot into a thin override hook.
 

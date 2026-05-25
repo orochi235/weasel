@@ -334,63 +334,17 @@ html, body, #root {
   background:
     repeating-linear-gradient(45deg, #5a5a5a 0 8px, #626262 8px 16px);
   overflow: hidden;
-  /* Workspace tint variables — driven by the mode machine in Task 19.
-     Default transparent means no tint until a mode activates. */
-  --wd-mode-tint: transparent;
-  --wd-mode-tint-intensity: 0.12;
 }
-
-/* Per-mode tint colours — keyed on data-mode attribute set by the mode machine. */
-.wd-canvas-host[data-mode="path-edit"]      { --wd-mode-tint: #3b82f6; }
 
 /* Alt+hover cursor stub for future add-anchor sub-tool.
  * While in path-edit mode with Alt held, the cursor over the active path
  * switches to `copy` (the "+" cursor) as a visual affordance. No hit-test
  * gating is applied here — that's the add-anchor sub-tool's job. */
 .wd-canvas-host[data-mode="path-edit"][data-alt-held="true"] > canvas { cursor: copy; }
-.wd-canvas-host[data-mode="isolation"]      { --wd-mode-tint: #8b5cf6; }
-.wd-canvas-host[data-mode="text-edit"]      { --wd-mode-tint: #10b981; }
-.wd-canvas-host[data-mode="free-transform"] { --wd-mode-tint: #f59e0b; }
-.wd-canvas-host[data-mode="crop"]           { --wd-mode-tint: #ef4444; }
 
-/* Tint strip: a narrow band at the top edge of the workspace (~120px tall)
-   that fades from tinted color → fully transparent over its height. Sits
-   ABOVE the canvas (z-index 3) with pointer-events: none. Stays out of the
-   document area because the gradient is transparent past 120px from the
-   top, regardless of where the page sits within the workspace. Driven by
-   --wd-mode-tint and --wd-mode-tint-intensity; defaults to invisible. */
-.wd-canvas-host::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 120px;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--wd-mode-tint) calc(var(--wd-mode-tint-intensity) * 100%), transparent) 0%,
-    transparent 100%
-  );
-  transition: background 150ms ease-out;
-  z-index: 3;
-}
-
-/* `data-tint-direction="top-down"` on a mode definition means the colored
-   end is at the bottom of the strip. Default (no attribute or bottom-up)
-   places the colored end at the top, matching the modality-design.md spec. */
-.wd-canvas-host[data-tint-direction="top-down"]::before {
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--wd-mode-tint) calc(var(--wd-mode-tint-intensity) * 100%), transparent) 0%,
-    transparent 100%
-  );
-}
-
-.wd-canvas-host > canvas {
-  position: relative;
-  z-index: 2; /* establish stacking context; tint pseudo-element sits at z-index 3 above */
-}
+/* Mode tint is painted by the kit's render pipeline (`workspaceTintLayer`
+ * in App.tsx) so it can mask out the document page in world space.
+ * No CSS-side tint here. */
 
 .wd-canvas-host canvas {
   display: block;

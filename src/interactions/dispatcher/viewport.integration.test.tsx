@@ -1,9 +1,9 @@
 /**
- * Phase 8.5 — end-to-end integration tests for viewportPanAction and
+ * Phase 8.5 — end-to-end integration tests for viewportWheelPanAction and
  * viewportZoomAction via the gesture dispatcher.
  *
  * Proves:
- *   - plain wheel event → pan (viewportPanAction fires, view.x/y updates)
+ *   - plain wheel event → pan (viewportWheelPanAction fires, view.x/y updates)
  *   - Cmd+wheel event → zoom (viewportZoomAction fires, view.scale updates)
  *   - Cmd+= keydown → zoom in
  *   - Cmd+- keydown → zoom out
@@ -23,7 +23,7 @@ import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
 import '../actions/depSchema'; // augments DepSchema
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { useGestureDispatcher } from './useGestureDispatcher';
-import { viewportPanAction } from '../actions/defaults/viewportPan';
+import { viewportWheelPanAction } from '../actions/defaults/viewportWheelPan';
 import { viewportZoomAction } from '../actions/defaults/viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../actions/depSchema';
@@ -81,8 +81,8 @@ function RegisterViewDep({ viewApi }: { viewApi: ViewApi }) {
 /** Registers viewport action descriptors. */
 function RegisterViewportActions() {
   const registry = useActionsRegistry();
-  if (registry && !registry.list().find((a) => a.id === 'viewport.pan')) {
-    registry.register(viewportPanAction);
+  if (registry && !registry.list().find((a) => a.id === 'viewport.wheelPan')) {
+    registry.register(viewportWheelPanAction);
   }
   if (registry && !registry.list().find((a) => a.id === 'viewport.zoom')) {
     registry.register(viewportZoomAction);
@@ -145,7 +145,7 @@ function fireKey(
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('viewportPanAction integration', () => {
+describe('viewportWheelPanAction integration', () => {
   it('plain wheel event pans the view by deltaX/deltaY / scale', () => {
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 2, y: 2 } });
     const Harness = buildHarness(viewApi);

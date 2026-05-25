@@ -23,7 +23,7 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
     inFlight: () => map,
     getInFlightHandles: () => map.values(),
     subscribe: () => () => {},
-    getActiveGesture: () => ({ kind: null, id: null }),
+    getActiveAction: () => ({ kind: null, id: null }),
     beginUiOngoing: () => null,
   };
 }
@@ -163,21 +163,21 @@ describe('useDispatcherOverlayLayer', () => {
       }),
     };
 
-    it('hides the marquee overlay when gesture.marquee reports false', () => {
+    it('hides the marquee overlay when action.marquee reports false', () => {
       const dispatcher = makeDispatcher([marqueeHandle]);
       const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
       const allow = data(new Set([])); // nothing visible
       expect(collectPaths(result.current.draw(allow, VIEW, DIMS))).toHaveLength(0);
-      const allowMarquee = data(new Set(['gesture.marquee']));
+      const allowMarquee = data(new Set(['action.marquee']));
       expect(collectPaths(result.current.draw(allowMarquee, VIEW, DIMS))).toHaveLength(1);
     });
 
-    it('hides the lasso overlay when gesture.lasso reports false', () => {
+    it('hides the lasso overlay when action.lasso reports false', () => {
       const dispatcher = makeDispatcher([lassoHandle]);
       const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
       const allow = data(new Set([]));
       expect(collectPaths(result.current.draw(allow, VIEW, DIMS))).toHaveLength(0);
-      const allowLasso = data(new Set(['gesture.lasso']));
+      const allowLasso = data(new Set(['action.lasso']));
       expect(collectPaths(result.current.draw(allowLasso, VIEW, DIMS))).toHaveLength(1);
     });
 

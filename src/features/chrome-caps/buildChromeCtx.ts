@@ -24,7 +24,7 @@ export interface BuildChromeCtxArgs {
   selection: readonly NodeId[];
   multiActive: boolean;
   modifiers: ModifierState;
-  gesture: { kind: string | null; id: string | null };
+  action: { kind: string | null; id: string | null };
   hover: NodeId | null;
   view: View;
   suppressedIds?: ReadonlySet<string>;
@@ -36,7 +36,7 @@ export function buildChromeCtx(args: BuildChromeCtxArgs): ChromeCtx {
     selection: args.selection,
     multiActive: args.multiActive,
     modifiers: args.modifiers,
-    gesture: args.gesture,
+    action: args.action,
     hover: args.hover,
     view: args.view,
     suppressedIds: args.suppressedIds ?? EMPTY_SUPPRESSED,
