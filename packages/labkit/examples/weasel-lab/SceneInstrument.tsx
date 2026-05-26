@@ -1,12 +1,13 @@
 import {
   SceneCanvas,
   WeaselProvider,
+  createScene,
   gridSnapStrategy,
-  useScene,
+  sceneFromJSON,
   useSelection,
 } from '@orochi235/weasel';
-import type { UnitSystem } from '@orochi235/weasel';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import type { AddNodeSpec, Scene, SerializedScene, UnitSystem } from '@orochi235/weasel';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { defineInstrument, type RenderContext } from '@labkit/react';
 
 interface NodeData {
@@ -20,6 +21,11 @@ interface Pose {
 }
 type LayerId = 'default';
 
+type SerializedSceneJSON = SerializedScene<NodeData, LayerId, Pose>;
+
+interface SceneState {
+  scene: SerializedSceneJSON | null;
+}
 interface SceneConfig {
   cellSize: number;
   showGrid: boolean;
@@ -27,25 +33,22 @@ interface SceneConfig {
 
 const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 
-const INITIAL_NODES = [
+const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   {
-    id: 'a' as never,
-    kind: 'leaf' as const,
-    layer: 'default' as const,
+    kind: 'leaf',
+    layer: 'default',
     pose: { x: 40, y: 40, width: 80, height: 60 },
     data: { color: '#7fb069' },
   },
   {
-    id: 'b' as never,
-    kind: 'leaf' as const,
-    layer: 'default' as const,
+    kind: 'leaf',
+    layer: 'default',
     pose: { x: 180, y: 120, width: 100, height: 80 },
     data: { color: '#d4a574' },
   },
   {
-    id: 'c' as never,
-    kind: 'leaf' as const,
-    layer: 'default' as const,
+    kind: 'leaf',
+    layer: 'default',
     pose: { x: 340, y: 60, width: 70, height: 70 },
     data: { color: '#a48bd4' },
   },
@@ -53,11 +56,57 @@ const INITIAL_NODES = [
 
 const SYSTEM_LAYERS = [{ id: 'default' as const }];
 
-function SceneBody({ config }: { config: SceneConfig }) {
-  const scene = useScene<NodeData, LayerId, Pose>({
+function buildScene(json: SerializedSceneJSON | null): Scene<NodeData, LayerId, Pose> {
+  if (json) return sceneFromJSON<NodeData, LayerId, Pose>(json, {});
+  return createScene<NodeData, LayerId, Pose>({
     systemLayers: SYSTEM_LAYERS,
     initial: INITIAL_NODES,
   });
+}
+
+interface SceneBodyProps {
+  config: SceneConfig;
+  state: SceneState;
+  setState: (next: SceneState | ((prev: SceneState) => SceneState)) => void;
+}
+
+function SceneBody({ config, state, setState }: SceneBodyProps) {
+  // Scene held in a ref so we can swap it on external state changes (Reset)
+  // without going through React state (which would cause cascade renders).
+  const sceneRef = useRef<Scene<NodeData, LayerId, Pose> | null>(null);
+  if (sceneRef.current === null) sceneRef.current = buildScene(state.scene);
+
+  // The most-recent JSON we ourselves pushed up to labkit. Used to detect
+  // when state.scene was changed by someone else (Reset / Clone hydration /
+  // undo) so we can rebuild the underlying weasel scene.
+  const lastPushedRef = useRef<SerializedSceneJSON | null>(state.scene);
+
+  // Force a re-render after rebuilding the scene (the ref swap is invisible
+  // to React). useSyncExternalStore below handles the *internal* mutations.
+  const [, forceRender] = useState(0);
+
+  useEffect(() => {
+    if (state.scene === lastPushedRef.current) return; // we wrote it; ignore
+    // External change → rebuild scene.
+    sceneRef.current = buildScene(state.scene);
+    lastPushedRef.current = state.scene;
+    forceRender((n) => n + 1);
+  }, [state.scene]);
+
+  const scene = sceneRef.current;
+
+  // Subscribe React to internal scene mutations (drag/resize/etc).
+  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
+
+  // Push scene mutations up to labkit state so persistence/clone capture them.
+  useEffect(() => {
+    return scene.subscribe(() => {
+      const json = scene.toJSON();
+      lastPushedRef.current = json;
+      setState((prev) => ({ ...prev, scene: json }));
+    });
+  }, [scene, setState]);
+
   const selection = useSelection();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -127,10 +176,10 @@ function SceneBody({ config }: { config: SceneConfig }) {
   );
 }
 
-export const SceneInstrument = defineInstrument<Record<string, never>, SceneConfig>({
+export const SceneInstrument = defineInstrument<SceneState, SceneConfig>({
   name: 'WeaselScene',
   defaultConfig: () => ({ cellSize: 20, showGrid: true }),
-  initialState: () => ({}),
+  initialState: () => ({ scene: null }),
   configSchema: () => [
     { type: 'checkbox', key: 'showGrid', label: 'Show grid', default: true },
     {
@@ -143,9 +192,12 @@ export const SceneInstrument = defineInstrument<Record<string, never>, SceneConf
       default: 20,
     },
   ],
-  render: (ctx) => (
-    <WeaselProvider>
-      <SceneBody config={(ctx as RenderContext<unknown, SceneConfig>).config} />
-    </WeaselProvider>
-  ),
+  render: (ctx) => {
+    const typed = ctx as RenderContext<SceneState, SceneConfig>;
+    return (
+      <WeaselProvider>
+        <SceneBody config={typed.config} state={typed.state} setState={typed.setState} />
+      </WeaselProvider>
+    );
+  },
 });
