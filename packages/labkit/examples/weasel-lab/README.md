@@ -19,10 +19,11 @@ npm run dev:weasel
 
 The host div uses `position: relative; overflow: hidden` and the SceneCanvas wrapper inside is `position: absolute; inset: 0`. This is **load-bearing**: SceneCanvas sizes its `<canvas>` via the `width`/`height` props, and ResizeObserver-based auto-sizing on a flow-layout container creates a feedback loop where the canvas's intrinsic dimensions grow the parent, which fires the observer, which resizes the canvas, ad infinitum (~80 React renders/sec). The absolute child decouples canvas growth from parent layout.
 
-## Known gaps
+## Bridged behaviors
 
-- **Persistence does not bridge.** Labkit's "Save / Reset / Clone" operates on labkit's own state — weasel owns the scene via `useScene`, so cloning a workspace gets a labkit clone but a fresh weasel scene.
-- **Undo/Redo are not wired.** Labkit's toolbar Undo/Redo buttons don't appear because the instrument doesn't declare `undo`. Weasel has its own op-based history (`createHistory`) — the next step is a bridge capability that surfaces weasel actions in labkit's toolbar.
+- **Persistence:** the instrument hydrates the weasel scene from labkit state on mount (via `sceneFromJSON`), subscribes to scene mutations, and pushes `scene.toJSON()` back into labkit state. A `lastPushedRef` distinguishes self-pushes (no rebuild) from external state changes (Reset, Clone, Undo, Redo) so the underlying weasel `Scene` gets swapped via `buildScene()` when needed. The `Lab` is configured with `localStorageAdapter`, so the round-trip survives reloads.
+- **Reset / Clone:** work via the persistence bridge above. Reset clears `state.scene` → instrument rebuilds with `INITIAL_NODES`. Clone produces a new workspace whose initial state is a deep copy of the source — its scene hydrates from that copy on first mount.
+- **Undo / Redo:** the instrument declares `undo: { snapshotOn: ['state.change'] }`. Since every scene mutation flows through `ctx.setState`, labkit's snapshot-based undo machinery captures the full serialized scene on each step. Undo restores prior state.scene → the external-change detector rebuilds the weasel scene from that JSON. (This required fixing a latent labkit redo bug — `undo()`/`redo()` now take the current state so the abandoned side gets pushed onto the opposite queue.)
 
 ## Why this matters
 

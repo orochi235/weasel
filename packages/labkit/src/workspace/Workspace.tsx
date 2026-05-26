@@ -118,13 +118,13 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
         canUndo: record.undoStack.past.length > 0,
         canRedo: record.undoStack.future.length > 0,
         undo: () => {
-          const result = undoUndo(record.undoStack);
+          const result = undoUndo(record.undoStack, structuredClone(record.state));
           if (!result) return;
           updateWorkspaceState(record.id, result.snapshot as never);
           updateWorkspaceUndoStack(record.id, result.stack);
         },
         redo: () => {
-          const result = undoRedo(record.undoStack);
+          const result = undoRedo(record.undoStack, structuredClone(record.state));
           if (!result) return;
           updateWorkspaceState(record.id, result.snapshot as never);
           updateWorkspaceUndoStack(record.id, result.stack);

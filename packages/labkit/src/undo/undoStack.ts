@@ -13,18 +13,24 @@ export function pushSnapshot(stack: UndoStack, snapshot: unknown, maxDepth: numb
   return { past, future: [] };
 }
 
-export function undo(stack: UndoStack): { stack: UndoStack; snapshot: unknown } | null {
+export function undo(
+  stack: UndoStack,
+  current: unknown,
+): { stack: UndoStack; snapshot: unknown } | null {
   if (stack.past.length === 0) return null;
   const past = stack.past.slice();
   const snapshot = past.pop();
-  return { stack: { past, future: [...stack.future, snapshot] }, snapshot };
+  return { stack: { past, future: [...stack.future, current] }, snapshot };
 }
 
-export function redo(stack: UndoStack): { stack: UndoStack; snapshot: unknown } | null {
+export function redo(
+  stack: UndoStack,
+  current: unknown,
+): { stack: UndoStack; snapshot: unknown } | null {
   if (stack.future.length === 0) return null;
   const future = stack.future.slice();
   const snapshot = future.pop();
-  return { stack: { past: [...stack.past, snapshot], future }, snapshot };
+  return { stack: { past: [...stack.past, current], future }, snapshot };
 }
 
 export function clearUndo(_stack: UndoStack): UndoStack {

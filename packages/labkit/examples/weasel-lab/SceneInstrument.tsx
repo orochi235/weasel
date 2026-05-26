@@ -192,6 +192,7 @@ export const SceneInstrument = defineInstrument<SceneState, SceneConfig>({
       default: 20,
     },
   ],
+  undo: { snapshotOn: ['state.change'], maxDepth: 50 },
   render: (ctx) => {
     const typed = ctx as RenderContext<SceneState, SceneConfig>;
     return (
