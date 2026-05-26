@@ -15,9 +15,12 @@ npm run dev:weasel
 - Config schema (`Show grid`, `Grid spacing`) flows from labkit's `defineInstrument` into the scene's grid layer.
 - `LABKIT_EXAMPLE=weasel-lab` triggers a different alias set in `vite.config.ts` that replicates weasel's internal monorepo aliases (so `@orochi235/weasel-history`'s bare `core/...` imports resolve against the weasel checkout).
 
+## Layout note
+
+The host div uses `position: relative; overflow: hidden` and the SceneCanvas wrapper inside is `position: absolute; inset: 0`. This is **load-bearing**: SceneCanvas sizes its `<canvas>` via the `width`/`height` props, and ResizeObserver-based auto-sizing on a flow-layout container creates a feedback loop where the canvas's intrinsic dimensions grow the parent, which fires the observer, which resizes the canvas, ad infinitum (~80 React renders/sec). The absolute child decouples canvas growth from parent layout.
+
 ## Known gaps
 
-- **Scene rectangles do not paint yet.** The GL context initialises, weasel's SceneCanvas mounts, but the three demo rects in `SceneInstrument.tsx` come up blank. Likely a missing piece in the SceneCanvas setup (font registration, viewport auto-center, or selection context mount order) — needs a side-by-side comparison against `~/src/weasel/demo/demos/MoveDemo.tsx` running inside the weasel demo.
 - **Persistence does not bridge.** Labkit's "Save / Reset / Clone" operates on labkit's own state — weasel owns the scene via `useScene`, so cloning a workspace gets a labkit clone but a fresh weasel scene.
 - **Undo/Redo are not wired.** Labkit's toolbar Undo/Redo buttons don't appear because the instrument doesn't declare `undo`. Weasel has its own op-based history (`createHistory`) — the next step is a bridge capability that surfaces weasel actions in labkit's toolbar.
 

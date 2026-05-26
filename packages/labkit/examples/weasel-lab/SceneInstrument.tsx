@@ -6,7 +6,7 @@ import {
   useSelection,
 } from '@orochi235/weasel';
 import type { UnitSystem } from '@orochi235/weasel';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { defineInstrument, type RenderContext } from '@labkit/react';
 
 interface NodeData {
@@ -27,84 +27,102 @@ interface SceneConfig {
 
 const UNITS: UnitSystem = { base: 'px', units: { px: 1 } };
 
-function SceneBody({ ctx }: { ctx: RenderContext<unknown, SceneConfig> }) {
-  const config = ctx.config;
+const INITIAL_NODES = [
+  {
+    id: 'a' as never,
+    kind: 'leaf' as const,
+    layer: 'default' as const,
+    pose: { x: 40, y: 40, width: 80, height: 60 },
+    data: { color: '#7fb069' },
+  },
+  {
+    id: 'b' as never,
+    kind: 'leaf' as const,
+    layer: 'default' as const,
+    pose: { x: 180, y: 120, width: 100, height: 80 },
+    data: { color: '#d4a574' },
+  },
+  {
+    id: 'c' as never,
+    kind: 'leaf' as const,
+    layer: 'default' as const,
+    pose: { x: 340, y: 60, width: 70, height: 70 },
+    data: { color: '#a48bd4' },
+  },
+];
+
+const SYSTEM_LAYERS = [{ id: 'default' as const }];
+
+function SceneBody({ config }: { config: SceneConfig }) {
   const scene = useScene<NodeData, LayerId, Pose>({
-    systemLayers: [{ id: 'default' }],
-    initial: [
-      {
-        id: 'a' as never,
-        kind: 'leaf',
-        layer: 'default',
-        pose: { x: 40, y: 40, width: 80, height: 60 },
-        data: { color: '#7fb069' },
-      },
-      {
-        id: 'b' as never,
-        kind: 'leaf',
-        layer: 'default',
-        pose: { x: 180, y: 120, width: 100, height: 80 },
-        data: { color: '#d4a574' },
-      },
-      {
-        id: 'c' as never,
-        kind: 'leaf',
-        layer: 'default',
-        pose: { x: 340, y: 60, width: 70, height: 70 },
-        data: { color: '#a48bd4' },
-      },
-    ],
+    systemLayers: SYSTEM_LAYERS,
+    initial: INITIAL_NODES,
   });
   const selection = useSelection();
-  const [view, setView] = useState({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState({ w: 600, h: 400 });
+  const [size, setSize] = useState({ w: 800, h: 600 });
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => {
-      const r = el.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0) setSize({ w: Math.round(r.width), h: Math.round(r.height) });
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const box = entry.contentBoxSize?.[0];
+      const w = Math.round(box ? box.inlineSize : entry.contentRect.width);
+      const h = Math.round(box ? box.blockSize : entry.contentRect.height);
+      if (w <= 0 || h <= 0) return;
+      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-      <SceneCanvas
-        width={size.w}
-        height={size.h}
-        scene={scene}
-        selection={selection}
-        selectTool={{
-          snap: gridSnapStrategy<Pose>({ value: config.cellSize, unit: 'px' }, UNITS),
-        }}
-        view={view}
-        onViewChange={setView}
-        viewport={{}}
-        layers={{
-          grid: config.showGrid
-            ? {
-                spacing: { value: config.cellSize, unit: 'px' },
-                unitSystem: UNITS,
-                bounds: () => ({ x: 0, y: 0, width: 2000, height: 2000 }),
-                accentEvery: 5,
-              }
-            : null,
-          scene: {
-            drawOne: (n, p) => [
-              {
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: n.data.color },
-              },
-            ],
+  const selectTool = useMemo(
+    () => ({ snap: gridSnapStrategy<Pose>({ value: config.cellSize, unit: 'px' }, UNITS) }),
+    [config.cellSize],
+  );
+
+  const layers = useMemo(
+    () => ({
+      grid: config.showGrid
+        ? {
+            spacing: { value: config.cellSize, unit: 'px' as const },
+            unitSystem: UNITS,
+            bounds: () => ({ x: 0, y: 0, width: 2000, height: 2000 }),
+            accentEvery: 5,
+          }
+        : null,
+      scene: {
+        drawOne: (n: { data: NodeData }, p: Pose) => [
+          {
+            kind: 'path' as const,
+            path: { kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height },
+            fill: { color: n.data.color },
           },
-          selectionOverlay: { handles: true },
-        }}
-      />
+        ],
+      },
+      selectionOverlay: { handles: true },
+    }),
+    [config.showGrid, config.cellSize],
+  );
+
+  return (
+    <div
+      ref={containerRef}
+      className="lk-weasel-host"
+      style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
+    >
+      <div style={{ position: 'absolute', inset: 0 }}>
+        <SceneCanvas
+          width={size.w}
+          height={size.h}
+          scene={scene}
+          selection={selection}
+          selectTool={selectTool}
+          layers={layers}
+        />
+      </div>
     </div>
   );
 }
@@ -127,7 +145,7 @@ export const SceneInstrument = defineInstrument<Record<string, never>, SceneConf
   ],
   render: (ctx) => (
     <WeaselProvider>
-      <SceneBody ctx={ctx as RenderContext<unknown, SceneConfig>} />
+      <SceneBody config={(ctx as RenderContext<unknown, SceneConfig>).config} />
     </WeaselProvider>
   ),
 });
