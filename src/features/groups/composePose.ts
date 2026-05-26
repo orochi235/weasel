@@ -18,15 +18,22 @@
  */
 
 /**
- * Axis-aligned rectangle pose. The canonical pose shape used by `composeRectPose`
- * and the `unionBounds` helper. Defined here in core/transforms so that the
- * compose helpers don't depend on features.
+ * Axis-aligned rectangle pose with optional rotation. The canonical pose
+ * shape used by `composeRectPose` and the `unionBounds` helper. Rotation is
+ * in radians, pivoted on the unrotated AABB center; absent === 0. Kit-side
+ * code that consumes rotation already reads `pose.rotation ?? 0`
+ * (`SceneCanvas.defaultDrawOne`, `rotate/handle.ts`, `pathInWorld.ts`), so
+ * the slot exists on every default scene whether or not the consumer
+ * populates it. Defined here in core/transforms so the compose helpers
+ * don't depend on features.
  */
 export interface RectPose {
   x: number;
   y: number;
   width: number;
   height: number;
+  /** Rotation in radians around the unrotated AABB center. Absent === 0. */
+  rotation?: number;
 }
 
 /** Minimal adapter needed by `composeWorldPose` and friends — pose lookup plus parent walk. */
