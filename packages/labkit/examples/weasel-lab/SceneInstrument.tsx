@@ -6,20 +6,34 @@ import {
   sceneFromJSON,
   useSelection,
 } from '@orochi235/weasel';
-import type { AddNodeSpec, Scene, SerializedScene, UnitSystem } from '@orochi235/weasel';
+import type {
+  AddNodeSpec,
+  Mat3,
+  RotatedPose,
+  Scene,
+  SerializedScene,
+  UnitSystem,
+} from '@orochi235/weasel';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { defineInstrument, type RenderContext } from '@labkit/react';
 
 interface NodeData {
   color: string;
 }
-interface Pose {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+type Pose = RotatedPose;
 type LayerId = 'default';
+
+function rotationTransform(p: Pose): Mat3 {
+  const cx = p.x + p.width / 2;
+  const cy = p.y + p.height / 2;
+  const c = Math.cos(p.rotation);
+  const s = Math.sin(p.rotation);
+  // T(cx, cy) * R(θ) * T(-cx, -cy), column-major Float32Array (matching weasel's mat3).
+  // Composing closed-form: rotate around the rect's centre.
+  const tx = cx - cx * c + cy * s;
+  const ty = cy - cx * s - cy * c;
+  return new Float32Array([c, s, 0, -s, c, 0, tx, ty, 1]) as Mat3;
+}
 
 type SerializedSceneJSON = SerializedScene<NodeData, LayerId, Pose>;
 
@@ -37,19 +51,19 @@ const INITIAL_NODES: readonly AddNodeSpec<NodeData, LayerId, Pose>[] = [
   {
     kind: 'leaf',
     layer: 'default',
-    pose: { x: 40, y: 40, width: 80, height: 60 },
+    pose: { x: 40, y: 40, width: 80, height: 60, rotation: 0 },
     data: { color: '#7fb069' },
   },
   {
     kind: 'leaf',
     layer: 'default',
-    pose: { x: 180, y: 120, width: 100, height: 80 },
+    pose: { x: 180, y: 120, width: 100, height: 80, rotation: 0 },
     data: { color: '#d4a574' },
   },
   {
     kind: 'leaf',
     layer: 'default',
-    pose: { x: 340, y: 60, width: 70, height: 70 },
+    pose: { x: 340, y: 60, width: 70, height: 70, rotation: 0 },
     data: { color: '#a48bd4' },
   },
 ];
@@ -145,9 +159,15 @@ function SceneBody({ config, state, setState }: SceneBodyProps) {
       scene: {
         drawOne: (n: { data: NodeData }, p: Pose) => [
           {
-            kind: 'path' as const,
-            path: { kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height },
-            fill: { color: n.data.color },
+            kind: 'group' as const,
+            transform: rotationTransform(p),
+            children: [
+              {
+                kind: 'path' as const,
+                path: { kind: 'rect' as const, x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { color: n.data.color },
+              },
+            ],
           },
         ],
       },
