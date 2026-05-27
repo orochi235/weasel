@@ -1,6 +1,6 @@
-import { useMemo, type CSSProperties } from 'react';
+import { useCallback, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { sampleCurve, type Point } from './catmullRom';
-import { modelToPlot, type ModelRange } from './geometry';
+import { modelToPlot, plotToModel, type ModelRange } from './geometry';
 import s from './CurveEditor.module.css';
 
 export interface ControlPoint {
@@ -49,6 +49,8 @@ const SAMPLES_PER_SEGMENT = 16;
 export function CurveEditor(props: CurveEditorProps) {
   const {
     value, width, height,
+    onChange, onChangeCommit,
+    domain = '2d',
     xRange = [0, 1],
     yRange = [0, 1],
     className,
@@ -81,10 +83,86 @@ export function CurveEditor(props: CurveEditorProps) {
     return parts.join('');
   }, [value, modelRange, plotSize]);
 
+  // ── Drag state ─────────────────────────────────────────────────────────
+  interface DragState {
+    index: number;
+    pointerId: number;
+    startValue: readonly ControlPoint[];
+    lastNext: ControlPoint[];
+  }
+  const dragRef = useRef<DragState | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  // Refs to break the useCallback dependency cycle between the three
+  // window-level handlers (each one needs to remove the others on cleanup).
+  const onWindowMoveRef = useRef<(e: PointerEvent) => void>(() => {});
+  const onWindowUpRef = useRef<(e: PointerEvent) => void>(() => {});
+  const onWindowCancelRef = useRef<(e: PointerEvent) => void>(() => {});
+
+  const pointerToModel = useCallback((clientX: number, clientY: number): Point => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    const left = rect?.left ?? 0;
+    const top = rect?.top ?? 0;
+    const plot: Point = { x: clientX - left, y: clientY - top };
+    return plotToModel(plot, modelRange, plotSize);
+  }, [modelRange, plotSize]);
+
+  const cleanupDrag = useCallback(() => {
+    window.removeEventListener('pointermove', onWindowMoveRef.current);
+    window.removeEventListener('pointerup', onWindowUpRef.current);
+    window.removeEventListener('pointercancel', onWindowCancelRef.current);
+    dragRef.current = null;
+  }, []);
+
+  onWindowMoveRef.current = (e: PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    const m = pointerToModel(e.clientX, e.clientY);
+    const next = d.startValue.map((p) => ({ ...p }));
+    let nx = m.x;
+    if (domain === '1d') {
+      const left = d.index > 0 ? next[d.index - 1].x : -Infinity;
+      const right = d.index < next.length - 1 ? next[d.index + 1].x : Infinity;
+      nx = Math.max(left, Math.min(right, nx));
+    }
+    next[d.index] = { x: nx, y: m.y };
+    d.lastNext = next;
+    onChange(next);
+  };
+
+  onWindowUpRef.current = (e: PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    if (onChangeCommit) onChangeCommit(d.lastNext, d.startValue);
+    cleanupDrag();
+  };
+
+  onWindowCancelRef.current = (e: PointerEvent) => {
+    const d = dragRef.current;
+    if (!d || d.pointerId !== e.pointerId) return;
+    // Restore pre-drag value; no commit.
+    onChange(d.startValue.map((p) => ({ ...p })));
+    cleanupDrag();
+  };
+
+  const onPointerDownAnchor = useCallback((index: number, e: ReactPointerEvent<SVGCircleElement>) => {
+    e.stopPropagation();
+    dragRef.current = {
+      index,
+      pointerId: e.pointerId,
+      startValue: value,
+      lastNext: value.map((p) => ({ ...p })),
+    };
+    window.addEventListener('pointermove', onWindowMoveRef.current);
+    window.addEventListener('pointerup', onWindowUpRef.current);
+    window.addEventListener('pointercancel', onWindowCancelRef.current);
+  }, [value]);
+
   const cls = [s.root, className].filter(Boolean).join(' ');
 
   return (
     <svg
+      ref={svgRef}
       className={cls}
       style={style}
       width={width}
@@ -107,6 +185,7 @@ export function CurveEditor(props: CurveEditorProps) {
           cy={a.y}
           r={4}
           data-anchor-index={i}
+          onPointerDown={(e) => onPointerDownAnchor(i, e)}
         />
       ))}
     </svg>
