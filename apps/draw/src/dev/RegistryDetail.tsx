@@ -121,6 +121,8 @@ import type {
   MetaEntry, CallbackRef, TreeCategoryNode,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
+import traitSchemas from 'virtual:weasel-trait-schemas';
+import { SchemaTable } from './SchemaTable';
 import { canonicalModifiers, describeRoute, describeRouteParts, formatPhaseAtom, getGestureDescriptor, ROUTE_FIELD_DEFINITIONS, type GestureName, type RouteFieldName } from '@orochi235/weasel/routing';
 import { collectBundles, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute } from './registryData';
 void GESTURE_CHANNEL_KEYS;
@@ -340,7 +342,38 @@ function renderEntryBody(
 
 function MetaDetail({ entry }: { entry: MetaEntry }) {
   if (entry.id === 'tokens') return <TokensDetail />;
+  if (entry.id === 'sceneNode') return <SceneNodeDetail />;
   return null;
+}
+
+/** Documents the `SceneNode<TData, TLayer, TPose>` discriminated union — the
+ *  per-variant property list pulled from the kit source by the trait-schemas
+ *  Vite plugin. Lives on the Meta tab so consumers can answer "what fields
+ *  does a leaf vs. container node actually carry" without grepping. */
+function SceneNodeDetail() {
+  const node = traitSchemas.node;
+  return (
+    <div>
+      <h2 className={s.detailHeading}>SceneNode</h2>
+      <p className={s.empty}>
+        Discriminated union over <code>kind</code>. Every variant inherits the
+        base node fields (<code>id</code>, <code>layer</code>, <code>pose</code>,{' '}
+        <code>data</code>, <code>parent</code>) and adds variant-specific ones.
+      </p>
+      {node.variants.length === 0 && (
+        <p className={s.schemaNote}>No variants extracted — was the kit source moved?</p>
+      )}
+      {node.variants.map((v) => (
+        <section key={v.kind}>
+          <h3 className={s.subHeading}>kind: {v.kind}</h3>
+          <SchemaTable rows={v.properties} />
+        </section>
+      ))}
+      <p className={s.schemaSource}>
+        Extracted from <code>{node.source.file}:{node.source.line}</code>
+      </p>
+    </div>
+  );
 }
 
 function TokensDetail() {
@@ -422,7 +455,28 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      <OpSchemaPanel factoryId={factoryId} />
     </div>
+  );
+}
+
+/** Args-object property table for an op factory. Pulled from the kit's
+ *  TypeScript source by the trait-schemas Vite plugin, so it stays current
+ *  without per-op handwritten docs. */
+function OpSchemaPanel({ factoryId }: { factoryId: string }) {
+  const schema = traitSchemas.ops[factoryId];
+  if (!schema) return null;
+  return (
+    <>
+      <h3 className={s.subHeading}>Arguments</h3>
+      <SchemaTable rows={schema.params} empty="Factory takes no arguments." />
+      <dl className={s.detailList}>
+        <dt>returns</dt><dd><code className={s.schemaType}>{schema.returnType}</code></dd>
+      </dl>
+      <p className={s.schemaSource}>
+        Extracted from <code>{schema.source.file}:{schema.source.line}</code>
+      </p>
+    </>
   );
 }
 
@@ -790,6 +844,24 @@ function describeBinding(spec: Record<string, unknown>): string {
   return parts.join(' ');
 }
 
+/** Payload schema for a gesture's dispatched event, extracted from the kit
+ *  source by the trait-schemas Vite plugin. */
+function GesturePayloadPanel({ gestureId }: { gestureId: string }) {
+  const schema = traitSchemas.gestures[gestureId];
+  if (!schema) return null;
+  return (
+    <>
+      <h3 className={s.subHeading}>Payload</h3>
+      <SchemaTable rows={schema.payload} empty="No payload fields (event-only)." />
+      {schema.source && (
+        <p className={s.schemaSource}>
+          Payload type at <code>{schema.source.file}:{schema.source.line}</code>
+        </p>
+      )}
+    </>
+  );
+}
+
 function GestureDetail({
   entry, tools, actions, onNavigate,
 }: {
@@ -819,6 +891,7 @@ function GestureDetail({
         Input channel. Tools below subscribe to it via the legacy phase
         grammar; actions below bind to it via the modern dispatcher.
       </p>
+      <GesturePayloadPanel gestureId={entry.id} />
       <h3 className={s.subHeading}>Actions binding this gesture</h3>
       <DataGrid
         rows={actionRows}
@@ -1533,7 +1606,35 @@ function ShapeKindDetail({
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      <ShapeSchemaPanel kindId={entry.id} />
     </div>
+  );
+}
+
+/** Pose + data property tables extracted from the kit source by the
+ *  trait-schemas Vite plugin. Surfaces "what properties does a `rect` /
+ *  `text` / `pen` carry" without round-tripping to the TS source. */
+function ShapeSchemaPanel({ kindId }: { kindId: string }) {
+  const schema = traitSchemas.shapes[kindId];
+  if (!schema) {
+    return <p className={s.empty}>No extracted schema for this shape kind.</p>;
+  }
+  return (
+    <>
+      {schema.notes && <p className={s.schemaNote}>{schema.notes}</p>}
+      <h3 className={s.subHeading}>Pose</h3>
+      <SchemaTable rows={schema.pose} empty="Pose synthesized elsewhere (no literal in source)." />
+      <h3 className={s.subHeading}>Data</h3>
+      <SchemaTable rows={schema.data} empty="No data fields populated by default." />
+      {schema.renderer && (
+        <p className={s.schemaSource}>
+          Painter: <code>{schema.renderer}</code>
+        </p>
+      )}
+      <p className={s.schemaSource}>
+        Extracted from <code>{schema.source.file}:{schema.source.line}</code>
+      </p>
+    </>
   );
 }
 
@@ -1589,6 +1690,7 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
       {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      <OpSchemaPanel factoryId={entry.id} />
     </div>
   );
 }

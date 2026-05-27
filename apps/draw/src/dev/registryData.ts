@@ -294,10 +294,13 @@ export interface GroupEntry {
   source: 'tool' | 'action';
 }
 
-export interface MetaEntry { kind: 'meta'; id: 'tokens'; label: string }
+export interface MetaEntry { kind: 'meta'; id: 'tokens' | 'sceneNode'; label: string }
 
 export function collectMeta(): readonly MetaEntry[] {
-  return [{ kind: 'meta', id: 'tokens', label: 'Tokens' }];
+  return [
+    { kind: 'meta', id: 'tokens', label: 'Tokens' },
+    { kind: 'meta', id: 'sceneNode', label: 'SceneNode' },
+  ];
 }
 
 export type TreeCategory =
