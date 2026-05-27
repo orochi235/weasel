@@ -1,4 +1,4 @@
-import { Lab } from '@labkit/react';
+import { Lab, localStorageAdapter } from '@labkit/react';
 import { StubInstrument } from './StubInstrument';
 
 export function MinimalLab() {
@@ -6,7 +6,9 @@ export function MinimalLab() {
     <Lab
       instruments={[StubInstrument]}
       defaultInstrument="Stub"
+      storage={localStorageAdapter}
       storageKey="minimal-lab"
+      theme="interstellar"
       title="Minimal Lab"
     />
   );

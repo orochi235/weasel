@@ -25,13 +25,10 @@ export default defineConfig(async () => ({
   plugins: [react()],
   root: `examples/${example}`,
   resolve: {
-    alias:
-      example === 'weasel-lab'
-        ? [
-            { find: '@labkit/react', replacement: labkitAlias['@labkit/react'] },
-            ...(await weaselAlias()),
-          ]
-        : labkitAlias,
+    alias: [
+      { find: '@labkit/react', replacement: labkitAlias['@labkit/react'] },
+      ...(await weaselAlias()),
+    ],
   },
   server: {
     fs: { allow: [here, fileURLToPath(new URL('./node_modules/@orochi235/weasel/', import.meta.url))] },

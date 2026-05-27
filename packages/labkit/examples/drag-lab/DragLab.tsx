@@ -1,4 +1,4 @@
-import { Lab } from '@labkit/react';
+import { Lab, localStorageAdapter } from '@labkit/react';
 import { GardenInstrument } from './GardenInstrument';
 
 export function DragLab() {
@@ -6,7 +6,9 @@ export function DragLab() {
     <Lab
       instruments={[GardenInstrument]}
       defaultInstrument="Garden"
+      storage={localStorageAdapter}
       storageKey="drag-lab"
+      theme="interstellar"
       title="Drag Lab"
     />
   );

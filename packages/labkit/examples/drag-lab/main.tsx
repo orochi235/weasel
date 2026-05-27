@@ -2,7 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../src/styles.less';
 import '../../src/theme/light.less';
-import '../../src/theme/dark.less';
+import '../../src/theme/interstellar.less';
+import './styles.less';
 import { DragLab } from './DragLab';
 
 const root = document.getElementById('root');
