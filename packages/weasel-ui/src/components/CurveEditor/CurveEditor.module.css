@@ -1,0 +1,57 @@
+.root {
+  --curve-bg: transparent;
+  --curve-grid: rgba(0, 0, 0, 0.06);
+  --curve-axis: rgba(0, 0, 0, 0.3);
+  --curve-line: #3478f6;
+  --curve-line-width: 1.5;
+  --curve-anchor-fill: #ffffff;
+  --curve-anchor-stroke: #3478f6;
+  --curve-anchor-radius: 4;
+  --curve-anchor-active-fill: #3478f6;
+  --curve-pinned-fill: #888888;
+
+  display: block;
+  background: var(--curve-bg);
+  user-select: none;
+  touch-action: none;
+}
+
+.grid {
+  stroke: var(--curve-grid);
+  stroke-width: 1;
+  fill: none;
+}
+
+.axis {
+  stroke: var(--curve-axis);
+  stroke-width: 1;
+  fill: none;
+}
+
+.curve {
+  stroke: var(--curve-line);
+  stroke-width: var(--curve-line-width);
+  fill: none;
+  pointer-events: stroke;
+}
+
+.anchor {
+  fill: var(--curve-anchor-fill);
+  stroke: var(--curve-anchor-stroke);
+  stroke-width: 1.5;
+  cursor: grab;
+}
+
+.anchor:hover {
+  fill: var(--curve-anchor-active-fill);
+}
+
+.anchor.active {
+  fill: var(--curve-anchor-active-fill);
+  cursor: grabbing;
+}
+
+.anchor.pinned {
+  fill: var(--curve-pinned-fill);
+  cursor: default;
+}
