@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export type LabTheme = 'auto' | 'light' | 'dark';
+export type LabTheme = 'auto' | 'light' | 'interstellar';
 
 export interface LabShellProps {
   title: string;
@@ -15,7 +15,11 @@ export interface LabShellProps {
 
 export function LabShell({ title, children, header, footer, theme = 'auto' }: LabShellProps) {
   const themeClass =
-    theme === 'light' ? ' lk-theme-light' : theme === 'dark' ? ' lk-theme-dark' : '';
+    theme === 'light'
+      ? ' lk-theme-light'
+      : theme === 'interstellar'
+        ? ' lk-theme-interstellar'
+        : '';
   return (
     <div className={`lk-root lk-shell${themeClass}`}>
       <header className="lk-shell-header">

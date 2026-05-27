@@ -1,7 +1,7 @@
 import type { Preview } from '@storybook/react';
 import '../src/styles.less';
 import '../src/theme/light.less';
-import '../src/theme/dark.less';
+import '../src/theme/interstellar.less';
 
 const preview: Preview = {
   parameters: {
@@ -20,7 +20,7 @@ const preview: Preview = {
         items: [
           { value: 'auto', title: 'Auto (OS)' },
           { value: 'light', title: 'Light' },
-          { value: 'dark', title: 'Dark' },
+          { value: 'interstellar', title: 'Interstellar' },
         ],
         dynamicTitle: true,
       },
@@ -28,12 +28,12 @@ const preview: Preview = {
   },
   decorators: [
     (Story, ctx) => {
-      const theme = ctx.globals.theme as 'auto' | 'light' | 'dark';
+      const theme = ctx.globals.theme as 'auto' | 'light' | 'interstellar';
       const className =
         theme === 'light'
           ? 'lk-root lk-theme-light'
-          : theme === 'dark'
-            ? 'lk-root lk-theme-dark'
+          : theme === 'interstellar'
+            ? 'lk-root lk-theme-interstellar'
             : 'lk-root';
       return (
         <div className={className} style={{ padding: 16, minHeight: '100vh' }}>

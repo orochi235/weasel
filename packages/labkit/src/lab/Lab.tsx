@@ -21,7 +21,7 @@ export interface LabProps {
   defaultInstrument: string;
   storage?: StorageAdapter | null;
   storageKey?: string;
-  theme?: 'auto' | 'light' | 'dark';
+  theme?: 'auto' | 'light' | 'interstellar';
   title?: string;
   children?: ReactNode;
 }
@@ -31,7 +31,7 @@ function buildStore(
   defaultInstrument: string,
   storage: StorageAdapter,
   storageKey: string,
-  initialTheme: 'auto' | 'light' | 'dark',
+  initialTheme: 'auto' | 'light' | 'interstellar',
 ): LabStore {
   const store = createLabStore({ storageKey, storage, initialTheme });
   if (store.getState().workspaces.length === 0) {
@@ -135,7 +135,11 @@ export function Lab({
   }, [instruments, workspaces, savedSnapshots, themeValue, store]);
 
   const themeClass =
-    themeValue === 'light' ? 'lk-theme-light' : themeValue === 'dark' ? 'lk-theme-dark' : '';
+    themeValue === 'light'
+      ? 'lk-theme-light'
+      : themeValue === 'interstellar'
+        ? 'lk-theme-interstellar'
+        : '';
 
   return (
     <LabStoreContext.Provider value={{ store }}>

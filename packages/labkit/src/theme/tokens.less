@@ -1,28 +1,37 @@
 // tokens.less — the contract.
-// Dark is the base; @media (prefers-color-scheme: light) overrides for OS-following.
-// Explicit .lk-theme-light / .lk-theme-dark classes (added by <Lab>) win via specificity.
+// Interstellar is the base; @media (prefers-color-scheme: light) overrides for OS-following.
+// Explicit .lk-theme-light / .lk-theme-interstellar classes (added by <Lab>) win via specificity.
 
 :root {
   // Surface
-  --lk-bg: #1a1410;
-  --lk-bg-elevated: #241c16;
-  --lk-bg-canvas: #2a2018;
-  --lk-border: #4a3c2e;
+  --lk-bg: #0a0a14;
+  --lk-bg-elevated: rgba(20, 20, 36, 0.55);
+  --lk-bg-canvas: #02020a;
+  --lk-border: rgba(255, 255, 255, 0.14);
   --lk-divider: rgba(255, 255, 255, 0.08);
+  --lk-glass-blur: 12px;
 
   // Text
-  --lk-text: #e8dccd;
-  --lk-text-muted: #9d8b76;
-  --lk-text-disabled: #6b5c4a;
+  --lk-text: #e8e8f0;
+  --lk-text-muted: #a8a8c0;
+  --lk-text-disabled: #5a5a78;
 
   // Accent / interactive
-  --lk-accent: #d4a574;
-  --lk-accent-hover: #e8b885;
-  --lk-focus-ring: rgba(212, 165, 116, 0.4);
+  --lk-accent: #b08adb;
+  --lk-accent-hover: #c6a3ee;
+  --lk-focus-ring: rgba(176, 138, 219, 0.45);
+
+  // Cosmic background — layered fill on .lk-lab.
+  --lk-space-nebula:
+    radial-gradient(ellipse 60% 80% at 18% 30%, rgba(150, 80, 200, 0.22), transparent 70%),
+    radial-gradient(ellipse 55% 90% at 78% 70%, rgba(220, 100, 140, 0.18), transparent 65%),
+    radial-gradient(ellipse 50% 70% at 50% 50%, rgba(60, 110, 200, 0.18), transparent 75%),
+    radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%);
 
   // Sizing
-  --lk-radius: 4px;
-  --lk-radius-sm: 2px;
+  --lk-radius: 6px;
+  --lk-radius-sm: 3px;
+  --lk-radius-lg: 14px;
   --lk-control-height: 28px;
   --lk-spacing-xs: 4px;
   --lk-spacing-sm: 8px;
@@ -30,10 +39,14 @@
   --lk-spacing-lg: 16px;
 
   // Typography
-  --lk-font: system-ui, -apple-system, sans-serif;
+  --lk-font: 'Oswald', system-ui, -apple-system, sans-serif;
   --lk-font-mono: ui-monospace, SFMono-Regular, monospace;
+  --lk-font-display: 'Oswald', system-ui, sans-serif;
   --lk-font-size: 13px;
   --lk-font-size-sm: 11px;
+  --lk-font-weight-light: 300;
+  --lk-font-weight-medium: 500;
+  --lk-font-weight-bold: 700;
 
   // Z-layers
   --lk-z-toolbar: 10;

@@ -30,7 +30,7 @@ export interface LabStoreActions {
   loadSnapshot: (snapshotId: string, workspaceId: string) => void;
   deleteSnapshot: (snapshotId: string) => void;
   listSnapshots: (workspaceId?: string) => SavedSnapshot[];
-  setTheme: (theme: 'light' | 'dark' | 'auto') => void;
+  setTheme: (theme: 'light' | 'interstellar' | 'auto') => void;
 }
 
 export type LabStore = StoreApi<LabStoreState & LabStoreActions> & {
@@ -59,8 +59,8 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
   }
 
   const themeRaw = options.storage.read(labStorageKey(options.storageKey, 'theme'));
-  let hydratedTheme: 'light' | 'dark' | 'auto';
-  if (themeRaw === 'light' || themeRaw === 'dark' || themeRaw === 'auto') {
+  let hydratedTheme: 'light' | 'interstellar' | 'auto';
+  if (themeRaw === 'light' || themeRaw === 'interstellar' || themeRaw === 'auto') {
     hydratedTheme = themeRaw;
   } else {
     hydratedTheme = options.initialTheme ?? 'auto';

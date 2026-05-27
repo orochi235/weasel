@@ -1,9 +1,22 @@
 @import './tokens.less';
 
-// Resets and global element defaults
+// Self-hosted Oswald (variable font, weights 100–900) for the headline typeface.
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../fonts/oswald-latin-variable.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+// Resets and global element defaults.
 .lk-root {
   font-family: var(--lk-font);
   font-size: var(--lk-font-size);
+  font-weight: var(--lk-font-weight-light, 300);
   color: var(--lk-text);
   background: var(--lk-bg);
   line-height: 1.4;
@@ -21,9 +34,12 @@
     height: var(--lk-control-height);
     padding: 0 var(--lk-spacing-md);
     cursor: pointer;
+    backdrop-filter: blur(var(--lk-glass-blur, 0));
+    -webkit-backdrop-filter: blur(var(--lk-glass-blur, 0));
 
     &:hover {
       border-color: var(--lk-accent);
+      color: var(--lk-accent);
     }
 
     &:focus-visible {
@@ -40,4 +56,64 @@
   input[type="range"] {
     accent-color: var(--lk-accent);
   }
+}
+
+// Cosmic background applied to the Lab root. The starscape sits as a fixed
+// pseudo-element so panning the workspace doesn't shift the field of stars.
+.lk-lab {
+  position: relative;
+  isolation: isolate;
+  background: var(--lk-space-nebula, var(--lk-bg));
+  background-attachment: fixed;
+}
+
+.lk-lab::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1.2px 1.2px at 4% 18%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 9% 64%, #fff, transparent 60%),
+    radial-gradient(1.5px 1.5px at 14% 36%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 19% 82%, #cce, transparent 60%),
+    radial-gradient(0.8px 0.8px at 23% 28%, #fff, transparent 60%),
+    radial-gradient(1.4px 1.4px at 28% 55%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 33% 12%, #ffe, transparent 60%),
+    radial-gradient(1.2px 1.2px at 37% 70%, #fff, transparent 60%),
+    radial-gradient(0.7px 0.7px at 42% 40%, #fff, transparent 60%),
+    radial-gradient(1.5px 1.5px at 47% 88%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 52% 22%, #cef, transparent 60%),
+    radial-gradient(1.3px 1.3px at 57% 60%, #fff, transparent 60%),
+    radial-gradient(0.9px 0.9px at 62% 35%, #fff, transparent 60%),
+    radial-gradient(1.1px 1.1px at 66% 75%, #fff, transparent 60%),
+    radial-gradient(1.4px 1.4px at 71% 14%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 76% 50%, #fff, transparent 60%),
+    radial-gradient(0.8px 0.8px at 81% 80%, #ffe, transparent 60%),
+    radial-gradient(1.3px 1.3px at 85% 25%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 89% 62%, #cce, transparent 60%),
+    radial-gradient(1.5px 1.5px at 93% 38%, #fff, transparent 60%),
+    radial-gradient(0.9px 0.9px at 97% 78%, #fff, transparent 60%);
+  background-repeat: no-repeat;
+}
+
+// Light theme opts out of the cosmic backdrop & starscape.
+.lk-theme-light.lk-lab {
+  background: var(--lk-bg);
+  background-attachment: scroll;
+}
+
+.lk-theme-light.lk-lab::before {
+  display: none;
+}
+
+// Headline / display text uses Oswald light at tighter line-height.
+.lk-lab h1,
+.lk-lab h2,
+.lk-lab h3 {
+  font-family: var(--lk-font-display);
+  font-weight: var(--lk-font-weight-light, 300);
+  letter-spacing: 0.01em;
+  line-height: 1.2;
 }

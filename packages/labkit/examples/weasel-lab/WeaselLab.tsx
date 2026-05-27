@@ -8,6 +8,7 @@ export function WeaselLab() {
       defaultInstrument="WeaselScene"
       storage={localStorageAdapter}
       storageKey="weasel-lab"
+      theme="interstellar"
       title="Weasel Lab"
     />
   );

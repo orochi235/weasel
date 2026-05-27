@@ -107,8 +107,8 @@ describe('updateWorkspaceConfig', () => {
 describe('setTheme', () => {
   it('updates theme', () => {
     const s = makeStore();
-    s.getState().setTheme('dark');
-    expect(s.getState().theme).toBe('dark');
+    s.getState().setTheme('interstellar');
+    expect(s.getState().theme).toBe('interstellar');
   });
 });
 

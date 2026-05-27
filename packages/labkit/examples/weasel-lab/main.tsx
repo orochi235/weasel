@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../src/styles.less';
 import '../../src/theme/light.less';
-import '../../src/theme/dark.less';
+import '../../src/theme/interstellar.less';
 import { WeaselLab } from './WeaselLab';
 
 const root = document.getElementById('root');

@@ -30,17 +30,17 @@ describe('LabShell', () => {
     );
     const root = container.firstChild as HTMLElement;
     expect(root.classList.contains('lk-theme-light')).toBe(true);
-    expect(root.classList.contains('lk-theme-dark')).toBe(false);
+    expect(root.classList.contains('lk-theme-interstellar')).toBe(false);
   });
 
-  test('applies lk-theme-dark class when theme="dark"', () => {
+  test('applies lk-theme-interstellar class when theme="interstellar"', () => {
     const { container } = render(
-      <LabShell title="t" theme="dark">
+      <LabShell title="t" theme="interstellar">
         x
       </LabShell>,
     );
     const root = container.firstChild as HTMLElement;
-    expect(root.classList.contains('lk-theme-dark')).toBe(true);
+    expect(root.classList.contains('lk-theme-interstellar')).toBe(true);
     expect(root.classList.contains('lk-theme-light')).toBe(false);
   });
 
@@ -48,7 +48,7 @@ describe('LabShell', () => {
     const { container } = render(<LabShell title="t">x</LabShell>);
     const root = container.firstChild as HTMLElement;
     expect(root.classList.contains('lk-theme-light')).toBe(false);
-    expect(root.classList.contains('lk-theme-dark')).toBe(false);
+    expect(root.classList.contains('lk-theme-interstellar')).toBe(false);
   });
 
   test('always applies lk-root class', () => {

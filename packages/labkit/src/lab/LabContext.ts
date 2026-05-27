@@ -13,8 +13,8 @@ export interface LabContextValue {
   saveSnapshot: (workspaceId: string, name?: string) => void;
   loadSnapshot: (workspaceId: string, snapshotId: string) => void;
   deleteSnapshot: (snapshotId: string) => void;
-  theme: 'auto' | 'light' | 'dark';
-  setTheme: (t: 'auto' | 'light' | 'dark') => void;
+  theme: 'auto' | 'light' | 'interstellar';
+  setTheme: (t: 'auto' | 'light' | 'interstellar') => void;
 }
 
 export const LabContext = createContext<LabContextValue | null>(null);

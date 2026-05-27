@@ -94,16 +94,16 @@ describe('<Lab>', () => {
     expect(container.querySelector('.lk-lab')?.className).toMatch(/lk-theme-light/);
   });
 
-  it('theme="dark" applies lk-theme-dark class', () => {
-    const { container } = mountLab({ theme: 'dark' });
-    expect(container.querySelector('.lk-lab')?.className).toMatch(/lk-theme-dark/);
+  it('theme="interstellar" applies lk-theme-interstellar class', () => {
+    const { container } = mountLab({ theme: 'interstellar' });
+    expect(container.querySelector('.lk-lab')?.className).toMatch(/lk-theme-interstellar/);
   });
 
   it('theme="auto" applies neither class', () => {
     const { container } = mountLab({ theme: 'auto' });
     const cls = container.querySelector('.lk-lab')?.className ?? '';
     expect(cls).not.toMatch(/lk-theme-light/);
-    expect(cls).not.toMatch(/lk-theme-dark/);
+    expect(cls).not.toMatch(/lk-theme-interstellar/);
   });
 
   it('setTheme updates class at runtime', () => {

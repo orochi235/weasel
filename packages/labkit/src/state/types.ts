@@ -25,7 +25,7 @@ export interface SavedSnapshot {
 export interface LabStoreState {
   workspaces: WorkspaceRecord[];
   savedSnapshots: SavedSnapshot[];
-  theme: 'light' | 'dark' | 'auto';
+  theme: 'light' | 'interstellar' | 'auto';
 }
 
 export interface StorageAdapter {
@@ -44,7 +44,7 @@ export interface ExperimentStateHandle<TS, TC> {
 export interface CreateLabStoreOptions {
   storageKey: string;
   storage: StorageAdapter;
-  initialTheme?: 'light' | 'dark' | 'auto';
+  initialTheme?: 'light' | 'interstellar' | 'auto';
 }
 
 export type InstrumentSerializers = Record<
