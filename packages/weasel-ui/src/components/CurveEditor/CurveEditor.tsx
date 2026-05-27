@@ -51,6 +51,7 @@ export function CurveEditor(props: CurveEditorProps) {
     value, width, height,
     onChange, onChangeCommit,
     domain = '2d',
+    endpoints = 'free',
     addPointMode = 'click-curve',
     xRange = [0, 1],
     yRange = [0, 1],
@@ -121,12 +122,22 @@ export function CurveEditor(props: CurveEditorProps) {
     const m = pointerToModel(e.clientX, e.clientY);
     const next = d.startValue.map((p) => ({ ...p }));
     let nx = m.x;
-    if (domain === '1d') {
+    let ny = m.y;
+
+    const isEndpoint = d.index === 0 || d.index === next.length - 1;
+
+    if (endpoints === 'pinned-both' && isEndpoint) {
+      nx = d.index === 0 ? modelRange.xMin : modelRange.xMax;
+      ny = d.index === 0 ? modelRange.yMin : modelRange.yMax;
+    } else if (endpoints === 'pinned-x' && isEndpoint) {
+      nx = d.index === 0 ? modelRange.xMin : modelRange.xMax;
+    } else if (domain === '1d') {
       const left = d.index > 0 ? next[d.index - 1].x : -Infinity;
       const right = d.index < next.length - 1 ? next[d.index + 1].x : Infinity;
       nx = Math.max(left, Math.min(right, nx));
     }
-    next[d.index] = { x: nx, y: m.y };
+
+    next[d.index] = { x: nx, y: ny };
     d.lastNext = next;
     onChange(next);
   };
@@ -146,10 +157,16 @@ export function CurveEditor(props: CurveEditorProps) {
     cleanupDrag();
   };
 
+  const isPinnedEndpoint = useCallback((index: number): boolean => {
+    if (endpoints === 'free') return false;
+    return index === 0 || index === value.length - 1;
+  }, [endpoints, value.length]);
+
   const onPointerDownAnchor = useCallback((index: number, e: ReactPointerEvent<SVGCircleElement>) => {
     e.stopPropagation();
     // Shift+click → delete.
     if (e.shiftKey) {
+      if (isPinnedEndpoint(index)) return;
       const next = value.filter((_, i) => i !== index);
       onChange(next);
       if (onChangeCommit) onChangeCommit(next, value);
@@ -164,7 +181,7 @@ export function CurveEditor(props: CurveEditorProps) {
     window.addEventListener('pointermove', onWindowMoveRef.current);
     window.addEventListener('pointerup', onWindowUpRef.current);
     window.addEventListener('pointercancel', onWindowCancelRef.current);
-  }, [value, onChange, onChangeCommit]);
+  }, [value, onChange, onChangeCommit, isPinnedEndpoint]);
 
   const segmentSamples = useMemo((): Point[][] => {
     if (value.length < 2) return [];
@@ -232,17 +249,21 @@ export function CurveEditor(props: CurveEditorProps) {
           fill="none"
         />
       )}
-      {plotAnchors.map((a, i) => (
-        <circle
-          key={i}
-          className={s.anchor}
-          cx={a.x}
-          cy={a.y}
-          r={4}
-          data-anchor-index={i}
-          onPointerDown={(e) => onPointerDownAnchor(i, e)}
-        />
-      ))}
+      {plotAnchors.map((a, i) => {
+        const pinned = isPinnedEndpoint(i);
+        const anchorCls = [s.anchor, pinned && s.pinned].filter(Boolean).join(' ');
+        return (
+          <circle
+            key={i}
+            className={anchorCls}
+            cx={a.x}
+            cy={a.y}
+            r={4}
+            data-anchor-index={i}
+            onPointerDown={(e) => onPointerDownAnchor(i, e)}
+          />
+        );
+      })}
     </svg>
   );
 }

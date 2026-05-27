@@ -252,3 +252,82 @@ describe('CurveEditor — add and delete', () => {
     expect(next).toEqual([{ x: 0, y: 0 }, { x: 1, y: 1 }]);
   });
 });
+
+describe('CurveEditor — endpoint constraints', () => {
+  it('pinned-x: first anchor x locked to xRange[0]', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={onChange}
+        endpoints="pinned-x"
+        width={200}
+        height={100}
+      />,
+    );
+    const first = container.querySelectorAll('circle')[0] as Element;
+    fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 7 });
+    fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 7 });
+
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].x).toBe(0);   // x clamped to xRange[0]
+    expect(last[0].y).not.toBe(0); // y is editable
+  });
+
+  it('pinned-both: first anchor stays at the corner', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={onChange}
+        endpoints="pinned-both"
+        width={200}
+        height={100}
+      />,
+    );
+    const first = container.querySelectorAll('circle')[0] as Element;
+    fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 8 });
+    fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 8 });
+
+    if (onChange.mock.calls.length > 0) {
+      const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+      expect(last[0].x).toBe(0);
+      expect(last[0].y).toBe(0);
+    }
+  });
+
+  it('pinned endpoints cannot be deleted via shift+click', () => {
+    const onChangeCommit = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        onChangeCommit={onChangeCommit}
+        endpoints="pinned-x"
+        width={200}
+        height={100}
+      />,
+    );
+    const first = container.querySelectorAll('circle')[0] as Element;
+    fireEvent.pointerDown(first, {
+      clientX: 0, clientY: 100, pointerId: 9, shiftKey: true,
+    });
+    expect(onChangeCommit).not.toHaveBeenCalled();
+  });
+
+  it('renders pinned endpoints with the pinned visual class', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        endpoints="pinned-both"
+        width={200}
+        height={100}
+      />,
+    );
+    const circles = container.querySelectorAll('circle');
+    expect(circles[0].className.baseVal).toMatch(/pinned/);
+    expect(circles[2].className.baseVal).toMatch(/pinned/);
+    expect(circles[1].className.baseVal).not.toMatch(/pinned/);
+  });
+});
