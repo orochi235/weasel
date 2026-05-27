@@ -350,12 +350,11 @@ describe('CurveEditor — visual chrome', () => {
     expect(gridLines.length).toBeGreaterThan(0);
   });
 
-  it('renders axis lines when showAxes is true', () => {
+  it('renders axis lines unconditionally', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
         onChange={() => {}}
-        showAxes
         width={200}
         height={100}
       />,

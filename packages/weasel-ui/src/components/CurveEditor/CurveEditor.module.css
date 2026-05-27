@@ -1,5 +1,5 @@
 .root {
-  --curve-bg: transparent;
+  --curve-bg: rgba(0, 0, 0, 0.04);
   --curve-grid: rgba(0, 0, 0, 0.06);
   --curve-axis: rgba(0, 0, 0, 0.3);
   --curve-line: #3478f6;

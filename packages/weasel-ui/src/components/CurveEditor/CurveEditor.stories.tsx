@@ -17,7 +17,6 @@ function Interactive(props: {
   width?: number;
   height?: number;
   showGrid?: boolean;
-  showAxes?: boolean;
 }) {
   const [value, setValue] = useState(props.initial);
   return (
@@ -29,7 +28,6 @@ function Interactive(props: {
       width={props.width ?? 400}
       height={props.height ?? 200}
       showGrid={props.showGrid}
-      showAxes={props.showAxes}
     />
   );
 }
@@ -41,7 +39,6 @@ export const EasingCurve: Story = {
       domain="1d"
       endpoints="pinned-both"
       showGrid
-      showAxes
     />
   ),
 };
@@ -63,7 +60,6 @@ export const PinnedX: Story = {
       initial={[{ x: 0, y: 0.3 }, { x: 0.5, y: 0.7 }, { x: 1, y: 0.4 }]}
       domain="1d"
       endpoints="pinned-x"
-      showAxes
     />
   ),
 };
