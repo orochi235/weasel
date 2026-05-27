@@ -34,6 +34,8 @@ export interface CurveEditorProps {
   height: number;
   /** Show a background grid. */
   showGrid?: boolean;
+  /** Show axis lines along the bottom and left edges. Default `true`. */
+  showAxes?: boolean;
   /** How new anchors are added. Default 'click-curve'. */
   addPointMode?: AddPointMode;
   /** Extra class on the root SVG element. */
@@ -293,20 +295,22 @@ export function CurveEditor(props: CurveEditorProps) {
           ))}
         </g>
       )}
-      <g>
-        <line
-          data-curve-element="axis"
-          className={s.axis}
-          x1={0} x2={width}
-          y1={height} y2={height}
-        />
-        <line
-          data-curve-element="axis"
-          className={s.axis}
-          x1={0} x2={0}
-          y1={0} y2={height}
-        />
-      </g>
+      {props.showAxes !== false && (
+        <g>
+          <line
+            data-curve-element="axis"
+            className={s.axis}
+            x1={0} x2={width}
+            y1={height} y2={height}
+          />
+          <line
+            data-curve-element="axis"
+            className={s.axis}
+            x1={0} x2={0}
+            y1={0} y2={height}
+          />
+        </g>
+      )}
       {pathD && (
         <path
           className={s.curve}

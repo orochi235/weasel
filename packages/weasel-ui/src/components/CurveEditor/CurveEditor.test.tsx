@@ -350,7 +350,7 @@ describe('CurveEditor — visual chrome', () => {
     expect(gridLines.length).toBeGreaterThan(0);
   });
 
-  it('renders axis lines unconditionally', () => {
+  it('renders axis lines by default', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
@@ -361,6 +361,20 @@ describe('CurveEditor — visual chrome', () => {
     );
     const axes = container.querySelectorAll('[data-curve-element="axis"]');
     expect(axes.length).toBe(2);
+  });
+
+  it('omits axis lines when showAxes is false', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        showAxes={false}
+        width={200}
+        height={100}
+      />,
+    );
+    const axes = container.querySelectorAll('[data-curve-element="axis"]');
+    expect(axes.length).toBe(0);
   });
 
   it('marks the dragged anchor with the active class', () => {
