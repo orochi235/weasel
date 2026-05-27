@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases';
 import { callbackSourcePlugin } from './vite-plugin-callback-source';
+import { traitSchemasPlugin } from './vite-plugin-trait-schemas';
 
 const repoRoot = resolve(__dirname, '../..');
 
@@ -31,6 +32,7 @@ export default defineConfig({
         resolve(repoRoot, 'apps/draw/src'),
       ],
     }),
+    traitSchemasPlugin({ repoRoot }),
   ],
   server: { port: 5174 },
   define: {

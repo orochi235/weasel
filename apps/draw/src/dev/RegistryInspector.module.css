@@ -264,3 +264,45 @@
 }
 .tagAdded { color: #6cb96c; }
 .tagRemoved { color: #c87878; }
+
+/* Schema panel — property tables for shape/op/action/gesture/node detail. */
+.schemaTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 4px 0 8px;
+}
+.schemaTable th,
+.schemaTable td {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--wzl-border, #3a342b);
+  vertical-align: top;
+}
+.schemaTable th {
+  color: var(--wzl-muted, #a59685);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+.schemaName {
+  font-family: var(--wzl-font-mono, ui-monospace, monospace);
+  color: var(--wzl-fg, #d4c4a8);
+}
+.schemaOptional { color: var(--wzl-muted, #a59685); margin-left: 2px; }
+.schemaType {
+  font-family: var(--wzl-font-mono, ui-monospace, monospace);
+  color: var(--wzl-accent, #c89a5e);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.schemaDefault {
+  font-family: var(--wzl-font-mono, ui-monospace, monospace);
+  color: #8aa86e;
+  font-size: 12px;
+}
+.schemaMuted { color: var(--wzl-muted, #a59685); }
+.schemaSource { color: var(--wzl-muted, #a59685); font-size: 12px; margin-top: 4px; }
+.schemaNote { color: var(--wzl-muted, #a59685); font-size: 12px; font-style: italic; margin: 4px 0 8px; }
