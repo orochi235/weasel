@@ -5,6 +5,7 @@ export const NORMAL: ModeDefinition = {
   kind: 'soft',
   allows: [
     'creates-selection',
+    'transforms-selection',
     'creates-paths',
     'creates-shapes',
     'creates-text',
@@ -30,6 +31,7 @@ export const ISOLATION: ModeDefinition = {
   kind: 'soft',
   allows: [
     'creates-selection',
+    'transforms-selection',
     'creates-paths',
     'creates-shapes',
     'creates-text',
