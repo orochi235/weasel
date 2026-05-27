@@ -102,6 +102,22 @@ export function CurveEditor(props: CurveEditorProps) {
   const onWindowUpRef = useRef<(e: PointerEvent) => void>(() => {});
   const onWindowCancelRef = useRef<(e: PointerEvent) => void>(() => {});
 
+  // Stable outer handlers — same function identity across renders.
+  // They delegate to refs that point at the latest per-render handler.
+  // Without this, `removeEventListener` would receive a different function
+  // value than `addEventListener` did (because the per-render inner handlers
+  // get reassigned every render), silently leaking listeners on each
+  // controlled re-render during a drag.
+  const stableMoveHandler = useRef((e: PointerEvent) => {
+    onWindowMoveRef.current(e);
+  }).current;
+  const stableUpHandler = useRef((e: PointerEvent) => {
+    onWindowUpRef.current(e);
+  }).current;
+  const stableCancelHandler = useRef((e: PointerEvent) => {
+    onWindowCancelRef.current(e);
+  }).current;
+
   const pointerToModel = useCallback((clientX: number, clientY: number): Point => {
     const rect = svgRef.current?.getBoundingClientRect();
     const left = rect?.left ?? 0;
@@ -111,11 +127,11 @@ export function CurveEditor(props: CurveEditorProps) {
   }, [modelRange, plotSize]);
 
   const cleanupDrag = useCallback(() => {
-    window.removeEventListener('pointermove', onWindowMoveRef.current);
-    window.removeEventListener('pointerup', onWindowUpRef.current);
-    window.removeEventListener('pointercancel', onWindowCancelRef.current);
+    window.removeEventListener('pointermove', stableMoveHandler);
+    window.removeEventListener('pointerup', stableUpHandler);
+    window.removeEventListener('pointercancel', stableCancelHandler);
     dragRef.current = null;
-  }, []);
+  }, [stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   onWindowMoveRef.current = (e: PointerEvent) => {
     const d = dragRef.current;
@@ -182,10 +198,10 @@ export function CurveEditor(props: CurveEditorProps) {
       startValue: value,
       lastNext: value.map((p) => ({ ...p })),
     };
-    window.addEventListener('pointermove', onWindowMoveRef.current);
-    window.addEventListener('pointerup', onWindowUpRef.current);
-    window.addEventListener('pointercancel', onWindowCancelRef.current);
-  }, [value, onChange, onChangeCommit, isPinnedEndpoint]);
+    window.addEventListener('pointermove', stableMoveHandler);
+    window.addEventListener('pointerup', stableUpHandler);
+    window.addEventListener('pointercancel', stableCancelHandler);
+  }, [value, onChange, onChangeCommit, isPinnedEndpoint, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const segmentSamples = useMemo((): Point[][] => {
     if (value.length < 2) return [];
@@ -217,7 +233,18 @@ export function CurveEditor(props: CurveEditorProps) {
       const insertIndex = hit.segIdx + 1;
       const next = [...value.slice(0, insertIndex), modelPt, ...value.slice(insertIndex)];
       onChange(next);
-      if (onChangeCommit) onChangeCommit(next, value);
+      // Begin a drag on the new anchor — commit fires on pointerup with the
+      // final position so the user can slide the insertion precisely.
+      setActiveDragIndex(insertIndex);
+      dragRef.current = {
+        index: insertIndex,
+        pointerId: e.pointerId,
+        startValue: value, // pre-insert value, so the commit's `prev` is correct
+        lastNext: next,
+      };
+      window.addEventListener('pointermove', stableMoveHandler);
+      window.addEventListener('pointerup', stableUpHandler);
+      window.addEventListener('pointercancel', stableCancelHandler);
       return;
     }
 
@@ -231,7 +258,7 @@ export function CurveEditor(props: CurveEditorProps) {
     const next = [...value.slice(0, insertIndex), modelPt, ...value.slice(insertIndex)];
     onChange(next);
     if (onChangeCommit) onChangeCommit(next, value);
-  }, [addPointMode, value, modelRange, plotSize, segmentSamples, domain, onChange, onChangeCommit]);
+  }, [addPointMode, value, modelRange, plotSize, segmentSamples, domain, onChange, onChangeCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const cls = [s.root, className].filter(Boolean).join(' ');
 

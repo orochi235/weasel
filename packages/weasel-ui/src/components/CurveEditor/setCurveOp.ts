@@ -42,8 +42,8 @@ export function createSetCurveOp(args: CreateSetCurveOpArgs): Op {
     label,
     coalesceKey,
     apply(adapter) {
-      (adapter as SetCurveAdapter).setValue(id, to);
       if (controlPointsEqual(from, to)) return false;
+      (adapter as SetCurveAdapter).setValue(id, to);
       return undefined;
     },
     invert() {

@@ -41,4 +41,14 @@ describe('createSetCurveOp', () => {
     const result = op.apply({ setValue: vi.fn() });
     expect(result).toBe(false);
   });
+
+  it('does NOT call adapter.setValue on no-op', () => {
+    const setValue = vi.fn();
+    const adapter: SetCurveAdapter = { setValue };
+    const same: ControlPoint[] = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
+    const op = createSetCurveOp({ id: 'c1', from: same, to: same.map((p) => ({ ...p })) });
+    const result = op.apply(adapter);
+    expect(result).toBe(false);
+    expect(setValue).not.toHaveBeenCalled();
+  });
 });

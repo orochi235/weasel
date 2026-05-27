@@ -184,7 +184,11 @@ describe('CurveEditor — add and delete', () => {
     // two-anchor [(0,0),(1,1)] curve, so model (0.5, 0.5) is plot (100, 50)).
     const svg = container.querySelector('svg')!;
     fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 3 });
-
+    // After pointerDown alone, onChange has fired (insertion + drag-in-progress)
+    // but commit waits for pointerUp.
+    expect(onChange).toHaveBeenCalled();
+    expect(onChangeCommit).not.toHaveBeenCalled();
+    fireEvent.pointerUp(window, { clientX: 100, clientY: 50, pointerId: 3 });
     expect(onChangeCommit).toHaveBeenCalledTimes(1);
     const [next] = onChangeCommit.mock.calls[0];
     expect(next).toHaveLength(3);
@@ -289,11 +293,10 @@ describe('CurveEditor — endpoint constraints', () => {
     fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 8 });
     fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 8 });
 
-    if (onChange.mock.calls.length > 0) {
-      const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
-      expect(last[0].x).toBe(0);
-      expect(last[0].y).toBe(0);
-    }
+    expect(onChange).toHaveBeenCalled();
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].x).toBe(0);
+    expect(last[0].y).toBe(0);
   });
 
   it('pinned endpoints cannot be deleted via shift+click', () => {
