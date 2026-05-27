@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { sampleCurve, type Point } from './catmullRom';
-import { modelToPlot, plotToModel, type ModelRange } from './geometry';
+import { hitTestCurve, modelToPlot, plotToModel, type ModelRange } from './geometry';
 import s from './CurveEditor.module.css';
 
 export interface ControlPoint {
@@ -51,6 +51,7 @@ export function CurveEditor(props: CurveEditorProps) {
     value, width, height,
     onChange, onChangeCommit,
     domain = '2d',
+    addPointMode = 'click-curve',
     xRange = [0, 1],
     yRange = [0, 1],
     className,
@@ -147,6 +148,13 @@ export function CurveEditor(props: CurveEditorProps) {
 
   const onPointerDownAnchor = useCallback((index: number, e: ReactPointerEvent<SVGCircleElement>) => {
     e.stopPropagation();
+    // Shift+click → delete.
+    if (e.shiftKey) {
+      const next = value.filter((_, i) => i !== index);
+      onChange(next);
+      if (onChangeCommit) onChangeCommit(next, value);
+      return;
+    }
     dragRef.current = {
       index,
       pointerId: e.pointerId,
@@ -156,7 +164,53 @@ export function CurveEditor(props: CurveEditorProps) {
     window.addEventListener('pointermove', onWindowMoveRef.current);
     window.addEventListener('pointerup', onWindowUpRef.current);
     window.addEventListener('pointercancel', onWindowCancelRef.current);
-  }, [value]);
+  }, [value, onChange, onChangeCommit]);
+
+  const segmentSamples = useMemo((): Point[][] => {
+    if (value.length < 2) return [];
+    const out: Point[][] = [];
+    const all = sampleCurve(value, SAMPLES_PER_SEGMENT);
+    for (let i = 0; i < value.length - 1; i++) {
+      const start = i * SAMPLES_PER_SEGMENT;
+      const end = start + SAMPLES_PER_SEGMENT;
+      const slice = all.slice(start, end + 1);
+      out.push(slice.map((p) => modelToPlot(p, modelRange, plotSize)));
+    }
+    return out;
+  }, [value, modelRange, plotSize]);
+
+  const onSvgPointerDown = useCallback((e: ReactPointerEvent<SVGSVGElement>) => {
+    if (addPointMode === 'never') return;
+    const target = e.target as SVGElement;
+    if (target.tagName === 'circle') return;
+
+    const rect = svgRef.current?.getBoundingClientRect();
+    const left = rect?.left ?? 0;
+    const top = rect?.top ?? 0;
+    const plotPt: Point = { x: e.clientX - left, y: e.clientY - top };
+    const modelPt = plotToModel(plotPt, modelRange, plotSize);
+
+    if (addPointMode === 'click-curve') {
+      const hit = hitTestCurve(segmentSamples, plotPt, 8);
+      if (!hit) return;
+      const insertIndex = hit.segIdx + 1;
+      const next = [...value.slice(0, insertIndex), modelPt, ...value.slice(insertIndex)];
+      onChange(next);
+      if (onChangeCommit) onChangeCommit(next, value);
+      return;
+    }
+
+    // 'click-empty'
+    let insertIndex = value.length;
+    if (domain === '1d') {
+      for (let i = 0; i < value.length; i++) {
+        if (value[i].x > modelPt.x) { insertIndex = i; break; }
+      }
+    }
+    const next = [...value.slice(0, insertIndex), modelPt, ...value.slice(insertIndex)];
+    onChange(next);
+    if (onChangeCommit) onChangeCommit(next, value);
+  }, [addPointMode, value, modelRange, plotSize, segmentSamples, domain, onChange, onChangeCommit]);
 
   const cls = [s.root, className].filter(Boolean).join(' ');
 
@@ -169,6 +223,7 @@ export function CurveEditor(props: CurveEditorProps) {
       height={height}
       viewBox={`0 0 ${width} ${height}`}
       role="img"
+      onPointerDown={onSvgPointerDown}
     >
       {pathD && (
         <path

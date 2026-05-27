@@ -144,3 +144,111 @@ describe('CurveEditor — drag', () => {
     expect(last[1].x).toBeGreaterThan(1.0);
   });
 });
+
+describe('CurveEditor — add and delete', () => {
+  it('adds an anchor on empty-plot click when addPointMode="click-empty"', () => {
+    const onChange = vi.fn();
+    const onChangeCommit = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={onChange}
+        onChangeCommit={onChangeCommit}
+        addPointMode="click-empty"
+        width={200}
+        height={100}
+      />,
+    );
+    const svg = container.querySelector('svg')!;
+    fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 2 });
+
+    expect(onChangeCommit).toHaveBeenCalledTimes(1);
+    const [next] = onChangeCommit.mock.calls[0];
+    expect(next).toHaveLength(3);
+  });
+
+  it('adds an anchor on curve click when addPointMode="click-curve"', () => {
+    const onChange = vi.fn();
+    const onChangeCommit = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={onChange}
+        onChangeCommit={onChangeCommit}
+        addPointMode="click-curve"
+        width={200}
+        height={100}
+      />,
+    );
+    // Click near the middle of the curve (which is on the y=x line for a
+    // two-anchor [(0,0),(1,1)] curve, so model (0.5, 0.5) is plot (100, 50)).
+    const svg = container.querySelector('svg')!;
+    fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 3 });
+
+    expect(onChangeCommit).toHaveBeenCalledTimes(1);
+    const [next] = onChangeCommit.mock.calls[0];
+    expect(next).toHaveLength(3);
+  });
+
+  it('does not add on click when addPointMode="never"', () => {
+    const onChangeCommit = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        onChangeCommit={onChangeCommit}
+        addPointMode="never"
+        width={200}
+        height={100}
+      />,
+    );
+    const svg = container.querySelector('svg')!;
+    fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 4 });
+
+    expect(onChangeCommit).not.toHaveBeenCalled();
+  });
+
+  it('inserts at x-sorted index in 1D mode (click-empty)', () => {
+    const onChangeCommit = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        onChangeCommit={onChangeCommit}
+        domain="1d"
+        addPointMode="click-empty"
+        width={200}
+        height={100}
+      />,
+    );
+    // Click at plot (50, 50) → model (0.25, 0.5). Should insert at index 1.
+    const svg = container.querySelector('svg')!;
+    fireEvent.pointerDown(svg, { clientX: 50, clientY: 50, pointerId: 5 });
+
+    const [next] = onChangeCommit.mock.calls[0];
+    expect(next[1].x).toBeCloseTo(0.25, 2);
+    expect(next).toHaveLength(3);
+  });
+
+  it('deletes an anchor on shift+click', () => {
+    const onChangeCommit = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        onChangeCommit={onChangeCommit}
+        width={200}
+        height={100}
+      />,
+    );
+    const middle = container.querySelectorAll('circle')[1] as Element;
+    fireEvent.pointerDown(middle, {
+      clientX: 100, clientY: 50, pointerId: 6, shiftKey: true,
+    });
+
+    expect(onChangeCommit).toHaveBeenCalledTimes(1);
+    const [next] = onChangeCommit.mock.calls[0];
+    expect(next).toHaveLength(2);
+    expect(next).toEqual([{ x: 0, y: 0 }, { x: 1, y: 1 }]);
+  });
+});
