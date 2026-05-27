@@ -331,3 +331,49 @@ describe('CurveEditor — endpoint constraints', () => {
     expect(circles[1].className.baseVal).not.toMatch(/pinned/);
   });
 });
+
+describe('CurveEditor — visual chrome', () => {
+  it('renders grid lines when showGrid is true', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        showGrid
+        width={200}
+        height={100}
+      />,
+    );
+    const gridLines = container.querySelectorAll('[data-curve-element="grid"]');
+    expect(gridLines.length).toBeGreaterThan(0);
+  });
+
+  it('renders axis lines when showAxes is true', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        showAxes
+        width={200}
+        height={100}
+      />,
+    );
+    const axes = container.querySelectorAll('[data-curve-element="axis"]');
+    expect(axes.length).toBe(2);
+  });
+
+  it('marks the dragged anchor with the active class', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        width={200}
+        height={100}
+      />,
+    );
+    const middle = container.querySelectorAll('circle')[1];
+    fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 10 });
+    expect(middle.className.baseVal).toMatch(/active/);
+    fireEvent.pointerUp(window, { clientX: 100, clientY: 50, pointerId: 10 });
+    expect(middle.className.baseVal).not.toMatch(/active/);
+  });
+});

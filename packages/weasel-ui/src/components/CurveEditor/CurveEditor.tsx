@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { sampleCurve, type Point } from './catmullRom';
 import { hitTestCurve, modelToPlot, plotToModel, type ModelRange } from './geometry';
 import s from './CurveEditor.module.css';
@@ -94,6 +94,7 @@ export function CurveEditor(props: CurveEditorProps) {
   }
   const dragRef = useRef<DragState | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const [activeDragIndex, setActiveDragIndex] = useState<number | null>(null);
 
   // Refs to break the useCallback dependency cycle between the three
   // window-level handlers (each one needs to remove the others on cleanup).
@@ -146,6 +147,7 @@ export function CurveEditor(props: CurveEditorProps) {
     const d = dragRef.current;
     if (!d || d.pointerId !== e.pointerId) return;
     if (onChangeCommit) onChangeCommit(d.lastNext, d.startValue);
+    setActiveDragIndex(null);
     cleanupDrag();
   };
 
@@ -154,6 +156,7 @@ export function CurveEditor(props: CurveEditorProps) {
     if (!d || d.pointerId !== e.pointerId) return;
     // Restore pre-drag value; no commit.
     onChange(d.startValue.map((p) => ({ ...p })));
+    setActiveDragIndex(null);
     cleanupDrag();
   };
 
@@ -172,6 +175,7 @@ export function CurveEditor(props: CurveEditorProps) {
       if (onChangeCommit) onChangeCommit(next, value);
       return;
     }
+    setActiveDragIndex(index);
     dragRef.current = {
       index,
       pointerId: e.pointerId,
@@ -242,6 +246,44 @@ export function CurveEditor(props: CurveEditorProps) {
       role="img"
       onPointerDown={onSvgPointerDown}
     >
+      {props.showGrid && (
+        <g>
+          {[0.25, 0.5, 0.75].map((f) => (
+            <line
+              key={`gx-${f}`}
+              data-curve-element="grid"
+              className={s.grid}
+              x1={f * width} x2={f * width}
+              y1={0} y2={height}
+            />
+          ))}
+          {[0.25, 0.5, 0.75].map((f) => (
+            <line
+              key={`gy-${f}`}
+              data-curve-element="grid"
+              className={s.grid}
+              x1={0} x2={width}
+              y1={f * height} y2={f * height}
+            />
+          ))}
+        </g>
+      )}
+      {props.showAxes && (
+        <g>
+          <line
+            data-curve-element="axis"
+            className={s.axis}
+            x1={0} x2={width}
+            y1={height} y2={height}
+          />
+          <line
+            data-curve-element="axis"
+            className={s.axis}
+            x1={0} x2={0}
+            y1={0} y2={height}
+          />
+        </g>
+      )}
       {pathD && (
         <path
           className={s.curve}
@@ -251,7 +293,8 @@ export function CurveEditor(props: CurveEditorProps) {
       )}
       {plotAnchors.map((a, i) => {
         const pinned = isPinnedEndpoint(i);
-        const anchorCls = [s.anchor, pinned && s.pinned].filter(Boolean).join(' ');
+        const active = activeDragIndex === i;
+        const anchorCls = [s.anchor, pinned && s.pinned, active && s.active].filter(Boolean).join(' ');
         return (
           <circle
             key={i}
