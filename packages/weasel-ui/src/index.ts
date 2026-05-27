@@ -16,6 +16,7 @@ export * from './components/SidebarPanel';
 export * from './components/ToolButton';
 export * from './components/ToolGroup';
 export * from './components/ToolPalette';
+export * from './components/CurveEditor';
 export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOpts } from './paintGradientTrack';
 export { oklchToHex, chromaAt } from './color/oklch';
