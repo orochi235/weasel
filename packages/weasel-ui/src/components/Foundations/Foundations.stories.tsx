@@ -199,6 +199,35 @@ function BordersView(): ReactElement {
   );
 }
 
+function LinesView(): ReactElement {
+  // Render each line token as a horizontal rule against a sunken
+  // surface — the canonical "structural line on a plot / sunken panel"
+  // setting. Borders enclose UI elements; lines partition content.
+  const lines: { token: string; description: string }[] = [
+    { token: '--wzl-line-subtle', description: 'barely-there separators (table rows, secondary gridlines)' },
+    { token: '--wzl-line', description: 'primary gridlines on sunken surfaces' },
+    { token: '--wzl-line-strong', description: 'axes, emphasized dividers' },
+  ];
+  return (
+    <Section title="Lines">
+      <div
+        className={s.borderGrid}
+        style={{ background: 'var(--wzl-surface-sunken)', padding: '12px 16px', borderRadius: 'var(--wzl-radius-md)' }}
+      >
+        {lines.map((l) => (
+          <div key={l.token} className={s.borderRow}>
+            <code className={s.borderToken}>{l.token}</code>
+            <div className={s.borderSampleWrap}>
+              <div style={{ width: '100%', height: 1, background: `var(${l.token})` }} />
+            </div>
+            <span style={{ color: 'var(--wzl-fg-muted)', fontSize: 12 }}>{l.description}</span>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 function AccentsView(): ReactElement {
   return (
     <Section title="Accents">
@@ -358,6 +387,7 @@ export const Colors: Story = { render: () => <ColorsView /> };
 export const Surfaces: Story = { render: () => <SurfacesView /> };
 export const Text: Story = { render: () => <TextView /> };
 export const Borders: Story = { render: () => <BordersView /> };
+export const Lines: Story = { render: () => <LinesView /> };
 export const Accents: Story = { render: () => <AccentsView /> };
 export const Glass: Story = { render: () => <GlassView /> };
 export const Primitives: Story = { render: () => <PrimitivesView /> };
@@ -368,6 +398,7 @@ export const All: Story = {
       <SurfacesView />
       <TextView />
       <BordersView />
+      <LinesView />
       <AccentsView />
       <GlassView />
       <PrimitivesView />

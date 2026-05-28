@@ -75,6 +75,17 @@
   --wzl-border:        var(--wzl-gray-700);
   --wzl-border-strong: var(--wzl-gray-600);
 
+  /* Lines — for structural strokes (gridlines, dividers, plot axes).
+   * Distinct from borders, which enclose UI elements; lines partition
+   * content. Three alpha steps over `--wzl-fg` so the line auto-tints
+   * for whichever surface it's drawn on without needing per-mode values.
+   * Perceptual jobs: `subtle` = barely-there separators (table rows),
+   * default = primary gridlines on sunken surfaces, `strong` = axes /
+   * emphasized dividers. */
+  --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  --wzl-line:        color-mix(in srgb, var(--wzl-fg) 20%, transparent);
+  --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+
   /* Interactive */
   --wzl-accent:       var(--wzl-accent-base);
   --wzl-accent-hover: var(--wzl-accent-strong);

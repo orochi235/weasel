@@ -4,8 +4,8 @@
    * either the curve-* var (component scope) or the wzl-* token (app
    * scope) without touching this file. */
   --curve-bg: var(--wzl-surface-sunken);
-  --curve-grid: var(--wzl-border-strong);
-  --curve-axis: var(--wzl-fg-muted);
+  --curve-grid: var(--wzl-line);
+  --curve-axis: var(--wzl-line-strong);
   --curve-line: var(--wzl-accent);
   --curve-line-width: 1.5;
   --curve-anchor-fill: var(--wzl-surface);
