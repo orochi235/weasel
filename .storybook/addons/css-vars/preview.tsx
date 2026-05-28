@@ -38,8 +38,15 @@ function applyOverrides(overrides: Record<string, string>): void {
     el.id = STYLE_ID;
     document.head.appendChild(el);
   }
+  // `!important` is load-bearing here: many component CSS modules
+  // redeclare their local vars on a class on the component element
+  // (`.curve-editor.root { --curve-line: ... }`). That declaration has
+  // the same specificity as our `:root { ... }` override, so without
+  // `!important` the source-order race decides who wins — and component
+  // CSS modules often inject later, beating us silently. `!important`
+  // takes the race out of the picture.
   const decls = Object.entries(overrides)
-    .map(([k, v]) => `  ${k}: ${v};`)
+    .map(([k, v]) => `  ${k}: ${v} !important;`)
     .join('\n');
   el.textContent = decls.length > 0 ? `:root {\n${decls}\n}\n` : '';
 }
