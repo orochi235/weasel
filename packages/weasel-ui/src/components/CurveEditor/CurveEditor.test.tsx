@@ -125,11 +125,14 @@ describe('CurveEditor — drag', () => {
     expect(last[1].x).toBeGreaterThanOrEqual(0);
   });
 
-  it('does NOT clamp x in 2D mode', () => {
+  it('does NOT clamp x to neighbors in 2D mode (still clamps to canvas)', () => {
     const onChange = vi.fn();
+    // Use a configuration where the right neighbor is at 0.8 — well
+    // inside the [0, 1] canvas range — so we can distinguish
+    // neighbor-clamping (1D) from canvas-clamping (always).
     const { container } = render(
       <CurveEditor
-        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
+        value={[{ x: 0, y: 0 }, { x: 0.4, y: 0.4 }, { x: 0.8, y: 0.8 }]}
         onChange={onChange}
         domain="2d"
         width={200}
@@ -137,11 +140,14 @@ describe('CurveEditor — drag', () => {
       />,
     );
     const middle = container.querySelectorAll('circle')[1] as Element;
-    fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
+    fireEvent.pointerDown(middle, { clientX: 80, clientY: 60, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 500, clientY: 50, pointerId: 1 });
 
     const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
-    expect(last[1].x).toBeGreaterThan(1.0);
+    // In 2D, the middle anchor can exceed the right neighbor's x (0.8)…
+    expect(last[1].x).toBeGreaterThan(0.8);
+    // …but is still clamped to the canvas's xMax (1.0).
+    expect(last[1].x).toBeLessThanOrEqual(1.0);
   });
 });
 

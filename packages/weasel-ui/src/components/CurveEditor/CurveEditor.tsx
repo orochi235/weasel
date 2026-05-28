@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
-import { sampleCurve, type Point } from './catmullRom';
+import { type Point } from './catmullRom';
+import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestCurve, modelToPlot, plotToModel, type ModelRange } from './geometry';
 import s from './CurveEditor.module.css';
 
@@ -46,6 +47,10 @@ export interface CurveEditorProps {
   onChangeCommit?: (next: ControlPoint[], prev: readonly ControlPoint[]) => void;
   /** 1D function (monotonic in x) or 2D path. Default '2d'. */
   domain?: CurveDomain;
+  /** Interpolation algorithm. All options are interpolating (the curve
+   *  passes through every anchor); they differ in tangent computation
+   *  and parameterization. Default `'catmull-rom'` (centripetal). */
+  interpolation?: InterpolationMode;
   /** Endpoint constraint mode. Default 'free'. */
   endpoints?: EndpointMode;
   /** Model-space x range. Default [0, 1]. */
@@ -108,11 +113,13 @@ export function CurveEditor(props: CurveEditorProps) {
 
   // Sample the curve once in MODEL space and project to plot space.
   // Shared by the curve `<path>` and (when fill is configured) the
-  // fill region — avoids two passes through Catmull-Rom.
+  // fill region — avoids two sampling passes.
+  const interpolation = props.interpolation ?? 'catmull-rom';
   const plotSamples = useMemo((): Point[] => {
     if (value.length < 2) return [];
-    return sampleCurve(value, SAMPLES_PER_SEGMENT).map((p) => modelToPlot(p, modelRange, plotSize));
-  }, [value, modelRange, plotSize]);
+    return sampleByInterpolation(value, SAMPLES_PER_SEGMENT, interpolation)
+      .map((p) => modelToPlot(p, modelRange, plotSize));
+  }, [value, modelRange, plotSize, interpolation]);
 
   const pathD = useMemo(() => {
     if (plotSamples.length === 0) return '';
@@ -266,7 +273,7 @@ export function CurveEditor(props: CurveEditorProps) {
   const segmentSamples = useMemo((): Point[][] => {
     if (value.length < 2) return [];
     const out: Point[][] = [];
-    const all = sampleCurve(value, SAMPLES_PER_SEGMENT);
+    const all = sampleByInterpolation(value, SAMPLES_PER_SEGMENT, interpolation);
     for (let i = 0; i < value.length - 1; i++) {
       const start = i * SAMPLES_PER_SEGMENT;
       const end = start + SAMPLES_PER_SEGMENT;
@@ -274,7 +281,7 @@ export function CurveEditor(props: CurveEditorProps) {
       out.push(slice.map((p) => modelToPlot(p, modelRange, plotSize)));
     }
     return out;
-  }, [value, modelRange, plotSize]);
+  }, [value, modelRange, plotSize, interpolation]);
 
   const onSvgPointerDown = useCallback((e: ReactPointerEvent<SVGSVGElement>) => {
     if (addPointMode === 'never') return;

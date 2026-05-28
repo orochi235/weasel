@@ -10,6 +10,7 @@ import { CurveEditor, type ControlPoint } from './CurveEditor';
 interface InteractiveProps {
   initial: ControlPoint[];
   domain: '1d' | '2d';
+  interpolation: 'linear' | 'catmull-rom' | 'catmull-rom-uniform' | 'catmull-rom-chordal' | 'monotone';
   endpoints: 'free' | 'pinned-x' | 'pinned-both';
   addPointMode: 'click-curve' | 'click-empty' | 'never';
   showGrid: boolean;
@@ -27,6 +28,7 @@ function Interactive(props: InteractiveProps) {
       value={value}
       onChange={setValue}
       domain={props.domain}
+      interpolation={props.interpolation}
       endpoints={props.endpoints}
       addPointMode={props.addPointMode}
       grid={props.showGrid ? { divisions: props.gridDivisions ?? 3 } : false}
@@ -46,6 +48,10 @@ const meta: Meta<typeof Interactive> = {
     domain: {
       control: 'inline-radio',
       options: ['1d', '2d'],
+    },
+    interpolation: {
+      control: 'select',
+      options: ['linear', 'catmull-rom', 'catmull-rom-uniform', 'catmull-rom-chordal', 'monotone'],
     },
     endpoints: {
       control: 'inline-radio',
@@ -71,6 +77,7 @@ export default meta;
 type Story = StoryObj<typeof Interactive>;
 
 const COMMON: Partial<InteractiveProps> = {
+  interpolation: 'catmull-rom',
   addPointMode: 'click-curve',
   showGrid: false,
   gridDivisions: 3,

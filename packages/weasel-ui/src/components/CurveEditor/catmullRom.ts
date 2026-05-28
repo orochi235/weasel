@@ -1,8 +1,13 @@
 /**
- * Centripetal Catmull-Rom spline sampling. Yuksel/Schneider 2011
- * parameterization (α = 0.5) — passes exactly through every anchor,
- * avoids cusps and self-intersections that uniform Catmull-Rom
- * produces on sharp angles in 2D.
+ * Catmull-Rom spline sampling, parameterized by α.
+ *
+ * α = 0   → uniform parameterization (original Catmull-Rom). Fast, can
+ *           produce cusps and self-intersections at sharp 2D angles.
+ * α = 0.5 → centripetal (Yuksel/Schneider 2011). No cusps, no
+ *           self-intersection. The "safe default" for 2D.
+ * α = 1   → chordal. Smoother than uniform, different artifacts.
+ *
+ * `sampleCurve(...)` is the convenience alias for centripetal (α=0.5).
  */
 
 export interface Point {
@@ -10,28 +15,27 @@ export interface Point {
   y: number;
 }
 
-const ALPHA = 0.5;
-
-function knot(a: Point, b: Point): number {
+function knot(a: Point, b: Point, alpha: number): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
-  return Math.pow(Math.sqrt(dx * dx + dy * dy), ALPHA);
+  return Math.pow(Math.sqrt(dx * dx + dy * dy), alpha);
 }
 
 /**
- * Sample the centripetal Catmull-Rom segment between p1 and p2 at
- * parameter t ∈ [0, 1]. p0 and p3 are the surrounding control points
- * (use phantom reflection at endpoints — see sampleCurve below).
+ * Sample the Catmull-Rom segment between p1 and p2 at parameter
+ * t ∈ [0, 1]. p0 and p3 are the surrounding control points (use phantom
+ * reflection at endpoints — see sampleCatmullRom below).
  *
- * Returns p1 at t=0 and p2 at t=1.
+ * Returns p1 at t=0 and p2 at t=1. `alpha` controls parameterization.
  */
 export function segmentSampleAt(
   p0: Point, p1: Point, p2: Point, p3: Point, t: number,
+  alpha: number = 0.5,
 ): Point {
   const t0 = 0;
-  const t1 = t0 + knot(p0, p1);
-  const t2 = t1 + knot(p1, p2);
-  const t3 = t2 + knot(p2, p3);
+  const t1 = t0 + knot(p0, p1, alpha);
+  const t2 = t1 + knot(p1, p2, alpha);
+  const t3 = t2 + knot(p2, p3, alpha);
 
   // Degenerate: coincident p1/p2 → linear interpolation fallback.
   if (t2 - t1 === 0) {
@@ -58,16 +62,16 @@ export function segmentSampleAt(
 }
 
 /**
- * Sample the whole curve through `anchors`. Returns
- * `(n-1) * samplesPerSegment + 1` points. Phantom endpoints by
- * reflection so the first/last segments are tangent to the chord
- * into/out of the endpoints.
- *
- * Returns `[]` for fewer than 2 anchors.
+ * Sample the whole curve through `anchors` using Catmull-Rom with the
+ * given α. Returns `(n-1) * samplesPerSegment + 1` points. Phantom
+ * endpoints by reflection so the first/last segments are tangent to
+ * the chord into/out of the endpoints. Returns `[]` for fewer than 2
+ * anchors.
  */
-export function sampleCurve(
+export function sampleCatmullRom(
   anchors: readonly Point[],
   samplesPerSegment: number,
+  alpha: number = 0.5,
 ): Point[] {
   if (anchors.length < 2) return [];
   if (samplesPerSegment < 1) samplesPerSegment = 1;
@@ -100,8 +104,17 @@ export function sampleCurve(
         continue;
       }
       const t = s / samplesPerSegment;
-      out.push(segmentSampleAt(p0, p1, p2, p3, t));
+      out.push(segmentSampleAt(p0, p1, p2, p3, t, alpha));
     }
   }
   return out;
+}
+
+/** Convenience alias for centripetal Catmull-Rom (α=0.5). The most
+ *  common choice; safe default for 2D paths. */
+export function sampleCurve(
+  anchors: readonly Point[],
+  samplesPerSegment: number,
+): Point[] {
+  return sampleCatmullRom(anchors, samplesPerSegment, 0.5);
 }

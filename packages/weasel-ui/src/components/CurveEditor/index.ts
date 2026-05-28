@@ -15,3 +15,8 @@ export {
   type SetCurveAdapter,
   type CreateSetCurveOpArgs,
 } from './setCurveOp';
+
+export {
+  sampleByInterpolation,
+  type InterpolationMode,
+} from './interpolation';
