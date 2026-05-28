@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeConfig } from 'vite';
 import { weaselAliases } from '../scripts/vite-aliases.ts';
+import { weaselTokensPlugin } from '../scripts/vite-plugin-weasel-tokens.ts';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -19,6 +20,8 @@ const config: StorybookConfig = {
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
     '@storybook/addon-themes',
+    // Local addon: CSS Vars panel — see `.storybook/addons/css-vars/`.
+    './addons/css-vars/preset.ts',
   ],
   framework: {
     name: '@storybook/react-vite',
@@ -39,6 +42,7 @@ const config: StorybookConfig = {
           },
         ]),
       },
+      plugins: [weaselTokensPlugin({ repoRoot })],
     });
   },
 };

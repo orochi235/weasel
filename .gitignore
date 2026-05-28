@@ -20,6 +20,8 @@ playwright-report/
 test-results/
 storybook-static/
 debug-storybook.log
+# Materialized at Storybook start by .storybook/addons/css-vars/preset.ts
+.storybook/addons/css-vars/tokens.generated.ts
 # Ad-hoc screenshots dropped at repo root during debugging.
 # Doesn't affect tracked PNGs (weasel-transparent.png etc.) or anything in subdirs.
 /*.png
