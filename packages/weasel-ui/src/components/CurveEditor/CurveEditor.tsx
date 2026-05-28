@@ -80,6 +80,24 @@ export interface CurveEditorProps {
    *  fixed by design and shouldn't draw user attention. Interactive
    *  handles always render. Default false. */
   hideNonInteractive?: boolean;
+  /** Constrain the curve to a class of shapes regardless of the
+   *  caller's `interpolation` / `domain` settings.
+   *
+   *  - `'none'` (default): no enforcement. Interpolation can overshoot,
+   *    fold back, exceed bounds — whatever the chosen algorithm does.
+   *  - `'function'`: the result is guaranteed to be a function
+   *    y = f(x) within the visible plot bounds. Enforced by (a)
+   *    clamping each anchor's x to be strictly between its neighbors'
+   *    x values during drag, (b) overriding `interpolation` with
+   *    `'monotone'` regardless of caller (the only algo guaranteed
+   *    not to overshoot y or fold x), and (c) the existing
+   *    canvas-bounds clamp on y.
+   *
+   *  In `'function'` mode the `domain` and `interpolation` props are
+   *  effectively shadowed — caller's choices for those still flow
+   *  through but the constraint logic supersedes them where they
+   *  conflict. */
+  constrain?: 'none' | 'function';
   /** How new anchors are added. Default 'click-curve'. */
   addPointMode?: AddPointMode;
   /** Extra class on the root SVG element. */
@@ -119,7 +137,14 @@ export function CurveEditor(props: CurveEditorProps) {
   // Sample the curve once in MODEL space and project to plot space.
   // Shared by the curve `<path>` and (when fill is configured) the
   // fill region — avoids two sampling passes.
-  const interpolation = props.interpolation ?? 'catmull-rom';
+  // When `constrain='function'`, the only safe interpolation is
+  // 'monotone' (Fritsch-Carlson) — it's the only algo guaranteed not
+  // to overshoot y or backtrack in x within a segment. Override the
+  // caller's preference.
+  const constrain = props.constrain ?? 'none';
+  const interpolation = constrain === 'function'
+    ? 'monotone'
+    : (props.interpolation ?? 'catmull-rom');
   const plotSamples = useMemo((): Point[] => {
     if (value.length < 2) return [];
     return sampleByInterpolation(value, SAMPLES_PER_SEGMENT, interpolation)
@@ -216,9 +241,15 @@ export function CurveEditor(props: CurveEditorProps) {
       ny = d.index === 0 ? modelRange.yMin : modelRange.yMax;
     } else if (endpoints === 'pinned-x' && isEndpoint) {
       nx = d.index === 0 ? modelRange.xMin : modelRange.xMax;
-    } else if (domain === '1d') {
-      const left = d.index > 0 ? next[d.index - 1].x : -Infinity;
-      const right = d.index < next.length - 1 ? next[d.index + 1].x : Infinity;
+    } else if (constrain === 'function' || domain === '1d') {
+      // Both modes constrain x to between neighbors. `function` mode
+      // requires STRICT monotonicity (an epsilon gap so two anchors
+      // never share an x); plain 1D allows equal x.
+      const epsilon = constrain === 'function'
+        ? (modelRange.xMax - modelRange.xMin) / 1000
+        : 0;
+      const left = d.index > 0 ? next[d.index - 1].x + epsilon : -Infinity;
+      const right = d.index < next.length - 1 ? next[d.index + 1].x - epsilon : Infinity;
       nx = Math.max(left, Math.min(right, nx));
     }
 

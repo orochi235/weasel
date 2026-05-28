@@ -18,6 +18,7 @@ interface InteractiveProps {
   showAxes: boolean;
   fillSide: 'none' | 'below' | 'above';
   hideNonInteractive: boolean;
+  constrain: 'none' | 'function';
   /** Single control that scales the plot. Height is derived at the
    *  CurveEditor's natural 2:1 aspect — saves a second slider. */
   width: number;
@@ -37,6 +38,7 @@ function Interactive(props: InteractiveProps) {
       axes={props.showAxes ? {} : false}
       fill={props.fillSide === 'none' ? false : { side: props.fillSide }}
       hideNonInteractive={props.hideNonInteractive}
+      constrain={props.constrain}
       width={props.width}
       height={Math.round(props.width / 2)}
     />
@@ -72,6 +74,10 @@ const meta: Meta<typeof Interactive> = {
       options: ['none', 'below', 'above'],
     },
     hideNonInteractive: { control: 'boolean' },
+    constrain: {
+      control: 'inline-radio',
+      options: ['none', 'function'],
+    },
     width: { control: { type: 'number', min: 100, max: 800, step: 20 } },
   },
 };
@@ -87,6 +93,7 @@ const COMMON: Partial<InteractiveProps> = {
   showAxes: true,
   fillSide: 'none',
   hideNonInteractive: false,
+  constrain: 'none',
   width: 400,
 };
 
