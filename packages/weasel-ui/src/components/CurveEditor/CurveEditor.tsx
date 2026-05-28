@@ -7,6 +7,11 @@ import s from './CurveEditor.module.css';
 export interface ControlPoint {
   x: number;
   y: number;
+  /** When true, this control point can't be moved or deleted by the
+   *  user. Render as a smaller diamond with locked styling.
+   *  Independent of `endpoints` — a locked anchor can be at any
+   *  position, not just at the canvas edges. */
+  locked?: boolean;
 }
 
 export type CurveDomain = '1d' | '2d';
@@ -377,8 +382,20 @@ export function CurveEditor(props: CurveEditorProps) {
     return index === 0 || index === value.length - 1;
   }, [endpoints, value.length]);
 
+  // "Fully locked" — caller marked the anchor `locked: true`, OR the
+  // endpoints mode pins both axes for endpoints. These anchors can't
+  // be dragged or deleted; they render as smaller diamonds with the
+  // locked styling.
+  const isLocked = useCallback((index: number): boolean => {
+    if (value[index]?.locked) return true;
+    if (endpoints === 'pinned-both' && (index === 0 || index === value.length - 1)) return true;
+    return false;
+  }, [endpoints, value]);
+
   const onPointerDownAnchor = useCallback((index: number, e: ReactPointerEvent<SVGElement>) => {
     e.stopPropagation();
+    // Locked anchors swallow the gesture entirely — no drag, no delete.
+    if (isLocked(index)) return;
     // Shift+click → delete.
     if (e.shiftKey) {
       if (isPinnedEndpoint(index)) return;
@@ -400,7 +417,7 @@ export function CurveEditor(props: CurveEditorProps) {
     window.addEventListener('pointermove', stableMoveHandler);
     window.addEventListener('pointerup', stableUpHandler);
     window.addEventListener('pointercancel', stableCancelHandler);
-  }, [value, onChange, onChangeCommit, isPinnedEndpoint, props.minPoints, recordCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
+  }, [value, onChange, onChangeCommit, isPinnedEndpoint, isLocked, props.minPoints, recordCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const segmentSamples = useMemo((): Point[][] => {
     if (value.length < 2) return [];
@@ -548,21 +565,30 @@ export function CurveEditor(props: CurveEditorProps) {
       )}
       {plotAnchors.map((a, i) => {
         const pinned = isPinnedEndpoint(i);
-        // An anchor is non-interactive when it's a pinned endpoint
-        // whose movement is fully constrained by the endpoints mode.
-        if (pinned && props.hideNonInteractive) return null;
+        const locked = isLocked(i);
+        // Hide non-interactive handles when requested. Locked anchors
+        // and pinned endpoints both qualify (caller can't move them).
+        if ((locked || pinned) && props.hideNonInteractive) return null;
         const active = activeDragIndex === i;
         const isEndpoint = i === 0 || i === value.length - 1;
         const anchorCls = [
           s.anchor,
           isEndpoint && s.endpoint,
-          pinned && s.pinned,
+          (pinned || locked) && s.pinned,
+          locked && s.locked,
           active && s.active,
         ].filter(Boolean).join(' ');
-        // Endpoints render as diamonds (rotated squares) so they read
-        // as a distinct handle category from interior circles.
-        if (isEndpoint) {
-          const half = 4 + 1; // slightly bigger than circle r=4 so diamonds read at similar visual weight
+        // Shape rule:
+        // - Locked anchor: small diamond (area ≈ interior circle area)
+        // - Endpoint (not locked): larger diamond (current size)
+        // - Interior anchor: circle
+        const renderAsDiamond = isEndpoint || locked;
+        if (renderAsDiamond) {
+          // Locked diamond half = 3.55 → underlying square side 7.1 →
+          // area ≈ 50, matching interior circle (r=4, area π·16 ≈ 50.3).
+          // Unlocked endpoint stays slightly larger so the draggable
+          // affordance still reads at high visual weight.
+          const half = locked ? 3.55 : 5;
           return (
             <rect
               key={i}

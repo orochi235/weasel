@@ -88,6 +88,12 @@
   cursor: default;
 }
 
+/* Caller-set locked anchors share the gray pinned fill but signal
+ * "not interactive at all" via the not-allowed cursor. */
+.anchor.locked {
+  cursor: not-allowed;
+}
+
 /* Endpoint vertices render as diamonds (rotated squares) instead of
  * circles, so they read as a different category of handle. The shape
  * is enforced inline via SVG <rect transform>; this class only adds
