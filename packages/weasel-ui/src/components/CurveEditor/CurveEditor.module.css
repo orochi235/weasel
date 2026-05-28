@@ -30,6 +30,14 @@
   background: var(--curve-bg);
   user-select: none;
   touch-action: none;
+  outline: none;
+}
+
+/* Keyboard-only focus ring (history-enabled component). Mouse clicks
+ * don't trigger this. */
+.root:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
 }
 
 .fill {

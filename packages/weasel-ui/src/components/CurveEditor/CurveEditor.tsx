@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { type Point } from './catmullRom';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestCurve, modelToPlot, plotToModel, type ModelRange } from './geometry';
@@ -98,6 +98,21 @@ export interface CurveEditorProps {
    *  through but the constraint logic supersedes them where they
    *  conflict. */
   constrain?: 'none' | 'function';
+  /** Built-in undo/redo via keyboard when the component has focus.
+   *  Default `true`.
+   *
+   *  When on, the component listens for Cmd/Ctrl+Z (undo) and
+   *  Cmd/Ctrl+Shift+Z or Cmd/Ctrl+Y (redo) on the focused SVG. Each
+   *  `onChangeCommit` event pushes the previous value onto an internal
+   *  past stack; undo pops it, fires `onChange(previousValue)` (NOT
+   *  `onChangeCommit` — undo isn't a fresh commit). Consumers using
+   *  an external history layer (weasel-history etc.) should set
+   *  `history={false}` so the two systems don't fight.
+   *
+   *  Overriding: capture-phase keydown on any ancestor runs before
+   *  the component's bubble-phase handler — call `stopPropagation()`
+   *  there to consume the keystroke yourself. */
+  history?: boolean;
   /** Minimum allowed control-point count. When `value.length <=
    *  minPoints`, user-initiated deletion (shift-click on an interior
    *  anchor) is refused. Doesn't mutate `value` if the caller starts
@@ -210,6 +225,61 @@ export function CurveEditor(props: CurveEditorProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [activeDragIndex, setActiveDragIndex] = useState<number | null>(null);
 
+  // ── Internal undo/redo stacks ───────────────────────────────────────
+  // Refs (not state) — they don't drive rendering. The actual value
+  // change goes through onChange, which the consumer is responsible for
+  // reflecting in `value`. We just track the snapshot history so undo
+  // can hand the consumer the right past value.
+  const historyEnabled = props.history !== false;
+  const pastRef = useRef<ControlPoint[][]>([]);
+  const futureRef = useRef<ControlPoint[][]>([]);
+  // Live `value` for the key handlers — useState closures would capture
+  // stale values mid-keypress.
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  /** Internal: record a commit into the past stack. Called from the
+   *  drag/insert/delete paths after each onChange settles. Clears the
+   *  redo stack — any new edit invalidates the redo path. */
+  const recordCommit = useCallback((prev: readonly ControlPoint[]) => {
+    if (!historyEnabled) return;
+    pastRef.current.push(prev.map((p) => ({ ...p })));
+    futureRef.current = [];
+  }, [historyEnabled]);
+
+  const undo = useCallback(() => {
+    if (!historyEnabled) return;
+    const past = pastRef.current;
+    if (past.length === 0) return;
+    const prev = past.pop()!;
+    futureRef.current.push(valueRef.current.map((p) => ({ ...p })));
+    onChange(prev);
+  }, [historyEnabled, onChange]);
+
+  const redo = useCallback(() => {
+    if (!historyEnabled) return;
+    const future = futureRef.current;
+    if (future.length === 0) return;
+    const next = future.pop()!;
+    pastRef.current.push(valueRef.current.map((p) => ({ ...p })));
+    onChange(next);
+  }, [historyEnabled, onChange]);
+
+  const onSvgKeyDown = useCallback((e: ReactKeyboardEvent<SVGSVGElement>) => {
+    if (!historyEnabled) return;
+    const mod = e.metaKey || e.ctrlKey;
+    if (!mod) return;
+    const k = e.key.toLowerCase();
+    if (k === 'z') {
+      if (e.shiftKey) redo();
+      else undo();
+      e.preventDefault();
+    } else if (k === 'y') {
+      redo();
+      e.preventDefault();
+    }
+  }, [historyEnabled, undo, redo]);
+
   // Refs to break the useCallback dependency cycle between the three
   // window-level handlers (each one needs to remove the others on cleanup).
   const onWindowMoveRef = useRef<(e: PointerEvent) => void>(() => {});
@@ -286,7 +356,9 @@ export function CurveEditor(props: CurveEditorProps) {
   onWindowUpRef.current = (e: PointerEvent) => {
     const d = dragRef.current;
     if (!d || d.pointerId !== e.pointerId) return;
-    if (onChangeCommit) onChangeCommit(d.lastNext, d.commitPrev ?? d.startValue);
+    const prev = d.commitPrev ?? d.startValue;
+    recordCommit(prev);
+    if (onChangeCommit) onChangeCommit(d.lastNext, prev);
     setActiveDragIndex(null);
     cleanupDrag();
   };
@@ -314,6 +386,7 @@ export function CurveEditor(props: CurveEditorProps) {
       if (props.minPoints !== undefined && value.length <= props.minPoints) return;
       const next = value.filter((_, i) => i !== index);
       onChange(next);
+      recordCommit(value);
       if (onChangeCommit) onChangeCommit(next, value);
       return;
     }
@@ -327,7 +400,7 @@ export function CurveEditor(props: CurveEditorProps) {
     window.addEventListener('pointermove', stableMoveHandler);
     window.addEventListener('pointerup', stableUpHandler);
     window.addEventListener('pointercancel', stableCancelHandler);
-  }, [value, onChange, onChangeCommit, isPinnedEndpoint, props.minPoints, stableMoveHandler, stableUpHandler, stableCancelHandler]);
+  }, [value, onChange, onChangeCommit, isPinnedEndpoint, props.minPoints, recordCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const segmentSamples = useMemo((): Point[][] => {
     if (value.length < 2) return [];
@@ -386,8 +459,9 @@ export function CurveEditor(props: CurveEditorProps) {
     }
     const next = [...value.slice(0, insertIndex), modelPt, ...value.slice(insertIndex)];
     onChange(next);
+    recordCommit(value);
     if (onChangeCommit) onChangeCommit(next, value);
-  }, [addPointMode, value, modelRange, plotSize, segmentSamples, domain, props.maxPoints, onChange, onChangeCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
+  }, [addPointMode, value, modelRange, plotSize, segmentSamples, domain, props.maxPoints, onChange, onChangeCommit, recordCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const cls = [s.root, className].filter(Boolean).join(' ');
 
@@ -400,7 +474,9 @@ export function CurveEditor(props: CurveEditorProps) {
       height={height}
       viewBox={`0 0 ${width} ${height}`}
       role="img"
+      tabIndex={historyEnabled ? 0 : undefined}
       onPointerDown={onSvgPointerDown}
+      onKeyDown={historyEnabled ? onSvgKeyDown : undefined}
     >
       {props.grid && (() => {
         const divisions = props.grid.divisions ?? 3;
