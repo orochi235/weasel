@@ -5,6 +5,8 @@ export {
   type CurveDomain,
   type EndpointMode,
   type AddPointMode,
+  type GridSettings,
+  type AxesSettings,
 } from './CurveEditor';
 
 export {

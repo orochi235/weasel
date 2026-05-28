@@ -12,6 +12,19 @@ export type CurveDomain = '1d' | '2d';
 export type EndpointMode = 'free' | 'pinned-x' | 'pinned-both';
 export type AddPointMode = 'click-curve' | 'click-empty' | 'never';
 
+export interface GridSettings {
+  /** Number of evenly-spaced internal grid lines per axis (excluding the
+   *  edges). Applied to both x and y. Default 3. */
+  divisions?: number;
+  /** Stroke color override. When omitted, uses `var(--curve-grid)`. */
+  color?: string;
+}
+
+export interface AxesSettings {
+  /** Stroke color override. When omitted, uses `var(--curve-axis)`. */
+  color?: string;
+}
+
 export interface CurveEditorProps {
   /** Anchor points; caller-owned. */
   value: readonly ControlPoint[];
@@ -32,10 +45,13 @@ export interface CurveEditorProps {
   width: number;
   /** Plot height in CSS pixels. */
   height: number;
-  /** Show a background grid. */
-  showGrid?: boolean;
-  /** Show axis lines along the bottom and left edges. Default `true`. */
-  showAxes?: boolean;
+  /** Background grid configuration. `false` / `null` / omitted → no grid.
+   *  Pass `{}` for default grid (3 divisions per axis) or a populated
+   *  GridSettings to customize. */
+  grid?: GridSettings | false | null;
+  /** Axis line configuration. `false` / `null` → no axes. Omitted →
+   *  default-styled axes (on). Pass an AxesSettings to customize. */
+  axes?: AxesSettings | false | null;
   /** How new anchors are added. Default 'click-curve'. */
   addPointMode?: AddPointMode;
   /** Extra class on the root SVG element. */
@@ -273,44 +289,59 @@ export function CurveEditor(props: CurveEditorProps) {
       role="img"
       onPointerDown={onSvgPointerDown}
     >
-      {props.showGrid && (
-        <g>
-          {[0.25, 0.5, 0.75].map((f) => (
+      {props.grid && (() => {
+        const divisions = props.grid.divisions ?? 3;
+        const stroke = props.grid.color;
+        // Evenly-spaced internal divisions, excluding the edges (which
+        // belong to the axes). For divisions=3, fractions are 1/4, 2/4, 3/4.
+        const fractions: number[] = [];
+        for (let i = 1; i <= divisions; i++) fractions.push(i / (divisions + 1));
+        return (
+          <g>
+            {fractions.map((f) => (
+              <line
+                key={`gx-${f}`}
+                data-curve-element="grid"
+                className={s.grid}
+                stroke={stroke}
+                x1={f * width} x2={f * width}
+                y1={0} y2={height}
+              />
+            ))}
+            {fractions.map((f) => (
+              <line
+                key={`gy-${f}`}
+                data-curve-element="grid"
+                className={s.grid}
+                stroke={stroke}
+                x1={0} x2={width}
+                y1={f * height} y2={f * height}
+              />
+            ))}
+          </g>
+        );
+      })()}
+      {props.axes !== false && props.axes !== null && (() => {
+        const stroke = props.axes?.color;
+        return (
+          <g>
             <line
-              key={`gx-${f}`}
-              data-curve-element="grid"
-              className={s.grid}
-              x1={f * width} x2={f * width}
+              data-curve-element="axis"
+              className={s.axis}
+              stroke={stroke}
+              x1={0} x2={width}
+              y1={height} y2={height}
+            />
+            <line
+              data-curve-element="axis"
+              className={s.axis}
+              stroke={stroke}
+              x1={0} x2={0}
               y1={0} y2={height}
             />
-          ))}
-          {[0.25, 0.5, 0.75].map((f) => (
-            <line
-              key={`gy-${f}`}
-              data-curve-element="grid"
-              className={s.grid}
-              x1={0} x2={width}
-              y1={f * height} y2={f * height}
-            />
-          ))}
-        </g>
-      )}
-      {props.showAxes !== false && (
-        <g>
-          <line
-            data-curve-element="axis"
-            className={s.axis}
-            x1={0} x2={width}
-            y1={height} y2={height}
-          />
-          <line
-            data-curve-element="axis"
-            className={s.axis}
-            x1={0} x2={0}
-            y1={0} y2={height}
-          />
-        </g>
-      )}
+          </g>
+        );
+      })()}
       {pathD && (
         <path
           className={s.curve}

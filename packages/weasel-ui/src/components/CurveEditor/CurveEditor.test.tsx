@@ -336,18 +336,48 @@ describe('CurveEditor — endpoint constraints', () => {
 });
 
 describe('CurveEditor — visual chrome', () => {
-  it('renders grid lines when showGrid is true', () => {
+  it('renders grid lines when grid is an object', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
         onChange={() => {}}
-        showGrid
+        grid={{}}
         width={200}
         height={100}
       />,
     );
     const gridLines = container.querySelectorAll('[data-curve-element="grid"]');
     expect(gridLines.length).toBeGreaterThan(0);
+  });
+
+  it('omits grid lines when grid is omitted, false, or null', () => {
+    for (const grid of [undefined, false as const, null]) {
+      const { container } = render(
+        <CurveEditor
+          value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+          onChange={() => {}}
+          grid={grid}
+          width={200}
+          height={100}
+        />,
+      );
+      expect(container.querySelectorAll('[data-curve-element="grid"]').length).toBe(0);
+    }
+  });
+
+  it('honors grid.divisions count', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        grid={{ divisions: 5 }}
+        width={200}
+        height={100}
+      />,
+    );
+    // 5 divisions × 2 axes = 10 internal grid lines.
+    const gridLines = container.querySelectorAll('[data-curve-element="grid"]');
+    expect(gridLines.length).toBe(10);
   });
 
   it('renders axis lines by default', () => {
@@ -363,18 +393,19 @@ describe('CurveEditor — visual chrome', () => {
     expect(axes.length).toBe(2);
   });
 
-  it('omits axis lines when showAxes is false', () => {
-    const { container } = render(
-      <CurveEditor
-        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
-        showAxes={false}
-        width={200}
-        height={100}
-      />,
-    );
-    const axes = container.querySelectorAll('[data-curve-element="axis"]');
-    expect(axes.length).toBe(0);
+  it('omits axis lines when axes is false or null', () => {
+    for (const axes of [false as const, null]) {
+      const { container } = render(
+        <CurveEditor
+          value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+          onChange={() => {}}
+          axes={axes}
+          width={200}
+          height={100}
+        />,
+      );
+      expect(container.querySelectorAll('[data-curve-element="axis"]').length).toBe(0);
+    }
   });
 
   it('marks the dragged anchor with the active class', () => {

@@ -13,6 +13,7 @@ interface InteractiveProps {
   endpoints: 'free' | 'pinned-x' | 'pinned-both';
   addPointMode: 'click-curve' | 'click-empty' | 'never';
   showGrid: boolean;
+  gridDivisions?: number;
   showAxes: boolean;
   width: number;
   height: number;
@@ -27,8 +28,8 @@ function Interactive(props: InteractiveProps) {
       domain={props.domain}
       endpoints={props.endpoints}
       addPointMode={props.addPointMode}
-      showGrid={props.showGrid}
-      showAxes={props.showAxes}
+      grid={props.showGrid ? { divisions: props.gridDivisions ?? 3 } : false}
+      axes={props.showAxes ? {} : false}
       width={props.width}
       height={props.height}
     />
@@ -53,6 +54,7 @@ const meta: Meta<typeof Interactive> = {
       options: ['click-curve', 'click-empty', 'never'],
     },
     showGrid: { control: 'boolean' },
+    gridDivisions: { control: { type: 'number', min: 1, max: 20, step: 1 } },
     showAxes: { control: 'boolean' },
     width: { control: { type: 'number', min: 100, max: 800, step: 20 } },
     height: { control: { type: 'number', min: 100, max: 600, step: 20 } },
@@ -65,6 +67,7 @@ type Story = StoryObj<typeof Interactive>;
 const COMMON: Partial<InteractiveProps> = {
   addPointMode: 'click-curve',
   showGrid: true,
+  gridDivisions: 3,
   showAxes: true,
   width: 400,
   height: 200,

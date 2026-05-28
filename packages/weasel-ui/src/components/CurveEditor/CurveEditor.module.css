@@ -1,14 +1,18 @@
 .root {
-  --curve-bg: rgba(0, 0, 0, 0.04);
-  --curve-grid: rgba(0, 0, 0, 0.06);
-  --curve-axis: rgba(0, 0, 0, 0.3);
-  --curve-line: #3478f6;
+  /* Component-local vars layered over the theme tokens. Each var resolves
+   * to a semantic token from @orochi235/weasel-theme; consumers override
+   * either the curve-* var (component scope) or the wzl-* token (app
+   * scope) without touching this file. */
+  --curve-bg: var(--wzl-surface-sunken);
+  --curve-grid: var(--wzl-fg-subtle);
+  --curve-axis: var(--wzl-fg-muted);
+  --curve-line: var(--wzl-accent);
   --curve-line-width: 1.5;
-  --curve-anchor-fill: #ffffff;
-  --curve-anchor-stroke: #3478f6;
+  --curve-anchor-fill: var(--wzl-surface);
+  --curve-anchor-stroke: var(--wzl-accent);
   --curve-anchor-radius: 4;
-  --curve-anchor-active-fill: #3478f6;
-  --curve-pinned-fill: #888888;
+  --curve-anchor-active-fill: var(--wzl-accent);
+  --curve-pinned-fill: var(--wzl-fg-subtle);
 
   display: block;
   background: var(--curve-bg);
