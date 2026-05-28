@@ -426,7 +426,7 @@ describe('CurveEditor — visual chrome', () => {
     expect(d).toMatch(/Z$/);
   });
 
-  it('skips fill in 2D mode even when fill is configured', () => {
+  it('renders fill in 2D mode as well (closes along the chosen edge)', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
@@ -437,7 +437,8 @@ describe('CurveEditor — visual chrome', () => {
         height={100}
       />,
     );
-    expect(container.querySelector('[data-curve-element="fill"]')).toBeNull();
+    const fillEl = container.querySelector('[data-curve-element="fill"]');
+    expect(fillEl).not.toBeNull();
   });
 
   it('omits fill when fill is false, null, or omitted', () => {

@@ -63,9 +63,12 @@ export interface CurveEditorProps {
   /** Axis line configuration. `false` / `null` → no axes. Omitted →
    *  default-styled axes (on). Pass an AxesSettings to customize. */
   axes?: AxesSettings | false | null;
-  /** Shade the region under or over the curve. Only renders in
-   *  `domain='1d'` mode (the "below" / "above" concept needs a function
-   *  to be well-defined). `false` / `null` / omitted = no fill. */
+  /** Shade the region under or over the curve. The algorithm closes the
+   *  polyline back along the bottom (`below`) or top (`above`) edge of
+   *  the plot — works cleanly for x-monotonic curves; produces visually
+   *  reasonable but potentially overlapping fills for curves that loop
+   *  back on themselves. Works in either domain. `false` / `null` /
+   *  omitted = no fill. */
   fill?: FillSettings | false | null;
   /** How new anchors are added. Default 'click-curve'. */
   addPointMode?: AddPointMode;
@@ -125,9 +128,6 @@ export function CurveEditor(props: CurveEditorProps) {
   // function). In 2D mode, returns null.
   const fillD = useMemo((): string | null => {
     if (!props.fill || plotSamples.length === 0) return null;
-    // Fill only renders in 1D mode. Component domain default is '2d',
-    // so undefined → 2d → no fill.
-    if ((props.domain ?? '2d') !== '1d') return null;
     const closingY = props.fill.side === 'below' ? height : 0;
     const first = plotSamples[0];
     const last = plotSamples[plotSamples.length - 1];
@@ -139,7 +139,7 @@ export function CurveEditor(props: CurveEditorProps) {
     parts.push(`L${first.x.toFixed(2)},${closingY.toFixed(2)}`);
     parts.push('Z');
     return parts.join('');
-  }, [props.fill, props.domain, plotSamples, height]);
+  }, [props.fill, plotSamples, height]);
 
   // ── Drag state ─────────────────────────────────────────────────────────
   interface DragState {
