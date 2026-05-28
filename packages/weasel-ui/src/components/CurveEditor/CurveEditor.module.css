@@ -6,13 +6,18 @@
   --curve-bg: var(--wzl-surface-sunken);
   --curve-grid: var(--wzl-line);
   --curve-axis: var(--wzl-line-strong);
-  --curve-line: var(--wzl-accent);
+  /* Curve color is intentionally NOT --wzl-accent: the brand accent is
+   * a moody midnight purple chosen for chrome and CTAs, which reads as
+   * dim against the sunken plot surface. A saturated blue gives the
+   * curve a confident voice. Override --curve-line in a consumer
+   * stylesheet to retint (the fill follows automatically). */
+  --curve-line: #3b82f6;
   --curve-line-width: 1.5;
-  --curve-fill: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
+  --curve-fill: color-mix(in srgb, var(--curve-line) 40%, transparent);
   --curve-anchor-fill: var(--wzl-surface);
-  --curve-anchor-stroke: var(--wzl-accent);
+  --curve-anchor-stroke: var(--curve-line);
   --curve-anchor-radius: 4;
-  --curve-anchor-active-fill: var(--wzl-accent);
+  --curve-anchor-active-fill: var(--curve-line);
   --curve-pinned-fill: var(--wzl-fg-subtle);
 
   display: block;
