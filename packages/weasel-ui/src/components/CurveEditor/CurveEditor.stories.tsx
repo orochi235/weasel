@@ -15,8 +15,7 @@ interface InteractiveProps {
   showGrid: boolean;
   gridDivisions?: number;
   showAxes: boolean;
-  showFill: boolean;
-  fillSide: 'below' | 'above';
+  fillSide: 'none' | 'below' | 'above';
   width: number;
   height: number;
 }
@@ -32,7 +31,7 @@ function Interactive(props: InteractiveProps) {
       addPointMode={props.addPointMode}
       grid={props.showGrid ? { divisions: props.gridDivisions ?? 3 } : false}
       axes={props.showAxes ? {} : false}
-      fill={props.showFill ? { side: props.fillSide } : false}
+      fill={props.fillSide === 'none' ? false : { side: props.fillSide }}
       width={props.width}
       height={props.height}
     />
@@ -59,10 +58,9 @@ const meta: Meta<typeof Interactive> = {
     showGrid: { control: 'boolean' },
     gridDivisions: { control: { type: 'number', min: 1, max: 20, step: 1 } },
     showAxes: { control: 'boolean' },
-    showFill: { control: 'boolean' },
     fillSide: {
       control: 'inline-radio',
-      options: ['below', 'above'],
+      options: ['none', 'below', 'above'],
     },
     width: { control: { type: 'number', min: 100, max: 800, step: 20 } },
     height: { control: { type: 'number', min: 100, max: 600, step: 20 } },
@@ -77,8 +75,7 @@ const COMMON: Partial<InteractiveProps> = {
   showGrid: false,
   gridDivisions: 3,
   showAxes: true,
-  showFill: false,
-  fillSide: 'below',
+  fillSide: 'none',
   width: 400,
   height: 200,
 };
@@ -89,7 +86,7 @@ export const EasingCurve: Story = {
     initial: [{ x: 0, y: 0 }, { x: 0.3, y: 0.1 }, { x: 0.7, y: 0.9 }, { x: 1, y: 1 }],
     domain: '1d',
     endpoints: 'pinned-both',
-    showFill: true,
+    fillSide: 'below',
   },
 };
 
