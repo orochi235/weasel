@@ -210,6 +210,10 @@ export function CurveEditor(props: CurveEditorProps) {
       nx = Math.max(left, Math.min(right, nx));
     }
 
+    // Clamp to model range so vertices never leave the visible plot.
+    nx = Math.max(modelRange.xMin, Math.min(modelRange.xMax, nx));
+    ny = Math.max(modelRange.yMin, Math.min(modelRange.yMax, ny));
+
     next[d.index] = { x: nx, y: ny };
     d.lastNext = next;
     onChange(next);
