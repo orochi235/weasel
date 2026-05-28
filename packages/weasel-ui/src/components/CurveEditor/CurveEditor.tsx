@@ -188,10 +188,22 @@ export function CurveEditor(props: CurveEditorProps) {
   }, [props.fill, plotSamples, height]);
 
   // ── Drag state ─────────────────────────────────────────────────────────
+  // `startValue` is the array shape the drag handler indexes into —
+  // for an in-progress click-curve insert, this is the POST-insertion
+  // shape so `next[index]` writes to the newly-inserted anchor, not a
+  // stale slot. `commitPrev` is what onChangeCommit's `prev` callback
+  // arg should receive — for click-curve insert, that's the PRE-insert
+  // value so consumers see a clean "added one point" diff. For plain
+  // anchor drags they're equal (and commitPrev is omitted).
   interface DragState {
     index: number;
     pointerId: number;
     startValue: readonly ControlPoint[];
+    /** Optional override for the `prev` arg passed to onChangeCommit
+     *  on release. When undefined, the commit uses startValue. Set
+     *  during click-curve insertion so the commit reports the
+     *  pre-insertion array as prev. */
+    commitPrev?: readonly ControlPoint[];
     lastNext: ControlPoint[];
   }
   const dragRef = useRef<DragState | null>(null);
@@ -274,7 +286,7 @@ export function CurveEditor(props: CurveEditorProps) {
   onWindowUpRef.current = (e: PointerEvent) => {
     const d = dragRef.current;
     if (!d || d.pointerId !== e.pointerId) return;
-    if (onChangeCommit) onChangeCommit(d.lastNext, d.startValue);
+    if (onChangeCommit) onChangeCommit(d.lastNext, d.commitPrev ?? d.startValue);
     setActiveDragIndex(null);
     cleanupDrag();
   };
@@ -355,7 +367,8 @@ export function CurveEditor(props: CurveEditorProps) {
       dragRef.current = {
         index: insertIndex,
         pointerId: e.pointerId,
-        startValue: value, // pre-insert value, so the commit's `prev` is correct
+        startValue: next,        // post-insertion shape so move-handler index aligns
+        commitPrev: value,       // pre-insertion is what `prev` in onChangeCommit should be
         lastNext: next,
       };
       window.addEventListener('pointermove', stableMoveHandler);
