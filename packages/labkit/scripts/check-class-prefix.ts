@@ -48,8 +48,11 @@ function checkLessFile(file: string): void {
   const lines = content.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? '';
-    // Strip line comments and `@import` lines (paths look like class selectors).
-    const code = line.replace(/\/\/.*$/, '');
+    // Strip line comments and string literals (url() paths look like class selectors).
+    const code = line
+      .replace(/\/\/.*$/, '')
+      .replace(/'[^']*'/g, "''")
+      .replace(/"[^"]*"/g, '""');
     if (/^\s*@import\b/.test(code)) continue;
     for (const match of code.matchAll(LESS_CLASS_RE)) {
       const cls = match[1] ?? '';
