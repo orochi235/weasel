@@ -98,6 +98,15 @@ export interface CurveEditorProps {
    *  through but the constraint logic supersedes them where they
    *  conflict. */
   constrain?: 'none' | 'function';
+  /** Minimum allowed control-point count. When `value.length <=
+   *  minPoints`, user-initiated deletion (shift-click on an interior
+   *  anchor) is refused. Doesn't mutate `value` if the caller starts
+   *  outside the range — that's the caller's responsibility. */
+  minPoints?: number;
+  /** Maximum allowed control-point count. When `value.length >=
+   *  maxPoints`, user-initiated insertion (click-curve or click-empty)
+   *  is refused. */
+  maxPoints?: number;
   /** How new anchors are added. Default 'click-curve'. */
   addPointMode?: AddPointMode;
   /** Extra class on the root SVG element. */
@@ -289,6 +298,8 @@ export function CurveEditor(props: CurveEditorProps) {
     // Shift+click → delete.
     if (e.shiftKey) {
       if (isPinnedEndpoint(index)) return;
+      // Refuse if we'd drop below the configured minimum.
+      if (props.minPoints !== undefined && value.length <= props.minPoints) return;
       const next = value.filter((_, i) => i !== index);
       onChange(next);
       if (onChangeCommit) onChangeCommit(next, value);
@@ -304,7 +315,7 @@ export function CurveEditor(props: CurveEditorProps) {
     window.addEventListener('pointermove', stableMoveHandler);
     window.addEventListener('pointerup', stableUpHandler);
     window.addEventListener('pointercancel', stableCancelHandler);
-  }, [value, onChange, onChangeCommit, isPinnedEndpoint, stableMoveHandler, stableUpHandler, stableCancelHandler]);
+  }, [value, onChange, onChangeCommit, isPinnedEndpoint, props.minPoints, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const segmentSamples = useMemo((): Point[][] => {
     if (value.length < 2) return [];
@@ -321,6 +332,8 @@ export function CurveEditor(props: CurveEditorProps) {
 
   const onSvgPointerDown = useCallback((e: ReactPointerEvent<SVGSVGElement>) => {
     if (addPointMode === 'never') return;
+    // Refuse if we'd exceed the configured maximum.
+    if (props.maxPoints !== undefined && value.length >= props.maxPoints) return;
     const target = e.target as SVGElement;
     if (target.tagName === 'circle') return;
 
@@ -361,7 +374,7 @@ export function CurveEditor(props: CurveEditorProps) {
     const next = [...value.slice(0, insertIndex), modelPt, ...value.slice(insertIndex)];
     onChange(next);
     if (onChangeCommit) onChangeCommit(next, value);
-  }, [addPointMode, value, modelRange, plotSize, segmentSamples, domain, onChange, onChangeCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
+  }, [addPointMode, value, modelRange, plotSize, segmentSamples, domain, props.maxPoints, onChange, onChangeCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const cls = [s.root, className].filter(Boolean).join(' ');
 

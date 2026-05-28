@@ -240,6 +240,41 @@ describe('CurveEditor — add and delete', () => {
     expect(next).toHaveLength(3);
   });
 
+  it('refuses to delete when at minPoints floor', () => {
+    const onChangeCommit = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        onChangeCommit={onChangeCommit}
+        minPoints={3}
+        width={200}
+        height={100}
+      />,
+    );
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
+    fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 50, shiftKey: true });
+    expect(onChangeCommit).not.toHaveBeenCalled();
+  });
+
+  it('refuses to add when at maxPoints ceiling', () => {
+    const onChangeCommit = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        onChangeCommit={onChangeCommit}
+        addPointMode="click-empty"
+        maxPoints={2}
+        width={200}
+        height={100}
+      />,
+    );
+    const svg = container.querySelector('svg')!;
+    fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 51 });
+    expect(onChangeCommit).not.toHaveBeenCalled();
+  });
+
   it('deletes an anchor on shift+click', () => {
     const onChangeCommit = vi.fn();
     const { container } = render(
