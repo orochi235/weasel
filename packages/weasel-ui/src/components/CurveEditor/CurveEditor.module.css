@@ -5,7 +5,10 @@
    * scope) without touching this file. */
   --curve-bg: var(--wzl-surface-sunken);
   --curve-grid: var(--wzl-line);
-  --curve-axis: var(--wzl-line-strong);
+  /* Axes get full foreground contrast (not a faded line) — they're
+   * the plot frame, the most prominent structural element after the
+   * curve itself. */
+  --curve-axis: var(--wzl-fg);
   /* Curve color is intentionally NOT --wzl-accent: the brand accent is
    * a moody midnight purple chosen for chrome and CTAs, which reads as
    * dim against the sunken plot surface. A saturated blue gives the
