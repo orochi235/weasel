@@ -25,7 +25,7 @@ describe('CurveEditor — rendering', () => {
     const { container } = render(
       <CurveEditor value={value} onChange={() => {}} width={200} height={100} />,
     );
-    const circles = container.querySelectorAll('circle');
+    const circles = container.querySelectorAll('[data-anchor-index]');
     expect(circles.length).toBe(3);
   });
 
@@ -53,7 +53,7 @@ describe('CurveEditor — rendering', () => {
       />,
     );
     expect(container.querySelector('path')).toBeNull();
-    expect(container.querySelectorAll('circle').length).toBe(1);
+    expect(container.querySelectorAll('[data-anchor-index]').length).toBe(1);
   });
 });
 
@@ -68,7 +68,7 @@ describe('CurveEditor — drag', () => {
         height={100}
       />,
     );
-    const circles = container.querySelectorAll('circle');
+    const circles = container.querySelectorAll('[data-anchor-index]');
     const middle = circles[1] as Element;
 
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
@@ -93,7 +93,7 @@ describe('CurveEditor — drag', () => {
         height={100}
       />,
     );
-    const middle = container.querySelectorAll('circle')[1] as Element;
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
 
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 120, clientY: 30, pointerId: 1 });
@@ -116,7 +116,7 @@ describe('CurveEditor — drag', () => {
         height={100}
       />,
     );
-    const middle = container.querySelectorAll('circle')[1] as Element;
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 500, clientY: 50, pointerId: 1 });
 
@@ -139,7 +139,7 @@ describe('CurveEditor — drag', () => {
         height={100}
       />,
     );
-    const middle = container.querySelectorAll('circle')[1] as Element;
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
     fireEvent.pointerDown(middle, { clientX: 80, clientY: 60, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 500, clientY: 50, pointerId: 1 });
 
@@ -251,7 +251,7 @@ describe('CurveEditor — add and delete', () => {
         height={100}
       />,
     );
-    const middle = container.querySelectorAll('circle')[1] as Element;
+    const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
     fireEvent.pointerDown(middle, {
       clientX: 100, clientY: 50, pointerId: 6, shiftKey: true,
     });
@@ -275,7 +275,7 @@ describe('CurveEditor — endpoint constraints', () => {
         height={100}
       />,
     );
-    const first = container.querySelectorAll('circle')[0] as Element;
+    const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
     fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 7 });
     fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 7 });
 
@@ -295,7 +295,7 @@ describe('CurveEditor — endpoint constraints', () => {
         height={100}
       />,
     );
-    const first = container.querySelectorAll('circle')[0] as Element;
+    const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
     fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 8 });
     fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 8 });
 
@@ -317,7 +317,7 @@ describe('CurveEditor — endpoint constraints', () => {
         height={100}
       />,
     );
-    const first = container.querySelectorAll('circle')[0] as Element;
+    const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
     fireEvent.pointerDown(first, {
       clientX: 0, clientY: 100, pointerId: 9, shiftKey: true,
     });
@@ -334,10 +334,10 @@ describe('CurveEditor — endpoint constraints', () => {
         height={100}
       />,
     );
-    const circles = container.querySelectorAll('circle');
-    expect(circles[0].className.baseVal).toMatch(/pinned/);
-    expect(circles[2].className.baseVal).toMatch(/pinned/);
-    expect(circles[1].className.baseVal).not.toMatch(/pinned/);
+    const circles = container.querySelectorAll('[data-anchor-index]');
+    expect(circles[0].getAttribute('class')).toMatch(/pinned/);
+    expect(circles[2].getAttribute('class')).toMatch(/pinned/);
+    expect(circles[1].getAttribute('class')).not.toMatch(/pinned/);
   });
 });
 
@@ -472,10 +472,10 @@ describe('CurveEditor — visual chrome', () => {
         height={100}
       />,
     );
-    const middle = container.querySelectorAll('circle')[1];
+    const middle = container.querySelectorAll('[data-anchor-index]')[1];
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 10 });
-    expect(middle.className.baseVal).toMatch(/active/);
+    expect(middle.getAttribute('class')).toMatch(/active/);
     fireEvent.pointerUp(window, { clientX: 100, clientY: 50, pointerId: 10 });
-    expect(middle.className.baseVal).not.toMatch(/active/);
+    expect(middle.getAttribute('class')).not.toMatch(/active/);
   });
 });

@@ -12,8 +12,8 @@
    * curve a confident voice. Override --curve-line in a consumer
    * stylesheet to retint (the fill follows automatically). */
   --curve-line: #3b82f6;
-  --curve-line-width: 1.5;
-  --curve-fill: color-mix(in srgb, var(--curve-line) 40%, transparent);
+  --curve-line-width: var(--wzl-curve-width);
+  --curve-fill: color-mix(in srgb, var(--curve-line) 30%, transparent);
   --curve-anchor-fill: var(--wzl-surface);
   --curve-anchor-stroke: var(--curve-line);
   --curve-anchor-radius: 4;
@@ -43,8 +43,10 @@
 }
 
 .axis {
+  /* Axes get the thickest + brightest of the structural line stack so
+   * they read as plot frame rather than incidental gridlines. */
   stroke: var(--curve-axis);
-  stroke-width: 1;
+  stroke-width: var(--wzl-line-width);
   fill: none;
 }
 
@@ -74,4 +76,20 @@
 .anchor.pinned {
   fill: var(--curve-pinned-fill);
   cursor: default;
+}
+
+/* Endpoint vertices render as diamonds (rotated squares) instead of
+ * circles, so they read as a different category of handle. The shape
+ * is enforced inline via SVG <rect transform>; this class only adds
+ * the hover/active styling. */
+.endpoint {
+  /* No fill / stroke overrides — endpoint visuals reuse .anchor /
+   * .anchor.pinned / .anchor.active styling. The class exists as a
+   * marker for future per-endpoint styling needs. */
+}
+
+/* When the consumer opts into hiding non-interactive handles, pinned
+ * endpoints disappear entirely. */
+.hidden {
+  display: none;
 }

@@ -17,8 +17,10 @@ interface InteractiveProps {
   gridDivisions?: number;
   showAxes: boolean;
   fillSide: 'none' | 'below' | 'above';
+  hideNonInteractive: boolean;
+  /** Single control that scales the plot. Height is derived at the
+   *  CurveEditor's natural 2:1 aspect — saves a second slider. */
   width: number;
-  height: number;
 }
 
 function Interactive(props: InteractiveProps) {
@@ -34,8 +36,9 @@ function Interactive(props: InteractiveProps) {
       grid={props.showGrid ? { divisions: props.gridDivisions ?? 3 } : false}
       axes={props.showAxes ? {} : false}
       fill={props.fillSide === 'none' ? false : { side: props.fillSide }}
+      hideNonInteractive={props.hideNonInteractive}
       width={props.width}
-      height={props.height}
+      height={Math.round(props.width / 2)}
     />
   );
 }
@@ -68,8 +71,8 @@ const meta: Meta<typeof Interactive> = {
       control: 'inline-radio',
       options: ['none', 'below', 'above'],
     },
+    hideNonInteractive: { control: 'boolean' },
     width: { control: { type: 'number', min: 100, max: 800, step: 20 } },
-    height: { control: { type: 'number', min: 100, max: 600, step: 20 } },
   },
 };
 export default meta;
@@ -83,8 +86,8 @@ const COMMON: Partial<InteractiveProps> = {
   gridDivisions: 3,
   showAxes: true,
   fillSide: 'none',
+  hideNonInteractive: false,
   width: 400,
-  height: 200,
 };
 
 export const EasingCurve: Story = {

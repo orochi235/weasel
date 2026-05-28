@@ -75,6 +75,11 @@ export interface CurveEditorProps {
    *  back on themselves. Works in either domain. `false` / `null` /
    *  omitted = no fill. */
   fill?: FillSettings | false | null;
+  /** When true, vertex handles that aren't interactive (currently:
+   *  pinned endpoints) are hidden entirely. Useful when an endpoint is
+   *  fixed by design and shouldn't draw user attention. Interactive
+   *  handles always render. Default false. */
+  hideNonInteractive?: boolean;
   /** How new anchors are added. Default 'click-curve'. */
   addPointMode?: AddPointMode;
   /** Extra class on the root SVG element. */
@@ -248,7 +253,7 @@ export function CurveEditor(props: CurveEditorProps) {
     return index === 0 || index === value.length - 1;
   }, [endpoints, value.length]);
 
-  const onPointerDownAnchor = useCallback((index: number, e: ReactPointerEvent<SVGCircleElement>) => {
+  const onPointerDownAnchor = useCallback((index: number, e: ReactPointerEvent<SVGElement>) => {
     e.stopPropagation();
     // Shift+click → delete.
     if (e.shiftKey) {
@@ -410,8 +415,35 @@ export function CurveEditor(props: CurveEditorProps) {
       )}
       {plotAnchors.map((a, i) => {
         const pinned = isPinnedEndpoint(i);
+        // An anchor is non-interactive when it's a pinned endpoint
+        // whose movement is fully constrained by the endpoints mode.
+        if (pinned && props.hideNonInteractive) return null;
         const active = activeDragIndex === i;
-        const anchorCls = [s.anchor, pinned && s.pinned, active && s.active].filter(Boolean).join(' ');
+        const isEndpoint = i === 0 || i === value.length - 1;
+        const anchorCls = [
+          s.anchor,
+          isEndpoint && s.endpoint,
+          pinned && s.pinned,
+          active && s.active,
+        ].filter(Boolean).join(' ');
+        // Endpoints render as diamonds (rotated squares) so they read
+        // as a distinct handle category from interior circles.
+        if (isEndpoint) {
+          const half = 4 + 1; // slightly bigger than circle r=4 so diamonds read at similar visual weight
+          return (
+            <rect
+              key={i}
+              className={anchorCls}
+              x={a.x - half}
+              y={a.y - half}
+              width={half * 2}
+              height={half * 2}
+              transform={`rotate(45 ${a.x} ${a.y})`}
+              data-anchor-index={i}
+              onPointerDown={(e) => onPointerDownAnchor(i, e)}
+            />
+          );
+        }
         return (
           <circle
             key={i}

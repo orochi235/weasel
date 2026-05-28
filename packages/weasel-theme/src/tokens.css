@@ -85,6 +85,13 @@
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line:        color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
+  /* Stroke widths.
+   *   --wzl-line-width  : structural lines (gridlines, dividers, axes).
+   *   --wzl-curve-width : drawn data curves / signal traces. Heavier than
+   *                       structural lines so the data reads as primary
+   *                       content. Independently tunable. */
+  --wzl-line-width:  2px;
+  --wzl-curve-width: 3px;
 
   /* Interactive */
   --wzl-accent:       var(--wzl-accent-base);
