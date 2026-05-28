@@ -8,6 +8,7 @@
   --curve-axis: var(--wzl-line-strong);
   --curve-line: var(--wzl-accent);
   --curve-line-width: 1.5;
+  --curve-fill: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
   --curve-anchor-fill: var(--wzl-surface);
   --curve-anchor-stroke: var(--wzl-accent);
   --curve-anchor-radius: 4;
@@ -15,9 +16,19 @@
   --curve-pinned-fill: var(--wzl-fg-subtle);
 
   display: block;
+  /* Anchors at plot x=0 / x=width / y=0 / y=height extend past the SVG
+   * box by their radius — let them paint over the host page instead of
+   * being half-clipped. */
+  overflow: visible;
   background: var(--curve-bg);
   user-select: none;
   touch-action: none;
+}
+
+.fill {
+  fill: var(--curve-fill);
+  stroke: none;
+  pointer-events: none;
 }
 
 .grid {

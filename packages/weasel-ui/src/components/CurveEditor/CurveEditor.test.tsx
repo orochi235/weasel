@@ -408,6 +408,54 @@ describe('CurveEditor — visual chrome', () => {
     }
   });
 
+  it('renders a fill path in 1D mode when fill is configured', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        domain="1d"
+        fill={{ side: 'below' }}
+        width={200}
+        height={100}
+      />,
+    );
+    const fillEl = container.querySelector('[data-curve-element="fill"]');
+    expect(fillEl).not.toBeNull();
+    const d = fillEl!.getAttribute('d')!;
+    expect(d).toMatch(/^M/);
+    expect(d).toMatch(/Z$/);
+  });
+
+  it('skips fill in 2D mode even when fill is configured', () => {
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onChange={() => {}}
+        domain="2d"
+        fill={{ side: 'below' }}
+        width={200}
+        height={100}
+      />,
+    );
+    expect(container.querySelector('[data-curve-element="fill"]')).toBeNull();
+  });
+
+  it('omits fill when fill is false, null, or omitted', () => {
+    for (const fill of [undefined, false as const, null]) {
+      const { container } = render(
+        <CurveEditor
+          value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+          onChange={() => {}}
+          domain="1d"
+          fill={fill}
+          width={200}
+          height={100}
+        />,
+      );
+      expect(container.querySelector('[data-curve-element="fill"]')).toBeNull();
+    }
+  });
+
   it('marks the dragged anchor with the active class', () => {
     const { container } = render(
       <CurveEditor

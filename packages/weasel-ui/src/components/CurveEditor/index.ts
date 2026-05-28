@@ -7,6 +7,7 @@ export {
   type AddPointMode,
   type GridSettings,
   type AxesSettings,
+  type FillSettings,
 } from './CurveEditor';
 
 export {

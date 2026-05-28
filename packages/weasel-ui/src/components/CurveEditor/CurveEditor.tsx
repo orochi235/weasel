@@ -25,6 +25,17 @@ export interface AxesSettings {
   color?: string;
 }
 
+export interface FillSettings {
+  /** Which side of the curve gets filled — `'below'` shades the region
+   *  between the curve and the bottom edge of the plot; `'above'` shades
+   *  between the curve and the top edge. Required (no default — the
+   *  whole point is to pick a side). */
+  side: 'below' | 'above';
+  /** Fill color override. When omitted, uses `var(--curve-fill)`
+   *  (translucent accent). */
+  color?: string;
+}
+
 export interface CurveEditorProps {
   /** Anchor points; caller-owned. */
   value: readonly ControlPoint[];
@@ -52,6 +63,10 @@ export interface CurveEditorProps {
   /** Axis line configuration. `false` / `null` → no axes. Omitted →
    *  default-styled axes (on). Pass an AxesSettings to customize. */
   axes?: AxesSettings | false | null;
+  /** Shade the region under or over the curve. Only renders in
+   *  `domain='1d'` mode (the "below" / "above" concept needs a function
+   *  to be well-defined). `false` / `null` / omitted = no fill. */
+  fill?: FillSettings | false | null;
   /** How new anchors are added. Default 'click-curve'. */
   addPointMode?: AddPointMode;
   /** Extra class on the root SVG element. */
@@ -88,18 +103,43 @@ export function CurveEditor(props: CurveEditorProps) {
     [value, modelRange, plotSize],
   );
 
-  // Sample the curve in MODEL space, then project samples to plot space.
+  // Sample the curve once in MODEL space and project to plot space.
+  // Shared by the curve `<path>` and (when fill is configured) the
+  // fill region — avoids two passes through Catmull-Rom.
+  const plotSamples = useMemo((): Point[] => {
+    if (value.length < 2) return [];
+    return sampleCurve(value, SAMPLES_PER_SEGMENT).map((p) => modelToPlot(p, modelRange, plotSize));
+  }, [value, modelRange, plotSize]);
+
   const pathD = useMemo(() => {
-    if (value.length < 2) return '';
-    const modelSamples = sampleCurve(value, SAMPLES_PER_SEGMENT);
-    const plotSamples = modelSamples.map((p) => modelToPlot(p, modelRange, plotSize));
     if (plotSamples.length === 0) return '';
     const parts: string[] = [`M${plotSamples[0].x.toFixed(2)},${plotSamples[0].y.toFixed(2)}`];
     for (let i = 1; i < plotSamples.length; i++) {
       parts.push(`L${plotSamples[i].x.toFixed(2)},${plotSamples[i].y.toFixed(2)}`);
     }
     return parts.join('');
-  }, [value, modelRange, plotSize]);
+  }, [plotSamples]);
+
+  // Fill path: closed polygon between the curve and the chosen edge.
+  // Only meaningful in 1D mode (the "below" / "above" question needs a
+  // function). In 2D mode, returns null.
+  const fillD = useMemo((): string | null => {
+    if (!props.fill || plotSamples.length === 0) return null;
+    // Fill only renders in 1D mode. Component domain default is '2d',
+    // so undefined → 2d → no fill.
+    if ((props.domain ?? '2d') !== '1d') return null;
+    const closingY = props.fill.side === 'below' ? height : 0;
+    const first = plotSamples[0];
+    const last = plotSamples[plotSamples.length - 1];
+    const parts: string[] = [`M${first.x.toFixed(2)},${first.y.toFixed(2)}`];
+    for (let i = 1; i < plotSamples.length; i++) {
+      parts.push(`L${plotSamples[i].x.toFixed(2)},${plotSamples[i].y.toFixed(2)}`);
+    }
+    parts.push(`L${last.x.toFixed(2)},${closingY.toFixed(2)}`);
+    parts.push(`L${first.x.toFixed(2)},${closingY.toFixed(2)}`);
+    parts.push('Z');
+    return parts.join('');
+  }, [props.fill, props.domain, plotSamples, height]);
 
   // ── Drag state ─────────────────────────────────────────────────────────
   interface DragState {
@@ -342,6 +382,14 @@ export function CurveEditor(props: CurveEditorProps) {
           </g>
         );
       })()}
+      {fillD && (
+        <path
+          data-curve-element="fill"
+          className={s.fill}
+          d={fillD}
+          fill={props.fill && props.fill !== null ? props.fill.color : undefined}
+        />
+      )}
       {pathD && (
         <path
           className={s.curve}
