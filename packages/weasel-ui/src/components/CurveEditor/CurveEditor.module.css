@@ -9,12 +9,11 @@
    * the plot frame, the most prominent structural element after the
    * curve itself. */
   --curve-axis: var(--wzl-fg);
-  /* Curve color is intentionally NOT --wzl-accent: the brand accent is
-   * a moody midnight purple chosen for chrome and CTAs, which reads as
-   * dim against the sunken plot surface. A saturated blue gives the
-   * curve a confident voice. Override --curve-line in a consumer
-   * stylesheet to retint (the fill follows automatically). */
-  --curve-line: #3b82f6;
+  /* Curve color routes through the system-level --wzl-curve-color
+   * token (defined in weasel-theme/tokens.css). Override either
+   * --curve-line (component scope) or --wzl-curve-color (app scope).
+   * Fill, anchor strokes, and active-fill follow automatically. */
+  --curve-line: var(--wzl-curve-color);
   --curve-line-width: var(--wzl-curve-width);
   --curve-fill: color-mix(in srgb, var(--curve-line) 30%, transparent);
   --curve-anchor-fill: var(--wzl-surface);

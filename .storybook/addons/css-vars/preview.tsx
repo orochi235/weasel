@@ -64,14 +64,10 @@ function clearOverrides(): void {
  *
  * Cross-origin stylesheets throw on `cssRules` access; we skip them.
  */
-function scanVars(_root: Element | Document): IntrospectVar[] {
-  const found = new Map<string, string>();
-  const rootStyle = getComputedStyle(document.documentElement);
-
-  const record = (name: string): void => {
-    if (found.has(name)) return;
-    found.set(name, rootStyle.getPropertyValue(name).trim());
-  };
+function scanVars(root: Element | Document): IntrospectVar[] {
+  // Phase 1: collect var NAMES from inline styles + stylesheet rules.
+  const names = new Set<string>();
+  const record = (name: string): void => { names.add(name); };
 
   // (a) inline style attributes
   const inlineEls = document.querySelectorAll('[style*="var("]');
@@ -96,8 +92,38 @@ function scanVars(_root: Element | Document): IntrospectVar[] {
     walkRules(rules, record);
   }
 
-  return Array.from(found.entries())
-    .map(([name, currentValue]) => ({ name, currentValue }))
+  // Phase 2: resolve each var's current value. Theme tokens live on
+  // `:root`; component-local vars (--curve-line, --slider-track, etc.)
+  // are declared on inner elements, so a `:root` lookup returns empty.
+  // Walk the story root's descendants until we find an element whose
+  // computed style yields a value for the var.
+  const values = new Map<string, string>();
+  const rootCS = getComputedStyle(document.documentElement);
+  for (const name of names) {
+    const v = rootCS.getPropertyValue(name).trim();
+    if (v) values.set(name, v);
+  }
+  // For any var still missing a value, walk descendants.
+  const missing = Array.from(names).filter((n) => !values.has(n));
+  if (missing.length > 0) {
+    const scopeRoot = root instanceof Document ? (root.body ?? document.documentElement) : root;
+    const els = scopeRoot.querySelectorAll('*');
+    for (const el of Array.from(els)) {
+      if (missing.length === 0) break;
+      const cs = getComputedStyle(el);
+      for (let i = missing.length - 1; i >= 0; i--) {
+        const name = missing[i];
+        const v = cs.getPropertyValue(name).trim();
+        if (v) {
+          values.set(name, v);
+          missing.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  return Array.from(names)
+    .map((name) => ({ name, currentValue: values.get(name) ?? '' }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

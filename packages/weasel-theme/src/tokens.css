@@ -92,6 +92,11 @@
    *                       content. Independently tunable. */
   --wzl-line-width:  2px;
   --wzl-curve-width: 3px;
+  /* Curve color — used by plot components (CurveEditor today; future
+   * waveform / chart widgets). Routes through the bright accent variant
+   * because --wzl-accent (midnight purple) is too dim on sunken
+   * surfaces. */
+  --wzl-curve-color: var(--wzl-accent-strong);
 
   /* Interactive */
   --wzl-accent:       var(--wzl-accent-base);
