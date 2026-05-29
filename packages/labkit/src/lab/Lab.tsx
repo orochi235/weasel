@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useRef } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
@@ -22,6 +22,13 @@ export interface LabProps {
   storage?: StorageAdapter | null;
   storageKey?: string;
   theme?: 'auto' | 'light' | 'interstellar';
+  /**
+   * Optional list of CSS colors used to compose the interstellar theme's
+   * cosmic backdrop. Each color becomes one radial-gradient blob on the
+   * dark void base. Order maps to a fixed spread of positions; extras wrap
+   * around. Ignored unless `theme="interstellar"` is active.
+   */
+  nebula?: readonly string[];
   title?: string;
   children?: ReactNode;
 }
@@ -45,12 +52,34 @@ function buildStore(
   return store;
 }
 
+// Fixed spread of nebula blob positions / sizes / fall-off stops. Colors
+// supplied via the `nebula` prop are slotted into these slots in order;
+// callers passing more than 5 wrap around (intentional — keeps the look
+// readable and bounded).
+const NEBULA_SLOTS = [
+  { cx: '18%', cy: '30%', sx: '60%', sy: '80%', stop: '70%' },
+  { cx: '78%', cy: '70%', sx: '55%', sy: '90%', stop: '65%' },
+  { cx: '50%', cy: '50%', sx: '50%', sy: '70%', stop: '75%' },
+  { cx: '12%', cy: '82%', sx: '50%', sy: '70%', stop: '70%' },
+  { cx: '85%', cy: '18%', sx: '55%', sy: '80%', stop: '70%' },
+] as const;
+
+function buildNebula(colors: readonly string[]): string {
+  const blobs = colors.map((c, i) => {
+    const p = NEBULA_SLOTS[i % NEBULA_SLOTS.length];
+    return `radial-gradient(ellipse ${p.sx} ${p.sy} at ${p.cx} ${p.cy}, color-mix(in srgb, ${c} 22%, transparent), transparent ${p.stop})`;
+  });
+  blobs.push('radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)');
+  return blobs.join(', ');
+}
+
 export function Lab({
   instruments,
   defaultInstrument,
   storage,
   storageKey,
   theme,
+  nebula,
   title,
   children,
 }: LabProps) {
@@ -141,10 +170,18 @@ export function Lab({
         ? 'lk-theme-interstellar'
         : '';
 
+  // Only apply the nebula override when interstellar is active and at
+  // least one color is provided. Setting a CSS custom property is the
+  // sanctioned use of inline style.
+  const nebulaStyle =
+    themeValue === 'interstellar' && nebula && nebula.length > 0
+      ? ({ ['--lk-space-nebula' as string]: buildNebula(nebula) } as CSSProperties)
+      : undefined;
+
   return (
     <LabStoreContext.Provider value={{ store }}>
       <LabContext.Provider value={contextValue}>
-        <div className={`lk-lab ${themeClass}`.trim()}>
+        <div className={`lk-lab ${themeClass}`.trim()} style={nebulaStyle}>
           <LabShell title={title ?? 'Labkit'} theme={themeValue} header={children}>
             <WorkspaceGrid>
               {workspaces.map((w) => (
