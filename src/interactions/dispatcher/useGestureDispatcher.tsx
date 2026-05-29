@@ -17,7 +17,7 @@ import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry } from '../actions/depRegistry';
 import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
-import type { Tool } from '../../tools/types';
+import type { Tool, ToolCtx } from '../../tools/types';
 import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
 import type { InputEvent } from './matcher';
 
@@ -204,10 +204,38 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   // fires.
   const lastClickRef = useRef<{ t: number; clientX: number; clientY: number } | null>(null);
 
-  // Cancel in-flight ongoing handles when active tool changes (not on initial mount).
+  // Tool-switch lifecycle. Two things have to happen when the active tool
+  // changes (and only then — not on initial mount):
+  //   1. Fire the outgoing tool's `onDeactivate(ctx)` so it can clean up
+  //      tool-owned scratch state. Pen relies on this to discard a
+  //      half-built path the user hasn't committed.
+  //   2. Cancel any in-flight ongoing dispatcher handles so the new tool
+  //      doesn't inherit a live gesture.
+  //
+  // The `ToolCtx` passed to `onDeactivate` is intentionally minimal — at
+  // this lifecycle moment there's no event-driven cursor position, hit
+  // result, or modifier state to populate. We pass the tool's own scratch
+  // (via `initScratch()`, which tools that hold persistent state implement
+  // as a singleton ref-return) so cleanup hooks can read/mutate the only
+  // state they actually care about. Fields the implementation reads beyond
+  // `scratch` will read undefined; tools whose cleanup needs more should
+  // either rely on closure-captured refs (the pen-tool pattern) or wait
+  // until we have a real cause to broaden the contract.
   const prevActiveRef = useRef(activeTool.active);
   useEffect(() => {
     if (prevActiveRef.current !== activeTool.active) {
+      const prevTool = toolsById.get(prevActiveRef.current) as Tool<unknown> | undefined;
+      if (prevTool?.onDeactivate) {
+        const scratch = prevTool.initScratch?.();
+        try {
+          prevTool.onDeactivate({ scratch } as unknown as ToolCtx<unknown>);
+        } catch (err) {
+          console.error(
+            `weasel: tool "${prevActiveRef.current}".onDeactivate threw`,
+            err,
+          );
+        }
+      }
       dispatcherRef.current?.cancelAll('cancel');
     }
     prevActiveRef.current = activeTool.active;

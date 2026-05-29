@@ -243,7 +243,15 @@ function applyReparent(
 export const moveAction: Action & { requires: string[] } = {
   id: 'move',
   label: 'Move',
-  defaultBinding: { kind: 'drag' },
+  // Ambient default targets `selected-body` so a host without an explicit
+  // select-tool binding still gets drag-to-move on the selection — but ONLY
+  // on the selected body. A bare `{ kind: 'drag' }` catches every drag in
+  // ambient scope and bleeds the move into drawing-tool gestures (any path
+  // where the higher-priority active match falls through). Drawing tools
+  // bind bare drag at active scope and outrank this; the symptom of
+  // "drawing tools move the selection" disappears once the ambient binding
+  // is target-qualified instead of universal.
+  defaultBinding: { kind: 'drag', target: 'selected-body' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

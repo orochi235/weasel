@@ -54,6 +54,7 @@ import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { InsertDep, InsertExtras } from '../depSchema';
+import type { SelectionApi } from 'core/selection/useSelection';
 
 /** The kit's built-in insert kinds — those the dispatcher overlay layer
  *  knows how to render. Consumer-defined kinds fall through to `null`
@@ -244,12 +245,23 @@ export const insertAction: Action & { requires: string[] } = {
   label: 'Insert',
   group: 'insert',
   defaultBinding: { kind: 'drag' },
-  requires: ['insert'],
+  requires: ['insert', 'selection'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const dep = ctx.deps.insert as InsertDep | undefined;
       if (!dep) return {};
+
+      // Starting a draw retires any prior selection — the lingering halo
+      // around an unrelated node while the user is drawing a new shape is
+      // just visual noise, and it primes the UX bug where a drag that
+      // continues over the selected node would otherwise drive the move
+      // action via fall-through. The clear is unconditional: the user has
+      // committed to "I'm making a new thing" by engaging a creation tool.
+      const selection = ctx.deps.selection as SelectionApi | undefined;
+      if (selection && selection.get().length > 0) {
+        selection.clear();
+      }
 
       const scratch: InsertScratch = {
         dep,
