@@ -394,6 +394,7 @@ interface ListProps {
 function List({ rows, overrides, onChange, onReset, onResetAll, emptyHint, grouped }: ListProps): React.ReactElement {
   const hasOverrides = rows.some((r) => overrides[r.name] !== undefined);
   const [editing, setEditing] = React.useState<{ name: string; anchor: DOMRect } | null>(null);
+  const [query, setQuery] = React.useState('');
   const editingRow = editing ? rows.find((r) => r.name === editing.name) ?? null : null;
 
   if (rows.length === 0) {
@@ -402,46 +403,112 @@ function List({ rows, overrides, onChange, onReset, onResetAll, emptyHint, group
     );
   }
 
+  // Filter on name OR current value — searching by color hex or `var(...)`
+  // target is often as useful as searching by token name.
+  const q = query.trim().toLowerCase();
+  const filtered = q === ''
+    ? rows
+    : rows.filter((r) =>
+        r.name.toLowerCase().includes(q) || r.currentValue.toLowerCase().includes(q),
+      );
+
   // Group by `group` if requested; else single bucket.
-  const buckets = new Map<string, typeof rows>();
-  for (const r of rows) {
+  const buckets = new Map<string, typeof filtered>();
+  for (const r of filtered) {
     const k = grouped ? (r.group ?? 'other') : '';
-    const arr = (buckets.get(k) ?? []) as typeof rows;
+    const arr = (buckets.get(k) ?? []) as typeof filtered;
     buckets.set(k, [...arr, r]);
   }
+
+  const countText = q === ''
+    ? `${rows.length} variable${rows.length === 1 ? '' : 's'}`
+    : `${filtered.length} / ${rows.length} variable${rows.length === 1 ? '' : 's'}`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          flexDirection: 'column',
+          gap: 6,
           padding: '6px 12px',
           borderBottom: '1px solid rgba(0,0,0,0.1)',
           fontSize: 11,
-          opacity: 0.8,
         }}
       >
-        <span>{rows.length} variable{rows.length === 1 ? '' : 's'}</span>
-        <button
-          type="button"
-          onClick={onResetAll}
-          disabled={!hasOverrides}
-          style={{
-            fontSize: 11,
-            padding: '2px 8px',
-            border: '1px solid rgba(0,0,0,0.15)',
-            borderRadius: 3,
-            background: 'transparent',
-            cursor: hasOverrides ? 'pointer' : 'default',
-            opacity: hasOverrides ? 1 : 0.4,
-          }}
-        >
-          Reset all
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: 0.8 }}>
+          <span>{countText}</span>
+          <button
+            type="button"
+            onClick={onResetAll}
+            disabled={!hasOverrides}
+            style={{
+              fontSize: 11,
+              padding: '2px 8px',
+              border: '1px solid rgba(0,0,0,0.15)',
+              borderRadius: 3,
+              background: 'transparent',
+              cursor: hasOverrides ? 'pointer' : 'default',
+              opacity: hasOverrides ? 1 : 0.4,
+            }}
+          >
+            Reset all
+          </button>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape' && query !== '') { e.stopPropagation(); setQuery(''); } }}
+            placeholder="Filter by name or value…"
+            spellCheck={false}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              fontSize: 11,
+              padding: '4px 24px 4px 8px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 3,
+              background: '#11141a',
+              color: '#e6e7e9',
+            }}
+          />
+          {query !== '' && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="Clear filter"
+              title="Clear"
+              style={{
+                position: 'absolute',
+                right: 4,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: 18,
+                height: 18,
+                border: 'none',
+                borderRadius: 3,
+                background: 'transparent',
+                color: 'inherit',
+                cursor: 'pointer',
+                fontSize: 14,
+                lineHeight: 1,
+                opacity: 0.7,
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
       </div>
       <div style={{ overflowY: 'auto', flex: 1 }}>
+        {filtered.length === 0 && (
+          <div style={{ padding: 16, fontSize: 11, fontStyle: 'italic', opacity: 0.6 }}>
+            No matches for &ldquo;{query}&rdquo;.
+          </div>
+        )}
         {Array.from(buckets.entries()).map(([group, items]) => (
           <div key={group}>
             {grouped && group && (
