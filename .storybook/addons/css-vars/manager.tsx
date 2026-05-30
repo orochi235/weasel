@@ -14,6 +14,7 @@
  * inspector edits).
  */
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { addons, types, useChannel } from 'storybook/manager-api';
 import { AddonPanel } from 'storybook/internal/components';
 // `tokens.generated.ts` is materialized by `preset.ts` on Storybook
@@ -33,74 +34,140 @@ const EVT_REQUEST_RESYNC = 'WEASEL_CSS_VARS/REQUEST_RESYNC';
 const STORAGE_KEY = 'weasel:css-vars:overrides';
 
 /**
- * Row layout + narrow-mode container query. We keep the wide 4-column
- * grid as the default; when the panel container drops below ~360px wide
- * (e.g. when the panel is pinned into the 320px secondary panel slot),
- * the name jumps to its own row and the input/swatch/reset share the
- * row below it.
+ * Single-line row: `[name | value]`. Value right-aligns and truncates
+ * with ellipsis. Click opens the floating editor (rendered separately
+ * via a portal). Hover shows a CSS-only tooltip with ~120ms dwell — no
+ * JS state, no native `title` (which has multi-second OS dwell).
  */
 const PANEL_CSS = `
 .wzl-cssvars-row {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(120px, 1.2fr) auto auto;
-  gap: 8px;
-  align-items: center;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
   padding: 4px 12px;
+  margin: 0;
+  border: none;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: transparent;
+  color: inherit;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+.wzl-cssvars-row:hover,
+.wzl-cssvars-row[data-editing] {
+  background: rgba(255, 255, 255, 0.04);
 }
 .wzl-cssvars-name {
+  flex: 0 0 auto;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
+  max-width: 60%;
 }
-.wzl-cssvars-text {
-  font-family: inherit;
+.wzl-cssvars-dot {
+  color: #e08a3c;
+  margin-left: 6px;
+}
+.wzl-cssvars-value {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.7;
+}
+.wzl-cssvars-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.wzl-cssvars-tip {
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  z-index: 100;
+  margin-top: 2px;
+  padding: 6px 10px;
+  background: #0b0d11;
+  color: #e6e7e9;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  max-width: 320px;
+  word-break: break-all;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 80ms ease-out 120ms, transform 80ms ease-out 120ms;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.wzl-cssvars-row:hover .wzl-cssvars-tip {
+  opacity: 1;
+  transform: translateY(0);
+}
+.wzl-cssvars-row[data-editing] .wzl-cssvars-tip {
+  display: none;
+}
+.wzl-cssvars-tip-label {
+  opacity: 0.55;
+  margin-right: 6px;
+}
+
+/* Floating editor — portal'd to document.body, position computed
+ * on open. */
+.wzl-cssvars-editor {
+  position: fixed;
+  z-index: 200;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px;
+  background: #0b0d11;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+.wzl-cssvars-editor-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
-  padding: 2px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 3px;
   background: #11141a;
   color: #e6e7e9;
-  min-width: 0;
+  min-width: 200px;
 }
-.wzl-cssvars-color {
+.wzl-cssvars-editor-color {
   width: 28px;
-  height: 22px;
+  height: 26px;
   padding: 0;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   background: transparent;
   cursor: pointer;
 }
-.wzl-cssvars-color-spacer {
-  width: 28px;
-}
-.wzl-cssvars-reset {
+.wzl-cssvars-editor-btn {
   font-size: 11px;
-  padding: 2px 8px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 3px;
   background: transparent;
+  color: inherit;
   cursor: pointer;
 }
-.wzl-cssvars-reset:disabled {
+.wzl-cssvars-editor-btn:disabled {
   cursor: default;
   opacity: 0.4;
-}
-
-@container (max-width: 360px) {
-  .wzl-cssvars-row {
-    grid-template-columns: 1fr auto auto;
-    grid-template-rows: auto auto;
-    row-gap: 4px;
-  }
-  .wzl-cssvars-name { grid-column: 1 / -1; grid-row: 1; }
-  .wzl-cssvars-text { grid-column: 1; grid-row: 2; }
-  .wzl-cssvars-color { grid-column: 2; grid-row: 2; }
-  .wzl-cssvars-color-spacer { display: none; }
-  .wzl-cssvars-reset { grid-column: 3; grid-row: 2; }
 }
 `;
 
@@ -182,53 +249,135 @@ interface RowProps {
   readonly defaultValue: string;
   readonly currentValue: string;
   readonly override: string | undefined;
-  readonly onChange: (value: string) => void;
-  readonly onReset: () => void;
+  readonly editing: boolean;
+  readonly onOpen: (anchor: DOMRect) => void;
 }
 
-function Row({ name, defaultValue, currentValue, override, onChange, onReset }: RowProps): React.ReactElement {
+function Row({ name, defaultValue, currentValue, override, editing, onOpen }: RowProps): React.ReactElement {
   const displayed = override ?? currentValue ?? defaultValue;
   const colorish = isColorish(displayed) || isColorish(defaultValue);
   const hex = colorish ? toHex(displayed) : null;
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>): void => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    onOpen(rect);
+  };
   return (
-    <div className="wzl-cssvars-row">
-      <span
-        className="wzl-cssvars-name"
-        title={`default: ${defaultValue}`}
-      >
+    <button
+      type="button"
+      className="wzl-cssvars-row"
+      onClick={handleClick}
+      data-editing={editing ? '' : undefined}
+    >
+      <span className="wzl-cssvars-name">
         {name}
         {override !== undefined && (
-          <span style={{ marginLeft: 6, color: '#e08a3c' }} title="overridden">●</span>
+          <span className="wzl-cssvars-dot" aria-label="overridden">●</span>
         )}
       </span>
+      <span className="wzl-cssvars-value">
+        {hex && <span className="wzl-cssvars-swatch" style={{ background: hex }} />}
+        {displayed}
+      </span>
+      <span className="wzl-cssvars-tip" role="tooltip">
+        <div>
+          <span className="wzl-cssvars-tip-label">current</span>
+          {displayed}
+        </div>
+        <div>
+          <span className="wzl-cssvars-tip-label">default</span>
+          {defaultValue}
+        </div>
+      </span>
+    </button>
+  );
+}
+
+interface EditorProps {
+  readonly anchor: DOMRect;
+  readonly name: string;
+  readonly value: string;
+  readonly hasOverride: boolean;
+  readonly onChange: (value: string) => void;
+  readonly onReset: () => void;
+  readonly onClose: () => void;
+}
+
+function Editor({ anchor, name, value, hasOverride, onChange, onReset, onClose }: EditorProps): React.ReactElement {
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const colorish = isColorish(value);
+  const hex = colorish ? toHex(value) : null;
+
+  // Position below the anchor row. The editor is `position: fixed`, so
+  // anchor.left/bottom (viewport-relative) is exactly what we want. We
+  // clamp the right edge to keep it on-screen when a row sits near the
+  // viewport's right border (e.g. inside the pinned 320px secondary
+  // panel slot).
+  const style: React.CSSProperties = React.useMemo(() => {
+    const top = anchor.bottom + 4;
+    const minWidth = 320;
+    const maxLeft = window.innerWidth - minWidth - 8;
+    const left = Math.min(anchor.left, Math.max(8, maxLeft));
+    return { top, left };
+  }, [anchor]);
+
+  React.useEffect(() => {
+    const onDocPointerDown = (e: MouseEvent): void => {
+      if (!rootRef.current) return;
+      const target = e.target as Node | null;
+      if (rootRef.current.contains(target)) return;
+      // Clicking another row should not flash-close — let the row's own
+      // onClick handler retarget the editor to the new anchor.
+      if (target instanceof Element && target.closest('.wzl-cssvars-row')) return;
+      onClose();
+    };
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('mousedown', onDocPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <div ref={rootRef} className="wzl-cssvars-editor" style={style} role="dialog" aria-label={`Edit ${name}`}>
       <input
-        className="wzl-cssvars-text"
+        className="wzl-cssvars-editor-text"
         type="text"
-        value={displayed}
-        onChange={(e) => onChange(e.target.value)}
+        value={value}
+        autoFocus
         spellCheck={false}
+        onChange={(e) => onChange(e.target.value)}
       />
-      {colorish && hex ? (
+      {colorish && hex !== null && (
         <input
-          className="wzl-cssvars-color"
+          className="wzl-cssvars-editor-color"
           type="color"
           value={hex}
           onChange={(e) => onChange(e.target.value)}
-          title="Pick color"
+          aria-label="Pick color"
         />
-      ) : (
-        <span className="wzl-cssvars-color-spacer" />
       )}
       <button
-        className="wzl-cssvars-reset"
         type="button"
+        className="wzl-cssvars-editor-btn"
         onClick={onReset}
-        disabled={override === undefined}
-        title="Reset to default"
+        disabled={!hasOverride}
       >
         Reset
       </button>
-    </div>
+      <button
+        type="button"
+        className="wzl-cssvars-editor-btn"
+        onClick={onClose}
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </div>,
+    document.body,
   );
 }
 
@@ -244,6 +393,8 @@ interface ListProps {
 
 function List({ rows, overrides, onChange, onReset, onResetAll, emptyHint, grouped }: ListProps): React.ReactElement {
   const hasOverrides = rows.some((r) => overrides[r.name] !== undefined);
+  const [editing, setEditing] = React.useState<{ name: string; anchor: DOMRect } | null>(null);
+  const editingRow = editing ? rows.find((r) => r.name === editing.name) ?? null : null;
 
   if (rows.length === 0) {
     return (
@@ -314,13 +465,24 @@ function List({ rows, overrides, onChange, onReset, onResetAll, emptyHint, group
                 defaultValue={r.defaultValue}
                 currentValue={r.currentValue}
                 override={overrides[r.name]}
-                onChange={(v) => onChange(r.name, v)}
-                onReset={() => onReset(r.name)}
+                editing={editing?.name === r.name}
+                onOpen={(anchor) => setEditing({ name: r.name, anchor })}
               />
             ))}
           </div>
         ))}
       </div>
+      {editing && editingRow && (
+        <Editor
+          anchor={editing.anchor}
+          name={editing.name}
+          value={overrides[editing.name] ?? editingRow.currentValue ?? editingRow.defaultValue}
+          hasOverride={overrides[editing.name] !== undefined}
+          onChange={(v) => onChange(editing.name, v)}
+          onReset={() => onReset(editing.name)}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }

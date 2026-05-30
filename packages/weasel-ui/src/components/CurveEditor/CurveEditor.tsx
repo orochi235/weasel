@@ -4,6 +4,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from 'react';
 import { type Point } from './catmullRom';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
@@ -33,6 +34,19 @@ export interface ControlPoint {
 export type CurveDomain = '1d' | '2d';
 export type EndpointMode = 'free' | 'pinned-x' | 'pinned-both';
 export type AddPointMode = 'click-curve' | 'click-empty' | 'never';
+
+/** Per-anchor render context passed to `renderAnchor`. Coordinates are in
+ *  plot (SVG) space, ready to drop into `cx/cy` or `transform`. */
+export interface AnchorRenderProps {
+  point: ControlPoint;
+  index: number;
+  cx: number;
+  cy: number;
+  isActive: boolean;
+  isLocked: boolean;
+  isPinnedEndpoint: boolean;
+  isEndpoint: boolean;
+}
 
 /** Curve-render configuration. Empty today — color/width are still
  *  driven by the `--curve-*` CSS vars on the component root. Reserved
@@ -145,6 +159,17 @@ export interface CurveEditorProps {
   maxPoints?: number;
   /** How new anchors are added. Default 'click-curve'. */
   addPointMode?: AddPointMode;
+  /** Custom anchor renderer. When provided and returns a non-null node, it
+   *  replaces the default circle/diamond visuals for that anchor. The
+   *  returned content is wrapped in a `<g data-anchor-index>` that owns the
+   *  pointerdown/contextmenu handlers, so callers don't need to wire
+   *  gestures themselves — they just draw. Returning `null` falls back to
+   *  the default visual for that anchor. */
+  renderAnchor?: (info: AnchorRenderProps) => ReactNode;
+  /** Extra SVG content rendered inside the plot's SVG between the grid
+   *  and the anchors. Useful for connecting lines, region shading, or
+   *  any decoration that should sit beneath the anchor handles. */
+  decorations?: ReactNode;
   /** Extra class on the root SVG element. */
   className?: string;
   /** Inline style on the root SVG element. */
@@ -543,6 +568,7 @@ export function CurveEditor(props: CurveEditorProps) {
           fill="none"
         />
       )}
+      {props.decorations}
       {plotAnchors.map((a, i) => {
         const pinned = isPinnedEndpoint(i);
         const locked = isLocked(i);
@@ -556,6 +582,33 @@ export function CurveEditor(props: CurveEditorProps) {
         // points as plain circles.
         const curveDrawn = props.curve !== false && props.curve !== null;
         const isEndpoint = curveDrawn && (i === 0 || i === value.length - 1);
+        // Custom anchor renderer (opt-in). Wrap in a <g> that owns the
+        // gesture handlers so callers don't have to re-implement drag/
+        // delete; they just draw the visual.
+        if (props.renderAnchor) {
+          const node = props.renderAnchor({
+            point: value[i],
+            index: i,
+            cx: a.x,
+            cy: a.y,
+            isActive: active,
+            isLocked: locked,
+            isPinnedEndpoint: pinned,
+            isEndpoint,
+          });
+          if (node !== null && node !== undefined) {
+            return (
+              <g
+                key={i}
+                data-anchor-index={i}
+                onPointerDown={(e) => onPointerDownAnchor(i, e)}
+                onContextMenu={(e) => onContextMenuAnchor(i, e)}
+              >
+                {node}
+              </g>
+            );
+          }
+        }
         const anchorCls = [
           s.anchor,
           isEndpoint && s.endpoint,

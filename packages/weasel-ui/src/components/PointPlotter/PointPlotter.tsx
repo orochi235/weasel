@@ -1,6 +1,7 @@
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   CurveEditor,
+  type AnchorRenderProps,
   type ControlPoint,
   type CurveEditorProps,
 } from '../CurveEditor';
@@ -34,6 +35,10 @@ export interface PointPlotterProps {
   /** Built-in undo/redo via keyboard when the component has focus.
    *  Default `true`. See `CurveEditor.history` for details. */
   history?: boolean;
+  /** Custom per-anchor renderer. See `CurveEditor.renderAnchor`. */
+  renderAnchor?: (info: AnchorRenderProps) => ReactNode;
+  /** Extra SVG content beneath the anchors. See `CurveEditor.decorations`. */
+  decorations?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
