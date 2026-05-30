@@ -1,8 +1,24 @@
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+  useCallback, useMemo, useRef, useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import { type Point } from './catmullRom';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
-import { hitTestCurve, modelToPlot, plotToModel, type ModelRange } from './geometry';
+import {
+  Plot2D,
+  type Plot2DHandle,
+  type GridSettings,
+  type AxesSettings,
+} from '../Plot2D';
+import { modelToPlot, type ModelRange } from '../Plot2D/geometry';
+import { hitTestCurve } from './hitTest';
 import s from './CurveEditor.module.css';
+
+// Re-export so existing CurveEditor consumers keep working.
+export type { GridSettings, AxesSettings };
 
 export interface ControlPoint {
   x: number;
@@ -17,19 +33,6 @@ export interface ControlPoint {
 export type CurveDomain = '1d' | '2d';
 export type EndpointMode = 'free' | 'pinned-x' | 'pinned-both';
 export type AddPointMode = 'click-curve' | 'click-empty' | 'never';
-
-export interface GridSettings {
-  /** Number of evenly-spaced internal grid lines per axis (excluding the
-   *  edges). Applied to both x and y. Default 3. */
-  divisions?: number;
-  /** Stroke color override. When omitted, uses `var(--curve-grid)`. */
-  color?: string;
-}
-
-export interface AxesSettings {
-  /** Stroke color override. When omitted, uses `var(--curve-axis)`. */
-  color?: string;
-}
 
 export interface FillSettings {
   /** Which side of the curve gets filled — `'below'` shades the region
@@ -157,7 +160,10 @@ export function CurveEditor(props: CurveEditorProps) {
 
   const plotSize = useMemo(() => ({ width, height }), [width, height]);
 
-  // Project anchors to plot space for both rendering and (later) hit testing.
+  // Project anchors to plot space for rendering. Uses the same
+  // transform Plot2D exposes via its handle; we call the pure function
+  // directly here because the ref isn't populated on the first render
+  // pass and the math is identical.
   const plotAnchors: Point[] = useMemo(
     () => value.map((a) => modelToPlot(a, modelRange, plotSize)),
     [value, modelRange, plotSize],
@@ -227,7 +233,7 @@ export function CurveEditor(props: CurveEditorProps) {
     lastNext: ControlPoint[];
   }
   const dragRef = useRef<DragState | null>(null);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const plotRef = useRef<Plot2DHandle | null>(null);
   const [activeDragIndex, setActiveDragIndex] = useState<number | null>(null);
 
   // ── Internal undo/redo stacks ───────────────────────────────────────
@@ -308,12 +314,10 @@ export function CurveEditor(props: CurveEditorProps) {
   }).current;
 
   const pointerToModel = useCallback((clientX: number, clientY: number): Point => {
-    const rect = svgRef.current?.getBoundingClientRect();
-    const left = rect?.left ?? 0;
-    const top = rect?.top ?? 0;
-    const plot: Point = { x: clientX - left, y: clientY - top };
-    return plotToModel(plot, modelRange, plotSize);
-  }, [modelRange, plotSize]);
+    const h = plotRef.current;
+    if (!h) return { x: 0, y: 0 };
+    return h.clientToModel({ clientX, clientY });
+  }, []);
 
   const cleanupDrag = useCallback(() => {
     window.removeEventListener('pointermove', stableMoveHandler);
@@ -446,18 +450,18 @@ export function CurveEditor(props: CurveEditorProps) {
     return out;
   }, [value, modelRange, plotSize, interpolation]);
 
-  const onSvgPointerDown = useCallback((e: ReactPointerEvent<SVGSVGElement>) => {
+  const onSvgPointerDown = useCallback((
+    e: ReactPointerEvent<SVGSVGElement>,
+    coords: { plot: Point; model: Point },
+  ) => {
     if (addPointMode === 'never') return;
     // Refuse if we'd exceed the configured maximum.
     if (props.maxPoints !== undefined && value.length >= props.maxPoints) return;
     const target = e.target as SVGElement;
     if (target.tagName === 'circle') return;
 
-    const rect = svgRef.current?.getBoundingClientRect();
-    const left = rect?.left ?? 0;
-    const top = rect?.top ?? 0;
-    const plotPt: Point = { x: e.clientX - left, y: e.clientY - top };
-    const modelPt = plotToModel(plotPt, modelRange, plotSize);
+    const plotPt = coords.plot;
+    const modelPt = coords.model;
 
     if (addPointMode === 'click-curve') {
       const hit = hitTestCurve(segmentSamples, plotPt, 8);
@@ -492,76 +496,25 @@ export function CurveEditor(props: CurveEditorProps) {
     onChange(next);
     recordCommit(value);
     if (onChangeCommit) onChangeCommit(next, value);
-  }, [addPointMode, value, modelRange, plotSize, segmentSamples, domain, props.maxPoints, onChange, onChangeCommit, recordCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
+  }, [addPointMode, value, segmentSamples, domain, props.maxPoints, onChange, onChangeCommit, recordCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const cls = [s.root, className].filter(Boolean).join(' ');
 
   return (
-    <svg
-      ref={svgRef}
+    <Plot2D
+      ref={plotRef}
       className={cls}
       style={style}
       width={width}
       height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      role="img"
+      xRange={xRange}
+      yRange={yRange}
+      grid={props.grid}
+      axes={props.axes}
       tabIndex={historyEnabled ? 0 : undefined}
       onPointerDown={onSvgPointerDown}
       onKeyDown={historyEnabled ? onSvgKeyDown : undefined}
     >
-      {props.grid && (() => {
-        const divisions = props.grid.divisions ?? 3;
-        const stroke = props.grid.color;
-        // Evenly-spaced internal divisions, excluding the edges (which
-        // belong to the axes). For divisions=3, fractions are 1/4, 2/4, 3/4.
-        const fractions: number[] = [];
-        for (let i = 1; i <= divisions; i++) fractions.push(i / (divisions + 1));
-        return (
-          <g>
-            {fractions.map((f) => (
-              <line
-                key={`gx-${f}`}
-                data-curve-element="grid"
-                className={s.grid}
-                stroke={stroke}
-                x1={f * width} x2={f * width}
-                y1={0} y2={height}
-              />
-            ))}
-            {fractions.map((f) => (
-              <line
-                key={`gy-${f}`}
-                data-curve-element="grid"
-                className={s.grid}
-                stroke={stroke}
-                x1={0} x2={width}
-                y1={f * height} y2={f * height}
-              />
-            ))}
-          </g>
-        );
-      })()}
-      {props.axes !== false && props.axes !== null && (() => {
-        const stroke = props.axes?.color;
-        return (
-          <g>
-            <line
-              data-curve-element="axis"
-              className={s.axis}
-              stroke={stroke}
-              x1={0} x2={width}
-              y1={height} y2={height}
-            />
-            <line
-              data-curve-element="axis"
-              className={s.axis}
-              stroke={stroke}
-              x1={0} x2={0}
-              y1={0} y2={height}
-            />
-          </g>
-        );
-      })()}
       {fillD && (
         <path
           data-curve-element="fill"
@@ -631,6 +584,6 @@ export function CurveEditor(props: CurveEditorProps) {
           />
         );
       })}
-    </svg>
+    </Plot2D>
   );
 }

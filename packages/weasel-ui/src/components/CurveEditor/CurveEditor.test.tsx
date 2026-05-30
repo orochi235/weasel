@@ -387,7 +387,7 @@ describe('CurveEditor — visual chrome', () => {
         height={100}
       />,
     );
-    const gridLines = container.querySelectorAll('[data-curve-element="grid"]');
+    const gridLines = container.querySelectorAll('[data-plot-element="grid"]');
     expect(gridLines.length).toBeGreaterThan(0);
   });
 
@@ -402,7 +402,7 @@ describe('CurveEditor — visual chrome', () => {
           height={100}
         />,
       );
-      expect(container.querySelectorAll('[data-curve-element="grid"]').length).toBe(0);
+      expect(container.querySelectorAll('[data-plot-element="grid"]').length).toBe(0);
     }
   });
 
@@ -417,7 +417,7 @@ describe('CurveEditor — visual chrome', () => {
       />,
     );
     // 5 divisions × 2 axes = 10 internal grid lines.
-    const gridLines = container.querySelectorAll('[data-curve-element="grid"]');
+    const gridLines = container.querySelectorAll('[data-plot-element="grid"]');
     expect(gridLines.length).toBe(10);
   });
 
@@ -430,7 +430,7 @@ describe('CurveEditor — visual chrome', () => {
         height={100}
       />,
     );
-    const axes = container.querySelectorAll('[data-curve-element="axis"]');
+    const axes = container.querySelectorAll('[data-plot-element="axis"]');
     expect(axes.length).toBe(2);
   });
 
@@ -445,7 +445,7 @@ describe('CurveEditor — visual chrome', () => {
           height={100}
         />,
       );
-      expect(container.querySelectorAll('[data-curve-element="axis"]').length).toBe(0);
+      expect(container.querySelectorAll('[data-plot-element="axis"]').length).toBe(0);
     }
   });
 

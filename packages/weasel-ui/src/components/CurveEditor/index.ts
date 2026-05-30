@@ -5,10 +5,11 @@ export {
   type CurveDomain,
   type EndpointMode,
   type AddPointMode,
-  type GridSettings,
-  type AxesSettings,
   type FillSettings,
 } from './CurveEditor';
+// GridSettings / AxesSettings now live on Plot2D — import them from
+// `@orochi235/weasel-ui` (or `./Plot2D`) rather than re-exporting here
+// and creating an ambiguous `export *` at the package root.
 
 export {
   createSetCurveOp,

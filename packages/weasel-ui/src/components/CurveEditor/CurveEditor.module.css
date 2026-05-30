@@ -2,17 +2,10 @@
   /* Component-local vars layered over the theme tokens. Each var resolves
    * to a semantic token from @orochi235/weasel-theme; consumers override
    * either the curve-* var (component scope) or the wzl-* token (app
-   * scope) without touching this file. */
-  --curve-bg: var(--wzl-surface-sunken);
-  --curve-grid: var(--wzl-line);
-  /* Axes get full foreground contrast (not a faded line) — they're
-   * the plot frame, the most prominent structural element after the
-   * curve itself. */
-  --curve-axis: var(--wzl-fg);
-  /* Curve color routes through the system-level --wzl-curve-color
-   * token (defined in weasel-theme/tokens.css). Override either
-   * --curve-line (component scope) or --wzl-curve-color (app scope).
-   * Fill, anchor strokes, and active-fill follow automatically. */
+   * scope) without touching this file.
+   *
+   * Background / grid / axis tokens live on Plot2D now (this component
+   * composes Plot2D, which paints the background and chrome). */
   --curve-line: var(--wzl-curve-color);
   --curve-line-width: var(--wzl-curve-width);
   --curve-fill: color-mix(in srgb, var(--curve-line) 30%, transparent);
@@ -21,43 +14,12 @@
   --curve-anchor-radius: 4;
   --curve-anchor-active-fill: var(--curve-line);
   --curve-pinned-fill: var(--wzl-fg-subtle);
-
-  display: block;
-  /* Anchors at plot x=0 / x=width / y=0 / y=height extend past the SVG
-   * box by their radius — let them paint over the host page instead of
-   * being half-clipped. */
-  overflow: visible;
-  background: var(--curve-bg);
-  user-select: none;
-  touch-action: none;
-  outline: none;
-}
-
-/* Keyboard-only focus ring (history-enabled component). Mouse clicks
- * don't trigger this. */
-.root:focus-visible {
-  outline: 2px solid var(--wzl-focus-ring);
-  outline-offset: 2px;
 }
 
 .fill {
   fill: var(--curve-fill);
   stroke: none;
   pointer-events: none;
-}
-
-.grid {
-  stroke: var(--curve-grid);
-  stroke-width: 1;
-  fill: none;
-}
-
-.axis {
-  /* Axes get the thickest + brightest of the structural line stack so
-   * they read as plot frame rather than incidental gridlines. */
-  stroke: var(--curve-axis);
-  stroke-width: var(--wzl-line-width);
-  fill: none;
 }
 
 .curve {
