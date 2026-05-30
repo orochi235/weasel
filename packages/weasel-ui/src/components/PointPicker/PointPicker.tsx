@@ -10,11 +10,7 @@ import {
   type AxesSettings,
 } from '../Plot2D';
 import { modelToPlot, type ModelRange } from '../Plot2D/geometry';
-// PointPicker reuses CurveEditor's anchor styling so the two components
-// look visually consistent in the same surface. The classes are scoped
-// (CSS modules) but the underlying tokens (--curve-anchor-*) come from
-// CurveEditor's module — we import the same module here on purpose.
-import s from '../CurveEditor/CurveEditor.module.css';
+import s from './PointPicker.module.css';
 
 export interface PointPickerProps {
   value: { x: number; y: number };
@@ -133,16 +129,17 @@ export function PointPicker(props: PointPickerProps) {
   }, [locked, value, stableMove, stableUp, stableCancel]);
 
   const pointCls = [
-    s.anchor,
-    locked && s.pinned,
+    s.point,
     locked && s.locked,
     active && s.active,
   ].filter(Boolean).join(' ');
 
+  const rootCls = [s.root, className].filter(Boolean).join(' ');
+
   return (
     <Plot2D
       ref={plotRef}
-      className={className}
+      className={rootCls}
       style={style}
       width={width}
       height={height}
