@@ -1,0 +1,38 @@
+.root {
+  /* Component-local vars layered over theme tokens. Consumers override
+   * either the plot-* var (component scope) or the wzl-* token (app
+   * scope). */
+  --plot-bg: var(--wzl-surface-sunken);
+  --plot-grid: var(--wzl-line);
+  /* Axes get full foreground contrast — they're the plot frame, the
+   * most prominent structural element after caller-rendered content. */
+  --plot-axis: var(--wzl-fg);
+
+  display: block;
+  /* Caller-rendered marks at the very edge (e.g. CurveEditor anchors)
+   * extend past the SVG box by their radius — let them paint over the
+   * host page instead of being half-clipped. */
+  overflow: visible;
+  background: var(--plot-bg);
+  user-select: none;
+  touch-action: none;
+  outline: none;
+}
+
+/* Keyboard-only focus ring. Caller opts in via `tabIndex`. */
+.root:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 2px;
+}
+
+.grid {
+  stroke: var(--plot-grid);
+  stroke-width: 1;
+  fill: none;
+}
+
+.axis {
+  stroke: var(--plot-axis);
+  stroke-width: var(--wzl-line-width);
+  fill: none;
+}
