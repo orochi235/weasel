@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { type Point } from './catmullRom';
 import { sampleByInterpolation, type InterpolationMode } from './interpolation';
 import { hitTestCurve, modelToPlot, plotToModel, type ModelRange } from './geometry';
@@ -392,21 +392,35 @@ export function CurveEditor(props: CurveEditorProps) {
     return false;
   }, [endpoints, value]);
 
+  const deleteAnchor = useCallback((index: number): void => {
+    if (isLocked(index)) return;
+    if (isPinnedEndpoint(index)) return;
+    if (props.minPoints !== undefined && value.length <= props.minPoints) return;
+    const next = value.filter((_, i) => i !== index);
+    onChange(next);
+    recordCommit(value);
+    if (onChangeCommit) onChangeCommit(next, value);
+  }, [isLocked, isPinnedEndpoint, props.minPoints, value, onChange, onChangeCommit, recordCommit]);
+
+  const onContextMenuAnchor = useCallback((index: number, e: ReactMouseEvent<SVGElement>) => {
+    // Right-click → delete. Always suppress the browser menu over an
+    // anchor, even if the delete is refused (locked / pinned / minPoints).
+    e.preventDefault();
+    e.stopPropagation();
+    deleteAnchor(index);
+  }, [deleteAnchor]);
+
   const onPointerDownAnchor = useCallback((index: number, e: ReactPointerEvent<SVGElement>) => {
     e.stopPropagation();
     // Locked anchors swallow the gesture entirely — no drag, no delete.
     if (isLocked(index)) return;
     // Shift+click → delete.
     if (e.shiftKey) {
-      if (isPinnedEndpoint(index)) return;
-      // Refuse if we'd drop below the configured minimum.
-      if (props.minPoints !== undefined && value.length <= props.minPoints) return;
-      const next = value.filter((_, i) => i !== index);
-      onChange(next);
-      recordCommit(value);
-      if (onChangeCommit) onChangeCommit(next, value);
+      deleteAnchor(index);
       return;
     }
+    // Right-click is handled by onContextMenu; don't start a drag.
+    if (e.button === 2) return;
     setActiveDragIndex(index);
     dragRef.current = {
       index,
@@ -417,7 +431,7 @@ export function CurveEditor(props: CurveEditorProps) {
     window.addEventListener('pointermove', stableMoveHandler);
     window.addEventListener('pointerup', stableUpHandler);
     window.addEventListener('pointercancel', stableCancelHandler);
-  }, [value, onChange, onChangeCommit, isPinnedEndpoint, isLocked, props.minPoints, recordCommit, stableMoveHandler, stableUpHandler, stableCancelHandler]);
+  }, [value, isLocked, deleteAnchor, stableMoveHandler, stableUpHandler, stableCancelHandler]);
 
   const segmentSamples = useMemo((): Point[][] => {
     if (value.length < 2) return [];
@@ -600,6 +614,7 @@ export function CurveEditor(props: CurveEditorProps) {
               transform={`rotate(45 ${a.x} ${a.y})`}
               data-anchor-index={i}
               onPointerDown={(e) => onPointerDownAnchor(i, e)}
+              onContextMenu={(e) => onContextMenuAnchor(i, e)}
             />
           );
         }
@@ -612,6 +627,7 @@ export function CurveEditor(props: CurveEditorProps) {
             r={4}
             data-anchor-index={i}
             onPointerDown={(e) => onPointerDownAnchor(i, e)}
+            onContextMenu={(e) => onContextMenuAnchor(i, e)}
           />
         );
       })}
