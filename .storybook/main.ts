@@ -22,6 +22,8 @@ const config: StorybookConfig = {
     '@storybook/addon-themes',
     // Local addon: CSS Vars panel — see `.storybook/addons/css-vars/`.
     './addons/css-vars/preset.ts',
+    // Local addon: Secondary panel — see `.storybook/addons/secondary-panel/`.
+    './addons/secondary-panel/preset.ts',
   ],
   framework: {
     name: '@storybook/react-vite',

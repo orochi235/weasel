@@ -32,6 +32,78 @@ const EVT_REQUEST_RESYNC = 'WEASEL_CSS_VARS/REQUEST_RESYNC';
 
 const STORAGE_KEY = 'weasel:css-vars:overrides';
 
+/**
+ * Row layout + narrow-mode container query. We keep the wide 4-column
+ * grid as the default; when the panel container drops below ~360px wide
+ * (e.g. when the panel is pinned into the 320px secondary panel slot),
+ * the name jumps to its own row and the input/swatch/reset share the
+ * row below it.
+ */
+const PANEL_CSS = `
+.wzl-cssvars-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, 1.2fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+.wzl-cssvars-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.wzl-cssvars-text {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  background: #11141a;
+  color: #e6e7e9;
+  min-width: 0;
+}
+.wzl-cssvars-color {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: transparent;
+  cursor: pointer;
+}
+.wzl-cssvars-color-spacer {
+  width: 28px;
+}
+.wzl-cssvars-reset {
+  font-size: 11px;
+  padding: 2px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+.wzl-cssvars-reset:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+@container (max-width: 360px) {
+  .wzl-cssvars-row {
+    grid-template-columns: 1fr auto auto;
+    grid-template-rows: auto auto;
+    row-gap: 4px;
+  }
+  .wzl-cssvars-name { grid-column: 1 / -1; grid-row: 1; }
+  .wzl-cssvars-text { grid-column: 1; grid-row: 2; }
+  .wzl-cssvars-color { grid-column: 2; grid-row: 2; }
+  .wzl-cssvars-color-spacer { display: none; }
+  .wzl-cssvars-reset { grid-column: 3; grid-row: 2; }
+}
+`;
+
 type Overrides = Record<string, string>;
 
 interface IntrospectVar {
@@ -119,21 +191,10 @@ function Row({ name, defaultValue, currentValue, override, onChange, onReset }: 
   const colorish = isColorish(displayed) || isColorish(defaultValue);
   const hex = colorish ? toHex(displayed) : null;
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(180px, 1fr) minmax(120px, 1.2fr) auto auto',
-        gap: 8,
-        alignItems: 'center',
-        padding: '4px 12px',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-        fontSize: 12,
-      }}
-    >
+    <div className="wzl-cssvars-row">
       <span
+        className="wzl-cssvars-name"
         title={`default: ${defaultValue}`}
-        style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
       >
         {name}
         {override !== undefined && (
@@ -141,46 +202,29 @@ function Row({ name, defaultValue, currentValue, override, onChange, onReset }: 
         )}
       </span>
       <input
+        className="wzl-cssvars-text"
         type="text"
         value={displayed}
         onChange={(e) => onChange(e.target.value)}
         spellCheck={false}
-        style={{
-          fontFamily: 'inherit',
-          fontSize: 12,
-          padding: '2px 6px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: 3,
-          background: '#11141a',
-          color: '#e6e7e9',
-          minWidth: 0,
-        }}
       />
       {colorish && hex ? (
         <input
+          className="wzl-cssvars-color"
           type="color"
           value={hex}
           onChange={(e) => onChange(e.target.value)}
-          style={{ width: 28, height: 22, padding: 0, border: '1px solid rgba(0,0,0,0.15)', background: 'transparent', cursor: 'pointer' }}
           title="Pick color"
         />
       ) : (
-        <span style={{ width: 28 }} />
+        <span className="wzl-cssvars-color-spacer" />
       )}
       <button
+        className="wzl-cssvars-reset"
         type="button"
         onClick={onReset}
         disabled={override === undefined}
         title="Reset to default"
-        style={{
-          fontSize: 11,
-          padding: '2px 8px',
-          border: '1px solid rgba(0,0,0,0.15)',
-          borderRadius: 3,
-          background: 'transparent',
-          cursor: override === undefined ? 'default' : 'pointer',
-          opacity: override === undefined ? 0.4 : 1,
-        }}
       >
         Reset
       </button>
@@ -362,7 +406,11 @@ function Panel(): React.ReactElement {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div
+      className="wzl-cssvars-root"
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', containerType: 'inline-size' }}
+    >
+      <style>{PANEL_CSS}</style>
       <div style={{ display: 'flex', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
         {(['theme', 'story'] as const).map((t) => (
           <button
