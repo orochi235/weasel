@@ -34,6 +34,13 @@ export type CurveDomain = '1d' | '2d';
 export type EndpointMode = 'free' | 'pinned-x' | 'pinned-both';
 export type AddPointMode = 'click-curve' | 'click-empty' | 'never';
 
+/** Curve-render configuration. Empty today — color/width are still
+ *  driven by the `--curve-*` CSS vars on the component root. Reserved
+ *  for future per-instance overrides. */
+export interface CurveSettings {
+  // Intentionally empty for now.
+}
+
 export interface FillSettings {
   /** Which side of the curve gets filled — `'below'` shades the region
    *  between the curve and the bottom edge of the plot; `'above'` shades
@@ -76,6 +83,12 @@ export interface CurveEditorProps {
   /** Axis line configuration. `false` / `null` → no axes. Omitted →
    *  default-styled axes (on). Pass an AxesSettings to customize. */
   axes?: AxesSettings | false | null;
+  /** Whether to draw the curve `<path>` between anchors. `false` / `null`
+   *  hide the curve while keeping anchors, drag, add, and delete
+   *  behavior intact — used by `PointPlotter` to present the same
+   *  gesture surface without connecting the points. Omitted → curve is
+   *  drawn (default). */
+  curve?: CurveSettings | false | null;
   /** Shade the region under or over the curve. The algorithm closes the
    *  polyline back along the bottom (`below`) or top (`above`) edge of
    *  the plot — works cleanly for x-monotonic curves; produces visually
@@ -523,7 +536,7 @@ export function CurveEditor(props: CurveEditorProps) {
           fill={props.fill && props.fill !== null ? props.fill.color : undefined}
         />
       )}
-      {pathD && (
+      {pathD && props.curve !== false && props.curve !== null && (
         <path
           className={s.curve}
           d={pathD}
@@ -537,7 +550,12 @@ export function CurveEditor(props: CurveEditorProps) {
         // and pinned endpoints both qualify (caller can't move them).
         if ((locked || pinned) && props.hideNonInteractive) return null;
         const active = activeDragIndex === i;
-        const isEndpoint = i === 0 || i === value.length - 1;
+        // "Endpoint" semantics only apply when the curve is drawn — the
+        // first/last anchors of an undrawn polyline aren't meaningfully
+        // endpoints. PointPlotter relies on this to render all its
+        // points as plain circles.
+        const curveDrawn = props.curve !== false && props.curve !== null;
+        const isEndpoint = curveDrawn && (i === 0 || i === value.length - 1);
         const anchorCls = [
           s.anchor,
           isEndpoint && s.endpoint,
