@@ -1,5 +1,6 @@
 import { useCallback, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
 import s from './Slider.module.css';
+import { formatNumber } from '../../format/number';
 
 export type ThumbRenderCtx = {
   width: number;
@@ -69,7 +70,7 @@ function resolveBounds(thumb: Thumb, ctx: BoundsCtx, fallbackMin: number, fallba
 }
 
 function defaultReadout(thumb: Thumb): string {
-  return thumb.value.toFixed(3);
+  return formatNumber(thumb.value, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }
 
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
