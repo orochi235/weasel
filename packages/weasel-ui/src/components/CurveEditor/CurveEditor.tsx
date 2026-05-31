@@ -392,8 +392,15 @@ export function CurveEditor(props: CurveEditorProps) {
     }
 
     // Clamp to model range so vertices never leave the visible plot.
-    nx = Math.max(modelRange.xMin, Math.min(modelRange.xMax, nx));
-    ny = Math.max(modelRange.yMin, Math.min(modelRange.yMax, ny));
+    // Handle inverted ranges (e.g. yRange=[height,0]) by normalising bounds.
+    {
+      const xLo = Math.min(modelRange.xMin, modelRange.xMax);
+      const xHi = Math.max(modelRange.xMin, modelRange.xMax);
+      const yLo = Math.min(modelRange.yMin, modelRange.yMax);
+      const yHi = Math.max(modelRange.yMin, modelRange.yMax);
+      nx = Math.max(xLo, Math.min(xHi, nx));
+      ny = Math.max(yLo, Math.min(yHi, ny));
+    }
 
     next[d.index] = { x: nx, y: ny };
     d.lastNext = next;
