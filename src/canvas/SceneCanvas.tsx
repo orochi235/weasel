@@ -104,6 +104,7 @@ import {
 } from 'features/chrome-caps';
 import type { RuleCtx } from 'features/chrome-caps';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+export { rotateAroundAABBCenter } from './poseRotation';
 
 /**
  * Minimal adapter surface the legacy bridge factories need for delete /
@@ -197,36 +198,12 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
     ));
   }
 
-  // Auto-rotate when the pose carries a non-zero `rotation` field. Wraps
-  // every emitted command in a single group transform around the AABB
-  // center — covers RotatedPose-shaped scenes without per-demo drawOne
-  // boilerplate. Painters and consumers that need different rotation
-  // semantics (e.g. pivot at origin) can override `drawOne`.
-  const p = pose as unknown as Partial<{ x: number; y: number; width: number; height: number; rotation: number }>;
-  if (p.rotation && p.x != null && p.y != null && p.width != null && p.height != null) {
-    return [{
-      kind: 'group',
-      transform: rotateAroundAABBCenter(p.x, p.y, p.width, p.height, p.rotation),
-      children: primary,
-    }];
-  }
+  // Pose-rotation wrap moved to `wrapWithPoseRotation` in
+  // `./poseRotation`, applied inside `buildSceneLayer` and the preview-
+  // ghost layer so every per-node `drawOne` (consumer-supplied or
+  // default) gets rotation visualization. Keeping it here too would
+  // double-wrap.
   return primary;
-}
-
-/** Compose `T(cx,cy) · R(θ) · T(-cx,-cy)` for the AABB center of `(x, y,
- *  width, height)` into a column-major 3×3 affine. Matches the
- *  `[a, b, 0, c, d, 0, tx, ty, 1]` layout `kind: 'group'` consumes. */
-export function rotateAroundAABBCenter(
-  x: number, y: number, width: number, height: number, rotation: number,
-): Float32Array {
-  const cx = x + width / 2;
-  const cy = y + height / 2;
-  const cs = Math.cos(rotation);
-  const sn = Math.sin(rotation);
-  const a = cs, b = sn, c = -sn, d = cs;
-  const tx = cx - a * cx - c * cy;
-  const ty = cy - b * cx - d * cy;
-  return new Float32Array([a, b, 0, c, d, 0, tx, ty, 1]);
 }
 
 /** Deep-merge user-supplied `layers` with kit defaults. Slots the user
@@ -483,6 +460,13 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  surface — `lasso.mode`, `clone.cloneSelection`, etc. */
     toolOptions?: BuiltinToolOptions;
 
+    /** Initial active-slot tool id. Default: `'select'`. Must be one of the
+     *  registered tools (via `defaultTools` / `toolBundle`). Useful for
+     *  demos / consumers that want to land on a non-select tool — e.g. the
+     *  lasso demo starts with `initialActiveTool="lasso"`. Ignored when the
+     *  consumer supplies their own `tools` prop. */
+    initialActiveTool?: string;
+
     /** Always-on tools to register alongside the internal default select.
      *  Use this for wheel/keyboard zoom + pan tools that should run alongside
      *  the default select. If you supply your own `tools` prop, this is
@@ -723,6 +707,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     toolBundle,
     defaultTools,
     toolOptions,
+    initialActiveTool,
     ambient,
     viewport,
     layers,
@@ -1063,7 +1048,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const toolsTakeover = toolsProp && isToolsApi(toolsProp) ? toolsProp : null;
 
   const internalTools = useTools({
-    active: 'select',
+    active: initialActiveTool ?? 'select',
     registry: internalRegistry,
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
   });

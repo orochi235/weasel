@@ -16,6 +16,7 @@ import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { ToolsApi } from 'tools/useTools';
 import { findShapeSilhouette } from '../NodeShape';
+import { wrapWithPoseRotation } from '../poseRotation';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 
 /** A source of in-flight preview state — either a tool from the tools
@@ -150,7 +151,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         // (path, fill, text, etc.).
         const effNode = data == null ? node : ({ ...node, data } as typeof node);
         const self = drawOne(effNode, effPose, view);
-        const childCommands: DrawCommand[] = [...self];
+        const selfRotated = wrapWithPoseRotation(self, effPose as unknown);
+        const childCommands: DrawCommand[] = [...selfRotated];
         for (const cid of sc.childrenOf(asNodeId(id))) {
           if (!idSet.has(cid)) continue;
           for (const cmd of buildSubtree(cid)) childCommands.push(cmd);

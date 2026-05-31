@@ -71,6 +71,7 @@ import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 
 const alwaysVisible = (_id: string): boolean => true;
 import { buildSceneTree } from './buildSceneTree';
+import { wrapWithPoseRotation } from './poseRotation';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
 import type { ViewportConfig } from './SceneCanvas/useViewportTools';
@@ -551,11 +552,12 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
             const oy = (pose as { y?: number }).y ?? (b ? b.y : 0);
             debugSink.recordOrigin(obj.id, { x: ox, y: oy });
           }
+          const rotated = wrapWithPoseRotation(cmds, pose);
           const alpha = cfg.alphaFor ? cfg.alphaFor(obj.id) : 1;
-          if (alpha !== 1 && cmds.length > 0) {
-            return [{ kind: 'group', alpha, children: cmds }];
+          if (alpha !== 1 && rotated.length > 0) {
+            return [{ kind: 'group', alpha, children: rotated }];
           }
-          return cmds;
+          return rotated;
         };
         // Honor cfg.toPose on the hierarchical path by shimming getPose on the
         // adapter so buildSceneTree routes through it instead of the raw adapter.
@@ -583,11 +585,12 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         const pose: TPose = toPose(obj);
         if (drawOne) {
           const cmds = drawOne(obj, pose, view);
+          const rotated = wrapWithPoseRotation(cmds, pose);
           const alpha = cfg.alphaFor ? cfg.alphaFor(obj.id) : 1;
-          if (alpha !== 1 && cmds.length > 0) {
-            children.push({ kind: 'group', alpha, children: cmds });
+          if (alpha !== 1 && rotated.length > 0) {
+            children.push({ kind: 'group', alpha, children: rotated });
           } else {
-            for (const cmd of cmds) children.push(cmd);
+            for (const cmd of rotated) children.push(cmd);
           }
         }
         if (debugSink) {
