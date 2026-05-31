@@ -119,6 +119,12 @@ export function SliderRow({
   unit,
   layout,
 }: SliderRowProps) {
+  // Default readout precision tracks `step`: integer steps → 0 decimals,
+  // 0.1 → 1 decimal, 0.05/0.02/0.01 → 2 decimals, 0.005 → 3, etc. Callers
+  // can still pass an explicit `format` to override (e.g. for a custom
+  // unit string or a non-decimal display like fractions).
+  const decimals = step >= 1 ? 0 : Math.min(6, Math.max(0, Math.ceil(-Math.log10(step))));
+  const effectiveFormat = format ?? ((n: number) => formatNumber(n, decimals));
   return (
     <PropertyRow
       label={label}
@@ -127,7 +133,7 @@ export function SliderRow({
           value={value}
           min={min}
           max={max}
-          format={format}
+          format={effectiveFormat}
           unit={unit}
           onCommit={onChange}
         />

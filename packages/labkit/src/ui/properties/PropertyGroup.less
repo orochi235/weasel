@@ -30,7 +30,10 @@
   grid-template-columns: 1fr 1fr;
   column-gap: 16px;
   row-gap: 10px;
-  align-items: start;
+  // Stretch so paired rows match in height — slider rows then bottom-align
+  // their tracks (via `margin-top: auto`) and stay lined up even when one
+  // sibling's label wraps to two lines.
+  align-items: stretch;
 }
 
 .lk-property-group:not(.lk-property-group--pairs) .lk-property-group__body > :not(.lk-property-row--color) {
