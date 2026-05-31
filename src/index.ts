@@ -241,6 +241,30 @@ export type {
 } from './canvas/Canvas';
 export type { CanvasExtensionApi } from './canvas/canvasExtension';
 
+// ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
+// `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
+// given view; `<MinimapCanvas>` is the opinionated minimap built on top.
+// See `docs/superpowers/specs/2026-05-31-detached-minimap-design.md`.
+export { SceneViewCanvas } from './canvas/SceneViewCanvas';
+export type { SceneViewCanvasProps } from './canvas/SceneViewCanvas';
+export { MinimapCanvas } from './canvas/MinimapCanvas';
+export type { MinimapCanvasProps } from './canvas/MinimapCanvas';
+export {
+  buildSceneViewCommands,
+  renderSceneToCanvas,
+} from './canvas/sceneViewRender';
+export type { SceneViewDrawOne } from './canvas/sceneViewRender';
+export {
+  FALLBACK_FIT_VIEW,
+  computeFitView,
+  computeIndicatorCommand,
+} from './canvas/minimapMath';
+export type {
+  ComputeFitViewOptions,
+  IndicatorStyle,
+  MinimapFit,
+} from './canvas/minimapMath';
+
 // ─── Selection state hook ───────────────────────────────────────────────────
 export { useSelection } from './core/selection/useSelection';
 export type {
