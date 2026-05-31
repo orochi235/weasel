@@ -10,9 +10,9 @@
 }
 
 .toast {
-  background: #fff8e1;
+  background: var(--wzl-fg);
   border: 1px solid #c97c5d;
-  color: #3a2e22;
+  color: var(--wzl-border);
   padding: 10px 12px;
   border-radius: 6px;
   font-size: 13px;
@@ -36,7 +36,7 @@
 .close {
   background: none;
   border: none;
-  color: #3a2e22;
+  color: var(--wzl-border);
   cursor: pointer;
   font-size: 16px;
   padding: 0 4px;

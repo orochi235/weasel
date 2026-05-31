@@ -13,7 +13,7 @@
   padding: 0 8px;
   height: 24px;
   font-size: 12px;
-  color: #d8c8a8;
+  color: var(--wzl-fg);
   background: transparent;
   border-radius: 2px;
   cursor: pointer;
@@ -23,37 +23,37 @@
 }
 
 .row:hover {
-  background: #221c12;
+  background: var(--wzl-surface);
 }
 
 /* "Applied" rows (on the undo stack at or before the current marker)
    render with normal opacity. Future (redo) rows dim out so the user
    can read the stack as past-→-future at a glance. */
 .applied {
-  color: #d8c8a8;
+  color: var(--wzl-fg);
 }
 
 .future {
-  color: #6a5d44;
+  color: var(--wzl-fg-subtle);
 }
 
 /* The current row gets a stronger background and a faint bottom border
    so the boundary between applied and future is visible without an
    extra DOM divider. */
 .current {
-  background: #3a2e1c;
-  color: #fff5d8;
-  border-bottom: 1px solid #ddb87a;
+  background: var(--wzl-border);
+  color: var(--wzl-fg);
+  border-bottom: 1px solid var(--wzl-fg);
   border-radius: 2px 2px 0 0;
 }
 
 .current:hover {
-  background: #443420;
+  background: var(--wzl-border);
 }
 
 .empty {
   padding: 12px 8px;
   font-size: 12px;
-  color: #6a5d44;
+  color: var(--wzl-fg-subtle);
   font-style: italic;
 }

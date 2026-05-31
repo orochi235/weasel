@@ -14,7 +14,7 @@
   flex: 0 0 auto;
 }
 .sliderLabel {
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -30,13 +30,13 @@
   align-items: center;
 }
 .label {
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   font-size: 12px;
   white-space: nowrap;
   padding-right: 4px;
 }
 .miniLabel {
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   font-size: 12px;
   text-align: center;
 }
@@ -53,7 +53,7 @@
 
 .readOnly {
   font-size: 12px;
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   padding: 4px 6px;
 }
 
@@ -63,7 +63,7 @@
   border-radius: 4px;
   background: var(--wzl-input-bg);
   font-size: 12px;
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
   min-width: 0;
 }
 .input[type="number"] {
@@ -87,7 +87,7 @@
   border-radius: 4px;
   background: var(--wzl-input-bg);
   font-size: 12px;
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
   min-width: 0;
 }
 .select:focus {
@@ -128,7 +128,7 @@
   text-align: right;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .swatchGrid {
@@ -147,7 +147,7 @@
   background-clip: padding-box;
 }
 .swatch:hover {
-  border-color: var(--wzl-text-muted);
+  border-color: var(--wzl-fg-muted);
 }
 .swatchActive {
   border-color: var(--wzl-accent);
@@ -171,7 +171,7 @@
   border: 1px solid var(--wzl-panel-border);
   border-radius: 4px;
   background: var(--wzl-input-bg);
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;

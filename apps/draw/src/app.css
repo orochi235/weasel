@@ -1,26 +1,14 @@
 :root {
   color-scheme: dark;
-  /* Accent for active toggle states (grid, snap, etc.). Aqua/cyan reads
-     clearly against the warm brown palette without competing with the
-     sage default fill. Exposed as a custom property so consumers can
-     theme it. */
-  --wd-accent: #3ec9d0;
-  --wd-accent-bg: rgba(62, 201, 208, 0.18);
-  /* Shared chrome surface — top bar, status bar, sidebars. One knob so
-     tuning the chrome tone happens in a single place. */
-  --wd-chrome-bg: #221a13;
-  --wd-chrome-border: #3a2e22;
-  /* Dark-theme overrides for @orochi235/weasel-ui tokens. Lifted from
-     `.wd-sidebar.right` to app root so the left tool palette (and
-     anything else using weasel-ui tokens) inherits the same dark theme
-     instead of falling through to weasel-theme's light defaults. */
-  --wzl-text: #d4c4a8;
-  --wzl-text-muted: #8a7a5a;
-  --wzl-panel-bg: transparent;
-  --wzl-panel-border: #3a2e22;
-  --wzl-input-bg: #1a130d;
-  --wzl-accent: #d4c4a8;
-  --wzl-danger: #b03030;
+  /* Accent for active toggle states (grid, snap, etc.). Picks up the
+     kit's purple accent so toggles read in the same family as Switch,
+     RangeSlider, and Checkbox active states. */
+  --wd-accent: var(--wzl-accent-strong);
+  --wd-accent-bg: color-mix(in srgb, var(--wzl-accent-strong) 22%, transparent);
+  /* Shared chrome surface — top bar, status bar, sidebars. Defers to
+     the kit's surface tones so the whole app reads in one palette. */
+  --wd-chrome-bg: var(--wzl-surface);
+  --wd-chrome-border: var(--wzl-border);
 }
 
 * { box-sizing: border-box; }
@@ -30,9 +18,9 @@ html, body, #root {
   padding: 0;
   width: 100%;
   height: 100%;
-  background: #4a4a4a;
-  color: #d4c4a8;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--wzl-surface-sunken);
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
   overflow: hidden;
 }
 
@@ -104,7 +92,7 @@ html, body, #root {
   height: 26px;
   padding: 0 6px;
   background: transparent;
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
   border: 0;
   border-radius: 2px;
   cursor: pointer;
@@ -138,7 +126,7 @@ html, body, #root {
   height: 26px;
   padding: 0 6px;
   background: transparent;
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
   border: 0;
   border-radius: 2px;
   cursor: pointer;
@@ -169,8 +157,8 @@ html, body, #root {
   flex-direction: column;
   min-width: 120px;
   padding: 2px;
-  background: #221a13;
-  border: 1px solid #3a2e22;
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
   border-radius: 4px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
@@ -178,7 +166,7 @@ html, body, #root {
 .wd-actionbar-menuitem {
   padding: 6px 10px;
   background: transparent;
-  color: #d4c4a8;
+  color: var(--wzl-fg);
   border: 0;
   border-radius: 2px;
   cursor: pointer;
@@ -188,8 +176,8 @@ html, body, #root {
 }
 
 .wd-actionbar-menuitem:hover {
-  background: #2a2418;
-  color: #fff5d8;
+  background: var(--wzl-border);
+  color: var(--wzl-fg);
 }
 
 /* --- LayerList row label (icon + id) --------------------------------- */
@@ -206,7 +194,7 @@ html, body, #root {
 
 /* --- Page row (locked, system-owned) --------------------------------- */
 .wd-layer-label-page {
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   font-style: italic;
 }
 
@@ -274,8 +262,8 @@ html, body, #root {
   gap: 2px;
   padding: 8px 4px;
   background: transparent;
-  color: #d4c4a8;
-  border: 1px solid #3a2e22;
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
   border-radius: 4px;
   cursor: pointer;
   font-family: inherit;
@@ -284,12 +272,12 @@ html, body, #root {
 }
 
 .wd-tool-button > svg { display: block; }
-.wd-tool-button:hover { border-color: #5a4a38; }
+.wd-tool-button:hover { border-color: var(--wzl-focus-ring); }
 
 .wd-tool-button.active {
-  background: #d4c4a8;
-  color: #1a130d;
-  border-color: #d4c4a8;
+  background: var(--wzl-fg);
+  color: var(--wzl-surface-sunken);
+  border-color: var(--wzl-fg);
 }
 
 .wd-tool-button .key {
@@ -303,10 +291,10 @@ html, body, #root {
   flex-shrink: 0;
   cursor: ew-resize;
   background: transparent;
-  border-left: 1px solid #3a2e22;
+  border-left: 1px solid var(--wzl-border);
 }
 .wd-sidebar-resize:hover {
-  background: #3a2e22;
+  background: var(--wzl-border);
 }
 
 .wd-stage {
@@ -358,7 +346,7 @@ html, body, #root {
    path obj). Gives a clear visual cue that pointer gestures will edit
    anchors/handles rather than start a new path. */
 .pen-edit-active {
-  background-color: #2a2218;
+  background-color: var(--wzl-border);
 }
 
 /* The kit's <Canvas> sets tabIndex={0} so keyboard events work. Suppress
@@ -373,7 +361,7 @@ html, body, #root {
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8a7a5a;
+  color: var(--wzl-fg-subtle);
   margin-bottom: 4px;
 }
 
@@ -388,7 +376,7 @@ html, body, #root {
   width: 36px;
   height: 28px;
   background: transparent;
-  border: 1px solid #3a2e22;
+  border: 1px solid var(--wzl-border);
   border-radius: 4px;
   cursor: pointer;
   padding: 2px;
@@ -397,7 +385,7 @@ html, body, #root {
 .wd-color-row code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
-  color: #a89878;
+  color: var(--wzl-fg-muted);
 }
 
 /* Dismiss animation: pivot around the bottom-left corner as if all but
@@ -451,7 +439,7 @@ html, body, #root {
   padding: 4px 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
-  color: var(--wzl-text-muted, #8a7a5a);
+  color: var(--wzl-text-muted, var(--wzl-fg-subtle));
   background: var(--wzl-panel-bg);
   border-top: 1px solid var(--wzl-panel-border);
   display: flex;
@@ -481,13 +469,13 @@ html, body, #root {
   text-transform: uppercase;
   padding: 2px 8px;
   background: transparent;
-  border: 1px solid #3a2e22;
+  border: 1px solid var(--wzl-border);
   border-radius: 3px;
-  color: #d4c4a8;
+  color: var(--wzl-fg);
   cursor: pointer;
 }
 .wd-swatch-none-toggle:hover {
-  background: #2a2418;
+  background: var(--wzl-border);
 }
 .wd-swatch-none-toggle.is-active {
   background: var(--wd-accent-bg);
@@ -539,7 +527,7 @@ html, body, #root {
   height: 32px;
   padding: 0;
   background: transparent;
-  border: 1px solid #3a2e22;
+  border: 1px solid var(--wzl-border);
   border-radius: 2px;
   cursor: pointer;
   /* The dynamic color flows through --wd-swatch-color, set inline on
@@ -595,8 +583,8 @@ html, body, #root {
 }
 
 .wd-swatch.is-focused {
-  border-color: #d4c4a8;
-  box-shadow: 0 0 0 2px #d4c4a8, inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  border-color: var(--wzl-fg);
+  box-shadow: 0 0 0 2px var(--wzl-fg), inset 0 0 0 1px rgba(0, 0, 0, 0.18);
 }
 
 /* When the stroke chip is focused, also outline the *inside* edge of the
@@ -608,7 +596,7 @@ html, body, #root {
   content: '';
   position: absolute;
   inset: 8px;
-  border: 1px solid #d4c4a8;
+  border: 1px solid var(--wzl-fg);
   border-radius: 1px;
   pointer-events: none;
 }
@@ -675,14 +663,14 @@ html, body, #root {
    neutral translucent selection. Mirrors the treatment applied to the
    HistoryList initial row. */
 .wd-layerlist-host > div > div {
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
 }
 .wd-layerlist-host > div > div:hover {
   background: rgba(0, 0, 0, 0.06);
 }
 .wd-layerlist-host > div > div[data-selected="true"] {
   background: rgba(0, 0, 0, 0.12);
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
 }
 
 /* --- History list host inside PropertiesPanel ------------------------ */
@@ -714,7 +702,7 @@ html, body, #root {
 .wd-historylist-host div:has(> .wd-history-initial):hover {
   background: transparent;
   border-bottom: 0;
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
 }
 
 .wd-sidebar-spacer {
@@ -740,7 +728,7 @@ html, body, #root {
 .wd-scene-count {
   padding: 0 12px;
   font-size: 11px;
-  color: var(--wui-text-muted, #8a7a5a);
+  color: var(--wui-text-muted, var(--wzl-fg-subtle));
   font-family: ui-monospace, monospace;
 }
 
@@ -793,8 +781,8 @@ html, body, #root {
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  background: #1a130d;
-  border: 1px solid #3a2e22;
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border);
   border-radius: 4px;
 }
 
@@ -804,8 +792,8 @@ html, body, #root {
   gap: 6px;
   margin-top: 6px;
   padding: 8px 8px 8px 10px;
-  background: #1f1610;
-  border-left: 2px solid #3a2e22;
+  background: var(--wzl-surface-sunken);
+  border-left: 2px solid var(--wzl-border);
   border-radius: 2px;
 }
 
@@ -814,7 +802,7 @@ html, body, #root {
   flex-direction: column;
   gap: 2px;
   padding-bottom: 4px;
-  border-bottom: 1px solid #2a2418;
+  border-bottom: 1px solid var(--wzl-border);
 }
 
 .wd-prefs-subpanel .wd-prefs-group-header {
@@ -826,7 +814,7 @@ html, body, #root {
   margin: 0;
   font-size: 12px;
   font-weight: 600;
-  color: #fff5d8;
+  color: var(--wzl-fg);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -835,13 +823,13 @@ html, body, #root {
   font-size: 11px;
   text-transform: none;
   letter-spacing: 0;
-  color: #d4c4a8;
+  color: var(--wzl-fg);
 }
 
 .wd-prefs-group-desc {
   margin: 0;
   font-size: 11px;
-  color: #8a7a5a;
+  color: var(--wzl-fg-subtle);
   line-height: 1.35;
 }
 
@@ -857,7 +845,7 @@ html, body, #root {
   justify-content: space-between;
   gap: 8px;
   font-size: 12px;
-  color: #d4c4a8;
+  color: var(--wzl-fg);
   cursor: default;
 }
 
@@ -895,7 +883,7 @@ html, body, #root {
 .wd-prefs-readonly {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
-  color: #8a7a5a;
+  color: var(--wzl-fg-subtle);
 }
 
 /* Inline variant of `.wd-prefs-subpanel` — used when an object-kind pref
@@ -920,9 +908,9 @@ html, body, #root {
   font-size: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #8a7a5a;
+  color: var(--wzl-fg-subtle);
   padding-bottom: 2px;
-  border-bottom: 1px solid #2a2418;
+  border-bottom: 1px solid var(--wzl-border);
 }
 
 .wd-prefs-panels-head-flag {
@@ -931,7 +919,7 @@ html, body, #root {
 
 .wd-prefs-panels-row {
   font-size: 12px;
-  color: #d4c4a8;
+  color: var(--wzl-fg);
 }
 
 /* Center the Hidden / Collapsed checkboxes in their grid cells (the
