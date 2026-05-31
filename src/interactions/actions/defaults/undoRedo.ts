@@ -4,6 +4,7 @@ import type { Action } from '../registry';
  * @experimental
  * Static descriptor for the `undo` Action.
  */
+// No `eligible` field → undo/redo are always eligible across all modes.
 export const undoAction: Action & { requires: string[] } = {
   id: 'undo',
   label: 'Undo',

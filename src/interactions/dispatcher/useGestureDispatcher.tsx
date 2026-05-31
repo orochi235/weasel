@@ -120,6 +120,14 @@ export interface UseGestureDispatcherOptions {
    * that's already the test contract.
    */
   requestRedraw?: () => void;
+
+  /**
+   * Thunk returning the live `RuleCtx` for the current frame. When supplied,
+   * the dispatcher filters matched candidates by their declared
+   * `Action.eligible` rule (omitted => always eligible). `<SceneCanvas>`
+   * wires this; tests / harnesses without chrome-caps state can omit it.
+   */
+  getRuleCtx?: () => import('../../features/chrome-caps').RuleCtx;
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +166,7 @@ function computeMultiTouchGeometry(
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx } = opts;
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
@@ -178,6 +186,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
     isMac: IS_MAC,
+    getRuleCtx,
   });
   ctxRef.current = {
     actions,
@@ -186,6 +195,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
     isMac: IS_MAC,
+    getRuleCtx,
   };
 
   // Stable refs for optional thunks so the effect closure always sees the latest version.

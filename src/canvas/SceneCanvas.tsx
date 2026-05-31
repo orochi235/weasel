@@ -102,6 +102,7 @@ import {
   resolveVisibility,
   useHoverTracking,
 } from 'features/chrome-caps';
+import type { RuleCtx } from 'features/chrome-caps';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 /**
@@ -590,6 +591,19 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     chromeVisibility?: import('features/chrome-caps').VisibilityRules;
 
     /**
+     * Returns the active mode id + the capability tags the mode allows.
+     * Defaults to `{ id: 'normal', allowedCapabilities: new Set() }` when
+     * omitted. Apps using the modality machine should derive this from
+     * `modality.machine.registry.current()` (mode.id + mode.allows union
+     * with implicit capability tags).
+     *
+     * Threading this through enables mode-aware chrome (selection outline,
+     * resize handles, rotation handle are off in path-edit mode) and the
+     * dispatcher's eligibility filter in later phases.
+     */
+    getActiveMode?: () => { id: string; allowedCapabilities: ReadonlySet<string> };
+
+    /**
      * Optional live focus getter for chrome-caps' `focused` ctx field.
      * SceneCanvas does not own focus state by default — wire this when
      * your visibility rules read the `focused` atom (e.g. the kit's
@@ -727,6 +741,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     isPointerInteractive,
     onDoubleClick,
     chromeVisibility,
+    getActiveMode,
     getFocused: getFocusedProp,
     ...rest
   } = props;
@@ -1192,11 +1207,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // that feed `buildChromeCtx`. The resolver factory below closes over these
   // and is called per draw / per hitTest from Canvas.
   const selectionForCapsRef = useRef<readonly NodeId[]>([]);
-  const suppressedForCapsRef = useRef<ReadonlySet<string> | undefined>(undefined);
   const getFocusedPropRef = useRef(getFocusedProp);
   getFocusedPropRef.current = getFocusedProp;
   const chromeVisibilityRef = useRef(chromeVisibility);
   chromeVisibilityRef.current = chromeVisibility;
+  const getActiveModeRef = useRef(getActiveMode);
+  getActiveModeRef.current = getActiveMode;
 
   // The visibility predicate factory passed to <Canvas>. Called fresh per
   // draw / hitTest; builds ChromeCtx from the live refs and resolves
@@ -1204,8 +1220,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // no consumer overrides are present AND no hover tracking is needed —
   // letting the kit's defaults still gate paint without forcing every
   // legacy consumer onto chrome-caps.
-  const getIsVisibleForCanvas = useCallback((): (id: string) => boolean => {
+  /** Build the live RuleCtx — selection + view + modifiers + mode + capabilities
+   *  + active action. Consumed by chrome-caps' resolver and the dispatcher's
+   *  eligibility filter so both see the same view of the world. */
+  const buildCurrentRuleCtx = useCallback(() => {
     const sel = selectionForCapsRef.current;
+    const modeInfo = getActiveModeRef.current?.() ?? { id: 'normal', allowedCapabilities: new Set<string>() };
     const ctx = buildChromeCtx({
       focused: getFocusedPropRef.current ? getFocusedPropRef.current() : true,
       selection: sel,
@@ -1214,12 +1234,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       action: dispatcher.getActiveAction(),
       hover: getHover(),
       view: currentViewRef.current,
-      ...(suppressedForCapsRef.current !== undefined
-        ? { suppressedIds: suppressedForCapsRef.current }
-        : {}),
     });
-    return resolveVisibility(chromeVisibilityRef.current, ctx);
+    // buildChromeCtx returns a ChromeCtx (legacy shape); resolveVisibility
+    // accepts both ChromeCtx and RuleCtx and supplies defaults when mode/
+    // allowedCapabilities are absent. We attach them inline so the
+    // mode-gated default rules can read them.
+    return { ...ctx, mode: modeInfo.id, allowedCapabilities: modeInfo.allowedCapabilities };
   }, [dispatcher, getHover]);
+
+  const getIsVisibleForCanvas = useCallback((): (id: string) => boolean => {
+    const ruleCtx = buildCurrentRuleCtx() as Parameters<typeof resolveVisibility>[1];
+    return resolveVisibility(chromeVisibilityRef.current, ruleCtx);
+  }, [buildCurrentRuleCtx]);
 
   // Pen preview overlay — reads the pen tool's persistent scratch and draws
   // the in-progress path (anchors, handles, rubber-band, close hint). Only
@@ -1342,10 +1368,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectedIds = selection.current;
   const multiActive = selectedIds.length > 1;
 
-  // Keep chrome-caps live sources in sync with the live selection +
-  // path-edit suppression, both of which change on every relevant render.
+  // Keep chrome-caps live selection source in sync; updates each relevant render.
   selectionForCapsRef.current = selectedIds as readonly NodeId[];
-  suppressedForCapsRef.current = getSuppressedSelectionIds();
   const selectionOverlayLayer = useMemo(() => {
     const selCfg = mergedLayers.selectionOverlay as
       | SelectionOverlaySlotConfig<TPose>
@@ -1591,6 +1615,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             pickEvery={internalPickEvery}
             viewRef={currentViewRef}
             dispatcher={dispatcher}
+            getIsVisibleForCanvas={getIsVisibleForCanvas}
+            getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
           />
           {children}
         </ActionsProviderIfRoot>
@@ -1621,6 +1647,8 @@ function GestureDispatcherMounter({
   pickEvery,
   viewRef,
   dispatcher,
+  getIsVisibleForCanvas,
+  getRuleCtx,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
@@ -1635,6 +1663,14 @@ function GestureDispatcherMounter({
   /** Pre-created dispatcher to pump events into. When omitted,
    *  `useGestureDispatcher` creates one internally (legacy path). */
   dispatcher?: Dispatcher;
+  /** Chrome-caps visibility resolver factory. Threaded into
+   *  `buildAffordanceAt` so the hit-test pipeline gates corner / rotate /
+   *  anchor affordances on the same chrome ids the renderer uses. */
+  getIsVisibleForCanvas?: () => (id: string) => boolean;
+  /** Live RuleCtx factory. Threaded into `useGestureDispatcher` so the
+   *  dispatcher's eligibility filter sees the same mode/capabilities/selection
+   *  view of the world that chrome-caps does. */
+  getRuleCtx?: () => RuleCtx;
 }) {
   const registry = useActionsRegistry();
   const depRegistry = useDepRegistry();
@@ -1711,9 +1747,15 @@ function GestureDispatcherMounter({
       () => HANDLE_HIT_RADIUS / meanScale(viewRef.current?.scale ?? { x: 1, y: 1 }),
       () => DEFAULT_ROTATION_HANDLE_DISTANCE / meanScale(viewRef.current?.scale ?? { x: 1, y: 1 }),
       getAnchorState,
+      // Chrome-caps resolver: keep the affordance hit-test in sync with what
+      // the renderer is actually painting. Without this, a click on a (no
+      // longer visible) resize handle position still classifies as a resize
+      // handle — e.g. an anchor drag in path-edit mode resizes the path's
+      // bounding box instead of moving the anchor.
+      getIsVisibleForCanvas ? () => getIsVisibleForCanvas() : undefined,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectionRef, boundsOf, viewRef, getAnchorState]);
+  }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas]);
 
   // Build the `classifyTarget` thunk. Converts client coords → world coords
   // internally using the canvas rect + view, then delegates to `buildClassifyTarget`.
@@ -1829,6 +1871,7 @@ function GestureDispatcherMounter({
     dispatcher,
     clientToWorld,
     requestRedraw,
+    getRuleCtx,
   });
   return null;
 }

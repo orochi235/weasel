@@ -95,6 +95,7 @@ function makeAlignAction(edge: AlignEdge): Action {
     label: LABEL_FOR[edge],
     icon: ICON_FOR[edge],
     group: 'align',
+    eligible: { capability: 'transforms-selection' },
     // No default keybindings — six edges/centers don't fit a clean default
     // chord set. Wire bindings explicitly via the actions registry override map.
     invoker: {

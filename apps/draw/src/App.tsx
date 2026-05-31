@@ -89,6 +89,7 @@ import { dispatchDoubleClickEntry } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
 import type { SceneCanvasHit } from '@orochi235/weasel';
+import { IMPLICIT_TAGS } from '@orochi235/weasel-modes';
 import { sceneToSvgString } from './svgExport';
 import type { RecordingProfile } from './recorder';
 
@@ -1198,6 +1199,12 @@ function EditorWithSharedScene({
     dispatchDoubleClickEntry(hit, modality.machine);
   }, [modality.machine]);
 
+  const getActiveMode = useCallback((): { id: string; allowedCapabilities: ReadonlySet<string> } => {
+    const mode = modality.machine.registry.current();
+    const allowed = new Set<string>([...mode.allows, ...IMPLICIT_TAGS]);
+    return { id: mode.id, allowedCapabilities: allowed };
+  }, [modality.machine]);
+
   // TODO(modality): wire non-normal-mode background-click composition
   // (text-edit commit, isolation scoped-clear) through `handleBackgroundClick`
   // from `./modality` once we have a non-leaky hook into the dispatcher.
@@ -1451,6 +1458,7 @@ function EditorWithSharedScene({
             alphaFor={modality.scopingDim.alphaFor}
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
             onDoubleClick={onDoubleClick}
+            getActiveMode={getActiveMode}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
           </SceneCanvas>

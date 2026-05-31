@@ -54,6 +54,7 @@ interface PinchScratch {
  *
  * The invoker is `ongoing`. Zoom is applied per-frame via `view.set(zoomAt(...))`.
  */
+// No `eligible` field → pinch zoom is always eligible across all modes.
 export const pinchZoomAction: Action & { requires: string[] } = {
   id: 'viewport.pinchZoom',
   label: 'Pinch Zoom',

@@ -252,6 +252,7 @@ export const moveAction: Action & { requires: string[] } = {
   // "drawing tools move the selection" disappears once the ambient binding
   // is target-qualified instead of universal.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
+  eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

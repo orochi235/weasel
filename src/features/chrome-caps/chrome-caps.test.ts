@@ -1,26 +1,27 @@
 import { describe, it, expect } from 'vitest';
 import { asNodeId, type NodeId } from '../../core/scene/types';
-import type { ChromeCtx, Condition } from './types';
+import type { ChromeCtx, Condition, RuleCtx } from './types';
 import {
   when, and, or, not, always, never,
   focused, gesturing, actionIs,
   selectionEmpty, selectionIs, selectionAtLeast, multiActive,
-  hovering, hoveringSelected, suppressed,
+  hovering, hoveringSelected,
   modifierHeld, zoomAtLeast,
 } from './conditions';
 import { defaultVisibilityRules } from './defaults';
 import { resolveVisibility } from './resolve';
 
-function ctx(over: Partial<ChromeCtx> = {}): ChromeCtx {
+function ctx(over: Partial<RuleCtx> = {}): RuleCtx {
   return {
     focused: false,
     selection: [],
     multiActive: false,
-    suppressedIds: new Set(),
     modifiers: { alt: false, shift: false, meta: false, ctrl: false },
     action: { kind: null, id: null },
     hover: null,
     view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    mode: 'normal',
+    allowedCapabilities: new Set(),
     ...over,
   };
 }
@@ -60,11 +61,6 @@ describe('chrome-caps / atoms', () => {
     expect(hovering(ctx({ hover: NID('a') }))).toBe(true);
     expect(hoveringSelected(ctx({ hover: NID('a'), selection: [NID('a')] }))).toBe(true);
     expect(hoveringSelected(ctx({ hover: NID('a'), selection: [NID('b')] }))).toBe(false);
-  });
-
-  it('suppressed', () => {
-    expect(suppressed('foo')(ctx({ suppressedIds: new Set(['foo']) }))).toBe(true);
-    expect(suppressed('foo')(ctx({ suppressedIds: new Set(['bar']) }))).toBe(false);
   });
 
   it('modifierHeld', () => {
@@ -208,10 +204,52 @@ describe('chrome-caps / defaults table', () => {
       'action.lasso',
       'action.marquee',
       'action.move-ghosts',
+      'path-edit.anchors',
+      'path-edit.overlay',
       'selection.outline',
       'selection.resize-handles',
       'selection.rotation-handle',
       'snap.guides',
     ]);
+  });
+});
+
+describe('mode-gated defaults', () => {
+  const baseCtx = ctx;
+
+  it('selection.outline is off in path-edit mode even with selection', () => {
+    const c = baseCtx({ selection: [NID('n1')], mode: 'path-edit' });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.outline')).toBe(false);
+  });
+
+  it('selection.resize-handles is off in path-edit mode', () => {
+    const c = baseCtx({ selection: [NID('n1')], mode: 'path-edit' });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.resize-handles')).toBe(false);
+  });
+
+  it('selection.rotation-handle is off in path-edit mode', () => {
+    const c = baseCtx({ selection: [NID('n1')], focused: true, mode: 'path-edit' });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.rotation-handle')).toBe(false);
+  });
+
+  it('selection chrome is ON in normal mode', () => {
+    const c = baseCtx({ selection: [NID('n1')], focused: true, mode: 'normal' });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.outline')).toBe(true);
+    expect(isVisible('selection.resize-handles')).toBe(true);
+    expect(isVisible('selection.rotation-handle')).toBe(true);
+  });
+
+  it('path-edit.anchors is ON only in path-edit mode', () => {
+    expect(resolveVisibility(undefined, baseCtx({ mode: 'path-edit' }))('path-edit.anchors')).toBe(true);
+    expect(resolveVisibility(undefined, baseCtx({ mode: 'normal' }))('path-edit.anchors')).toBe(false);
+  });
+
+  it('path-edit.overlay is ON only in path-edit mode', () => {
+    expect(resolveVisibility(undefined, baseCtx({ mode: 'path-edit' }))('path-edit.overlay')).toBe(true);
+    expect(resolveVisibility(undefined, baseCtx({ mode: 'normal' }))('path-edit.overlay')).toBe(false);
   });
 });

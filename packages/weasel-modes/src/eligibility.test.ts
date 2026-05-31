@@ -7,7 +7,7 @@ const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
 
 describe('eligibleTool', () => {
   it('returns true in normal for a selection tool', () => {
-    expect(eligibleTool(reg, { id: 't', capabilities: ['selection'] })).toBe(true);
+    expect(eligibleTool(reg, { id: 't', capabilities: ['creates-selection'] })).toBe(true);
   });
 
   it('returns true for navigation tools in any mode (implicit tag)', () => {
@@ -18,7 +18,7 @@ describe('eligibleTool', () => {
 
   it('returns false in path-edit for selection tools', () => {
     const r2 = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
-    expect(eligibleTool(r2, { id: 'sel', capabilities: ['selection'] })).toBe(false);
+    expect(eligibleTool(r2, { id: 'sel', capabilities: ['creates-selection'] })).toBe(false);
   });
 
   it('untagged tools are ineligible everywhere except modes that allow []', () => {

@@ -37,6 +37,7 @@ export const clearSelectionAction: Action & { requires: string[] } = {
   id: 'clearSelection',
   label: 'Clear selection',
   // No defaultBinding / defaultBinding — fires only via Tool.bindings.
+  eligible: { capability: 'creates-selection' },
   requires: ['selection'],
   invoker: {
     timing: 'immediate',

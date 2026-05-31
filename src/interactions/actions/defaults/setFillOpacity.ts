@@ -50,6 +50,7 @@ function refreshPreviews(scratch: SetFillOpacityScratch): void {
 export const setFillOpacityAction: Action & { requires: string[] } = {
   id: 'setFillOpacity',
   label: 'Set fill opacity',
+  eligible: { capability: 'applies-fill' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',

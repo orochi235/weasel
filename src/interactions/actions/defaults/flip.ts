@@ -51,6 +51,7 @@ export const flipAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: ['h', 'H'], mods: { shift: true } }, opts: { params: { axis: 'x' } } },
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],
+  eligible: { capability: 'transforms-selection' },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'immediate',

@@ -245,6 +245,7 @@ export const insertAction: Action & { requires: string[] } = {
   label: 'Insert',
   group: 'insert',
   defaultBinding: { kind: 'drag' },
+  eligible: { capability: 'creates-shapes' },
   requires: ['insert', 'selection'],
   invoker: {
     timing: 'ongoing',
@@ -402,6 +403,7 @@ export const insertRotateAction: Action = {
   id: 'insert.adjustRotation',
   label: 'Insert — rotate',
   group: 'insert',
+  eligible: { capability: 'creates-shapes' },
   invoker: {
     timing: 'immediate' as const,
     run: (_deps, params) => {

@@ -17,8 +17,6 @@ import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
 import type { ChromeCtx } from './types';
 
-const EMPTY_SUPPRESSED: ReadonlySet<string> = new Set();
-
 export interface BuildChromeCtxArgs {
   focused: boolean;
   selection: readonly NodeId[];
@@ -27,7 +25,6 @@ export interface BuildChromeCtxArgs {
   action: { kind: string | null; id: string | null };
   hover: NodeId | null;
   view: View;
-  suppressedIds?: ReadonlySet<string>;
 }
 
 export function buildChromeCtx(args: BuildChromeCtxArgs): ChromeCtx {
@@ -39,6 +36,5 @@ export function buildChromeCtx(args: BuildChromeCtxArgs): ChromeCtx {
     action: args.action,
     hover: args.hover,
     view: args.view,
-    suppressedIds: args.suppressedIds ?? EMPTY_SUPPRESSED,
   };
 }

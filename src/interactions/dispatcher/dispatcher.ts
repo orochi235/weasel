@@ -42,6 +42,7 @@ import { resolveParams } from '../actions/invoker';
 import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted } from './matcher';
+import { evaluate, type Rule, type RuleCtx, type Condition } from '../../features/chrome-caps';
 
 // ---------------------------------------------------------------------------
 // Dev-only instrumentation
@@ -142,6 +143,42 @@ export interface DispatcherContext {
   toolsById: ReadonlyMap<string, Tool>;
   /** Platform flag for `mod` shorthand resolution. */
   isMac: boolean;
+  /**
+   * Thunk returning a fresh `RuleCtx` for the current frame. When
+   * supplied, the dispatcher filters matched candidates by their
+   * declared `Action.eligible` rule (omitted => always eligible).
+   * When omitted, no eligibility filtering is applied — preserves
+   * backward compatibility for callers (tests, legacy harnesses) that
+   * don't wire up chrome-caps state.
+   */
+  getRuleCtx?: () => RuleCtx;
+}
+
+/**
+ * Normalize an `Action.eligible` value to a raw `Rule`. Conditions are
+ * callable functions carrying `.rule`; raw Rules are returned as-is.
+ */
+function eligibleToRule(eligible: Rule | Condition): Rule {
+  return typeof eligible === 'function' ? (eligible as Condition).rule : eligible;
+}
+
+/**
+ * Filter `matches` to only those whose backing action has no `eligible`
+ * rule, or whose rule evaluates true against `ruleCtx`. Exported for
+ * unit testing.
+ *
+ * @internal
+ */
+export function filterEligible<M extends { binding: { actionId: string } }>(
+  matches: readonly M[],
+  actionLookup: (id: string) => Action | undefined,
+  ruleCtx: RuleCtx,
+): M[] {
+  return matches.filter((m) => {
+    const action = actionLookup(m.binding.actionId);
+    if (!action?.eligible) return true;
+    return evaluate(eligibleToRule(action.eligible), ruleCtx);
+  });
 }
 
 /**
@@ -623,7 +660,7 @@ export function createDispatcher(opts?: {
     // Compute the engaged-channels set once per dispatch — the matcher
     // uses it to gate `phase`-qualified specs (`[engaged] wheel`, etc.).
     const engagedChannels = snapshotEngagedChannels();
-    const matches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
+    const rawMatches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
     const traceCandidates: DispatchLogEntry['candidates'] = [];
     const eventKey =
       event.kind === 'key' || event.kind === 'key-held' ? event.key : undefined;
@@ -638,13 +675,27 @@ export function createDispatcher(opts?: {
         outcome,
       });
     };
-    if (matches.length === 0) {
+    if (rawMatches.length === 0) {
       finishTrace(null, 'unhandled');
       return 'unhandled';
     }
 
     // --- Action lookup ---
     const actionMap = buildActionMap(ctx.actions);
+
+    // --- Eligibility filter (mode-aware-dispatch) ---
+    // When a `RuleCtx` is available, strip candidates whose action's
+    // `eligible` rule evaluates false. This is defense-in-depth: even
+    // if a stale affordance hit slips through, the dispatcher refuses
+    // to fire an action declared ineligible for the active mode.
+    const ruleCtx = ctx.getRuleCtx?.();
+    const matches = ruleCtx
+      ? filterEligible(rawMatches, (id) => actionMap.get(id), ruleCtx)
+      : rawMatches;
+    if (matches.length === 0) {
+      finishTrace(null, 'unhandled');
+      return 'unhandled';
+    }
 
     // --- Specificity-ordered fall-through ---
     // For each candidate, check the enabled gate. The first action that is

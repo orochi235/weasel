@@ -37,6 +37,7 @@ export const insertPathAnchorAction: Action & { requires: string[] } = {
   id: 'insertPathAnchor',
   label: 'Insert anchor',
   defaultBinding: { kind: 'click', mods: { alt: true } },
+  eligible: { capability: 'edits-anchors' },
   requires: ['editAnchors'],
   invoker: {
     timing: 'immediate',

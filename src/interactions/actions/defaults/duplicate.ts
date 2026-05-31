@@ -9,6 +9,7 @@ export const duplicateAction: Action = {
   id: 'duplicate',
   label: 'Duplicate',
   defaultBinding: { kind: 'key', key: 'd', mods: { mod: true } },
+  eligible: { capability: ['edits-page', 'creates-selection'] },
   invoker: {
     timing: 'immediate',
     run: (_deps, params) => {

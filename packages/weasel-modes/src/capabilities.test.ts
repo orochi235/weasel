@@ -4,7 +4,7 @@ import { ALL_TAGS, IMPLICIT_TAGS, isCapabilityTag } from './capabilities';
 describe('capabilities', () => {
   it('ALL_TAGS includes the documented capability vocabulary', () => {
     expect(ALL_TAGS).toContain('navigation');
-    expect(ALL_TAGS).toContain('selection');
+    expect(ALL_TAGS).toContain('creates-selection');
     expect(ALL_TAGS).toContain('creates-paths');
     expect(ALL_TAGS).toContain('creates-shapes');
     expect(ALL_TAGS).toContain('creates-text');
@@ -21,7 +21,7 @@ describe('capabilities', () => {
   });
 
   it('isCapabilityTag narrows correctly', () => {
-    expect(isCapabilityTag('selection')).toBe(true);
+    expect(isCapabilityTag('creates-selection')).toBe(true);
     expect(isCapabilityTag('not-a-tag')).toBe(false);
   });
 });

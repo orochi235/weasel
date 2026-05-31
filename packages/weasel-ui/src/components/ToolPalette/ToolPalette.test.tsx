@@ -230,7 +230,7 @@ describe('ToolPalette — keyboard nav', () => {
 describe('ToolPalette — mode eligibility', () => {
   /**
    * Builds a fake AnyTool with capability tags so eligibility works.
-   * The 'selection' tag is allowed in NORMAL but not PATH_EDIT;
+   * The 'creates-selection' tag is allowed in NORMAL but not PATH_EDIT;
    * 'edits-anchors' is allowed in PATH_EDIT.
    * 'navigation' (the hand tool) is always allowed.
    */
@@ -238,7 +238,7 @@ describe('ToolPalette — mode eligibility', () => {
     return { id, capabilities, presentation: { label: id, group } } as AnyTool;
   }
 
-  const selectTool = toolWithCaps('select', ['selection']);
+  const selectTool = toolWithCaps('select', ['creates-selection']);
   const anchorTool = toolWithCaps('anchor-edit', ['edits-anchors'], 'draw');
   const handTool   = toolWithCaps('hand', ['navigation'], 'view');
 
@@ -250,7 +250,7 @@ describe('ToolPalette — mode eligibility', () => {
 
   it('when mode is "normal", select and hand tools are not aria-disabled', () => {
     const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'normal' });
-    // selectTool ('selection') and handTool ('navigation') are both eligible in normal mode.
+    // selectTool ('creates-selection') and handTool ('navigation') are both eligible in normal mode.
     const tools = makeTools(selectTool, handTool);
     render(<ToolPalette tools={tools} modeRegistry={reg} />);
     const buttons = screen.getAllByRole('button');

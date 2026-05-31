@@ -9,6 +9,7 @@ export const groupAction: Action = {
   id: 'group',
   label: 'Group',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
+  eligible: { capability: 'edits-page' },
   invoker: {
     timing: 'immediate',
     run: (_deps, params) => {
@@ -27,6 +28,7 @@ export const ungroupAction: Action = {
   id: 'ungroup',
   label: 'Ungroup',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
+  eligible: { capability: 'edits-page' },
   invoker: {
     timing: 'immediate',
     run: (_deps, params) => {

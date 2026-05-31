@@ -1,47 +1,64 @@
 import type { VisibilityRules } from './types';
-import {
-  actionIs,
-  focused,
-  gesturing,
-  selectionAtLeast,
-} from './conditions';
+import type { Rule } from './rule';
 
 /**
- * Kit-shipped defaults. Merged with the consumer's `chromeVisibility`
- * map at resolve time; consumer entries take precedence per id.
+ * Kit-shipped defaults. Merged with the consumer's `chromeVisibility` map
+ * at resolve time; consumer entries take precedence per id.
  *
- * Read this table as the canonical "when does each chrome part show"
- * spec. Before chrome-caps these rules lived inline inside affordance
- * `regions()` methods and overlay-layer `draw()` early-returns — the
- * point of the migration is to centralize them here.
+ * Written as literal Rule trees rather than fluent chains so the inputs
+ * each rule depends on are immediately visible. The fluent atoms compile
+ * to the same trees; either form is valid in a VisibilityRules entry.
+ *
+ * Mode gating: selection chrome is suppressed in `path-edit` because the
+ * path-editing overlay takes over visually. Path-edit-specific chrome
+ * ids (`path-edit.*`) are positively gated to that mode. This replaces
+ * the old `suppressedIds` set, which only the selection-outline path
+ * honored.
  */
 export const defaultVisibilityRules: VisibilityRules = {
-  // Static selection chrome — visible while a selection exists.
-  'selection.outline':         selectionAtLeast(1),
+  // Static selection chrome — visible while a selection exists, but off
+  // in path-edit (the path-editing overlay takes over).
+  'selection.outline': {
+    selection: { atLeast: 1 },
+    mode: { not: 'path-edit' },
+  } as Rule,
 
-  // Handles hide during an action so the moving / resizing object
-  // isn't visually crowded; they reappear on commit. Single mode
-  // shows per-object corners; multi mode shows union-bounds corners
-  // (the affordance's `pickRenderTarget` picks the appropriate target).
-  'selection.resize-handles':  selectionAtLeast(1).andNot(gesturing),
+  // Handles hide during an action so the moving / resizing object isn't
+  // visually crowded; they reappear on commit. Also off in path-edit.
+  'selection.resize-handles': {
+    all: [
+      { selection: { atLeast: 1 } },
+      { not: { gesturing: true } },
+      { mode: { not: 'path-edit' } },
+    ],
+  } as Rule,
+
   // Rotation handle visible whenever any selection is focused — single
   // mode pivots around the selected node's center; multi mode pivots
-  // around the union AABB center (the rotation action's
-  // `useUnionPivot: ids.length > 1` branch handles the dispatch).
-  'selection.rotation-handle': selectionAtLeast(1).and(focused).andNot(gesturing),
+  // around the union AABB center. Off in path-edit and during action.
+  'selection.rotation-handle': {
+    all: [
+      { selection: { atLeast: 1 } },
+      { focused: true },
+      { not: { gesturing: true } },
+      { mode: { not: 'path-edit' } },
+    ],
+  } as Rule,
 
   // Transient action chrome — only shown during the matching action.
-  'action.marquee':            actionIs('marquee'),
-  'action.lasso':              actionIs('lasso'),
-  'action.move-ghosts':        actionIs('move'),
+  'action.marquee':     { actionIs: 'marquee' } as Rule,
+  'action.lasso':       { actionIs: 'lasso' } as Rule,
+  'action.move-ghosts': { actionIs: 'move' } as Rule,
 
-  // Snap system — guides during any action (move/resize/rotate snap
-  // into siblings); targets visible only when a snap is engaged.
-  'snap.guides':               gesturing,
+  // Path-edit chrome — gated positively to path-edit mode.
+  'path-edit.anchors': { mode: 'path-edit' } as Rule,
+  'path-edit.overlay': { mode: 'path-edit' } as Rule,
+
+  // Snap system — guides during any action; targets consumer-driven for now.
+  'snap.guides': { gesturing: true } as Rule,
   // 'snap.targets' — no default; consumer-driven for now.
 
-  // 'grid' / 'debug.*' — no default; visibility is currently driven by
+  // 'grid' / 'debug.*' — no default; visibility currently driven by
   // dedicated boolean props on <SceneCanvas>. They'll move into this
-  // table as they migrate, but the rules table doesn't need to assert
-  // them today.
+  // table as they migrate.
 };

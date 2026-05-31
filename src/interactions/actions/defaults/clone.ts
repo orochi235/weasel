@@ -91,6 +91,7 @@ export const cloneAction: Action & { requires: string[] } = {
   id: 'clone',
   label: 'Clone',
   defaultBinding: { kind: 'drag' },
+  eligible: { capability: ['edits-page', 'creates-selection'] },
   requires: ['selection', 'scene'],
   invoker: {
     timing: 'ongoing',
