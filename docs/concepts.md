@@ -26,6 +26,62 @@ You can override any of the internal controllers by passing your own
 (`move`, `resize`, `selection`, …); supply `*Options` to configure the
 default ones. See [hooks.md](./hooks.md) and `src/canvas/Canvas.tsx`.
 
+## `<SceneViewCanvas>` and `<MinimapCanvas>` (detached views)
+
+Three primitives can render a second view of a scene. Pick by where the
+inset lives and whether it's interactive:
+
+- **`<SceneViewCanvas>`** — a pointer-inert, read-only `<canvas>` that
+  renders a `Scene` at an arbitrary `view`. Has its own GL context and DOM
+  node. Use for thumbnails, side-by-side previews, printable snapshots, or
+  any second view that doesn't accept input.
+- **`<MinimapCanvas>`** — `<SceneViewCanvas>` plus a viewport-rectangle
+  indicator and click/drag-to-recenter against a `mainView` callback. Use as
+  a navigation widget in a sidebar/panel — a distinct DOM location from the
+  main `<SceneCanvas>`.
+- **`createViewportLayer`** — renders an inset *inside* the main
+  `<SceneCanvas>`'s drawing buffer (superimposed PiP). Use when the inset
+  must live as pixels in the main canvas, e.g. for a screenshot-stable
+  minimap or a print-included overview.
+
+Detached variants are the right default when the minimap belongs in a
+panel; `createViewportLayer` stays as the canonical superimposed primitive.
+
+```tsx
+import { MinimapCanvas, SceneCanvas, useScene, useSelection } from '@orochi235/weasel';
+import { useState } from 'react';
+import type { View } from '@orochi235/weasel';
+
+function App() {
+  const scene = useScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
+  const selection = useSelection();
+  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+
+  return (
+    <>
+      <SceneCanvas
+        width={600} height={400}
+        scene={scene} selection={selection}
+        view={view} onViewChange={setView}
+        layers={{ scene: { drawOne: (n, p) => [/* … */] } }}
+      />
+      <MinimapCanvas
+        scene={scene}
+        mainView={view}
+        mainViewDims={{ width: 600, height: 400 }}
+        onMainViewChange={setView}
+        width={200} height={140}
+        drawOne={(n, p) => [/* stripped-down minimap variant */]}
+        fit="scene"
+      />
+    </>
+  );
+}
+```
+
+Design rationale: see
+[`docs/superpowers/specs/2026-05-31-detached-minimap-design.md`](./superpowers/specs/2026-05-31-detached-minimap-design.md).
+
 ## Adapter
 
 Weasel never reads or writes your scene state directly. Every gesture takes

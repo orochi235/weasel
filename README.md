@@ -15,6 +15,7 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 - Layered canvas rendering with debug overlays
 - Path poses, rect poses, rotated poses; first-class compound paths
 - Viewport with zoom/pan tools, momentum, and boundary clamping
+- Detached read-only scene views and navigation minimap (`<SceneViewCanvas>`, `<MinimapCanvas>`)
 - WebGL2 renderer with MSDF text, gradients, patterns, and per-vertex colors
 - Custom fragment shaders via `registerProgram` (`@experimental`)
 
