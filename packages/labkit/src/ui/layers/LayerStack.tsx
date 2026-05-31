@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useState } from 'react';
+import { type CSSProperties, type ReactNode, type RefCallback, useState } from 'react';
 import { useReorderDragList } from '../../passthrough/weasel-ui';
 
 export interface LayerStackItem {
@@ -97,8 +97,13 @@ export function LayerStack({
           </div>
         </div>
       )}
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-      <div className="lk-layer-stack__list" {...(drag.containerProps as any)}>
+      <div
+        className="lk-layer-stack__list"
+        ref={drag.containerProps.ref as RefCallback<HTMLDivElement>}
+        onPointerMove={drag.containerProps.onPointerMove}
+        onPointerUp={drag.containerProps.onPointerUp}
+        onPointerCancel={drag.containerProps.onPointerCancel}
+      >
         {items.map((item, i) => {
           const expanded = expandedIds.has(item.id);
           const draggedId = drag.state.draggedIds?.[0];
