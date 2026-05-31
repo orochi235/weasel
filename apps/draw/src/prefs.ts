@@ -25,9 +25,8 @@ interface WeaselDrawPrefBase<K extends WeaselDrawPrefKind, Value> {
   /** Fallback when nothing is persisted. */
   default: Value;
   /** Hidden from the Preferences modal in production. Used for prefs the
-   *  user shouldn't toggle directly — set by other code paths (e.g.
-   *  `ui.disclaimerDismissed` via the banner's "I understand" link). In
-   *  dev mode, an "Show hidden prefs" toggle reveals them. */
+   *  user shouldn't toggle directly — set by other code paths. In dev
+   *  mode, the "Show hidden" toggle reveals them. */
   hidden?: boolean;
 }
 
@@ -158,13 +157,6 @@ export const PREFS = {
           // layers panel, so showing the dedicated panel on first run is
           // redundant. Reveal it via Preferences → Panel visibility.
           default: { document: { hidden: true } } as Record<string, { hidden?: boolean; collapsed?: boolean }>,
-        },
-        disclaimerDismissed: {
-          kind: 'boolean',
-          name: 'Dismiss Adobe/Illustrator disclaimer',
-          description: 'Hide the bottom-right "dumpster fire" disclaimer banner. Set by clicking "I understand" on the banner itself.',
-          default: false,
-          hidden: true,
         },
       },
     },
