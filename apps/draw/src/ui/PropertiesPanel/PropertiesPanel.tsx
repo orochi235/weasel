@@ -1,4 +1,4 @@
-import { useRef, type ReactNode, type ChangeEvent } from 'react';
+import { useRef, useState, type ReactNode, type ChangeEvent } from 'react';
 import { SidebarPanel, type SidebarPanelProps } from '@orochi235/weasel-ui';
 import { toHex8, getAlpha01, withAlpha01, useActionsRegistry, type UiOngoingControl } from '@orochi235/weasel';
 import s from './PropertiesPanel.module.css';
@@ -215,6 +215,14 @@ export function PropertyColorInput(props: {
   const alphaPct = Math.round(alpha01 * 100);
   const colorCtrlRef = useRef<UiOngoingControl | null>(null);
   const opacityCtrlRef = useRef<UiOngoingControl | null>(null);
+  // Action-based dispatch doesn't synchronously refresh `props.value`
+  // (the registry batches scene writes until end('commit')), so a
+  // controlled `<input value={alphaPct}>` snaps the thumb back to the
+  // pre-drag value mid-drag. Track a local draft while the slider is
+  // active so the thumb visually follows the pointer; fall back to
+  // `props.value` once the drag commits.
+  const [opacityDraft, setOpacityDraft] = useState<number | null>(null);
+  const visibleAlphaPct = opacityDraft ?? alphaPct;
 
   /** Color picker commit uses `blur` (fires when the native picker closes
    *  and focus leaves the input). Chrome fires `change` continuously during
@@ -279,16 +287,20 @@ export function PropertyColorInput(props: {
         min={0}
         max={100}
         step={1}
-        value={alphaPct}
+        value={visibleAlphaPct}
         title="Opacity"
         aria-label="Opacity"
-        onInput={(e) => dispatchOpacity(Number((e.target as HTMLInputElement).value) / 100, 'input')}
-        onPointerUp={() => dispatchOpacity(alpha01, 'commit')}
-        onPointerCancel={() => dispatchOpacity(alpha01, 'commit')}
-        onKeyUp={() => dispatchOpacity(alpha01, 'commit')}
-        onBlur={() => dispatchOpacity(alpha01, 'commit')}
+        onInput={(e) => {
+          const pct = Number((e.target as HTMLInputElement).value);
+          setOpacityDraft(pct);
+          dispatchOpacity(pct / 100, 'input');
+        }}
+        onPointerUp={() => { dispatchOpacity(alpha01, 'commit'); setOpacityDraft(null); }}
+        onPointerCancel={() => { dispatchOpacity(alpha01, 'commit'); setOpacityDraft(null); }}
+        onKeyUp={() => { dispatchOpacity(alpha01, 'commit'); setOpacityDraft(null); }}
+        onBlur={() => { dispatchOpacity(alpha01, 'commit'); setOpacityDraft(null); }}
       />
-      <span className={s.alphaReadout}>{alphaPct}</span>
+      <span className={s.alphaReadout}>{visibleAlphaPct}</span>
     </span>
   );
 }
