@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { type ControlPoint, CurveEditor, formatNumber } from '../../passthrough/weasel-ui';
+import { type ControlPoint, CurveEditor } from '../../passthrough/weasel-ui';
 
 export interface CurveFieldProps {
   /** Flat [x0, y0, x1, y1, …] — matches how curve-as-array configs
@@ -61,8 +61,6 @@ export function CurveField({
     onChange(out);
   }, [values, onChange]);
 
-  const readoutDigits = step < 1 ? 2 : 0;
-
   return (
     <div className="lk-curve-field">
       <div className="lk-curve-field__plot">
@@ -81,16 +79,6 @@ export function CurveField({
           grid={{}}
           history={false}
         />
-      </div>
-      <div className="lk-curve-field__readouts">
-        {points.map((p) => (
-          <em key={p.x} className="lk-curve-field__readout" data-testid="lk-curve-field__readout">
-            {formatNumber(p.y, {
-              minimumFractionDigits: readoutDigits,
-              maximumFractionDigits: readoutDigits,
-            })}
-          </em>
-        ))}
       </div>
       <button type="button" className="lk-curve-field__flip" onClick={handleFlip}>
         Flip horizontally
