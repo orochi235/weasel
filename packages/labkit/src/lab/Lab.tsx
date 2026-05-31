@@ -66,7 +66,7 @@ const NEBULA_SLOTS = [
 
 function buildNebula(colors: readonly string[]): string {
   const blobs = colors.map((c, i) => {
-    const p = NEBULA_SLOTS[i % NEBULA_SLOTS.length];
+    const p = NEBULA_SLOTS[i % NEBULA_SLOTS.length]!;
     return `radial-gradient(ellipse ${p.sx} ${p.sy} at ${p.cx} ${p.cy}, color-mix(in srgb, ${c} 22%, transparent), transparent ${p.stop})`;
   });
   blobs.push('radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)');
