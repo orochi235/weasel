@@ -149,6 +149,89 @@ describe('CurveEditor — drag', () => {
     // …but is still clamped to the canvas's xMax (1.0).
     expect(last[1].x).toBeLessThanOrEqual(1.0);
   });
+
+  // Regression: when modelRange has yMin > yMax (e.g. yRange=[100,0] for
+  // SVG-style coords), the final clamp `Math.max(yMin, Math.min(yMax, ny))`
+  // collapses every drag to the same value. Same for inverted xRange.
+  it('clamps dragged anchors to the visible plot with inverted yRange', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 50 }, { x: 1, y: 50 }]}
+        onChange={onChange}
+        xRange={[0, 1]}
+        yRange={[100, 0]}
+        width={200}
+        height={100}
+      />,
+    );
+    const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
+    // Move the pointer to the middle of the plot vertically. In an
+    // inverted yRange, plotY=30 corresponds to modelY=30 (not 100).
+    fireEvent.pointerDown(first, { clientX: 0, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 30, pointerId: 1 });
+
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].y).toBeGreaterThanOrEqual(0);
+    expect(last[0].y).toBeLessThanOrEqual(100);
+    // The pre-fix bug snapped y to 100 (yMax under the old non-normalised
+    // clamp). Verify the new value reflects the pointer position.
+    expect(last[0].y).toBeLessThan(100);
+    expect(last[0].y).toBeGreaterThan(0);
+  });
+
+  it('clamps dragged anchors to the visible plot with inverted xRange', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0.5, y: 0 }, { x: 0.5, y: 1 }]}
+        onChange={onChange}
+        xRange={[1, 0]}
+        yRange={[0, 1]}
+        width={200}
+        height={100}
+        domain="2d"
+      />,
+    );
+    const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
+    fireEvent.pointerDown(first, { clientX: 100, clientY: 100, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 60, clientY: 100, pointerId: 1 });
+
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].x).toBeGreaterThanOrEqual(0);
+    expect(last[0].x).toBeLessThanOrEqual(1);
+    // The pre-fix bug snapped x to 1 (xMin under the old non-normalised
+    // clamp, since min > max collapses).
+    expect(last[0].x).toBeLessThan(1);
+    expect(last[0].x).toBeGreaterThan(0);
+  });
+
+  it('drags past the plot clamp to the correct edge under inverted yRange', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 50 }, { x: 1, y: 50 }]}
+        onChange={onChange}
+        xRange={[0, 1]}
+        yRange={[100, 0]}
+        width={200}
+        height={100}
+      />,
+    );
+    const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
+    // Drag way above the plot — clamp should hit yHi=100 (not collapse).
+    fireEvent.pointerDown(first, { clientX: 0, clientY: 50, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 0, clientY: -500, pointerId: 1 });
+    let last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].y).toBeLessThanOrEqual(100);
+    expect(last[0].y).toBeGreaterThanOrEqual(0);
+
+    // Drag way below — clamp should hit yLo=0.
+    fireEvent.pointerMove(window, { clientX: 0, clientY: 600, pointerId: 1 });
+    last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last[0].y).toBeLessThanOrEqual(100);
+    expect(last[0].y).toBeGreaterThanOrEqual(0);
+  });
 });
 
 describe('CurveEditor — add and delete', () => {
