@@ -1,0 +1,134 @@
+.lk-layer-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.lk-layer-stack__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lk-layer-stack__title {
+  margin: 0;
+  font-family: var(--lk-font-display);
+  font-weight: var(--lk-font-weight-light, 300);
+  font-size: 1rem;
+  color: var(--lk-text);
+}
+
+.lk-layer-stack__palette {
+  display: flex;
+  gap: 4px;
+}
+
+.lk-layer-stack__add {
+  background: transparent;
+  border: 1px dashed var(--lk-border);
+  border-radius: var(--lk-radius-sm, 6px);
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  color: var(--lk-text-dim);
+  cursor: pointer;
+}
+
+.lk-layer-stack__add:hover {
+  background: var(--lk-bg-elevated);
+  color: var(--lk-text);
+}
+
+.lk-layer-stack__list {
+  display: grid;
+  gap: 6px;
+}
+
+.lk-layer-stack__drop-hint {
+  height: 2px;
+  background: var(--lk-accent, #6cf);
+  border-radius: 1px;
+}
+
+.lk-layer-stack__empty {
+  color: var(--lk-text-dim);
+  font-size: 0.85rem;
+  padding: 8px;
+  text-align: center;
+}
+
+.lk-layer-card {
+  background: var(--lk-bg-elevated);
+  border: 1px solid var(--lk-border);
+  border-radius: var(--lk-radius-md, 8px);
+  overflow: hidden;
+}
+
+.lk-layer-card.has-accent {
+  border-left: 3px solid var(--lk-layer-card-accent);
+}
+
+.lk-layer-card.is-dragging {
+  opacity: 0.5;
+}
+
+.lk-layer-card__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.lk-layer-card__handle {
+  background: transparent;
+  border: 0;
+  color: var(--lk-text-dim);
+  padding: 2px 4px;
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: var(--lk-radius-sm, 6px);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.lk-layer-card.has-accent .lk-layer-card__handle {
+  background: var(--lk-layer-card-accent);
+  color: white;
+}
+
+.lk-layer-card__handle:active {
+  cursor: grabbing;
+}
+
+.lk-layer-card__kind,
+.lk-layer-card__primary {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.lk-layer-card__primary {
+  background: transparent;
+  border: 0;
+  color: var(--lk-text);
+}
+
+.lk-layer-card__remove {
+  background: transparent;
+  border: 0;
+  color: var(--lk-text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.lk-layer-card__remove:hover {
+  color: var(--lk-text);
+}
+
+.lk-layer-card__body {
+  padding: 8px;
+  border-top: 1px solid var(--lk-border);
+}

@@ -11,6 +11,7 @@ export default defineConfig({
     'undo/index': 'src/undo/index.ts',
     'dragdrop/index': 'src/dragdrop/index.ts',
     'passthrough/weasel-ui': 'src/passthrough/weasel-ui.ts',
+    'ui/layers/index': 'src/ui/layers/index.ts',
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
