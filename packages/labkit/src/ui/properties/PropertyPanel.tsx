@@ -89,6 +89,12 @@ export interface SliderRowProps {
   onChange: (next: number) => void;
   /** Override how the value is rendered next to the label. Defaults to `value.toString()`. */
   format?: (value: number) => ReactNode;
+  /**
+   * Optional suffix rendered next to the readout. A string becomes a
+   * baseline-aligned dim "word" unit (e.g. "px"); pass JSX like `<sup>°</sup>`
+   * to get the browser's native super positioning for symbol units.
+   */
+  unit?: ReactNode;
   layout?: PropertyRowLayout;
 }
 
@@ -100,6 +106,7 @@ export function SliderRow({
   step = 1,
   onChange,
   format,
+  unit,
   layout,
 }: SliderRowProps) {
   return (
@@ -112,6 +119,7 @@ export function SliderRow({
           max={max}
           step={step}
           format={format}
+          unit={unit}
           onCommit={onChange}
         />
       }
@@ -135,6 +143,7 @@ interface EditableReadoutProps {
   max: number;
   step: number;
   format?: (value: number) => ReactNode;
+  unit?: ReactNode;
   onCommit: (next: number) => void;
 }
 
@@ -143,24 +152,44 @@ interface EditableReadoutProps {
  * cancels on Escape. Clicks are stopped so the wrapping <label> doesn't
  * forward focus to the slider thumb.
  */
-function EditableReadout({ value, min, max, step, format, onCommit }: EditableReadoutProps) {
+function EditableReadout({
+  value,
+  min,
+  max,
+  step,
+  format,
+  unit,
+  onCommit,
+}: EditableReadoutProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
 
+  // String units get the word-style wrapper; JSX (e.g. <sup>°</sup>) renders
+  // as-is and inherits its styling from the .lk-property-row__readout-group rule.
+  const suffix =
+    unit == null
+      ? null
+      : typeof unit === 'string'
+        ? <span className="lk-property-row__readout-unit">{unit}</span>
+        : unit;
+
   if (!editing) {
     return (
-      <button
-        type="button"
-        className="lk-property-row__readout-button"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={(e) => {
-          e.stopPropagation();
-          setDraft(formatNumber(value));
-          setEditing(true);
-        }}
-      >
-        {format ? format(value) : formatNumber(value)}
-      </button>
+      <span className="lk-property-row__readout-group">
+        <button
+          type="button"
+          className="lk-property-row__readout-button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.stopPropagation();
+            setDraft(formatNumber(value));
+            setEditing(true);
+          }}
+        >
+          {format ? format(value) : formatNumber(value)}
+        </button>
+        {suffix}
+      </span>
     );
   }
 
@@ -174,26 +203,29 @@ function EditableReadout({ value, min, max, step, format, onCommit }: EditableRe
   };
 
   return (
-    <input
-      autoFocus
-      type="text"
-      inputMode="decimal"
-      className="lk-property-row__readout-input"
-      value={draft}
-      onChange={(e) => setDraft(e.target.value.replace(/-/g, '−'))}
-      onClick={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          commit();
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          setEditing(false);
-        }
-      }}
-    />
+    <span className="lk-property-row__readout-group">
+      <input
+        autoFocus
+        type="text"
+        inputMode="decimal"
+        className="lk-property-row__readout-input"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/-/g, '−'))}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commit();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            setEditing(false);
+          }
+        }}
+      />
+      {suffix}
+    </span>
   );
 }
 
@@ -201,12 +233,41 @@ export interface ColorRowProps {
   label: ReactNode;
   value: string;
   onChange: (next: string) => void;
+  /** 0..1 alpha. When provided, a translucent slider renders beneath the swatch. */
+  alpha?: number;
+  onAlphaChange?: (next: number) => void;
+  /**
+   * Render the alpha track as inert (dimmed, no thumb, not-allowed cursor).
+   * Use when the color's consumer drops alpha so the affordance reads dead.
+   */
+  alphaDisabled?: boolean;
 }
 
-export function ColorRow({ label, value, onChange }: ColorRowProps) {
+export function ColorRow({
+  label,
+  value,
+  onChange,
+  alpha,
+  onAlphaChange,
+  alphaDisabled,
+}: ColorRowProps) {
+  const showAlpha = alpha != null;
+  const className = alphaDisabled ? 'lk-property-row--alpha-disabled' : undefined;
   return (
-    <PropertyRow label={label} variant="color">
+    <PropertyRow label={label} variant="color" className={className}>
       <input type="color" value={value} onChange={(e) => onChange(e.target.value)} />
+      {showAlpha && (
+        <input
+          type="range"
+          className="lk-property-row__alpha"
+          min={0}
+          max={1}
+          step={0.01}
+          value={alpha}
+          disabled={alphaDisabled}
+          onChange={(e) => onAlphaChange?.(Number(e.target.value))}
+        />
+      )}
     </PropertyRow>
   );
 }

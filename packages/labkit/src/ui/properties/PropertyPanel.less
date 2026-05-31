@@ -101,9 +101,66 @@
   margin: 0;
 }
 
+// Inline-block (not flex) so the browser's native vertical-align for
+// <sub>/<sup> still works inside — flex collapses baseline semantics
+// and sinks superscripts onto the baseline.
+.lk-property-row__readout-group {
+  display: inline-block;
+  white-space: nowrap;
+}
+// Word-style units (e.g. "px") read as a small dim suffix next to the digits.
+.lk-property-row__readout-unit {
+  color: var(--lk-text-muted);
+  font-size: 0.78em;
+  line-height: 1;
+  margin-left: 2px;
+  pointer-events: none;
+}
+// Symbol units (e.g. `<sup>°</sup>`) lean on the browser's native super
+// positioning. Just dim them to match — do NOT set line-height: 0, that
+// would re-collapse the glyph onto the baseline.
+.lk-property-row__readout-group sup {
+  color: var(--lk-text-muted);
+  font-size: 0.7em;
+  pointer-events: none;
+}
+
 .lk-property-row input[type='range'] {
   width: calc(100% + 8px);
   margin: 0 -4px;
+  // Hairline track + small translucent thumb, tinted with the active --lk-accent.
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 18px;
+  cursor: pointer;
+}
+.lk-property-row input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--lk-accent) 18%, transparent);
+}
+.lk-property-row input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--lk-accent) 18%, transparent);
+}
+.lk-property-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--lk-accent) 70%, transparent);
+  border: none;
+  margin-top: -2px;
+}
+.lk-property-row input[type='range']::-moz-range-thumb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--lk-accent) 70%, transparent);
+  border: none;
 }
 
 // ── Inline layout: label sits to the left of the control. ──────
@@ -149,18 +206,29 @@
 }
 
 // ── Color variant: label and swatch side-by-side, two per row in the grid.
+// Switches to a 2-row grid when an alpha slider is rendered beneath.
 .lk-property-row--color {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto;
+  align-content: end;
+  column-gap: 8px;
+  row-gap: 0;
+  min-width: 0;
 }
 
 .lk-property-row--color .lk-property-row__label {
-  flex: 1;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: center;
+  flex: initial;
   min-width: 0;
 }
 
 .lk-property-row--color input[type='color'] {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
   width: 36px;
   height: 24px;
   background: transparent;
@@ -169,6 +237,43 @@
   padding: 2px;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+// Alpha slider: full-width second row beneath the color swatch.
+.lk-property-row--color input[type='range'].lk-property-row__alpha {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 12px;
+  width: 100%;
+  margin: 0;
+}
+.lk-property-row--color input[type='range'].lk-property-row__alpha::-webkit-slider-runnable-track {
+  background: color-mix(in srgb, var(--lk-accent) 10%, transparent);
+}
+.lk-property-row--color input[type='range'].lk-property-row__alpha::-moz-range-track {
+  background: color-mix(in srgb, var(--lk-accent) 10%, transparent);
+}
+// Disabled state: dim the track, hide the thumb, swap the cursor — used when
+// the consumer of the color drops alpha so the affordance reads as inert.
+.lk-property-row--color.lk-property-row--alpha-disabled input[type='range'].lk-property-row__alpha {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.lk-property-row--color.lk-property-row--alpha-disabled
+  input[type='range'].lk-property-row__alpha::-webkit-slider-runnable-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+.lk-property-row--color.lk-property-row--alpha-disabled
+  input[type='range'].lk-property-row__alpha::-moz-range-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+.lk-property-row--color.lk-property-row--alpha-disabled
+  input[type='range'].lk-property-row__alpha::-webkit-slider-thumb {
+  background: transparent;
+}
+.lk-property-row--color.lk-property-row--alpha-disabled
+  input[type='range'].lk-property-row__alpha::-moz-range-thumb {
+  background: transparent;
 }
 
 // ── Checkbox variant: control-first inline layout, no uppercase label.

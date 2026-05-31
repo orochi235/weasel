@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SliderRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
@@ -21,6 +21,7 @@ function Controlled({
   max: number;
   step?: number;
   format?: (v: number) => string;
+  unit?: ReactNode;
   layout?: 'block' | 'inline';
 }) {
   const [value, setValue] = useState(initial);
@@ -59,6 +60,15 @@ export const WithUnit: Story = {
   render: () => (
     <div style={{ width: 280 }}>
       <Controlled initial={12} label="Radius" min={0} max={64} format={(v) => `${v}px`} />
+    </div>
+  ),
+};
+
+export const WithUnitSuffix: Story = {
+  render: () => (
+    <div style={{ width: 280, display: 'grid', gap: 12 }}>
+      <Controlled initial={12} label="Radius" min={0} max={64} unit="px" />
+      <Controlled initial={45} label="Angle" min={-180} max={180} unit={<sup>°</sup>} />
     </div>
   ),
 };
