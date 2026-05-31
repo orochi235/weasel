@@ -214,7 +214,13 @@ export function BezierEditDemo() {
           scene={scene}
           selection={selection}
           animator={animator}
-          defaultTools={['select', 'rotate', 'pen']}
+          // 'rotate' intentionally omitted: rotateAction can't rotate a
+          // polygon Path pose (no x/y/width/height/rotation fields), so the
+          // rotation affordance would expose a rotate cursor without a
+          // working interaction. Kit-level fix is to gate affordance
+          // visibility on pose-descriptor support; until then, demos with
+          // path-shaped poses opt out of the rotate tool.
+          defaultTools={['select', 'pen']}
           selectTool={{
             handleHitRadius: HANDLE,
             resize: { geometry: pathPoseDescriptor as PoseProjection<Path> },
