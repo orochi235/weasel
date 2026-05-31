@@ -26,7 +26,7 @@ function editingScratch(
       activeHandle: null,
       dirty: false,
       preConvert: null,
-      original: { path: null as never, closed: false },
+      gestureBaseline: null,
       marquee: null,
     },
   };

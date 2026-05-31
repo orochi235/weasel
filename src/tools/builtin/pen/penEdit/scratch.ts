@@ -30,10 +30,7 @@ export function enterEditMode(scratch: PenScratch, args: EnterEditArgs): void {
     preConvert: args.isParametric
       ? { path: args.path, closed: args.closed, params: args.params }
       : null,
-    original: {
-      path: anchorsToPath(derived.anchors, closedArr),
-      closed: closedArr[0] ?? false,
-    },
+    gestureBaseline: null,
     marquee: null,
   };
 }
@@ -58,27 +55,53 @@ function rectToAnchors(
 }
 
 /**
- * Build the SetPathOp that commits the current edit state to history.
- * Returns null when the edit is not dirty (entering edit + exiting without
- * mutation is a no-op, including for parametric trapdoors).
+ * Capture the gesture baseline — the path/closed/params snapshot used as
+ * the `from` of the SetPathOp emitted when this gesture completes.
  *
- * NOTE: This implementation has a known bug in the `from` snapshot for
- * non-trapdoor edits — it computes the snapshot from current (post-edit)
- * anchors, which means undo would no-op. Task 21 fixes this by snapshotting
- * the entry state on `enterEditMode`.
+ * On the first gesture in a session against a parametric shape, the
+ * baseline IS the parametric form (sourced from `preConvert`), so undo
+ * restores the original rect/etc. `preConvert` is then cleared so
+ * subsequent gestures' baselines are plain polygons.
  */
-export function commitEditAsOp(scratch: PenScratch): Op | null {
-  if (!scratch.edit || !scratch.edit.dirty) return null;
+export function captureGestureBaseline(scratch: PenScratch): void {
+  if (!scratch.edit) return;
+  if (scratch.edit.gestureBaseline !== null) return;
+  if (scratch.edit.preConvert) {
+    scratch.edit.gestureBaseline = {
+      path: scratch.edit.preConvert.path,
+      closed: scratch.edit.preConvert.closed,
+      params: scratch.edit.preConvert.params,
+    };
+    scratch.edit.preConvert = null;
+    return;
+  }
+  scratch.edit.gestureBaseline = {
+    path: anchorsToPath(scratch.edit.anchors, scratch.edit.closed),
+    closed: scratch.edit.closed[0] ?? false,
+    params: undefined,
+  };
+}
+
+/**
+ * Build the SetPathOp for the current gesture and clear gestureBaseline.
+ * Returns null when no baseline was captured (caller forgot) or the edit
+ * isn't dirty (no-op gesture — don't push).
+ */
+export function commitGestureOp(scratch: PenScratch, label: string): Op | null {
+  if (!scratch.edit) return null;
+  if (!scratch.edit.gestureBaseline) return null;
+  if (!scratch.edit.dirty) {
+    scratch.edit.gestureBaseline = null;
+    return null;
+  }
+  const baseline = scratch.edit.gestureBaseline;
   const newPath = anchorsToPath(scratch.edit.anchors, scratch.edit.closed);
   const newClosed = scratch.edit.closed[0] ?? false;
-  const fromFields = scratch.edit.preConvert
-    ? scratch.edit.preConvert
-    : { path: scratch.edit.original.path, closed: scratch.edit.original.closed, params: undefined };
+  scratch.edit.gestureBaseline = null;
   return createSetPathOp({
     id: scratch.edit.objId,
-    from: fromFields,
+    from: baseline,
     to: { path: newPath, closed: newClosed, params: undefined },
-    label: 'Edit path',
-    coalesceKey: `penEdit:${scratch.edit.objId}`,
+    label,
   });
 }
