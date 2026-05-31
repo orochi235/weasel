@@ -115,7 +115,7 @@ describe('moveAction descriptor', () => {
     expect(moveAction.id).toBe('move');
     expect(moveAction.label).toBe('Move');
     expect(moveAction.invoker?.timing).toBe('ongoing');
-    expect(moveAction.defaultBinding).toEqual({ kind: 'drag' });
+    expect(moveAction.defaultBinding).toEqual({ kind: 'drag', target: 'selected-body' });
   });
 
   it('start returns empty handle when selection is empty', () => {

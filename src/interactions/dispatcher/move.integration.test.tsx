@@ -63,10 +63,19 @@ beforeAll(() => {
 // Test harness components
 // ---------------------------------------------------------------------------
 
-/** Mounts the gesture dispatcher on the canvas element. */
+/** Mounts the gesture dispatcher on the canvas element.
+ *  `moveAction`'s ambient binding is `{ kind: 'drag', target: 'selected-body' }`,
+ *  so the harness has to mark every drag as landing on the selection — we
+ *  do that with a constant `classifyTarget` thunk. Real apps source this
+ *  from a selection-aware hit test (see SceneCanvas). */
 function MountDispatcher({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   const registry = useActionsRegistry();
-  useGestureDispatcher({ canvasRef, actions: registry!, toolsById: new Map() });
+  useGestureDispatcher({
+    canvasRef,
+    actions: registry!,
+    toolsById: new Map(),
+    classifyTarget: () => 'selected-body',
+  });
   return <canvas ref={canvasRef} data-testid="canvas" />;
 }
 
