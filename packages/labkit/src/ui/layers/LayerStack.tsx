@@ -109,7 +109,7 @@ export function LayerStack({
                 onClick={() => onAdd(k)}
                 aria-label={`Add ${k}`}
               >
-                + {k}
+                {k}
               </button>
             ))}
           </div>
@@ -186,9 +186,6 @@ export function LayerStack({
                 {expanded && (
                   <div
                     className="lk-layer-card__body"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onPointerMove={(e) => e.stopPropagation()}
-                    onPointerUp={(e) => e.stopPropagation()}
                   >
                     {renderBody(item)}
                   </div>
