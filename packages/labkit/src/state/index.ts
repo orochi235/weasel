@@ -34,3 +34,7 @@ export type {
   WorkspaceRecord,
 } from './types';
 export { useExperimentState } from './useExperimentState';
+export {
+  SingletonExperimentProvider,
+  type SingletonExperimentProviderProps,
+} from './SingletonExperiment';
