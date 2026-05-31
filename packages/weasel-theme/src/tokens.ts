@@ -29,9 +29,20 @@ export const DEFAULT_TOKENS = {
   '--wzl-warning-base':  '#d99a3f',
 
   // Geometry
-  '--wzl-radius-sm': '3px',
-  '--wzl-radius-md': '5px',
-  '--wzl-border-w':  '1px',
+  '--wzl-radius-sm':   '3px',
+  '--wzl-radius-md':   '5px',
+  '--wzl-border-w':    '1px',
+  '--wzl-line-width':  '2px',
+  '--wzl-curve-width': '3px',
+
+  // Structural lines — three opacity levels of fg. color-mix at runtime;
+  // hex approximations here resolve against the dark default fg.
+  '--wzl-line-subtle': 'rgba(230, 231, 233, 0.10)',
+  '--wzl-line':        'rgba(230, 231, 233, 0.20)',
+  '--wzl-line-strong': 'rgba(230, 231, 233, 0.40)',
+
+  // Curve color — semantic alias for the accent.
+  '--wzl-curve-color': '#5841b8',
 
   // Typography
   '--wzl-font-ui':            "'Oswald', 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif",
