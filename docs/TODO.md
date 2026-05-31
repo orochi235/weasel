@@ -33,7 +33,6 @@ Priority tags:
 - Kit-level `viewTransform` zoom integration on `<Canvas>` → [Viewport](#viewport)
 
 **Paths & booleans**
-- Paths hot-loop perf hardening → [Paths & booleans](#paths--booleans)
 - Generic CSS cascade for `@orochi235/weasel-svg`'s parser → [Paths & booleans](#paths--booleans)
 
 **Text**
@@ -130,8 +129,6 @@ From `docs/specs/2026-05-03-tool-overlay-channel-design.md`:
 ---
 
 ## Paths & booleans
-
-- **(P2) Paths hot-loop perf hardening.** Making paths first-class trades V8 monomorphization for polymorphism in interaction hot loops. Plan: (1) verify the `RectPath` discriminated subtype short-circuits in the polygon kernels (O(1) AABB + hit), (2) audit pointer-move paths for per-frame allocation (resize-preview ghost vertices are the worst offender — likely needs in-place mutation or `Float32Array` ghost buffers), (3) benchmark rect-only and polygon-only scenes against a pre-paths baseline, (4) fix any regression > ~10% before sunsetting any remaining rect-only fast paths.
 
 - **(P2) Generic CSS cascade for `@orochi235/weasel-svg`'s parser.** Surfaced 2026-05-13 importing the Ghostscript tiger — `<g fill="...">` groups containing `<path>` elements with no direct fill were falling back to black because the parser only reads `el.getAttribute(attr)` at leaf time. A targeted fix patches fill/stroke/opacity inheritance plus `style=` attribute parsing, but SVG has a long list of inheritable presentation attributes — paint (fill/stroke/fill-rule/fill-opacity/stroke-opacity), stroke decoration (linecap/linejoin/miterlimit/dasharray/dashoffset), font-* (family/size/weight/style/text-anchor/letter-spacing/decoration), color (for `currentColor` resolution), opacity, visibility, display, color-interpolation, image-rendering, shape-rendering, text-rendering, clip-rule, clip-path, mask, filter, marker-*. Per-attr walk-up code accumulates as the matrix grows; the right answer is **threading a cascading style context down through the recursive parse**: at each element, compute "current cascade" = parent cascade + element's own attrs + style attr; leaf parsers read from the threaded context, not from the DOM. Browser-only fast path could use `getComputedStyle` against a hidden DOM node, with the threaded-context fallback for Node/jsdom tests.
 
