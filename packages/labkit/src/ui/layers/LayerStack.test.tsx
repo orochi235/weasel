@@ -116,4 +116,54 @@ describe('LayerStack', () => {
     fireEvent.change(sel, { target: { value: 'bevel' } });
     expect(onPrimaryChange).toHaveBeenCalledWith(1, 'bevel');
   });
+
+  it('newly added items render expanded by default', () => {
+    const initial: LayerStackItem[] = [{ id: 1, kind: 'fill' }];
+    const { rerender } = render(
+      <LayerStack
+        title="Fill"
+        items={initial}
+        paletteKinds={[]}
+        onAdd={() => {}}
+        onRemove={() => {}}
+        onReorder={() => {}}
+        onPrimaryChange={() => {}}
+        renderBody={(item) => <div data-testid={`body-${item.id}`}>b{item.id}</div>}
+      />,
+    );
+    expect(screen.getByTestId('body-1')).toBeInTheDocument();
+    rerender(
+      <LayerStack
+        title="Fill"
+        items={[...initial, { id: 2, kind: 'tail' }]}
+        paletteKinds={[]}
+        onAdd={() => {}}
+        onRemove={() => {}}
+        onReorder={() => {}}
+        onPrimaryChange={() => {}}
+        renderBody={(item) => <div data-testid={`body-${item.id}`}>b{item.id}</div>}
+      />,
+    );
+    expect(screen.getByTestId('body-2')).toBeInTheDocument();
+  });
+
+  it('items with defaultExpanded: false render collapsed', () => {
+    render(
+      <LayerStack
+        title="Fill"
+        items={[{ id: 1, kind: 'fill', defaultExpanded: false }]}
+        paletteKinds={[]}
+        onAdd={() => {}}
+        onRemove={() => {}}
+        onReorder={() => {}}
+        onPrimaryChange={() => {}}
+        renderBody={(item) => <div data-testid={`body-${item.id}`}>b{item.id}</div>}
+      />,
+    );
+    expect(screen.queryByTestId('body-1')).not.toBeInTheDocument();
+  });
+
+  // TODO: reorder off-by-one fix (Bug 1) is covered by manual integration
+  // testing in speech-balloons once LayerStack is consumed there (B3).
+  // useReorderDragList is mocked in unit tests, making onReorder untestable here.
 });

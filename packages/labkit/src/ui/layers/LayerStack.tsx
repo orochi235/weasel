@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, type RefCallback, useState } from 'react';
+import { type CSSProperties, type ReactNode, type RefCallback, useEffect, useState } from 'react';
 import { useReorderDragList } from '../../passthrough/weasel-ui';
 
 export interface LayerStackItem {
@@ -53,6 +53,19 @@ export function LayerStack({
     () => new Set(items.filter((i) => i.defaultExpanded !== false).map((i) => i.id)),
   );
 
+  useEffect(() => {
+    setExpandedIds((prev) => {
+      let next: Set<number | string> | null = null;
+      for (const item of items) {
+        if (item.defaultExpanded === false) continue;
+        if (prev.has(item.id)) continue;
+        if (next === null) next = new Set(prev);
+        next.add(item.id);
+      }
+      return next ?? prev;
+    });
+  }, [items]);
+
   const dragItems = items.map((it) => ({ id: String(it.id), label: it.kind }));
   const drag = useReorderDragList({
     items: dragItems,
@@ -62,8 +75,13 @@ export function LayerStack({
       const moving = new Set(ids);
       const remaining = orig.filter((id) => !moving.has(String(id)));
       const movedIds = items.map((i) => i.id).filter((id) => moving.has(String(id)));
+      // weasel reports targetIndex against the original list (which includes
+      // the dragged row). Each moved item that originally sat before
+      // targetIndex needs to shift the insertion point left by one.
+      const shift = orig.filter((id, idx) => moving.has(String(id)) && idx < targetIndex).length;
+      const adjusted = targetIndex - shift;
       const out = [...remaining];
-      out.splice(targetIndex, 0, ...movedIds);
+      out.splice(adjusted, 0, ...movedIds);
       onReorder(out);
     },
   });
