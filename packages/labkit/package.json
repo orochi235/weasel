@@ -43,6 +43,10 @@
       "types": "./dist/state/index.d.ts",
       "import": "./dist/state/index.js"
     },
+    "./weasel-ui": {
+      "types": "./dist/passthrough/weasel-ui.d.ts",
+      "import": "./dist/passthrough/weasel-ui.js"
+    },
     "./styles.css": "./dist/styles.css",
     "./theme-light.css": "./dist/theme-light.css",
     "./theme-interstellar.css": "./dist/theme-interstellar.css"
