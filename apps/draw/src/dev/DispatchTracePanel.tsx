@@ -29,6 +29,8 @@ interface DispatchLogEntry {
   kind: 'dispatch';
   ts: number;
   eventKind: string;
+  /** For key / key-held events, the key id (`'Escape'`, `' '`, …). */
+  key?: string;
   candidates: Array<{
     actionId: string;
     scope: 'hotkey' | 'active' | 'ambient';
@@ -313,7 +315,12 @@ function RowGroup(props: {
     <>
       <tr className={rowClass} onClick={onToggle}>
         <td>{formatAge(ageMs)}</td>
-        <td>{entry.eventKind}</td>
+        <td>
+          {entry.eventKind}
+          {entry.key !== undefined ? (
+            <> <code>{entry.key === ' ' ? 'Space' : entry.key}</code></>
+          ) : null}
+        </td>
         <td>{renderOutcome(entry)}</td>
         <td>{entry.candidates.length}</td>
       </tr>

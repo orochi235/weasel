@@ -86,7 +86,7 @@ export interface AffordanceRegion<TScratch = unknown> {
    *  - `custom` — emit arbitrary draw commands; receives a {@link CustomPaintContext}. */
   paint?:
     | { kind: 'square';   sizePx: number;  fill?: FillStyle; stroke?: Stroke }
-    | { kind: 'annulus';  fill?: FillStyle; stroke?: Stroke }
+    | { kind: 'annulus';  fill?: FillStyle; stroke?: Stroke; insetPx?: number }
     | { kind: 'custom';   draw: (ctx: CustomPaintContext) => DrawCommand[] };
 
   /** Optional CSS cursor to apply while the pointer hovers this region

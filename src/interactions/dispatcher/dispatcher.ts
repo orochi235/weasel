@@ -62,6 +62,10 @@ export interface DispatchLogEntry {
   kind: 'dispatch';
   ts: number;
   eventKind: string;
+  /** For `key` / `key-held` events, the key id (`'Escape'`, `' '`, `'a'`).
+   *  Lives on the event side of the entry — `fired` should describe
+   *  what dispatched, not which key triggered it. */
+  key?: string;
   candidates: Array<{ actionId: string; scope: BindingScope; enabledResult: boolean | string }>;
   fired: string | null;
   outcome: 'handled' | 'unhandled';
@@ -621,8 +625,18 @@ export function createDispatcher(opts?: {
     const engagedChannels = snapshotEngagedChannels();
     const matches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
     const traceCandidates: DispatchLogEntry['candidates'] = [];
+    const eventKey =
+      event.kind === 'key' || event.kind === 'key-held' ? event.key : undefined;
     const finishTrace = (fired: string | null, outcome: 'handled' | 'unhandled') => {
-      recordTrace({ kind: 'dispatch', ts: Date.now(), eventKind: event.kind, candidates: traceCandidates, fired, outcome });
+      recordTrace({
+        kind: 'dispatch',
+        ts: Date.now(),
+        eventKind: event.kind,
+        ...(eventKey !== undefined ? { key: eventKey } : {}),
+        candidates: traceCandidates,
+        fired,
+        outcome,
+      });
     };
     if (matches.length === 0) {
       finishTrace(null, 'unhandled');
