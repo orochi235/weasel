@@ -211,61 +211,53 @@ describe('computeFitView — fit=function', () => {
 });
 
 describe('computeIndicatorCommand', () => {
-  it('identity main view → indicator rect = full mainViewDims projected through minimap view', () => {
+  // The indicator is emitted in WORLD coords. The caller wraps the command
+  // list in a group transformed by the minimap's view, so the view→screen
+  // step happens once, in the same place the scene nodes pay it.
+
+  it('identity main view → world rect = full mainViewDims', () => {
     const mainView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const mainViewDims = { width: 800, height: 600 };
-    const minimapView: View = { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } };
-    const cmd = computeIndicatorCommand(mainView, mainViewDims, minimapView);
+    const cmd = computeIndicatorCommand(mainView, { width: 800, height: 600 });
     expect(cmd.kind).toBe('path');
     expect(cmd.path.kind).toBe('rect');
     if (cmd.path.kind !== 'rect') throw new Error('unreachable');
     expect(cmd.path.x).toBeCloseTo(0, 6);
     expect(cmd.path.y).toBeCloseTo(0, 6);
-    // World rect = 800x600; minimap scale 0.25 ⇒ 200x150.
-    expect(cmd.path.width).toBeCloseTo(200, 6);
-    expect(cmd.path.height).toBeCloseTo(150, 6);
+    expect(cmd.path.width).toBeCloseTo(800, 6);
+    expect(cmd.path.height).toBeCloseTo(600, 6);
   });
 
-  it('zoomed main view → indicator shrinks proportionally', () => {
+  it('zoomed main view → world rect shrinks proportionally', () => {
     const mainView: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
-    const mainViewDims = { width: 800, height: 600 };
-    const minimapView: View = { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } };
-    const cmd = computeIndicatorCommand(mainView, mainViewDims, minimapView);
+    const cmd = computeIndicatorCommand(mainView, { width: 800, height: 600 });
     if (cmd.path.kind !== 'rect') throw new Error('unreachable');
-    // World rect = 400x300; minimap scale 0.25 ⇒ 100x75.
-    expect(cmd.path.width).toBeCloseTo(100, 6);
-    expect(cmd.path.height).toBeCloseTo(75, 6);
+    // At 2× zoom the main canvas covers 400×300 of world.
+    expect(cmd.path.width).toBeCloseTo(400, 6);
+    expect(cmd.path.height).toBeCloseTo(300, 6);
   });
 
-  it('panned main view → indicator translates in minimap-screen space', () => {
+  it('panned main view → world rect translates by mainView origin', () => {
     const mainView: View = { x: 50, y: 30, scale: { x: 1, y: 1 } };
-    const mainViewDims = { width: 800, height: 600 };
-    const minimapView: View = { x: 0, y: 0, scale: { x: 0.25, y: 0.25 } };
-    const cmd = computeIndicatorCommand(mainView, mainViewDims, minimapView);
+    const cmd = computeIndicatorCommand(mainView, { width: 800, height: 600 });
     if (cmd.path.kind !== 'rect') throw new Error('unreachable');
-    // (50, 30) world → (12.5, 7.5) minimap-screen.
-    expect(cmd.path.x).toBeCloseTo(12.5, 6);
-    expect(cmd.path.y).toBeCloseTo(7.5, 6);
-    expect(cmd.path.width).toBeCloseTo(200, 6);
-    expect(cmd.path.height).toBeCloseTo(150, 6);
+    expect(cmd.path.x).toBeCloseTo(50, 6);
+    expect(cmd.path.y).toBeCloseTo(30, 6);
+    expect(cmd.path.width).toBeCloseTo(800, 6);
+    expect(cmd.path.height).toBeCloseTo(600, 6);
   });
 
-  it('minimap view with offset shifts the rect in screen space', () => {
-    const mainView: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
-    const mainViewDims = { width: 800, height: 600 };
-    const minimapView: View = { x: -100, y: -50, scale: { x: 0.25, y: 0.25 } };
-    const cmd = computeIndicatorCommand(mainView, mainViewDims, minimapView);
+  it('non-uniform main view scale → rect dimensions reflect each axis', () => {
+    const mainView: View = { x: 0, y: 0, scale: { x: 2, y: 4 } };
+    const cmd = computeIndicatorCommand(mainView, { width: 800, height: 800 });
     if (cmd.path.kind !== 'rect') throw new Error('unreachable');
-    // (0 - (-100)) * 0.25 = 25; (0 - (-50)) * 0.25 = 12.5
-    expect(cmd.path.x).toBeCloseTo(25, 6);
-    expect(cmd.path.y).toBeCloseTo(12.5, 6);
+    expect(cmd.path.width).toBeCloseTo(400, 6);
+    expect(cmd.path.height).toBeCloseTo(200, 6);
   });
 
   it('default style is white 1px [2,3] dash', () => {
     const cmd = computeIndicatorCommand(
       { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { width: 100, height: 100 },
-      { x: 0, y: 0, scale: { x: 1, y: 1 } },
     );
     expect(cmd.stroke?.paint).toEqual({ fill: 'solid', color: '#ffffff' });
     expect(cmd.stroke?.width).toBe(1);
@@ -276,35 +268,10 @@ describe('computeIndicatorCommand', () => {
     const cmd = computeIndicatorCommand(
       { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { width: 100, height: 100 },
-      { x: 0, y: 0, scale: { x: 1, y: 1 } },
       { stroke: '#ff00aa', width: 2.5, dash: [4, 1, 2, 1] },
     );
     expect(cmd.stroke?.paint).toEqual({ fill: 'solid', color: '#ff00aa' });
     expect(cmd.stroke?.width).toBe(2.5);
     expect(cmd.stroke?.dash).toEqual([4, 1, 2, 1]);
-  });
-
-  it('matches the ViewportLayerDemo indicator math (parity check)', () => {
-    // Replicates the inline math in demo/demos/ViewportLayerDemo.tsx lines 86–100.
-    const view: View = { x: 25, y: 17, scale: { x: 1.5, y: 1.5 } };
-    const W = 640;
-    const H = 480;
-    const minimapView: View = { x: -100, y: -100, scale: { x: 0.18, y: 0.18 } };
-
-    const worldX = view.x;
-    const worldY = view.y;
-    const worldW = W / view.scale.x;
-    const worldH = H / view.scale.y;
-    const expectedX = (worldX - minimapView.x) * minimapView.scale.x;
-    const expectedY = (worldY - minimapView.y) * minimapView.scale.y;
-    const expectedW = worldW * minimapView.scale.x;
-    const expectedH = worldH * minimapView.scale.y;
-
-    const cmd = computeIndicatorCommand(view, { width: W, height: H }, minimapView);
-    if (cmd.path.kind !== 'rect') throw new Error('unreachable');
-    expect(cmd.path.x).toBeCloseTo(expectedX, 6);
-    expect(cmd.path.y).toBeCloseTo(expectedY, 6);
-    expect(cmd.path.width).toBeCloseTo(expectedW, 6);
-    expect(cmd.path.height).toBeCloseTo(expectedH, 6);
   });
 });

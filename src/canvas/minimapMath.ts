@@ -166,20 +166,20 @@ export function computeFitView<TData, TLayer extends string, TPose>(
 export function computeIndicatorCommand(
   mainView: View,
   mainViewDims: ViewportDims,
-  minimapView: View,
   style: IndicatorStyle = {},
 ): PathDrawCommand {
-  const worldX = mainView.x;
-  const worldY = mainView.y;
-  const worldW = mainViewDims.width / mainView.scale.x;
-  const worldH = mainViewDims.height / mainView.scale.y;
-  const sx = (worldX - minimapView.x) * minimapView.scale.x;
-  const sy = (worldY - minimapView.y) * minimapView.scale.y;
-  const sw = worldW * minimapView.scale.x;
-  const sh = worldH * minimapView.scale.y;
+  // World-space rect: returned as-is. The caller wraps the command list
+  // (scene + extras) in a group transformed by the minimap's view, so the
+  // indicator lands in screen coords automatically. Returning screen coords
+  // here would get the view transform applied a second time — a bug that
+  // manifested as the indicator drifting at non-identity minimap scale.
+  const x = mainView.x;
+  const y = mainView.y;
+  const width = mainViewDims.width / mainView.scale.x;
+  const height = mainViewDims.height / mainView.scale.y;
   return {
     kind: 'path',
-    path: { kind: 'rect', x: sx, y: sy, width: sw, height: sh },
+    path: { kind: 'rect', x, y, width, height },
     stroke: {
       paint: { fill: 'solid', color: style.stroke ?? DEFAULT_INDICATOR_STROKE },
       width: style.width ?? DEFAULT_INDICATOR_WIDTH,
