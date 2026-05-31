@@ -27,7 +27,6 @@ Priority tags:
 - Affordances of registered-but-not-active tools → [Tools & gestures](#tools--gestures)
 - Audit other chrome violations (visible-is-hittable) → [Tools & gestures](#tools--gestures)
 - `useTextTool` synthesized adapter ergonomic → [Tools & gestures](#tools--gestures)
-- Gate rotation affordance on pose-descriptor support → [Tools & gestures](#tools--gestures)
 
 **Viewport**
 - Axis-aware elliptical hit shapes under non-uniform zoom → [Viewport](#viewport)
@@ -85,8 +84,6 @@ Priority tags:
 - **(P2) Affordances of registered-but-not-active tools.** Today the dispatcher walks `tools.getActiveOverlays()` for affordance hit-tests, which only surfaces the active/hotkey/ambient slots' overlays — not arbitrary registered tools. To get selection chrome hittable while a non-select tool is active, the consumer has to register the select tool as `ambient` (see `LassoDemo` after the chrome-affordances spec). The architectural cleanup is to surface ALL registered tools' affordances cross-tool; deferred because changing `getActiveOverlays` broke `omits modifier overlay when not engaged` semantics. File a separate spec when it bites.
 
 - **(P2) Audit other chrome violations against the visible-is-hittable principle.** Spec `docs/superpowers/specs/2026-05-10-chrome-affordances-design.md` shipped corner-resize + rotation as cross-tool-hittable affordances. Other chrome families that may render while a non-owning tool is active and need the same migration: anchor-edit dots (`useEditAnchorsTool`) — visible during anchor-edit mode; snap-target highlights (`createCellHighlightLayer`) — currently visualization only, file a follow-up if hover ever becomes interactive; debug-overlay hit-rings — visualization only, principle satisfied. Each chrome family with a real interactive surface gets its own follow-up spec.
-
-- **(P2) Gate rotation affordance on pose-descriptor support.** Surfaced 2026-05-31. The rotation affordance + rotate cursor render for any selection regardless of whether the selected node's pose supports rotation. In `BezierEditDemo` (Path-shaped pose, no x/y/width/height/rotation fields), the rotate cursor appears on hover but dragging does nothing — `rotateAction.applyRotationDelta` defaults the missing fields to 0 and writes a `rotation` key the consumer's `drawOne` ignores. Workaround applied 2026-05-31: BezierEditDemo drops `'rotate'` from `defaultTools`. Kit fix: have the rotation affordance check whether the selection's pose-descriptor (or some `canRotate(id)` predicate) declares rotation support, and skip the affordance otherwise. Cleanest seam is probably `PoseDescriptor.supportsRotation: boolean` on the projection, consulted by `createRotationAffordance.regions`.
 
 - **(P2) `useTextTool`'s synthesized adapter ergonomic.** `useTextTool` synthesizes its own `InsertAdapter` and threads `ctx.applyBatch` via a ref because the click-first ergonomic doesn't expose an adapter to the consumer. After the May 5 drag-insert primitive landed, the capture-and-clear is owned by `defineDragInsertTool` (not duplicated in the wrapper) but the underlying asymmetry remains. Revisit if a third drag-insert tool would benefit from a unified ergonomics story (e.g. accept either an adapter *or* an inline factory).
 

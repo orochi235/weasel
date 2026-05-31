@@ -50,7 +50,8 @@ import type {
   ResizePose,
 } from '../../gestures/types';
 import type { ResizePolicy } from '../depSchema';
-import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
+import { type PoseProjection } from '../resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
 
@@ -75,7 +76,10 @@ function resolveDeps(ctx: InvocationCtx): {
       behaviors: EMPTY_BEHAVIORS,
       pointSnap: EMPTY_POINT_SNAP,
       expandIds: IDENTITY_EXPAND,
-      geometry: RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
+      // AUTO dispatches per-call to pathPoseDescriptor for Path-shaped
+      // poses and RECT for everything else, so resize works on both
+      // shapes without the consumer wiring a `geometry` explicitly.
+      geometry: AUTO_POSE_DESCRIPTOR as PoseProjection<unknown>,
     };
   }
   return {

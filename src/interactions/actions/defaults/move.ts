@@ -48,7 +48,9 @@ import { resolveParams } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeAtPointDep } from '../depSchema';
-import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
+import { type PoseProjection } from '../resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
+import type { ResizePolicy } from '../depSchema';
 import {
   composeRectPose,
   composeWorldPose,
@@ -62,9 +64,19 @@ import {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-/** Translate a pose by (dx, dy) using the rect-pose default. */
-function translatePoseGeneric(pose: unknown, dx: number, dy: number): unknown {
-  return (RECT_POSE_DESCRIPTOR.translate as (p: unknown, dx: number, dy: number) => unknown)(pose, dx, dy);
+/** Translate a pose by (dx, dy). Defers to the supplied projection's
+ *  `translate` when present so non-rect poses (e.g. polygon Paths) move
+ *  correctly; falls back to `AUTO_POSE_DESCRIPTOR.translate` so unwired
+ *  Path consumers still drag correctly (AUTO dispatches per-call to the
+ *  path or rect translator based on pose shape). */
+function translatePoseGeneric(
+  pose: unknown,
+  dx: number,
+  dy: number,
+  projection?: PoseProjection<unknown>,
+): unknown {
+  const fn = projection?.translate ?? AUTO_POSE_DESCRIPTOR.translate;
+  return (fn as (p: unknown, dx: number, dy: number) => unknown)(pose, dx, dy);
 }
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
@@ -111,6 +123,11 @@ interface MoveScratch {
   /** In-flight preview poses keyed by node id (roots + cascaded children).
    *  Populated on onMove; cleared on onEnd. Read by `previewIds`/`previewPose`. */
   previews: Map<NodeId, unknown>;
+  /** Pose projection captured at drag start. Used by `translatePoseGeneric`
+   *  so non-rect poses (e.g. polygon Paths) translate via the consumer's
+   *  descriptor instead of the rect-pose default. Undefined when the
+   *  `resizePolicy` dep wasn't sourced. */
+  projection?: PoseProjection<unknown>;
 }
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -253,12 +270,18 @@ export const moveAction: Action & { requires: string[] } = {
   // is target-qualified instead of universal.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene'],
+  requires: ['selection', 'scene', 'resizePolicy'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+      // `resizePolicy` is the shared pose-projection dep — moveAction reads
+      // its `projection.translate` so non-rect poses (polygon Paths, etc.)
+      // translate via the consumer's descriptor instead of silently
+      // falling back to the rect-pose `{x, y, width, height}` default.
+      const policy = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
+      const projection = policy?.projection;
 
       if (!selection || !scene) return {};
 
@@ -300,6 +323,7 @@ export const moveAction: Action & { requires: string[] } = {
         scene,
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
+        projection,
       };
 
       return {
@@ -316,7 +340,7 @@ export const moveAction: Action & { requires: string[] } = {
           const { dx, dy } = scratch.currentDelta;
           scratch.previews.clear();
           for (const [id, origin] of scratch.startPoses) {
-            scratch.previews.set(id, translatePoseGeneric(origin, dx, dy));
+            scratch.previews.set(id, translatePoseGeneric(origin, dx, dy, scratch.projection));
           }
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -357,12 +381,12 @@ export const moveAction: Action & { requires: string[] } = {
               for (const id of scratch.ids) {
                 const origin = scratch.startPoses.get(id);
                 if (origin === undefined) continue;
-                scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy));
+                scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy, scratch.projection));
               }
               for (const id of scratch.cascadeIds) {
                 const origin = scratch.startPoses.get(id);
                 if (origin === undefined) continue;
-                scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy));
+                scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy, scratch.projection));
               }
             }
           });

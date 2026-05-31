@@ -36,4 +36,9 @@ export const AUTO_POSE_DESCRIPTOR: PoseProjection<unknown> = {
     const r = (p as { rotation?: unknown }).rotation;
     return typeof r === 'number' ? r : 0;
   },
+  // Path-shaped poses can't carry rotation (see `pathPoseDescriptor`).
+  // Everything else flows through `wrapWithPoseRotation`'s x/y/w/h gate at
+  // paint time, so report `true` and let the wrapper no-op for poses
+  // missing AABB fields.
+  supportsRotation: (p) => !isPathLike(p),
 };

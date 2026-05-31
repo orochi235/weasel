@@ -69,6 +69,12 @@ export const pathPoseDescriptor: PoseProjection<Path> = {
     }
     throw new Error('pathPoseDescriptor.lerp: incompatible path shapes');
   },
+  // Path poses carry no x/y/width/height/rotation fields — the kit's
+  // `wrapWithPoseRotation` helper has nothing to bind a rotation to, and
+  // `remapBounds` would drop a synthetic rotation field on every commit.
+  // Returning false here hides the rotation affordance for Path consumers
+  // so the rotate cursor doesn't appear without a working interaction.
+  supportsRotation: () => false,
 };
 
 function remapPolygon(path: PolygonPath, src: ResizePose, dst: ResizePose, sx: number, sy: number): PolygonPath {

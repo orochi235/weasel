@@ -141,13 +141,25 @@ export function createRotationAffordance(
 function pickTarget(state: ChromeState): { id: string; bounds: Bounds } | null {
   if (state.selection.length === 1) {
     const id = state.selection[0];
+    // Skip when the selected node's pose-descriptor declares it can't
+    // carry a rotation. Without this the rotation affordance would expose
+    // a rotate cursor over (e.g.) polygon-Path selections whose
+    // `rotateAction` write is silently dropped at paint time.
+    if (state.canRotate && !state.canRotate(id)) return null;
     const b = state.boundsOf(id);
     return b ? { id, bounds: b } : null;
   }
   // Multi-selection: anchor the ring to the union AABB. `rotateAction`
   // ignores the synthetic id and pivots at its own union center
   // (`useUnionPivot: ids.length > 1` branch in `defaults/rotate.ts`).
+  // Require every selected id to support rotation — a partial multi-rotate
+  // (some ids rotate, others silently no-op) would feel broken.
   if (state.multiActive && state.unionBounds) {
+    if (state.canRotate) {
+      for (const id of state.selection) {
+        if (!state.canRotate(id)) return null;
+      }
+    }
     return { id: MULTI_RESIZE_TARGET_ID, bounds: state.unionBounds };
   }
   return null;

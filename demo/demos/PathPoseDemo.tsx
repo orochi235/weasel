@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import {
   asNodeId,
-  pathOriginProjection,
-  pathPoseDescriptor,
   polygonFromPoints,
   gridSnapStrategy,
   SceneCanvas,
@@ -77,8 +75,7 @@ export function PathPoseDemo() {
         scene={scene}
         selection={selection}
         selectTool={{
-          snap: gridSnapStrategy<Path>(20, { origin: pathOriginProjection }),
-          resize: { geometry: pathPoseDescriptor },
+          snap: gridSnapStrategy<Path>(20),
         }}
         debug={debug}
         layers={{

@@ -1,6 +1,10 @@
 import type { SnapStrategy } from '../../types';
 import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
 import type { DebugSink } from '../../../../debug/types';
+import { isPathLike } from 'interactions/actions/resize/autoPoseDescriptor';
+import { boundsOfPath } from 'features/paths/bounds';
+import { translatePath } from 'features/paths/transform';
+import type { Path } from 'features/paths/types';
 
 /**
  * Projection used by `gridSnapStrategy` when `TPose` doesn't expose `{x,y}`
@@ -19,14 +23,34 @@ export const RECT_ORIGIN_PROJECTION: OriginProjection<{ x: number; y: number }> 
   translate: (p, dx, dy) => ({ ...p, x: p.x + dx, y: p.y + dy }),
 };
 
+/** Per-call dispatch: routes Path-shaped poses to the path origin/translate
+ *  helpers and everything else to `RECT_ORIGIN_PROJECTION`. Default for
+ *  `gridSnapStrategy` so consumers with Path TPose don't have to thread
+ *  `pathOriginProjection` explicitly. */
+export const AUTO_ORIGIN_PROJECTION: OriginProjection<unknown> = {
+  getOrigin: (p) => {
+    if (isPathLike(p)) {
+      const b = boundsOfPath(p as Path);
+      return { x: b.x, y: b.y };
+    }
+    const r = p as { x: number; y: number };
+    return { x: r.x, y: r.y };
+  },
+  translate: (p, dx, dy) => {
+    if (isPathLike(p)) return translatePath(p as Path, dx, dy);
+    const r = p as { x: number; y: number };
+    return { ...r, x: r.x + dx, y: r.y + dy };
+  },
+};
+
 /** Snap-strategy that rounds the pose's origin to the nearest multiple of
  *  `spacing` (resolved through `unitSystem`). For non-rect TPose pass an
  *  `OriginProjection` so the strategy knows how to read/write the origin. */
-export function gridSnapStrategy<TPose extends { x: number; y: number }>(
+export function gridSnapStrategy<TPose>(
   spacing: UnitValue,
   unitSystem?: UnitSystem,
 ): SnapStrategy<TPose>;
-export function gridSnapStrategy<TPose extends { x: number; y: number }>(
+export function gridSnapStrategy<TPose>(
   spacing: UnitValue,
   opts: { unitSystem?: UnitSystem; debug?: DebugSink },
 ): SnapStrategy<TPose>;
@@ -52,7 +76,7 @@ export function gridSnapStrategy<TPose>(
   const unitSystem = optsArg ? optsArg.unitSystem : (arg as UnitSystem | undefined);
   const proj: OriginProjection<TPose> = optsArg && optsArg.origin
     ? optsArg.origin
-    : (RECT_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
+    : (AUTO_ORIGIN_PROJECTION as unknown as OriginProjection<TPose>);
   const debug: DebugSink | undefined = optsArg ? optsArg.debug : undefined;
   const c = resolveUnit(spacing, unitSystem);
   return {

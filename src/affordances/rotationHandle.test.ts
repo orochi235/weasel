@@ -128,6 +128,32 @@ describe('createRotationAffordance', () => {
     expect(s.innerHeight).toBe(60);
   });
 
+  it('emits no region when canRotate returns false for the single selection', () => {
+    const aff = createRotationAffordance();
+    const state: ChromeState = {
+      selection: [asNodeId('a')],
+      multiActive: false,
+      boundsOf: () => ({ x: 0, y: 0, width: 100, height: 100 }),
+      unionBounds: null,
+      modifiers: NO_MOD,
+      canRotate: () => false,
+    };
+    expect(aff.regions(state)).toEqual([]);
+  });
+
+  it('emits no region when any multi-selection member cannot rotate', () => {
+    const aff = createRotationAffordance();
+    const state: ChromeState = {
+      selection: [asNodeId('a'), asNodeId('b')],
+      multiActive: true,
+      boundsOf: () => null,
+      unionBounds: { x: 0, y: 0, width: 80, height: 60 },
+      modifiers: NO_MOD,
+      canRotate: (id) => id !== 'b',
+    };
+    expect(aff.regions(state)).toEqual([]);
+  });
+
   it('hitTest applies bounds rotation', () => {
     // AABB (0,0,100,100) rotated +π/2 around center (50,50). A point in
     // the annulus band UNROTATED is at (50, -10). Under the rotation,

@@ -983,8 +983,20 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         return effectiveBoundsOf ? effectiveBoundsOf(id) : null;
       },
       modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      // Rotation-capability predicate. Reads the committed pose (gestures
+      // don't change descriptor capability) and asks the geometry. Absent
+      // adapter / unknown ids fall back to `true` so the affordance stays
+      // visible — preserves pre-existing behavior for consumers that wire
+      // bounds without an adapter.
+      canRotate: (id) => {
+        if (!geometry.supportsRotation) return true;
+        const pose = committedPoseOf(id);
+        if (pose == null) return true;
+        return geometry.supportsRotation(pose);
+      },
     }),
-    [selectedIdsForWiring, multiActive, effectiveBoundsOf, tools, geometry],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedIdsForWiring, multiActive, effectiveBoundsOf, tools, geometry, adapter],
   );
 
   // Wire the dispatcher's hit-test context. The active tool's overlay (and

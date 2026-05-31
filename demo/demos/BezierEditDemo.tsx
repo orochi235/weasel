@@ -3,8 +3,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 // needs a ref into SceneCanvas — the new `animator` prop drives redraws.
 import {
   asNodeId,
+  DEFAULT_HANDLE_SIZE,
   PathBuilder,
-  pathPoseDescriptor,
   pathToAnchors,
   SceneCanvas,
   countPathAnchors,
@@ -22,11 +22,10 @@ import type {
   CycleHandle,
   Path,
   PolygonPath,
-  PoseProjection,
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 
-const H = 360, HANDLE = 8;
+const H = 360, HANDLE = DEFAULT_HANDLE_SIZE;
 const ID = 'curve';
 
 // An open S-curve: two cubic segments back to back.
@@ -214,16 +213,8 @@ export function BezierEditDemo() {
           scene={scene}
           selection={selection}
           animator={animator}
-          // 'rotate' intentionally omitted: rotateAction can't rotate a
-          // polygon Path pose (no x/y/width/height/rotation fields), so the
-          // rotation affordance would expose a rotate cursor without a
-          // working interaction. Kit-level fix is to gate affordance
-          // visibility on pose-descriptor support; until then, demos with
-          // path-shaped poses opt out of the rotate tool.
-          defaultTools={['select', 'pen']}
           selectTool={{
             handleHitRadius: HANDLE,
-            resize: { geometry: pathPoseDescriptor as PoseProjection<Path> },
             areaSelect: { behaviors: [selectFromMarquee()] },
           }}
           layers={{

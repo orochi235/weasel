@@ -10,3 +10,10 @@ describe('pathPoseDescriptor.lerp', () => {
     });
   });
 });
+
+describe('pathPoseDescriptor.supportsRotation', () => {
+  it('returns false for Path poses so the rotation affordance hides', () => {
+    const p = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } as const;
+    expect(pathPoseDescriptor.supportsRotation!(p)).toBe(false);
+  });
+});

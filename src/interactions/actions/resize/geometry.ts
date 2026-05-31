@@ -33,6 +33,13 @@ export interface PoseProjection<TPose> {
    *  runs anchor math there, and translates the resulting pose so the
    *  diagonally opposite world-space corner is pinned. */
   getRotation?(pose: TPose): number;
+  /** True iff this pose shape can carry a rotation. Consulted by the
+   *  rotation affordance to decide whether to render the rotate cursor /
+   *  drag-band over a selection. When omitted, the kit assumes `true` for
+   *  back-compat — descriptors whose poses lack `x/y/width/height/rotation`
+   *  fields (e.g. polygon Paths) should return `false` so the affordance
+   *  hides instead of exposing a non-functional rotate cursor. */
+  supportsRotation?(pose: TPose): boolean;
 }
 
 /** AABB-vs-AABB overlap. Exported for callers building a default
