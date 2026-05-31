@@ -32,6 +32,16 @@ UI words have specific referents — don't conflate them:
 
 When positioning HUDs / overlays, pick the right anchor: "inside the workspace" means `.wd-canvas-host`'s rect, not the canvas's.
 
+## Gesture / action / interaction taxonomy
+
+Before making API changes (renames, new fields, new exports) touching anything named `gesture`, `action`, `interaction`, `binding`, or the dispatcher/routing layer, **read `docs/taxonomy.md` first**. The terms have specific referents that are easy to conflate:
+
+- **Gesture** = form of input (click, drag, wheel, keystroke, drag-rect, drag-radial) — *how* input arrives.
+- **Action** = user-intent operation (move, marquee, lasso, resize, rotate, insert, delete) — *what to do*.
+- **Interaction** = a gesture composed with an action (the binding).
+
+Don't name a field `gesture` if its values are action-shaped (`'move'`/`'marquee'`/etc.), or vice versa.
+
 ## Key concepts
 
 - **Tools** handle gestures. They read `ToolCtx` (world coords, modifiers, selection, view) and either mutate the viewport (`ctx.setView`) or write to the scene (`ctx.applyBatch` + ops).
