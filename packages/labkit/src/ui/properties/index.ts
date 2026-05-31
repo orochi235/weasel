@@ -33,3 +33,5 @@ export type {
   EffectCardListProps,
   EffectCardListItem,
 } from './EffectCard';
+export { PropertyGroup } from './PropertyGroup';
+export type { PropertyGroupProps } from './PropertyGroup';
