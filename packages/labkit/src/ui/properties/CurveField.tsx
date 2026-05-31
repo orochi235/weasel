@@ -32,7 +32,7 @@ export function CurveField({
 }: CurveFieldProps) {
   const points: ControlPoint[] = useMemo(() => {
     const out: ControlPoint[] = [];
-    for (let i = 0; i + 1 < values.length; i += 2) out.push({ x: values[i], y: values[i + 1] });
+    for (let i = 0; i + 1 < values.length; i += 2) out.push({ x: values[i]!, y: values[i + 1]! });
     return out;
   }, [values]);
 
@@ -40,9 +40,9 @@ export function CurveField({
     (next: ControlPoint[]) => {
       const flat: number[] = new Array(next.length * 2);
       for (let i = 0; i < next.length; i++) {
-        const ySnap = Math.round(next[i].y / step) * step;
+        const ySnap = Math.round(next[i]!.y / step) * step;
         const y = Math.max(min, Math.min(max, ySnap));
-        flat[i * 2] = next[i].x;
+        flat[i * 2] = next[i]!.x;
         flat[i * 2 + 1] = y;
       }
       onChange(flat);
@@ -53,7 +53,7 @@ export function CurveField({
   const handleFlip = useCallback(() => {
     const flipped: Array<{ x: number; y: number }> = [];
     for (let i = 0; i + 1 < values.length; i += 2) {
-      flipped.push({ x: 1 - values[i], y: values[i + 1] });
+      flipped.push({ x: 1 - values[i]!, y: values[i + 1]! });
     }
     flipped.sort((a, b) => a.x - b.x);
     const out: number[] = [];
