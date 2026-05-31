@@ -367,8 +367,45 @@ function StopStrip({
         renderTrack={paintGradientTrack({ gradient: gradientAtT })}
         readoutPlacement="none"
       />
+      <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+        {sorted.map(s => (
+          <label
+            key={s.id}
+            title={`Stop @ ${s.offset.toFixed(2)} — click to recolor`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '2px 6px 2px 2px',
+              border: '1px solid #555',
+              borderRadius: 3,
+              fontSize: 11,
+              color: '#bbb',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="color"
+              value={s.color}
+              onChange={e => {
+                const next = stops.map(p => (p.id === s.id ? { ...p, color: e.target.value } : p));
+                setStops(next);
+              }}
+              style={{
+                width: 20,
+                height: 20,
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                cursor: 'pointer',
+              }}
+            />
+            {s.offset.toFixed(2)}
+          </label>
+        ))}
+      </div>
       <small style={{ color: '#888', display: 'block', marginTop: 4 }}>
-        Click the track to add a stop · drag to move · drag off to remove (min 2)
+        Click the track to add a stop · drag thumb to move · drag off to remove (min 2) · click a swatch below to recolor
       </small>
     </div>
   );
