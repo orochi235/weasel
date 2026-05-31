@@ -1,11 +1,14 @@
 .field {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
   gap: 4px;
 }
 
 .trigger {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   align-items: center;
   gap: 6px;
   height: 24px;

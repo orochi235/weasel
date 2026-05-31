@@ -1,6 +1,7 @@
 .slider {
   display: flex;
   flex-direction: column;
+  width: 100%;
   gap: 4px;
   font-family: var(--wzl-font-ui);
   color: var(--wzl-fg);
@@ -35,6 +36,7 @@
 .track {
   position: relative;
   height: 6px;
+  min-width: 80px;
   background: var(--wzl-track-bg);
   border: 1px solid var(--wzl-track-border);
   border-radius: 3px;
