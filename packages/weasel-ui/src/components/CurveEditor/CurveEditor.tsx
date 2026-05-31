@@ -424,15 +424,15 @@ export function CurveEditor(props: CurveEditorProps) {
     return index === 0 || index === value.length - 1;
   }, [endpoints, value.length]);
 
-  // "Fully locked" — caller marked the anchor `locked: true`, OR the
-  // endpoints mode pins both axes for endpoints. These anchors can't
-  // be dragged or deleted; they render as smaller diamonds with the
-  // locked styling.
+  // "Fully locked" — caller marked the anchor `locked: true`. These
+  // anchors swallow pointer gestures entirely. Pinned-both endpoints
+  // are NOT locked: they accept drag input (so onChange/onChangeCommit
+  // still fire with the clamped-to-corner value), but the move handler
+  // pins both axes so the visual position doesn't change. Delete
+  // protection for pinned endpoints lives in `isPinnedEndpoint`.
   const isLocked = useCallback((index: number): boolean => {
-    if (value[index]?.locked) return true;
-    if (endpoints === 'pinned-both' && (index === 0 || index === value.length - 1)) return true;
-    return false;
-  }, [endpoints, value]);
+    return value[index]?.locked === true;
+  }, [value]);
 
   const deleteAnchor = useCallback((index: number): void => {
     if (isLocked(index)) return;
