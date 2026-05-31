@@ -35,3 +35,5 @@ export type {
 } from './EffectCard';
 export { PropertyGroup } from './PropertyGroup';
 export type { PropertyGroupProps } from './PropertyGroup';
+export { CurveField } from './CurveField';
+export type { CurveFieldProps } from './CurveField';
