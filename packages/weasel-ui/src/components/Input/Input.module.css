@@ -1,0 +1,58 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.frame {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  background: var(--wzl-input-bg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui);
+  font-size: 13px;
+  line-height: 1;
+  transition: border-color 100ms, box-shadow 100ms;
+}
+
+.frame:focus-within {
+  border-color: var(--wzl-focus-ring);
+  box-shadow: 0 0 0 1px var(--wzl-focus-ring);
+}
+
+.field[data-invalid] .frame {
+  border-color: var(--wzl-danger, #ff5b5b);
+}
+
+.field[data-disabled] .frame {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.frame input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+
+.frame input::placeholder {
+  color: var(--wzl-fg-subtle);
+}
+
+.adornment {
+  display: inline-flex;
+  align-items: center;
+  color: var(--wzl-fg-subtle);
+  font-size: 12px;
+  pointer-events: none;
+}

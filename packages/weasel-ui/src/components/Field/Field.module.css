@@ -1,0 +1,37 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--wzl-font-ui);
+  color: var(--wzl-fg);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wzl-fg);
+  cursor: default;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--wzl-fg-subtle);
+  line-height: 1.4;
+}
+
+.error {
+  font-size: 11px;
+  color: var(--wzl-danger, #ff5b5b);
+  line-height: 1.4;
+}
+
+.row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.row .label {
+  flex: 1;
+  min-width: 0;
+}
