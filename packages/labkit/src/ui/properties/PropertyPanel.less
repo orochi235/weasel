@@ -25,12 +25,26 @@
 .lk-property-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 16px;
-  row-gap: 10px;
-  align-items: start;
+  column-gap: 18px;
+  row-gap: 6px;
+  align-items: stretch;
 }
 
-.lk-property-list > :not(.lk-property-row--color) {
+// Default packing: only color rows pair, everything else spans full width.
+// Scoped to NOT apply in pairs mode (otherwise this 0,2,0 selector beats the
+// pairs override below, which is only 0,1,0).
+.lk-property-list:not(.lk-property-list--pairs) > :not(.lk-property-row--color) {
+  grid-column: 1 / -1;
+}
+
+// `pack="pairs"` flips that: every row auto-places into the 2-col grid two
+// per row, and explicit full-width children opt in via the span helper class.
+.lk-property-list--pairs > * {
+  min-width: 0;
+}
+.lk-property-list--pairs > .lk-property-list__span,
+.lk-property-list--pairs > .lk-subpanel,
+.lk-property-list--pairs > h3 {
   grid-column: 1 / -1;
 }
 
@@ -41,8 +55,31 @@
 .lk-property-row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  // No gap by default — controls sit flush under their label, matching
+  // speech-balloons `.field { gap: 0 }`. Slider rows pull tighter still
+  // via a negative margin on the label below.
+  gap: 0;
   min-width: 0;
+}
+
+// Slider rows: pull the track up under the label so the row reads as one
+// tight block rather than a label + a separate horizontal strip. Also
+// bottom-align the track within the row so paired rows in a 2-col grid
+// keep their tracks lined up even when one label wraps to two lines.
+// Ported from speech-balloons styles.css:344-355.
+.lk-property-row:has(> input[type='range']) {
+  justify-content: flex-end;
+}
+.lk-property-row:has(> input[type='range']) > .lk-property-row__label {
+  // Baseline-align (not center) so the readout input doesn't inflate the
+  // label-group height past the text baseline. Matches SB styles.css:351.
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: -4px;
+}
+.lk-property-row > input[type='range'] {
+  margin-top: auto;
 }
 
 .lk-property-row__label {
@@ -65,35 +102,35 @@
   margin-left: auto;
 }
 
-.lk-property-row__readout-button {
-  background: none;
-  border: 0;
-  padding: 0 2px;
-  margin: 0;
+// Single always-rendered <input> styled to read as a text label until focused.
+// Padding/margin/width copied verbatim from speech-balloons (styles.css:384-409)
+// so visual density matches the source.
+.lk-property-row__readout-input {
   font: inherit;
-  color: var(--lk-accent);
   font-weight: var(--lk-font-weight-medium, 500);
+  // Force line-height 1 (the label parent inherits 1.2, which would make
+  // the input box ~3px taller than the SB reference). Matches SB
+  // styles.css:385 `font: 500 0.78rem/1`.
+  line-height: 1;
+  color: var(--lk-accent);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 1px 0;
+  margin: 0;
+  width: calc(5em - 24px);
+  text-align: right;
   cursor: text;
-  border-radius: var(--lk-radius-sm);
+  outline: none;
+  transition: background 80ms ease, border-color 80ms ease;
+  -moz-appearance: textfield;
 }
-.lk-property-row__readout-button:hover {
+.lk-property-row__readout-input:hover {
   background: rgba(255, 255, 255, 0.06);
 }
-.lk-property-row__readout-button:focus-visible {
-  outline: 1px solid var(--lk-focus-ring);
-}
-
-.lk-property-row__readout-input {
-  width: 5ch;
-  padding: 0 2px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid var(--lk-accent);
-  border-radius: var(--lk-radius-sm);
-  color: var(--lk-text);
-  font: inherit;
-  font-weight: var(--lk-font-weight-medium, 500);
-  text-align: right;
-  outline: none;
+.lk-property-row__readout-input:focus {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--lk-accent);
 }
 .lk-property-row__readout-input::-webkit-inner-spin-button,
 .lk-property-row__readout-input::-webkit-outer-spin-button {
@@ -126,13 +163,14 @@
 }
 
 .lk-property-row input[type='range'] {
-  width: calc(100% + 8px);
-  margin: 0 -4px;
   // Hairline track + small translucent thumb, tinted with the active --lk-accent.
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
-  height: 18px;
+  width: 100%;
+  height: 12px;
+  margin: 0;
+  padding: 0;
   cursor: pointer;
 }
 .lk-property-row input[type='range']::-webkit-slider-runnable-track {
@@ -182,15 +220,12 @@
   min-width: 0;
 }
 
-// Inline + range needs the negative-margin trick to not double-shift.
 .lk-property-row--inline input[type='range'] {
   width: auto;
-  margin: 0;
 }
 
-.lk-property-row input[type='text'],
-.lk-property-row input[type='number'],
-.lk-property-row select {
+.lk-property-row input[type='text']:not(.lk-property-row__readout-input),
+.lk-property-row input[type='number'] {
   background: rgba(0, 0, 0, 0.35);
   color: var(--lk-text);
   border: 1px solid var(--lk-border);
@@ -199,10 +234,27 @@
   font: 400 0.85rem/1 var(--lk-font);
 }
 
-.lk-property-row input[type='text']:focus,
-.lk-property-row input[type='number']:focus,
+.lk-property-row input[type='text']:not(.lk-property-row__readout-input):focus,
+.lk-property-row input[type='number']:focus {
+  outline: 1px solid var(--lk-accent);
+}
+
+// Selects in property rows render borderless — chevron only, transparent
+// background, no chrome. Matches the effect-kind-select pattern from SB
+// styles.css:699-723. Keep the native arrow via appearance: auto so users
+// still see something clickable.
+.lk-property-row select {
+  background: transparent;
+  color: var(--lk-text);
+  border: 0;
+  border-radius: 0;
+  padding: 2px 0;
+  font: 400 0.85rem/1 var(--lk-font);
+  cursor: pointer;
+}
 .lk-property-row select:focus {
   outline: 1px solid var(--lk-accent);
+  outline-offset: 2px;
 }
 
 // ── Color variant: label and swatch side-by-side, two per row in the grid.
@@ -225,16 +277,22 @@
   min-width: 0;
 }
 
+// Color swatch matches speech-balloons styles.css:451-461 exactly:
+// 36×24, hairline border, no padding. Padding: 0 is important — the native
+// <input type="color"> in some browsers (esp. Chrome) inflates beyond its
+// declared box when given padding, which expands the grid row and pushes
+// the paired slider track out of bottom alignment.
 .lk-property-row--color input[type='color'] {
   grid-column: 2;
   grid-row: 1;
   align-self: center;
+  box-sizing: border-box;
   width: 36px;
-  height: 24px;
+  height: 18px;
   background: transparent;
-  border: 1px solid var(--lk-border);
+  border: 0;
   border-radius: var(--lk-radius-sm);
-  padding: 2px;
+  padding: 0;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -340,4 +398,191 @@
 
 .lk-property-row__toggle-button--selected:hover {
   color: #0a0a14;
+}
+
+// ── Subpanel ────────────────────────────────────────────────────────
+// Headered group of controls inside a list. The header is a typographic
+// label flanked by a horizontal rule — no card chrome, just the divider.
+.lk-subpanel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10px;
+  row-gap: 3px;
+  align-items: stretch;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.lk-subpanel > * { min-width: 0; }
+.lk-subpanel > .lk-subpanel__title,
+.lk-subpanel > .lk-property-list__span {
+  grid-column: 1 / -1;
+}
+.lk-subpanel__title {
+  font-family: var(--lk-font-display);
+  font-weight: 400;
+  font-size: 0.72rem;
+  line-height: 1;
+  color: var(--lk-text);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+  padding: 6px 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lk-subpanel__title > span { flex: 0 0 auto; }
+.lk-subpanel__title > hr {
+  flex: 1 1 auto;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 0;
+}
+
+// ── EffectCard ──────────────────────────────────────────────────────
+// Draggable, collapsible card. Optional --lk-panel-accent re-binds the
+// local --lk-accent so every descendant control auto-tints. Ported from
+// speech-balloons styles.css:597-758 with class renames.
+.lk-effect-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--lk-border);
+  border-radius: var(--lk-radius-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.lk-effect-card.is-dragging { opacity: 0.45; }
+.lk-effect-card.is-expanded { background: rgba(0, 0, 0, 0.3); }
+
+.lk-effect-card.has-accent {
+  // Re-bind --lk-accent inside the card so every descendant style that paints
+  // with var(--lk-accent) (readouts, slider thumb, etc.) picks up the
+  // per-card tint automatically.
+  --lk-accent: var(--lk-panel-accent);
+  background: color-mix(in srgb, var(--lk-panel-accent) 4%, rgba(0, 0, 0, 0.28));
+  border-color: color-mix(in srgb, var(--lk-panel-accent) 28%, var(--lk-border));
+  border-left-width: 4px;
+  border-left-color: var(--lk-panel-accent);
+}
+.lk-effect-card.has-accent.is-expanded {
+  background: color-mix(in srgb, var(--lk-panel-accent) 5%, rgba(0, 0, 0, 0.35));
+}
+.lk-effect-card.has-accent .lk-effect-card__head {
+  background: color-mix(in srgb, var(--lk-panel-accent) 38%, rgba(0, 0, 0, 0.4));
+}
+.lk-effect-card.has-accent .lk-effect-card__head:hover {
+  background: color-mix(in srgb, var(--lk-panel-accent) 48%, rgba(0, 0, 0, 0.35));
+}
+
+.lk-effect-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.lk-effect-card__head:hover { background: rgba(255, 255, 255, 0.03); }
+
+.lk-effect-card__handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--lk-text-muted);
+  cursor: grab;
+  padding: 0 2px;
+}
+.lk-effect-card__handle:active { cursor: grabbing; }
+
+.lk-effect-card__index-badge {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  min-width: 14px;
+  padding: 0 2px;
+  color: var(--lk-panel-accent, var(--lk-text-muted));
+  font-size: 14px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  line-height: 1;
+}
+
+.lk-effect-card__title {
+  font-family: var(--lk-font-display);
+  font-weight: 500;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--lk-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lk-effect-card__primary {
+  font: 400 0.75rem/1 var(--lk-font);
+  color: var(--lk-text);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--lk-border);
+  border-radius: var(--lk-radius-sm);
+  padding: 2px 6px;
+  margin-left: auto;
+}
+// Push the remove button to the right edge — whether it follows a primary
+// chip or sits alone after the title.
+.lk-effect-card__head .lk-effect-card__remove,
+.lk-effect-card__head .lk-effect-card__primary + .lk-effect-card__remove {
+  margin-left: auto;
+}
+.lk-effect-card__head .lk-effect-card__primary ~ .lk-effect-card__remove {
+  margin-left: 4px;
+}
+
+.lk-effect-card__remove {
+  background: transparent;
+  color: var(--lk-text-muted);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  width: 22px;
+  height: 22px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.lk-effect-card__remove:hover {
+  color: #ffb3a8;
+  border-color: rgba(240, 68, 56, 0.4);
+  background: rgba(240, 68, 56, 0.08);
+}
+
+.lk-effect-card__body {
+  padding: 4px 12px 12px;
+  border-top: 1px solid var(--lk-border);
+  // Body content is typically a PropertyList — the consumer chooses pack mode.
+}
+
+// ── EffectCardList ──────────────────────────────────────────────────
+.lk-effect-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lk-effect-card-list__wrap { position: relative; }
+.lk-effect-card-list__drop-hint {
+  height: 0;
+  border-top: 2px solid var(--lk-accent);
+  border-radius: 2px;
+  margin: 2px 0;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--lk-accent) 60%, transparent);
+}
+.lk-effect-card-list__empty {
+  font: var(--lk-font-weight-light, 300) 0.78rem/1.4 var(--lk-font-display);
+  color: var(--lk-text-muted);
+  text-align: center;
+  padding: 16px 12px;
+  border: 1px dashed var(--lk-border);
+  border-radius: var(--lk-radius-sm);
 }

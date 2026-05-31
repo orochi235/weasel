@@ -17,19 +17,29 @@ export function PropertyPanel({ title, children, className }: PropertyPanelProps
   );
 }
 
+export type PropertyListPack = 'auto-color' | 'pairs';
+
 export interface PropertyListProps {
   children: ReactNode;
   className?: string;
+  /**
+   * How rows pack into the 2-column grid.
+   *   - `'auto-color'` (default): only color rows pair side-by-side; everything
+   *     else spans the full width. Right for sparse top-level panels.
+   *   - `'pairs'`: every row auto-places into the 2-column grid two-per-row.
+   *     Headers, subpanels, and full-width children (`<hr>`, curve blocks)
+   *     still span via `lk-property-list__span`. Right for dense effect bodies.
+   */
+  pack?: PropertyListPack;
 }
 
 /**
- * Grid container for PropertyRows. Arranges rows in a 2-column grid where
- * consecutive ColorRows pair side-by-side and every other row spans full width.
- * Use standalone for chrome-less layouts, or nest inside <PropertyPanel/> for
- * the standard glass card.
+ * Grid container for PropertyRows. Use standalone for chrome-less layouts, or
+ * nest inside <PropertyPanel/> for the standard glass card.
  */
-export function PropertyList({ children, className }: PropertyListProps) {
-  const cls = className ? `lk-property-list ${className}` : 'lk-property-list';
+export function PropertyList({ children, className, pack = 'auto-color' }: PropertyListProps) {
+  const packClass = pack === 'pairs' ? ' lk-property-list--pairs' : '';
+  const cls = `lk-property-list${packClass}${className ? ` ${className}` : ''}`;
   return <div className={cls}>{children}</div>;
 }
 
@@ -117,7 +127,6 @@ export function SliderRow({
           value={value}
           min={min}
           max={max}
-          step={step}
           format={format}
           unit={unit}
           onCommit={onChange}
@@ -127,6 +136,7 @@ export function SliderRow({
     >
       <input
         type="range"
+        tabIndex={-1}
         min={min}
         max={max}
         step={step}
@@ -141,7 +151,6 @@ interface EditableReadoutProps {
   value: number;
   min: number;
   max: number;
-  step: number;
   format?: (value: number) => ReactNode;
   unit?: ReactNode;
   onCommit: (next: number) => void;
@@ -152,20 +161,16 @@ interface EditableReadoutProps {
  * cancels on Escape. Clicks are stopped so the wrapping <label> doesn't
  * forward focus to the slider thumb.
  */
-function EditableReadout({
-  value,
-  min,
-  max,
-  step,
-  format,
-  unit,
-  onCommit,
-}: EditableReadoutProps) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
+function EditableReadout({ value, min, max, format, unit, onCommit }: EditableReadoutProps) {
+  // Draft is non-null only while the input is focused. Live value mirrors
+  // into the input otherwise. Pattern mirrors speech-balloons Lab.tsx:893-942.
+  const [draft, setDraft] = useState<string | null>(null);
+  const fmt = (n: number) => (format ? format(n) : formatNumber(n));
+  const displayValue = draft !== null ? draft : (() => {
+    const formatted = fmt(value);
+    return typeof formatted === 'string' ? formatted : String(formatted);
+  })();
 
-  // String units get the word-style wrapper; JSX (e.g. <sup>°</sup>) renders
-  // as-is and inherits its styling from the .lk-property-row__readout-group rule.
   const suffix =
     unit == null
       ? null
@@ -173,54 +178,43 @@ function EditableReadout({
         ? <span className="lk-property-row__readout-unit">{unit}</span>
         : unit;
 
-  if (!editing) {
-    return (
-      <span className="lk-property-row__readout-group">
-        <button
-          type="button"
-          className="lk-property-row__readout-button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={(e) => {
-            e.stopPropagation();
-            setDraft(formatNumber(value));
-            setEditing(true);
-          }}
-        >
-          {format ? format(value) : formatNumber(value)}
-        </button>
-        {suffix}
-      </span>
-    );
-  }
-
   const commit = () => {
-    const n = parseSignedNumber(draft);
-    if (Number.isFinite(n)) {
-      const clamped = Math.min(max, Math.max(min, n));
-      onCommit(clamped);
+    if (draft !== null) {
+      const n = parseSignedNumber(draft);
+      if (Number.isFinite(n)) onCommit(Math.min(max, Math.max(min, n)));
     }
-    setEditing(false);
+    setDraft(null);
   };
 
   return (
     <span className="lk-property-row__readout-group">
       <input
-        autoFocus
         type="text"
         inputMode="decimal"
         className="lk-property-row__readout-input"
-        value={draft}
+        value={displayValue}
+        onFocus={(e) => {
+          const formatted = fmt(value);
+          setDraft(typeof formatted === 'string' ? formatted : String(formatted));
+          e.currentTarget.select();
+        }}
         onChange={(e) => setDraft(e.target.value.replace(/-/g, '−'))}
-        onClick={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
         onBlur={commit}
+        onClick={(e) => {
+          // Stop the click from reaching the wrapping <label> (which would
+          // forward focus to the slider thumb).
+          e.preventDefault();
+          e.stopPropagation();
+          e.currentTarget.focus();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
-            e.preventDefault();
             commit();
+            e.currentTarget.blur();
           } else if (e.key === 'Escape') {
-            e.preventDefault();
-            setEditing(false);
+            setDraft(null);
+            e.currentTarget.blur();
           }
         }}
       />

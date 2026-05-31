@@ -102,7 +102,7 @@ describe('SliderRow', () => {
         format={(v) => v.toFixed(2)}
       />,
     );
-    expect(screen.getByText('0.50')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('0.50')).toBeInTheDocument();
   });
 });
 
