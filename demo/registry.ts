@@ -23,6 +23,7 @@ import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
 import { EasingsDemo } from './demos/EasingsDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
 import { ViewportLayerDemo } from './demos/ViewportLayerDemo';
+import { MinimapDemo } from './demos/MinimapDemo';
 import { ParallaxDemo } from './demos/ParallaxDemo';
 import { ForceGraphDemo } from './demos/ForceGraphDemo';
 import { D3SortableDemo } from './demos/D3SortableDemo';
@@ -60,6 +61,7 @@ import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
 import ViewportLayerDemoFull from './demos/ViewportLayerDemo.tsx?raw';
+import MinimapDemoFull from './demos/MinimapDemo.tsx?raw';
 import ParallaxDemoFull from './demos/ParallaxDemo.tsx?raw';
 import ForceGraphDemoFull from './demos/ForceGraphDemo.tsx?raw';
 import D3SortableDemoFull from './demos/D3SortableDemo.tsx?raw';
@@ -383,6 +385,16 @@ export const DEMOS: DemoEntry[] = [
     Component: ViewportLayerDemo,
     full: ViewportLayerDemoFull,
     path: 'demo/demos/ViewportLayerDemo.tsx',
+  },
+  {
+    id: 'minimap',
+    title: 'Minimap (detached)',
+    category: 'Viewport',
+    description: '<MinimapCanvas> mounts its own <canvas> in a sidebar (separate DOM location, own WebGL2 context) and renders the same scene the main canvas shows, through a derived fit view. A dashed indicator tracks the main canvas\'s visible window in world coords; click to recenter the main view on that world point, drag to pan continuously. Pointer-independent from the main canvas — the browser routes events by element under the cursor. No tool/action/dispatcher participation; the minimap is one hardcoded gesture pair with a fixed effect.',
+    hint: 'H = hand on main · click minimap to recenter · drag minimap to pan',
+    Component: MinimapDemo,
+    full: MinimapDemoFull,
+    path: 'demo/demos/MinimapDemo.tsx',
   },
   {
     id: 'parallax',
