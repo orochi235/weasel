@@ -183,7 +183,16 @@ export function LayerStack({
                     ✕
                   </button>
                 </div>
-                {expanded && <div className="lk-layer-card__body">{renderBody(item)}</div>}
+                {expanded && (
+                  <div
+                    className="lk-layer-card__body"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerMove={(e) => e.stopPropagation()}
+                    onPointerUp={(e) => e.stopPropagation()}
+                  >
+                    {renderBody(item)}
+                  </div>
+                )}
               </div>
               {showHintAfter && <div className="lk-layer-stack__drop-hint" />}
             </div>
