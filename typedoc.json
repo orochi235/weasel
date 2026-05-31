@@ -25,15 +25,23 @@
     "PencilScratch",
     "SelectScratch",
     "PenEditState",
-    "AreaScratch",
-    "MoveScratchTag",
     "HitAdapter",
-    "ApplyBatch",
     "BooleanZOrder",
     "OrderedSceneShape",
     "ReorderAdapter",
     "ToolsDispatcherOptions",
     "CreateDebugOverlayLayerOpts",
-    "STANDARD_SLOTS"
+    "STANDARD_SLOTS",
+    "KeyBinding",
+    "AreaSelectController",
+    "InsertController",
+    "MoveController",
+    "ResizeController",
+    "RotateController",
+    "ColorContextValue",
+    "PenAnchor",
+    "PencilPoint",
+    "AffordanceHit",
+    "View"
   ]
 }

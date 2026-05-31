@@ -73,4 +73,4 @@ export type {
 
 // Pure matcher functions
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase } from './ui/match';
-export type { PhaseContext } from './ui/match';
+export type { PhaseContext, ModifiersEvent } from './ui/match';

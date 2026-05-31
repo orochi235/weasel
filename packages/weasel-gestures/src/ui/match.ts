@@ -27,7 +27,7 @@ import type { PhaseAtom } from '../grammar/routeGrammar';
 // matchModifiers
 // ---------------------------------------------------------------------------
 
-type ModifiersEvent = { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
+export type ModifiersEvent = { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
 
 /** Per-physical-key requirement resolved from a `ModSpec`:
  *  - `'required'`  — the key MUST be held

@@ -563,7 +563,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /**
      * Chrome-caps visibility overrides, keyed by chrome id (`selection.outline`,
      * `selection.rotation-handle`, `gesture.marquee`, …). Each entry is a
-     * composable {@link import('features/chrome-caps').Condition} built from the
+     * composable {@link Condition} built from the
      * `cond()` builder. Merged on top of the kit's `defaultVisibilityRules`;
      * unspecified ids fall through to the defaults.
      *

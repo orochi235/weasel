@@ -105,7 +105,7 @@ export {
 } from './interactions/actions/registry';
 export type {
   Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
-  UiOngoingControl,
+  UiOngoingControl, BoundGesture,
 } from './interactions/actions/registry';
 export { moveAction } from './interactions/actions/defaults/move';
 export { resizeAction } from './interactions/actions/defaults/resize';
@@ -159,7 +159,16 @@ export type {
   DepName,
   DepRegistry,
 } from './interactions/actions/depRegistry';
-export type { ResizePolicy } from './interactions/actions/depSchema';
+export type {
+  AreaSelectDep,
+  EditAnchorsDep,
+  InsertDep,
+  InsertExtras,
+  LassoSelectDep,
+  NodeAtPointDep,
+  ResizePolicy,
+  ViewApi,
+} from './interactions/actions/depSchema';
 export {
   useResizePolicy,
   type UseResizePolicyOptions,
@@ -253,7 +262,7 @@ export {
   buildSceneViewCommands,
   renderSceneToCanvas,
 } from './canvas/sceneViewRender';
-export type { SceneViewDrawOne } from './canvas/sceneViewRender';
+export type { SceneViewDrawOne, RenderSceneToCanvasArgs } from './canvas/sceneViewRender';
 export {
   FALLBACK_FIT_VIEW,
   computeFitView,
@@ -336,6 +345,55 @@ export {
   type RotationScratch,
 } from './affordances';
 export type { ChromeState } from './core/selection/chromeState';
+
+// ─── chrome-caps: declarative chrome-visibility rules ──────────────────────
+export {
+  cond,
+  when,
+  and,
+  or,
+  not,
+  always,
+  never,
+  focused,
+  gesturing,
+  actionIs,
+  selectionEmpty,
+  selectionIs,
+  selectionAtLeast,
+  multiActive,
+  hovering,
+  hoveringSelected,
+  modifierHeld,
+  zoomAtLeast,
+  modeIs,
+  modeIn,
+  modeNot,
+  capabilityIs,
+  capabilityIn,
+  capabilityAll,
+  capabilityNot,
+  evaluate,
+  ALWAYS,
+  NEVER,
+  buildRuleCtx,
+  defaultVisibilityRules,
+  resolveVisibility,
+  buildChromeCtx,
+  useHoverTracking,
+} from './features/chrome-caps';
+export type {
+  ChromeCtx,
+  ChromeId,
+  Condition,
+  VisibilityRules,
+  Rule,
+  Selector,
+  RuleCtx,
+  BuildRuleCtxArgs,
+  BuildChromeCtxArgs,
+  UseHoverTrackingArgs,
+} from './features/chrome-caps';
 
 // ─── Selection overlay: outlines, handles, composer ─────────────────────────
 export {
@@ -701,6 +759,7 @@ export type {
   BooleanOp,
   BooleansAdapter,
   BooleanOpResult,
+  UseBooleansOptions,
   UseBooleansReturn,
 } from './interactions/actions/booleans';
 
@@ -789,6 +848,8 @@ export type {
 export type { BuiltinToolId, ToolBundle } from './canvas/SceneCanvas';
 export { BUNDLE_TOOLS, rotateAroundAABBCenter } from './canvas/SceneCanvas';
 export { KIT_SHAPE_KINDS } from './canvas/SceneCanvas/useBuiltinShapeTools';
+export type { BuiltinShapeToolId, BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
+export type { ViewportConfig } from './canvas/SceneCanvas/useViewportTools';
 export type {
   SceneToAdapterOptions,
   SceneAdapterSelection,
