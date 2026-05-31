@@ -38,6 +38,7 @@ export * from './lab';
 export type { LayerListProps } from './layers';
 export { LayerList } from './layers';
 export * from './primitives';
+export * from './ui/layers';
 export * from './ui/properties';
 export {
   createMemoryAdapter,
