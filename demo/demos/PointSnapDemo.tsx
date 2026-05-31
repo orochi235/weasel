@@ -116,25 +116,14 @@ function PointSnapDemoInner() {
           },
         },
         scene: {
-          drawOne: (_node, p): DrawCommand[] => {
-            const cxw = p.x + p.width / 2;
-            const cyw = p.y + p.height / 2;
-            const cs = Math.cos(p.rotation);
-            const sn = Math.sin(p.rotation);
-            const a = cs, b = sn, c = -sn, d = cs;
-            const tx = cxw - a * cxw - c * cyw;
-            const ty = cyw - b * cxw - d * cyw;
-            const transform = new Float32Array([a, b, 0, c, d, 0, tx, ty, 1]);
-            return [{
-              kind: 'group',
-              transform,
-              children: [{
-                kind: 'path',
-                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-                fill: { color: p.color },
-              }],
-            }];
-          },
+          // drawOne returns unrotated geometry; SceneCanvas wraps the
+          // output in a rotation transform when `pose.rotation` is set
+          // (see `wrapWithPoseRotation` in `src/canvas/poseRotation.ts`).
+          drawOne: (_node, p): DrawCommand[] => [{
+            kind: 'path',
+            path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+            fill: { color: p.color },
+          }],
         },
         selectionOverlay: { rotationHandle: false },
       }}
