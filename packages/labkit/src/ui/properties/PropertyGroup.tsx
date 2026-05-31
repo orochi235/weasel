@@ -7,6 +7,13 @@ export interface PropertyGroupProps {
   hidden?: boolean;
   children: ReactNode;
   className?: string;
+  /**
+   * How rows pack into the 2-column grid.
+   *   - `'auto-color'` (default): only color rows pair side-by-side; everything
+   *     else spans the full width.
+   *   - `'pairs'`: every row auto-places into the 2-column grid two-per-row.
+   */
+  pack?: 'auto-color' | 'pairs';
 }
 
 /**
@@ -14,9 +21,10 @@ export interface PropertyGroupProps {
  * related rows under a heading (e.g. "Aqua", "Bevel", "Dome" sections
  * inside a fill effect's controls).
  */
-export function PropertyGroup({ title, hidden, children, className }: PropertyGroupProps) {
+export function PropertyGroup({ title, hidden, children, className, pack = 'auto-color' }: PropertyGroupProps) {
   if (hidden) return null;
-  const cls = className ? `lk-property-group ${className}` : 'lk-property-group';
+  const packClass = pack === 'pairs' ? ' lk-property-group--pairs' : '';
+  const cls = `lk-property-group${packClass}${className ? ` ${className}` : ''}`;
   return (
     <div className={cls}>
       <h3 className="lk-property-group__title">

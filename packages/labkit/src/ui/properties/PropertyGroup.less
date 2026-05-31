@@ -33,6 +33,15 @@
   align-items: start;
 }
 
-.lk-property-group__body > :not(.lk-property-row--color) {
+.lk-property-group:not(.lk-property-group--pairs) .lk-property-group__body > :not(.lk-property-row--color) {
+  grid-column: 1 / -1;
+}
+
+.lk-property-group--pairs .lk-property-group__body > * {
+  grid-column: auto;
+}
+
+.lk-property-group--pairs .lk-property-group__body > h3,
+.lk-property-group--pairs .lk-property-group__body > .lk-property-group__span {
   grid-column: 1 / -1;
 }
