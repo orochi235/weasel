@@ -47,6 +47,10 @@
       "types": "./dist/passthrough/weasel-ui.d.ts",
       "import": "./dist/passthrough/weasel-ui.js"
     },
+    "./weasel-canvas": {
+      "types": "./dist/passthrough/weasel-canvas.d.ts",
+      "import": "./dist/passthrough/weasel-canvas.js"
+    },
     "./ui/layers": {
       "types": "./dist/ui/layers/index.d.ts",
       "import": "./dist/ui/layers/index.js"
@@ -75,13 +79,13 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@orochi235/weasel": "file:../weasel",
     "@orochi235/weasel-modes": "file:../weasel/packages/weasel-modes",
     "@orochi235/weasel-ui": "file:../weasel/packages/weasel-ui",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
-    "@orochi235/weasel": "file:../weasel",
     "@storybook/addon-a11y": "^8.4.0",
     "@storybook/addon-essentials": "^8.4.0",
     "@storybook/addon-interactions": "^8.4.0",

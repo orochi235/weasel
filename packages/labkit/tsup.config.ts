@@ -11,6 +11,7 @@ export default defineConfig({
     'undo/index': 'src/undo/index.ts',
     'dragdrop/index': 'src/dragdrop/index.ts',
     'passthrough/weasel-ui': 'src/passthrough/weasel-ui.ts',
+    'passthrough/weasel-canvas': 'src/passthrough/weasel-canvas.ts',
     'ui/layers/index': 'src/ui/layers/index.ts',
   },
   format: ['esm'],
@@ -18,7 +19,13 @@ export default defineConfig({
   dts: { tsconfig: './tsconfig.lib.json' },
   sourcemap: true,
   clean: true,
-  external: ['react', 'react-dom', '@orochi235/weasel-ui', '@orochi235/weasel-modes'],
+  external: [
+    'react',
+    'react-dom',
+    '@orochi235/weasel',
+    '@orochi235/weasel-ui',
+    '@orochi235/weasel-modes',
+  ],
   splitting: true,
   treeshake: true,
 });
