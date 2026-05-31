@@ -78,9 +78,11 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
   // `handleHitRadius` knobs are no longer used — the affordance is now
   // an invisible elliptical ring around the selection AABB (see
   // `createRotationAffordance`). The `bandPx` option is the only knob
-  // exposed for ring thickness, defaulting to 24.
+  // exposed for ring thickness, defaulting to 24. `paint: null` keeps
+  // the ring fully invisible — the cursor change on hover is the only
+  // visual cue, matching the documented intent.
   const rotationAff = useMemo(
-    () => createRotationAffordance({ bandPx: rotationHandleDistance }),
+    () => createRotationAffordance({ bandPx: rotationHandleDistance, paint: null }),
     [rotationHandleDistance],
   );
 
