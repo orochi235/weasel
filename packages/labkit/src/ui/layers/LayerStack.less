@@ -78,7 +78,9 @@
   padding: 6px 8px;
 }
 
-.lk-layer-card__handle {
+// Prefixed with `.lk-root` to outrank the .lk-root button rule in base.less,
+// which would otherwise paint a chrome border + elevated bg on these buttons.
+.lk-root .lk-layer-card__handle {
   background: transparent;
   border: 0;
   color: var(--lk-text-dim);
@@ -113,9 +115,10 @@
   background: transparent;
   border: 0;
   color: var(--lk-text);
+  font: inherit;
 }
 
-.lk-layer-card__remove {
+.lk-root .lk-layer-card__remove {
   background: transparent;
   border: 0;
   color: var(--lk-text-dim);
