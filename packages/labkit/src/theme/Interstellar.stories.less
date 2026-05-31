@@ -1,0 +1,92 @@
+// Storybook-only docs styles for the Interstellar theme page. Not bundled
+// into the library — imported by Interstellar.stories.tsx for vite/storybook.
+
+.lk-theme-doc {
+  font-family: var(--lk-font);
+  color: var(--lk-text);
+}
+
+.lk-theme-doc__grid {
+  display: grid;
+  gap: 32px;
+  max-width: 1100px;
+}
+
+.lk-theme-doc__heading {
+  font: 300 0.72rem/1 var(--lk-font-display);
+  color: var(--lk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 12px;
+}
+
+.lk-theme-doc__swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.lk-theme-doc__swatch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--lk-bg-elevated);
+  border: 1px solid var(--lk-border);
+  border-radius: var(--lk-radius-lg);
+  padding: 10px 12px;
+  backdrop-filter: blur(var(--lk-glass-blur, 0));
+  -webkit-backdrop-filter: blur(var(--lk-glass-blur, 0));
+}
+
+.lk-theme-doc__swatch-fill {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--lk-radius-sm);
+  border: 1px solid var(--lk-border);
+  flex-shrink: 0;
+}
+
+.lk-theme-doc__swatch-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.lk-theme-doc__swatch-name {
+  font: 300 0.95rem/1 var(--lk-font-display);
+  color: var(--lk-text);
+}
+
+.lk-theme-doc__swatch-var,
+.lk-theme-doc__swatch-value {
+  font: 400 0.7rem/1.2 var(--lk-font-mono);
+  color: var(--lk-text-muted);
+  word-break: break-all;
+}
+
+.lk-theme-doc__swatch-value {
+  color: var(--lk-text);
+}
+
+.lk-theme-doc__nebula {
+  width: 100%;
+  height: 200px;
+  border-radius: var(--lk-radius-lg);
+  border: 1px solid var(--lk-border);
+}
+
+.lk-theme-doc__note {
+  font: 400 0.85rem/1.5 var(--lk-font);
+  color: var(--lk-text-muted);
+  margin-top: 12px;
+  max-width: 640px;
+}
+
+.lk-theme-doc__type-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
+}

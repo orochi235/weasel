@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { formatNumber, parseSignedNumber } from '../format';
 
 export interface PropertyPanelProps {
   title?: ReactNode;
@@ -102,7 +103,20 @@ export function SliderRow({
   layout,
 }: SliderRowProps) {
   return (
-    <PropertyRow label={label} readout={format ? format(value) : value} layout={layout}>
+    <PropertyRow
+      label={label}
+      readout={
+        <EditableReadout
+          value={value}
+          min={min}
+          max={max}
+          step={step}
+          format={format}
+          onCommit={onChange}
+        />
+      }
+      layout={layout}
+    >
       <input
         type="range"
         min={min}
@@ -112,6 +126,74 @@ export function SliderRow({
         onChange={(e) => onChange(Number(e.target.value))}
       />
     </PropertyRow>
+  );
+}
+
+interface EditableReadoutProps {
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  format?: (value: number) => ReactNode;
+  onCommit: (next: number) => void;
+}
+
+/**
+ * Readout that swaps to a number input on click, commits on Enter/blur,
+ * cancels on Escape. Clicks are stopped so the wrapping <label> doesn't
+ * forward focus to the slider thumb.
+ */
+function EditableReadout({ value, min, max, step, format, onCommit }: EditableReadoutProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className="lk-property-row__readout-button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={(e) => {
+          e.stopPropagation();
+          setDraft(formatNumber(value));
+          setEditing(true);
+        }}
+      >
+        {format ? format(value) : formatNumber(value)}
+      </button>
+    );
+  }
+
+  const commit = () => {
+    const n = parseSignedNumber(draft);
+    if (Number.isFinite(n)) {
+      const clamped = Math.min(max, Math.max(min, n));
+      onCommit(clamped);
+    }
+    setEditing(false);
+  };
+
+  return (
+    <input
+      autoFocus
+      type="text"
+      inputMode="decimal"
+      className="lk-property-row__readout-input"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value.replace(/-/g, '−'))}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commit();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          setEditing(false);
+        }
+      }}
+    />
   );
 }
 
