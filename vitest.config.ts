@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import { playwright } from '@vitest/browser-playwright';
 import { weaselAliases } from './scripts/vite-aliases';
+import { traitSchemasPlugin } from './apps/draw/vite-plugin-trait-schemas';
 
 const storybookDir = dirname(fileURLToPath(new URL('./.storybook/main.ts', import.meta.url)));
 
@@ -73,6 +74,13 @@ export default defineConfig({
       },
       {
         ...shared,
+        // The draw app's Bundle Inspector consumes
+        // `virtual:weasel-trait-schemas`, served by a Vite plugin that's
+        // wired in `apps/draw/vite.config.ts` for dev/build. Vitest
+        // doesn't inherit that config, so the plugin has to be added
+        // here too or any test that imports a Bundle Inspector module
+        // fails to resolve the virtual id at load time.
+        plugins: [react(), traitSchemasPlugin({ repoRoot: __dirname })],
         test: {
           name: 'draw',
           environment: 'jsdom',
