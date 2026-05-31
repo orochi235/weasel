@@ -1,3 +1,4 @@
+import '@orochi235/weasel-theme/tokens.css';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerFont } from '@orochi235/weasel/renderer';

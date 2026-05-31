@@ -788,78 +788,21 @@ html, body, #root {
 }
 
 /* --- Preferences modal ----------------------------------------------- */
-.wd-prefs-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
+/* Shell (backdrop, frame, header, title, close button) comes from the
+ * weasel-ui `Dialog` primitive — no app-level rules needed for those. */
+
+/* Dialog title slot pairs the heading with the dev-only "Show hidden"
+ * toggle on the same row. */
+.wd-prefs-title-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.wd-prefs-modal {
-  display: flex;
-  flex-direction: column;
   gap: 12px;
-  max-width: min(90vw, 1100px);
-  max-height: 85vh;
-  padding: 16px;
-  background: #221a13;
-  color: #d4c4a8;
-  border: 1px solid #3a2e22;
-  border-radius: 6px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
+  flex: 1;
+  min-width: 0;
 }
-
-.wd-prefs-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.wd-prefs-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff5d8;
-}
-
-.wd-prefs-show-hidden {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  margin-right: 8px;
-  font-size: 11px;
-  color: #a89878;
-  cursor: pointer;
-  user-select: none;
-}
-.wd-prefs-show-hidden input {
-  margin: 0;
-}
-
-.wd-prefs-close {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: transparent;
-  color: #d4c4a8;
-  border: 1px solid #3a2e22;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 18px;
-  line-height: 1;
-}
-
-.wd-prefs-close:hover {
-  background: #2a2418;
-  color: #fff5d8;
+.wd-prefs-title-row > span:first-child {
+  flex: 1;
+  min-width: 0;
 }
 
 .wd-prefs-columns {
@@ -873,8 +816,8 @@ html, body, #root {
 }
 
 .wd-prefs-column {
-  flex: 0 0 260px;
-  width: 260px;
+  flex: 0 0 300px;
+  width: 300px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -958,64 +901,14 @@ html, body, #root {
   min-width: 0;
 }
 
+/* Control slot — fixed width so the label can take the rest of the row.
+ * Kit form controls (Input, NumberField, Select, RangeSlider) render as
+ * block-level flex columns that fill this slot. */
 .wd-prefs-row-control {
-  flex: 0 0 auto;
-  display: inline-flex;
+  flex: 0 0 110px;
+  min-width: 0;
+  display: flex;
   align-items: center;
-}
-
-.wd-prefs-input,
-.wd-prefs-select {
-  width: 96px;
-  padding: 3px 6px;
-  background: #1a130d;
-  color: #d4c4a8;
-  border: 1px solid #3a2e22;
-  border-radius: 3px;
-  font-family: inherit;
-  font-size: 12px;
-}
-
-/* Numeric fields read better with right-aligned digits — the decimal /
- * units column lines up across a stack of inputs (paper size, view
- * zoom, grid density, etc.). Applies to every native number input in
- * the app; non-numeric inputs are unaffected. */
-input[type="number"] {
-  text-align: right;
-}
-
-/* Slider-expression number prefs: range track + live value readout
- * occupy the same row-control slot as the plain <input type=number>. */
-.wd-prefs-slider {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.wd-prefs-range {
-  width: 96px;
-  margin: 0;
-  accent-color: #d4c4a8;
-}
-.wd-prefs-slider-value {
-  min-width: 28px;
-  text-align: right;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: #d4c4a8;
-}
-
-.wd-prefs-input:focus,
-.wd-prefs-select:focus {
-  outline: none;
-  border-color: #5a4a38;
-}
-
-.wd-prefs-checkbox {
-  width: 14px;
-  height: 14px;
-  margin: 0;
-  cursor: pointer;
-  accent-color: #d4c4a8;
 }
 
 .wd-prefs-readonly {

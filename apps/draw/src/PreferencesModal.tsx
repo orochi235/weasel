@@ -8,7 +8,8 @@
  *  recursion — we cast to `WeaselDrawPrefPath` at the leaf only. That's the
  *  one type pragmatism the recursive walk requires.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Checkbox, Dialog, Input, NumberField, RangeSlider, Select, Switch } from '@orochi235/weasel-ui';
 import {
   PREFS,
   usePref,
@@ -73,58 +74,24 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
     () => visibleSubtree(PREFS, showHidden) as WeaselDrawPrefGroup | null,
     [showHidden],
   );
-  // Esc closes. Bound on the document while open so the modal works even
-  // when focus is inside one of its inputs (where the app-level Cmd-,
-  // keybinding's `skipInEditable` would suppress it).
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
 
   return (
     <RegistryEnumSourcesContext.Provider value={sources}>
-    <div
-      className="wd-prefs-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Preferences"
-      onClick={(e) => {
-        // Click on the backdrop (not bubbled from the modal box) closes.
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="wd-prefs-modal">
-        <div className="wd-prefs-header">
-          <h2 className="wd-prefs-title">{PREFS.name}</h2>
-          {dev && (
-            <label className="wd-prefs-show-hidden" title="Dev only — reveal hidden prefs">
-              <input
-                type="checkbox"
-                checked={showHidden}
-                onChange={(e) => setShowHidden(e.target.checked)}
-              />
-              <span>Show hidden</span>
-            </label>
-          )}
-          <button
-            type="button"
-            className="wd-prefs-close"
-            onClick={onClose}
-            title="Close (Esc)"
-            aria-label="Close preferences"
-          >
-            ×
-          </button>
-        </div>
+      <Dialog
+        isOpen={open}
+        onOpenChange={(o) => { if (!o) onClose(); }}
+        aria-label="Preferences"
+        title={
+          <span className="wd-prefs-title-row">
+            <span>{PREFS.name}</span>
+            {dev && (
+              <Switch isSelected={showHidden} onChange={setShowHidden}>
+                Show hidden
+              </Switch>
+            )}
+          </span>
+        }
+      >
         <div className="wd-prefs-columns">
           {Object.entries(filteredRoot?.children ?? {}).map(([key, rawChild]) => {
             // Widen here: `PREFS.children` has narrow inferred entries (each
@@ -147,8 +114,7 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
             );
           })}
         </div>
-      </div>
-    </div>
+      </Dialog>
     </RegistryEnumSourcesContext.Provider>
   );
 }
@@ -223,14 +189,7 @@ function BooleanInput({ path, pref: _pref }: { path: string; pref: WeaselDrawPre
     boolean,
     (v: boolean) => void,
   ];
-  return (
-    <input
-      type="checkbox"
-      className="wd-prefs-checkbox"
-      checked={value}
-      onChange={(e) => setValue(e.target.checked)}
-    />
-  );
+  return <Checkbox isSelected={value} onChange={setValue} />;
 }
 
 function NumberInput({ path, pref }: { path: string; pref: WeaselDrawPrefNumber }) {
@@ -240,35 +199,22 @@ function NumberInput({ path, pref }: { path: string; pref: WeaselDrawPrefNumber 
   ];
   if (pref.expression === 'slider') {
     return (
-      <span className="wd-prefs-slider">
-        <input
-          type="range"
-          className="wd-prefs-range"
-          value={Number.isFinite(value) ? value : 0}
-          min={pref.min}
-          max={pref.max}
-          step={pref.step ?? 1}
-          onChange={(e) => {
-            const n = parseFloat(e.target.value);
-            setValue(Number.isFinite(n) ? n : 0);
-          }}
-        />
-        <span className="wd-prefs-slider-value">{value}</span>
-      </span>
+      <RangeSlider
+        value={Number.isFinite(value) ? value : 0}
+        onChange={(v) => setValue(typeof v === 'number' ? v : v[0])}
+        minValue={pref.min}
+        maxValue={pref.max}
+        step={pref.step ?? 1}
+      />
     );
   }
   return (
-    <input
-      type="number"
-      className="wd-prefs-input"
+    <NumberField
       value={Number.isFinite(value) ? value : 0}
-      min={pref.min}
-      max={pref.max}
+      onChange={setValue}
+      minValue={pref.min}
+      maxValue={pref.max}
       step={pref.step ?? 1}
-      onChange={(e) => {
-        const n = parseFloat(e.target.value);
-        setValue(Number.isFinite(n) ? n : 0);
-      }}
     />
   );
 }
@@ -278,14 +224,7 @@ function StringInput({ path, pref: _pref }: { path: string; pref: WeaselDrawPref
     string,
     (v: string) => void,
   ];
-  return (
-    <input
-      type="text"
-      className="wd-prefs-input"
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-    />
-  );
+  return <Input value={value} onChange={setValue} />;
 }
 
 function EnumInput({ path, pref }: { path: string; pref: WeaselDrawPrefEnum }) {
@@ -294,15 +233,11 @@ function EnumInput({ path, pref }: { path: string; pref: WeaselDrawPrefEnum }) {
     (v: string) => void,
   ];
   return (
-    <select
-      className="wd-prefs-select"
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-    >
-      {pref.options.map((o) => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
+    <Select<string>
+      options={pref.options.map((o) => ({ value: o.value, label: o.label }))}
+      selectedKey={value}
+      onSelectionChange={setValue}
+    />
   );
 }
 
@@ -373,18 +308,14 @@ function PanelsEditor({ pref }: { pref: WeaselDrawPrefObject }) {
           return (
             <div key={id} className="wd-prefs-panels-row">
               <span className="wd-prefs-panels-row-name">{label}</span>
-              <input
-                type="checkbox"
-                className="wd-prefs-checkbox"
-                checked={!!state.hidden}
-                onChange={(e) => update(id, 'hidden', e.target.checked)}
+              <Checkbox
+                isSelected={!!state.hidden}
+                onChange={(v) => update(id, 'hidden', v)}
                 aria-label={`Hide ${label} panel`}
               />
-              <input
-                type="checkbox"
-                className="wd-prefs-checkbox"
-                checked={!!state.collapsed}
-                onChange={(e) => update(id, 'collapsed', e.target.checked)}
+              <Checkbox
+                isSelected={!!state.collapsed}
+                onChange={(v) => update(id, 'collapsed', v)}
                 aria-label={`Collapse ${label} panel`}
               />
             </div>
