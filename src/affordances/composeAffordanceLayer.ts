@@ -7,7 +7,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import { meanScale } from 'core/viewport/meanScale';
 import type { DebugSink } from '../debug/types';
 import type { FillStyle, Stroke } from 'core/paint-types';
-import { PATH_M, PATH_C, PATH_Z } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 import type {
   Affordance,
   AffordanceBinding,
@@ -267,14 +267,11 @@ function paintRegion(
   if (paint.kind === 'annulus') {
     if (region.shape.kind !== 'annulus') return; // type mismatch — silent skip
     const s = region.shape;
-    // Emit the outer ellipse as a screen-space polygon (4 cubics, kappa-
-    // approx). Project each control point through the target transform
-    // then through the view transform so the ring follows target rotation
-    // and current zoom. Inner-rect cutout is omitted from the paint — the
-    // selection outline already shows the inner boundary; punching a real
-    // hole would need an even-odd PolygonPath with two subpaths, more
-    // surgery than the dev paint warrants.
-    const cmd = ellipseStrokeCommand(s, xf, viewT, paint.fill, paint.stroke);
+    // Convert the screen-px inset to target-local units so it visually
+    // matches at any zoom. `localToWorld` is rotation+translation (no
+    // scale), so target-local units equal world units for ring math.
+    const insetLocal = (paint.insetPx ?? 0) / meanScale(view.scale);
+    const cmd = annulusCommand(s, insetLocal, xf, viewT, paint.fill, paint.stroke);
     if (cmd) out.push(cmd);
     return;
   }
@@ -290,33 +287,86 @@ function paintRegion(
   }
 }
 
-/** Build a screen-space stroked-ellipse DrawCommand for the outer ring of
- *  an annulus region. Returns null when the ellipse degenerates. */
-function ellipseStrokeCommand(
+/** Build a screen-space DrawCommand for an annulus region: the area
+ *  inside the (contracted) outer ellipse but outside the (expanded)
+ *  inner rect. Renders as four disjoint petal subpaths — one per rect
+ *  edge — so the visible fill is true `ellipse \ rect`. A naive
+ *  ellipse + rect even-odd path would also fill the rect's corner
+ *  triangles where they poke past the contracted ellipse. Returns null
+ *  when the band collapses on both axes. */
+function annulusCommand(
   shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
+  insetLocal: number,
   xf: TargetTransform,
   viewT: ReturnType<typeof viewToTransform>,
   fill: FillStyle | undefined,
   stroke: Stroke | undefined,
 ): DrawCommand | null {
-  if (shape.rx <= 0 || shape.ry <= 0) return null;
-  const KAPPA = 0.5522847498307936;
+  const rx = shape.rx - insetLocal;
+  const ry = shape.ry - insetLocal;
+  if (rx <= 0 || ry <= 0) return null;
   const cx = shape.cx;
   const cy = shape.cy;
-  const rx = shape.rx;
-  const ry = shape.ry;
-  const ox = rx * KAPPA;
-  const oy = ry * KAPPA;
-  // 4 cubic Béziers around the ellipse (CCW from +x). All emitted in
-  // target-local coords; pushed through localToWorld then worldToScreen.
-  const localPts: { x: number; y: number }[] = [
-    { x: cx + rx, y: cy },
-    { x: cx + rx, y: cy + oy }, { x: cx + ox, y: cy + ry }, { x: cx,      y: cy + ry },
-    { x: cx - ox, y: cy + ry }, { x: cx - rx, y: cy + oy }, { x: cx - rx, y: cy      },
-    { x: cx - rx, y: cy - oy }, { x: cx - ox, y: cy - ry }, { x: cx,      y: cy - ry },
-    { x: cx + ox, y: cy - ry }, { x: cx + rx, y: cy - oy }, { x: cx + rx, y: cy      },
-  ];
-  // local → world → screen
+  // Expanded inner rect (still in target-local coords).
+  const rectHW = shape.innerWidth / 2 + insetLocal;
+  const rectHH = shape.innerHeight / 2 + insetLocal;
+  // Each petal exists only when the corresponding rect edge actually
+  // intersects the ellipse interior — otherwise the rect already
+  // extends past the ellipse on that axis and there's no band to show.
+  const haveTopBottom = rectHH < ry;
+  const haveLeftRight = rectHW < rx;
+  if (!haveTopBottom && !haveLeftRight) return null;
+  const xT = haveTopBottom ? rx * Math.sqrt(1 - (rectHH / ry) ** 2) : 0;
+  const yR = haveLeftRight ? ry * Math.sqrt(1 - (rectHW / rx) ** 2) : 0;
+
+  // Sampling density per petal arc — line segments are visually clean
+  // for the rotate-band band thickness and avoid the cubic-Bézier
+  // sub-arc bookkeeping. 24 is smooth at typical zooms.
+  const SAMPLES = 24;
+  const cmds: number[] = [];
+  const localPts: { x: number; y: number }[] = [];
+
+  function appendPetal(t0: number, t1: number): void {
+    cmds.push(PATH_M);
+    localPts.push({ x: cx + rx * Math.cos(t0), y: cy + ry * Math.sin(t0) });
+    for (let i = 1; i <= SAMPLES; i++) {
+      const t = t0 + (t1 - t0) * (i / SAMPLES);
+      cmds.push(PATH_L);
+      localPts.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
+    }
+    // PATH_Z closes back to the move-to point along the rect edge — both
+    // endpoints share the rect-edge coord by construction, so the
+    // closing segment IS the chord.
+    cmds.push(PATH_Z);
+  }
+
+  if (haveTopBottom) {
+    // Top petal: y < cy. Arc from right endpoint over t = -π/2 to left.
+    appendPetal(
+      Math.atan2(-rectHH / ry, xT / rx),   // in (-π/2, 0)
+      Math.atan2(-rectHH / ry, -xT / rx),  // in (-π, -π/2), decreasing through -π/2
+    );
+    // Bottom petal: y > cy. Arc through t = +π/2.
+    appendPetal(
+      Math.atan2(rectHH / ry, xT / rx),    // in (0, π/2)
+      Math.atan2(rectHH / ry, -xT / rx),   // in (π/2, π), increasing through π/2
+    );
+  }
+  if (haveLeftRight) {
+    // Right petal: x > cx. Arc through t = 0.
+    appendPetal(
+      Math.atan2(-yR / ry, rectHW / rx),   // in (-π/2, 0)
+      Math.atan2(yR / ry, rectHW / rx),    // in (0, π/2)
+    );
+    // Left petal: x < cx. Arc through t = ±π. Shift the end angle by
+    // -2π so the parametric trace passes through the leftmost point
+    // monotonically instead of crossing the right side.
+    appendPetal(
+      Math.atan2(-yR / ry, -rectHW / rx),                  // in (-π, -π/2)
+      Math.atan2(yR / ry, -rectHW / rx) - 2 * Math.PI,     // in (-3π/2, -π), decreasing through -π
+    );
+  }
+
   const coords = new Float32Array(localPts.length * 2);
   for (let i = 0; i < localPts.length; i++) {
     const w = localToWorld(xf, localPts[i].x, localPts[i].y);
@@ -324,11 +374,9 @@ function ellipseStrokeCommand(
     coords[i * 2] = sx;
     coords[i * 2 + 1] = sy;
   }
-  // M, C, C, C, C, Z — 6 path commands.
-  const commands = new Uint8Array([PATH_M, PATH_C, PATH_C, PATH_C, PATH_C, PATH_Z]);
   return {
     kind: 'path',
-    path: { kind: 'polygon', commands, coords, fillRule: 'nonzero' },
+    path: { kind: 'polygon', commands: new Uint8Array(cmds), coords, fillRule: 'nonzero' },
     ...(fill ? { fill } : {}),
     ...(stroke ? { stroke } : {}),
   };

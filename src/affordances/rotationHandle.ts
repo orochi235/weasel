@@ -1,6 +1,6 @@
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import type { Stroke } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 import type { DragChannel } from 'tools/types';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/shared/selectionTarget';
 
@@ -10,11 +10,16 @@ export interface RotationAffordanceOptions {
    *  `max(w/√2, w/2 + bandPx/scale)` so the zone stays hoverable at any
    *  zoom and any selection size. Default 24. */
   bandPx?: number;
-  /** Dev-time paint for the ring. `null` / `undefined` = invisible (the
-   *  shipping default, once we cut over to debug-only visibility). Pass
-   *  a `Stroke` to draw the outer ellipse as a hint — useful while
-   *  building or for explicit affordance discovery. */
-  paint?: Stroke | null | false;
+  /** Paint for the ring. `null` / `false` = invisible. Default is a
+   *  semi-transparent fill of the band, contracted by `insetPx` screen
+   *  pixels on the outer edge so the visible band sits inside the
+   *  hoverable zone with a clear margin. Pass a `Stroke` (or
+   *  `{ fill, stroke, insetPx }`) to override. */
+  paint?:
+    | Stroke
+    | { fill?: FillStyle; stroke?: Stroke; insetPx?: number }
+    | null
+    | false;
   /** Cursor while hovering the ring. Defaults to `'grab'`. */
   cursor?: string;
 }
@@ -32,10 +37,9 @@ const stubDrag: DragChannel<RotationScratch> = {
   onCancel: () => {},
 };
 
-const DEFAULT_DEV_STROKE: Stroke = {
-  paint: { color: 'rgba(26, 19, 13, 0.25)' },
-  width: 1,
-  dash: [3, 3],
+const DEFAULT_PAINT: { fill?: FillStyle; stroke?: Stroke; insetPx?: number } = {
+  fill: { fill: 'solid', color: 'rgba(26, 19, 13, 0.12)' },
+  insetPx: 10,
 };
 
 /**
@@ -60,9 +64,29 @@ export function createRotationAffordance(
 ): Affordance {
   const {
     bandPx = 24,
-    paint = DEFAULT_DEV_STROKE,
+    paint = DEFAULT_PAINT,
     cursor = 'grab',
   } = opts;
+
+  // Normalize `paint` into the AnnulusPaint shape understood by
+  // `composeAffordanceLayer`. Three input forms are accepted: a bare
+  // `Stroke` (legacy outline form), the `{ fill, stroke, insetPx }`
+  // object form, or `null`/`false` for invisible.
+  const annulusPaint:
+    | { kind: 'annulus'; fill?: FillStyle; stroke?: Stroke; insetPx?: number }
+    | null = (() => {
+      if (!paint) return null;
+      if ('paint' in paint) {
+        // Bare Stroke (has top-level `paint: PaintStyle`).
+        return { kind: 'annulus' as const, stroke: paint };
+      }
+      return {
+        kind: 'annulus' as const,
+        ...(paint.fill ? { fill: paint.fill } : {}),
+        ...(paint.stroke ? { stroke: paint.stroke } : {}),
+        ...(paint.insetPx !== undefined ? { insetPx: paint.insetPx } : {}),
+      };
+    })();
 
   return {
     id: 'selection.rotation-handle',
@@ -102,9 +126,7 @@ export function createRotationAffordance(
           innerWidth: b.width,
           innerHeight: b.height,
         },
-        ...(paint
-          ? { paint: { kind: 'annulus' as const, stroke: paint } }
-          : {}),
+        ...(annulusPaint ? { paint: annulusPaint } : {}),
         cursor,
         bind: (): AffordanceBinding => ({
           drag: stubDrag as unknown as AffordanceBinding['drag'],
