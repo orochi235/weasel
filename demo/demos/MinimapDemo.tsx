@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  MinimapCanvas,
   SceneCanvas,
   useScene,
   useSelection,
+  type SceneViewDrawOne,
 } from '@orochi235/weasel';
-// TODO: switch to '@orochi235/weasel' once step 6 lands
-import { MinimapCanvas } from '../../src/canvas/MinimapCanvas';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
-import type { SceneViewDrawOne } from '../../src/canvas/sceneViewRender';
 
 interface NodeData { color: string }
 type LayerId = 'default';
