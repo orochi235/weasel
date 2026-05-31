@@ -18,7 +18,7 @@ import {
 } from './';
 
 const meta: Meta = {
-  title: 'UI/Properties/Gallery/SpeechBalloonPanels',
+  title: 'UI/Properties/PropertyPanel/SpeechBalloonPanels',
 };
 export default meta;
 type Story = StoryObj;

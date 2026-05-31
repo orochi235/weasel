@@ -5,6 +5,7 @@ import {
   ColorRow,
   NumberRow,
   PropertyList,
+  type PropertyListPack,
   PropertyPanel,
   PropertyRow,
   SelectRow,
@@ -13,15 +14,38 @@ import {
   ToggleRow,
 } from './PropertyPanel';
 
-const meta: Meta<typeof PropertyPanel> = {
+// Args common to most stories — exposed as Storybook controls so the
+// title, pack mode, and container width can be tweaked live.
+interface DemoArgs {
+  title: string;
+  pack: PropertyListPack;
+  width: number;
+}
+
+const meta: Meta<DemoArgs> = {
   title: 'UI/Properties/PropertyPanel',
   component: PropertyPanel,
+  argTypes: {
+    title: { control: 'text' },
+    pack: {
+      control: 'inline-radio',
+      options: ['auto-color', 'pairs'] satisfies PropertyListPack[],
+      description:
+        "PropertyList packing. 'auto-color' (default) spans non-color rows full-width; 'pairs' packs every row two-per-row.",
+    },
+    width: { control: { type: 'number', min: 200, max: 600, step: 10 } },
+  },
+  args: {
+    title: 'Shape',
+    pack: 'auto-color',
+    width: 320,
+  },
 };
 export default meta;
 
-type Story = StoryObj<typeof PropertyPanel>;
+type Story = StoryObj<DemoArgs>;
 
-function Demo() {
+function Demo({ title, pack, width }: DemoArgs) {
   const [opacity, setOpacity] = useState(0.65);
   const [radius, setRadius] = useState(12);
   const [fill, setFill] = useState('#b08adb');
@@ -30,9 +54,9 @@ function Demo() {
   const [visible, setVisible] = useState(true);
 
   return (
-    <div style={{ width: 320 }}>
-      <PropertyPanel title="Shape">
-        <PropertyList>
+    <div style={{ width }}>
+      <PropertyPanel title={title}>
+        <PropertyList pack={pack}>
           <SliderRow
             label="Opacity"
             value={opacity}
@@ -49,7 +73,7 @@ function Demo() {
             max={64}
             step={1}
             onChange={setRadius}
-            format={(v) => `${v}px`}
+            unit="px"
           />
           <ColorRow label="Fill" value={fill} onChange={setFill} />
           <ColorRow label="Stroke" value={stroke} onChange={setStroke} />
@@ -62,13 +86,14 @@ function Demo() {
 }
 
 export const Default: Story = {
-  render: () => <Demo />,
+  render: (args) => <Demo {...args} />,
 };
 
 export const NoTitle: Story = {
-  render: () => (
-    <div style={{ width: 320 }}>
-      <PropertyPanel>
+  args: { title: '' },
+  render: ({ title, width }) => (
+    <div style={{ width }}>
+      <PropertyPanel title={title || undefined}>
         <PropertyList>
           <SliderRow label="Just a slider" value={50} min={0} max={100} onChange={() => {}} />
         </PropertyList>
@@ -77,7 +102,7 @@ export const NoTitle: Story = {
   ),
 };
 
-function AllRowsDemo() {
+function AllRowsDemo({ title, pack, width }: DemoArgs) {
   const [opacity, setOpacity] = useState(0.65);
   const [count, setCount] = useState(8);
   const [fill, setFill] = useState('#b08adb');
@@ -88,9 +113,9 @@ function AllRowsDemo() {
   const [align, setAlign] = useState<'left' | 'center' | 'right'>('center');
 
   return (
-    <div style={{ width: 320 }}>
-      <PropertyPanel title="Everything">
-        <PropertyList>
+    <div style={{ width }}>
+      <PropertyPanel title={title}>
+        <PropertyList pack={pack}>
           <SliderRow
             label="Opacity"
             value={opacity}
@@ -132,14 +157,16 @@ function AllRowsDemo() {
 }
 
 export const AllRows: Story = {
-  render: () => <AllRowsDemo />,
+  args: { title: 'Everything' },
+  render: (args) => <AllRowsDemo {...args} />,
 };
 
 export const CustomPropertyRow: Story = {
-  render: () => (
-    <div style={{ width: 320 }}>
-      <PropertyPanel title="Custom row">
-        <PropertyList>
+  args: { title: 'Custom row' },
+  render: ({ title, pack, width }) => (
+    <div style={{ width }}>
+      <PropertyPanel title={title}>
+        <PropertyList pack={pack}>
           <PropertyRow label="Anything" readout="custom">
             <button type="button">click me</button>
           </PropertyRow>
@@ -150,9 +177,11 @@ export const CustomPropertyRow: Story = {
 };
 
 export const ListWithoutChrome: Story = {
-  render: () => (
-    <div style={{ width: 320 }}>
-      <PropertyList>
+  // No title — this story explicitly demonstrates rendering without the panel chrome.
+  argTypes: { title: { table: { disable: true } } },
+  render: ({ pack, width }) => (
+    <div style={{ width }}>
+      <PropertyList pack={pack}>
         <SliderRow label="Bare" value={50} min={0} max={100} onChange={() => {}} />
         <ColorRow label="Color A" value="#b08adb" onChange={() => {}} />
         <ColorRow label="Color B" value="#1a1428" onChange={() => {}} />
