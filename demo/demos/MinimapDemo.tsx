@@ -8,6 +8,7 @@ import {
 } from '@orochi235/weasel';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
+import styles from './MinimapDemo.module.css';
 
 interface NodeData { color: string }
 type LayerId = 'default';
@@ -59,17 +60,17 @@ export function MinimapDemo() {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <span style={{ fontFamily: 'monospace' }}>
+    <div className={styles.demo}>
+      <div className={styles.header}>
+        <span className={styles.viewLabel}>
           view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) ×{view.scale.x.toFixed(2)}
         </span>
         <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</button>
-        <span style={{ color: '#888' }}>
+        <span className={styles.hint}>
           H = hand on main · click minimap to recenter · drag minimap to pan
         </span>
       </div>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+      <div className={styles.row}>
         <SceneCanvas
           width={MAIN_W}
           height={MAIN_H}
@@ -89,17 +90,8 @@ export function MinimapDemo() {
             },
           }}
         />
-        <aside
-          style={{
-            padding: 8,
-            border: '1px solid #444',
-            background: 'rgba(255,255,255,0.04)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6,
-          }}
-        >
-          <div style={{ fontSize: 11, color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <aside className={styles.minimapPanel}>
+          <div className={styles.minimapTitle}>
             Minimap (detached)
           </div>
           <MinimapCanvas

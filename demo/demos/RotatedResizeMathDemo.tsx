@@ -32,6 +32,7 @@
  */
 import { useCallback, useRef, useState } from 'react';
 import {
+  DEFAULT_HANDLE_SIZE,
   SceneCanvas,
   pointInRotatedRect,
   ROTATED_POSE_DESCRIPTOR,
@@ -57,7 +58,7 @@ interface Rect extends RotatedPose {
   color: string;
 }
 
-const W = 320, H = 240, HANDLE = 8;
+const W = 320, H = 240, HANDLE = DEFAULT_HANDLE_SIZE;
 
 const INITIAL_GREEN: Rect = { id: 'a', x: 80, y: 70, width: 160, height: 100, rotation: Math.PI / 6, color: '#7fb069' };
 const INITIAL_ORANGE: Rect = { ...INITIAL_GREEN, color: '#d4a574' };

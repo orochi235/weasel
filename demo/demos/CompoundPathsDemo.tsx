@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  DEFAULT_HANDLE_SIZE,
   SceneCanvas,
   composePath,
   pathPoseDescriptor,
@@ -15,7 +16,7 @@ import type { DrawCommand } from '../../src/renderer';
 interface Shape { id: string; pose: Path; fill: string; stroke?: string; label?: string }
 interface ShapeData { fill: string; stroke?: string; label?: string }
 
-const W = 720, H = 480, HANDLE = 8;
+const W = 720, H = 480, HANDLE = DEFAULT_HANDLE_SIZE;
 
 function ghost(): Path {
   const b = new PathBuilder().setFillRule('evenodd');

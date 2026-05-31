@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  DEFAULT_HANDLE_SIZE,
   gridSnapStrategy,
   SceneCanvas,
   useScene,
@@ -12,7 +13,7 @@ import type { DrawCommand } from '../../src/renderer';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
 
-const W = 520, H = 320, HANDLE = 8;
+const W = 520, H = 320, HANDLE = DEFAULT_HANDLE_SIZE;
 
 const INITIAL: Box[] = [
   { id: 'a', x:  60, y:  60, width: 80, height: 60, color: '#d4c4a8' },

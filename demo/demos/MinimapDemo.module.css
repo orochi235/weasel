@@ -1,0 +1,41 @@
+.demo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.viewLabel {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.hint {
+  color: var(--ckd-muted);
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.minimapPanel {
+  padding: 8px;
+  border: 1px solid var(--ckd-border);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.minimapTitle {
+  font-size: 11px;
+  color: var(--ckd-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
