@@ -75,6 +75,7 @@ export function LassoDemo() {
         selection={selection}
         selectionMode="multi"
         toolBundle="exhaustive"
+        initialActiveTool="lasso"
         toolOptions={{ lasso: { mode } }}
       />
     </div>
