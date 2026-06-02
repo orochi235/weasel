@@ -15,7 +15,8 @@ import {
   type AxesSettings,
 } from '../Plot2D';
 import { modelToPlot, type ModelRange } from '../Plot2D/geometry';
-import { hitTestCurve } from './hitTest';
+import { hitTestAnchor, hitTestCurve } from './hitTest';
+import { dlog, isDebugEnabled } from '../../dlog';
 import s from './CurveEditor.module.css';
 
 // Re-export so existing CurveEditor consumers keep working.
@@ -368,6 +369,11 @@ export function CurveEditor(props: CurveEditorProps) {
     const d = dragRef.current;
     if (!d || d.pointerId !== e.pointerId) return;
     const m = pointerToModel(e.clientX, e.clientY);
+    if (isDebugEnabled('curve-editor')) {
+      const svg = plotRef.current?.svg;
+      const rect = svg?.getBoundingClientRect();
+      dlog('curve-editor', 'onWindowMove', { cli: { x: e.clientX, y: e.clientY }, model: m, rect: rect ? { l: rect.left, t: rect.top, w: rect.width, h: rect.height } : null, plotRefHasHandle: !!plotRef.current, hasSvg: !!svg });
+    }
     const next = d.startValue.map((p) => ({ ...p }));
     let nx = m.x;
     let ny = m.y;
@@ -409,6 +415,7 @@ export function CurveEditor(props: CurveEditorProps) {
 
   onWindowUpRef.current = (e: PointerEvent) => {
     const d = dragRef.current;
+    dlog('curve-editor', 'onWindowUp', { hasDrag: !!d, eventPid: e.pointerId, dragPid: d?.pointerId, lastNext: d?.lastNext?.length });
     if (!d || d.pointerId !== e.pointerId) return;
     const prev = d.commitPrev ?? d.startValue;
     recordCommit(prev);
@@ -460,6 +467,7 @@ export function CurveEditor(props: CurveEditorProps) {
   }, [deleteAnchor]);
 
   const onPointerDownAnchor = useCallback((index: number, e: ReactPointerEvent<SVGElement>) => {
+    dlog('curve-editor', 'onPointerDownAnchor', { index, pointerId: e.pointerId, button: e.button, shift: e.shiftKey, target: (e.target as Element)?.tagName });
     e.stopPropagation();
     // Locked anchors swallow the gesture entirely — no drag, no delete.
     if (isLocked(index)) return;
@@ -499,6 +507,7 @@ export function CurveEditor(props: CurveEditorProps) {
     e: ReactPointerEvent<SVGSVGElement>,
     coords: { plot: Point; model: Point },
   ) => {
+    dlog('curve-editor', 'onSvgPointerDown', { target: (e.target as Element)?.tagName, targetCls: (e.target as Element)?.getAttribute?.('class'), plot: coords.plot, model: coords.model });
     if (addPointMode === 'never') return;
     // Refuse if we'd exceed the configured maximum.
     if (props.maxPoints !== undefined && value.length >= props.maxPoints) return;
@@ -508,10 +517,45 @@ export function CurveEditor(props: CurveEditorProps) {
     const plotPt = coords.plot;
     const modelPt = coords.model;
 
+    // Snap clicks that land near an existing anchor onto a drag of that
+    // anchor rather than inserting a new one. The DOM-target check above
+    // only catches pixel-exact hits on the rendered circle (r=4); real
+    // mouse clicks are typically a few px off, which would otherwise drop
+    // a redundant anchor practically on top of the intended one. Tolerance
+    // is generous enough to cover endpoint diamonds (rendered as rotated
+    // rects at the corners) too.
+    const nearby = hitTestAnchor(plotAnchors, plotPt, 12);
+    if (nearby) {
+      // Reuse the anchor's drag-start path so behavior matches a direct
+      // click on the anchor (drag, optional shift-delete, etc.).
+      onPointerDownAnchor(nearby.index, e);
+      return;
+    }
+
     if (addPointMode === 'click-curve') {
       const hit = hitTestCurve(segmentSamples, plotPt, 8);
       if (!hit) return;
       const insertIndex = hit.segIdx + 1;
+      // For function-constrained curves, refuse to insert at an x that would
+      // immediately be clamped against a neighbor (the monotone epsilon is
+      // tiny enough that mouse jitter on click otherwise produces a phantom
+      // "vertically above existing anchor" point). Snap to the existing
+      // neighbor's drag instead so the user can adjust it directly.
+      if (constrain === 'function' || domain === '1d') {
+        const epsilon = constrain === 'function'
+          ? (modelRange.xMax - modelRange.xMin) / 1000
+          : 0;
+        const left = insertIndex > 0 ? value[insertIndex - 1] : null;
+        const right = insertIndex < value.length ? value[insertIndex] : null;
+        if (left && Math.abs(modelPt.x - left.x) < epsilon * 2) {
+          onPointerDownAnchor(insertIndex - 1, e);
+          return;
+        }
+        if (right && Math.abs(modelPt.x - right.x) < epsilon * 2) {
+          onPointerDownAnchor(insertIndex, e);
+          return;
+        }
+      }
       const next = [...value.slice(0, insertIndex), modelPt, ...value.slice(insertIndex)];
       onChange(next);
       // Begin a drag on the new anchor — commit fires on pointerup with the
