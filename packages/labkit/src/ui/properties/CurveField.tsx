@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { type ControlPoint, CurveEditor } from '../../passthrough/weasel-ui';
+import { type ControlPoint, CurveEditor, dlog } from '../../passthrough/weasel-ui';
 
 export interface CurveFieldProps {
   /** Flat [x0, y0, x1, y1, …] — matches how curve-as-array configs
@@ -12,6 +12,8 @@ export interface CurveFieldProps {
   width: number;
   /** Plot height in CSS px. Default 110. */
   height?: number;
+  /** Flat default curve. When provided, a Reset button restores it. */
+  defaults?: readonly number[];
   onChange: (next: number[]) => void;
 }
 
@@ -28,6 +30,7 @@ export function CurveField({
   step,
   width,
   height = 110,
+  defaults,
   onChange,
 }: CurveFieldProps) {
   const points: ControlPoint[] = useMemo(() => {
@@ -45,6 +48,7 @@ export function CurveField({
         flat[i * 2] = next[i]!.x;
         flat[i * 2 + 1] = y;
       }
+      dlog('curve-field', 'handleChange', { nLen: next.length, flatLen: flat.length, sample: flat.slice(0, 4) });
       onChange(flat);
     },
     [onChange, min, max, step],
@@ -80,9 +84,20 @@ export function CurveField({
           history={false}
         />
       </div>
-      <button type="button" className="lk-curve-field__flip" onClick={handleFlip}>
-        Flip horizontally
-      </button>
+      <div className="lk-curve-field__actions">
+        <button type="button" className="lk-curve-field__action" onClick={handleFlip}>
+          Flip horizontally
+        </button>
+        {defaults && (
+          <button
+            type="button"
+            className="lk-curve-field__action"
+            onClick={() => onChange([...defaults])}
+          >
+            Reset
+          </button>
+        )}
+      </div>
     </div>
   );
 }

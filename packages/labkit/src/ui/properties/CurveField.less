@@ -20,8 +20,13 @@
   font-style: normal;
 }
 
-.lk-curve-field__flip {
+.lk-curve-field__actions {
+  display: flex;
+  gap: 6px;
   justify-self: start;
+}
+
+.lk-curve-field__action {
   background: transparent;
   border: 1px solid var(--lk-border);
   border-radius: var(--lk-radius-sm, 6px);
@@ -31,6 +36,6 @@
   cursor: pointer;
 }
 
-.lk-curve-field__flip:hover {
+.lk-curve-field__action:hover {
   background: var(--lk-bg-elevated);
 }
