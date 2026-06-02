@@ -145,4 +145,6 @@ export {
   type TrackCtx,
   type UseReorderDragListOptions,
   useReorderDragList,
+  dlog,
+  isDebugEnabled,
 } from '@orochi235/weasel-ui';

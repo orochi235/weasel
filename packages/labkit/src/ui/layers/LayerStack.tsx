@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactNode, type RefCallback, useEffect, useState } from 'react';
-import { useReorderDragList } from '../../passthrough/weasel-ui';
+import { useReorderDragList, dlog } from '../../passthrough/weasel-ui';
 
 export interface LayerStackItem {
   /** Stable id used for keys, onRemove, onReorder. Numeric to match
@@ -71,6 +71,7 @@ export function LayerStack({
     items: dragItems,
     selectedIds: [],
     onReorder: (ids, targetIndex) => {
+      dlog('layer-stack', 'onReorder', { ids, targetIndex });
       const orig = items.map((i) => i.id);
       const moving = new Set(ids);
       const remaining = orig.filter((id) => !moving.has(String(id)));
@@ -106,7 +107,7 @@ export function LayerStack({
                 key={k}
                 type="button"
                 className="lk-layer-stack__add"
-                onClick={() => onAdd(k)}
+                onClick={() => { dlog('layer-stack', 'onAdd', { kind: k }); onAdd(k); }}
                 aria-label={`Add ${k}`}
               >
                 {k}

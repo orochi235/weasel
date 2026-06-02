@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { formatNumber, parseSignedNumber } from '../format';
+import { dlog } from '../../passthrough/weasel-ui';
 
 export interface PropertyPanelProps {
   title?: ReactNode;
@@ -147,7 +148,7 @@ export function SliderRow({
         max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onChange={(e) => { const v = Number(e.target.value); dlog('property-panel', 'slider', { label, value: v }); onChange(v); }}
       />
     </PropertyRow>
   );
@@ -379,7 +380,7 @@ export function SelectRow<T extends string>({
 }: SelectRowProps<T>) {
   return (
     <PropertyRow label={label} layout={layout}>
-      <select value={value} onChange={(e) => onChange(e.target.value as T)}>
+      <select value={value} onChange={(e) => { const v = e.target.value as T; dlog('property-panel', 'select', { label, value: v }); onChange(v); }}>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {/* HTML <option> only renders text; ReactNode → string coerce */}

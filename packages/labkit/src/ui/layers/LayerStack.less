@@ -64,6 +64,10 @@
 }
 
 .lk-layer-card.has-accent {
+  // Re-bind --lk-accent inside the card so descendant controls (slider tracks
+  // and thumbs, readouts, etc.) tint to the per-card accent instead of the
+  // global theme accent. Mirrors EffectCard's behavior.
+  --lk-accent: var(--lk-layer-card-accent);
   border-left: 3px solid var(--lk-layer-card-accent);
 }
 
