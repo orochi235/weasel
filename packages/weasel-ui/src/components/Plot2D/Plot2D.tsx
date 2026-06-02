@@ -1,5 +1,5 @@
 import {
-  forwardRef, useCallback, useImperativeHandle, useMemo, useRef,
+  forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
@@ -10,6 +10,7 @@ import {
   type ModelRange, type Point,
 } from './geometry';
 import s from './Plot2D.module.css';
+import { dlog } from '../../dlog';
 
 export interface GridSettings {
   /** Number of evenly-spaced internal grid lines per axis (excluding
@@ -97,6 +98,10 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
     return { x: e.clientX - left, y: e.clientY - top };
   }, []);
 
+  useEffect(() => {
+    dlog('plot2d', 'mount', { width, height });
+    return () => dlog('plot2d', 'unmount');
+  }, []);
   useImperativeHandle(ref, () => ({
     get svg() { return svgRef.current; },
     plotToModel: (pt: Point) => plotToModel(pt, modelRange, plotSize),
