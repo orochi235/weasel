@@ -116,15 +116,34 @@ export function CurveField({
                 const left = Math.min(x0, x1);
                 const w = Math.abs(x1 - x0);
                 return (
-                  <rect
-                    key={i}
-                    x={left}
-                    y={0}
-                    width={w}
-                    height={height}
-                    fill={color}
-                    fillOpacity={0.18}
-                  />
+                  <g key={i}>
+                    <rect
+                      x={left}
+                      y={0}
+                      width={w}
+                      height={height}
+                      fill={color}
+                      fillOpacity={0.4}
+                    />
+                    <line
+                      x1={left}
+                      y1={0}
+                      x2={left}
+                      y2={height}
+                      stroke={color}
+                      strokeOpacity={0.85}
+                      strokeWidth={1}
+                    />
+                    <line
+                      x1={left + w}
+                      y1={0}
+                      x2={left + w}
+                      y2={height}
+                      stroke={color}
+                      strokeOpacity={0.85}
+                      strokeWidth={1}
+                    />
+                  </g>
                 );
               }
               const x = Math.max(0, Math.min(1, m.x)) * width;
