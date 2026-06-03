@@ -106,7 +106,7 @@ export function CurveField({
             width={width}
             height={height}
             viewBox={`0 0 ${width} ${height}`}
-            aria-hidden
+            aria-hidden="true"
           >
             {marks.map((m, i) => {
               const color = m.color ?? '#ffcc00';
