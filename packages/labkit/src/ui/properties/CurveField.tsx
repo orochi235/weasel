@@ -1,6 +1,10 @@
 import { useCallback, useMemo } from 'react';
 import { type ControlPoint, CurveEditor, dlog } from '../../passthrough/weasel-ui';
 
+export type CurveMark =
+  | { kind: 'band'; x: [number, number]; color?: string }
+  | { kind: 'line'; x: number; color?: string };
+
 export interface CurveFieldProps {
   /** Flat [x0, y0, x1, y1, …] — matches how curve-as-array configs
    *  serialize in JSON snapshots. */
@@ -15,6 +19,8 @@ export interface CurveFieldProps {
   /** Flat default curve. When provided, a Reset button restores it. */
   defaults?: readonly number[];
   onChange: (next: number[]) => void;
+  /** Optional vertical marks overlaid on the plot (e.g. landmarks). */
+  marks?: readonly CurveMark[];
 }
 
 /**
@@ -32,6 +38,7 @@ export function CurveField({
   height = 110,
   defaults,
   onChange,
+  marks,
 }: CurveFieldProps) {
   const points: ControlPoint[] = useMemo(() => {
     const out: ControlPoint[] = [];
@@ -93,6 +100,48 @@ export function CurveField({
           grid={{}}
           history={false}
         />
+        {marks && marks.length > 0 && (
+          <svg
+            className="lk-curve-field__marks"
+            width={width}
+            height={height}
+            viewBox={`0 0 ${width} ${height}`}
+            aria-hidden
+          >
+            {marks.map((m, i) => {
+              const color = m.color ?? '#ffcc00';
+              if (m.kind === 'band') {
+                const x0 = Math.max(0, Math.min(1, m.x[0])) * width;
+                const x1 = Math.max(0, Math.min(1, m.x[1])) * width;
+                const left = Math.min(x0, x1);
+                const w = Math.abs(x1 - x0);
+                return (
+                  <rect
+                    key={i}
+                    x={left}
+                    y={0}
+                    width={w}
+                    height={height}
+                    fill={color}
+                    fillOpacity={0.18}
+                  />
+                );
+              }
+              const x = Math.max(0, Math.min(1, m.x)) * width;
+              return (
+                <line
+                  key={i}
+                  x1={x}
+                  y1={0}
+                  x2={x}
+                  y2={height}
+                  stroke={color}
+                  strokeWidth={1}
+                />
+              );
+            })}
+          </svg>
+        )}
       </div>
       <div className="lk-curve-field__actions">
         <button type="button" className="lk-curve-field__action" onClick={handleFlip}>

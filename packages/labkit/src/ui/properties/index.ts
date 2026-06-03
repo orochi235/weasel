@@ -36,4 +36,4 @@ export type {
 export { PropertyGroup } from './PropertyGroup';
 export type { PropertyGroupProps } from './PropertyGroup';
 export { CurveField } from './CurveField';
-export type { CurveFieldProps } from './CurveField';
+export type { CurveFieldProps, CurveMark } from './CurveField';

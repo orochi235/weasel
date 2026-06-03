@@ -66,4 +66,62 @@ describe('CurveField', () => {
     screen.getByRole('button', { name: /flip vertically/i }).click();
     expect(onChange.mock.calls[0][0]).toEqual([0, 1, 0.5, 0.75, 1, 0]);
   });
+
+  it('renders a band mark as a positioned overlay rect', () => {
+    const { container } = render(
+      <CurveField
+        values={[0, 0, 1, 1]}
+        min={0}
+        max={1}
+        step={0.01}
+        width={200}
+        height={110}
+        marks={[{ kind: 'band', x: [0.2, 0.4], color: '#ffcc00' }]}
+        onChange={() => {}}
+      />,
+    );
+    const overlay = container.querySelector('.lk-curve-field__marks');
+    expect(overlay).not.toBeNull();
+    const rect = overlay!.querySelector('rect');
+    expect(rect).not.toBeNull();
+    // x = 0.2 * 200 = 40; width = (0.4 - 0.2) * 200 = 40.
+    expect(rect!.getAttribute('x')).toBe('40');
+    expect(rect!.getAttribute('width')).toBe('40');
+    expect(rect!.getAttribute('fill')).toBe('#ffcc00');
+  });
+
+  it('renders a line mark as a positioned line', () => {
+    const { container } = render(
+      <CurveField
+        values={[0, 0, 1, 1]}
+        min={0}
+        max={1}
+        step={0.01}
+        width={200}
+        height={110}
+        marks={[{ kind: 'line', x: 0.7, color: '#ffcc00' }]}
+        onChange={() => {}}
+      />,
+    );
+    const line = container.querySelector('.lk-curve-field__marks line');
+    expect(line).not.toBeNull();
+    expect(line!.getAttribute('x1')).toBe('140');
+    expect(line!.getAttribute('x2')).toBe('140');
+    expect(line!.getAttribute('stroke')).toBe('#ffcc00');
+  });
+
+  it('omits the marks overlay when marks is undefined', () => {
+    const { container } = render(
+      <CurveField
+        values={[0, 0, 1, 1]}
+        min={0}
+        max={1}
+        step={0.01}
+        width={200}
+        height={110}
+        onChange={() => {}}
+      />,
+    );
+    expect(container.querySelector('.lk-curve-field__marks')).toBeNull();
+  });
 });
