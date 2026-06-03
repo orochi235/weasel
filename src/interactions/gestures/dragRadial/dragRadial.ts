@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
+import { dlog } from '../../../debug/flag';
 
 export interface DragRadialPoint { x: number; y: number }
 
@@ -117,6 +118,7 @@ export function useDragRadial<TScratch = unknown>(
       ctx.scratch.modifiers = ctx.modifiers;
       scratchRef.current = ctx.scratch;
       setOverlay({ center: p, radius: 0, rotation: 0 });
+      dlog('drag-radial', 'start', p);
       opts.onStart?.(buildCtx());
     },
     onMove: (ctx) => {
@@ -137,6 +139,7 @@ export function useDragRadial<TScratch = unknown>(
         scratch: ctx.scratch.consumer,
         isSubThreshold: state.radius <= min,
       };
+      dlog('drag-radial', 'end', { radius: state.radius, rotation: state.rotation, isSubThreshold: endCtx.isSubThreshold });
       let r: boolean | void;
       try {
         r = opts.onEnd?.(endCtx);
@@ -147,6 +150,7 @@ export function useDragRadial<TScratch = unknown>(
       return r;
     },
     onCancel: () => {
+      dlog('drag-radial', 'cancel');
       optsRef.current.onCancel?.(buildCtx());
       scratchRef.current = null;
       setOverlay(null);

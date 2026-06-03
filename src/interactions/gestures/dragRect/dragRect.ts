@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
+import { dlog } from '../../../debug/flag';
 
 export interface DragRectPoint { x: number; y: number }
 export interface DragRectBounds { x: number; y: number; width: number; height: number }
@@ -118,6 +119,7 @@ export function useDragRect<TScratch = unknown>(
       const opts = optsRef.current;
       const raw: DragRectPoint = { x: ctx.start.worldX, y: ctx.start.worldY };
       const p: DragRectPoint = opts.snapPoint ? opts.snapPoint(raw) : raw;
+      dlog('drag-rect', 'start', p);
       ctx.scratch.start = p;
       ctx.scratch.current = p;
       scratchRef.current = ctx.scratch;
@@ -149,6 +151,7 @@ export function useDragRect<TScratch = unknown>(
         setCurrent(p) { s.current = p; writeOverlay(); },
         isSubThreshold,
       };
+      dlog('drag-rect', 'end', { bounds: b, isSubThreshold });
       let r: boolean | void;
       try {
         r = opts.onEnd?.(endCtx);
@@ -159,6 +162,7 @@ export function useDragRect<TScratch = unknown>(
       return r;
     },
     onCancel: () => {
+      dlog('drag-rect', 'cancel');
       optsRef.current.onCancel?.(buildConsumerCtx());
       scratchRef.current = null;
       setOverlay(null);

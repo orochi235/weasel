@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { NodeId } from 'core/scene/types';
+import { dlog } from 'debug/flag';
 
 /**
  * Selection click policy. `single` always replaces; `multi` toggles when the
@@ -85,6 +86,7 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
 
   const set = useCallback((ids: NodeId[]) => {
     if (lockRef.current) return;
+    dlog('selection', 'set', { from: ref.current.length, to: ids.length, ids });
     ref.current = ids;
     setCurrent(ids);
   }, []);

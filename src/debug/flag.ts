@@ -1,61 +1,80 @@
 /**
- * Kit-level debug flag, gated by localStorage.
+ * Namespaced, opt-in console tracing for the kit.
  *
- * Set `localStorage.setItem('weasel.debug', '1')` (or `'weaseldraw.debug'`
- * — both are recognized) in the browser console to enable verbose
- * diagnostics throughout the kit and its consumers:
+ * Enable in the browser:
  *
- *   - every history op push (`[history.applyOps] …`)
- *   - active tool / hotkey transitions (`[tools] active: …`)
- *   - selection mutations (`[selection] …`)
- *   - gesture cancels (`[dispatch] cancel reason=…`)
- *   - no-op op batch suppression warnings
+ *   localStorage.setItem('weasel.debug', '*')                 // all namespaces
+ *   localStorage.setItem('weasel.debug', 'tools,dispatch')    // specific ones
+ *   localStorage.setItem('weasel.debug', '1')                 // legacy "all"
  *
- * Clear with `localStorage.removeItem('weasel.debug')`. Off by default —
- * production builds strip `console.debug` regardless.
+ * Each call site picks a stable namespace string. Off by default; the flag
+ * is read once and cached per page session — reload to pick up a change.
  *
- * The flag is read once and cached for the page session. Reload to pick
- * up a change.
+ * Mirrors `packages/weasel-ui/src/dlog.ts`. The two impls live in separate
+ * packages because weasel-ui doesn't depend on the kit, but both read the
+ * same localStorage keys so behavior is uniform from a debugger's POV.
+ *
+ * Known kit namespaces:
+ *   - tools           — active-tool + hotkey transitions (useTools)
+ *   - dispatch        — gesture start / end / cancel (dispatcher)
+ *   - drag-rect       — useDragRect lifecycle
+ *   - drag-radial     — useDragRadial lifecycle
+ *   - scene-canvas    — SceneCanvas mount / unmount
+ *   - history         — applyOps push, no-op suppression, serialize/restore
  */
 
 const KEYS = ['weasel.debug', 'weaseldraw.debug'] as const;
 
-let cached: boolean | null = null;
+interface Cached {
+  all: boolean;
+  set: Set<string>;
+}
 
-function read(): boolean {
-  if (typeof localStorage === 'undefined') return false;
+let cached: Cached | null = null;
+
+function read(): Cached {
+  const empty: Cached = { all: false, set: new Set() };
+  if (typeof localStorage === 'undefined') return empty;
   try {
     for (const k of KEYS) {
       const v = localStorage.getItem(k);
-      if (v === '1' || v === 'true') return true;
+      if (v == null || v === '') continue;
+      if (v === '1' || v === 'true' || v === '*') return { all: true, set: new Set() };
+      return { all: false, set: new Set(v.split(/[\s,]+/).filter(Boolean)) };
     }
-    return false;
+    return empty;
   } catch {
-    return false;
+    return empty;
   }
 }
 
-/** True when the debug flag is set. Cached after first read for cheap
- *  hot-path checks; reload the page to pick up a change. */
-export function isDebugEnabled(): boolean {
+function get(): Cached {
   if (cached === null) cached = read();
   return cached;
 }
 
-/** Conditional console.debug — no-op when the flag is off. Use this for
- *  any kit-level diagnostic that fires more than a handful of times per
- *  session, so the console stays quiet by default. */
-export function dlog(...args: unknown[]): void {
-  if (!isDebugEnabled()) return;
-  // eslint-disable-next-line no-console
-  console.debug(...args);
+/** True when `namespace` (or `*`) is enabled. Pass no argument to test
+ *  whether *any* namespace is on (legacy global-flag semantics). */
+export function isDebugEnabled(namespace?: string): boolean {
+  const c = get();
+  if (c.all) return true;
+  if (namespace === undefined) return c.set.size > 0;
+  return c.set.has(namespace);
 }
 
-/** Conditional console.warn — no-op when the flag is off. Use for kit-level
- *  diagnostics that aren't strictly user-facing but indicate something
- *  worth surfacing during debugging (e.g. no-op op batches suppressed). */
-export function dwarn(...args: unknown[]): void {
-  if (!isDebugEnabled()) return;
+/** Conditional `console.debug` — no-op unless `namespace` (or `*`) is enabled.
+ *  Each call is prefixed with `[namespace]` so the source is searchable. */
+export function dlog(namespace: string, ...args: unknown[]): void {
+  if (!isDebugEnabled(namespace)) return;
   // eslint-disable-next-line no-console
-  console.warn(...args);
+  console.debug(`[${namespace}]`, ...args);
+}
+
+/** Conditional `console.warn` — like `dlog` but at warn level. Use for
+ *  diagnostics that indicate something worth surfacing during debugging
+ *  (e.g. no-op op batches suppressed). */
+export function dwarn(namespace: string, ...args: unknown[]): void {
+  if (!isDebugEnabled(namespace)) return;
+  // eslint-disable-next-line no-console
+  console.warn(`[${namespace}]`, ...args);
 }

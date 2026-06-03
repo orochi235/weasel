@@ -357,6 +357,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
   }
 
   function endGesture(): void {
+    if (inFlight) dlog('dispatch', 'end gesture; tool=', inFlight.tool.id, 'phase=', inFlight.phase);
     inFlight = null;
     opts.onGestureChange?.();
   }
@@ -376,6 +377,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
         claimedScratch = ctx.scratch;
       }
     }
+    dlog('dispatch', 'start gesture (slot); tool=', tool.id);
     inFlight = {
       tool,
       scratch: claimedScratch,
@@ -412,6 +414,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     // Affordance hits skip threshold gating — the layer already decided
     // this is a gesture, not a click. Jump straight to 'drag' phase and
     // fire onStart immediately so subsequent moves route to onMove.
+    dlog('dispatch', 'start gesture (affordance); kind=', baseCtx.target?.kind);
     result.drag.onStart?.(e, startCtx);
     inFlight = {
       tool: virtualTool,
@@ -499,6 +502,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       const ctx = ctxFor(initScratch, baseCtx, reportRoute);
       const decision = handler(e, ctx);
       if (decision === 'claim') {
+        dlog('dispatch', 'start gesture (pointer.onDown claim); tool=', tool.id);
         // ctx.scratch may have been mutated by the handler — capture it.
         inFlight = {
           tool,
@@ -520,6 +524,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       if (t.drag || t.pointer?.onClick) { owner = t; break; }
     }
     if (!owner) return;
+    dlog('dispatch', 'start gesture (pending owner); tool=', owner.id);
     inFlight = {
       tool: owner,
       scratch: getInitialScratch(owner),
@@ -695,7 +700,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
 
   function cancelGesture(): void {
     if (!inFlight) return;
-    dlog('[dispatch] cancel gesture; tool=', inFlight.tool.id, 'phase=', inFlight.phase);
+    dlog('dispatch', 'cancel gesture; tool=', inFlight.tool.id, 'phase=', inFlight.phase);
     if (inFlight.phase === 'drag') {
       const base = opts.getCtx();
       inFlight.tool.drag?.onCancel?.(ctxFor(inFlight.scratch, base, reportRoute));

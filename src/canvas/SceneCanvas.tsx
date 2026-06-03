@@ -48,6 +48,7 @@ import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
+import { dlog } from '../debug/flag';
 import type { UseAreaSelectOptions } from 'interactions/actions/area-select/options';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
@@ -762,6 +763,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // dispatcher's `onGestureChange` only fires for legacy `tool.drag.*` hooks,
   // which the migrated actions don't provide.
   const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
+
+  useEffect(() => {
+    dlog('scene-canvas', 'mount');
+    return () => dlog('scene-canvas', 'unmount');
+  }, []);
 
   // Animator subscription: when an animator is provided, request a redraw
   // on every active frame so consumer `drawOne` functions reading

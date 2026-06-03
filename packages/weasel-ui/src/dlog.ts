@@ -15,6 +15,15 @@
  * The flag is read once and cached for the page session — reload to
  * pick up changes. Cheap hot-path checks (one nullish-coalesce + Set
  * lookup) so leaving calls in place is fine.
+ *
+ * Mirrors `src/debug/flag.ts` in the kit. Two impls live here because
+ * weasel-ui doesn't depend on the kit, but both read the same
+ * localStorage keys so behavior is uniform. See the kit copy for the
+ * canonical list of kit-level namespaces.
+ *
+ * Known weasel-ui namespaces:
+ *   - plot2d        — Plot2D mount / unmount
+ *   - curve-editor  — CurveEditor pointer flow
  */
 
 const KEYS = ['weasel.debug', 'weaseldraw.debug'] as const;

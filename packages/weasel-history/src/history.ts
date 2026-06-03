@@ -220,7 +220,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // entirely. Hidden by default; enable via
       // `localStorage.setItem('weasel.debug', '1')`.
       dwarn(
-        `[history] '${label}' batch was a no-op — every op reported false/'noop'. ` +
+        'history',
+        `'${label}' batch was a no-op — every op reported false/'noop'. ` +
         `Skipping the undo entry; consider gating the dispatch upstream to avoid the wasted work.`,
       );
       return;
@@ -240,9 +241,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // pre-edit state, the original label sticks, and the entry id stays
       // stable so React lists keyed on id don't flicker.
       redoStack.length = 0;
+      dlog('history', `coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
       bump();
       return;
     }
+    dlog('history', `push '${label}' (${ops.length} ops)`);
     undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: incoming });
     redoStack.length = 0;
     bump();
@@ -411,7 +414,7 @@ function entryToSerial(e: Entry): SerializedHistoryEntry | null {
   for (const op of e.forwardOps) {
     const s = opToSerial(op);
     if (s === null) {
-      dlog(`[history.serialize] dropping entry id=${e.id} "${e.label}" — forwardOp without name`);
+      dlog('history', `serialize: dropping entry id=${e.id} "${e.label}" — forwardOp without name`);
       return null;
     }
     forwardOps.push(s);
@@ -420,7 +423,7 @@ function entryToSerial(e: Entry): SerializedHistoryEntry | null {
   for (const op of e.baseOps) {
     const s = opToSerial(op);
     if (s === null) {
-      dlog(`[history.serialize] dropping entry id=${e.id} "${e.label}" — baseOp without name`);
+      dlog('history', `serialize: dropping entry id=${e.id} "${e.label}" — baseOp without name`);
       return null;
     }
     baseOps.push(s);
@@ -448,13 +451,13 @@ function serialToEntry(se: SerializedHistoryEntry): Entry {
   const forwardOps = se.forwardOps.map((so) => {
     const built = rebuildOp(so.name, so.args);
     if (built !== null) return built;
-    dlog(`[history.restore] unknown op name "${so.name}" — substituting no-op placeholder`);
+    dlog('history', `restore: unknown op name "${so.name}" — substituting no-op placeholder`);
     return placeholderOp(so.name, so.args, se.label);
   });
   const baseOps = se.baseOps.map((so) => {
     const built = rebuildOp(so.name, so.args);
     if (built !== null) return built;
-    dlog(`[history.restore] unknown op name "${so.name}" — substituting no-op placeholder`);
+    dlog('history', `restore: unknown op name "${so.name}" — substituting no-op placeholder`);
     return placeholderOp(so.name, so.args, se.label);
   });
   return {

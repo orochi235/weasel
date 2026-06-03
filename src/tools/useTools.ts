@@ -167,7 +167,7 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       if (!(id in registryRef.current)) {
         throw new Error(`setActive: "${id}" not in registry`);
       }
-      dlog('[tools] active:', activeRef.current, '→', id);
+      dlog('tools', 'active:', activeRef.current, '→', id);
       dispatcher.cancelGesture();
       ctx.setActive(id);
     },
@@ -180,14 +180,14 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       if (!(id in registryRef.current)) {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
-      dlog('[tools] hotkey engaged:', id);
+      dlog('tools', 'hotkey engaged:', id);
       ctx.pushHotkey(id);
     },
     [dispatcher, ctx],
   );
 
   const disengageHotkey = useCallback(() => {
-    if (hotkeyRef.current) dlog('[tools] hotkey disengaged:', hotkeyRef.current);
+    if (hotkeyRef.current) dlog('tools', 'hotkey disengaged:', hotkeyRef.current);
     ctx.popHotkey();
   }, [ctx]);
 
