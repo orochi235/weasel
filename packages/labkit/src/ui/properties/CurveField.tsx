@@ -65,6 +65,16 @@ export function CurveField({
     onChange(out);
   }, [values, onChange]);
 
+  const handleFlipVertical = useCallback(() => {
+    const mid = (min + max) / 2;
+    const flipped: number[] = new Array(values.length);
+    for (let i = 0; i + 1 < values.length; i += 2) {
+      flipped[i] = values[i]!;
+      flipped[i + 1] = 2 * mid - values[i + 1]!;
+    }
+    onChange(flipped);
+  }, [values, min, max, onChange]);
+
   return (
     <div className="lk-curve-field">
       <div className="lk-curve-field__plot">
@@ -87,6 +97,9 @@ export function CurveField({
       <div className="lk-curve-field__actions">
         <button type="button" className="lk-curve-field__action" onClick={handleFlip}>
           Flip horizontally
+        </button>
+        <button type="button" className="lk-curve-field__action" onClick={handleFlipVertical}>
+          Flip vertically
         </button>
         {defaults && (
           <button

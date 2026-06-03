@@ -30,4 +30,40 @@ describe('CurveField', () => {
     // Sort by x ascending: (0,0.7), (0.7,0.4), (1,-1).
     expect(onChange.mock.calls[0][0]).toEqual([0, 0.7, 0.7, 0.4, 1, -1]);
   });
+
+  it('flip vertically mirrors y through (min+max)/2 and keeps x order', () => {
+    const onChange = vi.fn();
+    render(
+      <CurveField
+        values={[0, -1, 0.3, 0.4, 1, 0.7]}
+        min={-1}
+        max={1}
+        step={0.02}
+        width={200}
+        height={110}
+        onChange={onChange}
+      />,
+    );
+    screen.getByRole('button', { name: /flip vertically/i }).click();
+    expect(onChange).toHaveBeenCalledTimes(1);
+    // (min+max)/2 = 0. -1 → 1, 0.4 → -0.4, 0.7 → -0.7. x order preserved.
+    expect(onChange.mock.calls[0][0]).toEqual([0, 1, 0.3, -0.4, 1, -0.7]);
+  });
+
+  it('flip vertically with [0,1] range mirrors through 0.5', () => {
+    const onChange = vi.fn();
+    render(
+      <CurveField
+        values={[0, 0, 0.5, 0.25, 1, 1]}
+        min={0}
+        max={1}
+        step={0.01}
+        width={200}
+        height={110}
+        onChange={onChange}
+      />,
+    );
+    screen.getByRole('button', { name: /flip vertically/i }).click();
+    expect(onChange.mock.calls[0][0]).toEqual([0, 1, 0.5, 0.75, 1, 0]);
+  });
 });
