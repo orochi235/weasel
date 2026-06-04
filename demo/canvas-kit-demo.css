@@ -345,6 +345,23 @@ a:hover { text-decoration: underline; }
   white-space: pre;
 }
 
+.ckd-line {
+  display: flex;
+  gap: 12px;
+}
+
+.ckd-line-no {
+  flex: none;
+  color: #6b6553;
+  user-select: none;
+  text-align: right;
+}
+
+.ckd-line-content {
+  flex: 1 1 auto;
+  white-space: pre;
+}
+
 /* ---------- Theme overrides for weasel-ui's --wzl-* tokens.
    Components live in @orochi235/weasel-ui; we re-skin their CSS variables
    here to match the dark demo chrome. */

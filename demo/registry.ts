@@ -28,6 +28,7 @@ import { ParallaxDemo } from './demos/ParallaxDemo';
 import { ForceGraphDemo } from './demos/ForceGraphDemo';
 import { D3SortableDemo } from './demos/D3SortableDemo';
 import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
+import { LayeredCurveDemo } from './demos/LayeredCurveDemo';
 import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
 import { VertexColorsDemo } from './demos/VertexColorsDemo';
 import { VertexWidthsDemo } from './demos/VertexWidthsDemo';
@@ -66,6 +67,7 @@ import ParallaxDemoFull from './demos/ParallaxDemo.tsx?raw';
 import ForceGraphDemoFull from './demos/ForceGraphDemo.tsx?raw';
 import D3SortableDemoFull from './demos/D3SortableDemo.tsx?raw';
 import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
+import LayeredCurveDemoFull from './demos/LayeredCurveDemo.tsx?raw';
 import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
 import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
 import VertexWidthsDemoFull from './demos/VertexWidthsDemo.tsx?raw';
@@ -532,6 +534,16 @@ export const DEMOS: DemoEntry[] = [
     Component: PerceptualColorSlidersDemo,
     full: PerceptualColorSlidersDemoFull,
     path: 'demo/demos/PerceptualColorSlidersDemo.tsx',
+  },
+  {
+    id: 'layered-curve',
+    title: 'Layered curve editor',
+    category: 'weasel-ui',
+    description: 'LayeredCurveEditor composing three layers to reconstruct a beveled solid-of-revolution\'s cross-section: a goldenrod bevel layer (filled under, x ∈ [0, b]), a purple catmull-rom spline (x ∈ [b, half]), and a custom partition-handle layer at the seam. The two curves are held C0 continuous — the seam\'s y is synced between layers inside `onLayerChange`, demonstrating how cross-layer reactivity works (consumer-driven recompute; in-flight gestures see the freshest state each pointermove tick). The toolbar slider sets the bevel width b; the dark on-plot handle adjusts it live.',
+    hint: 'Drag anchors on either curve (the seam stays attached); drag the dark vertical handle to slide b; click on a curve to insert; shift-click an anchor to delete.',
+    Component: LayeredCurveDemo,
+    full: LayeredCurveDemoFull,
+    path: 'demo/demos/LayeredCurveDemo.tsx',
   },
 
   // ─── weasel-hud ───────────────────────────────────────────────────────────
