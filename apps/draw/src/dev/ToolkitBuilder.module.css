@@ -145,7 +145,7 @@
 }
 .matrix th { font-weight: 500; color: var(--wzl-muted, var(--wzl-fg-muted)); font-size: 10px; }
 .matrix code { font-size: 10px; }
-.matrixCell { text-align: center; color: var(--wzl-accent, #7fb069); font-weight: 700; }
+.matrixCell { text-align: center; color: var(--wzl-accent-fg, #7fb069); font-weight: 700; }
 
 /* Keystroke "key cap" styling — each modifier and key in its own bordered chip. */
 .keys { display: inline-flex; gap: 3px; align-items: center; flex-wrap: wrap; }
@@ -211,7 +211,7 @@
 }
 .bindingMod { color: var(--wzl-muted, var(--wzl-fg-muted)); }
 
-.enabledOk { color: var(--wzl-accent, #7fb069); font-weight: 600; }
+.enabledOk { color: var(--wzl-accent-fg, #7fb069); font-weight: 600; }
 .enabledNo { color: var(--wzl-warning, #d97757); font-family: ui-monospace, monospace; font-size: 11px; }
 
 /* Resolutions widget — gesture/phase pickers + per-mod resolution table. */
@@ -244,7 +244,7 @@
 }
 .resolutionsTable th { font-weight: 600; color: var(--wzl-muted, var(--wzl-fg-muted)); }
 .resolutionsCell { white-space: nowrap; }
-.resolutionsHit code { font-size: 11px; color: var(--wzl-accent, #7fb069); }
+.resolutionsHit code { font-size: 11px; color: var(--wzl-accent-fg, #7fb069); }
 .resolutionsMatchedKey {
   font-size: 10px;
   color: var(--wzl-muted, var(--wzl-fg-muted));
@@ -272,7 +272,7 @@
 }
 .segmentedButton[data-active='true'] {
   background: var(--wzl-accent, #7fb069);
-  color: #000;
+  color: var(--wzl-fg-on-accent, #f5f5f6);
 }
 .segmentedButton:disabled {
   cursor: not-allowed;

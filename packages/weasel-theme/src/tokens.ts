@@ -70,6 +70,7 @@ export const DEFAULT_TOKENS = {
 
   // Semantic — interactive
   '--wzl-accent':       '#2e1f7a',
+  '--wzl-accent-fg':    '#5841b8',
   '--wzl-accent-hover': '#5841b8',
   '--wzl-danger':       '#d94a3f',
   '--wzl-warning':      '#d99a3f',

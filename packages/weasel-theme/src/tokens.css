@@ -100,6 +100,12 @@
 
   /* Interactive */
   --wzl-accent:       var(--wzl-accent-base);
+  /* Accent for *foreground* use — text, icons, selected-state labels drawn
+   * directly on a surface. --wzl-accent is a fill; the midnight base is too
+   * dim to read as text against dark surfaces (same reason --wzl-curve-color
+   * routes through the strong variant). Flips to the deep base in light
+   * mode, where it's the legible one. */
+  --wzl-accent-fg:    var(--wzl-accent-strong);
   --wzl-accent-hover: var(--wzl-accent-strong);
   --wzl-danger:       var(--wzl-danger-base);
   --wzl-warning:      var(--wzl-warning-base);
@@ -158,6 +164,8 @@
   --wzl-border:         var(--wzl-gray-700);
   --wzl-border-strong:  var(--wzl-gray-600);
 
+  --wzl-accent-fg:      var(--wzl-accent-strong);
+
   --wzl-thumb-text:     var(--wzl-gray-900);
 }
 
@@ -176,6 +184,8 @@
 
   --wzl-border:         var(--wzl-gray-200);
   --wzl-border-strong:  var(--wzl-gray-300);
+
+  --wzl-accent-fg:      var(--wzl-accent-base);
 
   --wzl-thumb-text:     var(--wzl-gray-50);
 }

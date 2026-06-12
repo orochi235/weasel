@@ -54,7 +54,9 @@
   z-index: 1;
 }
 
-.badge[data-tone='accent']  { --badge-edge: var(--wzl-accent, #7fb069); }
+/* Tone edges double as text color in the outline/subtle variants, so they
+   must be foreground-legible — hence accent-fg, not the accent fill. */
+.badge[data-tone='accent']  { --badge-edge: var(--wzl-accent-fg, var(--wzl-accent, #7fb069)); }
 .badge[data-tone='info']    { --badge-edge: #7ab8d4; }
 .badge[data-tone='warn']    { --badge-edge: #d4a574; }
 .badge[data-tone='danger']  { --badge-edge: #c43c3c; }
@@ -74,6 +76,10 @@
   --badge-fill: color-mix(in oklab, var(--badge-edge) 14%, transparent);
   --badge-fg: var(--badge-edge);
 }
+/* Neutral's edge is a border gray that vanishes when the outline/subtle
+   variants (above) reuse it as the text color — re-assert the muted fg.
+   Solid keeps the variant's white fg on the gray fill. */
+.badge[data-tone='neutral']:not([data-variant='solid']) { --badge-fg: var(--wzl-muted, #9ea1a8); }
 
 .badge {
   padding:
