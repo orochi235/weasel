@@ -10,6 +10,12 @@ const repoRoot = resolve(__dirname, '../..');
 export default defineConfig({
   root: __dirname,
   base: '/weasel/draw/',
+  // apps/draw has no node_modules of its own, so Vite's default cacheDir
+  // resolves up to the repo root's `node_modules/.vite` — the SAME directory
+  // the kit dev server uses. Two concurrent servers then clobber each
+  // other's optimized-dep metadata and every page 504s with "Outdated
+  // Optimize Dep". Pin a distinct cache.
+  cacheDir: resolve(repoRoot, 'node_modules/.vite-draw'),
   // Serve the bundled Inter MSDF atlas so registerFont() in main.tsx can fetch
   // it. Atlas files live under repoRoot/assets/fonts/inter/.
   publicDir: resolve(repoRoot, 'assets/fonts'),
