@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
+import { keySpecFromKey } from '@orochi235/weasel-ui';
 import { RegistryDetail, RouteBadge } from './RegistryDetail';
 import type { TreeEntry } from './registryData';
 
@@ -118,10 +119,14 @@ describe('RouteBadge v3', () => {
     expect(tag?.className).toMatch(/routeMuted/);
   });
 
-  it('renders keyDown arg as a minimal KeyCap with the canonical glyph (no parens)', () => {
+  it('renders keyDown arg as a minimal KeyCap with the canonical label (no parens)', () => {
     const { container } = render(<RouteBadge route="[initial] keyDown(Escape)" />);
     const cap = container.querySelector('kbd[data-variant="minimal"]');
-    expect(cap?.textContent).toBe('⎋');
+    // Compare against keySpecFromKey rather than a literal glyph — the label
+    // is platform-dependent (⎋ on macOS, Esc elsewhere), and the detected
+    // platform follows the host OS via jsdom's user agent. The contract under
+    // test is that the arg routes through keySpecFromKey into a KeyCap.
+    expect(cap?.textContent).toBe(keySpecFromKey('Escape').label);
     // No parenthesized fallback rendering when arg is a key.
     expect(container.textContent).not.toMatch(/\(Escape\)/);
   });
@@ -134,6 +139,6 @@ describe('RouteBadge v3', () => {
   it('renders keyHeld arg as a minimal KeyCap (same path as keyDown)', () => {
     const { container } = render(<RouteBadge route="[initial] keyHeld(Space)" />);
     const cap = container.querySelector('kbd[data-variant="minimal"]');
-    expect(cap?.textContent).toBe('␣');
+    expect(cap?.textContent).toBe(keySpecFromKey(' ').label);
   });
 });
