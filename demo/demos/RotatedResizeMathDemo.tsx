@@ -466,8 +466,16 @@ export function RotatedResizeMathDemo() {
   const dragRef = useRef<DragState | null>(null);
 
   // Per-panel in-flight pose for the active gesture (null when idle). Lives
-  // in React state so panels + overlays re-render on each pointermove.
+  // in React state so panels + overlays re-render on each pointermove, and
+  // is mirrored into a ref so the pointerup commit reads the CURRENT value:
+  // the window listeners are registered once per gesture, so any state they
+  // close over is frozen at pointerdown time.
   const [live, setLive] = useState<Record<PanelId, Rect> | null>(null);
+  const liveRef = useRef<Record<PanelId, Rect> | null>(null);
+  const updateLive = useCallback((v: Record<PanelId, Rect> | null) => {
+    liveRef.current = v;
+    setLive(v);
+  }, []);
   const [activePanel, setActivePanel] = useState<PanelId | null>(null);
   const [originFixed, setOriginFixed] = useState<{ x: number; y: number } | null>(null);
   const [activeAnchor, setActiveAnchor] = useState<ResizeAnchor | null>(null);
@@ -509,8 +517,18 @@ export function RotatedResizeMathDemo() {
         next[panel] = { ...p, x: p.x + dx, y: p.y + dy };
       }
     }
-    setLive(next);
-  }, []);
+    updateLive(next);
+  }, [updateLive]);
+
+  // The window listeners must be the SAME function identities at add and
+  // remove time, and must see the latest handler closures when they fire —
+  // so register stable wrappers that delegate through refs. (Registering
+  // `ref.current` directly snapshots one render's closure and breaks both:
+  // the commit read a stale `live`, and the remove call never matched.)
+  const handlePointerUpRef = useRef<() => void>(() => {});
+  const handlePointerCancelRef = useRef<() => void>(() => {});
+  const onWindowPointerUp = useCallback(() => handlePointerUpRef.current(), []);
+  const onWindowPointerCancel = useCallback(() => handlePointerCancelRef.current(), []);
 
   const releaseCapture = useCallback(() => {
     const drag = dragRef.current;
@@ -525,36 +543,36 @@ export function RotatedResizeMathDemo() {
     setOriginFixed(null);
     setActiveAnchor(null);
     window.removeEventListener('pointermove', handlePointerMove);
-    window.removeEventListener('pointerup', handlePointerUpRef.current);
-    window.removeEventListener('pointercancel', handlePointerCancelRef.current);
-  }, [handlePointerMove]);
+    window.removeEventListener('pointerup', onWindowPointerUp);
+    window.removeEventListener('pointercancel', onWindowPointerCancel);
+  }, [handlePointerMove, onWindowPointerUp, onWindowPointerCancel]);
 
   const handlePointerUp = useCallback(() => {
     const drag = dragRef.current;
     if (!drag) return;
     // Commit each scene's live pose as the new committed pose via batch.
-    if (live) {
+    // Read through the ref, not the `live` state: this runs from a window
+    // listener whose closure predates every pointermove of the gesture.
+    const finalPoses = liveRef.current;
+    if (finalPoses) {
       for (const panel of PANEL_IDS) {
         const scene = scenes[panel];
-        const finalPose = live[panel];
+        const finalPose = finalPoses[panel];
         scene.batch('Resize', () => {
           scene.setPose(asNodeId('a'), finalPose);
         });
       }
     }
-    setLive(null);
+    updateLive(null);
     releaseCapture();
-  }, [live, releaseCapture, scenes]);
+  }, [releaseCapture, scenes, updateLive]);
 
   const handlePointerCancel = useCallback(() => {
-    setLive(null);
+    updateLive(null);
     releaseCapture();
-  }, [releaseCapture]);
+  }, [releaseCapture, updateLive]);
 
-  // Refs so `releaseCapture` removes the SAME identities it added.
-  const handlePointerUpRef = useRef(handlePointerUp);
   handlePointerUpRef.current = handlePointerUp;
-  const handlePointerCancelRef = useRef(handlePointerCancel);
   handlePointerCancelRef.current = handlePointerCancel;
 
   const handlePointerDown = useCallback((panel: PanelId, e: React.PointerEvent<HTMLDivElement>) => {
@@ -608,13 +626,13 @@ export function RotatedResizeMathDemo() {
     setActivePanel(panel);
     if (hitAnchor) setActiveAnchor(hitAnchor);
     if (hitAnchor) setOriginFixed(fixedCornerWorld(refPose, hitAnchor));
-    setLive(startPoses);
+    updateLive(startPoses);
 
     (wrapper as Element & { setPointerCapture?: (id: number) => void }).setPointerCapture?.(e.pointerId);
     window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUpRef.current);
-    window.addEventListener('pointercancel', handlePointerCancelRef.current);
-  }, [greenScene, orangeScene, purpleScene, tealScene, handlePointerMove]);
+    window.addEventListener('pointerup', onWindowPointerUp);
+    window.addEventListener('pointercancel', onWindowPointerCancel);
+  }, [greenScene, orangeScene, purpleScene, tealScene, handlePointerMove, onWindowPointerUp, onWindowPointerCancel, updateLive]);
 
   const livePose = (panel: PanelId): Rect | null => live?.[panel] ?? null;
   const displayedPose = (panel: PanelId): Rect => live?.[panel]
