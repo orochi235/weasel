@@ -100,6 +100,7 @@ import { firstPreviewPose, firstPreviewBounds } from './toolPreview';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
 import {
   buildChromeCtx,
+  never,
   resolveVisibility,
   useHoverTracking,
 } from 'features/chrome-caps';
@@ -1200,8 +1201,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const selectionForCapsRef = useRef<readonly NodeId[]>([]);
   const getFocusedPropRef = useRef(getFocusedProp);
   getFocusedPropRef.current = getFocusedProp;
-  const chromeVisibilityRef = useRef(chromeVisibility);
-  chromeVisibilityRef.current = chromeVisibility;
+  // selectionMode 'none' suppresses the marquee / lasso chrome by default:
+  // every selection write no-ops in that mode, so the select tool's
+  // empty-drag binding still CLAIMS the gesture (keeping it from falling
+  // through to other ambient drag actions like insert) but paints nothing.
+  // An explicit consumer rule for either id still wins.
+  const effectiveChromeVisibility = useMemo(() => (
+    selectionMode === 'none'
+      ? { 'action.marquee': never, 'action.lasso': never, ...chromeVisibility }
+      : chromeVisibility
+  ), [chromeVisibility, selectionMode]);
+  const chromeVisibilityRef = useRef(effectiveChromeVisibility);
+  chromeVisibilityRef.current = effectiveChromeVisibility;
   const getActiveModeRef = useRef(getActiveMode);
   getActiveModeRef.current = getActiveMode;
 

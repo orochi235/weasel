@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent } from '@testing-library/react';
 import { useRef, useEffect } from 'react';
 import type React from 'react';
 import { SceneCanvas } from './SceneCanvas';
@@ -146,5 +146,65 @@ describe('SceneCanvas — chrome-caps wiring', () => {
     const isVisible = helpersRef.current!.getIsVisible();
     // Ids the kit has no default for fall through to `always`.
     expect(isVisible('something.custom')).toBe(true);
+  });
+});
+
+/** Variant harness for selectionMode tests — returns the rendered container
+ *  so tests can drive pointer events on the canvas to start a real marquee. */
+function renderWithMode(
+  scene: Scene<D, L, P>,
+  selectionMode: 'single' | 'none',
+): {
+  helpersRef: React.MutableRefObject<CanvasHelpers<P> | null>;
+  container: HTMLElement;
+} {
+  const helpersRef: React.MutableRefObject<CanvasHelpers<P> | null> = { current: null };
+  function Probe() {
+    const localRef = useRef<CanvasHelpers<P> | null>(null);
+    useEffect(() => {
+      helpersRef.current = localRef.current;
+    });
+    return (
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        selectionMode={selectionMode}
+        helpersRef={localRef}
+      />
+    );
+  }
+  const { container } = render(<Probe />);
+  return { helpersRef, container };
+}
+
+describe('SceneCanvas — selectionMode none suppresses marquee chrome', () => {
+  function dragOnEmpty(container: HTMLElement) {
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      fireEvent.pointerDown(canvas, { clientX: 200, clientY: 200, pointerId: 1, button: 0 });
+      fireEvent.pointerMove(canvas, { clientX: 300, clientY: 280, pointerId: 1 });
+    });
+    return canvas;
+  }
+
+  it('control: default mode shows action.marquee while an empty-drag is in flight', () => {
+    const scene = makeScene();
+    const { helpersRef, container } = renderWithMode(scene, 'single');
+    act(() => {});
+    dragOnEmpty(container);
+    const isVisible = helpersRef.current!.getIsVisible();
+    expect(isVisible('action.marquee')).toBe(true);
+  });
+
+  it('selectionMode none: action.marquee stays hidden mid-drag', () => {
+    const scene = makeScene();
+    const { helpersRef, container } = renderWithMode(scene, 'none');
+    act(() => {});
+    dragOnEmpty(container);
+    const isVisible = helpersRef.current!.getIsVisible();
+    expect(isVisible('action.marquee')).toBe(false);
+    expect(isVisible('action.lasso')).toBe(false);
   });
 });
