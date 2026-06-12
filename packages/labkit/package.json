@@ -72,7 +72,11 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "build:site": "npm run docs:build && npm run build-storybook && rm -rf docs/.vitepress/dist/storybook && cp -R storybook-static docs/.vitepress/dist/storybook"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -107,6 +111,7 @@
     "tsx": "^4.19.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.4",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.4"
   }
 }

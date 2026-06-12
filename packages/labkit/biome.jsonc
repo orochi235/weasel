@@ -1,7 +1,16 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.13/schema.json",
   "files": {
-    "includes": ["**", "!dist", "!dist-examples", "!storybook-static", "!node_modules", "!examples"]
+    "includes": [
+      "**",
+      "!dist",
+      "!dist-examples",
+      "!storybook-static",
+      "!node_modules",
+      "!examples",
+      "!docs/.vitepress/dist",
+      "!docs/.vitepress/cache"
+    ]
   },
   "formatter": {
     "enabled": true,

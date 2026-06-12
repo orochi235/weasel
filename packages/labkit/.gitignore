@@ -9,3 +9,5 @@ coverage/
 *.tsbuildinfo
 .playwright-mcp/
 /*.png
+docs/.vitepress/dist/
+docs/.vitepress/cache/

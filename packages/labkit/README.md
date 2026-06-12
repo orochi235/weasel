@@ -6,8 +6,23 @@ This is the v0.x of the library. The Lab/Workspace/Instrument runtime arrives in
 
 ## Installation
 
+Not published to npm — for now the package is intentionally local-install-only.
+It also depends on a sibling clone of [weasel](https://github.com/orochi235/weasel),
+so clone both side by side:
+
 ```bash
-npm install @labkit/react
+git clone https://github.com/orochi235/weasel.git
+git clone https://github.com/orochi235/labkit.git
+cd weasel && npm install && npm run build
+cd ../labkit && npm install && npm run build
+```
+
+Then point your app at the local clone:
+
+```json
+"dependencies": {
+  "@labkit/react": "file:../labkit"
+}
 ```
 
 ## Usage
@@ -49,6 +64,9 @@ npm run build        # Build dist/ for publish
 
 ## Documentation
 
-- [`docs/AGENTS.md`](./docs/AGENTS.md) — agent navigation guide
-- [`docs/RECIPES.md`](./docs/RECIPES.md) — composition patterns
-- [`docs/superpowers/specs/2026-04-26-labkit-design.md`](./docs/superpowers/specs/2026-04-26-labkit-design.md) — design spec
+- [Docs site](https://orochi235.github.io/labkit/)
+- [Recipes](https://orochi235.github.io/labkit/RECIPES) — composition patterns
+- [Agent guide](https://orochi235.github.io/labkit/AGENTS) — agent navigation guide
+- [Storybook](https://orochi235.github.io/labkit/storybook/)
+- [Speech balloon experiment](https://orochi235.github.io/labkit/storybook/?path=/story/ui-properties-propertypanel-speechballoonpanels--right-sidebar-tails) — sample implementation built on the property-panel widgets
+- [Design spec](https://github.com/orochi235/labkit/blob/main/docs/superpowers/specs/2026-04-26-labkit-design.md)
