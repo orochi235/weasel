@@ -113,6 +113,9 @@ export interface DemoEntry {
   path: string;
   /** Additional source files (e.g. scene JSON) shown as extra tabs. */
   extras?: DemoExtra[];
+  /** Outbound "see also" links rendered under the description — e.g. a
+   *  consumer project that exercises the demonstrated component for real. */
+  links?: { label: string; href: string }[];
   /** ISO-8601 date of the first git commit adding this demo's source.
    *  Auto-populated by `virtual:demo-timestamps` — leave unset in the
    *  registry literal. */
@@ -541,6 +544,10 @@ export const DEMOS: DemoEntry[] = [
     category: 'weasel-ui',
     description: 'LayeredCurveEditor composing three layers to reconstruct a beveled solid-of-revolution\'s cross-section: a goldenrod bevel layer (filled under, x ∈ [0, b]), a purple catmull-rom spline (x ∈ [b, half]), and a custom partition-handle layer at the seam. The two curves are held C0 continuous — the seam\'s y is synced between layers inside `onLayerChange`, demonstrating how cross-layer reactivity works (consumer-driven recompute; in-flight gestures see the freshest state each pointermove tick). The toolbar slider sets the bevel width b; the dark on-plot handle adjusts it live.',
     hint: 'Drag anchors on either curve (the seam stays attached); drag the dark vertical handle to slide b; click on a curve to insert; shift-click an anchor to delete.',
+    links: [{
+      label: 'Speech balloon lab (uses this editor) →',
+      href: 'https://orochi235.github.io/experiments/speech-balloons/',
+    }],
     Component: LayeredCurveDemo,
     full: LayeredCurveDemoFull,
     path: 'demo/demos/LayeredCurveDemo.tsx',

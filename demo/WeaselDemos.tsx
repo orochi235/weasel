@@ -145,6 +145,13 @@ function DemoView({ entry }: { entry: DemoEntry }) {
         </div>
         <h2>{entry.title}</h2>
         <p className="ckd-desc">{entry.description}</p>
+        {entry.links && (
+          <p className="ckd-links">
+            {entry.links.map((l) => (
+              <a key={l.href} href={l.href} target="_blank" rel="noreferrer">{l.label}</a>
+            ))}
+          </p>
+        )}
       </header>
 
       <div className="ckd-canvas-wrap">

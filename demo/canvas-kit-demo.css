@@ -182,6 +182,13 @@ a:hover { text-decoration: underline; }
   max-width: 80ch;
 }
 
+.ckd-links {
+  font-size: 13px;
+  margin: 4px 0 0;
+  display: flex;
+  gap: 16px;
+}
+
 .ckd-eyebrow-sep,
 .ckd-eyebrow-date {
   color: var(--ckd-faint);
