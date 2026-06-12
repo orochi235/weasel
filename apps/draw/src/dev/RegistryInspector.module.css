@@ -134,7 +134,9 @@
   flex-wrap: wrap;
   gap: 4px;
 }
-.tag { background: var(--wzl-bg, var(--wzl-surface-sunken)); padding: 2px 8px; border-radius: 3px; margin-right: 4px; font-size: 13px; }
+/* Sunken (not --wzl-bg) so the chip reads as a token against the gray-800
+   detail panel — --wzl-bg aliases --wzl-surface, which is the panel color. */
+.tag { background: var(--wzl-surface-sunken); padding: 2px 8px; border-radius: 3px; margin-right: 4px; font-size: 13px; }
 .routeBadge { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
 
 .phaseGroup { display: inline-flex; align-items: center; gap: 2px; }

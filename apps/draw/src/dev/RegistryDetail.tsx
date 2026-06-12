@@ -7,8 +7,9 @@ function toKeys(parts: readonly string[] | undefined) {
 }
 
 /** Minimal inline-markdown renderer — splits on backtick-delimited code
- *  spans and wraps each in <code>. No other markdown features. Sufficient
- *  for the route-field explanation glossary, which uses inline code only. */
+ *  spans and wraps each in <code>. No other markdown features. Used by every
+ *  panel that renders prose strings (descriptions, JSDoc blocks, schema
+ *  notes), so backticks read as code tokens instead of literal characters. */
 function InlineMarkdown({ text }: { text: string }) {
   const segments = text.split(/(`[^`]+`)/g);
   return (
@@ -388,7 +389,7 @@ function TokensDetail() {
       {TOKEN_SETS.map((set) => (
         <section key={set.id}>
           <h3 className={s.subHeading}>{set.label}</h3>
-          <p className={s.empty}>{set.description}</p>
+          <p className={s.empty}><InlineMarkdown text={set.description} /></p>
           <TokenSetTable set={set} />
         </section>
       ))}
@@ -454,10 +455,16 @@ function OpKindDetail({ entry }: { entry: OpKindEntry; onNavigate: Props['onNavi
         )}
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
-      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <OpSchemaPanel factoryId={factoryId} />
     </div>
   );
+}
+
+/** JSDoc excerpt block. Runs the text through `InlineMarkdown` so backtick
+ *  spans render as code tokens rather than literal backticks. */
+function Jsdoc({ text }: { text: string }) {
+  return <pre className={s.jsdoc}><InlineMarkdown text={text} /></pre>;
 }
 
 /** Args-object property table for an op factory. Pulled from the kit's
@@ -956,15 +963,15 @@ function PhaseOutputDetail({
   // apply to `cursor` / `claimsAll`, which both phases honor.
   const engagedNoop = entry.id === 'overlay';
   const blurb = entry.id === 'overlay'
-    ? 'Render layer emitted while the tool is active. Only initial.overlay is read by the runtime today.'
+    ? 'Render layer emitted while the tool is active. Only `initial.overlay` is read by the runtime today.'
     : entry.id === 'cursor'
       ? 'CSS cursor the tool declares (string or scratch-aware thunk).'
-      : 'Modal-claim predicate. When true, the dispatcher routes every pointerdown to this tool and bypasses affordance hit-tests.';
+      : 'Modal-claim predicate. When true, the dispatcher routes every `pointerdown` to this tool and bypasses affordance hit-tests.';
   return (
     <div>
       <h2 className={s.detailHeading}>{entry.label}</h2>
       <p className={s.empty}>
-        Phase output — the tool <em>declares or emits</em> this, rather than reacting to an input event. {blurb}
+        Phase output — the tool <em>declares or emits</em> this, rather than reacting to an input event. <InlineMarkdown text={blurb} />
       </p>
       <h3 className={s.subHeading}>Tools declaring this output</h3>
       <DataGrid
@@ -1066,7 +1073,7 @@ function IconDetail({ entry }: { entry: IconEntry }) {
         <dt>source</dt><dd><code className={s.tag}>{entry.source}</code></dd>
         {match?.path && (<><dt>file</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
-      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
     </div>
   );
 }
@@ -1219,7 +1226,7 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
           />
         </>
       )}
-      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
     </div>
   );
 }
@@ -1435,7 +1442,7 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
           />
         </>
       )}
-      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
     </div>
   );
 }
@@ -1605,7 +1612,7 @@ function ShapeKindDetail({
         )}
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
-      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <ShapeSchemaPanel kindId={entry.id} />
     </div>
   );
@@ -1621,7 +1628,7 @@ function ShapeSchemaPanel({ kindId }: { kindId: string }) {
   }
   return (
     <>
-      {schema.notes && <p className={s.schemaNote}>{schema.notes}</p>}
+      {schema.notes && <p className={s.schemaNote}><InlineMarkdown text={schema.notes} /></p>}
       <h3 className={s.subHeading}>Pose</h3>
       <SchemaTable rows={schema.pose} empty="Pose synthesized elsewhere (no literal in source)." />
       <h3 className={s.subHeading}>Data</h3>
@@ -1689,7 +1696,7 @@ function OpFactoryDetail({ entry }: { entry: OpFactoryEntry }) {
         )}
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
       </dl>
-      {match?.jsdoc && <pre className={s.jsdoc}>{match.jsdoc}</pre>}
+      {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
       <OpSchemaPanel factoryId={entry.id} />
     </div>
   );
