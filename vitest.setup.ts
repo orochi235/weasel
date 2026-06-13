@@ -1,3 +1,20 @@
+import { afterEach } from 'vitest';
+import { act } from '@testing-library/react';
+
+/**
+ * Drain trailing React work after every test. Several components sync state
+ * through a deferred update (e.g. useTools pushing the active tool into
+ * ActiveToolContextProvider on a microtask): the update settles AFTER the
+ * synchronous test body / render's act() boundary, so React logs hundreds of
+ * "An update to … was not wrapped in act(...)" lines under CI's timing. This
+ * flushes those pending updates inside an act() boundary so they're properly
+ * acted instead of warned — a no-op when nothing is pending. It is NOT warning
+ * suppression: the updates really do run inside act() here.
+ */
+afterEach(async () => {
+  await act(async () => {});
+});
+
 /**
  * jsdom does not ship PointerEvent. When @testing-library/dom tries to use
  * window.PointerEvent to create pointer events it falls back to window.Event,
@@ -8,6 +25,46 @@
  *   - modifier keys (shiftKey, altKey, metaKey, ctrlKey) work
  *   - basic PointerEvent fields (pointerId, isPrimary, pointerType) work
  */
+// jsdom does not implement HTMLCanvasElement.prototype.getContext — it throws
+// "Not implemented" unless the (native, heavy) `canvas` package is installed.
+// Every component that mounts a <Canvas>/<SceneCanvas> tripped this, flooding
+// CI logs with identical stack dumps. Provide a non-throwing default:
+//   - '2d'    → a no-op context stub (enough surface for text/pattern paths)
+//   - 'webgl2'/'webgl' → null, which Canvas.tsx's renderer guard already
+//     treats as "no GL here, bail silently" (the jsdom code path).
+// Tests that need to assert on getContext (e.g. Canvas.test.tsx) still spy on
+// or re-stub it locally; this is only the quiet baseline.
+if (typeof HTMLCanvasElement !== 'undefined') {
+  const make2dStub = (canvas: HTMLCanvasElement) => ({
+    canvas,
+    clearRect() {}, fillRect() {}, strokeRect() {},
+    save() {}, restore() {},
+    translate() {}, rotate() {}, scale() {}, transform() {}, setTransform() {}, resetTransform() {},
+    setLineDash() {}, getLineDash: () => [] as number[],
+    beginPath() {}, closePath() {}, moveTo() {}, lineTo() {},
+    bezierCurveTo() {}, quadraticCurveTo() {}, arc() {}, arcTo() {}, rect() {}, ellipse() {},
+    clip() {}, stroke() {}, fill() {},
+    fillText() {}, strokeText() {},
+    measureText: (text = '') => ({ width: String(text).length * 6 }),
+    drawImage() {}, putImageData() {},
+    getImageData: (_x = 0, _y = 0, w = 1, h = 1) => ({
+      data: new Uint8ClampedArray(Math.max(1, w * h) * 4), width: w, height: h,
+    }),
+    createImageData: (w = 1, h = 1) => ({
+      data: new Uint8ClampedArray(Math.max(1, w * h) * 4), width: w, height: h,
+    }),
+    createLinearGradient: () => ({ addColorStop() {} }),
+    createRadialGradient: () => ({ addColorStop() {} }),
+    createPattern: () => null,
+  });
+  const proto = HTMLCanvasElement.prototype as unknown as {
+    getContext: (this: HTMLCanvasElement, type: string) => unknown;
+  };
+  proto.getContext = function getContext(this: HTMLCanvasElement, type: string) {
+    return type === '2d' ? make2dStub(this) : null;
+  };
+}
+
 if (typeof window !== 'undefined' && !window.PointerEvent) {
   class PointerEvent extends MouseEvent {
     // PointerEvent-specific fields
