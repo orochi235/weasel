@@ -1391,23 +1391,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         }
         const tb = firstPreviewBounds(tools, id);
         if (tb != null) return tb as unknown as TPose;
-        if (multiActive && id === MULTI_RESIZE_TARGET_ID && internalBoundsOf) {
-          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-          let any = false;
-          for (const sid of selectedIds) {
-            const b = internalBoundsOf(sid);
-            if (!b) continue;
-            any = true;
-            if (b.x < minX) minX = b.x;
-            if (b.y < minY) minY = b.y;
-            if (b.x + b.width > maxX) maxX = b.x + b.width;
-            if (b.y + b.height > maxY) maxY = b.y + b.height;
-          }
-          if (any) {
-            return { x: minX, y: minY, width: maxX - minX, height: maxY - minY } as unknown as TPose;
-          }
-          return null;
-        }
+        // The synthetic multi-resize union is resolved by the overlay layer
+        // from `ChromeState.unionBounds` at draw time (the single owner of
+        // the union AABB, shared with the affordance hit-tester) — no inline
+        // re-derivation here.
         if (!adapter) {
           if (internalBoundsOf) {
             const b = internalBoundsOf(id);

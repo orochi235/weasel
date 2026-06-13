@@ -22,12 +22,6 @@ Priority tags:
 
 ### P2 — broad reuse / friction-likely
 
-**Tools & gestures**
-- Phase 5 cleanup of chrome-affordances spec → [Tools & gestures](#tools--gestures)
-- Affordances of registered-but-not-active tools → [Tools & gestures](#tools--gestures)
-- Audit other chrome violations (visible-is-hittable) → [Tools & gestures](#tools--gestures)
-- `useTextTool` synthesized adapter ergonomic → [Tools & gestures](#tools--gestures)
-
 **Viewport**
 - Axis-aware elliptical hit shapes under non-uniform zoom → [Viewport](#viewport)
 - Kit-level `viewTransform` zoom integration on `<Canvas>` → [Viewport](#viewport)
@@ -76,13 +70,9 @@ Priority tags:
 
 - **(P3) Convergence-target facets.** Each kind-keyed concern (label/icon, propertyRows, bindings, subkinds, serialize/deserialize) lands as its own per-facet registry per the **node-facets reframe** at `docs/superpowers/specs/2026-05-22-node-facets-reframe-design.md`. Tracked individually under the relevant TODO sections (per-kind property-row registry, default action icons, useScene op-log serialization).
 
-- **(P2) Phase 5 cleanup of chrome-affordances spec.** The migration in Phase 3-4 left two behaviors split between Canvas and `useSelectTool`: (a) Canvas still synthesizes the multi-resize union via `poseById` + `MULTI_RESIZE_TARGET_ID` for the selection-overlay slot, and (b) `useSelectTool`'s affordances render `[]` to avoid double-rendering with the Canvas slot. Phase 5 should drop the Canvas synthesis (ChromeState.unionBounds replaces it), flip the affordances back to real `render`, and reshape the `selectionOverlay` slot into a thin override hook.
+- **(P3) Reshape `selectionOverlay` into a thin override hook.** Phase 5 of the chrome-affordances spec shipped (2026-06-13): the multi-resize union now has a single owner — `ChromeState.unionBounds` — which both the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`) and the overlay layer read at draw time. The inline `poseById` re-derivations in `Canvas`/`SceneCanvas` are deleted, `createSelectionOverlayLayer` resolves the synthetic union from the draw-time chromeState envelope, and `MULTI_RESIZE_TARGET_ID` moved to `core/selection/` (fixing the backwards `affordances→tools` import). Residual: the synthetic-id plumbing (`getSelection` → `[MULTI_RESIZE_TARGET_ID]`, `getOutlineIds` → real members) still lives in the Canvas/SceneCanvas wiring rather than inside `createSelectionOverlayLayer`. Fold it into the layer so the slot is purely a consumer override hook.
 
-- **(P2) Affordances of registered-but-not-active tools.** Today the dispatcher walks `tools.getActiveOverlays()` for affordance hit-tests, which only surfaces the active/hotkey/ambient slots' overlays — not arbitrary registered tools. To get selection chrome hittable while a non-select tool is active, the consumer has to register the select tool as `ambient` (see `LassoDemo` after the chrome-affordances spec). The architectural cleanup is to surface ALL registered tools' affordances cross-tool; deferred because changing `getActiveOverlays` broke `omits modifier overlay when not engaged` semantics. File a separate spec when it bites.
-
-- **(P2) Audit other chrome violations against the visible-is-hittable principle.** Spec `docs/superpowers/specs/2026-05-10-chrome-affordances-design.md` shipped corner-resize + rotation as cross-tool-hittable affordances. Other chrome families that may render while a non-owning tool is active and need the same migration: anchor-edit dots (`useEditAnchorsTool`) — visible during anchor-edit mode; snap-target highlights (`createCellHighlightLayer`) — currently visualization only, file a follow-up if hover ever becomes interactive; debug-overlay hit-rings — visualization only, principle satisfied. Each chrome family with a real interactive surface gets its own follow-up spec.
-
-- **(P2) `useTextTool`'s synthesized adapter ergonomic.** `useTextTool` synthesizes its own `InsertAdapter` and threads `ctx.applyBatch` via a ref because the click-first ergonomic doesn't expose an adapter to the consumer. After the May 5 drag-insert primitive landed, the capture-and-clear is owned by `defineDragInsertTool` (not duplicated in the wrapper) but the underlying asymmetry remains. Revisit if a third drag-insert tool would benefit from a unified ergonomics story (e.g. accept either an adapter *or* an inline factory).
+- **(P3) Consolidate the two affordance hit-test mechanisms.** Selection chrome is hit-tested two ways: `composeAffordanceLayer`'s `RenderLayer.hitTest` walk (reached via `tools.getActiveOverlays()`, which is why `<SceneCanvas>` mounts the rotate tool as `ambient`) and `affordanceAt`/`buildAffordanceAt` (a chromeState-based classifier in `<SceneCanvas>`). Both now resolve resize/rotate/anchor targets from `ChromeState`, so they overlap. Pick one. This subsumes the former "affordances of registered-but-not-active tools" item: `affordanceAt` already makes built-in selection/resize/rotate/anchor chrome hittable cross-tool with no ambient registration (LassoDemo no longer registers select as `ambient`), and the audit of other chrome families (anchor-edit dots gated by `path-edit.anchors`; snap-highlights / debug-rings visualization-only) came back clean. The only uncovered case is surfacing an *arbitrary third-party tool's* affordances cross-tool — no consumer needs that today.
 
 - **(P3) Image / polygon / future drag-insert tools.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. The consolidated `useDragRect` + `useInsert` + `defineDragInsertTool` stack is built so adding new drag-insert tools is a thin Tool veneer, but each tool is its own task.
 
