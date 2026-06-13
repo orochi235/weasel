@@ -15,11 +15,14 @@ import { useEffect, useRef } from 'react';
 import type { Action } from './registry';
 import { useActionsRegistry } from './registry';
 import { useOptionalDepRegistry, type DepName, type DepSchema } from './depRegistry';
-// Side-effect import: pulls in the module augmentation that adds `selection`, `view`,
-// `scene`, `history`, `pointer`, and `activeTool` keys to `DepSchema`. Without this, tsup's
-// per-entry dts compiler doesn't see the augmentation and `DepSchema['selection']` etc.
+// Type-only augmentation import: pulls in the module augmentation that adds `selection`,
+// `view`, `scene`, `history`, `pointer`, and `activeTool` keys to `DepSchema`. Without this,
+// tsup's per-entry dts compiler doesn't see the augmentation and `DepSchema['selection']` etc.
 // fail to type-check. `tsc --noEmit` happens to pick this up via test files; tsup doesn't.
-import './depSchema';
+// depSchema.ts is purely type-level (interfaces + a `declare module` block, no runtime side
+// effects), so this MUST be `import type` — a bare `import './depSchema'` makes esbuild emit a
+// runtime import that it then drops under the package's `sideEffects: false`, warning each build.
+import type {} from './depSchema';
 import { useOptionalActiveToolContext } from './activeToolContext';
 
 import { escapeAction } from './defaults/escape';

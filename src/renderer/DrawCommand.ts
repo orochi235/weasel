@@ -1,4 +1,11 @@
-import type { Path, FillStyle, Stroke, TextStyle, ResolvedRun } from '@orochi235/weasel';
+// Import the source types directly, NOT through the `@orochi235/weasel` self-barrel.
+// `src/index.ts` reexports `renderer/index.ts`, which reexports this module — so a
+// barrel import here forms a DrawCommand.ts → index.ts → renderer/index.ts → DrawCommand.ts
+// cycle that makes the dts bundler split them into mutually-dependent chunks and warn.
+import type { Path } from 'features/paths/types';
+import type { FillStyle, Stroke } from 'core/paint-types';
+import type { TextStyle } from 'features/text/textStyle';
+import type { ResolvedRun } from 'features/text/runs/resolveRuns';
 import type { Mat3 } from './math/mat3';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 
