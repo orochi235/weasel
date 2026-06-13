@@ -82,6 +82,7 @@
     "test:ui": "vitest run --project=weasel-ui",
     "test:draw": "vitest run --project=draw",
     "test:smoke": "vitest run --project=smoke",
+    "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
     "test:stories": "vitest run --project=storybook",
     "test:watch": "vitest",
     "test:changed": "vitest run --changed",
@@ -93,7 +94,7 @@
     "lint": "tsc --noEmit",
     "changeset": "changeset",
     "release": "changeset publish",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run build && npm run build:demo",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build && npm run test:smoke:consumer && npm run build:demo",
     "prepare": "npm run build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"

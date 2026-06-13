@@ -20,4 +20,13 @@ export default defineConfig({
   splitting: false,
   target: 'es2022',
   external: ['react', 'react-dom'],
+  // The @orochi235/weasel-* workspace sub-packages (history, gestures, modes) are
+  // NOT independently buildable — they reach into this package's src/core and
+  // src/debug via shared tsconfig path aliases, not public API. tsup externalizes
+  // everything in `dependencies` by default, which would emit bare
+  // `import ... from '@orochi235/weasel-history'` specifiers pointing at raw,
+  // un-built source. A downstream bundler with no baseUrl can't resolve those
+  // (e.g. `core/ops/registry`), so consumers get resolve failures. Inline them
+  // into dist instead; esbuild resolves their aliases here at build time.
+  noExternal: [/^@orochi235\/weasel-/],
 });
