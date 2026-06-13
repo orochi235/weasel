@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { usePenTool } from './usePenTool';
 import { captureGestureBaseline, commitGestureOp } from './penEdit/scratch';
 import { dragAnchor } from './penEdit/actions';
@@ -62,6 +62,28 @@ interface SetupEditOptions {
   getPathObj?: GetPathObj;
 }
 
+/**
+ * Wrap a tool's gesture handlers so each invocation runs inside act(). See the
+ * matching helper in usePenTool.test.tsx — usePenTool's handlers call forceRender,
+ * so driving them outside act() otherwise logs "not wrapped in act(...)".
+ */
+function actWrapTool<T extends { pointer?: unknown; drag?: unknown }>(tool: T): T {
+  const wrapFn = (fn: (...a: unknown[]) => unknown) => (...a: unknown[]): unknown => {
+    let r: unknown;
+    act(() => { r = fn(...a); });
+    return r;
+  };
+  const wrapGroup = (g: unknown): unknown => {
+    if (!g || typeof g !== 'object') return g;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(g as Record<string, unknown>)) {
+      out[k] = typeof v === 'function' ? wrapFn(v as (...a: unknown[]) => unknown) : v;
+    }
+    return out;
+  };
+  return { ...tool, pointer: wrapGroup(tool.pointer), drag: wrapGroup(tool.drag) };
+}
+
 function setupEdit(opts: SetupEditOptions = {}) {
   const adapter = makeAdapter();
   // History replays ops against the same adapter object.
@@ -78,8 +100,9 @@ function setupEdit(opts: SetupEditOptions = {}) {
     getPathObj: opts.getPathObj,
   }));
 
-  const { tool } = result.current;
-  const scratch = tool.initScratch!() as PenScratch;
+  const rawTool = result.current.tool;
+  const scratch = rawTool.initScratch!() as PenScratch;
+  const tool = actWrapTool(rawTool);
   return { tool, adapter, history, wrapPath, scratch };
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { usePenTool } from './usePenTool';
 import type { ToolCtx } from '../../types';
 import type { PolygonPath } from 'features/paths/types';
@@ -20,6 +20,31 @@ function makeAdapter() {
   return { added, ids, addNode, setSelection };
 }
 
+/**
+ * Wrap a tool's gesture handlers so each invocation runs inside act(). usePenTool
+ * calls forceRender (a useReducer dispatch + setIsEditing) from most handlers to
+ * repaint its overlay; driving those handlers directly from a test — outside any
+ * act() boundary — makes React log "An update to TestComponent was not wrapped in
+ * act(...)". Wrapping the calls acts the updates instead. Deterministic, unlike a
+ * trailing flush: a wrapped update never warns.
+ */
+function actWrapTool<T extends { pointer?: unknown; drag?: unknown }>(tool: T): T {
+  const wrapFn = (fn: (...a: unknown[]) => unknown) => (...a: unknown[]): unknown => {
+    let r: unknown;
+    act(() => { r = fn(...a); });
+    return r;
+  };
+  const wrapGroup = (g: unknown): unknown => {
+    if (!g || typeof g !== 'object') return g;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(g as Record<string, unknown>)) {
+      out[k] = typeof v === 'function' ? wrapFn(v as (...a: unknown[]) => unknown) : v;
+    }
+    return out;
+  };
+  return { ...tool, pointer: wrapGroup(tool.pointer), drag: wrapGroup(tool.drag) };
+}
+
 function setup(over: {
   autoSelect?: boolean;
   autoCommitOnClose?: boolean;
@@ -34,8 +59,9 @@ function setup(over: {
     wrapPath, adapter, ...over,
   }));
   // Pen state is persistent — initScratch returns the same ref.
-  const { tool } = result.current;
-  const scratch = tool.initScratch!();
+  const rawTool = result.current.tool;
+  const scratch = rawTool.initScratch!();
+  const tool = actWrapTool(rawTool);
   return { tool, adapter, wrapPath, scratch };
 }
 
