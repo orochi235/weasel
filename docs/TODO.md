@@ -61,9 +61,6 @@ Priority tags:
 - Plugin/bundling convention v1 (`WeaselPlugin` shape) → [Plugins & packaging](#plugins--packaging)
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
 
-**Demos & visual regression**
-- `ShapeToolsDemo` visual-regression baseline → [Demos & visual regression](#demos--visual-regression)
-
 **Canvas / SceneCanvas seam**
 - Decide Canvas's public-surface fate → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
 - Tighten `CanvasProps.adapter` to remove SceneCanvas casts → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
@@ -324,8 +321,6 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 ---
 
 ## Demos & visual regression
-
-- **(P2) `ShapeToolsDemo` visual-regression baseline.** `demo/demos/ShapeToolsDemo.tsx` has been live since the shape-tools landing but its baseline PNG was never captured. Run `gh workflow run visual-update.yml` + `gh run download <id>` per CONTRIBUTING.md; commit the resulting `tests/visual/baselines/shape-tools.png`.
 
 - **(P3) Demo coverage gaps for submodules.** `@orochi235/weasel-ui` exports `CommandPalette` and `PropertiesPanel` but has no demo card for either (CommandPalette is used in the harness chrome itself — surfacing it as a demo would expose it). `@orochi235/weasel-hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope per demo before writing them.
 

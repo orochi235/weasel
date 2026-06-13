@@ -36,7 +36,11 @@ jobs:
       - name: Capture baselines (UPDATE_SNAPSHOTS=1)
         run: npm run test:visual:update
 
+      # Always upload: a flaky non-baseline spec (e.g. the animation-stress
+      # perf assertion) can fail the capture step after baselines are already
+      # written. Without `always()` that flake would discard a good capture.
       - name: Upload captured baselines
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: visual-baselines
