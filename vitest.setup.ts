@@ -1,20 +1,3 @@
-import { afterEach } from 'vitest';
-import { act } from '@testing-library/react';
-
-/**
- * Drain trailing React work after every test. Several components sync state
- * through a deferred update (e.g. useTools pushing the active tool into
- * ActiveToolContextProvider on a microtask): the update settles AFTER the
- * synchronous test body / render's act() boundary, so React logs hundreds of
- * "An update to … was not wrapped in act(...)" lines under CI's timing. This
- * flushes those pending updates inside an act() boundary so they're properly
- * acted instead of warned — a no-op when nothing is pending. It is NOT warning
- * suppression: the updates really do run inside act() here.
- */
-afterEach(async () => {
-  await act(async () => {});
-});
-
 /**
  * jsdom does not ship PointerEvent. When @testing-library/dom tries to use
  * window.PointerEvent to create pointer events it falls back to window.Event,
