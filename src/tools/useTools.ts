@@ -1,5 +1,5 @@
 // src/tools/useTools.ts
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createToolsDispatcher, type ToolsDispatcher, type ToolsDispatcherOptions } from './dispatcher';
 import { dlog } from '../debug/flag';
 import type { AnyTool, ToolCtx } from './types';
@@ -105,16 +105,24 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
   const ctx = useActiveToolContext();
 
   // First-mount sync: if context is at its default ('select') and caller wants
-  // something else, push opts.active to the context via microtask so we don't
-  // setState during render.
+  // something else, push opts.active to the context. The decision is captured at
+  // first render; the actual setState runs in a post-commit effect (below) rather
+  // than a render-phase microtask, so it never updates state during render and is
+  // wrapped in act() under test.
   const hasInitializedRef = useRef(false);
   const isFirstRender = !hasInitializedRef.current;
+  const needsFirstMountSyncRef = useRef(false);
   if (isFirstRender) {
     hasInitializedRef.current = true;
-    if (ctx.active === 'select' && opts.active !== 'select') {
-      queueMicrotask(() => ctx.setActive(opts.active));
-    }
+    needsFirstMountSyncRef.current = ctx.active === 'select' && opts.active !== 'select';
   }
+  useEffect(() => {
+    if (!needsFirstMountSyncRef.current) return;
+    needsFirstMountSyncRef.current = false;
+    ctx.setActive(opts.active);
+    // First-mount sync only — deliberately runs once after mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // On the very first render, if context hasn't yet been updated to match
   // opts.active, use opts.active directly to avoid a flash of the wrong tool.
