@@ -64,6 +64,7 @@
     "dev:drag": "LABKIT_EXAMPLE=drag-lab vite",
     "dev:weasel": "LABKIT_EXAMPLE=weasel-lab vite",
     "build": "tsup && npm run build:css && npm run build:fonts",
+    "prepublishOnly": "npm run build",
     "build:css": "lessc src/styles.less dist/styles.css && lessc src/theme/light.less dist/theme-light.css && lessc src/theme/interstellar.less dist/theme-interstellar.css",
     "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
     "test": "vitest run",
@@ -83,12 +84,15 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@orochi235/weasel": "file:../weasel",
-    "@orochi235/weasel-modes": "file:../weasel/packages/weasel-modes",
-    "@orochi235/weasel-ui": "file:../weasel/packages/weasel-ui",
+    "earcut": "2.2.4",
+    "polygon-clipping": "^0.15.7",
+    "react-aria-components": "^1.5.0",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@orochi235/weasel": "file:../weasel",
+    "@orochi235/weasel-modes": "file:../weasel/packages/weasel-modes",
+    "@orochi235/weasel-ui": "file:../weasel/packages/weasel-ui",
     "@biomejs/biome": "^2.4.12",
     "@storybook/addon-a11y": "^8.4.0",
     "@storybook/addon-essentials": "^8.4.0",

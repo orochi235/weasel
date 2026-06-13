@@ -16,16 +16,25 @@ export default defineConfig({
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
-  dts: { tsconfig: './tsconfig.lib.json' },
+  // resolve inlines the weasel packages' types into labkit's .d.ts; without it
+  // the declarations re-export `from '@orochi235/weasel*'`, which consumers
+  // can't resolve since those packages aren't published.
+  dts: { tsconfig: './tsconfig.lib.json', resolve: [/^@orochi235\//] },
   sourcemap: true,
   clean: true,
-  external: [
-    'react',
-    'react-dom',
-    '@orochi235/weasel',
-    '@orochi235/weasel-ui',
-    '@orochi235/weasel-modes',
-  ],
+  // react/react-dom are peers; the rest are third-party libs pulled in by the
+  // inlined weasel code — kept external and declared as labkit dependencies so
+  // they aren't duplicated into the bundle.
+  external: ['react', 'react-dom', 'react-aria-components', 'earcut', 'polygon-clipping'],
+  // Inline the weasel packages into labkit's dist so the published package is
+  // self-contained — none of @orochi235/weasel* are published to npm.
+  noExternal: [/^@orochi235\//],
+  // The weasel packages are symlinked (file: deps) and ship raw TS source that
+  // bare-imports sibling @orochi235 packages. Resolve those from labkit's own
+  // node_modules instead of following symlinks into the weasel tree.
+  esbuildOptions(options) {
+    options.preserveSymlinks = true;
+  },
   splitting: true,
   treeshake: true,
 });
