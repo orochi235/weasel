@@ -19,20 +19,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout labkit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: labkit
 
       # labkit's package.json uses file:../weasel dependencies, so weasel
       # must sit next to labkit in the workspace
       - name: Checkout weasel
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: orochi235/weasel
           path: weasel
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
 
@@ -51,7 +51,7 @@ jobs:
         run: npm run build:site
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: labkit/docs/.vitepress/dist
 
@@ -64,4 +64,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
