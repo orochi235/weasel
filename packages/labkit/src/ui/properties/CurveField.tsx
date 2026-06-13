@@ -27,7 +27,7 @@ export interface CurveFieldProps {
  * A function-domain (y = f(x), x ∈ [0,1]) curve editor with per-stop
  * numeric readouts and flip buttons. Wraps weasel-ui's
  * `CurveEditor`; consumers wanting the raw editor (2D paths,
- * custom anchors) should import it from `@labkit/react/weasel-ui`.
+ * custom anchors) should import it from `@lab-kit/react/weasel-ui`.
  */
 export function CurveField({
   values,

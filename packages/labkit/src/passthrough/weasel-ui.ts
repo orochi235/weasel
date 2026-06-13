@@ -1,6 +1,6 @@
 /**
  * Re-exports from `@orochi235/weasel-ui` so consumers import primitives
- * through `@labkit/react/weasel-ui` rather than depending on the
+ * through `@lab-kit/react/weasel-ui` rather than depending on the
  * weasel-ui package directly. Lets labkit swap implementations in the
  * future without consumer churn.
  */

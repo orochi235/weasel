@@ -1,4 +1,4 @@
-import { Lab, localStorageAdapter } from '@labkit/react';
+import { Lab, localStorageAdapter } from '@lab-kit/react';
 import { GardenInstrument } from './GardenInstrument';
 
 export function DragLab() {

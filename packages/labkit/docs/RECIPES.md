@@ -7,8 +7,8 @@ Composition patterns for common lab shapes. This file grows as plans land.
 ### A minimal lab shell with a tiled grid
 
 ```tsx
-import { LabShell, WorkspaceGrid } from '@labkit/react';
-import '@labkit/react/styles.css';
+import { LabShell, WorkspaceGrid } from '@lab-kit/react';
+import '@lab-kit/react/styles.css';
 
 export function MyLab() {
   return (
@@ -26,7 +26,7 @@ export function MyLab() {
 ### A toolbar with undo/redo and a save button
 
 ```tsx
-import { Toolbar } from '@labkit/react';
+import { Toolbar } from '@lab-kit/react';
 
 <Toolbar>
   <Toolbar.Title>My Workspace</Toolbar.Title>
@@ -40,7 +40,7 @@ import { Toolbar } from '@labkit/react';
 ### A status bar with multiple sections
 
 ```tsx
-import { StatusBar, FpsMeter } from '@labkit/react';
+import { StatusBar, FpsMeter } from '@lab-kit/react';
 
 <StatusBar>
   <StatusBar.Section>Items: {items.length}</StatusBar.Section>
@@ -56,8 +56,8 @@ import { StatusBar, FpsMeter } from '@labkit/react';
 A lab where users drag items from a palette onto a canvas, with layer toggles and undo. (See `examples/drag-lab/` for the full version.)
 
 ```tsx
-import { defineInstrument, Lab } from '@labkit/react';
-import '@labkit/react/styles.css';
+import { defineInstrument, Lab } from '@lab-kit/react';
+import '@lab-kit/react/styles.css';
 
 interface Plant { id: string; kind: 'tree' | 'flower'; x: number; y: number }
 interface State { plants: Plant[] }

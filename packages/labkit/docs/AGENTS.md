@@ -81,7 +81,7 @@ Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all
 
 ## When to use what
 
-- One-off lab page with custom rendering? Import primitives directly from `@labkit/react`.
+- One-off lab page with custom rendering? Import primitives directly from `@lab-kit/react`.
 - Building an instrument? `defineInstrument({...})` and pass it to `<Lab instruments={[...]} />`.
 - Adding a new layer type to canvas? Push a `CanvasLayer` into `instrument.canvas.layers`. See `src/canvas/AGENTS.md`.
 - Adding undoable actions beyond state changes? Call `ctx.emit('myEvent')` and list `'myEvent'` in `instrument.undo.snapshotOn`.
@@ -94,7 +94,7 @@ Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all
 | `<CurveField>` (1D y=f(x) curve editor) | `src/ui/properties/CurveField.tsx` |
 | `<LayerStack>` (expandable layer cards w/ drop-hint reorder) | `src/ui/layers/LayerStack.tsx` |
 | `<SingletonExperimentProvider>` (one-workspace state runtime) | `src/state/SingletonExperiment.tsx` |
-| Weasel-ui passthroughs (`CurveEditor`, `useReorderDragList`, `formatNumber`, …) | `src/passthrough/weasel-ui.ts` (exported as `@labkit/react/weasel-ui`) |
+| Weasel-ui passthroughs (`CurveEditor`, `useReorderDragList`, `formatNumber`, …) | `src/passthrough/weasel-ui.ts` (exported as `@lab-kit/react/weasel-ui`) |
 
 ## Conventions
 

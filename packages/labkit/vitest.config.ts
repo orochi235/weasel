@@ -20,7 +20,7 @@ export default defineConfig(async () => ({
   plugins: [react()],
   resolve: {
     alias: [
-      { find: '@labkit/react', replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url)) },
+      { find: '@lab-kit/react', replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url)) },
       ...(await weaselAlias()),
     ],
   },

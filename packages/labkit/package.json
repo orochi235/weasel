@@ -1,5 +1,5 @@
 {
-  "name": "@labkit/react",
+  "name": "@lab-kit/react",
   "version": "0.0.1",
   "description": "React widgets for building self-contained interactive lab pages",
   "type": "module",

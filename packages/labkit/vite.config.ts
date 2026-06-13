@@ -5,7 +5,7 @@ import { defineConfig, type AliasOptions } from 'vite';
 const example = process.env.LABKIT_EXAMPLE ?? 'minimal';
 const here = fileURLToPath(new URL('.', import.meta.url));
 
-const labkitAlias = { '@labkit/react': fileURLToPath(new URL('./src/index.ts', import.meta.url)) };
+const labkitAlias = { '@lab-kit/react': fileURLToPath(new URL('./src/index.ts', import.meta.url)) };
 
 // The weasel-lab example consumes @orochi235/weasel from a sibling monorepo
 // whose runtime resolves bare specifiers (`core/...`, `@orochi235/weasel-*`)
@@ -26,7 +26,7 @@ export default defineConfig(async () => ({
   root: `examples/${example}`,
   resolve: {
     alias: [
-      { find: '@labkit/react', replacement: labkitAlias['@labkit/react'] },
+      { find: '@lab-kit/react', replacement: labkitAlias['@lab-kit/react'] },
       ...(await weaselAlias()),
     ],
   },
