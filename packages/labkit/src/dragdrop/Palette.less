@@ -1,0 +1,34 @@
+.lk-palette {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--lk-spacing-sm, 8px);
+  padding: var(--lk-spacing-sm, 8px);
+}
+
+.lk-palette__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--lk-spacing-sm, 8px);
+  background: var(--lk-color-surface, #fff);
+  border: 1px solid var(--lk-color-border, #d0d0d0);
+  border-radius: 4px;
+  cursor: grab;
+  font: inherit;
+  color: inherit;
+  user-select: none;
+  touch-action: none;
+
+  &:hover {
+    background: var(--lk-color-surface-hover, #f4f4f4);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.lk-palette__label {
+  pointer-events: none;
+}

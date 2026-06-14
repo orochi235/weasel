@@ -1,0 +1,121 @@
+{
+  "name": "@lab-kit/react",
+  "version": "0.0.1",
+  "description": "React widgets for building self-contained interactive lab pages",
+  "type": "module",
+  "files": [
+    "dist",
+    "src",
+    "AGENTS.md",
+    "RECIPES.md",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./primitives": {
+      "types": "./dist/primitives/index.d.ts",
+      "import": "./dist/primitives/index.js"
+    },
+    "./controls": {
+      "types": "./dist/controls/index.d.ts",
+      "import": "./dist/controls/index.js"
+    },
+    "./canvas": {
+      "types": "./dist/canvas/index.d.ts",
+      "import": "./dist/canvas/index.js"
+    },
+    "./layers": {
+      "types": "./dist/layers/index.d.ts",
+      "import": "./dist/layers/index.js"
+    },
+    "./undo": {
+      "types": "./dist/undo/index.d.ts",
+      "import": "./dist/undo/index.js"
+    },
+    "./dragdrop": {
+      "types": "./dist/dragdrop/index.d.ts",
+      "import": "./dist/dragdrop/index.js"
+    },
+    "./state": {
+      "types": "./dist/state/index.d.ts",
+      "import": "./dist/state/index.js"
+    },
+    "./weasel-ui": {
+      "types": "./dist/passthrough/weasel-ui.d.ts",
+      "import": "./dist/passthrough/weasel-ui.js"
+    },
+    "./weasel-canvas": {
+      "types": "./dist/passthrough/weasel-canvas.d.ts",
+      "import": "./dist/passthrough/weasel-canvas.js"
+    },
+    "./ui/layers": {
+      "types": "./dist/ui/layers/index.d.ts",
+      "import": "./dist/ui/layers/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./theme-light.css": "./dist/theme-light.css",
+    "./theme-interstellar.css": "./dist/theme-interstellar.css"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:drag": "LABKIT_EXAMPLE=drag-lab vite",
+    "dev:weasel": "LABKIT_EXAMPLE=weasel-lab vite",
+    "build": "tsup && npm run build:css && npm run build:fonts",
+    "prepublishOnly": "npm run build",
+    "build:css": "lessc src/styles.less dist/styles.css && lessc src/theme/light.less dist/theme-light.css && lessc src/theme/interstellar.less dist/theme-interstellar.css",
+    "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check . && tsx scripts/check-class-prefix.ts",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "build:site": "npm run docs:build && npm run build-storybook && rm -rf docs/.vitepress/dist/storybook && cp -R storybook-static docs/.vitepress/dist/storybook"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "earcut": "2.2.4",
+    "polygon-clipping": "^0.15.7",
+    "react-aria-components": "^1.5.0",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@orochi235/weasel": "file:../weasel",
+    "@orochi235/weasel-modes": "file:../weasel/packages/weasel-modes",
+    "@orochi235/weasel-ui": "file:../weasel/packages/weasel-ui",
+    "@biomejs/biome": "^2.4.12",
+    "@storybook/addon-a11y": "^8.4.0",
+    "@storybook/addon-essentials": "^8.4.0",
+    "@storybook/addon-interactions": "^8.4.0",
+    "@storybook/react": "^8.4.0",
+    "@storybook/react-vite": "^8.4.0",
+    "@storybook/test": "^8.4.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^24.12.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "jsdom": "^26.1.0",
+    "less": "^4.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "storybook": "^8.4.0",
+    "tsup": "^8.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.4",
+    "vitepress": "^1.6.4",
+    "vitest": "^4.1.4"
+  }
+}

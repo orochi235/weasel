@@ -1,0 +1,13 @@
+node_modules/
+dist/
+storybook-static/
+dist-examples/
+*.log
+.DS_Store
+.vite/
+coverage/
+*.tsbuildinfo
+.playwright-mcp/
+/*.png
+docs/.vitepress/dist/
+docs/.vitepress/cache/

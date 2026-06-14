@@ -1,0 +1,48 @@
+.lk-curve-field {
+  display: grid;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.lk-curve-field__plot {
+  position: relative;
+  width: 100%;
+}
+
+.lk-curve-field__marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lk-curve-field__readouts {
+  display: flex;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--lk-text-dim);
+}
+
+.lk-curve-field__readout {
+  font-style: normal;
+}
+
+.lk-curve-field__actions {
+  display: flex;
+  gap: 6px;
+  justify-self: start;
+}
+
+.lk-curve-field__action {
+  background: transparent;
+  border: 1px solid var(--lk-border);
+  border-radius: var(--lk-radius-sm, 6px);
+  color: var(--lk-text);
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.lk-curve-field__action:hover {
+  background: var(--lk-bg-elevated);
+}
