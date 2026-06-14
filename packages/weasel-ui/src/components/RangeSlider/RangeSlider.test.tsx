@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { render, fireEvent, screen, act } from '@testing-library/react';
 import { useState } from 'react';
 import { RangeSlider } from './RangeSlider';
 
@@ -23,7 +23,7 @@ describe('RangeSlider', () => {
     }
     render(<Wrap />);
     const thumb = screen.getByRole('slider') as HTMLInputElement;
-    thumb.focus();
+    act(() => { thumb.focus(); });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
     expect(thumb.value).toBe('11');
   });
@@ -37,7 +37,7 @@ describe('RangeSlider', () => {
     const onChange = vi.fn();
     render(<RangeSlider label="X" defaultValue={5} onChange={onChange} minValue={0} maxValue={10} />);
     const thumb = screen.getByRole('slider');
-    thumb.focus();
+    act(() => { thumb.focus(); });
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
     expect(onChange).toHaveBeenCalledWith(6);
   });

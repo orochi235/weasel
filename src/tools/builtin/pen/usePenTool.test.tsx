@@ -310,8 +310,9 @@ describe('usePenTool', () => {
 
   it('initScratch returns the same persistent ref across calls', () => {
     const { tool } = setup();
-    const a = tool.initScratch!();
-    const b = tool.initScratch!();
+    let a: unknown, b: unknown;
+    act(() => { a = tool.initScratch!(); });
+    act(() => { b = tool.initScratch!(); });
     expect(a).toBe(b);
   });
 

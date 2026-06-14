@@ -103,7 +103,7 @@ describe('weasel-hud integration', () => {
     const { container } = render(<ActiveToolContextProvider><Harness apiOut={api} /></ActiveToolContextProvider>);
     await act(async () => {});
 
-    api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });
+    act(() => { api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
     const canvas = container.querySelector('canvas')!;
 
     // Click far from the button — should NOT claim.
@@ -124,7 +124,8 @@ describe('weasel-hud integration', () => {
     const canvas = container.querySelector('canvas')!;
     canvas.style.setProperty('--wzl-button-fill', '#abcdef');
 
-    const btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });
+    let btn!: ReturnType<NonNullable<typeof apiOut.hudRef.current>['button']>;
+    act(() => { btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
 
     // Verify the widget's draw output reflects the CSS variable.
     const cmds = btn.draw({
