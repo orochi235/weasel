@@ -59,7 +59,7 @@ function gestureAt(canvas: HTMLCanvasElement, clientX: number, clientY: number) 
 }
 
 describe('SceneCanvas defaultTools selector', () => {
-  it('omitted defaultTools: resize is registered (corner-drag fires resize.onStart)', async () => {
+  it('omitted defaultTools: resize is registered (corner-drag fires resize.onStart)', () => {
     const resizeStart = vi.fn();
     function Harness() {
       const scene = useScene<D, L, P>({
@@ -97,14 +97,11 @@ describe('SceneCanvas defaultTools selector', () => {
     // Phase 14e Task 4: resizeAction.onStart fires after the drag threshold,
     // so send a full down→move→up sequence.
     gestureAt(canvas, 0, 0);
-    // The resize commit settles on a deferred tick after pointerup; flush it
-    // inside act() so it doesn't warn as an un-acted update.
-    await act(async () => { await new Promise<void>((r) => setTimeout(r, 0)); });
     expect(resizeStart).toHaveBeenCalled();
     expect(resizeStart.mock.calls[0][0]).toBe('a');
   });
 
-  it("defaultTools=['select']: corner-drag still routes to dispatcher-side resizeAction", async () => {
+  it("defaultTools=['select']: corner-drag still routes to dispatcher-side resizeAction", () => {
     // Resize is wired through `resizeAction` + `resizePolicy` dep — both are
     // registered by `useStandardActions` regardless of which builtin tools the
     // consumer mounts via `defaultTools`. With `defaultTools=['select']` the
@@ -140,7 +137,6 @@ describe('SceneCanvas defaultTools selector', () => {
     const { container } = render(<Harness />);
     const canvas = container.querySelector('canvas')!;
     gestureAt(canvas, 0, 0);
-    await act(async () => { await new Promise<void>((r) => setTimeout(r, 0)); });
     expect(resizeStart).toHaveBeenCalled();
     expect(resizeStart.mock.calls[0][0]).toBe('a');
   });
