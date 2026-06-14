@@ -28,7 +28,7 @@ function makeAdapter() {
  * act(...)". Wrapping the calls acts the updates instead. Deterministic, unlike a
  * trailing flush: a wrapped update never warns.
  */
-function actWrapTool<T extends { pointer?: unknown; drag?: unknown }>(tool: T): T {
+function actWrapTool<T extends { pointer?: unknown; drag?: unknown; keyboard?: unknown }>(tool: T): T {
   const wrapFn = (fn: (...a: unknown[]) => unknown) => (...a: unknown[]): unknown => {
     let r: unknown;
     act(() => { r = fn(...a); });
@@ -42,7 +42,7 @@ function actWrapTool<T extends { pointer?: unknown; drag?: unknown }>(tool: T): 
     }
     return out;
   };
-  return { ...tool, pointer: wrapGroup(tool.pointer), drag: wrapGroup(tool.drag) };
+  return { ...tool, pointer: wrapGroup(tool.pointer), drag: wrapGroup(tool.drag), keyboard: wrapGroup(tool.keyboard) };
 }
 
 function setup(over: {

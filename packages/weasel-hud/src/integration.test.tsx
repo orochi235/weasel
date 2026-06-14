@@ -85,8 +85,10 @@ describe('weasel-hud integration', () => {
     btn.on('press', api.press);
 
     const canvas = container.querySelector('canvas')!;
-    canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 30, clientY: 20 }));
-    canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 20 }));
+    act(() => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 30, clientY: 20 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 20 }));
+    });
 
     expect(api.press).toHaveBeenCalledTimes(1);
     expect(api.toolOnDown).not.toHaveBeenCalled();
@@ -105,7 +107,7 @@ describe('weasel-hud integration', () => {
     const canvas = container.querySelector('canvas')!;
 
     // Click far from the button — should NOT claim.
-    canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 150, clientY: 150 }));
+    act(() => { canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 150, clientY: 150 })); });
     expect(api.press).not.toHaveBeenCalled();
     expect(api.toolOnDown).toHaveBeenCalledTimes(1);
   });

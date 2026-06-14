@@ -172,7 +172,7 @@ describe('default keybindings: action shortcuts', () => {
           }}
         />,
       );
-      document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...mods }));
+      act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, ...mods })); });
       expect(run).toHaveBeenCalledOnce();
     });
   }
@@ -199,7 +199,7 @@ describe('default keybindings: Escape is reachable', () => {
         }}
       />,
     );
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
     expect(run).toHaveBeenCalledOnce();
   });
 });

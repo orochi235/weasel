@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
@@ -45,7 +45,7 @@ describe('SceneCanvas keydown dispatch', () => {
         actions={{ selectAll: { invoker: { timing: 'immediate' as const, run: () => { customRun(); } } } }} />,
     );
     // jsdom is not Mac, so `mod: true` in the defaultBinding resolves to ctrlKey.
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true })); });
     expect(customRun).toHaveBeenCalledOnce();
   });
 
@@ -53,13 +53,13 @@ describe('SceneCanvas keydown dispatch', () => {
     const scene = makeScene();
     const { container } = render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} />);
     expect(container).toBeTruthy();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
   });
 
   it('a non-matching key does not throw', () => {
     const scene = makeScene();
     render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} />);
-    expect(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F13', bubbles: true })))
+    expect(() => act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F13', bubbles: true })); }))
       .not.toThrow();
   });
 
@@ -73,7 +73,7 @@ describe('SceneCanvas keydown dispatch', () => {
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.focus();
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
+    act(() => { input.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true })); });
     expect(customRun).not.toHaveBeenCalled();
     document.body.removeChild(input);
   });
@@ -92,9 +92,9 @@ describe('SceneCanvas keydown dispatch', () => {
         }} />,
     );
     // jsdom is not Mac, so `mod: true` in the defaultBinding resolves to ctrlKey.
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true }));
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', ctrlKey: true, bubbles: true })); });
     expect(errSpy).toHaveBeenCalled();
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
     expect(next).toHaveBeenCalledOnce();
     errSpy.mockRestore();
   });
