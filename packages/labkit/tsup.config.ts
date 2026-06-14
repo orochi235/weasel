@@ -1,4 +1,9 @@
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'tsup';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const weaselRoot = resolve(here, '../..');
 
 export default defineConfig({
   entry: {
@@ -16,24 +21,38 @@ export default defineConfig({
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
-  // resolve inlines the weasel packages' types into labkit's .d.ts; without it
-  // the declarations re-export `from '@orochi235/weasel*'`, which consumers
-  // can't resolve since those packages aren't published.
-  dts: { tsconfig: './tsconfig.lib.json', resolve: [/^@orochi235\//] },
+  // FOLLOW-UP (publish blocker): .d.ts emission is disabled. tsup's dts bundler
+  // (rollup-plugin-dts) can't resolve the root-package core `@orochi235/weasel`
+  // — it resolves workspace members via their node_modules symlinks, but the
+  // monorepo's main package is the repo ROOT, which has no symlink, and rollup-
+  // dts ignores the tsconfig `paths` that tsc itself honors (verified: `tsc -p
+  // tsconfig.dts.json` resolves it cleanly). Fixing this needs a dts pipeline
+  // that honors paths — API Extractor, or real built dist types for
+  // weasel-ui/modes. tsconfig.dts.json is staged for that work. The JS bundle is
+  // already fully self-contained (zero @orochi235 runtime imports).
+  dts: false,
   sourcemap: true,
   clean: true,
-  // react/react-dom are peers; the rest are third-party libs pulled in by the
-  // inlined weasel code — kept external and declared as labkit dependencies so
-  // they aren't duplicated into the bundle.
-  external: ['react', 'react-dom', 'react-aria-components', 'earcut', 'polygon-clipping'],
-  // Inline the weasel packages into labkit's dist so the published package is
-  // self-contained — none of @orochi235/weasel* are published to npm.
+  // react/react-dom are peers; the rest are third-party libs declared as labkit
+  // dependencies. All @orochi235/weasel* are bundled in (see noExternal) so the
+  // published package is self-contained.
+  external: [
+    'react',
+    'react-dom',
+    'react-aria-components',
+    'earcut',
+    'polygon-clipping',
+  ],
+  // Bundle the weasel core + private sub-packages into labkit's dist — none are
+  // published to npm. weasel-ui / weasel-modes resolve from their workspace src
+  // (node_modules symlinks); the core resolves to its built, self-contained dist
+  // via the esbuild alias below (avoids re-bundling weasel's bare core/ imports).
   noExternal: [/^@orochi235\//],
-  // The weasel packages are symlinked (file: deps) and ship raw TS source that
-  // bare-imports sibling @orochi235 packages. Resolve those from labkit's own
-  // node_modules instead of following symlinks into the weasel tree.
   esbuildOptions(options) {
-    options.preserveSymlinks = true;
+    options.alias = {
+      ...(options.alias ?? {}),
+      '@orochi235/weasel': resolve(weaselRoot, 'dist/index.js'),
+    };
   },
   splitting: true,
   treeshake: true,

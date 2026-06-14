@@ -16,7 +16,7 @@ import type {
   View,
 } from '@orochi235/weasel';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { defineInstrument, type RenderContext } from '@lab-kit/react';
+import { defineInstrument, type RenderContext } from '@orochi235/labkit';
 
 type Kind = 'tree' | 'shrub' | 'flower';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@lab-kit/react",
+  "name": "@orochi235/labkit",
   "version": "0.0.1",
   "description": "React widgets for building self-contained interactive lab pages",
   "type": "module",
@@ -90,32 +90,11 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@orochi235/weasel": "file:../weasel",
-    "@orochi235/weasel-modes": "file:../weasel/packages/weasel-modes",
-    "@orochi235/weasel-ui": "file:../weasel/packages/weasel-ui",
+    "@orochi235/weasel-modes": "*",
+    "@orochi235/weasel-ui": "*",
     "@biomejs/biome": "^2.4.12",
-    "@storybook/addon-a11y": "^8.4.0",
-    "@storybook/addon-essentials": "^8.4.0",
-    "@storybook/addon-interactions": "^8.4.0",
-    "@storybook/react": "^8.4.0",
-    "@storybook/react-vite": "^8.4.0",
-    "@storybook/test": "^8.4.0",
     "@testing-library/jest-dom": "^6.6.0",
-    "@testing-library/react": "^16.3.0",
-    "@types/node": "^24.12.2",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "jsdom": "^26.1.0",
     "less": "^4.2.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "storybook": "^8.4.0",
-    "tsup": "^8.3.0",
-    "tsx": "^4.19.0",
-    "typescript": "~6.0.2",
-    "vite": "^8.0.4",
-    "vitepress": "^1.6.4",
-    "vitest": "^4.1.4"
+    "tsx": "^4.19.0"
   }
 }

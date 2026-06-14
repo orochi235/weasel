@@ -1,0 +1,42 @@
+{
+  "comment": "Dedicated tsconfig for tsup's .d.ts emission. Because labkit bundles the weasel core + private sub-packages into its dist, their raw source is compiled here for type emission. It must resolve weasel against SOURCE (via the same path map weasel's own tooling uses) and include weasel-ui/modes src (for ambient *.module.css decls) — otherwise types drift to `never` and CSS modules fail to resolve.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "exactOptionalPropertyTypes": false,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "types": ["node"],
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@orochi235/weasel": ["../../src/index.ts"],
+      "@orochi235/weasel/routing": ["../../src/tools/routing/index.ts"],
+      "@orochi235/weasel/*": ["../../src/*"],
+      "@orochi235/weasel-ui": ["../weasel-ui/src/index.ts"],
+      "@orochi235/weasel-modes": ["../weasel-modes/src/index.ts"],
+      "@orochi235/weasel-theme": ["../weasel-theme/src/index.ts"],
+      "@orochi235/weasel-theme/tokens.css": ["../weasel-theme/src/tokens.css"],
+      "core/*": ["../../src/core/*"],
+      "features/*": ["../../src/features/*"],
+      "affordances/*": ["../../src/affordances/*"],
+      "interactions/*": ["../../src/interactions/*"],
+      "tools/*": ["../../src/tools/*"],
+      "canvas/*": ["../../src/canvas/*"],
+      "debug/*": ["../../src/debug/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "../weasel-ui/src/**/*",
+    "../weasel-modes/src/**/*"
+  ]
+}

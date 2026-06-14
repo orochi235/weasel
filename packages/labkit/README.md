@@ -1,4 +1,4 @@
-# @lab-kit/react
+# @orochi235/labkit
 
 React widgets for building self-contained interactive **lab** pages — pages with sliders, controls, and canvas-based experimentation.
 
@@ -21,15 +21,15 @@ Then point your app at the local clone:
 
 ```json
 "dependencies": {
-  "@lab-kit/react": "file:../labkit"
+  "@orochi235/labkit": "file:../labkit"
 }
 ```
 
 ## Usage
 
 ```tsx
-import { LabShell, Toolbar, WorkspaceGrid, FpsMeter } from '@lab-kit/react';
-import '@lab-kit/react/styles.css';
+import { LabShell, Toolbar, WorkspaceGrid, FpsMeter } from '@orochi235/labkit';
+import '@orochi235/labkit/styles.css';
 
 function MyLab() {
   return (

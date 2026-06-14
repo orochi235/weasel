@@ -1,4 +1,4 @@
-import { Lab, localStorageAdapter } from '@lab-kit/react';
+import { Lab, localStorageAdapter } from '@orochi235/labkit';
 import { StubInstrument } from './StubInstrument';
 
 export function MinimalLab() {

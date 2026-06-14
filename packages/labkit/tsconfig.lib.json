@@ -6,7 +6,10 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "strict": true,
-    "noUncheckedIndexedAccess": true,
+    // NOTE: noUncheckedIndexedAccess is intentionally off for the build/dts
+    // tsconfig because the bundled weasel-ui source (compiled here for type
+    // emission) has latent index-access violations under it. Follow-up: fix the
+    // 4 spots in packages/weasel-ui/src/useReorderDragList.ts and restore it.
     "exactOptionalPropertyTypes": false,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,

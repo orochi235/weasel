@@ -98,3 +98,42 @@ Held until the merge is reviewed/merged and the package publishes cleanly:
    for review.
 
 Everything through step 4 is branch-local and reversible.
+
+## Status (branch `feat/absorb-labkit`, pushed for review)
+
+**Done**
+- filter-repo merge: all 115 labkit commits preserved under `packages/labkit/`.
+- Renamed `@lab-kit/react` → `@orochi235/labkit`; workspace member; all
+  `@lab-kit/react` import specifiers updated.
+- Deps: third-party (`earcut`, `polygon-clipping`, `react-aria-components`,
+  `zustand`) declared; `weasel-ui`/`weasel-modes` are devDeps; the core is
+  bundled (not a dep).
+- tsup: bundles all `@orochi235/weasel*` into labkit's dist (core resolves to
+  its built `dist/index.js` via an esbuild alias; ui/modes from workspace src).
+  **JS output is fully self-contained — zero `@orochi235` runtime imports.**
+- devDeps pruned to what the root lacks (`biome`, `jest-dom`, `less`, `tsx`);
+  Storybook/Vite/etc. come from the root (resolves the SB8-vs-Vite8 conflict).
+- vite/vitest configs reuse the monorepo `weaselAliases` (was pointing at a
+  now-absent `node_modules/@orochi235/weasel`).
+- Removed package-local cruft: `.github/` (inert), `.npmrc`, `package-lock.json`.
+- `npm install` green; `npm run build` green; tests **237/238** (the one failure
+  is a pre-existing `LayerStack` dlog-mock issue, identical on the source repo).
+
+**Deferred (follow-ups — not done on this branch)**
+1. **`.d.ts` emission is OFF** (publish blocker). tsup's rollup-dts can't resolve
+   the root-package core `@orochi235/weasel` (no node_modules symlink; it ignores
+   tsconfig `paths` that `tsc` honors). Needs a paths-aware dts pipeline (API
+   Extractor) or real built dist types for weasel-ui/modes. `tsconfig.dts.json`
+   is staged for this.
+2. **`noUncheckedIndexedAccess` left off** in labkit's build tsconfig — the
+   bundled `weasel-ui/src/useReorderDragList.ts` has 4 latent violations. Fix
+   them in weasel-ui and restore the flag.
+3. **Storybook not unified** — labkit is on Storybook 8, root on 10. Migrate
+   labkit stories (import changes) then add `packages/labkit/src/**/*.stories`
+   to `.storybook/main.ts`.
+4. **Docs/Pages not folded in**; **examples** still under `packages/labkit/`.
+5. **Changesets**: labkit not yet added to a release changeset.
+6. One-way doors (labkit repo archival + Pages redirect, publish) — untouched.
+
+Built/tested from `main` (12 commits ahead of the in-progress
+`chore/phase5-...` branch); rebase onto the latest trunk before merge.
