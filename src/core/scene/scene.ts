@@ -751,9 +751,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     getVersion: () => version,
   };
 
-  // Apply initial nodes (not undoable — they're part of the construction).
-  if (options.initial) {
-    for (const spec of options.initial) {
+  /** Insert nodes without writing to the undo log — used by construction
+   *  (`options.initial`) and by `loadState`. Specs must list parents before
+   *  children (the order `toJSON()` emits). Throws on id collision, unknown
+   *  layer, non-container parent, or cross-layer subtree. */
+  function applyConstructionSpecs(specs: readonly AddNodeSpec<TData, TLayer, TPose>[]): void {
+    for (const spec of specs) {
       // Bypass the log: we want construction to start with empty history.
       const id = spec.id ?? generateId();
       if (state.nodes.has(id)) {
@@ -776,6 +779,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       });
       patchClipFromPose(spec, id);
     }
+  }
+
+  // Apply initial nodes (not undoable — they're part of the construction).
+  if (options.initial) {
+    applyConstructionSpecs(options.initial);
     notify();
   }
 
