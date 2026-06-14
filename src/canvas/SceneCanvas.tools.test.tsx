@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, fireEvent, createEvent, act } from '@testing-library/react';
+import { render, createEvent, act } from '@testing-library/react';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
@@ -32,33 +32,30 @@ type D = { color: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
-/**
- * Drives a pointerdown at (clientX, clientY) on the canvas. Constructs the
- * event explicitly because jsdom's PointerEvent ignores clientX/Y from the
- * dict-init shorthand (matches the Canvas.test.tsx pattern).
- */
-function pointerDownAt(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
+/** Phase 14e Task 4: with `useResizeTool` deleted, resize gestures flow through
+ *  the dispatcher-side `resizeAction`, which fires `onStart` only after the drag
+ *  threshold is crossed. Sends down + move + up. Dispatches all three raw events
+ *  inside a SINGLE act() (rather than three separate fireEvent act() boundaries)
+ *  so a resize update that spans the gesture is acted as one unit — separate
+ *  per-event acts let a cross-event update slip through and warn under CI timing.
+ *  Events are constructed explicitly because jsdom's PointerEvent ignores
+ *  clientX/Y from the dict-init shorthand (matches the Canvas.test.tsx pattern). */
+function gestureAt(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
   canvas.setPointerCapture = vi.fn();
   const down = createEvent.pointerDown(canvas, { pointerId: 1 });
   Object.defineProperty(down, 'clientX', { value: clientX });
   Object.defineProperty(down, 'clientY', { value: clientY });
-  fireEvent(canvas, down);
-}
-
-/** Phase 14e Task 4: with `useResizeTool` deleted, resize gestures flow
- *  through the dispatcher-side `resizeAction`, which fires `onStart` only
- *  after the drag threshold is crossed. Helper sends down + move + up so
- *  affordance-driven resize behaviors actually fire. */
-function gestureAt(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
-  pointerDownAt(canvas, clientX, clientY);
   const move = createEvent.pointerMove(canvas, { pointerId: 1 });
   Object.defineProperty(move, 'clientX', { value: clientX + 20 });
   Object.defineProperty(move, 'clientY', { value: clientY + 20 });
-  fireEvent(canvas, move);
   const up = createEvent.pointerUp(canvas, { pointerId: 1 });
   Object.defineProperty(up, 'clientX', { value: clientX + 20 });
   Object.defineProperty(up, 'clientY', { value: clientY + 20 });
-  fireEvent(canvas, up);
+  act(() => {
+    canvas.dispatchEvent(down);
+    canvas.dispatchEvent(move);
+    canvas.dispatchEvent(up);
+  });
 }
 
 describe('SceneCanvas defaultTools selector', () => {
