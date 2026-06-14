@@ -11,8 +11,8 @@
  */
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { useRef } from 'react';
-import { mergeAlphaFromPrev, useActionsRegistry } from '@orochi235/weasel';
-import type { UiOngoingControl } from '@orochi235/weasel';
+import { mergeAlphaFromPrev, useActionsRegistry } from '@weasel-js/core';
+import type { UiOngoingControl } from '@weasel-js/core';
 import { useColorContext } from './tools/colorContext';
 
 export type ActivePaint =

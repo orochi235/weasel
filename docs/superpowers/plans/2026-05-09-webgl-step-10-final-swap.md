@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Delete the 2D codepath, fold `@orochi235/weasel-gl` source into thematic homes inside `@orochi235/weasel`, and ship `0.2.0` as a GL-only kit.
+**Goal:** Delete the 2D codepath, fold `@weasel-js/gl` source into thematic homes inside `@weasel-js/core`, and ship `0.2.0` as a GL-only kit.
 
 **Architecture:** Three landing zones for renderer source: `src/renderer/` (GL machinery — `WeaselRenderer`, `draw`, caches, math, shaders, textures), `src/features/text/atlas/` (font atlasing — `FontAtlas`, `GlyphLayout`, `registerFont`), `src/features/paths/tessellate/` (path → mesh — `tessellate`, `polyline`, `stroke`). Font binary assets move to `assets/fonts/inter/` so `src/` stays source-only. `RenderLayer.drawGL` and siblings rename to `draw`/`drawOne`/`drawGhost` (the 2D versions are deleted in the same edit). `<Canvas>`/`<SceneCanvas>` lose the `backend` prop; the demo's `BackendContext` and `?backend=` query param are deleted.
 
@@ -43,7 +43,7 @@ src/
 assets/
   fonts/inter/{inter.json,inter.png}
 
-(packages/weasel-gl/ deleted entirely)
+(packages/gl/ deleted entirely)
 (src/features/patterns/ deleted entirely — follow-up TODO)
 (src/features/viewport/pixelDensity.ts deleted)
 (demo/BackendContext.tsx deleted)
@@ -56,8 +56,8 @@ assets/
 ### Task A1: Move font assets to repo-root `assets/`
 
 **Files:**
-- Create: `assets/fonts/inter/inter.json` (move from `packages/weasel-gl/fonts/inter/inter.json`)
-- Create: `assets/fonts/inter/inter.png` (move from `packages/weasel-gl/fonts/inter/inter.png`)
+- Create: `assets/fonts/inter/inter.json` (move from `packages/gl/fonts/inter/inter.json`)
+- Create: `assets/fonts/inter/inter.png` (move from `packages/gl/fonts/inter/inter.png`)
 - Modify: `vite.config.ts` (change `publicDir` target)
 - Modify: `apps/swillustrator/vite.config.ts` (same)
 
@@ -65,10 +65,10 @@ assets/
 
 ```bash
 mkdir -p assets/fonts/inter
-git mv packages/weasel-gl/fonts/inter/inter.json assets/fonts/inter/inter.json
-git mv packages/weasel-gl/fonts/inter/inter.png assets/fonts/inter/inter.png
-git mv packages/weasel-gl/fonts/.gitkeep assets/fonts/.gitkeep
-rmdir packages/weasel-gl/fonts/inter packages/weasel-gl/fonts
+git mv packages/gl/fonts/inter/inter.json assets/fonts/inter/inter.json
+git mv packages/gl/fonts/inter/inter.png assets/fonts/inter/inter.png
+git mv packages/gl/fonts/.gitkeep assets/fonts/.gitkeep
+rmdir packages/gl/fonts/inter packages/gl/fonts
 ```
 
 - [ ] **Step 2: Update root `vite.config.ts`** — change `publicDir` to point at `assets/fonts`
@@ -85,7 +85,7 @@ publicDir: resolve(__dirname, 'assets/fonts'),
 grep -n "weasel-gl/fonts" apps/swillustrator/vite.config.ts
 ```
 
-If the grep returns lines, replace `packages/weasel-gl/fonts` → `assets/fonts` in the matched lines.
+If the grep returns lines, replace `packages/gl/fonts` → `assets/fonts` in the matched lines.
 
 - [ ] **Step 4: Smoke-test demo loads fonts**
 
@@ -104,7 +104,7 @@ Expected: `inter.json  inter.png`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add assets/ packages/weasel-gl/fonts vite.config.ts apps/swillustrator/vite.config.ts
+git add assets/ packages/gl/fonts vite.config.ts apps/swillustrator/vite.config.ts
 git commit -m "refactor(fonts): move font assets to repo-root assets/fonts/"
 ```
 
@@ -132,58 +132,58 @@ mkdir -p src/renderer/state src/renderer/math src/renderer/cache src/renderer/sh
 
 ```bash
 # Top-level renderer files
-git mv packages/weasel-gl/src/WeaselRenderer.ts src/renderer/WeaselRenderer.ts
-git mv packages/weasel-gl/src/WeaselRenderer.test.ts src/renderer/WeaselRenderer.test.ts
-git mv packages/weasel-gl/src/draw.ts src/renderer/draw.ts
-git mv packages/weasel-gl/src/draw.test.ts src/renderer/draw.test.ts
-git mv packages/weasel-gl/src/DrawCommand.ts src/renderer/DrawCommand.ts
-git mv packages/weasel-gl/src/index.ts src/renderer/index.ts
-git mv packages/weasel-gl/src/index.test.ts src/renderer/index.test.ts
+git mv packages/gl/src/WeaselRenderer.ts src/renderer/WeaselRenderer.ts
+git mv packages/gl/src/WeaselRenderer.test.ts src/renderer/WeaselRenderer.test.ts
+git mv packages/gl/src/draw.ts src/renderer/draw.ts
+git mv packages/gl/src/draw.test.ts src/renderer/draw.test.ts
+git mv packages/gl/src/DrawCommand.ts src/renderer/DrawCommand.ts
+git mv packages/gl/src/index.ts src/renderer/index.ts
+git mv packages/gl/src/index.test.ts src/renderer/index.test.ts
 
 # state/
-git mv packages/weasel-gl/src/GroupState.ts src/renderer/state/GroupState.ts
-git mv packages/weasel-gl/src/GroupState.test.ts src/renderer/state/GroupState.test.ts
+git mv packages/gl/src/GroupState.ts src/renderer/state/GroupState.ts
+git mv packages/gl/src/GroupState.test.ts src/renderer/state/GroupState.test.ts
 
 # math/
-git mv packages/weasel-gl/src/mat3.ts src/renderer/math/mat3.ts
-git mv packages/weasel-gl/src/mat3.test.ts src/renderer/math/mat3.test.ts
-git mv packages/weasel-gl/src/viewToMat3.ts src/renderer/math/viewToMat3.ts
-git mv packages/weasel-gl/src/viewToMat3.test.ts src/renderer/math/viewToMat3.test.ts
-git mv packages/weasel-gl/src/color.ts src/renderer/math/color.ts
-git mv packages/weasel-gl/src/color.test.ts src/renderer/math/color.test.ts
+git mv packages/gl/src/mat3.ts src/renderer/math/mat3.ts
+git mv packages/gl/src/mat3.test.ts src/renderer/math/mat3.test.ts
+git mv packages/gl/src/viewToMat3.ts src/renderer/math/viewToMat3.ts
+git mv packages/gl/src/viewToMat3.test.ts src/renderer/math/viewToMat3.test.ts
+git mv packages/gl/src/color.ts src/renderer/math/color.ts
+git mv packages/gl/src/color.test.ts src/renderer/math/color.test.ts
 
 # cache/
-git mv packages/weasel-gl/src/cache.ts src/renderer/cache/cache.ts
-git mv packages/weasel-gl/src/cache.test.ts src/renderer/cache/cache.test.ts
-git mv packages/weasel-gl/src/mesh.ts src/renderer/cache/mesh.ts
-git mv packages/weasel-gl/src/GLMeshCache.ts src/renderer/cache/GLMeshCache.ts
-git mv packages/weasel-gl/src/GLMeshCache.test.ts src/renderer/cache/GLMeshCache.test.ts
-git mv packages/weasel-gl/src/GLImageCache.ts src/renderer/cache/GLImageCache.ts
-git mv packages/weasel-gl/src/GLImageCache.test.ts src/renderer/cache/GLImageCache.test.ts
-git mv packages/weasel-gl/src/GLTextureCache.ts src/renderer/cache/GLTextureCache.ts
-git mv packages/weasel-gl/src/GLTextureCache.test.ts src/renderer/cache/GLTextureCache.test.ts
-git mv packages/weasel-gl/src/GradientRampCache.ts src/renderer/cache/GradientRampCache.ts
-git mv packages/weasel-gl/src/GradientRampCache.test.ts src/renderer/cache/GradientRampCache.test.ts
-git mv packages/weasel-gl/src/gradientTypes.test.ts src/renderer/cache/gradientTypes.test.ts
+git mv packages/gl/src/cache.ts src/renderer/cache/cache.ts
+git mv packages/gl/src/cache.test.ts src/renderer/cache/cache.test.ts
+git mv packages/gl/src/mesh.ts src/renderer/cache/mesh.ts
+git mv packages/gl/src/GLMeshCache.ts src/renderer/cache/GLMeshCache.ts
+git mv packages/gl/src/GLMeshCache.test.ts src/renderer/cache/GLMeshCache.test.ts
+git mv packages/gl/src/GLImageCache.ts src/renderer/cache/GLImageCache.ts
+git mv packages/gl/src/GLImageCache.test.ts src/renderer/cache/GLImageCache.test.ts
+git mv packages/gl/src/GLTextureCache.ts src/renderer/cache/GLTextureCache.ts
+git mv packages/gl/src/GLTextureCache.test.ts src/renderer/cache/GLTextureCache.test.ts
+git mv packages/gl/src/GradientRampCache.ts src/renderer/cache/GradientRampCache.ts
+git mv packages/gl/src/GradientRampCache.test.ts src/renderer/cache/GradientRampCache.test.ts
+git mv packages/gl/src/gradientTypes.test.ts src/renderer/cache/gradientTypes.test.ts
 
 # shaders/
-git mv packages/weasel-gl/src/ShaderProgram.ts src/renderer/shaders/ShaderProgram.ts
-git mv packages/weasel-gl/src/ShaderProgram.test.ts src/renderer/shaders/ShaderProgram.test.ts
-git mv packages/weasel-gl/src/registerProgram.ts src/renderer/shaders/registerProgram.ts
-git mv packages/weasel-gl/src/registerProgram.test.ts src/renderer/shaders/registerProgram.test.ts
+git mv packages/gl/src/ShaderProgram.ts src/renderer/shaders/ShaderProgram.ts
+git mv packages/gl/src/ShaderProgram.test.ts src/renderer/shaders/ShaderProgram.test.ts
+git mv packages/gl/src/registerProgram.ts src/renderer/shaders/registerProgram.ts
+git mv packages/gl/src/registerProgram.test.ts src/renderer/shaders/registerProgram.test.ts
 # Move existing shaders/ subdir contents
-git mv packages/weasel-gl/src/shaders/* src/renderer/shaders/
-rmdir packages/weasel-gl/src/shaders
+git mv packages/gl/src/shaders/* src/renderer/shaders/
+rmdir packages/gl/src/shaders
 
 # textures/
-git mv packages/weasel-gl/src/registerTexture.ts src/renderer/textures/registerTexture.ts
-git mv packages/weasel-gl/src/registerTexture.test.ts src/renderer/textures/registerTexture.test.ts
+git mv packages/gl/src/registerTexture.ts src/renderer/textures/registerTexture.ts
+git mv packages/gl/src/registerTexture.test.ts src/renderer/textures/registerTexture.test.ts
 ```
 
 - [ ] **Step 3: Verify all renderer files moved**
 
 ```bash
-ls packages/weasel-gl/src/
+ls packages/gl/src/
 ```
 
 Expected remaining: `FontAtlas.ts`, `FontAtlas.test.ts`, `GlyphLayout.ts`, `GlyphLayout.test.ts`, `registerFont.ts`, `registerFont.test.ts`, `tessellate.ts`, `tessellate.test.ts`, `polyline.ts`, `polyline.test.ts`, `stroke.ts`, `stroke.test.ts`. (Those move in Tasks A3 and A4.)
@@ -207,12 +207,12 @@ Note: TypeScript will be broken until Task A5. That's intentional — we move fi
 
 ```bash
 mkdir -p src/features/text/atlas
-git mv packages/weasel-gl/src/FontAtlas.ts src/features/text/atlas/FontAtlas.ts
-git mv packages/weasel-gl/src/FontAtlas.test.ts src/features/text/atlas/FontAtlas.test.ts
-git mv packages/weasel-gl/src/GlyphLayout.ts src/features/text/atlas/GlyphLayout.ts
-git mv packages/weasel-gl/src/GlyphLayout.test.ts src/features/text/atlas/GlyphLayout.test.ts
-git mv packages/weasel-gl/src/registerFont.ts src/features/text/atlas/registerFont.ts
-git mv packages/weasel-gl/src/registerFont.test.ts src/features/text/atlas/registerFont.test.ts
+git mv packages/gl/src/FontAtlas.ts src/features/text/atlas/FontAtlas.ts
+git mv packages/gl/src/FontAtlas.test.ts src/features/text/atlas/FontAtlas.test.ts
+git mv packages/gl/src/GlyphLayout.ts src/features/text/atlas/GlyphLayout.ts
+git mv packages/gl/src/GlyphLayout.test.ts src/features/text/atlas/GlyphLayout.test.ts
+git mv packages/gl/src/registerFont.ts src/features/text/atlas/registerFont.ts
+git mv packages/gl/src/registerFont.test.ts src/features/text/atlas/registerFont.test.ts
 ```
 
 - [ ] **Step 2: Commit**
@@ -232,18 +232,18 @@ git commit -m "refactor(text): move font atlas source into src/features/text/atl
 
 ```bash
 mkdir -p src/features/paths/tessellate
-git mv packages/weasel-gl/src/tessellate.ts src/features/paths/tessellate/tessellate.ts
-git mv packages/weasel-gl/src/tessellate.test.ts src/features/paths/tessellate/tessellate.test.ts
-git mv packages/weasel-gl/src/polyline.ts src/features/paths/tessellate/polyline.ts
-git mv packages/weasel-gl/src/polyline.test.ts src/features/paths/tessellate/polyline.test.ts
-git mv packages/weasel-gl/src/stroke.ts src/features/paths/tessellate/stroke.ts
-git mv packages/weasel-gl/src/stroke.test.ts src/features/paths/tessellate/stroke.test.ts
+git mv packages/gl/src/tessellate.ts src/features/paths/tessellate/tessellate.ts
+git mv packages/gl/src/tessellate.test.ts src/features/paths/tessellate/tessellate.test.ts
+git mv packages/gl/src/polyline.ts src/features/paths/tessellate/polyline.ts
+git mv packages/gl/src/polyline.test.ts src/features/paths/tessellate/polyline.test.ts
+git mv packages/gl/src/stroke.ts src/features/paths/tessellate/stroke.ts
+git mv packages/gl/src/stroke.test.ts src/features/paths/tessellate/stroke.test.ts
 ```
 
 - [ ] **Step 2: Verify weasel-gl/src/ is now empty**
 
 ```bash
-ls packages/weasel-gl/src/
+ls packages/gl/src/
 ```
 
 Expected: empty (or just shows zero entries).
@@ -256,19 +256,19 @@ git commit -m "refactor(paths): move path tessellation source into src/features/
 
 ---
 
-### Task A5: Replace `@orochi235/weasel-gl` imports with relative imports
+### Task A5: Replace `@weasel-js/gl` imports with relative imports
 
 **Files:**
-- Modify: every file that imports from `@orochi235/weasel-gl` or `@orochi235/weasel-gl/...`
+- Modify: every file that imports from `@weasel-js/gl` or `@weasel-js/gl/...`
 
-This is a mechanical s/// pass, but because the moved files are scattered across three new homes (`src/renderer/`, `src/features/text/atlas/`, `src/features/paths/tessellate/`), the replacement isn't a single sed. The cleanest path is to add a transitional alias in `tsconfig.json` + `vite.config.ts` that points `@orochi235/weasel-gl` at `src/renderer/index.ts`, then update individual call sites file-by-file as the renderer's barrel re-exports the moved-out symbols too.
+This is a mechanical s/// pass, but because the moved files are scattered across three new homes (`src/renderer/`, `src/features/text/atlas/`, `src/features/paths/tessellate/`), the replacement isn't a single sed. The cleanest path is to add a transitional alias in `tsconfig.json` + `vite.config.ts` that points `@weasel-js/gl` at `src/renderer/index.ts`, then update individual call sites file-by-file as the renderer's barrel re-exports the moved-out symbols too.
 
 - [ ] **Step 1: Make `src/renderer/index.ts` re-export font + tessellate symbols**
 
-The pre-move barrel exported everything via `packages/weasel-gl/src/index.ts`. Open `src/renderer/index.ts` and ensure it re-exports symbols that moved to `src/features/text/atlas/` and `src/features/paths/tessellate/`:
+The pre-move barrel exported everything via `packages/gl/src/index.ts`. Open `src/renderer/index.ts` and ensure it re-exports symbols that moved to `src/features/text/atlas/` and `src/features/paths/tessellate/`:
 
 ```ts
-// In src/renderer/index.ts, add transitional re-exports so @orochi235/weasel-gl
+// In src/renderer/index.ts, add transitional re-exports so @weasel-js/gl
 // keeps resolving to a single module while we migrate call sites.
 export { registerFont } from '../features/text/atlas/registerFont';
 export type { FontAtlas } from '../features/text/atlas/FontAtlas';
@@ -277,23 +277,23 @@ export type { FontAtlas } from '../features/text/atlas/FontAtlas';
 
 Read the current `src/renderer/index.ts` first and append re-exports for everything that moved to features.
 
-- [ ] **Step 2: Verify `tsc --noEmit` resolves @orochi235/weasel-gl**
+- [ ] **Step 2: Verify `tsc --noEmit` resolves @weasel-js/gl**
 
 ```bash
 npx tsc --noEmit 2>&1 | head -30
 ```
 
-Expected: no `Cannot find module '@orochi235/weasel-gl'` errors. Existing tsconfig path alias `"@orochi235/weasel-gl": ["./packages/weasel-gl/src/index.ts"]` no longer resolves (we deleted that file). Update `tsconfig.json`:
+Expected: no `Cannot find module '@weasel-js/gl'` errors. Existing tsconfig path alias `"@weasel-js/gl": ["./packages/gl/src/index.ts"]` no longer resolves (we deleted that file). Update `tsconfig.json`:
 
 ```json
-"@orochi235/weasel-gl": ["./src/renderer/index.ts"],
+"@weasel-js/gl": ["./src/renderer/index.ts"],
 ```
 
 And `vite.config.ts`:
 
 ```ts
 {
-  find: '@orochi235/weasel-gl',
+  find: '@weasel-js/gl',
   replacement: resolve(__dirname, 'src/renderer/index.ts'),
 },
 ```
@@ -306,31 +306,31 @@ And `vite.config.ts`:
 npx tsc --noEmit 2>&1 | head -30
 ```
 
-Expected: clean. If any errors, they're real cross-package import paths inside `src/renderer/` itself referring to the old `packages/weasel-gl/src/` neighbors. Fix per error: change `from './FontAtlas'` (now broken) to `from '../features/text/atlas/FontAtlas'`.
+Expected: clean. If any errors, they're real cross-package import paths inside `src/renderer/` itself referring to the old `packages/gl/src/` neighbors. Fix per error: change `from './FontAtlas'` (now broken) to `from '../features/text/atlas/FontAtlas'`.
 
-- [ ] **Step 4: Replace `@orochi235/weasel-gl` imports with relative paths**
+- [ ] **Step 4: Replace `@weasel-js/gl` imports with relative paths**
 
 Now that the alias works, switch in-`src` consumers off the package import. They should use relative imports because the renderer is now a sibling, not a peer:
 
 ```bash
-grep -rln "@orochi235/weasel-gl" src/ demo/ apps/
+grep -rln "@weasel-js/gl" src/ demo/ apps/
 ```
 
 For each match:
 - If it's in `src/`: replace with a relative import (e.g. `from '../renderer'`).
-- If it's in `demo/` or `apps/`: replace with `from '@orochi235/weasel'` if the symbol is re-exported from the kit barrel; otherwise use a relative import via the demo's existing alias.
+- If it's in `demo/` or `apps/`: replace with `from '@weasel-js/core'` if the symbol is re-exported from the kit barrel; otherwise use a relative import via the demo's existing alias.
 
 The full list will be visible via the grep above. The most common patterns:
-- `import { WeaselRenderer } from '@orochi235/weasel-gl'` → `from '@orochi235/weasel'` (after barrel update in Step 5)
-- `import { tessellate } from '@orochi235/weasel-gl'` → `from '@orochi235/weasel'`
-- `import type { DrawCommand } from '@orochi235/weasel-gl'` → `from '@orochi235/weasel'`
+- `import { WeaselRenderer } from '@weasel-js/gl'` → `from '@weasel-js/core'` (after barrel update in Step 5)
+- `import { tessellate } from '@weasel-js/gl'` → `from '@weasel-js/core'`
+- `import type { DrawCommand } from '@weasel-js/gl'` → `from '@weasel-js/core'`
 
 - [ ] **Step 5: Update `src/index.ts` to re-export the renderer surface**
 
 Open `src/index.ts` and add at the bottom:
 
 ```ts
-// Renderer surface (was @orochi235/weasel-gl pre-0.2.0)
+// Renderer surface (was @weasel-js/gl pre-0.2.0)
 export {
   WeaselRenderer,
   registerFont,
@@ -365,10 +365,10 @@ git commit -m "refactor(renderer): re-route imports through src/renderer barrel"
 
 ---
 
-### Task A6: Delete `packages/weasel-gl/` and update build config
+### Task A6: Delete `packages/gl/` and update build config
 
 **Files:**
-- Delete: `packages/weasel-gl/` (entire directory)
+- Delete: `packages/gl/` (entire directory)
 - Modify: `tsconfig.json` (drop weasel-gl path alias)
 - Modify: `vite.config.ts` (drop weasel-gl alias)
 - Modify: `apps/swillustrator/vite.config.ts` (drop weasel-gl alias)
@@ -377,16 +377,16 @@ git commit -m "refactor(renderer): re-route imports through src/renderer barrel"
 - [ ] **Step 1: Delete the package directory**
 
 ```bash
-git rm -r packages/weasel-gl/
+git rm -r packages/gl/
 ```
 
 - [ ] **Step 2: Drop weasel-gl tsconfig path**
 
-In `tsconfig.json`, remove the `@orochi235/weasel-gl` and `@orochi235/weasel-gl/*` entries from `paths` and the `packages/weasel-gl/src` etc. entries from `include`.
+In `tsconfig.json`, remove the `@weasel-js/gl` and `@weasel-js/gl/*` entries from `paths` and the `packages/gl/src` etc. entries from `include`.
 
 - [ ] **Step 3: Drop weasel-gl vite alias**
 
-In `vite.config.ts` remove the `@orochi235/weasel-gl` alias entries (both the prefixed `/(.*)$` form and the bare form).
+In `vite.config.ts` remove the `@weasel-js/gl` alias entries (both the prefixed `/(.*)$` form and the bare form).
 
 In `apps/swillustrator/vite.config.ts` do the same.
 
@@ -395,9 +395,9 @@ In `apps/swillustrator/vite.config.ts` do the same.
 In `package.json`, remove these lines:
 
 ```json
-"test:smoke:step1": "playwright test --config=packages/weasel-gl/dev/playwright.config.ts",
-"gen:font": "tsx packages/weasel-gl/scripts/gen-font.ts",
-"bundlesize:weasel-gl": "rm -rf /tmp/weasel-gl-bundle && tsup packages/weasel-gl/src/index.ts ...",
+"test:smoke:step1": "playwright test --config=packages/gl/dev/playwright.config.ts",
+"gen:font": "tsx packages/gl/scripts/gen-font.ts",
+"bundlesize:weasel-gl": "rm -rf /tmp/weasel-gl-bundle && tsup packages/gl/src/index.ts ...",
 ```
 
 If a `gen:font` replacement is needed, point it at the new home (`tsx scripts/gen-font.ts` after moving the script — out of scope for step 10; just delete for now and add a TODO if the user asks).
@@ -414,7 +414,7 @@ Expected: typecheck clean, all tests pass, tsup builds successfully.
 
 ```bash
 git add -A
-git commit -m "build: delete packages/weasel-gl/ and clean up aliases/scripts"
+git commit -m "build: delete packages/gl/ and clean up aliases/scripts"
 ```
 
 ---
@@ -1173,7 +1173,7 @@ At the top of `CHANGELOG.md`, after the title, insert:
 ### Breaking changes (final WebGL swap)
 
 - **2D backend removed.** `<Canvas>` and `<SceneCanvas>` no longer accept `backend?: '2d' | 'gl'`. WebGL2 is the only backend.
-- **`@orochi235/weasel-gl` deleted.** All renderer source folded into `@orochi235/weasel`:
+- **`@weasel-js/gl` deleted.** All renderer source folded into `@weasel-js/core`:
   - GL machinery → `src/renderer/`
   - Font atlasing → `src/features/text/atlas/`
   - Path tessellation → `src/features/paths/tessellate/`
@@ -1189,7 +1189,7 @@ At the top of `CHANGELOG.md`, after the title, insert:
 
 ### Font assets
 
-Font binaries (`inter.json` + `inter.png`) moved from `packages/weasel-gl/fonts/inter/` to `assets/fonts/inter/`. Vite `publicDir` updated.
+Font binaries (`inter.json` + `inter.png`) moved from `packages/gl/fonts/inter/` to `assets/fonts/inter/`. Vite `publicDir` updated.
 ```
 
 - [ ] **Step 3: Commit**
@@ -1267,7 +1267,7 @@ A starting skeleton:
 
 ## What shipped
 
-- **`@orochi235/weasel-gl` deleted.** Renderer source folded into `src/renderer/` (GL machinery), `src/features/text/atlas/` (font atlasing), `src/features/paths/tessellate/` (path tessellation).
+- **`@weasel-js/gl` deleted.** Renderer source folded into `src/renderer/` (GL machinery), `src/features/text/atlas/` (font atlasing), `src/features/paths/tessellate/` (path tessellation).
 - **2D codepath deleted.** `applyPaint`/`applyStroke`/`renderFilledRegion`, `setupCanvasDpr`/`useFixedPixelRatio`, the patterns-builtin catalog, all `RenderLayer.draw(ctx, …)` 2D method bodies.
 - **`*GL` family collapsed.** `RenderLayer.drawGL` → `draw`, `SceneSlotConfig.drawOneGL` → `drawOne`, `*Tool.drawGhostGL` → `drawGhost`.
 - **`backend` prop removed** from `<Canvas>` / `<SceneCanvas>`. Demo `BackendContext` and `?backend=` query param deleted.
@@ -1290,7 +1290,7 @@ A starting skeleton:
 ## Follow-ups
 
 - **GL pattern factories.** Tracked in TODO.md Tier 1.5 — restore pattern-fill UX via `registerTexture`.
-- **`gen:font` script home.** Was `packages/weasel-gl/scripts/gen-font.ts`; deleted in step 10. If we ever regenerate the Inter atlas, restore the script under `scripts/gen-font.ts` at repo root.
+- **`gen:font` script home.** Was `packages/gl/scripts/gen-font.ts`; deleted in step 10. If we ever regenerate the Inter atlas, restore the script under `scripts/gen-font.ts` at repo root.
 ```
 
 - [ ] **Step 3: Commit**
@@ -1342,7 +1342,7 @@ Step 10 is shipped.
 
 ## Self-review
 
-**1. Spec coverage.** The umbrella spec (`docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`) Step-10 row asks for: delete 2D codepath; drop `backend` prop; rename `@orochi235/weasel-gl` → `@orochi235/weasel`; bump major version; document migration. Coverage:
+**1. Spec coverage.** The umbrella spec (`docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`) Step-10 row asks for: delete 2D codepath; drop `backend` prop; rename `@weasel-js/gl` → `@weasel-js/core`; bump major version; document migration. Coverage:
 - Delete 2D codepath → Phase C.
 - Drop `backend` → Phase D (D1, D2).
 - Fold `weasel-gl` → Phase A.

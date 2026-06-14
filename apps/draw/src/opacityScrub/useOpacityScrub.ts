@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { asNodeId, toHex8, getAlpha01 } from '@orochi235/weasel';
+import { asNodeId, toHex8, getAlpha01 } from '@weasel-js/core';
 import {
   computeScrubbedPaints,
   type PaintSnapshot,

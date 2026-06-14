@@ -1,4 +1,4 @@
-// Import the source types directly, NOT through the `@orochi235/weasel` self-barrel.
+// Import the source types directly, NOT through the `@weasel-js/core` self-barrel.
 // `src/index.ts` reexports `renderer/index.ts`, which reexports this module — so a
 // barrel import here forms a DrawCommand.ts → index.ts → renderer/index.ts → DrawCommand.ts
 // cycle that makes the dts bundler split them into mutually-dependent chunks and warn.
@@ -11,7 +11,7 @@ import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgr
 
 /**
  * Solid-fill paint variant (subset of the full `FillStyle` union from
- * `@orochi235/weasel`). Kept for back-compat with step-1/2 consumers and
+ * `@weasel-js/core`). Kept for back-compat with step-1/2 consumers and
  * because some code reads `fill.color` directly. Through step 4, fills can
  * be any `FillStyle` variant — solid, pattern, or gradient.
  */

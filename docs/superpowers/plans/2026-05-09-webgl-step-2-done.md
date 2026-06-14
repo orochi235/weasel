@@ -5,7 +5,7 @@
 
 ## What shipped
 
-- Public exports of `StrokeAlign` type and `alignedStrokeRect` helper from `@orochi235/weasel`.
+- Public exports of `StrokeAlign` type and `alignedStrokeRect` helper from `@weasel-js/core`.
 - `extractPolylines(path)` — walks a `Path`, flattens curves via existing `flattenCubic`/`flattenQuadratic`, emits one polyline per contour with `closed` flag.
 - `tessellateStroke(path, stroke, opts)` produces a triangle ribbon mesh:
   - Straight-segment ribbon expansion (perpendicular ± half-width per side)
@@ -18,7 +18,7 @@
 - `kind: 'path'` DrawCommand variant gains `stroke?: Stroke`. `drawPath` draws fill first (existing) then stroke (new). Reuses the path-fill shader from step 1 (no new shader needed — strokes are colored triangles).
 - `RectPath` inner/outer alignment via `alignedStrokeRect` (alignment baked into geometry; no stencil).
 - `PolygonPath` inner/outer alignment via stencil two-pass (pass 1 builds path-interior mask from fill triangulation, pass 2 draws doubled-width ribbon clipped to the desired side).
-- `tessellateStroke` exported from `@orochi235/weasel-gl` public barrel.
+- `tessellateStroke` exported from `@weasel-js/gl` public barrel.
 - Synthetic scene canvases for caps / joins / dash / align — added to existing dev page; covered by the existing Playwright synthetic spec.
 
 ## Notable deviations from plan

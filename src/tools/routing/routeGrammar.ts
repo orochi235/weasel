@@ -13,7 +13,7 @@ export {
   RESERVED_ID_NAMES,
   VALID_MOD_NAMES,
   MOD_NAME_SET,
-} from '@orochi235/weasel-gestures';
+} from '@weasel-js/gestures';
 export type {
   ParsedRoute,
   ParsedModifiers,
@@ -25,4 +25,4 @@ export type {
   RouteDescriptionPart,
   RouteTermLabel,
   RouteFieldName,
-} from '@orochi235/weasel-gestures';
+} from '@weasel-js/gestures';

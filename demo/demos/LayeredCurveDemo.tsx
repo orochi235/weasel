@@ -5,7 +5,7 @@ import {
   type ControlPoint,
   type CurveLayer,
   type FunctionLayerState,
-} from '@orochi235/weasel-ui';
+} from '@weasel-js/ui';
 
 /**
  * Demo for the `LayeredCurveEditor`.

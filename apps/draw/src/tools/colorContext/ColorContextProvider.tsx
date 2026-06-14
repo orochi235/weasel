@@ -18,7 +18,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ActivePaint } from '../../ActiveSwatches';
 import { DEFAULT_FILL, DEFAULT_STROKE } from '../../ActiveSwatches';
-import { getAlpha01, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@orochi235/weasel';
+import { getAlpha01, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@weasel-js/core';
 
 // ---------------------------------------------------------------------------
 // Public types

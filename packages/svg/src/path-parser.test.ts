@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from './index';
-import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z } from '@orochi235/weasel';
+import { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z } from '@weasel-js/core';
 
 function pathFromSvg(d: string): { commands: number[]; coords: number[] } {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg"><path d="${d}"/></svg>`;

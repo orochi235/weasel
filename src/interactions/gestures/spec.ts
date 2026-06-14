@@ -11,4 +11,4 @@ export type {
   ModSpec,
   TargetSpec,
   PhaseSpec,
-} from '@orochi235/weasel-gestures';
+} from '@weasel-js/gestures';

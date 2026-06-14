@@ -1,7 +1,7 @@
 import { Fragment, useRef, type ReactNode } from 'react';
-import { UnknownIcon } from '@orochi235/weasel';
-import type { AnyTool, ToolsApi } from '@orochi235/weasel';
-import { eligibleTool, type ModeRegistry } from '@orochi235/weasel-modes';
+import { UnknownIcon } from '@weasel-js/core';
+import type { AnyTool, ToolsApi } from '@weasel-js/core';
+import { eligibleTool, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
 import s from './ToolPalette.module.css';

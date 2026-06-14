@@ -5,17 +5,17 @@
  *
  * Each package emits two entries (specific first, since vite matches in
  * order):
- *   1. A wildcard alias    `@orochi235/<name>/(.*)` → `packages/<name>/src/$1`
- *   2. A bare-package alias `@orochi235/<name>`     → `packages/<name>/src/index.ts`
+ *   1. A wildcard alias    `@weasel-js/<name>/(.*)` → `packages/<name>/src/$1`
+ *   2. A bare-package alias `@weasel-js/<name>`     → `packages/<name>/src/index.ts`
  *
  * Plus the kit's own aliases:
- *   - `@orochi235/weasel/(.*)`  → `src/import-shims/$1.ts` (subpath convention)
- *   - `@orochi235/weasel`       → `src/index.ts`
+ *   - `@weasel-js/core/(.*)`  → `src/import-shims/$1.ts` (subpath convention)
+ *   - `@weasel-js/core`       → `src/index.ts`
  *   - Bare top-level kit paths  (`core/...`, `features/...`, etc.) to match
  *     the kit's tsconfig `baseUrl: src` setup.
  *
  * Workspaces that need to override a specific subpath (e.g.
- * `@orochi235/weasel-theme/tokens.css`) prepend their overrides — vite
+ * `@weasel-js/theme/tokens.css`) prepend their overrides — vite
  * resolves in array order, so a more-specific entry first wins.
  */
 
@@ -57,8 +57,8 @@ function packageAliases(repoRoot: string): ViteAlias[] {
     } catch {
       // ignore — fall through to directory-name-based default
     }
-    // Default to @orochi235/<dirname> if package.json missing/invalid.
-    if (!pkgName) pkgName = `@orochi235/${name}`;
+    // Default to @weasel-js/<dirname> if package.json missing/invalid.
+    if (!pkgName) pkgName = `@weasel-js/${name}`;
     const srcDir = join(dir, 'src');
     // Wildcard first (more specific), then bare.
     out.push({
@@ -84,18 +84,18 @@ function escapeRegex(s: string): string {
  */
 export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): ViteAlias[] {
   return [
-    // Caller-supplied overrides win (e.g., `@orochi235/weasel-theme/tokens.css`).
+    // Caller-supplied overrides win (e.g., `@weasel-js/theme/tokens.css`).
     ...overrides,
     // Auto-generated package aliases (wildcard + bare for each workspace).
     ...packageAliases(repoRoot),
     // Kit subpath + bare entries — these aren't in `packages/`, they're the
     // main kit source under `src/`.
     {
-      find: /^@orochi235\/weasel\/(.*)$/,
+      find: /^@weasel-js\/core\/(.*)$/,
       replacement: join(repoRoot, 'src/import-shims/$1.ts'),
     },
     {
-      find: '@orochi235/weasel',
+      find: '@weasel-js/core',
       replacement: join(repoRoot, 'src/index.ts'),
     },
     // Bare top-level kit paths — match the kit's tsconfig `baseUrl: src`.

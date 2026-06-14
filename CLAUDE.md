@@ -1,6 +1,6 @@
 # weasel canvas-kit
 
-Generic 2D scene-graph canvas library. Published as `@orochi235/weasel`.
+Generic 2D scene-graph canvas library. Published as `@weasel-js/core`.
 
 ## Todo list
 

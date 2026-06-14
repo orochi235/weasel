@@ -473,7 +473,7 @@ import {
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubicWithArcLen,
   flattenQuadraticWithArcLen,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 export interface Polyline {
   /** Interleaved x,y vertices (length = 2 × point count). */
@@ -884,7 +884,7 @@ import {
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubicWithArcLen,
   flattenQuadraticWithArcLen,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 ```
 
 (Remove the now-unused `flattenCubic` and `flattenQuadratic` imports if they were there.)
@@ -2345,8 +2345,8 @@ import {
   rgbaToHex,
   useHandleDrag,
   useScene,
-} from '@orochi235/weasel';
-import type { Path } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { Path } from '@weasel-js/core';
 
 const W = 600;
 const H = 400;
@@ -2550,7 +2550,7 @@ import {
   selectFromMarquee,
   useSelection,
   useSelectWithAnchorEdit,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 ```
 
 Then add a helper near the top of the file (after the imports and constants):

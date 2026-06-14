@@ -4,8 +4,8 @@ import {
   useScene,
   useSelection,
   type ToolsApi,
-} from '@orochi235/weasel';
-import { ToolPalette } from '@orochi235/weasel-ui';
+} from '@weasel-js/core';
+import { ToolPalette } from '@weasel-js/ui';
 
 const W = 600, H = 400;
 

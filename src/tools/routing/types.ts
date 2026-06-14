@@ -4,7 +4,7 @@ import type { View } from '../../core/viewport/view';
 import type { Result } from './result';
 import type { ModifierKey } from './modifiers';
 import type { GestureBinding } from '../../interactions/actions/binding';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 
 /**
  * Configurable activation-key descriptor for tools that expose their

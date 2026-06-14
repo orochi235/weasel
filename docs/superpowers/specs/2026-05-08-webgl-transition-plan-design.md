@@ -13,7 +13,7 @@ The May 3 WebGL backend design remains the architectural source. It commits to:
 - Declarative `DrawCommand` tree as the layer→renderer interface
 - MSDF font atlases for text
 - CPU-side hit-testing (`pointInPath`, `pointNearStroke`)
-- Parallel package strategy: build `@orochi235/weasel-gl` to parity, then flip
+- Parallel package strategy: build `@weasel-js/gl` to parity, then flip
 - Path identity-keyed mesh caches; gradient-ramp / atlas / texture caches
 - Context-loss handling as a v1 correctness requirement
 
@@ -21,7 +21,7 @@ This doc moves the May 3 spec from "exploratory; not scheduled" to "scheduled; t
 
 ## Forcing function
 
-Strategic readiness — no specific consumer is hitting the 2D wall today. The transition is sequenced for steady progress, not urgency. The parallel-package strategy keeps it cheap to abandon mid-flight: steps 1–7 leave `@orochi235/weasel` 2D untouched, so abandonment costs only the work invested in `weasel-gl`.
+Strategic readiness — no specific consumer is hitting the 2D wall today. The transition is sequenced for steady progress, not urgency. The parallel-package strategy keeps it cheap to abandon mid-flight: steps 1–7 leave `@weasel-js/core` 2D untouched, so abandonment costs only the work invested in `weasel-gl`.
 
 ## Closed decisions
 
@@ -31,7 +31,7 @@ Strategic readiness — no specific consumer is hitting the 2D wall today. The t
 | 2 | Text rendering | **MSDF font atlas**, built via `msdf-bmfont-xml`. Default font ships prebuilt; consumers register more via `registerFont(family, atlasUrl)`. Complex-script shaping (HarfBuzz integration) deferred. |
 | 3 | Custom shader public API scope | **Minimal v1, marked experimental.** `registerProgram(id, vert, frag)` + small uniform type map, single geometry source ("auto-quad over command bounds"), `@experimental` JSDoc. Tightened from real usage in v2. |
 | 4 | Built-in effect vocabulary in v1 | **Parity + free GL wins.** Match 2D, plus extend `Paint` with linear/radial/conic gradients, add per-vertex colors (Path attribute), add `colorMatrix` group attribute. Defer FBO-based effects (drop shadow, glow, blur, masks) to v2. |
-| 5 | Transition strategy | **Parallel `@orochi235/weasel-gl` package → soak via `backend: '2d' \| 'gl'` prop → flip default → delete 2D and rename.** |
+| 5 | Transition strategy | **Parallel `@weasel-js/gl` package → soak via `backend: '2d' \| 'gl'` prop → flip default → delete 2D and rename.** |
 | 6 | Visual regression rig | **Playwright + pixelmatch**, locked to a single CI runner image (Linux + headless Chromium). Per-pixel sensitivity `pixelmatch({ threshold: 0.1 })`; pass criterion `mismatched / total < 0.02` (≤ 2% of pixels may differ). Baselines committed; updates only via `pnpm test:visual:update`. |
 
 ## Architecture deltas from May 3 spec
@@ -92,7 +92,7 @@ Ten steps. Each is independently testable. Steps 1–7 ship inside `weasel-gl` o
 | 7 | **Port built-in layers.** `createPathLayer`, `createTextLayer`, `createGridLayer`, `createSelectionOverlayLayer`, `createCellHighlightLayer`, `createChildrenLayer`, `createPenPreviewLayer`, `createDebugOverlayLayer`. Each rewritten to emit DrawCommand trees. External signatures preserved. | All built-in layer unit tests rewritten to assert against returned DrawCommand trees instead of ctx mocks. Pure functions; no GL context needed in unit suite. | Test rewrites are mechanical but voluminous. Triple-check overlay z-order parity. |
 | 8 | **Canvas component port.** `<Canvas>` (and `<SceneCanvas>`) accept `backend?: '2d' \| 'gl'`. Default `'2d'` initially. GL backend instantiates `WeaselRenderer`; 2D backend keeps the current `drawLayers` path. `setupCanvasDpr` removed from the GL path; renderer owns DPR. | Demo runs identically under `backend='2d'` and `backend='gl'` (eyeball at this stage; visual rig lands in step 9). | A `<canvas>` element holds one context type for life — switching `backend` requires a remount. Document; emit a console warning if changed at runtime. |
 | 9 | **Visual regression + demo soak.** Stand up Playwright + pixelmatch rig. Capture per-demo baseline PNGs under `backend='2d'`. Switch demos one at a time to `backend='gl'`; iterate until each demo's diff ≤ 2% pixel. Land baselines in git; CI runs on every PR. Default `backend` flips to `'gl'` once all demos green. | Every demo passes visual diff under `backend='gl'` against its 2D baseline. 30 days of `'gl'` default in the published demo site without a regression bug filed. | Cross-platform pixel determinism is bad; CI must lock to one runner image. Some tolerances may need to push above 2%. |
-| 10 | **Final swap.** Delete 2D codepath: `paint.ts` (2D `applyPaint`/`applyStroke`), `setupCanvasDpr`, `RenderLayer.draw(ctx, …)` 2D signature. Drop `backend` prop. Rename `@orochi235/weasel-gl` → fold back into `@orochi235/weasel`. Bump major version, write changeset, update README. | `weasel` ships as GL-only. No `CanvasRenderingContext2D` references in `src/`. Bundle size delta documented. | Consumers with custom RenderLayers must port. Provide migration guide + codemod for common patterns. |
+| 10 | **Final swap.** Delete 2D codepath: `paint.ts` (2D `applyPaint`/`applyStroke`), `setupCanvasDpr`, `RenderLayer.draw(ctx, …)` 2D signature. Drop `backend` prop. Rename `@weasel-js/gl` → fold back into `@weasel-js/core`. Bump major version, write changeset, update README. | `weasel` ships as GL-only. No `CanvasRenderingContext2D` references in `src/`. Bundle size delta documented. | Consumers with custom RenderLayers must port. Provide migration guide + codemod for common patterns. |
 
 ## Public API contract for v1 (after step 10)
 

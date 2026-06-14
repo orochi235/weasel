@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { ToolPalette } from './ToolPalette';
-import type { AnyTool, ToolsApi } from '@orochi235/weasel';
+import type { AnyTool, ToolsApi } from '@weasel-js/core';
 import {
   SelectIcon,
   LassoIcon,
@@ -9,7 +9,7 @@ import {
   TextIcon,
   PenIcon,
   HandIcon,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 const meta: Meta<typeof ToolPalette> = {
   title: 'weasel-ui/ToolPalette',

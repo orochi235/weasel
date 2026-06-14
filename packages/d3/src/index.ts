@@ -1,4 +1,4 @@
-// ─── @orochi235/weasel-d3 ──────────────────────────────────────────────────
+// ─── @weasel-js/d3 ──────────────────────────────────────────────────
 // d3 bridge for weasel. Currently ships Phase 1: data-join + chainable
 // selection. Phase 2 (transition chain) lands separately.
 //

@@ -163,7 +163,7 @@ src/core/ops/detachInstance.ts     + new
 src/core/ops/deleteSymbol.ts       + new
 src/renderer/                      ~ Instance render path (pose push + symbol walk)
 src/canvas/sceneAdapter.ts         ~ Instance hit-tests as a whole; symbol-edit drills in
-packages/weasel-modes/             + symbol-edit mode in the default preset
+packages/modes/             + symbol-edit mode in the default preset
 apps/weaseldraw/                   + Symbols panel UI section
                                    + symbol-edit chrome (breadcrumb, tint var)
                                    + Make Symbol / Detach / Edit Symbol menu + keys

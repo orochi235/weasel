@@ -1,7 +1,7 @@
 # weasel-ui
 
 UI chrome primitives for weasel-based apps — selection-aware property
-panels, toolbar shells, etc. Sibling to `@orochi235/weasel`; consumed
+panels, toolbar shells, etc. Sibling to `@weasel-js/core`; consumed
 today only by the WeaselDraw demo via a vite alias (no workspaces
 yet).
 
@@ -15,8 +15,8 @@ yet).
 
 ## CSS variables
 
-Components read `--wzl-*` tokens from `@orochi235/weasel-theme`. Import
-`@orochi235/weasel-theme/tokens.css` in your app shell for sensible
+Components read `--wzl-*` tokens from `@weasel-js/theme`. Import
+`@weasel-js/theme/tokens.css` in your app shell for sensible
 defaults, or define the variables yourself at any DOM scope.
 
 | Variable | Purpose |

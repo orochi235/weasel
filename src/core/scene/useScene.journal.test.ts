@@ -13,8 +13,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { createHistory } from '@orochi235/weasel-history';
-import type { Journal } from '@orochi235/weasel-history';
+import { createHistory } from '@weasel-js/history';
+import type { Journal } from '@weasel-js/history';
 import { useScene } from './useScene';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { createTransformOp } from 'core/ops/transform';

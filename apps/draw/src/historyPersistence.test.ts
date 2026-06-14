@@ -13,8 +13,8 @@
 //      position the original was at when serialized.
 
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTransformOp } from '@orochi235/weasel';
-import { createHistory, type History } from '@orochi235/weasel-history';
+import { createTransformOp } from '@weasel-js/core';
+import { createHistory, type History } from '@weasel-js/history';
 import { DB_NAME, loadScene, saveScene, type SceneSnapshot } from './sceneStore';
 
 // ──────────────────────────────────────────────────────────────────────────

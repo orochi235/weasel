@@ -1,5 +1,5 @@
 {
-  "name": "@orochi235/weasel-modes",
+  "name": "@weasel-js/modes",
   "version": "0.0.0",
   "private": true,
   "description": "App-level modality primitives: capability tags, mode definitions, mode registry, and decoration layer.",

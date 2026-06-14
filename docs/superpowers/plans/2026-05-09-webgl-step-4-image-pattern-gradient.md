@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add `kind: 'image'` DrawCommand support and extend the `Paint` type union with `'linear-gradient'`, `'radial-gradient'`, `'conic-gradient'`, and `'pattern'` variants to `@orochi235/weasel-gl`. Images are uploaded to a GL texture cache keyed by `ImageBitmap` identity. Patterns re-extract the source image from `CanvasPattern` and upload it with per-repetition-mode wrapping. Gradients are implemented via CPU-generated 1×256 gradient-ramp textures cached by a hash of their stop list. Each paint kind gets its own small shader. Exits when all paint variants render correctly in headless Chromium and the gradient ramp cache hit rate exceeds 95% in a soak demo.
+**Goal:** Add `kind: 'image'` DrawCommand support and extend the `Paint` type union with `'linear-gradient'`, `'radial-gradient'`, `'conic-gradient'`, and `'pattern'` variants to `@weasel-js/gl`. Images are uploaded to a GL texture cache keyed by `ImageBitmap` identity. Patterns re-extract the source image from `CanvasPattern` and upload it with per-repetition-mode wrapping. Gradients are implemented via CPU-generated 1×256 gradient-ramp textures cached by a hash of their stop list. Each paint kind gets its own small shader. Exits when all paint variants render correctly in headless Chromium and the gradient ramp cache hit rate exceeds 95% in a soak demo.
 
 **Architecture:** Three new shader programs join `WeaselRenderer`'s existing `pathFill` and `textSdf`:
 
@@ -12,9 +12,9 @@
 
 Per the key technical decision: **separate shaders per paint kind** (Option B). Fragment-shader branching on `u_paintKind` would run dead code on every path draw, costing performance on fill-heavy scenes. Three small shaders are faster, testable in isolation, and easier to read. The renderer picks the program based on the `Paint` discriminant before drawing.
 
-A new **`GradientRampCache`** (`packages/weasel-gl/src/GradientRampCache.ts`) holds 1×256 RGBA textures keyed by `JSON.stringify(stops)`. The cache is GL-context-bound (like `GLTextureCache`) and is discarded on context loss. Ramp pixels are generated CPU-side by `buildGradientRamp(stops): Uint8ClampedArray` — a pure function that linearly interpolates between consecutive stops at each of the 256 positions.
+A new **`GradientRampCache`** (`packages/gl/src/GradientRampCache.ts`) holds 1×256 RGBA textures keyed by `JSON.stringify(stops)`. The cache is GL-context-bound (like `GLTextureCache`) and is discarded on context loss. Ramp pixels are generated CPU-side by `buildGradientRamp(stops): Uint8ClampedArray` — a pure function that linearly interpolates between consecutive stops at each of the 256 positions.
 
-A new **`GLImageCache`** (`packages/weasel-gl/src/GLImageCache.ts`) holds GL textures keyed by `ImageBitmap` object identity (WeakMap). This is distinct from `GLTextureCache` (which uses string keys for fonts) because `ImageBitmap` objects are consumer-owned and don't have a natural string id. The `CanvasPattern` path also feeds through this cache after extracting the source image via `(pattern as any).image`.
+A new **`GLImageCache`** (`packages/gl/src/GLImageCache.ts`) holds GL textures keyed by `ImageBitmap` object identity (WeakMap). This is distinct from `GLTextureCache` (which uses string keys for fonts) because `ImageBitmap` objects are consumer-owned and don't have a natural string id. The `CanvasPattern` path also feeds through this cache after extracting the source image via `(pattern as any).image`.
 
 **Paint type extension** (`src/core/paint.ts`) adds the three gradient variants and documents the `CanvasPattern` source-compat caveat. The `weasel-gl` package picks up the extended type via the workspace path alias; no changes to the `weasel` package's public API surface other than the type extension.
 
@@ -44,7 +44,7 @@ A new **`GLImageCache`** (`packages/weasel-gl/src/GLImageCache.ts`) holds GL tex
 
 ## File structure
 
-Files this plan creates/modifies in `packages/weasel-gl/`:
+Files this plan creates/modifies in `packages/gl/`:
 
 ```
 src/
@@ -121,7 +121,7 @@ function isSolidPaint(paint: Paint): paint is { fill?: 'solid'; color: string; o
 // Replace the existing SolidPaint-only fill type on PathDrawCommand with the full Paint union.
 // Also add ImageDrawCommand.
 
-import type { Paint, GradStop } from '@orochi235/weasel';  // re-export from paint.ts
+import type { Paint, GradStop } from '@weasel-js/core';  // re-export from paint.ts
 
 export type { GradStop };
 
@@ -188,11 +188,11 @@ const TWO_STOP: GradStop[] = [
 
 There are no runtime tests for paint.ts (it's a type + 2D helpers). Verify the type extension compiles and is importable:
 
-Create `packages/weasel-gl/src/gradientTypes.test.ts`:
+Create `packages/gl/src/gradientTypes.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import type { Paint, GradStop } from '@orochi235/weasel';
+import type { Paint, GradStop } from '@weasel-js/core';
 
 describe('Paint gradient types (compile-time + runtime shape)', () => {
   it('GradStop has offset and color fields', () => {
@@ -244,10 +244,10 @@ describe('Paint gradient types (compile-time + runtime shape)', () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/gradientTypes.test.ts
+npm test -- packages/gl/src/gradientTypes.test.ts
 ```
 
-Expected: FAIL — TypeScript compile error: `GradStop` not exported from `@orochi235/weasel`.
+Expected: FAIL — TypeScript compile error: `GradStop` not exported from `@weasel-js/core`.
 
 - [ ] **Step 3: Implement**
 
@@ -265,7 +265,7 @@ export type { Paint, GradStop, Stroke, StrokeAlign, /* ... existing ... */ } fro
 - [ ] **Step 4: Run to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/gradientTypes.test.ts
+npm test -- packages/gl/src/gradientTypes.test.ts
 npm run typecheck
 ```
 
@@ -274,7 +274,7 @@ Expected: PASS (5 tests), 0 type errors.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/core/paint.ts src/index.ts packages/weasel-gl/src/gradientTypes.test.ts
+git add src/core/paint.ts src/index.ts packages/gl/src/gradientTypes.test.ts
 git commit -m "feat(paint): add GradStop + linear/radial/conic gradient Paint variants"
 ```
 
@@ -283,20 +283,20 @@ git commit -m "feat(paint): add GradStop + linear/radial/conic gradient Paint va
 ## Task 2: `buildGradientRamp` and `GradientRampCache`
 
 **Files:**
-- Create: `packages/weasel-gl/src/GradientRampCache.ts`
-- Create: `packages/weasel-gl/src/GradientRampCache.test.ts`
+- Create: `packages/gl/src/GradientRampCache.ts`
+- Create: `packages/gl/src/GradientRampCache.test.ts`
 
 **Conventions:** §9 — the cache is GL-context-bound. The ramp builder is pure (no GL). The key is `JSON.stringify(stops)` which is a stable hash for the step-4 scale. The cache lives on the renderer instance, not in a module-level singleton — so multi-renderer isolation is automatic.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/GradientRampCache.test.ts`:
+Create `packages/gl/src/GradientRampCache.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from '../test-utils/glRecorder';
 import { buildGradientRamp, GradientRampCache } from './GradientRampCache';
-import type { GradStop } from '@orochi235/weasel';
+import type { GradStop } from '@weasel-js/core';
 
 const BLACK_WHITE: GradStop[] = [
   { offset: 0, color: '#000000' },
@@ -426,14 +426,14 @@ describe('GradientRampCache', () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/GradientRampCache.test.ts
+npm test -- packages/gl/src/GradientRampCache.test.ts
 ```
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `GradientRampCache.ts`**
 
-Create `packages/weasel-gl/src/GradientRampCache.ts`:
+Create `packages/gl/src/GradientRampCache.ts`:
 
 ```ts
 /**
@@ -450,7 +450,7 @@ Create `packages/weasel-gl/src/GradientRampCache.ts`:
  * before writing outColor: vec4(rgb * a, a).
  */
 
-import type { GradStop } from '@orochi235/weasel';
+import type { GradStop } from '@weasel-js/core';
 import { parseColor } from './color';
 
 const RAMP_SIZE = 256;
@@ -564,7 +564,7 @@ export class GradientRampCache {
 - [ ] **Step 4: Run to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/GradientRampCache.test.ts
+npm test -- packages/gl/src/GradientRampCache.test.ts
 ```
 
 Expected: PASS (all ~14 tests).
@@ -572,7 +572,7 @@ Expected: PASS (all ~14 tests).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/GradientRampCache.ts packages/weasel-gl/src/GradientRampCache.test.ts
+git add packages/gl/src/GradientRampCache.ts packages/gl/src/GradientRampCache.test.ts
 git commit -m "feat(weasel-gl): GradientRampCache — CPU ramp builder + GL 1×256 texture cache"
 ```
 
@@ -581,14 +581,14 @@ git commit -m "feat(weasel-gl): GradientRampCache — CPU ramp builder + GL 1×2
 ## Task 3: `GLImageCache` — WeakMap-keyed image upload
 
 **Files:**
-- Create: `packages/weasel-gl/src/GLImageCache.ts`
-- Create: `packages/weasel-gl/src/GLImageCache.test.ts`
+- Create: `packages/gl/src/GLImageCache.ts`
+- Create: `packages/gl/src/GLImageCache.test.ts`
 
 **Conventions:** §9 — cache is renderer-instance-bound. The WeakMap key is `ImageBitmap` identity, so the GC can collect unreferenced bitmaps. An uploaded-but-gc'd bitmap leaves a dangling `WebGLTexture`; this is acceptable for v1 (renderer lifetime is typically the page's lifetime and `ImageBitmap.close()` is the consumer's responsibility).
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/GLImageCache.test.ts`:
+Create `packages/gl/src/GLImageCache.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -673,14 +673,14 @@ describe('GLImageCache', () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/GLImageCache.test.ts
+npm test -- packages/gl/src/GLImageCache.test.ts
 ```
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `GLImageCache.ts`**
 
-Create `packages/weasel-gl/src/GLImageCache.ts`:
+Create `packages/gl/src/GLImageCache.ts`:
 
 ```ts
 /**
@@ -765,7 +765,7 @@ function wrapModes(
 
 - [ ] **Step 4: Add `REPEAT` and `MIRRORED_REPEAT` constants to the GL recorder**
 
-Edit `packages/weasel-gl/test-utils/glRecorder.ts` — add to `GL_CONSTANTS`:
+Edit `packages/gl/test-utils/glRecorder.ts` — add to `GL_CONSTANTS`:
 
 ```ts
   // Wrap modes (step 4)
@@ -776,7 +776,7 @@ Edit `packages/weasel-gl/test-utils/glRecorder.ts` — add to `GL_CONSTANTS`:
 - [ ] **Step 5: Run to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/GLImageCache.test.ts
+npm test -- packages/gl/src/GLImageCache.test.ts
 ```
 
 Expected: PASS (all 7 tests).
@@ -784,7 +784,7 @@ Expected: PASS (all 7 tests).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-gl/src/GLImageCache.ts packages/weasel-gl/src/GLImageCache.test.ts packages/weasel-gl/test-utils/glRecorder.ts
+git add packages/gl/src/GLImageCache.ts packages/gl/src/GLImageCache.test.ts packages/gl/test-utils/glRecorder.ts
 git commit -m "feat(weasel-gl): GLImageCache — WeakMap-keyed image upload with repetition-mode wrapping"
 ```
 
@@ -793,7 +793,7 @@ git commit -m "feat(weasel-gl): GLImageCache — WeakMap-keyed image upload with
 ## Task 4: `imageFill` shader
 
 **Files:**
-- Create: `packages/weasel-gl/src/shaders/imageFill.ts`
+- Create: `packages/gl/src/shaders/imageFill.ts`
 
 **Conventions:** §2 — premultiplied output `vec4(rgb * a, a)`.
 
@@ -801,7 +801,7 @@ No test file for this task (shader source is a string constant; tested end-to-en
 
 - [ ] **Step 1: Create `imageFill.ts`**
 
-Create `packages/weasel-gl/src/shaders/imageFill.ts`:
+Create `packages/gl/src/shaders/imageFill.ts`:
 
 ```ts
 /**
@@ -871,7 +871,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/shaders/imageFill.ts
+git add packages/gl/src/shaders/imageFill.ts
 git commit -m "feat(weasel-gl): imageFill shader — textured quad with premultiplied alpha output"
 ```
 
@@ -880,7 +880,7 @@ git commit -m "feat(weasel-gl): imageFill shader — textured quad with premulti
 ## Task 5: `gradFill` shader
 
 **Files:**
-- Create: `packages/weasel-gl/src/shaders/gradFill.ts`
+- Create: `packages/gl/src/shaders/gradFill.ts`
 
 **Conventions:** §2 — premultiplied output. §8 — the gradient coordinate projection math must be verified visually (unit test checks uniform names only; Playwright catches wrong projection).
 
@@ -895,7 +895,7 @@ This is one shader with `u_gradKind` branching. This is the deliberate exception
 
 - [ ] **Step 1: Create `gradFill.ts`**
 
-Create `packages/weasel-gl/src/shaders/gradFill.ts`:
+Create `packages/gl/src/shaders/gradFill.ts`:
 
 ```ts
 /**
@@ -1000,7 +1000,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/shaders/gradFill.ts
+git add packages/gl/src/shaders/gradFill.ts
 git commit -m "feat(weasel-gl): gradFill shader — gradient-ramp path fill (linear/radial/conic)"
 ```
 
@@ -1009,14 +1009,14 @@ git commit -m "feat(weasel-gl): gradFill shader — gradient-ramp path fill (lin
 ## Task 6: Extend `WeaselRenderer` with new programs and caches
 
 **Files:**
-- Modify: `packages/weasel-gl/src/WeaselRenderer.ts`
-- Modify: `packages/weasel-gl/src/WeaselRenderer.test.ts` (add assertions)
+- Modify: `packages/gl/src/WeaselRenderer.ts`
+- Modify: `packages/gl/src/WeaselRenderer.test.ts` (add assertions)
 
 **Conventions:** §1 — GL recorder doesn't verify texture state; §9 — per-renderer caches.
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `packages/weasel-gl/src/WeaselRenderer.test.ts`:
+Add to `packages/gl/src/WeaselRenderer.test.ts`:
 
 ```ts
 describe('WeaselRenderer (step 4: new programs)', () => {
@@ -1063,14 +1063,14 @@ describe('WeaselRenderer (step 4: new programs)', () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts
+npm test -- packages/gl/src/WeaselRenderer.test.ts
 ```
 
 Expected: FAIL — `_imageFill is not a function` or similar.
 
 - [ ] **Step 3: Implement**
 
-Edit `packages/weasel-gl/src/WeaselRenderer.ts`:
+Edit `packages/gl/src/WeaselRenderer.ts`:
 
 1. Add imports for the new shaders and caches:
 
@@ -1163,7 +1163,7 @@ export interface DrawContext {
 - [ ] **Step 4: Run to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts
+npm test -- packages/gl/src/WeaselRenderer.test.ts
 ```
 
 Expected: PASS (all existing tests + 3 new).
@@ -1171,7 +1171,7 @@ Expected: PASS (all existing tests + 3 new).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/WeaselRenderer.ts packages/weasel-gl/src/WeaselRenderer.test.ts packages/weasel-gl/src/draw.ts
+git add packages/gl/src/WeaselRenderer.ts packages/gl/src/WeaselRenderer.test.ts packages/gl/src/draw.ts
 git commit -m "feat(weasel-gl): wire imageFill + gradFill programs and caches into WeaselRenderer"
 ```
 
@@ -1180,14 +1180,14 @@ git commit -m "feat(weasel-gl): wire imageFill + gradFill programs and caches in
 ## Task 7: `DrawCommand.ts` — add `ImageDrawCommand` + extend `PathDrawCommand.fill`
 
 **Files:**
-- Modify: `packages/weasel-gl/src/DrawCommand.ts`
+- Modify: `packages/gl/src/DrawCommand.ts`
 
 - [ ] **Step 1: Update `DrawCommand.ts`**
 
 Replace the existing `SolidPaint`-only fill type with the full `Paint` union and add `ImageDrawCommand`:
 
 ```ts
-import type { Path, Stroke, TextStyle, Paint, GradStop } from '@orochi235/weasel';
+import type { Path, Stroke, TextStyle, Paint, GradStop } from '@weasel-js/core';
 import type { Mat3 } from './mat3';
 
 export type { Paint, GradStop };
@@ -1251,7 +1251,7 @@ Expected: 0 errors. (The existing `draw.ts` still uses `fill.color` on `SolidPai
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/DrawCommand.ts packages/weasel-gl/src/index.ts
+git add packages/gl/src/DrawCommand.ts packages/gl/src/index.ts
 git commit -m "feat(weasel-gl): DrawCommand — add ImageDrawCommand; extend PathDrawCommand.fill to full Paint union"
 ```
 
@@ -1260,8 +1260,8 @@ git commit -m "feat(weasel-gl): DrawCommand — add ImageDrawCommand; extend Pat
 ## Task 8: `draw.ts` — implement image, pattern, and gradient dispatch
 
 **Files:**
-- Modify: `packages/weasel-gl/src/draw.ts`
-- Modify: `packages/weasel-gl/src/draw.test.ts`
+- Modify: `packages/gl/src/draw.ts`
+- Modify: `packages/gl/src/draw.test.ts`
 
 **Conventions:** §2 — premultiplied output (enforced by shaders; `draw.ts` sets uniforms correctly). §8 — gradient projection correctness needs Playwright, not just call-count assertions.
 
@@ -1316,10 +1316,10 @@ function extractPatternRepetition(pattern: CanvasPattern): PatternRepetition {
 
 - [ ] **Step 1: Write failing tests**
 
-Add to `packages/weasel-gl/src/draw.test.ts`:
+Add to `packages/gl/src/draw.test.ts`:
 
 ```ts
-import type { RectPath } from '@orochi235/weasel';
+import type { RectPath } from '@weasel-js/core';
 
 describe('draw — kind: image', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -1441,7 +1441,7 @@ describe('draw — path fill: pattern', () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/draw.test.ts
+npm test -- packages/gl/src/draw.test.ts
 ```
 
 Expected: many FAILs — `'image'` case not in dispatch switch; gradient paths throw "step 4: gradient/pattern arrives in step 4".
@@ -1454,7 +1454,7 @@ Add imports:
 import type { GLImageCache, PatternRepetition } from './GLImageCache';
 import type { GradientRampCache } from './GradientRampCache';
 import type { ImageDrawCommand } from './DrawCommand';
-import type { Paint } from '@orochi235/weasel';
+import type { Paint } from '@weasel-js/core';
 import { mat3 } from './mat3';
 ```
 
@@ -1692,7 +1692,7 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
 - [ ] **Step 4: Run to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/draw.test.ts
+npm test -- packages/gl/src/draw.test.ts
 ```
 
 Expected: all tests pass.
@@ -1706,7 +1706,7 @@ Expected: 0 errors.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/draw.ts packages/weasel-gl/src/draw.test.ts
+git add packages/gl/src/draw.ts packages/gl/src/draw.test.ts
 git commit -m "feat(weasel-gl): draw — image, pattern, and gradient fill dispatch"
 ```
 
@@ -1715,14 +1715,14 @@ git commit -m "feat(weasel-gl): draw — image, pattern, and gradient fill dispa
 ## Task 9: `color.ts` — `parseColorToRgba255` helper
 
 **Files:**
-- Modify: `packages/weasel-gl/src/color.ts`
-- Modify: `packages/weasel-gl/src/color.test.ts`
+- Modify: `packages/gl/src/color.ts`
+- Modify: `packages/gl/src/color.test.ts`
 
 `buildGradientRamp` currently calls `parseColor` (returns 0..1 floats) and then multiplies by 255. Extract this as a named helper so the ramp builder reads clearly and the conversion has its own test coverage.
 
 - [ ] **Step 1: Add failing test**
 
-Add to `packages/weasel-gl/src/color.test.ts`:
+Add to `packages/gl/src/color.test.ts`:
 
 ```ts
 import { parseColorToRgba255 } from './color';
@@ -1751,7 +1751,7 @@ describe('parseColorToRgba255', () => {
 - [ ] **Step 2: Run to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/color.test.ts
+npm test -- packages/gl/src/color.test.ts
 ```
 
 - [ ] **Step 3: Add export to `color.ts`**
@@ -1775,13 +1775,13 @@ const parsed = sorted.map((s) => parseColorToRgba255(s.color));
 - [ ] **Step 4: Run to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/color.test.ts packages/weasel-gl/src/GradientRampCache.test.ts
+npm test -- packages/gl/src/color.test.ts packages/gl/src/GradientRampCache.test.ts
 ```
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/color.ts packages/weasel-gl/src/color.test.ts packages/weasel-gl/src/GradientRampCache.ts
+git add packages/gl/src/color.ts packages/gl/src/color.test.ts packages/gl/src/GradientRampCache.ts
 git commit -m "refactor(weasel-gl): add parseColorToRgba255 helper; use in GradientRampCache"
 ```
 
@@ -1790,13 +1790,13 @@ git commit -m "refactor(weasel-gl): add parseColorToRgba255 helper; use in Gradi
 ## Task 10: Update barrel exports (`index.ts`)
 
 **Files:**
-- Modify: `packages/weasel-gl/src/index.ts`
+- Modify: `packages/gl/src/index.ts`
 
 - [ ] **Step 1: Update `index.ts`**
 
 ```ts
 /**
- * @orochi235/weasel-gl — public barrel.
+ * @weasel-js/gl — public barrel.
  *
  * Experimental. Surface evolves through the WebGL transition steps.
  * Through step 4: image, pattern, gradient Paint variants.
@@ -1824,7 +1824,7 @@ export { buildGradientRamp, GradientRampCache } from './GradientRampCache';
 - [ ] **Step 2: Run typecheck and barrel test**
 
 ```bash
-npm test -- packages/weasel-gl/src/index.test.ts
+npm test -- packages/gl/src/index.test.ts
 npm run typecheck
 ```
 
@@ -1833,7 +1833,7 @@ Expected: PASS, 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/index.ts
+git add packages/gl/src/index.ts
 git commit -m "feat(weasel-gl): export ImageDrawCommand, GradStop, GradientRampCache from barrel"
 ```
 
@@ -1842,8 +1842,8 @@ git commit -m "feat(weasel-gl): export ImageDrawCommand, GradStop, GradientRampC
 ## Task 11: Smoke page — image-gradient dev page
 
 **Files:**
-- Create: `packages/weasel-gl/dev/image-gradient.html`
-- Create: `packages/weasel-gl/dev/image-gradient.ts`
+- Create: `packages/gl/dev/image-gradient.html`
+- Create: `packages/gl/dev/image-gradient.ts`
 
 **Conventions:** §6 — `preserveDrawingBuffer: true` AND `stencil: true`; §1 — pixel correctness verified here, not by unit tests.
 
@@ -1890,7 +1890,7 @@ The smoke page renders five scenes on five canvases:
 ```ts
 import { WeaselRenderer } from '../src/WeaselRenderer';
 import type { DrawCommand } from '../src/DrawCommand';
-import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@orochi235/weasel';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/core';
 
 function getCtx(id: string): WebGL2RenderingContext {
   const canvas = document.getElementById(id) as HTMLCanvasElement;
@@ -2024,7 +2024,7 @@ renderPattern().catch(console.error);
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/dev/image-gradient.html packages/weasel-gl/dev/image-gradient.ts
+git add packages/gl/dev/image-gradient.html packages/gl/dev/image-gradient.ts
 git commit -m "feat(weasel-gl/dev): image-gradient smoke page for step-4 visual verification"
 ```
 
@@ -2033,7 +2033,7 @@ git commit -m "feat(weasel-gl/dev): image-gradient smoke page for step-4 visual 
 ## Task 12: Playwright smoke spec — pixel correctness
 
 **Files:**
-- Create: `packages/weasel-gl/dev/image-gradient.spec.ts`
+- Create: `packages/gl/dev/image-gradient.spec.ts`
 
 **Conventions:** §6 — `preserveDrawingBuffer: true` on every canvas (done in Task 11). §1 — this is the primary pixel-correctness gate. §8 — gradient correctness (direction, center, wrap) requires sampling at specific positions in the canvas.
 
@@ -2128,7 +2128,7 @@ test.describe('image-gradient smoke', () => {
 - [ ] **Step 2: Start dev server and run spec manually**
 
 ```bash
-cd packages/weasel-gl
+cd packages/gl
 npx vite dev --config dev/vite.config.ts --port 5174 &
 sleep 3
 npx playwright test dev/image-gradient.spec.ts
@@ -2143,7 +2143,7 @@ Iterate on failures by opening `http://localhost:5174/image-gradient.html` and v
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/dev/image-gradient.spec.ts
+git add packages/gl/dev/image-gradient.spec.ts
 git commit -m "test(weasel-gl): image-gradient Playwright smoke spec — pixel correctness for step 4"
 ```
 
@@ -2152,7 +2152,7 @@ git commit -m "test(weasel-gl): image-gradient Playwright smoke spec — pixel c
 ## Task 13: Soak demo — gradient ramp cache hit rate
 
 **Files:**
-- Create: `packages/weasel-gl/scripts/gen-soak.ts`
+- Create: `packages/gl/scripts/gen-soak.ts`
 
 **Conventions:** §3 — no new npm deps (no `--save-exact` needed here; this is a script, not a runtime dep).
 
@@ -2162,13 +2162,13 @@ In practice, most scenes reuse the same gradient stops across frames — hits ac
 
 - [ ] **Step 1: Create `gen-soak.ts`**
 
-Create `packages/weasel-gl/scripts/gen-soak.ts`:
+Create `packages/gl/scripts/gen-soak.ts`:
 
 ```ts
 /**
  * Gradient ramp cache soak: verifies >95% hit rate after initial frame warm-up.
  *
- * Usage: tsx packages/weasel-gl/scripts/gen-soak.ts
+ * Usage: tsx packages/gl/scripts/gen-soak.ts
  *
  * The script is pure JS — it doesn't render to a canvas, just exercises
  * GradientRampCache directly with a realistic mixture of gradient stops.
@@ -2177,7 +2177,7 @@ Create `packages/weasel-gl/scripts/gen-soak.ts`:
  */
 
 import { GradientRampCache } from '../src/GradientRampCache';
-import type { GradStop } from '@orochi235/weasel';
+import type { GradStop } from '@weasel-js/core';
 
 // Minimal fake GL for the soak (no real GPU needed).
 const fakeGl = new Proxy({} as WebGL2RenderingContext, {
@@ -2246,7 +2246,7 @@ if (rate < 0.95) {
 - [ ] **Step 2: Run the soak**
 
 ```bash
-npx tsx packages/weasel-gl/scripts/gen-soak.ts
+npx tsx packages/gl/scripts/gen-soak.ts
 ```
 
 Expected output:
@@ -2266,14 +2266,14 @@ PASS: hit rate > 95%
 
 ```jsonc
 "scripts": {
-  "soak:grad": "tsx packages/weasel-gl/scripts/gen-soak.ts"
+  "soak:grad": "tsx packages/gl/scripts/gen-soak.ts"
 }
 ```
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-gl/scripts/gen-soak.ts package.json
+git add packages/gl/scripts/gen-soak.ts package.json
 git commit -m "feat(weasel-gl): gradient ramp soak script — verifies >95% cache hit rate"
 ```
 
@@ -2308,7 +2308,7 @@ Expected: PASS.
 - [ ] **Step 4: Run Playwright smoke tests**
 
 ```bash
-cd packages/weasel-gl
+cd packages/gl
 npx vite dev --config dev/vite.config.ts --port 5174 &
 sleep 3
 npx playwright test dev/

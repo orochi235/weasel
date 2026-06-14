@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useScene } from '@orochi235/weasel';
+import { useScene } from '@weasel-js/core';
 import { d3Bind } from './bind';
 
 interface Datum {

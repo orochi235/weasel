@@ -6,7 +6,7 @@
 ## What shipped
 
 - `pnpm gen:font` build script wrapping `msdf-bmfont-xml@2.8.0` (CJK explicitly deferred).
-- Inter v4 (Apache-2.0) prebuilt MSDF atlas at `packages/weasel-gl/fonts/inter/` — 191 glyphs at 32px, 512×512 atlas, 143KB PNG + 63KB JSON.
+- Inter v4 (Apache-2.0) prebuilt MSDF atlas at `packages/gl/fonts/inter/` — 191 glyphs at 32px, 512×512 atlas, 143KB PNG + 63KB JSON.
 - `BmFont` types + `parseBmFont` with `charMap` and `kerningMap` accelerators (`FontAtlas.ts`).
 - `layoutGlyphs(text, style, font, origin)` pure function — pen advance, kerning, UV mapping, `?` fallback for unknown codepoints, console.warn skip for missing-with-no-fallback.
 - `quadsToVertexBuffer` and `buildQuadIndexBuffer` helpers — interleaved x,y,u,v per vertex, two-triangle quad index pattern.

@@ -1,4 +1,4 @@
-import type { Animator, NodeId, PoseProjection } from '@orochi235/weasel';
+import type { Animator, NodeId, PoseProjection } from '@weasel-js/core';
 
 export interface BindOptions<TData, TPose> {
   /** Stable id derivation per datum — the binding diffs old vs new state by this key. */

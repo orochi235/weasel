@@ -9,7 +9,7 @@
  * The returned `TextureHandle` is what `FillStyle.pattern` accepts.
  *
  * For ready-to-use named patterns (hatch, crosshatch, dots, chunks),
- * see the `@orochi235/weasel/patterns-builtin` subpath.
+ * see the `@weasel-js/core/patterns-builtin` subpath.
  */
 
 import { registerTexture } from '../../renderer/textures/registerTexture';

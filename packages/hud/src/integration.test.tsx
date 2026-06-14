@@ -1,4 +1,4 @@
-// packages/weasel-hud/src/integration.test.tsx
+// packages/hud/src/integration.test.tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';

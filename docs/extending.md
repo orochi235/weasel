@@ -11,7 +11,7 @@ slot keys (`grid`, `scene`, `selectionOverlay`, …) take slot config;
 `.layer` field:
 
 ```ts
-import type { CustomLayerEntry, RenderLayer } from '@orochi235/weasel';
+import type { CustomLayerEntry, RenderLayer } from '@weasel-js/core';
 
 const hud: RenderLayer<unknown> = {
   id: 'hud',
@@ -52,7 +52,7 @@ import {
   createCornerResizeAffordance,
   composeAffordanceLayer,
   type Affordance,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 // 1. Build an affordance instance via a kit-shipped factory.
 const corners = createCornerResizeAffordance({
@@ -179,7 +179,7 @@ The kit ships:
 For grid snapping on a non-rect pose, also pass an `OriginProjection`:
 
 ```ts
-import { gridSnapStrategy, snap, pathOriginProjection } from '@orochi235/weasel';
+import { gridSnapStrategy, snap, pathOriginProjection } from '@weasel-js/core';
 
 useMove(adapter, {
   translatePose: pathPoseDescriptor.translate,

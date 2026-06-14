@@ -6,7 +6,7 @@
 
 **Architecture:** Replace closure-based `Condition` predicates with a JSON tree (`Rule = Selector | { all } | { any } | { not } | { when }`). Fluent layer (`selectionAtLeast(1).and(modeIs('normal'))`) compiles to canonical tree fragments. The same evaluator gates chrome rendering, affordance hit-testing, and action dispatch. Mode and capability are first-class selector keys; mode owns its chrome budget; action descriptors gain optional `eligible: Rule`.
 
-**Tech Stack:** TypeScript, React, Vitest. Affected packages: `packages/weasel-modes`, `src/features/chrome-caps`, `src/canvas`, `src/interactions/actions`, `src/interactions/dispatcher`, `src/tools/builtin/select`, `apps/draw`.
+**Tech Stack:** TypeScript, React, Vitest. Affected packages: `packages/modes`, `src/features/chrome-caps`, `src/canvas`, `src/interactions/actions`, `src/interactions/dispatcher`, `src/tools/builtin/select`, `apps/draw`.
 
 **Spec:** `docs/superpowers/specs/2026-05-25-mode-aware-dispatch-design.md`
 
@@ -26,8 +26,8 @@
 
 ### Modified files
 
-- `packages/weasel-modes/src/capabilities.ts` — rename `'selection'` → `'creates-selection'`.
-- `packages/weasel-modes/src/presets/default.ts` — update mode `allows` lists with new tag name.
+- `packages/modes/src/capabilities.ts` — rename `'selection'` → `'creates-selection'`.
+- `packages/modes/src/presets/default.ts` — update mode `allows` lists with new tag name.
 - `src/features/chrome-caps/conditions.ts` — atoms now construct tree fragments; combinators produce `all`/`any`/`not` nodes.
 - `src/features/chrome-caps/types.ts` — remove `suppressedIds` from `ChromeCtx`; `Condition` becomes alias for `Rule`.
 - `src/features/chrome-caps/defaults.ts` — rewrite rules in tree form with mode constraints.
@@ -63,7 +63,7 @@ Write `rule.ts`:
 ```ts
 import type { NodeId } from '../../core/scene/types';
 import type { ModifierState } from '../../interactions/gestures/types';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 import type { RuleCtx } from './ruleCtx';
 
 /**
@@ -153,7 +153,7 @@ Write `ruleCtx.ts`:
 import type { NodeId } from '../../core/scene/types';
 import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 
 /**
  * Live state read by rule evaluation. Built once per frame on the consuming
@@ -723,7 +723,7 @@ Replace `buildChromeCtx.ts`:
 import type { NodeId } from '../../core/scene/types';
 import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 import { buildRuleCtx, type RuleCtx } from './ruleCtx';
 
 const EMPTY_CAPS: ReadonlySet<CapabilityTag> = new Set();
@@ -967,7 +967,7 @@ Delete the `getSuppressedSelectionIds` callback and `EMPTY_ID_SET` if no other c
 In `/Users/mike/src/weasel/.claude/worktrees/path-edit-undo-granularity/apps/draw/src/App.tsx`, find where `SceneCanvas` is rendered. Add the `getActiveMode` prop:
 
 ```ts
-import { eligibleForMode } from '@orochi235/weasel-modes';
+import { eligibleForMode } from '@weasel-js/modes';
 
 // ...
 
@@ -1247,8 +1247,8 @@ git commit -m "feat(dispatcher): action eligibility filter via Rule grammar"
 ### Task 11: Rename `'selection'` capability tag to `'creates-selection'`
 
 **Files:**
-- Modify: `/Users/mike/src/weasel/.claude/worktrees/path-edit-undo-granularity/packages/weasel-modes/src/capabilities.ts`
-- Modify: `/Users/mike/src/weasel/.claude/worktrees/path-edit-undo-granularity/packages/weasel-modes/src/presets/default.ts`
+- Modify: `/Users/mike/src/weasel/.claude/worktrees/path-edit-undo-granularity/packages/modes/src/capabilities.ts`
+- Modify: `/Users/mike/src/weasel/.claude/worktrees/path-edit-undo-granularity/packages/modes/src/presets/default.ts`
 - Modify: `/Users/mike/src/weasel/.claude/worktrees/path-edit-undo-granularity/src/tools/builtin/select/useSelectTool.ts`
 - Modify: All test files that reference `'selection'` capability (see grep below).
 
@@ -1266,11 +1266,11 @@ In `src/tools/builtin/select/useSelectTool.ts:271`, replace `capabilities: ['sel
 
 - [ ] **Step 4: Grep + fix all remaining references**
 
-Run: `grep -rn "'selection'" packages/weasel-modes/src/ src/ apps/draw/src/ 2>&1 | grep -v ".md:"`
+Run: `grep -rn "'selection'" packages/modes/src/ src/ apps/draw/src/ 2>&1 | grep -v ".md:"`
 
 For each match, determine if it's the capability tag or an unrelated string. Likely matches to update:
-- `packages/weasel-modes/src/capabilities.test.ts`
-- `packages/weasel-modes/src/eligibility.test.ts`
+- `packages/modes/src/capabilities.test.ts`
+- `packages/modes/src/eligibility.test.ts`
 - `src/interactions/dispatcher/dispatcher.test.ts`
 - `src/interactions/dispatcher/move.integration.test.tsx`
 - `src/interactions/dispatcher/resize.integration.test.tsx`
@@ -1287,7 +1287,7 @@ Expected: clean.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-modes/ src/ apps/draw/
+git add packages/modes/ src/ apps/draw/
 git commit -m "refactor(capabilities): rename 'selection' to 'creates-selection'"
 ```
 

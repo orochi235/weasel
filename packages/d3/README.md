@@ -1,4 +1,4 @@
-# @orochi235/weasel-d3
+# @weasel-js/d3
 
 d3 bridge for [weasel](https://orochi235.github.io/weasel/). Lets you drive a `useScene` from a d3-style data-join and (in Phase 2) animate updates via a `.transition()` chain over `useAnimator`.
 
@@ -11,8 +11,8 @@ d3 bridge for [weasel](https://orochi235.github.io/weasel/). Lets you drive a `u
 ## Quick taste
 
 ```ts
-import { useScene } from '@orochi235/weasel';
-import { d3Bind } from '@orochi235/weasel-d3';
+import { useScene } from '@weasel-js/core';
+import { d3Bind } from '@weasel-js/d3';
 
 const scene = useScene<{ color: string }, 'graph', RectPose>({
   systemLayers: [{ id: 'graph' }],

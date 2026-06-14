@@ -1,11 +1,11 @@
 /**
- * Pure matcher primitives live in `@orochi235/weasel-gestures`. This file
+ * Pure matcher primitives live in `@weasel-js/gestures`. This file
  * re-exports them for kit-internal consumers and layers the actions-layer
  * binding-scope / matchBest logic on top.
  */
 
-import { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase } from '@orochi235/weasel-gestures';
-import type { GestureSpec, InputEvent, ModSpec, PhaseContext } from '@orochi235/weasel-gestures';
+import { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase } from '@weasel-js/gestures';
+import type { GestureSpec, InputEvent, ModSpec, PhaseContext } from '@weasel-js/gestures';
 import type { GestureBinding } from '../actions/binding';
 
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase };

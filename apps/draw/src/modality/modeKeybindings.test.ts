@@ -8,7 +8,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createModeMachine } from './machine';
-import { DEFAULT_MODES } from '@orochi235/weasel-modes';
+import { DEFAULT_MODES } from '@weasel-js/modes';
 
 function fakeHistory() {
   return {

@@ -116,7 +116,7 @@ export type Obj = RectObj | TextObj | PathObj;
 
 ```ts
 // poseUpdate.ts
-import type { Path, TextStyle } from '@orochi235/weasel';
+import type { Path, TextStyle } from '@weasel-js/core';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'

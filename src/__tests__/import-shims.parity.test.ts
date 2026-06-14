@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
  *   1. `tsup.config.ts`     `entry` keys  — drives the published `dist/<name>.js`
  *   2. `package.json`       `exports`     — declares them to consumers
  *   3. `src/import-shims/*.ts`  shim files    — what vite's wildcard alias
- *                                           (`@orochi235/weasel/<x>` →
+ *                                           (`@weasel-js/core/<x>` →
  *                                           `src/import-shims/<x>.ts`) resolves to;
  *                                           required for the demo build and
  *                                           any consumer using vite/vitest

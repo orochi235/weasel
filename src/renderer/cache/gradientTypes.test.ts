@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { FillStyle, GradStop } from '@orochi235/weasel';
+import type { FillStyle, GradStop } from '@weasel-js/core';
 
 describe('FillStyle gradient types (compile-time + runtime shape)', () => {
   it('GradStop has offset and color fields', () => {

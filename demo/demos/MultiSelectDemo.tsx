@@ -8,8 +8,8 @@ import {
   useSelection,
   useSelectTool,
   useTools,
-} from '@orochi235/weasel';
-import type { CanvasExtensionApi } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { CanvasExtensionApi } from '@weasel-js/core';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 

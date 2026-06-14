@@ -1,4 +1,4 @@
-import type { BadgeProps } from '@orochi235/weasel-ui';
+import type { BadgeProps } from '@weasel-js/ui';
 
 /** A single value within a token set, paired with the props its renderer
  *  needs. The shape of `props` depends on the set's `kind`. */

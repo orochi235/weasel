@@ -58,7 +58,7 @@ If `onChangeCommit` is omitted, only `onChange` fires — caller can derive comm
 ### File layout
 
 ```
-packages/weasel-ui/src/components/CurveEditor/
+packages/ui/src/components/CurveEditor/
 ├── index.ts                  # public exports: CurveEditor, ControlPoint, createSetCurveOp
 ├── CurveEditor.tsx           # the React component (~150-200 lines)
 ├── CurveEditor.module.css    # styling, CSS-var tokens for colors/sizes
@@ -117,8 +117,8 @@ Defaults live in `CurveEditor.module.css`; consumers override per-instance via i
 The component ships an Op factory so consumers can plug straight into `weasel-history`:
 
 ```ts
-// packages/weasel-ui/src/components/CurveEditor/setCurveOp.ts
-import { type Op } from '@orochi235/weasel';
+// packages/ui/src/components/CurveEditor/setCurveOp.ts
+import { type Op } from '@weasel-js/core';
 import type { ControlPoint } from './CurveEditor';
 
 export interface SetCurveAdapter {

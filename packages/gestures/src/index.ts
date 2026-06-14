@@ -1,4 +1,4 @@
-// Barrel for @orochi235/weasel-gestures.
+// Barrel for @weasel-js/gestures.
 //
 // Source is split into two subtrees:
 //   - `grammar/` — abstract logic (taxonomy, modifiers, route grammars,

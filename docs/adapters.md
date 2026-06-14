@@ -13,7 +13,7 @@ scene and pass it to every hook.
 import type {
   MoveAdapter, ResizeAdapter, RotateAdapter,
   InsertAdapter, AreaSelectAdapter,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 // One value, satisfies them all.
 const adapter: MoveAdapter<Rect, Pose>
@@ -35,7 +35,7 @@ from a `useState`-backed array. It satisfies `MoveAdapter`, `ResizeAdapter`,
 `InsertAdapter`, and `AreaSelectAdapter` out of the box.
 
 ```ts
-import { arrayAdapter, useSelection } from '@orochi235/weasel';
+import { arrayAdapter, useSelection } from '@weasel-js/core';
 
 const [rects, setRects] = useState<Rect[]>(INITIAL);
 const rectsRef = useRef(rects);

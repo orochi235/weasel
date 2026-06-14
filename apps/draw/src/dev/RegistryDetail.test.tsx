@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
-import { keySpecFromKey } from '@orochi235/weasel-ui';
+import { keySpecFromKey } from '@weasel-js/ui';
 import { RegistryDetail, RouteBadge } from './RegistryDetail';
 import type { TreeEntry } from './registryData';
 

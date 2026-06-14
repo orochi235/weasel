@@ -4,7 +4,7 @@ import {
   ActionsProvider,
   useAction,
   type Action,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { ActionBar } from './ActionBar';
 
 // Inline placeholder glyphs keep the story self-contained.

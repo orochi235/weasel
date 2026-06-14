@@ -1,4 +1,4 @@
-import type { Op } from '@orochi235/weasel';
+import type { Op } from '@weasel-js/core';
 import type { ControlPoint } from './CurveEditor';
 
 /**

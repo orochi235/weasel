@@ -22,7 +22,7 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 ## Install
 
 ```sh
-npm install @orochi235/weasel react
+npm install @weasel-js/core react
 ```
 
 `react` is a peer dependency (>=18).
@@ -32,7 +32,7 @@ npm install @orochi235/weasel react
 Every interaction takes a small, narrow **adapter** — a few methods that read the current scene and apply ops back. The kit doesn't own your scene; it asks. That keeps it agnostic to whether your scene lives in React state, Zustand, Redux, or a CRDT.
 
 ```tsx
-import { useMove, useDelete, createHistory, snap, gridSnapStrategy } from '@orochi235/weasel';
+import { useMove, useDelete, createHistory, snap, gridSnapStrategy } from '@weasel-js/core';
 
 const history = createHistory(adapter);
 
@@ -61,7 +61,7 @@ Live demo: <https://orochi235.github.io/weasel/>
 Text is rendered via MSDF atlases. Register fonts before the first paint:
 
 ```tsx
-import { registerFont } from '@orochi235/weasel';
+import { registerFont } from '@weasel-js/core';
 
 await registerFont('Inter', '/fonts/inter.json');
 ```
@@ -73,7 +73,7 @@ The kit ships a prebuilt Inter atlas under `assets/fonts/inter/`. To regenerate 
 `<ActionsProvider>` wires a single `keydown` listener and dispatches to a registry of `Action` descriptors. `<SceneCanvas>` auto-mounts a provider (if no parent provider exists) and registers default actions for select-all, escape, duplicate, nudge, and reorder, all derived from the scene/selection/adapter it already owns.
 
 ```tsx
-import { ActionsProvider, SceneCanvas } from '@orochi235/weasel';
+import { ActionsProvider, SceneCanvas } from '@weasel-js/core';
 
 <ActionsProvider>
   <SceneCanvas
@@ -98,7 +98,7 @@ The `actions` prop accepts `null` (disable all defaults), a partial override of 
 The renderer supports `kind: 'shader'` `DrawCommand`s for layers that want a custom fragment shader. Register the program once, then emit a draw command with uniforms and bounds:
 
 ```tsx
-import { registerProgram, registerTexture } from '@orochi235/weasel';
+import { registerProgram, registerTexture } from '@weasel-js/core';
 
 const voronoi = registerProgram(
   'voronoi',
@@ -127,9 +127,9 @@ Uniforms support `number`, `vec2..4`, `mat3`, `mat4`, and `TextureHandle` (from 
 For tree-shaking and clarity, hook-specific helpers are scoped:
 
 ```ts
-import { snapToGrid } from '@orochi235/weasel/move';
-import { snapToGrid, clampMinSize } from '@orochi235/weasel/resize';
-import { snapToGrid } from '@orochi235/weasel/insert';
+import { snapToGrid } from '@weasel-js/core/move';
+import { snapToGrid, clampMinSize } from '@weasel-js/core/resize';
+import { snapToGrid } from '@weasel-js/core/insert';
 ```
 
 ## Documentation

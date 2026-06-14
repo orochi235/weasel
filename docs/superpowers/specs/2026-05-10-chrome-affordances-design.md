@@ -334,7 +334,7 @@ Five phases. Each ends in a working, testable state with no user-facing regressi
 
 ### Phase 1 — Move selection to core + build chrome state surface
 
-- `git mv src/features/selection/{useSelection.ts,types.ts}` → `src/core/selection/`. Update kit-internal import paths; the `@orochi235/weasel` barrel re-export stays so consumers see no change.
+- `git mv src/features/selection/{useSelection.ts,types.ts}` → `src/core/selection/`. Update kit-internal import paths; the `@weasel-js/core` barrel re-export stays so consumers see no change.
 - Create `src/core/selection/chromeState.ts` with the `ChromeState` type and `buildChromeState` builder.
 - Wire `buildChromeState` into Canvas — call it on every render, expose via the helpers ref / context so layers can read it on `draw`.
 - **Tests:** type-check passes after move; `buildChromeState` unit tests for each derived field (`selection`, `multiActive`, `unionBounds` with 0/1/2/N selected, `boundsOf` overlay-awareness).

@@ -225,8 +225,8 @@ This task is the largest. It does three things in one commit because they're a c
 Edit `apps/swillustrator/src/prefs.ts`. At the top of the file, after the existing imports, add:
 
 ```ts
-import { usePenTool } from '@orochi235/weasel';
-import type { ToolPrefGroup } from '@orochi235/weasel';
+import { usePenTool } from '@weasel-js/core';
+import type { ToolPrefGroup } from '@weasel-js/core';
 ```
 
 Just below the `SwillPrefGroup` interface declaration (~line 103), add:

@@ -1,13 +1,13 @@
 # weasel-theme
 
-Design tokens shared by `@orochi235/weasel-ui` (DOM/React widgets) and
-`@orochi235/weasel-hud` (WebGL widgets). Single namespace: `--wzl-*`.
+Design tokens shared by `@weasel-js/ui` (DOM/React widgets) and
+`@weasel-js/hud` (WebGL widgets). Single namespace: `--wzl-*`.
 
 ## Usage
 
 ```ts
 // In your app shell, import the CSS for default values:
-import '@orochi235/weasel-theme/tokens.css';
+import '@weasel-js/theme/tokens.css';
 ```
 
 Override individual tokens at any DOM level:
@@ -26,4 +26,4 @@ the same values as a typed object for fallback when CSS isn't loaded.
 
 `tokens.ts` and `tokens.css` are maintained side-by-side. The parity test
 in `tokens.test.ts` catches drift between them. If you edit one, edit
-the other and run `pnpm exec vitest run packages/weasel-theme/`.
+the other and run `pnpm exec vitest run packages/theme/`.

@@ -1,7 +1,7 @@
 # RangePicker — design spec
 
 **Date:** 2026-05-09
-**Package:** `@orochi235/weasel-ui`
+**Package:** `@weasel-js/ui`
 **Status:** Design approved, awaiting implementation plan.
 
 ## Summary
@@ -301,7 +301,7 @@ Manual verification: rebuild the experiment's L-range, chroma, hue, and indices 
 
 ## Package layout
 
-New files in `packages/weasel-ui/src/`:
+New files in `packages/ui/src/`:
 - `RangePicker.tsx` — component implementation.
 - `RangePicker.module.css` — track / thumb / readout styles.
 - `paintGradientTrack.ts` — pure helper.

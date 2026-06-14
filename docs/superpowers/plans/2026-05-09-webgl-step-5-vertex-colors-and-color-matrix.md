@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extend `@orochi235/weasel-gl` with two orthogonal color-manipulation features. (1) `vertexColors` on the `kind: 'path'` DrawCommand variant: a flat RGBA-per-vertex array that tints each vertex independently, enabling gradient-along-path effects. (2) `colorMatrix` on the `kind: 'group'` DrawCommand variant: a 4×5 (matrix + bias column) transform applied to every fragment's color in that subtree, enabling hue rotation, saturation shifts, and color tinting. Exits when test scenes for both features render correctly in headless Chromium: a gradient-along-path (red → blue via per-vertex colors on a convex polygon) and a hue-rotated subtree (normal-colored paths inside a group whose `colorMatrix` rotates hues 120°).
+**Goal:** Extend `@weasel-js/gl` with two orthogonal color-manipulation features. (1) `vertexColors` on the `kind: 'path'` DrawCommand variant: a flat RGBA-per-vertex array that tints each vertex independently, enabling gradient-along-path effects. (2) `colorMatrix` on the `kind: 'group'` DrawCommand variant: a 4×5 (matrix + bias column) transform applied to every fragment's color in that subtree, enabling hue rotation, saturation shifts, and color tinting. Exits when test scenes for both features render correctly in headless Chromium: a gradient-along-path (red → blue via per-vertex colors on a convex polygon) and a hue-rotated subtree (normal-colored paths inside a group whose `colorMatrix` rotates hues 120°).
 
 **Architecture (vertex colors):** The path-fill vertex shader gains a new optional attribute `a_vertexColor` (vec4). Two shader variants are compiled at renderer startup: `pathFillFlat` (no vertex-color attribute; existing behavior) and `pathFillVColor` (with `a_vertexColor`; the fragment mixes it with `u_color` by multiplication). The renderer selects the variant at draw time: if the `PathDrawCommand` carries `vertexColors`, it creates a per-draw VBO for the color data, binds it as the `a_vertexColor` attribute, and dispatches `pathFillVColor`. If `vertexColors` is absent, it uses `pathFillFlat` exactly as before (zero behavior change to existing draws). The `GLMeshCache` is unchanged — it owns only the geometry VBO + VAO, keyed by path identity. The per-draw vertex-color VBO is allocated locally inside `drawPath` (same pattern as the dynamic text VBO in step 3). This is a documented perf TODO for step 7: pool per-draw VBOs.
 
@@ -18,10 +18,10 @@
 
 - [`webgl-stepwise-conventions.md`](./webgl-stepwise-conventions.md) — accumulated lessons. Entries §1, §2, §6, §8, §9 apply directly (see task callouts below).
 - [`2026-05-09-webgl-step-3-done.md`](./2026-05-09-webgl-step-3-done.md) — most recent done note; pay attention to the per-renderer state coupling bug (§9) and the smoke sampling note (§1 update).
-- `packages/weasel-gl/src/shaders/pathFill.ts` — existing path-fill shader; step 5 derives two variants from it.
-- `packages/weasel-gl/src/GroupState.ts` — existing transform+alpha stack; step 5 extends it with a colorMatrix stack.
-- `packages/weasel-gl/src/draw.ts` — `drawPath` and `drawGroup`; both are modified.
-- `packages/weasel-gl/src/WeaselRenderer.ts` — constructor, `onContextRestored`, and `DrawContext`; gains `pathFillVColor` program.
+- `packages/gl/src/shaders/pathFill.ts` — existing path-fill shader; step 5 derives two variants from it.
+- `packages/gl/src/GroupState.ts` — existing transform+alpha stack; step 5 extends it with a colorMatrix stack.
+- `packages/gl/src/draw.ts` — `drawPath` and `drawGroup`; both are modified.
+- `packages/gl/src/WeaselRenderer.ts` — constructor, `onContextRestored`, and `DrawContext`; gains `pathFillVColor` program.
 
 **Conventions cited by specific tasks below:**
 
@@ -42,7 +42,7 @@
 
 ## File structure
 
-Files this plan creates/modifies in `packages/weasel-gl/`:
+Files this plan creates/modifies in `packages/gl/`:
 
 ```
 src/
@@ -160,7 +160,7 @@ The 4×5 bias-in-column approach is preferred over a separate `bias` vec4 becaus
   }
   ```
 
-- [ ] **Step 3:** Run `pnpm typecheck` (or `tsc --noEmit`) from `packages/weasel-gl/`. Expect clean.
+- [ ] **Step 3:** Run `pnpm typecheck` (or `tsc --noEmit`) from `packages/gl/`. Expect clean.
 
 **No test file changes for this task** — the types are structural; correctness is verified by downstream tests.
 
@@ -416,7 +416,7 @@ The 4×5 color matrix identity is `[1,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0]`
   });
   ```
 
-- [ ] **Step 4:** Run `pnpm test` in `packages/weasel-gl/`. All existing tests pass; new GroupState colorMatrix tests pass.
+- [ ] **Step 4:** Run `pnpm test` in `packages/gl/`. All existing tests pass; new GroupState colorMatrix tests pass.
 
 ---
 
@@ -834,7 +834,7 @@ A red input `(1,0,0,1)` through this matrix produces approximately `(0,0.5,0.866
 
 - [ ] **Step 6:** Create `dev/color-matrix.spec.ts` — Playwright spec with left/right circle assertions.
 
-- [ ] **Step 7:** Run `pnpm test:smoke` (or `npx playwright test` from `packages/weasel-gl/`) and confirm both smoke specs pass. If a spec fails, diagnose whether the issue is in the shader GLSL (wrong output channel), the color-matrix upload (row/column major mismatch), or the vertex-color VBO binding order.
+- [ ] **Step 7:** Run `pnpm test:smoke` (or `npx playwright test` from `packages/gl/`) and confirm both smoke specs pass. If a spec fails, diagnose whether the issue is in the shader GLSL (wrong output channel), the color-matrix upload (row/column major mismatch), or the vertex-color VBO binding order.
 
 ---
 

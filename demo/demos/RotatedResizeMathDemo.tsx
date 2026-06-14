@@ -42,13 +42,13 @@ import {
   cornerResizeHandles,
   hitCornerHandle,
   asNodeId,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type {
   PoseProjection,
   RotatedPose,
   ResizeAnchor,
   ResizePose,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 type PanelId = 'green' | 'orange' | 'purple' | 'teal';

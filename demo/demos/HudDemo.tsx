@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect } from 'react';
 import { SceneCanvas, useScene } from '../../src';
 import type { CanvasExtensionApi } from '../../src';
-import { useHud } from '../../packages/weasel-hud/src/react';
-import type { ButtonWidget } from '../../packages/weasel-hud/src';
+import { useHud } from '../../packages/hud/src/react';
+import type { ButtonWidget } from '../../packages/hud/src';
 
 const W = 600, H = 400;
 
@@ -43,7 +43,7 @@ export function HudDemo() {
       <p>
         Click the button rendered in the WebGL canvas. The counter increments
         each click. The button is a HUD widget drawn in screen space via
-        <code> @orochi235/weasel-hud</code>.
+        <code> @weasel-js/hud</code>.
       </p>
       <SceneCanvas
         ref={ref}

@@ -5,8 +5,8 @@ import {
   freeform,
   tileGrid,
   snapPoint,
-} from '@orochi235/weasel';
-import type { SerializedScene } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { SerializedScene } from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 import sceneJson from './data/layout.scene.json';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, expectTypeOf } from 'vitest';
 import type { Tool } from './types';
 import type { GestureBinding } from '../interactions/actions/binding';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 
 describe('Tool.bindings (Phase 1 additive)', () => {
   it('bindings field is optional and typed when present', () => {

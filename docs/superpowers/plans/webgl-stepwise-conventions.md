@@ -11,7 +11,7 @@ This doc is updated at the end of every step (alongside the per-step done note).
 **Status:** confirmed in step 1.
 **Where it bites:** any feature that depends on a non-default `getContext` attribute (stencil, depth, antialias, premultipliedAlpha, preserveDrawingBuffer).
 
-`makeGLRecorder()` in `packages/weasel-gl/test-utils/glRecorder.ts` records *method calls*, not the context attributes the canvas was created with. If the renderer relies on `{ stencil: true }` (e.g. for any two-pass mask) or `{ alpha: true }` (the default) or any other context option, the unit tests pass while the real-browser output is wrong.
+`makeGLRecorder()` in `packages/gl/test-utils/glRecorder.ts` records *method calls*, not the context attributes the canvas was created with. If the renderer relies on `{ stencil: true }` (e.g. for any two-pass mask) or `{ alpha: true }` (the default) or any other context option, the unit tests pass while the real-browser output is wrong.
 
 **Required:** any feature whose correctness depends on a context option needs a **Playwright smoke test that reads pixels back from a real browser**. A unit test of GL call sequence is necessary but not sufficient.
 
@@ -26,7 +26,7 @@ Step 1 caught this: the stencil two-pass for evenodd was unit-tested green but p
 
 The browser composites the canvas over the page background expecting **premultiplied** RGB (RGB pre-multiplied by alpha). If the shader outputs `vec4(rgb, a)` with straight alpha and `rgb > a`, the composition over the page produces incorrect (too-bright) results — translucent fills look fully opaque. The renderer also uses `gl.blendFunc(ONE, ONE_MINUS_SRC_ALPHA)` to match.
 
-**Required:** every fragment shader in `packages/weasel-gl/src/shaders/` outputs `vec4(rgb * a, a)`, where `a` is the effective alpha (color alpha × group alpha). Document this in a top-of-file comment for every new shader.
+**Required:** every fragment shader in `packages/gl/src/shaders/` outputs `vec4(rgb * a, a)`, where `a` is the effective alpha (color alpha × group alpha). Document this in a top-of-file comment for every new shader.
 
 The path-fill shader (step 1) and stroke (step 2, which reuses path-fill) follow this. Future shaders (text/SDF in step 3, gradient in step 4, custom shader API in step 6) must too.
 
@@ -48,9 +48,9 @@ The path-fill shader (step 1) and stroke (step 2, which reuses path-fill) follow
 **Status:** confirmed in step 1.
 **Where it bites:** any step that adds a new workspace package whose tests import from another workspace package using the `@scope/name` alias.
 
-Vitest uses its own config (`vitest.config.ts`), separate from the project's main `vite.config.ts`. If `@orochi235/weasel` has a `resolve.alias` in `vite.config.ts`, that alias must be mirrored in `vitest.config.ts` for any vitest test that imports a *value* (not just a type) from that path.
+Vitest uses its own config (`vitest.config.ts`), separate from the project's main `vite.config.ts`. If `@weasel-js/core` has a `resolve.alias` in `vite.config.ts`, that alias must be mirrored in `vitest.config.ts` for any vitest test that imports a *value* (not just a type) from that path.
 
-**Required:** when adding a new workspace package's first vitest test, include at least one runtime *value* import from `@orochi235/weasel` (or whatever cross-workspace path is used). Type-only imports get stripped at runtime and won't fail-fast on missing aliases.
+**Required:** when adding a new workspace package's first vitest test, include at least one runtime *value* import from `@weasel-js/core` (or whatever cross-workspace path is used). Type-only imports get stripped at runtime and won't fail-fast on missing aliases.
 
 ---
 
@@ -59,7 +59,7 @@ Vitest uses its own config (`vitest.config.ts`), separate from the project's mai
 **Status:** confirmed in step 1.
 **Where it bites:** any step that adds a new dev page that needs to serve from outside the main `vite.config.ts` root.
 
-`vite --root .` errors with "Unknown option `--root`" in vite ≥ 8. Use a per-page `vite.config.ts` instead (see `packages/weasel-gl/dev/vite.config.ts` from step 1).
+`vite --root .` errors with "Unknown option `--root`" in vite ≥ 8. Use a per-page `vite.config.ts` instead (see `packages/gl/dev/vite.config.ts` from step 1).
 
 ---
 
@@ -184,7 +184,7 @@ This decouples the public surface from the GL context lifecycle. Multiple render
 **Status:** confirmed in step 7.
 **Where it bites:** any step that adds a new cross-workspace value import.
 
-Step 7's `pathLayer.ts` imported `viewToMat3` from `@orochi235/weasel-gl`. The vitest config got the new alias (catching unit tests). The **dev vite config didn't**, and *every* dev page broke in the browser — including pages like `smoke.ts` and `colors.ts` that don't directly use the new import. The dependency chain runs `dev page → WeaselRenderer → draw.ts → @orochi235/weasel (existing) → src/index.ts → pathLayer.ts → @orochi235/weasel-gl (new bare specifier, unresolved)`.
+Step 7's `pathLayer.ts` imported `viewToMat3` from `@weasel-js/gl`. The vitest config got the new alias (catching unit tests). The **dev vite config didn't**, and *every* dev page broke in the browser — including pages like `smoke.ts` and `colors.ts` that don't directly use the new import. The dependency chain runs `dev page → WeaselRenderer → draw.ts → @weasel-js/core (existing) → src/index.ts → pathLayer.ts → @weasel-js/gl (new bare specifier, unresolved)`.
 
 **Required:** when adding a new cross-package import, mirror the alias into every vite/vitest config in the project — not just the one whose tests you're running. Search for `defineConfig` across the repo and audit each `resolve.alias` block. The alias mismatch fails *only at browser load time*, so unit tests passing is not sufficient evidence the dev pages still work. Convention §1 (real-browser smoke required) is what catches this.
 

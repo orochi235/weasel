@@ -18,7 +18,7 @@
  * "Show dev panels" pref) only in development.
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
-import { ActionsBar } from '@orochi235/weasel-ui';
+import { ActionsBar } from '@weasel-js/ui';
 import s from './DispatchTracePanel.module.css';
 
 // Structural copies of the trace entry types from

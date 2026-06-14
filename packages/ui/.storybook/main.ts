@@ -19,20 +19,20 @@ const config: StorybookConfig = {
       resolve: {
         alias: [
           {
-            find: '@orochi235/weasel-theme/tokens.css',
-            replacement: resolve(repoRoot, 'packages/weasel-theme/src/tokens.css'),
+            find: '@weasel-js/theme/tokens.css',
+            replacement: resolve(repoRoot, 'packages/theme/src/tokens.css'),
           },
           {
-            find: '@orochi235/weasel-theme',
-            replacement: resolve(repoRoot, 'packages/weasel-theme/src/index.ts'),
+            find: '@weasel-js/theme',
+            replacement: resolve(repoRoot, 'packages/theme/src/index.ts'),
           },
           {
-            find: /^@orochi235\/weasel-ui\/(.*)$/,
-            replacement: resolve(repoRoot, 'packages/weasel-ui/src/$1'),
+            find: /^@weasel-js\/ui\/(.*)$/,
+            replacement: resolve(repoRoot, 'packages/ui/src/$1'),
           },
           {
-            find: '@orochi235/weasel-ui',
-            replacement: resolve(repoRoot, 'packages/weasel-ui/src/index.ts'),
+            find: '@weasel-js/ui',
+            replacement: resolve(repoRoot, 'packages/ui/src/index.ts'),
           },
         ],
       },

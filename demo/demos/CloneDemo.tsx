@@ -1,4 +1,4 @@
-import { SceneCanvas } from '@orochi235/weasel';
+import { SceneCanvas } from '@weasel-js/core';
 import sceneJson from './data/clone.scene.json';
 
 export function CloneDemo() {

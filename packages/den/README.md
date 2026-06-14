@@ -6,7 +6,7 @@ demo, and WeaselDraw do not (yet) depend on anything here.
 ## Why it exists
 
 `docs/specs/2026-05-03-weasel-den-design.md` approves a peer workspace
-package `@orochi235/weasel-den` whose scope is:
+package `@weasel-js/den` whose scope is:
 
 - Finished, stable tools (delete, duplicate, nudge, undo/redo, hand,
   wheel-zoom, wheel-pan, keyboard-zoom). Today these still live inside
@@ -29,7 +29,7 @@ looks at the file tree and asks "what's weasel-den?"
 
 - [ ] Stand up workspaces in repo root
 - [ ] Move core into `packages/weasel/`
-- [ ] Create real `packages/weasel-den/{package.json,tsconfig.json,src/}`
+- [ ] Create real `packages/den/{package.json,tsconfig.json,src/}`
 - [ ] Migrate first tool (`useDeleteTool`)
 - [ ] Implement `useStandardTools`
 - [ ] Implement `useStandardCanvasSetup`

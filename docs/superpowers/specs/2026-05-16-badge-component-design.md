@@ -2,7 +2,7 @@
 
 Status: spec
 Date: 2026-05-16
-Package: `@orochi235/weasel-ui`
+Package: `@weasel-js/ui`
 
 ## Motivation
 
@@ -27,7 +27,7 @@ Package: `@orochi235/weasel-ui`
 ## Location
 
 ```
-packages/weasel-ui/src/components/Badge/
+packages/ui/src/components/Badge/
   Badge.tsx
   Badge.module.css
   Badge.stories.tsx
@@ -49,7 +49,7 @@ packages/weasel-ui/src/components/Badge/
     Ribbon.tsx
 ```
 
-Re-exported from `packages/weasel-ui/src/index.ts`.
+Re-exported from `packages/ui/src/index.ts`.
 
 ## API
 

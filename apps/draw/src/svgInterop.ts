@@ -1,6 +1,6 @@
 /**
  * Bridge between WeaselDraw's `Obj` discriminated union (`PathObj |
- * TextObj`, discriminated by `tool`) and `@orochi235/weasel-svg`'s
+ * TextObj`, discriminated by `tool`) and `@weasel-js/svg`'s
  * `SvgNode` discriminated union. Each direction is intentionally lossy
  * at the edges (PathObj's stroke/strokeWidth compresses to an SvgStroke;
  * SvgGroupNode flattens on import) — see comments inline for the
@@ -12,8 +12,8 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import { boundsOfPath } from '@orochi235/weasel';
-import type { PolygonPath, TextStyle } from '@orochi235/weasel';
+import { boundsOfPath } from '@weasel-js/core';
+import type { PolygonPath, TextStyle } from '@weasel-js/core';
 import type {
   ParseResult,
   SerializeOptions,
@@ -21,7 +21,7 @@ import type {
   SvgGroupNode,
   SvgPathNode,
   SvgTextNode,
-} from '@orochi235/weasel-svg';
+} from '@weasel-js/svg';
 import type { Obj, PathObj, PathParams, TextObj, ToolKind } from './poseUpdate';
 
 interface Group { id: string; members: string[] }

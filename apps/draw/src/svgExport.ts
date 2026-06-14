@@ -25,13 +25,13 @@ import {
   boundsOfPath,
   translatePath,
   rectPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import {
   serializeSvg,
   type SvgNode,
   type SvgPathNode,
   type SvgTextNode,
-} from '@orochi235/weasel-svg';
+} from '@weasel-js/svg';
 
 import { docToSerializeOptions, type WeaselDrawPaperSize } from './svgInterop';
 

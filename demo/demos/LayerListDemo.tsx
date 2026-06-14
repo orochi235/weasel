@@ -6,7 +6,7 @@ import {
   useSelection,
   useSelectTool,
   useTools,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 // `LayerList` + `useLayerList` are WeaselDraw-side specializations
 // (kit/app split): they live under `apps/draw/src/ui/`. Imported
 // via relative path because both directories are part of this monorepo.

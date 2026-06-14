@@ -14,7 +14,7 @@ import {
   type Path,
   type PolygonPath,
   type RectPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { Matrix } from './types';
 import { IDENTITY_MATRIX } from './types';
 import { applyMatrix, isIdentity } from './transform';

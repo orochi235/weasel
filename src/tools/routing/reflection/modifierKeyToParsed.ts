@@ -1,1 +1,1 @@
-export { modifierKeyToParsed, canonicalModifiers } from '@orochi235/weasel-gestures';
+export { modifierKeyToParsed, canonicalModifiers } from '@weasel-js/gestures';

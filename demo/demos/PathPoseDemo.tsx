@@ -6,11 +6,11 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type {
   Path,
   DebugConfig,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [

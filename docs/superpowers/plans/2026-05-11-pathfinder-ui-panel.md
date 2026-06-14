@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a `PathfinderPanel` styled component in `@orochi235/weasel-ui` that surfaces the kit's five `useBooleans` actions as a row of icon buttons with built-in Pathfinder-convention SVG icons, adapter-derived disabled state, and overrides for icons / labels / orientation.
+**Goal:** Ship a `PathfinderPanel` styled component in `@weasel-js/ui` that surfaces the kit's five `useBooleans` actions as a row of icon buttons with built-in Pathfinder-convention SVG icons, adapter-derived disabled state, and overrides for icons / labels / orientation.
 
-**Architecture:** Presentational React component in `packages/weasel-ui/src/components/PathfinderPanel/` following the established per-component directory convention (`PathfinderPanel.tsx` + `.module.css` + `.test.tsx` + `.stories.tsx` + internal `pathfinderIcons.tsx` + `index.ts` barrel). The component takes both `adapter` (subset of `BooleansAdapter` — just `getSelection` + `getWorldPath`) and `actions` (returned from `useBooleans(adapter)`); the consumer calls the hook once and shares the result with their own keybinding wiring. A uniform `<2 valid paths` predicate computed each render drives disabled state for all five buttons.
+**Architecture:** Presentational React component in `packages/ui/src/components/PathfinderPanel/` following the established per-component directory convention (`PathfinderPanel.tsx` + `.module.css` + `.test.tsx` + `.stories.tsx` + internal `pathfinderIcons.tsx` + `index.ts` barrel). The component takes both `adapter` (subset of `BooleansAdapter` — just `getSelection` + `getWorldPath`) and `actions` (returned from `useBooleans(adapter)`); the consumer calls the hook once and shares the result with their own keybinding wiring. A uniform `<2 valid paths` predicate computed each render drives disabled state for all five buttons.
 
 **Tech Stack:** TypeScript, React 18+, Vitest + `@testing-library/react`, CSS Modules, Storybook (CSF v3 via `@storybook/react-vite`). Tests run from repo root via `npm test`. No new dependencies.
 
@@ -16,7 +16,7 @@
 
 Files this plan creates or modifies:
 
-**Created** under `packages/weasel-ui/src/components/PathfinderPanel/`:
+**Created** under `packages/ui/src/components/PathfinderPanel/`:
 
 - `pathfinderIcons.tsx` — five internal-only SVG components.
 - `PathfinderPanel.tsx` — the component, exports + types.
@@ -27,7 +27,7 @@ Files this plan creates or modifies:
 
 **Modified:**
 
-- `packages/weasel-ui/src/index.ts` — re-export the new barrel.
+- `packages/ui/src/index.ts` — re-export the new barrel.
 - `demo/demos/BooleanOpsDemo.tsx` — add interactive panel region above the static grid.
 - `demo/registry.ts` — update the `boolean-ops` entry description + hint to reflect the new interactive region.
 - `docs/TODO.md` — mark "Pathfinder UI panel" entry as shipped under the Tier 3 follow-ups list.
@@ -38,8 +38,8 @@ Files this plan creates or modifies:
 
 **Files:**
 
-- Create: `packages/weasel-ui/src/components/PathfinderPanel/pathfinderIcons.tsx`
-- Create (test): `packages/weasel-ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx`
+- Create: `packages/ui/src/components/PathfinderPanel/pathfinderIcons.tsx`
+- Create (test): `packages/ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx`
 
 **Visual recipe** (shared across all icons):
 
@@ -65,7 +65,7 @@ Files this plan creates or modifies:
 - [ ] **Step 1: Write the failing test**
 
 ```tsx
-// packages/weasel-ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx
+// packages/ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import {
@@ -115,14 +115,14 @@ describe('pathfinderIcons', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx
 ```
 Expected: FAIL — module `./pathfinderIcons` not found.
 
 - [ ] **Step 3: Implement the icons**
 
 ```tsx
-// packages/weasel-ui/src/components/PathfinderPanel/pathfinderIcons.tsx
+// packages/ui/src/components/PathfinderPanel/pathfinderIcons.tsx
 const SVG_BASE = {
   viewBox: '0 0 20 20',
   width: 20,
@@ -202,15 +202,15 @@ export function DivideIcon() {
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx
 ```
 Expected: PASS, all six assertions.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/PathfinderPanel/pathfinderIcons.tsx \
-        packages/weasel-ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx
+git add packages/ui/src/components/PathfinderPanel/pathfinderIcons.tsx \
+        packages/ui/src/components/PathfinderPanel/pathfinderIcons.test.tsx
 git commit -m "feat(weasel-ui): inline SVG icons for Pathfinder panel"
 ```
 
@@ -220,8 +220,8 @@ git commit -m "feat(weasel-ui): inline SVG icons for Pathfinder panel"
 
 **Files:**
 
-- Create: `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.tsx`
-- Create (test): `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx`
+- Create: `packages/ui/src/components/PathfinderPanel/PathfinderPanel.tsx`
+- Create (test): `packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx`
 
 **Op order** (left-to-right): `union`, `intersect`, `subtract`, `exclude`, `divide`.
 
@@ -230,12 +230,12 @@ git commit -m "feat(weasel-ui): inline SVG icons for Pathfinder panel"
 - [ ] **Step 1: Write the failing test**
 
 ```tsx
-// packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+// packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PathfinderPanel } from './PathfinderPanel';
-import type { BooleansAdapter, UseBooleansReturn } from '@orochi235/weasel';
-import { asNodeId } from '@orochi235/weasel';
+import type { BooleansAdapter, UseBooleansReturn } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core';
 
 const noop = () => {};
 const noopActions: UseBooleansReturn = {
@@ -285,16 +285,16 @@ describe('PathfinderPanel', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 ```
 Expected: FAIL — module `./PathfinderPanel` not found.
 
 - [ ] **Step 3: Implement the minimal component**
 
 ```tsx
-// packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.tsx
+// packages/ui/src/components/PathfinderPanel/PathfinderPanel.tsx
 import type { ReactNode } from 'react';
-import type { BooleansAdapter, UseBooleansReturn } from '@orochi235/weasel';
+import type { BooleansAdapter, UseBooleansReturn } from '@weasel-js/core';
 import {
   UnionIcon,
   IntersectIcon,
@@ -371,7 +371,7 @@ export function PathfinderPanel(props: PathfinderPanelProps) {
 Also create an empty CSS module so the import resolves:
 
 ```css
-/* packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.module.css */
+/* packages/ui/src/components/PathfinderPanel/PathfinderPanel.module.css */
 .panel {}
 .vertical {}
 .button {}
@@ -382,16 +382,16 @@ Also create an empty CSS module so the import resolves:
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 ```
 Expected: PASS, both tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.tsx \
-        packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.module.css \
-        packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+git add packages/ui/src/components/PathfinderPanel/PathfinderPanel.tsx \
+        packages/ui/src/components/PathfinderPanel/PathfinderPanel.module.css \
+        packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 git commit -m "feat(weasel-ui): PathfinderPanel skeleton — five op buttons"
 ```
 
@@ -401,8 +401,8 @@ git commit -m "feat(weasel-ui): PathfinderPanel skeleton — five op buttons"
 
 **Files:**
 
-- Modify: `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.tsx`
-- Modify: `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx`
+- Modify: `packages/ui/src/components/PathfinderPanel/PathfinderPanel.tsx`
+- Modify: `packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx`
 
 Disabled predicate: count `adapter.getSelection()` entries where `adapter.getWorldPath(id) != null`; if that count is `<2`, all five buttons are disabled.
 
@@ -474,7 +474,7 @@ describe('PathfinderPanel — click dispatch', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 ```
 Expected: the four new tests FAIL — `disabled` is `false` for all buttons regardless of selection size.
 
@@ -513,15 +513,15 @@ And in the button JSX:
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 ```
 Expected: all PathfinderPanel tests PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.tsx \
-        packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+git add packages/ui/src/components/PathfinderPanel/PathfinderPanel.tsx \
+        packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 git commit -m "feat(weasel-ui): PathfinderPanel disabled-state derivation + click dispatch"
 ```
 
@@ -531,8 +531,8 @@ git commit -m "feat(weasel-ui): PathfinderPanel disabled-state derivation + clic
 
 **Files:**
 
-- Modify: `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.tsx`
-- Modify: `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx`
+- Modify: `packages/ui/src/components/PathfinderPanel/PathfinderPanel.tsx`
+- Modify: `packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx`
 
 All three override surfaces (`icons`, `labels`, `orientation`) are already declared on `PathfinderPanelProps` and consumed in the JSX from Task 2. This task adds explicit test coverage and verifies the existing wiring behaves correctly — and adds the vertical-class assertion that proves the CSS-class toggle works.
 
@@ -601,13 +601,13 @@ describe('PathfinderPanel — overrides', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 ```
 Expected: most pass already (since Task 2 wired up the props), but the vertical-class tests may fail if Vitest's CSS module shim returns `undefined` for `s.vertical`. If so, see Step 3.
 
 - [ ] **Step 3: Confirm CSS-module shim returns a string**
 
-Check `packages/weasel-ui/src/css-modules.d.ts` and the Vitest config — CSS modules in this repo are typed and resolve to string maps. If `s.vertical` is `undefined` under Vitest, replace the class-presence test with a `data-orientation="vertical"` attribute on the root:
+Check `packages/ui/src/css-modules.d.ts` and the Vitest config — CSS modules in this repo are typed and resolve to string maps. If `s.vertical` is `undefined` under Vitest, replace the class-presence test with a `data-orientation="vertical"` attribute on the root:
 
 ```tsx
 // in PathfinderPanel.tsx, on the root <div>:
@@ -619,15 +619,15 @@ And change the test to assert `root.getAttribute('data-orientation') === 'vertic
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 ```
 Expected: all overrides tests PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.tsx \
-        packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+git add packages/ui/src/components/PathfinderPanel/PathfinderPanel.tsx \
+        packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 git commit -m "test(weasel-ui): PathfinderPanel override-prop coverage"
 ```
 
@@ -637,7 +637,7 @@ git commit -m "test(weasel-ui): PathfinderPanel override-prop coverage"
 
 **Files:**
 
-- Modify: `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx`
+- Modify: `packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx`
 
 Verifies the disabled-state predicate filters non-path entries correctly: an adapter that returns 3 selected ids but where one returns `undefined` from `getWorldPath` should count as 2 valid paths and enable the buttons.
 
@@ -646,7 +646,7 @@ Verifies the disabled-state predicate filters non-path entries correctly: an ada
 Append to `PathfinderPanel.test.tsx`:
 
 ```tsx
-import { asNodeId as nid } from '@orochi235/weasel';
+import { asNodeId as nid } from '@weasel-js/core';
 
 describe('PathfinderPanel — mixed selection', () => {
   it('non-path selection members are filtered out of the disabled predicate', () => {
@@ -683,7 +683,7 @@ describe('PathfinderPanel — mixed selection', () => {
 - [ ] **Step 2: Run tests to verify they pass**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+npm test -- packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 ```
 Expected: both new tests PASS (Task 3's implementation already handles this — the test verifies the predicate is correct, not that new code is needed).
 
@@ -692,7 +692,7 @@ If either fails, the predicate isn't filtering correctly; debug `PathfinderPanel
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
+git add packages/ui/src/components/PathfinderPanel/PathfinderPanel.test.tsx
 git commit -m "test(weasel-ui): PathfinderPanel mixed-selection filter predicate"
 ```
 
@@ -702,7 +702,7 @@ git commit -m "test(weasel-ui): PathfinderPanel mixed-selection filter predicate
 
 **Files:**
 
-- Modify: `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.module.css`
+- Modify: `packages/ui/src/components/PathfinderPanel/PathfinderPanel.module.css`
 
 Match the LayerList chrome convention: dark warm-brown background, 4px radius, 2px padding, 1px gap, 28×28 buttons. Vertical orientation flips `flex-direction`. Disabled drops opacity.
 
@@ -711,7 +711,7 @@ Match the LayerList chrome convention: dark warm-brown background, 4px radius, 2
 Replace the empty stub from Task 2:
 
 ```css
-/* packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.module.css */
+/* packages/ui/src/components/PathfinderPanel/PathfinderPanel.module.css */
 .panel {
   display: flex;
   flex-direction: row;
@@ -763,14 +763,14 @@ Replace the empty stub from Task 2:
 - [ ] **Step 2: Run tests to verify nothing regressed**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/PathfinderPanel/
+npm test -- packages/ui/src/components/PathfinderPanel/
 ```
 Expected: all PathfinderPanel tests still PASS.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.module.css
+git add packages/ui/src/components/PathfinderPanel/PathfinderPanel.module.css
 git commit -m "style(weasel-ui): PathfinderPanel chrome — LayerList-matched palette"
 ```
 
@@ -780,13 +780,13 @@ git commit -m "style(weasel-ui): PathfinderPanel chrome — LayerList-matched pa
 
 **Files:**
 
-- Create: `packages/weasel-ui/src/components/PathfinderPanel/index.ts`
-- Modify: `packages/weasel-ui/src/index.ts`
+- Create: `packages/ui/src/components/PathfinderPanel/index.ts`
+- Modify: `packages/ui/src/index.ts`
 
 - [ ] **Step 1: Create the per-component barrel**
 
 ```ts
-// packages/weasel-ui/src/components/PathfinderPanel/index.ts
+// packages/ui/src/components/PathfinderPanel/index.ts
 export { PathfinderPanel } from './PathfinderPanel';
 export type {
   PathfinderPanelProps,
@@ -797,7 +797,7 @@ export type {
 
 - [ ] **Step 2: Add the re-export to the main index**
 
-Append to `packages/weasel-ui/src/index.ts`:
+Append to `packages/ui/src/index.ts`:
 
 ```ts
 export * from './components/PathfinderPanel';
@@ -815,8 +815,8 @@ Expected: no new errors.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/PathfinderPanel/index.ts \
-        packages/weasel-ui/src/index.ts
+git add packages/ui/src/components/PathfinderPanel/index.ts \
+        packages/ui/src/index.ts
 git commit -m "feat(weasel-ui): export PathfinderPanel from package barrel"
 ```
 
@@ -826,18 +826,18 @@ git commit -m "feat(weasel-ui): export PathfinderPanel from package barrel"
 
 **Files:**
 
-- Create: `packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.stories.tsx`
+- Create: `packages/ui/src/components/PathfinderPanel/PathfinderPanel.stories.tsx`
 
 Four stories: `Default`, `Disabled`, `Vertical`, `CustomIcons`. Each wires a minimal in-memory adapter with one or more dummy `Path` records.
 
 - [ ] **Step 1: Write the stories file**
 
 ```tsx
-// packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.stories.tsx
+// packages/ui/src/components/PathfinderPanel/PathfinderPanel.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PathfinderPanel } from './PathfinderPanel';
-import type { BooleansAdapter, UseBooleansReturn } from '@orochi235/weasel';
-import { asNodeId } from '@orochi235/weasel';
+import type { BooleansAdapter, UseBooleansReturn } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core';
 
 const meta: Meta<typeof PathfinderPanel> = {
   title: 'weasel-ui/PathfinderPanel',
@@ -905,14 +905,14 @@ export const CustomIcons: Story = {
 - [ ] **Step 2: Verify stories build (optional smoke)**
 
 ```bash
-cd packages/weasel-ui && npm run build-storybook
+cd packages/ui && npm run build-storybook
 ```
 Expected: stories file compiles without TS errors. (You can also visually inspect via `npm run storybook` if you want.)
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/PathfinderPanel/PathfinderPanel.stories.tsx
+git add packages/ui/src/components/PathfinderPanel/PathfinderPanel.stories.tsx
 git commit -m "story(weasel-ui): PathfinderPanel — default, disabled, vertical, custom-icons"
 ```
 
@@ -973,15 +973,15 @@ import {
   PATH_Z,
   SceneCanvas,
   asNodeId,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type {
   BooleansAdapter,
   NodeId,
   PolygonPath,
   Op,
   Path,
-} from '@orochi235/weasel';
-import { PathfinderPanel } from '@orochi235/weasel-ui';
+} from '@weasel-js/core';
+import { PathfinderPanel } from '@weasel-js/ui';
 import type { DrawCommand } from '../../src/renderer';
 
 const W = 240;
@@ -1260,7 +1260,7 @@ Find the `boolean-ops` entry (`id: 'boolean-ops'`) and replace its `description`
   id: 'boolean-ops',
   title: 'Boolean ops',
   category: 'Geometry',
-  description: 'Five Pathfinder-style polygon-boolean operations on path geometry: union, intersect, subtract (back minus front, Illustrator "Minus Front" semantics), exclude (XOR), divide (fracture along intersections). Backed by `pathUnion` / `pathIntersect` / `pathSubtract` / `pathExclude` / `pathDivide` from the kit, which wrap a vendored `polygon-clipping` engine. The `useBooleans` hook composes these into one undoable selection action; the top "Interactive" region is wired to the `@orochi235/weasel-ui` `<PathfinderPanel>` component, while the static rows below show each op applied to the same rect + circle inputs.',
+  description: 'Five Pathfinder-style polygon-boolean operations on path geometry: union, intersect, subtract (back minus front, Illustrator "Minus Front" semantics), exclude (XOR), divide (fracture along intersections). Backed by `pathUnion` / `pathIntersect` / `pathSubtract` / `pathExclude` / `pathDivide` from the kit, which wrap a vendored `polygon-clipping` engine. The `useBooleans` hook composes these into one undoable selection action; the top "Interactive" region is wired to the `@weasel-js/ui` `<PathfinderPanel>` component, while the static rows below show each op applied to the same rect + circle inputs.',
   hint: 'In the Interactive region: click empty space to deselect, click both paths to re-enable. Click a Pathfinder button to commit the op; Reset restores the two source paths.',
   Component: BooleanOpsDemo,
   full: BooleanOpsDemoFull,
@@ -1297,7 +1297,7 @@ In the Tier 3 "Pathfinder follow-ups (post-v1)" section, the third bullet is cur
 Replace that bullet with:
 
 ```markdown
-- [x] **Pathfinder UI panel.** *Shipped 2026-05-11.* `@orochi235/weasel-ui` now ships `<PathfinderPanel>` — five icon buttons surfacing the `useBooleans` actions, with default Pathfinder-convention SVG icons, adapter-derived disabled state (uniform `<2 valid paths` predicate), and overrides for icons, labels, and orientation. Demo: interactive region atop `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec: `docs/superpowers/specs/2026-05-11-pathfinder-ui-panel-design.md`. Plan: `docs/superpowers/plans/2026-05-11-pathfinder-ui-panel.md`.
+- [x] **Pathfinder UI panel.** *Shipped 2026-05-11.* `@weasel-js/ui` now ships `<PathfinderPanel>` — five icon buttons surfacing the `useBooleans` actions, with default Pathfinder-convention SVG icons, adapter-derived disabled state (uniform `<2 valid paths` predicate), and overrides for icons, labels, and orientation. Demo: interactive region atop `demo/demos/BooleanOpsDemo.tsx` (`#boolean-ops`). Spec: `docs/superpowers/specs/2026-05-11-pathfinder-ui-panel-design.md`. Plan: `docs/superpowers/plans/2026-05-11-pathfinder-ui-panel.md`.
 ```
 
 - [ ] **Step 2: Run the production gate**

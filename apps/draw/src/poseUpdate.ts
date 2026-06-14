@@ -1,5 +1,5 @@
-import type { BooleanOp, Path, TextStyle } from '@orochi235/weasel';
-import { scalePathToBounds, translatePath } from '@orochi235/weasel';
+import type { BooleanOp, Path, TextStyle } from '@weasel-js/core';
+import { scalePathToBounds, translatePath } from '@weasel-js/core';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'

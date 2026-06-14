@@ -1,4 +1,4 @@
-import { DEFAULT_TOKENS, type TokenName } from '@orochi235/weasel-theme';
+import { DEFAULT_TOKENS, type TokenName } from '@weasel-js/theme';
 
 export interface ResolvedTokens {
   text: string;

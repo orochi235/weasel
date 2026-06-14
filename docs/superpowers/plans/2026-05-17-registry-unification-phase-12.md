@@ -28,7 +28,7 @@ The six tasks share a single failure mode: half-doing any one of them leaves a l
 - `src/tools/builtin/useSelectTool/useSelectTool.ts` — delete `routes` table; remove legacy hook imports.
 - `src/tools/builtin/useRotateTool/useRotateTool.ts`, `src/tools/builtin/useCloneTool/useCloneTool.ts`, `src/tools/builtin/useLassoTool/useLassoTool.ts`, `src/tools/builtin/useEditAnchorsTool/useEditAnchorsTool.ts`, `src/tools/builtin/useTextTool/useTextTool.ts` — drop legacy hook imports; rely on `Tool.bindings`.
 - `src/interactions/actions/defaults/{escape,selectAll,delete,duplicate,group,ungroup,undoRedo,flip,nudge,reorder}.ts` — switch from `defaultBinding: KeyBinding` to `gestureBinding: GestureSpec`. Drop `defaultBinding`.
-- `packages/weasel-ui/src/components/ActionBar/ActionBar.tsx` — fire via `registry.fire(action.id, {})` (or `action.invoker.run`) instead of `action.run?.()`.
+- `packages/ui/src/components/ActionBar/ActionBar.tsx` — fire via `registry.fire(action.id, {})` (or `action.invoker.run`) instead of `action.run?.()`.
 - Test files calling `action.run!()` directly — switch to dispatcher fire or `invoker.run(stubCtx)`.
 
 **Create:** nothing.
@@ -123,7 +123,7 @@ Modifier and parametric variants follow Phase 4's patterns (already established 
 
 ### Task 7: ActionBar + tests off `action.run`
 
-In `packages/weasel-ui/src/components/ActionBar/ActionBar.tsx`:
+In `packages/ui/src/components/ActionBar/ActionBar.tsx`:
 
 ```ts
 // BEFORE

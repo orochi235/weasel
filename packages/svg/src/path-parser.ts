@@ -14,7 +14,7 @@
  * weasel-svg's coverage matrix.
  */
 
-import { PathBuilder } from '@orochi235/weasel';
+import { PathBuilder } from '@weasel-js/core';
 
 const NUM_RE = /[+-]?(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?/g;
 

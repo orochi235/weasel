@@ -297,8 +297,8 @@ import {
   useClipboard,
   useSelectTool,
   useTools,
-} from '@orochi235/weasel';
-import type { ClipboardSnapshot } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { ClipboardSnapshot } from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }

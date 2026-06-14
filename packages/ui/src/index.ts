@@ -1,4 +1,4 @@
-// `@orochi235/weasel-ui` ships generic UI primitives — building blocks the
+// `@weasel-js/ui` ships generic UI primitives — building blocks the
 // kit's apps compose. Specialized panels (LayerList, etc.) live in their
 // consuming app (today: `apps/draw/src/ui/`).
 export { dlog, isDebugEnabled } from './dlog';

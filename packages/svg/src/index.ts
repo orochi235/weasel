@@ -1,5 +1,5 @@
 /**
- * `@orochi235/weasel-svg` — SVG ↔ weasel interop.
+ * `@weasel-js/svg` — SVG ↔ weasel interop.
  *
  * Two entry points:
  * - `parseSvg(svg)` lowers an SVG document to a `SvgNode[]` tree of

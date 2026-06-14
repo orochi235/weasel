@@ -1,4 +1,4 @@
-import type { Journal } from '@orochi235/weasel-history';
+import type { Journal } from '@weasel-js/history';
 
 export interface CreateJournalCacheOptions {
   /** Maximum entries before LRU eviction. Spec says 8 for WeaselDraw. */

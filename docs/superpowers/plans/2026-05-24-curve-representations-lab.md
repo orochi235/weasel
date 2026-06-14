@@ -1332,7 +1332,7 @@ Anchors+controls, curvature comb, inflections+extrema. Each takes the rep + anch
 
 ```ts
 // demo/demos/curveLab/overlays.ts
-import type { DrawCommand, RenderLayer } from '@orochi235/weasel';
+import type { DrawCommand, RenderLayer } from '@weasel-js/core';
 import type { CurveRepresentation, SharedAnchor } from '../../../src/features/paths/curves';
 
 interface View { x: number; y: number; scale: { x: number; y: number } }
@@ -1644,8 +1644,8 @@ Wraps a `<SceneCanvas>` for one representation. Reads shared anchors, builds the
 ```tsx
 // demo/demos/curveLab/RepresentationPanel.tsx
 import { useCallback, useMemo, useState } from 'react';
-import { SceneCanvas, useScene, useSelection, asNodeId } from '@orochi235/weasel';
-import type { DrawCommand, View } from '@orochi235/weasel';
+import { SceneCanvas, useScene, useSelection, asNodeId } from '@weasel-js/core';
+import type { DrawCommand, View } from '@weasel-js/core';
 import type { CurveRepresentation, SharedAnchor } from '../../../src/features/paths/curves';
 import {
   createAnchorsLayer,
@@ -1753,7 +1753,7 @@ export function RepresentationPanel({ rep, anchors, overlays, width, height }: R
 npx tsc --noEmit 2>&1 | grep -v "Badge.stories" | head
 ```
 
-Expected: clean. If "View" isn't exported from `@orochi235/weasel`, change the import to `import type { View } from '../../../src/core/viewport/view';`.
+Expected: clean. If "View" isn't exported from `@weasel-js/core`, change the import to `import type { View } from '../../../src/core/viewport/view';`.
 
 - [ ] **Step 3: Commit**
 

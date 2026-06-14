@@ -1281,7 +1281,7 @@ feat(layout): export layout module from package root
 
 Adds the strategies barrel, the top-level layout barrel, and a re-export
 from src/index.ts so consumers import { freeform, tileGrid, snapPoint,
-nearest, nearestWithin, cellAt, none, ... } from '@orochi235/weasel'.
+nearest, nearestWithin, cellAt, none, ... } from '@weasel-js/core'.
 
 Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 EOF
@@ -2052,9 +2052,9 @@ Create `demo/demos/LayoutDemo.tsx`. Use `WeaselDrawDemo.tsx` as the structural r
 
 ```tsx
 import { useMemo, useState } from 'react';
-import { Canvas, useSelectTool, useTools } from '@orochi235/weasel';
-import { freeform, tileGrid, snapPoint } from '@orochi235/weasel';
-import type { MoveAdapter } from '@orochi235/weasel';
+import { Canvas, useSelectTool, useTools } from '@weasel-js/core';
+import { freeform, tileGrid, snapPoint } from '@weasel-js/core';
+import type { MoveAdapter } from '@weasel-js/core';
 
 type Obj = { id: string; kind: 'container' | 'child' };
 type P = { x: number; y: number; width: number; height: number };

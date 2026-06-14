@@ -393,7 +393,7 @@ interface DepSchema {
   pointer: PointerApi
   activeTool: ActiveToolContextValue
   // Swill (consumer) augments:
-  //   declare module '@orochi235/weasel' {
+  //   declare module '@weasel-js/core' {
   //     interface DepSchema { color: ColorContextValue }
   //   }
 }

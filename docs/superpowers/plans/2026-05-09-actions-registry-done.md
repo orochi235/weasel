@@ -7,7 +7,7 @@
 ## What shipped
 
 - New `<ActionsProvider>` + `useActionsRegistry()` + `useAction()` exported
-  from `@orochi235/weasel` under `@experimental`. One `keydown` listener per
+  from `@weasel-js/core` under `@experimental`. One `keydown` listener per
   provider scope; first-registered-wins overlap, last-registered-wins on id;
   cleanup is last-writer-protected so a stale unmount can't clobber a later
   registrant. Frozen `list()` snapshots.

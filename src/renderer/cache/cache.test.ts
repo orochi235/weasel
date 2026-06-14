@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { RectPath } from '@orochi235/weasel';
+import type { RectPath } from '@weasel-js/core';
 import { getMesh, _resetCacheForTests } from './cache';
 
 describe('mesh cache', () => {

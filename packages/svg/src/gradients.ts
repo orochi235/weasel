@@ -6,7 +6,7 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import type { FillStyle, GradStop } from '@orochi235/weasel';
+import type { FillStyle, GradStop } from '@weasel-js/core';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
 

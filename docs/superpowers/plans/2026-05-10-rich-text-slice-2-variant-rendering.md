@@ -816,7 +816,7 @@ export interface TextDrawCommand {
 }
 ```
 
-Add `import type { ResolvedRun } from '@orochi235/weasel';` at the top of `DrawCommand.ts` (the `runs` field's type comes from the public-facing package; the path-aliased import keeps `DrawCommand.ts` consumer-friendly).
+Add `import type { ResolvedRun } from '@weasel-js/core';` at the top of `DrawCommand.ts` (the `runs` field's type comes from the public-facing package; the path-aliased import keeps `DrawCommand.ts` consumer-friendly).
 
 - [ ] **Step 4.2: Export `ResolvedRun` and `resolveRuns` from `src/features/text/index.ts`**
 
@@ -1552,7 +1552,7 @@ Open `demo/demos/TextDemo.tsx`. Add a fifth `TextNode` to the `INITIAL` array (i
 },
 ```
 
-(If the `TextNode` interface in the demo file doesn't yet have a `runs?: StyledRun[]` field, add it — import `StyledRun` from `@orochi235/weasel`.)
+(If the `TextNode` interface in the demo file doesn't yet have a `runs?: StyledRun[]` field, add it — import `StyledRun` from `@weasel-js/core`.)
 
 - [ ] **Step 9.2: Verify the demo compiles and renders the rich-text node**
 

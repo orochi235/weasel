@@ -1,5 +1,5 @@
-import type { Path, Stroke } from '@orochi235/weasel';
-import { alignedStrokeRect } from '@orochi235/weasel';
+import type { Path, Stroke } from '@weasel-js/core';
+import { alignedStrokeRect } from '@weasel-js/core';
 import type { Mesh } from '../../../renderer/cache/mesh';
 import { extractPolylines, type Polyline } from './polyline';
 

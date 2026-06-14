@@ -1,7 +1,7 @@
 import type { NodeId } from '../../core/scene/types';
 import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 
 /**
  * Live state read by rule evaluation. Built once per frame on the consuming

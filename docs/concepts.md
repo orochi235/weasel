@@ -1,6 +1,6 @@
 # Concepts
 
-The mental model behind `@orochi235/weasel`. Read this before writing code.
+The mental model behind `@weasel-js/core`. Read this before writing code.
 
 ## `<Canvas>`
 
@@ -48,9 +48,9 @@ Detached variants are the right default when the minimap belongs in a
 panel; `createViewportLayer` stays as the canonical superimposed primitive.
 
 ```tsx
-import { MinimapCanvas, SceneCanvas, useScene, useSelection } from '@orochi235/weasel';
+import { MinimapCanvas, SceneCanvas, useScene, useSelection } from '@weasel-js/core';
 import { useState } from 'react';
-import type { View } from '@orochi235/weasel';
+import type { View } from '@weasel-js/core';
 
 function App() {
   const scene = useScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });

@@ -4,7 +4,7 @@
 
 **Goal:** Make Swillustrator round-trip its full feature surface through SVG via a `swill:` XML namespace, fixing the audit-flagged gaps (paper-size, groups, text style, warnings) and adding direct bridge tests. weasel-svg stays domain-neutral: it learns to pass *any* declared namespace through opaquely, and all `swill:` semantics live in `apps/swillustrator/src/svgInterop.ts`.
 
-**Architecture:** Three layers, three files: `packages/weasel-svg` (extend types + parse + serialize for **generic** namespace pass-through — no `swill`-specific knowledge), `apps/swillustrator/src/svgInterop.ts` (Obj ↔ SvgNode bridge — declares the `swill` namespace, encodes/decodes paper-size, group-id, line-height via the generic `meta` / `documentMeta` bags), `apps/swillustrator/src/App.tsx` (Save/Open wiring — call setDoc, walk groupsRef). Layers (the spec's later "T3 layers" work) deferred to a follow-up plan after a separate brainstorm.
+**Architecture:** Three layers, three files: `packages/svg` (extend types + parse + serialize for **generic** namespace pass-through — no `swill`-specific knowledge), `apps/swillustrator/src/svgInterop.ts` (Obj ↔ SvgNode bridge — declares the `swill` namespace, encodes/decodes paper-size, group-id, line-height via the generic `meta` / `documentMeta` bags), `apps/swillustrator/src/App.tsx` (Save/Open wiring — call setDoc, walk groupsRef). Layers (the spec's later "T3 layers" work) deferred to a follow-up plan after a separate brainstorm.
 
 **Tech Stack:** TypeScript, React 18+, Vitest, weasel-svg.
 
@@ -33,7 +33,7 @@ Audit gaps **explicitly deferred**:
 
 ### Key design decisions baked into this plan
 
-- **Namespace prefix: `swill:`.** XML namespace URI: `https://swillustrator.app/svg-ext`. The npm package name `@orochi235/weasel-svg` is **unchanged** — only the XML prefix and URI use `swill`.
+- **Namespace prefix: `swill:`.** XML namespace URI: `https://swillustrator.app/svg-ext`. The npm package name `@weasel-js/svg` is **unchanged** — only the XML prefix and URI use `swill`.
 - **weasel-svg is domain-neutral.** It surfaces declared namespaces as opaque `meta` bags. It never knows what `swill:paperSize` means. All `swill:` semantics live in `svgInterop.ts`.
 - **Multi-group membership is forbidden — enforced at the model level.** Each Swillustrator object belongs to at most one group. The Swillustrator group adapter (`insertGroup` / `addToGroup` in `App.tsx`) strips any prior memberships when a member is added to a new group (Task 3 Step 7a–7c). A defense-in-depth assertion at the persistence boundary in `objsToSvgNodes` (Task 3 Step 6) catches any direct-mutation bug that bypasses the adapter; it should never fire in practice with the model-level fix in place. `objsToSvgNodes` does not need a "first-group-wins" disambiguator.
 - **Paper-size enum on disk = `letter`, not `us-letter`.** Matches Swillustrator's internal `PAPER_PRESETS` keys (`letter`, `a4`, `legal`). No transform on the way to/from SVG.
@@ -44,9 +44,9 @@ Audit gaps **explicitly deferred**:
 ## File map
 
 Files this plan creates:
-- `packages/weasel-svg/src/__fixtures__/swillustrator-minimal.svg` — one rect, one text (Task 2).
-- `packages/weasel-svg/src/__fixtures__/swillustrator-groups.svg` — two groups with three shapes each (Task 3).
-- `packages/weasel-svg/src/__fixtures__/swillustrator-papers.svg` — one of each paper-size enum (Task 2).
+- `packages/svg/src/__fixtures__/swillustrator-minimal.svg` — one rect, one text (Task 2).
+- `packages/svg/src/__fixtures__/swillustrator-groups.svg` — two groups with three shapes each (Task 3).
+- `packages/svg/src/__fixtures__/swillustrator-papers.svg` — one of each paper-size enum (Task 2).
 - `apps/swillustrator/src/svgInterop.test.ts` — direct bridge tests (Task 1 baseline; extended in Tasks 3, 4).
 - `apps/swillustrator/src/groupMembership.ts` — pure helper that strips members from prior groups; enforces single-group-membership at the model level (Task 3).
 - `apps/swillustrator/src/groupMembership.test.ts` — unit tests for `stripPriorMemberships` and the Swillustrator group-adapter wiring (Task 3).
@@ -54,11 +54,11 @@ Files this plan creates:
 - `apps/swillustrator/src/Toasts.module.css` *or* additions to `swillustrator.css` — CSS for the toast (Task 5).
 
 Files this plan modifies:
-- `packages/weasel-svg/src/types.ts` — add `meta?: NamespaceMeta` on every `SvgNode` variant; add `documentMeta?: NamespaceMeta` on `ParseResult` and `SerializeOptions`; add `namespaces?: Record<string, string>` to `ParseOptions` and `SerializeOptions`; add `viewBox` / `width` / `height` / `title` to `ParseResult` and `SerializeOptions` (Task 0 + Task 2).
-- `packages/weasel-svg/src/parse.ts` — generic: collect declared-namespace attrs into `meta` per element and `documentMeta` for root attrs/children (Task 0). Also surface `viewBox`, `width`, `height`, `<title>` (standard SVG; Task 2).
-- `packages/weasel-svg/src/serialize.ts` — generic: write `xmlns:<prefix>="..."` for each declared namespace, emit `meta.<prefix>.attrs` as `<prefix>:<name>="..."` on each element, emit `documentMeta.<prefix>.attrs`/`elements` on the root (Task 0). Also emit `width`/`height`/`<title>` (Task 2).
-- `packages/weasel-svg/src/index.ts` — re-export `NamespaceMeta` type (Task 0).
-- `packages/weasel-svg/src/roundtrip.test.ts` — add T0 generic-namespace round-trip cases; add T2 paper-size/title/groups/text-style cases.
+- `packages/svg/src/types.ts` — add `meta?: NamespaceMeta` on every `SvgNode` variant; add `documentMeta?: NamespaceMeta` on `ParseResult` and `SerializeOptions`; add `namespaces?: Record<string, string>` to `ParseOptions` and `SerializeOptions`; add `viewBox` / `width` / `height` / `title` to `ParseResult` and `SerializeOptions` (Task 0 + Task 2).
+- `packages/svg/src/parse.ts` — generic: collect declared-namespace attrs into `meta` per element and `documentMeta` for root attrs/children (Task 0). Also surface `viewBox`, `width`, `height`, `<title>` (standard SVG; Task 2).
+- `packages/svg/src/serialize.ts` — generic: write `xmlns:<prefix>="..."` for each declared namespace, emit `meta.<prefix>.attrs` as `<prefix>:<name>="..."` on each element, emit `documentMeta.<prefix>.attrs`/`elements` on the root (Task 0). Also emit `width`/`height`/`<title>` (Task 2).
+- `packages/svg/src/index.ts` — re-export `NamespaceMeta` type (Task 0).
+- `packages/svg/src/roundtrip.test.ts` — add T0 generic-namespace round-trip cases; add T2 paper-size/title/groups/text-style cases.
 - `apps/swillustrator/src/svgInterop.ts` — declare the `swill` namespace; encode/decode paper-size + units + line-height + group-id via `meta` and `documentMeta`; stop flattening groups; surface `Group[]` alongside `Obj[]` from open; enforce single-group-membership invariant.
 - `apps/swillustrator/src/App.tsx` — `onSaveSvg` passes `namespaces: { swill: SWILL_NS }` and `documentMeta` containing paper-size; `onOpenSvg` reads `documentMeta.swill.attrs.paperSize`, calls `setDoc`, populates `groupsRef`, surfaces warnings via the new toast. Group adapter's `insertGroup` / `addToGroup` strip prior memberships (single-group-membership invariant) via `stripPriorMemberships`.
 
@@ -84,16 +84,16 @@ Goal: extend weasel-svg's parse + serialize so that *any* declared XML namespace
 This is the foundation: T2 (paper-size), T3 (groups), and T4 (text style) all build on the types and behavior defined here.
 
 **Files:**
-- Modify: `packages/weasel-svg/src/types.ts`
-- Modify: `packages/weasel-svg/src/parse.ts`
-- Modify: `packages/weasel-svg/src/serialize.ts`
-- Modify: `packages/weasel-svg/src/index.ts`
-- Modify: `packages/weasel-svg/src/__fixtures__/fixtures.ts`
-- Modify: `packages/weasel-svg/src/roundtrip.test.ts`
+- Modify: `packages/svg/src/types.ts`
+- Modify: `packages/svg/src/parse.ts`
+- Modify: `packages/svg/src/serialize.ts`
+- Modify: `packages/svg/src/index.ts`
+- Modify: `packages/svg/src/__fixtures__/fixtures.ts`
+- Modify: `packages/svg/src/roundtrip.test.ts`
 
 - [ ] **Step 1: Define the `NamespaceMeta` shape in types.ts**
 
-In `/Users/mike/src/weasel/packages/weasel-svg/src/types.ts`, add at the top of the file (after any existing imports):
+In `/Users/mike/src/weasel/packages/svg/src/types.ts`, add at the top of the file (after any existing imports):
 
 ```ts
 /**
@@ -134,7 +134,7 @@ export interface NamespacedElement {
 
 - [ ] **Step 2: Extend `SvgNode` variants and `ParseResult` / `SerializeOptions`**
 
-Still in `/Users/mike/src/weasel/packages/weasel-svg/src/types.ts`:
+Still in `/Users/mike/src/weasel/packages/svg/src/types.ts`:
 
 a) Add `meta?: NamespaceMeta` to each `SvgNode` variant. Locate the existing `SvgGroupNode`, `SvgPathNode`, `SvgTextNode` interfaces and add the field:
 
@@ -231,7 +231,7 @@ export interface SerializeOptions {
 
 - [ ] **Step 3: Re-export the new types from index.ts**
 
-In `/Users/mike/src/weasel/packages/weasel-svg/src/index.ts`, find the existing `export type { ... }` block and add `NamespaceMeta`, `NamespacedElement`, `ParseOptions` to the list:
+In `/Users/mike/src/weasel/packages/svg/src/index.ts`, find the existing `export type { ... }` block and add `NamespaceMeta`, `NamespacedElement`, `ParseOptions` to the list:
 
 ```ts
 export type {
@@ -242,7 +242,7 @@ export type {
 
 - [ ] **Step 4: Write a failing round-trip test for generic namespace pass-through**
 
-Append to `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/fixtures.ts`:
+Append to `/Users/mike/src/weasel/packages/svg/src/__fixtures__/fixtures.ts`:
 
 ```ts
 /** Generic two-namespace fixture: proves weasel-svg passes through arbitrary
@@ -259,7 +259,7 @@ export const TWO_NAMESPACES_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns
 </svg>`;
 ```
 
-Append to `/Users/mike/src/weasel/packages/weasel-svg/src/roundtrip.test.ts`, inside the existing `describe('round-trip', ...)` block:
+Append to `/Users/mike/src/weasel/packages/svg/src/roundtrip.test.ts`, inside the existing `describe('round-trip', ...)` block:
 
 ```ts
   it('generic namespace pass-through: two declared namespaces stay isolated', () => {
@@ -335,12 +335,12 @@ Append to `/Users/mike/src/weasel/packages/weasel-svg/src/roundtrip.test.ts`, in
 
 - [ ] **Step 5: Run the new tests, verify they fail**
 
-Run: `cd /Users/mike/src/weasel && npx vitest run packages/weasel-svg/src/roundtrip.test.ts -t "generic namespace"`
+Run: `cd /Users/mike/src/weasel && npx vitest run packages/svg/src/roundtrip.test.ts -t "generic namespace"`
 Expected: FAIL — `parseSvg` doesn't accept an options arg yet, `documentMeta` is undefined, `node.meta` is undefined, `serializeSvg` doesn't accept `namespaces` / `documentMeta`. Two failing tests.
 
 - [ ] **Step 6: Implement generic namespace collection in parse.ts**
 
-In `/Users/mike/src/weasel/packages/weasel-svg/src/parse.ts`:
+In `/Users/mike/src/weasel/packages/svg/src/parse.ts`:
 
 a) Change the `parseSvg` signature to accept options and surface the new fields:
 
@@ -544,7 +544,7 @@ And in `parseElement`, before returning each node, attach its element meta:
 
 - [ ] **Step 7: Implement generic namespace emission in serialize.ts**
 
-In `/Users/mike/src/weasel/packages/weasel-svg/src/serialize.ts`:
+In `/Users/mike/src/weasel/packages/svg/src/serialize.ts`:
 
 a) Update the `serializeSvg` signature and rewrite root assembly:
 
@@ -676,12 +676,12 @@ Apply the same pattern (`metaAttrsXml` on the open tag, `metaElementsXml` before
 
 - [ ] **Step 8: Run the new round-trip tests, verify they pass**
 
-Run: `cd /Users/mike/src/weasel && npx vitest run packages/weasel-svg/src/roundtrip.test.ts -t "generic namespace"`
+Run: `cd /Users/mike/src/weasel && npx vitest run packages/svg/src/roundtrip.test.ts -t "generic namespace"`
 Expected: both new tests pass.
 
 - [ ] **Step 9: Run the full weasel-svg test file, verify no regressions**
 
-Run: `cd /Users/mike/src/weasel && npx vitest run packages/weasel-svg/`
+Run: `cd /Users/mike/src/weasel && npx vitest run packages/svg/`
 Expected: every existing test still passes. If a test fails because it called `parseSvg(svg)` and the new signature broke it, that's impossible — the new param is optional. If it fails on a type error, check that the `meta?: NamespaceMeta` additions didn't accidentally make a field non-optional anywhere.
 
 - [ ] **Step 10: Typecheck**
@@ -692,7 +692,7 @@ Expected: zero errors.
 - [ ] **Step 11: Commit**
 
 ```bash
-git add packages/weasel-svg/src/types.ts packages/weasel-svg/src/parse.ts packages/weasel-svg/src/serialize.ts packages/weasel-svg/src/index.ts packages/weasel-svg/src/__fixtures__/fixtures.ts packages/weasel-svg/src/roundtrip.test.ts
+git add packages/svg/src/types.ts packages/svg/src/parse.ts packages/svg/src/serialize.ts packages/svg/src/index.ts packages/svg/src/__fixtures__/fixtures.ts packages/svg/src/roundtrip.test.ts
 git commit -m "feat(weasel-svg): generic namespace pass-through via meta / documentMeta"
 ```
 
@@ -727,7 +727,7 @@ Create `/Users/mike/src/weasel/apps/swillustrator/src/svgInterop.test.ts`:
  */
 
 import { describe, it, expect } from 'vitest';
-import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@orochi235/weasel-svg';
+import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js/svg';
 import { objToSvgNode, svgNodesToObjs } from './svgInterop';
 
 // Minimal local mirror of svgInterop's internal Obj union. Keep in sync
@@ -890,12 +890,12 @@ git commit -m "test(svgInterop): pin baseline Obj ↔ SvgNode behavior"
 Goal: weasel-svg's parse + serialize already learned to round-trip declared namespaces in T0. This task adds standard-SVG `viewBox` / `width` / `height` / `<title>` to the same surface, then teaches `svgInterop.ts` to declare the `swill` namespace and encode `paperSize` / `units` into `documentMeta.swill.attrs`.
 
 **Files:**
-- Create: `packages/weasel-svg/src/__fixtures__/swillustrator-minimal.svg`
-- Create: `packages/weasel-svg/src/__fixtures__/swillustrator-papers.svg`
-- Modify: `packages/weasel-svg/src/parse.ts` (only if T0 didn't already handle `viewBox` / `<title>` / `width` / `height` — likely it did; double-check)
-- Modify: `packages/weasel-svg/src/serialize.ts` (likewise for `width` / `height` / `<title>`)
-- Modify: `packages/weasel-svg/src/__fixtures__/fixtures.ts`
-- Modify: `packages/weasel-svg/src/roundtrip.test.ts`
+- Create: `packages/svg/src/__fixtures__/swillustrator-minimal.svg`
+- Create: `packages/svg/src/__fixtures__/swillustrator-papers.svg`
+- Modify: `packages/svg/src/parse.ts` (only if T0 didn't already handle `viewBox` / `<title>` / `width` / `height` — likely it did; double-check)
+- Modify: `packages/svg/src/serialize.ts` (likewise for `width` / `height` / `<title>`)
+- Modify: `packages/svg/src/__fixtures__/fixtures.ts`
+- Modify: `packages/svg/src/roundtrip.test.ts`
 - Modify: `apps/swillustrator/src/svgInterop.ts`
 - Modify: `apps/swillustrator/src/App.tsx` (lines around 1276-1297)
 
@@ -919,7 +919,7 @@ export const SWILL_NAMESPACES = { swill: SWILL_NS } as const;
 
 - [ ] **Step 2: Add the fixture strings**
 
-Append to `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/fixtures.ts`:
+Append to `/Users/mike/src/weasel/packages/svg/src/__fixtures__/fixtures.ts`:
 
 ```ts
 export const SWILLUSTRATOR_MINIMAL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 816 1056" width="816" height="1056" swill:paperSize="letter" swill:units="px">
@@ -935,7 +935,7 @@ export const SWILLUSTRATOR_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg"
 
 - [ ] **Step 3: Write failing round-trip test for paper-size + title (weasel-svg side)**
 
-Append to `/Users/mike/src/weasel/packages/weasel-svg/src/roundtrip.test.ts`:
+Append to `/Users/mike/src/weasel/packages/svg/src/roundtrip.test.ts`:
 
 ```ts
   it('document-level metadata: viewBox, swill:paperSize, swill:units, title', () => {
@@ -977,7 +977,7 @@ Append to `/Users/mike/src/weasel/packages/weasel-svg/src/roundtrip.test.ts`:
 
 - [ ] **Step 4: Run the new tests, verify they pass**
 
-Run: `cd /Users/mike/src/weasel && npx vitest run packages/weasel-svg/src/roundtrip.test.ts -t "document-level metadata|paper-size preset"`
+Run: `cd /Users/mike/src/weasel && npx vitest run packages/svg/src/roundtrip.test.ts -t "document-level metadata|paper-size preset"`
 
 Expected: both pass. If `viewBox` is undefined or `width`/`height` aren't emitted, T0 didn't include the standard-SVG additions — go back and add them: `parseSvg` should surface `viewBox` (T0 Step 6 already does this) and `<title>` (T0 Step 6 already does this); `serializeSvg` should emit `width`/`height`/`<title>` (T0 Step 7 already does this). The point of this step is to verify the integration end-to-end.
 
@@ -1059,13 +1059,13 @@ Expected: all tests pass, including the two new round-trip cases.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/weasel-svg/src/__fixtures__/fixtures.ts packages/weasel-svg/src/roundtrip.test.ts apps/swillustrator/src/svgInterop.ts apps/swillustrator/src/App.tsx
+git add packages/svg/src/__fixtures__/fixtures.ts packages/svg/src/roundtrip.test.ts apps/swillustrator/src/svgInterop.ts apps/swillustrator/src/App.tsx
 git commit -m "feat(svg-native): paper-size, units, and title round-trip via swill namespace"
 ```
 
 - [ ] **Step 9: Write the on-disk fixture files for documentation**
 
-Create `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/swillustrator-minimal.svg`:
+Create `/Users/mike/src/weasel/packages/svg/src/__fixtures__/swillustrator-minimal.svg`:
 
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 816 1056" width="816" height="1056" swill:paperSize="letter" swill:units="px">
@@ -1075,7 +1075,7 @@ Create `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/swillustrato
 </svg>
 ```
 
-Create `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/swillustrator-papers.svg`:
+Create `/Users/mike/src/weasel/packages/svg/src/__fixtures__/swillustrator-papers.svg`:
 
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 794 1123" width="794" height="1123" swill:paperSize="a4" swill:units="px">
@@ -1086,7 +1086,7 @@ Create `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/swillustrato
 - [ ] **Step 10: Commit the on-disk fixtures**
 
 ```bash
-git add packages/weasel-svg/src/__fixtures__/swillustrator-minimal.svg packages/weasel-svg/src/__fixtures__/swillustrator-papers.svg
+git add packages/svg/src/__fixtures__/swillustrator-minimal.svg packages/svg/src/__fixtures__/swillustrator-papers.svg
 git commit -m "docs(weasel-svg): on-disk fixtures for swillustrator-authored SVGs"
 ```
 
@@ -1103,9 +1103,9 @@ This task also includes a small but important step: enforce **single-group-membe
 Enforcement strategy (option C from the design discussion): the Swillustrator group adapter in `App.tsx` is the single source of truth for the group model. Its `insertGroup` and `addToGroup` methods strip prior memberships before adding members to a new group. A throw-on-violation check in `objsToSvgNodes` is retained as belt-and-braces — it documents the invariant and catches any code path that mutates `Group.members` directly, bypassing the adapter. With the adapter fix in place, that check should never fire in practice.
 
 **Files:**
-- Create: `packages/weasel-svg/src/__fixtures__/swillustrator-groups.svg`
-- Modify: `packages/weasel-svg/src/__fixtures__/fixtures.ts`
-- Modify: `packages/weasel-svg/src/roundtrip.test.ts`
+- Create: `packages/svg/src/__fixtures__/swillustrator-groups.svg`
+- Modify: `packages/svg/src/__fixtures__/fixtures.ts`
+- Modify: `packages/svg/src/roundtrip.test.ts`
 - Modify: `apps/swillustrator/src/svgInterop.ts`
 - Modify: `apps/swillustrator/src/svgInterop.test.ts`
 - Modify: `apps/swillustrator/src/App.tsx`
@@ -1125,7 +1125,7 @@ For the scope of this plan, both Step 6's persistence-boundary assertion and Ste
 
 - [ ] **Step 1: Add the groups fixture string**
 
-Append to `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/fixtures.ts`:
+Append to `/Users/mike/src/weasel/packages/svg/src/__fixtures__/fixtures.ts`:
 
 ```ts
 export const SWILLUSTRATOR_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 400 400">
@@ -1144,7 +1144,7 @@ export const SWILLUSTRATOR_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg"
 
 - [ ] **Step 2: Write failing round-trip test for groups with swill:group-id**
 
-Append to `/Users/mike/src/weasel/packages/weasel-svg/src/roundtrip.test.ts`:
+Append to `/Users/mike/src/weasel/packages/svg/src/roundtrip.test.ts`:
 
 ```ts
   it('groups with swill:group-id round-trip', () => {
@@ -1176,7 +1176,7 @@ Append to `/Users/mike/src/weasel/packages/weasel-svg/src/roundtrip.test.ts`:
 
 - [ ] **Step 3: Run the test, verify it passes**
 
-Run: `cd /Users/mike/src/weasel && npx vitest run packages/weasel-svg/src/roundtrip.test.ts -t "swill:group-id"`
+Run: `cd /Users/mike/src/weasel && npx vitest run packages/svg/src/roundtrip.test.ts -t "swill:group-id"`
 Expected: PASS — T0's generic pass-through already handles `swill:group-id` as an opaque per-element attribute. This test confirms the end-to-end path works without any kit-level changes. If it fails, the `meta` collection in T0 has a bug — fix it there.
 
 - [ ] **Step 4: Write failing bridge test for group preservation**
@@ -1323,13 +1323,13 @@ In `/Users/mike/src/weasel/apps/swillustrator/src/svgInterop.ts`:
 a) Add `Group` to the imports and to the local type set:
 
 ```ts
-import type { Path, PolygonPath, TextStyle } from '@orochi235/weasel';
+import type { Path, PolygonPath, TextStyle } from '@weasel-js/core';
 import type {
   SvgNode,
   SvgGroupNode,
   SvgPathNode,
   SvgTextNode,
-} from '@orochi235/weasel-svg';
+} from '@weasel-js/svg';
 
 interface Group { id: string; members: string[] }
 ```
@@ -1485,7 +1485,7 @@ Expected: all tests in the file pass, including the new `svgNodesToObjsWithGroup
 Create `/Users/mike/src/weasel/apps/swillustrator/src/groupMembership.ts`. This is a verbatim extraction of the groups portion of the App.tsx adapter (lines ~547–566) — same behavior, no strip yet. The strip lands in Step 7c, after Step 7b's test fails.
 
 ```ts
-import type { Group } from '@orochi235/weasel';
+import type { Group } from '@weasel-js/core';
 
 /** Mutable reference shape — matches how App.tsx stores its `groupsRef`. */
 export interface GroupsRef {
@@ -1536,7 +1536,7 @@ Create `/Users/mike/src/weasel/apps/swillustrator/src/groupMembership.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
-import type { Group } from '@orochi235/weasel';
+import type { Group } from '@weasel-js/core';
 import { createGroupAdapter, type GroupsRef } from './groupMembership';
 
 describe('group adapter — single-membership enforcement on create', () => {
@@ -1734,13 +1734,13 @@ Expected: clean typecheck; all bridge + round-trip tests pass.
 - [ ] **Step 10: Commit**
 
 ```bash
-git add packages/weasel-svg/src/__fixtures__/fixtures.ts packages/weasel-svg/src/roundtrip.test.ts apps/swillustrator/src/svgInterop.ts apps/swillustrator/src/svgInterop.test.ts apps/swillustrator/src/groupMembership.ts apps/swillustrator/src/groupMembership.test.ts apps/swillustrator/src/App.tsx
+git add packages/svg/src/__fixtures__/fixtures.ts packages/svg/src/roundtrip.test.ts apps/swillustrator/src/svgInterop.ts apps/swillustrator/src/svgInterop.test.ts apps/swillustrator/src/groupMembership.ts apps/swillustrator/src/groupMembership.test.ts apps/swillustrator/src/App.tsx
 git commit -m "feat(svg-native): preserve groups end-to-end via swill:group-id; forbid multi-group membership"
 ```
 
 - [ ] **Step 11: Add the on-disk groups fixture**
 
-Create `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/swillustrator-groups.svg`:
+Create `/Users/mike/src/weasel/packages/svg/src/__fixtures__/swillustrator-groups.svg`:
 
 ```xml
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 400 400">
@@ -1758,7 +1758,7 @@ Create `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/swillustrato
 ```
 
 ```bash
-git add packages/weasel-svg/src/__fixtures__/swillustrator-groups.svg
+git add packages/svg/src/__fixtures__/swillustrator-groups.svg
 git commit -m "docs(weasel-svg): on-disk fixture for swillustrator groups"
 ```
 
@@ -1779,16 +1779,16 @@ Goal: every `TextStyle` field a Swillustrator user can set survives a save→ope
 - `caretColor`, `selectionBackground`, `selectionColor` → **not persisted** (edit-overlay-only chrome, not document content). Document the choice inline.
 
 **Files:**
-- Modify: `packages/weasel-svg/src/parse.ts`
-- Modify: `packages/weasel-svg/src/serialize.ts`
-- Modify: `packages/weasel-svg/src/__fixtures__/fixtures.ts`
-- Modify: `packages/weasel-svg/src/roundtrip.test.ts`
+- Modify: `packages/svg/src/parse.ts`
+- Modify: `packages/svg/src/serialize.ts`
+- Modify: `packages/svg/src/__fixtures__/fixtures.ts`
+- Modify: `packages/svg/src/roundtrip.test.ts`
 - Modify: `apps/swillustrator/src/svgInterop.ts`
 - Modify: `apps/swillustrator/src/svgInterop.test.ts`
 
 - [ ] **Step 1: Add a text-style fixture with every persisted field set**
 
-Append to `/Users/mike/src/weasel/packages/weasel-svg/src/__fixtures__/fixtures.ts`:
+Append to `/Users/mike/src/weasel/packages/svg/src/__fixtures__/fixtures.ts`:
 
 ```ts
 export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:swill="https://swillustrator.app/svg-ext" viewBox="0 0 200 100">
@@ -1798,7 +1798,7 @@ export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmln
 
 - [ ] **Step 2: Write failing round-trip test**
 
-Append to `/Users/mike/src/weasel/packages/weasel-svg/src/roundtrip.test.ts`:
+Append to `/Users/mike/src/weasel/packages/svg/src/roundtrip.test.ts`:
 
 ```ts
   it('text style: font-size/family/weight/italic/align + fill round-trip', () => {
@@ -1843,12 +1843,12 @@ Append to `/Users/mike/src/weasel/packages/weasel-svg/src/roundtrip.test.ts`:
 
 - [ ] **Step 3: Run the test, verify it fails**
 
-Run: `cd /Users/mike/src/weasel && npx vitest run packages/weasel-svg/src/roundtrip.test.ts -t "text style"`
+Run: `cd /Users/mike/src/weasel && npx vitest run packages/svg/src/roundtrip.test.ts -t "text style"`
 Expected: FAIL — the serializer still emits `data-weasel-line-height` (carried over from the pre-namespace implementation). The parser still reads from `data-weasel-line-height` into `style.lineHeight`. We need to (a) remove both, (b) push the line-height value into the generic meta path on write, (c) leave reading on the meta path (svgInterop will interpret it).
 
 - [ ] **Step 4: Remove the legacy line-height attribute handling in parse.ts**
 
-In `/Users/mike/src/weasel/packages/weasel-svg/src/parse.ts`, inside `readTextStyle` (or wherever the `data-weasel-line-height` attribute is read), delete the block:
+In `/Users/mike/src/weasel/packages/svg/src/parse.ts`, inside `readTextStyle` (or wherever the `data-weasel-line-height` attribute is read), delete the block:
 
 ```ts
   // DELETE THIS:
@@ -1863,7 +1863,7 @@ The line-height is now part of the generic `meta` bag — it does not become a `
 
 - [ ] **Step 5: Remove the legacy line-height emission in serialize.ts**
 
-In `/Users/mike/src/weasel/packages/weasel-svg/src/serialize.ts`, inside `textXml`, delete the block:
+In `/Users/mike/src/weasel/packages/svg/src/serialize.ts`, inside `textXml`, delete the block:
 
 ```ts
   // DELETE THIS:
@@ -1922,7 +1922,7 @@ In `svgNodesToObjsWithGroups`, in the text branch, lift the meta back into the s
 
 - [ ] **Step 7: Run round-trip tests, verify they pass**
 
-Run: `cd /Users/mike/src/weasel && npx vitest run packages/weasel-svg/src/roundtrip.test.ts`
+Run: `cd /Users/mike/src/weasel && npx vitest run packages/svg/src/roundtrip.test.ts`
 Expected: all tests pass, including the new "text style" test.
 
 - [ ] **Step 8: Add a bridge test confirming the style survives Obj ↔ SvgNode**
@@ -1969,7 +1969,7 @@ Expected: all tests pass, including the new text-style bridge test.
 - [ ] **Step 10: Commit**
 
 ```bash
-git add packages/weasel-svg/src/parse.ts packages/weasel-svg/src/serialize.ts packages/weasel-svg/src/__fixtures__/fixtures.ts packages/weasel-svg/src/roundtrip.test.ts apps/swillustrator/src/svgInterop.ts apps/swillustrator/src/svgInterop.test.ts
+git add packages/svg/src/parse.ts packages/svg/src/serialize.ts packages/svg/src/__fixtures__/fixtures.ts packages/svg/src/roundtrip.test.ts apps/swillustrator/src/svgInterop.ts apps/swillustrator/src/svgInterop.test.ts
 git commit -m "feat(svg-native): text style round-trip; lineHeight via swill:line-height"
 ```
 

@@ -17,12 +17,12 @@ import {
   staggerVertexColors,
   rainbowVertexColors,
   solidVertexColors,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type {
   CycleHandle,
   Path,
   PolygonPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 const H = 360, HANDLE = DEFAULT_HANDLE_SIZE;

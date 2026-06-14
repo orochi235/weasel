@@ -8,8 +8,8 @@
 // The store holds a single record under the well-known key `'current'`. We
 // never grow the keyspace today; future "recent files" would justify a v2.
 
-import type { Group } from '@orochi235/weasel';
-import type { SerializedHistory } from '@orochi235/weasel-history';
+import type { Group } from '@weasel-js/core';
+import type { SerializedHistory } from '@weasel-js/history';
 import type { Obj } from './poseUpdate';
 
 /** Per-document metadata. Mirrors the local interface in App.tsx; kept here

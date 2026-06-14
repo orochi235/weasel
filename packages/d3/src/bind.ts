@@ -1,5 +1,5 @@
-import { asNodeId, RECT_POSE_DESCRIPTOR } from '@orochi235/weasel';
-import type { Animator, NodeId, PoseProjection, Scene } from '@orochi235/weasel';
+import { asNodeId, RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
+import type { Animator, NodeId, PoseProjection, Scene } from '@weasel-js/core';
 import { createTransition } from './transition';
 import type {
   BindOptions,

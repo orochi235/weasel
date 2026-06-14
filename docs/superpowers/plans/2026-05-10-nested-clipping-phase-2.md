@@ -1378,7 +1378,7 @@ Read `demo/demos/SceneDemo.tsx` and `demo/demos/ResizeDemo.tsx` for the `useScen
 Create `demo/demos/ClippingDemo.tsx`:
 
 ```tsx
-import { asNodeId, SceneCanvas, useScene } from '@orochi235/weasel';
+import { asNodeId, SceneCanvas, useScene } from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 import type { Path } from '../../src/features/paths/types';
 

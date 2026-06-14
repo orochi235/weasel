@@ -5,26 +5,26 @@ Status: design, awaiting user approval before implementation plan.
 Promoted from the Tier 3 Pathfinder follow-ups in `docs/TODO.md`. The
 `useBooleans` action hook is imperative-only today; consumers wanting a
 button palette wire their own. This spec ships a generic `PathfinderPanel`
-component in `@orochi235/weasel-ui` so any consumer can drop in the five
+component in `@weasel-js/ui` so any consumer can drop in the five
 boolean ops without re-inventing the icons, the disabled-state predicate,
 or the click handlers.
 
 ## Goal
 
 Ship a presentational `PathfinderPanel` React component in
-`@orochi235/weasel-ui` that renders the five `useBooleans` actions
+`@weasel-js/ui` that renders the five `useBooleans` actions
 (`union` / `intersect` / `subtract` / `exclude` / `divide`) as a row of
 icon buttons, with built-in Illustrator/Figma-convention SVG icons,
 uniform disabled-state derivation, and slots for icon and label override.
 
-The kit's main `@orochi235/weasel` package is unchanged — this is
+The kit's main `@weasel-js/core` package is unchanged — this is
 consumer-facing chrome only.
 
 ## Scope
 
 **In:**
 
-- `PathfinderPanel` styled component in `packages/weasel-ui/src/`.
+- `PathfinderPanel` styled component in `packages/ui/src/`.
 - Five built-in inline SVG icons matching the Illustrator/Figma
   Pathfinder visual convention.
 - `icons` prop for per-op icon override; `labels` prop for per-op label
@@ -33,7 +33,7 @@ consumer-facing chrome only.
   `getWorldPath` (uniform `<2 paths` predicate across all five ops).
 - Unit tests, Storybook stories, demo integration into the existing
   `BooleanOpsDemo`.
-- Public exports from `@orochi235/weasel-ui`.
+- Public exports from `@weasel-js/ui`.
 
 **Out:**
 
@@ -53,14 +53,14 @@ consumer-facing chrome only.
 
 ## Component location & file layout
 
-`packages/weasel-ui/src/` is being reorganized so each component lives
+`packages/ui/src/` is being reorganized so each component lives
 in its own `components/<Name>/` subdirectory with a per-component
 `index.ts` barrel (in-flight as of 2026-05-11; CommandPalette,
 LayerList, PropertiesPanel, RangePicker have already moved). The
 Pathfinder panel follows the new convention:
 
 ```
-packages/weasel-ui/src/components/PathfinderPanel/
+packages/ui/src/components/PathfinderPanel/
   PathfinderPanel.tsx
   PathfinderPanel.module.css
   PathfinderPanel.test.tsx
@@ -80,7 +80,7 @@ export type {
 } from './PathfinderPanel';
 ```
 
-The main `packages/weasel-ui/src/index.ts` re-exports through the
+The main `packages/ui/src/index.ts` re-exports through the
 component barrel:
 
 ```ts
@@ -94,7 +94,7 @@ the `icons` prop.
 
 ```ts
 import type { ReactNode } from 'react';
-import type { BooleansAdapter, UseBooleansReturn } from '@orochi235/weasel';
+import type { BooleansAdapter, UseBooleansReturn } from '@weasel-js/core';
 
 export type PathfinderOp =
   | 'union' | 'intersect' | 'subtract' | 'exclude' | 'divide';
@@ -259,19 +259,19 @@ home without a parallel demo card.
 
 The per-component `index.ts` lists the public surface (see "Component
 location & file layout" above). The main
-`packages/weasel-ui/src/index.ts` reaches through it:
+`packages/ui/src/index.ts` reaches through it:
 
 ```ts
 export * from './components/PathfinderPanel';
 ```
 
-No changes to `@orochi235/weasel`'s main barrel. The panel is chrome;
+No changes to `@weasel-js/core`'s main barrel. The panel is chrome;
 the kit doesn't depend on it.
 
 ## Risk / open items
 
 - **`BooleansAdapter` type imported across the package boundary.**
-  `@orochi235/weasel-ui` already reaches into the kit for types
+  `@weasel-js/ui` already reaches into the kit for types
   (`NodeId`, etc.), so the import is not a new boundary, but the panel
   is now mildly load-bearing on `BooleansAdapter`'s shape. If the
   adapter ever drops `getWorldPath` (unlikely — it's core), the panel

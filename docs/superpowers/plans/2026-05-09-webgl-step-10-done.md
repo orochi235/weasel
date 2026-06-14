@@ -5,7 +5,7 @@
 
 ## What shipped
 
-- **`@orochi235/weasel-gl` deleted as a separate package.** Renderer source folded into thematic homes inside `@orochi235/weasel`:
+- **`@weasel-js/gl` deleted as a separate package.** Renderer source folded into thematic homes inside `@weasel-js/core`:
   - GL machinery → `src/renderer/` (`WeaselRenderer`, `draw`, `state/`, `math/`, `cache/`, `shaders/`, `textures/`)
   - Font atlasing → `src/features/text/atlas/` (`FontAtlas`, `GlyphLayout`, `registerFont`)
   - Path tessellation → `src/features/paths/tessellate/` (`tessellate`, `polyline`, `stroke`)
@@ -23,7 +23,7 @@
 - **`PixelDensityDemo` retired.** Its only purpose was demonstrating the deleted DPR helpers.
 - **Build & config cleaned up.** Vite `publicDir` repointed to `assets/fonts`. Dropped weasel-gl-specific scripts (`test:smoke:step1`, `gen:font`, `bundlesize:weasel-gl`). Restored `patterns-builtin` tsup entry + `package.json` exports block.
 - **Version bump** `0.1.0` → `0.2.0` with CHANGELOG entry.
-- **README updated** — Backends section dropped; tagline rewritten as "rendered on WebGL2"; Custom-shaders + text-rendering sections updated to import from `@orochi235/weasel`.
+- **README updated** — Backends section dropped; tagline rewritten as "rendered on WebGL2"; Custom-shaders + text-rendering sections updated to import from `@weasel-js/core`.
 
 ## Notable deviations from plan
 
@@ -46,7 +46,7 @@
 ## Follow-ups already tracked
 
 - **Typed scene-object references** (TODO Tier 1.5, medium-high priority) — the parallel `kinds` array on `SelectionContextValue` is a temporary half-step toward a `{id, kind}` reference type.
-- **`gen:font` script restoration** (TODO Pre-1.0 polish) — was deleted with `packages/weasel-gl/scripts/`; restore at `scripts/gen-font.ts` if we ever regenerate the Inter atlas.
+- **`gen:font` script restoration** (TODO Pre-1.0 polish) — was deleted with `packages/gl/scripts/`; restore at `scripts/gen-font.ts` if we ever regenerate the Inter atlas.
 
 ## Lessons
 

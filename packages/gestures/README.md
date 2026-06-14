@@ -1,8 +1,8 @@
-# @orochi235/weasel-gestures
+# @weasel-js/gestures
 
 **Pure gesture-routing primitives.** No React, no DOM, no scene-graph
 awareness — just types, parsers, and pure matcher functions. Designed
-as the abstract foundation under [`@orochi235/weasel`](../../README.md)'s
+as the abstract foundation under [`@weasel-js/core`](../../README.md)'s
 declarative tool routing, but usable independently of the kit.
 
 This package answers two questions:
@@ -37,7 +37,7 @@ them out makes:
   affecting downstream renderers.
 
 This package is currently `private: true` and ships as a workspace
-dependency of `@orochi235/weasel`. Stabilize the surface here before
+dependency of `@weasel-js/core`. Stabilize the surface here before
 any external publish.
 
 ## Surface overview
@@ -100,7 +100,7 @@ import {
   mods,
   type InputEvent,
   type DragSpec,
-} from '@orochi235/weasel-gestures';
+} from '@weasel-js/gestures';
 
 const parsed = parseRoute('[engaged] drag => node +shift');
 // parsed.phases = [{ channel: '&', phase: 'engaged' }]

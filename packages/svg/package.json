@@ -1,8 +1,8 @@
 {
-  "name": "@orochi235/weasel-svg",
+  "name": "@weasel-js/svg",
   "version": "0.0.0",
   "private": true,
-  "description": "SVG import/export for @orochi235/weasel: parse SVG strings into weasel-native shapes and serialize them back.",
+  "description": "SVG import/export for @weasel-js/core: parse SVG strings into weasel-native shapes and serialize them back.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,

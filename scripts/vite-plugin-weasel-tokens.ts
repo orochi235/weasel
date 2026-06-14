@@ -1,5 +1,5 @@
 /**
- * Dev/build Vite plugin that parses `packages/weasel-theme/src/tokens.css`
+ * Dev/build Vite plugin that parses `packages/theme/src/tokens.css`
  * and exposes the parsed list of `--wzl-*` design tokens via the virtual
  * module
  *
@@ -87,7 +87,7 @@ function groupOf(name: string): string {
 }
 
 export function weaselTokensPlugin(opts: WeaselTokensPluginOptions): Plugin {
-  const tokensPath = resolve(opts.repoRoot, 'packages/weasel-theme/src/tokens.css');
+  const tokensPath = resolve(opts.repoRoot, 'packages/theme/src/tokens.css');
   let cached: Token[] | null = null;
   let server: ViteDevServer | null = null;
 

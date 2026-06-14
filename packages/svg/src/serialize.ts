@@ -5,13 +5,13 @@
  * label. Gradient paints are gathered into a single `<defs>` block.
  */
 
-import type { Path } from '@orochi235/weasel';
-import { boundsOfPath } from '@orochi235/weasel';
+import type { Path } from '@weasel-js/core';
+import { boundsOfPath } from '@weasel-js/core';
 import type {
   NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode, SvgNode,
   SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
-import { runsToPlainText } from '@orochi235/weasel';
+import { runsToPlainText } from '@weasel-js/core';
 import { serializePathD } from './path-serializer';
 import { formatMatrix, trimNumber } from './transform';
 import { GradientRegistry } from './gradients';
@@ -310,7 +310,7 @@ function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Reco
   return `<text ${attrs.join(' ')}${metaAttrs}>${body}${metaEls}</text>`;
 }
 
-function runXml(run: import('@orochi235/weasel').StyledRun, registry: GradientRegistry): string {
+function runXml(run: import('@weasel-js/core').StyledRun, registry: GradientRegistry): string {
   const attrs: string[] = [];
   if (run.bold) attrs.push(`font-weight="700"`);
   if (run.italic) attrs.push(`font-style="italic"`);

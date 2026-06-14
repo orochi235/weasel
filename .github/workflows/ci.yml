@@ -29,7 +29,7 @@ jobs:
       # only to validate that stories can mount. Run the three real test projects only.
       - run: npx vitest run --project=kit --project=weasel-ui --project=draw
       - run: npm run build
-      # Bundle the built `@orochi235/weasel` entry from outside the monorepo to
+      # Bundle the built `@weasel-js/core` entry from outside the monorepo to
       # prove no path-alias / bare workspace-package specifier leaked into dist.
       # The in-repo vitest `smoke` project can't catch this — it inherits the
       # repo tsconfig baseUrl. See scripts/smoke-consumer-bundle.mjs.

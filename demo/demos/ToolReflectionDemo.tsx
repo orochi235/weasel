@@ -8,7 +8,7 @@ import {
   useSelectTool,
   useHandTool,
   useTools,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import {
   buildActionRegistry,
   canonicalModifiers,
@@ -16,7 +16,7 @@ import {
   type RegistryEntry,
   type Conflict,
   type ToolDef,
-} from '@orochi235/weasel/routing';
+} from '@weasel-js/core/routing';
 import type { DrawCommand } from '../../src/renderer';
 import styles from './ToolReflectionDemo.module.css';
 

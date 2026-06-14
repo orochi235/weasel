@@ -100,7 +100,7 @@ Three layers, each independently testable:
 └─────────────────────┬─────────────────────────────────┘
                       │
 ┌─────────────────────▼─────────────────────────────────┐
-│  @orochi235/weasel-svg                                │
+│  @weasel-js/svg                                │
 │    parseSvg / serializeSvg                            │
 │    Generic SVG ↔ SvgNode tree                         │
 │    Knows about namespaces *generically*               │
@@ -158,11 +158,11 @@ The plan that follows this spec will break these into bite-sized steps.
 
 Three layers, each with its own test file:
 
-1. **weasel-svg unit tests** (`packages/weasel-svg/src/*.test.ts`): namespace parsing, viewBox surface, layer registry encoding, namespace round-trip for each new field. Extend the existing `roundtrip.test.ts`.
+1. **weasel-svg unit tests** (`packages/svg/src/*.test.ts`): namespace parsing, viewBox surface, layer registry encoding, namespace round-trip for each new field. Extend the existing `roundtrip.test.ts`.
 2. **svgInterop bridge tests** (`apps/swillustrator/src/svgInterop.test.ts` — new): every `Obj` × `SvgNode` cell, including the new metadata bag.
 3. **Swillustrator integration** (existing harness, possibly visual regression): Save a known scene, reload, assert the rendered output matches.
 
-Plus a small set of golden-file fixtures under `packages/weasel-svg/src/__fixtures__/`:
+Plus a small set of golden-file fixtures under `packages/svg/src/__fixtures__/`:
 - `swillustrator-minimal.svg` — one rect, one text
 - `swillustrator-groups.svg` — two groups with three shapes each
 - `swillustrator-layers.svg` — three layers, multiple shapes

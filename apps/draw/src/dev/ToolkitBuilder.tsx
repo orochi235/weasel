@@ -27,7 +27,7 @@ import {
   type GestureSpec,
   type ToolBundle,
   type ToolsApi,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import {
   buildActionRegistry,
   canonicalModifiers,
@@ -35,8 +35,8 @@ import {
   type Conflict,
   type RegistryEntry,
   type ToolDef,
-} from '@orochi235/weasel/routing';
-import { formatShortcutParts, KeySequence } from '@orochi235/weasel-ui';
+} from '@weasel-js/core/routing';
+import { formatShortcutParts, KeySequence } from '@weasel-js/ui';
 import { lookupShortcutByToolId } from './keybindingsView';
 import s from './ToolkitBuilder.module.css';
 

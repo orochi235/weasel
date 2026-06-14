@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add an `ActionsRegistry` (with `<ActionsProvider>` + `useActionsRegistry()` + `useAction()`) that owns one `keydown` listener per scope and dispatches to registered `Action` descriptors. `<SceneCanvas>` auto-mounts the provider, derives default actions (selectAll / escape / duplicate / nudge×8 / reorder×2) from its scene + selection + adapter, and exposes a single `actions?: ActionsProp` prop for consumer override / disable / extension. Existing standalone hooks (`useSelectAll` etc.) refactor to register-into-provider when one exists, else fall back to `useKeybinding`. Ships `@experimental` in the `@orochi235/weasel` barrel. Exits when the registry suite + integration tests + back-compat tests are green AND three demos (MultiSelectDemo, ActionsDemo, NestedGroupsDemo) have their redundant action-hook calls deleted with Cmd+A / Esc / Cmd+D / arrows / Cmd+] still functional through the auto-defaults.
+**Goal:** Add an `ActionsRegistry` (with `<ActionsProvider>` + `useActionsRegistry()` + `useAction()`) that owns one `keydown` listener per scope and dispatches to registered `Action` descriptors. `<SceneCanvas>` auto-mounts the provider, derives default actions (selectAll / escape / duplicate / nudge×8 / reorder×2) from its scene + selection + adapter, and exposes a single `actions?: ActionsProp` prop for consumer override / disable / extension. Existing standalone hooks (`useSelectAll` etc.) refactor to register-into-provider when one exists, else fall back to `useKeybinding`. Ships `@experimental` in the `@weasel-js/core` barrel. Exits when the registry suite + integration tests + back-compat tests are green AND three demos (MultiSelectDemo, ActionsDemo, NestedGroupsDemo) have their redundant action-hook calls deleted with Cmd+A / Esc / Cmd+D / arrows / Cmd+] still functional through the auto-defaults.
 
 ## Architecture
 
@@ -74,7 +74,7 @@ The `useKeybinding` call's `enabled` flag is gated by `reg == null` so the docum
 
 ### §E — Public surface
 
-Added to `@orochi235/weasel` barrel under `@experimental`:
+Added to `@weasel-js/core` barrel under `@experimental`:
 
 ```ts
 export { ActionsProvider, useActionsRegistry, useAction } from './interactions/actions/registry';
@@ -2429,10 +2429,10 @@ All sections covered.
 ## What shipped
 
 - New `<ActionsProvider>` + `useActionsRegistry()` + `useAction()` exported from
-  `@orochi235/weasel` under `@experimental`. One `keydown` listener per
+  `@weasel-js/core` under `@experimental`. One `keydown` listener per
   provider scope; first-registered-wins overlap, last-registered-wins on id.
 - Five default action factories (selectAll, escape, duplicate, nudge×8,
-  reorder×2) exported from `@orochi235/weasel` and used by `<SceneCanvas>` to
+  reorder×2) exported from `@weasel-js/core` and used by `<SceneCanvas>` to
   auto-register defaults when a scene + selection are present.
 - New `<SceneCanvas>` props: `actions?: ActionsProp` (override / disable /
   extend) and `actionDefaults?: { cloneNode, duplicateOffset, nudgeStep, nudgeShiftStep }`

@@ -163,7 +163,7 @@ src/core/scene/types.ts         + MaskedGroup container variant
 src/core/scene/ops/             + createMakeMaskOp, createReleaseMaskOp
 src/renderer/                   + offscreen-target machinery, mask composite shader
 src/canvas/sceneAdapter.ts      ~ hit-testing respects mask coverage
-packages/weasel-modes/          + mask-edit mode in the default preset
+packages/modes/          + mask-edit mode in the default preset
                                 + edits-mask capability tag
 apps/weaseldraw/                + Make/Release Mask menu items + keybindings
                                 + mask-edit chrome (breadcrumb, tint var)

@@ -29,7 +29,7 @@ To add a consumer-specific dep, you need three small pieces:
 // myapp/src/colorContext/depSchemaAugmentation.ts
 import type { ColorContextValue } from './ColorContext';
 
-declare module '@orochi235/weasel' {
+declare module '@weasel-js/core' {
   interface DepSchema {
     color: ColorContextValue;
   }
@@ -45,7 +45,7 @@ A side-effect import of this file in your app's entrypoint makes `useDepSource('
 Mount a thin bridge component **inside** `<DepRegistryProvider>` (which `<SceneCanvas>` provides) that calls `useDepSource`:
 
 ```tsx
-import { useDepSource } from '@orochi235/weasel';
+import { useDepSource } from '@weasel-js/core';
 import { useColorContext } from './ColorContext';
 
 function ColorDepBridge() {
@@ -60,7 +60,7 @@ The thunk passed to `useDepSource` is called at action-dispatch time — return 
 ### 3. Wire an action that requires the dep
 
 ```ts
-import { type Action } from '@orochi235/weasel';
+import { type Action } from '@weasel-js/core';
 
 export const setFillFromSwatchAction: Action = {
   id: 'color.setFillFromSwatch',

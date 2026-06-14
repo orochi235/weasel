@@ -1,6 +1,6 @@
 .root {
   /* Component-local vars layered over the theme tokens. Each var resolves
-   * to a semantic token from @orochi235/weasel-theme; consumers override
+   * to a semantic token from @weasel-js/theme; consumers override
    * either the curve-* var (component scope) or the wzl-* token (app
    * scope) without touching this file.
    *

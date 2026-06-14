@@ -8,8 +8,8 @@
  * carries `transform` data — even on `<g>` nodes.
  */
 
-import type { Path, PolygonPath } from '@orochi235/weasel';
-import { PATH_L, PATH_M, PATH_Z } from '@orochi235/weasel';
+import type { Path, PolygonPath } from '@weasel-js/core';
+import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/core';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath,
   parsePoints, polylineToPath, polygonToPath,
@@ -20,9 +20,9 @@ import type {
   Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
-import type { StyledRun, TextStyle, FillStyle } from '@orochi235/weasel';
+import type { StyledRun, TextStyle, FillStyle } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rotationComponent, isIdentity } from './transform';
-import { boundsOfPath } from '@orochi235/weasel';
+import { boundsOfPath } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';

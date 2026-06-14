@@ -267,7 +267,7 @@ Order-of-magnitude estimates for typical interactive scenes (60fps =
 
 ## Migration sequencing (if pursued)
 
-1. Stand up a minimal renderer in a parallel package (`@orochi235/weasel-gl`)
+1. Stand up a minimal renderer in a parallel package (`@weasel-js/gl`)
    that handles solid-fill paths only. Test against synthetic scenes.
 2. Add stroke support (ribbon expansion, basic caps/joins).
 3. Add text via MSDF atlas of one default font.

@@ -10,7 +10,7 @@
  * Each call site picks a stable namespace string. Off by default; the flag
  * is read once and cached per page session — reload to pick up a change.
  *
- * Mirrors `packages/weasel-ui/src/dlog.ts`. The two impls live in separate
+ * Mirrors `packages/ui/src/dlog.ts`. The two impls live in separate
  * packages because weasel-ui doesn't depend on the kit, but both read the
  * same localStorage keys so behavior is uniform from a debugger's POV.
  *

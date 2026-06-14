@@ -1,5 +1,5 @@
 {
-  "name": "@orochi235/weasel-hud",
+  "name": "@weasel-js/hud",
   "version": "0.0.0",
   "private": true,
   "description": "WebGL-rendered UI widgets that composite into a weasel canvas",
@@ -23,6 +23,6 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@orochi235/weasel-theme": "*"
+    "@weasel-js/theme": "*"
   }
 }

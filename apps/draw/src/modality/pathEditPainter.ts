@@ -22,13 +22,13 @@
  * The wiring layer (Task 18) casts to `DrawCommand[]` at the call site.
  */
 
-import type { ModeDrawCommand } from '@orochi235/weasel-modes';
+import type { ModeDrawCommand } from '@weasel-js/modes';
 import {
   PATH_M,
   PATH_L,
   PATH_Z,
   type PolygonPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 /** Control handle descriptor — matches the shape of PathAnchor.controlIn/controlOut. */
 export interface AnchorControl {

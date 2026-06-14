@@ -10,22 +10,22 @@
 - Migrate every built-in tool that declared `keybinding` to register a `tool.select.<id>` ambient action with `scope: 'hotkey'` and a `keyDown` default binding. Migrate every tool that declared `hotkey` to register a `tool.hold.<id>` action with a `keyHeld` default binding (the existing action exists; it just changes its spec from `key-held` to a `keyHeld` route).
 - Remove `ToolDef.keybinding`, `ToolDef.hotkey`, the `KeyBinding` interface, and the `useKeybindings` keydown→switchTool path. Inspector consumers (`ToolPalette`, `ToolkitBuilder`, `HotkeyTriggerDetail`) read shortcuts from the action registry instead.
 
-**Tech Stack:** TypeScript, React, Vitest, the weasel route grammar (`@orochi235/weasel-gestures`), the actions registry (`src/interactions/actions/`), the dispatcher (`src/interactions/dispatcher/`).
+**Tech Stack:** TypeScript, React, Vitest, the weasel route grammar (`@weasel-js/gestures`), the actions registry (`src/interactions/actions/`), the dispatcher (`src/interactions/dispatcher/`).
 
 ---
 
 ## File Structure
 
 **New files:**
-- `packages/weasel-gestures/src/grammar/gestures.test.ts` — extended to cover `keyHeld` descriptor (existing test file).
+- `packages/gestures/src/grammar/gestures.test.ts` — extended to cover `keyHeld` descriptor (existing test file).
 - `src/interactions/actions/defaults/toolSelect.ts` — factory `makeToolSelectAction(toolId, key, opts)` for tap-style tool switches.
 - `apps/draw/src/dev/keybindingsView.ts` — pure helper that derives a "what key activates this tool" lookup from the action registry, replacing direct reads of `ToolDef.keybinding`.
 
 **Modified — grammar + dispatcher:**
-- `packages/weasel-gestures/src/grammar/gestures.ts` — add `keyHeld` to `GestureName` and `GESTURE_DESCRIPTORS`.
-- `packages/weasel-gestures/src/ui/spec.ts` — already has `KeyHeldSpec`; verify `keyRouteToSpec` covers the new route gesture.
-- `packages/weasel-gestures/src/ui/match.ts` — already matches `key-held` events; no code change expected. Add a test crossing the route grammar boundary.
-- `packages/weasel-gestures/src/grammar/describeRoute.ts` — extend `actionClause` to phrase `keyHeld` as "holds {key}".
+- `packages/gestures/src/grammar/gestures.ts` — add `keyHeld` to `GestureName` and `GESTURE_DESCRIPTORS`.
+- `packages/gestures/src/ui/spec.ts` — already has `KeyHeldSpec`; verify `keyRouteToSpec` covers the new route gesture.
+- `packages/gestures/src/ui/match.ts` — already matches `key-held` events; no code change expected. Add a test crossing the route grammar boundary.
+- `packages/gestures/src/grammar/describeRoute.ts` — extend `actionClause` to phrase `keyHeld` as "holds {key}".
 - `src/interactions/actions/types.ts` (or wherever `Action` is defined) — add `scope?: 'hotkey'` field.
 - `src/interactions/dispatcher/dispatcher.ts:282-326` — in `assembleScopedBindings`, branch ambient-walker on `action.scope === 'hotkey'` to land bindings in the hotkey scope.
 - `src/interactions/dispatcher/keyHeldEngagement.ts` (new) — wire keyHeld engagement into the dispatcher's channel-phase state machine, mirroring how drag advances `[initial]` → `[engaged]`.
@@ -41,8 +41,8 @@
 - `src/interactions/keyHelpers.ts` — delete `KeyBinding` interface; keep any unrelated helpers.
 
 **Modified — inspector:**
-- `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx:122` — read shortcut chips from a passed-in `lookupShortcut(toolId)` prop instead of `tool.keybinding`.
-- `packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts` — keep `keyGlyph` + `formatShortcutParts`; drop the `KeyBinding` import dependency by switching to a `{ key, mod, alt, shift }`-shaped input.
+- `packages/ui/src/components/ToolPalette/ToolPalette.tsx:122` — read shortcut chips from a passed-in `lookupShortcut(toolId)` prop instead of `tool.keybinding`.
+- `packages/ui/src/components/ToolPalette/formatShortcut.ts` — keep `keyGlyph` + `formatShortcutParts`; drop the `KeyBinding` import dependency by switching to a `{ key, mod, alt, shift }`-shaped input.
 - `apps/draw/src/dev/ToolkitBuilder.tsx:217` — call the new `keybindingsView.lookupShortcut(toolId)` helper.
 - `apps/draw/src/dev/registryData.ts:259, 428-430` — `HotkeyTriggerEntry` now lists each `tool.hold.*` action's `keyHeld` arg, derived from the action registry. (The entry stays — it remains a useful "what global hotkeys exist" facet.)
 - `apps/draw/src/dev/RegistryDetail.tsx:356-358` — `HotkeyTriggerDetail` renders the matching action's route via `RouteBadge` for parity with the rest of the inspector.
@@ -54,13 +54,13 @@
 ### Task 1: Register `keyHeld` in the gesture taxonomy
 
 **Files:**
-- Modify: `packages/weasel-gestures/src/grammar/gestures.ts:11-52`
-- Test: `packages/weasel-gestures/src/grammar/gestures.test.ts`
+- Modify: `packages/gestures/src/grammar/gestures.ts:11-52`
+- Test: `packages/gestures/src/grammar/gestures.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-// packages/weasel-gestures/src/grammar/gestures.test.ts — append
+// packages/gestures/src/grammar/gestures.test.ts — append
 import { describe, it, expect } from 'vitest';
 import { getGestureDescriptor, isKnownGestureName, GESTURE_DESCRIPTORS } from './gestures';
 
@@ -84,13 +84,13 @@ describe('keyHeld gesture', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run packages/weasel-gestures/src/grammar/gestures.test.ts -t 'keyHeld gesture' --reporter=default`
+Run: `npx vitest run packages/gestures/src/grammar/gestures.test.ts -t 'keyHeld gesture' --reporter=default`
 Expected: FAIL with `unknown gesture: keyHeld` or `isKnownGestureName` returning false.
 
 - [ ] **Step 3: Add `keyHeld` to GestureName union + descriptors**
 
 ```ts
-// packages/weasel-gestures/src/grammar/gestures.ts:11-20 — extend GestureName
+// packages/gestures/src/grammar/gestures.ts:11-20 — extend GestureName
 export type GestureName =
   | 'click'
   | 'pointerDown'
@@ -103,7 +103,7 @@ export type GestureName =
   | 'contextMenu'
   | 'multiTouchTap';
 
-// packages/weasel-gestures/src/grammar/gestures.ts:42-52 — extend descriptors
+// packages/gestures/src/grammar/gestures.ts:42-52 — extend descriptors
 export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'click',         hasTarget: true  },
   { name: 'pointerDown',   hasTarget: true  },
@@ -120,13 +120,13 @@ export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx vitest run packages/weasel-gestures/src/grammar/gestures.test.ts -t 'keyHeld gesture' --reporter=default`
+Run: `npx vitest run packages/gestures/src/grammar/gestures.test.ts -t 'keyHeld gesture' --reporter=default`
 Expected: PASS (2 new tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gestures/src/grammar/gestures.ts packages/weasel-gestures/src/grammar/gestures.test.ts
+git add packages/gestures/src/grammar/gestures.ts packages/gestures/src/grammar/gestures.test.ts
 git commit -m "feat(gestures): add keyHeld as a first-class gesture descriptor"
 ```
 
@@ -135,12 +135,12 @@ git commit -m "feat(gestures): add keyHeld as a first-class gesture descriptor"
 ### Task 2: Round-trip parseRoute/formatRoute for keyHeld
 
 **Files:**
-- Test: `packages/weasel-gestures/src/grammar/routeGrammar.test.ts`
+- Test: `packages/gestures/src/grammar/routeGrammar.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-// packages/weasel-gestures/src/grammar/routeGrammar.test.ts — append in the parse/format suites
+// packages/gestures/src/grammar/routeGrammar.test.ts — append in the parse/format suites
 it('parses keyHeld with a key arg', () => {
   expect(parseRoute('[initial] keyHeld(Space)')).toEqual({
     phases: [{ channel: '&', phase: 'initial' }],
@@ -159,22 +159,22 @@ it('round-trips keyHeld through format → parse', () => {
 
 - [ ] **Step 2: Run tests to verify failure**
 
-Run: `npx vitest run packages/weasel-gestures/src/grammar/routeGrammar.test.ts -t 'keyHeld' --reporter=default`
+Run: `npx vitest run packages/gestures/src/grammar/routeGrammar.test.ts -t 'keyHeld' --reporter=default`
 Expected: FAIL — initially passes if parser is taxonomy-driven, but verify no special-case suppression. If they already pass after Task 1, that's correct — note in commit that the parser is taxonomy-driven and required no change. Otherwise add handling.
 
 - [ ] **Step 3: Implement parser support if missing**
 
-The grammar parser at `packages/weasel-gestures/src/grammar/routeGrammar.ts:118-125` reads the gesture name and looks it up via `isKnownGestureName`. After Task 1 the lookup succeeds, so no parser change is expected. If the tests fail, the cause is downstream (likely `getGestureDescriptor` consumers that pattern-match on gesture names) — add `keyHeld` handling next to `keyDown` / `keyUp` wherever it's missed.
+The grammar parser at `packages/gestures/src/grammar/routeGrammar.ts:118-125` reads the gesture name and looks it up via `isKnownGestureName`. After Task 1 the lookup succeeds, so no parser change is expected. If the tests fail, the cause is downstream (likely `getGestureDescriptor` consumers that pattern-match on gesture names) — add `keyHeld` handling next to `keyDown` / `keyUp` wherever it's missed.
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `npx vitest run packages/weasel-gestures/src/grammar/routeGrammar.test.ts --reporter=default`
+Run: `npx vitest run packages/gestures/src/grammar/routeGrammar.test.ts --reporter=default`
 Expected: PASS (all existing + 2 new).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gestures/src/grammar/routeGrammar.test.ts
+git add packages/gestures/src/grammar/routeGrammar.test.ts
 git commit -m "test(gestures): cover keyHeld in route grammar round-trip"
 ```
 
@@ -183,13 +183,13 @@ git commit -m "test(gestures): cover keyHeld in route grammar round-trip"
 ### Task 3: Wire `keyHeld` into `describeRoute`
 
 **Files:**
-- Modify: `packages/weasel-gestures/src/grammar/describeRoute.ts:67-99`
-- Test: same file's eventual `.test.ts` (create if missing — `packages/weasel-gestures/src/grammar/describeRoute.test.ts`)
+- Modify: `packages/gestures/src/grammar/describeRoute.ts:67-99`
+- Test: same file's eventual `.test.ts` (create if missing — `packages/gestures/src/grammar/describeRoute.test.ts`)
 
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-// packages/weasel-gestures/src/grammar/describeRoute.test.ts — new file
+// packages/gestures/src/grammar/describeRoute.test.ts — new file
 import { describe, it, expect } from 'vitest';
 import { parseRoute } from './routeGrammar';
 import { describeRoute } from './describeRoute';
@@ -211,13 +211,13 @@ describe('describeRoute — keyHeld', () => {
 
 - [ ] **Step 2: Run test to verify failure**
 
-Run: `npx vitest run packages/weasel-gestures/src/grammar/describeRoute.test.ts --reporter=default`
+Run: `npx vitest run packages/gestures/src/grammar/describeRoute.test.ts --reporter=default`
 Expected: FAIL — `describeRoute` currently has no `keyHeld` arm in `actionClause`, so it falls through to `undefined` / the catchall.
 
 - [ ] **Step 3: Add keyHeld arm to `actionClause`**
 
 ```ts
-// packages/weasel-gestures/src/grammar/describeRoute.ts — extend the switch in actionClause
+// packages/gestures/src/grammar/describeRoute.ts — extend the switch in actionClause
 case 'keyDown':
 case 'keyUp':
 case 'keyHeld': {
@@ -233,13 +233,13 @@ case 'keyHeld': {
 
 - [ ] **Step 4: Run tests**
 
-Run: `npx vitest run packages/weasel-gestures/src/grammar/describeRoute.test.ts --reporter=default`
+Run: `npx vitest run packages/gestures/src/grammar/describeRoute.test.ts --reporter=default`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gestures/src/grammar/describeRoute.ts packages/weasel-gestures/src/grammar/describeRoute.test.ts
+git add packages/gestures/src/grammar/describeRoute.ts packages/gestures/src/grammar/describeRoute.test.ts
 git commit -m "feat(gestures): describeRoute phrasing for keyHeld"
 ```
 
@@ -310,7 +310,7 @@ git commit -m "feat(inspector): keyHeld in route badge, Powerline catalog, story
 
 Read these files in order before writing code:
 - `src/interactions/dispatcher/dispatcher.ts:330-400` — find where drag transitions a channel from `initial` to `engaged`.
-- `packages/weasel-gestures/src/ui/match.ts:230-260` — see how `key-held` events are matched today.
+- `packages/gestures/src/ui/match.ts:230-260` — see how `key-held` events are matched today.
 - `src/interactions/actions/defaults/toolHold.ts:15-35` — the existing push/popHotkey integration for held-key actions.
 
 Note: weasel's drag engagement lives in the gesture-channel state machine; keyHeld must mirror it but on the keyboard channel (one per key id, not one per pointer).
@@ -573,7 +573,7 @@ Expected: FAIL — module not found.
 ```ts
 // src/interactions/actions/defaults/toolSelect.ts
 import type { Action } from '../types';
-import type { KeySpec } from '@orochi235/weasel-gestures';
+import type { KeySpec } from '@weasel-js/gestures';
 
 export interface ToolSelectKeyOpts {
   key: string;
@@ -707,7 +707,7 @@ In `src/tools/builtin/useHandTool/useHandTool.ts`, also remove the `hotkey: 'spa
 Find where built-in tools are registered into the canvas mount (search: `grep -rn "useSelectTool\|useRectTool" src/ | grep -v test`). Add to the same setup site:
 
 ```ts
-import { makeToolSelectAction } from '@orochi235/weasel/actions';
+import { makeToolSelectAction } from '@weasel-js/core/actions';
 // For each migrated tool:
 actions.register(makeToolSelectAction('rect', { key: 'r' }));
 // For Hand (held-Space) also:
@@ -742,7 +742,7 @@ Pre-req: Task 9 complete for every tool. No remaining code reads these fields.
 - [ ] **Step 1: Confirm nothing reads the fields**
 
 Run: `grep -rn "\.keybinding\b\|\.hotkey\b" src/ apps/ packages/ --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v ".test."`
-Expected: only inspector-side reads in `apps/draw/src/dev/ToolkitBuilder.tsx` and `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx` — those are handled in Phase 6.
+Expected: only inspector-side reads in `apps/draw/src/dev/ToolkitBuilder.tsx` and `packages/ui/src/components/ToolPalette/ToolPalette.tsx` — those are handled in Phase 6.
 
 If any other read survives, return to Task 9 for that tool.
 
@@ -787,8 +787,8 @@ git commit -m "refactor(tools): drop ToolDef.keybinding / .hotkey / KeyBinding /
 **Files:**
 - Create: `apps/draw/src/dev/keybindingsView.ts`
 - Modify: `apps/draw/src/dev/ToolkitBuilder.tsx:217`
-- Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx:122` (and its props interface)
-- Modify: `packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts` — drop the `KeyBinding` import; accept a plain `{ key, mod?, alt?, shift? }` object.
+- Modify: `packages/ui/src/components/ToolPalette/ToolPalette.tsx:122` (and its props interface)
+- Modify: `packages/ui/src/components/ToolPalette/formatShortcut.ts` — drop the `KeyBinding` import; accept a plain `{ key, mod?, alt?, shift? }` object.
 
 - [ ] **Step 1: Write the failing test for `keybindingsView`**
 
@@ -824,7 +824,7 @@ describe('lookupShortcutByToolId', () => {
 
 ```ts
 // apps/draw/src/dev/keybindingsView.ts
-import type { KeySpec } from '@orochi235/weasel-gestures';
+import type { KeySpec } from '@weasel-js/gestures';
 
 export interface KeyShortcut {
   key: string;
@@ -851,7 +851,7 @@ export function lookupShortcutByToolId(
 - [ ] **Step 3: Update `formatShortcut.ts` to accept the lighter input**
 
 ```ts
-// packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts
+// packages/ui/src/components/ToolPalette/formatShortcut.ts
 import { keyGlyph } from '../Keycaps/keyGlyph';
 
 export interface ShortcutInput {
@@ -881,7 +881,7 @@ export function formatShortcut(b: ShortcutInput | undefined): string | undefined
 - [ ] **Step 4: Update `ToolPalette.tsx` to take a `lookupShortcut` prop**
 
 ```tsx
-// packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx — add to props
+// packages/ui/src/components/ToolPalette/ToolPalette.tsx — add to props
 export interface ToolPaletteProps {
   // ... existing ...
   /** Optional shortcut lookup. Receives a tool id, returns the activation
@@ -917,7 +917,7 @@ Expected: PASS.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/draw/src/dev/keybindingsView.ts apps/draw/src/dev/keybindingsView.test.ts packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx apps/draw/src/dev/ToolkitBuilder.tsx
+git add apps/draw/src/dev/keybindingsView.ts apps/draw/src/dev/keybindingsView.test.ts packages/ui/src/components/ToolPalette/formatShortcut.ts packages/ui/src/components/ToolPalette/ToolPalette.tsx apps/draw/src/dev/ToolkitBuilder.tsx
 git commit -m "refactor(inspector): shortcut chips read from action registry, not ToolDef.keybinding"
 ```
 

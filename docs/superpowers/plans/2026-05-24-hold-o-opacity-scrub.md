@@ -6,7 +6,7 @@
 
 **Architecture:** A new self-contained hook `useOpacityScrub` mounted in `App.tsx` listens for `KeyO` keydown/keyup globally, snapshots paints + history index at session start, applies live scene mutations on wheel ticks, and on release rewinds intermediate history and emits one final `scene.batch('Adjust opacity', ...)`. A sibling `OpacityHud` component renders a transient chip inside `.wd-canvas-host` while a session is active.
 
-**Tech Stack:** React 18, `@orochi235/weasel` scene API (`scene.batch`, `scene.update`, `scene.historyIndex`, `scene.jumpToHistoryIndex`), existing hex8 helpers from `apps/draw/src/ActiveSwatches.tsx`.
+**Tech Stack:** React 18, `@weasel-js/core` scene API (`scene.batch`, `scene.update`, `scene.historyIndex`, `scene.jumpToHistoryIndex`), existing hex8 helpers from `apps/draw/src/ActiveSwatches.tsx`.
 
 **Reference spec:** `docs/superpowers/specs/2026-05-24-hold-o-opacity-scrub-design.md`
 
@@ -259,7 +259,7 @@ The hook depends on the same `scene` and `selection` instances `App.tsx` already
 // apps/draw/src/opacityScrub/useOpacityScrub.ts
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { asNodeId } from '@orochi235/weasel';
+import { asNodeId } from '@weasel-js/core';
 import type { WeaselDrawData } from '../weaselDrawData';
 import {
   computeScrubbedPaints,

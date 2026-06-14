@@ -1,5 +1,5 @@
 /**
- * Public types for `@orochi235/weasel-svg`. The package exposes a flat,
+ * Public types for `@weasel-js/svg`. The package exposes a flat,
  * discriminated-union node model (`SvgNode`) that mirrors the SVG element
  * tree but uses weasel-native leaf data (`Path`, `FillStyle`) for geometry and
  * paint.
@@ -11,7 +11,7 @@
  * single `matrix(a b c d e f)` on the `<g>`.
  */
 
-import type { Path, FillStyle, StyledRun, TextStyle } from '@orochi235/weasel';
+import type { Path, FillStyle, StyledRun, TextStyle } from '@weasel-js/core';
 
 /**
  * Opaque pass-through bag for namespaced XML content.

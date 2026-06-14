@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add stroke rendering to `@orochi235/weasel-gl`. Polyline → ribbon mesh expansion (CPU-side caps, joins, miter limits), dash patterns via geometry gaps, and `StrokeAlign` (`center`/`inner`/`outer`). Reuses the existing path-fill shader (strokes are just colored triangles). Exits when synthetic scenes covering all caps, all joins, dash patterns, and all three alignments render correctly in headless Chromium.
+**Goal:** Add stroke rendering to `@weasel-js/gl`. Polyline → ribbon mesh expansion (CPU-side caps, joins, miter limits), dash patterns via geometry gaps, and `StrokeAlign` (`center`/`inner`/`outer`). Reuses the existing path-fill shader (strokes are just colored triangles). Exits when synthetic scenes covering all caps, all joins, dash patterns, and all three alignments render correctly in headless Chromium.
 
-**Architecture:** New module `packages/weasel-gl/src/stroke.ts` produces a `Mesh` from `(Path, Stroke)`. The `kind: 'path'` DrawCommand variant gains an optional `stroke?: Stroke`. `drawPath()` draws fill first (existing) then stroke (new). For `align: 'inner' | 'outer'` on arbitrary paths, a stencil two-pass clips the ribbon to the path's interior or exterior — pass 1 builds the path-interior stencil mask, pass 2 draws the ribbon with the mask. `RectPath` short-circuits via `alignedStrokeRect` (existing helper in `@orochi235/weasel/core/paint.ts`).
+**Architecture:** New module `packages/gl/src/stroke.ts` produces a `Mesh` from `(Path, Stroke)`. The `kind: 'path'` DrawCommand variant gains an optional `stroke?: Stroke`. `drawPath()` draws fill first (existing) then stroke (new). For `align: 'inner' | 'outer'` on arbitrary paths, a stencil two-pass clips the ribbon to the path's interior or exterior — pass 1 builds the path-interior stencil mask, pass 2 draws the ribbon with the mask. `RectPath` short-circuits via `alignedStrokeRect` (existing helper in `@weasel-js/core/core/paint.ts`).
 
-**Tech Stack:** TypeScript (strict), vitest. No new external deps. Reuses `@orochi235/weasel` exports: `Stroke` (existing public), `Path`, `PolygonPath`, `RectPath`, path command codes, `flattenCubic`/`flattenQuadratic`. Adds two exports to `@orochi235/weasel`'s barrel: `StrokeAlign` type, `alignedStrokeRect` helper.
+**Tech Stack:** TypeScript (strict), vitest. No new external deps. Reuses `@weasel-js/core` exports: `Stroke` (existing public), `Path`, `PolygonPath`, `RectPath`, path command codes, `flattenCubic`/`flattenQuadratic`. Adds two exports to `@weasel-js/core`'s barrel: `StrokeAlign` type, `alignedStrokeRect` helper.
 
 **Spec:** [`docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md`](../specs/2026-05-08-webgl-transition-plan-design.md), Sequencing → Step 2.
 
@@ -23,7 +23,7 @@
 
 ## File structure
 
-Files this plan creates/modifies in `packages/weasel-gl/src/`:
+Files this plan creates/modifies in `packages/gl/src/`:
 
 ```
 stroke.ts                  # NEW — polyline → ribbon mesh; caps, joins, dash
@@ -39,9 +39,9 @@ Files outside the package:
 
 ```
 src/index.ts               # MODIFY — export StrokeAlign type and alignedStrokeRect helper
-packages/weasel-gl/dev/synthetic.html   # MODIFY — add stroke scenes
-packages/weasel-gl/dev/synthetic.ts     # MODIFY
-packages/weasel-gl/dev/synthetic.spec.ts # MODIFY (or extend smoke.spec.ts)
+packages/gl/dev/synthetic.html   # MODIFY — add stroke scenes
+packages/gl/dev/synthetic.ts     # MODIFY
+packages/gl/dev/synthetic.spec.ts # MODIFY (or extend smoke.spec.ts)
 docs/TODO.md               # MODIFY — mark step 2 shipped
 docs/superpowers/plans/2026-05-09-webgl-step-2-done.md  # NEW done note
 ```
@@ -81,7 +81,7 @@ Expected: 0 errors.
 Run a quick value check: create `/tmp/check-export.ts`:
 
 ```ts
-import { alignedStrokeRect, type StrokeAlign } from '@orochi235/weasel';
+import { alignedStrokeRect, type StrokeAlign } from '@weasel-js/core';
 const r = alignedStrokeRect({ x: 0, y: 0, width: 10, height: 10 }, 'inner', 2);
 const a: StrokeAlign = 'center';
 console.log(r, a);
@@ -103,14 +103,14 @@ git commit -m "feat(weasel): export StrokeAlign type and alignedStrokeRect helpe
 ## Task 2: Polyline extraction
 
 **Files:**
-- Create: `packages/weasel-gl/src/polyline.ts`
-- Create: `packages/weasel-gl/src/polyline.test.ts`
+- Create: `packages/gl/src/polyline.ts`
+- Create: `packages/gl/src/polyline.test.ts`
 
-A helper that walks a `Path` and emits one polyline per contour. Reuses bezier flattening from `@orochi235/weasel` (`flattenCubic`/`flattenQuadratic`). Output shape: `{ points: number[]; closed: boolean }[]` where `points` is interleaved x,y and `closed` reflects whether the contour ended with `Z`.
+A helper that walks a `Path` and emits one polyline per contour. Reuses bezier flattening from `@weasel-js/core` (`flattenCubic`/`flattenQuadratic`). Output shape: `{ points: number[]; closed: boolean }[]` where `points` is interleaved x,y and `closed` reflects whether the contour ended with `Z`.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/polyline.test.ts`:
+Create `packages/gl/src/polyline.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -118,7 +118,7 @@ import {
   PATH_M, PATH_L, PATH_Q, PATH_Z,
   type PolygonPath,
   type RectPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { extractPolylines } from './polyline';
 
 describe('extractPolylines', () => {
@@ -189,13 +189,13 @@ describe('extractPolylines', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/polyline.test.ts`
+Run: `npm test -- packages/gl/src/polyline.test.ts`
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement polyline extraction**
 
-Create `packages/weasel-gl/src/polyline.ts`:
+Create `packages/gl/src/polyline.ts`:
 
 ```ts
 import {
@@ -210,7 +210,7 @@ import {
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubic,
   flattenQuadratic,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 export interface Polyline {
   /** Interleaved x,y vertices (length = 2 × point count). */
@@ -303,14 +303,14 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/polyline.test.ts`
+Run: `npm test -- packages/gl/src/polyline.test.ts`
 
 Expected: PASS, 5 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/polyline.ts packages/weasel-gl/src/polyline.test.ts
+git add packages/gl/src/polyline.ts packages/gl/src/polyline.test.ts
 git commit -m "feat(weasel-gl): extractPolylines (path → flattened polylines per contour)"
 ```
 
@@ -319,18 +319,18 @@ git commit -m "feat(weasel-gl): extractPolylines (path → flattened polylines p
 ## Task 3: Stroke ribbon — straight segments, butt caps, no joins
 
 **Files:**
-- Create: `packages/weasel-gl/src/stroke.ts`
-- Create: `packages/weasel-gl/src/stroke.test.ts`
+- Create: `packages/gl/src/stroke.ts`
+- Create: `packages/gl/src/stroke.test.ts`
 
 Generates a `Mesh` for a stroke. First version handles only straight segments with `cap: 'butt'` and no joins (treats each segment independently). Subsequent tasks add joins, other caps, dashes.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/stroke.test.ts`:
+Create `packages/gl/src/stroke.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import type { RectPath, Stroke } from '@orochi235/weasel';
+import type { RectPath, Stroke } from '@weasel-js/core';
 import { tessellateStroke } from './stroke';
 
 describe('tessellateStroke (straight, butt, no joins)', () => {
@@ -365,16 +365,16 @@ describe('tessellateStroke (straight, butt, no joins)', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/stroke.test.ts`
+Run: `npm test -- packages/gl/src/stroke.test.ts`
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement basic ribbon expansion**
 
-Create `packages/weasel-gl/src/stroke.ts`:
+Create `packages/gl/src/stroke.ts`:
 
 ```ts
-import type { Path, Stroke } from '@orochi235/weasel';
+import type { Path, Stroke } from '@weasel-js/core';
 import type { Mesh } from './mesh';
 import { extractPolylines, type Polyline } from './polyline';
 
@@ -467,14 +467,14 @@ function expandPolyline(pl: Polyline, width: number, verts: number[], idx: numbe
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/stroke.test.ts`
+Run: `npm test -- packages/gl/src/stroke.test.ts`
 
 Expected: PASS, 3 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/stroke.ts packages/weasel-gl/src/stroke.test.ts
+git add packages/gl/src/stroke.ts packages/gl/src/stroke.test.ts
 git commit -m "feat(weasel-gl): tessellateStroke for straight segments (butt cap, no joins)"
 ```
 
@@ -483,14 +483,14 @@ git commit -m "feat(weasel-gl): tessellateStroke for straight segments (butt cap
 ## Task 4: Bevel joins
 
 **Files:**
-- Modify: `packages/weasel-gl/src/stroke.ts`
-- Modify: `packages/weasel-gl/src/stroke.test.ts`
+- Modify: `packages/gl/src/stroke.ts`
+- Modify: `packages/gl/src/stroke.test.ts`
 
 A bevel join fills the wedge between two segments with a single triangle from the outer corner of segment A's end to the outer corner of segment B's start, sharing the inner corner.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `packages/weasel-gl/src/stroke.test.ts`:
+Append to `packages/gl/src/stroke.test.ts`:
 
 ```ts
 describe('tessellateStroke joins', () => {
@@ -508,20 +508,20 @@ describe('tessellateStroke joins', () => {
   });
 });
 
-import { PATH_M, PATH_L, type PolygonPath } from '@orochi235/weasel';
+import { PATH_M, PATH_L, type PolygonPath } from '@weasel-js/core';
 ```
 
 (Place the `import` at the top of the file with the other imports.)
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/stroke.test.ts`
+Run: `npm test -- packages/gl/src/stroke.test.ts`
 
 Expected: FAIL — bevel triangle not yet emitted; current count is 12.
 
 - [ ] **Step 3: Implement bevel joins**
 
-Replace `expandPolyline` in `packages/weasel-gl/src/stroke.ts`:
+Replace `expandPolyline` in `packages/gl/src/stroke.ts`:
 
 ```ts
 function expandPolyline(pl: Polyline, width: number, join: 'miter' | 'round' | 'bevel', verts: number[], idx: number[]): void {
@@ -599,14 +599,14 @@ expandPolyline(pl, width, join, verts, idx);
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/stroke.test.ts`
+Run: `npm test -- packages/gl/src/stroke.test.ts`
 
 Expected: PASS, 4 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/stroke.ts packages/weasel-gl/src/stroke.test.ts
+git add packages/gl/src/stroke.ts packages/gl/src/stroke.test.ts
 git commit -m "feat(weasel-gl): bevel joins"
 ```
 
@@ -615,8 +615,8 @@ git commit -m "feat(weasel-gl): bevel joins"
 ## Task 5: Miter joins (with miter limit)
 
 **Files:**
-- Modify: `packages/weasel-gl/src/stroke.ts`
-- Modify: `packages/weasel-gl/src/stroke.test.ts`
+- Modify: `packages/gl/src/stroke.ts`
+- Modify: `packages/gl/src/stroke.test.ts`
 
 A miter join extends both segments' outer edges until they meet at a point. If the angle is too sharp (miter length > miter limit × half-width), the join falls back to bevel.
 
@@ -624,7 +624,7 @@ The default miter limit in Canvas2D is 10. Since `Stroke` doesn't currently have
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `packages/weasel-gl/src/stroke.test.ts`:
+Append to `packages/gl/src/stroke.test.ts`:
 
 ```ts
 it('extends miter join to the outer apex on a 90° corner', () => {
@@ -655,7 +655,7 @@ it('falls back to bevel for very acute angles (miter limit 10, half-width 2 → 
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/stroke.test.ts`
+Run: `npm test -- packages/gl/src/stroke.test.ts`
 
 Expected: FAIL — miter case has no join triangle yet (12 indices, expected 15).
 
@@ -755,14 +755,14 @@ Use `emitMiterOrBevel` in the join loop when `join === 'miter'`. Bevel branch st
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/stroke.test.ts`
+Run: `npm test -- packages/gl/src/stroke.test.ts`
 
 Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/stroke.ts packages/weasel-gl/src/stroke.test.ts
+git add packages/gl/src/stroke.ts packages/gl/src/stroke.test.ts
 git commit -m "feat(weasel-gl): miter joins with miter-limit bevel fallback"
 ```
 
@@ -771,8 +771,8 @@ git commit -m "feat(weasel-gl): miter joins with miter-limit bevel fallback"
 ## Task 6: Round joins
 
 **Files:**
-- Modify: `packages/weasel-gl/src/stroke.ts`
-- Modify: `packages/weasel-gl/src/stroke.test.ts`
+- Modify: `packages/gl/src/stroke.ts`
+- Modify: `packages/gl/src/stroke.test.ts`
 
 A round join is an arc fan from one segment's outer corner to the next segment's outer corner, centered on the joint. Tessellate with N triangles where N depends on the angle and a fixed angular step (~10°/segment is fine for v1).
 
@@ -861,7 +861,7 @@ Expected: PASS, 7 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/stroke.ts packages/weasel-gl/src/stroke.test.ts
+git add packages/gl/src/stroke.ts packages/gl/src/stroke.test.ts
 git commit -m "feat(weasel-gl): round joins via fan triangulation"
 ```
 
@@ -870,8 +870,8 @@ git commit -m "feat(weasel-gl): round joins via fan triangulation"
 ## Task 7: Square and round caps
 
 **Files:**
-- Modify: `packages/weasel-gl/src/stroke.ts`
-- Modify: `packages/weasel-gl/src/stroke.test.ts`
+- Modify: `packages/gl/src/stroke.ts`
+- Modify: `packages/gl/src/stroke.test.ts`
 
 End caps apply only to *open* polylines. `butt` (default) is the no-op we already have. `square` extends the polyline by `half` in the segment direction at each endpoint. `round` is a half-disc fan centered on the endpoint.
 
@@ -971,7 +971,7 @@ Expected: PASS, 9 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/stroke.ts packages/weasel-gl/src/stroke.test.ts
+git add packages/gl/src/stroke.ts packages/gl/src/stroke.test.ts
 git commit -m "feat(weasel-gl): square and round end caps"
 ```
 
@@ -980,8 +980,8 @@ git commit -m "feat(weasel-gl): square and round end caps"
 ## Task 8: Dash patterns
 
 **Files:**
-- Modify: `packages/weasel-gl/src/stroke.ts`
-- Modify: `packages/weasel-gl/src/stroke.test.ts`
+- Modify: `packages/gl/src/stroke.ts`
+- Modify: `packages/gl/src/stroke.test.ts`
 
 A dash pattern is an array `[on1, off1, on2, off2, …]`. Walk the polyline accumulating arc length; emit ribbon geometry only during "on" portions, breaking the polyline into multiple sub-polylines that get capped per the stroke's `cap`.
 
@@ -1105,7 +1105,7 @@ Expected: PASS, 11 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/stroke.ts packages/weasel-gl/src/stroke.test.ts
+git add packages/gl/src/stroke.ts packages/gl/src/stroke.test.ts
 git commit -m "feat(weasel-gl): dash patterns split into per-on-segment ribbons"
 ```
 
@@ -1114,18 +1114,18 @@ git commit -m "feat(weasel-gl): dash patterns split into per-on-segment ribbons"
 ## Task 9: DrawCommand stroke variant + drawPath dispatch
 
 **Files:**
-- Modify: `packages/weasel-gl/src/DrawCommand.ts`
-- Modify: `packages/weasel-gl/src/draw.ts`
-- Modify: `packages/weasel-gl/src/draw.test.ts`
+- Modify: `packages/gl/src/DrawCommand.ts`
+- Modify: `packages/gl/src/draw.ts`
+- Modify: `packages/gl/src/draw.test.ts`
 
 Extend the `kind: 'path'` DrawCommand variant with `stroke?: Stroke`. After drawing fill (existing), draw stroke. Reuses the existing path-fill shader (strokes are colored triangles).
 
 - [ ] **Step 1: Add failing test**
 
-Append to `packages/weasel-gl/src/draw.test.ts`:
+Append to `packages/gl/src/draw.test.ts`:
 
 ```ts
-import type { RectPath, Stroke } from '@orochi235/weasel';
+import type { RectPath, Stroke } from '@weasel-js/core';
 
 describe('WeaselRenderer.render — kind: path with stroke', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -1170,7 +1170,7 @@ Expected: FAIL — stroke handling not present.
 In `DrawCommand.ts`:
 
 ```ts
-import type { Path, Stroke } from '@orochi235/weasel';
+import type { Path, Stroke } from '@weasel-js/core';
 // (Stroke is already publicly exported.)
 
 export interface PathDrawCommand {
@@ -1248,7 +1248,7 @@ Expected: PASS — adds 3 stroke-related tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/DrawCommand.ts packages/weasel-gl/src/draw.ts packages/weasel-gl/src/draw.test.ts
+git add packages/gl/src/DrawCommand.ts packages/gl/src/draw.ts packages/gl/src/draw.test.ts
 git commit -m "feat(weasel-gl): kind: 'path' stroke variant; draw fill then stroke"
 ```
 
@@ -1257,16 +1257,16 @@ git commit -m "feat(weasel-gl): kind: 'path' stroke variant; draw fill then stro
 ## Task 10: StrokeAlign for RectPath
 
 **Files:**
-- Modify: `packages/weasel-gl/src/stroke.ts`
+- Modify: `packages/gl/src/stroke.ts`
 
-For `RectPath` with `align: 'inner' | 'outer'`, adjust the rect via `alignedStrokeRect` from `@orochi235/weasel` *before* polyline extraction. For arbitrary paths, alignment is deferred to Task 11.
+For `RectPath` with `align: 'inner' | 'outer'`, adjust the rect via `alignedStrokeRect` from `@weasel-js/core` *before* polyline extraction. For arbitrary paths, alignment is deferred to Task 11.
 
 - [ ] **Step 1: Add failing test**
 
 Append to `stroke.test.ts`:
 
 ```ts
-import { alignedStrokeRect } from '@orochi235/weasel';
+import { alignedStrokeRect } from '@weasel-js/core';
 
 it('inner alignment on RectPath shifts the polyline inward by half-width', () => {
   const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 100, height: 100 };
@@ -1301,7 +1301,7 @@ Expected: FAIL — alignment isn't honored yet.
 In `stroke.ts`, before `extractPolylines`:
 
 ```ts
-import { alignedStrokeRect } from '@orochi235/weasel';
+import { alignedStrokeRect } from '@weasel-js/core';
 
 export function tessellateStroke(path: Path, stroke: Stroke, opts: StrokeOptions = {}): Mesh {
   const width = stroke.width ?? 1;
@@ -1329,7 +1329,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/stroke.ts packages/weasel-gl/src/stroke.test.ts
+git add packages/gl/src/stroke.ts packages/gl/src/stroke.test.ts
 git commit -m "feat(weasel-gl): RectPath inner/outer stroke alignment via alignedStrokeRect"
 ```
 
@@ -1338,8 +1338,8 @@ git commit -m "feat(weasel-gl): RectPath inner/outer stroke alignment via aligne
 ## Task 11: StrokeAlign for arbitrary paths via stencil two-pass
 
 **Files:**
-- Modify: `packages/weasel-gl/src/draw.ts`
-- Modify: `packages/weasel-gl/src/draw.test.ts`
+- Modify: `packages/gl/src/draw.ts`
+- Modify: `packages/gl/src/draw.test.ts`
 
 > ⚠️ **Convention §1 applies here.** Unit tests with the GL recorder will mock stencil ops away — they assert the *call sequence* but not the *context attribute* (`stencil: true` on `getContext`). Step 1 caught a near-identical bug in evenodd: unit-tests green, real-browser produced a solid filled square.
 >
@@ -1452,7 +1452,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/draw.ts packages/weasel-gl/src/draw.test.ts
+git add packages/gl/src/draw.ts packages/gl/src/draw.test.ts
 git commit -m "feat(weasel-gl): inner/outer stroke alignment via stencil clip on PolygonPath"
 ```
 
@@ -1461,11 +1461,11 @@ git commit -m "feat(weasel-gl): inner/outer stroke alignment via stencil clip on
 ## Task 12: Public barrel exports
 
 **Files:**
-- Modify: `packages/weasel-gl/src/index.ts`
+- Modify: `packages/gl/src/index.ts`
 
 - [ ] **Step 1: Add stroke exports**
 
-Add to `packages/weasel-gl/src/index.ts`:
+Add to `packages/gl/src/index.ts`:
 
 ```ts
 export { tessellateStroke, type StrokeOptions } from './stroke';
@@ -1480,7 +1480,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/index.ts
+git add packages/gl/src/index.ts
 git commit -m "feat(weasel-gl): export tessellateStroke from public barrel"
 ```
 
@@ -1489,9 +1489,9 @@ git commit -m "feat(weasel-gl): export tessellateStroke from public barrel"
 ## Task 13: Synthetic scene + smoke spec
 
 **Files:**
-- Modify: `packages/weasel-gl/dev/synthetic.html`
-- Modify: `packages/weasel-gl/dev/synthetic.ts`
-- Modify: `packages/weasel-gl/dev/synthetic.spec.ts`
+- Modify: `packages/gl/dev/synthetic.html`
+- Modify: `packages/gl/dev/synthetic.ts`
+- Modify: `packages/gl/dev/synthetic.spec.ts`
 
 Add four new canvases covering caps, joins, dashes, alignment.
 
@@ -1519,7 +1519,7 @@ Append to `synthetic.html`:
 Add scene builders for each canvas. Example:
 
 ```ts
-import type { Stroke } from '@orochi235/weasel';
+import type { Stroke } from '@weasel-js/core';
 
 const strokeLine = (x1: number, y1: number, x2: number, y2: number, stroke: Stroke): DrawCommand => ({
   kind: 'path',
@@ -1561,9 +1561,9 @@ Expected: 2 specs pass, all 8 canvases paint.
 
 - [ ] **Step 5: Manual eyeball**
 
-Run: `npx vite --config packages/weasel-gl/dev/vite.config.ts --port 5173`
+Run: `npx vite --config packages/gl/dev/vite.config.ts --port 5173`
 
-Visit: `http://localhost:5173/packages/weasel-gl/dev/synthetic.html`
+Visit: `http://localhost:5173/packages/gl/dev/synthetic.html`
 
 Confirm visually:
 - **cCaps:** three white horizontal lines; second has square endcaps extending further than the line itself; third has rounded endcaps.
@@ -1574,7 +1574,7 @@ Confirm visually:
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-gl/dev/synthetic.html packages/weasel-gl/dev/synthetic.ts packages/weasel-gl/dev/synthetic.spec.ts
+git add packages/gl/dev/synthetic.html packages/gl/dev/synthetic.ts packages/gl/dev/synthetic.spec.ts
 git commit -m "test(weasel-gl): synthetic scenes for caps / joins / dash / align"
 ```
 

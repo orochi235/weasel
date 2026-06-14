@@ -38,7 +38,7 @@ export interface UseMoveOptions<TPose> {
    *  is already correct.
    *
    *  Pair with `worldPoseLookup(adapter, composeRectPose)` from
-   *  `@orochi235/weasel/transforms` for the standard rect case. Returning
+   *  `@weasel-js/core/transforms` for the standard rect case. Returning
    *  `null` for an id (e.g., one removed mid-render) skips it. */
   cascadeWorldPose?: (id: string) => TPose | null;
 }

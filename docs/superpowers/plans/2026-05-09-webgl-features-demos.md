@@ -6,7 +6,7 @@
 
 **Architecture:** Each demo lives in `demo/demos/` and is registered in `demo/registry.ts`. Demos that use only consumer-facing `Paint` (gradients) wire through the existing `scene.drawOne` path; demos that use `DrawCommand`-only fields (`vertexColors`, `colorMatrix`) emit DrawCommands through a custom `RenderLayer` slotted into `SceneCanvas`'s `layers` prop (the same pattern `QuadtreeDemo` uses). The `CustomShaderDemo` registers programs at module scope via `registerProgram()` and threads handles into the renderer through a new `shaders` prop on `Canvas` and `SceneCanvas`.
 
-**Tech Stack:** TypeScript, React, Vite (with `?raw` imports for demo source display), `@orochi235/weasel` (kit public surface), `@orochi235/weasel-gl` (renderer types and helpers — `DrawCommand`, `viewToMat3`, `registerProgram`, `registerTexture`, `ShaderProgramHandle`, `ShaderUniform`, `TextureHandle`). Tests use Vitest + Testing Library.
+**Tech Stack:** TypeScript, React, Vite (with `?raw` imports for demo source display), `@weasel-js/core` (kit public surface), `@weasel-js/gl` (renderer types and helpers — `DrawCommand`, `viewToMat3`, `registerProgram`, `registerTexture`, `ShaderProgramHandle`, `ShaderUniform`, `TextureHandle`). Tests use Vitest + Testing Library.
 
 **Spec:** `docs/superpowers/specs/2026-05-09-webgl-features-demos-design.md`. Note: the spec said "no kit API changes"; that's amended here — Task 1 adds the `shaders` prop to enable the custom shader demo (the rest of the demos make zero kit changes).
 
@@ -55,7 +55,7 @@ Expected: locate the props type for `Canvas`, the props type for `SceneCanvas`, 
 Add to `src/canvas/Canvas.test.tsx`:
 
 ```tsx
-import { registerProgram } from '@orochi235/weasel-gl';
+import { registerProgram } from '@weasel-js/gl';
 
 describe('Canvas shaders prop', () => {
   it('accepts a shaders array and renders without throwing', () => {
@@ -95,9 +95,9 @@ Expected: FAIL — `shaders` is not a known prop on `SceneCanvas` or `Canvas`.
 
 In `src/canvas/Canvas.tsx`:
 
-1. Add the import at the top (or extend the existing `@orochi235/weasel-gl` import):
+1. Add the import at the top (or extend the existing `@weasel-js/gl` import):
    ```tsx
-   import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '@orochi235/weasel-gl';
+   import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '@weasel-js/gl';
    ```
 2. Add `shaders?: ShaderProgramHandle[]` to the Canvas props interface. Document it:
    ```tsx
@@ -143,7 +143,7 @@ In `src/canvas/Canvas.tsx`:
 
 In `src/canvas/SceneCanvas.tsx`:
 
-1. Add `shaders?: ShaderProgramHandle[]` to the `SceneCanvasProps` interface (import the type from `@orochi235/weasel-gl`).
+1. Add `shaders?: ShaderProgramHandle[]` to the `SceneCanvasProps` interface (import the type from `@weasel-js/gl`).
 2. Destructure it from props.
 3. Forward it to the inner `<Canvas ... shaders={shaders} />`.
 
@@ -237,9 +237,9 @@ Create `demo/demos/GradientPlaygroundDemo.tsx`:
 
 ```tsx
 import { useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useScene } from '@orochi235/weasel';
-import type { Paint } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import type { Paint } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/gl';
 
 const W = 600;
 const H = 400;
@@ -720,9 +720,9 @@ Create `demo/demos/VertexColorsDemo.tsx`:
 
 ```tsx
 import { useMemo, useState } from 'react';
-import { SceneCanvas, useScene, polygonFromPoints } from '@orochi235/weasel';
-import type { RenderLayer } from '@orochi235/weasel';
-import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
+import { SceneCanvas, useScene, polygonFromPoints } from '@weasel-js/core';
+import type { RenderLayer } from '@weasel-js/core';
+import { viewToMat3, type DrawCommand } from '@weasel-js/gl';
 
 const W = 600;
 const H = 400;
@@ -995,9 +995,9 @@ Create `demo/demos/ColorMatrixDemo.tsx`:
 
 ```tsx
 import { useMemo, useState } from 'react';
-import { SceneCanvas, useScene } from '@orochi235/weasel';
-import type { RenderLayer } from '@orochi235/weasel';
-import { viewToMat3, type DrawCommand } from '@orochi235/weasel-gl';
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import type { RenderLayer } from '@weasel-js/core';
+import { viewToMat3, type DrawCommand } from '@weasel-js/gl';
 
 const W = 720;
 const H = 360;
@@ -1245,12 +1245,12 @@ Create `demo/demos/CustomShaderDemo.tsx`:
 
 ```tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useScene } from '@orochi235/weasel';
-import type { RenderLayer } from '@orochi235/weasel';
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import type { RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture, viewToMat3,
   type DrawCommand, type ShaderProgramHandle, type TextureHandle,
-} from '@orochi235/weasel-gl';
+} from '@weasel-js/gl';
 import weaselMarkUrl from '../assets/weasel-mark.png';
 
 const PANEL_W = 240;

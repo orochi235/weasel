@@ -22,10 +22,10 @@ focus on primitives.
 
 ## Goal
 
-Stand up `@orochi235/weasel-den` as a peer workspace package that:
+Stand up `@weasel-js/den` as a peer workspace package that:
 
 - Hosts finished, stable tools.
-- Depends on `@orochi235/weasel` only through its public exports.
+- Depends on `@weasel-js/core` only through its public exports.
 - Runs its own test suite, separable from core.
 - Ships a convenience composition layer so consumers don't pay a boilerplate
   tax for the split.
@@ -43,18 +43,18 @@ weasel/
   package.json                 # workspace root, devDeps + dispatcher scripts
   tsconfig.base.json           # shared compiler opts
   packages/
-    weasel/                    # @orochi235/weasel — primitives, Canvas, Tool API
+    weasel/                    # @weasel-js/core — primitives, Canvas, Tool API
       src/
       package.json
       tsconfig.json
       tsup.config.ts
       vitest.config.ts
-    weasel-den/                # @orochi235/weasel-den — finished tools + packs
+    weasel-den/                # @weasel-js/den — finished tools + packs
       src/
         tools/                 # one file per tool, mirroring current layout
         packs/                 # useStandardTools, useDrawingAppPack, ...
         index.ts
-      package.json             # depends on "@orochi235/weasel": "workspace:*"
+      package.json             # depends on "@weasel-js/core": "workspace:*"
       tsconfig.json
       tsup.config.ts
       vitest.config.ts
@@ -63,7 +63,7 @@ weasel/
 ```
 
 The repo root has no source code; it's a coordinator. `npm test` from root
-runs both workspaces' suites; `npm test -w @orochi235/weasel` scopes to core.
+runs both workspaces' suites; `npm test -w @weasel-js/core` scopes to core.
 
 ### Initial migration list
 
@@ -90,7 +90,7 @@ API?" — yes → core, no → den.
 
 ### Public extension API
 
-The symmetry contract: weasel-den consumes only what `@orochi235/weasel`
+The symmetry contract: weasel-den consumes only what `@weasel-js/core`
 exports through its public entry points. No reaching into `dist/internal/`,
 no path aliases that bypass the exports map.
 
@@ -237,17 +237,17 @@ Add when there's a real consumer. Don't anticipate.
 
 - **vitest:** each workspace ships its own `vitest.config.ts`. Root
   `npm test` runs both via `vitest --workspace` (or a small dispatcher
-  script). `npm test -w @orochi235/weasel` scopes to core.
+  script). `npm test -w @weasel-js/core` scopes to core.
 - **tsup:** each package builds independently. weasel-den marks
-  `@orochi235/weasel` as external — consumers install both packages. Sub-path
+  `@weasel-js/core` as external — consumers install both packages. Sub-path
   exports (`weasel-den/packs/drawing-app`) ship as separate entries to keep
   bundle size predictable.
 - **TS resolution:** workspaces symlink. weasel-den imports
-  `@orochi235/weasel`; TypeScript resolves through the workspace package's
+  `@weasel-js/core`; TypeScript resolves through the workspace package's
   `exports` field, which during dev points at `src/index.ts` (we drop the
   current root `paths` aliasing). On publish, `exports` points at `dist/`.
 - **demo:** drops the current vite alias regex. Adds workspace deps on both
-  `@orochi235/weasel` and `@orochi235/weasel-den`. Resolution flows through
+  `@weasel-js/core` and `@weasel-js/den`. Resolution flows through
   workspace symlinks.
 - **pre-commit:** scope test runs to the workspace whose files changed
   (lint-staged + a small dispatcher). Today's pre-commit hook reruns the
@@ -278,9 +278,9 @@ High-level (impl plan will detail each step):
 
 1. Stand up workspaces scaffold; move core into `packages/weasel/`
    unchanged. Verify all tests pass and dist build is byte-equivalent.
-2. Create empty `packages/weasel-den/` with package.json, tsup, vitest.
+2. Create empty `packages/den/` with package.json, tsup, vitest.
 3. Move tools one at a time, smallest first (`useDeleteTool` → ...).
-   Per move: shift files, fix imports to `@orochi235/weasel`, run tests,
+   Per move: shift files, fix imports to `@weasel-js/core`, run tests,
    commit.
 4. Implement `useStandardTools` and `useStandardCanvasSetup` in weasel-den.
    Tests verify each opt-out and override path.
@@ -295,16 +295,16 @@ High-level (impl plan will detail each step):
 
 **Create:**
 
-- `packages/weasel-den/package.json`
-- `packages/weasel-den/tsconfig.json`
-- `packages/weasel-den/tsup.config.ts`
-- `packages/weasel-den/vitest.config.ts`
-- `packages/weasel-den/src/index.ts`
-- `packages/weasel-den/src/tools/{useDeleteTool,useDuplicateTool,...}.ts`
+- `packages/den/package.json`
+- `packages/den/tsconfig.json`
+- `packages/den/tsup.config.ts`
+- `packages/den/vitest.config.ts`
+- `packages/den/src/index.ts`
+- `packages/den/src/tools/{useDeleteTool,useDuplicateTool,...}.ts`
   (moved from core)
-- `packages/weasel-den/src/packs/useStandardTools.ts`
-- `packages/weasel-den/src/packs/useStandardCanvasSetup.ts`
-- `packages/weasel-den/src/packs/useDrawingAppPack.ts`
+- `packages/den/src/packs/useStandardTools.ts`
+- `packages/den/src/packs/useStandardCanvasSetup.ts`
+- `packages/den/src/packs/useDrawingAppPack.ts`
 - Tests for each of the above.
 - `tsconfig.base.json` at root
 - New root `package.json` with workspaces config + dispatcher scripts.

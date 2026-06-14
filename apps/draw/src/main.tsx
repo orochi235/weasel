@@ -1,12 +1,12 @@
-import '@orochi235/weasel-theme/tokens.css';
+import '@weasel-js/theme/tokens.css';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerFont } from '@orochi235/weasel/renderer';
+import { registerFont } from '@weasel-js/core/renderer';
 import {
   ActionsProvider,
   DepRegistryProvider,
   SelectionContextProvider,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { App } from './App';
 import { ToolkitBuilder } from './dev/ToolkitBuilder';
 import { RegistryInspector } from './dev/RegistryInspector';

@@ -24,8 +24,8 @@ export default defineConfig({
       // Specific overrides win — weasel-theme ships a `tokens.css` import the
       // generic wildcard would otherwise rewrite to a `.ts` lookup.
       {
-        find: '@orochi235/weasel-theme/tokens.css',
-        replacement: resolve(repoRoot, 'packages/weasel-theme/src/tokens.css'),
+        find: '@weasel-js/theme/tokens.css',
+        replacement: resolve(repoRoot, 'packages/theme/src/tokens.css'),
       },
     ]),
   },

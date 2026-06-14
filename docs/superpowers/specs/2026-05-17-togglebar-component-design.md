@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add a `ToggleBar` to `@orochi235/weasel-ui` that visually matches `RangePicker`'s frosted-glass aesthetic (same track recipe, same selected-cell recipe as the RangePicker thumb) and is flexible enough to function as:
+Add a `ToggleBar` to `@weasel-js/ui` that visually matches `RangePicker`'s frosted-glass aesthetic (same track recipe, same selected-cell recipe as the RangePicker thumb) and is flexible enough to function as:
 
 1. **Single-select segmented control** (primary use case)
 2. **Multi-select toggle group**
@@ -10,7 +10,7 @@ Add a `ToggleBar` to `@orochi235/weasel-ui` that visually matches `RangePicker`'
 
 ## Location
 
-`packages/weasel-ui/src/components/ToggleBar/`:
+`packages/ui/src/components/ToggleBar/`:
 
 - `ToggleBar.tsx`
 - `ToggleBar.module.css`
@@ -18,7 +18,7 @@ Add a `ToggleBar` to `@orochi235/weasel-ui` that visually matches `RangePicker`'
 - `ToggleBar.test.tsx`
 - `index.ts`
 
-Export from `packages/weasel-ui/src/index.ts` alongside `RangePicker`.
+Export from `packages/ui/src/index.ts` alongside `RangePicker`.
 
 ## API
 

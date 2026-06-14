@@ -1,5 +1,5 @@
 {
-  "name": "@orochi235/weasel-theme",
+  "name": "@weasel-js/theme",
   "version": "0.0.0",
   "private": true,
   "description": "Design tokens shared by weasel-ui and weasel-hud — CSS variables + a parallel TS export.",

@@ -5,7 +5,7 @@ import type {
   NodeId,
   PoseProjection,
   Scene,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { D3Transition } from './types';
 
 interface TransitionCtx<TData, TPose> {

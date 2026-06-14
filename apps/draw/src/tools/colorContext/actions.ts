@@ -14,8 +14,8 @@
 // Side-effect import: augments DepSchema with `color: ColorContextValue`.
 import './depSchemaAugmentation';
 
-import type { Action } from '@orochi235/weasel';
-import type { ActionDeps } from '@orochi235/weasel';
+import type { Action } from '@weasel-js/core';
+import type { ActionDeps } from '@weasel-js/core';
 import type { ColorContextValue } from './ColorContextProvider';
 
 // ---------------------------------------------------------------------------

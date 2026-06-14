@@ -4,7 +4,7 @@ import {
   useOptionalDepRegistry,
   evaluateEnabled,
   type Action,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import s from './ActionBar.module.css';
 
 const EMPTY_LIST: readonly Action[] = Object.freeze([]);

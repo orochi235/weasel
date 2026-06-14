@@ -6,7 +6,7 @@
 
 **Architecture:** Pure controlled component (`value` + `onChange` + `onChangeCommit`). SVG rendering in three layers (grid/axes, curve path, anchor markers). Centripetal Catmull-Rom for curve math — passes exactly through every anchor, avoids 2D cusps. Mode prop (`'1d' | '2d'`) gates drag-time x-clamping. Optional Op factory (`createSetCurveOp`) for cheap weasel-history wiring at the caller.
 
-**Tech Stack:** TypeScript, React 18, SVG, Vitest, React Testing Library, Storybook 8. Lives in `packages/weasel-ui/`.
+**Tech Stack:** TypeScript, React 18, SVG, Vitest, React Testing Library, Storybook 8. Lives in `packages/ui/`.
 
 **Spec:** `docs/superpowers/specs/2026-05-27-curve-editor-design.md`
 
@@ -17,7 +17,7 @@
 All paths relative to worktree root `/Users/mike/src/weasel/.claude/worktrees/curve-editor/`.
 
 ```
-packages/weasel-ui/src/components/CurveEditor/
+packages/ui/src/components/CurveEditor/
 ├── index.ts                  # public exports (CurveEditor, ControlPoint, createSetCurveOp)
 ├── CurveEditor.tsx           # the React component (~180 lines target)
 ├── CurveEditor.module.css    # styling, CSS-var tokens
@@ -32,19 +32,19 @@ packages/weasel-ui/src/components/CurveEditor/
 ```
 
 Plus one modification:
-- `packages/weasel-ui/src/index.ts` — add `export * from './components/CurveEditor';`
+- `packages/ui/src/index.ts` — add `export * from './components/CurveEditor';`
 
 ---
 
 ## Task 1: Pure math — centripetal Catmull-Rom sampling
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/CurveEditor/catmullRom.ts`
-- Create: `packages/weasel-ui/src/components/CurveEditor/catmullRom.test.ts`
+- Create: `packages/ui/src/components/CurveEditor/catmullRom.ts`
+- Create: `packages/ui/src/components/CurveEditor/catmullRom.test.ts`
 
 - [ ] **Step 1: Write failing tests**
 
-Create `packages/weasel-ui/src/components/CurveEditor/catmullRom.test.ts`:
+Create `packages/ui/src/components/CurveEditor/catmullRom.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -144,14 +144,14 @@ describe('sampleCurve', () => {
 
 ```bash
 cd /Users/mike/src/weasel/.claude/worktrees/curve-editor
-npx vitest run packages/weasel-ui/src/components/CurveEditor/catmullRom.test.ts 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/catmullRom.test.ts 2>&1 | tail -10
 ```
 
 Expected: all tests fail (module not found).
 
 - [ ] **Step 3: Implement catmullRom.ts**
 
-Create `packages/weasel-ui/src/components/CurveEditor/catmullRom.ts`:
+Create `packages/ui/src/components/CurveEditor/catmullRom.ts`:
 
 ```ts
 /**
@@ -269,7 +269,7 @@ export function sampleCurve(
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/catmullRom.test.ts 2>&1 | tail -5
+npx vitest run packages/ui/src/components/CurveEditor/catmullRom.test.ts 2>&1 | tail -5
 ```
 
 Expected: all 8 tests pass.
@@ -277,7 +277,7 @@ Expected: all 8 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/catmullRom.ts packages/weasel-ui/src/components/CurveEditor/catmullRom.test.ts
+git add packages/ui/src/components/CurveEditor/catmullRom.ts packages/ui/src/components/CurveEditor/catmullRom.test.ts
 git commit -m "feat(weasel-ui/CurveEditor): centripetal Catmull-Rom sampling"
 ```
 
@@ -286,12 +286,12 @@ git commit -m "feat(weasel-ui/CurveEditor): centripetal Catmull-Rom sampling"
 ## Task 2: Geometry — coordinate transforms and hit tests
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/CurveEditor/geometry.ts`
-- Create: `packages/weasel-ui/src/components/CurveEditor/geometry.test.ts`
+- Create: `packages/ui/src/components/CurveEditor/geometry.ts`
+- Create: `packages/ui/src/components/CurveEditor/geometry.test.ts`
 
 - [ ] **Step 1: Write failing tests**
 
-Create `packages/weasel-ui/src/components/CurveEditor/geometry.test.ts`:
+Create `packages/ui/src/components/CurveEditor/geometry.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -383,14 +383,14 @@ describe('hitTestCurve', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/geometry.test.ts 2>&1 | tail -5
+npx vitest run packages/ui/src/components/CurveEditor/geometry.test.ts 2>&1 | tail -5
 ```
 
 Expected: all tests fail (module not found).
 
 - [ ] **Step 3: Implement geometry.ts**
 
-Create `packages/weasel-ui/src/components/CurveEditor/geometry.ts`:
+Create `packages/ui/src/components/CurveEditor/geometry.ts`:
 
 ```ts
 /**
@@ -497,7 +497,7 @@ export function hitTestCurve(
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/geometry.test.ts 2>&1 | tail -5
+npx vitest run packages/ui/src/components/CurveEditor/geometry.test.ts 2>&1 | tail -5
 ```
 
 Expected: all tests pass.
@@ -505,7 +505,7 @@ Expected: all tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/geometry.ts packages/weasel-ui/src/components/CurveEditor/geometry.test.ts
+git add packages/ui/src/components/CurveEditor/geometry.ts packages/ui/src/components/CurveEditor/geometry.test.ts
 git commit -m "feat(weasel-ui/CurveEditor): geometry transforms and hit tests"
 ```
 
@@ -514,14 +514,14 @@ git commit -m "feat(weasel-ui/CurveEditor): geometry transforms and hit tests"
 ## Task 3: Op factory — setCurveOp for weasel-history
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/CurveEditor/setCurveOp.ts`
-- Create: `packages/weasel-ui/src/components/CurveEditor/setCurveOp.test.ts`
+- Create: `packages/ui/src/components/CurveEditor/setCurveOp.ts`
+- Create: `packages/ui/src/components/CurveEditor/setCurveOp.test.ts`
 
-**Context:** The Op shape comes from `@orochi235/weasel` (the main package re-exports it). Mirror the shape used in `src/core/ops/setPath.ts`: `apply(adapter)` calls a typed adapter method; `invert()` returns a mirror op with `from`/`to` swapped. The `coalesceKey` field is optional; passes through invert.
+**Context:** The Op shape comes from `@weasel-js/core` (the main package re-exports it). Mirror the shape used in `src/core/ops/setPath.ts`: `apply(adapter)` calls a typed adapter method; `invert()` returns a mirror op with `from`/`to` swapped. The `coalesceKey` field is optional; passes through invert.
 
 - [ ] **Step 1: Write failing tests**
 
-Create `packages/weasel-ui/src/components/CurveEditor/setCurveOp.test.ts`:
+Create `packages/ui/src/components/CurveEditor/setCurveOp.test.ts`:
 
 ```ts
 import { describe, expect, it, vi } from 'vitest';
@@ -573,14 +573,14 @@ describe('createSetCurveOp', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/setCurveOp.test.ts 2>&1 | tail -5
+npx vitest run packages/ui/src/components/CurveEditor/setCurveOp.test.ts 2>&1 | tail -5
 ```
 
 Expected: all tests fail (module not found — `setCurveOp.ts` and `CurveEditor.tsx` don't exist yet).
 
 - [ ] **Step 3: Stub the ControlPoint type so setCurveOp compiles**
 
-Create `packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx` with a placeholder export:
+Create `packages/ui/src/components/CurveEditor/CurveEditor.tsx` with a placeholder export:
 
 ```tsx
 // Placeholder — full implementation in Task 4. Exposes the ControlPoint
@@ -605,10 +605,10 @@ export function CurveEditor(_props: CurveEditorProps) {
 
 - [ ] **Step 4: Implement setCurveOp.ts**
 
-Create `packages/weasel-ui/src/components/CurveEditor/setCurveOp.ts`:
+Create `packages/ui/src/components/CurveEditor/setCurveOp.ts`:
 
 ```ts
-import type { Op } from '@orochi235/weasel';
+import type { Op } from '@weasel-js/core';
 import type { ControlPoint } from './CurveEditor';
 
 /**
@@ -678,7 +678,7 @@ function controlPointsEqual(
 - [ ] **Step 5: Run tests to verify they pass**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/setCurveOp.test.ts 2>&1 | tail -5
+npx vitest run packages/ui/src/components/CurveEditor/setCurveOp.test.ts 2>&1 | tail -5
 ```
 
 Expected: all 5 tests pass.
@@ -694,7 +694,7 @@ Expected: clean.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/setCurveOp.ts packages/weasel-ui/src/components/CurveEditor/setCurveOp.test.ts packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx
+git add packages/ui/src/components/CurveEditor/setCurveOp.ts packages/ui/src/components/CurveEditor/setCurveOp.test.ts packages/ui/src/components/CurveEditor/CurveEditor.tsx
 git commit -m "feat(weasel-ui/CurveEditor): setCurveOp factory for weasel-history"
 ```
 
@@ -703,15 +703,15 @@ git commit -m "feat(weasel-ui/CurveEditor): setCurveOp factory for weasel-histor
 ## Task 4: CurveEditor skeleton — rendering only
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx`
-- Create: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.module.css`
-- Create: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.tsx`
+- Create: `packages/ui/src/components/CurveEditor/CurveEditor.module.css`
+- Create: `packages/ui/src/components/CurveEditor/CurveEditor.test.tsx`
 
 **Goal:** Render the curve + anchors. No interaction yet. Subsequent tasks layer drag, add/delete, endpoints.
 
 - [ ] **Step 1: Write failing rendering test**
 
-Create `packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx`:
+Create `packages/ui/src/components/CurveEditor/CurveEditor.test.tsx`:
 
 ```tsx
 import { describe, expect, it } from 'vitest';
@@ -777,14 +777,14 @@ describe('CurveEditor — rendering', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
 ```
 
 Expected: 4 tests fail.
 
 - [ ] **Step 3: Implement the skeleton component**
 
-Replace `packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx`:
+Replace `packages/ui/src/components/CurveEditor/CurveEditor.tsx`:
 
 ```tsx
 import { useMemo, type CSSProperties } from 'react';
@@ -906,7 +906,7 @@ export function CurveEditor(props: CurveEditorProps) {
 
 - [ ] **Step 4: Create the CSS module**
 
-Create `packages/weasel-ui/src/components/CurveEditor/CurveEditor.module.css`:
+Create `packages/ui/src/components/CurveEditor/CurveEditor.module.css`:
 
 ```css
 .root {
@@ -971,7 +971,7 @@ Create `packages/weasel-ui/src/components/CurveEditor/CurveEditor.module.css`:
 - [ ] **Step 5: Run tests to verify they pass**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
 ```
 
 Expected: 4 tests pass.
@@ -987,7 +987,7 @@ Expected: clean.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx packages/weasel-ui/src/components/CurveEditor/CurveEditor.module.css packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx
+git add packages/ui/src/components/CurveEditor/CurveEditor.tsx packages/ui/src/components/CurveEditor/CurveEditor.module.css packages/ui/src/components/CurveEditor/CurveEditor.test.tsx
 git commit -m "feat(weasel-ui/CurveEditor): skeleton component with curve + anchor rendering"
 ```
 
@@ -996,14 +996,14 @@ git commit -m "feat(weasel-ui/CurveEditor): skeleton component with curve + anch
 ## Task 5: Drag interaction
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx`
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.test.tsx`
 
 **Goal:** Dragging an anchor moves it. `onChange` fires per pointer move; `onChangeCommit` fires once on release. In `domain='1d'`, x is clamped between left/right neighbors during drag.
 
 - [ ] **Step 1: Add failing drag tests**
 
-Append to `packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx`:
+Append to `packages/ui/src/components/CurveEditor/CurveEditor.test.tsx`:
 
 ```tsx
 import { fireEvent } from '@testing-library/react';
@@ -1106,7 +1106,7 @@ Also add `import { vi } from 'vitest';` at the top if not already present.
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
 ```
 
 Expected: 4 new drag tests fail.
@@ -1237,7 +1237,7 @@ Update the `circle` rendering to wire `onPointerDown`:
 - [ ] **Step 4: Run tests**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
 ```
 
 Expected: all 8 tests pass (4 from Task 4 + 4 drag tests).
@@ -1272,7 +1272,7 @@ Expected: clean.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx
+git add packages/ui/src/components/CurveEditor/CurveEditor.tsx packages/ui/src/components/CurveEditor/CurveEditor.test.tsx
 git commit -m "feat(weasel-ui/CurveEditor): drag interaction with 1D x-clamping"
 ```
 
@@ -1281,8 +1281,8 @@ git commit -m "feat(weasel-ui/CurveEditor): drag interaction with 1D x-clamping"
 ## Task 6: Add and delete anchors
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx`
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.test.tsx`
 
 **Goal:** Per `addPointMode`, clicking adds an anchor. Shift+click on an anchor deletes it. Both fire `onChangeCommit`.
 
@@ -1407,7 +1407,7 @@ describe('CurveEditor — add and delete', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx -t "add and delete" 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx -t "add and delete" 2>&1 | tail -10
 ```
 
 Expected: 5 tests fail.
@@ -1506,7 +1506,7 @@ Update the `<svg>` element to wire `onPointerDown={onSvgPointerDown}`.
 - [ ] **Step 4: Run tests**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
 ```
 
 Expected: all tests pass (4 rendering + 4 drag + 5 add/delete = 13).
@@ -1514,7 +1514,7 @@ Expected: all tests pass (4 rendering + 4 drag + 5 add/delete = 13).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx
+git add packages/ui/src/components/CurveEditor/CurveEditor.tsx packages/ui/src/components/CurveEditor/CurveEditor.test.tsx
 git commit -m "feat(weasel-ui/CurveEditor): add and delete anchors"
 ```
 
@@ -1523,8 +1523,8 @@ git commit -m "feat(weasel-ui/CurveEditor): add and delete anchors"
 ## Task 7: Endpoint constraints
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx`
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.test.tsx`
 
 **Goal:** `endpoints='pinned-x'` locks first/last anchors' x to xRange edges; y is editable. `endpoints='pinned-both'` locks first/last to the corners. Pinned endpoints can't be deleted.
 
@@ -1618,7 +1618,7 @@ describe('CurveEditor — endpoint constraints', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx -t "endpoint constraints" 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx -t "endpoint constraints" 2>&1 | tail -10
 ```
 
 Expected: 4 tests fail.
@@ -1709,7 +1709,7 @@ Update the anchor rendering to apply the pinned class:
 - [ ] **Step 4: Run tests**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
 ```
 
 Expected: all 17 tests pass.
@@ -1717,7 +1717,7 @@ Expected: all 17 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx
+git add packages/ui/src/components/CurveEditor/CurveEditor.tsx packages/ui/src/components/CurveEditor/CurveEditor.test.tsx
 git commit -m "feat(weasel-ui/CurveEditor): endpoint constraints (pinned-x, pinned-both)"
 ```
 
@@ -1726,8 +1726,8 @@ git commit -m "feat(weasel-ui/CurveEditor): endpoint constraints (pinned-x, pinn
 ## Task 8: Grid, axes, and active anchor styling
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx`
-- Modify: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.tsx`
+- Modify: `packages/ui/src/components/CurveEditor/CurveEditor.test.tsx`
 
 **Goal:** `showGrid` and `showAxes` props render visual chrome. Active (being-dragged) anchor gets the `active` class.
 
@@ -1787,7 +1787,7 @@ describe('CurveEditor — visual chrome', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx -t "visual chrome" 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx -t "visual chrome" 2>&1 | tail -10
 ```
 
 Expected: 3 tests fail.
@@ -1879,7 +1879,7 @@ Update the anchor rendering to apply `active` class:
 - [ ] **Step 4: Run tests**
 
 ```bash
-npx vitest run packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
+npx vitest run packages/ui/src/components/CurveEditor/CurveEditor.test.tsx 2>&1 | tail -10
 ```
 
 Expected: all 20 tests pass.
@@ -1887,7 +1887,7 @@ Expected: all 20 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/CurveEditor.tsx packages/weasel-ui/src/components/CurveEditor/CurveEditor.test.tsx
+git add packages/ui/src/components/CurveEditor/CurveEditor.tsx packages/ui/src/components/CurveEditor/CurveEditor.test.tsx
 git commit -m "feat(weasel-ui/CurveEditor): grid, axes, active-anchor styling"
 ```
 
@@ -1896,13 +1896,13 @@ git commit -m "feat(weasel-ui/CurveEditor): grid, axes, active-anchor styling"
 ## Task 9: Storybook stories and package export
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/CurveEditor/index.ts`
-- Create: `packages/weasel-ui/src/components/CurveEditor/CurveEditor.stories.tsx`
-- Modify: `packages/weasel-ui/src/index.ts`
+- Create: `packages/ui/src/components/CurveEditor/index.ts`
+- Create: `packages/ui/src/components/CurveEditor/CurveEditor.stories.tsx`
+- Modify: `packages/ui/src/index.ts`
 
 - [ ] **Step 1: Create the local barrel export**
 
-Create `packages/weasel-ui/src/components/CurveEditor/index.ts`:
+Create `packages/ui/src/components/CurveEditor/index.ts`:
 
 ```ts
 export {
@@ -1923,7 +1923,7 @@ export {
 
 - [ ] **Step 2: Add to the package's public exports**
 
-Edit `packages/weasel-ui/src/index.ts` and append after the last existing `export *` line:
+Edit `packages/ui/src/index.ts` and append after the last existing `export *` line:
 
 ```ts
 export * from './components/CurveEditor';
@@ -1931,7 +1931,7 @@ export * from './components/CurveEditor';
 
 - [ ] **Step 3: Write Storybook stories**
 
-Create `packages/weasel-ui/src/components/CurveEditor/CurveEditor.stories.tsx`:
+Create `packages/ui/src/components/CurveEditor/CurveEditor.stories.tsx`:
 
 ```tsx
 import type { Meta, StoryObj } from '@storybook/react';
@@ -2036,7 +2036,7 @@ Expected: green (tsc + vitest + tsup + typedoc all pass).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/CurveEditor/index.ts packages/weasel-ui/src/components/CurveEditor/CurveEditor.stories.tsx packages/weasel-ui/src/index.ts
+git add packages/ui/src/components/CurveEditor/index.ts packages/ui/src/components/CurveEditor/CurveEditor.stories.tsx packages/ui/src/index.ts
 git commit -m "feat(weasel-ui/CurveEditor): Storybook stories and package exports"
 ```
 

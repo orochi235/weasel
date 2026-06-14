@@ -1,12 +1,12 @@
 import { useRef, useState, type ReactNode, type ChangeEvent } from 'react';
-import { SidebarPanel, type SidebarPanelProps } from '@orochi235/weasel-ui';
-import { toHex8, getAlpha01, withAlpha01, useActionsRegistry, type UiOngoingControl } from '@orochi235/weasel';
+import { SidebarPanel, type SidebarPanelProps } from '@weasel-js/ui';
+import { toHex8, getAlpha01, withAlpha01, useActionsRegistry, type UiOngoingControl } from '@weasel-js/core';
 import s from './PropertiesPanel.module.css';
 
 /** Convenience composition: a `SidebarPanel` whose body is a
  *  12-column property grid. Use directly when the panel content is a
  *  set of `PropertyRow`s. For panels with free-form content (a list, a
- *  custom widget), call `SidebarPanel` straight from `@orochi235/weasel-ui`
+ *  custom widget), call `SidebarPanel` straight from `@weasel-js/ui`
  *  and skip the grid. */
 export type PropertiesPanelProps = SidebarPanelProps;
 

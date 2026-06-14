@@ -1,6 +1,6 @@
 /** Initial scene content for TextDemo — five text nodes covering single-line,
  *  multi-line, alignment, themed-editor styling, and inline rich-text runs. */
-import type { RectPose, TextPose } from '@orochi235/weasel';
+import type { RectPose, TextPose } from '@weasel-js/core';
 
 export type TextNode = TextPose & { id: string };
 export type Pose = RectPose;

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ToolPalette } from './ToolPalette';
-import type { AnyTool, ToolsApi } from '@orochi235/weasel';
-import { createModeRegistry } from '@orochi235/weasel-modes';
-import { DEFAULT_MODES } from '@orochi235/weasel-modes/presets/default';
+import type { AnyTool, ToolsApi } from '@weasel-js/core';
+import { createModeRegistry } from '@weasel-js/modes';
+import { DEFAULT_MODES } from '@weasel-js/modes/presets/default';
 
 function fakeTool(id: string, group?: string, label?: string): AnyTool {
   return {

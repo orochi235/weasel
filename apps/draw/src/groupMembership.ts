@@ -11,7 +11,7 @@
  * boundary in case some other path mutates `Group.members` directly.
  */
 
-import type { Group } from '@orochi235/weasel';
+import type { Group } from '@weasel-js/core';
 
 /** Mutable reference shape — matches how App.tsx stores its `groupsRef`. */
 export interface GroupsRef {

@@ -9,13 +9,13 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type {
   AlignEdge,
   DistributeAxis,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 /** FlipAxis was removed from the kit public surface in chore/legacy-hook-purge;
  *  preserve the local alias so this stub keeps compiling until WeaselDraw
  *  is rebuilt. */
 export type FlipAxis = 'x' | 'y';
-import { ActionBar as KitActionBar } from '@orochi235/weasel-ui';
+import { ActionBar as KitActionBar } from '@weasel-js/ui';
 
 /** Paper-size keys mirrored from App.tsx's `PAPER_PRESETS` map. Kept as a
  *  bare string union here so this component stays decoupled from the
@@ -99,7 +99,7 @@ export interface ActionBarProps {
   // publishes the `booleansAdapter` dep via `<BooleansAdapterPublisher>` so
   // the descriptors' invoker has a concrete adapter to execute. This component
   // takes no booleans props.
-  // File I/O — SVG round-trip via @orochi235/weasel-svg.
+  // File I/O — SVG round-trip via @weasel-js/svg.
   onSaveSvg(): void;
   onOpenSvg(): void;
   /** Start a fresh document at the picked paper size. Clears the scene,

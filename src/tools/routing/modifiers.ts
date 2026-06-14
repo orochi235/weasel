@@ -1,2 +1,2 @@
-export { mods } from '@orochi235/weasel-gestures';
-export type { ModifierKey } from '@orochi235/weasel-gestures';
+export { mods } from '@weasel-js/gestures';
+export type { ModifierKey } from '@weasel-js/gestures';

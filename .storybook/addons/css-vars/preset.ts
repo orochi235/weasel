@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
-const TOKENS_CSS = resolve(repoRoot, 'packages/weasel-theme/src/tokens.css');
+const TOKENS_CSS = resolve(repoRoot, 'packages/theme/src/tokens.css');
 const GENERATED = resolve(here, 'tokens.generated.ts');
 
 interface Token {

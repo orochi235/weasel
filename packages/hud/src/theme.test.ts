@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { readTokens } from './theme';
-import { DEFAULT_TOKENS } from '@orochi235/weasel-theme';
+import { DEFAULT_TOKENS } from '@weasel-js/theme';
 
 const trash: HTMLElement[] = [];
 afterEach(() => {

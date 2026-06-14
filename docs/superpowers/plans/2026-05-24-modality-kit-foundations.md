@@ -6,7 +6,7 @@
 
 **Architecture:** Four phases. Phase 1 mechanically extracts `History` into its own package with no API changes — every existing test still passes. Phase 2 adds the `Journal` class alongside `History`, using a private inner `History` for the journal's own undo stack and a new `parent.recordEntry(ops, label)` to flush on commit without re-applying. Phase 3 stands up `weasel-modes` with capability-tag types, `ModeDefinition`, a registry, and the six stock-mode data records. Phase 4 adds the mode-owned decoration layer — a render-layer slot whose content is supplied by the active mode rather than any tool.
 
-**Tech Stack:** TypeScript, npm workspaces, vitest, the existing weasel kit conventions (path-aliased imports, `@orochi235/weasel-*` package names, `RenderLayer` shape from `core/layers/render`).
+**Tech Stack:** TypeScript, npm workspaces, vitest, the existing weasel kit conventions (path-aliased imports, `@weasel-js/*` package names, `RenderLayer` shape from `core/layers/render`).
 
 **Spec:** `docs/superpowers/specs/2026-05-24-modality-design.md`
 
@@ -17,7 +17,7 @@
 After this plan:
 
 ```
-packages/weasel-history/
+packages/history/
   package.json
   tsconfig.json
   src/
@@ -27,7 +27,7 @@ packages/weasel-history/
     journal.ts            — new: Journal class
     journal.test.ts       — new
 
-packages/weasel-modes/
+packages/modes/
   package.json
   tsconfig.json
   src/
@@ -45,7 +45,7 @@ src/
     history/              — DELETED
     applyOps.ts           — unchanged
   interactions/actions/depSchema.ts  — import path updated
-  index.ts                — re-export updated to point at @orochi235/weasel-history
+  index.ts                — re-export updated to point at @weasel-js/history
 ```
 
 ---
@@ -57,9 +57,9 @@ No behavior change. Mechanical move + import updates. All existing history tests
 ### Task 1: Scaffold the `weasel-history` package
 
 **Files:**
-- Create: `packages/weasel-history/package.json`
-- Create: `packages/weasel-history/tsconfig.json`
-- Create: `packages/weasel-history/src/index.ts` (empty for now)
+- Create: `packages/history/package.json`
+- Create: `packages/history/tsconfig.json`
+- Create: `packages/history/src/index.ts` (empty for now)
 
 - [ ] **Step 1: Verify the parent directory exists**
 
@@ -69,14 +69,14 @@ Expected: includes `weasel-gestures`, `weasel-ui`, `weasel-hud`, etc.
 - [ ] **Step 2: Create the package directory and files**
 
 ```bash
-mkdir -p packages/weasel-history/src
+mkdir -p packages/history/src
 ```
 
-- [ ] **Step 3: Create `packages/weasel-history/package.json`**
+- [ ] **Step 3: Create `packages/history/package.json`**
 
 ```json
 {
-  "name": "@orochi235/weasel-history",
+  "name": "@weasel-js/history",
   "version": "0.0.0",
   "private": true,
   "description": "Undo/redo history with scoped sub-history (Journal) primitive. No React, no DOM.",
@@ -95,7 +95,7 @@ mkdir -p packages/weasel-history/src
 }
 ```
 
-- [ ] **Step 4: Create `packages/weasel-history/tsconfig.json`**
+- [ ] **Step 4: Create `packages/history/tsconfig.json`**
 
 ```json
 {
@@ -108,7 +108,7 @@ mkdir -p packages/weasel-history/src
 }
 ```
 
-- [ ] **Step 5: Create empty `packages/weasel-history/src/index.ts`**
+- [ ] **Step 5: Create empty `packages/history/src/index.ts`**
 
 ```ts
 // Public surface populated in Task 2.
@@ -118,30 +118,30 @@ export {};
 - [ ] **Step 6: Verify npm picks up the workspace**
 
 Run: `npm install`
-Expected: no errors; `node_modules/@orochi235/weasel-history` is a symlink to `packages/weasel-history`.
+Expected: no errors; `node_modules/@weasel-js/history` is a symlink to `packages/history`.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-history
+git add packages/history
 git commit -m "chore(weasel-history): scaffold package"
 ```
 
 ### Task 2: Move `History` source files into the package
 
 **Files:**
-- Move: `src/core/history/history.ts` → `packages/weasel-history/src/history.ts`
-- Move: `src/core/history/history.test.ts` → `packages/weasel-history/src/history.test.ts`
-- Move: `src/core/history/index.ts` → `packages/weasel-history/src/index.ts` (overwrite scaffold)
+- Move: `src/core/history/history.ts` → `packages/history/src/history.ts`
+- Move: `src/core/history/history.test.ts` → `packages/history/src/history.test.ts`
+- Move: `src/core/history/index.ts` → `packages/history/src/index.ts` (overwrite scaffold)
 
 The moved files import `Op` and `rebuildOp` from `core/ops/...` and a debug helper from `debug/flag`. After the move those imports become cross-package imports.
 
 - [ ] **Step 1: Git-move the source files**
 
 ```bash
-git mv src/core/history/history.ts packages/weasel-history/src/history.ts
-git mv src/core/history/history.test.ts packages/weasel-history/src/history.test.ts
-git mv src/core/history/index.ts packages/weasel-history/src/index.ts
+git mv src/core/history/history.ts packages/history/src/history.ts
+git mv src/core/history/history.test.ts packages/history/src/history.test.ts
+git mv src/core/history/index.ts packages/history/src/index.ts
 ```
 
 - [ ] **Step 2: Verify the old directory is empty, then remove it**
@@ -151,7 +151,7 @@ ls src/core/history/  # should be empty
 rmdir src/core/history/
 ```
 
-- [ ] **Step 3: Fix imports in `packages/weasel-history/src/history.ts`**
+- [ ] **Step 3: Fix imports in `packages/history/src/history.ts`**
 
 The file currently has:
 ```ts
@@ -167,22 +167,22 @@ import { rebuildOp } from 'core/ops/registry';
 import { dwarn, dlog } from 'debug/flag';
 ```
 
-- [ ] **Step 4: Fix imports in `packages/weasel-history/src/history.test.ts`**
+- [ ] **Step 4: Fix imports in `packages/history/src/history.test.ts`**
 
 Locate any `from '../...'` or `from './history'` imports. The relative imports inside the package stay relative; cross-package imports (any reaching into `core/...`, `debug/...`, etc.) become path-aliased.
 
-Run: `grep -n "^import" packages/weasel-history/src/history.test.ts`
-For each result whose path goes outside `packages/weasel-history/src/`, convert to a path alias (`core/...`, `debug/...`, etc.). Imports inside the package use relative paths.
+Run: `grep -n "^import" packages/history/src/history.test.ts`
+For each result whose path goes outside `packages/history/src/`, convert to a path alias (`core/...`, `debug/...`, etc.). Imports inside the package use relative paths.
 
 - [ ] **Step 5: Run history tests in-place**
 
-Run: `npx vitest run packages/weasel-history/src/history.test.ts`
+Run: `npx vitest run packages/history/src/history.test.ts`
 Expected: PASS — all existing history tests green.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-history src/core/history
+git add packages/history src/core/history
 git commit -m "refactor(weasel-history): move History source from core into package"
 ```
 
@@ -201,7 +201,7 @@ export * from './core/history';
 
 Change to:
 ```ts
-export * from '@orochi235/weasel-history';
+export * from '@weasel-js/history';
 ```
 
 - [ ] **Step 2: Update `src/interactions/actions/depSchema.ts` type import**
@@ -213,7 +213,7 @@ import type { History } from 'core/history/history';
 
 Change to:
 ```ts
-import type { History } from '@orochi235/weasel-history';
+import type { History } from '@weasel-js/history';
 ```
 
 - [ ] **Step 3: Sweep for any other lingering importers**
@@ -221,7 +221,7 @@ import type { History } from '@orochi235/weasel-history';
 Run: `grep -rn "from.*core/history\|from '../history\|from './history'" src/ apps/ --include="*.ts" --include="*.tsx"`
 Expected: no results (or only inside files you've already updated).
 
-If any results appear, update them the same way: the public surface is `@orochi235/weasel-history`.
+If any results appear, update them the same way: the public surface is `@weasel-js/history`.
 
 - [ ] **Step 4: Typecheck the whole repo**
 
@@ -237,7 +237,7 @@ Expected: PASS — no regressions.
 
 ```bash
 git add src apps
-git commit -m "refactor(history): point consumers at @orochi235/weasel-history"
+git commit -m "refactor(history): point consumers at @weasel-js/history"
 ```
 
 ---
@@ -259,12 +259,12 @@ Architectural shape (locked in here so all tasks below are consistent):
 ### Task 4: Add `History.recordEntry(ops, label)` — push without applying
 
 **Files:**
-- Modify: `packages/weasel-history/src/history.ts`
-- Test: `packages/weasel-history/src/history.recordEntry.test.ts`
+- Modify: `packages/history/src/history.ts`
+- Test: `packages/history/src/history.recordEntry.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-history/src/history.recordEntry.test.ts`:
+Create `packages/history/src/history.recordEntry.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -342,7 +342,7 @@ describe('History.recordEntry', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npx vitest run packages/weasel-history/src/history.recordEntry.test.ts`
+Run: `npx vitest run packages/history/src/history.recordEntry.test.ts`
 Expected: FAIL with `h.recordEntry is not a function`.
 
 - [ ] **Step 3: Add `recordEntry` to the `History` interface in `history.ts`**
@@ -370,30 +370,30 @@ Inside the returned object literal (next to `apply`, `applyOps`, etc.), add:
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `npx vitest run packages/weasel-history/src/history.recordEntry.test.ts`
+Run: `npx vitest run packages/history/src/history.recordEntry.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Run the full history suite to verify no regressions**
 
-Run: `npx vitest run packages/weasel-history/src/`
+Run: `npx vitest run packages/history/src/`
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-history/src
+git add packages/history/src
 git commit -m "feat(weasel-history): add History.recordEntry for preapplied push"
 ```
 
 ### Task 5: Add `History.allForwardOps()` — snapshot the current net forward ops
 
 **Files:**
-- Modify: `packages/weasel-history/src/history.ts`
-- Test: `packages/weasel-history/src/history.allForwardOps.test.ts`
+- Modify: `packages/history/src/history.ts`
+- Test: `packages/history/src/history.allForwardOps.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-history/src/history.allForwardOps.test.ts`:
+Create `packages/history/src/history.allForwardOps.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -450,7 +450,7 @@ describe('History.allForwardOps', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npx vitest run packages/weasel-history/src/history.allForwardOps.test.ts`
+Run: `npx vitest run packages/history/src/history.allForwardOps.test.ts`
 Expected: FAIL — `h.allForwardOps is not a function`.
 
 - [ ] **Step 3: Add `allForwardOps` to the `History` interface**
@@ -479,32 +479,32 @@ Inside the returned object literal:
 
 - [ ] **Step 5: Run the test**
 
-Run: `npx vitest run packages/weasel-history/src/history.allForwardOps.test.ts`
+Run: `npx vitest run packages/history/src/history.allForwardOps.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Run the full history suite**
 
-Run: `npx vitest run packages/weasel-history/src/`
+Run: `npx vitest run packages/history/src/`
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-history/src
+git add packages/history/src
 git commit -m "feat(weasel-history): add History.allForwardOps snapshot"
 ```
 
 ### Task 6: Define the `Journal` interface and `history.beginJournal`
 
 **Files:**
-- Create: `packages/weasel-history/src/journal.ts`
-- Modify: `packages/weasel-history/src/history.ts` (add `beginJournal` method; keep `adapter` reference for the new method)
-- Modify: `packages/weasel-history/src/index.ts`
-- Test: `packages/weasel-history/src/journal.skeleton.test.ts`
+- Create: `packages/history/src/journal.ts`
+- Modify: `packages/history/src/history.ts` (add `beginJournal` method; keep `adapter` reference for the new method)
+- Modify: `packages/history/src/index.ts`
+- Test: `packages/history/src/journal.skeleton.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-history/src/journal.skeleton.test.ts`:
+Create `packages/history/src/journal.skeleton.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -543,10 +543,10 @@ describe('history.beginJournal — Journal skeleton', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npx vitest run packages/weasel-history/src/journal.skeleton.test.ts`
+Run: `npx vitest run packages/history/src/journal.skeleton.test.ts`
 Expected: FAIL — `Cannot find module './journal'`.
 
-- [ ] **Step 3: Create `packages/weasel-history/src/journal.ts`**
+- [ ] **Step 3: Create `packages/history/src/journal.ts`**
 
 ```ts
 import type { Op } from 'core/ops/types';
@@ -645,7 +645,7 @@ In the `createHistory` returned object:
 
 - [ ] **Step 4: Add `beginJournal` to History**
 
-In `packages/weasel-history/src/history.ts`:
+In `packages/history/src/history.ts`:
 
 Add an import at the top:
 ```ts
@@ -673,7 +673,7 @@ In the `createHistory` returned object literal, add:
 
 Note: `this` inside the method refers to the returned History object. If TS or runtime complains about `this`, use the explicit `outerHistory` pattern: capture `const self: History = …` after the object literal is constructed and pass that.
 
-- [ ] **Step 5: Update `packages/weasel-history/src/index.ts` to export Journal types**
+- [ ] **Step 5: Update `packages/history/src/index.ts` to export Journal types**
 
 Append to existing exports:
 ```ts
@@ -684,13 +684,13 @@ Note: `createJournalInternal` is intentionally NOT exported — the public way t
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `npx vitest run packages/weasel-history/src/journal.skeleton.test.ts`
+Run: `npx vitest run packages/history/src/journal.skeleton.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-history/src
+git add packages/history/src
 git commit -m "feat(weasel-history): Journal skeleton with stub methods"
 ```
 
@@ -699,12 +699,12 @@ git commit -m "feat(weasel-history): Journal skeleton with stub methods"
 Delegate to the inner history.
 
 **Files:**
-- Modify: `packages/weasel-history/src/journal.ts`
-- Test: `packages/weasel-history/src/journal.applyBatch.test.ts`
+- Modify: `packages/history/src/journal.ts`
+- Test: `packages/history/src/journal.applyBatch.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-history/src/journal.applyBatch.test.ts`:
+Create `packages/history/src/journal.applyBatch.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -780,7 +780,7 @@ describe('Journal.applyBatch / undo / redo', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npx vitest run packages/weasel-history/src/journal.applyBatch.test.ts`
+Run: `npx vitest run packages/history/src/journal.applyBatch.test.ts`
 Expected: FAIL — `Journal.applyBatch not yet implemented`.
 
 - [ ] **Step 3: Implement applyBatch / undo / redo in `journal.ts`**
@@ -803,25 +803,25 @@ Replace the stub methods:
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-history/src/journal.applyBatch.test.ts`
+Run: `npx vitest run packages/history/src/journal.applyBatch.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-history/src
+git add packages/history/src
 git commit -m "feat(weasel-history): Journal.applyBatch/undo/redo delegate to inner"
 ```
 
 ### Task 8: Implement `Journal.commit`
 
 **Files:**
-- Modify: `packages/weasel-history/src/journal.ts`
-- Test: `packages/weasel-history/src/journal.commit.test.ts`
+- Modify: `packages/history/src/journal.ts`
+- Test: `packages/history/src/journal.commit.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-history/src/journal.commit.test.ts`:
+Create `packages/history/src/journal.commit.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -903,7 +903,7 @@ describe('Journal.commit', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npx vitest run packages/weasel-history/src/journal.commit.test.ts`
+Run: `npx vitest run packages/history/src/journal.commit.test.ts`
 Expected: FAIL — `Journal.commit not yet implemented`.
 
 - [ ] **Step 3: Implement commit**
@@ -922,25 +922,25 @@ Replace the stub:
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-history/src/journal.commit.test.ts`
+Run: `npx vitest run packages/history/src/journal.commit.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-history/src
+git add packages/history/src
 git commit -m "feat(weasel-history): Journal.commit flushes net ops to parent"
 ```
 
 ### Task 9: Implement `Journal.cancel`
 
 **Files:**
-- Modify: `packages/weasel-history/src/journal.ts`
-- Test: `packages/weasel-history/src/journal.cancel.test.ts`
+- Modify: `packages/history/src/journal.ts`
+- Test: `packages/history/src/journal.cancel.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-history/src/journal.cancel.test.ts`:
+Create `packages/history/src/journal.cancel.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1005,7 +1005,7 @@ describe('Journal.cancel', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npx vitest run packages/weasel-history/src/journal.cancel.test.ts`
+Run: `npx vitest run packages/history/src/journal.cancel.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement cancel**
@@ -1021,13 +1021,13 @@ Replace the stub:
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-history/src/journal.cancel.test.ts`
+Run: `npx vitest run packages/history/src/journal.cancel.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-history/src
+git add packages/history/src
 git commit -m "feat(weasel-history): Journal.cancel rolls scene back via inner.goto(0)"
 ```
 
@@ -1036,12 +1036,12 @@ git commit -m "feat(weasel-history): Journal.cancel rolls scene back via inner.g
 Suspend keeps the inner intact for later resume. The journal is no longer "active" — applyBatch/undo/redo throw — but its state is preserved.
 
 **Files:**
-- Modify: `packages/weasel-history/src/journal.ts`
-- Test: `packages/weasel-history/src/journal.suspend.test.ts`
+- Modify: `packages/history/src/journal.ts`
+- Test: `packages/history/src/journal.suspend.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-history/src/journal.suspend.test.ts`:
+Create `packages/history/src/journal.suspend.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1094,7 +1094,7 @@ describe('Journal.suspend', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npx vitest run packages/weasel-history/src/journal.suspend.test.ts`
+Run: `npx vitest run packages/history/src/journal.suspend.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement suspend**
@@ -1109,13 +1109,13 @@ Replace the stub:
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-history/src/journal.suspend.test.ts`
+Run: `npx vitest run packages/history/src/journal.suspend.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-history/src
+git add packages/history/src
 git commit -m "feat(weasel-history): Journal.suspend preserves state for resume"
 ```
 
@@ -1126,13 +1126,13 @@ Per spec, `resumeJournal` is a method on `History`, not a free function. Stalene
 The journal needs a tristate (`'active' | 'suspended' | 'closed'`) so we can distinguish "suspended (resumable)" from "closed (committed or cancelled — not resumable)". The History method calls a non-public hook on the journal to flip the state back.
 
 **Files:**
-- Modify: `packages/weasel-history/src/journal.ts`
-- Modify: `packages/weasel-history/src/history.ts` (add `resumeJournal` method)
-- Test: `packages/weasel-history/src/journal.resume.test.ts`
+- Modify: `packages/history/src/journal.ts`
+- Modify: `packages/history/src/history.ts` (add `resumeJournal` method)
+- Test: `packages/history/src/journal.resume.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-history/src/journal.resume.test.ts`:
+Create `packages/history/src/journal.resume.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1210,12 +1210,12 @@ describe('history.resumeJournal', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `npx vitest run packages/weasel-history/src/journal.resume.test.ts`
+Run: `npx vitest run packages/history/src/journal.resume.test.ts`
 Expected: FAIL — `parent.resumeJournal is not a function`.
 
 - [ ] **Step 3: Refactor journal state to a tristate; add a resume hook**
 
-In `packages/weasel-history/src/journal.ts`:
+In `packages/history/src/journal.ts`:
 
 Replace `let active = true;` with:
 ```ts
@@ -1263,7 +1263,7 @@ RESUMERS.delete(journal);
 
 - [ ] **Step 4: Add `resumeJournal` to History**
 
-In `packages/weasel-history/src/history.ts`:
+In `packages/history/src/history.ts`:
 
 Update the import line at the top of the file:
 ```ts
@@ -1289,18 +1289,18 @@ In the `createHistory` returned object literal:
 
 - [ ] **Step 5: Run the test**
 
-Run: `npx vitest run packages/weasel-history/src/journal.resume.test.ts`
+Run: `npx vitest run packages/history/src/journal.resume.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Run all weasel-history tests**
 
-Run: `npx vitest run packages/weasel-history/src/`
+Run: `npx vitest run packages/history/src/`
 Expected: PASS — no regressions in earlier journal tests.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-history/src
+git add packages/history/src
 git commit -m "feat(weasel-history): history.resumeJournal re-activates suspended journals"
 ```
 
@@ -1309,11 +1309,11 @@ git commit -m "feat(weasel-history): history.resumeJournal re-activates suspende
 `currentEntryId()` was added in Task 6 and `forkedAtEntryId` is set from it in `createJournalInternal`. This task is verification-only — write the semantic tests against the existing implementation. If the tests fail, the engineer fixes the implementation (most likely there's a subtle off-by-one in how `nextEntryId` is captured or how `currentEntryId` reports it).
 
 **Files:**
-- Test: `packages/weasel-history/src/journal.forkPoint.test.ts`
+- Test: `packages/history/src/journal.forkPoint.test.ts`
 
 - [ ] **Step 1: Write the test**
 
-Create `packages/weasel-history/src/journal.forkPoint.test.ts`:
+Create `packages/history/src/journal.forkPoint.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1366,7 +1366,7 @@ describe('forkedAtEntryId', () => {
 
 - [ ] **Step 2: Run the test — should PASS against the Task-6 implementation**
 
-Run: `npx vitest run packages/weasel-history/src/journal.forkPoint.test.ts`
+Run: `npx vitest run packages/history/src/journal.forkPoint.test.ts`
 Expected: PASS.
 
 If it fails, fix the implementation:
@@ -1385,14 +1385,14 @@ const forkedAtEntryId = parent.currentEntryId();
 
 - [ ] **Step 3: Run the full weasel-history suite**
 
-Run: `npx vitest run packages/weasel-history/src/`
+Run: `npx vitest run packages/history/src/`
 Expected: PASS.
 
 - [ ] **Step 4: Commit (only if any changes were made; otherwise skip)**
 
 If the implementation was already correct in Task 6, the only change here is the new test file:
 ```bash
-git add packages/weasel-history/src/journal.forkPoint.test.ts
+git add packages/history/src/journal.forkPoint.test.ts
 git commit -m "test(weasel-history): forkedAtEntryId semantics"
 ```
 
@@ -1403,21 +1403,21 @@ git commit -m "test(weasel-history): forkedAtEntryId semantics"
 ### Task 13: Scaffold the `weasel-modes` package
 
 **Files:**
-- Create: `packages/weasel-modes/package.json`
-- Create: `packages/weasel-modes/tsconfig.json`
-- Create: `packages/weasel-modes/src/index.ts`
+- Create: `packages/modes/package.json`
+- Create: `packages/modes/tsconfig.json`
+- Create: `packages/modes/src/index.ts`
 
 - [ ] **Step 1: Create the package directory**
 
 ```bash
-mkdir -p packages/weasel-modes/src/presets
+mkdir -p packages/modes/src/presets
 ```
 
-- [ ] **Step 2: Create `packages/weasel-modes/package.json`**
+- [ ] **Step 2: Create `packages/modes/package.json`**
 
 ```json
 {
-  "name": "@orochi235/weasel-modes",
+  "name": "@weasel-js/modes",
   "version": "0.0.0",
   "private": true,
   "description": "App-level modality primitives: capability tags, mode definitions, mode registry, and decoration layer.",
@@ -1440,7 +1440,7 @@ mkdir -p packages/weasel-modes/src/presets
 }
 ```
 
-- [ ] **Step 3: Create `packages/weasel-modes/tsconfig.json`**
+- [ ] **Step 3: Create `packages/modes/tsconfig.json`**
 
 ```json
 {
@@ -1453,7 +1453,7 @@ mkdir -p packages/weasel-modes/src/presets
 }
 ```
 
-- [ ] **Step 4: Create `packages/weasel-modes/src/index.ts`**
+- [ ] **Step 4: Create `packages/modes/src/index.ts`**
 
 ```ts
 // Public surface populated in later tasks.
@@ -1463,25 +1463,25 @@ export {};
 - [ ] **Step 5: Verify workspace picks it up**
 
 Run: `npm install`
-Expected: no errors; `node_modules/@orochi235/weasel-modes` symlinks to the package.
+Expected: no errors; `node_modules/@weasel-js/modes` symlinks to the package.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-modes
+git add packages/modes
 git commit -m "chore(weasel-modes): scaffold package"
 ```
 
 ### Task 14: Define the `CapabilityTag` type and `IMPLICIT_TAGS`
 
 **Files:**
-- Create: `packages/weasel-modes/src/capabilities.ts`
-- Modify: `packages/weasel-modes/src/index.ts`
-- Test: `packages/weasel-modes/src/capabilities.test.ts`
+- Create: `packages/modes/src/capabilities.ts`
+- Modify: `packages/modes/src/index.ts`
+- Test: `packages/modes/src/capabilities.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-modes/src/capabilities.test.ts`:
+Create `packages/modes/src/capabilities.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1515,10 +1515,10 @@ describe('capabilities', () => {
 
 - [ ] **Step 2: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/capabilities.test.ts`
+Run: `npx vitest run packages/modes/src/capabilities.test.ts`
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 3: Create `packages/weasel-modes/src/capabilities.ts`**
+- [ ] **Step 3: Create `packages/modes/src/capabilities.ts`**
 
 ```ts
 /** The full vocabulary of capability tags shipped in the default preset.
@@ -1551,12 +1551,12 @@ export function isCapabilityTag(value: string): value is CapabilityTag {
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/capabilities.test.ts`
+Run: `npx vitest run packages/modes/src/capabilities.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Re-export from index**
 
-In `packages/weasel-modes/src/index.ts`:
+In `packages/modes/src/index.ts`:
 ```ts
 export { ALL_TAGS, IMPLICIT_TAGS, isCapabilityTag } from './capabilities';
 export type { CapabilityTag } from './capabilities';
@@ -1565,20 +1565,20 @@ export type { CapabilityTag } from './capabilities';
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-modes/src
+git add packages/modes/src
 git commit -m "feat(weasel-modes): capability tag vocabulary and implicit tags"
 ```
 
 ### Task 15: Define the `ModeDefinition` interface
 
 **Files:**
-- Create: `packages/weasel-modes/src/modeDefinition.ts`
-- Modify: `packages/weasel-modes/src/index.ts`
-- Test: `packages/weasel-modes/src/modeDefinition.test.ts`
+- Create: `packages/modes/src/modeDefinition.ts`
+- Modify: `packages/modes/src/index.ts`
+- Test: `packages/modes/src/modeDefinition.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-modes/src/modeDefinition.test.ts`:
+Create `packages/modes/src/modeDefinition.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1618,10 +1618,10 @@ describe('eligibleForMode', () => {
 
 - [ ] **Step 2: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/modeDefinition.test.ts`
+Run: `npx vitest run packages/modes/src/modeDefinition.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Create `packages/weasel-modes/src/modeDefinition.ts`**
+- [ ] **Step 3: Create `packages/modes/src/modeDefinition.ts`**
 
 ```ts
 import { IMPLICIT_TAGS, type CapabilityTag } from './capabilities';
@@ -1659,12 +1659,12 @@ export function eligibleForMode(mode: ModeDefinition, toolTags: readonly Capabil
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/modeDefinition.test.ts`
+Run: `npx vitest run packages/modes/src/modeDefinition.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Re-export from index**
 
-In `packages/weasel-modes/src/index.ts`, append:
+In `packages/modes/src/index.ts`, append:
 ```ts
 export { eligibleForMode } from './modeDefinition';
 export type { ModeDefinition, WorkspaceVisual } from './modeDefinition';
@@ -1673,20 +1673,20 @@ export type { ModeDefinition, WorkspaceVisual } from './modeDefinition';
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-modes/src
+git add packages/modes/src
 git commit -m "feat(weasel-modes): ModeDefinition + eligibleForMode predicate"
 ```
 
 ### Task 16: Define the stock-mode preset (data only)
 
 **Files:**
-- Create: `packages/weasel-modes/src/presets/default.ts`
-- Modify: `packages/weasel-modes/src/index.ts`
-- Test: `packages/weasel-modes/src/presets/default.test.ts`
+- Create: `packages/modes/src/presets/default.ts`
+- Modify: `packages/modes/src/index.ts`
+- Test: `packages/modes/src/presets/default.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-modes/src/presets/default.test.ts`:
+Create `packages/modes/src/presets/default.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1732,10 +1732,10 @@ describe('default mode preset', () => {
 
 - [ ] **Step 2: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/presets/default.test.ts`
+Run: `npx vitest run packages/modes/src/presets/default.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Create `packages/weasel-modes/src/presets/default.ts`**
+- [ ] **Step 3: Create `packages/modes/src/presets/default.ts`**
 
 ```ts
 import type { ModeDefinition } from '../modeDefinition';
@@ -1832,12 +1832,12 @@ export function byId(id: string): ModeDefinition {
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/presets/default.test.ts`
+Run: `npx vitest run packages/modes/src/presets/default.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Re-export from index**
 
-In `packages/weasel-modes/src/index.ts`, append:
+In `packages/modes/src/index.ts`, append:
 ```ts
 export { DEFAULT_MODES, byId, NORMAL, PATH_EDIT, ISOLATION, FREE_TRANSFORM, TEXT_EDIT, CROP } from './presets/default';
 ```
@@ -1845,7 +1845,7 @@ export { DEFAULT_MODES, byId, NORMAL, PATH_EDIT, ISOLATION, FREE_TRANSFORM, TEXT
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-modes/src
+git add packages/modes/src
 git commit -m "feat(weasel-modes): six-mode default preset (data only)"
 ```
 
@@ -1854,13 +1854,13 @@ git commit -m "feat(weasel-modes): six-mode default preset (data only)"
 A small state container — current mode, transitions, listeners. The registry does not interpret modes (eligibility, scoping, etc.) — it just tracks "which mode is active right now" and notifies subscribers.
 
 **Files:**
-- Create: `packages/weasel-modes/src/registry.ts`
-- Modify: `packages/weasel-modes/src/index.ts`
-- Test: `packages/weasel-modes/src/registry.test.ts`
+- Create: `packages/modes/src/registry.ts`
+- Modify: `packages/modes/src/index.ts`
+- Test: `packages/modes/src/registry.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-modes/src/registry.test.ts`:
+Create `packages/modes/src/registry.test.ts`:
 
 ```ts
 import { describe, it, expect, vi } from 'vitest';
@@ -1915,10 +1915,10 @@ describe('createModeRegistry', () => {
 
 - [ ] **Step 2: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/registry.test.ts`
+Run: `npx vitest run packages/modes/src/registry.test.ts`
 Expected: FAIL.
 
-- [ ] **Step 3: Create `packages/weasel-modes/src/registry.ts`**
+- [ ] **Step 3: Create `packages/modes/src/registry.ts`**
 
 ```ts
 import type { ModeDefinition } from './modeDefinition';
@@ -1975,12 +1975,12 @@ export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistr
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/registry.test.ts`
+Run: `npx vitest run packages/modes/src/registry.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Re-export from index**
 
-In `packages/weasel-modes/src/index.ts`, append:
+In `packages/modes/src/index.ts`, append:
 ```ts
 export { createModeRegistry } from './registry';
 export type { ModeRegistry, CreateModeRegistryOptions } from './registry';
@@ -1989,7 +1989,7 @@ export type { ModeRegistry, CreateModeRegistryOptions } from './registry';
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-modes/src
+git add packages/modes/src
 git commit -m "feat(weasel-modes): mode registry with active mode + subscribe"
 ```
 
@@ -2006,9 +2006,9 @@ The shape: a function that, given the current `ModeDefinition` and the canvas co
 This task defines the *contract*. Modes register decoration painters by id; the layer looks up the painter for the active mode each frame.
 
 **Files:**
-- Create: `packages/weasel-modes/src/decorations.ts`
-- Modify: `packages/weasel-modes/src/index.ts`
-- Test: `packages/weasel-modes/src/decorations.test.ts`
+- Create: `packages/modes/src/decorations.ts`
+- Modify: `packages/modes/src/index.ts`
+- Test: `packages/modes/src/decorations.test.ts`
 
 - [ ] **Step 1: Read the existing RenderLayer shape**
 
@@ -2019,7 +2019,7 @@ Read this to understand the shape decoration painters must produce.
 
 - [ ] **Step 2: Write the failing test**
 
-Create `packages/weasel-modes/src/decorations.test.ts`:
+Create `packages/modes/src/decorations.test.ts`:
 
 ```ts
 import { describe, it, expect, vi } from 'vitest';
@@ -2080,10 +2080,10 @@ describe('createModeDecorations', () => {
 
 - [ ] **Step 3: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/decorations.test.ts`
+Run: `npx vitest run packages/modes/src/decorations.test.ts`
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 4: Create `packages/weasel-modes/src/decorations.ts`**
+- [ ] **Step 4: Create `packages/modes/src/decorations.ts`**
 
 ```ts
 import type { ModeRegistry } from './registry';
@@ -2135,12 +2135,12 @@ export function createModeDecorations(opts: CreateModeDecorationsOptions): ModeD
 
 - [ ] **Step 5: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/decorations.test.ts`
+Run: `npx vitest run packages/modes/src/decorations.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Re-export from index**
 
-In `packages/weasel-modes/src/index.ts`, append:
+In `packages/modes/src/index.ts`, append:
 ```ts
 export { createModeDecorations } from './decorations';
 export type { ModeDecorations, ModeDecorationPainter, CreateModeDecorationsOptions, ModeDrawCommand } from './decorations';
@@ -2149,7 +2149,7 @@ export type { ModeDecorations, ModeDecorationPainter, CreateModeDecorationsOptio
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-modes/src
+git add packages/modes/src
 git commit -m "feat(weasel-modes): mode-owned decoration layer (painter registry)"
 ```
 
@@ -2177,10 +2177,10 @@ If `prepublishOnly` does not exist at the root, check `package.json` scripts; ot
 
 - [ ] **Step 4: Verify the two new packages are visible from a kit-internal import path**
 
-Run: `node -e "import('@orochi235/weasel-history').then((m) => console.log(Object.keys(m)))"`
+Run: `node -e "import('@weasel-js/history').then((m) => console.log(Object.keys(m)))"`
 Expected: list including `createHistory`. (Note: `beginJournal` and `resumeJournal` are methods on the `History` instance, not module-level exports.)
 
-Run: `node -e "import('@orochi235/weasel-modes').then((m) => console.log(Object.keys(m)))"`
+Run: `node -e "import('@weasel-js/modes').then((m) => console.log(Object.keys(m)))"`
 Expected: list including `createModeRegistry`, `DEFAULT_MODES`, `eligibleForMode`, `createModeDecorations`, `ALL_TAGS`.
 
 - [ ] **Step 5: No-op commit (or skip if everything was committed in prior tasks)**

@@ -1,13 +1,13 @@
-# @orochi235/weasel-svg
+# @weasel-js/svg
 
-SVG import / export for [`@orochi235/weasel`](../../). Parse an SVG string into a tree of weasel-native shapes (`Path`, `FillStyle`, `Stroke`); serialize the same tree back to an SVG document.
+SVG import / export for [`@weasel-js/core`](../../). Parse an SVG string into a tree of weasel-native shapes (`Path`, `FillStyle`, `Stroke`); serialize the same tree back to an SVG document.
 
-The package has zero runtime dependencies outside `@orochi235/weasel` — the path-`d` parser, transform parser, and color parser are all hand-rolled and live in this package.
+The package has zero runtime dependencies outside `@weasel-js/core` — the path-`d` parser, transform parser, and color parser are all hand-rolled and live in this package.
 
 ## Quick start
 
 ```ts
-import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
+import { parseSvg, serializeSvg } from '@weasel-js/svg';
 
 const { nodes, warnings } = parseSvg(`
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -76,7 +76,7 @@ Arc commands (`A`/`a`) are converted to cubic Bezier approximations using the st
 
 ```sh
 # From the repo root:
-npx vitest run packages/weasel-svg
+npx vitest run packages/svg
 ```
 
 Three test files:

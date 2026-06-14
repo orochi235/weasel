@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ActionsProvider } from '@orochi235/weasel';
+import { ActionsProvider } from '@weasel-js/core';
 import { ActionBar, type ActionBarProps } from './ActionBar';
 import './app.css';
 

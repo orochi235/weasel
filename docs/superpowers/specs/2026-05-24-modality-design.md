@@ -235,14 +235,14 @@ A separate in-flight refactor (`docs/superpowers/plans/2026-05-24-canvas-sceneca
 ## What lives where (file plan)
 
 ```
-packages/weasel-history/
+packages/history/
   src/
     History.ts          (moved from src/core/history/history.ts)
     Journal.ts          (new)
     serialize.ts        (moved)
     index.ts
 
-packages/weasel-modes/
+packages/modes/
   src/
     types.ts            (ModeDefinition, CapabilityTag)
     registry.ts         (active mode, transitions)

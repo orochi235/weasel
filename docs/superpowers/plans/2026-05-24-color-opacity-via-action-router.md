@@ -830,16 +830,16 @@ Expected: all pass.
 In `apps/draw/src/ActiveSwatches.tsx` (lines 34–74 — `toHex8`, `getAlpha01`, `withAlpha01`, `mergeAlphaFromPrev`), delete the inline definitions and replace with:
 
 ```typescript
-import { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '@orochi235/weasel/util/color';
+import { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from '@weasel-js/core/util/color';
 // (or the actual public path — check apps/draw/src for existing kit imports)
 ```
 
-If `@orochi235/weasel/util/color` is not a public path, add it to the kit's public exports (look at `package.json` `exports` field or `src/index.ts`). For this task, the safe path is `from '../../../src/util/color'` relative to the file — but match whatever existing kit imports in apps/draw use.
+If `@weasel-js/core/util/color` is not a public path, add it to the kit's public exports (look at `package.json` `exports` field or `src/index.ts`). For this task, the safe path is `from '../../../src/util/color'` relative to the file — but match whatever existing kit imports in apps/draw use.
 
 Check existing imports first:
 
 ```bash
-grep -n "from '@orochi235/weasel\|from '\.\./\.\./\.\./src" apps/draw/src/ActiveSwatches.tsx | head -5
+grep -n "from '@weasel-js/core\|from '\.\./\.\./\.\./src" apps/draw/src/ActiveSwatches.tsx | head -5
 ```
 
 If `PropertyColorInput` in `PropertiesPanel.tsx` also has its own copy of `toHex8` / `getAlpha01` / `withAlpha01` (it does — lines 190–220 use them), update its imports too:

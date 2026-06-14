@@ -16,9 +16,9 @@ import {
   SceneCanvas,
   useScene,
   asNodeId,
-} from '@orochi235/weasel';
-import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@orochi235/weasel';
-import { ActionBar } from '@orochi235/weasel-ui';
+} from '@weasel-js/core';
+import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@weasel-js/core';
+import { ActionBar } from '@weasel-js/ui';
 import type { DrawCommand } from '../../src/renderer';
 
 const W = 240;

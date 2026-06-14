@@ -11,7 +11,7 @@
 import {
   PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z,
   type Path,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { trimNumber } from './transform';
 
 /** Serialize a weasel `Path` to an SVG `d=` attribute string. */

@@ -9,7 +9,7 @@ Three coordinated additions to weasel:
 
 1. **Five new shape tools** (`useEllipseTool`, `useLineTool`, `usePolygonTool`, `useStarTool`, `usePencilTool`) in `src/tools/builtin/`, alongside one new gesture primitive (`useDragRadial`) and one new pure geometry helper (`schneiderFit` for the pencil tool's cubic-Bezier fit).
 2. **Presentation metadata on `Tool`** — `Tool.presentation?: { label, icon, cursor, group, shortcut }` plus kit-shipped default icons for every built-in tool. Cursor plumbing is the only piece that touches the dispatcher.
-3. **`<ToolPalette>` component** in `@orochi235/weasel-ui` consuming the new metadata — grouped flat layout, ARIA toolbar semantics, no flyouts.
+3. **`<ToolPalette>` component** in `@weasel-js/ui` consuming the new metadata — grouped flat layout, ARIA toolbar semantics, no flyouts.
 
 Driver: the swillustrator app currently re-implements its own tool buttons because the kit's `Tool` type carries no presentation metadata. Every weasel consumer that wants a palette duplicates this work. Once metadata + `<ToolPalette>` ship, swillustrator and future consumers render their palettes from kit data alone.
 
@@ -41,7 +41,7 @@ src/features/paths/schneiderFit.ts          — pure cubic-Bezier fitter
 src/icons/                                  — kit-shipped SVG icon components
   index.ts                                  — barrel
   SelectIcon.tsx, HandIcon.tsx, ...         — one inline-SVG component per tool
-packages/weasel-ui/src/
+packages/ui/src/
   ToolPalette.tsx                           — new component
   ToolPalette.css                           — grouped layout
 ```
@@ -197,7 +197,7 @@ Implements Schneider (1990, *Graphics Gems I*) adaptive cubic-Bezier fitting:
 
 ## `<ToolPalette>` component
 
-Lives at `packages/weasel-ui/src/ToolPalette.tsx`.
+Lives at `packages/ui/src/ToolPalette.tsx`.
 
 ```tsx
 interface ToolPaletteProps {

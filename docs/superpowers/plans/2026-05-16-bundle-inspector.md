@@ -4,9 +4,9 @@
 
 **Goal:** Build a read-only catalog browser at `#/dev/registry` in `apps/swillustrator` that lets you browse every tool, action, shape kind, bundle, icon, op factory, and public export the weasel kit registers — with a categorized tree, bundle filter, text filter, and per-leaf detail pane.
 
-**Architecture:** New page sibling to `ToolkitBuilder`, mounted from `apps/swillustrator/src/main.tsx` on `#/dev/registry`. Data is collected by a hybrid pipeline: a hidden `<SceneCanvas>` provides runtime introspection of tools/actions/bundles (via `useActionsRegistry` + the synthesized `ToolsApi`), while barrel imports from `@orochi235/weasel` and `apps/swillustrator/src/*Icons.tsx` cover icons, op factories, and public exports. Source-file paths and JSDoc snippets are pulled lazily on selection through a Vite `import.meta.glob` of raw source.
+**Architecture:** New page sibling to `ToolkitBuilder`, mounted from `apps/swillustrator/src/main.tsx` on `#/dev/registry`. Data is collected by a hybrid pipeline: a hidden `<SceneCanvas>` provides runtime introspection of tools/actions/bundles (via `useActionsRegistry` + the synthesized `ToolsApi`), while barrel imports from `@weasel-js/core` and `apps/swillustrator/src/*Icons.tsx` cover icons, op factories, and public exports. Source-file paths and JSDoc snippets are pulled lazily on selection through a Vite `import.meta.glob` of raw source.
 
-**Tech Stack:** React, TypeScript, Vite, CSS modules, `@orochi235/weasel`, `@orochi235/weasel/routing`, Vitest + `@testing-library/react`.
+**Tech Stack:** React, TypeScript, Vite, CSS modules, `@weasel-js/core`, `@weasel-js/core/routing`, Vitest + `@testing-library/react`.
 
 **Spec:** `docs/superpowers/specs/2026-05-16-bundle-inspector-design.md`.
 
@@ -53,7 +53,7 @@ Create `apps/swillustrator/src/dev/RegistryInspector.test.tsx`:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
-import { ActionsProvider, SelectionContextProvider } from '@orochi235/weasel';
+import { ActionsProvider, SelectionContextProvider } from '@weasel-js/core';
 import { RegistryInspector } from './RegistryInspector';
 
 describe('RegistryInspector', () => {
@@ -269,7 +269,7 @@ Create `apps/swillustrator/src/dev/registryData.ts`:
 
 ```ts
 import type { ComponentType } from 'react';
-import * as Weasel from '@orochi235/weasel';
+import * as Weasel from '@weasel-js/core';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
 
@@ -394,7 +394,7 @@ export function collectOpFactories(): readonly OpFactoryEntry[] {
     .map((id) => ({ kind: 'opFactory', id, label: id }));
 }
 
-/** All function/object exports from the `@orochi235/weasel` barrel. Filters
+/** All function/object exports from the `@weasel-js/core` barrel. Filters
  *  out type-only re-exports (which vanish at runtime anyway). */
 export function collectPublicExports(): readonly PublicExportEntry[] {
   const out: PublicExportEntry[] = [];
@@ -446,7 +446,7 @@ Create `apps/swillustrator/src/dev/registryProbe.test.tsx`:
 
 ```tsx
 import { render, waitFor } from '@testing-library/react';
-import { ActionsProvider, SelectionContextProvider } from '@orochi235/weasel';
+import { ActionsProvider, SelectionContextProvider } from '@weasel-js/core';
 import { RegistryProbe } from './registryProbe';
 
 describe('RegistryProbe', () => {
@@ -495,7 +495,7 @@ import {
   useSelection,
   useUndoRedo,
   type ToolsApi,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { ToolEntry, ActionEntry } from './registryData';
 
 export interface RegistrySnapshot {
@@ -886,7 +886,7 @@ Replace the contents of `apps/swillustrator/src/dev/RegistryInspector.test.tsx`:
 
 ```tsx
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ActionsProvider, SelectionContextProvider } from '@orochi235/weasel';
+import { ActionsProvider, SelectionContextProvider } from '@weasel-js/core';
 import { RegistryInspector } from './RegistryInspector';
 
 function renderInspector() {

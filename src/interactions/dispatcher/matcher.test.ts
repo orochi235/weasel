@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { matchBest, matchSorted, specificity, type InputEvent, type ScopedBinding } from './matcher';
 import type { GestureBinding } from '../actions/binding';
-import type { GestureSpec } from '@orochi235/weasel-gestures';
+import type { GestureSpec } from '@weasel-js/gestures';
 
 const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 // Default wheel event data fields (matcher only reads mods; these are pass-through).

@@ -6,7 +6,7 @@ import {
   useScene,
   useSelection,
   type LassoHitMode,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 const W = 480, H = 320;
 

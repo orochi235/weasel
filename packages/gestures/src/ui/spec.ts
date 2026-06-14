@@ -66,7 +66,7 @@ export type TargetSpec =
  *  Array form for explicit channel:phase atoms — e.g. `[{ channel: 'rect',
  *  phase: 'engaged' }]` for "when the rect tool is mid-gesture, regardless of
  *  which scope I'm in." See the v3 route grammar in
- *  `@orochi235/weasel-gestures/grammar` for the full lattice.
+ *  `@weasel-js/gestures/grammar` for the full lattice.
  *
  *  When omitted, matches in any phase (preserves pre-phase behavior). */
 export type PhaseSpec = 'initial' | 'engaged' | '*' | readonly import('../grammar/routeGrammar').PhaseAtom[];

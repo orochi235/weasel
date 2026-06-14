@@ -61,7 +61,7 @@ Mount a hidden `<SceneCanvas>` configured with the union of all known tools and 
 For things not exposed through a runtime hook:
 - **Icons:** `apps/swillustrator/src/actionIcons.tsx`, `kindIcons.tsx`
 - **Shape kinds:** the kit's exported node-kind catalog
-- **Op factories, public exports:** named exports from `@orochi235/weasel`'s barrel
+- **Op factories, public exports:** named exports from `@weasel-js/core`'s barrel
 
 ### Source-file paths & JSDoc snippets
 A small Vite `import.meta.glob('...', { as: 'raw' })` over `src/**/*.{ts,tsx}` (and the kit's `src/**/*.{ts,tsx}`), pulled lazily on selection so it doesn't bloat the dev bundle. A leaf lookup matches by exported symbol name and reads the JSDoc immediately preceding the export.

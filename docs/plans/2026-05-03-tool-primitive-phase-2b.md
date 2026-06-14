@@ -1020,7 +1020,7 @@ In `src/features/viewport/usePan.ts`, replace the existing JSDoc on the `usePan`
  * the gesture (useful when the app has multiple viewports — e.g. a main
  * canvas plus a separate seed-starting view).
  *
- * @deprecated Phase 2b ships `useHandTool` from `@orochi235/weasel/tools`
+ * @deprecated Phase 2b ships `useHandTool` from `@weasel-js/core/tools`
  * which integrates with `<Canvas view={...} />`. This hook uses
  * `React.MouseEvent` and an inverted (additive) sign convention — incompatible
  * with the Tool primitive dispatcher and the new `View` shape. Removal is

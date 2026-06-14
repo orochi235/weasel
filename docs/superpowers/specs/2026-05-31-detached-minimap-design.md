@@ -108,9 +108,9 @@ not a replacement.
 ### `<SceneViewCanvas>`
 
 ```tsx
-import type { Scene } from '@orochi235/weasel';
-import type { View } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel';
+import type { Scene } from '@weasel-js/core';
+import type { View } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/core';
 
 interface SceneViewCanvasProps<TData, TLayer, TPose> {
   scene: Scene<TData, TLayer, TPose>;
@@ -149,7 +149,7 @@ handles invalidation. No internal RAF loop; render is on demand.
 ### `<MinimapCanvas>`
 
 ```tsx
-import type { Scene, View, DrawCommand } from '@orochi235/weasel';
+import type { Scene, View, DrawCommand } from '@weasel-js/core';
 
 interface MinimapCanvasProps<TData, TLayer, TPose> {
   /** Same scene the main canvas is rendering. */

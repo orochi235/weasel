@@ -29,8 +29,8 @@
 
 - **Vitest: 156/156 pass** (22 test files; new: `registerTexture` 5, `registerProgram` 6 = +11 from step 5's 145).
 - **Playwright: 8/8 specs pass** (smoke + synthetic + text + paint + colors + 3 shader specs).
-- **Typecheck**: clean for `packages/weasel-gl` (pre-existing rootDir noise from main `src/` imports is not step-6 related).
-- **Browser-verified**: Voronoi pattern animates smoothly inside the bounds rect at `/packages/weasel-gl/dev/shader.html`; cell borders move as `u_time` changes.
+- **Typecheck**: clean for `packages/gl` (pre-existing rootDir noise from main `src/` imports is not step-6 related).
+- **Browser-verified**: Voronoi pattern animates smoothly inside the bounds rect at `/packages/gl/dev/shader.html`; cell borders move as `u_time` changes.
 
 ## Lessons for step 7+ (folded into conventions)
 

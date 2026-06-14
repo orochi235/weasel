@@ -170,7 +170,7 @@ Read `/Users/mike/src/weasel/demo/demos/CloneDemo.tsx` and `/Users/mike/src/weas
 
 Update `CloneDemo.tsx`:
 
-- Import `useSelection`, `useSelectTool`, `useTools` from `@orochi235/weasel`.
+- Import `useSelection`, `useSelectTool`, `useTools` from `@weasel-js/core`.
 - Inside the component:
   - `const selection = useSelection({ mode: 'multi', extend: 'shift' });`
   - Spread `selection.adapterMethods` onto the adapter object so `getSelection` / `setSelection` resolve to the shared state.

@@ -58,7 +58,7 @@ Shift-held drags during engagement get the shift-specific binding; plain drags g
 
 ### Where the change lands
 
-`matchSorted` in `packages/weasel-gestures/src/ui/match.ts`. The current implementation iterates `SCOPE_PRIORITY` outer and `bindings` inner; matches accumulate in registration order. The new implementation accumulates matches per scope, sorts each scope's matches by specificity (descending), then concatenates scopes in priority order.
+`matchSorted` in `packages/gestures/src/ui/match.ts`. The current implementation iterates `SCOPE_PRIORITY` outer and `bindings` inner; matches accumulate in registration order. The new implementation accumulates matches per scope, sorts each scope's matches by specificity (descending), then concatenates scopes in priority order.
 
 ```ts
 function specificity(spec: GestureSpec): readonly number[] {
@@ -103,7 +103,7 @@ Tests verify the contract: an integration test confirms a binding with a target 
 ## Definition of done
 
 - `matchSorted` orders within-scope matches by specificity (descending), then registration order.
-- A unit test in `packages/weasel-gestures/src/ui/match.test.ts` covers the four-component tuple, including tiebreaks.
+- A unit test in `packages/gestures/src/ui/match.test.ts` covers the four-component tuple, including tiebreaks.
 - `editAnchorsAction.defaultBinding` gets a function-form `target` predicate matching `anchor:*`/`controlIn:*`/`controlOut:*` affordance kinds.
 - An integration test in `src/interactions/dispatcher/dispatcher.test.ts` confirms editAnchorsAction wins over moveAction on an anchor-kind affordance drag.
 - `tests/e2e/bezier-edit.spec.ts` — the third spec flips from `test.fixme` to `test`.

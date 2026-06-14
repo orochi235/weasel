@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { wrapWithRotation } from './rotationRender';
-import type { DrawCommand } from '@orochi235/weasel/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 
 describe('wrapWithRotation', () => {
   const inner: DrawCommand[] = [

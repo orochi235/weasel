@@ -128,7 +128,7 @@ The kit's grid surface is now exposed exclusively via `export * from './features
 - [ ] **Step 2.4: Run typecheck**
 
 Run: `npx tsc --noEmit`
-Expected: clean. If consumers (or kit-internal files) imported these names from `@orochi235/weasel`, the names are still exported via the wildcard, so this should be a pure re-routing with no observable change.
+Expected: clean. If consumers (or kit-internal files) imported these names from `@weasel-js/core`, the names are still exported via the wildcard, so this should be a pure re-routing with no observable change.
 
 - [ ] **Step 2.5: Run the full test suite as a regression check**
 
