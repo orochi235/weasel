@@ -3,7 +3,7 @@ import type { Tool, ToolCtx, ToolModifiers } from '../types';
 import type { ToolDef, PhaseDef, ActionFn } from './types';
 import type { Result, BeginSpec } from './result';
 import { resolveRoute } from './lookup';
-import { mods, type ModifierKey } from './modifiers';
+import { mods, type ModifierCombo } from './modifiers';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from './routeGrammar';
 import type {
   RouteResolvedInfo,
@@ -63,10 +63,10 @@ export function defineTool<TScratch = void>(
   };
 
   // Translate a ToolModifiers runtime snapshot to the canonical
-  // ModifierKey string used in route sub-tables. Kept local because the
+  // ModifierCombo string used in route sub-tables. Kept local because the
   // helper in lookup.ts is module-private and the reflection callback is
   // the only consumer outside it.
-  const modifiersToCanonicalKey = (m: ToolModifiers): ModifierKey => {
+  const modifiersToCanonicalKey = (m: ToolModifiers): ModifierCombo => {
     const active: Array<'mod' | 'shift' | 'alt'> = [];
     if (m.meta || m.ctrl) active.push('mod');
     if (m.shift) active.push('shift');

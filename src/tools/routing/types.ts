@@ -2,7 +2,7 @@ import type { ToolCtx, ToolPresentation, HotkeyTrigger, ToolModifiers } from '..
 import type { RenderLayer } from '../../core/layers/render';
 import type { View } from '../../core/viewport/view';
 import type { Result } from './result';
-import type { ModifierKey } from './modifiers';
+import type { ModifierCombo } from './modifiers';
 import type { GestureBinding } from '../../interactions/actions/binding';
 import type { CapabilityTag } from '@weasel-js/modes';
 
@@ -33,7 +33,7 @@ export type ActionFn<TScratch> = (
   event?: PointerEvent | KeyboardEvent | WheelEvent,
 ) => Result<TScratch>;
 
-export type ModifierRoute<TScratch> = Partial<Record<ModifierKey, ActionFn<TScratch>>>;
+export type ModifierRoute<TScratch> = Partial<Record<ModifierCombo, ActionFn<TScratch>>>;
 
 export type RouteEntry<TScratch> = ActionFn<TScratch> | ModifierRoute<TScratch>;
 

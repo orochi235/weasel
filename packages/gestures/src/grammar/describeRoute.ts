@@ -1,10 +1,10 @@
 import { getGestureDescriptor, type GestureName } from './gestures';
-import type { ParsedRoute, PhaseAtom, ParsedModifiers, ModName } from './routeGrammar';
+import type { ParsedRoute, PhaseAtom, ParsedModifiers, ModifierKey } from './routeGrammar';
 
-const MOD_NAMES: Record<ModName, string> = {
+const MOD_NAMES: Record<ModifierKey, string> = {
   mod: 'Mod', shift: 'Shift', alt: 'Alt', ctrl: 'Ctrl', meta: 'Meta',
 };
-const MOD_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
+const MOD_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 /** Glossary for route-vocabulary terms surfaced by `describeRouteParts`.
  *  Exposed so docs / inspector UIs can render the same definitions. */

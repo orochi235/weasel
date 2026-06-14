@@ -22,7 +22,7 @@ export type {
 
 // Modifier helpers
 export { mods } from './grammar/modifiers';
-export type { ModifierKey } from './grammar/modifiers';
+export type { ModifierCombo } from './grammar/modifiers';
 
 // Route grammar (v3)
 export {
@@ -40,7 +40,7 @@ export {
 export type {
   ParsedRoute,
   ParsedModifiers,
-  ModName,
+  ModifierKey,
   ModRequirement,
   PhaseAtom,
   ChannelRef,
@@ -61,7 +61,23 @@ export { modifierKeyToParsed, canonicalModifiers } from './grammar/modifierKeyTo
 
 // Phase + InputEvent
 export type { RoutePhase } from './ui/phase';
-export type { InputEvent } from './ui/inputEvent';
+export type {
+  InputEvent,
+  EventModifiers,
+  BodyTarget,
+  KeyEvent,
+  KeyHeldEvent,
+  WheelEvent,
+  PointerDownEvent,
+  PointerMoveEvent,
+  PointerUpEvent,
+  PointerCancelEvent,
+  ClickEvent,
+  DoubleClickEvent,
+  ContextMenuEvent,
+  MultitouchEvent,
+  MultitouchTapEvent,
+} from './ui/inputEvent';
 
 // GestureSpec union + sub-types + ModSpec + TargetSpec + PhaseSpec
 export type {

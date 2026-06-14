@@ -17,7 +17,7 @@ export {
 export type {
   ParsedRoute,
   ParsedModifiers,
-  ModName,
+  ModifierKey,
   ModRequirement,
   PhaseAtom,
   ChannelRef,

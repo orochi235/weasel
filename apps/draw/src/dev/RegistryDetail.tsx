@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
-import type { ParsedModifiers, ModName } from '@weasel-js/core/routing';
+import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
 
 function toKeys(parts: readonly string[] | undefined) {
   return parts?.map((label) => ({ label }));
@@ -23,7 +23,7 @@ function InlineMarkdown({ text }: { text: string }) {
   );
 }
 
-const MOD_DISPLAY_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
+const MOD_DISPLAY_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 /** Decompose a `ParsedModifiers` map into KeySpecs for KeySequence. Empty
  *  map (no required modifiers) returns undefined; otherwise emits one chip

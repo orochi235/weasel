@@ -64,12 +64,17 @@ export const RESERVED_ID_NAMES: ReadonlySet<string> = new Set([
  *  `ParsedModifiers` map means "must not be held" (the strict default). */
 export type ModRequirement = 'required' | 'optional';
 
-/** Canonical modifier names accepted in the modSlot. */
-export type ModName = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta';
+/** Canonical modifier names accepted in the modSlot, in canonical order.
+ *  Single source of truth: the {@link ModifierKey} type and the runtime
+ *  validator (`MOD_NAME_SET`) are both derived from this tuple. */
+export const VALID_MOD_NAMES = ['mod', 'shift', 'alt', 'ctrl', 'meta'] as const;
+
+/** A single modifier name accepted in the modSlot. */
+export type ModifierKey = (typeof VALID_MOD_NAMES)[number];
 
 /** Parsed-form modifiers — structured map; absent keys are implicitly
  *  forbidden. Empty object = "no modifiers held". */
-export type ParsedModifiers = Partial<Record<ModName, ModRequirement>>;
+export type ParsedModifiers = Partial<Record<ModifierKey, ModRequirement>>;
 
 /** Reserved sigil characters. The parser rejects any of these with a
  *  "reserved for future use" error so introducing them later is
@@ -79,8 +84,7 @@ export const RESERVED_SIGILS: ReadonlySet<string> = new Set(['!', '@', '#', '$',
 /** Active (parseable) sigils today: `+` required, `?` optional. */
 export const ACTIVE_SIGILS: ReadonlySet<string> = new Set(['+', '?']);
 
-export const VALID_MOD_NAMES: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
-const MOD_NAME_SET = new Set<string>(VALID_MOD_NAMES);
+const MOD_NAME_SET: ReadonlySet<string> = new Set(VALID_MOD_NAMES);
 export { MOD_NAME_SET };
 
 /** v3 parsed-route shape. */
@@ -171,10 +175,10 @@ export function parseRoute(input: string): ParsedRoute {
     if (!MOD_NAME_SET.has(name)) {
       throw new Error(`invalid route (unknown modifier "${name}"): ${input}`);
     }
-    if (modifiers[name as ModName] !== undefined) {
+    if (modifiers[name as ModifierKey] !== undefined) {
       throw new Error(`invalid route (duplicate modifier "${name}"): ${input}`);
     }
-    modifiers[name as ModName] = sigil === '+' ? 'required' : 'optional';
+    modifiers[name as ModifierKey] = sigil === '+' ? 'required' : 'optional';
     rest = rest.slice(nameMatch[0].length).trimStart();
   }
 
@@ -314,7 +318,7 @@ function withoutShift(m: ParsedModifiers): ParsedModifiers {
   return rest;
 }
 
-const MOD_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
+const MOD_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 export function formatRoute(r: ParsedRoute): string {
   const desc = getGestureDescriptor(r.gesture);

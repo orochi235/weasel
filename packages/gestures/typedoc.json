@@ -4,7 +4,7 @@
   "entryPointStrategy": "resolve",
   "tsconfig": "../../tsconfig.json",
   "out": "../../dist-demo/api-gestures",
-  "name": "weasel-gestures",
+  "name": "@weasel-js/gestures",
   "includeVersion": false,
   "excludePrivate": true,
   "excludeInternal": true,

@@ -3,7 +3,7 @@ export type {
 } from './hitResult';
 export type { Result, BeginSpec } from './result';
 export { apply, begin, hold, commit, cancel, claim, none } from './result';
-export type { ModifierKey } from './modifiers';
+export type { ModifierCombo } from './modifiers';
 export { mods } from './modifiers';
 export type {
   ToolDef, PhaseDef, RouteTable, RouteEntry, ModifierRoute, ActionFn,
@@ -11,7 +11,7 @@ export type {
 } from './types';
 export { resolveRoute } from './lookup';
 export { parseRoute, formatRoute, formatPhaseAtom, collapseShiftPairs, describeRoute, describeRouteParts, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS, RESERVED_ID_PREFIXES, RESERVED_ID_NAMES } from './routeGrammar';
-export type { ParsedRoute, ParsedModifiers, ModName, ModRequirement, PhaseAtom, ChannelRef, DescribeRouteOptions, RouteDescriptionPart, RouteTermLabel, RouteFieldName } from './routeGrammar';
+export type { ParsedRoute, ParsedModifiers, ModifierKey, ModRequirement, PhaseAtom, ChannelRef, DescribeRouteOptions, RouteDescriptionPart, RouteTermLabel, RouteFieldName } from './routeGrammar';
 export { getGestureDescriptor, isKnownGestureName, GESTURE_DESCRIPTORS } from './gestures';
 export type { GestureName, GestureDescriptor, GestureArgSpec } from './gestures';
 export { defineTool } from './defineTool';

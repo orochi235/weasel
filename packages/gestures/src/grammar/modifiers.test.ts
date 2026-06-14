@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mods, type ModifierKey } from './modifiers';
+import { mods, type ModifierCombo } from './modifiers';
 
 describe('mods() helper', () => {
   it('no args returns "default"', () => {
@@ -30,8 +30,8 @@ describe('mods() helper', () => {
     expect(mods('shift', 'shift')).toBe('shift');
   });
 
-  it('ModifierKey type accepts only valid keys', () => {
-    const valid: ModifierKey[] = [
+  it('ModifierCombo type accepts only valid keys', () => {
+    const valid: ModifierCombo[] = [
       'default',
       'mod', 'shift', 'alt',
       'mod+shift', 'mod+alt', 'shift+alt',

@@ -1,7 +1,7 @@
 import type { ActionFn, RouteTable, RouteEntry, ModifierRoute } from './types';
 import type { HitResult } from './hitResult';
 import type { ToolModifiers } from '../types';
-import { mods, type ModifierKey } from './modifiers';
+import { mods, type ModifierCombo } from './modifiers';
 
 /** Result of a successful `resolveRoute` lookup: the resolved `ActionFn`
  *  plus the route-table key that matched after precedence resolution.
@@ -61,8 +61,8 @@ function resolveEntry<TScratch>(
 }
 
 /** Translate the runtime ToolModifiers snapshot to the canonical
- *  ModifierKey for sub-table lookup. */
-function modifiersToKey(modifiers: ToolModifiers): ModifierKey {
+ *  ModifierCombo for sub-table lookup. */
+function modifiersToKey(modifiers: ToolModifiers): ModifierCombo {
   const active: Array<'mod' | 'shift' | 'alt'> = [];
   // 'mod' is the platform-natural primary modifier:
   // Cmd on Mac (meta), Ctrl elsewhere.

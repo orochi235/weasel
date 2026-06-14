@@ -1,6 +1,6 @@
 import type { KeySpec } from './Keycaps';
 
-/** Logical modifier name. Matches the kit's `ModName` in shape — kept as a
+/** Logical modifier name. Matches the kit's `ModifierKey` in shape — kept as a
  *  local type so `weasel-ui` stays independent of `@weasel-js/core`. */
 export type LogicalMod = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta';
 

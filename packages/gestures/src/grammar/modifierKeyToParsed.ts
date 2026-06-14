@@ -1,15 +1,15 @@
-import type { ModifierKey } from './modifiers';
-import type { ParsedModifiers, ModName } from './routeGrammar';
+import type { ModifierCombo } from './modifiers';
+import type { ParsedModifiers, ModifierKey } from './routeGrammar';
 
-/** Translate the tool-authoring `ModifierKey` enum (positional string,
+/** Translate the tool-authoring `ModifierCombo` enum (positional string,
  *  e.g. `'mod+shift'`) to the v3 `ParsedModifiers` structured map
  *  (every listed modifier becomes `'required'`; unlisted means
  *  forbidden / absent). `'default'` yields `{}`. */
-export function modifierKeyToParsed(key: ModifierKey): ParsedModifiers {
+export function modifierKeyToParsed(key: ModifierCombo): ParsedModifiers {
   if (key === 'default') return {};
   const out: ParsedModifiers = {};
   for (const part of key.split('+')) {
-    out[part as ModName] = 'required';
+    out[part as ModifierKey] = 'required';
   }
   return out;
 }

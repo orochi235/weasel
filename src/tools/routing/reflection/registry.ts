@@ -2,7 +2,7 @@ import type {
   ToolDef, PhaseDef, RouteTable, ModifierRoute, ActionFn,
   WheelTable, KeyRouteTable, MultiTouchTapTable,
 } from '../types';
-import type { ModifierKey } from '../modifiers';
+import type { ModifierCombo } from '../modifiers';
 import type { ParsedModifiers } from '../routeGrammar';
 import { getGestureDescriptor, type GestureName } from '../gestures';
 import type { RoutePhase } from './route-resolved';
@@ -82,7 +82,7 @@ function walkModifierRoute(
   sub: ModifierRoute<unknown>,
   out: RegistryEntry[],
 ): void {
-  for (const modKey of Object.keys(sub) as ModifierKey[]) {
+  for (const modKey of Object.keys(sub) as ModifierCombo[]) {
     if (sub[modKey] == null) continue;
     out.push({
       toolId, phase, gesture,

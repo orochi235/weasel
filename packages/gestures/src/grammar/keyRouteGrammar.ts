@@ -9,10 +9,12 @@
  * grammar only widens which events match, never narrows.
  */
 import type { KeySpec, ModSpec } from '../ui/spec';
+import { VALID_MOD_NAMES, type ModifierKey } from './routeGrammar';
 
-export type OptionalMod = 'mod' | 'shift' | 'alt' | 'ctrl' | 'meta';
-const OPTIONAL_MODS: readonly OptionalMod[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
-const OPTIONAL_SET = new Set<string>(OPTIONAL_MODS);
+/** An optional modifier in a key route — the same set as the canonical
+ *  {@link ModifierKey}. */
+export type OptionalMod = ModifierKey;
+const OPTIONAL_SET = new Set<string>(VALID_MOD_NAMES);
 
 export interface ParsedKeyRoute {
   key: string;
