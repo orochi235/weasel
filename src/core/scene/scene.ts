@@ -743,6 +743,40 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       return { version: 1, systemLayers, nodes };
     },
 
+    loadState(json) {
+      // Validate + map up front (throws before we touch live state on a bad
+      // version or unknown registry key).
+      const specs = specsFromSerialized(json, registry);
+      // Reset node + layer state.
+      state.nodes.clear();
+      state.roots.length = 0;
+      state.layers.length = 0;
+      state.layerIndex.clear();
+      for (let i = 0; i < json.systemLayers.length; i++) {
+        const spec = json.systemLayers[i];
+        if (state.layerIndex.has(spec.id)) {
+          throw new Error(`Scene.loadState: duplicate system layer id "${spec.id}"`);
+        }
+        state.layers.push({
+          kind: 'system',
+          id: spec.id,
+          visible: spec.visible ?? true,
+          locked: spec.locked ?? false,
+        });
+        state.layerIndex.set(spec.id, i);
+      }
+      // Clear history + transient batch/clip caches.
+      undoStack.length = 0;
+      redoStack.length = 0;
+      pendingClipPatches.clear();
+      currentBatch = null;
+      batchDepth = 0;
+      batchDirty = false;
+      // Rebuild nodes (bypass the log, exactly like construction).
+      applyConstructionSpecs(specs);
+      notify();
+    },
+
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -751,9 +785,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     getVersion: () => version,
   };
 
-  // Apply initial nodes (not undoable — they're part of the construction).
-  if (options.initial) {
-    for (const spec of options.initial) {
+  /** Insert nodes without writing to the undo log — used by construction
+   *  (`options.initial`) and by `loadState`. Specs must list parents before
+   *  children (the order `toJSON()` emits). Throws on id collision, unknown
+   *  layer, non-container parent, or cross-layer subtree. */
+  function applyConstructionSpecs(specs: readonly AddNodeSpec<TData, TLayer, TPose>[]): void {
+    for (const spec of specs) {
       // Bypass the log: we want construction to start with empty history.
       const id = spec.id ?? generateId();
       if (state.nodes.has(id)) {
@@ -776,6 +813,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       });
       patchClipFromPose(spec, id);
     }
+  }
+
+  // Apply initial nodes (not undoable — they're part of the construction).
+  if (options.initial) {
+    applyConstructionSpecs(options.initial);
     notify();
   }
 
@@ -787,6 +829,40 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     () => pendingClipPatches.size;
 
   return scene;
+}
+
+/** Map a `SerializedScene` to construction specs. Shared by `sceneFromJSON`
+ *  (new instance) and `Scene.loadState` (in-place). Validates version and
+ *  resolves `clipFromPoseKey` → function via the registry; throws on an
+ *  unsupported version or an unknown registry key. */
+function specsFromSerialized<TData, TLayer extends string, TPose>(
+  json: SerializedScene<TData, TLayer, TPose>,
+  registry: SceneRegistry<TPose>,
+): AddNodeSpec<TData, TLayer, TPose>[] {
+  if (json.version !== 1) {
+    throw new Error(`Scene: unsupported version ${json.version}; only v1 supported`);
+  }
+  return json.nodes.map((n) => {
+    const spec: AddNodeSpec<TData, TLayer, TPose> = {
+      id: n.id as NodeId,
+      kind: n.kind,
+      layer: n.layer,
+      pose: n.pose,
+      data: n.data,
+    };
+    if (n.parent !== undefined) spec.parent = n.parent as NodeId;
+    if (n.clipFromPoseKey !== undefined) {
+      const fn = registry.clipFromPose?.[n.clipFromPoseKey];
+      if (!fn) {
+        throw new Error(
+          `Scene: unknown clipFromPose key '${n.clipFromPoseKey}'. ` +
+          `Register a function with this key in the registry option.`,
+        );
+      }
+      (spec as { clipFromPose?: typeof fn }).clipFromPose = fn;
+    }
+    return spec;
+  });
 }
 
 /** Reconstruct a Scene from a JSON snapshot produced by `scene.toJSON()`.
@@ -803,31 +879,8 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
   },
 ): Scene<TData, TLayer, TPose> {
-  if (json.version !== 1) {
-    throw new Error(`sceneFromJSON: unsupported version ${json.version}; only v1 supported`);
-  }
   const registry = options.registry ?? {};
-  const initial: AddNodeSpec<TData, TLayer, TPose>[] = json.nodes.map((n) => {
-    const spec: AddNodeSpec<TData, TLayer, TPose> = {
-      id: n.id as NodeId,
-      kind: n.kind,
-      layer: n.layer,
-      pose: n.pose,
-      data: n.data,
-    };
-    if (n.parent !== undefined) spec.parent = n.parent as NodeId;
-    if (n.clipFromPoseKey !== undefined) {
-      const fn = registry.clipFromPose?.[n.clipFromPoseKey];
-      if (!fn) {
-        throw new Error(
-          `sceneFromJSON: unknown clipFromPose key '${n.clipFromPoseKey}'. ` +
-          `Register a function with this key in the registry option.`
-        );
-      }
-      (spec as { clipFromPose?: typeof fn }).clipFromPose = fn;
-    }
-    return spec;
-  });
+  const initial = specsFromSerialized(json, registry);
   return createScene<TData, TLayer, TPose>({
     systemLayers: json.systemLayers,
     initial,

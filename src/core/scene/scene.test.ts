@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createScene, sceneFromJSON } from './scene';
 import { asNodeId } from './types';
-import type { SerializedScene } from './types';
+import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
 
 type Layer = 'background' | 'structures' | 'plantings';
 interface Data { label: string }
@@ -819,5 +819,88 @@ describe('sceneFromJSON', () => {
     const restored = sceneFromJSON(json1, {});
     const json2 = restored.toJSON();
     expect(json2).toEqual(json1);
+  });
+});
+
+describe('Scene.loadState', () => {
+  type D = { kind: string; color: string };
+  const LAYERS: SystemLayerSpec<'main'>[] = [{ id: 'main' }];
+
+  function sceneWithTwoNodes() {
+    const s = createScene<D, 'main'>({ systemLayers: LAYERS });
+    s.add({ kind: 'leaf', layer: 'main', pose: { x: 1, y: 2, width: 3, height: 4 }, data: { kind: 'a', color: 'red' } });
+    s.add({ kind: 'leaf', layer: 'main', pose: { x: 5, y: 6, width: 7, height: 8 }, data: { kind: 'b', color: 'blue' } });
+    return s;
+  }
+
+  it('round-trips toJSON → loadState into an empty scene', () => {
+    const src = sceneWithTwoNodes();
+    const json = src.toJSON();
+    const dst = createScene<D, 'main'>({ systemLayers: LAYERS });
+    dst.loadState(json);
+    expect(dst.toJSON()).toEqual(json);
+    expect(dst.nodes.size).toBe(2);
+  });
+
+  it('preserves the instance, bumps version, and notifies once', () => {
+    const dst = createScene<D, 'main'>({ systemLayers: LAYERS });
+    const ref = dst;
+    const listener = vi.fn();
+    dst.subscribe(listener);
+    const v0 = dst.getVersion();
+    dst.loadState(sceneWithTwoNodes().toJSON());
+    expect(dst).toBe(ref);
+    expect(dst.getVersion()).toBeGreaterThan(v0);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces existing content (wipes prior nodes)', () => {
+    const dst = sceneWithTwoNodes();
+    const emptyJson = createScene<D, 'main'>({ systemLayers: LAYERS }).toJSON();
+    dst.loadState(emptyJson);
+    expect(dst.nodes.size).toBe(0);
+    expect(dst.roots.length).toBe(0);
+  });
+
+  it('clears history (no undo/redo after load)', () => {
+    const dst = sceneWithTwoNodes();
+    expect(dst.canUndo()).toBe(true);
+    dst.loadState(sceneWithTwoNodes().toJSON());
+    expect(dst.canUndo()).toBe(false);
+    expect(dst.canRedo()).toBe(false);
+  });
+
+  it('restores layer visibility/lock flags', () => {
+    const src = createScene<D, 'main'>({ systemLayers: [{ id: 'main' }] });
+    src.setLayerVisible('main', false);
+    src.setLayerLocked('main', true);
+    const dst = createScene<D, 'main'>({ systemLayers: [{ id: 'main' }] });
+    dst.loadState(src.toJSON());
+    expect(dst.layers[0].visible).toBe(false);
+    expect(dst.layers[0].locked).toBe(true);
+  });
+
+  it('throws on an unsupported version', () => {
+    const dst = createScene<D, 'main'>({ systemLayers: LAYERS });
+    expect(() => dst.loadState({ version: 2, systemLayers: LAYERS, nodes: [] } as never)).toThrow(/version/);
+  });
+
+  it('restores a parented snapshot in place over a populated scene', () => {
+    const src = createScene<D, 'main'>({ systemLayers: LAYERS });
+    const bedId = src.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'bed', color: 'brown' } });
+    src.add({ kind: 'leaf', layer: 'main', parent: bedId, pose: { x: 1, y: 1, width: 2, height: 2 }, data: { kind: 'plant', color: 'green' } });
+    const json = src.toJSON();
+
+    const dst = sceneWithTwoNodes(); // pre-populated with different, flat content
+    dst.loadState(json);
+
+    expect(dst.toJSON()).toEqual(json);
+    expect([...dst.roots]).toEqual([bedId]);
+    const bed = dst.get(bedId);
+    expect(bed?.kind).toBe('container');
+    const children = (bed as { children: readonly string[] }).children;
+    expect(children.length).toBe(1);
+    expect(dst.get(children[0] as NodeId)?.parent).toBe(bedId);
+    expect([...dst.renderOrder()]).toEqual([bedId, children[0]]);
   });
 });
