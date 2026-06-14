@@ -26,6 +26,15 @@ const TSX_CLASS_RE = /className=\s*\{?\s*['"`]([^'"`]+)['"`]\s*\}?/g;
 // Matches CSS class selectors: a `.` followed by an identifier starting with a letter.
 const LESS_CLASS_RE = /\.([a-zA-Z][\w-]*)/g;
 
+// State-modifier classes follow the BEM `is-`/`has-` convention: they are never
+// used standalone, only compounded onto an `lk-` block class (e.g.
+// `.lk-effect-card.is-expanded`), so they can't collide globally and are exempt
+// from the `lk-` prefix rule.
+const STATE_CLASS_RE = /^(?:is|has)-/;
+function isAllowed(cls: string): boolean {
+  return cls.startsWith('lk-') || STATE_CLASS_RE.test(cls);
+}
+
 function checkTsxFile(file: string): void {
   const content = readFileSync(file, 'utf8');
   const lines = content.split('\n');
@@ -35,7 +44,7 @@ function checkTsxFile(file: string): void {
       const classes = (match[1] ?? '').split(/\s+/).filter(Boolean);
       for (const cls of classes) {
         if (cls === '' || cls.includes('${')) continue;
-        if (!cls.startsWith('lk-')) {
+        if (!isAllowed(cls)) {
           offenders.push({ file: relative(ROOT, file), line: i + 1, match: cls });
         }
       }
@@ -56,7 +65,7 @@ function checkLessFile(file: string): void {
     if (/^\s*@import\b/.test(code)) continue;
     for (const match of code.matchAll(LESS_CLASS_RE)) {
       const cls = match[1] ?? '';
-      if (!cls.startsWith('lk-')) {
+      if (!isAllowed(cls)) {
         offenders.push({ file: relative(ROOT, file), line: i + 1, match: `.${cls}` });
       }
     }

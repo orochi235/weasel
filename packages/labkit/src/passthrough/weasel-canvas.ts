@@ -7,17 +7,17 @@
  * demand it.
  */
 export {
-  SceneViewCanvas,
-  type SceneViewCanvasProps,
-  MinimapCanvas,
-  type MinimapCanvasProps,
   buildSceneViewCommands,
-  renderSceneToCanvas,
-  type SceneViewDrawOne,
-  FALLBACK_FIT_VIEW,
+  type ComputeFitViewOptions,
   computeFitView,
   computeIndicatorCommand,
-  type ComputeFitViewOptions,
+  FALLBACK_FIT_VIEW,
   type IndicatorStyle,
+  MinimapCanvas,
+  type MinimapCanvasProps,
   type MinimapFit,
+  renderSceneToCanvas,
+  SceneViewCanvas,
+  type SceneViewCanvasProps,
+  type SceneViewDrawOne,
 } from '@weasel-js/core';

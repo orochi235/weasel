@@ -34,9 +34,5 @@
       "debug/*": ["../../src/debug/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "../ui/src/**/*",
-    "../modes/src/**/*"
-  ]
+  "include": ["src/**/*", "../ui/src/**/*", "../modes/src/**/*"]
 }

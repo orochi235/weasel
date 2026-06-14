@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react';
-import { formatNumber, parseSignedNumber } from '../format';
+import { type ReactNode, useState } from 'react';
 import { dlog } from '../../passthrough/weasel-ui';
+import { formatNumber, parseSignedNumber } from '../format';
 
 export interface PropertyPanelProps {
   title?: ReactNode;
@@ -148,7 +148,11 @@ export function SliderRow({
         max={max}
         step={step}
         value={value}
-        onChange={(e) => { const v = Number(e.target.value); dlog('property-panel', 'slider', { label, value: v }); onChange(v); }}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          dlog('property-panel', 'slider', { label, value: v });
+          onChange(v);
+        }}
       />
     </PropertyRow>
   );
@@ -173,17 +177,20 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
   // into the input otherwise. Pattern mirrors speech-balloons Lab.tsx:893-942.
   const [draft, setDraft] = useState<string | null>(null);
   const fmt = (n: number) => (format ? format(n) : formatNumber(n));
-  const displayValue = draft !== null ? draft : (() => {
-    const formatted = fmt(value);
-    return typeof formatted === 'string' ? formatted : String(formatted);
-  })();
+  const displayValue =
+    draft !== null
+      ? draft
+      : (() => {
+          const formatted = fmt(value);
+          return typeof formatted === 'string' ? formatted : String(formatted);
+        })();
 
   const suffix =
-    unit == null
-      ? null
-      : typeof unit === 'string'
-        ? <span className="lk-property-row__readout-unit">{unit}</span>
-        : unit;
+    unit == null ? null : typeof unit === 'string' ? (
+      <span className="lk-property-row__readout-unit">{unit}</span>
+    ) : (
+      unit
+    );
 
   const commit = () => {
     if (draft !== null) {
@@ -296,14 +303,7 @@ export interface TextRowProps {
   layout?: PropertyRowLayout;
 }
 
-export function TextRow({
-  label,
-  value,
-  onChange,
-  placeholder,
-  maxLength,
-  layout,
-}: TextRowProps) {
+export function TextRow({ label, value, onChange, placeholder, maxLength, layout }: TextRowProps) {
   return (
     <PropertyRow label={label} layout={layout}>
       <input
@@ -380,7 +380,14 @@ export function SelectRow<T extends string>({
 }: SelectRowProps<T>) {
   return (
     <PropertyRow label={label} layout={layout}>
-      <select value={value} onChange={(e) => { const v = e.target.value as T; dlog('property-panel', 'select', { label, value: v }); onChange(v); }}>
+      <select
+        value={value}
+        onChange={(e) => {
+          const v = e.target.value as T;
+          dlog('property-panel', 'select', { label, value: v });
+          onChange(v);
+        }}
+      >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {/* HTML <option> only renders text; ReactNode → string coerce */}
@@ -409,15 +416,14 @@ export function ToggleRow<T extends string>({
 }: ToggleRowProps<T>) {
   return (
     <PropertyRow label={label} layout={layout}>
-      <div className="lk-property-row__toggle" role="radiogroup">
+      <div className="lk-property-row__toggle">
         {options.map((opt) => {
           const selected = opt.value === value;
           return (
             <button
               key={opt.value}
               type="button"
-              role="radio"
-              aria-checked={selected}
+              aria-pressed={selected}
               className={
                 selected
                   ? 'lk-property-row__toggle-button lk-property-row__toggle-button--selected'

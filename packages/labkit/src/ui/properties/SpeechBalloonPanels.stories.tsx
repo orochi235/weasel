@@ -45,8 +45,24 @@ function BodyPanel() {
             { value: 'cloud', label: 'cloud' },
           ]}
         />
-        <SliderRow label="Width" value={width} min={60} max={500} step={2} unit="px" onChange={setWidth} />
-        <SliderRow label="Height" value={height} min={20} max={500} step={2} unit="px" onChange={setHeight} />
+        <SliderRow
+          label="Width"
+          value={width}
+          min={60}
+          max={500}
+          step={2}
+          unit="px"
+          onChange={setWidth}
+        />
+        <SliderRow
+          label="Height"
+          value={height}
+          min={20}
+          max={500}
+          step={2}
+          unit="px"
+          onChange={setHeight}
+        />
         <SliderRow
           label="Italic lean"
           value={lean}
@@ -94,8 +110,22 @@ function TailBody() {
           { value: 'wavy', label: 'wavy' },
         ]}
       />
-      <SliderRow label="Angle" value={angle} min={0} max={359} unit={<sup>°</sup>} onChange={setAngle} />
-      <SliderRow label="Tip angle" value={outAngle} min={-90} max={90} unit={<sup>°</sup>} onChange={setOutAngle} />
+      <SliderRow
+        label="Angle"
+        value={angle}
+        min={0}
+        max={359}
+        unit={<sup>°</sup>}
+        onChange={setAngle}
+      />
+      <SliderRow
+        label="Tip angle"
+        value={outAngle}
+        min={-90}
+        max={90}
+        unit={<sup>°</sup>}
+        onChange={setOutAngle}
+      />
       <SliderRow
         label="Bend"
         value={arc}
@@ -105,10 +135,25 @@ function TailBody() {
         format={(v) => v.toFixed(2)}
         onChange={setArc}
       />
-      <SliderRow label="Length" value={size} min={8} max={220} step={0.5} unit="px" onChange={setSize} />
+      <SliderRow
+        label="Length"
+        value={size}
+        min={8}
+        max={220}
+        step={0.5}
+        unit="px"
+        onChange={setSize}
+      />
       {shape === 'bubbles' && (
         <Subpanel title="Bubbles">
-          <SliderRow label="Size" value={bubbleDiameter} min={8} max={120} unit="px" onChange={setBubbleDiameter} />
+          <SliderRow
+            label="Size"
+            value={bubbleDiameter}
+            min={8}
+            max={120}
+            unit="px"
+            onChange={setBubbleDiameter}
+          />
           <SliderRow label="Count" value={count} min={1} max={8} onChange={setCount} />
           <SliderRow
             label="Gap"
@@ -119,7 +164,15 @@ function TailBody() {
             format={(v) => v.toFixed(2)}
             onChange={setGap}
           />
-          <SliderRow label="Base distance" value={radial} min={-60} max={60} step={0.5} unit="px" onChange={setRadial} />
+          <SliderRow
+            label="Base distance"
+            value={radial}
+            min={-60}
+            max={60}
+            step={0.5}
+            unit="px"
+            onChange={setRadial}
+          />
         </Subpanel>
       )}
     </PropertyList>
@@ -143,7 +196,13 @@ function StrokePanel() {
           format={(v) => v.toFixed(1)}
           onChange={setWidth}
         />
-        <ColorRow label="Color" value={color} onChange={setColor} alpha={alpha} onAlphaChange={setAlpha} />
+        <ColorRow
+          label="Color"
+          value={color}
+          onChange={setColor}
+          alpha={alpha}
+          onAlphaChange={setAlpha}
+        />
       </PropertyList>
     </PropertyPanel>
   );
@@ -161,9 +220,36 @@ function ShadowPanel() {
         <div className="lk-property-list__span">
           <CheckboxRow label="Enabled" value={enabled} onChange={setEnabled} />
         </div>
-        <SliderRow label="Offset X" value={dx} min={-20} max={20} step={0.5} unit="px" format={(v) => v.toFixed(1)} onChange={setDx} />
-        <SliderRow label="Offset Y" value={dy} min={-20} max={20} step={0.5} unit="px" format={(v) => v.toFixed(1)} onChange={setDy} />
-        <SliderRow label="Blur" value={blur} min={0} max={30} step={0.5} unit="px" format={(v) => v.toFixed(1)} onChange={setBlur} />
+        <SliderRow
+          label="Offset X"
+          value={dx}
+          min={-20}
+          max={20}
+          step={0.5}
+          unit="px"
+          format={(v) => v.toFixed(1)}
+          onChange={setDx}
+        />
+        <SliderRow
+          label="Offset Y"
+          value={dy}
+          min={-20}
+          max={20}
+          step={0.5}
+          unit="px"
+          format={(v) => v.toFixed(1)}
+          onChange={setDy}
+        />
+        <SliderRow
+          label="Blur"
+          value={blur}
+          min={0}
+          max={30}
+          step={0.5}
+          unit="px"
+          format={(v) => v.toFixed(1)}
+          onChange={setBlur}
+        />
         <SliderRow
           label="Opacity"
           value={opacity}
@@ -225,17 +311,17 @@ export const RightSidebarTails: Story = {
           onReorder={reorder}
           defaultExpandedIds={tails.map((t) => t.id)}
           renderItem={(tail, { cardProps }) => (
-          <EffectCard
-            {...cardProps}
-            accent={tail.accent}
-            index={tails.findIndex((t) => t.id === tail.id)}
-            title={tail.shape}
-            primary={<>{Math.round(60 + tail.id * 30)}°</>}
-            onRemove={() => remove(tail.id)}
-          >
-            <TailBody />
-          </EffectCard>
-        )}
+            <EffectCard
+              {...cardProps}
+              accent={tail.accent}
+              index={tails.findIndex((t) => t.id === tail.id)}
+              title={tail.shape}
+              primary={<>{Math.round(60 + tail.id * 30)}°</>}
+              onRemove={() => remove(tail.id)}
+            >
+              <TailBody />
+            </EffectCard>
+          )}
         />
       );
     }
@@ -279,8 +365,22 @@ export const LayerStack: Story = {
               onRemove={() => setItems((prev) => prev.filter((t) => t.id !== item.id))}
             >
               <PropertyList pack="pairs">
-                <SliderRow label="Sample A" value={12} min={0} max={64} unit="px" onChange={() => {}} />
-                <SliderRow label="Sample B" value={45} min={-180} max={180} unit={<sup>°</sup>} onChange={() => {}} />
+                <SliderRow
+                  label="Sample A"
+                  value={12}
+                  min={0}
+                  max={64}
+                  unit="px"
+                  onChange={() => {}}
+                />
+                <SliderRow
+                  label="Sample B"
+                  value={45}
+                  min={-180}
+                  max={180}
+                  unit={<sup>°</sup>}
+                  onChange={() => {}}
+                />
               </PropertyList>
             </EffectCard>
           )}

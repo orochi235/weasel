@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode, useState } from 'react';
 
 // ── Subpanel ─────────────────────────────────────────────────────────
 // Headered group of controls inside a wider panel/list. The header is a
@@ -85,7 +85,25 @@ export function EffectCard({
   // The card's CSS re-binds --lk-accent to --lk-panel-accent so descendants tint.
   const style = accent ? ({ '--lk-panel-accent': accent } as CSSProperties) : undefined;
 
+  // When a toggle handler is supplied the header acts as a disclosure button:
+  // role + tab stop + Enter/Space. Bundled together so the interactive props are
+  // applied as a set (no half-interactive element when onToggleExpanded is absent).
+  const headProps = onToggleExpanded
+    ? {
+        role: 'button' as const,
+        tabIndex: 0,
+        onClick: onToggleExpanded,
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggleExpanded();
+          }
+        },
+      }
+    : {};
+
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: native HTML5 drag-and-drop container — drag events are not click/keyboard interactions and have no semantic element; the in-card handle and header carry the a11y affordances.
     <div
       className={cls}
       style={style}
@@ -96,21 +114,10 @@ export function EffectCard({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
-      <div
-        className="lk-effect-card__head"
-        onClick={onToggleExpanded}
-        role={onToggleExpanded ? 'button' : undefined}
-        tabIndex={onToggleExpanded ? 0 : undefined}
-        onKeyDown={(e) => {
-          if (!onToggleExpanded) return;
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onToggleExpanded();
-          }
-        }}
-      >
+      <div className="lk-effect-card__head" {...headProps}>
         {index != null ? (
-          <span
+          <button
+            type="button"
             className="lk-effect-card__index-badge lk-effect-card__handle"
             title="Drag to reorder · click to toggle"
             aria-label={`Item ${index + 1} — drag to reorder, click to toggle`}
@@ -122,7 +129,7 @@ export function EffectCard({
             }}
           >
             {index + 1}
-          </span>
+          </button>
         ) : (
           <span
             className="lk-effect-card__handle"
@@ -217,9 +224,7 @@ export function EffectCardList<T extends EffectCardListItem>({
   empty,
   defaultExpandedIds,
 }: EffectCardListProps<T>) {
-  const [expanded, setExpanded] = useState<Set<T['id']>>(
-    () => new Set(defaultExpandedIds ?? []),
-  );
+  const [expanded, setExpanded] = useState<Set<T['id']>>(() => new Set(defaultExpandedIds ?? []));
   const [draggingId, setDraggingId] = useState<T['id'] | null>(null);
   const [pressedId, setPressedId] = useState<T['id'] | null>(null);
   const [dropHint, setDropHint] = useState<{ id: T['id']; position: 'before' | 'after' } | null>(

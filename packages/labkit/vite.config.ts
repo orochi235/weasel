@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
-import { defineConfig, type AliasOptions } from 'vite';
+import { type AliasOptions, defineConfig } from 'vite';
 
 const example = process.env.LABKIT_EXAMPLE ?? 'minimal';
 const here = fileURLToPath(new URL('.', import.meta.url));
@@ -8,7 +8,9 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 // labkit is a workspace package; the weasel monorepo root is two levels up.
 const weaselRoot = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
 
-const labkitAlias = { '@weasel-js/labkit': fileURLToPath(new URL('./src/index.ts', import.meta.url)) };
+const labkitAlias = {
+  '@weasel-js/labkit': fileURLToPath(new URL('./src/index.ts', import.meta.url)),
+};
 
 // The examples consume @weasel-js/core from the monorepo, whose runtime
 // resolves bare specifiers (`core/...`, `@weasel-js/core-*`) via the shared

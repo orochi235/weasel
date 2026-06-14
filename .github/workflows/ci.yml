@@ -23,12 +23,18 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      # labkit carries its own biome config + class-prefix check (its tests run
+      # in the `labkit` vitest project below).
+      - run: npm run lint -w @weasel-js/labkit
       # Skip the `storybook` vitest project. `@storybook/addon-vitest` would otherwise
       # spin up headless Chromium and render every CSF story as a browser test on every
       # push — pulls Playwright + ~250 MB of browser, adds wall-clock time, and exists
-      # only to validate that stories can mount. Run the three real test projects only.
-      - run: npx vitest run --project=kit --project=weasel-ui --project=draw
+      # only to validate that stories can mount. Run the real test projects only.
+      - run: npx vitest run --project=kit --project=weasel-ui --project=draw --project=labkit
       - run: npm run build
+      # labkit bundles the (private) weasel packages into a self-contained dist;
+      # build it after the core so its esbuild alias resolves the built core.
+      - run: npm run build -w @weasel-js/labkit
       # Bundle the built `@weasel-js/core` entry from outside the monorepo to
       # prove no path-alias / bare workspace-package specifier leaked into dist.
       # The in-repo vitest `smoke` project can't catch this — it inherits the

@@ -48,6 +48,7 @@ export {
   Dialog,
   type DialogProps,
   detectPlatform,
+  dlog,
   EDGE_PROFILES,
   type EdgeCap,
   type EdgeProfile,
@@ -66,6 +67,7 @@ export {
   type InputProps,
   type InterpolationMode,
   inferKeycapKind,
+  isDebugEnabled,
   KeyCap,
   type KeyCapProps,
   type KeyCapVariant,
@@ -145,6 +147,4 @@ export {
   type TrackCtx,
   type UseReorderDragListOptions,
   useReorderDragList,
-  dlog,
-  isDebugEnabled,
 } from '@weasel-js/ui';

@@ -21,6 +21,10 @@ export {
   labStorageKey,
   serializeWorkspaces,
 } from './helpers';
+export {
+  SingletonExperimentProvider,
+  type SingletonExperimentProviderProps,
+} from './SingletonExperiment';
 export type { LabStore, LabStoreActions } from './store';
 export { createLabStore } from './store';
 export type {
@@ -34,7 +38,3 @@ export type {
   WorkspaceRecord,
 } from './types';
 export { useExperimentState } from './useExperimentState';
-export {
-  SingletonExperimentProvider,
-  type SingletonExperimentProviderProps,
-} from './SingletonExperiment';

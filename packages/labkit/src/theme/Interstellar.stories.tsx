@@ -92,10 +92,7 @@ function SwatchGrid({ tokens, title }: { tokens: readonly Swatch[]; title: strin
       <div className="lk-theme-doc__swatch-grid">
         {tokens.map((t) => (
           <div key={t.cssVar} className="lk-theme-doc__swatch">
-            <div
-              className="lk-theme-doc__swatch-fill"
-              style={{ background: `var(${t.cssVar})` }}
-            />
+            <div className="lk-theme-doc__swatch-fill" style={{ background: `var(${t.cssVar})` }} />
             <div className="lk-theme-doc__swatch-meta">
               <div className="lk-theme-doc__swatch-name">{t.name}</div>
               <code className="lk-theme-doc__swatch-var">{t.cssVar}</code>
@@ -112,14 +109,10 @@ function NebulaPreview() {
   return (
     <div>
       <h3 className="lk-theme-doc__heading">Cosmic backdrop (`--lk-space-nebula`)</h3>
-      <div
-        className="lk-theme-doc__nebula"
-        style={{ background: 'var(--lk-space-nebula)' }}
-      />
+      <div className="lk-theme-doc__nebula" style={{ background: 'var(--lk-space-nebula)' }} />
       <p className="lk-theme-doc__note">
-        Default: four radial gradients (purple, pink, blue, then a dark void
-        base). Override per-Lab by passing <code>nebula={'{[colors]}'}</code> to
-        the <code>&lt;Lab&gt;</code> component.
+        Default: four radial gradients (purple, pink, blue, then a dark void base). Override per-Lab
+        by passing <code>nebula={'{[colors]}'}</code> to the <code>&lt;Lab&gt;</code> component.
       </p>
     </div>
   );
@@ -213,8 +206,8 @@ export const Overview: Story = {
           margin: '12px 0 32px',
         }}
       >
-        Deep-space gradient backdrop, dark glass surfaces, Oswald display
-        type, purple accent. Default theme for labs running in lab mode.
+        Deep-space gradient backdrop, dark glass surfaces, Oswald display type, purple accent.
+        Default theme for labs running in lab mode.
       </p>
       <div className="lk-theme-doc__grid">
         <SwatchGrid title="Surface" tokens={SURFACE_TOKENS} />

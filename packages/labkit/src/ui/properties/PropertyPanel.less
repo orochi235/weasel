@@ -497,6 +497,11 @@
 .lk-effect-card__handle:active { cursor: grabbing; }
 
 .lk-effect-card__index-badge {
+  // Rendered as a <button> (keyboard-operable drag/toggle handle); strip the
+  // native button chrome so it matches the surrounding badge styling.
+  appearance: none;
+  border: 0;
+  background: none;
   display: inline-flex;
   align-items: baseline;
   justify-content: center;

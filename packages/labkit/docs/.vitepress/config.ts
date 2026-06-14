@@ -2,8 +2,7 @@ import { defineConfig } from 'vitepress';
 
 export default defineConfig({
   title: 'labkit',
-  description:
-    'React widgets for building self-contained interactive lab pages',
+  description: 'React widgets for building self-contained interactive lab pages',
   base: '/labkit/',
   cleanUrls: true,
   srcExclude: ['superpowers/**', 'IDEAS.md'],
@@ -26,8 +25,6 @@ export default defineConfig({
         ],
       },
     ],
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/orochi235/labkit' },
-    ],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/orochi235/labkit' }],
   },
 });

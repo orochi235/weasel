@@ -71,9 +71,7 @@ export const WithAlpha: Story = {
 };
 
 export const AlphaDisabled: Story = {
-  render: () => (
-    <OneWithAlpha initial="#7ec8e3" initialAlpha={1} label="Fill" alphaDisabled />
-  ),
+  render: () => <OneWithAlpha initial="#7ec8e3" initialAlpha={1} label="Fill" alphaDisabled />,
 };
 
 function AlphaPair() {

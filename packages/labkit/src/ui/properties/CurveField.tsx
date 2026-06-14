@@ -55,7 +55,11 @@ export function CurveField({
         flat[i * 2] = next[i]!.x;
         flat[i * 2 + 1] = y;
       }
-      dlog('curve-field', 'handleChange', { nLen: next.length, flatLen: flat.length, sample: flat.slice(0, 4) });
+      dlog('curve-field', 'handleChange', {
+        nLen: next.length,
+        flatLen: flat.length,
+        sample: flat.slice(0, 4),
+      });
       onChange(flat);
     },
     [onChange, min, max, step],
@@ -108,7 +112,7 @@ export function CurveField({
             viewBox={`0 0 ${width} ${height}`}
             aria-hidden="true"
           >
-            {marks.map((m, i) => {
+            {marks.map((m) => {
               const color = m.color ?? '#ffcc00';
               if (m.kind === 'band') {
                 const x0 = Math.max(0, Math.min(1, m.x[0])) * width;
@@ -116,15 +120,8 @@ export function CurveField({
                 const left = Math.min(x0, x1);
                 const w = Math.abs(x1 - x0);
                 return (
-                  <g key={i}>
-                    <rect
-                      x={left}
-                      y={0}
-                      width={w}
-                      height={height}
-                      fill={color}
-                      fillOpacity={0.4}
-                    />
+                  <g key={`band-${m.x[0]}-${m.x[1]}-${color}`}>
+                    <rect x={left} y={0} width={w} height={height} fill={color} fillOpacity={0.4} />
                     <line
                       x1={left}
                       y1={0}
@@ -149,7 +146,7 @@ export function CurveField({
               const x = Math.max(0, Math.min(1, m.x)) * width;
               return (
                 <line
-                  key={i}
+                  key={`mark-${m.x}-${color}`}
                   x1={x}
                   y1={0}
                   x2={x}

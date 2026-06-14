@@ -1,12 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import {
-  CheckboxRow,
-  ColorRow,
-  PropertyList,
-  PropertyRow,
-  SliderRow,
-} from './PropertyPanel';
+import { CheckboxRow, ColorRow, PropertyList, PropertyRow, SliderRow } from './PropertyPanel';
 
 const meta: Meta<typeof PropertyList> = {
   title: 'UI/Properties/PropertyList',

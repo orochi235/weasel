@@ -21,7 +21,13 @@ export interface PropertyGroupProps {
  * related rows under a heading (e.g. "Aqua", "Bevel", "Dome" sections
  * inside a fill effect's controls).
  */
-export function PropertyGroup({ title, hidden, children, className, pack = 'auto-color' }: PropertyGroupProps) {
+export function PropertyGroup({
+  title,
+  hidden,
+  children,
+  className,
+  pack = 'auto-color',
+}: PropertyGroupProps) {
   if (hidden) return null;
   const packClass = pack === 'pairs' ? ' lk-property-group--pairs' : '';
   const cls = `lk-property-group${packClass}${className ? ` ${className}` : ''}`;

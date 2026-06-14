@@ -34,13 +34,7 @@ export default defineConfig({
   // react/react-dom are peers; the rest are third-party libs declared as labkit
   // dependencies. All @weasel-js/core* are bundled in (see noExternal) so the
   // published package is self-contained.
-  external: [
-    'react',
-    'react-dom',
-    'react-aria-components',
-    'earcut',
-    'polygon-clipping',
-  ],
+  external: ['react', 'react-dom', 'react-aria-components', 'earcut', 'polygon-clipping'],
   // Bundle the weasel core + private sub-packages into labkit's dist — none are
   // published to npm. The sub-packages (@weasel-js/ui, /modes, and their own
   // deps) resolve from their workspace src (node_modules symlinks); the core

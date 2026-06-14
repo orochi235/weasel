@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
-import { defineConfig, type AliasOptions } from 'vitest/config';
+import { type AliasOptions, defineConfig } from 'vitest/config';
 
 // labkit is a workspace package; the weasel monorepo root is two levels up.
 const weaselRoot = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
@@ -20,7 +20,10 @@ export default defineConfig(async () => ({
   plugins: [react()],
   resolve: {
     alias: [
-      { find: '@weasel-js/labkit', replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url)) },
+      {
+        find: '@weasel-js/labkit',
+        replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url)),
+      },
       ...(await weaselAlias()),
     ],
   },

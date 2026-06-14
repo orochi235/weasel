@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  FALLBACK_FIT_VIEW,
-  MinimapCanvas,
-  SceneViewCanvas,
   buildSceneViewCommands,
   computeFitView,
   computeIndicatorCommand,
+  FALLBACK_FIT_VIEW,
+  MinimapCanvas,
   renderSceneToCanvas,
+  SceneViewCanvas,
 } from './weasel-canvas';
 
 describe('weasel-canvas passthrough', () => {

@@ -59,7 +59,8 @@ export default defineConfig({
             'apps/**/*.smoke.test.{ts,tsx}',
             'demo/**/*.smoke.test.{ts,tsx}',
           ],
-          exclude: ['**/node_modules/**', 'dist/**', '.claude/**'],
+          // labkit's smoke test runs in the dedicated `labkit` project (own setup).
+          exclude: ['**/node_modules/**', 'dist/**', '.claude/**', 'packages/labkit/**'],
         },
       },
       {
@@ -70,6 +71,23 @@ export default defineConfig({
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: ['packages/**/*.test.{ts,tsx}'],
+          // labkit runs in its own project below (own setup + css handling).
+          exclude: ['packages/labkit/**', '**/node_modules/**'],
+        },
+      },
+      {
+        ...shared,
+        test: {
+          name: 'labkit',
+          environment: 'jsdom',
+          globals: true,
+          // labkit ships its own setup (jest-dom matchers, cleanup, storage
+          // hoist) and imports component CSS, so it needs css handling — the
+          // root setup/projects don't provide either.
+          setupFiles: ['./packages/labkit/src/test-setup.ts'],
+          css: true,
+          include: ['packages/labkit/src/**/*.{test,spec}.{ts,tsx}'],
+          exclude: ['**/node_modules/**'],
         },
       },
       {

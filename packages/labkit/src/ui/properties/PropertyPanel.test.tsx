@@ -170,7 +170,7 @@ describe('SelectRow', () => {
 });
 
 describe('ToggleRow', () => {
-  it('marks the active option aria-checked and emits on click', () => {
+  it('marks the active option aria-pressed and emits on click', () => {
     const onChange = vi.fn();
     render(
       <ToggleRow
@@ -185,8 +185,8 @@ describe('ToggleRow', () => {
     );
     const left = screen.getByText('L');
     const right = screen.getByText('R');
-    expect(left).toHaveAttribute('aria-checked', 'true');
-    expect(right).toHaveAttribute('aria-checked', 'false');
+    expect(left).toHaveAttribute('aria-pressed', 'true');
+    expect(right).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(right);
     expect(onChange).toHaveBeenCalledWith('right');
   });

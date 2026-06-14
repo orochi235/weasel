@@ -38,8 +38,6 @@ export * from './lab';
 export type { LayerListProps } from './layers';
 export { LayerList } from './layers';
 export * from './primitives';
-export * from './ui/layers';
-export * from './ui/properties';
 export {
   createMemoryAdapter,
   localStorageAdapter,
@@ -65,6 +63,8 @@ export type {
   WorkspaceRecord,
 } from './state/types';
 export { useExperimentState } from './state/useExperimentState';
+export * from './ui/layers';
+export * from './ui/properties';
 export type { EventBus, EventListener } from './undo';
 export { clearUndo, createEventBus, emptyStack, pushSnapshot, redo, undo } from './undo';
 export * from './workspace';

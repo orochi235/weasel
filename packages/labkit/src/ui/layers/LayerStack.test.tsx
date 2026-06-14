@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 // useReorderDragList pulls its own React copy from weasel/node_modules, which
 // breaks hooks in jsdom. Stub it out with a no-op implementation.
 vi.mock('../../passthrough/weasel-ui', () => ({
+  dlog: () => {},
   useReorderDragList: () => ({
     rowProps: (_id: string, _i: number) => ({ onPointerDown: () => {} }),
     containerProps: {
