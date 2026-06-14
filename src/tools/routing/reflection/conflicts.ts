@@ -2,7 +2,7 @@ import type { ToolDef } from '../types';
 import type { ParsedModifiers } from '../routeGrammar';
 import type { RoutePhase, RouteGesture } from './route-resolved';
 import { buildActionRegistry, type RegistryEntry } from './registry';
-import { canonicalModifiers } from './modifierKeyToParsed';
+import { canonicalModifiers } from './modifierComboToParsed';
 
 /** Two or more tools declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple — the dispatcher's slot precedence picks one

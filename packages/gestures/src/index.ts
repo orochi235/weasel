@@ -55,7 +55,7 @@ export { describeRoute, describeRouteParts, ROUTE_TERMS, ROUTE_FIELD_DEFINITIONS
 export type { DescribeRouteOptions, RouteDescriptionPart, RouteTermLabel, RouteFieldName } from './grammar/describeRoute';
 
 // Modifier-key reflection helpers
-export { modifierKeyToParsed, canonicalModifiers } from './grammar/modifierKeyToParsed';
+export { modifierComboToParsed, canonicalModifiers } from './grammar/modifierComboToParsed';
 
 // ─── ui ───────────────────────────────────────────────────────────────────
 

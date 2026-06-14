@@ -5,7 +5,7 @@ import type { ParsedModifiers, ModifierKey } from './routeGrammar';
  *  e.g. `'mod+shift'`) to the v3 `ParsedModifiers` structured map
  *  (every listed modifier becomes `'required'`; unlisted means
  *  forbidden / absent). `'default'` yields `{}`. */
-export function modifierKeyToParsed(key: ModifierCombo): ParsedModifiers {
+export function modifierComboToParsed(key: ModifierCombo): ParsedModifiers {
   if (key === 'default') return {};
   const out: ParsedModifiers = {};
   for (const part of key.split('+')) {

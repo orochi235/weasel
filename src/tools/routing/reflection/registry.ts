@@ -6,7 +6,7 @@ import type { ModifierCombo } from '../modifiers';
 import type { ParsedModifiers } from '../routeGrammar';
 import { getGestureDescriptor, type GestureName } from '../gestures';
 import type { RoutePhase } from './route-resolved';
-import { modifierKeyToParsed } from './modifierKeyToParsed';
+import { modifierComboToParsed } from './modifierComboToParsed';
 
 /** One row in the action registry — uniquely identifies a routing slot
  *  on one tool. Multiple rows can share (gesture, arg, target, modifiers)
@@ -87,7 +87,7 @@ function walkModifierRoute(
     out.push({
       toolId, phase, gesture,
       arg: undefined, target,
-      modifiers: modifierKeyToParsed(modKey),
+      modifiers: modifierComboToParsed(modKey),
     });
   }
 }
