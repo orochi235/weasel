@@ -92,15 +92,24 @@ export interface ModeSwitchLogEntry {
 export type TraceLogEntry = DispatchLogEntry | ModeSwitchLogEntry;
 
 const TRACE_LIMIT = 200;
-const traceLog: TraceLogEntry[] = [];
 
-if (DEV && typeof window !== 'undefined') {
-  // Single combined log — `__weaselDispatchLog__` is the historical
-  // global; entries are now a union of dispatch + mode-switch records.
-  // Filter via `(e) => e.kind === 'dispatch'` if you only want input
-  // routing.
-  (window as unknown as { __weaselDispatchLog__: TraceLogEntry[] }).__weaselDispatchLog__ = traceLog;
-}
+// `traceLog` is the rolling buffer; in dev it IS `window.__weaselDispatchLog__`
+// so the ToolkitBuilder widget can poll it. Bind to the existing global if one
+// is already present rather than reassigning a fresh array: an HMR
+// re-evaluation of this module would otherwise create a new array and orphan
+// the long-lived Dispatcher (held in a SceneCanvas `useRef` that survives Fast
+// Refresh) whose `recordTrace` closure still pushes to the previous array — the
+// widget would then read an array nothing writes to. Reuse keeps every module
+// instance and the widget pointed at one shared array.
+//
+// `__weaselDispatchLog__` is the historical global; entries are a union of
+// dispatch + mode-switch records. Filter via `(e) => e.kind === 'dispatch'` if
+// you only want input routing.
+const traceLog: TraceLogEntry[] =
+  DEV && typeof window !== 'undefined'
+    ? ((window as unknown as { __weaselDispatchLog__?: TraceLogEntry[] }).__weaselDispatchLog__ ??=
+        [])
+    : [];
 
 function recordTrace(entry: TraceLogEntry): void {
   if (!DEV) return;
