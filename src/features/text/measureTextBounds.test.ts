@@ -1,0 +1,52 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { _resetFontRegistryForTests, registerFont } from './atlas/registerFont';
+import { FIXTURE_FONT } from './atlas/FontAtlas';
+import { measureTextBounds } from './measureTextBounds';
+
+function stubFetch() {
+  const encoder = new TextEncoder();
+  global.fetch = vi.fn().mockImplementation((url: string) => {
+    if (url.endsWith('.json')) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+    }
+    if (url.endsWith('.png')) {
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }
+    return Promise.reject(new Error(`unexpected url: ${url}`));
+  }) as typeof fetch;
+  global.createImageBitmap = vi.fn().mockResolvedValue({
+    width: 512, height: 512, close: vi.fn(),
+  } as unknown as ImageBitmap);
+}
+
+beforeEach(() => {
+  _resetFontRegistryForTests();
+  stubFetch();
+});
+
+describe('measureTextBounds', () => {
+  it('returns zero width/height for empty text', async () => {
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const b = measureTextBounds('', { fontFamily: 'inter', fontSize: 32 });
+    expect(b.width).toBe(0);
+  });
+
+  it('width grows with text length and height is positive', async () => {
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const ab = measureTextBounds('AB', { fontFamily: 'inter', fontSize: 32 });
+    const abab = measureTextBounds('ABAB', { fontFamily: 'inter', fontSize: 32 });
+    expect(ab.width).toBeGreaterThan(0);
+    expect(ab.height).toBeGreaterThan(0);
+    expect(abab.width).toBeGreaterThan(ab.width);
+  });
+
+  it('scales with fontSize', async () => {
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const small = measureTextBounds('AB', { fontFamily: 'inter', fontSize: 16 });
+    const large = measureTextBounds('AB', { fontFamily: 'inter', fontSize: 32 });
+    expect(large.width).toBeGreaterThan(small.width);
+  });
+});

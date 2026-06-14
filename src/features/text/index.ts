@@ -16,6 +16,7 @@ export {
 export type { TextStyle, ResolvedTextStyle } from './textStyle';
 export { measureText } from './measureText';
 export type { MeasuredText } from './measureText';
+export { measureTextBounds } from './measureTextBounds';
 export { createTextLayer } from './textLayer';
 export type { TextPose, CreateTextLayerOpts } from './textLayer';
 export { pointInTextPose, caretIndexAt } from './hitTest';
