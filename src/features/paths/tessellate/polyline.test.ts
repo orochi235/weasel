@@ -3,7 +3,7 @@ import {
   PATH_M, PATH_L, PATH_Q, PATH_Z,
   type PolygonPath,
   type RectPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { PathBuilder, polygonFromPoints, rectPath } from '../builder';
 import { extractPolylines } from './polyline';
 

@@ -1,6 +1,6 @@
 // src/tools/routing/reflection/route-resolved.ts
 import type { HitResult } from '../hitResult';
-import type { ModifierKey } from '../modifiers';
+import type { ModifierCombo } from '../modifiers';
 import type { GestureName } from '../gestures';
 
 /** Phase the route was resolved against. Mirrors the spec's two-phase
@@ -26,7 +26,7 @@ export interface RouteResolvedInfo {
    *  table), this is '*'. For keyDown/keyUp, it's the key name ('Escape',
    *  'Enter', etc.). */
   matchedKey: string;
-  modifiers: ModifierKey;
+  modifiers: ModifierCombo;
   /** The full HitResult at resolution time (snapshot — safe to read). */
   target: HitResult;
   /** Monotonic timestamp (ms since page load via performance.now()).

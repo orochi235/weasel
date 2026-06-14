@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ActionsProvider, SelectionContextProvider } from '@orochi235/weasel';
+import { ActionsProvider, SelectionContextProvider } from '@weasel-js/core';
 import { RegistryInspector } from './RegistryInspector';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally so

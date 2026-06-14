@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
-import { SceneCanvas, hexToRgba, rgbaToHex, useHandleDrag, useScene } from '@orochi235/weasel';
-import type { FillStyle, RenderLayer } from '@orochi235/weasel';
+import { SceneCanvas, hexToRgba, rgbaToHex, useHandleDrag, useScene } from '@weasel-js/core';
+import type { FillStyle, RenderLayer } from '@weasel-js/core';
 import { viewToMat3, type DrawCommand } from '../../src/renderer';
-import { Slider, paintGradientTrack, type Thumb } from '@orochi235/weasel-ui';
+import { Slider, paintGradientTrack, type Thumb } from '@weasel-js/ui';
 
 const W = 600;
 const H = 400;

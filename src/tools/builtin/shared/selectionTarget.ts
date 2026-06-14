@@ -3,10 +3,8 @@
 // helpers, with rotation indicating an oriented selection box.
 export type { Bounds } from '../../../core/viewport/fitViewToBounds';
 
-/** Synthetic id used by `<Canvas selectionMode="multi">` to address the
- *  union-AABB target when 2+ real ids are selected. The selection-overlay
- *  layer asks `previewBounds(MULTI_RESIZE_TARGET_ID)` for the union rect; the
- *  select tool synthesizes it from `getSelection()` + `boundsOf` so callers
- *  don't have to special-case it. Exported so `Canvas.tsx` (and any consumer
- *  wiring its own selection-overlay layer) can reference the same constant. */
-export const MULTI_RESIZE_TARGET_ID = '__weasel:multi-selection';
+// `MULTI_RESIZE_TARGET_ID` moved to `core/selection` (it's a selection-derived
+// concept consumed by affordances + the overlay layer, so it belongs at the
+// bottom of the layering). Re-exported here so `useSelectTool`'s public
+// re-export and existing `tools/` import paths stay stable.
+export { MULTI_RESIZE_TARGET_ID } from '../../../core/selection/selectionTarget';

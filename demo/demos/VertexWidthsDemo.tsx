@@ -8,14 +8,14 @@ import {
   useSelection,
   SceneCanvas,
   WeaselProvider,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type {
   Path,
   PolygonPath,
   Stroke,
   RenderLayer,
   DrawCommand,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 const W = 600;
 const H = 240;

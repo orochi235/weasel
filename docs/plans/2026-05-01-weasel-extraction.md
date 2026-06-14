@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Extract `src/canvas-kit/`, `src/canvas-kit-demo/`, and `docs/canvas-kit/` from garden into a new public repo `github.com/orochi235/weasel`, published to npm as `@orochi235/weasel@0.1.0`. Garden becomes a package consumer.
+**Goal:** Extract `src/canvas-kit/`, `src/canvas-kit-demo/`, and `docs/canvas-kit/` from garden into a new public repo `github.com/orochi235/weasel`, published to npm as `@weasel-js/core@0.1.0`. Garden becomes a package consumer.
 
-**Architecture:** Two repos with an npm package boundary. The new `weasel` repo holds the kit source, demo, and docs; it publishes ESM-only via `tsup`, ships `.d.ts` bundles, and uses changesets + GitHub Actions for releases. Garden depends on `@orochi235/weasel` (via `file:../weasel` during active dev, `^0.1.0` afterwards) and contains zero kit source.
+**Architecture:** Two repos with an npm package boundary. The new `weasel` repo holds the kit source, demo, and docs; it publishes ESM-only via `tsup`, ships `.d.ts` bundles, and uses changesets + GitHub Actions for releases. Garden depends on `@weasel-js/core` (via `file:../weasel` during active dev, `^0.1.0` afterwards) and contains zero kit source.
 
 **Tech Stack:** Node 20+, TypeScript, tsup, Vitest, changesets, GitHub Actions, npm, ESM.
 
@@ -45,7 +45,7 @@ Expected: either an empty list / "no packages yet", or a list that does NOT cont
 - [ ] **Step 2.1: Probe registry**
 
 ```sh
-npm view @orochi235/weasel 2>&1
+npm view @weasel-js/core 2>&1
 ```
 
 Expected: `npm error code E404` — name is unclaimed. If this returns a real package document, STOP and choose a new name; the rest of the plan assumes the name is yours.
@@ -350,7 +350,7 @@ Expected: `clean`. If anything matches, stop and reconcile — runtime deps must
 
 ```json
 {
-  "name": "@orochi235/weasel",
+  "name": "@weasel-js/core",
   "version": "0.0.0",
   "description": "Domain-agnostic 2D scene graph primitives for React: viewport math, drag/resize/insert/clone interactions, layered canvas rendering.",
   "license": "MIT",
@@ -546,7 +546,7 @@ export default defineConfig({
   base: '/weasel/',
   resolve: {
     alias: {
-      '@orochi235/weasel': resolve(__dirname, 'src/index.ts'),
+      '@weasel-js/core': resolve(__dirname, 'src/index.ts'),
     },
   },
   plugins: [react()],
@@ -809,7 +809,7 @@ Domain-agnostic 2D scene graph primitives for React. Viewport math, pointer-driv
 ## Install
 
 ```sh
-npm install @orochi235/weasel react
+npm install @weasel-js/core react
 ```
 
 `react` is a peer dependency (>=18).
@@ -817,7 +817,7 @@ npm install @orochi235/weasel react
 ## Quickstart
 
 ```tsx
-import { useMoveInteraction } from '@orochi235/weasel';
+import { useMoveInteraction } from '@weasel-js/core';
 
 // see the demo for a full working example:
 // https://orochi235.github.io/weasel/
@@ -832,9 +832,9 @@ Live demo: <https://orochi235.github.io/weasel/>
 For tree-shaking and clarity, hook-specific helpers are scoped:
 
 ```ts
-import { snapToGrid } from '@orochi235/weasel/move';
-import { snapToGrid, clampMinSize } from '@orochi235/weasel/resize';
-import { snapToGrid } from '@orochi235/weasel/insert';
+import { snapToGrid } from '@weasel-js/core/move';
+import { snapToGrid, clampMinSize } from '@weasel-js/core/resize';
+import { snapToGrid } from '@weasel-js/core/insert';
 ```
 
 ## Documentation
@@ -859,7 +859,7 @@ MIT.
 Replace `YYYY-MM-DD` with today's date when running:
 
 ```markdown
-# @orochi235/weasel
+# @weasel-js/core
 
 ## 0.1.0 - 2026-05-01 - Initial release
 
@@ -1043,7 +1043,7 @@ npx changeset
 ```
 
 Prompts:
-- Which packages would you like to include? → `@orochi235/weasel`
+- Which packages would you like to include? → `@weasel-js/core`
 - What kind of change? → `minor` (we're bumping 0.0.0 → 0.1.0)
 - Summary → `Initial release. Extracted from garden src/canvas-kit; no public API changes.`
 
@@ -1093,7 +1093,7 @@ Expected: registry confirms publish. If using 2FA `auth-and-writes` you'll be pr
 - [ ] **Step 29.1: Check registry**
 
 ```sh
-npm view @orochi235/weasel@0.1.0
+npm view @weasel-js/core@0.1.0
 ```
 
 Expected: a complete package document (version, dist, files, exports). No 404.
@@ -1103,8 +1103,8 @@ Expected: a complete package document (version, dist, files, exports). No 404.
 ```sh
 mkdir -p /tmp/weasel-smoke && cd /tmp/weasel-smoke
 npm init -y > /dev/null
-npm install @orochi235/weasel react react-dom
-ls node_modules/@orochi235/weasel/dist/
+npm install @weasel-js/core react react-dom
+ls node_modules/@weasel-js/core/dist/
 ```
 
 Expected: `index.js`, `index.d.ts`, plus the six subpath entries.
@@ -1156,10 +1156,10 @@ git checkout -b extract-canvas-kit
 
 ```sh
 cd /Users/mike/src/eric
-npm install --save-exact @orochi235/weasel@^0.1.0
+npm install --save-exact @weasel-js/core@^0.1.0
 ```
 
-Expected: `package.json` `dependencies` gains `"@orochi235/weasel": "^0.1.0"`. `package-lock.json` updates.
+Expected: `package.json` `dependencies` gains `"@weasel-js/core": "^0.1.0"`. `package-lock.json` updates.
 
 #### Task 34: Codemod garden imports
 
@@ -1178,17 +1178,17 @@ wc -l /tmp/garden-canvas-kit-imports.txt
 
 ```sh
 cd /Users/mike/src/eric
-# subpath imports (e.g. @/canvas-kit/move) → @orochi235/weasel/move
-grep -rlE "from '@/canvas-kit/" src/ | xargs sed -i '' -E "s|from '@/canvas-kit/|from '@orochi235/weasel/|g"
-# bare imports (e.g. @/canvas-kit) → @orochi235/weasel
-grep -rlE "from '@/canvas-kit'" src/ | xargs sed -i '' -E "s|from '@/canvas-kit'|from '@orochi235/weasel'|g"
+# subpath imports (e.g. @/canvas-kit/move) → @weasel-js/core/move
+grep -rlE "from '@/canvas-kit/" src/ | xargs sed -i '' -E "s|from '@/canvas-kit/|from '@weasel-js/core/|g"
+# bare imports (e.g. @/canvas-kit) → @weasel-js/core
+grep -rlE "from '@/canvas-kit'" src/ | xargs sed -i '' -E "s|from '@/canvas-kit'|from '@weasel-js/core'|g"
 ```
 
 - [ ] **Step 34.3: Verify**
 
 ```sh
 grep -rEn "from '@/canvas-kit" src/ || echo "clean"
-grep -rEn "from '@orochi235/weasel" src/ | wc -l
+grep -rEn "from '@weasel-js/core" src/ | wc -l
 ```
 
 Expected: first command prints `clean`. Second prints a count matching `/tmp/garden-canvas-kit-imports.txt` line count.
@@ -1249,7 +1249,7 @@ npm test
 npm run build
 ```
 
-Expected: green. If failures point at missing exports from `@orochi235/weasel`, the package's `exports` map is missing something; add the entry to weasel's `package.json` and `tsup.config.ts`, publish a `0.1.1`, bump garden's dep, and rerun.
+Expected: green. If failures point at missing exports from `@weasel-js/core`, the package's `exports` map is missing something; add the entry to weasel's `package.json` and `tsup.config.ts`, publish a `0.1.1`, bump garden's dep, and rerun.
 
 #### Task 39: Commit garden changes
 
@@ -1264,7 +1264,7 @@ git status
 - [ ] **Step 39.2: Commit**
 
 ```sh
-git commit -m "refactor: consume canvas-kit as @orochi235/weasel package"
+git commit -m "refactor: consume canvas-kit as @weasel-js/core package"
 ```
 
 #### Task 40: PR + merge
@@ -1273,9 +1273,9 @@ git commit -m "refactor: consume canvas-kit as @orochi235/weasel package"
 
 ```sh
 git push -u origin extract-canvas-kit
-gh pr create --title "refactor: consume canvas-kit as @orochi235/weasel" --body "$(cat <<'EOF'
+gh pr create --title "refactor: consume canvas-kit as @weasel-js/core" --body "$(cat <<'EOF'
 ## Summary
-- Replaces in-tree `src/canvas-kit/`, `src/canvas-kit-demo/`, `docs/canvas-kit/` with a dependency on `@orochi235/weasel@^0.1.0`.
+- Replaces in-tree `src/canvas-kit/`, `src/canvas-kit-demo/`, `docs/canvas-kit/` with a dependency on `@weasel-js/core@^0.1.0`.
 - Removes the `@/canvas-kit/*` path alias from tsconfig and vite config.
 - All garden imports rewritten via codemod.
 
@@ -1308,7 +1308,7 @@ Find sections that describe canvas-kit as in-tree. Replace with a short note:
 ```markdown
 ## canvas-kit / weasel
 
-The 2D scene-graph primitives (drag, resize, insert, clone, viewport math, layered rendering) live in a separate repo: <https://github.com/orochi235/weasel>, published as `@orochi235/weasel`. For kit-related changes, work in that repo and bump garden's dependency.
+The 2D scene-graph primitives (drag, resize, insert, clone, viewport math, layered rendering) live in a separate repo: <https://github.com/orochi235/weasel>, published as `@weasel-js/core`. For kit-related changes, work in that repo and bump garden's dependency.
 ```
 
 #### Task 42: Document the local-dev flow
@@ -1324,7 +1324,7 @@ The 2D scene-graph primitives (drag, resize, insert, clone, viewport math, layer
 When iterating on weasel and garden together:
 
 1. Clone weasel next to garden: `~/src/weasel`.
-2. In garden's `package.json`, temporarily change the dep to `"@orochi235/weasel": "file:../weasel"`.
+2. In garden's `package.json`, temporarily change the dep to `"@weasel-js/core": "file:../weasel"`.
 3. `npm install` in garden.
 4. In weasel, run `npm run build -- --watch` (or just `npm run build` after each change). Garden picks up the new `dist/` because the file: dep is symlinked.
 5. When done, change garden's dep back to a real version (`^0.1.x`) and `npm install` again.
@@ -1342,7 +1342,7 @@ For a one-shot test of an unpublished version: `cd ~/src/weasel && npm pack`, th
 Append (or update an existing canvas-kit extraction line) to `docs/TODO.md`:
 
 ```markdown
-- [x] Extract canvas-kit to standalone repo. Published as `@orochi235/weasel@0.1.0` on 2026-05-01. Repo: <https://github.com/orochi235/weasel>.
+- [x] Extract canvas-kit to standalone repo. Published as `@weasel-js/core@0.1.0` on 2026-05-01. Repo: <https://github.com/orochi235/weasel>.
 ```
 
 - [ ] **Step 43.2: Commit on garden's main**
@@ -1351,7 +1351,7 @@ Append (or update an existing canvas-kit extraction line) to `docs/TODO.md`:
 cd /Users/mike/src/eric
 git checkout main && git pull
 git add CLAUDE.md README.md docs/TODO.md
-git commit -m "docs(garden): point at @orochi235/weasel for kit work; mark extraction complete"
+git commit -m "docs(garden): point at @weasel-js/core for kit work; mark extraction complete"
 git push
 ```
 
@@ -1363,5 +1363,5 @@ git push
 - **`package.json` exports vs `tsup.config.ts` entries:** both list `index, move, resize, insert, area-select, clipboard, clone` — seven entries, matching.
 - **Node version:** `package.json` `engines.node` is `>=20`; CI matrix uses `20` and `22`; release workflow uses `20`. Consistent.
 - **Type / file references:** `extract/kit`, `extract/demo`, `extract/docs` branch names used consistently in Tasks 7–11. `~/src/weasel` used consistently in Phases 2–3. `/Users/mike/src/eric` used consistently for garden in Phases 0, 4, 5.
-- **Codemod direction:** Task 21 rewrites `@/canvas-kit` → relative inside the new repo. Task 34 rewrites `@/canvas-kit` → `@orochi235/weasel` inside garden. The two scripts target different repos and run at different phases — no overlap.
+- **Codemod direction:** Task 21 rewrites `@/canvas-kit` → relative inside the new repo. Task 34 rewrites `@/canvas-kit` → `@weasel-js/core` inside garden. The two scripts target different repos and run at different phases — no overlap.
 - **Subtree-split caveat:** Task 8 surfaces path-prefix issues; Task 9.2 documents the filter-repo fallback so a worker who hits weirdness has a clear next step instead of improvising.

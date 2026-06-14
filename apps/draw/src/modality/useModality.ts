@@ -14,15 +14,15 @@ import {
   type RenderLayer,
   type DrawCommand,
   type Scene,
-} from '@orochi235/weasel';
-import { createHistory, type History } from '@orochi235/weasel-history';
+} from '@weasel-js/core';
+import { createHistory, type History } from '@weasel-js/history';
 import {
   createModeDecorations,
   createScopingDim,
   DEFAULT_MODES,
   type ModeDecorations,
   type ScopingDim,
-} from '@orochi235/weasel-modes';
+} from '@weasel-js/modes';
 import {
   createModeMachine,
   createPathEditPainter,

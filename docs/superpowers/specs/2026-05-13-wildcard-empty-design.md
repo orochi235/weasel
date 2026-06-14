@@ -243,7 +243,7 @@ opt-out story credible.
 - **Silent behavior change for any consumer outside this repo that
   relied on the old "implicit skip" semantic.** Low risk because the
   kit is unpublished beyond this repo and the only external surface
-  is the `@orochi235/weasel` package. Document in the CHANGELOG and
+  is the `@weasel-js/core` package. Document in the CHANGELOG and
   flag in the routing spec.
 - **Modifier sub-table on `'*'` now fires for empty.** Intended, but
   could surprise someone who only thought about the node case when

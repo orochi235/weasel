@@ -36,7 +36,7 @@ Doing any one of these without the others leaves the codebase in a half-state wh
 - `src/interactions/actions/registry.tsx` — delete `Action.run`, legacy `defaultBinding: KeyBinding`, legacy keydown loop, `DispatcherPresence` consumption.
 - `src/interactions/actions/useStandardActions.ts` — delete `withLegacyRunBridge`, simplify factory wiring.
 - Every default-action factory in `src/interactions/actions/defaults/` that spreads `defaultBinding` — switch to `gestureBinding` (where appropriate; some bindings have no GestureSpec equivalent and need to be deleted entirely).
-- `packages/weasel-ui/src/components/ActionBar/ActionBar.tsx` — already migrated to `registry.trigger` (Phase 12 Task 7). No change.
+- `packages/ui/src/components/ActionBar/ActionBar.tsx` — already migrated to `registry.trigger` (Phase 12 Task 7). No change.
 - `src/tools/builtin/useSelectTool/useSelectTool.ts` — delete `routes` field entirely; remove `useMove` / `useAreaSelect` imports.
 - `src/tools/builtin/useRotateTool/useRotateTool.ts`, `src/tools/builtin/useCloneTool/useCloneTool.ts`, `src/tools/builtin/useLassoTool/useLassoTool.ts`, `src/tools/builtin/useEditAnchorsTool/useEditAnchorsTool.ts`, `src/tools/builtin/useTextTool/useTextTool.ts` — remove legacy hook imports.
 - `src/tools/types.ts` — once no tool uses `previewIds`/`previewPose`, decide whether to keep them on `Tool` (consumers can still need them) or remove. Lean keep.

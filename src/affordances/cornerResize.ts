@@ -2,7 +2,7 @@ import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DragChannel } from 'tools/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
+import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
 export interface CornerResizeAffordanceOptions {
   /** Hit radius (screen-px) for the corner handles. Default 8. */

@@ -6,8 +6,8 @@ import {
   useInsertTool,
   useScene,
   useTools,
-} from '@orochi235/weasel';
-import type { SceneNode } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { SceneNode } from '@weasel-js/core';
 
 // Per-shape data the kit's insert dep mints: `{ path, fill }` (see
 // `useInsertDepSource`). Pose is plain `{ x, y, width, height }`.

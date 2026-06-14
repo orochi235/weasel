@@ -224,7 +224,7 @@ export interface ActionsRegistry {
    * Subscribe to registry mutations. The callback fires after any
    * `register`/`unregister` that changes the version. Returns an
    * unsubscribe function. Designed for `useSyncExternalStore`-driven
-   * surfaces (e.g. `<ActionBar>` in `@orochi235/weasel-ui`) that need to
+   * surfaces (e.g. `<ActionBar>` in `@weasel-js/ui`) that need to
    * re-render when the action set changes.
    */
   subscribe(listener: () => void): () => void;

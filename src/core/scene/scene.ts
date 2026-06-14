@@ -1,4 +1,4 @@
-import type { Journal } from '@orochi235/weasel-history';
+import type { Journal } from '@weasel-js/history';
 import {
   asNodeId,
   type AddNodeSpec,

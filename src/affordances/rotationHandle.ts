@@ -2,7 +2,7 @@ import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { FillStyle, Stroke } from 'core/paint-types';
 import type { DragChannel } from 'tools/types';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/shared/selectionTarget';
+import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
 export interface RotationAffordanceOptions {
   /** Minimum screen-space thickness of the rotate-zone band outside the

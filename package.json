@@ -1,5 +1,5 @@
 {
-  "name": "@orochi235/weasel",
+  "name": "@weasel-js/core",
   "version": "0.3.0",
   "description": "Domain-agnostic 2D scene graph primitives for React: viewport math, drag/resize/insert/clone interactions, layered canvas rendering.",
   "license": "MIT",
@@ -74,7 +74,7 @@
     "build:demo": "vite build && npm run build:api",
     "build:draw": "vite build --config apps/draw/vite.config.ts",
     "build:api": "typedoc && npm run build:api:gestures",
-    "build:api:gestures": "typedoc --options packages/weasel-gestures/typedoc.json",
+    "build:api:gestures": "typedoc --options packages/gestures/typedoc.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --project=kit --project=weasel-ui --project=draw --project=smoke",
     "test:unit": "vitest run --project=kit --project=weasel-ui --project=draw",
@@ -155,9 +155,9 @@
     "2d"
   ],
   "dependencies": {
-    "@orochi235/weasel-gestures": "*",
-    "@orochi235/weasel-history": "*",
-    "@orochi235/weasel-modes": "*",
+    "@weasel-js/gestures": "*",
+    "@weasel-js/history": "*",
+    "@weasel-js/modes": "*",
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7"
   },

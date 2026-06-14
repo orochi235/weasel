@@ -18,60 +18,19 @@
  * "Show dev panels" pref) only in development.
  */
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactElement } from 'react';
-import { ActionsBar } from '@orochi235/weasel-ui';
+import { ActionsBar } from '@weasel-js/ui';
 import s from './DispatchTracePanel.module.css';
-
-// Structural copies of the trace entry types from
-// `src/interactions/dispatcher/dispatcher.ts`. Kept local so this panel
-// doesn't pull non-public symbols across the package boundary; if the
-// kit ever re-exports the types, swap these for the imports.
-interface DispatchLogEntry {
-  kind: 'dispatch';
-  ts: number;
-  eventKind: string;
-  /** For key / key-held events, the key id (`'Escape'`, `' '`, …). */
-  key?: string;
-  candidates: Array<{
-    actionId: string;
-    scope: 'hotkey' | 'active' | 'ambient';
-    enabledResult: boolean | string;
-  }>;
-  fired: string | null;
-  outcome: 'handled' | 'unhandled';
-}
-
-interface ModeSwitchLogEntry {
-  kind: 'mode';
-  ts: number;
-  mode: string;
-  from: string | null;
-  to: string | null;
-  detail?: string;
-}
-
-type TraceLogEntry = DispatchLogEntry | ModeSwitchLogEntry;
-
-interface DispatchLogWindow extends Window {
-  __weaselDispatchLog__?: TraceLogEntry[];
-}
+import {
+  clearLog,
+  formatAge,
+  formatEnabled,
+  readLog,
+  type DispatchLogEntry,
+  type TraceLogEntry,
+} from './dispatchTraceLog';
 
 const POLL_MS = 250;
 const DISPLAY_LIMIT = 100;
-
-function readLog(): TraceLogEntry[] {
-  if (typeof window === 'undefined') return [];
-  const w = window as DispatchLogWindow;
-  return w.__weaselDispatchLog__ ?? [];
-}
-
-function clearLog(): void {
-  if (typeof window === 'undefined') return;
-  const w = window as DispatchLogWindow;
-  const log = w.__weaselDispatchLog__;
-  // Mutate in place so the dispatcher's own reference keeps appending
-  // into the same array (replacing the global would orphan the writer).
-  if (log) log.length = 0;
-}
 
 export interface DispatchTracePanelProps {
   /** Initial collapsed state. Defaults to `false` (panel open). */
@@ -362,20 +321,6 @@ function RowGroup(props: {
 function renderOutcome(entry: DispatchLogEntry): ReactElement | string {
   if (entry.outcome === 'unhandled') return 'unhandled';
   return entry.fired ? <code>{entry.fired}</code> : 'handled';
-}
-
-function formatAge(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  const sec = ms / 1000;
-  if (sec < 60) return `${sec.toFixed(1)}s`;
-  const m = Math.floor(sec / 60);
-  return `${m}m${Math.floor(sec % 60)}s`;
-}
-
-function formatEnabled(v: boolean | string): string {
-  if (v === true) return 'yes';
-  if (v === false) return 'no';
-  return v;
 }
 
 /** Trash can — clears the log. */

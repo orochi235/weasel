@@ -36,10 +36,10 @@ The wholesale-replacement alternative (`draw` returns `DrawCommand[]`; the 2D ba
 
 - [`webgl-stepwise-conventions.md`](./webgl-stepwise-conventions.md) — accumulated lessons. Entries §1, §2, §6, §8 apply directly (see task callouts below).
 - [`2026-05-09-webgl-step-6-done.md`](./2026-05-09-webgl-step-6-done.md) — most recent done note.
-- [`2026-05-09-webgl-step-4-done.md`](./2026-05-09-webgl-step-4-done.md) — gradient `Paint` types are public on `@orochi235/weasel`; layers can pass them through.
+- [`2026-05-09-webgl-step-4-done.md`](./2026-05-09-webgl-step-4-done.md) — gradient `Paint` types are public on `@weasel-js/core`; layers can pass them through.
 - `src/core/layers/render.ts` — current `RenderLayer` + `drawLayers`; only file the interface change touches.
-- `packages/weasel-gl/src/DrawCommand.ts` — every variant the layers can emit.
-- `packages/weasel-gl/src/index.ts` — barrel; layers import `DrawCommand` from `@orochi235/weasel-gl`.
+- `packages/gl/src/DrawCommand.ts` — every variant the layers can emit.
+- `packages/gl/src/index.ts` — barrel; layers import `DrawCommand` from `@weasel-js/gl`.
 - The eight layer source files listed in the File structure section.
 
 **Conventions cited by specific tasks below:**
@@ -102,7 +102,7 @@ src/
     createDebugOverlayLayer.ts         MODIFY — add drawGL.
     createDebugOverlayLayer.test.ts    MODIFY (or NEW) — tree-shape assertions.
 
-packages/weasel-gl/
+packages/gl/
   src/
     viewToMat3.ts                      NEW — viewToMat3(view: View) → Mat3 helper used by
                                               world-space drawGL implementations.
@@ -127,7 +127,7 @@ docs/superpowers/plans/
 // src/core/layers/render.ts (after the change)
 
 import type { View } from '../../features/viewport/view';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '@weasel-js/gl';
 
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: 1 };
 
@@ -197,9 +197,9 @@ export function drawLayers<TData>(/* …unchanged signature… */): void {
   });
   ```
 - [ ] **Step 2.** Run the test (expect: TS error, `drawGL` not on `RenderLayer`).
-- [ ] **Step 3.** Add `Dims` and `drawGL?: (data, view, dims) => DrawCommand[]` to `RenderLayer` per the reference block above. Add the JSDoc comment. Add the `import type { DrawCommand } from '@orochi235/weasel-gl';` line.
+- [ ] **Step 3.** Add `Dims` and `drawGL?: (data, view, dims) => DrawCommand[]` to `RenderLayer` per the reference block above. Add the JSDoc comment. Add the `import type { DrawCommand } from '@weasel-js/gl';` line.
 - [ ] **Step 4.** Run the test — passes.
-- [ ] **Step 5.** Run `pnpm typecheck` — must be clean. The import from `@orochi235/weasel-gl` may trip a circular-dependency or tsconfig path issue; if so, declare a local minimal `DrawCommand` type alias here using `import type` so it's erased at runtime, but prefer the real import.
+- [ ] **Step 5.** Run `pnpm typecheck` — must be clean. The import from `@weasel-js/gl` may trip a circular-dependency or tsconfig path issue; if so, declare a local minimal `DrawCommand` type alias here using `import type` so it's erased at runtime, but prefer the real import.
 
 > **Self-review:** Does this task break any existing `RenderLayer` consumer? Search `RenderLayer<` across `src/`. Every site declares only the existing fields; the new optional method is purely additive. Confirmed safe.
 
@@ -207,7 +207,7 @@ export function drawLayers<TData>(/* …unchanged signature… */): void {
 
 ## Task 2: Add `viewToMat3` helper in `weasel-gl`
 
-**Files:** `packages/weasel-gl/src/viewToMat3.ts`, `packages/weasel-gl/src/viewToMat3.test.ts`, `packages/weasel-gl/src/index.ts`
+**Files:** `packages/gl/src/viewToMat3.ts`, `packages/gl/src/viewToMat3.test.ts`, `packages/gl/src/index.ts`
 
 The world-space `drawGL` implementations all need to wrap their content in a `kind: 'group'` with the world→screen transform. Current `weasel-gl` exports `mat3` but no `View`-keyed helper. The transformation is: `screen = (world − {x,y}) × scale` → matrix form `[scale, 0, -view.x*scale, 0, scale, -view.y*scale, 0, 0, 1]` (column-major).
 
@@ -230,7 +230,7 @@ The world-space `drawGL` implementations all need to wrap their content in a `ki
 - [ ] **Step 2.** Run the test (red — file does not exist).
 - [ ] **Step 3.** Implement:
   ```ts
-  // packages/weasel-gl/src/viewToMat3.ts
+  // packages/gl/src/viewToMat3.ts
   import type { Mat3 } from './mat3';
 
   /** A weasel View — {x, y, scale}. Local type to avoid a runtime cross-package import. */
@@ -253,7 +253,7 @@ The world-space `drawGL` implementations all need to wrap their content in a `ki
   }
   ```
 - [ ] **Step 4.** Run the test — passes.
-- [ ] **Step 5.** Add `export { viewToMat3, type View as ViewLike } from './viewToMat3';` to `packages/weasel-gl/src/index.ts`. (`ViewLike` rename avoids colliding with consumer code that imports `View` from the main package.)
+- [ ] **Step 5.** Add `export { viewToMat3, type View as ViewLike } from './viewToMat3';` to `packages/gl/src/index.ts`. (`ViewLike` rename avoids colliding with consumer code that imports `View` from the main package.)
 - [ ] **Step 6.** Run `pnpm typecheck` — clean.
 
 > **Plan-time fixture sanity check (convention §3 from step 4):** for view `{x:10, y:20, scale:2}`, world point (10, 20) → ((10-10)*2, (20-20)*2) = (0, 0). World (0, 0) → ((0-10)*2, (0-20)*2) = (-20, -40). Matches the expected matrix's translation column. Verified.
@@ -340,7 +340,7 @@ The world-space `drawGL` implementations all need to wrap their content in a `ki
     return [{ kind: 'group', transform: viewToMat3(view), children }];
   },
   ```
-  Add the `import { viewToMat3 } from '@orochi235/weasel-gl';` and `import type { DrawCommand } from '@orochi235/weasel-gl';` at the top.
+  Add the `import { viewToMat3 } from '@weasel-js/gl';` and `import type { DrawCommand } from '@weasel-js/gl';` at the top.
 - [ ] **Step 4.** Run the tests — passes. Run `pnpm typecheck`.
 
 ---
@@ -420,7 +420,7 @@ This isolates the GL port from text layout — measurement is an implementation 
     return [{ kind: 'group', transform: viewToMat3(view), children }];
   },
   ```
-- [ ] **Step 5.** Run the tests — passes. Add a JSDoc note on `createTextLayer`: "GL backend requires the resolved style's `fontFamily` to be registered via `registerFont` from `@orochi235/weasel-gl`. Unregistered families render with a warning and a fallback glyph."
+- [ ] **Step 5.** Run the tests — passes. Add a JSDoc note on `createTextLayer`: "GL backend requires the resolved style's `fontFamily` to be registered via `registerFont` from `@weasel-js/gl`. Unregistered families render with a warning and a fallback glyph."
 
 ---
 
@@ -680,7 +680,7 @@ This isolates the GL port from text layout — measurement is an implementation 
 ]
 ```
 
-**Circle approximation:** the GL `Path` types do not have a primitive `arc` (the kit's existing `Path` is `rect`, `polygon`, or beziered subpaths). Approximate `arc(cx, cy, r, 0, 2π)` as an N-segment polygon (N=24 gives ≤0.5px deviation at r=8). Add a small helper `approximateCircle(cx, cy, r, segments=24): Path` either inside `penPreviewLayer.ts` or as an exported util on `@orochi235/weasel-gl` if useful elsewhere. **Step-7 scope:** keep it inline.
+**Circle approximation:** the GL `Path` types do not have a primitive `arc` (the kit's existing `Path` is `rect`, `polygon`, or beziered subpaths). Approximate `arc(cx, cy, r, 0, 2π)` as an N-segment polygon (N=24 gives ≤0.5px deviation at r=8). Add a small helper `approximateCircle(cx, cy, r, segments=24): Path` either inside `penPreviewLayer.ts` or as an exported util on `@weasel-js/gl` if useful elsewhere. **Step-7 scope:** keep it inline.
 
 **Bezier subpath translation:** the 2D code uses `ctx.bezierCurveTo`. The kit's `Path` types support cubic segments — re-emit each anchor pair as a cubic `bezier` segment. Use the existing `Path` representation; `traceToContext` reads it the same way `bezierCurveTo` does.
 
@@ -782,11 +782,11 @@ This isolates the GL port from text layout — measurement is an implementation 
 
 ## Task 11: Smoke spec — multi-layer GL scene
 
-**Files:** `packages/weasel-gl/dev/layers.html`, `packages/weasel-gl/dev/layers.ts`, `packages/weasel-gl/dev/layers.spec.ts`
+**Files:** `packages/gl/dev/layers.html`, `packages/gl/dev/layers.ts`, `packages/gl/dev/layers.spec.ts`
 
 **Convention §6 callout:** dev page's `getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })`.
 **Convention §1 update callout:** 16×16 grid pixel sampling, not diagonal.
-**MSDF font note:** call `await registerFont('default', '/packages/weasel-gl/fonts/default.json')` before `WeaselRenderer.render()`. The smoke spec must `await` the font load before taking pixel samples.
+**MSDF font note:** call `await registerFont('default', '/packages/gl/fonts/default.json')` before `WeaselRenderer.render()`. The smoke spec must `await` the font load before taking pixel samples.
 
 **Sample scene (world space):**
 - Grid layer: spacing 50, bounds (0,0,400,400), accent every 4.
@@ -804,8 +804,8 @@ The dev page composes the DrawCommand trees from each layer's `drawGL`, concaten
   - **Grid sample point (~25, 25) on a sub-line is non-transparent.**
   - **Outside-everything pixel (~480, 480) is transparent.**
   - 16×16 grid scan: at least 30 sample points have non-zero alpha.
-- [ ] **Step 4.** Add `dev/layers.html` to the per-page Vite config (`packages/weasel-gl/dev/vite.config.ts`).
-- [ ] **Step 5.** Run `pnpm --filter @orochi235/weasel-gl run test:smoke -- layers.spec.ts`. Iterate until green.
+- [ ] **Step 4.** Add `dev/layers.html` to the per-page Vite config (`packages/gl/dev/vite.config.ts`).
+- [ ] **Step 5.** Run `pnpm --filter @weasel-js/gl run test:smoke -- layers.spec.ts`. Iterate until green.
 
 > **Plan-time fixture sanity check (convention §3):** at view `{x:0,y:0,scale:1}` with `viewToMat3`, the world rect at (100,100,80,80) maps directly to screen rect (100,100,80,80). Center is (140, 140). Confirmed.
 
@@ -832,7 +832,7 @@ The dev page composes the DrawCommand trees from each layer's `drawGL`, concaten
 - [ ] `pnpm typecheck` is clean.
 - [ ] The smoke spec (`layers.spec.ts`) is green in headless Chromium.
 - [ ] No new npm dependencies. (Confirm with `git diff package.json`.)
-- [ ] No changes outside `src/core/layers/render.ts`, the eight layer files, their tests, `packages/weasel-gl/src/viewToMat3.ts`, `packages/weasel-gl/src/index.ts`, and the `packages/weasel-gl/dev/layers.*` smoke files.
+- [ ] No changes outside `src/core/layers/render.ts`, the eight layer files, their tests, `packages/gl/src/viewToMat3.ts`, `packages/gl/src/index.ts`, and the `packages/gl/dev/layers.*` smoke files.
 
 ---
 
@@ -847,7 +847,7 @@ The dev page composes the DrawCommand trees from each layer's `drawGL`, concaten
 ## What shipped
 
 - `RenderLayer<TData>` gained an optional `drawGL?(data, view, dims): DrawCommand[]` method and a new `Dims` type. The 2D `draw` is unchanged; `drawLayers` ignores `drawGL`. Step 8 will dispatch it.
-- `viewToMat3(view)` helper exported from `@orochi235/weasel-gl`; world-space layers wrap their `drawGL` output in a `kind:'group'` with this transform.
+- `viewToMat3(view)` helper exported from `@weasel-js/gl`; world-space layers wrap their `drawGL` output in a `kind:'group'` with this transform.
 - Eight built-in layers ported (additive `drawGL`):
   - `createPathLayer` — emits one path command per visible node.
   - `createTextLayer` — emits one text command per wrapped line; uses an offscreen 2D ctx for `measureText` width measurement.

@@ -1,11 +1,11 @@
-/** Re-export from the extracted `@orochi235/weasel-gestures` package. */
+/** Re-export from the extracted `@weasel-js/gestures` package. */
 export {
   GESTURE_DESCRIPTORS,
   getGestureDescriptor,
   isKnownGestureName,
-} from '@orochi235/weasel-gestures';
+} from '@weasel-js/gestures';
 export type {
   GestureName,
   GestureDescriptor,
   GestureArgSpec,
-} from '@orochi235/weasel-gestures';
+} from '@weasel-js/gestures';

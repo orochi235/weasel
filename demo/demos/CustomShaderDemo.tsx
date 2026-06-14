@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, useHandleDrag, useScene } from '@orochi235/weasel';
-import type { RenderLayer } from '@orochi235/weasel';
+import { SceneCanvas, useHandleDrag, useScene } from '@weasel-js/core';
+import type { RenderLayer } from '@weasel-js/core';
 import {
   registerProgram, registerTexture, viewToMat3,
   type DrawCommand, type ShaderProgramHandle, type TextureHandle,

@@ -4,12 +4,12 @@
 
 A composed badge row in the spirit of a [Powerline](https://github.com/powerline/powerline) shell prompt: a horizontal strip of segments where each segment ends in a shaped cap (chevron, slant, scallop, round, flat, …), and the next segment's left edge fits that cap exactly so the segments tessellate without gaps or overlaps.
 
-The component lives in `@orochi235/weasel-ui` alongside `Badge` and reuses Badge's machinery (tones, variants, sizes, effects, perimeter sampler) by adding a new `BadgeBase` rather than reimplementing badge rendering.
+The component lives in `@weasel-js/ui` alongside `Badge` and reuses Badge's machinery (tones, variants, sizes, effects, perimeter sampler) by adding a new `BadgeBase` rather than reimplementing badge rendering.
 
 ## API
 
 ```tsx
-import { Powerline } from '@orochi235/weasel-ui';
+import { Powerline } from '@weasel-js/ui';
 
 <Powerline
   startCap="flat"
@@ -65,7 +65,7 @@ Two segments share an edge by passing the *same* profile to one's `rightEdge` an
 
 ### New `BadgeBase`: `powerline`
 
-Lives at `packages/weasel-ui/src/components/Badge/bases/Powerline.tsx`. Implements the existing `BadgeBase` contract:
+Lives at `packages/ui/src/components/Badge/bases/Powerline.tsx`. Implements the existing `BadgeBase` contract:
 
 ```ts
 {
@@ -87,7 +87,7 @@ Because this base produces a valid closed-perimeter sampler, every existing Badg
 
 ### Edge profile registry
 
-`packages/weasel-ui/src/components/Badge/bases/edgeProfiles.ts`:
+`packages/ui/src/components/Badge/bases/edgeProfiles.ts`:
 
 ```ts
 export const EDGE_PROFILES: Record<BuiltInEdgeName, EdgeProfile> = {
@@ -105,7 +105,7 @@ The registry is open: users may pass a custom `EdgeProfile` function as an `endC
 
 ### `Powerline` component
 
-`packages/weasel-ui/src/components/Powerline/Powerline.tsx`:
+`packages/ui/src/components/Powerline/Powerline.tsx`:
 
 ```tsx
 export function Powerline({ segments, startCap = 'flat', size, variant, ...rest }: PowerlineProps) {
@@ -149,20 +149,20 @@ No special rules for the segments themselves; Badge handles all of that.
 
 ## Files added
 
-- `packages/weasel-ui/src/components/Badge/bases/Powerline.tsx`
-- `packages/weasel-ui/src/components/Badge/bases/edgeProfiles.ts`
-- `packages/weasel-ui/src/components/Badge/bases/index.ts` — register `powerline`
-- `packages/weasel-ui/src/components/Badge/bases/types.ts` — add `BadgeBaseParams['powerline']`
-- `packages/weasel-ui/src/components/Powerline/Powerline.tsx`
-- `packages/weasel-ui/src/components/Powerline/Powerline.module.css`
-- `packages/weasel-ui/src/components/Powerline/Powerline.stories.tsx`
-- `packages/weasel-ui/src/components/Powerline/index.ts`
-- `packages/weasel-ui/src/index.ts` — export `Powerline`, `EDGE_PROFILES`, types
+- `packages/ui/src/components/Badge/bases/Powerline.tsx`
+- `packages/ui/src/components/Badge/bases/edgeProfiles.ts`
+- `packages/ui/src/components/Badge/bases/index.ts` — register `powerline`
+- `packages/ui/src/components/Badge/bases/types.ts` — add `BadgeBaseParams['powerline']`
+- `packages/ui/src/components/Powerline/Powerline.tsx`
+- `packages/ui/src/components/Powerline/Powerline.module.css`
+- `packages/ui/src/components/Powerline/Powerline.stories.tsx`
+- `packages/ui/src/components/Powerline/index.ts`
+- `packages/ui/src/index.ts` — export `Powerline`, `EDGE_PROFILES`, types
 
 ## Files modified
 
-- `packages/weasel-ui/src/components/Badge/bases/index.ts` — register the new base
-- `packages/weasel-ui/src/components/Badge/bases/types.ts` — extend `BadgeBaseParams`
+- `packages/ui/src/components/Badge/bases/index.ts` — register the new base
+- `packages/ui/src/components/Badge/bases/types.ts` — extend `BadgeBaseParams`
 
 ## Non-goals
 

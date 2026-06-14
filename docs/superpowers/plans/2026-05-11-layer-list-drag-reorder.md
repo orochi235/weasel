@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a `<LayerList>` React component in `@orochi235/weasel-ui` plus a headless `useReorderDragList` hook that backs it. Generic items-in / `onReorder`-out — no kit-op coupling. Multi-select-aware drag with drop indicator.
+**Goal:** Ship a `<LayerList>` React component in `@weasel-js/ui` plus a headless `useReorderDragList` hook that backs it. Generic items-in / `onReorder`-out — no kit-op coupling. Multi-select-aware drag with drop indicator.
 
 **Architecture:** Hook owns the drag state machine (threshold-gated start, pointer-Y → target-index math, multi-select block move). Component renders rows + drop indicator and consumes the hook. Consumer maps scene state → `items` prop and wires `onReorder` to `createMoveToIndexOp`.
 
@@ -14,13 +14,13 @@
 
 ## File map
 
-- Create: `packages/weasel-ui/src/useReorderDragList.ts`
-- Create: `packages/weasel-ui/src/useReorderDragList.test.ts`
-- Create: `packages/weasel-ui/src/LayerList.tsx`
-- Create: `packages/weasel-ui/src/LayerList.module.css`
-- Create: `packages/weasel-ui/src/LayerList.test.tsx`
-- Create: `packages/weasel-ui/src/LayerList.stories.tsx`
-- Modify: `packages/weasel-ui/src/index.ts` — re-export.
+- Create: `packages/ui/src/useReorderDragList.ts`
+- Create: `packages/ui/src/useReorderDragList.test.ts`
+- Create: `packages/ui/src/LayerList.tsx`
+- Create: `packages/ui/src/LayerList.module.css`
+- Create: `packages/ui/src/LayerList.test.tsx`
+- Create: `packages/ui/src/LayerList.stories.tsx`
+- Modify: `packages/ui/src/index.ts` — re-export.
 - Create: `demo/demos/LayerListDemo.tsx`
 - Modify: `demo/registry.ts` — register.
 - Modify: `docs/TODO.md` — strike Tier 1.5 entry.
@@ -30,8 +30,8 @@
 ## Task 1: `useReorderDragList` hook + tests (TDD)
 
 **Files:**
-- Create: `packages/weasel-ui/src/useReorderDragList.ts`
-- Test: `packages/weasel-ui/src/useReorderDragList.test.ts`
+- Create: `packages/ui/src/useReorderDragList.ts`
+- Test: `packages/ui/src/useReorderDragList.test.ts`
 
 The hook's drag state machine: idle → pending (pointerdown captured, sub-threshold) → active (past threshold) → end (commit on pointerup) or cancel (Esc / pointercancel).
 
@@ -39,7 +39,7 @@ The hook's drag state machine: idle → pending (pointerdown captured, sub-thres
 
 Use `@testing-library/react`'s `renderHook` + `act`. Mock the container `ref` by attaching the returned `containerProps.ref` to a JSDOM element with stubbed `getBoundingClientRect` per child.
 
-Create `packages/weasel-ui/src/useReorderDragList.test.ts`:
+Create `packages/ui/src/useReorderDragList.test.ts`:
 
 ```ts
 import { describe, expect, it, vi } from 'vitest';
@@ -187,14 +187,14 @@ describe('useReorderDragList', () => {
 
 ```
 cd /Users/mike/src/weasel
-npx vitest run packages/weasel-ui/src/useReorderDragList.test.ts
+npx vitest run packages/ui/src/useReorderDragList.test.ts
 ```
 
 Expected: all fail (file doesn't exist).
 
 - [ ] **Step 1.3: Implement the hook**
 
-Create `packages/weasel-ui/src/useReorderDragList.ts`:
+Create `packages/ui/src/useReorderDragList.ts`:
 
 ```ts
 import { useCallback, useRef, useState } from 'react';
@@ -348,7 +348,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
 - [ ] **Step 1.4: Run tests — confirm green**
 
 ```
-npx vitest run packages/weasel-ui/src/useReorderDragList.test.ts
+npx vitest run packages/ui/src/useReorderDragList.test.ts
 ```
 
 Expected: all 7 pass. If any test fails, inspect the failure: it may be the no-op-detection (test 6) interacting with how target index back-calculates after engagement. Adjust the production code to match the test's stated semantic.
@@ -364,7 +364,7 @@ Expected: clean (modulo 3 pre-existing `PropertiesPanel.stories.tsx` errors).
 - [ ] **Step 1.6: Commit**
 
 ```
-git add packages/weasel-ui/src/useReorderDragList.ts packages/weasel-ui/src/useReorderDragList.test.ts
+git add packages/ui/src/useReorderDragList.ts packages/ui/src/useReorderDragList.test.ts
 git commit -m "feat(weasel-ui): useReorderDragList headless hook" -m "" -m "Threshold-gated drag state machine for list reorder; multi-select-aware block move; no-op detection on drop within source range." -m "" -m "Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
@@ -373,17 +373,17 @@ git commit -m "feat(weasel-ui): useReorderDragList headless hook" -m "" -m "Thre
 ## Task 2: `<LayerList>` component + CSS module + tests
 
 **Files:**
-- Create: `packages/weasel-ui/src/LayerList.tsx`
-- Create: `packages/weasel-ui/src/LayerList.module.css`
-- Test: `packages/weasel-ui/src/LayerList.test.tsx`
+- Create: `packages/ui/src/LayerList.tsx`
+- Create: `packages/ui/src/LayerList.module.css`
+- Test: `packages/ui/src/LayerList.test.tsx`
 
 - [ ] **Step 2.1: Read existing weasel-ui component for conventions**
 
-Read `packages/weasel-ui/src/PropertiesPanel.tsx` + `PropertiesPanel.module.css` (already read in earlier session). Match the CSS-module + `className` composition pattern. No inline styles.
+Read `packages/ui/src/PropertiesPanel.tsx` + `PropertiesPanel.module.css` (already read in earlier session). Match the CSS-module + `className` composition pattern. No inline styles.
 
 - [ ] **Step 2.2: Write the failing component tests**
 
-Create `packages/weasel-ui/src/LayerList.test.tsx`:
+Create `packages/ui/src/LayerList.test.tsx`:
 
 ```tsx
 import { describe, expect, it, vi } from 'vitest';
@@ -450,14 +450,14 @@ describe('LayerList', () => {
 - [ ] **Step 2.3: Run tests — expect failure**
 
 ```
-npx vitest run packages/weasel-ui/src/LayerList.test.tsx
+npx vitest run packages/ui/src/LayerList.test.tsx
 ```
 
 Expected: all fail (file doesn't exist).
 
 - [ ] **Step 2.4: Implement the component**
 
-Create `packages/weasel-ui/src/LayerList.module.css`:
+Create `packages/ui/src/LayerList.module.css`:
 
 ```css
 .list {
@@ -523,7 +523,7 @@ Create `packages/weasel-ui/src/LayerList.module.css`:
 }
 ```
 
-Create `packages/weasel-ui/src/LayerList.tsx`:
+Create `packages/ui/src/LayerList.tsx`:
 
 ```tsx
 import type { ReactNode, PointerEvent as ReactPointerEvent } from 'react';
@@ -630,7 +630,7 @@ Note: the `style={...}` on the drop indicator is dynamic positioning (computed p
 - [ ] **Step 2.5: Run tests — confirm green**
 
 ```
-npx vitest run packages/weasel-ui/src/LayerList.test.tsx
+npx vitest run packages/ui/src/LayerList.test.tsx
 ```
 
 Expected: all 6 pass.
@@ -645,7 +645,7 @@ Expected: clean (modulo pre-existing).
 
 - [ ] **Step 2.7: Update barrel**
 
-In `packages/weasel-ui/src/index.ts`, add:
+In `packages/ui/src/index.ts`, add:
 
 ```ts
 export { LayerList } from './LayerList';
@@ -661,7 +661,7 @@ export type {
 - [ ] **Step 2.8: Commit**
 
 ```
-git add packages/weasel-ui/src/LayerList.tsx packages/weasel-ui/src/LayerList.module.css packages/weasel-ui/src/LayerList.test.tsx packages/weasel-ui/src/index.ts
+git add packages/ui/src/LayerList.tsx packages/ui/src/LayerList.module.css packages/ui/src/LayerList.test.tsx packages/ui/src/index.ts
 git commit -m "feat(weasel-ui): LayerList component" -m "" -m "Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
@@ -670,15 +670,15 @@ git commit -m "feat(weasel-ui): LayerList component" -m "" -m "Co-Authored-By: C
 ## Task 3: Storybook story
 
 **Files:**
-- Create: `packages/weasel-ui/src/LayerList.stories.tsx`
+- Create: `packages/ui/src/LayerList.stories.tsx`
 
 - [ ] **Step 3.1: Read existing stories for pattern**
 
-Read `packages/weasel-ui/src/PropertiesPanel.stories.tsx` and `packages/weasel-ui/src/RangePicker.stories.tsx`.
+Read `packages/ui/src/PropertiesPanel.stories.tsx` and `packages/ui/src/RangePicker.stories.tsx`.
 
 - [ ] **Step 3.2: Write the story**
 
-Create `packages/weasel-ui/src/LayerList.stories.tsx`:
+Create `packages/ui/src/LayerList.stories.tsx`:
 
 ```tsx
 import type { Meta, StoryObj } from '@storybook/react';
@@ -756,7 +756,7 @@ npx tsc --noEmit
 - [ ] **Step 3.4: Commit**
 
 ```
-git add packages/weasel-ui/src/LayerList.stories.tsx
+git add packages/ui/src/LayerList.stories.tsx
 git commit -m "story(weasel-ui): LayerList default + empty" -m "" -m "Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
@@ -791,8 +791,8 @@ import {
   useSelection,
   useSelectTool,
   useTools,
-} from '@orochi235/weasel';
-import { LayerList, type LayerListItem } from '@orochi235/weasel-ui';
+} from '@weasel-js/core';
+import { LayerList, type LayerListItem } from '@weasel-js/ui';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -911,7 +911,7 @@ Add an entry near other tools demos:
   id: 'layer-list',
   title: 'Layer list',
   category: 'Tools',
-  description: 'LayerList from @orochi235/weasel-ui wired to a scene. Click rows or rects to select. Drag rows to reorder. Drag a selected row to move the whole selection.',
+  description: 'LayerList from @weasel-js/ui wired to a scene. Click rows or rects to select. Drag rows to reorder. Drag a selected row to move the whole selection.',
   hint: 'Drag the rows up and down.',
   Component: LayerListDemo,
   full: LayerListDemoFull,
@@ -941,7 +941,7 @@ git commit -m "demo(layer-list): scene + LayerList side-by-side" -m "" -m "Co-Au
 In `docs/TODO.md`, find the Tier 1.5 bullet `- **Drag-to-reorder UX for sibling z-order.**`. Replace with:
 
 ```
-- [x] **Drag-to-reorder UX for sibling z-order.** *Shipped 2026-05-11.* `@orochi235/weasel-ui` now ships `<LayerList>` (styled component) backed by a headless `useReorderDragList` hook. Click + shift-click selection, multi-select-aware block drag, drop indicator, threshold-gated start. Generic items+onReorder API — consumer wires the `createMoveToIndexOp` call. Demo: `demo/demos/LayerListDemo.tsx` (`#layer-list`). Spec: `docs/superpowers/specs/2026-05-11-layer-list-drag-reorder-design.md`. Plan: `docs/superpowers/plans/2026-05-11-layer-list-drag-reorder.md`.
+- [x] **Drag-to-reorder UX for sibling z-order.** *Shipped 2026-05-11.* `@weasel-js/ui` now ships `<LayerList>` (styled component) backed by a headless `useReorderDragList` hook. Click + shift-click selection, multi-select-aware block drag, drop indicator, threshold-gated start. Generic items+onReorder API — consumer wires the `createMoveToIndexOp` call. Demo: `demo/demos/LayerListDemo.tsx` (`#layer-list`). Spec: `docs/superpowers/specs/2026-05-11-layer-list-drag-reorder-design.md`. Plan: `docs/superpowers/plans/2026-05-11-layer-list-drag-reorder.md`.
 ```
 
 - [ ] **Step 5.2: Commit + release gate**

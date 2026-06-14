@@ -4,7 +4,7 @@ import {
   type PolygonPath,
   type RectPath,
   type Stroke,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { tessellateStroke } from './stroke';
 import { PathBuilder } from '../builder';
 

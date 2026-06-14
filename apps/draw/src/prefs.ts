@@ -7,8 +7,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RegistryEnumFilter } from './registry/types';
-import { usePenTool } from '@orochi235/weasel';
-import type { ToolPrefGroup } from '@orochi235/weasel';
+import { usePenTool } from '@weasel-js/core';
+import type { ToolPrefGroup } from '@weasel-js/core';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types

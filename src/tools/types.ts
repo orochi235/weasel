@@ -9,7 +9,7 @@ import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureBinding } from '../interactions/actions/binding';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 
 /** Outcome of a channel handler. `'claim'` stops dispatch for this event;
  *  `'pass'` lets the next slot try. Handlers that return nothing are

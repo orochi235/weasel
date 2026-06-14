@@ -6,7 +6,7 @@
 
 **Architecture:** A new `useColorContextTool(opts)` hook returns `{ tool, api }`. The `Tool` registers D / X / Shift-X / `/` via `initial.keyDown` in the ambient list of the kit dispatcher. The `api` is the existing `ColorContextApi` plus three scene-write methods that delegate to the App's `updateSelected` helper (passed in as a dep). A new `<ColorContextProvider value={api}>` + `useColorContext()` give UI components the api without prop-drilling. Non-React tools (eyedropper) still receive the api directly at construction.
 
-**Tech Stack:** TypeScript, React 19, Vitest, `@orochi235/weasel` (the kit), `defineTool` + `claim` from `src/tools/routing`.
+**Tech Stack:** TypeScript, React 19, Vitest, `@weasel-js/core` (the kit), `defineTool` + `claim` from `src/tools/routing`.
 
 **Spec:** `docs/superpowers/specs/2026-05-16-color-context-tool-design.md`
 
@@ -491,7 +491,7 @@ Write `apps/swillustrator/src/testUtils/dispatchKeyDown.ts` (create the `testUti
  * channel maps the binding. Sufficient for unit tests asserting which
  * api method fires on which key.
  */
-import type { AnyTool } from '@orochi235/weasel';
+import type { AnyTool } from '@weasel-js/core';
 
 interface KeyEvent {
   key: string;
@@ -532,8 +532,8 @@ Expected: the four new tests fail — `result.current.tool` is undefined.
 In `useColorContextTool.ts`, add at the top of the file (with the other imports). `defineTool` and `claim` live on the `routing` subpath:
 
 ```ts
-import { defineTool, claim } from '@orochi235/weasel/routing';
-import type { Tool } from '@orochi235/weasel';
+import { defineTool, claim } from '@weasel-js/core/routing';
+import type { Tool } from '@weasel-js/core';
 ```
 
 Inside the hook body, after `applyStrokeWidthToSelection`, build the tool:

@@ -10,7 +10,7 @@
 3. *App chrome* — `ModeBreadcrumb`, `ModeStatusIndicator`, palette greying, workspace-tint CSS overlay driven by `--wd-mode-tint*` variables.
 4. *Path-edit end-to-end* — register PATH_EDIT decoration painter, wire double-click → enter, `⎋` → suspend, `⌘⎋` → discard, staleness check, end-to-end verification of dim/grey/tint/undo.
 
-**Tech Stack:** TypeScript, React, npm workspaces, vitest, `@orochi235/weasel-history`, `@orochi235/weasel-modes`, existing kit conventions (`RenderLayer`, `ToolCtx.applyOps`, `useScene`).
+**Tech Stack:** TypeScript, React, npm workspaces, vitest, `@weasel-js/history`, `@weasel-js/modes`, existing kit conventions (`RenderLayer`, `ToolCtx.applyOps`, `useScene`).
 
 **Spec:** `docs/superpowers/specs/2026-05-24-modality-design.md`
 
@@ -23,14 +23,14 @@
 After this plan:
 
 ```
-packages/weasel-modes/                       (extended)
+packages/modes/                       (extended)
   src/
     capabilities.ts                          (already exists; +ALL_TAGS check)
     eligibility.ts                           NEW — eligibleTool(registry, tool)
     scopingLayer.ts                          NEW — scoping-dim RenderLayer factory
     scopingLayer.test.ts                     NEW
 
-packages/weasel-history/                     (extended)
+packages/history/                     (extended)
   src/
     journal.ts                               (already exists)
     routing.ts                               NEW — ApplyOpsRouter helper
@@ -107,7 +107,7 @@ The kit's `Tool<TScratch>` interface needs a `capabilities?: CapabilityTag[]` fi
 
 - [ ] **Step 1: Confirm foundations is merged**
 
-Run: `grep -l "createModeRegistry\|eligibleForMode" packages/weasel-modes/src/*.ts`
+Run: `grep -l "createModeRegistry\|eligibleForMode" packages/modes/src/*.ts`
 Expected: matches `registry.ts`, `modeDefinition.ts`. If empty, stop and merge foundations first.
 
 - [ ] **Step 2: Write the failing test**
@@ -116,7 +116,7 @@ Open `src/tools/types.test.ts`, append:
 
 ```ts
 import type { Tool } from './types';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 
 describe('Tool.capabilities', () => {
   it('accepts CapabilityTag[] and is optional', () => {
@@ -146,12 +146,12 @@ In `src/tools/types.ts`, find the `Tool<TScratch>` interface (line ~140) and add
    * ineligible by all modes except those whose `allows` list includes
    * every implicit-or-declared tag (i.e. `normal` in the default preset).
    */
-  capabilities?: import('@orochi235/weasel-modes').CapabilityTag[];
+  capabilities?: import('@weasel-js/modes').CapabilityTag[];
 ```
 
-Also add `@orochi235/weasel-modes` to the kit's `package.json` `dependencies` (workspace `*`):
+Also add `@weasel-js/modes` to the kit's `package.json` `dependencies` (workspace `*`):
 
-Run: `npm pkg set dependencies.@orochi235/weasel-modes='*'`
+Run: `npm pkg set dependencies.@weasel-js/modes='*'`
 Run: `npm install`
 
 - [ ] **Step 5: Run the test**
@@ -294,13 +294,13 @@ git commit -m "feat(tools): tag built-in tools with capability tags for modality
 A thin wrapper around `eligibleForMode` that takes a `ModeRegistry` and a `Tool` (or `Tool['capabilities']`) and returns whether the tool is usable right now. Lives in `weasel-modes` because the predicate is kit-level; the app calls it from the palette renderer.
 
 **Files:**
-- Create: `packages/weasel-modes/src/eligibility.ts`
-- Modify: `packages/weasel-modes/src/index.ts`
-- Test: `packages/weasel-modes/src/eligibility.test.ts`
+- Create: `packages/modes/src/eligibility.ts`
+- Modify: `packages/modes/src/index.ts`
+- Test: `packages/modes/src/eligibility.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-modes/src/eligibility.test.ts`:
+Create `packages/modes/src/eligibility.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -341,13 +341,13 @@ describe('eligibleTool', () => {
 
 - [ ] **Step 2: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/eligibility.test.ts`
+Run: `npx vitest run packages/modes/src/eligibility.test.ts`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Create `eligibility.ts`**
 
 ```ts
-// packages/weasel-modes/src/eligibility.ts
+// packages/modes/src/eligibility.ts
 import type { ModeRegistry } from './registry';
 import type { ModeDefinition } from './modeDefinition';
 import type { CapabilityTag } from './capabilities';
@@ -375,7 +375,7 @@ export function eligibleToolByCapabilities(
 
 - [ ] **Step 4: Re-export from index**
 
-In `packages/weasel-modes/src/index.ts`, append:
+In `packages/modes/src/index.ts`, append:
 
 ```ts
 export { eligibleTool, eligibleToolByCapabilities, type ToolLike } from './eligibility';
@@ -383,13 +383,13 @@ export { eligibleTool, eligibleToolByCapabilities, type ToolLike } from './eligi
 
 - [ ] **Step 5: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/eligibility.test.ts`
+Run: `npx vitest run packages/modes/src/eligibility.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-modes/src
+git add packages/modes/src
 git commit -m "feat(weasel-modes): eligibleTool / eligibleToolByCapabilities helpers"
 ```
 
@@ -419,7 +419,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useScene } from './useScene';
 import { createInsertOp } from '../ops';  // adjust import to actual op factory
-import type { Journal } from '@orochi235/weasel-history';
+import type { Journal } from '@weasel-js/history';
 
 describe('useScene journal routing', () => {
   it('without a journal accessor, applyOps records a parent-history entry', () => {
@@ -492,7 +492,7 @@ Expected: FAIL — `getActiveJournal` option not recognised.
 
 In `src/core/scene/useScene.ts`:
 
-1. Extend the options type with `getActiveJournal?: () => Journal | null` (import `Journal` from `@orochi235/weasel-history`).
+1. Extend the options type with `getActiveJournal?: () => Journal | null` (import `Journal` from `@weasel-js/history`).
 2. Capture the accessor at hook init: `const getJournal = options.getActiveJournal ?? (() => null);`
 3. In the existing `applyOps` callback body, replace the parent-history call site with a routing guard:
 
@@ -513,7 +513,7 @@ const applyOps = useCallback((ops: Op[], label: string) => {
 > - If a journal is active, just call `journal.applyBatch(ops, label)` — it handles mutation + its own stack.
 > - Else, call the existing parent-history pathway end-to-end.
 >
-> Read `packages/weasel-history/src/journal.ts` and `useScene.ts` together to confirm the actual division before editing.
+> Read `packages/history/src/journal.ts` and `useScene.ts` together to confirm the actual division before editing.
 
 - [ ] **Step 5: Run the test**
 
@@ -541,9 +541,9 @@ When `mode.scoping === true`, out-of-target objects should render at 30% opacity
 The actual "dim" effect is implemented as a *masking pass* on the existing scene-render output, not as an overlay. The cleanest shape in the current renderer is: a layer slot that pre-multiplies non-target ids with an alpha and disables their pointer hits via the existing `Canvas` hit-test override pipeline.
 
 **Files:**
-- Create: `packages/weasel-modes/src/scopingLayer.ts`
-- Modify: `packages/weasel-modes/src/index.ts`
-- Test: `packages/weasel-modes/src/scopingLayer.test.ts`
+- Create: `packages/modes/src/scopingLayer.ts`
+- Modify: `packages/modes/src/index.ts`
+- Test: `packages/modes/src/scopingLayer.test.ts`
 
 - [ ] **Step 1: Read the existing `RenderLayer` and the scene-render slot**
 
@@ -563,7 +563,7 @@ Default to Shape A. If the scene-render slot doesn't yet support per-id alpha, a
 
 - [ ] **Step 3: Write the failing test**
 
-Create `packages/weasel-modes/src/scopingLayer.test.ts`:
+Create `packages/modes/src/scopingLayer.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -610,13 +610,13 @@ describe('createScopingDim', () => {
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/scopingLayer.test.ts`
+Run: `npx vitest run packages/modes/src/scopingLayer.test.ts`
 Expected: FAIL — module not found.
 
 - [ ] **Step 5: Create `scopingLayer.ts`**
 
 ```ts
-// packages/weasel-modes/src/scopingLayer.ts
+// packages/modes/src/scopingLayer.ts
 import type { ModeRegistry } from './registry';
 
 export interface CreateScopingDimOptions {
@@ -655,7 +655,7 @@ export function createScopingDim(opts: CreateScopingDimOptions): ScopingDim {
 
 - [ ] **Step 6: Re-export from index**
 
-In `packages/weasel-modes/src/index.ts`, append:
+In `packages/modes/src/index.ts`, append:
 
 ```ts
 export { createScopingDim } from './scopingLayer';
@@ -664,13 +664,13 @@ export type { ScopingDim, CreateScopingDimOptions } from './scopingLayer';
 
 - [ ] **Step 7: Run the test**
 
-Run: `npx vitest run packages/weasel-modes/src/scopingLayer.test.ts`
+Run: `npx vitest run packages/modes/src/scopingLayer.test.ts`
 Expected: PASS (4 cases).
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/weasel-modes/src
+git add packages/modes/src
 git commit -m "feat(weasel-modes): scoping-dim per-id alpha helper"
 ```
 
@@ -874,7 +874,7 @@ Create `apps/draw/src/modality/machine.test.ts`:
 ```ts
 import { describe, it, expect, vi } from 'vitest';
 import { createModeMachine } from './machine';
-import { DEFAULT_MODES } from '@orochi235/weasel-modes';
+import { DEFAULT_MODES } from '@weasel-js/modes';
 
 function fakeHistory() {
   const journals: Array<{ committed: boolean; cancelled: boolean; suspended: boolean }> = [];
@@ -1000,9 +1000,9 @@ Expected: FAIL — file not found.
 - [ ] **Step 3: Create `apps/draw/src/modality/machine.ts`**
 
 ```ts
-import { createModeRegistry, type ModeRegistry } from '@orochi235/weasel-modes';
-import type { ModeDefinition } from '@orochi235/weasel-modes';
-import type { History, Journal } from '@orochi235/weasel-history';
+import { createModeRegistry, type ModeRegistry } from '@weasel-js/modes';
+import type { ModeDefinition } from '@weasel-js/modes';
+import type { History, Journal } from '@weasel-js/history';
 
 export interface CreateModeMachineOptions {
   modes: readonly ModeDefinition[];
@@ -1193,7 +1193,7 @@ Expected: FAIL.
 - [ ] **Step 3: Create `apps/draw/src/modality/journalCache.ts`**
 
 ```ts
-import type { Journal } from '@orochi235/weasel-history';
+import type { Journal } from '@weasel-js/history';
 
 export interface CreateJournalCacheOptions {
   /** Maximum entries before LRU eviction. Spec says 8 for WeaselDraw. */
@@ -2235,8 +2235,8 @@ If `apps/draw/src/App.tsx` doesn't yet construct a mode machine (it doesn't — 
 In `App.tsx`, add:
 
 ```tsx
-import { createModeMachine, createScopingDim } from '@orochi235/weasel-modes';
-import { createModeDecorations, DEFAULT_MODES } from '@orochi235/weasel-modes';
+import { createModeMachine, createScopingDim } from '@weasel-js/modes';
+import { createModeDecorations, DEFAULT_MODES } from '@weasel-js/modes';
 import { createModeMachine } from './modality';
 import { createPathEditPainter } from './modality/pathEditPainter';
 

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Stand up `@orochi235/weasel-hud` v1 — an imperative, retained-mode WebGL UI widget package that renders into a weasel canvas via the existing renderer pipeline. Ships `rect`, `text`, `image`, `label`, and `button`; pre-empts the canvas's tool dispatcher; vanilla core with a React subpath.
+**Goal:** Stand up `@weasel-js/hud` v1 — an imperative, retained-mode WebGL UI widget package that renders into a weasel canvas via the existing renderer pipeline. Ships `rect`, `text`, `image`, `label`, and `button`; pre-empts the canvas's tool dispatcher; vanilla core with a React subpath.
 
 **Architecture:** Three-stage build. Stage A lands a **Canvas extension API** on weasel core (`requestRedraw`, `registerLayer`, `installPointerInterceptor`) — a precondition called out in the spec. Stage B builds the HUD core: `Hud` orchestrator, `Widget` protocol, `HudHost` adapter, `attachHud`, default-font auto-registration. Stage C ships the v1 widgets (rect, text, image, label, button) and the React subpath, then proves end-to-end with an integration test and a demo.
 
@@ -57,29 +57,29 @@ re-export) is updated in the same commit as this note.
 - Modify: `src/index.ts` — export the new type
 
 **Stage B — HUD core (no widgets)**
-- Create: `packages/weasel-hud/src/widget.ts` — `Widget`, `HudPointerEvent`, `HudDrawCtx` types
-- Create: `packages/weasel-hud/src/host.ts` — `HudHost` interface
-- Create: `packages/weasel-hud/src/hud.ts` — `Hud` class, `createHud()` factory
-- Create: `packages/weasel-hud/src/hud.test.ts`
-- Create: `packages/weasel-hud/src/fonts/inter.json` — copy of `assets/fonts/inter/inter.json`
-- Create: `packages/weasel-hud/src/fonts/inter.png` — copy of `assets/fonts/inter/inter.png`
-- Create: `packages/weasel-hud/src/fonts/registerDefaultFont.ts`
-- Create: `packages/weasel-hud/src/fonts/registerDefaultFont.test.ts`
-- Create: `packages/weasel-hud/src/attach.ts` — `attachHud(canvas, hud)`
-- Create: `packages/weasel-hud/src/attach.test.ts`
-- Modify: `packages/weasel-hud/src/index.ts` — barrel
-- Modify: `packages/weasel-hud/package.json` — add `@orochi235/weasel-hud/react` subpath
+- Create: `packages/hud/src/widget.ts` — `Widget`, `HudPointerEvent`, `HudDrawCtx` types
+- Create: `packages/hud/src/host.ts` — `HudHost` interface
+- Create: `packages/hud/src/hud.ts` — `Hud` class, `createHud()` factory
+- Create: `packages/hud/src/hud.test.ts`
+- Create: `packages/hud/src/fonts/inter.json` — copy of `assets/fonts/inter/inter.json`
+- Create: `packages/hud/src/fonts/inter.png` — copy of `assets/fonts/inter/inter.png`
+- Create: `packages/hud/src/fonts/registerDefaultFont.ts`
+- Create: `packages/hud/src/fonts/registerDefaultFont.test.ts`
+- Create: `packages/hud/src/attach.ts` — `attachHud(canvas, hud)`
+- Create: `packages/hud/src/attach.test.ts`
+- Modify: `packages/hud/src/index.ts` — barrel
+- Modify: `packages/hud/package.json` — add `@weasel-js/hud/react` subpath
 
 **Stage C — Widgets + React + integration**
-- Create: `packages/weasel-hud/src/widgets/rect.ts` + test
-- Create: `packages/weasel-hud/src/widgets/text.ts` + test
-- Create: `packages/weasel-hud/src/widgets/image.ts` + test
-- Create: `packages/weasel-hud/src/widgets/label.ts` + test
-- Create: `packages/weasel-hud/src/widgets/button.ts` + test
-- Create: `packages/weasel-hud/src/react/index.ts`
-- Create: `packages/weasel-hud/src/react/useHud.ts`
-- Create: `packages/weasel-hud/src/react/useHud.test.tsx`
-- Create: `packages/weasel-hud/src/integration.test.tsx`
+- Create: `packages/hud/src/widgets/rect.ts` + test
+- Create: `packages/hud/src/widgets/text.ts` + test
+- Create: `packages/hud/src/widgets/image.ts` + test
+- Create: `packages/hud/src/widgets/label.ts` + test
+- Create: `packages/hud/src/widgets/button.ts` + test
+- Create: `packages/hud/src/react/index.ts`
+- Create: `packages/hud/src/react/useHud.ts`
+- Create: `packages/hud/src/react/useHud.test.tsx`
+- Create: `packages/hud/src/integration.test.tsx`
 - Create: `demo/demos/HudDemo.tsx` + entry in the demo registry
 
 ---
@@ -338,13 +338,13 @@ that pipeline directly via `RenderLayer.hitTest`.
 ### Task B1: define widget protocol and host types
 
 **Files:**
-- Create: `packages/weasel-hud/src/widget.ts`
-- Create: `packages/weasel-hud/src/host.ts`
+- Create: `packages/hud/src/widget.ts`
+- Create: `packages/hud/src/host.ts`
 
 - [ ] **Step 1: Write the widget protocol module**
 
 ```ts
-// packages/weasel-hud/src/widget.ts
+// packages/hud/src/widget.ts
 import type { DrawCommand } from '../../../src/renderer';
 
 export interface WidgetBounds {
@@ -386,7 +386,7 @@ export interface Widget {
 - [ ] **Step 2: Write the host module**
 
 ```ts
-// packages/weasel-hud/src/host.ts
+// packages/hud/src/host.ts
 import type { RenderLayer } from '../../../src/core/layers/render';
 
 export type PointerInterceptor = (evt: PointerEvent) => 'claim' | 'pass';
@@ -408,7 +408,7 @@ Expected: clean.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-hud/src/widget.ts packages/weasel-hud/src/host.ts
+git add packages/hud/src/widget.ts packages/hud/src/host.ts
 git commit -m "feat(weasel-hud): widget protocol and host interface"
 ```
 
@@ -417,13 +417,13 @@ git commit -m "feat(weasel-hud): widget protocol and host interface"
 ### Task B2: implement Hud orchestrator (no widgets yet)
 
 **Files:**
-- Create: `packages/weasel-hud/src/hud.ts`
-- Create: `packages/weasel-hud/src/hud.test.ts`
+- Create: `packages/hud/src/hud.ts`
+- Create: `packages/hud/src/hud.test.ts`
 
 - [ ] **Step 1: Write failing tests**
 
 ```ts
-// packages/weasel-hud/src/hud.test.ts
+// packages/hud/src/hud.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { createHud } from './hud';
 import type { HudHost } from './host';
@@ -508,13 +508,13 @@ describe('Hud', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/hud.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/hud.test.ts`
 Expected: FAIL — `createHud` doesn't exist.
 
 - [ ] **Step 3: Implement Hud**
 
 ```ts
-// packages/weasel-hud/src/hud.ts
+// packages/hud/src/hud.ts
 import type { Widget } from './widget';
 import type { HudHost } from './host';
 
@@ -581,13 +581,13 @@ export function createHud(): Hud {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/hud.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/hud.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-hud/src/hud.ts packages/weasel-hud/src/hud.test.ts
+git add packages/hud/src/hud.ts packages/hud/src/hud.test.ts
 git commit -m "feat(weasel-hud): Hud orchestrator (bind/add/remove/markDirty)"
 ```
 
@@ -596,25 +596,25 @@ git commit -m "feat(weasel-hud): Hud orchestrator (bind/add/remove/markDirty)"
 ### Task B3: copy Inter atlas into weasel-hud + write registerDefaultFont
 
 **Files:**
-- Create: `packages/weasel-hud/src/fonts/inter.json` (binary copy)
-- Create: `packages/weasel-hud/src/fonts/inter.png` (binary copy)
-- Create: `packages/weasel-hud/src/fonts/registerDefaultFont.ts`
-- Create: `packages/weasel-hud/src/fonts/registerDefaultFont.test.ts`
+- Create: `packages/hud/src/fonts/inter.json` (binary copy)
+- Create: `packages/hud/src/fonts/inter.png` (binary copy)
+- Create: `packages/hud/src/fonts/registerDefaultFont.ts`
+- Create: `packages/hud/src/fonts/registerDefaultFont.test.ts`
 
 Resolves spec open-question #1 by bundling: weasel-hud is self-contained.
 
 - [ ] **Step 1: Copy the atlas files**
 
 ```bash
-mkdir -p packages/weasel-hud/src/fonts
-cp assets/fonts/inter/inter.json packages/weasel-hud/src/fonts/inter.json
-cp assets/fonts/inter/inter.png packages/weasel-hud/src/fonts/inter.png
+mkdir -p packages/hud/src/fonts
+cp assets/fonts/inter/inter.json packages/hud/src/fonts/inter.json
+cp assets/fonts/inter/inter.png packages/hud/src/fonts/inter.png
 ```
 
 - [ ] **Step 2: Write the failing test**
 
 ```ts
-// packages/weasel-hud/src/fonts/registerDefaultFont.test.ts
+// packages/hud/src/fonts/registerDefaultFont.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerDefaultFont, DEFAULT_FONT_FAMILY } from './registerDefaultFont';
 import { _resetFontRegistryForTests, getFont } from '../../../../src/features/text/atlas/registerFont';
@@ -649,13 +649,13 @@ describe('registerDefaultFont', () => {
 
 - [ ] **Step 3: Run test to verify it fails**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/fonts/registerDefaultFont.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/fonts/registerDefaultFont.test.ts`
 Expected: FAIL — `registerDefaultFont` doesn't exist.
 
 - [ ] **Step 4: Write registerDefaultFont**
 
 ```ts
-// packages/weasel-hud/src/fonts/registerDefaultFont.ts
+// packages/hud/src/fonts/registerDefaultFont.ts
 import { registerFont } from '../../../../src/features/text/atlas/registerFont';
 
 // Vite/esbuild URL imports — these resolve to the bundled asset paths at build time.
@@ -674,13 +674,13 @@ export async function registerDefaultFont(): Promise<void> {
 
 - [ ] **Step 5: Run test to verify it passes**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/fonts/registerDefaultFont.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/fonts/registerDefaultFont.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-hud/src/fonts/
+git add packages/hud/src/fonts/
 git commit -m "feat(weasel-hud): bundle Inter atlas + registerDefaultFont helper"
 ```
 
@@ -689,13 +689,13 @@ git commit -m "feat(weasel-hud): bundle Inter atlas + registerDefaultFont helper
 ### Task B4: attachHud — wire HUD to a Canvas extension API
 
 **Files:**
-- Create: `packages/weasel-hud/src/attach.ts`
-- Create: `packages/weasel-hud/src/attach.test.ts`
+- Create: `packages/hud/src/attach.ts`
+- Create: `packages/hud/src/attach.test.ts`
 
 - [ ] **Step 1: Write failing tests**
 
 ```ts
-// packages/weasel-hud/src/attach.test.ts
+// packages/hud/src/attach.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { attachHud } from './attach';
 import { createHud } from './hud';
@@ -740,13 +740,13 @@ describe('attachHud', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/attach.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/attach.test.ts`
 Expected: FAIL — `attachHud` doesn't exist.
 
 - [ ] **Step 3: Implement attachHud**
 
 ```ts
-// packages/weasel-hud/src/attach.ts
+// packages/hud/src/attach.ts
 import type { Hud } from './hud';
 import type { CanvasExtensionApi } from '../../../src/canvas/canvasExtension';
 import type { RenderLayer } from '../../../src/core/layers/render';
@@ -862,7 +862,7 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/attach.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/attach.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Add hud → host coercion fix**
@@ -882,7 +882,7 @@ hud.bind({
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-hud/src/attach.ts packages/weasel-hud/src/attach.test.ts
+git add packages/hud/src/attach.ts packages/hud/src/attach.test.ts
 git commit -m "feat(weasel-hud): attachHud wiring layer + interceptor + default font"
 ```
 
@@ -891,12 +891,12 @@ git commit -m "feat(weasel-hud): attachHud wiring layer + interceptor + default 
 ### Task B5: write the public barrel
 
 **Files:**
-- Modify: `packages/weasel-hud/src/index.ts`
+- Modify: `packages/hud/src/index.ts`
 
 - [ ] **Step 1: Replace the placeholder barrel**
 
 ```ts
-// packages/weasel-hud/src/index.ts
+// packages/hud/src/index.ts
 export { createHud, type Hud } from './hud';
 export { attachHud } from './attach';
 export type {
@@ -914,7 +914,7 @@ export { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaul
 
 ```bash
 pnpm exec tsc --noEmit
-git add packages/weasel-hud/src/index.ts
+git add packages/hud/src/index.ts
 git commit -m "feat(weasel-hud): public barrel"
 ```
 
@@ -925,13 +925,13 @@ git commit -m "feat(weasel-hud): public barrel"
 ### Task C1: rect widget
 
 **Files:**
-- Create: `packages/weasel-hud/src/widgets/rect.ts`
-- Create: `packages/weasel-hud/src/widgets/rect.test.ts`
+- Create: `packages/hud/src/widgets/rect.ts`
+- Create: `packages/hud/src/widgets/rect.test.ts`
 
 - [ ] **Step 1: Write failing tests**
 
 ```ts
-// packages/weasel-hud/src/widgets/rect.test.ts
+// packages/hud/src/widgets/rect.test.ts
 import { describe, it, expect } from 'vitest';
 import { createRect } from './rect';
 
@@ -973,13 +973,13 @@ describe('rect widget', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/widgets/rect.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/widgets/rect.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement rect**
 
 ```ts
-// packages/weasel-hud/src/widgets/rect.ts
+// packages/hud/src/widgets/rect.ts
 import type { Widget, HudDrawCtx, HudPointerEvent, PointerClaim, WidgetBounds } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '../../../../src/renderer';
 import { PATH_M, PATH_L, PATH_Z } from '../../../../src/features/paths/types';
@@ -1044,12 +1044,12 @@ If the constants or shape differ, adjust the rect implementation to match. (The 
 
 - [ ] **Step 5: Run tests to verify they pass**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/widgets/rect.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/widgets/rect.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Add rect to barrel and Hud factory**
 
-In `packages/weasel-hud/src/hud.ts`, extend the returned object:
+In `packages/hud/src/hud.ts`, extend the returned object:
 
 ```ts
 import { createRect, type RectOptions, type RectWidget } from './widgets/rect';
@@ -1065,7 +1065,7 @@ rect(opts: RectOptions): RectWidget {
 
 (Update the `Hud` interface to declare `rect(opts: RectOptions): RectWidget`.)
 
-In `packages/weasel-hud/src/index.ts`, export the rect types:
+In `packages/hud/src/index.ts`, export the rect types:
 
 ```ts
 export type { RectOptions, RectWidget } from './widgets/rect';
@@ -1073,7 +1073,7 @@ export type { RectOptions, RectWidget } from './widgets/rect';
 
 - [ ] **Step 7: Add Hud-factory test**
 
-In `packages/weasel-hud/src/hud.test.ts` add:
+In `packages/hud/src/hud.test.ts` add:
 
 ```ts
 it('rect() factory creates widget and adds it to the list', () => {
@@ -1084,13 +1084,13 @@ it('rect() factory creates widget and adds it to the list', () => {
 });
 ```
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/`
+Run: `pnpm exec vitest run packages/hud/src/`
 Expected: all PASS.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/weasel-hud/src/widgets/rect.ts packages/weasel-hud/src/widgets/rect.test.ts packages/weasel-hud/src/hud.ts packages/weasel-hud/src/hud.test.ts packages/weasel-hud/src/index.ts
+git add packages/hud/src/widgets/rect.ts packages/hud/src/widgets/rect.test.ts packages/hud/src/hud.ts packages/hud/src/hud.test.ts packages/hud/src/index.ts
 git commit -m "feat(weasel-hud): rect widget"
 ```
 
@@ -1099,13 +1099,13 @@ git commit -m "feat(weasel-hud): rect widget"
 ### Task C2: text and image widgets
 
 **Files:**
-- Create: `packages/weasel-hud/src/widgets/text.ts` + test
-- Create: `packages/weasel-hud/src/widgets/image.ts` + test
+- Create: `packages/hud/src/widgets/text.ts` + test
+- Create: `packages/hud/src/widgets/image.ts` + test
 
 - [ ] **Step 1: Write text widget + test**
 
 ```ts
-// packages/weasel-hud/src/widgets/text.ts
+// packages/hud/src/widgets/text.ts
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
 import type { DrawCommand, TextDrawCommand } from '../../../../src/renderer';
 
@@ -1161,7 +1161,7 @@ export function createText(opts: TextOptions): TextWidget {
 ```
 
 ```ts
-// packages/weasel-hud/src/widgets/text.test.ts
+// packages/hud/src/widgets/text.test.ts
 import { describe, it, expect } from 'vitest';
 import { createText } from './text';
 
@@ -1192,7 +1192,7 @@ describe('text widget', () => {
 - [ ] **Step 2: Write image widget + test**
 
 ```ts
-// packages/weasel-hud/src/widgets/image.ts
+// packages/hud/src/widgets/image.ts
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
 import type { DrawCommand, ImageDrawCommand } from '../../../../src/renderer';
 
@@ -1245,7 +1245,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
 ```
 
 ```ts
-// packages/weasel-hud/src/widgets/image.test.ts
+// packages/hud/src/widgets/image.test.ts
 import { describe, it, expect } from 'vitest';
 import { createImage } from './image';
 
@@ -1266,7 +1266,7 @@ describe('image widget', () => {
 
 - [ ] **Step 3: Run tests**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/widgets/`
+Run: `pnpm exec vitest run packages/hud/src/widgets/`
 Expected: rect, text, image all PASS.
 
 - [ ] **Step 4: Add factories to Hud + barrel**
@@ -1291,7 +1291,7 @@ In `index.ts`, export the new types: `TextOptions`, `TextWidget`, `ImageOptions`
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-hud/
+git add packages/hud/
 git commit -m "feat(weasel-hud): text and image widgets"
 ```
 
@@ -1300,14 +1300,14 @@ git commit -m "feat(weasel-hud): text and image widgets"
 ### Task C3: label widget (text with default-font ergonomics)
 
 **Files:**
-- Create: `packages/weasel-hud/src/widgets/label.ts` + test
+- Create: `packages/hud/src/widgets/label.ts` + test
 
 A `label` is a text widget with sensible defaults — explicit factory for clarity.
 
 - [ ] **Step 1: Write label**
 
 ```ts
-// packages/weasel-hud/src/widgets/label.ts
+// packages/hud/src/widgets/label.ts
 import { createText, type TextWidget } from './text';
 
 export interface LabelOptions {
@@ -1338,7 +1338,7 @@ export function createLabel(opts: LabelOptions): LabelWidget {
 - [ ] **Step 2: Write test**
 
 ```ts
-// packages/weasel-hud/src/widgets/label.test.ts
+// packages/hud/src/widgets/label.test.ts
 import { describe, it, expect } from 'vitest';
 import { createLabel } from './label';
 
@@ -1368,8 +1368,8 @@ label(opts: LabelOptions): LabelWidget {
 ```
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/
-git add packages/weasel-hud/
+pnpm exec vitest run packages/hud/src/
+git add packages/hud/
 git commit -m "feat(weasel-hud): label widget"
 ```
 
@@ -1378,12 +1378,12 @@ git commit -m "feat(weasel-hud): label widget"
 ### Task C4: button widget (interactive — hit-test, hover, press, events)
 
 **Files:**
-- Create: `packages/weasel-hud/src/widgets/button.ts` + test
+- Create: `packages/hud/src/widgets/button.ts` + test
 
 - [ ] **Step 1: Write failing tests**
 
 ```ts
-// packages/weasel-hud/src/widgets/button.test.ts
+// packages/hud/src/widgets/button.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { createButton } from './button';
 
@@ -1464,13 +1464,13 @@ describe('button widget', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/widgets/button.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/widgets/button.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement button**
 
 ```ts
-// packages/weasel-hud/src/widgets/button.ts
+// packages/hud/src/widgets/button.ts
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
 import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../../../../src/renderer';
 import { PATH_M, PATH_L, PATH_Z } from '../../../../src/features/paths/types';
@@ -1590,7 +1590,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/widgets/button.test.ts`
+Run: `pnpm exec vitest run packages/hud/src/widgets/button.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Add to Hud + barrel**
@@ -1614,13 +1614,13 @@ export type { ButtonOptions, ButtonWidget, ButtonEvent, ButtonHandler } from './
 
 - [ ] **Step 6: Run full HUD suite**
 
-Run: `pnpm exec vitest run packages/weasel-hud/`
+Run: `pnpm exec vitest run packages/hud/`
 Expected: all PASS.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-hud/
+git add packages/hud/
 git commit -m "feat(weasel-hud): button widget with press/hover/leave events"
 ```
 
@@ -1629,14 +1629,14 @@ git commit -m "feat(weasel-hud): button widget with press/hover/leave events"
 ### Task C5: React subpath (useHud)
 
 **Files:**
-- Create: `packages/weasel-hud/src/react/index.ts`
-- Create: `packages/weasel-hud/src/react/useHud.ts`
-- Create: `packages/weasel-hud/src/react/useHud.test.tsx`
-- Modify: `packages/weasel-hud/package.json` — add `./react` export
+- Create: `packages/hud/src/react/index.ts`
+- Create: `packages/hud/src/react/useHud.ts`
+- Create: `packages/hud/src/react/useHud.test.tsx`
+- Modify: `packages/hud/package.json` — add `./react` export
 
 - [ ] **Step 1: Add React subpath to package.json**
 
-In `packages/weasel-hud/package.json`, replace the `exports` block:
+In `packages/hud/package.json`, replace the `exports` block:
 
 ```json
 "exports": {
@@ -1658,7 +1658,7 @@ In `packages/weasel-hud/package.json`, replace the `exports` block:
 - [ ] **Step 2: Write the failing test**
 
 ```tsx
-// packages/weasel-hud/src/react/useHud.test.tsx
+// packages/hud/src/react/useHud.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useHud } from './useHud';
@@ -1688,13 +1688,13 @@ describe('useHud', () => {
 
 - [ ] **Step 3: Run test to verify it fails**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/react/useHud.test.tsx`
+Run: `pnpm exec vitest run packages/hud/src/react/useHud.test.tsx`
 Expected: FAIL.
 
 - [ ] **Step 4: Implement useHud**
 
 ```ts
-// packages/weasel-hud/src/react/useHud.ts
+// packages/hud/src/react/useHud.ts
 import { useEffect, useState } from 'react';
 import { createHud, type Hud } from '../hud';
 import { attachHud } from '../attach';
@@ -1718,19 +1718,19 @@ export function useHud(canvasRef: { current: CanvasExtensionApi | null }): Hud {
 ```
 
 ```ts
-// packages/weasel-hud/src/react/index.ts
+// packages/hud/src/react/index.ts
 export { useHud } from './useHud';
 ```
 
 - [ ] **Step 5: Run test to verify it passes**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/react/useHud.test.tsx`
+Run: `pnpm exec vitest run packages/hud/src/react/useHud.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-hud/
+git add packages/hud/
 git commit -m "feat(weasel-hud): React subpath with useHud hook"
 ```
 
@@ -1739,14 +1739,14 @@ git commit -m "feat(weasel-hud): React subpath with useHud hook"
 ### Task C6: end-to-end integration test
 
 **Files:**
-- Create: `packages/weasel-hud/src/integration.test.tsx`
+- Create: `packages/hud/src/integration.test.tsx`
 
 Proves the full input-claim contract: real `<Canvas>`, real HUD, real button, simulated pointerdown.
 
 - [ ] **Step 1: Write the test**
 
 ```tsx
-// packages/weasel-hud/src/integration.test.tsx
+// packages/hud/src/integration.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import React from 'react';
@@ -1814,7 +1814,7 @@ describe('weasel-hud integration', () => {
 
 - [ ] **Step 2: Run the integration test**
 
-Run: `pnpm exec vitest run packages/weasel-hud/src/integration.test.tsx`
+Run: `pnpm exec vitest run packages/hud/src/integration.test.tsx`
 Expected: PASS.
 
 If it fails, the most likely reasons are:
@@ -1824,7 +1824,7 @@ If it fails, the most likely reasons are:
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-hud/src/integration.test.tsx
+git add packages/hud/src/integration.test.tsx
 git commit -m "test(weasel-hud): end-to-end input-claim integration"
 ```
 
@@ -1846,10 +1846,10 @@ Expected: identifies the registry file. (Likely `demo/App.tsx` or `demo/demos/in
 ```tsx
 // demo/demos/HudDemo.tsx
 import { useRef, useState } from 'react';
-import { SceneCanvas } from '@orochi235/weasel';
-import { useHud } from '@orochi235/weasel-hud/react';
+import { SceneCanvas } from '@weasel-js/core';
+import { useHud } from '@weasel-js/hud/react';
 import type { CanvasExtensionApi } from '../../src/canvas/canvasExtension';
-import { useScene } from '@orochi235/weasel';
+import { useScene } from '@weasel-js/core';
 
 export function HudDemo() {
   const ref = useRef<CanvasExtensionApi>(null);

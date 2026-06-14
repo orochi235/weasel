@@ -37,6 +37,8 @@ import {
 } from 'interactions/actions/rotate/handle';
 import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { ChromeState } from 'core/selection/chromeState';
+import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
@@ -659,21 +661,36 @@ export function createSelectionOverlayLayer<TPose>(
       const showHandles = isVisible ? isVisible('selection.resize-handles') : true;
       const showRotation = isVisible ? isVisible('selection.rotation-handle') : true;
 
+      // The synthetic multi-resize id resolves to `ChromeState.unionBounds`,
+      // the single owner of the multi-selection union AABB — the same value
+      // the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`)
+      // reads, so painted chrome and its hit region stay in agreement. When
+      // no chromeState rides the draw envelope (bare/test callers), fall
+      // through to the supplied resolver so they can synthesize it via
+      // `getPose`.
+      const chromeState = asChromeState(data);
+      const resolveTargetBounds = (id: string): Bounds | null => {
+        if (id === MULTI_RESIZE_TARGET_ID && chromeState?.unionBounds != null) {
+          return chromeState.unionBounds;
+        }
+        return resolveBounds(id);
+      };
+
       const out: DrawCommand[] = [];
       if (showOutline) {
         const outlineIdsRaw = opts.getOutlineIds ? opts.getOutlineIds() : ids;
         const outlineIds = suppressed && suppressed.size > 0
           ? outlineIdsRaw.filter((id) => !suppressed.has(id as unknown as string))
           : outlineIdsRaw;
-        for (const cmd of outlineCommandsFor(outlineIds, resolveBounds, stroke, pad, view)) out.push(cmd);
+        for (const cmd of outlineCommandsFor(outlineIds, resolveTargetBounds, stroke, pad, view)) out.push(cmd);
       }
       if (!handles) return out;
       if (showHandles) {
-        for (const cmd of handleCommandsFor(ids, resolveBounds, handles, handlesOf, view)) out.push(cmd);
+        for (const cmd of handleCommandsFor(ids, resolveTargetBounds, handles, handlesOf, view)) out.push(cmd);
       }
       if (showRotation && rotationHandleDistance !== null) {
         for (const id of ids) {
-          const b = resolveBounds(id);
+          const b = resolveTargetBounds(id);
           if (!b) continue;
           for (const cmd of rotationHandleCommands(b, handles, rotationHandleDistance, view)) {
             out.push(cmd);
@@ -692,5 +709,16 @@ export function createSelectionOverlayLayer<TPose>(
 function asIsVisible(data: unknown): ((id: string) => boolean) | null {
   const maybe = data as { getIsVisible?: () => (id: string) => boolean };
   if (typeof maybe?.getIsVisible === 'function') return maybe.getIsVisible();
+  return null;
+}
+
+/** Pull live `ChromeState` off the draw `data` envelope (the same channel
+ *  `composeAffordanceLayer` uses). Returns `null` for bare/test callers that
+ *  pass plain data with no `getChromeState` thunk — the layer then resolves
+ *  the multi-union via the supplied `getPose` resolver, preserving pre-
+ *  chromeState behavior. */
+function asChromeState(data: unknown): ChromeState | null {
+  const maybe = data as { getChromeState?: () => ChromeState };
+  if (typeof maybe?.getChromeState === 'function') return maybe.getChromeState();
   return null;
 }

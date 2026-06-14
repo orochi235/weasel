@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a `Powerline` component to `@orochi235/weasel-ui` — a horizontal row of `Badge` segments whose end caps tessellate, via a new `powerline` `BadgeBase` that takes pluggable left/right edge profiles.
+**Goal:** Add a `Powerline` component to `@weasel-js/ui` — a horizontal row of `Badge` segments whose end caps tessellate, via a new `powerline` `BadgeBase` that takes pluggable left/right edge profiles.
 
 **Architecture:** A new `BadgeBase` named `powerline` implements the existing `BaseModule` contract by sampling a closed perimeter whose left and right edges are driven by `EdgeProfile` functions (`(t, depth) => xOffset`). A thin `Powerline` component renders one `<Badge base="powerline" />` per segment and threads each segment's `endCap` profile as the next segment's `leftEdge`, so shared geometry tessellates exactly. All existing Badge features (tones, variants, effects, crawl, focus) work on each segment without extra plumbing.
 
-**Tech Stack:** TypeScript, React 18, Vitest + `@testing-library/react`, Storybook (CSF3), css-modules. Workspace package: `packages/weasel-ui` (consume via `@orochi235/weasel-ui` workspace dep). Run tests with `npm test -w @orochi235/weasel-ui`.
+**Tech Stack:** TypeScript, React 18, Vitest + `@testing-library/react`, Storybook (CSF3), css-modules. Workspace package: `packages/ui` (consume via `@weasel-js/ui` workspace dep). Run tests with `npm test -w @weasel-js/ui`.
 
 Spec: `docs/superpowers/specs/2026-05-22-powerline-design.md`
 
@@ -15,33 +15,33 @@ Spec: `docs/superpowers/specs/2026-05-22-powerline-design.md`
 ## File Structure
 
 **Create:**
-- `packages/weasel-ui/src/components/Badge/bases/edgeProfiles.ts` — built-in `EdgeProfile` registry + `EdgeCap` type + `resolveEdge` helper.
-- `packages/weasel-ui/src/components/Badge/bases/edgeProfiles.test.ts` — unit tests for built-in profiles + `resolveEdge`.
-- `packages/weasel-ui/src/components/Badge/bases/Powerline.tsx` — `BaseModule<PowerlineParams>` implementation.
-- `packages/weasel-ui/src/components/Badge/bases/Powerline.test.ts` — unit tests for the base's `build()`.
-- `packages/weasel-ui/src/components/Powerline/Powerline.tsx` — row component.
-- `packages/weasel-ui/src/components/Powerline/Powerline.module.css` — row container styling (inline-flex, no gap).
-- `packages/weasel-ui/src/components/Powerline/Powerline.test.tsx` — component tests.
-- `packages/weasel-ui/src/components/Powerline/Powerline.stories.tsx` — Storybook stories.
-- `packages/weasel-ui/src/components/Powerline/index.ts` — public exports.
+- `packages/ui/src/components/Badge/bases/edgeProfiles.ts` — built-in `EdgeProfile` registry + `EdgeCap` type + `resolveEdge` helper.
+- `packages/ui/src/components/Badge/bases/edgeProfiles.test.ts` — unit tests for built-in profiles + `resolveEdge`.
+- `packages/ui/src/components/Badge/bases/Powerline.tsx` — `BaseModule<PowerlineParams>` implementation.
+- `packages/ui/src/components/Badge/bases/Powerline.test.ts` — unit tests for the base's `build()`.
+- `packages/ui/src/components/Powerline/Powerline.tsx` — row component.
+- `packages/ui/src/components/Powerline/Powerline.module.css` — row container styling (inline-flex, no gap).
+- `packages/ui/src/components/Powerline/Powerline.test.tsx` — component tests.
+- `packages/ui/src/components/Powerline/Powerline.stories.tsx` — Storybook stories.
+- `packages/ui/src/components/Powerline/index.ts` — public exports.
 
 **Modify:**
-- `packages/weasel-ui/src/components/Badge/bases/index.ts` — register `powerline`, extend `BadgeBase` union and `BadgeBaseParams`.
-- `packages/weasel-ui/src/index.ts` — re-export `Powerline` and its types.
+- `packages/ui/src/components/Badge/bases/index.ts` — register `powerline`, extend `BadgeBase` union and `BadgeBaseParams`.
+- `packages/ui/src/index.ts` — re-export `Powerline` and its types.
 
 ---
 
 ## Task 1: Built-in edge profile registry
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/Badge/bases/edgeProfiles.ts`
-- Test: `packages/weasel-ui/src/components/Badge/bases/edgeProfiles.test.ts`
+- Create: `packages/ui/src/components/Badge/bases/edgeProfiles.ts`
+- Test: `packages/ui/src/components/Badge/bases/edgeProfiles.test.ts`
 
 The registry defines the v1 cap shapes. An `EdgeProfile` is a pure function `(t, depth) → xOffset` where `t ∈ [0,1]` runs top→bottom and `xOffset` is in CSS px (positive = protrude rightward of the unprotruded edge, negative = cut inward). `resolveEdge` accepts either a registered name or a custom function.
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `packages/weasel-ui/src/components/Badge/bases/edgeProfiles.test.ts`:
+Create `packages/ui/src/components/Badge/bases/edgeProfiles.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -108,12 +108,12 @@ describe('resolveEdge', () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `npm test -w @orochi235/weasel-ui -- edgeProfiles`
+Run: `npm test -w @weasel-js/ui -- edgeProfiles`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement the registry**
 
-Create `packages/weasel-ui/src/components/Badge/bases/edgeProfiles.ts`:
+Create `packages/ui/src/components/Badge/bases/edgeProfiles.ts`:
 
 ```ts
 export type EdgeProfile = (t: number, depth: number) => number;
@@ -147,14 +147,14 @@ export function resolveEdge(cap: EdgeCap): EdgeProfile {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `npm test -w @orochi235/weasel-ui -- edgeProfiles`
+Run: `npm test -w @weasel-js/ui -- edgeProfiles`
 Expected: PASS (10 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge/bases/edgeProfiles.ts \
-        packages/weasel-ui/src/components/Badge/bases/edgeProfiles.test.ts
+git add packages/ui/src/components/Badge/bases/edgeProfiles.ts \
+        packages/ui/src/components/Badge/bases/edgeProfiles.test.ts
 git commit -m "feat(weasel-ui): add edge profile registry for powerline caps"
 ```
 
@@ -163,8 +163,8 @@ git commit -m "feat(weasel-ui): add edge profile registry for powerline caps"
 ## Task 2: Powerline base (perimeter sampler)
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/Badge/bases/Powerline.tsx`
-- Test: `packages/weasel-ui/src/components/Badge/bases/Powerline.test.ts`
+- Create: `packages/ui/src/components/Badge/bases/Powerline.tsx`
+- Test: `packages/ui/src/components/Badge/bases/Powerline.test.ts`
 
 A `BaseModule<PowerlineParams>` whose `build()` samples a closed perimeter: top edge (flat), right edge (driven by `rightEdge` profile, top→bottom), bottom edge (flat, right→left), left edge (driven by `leftEdge` profile, bottom→top, mirrored so the same profile tessellates with the previous segment's right edge).
 
@@ -172,7 +172,7 @@ Perimeter sample density: 64 points per vertical edge (smooth enough for chevron
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `packages/weasel-ui/src/components/Badge/bases/Powerline.test.ts`:
+Create `packages/ui/src/components/Badge/bases/Powerline.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -243,12 +243,12 @@ describe('Powerline base', () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `npm test -w @orochi235/weasel-ui -- Powerline.test`
+Run: `npm test -w @weasel-js/ui -- Powerline.test`
 Expected: FAIL — module `./Powerline` not found.
 
 - [ ] **Step 3: Implement the base**
 
-Create `packages/weasel-ui/src/components/Badge/bases/Powerline.tsx`:
+Create `packages/ui/src/components/Badge/bases/Powerline.tsx`:
 
 ```ts
 import { resolveEdge, type EdgeCap } from './edgeProfiles';
@@ -380,14 +380,14 @@ export default Powerline;
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `npm test -w @orochi235/weasel-ui -- Powerline.test`
+Run: `npm test -w @weasel-js/ui -- Powerline.test`
 Expected: PASS (6 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge/bases/Powerline.tsx \
-        packages/weasel-ui/src/components/Badge/bases/Powerline.test.ts
+git add packages/ui/src/components/Badge/bases/Powerline.tsx \
+        packages/ui/src/components/Badge/bases/Powerline.test.ts
 git commit -m "feat(weasel-ui): add powerline BadgeBase with pluggable edge profiles"
 ```
 
@@ -396,13 +396,13 @@ git commit -m "feat(weasel-ui): add powerline BadgeBase with pluggable edge prof
 ## Task 3: Register the powerline base
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/Badge/bases/index.ts`
+- Modify: `packages/ui/src/components/Badge/bases/index.ts`
 
 Add `powerline` to the `BadgeBase` union, register its module, and expose its params type. Keep all other base entries unchanged so existing Badge call sites are untouched.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `packages/weasel-ui/src/components/Badge/bases/Powerline.test.ts`:
+Append to `packages/ui/src/components/Badge/bases/Powerline.test.ts`:
 
 ```ts
 import { BASES, type BadgeBase } from './index';
@@ -418,12 +418,12 @@ describe('Powerline base registration', () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `npm test -w @orochi235/weasel-ui -- Powerline.test`
+Run: `npm test -w @weasel-js/ui -- Powerline.test`
 Expected: FAIL — `'powerline'` is not assignable to `BadgeBase`, and `BASES.powerline` is undefined.
 
 - [ ] **Step 3: Update the registry**
 
-Modify `packages/weasel-ui/src/components/Badge/bases/index.ts`:
+Modify `packages/ui/src/components/Badge/bases/index.ts`:
 
 ```ts
 import type { BaseModule } from './types';
@@ -475,19 +475,19 @@ export const BASES: Record<BadgeBase, BaseModule<any>> = {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npm test -w @orochi235/weasel-ui -- Powerline.test edgeProfiles`
+Run: `npm test -w @weasel-js/ui -- Powerline.test edgeProfiles`
 Expected: PASS — all tests including the new registration test.
 
 Also run the full weasel-ui test suite to confirm no regressions:
 
-Run: `npm test -w @orochi235/weasel-ui`
+Run: `npm test -w @weasel-js/ui`
 Expected: PASS for all pre-existing tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge/bases/index.ts \
-        packages/weasel-ui/src/components/Badge/bases/Powerline.test.ts
+git add packages/ui/src/components/Badge/bases/index.ts \
+        packages/ui/src/components/Badge/bases/Powerline.test.ts
 git commit -m "feat(weasel-ui): register powerline base in BASES registry"
 ```
 
@@ -496,16 +496,16 @@ git commit -m "feat(weasel-ui): register powerline base in BASES registry"
 ## Task 4: Powerline component
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/Powerline/Powerline.tsx`
-- Create: `packages/weasel-ui/src/components/Powerline/Powerline.module.css`
-- Create: `packages/weasel-ui/src/components/Powerline/index.ts`
-- Test: `packages/weasel-ui/src/components/Powerline/Powerline.test.tsx`
+- Create: `packages/ui/src/components/Powerline/Powerline.tsx`
+- Create: `packages/ui/src/components/Powerline/Powerline.module.css`
+- Create: `packages/ui/src/components/Powerline/index.ts`
+- Test: `packages/ui/src/components/Powerline/Powerline.test.tsx`
 
 Thin component that emits one `<Badge base="powerline" />` per segment, threads the cap profiles, and applies row-level defaults that per-segment props can override. Row container is an `inline-flex` with `gap: 0` so segments butt.
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `packages/weasel-ui/src/components/Powerline/Powerline.test.tsx`:
+Create `packages/ui/src/components/Powerline/Powerline.test.tsx`:
 
 ```tsx
 import { describe, it, expect } from 'vitest';
@@ -584,12 +584,12 @@ describe('Powerline', () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `npm test -w @orochi235/weasel-ui -- Powerline`
+Run: `npm test -w @weasel-js/ui -- Powerline`
 Expected: FAIL — `./Powerline` not found.
 
 - [ ] **Step 3: Implement the CSS module**
 
-Create `packages/weasel-ui/src/components/Powerline/Powerline.module.css`:
+Create `packages/ui/src/components/Powerline/Powerline.module.css`:
 
 ```css
 .row {
@@ -601,7 +601,7 @@ Create `packages/weasel-ui/src/components/Powerline/Powerline.module.css`:
 
 - [ ] **Step 4: Implement the component**
 
-Create `packages/weasel-ui/src/components/Powerline/Powerline.tsx`:
+Create `packages/ui/src/components/Powerline/Powerline.tsx`:
 
 ```tsx
 import type { ReactNode } from 'react';
@@ -674,7 +674,7 @@ export function Powerline({
 
 - [ ] **Step 5: Create the public exports**
 
-Create `packages/weasel-ui/src/components/Powerline/index.ts`:
+Create `packages/ui/src/components/Powerline/index.ts`:
 
 ```ts
 export { Powerline } from './Powerline';
@@ -685,13 +685,13 @@ export { EDGE_PROFILES } from '../Badge/bases/edgeProfiles';
 
 - [ ] **Step 6: Run tests to verify they pass**
 
-Run: `npm test -w @orochi235/weasel-ui -- Powerline`
+Run: `npm test -w @weasel-js/ui -- Powerline`
 Expected: PASS for the new component tests (5 tests) and the base tests still pass.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Powerline/
+git add packages/ui/src/components/Powerline/
 git commit -m "feat(weasel-ui): add Powerline row component"
 ```
 
@@ -700,13 +700,13 @@ git commit -m "feat(weasel-ui): add Powerline row component"
 ## Task 5: Export from package root
 
 **Files:**
-- Modify: `packages/weasel-ui/src/index.ts`
+- Modify: `packages/ui/src/index.ts`
 
-Re-export `Powerline` and its types so consumers can `import { Powerline } from '@orochi235/weasel-ui'`.
+Re-export `Powerline` and its types so consumers can `import { Powerline } from '@weasel-js/ui'`.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `packages/weasel-ui/src/components/Powerline/Powerline.test.tsx`:
+Append to `packages/ui/src/components/Powerline/Powerline.test.tsx`:
 
 ```tsx
 import * as PkgRoot from '../../index';
@@ -725,12 +725,12 @@ describe('package root export', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npm test -w @orochi235/weasel-ui -- Powerline.test`
+Run: `npm test -w @weasel-js/ui -- Powerline.test`
 Expected: FAIL — `PkgRoot.Powerline` is undefined.
 
 - [ ] **Step 3: Add the re-exports**
 
-Modify `packages/weasel-ui/src/index.ts` — add this line in alphabetical position (after `./components/OptionsBar`, before `./components/Sidebar`):
+Modify `packages/ui/src/index.ts` — add this line in alphabetical position (after `./components/OptionsBar`, before `./components/Sidebar`):
 
 ```ts
 export * from './components/Powerline';
@@ -758,14 +758,14 @@ export * from './components/ToolPalette';
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npm test -w @orochi235/weasel-ui`
+Run: `npm test -w @weasel-js/ui`
 Expected: PASS — full weasel-ui suite green.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/index.ts \
-        packages/weasel-ui/src/components/Powerline/Powerline.test.tsx
+git add packages/ui/src/index.ts \
+        packages/ui/src/components/Powerline/Powerline.test.tsx
 git commit -m "feat(weasel-ui): export Powerline from package root"
 ```
 
@@ -774,13 +774,13 @@ git commit -m "feat(weasel-ui): export Powerline from package root"
 ## Task 6: Storybook stories
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/Powerline/Powerline.stories.tsx`
+- Create: `packages/ui/src/components/Powerline/Powerline.stories.tsx`
 
 Stories exercise every built-in cap, mixed-tone rows, a custom `EdgeProfile`, and per-segment overrides. These are the visual validation surface — review them in Storybook before declaring done.
 
 - [ ] **Step 1: Create the stories file**
 
-Create `packages/weasel-ui/src/components/Powerline/Powerline.stories.tsx`:
+Create `packages/ui/src/components/Powerline/Powerline.stories.tsx`:
 
 ```tsx
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -885,18 +885,18 @@ export const LongStripCookbook: Story = {
 
 Storybook is run from the repo root. Quick smoke check that the file compiles via TypeScript:
 
-Run: `npm run -w @orochi235/weasel-ui typecheck 2>/dev/null || npx -w @orochi235/weasel-ui tsc --noEmit`
-Expected: PASS — no TS errors. (If neither script exists, `npx tsc --noEmit -p packages/weasel-ui` from repo root.)
+Run: `npm run -w @weasel-js/ui typecheck 2>/dev/null || npx -w @weasel-js/ui tsc --noEmit`
+Expected: PASS — no TS errors. (If neither script exists, `npx tsc --noEmit -p packages/ui` from repo root.)
 
 - [ ] **Step 3: Run the full weasel-ui suite one more time**
 
-Run: `npm test -w @orochi235/weasel-ui`
+Run: `npm test -w @weasel-js/ui`
 Expected: PASS.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Powerline/Powerline.stories.tsx
+git add packages/ui/src/components/Powerline/Powerline.stories.tsx
 git commit -m "feat(weasel-ui): Powerline stories for caps, variants, custom profiles"
 ```
 
@@ -910,7 +910,7 @@ The base-level integration is the payoff — confirm every Badge feature still w
 
 - [ ] **Step 1: Start Storybook**
 
-Run: `npm run -w @orochi235/weasel-ui storybook` (or `npm run storybook` from repo root if that's where it's wired).
+Run: `npm run -w @weasel-js/ui storybook` (or `npm run storybook` from repo root if that's where it's wired).
 
 - [ ] **Step 2: Visual checks — confirm each of the following**
 

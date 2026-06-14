@@ -975,7 +975,7 @@ git commit -m "feat(canvas): synthesized boundsOf surfaces rotation via descript
 Edit `demo/demos/RotateDemo.tsx`. Update the `<SceneCanvas>` props:
 
 ```tsx
-import { ROTATED_POSE_DESCRIPTOR } from '@orochi235/weasel';
+import { ROTATED_POSE_DESCRIPTOR } from '@weasel-js/core';
 
 // ...
 
@@ -1051,9 +1051,9 @@ import {
   pointInRotatedRect,
   ROTATED_POSE_DESCRIPTOR,
   useScene,
-} from '@orochi235/weasel';
-import type { RotatedPose } from '@orochi235/weasel';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+} from '@weasel-js/core';
+import type { RotatedPose } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/gl';
 import { useState } from 'react';
 import { useBackend } from '../BackendContext';
 
@@ -1179,7 +1179,7 @@ The three counterexamples each construct a *custom* `PoseDescriptor` that intent
 Add to `RotatedResizeMathDemo.tsx`:
 
 ```tsx
-import { RECT_POSE_DESCRIPTOR } from '@orochi235/weasel';
+import { RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
 
 /** Subverted descriptor: pose carries rotation, but `getRotation` lies and
  *  returns 0. `useResize` takes the unrotated path; drag delta is applied
@@ -1285,7 +1285,7 @@ Below each panel, render a small monospace caption that shows the anchor invaria
 Implementation:
 
 ```tsx
-import { rotatePoint } from '@orochi235/weasel/internal/rotate'; // verify the import path during impl
+import { rotatePoint } from '@weasel-js/core/internal/rotate'; // verify the import path during impl
 
 function LedgerCaption({ scene, anchor }: { scene: ReturnType<typeof useScene<Rect>>; anchor: { x: 'min' | 'max'; y: 'min' | 'max' } }) {
   const node = scene.get('a');

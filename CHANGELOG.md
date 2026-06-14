@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking changes (final WebGL swap — Step 10)
 
 - **2D backend removed.** `<Canvas>` and `<SceneCanvas>` no longer accept `backend?: '2d' | 'gl'`. WebGL2 is the only backend. The kit's existing `background`, `view`, `scene`, etc. props are unchanged; just the `backend` switch is gone.
-- **`@orochi235/weasel-gl` deleted as a separate package.** All renderer source folded into `@orochi235/weasel`:
+- **`@weasel-js/gl` deleted as a separate package.** All renderer source folded into `@weasel-js/core`:
   - GL machinery → `src/renderer/` (`WeaselRenderer`, `draw`, `state/`, `math/`, `cache/`, `shaders/`, `textures/`)
   - Font atlasing → `src/features/text/atlas/` (`FontAtlas`, `GlyphLayout`, `registerFont`)
   - Path tessellation → `src/features/paths/tessellate/` (`tessellate`, `polyline`, `stroke`)
@@ -71,16 +71,16 @@ Demos and `apps/draw` were updated in this release. No external consumers exist.
 - Ambient context publishing the active selection (`readonly string[]`) and an optional parallel `kinds` array so non-canvas UI (palette, status bar) can render type-aware copy ("3 paths selected"). `SceneCanvas` auto-publishes; consumers can override per-id labels via a `describeKind?: (node) => string` prop.
 - New exports: `SelectionContextProvider`, `useSelectionContext`, `usePublishSelection`, `SelectionContextValue`.
 
-#### Command palette extracted to `@orochi235/weasel-ui`
+#### Command palette extracted to `@weasel-js/ui`
 
-- The demo's `<CommandPalette>` is now part of `packages/weasel-ui/` (alongside `<PropertiesPanel>`). Hooks (`useActionsRegistry`, `useAction`, `evaluateEnabled`, `ActionDisabledReason`) stay in the kit.
+- The demo's `<CommandPalette>` is now part of `packages/ui/` (alongside `<PropertiesPanel>`). Hooks (`useActionsRegistry`, `useAction`, `evaluateEnabled`, `ActionDisabledReason`) stay in the kit.
 - The palette renders a kind-aware header ("1 path selected", "3 objects selected", "No selection") when `<SelectionContextProvider>` is in scope.
 
 #### WebGL2 backend (carried over from the 0.1.x soak)
 
 These items shipped as the `@experimental` GL backend during Steps 1–9; in 0.2.0 they're the only backend.
 
-- New workspace package `@orochi235/weasel-gl` housing the GL2 renderer.
+- New workspace package `@weasel-js/gl` housing the GL2 renderer.
 - `WeaselRenderer` with WebGL2 context lifecycle, DPR-aware resize, and
   context-loss/restore handling.
 - `<Canvas>` / `<SceneCanvas>` accept `backend?: '2d' | 'gl'` (default `'2d'`).

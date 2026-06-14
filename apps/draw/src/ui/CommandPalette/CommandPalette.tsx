@@ -25,7 +25,7 @@ import {
   useSelectionContext,
   type Action,
   type ActionEnabledResult,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import styles from './CommandPalette.module.css';
 
 /** Display strings for the closed `ActionDisabledReason` enum. Defined here

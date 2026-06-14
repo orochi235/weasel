@@ -11,7 +11,7 @@
 - **Data-join** (`d3-selection`'s `.data(data, key).join(...)` idiom) — the canonical way d3 reconciles arrays of data with scene state. Lifts directly to weasel's op model: enter → InsertOp, update → SetPoseOp, exit → DeleteOp.
 - **Transitions** (`d3-transition`'s `.transition().duration().ease()...` chain) — bridges to the kit's `useAnimator`. d3's per-tick interpolation gives us color/path/string/object tweens for free, which the kit's animator doesn't have natively today.
 
-Both pieces land as a **separate package**, `@orochi235/weasel-d3`, with `d3-force`, `d3-interpolate`, and (optionally) `d3-ease` as runtime deps. Consumers who don't want d3 don't pay the bundle cost.
+Both pieces land as a **separate package**, `@weasel-js/d3`, with `d3-force`, `d3-interpolate`, and (optionally) `d3-ease` as runtime deps. Consumers who don't want d3 don't pay the bundle cost.
 
 One kit-side change unblocks the plugin and benefits non-d3 consumers: the animator gains a pluggable interpolator slot so `tween` can accept `d3-interpolate` (or any equivalent) for non-numeric values.
 
@@ -41,8 +41,8 @@ One kit-side change unblocks the plugin and benefits non-d3 consumers: the anima
 ### Package layout
 
 ```
-@orochi235/weasel-d3
-├── package.json          # peerDeps: @orochi235/weasel, react. deps: d3-interpolate.
+@weasel-js/d3
+├── package.json          # peerDeps: @weasel-js/core, react. deps: d3-interpolate.
 │                          # peerDepsMeta: d3-force optional (but recommended).
 ├── src/
 │   ├── index.ts          # barrel
@@ -54,7 +54,7 @@ One kit-side change unblocks the plugin and benefits non-d3 consumers: the anima
 └── README.md
 ```
 
-Lives under `packages/weasel-d3/` in the monorepo (next to `weasel-ui`, `weasel-hud`).
+Lives under `packages/d3/` in the monorepo (next to `weasel-ui`, `weasel-hud`).
 
 ### Kit-side change (Phase 0)
 
@@ -266,7 +266,7 @@ Single PR. `useAnimator.tween` accepts optional `interpolate`. Adds ~50 lines + 
 
 ### Phase 1 — `d3Bind` + Selection
 
-Lands `@orochi235/weasel-d3` package with `bind`, `selection`, types, README. Tests cover diff correctness (enter/update/exit emission), batched op dispatch, op-factory vs declarative modes, filter / each / interrupt. No transitions yet — `.transition()` throws `not implemented` placeholder.
+Lands `@weasel-js/d3` package with `bind`, `selection`, types, README. Tests cover diff correctness (enter/update/exit emission), batched op dispatch, op-factory vs declarative modes, filter / each / interrupt. No transitions yet — `.transition()` throws `not implemented` placeholder.
 
 Also lands the package's `package.json`, vitest setup, tsup config, and registry entry in the root workspace.
 
@@ -311,7 +311,7 @@ Per phase:
 
 ## Public exports
 
-`@orochi235/weasel-d3/src/index.ts`:
+`@weasel-js/d3/src/index.ts`:
 
 ```ts
 export { d3Bind } from './bind';
@@ -322,13 +322,13 @@ export type {
 } from './types';
 ```
 
-The kit's `@orochi235/weasel` doesn't change its public surface (Phase 0 is an additive optional arg on `tween`).
+The kit's `@weasel-js/core` doesn't change its public surface (Phase 0 is an additive optional arg on `tween`).
 
 ## Dependencies
 
 | Package | Type | Why |
 |---|---|---|
-| `@orochi235/weasel` | peerDep | Scene, useAnimator, op factories, types |
+| `@weasel-js/core` | peerDep | Scene, useAnimator, op factories, types |
 | `react` | peerDep | (transitively via weasel) |
 | `d3-interpolate` | dep | Used by `.tween()` defaults; consumer can override |
 | `d3-force` | peerDepMeta optional | Recommended pairing; not strictly required by this package |

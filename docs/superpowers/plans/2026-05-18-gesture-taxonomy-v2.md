@@ -1110,11 +1110,11 @@ git commit -m "feat(dispatcher): synthesize multiTouchTap from multitouch tap"
 Replace the local `parseRoute` (line ~446) with a passthrough:
 
 ```ts
-export { parseRoute } from '@orochi235/weasel/routing';   // re-export the v2 grammar
-export type { ParsedRoute } from '@orochi235/weasel/routing';
+export { parseRoute } from '@weasel-js/core/routing';   // re-export the v2 grammar
+export type { ParsedRoute } from '@weasel-js/core/routing';
 ```
 
-(Ensure `@orochi235/weasel/routing` re-exports `parseRoute` from `src/tools/routing/routeGrammar.ts` via the package's barrel.)
+(Ensure `@weasel-js/core/routing` re-exports `parseRoute` from `src/tools/routing/routeGrammar.ts` via the package's barrel.)
 
 - [ ] **Run inspector tests**
 

@@ -48,7 +48,7 @@ The audit revealed 6 layers without `drawGL` beyond what step 7/8 covered. All p
 
 ### Font registration
 
-- **`vite.config.ts`** `publicDir → packages/weasel-gl/fonts` so the inter atlas is served at `/weasel/inter/inter.json` + `/inter.png`.
+- **`vite.config.ts`** `publicDir → packages/gl/fonts` so the inter atlas is served at `/weasel/inter/inter.json` + `/inter.png`.
 - **`BackendProvider`** awaits `registerFont('sans-serif', …)` + `registerFont('Inter', …)` before mounting children when `backend='gl'`. First paint includes glyphs.
 
 ### New conventions
@@ -67,7 +67,7 @@ The audit revealed 6 layers without `drawGL` beyond what step 7/8 covered. All p
 
 - **Vitest: 1477/1477 pass** (180 test files; +1 from baseline-set test split).
 - **Playwright (existing GL smoke suite): 17/17 pass**. Visual rig's 24 specs aren't run in this session — they expect baselines from CI.
-- **Typecheck**: clean for `packages/weasel-gl` modulo one pre-existing `draw.ts(138,84)` warning unchanged from steps 7/8.
+- **Typecheck**: clean for `packages/gl` modulo one pre-existing `draw.ts(138,84)` warning unchanged from steps 7/8.
 - **Browser-verified** by the user across many demos under both backends. Most demos render correctly under GL after this session's fixes. Gaps documented below.
 
 ## Open follow-ups

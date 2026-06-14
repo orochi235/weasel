@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Slider, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@orochi235/weasel-ui';
-import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@orochi235/weasel';
-import type { RenderLayer } from '@orochi235/weasel';
+import { Slider, chromaAt, oklchToHex, paintGradientTrack, type ChromaCurve, type Thumb } from '@weasel-js/ui';
+import { SceneCanvas, hexToRgba, polygonFromPoints, useScene } from '@weasel-js/core';
+import type { RenderLayer } from '@weasel-js/core';
 import { viewToMat3, type DrawCommand } from '../../src/renderer';
 
 type CThumb = Thumb & { key: 'cTop' | 'cPeak' | 'cBot' };

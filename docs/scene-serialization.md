@@ -10,7 +10,7 @@ with empty history.
 ## Quick example
 
 ```ts
-import { createScene, sceneFromJSON } from '@orochi235/weasel';
+import { createScene, sceneFromJSON } from '@weasel-js/core';
 
 // Build a scene however you like, then save it:
 const scene = createScene({
@@ -40,7 +40,7 @@ also use a `*.scene.json` file as initial scene data (see
 [Loading demo data from a JSON file](#loading-demo-data-from-a-json-file)).
 
 ```ts
-import type { SerializedScene, SerializedNode } from '@orochi235/weasel';
+import type { SerializedScene, SerializedNode } from '@weasel-js/core';
 
 // Example value for a scene with two layers and three nodes:
 const example: SerializedScene<MyData, 'shapes' | 'annotations', RectPose> = {
@@ -107,8 +107,8 @@ stores the key. On load, `sceneFromJSON` looks the key up in the registry and
 wires the live function back onto the node.
 
 ```ts
-import { createScene, sceneFromJSON } from '@orochi235/weasel';
-import type { SceneRegistry } from '@orochi235/weasel';
+import { createScene, sceneFromJSON } from '@weasel-js/core';
+import type { SceneRegistry } from '@weasel-js/core';
 import { ellipsePath, rectPath } from './my-clip-factories';
 
 // Define the registry once and share it between save and load:
@@ -186,7 +186,7 @@ and makes the data diff-friendly.
 ```ts
 // my-scene.scene.json is a SerializedScene<MyData, MyLayer, MyPose> object.
 import sceneData from './my-scene.scene.json';
-import { sceneFromJSON } from '@orochi235/weasel';
+import { sceneFromJSON } from '@weasel-js/core';
 
 // No registry needed if the JSON has no clipFromPoseKey fields:
 const scene = sceneFromJSON(sceneData, {});
@@ -207,7 +207,7 @@ JSON to the right type:
 
 ```ts
 import raw from './my-scene.scene.json';
-import type { SerializedScene } from '@orochi235/weasel';
+import type { SerializedScene } from '@weasel-js/core';
 
 const sceneData = raw as SerializedScene<MyData, MyLayer, MyPose>;
 const scene = sceneFromJSON(sceneData, {});

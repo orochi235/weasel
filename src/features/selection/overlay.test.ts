@@ -8,6 +8,7 @@ import {
 } from './overlay';
 import type { Group, GroupAdapter } from '../groups/types';
 import { asNodeId } from 'core/scene/types';
+import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
 function makeGroupAdapter(groups: Group[]): GroupAdapter {
   const byId = new Map<string, Group>(groups.map((g) => [g.id, { ...g, members: [...g.members] }]));
@@ -239,6 +240,42 @@ describe('createSelectionOverlayLayer', () => {
     const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
     // Outline pass only (handles disabled). One stroke for the selected id.
     expect(tree.filter((c) => c.kind === 'path').length).toBe(1);
+  });
+
+  describe('multi-union resolves from chromeState', () => {
+    // Phase 5 cleanup: the synthetic multi-resize id resolves to
+    // `ChromeState.unionBounds` (the single owner of the union AABB) when the
+    // draw envelope carries a `getChromeState` thunk. `getPose` deliberately
+    // returns a faraway rect for the synthetic id so we can prove chromeState
+    // wins over the construction-time resolver.
+    const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const layer = createSelectionOverlayLayer<Pose>({
+      getSelection: () => [asNodeId(MULTI_RESIZE_TARGET_ID)],
+      getPose: (id) =>
+        id === MULTI_RESIZE_TARGET_ID ? { x: 999, y: 999, width: 1, height: 1 } : null,
+      handles: false, // outline pass only → one stroke whose rect we can read
+    });
+
+    it('resolves the synthetic id to chromeState.unionBounds when the envelope carries it', () => {
+      const data = { getChromeState: () => ({ unionBounds: { x: 0, y: 0, width: 100, height: 100 } }) };
+      const tree = layer.draw(data, VIEW, DIMS);
+      const stroke = tree.find((c) => c.kind === 'path') as PathDrawCommand;
+      expect(stroke).toBeDefined();
+      const rect = stroke.path as { x: number; y: number; width: number };
+      // The union (0,0,100×100), not getPose's faraway {999,999,1,1}.
+      expect(rect.x).toBeLessThan(10);
+      expect(rect.width).toBeGreaterThan(90);
+    });
+
+    it('falls back to getPose for the synthetic id when no chromeState rides the envelope', () => {
+      const tree = layer.draw(undefined, VIEW, DIMS);
+      const stroke = tree.find((c) => c.kind === 'path') as PathDrawCommand;
+      expect(stroke).toBeDefined();
+      const rect = stroke.path as { x: number };
+      // getPose's faraway rect (x≈999) drives the outline — preserves the
+      // pre-chromeState behavior for bare/test callers.
+      expect(rect.x).toBeGreaterThan(900);
+    });
   });
 
   describe('chrome-caps visibility gate', () => {

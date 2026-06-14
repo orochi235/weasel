@@ -15,10 +15,10 @@
 **Required reading before starting:**
 - [`webgl-stepwise-conventions.md`](./webgl-stepwise-conventions.md) — accumulated lessons. §1, §2, §3, §6, §9 apply directly (see task callouts below).
 - [`2026-05-09-webgl-step-3-done.md`](./2026-05-09-webgl-step-3-done.md) — most recent done note.
-- `packages/weasel-gl/src/WeaselRenderer.ts` — where programRegistry and context-restore must be wired.
-- `packages/weasel-gl/src/draw.ts` — where `dispatch` gains the `'shader'` case.
-- `packages/weasel-gl/src/ShaderProgram.ts` — `ShaderCompileError` already exists and is the right throw type.
-- `packages/weasel-gl/src/GLTextureCache.ts` — `registerTexture`'s uploads go here.
+- `packages/gl/src/WeaselRenderer.ts` — where programRegistry and context-restore must be wired.
+- `packages/gl/src/draw.ts` — where `dispatch` gains the `'shader'` case.
+- `packages/gl/src/ShaderProgram.ts` — `ShaderCompileError` already exists and is the right throw type.
+- `packages/gl/src/GLTextureCache.ts` — `registerTexture`'s uploads go here.
 
 **Conventions cited by specific tasks below:**
 - Task 2 (handles + registry): §9 — do not track per-renderer state on shared module entries; programRegistry lives on the renderer instance, not module-level.
@@ -33,7 +33,7 @@
 
 ## File structure
 
-Files this plan creates or modifies in `packages/weasel-gl/`:
+Files this plan creates or modifies in `packages/gl/`:
 
 ```
 src/
@@ -328,7 +328,7 @@ pnpm --filter weasel-gl typecheck
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/registerTexture.ts packages/weasel-gl/src/registerTexture.test.ts
+git add packages/gl/src/registerTexture.ts packages/gl/src/registerTexture.test.ts
 git commit -m "feat(weasel-gl): add TextureHandle + registerTexture registry"
 ```
 
@@ -469,7 +469,7 @@ pnpm --filter weasel-gl typecheck
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/shaders/customPrelude.ts
+git add packages/gl/src/shaders/customPrelude.ts
 git commit -m "feat(weasel-gl): add custom shader vertex prelude + quad geometry"
 ```
 
@@ -744,9 +744,9 @@ pnpm --filter weasel-gl typecheck
 
 ```bash
 git add \
-  packages/weasel-gl/src/registerProgram.ts \
-  packages/weasel-gl/src/registerProgram.test.ts \
-  packages/weasel-gl/src/DrawCommand.ts
+  packages/gl/src/registerProgram.ts \
+  packages/gl/src/registerProgram.test.ts \
+  packages/gl/src/DrawCommand.ts
 git commit -m "feat(weasel-gl): ShaderProgramHandle + registerProgram source registry + ShaderDrawCommand type"
 ```
 
@@ -949,7 +949,7 @@ pnpm --filter weasel-gl typecheck
 - [ ] **Step 9: Commit**
 
 ```bash
-git add packages/weasel-gl/src/WeaselRenderer.ts packages/weasel-gl/src/shaders/customPrelude.ts
+git add packages/gl/src/WeaselRenderer.ts packages/gl/src/shaders/customPrelude.ts
 git commit -m "feat(weasel-gl): add programRegistry + quad geometry + renderer.registerProgram()"
 ```
 
@@ -1200,7 +1200,7 @@ pnpm --filter weasel-gl typecheck
 - [ ] **Step 9: Commit**
 
 ```bash
-git add packages/weasel-gl/src/draw.ts packages/weasel-gl/src/WeaselRenderer.ts
+git add packages/gl/src/draw.ts packages/gl/src/WeaselRenderer.ts
 git commit -m "feat(weasel-gl): drawShader dispatch + setUniform binder + kit quad geometry"
 ```
 
@@ -1360,7 +1360,7 @@ Expected: all draw tests pass including the new shader ones.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-gl/src/draw.test.ts
+git add packages/gl/src/draw.test.ts
 git commit -m "test(weasel-gl): unit tests for drawShader dispatch path"
 ```
 
@@ -1405,7 +1405,7 @@ pnpm --filter weasel-gl test --run
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-gl/src/draw.test.ts
+git add packages/gl/src/draw.test.ts
 git commit -m "test(weasel-gl): setUniform type-dispatch unit tests"
 ```
 
@@ -1448,7 +1448,7 @@ pnpm --filter weasel-gl typecheck
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-gl/src/index.ts
+git add packages/gl/src/index.ts
 git commit -m "feat(weasel-gl): export registerProgram, registerTexture, shader types in public barrel"
 ```
 
@@ -1608,7 +1608,7 @@ Verify: Voronoi pattern renders in the 300×300 rect, animates smoothly, backgro
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/dev/shader.html packages/weasel-gl/dev/shader.ts
+git add packages/gl/dev/shader.html packages/gl/dev/shader.ts
 git commit -m "feat(weasel-gl): Voronoi shader demo page for smoke testing"
 ```
 
@@ -1739,7 +1739,7 @@ Expected: 3/3 pass.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/dev/shader.spec.ts
+git add packages/gl/dev/shader.spec.ts
 git commit -m "test(weasel-gl): Playwright smoke spec for kind:shader dispatch path"
 ```
 
@@ -1814,7 +1814,7 @@ Expected: passes (or skips cleanly if WebGL2 unavailable in test environment).
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/registerProgram.integration.test.ts
+git add packages/gl/src/registerProgram.integration.test.ts
 git commit -m "test(weasel-gl): ShaderCompileError integration test via OffscreenCanvas"
 ```
 

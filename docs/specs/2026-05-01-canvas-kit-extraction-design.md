@@ -1,6 +1,6 @@
-# canvas-kit Extraction → `@orochi235/weasel`
+# canvas-kit Extraction → `@weasel-js/core`
 
-**Goal:** Extract `src/canvas-kit/`, `src/canvas-kit-demo/`, and `docs/canvas-kit/` from the garden monorepo into a standalone public npm package `@orochi235/weasel`, hosted in its own GitHub repository.
+**Goal:** Extract `src/canvas-kit/`, `src/canvas-kit-demo/`, and `docs/canvas-kit/` from the garden monorepo into a standalone public npm package `@weasel-js/core`, hosted in its own GitHub repository.
 
 **Naming note:** "canvas-kit" is the in-tree working name; the published package and new repo are both **weasel**. Within this spec, "canvas-kit" refers to the existing in-tree directories and "weasel" refers to the post-extraction package and repo.
 
@@ -10,13 +10,13 @@
 
 ## Decisions (locked)
 
-- **Package name:** `@orochi235/weasel`. Reads as "wonder easel" — etch-a-sketch-adjacent ("Wonder Easel" sounds like a vintage drawing toy) with arguable allusion to "one-eyed wonder weasel" left as plausibly-deniable garnish. Unique on npm, no trademark adjacency.
+- **Package name:** `@weasel-js/core`. Reads as "wonder easel" — etch-a-sketch-adjacent ("Wonder Easel" sounds like a vintage drawing toy) with arguable allusion to "one-eyed wonder weasel" left as plausibly-deniable garnish. Unique on npm, no trademark adjacency.
 - **Logo treatment:** the `o` in "wonder" is rendered as an eye (single-eye motif ties the wordmark to the second reading).
 - **License:** MIT.
 - **Repo name:** `weasel` under `orochi235`.
 - **Initial version:** `0.1.0`. Pre-1.0 while the API surface (paths, groups, text, units-per-subobject) keeps shifting.
 
-Verify before first publish: `npm view @orochi235/weasel` returns 404 (name available) and the `orochi235` npm scope exists / is created.
+Verify before first publish: `npm view @weasel-js/core` returns 404 (name available) and the `orochi235` npm scope exists / is created.
 
 ---
 
@@ -30,8 +30,8 @@ github.com/orochi235/garden              ← existing repo, becomes a consumer
 ```
 
 After extraction:
-- The kit publishes to npm as `@orochi235/weasel`.
-- Garden depends on it as `"@orochi235/weasel": "^0.x"` and contains zero kit source.
+- The kit publishes to npm as `@weasel-js/core`.
+- Garden depends on it as `"@weasel-js/core": "^0.x"` and contains zero kit source.
 - During development of new kit features, garden temporarily points at a local checkout (`"file:../weasel"`) so changes can flow without a publish round-trip.
 
 **Module format:** ESM-only. `"type": "module"` in `package.json`. CJS support is deferred unless a real consumer needs it. Tree-shakeable barrel exports.
@@ -150,15 +150,15 @@ Alternative: `git filter-repo --path src/canvas-kit/ --path src/canvas-kit-demo/
 **Phase A — local file dep (during extraction).**
 1. New repo lives at `~/src/weasel` (or wherever).
 2. `npm run build` in the kit produces `dist/`.
-3. Garden's `package.json`: `"@orochi235/weasel": "file:../weasel"`.
+3. Garden's `package.json`: `"@weasel-js/core": "file:../weasel"`.
 4. Garden's `tsconfig.json`: remove the `@/canvas-kit/*` path alias.
-5. Garden's source: imports stay as-is (`from '@/canvas-kit'` becomes `from '@orochi235/weasel'`). One-time codemod via `sed` or `grep -l | xargs sed`.
+5. Garden's source: imports stay as-is (`from '@/canvas-kit'` becomes `from '@weasel-js/core'`). One-time codemod via `sed` or `grep -l | xargs sed`.
 6. Delete `src/canvas-kit/`, `src/canvas-kit-demo/`, `docs/canvas-kit/` from garden in the same commit.
 7. `npm install` + `npm test` in garden — confirm everything still works.
 
 **Phase B — published package.**
 1. Publish `0.1.0` from the new repo (changeset release flow).
-2. Garden's `package.json`: switch `"file:../weasel"` → `"@orochi235/weasel": "^0.1.0"`.
+2. Garden's `package.json`: switch `"file:../weasel"` → `"@weasel-js/core": "^0.1.0"`.
 3. Commit + push.
 
 Garden's local-dev experience after Phase B: change something in weasel, run `npm publish` (or `npm pack` + `npm install ../weasel-X.Y.Z.tgz` for a quick test), garden picks up the new version. Or revert temporarily to `file:../weasel` for active dev.
@@ -194,15 +194,15 @@ Things to verify or fix before the cut, separately from the move:
 - **Path-alias removal** in garden requires a codemod across the whole codebase. Mitigation: scripted `sed` + `git diff` review + run garden's full test suite.
 - **First publish under a scoped name** requires an npm account with the scope created. Set this up before execution, not during.
 - **GitHub Pages on a public repo** is free; verify org-level Pages settings if `orochi235` is an org rather than a user account.
-- **Discoverability:** `@orochi235/weasel` is harder to find than an unscoped name. Mitigated by good README, demo site, and tags on GitHub. Re-evaluate before 1.0.
+- **Discoverability:** `@weasel-js/core` is harder to find than an unscoped name. Mitigated by good README, demo site, and tags on GitHub. Re-evaluate before 1.0.
 
 ---
 
 ## Success criteria
 
 After execution:
-- `@orochi235/weasel@0.1.0` is published to npm.
+- `@weasel-js/core@0.1.0` is published to npm.
 - Garden depends on it via package.json, has no `src/canvas-kit/` directory, and all garden tests pass.
 - The new repo's CI is green (test + build).
 - The demo site is reachable at `https://orochi235.github.io/weasel/`.
-- A user can `npm install @orochi235/weasel react` in a fresh project, follow the README quickstart, and have a working drag-resize demo in 10 minutes.
+- A user can `npm install @weasel-js/core react` in a fresh project, follow the README quickstart, and have a working drag-resize demo in 10 minutes.

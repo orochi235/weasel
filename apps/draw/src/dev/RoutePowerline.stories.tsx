@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Powerline } from '@orochi235/weasel-ui';
+import { Powerline } from '@weasel-js/ui';
 import { routeToPowerline } from './RegistryDetail';
 
 /** Visual catalog of every route-config shape the inspector renders as a

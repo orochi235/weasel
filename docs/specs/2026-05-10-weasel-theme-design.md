@@ -8,7 +8,7 @@
 weasel has two consumer-facing widget packages today:
 
 - **weasel-ui** — DOM/React components (PropertiesPanel, RangePicker, …). Themed via
-  CSS variables in `packages/weasel-ui/src/tokens.css` (the `--wui-*` namespace).
+  CSS variables in `packages/ui/src/tokens.css` (the `--wui-*` namespace).
 - **weasel-hud** — WebGL widgets rendered into the canvas (button, label, rect, text,
   image). Themed inline: every widget option (`fill`, `pressedFill`, `textColor`,
   …) is a separate hex string the consumer either supplies per widget or accepts
@@ -22,7 +22,7 @@ doesn't define.
 
 ## Goal
 
-Stand up `@orochi235/weasel-theme` as the canonical home for the design system's
+Stand up `@weasel-js/theme` as the canonical home for the design system's
 tokens:
 
 - Single CSS file (`tokens.css`) and a parallel TS module (`tokens.ts`) exporting
@@ -41,7 +41,7 @@ tokens:
 
 | Axis | Choice | Notes |
 |---|---|---|
-| Token home | New `packages/weasel-theme/` package | Neither weasel-ui nor weasel-hud depends on the other. |
+| Token home | New `packages/theme/` package | Neither weasel-ui nor weasel-hud depends on the other. |
 | Namespace | `--wzl-*` (renamed from `--wui-*`) | More accurate now that tokens span DOM + WebGL widgets. |
 | Token vocabulary | 12 pre-existing + 4 new button-state = 16 | Font tokens deliberately excluded. |
 | Per-widget overrides | Inline style props win over theme | "Explicit > implicit" — additive, non-breaking change. |
@@ -55,8 +55,8 @@ tokens:
 ### Package layout
 
 ```
-packages/weasel-theme/
-  package.json       # @orochi235/weasel-theme, private
+packages/theme/
+  package.json       # @weasel-js/theme, private
   tsconfig.json
   README.md
   src/
@@ -68,7 +68,7 @@ packages/weasel-theme/
 
 ### Token vocabulary
 
-`packages/weasel-theme/src/tokens.css`:
+`packages/theme/src/tokens.css`:
 
 ```css
 :root {
@@ -91,7 +91,7 @@ packages/weasel-theme/
 }
 ```
 
-`packages/weasel-theme/src/tokens.ts` exports the same set as a typed object,
+`packages/theme/src/tokens.ts` exports the same set as a typed object,
 with `--wzl-button-text`'s value resolved to the literal `#1a1a1a` (TS exports
 can't reference each other syntactically the way CSS can with `var()`):
 
@@ -107,17 +107,17 @@ export type TokenName = keyof typeof DEFAULT_TOKENS;
 
 ### weasel-ui migration
 
-- `packages/weasel-ui/src/tokens.css` is **deleted**.
-- All references to `--wui-*` in `packages/weasel-ui/src/*.module.css` are rewritten
+- `packages/ui/src/tokens.css` is **deleted**.
+- All references to `--wui-*` in `packages/ui/src/*.module.css` are rewritten
   to `--wzl-*`. Mechanical sed-style rename, ~30-50 references.
-- The one demo currently importing `@orochi235/weasel-ui/tokens.css` (WeaselDraw,
+- The one demo currently importing `@weasel-js/ui/tokens.css` (WeaselDraw,
   per the existing alias in `vite.config.ts`) migrates to
-  `@orochi235/weasel-theme/tokens.css`.
+  `@weasel-js/theme/tokens.css`.
 - `package.json`'s `./tokens.css` export entry is removed from weasel-ui.
 
 ### weasel-hud token resolution
 
-A new module `packages/weasel-hud/src/theme.ts` resolves tokens by reading from
+A new module `packages/hud/src/theme.ts` resolves tokens by reading from
 the canvas element's computed style with `DEFAULT_TOKENS` as fallback. It exports
 a typed `ResolvedTokens` object that maps to camelCase fields for ergonomic
 widget consumption:
@@ -206,7 +206,7 @@ involvement. `rect`'s fill is required; `text`'s color is consumer-supplied;
 
 ```
 Consumer app
-  imports @orochi235/weasel-theme/tokens.css  ─┐
+  imports @weasel-js/theme/tokens.css  ─┐
                                                 │
 weasel-ui components read `var(--wzl-*)` via CSS
                                                 │
@@ -238,27 +238,27 @@ future enhancement, not v1.
 
 ## Testing
 
-**`packages/weasel-theme/src/tokens.test.ts`**:
+**`packages/theme/src/tokens.test.ts`**:
 - DEFAULT_TOKENS keys match the set of `--wzl-*` keys defined in `tokens.css`
   (catches drift when one is edited without the other)
 
-**`packages/weasel-hud/src/theme.test.ts`**:
+**`packages/hud/src/theme.test.ts`**:
 - `readTokens(null)` returns DEFAULT_TOKENS-equivalent values
 - `readTokens(canvasEl)` returns DEFAULT_TOKENS values when no CSS variables are
   set (i.e., consumer hasn't imported tokens.css)
 - `readTokens(canvasEl)` picks up CSS variables set directly on the canvas
 - `readTokens(canvasEl)` picks up CSS variables cascaded from an ancestor
 
-**`packages/weasel-hud/src/widgets/button.test.ts`** — extend:
+**`packages/hud/src/widgets/button.test.ts`** — extend:
 - Button uses `ctx.tokens.buttonFill` when `opts.fill` is omitted
 - Button respects `opts.fill` when supplied (theme overridden)
 - Same for `pressedFill` / `hoverFill` / `textColor`
 
-**`packages/weasel-hud/src/widgets/label.test.ts`** — extend:
+**`packages/hud/src/widgets/label.test.ts`** — extend:
 - Label uses `ctx.tokens.text` when `opts.color` is omitted
 - Label respects `opts.color` when supplied
 
-**`packages/weasel-hud/src/integration.test.tsx`** — extend:
+**`packages/hud/src/integration.test.tsx`** — extend:
 - Set `--wzl-button-fill` directly on the canvas element, render a button, assert
   the resulting `DrawCommand`'s fill color reflects the CSS variable
 
@@ -298,6 +298,6 @@ selectors. Animation/transition of CSS variables.
 
 3. **Keep `package.json`'s `./tokens.css` export on weasel-ui as a re-import?**
    A one-line `@import` shim would preserve any external consumer's existing
-   `import '@orochi235/weasel-ui/tokens.css'` path. The spec assumes there are no
+   `import '@weasel-js/ui/tokens.css'` path. The spec assumes there are no
    external consumers (this is pre-publication exploratory work) and drops it.
    Plan should verify by searching the repo for any reference to that subpath.

@@ -1,5 +1,5 @@
 /**
- * ts-morph based extractor that reads the @orochi235/weasel kit source and
+ * ts-morph based extractor that reads the @weasel-js/core kit source and
  * produces a TraitSchemaIndex describing shape kinds, op factories, actions,
  * gestures, and the SceneNode discriminated union.
  *

@@ -1,0 +1,73 @@
+.root {
+  /* Component-local vars layered over the theme tokens. Each var resolves
+   * to a semantic token from @weasel-js/theme; consumers override
+   * either the curve-* var (component scope) or the wzl-* token (app
+   * scope) without touching this file.
+   *
+   * Background / grid / axis tokens live on Plot2D now (this component
+   * composes Plot2D, which paints the background and chrome). */
+  --curve-line: var(--wzl-curve-color);
+  --curve-line-width: var(--wzl-curve-width);
+  --curve-fill: color-mix(in srgb, var(--curve-line) 30%, transparent);
+  --curve-anchor-fill: var(--wzl-surface);
+  --curve-anchor-stroke: var(--curve-line);
+  --curve-anchor-radius: 4;
+  --curve-anchor-active-fill: var(--curve-line);
+  --curve-pinned-fill: var(--wzl-fg-subtle);
+}
+
+.fill {
+  fill: var(--curve-fill);
+  stroke: none;
+  pointer-events: none;
+}
+
+.curve {
+  stroke: var(--curve-line);
+  stroke-width: var(--curve-line-width);
+  fill: none;
+  pointer-events: stroke;
+}
+
+.anchor {
+  fill: var(--curve-anchor-fill);
+  stroke: var(--curve-anchor-stroke);
+  stroke-width: 1.5;
+  cursor: grab;
+}
+
+.anchor:hover {
+  fill: var(--curve-anchor-active-fill);
+}
+
+.anchor.active {
+  fill: var(--curve-anchor-active-fill);
+  cursor: grabbing;
+}
+
+.anchor.pinned {
+  fill: var(--curve-pinned-fill);
+  cursor: default;
+}
+
+/* Caller-set locked anchors share the gray pinned fill but signal
+ * "not interactive at all" via the not-allowed cursor. */
+.anchor.locked {
+  cursor: not-allowed;
+}
+
+/* Endpoint vertices render as diamonds (rotated squares) instead of
+ * circles, so they read as a different category of handle. The shape
+ * is enforced inline via SVG <rect transform>; this class only adds
+ * the hover/active styling. */
+.endpoint {
+  /* No fill / stroke overrides — endpoint visuals reuse .anchor /
+   * .anchor.pinned / .anchor.active styling. The class exists as a
+   * marker for future per-endpoint styling needs. */
+}
+
+/* When the consumer opts into hiding non-interactive handles, pinned
+ * endpoints disappear entirely. */
+.hidden {
+  display: none;
+}

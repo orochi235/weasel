@@ -6,7 +6,7 @@
 ## Problem
 
 weasel today renders scene content via WebGL but ships every UI widget — toolbars,
-property panels, sliders — as DOM/React in `@orochi235/weasel-ui`. That works, but
+property panels, sliders — as DOM/React in `@weasel-js/ui`. That works, but
 two things make a parallel WebGL-rendered widget kit feel inevitable rather than
 optional:
 
@@ -26,7 +26,7 @@ clean foundation, easy to grow.
 
 ## Goal
 
-Stand up `@orochi235/weasel-hud` as a peer workspace package that:
+Stand up `@weasel-js/hud` as a peer workspace package that:
 
 - Renders UI widgets directly into a weasel canvas via the existing renderer
   pipeline.
@@ -36,7 +36,7 @@ Stand up `@orochi235/weasel-hud` as a peer workspace package that:
 - Provides an imperative, retained-mode API: widgets are persistent objects
   the consumer holds references to and mutates.
 - Stays vanilla TypeScript at its core — no React dependency. A thin
-  `@orochi235/weasel-hud/react` subpath supplies a `useHud` hook for React
+  `@weasel-js/hud/react` subpath supplies a `useHud` hook for React
   consumers.
 - Pre-empts the canvas's tool input dispatch so widget clicks work regardless
   of which tool is active.
@@ -55,7 +55,7 @@ decisions here so the plan and implementation don't relitigate them.
 | v1 widgets | `rect`, `text`, `image`, `button`, `label` | Smallest set that surfaces the input-claim contract. |
 | API style | Imperative builder | Returns widget instances; consumer holds refs. |
 | Lifecycle model | Retained | Immediate-mode helper can layer on later. |
-| Framework | Vanilla core; React subpath | `@orochi235/weasel-hud/react` for `useHud`. |
+| Framework | Vanilla core; React subpath | `@weasel-js/hud/react` for `useHud`. |
 | Canvas attach | `attachHud(canvasEl, hud)` | Vanilla; React hook wraps it. |
 | Internal model | Widget protocol (object with `draw`/`hitTest`/`onPointer`) | Each widget kind implements the protocol; HUD walks a flat list. |
 | Text | MSDF, default Inter atlas auto-registered on attach | Reuses the renderer's existing font path. |
@@ -66,7 +66,7 @@ decisions here so the plan and implementation don't relitigate them.
 ### Package layout
 
 ```
-packages/weasel-hud/
+packages/hud/
   package.json
   tsconfig.json
   README.md
@@ -97,7 +97,7 @@ packages/weasel-hud/
 ### Public API
 
 ```ts
-import { createHud, attachHud } from '@orochi235/weasel-hud';
+import { createHud, attachHud } from '@weasel-js/hud';
 
 const hud = createHud();
 
@@ -337,7 +337,7 @@ These are deliberate non-decisions that the implementation plan can resolve.
 4. **Renderer-types import path.** weasel-hud needs `DrawCommand` (from
    `src/renderer`) and `RenderLayer<unknown>` (from `src/core/layers/render`).
    weasel core's main barrel does not currently re-export those, and vitest's
-   `/^@orochi235\/weasel\/(.*)$/` alias routes `@orochi235/weasel/renderer` to
+   `/^@orochi235\/weasel\/(.*)$/` alias routes `@weasel-js/core/renderer` to
    `src/subpaths/renderer.ts` (which doesn't exist). Three plausible fixes:
    add a `subpaths/renderer.ts` re-export, widen the main barrel to include
    the types, or have weasel-hud import via package-relative paths once the

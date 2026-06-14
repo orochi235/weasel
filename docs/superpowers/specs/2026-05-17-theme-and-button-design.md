@@ -43,7 +43,7 @@ specialized components accumulate ad-hoc button styles.
 
 ### Token structure
 
-Two layers, both defined in `packages/weasel-theme/src/tokens.css`:
+Two layers, both defined in `packages/theme/src/tokens.css`:
 
 **Primitive scale** — raw values, not intended for direct component
 consumption. Documented as such with a comment block.
@@ -151,7 +151,7 @@ The seven tokens components reference but no theme defines —
 
 ### Foundations story
 
-New file: `packages/weasel-ui/src/components/Foundations/Foundations.stories.tsx`.
+New file: `packages/ui/src/components/Foundations/Foundations.stories.tsx`.
 
 Renders, in order:
 
@@ -175,7 +175,7 @@ No interactivity. Pure visual reference. The story is the documentation.
 ### File layout
 
 ```
-packages/weasel-ui/src/components/Button/
+packages/ui/src/components/Button/
   Button.tsx
   Button.module.css
   Button.test.tsx
@@ -183,7 +183,7 @@ packages/weasel-ui/src/components/Button/
   index.ts
 ```
 
-Exported from `packages/weasel-ui/src/index.ts` as `Button`, `ButtonProps`.
+Exported from `packages/ui/src/index.ts` as `Button`, `ButtonProps`.
 
 ### Component shape
 
@@ -301,7 +301,7 @@ When `iconOnly` is true:
 
 ## Acceptance
 
-- `npm test -w @orochi235/weasel-ui` green.
+- `npm test -w @weasel-js/ui` green.
 - `npx tsc --noEmit` clean.
 - Storybook shows: Foundations story, all eight Button stories, and
   every previously-existing story still renders without visual

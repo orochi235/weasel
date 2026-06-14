@@ -272,7 +272,15 @@ export function layoutRuns(
   const finiteWidth = Number.isFinite(opts.maxWidth) ? opts.maxWidth : 0;
   for (const line of lines) {
     const alignShift = (() => {
-      if (opts.align === 'left' || !Number.isFinite(opts.maxWidth)) return 0;
+      if (opts.align === 'left') return 0;
+      // With a finite box, distribute the slack within `maxWidth` (origin.x is
+      // the box's left edge). With no box (infinite maxWidth), anchor on the
+      // line's own width instead — origin.x is the text's midpoint ('center')
+      // or right edge ('right'). This matches the canvas-2D `renderLabel`
+      // anchor model so point-anchored labels center on x in both backends.
+      if (!Number.isFinite(opts.maxWidth)) {
+        return opts.align === 'center' ? -line.width / 2 : -line.width;
+      }
       const slack = finiteWidth - line.width;
       return opts.align === 'center' ? slack / 2 : slack;
     })();

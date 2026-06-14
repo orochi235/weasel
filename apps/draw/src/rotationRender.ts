@@ -1,4 +1,4 @@
-import type { DrawCommand } from '@orochi235/weasel/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { Pose } from './poseUpdate';
 
 /** Build a column-major Float32Array (Mat3) encoding "rotate by `theta`

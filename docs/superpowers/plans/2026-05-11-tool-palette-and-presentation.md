@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add `Tool.presentation` metadata (label, icon, group, shortcut override) on the kit's `Tool` type, backfill it on all six existing built-in tools, ship a `<ToolPalette>` component in `@orochi235/weasel-ui` that renders an ARIA toolbar grouped by `presentation.group`, and drop Swillustrator's hand-rolled `TOOL_ORDER` button block in favor of the new component.
+**Goal:** Add `Tool.presentation` metadata (label, icon, group, shortcut override) on the kit's `Tool` type, backfill it on all six existing built-in tools, ship a `<ToolPalette>` component in `@weasel-js/ui` that renders an ARIA toolbar grouped by `presentation.group`, and drop Swillustrator's hand-rolled `TOOL_ORDER` button block in favor of the new component.
 
 **Architecture:** `Tool.presentation` is a new optional field on the existing `Tool<TScratch>` interface in `src/tools/types.ts`. The `cursor` half of the spec is already in place (top-level `Tool.cursor` + `Canvas.tsx` writes `style.cursor` on the host) — this plan deviates from the spec by leaving `cursor` at the top level rather than nesting it under `presentation`, avoiding duplicate declarations. The palette itself is a presentational React component that consumes the `ToolsApi`, partitions tools by group, formats shortcut text from the structured `KeyBinding` shape (now stable after the `753d3d0` refactor), and exposes ARIA toolbar keyboard nav. Shape tools and their primitives (`useDragRadial`, `schneiderFit`, `useEllipseTool`, etc.) are out of scope — separate plan.
 
@@ -17,13 +17,13 @@
 **Created:**
 
 - `src/icons/UnknownIcon.tsx` — placeholder for tools without `presentation.icon`.
-- `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx`
-- `packages/weasel-ui/src/components/ToolPalette/ToolPalette.module.css`
-- `packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx`
-- `packages/weasel-ui/src/components/ToolPalette/ToolPalette.stories.tsx`
-- `packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts`
-- `packages/weasel-ui/src/components/ToolPalette/formatShortcut.test.ts`
-- `packages/weasel-ui/src/components/ToolPalette/index.ts`
+- `packages/ui/src/components/ToolPalette/ToolPalette.tsx`
+- `packages/ui/src/components/ToolPalette/ToolPalette.module.css`
+- `packages/ui/src/components/ToolPalette/ToolPalette.test.tsx`
+- `packages/ui/src/components/ToolPalette/ToolPalette.stories.tsx`
+- `packages/ui/src/components/ToolPalette/formatShortcut.ts`
+- `packages/ui/src/components/ToolPalette/formatShortcut.test.ts`
+- `packages/ui/src/components/ToolPalette/index.ts`
 
 **Modified:**
 
@@ -35,7 +35,7 @@
 - `src/tools/builtin/useTextTool.ts` — backfill `presentation`.
 - `src/tools/builtin/useUserPenTool.ts` — backfill `presentation`.
 - `src/tools/builtin/useHandTool.ts` — backfill `presentation`.
-- `packages/weasel-ui/src/index.ts` — re-export ToolPalette barrel.
+- `packages/ui/src/index.ts` — re-export ToolPalette barrel.
 - `apps/swillustrator/src/App.tsx` — drop local `TOOL_ORDER` rendering, use `<ToolPalette>`.
 - `apps/swillustrator/src/swillustrator.css` — drop dead `.swill-tool-button` rules if no longer used.
 
@@ -283,15 +283,15 @@ git commit -m "feat(tools): backfill presentation metadata on six built-in tools
 
 **Files:**
 
-- Create: `packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts`
-- Create: `packages/weasel-ui/src/components/ToolPalette/formatShortcut.test.ts`
+- Create: `packages/ui/src/components/ToolPalette/formatShortcut.ts`
+- Create: `packages/ui/src/components/ToolPalette/formatShortcut.test.ts`
 
 Derives a display-shortcut string from the kit's `KeyBinding` shape — `{ key, mod?, shift?, alt? }`. Used by `<ToolPalette>` when a tool doesn't override via `presentation.shortcut`.
 
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-// packages/weasel-ui/src/components/ToolPalette/formatShortcut.test.ts
+// packages/ui/src/components/ToolPalette/formatShortcut.test.ts
 import { describe, it, expect } from 'vitest';
 import { formatShortcut } from './formatShortcut';
 
@@ -334,7 +334,7 @@ describe('formatShortcut', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-cd /Users/mike/src/weasel && npm test -- packages/weasel-ui/src/components/ToolPalette/formatShortcut.test.ts
+cd /Users/mike/src/weasel && npm test -- packages/ui/src/components/ToolPalette/formatShortcut.test.ts
 ```
 
 Expected: FAIL — module not found.
@@ -342,8 +342,8 @@ Expected: FAIL — module not found.
 - [ ] **Step 3: Implement**
 
 ```ts
-// packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts
-import type { KeyBinding } from '@orochi235/weasel';
+// packages/ui/src/components/ToolPalette/formatShortcut.ts
+import type { KeyBinding } from '@weasel-js/core';
 
 /** Format a `KeyBinding` as a display string. Order: mod, shift, alt, key.
  *  Returns `undefined` for `undefined` input so callers can `??` a fallback.
@@ -360,7 +360,7 @@ export function formatShortcut(b: KeyBinding | undefined): string | undefined {
 }
 ```
 
-If `KeyBinding` isn't exported from `@orochi235/weasel`'s top-level index, locate the actual export path (`grep -n "KeyBinding" /Users/mike/src/weasel/src/index.ts`) and import from there. If it's not exported at all, add an export to `src/index.ts`:
+If `KeyBinding` isn't exported from `@weasel-js/core`'s top-level index, locate the actual export path (`grep -n "KeyBinding" /Users/mike/src/weasel/src/index.ts`) and import from there. If it's not exported at all, add an export to `src/index.ts`:
 
 ```ts
 // in src/index.ts, near other action-layer exports
@@ -370,7 +370,7 @@ export type { KeyBinding } from './interactions/actions/useKeybinding';
 - [ ] **Step 4: Run to verify PASS**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/formatShortcut.test.ts
+npm test -- packages/ui/src/components/ToolPalette/formatShortcut.test.ts
 ```
 
 Expected: PASS, 8 tests.
@@ -378,8 +378,8 @@ Expected: PASS, 8 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToolPalette/formatShortcut.ts \
-        packages/weasel-ui/src/components/ToolPalette/formatShortcut.test.ts \
+git add packages/ui/src/components/ToolPalette/formatShortcut.ts \
+        packages/ui/src/components/ToolPalette/formatShortcut.test.ts \
         src/index.ts   # only if you needed to export KeyBinding
 git commit -m "feat(weasel-ui): formatShortcut deriver for ToolPalette"
 ```
@@ -390,9 +390,9 @@ git commit -m "feat(weasel-ui): formatShortcut deriver for ToolPalette"
 
 **Files:**
 
-- Create: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx`
-- Create: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.module.css` (stub — full styling in Task 6)
-- Create: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx`
+- Create: `packages/ui/src/components/ToolPalette/ToolPalette.tsx`
+- Create: `packages/ui/src/components/ToolPalette/ToolPalette.module.css` (stub — full styling in Task 6)
+- Create: `packages/ui/src/components/ToolPalette/ToolPalette.test.tsx`
 
 Skeleton renders one button per tool from `tools.list()`, dispatches `tools.setActive(id)` on click, and applies `aria-current="true"` to the active tool. No groups, no keyboard nav yet — those come in subsequent tasks.
 
@@ -412,11 +412,11 @@ If those exact names diverge, adapt the test + component to match.
 - [ ] **Step 2: Write the failing test**
 
 ```tsx
-// packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+// packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ToolPalette } from './ToolPalette';
-import type { AnyTool, ToolsApi } from '@orochi235/weasel';
+import type { AnyTool, ToolsApi } from '@weasel-js/core';
 
 function fakeTool(id: string, group?: string, label?: string): AnyTool {
   return {
@@ -486,7 +486,7 @@ If `ToolsApi` isn't exported from the kit's top-level, check `grep -n "ToolsApi"
 - [ ] **Step 3: Run to verify FAIL**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+npm test -- packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 ```
 
 Expected: FAIL — module not found.
@@ -494,9 +494,9 @@ Expected: FAIL — module not found.
 - [ ] **Step 4: Implement the skeleton**
 
 ```tsx
-// packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx
-import { UnknownIcon } from '@orochi235/weasel';
-import type { AnyTool, ToolsApi } from '@orochi235/weasel';
+// packages/ui/src/components/ToolPalette/ToolPalette.tsx
+import { UnknownIcon } from '@weasel-js/core';
+import type { AnyTool, ToolsApi } from '@weasel-js/core';
 import s from './ToolPalette.module.css';
 
 export interface ToolPaletteProps {
@@ -538,7 +538,7 @@ export function ToolPalette(props: ToolPaletteProps) {
 And the stub CSS module (full styling in Task 6):
 
 ```css
-/* packages/weasel-ui/src/components/ToolPalette/ToolPalette.module.css */
+/* packages/ui/src/components/ToolPalette/ToolPalette.module.css */
 .palette {}
 .horizontal {}
 .button {}
@@ -547,12 +547,12 @@ And the stub CSS module (full styling in Task 6):
 .label {}
 ```
 
-If `AnyTool` / `ToolsApi` aren't exported from `@orochi235/weasel`, add the exports in `src/index.ts` (same approach as Task 4).
+If `AnyTool` / `ToolsApi` aren't exported from `@weasel-js/core`, add the exports in `src/index.ts` (same approach as Task 4).
 
 - [ ] **Step 5: Run to verify PASS**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+npm test -- packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 ```
 
 Expected: 6 tests PASS.
@@ -560,9 +560,9 @@ Expected: 6 tests PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx \
-        packages/weasel-ui/src/components/ToolPalette/ToolPalette.module.css \
-        packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx \
+git add packages/ui/src/components/ToolPalette/ToolPalette.tsx \
+        packages/ui/src/components/ToolPalette/ToolPalette.module.css \
+        packages/ui/src/components/ToolPalette/ToolPalette.test.tsx \
         src/index.ts   # only if needed for AnyTool/ToolsApi
 git commit -m "feat(weasel-ui): ToolPalette skeleton with click + aria-current"
 ```
@@ -573,8 +573,8 @@ git commit -m "feat(weasel-ui): ToolPalette skeleton with click + aria-current"
 
 **Files:**
 
-- Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx`
-- Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx`
+- Modify: `packages/ui/src/components/ToolPalette/ToolPalette.tsx`
+- Modify: `packages/ui/src/components/ToolPalette/ToolPalette.test.tsx`
 
 Partition `tools.list()` by `presentation.group`, render each group as its own `<div>`, insert separators between groups. Unknown groups go after known ones in first-seen order; tools without a group go into an implicit `'misc'` bucket rendered last.
 
@@ -643,7 +643,7 @@ describe('ToolPalette — grouping', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+npm test -- packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 ```
 
 Expected: the four new tests fail (current skeleton renders a flat list with no separators).
@@ -736,7 +736,7 @@ import { Fragment } from 'react';
 - [ ] **Step 4: Run to verify all tests pass**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+npm test -- packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 ```
 
 Expected: 10 tests PASS (6 original + 4 new).
@@ -745,8 +745,8 @@ Expected: 10 tests PASS (6 original + 4 new).
 
 ```bash
 cd /Users/mike/src/weasel && npm run typecheck
-git add packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx \
-        packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+git add packages/ui/src/components/ToolPalette/ToolPalette.tsx \
+        packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 git commit -m "feat(weasel-ui): ToolPalette grouping + separators"
 ```
 
@@ -756,8 +756,8 @@ git commit -m "feat(weasel-ui): ToolPalette grouping + separators"
 
 **Files:**
 
-- Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx`
-- Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx`
+- Modify: `packages/ui/src/components/ToolPalette/ToolPalette.tsx`
+- Modify: `packages/ui/src/components/ToolPalette/ToolPalette.test.tsx`
 
 Each button shows the keyboard shortcut next to its label (via `formatShortcut(tool.keybinding)` unless `presentation.shortcut` is set), and the button's `title` attribute combines label + shortcut for the native tooltip.
 
@@ -811,7 +811,7 @@ describe('ToolPalette — shortcuts', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+npm test -- packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 ```
 
 Expected: 4 new tests fail.
@@ -855,7 +855,7 @@ The third test asserts the title contains both "select" and "V" but doesn't pin 
 - [ ] **Step 4: Run all tests**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/
+npm test -- packages/ui/src/components/ToolPalette/
 ```
 
 Expected: 14 tests pass (10 original + 4 new).
@@ -863,8 +863,8 @@ Expected: 14 tests pass (10 original + 4 new).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx \
-        packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+git add packages/ui/src/components/ToolPalette/ToolPalette.tsx \
+        packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 git commit -m "feat(weasel-ui): ToolPalette shortcut display + native tooltip"
 ```
 
@@ -874,8 +874,8 @@ git commit -m "feat(weasel-ui): ToolPalette shortcut display + native tooltip"
 
 **Files:**
 
-- Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx`
-- Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx`
+- Modify: `packages/ui/src/components/ToolPalette/ToolPalette.tsx`
+- Modify: `packages/ui/src/components/ToolPalette/ToolPalette.test.tsx`
 
 Arrow keys move focus between buttons within the palette; Enter / Space activates (and click already handles activation). Per ARIA Toolbar pattern, the buttons form a single focusable group — only the currently-focused button has `tabIndex={0}`, the rest have `tabIndex={-1}`.
 
@@ -958,7 +958,7 @@ describe('ToolPalette — keyboard nav', () => {
 - [ ] **Step 2: Run to verify FAIL**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+npm test -- packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 ```
 
 Expected: ~6 new tests fail.
@@ -1069,7 +1069,7 @@ function renderToolButton(tool: AnyTool, tools: ToolsApi, isTabbable: boolean) {
 - [ ] **Step 4: Run tests**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+npm test -- packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 ```
 
 Expected: ~20 tests pass.
@@ -1077,8 +1077,8 @@ Expected: ~20 tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToolPalette/ToolPalette.tsx \
-        packages/weasel-ui/src/components/ToolPalette/ToolPalette.test.tsx
+git add packages/ui/src/components/ToolPalette/ToolPalette.tsx \
+        packages/ui/src/components/ToolPalette/ToolPalette.test.tsx
 git commit -m "feat(weasel-ui): ToolPalette ARIA toolbar keyboard nav"
 ```
 
@@ -1088,7 +1088,7 @@ git commit -m "feat(weasel-ui): ToolPalette ARIA toolbar keyboard nav"
 
 **Files:**
 
-- Modify: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.module.css`
+- Modify: `packages/ui/src/components/ToolPalette/ToolPalette.module.css`
 
 Visual chrome. Match the LayerList / PathfinderPanel palette (dark warm-brown, 4px radius, 2px padding). Vertical layout default; horizontal layout flips `flex-direction`. Button is icon-above-label, with the shortcut as small subtext.
 
@@ -1180,7 +1180,7 @@ Visual chrome. Match the LayerList / PathfinderPanel palette (dark warm-brown, 4
 - [ ] **Step 2: Run tests to confirm no regressions**
 
 ```bash
-npm test -- packages/weasel-ui/src/components/ToolPalette/
+npm test -- packages/ui/src/components/ToolPalette/
 ```
 
 Expected: all tests still pass.
@@ -1188,7 +1188,7 @@ Expected: all tests still pass.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToolPalette/ToolPalette.module.css
+git add packages/ui/src/components/ToolPalette/ToolPalette.module.css
 git commit -m "style(weasel-ui): ToolPalette chrome — dark palette with icon-above-label buttons"
 ```
 
@@ -1198,13 +1198,13 @@ git commit -m "style(weasel-ui): ToolPalette chrome — dark palette with icon-a
 
 **Files:**
 
-- Create: `packages/weasel-ui/src/components/ToolPalette/index.ts`
-- Modify: `packages/weasel-ui/src/index.ts`
+- Create: `packages/ui/src/components/ToolPalette/index.ts`
+- Modify: `packages/ui/src/index.ts`
 
 - [ ] **Step 1: Create the barrel**
 
 ```ts
-// packages/weasel-ui/src/components/ToolPalette/index.ts
+// packages/ui/src/components/ToolPalette/index.ts
 export { ToolPalette } from './ToolPalette';
 export type { ToolPaletteProps } from './ToolPalette';
 export { formatShortcut } from './formatShortcut';
@@ -1212,7 +1212,7 @@ export { formatShortcut } from './formatShortcut';
 
 - [ ] **Step 2: Re-export from main weasel-ui index**
 
-Append to the top section of `packages/weasel-ui/src/index.ts` (alongside the other `export * from './components/...'` lines):
+Append to the top section of `packages/ui/src/index.ts` (alongside the other `export * from './components/...'` lines):
 
 ```ts
 export * from './components/ToolPalette';
@@ -1222,8 +1222,8 @@ export * from './components/ToolPalette';
 
 ```bash
 cd /Users/mike/src/weasel && npm run typecheck
-git add packages/weasel-ui/src/components/ToolPalette/index.ts \
-        packages/weasel-ui/src/index.ts
+git add packages/ui/src/components/ToolPalette/index.ts \
+        packages/ui/src/index.ts
 git commit -m "feat(weasel-ui): export ToolPalette from package barrel"
 ```
 
@@ -1233,18 +1233,18 @@ git commit -m "feat(weasel-ui): export ToolPalette from package barrel"
 
 **Files:**
 
-- Create: `packages/weasel-ui/src/components/ToolPalette/ToolPalette.stories.tsx`
+- Create: `packages/ui/src/components/ToolPalette/ToolPalette.stories.tsx`
 
 Three stories per the spec: Default (vertical, full 6-tool palette), Horizontal (same tools, horizontal), Minimal (3 tools, no groups).
 
 - [ ] **Step 1: Write the stories**
 
 ```tsx
-// packages/weasel-ui/src/components/ToolPalette/ToolPalette.stories.tsx
+// packages/ui/src/components/ToolPalette/ToolPalette.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { ToolPalette } from './ToolPalette';
-import type { AnyTool, ToolsApi } from '@orochi235/weasel';
+import type { AnyTool, ToolsApi } from '@weasel-js/core';
 import {
   SelectIcon,
   LassoIcon,
@@ -1252,7 +1252,7 @@ import {
   TextIcon,
   PenIcon,
   HandIcon,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 const meta: Meta<typeof ToolPalette> = {
   title: 'weasel-ui/ToolPalette',
@@ -1318,7 +1318,7 @@ The unused `buildFullPalette` function at the top is dead — remove it. (It's t
 
 ```bash
 cd /Users/mike/src/weasel && npm run typecheck
-git add packages/weasel-ui/src/components/ToolPalette/ToolPalette.stories.tsx
+git add packages/ui/src/components/ToolPalette/ToolPalette.stories.tsx
 git commit -m "story(weasel-ui): ToolPalette — default, horizontal, minimal"
 ```
 
@@ -1338,7 +1338,7 @@ After this task, Swillustrator's tool palette is rendered from kit metadata alon
 In `apps/swillustrator/src/App.tsx`:
 
 1. Remove the `TOOL_ORDER` array (the `ToolEntry` interface + `const TOOL_ORDER: ToolEntry[] = [...]` lines).
-2. Remove the `import { SelectIcon, LassoIcon, RectIcon as ToolRectIcon, TextIcon as ToolTextIcon, PenIcon, HandIcon } from '@orochi235/weasel';` import — the kit metadata supplies the icons now.
+2. Remove the `import { SelectIcon, LassoIcon, RectIcon as ToolRectIcon, TextIcon as ToolTextIcon, PenIcon, HandIcon } from '@weasel-js/core';` import — the kit metadata supplies the icons now.
 3. Remove the `ComponentType` import.
 4. In the tool palette JSX block (the `{TOOL_ORDER.map(...)}` inside `<aside className="swill-sidebar">`), replace with:
 
@@ -1364,7 +1364,7 @@ In `apps/swillustrator/src/App.tsx`:
 5. Add the import:
 
 ```ts
-import { ToolPalette } from '@orochi235/weasel-ui';
+import { ToolPalette } from '@weasel-js/ui';
 ```
 
 (combine with the existing weasel-ui import block).

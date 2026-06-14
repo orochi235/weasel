@@ -1599,13 +1599,13 @@ export { defineViewportTool } from './defineViewportTool';
 
 - [ ] **Step 2: Re-export from main kit index under a subpath alias**
 
-The new factory is shipped under `@orochi235/weasel/routing` — an experimental subpath. Existing imperative `defineTool` (at `src/tools/defineTool.ts`) stays exported from the main `@orochi235/weasel` barrel. They're separate functions at separate import paths during the migration; consumers opt into the new shape via the subpath.
+The new factory is shipped under `@weasel-js/core/routing` — an experimental subpath. Existing imperative `defineTool` (at `src/tools/defineTool.ts`) stays exported from the main `@weasel-js/core` barrel. They're separate functions at separate import paths during the migration; consumers opt into the new shape via the subpath.
 
 Add a section to `src/index.ts`:
 
 ```ts
 // New declarative routing surface — experimental.
-// import { defineTool } from '@orochi235/weasel/routing';
+// import { defineTool } from '@weasel-js/core/routing';
 export * as routing from './tools/routing';
 ```
 
@@ -1647,7 +1647,7 @@ Create a temporary file to verify the import resolves:
 
 ```bash
 cat > /tmp/routing-smoke.ts <<'EOF'
-import { defineTool, apply, begin, hold } from '@orochi235/weasel/routing';
+import { defineTool, apply, begin, hold } from '@weasel-js/core/routing';
 const t = defineTool({ id: 'test', initial: {} });
 console.log(t.id);
 EOF
@@ -1664,7 +1664,7 @@ git add src/tools/routing/index.ts src/index.ts package.json tsup.config.ts
 # Only add tsup.config.ts if you actually modified it.
 git commit -m "feat(tools): ship declarative routing under /routing subpath
 
-@orochi235/weasel/routing exports the new factory + action constructors
+@weasel-js/core/routing exports the new factory + action constructors
 + types. Existing imperative defineTool stays exported from the main
 barrel during the migration; subpath gives the new factory an
 unambiguous import location. Once all built-in tools migrate, the
@@ -1684,7 +1684,7 @@ deprecates."
 
 - **`applyBatch` rename:** the kit-wide find/replace in Task 1 is mechanical. If any callsite is missed (because, say, the identifier is in a string template), the typecheck or test run in subsequent tasks catches it.
 
-- **`defineTool` collision:** the new factory is shipped at `@orochi235/weasel/routing`; the existing imperative `defineTool` stays at the main barrel. Both work during the migration. Once all built-ins migrate, the routing factory promotes and the old one deprecates.
+- **`defineTool` collision:** the new factory is shipped at `@weasel-js/core/routing`; the existing imperative `defineTool` stays at the main barrel. Both work during the migration. Once all built-ins migrate, the routing factory promotes and the old one deprecates.
 
 - **Test patterns:** each task writes its tests against `vitest`. The `ToolCtx` stubs in `defineTool.test.ts` are tedious — consider extracting a `buildToolCtx(overrides)` helper to a shared test utility in a follow-up. Not in scope here.
 

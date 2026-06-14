@@ -12,8 +12,8 @@ import {
   pointSnapToGrid,
   ROTATED_POSE_DESCRIPTOR,
   useResizePolicy,
-} from '@orochi235/weasel';
-import type { RotatedPose, PoseProjection, CanvasExtensionApi } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { RotatedPose, PoseProjection, CanvasExtensionApi } from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Rect extends RotatedPose {

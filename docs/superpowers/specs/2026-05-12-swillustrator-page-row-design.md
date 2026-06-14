@@ -40,7 +40,7 @@ The work splits cleanly into two layers:
 ### `LayerListItem`
 
 Extend `LayerListItem` in
-`packages/weasel-ui/src/useReorderDragList.ts` with an optional flag:
+`packages/ui/src/useReorderDragList.ts` with an optional flag:
 
 ```ts
 export interface LayerListItem {

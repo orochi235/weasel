@@ -929,7 +929,7 @@ git commit -m "feat(tools): useKeyboardZoomTool axis option (both | x | y)"
 
 - [ ] **Step 1: Write the demo**
 
-Create `demo/demos/PerAxisZoomDemo.tsx`. This follows the `ZoomDemo.tsx` pattern (useScene + SceneCanvas + ambient tools), with sliders for per-axis scale and a mode-selectable fit button. The fitViewToBounds import comes from `@orochi235/weasel`:
+Create `demo/demos/PerAxisZoomDemo.tsx`. This follows the `ZoomDemo.tsx` pattern (useScene + SceneCanvas + ambient tools), with sliders for per-axis scale and a mode-selectable fit button. The fitViewToBounds import comes from `@weasel-js/core`:
 
 ```tsx
 import { useState } from 'react';
@@ -942,7 +942,7 @@ import {
   useWheelPanTool,
   useKeyboardZoomTool,
   fitViewToBounds,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 

@@ -24,7 +24,7 @@ import { useState, useEffect, type ReactElement } from 'react';
 import { createModeMachine } from './machine';
 import { dispatchDoubleClickEntry } from './doubleClickEntry';
 import { ModeBreadcrumb } from './chrome/ModeBreadcrumb';
-import { DEFAULT_MODES } from '@orochi235/weasel-modes';
+import { DEFAULT_MODES } from '@weasel-js/modes';
 
 // ─── Minimal history stub (no real scene needed) ─────────────────────────────
 

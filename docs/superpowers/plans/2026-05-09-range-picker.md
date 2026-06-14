@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build `RangePicker` (a generic React component for editing arbitrary-length thumb lists on a 1D axis) and `paintGradientTrack` (a pure track-painter helper) in `packages/weasel-ui`, then port the perceptual-color experiment's sliders to a new demo for parity verification.
+**Goal:** Build `RangePicker` (a generic React component for editing arbitrary-length thumb lists on a 1D axis) and `paintGradientTrack` (a pure track-painter helper) in `packages/ui`, then port the perceptual-color experiment's sliders to a new demo for parity verification.
 
 **Architecture:** One controlled React component, generic over a `Thumb` extension type, with a single render path (no native `<input type=range>`). Track painting is handled by a separate pure helper that returns a `renderTrack` closure. Per-thumb `bounds` may be a static tuple or a callback evaluated against the picker's in-flight thumb buffer per drag tick.
 
@@ -16,13 +16,13 @@
 
 | Path | Responsibility |
 |---|---|
-| `packages/weasel-ui/src/RangePicker.tsx` | Component implementation. Drag, keyboard, ARIA, constraints, in-flight buffer, dynamic add/remove, shift-translate-all, thumb shape rendering, readouts. |
-| `packages/weasel-ui/src/RangePicker.module.css` | Track / thumb / readout / hatched-region styles. References `--wui-track-*` and `--wui-thumb-*`. |
-| `packages/weasel-ui/src/paintGradientTrack.tsx` | Pure helper: closure that renders a `<div>` with computed gradient + hatched-overlay background. |
-| `packages/weasel-ui/src/RangePicker.test.tsx` | Component tests. |
-| `packages/weasel-ui/src/paintGradientTrack.test.tsx` | Helper tests. |
-| `packages/weasel-ui/src/tokens.css` | New CSS variables for default track + thumb appearance. **Modify.** |
-| `packages/weasel-ui/src/index.ts` | Public exports. **Modify.** |
+| `packages/ui/src/RangePicker.tsx` | Component implementation. Drag, keyboard, ARIA, constraints, in-flight buffer, dynamic add/remove, shift-translate-all, thumb shape rendering, readouts. |
+| `packages/ui/src/RangePicker.module.css` | Track / thumb / readout / hatched-region styles. References `--wui-track-*` and `--wui-thumb-*`. |
+| `packages/ui/src/paintGradientTrack.tsx` | Pure helper: closure that renders a `<div>` with computed gradient + hatched-overlay background. |
+| `packages/ui/src/RangePicker.test.tsx` | Component tests. |
+| `packages/ui/src/paintGradientTrack.test.tsx` | Helper tests. |
+| `packages/ui/src/tokens.css` | New CSS variables for default track + thumb appearance. **Modify.** |
+| `packages/ui/src/index.ts` | Public exports. **Modify.** |
 | `demo/demos/PerceptualColorSlidersDemo.tsx` | Demo porting the four representative slider variants from the experiment for visual + behavioral parity. |
 | `demo/registry.ts` | Register the new demo. **Modify.** |
 
@@ -53,15 +53,15 @@
 ## Task 1: Scaffold package files, tokens, and exports
 
 **Files:**
-- Create: `packages/weasel-ui/src/RangePicker.tsx`
-- Create: `packages/weasel-ui/src/RangePicker.module.css`
-- Create: `packages/weasel-ui/src/paintGradientTrack.tsx`
-- Modify: `packages/weasel-ui/src/tokens.css`
-- Modify: `packages/weasel-ui/src/index.ts`
+- Create: `packages/ui/src/RangePicker.tsx`
+- Create: `packages/ui/src/RangePicker.module.css`
+- Create: `packages/ui/src/paintGradientTrack.tsx`
+- Modify: `packages/ui/src/tokens.css`
+- Modify: `packages/ui/src/index.ts`
 
 - [ ] **Step 1: Add CSS variables to `tokens.css`**
 
-Append to `packages/weasel-ui/src/tokens.css`, inside the `:root` block, before the closing `}`:
+Append to `packages/ui/src/tokens.css`, inside the `:root` block, before the closing `}`:
 
 ```css
   --wui-track-bg: #e3e3e3;
@@ -229,7 +229,7 @@ export function paintGradientTrack(_opts: GradientTrackOpts): (ctx: TrackCtx) =>
 
 - [ ] **Step 5: Export from `index.ts`**
 
-Replace the contents of `packages/weasel-ui/src/index.ts`:
+Replace the contents of `packages/ui/src/index.ts`:
 
 ```ts
 export {
@@ -268,11 +268,11 @@ Expected: PASS (no errors).
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx \
-        packages/weasel-ui/src/RangePicker.module.css \
-        packages/weasel-ui/src/paintGradientTrack.tsx \
-        packages/weasel-ui/src/tokens.css \
-        packages/weasel-ui/src/index.ts
+git add packages/ui/src/RangePicker.tsx \
+        packages/ui/src/RangePicker.module.css \
+        packages/ui/src/paintGradientTrack.tsx \
+        packages/ui/src/tokens.css \
+        packages/ui/src/index.ts
 git commit -m "feat(weasel-ui): scaffold RangePicker and paintGradientTrack types"
 ```
 
@@ -281,12 +281,12 @@ git commit -m "feat(weasel-ui): scaffold RangePicker and paintGradientTrack type
 ## Task 2: Render thumbs at value-mapped positions
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Create: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Create: `packages/ui/src/RangePicker.test.tsx`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-ui/src/RangePicker.test.tsx`:
+Create `packages/ui/src/RangePicker.test.tsx`:
 
 ```tsx
 import { describe, it, expect } from 'vitest';
@@ -314,12 +314,12 @@ describe('RangePicker rendering', () => {
 
 - [ ] **Step 2: Run test, verify it fails**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL — no thumbs rendered.
 
 - [ ] **Step 3: Implement static thumb rendering**
 
-Replace the `RangePicker` body in `packages/weasel-ui/src/RangePicker.tsx`:
+Replace the `RangePicker` body in `packages/ui/src/RangePicker.tsx`:
 
 ```tsx
 export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>): JSX.Element {
@@ -374,13 +374,13 @@ Replace the inline `React.CSSProperties` cast with `CSSProperties`:
 
 - [ ] **Step 4: Run test, verify it passes**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): RangePicker renders thumbs at value-mapped positions"
 ```
 
@@ -389,14 +389,14 @@ git commit -m "feat(weasel-ui): RangePicker renders thumbs at value-mapped posit
 ## Task 3: Single-thumb pointer drag with min/max clamp and step snap
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 The picker holds an in-flight thumb buffer in a ref during a drag, fires `onChange` with the buffer's contents on each pointermove, and fires `onCommit` once on pointerup. Document-level pointer listeners avoid `setPointerCapture`.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `packages/weasel-ui/src/RangePicker.test.tsx`:
+Append to `packages/ui/src/RangePicker.test.tsx`:
 
 ```tsx
 import { fireEvent } from '@testing-library/react';
@@ -479,12 +479,12 @@ import { describe, it, expect, vi } from 'vitest';
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL — no drag logic, onChange never called.
 
 - [ ] **Step 3: Implement drag logic**
 
-Replace `packages/weasel-ui/src/RangePicker.tsx` with:
+Replace `packages/ui/src/RangePicker.tsx` with:
 
 ```tsx
 import { useCallback, useRef, type CSSProperties, type ReactNode } from 'react';
@@ -632,7 +632,7 @@ export function RangePicker<T extends Thumb = Thumb>(props: RangePickerProps<T>)
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS (4 tests).
 
 - [ ] **Step 5: Run typecheck**
@@ -643,7 +643,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): single-thumb drag with min/max clamp and step snap"
 ```
 
@@ -652,8 +652,8 @@ git commit -m "feat(weasel-ui): single-thumb drag with min/max clamp and step sn
 ## Task 4: Keyboard navigation and ARIA
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 Spec § Keyboard:
 - ArrowLeft / ArrowDown: −1 step
@@ -722,7 +722,7 @@ describe('RangePicker keyboard', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL — no key handlers.
 
 - [ ] **Step 3: Add keyboard handler**
@@ -785,13 +785,13 @@ Wire it onto the thumb element by adding `onKeyDown={onThumbKeyDown(i)}` next to
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS (8 tests cumulative).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): keyboard navigation + ARIA on RangePicker thumbs"
 ```
 
@@ -800,7 +800,7 @@ git commit -m "feat(weasel-ui): keyboard navigation + ARIA on RangePicker thumbs
 ## Task 5: Multi-thumb 'free' constraint (default)
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 The default `constraint` is `'free'` — thumbs can pass each other. Task 3's drag already supports this (no neighbor logic). We add a regression test that verifies the picker preserves order in `onChange` (i.e., the array is indexed positionally, not sorted).
 
@@ -837,13 +837,13 @@ describe('RangePicker free constraint', () => {
 
 - [ ] **Step 2: Run, verify it passes (default behavior already)**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS — the test confirms the default 'free' behavior already works.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.test.tsx
 git commit -m "test(weasel-ui): RangePicker 'free' constraint preserves index order"
 ```
 
@@ -852,8 +852,8 @@ git commit -m "test(weasel-ui): RangePicker 'free' constraint preserves index or
 ## Task 6: 'ordered' constraint with hairline gap
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 Spec § Drag, constraint `'ordered'`: a moving thumb is clamped to `(thumbs[i-1].value, thumbs[i+1].value)` exclusive, with a hairline gap of `step` (or `(max-min)/1000` if `step` undefined). Caps still apply.
 
@@ -911,7 +911,7 @@ describe("RangePicker 'ordered' constraint", () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL — no constraint logic yet; thumbs cross each other.
 
 - [ ] **Step 3: Apply constraint inside the drag move handler**
@@ -955,13 +955,13 @@ Add `constraint` to the dependency array of `beginThumbDrag`'s `useCallback`:
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): RangePicker 'ordered' constraint with hairline gap"
 ```
 
@@ -970,8 +970,8 @@ git commit -m "feat(weasel-ui): RangePicker 'ordered' constraint with hairline g
 ## Task 7: Per-thumb `bounds` (tuple form)
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 A thumb's `bounds` (when a tuple) clamps it independent of the picker's overall `min`/`max` and independent of `constraint`. Applies in drag, keyboard, and Home/End.
 
@@ -1024,7 +1024,7 @@ describe('RangePicker per-thumb bounds (tuple form)', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL.
 
 - [ ] **Step 3: Add a bounds-resolver helper and apply it**
@@ -1102,7 +1102,7 @@ Note: `resolveBounds` accepts `Thumb`, but `thumbs` is `readonly T[]` where `T e
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Run typecheck**
@@ -1113,7 +1113,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): per-thumb bounds (tuple form) clamps drag and Home/End"
 ```
 
@@ -1122,7 +1122,7 @@ git commit -m "feat(weasel-ui): per-thumb bounds (tuple form) clamps drag and Ho
 ## Task 8: Per-thumb `bounds` (callback form)
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 The callback form is already supported by `resolveBounds` (it dispatches on `typeof bounds === 'function'`). Add a regression test that exercises the in-flight buffer.
 
@@ -1159,13 +1159,13 @@ describe('RangePicker per-thumb bounds (callback form)', () => {
 
 - [ ] **Step 2: Run, verify it passes**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.test.tsx
 git commit -m "test(weasel-ui): per-thumb bounds callback receives in-flight buffer"
 ```
 
@@ -1174,8 +1174,8 @@ git commit -m "test(weasel-ui): per-thumb bounds callback receives in-flight buf
 ## Task 9: Click-on-track to add (`onAddThumb`)
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 When `onAddThumb` is defined, a pointerdown on the track itself (not a thumb) computes the value at the pointer's x and calls `onAddThumb(atValue)`. If the callback returns a `T`, the picker fires `onChange` and `onCommit` with the appended thumb. If it returns `null`, the click is a no-op.
 
@@ -1229,7 +1229,7 @@ describe('RangePicker click-on-track to add', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement track click**
@@ -1266,13 +1266,13 @@ Wire it onto the track div:
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): RangePicker click-on-track to add via onAddThumb"
 ```
 
@@ -1281,8 +1281,8 @@ git commit -m "feat(weasel-ui): RangePicker click-on-track to add via onAddThumb
 ## Task 10: Drag-off-vertical and right-click to remove (`onRemoveThumb`)
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 Spec § Remove:
 - During a thumb drag, if pointer y exits the track band by more than `trackHeight` vertically, on pointerup the picker calls `onRemoveThumb(index)`. If it returns truthy, the picker emits `onChange` with the thumb removed.
@@ -1354,7 +1354,7 @@ describe('RangePicker remove (drag-off and right-click)', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement remove gestures**
@@ -1455,13 +1455,13 @@ For drag-off-vertical, modify `beginThumbDrag` to track whether the drag exited 
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): RangePicker drag-off-vertical and right-click remove"
 ```
 
@@ -1470,8 +1470,8 @@ git commit -m "feat(weasel-ui): RangePicker drag-off-vertical and right-click re
 ## Task 11: `allowShiftAll` shift-drag translates all thumbs
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 Spec § Drag, modifier behavior: with shift held on pointerdown and `allowShiftAll === true`, all thumbs translate by the same delta. The delta is reduced as needed so no thumb crosses `min` or `max`. Per-thumb bounds are also respected (each thumb's clamp narrows the allowed delta).
 
@@ -1534,7 +1534,7 @@ describe('RangePicker allowShiftAll', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL — shift treated as ordinary drag, only one thumb moves.
 
 - [ ] **Step 3: Branch on shift in `beginThumbDrag`**
@@ -1609,13 +1609,13 @@ The `anchorIndex` is declared but unused; either drop it from the signature or r
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): RangePicker allowShiftAll shift-drag translate-all"
 ```
 
@@ -1624,8 +1624,8 @@ git commit -m "feat(weasel-ui): RangePicker allowShiftAll shift-drag translate-a
 ## Task 12: Track customization via `renderTrack`
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 `renderTrack(ctx)` returns a `ReactNode` rendered inside an absolutely-positioned, `inset: 0` container behind the thumbs. The picker measures the track width on mount and on resize via `ResizeObserver`, and re-invokes `renderTrack` whenever `trackWidth` changes.
 
@@ -1657,7 +1657,7 @@ describe('RangePicker renderTrack', () => {
 
 - [ ] **Step 2: Run, verify it fails**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL — `renderTrack` not invoked.
 
 - [ ] **Step 3: Wire `renderTrack` into the JSX**
@@ -1679,13 +1679,13 @@ This calls `renderTrack` with a snapshot. `trackWidth` is measured at render tim
 
 - [ ] **Step 4: Run, verify it passes**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): RangePicker renderTrack customization"
 ```
 
@@ -1694,8 +1694,8 @@ git commit -m "feat(weasel-ui): RangePicker renderTrack customization"
 ## Task 13: `paintGradientTrack` helper
 
 **Files:**
-- Modify: `packages/weasel-ui/src/paintGradientTrack.tsx`
-- Create: `packages/weasel-ui/src/paintGradientTrack.test.tsx`
+- Modify: `packages/ui/src/paintGradientTrack.tsx`
+- Create: `packages/ui/src/paintGradientTrack.test.tsx`
 
 The helper returns a function that, given a `TrackCtx`, renders an absolutely-positioned `<div>` whose `background` CSS string is composed of:
 1. A horizontal `linear-gradient(to right, …)` sampled from `opts.gradient` at `samples + 1` points (default 16 → 17 stops).
@@ -1722,7 +1722,7 @@ The base gradient is appended LAST. In CSS shorthand, multiple layers stack with
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `packages/weasel-ui/src/paintGradientTrack.test.tsx`:
+Create `packages/ui/src/paintGradientTrack.test.tsx`:
 
 ```tsx
 import { describe, it, expect } from 'vitest';
@@ -1784,12 +1784,12 @@ Note: `valueToFraction` in this helper's tests is identity, but the helper inter
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/paintGradientTrack.test.tsx`
+Run: `npx vitest run packages/ui/src/paintGradientTrack.test.tsx`
 Expected: FAIL — helper still returns `null`.
 
 - [ ] **Step 3: Implement the helper**
 
-Replace `packages/weasel-ui/src/paintGradientTrack.tsx` with:
+Replace `packages/ui/src/paintGradientTrack.tsx` with:
 
 ```tsx
 import type { ReactNode, CSSProperties } from 'react';
@@ -1853,7 +1853,7 @@ export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => 
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/paintGradientTrack.test.tsx`
+Run: `npx vitest run packages/ui/src/paintGradientTrack.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Run the full test suite**
@@ -1864,7 +1864,7 @@ Expected: PASS (everything green).
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/paintGradientTrack.tsx packages/weasel-ui/src/paintGradientTrack.test.tsx
+git add packages/ui/src/paintGradientTrack.tsx packages/ui/src/paintGradientTrack.test.tsx
 git commit -m "feat(weasel-ui): paintGradientTrack helper composes sampled gradient + hatch overlays"
 ```
 
@@ -1873,9 +1873,9 @@ git commit -m "feat(weasel-ui): paintGradientTrack helper composes sampled gradi
 ## Task 14: Thumb shape variants (`'notched'`, custom render)
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.module.css`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.module.css`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 Spec § Styling: `'round'` is the default; `'notched'` ships an inline-SVG polygon (matching the experiment's `--thumb-svg` data URI); `{ render }` is a consumer-supplied function returning a `ReactNode`.
 
@@ -1914,7 +1914,7 @@ describe('RangePicker thumb shape variants', () => {
 
 - [ ] **Step 2: Run, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL.
 
 - [ ] **Step 3: Add notched styling**
@@ -1966,13 +1966,13 @@ Replace the thumb mapping in `RangePicker.tsx` with:
 
 - [ ] **Step 5: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.module.css packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.module.css packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): RangePicker thumb shapes (notched + custom render)"
 ```
 
@@ -1981,8 +1981,8 @@ git commit -m "feat(weasel-ui): RangePicker thumb shapes (notched + custom rende
 ## Task 15: Readouts (`inline-after`, `below-thumb`)
 
 **Files:**
-- Modify: `packages/weasel-ui/src/RangePicker.tsx`
-- Modify: `packages/weasel-ui/src/RangePicker.test.tsx`
+- Modify: `packages/ui/src/RangePicker.tsx`
+- Modify: `packages/ui/src/RangePicker.test.tsx`
 
 Spec § Readouts:
 - `'none'` (default): no readout.
@@ -2044,7 +2044,7 @@ describe('RangePicker readouts', () => {
 
 - [ ] **Step 2: Run tests, verify they fail**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: FAIL.
 
 - [ ] **Step 3: Render readouts conditionally**
@@ -2129,7 +2129,7 @@ Wrap the existing root render with the readout block. Replace the component's re
 
 - [ ] **Step 4: Run tests, verify they pass**
 
-Run: `npx vitest run packages/weasel-ui/src/RangePicker.test.tsx`
+Run: `npx vitest run packages/ui/src/RangePicker.test.tsx`
 Expected: PASS.
 
 - [ ] **Step 5: Full test run + typecheck**
@@ -2140,7 +2140,7 @@ Expected: both PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/RangePicker.tsx packages/weasel-ui/src/RangePicker.test.tsx
+git add packages/ui/src/RangePicker.tsx packages/ui/src/RangePicker.test.tsx
 git commit -m "feat(weasel-ui): RangePicker readouts (inline-after + below-thumb)"
 ```
 
@@ -2166,7 +2166,7 @@ Create `demo/demos/PerceptualColorSlidersDemo.tsx`:
 
 ```tsx
 import { useState } from 'react';
-import { RangePicker, paintGradientTrack, type Thumb } from '@orochi235/weasel-ui';
+import { RangePicker, paintGradientTrack, type Thumb } from '@weasel-js/ui';
 
 // Minimal OKLCH → sRGB hex (clamped). Sufficient for a demo gradient.
 function oklchToHex(L: number, C: number, Hdeg: number): string {

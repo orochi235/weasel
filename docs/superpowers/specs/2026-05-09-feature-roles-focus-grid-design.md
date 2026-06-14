@@ -107,9 +107,9 @@ Selection is protocol-shaped; the convention here was crystallized against bundl
 
 ### R2 — Barrel-only refactor is a breaking change for consumers using deep imports
 
-If any consumer currently imports from `'@orochi235/weasel/internal/...'` (or via TypeScript's path mapping into a feature-internal file), the barrel cleanup that re-routes the main barrel doesn't break them — but cleaning up *ad-hoc* internal imports as part of this work might.
+If any consumer currently imports from `'@weasel-js/core/internal/...'` (or via TypeScript's path mapping into a feature-internal file), the barrel cleanup that re-routes the main barrel doesn't break them — but cleaning up *ad-hoc* internal imports as part of this work might.
 
-**Mitigation:** the change in scope is the kit's main barrel and the feature barrels. Consumer-side import paths under `@orochi235/weasel` aren't widened or narrowed. If a deep-import consumer exists in eric or another consumer app, run the consumer's build after the change as a smoke check.
+**Mitigation:** the change in scope is the kit's main barrel and the feature barrels. Consumer-side import paths under `@weasel-js/core` aren't widened or narrowed. If a deep-import consumer exists in eric or another consumer app, run the consumer's build after the change as a smoke check.
 
 ### R3 — Doc bloat without action
 

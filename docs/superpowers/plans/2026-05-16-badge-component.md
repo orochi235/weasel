@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a reusable `Badge` component in `@orochi235/weasel-ui` with 13 SVG-drawn border shapes, three visual variants, six tones, interactive affordances (clickable, removable), and Storybook coverage; migrate the existing slot pill in `ToolkitBuilder` to use it.
+**Goal:** Build a reusable `Badge` component in `@weasel-js/ui` with 13 SVG-drawn border shapes, three visual variants, six tones, interactive affordances (clickable, removable), and Storybook coverage; migrate the existing slot pill in `ToolkitBuilder` to use it.
 
 **Architecture:** Single React component with prop-driven API plus children escape hatch. Each badge renders an absolutely-positioned `<svg>` (fill/stroke/focus paths) underneath an HTML flex content row (dot, icon, label, remove). Shape geometry lives in `shapes/<Name>.tsx` modules registered in `shapes/index.ts`. Tone and variant resolve to two CSS custom properties (`--badge-edge`, `--badge-fill`) on the wrapper.
 
@@ -14,7 +14,7 @@
 
 ## File Structure
 
-**New files (all under `packages/weasel-ui/src/components/Badge/`):**
+**New files (all under `packages/ui/src/components/Badge/`):**
 - `index.ts` — re-exports
 - `Badge.tsx` — wrapper component
 - `Badge.module.css` — layout, tone classes, variant rules
@@ -25,7 +25,7 @@
 - `shapes/Pill.tsx`, `Square.tsx`, `Notched.tsx`, `Perforated.tsx`, `Diamond.tsx`, `Dot.tsx`, `Hexagon.tsx`, `Chevron.tsx`, `Banner.tsx`, `Starburst.tsx`, `Scalloped.tsx`, `Shield.tsx`, `Ribbon.tsx`
 
 **Modified files:**
-- `packages/weasel-ui/src/index.ts` — add Badge exports
+- `packages/ui/src/index.ts` — add Badge exports
 - `apps/swillustrator/src/dev/ToolkitBuilder.tsx` — replace slot pill (line ~485) with `<Badge>`
 - `apps/swillustrator/src/dev/ToolkitBuilder.module.css` — remove `.slot` rules (lines ~150-171)
 
@@ -34,15 +34,15 @@
 ## Task 1: Scaffold types + empty shape registry
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/Badge/types.ts`
-- Create: `packages/weasel-ui/src/components/Badge/shapes/index.ts`
-- Create: `packages/weasel-ui/src/components/Badge/shapes/index.test.ts`
-- Create: `packages/weasel-ui/src/components/Badge/index.ts`
+- Create: `packages/ui/src/components/Badge/types.ts`
+- Create: `packages/ui/src/components/Badge/shapes/index.ts`
+- Create: `packages/ui/src/components/Badge/shapes/index.test.ts`
+- Create: `packages/ui/src/components/Badge/index.ts`
 
 - [ ] **Step 1: Write the failing registry test**
 
 ```ts
-// packages/weasel-ui/src/components/Badge/shapes/index.test.ts
+// packages/ui/src/components/Badge/shapes/index.test.ts
 import { describe, it, expect } from 'vitest';
 import { SHAPES, ALL_SHAPES } from './index';
 
@@ -68,13 +68,13 @@ describe('shape registry', () => {
 
 - [ ] **Step 2: Run the test and confirm it fails**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/shapes/index.test.ts`
+Run: `npx vitest run packages/ui/src/components/Badge/shapes/index.test.ts`
 Expected: FAIL with module not found.
 
 - [ ] **Step 3: Create the types file**
 
 ```ts
-// packages/weasel-ui/src/components/Badge/types.ts
+// packages/ui/src/components/Badge/types.ts
 import type { ReactNode } from 'react';
 
 export type BadgeShape =
@@ -106,7 +106,7 @@ export interface ShapeModule {
 Stub every shape with a trivial component that renders an empty `<g/>` for now; later tasks fill them in. This keeps the registry test green from the start.
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/index.ts
+// packages/ui/src/components/Badge/shapes/index.ts
 import type { BadgeShape, ShapeModule } from '../types';
 
 const stub: ShapeModule = {
@@ -141,7 +141,7 @@ export const ALL_SHAPES: BadgeShape[] = [
 - [ ] **Step 5: Create the package index**
 
 ```ts
-// packages/weasel-ui/src/components/Badge/index.ts
+// packages/ui/src/components/Badge/index.ts
 export { Badge } from './Badge';
 export type { BadgeProps } from './Badge';
 export type { BadgeShape, BadgeTone, BadgeVariant, BadgeSize } from './types';
@@ -151,13 +151,13 @@ Note: `Badge.tsx` doesn't exist yet — Task 2 creates it. The index file will f
 
 - [ ] **Step 6: Run the registry test, confirm pass**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/shapes/index.test.ts`
+Run: `npx vitest run packages/ui/src/components/Badge/shapes/index.test.ts`
 Expected: PASS (2 tests).
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge
+git add packages/ui/src/components/Badge
 git commit -m "feat(weasel-ui): scaffold Badge types + shape registry"
 ```
 
@@ -166,16 +166,16 @@ git commit -m "feat(weasel-ui): scaffold Badge types + shape registry"
 ## Task 2: Badge wrapper with pill shape, tone, variant, size
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/Badge/Badge.tsx`
-- Create: `packages/weasel-ui/src/components/Badge/Badge.module.css`
-- Create: `packages/weasel-ui/src/components/Badge/Badge.test.tsx`
-- Modify: `packages/weasel-ui/src/components/Badge/shapes/Pill.tsx` (new file replaces stub)
-- Modify: `packages/weasel-ui/src/components/Badge/shapes/index.ts`
+- Create: `packages/ui/src/components/Badge/Badge.tsx`
+- Create: `packages/ui/src/components/Badge/Badge.module.css`
+- Create: `packages/ui/src/components/Badge/Badge.test.tsx`
+- Modify: `packages/ui/src/components/Badge/shapes/Pill.tsx` (new file replaces stub)
+- Modify: `packages/ui/src/components/Badge/shapes/index.ts`
 
 - [ ] **Step 1: Write the failing Badge test**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/Badge.test.tsx
+// packages/ui/src/components/Badge/Badge.test.tsx
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { Badge } from './Badge';
@@ -211,13 +211,13 @@ describe('Badge', () => {
 
 - [ ] **Step 2: Run the test, confirm it fails**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/Badge.test.tsx`
+Run: `npx vitest run packages/ui/src/components/Badge/Badge.test.tsx`
 Expected: FAIL (Badge module not found).
 
 - [ ] **Step 3: Create Pill shape**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Pill.tsx
+// packages/ui/src/components/Badge/shapes/Pill.tsx
 import type { ShapeModule } from '../types';
 
 const Pill: ShapeModule = {
@@ -246,7 +246,7 @@ Note: SVG uses `preserveAspectRatio="none"` (set on the parent `<svg>`) so the 1
 - [ ] **Step 4: Wire Pill into the registry**
 
 ```ts
-// packages/weasel-ui/src/components/Badge/shapes/index.ts
+// packages/ui/src/components/Badge/shapes/index.ts
 import type { BadgeShape, ShapeModule } from '../types';
 import Pill from './Pill';
 
@@ -282,7 +282,7 @@ export const ALL_SHAPES: BadgeShape[] = [
 - [ ] **Step 5: Create Badge.module.css**
 
 ```css
-/* packages/weasel-ui/src/components/Badge/Badge.module.css */
+/* packages/ui/src/components/Badge/Badge.module.css */
 
 .badge {
   position: relative;
@@ -360,7 +360,7 @@ export const ALL_SHAPES: BadgeShape[] = [
 - [ ] **Step 6: Create Badge.tsx**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/Badge.tsx
+// packages/ui/src/components/Badge/Badge.tsx
 import type { ReactNode } from 'react';
 import s from './Badge.module.css';
 import { SHAPES } from './shapes';
@@ -413,18 +413,18 @@ export function Badge(props: BadgeProps) {
 
 - [ ] **Step 7: Run the test, confirm pass**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/Badge.test.tsx`
+Run: `npx vitest run packages/ui/src/components/Badge/Badge.test.tsx`
 Expected: PASS (5 tests).
 
 - [ ] **Step 8: Verify typecheck**
 
-Run: `npx tsc --noEmit -p packages/weasel-ui/tsconfig.json`
+Run: `npx tsc --noEmit -p packages/ui/tsconfig.json`
 Expected: no errors.
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge
+git add packages/ui/src/components/Badge
 git commit -m "feat(weasel-ui): Badge wrapper + pill shape + tone/variant/size"
 ```
 
@@ -465,13 +465,13 @@ describe('every shape renders at least one geometry element', () => {
 
 - [ ] **Step 2: Run the test, confirm 12 failures (one per stubbed shape)**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/shapes/index.test.ts`
+Run: `npx vitest run packages/ui/src/components/Badge/shapes/index.test.ts`
 Expected: pill passes; the other 12 fail because the stub returns null.
 
 - [ ] **Step 3: Implement Square**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Square.tsx
+// packages/ui/src/components/Badge/shapes/Square.tsx
 import type { ShapeModule } from '../types';
 
 const Square: ShapeModule = {
@@ -500,7 +500,7 @@ export default Square;
 The shape is a square with quarter-circle cuts radially inward at each corner. Built as a single `<path>`. Coordinates in the 100×100 box: corner radius `r=14` (visual constant; tweak if needed).
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Notched.tsx
+// packages/ui/src/components/Badge/shapes/Notched.tsx
 import type { ShapeModule } from '../types';
 
 // Square with concave quarter-circle cutouts at each corner.
@@ -547,7 +547,7 @@ export default Notched;
 Renders the badge silhouette via SVG `<mask>` so the perforation notches actually cut out (rather than just being drawn). For simplicity at this scale, use a fixed 14-notches-per-side layout against the 100×100 coord box; `preserveAspectRatio="none"` stretches the ovals along x — which is OK because the notches are tiny and the visual still reads as perforated.
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Perforated.tsx
+// packages/ui/src/components/Badge/shapes/Perforated.tsx
 import type { ShapeModule } from '../types';
 
 const COUNT = 14;
@@ -605,7 +605,7 @@ export default Perforated;
 - [ ] **Step 6: Implement Diamond**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Diamond.tsx
+// packages/ui/src/components/Badge/shapes/Diamond.tsx
 import type { ShapeModule } from '../types';
 
 const d = 'M 50 2 L 98 50 L 50 98 L 2 50 Z';
@@ -629,7 +629,7 @@ export default Diamond;
 - [ ] **Step 7: Implement Dot**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Dot.tsx
+// packages/ui/src/components/Badge/shapes/Dot.tsx
 import type { ShapeModule } from '../types';
 
 const Dot: ShapeModule = {
@@ -655,7 +655,7 @@ export default Dot;
 - [ ] **Step 8: Implement Hexagon (point-up)**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Hexagon.tsx
+// packages/ui/src/components/Badge/shapes/Hexagon.tsx
 import type { ShapeModule } from '../types';
 
 // Regular hex, point-up, inscribed in the 100×100 box.
@@ -682,7 +682,7 @@ export default Hexagon;
 - [ ] **Step 9: Implement Chevron (right-pointing banner)**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Chevron.tsx
+// packages/ui/src/components/Badge/shapes/Chevron.tsx
 import type { ShapeModule } from '../types';
 
 // Rectangle with a triangular point on the right.
@@ -706,7 +706,7 @@ export default Chevron;
 - [ ] **Step 10: Implement Banner (pointed both ends)**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Banner.tsx
+// packages/ui/src/components/Badge/shapes/Banner.tsx
 import type { ShapeModule } from '../types';
 
 const d = 'M 0 50 L 12 0 L 88 0 L 100 50 L 88 100 L 12 100 Z';
@@ -729,7 +729,7 @@ export default Banner;
 - [ ] **Step 11: Update the registry**
 
 ```ts
-// packages/weasel-ui/src/components/Badge/shapes/index.ts
+// packages/ui/src/components/Badge/shapes/index.ts
 import type { BadgeShape, ShapeModule } from '../types';
 import Pill from './Pill';
 import Square from './Square';
@@ -772,13 +772,13 @@ export const ALL_SHAPES: BadgeShape[] = [
 
 - [ ] **Step 12: Run the registry tests, confirm pill+8 pass, 4 still fail**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/shapes/index.test.ts`
+Run: `npx vitest run packages/ui/src/components/Badge/shapes/index.test.ts`
 Expected: 9 shape-rendering tests pass; starburst/scalloped/shield/ribbon fail (still stubbed). The 2 baseline registry tests still pass.
 
 - [ ] **Step 13: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge/shapes
+git add packages/ui/src/components/Badge/shapes
 git commit -m "feat(weasel-ui): Badge CSS-tier shapes (square, notched, perforated, diamond, dot, hexagon, chevron, banner)"
 ```
 
@@ -792,7 +792,7 @@ git commit -m "feat(weasel-ui): Badge CSS-tier shapes (square, notched, perforat
 
 - [ ] **Step 1: Run the registry tests, observe the four expected failures**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/shapes/index.test.ts`
+Run: `npx vitest run packages/ui/src/components/Badge/shapes/index.test.ts`
 Expected: starburst, scalloped, shield, ribbon tests fail (no geometry rendered).
 
 - [ ] **Step 2: Implement Starburst**
@@ -800,7 +800,7 @@ Expected: starburst, scalloped, shield, ribbon tests fail (no geometry rendered)
 A 12-point burst built by alternating long and short radii around a circle. Slight rotation makes it feel hand-drawn.
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Starburst.tsx
+// packages/ui/src/components/Badge/shapes/Starburst.tsx
 import type { ShapeModule } from '../types';
 
 function starburstPath(points = 12, outerR = 48, innerR = 36, rotation = -7) {
@@ -843,7 +843,7 @@ export default Starburst;
 Border is a series of concave arcs. Sixteen scallops total (four per side) at 100×100.
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Scalloped.tsx
+// packages/ui/src/components/Badge/shapes/Scalloped.tsx
 import type { ShapeModule } from '../types';
 
 function scallopedPath(perSide = 4) {
@@ -893,7 +893,7 @@ export default Scalloped;
 - [ ] **Step 4: Implement Shield**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Shield.tsx
+// packages/ui/src/components/Badge/shapes/Shield.tsx
 import type { ShapeModule } from '../types';
 
 // Top: flat shoulders rounded slightly. Bottom: curves down to a point.
@@ -922,7 +922,7 @@ export default Shield;
 Rectangle with a triangular V cut from the right side.
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/shapes/Ribbon.tsx
+// packages/ui/src/components/Badge/shapes/Ribbon.tsx
 import type { ShapeModule } from '../types';
 
 const d = 'M 0 0 L 88 0 L 100 50 L 88 100 L 0 100 L 12 50 Z';
@@ -967,13 +967,13 @@ import Ribbon from './Ribbon';
 
 - [ ] **Step 7: Run the registry tests, all green**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/shapes/index.test.ts`
+Run: `npx vitest run packages/ui/src/components/Badge/shapes/index.test.ts`
 Expected: 2 + 13 = 15 tests pass.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge/shapes
+git add packages/ui/src/components/Badge/shapes
 git commit -m "feat(weasel-ui): Badge SVG-tier shapes (starburst, scalloped, shield, ribbon)"
 ```
 
@@ -1015,7 +1015,7 @@ describe('Badge content slots', () => {
 
 - [ ] **Step 2: Run, confirm 3 failures**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/Badge.test.tsx`
+Run: `npx vitest run packages/ui/src/components/Badge/Badge.test.tsx`
 Expected: 3 new tests fail.
 
 - [ ] **Step 3: Extend `Badge.module.css`**
@@ -1125,13 +1125,13 @@ Inline-style note: project rule forbids inline `style` except when absolutely ne
 
 - [ ] **Step 5: Run tests, confirm pass**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/Badge.test.tsx`
+Run: `npx vitest run packages/ui/src/components/Badge/Badge.test.tsx`
 Expected: all pass (8 tests now).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge
+git add packages/ui/src/components/Badge
 git commit -m "feat(weasel-ui): Badge dot, leadingIcon, per-shape insets"
 ```
 
@@ -1185,7 +1185,7 @@ describe('Badge interactive', () => {
 
 - [ ] **Step 2: Run, confirm failures**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/Badge.test.tsx`
+Run: `npx vitest run packages/ui/src/components/Badge/Badge.test.tsx`
 Expected: 5 new failures.
 
 - [ ] **Step 3: Extend CSS for interactive states**
@@ -1313,13 +1313,13 @@ export function Badge(props: BadgeProps) {
 
 - [ ] **Step 5: Run tests, confirm all green**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/Badge.test.tsx`
+Run: `npx vitest run packages/ui/src/components/Badge/Badge.test.tsx`
 Expected: 13 tests pass.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge
+git add packages/ui/src/components/Badge
 git commit -m "feat(weasel-ui): Badge clickable variant + focus ring path"
 ```
 
@@ -1416,13 +1416,13 @@ const { /* ... */, onRemove, removeLabel } = props;
 
 - [ ] **Step 5: Run tests, confirm all green**
 
-Run: `npx vitest run packages/weasel-ui/src/components/Badge/Badge.test.tsx`
+Run: `npx vitest run packages/ui/src/components/Badge/Badge.test.tsx`
 Expected: 16 tests pass.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge
+git add packages/ui/src/components/Badge
 git commit -m "feat(weasel-ui): Badge removable variant with × button"
 ```
 
@@ -1431,12 +1431,12 @@ git commit -m "feat(weasel-ui): Badge removable variant with × button"
 ## Task 8: Storybook stories
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/Badge/Badge.stories.tsx`
+- Create: `packages/ui/src/components/Badge/Badge.stories.tsx`
 
 - [ ] **Step 1: Create the stories file**
 
 ```tsx
-// packages/weasel-ui/src/components/Badge/Badge.stories.tsx
+// packages/ui/src/components/Badge/Badge.stories.tsx
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Badge } from './Badge';
 import { ALL_SHAPES } from './shapes';
@@ -1558,7 +1558,7 @@ Inline-style note: Storybook layout helpers are demo-only, never shipped in prod
 
 - [ ] **Step 2: Run Storybook locally to verify visuals**
 
-Run: `npm --workspace @orochi235/weasel-ui run storybook` (or the equivalent script — check `packages/weasel-ui/package.json` if unsure).
+Run: `npm --workspace @weasel-js/ui run storybook` (or the equivalent script — check `packages/ui/package.json` if unsure).
 Open the listed URL, navigate to **weasel-ui/Badge**, check each story renders without console errors. In particular:
 - AllShapes: all 13 shapes draw.
 - SlotPillReplica: visually matches the live Toolkit Builder slot column.
@@ -1569,7 +1569,7 @@ If anything looks wrong, fix it before committing.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/Badge/Badge.stories.tsx
+git add packages/ui/src/components/Badge/Badge.stories.tsx
 git commit -m "docs(weasel-ui): Badge storybook stories"
 ```
 
@@ -1578,12 +1578,12 @@ git commit -m "docs(weasel-ui): Badge storybook stories"
 ## Task 9: Export Badge from weasel-ui
 
 **Files:**
-- Modify: `packages/weasel-ui/src/index.ts`
+- Modify: `packages/ui/src/index.ts`
 
 - [ ] **Step 1: Edit the package index**
 
 ```ts
-// packages/weasel-ui/src/index.ts
+// packages/ui/src/index.ts
 export * from './components/Badge';
 // (keep existing exports)
 ```
@@ -1603,7 +1603,7 @@ export * from './components/ToolGroup';
 
 - [ ] **Step 2: Typecheck**
 
-Run: `npx tsc --noEmit -p packages/weasel-ui/tsconfig.json`
+Run: `npx tsc --noEmit -p packages/ui/tsconfig.json`
 Expected: no errors.
 
 - [ ] **Step 3: Run full test project**
@@ -1614,7 +1614,7 @@ Expected: all weasel-ui tests pass.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-ui/src/index.ts
+git add packages/ui/src/index.ts
 git commit -m "feat(weasel-ui): export Badge"
 ```
 
@@ -1631,7 +1631,7 @@ git commit -m "feat(weasel-ui): export Badge"
 In `apps/swillustrator/src/dev/ToolkitBuilder.tsx`, locate the route columns definition (around line 479-490) and the `_slot` column. Replace its `render` function:
 
 ```tsx
-import { Badge } from '@orochi235/weasel-ui';
+import { Badge } from '@weasel-js/ui';
 
 // near other constants in the file:
 const SLOT_TONE = {
@@ -1673,7 +1673,7 @@ Expected: all pass. (No tests directly inspect the slot pill DOM today; any fail
 
 - [ ] **Step 4: Visual check**
 
-Start the dev server: `npm --workspace @orochi235/swillustrator run dev` (or whatever it's named — check `apps/swillustrator/package.json`). Open the Toolkit Builder dev view, look at the Tool Routes widget, confirm the slot column visually matches what it did before. Compare against the SlotPillReplica Storybook story.
+Start the dev server: `npm --workspace @weasel-js/swillustrator run dev` (or whatever it's named — check `apps/swillustrator/package.json`). Open the Toolkit Builder dev view, look at the Tool Routes widget, confirm the slot column visually matches what it did before. Compare against the SlotPillReplica Storybook story.
 
 - [ ] **Step 5: Commit**
 
@@ -1702,7 +1702,7 @@ Expected: all clean.
 
 - [ ] **Step 2: Quick interactive check in Storybook**
 
-Run: `npm --workspace @orochi235/weasel-ui run storybook`
+Run: `npm --workspace @weasel-js/ui run storybook`
 Click through all Badge stories one more time, especially:
 - AllShapes (every shape draws)
 - ToneVariantMatrix (legibility on every cell)

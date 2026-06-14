@@ -14,9 +14,9 @@
 
 ## File Map
 
-- **Modify:** `packages/weasel-ui/src/useReorderDragList.ts` — add `locked?: boolean` to `LayerListItem`; no-op `onPointerDownRow` for locked items; clamp `computeTargetIndex` to `firstLockedIndex`.
-- **Modify:** `packages/weasel-ui/src/components/LayerList/LayerList.tsx` — emit `data-locked="true"` on locked rows; force exclusive select for locked rows; strip locked ids from shift-click selection on regular rows.
-- **Modify:** `packages/weasel-ui/src/components/LayerList/LayerList.test.tsx` — add tests for the above.
+- **Modify:** `packages/ui/src/useReorderDragList.ts` — add `locked?: boolean` to `LayerListItem`; no-op `onPointerDownRow` for locked items; clamp `computeTargetIndex` to `firstLockedIndex`.
+- **Modify:** `packages/ui/src/components/LayerList/LayerList.tsx` — emit `data-locked="true"` on locked rows; force exclusive select for locked rows; strip locked ids from shift-click selection on regular rows.
+- **Modify:** `packages/ui/src/components/LayerList/LayerList.test.tsx` — add tests for the above.
 - **Modify:** `apps/swillustrator/src/kindIcons.tsx` — add `PageIcon`.
 - **Modify:** `apps/swillustrator/src/App.tsx` — `PAGE_ROW_ID` constant, `pageSelected` state, append Page row to `layerItems`, branch `onSelectLayers`, sync effect, branch right sidebar.
 - **Modify:** `apps/swillustrator/src/swillustrator.css` — `.swill-layer-label-page` muted/italic; `[data-locked="true"]` divider above.
@@ -26,11 +26,11 @@
 ## Task 1: Add `locked` flag to `LayerListItem` type
 
 **Files:**
-- Modify: `packages/weasel-ui/src/useReorderDragList.ts:4-7`
+- Modify: `packages/ui/src/useReorderDragList.ts:4-7`
 
 - [ ] **Step 1: Update `LayerListItem` interface**
 
-Edit `packages/weasel-ui/src/useReorderDragList.ts`. Replace lines 4–7:
+Edit `packages/ui/src/useReorderDragList.ts`. Replace lines 4–7:
 
 ```ts
 export interface LayerListItem {
@@ -44,14 +44,14 @@ export interface LayerListItem {
 
 - [ ] **Step 2: Typecheck**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec tsc --noEmit`
+Run: `pnpm --filter @weasel-js/ui exec tsc --noEmit`
 
 Expected: passes (locked is optional, no consumers break).
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/useReorderDragList.ts
+git add packages/ui/src/useReorderDragList.ts
 git commit -m "feat(weasel-ui): add optional locked flag to LayerListItem"
 ```
 
@@ -60,12 +60,12 @@ git commit -m "feat(weasel-ui): add optional locked flag to LayerListItem"
 ## Task 2: No-op drag-start on locked rows
 
 **Files:**
-- Test: `packages/weasel-ui/src/components/LayerList/LayerList.test.tsx`
-- Modify: `packages/weasel-ui/src/useReorderDragList.ts:70-78`
+- Test: `packages/ui/src/components/LayerList/LayerList.test.tsx`
+- Modify: `packages/ui/src/useReorderDragList.ts:70-78`
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `packages/weasel-ui/src/components/LayerList/LayerList.test.tsx` (before the closing `});`):
+Append to `packages/ui/src/components/LayerList/LayerList.test.tsx` (before the closing `});`):
 
 ```tsx
 it('locked row cannot initiate a drag', () => {
@@ -91,13 +91,13 @@ it('locked row cannot initiate a drag', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec vitest run LayerList.test.tsx`
+Run: `pnpm --filter @weasel-js/ui exec vitest run LayerList.test.tsx`
 
 Expected: FAIL — drop indicator is present (locked behavior not yet implemented).
 
 - [ ] **Step 3: No-op drag-start in `onPointerDownRow`**
 
-Edit `packages/weasel-ui/src/useReorderDragList.ts:70-78`. Replace the existing `onPointerDownRow` with:
+Edit `packages/ui/src/useReorderDragList.ts:70-78`. Replace the existing `onPointerDownRow` with:
 
 ```ts
 const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointerEvent) => {
@@ -118,14 +118,14 @@ const onPointerDownRow = useCallback((id: string, index: number, e: ReactPointer
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec vitest run LayerList.test.tsx`
+Run: `pnpm --filter @weasel-js/ui exec vitest run LayerList.test.tsx`
 
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/useReorderDragList.ts packages/weasel-ui/src/components/LayerList/LayerList.test.tsx
+git add packages/ui/src/useReorderDragList.ts packages/ui/src/components/LayerList/LayerList.test.tsx
 git commit -m "feat(useReorderDragList): skip drag-init for locked rows"
 ```
 
@@ -134,8 +134,8 @@ git commit -m "feat(useReorderDragList): skip drag-init for locked rows"
 ## Task 3: Clamp drop indicator at first locked index
 
 **Files:**
-- Test: `packages/weasel-ui/src/components/LayerList/LayerList.test.tsx`
-- Modify: `packages/weasel-ui/src/useReorderDragList.ts:55-64`
+- Test: `packages/ui/src/components/LayerList/LayerList.test.tsx`
+- Modify: `packages/ui/src/useReorderDragList.ts:55-64`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -178,13 +178,13 @@ it('drops cannot land at or below a locked row', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec vitest run LayerList.test.tsx`
+Run: `pnpm --filter @weasel-js/ui exec vitest run LayerList.test.tsx`
 
 Expected: FAIL — `onReorder` called with index 3 (past the Page row).
 
 - [ ] **Step 3: Clamp in `computeTargetIndex`**
 
-Edit `packages/weasel-ui/src/useReorderDragList.ts:55-64`. Replace `computeTargetIndex` with:
+Edit `packages/ui/src/useReorderDragList.ts:55-64`. Replace `computeTargetIndex` with:
 
 ```ts
 const computeTargetIndex = useCallback((clientY: number): number => {
@@ -207,14 +207,14 @@ const computeTargetIndex = useCallback((clientY: number): number => {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec vitest run LayerList.test.tsx`
+Run: `pnpm --filter @weasel-js/ui exec vitest run LayerList.test.tsx`
 
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/useReorderDragList.ts packages/weasel-ui/src/components/LayerList/LayerList.test.tsx
+git add packages/ui/src/useReorderDragList.ts packages/ui/src/components/LayerList/LayerList.test.tsx
 git commit -m "feat(useReorderDragList): clamp drop indicator at first locked row"
 ```
 
@@ -223,8 +223,8 @@ git commit -m "feat(useReorderDragList): clamp drop indicator at first locked ro
 ## Task 4: Force exclusive select for locked rows
 
 **Files:**
-- Test: `packages/weasel-ui/src/components/LayerList/LayerList.test.tsx`
-- Modify: `packages/weasel-ui/src/components/LayerList/LayerList.tsx:35-53`
+- Test: `packages/ui/src/components/LayerList/LayerList.test.tsx`
+- Modify: `packages/ui/src/components/LayerList/LayerList.tsx:35-53`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -263,13 +263,13 @@ it('shift-click on a regular row strips locked ids from selection', () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec vitest run LayerList.test.tsx`
+Run: `pnpm --filter @weasel-js/ui exec vitest run LayerList.test.tsx`
 
 Expected: both new tests FAIL.
 
 - [ ] **Step 3: Update selection logic in `handleContainerPointerUp`**
 
-Edit `packages/weasel-ui/src/components/LayerList/LayerList.tsx`. Replace lines 35–53 (the `handleContainerPointerUp` function) with:
+Edit `packages/ui/src/components/LayerList/LayerList.tsx`. Replace lines 35–53 (the `handleContainerPointerUp` function) with:
 
 ```tsx
 const handleContainerPointerUp = (e: ReactPointerEvent) => {
@@ -307,14 +307,14 @@ The `items` reference comes from the destructured props at the top of the compon
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec vitest run LayerList.test.tsx`
+Run: `pnpm --filter @weasel-js/ui exec vitest run LayerList.test.tsx`
 
 Expected: PASS for all six tests in the file.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/LayerList/LayerList.tsx packages/weasel-ui/src/components/LayerList/LayerList.test.tsx
+git add packages/ui/src/components/LayerList/LayerList.tsx packages/ui/src/components/LayerList/LayerList.test.tsx
 git commit -m "feat(LayerList): exclusive select for locked rows; strip locked from shift-click"
 ```
 
@@ -323,8 +323,8 @@ git commit -m "feat(LayerList): exclusive select for locked rows; strip locked f
 ## Task 5: Emit `data-locked` on locked rows
 
 **Files:**
-- Test: `packages/weasel-ui/src/components/LayerList/LayerList.test.tsx`
-- Modify: `packages/weasel-ui/src/components/LayerList/LayerList.tsx:71-87`
+- Test: `packages/ui/src/components/LayerList/LayerList.test.tsx`
+- Modify: `packages/ui/src/components/LayerList/LayerList.tsx:71-87`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -347,13 +347,13 @@ it('locked rows emit data-locked="true"', () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec vitest run LayerList.test.tsx`
+Run: `pnpm --filter @weasel-js/ui exec vitest run LayerList.test.tsx`
 
 Expected: FAIL (no `data-locked` attribute yet).
 
 - [ ] **Step 3: Add the attribute in the row JSX**
 
-Edit `packages/weasel-ui/src/components/LayerList/LayerList.tsx:77-86`. Replace the inner `return` of the `.map` with:
+Edit `packages/ui/src/components/LayerList/LayerList.tsx:77-86`. Replace the inner `return` of the `.map` with:
 
 ```tsx
 return (
@@ -371,14 +371,14 @@ return (
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec vitest run LayerList.test.tsx`
+Run: `pnpm --filter @weasel-js/ui exec vitest run LayerList.test.tsx`
 
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/LayerList/LayerList.tsx packages/weasel-ui/src/components/LayerList/LayerList.test.tsx
+git add packages/ui/src/components/LayerList/LayerList.tsx packages/ui/src/components/LayerList/LayerList.test.tsx
 git commit -m "feat(LayerList): emit data-locked on locked rows"
 ```
 
@@ -390,7 +390,7 @@ git commit -m "feat(LayerList): emit data-locked on locked rows"
 
 - [ ] **Step 1: Run typecheck + tests for the whole package**
 
-Run: `pnpm --filter @orochi235/weasel-ui exec tsc --noEmit && pnpm --filter @orochi235/weasel-ui exec vitest run`
+Run: `pnpm --filter @weasel-js/ui exec tsc --noEmit && pnpm --filter @weasel-js/ui exec vitest run`
 
 Expected: both pass.
 

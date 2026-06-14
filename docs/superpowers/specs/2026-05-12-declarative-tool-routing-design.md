@@ -1058,13 +1058,13 @@ the declarative factory to the canonical kit location.
 Before Phase 6:
 
 ```ts
-import { defineTool, apply, mods, type ToolDef } from '@orochi235/weasel/routing';
+import { defineTool, apply, mods, type ToolDef } from '@weasel-js/core/routing';
 ```
 
 After Phase 6:
 
 ```ts
-import { defineTool, apply, mods, type ToolDef } from '@orochi235/weasel';
+import { defineTool, apply, mods, type ToolDef } from '@weasel-js/core';
 ```
 
 The `/routing` subpath is preserved, narrowed to reflection consumers:
@@ -1075,7 +1075,7 @@ import {
   type RegistryEntry, type Conflict,
   type RouteResolvedInfo, formatRouteResolved,
   useToolDebugInfo, ToolDebugOverlay,
-} from '@orochi235/weasel/routing';
+} from '@weasel-js/core/routing';
 ```
 
 ### Rationale
@@ -1102,6 +1102,6 @@ import {
 
 ### Migration note for external consumers
 
-Anyone authoring tools via `@orochi235/weasel/routing` before Phase 6
+Anyone authoring tools via `@weasel-js/core/routing` before Phase 6
 changes their import line and otherwise their code is unaffected.
 Behavior, types, and runtime contract are identical.

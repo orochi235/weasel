@@ -20,8 +20,8 @@ const shared = {
   resolve: {
     alias: weaselAliases(__dirname, [
       {
-        find: '@orochi235/weasel-theme/tokens.css',
-        replacement: resolve(__dirname, 'packages/weasel-theme/src/tokens.css'),
+        find: '@weasel-js/theme/tokens.css',
+        replacement: resolve(__dirname, 'packages/theme/src/tokens.css'),
       },
     ]),
   },

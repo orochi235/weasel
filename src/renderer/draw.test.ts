@@ -74,7 +74,7 @@ describe('WeaselRenderer.render — kind: group', () => {
   });
 });
 
-import type { RectPath } from '@orochi235/weasel';
+import type { RectPath } from '@weasel-js/core';
 
 describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -110,8 +110,8 @@ describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
   });
 });
 
-import type { PolygonPath } from '@orochi235/weasel';
-import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@orochi235/weasel';
+import type { PolygonPath } from '@weasel-js/core';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/core';
 
 describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;

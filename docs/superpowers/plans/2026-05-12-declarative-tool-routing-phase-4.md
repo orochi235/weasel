@@ -1231,7 +1231,7 @@ EOF
 - Create: `src/tools/routing/reflection/index.ts`
 - Modify: `src/tools/routing/index.ts`
 
-Surface the reflection consumers via the existing `@orochi235/weasel/routing` subpath. No new top-level subpath needed — reflection rides on routing.
+Surface the reflection consumers via the existing `@weasel-js/core/routing` subpath. No new top-level subpath needed — reflection rides on routing.
 
 - [ ] **Step 1: Create the reflection barrel**
 
@@ -1267,7 +1267,7 @@ import {
   buildActionRegistry, findConflicts,
   useToolDebugInfo, ToolDebugOverlay,
   type RegistryEntry, type Conflict, type RouteResolvedInfo,
-} from '@orochi235/weasel/routing';
+} from '@weasel-js/core/routing';
 const _r: RegistryEntry[] = buildActionRegistry([]);
 const _c: Conflict[] = findConflicts([]);
 console.log(_r, _c, useToolDebugInfo, ToolDebugOverlay);
@@ -1294,7 +1294,7 @@ git add src/tools/routing/reflection/index.ts src/tools/routing/index.ts
 git commit -m "$(cat <<'EOF'
 feat(routing): export reflection consumers from /routing subpath
 
-Reflection rides on the existing @orochi235/weasel/routing subpath —
+Reflection rides on the existing @weasel-js/core/routing subpath —
 no new package.json exports needed. Consumers import
 buildActionRegistry / findConflicts / useToolDebugInfo / ToolDebugOverlay
 alongside defineTool from the same path.
@@ -1329,14 +1329,14 @@ Confirm how demos register (likely a `Record<string, () => JSX.Element>` keyed b
 ```tsx
 // demo/demos/ToolReflectionDemo.tsx
 import { useMemo, useRef } from 'react';
-import { SceneCanvas } from '@orochi235/weasel';
+import { SceneCanvas } from '@weasel-js/core';
 import {
   buildActionRegistry, findConflicts,
   useToolDebugInfo, ToolDebugOverlay,
   type RegistryEntry, type Conflict,
-} from '@orochi235/weasel/routing';
-import { useSelectTool } from '@orochi235/weasel';
-import { useHandTool } from '@orochi235/weasel';
+} from '@weasel-js/core/routing';
+import { useSelectTool } from '@weasel-js/core';
+import { useHandTool } from '@weasel-js/core';
 
 export function ToolReflectionDemo(): JSX.Element {
   const select = useSelectTool();
@@ -1435,7 +1435,7 @@ function DemoOverlay(): JSX.Element {
 // of useSelectTool / useHandTool for registry/conflict introspection.
 // Real kit consumers introspect the ToolDef they defined in their own
 // source; here we approximate so the demo is self-contained.
-function buildDemoToolDefs(): readonly import('@orochi235/weasel/routing').ToolDef[] {
+function buildDemoToolDefs(): readonly import('@weasel-js/core/routing').ToolDef[] {
   // Inline the same routes as the migrated builtins:
   //   select: click on rect/text/path/empty (+ shift sub-table), drag on
   //           rect/text/path → move, drag on empty → marquee, dblTap on
@@ -1471,7 +1471,7 @@ function buildDemoToolDefs(): readonly import('@orochi235/weasel/routing').ToolD
 }
 
 // Stub — demo wires this to the real dispatcher via SceneCanvas context.
-declare function useSceneDispatcher(): import('@orochi235/weasel').ToolsDispatcher;
+declare function useSceneDispatcher(): import('@weasel-js/core').ToolsDispatcher;
 ```
 
 - [ ] **Step 3: Resolve the `useSceneDispatcher` access**

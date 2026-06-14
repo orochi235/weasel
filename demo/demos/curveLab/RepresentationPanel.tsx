@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, asNodeId, useScene, useSelection } from '@orochi235/weasel';
+import { SceneCanvas, asNodeId, useScene, useSelection } from '@weasel-js/core';
 import type { DrawCommand } from '../../../src/renderer';
 import type { CurveRepresentation, SharedAnchor } from '../../../src/features/paths/curves';
 import {

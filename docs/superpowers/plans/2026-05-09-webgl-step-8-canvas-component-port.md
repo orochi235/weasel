@@ -21,14 +21,14 @@
 - `src/core/layers/render.ts` — current `drawLayers` (the 2D dispatcher). Step 8 adds `drawLayersGL` in this same file.
 - `src/canvas/Canvas.tsx` (lines 998–1022 specifically — the render `useEffect`) — where the backend branch lands.
 - `src/canvas/SceneCanvas.tsx` — pass-through wrapper; gets a one-line prop forward.
-- `packages/weasel-gl/src/WeaselRenderer.ts` (`constructor`, `render`, `resize` methods around lines 82, 240, 265) — the instance API to instantiate, drive each frame, and resize.
-- `packages/weasel-gl/dev/layers.ts` and `layers.spec.ts` — the closest existing pattern (manual layer composition + `WeaselRenderer.render`). Step 8's smoke page does the same thing but goes *through* `<SceneCanvas backend="gl">` rather than instantiating `WeaselRenderer` directly.
+- `packages/gl/src/WeaselRenderer.ts` (`constructor`, `render`, `resize` methods around lines 82, 240, 265) — the instance API to instantiate, drive each frame, and resize.
+- `packages/gl/dev/layers.ts` and `layers.spec.ts` — the closest existing pattern (manual layer composition + `WeaselRenderer.render`). Step 8's smoke page does the same thing but goes *through* `<SceneCanvas backend="gl">` rather than instantiating `WeaselRenderer` directly.
 
 **Conventions cited by specific tasks below:**
 
 - **Task 3 (`drawLayersGL`)** — convention §1: jsdom unit tests can assert tree shape and visibility/skip behavior; only a real-browser smoke (Task 9) confirms the `WeaselRenderer.render` round-trip emits pixels.
 - **Task 4 (Canvas GL useEffect)** — convention §6: dev pages targeted by Playwright readback **must** request `getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })`. The component itself passes these to `getContext` automatically when `backend === 'gl'` so consumers don't need to. Convention §2: every shader output is premultiplied — already true for all kit-internal shaders (relevant only if the smoke catches a regression).
-- **Task 4 (cross-package import)** — convention §14: `Canvas.tsx` will import `WeaselRenderer` from `@orochi235/weasel-gl`. Vitest config already has the alias (added in step 7); the demo's `vite.config.ts` and the dev `vite.config.ts` already have it too. **Audit**: grep `defineConfig` repo-wide before committing — if any vite/vitest config lacks the `@orochi235/weasel-gl` alias, add it. Browser-load-time failures are the symptom and unit tests won't catch them.
+- **Task 4 (cross-package import)** — convention §14: `Canvas.tsx` will import `WeaselRenderer` from `@weasel-js/gl`. Vitest config already has the alias (added in step 7); the demo's `vite.config.ts` and the dev `vite.config.ts` already have it too. **Audit**: grep `defineConfig` repo-wide before committing — if any vite/vitest config lacks the `@weasel-js/gl` alias, add it. Browser-load-time failures are the symptom and unit tests won't catch them.
 - **Task 9 (smoke spec)** — convention §1 update from step 3: 16×16 grid sampling. Step 7's `layers.spec.ts` is the template.
 
 **Deferred — out of scope for step 8:**
@@ -70,7 +70,7 @@ src/
     SceneCanvas.tsx                    MODIFY — add backend?: '2d' | 'gl' prop (default undefined → Canvas
                                                  falls through to its own default '2d'); pass through to <Canvas>.
 
-packages/weasel-gl/
+packages/gl/
   dev/
     canvas-gl.html                     NEW — smoke page mounting <SceneCanvas backend="gl">.
     canvas-gl.tsx                      NEW — React entry: a SceneCanvas with grid + cellHighlight + scene
@@ -166,7 +166,7 @@ export function _resetDrawLayersGLWarnings(): void {
 
 **What this task does:** Adds the prop and the change-warning *only*. Does not yet branch the render path on it (that's Task 4). After this task, `backend === 'gl'` is accepted but ignored — the 2D path still runs. This buys us a green typecheck baseline before reshaping the render `useEffect`.
 
-**Convention §14 callout:** The `import type { ... } from '@orochi235/weasel-gl'` we'll add in Task 4 is the first cross-package value import from `Canvas.tsx`. Audit every `vite.config.ts` and `vitest.config.ts` for the alias **before** Task 4 commits. The dev `vite.config.ts` (`packages/weasel-gl/dev/vite.config.ts`) and the demo `vite.config.ts` already have it as of step 7. Run `grep -rn "defineConfig" --include="*.ts" --include="*.js"` from repo root.
+**Convention §14 callout:** The `import type { ... } from '@weasel-js/gl'` we'll add in Task 4 is the first cross-package value import from `Canvas.tsx`. Audit every `vite.config.ts` and `vitest.config.ts` for the alias **before** Task 4 commits. The dev `vite.config.ts` (`packages/gl/dev/vite.config.ts`) and the demo `vite.config.ts` already have it as of step 7. Run `grep -rn "defineConfig" --include="*.ts" --include="*.js"` from repo root.
 
 - [ ] **Step 1.** Write the failing test in `src/canvas/Canvas.test.tsx`. Add a new describe block:
 
@@ -365,7 +365,7 @@ export function _resetDrawLayersGLWarnings(): void {
 
   ```ts
   import { drawLayersGL, _resetDrawLayersGLWarnings, type RenderLayer } from './render';
-  import type { DrawCommand } from '@orochi235/weasel-gl';
+  import type { DrawCommand } from '@weasel-js/gl';
 
   describe('drawLayersGL', () => {
     beforeEach(() => _resetDrawLayersGLWarnings());
@@ -527,7 +527,7 @@ This is the meat of step 8. We branch the existing render `useEffect` on `backen
 4. Calls `renderer.render(commands)`.
 5. Does **not** call `setupCanvasDpr` or `ctx.clearRect`. The GL render method already clears (`gl.clear`).
 
-**Convention §14 callout repeat:** before committing this task, audit every vite/vitest config for the `@orochi235/weasel-gl` alias. The dev `vite.config.ts`, `vitest.config.ts`, and demo `vite.config.ts` should all have it. Run `grep -rn "@orochi235/weasel-gl" --include="*.ts" --include="*.js" .` and verify each `defineConfig` site has the alias.
+**Convention §14 callout repeat:** before committing this task, audit every vite/vitest config for the `@weasel-js/gl` alias. The dev `vite.config.ts`, `vitest.config.ts`, and demo `vite.config.ts` should all have it. Run `grep -rn "@weasel-js/gl" --include="*.ts" --include="*.js" .` and verify each `defineConfig` site has the alias.
 
 - [ ] **Step 1.** Audit aliases. Run from repo root:
 
@@ -538,8 +538,8 @@ This is the meat of step 8. We branch the existing render `useEffect` on `backen
   For each result, open the file and confirm it has both:
 
   ```ts
-  { find: /^@orochi235\/weasel-gl\/(.*)$/, replacement: /* …/packages/weasel-gl/src/$1.ts */ },
-  { find: '@orochi235/weasel-gl', replacement: /* …/packages/weasel-gl/src/index.ts */ },
+  { find: /^@orochi235\/weasel-gl\/(.*)$/, replacement: /* …/packages/gl/src/$1.ts */ },
+  { find: '@weasel-js/gl', replacement: /* …/packages/gl/src/index.ts */ },
   ```
 
   If any config is missing the alias, add it before continuing. Commit any alias additions as a separate prep commit.
@@ -586,7 +586,7 @@ This is the meat of step 8. We branch the existing render `useEffect` on `backen
 
   ```ts
   import { drawLayers, drawLayersGL, type RenderLayer } from '../core/layers/render';
-  import { WeaselRenderer } from '@orochi235/weasel-gl';
+  import { WeaselRenderer } from '@weasel-js/gl';
   ```
 
   (The `drawLayers` line replaces the existing one; `WeaselRenderer` is new.)
@@ -792,13 +792,13 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 
 ## Task 7: Build the `<SceneCanvas backend="gl">` smoke dev page
 
-**Files:** `packages/weasel-gl/dev/canvas-gl.html`, `packages/weasel-gl/dev/canvas-gl.tsx`, `packages/weasel-gl/dev/vite.config.ts` (verify), `package.json` (verify React present in dev deps for the dev page)
+**Files:** `packages/gl/dev/canvas-gl.html`, `packages/gl/dev/canvas-gl.tsx`, `packages/gl/dev/vite.config.ts` (verify), `package.json` (verify React present in dev deps for the dev page)
 
 **Convention §6 callout:** the component itself (after Task 4) requests `preserveDrawingBuffer + stencil` in `getContext('webgl2')`. The smoke page does **not** call `getContext` itself — that's all internal to `<Canvas>`.
 
 **Why React in the smoke page:** unlike the existing dev pages (`smoke.ts`, `layers.ts`, etc.) which directly poke at `WeaselRenderer.render`, this page exercises the full `<SceneCanvas>` component. It needs React + ReactDOM, both already in the repo's main `package.json` because `<SceneCanvas>` already requires them in production. We import them via the same paths the demo app uses.
 
-- [ ] **Step 1.** Create `packages/weasel-gl/dev/canvas-gl.html`:
+- [ ] **Step 1.** Create `packages/gl/dev/canvas-gl.html`:
 
   ```html
   <!DOCTYPE html>
@@ -820,7 +820,7 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
   </html>
   ```
 
-- [ ] **Step 2.** Create `packages/weasel-gl/dev/canvas-gl.tsx`:
+- [ ] **Step 2.** Create `packages/gl/dev/canvas-gl.tsx`:
 
   ```tsx
   import React from 'react';
@@ -910,17 +910,17 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 
   Pick whichever shape works. The smoke goal is "see a red rect, blue rect, grid, and cell highlight on the canvas under `backend='gl'`."
 
-- [ ] **Step 3.** Update `packages/weasel-gl/dev/vite.config.ts` if it has an explicit rollup `input` list. Read the file first; if it relies on auto-discovery (which it does as of step 7), no change needed. Otherwise add `canvas-gl.html` to the input list. Also confirm React is resolvable from this dev page — the dev `vite.config.ts`'s `root` is the repo root, so `react` and `react-dom` resolve from the top-level `node_modules`. Verify with `ls node_modules/react` from the repo root.
+- [ ] **Step 3.** Update `packages/gl/dev/vite.config.ts` if it has an explicit rollup `input` list. Read the file first; if it relies on auto-discovery (which it does as of step 7), no change needed. Otherwise add `canvas-gl.html` to the input list. Also confirm React is resolvable from this dev page — the dev `vite.config.ts`'s `root` is the repo root, so `react` and `react-dom` resolve from the top-level `node_modules`. Verify with `ls node_modules/react` from the repo root.
 
-- [ ] **Step 4.** Manual smoke: `pnpm --filter @orochi235/weasel-gl run dev` (or the equivalent dev-server invocation), open `http://localhost:5173/packages/weasel-gl/dev/canvas-gl.html`, confirm the page renders the grid + green cell highlight + red and blue rects. Take a screenshot if it helps.
+- [ ] **Step 4.** Manual smoke: `pnpm --filter @weasel-js/gl run dev` (or the equivalent dev-server invocation), open `http://localhost:5173/packages/gl/dev/canvas-gl.html`, confirm the page renders the grid + green cell highlight + red and blue rects. Take a screenshot if it helps.
 
   If anything visual is off (no rects, blank canvas, console errors), debug before proceeding to Task 8. Most-likely failure: the `scene`/custom-layer plumbing assumed in Step 2 is wrong; iterate on Step 2's layer shape until a `drawGL`-producing layer is in the layer stack.
 
 - [ ] **Step 5.** Commit:
 
   ```bash
-  git add packages/weasel-gl/dev/canvas-gl.html packages/weasel-gl/dev/canvas-gl.tsx
-  # plus packages/weasel-gl/dev/vite.config.ts if changed
+  git add packages/gl/dev/canvas-gl.html packages/gl/dev/canvas-gl.tsx
+  # plus packages/gl/dev/vite.config.ts if changed
   git commit -m "feat(weasel-gl): add canvas-gl smoke dev page exercising <SceneCanvas backend='gl'>"
   ```
 
@@ -928,18 +928,18 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 
 ## Task 8: Playwright smoke spec for the GL canvas component
 
-**Files:** `packages/weasel-gl/dev/canvas-gl.spec.ts`
+**Files:** `packages/gl/dev/canvas-gl.spec.ts`
 
 **Convention §6 callout:** the canvas's GL context is created with `preserveDrawingBuffer: true` (Task 4 set that on `<Canvas>`'s `getContext` call), so `gl.readPixels` works after the render frame.
 
 **Convention §1 update callout:** 16×16 grid sampling per the step-3 lesson.
 
-- [ ] **Step 1.** Create `packages/weasel-gl/dev/canvas-gl.spec.ts`:
+- [ ] **Step 1.** Create `packages/gl/dev/canvas-gl.spec.ts`:
 
   ```ts
   import { test, expect, type Page } from '@playwright/test';
 
-  const PAGE = '/packages/weasel-gl/dev/canvas-gl.html';
+  const PAGE = '/packages/gl/dev/canvas-gl.html';
 
   async function getCanvas(page: Page): Promise<{ width: number; height: number }> {
     return page.evaluate(() => {
@@ -1022,7 +1022,7 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 
   **Plan-time fixture sanity check (convention §3 from step 4):** under `view = { x: 0, y: 0, scale: 1 }` (identity), world (140, 140) maps to screen (140, 140) in CSS pixels. With DPR=1 in headless Chromium, that's the same pixel index in the GL buffer. The `ratio` accounts for any DPR scaling the renderer applied (`canvas.width = cssWidth * dpr`). Confirmed.
 
-- [ ] **Step 2.** Run: `pnpm --filter @orochi235/weasel-gl run test:smoke -- canvas-gl.spec.ts`. Iterate until green.
+- [ ] **Step 2.** Run: `pnpm --filter @weasel-js/gl run test:smoke -- canvas-gl.spec.ts`. Iterate until green.
 
   Likely first-run failures + fixes:
   - **All-zero pixels everywhere.** The canvas isn't rendering. Open the page manually (Task 7 Step 4); inspect console errors. Most likely a layer setup mismatch (scene slot vs custom layer).
@@ -1032,7 +1032,7 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 - [ ] **Step 3.** Commit:
 
   ```bash
-  git add packages/weasel-gl/dev/canvas-gl.spec.ts
+  git add packages/gl/dev/canvas-gl.spec.ts
   git commit -m "test(weasel-gl): playwright smoke for <SceneCanvas backend='gl'>"
   ```
 
@@ -1046,7 +1046,7 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 
 - [ ] **Step 2.** Run typecheck: `pnpm typecheck`. Expected: clean.
 
-- [ ] **Step 3.** Run all Playwright specs: `pnpm --filter @orochi235/weasel-gl run test:smoke`. Expected: every spec green (existing + new `canvas-gl.spec.ts`).
+- [ ] **Step 3.** Run all Playwright specs: `pnpm --filter @weasel-js/gl run test:smoke`. Expected: every spec green (existing + new `canvas-gl.spec.ts`).
 
 - [ ] **Step 4.** Boot the demo app (`pnpm dev` or whatever the demo dev script is) and confirm at least one demo still renders correctly under the default `backend='2d'`. The demo's `<SceneCanvas>` callsites don't pass `backend`, so they fall through to `'2d'`, exercising the unchanged 2D path.
 
@@ -1091,8 +1091,8 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 - [ ] All existing Playwright specs (`smoke`, `synthetic`, `text`, `paint`, `colors`, three shader specs, `layers`) still green.
 - [ ] All vitest tests green: previously 1460/1460 (step 7) plus Task 1+3+4+5+6 additions.
 - [ ] Typecheck clean.
-- [ ] No new npm dependencies (`git diff package.json packages/weasel-gl/package.json` shows no new entries).
-- [ ] No changes outside `src/core/layers/render.ts`/`.test.ts`, `src/canvas/Canvas.tsx`/`.test.tsx`, `src/canvas/SceneCanvas.tsx`/`.test.tsx`, `packages/weasel-gl/dev/canvas-gl.{html,tsx,spec.ts}`, the dev `vite.config.ts` (if alias audit required edits), and `docs/superpowers/plans/` (done note + roadmap + conventions).
+- [ ] No new npm dependencies (`git diff package.json packages/gl/package.json` shows no new entries).
+- [ ] No changes outside `src/core/layers/render.ts`/`.test.ts`, `src/canvas/Canvas.tsx`/`.test.tsx`, `src/canvas/SceneCanvas.tsx`/`.test.tsx`, `packages/gl/dev/canvas-gl.{html,tsx,spec.ts}`, the dev `vite.config.ts` (if alias audit required edits), and `docs/superpowers/plans/` (done note + roadmap + conventions).
 
 ---
 
@@ -1110,7 +1110,7 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 - `drawLayersGL(layers, data, visibility, order, view, dims): DrawCommand[]` exported from `src/core/layers/render.ts`. Iterates the same visibility/order resolution as `drawLayers` but invokes each layer's `drawGL` and concatenates the results. Warns once per layer id when `drawGL` is missing.
 - `<Canvas>`'s render `useEffect` branches on the mount-time backend. The 2D body is unchanged. The GL body lazy-instantiates `WeaselRenderer` (with `preserveDrawingBuffer: true, stencil: true`), tracks dims via `lastResizeRef`, calls `renderer.resize` on change, builds the command list via `drawLayersGL`, and calls `renderer.render`.
 - `setupCanvasDpr` removed from the GL path; renderer owns DPR.
-- `packages/weasel-gl/dev/canvas-gl.{html,tsx}` smoke page mounts a `<SceneCanvas backend="gl">` with grid + cell highlight + path layer. Playwright `canvas-gl.spec.ts` asserts canvas mounts, red rect renders, outside-bounds is transparent, 16×16 scan ≥ 30 painted samples.
+- `packages/gl/dev/canvas-gl.{html,tsx}` smoke page mounts a `<SceneCanvas backend="gl">` with grid + cell highlight + path layer. Playwright `canvas-gl.spec.ts` asserts canvas mounts, red rect renders, outside-bounds is transparent, 16×16 scan ≥ 30 painted samples.
 
 ## Notable deviations from plan
 
@@ -1121,7 +1121,7 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 - Vitest: N/N pass (1460 baseline + N new from this step).
 - Playwright: N/N specs pass (existing 13 + `canvas-gl.spec.ts`).
 - Typecheck: clean.
-- Browser-verified: `<SceneCanvas backend="gl">` renders correctly at `/packages/weasel-gl/dev/canvas-gl.html`.
+- Browser-verified: `<SceneCanvas backend="gl">` renders correctly at `/packages/gl/dev/canvas-gl.html`.
 
 ## Lessons for step 9+ (folded into conventions)
 
@@ -1151,7 +1151,7 @@ This is a verification-only task: confirm that when `<Canvas backend="gl">` moun
 
 **2. Placeholder scan:** searched for "TBD", "TODO", "implement later", "add appropriate". One self-flagged uncertainty in Task 7 Step 2 ("verify before writing") includes a concrete fallback shape — not a placeholder. The Task 5 + Task 6 jsdom limitations are documented honestly, with the authoritative test pointed at Task 8 (Playwright). Acceptable.
 
-**3. Type consistency:** `drawLayersGL` signature `(layers, data, visibility, order, view, dims)` is identical across the reference block, the unit-test spec, the implementation, and the call site in Canvas.tsx. `Dims` from `src/core/layers/render.ts` (already exists from step 7). `DrawCommand` from `@orochi235/weasel-gl` barrel. `WeaselRenderer` constructor opts match the actual API (`{ gl, canvas, width, height, dpr }`). `renderer.resize({ width, height, dpr })` matches. Verified.
+**3. Type consistency:** `drawLayersGL` signature `(layers, data, visibility, order, view, dims)` is identical across the reference block, the unit-test spec, the implementation, and the call site in Canvas.tsx. `Dims` from `src/core/layers/render.ts` (already exists from step 7). `DrawCommand` from `@weasel-js/gl` barrel. `WeaselRenderer` constructor opts match the actual API (`{ gl, canvas, width, height, dpr }`). `renderer.resize({ width, height, dpr })` matches. Verified.
 
 **4. Ambiguity scan:** Task 7's React import path and scene-slot vs custom-layer fallback have plan-time uncertainty, called out explicitly with a fallback. The implementer reads `Canvas.tsx`'s scene-slot synthesis to decide. Task 5's "tautology assertion" is honestly flagged — Playwright (Task 8) is the real check. No silent ambiguity.
 

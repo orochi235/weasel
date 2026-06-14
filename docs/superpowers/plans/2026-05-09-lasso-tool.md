@@ -1262,7 +1262,7 @@ import { useMemo } from 'react';
 import { defineTool } from '../defineTool';
 import type { Tool } from '../types';
 import type { RenderLayer } from '../../core/layers/render';
-import type { DrawCommand } from '@orochi235/weasel-gl';
+import type { DrawCommand } from '@weasel-js/gl';
 import { viewToTransform } from '../../core/viewport/view';
 import { worldToScreen } from '../../core/viewport/viewTransform';
 import { PathBuilder } from '../../features/paths/builder';
@@ -1568,5 +1568,5 @@ Do not push automatically.
 - **`useDragGesture` vs hand-rolled state machine.** The plan uses a hand-rolled state machine inside `useLassoSelect` rather than `useDragGesture` because the lasso records vertex *history* — a list-shaped state that doesn't map cleanly onto the drag-gesture's `start`/`current` point pair. If the hand-rolled state machine grows beyond ~150 LOC during implementation, reconsider — `useDragGesture` could host the lifecycle + threshold logic and `useLassoSelect` could keep only the vertex array on top.
 - **Polygon-path encoding.** Step 7's `polylineToPath` helper builds a `PolygonPath` directly. If `PolygonPath`'s wire shape (e.g. opcode integers, field names) doesn't match what's pasted, `src/features/paths/builder.ts`'s `PathBuilder` is the more portable construction path: `new PathBuilder().moveTo(...).lineTo(...).build()`. Use it if the direct encoding fights you.
 - **`worldToScreen` / `viewToTransform`.** Both already exist in `src/core/viewport/`; `useSelectTool.ts` imports them the same way Step 7 shows. If the import path differs slightly, follow the existing import in `useSelectTool` exactly.
-- **`PolygonPath` import in `useLassoTool`.** Imported as a type from `@orochi235/weasel-gl`. If the IDE flags the import, the kit's `@orochi235/weasel-gl` workspace package is local — the type lives in its public surface.
+- **`PolygonPath` import in `useLassoTool`.** Imported as a type from `@weasel-js/gl`. If the IDE flags the import, the kit's `@weasel-js/gl` workspace package is local — the type lives in its public surface.
 - **Tests for the click-fallthrough path inside `useLassoTool`.** Out of scope for this plan; the empty-space-vs-hit dispatch in Tool is consumer-driven via `pickEvery` etc. The behavior-side fallthrough (tiny-lasso → click) is covered by `selectFromLasso.test.ts`.

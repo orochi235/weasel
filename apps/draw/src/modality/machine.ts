@@ -1,6 +1,6 @@
-import { createModeRegistry, type ModeRegistry } from '@orochi235/weasel-modes';
-import type { ModeDefinition } from '@orochi235/weasel-modes';
-import type { History, Journal } from '@orochi235/weasel-history';
+import { createModeRegistry, type ModeRegistry } from '@weasel-js/modes';
+import type { ModeDefinition } from '@weasel-js/modes';
+import type { History, Journal } from '@weasel-js/history';
 import { createJournalCache, type JournalCache } from './journalCache';
 
 export interface CreateModeMachineOptions {

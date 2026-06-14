@@ -9,8 +9,8 @@ import {
   useScene,
   asNodeId,
   textCommand,
-} from '@orochi235/weasel';
-import type { Path } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { Path } from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Shape { id: string; pose: Path; fill: string; stroke?: string; label?: string }

@@ -6,8 +6,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { colorResetAction, colorSwapAction, colorToggleFocusedNoneAction } from './actions';
-import type { ActionDeps } from '@orochi235/weasel';
-import type { ImmediateInvoker } from '@orochi235/weasel';
+import type { ActionDeps } from '@weasel-js/core';
+import type { ImmediateInvoker } from '@weasel-js/core';
 
 function makeColorDeps() {
   return {

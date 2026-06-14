@@ -2,8 +2,8 @@ import {
   asNodeId,
   createMoveToIndexOp,
   dispatchApplyBatch,
-} from '@orochi235/weasel';
-import type { SceneNode, Scene, SelectionApi } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { SceneNode, Scene, SelectionApi } from '@weasel-js/core';
 import type { LayerListItem, LayerListProps } from './LayerList';
 
 export interface UseLayerListArgs<TData, TLayer extends string, TPose> {

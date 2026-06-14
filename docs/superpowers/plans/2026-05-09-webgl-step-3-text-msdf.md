@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add MSDF text rendering to `@orochi235/weasel-gl`. A `pnpm gen:font` build script converts TTF/OTF fonts to JSON metrics + PNG atlas. Inter ships prebuilt as the default font. A new SDF fragment shader renders crisp text at any zoom level. Glyph layout covers ASCII + Latin-1. `registerFont(family, atlasUrl)` provides the public API. The DrawCommand interpreter gains a `kind: 'text'` variant. Exits when `kind: 'text'` renders crisp glyphs at multiple zoom levels in headless Chromium and glyph metrics match `measureText` within sub-pixel tolerance.
+**Goal:** Add MSDF text rendering to `@weasel-js/gl`. A `pnpm gen:font` build script converts TTF/OTF fonts to JSON metrics + PNG atlas. Inter ships prebuilt as the default font. A new SDF fragment shader renders crisp text at any zoom level. Glyph layout covers ASCII + Latin-1. `registerFont(family, atlasUrl)` provides the public API. The DrawCommand interpreter gains a `kind: 'text'` variant. Exits when `kind: 'text'` renders crisp glyphs at multiple zoom levels in headless Chromium and glyph metrics match `measureText` within sub-pixel tolerance.
 
 **Architecture:** Two new GL programs run in the same `WeaselRenderer`: the existing `pathFill` program (unchanged) and a new `textSdf` program. The `textSdf` program takes a per-glyph quad (interleaved x,y,u,v attributes), samples an atlas texture, and applies MSDF median + smoothstep to produce crisp anti-aliased glyphs. A `FontRegistry` (module-level `Map<string, FontFace>`) holds loaded fonts keyed by family name; `registerFont` is async because it fetches the PNG atlas and uploads it as a GL texture. Glyph layout is a pure function `layoutGlyphs(text, style, font) → GlyphQuad[]` that walks codepoints, looks up each in the font's JSON metrics, advances the pen by `advance + kerning`, and emits one quad per glyph. The renderer uploads the per-frame glyph quad buffer as a dynamic VBO (one VBO per draw call, reused each frame). Atlas textures live in a `GLTextureCache` (Map keyed by `TextureHandle` id). `WeaselRenderer` gains a `textSdf: ShaderProgram` field and a `textureCache: GLTextureCache` field; `drawText` is wired into `draw.ts` analogously to `drawPath`.
 
@@ -31,7 +31,7 @@
 
 ## File structure
 
-Files this plan creates/modifies in `packages/weasel-gl/`:
+Files this plan creates/modifies in `packages/gl/`:
 
 ```
 src/
@@ -72,7 +72,7 @@ package.json               # ADD scripts: gen:font; ADD dev dep msdf-bmfont-xml
 docs/superpowers/plans/2026-05-09-webgl-step-3-done.md  # NEW done note (written at step end)
 ```
 
-> The `scripts/gen-font.ts` lives at `packages/weasel-gl/scripts/gen-font.ts`. The `gen:font` npm script invokes it via `tsx`.
+> The `scripts/gen-font.ts` lives at `packages/gl/scripts/gen-font.ts`. The `gen:font` npm script invokes it via `tsx`.
 
 ---
 
@@ -81,7 +81,7 @@ docs/superpowers/plans/2026-05-09-webgl-step-3-done.md  # NEW done note (written
 `msdf-bmfont-xml` outputs a JSON file with this structure. Tests use stripped-down inline fixtures conforming to this shape.
 
 ```ts
-// packages/weasel-gl/src/FontAtlas.ts will define these types:
+// packages/gl/src/FontAtlas.ts will define these types:
 
 export interface BmFontInfo {
   face: string;
@@ -143,7 +143,7 @@ export const FIXTURE_FONT: BmFont = {
 
 **Files:**
 - Modify: `package.json` — add `msdf-bmfont-xml` as devDependency; add `gen:font` script
-- Create: `packages/weasel-gl/scripts/gen-font.ts` — thin CLI wrapper
+- Create: `packages/gl/scripts/gen-font.ts` — thin CLI wrapper
 
 > Convention §3: use `--save-exact` so no caret range lands.
 
@@ -166,28 +166,28 @@ Expected: `"msdf-bmfont-xml": "6.0.0"` (no `^` or `~`).
 In the `"scripts"` block, add:
 
 ```json
-"gen:font": "tsx packages/weasel-gl/scripts/gen-font.ts"
+"gen:font": "tsx packages/gl/scripts/gen-font.ts"
 ```
 
 - [ ] **Step 3: Create the gen-font script**
 
-Create `packages/weasel-gl/scripts/gen-font.ts`:
+Create `packages/gl/scripts/gen-font.ts`:
 
 ```ts
 #!/usr/bin/env tsx
 /**
  * gen-font — wraps msdf-bmfont-xml to produce a JSON metrics file + PNG atlas
- * for use in packages/weasel-gl/fonts/<family>/.
+ * for use in packages/gl/fonts/<family>/.
  *
  * Usage:
- *   pnpm gen:font --font path/to/Inter.ttf --out packages/weasel-gl/fonts/inter --size 32
+ *   pnpm gen:font --font path/to/Inter.ttf --out packages/gl/fonts/inter --size 32
  *
  * Output:
  *   <out>/inter.json   — BmFont metrics JSON
  *   <out>/inter.png    — MSDF atlas PNG (RGBA, 512×512)
  *
  * The prebuilt Inter atlas is already committed to the repo under
- * packages/weasel-gl/fonts/inter/. Re-run this script only when updating
+ * packages/gl/fonts/inter/. Re-run this script only when updating
  * the font or adding new charset coverage.
  *
  * Charset: ASCII + Latin-1 (U+0020–U+00FF, 224 codepoints).
@@ -257,7 +257,7 @@ Expected: 0 errors.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add package.json package-lock.json packages/weasel-gl/scripts/gen-font.ts
+git add package.json package-lock.json packages/gl/scripts/gen-font.ts
 git commit -m "chore(weasel-gl): add msdf-bmfont-xml dev dep + gen:font script"
 ```
 
@@ -266,8 +266,8 @@ git commit -m "chore(weasel-gl): add msdf-bmfont-xml dev dep + gen:font script"
 ## Task 2: Pre-build and commit the Inter font atlas
 
 **Files:**
-- Create: `packages/weasel-gl/fonts/inter/inter.json`
-- Create: `packages/weasel-gl/fonts/inter/inter.png`
+- Create: `packages/gl/fonts/inter/inter.json`
+- Create: `packages/gl/fonts/inter/inter.png`
 
 > **Important:** The atlas files are binary + large text. Commit them directly to git (no LFS required for a 512×512 PNG, ~80–120 KB). PNG files should be tracked in `.gitattributes` as binary if not already.
 
@@ -297,10 +297,10 @@ find node_modules/@fontsource/inter -name '*.ttf' | head
 - [ ] **Step 2: Generate the atlas**
 
 ```bash
-mkdir -p packages/weasel-gl/fonts/inter
+mkdir -p packages/gl/fonts/inter
 pnpm gen:font \
   --font node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2 \
-  --out packages/weasel-gl/fonts/inter \
+  --out packages/gl/fonts/inter \
   --size 32 \
   --atlas 512
 ```
@@ -310,7 +310,7 @@ pnpm gen:font \
 Verify the output exists:
 
 ```bash
-ls -lh packages/weasel-gl/fonts/inter/
+ls -lh packages/gl/fonts/inter/
 ```
 
 Expected: `inter.json` (~50–80 KB) and `inter.png` (~80–120 KB, 512×512 RGBA).
@@ -318,23 +318,23 @@ Expected: `inter.json` (~50–80 KB) and `inter.png` (~80–120 KB, 512×512 RGB
 Verify the JSON is valid BmFont format:
 
 ```bash
-node -e "const f = require('./packages/weasel-gl/fonts/inter/inter.json'); console.log('chars:', f.chars.length, 'kernings:', f.kernings.length)"
+node -e "const f = require('./packages/gl/fonts/inter/inter.json'); console.log('chars:', f.chars.length, 'kernings:', f.kernings.length)"
 ```
 
 Expected: `chars: 224` (or close; depends on coverage) and kernings > 0.
 
 - [ ] **Step 3: Mark PNG as binary in .gitattributes**
 
-If `packages/weasel-gl/fonts/**/*.png` is not already in `.gitattributes`:
+If `packages/gl/fonts/**/*.png` is not already in `.gitattributes`:
 
 ```bash
-echo 'packages/weasel-gl/fonts/**/*.png binary' >> .gitattributes
+echo 'packages/gl/fonts/**/*.png binary' >> .gitattributes
 ```
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-gl/fonts/inter/ .gitattributes
+git add packages/gl/fonts/inter/ .gitattributes
 git commit -m "feat(weasel-gl): add prebuilt Inter v4 MSDF atlas (Apache-2.0)"
 ```
 
@@ -343,14 +343,14 @@ git commit -m "feat(weasel-gl): add prebuilt Inter v4 MSDF atlas (Apache-2.0)"
 ## Task 3: `BmFont` types + `parseBmFont` loader
 
 **Files:**
-- Create: `packages/weasel-gl/src/FontAtlas.ts`
-- Create: `packages/weasel-gl/src/FontAtlas.test.ts`
+- Create: `packages/gl/src/FontAtlas.ts`
+- Create: `packages/gl/src/FontAtlas.test.ts`
 
 This module defines the TypeScript types for the BmFont JSON format and provides `parseBmFont(json: unknown): BmFont` — a defensive parser that throws if required fields are missing.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/FontAtlas.test.ts`:
+Create `packages/gl/src/FontAtlas.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -395,14 +395,14 @@ describe('parseBmFont', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/FontAtlas.test.ts
+npm test -- packages/gl/src/FontAtlas.test.ts
 ```
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `FontAtlas.ts`**
 
-Create `packages/weasel-gl/src/FontAtlas.ts`:
+Create `packages/gl/src/FontAtlas.ts`:
 
 ```ts
 /**
@@ -508,7 +508,7 @@ export function parseBmFont(raw: unknown): BmFont {
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/FontAtlas.test.ts
+npm test -- packages/gl/src/FontAtlas.test.ts
 ```
 
 Expected: PASS, 5 tests.
@@ -516,7 +516,7 @@ Expected: PASS, 5 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/FontAtlas.ts packages/weasel-gl/src/FontAtlas.test.ts
+git add packages/gl/src/FontAtlas.ts packages/gl/src/FontAtlas.test.ts
 git commit -m "feat(weasel-gl): BmFont types + parseBmFont with charMap/kerningMap"
 ```
 
@@ -525,8 +525,8 @@ git commit -m "feat(weasel-gl): BmFont types + parseBmFont with charMap/kerningM
 ## Task 4: Glyph layout
 
 **Files:**
-- Create: `packages/weasel-gl/src/GlyphLayout.ts`
-- Create: `packages/weasel-gl/src/GlyphLayout.test.ts`
+- Create: `packages/gl/src/GlyphLayout.ts`
+- Create: `packages/gl/src/GlyphLayout.test.ts`
 
 Pure function: `layoutGlyphs(text, style, font) → GlyphQuad[]`. Walks codepoints left-to-right, advances the pen by `xadvance × scale + kerning × scale`, emits one `GlyphQuad` per printable glyph. Unknown codepoints emit a fallback `?` glyph (codepoint 63) or are skipped with a console warning if `?` is also absent. `scale = style.fontSize / font.info.size`.
 
@@ -534,7 +534,7 @@ Pure function: `layoutGlyphs(text, style, font) → GlyphQuad[]`. Walks codepoin
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/GlyphLayout.test.ts`:
+Create `packages/gl/src/GlyphLayout.test.ts`:
 
 ```ts
 import { describe, it, expect, vi } from 'vitest';
@@ -612,14 +612,14 @@ describe('layoutGlyphs', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/GlyphLayout.test.ts
+npm test -- packages/gl/src/GlyphLayout.test.ts
 ```
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `GlyphLayout.ts`**
 
-Create `packages/weasel-gl/src/GlyphLayout.ts`:
+Create `packages/gl/src/GlyphLayout.ts`:
 
 ```ts
 /**
@@ -780,7 +780,7 @@ export function buildQuadIndexBuffer(quadCount: number): Uint32Array {
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/GlyphLayout.test.ts
+npm test -- packages/gl/src/GlyphLayout.test.ts
 ```
 
 Expected: PASS, 6 tests.
@@ -788,7 +788,7 @@ Expected: PASS, 6 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/GlyphLayout.ts packages/weasel-gl/src/GlyphLayout.test.ts
+git add packages/gl/src/GlyphLayout.ts packages/gl/src/GlyphLayout.test.ts
 git commit -m "feat(weasel-gl): glyph layout (pen advance, kerning, UV mapping, fallback)"
 ```
 
@@ -799,11 +799,11 @@ git commit -m "feat(weasel-gl): glyph layout (pen advance, kerning, UV mapping, 
 These helpers live in `GlyphLayout.ts` (already written above) but need their own test coverage.
 
 **Files:**
-- Modify: `packages/weasel-gl/src/GlyphLayout.test.ts` — append
+- Modify: `packages/gl/src/GlyphLayout.test.ts` — append
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `packages/weasel-gl/src/GlyphLayout.test.ts`:
+Append to `packages/gl/src/GlyphLayout.test.ts`:
 
 ```ts
 import { quadsToVertexBuffer, buildQuadIndexBuffer } from './GlyphLayout';
@@ -845,7 +845,7 @@ describe('buildQuadIndexBuffer', () => {
 - [ ] **Step 2: Run test to verify they pass (implementations already exist)**
 
 ```bash
-npm test -- packages/weasel-gl/src/GlyphLayout.test.ts
+npm test -- packages/gl/src/GlyphLayout.test.ts
 ```
 
 Expected: PASS, all tests including the new 5.
@@ -853,7 +853,7 @@ Expected: PASS, all tests including the new 5.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/GlyphLayout.test.ts
+git add packages/gl/src/GlyphLayout.test.ts
 git commit -m "test(weasel-gl): vertex buffer + index buffer helpers for glyph quads"
 ```
 
@@ -862,8 +862,8 @@ git commit -m "test(weasel-gl): vertex buffer + index buffer helpers for glyph q
 ## Task 6: GL texture cache
 
 **Files:**
-- Create: `packages/weasel-gl/src/GLTextureCache.ts`
-- Create: `packages/weasel-gl/src/GLTextureCache.test.ts`
+- Create: `packages/gl/src/GLTextureCache.ts`
+- Create: `packages/gl/src/GLTextureCache.test.ts`
 
 A cache of GL textures keyed by a `TextureHandle` (opaque string id). `upload(id, image)` uploads an `HTMLImageElement | ImageBitmap | ImageData` and returns a handle. `bind(handle, unit)` binds the texture to a texture unit. On context loss, the renderer discards the cache and creates a new one (same pattern as `GLMeshCache`).
 
@@ -871,7 +871,7 @@ Atlas textures use `gl.RGBA` / `UNSIGNED_BYTE`, linear filtering (`gl.LINEAR`), 
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/GLTextureCache.test.ts`:
+Create `packages/gl/src/GLTextureCache.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -931,14 +931,14 @@ describe('GLTextureCache', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/GLTextureCache.test.ts
+npm test -- packages/gl/src/GLTextureCache.test.ts
 ```
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `GLTextureCache.ts`**
 
-Create `packages/weasel-gl/src/GLTextureCache.ts`:
+Create `packages/gl/src/GLTextureCache.ts`:
 
 ```ts
 /**
@@ -1029,14 +1029,14 @@ TEXTURE_WRAP_T: 0x2803,
 CLAMP_TO_EDGE: 0x812F,
 ```
 
-Edit `packages/weasel-gl/test-utils/glRecorder.ts`:
+Edit `packages/gl/test-utils/glRecorder.ts`:
 
 In the `GL_CONSTANTS` object, append those key/value pairs. Keep the existing entries; just add to the block.
 
 - [ ] **Step 5: Run test to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/GLTextureCache.test.ts
+npm test -- packages/gl/src/GLTextureCache.test.ts
 ```
 
 Expected: PASS, 5 tests.
@@ -1044,7 +1044,7 @@ Expected: PASS, 5 tests.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-gl/src/GLTextureCache.ts packages/weasel-gl/src/GLTextureCache.test.ts packages/weasel-gl/test-utils/glRecorder.ts
+git add packages/gl/src/GLTextureCache.ts packages/gl/src/GLTextureCache.test.ts packages/gl/test-utils/glRecorder.ts
 git commit -m "feat(weasel-gl): GLTextureCache — atlas upload, linear filter, no mipmaps"
 ```
 
@@ -1053,8 +1053,8 @@ git commit -m "feat(weasel-gl): GLTextureCache — atlas upload, linear filter, 
 ## Task 7: `registerFont` public API
 
 **Files:**
-- Create: `packages/weasel-gl/src/registerFont.ts`
-- Create: `packages/weasel-gl/src/registerFont.test.ts`
+- Create: `packages/gl/src/registerFont.ts`
+- Create: `packages/gl/src/registerFont.test.ts`
 
 `registerFont(family, atlasUrl)` is async: it fetches the JSON metrics, fetches the PNG atlas as an `ImageBitmap`, and stores both in the module-level `FontRegistry`. The registry is queried by `drawText` at render time. If the registry doesn't have a font for the requested family, `drawText` logs a warning and skips rendering (not an error — fonts may still be loading).
 
@@ -1064,7 +1064,7 @@ The registry holds a `GLTextureCache` reference, but `registerFont` itself is GL
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/registerFont.test.ts`:
+Create `packages/gl/src/registerFont.test.ts`:
 
 ```ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -1141,14 +1141,14 @@ describe('registerFont', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/registerFont.test.ts
+npm test -- packages/gl/src/registerFont.test.ts
 ```
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `registerFont.ts`**
 
-Create `packages/weasel-gl/src/registerFont.ts`:
+Create `packages/gl/src/registerFont.ts`:
 
 ```ts
 /**
@@ -1258,7 +1258,7 @@ export function ensureFontTexture(
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/registerFont.test.ts
+npm test -- packages/gl/src/registerFont.test.ts
 ```
 
 Expected: PASS, 4 tests.
@@ -1266,7 +1266,7 @@ Expected: PASS, 4 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/registerFont.ts packages/weasel-gl/src/registerFont.test.ts
+git add packages/gl/src/registerFont.ts packages/gl/src/registerFont.test.ts
 git commit -m "feat(weasel-gl): registerFont() — async fetch + FontRegistry"
 ```
 
@@ -1275,7 +1275,7 @@ git commit -m "feat(weasel-gl): registerFont() — async fetch + FontRegistry"
 ## Task 8: MSDF text SDF fragment shader
 
 **Files:**
-- Create: `packages/weasel-gl/src/shaders/textSdf.ts`
+- Create: `packages/gl/src/shaders/textSdf.ts`
 
 > **Convention §2 applies here.** Fragment shader output MUST be premultiplied: `vec4(textColor.rgb * a, a)` where `a = textColor.a * smoothstep(...) * u_alpha`. The browser composites the canvas expecting premultiplied pixels. Blend func stays `gl.ONE, gl.ONE_MINUS_SRC_ALPHA`.
 
@@ -1285,7 +1285,7 @@ The text shader differs from the path-fill shader in two ways:
 
 No test for this task (GLSL source is a string; the real test is visual correctness in the smoke). The shader is exported for `WeaselRenderer` to compile.
 
-- [ ] **Step 1: Create `packages/weasel-gl/src/shaders/textSdf.ts`**
+- [ ] **Step 1: Create `packages/gl/src/shaders/textSdf.ts`**
 
 ```ts
 /**
@@ -1380,7 +1380,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/shaders/textSdf.ts
+git add packages/gl/src/shaders/textSdf.ts
 git commit -m "feat(weasel-gl): MSDF text SDF fragment shader (median + smoothstep, premultiplied)"
 ```
 
@@ -1389,11 +1389,11 @@ git commit -m "feat(weasel-gl): MSDF text SDF fragment shader (median + smoothst
 ## Task 9: `TextDrawCommand` variant
 
 **Files:**
-- Modify: `packages/weasel-gl/src/DrawCommand.ts`
+- Modify: `packages/gl/src/DrawCommand.ts`
 
-Extend the `DrawCommand` union with `kind: 'text'`. The `TextStyle` type from `@orochi235/weasel` is reused (via a re-export of `TextStyle` from `src/features/text/textStyle.ts` through the main barrel).
+Extend the `DrawCommand` union with `kind: 'text'`. The `TextStyle` type from `@weasel-js/core` is reused (via a re-export of `TextStyle` from `src/features/text/textStyle.ts` through the main barrel).
 
-- [ ] **Step 1: Verify `TextStyle` is exported from `@orochi235/weasel`**
+- [ ] **Step 1: Verify `TextStyle` is exported from `@weasel-js/core`**
 
 ```bash
 grep -n 'TextStyle' src/index.ts | head -10
@@ -1409,10 +1409,10 @@ Run `npm run typecheck` to confirm.
 
 - [ ] **Step 2: Add `TextDrawCommand` to `DrawCommand.ts`**
 
-Edit `packages/weasel-gl/src/DrawCommand.ts`:
+Edit `packages/gl/src/DrawCommand.ts`:
 
 ```ts
-import type { Path, Stroke, TextStyle } from '@orochi235/weasel';
+import type { Path, Stroke, TextStyle } from '@weasel-js/core';
 import type { Mat3 } from './mat3';
 
 /**
@@ -1471,7 +1471,7 @@ Expected: 0 errors.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-gl/src/DrawCommand.ts src/index.ts
+git add packages/gl/src/DrawCommand.ts src/index.ts
 git commit -m "feat(weasel-gl): TextDrawCommand variant; export TextStyle from weasel barrel"
 ```
 
@@ -1480,8 +1480,8 @@ git commit -m "feat(weasel-gl): TextDrawCommand variant; export TextStyle from w
 ## Task 10: `drawText` in `draw.ts`
 
 **Files:**
-- Modify: `packages/weasel-gl/src/draw.ts`
-- Modify: `packages/weasel-gl/src/draw.test.ts`
+- Modify: `packages/gl/src/draw.ts`
+- Modify: `packages/gl/src/draw.test.ts`
 
 Wire up the `'text'` dispatch case. `drawText` must:
 1. Call `ensureFontTexture(family, textureCache)` → if false (font not registered), `console.warn` + return.
@@ -1494,7 +1494,7 @@ The `DrawContext` must gain `textSdf: ShaderProgram` and `textureCache: GLTextur
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `packages/weasel-gl/src/draw.test.ts`:
+Append to `packages/gl/src/draw.test.ts`:
 
 ```ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -1563,19 +1563,19 @@ describe('dispatch text command', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/draw.test.ts
+npm test -- packages/gl/src/draw.test.ts
 ```
 
 Expected: FAIL — `textSdf` not on `DrawContext`, `dispatch` doesn't handle `'text'`.
 
 - [ ] **Step 3: Extend `DrawContext` and wire `drawText`**
 
-Edit `packages/weasel-gl/src/draw.ts`:
+Edit `packages/gl/src/draw.ts`:
 
 Add `textSdf: ShaderProgram` and `textureCache: GLTextureCache` to `DrawContext`:
 
 ```ts
-import type { Stroke, TextStyle } from '@orochi235/weasel';
+import type { Stroke, TextStyle } from '@weasel-js/core';
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand, TextDrawCommand } from './DrawCommand';
 import type { GroupState } from './GroupState';
 import type { GLMeshCache, GLMeshHandle } from './GLMeshCache';
@@ -1587,7 +1587,7 @@ import { parseColor } from './color';
 import { tessellateStroke } from './stroke';
 import { getFont, ensureFontTexture } from './registerFont';
 import { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from './GlyphLayout';
-import { resolveTextStyle } from '@orochi235/weasel';
+import { resolveTextStyle } from '@weasel-js/core';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -1697,7 +1697,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/draw.test.ts
+npm test -- packages/gl/src/draw.test.ts
 ```
 
 Expected: PASS, all tests.
@@ -1705,7 +1705,7 @@ Expected: PASS, all tests.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/draw.ts packages/weasel-gl/src/draw.test.ts
+git add packages/gl/src/draw.ts packages/gl/src/draw.test.ts
 git commit -m "feat(weasel-gl): drawText — glyph layout + MSDF shader dispatch"
 ```
 
@@ -1714,14 +1714,14 @@ git commit -m "feat(weasel-gl): drawText — glyph layout + MSDF shader dispatch
 ## Task 11: Wire `textSdf` program into `WeaselRenderer`
 
 **Files:**
-- Modify: `packages/weasel-gl/src/WeaselRenderer.ts`
-- Modify: `packages/weasel-gl/src/WeaselRenderer.test.ts`
+- Modify: `packages/gl/src/WeaselRenderer.ts`
+- Modify: `packages/gl/src/WeaselRenderer.test.ts`
 
 > **Convention §1 applies here.** The unit test (GL recorder) won't catch atlas-binding or texture-parameter bugs. Pixel correctness is verified in the smoke spec (Task 14). The test here only checks that the renderer constructs a `textSdf` program and that `DrawContext` has the new fields.
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `packages/weasel-gl/src/WeaselRenderer.test.ts`:
+Append to `packages/gl/src/WeaselRenderer.test.ts`:
 
 ```ts
 describe('WeaselRenderer text fields', () => {
@@ -1740,14 +1740,14 @@ describe('WeaselRenderer text fields', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts
+npm test -- packages/gl/src/WeaselRenderer.test.ts
 ```
 
 Expected: FAIL — `_textSdf` / `_textureCache` not on `WeaselRenderer`.
 
 - [ ] **Step 3: Update `WeaselRenderer`**
 
-Edit `packages/weasel-gl/src/WeaselRenderer.ts`:
+Edit `packages/gl/src/WeaselRenderer.ts`:
 
 Add imports:
 
@@ -1824,8 +1824,8 @@ export function _markAllFontsNotUploaded(): void {
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts
-npm test -- packages/weasel-gl/src/registerFont.test.ts
+npm test -- packages/gl/src/WeaselRenderer.test.ts
+npm test -- packages/gl/src/registerFont.test.ts
 npm run typecheck
 ```
 
@@ -1834,7 +1834,7 @@ Expected: all pass, 0 typecheck errors.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/WeaselRenderer.ts packages/weasel-gl/src/WeaselRenderer.test.ts packages/weasel-gl/src/registerFont.ts
+git add packages/gl/src/WeaselRenderer.ts packages/gl/src/WeaselRenderer.test.ts packages/gl/src/registerFont.ts
 git commit -m "feat(weasel-gl): wire textSdf program + GLTextureCache into WeaselRenderer"
 ```
 
@@ -1843,13 +1843,13 @@ git commit -m "feat(weasel-gl): wire textSdf program + GLTextureCache into Wease
 ## Task 12: Barrel exports
 
 **Files:**
-- Modify: `packages/weasel-gl/src/index.ts`
+- Modify: `packages/gl/src/index.ts`
 
 Export the new public API surface: `registerFont`, `TextDrawCommand`, `GlyphQuad`, `BmFont`, and reexport `TextStyle` from the weasel barrel (already done in Task 9 for the main weasel barrel; here we re-export from weasel-gl).
 
 - [ ] **Step 1: Update `index.ts`**
 
-Edit `packages/weasel-gl/src/index.ts` — append:
+Edit `packages/gl/src/index.ts` — append:
 
 ```ts
 export { registerFont } from './registerFont';
@@ -1866,13 +1866,13 @@ export type {
   BmFontKerning,
   FontEntry,
 } from './FontAtlas';
-export type { TextStyle } from '@orochi235/weasel';
+export type { TextStyle } from '@weasel-js/core';
 ```
 
 - [ ] **Step 2: Run tests**
 
 ```bash
-npm test -- packages/weasel-gl/src/index.test.ts
+npm test -- packages/gl/src/index.test.ts
 npm run typecheck
 ```
 
@@ -1881,7 +1881,7 @@ Expected: PASS, 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/index.ts
+git add packages/gl/src/index.ts
 git commit -m "feat(weasel-gl): barrel exports for registerFont + text types"
 ```
 
@@ -1890,7 +1890,7 @@ git commit -m "feat(weasel-gl): barrel exports for registerFont + text types"
 ## Task 13: Update `gen:font` to handle `@fontsource` WOFF2 input
 
 **Files:**
-- Modify: `packages/weasel-gl/scripts/gen-font.ts`
+- Modify: `packages/gl/scripts/gen-font.ts`
 
 `msdf-bmfont-xml` may not support WOFF2 natively. This task hardens the script to fall back to a font-format conversion step if the input is not a TTF/OTF.
 
@@ -1898,7 +1898,7 @@ This is a best-effort task: if `fonttools` (Python) is available, the script aut
 
 - [ ] **Step 1: Update `gen-font.ts` to detect WOFF2 and fail informatively**
 
-Edit `packages/weasel-gl/scripts/gen-font.ts` — replace the `execFileSync` block:
+Edit `packages/gl/scripts/gen-font.ts` — replace the `execFileSync` block:
 
 ```ts
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -1960,7 +1960,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/scripts/gen-font.ts
+git add packages/gl/scripts/gen-font.ts
 git commit -m "chore(weasel-gl): harden gen-font for WOFF2 input via fonttools"
 ```
 
@@ -1969,10 +1969,10 @@ git commit -m "chore(weasel-gl): harden gen-font for WOFF2 input via fonttools"
 ## Task 14: Playwright text smoke spec
 
 **Files:**
-- Create: `packages/weasel-gl/dev/text.html`
-- Create: `packages/weasel-gl/dev/text.ts`
-- Create: `packages/weasel-gl/dev/text.spec.ts`
-- Modify: `packages/weasel-gl/dev/playwright.config.ts` — extend `testMatch` to include `text.spec.ts`
+- Create: `packages/gl/dev/text.html`
+- Create: `packages/gl/dev/text.ts`
+- Create: `packages/gl/dev/text.spec.ts`
+- Modify: `packages/gl/dev/playwright.config.ts` — extend `testMatch` to include `text.spec.ts`
 
 > **Convention §1:** Unit tests with the GL recorder don't catch atlas sampling, texture binding, or smoothstep bugs. This smoke spec is the primary correctness verification.
 > **Convention §6:** `getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })` on every dev-page canvas.
@@ -1981,7 +1981,7 @@ This task verifies that `kind: 'text'` renders non-empty pixels at two font size
 
 - [ ] **Step 1: Create `text.html`**
 
-Create `packages/weasel-gl/dev/text.html`:
+Create `packages/gl/dev/text.html`:
 
 ```html
 <!doctype html>
@@ -2011,13 +2011,13 @@ Create `packages/weasel-gl/dev/text.html`:
 
 - [ ] **Step 2: Create `text.ts`**
 
-Create `packages/weasel-gl/dev/text.ts`:
+Create `packages/gl/dev/text.ts`:
 
 ```ts
 import { WeaselRenderer, registerFont } from '../src/index';
 import type { DrawCommand } from '../src/DrawCommand';
 
-const FONTS_BASE = '/packages/weasel-gl/fonts/inter';
+const FONTS_BASE = '/packages/gl/fonts/inter';
 
 async function main() {
   await registerFont('Inter', `${FONTS_BASE}/inter.json`, `${FONTS_BASE}/inter.png`);
@@ -2072,7 +2072,7 @@ main().catch(console.error);
 
 - [ ] **Step 3: Create `text.spec.ts`**
 
-Create `packages/weasel-gl/dev/text.spec.ts`:
+Create `packages/gl/dev/text.spec.ts`:
 
 ```ts
 import { test, expect } from '@playwright/test';
@@ -2087,7 +2087,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test('text smoke — Inter glyphs paint non-empty pixels at all sizes', async ({ page }) => {
-  await page.goto('/packages/weasel-gl/dev/text.html');
+  await page.goto('/packages/gl/dev/text.html');
   // Wait for font to load and canvases to render.
   await page.waitForFunction(() =>
     document.querySelector('p')?.textContent === 'Inter loaded.',
@@ -2118,7 +2118,7 @@ test('text smoke — Inter glyphs paint non-empty pixels at all sizes', async ({
 });
 
 test('text smoke — glyph region has higher alpha than background', async ({ page }) => {
-  await page.goto('/packages/weasel-gl/dev/text.html');
+  await page.goto('/packages/gl/dev/text.html');
   await page.waitForFunction(() =>
     document.querySelector('p')?.textContent === 'Inter loaded.',
   { timeout: 10_000 });
@@ -2151,7 +2151,7 @@ test('text smoke — glyph region has higher alpha than background', async ({ pa
 
 - [ ] **Step 4: Extend `playwright.config.ts` test match**
 
-Edit `packages/weasel-gl/dev/playwright.config.ts` — change `testMatch`:
+Edit `packages/gl/dev/playwright.config.ts` — change `testMatch`:
 
 ```ts
 testMatch: /(smoke|synthetic|text)\.spec\.ts/,
@@ -2162,19 +2162,19 @@ testMatch: /(smoke|synthetic|text)\.spec\.ts/,
 ```bash
 npm run test:smoke:step1
 # or equivalently:
-npx playwright test --config=packages/weasel-gl/dev/playwright.config.ts text.spec.ts
+npx playwright test --config=packages/gl/dev/playwright.config.ts text.spec.ts
 ```
 
-Expected: 2 tests PASS. If the atlas fetch fails (404), check that `packages/weasel-gl/fonts/inter/` contains `inter.json` and `inter.png` and that the Vite dev server can serve them (the vite config roots at repo root).
+Expected: 2 tests PASS. If the atlas fetch fails (404), check that `packages/gl/fonts/inter/` contains `inter.json` and `inter.png` and that the Vite dev server can serve them (the vite config roots at repo root).
 
-Also open `http://localhost:5173/packages/weasel-gl/dev/text.html` in a browser and visually verify:
+Also open `http://localhost:5173/packages/gl/dev/text.html` in a browser and visually verify:
 - Text is readable and crisp at all four sizes in `cZoom`.
 - No obvious artifacts (boxy aliasing = SDF threshold wrong; fully-black glyphs = atlas not loaded; transparent text = premultiply bug).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-gl/dev/text.html packages/weasel-gl/dev/text.ts packages/weasel-gl/dev/text.spec.ts packages/weasel-gl/dev/playwright.config.ts
+git add packages/gl/dev/text.html packages/gl/dev/text.ts packages/gl/dev/text.spec.ts packages/gl/dev/playwright.config.ts
 git commit -m "test(weasel-gl): text smoke spec — MSDF glyph pixel coverage"
 ```
 
@@ -2192,7 +2192,7 @@ git commit -m "test(weasel-gl): text smoke spec — MSDF glyph pixel coverage"
 grep gen:font package.json
 ```
 
-Expected: `"gen:font": "tsx packages/weasel-gl/scripts/gen-font.ts"`.
+Expected: `"gen:font": "tsx packages/gl/scripts/gen-font.ts"`.
 
 - [ ] **Step 2: Update roadmap**
 
@@ -2293,4 +2293,4 @@ float coverage = smoothstep(0.5 - aaWidth, 0.5 + aaWidth, sdfVal);
 
 4. **`gl.DYNAMIC_DRAW` for per-frame text vertex buffers.** Step 3 allocates a new `VBO`/`VAO` per `drawText` call and does not clean them up within the frame. This is a known inefficiency: for step 3's scope (smoke tests, not production demos), it's acceptable. Step 7 (port of `createTextLayer`) should introduce a dynamic buffer pool. Track this as a TODO comment in `drawText`.
 
-5. **`resolveTextStyle` import in `draw.ts`.** The `draw.ts` module imports `resolveTextStyle` from `@orochi235/weasel`. This is a cross-package value import, so vitest alias must be present. Convention §4 applies: verify the vitest alias for `@orochi235/weasel` exists in `vitest.config.ts` before running the draw tests (it should already be there from step 1).
+5. **`resolveTextStyle` import in `draw.ts`.** The `draw.ts` module imports `resolveTextStyle` from `@weasel-js/core`. This is a cross-package value import, so vitest alias must be present. Convention §4 applies: verify the vitest alias for `@weasel-js/core` exists in `vitest.config.ts` before running the draw tests (it should already be there from step 1).

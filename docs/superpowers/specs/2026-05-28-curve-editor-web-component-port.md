@@ -4,7 +4,7 @@
 
 ## Why
 
-CurveEditor is intended for "drop into arbitrary labs and one-off projects with whatever UI framework or none at all." Today it ships as a React component in `@orochi235/weasel-ui` — which means consumers either reach for React or pay R2WC's ~50KB React runtime tax per page.
+CurveEditor is intended for "drop into arbitrary labs and one-off projects with whatever UI framework or none at all." Today it ships as a React component in `@weasel-js/ui` — which means consumers either reach for React or pay R2WC's ~50KB React runtime tax per page.
 
 A native web component (`<curve-editor>`) lets consumers `<script src=…>` + drop the custom element anywhere — vanilla HTML, Vue, Svelte, static-site labs, internal admin tools. Bundle target: 10–20 KB minified+gzipped.
 
@@ -26,7 +26,7 @@ What needs rewriting is **just the React component itself** (`CurveEditor.tsx`, 
 
 Two implementations. Every CurveEditor feature lands twice. Sustainable only if API churn slows to ~monthly.
 
-- **Lit version**: `@orochi235/weasel-curve-editor` (new package). Registers `<curve-editor>`. Ships Lit (~5 KB) + component (~5-10 KB). Pure standalone widget.
+- **Lit version**: `@weasel-js/curve-editor` (new package). Registers `<curve-editor>`. Ships Lit (~5 KB) + component (~5-10 KB). Pure standalone widget.
 - **React version**: stays in `weasel-ui`. Used by apps/draw and React-based consumers.
 
 Sync discipline: changes to the shared math modules are free; changes to the rendering/interaction logic land in both files within the same PR.
@@ -64,7 +64,7 @@ Don't start until:
 ## Post-decision file map (Lit-only / Option B as the default starting point)
 
 ```
-packages/weasel-curve-editor/                # new package
+packages/curve-editor/                # new package
 ├── package.json                              # esm-only, "exports" entry, sideEffects: false
 ├── src/
 │   ├── index.ts                              # exports the custom element + registers on import
@@ -81,7 +81,7 @@ packages/weasel-curve-editor/                # new package
 
 ### Math module sharing
 
-Decision needed: copy the math modules into the new package (simple, slight duplication), or extract them into a shared `@orochi235/weasel-curve-math` package (clean, more packages to publish, version-coordination overhead).
+Decision needed: copy the math modules into the new package (simple, slight duplication), or extract them into a shared `@weasel-js/curve-math` package (clean, more packages to publish, version-coordination overhead).
 
 Recommendation: copy on day 1. If a third consumer emerges, extract then.
 
@@ -109,7 +109,7 @@ Recommendation: copy on day 1. If a third consumer emerges, extract then.
 Consumer usage:
 
 ```html
-<script type="module" src="https://unpkg.com/@orochi235/weasel-curve-editor"></script>
+<script type="module" src="https://unpkg.com/@weasel-js/curve-editor"></script>
 
 <curve-editor
   domain="1d"
@@ -130,7 +130,7 @@ Consumer usage:
 
 The Lit version uses Shadow DOM, which by default isolates the component from the host page's CSS. Three approaches to theming:
 
-1. **Inherit `--wzl-*` tokens via the cascade.** CSS custom properties DO pierce Shadow DOM. The custom element can consume `var(--wzl-fg)` etc., and the host page just needs to load `@orochi235/weasel-theme/tokens.css`. Works.
+1. **Inherit `--wzl-*` tokens via the cascade.** CSS custom properties DO pierce Shadow DOM. The custom element can consume `var(--wzl-fg)` etc., and the host page just needs to load `@weasel-js/theme/tokens.css`. Works.
 2. **Bake a default theme into the component.** Ship `tokens.css` inline as a `<style>` inside the Shadow Root. Works standalone with zero host-page setup. Override-able via the `--curve-*` vars at the custom element's host.
 3. **Expose a `theme` attribute.** `<curve-editor theme="light">` switches between built-in palettes. More opinionated, less flexible.
 
@@ -138,8 +138,8 @@ Recommendation: **#2 by default, with the `--wzl-*` tokens used internally**. Co
 
 ## Distribution
 
-- npm: `@orochi235/weasel-curve-editor`
-- CDN: `unpkg.com/@orochi235/weasel-curve-editor` (auto via npm publish)
+- npm: `@weasel-js/curve-editor`
+- CDN: `unpkg.com/@weasel-js/curve-editor` (auto via npm publish)
 - IIFE bundle for `<script src>` (no module needed): build a separate `dist/curve-editor.iife.js` via Vite's library mode
 - Targets: ES2020 (covers all modern browsers; no IE11 effort)
 

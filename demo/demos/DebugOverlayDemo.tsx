@@ -4,11 +4,11 @@ import {
   gridSnapStrategy,
   SceneCanvas,
   useScene,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type {
   DebugConfig,
   DebugFeature,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }

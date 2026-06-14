@@ -1,6 +1,6 @@
 # weasel docs
 
-Reference docs for `@orochi235/weasel`. The top-level
+Reference docs for `@weasel-js/core`. The top-level
 [README](../README.md) is the elevator pitch and install guide; these files
 go deeper.
 

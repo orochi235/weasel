@@ -8,10 +8,10 @@
  * The `<ColorDepBridge>` component (in App.tsx) registers the live source:
  *   useDepSource('color', () => colorContext)
  */
-import '@orochi235/weasel';
+import '@weasel-js/core';
 import type { ColorContextValue } from './ColorContextProvider';
 
-declare module '@orochi235/weasel' {
+declare module '@weasel-js/core' {
   interface DepSchema {
     color: ColorContextValue;
   }

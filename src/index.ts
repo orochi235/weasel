@@ -1,5 +1,5 @@
 /**
- * @orochi235/weasel — domain-agnostic 2D scene-graph primitives for React +
+ * @weasel-js/core — domain-agnostic 2D scene-graph primitives for React +
  * canvas apps. A scene is a tree of `SceneNode`s; the kit makes no assumption
  * about a node's payload beyond `{ id }`. Pose shape is generic, units are
  * pluggable, and every interaction is wired through a narrow adapter the
@@ -47,9 +47,9 @@
  * Per-hook subpath imports: `snapToGrid` exists for move, resize, and insert
  * with different return shapes. Import from the hook-specific subpath to pick
  * the right one:
- *   import { snapToGrid } from '@orochi235/weasel/move';
- *   import { snapToGrid, clampMinSize } from '@orochi235/weasel/resize';
- *   import { snapToGrid } from '@orochi235/weasel/insert';
+ *   import { snapToGrid } from '@weasel-js/core/move';
+ *   import { snapToGrid, clampMinSize } from '@weasel-js/core/resize';
+ *   import { snapToGrid } from '@weasel-js/core/insert';
  */
 
 // ─── Features: grids, multi-viewport composition ────────────────────────────
@@ -206,7 +206,7 @@ export { usePointerGestures } from './interactions/gestures/usePointerGestures';
 export * from './tools';
 export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/pinchZoom';
 // New declarative routing surface — experimental.
-// import { defineTool } from '@orochi235/weasel/routing';
+// import { defineTool } from '@weasel-js/core/routing';
 export * as routing from './tools/routing';
 export type {
   PointerGestureBindings,
@@ -536,7 +536,7 @@ export type { RectPose } from './features/groups/unionBounds';
 export { withGroupOrdering } from './features/groups/orderedGroups';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────
-export * from '@orochi235/weasel-history';
+export * from '@weasel-js/history';
 
 // ─── Adapters: contract types + reference arrayAdapter ──────────────────────
 export * from './core/adapters/types';

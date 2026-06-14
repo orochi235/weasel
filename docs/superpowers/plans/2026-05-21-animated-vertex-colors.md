@@ -1642,7 +1642,7 @@ Notes for the implementer:
     cycleVertexColors,
     staggerVertexColors,
     type CycleHandle,
-  } from '@orochi235/weasel';
+  } from '@weasel-js/core';
   ```
 
 - [ ] **Step 4: Verify the demo loads in the dev server**

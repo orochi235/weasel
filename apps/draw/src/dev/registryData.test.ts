@@ -6,7 +6,7 @@ import {
   collectOpFactories,
   collectShapeTrait,
 } from './registryData';
-import { defaultNodeRouting, type NodeRoutingEntry } from '@orochi235/weasel';
+import { defaultNodeRouting, type NodeRoutingEntry } from '@weasel-js/core';
 
 describe('registryData static collectors', () => {
   it('collectIcons returns named entries for action and kind icons', () => {

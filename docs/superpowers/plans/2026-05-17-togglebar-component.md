@@ -2,24 +2,24 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship `ToggleBar` in `@orochi235/weasel-ui` — a segmented control that supports single-select, multi-select, and (via 2-segment single) boolean, sharing `RangePicker`'s frosted-glass aesthetic.
+**Goal:** Ship `ToggleBar` in `@weasel-js/ui` — a segmented control that supports single-select, multi-select, and (via 2-segment single) boolean, sharing `RangePicker`'s frosted-glass aesthetic.
 
-**Architecture:** Single component in `packages/weasel-ui/src/components/ToggleBar/`. Mode discriminated union (`'single' | 'multiple'`). Controlled only. Per-segment frosted fill (no sliding thumb). CSS variables (`--wzl-track-*`, `--wzl-thumb-*`, `--wzl-accent`, `--wzl-tb-height`) shared with `RangePicker`.
+**Architecture:** Single component in `packages/ui/src/components/ToggleBar/`. Mode discriminated union (`'single' | 'multiple'`). Controlled only. Per-segment frosted fill (no sliding thumb). CSS variables (`--wzl-track-*`, `--wzl-thumb-*`, `--wzl-accent`, `--wzl-tb-height`) shared with `RangePicker`.
 
 **Tech Stack:** React 18, TypeScript, CSS Modules, Vitest + Testing Library, Storybook (vite).
 
 **Spec:** `docs/superpowers/specs/2026-05-17-togglebar-component-design.md`
 
-**Reference:** `packages/weasel-ui/src/components/RangePicker/` — copy patterns from `RangePicker.tsx`, `.module.css`, `.test.tsx`, `.stories.tsx`, `index.ts`.
+**Reference:** `packages/ui/src/components/RangePicker/` — copy patterns from `RangePicker.tsx`, `.module.css`, `.test.tsx`, `.stories.tsx`, `index.ts`.
 
 ---
 
 ### Task 1: Scaffold files with types and empty render
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/ToggleBar/ToggleBar.tsx`
-- Create: `packages/weasel-ui/src/components/ToggleBar/ToggleBar.module.css`
-- Create: `packages/weasel-ui/src/components/ToggleBar/index.ts`
+- Create: `packages/ui/src/components/ToggleBar/ToggleBar.tsx`
+- Create: `packages/ui/src/components/ToggleBar/ToggleBar.module.css`
+- Create: `packages/ui/src/components/ToggleBar/index.ts`
 
 - [ ] **Step 1: Create `ToggleBar.module.css` with the root container shell**
 
@@ -268,13 +268,13 @@ export type { ToggleBarItem, ToggleBarProps } from './ToggleBar';
 
 - [ ] **Step 4: Typecheck**
 
-Run: `cd packages/weasel-ui && npx tsc --noEmit`
+Run: `cd packages/ui && npx tsc --noEmit`
 Expected: PASS (no errors).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToggleBar/
+git add packages/ui/src/components/ToggleBar/
 git commit -m "feat(weasel-ui): scaffold ToggleBar component"
 ```
 
@@ -283,7 +283,7 @@ git commit -m "feat(weasel-ui): scaffold ToggleBar component"
 ### Task 2: Single-mode rendering + click tests
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/ToggleBar/ToggleBar.test.tsx`
+- Create: `packages/ui/src/components/ToggleBar/ToggleBar.test.tsx`
 
 - [ ] **Step 1: Write failing tests for single-mode render and click**
 
@@ -352,13 +352,13 @@ describe('ToggleBar single mode', () => {
 
 - [ ] **Step 2: Run tests, verify they pass**
 
-Run: `cd packages/weasel-ui && npx vitest run src/components/ToggleBar/ToggleBar.test.tsx`
+Run: `cd packages/ui && npx vitest run src/components/ToggleBar/ToggleBar.test.tsx`
 Expected: 5 tests PASS (implementation from Task 1 already covers these).
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToggleBar/ToggleBar.test.tsx
+git add packages/ui/src/components/ToggleBar/ToggleBar.test.tsx
 git commit -m "test(weasel-ui): cover ToggleBar single-mode rendering and click"
 ```
 
@@ -367,7 +367,7 @@ git commit -m "test(weasel-ui): cover ToggleBar single-mode rendering and click"
 ### Task 3: Multi-mode tests
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/ToggleBar/ToggleBar.test.tsx`
+- Modify: `packages/ui/src/components/ToggleBar/ToggleBar.test.tsx`
 
 - [ ] **Step 1: Append multi-mode tests**
 
@@ -412,13 +412,13 @@ describe('ToggleBar multiple mode', () => {
 
 - [ ] **Step 2: Run tests, verify they pass**
 
-Run: `cd packages/weasel-ui && npx vitest run src/components/ToggleBar/ToggleBar.test.tsx`
+Run: `cd packages/ui && npx vitest run src/components/ToggleBar/ToggleBar.test.tsx`
 Expected: all tests PASS (8 total).
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToggleBar/ToggleBar.test.tsx
+git add packages/ui/src/components/ToggleBar/ToggleBar.test.tsx
 git commit -m "test(weasel-ui): cover ToggleBar multi-mode toggle behavior"
 ```
 
@@ -427,7 +427,7 @@ git commit -m "test(weasel-ui): cover ToggleBar multi-mode toggle behavior"
 ### Task 4: Keyboard navigation tests
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/ToggleBar/ToggleBar.test.tsx`
+- Modify: `packages/ui/src/components/ToggleBar/ToggleBar.test.tsx`
 
 - [ ] **Step 1: Append keyboard tests**
 
@@ -507,13 +507,13 @@ describe('ToggleBar keyboard — multiple mode', () => {
 
 - [ ] **Step 2: Run tests, verify they pass**
 
-Run: `cd packages/weasel-ui && npx vitest run src/components/ToggleBar/ToggleBar.test.tsx`
+Run: `cd packages/ui && npx vitest run src/components/ToggleBar/ToggleBar.test.tsx`
 Expected: all tests PASS (14 total).
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToggleBar/ToggleBar.test.tsx
+git add packages/ui/src/components/ToggleBar/ToggleBar.test.tsx
 git commit -m "test(weasel-ui): cover ToggleBar keyboard navigation"
 ```
 
@@ -522,7 +522,7 @@ git commit -m "test(weasel-ui): cover ToggleBar keyboard navigation"
 ### Task 5: Disabled segment tests
 
 **Files:**
-- Modify: `packages/weasel-ui/src/components/ToggleBar/ToggleBar.test.tsx`
+- Modify: `packages/ui/src/components/ToggleBar/ToggleBar.test.tsx`
 
 - [ ] **Step 1: Append disabled tests**
 
@@ -558,13 +558,13 @@ describe('ToggleBar disabled segments', () => {
 
 - [ ] **Step 2: Run tests, verify they pass**
 
-Run: `cd packages/weasel-ui && npx vitest run src/components/ToggleBar/ToggleBar.test.tsx`
+Run: `cd packages/ui && npx vitest run src/components/ToggleBar/ToggleBar.test.tsx`
 Expected: all tests PASS (16 total).
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToggleBar/ToggleBar.test.tsx
+git add packages/ui/src/components/ToggleBar/ToggleBar.test.tsx
 git commit -m "test(weasel-ui): cover ToggleBar disabled segment handling"
 ```
 
@@ -573,7 +573,7 @@ git commit -m "test(weasel-ui): cover ToggleBar disabled segment handling"
 ### Task 6: Storybook stories
 
 **Files:**
-- Create: `packages/weasel-ui/src/components/ToggleBar/ToggleBar.stories.tsx`
+- Create: `packages/ui/src/components/ToggleBar/ToggleBar.stories.tsx`
 
 - [ ] **Step 1: Write stories**
 
@@ -671,13 +671,13 @@ export const AllowDeselect: Story = {
 
 - [ ] **Step 2: Typecheck**
 
-Run: `cd packages/weasel-ui && npx tsc --noEmit`
+Run: `cd packages/ui && npx tsc --noEmit`
 Expected: PASS.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/components/ToggleBar/ToggleBar.stories.tsx
+git add packages/ui/src/components/ToggleBar/ToggleBar.stories.tsx
 git commit -m "docs(weasel-ui): add ToggleBar stories"
 ```
 
@@ -686,11 +686,11 @@ git commit -m "docs(weasel-ui): add ToggleBar stories"
 ### Task 7: Export from package barrel
 
 **Files:**
-- Modify: `packages/weasel-ui/src/index.ts`
+- Modify: `packages/ui/src/index.ts`
 
 - [ ] **Step 1: Add the export line**
 
-Open `packages/weasel-ui/src/index.ts`. After the line `export * from './components/RangePicker';`, add:
+Open `packages/ui/src/index.ts`. After the line `export * from './components/RangePicker';`, add:
 
 ```ts
 export * from './components/ToggleBar';
@@ -698,13 +698,13 @@ export * from './components/ToggleBar';
 
 - [ ] **Step 2: Verify package builds**
 
-Run: `cd packages/weasel-ui && npx tsc --noEmit && npx vitest run`
+Run: `cd packages/ui && npx tsc --noEmit && npx vitest run`
 Expected: typecheck PASS, all tests PASS.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/src/index.ts
+git add packages/ui/src/index.ts
 git commit -m "feat(weasel-ui): export ToggleBar from package barrel"
 ```
 
@@ -716,7 +716,7 @@ git commit -m "feat(weasel-ui): export ToggleBar from package barrel"
 
 - [ ] **Step 1: Start the weasel-ui storybook dev server**
 
-Run: `cd packages/weasel-ui && npm run storybook` (or whatever script exists in `package.json`; check first if unsure with `cat packages/weasel-ui/package.json | grep -A1 storybook`)
+Run: `cd packages/ui && npm run storybook` (or whatever script exists in `package.json`; check first if unsure with `cat packages/ui/package.json | grep -A1 storybook`)
 
 - [ ] **Step 2: Open `weasel-ui/ToggleBar` in the browser**
 
@@ -741,12 +741,12 @@ No commit for this task — verification only.
 
 - [ ] **Step 1: Run full package checks**
 
-Run: `cd packages/weasel-ui && npx tsc --noEmit && npx vitest run`
+Run: `cd packages/ui && npx tsc --noEmit && npx vitest run`
 Expected: both PASS with no warnings.
 
 - [ ] **Step 2: Run the repo's prepublish gate** (per CLAUDE.md memory: matches CI's release gate)
 
-Run: `cd packages/weasel-ui && npm run prepublishOnly` (or, if no script: `npx tsc --noEmit && npx vitest run && npx tsup build`).
+Run: `cd packages/ui && npm run prepublishOnly` (or, if no script: `npx tsc --noEmit && npx vitest run && npx tsup build`).
 Expected: PASS.
 
 - [ ] **Step 3: Confirm git log shows the expected feature commits**

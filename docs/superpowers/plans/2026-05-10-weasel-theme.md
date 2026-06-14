@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Stand up `@orochi235/weasel-theme` as the canonical home for design tokens. Rename the `--wui-*` CSS namespace to `--wzl-*` across weasel-ui's components. Add four button-state tokens. Have weasel-hud read tokens from `getComputedStyle(canvasEl)` per draw, with `DEFAULT_TOKENS` as fallback, so widgets pick up live CSS theme changes without machinery.
+**Goal:** Stand up `@weasel-js/theme` as the canonical home for design tokens. Rename the `--wui-*` CSS namespace to `--wzl-*` across weasel-ui's components. Add four button-state tokens. Have weasel-hud read tokens from `getComputedStyle(canvasEl)` per draw, with `DEFAULT_TOKENS` as fallback, so widgets pick up live CSS theme changes without machinery.
 
 **Architecture:** Five stages. Stage 1 creates the new `weasel-theme` package (CSS + parallel TS source). Stage 2 migrates weasel-ui to the new namespace and deletes its now-redundant `tokens.css`. Stage 3 builds the HUD's token-resolution module and extends `HudDrawCtx`. Stage 4 refactors `label` and `button` widgets to read defaults from `ctx.tokens` instead of hardcoded constants. Stage 5 adds the end-to-end integration test and prunes stale references.
 
@@ -14,47 +14,47 @@
 
 ## File Structure
 
-**Stage 1 — Scaffold `packages/weasel-theme/`**
-- Create: `packages/weasel-theme/package.json`
-- Create: `packages/weasel-theme/tsconfig.json`
-- Create: `packages/weasel-theme/README.md`
-- Create: `packages/weasel-theme/src/tokens.ts`
-- Create: `packages/weasel-theme/src/tokens.css`
-- Create: `packages/weasel-theme/src/index.ts`
-- Create: `packages/weasel-theme/src/tokens.test.ts`
+**Stage 1 — Scaffold `packages/theme/`**
+- Create: `packages/theme/package.json`
+- Create: `packages/theme/tsconfig.json`
+- Create: `packages/theme/README.md`
+- Create: `packages/theme/src/tokens.ts`
+- Create: `packages/theme/src/tokens.css`
+- Create: `packages/theme/src/index.ts`
+- Create: `packages/theme/src/tokens.test.ts`
 - Modify: `tsconfig.json` (root) — add path alias + `include` entry
-- Modify: `vite.config.ts` (root) — add resolve alias for `@orochi235/weasel-theme` + `@orochi235/weasel-theme/tokens.css`
+- Modify: `vite.config.ts` (root) — add resolve alias for `@weasel-js/theme` + `@weasel-js/theme/tokens.css`
 - Modify: `vitest.config.ts` — same aliases
 - Modify: `apps/swillustrator/vite.config.ts` — same aliases
 
 **Stage 2 — Migrate weasel-ui to the new namespace**
-- Modify: `packages/weasel-ui/src/PropertiesPanel.module.css` — rename 24 `--wui-*` → `--wzl-*`
-- Modify: `packages/weasel-ui/src/RangePicker.module.css` — rename 10
-- Modify: `packages/weasel-ui/src/CommandPalette.module.css` — rename 21
-- Modify: `packages/weasel-ui/src/paintGradientTrack.tsx` — rename 2 string refs
-- Modify: `apps/swillustrator/src/App.tsx` — change `@orochi235/weasel-ui/tokens.css` import to `@orochi235/weasel-theme/tokens.css`
+- Modify: `packages/ui/src/PropertiesPanel.module.css` — rename 24 `--wui-*` → `--wzl-*`
+- Modify: `packages/ui/src/RangePicker.module.css` — rename 10
+- Modify: `packages/ui/src/CommandPalette.module.css` — rename 21
+- Modify: `packages/ui/src/paintGradientTrack.tsx` — rename 2 string refs
+- Modify: `apps/swillustrator/src/App.tsx` — change `@weasel-js/ui/tokens.css` import to `@weasel-js/theme/tokens.css`
 - Modify: `demo/canvas-kit-demo.css` — rename 13
 - Modify: `apps/swillustrator/src/swillustrator.css` — rename 7
-- Modify: `packages/weasel-ui/package.json` — remove `./tokens.css` from `exports`
-- Delete: `packages/weasel-ui/src/tokens.css`
-- Modify: `vite.config.ts`, `vitest.config.ts`, `apps/swillustrator/vite.config.ts` — remove the old `@orochi235/weasel-ui/tokens.css` alias
+- Modify: `packages/ui/package.json` — remove `./tokens.css` from `exports`
+- Delete: `packages/ui/src/tokens.css`
+- Modify: `vite.config.ts`, `vitest.config.ts`, `apps/swillustrator/vite.config.ts` — remove the old `@weasel-js/ui/tokens.css` alias
 
 **Stage 3 — Token resolution in weasel-hud**
-- Create: `packages/weasel-hud/src/theme.ts` — `ResolvedTokens` type + `readTokens()` function
-- Create: `packages/weasel-hud/src/theme.test.ts`
-- Modify: `packages/weasel-hud/src/widget.ts` — add `tokens: ResolvedTokens` to `HudDrawCtx`
-- Modify: `packages/weasel-hud/src/attach.ts` — `draw()` calls `readTokens(api.element)` and packs result into ctx
-- Modify: `packages/weasel-hud/src/index.ts` — re-export `ResolvedTokens`, `readTokens`
-- Modify: `packages/weasel-hud/package.json` — add `@orochi235/weasel-theme` to peerDependencies (or dependencies — see Task 3.1)
+- Create: `packages/hud/src/theme.ts` — `ResolvedTokens` type + `readTokens()` function
+- Create: `packages/hud/src/theme.test.ts`
+- Modify: `packages/hud/src/widget.ts` — add `tokens: ResolvedTokens` to `HudDrawCtx`
+- Modify: `packages/hud/src/attach.ts` — `draw()` calls `readTokens(api.element)` and packs result into ctx
+- Modify: `packages/hud/src/index.ts` — re-export `ResolvedTokens`, `readTokens`
+- Modify: `packages/hud/package.json` — add `@weasel-js/theme` to peerDependencies (or dependencies — see Task 3.1)
 
 **Stage 4 — Widget integration**
-- Modify: `packages/weasel-hud/src/widgets/label.ts` + `label.test.ts` — read `ctx.tokens.text` when color omitted
-- Modify: `packages/weasel-hud/src/widgets/text.ts` + `text.test.ts` — same fallback for opts.color
-- Modify: `packages/weasel-hud/src/widgets/button.ts` + `button.test.ts` — read four button tokens when corresponding opts omitted
+- Modify: `packages/hud/src/widgets/label.ts` + `label.test.ts` — read `ctx.tokens.text` when color omitted
+- Modify: `packages/hud/src/widgets/text.ts` + `text.test.ts` — same fallback for opts.color
+- Modify: `packages/hud/src/widgets/button.ts` + `button.test.ts` — read four button tokens when corresponding opts omitted
 
 **Stage 5 — Integration test + cleanup**
-- Modify: `packages/weasel-hud/src/integration.test.tsx` — add a CSS-variable end-to-end test
-- Modify: `packages/weasel-ui/README.md` — mention that tokens have moved to weasel-theme
+- Modify: `packages/hud/src/integration.test.tsx` — add a CSS-variable end-to-end test
+- Modify: `packages/ui/README.md` — mention that tokens have moved to weasel-theme
 
 ---
 
@@ -64,13 +64,13 @@ These files contain `--wui-*` references that all become `--wzl-*`:
 
 | File | Count |
 |---|---|
-| `packages/weasel-ui/src/PropertiesPanel.module.css` | 24 |
-| `packages/weasel-ui/src/CommandPalette.module.css` | 21 |
-| `packages/weasel-ui/src/RangePicker.module.css` | 10 |
-| `packages/weasel-ui/src/tokens.css` | 12 (file gets DELETED in Stage 2) |
+| `packages/ui/src/PropertiesPanel.module.css` | 24 |
+| `packages/ui/src/CommandPalette.module.css` | 21 |
+| `packages/ui/src/RangePicker.module.css` | 10 |
+| `packages/ui/src/tokens.css` | 12 (file gets DELETED in Stage 2) |
 | `demo/canvas-kit-demo.css` | 13 |
 | `apps/swillustrator/src/swillustrator.css` | 7 |
-| `packages/weasel-ui/src/paintGradientTrack.tsx` | 2 (JS string literals — `getPropertyValue('--wui-…')` calls) |
+| `packages/ui/src/paintGradientTrack.tsx` | 2 (JS string literals — `getPropertyValue('--wui-…')` calls) |
 | **Total to migrate** | **77 references across 6 files** |
 
 (`tokens.css` deletion isn't counted as a migration — it's a removal.)
@@ -84,22 +84,22 @@ The migration is a single mechanical find/replace: `--wui-` → `--wzl-` everywh
 ### Task 1.1: Create the package skeleton
 
 **Files:**
-- Create: `packages/weasel-theme/package.json`
-- Create: `packages/weasel-theme/tsconfig.json`
-- Create: `packages/weasel-theme/README.md`
-- Create: `packages/weasel-theme/src/index.ts`
+- Create: `packages/theme/package.json`
+- Create: `packages/theme/tsconfig.json`
+- Create: `packages/theme/README.md`
+- Create: `packages/theme/src/index.ts`
 
 - [ ] **Step 1: Create the package directory**
 
 ```bash
-mkdir -p packages/weasel-theme/src
+mkdir -p packages/theme/src
 ```
 
 - [ ] **Step 2: Write `package.json`**
 
 ```json
 {
-  "name": "@orochi235/weasel-theme",
+  "name": "@weasel-js/theme",
   "version": "0.0.0",
   "private": true,
   "description": "Design tokens shared by weasel-ui and weasel-hud — CSS variables + a parallel TS export.",
@@ -138,14 +138,14 @@ mkdir -p packages/weasel-theme/src
 ```markdown
 # weasel-theme
 
-Design tokens shared by `@orochi235/weasel-ui` (DOM/React widgets) and
-`@orochi235/weasel-hud` (WebGL widgets). Single namespace: `--wzl-*`.
+Design tokens shared by `@weasel-js/ui` (DOM/React widgets) and
+`@weasel-js/hud` (WebGL widgets). Single namespace: `--wzl-*`.
 
 ## Usage
 
 ```ts
 // In your app shell, import the CSS for default values:
-import '@orochi235/weasel-theme/tokens.css';
+import '@weasel-js/theme/tokens.css';
 ```
 
 Override individual tokens at any DOM level:
@@ -164,13 +164,13 @@ the same values as a typed object for fallback when CSS isn't loaded.
 
 `tokens.ts` and `tokens.css` are maintained side-by-side. The parity test
 in `tokens.test.ts` catches drift between them. If you edit one, edit
-the other and run `pnpm exec vitest run packages/weasel-theme/`.
+the other and run `pnpm exec vitest run packages/theme/`.
 ```
 
 - [ ] **Step 5: Create the (empty) barrel**
 
 ```ts
-// packages/weasel-theme/src/index.ts
+// packages/theme/src/index.ts
 export { DEFAULT_TOKENS, type TokenName } from './tokens';
 ```
 
@@ -179,7 +179,7 @@ export { DEFAULT_TOKENS, type TokenName } from './tokens';
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-theme/
+git add packages/theme/
 git commit -m "feat(weasel-theme): package skeleton"
 ```
 
@@ -188,8 +188,8 @@ git commit -m "feat(weasel-theme): package skeleton"
 ### Task 1.2: Write the token source modules
 
 **Files:**
-- Create: `packages/weasel-theme/src/tokens.ts`
-- Create: `packages/weasel-theme/src/tokens.css`
+- Create: `packages/theme/src/tokens.ts`
+- Create: `packages/theme/src/tokens.css`
 
 - [ ] **Step 1: Write `tokens.css`**
 
@@ -220,7 +220,7 @@ git commit -m "feat(weasel-theme): package skeleton"
 - [ ] **Step 2: Write `tokens.ts`**
 
 ```ts
-// packages/weasel-theme/src/tokens.ts
+// packages/theme/src/tokens.ts
 /**
  * Source of truth for token default values. Mirrors tokens.css exactly,
  * with var(--*) references resolved to their literal target value (TS
@@ -260,7 +260,7 @@ Expected: clean.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-theme/src/tokens.ts packages/weasel-theme/src/tokens.css
+git add packages/theme/src/tokens.ts packages/theme/src/tokens.css
 git commit -m "feat(weasel-theme): token source modules (CSS + TS)"
 ```
 
@@ -269,12 +269,12 @@ git commit -m "feat(weasel-theme): token source modules (CSS + TS)"
 ### Task 1.3: Parity test
 
 **Files:**
-- Create: `packages/weasel-theme/src/tokens.test.ts`
+- Create: `packages/theme/src/tokens.test.ts`
 
 - [ ] **Step 1: Write the test**
 
 ```ts
-// packages/weasel-theme/src/tokens.test.ts
+// packages/theme/src/tokens.test.ts
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -299,28 +299,28 @@ describe('weasel-theme tokens', () => {
 In `tsconfig.json` (project root), find the `paths` block and append:
 
 ```json
-"@orochi235/weasel-theme": ["./packages/weasel-theme/src/index.ts"],
-"@orochi235/weasel-theme/tokens.css": ["./packages/weasel-theme/src/tokens.css"]
+"@weasel-js/theme": ["./packages/theme/src/index.ts"],
+"@weasel-js/theme/tokens.css": ["./packages/theme/src/tokens.css"]
 ```
 
-And in the `include` array, add `"packages/weasel-theme/src"`:
+And in the `include` array, add `"packages/theme/src"`:
 
 ```json
-"include": ["src", "demo", "apps", "packages/weasel-ui/src", "packages/weasel-hud/src", "packages/weasel-theme/src"]
+"include": ["src", "demo", "apps", "packages/ui/src", "packages/hud/src", "packages/theme/src"]
 ```
 
 - [ ] **Step 3: Update `vite.config.ts` resolve aliases**
 
-Find the `alias` array in `vite.config.ts` and add (near the other `@orochi235/weasel-*` entries):
+Find the `alias` array in `vite.config.ts` and add (near the other `@weasel-js/*` entries):
 
 ```ts
 {
-  find: '@orochi235/weasel-theme/tokens.css',
-  replacement: resolve(__dirname, 'packages/weasel-theme/src/tokens.css'),
+  find: '@weasel-js/theme/tokens.css',
+  replacement: resolve(__dirname, 'packages/theme/src/tokens.css'),
 },
 {
-  find: '@orochi235/weasel-theme',
-  replacement: resolve(__dirname, 'packages/weasel-theme/src/index.ts'),
+  find: '@weasel-js/theme',
+  replacement: resolve(__dirname, 'packages/theme/src/index.ts'),
 },
 ```
 
@@ -334,19 +334,19 @@ Same additions in `apps/swillustrator/vite.config.ts`'s `alias` array (note: pat
 
 ```ts
 {
-  find: '@orochi235/weasel-theme/tokens.css',
-  replacement: resolve(repoRoot, 'packages/weasel-theme/src/tokens.css'),
+  find: '@weasel-js/theme/tokens.css',
+  replacement: resolve(repoRoot, 'packages/theme/src/tokens.css'),
 },
 {
-  find: '@orochi235/weasel-theme',
-  replacement: resolve(repoRoot, 'packages/weasel-theme/src/index.ts'),
+  find: '@weasel-js/theme',
+  replacement: resolve(repoRoot, 'packages/theme/src/index.ts'),
 },
 ```
 
 - [ ] **Step 6: Run the parity test**
 
 ```bash
-pnpm exec vitest run packages/weasel-theme/
+pnpm exec vitest run packages/theme/
 ```
 
 Expected: PASS.
@@ -362,7 +362,7 @@ Expected: same baseline as before this stage (1952 passing + 1 pre-existing fail
 - [ ] **Step 8: Commit**
 
 ```bash
-git add packages/weasel-theme/src/tokens.test.ts tsconfig.json vite.config.ts vitest.config.ts apps/swillustrator/vite.config.ts
+git add packages/theme/src/tokens.test.ts tsconfig.json vite.config.ts vitest.config.ts apps/swillustrator/vite.config.ts
 git commit -m "test(weasel-theme): parity check between CSS and TS exports; wire path aliases"
 ```
 
@@ -375,10 +375,10 @@ Mechanical rename + one path update. Single commit because the migration must la
 ### Task 2.1: Rename `--wui-` → `--wzl-` across all CSS / TSX / CSS-in-demo references
 
 **Files:** (rename `--wui-` → `--wzl-` in each)
-- Modify: `packages/weasel-ui/src/PropertiesPanel.module.css`
-- Modify: `packages/weasel-ui/src/CommandPalette.module.css`
-- Modify: `packages/weasel-ui/src/RangePicker.module.css`
-- Modify: `packages/weasel-ui/src/paintGradientTrack.tsx`
+- Modify: `packages/ui/src/PropertiesPanel.module.css`
+- Modify: `packages/ui/src/CommandPalette.module.css`
+- Modify: `packages/ui/src/RangePicker.module.css`
+- Modify: `packages/ui/src/paintGradientTrack.tsx`
 - Modify: `demo/canvas-kit-demo.css`
 - Modify: `apps/swillustrator/src/swillustrator.css`
 
@@ -388,7 +388,7 @@ Mechanical rename + one path update. Single commit because the migration must la
 grep -rn '\-\-wui-' --include='*.ts' --include='*.tsx' --include='*.css' --include='*.json' --include='*.md' . 2>/dev/null | grep -v node_modules | grep -v dist
 ```
 
-Expected: lists exactly the 6 files above, plus `packages/weasel-ui/src/tokens.css` (which is deleted in 2.2). No other matches.
+Expected: lists exactly the 6 files above, plus `packages/ui/src/tokens.css` (which is deleted in 2.2). No other matches.
 
 If there are extras (e.g., a README mentioning `--wui-`), include them in this rename.
 
@@ -398,10 +398,10 @@ The rename is `--wui-` → `--wzl-` literally. Use:
 
 ```bash
 for f in \
-  packages/weasel-ui/src/PropertiesPanel.module.css \
-  packages/weasel-ui/src/CommandPalette.module.css \
-  packages/weasel-ui/src/RangePicker.module.css \
-  packages/weasel-ui/src/paintGradientTrack.tsx \
+  packages/ui/src/PropertiesPanel.module.css \
+  packages/ui/src/CommandPalette.module.css \
+  packages/ui/src/RangePicker.module.css \
+  packages/ui/src/paintGradientTrack.tsx \
   demo/canvas-kit-demo.css \
   apps/swillustrator/src/swillustrator.css; do
   sed -i '' 's/--wui-/--wzl-/g' "$f"
@@ -414,10 +414,10 @@ done
 
 ```bash
 grep -c '\-\-wui-' \
-  packages/weasel-ui/src/PropertiesPanel.module.css \
-  packages/weasel-ui/src/CommandPalette.module.css \
-  packages/weasel-ui/src/RangePicker.module.css \
-  packages/weasel-ui/src/paintGradientTrack.tsx \
+  packages/ui/src/PropertiesPanel.module.css \
+  packages/ui/src/CommandPalette.module.css \
+  packages/ui/src/RangePicker.module.css \
+  packages/ui/src/paintGradientTrack.tsx \
   demo/canvas-kit-demo.css \
   apps/swillustrator/src/swillustrator.css
 ```
@@ -428,10 +428,10 @@ Expected: 0 for every file.
 
 ```bash
 grep -c '\-\-wzl-' \
-  packages/weasel-ui/src/PropertiesPanel.module.css \
-  packages/weasel-ui/src/CommandPalette.module.css \
-  packages/weasel-ui/src/RangePicker.module.css \
-  packages/weasel-ui/src/paintGradientTrack.tsx \
+  packages/ui/src/PropertiesPanel.module.css \
+  packages/ui/src/CommandPalette.module.css \
+  packages/ui/src/RangePicker.module.css \
+  packages/ui/src/paintGradientTrack.tsx \
   demo/canvas-kit-demo.css \
   apps/swillustrator/src/swillustrator.css
 ```
@@ -445,18 +445,18 @@ Expected: 24 / 21 / 10 / 2 / 13 / 7 (in order; matches the inventory table above
 ### Task 2.2: Delete weasel-ui's tokens.css and update its package.json + swillustrator import
 
 **Files:**
-- Delete: `packages/weasel-ui/src/tokens.css`
-- Modify: `packages/weasel-ui/package.json` — remove `./tokens.css` export entry
-- Modify: `apps/swillustrator/src/App.tsx:41` — change `@orochi235/weasel-ui/tokens.css` to `@orochi235/weasel-theme/tokens.css`
-- Modify: `vite.config.ts` — remove the `@orochi235/weasel-ui/tokens.css` alias (added in Stage 1 → 1.3 we added the new `weasel-theme/tokens.css` alias; the OLD weasel-ui one stays only until this task)
+- Delete: `packages/ui/src/tokens.css`
+- Modify: `packages/ui/package.json` — remove `./tokens.css` export entry
+- Modify: `apps/swillustrator/src/App.tsx:41` — change `@weasel-js/ui/tokens.css` to `@weasel-js/theme/tokens.css`
+- Modify: `vite.config.ts` — remove the `@weasel-js/ui/tokens.css` alias (added in Stage 1 → 1.3 we added the new `weasel-theme/tokens.css` alias; the OLD weasel-ui one stays only until this task)
 
 - [ ] **Step 1: Delete the old tokens.css**
 
 ```bash
-git rm packages/weasel-ui/src/tokens.css
+git rm packages/ui/src/tokens.css
 ```
 
-- [ ] **Step 2: Update `packages/weasel-ui/package.json`**
+- [ ] **Step 2: Update `packages/ui/package.json`**
 
 Read the file. Find the `exports` block. Remove the `"./tokens.css": "./src/tokens.css"` entry. The block should look like (preserve the existing `.` and `./package.json` entries):
 
@@ -475,27 +475,27 @@ Read the file. Find the `exports` block. Remove the `"./tokens.css": "./src/toke
 Find the line (around 41):
 
 ```ts
-import '@orochi235/weasel-ui/tokens.css';
+import '@weasel-js/ui/tokens.css';
 ```
 
 Replace with:
 
 ```ts
-import '@orochi235/weasel-theme/tokens.css';
+import '@weasel-js/theme/tokens.css';
 ```
 
-- [ ] **Step 4: Remove the old `@orochi235/weasel-ui/tokens.css` alias**
+- [ ] **Step 4: Remove the old `@weasel-js/ui/tokens.css` alias**
 
 In `vite.config.ts`, find the alias entry:
 
 ```ts
 {
-  find: '@orochi235/weasel-ui/tokens.css',
-  replacement: resolve(__dirname, 'packages/weasel-ui/src/tokens.css'),
+  find: '@weasel-js/ui/tokens.css',
+  replacement: resolve(__dirname, 'packages/ui/src/tokens.css'),
 },
 ```
 
-Delete it. The new `@orochi235/weasel-theme/tokens.css` alias (added in 1.3) takes over.
+Delete it. The new `@weasel-js/theme/tokens.css` alias (added in 1.3) takes over.
 
 Do the same in `apps/swillustrator/vite.config.ts` if a `weasel-ui/tokens.css` alias exists there too. Check with:
 
@@ -539,8 +539,8 @@ Single atomic rename across all weasel-ui component CSS, paintGradientTrack
 JS, canvas-kit-demo's CSS overrides, and the swillustrator app CSS.
 77 references migrated to the new --wzl- namespace.
 
-Deletes packages/weasel-ui/src/tokens.css (canonical home moved to
-@orochi235/weasel-theme/tokens.css); updates swillustrator's import; drops
+Deletes packages/ui/src/tokens.css (canonical home moved to
+@weasel-js/theme/tokens.css); updates swillustrator's import; drops
 the weasel-ui/tokens.css alias from vite/vitest configs. The new
 weasel-theme/tokens.css alias (added in the previous stage) supplies the
 defaults.
@@ -555,12 +555,12 @@ EOF
 ### Task 3.1: Add weasel-theme to weasel-hud's dependencies
 
 **Files:**
-- Modify: `packages/weasel-hud/package.json`
+- Modify: `packages/hud/package.json`
 
 - [ ] **Step 1: Read the current `package.json`**
 
 ```bash
-cat packages/weasel-hud/package.json
+cat packages/hud/package.json
 ```
 
 - [ ] **Step 2: Add the dependency**
@@ -569,7 +569,7 @@ Add a `dependencies` block (or extend if it exists). Since weasel-hud is a priva
 
 ```json
 "dependencies": {
-  "@orochi235/weasel-theme": "workspace:*"
+  "@weasel-js/theme": "workspace:*"
 }
 ```
 
@@ -586,7 +586,7 @@ Expected: no errors. (May report nothing-to-do if the workspace alias already re
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-hud/package.json
+git add packages/hud/package.json
 git commit -m "build(weasel-hud): add workspace dependency on weasel-theme"
 ```
 
@@ -595,16 +595,16 @@ git commit -m "build(weasel-hud): add workspace dependency on weasel-theme"
 ### Task 3.2: `readTokens` and `ResolvedTokens`
 
 **Files:**
-- Create: `packages/weasel-hud/src/theme.ts`
-- Create: `packages/weasel-hud/src/theme.test.ts`
+- Create: `packages/hud/src/theme.ts`
+- Create: `packages/hud/src/theme.test.ts`
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
-// packages/weasel-hud/src/theme.test.ts
+// packages/hud/src/theme.test.ts
 import { describe, it, expect, afterEach } from 'vitest';
 import { readTokens } from './theme';
-import { DEFAULT_TOKENS } from '@orochi235/weasel-theme';
+import { DEFAULT_TOKENS } from '@weasel-js/theme';
 
 const trash: HTMLElement[] = [];
 afterEach(() => {
@@ -659,7 +659,7 @@ describe('readTokens', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/theme.test.ts
+pnpm exec vitest run packages/hud/src/theme.test.ts
 ```
 
 Expected: FAIL — `./theme` doesn't exist.
@@ -667,8 +667,8 @@ Expected: FAIL — `./theme` doesn't exist.
 - [ ] **Step 3: Write the implementation**
 
 ```ts
-// packages/weasel-hud/src/theme.ts
-import { DEFAULT_TOKENS, type TokenName } from '@orochi235/weasel-theme';
+// packages/hud/src/theme.ts
+import { DEFAULT_TOKENS, type TokenName } from '@weasel-js/theme';
 
 export interface ResolvedTokens {
   text: string;
@@ -732,7 +732,7 @@ export function readTokens(canvasEl: HTMLCanvasElement | null): ResolvedTokens {
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/theme.test.ts
+pnpm exec vitest run packages/hud/src/theme.test.ts
 ```
 
 Expected: 4/4 PASS.
@@ -740,7 +740,7 @@ Expected: 4/4 PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-hud/src/theme.ts packages/weasel-hud/src/theme.test.ts
+git add packages/hud/src/theme.ts packages/hud/src/theme.test.ts
 git commit -m "feat(weasel-hud): readTokens — resolve --wzl-* CSS vars from the canvas element"
 ```
 
@@ -749,12 +749,12 @@ git commit -m "feat(weasel-hud): readTokens — resolve --wzl-* CSS vars from th
 ### Task 3.3: Extend `HudDrawCtx` with tokens
 
 **Files:**
-- Modify: `packages/weasel-hud/src/widget.ts`
+- Modify: `packages/hud/src/widget.ts`
 
 - [ ] **Step 1: Read the current `widget.ts`**
 
 ```bash
-cat packages/weasel-hud/src/widget.ts
+cat packages/hud/src/widget.ts
 ```
 
 Locate the `HudDrawCtx` interface (it has `dims` and `defaultFont` fields).
@@ -787,7 +787,7 @@ export interface HudDrawCtx {
 Several existing tests pass `HudDrawCtx`-shaped objects to widget `draw()` methods. After this change, those literals are missing the `tokens` field and won't typecheck. Search for them:
 
 ```bash
-grep -rn "defaultFont:" packages/weasel-hud/src/widgets/*.test.ts packages/weasel-hud/src/widgets/*.test.tsx 2>/dev/null
+grep -rn "defaultFont:" packages/hud/src/widgets/*.test.ts packages/hud/src/widgets/*.test.tsx 2>/dev/null
 ```
 
 In each match, find the `HudDrawCtx`-shaped literal and add a `tokens` field. Use the `DEFAULT_TOKENS`-equivalent values for tests that don't care about tokens. Helper for test files:
@@ -815,7 +815,7 @@ Expected: clean.
 - [ ] **Step 5: Run the widget tests to confirm no behavior change**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/
+pnpm exec vitest run packages/hud/
 ```
 
 Expected: all pass at the same count as before this stage (no tests added or behavior changed — only test-fixture shape updated).
@@ -823,7 +823,7 @@ Expected: all pass at the same count as before this stage (no tests added or beh
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-hud/src/widget.ts packages/weasel-hud/src/widgets/*.test.ts packages/weasel-hud/src/widgets/*.test.tsx
+git add packages/hud/src/widget.ts packages/hud/src/widgets/*.test.ts packages/hud/src/widgets/*.test.tsx
 git commit -m "refactor(weasel-hud): add ResolvedTokens to HudDrawCtx; thread through widget tests"
 ```
 
@@ -832,7 +832,7 @@ git commit -m "refactor(weasel-hud): add ResolvedTokens to HudDrawCtx; thread th
 ### Task 3.4: `attachHud` resolves tokens per draw
 
 **Files:**
-- Modify: `packages/weasel-hud/src/attach.ts`
+- Modify: `packages/hud/src/attach.ts`
 
 - [ ] **Step 1: Read the current `attach.ts`**
 
@@ -881,14 +881,14 @@ Existing attach tests build a fake `api` with `element: null`. Verify they still
 Run the attach tests:
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/attach.test.ts
+pnpm exec vitest run packages/hud/src/attach.test.ts
 ```
 
 Expected: pass.
 
 - [ ] **Step 5: Add a new attach test for token resolution**
 
-Append to `packages/weasel-hud/src/attach.test.ts`:
+Append to `packages/hud/src/attach.test.ts`:
 
 ```ts
 it('layer.draw resolves tokens from the canvas element', () => {
@@ -921,7 +921,7 @@ it('layer.draw resolves tokens from the canvas element', () => {
 - [ ] **Step 6: Run the test to verify it fails**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/attach.test.ts -t "resolves tokens from the canvas element"
+pnpm exec vitest run packages/hud/src/attach.test.ts -t "resolves tokens from the canvas element"
 ```
 
 Expected: FAIL — the button widget hasn't been updated yet (Stage 4); it'll still draw with its hardcoded `'#ffffff'` default.
@@ -931,7 +931,7 @@ If the test PASSES already, the button refactor was somehow done already; skip S
 - [ ] **Step 7: Commit (test failing is OK; Stage 4 makes it pass)**
 
 ```bash
-git add packages/weasel-hud/src/attach.ts packages/weasel-hud/src/attach.test.ts
+git add packages/hud/src/attach.ts packages/hud/src/attach.test.ts
 git commit -m "feat(weasel-hud): attachHud resolves tokens on every draw
 
 The token resolution producer side. Widgets that consume ctx.tokens come
@@ -942,13 +942,13 @@ intentional (acts as a forward-test for the widget refactor)."
 Actually — committing with a failing test is anti-pattern. Move the new attach test to Stage 4 (Task 4.4 below) so each commit lands green. Skip steps 5-7 in this task; the `attachHud` code change alone is the commit:
 
 ```bash
-git add packages/weasel-hud/src/attach.ts
+git add packages/hud/src/attach.ts
 git commit -m "feat(weasel-hud): attachHud resolves tokens on every draw"
 ```
 
 - [ ] **Step 8: Re-update the index barrel to export theme types**
 
-In `packages/weasel-hud/src/index.ts`, append:
+In `packages/hud/src/index.ts`, append:
 
 ```ts
 export { readTokens, type ResolvedTokens } from './theme';
@@ -957,7 +957,7 @@ export { readTokens, type ResolvedTokens } from './theme';
 Commit:
 
 ```bash
-git add packages/weasel-hud/src/index.ts
+git add packages/hud/src/index.ts
 git commit -m "feat(weasel-hud): export readTokens + ResolvedTokens from barrel"
 ```
 
@@ -968,8 +968,8 @@ git commit -m "feat(weasel-hud): export readTokens + ResolvedTokens from barrel"
 ### Task 4.1: Label reads `ctx.tokens.text` when `opts.color` is omitted
 
 **Files:**
-- Modify: `packages/weasel-hud/src/widgets/label.ts`
-- Modify: `packages/weasel-hud/src/widgets/label.test.ts`
+- Modify: `packages/hud/src/widgets/label.ts`
+- Modify: `packages/hud/src/widgets/label.test.ts`
 
 - [ ] **Step 1: Read the current `label.ts`**
 
@@ -1044,7 +1044,7 @@ import { readTokens } from '../theme';
 - [ ] **Step 4: Verify tests fail (until 4.2 lands)**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/widgets/label.test.ts
+pnpm exec vitest run packages/hud/src/widgets/label.test.ts
 ```
 
 Expected: tests reference `text` field on tokens; the test that asserts `#abcdef` should fail because `text.ts` still uses the explicit color.
@@ -1056,8 +1056,8 @@ Expected: tests reference `text` field on tokens; the test that asserts `#abcdef
 ### Task 4.2: Text widget reads `ctx.tokens.text` fallback
 
 **Files:**
-- Modify: `packages/weasel-hud/src/widgets/text.ts`
-- Modify: `packages/weasel-hud/src/widgets/text.test.ts`
+- Modify: `packages/hud/src/widgets/text.ts`
+- Modify: `packages/hud/src/widgets/text.test.ts`
 
 - [ ] **Step 1: Make `TextOptions.color` optional**
 
@@ -1123,7 +1123,7 @@ If existing tests pass `color: '#000'` explicitly, they should still pass since 
 - [ ] **Step 4: Run tests**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/widgets/text.test.ts packages/weasel-hud/src/widgets/label.test.ts
+pnpm exec vitest run packages/hud/src/widgets/text.test.ts packages/hud/src/widgets/label.test.ts
 ```
 
 Expected: all PASS (including the label tests from 4.1, now that text.ts resolves the fallback).
@@ -1131,7 +1131,7 @@ Expected: all PASS (including the label tests from 4.1, now that text.ts resolve
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-hud/src/widgets/text.ts packages/weasel-hud/src/widgets/text.test.ts packages/weasel-hud/src/widgets/label.ts packages/weasel-hud/src/widgets/label.test.ts
+git add packages/hud/src/widgets/text.ts packages/hud/src/widgets/text.test.ts packages/hud/src/widgets/label.ts packages/hud/src/widgets/label.test.ts
 git commit -m "feat(weasel-hud): label + text widgets read ctx.tokens.text fallback"
 ```
 
@@ -1140,8 +1140,8 @@ git commit -m "feat(weasel-hud): label + text widgets read ctx.tokens.text fallb
 ### Task 4.3: Button widget reads four token fallbacks
 
 **Files:**
-- Modify: `packages/weasel-hud/src/widgets/button.ts`
-- Modify: `packages/weasel-hud/src/widgets/button.test.ts`
+- Modify: `packages/hud/src/widgets/button.ts`
+- Modify: `packages/hud/src/widgets/button.test.ts`
 
 - [ ] **Step 1: Update `ButtonOptions` color fields to be optional (they already are) — verify**
 
@@ -1247,7 +1247,7 @@ import { readTokens } from '../theme';
 - [ ] **Step 4: Run tests**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/widgets/button.test.ts
+pnpm exec vitest run packages/hud/src/widgets/button.test.ts
 ```
 
 Expected: all PASS (including pre-existing tests that pass explicit colors — those still work).
@@ -1255,7 +1255,7 @@ Expected: all PASS (including pre-existing tests that pass explicit colors — t
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-hud/src/widgets/button.ts packages/weasel-hud/src/widgets/button.test.ts
+git add packages/hud/src/widgets/button.ts packages/hud/src/widgets/button.test.ts
 git commit -m "feat(weasel-hud): button reads four token fallbacks (fill, hover, pressed, text)"
 ```
 
@@ -1264,7 +1264,7 @@ git commit -m "feat(weasel-hud): button reads four token fallbacks (fill, hover,
 ### Task 4.4: Re-enable the attach test from Task 3.4
 
 **Files:**
-- Modify: `packages/weasel-hud/src/attach.test.ts`
+- Modify: `packages/hud/src/attach.test.ts`
 
 The attach test that asserts "layer.draw resolves tokens from the canvas element" was deferred from Task 3.4. With Stage 4 complete, it should now pass.
 
@@ -1299,7 +1299,7 @@ it('layer.draw resolves tokens from the canvas element', () => {
 - [ ] **Step 2: Run the test**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/attach.test.ts
+pnpm exec vitest run packages/hud/src/attach.test.ts
 ```
 
 Expected: PASS.
@@ -1307,7 +1307,7 @@ Expected: PASS.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-hud/src/attach.test.ts
+git add packages/hud/src/attach.test.ts
 git commit -m "test(weasel-hud): end-to-end token resolution through attachHud"
 ```
 
@@ -1318,7 +1318,7 @@ git commit -m "test(weasel-hud): end-to-end token resolution through attachHud"
 ### Task 5.1: End-to-end theme test in `integration.test.tsx`
 
 **Files:**
-- Modify: `packages/weasel-hud/src/integration.test.tsx`
+- Modify: `packages/hud/src/integration.test.tsx`
 
 - [ ] **Step 1: Add the test**
 
@@ -1367,7 +1367,7 @@ Note: this test doesn't go through the canvas's render loop (which would require
 - [ ] **Step 2: Run the test**
 
 ```bash
-pnpm exec vitest run packages/weasel-hud/src/integration.test.tsx
+pnpm exec vitest run packages/hud/src/integration.test.tsx
 ```
 
 Expected: PASS, plus the existing integration tests stay green.
@@ -1375,7 +1375,7 @@ Expected: PASS, plus the existing integration tests stay green.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-hud/src/integration.test.tsx
+git add packages/hud/src/integration.test.tsx
 git commit -m "test(weasel-hud): integration test for CSS-variable themed button fill"
 ```
 
@@ -1384,12 +1384,12 @@ git commit -m "test(weasel-hud): integration test for CSS-variable themed button
 ### Task 5.2: Update weasel-ui's README
 
 **Files:**
-- Modify: `packages/weasel-ui/README.md`
+- Modify: `packages/ui/README.md`
 
 - [ ] **Step 1: Read the current README**
 
 ```bash
-cat packages/weasel-ui/README.md
+cat packages/ui/README.md
 ```
 
 It mentions `tokens.css` is one of the things this package ships.
@@ -1401,8 +1401,8 @@ Replace the "tokens.css" mention with a note that tokens have moved:
 ```markdown
 ## CSS variables
 
-Components read `--wzl-*` tokens from `@orochi235/weasel-theme`. Import
-`@orochi235/weasel-theme/tokens.css` in your app shell for sensible
+Components read `--wzl-*` tokens from `@weasel-js/theme`. Import
+`@weasel-js/theme/tokens.css` in your app shell for sensible
 defaults, or define the variables yourself at any DOM scope.
 
 | Variable | Purpose |
@@ -1421,7 +1421,7 @@ Plus any other places the README references `--wui-*`.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-ui/README.md
+git add packages/ui/README.md
 git commit -m "docs(weasel-ui): point at weasel-theme for tokens"
 ```
 

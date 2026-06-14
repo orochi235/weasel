@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
-import * as Weasel from '@orochi235/weasel';
-import { defaultNodeRouting, type NodeRoutingEntry } from '@orochi235/weasel';
-import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@orochi235/weasel/routing';
+import * as Weasel from '@weasel-js/core';
+import { defaultNodeRouting, type NodeRoutingEntry } from '@weasel-js/core';
+import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
 

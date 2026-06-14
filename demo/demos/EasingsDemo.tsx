@@ -6,10 +6,10 @@ import {
   useScene,
   asNodeId,
   textCommand,
-} from '@orochi235/weasel';
-import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
-import { Slider } from '@orochi235/weasel-ui';
+import { Slider } from '@weasel-js/ui';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
 

@@ -24,8 +24,8 @@ import {
   useRectTool,
   useStarTool,
   useTextTool,
-} from '@orochi235/weasel';
-import type { AnyTool, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { AnyTool, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode } from '@weasel-js/core';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
 
 /** Per-tool option overrides for the built-in shape/lasso tools.

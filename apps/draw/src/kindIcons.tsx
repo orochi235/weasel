@@ -13,7 +13,7 @@
  *  the icons are `aria-hidden`.
  */
 import type { ReactNode } from 'react';
-import type { BooleanOp } from '@orochi235/weasel';
+import type { BooleanOp } from '@weasel-js/core';
 import {
   RectIcon,
   EllipseIcon,
@@ -29,7 +29,7 @@ import {
   SubtractIcon,
   ExcludeIcon,
   DivideIcon,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { ToolKind } from './poseUpdate';
 
 const SVG_BASE = {

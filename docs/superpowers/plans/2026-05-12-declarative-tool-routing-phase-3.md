@@ -262,7 +262,7 @@ to:
 import { defineTool, apply } from '../routing';
 ```
 
-(The new defineTool lives at `@orochi235/weasel/routing` per Phase 1, but internal imports use the relative path.)
+(The new defineTool lives at `@weasel-js/core/routing` per Phase 1, but internal imports use the relative path.)
 
 - [ ] **Step 3: Add click and dblTap routes**
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SceneCanvas, useScene, textCommand, meanScale } from '@orochi235/weasel';
+import { SceneCanvas, useScene, textCommand, meanScale } from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 type Layer = 'scene';

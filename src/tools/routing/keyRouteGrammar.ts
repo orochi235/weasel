@@ -2,8 +2,8 @@ export {
   parseKeyRoute,
   formatKeyRoute,
   keyRouteToSpec,
-} from '@orochi235/weasel-gestures';
+} from '@weasel-js/gestures';
 export type {
   ParsedKeyRoute,
   OptionalMod,
-} from '@orochi235/weasel-gestures';
+} from '@weasel-js/gestures';

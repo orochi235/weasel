@@ -9,7 +9,7 @@
  *  one type pragmatism the recursive walk requires.
  */
 import { useMemo, useState } from 'react';
-import { Checkbox, Dialog, Input, NumberField, RangeSlider, Select, Switch } from '@orochi235/weasel-ui';
+import { Checkbox, Dialog, Input, NumberField, RangeSlider, Select, Switch } from '@weasel-js/ui';
 import {
   PREFS,
   usePref,

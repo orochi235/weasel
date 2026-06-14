@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import type { RectPath } from '@orochi235/weasel';
+import type { RectPath } from '@weasel-js/core';
 import {
   PATH_M,
   PATH_L,
   PATH_Z,
   type PolygonPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { tessellate } from './tessellate';
 
 describe('tessellate (RectPath)', () => {
@@ -79,7 +79,7 @@ describe('tessellate (PolygonPath, single-contour, no curves)', () => {
   });
 });
 
-import { PATH_Q as PQ, PATH_C as PC, DEFAULT_FLATTEN_TOLERANCE } from '@orochi235/weasel';
+import { PATH_Q as PQ, PATH_C as PC, DEFAULT_FLATTEN_TOLERANCE } from '@weasel-js/core';
 
 describe('tessellate (PolygonPath, bezier curves)', () => {
   it('flattens a quadratic and triangulates the resulting polyline', () => {

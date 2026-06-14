@@ -93,17 +93,17 @@ src/tools/dispatcher.test.ts   defineTool from './routing/defineTool'
 
 **Rough internal import-rewrite count: ~30 lines** across ~30 files. The bulk is a single `'../routing'` → `'../'` (or absolute `'tools/'`) rewrite per builtin tool; mechanical.
 
-### Subpath `@orochi235/weasel/routing` — single external consumer
+### Subpath `@weasel-js/core/routing` — single external consumer
 
 ```bash
-grep -rn "from '@orochi235/weasel/routing'" /Users/mike/src/weasel/ 2>/dev/null
+grep -rn "from '@weasel-js/core/routing'" /Users/mike/src/weasel/ 2>/dev/null
 # demo/demos/ToolReflectionDemo.tsx:20 — buildActionRegistry, findConflicts, apply, mods,
 #                                        type RegistryEntry, type Conflict, type ToolDef
 ```
 
 Plan files reference it as illustrative code samples; no other live consumer.
 
-`apps/swillustrator/` and `packages/weasel-*` do **not** import `defineTool` (declarative or imperative), `ToolDef`, or the `/routing` subpath at all. Swillustrator builds tools by composing the kit's built-in `useSelectTool`, `useHandTool`, etc., never authoring its own through either factory. Confirmed via:
+`apps/swillustrator/` and `packages/*` do **not** import `defineTool` (declarative or imperative), `ToolDef`, or the `/routing` subpath at all. Swillustrator builds tools by composing the kit's built-in `useSelectTool`, `useHandTool`, etc., never authoring its own through either factory. Confirmed via:
 
 ```bash
 grep -rln "defineTool\|/routing\|tools/routing" /Users/mike/src/weasel/apps/swillustrator/ /Users/mike/src/weasel/packages/
@@ -164,7 +164,7 @@ The dependency graph dictates order: the factory file move must precede the subs
 2. **T2 — Move `routing/defineTool.{ts,test.ts}` → `tools/defineTool.{ts,test.ts}`** (overwriting the imperative files). Add one type-only test for the no-`initScratch` `void` default to close the coverage gap. Update internal imports throughout the kit (~26 builtin sites + 3 deep-path sites).
 3. **T3 — Move `routing/{result,modifiers,lookup,hitResult,types,defineViewportTool}.ts` → `src/tools/`.** Update the ~30 import sites identified in pre-flight (builtin tools + interactions/gestures + dispatcher + types).
 4. **T4 — Update `src/tools/routing/index.ts`.** Reduce to reflection-only re-exports. Keep `RegistryEntry`, `Conflict`, `RouteResolvedInfo`, `RoutePhase`, `RouteGesture`, `formatRouteResolved`, `useToolDebugInfo`, `ToolDebugOverlay`, `buildActionRegistry`, `findConflicts`. Drop `defineTool`, `defineViewportTool`, `mods`, the `Result` constructors, the `HitResult` types — they now live at the kit root.
-5. **T5 — Update main barrel `src/index.ts`.** Promote the factory + supporting authoring exports out of the `routing` namespace and onto the top-level. Adjust the `ToolReflectionDemo` to import `apply`, `mods`, and `type ToolDef` from `@orochi235/weasel` directly while keeping `buildActionRegistry`, `findConflicts`, `RegistryEntry`, `Conflict` from `@orochi235/weasel/routing`.
+5. **T5 — Update main barrel `src/index.ts`.** Promote the factory + supporting authoring exports out of the `routing` namespace and onto the top-level. Adjust the `ToolReflectionDemo` to import `apply`, `mods`, and `type ToolDef` from `@weasel-js/core` directly while keeping `buildActionRegistry`, `findConflicts`, `RegistryEntry`, `Conflict` from `@weasel-js/core/routing`.
 6. **T6 — Update spec doc.** Add a "Phase 6 follow-up" section after the existing Phase 4.5 follow-up: imperative removed, canonical location is `src/tools/defineTool.ts`, `/routing` subpath houses reflection. Note no API behavioral change.
 7. **T7 — Full regression sweep.** `prepublishOnly`, kit tests, Swillustrator typecheck, demo build.
 
@@ -377,7 +377,7 @@ Replace the imperative `src/tools/defineTool.ts` with the declarative factory fi
   export { defineTool } from '../defineTool';
   ```
 
-  This keeps the `@orochi235/weasel/routing` subpath surface unchanged for ToolReflectionDemo and other current consumers; T4 narrows it further.
+  This keeps the `@weasel-js/core/routing` subpath surface unchanged for ToolReflectionDemo and other current consumers; T4 narrows it further.
 
 - [ ] **Update the `routing/defineViewportTool.ts`** import chain:
 
@@ -597,7 +597,7 @@ Note on `types.ts` collision: the routing folder's `types.ts` (which holds `Tool
 
 ### Goal
 
-After T3 the `/routing` barrel re-exports authoring substrate from `'..'` purely to bridge intermediate. In T4 the barrel collapses to its real purpose: **reflection consumers**. External consumers of `@orochi235/weasel/routing` that need authoring primitives (`apply`, `mods`, `ToolDef`) get them from the main barrel `@orochi235/weasel` after T5.
+After T3 the `/routing` barrel re-exports authoring substrate from `'..'` purely to bridge intermediate. In T4 the barrel collapses to its real purpose: **reflection consumers**. External consumers of `@weasel-js/core/routing` that need authoring primitives (`apply`, `mods`, `ToolDef`) get them from the main barrel `@weasel-js/core` after T5.
 
 ### Steps
 
@@ -610,7 +610,7 @@ After T3 the `/routing` barrel re-exports authoring substrate from `'..'` purely
   // constructors (`apply`, `begin`, `hold`, `commit`, `cancel`, `claim`,
   // `none`), `mods`, and the route-authoring types (`ToolDef`,
   // `PhaseDef`, `RouteTable`, ...) live at the top of the tools barrel
-  // since Phase 6. Import them from `@orochi235/weasel`.
+  // since Phase 6. Import them from `@weasel-js/core`.
   //
   // This subpath houses introspection-only utilities — registry,
   // conflict-walking, debug overlay, route-resolved info.
@@ -630,7 +630,7 @@ After T3 the `/routing` barrel re-exports authoring substrate from `'..'` purely
     type RegistryEntry,
     type Conflict,
     type ToolDef,
-  } from '@orochi235/weasel/routing';
+  } from '@weasel-js/core/routing';
   ```
 
   Of these, after the narrowing: `buildActionRegistry`, `findConflicts`, `RegistryEntry`, `Conflict` stay on `/routing`. `apply`, `mods`, `ToolDef` move to the main barrel. The demo must be updated in T5; for now T4 will leave `tsc` failing on those three symbols. Commit T4 + T5 as a pair, or stage the demo edit at the end of T4.
@@ -640,11 +640,11 @@ After T3 the `/routing` barrel re-exports authoring substrate from `'..'` purely
   ```ts
   import {
     apply, mods, type ToolDef,
-  } from '@orochi235/weasel';
+  } from '@weasel-js/core';
   import {
     buildActionRegistry, findConflicts,
     type RegistryEntry, type Conflict,
-  } from '@orochi235/weasel/routing';
+  } from '@weasel-js/core/routing';
   ```
 
 - [ ] **Run typecheck:**
@@ -695,7 +695,7 @@ Now that `src/tools/index.ts` exports the full authoring surface (T3), make the 
 
   ```ts
   // New declarative routing surface — experimental.
-  // import { defineTool } from '@orochi235/weasel/routing';
+  // import { defineTool } from '@weasel-js/core/routing';
   export * as routing from './tools/routing';
   ```
 
@@ -703,7 +703,7 @@ Now that `src/tools/index.ts` exports the full authoring surface (T3), make the 
 
   ```ts
   // Declarative tool authoring is now part of the main barrel:
-  //   import { defineTool, apply, mods, type ToolDef } from '@orochi235/weasel';
+  //   import { defineTool, apply, mods, type ToolDef } from '@weasel-js/core';
   // The `/routing` subpath houses reflection-only utilities — registry,
   // conflict checker, debug overlay, route-resolved info. See Phase 6
   // notes in docs/superpowers/specs/2026-05-12-declarative-tool-routing-design.md.
@@ -767,13 +767,13 @@ Document the refactor in the spec doc so future readers (and the next reviewer) 
   Before Phase 6:
 
   ```ts
-  import { defineTool, apply, mods, type ToolDef } from '@orochi235/weasel/routing';
+  import { defineTool, apply, mods, type ToolDef } from '@weasel-js/core/routing';
   ```
 
   After Phase 6:
 
   ```ts
-  import { defineTool, apply, mods, type ToolDef } from '@orochi235/weasel';
+  import { defineTool, apply, mods, type ToolDef } from '@weasel-js/core';
   ```
 
   The `/routing` subpath is preserved, narrowed to reflection consumers:
@@ -784,7 +784,7 @@ Document the refactor in the spec doc so future readers (and the next reviewer) 
     type RegistryEntry, type Conflict,
     type RouteResolvedInfo, formatRouteResolved,
     useToolDebugInfo, ToolDebugOverlay,
-  } from '@orochi235/weasel/routing';
+  } from '@weasel-js/core/routing';
   ```
 
   ### Rationale
@@ -811,7 +811,7 @@ Document the refactor in the spec doc so future readers (and the next reviewer) 
 
   ### Migration note for external consumers
 
-  Anyone authoring tools via `@orochi235/weasel/routing` before Phase 6
+  Anyone authoring tools via `@weasel-js/core/routing` before Phase 6
   changes their import line and otherwise their code is unaffected.
   Behavior, types, and runtime contract are identical.
   ```
@@ -893,8 +893,8 @@ Confirm the kit, Swillustrator, the demo, and the published surface all still wo
     defineViewportTool) hoisted alongside.
   - /routing subpath narrowed to reflection consumers only (registry,
     conflicts, debug overlay, route-resolved info).
-  - Public API: `import { defineTool, apply, mods } from '@orochi235/weasel';`
-    replaces `import { ... } from '@orochi235/weasel/routing';` for
+  - Public API: `import { defineTool, apply, mods } from '@weasel-js/core';`
+    replaces `import { ... } from '@weasel-js/core/routing';` for
     authoring. The subpath remains for reflection.
   ```
 
@@ -904,7 +904,7 @@ Confirm the kit, Swillustrator, the demo, and the published surface all still wo
 
 ## What Phase 6 explicitly does NOT cover
 
-1. **Reflection consumers' folder name.** `src/tools/routing/reflection/` stays at that path. Renaming `routing/` to `introspection/` or similar is a separate cosmetic decision; the public subpath `@orochi235/weasel/routing` is a stable contract for the demo.
+1. **Reflection consumers' folder name.** `src/tools/routing/reflection/` stays at that path. Renaming `routing/` to `introspection/` or similar is a separate cosmetic decision; the public subpath `@weasel-js/core/routing` is a stable contract for the demo.
 2. **Inlining the dispatcher's JSDoc references to "routing".** Five comment-level uses of "routing" remain in `src/tools/dispatcher.ts`. They describe a behavior (declarative routing as a translation discipline), not a folder; they read correctly after the move. Touching them is a no-op refactor.
 3. **The `BeginSpec` thresholdPx field.** Documented in `result.ts` but never consumed by the factory or dispatcher. Removal is a separate cleanup; out of scope here.
 4. **Kit version bump.** Phase 6 is a refactor; consumer-visible behavior is identical. No `0.3.0 → 0.4.0` bump is required, but if the user wants to surface the breaking import-path change to external authors via the changeset, that's a separate release-coordination task.

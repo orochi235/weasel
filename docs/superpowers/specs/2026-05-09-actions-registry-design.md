@@ -129,7 +129,7 @@ For demos using `<SceneCanvas>`, the consumer-level `useSelectAll(...)` calls be
 
 ### §F — Public API surface
 
-Added to `@orochi235/weasel` barrel:
+Added to `@weasel-js/core` barrel:
 
 ```ts
 export { ActionsProvider, useActionsRegistry, useAction } from './interactions/actions/registry';
@@ -329,7 +329,7 @@ These tests assert each line of the resolution rules in §D resolves as document
 
 ## Done criteria
 
-1. New API ships in `@orochi235/weasel` barrel under `@experimental`.
+1. New API ships in `@weasel-js/core` barrel under `@experimental`.
 2. `<SceneCanvas>` auto-registers default actions; `actions` prop honored per the resolution rules.
 3. All existing standalone hooks (`useSelectAll`, etc.) refactored to register-when-provider-exists; behavior unchanged for bare-Canvas users.
 4. At least 3 demos (MultiSelect, Actions, NestedGroups) migrated — `useSelectAll`/`useEscape`/`useDuplicate` calls deleted; Cmd+A / Esc / Cmd+D still work.

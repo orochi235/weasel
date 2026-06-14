@@ -2,8 +2,8 @@ import {
   asNodeId,
   ROTATED_POSE_DESCRIPTOR,
   SceneCanvas,
-} from '@orochi235/weasel';
-import type { PoseProjection, RotatedPose } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { PoseProjection, RotatedPose } from '@weasel-js/core';
 import sceneJson from './data/rotate.scene.json';
 
 const W = 400, H = 300;

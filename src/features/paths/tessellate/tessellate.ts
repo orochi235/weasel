@@ -11,7 +11,7 @@ import {
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubicWithArcLen,
   flattenQuadraticWithArcLen,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { Mesh } from '../../../renderer/cache/mesh';
 
 export interface TessellateOptions {

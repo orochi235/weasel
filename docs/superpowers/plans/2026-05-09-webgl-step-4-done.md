@@ -5,7 +5,7 @@
 
 ## What shipped
 
-- `Paint` type extension on `@orochi235/weasel`: linear / radial / conic gradient variants + `GradStop` type. 2D `applyPaint`/`applyStroke` fall back to opaque black for gradient variants (2D backend is GL-only deferred to step 10).
+- `Paint` type extension on `@weasel-js/core`: linear / radial / conic gradient variants + `GradStop` type. 2D `applyPaint`/`applyStroke` fall back to opaque black for gradient variants (2D backend is GL-only deferred to step 10).
 - `GradientRampCache` — CPU 1×256 RGBA ramp builder + per-renderer GL texture cache keyed on `JSON.stringify(stops)`.
 - `GLImageCache` — WeakMap-keyed image upload (key = `ImageBitmap` identity). Wrap modes per `repetition` (CLAMP / REPEAT / mixed).
 - `imageFill` shader — textured-quad with premultiplied alpha output.

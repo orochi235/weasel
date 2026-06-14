@@ -10,7 +10,7 @@ import {
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubicWithArcLen,
   flattenQuadraticWithArcLen,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 export interface Polyline {
   /** Interleaved x,y vertices (length = 2 × point count). */

@@ -1,5 +1,5 @@
 /** Inline SVG icons for ActionBar — thematically compatible with the
- *  Pathfinder icons in @orochi235/weasel-ui (same 20×20 viewBox, stroked
+ *  Pathfinder icons in @weasel-js/ui (same 20×20 viewBox, stroked
  *  outlines in currentColor, filled regions in currentColor for the
  *  "highlighted" affordance — the alignment edge, the moving shape in a
  *  z-order op, etc.).

@@ -160,6 +160,20 @@ describe('layoutRuns — word wrap', () => {
     expect(rightX).toBeGreaterThan(centerX);
   });
 
+  it('anchors center/right on the line width when no maxWidth box is given', async () => {
+    await registerFixture('inter', [{}]);
+    const at = (align: 'left' | 'center' | 'right') =>
+      layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align }, { x: 100, y: 0 });
+    const first = (o: ReturnType<typeof at>) => o.groups[0].quads[0].x0;
+    // Without a box, the anchor x is the text's left edge ('left'), midpoint
+    // ('center'), or right edge ('right'). So center shifts left by half the
+    // line width and right by the full line width, relative to 'left'.
+    const shiftCenter = first(at('left')) - first(at('center'));
+    const shiftRight = first(at('left')) - first(at('right'));
+    expect(shiftCenter).toBeGreaterThan(0);
+    expect(shiftRight).toBeCloseTo(2 * shiftCenter, 5);
+  });
+
   it('respects newlines inside a run as forced line breaks', async () => {
     await registerFixture('inter', [{}]);
     const out = layoutRuns(

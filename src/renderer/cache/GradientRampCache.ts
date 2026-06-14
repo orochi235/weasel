@@ -8,7 +8,7 @@
  * shader applies premultiplication before writing outColor.
  */
 
-import type { GradStop } from '@orochi235/weasel';
+import type { GradStop } from '@weasel-js/core';
 import { resolveColor } from '../math/color';
 
 const RAMP_SIZE = 256;

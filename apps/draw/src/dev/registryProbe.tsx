@@ -9,18 +9,18 @@ import {
   type NodeRoutingEntry,
   type TargetSpec,
   type ToolsApi,
-} from '@orochi235/weasel';
-import type { PhaseSpec } from '@orochi235/weasel-gestures';
-import { buildActionRegistry, formatRoute, type RegistryEntry } from '@orochi235/weasel/routing';
+} from '@weasel-js/core';
+import type { PhaseSpec } from '@weasel-js/gestures';
+import { buildActionRegistry, formatRoute, type RegistryEntry } from '@weasel-js/core/routing';
 import type {
   GestureName,
   ParsedModifiers,
   PhaseAtom,
   ToolDef,
-} from '@orochi235/weasel/routing';
+} from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
 import type { PhaseSummary, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
-import { formatShortcutParts } from '@orochi235/weasel-ui';
+import { formatShortcutParts } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 
 export interface RegistrySnapshot {

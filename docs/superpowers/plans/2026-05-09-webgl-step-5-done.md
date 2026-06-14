@@ -27,7 +27,7 @@
 
 - Vitest: 145/145 pass (20 test files; new tests in `compose4x5.test.ts`, GroupState colorMatrix stack tests, and a per-vertex VBO upload test).
 - Playwright: 5/5 specs pass (smoke + synthetic + text + paint + colors).
-- Typecheck: clean for `packages/weasel-gl` (pre-existing rootDir noise from main `src/` imports is not step-5 related and isn't gated on this work).
+- Typecheck: clean for `packages/gl` (pre-existing rootDir noise from main `src/` imports is not step-5 related and isn't gated on this work).
 - Browser-verified: all three colors smoke scenes render correctly.
 
 ## Lessons for step 6+ (folded into conventions)

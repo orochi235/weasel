@@ -1,0 +1,165 @@
+/**
+ * Keyboard/pointer modifier flags carried by every {@link InputEvent} arm.
+ * Factored out so the four booleans are documented once instead of repeated
+ * on all twelve event shapes.
+ */
+export interface EventModifiers {
+  altKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+}
+
+/**
+ * Body-target classification from the scene hit-test. Populated by
+ * `useGestureDispatcher` when a `classifyTarget` thunk is supplied to its
+ * options, and read by `matchTarget` to resolve string-form `TargetSpec`
+ * values. Absent when `classifyTarget` is not wired.
+ */
+export type BodyTarget = 'empty' | 'selected-body' | 'unselected-body';
+
+/** A keystroke. */
+export interface KeyEvent extends EventModifiers {
+  kind: 'key';
+  key: string;
+  repeat?: boolean;
+}
+
+/** A held key transitioning down or up (e.g. space-to-pan). */
+export interface KeyHeldEvent extends EventModifiers {
+  kind: 'key-held';
+  key: string;
+  phase: 'down' | 'up';
+}
+
+/** A scroll-wheel / trackpad scroll, with raw deltas and client coords. */
+export interface WheelEvent extends EventModifiers {
+  kind: 'wheel';
+  deltaX: number;
+  deltaY: number;
+  clientX: number;
+  clientY: number;
+}
+
+/** A pointer press — the start of any drag, and the richest event shape. */
+export interface PointerDownEvent extends EventModifiers {
+  kind: 'pointerdown';
+  target?: unknown;
+  /** World-space coordinates (post view transform). */
+  x?: number;
+  y?: number;
+  /**
+   * Client/screen-space coordinates (raw DOM event). Required for any drag
+   * action whose effect mutates the view itself — world coords shift
+   * mid-gesture and produce self-referential deltas.
+   */
+  clientX?: number;
+  clientY?: number;
+  /** Generic affordance payload (the kit narrows this to `AffordanceHit`). */
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+}
+
+/** A pump-only pointer move. Carried in the union so the dispatcher's
+ *  `handleInput` signature stays uniform; the matcher never matches it. */
+export interface PointerMoveEvent extends EventModifiers {
+  kind: 'pointermove';
+  x: number;
+  y: number;
+  clientX?: number;
+  clientY?: number;
+}
+
+/** A pump-only pointer release. Not matched by the matcher. */
+export interface PointerUpEvent extends EventModifiers {
+  kind: 'pointerup';
+  x: number;
+  y: number;
+  clientX?: number;
+  clientY?: number;
+}
+
+/** A pump-only pointer cancel. Not matched by the matcher. */
+export interface PointerCancelEvent extends EventModifiers {
+  kind: 'pointercancel';
+}
+
+/** A click (down+up on the same target). */
+export interface ClickEvent extends EventModifiers {
+  kind: 'click';
+  target?: unknown;
+  /**
+   * World-space coordinates of the click, derived via the `clientToWorld`
+   * thunk supplied to the dispatcher. Absent when the thunk isn't wired.
+   * Forwarded into action params so click invokers can act on the click's
+   * position without their own pointer-listener plumbing.
+   */
+  worldX?: number;
+  worldY?: number;
+  bodyTarget?: BodyTarget;
+}
+
+/** A double click. `worldX`/`worldY` carry the same meaning as on {@link ClickEvent}. */
+export interface DoubleClickEvent extends EventModifiers {
+  kind: 'doubleclick';
+  target?: unknown;
+  worldX?: number;
+  worldY?: number;
+  bodyTarget?: BodyTarget;
+}
+
+/** A context-menu (right-click) request. */
+export interface ContextMenuEvent extends EventModifiers {
+  kind: 'contextmenu';
+  target?: unknown;
+  bodyTarget?: BodyTarget;
+}
+
+/** A running multitouch gesture (e.g. pinch/rotate). */
+export interface MultitouchEvent extends EventModifiers {
+  kind: 'multitouch';
+  fingers: number;
+  /**
+   * Centroid of active pointers in screen space. Populated by
+   * `useGestureDispatcher` on the pointermove-pump of a running multitouch
+   * handle (updated each frame). Absent on the initial pointerdown-triggered
+   * multitouch event.
+   */
+  centroid?: { x: number; y: number };
+  /**
+   * Distance between the two primary pointers (screen space). Populated on
+   * move-pump events alongside `centroid`. Absent on the initial event.
+   */
+  spread?: number;
+}
+
+/** A multi-finger tap (no drag). */
+export interface MultitouchTapEvent extends EventModifiers {
+  kind: 'multitouchtap';
+  fingers: number;
+}
+
+/**
+ * Normalized input-event shape consumed by the pure matcher. Built by the
+ * React seam (`useGestureDispatcher`) from DOM events. Pump-only events
+ * ({@link PointerMoveEvent}, {@link PointerUpEvent}, {@link PointerCancelEvent})
+ * ride in the same union so the dispatcher's `handleInput` signature stays
+ * uniform; the matcher itself never matches them.
+ *
+ * The `affordance?` field on {@link PointerDownEvent} is widened to `unknown`
+ * in this package — the kit narrows it back to `AffordanceHit` at consumption.
+ * This keeps `@weasel-js/gestures` free of any kit-affordance type.
+ */
+export type InputEvent =
+  | KeyEvent
+  | KeyHeldEvent
+  | WheelEvent
+  | PointerDownEvent
+  | PointerMoveEvent
+  | PointerUpEvent
+  | PointerCancelEvent
+  | ClickEvent
+  | DoubleClickEvent
+  | ContextMenuEvent
+  | MultitouchEvent
+  | MultitouchTapEvent;

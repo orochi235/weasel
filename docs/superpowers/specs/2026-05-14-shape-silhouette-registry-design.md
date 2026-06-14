@@ -202,7 +202,7 @@ Same registry feeds, by follow-up:
 2. **Area-select / lasso.** `selectFromLasso` already calls
    `polygonIntersectsRect` against the node's AABB. With
    `silhouette`, it can run the real polygon/polygon test.
-3. **SVG export.** `packages/weasel-svg` currently emits each
+3. **SVG export.** `packages/svg` currently emits each
    node as a `<rect>` or via `node.data.path`. With `silhouette`
    it can emit a `<path d=...>` for ellipses, polygons, etc.,
    without each shape kind teaching the exporter separately.

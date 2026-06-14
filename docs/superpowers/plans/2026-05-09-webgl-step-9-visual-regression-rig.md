@@ -73,7 +73,7 @@ Before starting:
 1. `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md` — the **"Visual regression rig"** section. This plan implements exactly what that section specifies.
 2. `docs/superpowers/plans/webgl-stepwise-conventions.md` — all entries apply. Specific callouts below per task.
 3. `docs/superpowers/plans/2026-05-09-webgl-step-3-done.md` — §smoke test sample patterns (§1 update): use 2D `canvas.screenshot()` via Playwright, not `gl.readPixels`. pixelmatch works on PNG buffers, not raw GL bytes.
-4. Existing smoke setup: `packages/weasel-gl/dev/playwright.config.ts`, `smoke.spec.ts`, `synthetic.spec.ts`, `text.spec.ts` — structural reference for config and spec shape.
+4. Existing smoke setup: `packages/gl/dev/playwright.config.ts`, `smoke.spec.ts`, `synthetic.spec.ts`, `text.spec.ts` — structural reference for config and spec shape.
 5. `demo/demos/` — enumerate the full list of demo IDs before writing specs. At time of writing, the registry in `demo/registry.ts` defines 24 demos (see §Demo inventory below).
 6. `demo/CanvasKitDemo.tsx` — understand how the SPA routes by hash; backend query-string hook lands here in step 8.
 
@@ -318,7 +318,7 @@ export function assertMatchesBaseline(
 - `UPDATE_SNAPSHOTS=1` is the environment-level toggle; `npm run test:visual:update` sets it via `cross-env UPDATE_SNAPSHOTS=1 ...` OR via an explicit `--update-snapshots` flag mapped to it. See task 4 for scripts.
 - The diff PNG is computed but not written to disk in this harness (keeps the rig simple). If a PR workflow should artifact the diff image for review, add an optional `diffOutputPath` parameter and `writeFileSync` when provided.
 
-> **Convention §6 (preserveDrawingBuffer):** Playwright's `canvas.screenshot()` uses the browser's built-in screenshot mechanism (composited frame capture), NOT `gl.readPixels`. This bypasses the `preserveDrawingBuffer` concern entirely — the browser composites and captures whatever was last painted, regardless of the WebGL buffer state. This is correct behavior for a visual regression rig. The smoke specs in `packages/weasel-gl/dev/` use `gl.readPixels` because they need raw color values; this rig does not.
+> **Convention §6 (preserveDrawingBuffer):** Playwright's `canvas.screenshot()` uses the browser's built-in screenshot mechanism (composited frame capture), NOT `gl.readPixels`. This bypasses the `preserveDrawingBuffer` concern entirely — the browser composites and captures whatever was last painted, regardless of the WebGL buffer state. This is correct behavior for a visual regression rig. The smoke specs in `packages/gl/dev/` use `gl.readPixels` because they need raw color values; this rig does not.
 
 ---
 
@@ -569,7 +569,7 @@ The spec (§ Risks & rollback) calls for a CI step that "fails if delta > 50KB w
 
 Add a step to the `test` job in `ci.yml` that:
 1. Runs `npm run bundlesize:weasel-gl` and captures the byte count.
-2. Compares against a committed baseline size (store as `packages/weasel-gl/.bundle-size-baseline` — a plain text file with the byte count).
+2. Compares against a committed baseline size (store as `packages/gl/.bundle-size-baseline` — a plain text file with the byte count).
 3. Fails if `current - baseline > 51200` (50 KB) AND no `CHANGELOG.md` entry for the current commit SHA exists.
 
 Simpler acceptable alternative: fail if delta > 50 KB unconditionally, and require the developer to update the baseline file as part of any large-bundle PR. This avoids the CHANGELOG-coupling complexity.
@@ -578,20 +578,20 @@ Simpler acceptable alternative: fail if delta > 50 KB unconditionally, and requi
 - name: Assert weasel-gl bundle size delta
   run: |
     CURRENT=$(npm run bundlesize:weasel-gl --silent 2>&1 | grep -oP '\d+(?= bytes)')
-    BASELINE=$(cat packages/weasel-gl/.bundle-size-baseline 2>/dev/null || echo 0)
+    BASELINE=$(cat packages/gl/.bundle-size-baseline 2>/dev/null || echo 0)
     DELTA=$((CURRENT - BASELINE))
     echo "Bundle size: ${CURRENT} bytes (baseline: ${BASELINE}, delta: ${DELTA})"
     if [ "$DELTA" -gt 51200 ]; then
       echo "ERROR: bundle grew by ${DELTA} bytes (> 50KB limit)."
-      echo "Update packages/weasel-gl/.bundle-size-baseline if this is intentional."
+      echo "Update packages/gl/.bundle-size-baseline if this is intentional."
       exit 1
     fi
 ```
 
 Capture the initial baseline:
 ```bash
-npm run bundlesize:weasel-gl | grep -oP '\d+(?= bytes)' > packages/weasel-gl/.bundle-size-baseline
-git add packages/weasel-gl/.bundle-size-baseline
+npm run bundlesize:weasel-gl | grep -oP '\d+(?= bytes)' > packages/gl/.bundle-size-baseline
+git add packages/gl/.bundle-size-baseline
 ```
 
 ---

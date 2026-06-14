@@ -3,7 +3,7 @@ import {
   SceneCanvas,
   useScene,
   useSelection,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 

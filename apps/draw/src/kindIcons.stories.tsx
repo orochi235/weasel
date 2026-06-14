@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { BooleanOp } from '@orochi235/weasel';
+import type { BooleanOp } from '@weasel-js/core';
 import { ToolIcon } from './kindIcons';
 import type { ToolKind } from './poseUpdate';
 

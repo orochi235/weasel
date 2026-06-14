@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, vitest. No new dependencies.
 
-**Prerequisite:** This plan assumes the `weasel-gestures` extraction is **not yet** complete — paths reference current locations under `src/tools/routing/` and `apps/swillustrator/src/dev/`. If the extraction lands first, the same code edits apply to `packages/weasel-gestures/src/` paths instead. Sequencing decision is yours; either order works.
+**Prerequisite:** This plan assumes the `weasel-gestures` extraction is **not yet** complete — paths reference current locations under `src/tools/routing/` and `apps/swillustrator/src/dev/`. If the extraction lands first, the same code edits apply to `packages/gestures/src/` paths instead. Sequencing decision is yours; either order works.
 
 **Out of scope:**
 - `ModifierKey` enum retirement at the tool-authoring layer. Tool route tables continue using `Partial<Record<ModifierKey, ActionFn>>` as today; only the wire-format layer (route strings, reflection RegistryEntry, parsed shape) switches to structured.
@@ -652,7 +652,7 @@ grep -n "formatRoutes\|formatRoute\b" /Users/mike/src/weasel/apps/swillustrator/
 Replace the body of `formatRoutes` with a one-liner per entry:
 
 ```ts
-import { formatRoute } from '@orochi235/weasel/routing';
+import { formatRoute } from '@weasel-js/core/routing';
 
 function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
   return entries.map((e) => formatRoute({
@@ -749,7 +749,7 @@ Expected: failures.
 In `RegistryDetail.tsx`, update `modifierKeys` to consume the structured `ParsedModifiers` shape, and update `RouteBadge` to render the v3 phase list:
 
 ```tsx
-import type { ParsedModifiers, ModName } from '@orochi235/weasel/routing';
+import type { ParsedModifiers, ModName } from '@weasel-js/core/routing';
 
 const MOD_GLYPHS: Record<ModName, string> = { mod: '⌘', shift: '⇧', alt: '⌥', ctrl: '⌃', meta: '⌘' };
 const MOD_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];

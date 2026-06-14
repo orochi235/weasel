@@ -2,26 +2,26 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Stand up `@orochi235/weasel-gl` as a workspace package and implement enough of `WeaselRenderer` to render solid-fill paths (both fillRules) inside nested `kind: 'group'` containers with transform + alpha. Exits when synthetic scenes (10/100/1000 polygons; both fill rules; nested groups) render correctly in headless Chromium.
+**Goal:** Stand up `@weasel-js/gl` as a workspace package and implement enough of `WeaselRenderer` to render solid-fill paths (both fillRules) inside nested `kind: 'group'` containers with transform + alpha. Exits when synthetic scenes (10/100/1000 polygons; both fill rules; nested groups) render correctly in headless Chromium.
 
-**Architecture:** New workspace package `packages/weasel-gl/`, source-only (no build), imported into the demo app via the workspace path mapping just like `weasel-ui`. Renderer is one class (`WeaselRenderer`) wrapping a `WebGL2RenderingContext`. Tessellation is pure functions; the path mesh cache is a module-level `WeakMap<Path, Mesh>`. Tests are vitest unit tests using a Proxy-based GL call recorder; a single Playwright smoke test exercises a real browser to confirm pixels actually paint.
+**Architecture:** New workspace package `packages/gl/`, source-only (no build), imported into the demo app via the workspace path mapping just like `weasel-ui`. Renderer is one class (`WeaselRenderer`) wrapping a `WebGL2RenderingContext`. Tessellation is pure functions; the path mesh cache is a module-level `WeakMap<Path, Mesh>`. Tests are vitest unit tests using a Proxy-based GL call recorder; a single Playwright smoke test exercises a real browser to confirm pixels actually paint.
 
-**Tech Stack:** TypeScript (strict), vitest, jsdom, earcut (new dep), Playwright (new dev dep). Reuses existing `@orochi235/weasel` exports: `Path`, `PolygonPath`, `RectPath`, `PATH_M`, `PATH_L`, `PATH_C`, `PATH_Q`, `PATH_Z`, `PATH_CMD_LENGTHS`, `flattenCubic`, `flattenQuadratic`, `DEFAULT_FLATTEN_TOLERANCE`.
+**Tech Stack:** TypeScript (strict), vitest, jsdom, earcut (new dep), Playwright (new dev dep). Reuses existing `@weasel-js/core` exports: `Path`, `PolygonPath`, `RectPath`, `PATH_M`, `PATH_L`, `PATH_C`, `PATH_Q`, `PATH_Z`, `PATH_CMD_LENGTHS`, `flattenCubic`, `flattenQuadratic`, `DEFAULT_FLATTEN_TOLERANCE`.
 
 **Reference reading before starting:**
 - Spec: `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md` (sections "Architecture deltas," "Sequencing → Step 1," "Custom shader API")
 - Existing path types: `src/features/paths/types.ts`
 - Existing bezier flatteners: `src/features/paths/flatten.ts`
-- Existing workspace package shape: `packages/weasel-ui/package.json`, `packages/weasel-ui/tsconfig.json`
+- Existing workspace package shape: `packages/ui/package.json`, `packages/ui/tsconfig.json`
 
 ---
 
 ## File structure
 
-Files this plan creates (all under `packages/weasel-gl/`):
+Files this plan creates (all under `packages/gl/`):
 
 ```
-packages/weasel-gl/
+packages/gl/
   package.json                       # workspace package manifest
   tsconfig.json                      # extends root, src-only
   README.md                          # one paragraph + "experimental" notice
@@ -60,7 +60,7 @@ Files this plan modifies (outside the new package):
 ```
 package.json                         # add earcut, @types/earcut, @playwright/test deps
                                      # add scripts: test:visual:smoke, gen:font (placeholder)
-tsconfig.json                        # add packages/weasel-gl path mapping + include
+tsconfig.json                        # add packages/gl path mapping + include
 .github/workflows/ci.yml             # bundle-size gate for weasel-gl (only if file exists)
 docs/TODO.md                         # mark step 1 in progress / shipped
 ```
@@ -72,16 +72,16 @@ docs/TODO.md                         # mark step 1 in progress / shipped
 ## Task 1: Workspace package skeleton
 
 **Files:**
-- Create: `packages/weasel-gl/package.json`
-- Create: `packages/weasel-gl/tsconfig.json`
-- Create: `packages/weasel-gl/README.md`
-- Create: `packages/weasel-gl/src/index.ts`
-- Create: `packages/weasel-gl/src/index.test.ts`
+- Create: `packages/gl/package.json`
+- Create: `packages/gl/tsconfig.json`
+- Create: `packages/gl/README.md`
+- Create: `packages/gl/src/index.ts`
+- Create: `packages/gl/src/index.test.ts`
 - Modify: `tsconfig.json` (root) — add path mapping and include
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/index.test.ts`:
+Create `packages/gl/src/index.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -97,17 +97,17 @@ describe('weasel-gl barrel', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/index.test.ts`
+Run: `npm test -- packages/gl/src/index.test.ts`
 
 Expected: FAIL — module `./index` not found, or no exports.
 
 - [ ] **Step 3: Create the package files**
 
-Create `packages/weasel-gl/package.json`:
+Create `packages/gl/package.json`:
 
 ```json
 {
-  "name": "@orochi235/weasel-gl",
+  "name": "@weasel-js/gl",
   "version": "0.0.0",
   "private": true,
   "description": "WebGL2 renderer for weasel — experimental, parallel to the 2D backend.",
@@ -127,7 +127,7 @@ Create `packages/weasel-gl/package.json`:
 }
 ```
 
-Create `packages/weasel-gl/tsconfig.json`:
+Create `packages/gl/tsconfig.json`:
 
 ```json
 {
@@ -140,21 +140,21 @@ Create `packages/weasel-gl/tsconfig.json`:
 }
 ```
 
-Create `packages/weasel-gl/README.md`:
+Create `packages/gl/README.md`:
 
 ```md
-# @orochi235/weasel-gl
+# @weasel-js/gl
 
 WebGL2 renderer for weasel. **Experimental.** Builds toward parity with the 2D backend; not consumer-ready.
 
 See `docs/superpowers/specs/2026-05-08-webgl-transition-plan-design.md` for the transition plan and `docs/superpowers/plans/2026-05-08-webgl-step-1-solid-fill-paths.md` for the current step.
 ```
 
-Create `packages/weasel-gl/src/index.ts`:
+Create `packages/gl/src/index.ts`:
 
 ```ts
 /**
- * @orochi235/weasel-gl — public barrel.
+ * @weasel-js/gl — public barrel.
  *
  * Experimental. Surface evolves through the WebGL transition steps.
  */
@@ -165,23 +165,23 @@ Modify root `tsconfig.json` — add the path mapping under `compilerOptions.path
 
 ```jsonc
 "paths": {
-  "@orochi235/weasel": ["./src/index.ts"],
-  "@orochi235/weasel/*": ["./src/*"],
-  "@orochi235/weasel-ui": ["./packages/weasel-ui/src/index.ts"],
-  "@orochi235/weasel-gl": ["./packages/weasel-gl/src/index.ts"],
-  "@orochi235/weasel-gl/*": ["./packages/weasel-gl/src/*"]
+  "@weasel-js/core": ["./src/index.ts"],
+  "@weasel-js/core/*": ["./src/*"],
+  "@weasel-js/ui": ["./packages/ui/src/index.ts"],
+  "@weasel-js/gl": ["./packages/gl/src/index.ts"],
+  "@weasel-js/gl/*": ["./packages/gl/src/*"]
 }
 ```
 
 And add the package's source to `include`:
 
 ```jsonc
-"include": ["src", "demo", "apps", "packages/weasel-ui/src", "packages/weasel-gl/src", "packages/weasel-gl/test-utils", "packages/weasel-gl/dev"]
+"include": ["src", "demo", "apps", "packages/ui/src", "packages/gl/src", "packages/gl/test-utils", "packages/gl/dev"]
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/index.test.ts`
+Run: `npm test -- packages/gl/src/index.test.ts`
 
 Expected: PASS, 1 test.
 
@@ -192,7 +192,7 @@ Expected: 0 errors.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl tsconfig.json
+git add packages/gl tsconfig.json
 git commit -m "feat(weasel-gl): scaffold workspace package"
 ```
 
@@ -237,14 +237,14 @@ git commit -m "chore(deps): add earcut for path tessellation"
 ## Task 3: GL call recorder test utility
 
 **Files:**
-- Create: `packages/weasel-gl/test-utils/glRecorder.ts`
-- Create: `packages/weasel-gl/test-utils/glRecorder.test.ts`
+- Create: `packages/gl/test-utils/glRecorder.ts`
+- Create: `packages/gl/test-utils/glRecorder.test.ts`
 
 This is a Proxy-based fake `WebGL2RenderingContext` that records every method call. Used by every renderer-side unit test in this plan. Pixel correctness is *not* tested here — that's the smoke test's job.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/test-utils/glRecorder.test.ts`:
+Create `packages/gl/test-utils/glRecorder.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -294,13 +294,13 @@ describe('glRecorder', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/test-utils/glRecorder.test.ts`
+Run: `npm test -- packages/gl/test-utils/glRecorder.test.ts`
 
 Expected: FAIL — `glRecorder` module not found.
 
 - [ ] **Step 3: Implement glRecorder**
 
-Create `packages/weasel-gl/test-utils/glRecorder.ts`:
+Create `packages/gl/test-utils/glRecorder.ts`:
 
 ```ts
 /**
@@ -438,14 +438,14 @@ export function makeGLRecorder(): GLRecorder {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/test-utils/glRecorder.test.ts`
+Run: `npm test -- packages/gl/test-utils/glRecorder.test.ts`
 
 Expected: PASS, 5 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/test-utils
+git add packages/gl/test-utils
 git commit -m "feat(weasel-gl): GL call recorder for unit tests"
 ```
 
@@ -454,11 +454,11 @@ git commit -m "feat(weasel-gl): GL call recorder for unit tests"
 ## Task 4: Mesh type
 
 **Files:**
-- Create: `packages/weasel-gl/src/mesh.ts`
+- Create: `packages/gl/src/mesh.ts`
 
 A pure type definition. No tests; types are exercised by tessellator tests that follow.
 
-- [ ] **Step 1: Create `packages/weasel-gl/src/mesh.ts`**
+- [ ] **Step 1: Create `packages/gl/src/mesh.ts`**
 
 ```ts
 /**
@@ -490,7 +490,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/mesh.ts
+git add packages/gl/src/mesh.ts
 git commit -m "feat(weasel-gl): Mesh type"
 ```
 
@@ -499,16 +499,16 @@ git commit -m "feat(weasel-gl): Mesh type"
 ## Task 5: Tessellator — RectPath
 
 **Files:**
-- Create: `packages/weasel-gl/src/tessellate.ts`
-- Create: `packages/weasel-gl/src/tessellate.test.ts`
+- Create: `packages/gl/src/tessellate.ts`
+- Create: `packages/gl/src/tessellate.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/tessellate.test.ts`:
+Create `packages/gl/src/tessellate.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import type { RectPath } from '@orochi235/weasel';
+import type { RectPath } from '@weasel-js/core';
 import { tessellate } from './tessellate';
 
 describe('tessellate (RectPath)', () => {
@@ -536,16 +536,16 @@ describe('tessellate (RectPath)', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: FAIL — `tessellate` not found.
 
 - [ ] **Step 3: Implement tessellate for RectPath**
 
-Create `packages/weasel-gl/src/tessellate.ts`:
+Create `packages/gl/src/tessellate.ts`:
 
 ```ts
-import type { Path, RectPath } from '@orochi235/weasel';
+import type { Path, RectPath } from '@weasel-js/core';
 import type { Mesh } from './mesh';
 
 export function tessellate(path: Path): Mesh {
@@ -568,14 +568,14 @@ function tessellateRect(p: RectPath): Mesh {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: PASS, 2 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/tessellate.ts packages/weasel-gl/src/tessellate.test.ts
+git add packages/gl/src/tessellate.ts packages/gl/src/tessellate.test.ts
 git commit -m "feat(weasel-gl): tessellate RectPath"
 ```
 
@@ -584,12 +584,12 @@ git commit -m "feat(weasel-gl): tessellate RectPath"
 ## Task 6: Tessellator — PolygonPath single-contour, M/L/Z, nonzero
 
 **Files:**
-- Modify: `packages/weasel-gl/src/tessellate.ts`
-- Modify: `packages/weasel-gl/src/tessellate.test.ts`
+- Modify: `packages/gl/src/tessellate.ts`
+- Modify: `packages/gl/src/tessellate.test.ts`
 
 - [ ] **Step 1: Add failing tests**
 
-Append to `packages/weasel-gl/src/tessellate.test.ts`:
+Append to `packages/gl/src/tessellate.test.ts`:
 
 ```ts
 import {
@@ -597,7 +597,7 @@ import {
   PATH_L,
   PATH_Z,
   type PolygonPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 describe('tessellate (PolygonPath, single-contour, no curves)', () => {
   it('triangulates a square via M/L/L/L/Z', () => {
@@ -654,13 +654,13 @@ describe('tessellate (PolygonPath, single-contour, no curves)', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: FAIL — `tessellate` throws "PolygonPath not yet supported."
 
 - [ ] **Step 3: Implement single-contour polygon tessellation**
 
-Replace `packages/weasel-gl/src/tessellate.ts`:
+Replace `packages/gl/src/tessellate.ts`:
 
 ```ts
 import earcut from 'earcut';
@@ -674,7 +674,7 @@ import {
   PATH_C,
   PATH_Q,
   PATH_CMD_LENGTHS,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { Mesh } from './mesh';
 
 export function tessellate(path: Path): Mesh {
@@ -749,14 +749,14 @@ function tessellatePolygon(p: PolygonPath): Mesh {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: PASS, 5 tests (2 rect + 3 polygon).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/tessellate.ts packages/weasel-gl/src/tessellate.test.ts
+git add packages/gl/src/tessellate.ts packages/gl/src/tessellate.test.ts
 git commit -m "feat(weasel-gl): tessellate single-contour PolygonPath via earcut"
 ```
 
@@ -765,13 +765,13 @@ git commit -m "feat(weasel-gl): tessellate single-contour PolygonPath via earcut
 ## Task 7: Tessellator — multi-contour PolygonPath with holes (nonzero)
 
 **Files:**
-- Modify: `packages/weasel-gl/src/tessellate.test.ts`
+- Modify: `packages/gl/src/tessellate.test.ts`
 
 The implementation in Task 6 already passes hole indices to earcut; this task only adds the test coverage that proves it works.
 
 - [ ] **Step 1: Add failing test**
 
-Append to `packages/weasel-gl/src/tessellate.test.ts`:
+Append to `packages/gl/src/tessellate.test.ts`:
 
 ```ts
 describe('tessellate (PolygonPath, multi-contour, nonzero)', () => {
@@ -800,7 +800,7 @@ describe('tessellate (PolygonPath, multi-contour, nonzero)', () => {
 
 - [ ] **Step 2: Run test to verify it passes immediately**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: PASS, 6 tests. (The implementation in Task 6 already supports holes; this test guards against regression.)
 
@@ -809,7 +809,7 @@ If the assertion `expect(mesh.indices.length).toBe(24)` fails, do NOT change the
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/tessellate.test.ts
+git add packages/gl/src/tessellate.test.ts
 git commit -m "test(weasel-gl): cover multi-contour polygon with hole"
 ```
 
@@ -818,17 +818,17 @@ git commit -m "test(weasel-gl): cover multi-contour polygon with hole"
 ## Task 8: Tessellator — bezier curves (Q and C)
 
 **Files:**
-- Modify: `packages/weasel-gl/src/tessellate.ts`
-- Modify: `packages/weasel-gl/src/tessellate.test.ts`
+- Modify: `packages/gl/src/tessellate.ts`
+- Modify: `packages/gl/src/tessellate.test.ts`
 
-Reuse `flattenQuadratic` / `flattenCubic` from `@orochi235/weasel` (existing implementation in `src/features/paths/flatten.ts`).
+Reuse `flattenQuadratic` / `flattenCubic` from `@weasel-js/core` (existing implementation in `src/features/paths/flatten.ts`).
 
 - [ ] **Step 1: Add failing tests**
 
-Append to `packages/weasel-gl/src/tessellate.test.ts`:
+Append to `packages/gl/src/tessellate.test.ts`:
 
 ```ts
-import { PATH_Q as PQ, PATH_C as PC, DEFAULT_FLATTEN_TOLERANCE } from '@orochi235/weasel';
+import { PATH_Q as PQ, PATH_C as PC, DEFAULT_FLATTEN_TOLERANCE } from '@weasel-js/core';
 
 describe('tessellate (PolygonPath, bezier curves)', () => {
   it('flattens a quadratic and triangulates the resulting polyline', () => {
@@ -885,13 +885,13 @@ describe('tessellate (PolygonPath, bezier curves)', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: FAIL — bezier curves throw, and `tessellate` doesn't accept an options arg.
 
 - [ ] **Step 3: Implement curve flattening**
 
-Replace the import block at the top of `packages/weasel-gl/src/tessellate.ts`:
+Replace the import block at the top of `packages/gl/src/tessellate.ts`:
 
 ```ts
 import earcut from 'earcut';
@@ -908,7 +908,7 @@ import {
   DEFAULT_FLATTEN_TOLERANCE,
   flattenCubic,
   flattenQuadratic,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { Mesh } from './mesh';
 
 export interface TessellateOptions {
@@ -1012,14 +1012,14 @@ function tessellatePolygon(p: PolygonPath, opts: TessellateOptions): Mesh {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: PASS, 10 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/tessellate.ts packages/weasel-gl/src/tessellate.test.ts
+git add packages/gl/src/tessellate.ts packages/gl/src/tessellate.test.ts
 git commit -m "feat(weasel-gl): flatten Q/C bezier segments before tessellation"
 ```
 
@@ -1028,14 +1028,14 @@ git commit -m "feat(weasel-gl): flatten Q/C bezier segments before tessellation"
 ## Task 9: Tessellator — evenodd path (naive fan + requiresStencil)
 
 **Files:**
-- Modify: `packages/weasel-gl/src/tessellate.ts`
-- Modify: `packages/weasel-gl/src/tessellate.test.ts`
+- Modify: `packages/gl/src/tessellate.ts`
+- Modify: `packages/gl/src/tessellate.test.ts`
 
 For `fillRule: 'evenodd'`, we don't ask earcut to handle holes correctly (it doesn't, in the evenodd sense). Instead emit a naive triangle fan per contour and set `requiresStencil: true`. The renderer's stencil two-pass sorts out which fragments are actually inside.
 
 - [ ] **Step 1: Add failing tests**
 
-Append to `packages/weasel-gl/src/tessellate.test.ts`:
+Append to `packages/gl/src/tessellate.test.ts`:
 
 ```ts
 describe('tessellate (PolygonPath, evenodd)', () => {
@@ -1091,13 +1091,13 @@ describe('tessellate (PolygonPath, evenodd)', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: FAIL — current `tessellatePolygon` always uses earcut and never sets `requiresStencil`.
 
 - [ ] **Step 3: Implement evenodd path**
 
-Modify `packages/weasel-gl/src/tessellate.ts`. Update `flattenPolygon` to also return per-contour vertex offsets, and split `tessellatePolygon` into a fillRule branch:
+Modify `packages/gl/src/tessellate.ts`. Update `flattenPolygon` to also return per-contour vertex offsets, and split `tessellatePolygon` into a fillRule branch:
 
 ```ts
 interface FlattenedContours {
@@ -1203,14 +1203,14 @@ function flattenPolygon(p: PolygonPath, tolerance: number): FlattenedContours {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npm test -- packages/weasel-gl/src/tessellate.test.ts`
+Run: `npm test -- packages/gl/src/tessellate.test.ts`
 
 Expected: PASS, 13 tests. The previous "10×10 with hole, nonzero" test still passes because `contourStarts.slice(1)` produces the same hole-indices array earcut received before.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/tessellate.ts packages/weasel-gl/src/tessellate.test.ts
+git add packages/gl/src/tessellate.ts packages/gl/src/tessellate.test.ts
 git commit -m "feat(weasel-gl): evenodd fillRule via naive fan + requiresStencil"
 ```
 
@@ -1219,18 +1219,18 @@ git commit -m "feat(weasel-gl): evenodd fillRule via naive fan + requiresStencil
 ## Task 10: Path mesh cache
 
 **Files:**
-- Create: `packages/weasel-gl/src/cache.ts`
-- Create: `packages/weasel-gl/src/cache.test.ts`
+- Create: `packages/gl/src/cache.ts`
+- Create: `packages/gl/src/cache.test.ts`
 
 WeakMap keyed on Path identity. Same Path object → same cached Mesh. Different Path object (even with same coords) → different cache entry.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/cache.test.ts`:
+Create `packages/gl/src/cache.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import type { RectPath } from '@orochi235/weasel';
+import type { RectPath } from '@weasel-js/core';
 import { getMesh, _resetCacheForTests } from './cache';
 
 describe('mesh cache', () => {
@@ -1263,16 +1263,16 @@ describe('mesh cache', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/cache.test.ts`
+Run: `npm test -- packages/gl/src/cache.test.ts`
 
 Expected: FAIL — `cache` module not found.
 
 - [ ] **Step 3: Implement the cache**
 
-Create `packages/weasel-gl/src/cache.ts`:
+Create `packages/gl/src/cache.ts`:
 
 ```ts
-import type { Path } from '@orochi235/weasel';
+import type { Path } from '@weasel-js/core';
 import type { Mesh } from './mesh';
 import { tessellate, type TessellateOptions } from './tessellate';
 
@@ -1303,14 +1303,14 @@ export function _resetCacheForTests(): void {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/cache.test.ts`
+Run: `npm test -- packages/gl/src/cache.test.ts`
 
 Expected: PASS, 3 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/cache.ts packages/weasel-gl/src/cache.test.ts
+git add packages/gl/src/cache.ts packages/gl/src/cache.test.ts
 git commit -m "feat(weasel-gl): WeakMap path-mesh cache"
 ```
 
@@ -1319,14 +1319,14 @@ git commit -m "feat(weasel-gl): WeakMap path-mesh cache"
 ## Task 11: Mat3 — 2D affine helpers
 
 **Files:**
-- Create: `packages/weasel-gl/src/mat3.ts`
-- Create: `packages/weasel-gl/src/mat3.test.ts`
+- Create: `packages/gl/src/mat3.ts`
+- Create: `packages/gl/src/mat3.test.ts`
 
 Column-major 9-element flat array (matches `uniformMatrix3fv` GL convention). Six operations: `identity`, `multiply`, `translate`, `scale`, `screenToClip`, `apply`.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/mat3.test.ts`:
+Create `packages/gl/src/mat3.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1376,13 +1376,13 @@ describe('mat3', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/mat3.test.ts`
+Run: `npm test -- packages/gl/src/mat3.test.ts`
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement mat3**
 
-Create `packages/weasel-gl/src/mat3.ts`:
+Create `packages/gl/src/mat3.ts`:
 
 ```ts
 /**
@@ -1477,14 +1477,14 @@ export const mat3 = {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/mat3.test.ts`
+Run: `npm test -- packages/gl/src/mat3.test.ts`
 
 Expected: PASS, 5 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/mat3.ts packages/weasel-gl/src/mat3.test.ts
+git add packages/gl/src/mat3.ts packages/gl/src/mat3.test.ts
 git commit -m "feat(weasel-gl): mat3 affine helpers (column-major, GL-ready)"
 ```
 
@@ -1493,13 +1493,13 @@ git commit -m "feat(weasel-gl): mat3 affine helpers (column-major, GL-ready)"
 ## Task 12: Path-fill shader sources
 
 **Files:**
-- Create: `packages/weasel-gl/src/shaders/pathFill.ts`
+- Create: `packages/gl/src/shaders/pathFill.ts`
 
 Pure-data file. No tests; exercised by `ShaderProgram` tests in the next task and by the smoke test.
 
 - [ ] **Step 1: Create shader sources**
 
-Create `packages/weasel-gl/src/shaders/pathFill.ts`:
+Create `packages/gl/src/shaders/pathFill.ts`:
 
 ```ts
 /**
@@ -1555,7 +1555,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/src/shaders/pathFill.ts
+git add packages/gl/src/shaders/pathFill.ts
 git commit -m "feat(weasel-gl): solid path-fill GLSL sources"
 ```
 
@@ -1564,14 +1564,14 @@ git commit -m "feat(weasel-gl): solid path-fill GLSL sources"
 ## Task 13: ShaderProgram wrapper
 
 **Files:**
-- Create: `packages/weasel-gl/src/ShaderProgram.ts`
-- Create: `packages/weasel-gl/src/ShaderProgram.test.ts`
+- Create: `packages/gl/src/ShaderProgram.ts`
+- Create: `packages/gl/src/ShaderProgram.test.ts`
 
 Compile-link-lookup wrapper. Handles compile failure via thrown `ShaderCompileError`. Reads info logs on failure.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/ShaderProgram.test.ts`:
+Create `packages/gl/src/ShaderProgram.test.ts`:
 
 ```ts
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -1629,13 +1629,13 @@ describe('ShaderProgram', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/ShaderProgram.test.ts`
+Run: `npm test -- packages/gl/src/ShaderProgram.test.ts`
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement ShaderProgram**
 
-Create `packages/weasel-gl/src/ShaderProgram.ts`:
+Create `packages/gl/src/ShaderProgram.ts`:
 
 ```ts
 /**
@@ -1719,14 +1719,14 @@ export class ShaderProgram {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/ShaderProgram.test.ts`
+Run: `npm test -- packages/gl/src/ShaderProgram.test.ts`
 
 Expected: PASS, 4 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/ShaderProgram.ts packages/weasel-gl/src/ShaderProgram.test.ts
+git add packages/gl/src/ShaderProgram.ts packages/gl/src/ShaderProgram.test.ts
 git commit -m "feat(weasel-gl): ShaderProgram compile/link/lookup wrapper"
 ```
 
@@ -1735,14 +1735,14 @@ git commit -m "feat(weasel-gl): ShaderProgram compile/link/lookup wrapper"
 ## Task 14: Group state stack (transform + alpha)
 
 **Files:**
-- Create: `packages/weasel-gl/src/GroupState.ts`
-- Create: `packages/weasel-gl/src/GroupState.test.ts`
+- Create: `packages/gl/src/GroupState.ts`
+- Create: `packages/gl/src/GroupState.test.ts`
 
 Tracks the current `(transform, alpha)` while walking a DrawCommand tree. Push composes onto current; pop restores. Initial state is identity / 1.0.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/GroupState.test.ts`:
+Create `packages/gl/src/GroupState.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -1803,13 +1803,13 @@ describe('GroupState', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/GroupState.test.ts`
+Run: `npm test -- packages/gl/src/GroupState.test.ts`
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement GroupState**
 
-Create `packages/weasel-gl/src/GroupState.ts`:
+Create `packages/gl/src/GroupState.ts`:
 
 ```ts
 import { mat3, type Mat3 } from './mat3';
@@ -1860,14 +1860,14 @@ export class GroupState {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/GroupState.test.ts`
+Run: `npm test -- packages/gl/src/GroupState.test.ts`
 
 Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/GroupState.ts packages/weasel-gl/src/GroupState.test.ts
+git add packages/gl/src/GroupState.ts packages/gl/src/GroupState.test.ts
 git commit -m "feat(weasel-gl): GroupState push/pop transform + alpha stack"
 ```
 
@@ -1876,14 +1876,14 @@ git commit -m "feat(weasel-gl): GroupState push/pop transform + alpha stack"
 ## Task 15: GL mesh upload + cache
 
 **Files:**
-- Create: `packages/weasel-gl/src/GLMeshCache.ts`
-- Create: `packages/weasel-gl/src/GLMeshCache.test.ts`
+- Create: `packages/gl/src/GLMeshCache.ts`
+- Create: `packages/gl/src/GLMeshCache.test.ts`
 
 Upload a `Mesh` (CPU-side) into a VBO + IBO + VAO (GPU-side) and cache the GL handles keyed on Mesh identity. Re-uses the recorder for unit tests.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/GLMeshCache.test.ts`:
+Create `packages/gl/src/GLMeshCache.test.ts`:
 
 ```ts
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -1937,13 +1937,13 @@ describe('GLMeshCache', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/GLMeshCache.test.ts`
+Run: `npm test -- packages/gl/src/GLMeshCache.test.ts`
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement GLMeshCache**
 
-Create `packages/weasel-gl/src/GLMeshCache.ts`:
+Create `packages/gl/src/GLMeshCache.ts`:
 
 ```ts
 import type { Mesh } from './mesh';
@@ -2010,14 +2010,14 @@ export class GLMeshCache {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/GLMeshCache.test.ts`
+Run: `npm test -- packages/gl/src/GLMeshCache.test.ts`
 
 Expected: PASS, 3 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/GLMeshCache.ts packages/weasel-gl/src/GLMeshCache.test.ts
+git add packages/gl/src/GLMeshCache.ts packages/gl/src/GLMeshCache.test.ts
 git commit -m "feat(weasel-gl): GL-side mesh upload + cache"
 ```
 
@@ -2026,14 +2026,14 @@ git commit -m "feat(weasel-gl): GL-side mesh upload + cache"
 ## Task 16: WeaselRenderer — constructor + initial GL setup
 
 **Files:**
-- Create: `packages/weasel-gl/src/WeaselRenderer.ts`
-- Create: `packages/weasel-gl/src/WeaselRenderer.test.ts`
+- Create: `packages/gl/src/WeaselRenderer.ts`
+- Create: `packages/gl/src/WeaselRenderer.test.ts`
 
 Class wrapping the GL context. Constructor takes a `HTMLCanvasElement` (or, for tests, a precomputed `WebGL2RenderingContext`) and runs initial setup: blend mode, clear color, viewport, compile path-fill shader.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/WeaselRenderer.test.ts`:
+Create `packages/gl/src/WeaselRenderer.test.ts`:
 
 ```ts
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -2072,13 +2072,13 @@ describe('WeaselRenderer (constructor)', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts`
+Run: `npm test -- packages/gl/src/WeaselRenderer.test.ts`
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement constructor**
 
-Create `packages/weasel-gl/src/WeaselRenderer.ts`:
+Create `packages/gl/src/WeaselRenderer.ts`:
 
 ```ts
 import { ShaderProgram } from './ShaderProgram';
@@ -2166,14 +2166,14 @@ export class WeaselRenderer {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts`
+Run: `npm test -- packages/gl/src/WeaselRenderer.test.ts`
 
 Expected: PASS, 3 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/WeaselRenderer.ts packages/weasel-gl/src/WeaselRenderer.test.ts
+git add packages/gl/src/WeaselRenderer.ts packages/gl/src/WeaselRenderer.test.ts
 git commit -m "feat(weasel-gl): WeaselRenderer constructor + initial GL state"
 ```
 
@@ -2182,12 +2182,12 @@ git commit -m "feat(weasel-gl): WeaselRenderer constructor + initial GL state"
 ## Task 17: WeaselRenderer.resize()
 
 **Files:**
-- Modify: `packages/weasel-gl/src/WeaselRenderer.ts`
-- Modify: `packages/weasel-gl/src/WeaselRenderer.test.ts`
+- Modify: `packages/gl/src/WeaselRenderer.ts`
+- Modify: `packages/gl/src/WeaselRenderer.test.ts`
 
 - [ ] **Step 1: Add failing test**
 
-Append to `packages/weasel-gl/src/WeaselRenderer.test.ts`:
+Append to `packages/gl/src/WeaselRenderer.test.ts`:
 
 ```ts
 describe('WeaselRenderer.resize', () => {
@@ -2212,13 +2212,13 @@ describe('WeaselRenderer.resize', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts`
+Run: `npm test -- packages/gl/src/WeaselRenderer.test.ts`
 
 Expected: FAIL — `resize` not defined.
 
 - [ ] **Step 3: Implement resize**
 
-Two edits to `packages/weasel-gl/src/WeaselRenderer.ts`:
+Two edits to `packages/gl/src/WeaselRenderer.ts`:
 
 (a) Declare a new private field next to the existing private fields at the top of the class (just under `private dpr: number;`):
 
@@ -2253,14 +2253,14 @@ resize(dims: { width: number; height: number; dpr: number }): void {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts`
+Run: `npm test -- packages/gl/src/WeaselRenderer.test.ts`
 
 Expected: PASS, 5 tests total.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/WeaselRenderer.ts packages/weasel-gl/src/WeaselRenderer.test.ts
+git add packages/gl/src/WeaselRenderer.ts packages/gl/src/WeaselRenderer.test.ts
 git commit -m "feat(weasel-gl): WeaselRenderer.resize updates viewport + canvas dims"
 ```
 
@@ -2269,14 +2269,14 @@ git commit -m "feat(weasel-gl): WeaselRenderer.resize updates viewport + canvas 
 ## Task 18: WeaselRenderer — context loss / restore handlers
 
 **Files:**
-- Modify: `packages/weasel-gl/src/WeaselRenderer.ts`
-- Modify: `packages/weasel-gl/src/WeaselRenderer.test.ts`
+- Modify: `packages/gl/src/WeaselRenderer.ts`
+- Modify: `packages/gl/src/WeaselRenderer.test.ts`
 
 When `webglcontextlost` fires, the renderer marks state as invalid. On `webglcontextrestored`, it re-runs initial setup and re-compiles the path-fill program. Mesh-cache is recreated (Mesh meshes themselves don't change, but their GL-side handles are gone).
 
 - [ ] **Step 1: Add failing test**
 
-Append to `packages/weasel-gl/src/WeaselRenderer.test.ts`:
+Append to `packages/gl/src/WeaselRenderer.test.ts`:
 
 ```ts
 describe('WeaselRenderer context loss', () => {
@@ -2315,13 +2315,13 @@ describe('WeaselRenderer context loss', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts`
+Run: `npm test -- packages/gl/src/WeaselRenderer.test.ts`
 
 Expected: FAIL — `isContextLost`, event handlers not present.
 
 - [ ] **Step 3: Implement context-loss handling**
 
-Three edits to `packages/weasel-gl/src/WeaselRenderer.ts`:
+Three edits to `packages/gl/src/WeaselRenderer.ts`:
 
 (a) Mark `pathFill` and `meshCache` as mutable (drop `readonly`) — the restore handler reassigns them. Replace the existing two field declarations near the top of the class:
 
@@ -2381,14 +2381,14 @@ if (this.canvas) {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/WeaselRenderer.test.ts`
+Run: `npm test -- packages/gl/src/WeaselRenderer.test.ts`
 
 Expected: PASS, 6 tests total.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/WeaselRenderer.ts packages/weasel-gl/src/WeaselRenderer.test.ts
+git add packages/gl/src/WeaselRenderer.ts packages/gl/src/WeaselRenderer.test.ts
 git commit -m "feat(weasel-gl): handle webglcontextlost / restored"
 ```
 
@@ -2397,18 +2397,18 @@ git commit -m "feat(weasel-gl): handle webglcontextlost / restored"
 ## Task 19: DrawCommand union (step-1 subset) + interpreter — kind: 'group'
 
 **Files:**
-- Create: `packages/weasel-gl/src/DrawCommand.ts`
-- Create: `packages/weasel-gl/src/draw.ts`
-- Create: `packages/weasel-gl/src/draw.test.ts`
+- Create: `packages/gl/src/DrawCommand.ts`
+- Create: `packages/gl/src/draw.ts`
+- Create: `packages/gl/src/draw.test.ts`
 
 The full DrawCommand union from the spec lands across multiple steps; here we land just `kind: 'group'` and `kind: 'path'`. (`text`, `image`, `shader` arrive in later steps.)
 
 - [ ] **Step 1: Create the DrawCommand types**
 
-Create `packages/weasel-gl/src/DrawCommand.ts`:
+Create `packages/gl/src/DrawCommand.ts`:
 
 ```ts
-import type { Path } from '@orochi235/weasel';
+import type { Path } from '@weasel-js/core';
 import type { Mat3 } from './mat3';
 
 /**
@@ -2441,7 +2441,7 @@ export interface GroupDrawCommand {
 
 - [ ] **Step 2: Write the failing draw() test**
 
-Create `packages/weasel-gl/src/draw.test.ts`:
+Create `packages/gl/src/draw.test.ts`:
 
 ```ts
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -2490,13 +2490,13 @@ describe('WeaselRenderer.render — kind: group', () => {
 
 - [ ] **Step 3: Run tests to verify they fail**
 
-Run: `npm test -- packages/weasel-gl/src/draw.test.ts`
+Run: `npm test -- packages/gl/src/draw.test.ts`
 
 Expected: FAIL — `render` not defined.
 
 - [ ] **Step 4: Implement the interpreter (group only) + render entry point**
 
-Create `packages/weasel-gl/src/draw.ts`:
+Create `packages/gl/src/draw.ts`:
 
 ```ts
 import type { DrawCommand, GroupDrawCommand, PathDrawCommand } from './DrawCommand';
@@ -2561,14 +2561,14 @@ render(commands: DrawCommand[]): void {
 
 - [ ] **Step 5: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/draw.test.ts`
+Run: `npm test -- packages/gl/src/draw.test.ts`
 
 Expected: PASS, 3 tests.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add packages/weasel-gl/src/DrawCommand.ts packages/weasel-gl/src/draw.ts packages/weasel-gl/src/draw.test.ts packages/weasel-gl/src/WeaselRenderer.ts
+git add packages/gl/src/DrawCommand.ts packages/gl/src/draw.ts packages/gl/src/draw.test.ts packages/gl/src/WeaselRenderer.ts
 git commit -m "feat(weasel-gl): DrawCommand union + render entry + group interpreter"
 ```
 
@@ -2577,14 +2577,14 @@ git commit -m "feat(weasel-gl): DrawCommand union + render entry + group interpr
 ## Task 20: Color string parser
 
 **Files:**
-- Create: `packages/weasel-gl/src/color.ts`
-- Create: `packages/weasel-gl/src/color.test.ts`
+- Create: `packages/gl/src/color.ts`
+- Create: `packages/gl/src/color.test.ts`
 
 `Paint.color` accepts CSS color strings; the GL uniform needs four `[0..1]` floats. The simplest robust approach: use the browser's built-in CSS parsing via a throwaway `<canvas>` 2D context. For headless/jsdom environments, a small explicit parser handles the common forms.
 
 - [ ] **Step 1: Write the failing test**
 
-Create `packages/weasel-gl/src/color.test.ts`:
+Create `packages/gl/src/color.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -2630,13 +2630,13 @@ describe('parseColor', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npm test -- packages/weasel-gl/src/color.test.ts`
+Run: `npm test -- packages/gl/src/color.test.ts`
 
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement parser**
 
-Create `packages/weasel-gl/src/color.ts`:
+Create `packages/gl/src/color.ts`:
 
 ```ts
 /**
@@ -2693,14 +2693,14 @@ function parseHex(s: string): [number, number, number, number] {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npm test -- packages/weasel-gl/src/color.test.ts`
+Run: `npm test -- packages/gl/src/color.test.ts`
 
 Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/color.ts packages/weasel-gl/src/color.test.ts
+git add packages/gl/src/color.ts packages/gl/src/color.test.ts
 git commit -m "feat(weasel-gl): parseColor for solid Paint fills"
 ```
 
@@ -2709,15 +2709,15 @@ git commit -m "feat(weasel-gl): parseColor for solid Paint fills"
 ## Task 21: DrawCommand interpreter — kind: 'path' (nonzero solid fill)
 
 **Files:**
-- Modify: `packages/weasel-gl/src/draw.ts`
-- Modify: `packages/weasel-gl/src/draw.test.ts`
+- Modify: `packages/gl/src/draw.ts`
+- Modify: `packages/gl/src/draw.test.ts`
 
 - [ ] **Step 1: Add failing tests**
 
-Append to `packages/weasel-gl/src/draw.test.ts`:
+Append to `packages/gl/src/draw.test.ts`:
 
 ```ts
-import type { RectPath } from '@orochi235/weasel';
+import type { RectPath } from '@weasel-js/core';
 
 describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -2756,13 +2756,13 @@ describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npm test -- packages/weasel-gl/src/draw.test.ts`
+Run: `npm test -- packages/gl/src/draw.test.ts`
 
 Expected: FAIL — `drawPath` is a no-op.
 
 - [ ] **Step 3: Implement drawPath**
 
-Replace the `drawPath` function in `packages/weasel-gl/src/draw.ts`:
+Replace the `drawPath` function in `packages/gl/src/draw.ts`:
 
 ```ts
 import { parseColor } from './color';
@@ -2803,14 +2803,14 @@ function drawPathStencil(_ctx: DrawContext, _cmd: PathDrawCommand, _handle: { va
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npm test -- packages/weasel-gl/src/draw.test.ts`
+Run: `npm test -- packages/gl/src/draw.test.ts`
 
 Expected: PASS, 6 tests total. (Three new path tests pass; previous group tests still pass.)
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/draw.ts packages/weasel-gl/src/draw.test.ts
+git add packages/gl/src/draw.ts packages/gl/src/draw.test.ts
 git commit -m "feat(weasel-gl): draw kind: 'path' with nonzero solid fill"
 ```
 
@@ -2819,8 +2819,8 @@ git commit -m "feat(weasel-gl): draw kind: 'path' with nonzero solid fill"
 ## Task 22: DrawCommand interpreter — kind: 'path' (evenodd, stencil two-pass)
 
 **Files:**
-- Modify: `packages/weasel-gl/src/draw.ts`
-- Modify: `packages/weasel-gl/src/draw.test.ts`
+- Modify: `packages/gl/src/draw.ts`
+- Modify: `packages/gl/src/draw.test.ts`
 
 Stencil two-pass for evenodd:
 1. **Pass 1 (mask build):** disable color writes; enable stencil; configure `stencilOp(KEEP, KEEP, INVERT)` so each fragment toggles its stencil bit. Draw the naive fan. Result: stencil bits are 1 inside (odd-coverage) regions, 0 outside.
@@ -2830,11 +2830,11 @@ For step 1, we re-draw the fan as the second pass — it covers the same fragmen
 
 - [ ] **Step 1: Add failing tests**
 
-Append to `packages/weasel-gl/src/draw.test.ts`:
+Append to `packages/gl/src/draw.test.ts`:
 
 ```ts
-import type { PolygonPath } from '@orochi235/weasel';
-import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@orochi235/weasel';
+import type { PolygonPath } from '@weasel-js/core';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/core';
 
 describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -2882,13 +2882,13 @@ describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () =
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npm test -- packages/weasel-gl/src/draw.test.ts`
+Run: `npm test -- packages/gl/src/draw.test.ts`
 
 Expected: FAIL — `drawPathStencil` is still a stub.
 
 - [ ] **Step 3: Implement drawPathStencil**
 
-Replace `drawPathStencil` in `packages/weasel-gl/src/draw.ts`:
+Replace `drawPathStencil` in `packages/gl/src/draw.ts`:
 
 ```ts
 import type { GLMeshHandle } from './GLMeshCache';
@@ -2931,14 +2931,14 @@ function drawPathStencil(ctx: DrawContext, cmd: PathDrawCommand, handle: GLMeshH
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npm test -- packages/weasel-gl/src/draw.test.ts`
+Run: `npm test -- packages/gl/src/draw.test.ts`
 
 Expected: PASS, 8 tests total.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/weasel-gl/src/draw.ts packages/weasel-gl/src/draw.test.ts
+git add packages/gl/src/draw.ts packages/gl/src/draw.test.ts
 git commit -m "feat(weasel-gl): evenodd path via stencil two-pass"
 ```
 
@@ -2947,15 +2947,15 @@ git commit -m "feat(weasel-gl): evenodd path via stencil two-pass"
 ## Task 23: Index barrel exports
 
 **Files:**
-- Modify: `packages/weasel-gl/src/index.ts`
+- Modify: `packages/gl/src/index.ts`
 
 - [ ] **Step 1: Update the barrel**
 
-Replace `packages/weasel-gl/src/index.ts`:
+Replace `packages/gl/src/index.ts`:
 
 ```ts
 /**
- * @orochi235/weasel-gl — public barrel.
+ * @weasel-js/gl — public barrel.
  *
  * Experimental. Surface evolves through the WebGL transition steps.
  * Step 1 ships: WeaselRenderer + DrawCommand types for solid-fill paths
@@ -2978,7 +2978,7 @@ export type { Mesh } from './mesh';
 
 - [ ] **Step 2: Update the barrel test**
 
-Replace `packages/weasel-gl/src/index.test.ts`:
+Replace `packages/gl/src/index.test.ts`:
 
 ```ts
 import { describe, it, expect } from 'vitest';
@@ -2997,7 +2997,7 @@ describe('weasel-gl barrel', () => {
 
 - [ ] **Step 3: Run tests + typecheck**
 
-Run: `npm test -- packages/weasel-gl/src/index.test.ts`
+Run: `npm test -- packages/gl/src/index.test.ts`
 
 Expected: PASS, 2 tests.
 
@@ -3008,7 +3008,7 @@ Expected: 0 errors.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-gl/src/index.ts packages/weasel-gl/src/index.test.ts
+git add packages/gl/src/index.ts packages/gl/src/index.test.ts
 git commit -m "feat(weasel-gl): public barrel exports for step 1"
 ```
 
@@ -3017,15 +3017,15 @@ git commit -m "feat(weasel-gl): public barrel exports for step 1"
 ## Task 24: Smoke page (manual)
 
 **Files:**
-- Create: `packages/weasel-gl/dev/smoke.html`
-- Create: `packages/weasel-gl/dev/smoke.ts`
-- Modify: `vite.config.ts` (root) — verify it picks up `packages/weasel-gl/dev/`
+- Create: `packages/gl/dev/smoke.html`
+- Create: `packages/gl/dev/smoke.ts`
+- Modify: `vite.config.ts` (root) — verify it picks up `packages/gl/dev/`
 
 A small browser page that boots the renderer against a real GL context and renders a 100×100 red square at (50, 50). Used for manual eyeballing during development and as the target of the Playwright smoke test in the next task.
 
 - [ ] **Step 1: Create the smoke page**
 
-Create `packages/weasel-gl/dev/smoke.html`:
+Create `packages/gl/dev/smoke.html`:
 
 ```html
 <!doctype html>
@@ -3045,7 +3045,7 @@ Create `packages/weasel-gl/dev/smoke.html`:
 </html>
 ```
 
-Create `packages/weasel-gl/dev/smoke.ts`:
+Create `packages/gl/dev/smoke.ts`:
 
 ```ts
 import { WeaselRenderer, mat3 } from '../src/index';
@@ -3082,7 +3082,7 @@ The root `vite.config.ts` is configured for the demo app. To boot the smoke page
 npx vite --config vite.config.ts dev
 ```
 
-Then visit: `http://localhost:5173/packages/weasel-gl/dev/smoke.html`
+Then visit: `http://localhost:5173/packages/gl/dev/smoke.html`
 
 Expected: a red 100×100 square at (50, 50) and a 50%-opacity green 100×100 square at (200, 50) on a dark gray page.
 
@@ -3095,7 +3095,7 @@ Open the URL, confirm two squares render (red opaque, green half-opacity). Commi
 - [ ] **Step 4: Commit**
 
 ```bash
-git add packages/weasel-gl/dev/smoke.html packages/weasel-gl/dev/smoke.ts
+git add packages/gl/dev/smoke.html packages/gl/dev/smoke.ts
 git commit -m "chore(weasel-gl): smoke page for manual + Playwright verification"
 ```
 
@@ -3105,8 +3105,8 @@ git commit -m "chore(weasel-gl): smoke page for manual + Playwright verification
 
 **Files:**
 - Modify: `package.json` — add `@playwright/test`, `pixelmatch`, `pngjs`, scripts
-- Create: `packages/weasel-gl/dev/playwright.config.ts`
-- Create: `packages/weasel-gl/dev/smoke.spec.ts`
+- Create: `packages/gl/dev/playwright.config.ts`
+- Create: `packages/gl/dev/smoke.spec.ts`
 
 Step-1 smoke test: boot the smoke page and confirm the expected pixels are roughly the expected colors. NOT a baseline — full visual regression rig lands in step 9.
 
@@ -3121,12 +3121,12 @@ Run: `npx playwright install chromium` (one-time, downloads the browser binary).
 In root `package.json`, add to `scripts`:
 
 ```jsonc
-"test:smoke:step1": "playwright test --config=packages/weasel-gl/dev/playwright.config.ts"
+"test:smoke:step1": "playwright test --config=packages/gl/dev/playwright.config.ts"
 ```
 
 - [ ] **Step 3: Create Playwright config**
 
-Create `packages/weasel-gl/dev/playwright.config.ts`:
+Create `packages/gl/dev/playwright.config.ts`:
 
 ```ts
 import { defineConfig } from '@playwright/test';
@@ -3150,13 +3150,13 @@ export default defineConfig({
 
 - [ ] **Step 4: Write the smoke test**
 
-Create `packages/weasel-gl/dev/smoke.spec.ts`:
+Create `packages/gl/dev/smoke.spec.ts`:
 
 ```ts
 import { test, expect } from '@playwright/test';
 
 test('step 1 smoke — red and green rects render', async ({ page }) => {
-  await page.goto('/packages/weasel-gl/dev/smoke.html');
+  await page.goto('/packages/gl/dev/smoke.html');
   // Wait for canvas to exist and the renderer to flush.
   await page.waitForSelector('canvas');
   await page.waitForTimeout(200);                       // generous; the smoke renders synchronously
@@ -3199,7 +3199,7 @@ Expected: PASS — Playwright boots vite, navigates to the smoke page, samples p
 - [ ] **Step 6: Commit**
 
 ```bash
-git add package.json package-lock.json packages/weasel-gl/dev/playwright.config.ts packages/weasel-gl/dev/smoke.spec.ts
+git add package.json package-lock.json packages/gl/dev/playwright.config.ts packages/gl/dev/smoke.spec.ts
 git commit -m "test(weasel-gl): Playwright smoke for step 1"
 ```
 
@@ -3208,14 +3208,14 @@ git commit -m "test(weasel-gl): Playwright smoke for step 1"
 ## Task 26: Synthetic scene exit verification
 
 **Files:**
-- Create: `packages/weasel-gl/dev/synthetic.html`
-- Create: `packages/weasel-gl/dev/synthetic.ts`
+- Create: `packages/gl/dev/synthetic.html`
+- Create: `packages/gl/dev/synthetic.ts`
 
 Verifies the step-1 spec exit criterion: synthetic test scenes (10 / 100 / 1000 polygons; nested groups with transform + alpha; both fillRules) render correctly. Manual eyeball verification only — automated visual regression lands in step 9.
 
 - [ ] **Step 1: Create the synthetic scene page**
 
-Create `packages/weasel-gl/dev/synthetic.html`:
+Create `packages/gl/dev/synthetic.html`:
 
 ```html
 <!doctype html>
@@ -3243,7 +3243,7 @@ Create `packages/weasel-gl/dev/synthetic.html`:
 </html>
 ```
 
-Create `packages/weasel-gl/dev/synthetic.ts`:
+Create `packages/gl/dev/synthetic.ts`:
 
 ```ts
 import { WeaselRenderer, mat3 } from '../src/index';
@@ -3253,7 +3253,7 @@ import {
 import {
   PATH_M, PATH_L, PATH_Z,
   type PolygonPath,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 
 function randomRectCommand(seed: number, color: string): DrawCommand {
   const rand = (s: number) => Math.abs(Math.sin(s * 9301 + 49297) * 233280) % 1;
@@ -3304,7 +3304,7 @@ make('cEvenodd', 400, 400, [{ kind: 'path', path: ringPath, fill: { color: '#00a
 
 Run: `npx vite --config vite.config.ts dev`
 
-Visit: `http://localhost:5173/packages/weasel-gl/dev/synthetic.html`
+Visit: `http://localhost:5173/packages/gl/dev/synthetic.html`
 
 Expected:
 - 10-rect scene: 10 colored rectangles within the canvas, all at half opacity (group α=0.5).
@@ -3317,7 +3317,7 @@ If any scene fails to render (black canvas) or renders incorrectly (wrong stenci
 - [ ] **Step 3: Commit**
 
 ```bash
-git add packages/weasel-gl/dev/synthetic.html packages/weasel-gl/dev/synthetic.ts
+git add packages/gl/dev/synthetic.html packages/gl/dev/synthetic.ts
 git commit -m "chore(weasel-gl): synthetic scenes for step 1 exit verification"
 ```
 
@@ -3341,7 +3341,7 @@ Create `docs/superpowers/plans/2026-05-08-webgl-step-1-done.md`:
 
 ## What shipped
 
-- `@orochi235/weasel-gl` workspace package wired into `tsconfig.json`.
+- `@weasel-js/gl` workspace package wired into `tsconfig.json`.
 - Path tessellator (earcut + bezier flattening via reused `flattenCubic`/`flattenQuadratic`).
 - evenodd fillRule via naive fan + stencil two-pass.
 - WeakMap path-mesh cache.
@@ -3402,7 +3402,7 @@ If `ci.yml` (or similar) exists, continue. Otherwise:
 
 ```jsonc
 "scripts": {
-  "bundlesize:weasel-gl": "tsup packages/weasel-gl/src/index.ts --format esm --out-dir /tmp/weasel-gl-bundle && wc -c /tmp/weasel-gl-bundle/index.mjs"
+  "bundlesize:weasel-gl": "tsup packages/gl/src/index.ts --format esm --out-dir /tmp/weasel-gl-bundle && wc -c /tmp/weasel-gl-bundle/index.mjs"
 }
 ```
 
@@ -3416,7 +3416,7 @@ Add to the existing CI workflow (don't invent a new file):
 - name: Compare bundle size against main
   run: |
     git fetch origin main
-    git checkout origin/main -- packages/weasel-gl
+    git checkout origin/main -- packages/gl
     npm run bundlesize:weasel-gl > bundle-size-main.txt
     delta_kb=$(echo "($(wc -c < bundle-size.txt) - $(wc -c < bundle-size-main.txt)) / 1024" | bc)
     if [ "$delta_kb" -gt 50 ]; then
@@ -3460,4 +3460,4 @@ git commit -m "ci(weasel-gl): fail PRs that grow bundle > 50KB without CHANGELOG
 - **Wiring into `<Canvas>`** — step 8.
 - **Visual regression baselines** — step 9.
 
-The step-1 renderer is a parallel package that nothing in `@orochi235/weasel` references. Demos still run on the 2D backend. Abandonment is cheap: delete `packages/weasel-gl/` and the new tsconfig paths.
+The step-1 renderer is a parallel package that nothing in `@weasel-js/core` references. Demos still run on the 2D backend. Abandonment is cheap: delete `packages/gl/` and the new tsconfig paths.

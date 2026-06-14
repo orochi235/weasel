@@ -9,8 +9,8 @@
 - **`drawLayersGL(layers, data, visibility, order, view, dims): DrawCommand[]`** in `src/core/layers/render.ts` — sibling to the 2D `drawLayers`. Mirrors visibility/order resolution; iterates and concatenates each layer's `drawGL(data, view, dims)`. Layers without `drawGL` warn-once per layer id (module-level Set) and are skipped.
 - **`<Canvas>` GL backend lifecycle**: lazy-creates `WeaselRenderer` on first paint when `backend === 'gl'`; disposes on unmount. The `<canvas>` element gets `getContext('webgl2', { preserveDrawingBuffer: true, stencil: true })` automatically — consumers don't pass these.
 - **DPR branching**: 2D path keeps `setupCanvasDpr` from `src/features/viewport/pixelDensity.ts`. GL path calls `WeaselRenderer.resize({ width, height, dpr })` only when dims/dpr change (tracked via `lastResizeRef`). No unified DPR helper — the two paths stay independent.
-- **Cross-package alias audit (convention §14)**: top-level `vite.config.ts` and `apps/swillustrator/vite.config.ts` were missing the `@orochi235/weasel-gl` alias. Without these, every demo + swill page would have broken on the first `Canvas.tsx → @orochi235/weasel-gl` import. Caught preemptively; fixed in `ac8e573`.
-- **Smoke dev page** `packages/weasel-gl/dev/canvas-gl.{html,tsx}` rendering `<SceneCanvas backend="gl">` with grid + cell highlight + a path layer. Playwright `canvas-gl.spec.ts` (4 specs): center-of-rect non-empty, blue rect, outside-bounds transparent, 16×16 grid scan ≥ 30 painted samples.
+- **Cross-package alias audit (convention §14)**: top-level `vite.config.ts` and `apps/swillustrator/vite.config.ts` were missing the `@weasel-js/gl` alias. Without these, every demo + swill page would have broken on the first `Canvas.tsx → @weasel-js/gl` import. Caught preemptively; fixed in `ac8e573`.
+- **Smoke dev page** `packages/gl/dev/canvas-gl.{html,tsx}` rendering `<SceneCanvas backend="gl">` with grid + cell highlight + a path layer. Playwright `canvas-gl.spec.ts` (4 specs): center-of-rect non-empty, blue rect, outside-bounds transparent, 16×16 grid scan ≥ 30 painted samples.
 
 ## Notable deviations from plan
 
@@ -24,7 +24,7 @@
 - **Vitest: 1476/1476 pass** (180 test files; +16 from step 7's 1460).
 - **Playwright: 17/17 specs pass** (smoke + synthetic + text + paint + colors + 3 shader + 5 layers + 4 canvas-gl).
 - **Typecheck**: only the pre-existing `draw.ts(138,84)` warning, unchanged from step 7.
-- **Browser-verified**: `/packages/weasel-gl/dev/canvas-gl.html` shows the GL-backend `<SceneCanvas>` rendering grid + cell highlight + path layer; the two warn-once messages for system layers fire exactly once per page load (not per frame).
+- **Browser-verified**: `/packages/gl/dev/canvas-gl.html` shows the GL-backend `<SceneCanvas>` rendering grid + cell highlight + path layer; the two warn-once messages for system layers fire exactly once per page load (not per frame).
 
 ## Lessons for step 9+ (folded into conventions)
 

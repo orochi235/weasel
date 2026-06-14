@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
-import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@orochi235/weasel-ui';
-import type { ParsedModifiers, ModName } from '@orochi235/weasel/routing';
+import { Badge, DataGrid, KeyCap, KeySequence, Powerline, keySpecFromKey, keySpecsFromMods, type BadgeProps, type DataGridColumn, type KeySpec, type LogicalModSpec, type PowerlineProps } from '@weasel-js/ui';
+import type { ParsedModifiers, ModifierKey } from '@weasel-js/core/routing';
 
 function toKeys(parts: readonly string[] | undefined) {
   return parts?.map((label) => ({ label }));
@@ -23,7 +23,7 @@ function InlineMarkdown({ text }: { text: string }) {
   );
 }
 
-const MOD_DISPLAY_ORDER: readonly ModName[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
+const MOD_DISPLAY_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
 /** Decompose a `ParsedModifiers` map into KeySpecs for KeySequence. Empty
  *  map (no required modifiers) returns undefined; otherwise emits one chip
@@ -124,7 +124,7 @@ import type {
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
 import traitSchemas from 'virtual:weasel-trait-schemas';
 import { SchemaTable } from './SchemaTable';
-import { canonicalModifiers, describeRoute, describeRouteParts, formatPhaseAtom, getGestureDescriptor, ROUTE_FIELD_DEFINITIONS, type GestureName, type RouteFieldName } from '@orochi235/weasel/routing';
+import { canonicalModifiers, describeRoute, describeRouteParts, formatPhaseAtom, getGestureDescriptor, ROUTE_FIELD_DEFINITIONS, type GestureName, type RouteFieldName } from '@weasel-js/core/routing';
 import { collectBundles, GESTURE_CHANNEL_KEYS, PHASE_OUTPUT_KEYS, parseRoute } from './registryData';
 void GESTURE_CHANNEL_KEYS;
 void PHASE_OUTPUT_KEYS;
@@ -248,7 +248,7 @@ function BundleBadge({ id, label }: { id: string; label?: string }) {
   return <Badge {...(props as BadgeProps)}>{label ?? id}</Badge>;
 }
 void parseRoute;
-import * as Weasel from '@orochi235/weasel';
+import * as Weasel from '@weasel-js/core';
 import { ToolIcon } from '../kindIcons';
 import type { ToolKind } from '../poseUpdate';
 import { findSourceMatch } from './sourceLookup';

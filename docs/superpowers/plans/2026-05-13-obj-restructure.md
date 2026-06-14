@@ -17,7 +17,7 @@ polygon, points + ratio for star).
 
 **Spec:** `docs/superpowers/specs/2026-05-13-obj-restructure-design.md`
 
-**Tech stack:** TypeScript, React, Vitest, `@orochi235/weasel` (kit).
+**Tech stack:** TypeScript, React, Vitest, `@weasel-js/core` (kit).
 
 **Architecture:** A "rectangle" is now a `PathObj` with `tool: 'rect'`
 and `path.kind === 'rect'`. Every PathObj names its authoring tool
@@ -75,8 +75,8 @@ is expected and resolves by T9.
   Replace lines 1–9 with:
 
   ```ts
-  import type { Path, TextStyle } from '@orochi235/weasel';
-  import { scalePathToBounds, translatePath } from '@orochi235/weasel';
+  import type { Path, TextStyle } from '@weasel-js/core';
+  import { scalePathToBounds, translatePath } from '@weasel-js/core';
 
   export type ToolKind =
     | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'
@@ -196,7 +196,7 @@ latent bug surfaced in the rect-as-path agent's findings.
 - [ ] **Step 2: Ensure `translatePath` is imported**
 
   Search imports in `App.tsx` for `translatePath`; add to the
-  `@orochi235/weasel` import line if missing.
+  `@weasel-js/core` import line if missing.
 
 - [ ] **Step 3: Add a unit test pinning the translate fix**
 
@@ -716,7 +716,7 @@ The bridge layer:
 
 `kindIcons.tsx` today has only `RectIcon`, `TextIcon`, `PathIcon`,
 `PageIcon`. The kit already ships every per-shape icon we need from
-`@orochi235/weasel` (the same icons the tool palette uses):
+`@weasel-js/core` (the same icons the tool palette uses):
 `RectIcon`, `EllipseIcon`, `PolygonIcon`, `StarIcon`, `LineIcon`,
 `PenIcon`, `PencilIcon`, `TextIcon`, `UnknownIcon`. T9 reuses those
 directly — zero new SVG authoring.
@@ -731,7 +731,7 @@ directly — zero new SVG authoring.
   import {
     RectIcon, EllipseIcon, PolygonIcon, StarIcon, LineIcon,
     PenIcon, PencilIcon, TextIcon, UnknownIcon,
-  } from '@orochi235/weasel';
+  } from '@weasel-js/core';
 
   // Keep the existing PageIcon (no kit equivalent).
   // PathIcon is no longer needed — UnknownIcon replaces it for the

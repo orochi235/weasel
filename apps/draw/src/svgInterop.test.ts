@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@orochi235/weasel-svg';
-import { parseSvg, serializeSvg } from '@orochi235/weasel-svg';
+import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js/svg';
+import { parseSvg, serializeSvg } from '@weasel-js/svg';
 import { objToSvgNode, svgNodesToObjs, svgNodesToObjsWithGroups, objsToSvgNodes } from './svgInterop';
 
 // Minimal local mirror of svgInterop's internal Obj union. Keep in sync

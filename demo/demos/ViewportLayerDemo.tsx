@@ -4,7 +4,7 @@ import {
   useScene,
   useSelection,
   createViewportLayer,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 import type { RenderLayer } from '../../src/core/layers/render';

@@ -55,8 +55,8 @@ import {
   worldToScreen,
   ActiveToolContextProvider,
   useActiveToolContext,
-} from '@orochi235/weasel';
-import { SidebarPanel, ToolPalette } from '@orochi235/weasel-ui';
+} from '@weasel-js/core';
+import { SidebarPanel, ToolPalette } from '@weasel-js/ui';
 
 import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
@@ -80,16 +80,16 @@ import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
-import { useSceneAdapter } from '@orochi235/weasel';
-import { parseSvg } from '@orochi235/weasel-svg';
+import { useSceneAdapter } from '@weasel-js/core';
+import { parseSvg } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
 import { dispatchDoubleClickEntry } from './modality';
 import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
-import type { SceneCanvasHit } from '@orochi235/weasel';
-import { IMPLICIT_TAGS } from '@orochi235/weasel-modes';
+import type { SceneCanvasHit } from '@weasel-js/core';
+import { IMPLICIT_TAGS } from '@weasel-js/modes';
 import { sceneToSvgString } from './svgExport';
 import type { RecordingProfile } from './recorder';
 
@@ -1047,7 +1047,7 @@ export function App(): ReactElement {
   // `scene.setActiveJournalAccessor` once the machine is constructed —
   // no ref dance needed at this layer.
   const modality = useModality(
-    scene as unknown as import('@orochi235/weasel').Scene<unknown, string, unknown>,
+    scene as unknown as import('@weasel-js/core').Scene<unknown, string, unknown>,
   );
 
   // Persist on every commit. The 300ms debounce coalesces drag bursts so

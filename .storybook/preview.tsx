@@ -1,6 +1,6 @@
 import type { Preview } from '@storybook/react-vite';
 import React from 'react';
-import '@orochi235/weasel-theme/tokens.css';
+import '@weasel-js/theme/tokens.css';
 
 // Paint the preview iframe canvas with our themed surface color so stories
 // don't render on raw white. Lives outside the React tree so it applies even

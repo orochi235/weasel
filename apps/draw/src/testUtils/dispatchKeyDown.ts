@@ -9,7 +9,7 @@
  * `src/tools/types.ts:217`). Tests can therefore poke at the declarative
  * route table without spinning up a full dispatcher.
  */
-import type { AnyTool } from '@orochi235/weasel';
+import type { AnyTool } from '@weasel-js/core';
 
 interface KeyEvent {
   key: string;

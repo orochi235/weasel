@@ -1,5 +1,5 @@
-import type { Stroke, FillStyle, Path } from '@orochi235/weasel';
-import { resolveTextStyle } from '@orochi235/weasel';
+import type { Stroke, FillStyle, Path } from '@weasel-js/core';
+import { resolveTextStyle } from '@weasel-js/core';
 import type {
   DrawCommand,
   GroupDrawCommand,

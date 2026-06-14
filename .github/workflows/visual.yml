@@ -24,11 +24,11 @@ jobs:
       NPM_CONFIG_LOGLEVEL: error
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
 
       - run: npm ci
@@ -42,7 +42,7 @@ jobs:
       # On failure, upload diff artifacts so reviewers can inspect what changed.
       - name: Upload test results on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: visual-regression-results
           path: |

@@ -10,7 +10,7 @@
 
 ## Goals
 
-- Generic `<LayerList>` React component in `@orochi235/weasel-ui` that renders a flat list of items, supports click + shift-click selection, and supports drag-to-reorder with a drop indicator.
+- Generic `<LayerList>` React component in `@weasel-js/ui` that renders a flat list of items, supports click + shift-click selection, and supports drag-to-reorder with a drop indicator.
 - Headless `useReorderDragList` hook backing the component so future custom UIs can reuse the drag-state state-machine.
 - Multi-select-aware drag: dragging any one of N selected rows moves all selected rows as one contiguous block to the drop position.
 - `onReorder(ids: string[], targetIndex: number)` callback that the consumer wires to `createMoveToIndexOp` + `dispatchApplyBatch`. The component never imports kit ops directly — keeps weasel-ui decoupled.
@@ -25,7 +25,7 @@
 
 ## API
 
-### Styled component (`packages/weasel-ui/src/LayerList.tsx`)
+### Styled component (`packages/ui/src/LayerList.tsx`)
 
 ```ts
 export interface LayerListItem {
@@ -50,7 +50,7 @@ Item ordering: items[0] is rendered at the top of the list and represents the to
 Single-select: clicking a row replaces selection. Shift-click toggles row membership.
 Esc inside the list clears selection.
 
-### Headless hook (`packages/weasel-ui/src/useReorderDragList.ts`)
+### Headless hook (`packages/ui/src/useReorderDragList.ts`)
 
 ```ts
 export interface UseReorderDragListOptions {
@@ -111,7 +111,7 @@ Given pointer Y within the container:
 3. If pointer is below all midpoints: `targetIndex = N`.
 4. `createMoveToIndexOp` is "removing then inserting at `index`," so the consumer doesn't need to compensate for the removal — pass the raw target index.
 
-### Styled component visuals (`packages/weasel-ui/src/LayerList.module.css`)
+### Styled component visuals (`packages/ui/src/LayerList.module.css`)
 
 Follows the existing weasel-ui dark theme (see `PropertiesPanel.module.css`):
 - Panel: `background: var(--ckd-bg-panel)` or similar token; tight padding.
@@ -124,13 +124,13 @@ No inline styles. All variant logic via CSS classes (per user's coding rules).
 
 ## Files touched
 
-- Create: `packages/weasel-ui/src/LayerList.tsx`
-- Create: `packages/weasel-ui/src/LayerList.module.css`
-- Create: `packages/weasel-ui/src/useReorderDragList.ts`
-- Create: `packages/weasel-ui/src/LayerList.test.tsx`
-- Create: `packages/weasel-ui/src/useReorderDragList.test.ts`
-- Create: `packages/weasel-ui/src/LayerList.stories.tsx`
-- Modify: `packages/weasel-ui/src/index.ts` — re-export `LayerList`, `useReorderDragList`, types.
+- Create: `packages/ui/src/LayerList.tsx`
+- Create: `packages/ui/src/LayerList.module.css`
+- Create: `packages/ui/src/useReorderDragList.ts`
+- Create: `packages/ui/src/LayerList.test.tsx`
+- Create: `packages/ui/src/useReorderDragList.test.ts`
+- Create: `packages/ui/src/LayerList.stories.tsx`
+- Modify: `packages/ui/src/index.ts` — re-export `LayerList`, `useReorderDragList`, types.
 - Create: `demo/demos/LayerListDemo.tsx` — scene + LayerList side-by-side, wires `createMoveToIndexOp`.
 - Modify: `demo/registry.ts` — register `LayerListDemo`.
 - Modify: `docs/TODO.md` — strike entry.

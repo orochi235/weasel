@@ -1,6 +1,6 @@
 import { useState, useSyncExternalStore } from 'react';
-import { SceneCanvas, sceneFromJSON, useSelection } from '@orochi235/weasel';
-import type { SerializedScene } from '@orochi235/weasel';
+import { SceneCanvas, sceneFromJSON, useSelection } from '@weasel-js/core';
+import type { SerializedScene } from '@weasel-js/core';
 import sceneJson from './data/scene.scene.json';
 
 interface NodeData { color: string; label?: string }

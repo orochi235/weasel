@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { makeGLRecorder } from '../test-utils/glRecorder';
 import { buildGradientRamp, GradientRampCache } from './GradientRampCache';
-import type { GradStop } from '@orochi235/weasel';
+import type { GradStop } from '@weasel-js/core';
 
 const BLACK_WHITE: GradStop[] = [
   { offset: 0, color: '#000000' },

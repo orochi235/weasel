@@ -1,4 +1,4 @@
-import type { Path } from '@orochi235/weasel';
+import type { Path } from '@weasel-js/core';
 import type { Mesh } from './mesh';
 import { tessellate, type TessellateOptions } from 'features/paths/tessellate/tessellate';
 

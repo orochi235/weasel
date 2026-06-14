@@ -1,5 +1,5 @@
 import type { ModifierState } from '../../interactions/gestures/types';
-import type { CapabilityTag } from '@orochi235/weasel-modes';
+import type { CapabilityTag } from '@weasel-js/modes';
 import type { RuleCtx } from './ruleCtx';
 
 /**

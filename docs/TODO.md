@@ -1,6 +1,6 @@
 # canvas-kit / weasel TODO
 
-Backlog for the canvas-kit framework (published as `@orochi235/weasel`). The
+Backlog for the canvas-kit framework (published as `@weasel-js/core`). The
 kit aims to be a generic 2D scene-graph foundation. Items here are evaluated
 for cross-app reuse, not consumer-app value.
 
@@ -22,18 +22,12 @@ Priority tags:
 
 ### P2 — broad reuse / friction-likely
 
-**Tools & gestures**
-- Phase 5 cleanup of chrome-affordances spec → [Tools & gestures](#tools--gestures)
-- Affordances of registered-but-not-active tools → [Tools & gestures](#tools--gestures)
-- Audit other chrome violations (visible-is-hittable) → [Tools & gestures](#tools--gestures)
-- `useTextTool` synthesized adapter ergonomic → [Tools & gestures](#tools--gestures)
-
 **Viewport**
 - Axis-aware elliptical hit shapes under non-uniform zoom → [Viewport](#viewport)
 - Kit-level `viewTransform` zoom integration on `<Canvas>` → [Viewport](#viewport)
 
 **Paths & booleans**
-- Generic CSS cascade for `@orochi235/weasel-svg`'s parser → [Paths & booleans](#paths--booleans)
+- Generic CSS cascade for `@weasel-js/svg`'s parser → [Paths & booleans](#paths--booleans)
 
 **Text**
 - Cross-browser overlay alignment → [Text](#text)
@@ -76,13 +70,9 @@ Priority tags:
 
 - **(P3) Convergence-target facets.** Each kind-keyed concern (label/icon, propertyRows, bindings, subkinds, serialize/deserialize) lands as its own per-facet registry per the **node-facets reframe** at `docs/superpowers/specs/2026-05-22-node-facets-reframe-design.md`. Tracked individually under the relevant TODO sections (per-kind property-row registry, default action icons, useScene op-log serialization).
 
-- **(P2) Phase 5 cleanup of chrome-affordances spec.** The migration in Phase 3-4 left two behaviors split between Canvas and `useSelectTool`: (a) Canvas still synthesizes the multi-resize union via `poseById` + `MULTI_RESIZE_TARGET_ID` for the selection-overlay slot, and (b) `useSelectTool`'s affordances render `[]` to avoid double-rendering with the Canvas slot. Phase 5 should drop the Canvas synthesis (ChromeState.unionBounds replaces it), flip the affordances back to real `render`, and reshape the `selectionOverlay` slot into a thin override hook.
+- **(P3) Reshape `selectionOverlay` into a thin override hook.** Phase 5 of the chrome-affordances spec shipped (2026-06-13): the multi-resize union now has a single owner — `ChromeState.unionBounds` — which both the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`) and the overlay layer read at draw time. The inline `poseById` re-derivations in `Canvas`/`SceneCanvas` are deleted, `createSelectionOverlayLayer` resolves the synthetic union from the draw-time chromeState envelope, and `MULTI_RESIZE_TARGET_ID` moved to `core/selection/` (fixing the backwards `affordances→tools` import). Residual: the synthetic-id plumbing (`getSelection` → `[MULTI_RESIZE_TARGET_ID]`, `getOutlineIds` → real members) still lives in the Canvas/SceneCanvas wiring rather than inside `createSelectionOverlayLayer`. Fold it into the layer so the slot is purely a consumer override hook.
 
-- **(P2) Affordances of registered-but-not-active tools.** Today the dispatcher walks `tools.getActiveOverlays()` for affordance hit-tests, which only surfaces the active/hotkey/ambient slots' overlays — not arbitrary registered tools. To get selection chrome hittable while a non-select tool is active, the consumer has to register the select tool as `ambient` (see `LassoDemo` after the chrome-affordances spec). The architectural cleanup is to surface ALL registered tools' affordances cross-tool; deferred because changing `getActiveOverlays` broke `omits modifier overlay when not engaged` semantics. File a separate spec when it bites.
-
-- **(P2) Audit other chrome violations against the visible-is-hittable principle.** Spec `docs/superpowers/specs/2026-05-10-chrome-affordances-design.md` shipped corner-resize + rotation as cross-tool-hittable affordances. Other chrome families that may render while a non-owning tool is active and need the same migration: anchor-edit dots (`useEditAnchorsTool`) — visible during anchor-edit mode; snap-target highlights (`createCellHighlightLayer`) — currently visualization only, file a follow-up if hover ever becomes interactive; debug-overlay hit-rings — visualization only, principle satisfied. Each chrome family with a real interactive surface gets its own follow-up spec.
-
-- **(P2) `useTextTool`'s synthesized adapter ergonomic.** `useTextTool` synthesizes its own `InsertAdapter` and threads `ctx.applyBatch` via a ref because the click-first ergonomic doesn't expose an adapter to the consumer. After the May 5 drag-insert primitive landed, the capture-and-clear is owned by `defineDragInsertTool` (not duplicated in the wrapper) but the underlying asymmetry remains. Revisit if a third drag-insert tool would benefit from a unified ergonomics story (e.g. accept either an adapter *or* an inline factory).
+- **(P3) Consolidate the two affordance hit-test mechanisms.** Selection chrome is hit-tested two ways: `composeAffordanceLayer`'s `RenderLayer.hitTest` walk (reached via `tools.getActiveOverlays()`, which is why `<SceneCanvas>` mounts the rotate tool as `ambient`) and `affordanceAt`/`buildAffordanceAt` (a chromeState-based classifier in `<SceneCanvas>`). Both now resolve resize/rotate/anchor targets from `ChromeState`, so they overlap. Pick one. This subsumes the former "affordances of registered-but-not-active tools" item: `affordanceAt` already makes built-in selection/resize/rotate/anchor chrome hittable cross-tool with no ambient registration (LassoDemo no longer registers select as `ambient`), and the audit of other chrome families (anchor-edit dots gated by `path-edit.anchors`; snap-highlights / debug-rings visualization-only) came back clean. The only uncovered case is surfacing an *arbitrary third-party tool's* affordances cross-tool — no consumer needs that today.
 
 - **(P3) Image / polygon / future drag-insert tools.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. The consolidated `useDragRect` + `useInsert` + `defineDragInsertTool` stack is built so adding new drag-insert tools is a thin Tool veneer, but each tool is its own task.
 
@@ -127,7 +117,7 @@ From `docs/specs/2026-05-03-tool-overlay-channel-design.md`:
 
 ## Paths & booleans
 
-- **(P2) Generic CSS cascade for `@orochi235/weasel-svg`'s parser.** Surfaced 2026-05-13 importing the Ghostscript tiger — `<g fill="...">` groups containing `<path>` elements with no direct fill were falling back to black because the parser only reads `el.getAttribute(attr)` at leaf time. A targeted fix patches fill/stroke/opacity inheritance plus `style=` attribute parsing, but SVG has a long list of inheritable presentation attributes — paint (fill/stroke/fill-rule/fill-opacity/stroke-opacity), stroke decoration (linecap/linejoin/miterlimit/dasharray/dashoffset), font-* (family/size/weight/style/text-anchor/letter-spacing/decoration), color (for `currentColor` resolution), opacity, visibility, display, color-interpolation, image-rendering, shape-rendering, text-rendering, clip-rule, clip-path, mask, filter, marker-*. Per-attr walk-up code accumulates as the matrix grows; the right answer is **threading a cascading style context down through the recursive parse**: at each element, compute "current cascade" = parent cascade + element's own attrs + style attr; leaf parsers read from the threaded context, not from the DOM. Browser-only fast path could use `getComputedStyle` against a hidden DOM node, with the threaded-context fallback for Node/jsdom tests.
+- **(P2) Generic CSS cascade for `@weasel-js/svg`'s parser.** Surfaced 2026-05-13 importing the Ghostscript tiger — `<g fill="...">` groups containing `<path>` elements with no direct fill were falling back to black because the parser only reads `el.getAttribute(attr)` at leaf time. A targeted fix patches fill/stroke/opacity inheritance plus `style=` attribute parsing, but SVG has a long list of inheritable presentation attributes — paint (fill/stroke/fill-rule/fill-opacity/stroke-opacity), stroke decoration (linecap/linejoin/miterlimit/dasharray/dashoffset), font-* (family/size/weight/style/text-anchor/letter-spacing/decoration), color (for `currentColor` resolution), opacity, visibility, display, color-interpolation, image-rendering, shape-rendering, text-rendering, clip-rule, clip-path, mask, filter, marker-*. Per-attr walk-up code accumulates as the matrix grows; the right answer is **threading a cascading style context down through the recursive parse**: at each element, compute "current cascade" = parent cascade + element's own attrs + style attr; leaf parsers read from the threaded context, not from the DOM. Browser-only fast path could use `getComputedStyle` against a hidden DOM node, with the threaded-context fallback for Node/jsdom tests.
 
 ### Pathfinder follow-ups (post-v1)
 
@@ -159,7 +149,7 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
-- **(P2) Text properties panel** (Character + Paragraph). Surfaced 2026-05-11 while wiring `useTextEdit` into WeaselDraw — the kit ships rich `TextStyle` + `StyledRun` data and `useTextEdit` already handles bold/italic via the runs API, but there's no UI surface for any of it. A `@orochi235/weasel-ui` `<TextPropertiesPanel>` (paralleling `<PropertiesPanel>` / `<PathfinderPanel>`) reading from selection and dispatching style/run mutations would close the gap. Coverage to design: font family (system + web fonts), font size, font weight, italic / underline / strikethrough toggles, fill color, caret/selection colors, line height, letter spacing / tracking (new — not on `TextStyle` yet), paragraph alignment, and per-range run styling on the active text-edit selection. Open questions: (a) split into Character vs Paragraph panels (Illustrator-style) or one combined panel for v1; (b) whether the panel binds to selection or to `editingId` (Illustrator binds to both); (c) how to expose run-level mutators publicly; (d) which fields need new `TextStyle` keys (letter-spacing/tracking, decoration). Likely a multi-day spec once a real consumer demands it.
+- **(P2) Text properties panel** (Character + Paragraph). Surfaced 2026-05-11 while wiring `useTextEdit` into WeaselDraw — the kit ships rich `TextStyle` + `StyledRun` data and `useTextEdit` already handles bold/italic via the runs API, but there's no UI surface for any of it. A `@weasel-js/ui` `<TextPropertiesPanel>` (paralleling `<PropertiesPanel>` / `<PathfinderPanel>`) reading from selection and dispatching style/run mutations would close the gap. Coverage to design: font family (system + web fonts), font size, font weight, italic / underline / strikethrough toggles, fill color, caret/selection colors, line height, letter spacing / tracking (new — not on `TextStyle` yet), paragraph alignment, and per-range run styling on the active text-edit selection. Open questions: (a) split into Character vs Paragraph panels (Illustrator-style) or one combined panel for v1; (b) whether the panel binds to selection or to `editingId` (Illustrator binds to both); (c) how to expose run-level mutators publicly; (d) which fields need new `TextStyle` keys (letter-spacing/tracking, decoration). Likely a multi-day spec once a real consumer demands it.
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `src/features/text/atlas/GlyphLayout.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Defer until a real consumer hits a non-Latin language requirement.
 
@@ -239,7 +229,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P2) WeaselDraw persistence.** Currently in-memory only — no save/load/export.
 
-- **(P3) `<ToggleBar>` polish.** Shipped to `@orochi235/weasel-ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
+- **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 ### Align/distribute/flip follow-ups
 
@@ -271,7 +261,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 The kit's primitives are already pluggable — what's missing is a convention for bundling a feature's parts so a single `useFooPlugin()` call returns `{ tool, layers, ops, ... }` that the consumer spreads in, instead of wiring three or four separate exports per feature.
 
 - **(P2) Lightweight v1:** a documented `WeaselPlugin = { tool?, layers?, behaviors?, ... }` shape plus a `mergePluginConfig(...plugins)` helper. ~30 lines + a docs page. Defer until we have ≥2 plugin-shaped features in flight (pen, debug overlay, future grid) — designing before multiple examples risks YAGNI.
-- **(P3) Heavier v2** (only if needed for true third-party plugins): Canvas lifecycle hooks (mount/unmount/pre-render/post-render), capability/version negotiation against kit semver, sub-package layout (`@orochi235/weasel-pen`?). Don't pursue without a real third-party consumer asking.
+- **(P3) Heavier v2** (only if needed for true third-party plugins): Canvas lifecycle hooks (mount/unmount/pre-render/post-render), capability/version negotiation against kit semver, sub-package layout (`@weasel-js/pen`?). Don't pursue without a real third-party consumer asking.
 
 Pen tool and debug overlay both ship as separate exports first (tool + layer factory). After 2–3 plugin-shaped features have shipped this way, do a small spec pass to extract the bundling convention from the actual pattern.
 
@@ -322,7 +312,7 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 ## Demos & visual regression
 
-- **(P3) Demo coverage gaps for submodules.** `@orochi235/weasel-ui` exports `CommandPalette` and `PropertiesPanel` but has no demo card for either (CommandPalette is used in the harness chrome itself — surfacing it as a demo would expose it). `@orochi235/weasel-hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope per demo before writing them.
+- **(P3) Demo coverage gaps for submodules.** `@weasel-js/ui` exports `CommandPalette` and `PropertiesPanel` but has no demo card for either (CommandPalette is used in the harness chrome itself — surfacing it as a demo would expose it). `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope per demo before writing them.
 
 ### Canvas / SceneCanvas seam
 
@@ -357,7 +347,7 @@ From the WebGL transition spec — all deferred:
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
 
-- **(P3) `gen:font` script.** Was at `packages/weasel-gl/scripts/gen-font.ts`; deleted in Step 10. If we ever regenerate the Inter MSDF atlas, restore the script under `scripts/gen-font.ts` at repo root using `msdf-bmfont-xml`. The current atlas was regenerated cleanly so the script is not on the critical path.
+- **(P3) `gen:font` script.** Was at `packages/gl/scripts/gen-font.ts`; deleted in Step 10. If we ever regenerate the Inter MSDF atlas, restore the script under `scripts/gen-font.ts` at repo root using `msdf-bmfont-xml`. The current atlas was regenerated cleanly so the script is not on the critical path.
 
 - **(P3) Last 4 React `act()` warnings in CI vitest.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The remaining 4 all come from `src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test — a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`). A real fix has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log. Low value; defer.
 

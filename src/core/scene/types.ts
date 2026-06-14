@@ -189,7 +189,7 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
    *  When the accessor isn't known at scene-construction time (typical for
    *  mode machines that depend on `scene.history`), pass nothing here and
    *  wire it after construction via `scene.setActiveJournalAccessor(fn)`. */
-  getActiveJournal?: () => import('@orochi235/weasel-history').Journal | null;
+  getActiveJournal?: () => import('@weasel-js/history').Journal | null;
 }
 
 export interface Scene<TData, TLayer extends string, TPose = RectPose> {
@@ -225,7 +225,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  Pass `null` to detach. Overrides any `getActiveJournal` set in
    *  `UseSceneOptions`. */
   setActiveJournalAccessor(
-    fn: (() => import('@orochi235/weasel-history').Journal | null) | null,
+    fn: (() => import('@weasel-js/history').Journal | null) | null,
   ): void;
 
   /** Apply a batch of ops with journal-aware routing.

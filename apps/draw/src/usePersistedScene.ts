@@ -9,8 +9,8 @@
 // On unmount: fire-and-forget any pending write so the last edit survives.
 
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
-import type { Group } from '@orochi235/weasel';
-import type { SerializedHistory } from '@orochi235/weasel-history';
+import type { Group } from '@weasel-js/core';
+import type { SerializedHistory } from '@weasel-js/history';
 import type { Obj } from './poseUpdate';
 import {
   loadScene,

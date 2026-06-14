@@ -7,8 +7,8 @@ import {
   rgbaToHex,
   useHandleDrag,
   useScene,
-} from '@orochi235/weasel';
-import type { Path } from '@orochi235/weasel';
+} from '@weasel-js/core';
+import type { Path } from '@weasel-js/core';
 
 const W = 600;
 const H = 400;

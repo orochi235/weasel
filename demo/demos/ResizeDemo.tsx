@@ -1,4 +1,4 @@
-import { asNodeId, SceneCanvas, useScene } from '@orochi235/weasel';
+import { asNodeId, SceneCanvas, useScene } from '@weasel-js/core';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 

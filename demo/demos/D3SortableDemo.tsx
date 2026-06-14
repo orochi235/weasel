@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { d3Bind } from '@orochi235/weasel-d3';
+import { d3Bind } from '@weasel-js/d3';
 import {
   SceneCanvas,
   WeaselProvider,
@@ -9,7 +9,7 @@ import {
   useHandTool,
   useTools,
   easeInOutCubic,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type { DrawCommand } from '../../src/renderer';
 
 const W = 600, H = 400;

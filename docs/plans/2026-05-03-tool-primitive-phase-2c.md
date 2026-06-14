@@ -861,12 +861,12 @@ git commit -m "test(tools): zoom + pan + hand integration"
 
 ```tsx
 // demo/demos/ZoomDemo.tsx
-import { Canvas } from '@orochi235/weasel';
+import { Canvas } from '@weasel-js/core';
 import {
   useTools, useKeybindings, useHandTool,
   useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool,
   useSelectTool,
-} from '@orochi235/weasel/tools';
+} from '@weasel-js/core/tools';
 // …
 ```
 
