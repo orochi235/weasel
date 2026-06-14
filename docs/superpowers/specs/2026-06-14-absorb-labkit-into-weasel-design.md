@@ -120,28 +120,21 @@ Everything through step 4 is branch-local and reversible.
   is a pre-existing `LayerStack` dlog-mock issue, identical on the source repo).
 
 **Deferred (follow-ups — not done on this branch)**
-1. **`.d.ts` emission is OFF** (publish blocker). Diagnosed in depth:
-   - tsup's rollup-dts resolves workspace members via their node_modules
-     symlinks but can't resolve the root-package core `@orochi235/weasel` (no
-     symlink), and it ignores the tsconfig `paths` that `tsc` honors (verified:
-     `tsc -p tsconfig.dts.json` resolves everything cleanly).
-   - The core *does* emit `dist/index.d.ts`, but those types are **lossy**:
-     weasel's own dts bundling collapses the `DepRegistry`/`DepSchema` generics,
-     so e.g. `depReg.get('selection')` types to `never` (surfaces in
-     `weasel-ui/ActionBar`). Against weasel **source** the same code types
-     correctly. So labkit must build types from SOURCE, not the core's dist.
-   - **Plan (paths-aware, multi-entry):** add devDeps `rollup-plugin-dts` +
-     `@rollup/plugin-alias`; write `scripts/build-dts.mjs` that runs rollup over
-     all 11 entry points with rollup-plugin-dts + an alias plugin fed by the
-     monorepo's `weaselAliases(weaselRoot)` (resolves `@orochi235/weasel*` and
-     the bare `core/`,`features/`,… imports against source). Replace tsup's dts
-     (`dts: false` stays) with `"build:dts": "node scripts/build-dts.mjs"` in the
-     build script. `tsconfig.dts.json` (already staged) supplies the compiler
-     options; exclude `*.stories.tsx`/`*.test.tsx` from the dts input.
-   - Alternative if rollup-plugin-dts also fights the source compile: API
-     Extractor per entry (11 configs), or give weasel-ui/modes real built dist
-     types. rollup-plugin-dts + alias is the first attempt (reuses weaselAliases,
-     handles multi-entry natively).
+1. ~~**`.d.ts` emission is OFF** (publish blocker).~~ **DONE.** Implemented the
+   paths-aware, multi-entry plan: added devDeps `rollup-plugin-dts` +
+   `@rollup/plugin-alias`; `scripts/build-dts.mts` runs rollup over all 11 entry
+   points with rollup-plugin-dts + an alias plugin fed by the monorepo's
+   `weaselAliases(weaselRoot)`, so every `@orochi235/weasel*` and bare
+   `core/`,`features/`,… import resolves against SOURCE (no lossy `never`
+   generics). Wired as `"build:dts": "tsx scripts/build-dts.mts"`, run after
+   tsup (`dts: false` stays). Driving the alias table off `weaselAliases` makes
+   the pipeline rename-robust: the planned `@orochi235/weasel` → `@weasel-js/core`
+   rename is a one-file change in `scripts/vite-aliases.ts`. Run via `tsx`
+   (not `node`) so the script can import that TS helper. Verified: full `build`
+   green; all 11 `exports` `types` targets emit; a consumer-style typecheck of
+   the published surface (`skipLibCheck`, no source paths) passes with zero
+   errors. `tsconfig.dts.json` still carries `paths` purely as a fallback for a
+   direct `tsc -p tsconfig.dts.json` diagnostic (rollup-dts ignores them).
 2. **`noUncheckedIndexedAccess` left off** in labkit's build tsconfig — the
    bundled `weasel-ui/src/useReorderDragList.ts` has 4 latent violations. Fix
    them in weasel-ui and restore the flag.

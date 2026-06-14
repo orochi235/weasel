@@ -1,5 +1,5 @@
 {
-  "comment": "Dedicated tsconfig for tsup's .d.ts emission. Because labkit bundles the weasel core + private sub-packages into its dist, their raw source is compiled here for type emission. It must resolve weasel against SOURCE (via the same path map weasel's own tooling uses) and include weasel-ui/modes src (for ambient *.module.css decls) — otherwise types drift to `never` and CSS modules fail to resolve.",
+  "comment": "Supplies compilerOptions for labkit's .d.ts emission (scripts/build-dts.mts → rollup-plugin-dts). labkit bundles the weasel core + private sub-packages into its dist, so their raw source is compiled here for type emission and must resolve weasel against SOURCE — otherwise types drift to `never`. IMPORTANT: rollup-plugin-dts IGNORES the `paths` below; the build resolves weasel specifiers via the @rollup/plugin-alias table fed by the monorepo's weaselAliases() (scripts/vite-aliases.ts) — the single source of truth, so a package rename (e.g. @orochi235/weasel → @weasel-js/core) is a one-file change there. These `paths` exist only so a direct `tsc -p tsconfig.dts.json` (a diagnostic typecheck) still resolves against source; keep them in sync with weaselAliases on rename, or drop them if the diagnostic isn't needed.",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],

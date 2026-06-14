@@ -21,15 +21,13 @@ export default defineConfig({
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
-  // FOLLOW-UP (publish blocker): .d.ts emission is disabled. tsup's dts bundler
-  // (rollup-plugin-dts) can't resolve the root-package core `@orochi235/weasel`
-  // — it resolves workspace members via their node_modules symlinks, but the
-  // monorepo's main package is the repo ROOT, which has no symlink, and rollup-
-  // dts ignores the tsconfig `paths` that tsc itself honors (verified: `tsc -p
-  // tsconfig.dts.json` resolves it cleanly). Fixing this needs a dts pipeline
-  // that honors paths — API Extractor, or real built dist types for
-  // weasel-ui/modes. tsconfig.dts.json is staged for that work. The JS bundle is
-  // already fully self-contained (zero @orochi235 runtime imports).
+  // tsup's built-in dts can't resolve the root-package core `@orochi235/weasel`
+  // (it follows node_modules symlinks but the monorepo core is the repo ROOT,
+  // which has none) and ignores the tsconfig `paths` that tsc honors — so types
+  // drifted to `never`. .d.ts emission is therefore handled by a dedicated
+  // pipeline that resolves every weasel specifier to SOURCE via an alias plugin:
+  // see scripts/build-dts.mts, wired as the `build:dts` step after this build.
+  // The JS bundle here is fully self-contained (zero @orochi235 runtime imports).
   dts: false,
   sourcemap: true,
   clean: true,
