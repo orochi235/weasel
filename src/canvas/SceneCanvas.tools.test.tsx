@@ -102,7 +102,7 @@ describe('SceneCanvas defaultTools selector', () => {
     gestureAt(canvas, 0, 0);
     // The resize commit settles on a deferred tick after pointerup; flush it
     // inside act() so it doesn't warn as an un-acted update.
-    await act(async () => {});
+    await act(async () => { await new Promise<void>((r) => setTimeout(r, 0)); });
     expect(resizeStart).toHaveBeenCalled();
     expect(resizeStart.mock.calls[0][0]).toBe('a');
   });
@@ -143,7 +143,7 @@ describe('SceneCanvas defaultTools selector', () => {
     const { container } = render(<Harness />);
     const canvas = container.querySelector('canvas')!;
     gestureAt(canvas, 0, 0);
-    await act(async () => {});
+    await act(async () => { await new Promise<void>((r) => setTimeout(r, 0)); });
     expect(resizeStart).toHaveBeenCalled();
     expect(resizeStart.mock.calls[0][0]).toBe('a');
   });
