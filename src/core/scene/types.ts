@@ -273,7 +273,7 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  Bumps `getVersion()` and notifies subscribers exactly once.
    *
    *  Throws on an unsupported version or unknown registry/layer ids; on a
-   *  malformed snapshot the scene is left empty (callers should treat a
+   *  malformed snapshot the scene is left empty or partially populated (callers should treat a
    *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
    *  always well-formed. */
   loadState(json: SerializedScene<TData, TLayer, TPose>): void;

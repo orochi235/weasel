@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScene, sceneFromJSON } from './scene';
 import { asNodeId } from './types';
-import type { SerializedScene, SystemLayerSpec } from './types';
+import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
 
 type Layer = 'background' | 'structures' | 'plantings';
 interface Data { label: string }
@@ -883,5 +883,24 @@ describe('Scene.loadState', () => {
   it('throws on an unsupported version', () => {
     const dst = createScene<D, 'main'>({ systemLayers: LAYERS });
     expect(() => dst.loadState({ version: 2, systemLayers: LAYERS, nodes: [] } as never)).toThrow(/version/);
+  });
+
+  it('restores a parented snapshot in place over a populated scene', () => {
+    const src = createScene<D, 'main'>({ systemLayers: LAYERS });
+    const bedId = src.add({ kind: 'container', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'bed', color: 'brown' } });
+    src.add({ kind: 'leaf', layer: 'main', parent: bedId, pose: { x: 1, y: 1, width: 2, height: 2 }, data: { kind: 'plant', color: 'green' } });
+    const json = src.toJSON();
+
+    const dst = sceneWithTwoNodes(); // pre-populated with different, flat content
+    dst.loadState(json);
+
+    expect(dst.toJSON()).toEqual(json);
+    expect([...dst.roots]).toEqual([bedId]);
+    const bed = dst.get(bedId);
+    expect(bed?.kind).toBe('container');
+    const children = (bed as { children: readonly string[] }).children;
+    expect(children.length).toBe(1);
+    expect(dst.get(children[0] as NodeId)?.parent).toBe(bedId);
+    expect([...dst.renderOrder()]).toEqual([bedId, children[0]]);
   });
 });
