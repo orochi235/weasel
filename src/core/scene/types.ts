@@ -266,6 +266,17 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  `ContainerNode.clipFromPose` are translated to string keys via the
    *  scene's registry; throws if any function field has no matching key. */
   toJSON(): SerializedScene<TData, TLayer, TPose>;
+  /** Replace this scene's entire node + layer state in place from a snapshot
+   *  produced by `toJSON()`. Unlike `sceneFromJSON`, the existing Scene
+   *  instance is preserved — holders such as `<SceneCanvas>` keep their
+   *  reference. History (undo/redo) is cleared, matching `sceneFromJSON`.
+   *  Bumps `getVersion()` and notifies subscribers exactly once.
+   *
+   *  Throws on an unsupported version or unknown registry/layer ids; on a
+   *  malformed snapshot the scene is left empty (callers should treat a
+   *  `loadState` throw as fatal and reload). Snapshots from `toJSON()` are
+   *  always well-formed. */
+  loadState(json: SerializedScene<TData, TLayer, TPose>): void;
 
   // Subscription (used by useScene; also for non-React observers)
   subscribe(listener: () => void): () => void;

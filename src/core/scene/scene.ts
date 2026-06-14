@@ -743,6 +743,40 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       return { version: 1, systemLayers, nodes };
     },
 
+    loadState(json) {
+      // Validate + map up front (throws before we touch live state on a bad
+      // version or unknown registry key).
+      const specs = specsFromSerialized(json, registry);
+      // Reset node + layer state.
+      state.nodes.clear();
+      state.roots.length = 0;
+      state.layers.length = 0;
+      state.layerIndex.clear();
+      for (let i = 0; i < json.systemLayers.length; i++) {
+        const spec = json.systemLayers[i];
+        if (state.layerIndex.has(spec.id)) {
+          throw new Error(`Scene.loadState: duplicate system layer id "${spec.id}"`);
+        }
+        state.layers.push({
+          kind: 'system',
+          id: spec.id,
+          visible: spec.visible ?? true,
+          locked: spec.locked ?? false,
+        });
+        state.layerIndex.set(spec.id, i);
+      }
+      // Clear history + transient batch/clip caches.
+      undoStack.length = 0;
+      redoStack.length = 0;
+      pendingClipPatches.clear();
+      currentBatch = null;
+      batchDepth = 0;
+      batchDirty = false;
+      // Rebuild nodes (bypass the log, exactly like construction).
+      applyConstructionSpecs(specs);
+      notify();
+    },
+
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);
