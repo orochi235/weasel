@@ -409,11 +409,14 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     tools?: ToolsApi | Record<string, AnyTool | true | false>;
 
     /**
-     * Auto-wire `useKeybindings` against the active tool registry. Default
-     * `true`. When `false`, SceneCanvas still mounts its tools but does not
-     * subscribe to keybinding / hotkey events for them — leaving the
-     * consumer free to call `useKeybindings(tools, { ... })` themselves
-     * (e.g. with `disable`, `overrides`, or `defaultTool`).
+     * Auto-wire keyboard shortcuts. Default `true`. When `false`, SceneCanvas
+     * still mounts its tools but routes no keyboard input to them: it neither
+     * subscribes the legacy `useKeybindings` hook (tool hotkeys) nor lets the
+     * gesture dispatcher attach its `keydown`/`keyup` listeners (modern
+     * keyboard-bound actions like delete / escape / nudge). Pointer, wheel, and
+     * contextmenu interactions are unaffected. Leaves the consumer free to call
+     * `useKeybindings(tools, { ... })` themselves (e.g. with `disable`,
+     * `overrides`, or `defaultTool`).
      */
     enableKeybindings?: boolean;
 
@@ -1599,6 +1602,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             canvasApiRef={canvasApiRef}
             tools={tools}
             enabled={enableGestureDispatcher}
+            keyboard={enableKeybindings}
             selectionRef={selectionRef}
             boundsOf={internalBoundsOf}
             pickEvery={internalPickEvery}
@@ -1631,6 +1635,7 @@ function GestureDispatcherMounter({
   canvasApiRef,
   tools,
   enabled,
+  keyboard,
   selectionRef,
   boundsOf,
   pickEvery,
@@ -1645,6 +1650,9 @@ function GestureDispatcherMounter({
   canvasApiRef?: React.RefObject<CanvasExtensionApi | null>;
   tools: ToolsApi;
   enabled: boolean;
+  /** When false, the dispatcher leaves keyboard listeners unattached so
+   *  keyboard-bound actions never fire. Wired to `enableKeybindings`. */
+  keyboard: boolean;
   selectionRef?: React.RefObject<import('core/selection/useSelection').SelectionApi>;
   boundsOf?: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
   pickEvery?: (worldX: number, worldY: number) => string[];
@@ -1855,6 +1863,7 @@ function GestureDispatcherMounter({
     actions: registry!,
     toolsById,
     enabled,
+    keyboard,
     affordanceAt: wrappedAffordanceAt,
     classifyTarget: wrappedClassifyTarget,
     dispatcher,

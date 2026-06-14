@@ -45,6 +45,14 @@ export interface UseGestureDispatcherOptions {
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /**
+   * Default true. Set false to leave the window `keydown`/`keyup` listeners
+   * unattached so keyboard-bound actions never dispatch — pointer, wheel, and
+   * contextmenu channels stay live. `<SceneCanvas>` wires this to
+   * `enableKeybindings`, so opting out of keybindings disables the modern
+   * dispatcher key path as well as the legacy `useKeybindings` hook.
+   */
+  keyboard?: boolean;
+  /**
    * Optional affordance classifier. Called on every pointerdown with the
    * world-space coordinates of the pointer. Returns an `AffordanceHit` when
    * the pointer lands on a known affordance (resize handle, rotate handle, etc.)
@@ -166,7 +174,7 @@ function computeMultiTouchGeometry(
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx } = opts;
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
@@ -754,8 +762,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Attach
     // -----------------------------------------------------------------------
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
+    if (keyboard) {
+      window.addEventListener('keydown', onKeyDown);
+      window.addEventListener('keyup', onKeyUp);
+    }
     canvas?.addEventListener('wheel', onWheel, { passive: false });
     canvas?.addEventListener('pointerdown', onPointerDown);
     canvas?.addEventListener('pointermove', onPointerMove);
@@ -768,8 +778,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
+      if (keyboard) {
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('keyup', onKeyUp);
+      }
       canvas?.removeEventListener('wheel', onWheel);
       canvas?.removeEventListener('pointerdown', onPointerDown);
       canvas?.removeEventListener('pointermove', onPointerMove);
@@ -778,5 +790,5 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('contextmenu', onContextMenu);
       dispatcher.cancelAll('cancel');
     };
-  }, [enabled, canvasRef]);
+  }, [enabled, keyboard, canvasRef]);
 }

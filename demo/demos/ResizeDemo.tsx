@@ -16,6 +16,11 @@ export function ResizeDemo() {
       className="ckd-canvas"
       scene={scene}
       selectionOptions={{ initial: [asNodeId(INITIAL.id)] }}
+      // This demo is solely about resize handles. Keybinds and click-to-deselect
+      // only muddy the story, so drop both: no hotkey routing, and the rect
+      // stays selected (clearSelection unregistered).
+      enableKeybindings={false}
+      actions={{ clearSelection: null }}
     />
   );
 }
