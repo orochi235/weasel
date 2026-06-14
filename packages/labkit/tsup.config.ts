@@ -21,18 +21,18 @@ export default defineConfig({
   },
   format: ['esm'],
   tsconfig: './tsconfig.lib.json',
-  // tsup's built-in dts can't resolve the root-package core `@orochi235/weasel`
+  // tsup's built-in dts can't resolve the root-package core `@weasel-js/core`
   // (it follows node_modules symlinks but the monorepo core is the repo ROOT,
   // which has none) and ignores the tsconfig `paths` that tsc honors — so types
   // drifted to `never`. .d.ts emission is therefore handled by a dedicated
   // pipeline that resolves every weasel specifier to SOURCE via an alias plugin:
   // see scripts/build-dts.mts, wired as the `build:dts` step after this build.
-  // The JS bundle here is fully self-contained (zero @orochi235 runtime imports).
+  // The JS bundle here is fully self-contained (zero @weasel-js runtime imports).
   dts: false,
   sourcemap: true,
   clean: true,
   // react/react-dom are peers; the rest are third-party libs declared as labkit
-  // dependencies. All @orochi235/weasel* are bundled in (see noExternal) so the
+  // dependencies. All @weasel-js/core* are bundled in (see noExternal) so the
   // published package is self-contained.
   external: [
     'react',
@@ -42,14 +42,15 @@ export default defineConfig({
     'polygon-clipping',
   ],
   // Bundle the weasel core + private sub-packages into labkit's dist — none are
-  // published to npm. weasel-ui / weasel-modes resolve from their workspace src
-  // (node_modules symlinks); the core resolves to its built, self-contained dist
-  // via the esbuild alias below (avoids re-bundling weasel's bare core/ imports).
-  noExternal: [/^@orochi235\//],
+  // published to npm. The sub-packages (@weasel-js/ui, /modes, and their own
+  // deps) resolve from their workspace src (node_modules symlinks); the core
+  // resolves to its built, self-contained dist via the esbuild alias below
+  // (avoids re-bundling weasel's bare core/ imports).
+  noExternal: [/^@weasel-js\//],
   esbuildOptions(options) {
     options.alias = {
       ...(options.alias ?? {}),
-      '@orochi235/weasel': resolve(weaselRoot, 'dist/index.js'),
+      '@weasel-js/core': resolve(weaselRoot, 'dist/index.js'),
     };
   },
   splitting: true,

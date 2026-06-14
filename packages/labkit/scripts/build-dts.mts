@@ -11,9 +11,9 @@
  *
  * The alias table comes straight from the monorepo's `weaselAliases()` — the
  * single source of truth for name→source mapping. Because the JS bundle, the
- * vite/vitest configs, and this dts build all read that one helper, renaming the
- * weasel packages (e.g. `@orochi235/weasel` → `@weasel-js/core`) is a one-file
- * change in `scripts/vite-aliases.ts`; this script needs no edit.
+ * vite/vitest configs, and this dts build all read that one helper, a future
+ * weasel package rename is a one-file change in `scripts/vite-aliases.ts`; this
+ * script needs no edit.
  *
  * Run via `tsx` (not plain node) so it can import the TypeScript helper above.
  */
@@ -50,7 +50,7 @@ const input = Object.fromEntries(
 
 // Third-party libs are declared labkit deps (and react* are peers): keep them as
 // external `import` statements in the emitted types instead of inlining them.
-// Everything under @orochi235/* is redirected to source by the alias plugin and
+// Everything under @weasel-js/* is redirected to source by the alias plugin and
 // therefore inlined, matching the self-contained JS bundle.
 const external = [
   /^react($|\/)/,

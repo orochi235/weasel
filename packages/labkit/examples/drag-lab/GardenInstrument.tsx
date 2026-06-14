@@ -6,7 +6,7 @@ import {
   screenToWorld,
   useSelection,
   viewToTransform,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type {
   AddNodeSpec,
   RectPose,
@@ -14,9 +14,9 @@ import type {
   SerializedScene,
   UnitSystem,
   View,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { defineInstrument, type RenderContext } from '@orochi235/labkit';
+import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
 
 type Kind = 'tree' | 'shrub' | 'flower';
 

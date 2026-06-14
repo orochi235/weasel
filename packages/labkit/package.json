@@ -1,5 +1,5 @@
 {
-  "name": "@orochi235/labkit",
+  "name": "@weasel-js/labkit",
   "version": "0.0.1",
   "description": "React widgets for building self-contained interactive lab pages",
   "type": "module",
@@ -92,8 +92,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
-    "@orochi235/weasel-modes": "*",
-    "@orochi235/weasel-ui": "*",
+    "@weasel-js/modes": "*",
+    "@weasel-js/ui": "*",
     "@rollup/plugin-alias": "^6.0.0",
     "@testing-library/jest-dom": "^6.6.0",
     "less": "^4.2.0",

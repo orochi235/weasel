@@ -7,8 +7,8 @@ Composition patterns for common lab shapes. This file grows as plans land.
 ### A minimal lab shell with a tiled grid
 
 ```tsx
-import { LabShell, WorkspaceGrid } from '@orochi235/labkit';
-import '@orochi235/labkit/styles.css';
+import { LabShell, WorkspaceGrid } from '@weasel-js/labkit';
+import '@weasel-js/labkit/styles.css';
 
 export function MyLab() {
   return (
@@ -26,7 +26,7 @@ export function MyLab() {
 ### A toolbar with undo/redo and a save button
 
 ```tsx
-import { Toolbar } from '@orochi235/labkit';
+import { Toolbar } from '@weasel-js/labkit';
 
 <Toolbar>
   <Toolbar.Title>My Workspace</Toolbar.Title>
@@ -40,7 +40,7 @@ import { Toolbar } from '@orochi235/labkit';
 ### A status bar with multiple sections
 
 ```tsx
-import { StatusBar, FpsMeter } from '@orochi235/labkit';
+import { StatusBar, FpsMeter } from '@weasel-js/labkit';
 
 <StatusBar>
   <StatusBar.Section>Items: {items.length}</StatusBar.Section>
@@ -56,8 +56,8 @@ import { StatusBar, FpsMeter } from '@orochi235/labkit';
 A lab where users drag items from a palette onto a canvas, with layer toggles and undo. (See `examples/drag-lab/` for the full version.)
 
 ```tsx
-import { defineInstrument, Lab } from '@orochi235/labkit';
-import '@orochi235/labkit/styles.css';
+import { defineInstrument, Lab } from '@weasel-js/labkit';
+import '@weasel-js/labkit/styles.css';
 
 interface Plant { id: string; kind: 'tree' | 'flower'; x: number; y: number }
 interface State { plants: Plant[] }

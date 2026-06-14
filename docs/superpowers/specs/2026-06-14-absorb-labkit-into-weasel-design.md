@@ -147,3 +147,23 @@ Everything through step 4 is branch-local and reversible.
 
 Built/tested from `main` (12 commits ahead of the in-progress
 `chore/phase5-...` branch); rebase onto the latest trunk before merge.
+
+## Update — merged the org refactor + scope rename (2026-06-14)
+
+`main` landed the org refactor: the npm scope moved `@orochi235/*` → `@weasel-js/*`
+(core is now `@weasel-js/core`) and the internals decomposed into more workspace
+packages (`weasel-ui`→`ui`, `weasel-modes`→`modes`, plus new `d3`/`den`/`gestures`/
+`history`/`hud`/`svg`; the core kit still lives at root `src/`). Merged `main` into
+this branch and reconciled labkit to the new scheme:
+
+- labkit is now `@weasel-js/labkit`; devDeps `@weasel-js/ui` / `@weasel-js/modes`.
+- All labkit src/config/example specifiers swapped to `@weasel-js/*`; tsup
+  `noExternal` is now `/^@weasel-js\//`; esbuild core alias → `@weasel-js/core`.
+- The dts pipeline needed **no logic change** — it reads `weaselAliases()`, which
+  the refactor already updated, so it retargeted to `@weasel-js/*` and the new
+  packages automatically (the rename-robust design paying off). `tsconfig.dts.json`
+  `paths` (diagnostic fallback) updated to the new names + dirs.
+- Re-verified: core builds (root `prepare`), labkit `build` green, JS bundle has
+  zero `@weasel-js` runtime imports, all 11 `.d.ts` emit self-contained, a
+  consumer-style typecheck of `@weasel-js/labkit` passes, tests 237/238 (same
+  pre-existing `LayerStack` dlog-mock failure as the source repo).

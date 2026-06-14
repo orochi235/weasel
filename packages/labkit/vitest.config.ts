@@ -5,7 +5,7 @@ import { defineConfig, type AliasOptions } from 'vitest/config';
 // labkit is a workspace package; the weasel monorepo root is two levels up.
 const weaselRoot = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
 
-// Reuse the monorepo's canonical alias map so tests resolve @orochi235/weasel*
+// Reuse the monorepo's canonical alias map so tests resolve @weasel-js/core*
 // (and weasel's bare core/ features/ imports) against source — same as the
 // root vite/vitest configs.
 async function weaselAlias(): Promise<AliasOptions> {
@@ -20,7 +20,7 @@ export default defineConfig(async () => ({
   plugins: [react()],
   resolve: {
     alias: [
-      { find: '@orochi235/labkit', replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url)) },
+      { find: '@weasel-js/labkit', replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url)) },
       ...(await weaselAlias()),
     ],
   },

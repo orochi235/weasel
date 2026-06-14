@@ -1,6 +1,6 @@
 /**
- * Re-exports from `@orochi235/weasel-ui` so consumers import primitives
- * through `@orochi235/labkit/weasel-ui` rather than depending on the
+ * Re-exports from `@weasel-js/ui` so consumers import primitives
+ * through `@weasel-js/labkit/weasel-ui` rather than depending on the
  * weasel-ui package directly. Lets labkit swap implementations in the
  * future without consumer churn.
  */
@@ -147,4 +147,4 @@ export {
   useReorderDragList,
   dlog,
   isDebugEnabled,
-} from '@orochi235/weasel-ui';
+} from '@weasel-js/ui';

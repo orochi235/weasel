@@ -1,4 +1,4 @@
-import { Lab, localStorageAdapter } from '@orochi235/labkit';
+import { Lab, localStorageAdapter } from '@weasel-js/labkit';
 import { SceneInstrument } from './SceneInstrument';
 
 export function WeaselLab() {

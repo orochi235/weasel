@@ -4,16 +4,16 @@ import {
   createScene,
   sceneFromJSON,
   useSelection,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import type {
   AddNodeSpec,
   RectPose,
   Scene,
   SerializedScene,
   UnitSystem,
-} from '@orochi235/weasel';
+} from '@weasel-js/core';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { defineInstrument, type RenderContext } from '@orochi235/labkit';
+import { defineInstrument, type RenderContext } from '@weasel-js/labkit';
 
 interface NodeData {
   color: string;

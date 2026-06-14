@@ -8,10 +8,10 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 // labkit is a workspace package; the weasel monorepo root is two levels up.
 const weaselRoot = fileURLToPath(new URL('../../', import.meta.url)).replace(/\/$/, '');
 
-const labkitAlias = { '@orochi235/labkit': fileURLToPath(new URL('./src/index.ts', import.meta.url)) };
+const labkitAlias = { '@weasel-js/labkit': fileURLToPath(new URL('./src/index.ts', import.meta.url)) };
 
-// The examples consume @orochi235/weasel from the monorepo, whose runtime
-// resolves bare specifiers (`core/...`, `@orochi235/weasel-*`) via the shared
+// The examples consume @weasel-js/core from the monorepo, whose runtime
+// resolves bare specifiers (`core/...`, `@weasel-js/core-*`) via the shared
 // alias map. Reuse it so the examples resolve against source.
 async function weaselAlias(): Promise<AliasOptions> {
   const aliasesUrl = new URL(`file://${weaselRoot}/scripts/vite-aliases.ts`);
@@ -26,7 +26,7 @@ export default defineConfig(async () => ({
   root: `examples/${example}`,
   resolve: {
     alias: [
-      { find: '@orochi235/labkit', replacement: labkitAlias['@orochi235/labkit'] },
+      { find: '@weasel-js/labkit', replacement: labkitAlias['@weasel-js/labkit'] },
       ...(await weaselAlias()),
     ],
   },

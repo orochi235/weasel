@@ -10,10 +10,10 @@ npm run dev:weasel
 
 ## What this demonstrates
 
-- A labkit `<Lab>` shell (toolbar with Save/Clone/Reset/Close, sidebar with control panel, status bar, multi-workspace tabs) wrapping a `<SceneCanvas>` from `@orochi235/weasel`.
+- A labkit `<Lab>` shell (toolbar with Save/Clone/Reset/Close, sidebar with control panel, status bar, multi-workspace tabs) wrapping a `<SceneCanvas>` from `@weasel-js/core`.
 - The instrument declares no `canvas`/`dragDrop`/`undo` capability — weasel owns all canvas, gesture, and history concerns.
 - Config schema (`Show grid`, `Grid spacing`) flows from labkit's `defineInstrument` into the scene's grid layer.
-- `LABKIT_EXAMPLE=weasel-lab` triggers a different alias set in `vite.config.ts` that replicates weasel's internal monorepo aliases (so `@orochi235/weasel-history`'s bare `core/...` imports resolve against the weasel checkout).
+- `LABKIT_EXAMPLE=weasel-lab` triggers a different alias set in `vite.config.ts` that replicates weasel's internal monorepo aliases (so `@weasel-js/core-history`'s bare `core/...` imports resolve against the weasel checkout).
 
 ## Layout note
 

@@ -1,5 +1,5 @@
 {
-  "comment": "Supplies compilerOptions for labkit's .d.ts emission (scripts/build-dts.mts → rollup-plugin-dts). labkit bundles the weasel core + private sub-packages into its dist, so their raw source is compiled here for type emission and must resolve weasel against SOURCE — otherwise types drift to `never`. IMPORTANT: rollup-plugin-dts IGNORES the `paths` below; the build resolves weasel specifiers via the @rollup/plugin-alias table fed by the monorepo's weaselAliases() (scripts/vite-aliases.ts) — the single source of truth, so a package rename (e.g. @orochi235/weasel → @weasel-js/core) is a one-file change there. These `paths` exist only so a direct `tsc -p tsconfig.dts.json` (a diagnostic typecheck) still resolves against source; keep them in sync with weaselAliases on rename, or drop them if the diagnostic isn't needed.",
+  "comment": "Supplies compilerOptions for labkit's .d.ts emission (scripts/build-dts.mts → rollup-plugin-dts). labkit bundles the weasel core + private sub-packages into its dist, so their raw source is compiled here for type emission and must resolve weasel against SOURCE — otherwise types drift to `never`. IMPORTANT: rollup-plugin-dts IGNORES the `paths` below; the build resolves weasel specifiers via the @rollup/plugin-alias table fed by the monorepo's weaselAliases() (scripts/vite-aliases.ts) — the single source of truth, so a future package rename is a one-file change there. These `paths` exist only so a direct `tsc -p tsconfig.dts.json` (a diagnostic typecheck) still resolves against source; keep them in sync with weaselAliases on rename, or drop them if the diagnostic isn't needed.",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -18,13 +18,13 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@orochi235/weasel": ["../../src/index.ts"],
-      "@orochi235/weasel/routing": ["../../src/tools/routing/index.ts"],
-      "@orochi235/weasel/*": ["../../src/*"],
-      "@orochi235/weasel-ui": ["../weasel-ui/src/index.ts"],
-      "@orochi235/weasel-modes": ["../weasel-modes/src/index.ts"],
-      "@orochi235/weasel-theme": ["../weasel-theme/src/index.ts"],
-      "@orochi235/weasel-theme/tokens.css": ["../weasel-theme/src/tokens.css"],
+      "@weasel-js/core": ["../../src/index.ts"],
+      "@weasel-js/core/routing": ["../../src/tools/routing/index.ts"],
+      "@weasel-js/core/*": ["../../src/*"],
+      "@weasel-js/ui": ["../ui/src/index.ts"],
+      "@weasel-js/modes": ["../modes/src/index.ts"],
+      "@weasel-js/theme": ["../theme/src/index.ts"],
+      "@weasel-js/theme/tokens.css": ["../theme/src/tokens.css"],
       "core/*": ["../../src/core/*"],
       "features/*": ["../../src/features/*"],
       "affordances/*": ["../../src/affordances/*"],
@@ -36,7 +36,7 @@
   },
   "include": [
     "src/**/*",
-    "../weasel-ui/src/**/*",
-    "../weasel-modes/src/**/*"
+    "../ui/src/**/*",
+    "../modes/src/**/*"
   ]
 }
