@@ -120,11 +120,28 @@ Everything through step 4 is branch-local and reversible.
   is a pre-existing `LayerStack` dlog-mock issue, identical on the source repo).
 
 **Deferred (follow-ups — not done on this branch)**
-1. **`.d.ts` emission is OFF** (publish blocker). tsup's rollup-dts can't resolve
-   the root-package core `@orochi235/weasel` (no node_modules symlink; it ignores
-   tsconfig `paths` that `tsc` honors). Needs a paths-aware dts pipeline (API
-   Extractor) or real built dist types for weasel-ui/modes. `tsconfig.dts.json`
-   is staged for this.
+1. **`.d.ts` emission is OFF** (publish blocker). Diagnosed in depth:
+   - tsup's rollup-dts resolves workspace members via their node_modules
+     symlinks but can't resolve the root-package core `@orochi235/weasel` (no
+     symlink), and it ignores the tsconfig `paths` that `tsc` honors (verified:
+     `tsc -p tsconfig.dts.json` resolves everything cleanly).
+   - The core *does* emit `dist/index.d.ts`, but those types are **lossy**:
+     weasel's own dts bundling collapses the `DepRegistry`/`DepSchema` generics,
+     so e.g. `depReg.get('selection')` types to `never` (surfaces in
+     `weasel-ui/ActionBar`). Against weasel **source** the same code types
+     correctly. So labkit must build types from SOURCE, not the core's dist.
+   - **Plan (paths-aware, multi-entry):** add devDeps `rollup-plugin-dts` +
+     `@rollup/plugin-alias`; write `scripts/build-dts.mjs` that runs rollup over
+     all 11 entry points with rollup-plugin-dts + an alias plugin fed by the
+     monorepo's `weaselAliases(weaselRoot)` (resolves `@orochi235/weasel*` and
+     the bare `core/`,`features/`,… imports against source). Replace tsup's dts
+     (`dts: false` stays) with `"build:dts": "node scripts/build-dts.mjs"` in the
+     build script. `tsconfig.dts.json` (already staged) supplies the compiler
+     options; exclude `*.stories.tsx`/`*.test.tsx` from the dts input.
+   - Alternative if rollup-plugin-dts also fights the source compile: API
+     Extractor per entry (11 configs), or give weasel-ui/modes real built dist
+     types. rollup-plugin-dts + alias is the first attempt (reuses weaselAliases,
+     handles multi-entry natively).
 2. **`noUncheckedIndexedAccess` left off** in labkit's build tsconfig — the
    bundled `weasel-ui/src/useReorderDragList.ts` has 4 latent violations. Fix
    them in weasel-ui and restore the flag.
