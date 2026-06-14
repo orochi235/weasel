@@ -17,7 +17,14 @@ export default defineConfig({
   clean: true,
   treeshake: true,
   sourcemap: true,
-  splitting: false,
+  // splitting:true collapses modules shared across entry points (e.g. the
+  // text font-registry Map in features/text/atlas/registerFont.ts) into ONE
+  // shared chunk, so `dist/index.js` (Canvas/WeaselRenderer) and
+  // `dist/renderer.js` (registerFont) reference the SAME registry instance.
+  // With splitting:false each entry inlined its own copy → registerFont (only
+  // exported from /renderer) populated a different Map than the renderer read,
+  // silently dropping every glyph. See eric font-rendering fix 2026-06-14.
+  splitting: true,
   target: 'es2022',
   external: ['react', 'react-dom'],
   // The @orochi235/weasel-* workspace sub-packages (history, gestures, modes) are
