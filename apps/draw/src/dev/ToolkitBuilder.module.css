@@ -30,7 +30,11 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) minmax(420px, 32%);
+  /* canvas | catalog | conflicts — child order matches this column order.
+     The canvas is the primary visual, so it gets a column wide enough to
+     show the 520×360 SceneCanvas near 1:1; the (usually sparse) conflicts
+     panel takes the narrow trailing column. */
+  grid-template-columns: minmax(0, 540px) minmax(0, 1fr) minmax(240px, 24%);
   gap: 16px;
   align-items: start;
 }
@@ -89,7 +93,13 @@
 .widgetBody { padding: 8px 12px; }
 .widgetBodyScrollY { padding: 0 12px 8px; overflow-y: auto; min-height: 0; }
 .widgetBodyScrollXY { padding: 0 12px 8px; overflow: auto; min-height: 0; }
-.scene { background: #6a6a6a; border-radius: 4px; width: 100%; height: auto; max-width: 100%; }
+/* Explicit aspect-ratio mirrors the SceneCanvas buffer (width=520 height=360,
+   = 13/9). A bare `<canvas>` carries this ratio implicitly via its width/height
+   attributes, but inside this column-flex container that transferred ratio is
+   not applied on first layout — height collapses to the intrinsic 360px and the
+   scene paints squished/tall until a reflow happens. Stating the ratio makes
+   first-paint sizing deterministic. Keep in sync with the props in ToolkitBuilder.tsx. */
+.scene { background: #6a6a6a; border-radius: 4px; width: 100%; height: auto; max-width: 520px; aspect-ratio: 13 / 9; }
 .hint { margin: 0; font-size: 12px; color: var(--wzl-muted, var(--wzl-fg-muted)); }
 
 .sectionTitle {
@@ -283,4 +293,40 @@
   color: var(--wzl-warning, #d97757);
   font-family: ui-monospace, monospace;
 }
+
+/* Dispatch-trace widget rows — mirrors DispatchTracePanel's palette so the
+   two trace surfaces read identically. Rows are clickable to expand the
+   candidate-actions table. */
+.traceToggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.traceToggle input { margin: 0; }
+/* widgetTitle is the inverted (light) header — lay its contents out in a row
+   so the toggle can sit at the trailing edge. */
+.widgetTitle { display: flex; align-items: center; gap: 8px; }
+
+.traceRow { cursor: pointer; }
+.traceRow:hover { background: rgba(255, 255, 255, 0.06); }
+.traceRowUnhandled { background: rgba(220, 80, 60, 0.14); }
+.traceRowUnhandled:hover { background: rgba(220, 80, 60, 0.24); }
+.traceRowExpanded { background: rgba(255, 255, 255, 0.08); }
+
+/* Mode-switch rows: dimmer, read as ambient state rather than dispatched input. */
+.traceRowMode {
+  background: rgba(120, 160, 220, 0.08);
+  color: var(--wzl-muted, var(--wzl-fg-muted));
+}
+.traceRowMode:hover { background: rgba(120, 160, 220, 0.14); }
+.traceModeDetail { color: var(--wzl-muted, var(--wzl-fg-muted)); font-style: italic; }
+
+.traceDetailRow > td { background: rgba(0, 0, 0, 0.25); padding: 6px 12px; }
+.traceCandFired { font-weight: 700; color: var(--wzl-accent-fg, #7fb069); }
 

@@ -38,6 +38,13 @@ import {
 } from '@weasel-js/core/routing';
 import { formatShortcutParts, KeySequence } from '@weasel-js/ui';
 import { lookupShortcutByToolId } from './keybindingsView';
+import {
+  formatAge,
+  formatEnabled,
+  readLog,
+  type DispatchLogEntry,
+  type TraceLogEntry,
+} from './dispatchTraceLog';
 import s from './ToolkitBuilder.module.css';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -172,9 +179,10 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
         <RoutesWidget routes={routes} />
       </section>
 
-      {/* Right column: conflicts. */}
+      {/* Right column: conflicts + live dispatch trace. */}
       <aside className={s.reflect}>
         <ConflictsWidget conflicts={conflicts} />
+        <DispatchTraceWidget />
       </aside>
     </div>
   );
@@ -368,6 +376,171 @@ function ConflictsWidget({ conflicts }: { conflicts: readonly Conflict[] }): Rea
         )}
       </div>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Widget: live dispatch trace. Reads the kit's dev-only rolling log
+// (`window.__weaselDispatchLog__`, populated by the gesture dispatcher the
+// mounted SceneCanvas runs). Each row is one input-handling decision; click
+// to expand the candidate actions and see why each was (or wasn't) chosen.
+// Unhandled events (idle mousemoves, wheels over chrome) are noisy and hidden
+// by default — toggle to reveal them when diagnosing "X didn't fire".
+// ─────────────────────────────────────────────────────────────────────────
+
+const TRACE_POLL_MS = 250;
+const TRACE_DISPLAY_LIMIT = 100;
+
+function DispatchTraceWidget(): ReactElement {
+  const [entries, setEntries] = useState<TraceLogEntry[]>(() => readLog().slice());
+  const [now, setNow] = useState<number>(() => Date.now());
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [showUnhandled, setShowUnhandled] = useState<boolean>(false);
+  const lastLenRef = useRef<number>(entries.length);
+  const lastTsRef = useRef<number>(entries.length ? entries[entries.length - 1]!.ts : 0);
+
+  // Poll the log; skip the setState when nothing changed so the idle tick is
+  // cheap. `now` still advances each tick so the Age column counts up.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const log = readLog();
+      const len = log.length;
+      const lastTs = len ? log[len - 1]!.ts : 0;
+      if (len !== lastLenRef.current || lastTs !== lastTsRef.current) {
+        lastLenRef.current = len;
+        lastTsRef.current = lastTs;
+        setEntries(log.slice());
+      }
+      setNow(Date.now());
+    }, TRACE_POLL_MS);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const visible = entries
+    .filter((e) => (e.kind === 'mode' ? true : e.outcome === 'unhandled' ? showUnhandled : true))
+    .slice(-TRACE_DISPLAY_LIMIT)
+    .reverse();
+
+  return (
+    <div className={s.widget}>
+      <h2 className={s.widgetTitle}>
+        Dispatch · {entries.length}
+        <label className={s.traceToggle}>
+          <input
+            type="checkbox"
+            checked={showUnhandled}
+            onChange={(e) => setShowUnhandled(e.target.checked)}
+          />
+          unhandled
+        </label>
+      </h2>
+      <div className={s.widgetBodyScrollY}>
+        {visible.length === 0 ? (
+          <p className={s.empty}>
+            {entries.length > 0
+              ? 'All recorded events hidden — toggle “unhandled” to show them.'
+              : 'No dispatch events yet. Interact with the canvas to populate the trace.'}
+          </p>
+        ) : (
+          <table className={s.table}>
+            <thead>
+              <tr>
+                <th>Age</th>
+                <th>Event</th>
+                <th>Outcome</th>
+                <th>Cands</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((entry, i) => (
+                <TraceRow
+                  key={`${entry.ts}-${i}`}
+                  entry={entry}
+                  ageMs={Math.max(0, now - entry.ts)}
+                  isExpanded={expanded === entry.ts}
+                  onToggle={() => setExpanded((x) => (x === entry.ts ? null : entry.ts))}
+                />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TraceRow({
+  entry,
+  ageMs,
+  isExpanded,
+  onToggle,
+}: {
+  entry: TraceLogEntry;
+  ageMs: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+}): ReactElement {
+  if (entry.kind === 'mode') {
+    return (
+      <tr className={s.traceRowMode}>
+        <td>{formatAge(ageMs)}</td>
+        <td>
+          <code>{entry.mode}</code>
+          {entry.detail ? <span className={s.traceModeDetail}> ({entry.detail})</span> : null}
+        </td>
+        <td colSpan={2}>
+          <code>{entry.from ?? '∅'}</code> → <code>{entry.to ?? '∅'}</code>
+        </td>
+      </tr>
+    );
+  }
+  const unhandled = entry.outcome === 'unhandled';
+  const rowClass = [s.traceRow, unhandled ? s.traceRowUnhandled : '', isExpanded ? s.traceRowExpanded : '']
+    .filter(Boolean)
+    .join(' ');
+  return (
+    <>
+      <tr className={rowClass} onClick={onToggle}>
+        <td>{formatAge(ageMs)}</td>
+        <td>
+          {entry.eventKind}
+          {entry.key !== undefined ? <> <code>{entry.key === ' ' ? 'Space' : entry.key}</code></> : null}
+        </td>
+        <td>{unhandled ? 'unhandled' : entry.fired ? <code>{entry.fired}</code> : 'handled'}</td>
+        <td>{entry.candidates.length}</td>
+      </tr>
+      {isExpanded && (
+        <tr className={s.traceDetailRow}>
+          <td colSpan={4}>
+            {entry.candidates.length === 0 ? (
+              <em>No candidates considered.</em>
+            ) : (
+              <table className={s.table}>
+                <thead>
+                  <tr>
+                    <th>Action</th>
+                    <th>Scope</th>
+                    <th>Enabled</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entry.candidates.map((c, i) => (
+                    <tr
+                      key={`${c.actionId}-${i}`}
+                      className={c.actionId === (entry as DispatchLogEntry).fired ? s.traceCandFired : undefined}
+                    >
+                      <td><code>{c.actionId}</code></td>
+                      <td>{c.scope}</td>
+                      <td>{formatEnabled(c.enabledResult)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
