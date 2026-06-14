@@ -81,7 +81,8 @@ describe('weasel-hud integration', () => {
     await act(async () => {});  // let useHud's effect run
 
     expect(api.hudRef.current).not.toBeNull();
-    const btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });
+    let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
+    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
     btn.on('press', api.press);
 
     const canvas = container.querySelector('canvas')!;
