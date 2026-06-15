@@ -27,10 +27,15 @@
  * This means the canvas does not show live drag feedback until the overlay
  * system is wired (Phase 7 TODO).
  *
- * Features deferred to Phase 7:
+ * The behavior pipeline (snap-to-grid, snap-back-or-delete, snap-to-container,
+ * etc.) via `opts.behaviors` from `BindingOpts` IS wired: `start` builds a
+ * `GestureContext` + scene-backed adapter (`moveGestureAdapter`), `onMove`
+ * folds each behavior's proposed-transform result, and `onEnd` runs a
+ * first-non-undefined-wins reducer (`Op[]` commits via `scene.applyBatch`,
+ * `null` aborts, all-`undefined` falls through to the default translate path).
+ *
+ * Still deferred:
  * - Live drag overlay / ghost rendering.
- * - Behavior pipeline (snap-to-grid, snap-back-or-delete, etc.) via
- *   `opts.behaviors` from `BindingOpts`.
  * - Cascading children / group expansion (requires `getChildren` surface).
  *
  * ## Pose generics
