@@ -100,3 +100,63 @@ describe('groupAction.run', () => {
     expect(selection.get()).toEqual([]);
   });
 });
+
+describe('ungroupAction.run', () => {
+  it('dissolves a container, reparenting its children to the container parent and selecting them', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const selection = makeSelection([a, b]);
+
+    // First group the two nodes, then ungroup the resulting container.
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    const containerId = selection.get()[0]!;
+    selection.set([containerId]);
+
+    (ungroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+
+    expect(scene.get(containerId)).toBeUndefined();
+    expect(scene.get(a)!.parent).toBe(null);
+    expect(scene.get(b)!.parent).toBe(null);
+    expect(selection.get()).toEqual([a, b]);
+  });
+
+  it('no-ops on a selected leaf (non-container)', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const selection = makeSelection([a]);
+
+    (ungroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+
+    expect(scene.get(a)).toBeDefined();
+    expect(scene.get(a)!.kind).toBe('leaf');
+  });
+
+  it('reparents a nested container and leaf up to the dissolved container parent', () => {
+    const scene = makeScene();
+    // Build container A holding leaf `a` and a nested container B (holding leaf `b`).
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+
+    // Group b into container B, then group a + B into container A.
+    let selection = makeSelection([b]);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    const containerB = selection.get()[0]!;
+
+    selection = makeSelection([a, containerB]);
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+    const containerA = selection.get()[0]!;
+
+    selection.set([containerA]);
+    (ungroupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+
+    expect(scene.get(containerA)).toBeUndefined();
+    // a and B both float up to A's parent (root).
+    expect(scene.get(a)!.parent).toBe(null);
+    expect(scene.get(containerB)!.parent).toBe(null);
+    // B itself is untouched: still a container still holding b.
+    expect(scene.get(containerB)!.kind).toBe('container');
+    expect(scene.childrenOf(containerB)).toEqual([b]);
+    expect(selection.get()).toEqual([a, containerB]);
+  });
+});

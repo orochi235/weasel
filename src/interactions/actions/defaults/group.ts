@@ -2,7 +2,6 @@ import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { unionBounds, type RectPose } from 'features/groups/unionBounds';
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
 
 /**
  * @experimental
@@ -70,18 +69,55 @@ export const groupAction: Action & { requires: string[] } = {
 /**
  * @experimental
  * Static descriptor for the `ungroup` Action.
+ *
+ * "Group" here means a structural `ContainerNode`. `run` dissolves each
+ * selected container by reparenting its children up to the container's own
+ * parent (preserving z-order) and removing the now-empty container, as a single
+ * undoable batch. Selected non-container nodes are ignored. The freed children
+ * become the new selection.
  */
-export const ungroupAction: Action = {
+export const ungroupAction: Action & { requires: string[] } = {
   id: 'ungroup',
   label: 'Ungroup',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true, shift: true } },
   eligible: { capability: 'edits-page' },
+  requires: ['scene', 'selection'],
   invoker: {
     timing: 'immediate',
-    run: (_deps, params) => {
-      // Stub — depSchema wiring lives in useStandardActions.
-      void params;
+    run: (deps) => {
+      const selection = deps.selection as SelectionApi | undefined;
+      const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+      if (!selection || !scene) return;
+
+      const ids = selection.get();
+      if (ids.length === 0) return;
+
+      const containers = ids.filter((id) => scene.get(id as NodeId)?.kind === 'container');
+      if (containers.length === 0) return;
+
+      scene.batch('Ungroup', () => {
+        const freed: NodeId[] = [];
+        for (const containerId of containers) {
+          const container = scene.get(containerId as NodeId);
+          if (!container || container.kind !== 'container') continue;
+
+          const parent = container.parent ?? null;
+          const baseIndex =
+            parent === null
+              ? scene.roots.indexOf(containerId as NodeId)
+              : scene.childrenOf(parent).indexOf(containerId as NodeId);
+
+          const children = [...scene.childrenOf(containerId as NodeId)];
+          children.forEach((childId, i) => {
+            scene.move(childId, parent, baseIndex < 0 ? undefined : baseIndex + i);
+            freed.push(childId);
+          });
+
+          scene.remove(containerId as NodeId);
+        }
+        selection.set(freed);
+      });
     },
   },
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: () => true,
 };
