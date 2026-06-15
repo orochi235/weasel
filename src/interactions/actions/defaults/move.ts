@@ -19,24 +19,12 @@
  * poses only in React state (overlay) during the drag and committing a
  * single `createTransformOp` batch at the end.
  *
- * ## Design decisions vs `useMove`
- *
- * `useMove` uses `MoveAdapter` + a React overlay to render ghost positions
- * during the drag. `moveAction` has no overlay surface — the
- * descriptor tracks delta in scratch and writes to the scene only at commit.
- * This means the canvas does not show live drag feedback until the overlay
- * system is wired (Phase 7 TODO).
- *
  * The behavior pipeline (snap-to-grid, snap-back-or-delete, snap-to-container,
  * etc.) via `opts.behaviors` from `BindingOpts` IS wired: `start` builds a
  * `GestureContext` + scene-backed adapter (`moveGestureAdapter`), `onMove`
  * folds each behavior's proposed-transform result, and `onEnd` runs a
  * first-non-undefined-wins reducer (`Op[]` commits via `scene.applyBatch`,
  * `null` aborts, all-`undefined` falls through to the default translate path).
- *
- * Still deferred:
- * - Live drag overlay / ghost rendering.
- * - Cascading children / group expansion (requires `getChildren` surface).
  *
  * ## Pose generics
  *
