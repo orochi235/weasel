@@ -51,6 +51,8 @@ import type { NodeAtPointDep } from '../depSchema';
 import { type PoseProjection } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import type { ResizePolicy } from '../depSchema';
+import type { MoveBehavior, GroupTransform, GestureContext } from '../../gestures/types';
+import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
 import {
   composeRectPose,
   composeWorldPose,
@@ -128,6 +130,12 @@ interface MoveScratch {
    *  descriptor instead of the rect-pose default. Undefined when the
    *  `resizePolicy` dep wasn't sourced. */
   projection?: PoseProjection<unknown>;
+  /** Behaviors from `opts.behaviors`; empty array when none supplied. */
+  behaviors: MoveBehavior<unknown>[];
+  /** Reused gesture context handed to behaviors across the drag. */
+  gestureCtx: GestureContext<unknown>;
+  /** Scene-backed adapter the committed behavior ops apply through. */
+  adapter: MoveGestureAdapter<unknown>;
 }
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -316,6 +324,22 @@ export const moveAction: Action & { requires: string[] } = {
         }
       }
 
+      const behaviors = (opts?.behaviors ?? []) as MoveBehavior<unknown>[];
+      const adapter = moveGestureAdapter<unknown>(scene as Scene<unknown, string, unknown>);
+      const origin = new Map<string, unknown>();
+      for (const [id, pose] of startPoses) origin.set(id as string, pose);
+      const gestureCtx: GestureContext<unknown> = {
+        draggedIds: ids as unknown as string[],
+        origin,
+        current: new Map(origin),
+        snap: null,
+        modifiers: { ...ctx.modifiers },
+        pointer: { worldX: ctx.world.x, worldY: ctx.world.y, clientX: 0, clientY: 0 },
+        adapter: adapter as unknown as GestureContext<unknown>['adapter'],
+        scratch: {},
+      };
+      for (const b of behaviors) b.onStart?.(gestureCtx);
+
       const scratch: MoveScratch = {
         startPoses,
         ids,
@@ -324,23 +348,49 @@ export const moveAction: Action & { requires: string[] } = {
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
         projection,
+        behaviors,
+        gestureCtx,
+        adapter,
       };
 
       return {
         kind: 'move',
         onMove(moveCtx: InvocationCtx): void {
           if (!moveCtx.drag) return;
+          let dx = moveCtx.drag.delta.x;
+          let dy = moveCtx.drag.delta.y;
+
+          if (scratch.behaviors.length > 0) {
+            const gctx = scratch.gestureCtx;
+            gctx.modifiers = { ...moveCtx.modifiers };
+            gctx.pointer = { worldX: moveCtx.drag.current.x, worldY: moveCtx.drag.current.y, clientX: 0, clientY: 0 };
+            for (const [id, ori] of scratch.startPoses) {
+              gctx.current.set(id as string, translatePoseGeneric(ori, dx, dy, scratch.projection));
+            }
+            let transform: GroupTransform = { kind: 'translate', dx, dy };
+            const primary = scratch.ids[0] as NodeId | undefined;
+            for (const b of scratch.behaviors) {
+              const r: import('../../gestures/types').BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
+              if (!r) continue;
+              if (r.transform && r.transform.kind === 'translate') {
+                transform = r.transform;
+              } else if (r.pose !== undefined && primary !== undefined) {
+                const o = scratch.startPoses.get(primary) as { x: number; y: number } | undefined;
+                const p = r.pose as unknown as { x: number; y: number };
+                if (o) transform = { kind: 'translate', dx: p.x - o.x, dy: p.y - o.y };
+              }
+              if (r.snap !== undefined) gctx.snap = r.snap;
+            }
+            if (transform.kind === 'translate') { dx = transform.dx; dy = transform.dy; }
+          }
+
           // Track delta in scratch only — no scene writes, no history entries.
-          scratch.currentDelta = {
-            dx: moveCtx.drag.delta.x,
-            dy: moveCtx.drag.delta.y,
-          };
+          scratch.currentDelta = { dx, dy };
           // Refresh preview poses for every displaced id (roots + cascade).
           // The preview-ghost layer reads these via `previewIds`/`previewPose`.
-          const { dx, dy } = scratch.currentDelta;
           scratch.previews.clear();
-          for (const [id, origin] of scratch.startPoses) {
-            scratch.previews.set(id, translatePoseGeneric(origin, dx, dy, scratch.projection));
+          for (const [id, ori] of scratch.startPoses) {
+            scratch.previews.set(id, translatePoseGeneric(ori, dx, dy, scratch.projection));
           }
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -351,6 +401,27 @@ export const moveAction: Action & { requires: string[] } = {
           }
           // 'commit': apply final delta as a single batch → one undo entry.
           const { dx, dy } = scratch.currentDelta;
+
+          // Behavior pipeline owns the commit if any behavior returns non-undefined.
+          if (scratch.behaviors.length > 0) {
+            const gctx = scratch.gestureCtx;
+            for (const [id, ori] of scratch.startPoses) {
+              gctx.current.set(id as string, translatePoseGeneric(ori, dx, dy, scratch.projection));
+            }
+            for (const b of scratch.behaviors) {
+              const r = b.onEnd?.(gctx);
+              if (r === undefined) continue;        // defer to next behavior / default
+              if (r === null) {                     // abort (e.g. snap-back)
+                scratch.previews.clear();
+                return;
+              }
+              scratch.scene.applyBatch(r, 'Move', scratch.adapter);  // Op[] → commit, one undo entry
+              scratch.previews.clear();
+              return;
+            }
+            // all behaviors deferred → fall through to the default path below.
+          }
+
           // No-op if no movement (sub-threshold drag or zero delta).
           if (dx === 0 && dy === 0) {
             scratch.previews.clear();
