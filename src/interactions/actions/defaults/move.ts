@@ -51,7 +51,7 @@ import type { NodeAtPointDep } from '../depSchema';
 import { type PoseProjection } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import type { ResizePolicy } from '../depSchema';
-import type { MoveBehavior, GroupTransform, GestureContext } from '../../gestures/types';
+import type { MoveBehavior, GroupTransform, GestureContext, BehaviorResult } from '../../gestures/types';
 import { moveGestureAdapter, type MoveGestureAdapter } from '../move/gestureAdapter';
 import {
   composeRectPose,
@@ -364,13 +364,19 @@ export const moveAction: Action & { requires: string[] } = {
             const gctx = scratch.gestureCtx;
             gctx.modifiers = { ...moveCtx.modifiers };
             gctx.pointer = { worldX: moveCtx.drag.current.x, worldY: moveCtx.drag.current.y, clientX: 0, clientY: 0 };
+            // `current` is pre-populated from the raw cursor delta BEFORE
+            // any behavior shapes `transform`. Unlike `onEnd`, it is NOT
+            // refreshed after each behavior runs — so onMove behaviors
+            // should derive position from `origin` + the `proposed`
+            // GroupTransform arg, NOT from `ctx.current` (which reflects
+            // the unmodified delta at this frame's start).
             for (const [id, ori] of scratch.startPoses) {
               gctx.current.set(id as string, translatePoseGeneric(ori, dx, dy, scratch.projection));
             }
             let transform: GroupTransform = { kind: 'translate', dx, dy };
             const primary = scratch.ids[0] as NodeId | undefined;
             for (const b of scratch.behaviors) {
-              const r: import('../../gestures/types').BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
+              const r: BehaviorResult<unknown> | void = b.onMove?.(gctx, transform);
               if (!r) continue;
               if (r.transform && r.transform.kind === 'translate') {
                 transform = r.transform;
@@ -415,7 +421,12 @@ export const moveAction: Action & { requires: string[] } = {
                 scratch.previews.clear();
                 return;
               }
-              scratch.scene.applyBatch(r, 'Move', scratch.adapter);  // Op[] → commit, one undo entry
+              // Three-way contract: undefined = defer to next behavior (or
+              // default translate). null = abort (snap-back / delete). Op[]
+              // = claim the gesture and commit those ops — even an EMPTY
+              // array [] claims the commit and suppresses the default
+              // translate (behavior intentionally committed nothing).
+              scratch.scene.applyBatch(r, 'Move', scratch.adapter);
               scratch.previews.clear();
               return;
             }

@@ -86,4 +86,79 @@ describe('moveAction behavior pipeline', () => {
     handle.onEnd!(ctx(scene, [leaf], { start: { x: 0, y: 0 }, current: { x: 30, y: 40 }, delta: { x: 30, y: 40 } }), 'commit');
     expect(scene.get(asNodeId(leaf))?.pose).toEqual({ x: 30, y: 40, width: 20, height: 20 });
   });
+
+  it('multi-behavior ordering: first-defer second-claim — snapToContainer wins over snapToGrid', () => {
+    // snapToGrid only implements onMove (no onEnd) → returns undefined at
+    // onEnd → defers. snapToContainer returns Op[] at onEnd → claims the
+    // commit. The container snap should win regardless of ordering.
+    const { scene, box, leaf } = fixture();
+    const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 10, width: 20, height: 20 } };
+    const opts: BindingOpts = {
+      behaviors: [
+        snapToGrid<P>({ spacing: 20 }) as never,
+        snapToContainer<P>({
+          dwellMs: 0,
+          isInstant: () => true,
+          findTarget: (_id, wx) => (wx > 200 ? target : null),
+        }) as never,
+      ],
+    };
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leaf]), opts) as OngoingHandle;
+    handle.onMove!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } }));
+    handle.onEnd!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } }), 'commit');
+    // snapToContainer's onEnd claimed the commit → reparented + slot pose applied.
+    expect(scene.get(asNodeId(leaf))?.parent).toBe(box);
+    expect(scene.get(asNodeId(leaf))?.pose).toEqual({ x: 210, y: 10, width: 20, height: 20 });
+  });
+
+  it('multi-select uniform translate: both leaves move by the same delta (no drift)', () => {
+    // GroupTransform headline invariant: when multiple nodes are selected,
+    // every node translates by the same (dx, dy). Their relative offset
+    // must be preserved after the commit.
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const leafA = scene.add({ kind: 'leaf', layer: 'main', data: { color: '#f00' }, pose: { x: 0, y: 0, width: 20, height: 20 } }) as string;
+    const leafB = scene.add({ kind: 'leaf', layer: 'main', data: { color: '#00f' }, pose: { x: 100, y: 50, width: 20, height: 20 } }) as string;
+    const poseABefore = { ...scene.get(asNodeId(leafA))!.pose };
+    const poseBBefore = { ...scene.get(asNodeId(leafB))!.pose };
+
+    const opts: BindingOpts = { behaviors: [snapToGrid<P>({ spacing: 20 }) as never] };
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leafA, leafB]), opts) as OngoingHandle;
+    const delta = { x: 40, y: 60 };
+    handle.onMove!(ctx(scene, [leafA, leafB], { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta }));
+    handle.onEnd!(ctx(scene, [leafA, leafB], { start: { x: 0, y: 0 }, current: { x: delta.x, y: delta.y }, delta }), 'commit');
+
+    const poseA = scene.get(asNodeId(leafA))!.pose;
+    const poseB = scene.get(asNodeId(leafB))!.pose;
+    // Both must have moved by the same delta — their relative offset is preserved.
+    expect(poseA.x - poseABefore.x).toBe(poseB.x - poseBBefore.x);
+    expect(poseA.y - poseABefore.y).toBe(poseB.y - poseBBefore.y);
+    // Both moved by a non-zero amount (grid-snapped, but still a real move).
+    expect(poseA.x).not.toBe(poseABefore.x);
+    expect(poseB.x).not.toBe(poseBBefore.x);
+  });
+
+  it('cancel path bypasses behaviors: pose and parent unchanged', () => {
+    // onEnd('cancel') returns before the behavior pipeline → behaviors never
+    // fire and the scene is left exactly as at drag start.
+    const { scene, box, leaf } = fixture();
+    const poseBefore = { ...scene.get(asNodeId(leaf))!.pose };
+    const parentBefore = scene.get(asNodeId(leaf))!.parent;
+    const target: SnapTarget<P> = { parentId: box, slotPose: { x: 210, y: 10, width: 20, height: 20 } };
+    const opts: BindingOpts = {
+      behaviors: [
+        snapToContainer<P>({
+          dwellMs: 0,
+          isInstant: () => true,
+          findTarget: (_id, wx) => (wx > 200 ? target : null),
+        }) as never,
+      ],
+    };
+    const handle = (moveAction.invoker as OngoingInvoker).start(ctx(scene, [leaf]), opts) as OngoingHandle;
+    // Move over the container so the snap is committed in behavior scratch.
+    handle.onMove!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } }));
+    // Cancel instead of commit — behaviors must NOT fire.
+    handle.onEnd!(ctx(scene, [leaf], { start: { x: 10, y: 10 }, current: { x: 260, y: 10 }, delta: { x: 250, y: 0 } }), 'cancel');
+    expect(scene.get(asNodeId(leaf))?.pose).toEqual(poseBefore);
+    expect(scene.get(asNodeId(leaf))?.parent).toBe(parentBefore);
+  });
 });
