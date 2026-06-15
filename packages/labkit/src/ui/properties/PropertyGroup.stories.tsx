@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PropertyGroup } from './PropertyGroup';
 import { PropertyList, PropertyPanel, SliderRow } from './PropertyPanel';
 
 const meta: Meta<typeof PropertyGroup> = {
-  title: 'UI/Properties/PropertyGroup',
+  title: 'labkit/UI/Properties/PropertyGroup',
   component: PropertyGroup,
 };
 export default meta;

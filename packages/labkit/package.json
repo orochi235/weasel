@@ -70,15 +70,13 @@
     "build:fonts": "mkdir -p dist/fonts && cp src/fonts/*.woff2 dist/fonts/",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
     "lint": "biome check . && tsx scripts/check-class-prefix.ts",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
-    "build:site": "npm run docs:build && npm run build-storybook && rm -rf docs/.vitepress/dist/storybook && cp -R storybook-static docs/.vitepress/dist/storybook"
+    "docs:preview": "vitepress preview docs"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -92,12 +90,13 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.12",
-    "@weasel-js/modes": "*",
-    "@weasel-js/ui": "*",
     "@rollup/plugin-alias": "^6.0.0",
     "@testing-library/jest-dom": "^6.6.0",
+    "@weasel-js/modes": "*",
+    "@weasel-js/ui": "*",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",
-    "tsx": "^4.19.0"
+    "tsx": "^4.19.0",
+    "vitepress": "^1.6.4"
   }
 }

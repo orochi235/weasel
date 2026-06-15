@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LabShell } from './LabShell';
 
 const meta: Meta<typeof LabShell> = {
-  title: 'Lab/LabShell',
+  title: 'labkit/Lab/LabShell',
   component: LabShell,
   parameters: { layout: 'fullscreen' },
 };

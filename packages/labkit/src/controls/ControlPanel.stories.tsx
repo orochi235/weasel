@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { ControlPanel } from './ControlPanel';
 import type { ConfigField } from './types';
 
 const meta: Meta<typeof ControlPanel> = {
-  title: 'Controls/ControlPanel',
+  title: 'labkit/Controls/ControlPanel',
   component: ControlPanel,
   parameters: { layout: 'padded' },
 };

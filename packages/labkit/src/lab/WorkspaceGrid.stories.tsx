@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { WorkspaceGrid } from './WorkspaceGrid';
 
 const meta: Meta<typeof WorkspaceGrid> = {
-  title: 'Lab/WorkspaceGrid',
+  title: 'labkit/Lab/WorkspaceGrid',
   component: WorkspaceGrid,
 };
 export default meta;

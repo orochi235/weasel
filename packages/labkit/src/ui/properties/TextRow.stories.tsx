@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { TextRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof TextRow> = {
-  title: 'UI/Properties/Rows/TextRow',
+  title: 'labkit/UI/Properties/Rows/TextRow',
   component: TextRow,
 };
 export default meta;

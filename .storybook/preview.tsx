@@ -1,6 +1,27 @@
 import type { Preview } from '@storybook/react-vite';
 import React from 'react';
 import '@weasel-js/theme/tokens.css';
+// labkit stories render under `.lk-root` with labkit's own CSS + Oswald face; a
+// title-scoped decorator (below) applies the wrapper to `labkit/…` stories only.
+import '../packages/labkit/src/styles.less';
+import '../packages/labkit/src/theme/light.less';
+import '../packages/labkit/src/theme/interstellar.less';
+import labkitOswaldUrl from '../packages/labkit/src/fonts/oswald-latin-variable.woff2?url';
+
+// labkit's CSS @font-face resolves its URL relative to the COMPILED dist
+// stylesheet, so re-declare Oswald here for Vite, plus the framing class used by
+// the `.lk-root` wrapper decorator below.
+if (typeof document !== 'undefined') {
+  const id = 'labkit-sb-styles';
+  if (!document.getElementById(id)) {
+    const style = document.createElement('style');
+    style.id = id;
+    style.textContent =
+      `@font-face { font-family: 'Oswald'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('${labkitOswaldUrl}') format('woff2'); }` +
+      '.lk-sb-frame { padding: 16px; min-height: 100vh; }';
+    document.head.appendChild(style);
+  }
+}
 
 // Paint the preview iframe canvas with our themed surface color so stories
 // don't render on raw white. Lives outside the React tree so it applies even
@@ -73,6 +94,22 @@ const preview: Preview = {
   globalTypes: {
     // `theme` is driven by the manager-side toggle button in `manager.tsx`;
     // no `toolbar` config here so it doesn't render as a dropdown.
+    //
+    // labkit stories carry their own light/interstellar theming, independent of
+    // the weasel `theme` toggle. This toolbar drives the `.lk-root` decorator.
+    lkTheme: {
+      name: 'labkit theme',
+      defaultValue: 'auto',
+      toolbar: {
+        icon: 'circlehollow',
+        items: [
+          { value: 'auto', title: 'labkit: Auto (OS)' },
+          { value: 'light', title: 'labkit: Light' },
+          { value: 'interstellar', title: 'labkit: Interstellar' },
+        ],
+        dynamicTitle: true,
+      },
+    },
     fontFamily: {
       name: 'Font',
       description: 'Preview font family',
@@ -215,6 +252,23 @@ const preview: Preview = {
             <Story />
           </div>
         </>
+      );
+    },
+    // labkit-only wrapper: themed `.lk-root` frame for `labkit/…` stories,
+    // passthrough for everything else.
+    (Story, context) => {
+      if (!context.title?.startsWith('labkit/')) return <Story />;
+      const theme = String(context.globals.lkTheme ?? 'auto');
+      const className =
+        theme === 'light'
+          ? 'lk-root lk-theme-light lk-sb-frame'
+          : theme === 'interstellar'
+            ? 'lk-root lk-theme-interstellar lk-sb-frame'
+            : 'lk-root lk-sb-frame';
+      return (
+        <div className={className}>
+          <Story />
+        </div>
       );
     },
   ],

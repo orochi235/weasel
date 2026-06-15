@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FpsMeter } from './FpsMeter';
 
 const meta: Meta<typeof FpsMeter> = {
-  title: 'Primitives/FpsMeter',
+  title: 'labkit/Primitives/FpsMeter',
   component: FpsMeter,
 };
 export default meta;

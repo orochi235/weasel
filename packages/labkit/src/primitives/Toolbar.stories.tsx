@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Toolbar } from './Toolbar';
 
 const meta: Meta<typeof Toolbar> = {
-  title: 'Primitives/Toolbar',
+  title: 'labkit/Primitives/Toolbar',
   component: Toolbar,
 };
 export default meta;

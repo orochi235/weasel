@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ScaleIndicator } from './ScaleIndicator';
 
 const meta: Meta<typeof ScaleIndicator> = {
-  title: 'Primitives/ScaleIndicator',
+  title: 'labkit/Primitives/ScaleIndicator',
   component: ScaleIndicator,
   args: { unit: 'ft', pixelsPerUnit: 50 },
 };

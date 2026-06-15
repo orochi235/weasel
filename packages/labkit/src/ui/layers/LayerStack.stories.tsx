@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { LayerStack, type LayerStackItem } from './LayerStack';
 
 const meta: Meta<typeof LayerStack> = {
-  title: 'UI/Layers/LayerStack',
+  title: 'labkit/UI/Layers/LayerStack',
   component: LayerStack,
 };
 export default meta;

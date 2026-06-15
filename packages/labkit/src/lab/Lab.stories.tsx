@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect } from 'react';
 import type { Instrument } from '../instrument/types';
 import { Lab } from './Lab';
@@ -14,7 +14,7 @@ const StubInstrument: Instrument = {
 };
 
 const meta: Meta<typeof Lab> = {
-  title: 'Lab/Lab',
+  title: 'labkit/Lab/Lab',
   component: Lab,
   parameters: { layout: 'fullscreen' },
 };

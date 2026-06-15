@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { Sidebar } from './Sidebar';
 
 const meta: Meta<typeof Sidebar> = {
-  title: 'Primitives/Sidebar',
+  title: 'labkit/Primitives/Sidebar',
   component: Sidebar,
 };
 export default meta;

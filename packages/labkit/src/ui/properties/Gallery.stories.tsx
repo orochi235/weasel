@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import {
   CheckboxRow,
@@ -16,7 +16,7 @@ import {
 // Titled "Gallery" so it sorts above PropertyPanel/PropertyList/Rows in the
 // sidebar alphabetically (G < P < R). Acts as the visual root of the section.
 const meta: Meta = {
-  title: 'UI/Properties/Gallery',
+  title: 'labkit/UI/Properties/Gallery',
 };
 export default meta;
 type Story = StoryObj;

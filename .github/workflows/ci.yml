@@ -35,6 +35,11 @@ jobs:
       # labkit bundles the (private) weasel packages into a self-contained dist;
       # build it after the core so its esbuild alias resolves the built core.
       - run: npm run build -w @weasel-js/labkit
+      # labkit's premise is a self-contained dist with ZERO @weasel-js runtime/type
+      # imports. Bundle every labkit entry from outside the monorepo + grep dist
+      # (js+dts) for leaked @weasel-js specifiers. Runs after the build above.
+      # See packages/labkit/scripts/smoke-consumer-bundle.mjs.
+      - run: npm run test:smoke:consumer -w @weasel-js/labkit
       # Bundle the built `@weasel-js/core` entry from outside the monorepo to
       # prove no path-alias / bare workspace-package specifier leaked into dist.
       # The in-repo vitest `smoke` project can't catch this — it inherits the

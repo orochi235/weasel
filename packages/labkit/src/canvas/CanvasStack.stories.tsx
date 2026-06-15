@@ -1,11 +1,11 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { ScaleIndicator } from '../primitives/ScaleIndicator';
 import { CanvasStack } from './CanvasStack';
 import type { CanvasLayerDescriptor } from './useLayerScheduler';
 
 const meta: Meta<typeof CanvasStack> = {
-  title: 'Canvas/CanvasStack',
+  title: 'labkit/Canvas/CanvasStack',
   component: CanvasStack,
   parameters: { layout: 'fullscreen' },
 };

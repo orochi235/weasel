@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { CurveField } from './CurveField';
 
 const meta: Meta<typeof CurveField> = {
-  title: 'UI/Properties/CurveField',
+  title: 'labkit/UI/Properties/CurveField',
   component: CurveField,
 };
 export default meta;

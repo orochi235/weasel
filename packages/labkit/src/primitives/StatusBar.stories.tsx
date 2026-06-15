@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { StatusBar } from './StatusBar';
 
 const meta: Meta<typeof StatusBar> = {
-  title: 'Primitives/StatusBar',
+  title: 'labkit/Primitives/StatusBar',
   component: StatusBar,
 };
 export default meta;

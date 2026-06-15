@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import {
   CheckboxRow,
@@ -23,7 +23,7 @@ interface DemoArgs {
 }
 
 const meta: Meta<DemoArgs> = {
-  title: 'UI/Properties/PropertyPanel',
+  title: 'labkit/UI/Properties/PropertyPanel',
   component: PropertyPanel,
   argTypes: {
     title: { control: 'text' },

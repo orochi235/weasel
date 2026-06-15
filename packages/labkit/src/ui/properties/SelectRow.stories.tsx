@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { SelectRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof SelectRow> = {
-  title: 'UI/Properties/Rows/SelectRow',
+  title: 'labkit/UI/Properties/Rows/SelectRow',
   component: SelectRow,
 };
 export default meta;

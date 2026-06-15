@@ -68,7 +68,9 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     const rows = Array.from(c.children) as HTMLElement[];
     let raw = rows.length;
     for (let i = 0; i < rows.length; i++) {
-      const r = rows[i].getBoundingClientRect();
+      const row = rows[i];
+      if (!row) continue;
+      const r = row.getBoundingClientRect();
       if (clientY < r.bottom) { raw = i; break; }
     }
     return Math.min(raw, cap);
@@ -144,11 +146,19 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       .sort((a, b) => a - b);
     const isContiguous =
       indices.length > 0 &&
-      indices.every((v, i) => i === 0 || v === indices[i - 1] + 1);
+      indices.every((v, i) => {
+        if (i === 0) return true;
+        const prev = indices[i - 1];
+        return prev !== undefined && v === prev + 1;
+      });
+    const first = indices[0];
+    const last = indices[indices.length - 1];
     const wouldBeNoop =
       isContiguous &&
-      targetIndex >= indices[0] &&
-      targetIndex <= indices[indices.length - 1] + 1;
+      first !== undefined &&
+      last !== undefined &&
+      targetIndex >= first &&
+      targetIndex <= last + 1;
     if (!wouldBeNoop) {
       optsRef.current.onReorder(active.draggedIds, targetIndex);
     }

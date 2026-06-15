@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Instrument } from '../instrument/types';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { noneAdapter } from '../state/adapters';
@@ -67,7 +67,7 @@ function Harness() {
 }
 
 const meta: Meta<typeof Harness> = {
-  title: 'Workspace/Workspace',
+  title: 'labkit/Workspace/Workspace',
   component: Harness,
   parameters: { layout: 'fullscreen' },
 };

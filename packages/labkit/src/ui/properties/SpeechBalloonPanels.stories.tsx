@@ -3,7 +3,7 @@
 // effect bodies, subpanels, and accent-tinted effect cards look the same as
 // the SB reference, we've captured the styling correctly.
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import {
   CheckboxRow,
@@ -18,7 +18,7 @@ import {
 } from './';
 
 const meta: Meta = {
-  title: 'UI/Properties/PropertyPanel/SpeechBalloonPanels',
+  title: 'labkit/UI/Properties/PropertyPanel/SpeechBalloonPanels',
 };
 export default meta;
 type Story = StoryObj;

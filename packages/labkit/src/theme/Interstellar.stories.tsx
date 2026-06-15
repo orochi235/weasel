@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useEffect, useState } from 'react';
 import {
   CheckboxRow,
@@ -11,7 +11,7 @@ import {
 import './Interstellar.stories.less';
 
 const meta: Meta = {
-  title: 'Themes/Interstellar',
+  title: 'labkit/Themes/Interstellar',
   parameters: {
     docs: {
       description: {

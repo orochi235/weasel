@@ -6,10 +6,12 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "strict": true,
-    // NOTE: noUncheckedIndexedAccess is intentionally off for the build/dts
-    // tsconfig because the bundled weasel-ui source (compiled here for type
-    // emission) has latent index-access violations under it. Follow-up: fix the
-    // 4 spots in packages/weasel-ui/src/useReorderDragList.ts and restore it.
+    // noUncheckedIndexedAccess is OFF. Enabling it strict-checks everything
+    // labkit resolves to SOURCE — all of packages/ui (~360 violations) via the
+    // @weasel-js/ui alias. The dts config reaches even further (the whole core
+    // engine); see tsconfig.dts.json. Restoring the flag is a monorepo-wide
+    // hardening initiative, not a labkit change. (The 4 spots in
+    // packages/ui/src/useReorderDragList.ts are already fixed.)
     "exactOptionalPropertyTypes": false,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,

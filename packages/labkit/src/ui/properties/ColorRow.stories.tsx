@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { ColorRow, PropertyList } from './PropertyPanel';
 
 const meta: Meta<typeof ColorRow> = {
-  title: 'UI/Properties/Rows/ColorRow',
+  title: 'labkit/UI/Properties/Rows/ColorRow',
   component: ColorRow,
 };
 export default meta;

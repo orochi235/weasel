@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { CheckboxRow, ColorRow, PropertyList, PropertyRow, SliderRow } from './PropertyPanel';
 
 const meta: Meta<typeof PropertyList> = {
-  title: 'UI/Properties/PropertyList',
+  title: 'labkit/UI/Properties/PropertyList',
   component: PropertyList,
 };
 export default meta;

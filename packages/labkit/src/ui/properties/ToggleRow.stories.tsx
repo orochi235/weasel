@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { ToggleRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof ToggleRow> = {
-  title: 'UI/Properties/Rows/ToggleRow',
+  title: 'labkit/UI/Properties/Rows/ToggleRow',
   component: ToggleRow,
 };
 export default meta;

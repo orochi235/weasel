@@ -3,7 +3,8 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'labkit',
   description: 'React widgets for building self-contained interactive lab pages',
-  base: '/labkit/',
+  // Served as a sub-site of weasel's GitHub Pages (orochi235.github.io/weasel/).
+  base: '/weasel/labkit/',
   cleanUrls: true,
   srcExclude: ['superpowers/**', 'IDEAS.md'],
   themeConfig: {
@@ -12,7 +13,7 @@ export default defineConfig({
       { text: 'Agent Guide', link: '/AGENTS' },
       {
         text: 'Storybook',
-        link: 'https://orochi235.github.io/labkit/storybook/',
+        link: 'https://orochi235.github.io/weasel/docs/ui/storybook/',
       },
     ],
     sidebar: [
@@ -25,6 +26,6 @@ export default defineConfig({
         ],
       },
     ],
-    socialLinks: [{ icon: 'github', link: 'https://github.com/orochi235/labkit' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/orochi235/weasel' }],
   },
 });

@@ -15,6 +15,9 @@ const config: StorybookConfig = {
   stories: [
     '../packages/ui/src/**/*.stories.@(ts|tsx)',
     '../apps/swillustrator/src/**/*.stories.@(ts|tsx)',
+    // labkit stories (titled `labkit/…`); a title-scoped decorator in
+    // preview.tsx wraps them in `.lk-root` + labkit CSS so they render themed.
+    '../packages/labkit/src/**/*.stories.@(ts|tsx)',
   ],
   addons: [
     '@storybook/addon-vitest',

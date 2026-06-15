@@ -53,6 +53,9 @@ jobs:
       - run: npm run build:draw
       - run: mkdir -p dist-demo/draw && cp -R dist-draw/. dist-demo/draw/
       - run: npm run build-storybook -- -o dist-demo/docs/ui/storybook
+      # labkit's VitePress docs (base `/weasel/labkit/`) served under /labkit.
+      - run: npm run docs:build -w @weasel-js/labkit
+      - run: mkdir -p dist-demo/labkit && cp -R packages/labkit/docs/.vitepress/dist/. dist-demo/labkit/
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

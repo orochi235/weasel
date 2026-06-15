@@ -7,6 +7,13 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "strict": true,
+    // noUncheckedIndexedAccess is OFF. This config resolves @weasel-js/core (and
+    // ui/modes) to SOURCE so the whole inlined graph is in the program — turning
+    // the flag on surfaces ~1,659 latent index-access violations across the
+    // entire weasel engine (paths/Bezier/NURBS/tessellation, renderer math,
+    // tools, interactions). rollup-plugin-dts doesn't run diagnostics, so this
+    // never broke the build; restoring the flag is a monorepo-wide hardening
+    // initiative, not a labkit change.
     "exactOptionalPropertyTypes": false,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,

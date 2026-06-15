@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PropertyRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof PropertyRow> = {
-  title: 'UI/Properties/Rows/PropertyRow',
+  title: 'labkit/UI/Properties/Rows/PropertyRow',
   component: PropertyRow,
 };
 export default meta;

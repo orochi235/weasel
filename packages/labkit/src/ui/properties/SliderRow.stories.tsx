@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ReactNode, useState } from 'react';
 import { SliderRow } from './PropertyPanel';
 import { SideBySide } from './storyLayouts';
 
 const meta: Meta<typeof SliderRow> = {
-  title: 'UI/Properties/Rows/SliderRow',
+  title: 'labkit/UI/Properties/Rows/SliderRow',
   component: SliderRow,
 };
 export default meta;
