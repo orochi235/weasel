@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import { MoveDemo } from './demos/MoveDemo';
+import { MoveSnapDemo } from './demos/MoveSnapDemo';
 import { ResizeDemo } from './demos/ResizeDemo';
 import { RotateDemo } from './demos/RotateDemo';
 import { RotatedResizeMathDemo } from './demos/RotatedResizeMathDemo';
@@ -39,6 +40,7 @@ import { HudDemo } from './demos/HudDemo';
 import { LayerListDemo } from './demos/LayerListDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
+import MoveSnapDemoFull from './demos/MoveSnapDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
 import RotateDemoFull from './demos/RotateDemo.tsx?raw';
 import RotatedResizeMathDemoFull from './demos/RotatedResizeMathDemo.tsx?raw';
@@ -150,6 +152,16 @@ export const DEMOS: DemoEntry[] = [
     Component: MoveDemo,
     full: MoveDemoFull,
     path: 'demo/demos/MoveDemo.tsx',
+  },
+  {
+    id: 'move-snap',
+    title: 'Move + Snap (planting)',
+    category: 'Tools',
+    description: 'snapToContainer + snapBackOrDelete behaviors wired via selectTool={{ move: { behaviors } }}. Drag the green token over a bin and dwell 250 ms to plant it (reparent + snap to slot). Release on empty canvas within 30 px of the start to snap back; farther than 30 px also snaps back (onFreeRelease: "snap-back").',
+    hint: 'Drag the token into a bin and hold to plant it.',
+    Component: MoveSnapDemo,
+    full: MoveSnapDemoFull,
+    path: 'demo/demos/MoveSnapDemo.tsx',
   },
   {
     id: 'resize',
