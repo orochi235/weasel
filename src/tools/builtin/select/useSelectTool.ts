@@ -9,6 +9,8 @@ import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
 import { defineTool, mods, begin, claim, none, forwardActionTo } from '../../routing';
 import type { ActionFn } from '../../routing';
+import type { UseMoveOptions } from '../../../interactions/actions/move/options';
+import type { BindingOpts } from '../../../interactions/actions/invoker';
 import type { Tool } from '../../types';
 import type { DebugSink } from '../../../debug/types';
 import type { DrawCommand } from '../../../renderer';
@@ -54,9 +56,11 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   boundsOf?: (id: string) => Bounds | null;
   /** Project a pose to its AABB. Default: identity. */
   poseBounds?: (pose: TPose) => Bounds;
-  /** Legacy `useMove` options. Ignored after Phase 14e Task 3 — `moveAction`
-   *  is configured at the action-registration level now. */
-  move?: unknown;
+  /** Move-action options. After Phase 14e the move gesture is dispatcher-routed,
+   *  so only `behaviors` is consumed here — threaded into the move binding's
+   *  `opts.behaviors`. Other `UseMoveOptions` fields are accepted for API shape
+   *  but not read by this tool. */
+  move?: UseMoveOptions<TPose>;
   /** Legacy `useAreaSelect` options. Ignored after Phase 14e Task 3 —
    *  `areaSelectAction` configuration moved to the action registration. */
   areaSelect?: unknown;
@@ -369,9 +373,17 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
               },
             },
             actionId: 'move',
-            ...(options.reparentOnDrop && options.reparentOnDrop !== 'off'
-              ? { opts: { params: { reparentOnDrop: options.reparentOnDrop } } }
-              : {}),
+            ...((() => {
+              const reparent = options.reparentOnDrop && options.reparentOnDrop !== 'off'
+                ? { params: { reparentOnDrop: options.reparentOnDrop } }
+                : undefined;
+              const behaviors = options.move?.behaviors?.length
+                ? { behaviors: options.move.behaviors as BindingOpts['behaviors'] }
+                : undefined;
+              return reparent || behaviors
+                ? { opts: { ...reparent, ...behaviors } satisfies BindingOpts }
+                : {};
+            })()),
           },
           { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
           { spec: { kind: 'click' as const, target: 'empty' as const, mods: {} }, actionId: 'clearSelection' },
@@ -379,6 +391,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pickEveryFn, options.pickBest, options.debug, options.reparentOnDrop],
+    [pickEveryFn, options.pickBest, options.debug, options.reparentOnDrop, options.move],
   );
 }
