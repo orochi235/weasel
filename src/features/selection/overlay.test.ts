@@ -243,7 +243,7 @@ describe('createSelectionOverlayLayer', () => {
   });
 
   describe('multi-union resolves from chromeState', () => {
-    // Phase 5 cleanup: the synthetic multi-resize id resolves to
+    // The synthetic multi-resize id resolves to
     // `ChromeState.unionBounds` (the single owner of the union AABB) when the
     // draw envelope carries a `getChromeState` thunk. `getPose` deliberately
     // returns a faraway rect for the synthetic id so we can prove chromeState

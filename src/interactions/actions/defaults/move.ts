@@ -1,5 +1,5 @@
 /**
- * `moveAction` — first `ongoing`-timing Action descriptor (Phase 6 Task 1).
+ * `moveAction` — first `ongoing`-timing Action descriptor.
  *
  * Mirrors the per-frame translate semantics of the `useMove` hook:
  *   - `start`: capture origin poses for all selected nodes; record the
@@ -22,7 +22,7 @@
  * ## Design decisions vs `useMove`
  *
  * `useMove` uses `MoveAdapter` + a React overlay to render ghost positions
- * during the drag. `moveAction` has no overlay surface in Phase 6 — the
+ * during the drag. `moveAction` has no overlay surface — the
  * descriptor tracks delta in scratch and writes to the scene only at commit.
  * This means the canvas does not show live drag feedback until the overlay
  * system is wired (Phase 7 TODO).

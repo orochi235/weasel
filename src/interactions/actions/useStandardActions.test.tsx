@@ -18,7 +18,7 @@ import './depSchema';
 // ---------------------------------------------------------------------------
 
 function Providers({ children }: { children: ReactNode }) {
-  // Phase 14e Task 7: DepRegistryProvider must wrap ActionsProvider so that
+  // DepRegistryProvider must wrap ActionsProvider so that
   // ActionsProvider's `trigger` can read deps from the dep registry. This
   // matches SceneCanvas's nesting order.
   return (
@@ -80,10 +80,10 @@ const KIT_IDS = [
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.
-  'viewport.dragPan', // Phase 14c.2
-  'clearSelection', // Phase 14a
-  'enterTextEdit', // Phase 14c.3
-  'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity', // Phase 14e Task 8
+  'viewport.dragPan',
+  'clearSelection',
+  'enterTextEdit',
+  'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -106,7 +106,7 @@ describe('useStandardActions', () => {
     expect(last).toHaveLength(KIT_IDS.length);
   });
 
-  it('each registered action has an invoker (Phase 14e Task 7: withLegacyRunBridge deleted; trigger routes via invoker.run with deps from depRegistry)', () => {
+  it('each registered action has an invoker (withLegacyRunBridge deleted; trigger routes via invoker.run with deps from depRegistry)', () => {
     let actions: readonly Action[] = [];
     render(
       <Providers>
@@ -132,7 +132,7 @@ describe('useStandardActions', () => {
     expect(depValue).toBe(fakeSelection);
   });
 
-  it('escape via registry.trigger calls selection.set([]) when selection is non-empty (Phase 14e Task 7: trigger routes through invoker.run + depRegistry)', () => {
+  it('escape via registry.trigger calls selection.set([]) when selection is non-empty (trigger routes through invoker.run + depRegistry)', () => {
     const mockSet = vi.fn();
     const fakeSelection = {
       get: vi.fn(() => ['a', 'b']),

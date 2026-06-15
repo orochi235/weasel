@@ -1,5 +1,5 @@
 /**
- * Dep registry — Phase 3 of registry unification.
+ * Dep registry for registry unification.
  *
  * Holds named "live source" thunks. Actions declare `requires: ['selection']`;
  * the dispatcher calls `registry.get('selection')` at invocation time to
@@ -7,14 +7,14 @@
  *
  * `DepSchema` is intentionally an empty interface so consumers (apps,
  * features) augment it via declaration merging. The kit ships extensions
- * for `selection`, `view`, etc. as feature modules land (Phase 4+).
+ * for `selection`, `view`, etc. as feature modules land.
  */
 import {
   createContext, useContext, useEffect, useMemo, useRef,
   type ReactNode,
 } from 'react';
 
-// Empty by design — see module JSDoc. Phase 4+ extend via declaration merging.
+// Empty by design — see module JSDoc. Extend via declaration merging.
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface DepSchema {}
 export type DepName = keyof DepSchema;

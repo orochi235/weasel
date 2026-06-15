@@ -5,7 +5,7 @@
  * `RectPath` short-circuits to AABB arithmetic. `PolygonPath` delegates to
  * the polygon kernel in `polygonHitTestRect` after extracting vertices from
  * the command stream. Bezier segments in a `PolygonPath` are currently out of
- * scope (Phase 2 paths are rect or straight-line polygon only); a non-line
+ * scope (paths are rect or straight-line polygon only); a non-line
  * command will throw to surface accidental misuse early.
  *
  * For point-in-path specifically, use the existing `pointInPath` from

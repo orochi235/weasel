@@ -231,7 +231,7 @@ export interface Dispatcher {
    *
    * Surface for the canvas's preview-ghost layer (`usePreviewGhostLayer`)
    * to walk each handle's `previewIds()` / `previewPose(id)` and render
-   * dispatcher-driven gesture previews — Phase 14e. Read-only by design:
+   * dispatcher-driven gesture previews. Read-only by design:
    * external consumers must not mutate the in-flight map.
    */
   getInFlightHandles(): Iterable<OngoingHandle>;
@@ -537,7 +537,7 @@ export function createDispatcher(opts?: {
 
   /** Build the deps bag for an action. */
   function buildDeps(action: Action, depRegistry: DepRegistry): ActionDeps {
-    // `requires` is not on Action's public interface yet (Phase 3 stub).
+    // `requires` is not on Action's public interface yet.
     // Cast through unknown to read it if present without a type error.
     const requires = (action as unknown as { requires?: string[] }).requires ?? [];
     const entries = requires.map((name) => [name, depRegistry.get(name as never)]);

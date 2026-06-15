@@ -77,7 +77,7 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
    *  means "no clip for this container right now"; an empty / zero-area path
    *  means "clip everything out" (children render nowhere). When set, the
    *  renderer rasterizes the returned path into the stencil buffer and
-   *  paints descendants only where it covers. Phase 2 of nested clipping. */
+   *  paints descendants only where it covers. */
   clipFromPose?: (pose: TPose) => Path | null;
 }
 

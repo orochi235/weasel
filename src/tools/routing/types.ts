@@ -69,8 +69,8 @@ export interface PhaseDef<TScratch> {
    *  - Return `none()` or omit to pass through to threshold-gated
    *    click/drag classification.
    *
-   *  Phase 4.5 (factory completeness). Predates the imperative
-   *  `pointer.onDown` channel that useSelectTool used through Phase 3. */
+   *  Predates the imperative
+   *  `pointer.onDown` channel that useSelectTool used earlier. */
   pointerDown?: RouteTable<TScratch>;
   dblTap?:  RouteTable<TScratch>;
   /** Right-click route table. Mirrors `click` semantics — keyed by hit-test
@@ -91,7 +91,7 @@ export interface PhaseDef<TScratch> {
    *  at translation time and emits the resulting RenderLayer on
    *  Tool.overlay. The layer's `draw` closure should read dynamic state
    *  (scratch, controller overlay snapshots) via refs/closures captured
-   *  in the enclosing render scope — same pattern Phase 2/3 hand-rolled
+   *  in the enclosing render scope — same pattern hand-rolled
    *  tools use today.
    *
    *  Function form rather than a direct RenderLayer so consumers can
@@ -99,11 +99,11 @@ export interface PhaseDef<TScratch> {
    *  `useRef`-backed values are stable. Symmetric with `cursor`'s
    *  function form.
    *
-   *  Phase 5b note: only `initial.overlay` is read. If `engaged.overlay`
+   *  Note: only `initial.overlay` is read. If `engaged.overlay`
    *  is set, it is ignored — phase-specific overlay routing is a future
    *  enhancement. Tools that need engagement-aware previews should gate
    *  inside the single overlay's `draw` body via `if (!scratch.somefield)
-   *  return []`, which is how every Phase 2/3 hand-rolled tool already
+   *  return []`, which is how every hand-rolled tool already
    *  does it. */
   overlay?: () => RenderLayer<unknown>;
   /** Modal-claim predicate. When this resolves to `true`, the dispatcher
@@ -170,7 +170,7 @@ export interface ToolDef<TScratch = void> {
     view: View;
     modifiers: ToolModifiers;
   }) => { target: string; extra?: unknown } | null;
-  /** Phase 14+: declarative gesture-bindings forwarded onto `Tool.bindings`.
+  /** Declarative gesture-bindings forwarded onto `Tool.bindings`.
    *  The new dispatcher consults these while this tool is active. */
   bindings?: GestureBinding[];
   initial: PhaseDef<TScratch>;

@@ -37,7 +37,7 @@ function makeSelection(ids: string[]) {
 }
 
 // ---------------------------------------------------------------------------
-// reorderForwardAction (Phase 4 descriptor)
+// reorderForwardAction (descriptor)
 // ---------------------------------------------------------------------------
 
 describe('reorderForwardAction (descriptor)', () => {
@@ -148,7 +148,7 @@ describe('reorderForwardAction (descriptor)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// reorderBackwardAction (Phase 4 descriptor)
+// reorderBackwardAction (descriptor)
 // ---------------------------------------------------------------------------
 
 describe('reorderBackwardAction (descriptor)', () => {

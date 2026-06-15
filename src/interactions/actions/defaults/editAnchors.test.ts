@@ -57,7 +57,7 @@ describe('editAnchorsAction descriptor', () => {
     expect(editAnchorsAction.requires).toContain('selection');
   });
 
-  it('requires editAnchors dep (Phase 14b)', () => {
+  it('requires editAnchors dep', () => {
     expect(editAnchorsAction.requires).toContain('editAnchors');
   });
 
@@ -120,7 +120,7 @@ describe('editAnchorsAction descriptor', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Happy-path tests — Phase 14d-anchors (REAL invoker)
+// Happy-path tests — anchors (REAL invoker)
 // ---------------------------------------------------------------------------
 
 import { PATH_M, PATH_L, PATH_C, PATH_Z } from 'features/paths/types';
@@ -180,7 +180,7 @@ function makeRealCtx(
   };
 }
 
-describe('editAnchorsAction — REAL invoker (Phase 14d-anchors)', () => {
+describe('editAnchorsAction — REAL invoker (anchors)', () => {
   const invoker = getOngoingInvoker(editAnchorsAction);
 
   it('start returns onMove+onEnd when affordance is anchor:0', () => {

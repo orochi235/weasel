@@ -184,7 +184,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * the CanvasProps type — the `buildSceneLayer` path uses an internal cast to
    * access optional hierarchy methods (`getLayers`, `getChildren`) that are
    * present on SceneAdapter but absent from the narrow intersection type here.
-   * That cast is a known smell documented in the Phase 5 audit; promoting those
+   * That cast is a known smell documented in the audit; promoting those
    * methods to this type would surface a SceneAdapter-specific concern here and
    * is tracked in docs/TODO.md as a follow-up.
    *
@@ -345,7 +345,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * current frame (in addition to those reported by the tools' `previewIds()`).
    *
    * Wired by `<SceneCanvas>` to expose the new gesture-dispatcher's in-flight
-   * handles: as legacy hooks are removed from tools (Phase 14e Task 3), the
+   * handles: as legacy hooks are removed from tools, the
    * source-hide for move/clone/etc. needs to follow the preview-ghost layer
    * onto the dispatcher's `OngoingHandle.previewIds()`. Optional — bare
    * `<Canvas>` consumers don't need to wire it.
@@ -442,7 +442,7 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * draw commands (e.g. path-edit anchor dots) paint above scene content but
    * below tool overlays (drag rects, etc.).
    *
-   * Slot ordering: scene → (scoping mask, Task 8) → **decoration** → tool overlay → chrome.
+   * Slot ordering: scene → (scoping mask) → **decoration** → tool overlay → chrome.
    *
    * Wired by the modality machine after it activates a mode whose
    * `ModeDefinition` supplies a `paint()` factory. Omitting this prop is a

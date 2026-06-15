@@ -1,5 +1,5 @@
 /**
- * SceneCanvas seam-refactor coverage (Task 0.1)
+ * SceneCanvas seam-refactor coverage
  *
  * Targeted tests for the 9 behaviors that must stay green through the
  * Canvas / SceneCanvas seam refactor.  Only behaviors that had no direct

@@ -178,7 +178,7 @@ describe('areaSelectAction descriptor', () => {
   });
 
   it('overlay() exposes marquee shape that updates with onMove and clears on commit/cancel', () => {
-    // Phase 14e.2.5 — dispatcher-side chrome surface for the marquee.
+    // Dispatcher-side chrome surface for the marquee.
     const invoker = getOngoingInvoker(areaSelectAction);
     const dep = makeAreaSelectDep();
     const ctx = makeCtx({ world: { x: 10, y: 20 }, shift: true, dep });

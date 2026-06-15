@@ -25,7 +25,7 @@ function buildAffordanceTarget(
   affordanceHit: AffordanceBinding,
   adapter: unknown,
 ): HitResult {
-  // AffordanceBinding doesn't carry a standard targetId in Phase 1.
+  // AffordanceBinding doesn't carry a standard targetId.
   // Cast defensively to pick up any consumer-supplied targetId.
   const targetId = (affordanceHit as { targetId?: NodeId }).targetId;
   const kind =
@@ -404,7 +404,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       clientY: e.clientY,
       modifiers: { alt: !!e.altKey, shift: !!e.shiftKey, meta: !!e.metaKey, ctrl: !!e.ctrlKey },
     });
-    // Populate ctx.target for affordance gestures — Phase 1 placeholder kind.
+    // Populate ctx.target for affordance gestures — placeholder kind.
     const baseCtx = {
       ...rawBaseCtx,
       target: buildAffordanceTarget(result, rawBaseCtx.adapter),

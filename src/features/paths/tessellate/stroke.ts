@@ -33,12 +33,13 @@ interface Seg {
 /**
  * Build a triangle-mesh ribbon from a stroked Path.
  *
- * Step-2 v1 scope:
- *   - cap: 'butt' (others added in Task 7)
- *   - join: 'bevel' (miter + round added in Tasks 5-6)
- *   - center alignment (RectPath alignment in Task 10; PolygonPath inner/
- *     outer via stencil in Task 11)
- *   - solid (no dash; dash splitting in Task 8)
+ * Supports:
+ *   - cap: 'butt' | 'round' | 'square'
+ *   - join: 'miter' | 'round' | 'bevel'
+ *   - center alignment directly; RectPath inner/outer alignment via a
+ *     pre-shifted rect; PolygonPath inner/outer alignment via stencil at the
+ *     renderer level
+ *   - dash splitting
  */
 export function tessellateStroke(
   path: Path,

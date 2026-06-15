@@ -32,7 +32,7 @@ describe('useEyedropperTool', () => {
     expect(result.current.id).toBe('eyedropper');
     expect(result.current.keybinding).toEqual({ key: 'I' });
     // hotkey lives on the ToolDef (reflection escape hatch) rather than on
-    // the runtime Tool interface since Task 10 removed Tool.hotkey.
+    // the runtime Tool interface since Tool.hotkey was removed.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result.current.def as any)?.hotkey).toBe('alt');
     // cursor is a resolver function from defineTool; call it with a minimal ctx.
@@ -120,7 +120,7 @@ describe('useEyedropperTool', () => {
       useEyedropperTool({ onPick: () => {}, colorOf: () => null, hotkey: null }),
     );
     // hotkey lives on the ToolDef (reflection escape hatch) rather than on
-    // the runtime Tool interface since Task 10 removed Tool.hotkey.
+    // the runtime Tool interface since Tool.hotkey was removed.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result.current.def as any)?.hotkey).toBeUndefined();
   });

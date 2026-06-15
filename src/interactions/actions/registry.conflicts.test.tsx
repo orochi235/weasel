@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { ActionsProvider, useAction, useActionsRegistry } from './registry';
 
-// Phase 14e Task 7: the legacy keydown loop is gone; conflict resolution now
+// The legacy keydown loop is gone; conflict resolution now
 // surfaces via the imperative `registry.trigger(id)` path (palette / ActionBar
 // callers). The semantics are unchanged — last-writer-wins for the id, and
 // unregister cleanups respect the live entry — but the dispatch surface is

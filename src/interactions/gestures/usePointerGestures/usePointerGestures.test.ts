@@ -6,7 +6,7 @@ import { asNodeId } from 'core/scene/types';
 import { usePointerGestures } from './usePointerGestures';
 
 
-// Phase 14e Task 4 follow-up: `ResizeController` type was deleted along with
+// `ResizeController` type was deleted along with
 // the legacy `useResize` hook. The test fakes the minimal surface; the
 // `as never` cast at the construction site lets it satisfy
 // `usePointerGestures`'s local structural type without re-declaring it here.
@@ -18,7 +18,7 @@ type FakeResize = {
   overlay: null;
 };
 
-// Phase 14e Task 4: legacy `MoveController` type is gone; mirror the
+// Legacy `MoveController` type is gone; mirror the
 // minimal shape needed by `usePointerGestures` locally.
 type FakeMove = {
   start: ReturnType<typeof vi.fn>;

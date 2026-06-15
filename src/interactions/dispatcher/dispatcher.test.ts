@@ -133,7 +133,7 @@ describe('createDispatcher', () => {
 
     it('passes deps from depRegistry to invoker.run', () => {
       const run = vi.fn();
-      // `requires` is a Phase 4 field not yet on Action's type; cast to add it.
+      // `requires` is a field not yet on Action's type; cast to add it.
       const action = {
         id: 'actionA',
         label: 'A',

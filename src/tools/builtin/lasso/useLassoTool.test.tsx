@@ -15,7 +15,7 @@ function makeAdapter(hits: string[] = []): LassoSelectAdapter & { applyOps: Retu
 }
 
 describe('useLassoTool', () => {
-  // Phase 14e Task 3: legacy `useLassoSelect` hook removed. Drag flows
+  // Legacy `useLassoSelect` hook removed. Drag flows
   // entirely through `lassoSelectAction` via the gesture dispatcher; the
   // tool itself only declares id/keybinding/cursor/presentation + the
   // dispatcher binding. The route-table drag entry is gone, so tests that

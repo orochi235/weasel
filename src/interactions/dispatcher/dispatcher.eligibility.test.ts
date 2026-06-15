@@ -1,6 +1,6 @@
 /**
  * Dispatcher eligibility-filter tests — exercises the `Action.eligible`
- * gate added in mode-aware-dispatch Task 10. The dispatcher receives a
+ * gate added in mode-aware-dispatch. The dispatcher receives a
  * `getRuleCtx` thunk in `DispatcherContext`; when supplied, candidates
  * whose `eligible` rule evaluates false against the live RuleCtx are
  * stripped before the start-try loop.

@@ -32,7 +32,7 @@ type D = { color: string };
 type L = 'main';
 type P = { x: number; y: number; width: number; height: number };
 
-/** Phase 14e Task 4: with `useResizeTool` deleted, resize gestures flow through
+/** With `useResizeTool` deleted, resize gestures flow through
  *  the dispatcher-side `resizeAction`, which fires `onStart` only after the drag
  *  threshold is crossed. Sends down + move + up. Dispatches all three raw events
  *  inside a SINGLE act() (rather than three separate fireEvent act() boundaries)
@@ -82,7 +82,7 @@ describe('SceneCanvas defaultTools selector', () => {
             handleHitRadius: 8,
             resize: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => resizeStart(ctx.draggedIds[0]) }] },
           }}
-          // Phase 14e Task 4: with `useResizeTool` deleted, resize flows
+          // With `useResizeTool` deleted, resize flows
           // through the dispatcher-side `resizeAction`, which gates on
           // `SelectionRequired` by default. Override the static placeholder
           // so the dispatcher dispatches the gesture.
@@ -94,7 +94,7 @@ describe('SceneCanvas defaultTools selector', () => {
     const canvas = container.querySelector('canvas')!;
     // Drop the pointer at the top-left corner-handle (0,0) of the selected rect.
     // jsdom's getBoundingClientRect is zero, so clientX/Y maps 1:1 to world coords.
-    // Phase 14e Task 4: resizeAction.onStart fires after the drag threshold,
+    // resizeAction.onStart fires after the drag threshold,
     // so send a full down→move→up sequence.
     gestureAt(canvas, 0, 0);
     expect(resizeStart).toHaveBeenCalled();

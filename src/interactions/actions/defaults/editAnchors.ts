@@ -1,13 +1,13 @@
 /**
  * `editAnchorsAction` — ongoing Action descriptor for editing polygon anchors.
  *
- * ## Status: REAL (Phase 14d-anchors)
+ * ## Status: REAL
  *
  * The descriptor is fully operational when the consumer wires:
  *   1. `buildAffordanceAt` with a `getAnchorState` thunk so the dispatcher
  *      classifies anchor/control-handle hits as `anchor:N`, `controlIn:N`,
  *      or `controlOut:N` affordances on pointerdown.
- *   2. The `editAnchors` dep in the DepSchema (Phase 14b entry).
+ *   2. The `editAnchors` dep in the DepSchema.
  *
  * The invoker reads `ctx.drag.affordance.kind` to identify the hit anchor,
  * derives the coord index from `enumerateAnchors`, and on every `onMove`

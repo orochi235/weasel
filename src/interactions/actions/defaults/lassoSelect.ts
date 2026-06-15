@@ -1,10 +1,10 @@
 /**
  * `lassoSelectAction` — ongoing Action descriptor for polygon lasso selection.
  *
- * ## Status: REAL (Phase 14b)
+ * ## Status: REAL
  *
  * Implements lasso-select via the full pointermove stream (accumulated in
- * `InvocationCtx.drag.points` by the Phase 14b dispatcher extension):
+ * `InvocationCtx.drag.points` by the dispatcher extension):
  *   - `start`: initializes vertex list from the drag-start world point.
  *   - `onMove`: appends the current world point (skipping duplicates closer
  *     than `minVertexSpacing = 2` world-px).
@@ -16,7 +16,7 @@
  *
  * ## Dep
  *
- * Requires `lassoSelect` dep from DepSchema (Phase 14b addition):
+ * Requires `lassoSelect` dep from DepSchema:
  *   `{ hitTestLasso?(...), hitTestArea(...), getSelection(), setSelection(ids) }`
  *
  * ## What this does NOT wire (vs `useLassoSelect`)
@@ -81,7 +81,7 @@ interface LassoScratch {
  * Requires dep-schema entry: `lassoSelect`.
  *
  * The invoker accumulates pointermove vertices via `InvocationCtx.drag.points`
- * (Phase 14b dispatcher extension) and commits a polygon hit-test at drag end.
+ * (dispatcher extension) and commits a polygon hit-test at drag end.
  *
  * @see useLassoSelect — the React hook this descriptor mirrors for the default case.
  */

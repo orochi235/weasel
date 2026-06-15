@@ -4,7 +4,7 @@ import { useInsertTool } from './useInsertTool';
 import { makeCtx } from '../testUtils';
 
 /**
- * Phase 14e Task 3.5: useInsertTool is now a thin declarative wrapper that
+ * useInsertTool is now a thin declarative wrapper that
  * delegates the entire gesture to the dispatcher's `insertAction`. There is
  * no local route-table drag handler, no local overlay layer, and no local
  * pointer/click handler. End-to-end commit flow is exercised by

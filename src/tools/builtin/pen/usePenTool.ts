@@ -619,7 +619,7 @@ export function usePenTool<TPose>(
       },
       // Persistent-ref scratch — every gesture sees the same PenScratch so
       // multi-click subpath state survives the dispatcher's per-gesture
-      // initScratch contract. The Phase 5b `def.initScratch` substrate
+      // initScratch contract. The `def.initScratch` substrate
       // forwards this onto Tool.initScratch.
       initScratch: () => scratchRef.current!,
 

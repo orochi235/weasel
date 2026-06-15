@@ -1,7 +1,7 @@
 /** Option surface for the `insert` action.
  *
  *  Lives in a sibling file (not `insert.ts`) so the type contract stays stable
- *  even after the legacy `useInsert` hook is deleted in Phase 14e Task 4.
+ *  even after the legacy `useInsert` hook is gone.
  *  Consumers should import from here directly; `insert.ts` re-exports the
  *  same symbol for back-compat. */
 

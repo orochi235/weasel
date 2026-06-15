@@ -23,7 +23,7 @@ export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
  *  dashed close-line while the gesture is in flight. Esc cancels through
  *  the dispatcher's standard cancel pipeline.
  *
- *  Phase 14e Task 3: legacy `useLassoSelect` hook removed — all gesture
+ *  The legacy `useLassoSelect` hook is removed — all gesture
  *  state, overlay rendering, and selection commit live in
  *  `lassoSelectAction` (see `src/interactions/actions/defaults/lassoSelect.ts`). */
 export function useLassoTool(

@@ -1,5 +1,5 @@
 /**
- * Phase 12 — end-to-end integration test for resizeAction via dispatcher.
+ * End-to-end integration test for resizeAction via dispatcher.
  *
  * Validates the full affordance→InvocationCtx→invoker→scene-mutation chain:
  *
@@ -85,7 +85,7 @@ function makeAffordanceAt(
         kind: 'handle:bottom-right',
         fixedPoint: { x: 0, y: 0 },
         targetIds: nodeIds,
-        // Phase 12: typed anchor. bottom-right dragged → top-left fixed.
+        // Typed anchor. bottom-right dragged → top-left fixed.
         anchor: { x: 'min', y: 'min' },
       };
     }

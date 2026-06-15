@@ -28,8 +28,8 @@ describe('createScene — construction', () => {
         },
       },
     });
-    // No public getter for the registry; we'll test it indirectly via toJSON
-    // in Task 2. For now, just confirm the option doesn't break construction.
+    // No public getter for the registry; it's tested indirectly via toJSON
+    // elsewhere. Here, just confirm the option doesn't break construction.
     expect(scene).toBeDefined();
   });
 

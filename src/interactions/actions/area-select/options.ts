@@ -1,8 +1,8 @@
 /** Option surface for the `area-select` action.
  *
  *  Lives in a sibling file (not `areaSelect.ts`) so the type contract stays
- *  stable even after the legacy `useAreaSelect` hook is deleted in Phase 14e
- *  Task 4. Consumers should import from here directly; `areaSelect.ts`
+ *  stable even after the legacy `useAreaSelect` hook is gone.
+ *  Consumers should import from here directly; `areaSelect.ts`
  *  re-exports the same symbol for back-compat. */
 
 import type { AreaSelectBehavior } from '../../gestures/types';

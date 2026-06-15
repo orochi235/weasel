@@ -75,14 +75,14 @@ export function useKeybindings(
     function resolveSwitch(e: KeyboardEvent): string | null {
       const reg = toolsRef.current.registry;
 
-      // Phase 1: statically-registered built-in tools.
+      // Statically-registered built-in tools.
       for (const id in BUILTIN_SELECT_KEYS) {
         if (!(id in reg)) continue;
         const binding = BUILTIN_SELECT_KEYS[id];
         if (matchesKeyBinding(e, binding)) return id;
       }
 
-      // Phase 2: declared bindings on the ToolDef (configurable tools
+      // Declared bindings on the ToolDef (configurable tools
       // like useLassoTool, useEyedropperTool).
       for (const id in reg) {
         if (id in BUILTIN_SELECT_KEYS) continue;

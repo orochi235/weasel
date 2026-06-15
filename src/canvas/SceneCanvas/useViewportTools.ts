@@ -6,8 +6,7 @@
  * Keyboard zoom (Cmd+=/-/0) and wheel zoom/pan are now handled by the
  * `viewport.zoom` and `viewport.pan` action descriptors registered via
  * `useStandardActions` + `useGestureDispatcher`. The former
- * `useKeyboardZoomTool` and `useWheelZoomTool` ambient tools are dissolved
- * (Phase 8.5).
+ * `useKeyboardZoomTool` and `useWheelZoomTool` ambient tools are dissolved.
  *
  * Returns `{ handTool, viewportRegistered }`. When `viewport` is undefined,
  * `viewportRegistered` is false and SceneCanvas omits `hand` from the registry.

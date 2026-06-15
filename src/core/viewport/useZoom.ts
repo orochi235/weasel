@@ -5,7 +5,7 @@ import { useCallback, useMemo } from 'react';
  * registers `viewport.pan` and `viewport.zoom` action descriptors via
  * `useStandardActions` + `useGestureDispatcher`. Pass `useHandTool()` via
  * `ambient` for drag-to-pan. The former `useWheelZoomTool`,
- * `useKeyboardZoomTool`, and `useWheelPanTool` hooks are dissolved (Phase 8.5).
+ * `useKeyboardZoomTool`, and `useWheelPanTool` hooks are dissolved.
  * `useZoom` was the original controller-style API; it remains exported with
  * full test coverage but no kit-internal usage. Slated for removal in a future major.
  */
@@ -30,7 +30,7 @@ export interface UseZoomOptions {
 
 /**
  * @deprecated See `UseZoomOptions` deprecation note. Prefer the
- * descriptor-based viewport idiom (Phase 8.5).
+ * descriptor-based viewport idiom.
  */
 export interface UseZoomReturn {
   onWheel(e: WheelEvent | React.WheelEvent): void;
@@ -55,7 +55,7 @@ function isEditableTarget(t: EventTarget | null): boolean {
 /**
  * Wheel/key/double-click zoom with focal-point preservation; returns event handlers and `zoomTo`/`zoomBy`/`reset`.
  *
- * @deprecated Prefer the descriptor-based viewport idiom (Phase 8.5):
+ * @deprecated Prefer the descriptor-based viewport idiom:
  * `<SceneCanvas>` registers `viewport.pan` and `viewport.zoom` action
  * descriptors automatically. Pass `useHandTool()` via `ambient` for
  * drag-to-pan. `useZoom` covers the same input surface but doesn't

@@ -4,7 +4,7 @@ import { useTextTool } from './useTextTool';
 import { makeCtx } from '../testUtils';
 
 /**
- * Phase 14e Task 3.5: useTextTool is now a thin declarative wrapper. The
+ * useTextTool is now a thin declarative wrapper. The
  * drag-to-insert path is owned by the dispatcher's `insertAction` (kind:
  * 'text'); click-to-enter-edit is owned by `enterTextEditAction`. There is
  * no local route-table drag handler and no local pointer.onClick handler.
@@ -18,7 +18,7 @@ describe('useTextTool surface', () => {
     );
     expect(result.current.id).toBe('text');
     // keybinding field removed from ToolDef; key activation is now registered
-    // as a `tool.shortcut.text` action via useKeybindings (Task 9).
+    // as a `tool.shortcut.text` action via useKeybindings.
     const cursor = typeof result.current.cursor === 'function'
       ? (result.current.cursor as (c: unknown) => string)(makeCtx())
       : result.current.cursor;

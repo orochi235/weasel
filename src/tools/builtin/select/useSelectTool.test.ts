@@ -63,8 +63,8 @@ describe('useSelectTool', () => {
     );
     expect(result.current.id).toBe('select');
     // keybinding field removed from ToolDef; key activation is now registered
-    // as a `tool.shortcut.select` action via useKeybindings (Task 9).
-    // cursor is a resolver function (Phase 3 T6 added scratch-aware override).
+    // as a `tool.shortcut.select` action via useKeybindings.
+    // cursor is a resolver function (a scratch-aware override).
     // Idle scratch → 'default'.
     const cursor = result.current.cursor;
     const resolved = typeof cursor === 'function'
@@ -143,8 +143,8 @@ describe('useSelectTool', () => {
     expect(clear).not.toHaveBeenCalled();
   });
 
-  it('pointer.onClick after empty pointerdown (no mods) is now a no-op in the route table (Phase 14a: clearSelectionAction binding handles this via the new gesture dispatcher)', () => {
-    // Phase 14a removed `[mods()]: clearOnEmpty` from the click route table.
+  it('pointer.onClick after empty pointerdown (no mods) is now a no-op in the route table (clearSelectionAction binding handles this via the gesture dispatcher)', () => {
+    // The `[mods()]: clearOnEmpty` entry was removed from the click route table.
     // The new gesture dispatcher fires `clearSelectionAction` via Tool.bindings
     // for click-on-empty with no mods. The old route table entry is gone to
     // avoid double-fire. This test verifies the route-table no longer clears.
@@ -282,7 +282,7 @@ describe('useSelectTool', () => {
     expect(result.current.initScratch!()).toEqual({ kind: 'idle' });
   });
 
-  // Phase 14e Task 3: drag is now owned exclusively by the gesture
+  // Drag is now owned exclusively by the gesture
   // dispatcher via Tool.bindings. The legacy route-table drag entries
   // (drag.onStart/onMove/onEnd) are gone; tests that asserted on
   // `result.current.drag!.onStart!(...)` are deleted — coverage for
@@ -295,8 +295,8 @@ import { createDebugSink } from '../../../debug/createDebugSink';
 
 describe('useSelectTool — debug recording', () => {
   it('does not record handle hitboxes in pointer.onDown after the affordance migration', () => {
-    // Task 11 moved corner-handle hits to the affordance pipeline; Task 14
-    // moved rotation-handle hits the same way. Both inline
+    // Corner-handle hits moved to the affordance pipeline, and
+    // rotation-handle hits moved the same way. Both inline
     // `recordHitbox(...)` call sites are gone from pointer.onDown. Recording
     // for the affordance pipeline is a future concern. This test pins the
     // current state so a regression that adds inline recording back gets
@@ -320,7 +320,7 @@ describe('useSelectTool — debug recording', () => {
   });
 });
 
-// Phase 14e Task 3: useSelectTool no longer publishes its own overlay
+// useSelectTool no longer publishes its own overlay
 // layer. Marquee paint moved to the dispatcher overlay layer
 // (`useDispatcherOverlayLayer`); move ghosts moved to the preview-ghost
 // layer (`usePreviewGhostLayer`). The `useSelectTool overlay` describe
@@ -329,7 +329,7 @@ describe('useSelectTool — debug recording', () => {
 
 describe('useSelectTool — declarative dblTap forwards raw event', () => {
   it('passes the raw PointerEvent to onDoubleTap', () => {
-    // Phase 4.5 Task 4 migrated dblTap to a declarative route that
+    // dblTap was migrated to a declarative route that
     // reads the event via the new optional ActionFn parameter. Pin the
     // raw-event-forwarding contract so a regression in the routing
     // factory (or the ActionFn signature) gets caught.
@@ -380,7 +380,7 @@ describe('useSelectTool — declarative dblTap forwards raw event', () => {
 });
 
 describe('useSelectTool — declarative routing', () => {
-  // After Phase 3 T4/T5 + Phase 4.5 T4, useSelectTool's gesture surface is
+  // useSelectTool's gesture surface is
   // fully declarative — pointerDown / click / drag / dblTap all route through
   // tables. These tests pin the routing-table semantics so a regression in
   // the modifier sub-tables, drag-target dispatch, or cursor phase override
@@ -460,13 +460,13 @@ describe('useSelectTool — declarative routing', () => {
     expect(ctx.scratch).toEqual(expect.objectContaining({ kind: 'move' }));
   });
 
-  // Phase 14e Task 3: route-table drag entries deleted; drag is owned
+  // Route-table drag entries deleted; drag is owned
   // by the gesture dispatcher via Tool.bindings. The "drag opens engaged
   // scratch" assertions don't have a route-table surface to drive
   // anymore — engaged scratch is now set by pointerDown's begin() and
   // by the dispatcher's action invocation, both covered elsewhere.
   it('cursor resolver returns "move" when scratch.kind === "move"', () => {
-    // Phase 3 T6 added a scratch-aware cursor. Once a move gesture engages
+    // The cursor is scratch-aware. Once a move gesture engages
     // (scratch.kind === 'move'), the host should show the move cursor.
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {

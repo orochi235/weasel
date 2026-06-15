@@ -1,7 +1,7 @@
 /**
- * affordanceAt + clientToWorld regression: Phase 13 carryforward (Phase 14a T7).
+ * affordanceAt + clientToWorld regression.
  *
- * Phase 13's report flagged: "correct at scale=1/view.x=0; non-unit-scale needs audit."
+ * A prior audit flagged: "correct at scale=1/view.x=0; non-unit-scale needs audit."
  *
  * This suite exercises the `clientToWorld` formula used in `GestureDispatcherMounter`
  * and verifies that `buildAffordanceAt` / `buildClassifyTarget` hit-test correctly at:
@@ -181,7 +181,7 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
     const hit = affordanceAt(wp);
     expect(hit).not.toBeNull();
     expect(hit?.kind).toBe('handle:top-left');
-    // Phase 12: anchor is populated for handle:* hits. top-left dragged →
+    // anchor is populated for handle:* hits. top-left dragged →
     // bottom-right fixed → { x:'max', y:'max' }.
     expect(hit?.anchor).toEqual({ x: 'max', y: 'max' });
   });

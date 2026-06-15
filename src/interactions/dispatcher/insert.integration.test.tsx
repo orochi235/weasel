@@ -1,5 +1,5 @@
 /**
- * Phase 14c.2 — end-to-end integration test for insertAction via dispatcher.
+ * End-to-end integration test for insertAction via dispatcher.
  *
  * Validates the full drag-on-empty chain:
  *   pointerdown (bodyTarget:'empty') → insertAction.invoker.start →

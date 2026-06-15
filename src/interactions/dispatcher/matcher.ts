@@ -94,8 +94,8 @@ function compareSpecificity(a: GestureSpec, b: GestureSpec): number {
  * Find the best-matching binding across all scopes.
  *
  * Precedence: hotkey > active > ambient.
- * Within a scope, first-declared wins (target-specificity tie-breaking deferred
- * to Task 3 when target classification arrives).
+ * Within a scope, more-specific bindings win; same-specificity bindings keep
+ * registration order (see `matchSorted`).
  * Returns null when nothing matches.
  *
  * Note: this returns only the single best match. The dispatcher uses

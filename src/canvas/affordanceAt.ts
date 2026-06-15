@@ -9,7 +9,7 @@
  * `InputEvent.pointerdown.affordance` so `resizeAction` / `rotateAction`
  * invokers can guard on affordance kind.
  *
- * Phase 13: only unrotated single-selection handles are classified. Rotated
+ * Only unrotated single-selection handles are classified. Rotated
  * handle positions require rotating the corner around the AABB center —
  * see rotationHandle.ts for the rotation math. Multi-selection resize uses
  * `unionBounds` (same corners, same radius).

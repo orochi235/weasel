@@ -1,5 +1,5 @@
 /**
- * Tests for `usePreviewGhostLayer` — specifically the Phase 14e dispatcher
+ * Tests for `usePreviewGhostLayer` — specifically the dispatcher
  * surface: when a dispatcher's in-flight `OngoingHandle` exposes
  * `previewIds()` / `previewPose(id)`, the layer renders a ghost for that
  * id using the slot's `drawOne`. Removing the handle removes the ghost.

@@ -1,6 +1,6 @@
 /**
  * `clearSelectionAction` — immediate Action descriptor for click-on-empty
- * selection clearing (Phase 14a).
+ * selection clearing.
  *
  * ## Status: REAL
  *

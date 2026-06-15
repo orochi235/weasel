@@ -1,5 +1,5 @@
 /**
- * `cloneAction` — ongoing Action descriptor for alt-drag clone (Phase 11).
+ * `cloneAction` — ongoing Action descriptor for alt-drag clone.
  *
  * ## Status: REAL (scene-direct, no overlay)
  *

@@ -14,7 +14,7 @@ import * as builtins from './index';
 // NOTE: usePinchZoomTool is intentionally excluded. It is NOT a Tool factory
 // — it is a side-effect hook with signature (canvasRef, view, setView, opts)
 // that returns void. There is no Tool literal to attach capabilities to.
-// It is tracked as DONE_WITH_CONCERNS in the implementation notes for Task 2.
+// It is tracked as DONE_WITH_CONCERNS in the implementation notes.
 
 describe('built-in tool capabilities', () => {
   const cases: Array<[string, () => { capabilities?: readonly string[] } | null, readonly string[]]> = [

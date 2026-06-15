@@ -123,7 +123,7 @@ export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit'
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
 
-// ─── Invoker / GestureBinding / ActiveToolContext (Phase 1 of registry unification) ───
+// ─── Invoker / GestureBinding / ActiveToolContext ───
 export type {
   Point2,
   InvocationCtx,
@@ -147,7 +147,7 @@ export type {
   ActiveToolContextProviderProps,
 } from './interactions/actions/activeToolContext';
 
-// ─── Dep registry (Phase 3 of registry unification) ───
+// ─── Dep registry ───
 export {
   DepRegistryProvider,
   useDepRegistry,
@@ -174,7 +174,7 @@ export {
   type UseResizePolicyOptions,
 } from './canvas/deps/resizePolicy';
 
-// ─── Gesture dispatcher (Phase 3 of registry unification) ───
+// ─── Gesture dispatcher ───
 export {
   useGestureDispatcher,
   createDispatcher,
@@ -608,7 +608,7 @@ export type {
 } from './interactions/gestures/types';
 export type { ClipboardSnapshot } from './interactions/actions/clipboard/types';
 
-// ─── Gesture specs (Phase 1 of registry unification) ───
+// ─── Gesture specs ───
 export type {
   ModSpec,
   TargetSpec,
@@ -867,7 +867,7 @@ export type {
   UseHandToolOptions,
   InertiaConfig as HandToolInertiaConfig,
 } from './tools/builtin/hand/useHandTool';
-// UseWheelPanToolOptions and WheelPanInertiaConfig removed (Phase 8.5: useWheelPanTool dissolved).
+// UseWheelPanToolOptions and WheelPanInertiaConfig removed (useWheelPanTool dissolved).
 export type { SelectAdapter } from './tools/builtin/select/useSelectTool';
 export type { PolygonPoint } from './tools/builtin/polygon/usePolygonTool';
 export type { StarPoint } from './tools/builtin/star/useStarTool';

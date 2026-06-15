@@ -76,7 +76,7 @@ describe('Invoker', () => {
   });
 });
 
-describe('BindingOpts.params (Phase 4)', () => {
+describe('BindingOpts.params', () => {
   it('BindingOpts accepts a params bag for action-defined parameters', () => {
     const opts: BindingOpts = {
       behaviors: [],

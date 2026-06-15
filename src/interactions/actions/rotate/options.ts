@@ -1,7 +1,7 @@
 /** Option surface for the `rotate` action.
  *
  *  Lives in a sibling file (not `rotate.ts`) so the type contract stays stable
- *  even after the legacy `useRotate` hook is deleted in Phase 14e Task 4.
+ *  even after the legacy `useRotate` hook is gone.
  *  Consumers should import from here directly; `rotate.ts` re-exports the
  *  same symbols for back-compat. */
 

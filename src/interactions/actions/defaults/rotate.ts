@@ -1,5 +1,5 @@
 /**
- * `rotateAction` — ongoing Action descriptor for pointer-driven rotation (Phase 11).
+ * `rotateAction` — ongoing Action descriptor for pointer-driven rotation.
  *
  * ## Status: REAL (unrotated-pivot path)
  *

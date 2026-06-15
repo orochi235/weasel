@@ -158,7 +158,7 @@ describe('insertAction descriptor', () => {
   });
 
   // -------------------------------------------------------------------------
-  // Phase 14c.3: per-kind extras
+  // per-kind extras
   // -------------------------------------------------------------------------
 
   it('line kind: extras.a/b are the live drag endpoints (not AABB diagonal)', () => {
@@ -234,7 +234,7 @@ describe('insertAction descriptor', () => {
   });
 
   // -------------------------------------------------------------------------
-  // overlay() — live insert-drag preview (Phase 14e Task 2 follow-up)
+  // overlay() — live insert-drag preview
   // -------------------------------------------------------------------------
 
   describe('overlay()', () => {

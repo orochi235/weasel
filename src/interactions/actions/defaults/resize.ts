@@ -1,7 +1,7 @@
 /**
  * `resizeAction` — ongoing Action descriptor for anchor-relative drag resize.
  *
- * ## Status: REAL (Phase 12 + 14e)
+ * ## Status: REAL
  *
  * Performs real anchor-relative resize math for rect-shaped poses. Reads
  * `ctx.drag.affordance.anchor` to determine which corner is fixed, captures
@@ -10,8 +10,8 @@
  *
  * ## Behaviors / point-snap / expandIds / geometry — via `resizePolicy` dep
  *
- * Phase 14e (resize-behaviors-api) wired the four behavior options the
- * legacy `useResize` hook exposes (`behaviors`, `pointSnapBehaviors`,
+ * The resize-behaviors-api wired the four behavior options the
+ * legacy `useResize` hook exposed (`behaviors`, `pointSnapBehaviors`,
  * `expandIds`, `geometry`) through the `resizePolicy` dep entry. When
  * the dep is registered, this invoker:
  *
@@ -28,7 +28,7 @@
  *
  * When the dep is absent the invoker falls back to identity defaults
  * (no behaviors, no snap, `ids => ids` expansion, `RECT_POSE_DESCRIPTOR`),
- * which matches the unrotated rect-pose path the Phase 12 invoker already
+ * which matches the unrotated rect-pose path the invoker already
  * implemented.
  *
  * @see useResize — the React hook this descriptor mirrors.
@@ -519,7 +519,7 @@ export const resizeAction: Action & { requires: string[] } = {
    * every drag instead of resizing. The invoker self-guards on empty
    * selection (returns `{}`), so a static `true` here is correct.
    *
-   * Phase 14e fix: previously `() => ActionDisabledReason.SelectionRequired`
+   * Fix: previously `() => ActionDisabledReason.SelectionRequired`
    * — that broke every dispatcher-routed resize. See git blame.
    */
   enabled: () => true,

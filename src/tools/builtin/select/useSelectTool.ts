@@ -19,7 +19,7 @@ import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
 
-/** Pre-14e Task 3 style hooks for the area-select marquee. The dispatcher
+/** Legacy style hooks for the area-select marquee. The dispatcher
  *  overlay layer (`useDispatcherOverlayLayer`) now owns marquee paint; this
  *  type is retained on the option surface for source-compat with callers
  *  threading it through. */
@@ -30,7 +30,7 @@ export interface AreaSelectOverlayStyle {
   lineWidth?: number;
 }
 
-/** Pre-14e Task 3 style hook for the move ghost. The preview-ghost layer
+/** Legacy style hook for the move ghost. The preview-ghost layer
  *  renders moved silhouettes via `drawOne` now. Retained for source-compat. */
 export interface MoveOverlayStyle {
   ghostAlpha?: number;
@@ -56,12 +56,12 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   boundsOf?: (id: string) => Bounds | null;
   /** Project a pose to its AABB. Default: identity. */
   poseBounds?: (pose: TPose) => Bounds;
-  /** Move-action options. After Phase 14e the move gesture is dispatcher-routed,
+  /** Move-action options. The move gesture is dispatcher-routed,
    *  so only `behaviors` is consumed here — threaded into the move binding's
    *  `opts.behaviors`. Other `UseMoveOptions` fields are accepted for API shape
    *  but not read by this tool. */
   move?: UseMoveOptions<TPose>;
-  /** Legacy `useAreaSelect` options. Ignored after Phase 14e Task 3 —
+  /** Legacy `useAreaSelect` options. Ignored now —
    *  `areaSelectAction` configuration moved to the action registration. */
   areaSelect?: unknown;
   /** Optional debug sink. Reserved for future overlay/affordance hitbox
@@ -116,7 +116,7 @@ export type SelectScratch =
   | { kind: 'move'; ids: string[]; deferredClickId: string | null }
   | { kind: 'area' };
 
-/** Active-slot Tool. After Phase 14e Task 3:
+/** Active-slot Tool:
  *  - pointerDown classifier still runs the tool's own pickBest/pickEvery
  *    so click semantics (selection replace, extend, deferred collapse) are
  *    preserved across the same code path.

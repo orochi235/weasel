@@ -1,5 +1,5 @@
 /**
- * Phase 6 Task 4 — end-to-end integration test for moveAction via dispatcher.
+ * End-to-end integration test for moveAction via dispatcher.
  *
  * Proves the full drag pump chain:
  *   pointerdown → match drag binding → start

@@ -1,9 +1,9 @@
 /**
- * Canvas HUDs and backgroundFill prop coverage (Tasks 2.1, 2.2)
+ * Canvas HUDs and backgroundFill prop coverage
  *
- * This file will accumulate tests for Canvas-owned surface-layer concerns:
- *   - Task 2.1: backgroundFill layer composition
- *   - Task 2.2: cursorCoordsHud / pickHud (future)
+ * Tests for Canvas-owned surface-layer concerns:
+ *   - backgroundFill layer composition
+ *   - cursorCoordsHud / pickHud
  *
  * Test approach for layer composition: `debug={{ layers: true }}` + `debugSinkRef`
  * gives us snapshot().layers which lists every layer id Canvas built.  This is
@@ -46,7 +46,7 @@ beforeAll(() => {
 });
 
 // ---------------------------------------------------------------------------
-// Task 2.1: <Canvas> backgroundFill prop
+// <Canvas> backgroundFill prop
 // ---------------------------------------------------------------------------
 
 describe('<Canvas> backgroundFill prop', () => {
@@ -117,7 +117,7 @@ describe('<Canvas> backgroundFill prop', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Task 2.2: <Canvas> cursorCoordsHud / pickHud props
+// <Canvas> cursorCoordsHud / pickHud props
 // ---------------------------------------------------------------------------
 
 describe('<Canvas> HUDs', () => {

@@ -110,7 +110,7 @@ describe('usePenTool', () => {
     const { tool } = setup();
     expect(tool.id).toBe('pen');
     // keybinding field removed from ToolDef; key activation is now registered
-    // as a `tool.shortcut.pen` action via useKeybindings (Task 9).
+    // as a `tool.shortcut.pen` action via useKeybindings.
     expect(typeof tool.cursor).toBe('function');
   });
 

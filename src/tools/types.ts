@@ -37,16 +37,16 @@ export interface ToolCtx<TScratch = unknown> {
   modifiers: ToolModifiers;
   /** Hit-test result for the current event. Populated by the dispatcher
    *  before each handler call. Tools that don't use declarative routing
-   *  can ignore this. Optional in Phase 1 for migration; will become
+   *  can ignore this. Optional for migration; will become
    *  required once the routing migration is complete. */
   target?: HitResult;
   selection: SelectionApi;
   /** Adapter/scene access — opaque at this layer; tools that need it
-   *  cast to a known shape. Phase 1 doesn't constrain this. */
+   *  cast to a known shape. This layer doesn't constrain it. */
   adapter: unknown;
   applyOps: (ops: Op[], label: string) => void;
   /** Current viewport. Reflects camera-position semantics — see
-   *  `View` JSDoc. Phase 2b is pan-only. */
+   *  `View` JSDoc. */
   view: View;
   /** Mutate the viewport. In controlled mode this calls the consumer's
    *  `onViewChange`; in uncontrolled mode it updates Canvas's internal
@@ -206,7 +206,7 @@ export interface Tool<TScratch = unknown> {
    *  nothing — typically gated on a scratch field like
    *  `if (!scratch.overlay) return`. */
   overlay?: RenderLayer<unknown>;
-  /** Phase 1+ (registry-unification): declarative gesture-bindings the
+  /** Declarative gesture-bindings the
    *  dispatcher consults while this tool is active. Empty/undefined keeps
    *  legacy imperative-channel behavior. See
    *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */

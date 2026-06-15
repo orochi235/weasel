@@ -238,7 +238,7 @@ describe('cloneAction descriptor', () => {
   });
 
   it('previewPose returns a translated pose shape consumable by drawOne (canvas preview path)', () => {
-    // Phase 14e.2.5 sub-deliverable 3 — verifies the dispatcher preview
+    // Verifies the dispatcher preview
     // shape is rect-pose-like ({x, y, width, height, ...}), matching what
     // `usePreviewGhostLayer`'s `drawOne` consumes. This is the equivalent
     // of the legacy `useClone`/`defaultDrawGhost` `{id, x, y}` overlay

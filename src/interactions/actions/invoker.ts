@@ -119,12 +119,12 @@ export interface InvocationCtx {
  *  behaviors; extensible. */
 export interface BindingOpts {
   behaviors?: ActionBehavior<unknown, unknown, unknown>[];
-  /** Phase 4+: per-binding action parameters. The action's invoker reads
+  /** Per-binding action parameters. The action's invoker reads
    *  these via the second arg to `run` (or via InvocationCtx for ongoing
    *  invokers, when needed). Loose typing (Record<string, unknown>) for
    *  now; consider per-action typing later via BindingOpts<A>.
    *
-   *  Phase 14c.3: params may also be a thunk evaluated each time the
+   *  params may also be a thunk evaluated each time the
    *  dispatcher (or invoker) needs the value. Thunks let tools close over
    *  refs that mutate during a gesture (e.g. polygon `sides` adjusted
    *  mid-drag via ArrowUp). For ongoing invokers that want the latest
@@ -158,7 +158,7 @@ export interface ActionDeps {
 
 /**
  * Discriminated overlay shape returned by `OngoingHandle.overlay()`.
- * Phase 14e.2.5 / Phase 7 — dispatcher-side chrome surface for in-flight
+ * Dispatcher-side chrome surface for in-flight
  * gestures that paint non-ghost visuals. The canvas's
  * `useDispatcherOverlayLayer` walks every in-flight handle, calls
  * `overlay()`, and dispatches on `kind` to draw the appropriate shape.
@@ -248,7 +248,7 @@ export interface OngoingHandle {
   onEnd?(ctx: InvocationCtx, reason: 'commit' | 'cancel'): void;
 
   /**
-   * Optional preview surface — Phase 14e dispatcher-side ghost overlay.
+   * Optional preview surface — dispatcher-side ghost overlay.
    *
    * An ongoing-action implementation may populate `previewIds()` +
    * `previewPose(id)` to expose its in-flight preview state for the
@@ -295,7 +295,7 @@ export interface OngoingHandle {
   previewData?(id: string): unknown | null;
 
   /**
-   * Optional chrome surface — Phase 14e.2.5 dispatcher-side overlay layer.
+   * Optional chrome surface — dispatcher-side overlay layer.
    *
    * An ongoing-action implementation may populate `overlay()` to expose a
    * non-ghost visual (marquee rectangle, lasso polyline) for the canvas's
@@ -314,7 +314,7 @@ export interface OngoingHandle {
  *  async side-effect; the registry doesn't wait). */
 export interface ImmediateInvoker {
   timing: 'immediate';
-  /** `params` carries the matched binding's opts.params (Phase 4+). When
+  /** `params` carries the matched binding's opts.params. When
    *  invoked via the legacy `Action.run` bridge or from the command palette
    *  with no per-binding context, `params` is undefined; descriptors should
    *  default to a sensible variant. */

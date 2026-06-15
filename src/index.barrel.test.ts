@@ -117,15 +117,15 @@ describe('kit barrel parity', () => {
   });
 });
 
-describe('Phase 1 registry-unification exports', () => {
-  it('exposes Phase 1 value exports on the main barrel', () => {
+describe('registry-unification exports (ActiveToolContext)', () => {
+  it('exposes the ActiveToolContext value exports on the main barrel', () => {
     expect(Barrel.ActiveToolContextProvider).toBeDefined();
     expect(Barrel.useActiveToolContext).toBeDefined();
   });
 });
 
-describe('Phase 3 registry-unification exports', () => {
-  it('exposes Phase 3 value exports on the main barrel', () => {
+describe('registry-unification exports (DepRegistry + dispatcher)', () => {
+  it('exposes the DepRegistry and dispatcher value exports on the main barrel', () => {
     expect(Barrel.DepRegistryProvider).toBeDefined();
     expect(Barrel.useDepRegistry).toBeDefined();
     expect(Barrel.useDepSource).toBeDefined();

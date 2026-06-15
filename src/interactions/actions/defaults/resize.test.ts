@@ -4,7 +4,7 @@ import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
 import type { ResizeAnchor } from '../../gestures/types';
 
-// Phase 12: anchor lookup mirroring `buildAffordanceAt`'s convention.
+// Anchor lookup mirroring `buildAffordanceAt`'s convention.
 const ANCHOR_FOR_KIND: Record<string, ResizeAnchor> = {
   'handle:top-left':     { x: 'max', y: 'max' },
   'handle:top-right':    { x: 'min', y: 'max' },

@@ -41,7 +41,7 @@ const ICON_FOR: Record<BooleanOp, ReactNode> = {
 };
 
 // ---------------------------------------------------------------------------
-// Static descriptors (Phase 4+)
+// Static descriptors
 // ---------------------------------------------------------------------------
 
 function makePathfinderAction(op: BooleanOp): Action {
@@ -69,16 +69,16 @@ function makePathfinderAction(op: BooleanOp): Action {
   };
 }
 
-/** @experimental Static descriptor for pathfinder-union (Phase 4+). */
+/** @experimental Static descriptor for pathfinder-union. */
 export const pathfinderUnionAction     = makePathfinderAction('union');
-/** @experimental Static descriptor for pathfinder-subtract (Phase 4+). */
+/** @experimental Static descriptor for pathfinder-subtract. */
 export const pathfinderSubtractAction  = makePathfinderAction('subtract');
-/** @experimental Static descriptor for pathfinder-intersect (Phase 4+). */
+/** @experimental Static descriptor for pathfinder-intersect. */
 export const pathfinderIntersectAction = makePathfinderAction('intersect');
-/** @experimental Static descriptor for pathfinder-exclude (Phase 4+). */
+/** @experimental Static descriptor for pathfinder-exclude. */
 export const pathfinderExcludeAction   = makePathfinderAction('exclude');
-/** @experimental Static descriptor for pathfinder-divide (Phase 4+). */
+/** @experimental Static descriptor for pathfinder-divide. */
 export const pathfinderDivideAction    = makePathfinderAction('divide');
-/** @experimental Static descriptor for pathfinder-crop (Phase 4+). */
+/** @experimental Static descriptor for pathfinder-crop. */
 export const pathfinderCropAction      = makePathfinderAction('crop');
 

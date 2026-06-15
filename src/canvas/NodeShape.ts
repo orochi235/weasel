@@ -150,7 +150,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
  * coordinates matching the initial pose, so painters that ignored pose
  * rendered at the original location after a move/resize. By aligning the
  * path's bounds to the live pose origin every paint, both committed pose
- * mutations AND in-flight preview poses (Phase 14e preview-ghost layer)
+ * mutations AND in-flight preview poses (preview-ghost layer)
  * render at the right place without needing the actions to mutate `data.path`.
  *
  * Returns the path unchanged when the delta is zero so the fast-path

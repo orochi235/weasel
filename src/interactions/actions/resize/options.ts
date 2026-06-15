@@ -1,7 +1,7 @@
 /** Option surface for the `resize` action.
  *
  *  Lives in a sibling file (not `resize.ts`) so the type contract stays stable
- *  even after the legacy `useResize` hook is deleted in Phase 14e Task 4.
+ *  even after the legacy `useResize` hook is gone.
  *  Consumers should import from here directly; `resize.ts` re-exports the
  *  same symbol for back-compat. */
 

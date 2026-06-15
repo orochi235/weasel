@@ -1,5 +1,5 @@
 /**
- * Kit-standard DepSchema augmentation (Phase 4 of registry unification).
+ * Kit-standard DepSchema augmentation.
  *
  * Adds the named entries the kit's default actions consume. Consumer apps
  * add their own entries (e.g. `color`) via the same declaration-merging
@@ -12,7 +12,7 @@
  * ## Improvisation notes
  *
  * - **`view`**: No `ViewApi` interface existed. A minimal `{ get(): View;
- *   set(v: View): void }` is defined here; Phase 5+ may refine to include
+ *   set(v: View): void }` is defined here; a future refinement may include
  *   animation helpers or fit-to-bounds.
  *
  * - **`scene`**: `Scene<TData, TLayer, TPose>` is a generic interface with no
@@ -42,7 +42,7 @@ import type {
 } from '../gestures/types';
 import type { PoseProjection } from './resize/geometry';
 
-/** Minimal view API the action layer consumes. Phase 5+ may refine. */
+/** Minimal view API the action layer consumes. May be refined later. */
 export interface ViewApi {
   get(): View;
   set(v: View): void;
@@ -55,7 +55,7 @@ export interface ViewApi {
 }
 
 /**
- * Adapter dep for `areaSelectAction` (Phase 11).
+ * Adapter dep for `areaSelectAction`.
  *
  * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>` via AABB
  * overlap over scene nodes. Consumers with custom hit-testing override this
@@ -134,7 +134,7 @@ export interface EditAnchorsDep {
 }
 
 /**
- * Adapter dep for `lassoSelectAction` (Phase 14b).
+ * Adapter dep for `lassoSelectAction`.
  *
  * Provides polygon-lasso hit-testing + selection read/write.
  * Consumers that don't implement `hitTestLasso` can omit it; the action
@@ -160,7 +160,7 @@ export interface LassoSelectDep {
 }
 
 /**
- * Per-kind extra geometry passed to `InsertDep.commit` (Phase 14c.3).
+ * Per-kind extra geometry passed to `InsertDep.commit`.
  *
  * Built-in tools populate a typed variant so the kit's default factory can
  * render the true tool params (line endpoints, polygon side count, star
@@ -181,10 +181,10 @@ export type InsertExtras =
   | { kind: string; [extra: string]: unknown };
 
 /**
- * Adapter dep for `insertAction` (Phase 11).
+ * Adapter dep for `insertAction`.
  *
  * Provided by `<SceneCanvas>` / `<StandardActionsRegistrar>`. The `extras`
- * carry the active tool's kind + per-kind geometry (Phase 14c.3). Callers
+ * carry the active tool's kind + per-kind geometry. Callers
  * that need typed data must supply a richer `insert` dep.
  */
 export interface InsertDep {
@@ -200,10 +200,10 @@ export interface InsertDep {
 }
 
 /**
- * Adapter dep for `resizeAction` (Phase 14e — resize-behaviors-api).
+ * Adapter dep for `resizeAction`.
  *
  * Carries the four behavior-shaping options the legacy `useResize` hook
- * exposes through `UseResizeOptions`: bounds-frame behaviors (e.g.
+ * exposed through `UseResizeOptions`: bounds-frame behaviors (e.g.
  * `lockAspectWithModifier`), world-space anchor-point snap behaviors (e.g.
  * `pointSnapToGrid`), group-expansion (`expandIds`), and pose↔bounds
  * projection (`geometry`).
@@ -259,7 +259,7 @@ declare module './depRegistry' {
     /**
      * Area-select dep — AABB hit-test + selection read/write.
      *
-     * Phase 11: sourced from `<SceneCanvas>` via AABB overlap over all scene
+     * Sourced from `<SceneCanvas>` via AABB overlap over all scene
      * nodes. Override per-consumer for custom hit-testing (e.g. contain-mode,
      * lock-aware filtering).
      */
@@ -274,7 +274,7 @@ declare module './depRegistry' {
     /**
      * Insert dep — node factory for drag-to-insert.
      *
-     * Phase 11: sourced from `<SceneCanvas>`. The `kind` param comes from
+     * Sourced from `<SceneCanvas>`. The `kind` param comes from
      * the active binding's `opts.params.kind`. Override per-consumer to
      * provide a typed node factory (e.g. with custom data payloads).
      */
@@ -282,14 +282,14 @@ declare module './depRegistry' {
     /**
      * Lasso-select dep — polygon hit-test + selection read/write.
      *
-     * Phase 14b: sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>`.
+     * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>`.
      * Falls back to AABB hit-test when `hitTestLasso` is absent.
      */
     lassoSelect: LassoSelectDep;
     /**
      * Edit-anchors dep — narrow read/write of one polygon's path pose.
      *
-     * Phase 14b: sourced from consumer. Wraps `getPose`/`setPose`/`applyOps`
+     * Sourced from consumer. Wraps `getPose`/`setPose`/`applyOps`
      * for the currently-being-edited polygon node.
      *
      * The `editAnchorsAction` requires this dep to be registered when anchor
@@ -299,7 +299,7 @@ declare module './depRegistry' {
     /**
      * Text-edit dep — activates the in-place text editing overlay.
      *
-     * Phase 14c.3: sourced from consumer via `useTextEdit` / `useSceneTextEdit`.
+     * Sourced from consumer via `useTextEdit` / `useSceneTextEdit`.
      * The `enterTextEditAction` requires this dep to be registered by the text
      * tool when text editing is available.
      *

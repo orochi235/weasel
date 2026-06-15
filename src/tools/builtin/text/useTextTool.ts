@@ -18,7 +18,7 @@ const PRESENTATION = {
   icon: createElement(TextIcon),
   group: 'type',
 };
-/** Text Tool. Phase 14e Task 3.5: legacy `useInsert` hook dropped — drag-rect
+/** Text Tool. The legacy `useInsert` hook is dropped — drag-rect
  *  insertion is owned end-to-end by the dispatcher's `insertAction` (kind:
  *  'text'); click-on-selected-text-node enters edit mode via the
  *  `enterTextEdit` action.

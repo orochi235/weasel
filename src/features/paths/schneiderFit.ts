@@ -6,9 +6,6 @@
  * Output shape: an initial `M` to the first sample, followed by N
  * `C` cubic segments. For colinear / two-point inputs, returns a single
  * degenerate cubic. For empty input, returns an empty polygon path.
- *
- * NOTE: Task 4 ships only the API surface + degenerate handling. The
- * full LS / reparameterization / split machinery is added in Tasks 5–7.
  */
 
 import { PathBuilder } from './builder';

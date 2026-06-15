@@ -899,7 +899,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   });
 
   // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
-  // synthesizes this itself — it accepts it as a prop (Phase 4.1 seam refactor).
+  // synthesizes this itself — it accepts it as a prop (seam refactor).
   // The node resolver reads adapter.kindOf (set from kindClassifier when kinds
   // are registered), getPose, and getNode, matching the old Canvas synthesizer
   // algorithm exactly (see src/canvas/getNodeAtPoint.ts).
@@ -951,7 +951,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const handTool = useHandTool(handToolInertia ? { inertia: handToolInertia } : {});
 
   // Keyboard zoom and wheel zoom/pan are handled by the viewport.pan and
-  // viewport.zoom descriptors via the gesture dispatcher (Phase 8.5).
+  // viewport.zoom descriptors via the gesture dispatcher.
   // viewportAmbient no longer includes keyZoom/wheelZoom tool instances.
   const viewportAmbient: AnyTool[] = [];
 
@@ -1161,7 +1161,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`. Walks both the
-  // tools registry and the dispatcher's in-flight handles (Phase 14e).
+  // tools registry and the dispatcher's in-flight handles.
   const previewLayer = usePreviewGhostLayer<TData, TLayer, TPose>({
     scene,
     tools,
@@ -1172,7 +1172,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Dispatcher-driven chrome overlays — marquee rect + lasso polyline +
   // any other `OngoingHandle.overlay()` shapes the in-flight actions
   // publish. Screen-space; slotted after the preview-ghost so chrome
-  // paints on top of any displaced ghost silhouettes. Phase 14e.2.5.
+  // paints on top of any displaced ghost silhouettes.
   const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
 
   // Chrome-caps hover tracking: last-hovered NodeId fed into `ChromeCtx.hover`.
@@ -1620,12 +1620,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
 /**
  * Mounts the gesture dispatcher inside `<ActionsProviderIfRoot>` so it can
- * read the live registry. Phase 14e Task 2.6: the dispatcher is now
+ * read the live registry. The dispatcher is now
  * unconditionally present in every `<SceneCanvas>` tree; the
  * `DispatcherPresenceProvider` context (and `useIsDispatcherMounted` hook)
  * have been removed.
  *
- * Phase 13: accepts `selectionRef`, `boundsOf`, `pickEvery`, and `viewRef` so
+ * Accepts `selectionRef`, `boundsOf`, `pickEvery`, and `viewRef` so
  * it can wire `affordanceAt` + `classifyTarget` thunks into the dispatcher.
  * These thunks convert client coords → world coords via the canvas rect + view,
  * then classify the pointer position against affordances and scene bodies.
@@ -1686,7 +1686,7 @@ function GestureDispatcherMounter({
   const pickEveryRef = useRef(pickEvery);
   pickEveryRef.current = pickEvery;
 
-  // `getAnchorState` thunk for `buildAffordanceAt` (Phase 14b).
+  // `getAnchorState` thunk for `buildAffordanceAt`.
   //
   // Reads the live `editAnchors` dep from the registry at call time (O(1)
   // thunk call). When the dep is absent (no polygon selected / anchor-edit

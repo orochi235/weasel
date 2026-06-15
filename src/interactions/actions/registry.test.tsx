@@ -91,7 +91,7 @@ describe('ActionsRegistry — full coverage', () => {
     expect(reg.list().map(a => a.id)).toEqual(['a']);
   });
 
-  it('Provider attaches no document keydown listener (Phase 14e Task 7: dispatcher owns keystrokes)', () => {
+  it('Provider attaches no document keydown listener (dispatcher owns keystrokes)', () => {
     const addSpy = vi.spyOn(document, 'addEventListener');
     const { unmount } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const adds = addSpy.mock.calls.filter(c => c[0] === 'keydown').length;
@@ -120,7 +120,7 @@ describe('ActionsRegistry — full coverage', () => {
     unmount();
   });
 
-  // Phase 14e Task 7: the keystroke-matching tests (modifier combos, shift
+  // The keystroke-matching tests (modifier combos, shift
   // policies, skipInEditable, preventDefault, overlapping-bindings tiebreak)
   // tested the registry's legacy keydown loop, which is gone. Equivalent
   // coverage lives in the gesture dispatcher's tests
@@ -128,7 +128,7 @@ describe('ActionsRegistry — full coverage', () => {
   // for registered actions with `defaultBinding`.
 });
 
-describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () => {
+describe('Action with new invoker / GestureSpec fields (additive)', () => {
   it('accepts an immediate invoker', () => {
     const action: Action = {
       id: 'demo.immediate',
@@ -164,7 +164,7 @@ describe('Action with new invoker / GestureSpec fields (Phase 1 additive)', () =
     expect(action.defaultBinding).toEqual({ kind: 'wheel', mods: { ctrl: true } });
   });
 
-  // REMOVED (Phase 14e Task 7): 'legacy KeyBinding shape on defaultBinding
+  // REMOVED: 'legacy KeyBinding shape on defaultBinding
   // still compiles'. The `Action.defaultBinding` field has been deleted; all
   // bindings live on `defaultBinding` (read by the dispatcher).
 

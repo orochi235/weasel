@@ -1,5 +1,5 @@
 /**
- * Phase 14b — integration tests for pinchZoomAction via the gesture dispatcher.
+ * Integration tests for pinchZoomAction via the gesture dispatcher.
  *
  * Proves:
  *   - Two pointerdowns synthesize a multitouch event → pinchZoomAction.start fires

@@ -65,7 +65,7 @@ describe('lassoSelectAction descriptor', () => {
     expect(lassoSelectAction.invoker?.timing).toBe('ongoing');
   });
 
-  it('requires lassoSelect dep (Phase 14b implementation)', () => {
+  it('requires lassoSelect dep', () => {
     expect(lassoSelectAction.requires).toContain('lassoSelect');
   });
 
@@ -80,7 +80,7 @@ describe('lassoSelectAction descriptor', () => {
   });
 
   it('overlay() exposes lasso shape with vertices + current; updates on move; clears on end', () => {
-    // Phase 14e.2.5 — dispatcher-side chrome surface for the lasso polyline.
+    // Dispatcher-side chrome surface for the lasso polyline.
     const invoker = getOngoingInvoker(lassoSelectAction);
     const dep = makeLassoSelectDep();
     const startCtx: InvocationCtx = {

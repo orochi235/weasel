@@ -1,14 +1,14 @@
 /**
- * SceneCanvas — auto-mounted gesture dispatcher (Phase 3 Task 6).
+ * SceneCanvas — auto-mounted gesture dispatcher.
  *
  * Verifies that <SceneCanvas> auto-mounts `useGestureDispatcher` so
  * registered actions with a `defaultBinding` fire on window keydown,
  * and that `enableGestureDispatcher={false}` opts out cleanly.
  *
- * Phase 8 safety tests: confirm delete/duplicate/nudge/undo keybindings fire
- * through the dispatcher path BEFORE deleting the wrapper tools.
+ * Safety tests: confirm delete/duplicate/nudge/undo keybindings fire
+ * through the dispatcher path.
  *
- * Phase 14c.2 tests: insertDep wired — drag on empty space with a shape tool
+ * insertDep tests: insertDep wired — drag on empty space with a shape tool
  * active inserts a node into the scene end-to-end.
  */
 import { describe, it, expect, vi, beforeAll } from 'vitest';
@@ -105,8 +105,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
   });
 
   // -------------------------------------------------------------------------
-  // Phase 8 safety: verify delete/duplicate/nudge/undo fire via dispatcher
-  // BEFORE the wrapper tools are deleted.
+  // Safety: verify delete/duplicate/nudge/undo fire via dispatcher.
   // -------------------------------------------------------------------------
 
   type D8 = { kind: 'rect' };
@@ -121,7 +120,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     return s;
   }
 
-  it('Phase 8: Backspace fires deleteAction bridge run via dispatcher', () => {
+  it('Backspace fires deleteAction bridge run via dispatcher', () => {
     const scene = makeSceneWithNode();
     const deleteSpy = vi.fn();
     // enabled:()=>true bypasses the selection guard so the dispatcher runs the
@@ -136,7 +135,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     expect(deleteSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('Phase 8: Delete fires deleteAction bridge run via dispatcher', () => {
+  it('Delete fires deleteAction bridge run via dispatcher', () => {
     const scene = makeSceneWithNode();
     const deleteSpy = vi.fn();
     render(
@@ -149,7 +148,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     expect(deleteSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('Phase 8: Ctrl+D fires duplicateAction run via dispatcher (jsdom is not Mac)', () => {
+  it('Ctrl+D fires duplicateAction run via dispatcher (jsdom is not Mac)', () => {
     const scene = makeSceneWithNode();
     const dupSpy = vi.fn();
     render(
@@ -162,7 +161,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     expect(dupSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('Phase 8: ArrowUp fires nudgeUpAction run via dispatcher', () => {
+  it('ArrowUp fires nudgeUpAction run via dispatcher', () => {
     const scene = makeSceneWithNode();
     const nudgeSpy = vi.fn();
     // nudge descriptor id is "nudge.up" (not "nudge.up.small")
@@ -176,7 +175,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     expect(nudgeSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('Phase 8: Ctrl+Z fires undoAction run via dispatcher', () => {
+  it('Ctrl+Z fires undoAction run via dispatcher', () => {
     const scene = makeSceneWithNode();
     const undoSpy = vi.fn();
     render(
@@ -189,7 +188,7 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
     expect(undoSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('Phase 8: Ctrl+Shift+Z fires redoAction run via dispatcher', () => {
+  it('Ctrl+Shift+Z fires redoAction run via dispatcher', () => {
     const scene = makeSceneWithNode();
     const redoSpy = vi.fn();
     render(
@@ -230,10 +229,10 @@ describe('SceneCanvas auto-mounted gesture dispatcher', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Phase 14c.2: insertDep end-to-end — drag on empty canvas inserts a node
+// insertDep end-to-end — drag on empty canvas inserts a node
 // ---------------------------------------------------------------------------
 
-describe('Phase 14c.2 — insertDep wired in SceneCanvas', () => {
+describe('insertDep wired in SceneCanvas', () => {
   /**
    * These tests verify that SceneCanvas's `StandardActionsRegistrar` correctly
    * wires the `insert` dep and that the dep's `commit` function creates scene

@@ -371,7 +371,7 @@ describe('defineTool — raw event in ActionFn', () => {
 
   it('existing ActionFns that ignore the event parameter still work', () => {
     // The whole point of making `event` optional: ActionFns written
-    // before Phase 4.5 (taking only `ctx`) must continue to compile and
+    // before the `event` param was added (taking only `ctx`) must continue to compile and
     // behave identically.
     const tool = defineTool({
       id: 'test',

@@ -66,7 +66,7 @@ export interface GroupDrawCommand {
    *  the stencil buffer before drawing `children`; the children paint only
    *  where the clip covers. Nested groups with clips intersect — a child
    *  cannot escape an ancestor's clip. Max 7 nesting levels; the renderer
-   *  throws if exceeded. Phase 2 of nested clipping. */
+   *  throws if exceeded. */
   clip?: Path;
   children: DrawCommand[];
 }

@@ -1,7 +1,7 @@
 /**
  * `pinchZoomAction` — ongoing Action descriptor for two-finger pinch zoom.
  *
- * ## Status: REAL (Phase 14b)
+ * ## Status: REAL
  *
  * Implements pinch-zoom via the multi-touch pointer stream:
  *   - `start`: captures startSpread from `ctx.multiTouch.pinch.startSpread`
@@ -11,18 +11,18 @@
  *     on screen.
  *   - `onEnd`: no-op — zoom is already applied each frame.
  *
- * ## Dispatcher extensions required (Phase 14b)
+ * ## Dispatcher extensions required
  *
- * - `InvocationCtx.multiTouch.pinch`: added in Phase 14b. The dispatcher
+ * - `InvocationCtx.multiTouch.pinch`: the dispatcher
  *   populates it on every multitouch move-pump event. `startSpread` is
  *   captured once when the handle opens; `currentSpread` updates each frame.
- * - `InputEvent.multitouch.centroid / spread`: added in Phase 14b.
+ * - `InputEvent.multitouch.centroid / spread`:
  *   `useGestureDispatcher` synthesizes updated geometry on `pointermove`
  *   when a multitouch handle is in flight.
  *
  * ## Graceful degradation
  *
- * If `ctx.multiTouch.pinch` is absent (e.g. old dispatcher without Phase 14b
+ * If `ctx.multiTouch.pinch` is absent (e.g. old dispatcher without these
  * extensions), `start` returns an empty handle — no-op, no crash.
  *
  * @see zoomAt — fixed-point zoom primitive from `core/viewport/zoomAt`.

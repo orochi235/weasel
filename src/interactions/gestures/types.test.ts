@@ -8,7 +8,7 @@ import type {
   InsertOverlay,
 } from './types';
 
-describe('Phase 2 type shapes', () => {
+describe('type shapes', () => {
   it('BoundsConstraint.onMove receives proposed.pose and proposed.anchor', () => {
     const b: BoundsConstraint<ResizePose> = {
       onMove(_ctx, proposed) {

@@ -5,8 +5,8 @@ import type { NodeId } from 'core/scene/types';
 import { cornerResizeHandles, hitCornerHandle } from '../../actions/resize/cornerHandles';
 import type { ResizeAnchor } from '../types';
 
-// Phase 14e Task 4: legacy hook Controller types (Move/Resize/Rotate/Insert/AreaSelect)
-// are deleted along with their hooks. `usePointerGestures` only consumes the
+// The legacy hook Controller types (Move/Resize/Rotate/Insert/AreaSelect) were
+// deleted along with their hooks. `usePointerGestures` only consumes the
 // minimal start/move/end/cancel surface those controllers exposed, so define
 // local structural types here. `usePointerGestures` itself remains a public
 // barrel export for back-compat but has no internal consumers.

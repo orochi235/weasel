@@ -40,7 +40,7 @@ export interface UseGestureDispatcherOptions {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   /** Action registry (ActionsRegistry from registry.tsx). */
   actions: ActionsRegistry;
-  /** Tool definitions keyed by id. Phase 3 typically passes an empty Map. */
+  /** Tool definitions keyed by id. Typically passes an empty Map. */
   toolsById: ReadonlyMap<string, Tool>;
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
@@ -64,8 +64,8 @@ export interface UseGestureDispatcherOptions {
    * field as a guard in their `start` body.
    *
    * When omitted, `affordance` is always `undefined` — meaning only consumers
-   * that explicitly wire a classifier get affordance-gated behavior. Phase 13
-   * will wire the full chrome→dispatcher bridge via `<SceneCanvas>`.
+   * that explicitly wire a classifier get affordance-gated behavior.
+   * `<SceneCanvas>` wires the full chrome→dispatcher bridge.
    */
   affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
 
@@ -81,7 +81,7 @@ export interface UseGestureDispatcherOptions {
    *
    * When omitted, string-form target specs (`'empty'`, `'selected-body'`,
    * `'unselected-body'`) never match — bindings using those specs are
-   * silently skipped. Phase 13 wires this via `<SceneCanvas>`.
+   * silently skipped. `<SceneCanvas>` wires this.
    */
   classifyTarget?: (worldPoint: { x: number; y: number }) => 'empty' | 'selected-body' | 'unselected-body';
 
@@ -89,7 +89,7 @@ export interface UseGestureDispatcherOptions {
    * Optional pre-created `Dispatcher`. When provided, this hook pumps events
    * into the supplied instance instead of creating its own. Lets a parent
    * scope (e.g. `<SceneCanvas>`) share one dispatcher between the gesture
-   * mounter and other consumers (the preview-ghost layer in Phase 14e).
+   * mounter and other consumers (the preview-ghost layer).
    */
   dispatcher?: Dispatcher;
 

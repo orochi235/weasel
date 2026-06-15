@@ -1,7 +1,7 @@
 /** Option surface for the `move` action.
  *
  *  Lives in a sibling file (not `move.ts`) so the type contract stays stable
- *  even after the legacy `useMove` hook is deleted in Phase 14e Task 4.
+ *  even after the legacy `useMove` hook is gone.
  *  Consumers should import from here directly; `move.ts` re-exports the
  *  same symbol for back-compat. */
 

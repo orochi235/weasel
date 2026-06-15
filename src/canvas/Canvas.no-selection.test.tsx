@@ -1,5 +1,5 @@
 /**
- * Phase 3a+3b behavioral tests for Canvas without a selection prop.
+ * Behavioral tests for Canvas without a selection prop.
  *
  * After the refactor:
  *  1. Canvas renders without throwing even when no selection prop is passed.

@@ -1,5 +1,5 @@
 /**
- * `areaSelectAction` — ongoing Action descriptor for marquee area selection (Phase 11).
+ * `areaSelectAction` — ongoing Action descriptor for marquee area selection.
  *
  * ## Status: REAL
  *
@@ -16,7 +16,7 @@
  *
  * ## Dependencies
  *
- * Requires `areaSelect` dep from DepSchema (Phase 11 addition):
+ * Requires `areaSelect` dep from DepSchema:
  *   `{ hitTestArea(bounds): NodeId[], getSelection(): NodeId[], setSelection(ids): void }`
  *
  * `<SceneCanvas>` / `<StandardActionsRegistrar>` should source this dep by

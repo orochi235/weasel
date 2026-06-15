@@ -1,7 +1,7 @@
 /**
- * Canvas viewport prop coverage (Task 1.1 follow-up)
+ * Canvas viewport prop coverage
  *
- * After the Phase 1 cleanup, `<Canvas>` owns only the pinch-zoom DOM listener
+ * `<Canvas>` owns only the pinch-zoom DOM listener
  * (via `usePinchZoomTool`). The hand tool, wheel pan/zoom action descriptors,
  * and keyboard zoom shortcuts are SceneCanvas-level concerns — they belong with
  * the tool registry and gesture dispatcher, not with bare Canvas.

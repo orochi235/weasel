@@ -267,7 +267,7 @@ describe('<Canvas>', () => {
       expect(seen.some((s) => s.length === 1 && s[0] === 'b')).toBe(true);
     });
 
-    // Phase 14e Task 4: the "Canvas boundsOf drives the corner-resize
+    // The "Canvas boundsOf drives the corner-resize
     // affordance hit-test" test required `useResizeTool` to mount an
     // ambient affordance overlay. With the legacy tool deleted, the
     // resize affordance is now produced by the dispatcher-side
@@ -357,7 +357,7 @@ describe('<Canvas>', () => {
       expect(last).toEqual(['b']);
     });
 
-    // Phase 14e Task 3: bare `<Canvas>` no longer drives move via the
+    // Bare `<Canvas>` no longer drives move via the
     // legacy `useMove` hook (deleted from useSelectTool). Drag flows through
     // the gesture dispatcher mounted by `<SceneCanvas>`, so the
     // "moveStart behavior fires" assertion that exercised useMove from
@@ -631,7 +631,7 @@ describe('Canvas tools mode', () => {
   });
 });
 
-describe('Canvas viewport (Phase 2b)', () => {
+describe('Canvas viewport', () => {
   function noopScene() {
     return { drawOne: () => [] } as const;
   }

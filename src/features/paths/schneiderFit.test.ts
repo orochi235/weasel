@@ -121,7 +121,7 @@ describe('schneiderFit — iterative reparameterization', () => {
     // alone gives a coarse fit; reparameterization should improve it.
     // LS-only produces ~8 units of error; after 4 Newton-Raphson passes
     // this drops below 7. A single cubic cannot model a 270° arc within
-    // 2 units — Task 7 (split) handles that case.
+    // 2 units — recursive split handles that case.
     const samples: { x: number; y: number }[] = [];
     for (let i = 0; i <= 24; i++) {
       const t = (i / 24) * (3 * Math.PI / 2);
@@ -163,7 +163,7 @@ describe('schneiderFit — recursive split', () => {
   });
 
   it('fits a 270° arc within the original 2.0 tolerance using multiple cubics', () => {
-    // Re-test the Task 6 reparam input — now with split available, should
+    // Re-test the reparam input — now with split available, should
     // hit the original spec tolerance of 2.0.
     const samples: { x: number; y: number }[] = [];
     for (let i = 0; i <= 24; i++) {

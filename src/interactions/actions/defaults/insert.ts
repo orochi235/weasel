@@ -1,5 +1,5 @@
 /**
- * `insertAction` — ongoing Action descriptor for drag-to-insert (Phase 11).
+ * `insertAction` — ongoing Action descriptor for drag-to-insert.
  *
  * ## Status: REAL
  *
@@ -13,7 +13,7 @@
  *
  * ## Dependencies
  *
- * Requires `insert` dep from DepSchema (Phase 11 addition):
+ * Requires `insert` dep from DepSchema:
  *   `{ commit(bounds, kind): NodeId | null }`
  *
  * `<SceneCanvas>` / `<StandardActionsRegistrar>` should source this dep by
@@ -371,7 +371,7 @@ export const insertAction: Action & { requires: string[] } = {
    * Insert is always available — no selection required. Returns `true` so the
    * dispatcher allows the action through on every drag-on-empty gesture.
    *
-   * Phase 14c.2: fixed from the stale `ActionDisabledReason.SelectionRequired`
+   * Fixed from the stale `ActionDisabledReason.SelectionRequired`
    * placeholder that was silently blocking all dispatcher-routed inserts.
    */
   enabled: () => true as const,

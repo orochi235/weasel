@@ -1,5 +1,5 @@
 /**
- * Phase 8.5 — end-to-end integration tests for viewportWheelPanAction and
+ * End-to-end integration tests for viewportWheelPanAction and
  * viewportZoomAction via the gesture dispatcher.
  *
  * Proves:

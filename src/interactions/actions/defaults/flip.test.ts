@@ -7,7 +7,7 @@ import type { BoundGesture } from '../registry';
 interface Pose { x: number; y: number; width: number; height: number }
 
 // ---------------------------------------------------------------------------
-// flipAction descriptor (Phase 4 parametric shape)
+// flipAction descriptor (parametric shape)
 // ---------------------------------------------------------------------------
 
 describe('flipAction (axis param)', () => {

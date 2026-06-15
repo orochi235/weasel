@@ -80,7 +80,7 @@ function distributeSelection(
 }
 
 // ---------------------------------------------------------------------------
-// Static descriptors (Phase 4+)
+// Static descriptors
 // ---------------------------------------------------------------------------
 
 function makeDistributeAction(axis: DistributeAxis): Action {
@@ -104,8 +104,8 @@ function makeDistributeAction(axis: DistributeAxis): Action {
   };
 }
 
-/** @experimental Static descriptor for distribute-horizontal (Phase 4+). */
+/** @experimental Static descriptor for distribute-horizontal. */
 export const distributeHorizontalAction = makeDistributeAction('x');
-/** @experimental Static descriptor for distribute-vertical (Phase 4+). */
+/** @experimental Static descriptor for distribute-vertical. */
 export const distributeVerticalAction   = makeDistributeAction('y');
 

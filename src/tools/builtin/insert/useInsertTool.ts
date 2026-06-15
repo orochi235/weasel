@@ -22,7 +22,7 @@ const PRESENTATION = {
   group: 'shape',
 };
 
-/** Drag-to-insert Tool. Phase 14e Task 3.5: the legacy `useInsert` hook is
+/** Drag-to-insert Tool. The legacy `useInsert` hook is
  *  no longer consumed here — the gesture is owned end-to-end by the
  *  dispatcher's `insertAction` (see `src/interactions/actions/defaults/insert.ts`),
  *  which requires the `insert` dep. `SceneCanvas` registers that dep via

@@ -9,7 +9,7 @@
  *
  * ## Design notes
  * The dispatcher merges wheel event data (deltaX, deltaY, clientX, clientY)
- * into params at dispatch time (option (a) from Phase 8.5 design). The invoker
+ * into params at dispatch time. The invoker
  * reads them from the params bag.
  *
  * Pan delta is divided by view.scale so that one screen-pixel scroll equals

@@ -1,5 +1,5 @@
 /**
- * Phase 14b — integration tests for lassoSelectAction via the gesture dispatcher.
+ * Integration tests for lassoSelectAction via the gesture dispatcher.
  *
  * Proves:
  *   - pointerdown → match drag binding → start (lassoSelectAction)

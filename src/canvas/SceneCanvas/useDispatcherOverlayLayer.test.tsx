@@ -1,5 +1,5 @@
 /**
- * Tests for `useDispatcherOverlayLayer` — Phase 14e.2.5 dispatcher-side
+ * Tests for `useDispatcherOverlayLayer` — the dispatcher-side
  * chrome surface. When a dispatcher's in-flight `OngoingHandle` exposes
  * `overlay()` returning `{ kind: 'marquee', ... }` or `{ kind: 'lasso', ... }`,
  * the layer paints the matching shape. Removing the handle removes the paint.

@@ -21,8 +21,8 @@ function toChromeState(data: unknown): ChromeState {
 }
 
 export interface UseRotateToolOptions<TNode extends { id: string }, _TPose> {
-  /** Legacy `useRotate` options surface. Ignored after Phase 14e Task 3 —
-   *  rotation now flows through `rotateAction`, whose option surface is
+  /** Legacy `useRotate` options surface. Ignored now —
+   *  rotation flows through `rotateAction`, whose option surface is
    *  configured at the action-registration level. Kept on the type for
    *  backwards-compat with consumers (notably `SceneCanvas`'s
    *  `rotateOptions`) that still pass a value. */
@@ -52,7 +52,7 @@ export interface UseRotateToolOptions<TNode extends { id: string }, _TPose> {
  *  `useSelectTool.bindings` keyed on the `rotate-handle` affordance hit
  *  kind) → dispatcher → preview surface → scene commit.
  *
- *  Phase 14e Task 3: legacy `useRotate` hook removed — the affordance no
+ *  The legacy `useRotate` hook is removed — the affordance no
  *  longer wraps each region's drag channel; the unwrapped affordance is
  *  used purely for the paint + hit-test surface. The dispatcher's
  *  `affordanceAt` pipeline produces `rotate-handle` hits independently

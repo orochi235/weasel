@@ -2,7 +2,7 @@
  * Per-tool integration smoke tests for `<SceneCanvas>`.
  *
  * These tests catch end-to-end regressions where a tool's dispatch path is
- * silently broken — the kind of bug that Phase 14c.1 + Phase 14a's insert-dep
+ * silently broken — the kind of bug that the insert-dep
  * gap caused: shape-tool drags doing nothing in real demos because tests only
  * exercised callback-level behavior.
  *
@@ -452,7 +452,7 @@ describe('useHandTool smoke', () => {
 // commits a node via insertAction → adapter.applyOps.
 //
 // Line / polygon / star / pencil currently receive AABB bounds from the
-// insertAction invoker (richer geometry capture is Phase 14c.3). The
+// insertAction invoker (richer geometry capture is handled separately). The
 // assertions below reflect the stub output (a rect-shaped node), not the
 // future shape.
 // ---------------------------------------------------------------------------
@@ -658,13 +658,13 @@ describe('usePencilTool smoke', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Phase 14c.3: per-kind geometry assertions
+// Per-kind geometry assertions
 //
 // Each test asserts the inserted node carries the tool's TRUE per-kind
 // geometry — proving the AABB inscription stubs are gone.
 // ---------------------------------------------------------------------------
 
-describe('Phase 14c.3 — insert geometry uses tool params, not AABB', () => {
+describe('insert geometry uses tool params, not AABB', () => {
   it('line tool: inserted node uses actual drag endpoints (not AABB diagonal)', () => {
     const scene = emptyScene();
     const { container } = render(

@@ -1,5 +1,5 @@
 /**
- * SceneCanvas + useSelectTool integration — Phase 13 drag-route migration.
+ * SceneCanvas + useSelectTool integration — drag-route migration.
  *
  * Verifies that the four drag gestures (move, resize, rotate, area-select)
  * fire the correct action descriptor when `<SceneCanvas>` is fully mounted
@@ -121,7 +121,7 @@ const FORCE_ENABLED: { enabled: () => true | ActionDisabledReason } = { enabled:
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => {
+describe('integration: SceneCanvas + useSelectTool drag routes', () => {
 
   // --------------------------------------------------------------------------
   // Thread 1 + Thread 3 smoke: affordanceAt + classifyTarget wiring
@@ -129,7 +129,7 @@ describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => 
 
   it('affordanceAt returns a handle hit near a corner of the selected node', () => {
     // Verify the affordanceAt thunk fires and resizeAction commits.
-    // Phase 14e Task 4: with `useResizeTool` deleted, resize flows entirely
+    // With `useResizeTool` deleted, resize flows entirely
     // through the dispatcher-side `resizeAction`, which gates on
     // `SelectionRequired` by default — override to bypass the static
     // placeholder gate. resizeAction commits on `onEnd` via `scene.batch`.
@@ -309,7 +309,7 @@ describe('Phase 13 integration: SceneCanvas + useSelectTool drag routes', () => 
   // --------------------------------------------------------------------------
 
   // --------------------------------------------------------------------------
-  // Phase 14a: clearSelection via click binding
+  // clearSelection via click binding
   // --------------------------------------------------------------------------
 
   it('click on empty (no mods) clears selection via clearSelectionAction binding', () => {

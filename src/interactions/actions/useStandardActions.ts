@@ -4,9 +4,8 @@
  * nearest `<ActionsProvider>` and publish dep sources into the nearest
  * `<DepRegistryProvider>`.
  *
- * Phase 4 rewrite: instead of calling closure-style factories, this hook
- * registers each dep as a live source and each kit-standard descriptor with a
- * legacy run-bridge for pre-Phase-10 `useKeybinding` compatibility.
+ * Instead of calling closure-style factories, this hook registers each dep as
+ * a live source and each kit-standard descriptor's `invoker` directly.
  *
  * Falls back silently to a no-op when no `<ActionsProvider>` or
  * `<DepRegistryProvider>` is in scope.
@@ -216,7 +215,7 @@ export function useStandardActions(opts: UseStandardActionsOptions): void {
 
   useEffect(() => {
     if (!reg || !depReg) return;
-    // Phase 14e Task 7: `withLegacyRunBridge` is gone. Kit-standard descriptors
+    // `withLegacyRunBridge` is gone. Kit-standard descriptors
     // register their `invoker` directly. `registry.trigger(id)` reads from the
     // dep registry to build deps when calling `invoker.run` (so ActionBar /
     // palette callers still work without a per-action `run` thunk).

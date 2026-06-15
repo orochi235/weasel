@@ -40,7 +40,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
    * Optional dispatcher — when present, the layer additionally walks
    * `dispatcher.getInFlightHandles()` so dispatcher-path ongoing actions
    * can expose their preview state. Tool-side previews take priority
-   * (preserves backwards-compat while actions are migrated). Phase 14e.
+   * (preserves backwards-compat while actions are migrated).
    */
   dispatcher?: Dispatcher | null;
 }): RenderLayer<unknown> {
@@ -88,7 +88,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         sources.push(source);
       };
       // Tool-side sources first — they take priority during the
-      // dispatcher-side preview migration (Phase 14e).
+      // dispatcher-side preview migration.
       if (t.hotkeyEngaged) push(t.registry[t.hotkeyEngaged]);
       push(t.registry[t.active]);
       for (const tool of Object.values(t.registry)) push(tool);
@@ -113,7 +113,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // the first non-null match. Priority order:
       //   tool: hotkey > active > registry > ambient
       //   then: dispatcher in-flight handles (in insertion order)
-      // This preserves tool-side wins during the Phase 14e migration; once
+      // This preserves tool-side wins during the migration; once
       // an action has been moved off its legacy hook, its handle will be
       // the only source emitting a pose for the gesture's ids.
       const previewPoseFor = (id: string): TPose | null => {

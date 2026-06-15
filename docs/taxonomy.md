@@ -212,7 +212,7 @@ A user-intent operation that modifies app state. Identified by `{ id, label,
 defaultBinding?, invoker?, run?(), enabled?() }`. Discoverable via the Actions Registry +
 command palette; bindable to a key, mouse gesture, button click, or any other
 [Gesture](#gesture). Actions with a `defaultBinding` are routed through the gesture
-dispatcher (Phase 3+, 2026-05); actions without one fall back to the legacy
+dispatcher; actions without one fall back to the legacy
 `useKeybinding` path.
 
 Actions are the *application layer* of state change — the verbs the user can
@@ -223,11 +223,10 @@ invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
 and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
 under `src/interactions/actions/`. All default actions are registered as descriptors
-with `defaultBinding` and dispatched through the action registry (registry
-unification Phases 1–9, 2026-05). The remaining gap: drag-based action descriptors
+with `defaultBinding` and dispatched through the action registry. The remaining gap: drag-based action descriptors
 (`resize`, `rotate`, `areaSelect`, `insert`, `clone`) have stub invokers — their
 real behavior still flows through `useResize`, `useRotate`, etc. via `useSelectTool`'s
-route tables; full invoker implementations are tracked in `docs/TODO.md` as Phase 11.
+route tables; full invoker implementations are tracked in `docs/TODO.md`.
 
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
@@ -597,7 +596,7 @@ sizes but world-space for object positions. See
 kit-level affordance factories (`createCornerResizeAffordance`,
 `createRotationAffordance`) that render the same chrome via reusable primitives;
 `createSelectionOverlayLayer` still exists as the legacy presentational helper.
-The two coexist until Phase 5 cleanup completes.
+The two coexist until the cleanup completes.
 
 ---
 

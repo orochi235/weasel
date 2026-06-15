@@ -1,10 +1,10 @@
 /**
  * `enterTextEditAction` — immediate Action descriptor for entering in-place
- * text editing on a selected text node (Phase 14c.3).
+ * text editing on a selected text node.
  *
  * ## Status: REAL
  *
- * Fires via `useTextTool.bindings` (Phase 14e) when the user clicks on a
+ * Fires via `useTextTool.bindings` when the user clicks on a
  * selected text node. Calls `deps.textEdit.startEdit(id)` to activate the
  * contenteditable overlay managed by `useTextEdit` / `useSceneTextEdit`.
  *
@@ -24,7 +24,7 @@
  *
  * ## Self-guard: only act on text nodes
  *
- * Phase 14a's `classifyTarget` yields `'selected-body'` for any selected node
+ * The `classifyTarget` thunk yields `'selected-body'` for any selected node
  * kind — there's no per-kind filter yet (that's a Phase 14e follow-up). To
  * avoid entering text-edit mode when the text tool happens to have a non-text
  * node selected, the action self-guards via an optional `isTextNode` predicate
@@ -42,7 +42,7 @@
  * at dispatch time, making the `isTextNode` guard redundant. The action can
  * then drop `isTextNode` from `TextEditDep`.
  *
- * ## Migration plan for useTextTool (Phase 14e)
+ * ## Migration plan for useTextTool
  *
  * When wiring `useTextTool` to `Tool.bindings`:
  *

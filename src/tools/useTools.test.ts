@@ -171,7 +171,7 @@ describe('ToolsApi.getActiveOverlays', () => {
   });
 });
 
-describe('useTools (Phase 5: context-backed)', () => {
+describe('useTools (context-backed)', () => {
   it('throws when no ActiveToolContextProvider is in scope', () => {
     const rect = defineTool({ id: 'rect', initial: {} });
     expect(() =>

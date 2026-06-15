@@ -323,7 +323,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   // begin() can delegate to beginUiOngoing.
   const dispatcherRef = useRef<Dispatcher | null>(null);
 
-  // Phase 14e Task 7: the legacy keystroke loop that walked every action's
+  // The legacy keystroke loop that walked every action's
   // `defaultBinding: KeyBinding` and matched against keydown is gone. All
   // kit-standard descriptors now route through the gesture dispatcher via
   // `defaultBinding`. Consumer-facing hooks (`useEscape`, `useDelete`, ...)

@@ -1,5 +1,5 @@
 /**
- * Dispatcher overlay render layer for `<SceneCanvas>` — Phase 14e.2.5.
+ * Dispatcher overlay render layer for `<SceneCanvas>`.
  *
  * Walks the dispatcher's in-flight `OngoingHandle`s, calls each handle's
  * optional `overlay()` method, and paints the returned shape as chrome.
@@ -11,7 +11,7 @@
  * and any future overlay-only chrome an action wants to render.
  *
  * Replaces the per-tool `select-overlay` rendering for the same gestures
- * once the dispatcher path is the sole driver (Phase 14e Task 3). Until
+ * once the dispatcher path is the sole driver. Until
  * then both run side-by-side; the visuals overlap exactly so the
  * user-visible result is identical.
  */

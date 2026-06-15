@@ -1,8 +1,8 @@
 /** Option surface for the `lasso-select` action.
  *
  *  Lives in a sibling file (not `lassoSelect.ts`) so the type contract stays
- *  stable even after the legacy `useLassoSelect` hook is deleted in Phase 14e
- *  Task 4. Consumers should import from here directly; `lassoSelect.ts`
+ *  stable even after the legacy `useLassoSelect` hook is gone.
+ *  Consumers should import from here directly; `lassoSelect.ts`
  *  re-exports the same symbol for back-compat. */
 
 import type { LassoSelectBehavior } from '../../gestures/types';

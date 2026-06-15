@@ -8,7 +8,7 @@ import { defineTool } from './routing/defineTool';
 import { begin, claim } from './routing/result';
 import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
 
-describe('Phase 1 integration: define → use → key → canvas', () => {
+describe('integration: define → use → key → canvas', () => {
   it('keybinding switches active tool, drag routes through new tool', () => {
     const selectDrag = vi.fn();
     const penDrag    = vi.fn();
