@@ -39,8 +39,15 @@ import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
-import type { NodeAtPointDep } from '../depSchema';
+import type { NodeAtPointDep, LayoutDep } from '../depSchema';
+import type {
+  LayoutStrategy,
+  LayoutContainer,
+  LayoutChild,
+  DropTarget as LayoutDropTarget,
+} from '../../../layout/types';
 import { type PoseProjection } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import type { ResizePolicy } from '../depSchema';
@@ -74,6 +81,128 @@ function translatePoseGeneric(
   return (fn as (p: unknown, dx: number, dy: number) => unknown)(pose, dx, dy);
 }
 
+/** Drag-time layout pass. Walks containers for the deepest/topmost layout
+ *  candidate under the dragged center, runs the strategy's snap, and folds
+ *  destination + source reflow poses into `scratch.previews` (so they render
+ *  as ghosts) and `scratch.reflowIds`. Sets `scratch.layoutPass` when a
+ *  container accepts. Single-select only — caller guards on `ids.length === 1`. */
+function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
+  const layoutDep = scratch.layout;
+  if (!layoutDep || !moveCtx.drag) return;
+  const scene = scratch.scene;
+  const draggedId = scratch.ids[0];
+  const draggedPose = scratch.previews.get(draggedId);
+  if (draggedPose === undefined) return;
+  const sourceContainerId = scene.get(draggedId)?.parent ?? null;
+  const dr = draggedPose as { x: number; y: number; width?: number; height?: number };
+  const draggedCenter = { x: dr.x + (dr.width ?? 0) / 2, y: dr.y + (dr.height ?? 0) / 2 };
+
+  type Layout = LayoutStrategy<unknown>;
+  interface Candidate {
+    id: NodeId;
+    bounds: { x: number; y: number; width: number; height: number };
+    layout: Layout;
+    zPath: number[];
+    depth: number;
+  }
+  const candidates: Candidate[] = [];
+  const testInside = (cPose: unknown, layout: Layout): boolean => {
+    if (layout.contains) return layout.contains(cPose, draggedCenter);
+    const b = cPose as { x: number; y: number; width: number; height: number };
+    return draggedCenter.x >= b.x && draggedCenter.x < b.x + b.width
+      && draggedCenter.y >= b.y && draggedCenter.y < b.y + b.height;
+  };
+  const consider = (id: NodeId, zPath: number[]): void => {
+    if (id === draggedId) return;
+    const layout = layoutDep.getLayout(id as string);
+    if (!layout) return;
+    const node = scene.get(id);
+    if (!node) return;
+    if (!testInside(node.pose, layout)) return;
+    candidates.push({
+      id,
+      bounds: node.pose as { x: number; y: number; width: number; height: number },
+      layout,
+      zPath,
+      depth: zPath.length,
+    });
+  };
+  const walk = (parentId: NodeId | null, parentPath: number[]): void => {
+    const childIds = parentId === null ? scene.roots : scene.childrenOf(parentId);
+    for (let i = 0; i < childIds.length; i++) {
+      const childPath = [...parentPath, i];
+      consider(childIds[i], childPath);
+      walk(childIds[i], childPath);
+    }
+  };
+  walk(null, []);
+
+  // Deepest wins; sibling-index path breaks ties (higher z = later index).
+  let dest: Candidate | null = null;
+  for (const c of candidates) {
+    if (dest === null) { dest = c; continue; }
+    if (c.depth > dest.depth) { dest = c; continue; }
+    if (c.depth < dest.depth) continue;
+    let cAfter = false;
+    for (let i = 0; i < c.zPath.length; i++) {
+      if (c.zPath[i] > dest.zPath[i]) { cAfter = true; break; }
+      if (c.zPath[i] < dest.zPath[i]) { cAfter = false; break; }
+    }
+    if (cAfter) dest = c;
+  }
+  if (!dest) return;
+
+  const layout = dest.layout;
+  const container: LayoutContainer = { id: dest.id as string, bounds: dest.bounds };
+  const children: LayoutChild<unknown>[] = scene.childrenOf(dest.id)
+    .filter((cid) => cid !== draggedId || sourceContainerId === (dest!.id as string))
+    .map((cid) => ({ id: cid as string, pose: scene.get(cid)!.pose }));
+  const draggedArg = {
+    id: draggedId as string,
+    originPose: scratch.startPoses.get(draggedId)!,
+    pose: draggedPose,
+    sourceContainerId,
+  };
+  const targets = layout.getDropTargets(container, children, draggedArg);
+  const target = layout.snap.pickTarget(targets, { x: moveCtx.drag.current.x, y: moveCtx.drag.current.y });
+  if (!target) return; // not accepted
+
+  // Destination reflow → fold into previews (skip the dragged id itself).
+  for (const [cid, pose] of layout.reflowPoses(container, children, draggedArg, target)) {
+    if (asNodeId(cid) === draggedId) continue;
+    scratch.previews.set(asNodeId(cid), pose);
+    scratch.reflowIds.add(asNodeId(cid));
+  }
+
+  // Source reflow (cross-container) → fold changed leftovers into previews.
+  const sourceReflow = new Map<string, unknown>();
+  if (sourceContainerId && sourceContainerId !== (dest.id as string)) {
+    const srcLayout = layoutDep.getLayout(sourceContainerId);
+    const srcNode = scene.get(asNodeId(sourceContainerId));
+    if (srcLayout && srcNode) {
+      const srcContainer: LayoutContainer = {
+        id: sourceContainerId,
+        bounds: srcNode.pose as { x: number; y: number; width: number; height: number },
+      };
+      const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(sourceContainerId))
+        .filter((cid) => cid !== draggedId)
+        .map((cid) => ({ id: cid as string, pose: scene.get(cid)!.pose }));
+      for (const [cid, pose] of srcLayout.childPoses(srcContainer, srcChildren)) {
+        const cur = scene.get(asNodeId(cid))!.pose as Record<string, unknown>;
+        const next = pose as Record<string, unknown>;
+        const same = cur.x === next.x && cur.y === next.y
+          && cur.width === next.width && cur.height === next.height;
+        if (same) continue;
+        sourceReflow.set(cid, pose);
+        scratch.previews.set(asNodeId(cid), pose);
+        scratch.reflowIds.add(asNodeId(cid));
+      }
+    }
+  }
+
+  scratch.layoutPass = { layout, container, children, target, sourceReflow };
+}
+
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
  *  default) preserves the legacy translate-only commit. `'top'` lands the
  *  moved node at the top of the container under the cursor. `'above'`
@@ -97,6 +226,17 @@ function scenePoseAdapter(
 // ---------------------------------------------------------------------------
 // Internal scratch
 // ---------------------------------------------------------------------------
+
+/** Resolved layout drop for the latest onMove frame. Only set when a layout
+ *  container accepted the drag (non-null snap target), single-select. */
+interface LayoutPass {
+  layout: LayoutStrategy<unknown>;
+  container: LayoutContainer;
+  children: LayoutChild<unknown>[];
+  target: LayoutDropTarget<unknown>;
+  /** Source-container leftovers that actually moved (id → new pose). */
+  sourceReflow: Map<string, unknown>;
+}
 
 interface MoveScratch {
   /** Origin poses captured at drag start. Key is NodeId. Includes both
@@ -129,6 +269,14 @@ interface MoveScratch {
   gestureCtx: GestureContext<unknown>;
   /** Scene-backed adapter the committed behavior ops apply through. */
   adapter: MoveGestureAdapter<unknown>;
+  /** Layout dep captured at start; undefined when not registered. */
+  layout: LayoutDep | undefined;
+  /** Ids folded into `previews` solely for sibling reflow (dest + source).
+   *  Recomputed each onMove frame; tracked apart from roots/cascade so the
+   *  commit path doesn't treat them as moved roots. */
+  reflowIds: Set<NodeId>;
+  /** Latest resolved layout pass, or null when no container accepted. */
+  layoutPass: LayoutPass | null;
 }
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -283,6 +431,7 @@ export const moveAction: Action & { requires: string[] } = {
       // falling back to the rect-pose `{x, y, width, height}` default.
       const policy = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
       const projection = policy?.projection;
+      const layout = ctx.deps.layout as LayoutDep | undefined;
 
       if (!selection || !scene) return {};
 
@@ -344,6 +493,9 @@ export const moveAction: Action & { requires: string[] } = {
         behaviors,
         gestureCtx,
         adapter,
+        layout,
+        reflowIds: new Set<NodeId>(),
+        layoutPass: null,
       };
 
       return {
@@ -391,6 +543,11 @@ export const moveAction: Action & { requires: string[] } = {
           for (const [id, ori] of scratch.startPoses) {
             scratch.previews.set(id, translatePoseGeneric(ori, dx, dy, scratch.projection));
           }
+
+          // Layout reflow pass — single-select only; no-op without a layout dep.
+          scratch.reflowIds.clear();
+          scratch.layoutPass = null;
+          if (scratch.ids.length === 1) runLayoutPass(scratch, moveCtx);
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
           if (reason === 'cancel') {
