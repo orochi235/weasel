@@ -231,6 +231,16 @@ export interface ResizePolicy<TPose> {
   projection: PoseProjection<TPose>;
 }
 
+/**
+ * Layout-strategy lookup by container id, consumed by `moveAction` to run
+ * the drag-time reflow pass. Sourced by `<SceneCanvas>` from its `layouts`
+ * prop. Optional: `getLayout` returns null for any container when no layout
+ * is configured, so the reflow pass is a no-op then.
+ */
+export interface LayoutDep {
+  getLayout(containerId: string): import('../../layout/types').LayoutStrategy<unknown> | null;
+}
+
 declare module './depRegistry' {
   interface DepSchema {
     /** Kit selection state — ids of currently selected nodes. */
@@ -335,6 +345,11 @@ declare module './depRegistry' {
      * dispatcher instance it already owns.
      */
     dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };
+    /**
+     * Layout-strategy lookup. Sourced by `<SceneCanvas>` from `layouts`.
+     * Optional: absent (or all-null) → `moveAction` skips reflow.
+     */
+    layout?: LayoutDep;
   }
 }
 

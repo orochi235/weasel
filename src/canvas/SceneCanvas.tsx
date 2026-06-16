@@ -74,6 +74,7 @@ import {
   useEditAnchorsDepSource,
   useDispatcherDepSource,
   useResizePolicy,
+  useLayoutDepSource,
 } from './deps';
 import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
@@ -1595,6 +1596,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             viewportZoomEnabled={viewport?.zoom !== false}
             viewportRecenter={viewport?.recenter}
             editAnchorsExternalState={editAnchorsExternalState}
+            layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
@@ -1912,6 +1914,7 @@ function StandardActionsRegistrar({
   viewportZoomEnabled,
   viewportRecenter,
   editAnchorsExternalState,
+  layouts,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -1946,6 +1949,9 @@ function StandardActionsRegistrar({
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('./deps/editAnchors').EditAnchorsStateRef;
+  /** Forwarded from `SceneCanvasProps` so the `layout` dep source can wire
+   *  the per-container layout strategy lookup consumed by `moveAction`. */
+  layouts?: SceneCanvasProps<unknown, string, unknown>['layouts'];
 }) {
   const registry = useActionsRegistry();
 
@@ -1988,6 +1994,7 @@ function StandardActionsRegistrar({
   // dep's contract and trade-offs.
   useAreaSelectDepSource(scene, selection);
   useNodeAtPointDepSource(pickEvery);
+  useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);

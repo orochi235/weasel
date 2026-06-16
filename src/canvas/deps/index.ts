@@ -16,3 +16,4 @@ export {
   useResizePolicy,
   type UseResizePolicyOptions,
 } from './resizePolicy';
+export { useLayoutDepSource } from './layout';
