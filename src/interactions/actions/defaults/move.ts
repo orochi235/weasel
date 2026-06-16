@@ -40,6 +40,8 @@ import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
+import { createTransformOp } from 'core/ops/transform';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeAtPointDep, LayoutDep } from '../depSchema';
 import type {
@@ -84,7 +86,7 @@ function translatePoseGeneric(
 /** Drag-time layout pass. Walks containers for the deepest/topmost layout
  *  candidate under the dragged center, runs the strategy's snap, and folds
  *  destination + source reflow poses into `scratch.previews` (so they render
- *  as ghosts) and `scratch.reflowIds`. Sets `scratch.layoutPass` when a
+ *  as ghosts). Sets `scratch.layoutPass` when a
  *  container accepts. Single-select only — caller guards on `ids.length === 1`. */
 function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   const layoutDep = scratch.layout;
@@ -171,7 +173,6 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   for (const [cid, pose] of layout.reflowPoses(container, children, draggedArg, target)) {
     if (asNodeId(cid) === draggedId) continue;
     scratch.previews.set(asNodeId(cid), pose);
-    scratch.reflowIds.add(asNodeId(cid));
   }
 
   // Source reflow (cross-container) → fold changed leftovers into previews.
@@ -195,7 +196,6 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
         if (same) continue;
         sourceReflow.set(cid, pose);
         scratch.previews.set(asNodeId(cid), pose);
-        scratch.reflowIds.add(asNodeId(cid));
       }
     }
   }
@@ -271,10 +271,6 @@ interface MoveScratch {
   adapter: MoveGestureAdapter<unknown>;
   /** Layout dep captured at start; undefined when not registered. */
   layout: LayoutDep | undefined;
-  /** Ids folded into `previews` solely for sibling reflow (dest + source).
-   *  Recomputed each onMove frame; tracked apart from roots/cascade so the
-   *  commit path doesn't treat them as moved roots. */
-  reflowIds: Set<NodeId>;
   /** Latest resolved layout pass, or null when no container accepted. */
   layoutPass: LayoutPass | null;
 }
@@ -494,7 +490,6 @@ export const moveAction: Action & { requires: string[] } = {
         gestureCtx,
         adapter,
         layout,
-        reflowIds: new Set<NodeId>(),
         layoutPass: null,
       };
 
@@ -545,7 +540,6 @@ export const moveAction: Action & { requires: string[] } = {
           }
 
           // Layout reflow pass — single-select only; no-op without a layout dep.
-          scratch.reflowIds.clear();
           scratch.layoutPass = null;
           if (scratch.ids.length === 1) runLayoutPass(scratch, moveCtx);
         },
@@ -585,6 +579,35 @@ export const moveAction: Action & { requires: string[] } = {
 
           // No-op if no movement (sub-threshold drag or zero delta).
           if (dx === 0 && dy === 0) {
+            scratch.previews.clear();
+            return;
+          }
+
+          // Layout drop commit — takes precedence over reparent-on-drop when a
+          // layout container accepted the drag this gesture (single-select).
+          if (scratch.layout && scratch.ids.length === 1 && scratch.layoutPass) {
+            const lp = scratch.layoutPass;
+            const draggedId = scratch.ids[0];
+            const draggedArg = {
+              id: draggedId as string,
+              originPose: scratch.startPoses.get(draggedId)!,
+              pose: scratch.previews.get(draggedId) ?? scratch.startPoses.get(draggedId)!,
+              sourceContainerId: scratch.scene.get(draggedId)?.parent ?? null,
+            };
+            const dropOps = lp.layout.commitDrop(lp.container, lp.children, draggedArg, lp.target);
+            const reflowOps: Op[] = [];
+            for (const [cid, pose] of lp.sourceReflow) {
+              reflowOps.push(createTransformOp<unknown>({
+                id: cid,
+                from: scratch.scene.get(asNodeId(cid))!.pose,
+                to: pose,
+                label: 'Source reflow',
+              }));
+            }
+            const ops = [...dropOps, ...reflowOps];
+            if (ops.length > 0) {
+              scratch.scene.applyBatch(ops, ops[0].label ?? 'Move', scratch.adapter);
+            }
             scratch.previews.clear();
             return;
           }
