@@ -1,6 +1,6 @@
 // React hook that bridges the WeaselDraw scene to the IDB store.
 //
-// On mount: pull the snapshot, replace itemsRef/groupsRef, publish to React,
+// On mount: pull the snapshot, replace itemsRef, publish to React,
 //   then mark `restored: true` so the caller can bump nextId past the loaded
 //   ids.
 // While mounted: any render after restore schedules a debounced write
@@ -9,7 +9,6 @@
 // On unmount: fire-and-forget any pending write so the last edit survives.
 
 import { useEffect, useRef, useState, type MutableRefObject } from 'react';
-import type { Group } from '@weasel-js/core';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Obj } from './poseUpdate';
 import {
@@ -24,9 +23,7 @@ const DEBOUNCE_MS = 300;
 
 export interface UsePersistedSceneArgs {
   itemsRef: MutableRefObject<Obj[]>;
-  groupsRef: MutableRefObject<Group[]>;
   setItems: (next: Obj[]) => void;
-  setGroups: (next: Group[]) => void;
   doc: Document;
   setDoc: (next: Document) => void;
   view: View;
@@ -52,7 +49,7 @@ export interface UsePersistedSceneArgs {
 
 export function usePersistedScene(args: UsePersistedSceneArgs): { restored: boolean } {
   const {
-    itemsRef, groupsRef,
+    itemsRef,
     doc, setDoc, view, setView,
     publish, resetHistory,
     getSelection, setSelection,
@@ -92,7 +89,6 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
       if (cancelled) return;
       if (snap && snap.version === 1) {
         itemsRef.current = snap.items;
-        groupsRef.current = snap.groups;
         // publish() resyncs React state from the refs; setDoc/setView push
         // the non-ref fields; resetHistory wipes any history captured against
         // the (empty) pre-restore state. Selection lands last — it references
@@ -141,7 +137,6 @@ export function usePersistedScene(args: UsePersistedSceneArgs): { restored: bool
     const snap: SceneSnapshot = {
       version: 1,
       items: itemsRef.current.slice(),
-      groups: groupsRef.current.slice(),
       doc: docRef.current,
       view: viewRef.current,
       selection: getSelectionRef.current(),

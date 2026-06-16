@@ -8,7 +8,6 @@
 // The store holds a single record under the well-known key `'current'`. We
 // never grow the keyspace today; future "recent files" would justify a v2.
 
-import type { Group } from '@weasel-js/core';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Obj } from './poseUpdate';
 
@@ -28,7 +27,6 @@ export interface View {
 export interface SceneSnapshot {
   version: 1;
   items: Obj[];
-  groups: Group[];
   doc: Document;
   view: View;
   /** Optional — older snapshots predate selection persistence and load with
@@ -98,8 +96,11 @@ export async function loadScene(): Promise<SceneSnapshot | null> {
       if (raw == null || typeof raw !== 'object') return null;
       const snap = raw as Partial<SceneSnapshot>;
       if (snap.version !== 1) return null;
-      if (!Array.isArray(snap.items) || !Array.isArray(snap.groups)) return null;
+      if (!Array.isArray(snap.items)) return null;
       if (!snap.doc || !snap.view) return null;
+      // Legacy snapshots may still carry a `groups` array (membership groups
+      // are gone — grouping now lives in the scene tree as container nodes).
+      // We don't validate or read it; it's simply ignored on load.
       // Migrate legacy `view.scale: number` snapshots to the per-axis shape.
       const v = snap.view as unknown as { x: number; y: number; scale: number | { x: number; y: number } };
       if (typeof v.scale === 'number') {

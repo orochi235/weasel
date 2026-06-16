@@ -218,7 +218,6 @@ const sampleSnapshot = (): SceneSnapshot => ({
       strokeWidth: 1,
     },
   ],
-  groups: [],
   doc: { size: { width: 816, height: 1056 } },
   view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
 });
@@ -262,7 +261,7 @@ describe('sceneStore', () => {
     // Sneak a bad record directly into the store, bypassing saveScene's typing.
     const db = await openDb();
     const tx = db.transaction(STORE_NAME, 'readwrite');
-    tx.objectStore(STORE_NAME).put({ version: 99, items: [], groups: [], doc: {}, view: {} } as never, SCENE_KEY);
+    tx.objectStore(STORE_NAME).put({ version: 99, items: [], doc: {}, view: {} } as never, SCENE_KEY);
     await new Promise<void>((resolve) => { tx.oncomplete = () => resolve(); });
     db.close();
     const out = await loadScene();

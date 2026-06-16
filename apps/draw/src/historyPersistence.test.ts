@@ -211,7 +211,6 @@ describe('scene + history persistence', () => {
         // survives alongside history.
         { id: 'a', tool: 'rect', x: 20, y: 20, width: 1, height: 1 } as never,
       ],
-      groups: [],
       doc: { size: { width: 100, height: 100 } },
       view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
       selection: [],
@@ -252,7 +251,6 @@ describe('scene + history persistence', () => {
     const snap: SceneSnapshot = {
       version: 1,
       items: [],
-      groups: [],
       doc: { size: { width: 100, height: 100 } },
       view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     };
@@ -277,7 +275,6 @@ describe('scene + history persistence', () => {
     await saveScene({
       version: 1,
       items: [],
-      groups: [],
       doc: { size: { width: 100, height: 100 } },
       view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
       history: historyA.serialize(),
