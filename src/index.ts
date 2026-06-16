@@ -572,7 +572,6 @@ export type {
   BehaviorResult,
   GroupTransform,
   MoveBehavior,
-  MoveOverlay,
   ResizeAnchor,
   ResizePose,
   ResizeProposed,
