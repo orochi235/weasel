@@ -1,13 +1,12 @@
 /**
  * Kit-native SVG export for the WeaselDraw scene.
  *
- * Walks `scene.renderOrder()` (back-to-front), translates each leaf node's
- * stored `data.path` to its pose origin, and emits the appropriate
- * `SvgNode`. Text leaves emit `SvgTextNode`; everything else emits
- * `SvgPathNode`. Container nodes are flattened — children are emitted at
- * the root for v1. (Group serialization is a follow-up; the existing
- * `objsToSvgNodes` pipeline could be revived once the scene tracks
- * `Group` records, but the current scene shape doesn't.)
+ * Walks the scene's container tree (`scene.roots` + `scene.childrenOf`) via
+ * `sceneToSvgNodes`: every `kind:'container'` node becomes an `SvgGroupNode`
+ * (recursing) stamped with `meta.wd.attrs['group-id']` = its scene id, so the
+ * structure round-trips back through `svgNodesToSceneDrafts` on import. Every
+ * leaf is lowered to an `Obj` (pose baked into its `path`) and handed to
+ * `objToSvgNode`.
  *
  * Pose rotation rides on `SvgPathNode.rotation` / `SvgTextNode.rotation`
  * so the serializer emits a `transform="rotate(... cx cy)"`. The path
@@ -29,11 +28,15 @@ import {
 import {
   serializeSvg,
   type SvgNode,
-  type SvgPathNode,
-  type SvgTextNode,
 } from '@weasel-js/svg';
 
-import { docToSerializeOptions, type WeaselDrawPaperSize } from './svgInterop';
+import {
+  docToSerializeOptions,
+  sceneToSvgNodes,
+  type SceneSource,
+  type WeaselDrawPaperSize,
+} from './svgInterop';
+import type { Obj, PathObj, TextObj } from './poseUpdate';
 
 interface WeaselDrawPose {
   x: number; y: number; width: number; height: number; rotation?: number;
@@ -67,36 +70,42 @@ function pathAtPose(path: Path, pose: WeaselDrawPose): Path {
   return (dx === 0 && dy === 0) ? path : translatePath(path, dx, dy);
 }
 
-function leafToSvgNode(data: WeaselDrawData, pose: WeaselDrawPose): SvgNode | null {
+/**
+ * Lower a leaf node's `{data, pose}` to an `Obj` for `objToSvgNode`. The
+ * pose is baked into the geometry (rect → fresh rect from pose dims;
+ * polygon → translated so its AABB origin lands at pose.x/y), and rotation
+ * rides on the `Obj` so the serializer emits a rotate transform. Returns
+ * `null` for a leaf with no drawable data.
+ */
+function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj | null {
   if (data.text != null) {
-    const node: SvgTextNode = {
-      kind: 'text',
-      x: pose.x,
-      y: pose.y,
-      width: pose.width,
-      height: pose.height,
+    const o: TextObj = {
+      id,
+      tool: 'text',
+      x: pose.x, y: pose.y, width: pose.width, height: pose.height,
       text: data.text,
     };
-    if (pose.rotation) node.rotation = pose.rotation;
-    return node;
+    if (pose.rotation) o.rotation = pose.rotation;
+    return o;
   }
   if (data.path == null) return null;
   const path = pathAtPose(data.path, pose);
-  const node: SvgPathNode = {
-    kind: 'path',
+  const o: PathObj = {
+    id,
+    tool: 'imported',
+    x: pose.x, y: pose.y, width: pose.width, height: pose.height,
     path,
-    fill: data.fill
-      ? { kind: 'solid', color: data.fill }
-      : { kind: 'none' },
+    // `objToSvgNode` emits a solid fill iff `closed`, else fill:none. The
+    // WeaselDraw leaf model has no `closed` flag — fill presence is the
+    // signal — so derive `closed` from `data.fill` to preserve the prior
+    // export's "fill when data.fill is set, else none" behavior.
+    closed: data.fill != null,
+    fill: data.fill ?? '#000000',
+    stroke: data.stroke ?? '#000000',
+    strokeWidth: data.stroke && (data.strokeWidth ?? 0) > 0 ? (data.strokeWidth ?? 1) : 0,
   };
-  if (data.stroke && (data.strokeWidth ?? 0) > 0) {
-    node.stroke = {
-      paint: { kind: 'solid', color: data.stroke },
-      width: data.strokeWidth ?? 1,
-    };
-  }
-  if (pose.rotation) node.rotation = pose.rotation;
-  return node;
+  if (pose.rotation) o.rotation = pose.rotation;
+  return o;
 }
 
 export interface SceneToSvgOptions {
@@ -133,12 +142,20 @@ export function sceneToSvgString<TLayer extends string>(
     });
   }
 
-  for (const id of scene.renderOrder()) {
-    const node = scene.get(id);
-    if (!node || node.kind !== 'leaf') continue;
-    const svgNode = leafToSvgNode(node.data, node.pose);
-    if (svgNode) nodes.push(svgNode);
-  }
+  // Walk the container tree. `objOf` lowers a leaf's stored {data, pose}
+  // to an `Obj` (pose baked into the path); `sceneToSvgNodes` stamps each
+  // container's scene id onto `wd:group-id` so groups round-trip.
+  const source: SceneSource = {
+    roots: scene.roots.map(String),
+    childrenOf: (id) => scene.childrenOf(id as never).map(String),
+    kindOf: (id) => (scene.get(id as never)?.kind === 'container' ? 'container' : 'leaf'),
+    objOf: (id) => {
+      const node = scene.get(id as never);
+      if (!node || node.kind !== 'leaf') return undefined;
+      return leafToObj(id, node.data, node.pose) ?? undefined;
+    },
+  };
+  nodes.push(...sceneToSvgNodes(source));
 
   return serializeSvg(nodes, docToSerializeOptions({
     title: opts.filename,

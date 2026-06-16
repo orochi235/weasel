@@ -82,7 +82,7 @@ import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter } from '@weasel-js/core';
 import { parseSvg } from '@weasel-js/svg';
-import { downloadSvg, pickSvgFile, svgNodesToObjsWithGroups, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
+import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
 import { dispatchDoubleClickEntry } from './modality';
@@ -798,14 +798,29 @@ function Toolbar({
             const docPatch = parsedToDoc(parsed);
             if (docPatch.paperSize) setPaperSize(docPatch.paperSize);
             let seq = 0;
-            const { items, groups } = svgNodesToObjsWithGroups(parsed.nodes, () => `svg-${++seq}`);
+            const drafts = svgNodesToSceneDrafts(parsed.nodes, () => `svg-${++seq}`);
             scene.batch('Import SVG', () => {
-              // Map ObjId (from svgInterop) → scene-graph NodeId for both
-              // leaves and containers, so groups can reference their members
-              // (including nested groups) by the same key.
+              // Drafts arrive parent-before-child, so each draft's `parentId`
+              // (when set) has already been inserted and mapped. Map the
+              // draft's stable id → minted scene NodeId so children resolve
+              // their parent.
               const idMap = new Map<string, ReturnType<typeof asNodeId>>();
-              // 1. Insert all leaves at root first.
-              for (const o of items) {
+              for (const draft of drafts) {
+                const parent = draft.parentId != null ? idMap.get(draft.parentId) : undefined;
+                if (draft.kind === 'container') {
+                  // Container pose = AABB of descendants (computed by the
+                  // importer), matching the kit `group` action's convention.
+                  const sceneId = scene.add({
+                    kind: 'container',
+                    layer: 'default',
+                    pose: draft.pose,
+                    data: {},
+                    ...(parent != null ? { parent } : {}),
+                  });
+                  idMap.set(draft.id, sceneId);
+                  continue;
+                }
+                const o = draft.obj;
                 const pose: WeaselDrawPose = { x: o.x, y: o.y, width: o.width, height: o.height };
                 if (o.rotation) pose.rotation = o.rotation;
                 const textFill = o.tool === 'text' && o.style?.fill && (o.style.fill.fill === 'solid' || o.style.fill.fill === undefined)
@@ -814,50 +829,14 @@ function Toolbar({
                 const data: WeaselDrawData = o.tool === 'text'
                   ? { text: o.text, fill: textFill ?? '#000000' }
                   : { path: o.path, fill: o.fill, stroke: o.stroke, strokeWidth: o.strokeWidth };
-                const sceneId = scene.add({ kind: 'leaf', layer: 'default', pose, data });
-                idMap.set(o.id, sceneId);
-              }
-              // 2. Topologically: process groups whose members are all already
-              // in idMap. Inner groups land first; outer groups can then
-              // reparent them by reading idMap.get(innerGroupId).
-              const remaining = new Set(groups.map((g) => g.id));
-              while (remaining.size > 0) {
-                let progressed = false;
-                for (const g of groups) {
-                  if (!remaining.has(g.id)) continue;
-                  if (!g.members.every((m) => idMap.has(m))) continue;
-                  // Container pose = AABB of members so resize handles land
-                  // sensibly when the group is selected.
-                  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                  for (const m of g.members) {
-                    const member = scene.get(idMap.get(m)!);
-                    if (!member) continue;
-                    const mp = member.pose as WeaselDrawPose;
-                    if (mp.x < minX) minX = mp.x;
-                    if (mp.y < minY) minY = mp.y;
-                    if (mp.x + mp.width > maxX) maxX = mp.x + mp.width;
-                    if (mp.y + mp.height > maxY) maxY = mp.y + mp.height;
-                  }
-                  const containerPose: WeaselDrawPose = Number.isFinite(minX)
-                    ? { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
-                    : { x: 0, y: 0, width: 0, height: 0 };
-                  const containerId = scene.add({
-                    kind: 'container',
-                    layer: 'default',
-                    pose: containerPose,
-                    data: {},
-                  });
-                  idMap.set(g.id, containerId);
-                  for (const m of g.members) {
-                    scene.move(idMap.get(m)!, containerId);
-                  }
-                  remaining.delete(g.id);
-                  progressed = true;
-                }
-                if (!progressed) {
-                  console.warn(`[svg import] ${remaining.size} group(s) unresolvable — cyclic membership?`);
-                  break;
-                }
+                const sceneId = scene.add({
+                  kind: 'leaf',
+                  layer: 'default',
+                  pose,
+                  data,
+                  ...(parent != null ? { parent } : {}),
+                });
+                idMap.set(draft.id, sceneId);
               }
             });
           })();
