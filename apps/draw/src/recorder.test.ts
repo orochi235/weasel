@@ -56,7 +56,6 @@ describe('createRecorder', () => {
     const fakeSnap = {
       version: 1 as const,
       items: [],
-      groups: [],
       doc: { size: { width: 100, height: 100 } },
       view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
     };

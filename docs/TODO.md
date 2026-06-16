@@ -234,6 +234,8 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P2) WeaselDraw persistence.** Currently in-memory only — no save/load/export.
 
+- **(P2) MultiSelectDemo leaks the `@internal` `CanvasExtensionApi`.** `demo/demos/MultiSelectDemo.tsx` imports the `@internal` `CanvasExtensionApi` type from `@weasel-js/core` to reach selection/overlay behavior — a disallowed internal-API leak. Design a real public surface (a public prop on the canonical component, a narrow consumer-facing ref interface, or a subscription on the underlying primitive's owner) and migrate the demo onto it instead of the internal import.
+
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 ### Align/distribute/flip follow-ups

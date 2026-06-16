@@ -324,27 +324,6 @@ function unionRect(a: RectBounds, b: RectBounds): RectBounds {
 }
 
 /**
- * Walk an `SvgNode[]` tree and emit a flat list of WeaselDraw objects,
- * discarding container structure. Retained for call sites that want the
- * leaves only (no scene-graph reparenting).
- */
-export function svgNodesToObjs(
-  nodes: readonly SvgNode[],
-  nextId: () => string,
-): Obj[] {
-  const out: Obj[] = [];
-  const visit = (n: SvgNode): void => {
-    if (n.kind === 'group') {
-      for (const c of n.children) visit(c);
-      return;
-    }
-    out.push(svgLeafToObj(n, nextId()));
-  };
-  for (const n of nodes) visit(n);
-  return out;
-}
-
-/**
  * Read-only view of the scene the exporter walks. Decouples
  * {@link sceneToSvgNodes} from the kit `Scene` type so it can be unit-tested
  * with a plain object and reused against any tree shape.

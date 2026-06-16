@@ -14,7 +14,6 @@ import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js
 import { parseSvg, serializeSvg } from '@weasel-js/svg';
 import {
   objToSvgNode,
-  svgNodesToObjs,
   svgNodesToSceneDrafts,
   sceneToSvgNodes,
   type SceneDraft,
@@ -40,6 +39,15 @@ interface PathObjT {
 function ids(): () => string {
   let n = 0;
   return () => `i${n++}`;
+}
+
+// Read a node tree back through the production import path and return just
+// the leaf `Obj`s (drafts' containers dropped). Lets bridge round-trip tests
+// assert on the lowered objects without the dead `svgNodesToObjs` wrapper.
+function leavesOf(nodes: readonly SvgNode[], nextId: () => string) {
+  return svgNodesToSceneDrafts(nodes, nextId)
+    .filter((d): d is Extract<SceneDraft, { kind: 'leaf' }> => d.kind === 'leaf')
+    .map((d) => d.obj);
 }
 
 describe('objToSvgNode', () => {
@@ -101,67 +109,6 @@ describe('objToSvgNode', () => {
     };
     const node = objToSvgNode(path as never) as SvgPathNode;
     expect(node.fill).toEqual({ kind: 'solid', color: '#00ff00' });
-  });
-});
-
-describe('svgNodesToObjs (group-discarding wrapper — leaves only)', () => {
-  it('lowers an SvgPathNode (rect) to a rect-tool PathObj', () => {
-    const node: SvgPathNode = {
-      kind: 'path',
-      path: { kind: 'rect', x: 1, y: 2, width: 3, height: 4 },
-      fill: { kind: 'solid', color: '#aabbcc' },
-      stroke: { paint: { kind: 'solid', color: '#112233' }, width: 1.5 },
-    };
-    const out = svgNodesToObjs([node], ids());
-    expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({
-      tool: 'rect', x: 1, y: 2, width: 3, height: 4,
-      fill: '#aabbcc', stroke: '#112233', strokeWidth: 1.5,
-    });
-  });
-
-  it('lowers an SvgTextNode to a TextObj', () => {
-    const node: SvgTextNode = {
-      kind: 'text',
-      x: 10, y: 11, width: 200, height: 30,
-      text: 'hi',
-    };
-    const out = svgNodesToObjs([node], ids());
-    expect(out[0]).toMatchObject({ tool: 'text', x: 10, y: 11, text: 'hi' });
-  });
-
-  it('downgrades a gradient fill to black solid (lossy edge)', () => {
-    const node: SvgPathNode = {
-      kind: 'path',
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      // Gradient paint shape is opaque to the bridge; cast covers it.
-      fill: { kind: 'gradient', paint: { fill: 'linear', stops: [] } as never },
-    };
-    const out = svgNodesToObjs([node as SvgNode], ids());
-    expect((out[0] as unknown as RectObjT).fill).toBe('#000000');
-  });
-
-  it('treats SvgPathNode without stroke as strokeWidth=0', () => {
-    const node: SvgPathNode = {
-      kind: 'path',
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      fill: { kind: 'solid', color: '#abcdef' },
-    };
-    const out = svgNodesToObjs([node], ids());
-    expect((out[0] as unknown as RectObjT).strokeWidth).toBe(0);
-    expect((out[0] as unknown as RectObjT).stroke).toBe('#000000');
-  });
-
-  it('flattens groups, returning only the leaf items', () => {
-    const child: SvgPathNode = {
-      kind: 'path',
-      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      fill: { kind: 'solid', color: '#abc' },
-    };
-    const g: SvgGroupNode = { kind: 'group', children: [child] };
-    const out = svgNodesToObjs([g], ids());
-    expect(out).toHaveLength(1);
-    expect(out[0].tool).toBe('rect');
   });
 });
 
@@ -403,99 +350,11 @@ describe('text style round-trip via the bridge', () => {
     expect(node.style?.lineHeight).toBeUndefined();
     expect(node.meta?.wd?.attrs?.['line-height']).toBe('1.4');
 
-    const back = svgNodesToObjs([node], ids());
+    const back = leavesOf([node], ids());
     expect(back).toHaveLength(1);
     const t = back[0] as unknown as { tool: 'text'; style?: { lineHeight?: number } };
     expect(t.style?.lineHeight).toBe(1.4);
     expect(t.style).toEqual(text.style);
-  });
-});
-
-describe('svgNodesToObjs — coverage gaps', () => {
-  it('lowers an SvgPathNode (PolygonPath, closed) to a closed PathObj', () => {
-    const node: SvgPathNode = {
-      kind: 'path',
-      // M h v h Z — equivalent to a 50x50 box, but as a polygon
-      path: {
-        kind: 'polygon',
-        commands: new Uint8Array([0, 1, 1, 1, 4]),  // PATH_M, PATH_L*3, PATH_Z
-        coords: new Float32Array([0, 0, 50, 0, 50, 50, 0, 50]),
-        fillRule: 'nonzero',
-      },
-      fill: { kind: 'solid', color: '#7fb069' },
-      stroke: { paint: { kind: 'solid', color: '#000' }, width: 2 },
-    };
-    const out = svgNodesToObjs([node], ids());
-    expect(out).toHaveLength(1);
-    const o = out[0] as unknown as { tool: string; closed: boolean; fill: string; strokeWidth: number };
-    expect(o.tool).toBe('imported');
-    expect(o.closed).toBe(true);
-    expect(o.fill).toBe('#7fb069');
-    expect(o.strokeWidth).toBe(2);
-  });
-
-  it('lowers an SvgPathNode (PolygonPath, open) to an open PathObj', () => {
-    const node: SvgPathNode = {
-      kind: 'path',
-      path: {
-        kind: 'polygon',
-        commands: new Uint8Array([0, 1, 1]),  // PATH_M, PATH_L, PATH_L, no Z
-        coords: new Float32Array([0, 0, 50, 50, 100, 0]),
-        fillRule: 'nonzero',
-      },
-      fill: { kind: 'none' },
-      stroke: { paint: { kind: 'solid', color: '#000' }, width: 1 },
-    };
-    const out = svgNodesToObjs([node], ids());
-    const o = out[0] as unknown as { tool: string; closed: boolean; fill: string };
-    expect(o.closed).toBe(false);
-    // Open paths upcast their fill string to the bridge's fallback when
-    // SvgPaint.kind === 'none'. Document the behavior; it's a known edge
-    // not fixed in this plan.
-    expect(o.fill).toBe('#000000');
-  });
-
-  it('returns an empty list for an empty input array', () => {
-    const out = svgNodesToObjs([], ids());
-    expect(out).toEqual([]);
-  });
-
-  it('flattens a deeply nested mixed tree to its leaves', () => {
-    const leaf: SvgPathNode = {
-      kind: 'path',
-      path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
-      fill: { kind: 'solid', color: '#abc' },
-    };
-    const innerText: SvgTextNode = { kind: 'text', x: 0, y: 0, width: 10, height: 10, text: 'x' };
-    const inner: SvgGroupNode = {
-      kind: 'group',
-      meta: { wd: { attrs: { 'group-id': 'inner' } } },
-      children: [leaf, innerText],
-    };
-    const outer: SvgGroupNode = {
-      kind: 'group',
-      meta: { wd: { attrs: { 'group-id': 'outer' } } },
-      children: [inner],
-    };
-    const out = svgNodesToObjs([outer], ids());
-    expect(out).toHaveLength(2);  // leaf + text, groups discarded
-    // The leaf is a RectPath with no wd:tool attr → decodes to 'rect'.
-    expect(out.map((o) => o.tool).sort()).toEqual(['rect', 'text'].sort());
-  });
-
-  it('preserves text style across a group boundary', () => {
-    const t: SvgTextNode = {
-      kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'hi',
-      style: { fontSize: 24, fill: { fill: 'solid', color: '#b03030' } },
-    };
-    const g: SvgGroupNode = {
-      kind: 'group',
-      meta: { wd: { attrs: { 'group-id': 'g1' } } },
-      children: [t],
-    };
-    const out = svgNodesToObjs([g], ids());
-    const item = out[0] as unknown as { tool: 'text'; style?: unknown };
-    expect(item.style).toEqual(t.style);
   });
 });
 
@@ -528,7 +387,7 @@ describe('objToSvgNode — coverage gaps', () => {
     };
     const node = objToSvgNode(original as never);
     expect(node.kind).toBe('path');
-    const out = svgNodesToObjs([node], ids());
+    const out = leavesOf([node], ids());
     const back = out[0] as unknown as { tool: string; closed: boolean; strokeWidth: number };
     expect(back.tool).toBe('pen');
     expect(back.closed).toBe(false);
@@ -571,7 +430,7 @@ describe('rotation emit', () => {
 });
 
 describe('rotation parse', () => {
-  it('round-trips a rotated rect through serialize → parse → svgNodesToObjs', () => {
+  it('round-trips a rotated rect through serialize → parse → drafts', () => {
     const a = {
       id: 'r', tool: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 }, closed: true,
@@ -581,7 +440,7 @@ describe('rotation parse', () => {
     const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
     const parsed = parseSvg(svg);
     let next = 0;
-    const out = svgNodesToObjs(parsed.nodes, () => `id${next++}`);
+    const out = leavesOf(parsed.nodes, () => `id${next++}`);
     expect(out).toHaveLength(1);
     const r = out[0];
     expect(r.tool).toBe('rect');
@@ -590,7 +449,7 @@ describe('rotation parse', () => {
     expect(r.rotation).toBeCloseTo(Math.PI / 6, 5);
   });
 
-  it('round-trips a rotated text object through serialize → parse → svgNodesToObjs', () => {
+  it('round-trips a rotated text object through serialize → parse → drafts', () => {
     const a = {
       id: 't', tool: 'text' as const, x: 100, y: 50, width: 200, height: 40,
       text: 'Hi', rotation: Math.PI / 4,
@@ -599,7 +458,7 @@ describe('rotation parse', () => {
     const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
     const parsed = parseSvg(svg);
     let next = 0;
-    const out = svgNodesToObjs(parsed.nodes, () => `id${next++}`);
+    const out = leavesOf(parsed.nodes, () => `id${next++}`);
     expect(out).toHaveLength(1);
     const t = out[0];
     expect(t.tool).toBe('text');

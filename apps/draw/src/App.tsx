@@ -673,6 +673,10 @@ function Toolbar({
   // because the dispatcher's reorder action does the real work.
   const hasSelection = selection.current.length > 0;
   const selectionSize = selection.current.length;
+  // Ungroup is only meaningful when a container (group) node is selected.
+  const canUngroup = selection.current.some(
+    (id) => scene.get(asNodeId(id))?.kind === 'container',
+  );
 
   // Any selected leaf whose path is a polygon with ≥2 `M` commands is a
   // compound path — release explodes it into N independent leaves.
@@ -766,7 +770,7 @@ function Toolbar({
         canMoveBackward={hasSelection}
         onGroup={() => trigger('group')}
         onUngroup={() => trigger('ungroup')}
-        canUngroup={hasSelection}
+        canUngroup={canUngroup}
         onAlign={(edge: AlignEdge) => trigger(`align.${edge}`)}
         onDistribute={(axis: DistributeAxis) => trigger(`distribute.${axis}`)}
         onFlip={(_axis: FlipAxis) => trigger('flip')}
