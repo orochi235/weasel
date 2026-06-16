@@ -29,7 +29,7 @@
  *     `PIXELS`, `resolveUnit`, `formatUnit`.
  *   - Adapters: `SceneAdapter`, plus narrow per-hook subsets
  *     (`MoveAdapter`, `ResizeAdapter`, `InsertAdapter`, `OrderedAdapter`,
- *     `GroupAdapter`, action-specific adapters).
+ *     action-specific adapters).
  *
  * Non-rect poses (Path, polygon, custom): the kit is generic over `TPose`.
  * Plug in two small projections so the rect-flavored machinery works on any
@@ -528,12 +528,9 @@ export { constrainTo45 } from './util/constrainTo45';
 // ─── Utility: hex8 color helpers ────────────────────────────────────────────
 export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './util/color';
 
-// ─── Groups: lasso-style group records, resolve / expand / unionBounds ──────
-export type { Group, GroupAdapter } from './features/groups/types';
-export { resolveToOutermostGroup, expandToLeaves } from './features/groups/resolve';
+// ─── Groups: union the bounds of a node set ─────────────────────────────────
 export { unionBounds } from './features/groups/unionBounds';
 export type { RectPose } from './features/groups/unionBounds';
-export { withGroupOrdering } from './features/groups/orderedGroups';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────
 export * from '@weasel-js/history';

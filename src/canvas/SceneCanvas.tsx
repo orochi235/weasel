@@ -120,7 +120,6 @@ interface BridgeAdapter {
   insertNode(node: { id: string; [k: string]: unknown }): void;
   removeNode(id: string): void;
   setSelection(ids: string[]): void;
-  getGroup?(id: string): import('features/groups/types').Group | undefined;
 }
 
 /** Default size in CSS pixels for selection corner-handles AND their
