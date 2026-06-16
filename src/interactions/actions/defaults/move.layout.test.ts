@@ -8,7 +8,7 @@ import type { NodeId } from 'core/scene/types';
 type P = { x: number; y: number; width: number; height: number };
 
 interface AppliedBatch {
-  ops: { id?: string; label?: string; args?: { id?: string } }[];
+  ops: { name?: string; id?: string; label?: string; args?: { id?: string; toParentId?: string | null } }[];
   label: string;
 }
 
@@ -51,9 +51,23 @@ function makeScene(
   };
 }
 
-function makeCtx(scene: StubScene, selectionIds: string[], drag?: InvocationCtx['drag']): InvocationCtx {
+/** Resolve a layout by container id. Either a fn or a map of id → strategy. */
+type GetLayout = NonNullable<LayoutDep['getLayout']> | Record<string, unknown>;
+
+function makeCtx(
+  scene: StubScene,
+  selectionIds: string[],
+  drag?: InvocationCtx['drag'],
+  getLayout?: GetLayout,
+): InvocationCtx {
   const grid = tileGrid<P>({ cols: 2, rows: 1 });
-  const layout: LayoutDep = { getLayout: (id) => (id === 'C' ? (grid as never) : null) };
+  const defaultGet: LayoutDep['getLayout'] = (id) => (id === 'C' ? (grid as never) : null);
+  const resolve: LayoutDep['getLayout'] = getLayout === undefined
+    ? defaultGet
+    : typeof getLayout === 'function'
+      ? getLayout
+      : (id) => ((getLayout as Record<string, unknown>)[id] as never) ?? null;
+  const layout: LayoutDep = { getLayout: resolve };
   return {
     world: { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
@@ -112,6 +126,61 @@ describe('moveAction layout reflow', () => {
     const batch = scene.appliedBatches[0];
     expect(batch.ops.length).toBeGreaterThan(0);
     expect(batch.ops.some((o) => o.args?.id === 'a')).toBe(true);
+  });
+
+  it('emits a reparent op before the drop on a cross-container grid drag', () => {
+    // Source C (tileGrid) holds a, b at {0..100}; destination D (tileGrid)
+    // holds d1 at {200..300}. Dragging a's center into D should commit, in
+    // order: reparent(a -> D), drop(a), then the source reflow for b (which
+    // collapses into C's first cell once a leaves).
+    const scene = makeScene(
+      {
+        C: { x: 0, y: 0, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+        D: { x: 200, y: 0, width: 100, height: 100 },
+        d1: { x: 200, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
+      { C: ['a', 'b'], D: ['d1'] },
+      ['C', 'D'],
+    );
+    const grid = tileGrid<P>({ cols: 2, rows: 1 });
+    const layouts = { C: grid, D: grid };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts));
+    // Drag a (center {25,50}) into D: delta.x 200 puts the preview center at
+    // {225,50}, inside D's first cell, so runLayoutPass picks D as dest.
+    const drag = { start: { x: 25, y: 50 }, current: { x: 225, y: 50 }, delta: { x: 200, y: 0 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx, 'commit');
+
+    expect(scene.appliedBatches.length).toBe(1);
+    const ops = scene.appliedBatches[0].ops;
+
+    // Reparent op: name 'reparent', args.id === 'a', args.toParentId === 'D'.
+    const reparentIdx = ops.findIndex(
+      (o) => o.name === 'reparent' && o.args?.id === 'a',
+    );
+    expect(reparentIdx).toBeGreaterThanOrEqual(0);
+    expect(ops[reparentIdx].args?.toParentId).toBe('D');
+
+    // Drop op for a: a transform op (no 'reparent' name) targeting a.
+    const dropIdx = ops.findIndex(
+      (o) => o.name !== 'reparent' && o.args?.id === 'a',
+    );
+    expect(dropIdx).toBeGreaterThanOrEqual(0);
+
+    // Ordering contract: reparent precedes the drop.
+    expect(reparentIdx).toBeLessThan(dropIdx);
+
+    // Source reflow for b (C collapses to a single cell) lands after the drop.
+    const reflowIdx = ops.findIndex(
+      (o) => o.name !== 'reparent' && o.args?.id === 'b',
+    );
+    expect(reflowIdx).toBeGreaterThanOrEqual(0);
+    expect(reflowIdx).toBeGreaterThan(dropIdx);
   });
 
   it('falls through to translate commit when no layout accepts (no layoutPass)', () => {

@@ -8,11 +8,12 @@
 import { useRef } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
 import type { LayoutDep } from 'interactions/actions/depSchema';
-import type { LayoutStrategy } from '../../layout/types';
+import type { SceneToAdapterOptions } from '../sceneAdapter';
 
-type LayoutsProp =
-  | Record<string, LayoutStrategy<unknown>>
-  | ((containerId: string) => LayoutStrategy<unknown> | null);
+// Reuse the canonical `layouts` option type from the scene adapter under the
+// dep's erased generics (`unknown`/`string`/`unknown`) so the public surface
+// stays a single source of truth.
+type LayoutsProp = NonNullable<SceneToAdapterOptions<unknown, string, unknown>['layouts']>;
 
 export function useLayoutDepSource(layouts: LayoutsProp | undefined): void {
   const ref = useRef(layouts);
