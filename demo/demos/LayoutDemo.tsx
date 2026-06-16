@@ -36,33 +36,63 @@ export function LayoutDemo() {
     S: snapPoint<P>({ pattern: 'corners' }),
   }), []);
 
+  // Committed-pose ledger: walk each container's leaf children and surface
+  // their live pose + parent. Because the demo re-renders on scene version
+  // change, these rows update the instant a drag commits — letting you watch
+  // a child reparent and reflow into its destination container.
+  const rows = scene.roots.flatMap((containerId) =>
+    scene.childrenOf(containerId).map((childId) => {
+      const child = scene.get(childId)!;
+      const pose = child.pose as P;
+      return {
+        id: childId as string,
+        parent: child.parent as string | null,
+        text: `${childId}:${Math.round(pose.x)},${Math.round(pose.y)}`,
+      };
+    }),
+  );
+
   return (
-    <SceneCanvas
-      width={620}
-      height={260}
-      scene={scene}
-      layouts={layouts}
-      layers={{
-        scene: {
-          drawOne: (node, p): DrawCommand[] => {
-            const cmds: DrawCommand[] = [{
-              kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
-              fill: { color: node.data.color },
-            }];
-            if (node.data.isContainer) {
-              cmds.push({
+    <div>
+      <SceneCanvas
+        width={620}
+        height={260}
+        scene={scene}
+        layouts={layouts}
+        layers={{
+          scene: {
+            drawOne: (node, p): DrawCommand[] => {
+              const cmds: DrawCommand[] = [{
                 kind: 'path',
-                path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
-                stroke: { paint: { color: '#d4c4a8' }, width: 1 },
-              });
-            }
-            return cmds;
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { color: node.data.color },
+              }];
+              if (node.data.isContainer) {
+                cmds.push({
+                  kind: 'path',
+                  path: { kind: 'rect', x: p.x + 0.5, y: p.y + 0.5, width: p.width - 1, height: p.height - 1 },
+                  stroke: { paint: { color: '#d4c4a8' }, width: 1 },
+                });
+              }
+              return cmds;
+            },
           },
-        },
-        // Outline-only selection — this demo's about layout, not resize.
-        selectionOverlay: { handles: false },
-      }}
-    />
+          // Outline-only selection — this demo's about layout, not resize.
+          selectionOverlay: { handles: false },
+        }}
+      />
+      <ul className="ld-ledger">
+        {rows.map((row) => (
+          <li
+            key={row.id}
+            className="ld-row"
+            data-testid={`ld-pose-${row.id}`}
+            data-parent={row.parent ?? ''}
+          >
+            {row.text}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

@@ -42,6 +42,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
 import { createTransformOp } from 'core/ops/transform';
+import { createReparentOp } from 'core/ops/reparent';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeAtPointDep, LayoutDep } from '../depSchema';
 import type {
@@ -415,7 +416,7 @@ export const moveAction: Action & { requires: string[] } = {
   // is target-qualified instead of universal.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy'],
+  requires: ['selection', 'scene', 'resizePolicy', 'layout'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -595,6 +596,20 @@ export const moveAction: Action & { requires: string[] } = {
               sourceContainerId: scratch.scene.get(draggedId)?.parent ?? null,
             };
             const dropOps = lp.layout.commitDrop(lp.container, lp.children, draggedArg, lp.target);
+            // Cross-container drop: reparent the dragged node under the
+            // destination container so its tree position matches its new
+            // visual home. Scene v1's absolute-pose semantics mean the
+            // subsequent pose op still lands the child at the snapped cell.
+            const reparentOps: Op[] = [];
+            const destId = lp.container.id;
+            if (draggedArg.sourceContainerId !== destId) {
+              reparentOps.push(createReparentOp({
+                id: draggedId as string,
+                fromParentId: draggedArg.sourceContainerId,
+                toParentId: destId,
+                label: 'Reparent',
+              }));
+            }
             const reflowOps: Op[] = [];
             for (const [cid, pose] of lp.sourceReflow) {
               reflowOps.push(createTransformOp<unknown>({
@@ -604,7 +619,7 @@ export const moveAction: Action & { requires: string[] } = {
                 label: 'Source reflow',
               }));
             }
-            const ops = [...dropOps, ...reflowOps];
+            const ops = [...reparentOps, ...dropOps, ...reflowOps];
             if (ops.length > 0) {
               scratch.scene.applyBatch(ops, ops[0].label ?? 'Move', scratch.adapter);
             }
