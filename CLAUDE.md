@@ -29,6 +29,8 @@ UI words have specific referents — don't conflate them:
 - **canvas** — the HTML `<canvas>` element. In WeaselDraw this is sized to the document page (`paper.width × paper.height`) and sits inside the workspace; in ToolkitBuilder the canvas spans the visible area.
 - **document** / **page** — the white paper drawn on the canvas (or, in WeaselDraw, the canvas itself since it IS sized to the paper). When the user says "document" they mean the page, not the canvas element.
 - **scene** — the kit-owned tree (`Scene<TData, TLayer, TPose>`). Logical, not visual. Don't say "scene" when you mean "document" or "canvas".
+- **group** — a structural `ContainerNode` (`kind: 'container'`). The real Cmd+G group; `group`/`ungroup` create/dissolve a container and reparent the selection under it; round-trips to SVG `<g>`. Persistent and id-bearing. **Not** a membership list — there is no membership "group" type (the old `Group`/`GroupAdapter` was removed in 2026-06).
+- **selection** — the transient, immutable set of active ids (`SelectionApi.get()`/`set()`). "Operate on these N as a unit" with no persistence and no id; not a scene entity. Don't reintroduce a persistent membership-list "group" — a saved selection is just a consumer-held `string[]` passed to `selection.set`. See `docs/taxonomy.md` ("Group vs Selection — not the same axis").
 
 When positioning HUDs / overlays, pick the right anchor: "inside the workspace" means `.wd-canvas-host`'s rect, not the canvas's.
 

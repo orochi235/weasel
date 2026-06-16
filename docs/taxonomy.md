@@ -485,6 +485,26 @@ Every node carries `id`, `layer`, `pose`, `data`, and `parent`. The opaque `data
 field holds the consumer's domain payload; the kit never inspects it. See
 `src/core/scene/types.ts:17`.
 
+### Group vs Selection — not the same axis
+
+These are distinct concepts that the word "group" historically conflated; keep
+them separate.
+
+- **Group** = a structural `ContainerNode` (`kind: 'container'`, `children`). The
+  real "group" (Cmd+G): the `group`/`ungroup` actions create/dissolve a container
+  and reparent the selection under it. Persistent, id-bearing, selectable as a
+  unit, and the native round-trip for SVG `<g>`. Dragging a container moves its
+  descendants (the move action cascades `childrenOf`).
+- **Selection** = the transient, immutable set of currently-active ids (the
+  [`SelectionApi`](#selection): `get()` / `set()`). "Operate on these N as a unit"
+  with no persistence and no id — it is *not* a scene entity.
+
+There is no persistent membership-list concept. A consumer that wants named,
+saved selections holds its own `Record<string, string[]>` and calls
+`selection.set(ids)`. (The former `Group`/`GroupAdapter`/`expandToLeaves`
+membership apparatus was removed in 2026-06 — it was a saved-selection wearing
+the name "group.")
+
 ### View / ViewTransform
 
 `View` — the viewport's camera state: `{ x, y, scale }` where `x/y` is the world
