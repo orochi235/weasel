@@ -24,8 +24,6 @@ import type {
 } from '@weasel-js/svg';
 import type { Obj, PathObj, PathParams, TextObj, ToolKind } from './poseUpdate';
 
-interface Group { id: string; members: string[] }
-
 /**
  * The `wd:` XML namespace, used to ride WeaselDraw-specific metadata
  * (paper-size, group-id, line-height, future: layers, parametric origin)
@@ -192,151 +190,206 @@ export function objToSvgNode(o: Obj): SvgNode {
   return node;
 }
 
-/**
- * Lower a WeaselDraw scene (items + groups) to an SvgNode[] tree.
- * Items that belong to a group are emitted inside that group's
- * SvgGroupNode; items not in any group sit at the root.
- *
- * Nested groups are supported via Group.members containing group ids.
- * A group id appears in the output tree exactly once (under its parent,
- * or at root if it has no parent group).
- *
- * Single-group-membership invariant: each item / group id appears in at
- * most one parent group's `members[]`. The function throws if the input
- * violates this; the model layer is expected to maintain it.
- */
-export function objsToSvgNodes(items: readonly Obj[], groups: readonly Group[]): SvgNode[] {
-  const itemsById = new Map<string, Obj>();
-  for (const o of items) itemsById.set(o.id, o);
-  const groupsById = new Map<string, Group>();
-  for (const g of groups) groupsById.set(g.id, g);
-
-  // Enforce single-group-membership: each child id appears in at most one
-  // parent. If two groups claim the same id, fail loudly — WeaselDraw's
-  // model layer must guarantee this invariant, and a violation here means
-  // a bug in group ops, not an encoding ambiguity to silently disambiguate.
-  const parentOf = new Map<string, string>();
-  for (const g of groups) {
-    for (const m of g.members) {
-      const existing = parentOf.get(m);
-      if (existing) {
-        throw new Error(
-          `multi-group membership detected: '${m}' belongs to both '${existing}' and '${g.id}'. ` +
-          `WeaselDraw's group model forbids multi-membership.`,
-        );
-      }
-      parentOf.set(m, g.id);
-    }
-  }
-
-  const buildGroup = (g: Group): SvgGroupNode => {
-    const children: SvgNode[] = [];
-    for (const m of g.members) {
-      const childGroup = groupsById.get(m);
-      if (childGroup) {
-        children.push(buildGroup(childGroup));
-        continue;
-      }
-      const childItem = itemsById.get(m);
-      if (childItem) children.push(objToSvgNode(childItem));
-    }
-    const node: SvgGroupNode = { kind: 'group', children };
-    node.meta = { wd: { attrs: { 'group-id': g.id } } };
-    return node;
-  };
-
-  const out: SvgNode[] = [];
-  // Root-level groups: groups that aren't a member of any other group.
-  for (const g of groups) {
-    if (!parentOf.has(g.id)) out.push(buildGroup(g));
-  }
-  // Root-level items: items not claimed by any group.
-  for (const o of items) {
-    if (!parentOf.has(o.id)) out.push(objToSvgNode(o));
-  }
-  return out;
-}
+/** Plain AABB the import attaches to a container draft (and `objToSvgNode`
+ *  poses already carry). Matches WeaselDraw's `WeaselDrawPose` minus the
+ *  optional `rotation` — containers never rotate. */
+export interface RectBounds { x: number; y: number; width: number; height: number }
 
 /**
- * Walk an SvgNode tree and emit a WeaselDraw scene (items + groups).
- * Each SvgGroupNode becomes a Group record. The group id is taken from
- * `n.meta?.wd?.attrs?.['group-id']` when set, else synthesized via
- * `nextId()`. Nested groups produce nested Group.members lists.
+ * One node the importer wants the scene to materialize. The list is
+ * ordered parent-before-child so the caller can `scene.add` each draft in
+ * turn, resolving `parentId` against the ids it has already inserted.
+ *
+ *   - `leaf`    — an `Obj` (path/text); the caller lowers it to the scene's
+ *                 `{pose, data}` shape exactly as it does for root leaves.
+ *   - `container` — an SVG `<g>`. Carries the union-AABB of its leaf
+ *                 descendants as `pose` so resize handles land sensibly,
+ *                 mirroring the kit `group` action's container pose.
+ *
+ * `id` is the draft's stable identity (from `wd:group-id` for containers,
+ * or the leaf `Obj.id`); the caller maps it to the minted `NodeId`.
  */
-export function svgNodesToObjsWithGroups(
-  nodes: readonly SvgNode[],
-  nextId: () => string,
-): { items: Obj[]; groups: Group[] } {
-  const items: Obj[] = [];
-  const groups: Group[] = [];
+export type SceneDraft =
+  | { kind: 'leaf'; id: string; parentId: string | null; obj: Obj }
+  | { kind: 'container'; id: string; parentId: string | null; pose: RectBounds };
 
-  const visit = (n: SvgNode): string => {
-    if (n.kind === 'group') {
-      const gid = n.meta?.wd?.attrs?.['group-id'] ?? nextId();
-      const memberIds: string[] = [];
-      for (const c of n.children) memberIds.push(visit(c));
-      groups.push({ id: gid, members: memberIds });
-      return gid;
-    }
-    if (n.kind === 'text') {
-      const o: TextObj = {
-        id: nextId(),
-        tool: 'text',
-        x: n.x, y: n.y, width: n.width, height: n.height,
-        text: n.text,
-      };
-      if (n.rotation) o.rotation = n.rotation;
-      // Reconstitute the full TextStyle from weasel-svg's style + the
-      // namespaced lineHeight from the meta bag. weasel-svg doesn't model
-      // `lineHeight` so it rides on `meta.wd.attrs['line-height']`.
-      const lhStr = n.meta?.wd?.attrs?.['line-height'];
-      const lh = lhStr != null ? parseFloat(lhStr) : undefined;
-      if (n.style || (lh != null && Number.isFinite(lh))) {
-        o.style = { ...(n.style ?? {}) };
-        if (lh != null && Number.isFinite(lh)) o.style.lineHeight = lh;
-      }
-      items.push(o);
-      return o.id;
-    }
-    const fill = colorFromPaint(n.fill, '#000000');
-    const stroke = n.stroke ? colorFromPaint(n.stroke.paint, '#000000') : '#000000';
-    const strokeWidth = n.stroke?.width ?? 0;
-    const { tool, params } = decodePathToolAndParams(n.meta?.wd?.attrs, n.path.kind);
-    let bounds: { x: number; y: number; width: number; height: number };
-    let closed: boolean;
-    if (n.path.kind === 'rect') {
-      bounds = { x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height };
-      closed = true;
-    } else {
-      const b = boundsOfPath(n.path);
-      bounds = { x: b.x, y: b.y, width: b.width, height: b.height };
-      closed = isClosedPolygon(n.path);
-    }
-    const o: PathObj = {
-      id: nextId(),
-      tool,
-      x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
-      path: n.path, closed, fill, stroke, strokeWidth,
-      ...(params ? { params } : {}),
+/**
+ * Lower one path/text `SvgNode` to its `Obj`. Group nodes are not handled
+ * here (they have no `Obj` representation) — see {@link svgNodesToSceneDrafts}.
+ */
+function svgLeafToObj(
+  n: SvgPathNode | SvgTextNode,
+  id: string,
+): Obj {
+  if (n.kind === 'text') {
+    const o: TextObj = {
+      id,
+      tool: 'text',
+      x: n.x, y: n.y, width: n.width, height: n.height,
+      text: n.text,
     };
     if (n.rotation) o.rotation = n.rotation;
-    items.push(o);
-    return o.id;
+    // Reconstitute the full TextStyle from weasel-svg's style + the
+    // namespaced lineHeight from the meta bag. weasel-svg doesn't model
+    // `lineHeight` so it rides on `meta.wd.attrs['line-height']`.
+    const lhStr = n.meta?.wd?.attrs?.['line-height'];
+    const lh = lhStr != null ? parseFloat(lhStr) : undefined;
+    if (n.style || (lh != null && Number.isFinite(lh))) {
+      o.style = { ...(n.style ?? {}) };
+      if (lh != null && Number.isFinite(lh)) o.style.lineHeight = lh;
+    }
+    return o;
+  }
+  const fill = colorFromPaint(n.fill, '#000000');
+  const stroke = n.stroke ? colorFromPaint(n.stroke.paint, '#000000') : '#000000';
+  const strokeWidth = n.stroke?.width ?? 0;
+  const { tool, params } = decodePathToolAndParams(n.meta?.wd?.attrs, n.path.kind);
+  let bounds: RectBounds;
+  let closed: boolean;
+  if (n.path.kind === 'rect') {
+    bounds = { x: n.path.x, y: n.path.y, width: n.path.width, height: n.path.height };
+    closed = true;
+  } else {
+    const b = boundsOfPath(n.path);
+    bounds = { x: b.x, y: b.y, width: b.width, height: b.height };
+    closed = isClosedPolygon(n.path);
+  }
+  const o: PathObj = {
+    id,
+    tool,
+    x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+    path: n.path, closed, fill, stroke, strokeWidth,
+    ...(params ? { params } : {}),
   };
-  nodes.forEach(visit);
-  return { items, groups };
+  if (n.rotation) o.rotation = n.rotation;
+  return o;
 }
 
 /**
- * Walk an SvgNode tree and emit a flat list of WeaselDraw objects.
- * Thin wrapper around {@link svgNodesToObjsWithGroups} that discards the
- * group output — retained for call sites that don't yet consume groups.
+ * Walk an `SvgNode[]` tree and emit a flat, parent-before-child list of
+ * {@link SceneDraft}s the caller can replay into the scene graph.
+ *
+ * Each SVG `<g>` becomes a `kind:'container'` draft; its children are
+ * reparented under it (nested `<g>` → nested containers). The container id
+ * is taken from `meta.wd.attrs['group-id']` when present (so round-trips
+ * are stable), else synthesized via `nextId()`. Leaf path/text nodes
+ * become `kind:'leaf'` drafts carrying their `Obj` and a `parentId`.
+ *
+ * Container poses are the union-AABB of their leaf descendants — the same
+ * "container pose = members' bounds" convention the kit `group` action
+ * uses. Empty containers fall back to a zero-size box.
+ */
+export function svgNodesToSceneDrafts(
+  nodes: readonly SvgNode[],
+  nextId: () => string,
+): SceneDraft[] {
+  const drafts: SceneDraft[] = [];
+
+  // Visit a node, appending its draft(s). Returns the union-AABB of the
+  // leaves under `n` (a single leaf's own bounds, or a container's
+  // descendants' union) so a parent container can compose its own pose.
+  const visit = (n: SvgNode, parentId: string | null): RectBounds | null => {
+    if (n.kind === 'group') {
+      const gid = n.meta?.wd?.attrs?.['group-id'] ?? nextId();
+      // Emit the container draft first (parent-before-child) with a
+      // placeholder pose; patch it once the descendants' bounds are known.
+      const draft: Extract<SceneDraft, { kind: 'container' }> = {
+        kind: 'container', id: gid, parentId, pose: { x: 0, y: 0, width: 0, height: 0 },
+      };
+      drafts.push(draft);
+      let acc: RectBounds | null = null;
+      for (const c of n.children) {
+        const b = visit(c, gid);
+        if (b) acc = acc ? unionRect(acc, b) : b;
+      }
+      if (acc) draft.pose = acc;
+      return acc;
+    }
+    const obj = svgLeafToObj(n, nextId());
+    drafts.push({ kind: 'leaf', id: obj.id, parentId, obj });
+    return { x: obj.x, y: obj.y, width: obj.width, height: obj.height };
+  };
+
+  for (const n of nodes) visit(n, null);
+  return drafts;
+}
+
+/** Union of two AABBs. */
+function unionRect(a: RectBounds, b: RectBounds): RectBounds {
+  const minX = Math.min(a.x, b.x);
+  const minY = Math.min(a.y, b.y);
+  const maxX = Math.max(a.x + a.width, b.x + b.width);
+  const maxY = Math.max(a.y + a.height, b.y + b.height);
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+/**
+ * Walk an `SvgNode[]` tree and emit a flat list of WeaselDraw objects,
+ * discarding container structure. Retained for call sites that want the
+ * leaves only (no scene-graph reparenting).
  */
 export function svgNodesToObjs(
   nodes: readonly SvgNode[],
   nextId: () => string,
 ): Obj[] {
-  return svgNodesToObjsWithGroups(nodes, nextId).items;
+  const out: Obj[] = [];
+  const visit = (n: SvgNode): void => {
+    if (n.kind === 'group') {
+      for (const c of n.children) visit(c);
+      return;
+    }
+    out.push(svgLeafToObj(n, nextId()));
+  };
+  for (const n of nodes) visit(n);
+  return out;
+}
+
+/**
+ * Read-only view of the scene the exporter walks. Decouples
+ * {@link sceneToSvgNodes} from the kit `Scene` type so it can be unit-tested
+ * with a plain object and reused against any tree shape.
+ *
+ *   - `roots` — top-level node ids in z-order.
+ *   - `childrenOf(id)` — a container's child ids in z-order (empty for leaves).
+ *   - `kindOf(id)` — `'container'` for `<g>`-bound nodes, else `'leaf'`.
+ *   - `objOf(id)` — the leaf's `Obj`, or `undefined` to skip (e.g. a leaf
+ *     with no drawable data).
+ */
+export interface SceneSource {
+  roots: readonly string[];
+  childrenOf(id: string): readonly string[];
+  kindOf(id: string): 'leaf' | 'container';
+  objOf(id: string): Obj | undefined;
+}
+
+/**
+ * Walk a scene's container tree and emit an `SvgNode[]`. Every container
+ * becomes an `SvgGroupNode` (recursing into its children) stamped with
+ * `meta.wd.attrs['group-id']` = its scene id, so the structure round-trips
+ * back through {@link svgNodesToSceneDrafts}. Every leaf becomes the result
+ * of {@link objToSvgNode}.
+ */
+export function sceneToSvgNodes(source: SceneSource): SvgNode[] {
+  const emit = (id: string): SvgNode | null => {
+    if (source.kindOf(id) === 'container') {
+      const children: SvgNode[] = [];
+      for (const childId of source.childrenOf(id)) {
+        const child = emit(childId);
+        if (child) children.push(child);
+      }
+      const node: SvgGroupNode = { kind: 'group', children };
+      node.meta = { wd: { attrs: { 'group-id': id } } };
+      return node;
+    }
+    const obj = source.objOf(id);
+    return obj ? objToSvgNode(obj) : null;
+  };
+  const out: SvgNode[] = [];
+  for (const id of source.roots) {
+    const n = emit(id);
+    if (n) out.push(n);
+  }
+  return out;
 }
 
 function colorFromPaint(

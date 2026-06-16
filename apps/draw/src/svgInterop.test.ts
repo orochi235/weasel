@@ -1,13 +1,25 @@
 /**
  * Direct tests on the Obj ↔ SvgNode bridge. The baseline pins current
- * behavior so later tasks (groups, text style, namespace metadata) show
- * up as intentional edits to these expectations.
+ * behavior so later tasks (text style, namespace metadata) show up as
+ * intentional edits to these expectations.
+ *
+ * SVG `<g>` maps to the scene's structural container tree, not the old
+ * membership `Group` records: import emits parent-before-child scene
+ * drafts (`svgNodesToSceneDrafts`); export walks the scene's container
+ * tree (`sceneToSvgNodes`).
  */
 
 import { describe, it, expect } from 'vitest';
 import type { SvgNode, SvgPathNode, SvgTextNode, SvgGroupNode } from '@weasel-js/svg';
 import { parseSvg, serializeSvg } from '@weasel-js/svg';
-import { objToSvgNode, svgNodesToObjs, svgNodesToObjsWithGroups, objsToSvgNodes } from './svgInterop';
+import {
+  objToSvgNode,
+  svgNodesToObjs,
+  svgNodesToSceneDrafts,
+  sceneToSvgNodes,
+  type SceneDraft,
+  type SceneSource,
+} from './svgInterop';
 
 // Minimal local mirror of svgInterop's internal Obj union. Keep in sync
 // with the file under test; baseline tests don't need every field, just
@@ -92,7 +104,7 @@ describe('objToSvgNode', () => {
   });
 });
 
-describe('svgNodesToObjs (baseline — pre-namespace, pre-groups-preservation)', () => {
+describe('svgNodesToObjs (group-discarding wrapper — leaves only)', () => {
   it('lowers an SvgPathNode (rect) to a rect-tool PathObj', () => {
     const node: SvgPathNode = {
       kind: 'path',
@@ -139,29 +151,80 @@ describe('svgNodesToObjs (baseline — pre-namespace, pre-groups-preservation)',
     expect((out[0] as unknown as RectObjT).strokeWidth).toBe(0);
     expect((out[0] as unknown as RectObjT).stroke).toBe('#000000');
   });
-});
 
-describe('svgNodesToObjsWithGroups — groups preserved', () => {
-  it('returns a Group record for each SvgGroupNode and inlines members', () => {
+  it('flattens groups, returning only the leaf items', () => {
     const child: SvgPathNode = {
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
-      fill: { kind: 'solid', color: '#000000' },
+      fill: { kind: 'solid', color: '#abc' },
+    };
+    const g: SvgGroupNode = { kind: 'group', children: [child] };
+    const out = svgNodesToObjs([g], ids());
+    expect(out).toHaveLength(1);
+    expect(out[0].tool).toBe('rect');
+  });
+});
+
+describe('svgNodesToSceneDrafts — <g> → scene container drafts', () => {
+  // Convenience: split drafts by kind for assertions.
+  const split = (drafts: SceneDraft[]) => ({
+    containers: drafts.filter((d) => d.kind === 'container'),
+    leaves: drafts.filter((d): d is Extract<SceneDraft, { kind: 'leaf' }> => d.kind === 'leaf'),
+  });
+
+  it('importing a <g> with two leaf children yields a container holding two children', () => {
+    const a: SvgPathNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { kind: 'solid', color: '#abc' },
+    };
+    const b: SvgPathNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
+      fill: { kind: 'solid', color: '#def' },
     };
     const g: SvgGroupNode = {
       kind: 'group',
       meta: { wd: { attrs: { 'group-id': 'g1' } } },
-      children: [child],
+      children: [a, b],
     };
-    const result = svgNodesToObjsWithGroups([g], ids());
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0].tool).toBe('rect');
-    expect(result.groups).toHaveLength(1);
-    expect(result.groups[0].id).toBe('g1');
-    expect(result.groups[0].members).toEqual([result.items[0].id]);
+    const drafts = svgNodesToSceneDrafts([g], ids());
+    const { containers, leaves } = split(drafts);
+    expect(containers).toHaveLength(1);
+    expect(containers[0].id).toBe('g1');
+    expect(containers[0].parentId).toBeNull();
+    expect(leaves).toHaveLength(2);
+    // Both leaves parent under the container.
+    expect(leaves.every((l) => l.parentId === 'g1')).toBe(true);
+    // Container pose = AABB of the two children (0..30 wide, 0..10 tall).
+    expect(containers[0].pose).toEqual({ x: 0, y: 0, width: 30, height: 10 });
   });
 
-  it('handles nested SVG <g> elements by including child group ids in the parent member list', () => {
+  it('emits parents before their children (addable in order)', () => {
+    const leaf: SvgPathNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { kind: 'solid', color: '#abc' },
+    };
+    const g: SvgGroupNode = {
+      kind: 'group',
+      meta: { wd: { attrs: { 'group-id': 'g1' } } },
+      children: [leaf],
+    };
+    const drafts = svgNodesToSceneDrafts([g], ids());
+    const containerIdx = drafts.findIndex((d) => d.kind === 'container');
+    const leafIdx = drafts.findIndex((d) => d.kind === 'leaf');
+    expect(containerIdx).toBeGreaterThanOrEqual(0);
+    expect(leafIdx).toBeGreaterThan(containerIdx);
+    // Every child's parent appears earlier in the list.
+    const seen = new Set<string>();
+    for (const d of drafts) {
+      if (d.parentId !== null) expect(seen.has(d.parentId)).toBe(true);
+      seen.add(d.id);
+    }
+  });
+
+  it('nests containers for nested <g>, preserving wd:group-id', () => {
     const leaf: SvgPathNode = {
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
@@ -177,67 +240,98 @@ describe('svgNodesToObjsWithGroups — groups preserved', () => {
       meta: { wd: { attrs: { 'group-id': 'outer' } } },
       children: [inner],
     };
-    const result = svgNodesToObjsWithGroups([outer], ids());
-    expect(result.items).toHaveLength(1);
-    expect(result.groups.map((g) => g.id).sort()).toEqual(['inner', 'outer']);
-    const innerGroup = result.groups.find((g) => g.id === 'inner');
-    const outerGroup = result.groups.find((g) => g.id === 'outer');
-    expect(innerGroup!.members).toEqual([result.items[0].id]);
-    expect(outerGroup!.members).toEqual(['inner']);
+    const drafts = svgNodesToSceneDrafts([outer], ids());
+    const { containers, leaves } = split(drafts);
+    expect(containers.map((c) => c.id).sort()).toEqual(['inner', 'outer']);
+    expect(containers.find((c) => c.id === 'outer')!.parentId).toBeNull();
+    expect(containers.find((c) => c.id === 'inner')!.parentId).toBe('outer');
+    expect(leaves).toHaveLength(1);
+    expect(leaves[0].parentId).toBe('inner');
   });
 
-  it('groups without wd:group-id synthesize an id from the nextId fn', () => {
+  it('synthesizes a container id when wd:group-id is absent', () => {
     const leaf: SvgPathNode = {
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: { kind: 'solid', color: '#fff' },
     };
     const g: SvgGroupNode = { kind: 'group', children: [leaf] };
-    const result = svgNodesToObjsWithGroups([g], ids());
-    expect(result.groups).toHaveLength(1);
-    expect(result.groups[0].id).toMatch(/^i\d+$/);
-    expect(result.groups[0].members).toEqual([result.items[0].id]);
+    const drafts = svgNodesToSceneDrafts([g], ids());
+    const container = drafts.find((d) => d.kind === 'container')!;
+    expect(container.id).toMatch(/^i\d+$/);
+  });
+
+  it('keeps root-level leaves at root (parentId null)', () => {
+    const node: SvgPathNode = {
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { kind: 'solid', color: '#abc' },
+    };
+    const drafts = svgNodesToSceneDrafts([node], ids());
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].kind).toBe('leaf');
+    expect(drafts[0].parentId).toBeNull();
   });
 });
 
-describe('objsToSvgNodes — groups emitted', () => {
-  it('builds an SvgGroupNode wrapping the members of a Group', () => {
-    const items = [
-      { id: 'a', tool: 'rect' as const, x: 0, y: 0, width: 10, height: 10, path: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 }, closed: true, fill: '#fff', stroke: '#000', strokeWidth: 0 },
-      { id: 'b', tool: 'rect' as const, x: 20, y: 0, width: 10, height: 10, path: { kind: 'rect' as const, x: 20, y: 0, width: 10, height: 10 }, closed: true, fill: '#fff', stroke: '#000', strokeWidth: 0 },
-    ];
-    const groups = [{ id: 'g1', members: ['a', 'b'] }];
-    const nodes = objsToSvgNodes(items as never, groups);
+describe('sceneToSvgNodes — scene container tree → <g>', () => {
+  it('emits an SvgGroupNode per container, stamping group-id, and objToSvgNode per leaf', () => {
+    // A minimal SceneSource: one container 'c1' holding two leaves.
+    const a: RectObjT = {
+      id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      fill: '#fff', stroke: '#000', strokeWidth: 0,
+    };
+    const b: RectObjT = {
+      id: 'b', tool: 'rect', x: 20, y: 0, width: 10, height: 10,
+      path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, closed: true,
+      fill: '#fff', stroke: '#000', strokeWidth: 0,
+    };
+    const source: SceneSource = {
+      roots: ['c1'],
+      childrenOf: (id) => (id === 'c1' ? ['a', 'b'] : []),
+      kindOf: (id) => (id === 'c1' ? 'container' : 'leaf'),
+      objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
+    };
+    const nodes = sceneToSvgNodes(source);
     expect(nodes).toHaveLength(1);
-    const n0 = nodes[0];
-    expect(n0.kind).toBe('group');
-    if (n0.kind !== 'group') throw new Error('expected group');
-    expect(n0.meta?.wd?.attrs?.['group-id']).toBe('g1');
-    expect(n0.children).toHaveLength(2);
+    const g = nodes[0];
+    if (g.kind !== 'group') throw new Error('expected group');
+    expect(g.meta?.wd?.attrs?.['group-id']).toBe('c1');
+    expect(g.children).toHaveLength(2);
+    expect(g.children.every((c) => c.kind === 'path')).toBe(true);
   });
 
-  it('emits items not in any group at the document root', () => {
-    const items = [
-      { id: 'a', tool: 'rect' as const, x: 0, y: 0, width: 10, height: 10, path: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 }, closed: true, fill: '#fff', stroke: '#000', strokeWidth: 0 },
-      { id: 'b', tool: 'rect' as const, x: 20, y: 0, width: 10, height: 10, path: { kind: 'rect' as const, x: 20, y: 0, width: 10, height: 10 }, closed: true, fill: '#fff', stroke: '#000', strokeWidth: 0 },
-    ];
-    const groups = [{ id: 'g1', members: ['a'] }];
-    const nodes = objsToSvgNodes(items as never, groups);
-    // One group (wrapping 'a') + one root-level path ('b').
-    expect(nodes).toHaveLength(2);
-    expect(nodes[0].kind).toBe('group');
-    expect(nodes[1].kind).toBe('path');
+  it('emits root leaves at the document root', () => {
+    const a: RectObjT = {
+      id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      fill: '#fff', stroke: '#000', strokeWidth: 0,
+    };
+    const source: SceneSource = {
+      roots: ['a'],
+      childrenOf: () => [],
+      kindOf: () => 'leaf',
+      objOf: (id) => (id === 'a' ? (a as never) : undefined),
+    };
+    const nodes = sceneToSvgNodes(source);
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0].kind).toBe('path');
   });
 
-  it('nests SvgGroupNodes for nested Groups', () => {
-    const items = [
-      { id: 'a', tool: 'rect' as const, x: 0, y: 0, width: 10, height: 10, path: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 }, closed: true, fill: '#fff', stroke: '#000', strokeWidth: 0 },
-    ];
-    const groups = [
-      { id: 'inner', members: ['a'] },
-      { id: 'outer', members: ['inner'] },
-    ];
-    const nodes = objsToSvgNodes(items as never, groups);
+  it('nests SvgGroupNodes for nested containers', () => {
+    const a: RectObjT = {
+      id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      fill: '#fff', stroke: '#000', strokeWidth: 0,
+    };
+    const source: SceneSource = {
+      roots: ['outer'],
+      childrenOf: (id) => (id === 'outer' ? ['inner'] : id === 'inner' ? ['a'] : []),
+      kindOf: (id) => (id === 'a' ? 'leaf' : 'container'),
+      objOf: (id) => (id === 'a' ? (a as never) : undefined),
+    };
+    const nodes = sceneToSvgNodes(source);
     expect(nodes).toHaveLength(1);
     const outer = nodes[0];
     if (outer.kind !== 'group') throw new Error('expected outer group');
@@ -246,8 +340,45 @@ describe('objsToSvgNodes — groups emitted', () => {
     const inner = outer.children[0];
     if (inner.kind !== 'group') throw new Error('expected inner group');
     expect(inner.meta?.wd?.attrs?.['group-id']).toBe('inner');
+    expect(inner.children).toHaveLength(1);
+    expect(inner.children[0].kind).toBe('path');
   });
+});
 
+describe('container round-trip: drafts → svg → drafts (stable ids)', () => {
+  it('a container holding two leaves survives export + re-import with its id', () => {
+    // Build a scene source: container 'c1' with two rect leaves.
+    const a: RectObjT = {
+      id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+      fill: '#112233', stroke: '#000000', strokeWidth: 0,
+    };
+    const b: RectObjT = {
+      id: 'b', tool: 'rect', x: 20, y: 0, width: 10, height: 10,
+      path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, closed: true,
+      fill: '#445566', stroke: '#000000', strokeWidth: 0,
+    };
+    const source: SceneSource = {
+      roots: ['c1'],
+      childrenOf: (id) => (id === 'c1' ? ['a', 'b'] : []),
+      kindOf: (id) => (id === 'c1' ? 'container' : 'leaf'),
+      objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
+    };
+
+    // Export → SvgNode[] → serialize → parse → re-import as drafts.
+    const exported = sceneToSvgNodes(source);
+    const svg = serializeSvg(exported, { viewBox: { x: 0, y: 0, width: 100, height: 100 }, namespaces: { wd: 'https://weaseldraw.app/svg-ext' } });
+    const parsed = parseSvg(svg, { namespaces: { wd: 'https://weaseldraw.app/svg-ext' } });
+    let next = 0;
+    const drafts = svgNodesToSceneDrafts(parsed.nodes, () => `re-${next++}`);
+
+    const containers = drafts.filter((d) => d.kind === 'container');
+    const leaves = drafts.filter((d) => d.kind === 'leaf');
+    expect(containers).toHaveLength(1);
+    expect(containers[0].id).toBe('c1'); // stable id round-trips via wd:group-id
+    expect(leaves).toHaveLength(2);
+    expect(leaves.every((l) => l.parentId === 'c1')).toBe(true);
+  });
 });
 
 describe('text style round-trip via the bridge', () => {
@@ -277,20 +408,6 @@ describe('text style round-trip via the bridge', () => {
     const t = back[0] as unknown as { tool: 'text'; style?: { lineHeight?: number } };
     expect(t.style?.lineHeight).toBe(1.4);
     expect(t.style).toEqual(text.style);
-  });
-});
-
-describe('objsToSvgNodes — multi-group rejection', () => {
-  it('rejects multi-group membership at the persistence boundary', () => {
-    const items = [
-      { id: 'a', tool: 'rect' as const, x: 0, y: 0, width: 10, height: 10, path: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 }, closed: true, fill: '#fff', stroke: '#000', strokeWidth: 0 },
-    ];
-    // 'a' is claimed by two groups — this violates the single-membership invariant.
-    const groups = [
-      { id: 'g1', members: ['a'] },
-      { id: 'g2', members: ['a'] },
-    ];
-    expect(() => objsToSvgNodes(items as never, groups)).toThrow(/multi-group membership/i);
   });
 });
 
@@ -343,7 +460,7 @@ describe('svgNodesToObjs — coverage gaps', () => {
     expect(out).toEqual([]);
   });
 
-  it('handles a deeply nested mixed tree', () => {
+  it('flattens a deeply nested mixed tree to its leaves', () => {
     const leaf: SvgPathNode = {
       kind: 'path',
       path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
@@ -360,11 +477,10 @@ describe('svgNodesToObjs — coverage gaps', () => {
       meta: { wd: { attrs: { 'group-id': 'outer' } } },
       children: [inner],
     };
-    const result = svgNodesToObjsWithGroups([outer], ids());
-    expect(result.items).toHaveLength(2);  // leaf + text
-    expect(result.groups.map((g) => g.id).sort()).toEqual(['inner', 'outer']);
-    expect(result.groups.find((g) => g.id === 'outer')?.members).toEqual(['inner']);
-    expect(result.groups.find((g) => g.id === 'inner')?.members).toHaveLength(2);
+    const out = svgNodesToObjs([outer], ids());
+    expect(out).toHaveLength(2);  // leaf + text, groups discarded
+    // The leaf is a RectPath with no wd:tool attr → decodes to 'rect'.
+    expect(out.map((o) => o.tool).sort()).toEqual(['rect', 'text'].sort());
   });
 
   it('preserves text style across a group boundary', () => {
@@ -377,8 +493,8 @@ describe('svgNodesToObjs — coverage gaps', () => {
       meta: { wd: { attrs: { 'group-id': 'g1' } } },
       children: [t],
     };
-    const result = svgNodesToObjsWithGroups([g], ids());
-    const item = result.items[0] as unknown as { tool: 'text'; style?: unknown };
+    const out = svgNodesToObjs([g], ids());
+    const item = out[0] as unknown as { tool: 'text'; style?: unknown };
     expect(item.style).toEqual(t.style);
   });
 });
@@ -422,70 +538,70 @@ describe('objToSvgNode — coverage gaps', () => {
 
 describe('rotation emit', () => {
   it('writes transform="rotate(...)" for a rotated rect', () => {
-    const items = [{
+    const a = {
       id: 'r', tool: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 }, closed: true,
       fill: '#3366ff', stroke: '#000', strokeWidth: 0, rotation: Math.PI / 6,
-    }];
-    const nodes = objsToSvgNodes(items as never, []);
-    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    };
+    const node = objToSvgNode(a as never);
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
     expect(svg).toContain('transform="rotate(30 50 25)"');
   });
 
   it('writes transform="rotate(...)" for a rotated text', () => {
-    const items = [{
+    const a = {
       id: 't', tool: 'text' as const, x: 100, y: 50, width: 200, height: 40,
       text: 'Hi', rotation: Math.PI / 4,
-    }];
-    const nodes = objsToSvgNodes(items as never, []);
-    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
+    };
+    const node = objToSvgNode(a as never);
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
     expect(svg).toMatch(/transform="rotate\(45 200 70\)"/);
   });
 
   it('omits transform when rotation is 0 or undefined', () => {
-    const items = [{
+    const a = {
       id: 'r', tool: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 }, closed: true,
       fill: '#3366ff', stroke: '#000', strokeWidth: 0,
-    }];
-    const nodes = objsToSvgNodes(items as never, []);
-    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    };
+    const node = objToSvgNode(a as never);
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
     expect(svg).not.toContain('transform=');
   });
 });
 
 describe('rotation parse', () => {
-  it('round-trips a rotated rect through serialize → parse → svgNodesToObjsWithGroups', () => {
-    const items = [{
+  it('round-trips a rotated rect through serialize → parse → svgNodesToObjs', () => {
+    const a = {
       id: 'r', tool: 'rect' as const, x: 0, y: 0, width: 100, height: 50,
       path: { kind: 'rect' as const, x: 0, y: 0, width: 100, height: 50 }, closed: true,
       fill: '#3366ff', stroke: '#000000', strokeWidth: 0, rotation: Math.PI / 6,
-    }];
-    const nodes = objsToSvgNodes(items as never, []);
-    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
+    };
+    const node = objToSvgNode(a as never);
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 200, height: 200 } });
     const parsed = parseSvg(svg);
     let next = 0;
-    const out = svgNodesToObjsWithGroups(parsed.nodes, () => `id${next++}`);
-    expect(out.items).toHaveLength(1);
-    const r = out.items[0];
+    const out = svgNodesToObjs(parsed.nodes, () => `id${next++}`);
+    expect(out).toHaveLength(1);
+    const r = out[0];
     expect(r.tool).toBe('rect');
     expect(r.x).toBeCloseTo(0, 5);
     expect(r.width).toBeCloseTo(100, 5);
     expect(r.rotation).toBeCloseTo(Math.PI / 6, 5);
   });
 
-  it('round-trips a rotated text object through serialize → parse → svgNodesToObjsWithGroups', () => {
-    const items = [{
+  it('round-trips a rotated text object through serialize → parse → svgNodesToObjs', () => {
+    const a = {
       id: 't', tool: 'text' as const, x: 100, y: 50, width: 200, height: 40,
       text: 'Hi', rotation: Math.PI / 4,
-    }];
-    const nodes = objsToSvgNodes(items as never, []);
-    const svg = serializeSvg(nodes, { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
+    };
+    const node = objToSvgNode(a as never);
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 400, height: 200 } });
     const parsed = parseSvg(svg);
     let next = 0;
-    const out = svgNodesToObjsWithGroups(parsed.nodes, () => `id${next++}`);
-    expect(out.items).toHaveLength(1);
-    const t = out.items[0];
+    const out = svgNodesToObjs(parsed.nodes, () => `id${next++}`);
+    expect(out).toHaveLength(1);
+    const t = out[0];
     expect(t.tool).toBe('text');
     expect(t.rotation).toBeCloseTo(Math.PI / 4, 5);
   });
