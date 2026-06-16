@@ -42,7 +42,6 @@ Priority tags:
 - Layout strategies: AABB-fallback assumes rect-shaped TPose → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
-- Layout strategies: tool overlay rendering of reflowed siblings → [Scene, adapters & layout](#scene-adapters--layout)
 
 **Selection, actions & UI panels**
 - Per-kind property-row registry for `<PropertiesPanel>` → [Selection, actions & UI panels](#selection-actions--ui-panels)
