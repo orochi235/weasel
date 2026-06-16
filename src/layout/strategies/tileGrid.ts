@@ -78,7 +78,7 @@ export function tileGrid<TPose>(
   /**
    * Compute the swap induced by dragging `dragged` onto `target`, if any.
    * Returns `null` when there is no swap (cross-container drop, empty cell,
-   * or null target). The same logic backs both `reflowFor` (preview) and
+   * or null target). The same logic backs both `reflowPoses` (preview) and
    * `commitDrop` (commit) so they cannot disagree.
    */
   function computeSwap(
@@ -114,7 +114,7 @@ export function tileGrid<TPose>(
   return {
     snap,
 
-    getChildPositions(container, children) {
+    childPoses(container, children) {
       const out = new Map<string, TPose>();
       const ids = sortedChildIds(children);
       const byId = new Map(children.map((c) => [c.id, c.pose] as const));
@@ -143,7 +143,7 @@ export function tileGrid<TPose>(
       return out;
     },
 
-    reflowFor(container, children, dragged, target) {
+    reflowPoses(container, children, dragged, target) {
       const out = new Map<string, TPose>();
       const swap = computeSwap(container, children, dragged, target);
       if (swap !== null) {
@@ -167,7 +167,7 @@ export function tileGrid<TPose>(
         droppedPose = cellToPose(meta.cellRect, dragged.pose);
         const swap = computeSwap(container, children, dragged, target);
         if (swap !== null) {
-          const layoutBefore = this.getChildPositions(container, children);
+          const layoutBefore = this.childPoses(container, children);
           ops.push(
             createTransformOp<TPose>({
               id: swap.occupant,

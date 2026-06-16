@@ -11,10 +11,10 @@ const child = (id: string, x: number, y: number): { id: string; pose: P } => ({
 });
 
 describe('freeform', () => {
-  it('getChildPositions returns identity over stored poses', () => {
+  it('childPoses returns identity over stored poses', () => {
     const layout = freeform<P>();
     const children = [child('a', 5, 5), child('b', 30, 40)];
-    const got = layout.getChildPositions(container, children);
+    const got = layout.childPoses(container, children);
     expect(got.get('a')).toEqual({ x: 5, y: 5, width: 10, height: 10 });
     expect(got.get('b')).toEqual({ x: 30, y: 40, width: 10, height: 10 });
     expect(got.size).toBe(2);
@@ -35,9 +35,9 @@ describe('freeform', () => {
     expect(targets).toEqual([]);
   });
 
-  it('reflowFor returns an empty map (no sibling movement)', () => {
+  it('reflowPoses returns an empty map (no sibling movement)', () => {
     const layout = freeform<P>();
-    const reflow = layout.reflowFor(
+    const reflow = layout.reflowPoses(
       container,
       [child('a', 5, 5)],
       {

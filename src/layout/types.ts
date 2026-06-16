@@ -50,7 +50,7 @@ export interface LayoutDragged<TPose> {
 }
 
 export interface LayoutStrategy<TPose> {
-  getChildPositions(
+  childPoses(
     container: LayoutContainer,
     children: ReadonlyArray<LayoutChild<TPose>>,
   ): Map<string, TPose>;
@@ -61,7 +61,7 @@ export interface LayoutStrategy<TPose> {
     dragged: LayoutDragged<TPose>,
   ): DropTarget<TPose>[];
 
-  reflowFor(
+  reflowPoses(
     container: LayoutContainer,
     children: ReadonlyArray<LayoutChild<TPose>>,
     dragged: LayoutDragged<TPose>,

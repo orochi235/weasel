@@ -18,7 +18,7 @@ export function freeform<TPose>(opts: FreeformOptions<TPose> = {}): LayoutStrate
   return {
     snap,
 
-    getChildPositions(_container, children) {
+    childPoses(_container, children) {
       const out = new Map<string, TPose>();
       for (const c of children) out.set(c.id, c.pose);
       return out;
@@ -28,7 +28,7 @@ export function freeform<TPose>(opts: FreeformOptions<TPose> = {}): LayoutStrate
       return [];
     },
 
-    reflowFor() {
+    reflowPoses() {
       return new Map();
     },
 

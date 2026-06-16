@@ -7,14 +7,14 @@ type P = { x: number; y: number; width: number; height: number };
 const container = { id: 'C', bounds: { x: 0, y: 0, width: 100, height: 100 } };
 
 describe('tileGrid', () => {
-  it('getChildPositions assigns children to cells in id order', () => {
+  it('childPoses assigns children to cells in id order', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 2 });
     const children = [
       { id: 'b', pose: { x: 999, y: 999, width: 10, height: 10 } },
       { id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } },
       { id: 'c', pose: { x: 0, y: 0, width: 10, height: 10 } },
     ];
-    const got = layout.getChildPositions(container, children);
+    const got = layout.childPoses(container, children);
     // 100x100 container, 2x2 grid, no gap → 50x50 cells.
     // Sorted ids: a, b, c → cells (0,0), (1,0), (0,1).
     expect(got.get('a')).toEqual({ x: 0, y: 0, width: 50, height: 50 });
@@ -28,7 +28,7 @@ describe('tileGrid', () => {
       { id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } },
       { id: 'b', pose: { x: 0, y: 0, width: 10, height: 10 } },
     ];
-    const got = layout.getChildPositions(container, children);
+    const got = layout.childPoses(container, children);
     expect(got.size).toBe(1);
     expect(got.has('a')).toBe(true);
     expect(got.has('b')).toBe(false);
@@ -40,7 +40,7 @@ describe('tileGrid', () => {
       { id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } },
       { id: 'b', pose: { x: 0, y: 0, width: 10, height: 10 } },
     ];
-    const got = layout.getChildPositions(container, children);
+    const got = layout.childPoses(container, children);
     // 100 wide, 2 cols, 10 gap → cells width = (100 - 10) / 2 = 45.
     // a at x=0, b at x=55.
     expect(got.get('a')?.x).toBe(0);
@@ -66,7 +66,7 @@ describe('tileGrid', () => {
     expect((tl.meta as { cellRect: P }).cellRect).toEqual({ x: 0, y: 0, width: 50, height: 50 });
   });
 
-  it('reflowFor swaps occupant when picked cell is occupied (same-container drag)', () => {
+  it('reflowPoses swaps occupant when picked cell is occupied (same-container drag)', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 1 });
     const children = [
       { id: 'a', pose: { x: 0, y: 0, width: 50, height: 100 } },
@@ -80,7 +80,7 @@ describe('tileGrid', () => {
       sourceContainerId: 'C',
     });
     const cell1 = targets.find((t) => (t.meta as { col: number }).col === 1)!;
-    const reflow = layout.reflowFor(container, children, {
+    const reflow = layout.reflowPoses(container, children, {
       id: 'a',
       originPose: { x: 0, y: 0, width: 50, height: 100 },
       pose: { x: 50, y: 0, width: 50, height: 100 },
@@ -91,7 +91,7 @@ describe('tileGrid', () => {
     expect(reflow.has('a')).toBe(false);
   });
 
-  it('reflowFor returns empty map when picked cell is empty', () => {
+  it('reflowPoses returns empty map when picked cell is empty', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 1 });
     const children = [
       { id: 'a', pose: { x: 0, y: 0, width: 50, height: 100 } },
@@ -103,7 +103,7 @@ describe('tileGrid', () => {
       sourceContainerId: null,
     });
     const cell1 = targets.find((t) => (t.meta as { col: number }).col === 1)!;
-    const reflow = layout.reflowFor(container, children, {
+    const reflow = layout.reflowPoses(container, children, {
       id: 'd',
       originPose: { x: 0, y: 0, width: 50, height: 100 },
       pose: { x: 50, y: 0, width: 50, height: 100 },
@@ -136,7 +136,7 @@ describe('tileGrid', () => {
     expect(ops.every((o) => typeof o.apply === 'function' && typeof o.invert === 'function')).toBe(true);
   });
 
-  it('reflowFor swaps occupant under gap > 0 (no desync from gapped layout)', () => {
+  it('reflowPoses swaps occupant under gap > 0 (no desync from gapped layout)', () => {
     const layout = tileGrid<P>({ cols: 2, rows: 1, gap: 10 });
     // 100 wide, 2 cols, 10 gap → cells width = 45. a at x=0, b at x=55.
     const children = [
@@ -150,7 +150,7 @@ describe('tileGrid', () => {
       sourceContainerId: 'C',
     });
     const cell1 = targets.find((t) => (t.meta as { col: number }).col === 1)!;
-    const reflow = layout.reflowFor(container, children, {
+    const reflow = layout.reflowPoses(container, children, {
       id: 'a',
       originPose: { x: 0, y: 0, width: 45, height: 100 },
       pose: { x: 55, y: 0, width: 45, height: 100 },
@@ -203,7 +203,7 @@ describe('tileGrid', () => {
       { id: 'a', pose: { x: 25, y: 50 } as Point },
       { id: 'b', pose: { x: 75, y: 50 } as Point },
     ];
-    const got = layout.getChildPositions(container, children);
+    const got = layout.childPoses(container, children);
     // 100x100 container, 2x1 grid → cells at (0,0,50,100) and (50,0,50,100).
     // Centers: (25,50), (75,50).
     expect(got.get('a')).toEqual({ x: 25, y: 50 });

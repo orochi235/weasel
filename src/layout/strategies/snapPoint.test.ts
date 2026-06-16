@@ -13,10 +13,10 @@ const dragged = (pose: P) => ({
 });
 
 describe('snapPoint', () => {
-  it('getChildPositions returns identity', () => {
+  it('childPoses returns identity', () => {
     const layout = snapPoint<P>({ pattern: 'corners' });
     const children = [{ id: 'a', pose: { x: 5, y: 5 } as P }];
-    const got = layout.getChildPositions(container, children);
+    const got = layout.childPoses(container, children);
     expect(got.get('a')).toEqual({ x: 5, y: 5 });
   });
 
@@ -80,9 +80,9 @@ describe('snapPoint', () => {
     );
   });
 
-  it('reflowFor returns empty map', () => {
+  it('reflowPoses returns empty map', () => {
     const layout = snapPoint<P>({ pattern: 'center' });
-    const reflow = layout.reflowFor(container, [], dragged({ x: 0, y: 0 }), null);
+    const reflow = layout.reflowPoses(container, [], dragged({ x: 0, y: 0 }), null);
     expect(reflow.size).toBe(0);
   });
 

@@ -61,7 +61,7 @@ export function snapPoint<TPose extends Pt>(
   return {
     snap,
 
-    getChildPositions(_container, children) {
+    childPoses(_container, children) {
       const out = new Map<string, TPose>();
       for (const c of children) out.set(c.id, c.pose);
       return out;
@@ -76,7 +76,7 @@ export function snapPoint<TPose extends Pt>(
       }));
     },
 
-    reflowFor() {
+    reflowPoses() {
       return new Map();
     },
 
