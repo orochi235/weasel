@@ -5,13 +5,13 @@
  * Three pieces:
  *   - `composeSelectionPose` resolves the live pose for a selected id by
  *     consulting the move overlay first, then the resize overlay, then the
- *     stored pose. When a `groupAdapter` is supplied and the id resolves to
- *     a group, the returned pose is the union AABB of all transitive leaf
- *     poses (with the same precedence rules applied per leaf).
+ *     stored pose. When `getChildren`/`isContainer` are supplied and the id
+ *     resolves to a container, the returned pose is the union AABB of all
+ *     transitive leaf poses (with the same precedence rules applied per leaf).
  *   - `createSelectionOutlineLayer` draws the outline rect for each selected
- *     id (group ids resolve to a union AABB via the optional `groupAdapter`).
+ *     id (container ids resolve to a union AABB via `getChildren`/`isContainer`).
  *   - `createSelectionHandlesLayer` draws resize-handle rects (default 4
- *     corners) for each selected id, with the same group-resolution rules.
+ *     corners) for each selected id, with the same container-resolution rules.
  *
  * `createSelectionOverlayLayer` is a thin convenience that returns a single
  * `RenderLayer` whose draw runs the outline pass then the handles pass.
@@ -19,7 +19,7 @@
  * **Pose shape:** TPose is generic; callers must supply `getBounds(pose)`
  * to project any pose into the AABB the renderer needs. For rect-shaped
  * poses (`{x, y, width, height}`) pass the identity. For `Path` poses pass
- * `boundsOfPath`. Group ids reduce via `unionBounds` over the projected
+ * `boundsOfPath`. Container ids reduce via `unionBounds` over the projected
  * AABBs.
  */
 
@@ -27,8 +27,6 @@ import type { DrawCommand } from '../../renderer';
 import { mat3, type Mat3 } from '../../renderer';
 import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
-import type { GroupAdapter } from '../groups/types';
-import { expandToLeaves } from '../groups/resolve';
 import { unionBounds } from '../groups/unionBounds';
 import { alignedStrokeRect, type FillStyle, type Stroke } from 'core/paint-types';
 import {
@@ -64,9 +62,9 @@ export interface ComposeSelectionPoseOpts<TPose> {
   moveOverlay?: { poses: Map<string, TPose> } | null;
   /**
    * Resize overlay; consulted only when move overlay does not own the id.
-   * For group resize, `leafPoses` (when present) maps each leaf id under the
-   * group to its overlay pose. If absent the group falls back to stored
-   * leaf poses (defensive — group-resize integration is in flight).
+   * For container resize, `leafPoses` (when present) maps each leaf id under
+   * the container to its overlay pose. If absent the container falls back to
+   * stored leaf poses (defensive — container-resize integration is in flight).
    */
   resizeOverlay?: {
     id: string;
@@ -84,32 +82,43 @@ export interface ComposeSelectionPoseOpts<TPose> {
   getBounds?: (pose: TPose) => Bounds;
   /**
    * Wrap an AABB back into a TPose. Called only when the resolver collapses
-   * a group's leaves into a single union AABB. Defaults to the identity —
+   * a container's leaves into a single union AABB. Defaults to the identity —
    * for `Path` poses pass `(b) => ({ kind: 'rect', ...b })`.
    */
   fromBounds?: (bounds: Bounds) => TPose;
-  /**
-   * Optional group adapter. When supplied and the queried id is a group,
-   * the resolver returns the union AABB of all transitive leaf poses
-   * instead of the (non-existent) stored pose for the group id itself.
-   * If absent, group ids are treated as opaque leaf ids.
-   */
-  groupAdapter?: GroupAdapter;
+  /** Walk a container's direct children (e.g. `scene.childrenOf`). With
+   *  `isContainer`, a selected container resolves to the union AABB of its
+   *  transitive leaf poses instead of its own stored pose. */
+  getChildren?: (id: string) => readonly string[];
+  /** True when `id` is a structural container. */
+  isContainer?: (id: string) => boolean;
 }
 
 /**
  * Build a pose resolver for a selection. Precedence per id:
- * move overlay > resize overlay > stored. When a `groupAdapter` is supplied
- * and the id resolves to a group, the resolver returns the union AABB of
- * all transitive leaf poses (each leaf still subject to the precedence
- * rules). Empty groups resolve to `null`.
+ * move overlay > resize overlay > stored. When `getChildren`/`isContainer`
+ * are supplied and the id resolves to a container, the resolver returns the
+ * union AABB of all transitive leaf poses (each leaf still subject to the
+ * precedence rules). Containers with no leaves resolve to `null`.
  */
 export function composeSelectionPose<TPose>(
   opts: ComposeSelectionPoseOpts<TPose>,
 ): (id: string) => TPose | null {
-  const { moveOverlay, resizeOverlay, getStoredPose, groupAdapter } = opts;
+  const { moveOverlay, resizeOverlay, getStoredPose, getChildren, isContainer } = opts;
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
   const fromBounds = opts.fromBounds ?? ((bounds: Bounds) => bounds as unknown as TPose);
+
+  const leavesOf = (id: string): string[] => {
+    if (!getChildren || !isContainer || !isContainer(id)) return [id];
+    const out: string[] = [];
+    const visit = (nid: string) => {
+      const kids = getChildren(nid);
+      if (kids.length === 0) { out.push(nid); return; }
+      for (const k of kids) visit(k);
+    };
+    visit(id);
+    return out;
+  };
 
   const resolveLeaf = (id: string): TPose => {
     const moved = moveOverlay?.poses.get(id);
@@ -119,10 +128,10 @@ export function composeSelectionPose<TPose>(
   };
 
   return (id: string): TPose | null => {
-    if (groupAdapter !== undefined && groupAdapter.getGroup(id) !== undefined) {
-      const leaves = expandToLeaves([id], groupAdapter);
+    if (isContainer?.(id)) {
+      const leaves = leavesOf(id);
       if (leaves.length === 0) return null;
-      const groupResizeLeafPoses =
+      const containerResizeLeafPoses =
         resizeOverlay && resizeOverlay.id === id ? resizeOverlay.leafPoses : undefined;
       const leafBounds: Bounds[] = [];
       for (const leafId of leaves) {
@@ -131,7 +140,7 @@ export function composeSelectionPose<TPose>(
           leafBounds.push(getBounds(moved));
           continue;
         }
-        const overlayLeaf = groupResizeLeafPoses?.get(leafId);
+        const overlayLeaf = containerResizeLeafPoses?.get(leafId);
         if (overlayLeaf !== undefined) {
           leafBounds.push(getBounds(overlayLeaf));
           continue;
@@ -147,27 +156,39 @@ export function composeSelectionPose<TPose>(
 }
 
 /**
- * Build a pose resolver that handles group ids by computing the union AABB
- * of every leaf's bounds. Non-group ids pass through directly. When
- * `groupAdapter` is omitted, every id is treated as a leaf.
+ * Build a pose resolver that handles container ids by computing the union
+ * AABB of every leaf's bounds. Non-container ids pass through directly. When
+ * `getChildren`/`isContainer` are omitted, every id is treated as a leaf.
  */
-function makeGroupAwareBoundsResolver<TPose>(
+function makeContainerAwareBoundsResolver<TPose>(
   getPose: (id: string) => TPose | null,
   getBounds: (pose: TPose) => Bounds,
-  groupAdapter?: GroupAdapter,
+  getChildren?: (id: string) => readonly string[],
+  isContainer?: (id: string) => boolean,
 ): (id: string) => Bounds | null {
-  if (groupAdapter === undefined) {
+  if (getChildren === undefined || isContainer === undefined) {
     return (id: string) => {
       const p = getPose(id);
       return p === null ? null : getBounds(p);
     };
   }
+  const leavesOf = (id: string): string[] => {
+    if (!isContainer(id)) return [id];
+    const out: string[] = [];
+    const visit = (nid: string) => {
+      const kids = getChildren(nid);
+      if (kids.length === 0) { out.push(nid); return; }
+      for (const k of kids) visit(k);
+    };
+    visit(id);
+    return out;
+  };
   return (id: string): Bounds | null => {
-    if (groupAdapter.getGroup(id) === undefined) {
+    if (!isContainer(id)) {
       const p = getPose(id);
       return p === null ? null : getBounds(p);
     }
-    const leaves = expandToLeaves([id], groupAdapter);
+    const leaves = leavesOf(id);
     if (leaves.length === 0) return null;
     const leafBounds: Bounds[] = [];
     for (const leafId of leaves) {
@@ -183,10 +204,10 @@ function makeGroupAwareBoundsResolver<TPose>(
 interface SelectionLayerCommon<TPose> {
   getSelection: () => readonly NodeId[];
   /** Return null to skip rendering for an id (e.g. resolved pose unavailable).
-   *  Takes `string` rather than `NodeId` because the group-aware bounds
-   *  resolver internally walks expanded leaf ids via `GroupAdapter`, which
-   *  is generic over arbitrary string ids. NodeIds flow in fine — a NodeId
-   *  is a string. */
+   *  Takes `string` rather than `NodeId` because the container-aware bounds
+   *  resolver internally walks expanded leaf ids via `getChildren`, which is
+   *  generic over arbitrary string ids. NodeIds flow in fine — a NodeId is a
+   *  string. */
   getPose: (id: string) => TPose | null;
   /**
    * Project a pose into its AABB. Defaults to the identity — rect-shaped
@@ -194,11 +215,12 @@ interface SelectionLayerCommon<TPose> {
    * `boundsOfPath`.
    */
   getBounds?: (pose: TPose) => Bounds;
-  /**
-   * Optional group adapter. When supplied, any id that resolves to a group
-   * is rendered using the union bounds of all its transitive leaves.
-   */
-  groupAdapter?: GroupAdapter;
+  /** Walk a container's direct children (e.g. `scene.childrenOf`). When
+   *  supplied with `isContainer`, any id that resolves to a container is
+   *  rendered using the union bounds of all its transitive leaves. */
+  getChildren?: (id: string) => readonly string[];
+  /** True when `id` is a structural container. */
+  isContainer?: (id: string) => boolean;
 }
 
 /** Options for `createSelectionOutlineLayer`. */
@@ -568,7 +590,7 @@ export function createSelectionOutlineLayer<TPose>(
 ): RenderLayer<unknown> {
   const { stroke, pad } = resolveOutlineStroke(opts.outline);
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
-  const resolveBounds = makeGroupAwareBoundsResolver(opts.getPose, getBounds, opts.groupAdapter);
+  const resolveBounds = makeContainerAwareBoundsResolver(opts.getPose, getBounds, opts.getChildren, opts.isContainer);
   return {
     id: 'selection-outline',
     label: 'Selection outline',
@@ -591,7 +613,7 @@ export function createSelectionHandlesLayer<TPose>(
   const handles = resolveHandles(opts.handles);
   const handlesOf = opts.handlesOf ?? defaultHandlesOf;
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
-  const resolveBounds = makeGroupAwareBoundsResolver(opts.getPose, getBounds, opts.groupAdapter);
+  const resolveBounds = makeContainerAwareBoundsResolver(opts.getPose, getBounds, opts.getChildren, opts.isContainer);
   const rotationHandleDistance = resolveRotationHandleDistance(opts.rotationHandle);
   return {
     id: 'selection-handles',
@@ -637,7 +659,7 @@ export function createSelectionOverlayLayer<TPose>(
   const handles = handlesEnabled ? resolveHandles(opts.handles || undefined) : null;
   const handlesOf = opts.handlesOf ?? defaultHandlesOf;
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
-  const resolveBounds = makeGroupAwareBoundsResolver(opts.getPose, getBounds, opts.groupAdapter);
+  const resolveBounds = makeContainerAwareBoundsResolver(opts.getPose, getBounds, opts.getChildren, opts.isContainer);
   const rotationHandleDistance = resolveRotationHandleDistance(opts.rotationHandle);
 
   return {

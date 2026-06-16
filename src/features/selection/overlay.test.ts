@@ -6,26 +6,22 @@ import {
   createSelectionOutlineLayer,
   createSelectionHandlesLayer,
 } from './overlay';
-import type { Group, GroupAdapter } from '../groups/types';
 import { asNodeId } from 'core/scene/types';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
-function makeGroupAdapter(groups: Group[]): GroupAdapter {
-  const byId = new Map<string, Group>(groups.map((g) => [g.id, { ...g, members: [...g.members] }]));
+/**
+ * Build `getChildren`/`isContainer` accessors from a flat `id -> direct
+ * children` map. Ids present as keys are containers; everything else is a
+ * leaf. Mirrors how a real caller wires `scene.childrenOf` /
+ * `scene.get(id)?.kind === 'container'`.
+ */
+function makeContainerTree(children: Record<string, string[]>): {
+  getChildren: (id: string) => readonly string[];
+  isContainer: (id: string) => boolean;
+} {
   return {
-    getGroup: (id) => byId.get(id),
-    getGroupsForMember: (id) =>
-      [...byId.values()].filter((g) => g.members.includes(id)).map((g) => g.id),
-    insertGroup: (g) => byId.set(g.id, { ...g, members: [...g.members] }),
-    removeGroup: (id) => void byId.delete(id),
-    addToGroup: (gid, ids) => {
-      const g = byId.get(gid);
-      if (g) g.members.push(...ids);
-    },
-    removeFromGroup: (gid, ids) => {
-      const g = byId.get(gid);
-      if (g) g.members = g.members.filter((m) => !ids.includes(m));
-    },
+    getChildren: (id) => children[id] ?? [],
+    isContainer: (id) => Object.prototype.hasOwnProperty.call(children, id),
   };
 }
 
@@ -84,7 +80,7 @@ describe('composeSelectionPose', () => {
   });
 });
 
-describe('composeSelectionPose with groups', () => {
+describe('composeSelectionPose with containers', () => {
   const stored: Record<string, Pose> = {
     a: { x: 0, y: 0, width: 10, height: 10 },
     b: { x: 50, y: 50, width: 20, height: 20 },
@@ -92,49 +88,74 @@ describe('composeSelectionPose with groups', () => {
   };
   const getStoredPose = (id: string): Pose => stored[id];
 
-  it('non-group id with adapter resolves identical to no-adapter behavior', () => {
-    const adapter = makeGroupAdapter([{ id: 'g1', members: ['a', 'b'] }]);
-    const resolve = composeSelectionPose<Pose>({ getStoredPose, groupAdapter: adapter });
+  it('resolves a container to the union AABB of its leaf descendants (stale own pose ignored)', () => {
+    // `c` is a container with a stale own pose; its leaves drive the result.
+    const leaf: Record<string, Pose> = {
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 20, y: 30, width: 10, height: 10 },
+    };
+    const stale: Record<string, Pose> = {
+      ...leaf,
+      c: { x: 999, y: 999, width: 1, height: 1 },
+    };
+    const { getChildren, isContainer } = makeContainerTree({ c: ['a', 'b'] });
+    const resolve = composeSelectionPose<Pose>({
+      getStoredPose: (id) => stale[id],
+      getChildren,
+      isContainer,
+      getBounds: (p) => p,
+      fromBounds: (b) => ({ ...b }),
+    });
+    // Container resolves to the union envelope of a+b, not its stale own pose.
+    expect(resolve('c')).toEqual({ x: 0, y: 0, width: 30, height: 40 });
+    // A plain leaf resolves to its own pose.
+    expect(resolve('a')).toBe(stale.a);
+  });
+
+  it('non-container id resolves identical to no-accessor behavior', () => {
+    const { getChildren, isContainer } = makeContainerTree({ c: ['a', 'b'] });
+    const resolve = composeSelectionPose<Pose>({ getStoredPose, getChildren, isContainer });
     expect(resolve('a')).toBe(stored.a);
     expect(resolve('b')).toBe(stored.b);
   });
 
-  it('groupAdapter not provided: id treated as a leaf even if it would be a group', () => {
+  it('accessors not provided: id treated as a leaf even if it would be a container', () => {
     const stub: Pose = { x: -1, y: -1, width: 1, height: 1 };
     const resolve = composeSelectionPose<Pose>({
-      getStoredPose: (id) => (id === 'g1' ? stub : stored[id]),
+      getStoredPose: (id) => (id === 'c' ? stub : stored[id]),
     });
-    expect(resolve('g1')).toBe(stub);
+    expect(resolve('c')).toBe(stub);
   });
 
-  it('group of 2 rects: union bounds is the envelope', () => {
-    const adapter = makeGroupAdapter([{ id: 'g1', members: ['a', 'b'] }]);
-    const resolve = composeSelectionPose<Pose>({ getStoredPose, groupAdapter: adapter });
+  it('container of 2 rects: union bounds is the envelope', () => {
+    const { getChildren, isContainer } = makeContainerTree({ g1: ['a', 'b'] });
+    const resolve = composeSelectionPose<Pose>({ getStoredPose, getChildren, isContainer });
     expect(resolve('g1')).toEqual({ x: 0, y: 0, width: 70, height: 70 });
   });
 
-  it('composed group: union expands across all transitive leaves', () => {
-    const adapter = makeGroupAdapter([
-      { id: 'inner', members: ['a', 'b'] },
-      { id: 'outer', members: ['inner', 'c'] },
-    ]);
-    const resolve = composeSelectionPose<Pose>({ getStoredPose, groupAdapter: adapter });
+  it('nested container: union expands across all transitive leaves', () => {
+    const { getChildren, isContainer } = makeContainerTree({
+      inner: ['a', 'b'],
+      outer: ['inner', 'c'],
+    });
+    const resolve = composeSelectionPose<Pose>({ getStoredPose, getChildren, isContainer });
     expect(resolve('outer')).toEqual({ x: 0, y: 0, width: 105, height: 70 });
   });
 
   it('move overlay precedence: union uses overlay pose for dragged leaves', () => {
-    const adapter = makeGroupAdapter([{ id: 'g1', members: ['a', 'b'] }]);
+    const { getChildren, isContainer } = makeContainerTree({ g1: ['a', 'b'] });
     const movedA: Pose = { x: 200, y: 200, width: 10, height: 10 };
     const resolve = composeSelectionPose<Pose>({
       moveOverlay: { poses: new Map([['a', movedA]]) },
       getStoredPose,
-      groupAdapter: adapter,
+      getChildren,
+      isContainer,
     });
     expect(resolve('g1')).toEqual({ x: 50, y: 50, width: 160, height: 160 });
   });
 
-  it('resize overlay on a group: uses per-leaf overlay map when available', () => {
-    const adapter = makeGroupAdapter([{ id: 'g1', members: ['a', 'b'] }]);
+  it('resize overlay on a container: uses per-leaf overlay map when available', () => {
+    const { getChildren, isContainer } = makeContainerTree({ g1: ['a', 'b'] });
     const overlayA: Pose = { x: 0, y: 0, width: 30, height: 30 };
     const overlayB: Pose = { x: 30, y: 30, width: 30, height: 30 };
     const resolve = composeSelectionPose<Pose>({
@@ -147,36 +168,23 @@ describe('composeSelectionPose with groups', () => {
         ]),
       },
       getStoredPose,
-      groupAdapter: adapter,
+      getChildren,
+      isContainer,
     });
     expect(resolve('g1')).toEqual({ x: 0, y: 0, width: 60, height: 60 });
   });
 
-  it('resize overlay on a group without leafPoses falls back to stored', () => {
-    const adapter = makeGroupAdapter([{ id: 'g1', members: ['a', 'b'] }]);
+  it('resize overlay on a container without leafPoses falls back to stored', () => {
+    const { getChildren, isContainer } = makeContainerTree({ g1: ['a', 'b'] });
     const resolve = composeSelectionPose<Pose>({
       resizeOverlay: {
         id: 'g1',
         currentPose: { x: 0, y: 0, width: 0, height: 0 },
       },
       getStoredPose,
-      groupAdapter: adapter,
+      getChildren,
+      isContainer,
     });
-    expect(resolve('g1')).toEqual({ x: 0, y: 0, width: 70, height: 70 });
-  });
-
-  it('empty group: returns null', () => {
-    const adapter = makeGroupAdapter([{ id: 'g1', members: [] }]);
-    const resolve = composeSelectionPose<Pose>({ getStoredPose, groupAdapter: adapter });
-    expect(resolve('g1')).toBeNull();
-  });
-
-  it('cycle-safe: groups containing each other terminate', () => {
-    const adapter = makeGroupAdapter([
-      { id: 'g1', members: ['a', 'g2'] },
-      { id: 'g2', members: ['b', 'g1'] },
-    ]);
-    const resolve = composeSelectionPose<Pose>({ getStoredPose, groupAdapter: adapter });
     expect(resolve('g1')).toEqual({ x: 0, y: 0, width: 70, height: 70 });
   });
 });
