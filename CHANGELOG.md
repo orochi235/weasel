@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.4.0 — 2026-06-15
+
+### Breaking changes
+
+- **npm scope migrated `@orochi235/*` → `@weasel-js/*`.** The root package is
+  now `@weasel-js/core` (was `@orochi235/weasel`); the `weasel-` prefix was
+  dropped from the workspace sub-packages and their directories renamed. The
+  orochi235 GitHub URLs and author field are intentionally retained — this is
+  an npm-only move.
+- **Membership-group apparatus removed.** The old `Group` record / `GroupAdapter`
+  are gone. `group` / `ungroup` now create and dissolve a structural
+  `ContainerNode` (`kind: 'container'`) and reparent the selection under it; the
+  container persists in the scene tree and round-trips to SVG `<g>`. A *saved
+  selection* is just a consumer-held `string[]` passed to `selection.set` — it is
+  no longer a scene entity. See `docs/taxonomy.md` ("Group vs Selection").
+- **`LayoutStrategy` renames:** `getChildPositions` → `childPoses`,
+  `reflowFor` → `reflowPoses`. Update implementations and call sites.
+
+### Added
+
+- **Move behavior pipeline.** `useMove` runs an ordered `opts.behaviors`
+  pipeline over a scene-backed gesture adapter, so consumers can compose
+  move-time effects (snap, layout reflow, …) instead of forking the tool.
+  Threaded through the select binding via `move.behaviors`.
+- **Drag-time layout reflow.** A move into a layout container now runs a
+  reflow pass that folds sibling poses into the preview channel during the
+  drag, and commits via the strategy's `commitDrop` plus source-reflow ops.
+- **`Scene.loadState`** — in-place restore of a serialized snapshot (extracted
+  `applyConstructionSpecs` / `specsFromSerialized` for reuse).
+- **`measureTextBounds`** — atlas-based text measurement against the MSDF font
+  registry.
+- **labkit absorbed into the monorepo** as the `packages/labkit` workspace
+  package (published as `@lab-kit/react`), with its own CI wiring, smoke test,
+  and Storybook/Pages docs unification.
+- Dispatcher dev tooling: a live dispatch-trace widget in ToolkitBuilder, and
+  `enableKeybindings` now also gates the dispatcher key channel.
+- New `MoveSnapDemo` exercising container-snap + snap-back.
+
+### Build / tooling
+
+- `.d.ts` emission via `rollup-plugin-dts` with the alias pipeline; tsup code
+  splitting enabled so entry points share a single font registry; the
+  `@weasel-js/*` sub-packages are bundled into `dist` for publish.
+- CI actions bumped off Node 20 (checkout v6 / setup-node v6 / pages v5);
+  residual React `act()` warnings cleaned up at their call sites; visual
+  baselines re-captured from `ubuntu-22.04`.
+
 ### Deprecated
 
 - `Canvas` is now marked `@internal` / `@deprecated` and dropped from the
