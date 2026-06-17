@@ -1,4 +1,3 @@
-// src/interactions/actions/defaults/slice.ts
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '../invoker';
 import type { DrawCommand } from '../../../renderer';
@@ -18,6 +17,7 @@ const SLICE_WIDTH = 1;
 const SLICE_DASH = [6, 4];
 
 /**
+ * @experimental
  * Static descriptor for the `slice` Action.
  *
  * Ongoing drag invoker: tracks a slice line from drag start to current

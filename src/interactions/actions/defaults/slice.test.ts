@@ -52,5 +52,11 @@ describe('sliceAction', () => {
     const ov = handle.overlay?.();
     expect(ov?.kind).toBe('commands');
     expect(ov?.space).toBe('world');
+    const cmds = ov?.kind === 'commands' ? ov.commands : [];
+    expect(cmds).toHaveLength(1);
+    const cmd = cmds[0];
+    expect(cmd?.kind).toBe('path');
+    const paint = cmd?.kind === 'path' ? (cmd.stroke?.paint as { color?: string } | undefined) : undefined;
+    expect(paint?.color).toBe('#e23b3b');
   });
 });
