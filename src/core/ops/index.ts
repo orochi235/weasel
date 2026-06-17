@@ -6,6 +6,8 @@ export { createInsertOp, type InsertOp } from './create';
 export { createDeleteOp } from './delete';
 export { createSetSelectionOp } from './select';
 export { createSetTextOp } from './setText';
+export { createSetDataOp } from './setData';
+export { createSetLayerOp } from './setLayer';
 export {
   createReorderOp,
   createMoveToIndexOp,
