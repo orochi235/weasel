@@ -1,11 +1,12 @@
 // src/features/paths/splitByLine.ts
 import type { Path, PolygonPath, PathFillRule } from './types';
+import type { Point } from './cubicMath';
 import { boundsOfPath } from './bounds';
 import { extractPolylines } from './tessellate/polyline';
 import { pathIntersect } from './booleans';
 import { polygonFromPoints } from './builder';
 
-export interface Point { x: number; y: number; }
+export type { Point };
 export interface SplitByLineOptions {
   /** Polyline flattening tolerance for the boundary-crossing gate. */
   flattenTolerance?: number;

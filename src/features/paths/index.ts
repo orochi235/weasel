@@ -57,6 +57,7 @@ export {
 } from './flatten';
 export { composePath, decomposePath } from './compose';
 export { splitSubpaths } from './splitSubpaths';
+export { splitPathByLine, type SplitByLineOptions } from './splitByLine';
 export { unionBoundsPath } from './unionBoundsPath';
 export { pathPoseDescriptor } from './poseDescriptor';
 export { pathOriginProjection } from './originProjection';
