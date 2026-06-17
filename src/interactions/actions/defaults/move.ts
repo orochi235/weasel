@@ -295,6 +295,10 @@ interface MoveScratch {
   layout: LayoutDep | undefined;
   /** Latest resolved layout pass, or null when no container accepted. */
   layoutPass: LayoutPass | null;
+  /** Optional consumer commit hook captured at gesture start. When present,
+   *  ops-based commits route through it (consumer history) instead of
+   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+  applyOps?: (ops: Op[], label: string) => void;
 }
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -450,6 +454,7 @@ export const moveAction: Action & { requires: string[] } = {
       const policy = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
       const projection = policy?.projection;
       const layout = ctx.deps.layout as LayoutDep | undefined;
+      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
 
@@ -513,6 +518,7 @@ export const moveAction: Action & { requires: string[] } = {
         adapter,
         layout,
         layoutPass: null,
+        applyOps,
       };
 
       return {
@@ -574,6 +580,14 @@ export const moveAction: Action & { requires: string[] } = {
           // 'commit': apply final delta as a single batch → one undo entry.
           const { dx, dy } = scratch.currentDelta;
 
+          // Route ops-based commits through the consumer hook when present
+          // (so an app with its own history captures the gesture as one undo
+          // entry); otherwise commit straight to the scene's own history.
+          const commitOps = (ops: Op[], label: string): void => {
+            if (scratch.applyOps) scratch.applyOps(ops, label);
+            else scratch.scene.applyBatch(ops, label, scratch.adapter);
+          };
+
           // Behavior pipeline owns the commit if any behavior returns non-undefined.
           if (scratch.behaviors.length > 0) {
             const gctx = scratch.gestureCtx;
@@ -592,7 +606,7 @@ export const moveAction: Action & { requires: string[] } = {
               // = claim the gesture and commit those ops — even an EMPTY
               // array [] claims the commit and suppresses the default
               // translate (behavior intentionally committed nothing).
-              scratch.scene.applyBatch(r, 'Move', scratch.adapter);
+              commitOps(r, 'Move');
               scratch.previews.clear();
               return;
             }
@@ -668,7 +682,7 @@ export const moveAction: Action & { requires: string[] } = {
             }
             const ops = [...reparentOps, ...dropOps, ...reflowOps];
             if (ops.length > 0) {
-              scratch.scene.applyBatch(ops, ops[0].label ?? 'Move', scratch.adapter);
+              commitOps(ops, ops[0].label ?? 'Move');
             }
             scratch.previews.clear();
             return;

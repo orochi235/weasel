@@ -31,6 +31,7 @@
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { Scene, NodeId } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
 import type { History } from '@weasel-js/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
@@ -361,6 +362,14 @@ declare module './depRegistry' {
      * Optional: when absent, `sliceAction` is a no-op.
      */
     slice?: SliceDep;
+    /**
+     * Optional consumer commit hook. When present, `moveAction` (and other
+     * default actions) submit their committed ops through it instead of
+     * `scene.applyBatch`, so apps with their own history integration
+     * (checkpoint + push entry) capture the gesture as one undo entry.
+     * When absent, commits fall back to `scene.applyBatch`.
+     */
+    applyOps?: (ops: Op[], label: string) => void;
   }
 }
 
