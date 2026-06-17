@@ -4,6 +4,13 @@ import type { InvocationCtx } from '../invoker';
 import { tileGrid } from '../../../layout/strategies';
 import type { LayoutDep } from '../depSchema';
 import type { NodeId } from 'core/scene/types';
+import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
+
+/** Local-pose composition strategy (parent translation). Supplied as the
+ *  `poseComposition` dep so the existing tests below keep exercising the
+ *  local-pose model. Omitting it falls back to the kit's IDENTITY default
+ *  (absolute-pose), exercised by the dedicated absolute-model test. */
+const LOCAL_PC = { compose: composeRectPose, decompose: decomposeRectPose };
 
 type P = { x: number; y: number; width: number; height: number };
 
@@ -60,6 +67,10 @@ function makeCtx(
   drag?: InvocationCtx['drag'],
   getLayout?: GetLayout,
   applyOps?: (ops: unknown[], label?: string) => void,
+  // Pose-composition strategy. Defaults to LOCAL (parent translation) so the
+  // existing local-model tests keep passing. Pass `null` to OMIT the dep and
+  // exercise the kit's IDENTITY (absolute-pose) default.
+  poseComposition: typeof LOCAL_PC | null = LOCAL_PC,
 ): InvocationCtx {
   const grid = tileGrid<P>({ cols: 2, rows: 1 });
   const defaultGet: LayoutDep['getLayout'] = (id) => (id === 'C' ? (grid as never) : null);
@@ -74,6 +85,7 @@ function makeCtx(
     scene,
     layout,
   };
+  if (poseComposition) deps.poseComposition = poseComposition;
   if (applyOps) deps.applyOps = applyOps;
   return {
     world: { x: 0, y: 0 },
@@ -294,6 +306,48 @@ describe('moveAction layout reflow', () => {
     const drop = ops.find((o) => o.name === 'transform' && o.args?.id === 'a');
     expect(drop).toBeDefined();
     expect(drop!.args?.to).toMatchObject({ x: 0, y: 0 }); // local to D; world = {150,0}
+  });
+
+  it('ABSOLUTE model (no poseComposition): commits the WORLD cell origin, not rebased to local', () => {
+    // Absolute-pose scene (mirrors the kit's base scene + layoutDemo): every
+    // node stores WORLD coords; containers are grouping-only with no transform.
+    // Source container C at world {40,40} holds child `a` stored at WORLD
+    // {40,40}; destination D at world {200,0} holds d1 at WORLD {200,0}.
+    // Dragging a into D's cell 0 (world {200,0}) must commit a's pose AS the
+    // world cell origin {200,0} — NOT rebased to local {0,0} under D — because
+    // with no poseComposition dep the kit defaults to IDENTITY composition.
+    const scene = makeScene(
+      {
+        C: { x: 40, y: 40, width: 100, height: 100 },
+        a: { x: 40, y: 40, width: 50, height: 100 },
+        b: { x: 90, y: 40, width: 50, height: 100 },
+        D: { x: 200, y: 0, width: 100, height: 100 },
+        d1: { x: 200, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
+      { C: ['a', 'b'], D: ['d1'] },
+      ['C', 'D'],
+    );
+    const grid = tileGrid<P>({ cols: 2, rows: 1 });
+    const layouts = { C: grid, D: grid };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    // `null` → omit poseComposition → IDENTITY (absolute) default.
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts, undefined, null));
+    // a world center {40+25, 40+50} = {65,90}; delta {160,-40} → world center
+    // {225,50}, inside D's cell 0 (world {200,0,50,100}).
+    const drag = { start: { x: 65, y: 90 }, current: { x: 225, y: 50 }, delta: { x: 160, y: -40 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, layouts, undefined, null) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts, undefined, null) as InvocationCtx, 'commit');
+
+    const ops = scene.appliedBatches[0].ops;
+    const reparent = ops.find((o) => o.name === 'reparent' && o.args?.id === 'a');
+    expect(reparent).toBeDefined();
+    expect(reparent!.args?.toParentId).toBe('D');
+    const drop = ops.find((o) => o.name === 'transform' && o.args?.id === 'a');
+    expect(drop).toBeDefined();
+    // WORLD cell origin — identity composition leaves the world pose untouched.
+    expect(drop!.args?.to).toMatchObject({ x: 200, y: 0 });
   });
 
   it('routes the layout-drop commit through a consumer applyOps hook', () => {

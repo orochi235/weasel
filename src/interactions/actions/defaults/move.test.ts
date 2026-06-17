@@ -5,6 +5,13 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { NodeAtPointDep } from '../depSchema';
+import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
+
+/** Local-pose composition strategy. The reparentOnDrop tests below assert
+ *  LOCAL rebasing (world pose → local under the new parent), so they supply
+ *  this as the `poseComposition` dep. Without it the kit defaults to IDENTITY
+ *  (absolute-pose) and the committed pose would stay in world coords. */
+const LOCAL_PC = { compose: composeRectPose, decompose: decomposeRectPose };
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -421,6 +428,7 @@ describe('moveAction — reparentOnDrop', () => {
       deps: {
         selection,
         scene: scene as Scene<unknown, string, unknown>,
+        poseComposition: LOCAL_PC,
         ...(nodeAtPoint ? { nodeAtPoint } : {}),
       },
     };
