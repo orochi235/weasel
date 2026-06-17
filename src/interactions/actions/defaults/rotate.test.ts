@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { rotateAction } from './rotate';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
@@ -13,6 +13,7 @@ interface StubScene {
   get(id: NodeId): { pose: unknown; kind: 'leaf'; layer: string; data: unknown; parent: null } | undefined;
   setPose(id: NodeId, pose: unknown): void;
   batch<T>(label: string, fn: () => T): T;
+  applyBatch(ops: unknown[], label: string, adapter: unknown): void;
 }
 
 function makeStubScene(initial: Record<string, { pose: unknown }>): StubScene {
@@ -44,6 +45,23 @@ function makeStubScene(initial: Record<string, { pose: unknown }>): StubScene {
       this.setPose = prevSet;
       return result;
     },
+    // The commit path now emits transform ops through `commitOps` →
+    // `scene.applyBatch` (no consumer `applyOps`). Mirror the real scene:
+    // record one undo entry and apply each op via an adapter that writes the
+    // op's target pose to the scene.
+    applyBatch(opList: unknown[], label: string) {
+      const recorded: Array<{ id: string; pose: unknown }> = [];
+      const adapter = {
+        setPose(id: string, pose: unknown) {
+          recorded.push({ id, pose });
+          poses.set(id, pose);
+        },
+      };
+      for (const op of opList as Array<{ apply(a: unknown): void }>) {
+        op.apply(adapter);
+      }
+      batchLog.push({ label, ops: recorded });
+    },
   };
 }
 
@@ -56,6 +74,7 @@ function makeCtx(
     selectionIds?: string[];
     sceneNodes?: Record<string, { pose: unknown }>;
     world?: { x: number; y: number };
+    applyOps?: (ops: unknown[], label: string) => void;
   } = {},
 ): InvocationCtx & { scene: StubScene } {
   const scene = makeStubScene(overrides.sceneNodes ?? {});
@@ -64,7 +83,7 @@ function makeCtx(
     world: overrides.world ?? { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection, scene },
+    deps: { selection, scene, ...(overrides.applyOps ? { applyOps: overrides.applyOps } : {}) },
     scene,
   } as InvocationCtx & { scene: StubScene };
 }
@@ -267,5 +286,58 @@ describe('rotateAction descriptor', () => {
     expect(scene.batchLog[0].label).toBe('Rotate');
     // Both nodes should be in the same batch.
     expect(scene.batchLog[0].ops).toHaveLength(2);
+  });
+
+  it('routes the commit through the consumer applyOps hook when present', () => {
+    const invoker = getOngoingInvoker(rotateAction);
+    const applyOps = vi.fn();
+    const { scene, ...ctx } = makeCtx({
+      selectionIds: ['a'],
+      world: { x: 135, y: 75 },
+      sceneNodes: { a: { pose: { x: 100, y: 50, width: 50, height: 50, rotation: 0 } } },
+      applyOps,
+    });
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } });
+    handle.onEnd!({ ...(ctx as InvocationCtx), world: { x: 125, y: 65 } }, 'commit');
+
+    // Consumer hook owns the commit — scene.batch / applyBatch is not used.
+    expect(applyOps).toHaveBeenCalledOnce();
+    expect(scene.batchLog).toHaveLength(0);
+
+    const [ops, label] = applyOps.mock.calls[0] as [
+      Array<{ name: string; args: { id: string; from: unknown; to: { rotation: number } } }>,
+      string,
+    ];
+    expect(label).toBe('Rotate');
+    expect(ops).toHaveLength(1);
+    expect(ops[0].name).toBe('transform');
+    expect(ops[0].args.id).toBe('a');
+    // `from` is the pre-mutation pose (rotation 0), `to` carries the rotation.
+    expect(ops[0].args.from).toEqual({ x: 100, y: 50, width: 50, height: 50, rotation: 0 });
+    expect(ops[0].args.to.rotation).not.toBe(0);
+  });
+
+  it('emits one op per selected node through applyOps (union-pivot)', () => {
+    const invoker = getOngoingInvoker(rotateAction);
+    const applyOps = vi.fn();
+    const { scene: _scene, ...ctx } = makeCtx({
+      selectionIds: ['a', 'b'],
+      world: { x: 25, y: 5 },
+      sceneNodes: {
+        a: { pose: { x: 0, y: 0, width: 10, height: 10, rotation: 0 } },
+        b: { pose: { x: 20, y: 0, width: 10, height: 10, rotation: 0 } },
+      },
+      applyOps,
+    });
+    void _scene;
+    const handle = invoker.start(ctx as InvocationCtx, undefined);
+    handle.onMove!({ ...(ctx as InvocationCtx), world: { x: 15, y: -5 } });
+    handle.onEnd!({ ...(ctx as InvocationCtx), world: { x: 15, y: -5 } }, 'commit');
+
+    const [ops] = applyOps.mock.calls[0] as [Array<{ args: { id: string } }>];
+    expect(ops).toHaveLength(2);
+    expect(ops[0].args.id).toBe('a');
+    expect(ops[1].args.id).toBe('b');
   });
 });
