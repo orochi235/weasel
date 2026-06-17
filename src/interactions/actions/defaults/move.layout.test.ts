@@ -59,6 +59,7 @@ function makeCtx(
   selectionIds: string[],
   drag?: InvocationCtx['drag'],
   getLayout?: GetLayout,
+  applyOps?: (ops: unknown[], label?: string) => void,
 ): InvocationCtx {
   const grid = tileGrid<P>({ cols: 2, rows: 1 });
   const defaultGet: LayoutDep['getLayout'] = (id) => (id === 'C' ? (grid as never) : null);
@@ -68,11 +69,17 @@ function makeCtx(
       ? getLayout
       : (id) => ((getLayout as Record<string, unknown>)[id] as never) ?? null;
   const layout: LayoutDep = { getLayout: resolve };
+  const deps: Record<string, unknown> = {
+    selection: { get: () => selectionIds as NodeId[] },
+    scene,
+    layout,
+  };
+  if (applyOps) deps.applyOps = applyOps;
   return {
     world: { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: { get: () => selectionIds as NodeId[] }, scene, layout },
+    deps,
     drag,
   } as unknown as InvocationCtx;
 }
@@ -287,6 +294,45 @@ describe('moveAction layout reflow', () => {
     const drop = ops.find((o) => o.name === 'transform' && o.args?.id === 'a');
     expect(drop).toBeDefined();
     expect(drop!.args?.to).toMatchObject({ x: 0, y: 0 }); // local to D; world = {150,0}
+  });
+
+  it('routes the layout-drop commit through a consumer applyOps hook', () => {
+    // Same cross-container drop as the LOCAL-to-destination test, but with a
+    // consumer-supplied applyOps hook. The committed ops (reparent + transform
+    // for a, plus source reflow) must flow through the hook instead of the
+    // scene's own applyBatch — so an app with its own history captures the
+    // gesture as a single undo entry.
+    const scene = makeScene(
+      {
+        C: { x: 40, y: 40, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+        D: { x: 200, y: 0, width: 100, height: 100 },
+        d1: { x: 0, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
+      { C: ['a', 'b'], D: ['d1'] },
+      ['C', 'D'],
+    );
+    const grid = tileGrid<P>({ cols: 2, rows: 1 });
+    const layouts = { C: grid, D: grid };
+    const calls: { ops: { name?: string; args?: { id?: string } }[]; label?: string }[] = [];
+    const applyOps = (ops: unknown[], label?: string) =>
+      calls.push({ ops: ops as never, label });
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts, applyOps));
+    const drag = { start: { x: 65, y: 90 }, current: { x: 225, y: 50 }, delta: { x: 160, y: -40 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, layouts, applyOps) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts, applyOps) as InvocationCtx, 'commit');
+
+    // The consumer hook took over: scene.applyBatch was NOT used.
+    expect(scene.appliedBatches.length).toBe(0);
+    // The hook was called exactly once with the committed ops + label.
+    expect(calls.length).toBe(1);
+    expect(calls[0].label).toBeDefined();
+    expect(calls[0].ops.some((o) => o.name === 'reparent' && o.args?.id === 'a')).toBe(true);
+    expect(calls[0].ops.some((o) => o.name === 'transform' && o.args?.id === 'a')).toBe(true);
   });
 
   it('falls through to translate commit when no layout accepts (no layoutPass)', () => {
