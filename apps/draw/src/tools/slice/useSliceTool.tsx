@@ -14,6 +14,7 @@ export function useSliceTool() {
           group: 'shape',
           // No knife icon asset exists yet; icon omitted.
         },
+        keybinding: { key: 'K' },
         bindings: [{ spec: { kind: 'drag' }, actionId: 'slice' }],
         initial: {},
       }),
