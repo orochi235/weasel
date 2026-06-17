@@ -115,6 +115,11 @@ export { insertAction } from './interactions/actions/defaults/insert';
 export { clearSelectionAction } from './interactions/actions/defaults/clearSelection';
 export { cloneAction } from './interactions/actions/defaults/clone';
 export { viewportDragPanAction } from './interactions/actions/defaults/viewportDragPan';
+export {
+  viewportZoomAction,
+  makeViewportZoomAction,
+  type ViewportZoomOptions,
+} from './interactions/actions/defaults/viewportZoom';
 export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
 export { sliceAction } from './interactions/actions/defaults/slice';
@@ -440,8 +445,9 @@ export {
   rebaseLocalPose,
   translateRectPose,
   worldPoseLookup,
+  IDENTITY_POSE_COMPOSITION,
 } from './features/groups/composePose';
-export type { PoseAdapter } from './features/groups/composePose';
+export type { PoseAdapter, PoseComposition } from './features/groups/composePose';
 export { nestedHitTester } from './features/groups/nestedHit';
 export type {
   NestedHitOpts,

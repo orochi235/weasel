@@ -42,6 +42,25 @@ export interface PoseAdapter<TPose> {
   getParent(id: string): string | null;
 }
 
+/** Consumer's pose-composition strategy for hierarchical scenes. `compose`
+ *  folds a child's pose (in parent's frame) up to the next frame; `decompose`
+ *  is its inverse. Default is IDENTITY — an absolute-pose scene where every
+ *  node already stores world coords (parent is grouping-only, no transform). */
+export interface PoseComposition<TPose> {
+  compose: (parent: TPose, child: TPose) => TPose;
+  decompose: (parent: TPose, world: TPose) => TPose;
+}
+
+/** Default pose-composition strategy: IDENTITY. Both `compose` and
+ *  `decompose` return the child/world pose unchanged, modeling an
+ *  absolute-pose scene where every node stores world coords and parents are
+ *  grouping-only (no transform). With this strategy `composeWorldPose`
+ *  returns a node's own raw pose and `rebaseLocalPose` is a no-op. */
+export const IDENTITY_POSE_COMPOSITION: PoseComposition<unknown> = {
+  compose: (_parent, child) => child,
+  decompose: (_parent, world) => world,
+};
+
 /**
  * Walk `id`'s parent chain (root first to id last) and fold local poses into
  * a world pose via `compose`. Returns the world pose for `id`. Cycle-safe:
