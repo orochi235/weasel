@@ -3,6 +3,9 @@ import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { ActionDisabledReason } from '../registry';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { Op } from 'core/ops/types';
+import { createSetDataOp } from 'core/ops/setData';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { withAlpha01 } from '../../../util/color';
 
 // ---------------------------------------------------------------------------
@@ -19,6 +22,10 @@ interface SetStrokeOpacityScratch {
   /** Preview data entries — updated stroke per selected node.
    *  Populated on start and refreshed on every onMove. */
   previews: Map<NodeId, { stroke: string }>;
+  /** Optional consumer commit hook captured at gesture start. When present,
+   *  the ops-based commit routes through it (consumer history) instead of
+   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+  applyOps?: (ops: Op[], label: string) => void;
 }
 
 /** Refresh the preview map from `scratch.currentAlpha` and `startData`. */
@@ -39,9 +46,13 @@ function refreshPreviews(scratch: SetStrokeOpacityScratch): void {
  * Static descriptor for the `setStrokeOpacity` Action.
  *
  * Ongoing-timing action: on start captures per-node data; on each onMove
- * updates preview stroke alpha without touching the scene; on commit writes a
- * single batched `scene.update` per selected node so only one undo entry is
- * created.
+ * updates preview stroke alpha without touching the scene; on commit emits one
+ * `createSetDataOp` per selected node (from = pre-commit data, to = data with
+ * the alpha-replaced stroke) and routes the batch through the consumer
+ * `applyOps` hook when present (consumer history) else `scene.applyBatch` +
+ * `defaultCommitAdapter` (whose `setData` delegates to `scene.update({ data })`).
+ * Either path is a single batch → one undo entry, preserving the old
+ * `scene.batch('Set stroke opacity', …)` semantics exactly.
  *
  * Alpha semantics: `params.alpha01` (0..1) replaces the alpha channel of each
  * node's existing stroke while preserving the RGB. Clamping is delegated to
@@ -57,6 +68,7 @@ export const setStrokeOpacityAction: Action & { requires: string[] } = {
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<{ stroke?: string }, string, unknown> | undefined;
+      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
 
@@ -81,6 +93,7 @@ export const setStrokeOpacityAction: Action & { requires: string[] } = {
         startData,
         currentAlpha: initialAlpha,
         previews: new Map(),
+        applyOps,
       };
       refreshPreviews(scratch);
 
@@ -96,18 +109,28 @@ export const setStrokeOpacityAction: Action & { requires: string[] } = {
             scratch.previews.clear();
             return;
           }
-          scratch.scene.batch('Set stroke opacity', () => {
-            for (const id of scratch.ids) {
-              const prev = scratch.startData.get(id);
-              const next = withAlpha01(prev?.stroke ?? '#000000ff', scratch.currentAlpha);
-              // Re-read so concurrent edits to non-stroke fields aren't clobbered on commit.
-              const nodeNow = scratch.scene.get(id);
-              if (!nodeNow) continue;
-              scratch.scene.update(id, {
-                data: { ...(nodeNow.data as object), stroke: next } as never,
-              });
-            }
-          });
+          // Build one setData op per selected node. `from` is the node's
+          // pre-commit data (read here, BEFORE any mutation); `to` is the same
+          // data with the alpha-replaced stroke — exactly the values the old
+          // `scene.update(id, { data: { …nodeNow.data, stroke } })` wrote.
+          const ops: Op[] = [];
+          for (const id of scratch.ids) {
+            const prev = scratch.startData.get(id);
+            const next = withAlpha01(prev?.stroke ?? '#000000ff', scratch.currentAlpha);
+            // Re-read so concurrent edits to non-stroke fields aren't clobbered on commit.
+            const nodeNow = scratch.scene.get(id);
+            if (!nodeNow) continue;
+            const from = { ...(nodeNow.data as object) } as { stroke?: string };
+            const to = { ...from, stroke: next };
+            ops.push(createSetDataOp<{ stroke?: string }>({ id: id as string, from, to }));
+          }
+          if (ops.length > 0) {
+            // Route through the consumer hook when present (consumer history,
+            // one undo entry there); otherwise commit straight to the scene's
+            // own history. Either path is a single batch → one undo entry.
+            if (scratch.applyOps) scratch.applyOps(ops, 'Set stroke opacity');
+            else scratch.scene.applyBatch(ops, 'Set stroke opacity', defaultCommitAdapter(scratch.scene));
+          }
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
