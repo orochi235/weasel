@@ -610,19 +610,39 @@ export const moveAction: Action & { requires: string[] } = {
           if (scratch.layout && scratch.ids.length === 1 && scratch.layoutPass) {
             const lp = scratch.layoutPass;
             const draggedId = scratch.ids[0];
+            const commitAdapter = scenePoseAdapter(scratch.scene);
+            const startWorld = composeWorldPose(commitAdapter, draggedId as string, composeRectPose);
+            const sourceContainerId = scratch.scene.get(draggedId)?.parent ?? null;
             const draggedArg = {
               id: draggedId as string,
-              originPose: scratch.startPoses.get(draggedId)!,
-              pose: scratch.previews.get(draggedId) ?? scratch.startPoses.get(draggedId)!,
-              sourceContainerId: scratch.scene.get(draggedId)?.parent ?? null,
+              originPose: startWorld,
+              pose: { ...startWorld, x: startWorld.x + dx, y: startWorld.y + dy } as RectPose,
+              sourceContainerId,
             };
-            const dropOps = lp.layout.commitDrop(lp.container, lp.children, draggedArg, lp.target);
+            const destId = lp.container.id;
+            // commitDrop returns world poses (the contract is world in/out).
+            // Rebase each transform op to local: the dragged id lands under the
+            // destination container; any other id keeps its current parent.
+            // `from` rebases under the node's PRE-commit parent.
+            const rebaseOpToLocal = (op: Op): Op => {
+              if (op.name !== 'transform') return op;
+              const a = op.args as { id: string; from: RectPose; to: RectPose; label?: string; coalesceKey?: string };
+              const curParent = scratch.scene.get(asNodeId(a.id))?.parent ?? null;
+              const toParent = a.id === (draggedId as string) ? destId : curParent;
+              return createTransformOp<RectPose>({
+                id: a.id,
+                from: rebaseLocalPose(commitAdapter, a.from, curParent, composeRectPose, decomposeRectPose),
+                to: rebaseLocalPose(commitAdapter, a.to, toParent, composeRectPose, decomposeRectPose),
+                label: a.label,
+                coalesceKey: a.coalesceKey,
+              });
+            };
+            const dropOps = lp.layout.commitDrop(lp.container, lp.children, draggedArg, lp.target).map(rebaseOpToLocal);
             // Cross-container drop: reparent the dragged node under the
             // destination container so its tree position matches its new
             // visual home. Scene v1's absolute-pose semantics mean the
             // subsequent pose op still lands the child at the snapped cell.
             const reparentOps: Op[] = [];
-            const destId = lp.container.id;
             if (draggedArg.sourceContainerId !== destId) {
               reparentOps.push(createReparentOp({
                 id: draggedId as string,
@@ -632,11 +652,12 @@ export const moveAction: Action & { requires: string[] } = {
               }));
             }
             const reflowOps: Op[] = [];
-            for (const [cid, pose] of lp.sourceReflow) {
-              reflowOps.push(createTransformOp<unknown>({
+            for (const [cid, worldPose] of lp.sourceReflow) {
+              const parent = scratch.scene.get(asNodeId(cid))?.parent ?? null;
+              reflowOps.push(createTransformOp<RectPose>({
                 id: cid,
-                from: scratch.scene.get(asNodeId(cid))!.pose,
-                to: pose,
+                from: scratch.scene.get(asNodeId(cid))!.pose as RectPose,
+                to: rebaseLocalPose(commitAdapter, worldPose as RectPose, parent, composeRectPose, decomposeRectPose),
                 label: 'Source reflow',
               }));
             }
