@@ -4,6 +4,7 @@ pnpm-lock.yaml
 dist
 dist-demo
 dist-swillustrator
+dist-draw
 coverage
 .DS_Store
 *.tsbuildinfo
