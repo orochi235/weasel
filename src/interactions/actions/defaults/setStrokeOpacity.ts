@@ -62,7 +62,7 @@ export const setStrokeOpacityAction: Action & { requires: string[] } = {
   id: 'setStrokeOpacity',
   label: 'Set stroke opacity',
   eligible: { capability: 'applies-fill' },
-  requires: ['selection', 'scene'],
+  requires: ['selection', 'scene', 'applyOps'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {

@@ -110,7 +110,7 @@ export const cloneAction: Action & { requires: string[] } = {
   label: 'Clone',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: ['edits-page', 'creates-selection'] },
-  requires: ['selection', 'scene'],
+  requires: ['selection', 'scene', 'applyOps'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {

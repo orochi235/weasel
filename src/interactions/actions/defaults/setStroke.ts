@@ -61,7 +61,7 @@ export const setStrokeAction: Action & { requires: string[] } = {
   id: 'setStroke',
   label: 'Set stroke',
   eligible: { capability: 'applies-fill' },
-  requires: ['selection', 'scene'],
+  requires: ['selection', 'scene', 'applyOps'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {

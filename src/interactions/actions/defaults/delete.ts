@@ -31,7 +31,7 @@ export const deleteAction: Action & { requires: string[] } = {
     phase: [{ channel: '*', phase: 'initial' }],
   },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection'],
+  requires: ['scene', 'selection', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {

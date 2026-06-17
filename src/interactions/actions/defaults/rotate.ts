@@ -129,7 +129,7 @@ export const rotateAction: Action & { requires: string[] } = {
   label: 'Rotate',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene'],
+  requires: ['selection', 'scene', 'applyOps'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {

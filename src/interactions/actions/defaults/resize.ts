@@ -278,7 +278,7 @@ export const resizeAction: Action & { requires: string[] } = {
   label: 'Resize',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy'],
+  requires: ['selection', 'scene', 'resizePolicy', 'applyOps'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {

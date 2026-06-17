@@ -37,7 +37,7 @@ export const groupAction: Action & { requires: string[] } = {
   label: 'Group',
   defaultBinding: { kind: 'key', key: 'g', mods: { mod: true } },
   eligible: { capability: 'edits-page' },
-  requires: ['scene', 'selection'],
+  requires: ['scene', 'selection', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps) => {

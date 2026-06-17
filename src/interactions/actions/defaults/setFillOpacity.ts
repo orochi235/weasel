@@ -62,7 +62,7 @@ export const setFillOpacityAction: Action & { requires: string[] } = {
   id: 'setFillOpacity',
   label: 'Set fill opacity',
   eligible: { capability: 'applies-fill' },
-  requires: ['selection', 'scene'],
+  requires: ['selection', 'scene', 'applyOps'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
