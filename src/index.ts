@@ -493,6 +493,7 @@ export {
   pathContainsPolygon,
   pathIntersectsPolygon,
   pathDistanceToPoint,
+  splitPathByLine,
 } from './features/paths';
 export type {
   Path,
@@ -507,6 +508,7 @@ export type {
   CreatePathEditingOverlayLayerOptions,
   PathEditingOverlayStyle,
   PathInWorldPose,
+  SplitByLineOptions,
 } from './features/paths';
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {
