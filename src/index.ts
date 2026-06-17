@@ -117,6 +117,8 @@ export { cloneAction } from './interactions/actions/defaults/clone';
 export { viewportDragPanAction } from './interactions/actions/defaults/viewportDragPan';
 export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
+export { sliceAction } from './interactions/actions/defaults/slice';
+export type { SliceDep } from './interactions/actions/defaults/slice';
 export { pinchZoomAction } from './interactions/actions/defaults/pinchZoom';
 export { enterTextEditAction } from './interactions/actions/defaults/enterTextEdit';
 export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
@@ -173,6 +175,7 @@ export {
   useResizePolicy,
   type UseResizePolicyOptions,
 } from './canvas/deps/resizePolicy';
+export { useSliceDep } from './canvas/deps/slice';
 
 // ─── Gesture dispatcher ───
 export {
