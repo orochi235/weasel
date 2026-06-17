@@ -81,6 +81,9 @@ import { useColorContext } from './tools/colorContext';
 import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter } from '@weasel-js/core';
+import { sliceAction } from '@weasel-js/core';
+import { useSliceTool } from './tools/slice/useSliceTool';
+import { SliceDepPublisher } from './tools/slice/SliceDepPublisher';
 import { parseSvg } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
@@ -1262,6 +1265,8 @@ function EditorWithSharedScene({
     }],
   }), [paper.width, paper.height, backgroundColor]);
 
+  const sliceTool = useSliceTool();
+
   const { percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
@@ -1399,6 +1404,8 @@ function EditorWithSharedScene({
             selection={selection}
             selectionMode="multi"
             toolBundle="exhaustive"
+            tools={{ slice: sliceTool }}
+            actions={{ slice: sliceAction }}
             viewport={{ pinchZoom: true, recenter }}
             cursorCoordsHud
             pickHud
@@ -1444,6 +1451,7 @@ function EditorWithSharedScene({
             getActiveMode={getActiveMode}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
+            <SliceDepPublisher scene={scene} />
           </SceneCanvas>
           )}
         </div>

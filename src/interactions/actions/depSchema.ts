@@ -35,6 +35,7 @@ import type { History } from '@weasel-js/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
 import type { TextEditDep } from './defaults/enterTextEdit';
+import type { SliceDep } from './defaults/slice';
 import type {
   PointSnapBehavior,
   BoundsConstraint,
@@ -350,6 +351,16 @@ declare module './depRegistry' {
      * Optional: absent (or all-null) → `moveAction` skips reflow.
      */
     layout?: LayoutDep;
+    /**
+     * Slice dep — consumer-supplied commit for the Slice action.
+     *
+     * Receives the finite slice segment in world coordinates; the consumer
+     * scans the scene, splits crossed paths via `splitPathByLine`, and
+     * applies the result as one undoable batch.
+     *
+     * Optional: when absent, `sliceAction` is a no-op.
+     */
+    slice?: SliceDep;
   }
 }
 
