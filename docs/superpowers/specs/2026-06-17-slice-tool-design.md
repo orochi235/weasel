@@ -35,11 +35,19 @@ Two units with a clean boundary:
    enter-and-exit the path boundary (`< 2` crossings); otherwise returns the
    closed pieces as `PolygonPath`s.
 
-2. **WeaselDraw tool** — `apps/draw/src/tools/slice/useSliceTool.tsx`. Owns the
-   straight-line drag gesture, the live preview overlay, the scene scan, and the
-   undoable commit. Establishes the first `apps/draw/src/tools/` app-tool
-   pattern (no app-specific tool exists yet; all tools currently come from the
-   kit bundle).
+2. **WeaselDraw tool + action + commit dep** — `apps/draw/src/tools/slice/`.
+   The kit removed imperative `Tool.drag` channels; every drag tool now routes
+   its gesture through a declarative `bindings → action` (rect/line →
+   `insertAction`, hand → `viewport.dragPan`), with the tool supplying only the
+   live overlay. Slice follows the same shape:
+   - a `slice` **Tool** declaring `bindings: [{ spec: { kind: 'drag' }, actionId: 'slice' }]` and a line-preview `overlay`;
+   - a custom **`sliceAction`** (ongoing drag invoker) registered via SceneCanvas's `actions` prop;
+   - a consumer-supplied **commit dep** (modeled on `InsertDep`) whose `commit(a, b)` runs the scene scan + `splitPathByLine` + the undoable `applyOps` batch.
+
+   This establishes the first `apps/draw/src/tools/` app-tool pattern (no
+   app-specific tool exists yet; all tools currently come from the kit bundle).
+   The exact ongoing-invoker / handle / dep shapes are modeled on `insertAction`
+   and pinned in the implementation plan.
 
 ## `splitPathByLine` (the crux)
 
@@ -71,12 +79,16 @@ far-side crossings the stroke never reached. Accepted for v1; see non-goals.
   Sub-threshold drags are ignored (no accidental click-cuts).
 - **Overlay:** render the slice line as a live preview while dragging. Ephemeral
   — never inserted into the scene.
-- **Commit (drag end):** scan every leaf path/rect node; map each node's
-  geometry to world space; call `splitPathByLine`. For nodes that return pieces,
-  accumulate `createDeleteOp(node, index)` + `createInsertOp(piece) × N`, each
-  piece carrying over the original's **style (fill/stroke/opacity), parent, and
-  layer**, inserted at the original's z-index. Commit all as one
-  `ctx.applyOps(ops, 'Slice')` batch (single undo step).
+- **Commit (drag end):** the `sliceAction`'s ongoing handle calls the
+  `SliceDep.commit(a, b)` on release. `commit` scans every leaf path/rect node
+  (`scene.renderOrder()` → `scene.get` → `kind === 'leaf'` with `data.path`),
+  maps each node's geometry to world space via `pathInWorld(node.data.path,
+  node.pose)` (this bakes pose **rotation** too), and calls `splitPathByLine`.
+  For nodes that return pieces, it accumulates `createDeleteOp(node, index)` +
+  `createInsertOp(piece) × N` — each piece a new leaf with `pose =
+  boundsOfPath(piece)` and `data = { ...original.data, path: piece }` (carrying
+  over fill/stroke/strokeWidth), inserted at the original's `renderOrder` index —
+  and commits all as one `applyBatch`/`applyOps` undo step labeled `'Slice'`.
 - **Presentation:** label "Slice", knife cursor, shortcut `K`, grouped with the
   other shape tools.
 - **Wiring:** `SceneCanvas tools={{ slice: useSliceTool(...) }}` in
@@ -87,9 +99,11 @@ far-side crossings the stroke never reached. Accepted for v1; see non-goals.
 - **Béziers flatten** to polylines on cut pieces (curve info lost). Curve
   re-fitting (`schneiderFit`) is a later enhancement.
 - **Concave shapes** partly crossed may over-cut (Approach A tradeoff above).
-- **Rotated poses:** `pathPoseDescriptor` has no rotation support. v1 bakes
-  rotation into world geometry before splitting; if that proves fiddly during
-  implementation, rotated nodes are **skipped** (decision deferred to impl).
+- **Rotated poses:** handled — `pathInWorld(path, pose)` bakes pose rotation
+  into world coords before the split, and pieces are stored axis-aligned
+  (`pose = boundsOfPath(piece)`, no residual rotation). The cut pieces of a
+  rotated shape are therefore un-rotated polygons in world space (visually
+  identical; the rotation is "frozen in"). Acceptable for v1.
 - **Only closed/fillable leaf paths** (incl. `RectPath`). Containers, text,
   images, and open/stroke-only paths are skipped in v1.
 
