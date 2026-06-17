@@ -8,7 +8,7 @@ import type { NodeId } from 'core/scene/types';
 type P = { x: number; y: number; width: number; height: number };
 
 interface AppliedBatch {
-  ops: { name?: string; id?: string; label?: string; args?: { id?: string; toParentId?: string | null } }[];
+  ops: { name?: string; id?: string; label?: string; args?: { id?: string; toParentId?: string | null; to?: P } }[];
   label: string;
 }
 
@@ -217,6 +217,38 @@ describe('moveAction layout reflow', () => {
     const reparent = ops.find((o) => o.name === 'reparent' && o.args?.id === 'a');
     expect(reparent).toBeDefined();
     expect(reparent!.args?.toParentId).toBe('D');
+  });
+
+  it('writes the dropped child pose LOCAL to the destination container', () => {
+    // D at world {200,0}; the snapped cell is D's cell 0 at world {200,0}.
+    // Because the scene stores local poses, the committed pose must be {0,0}
+    // (local to D), which composes back to the world cell. Pre-commit-migration
+    // the transform writes the world pose {200,0} → wrong.
+    const scene = makeScene(
+      {
+        C: { x: 40, y: 40, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+        D: { x: 200, y: 0, width: 100, height: 100 },
+        d1: { x: 0, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
+      { C: ['a', 'b'], D: ['d1'] },
+      ['C', 'D'],
+    );
+    const grid = tileGrid<P>({ cols: 2, rows: 1 });
+    const layouts = { C: grid, D: grid };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts));
+    const drag = { start: { x: 65, y: 90 }, current: { x: 225, y: 50 }, delta: { x: 160, y: -40 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx, 'commit');
+
+    const ops = scene.appliedBatches[0].ops;
+    const drop = ops.find((o) => o.name === 'transform' && o.args?.id === 'a');
+    expect(drop).toBeDefined();
+    expect(drop!.args?.to).toMatchObject({ x: 0, y: 0 });
   });
 
   it('falls through to translate commit when no layout accepts (no layoutPass)', () => {
