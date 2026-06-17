@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { computeSliceOps, type SliceLeaf, type WDLeafNode } from './sliceCommit';
 import { rectPath, type NodeId } from '@weasel-js/core';
 
@@ -35,9 +35,11 @@ const nextId = () => `new-${++_idCounter}`;
 // ---------------------------------------------------------------------------
 
 describe('computeSliceOps', () => {
-  it('crossed leaf → 1 delete + 2 inserts', () => {
+  beforeEach(() => {
     _idCounter = 0;
+  });
 
+  it('crossed leaf → 1 delete + 2 inserts', () => {
     const leaf: SliceLeaf = {
       node: makeLeafNode(),
       index: 0,
@@ -70,8 +72,6 @@ describe('computeSliceOps', () => {
   });
 
   it('missed leaf → empty op list', () => {
-    _idCounter = 0;
-
     const leaf: SliceLeaf = {
       node: makeLeafNode(),
       index: 0,
@@ -90,8 +90,6 @@ describe('computeSliceOps', () => {
   });
 
   it('fill and stroke are carried onto inserted piece nodes', () => {
-    _idCounter = 0;
-
     const node = makeLeafNode({
       data: {
         path: squarePath,
@@ -124,5 +122,49 @@ describe('computeSliceOps', () => {
       // Each piece should have a path set.
       expect(inserted.data.path).toBeDefined();
     }
+  });
+
+  it('two crossed leaves → ops concatenated per leaf, both deletes carry their own node', () => {
+    const leafA: SliceLeaf = {
+      node: makeLeafNode({ id: 'a' as NodeId, data: { path: squarePath, fill: '#aaaaaa' } }),
+      index: 0,
+      worldPath: squarePath,
+    };
+    const leafB: SliceLeaf = {
+      node: makeLeafNode({ id: 'b' as NodeId, data: { path: squarePath, fill: '#bbbbbb' } }),
+      index: 1,
+      worldPath: squarePath,
+    };
+
+    const ops = computeSliceOps({
+      leaves: [leafA, leafB],
+      a: { x: -10, y: 50 },
+      b: { x: 110, y: 50 },
+      nextId,
+    });
+
+    // Each crossed leaf contributes 1 delete + 2 inserts = 6 ops, leaf A first.
+    expect(ops.map((o) => o.name)).toEqual([
+      'delete', 'insert', 'insert',
+      'delete', 'insert', 'insert',
+    ]);
+
+    // Each delete references its own original node (faithful undo, no cross-talk).
+    expect((ops[0] as { args: { node: WDLeafNode } }).args.node).toBe(leafA.node);
+    expect((ops[3] as { args: { node: WDLeafNode } }).args.node).toBe(leafB.node);
+
+    // Pieces inherit the fill of their source leaf, not the other leaf's.
+    for (const op of ops.slice(1, 3)) {
+      expect((op as { args: { node: WDLeafNode } }).args.node.data.fill).toBe('#aaaaaa');
+    }
+    for (const op of ops.slice(4, 6)) {
+      expect((op as { args: { node: WDLeafNode } }).args.node.data.fill).toBe('#bbbbbb');
+    }
+
+    // All four inserted ids are distinct.
+    const insertedIds = [ops[1], ops[2], ops[4], ops[5]].map(
+      (o) => (o as { args: { node: WDLeafNode } }).args.node.id,
+    );
+    expect(new Set(insertedIds).size).toBe(4);
   });
 });
