@@ -1,7 +1,23 @@
-import type { NodeId, Scene } from 'core/scene/types';
+import type { Node, NodeId, Scene } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { Op } from 'core/ops/types';
+import { createInsertOp } from 'core/ops/create';
+import { createReparentOp } from 'core/ops/reparent';
 import { unionBounds, type RectPose } from 'features/groups/unionBounds';
 import type { Action } from '../registry';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
+
+/** Mint a fresh NodeId for a new container. The old `scene.add(spec)` path
+ *  (no explicit id) let the scene generate a random id, so the produced id
+ *  was never deterministic/observable — pre-generating one here to feed the
+ *  insert op preserves behavior. Mirrors the scene's default id scheme
+ *  (`n{counter}-{random}`), which `core/scene/scene.ts` keeps module-private.
+ *  Same approach as `cloneAction`. */
+let containerIdCounter = 0;
+function freshContainerId(): NodeId {
+  return asNodeId(`n${(containerIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
+}
 
 /**
  * @experimental
@@ -27,6 +43,7 @@ export const groupAction: Action & { requires: string[] } = {
     run: (deps) => {
       const selection = deps.selection as SelectionApi | undefined;
       const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
       if (!selection || !scene) return;
 
       const ids = selection.get();
@@ -50,17 +67,51 @@ export const groupAction: Action & { requires: string[] } = {
       const pose =
         unionBounds(nodes.map((n) => n.pose as RectPose)) ?? { x: 0, y: 0, width: 0, height: 0 };
 
-      scene.batch('Group', () => {
-        const containerId = scene.add({
-          kind: 'container',
-          layer,
-          pose: pose as unknown,
-          data: {} as unknown,
-          parent,
-        });
-        for (const id of ids) scene.move(id as NodeId, containerId);
-        selection.set([containerId]);
-      });
+      // Build ops mirroring the old direct mutations, in the same order the
+      // `scene.batch('Group', …)` body produced them:
+      //   1. insert the fresh container (the old `scene.add` minted a random
+      //      id; we pre-generate one so the insert op carries a full node —
+      //      the id was never observable, so behavior is preserved);
+      //   2. reparent each selected id under the new container, in selection
+      //      order, capturing each node's PRE-mutation parent as `from`.
+      // The container must exist before any child reparents into it, so the
+      // insert op is emitted first. Member poses are intentionally untouched
+      // (absolute-pose model — reparenting alone doesn't move members).
+      const containerId = freshContainerId();
+      const ops: Op[] = [
+        createInsertOp<Node<unknown, string, unknown>>({
+          node: {
+            id: containerId,
+            kind: 'container',
+            layer,
+            pose: pose as unknown,
+            data: {} as unknown,
+            parent: parent ?? null,
+          } as Node<unknown, string, unknown>,
+          label: 'Group',
+        }),
+      ];
+      for (const node of nodes) {
+        ops.push(createReparentOp({
+          id: node.id as string,
+          fromParentId: (node.parent ?? null) as string | null,
+          toParentId: containerId as string,
+          label: 'Group',
+        }));
+      }
+
+      // Route the batch through the consumer `applyOps` hook when present (so
+      // an app with its own history captures the group as a single undo
+      // entry); otherwise commit straight to the scene's own history via
+      // `scene.applyBatch`. One applyOps / applyBatch call = one undo entry,
+      // matching the prior single `scene.batch('Group', …)`.
+      if (applyOps) applyOps(ops, 'Group');
+      else scene.applyBatch(ops, 'Group', defaultCommitAdapter(scene));
+
+      // Selection update is selection state, not a scene op — set it after the
+      // commit regardless of which path ran (the old code set it inside the
+      // batch; it was never an undoable scene mutation).
+      selection.set([containerId]);
     },
   },
   enabled: () => true,
