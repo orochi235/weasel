@@ -654,6 +654,11 @@ export const moveAction: Action & { requires: string[] } = {
             const reflowOps: Op[] = [];
             for (const [cid, worldPose] of lp.sourceReflow) {
               const parent = scratch.scene.get(asNodeId(cid))?.parent ?? null;
+              // Source-reflow siblings keep their parent, so `from` is already
+              // the live local pose (no rebase); only `to` (a world pose stored
+              // in `lp.sourceReflow`) is rebased to local. This is the
+              // intentional counterpart to the dropOps rebaser above, where
+              // `from` comes from a world `commitDrop` op and so does rebase.
               reflowOps.push(createTransformOp<RectPose>({
                 id: cid,
                 from: scratch.scene.get(asNodeId(cid))!.pose as RectPose,
