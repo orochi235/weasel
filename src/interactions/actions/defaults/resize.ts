@@ -54,6 +54,9 @@ import { type PoseProjection } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
+import type { Op } from 'core/ops/types';
+import { createTransformOp } from 'core/ops/transform';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -252,6 +255,10 @@ interface ResizeScratch {
   pointSnap: PointSnapBehavior<ResizePose>[];
   /** Gesture context handed to behaviors. Reused across move/end. */
   gestureCtx: GestureContext<unknown>;
+  /** Optional consumer commit hook captured at gesture start. When present,
+   *  the final pose commit routes through it (consumer history) instead of
+   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+  applyOps?: (ops: Op[], label: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -277,6 +284,7 @@ export const resizeAction: Action & { requires: string[] } = {
     start(ctx: InvocationCtx, _opts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
 
@@ -370,6 +378,7 @@ export const resizeAction: Action & { requires: string[] } = {
         behaviors,
         pointSnap,
         gestureCtx,
+        applyOps,
       };
 
       return {
@@ -496,13 +505,30 @@ export const resizeAction: Action & { requires: string[] } = {
           }
 
           if (scratch.previews.size === 0) return;
-          scratch.scene.batch('Resize', () => {
-            for (const id of scratch.writeIds) {
-              const next = scratch.previews.get(id);
-              if (next === undefined) continue;
-              scratch.scene.setPose(id, next);
-            }
-          });
+
+          // Emit the final poses as transform ops (from = pre-drag start pose,
+          // to = final preview pose) and route them through the consumer's
+          // `applyOps` hook when present (consumer history captures the resize
+          // as one undo entry); otherwise commit straight to the scene's own
+          // history via `scene.applyBatch`. Either way it's a single batch →
+          // one undo entry, matching the prior `scene.batch('Resize', …)`.
+          const ops: Op[] = [];
+          for (const id of scratch.writeIds) {
+            const next = scratch.previews.get(id);
+            if (next === undefined) continue;
+            const from = scratch.startPoses.get(id);
+            if (from === undefined) continue;
+            ops.push(createTransformOp<unknown>({
+              id: id as string,
+              from,
+              to: next,
+              label: 'Resize',
+            }));
+          }
+          if (ops.length > 0) {
+            if (scratch.applyOps) scratch.applyOps(ops, 'Resize');
+            else scratch.scene.applyBatch(ops, 'Resize', defaultCommitAdapter(scratch.scene));
+          }
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
