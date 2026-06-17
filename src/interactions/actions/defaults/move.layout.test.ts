@@ -349,4 +349,34 @@ describe('moveAction layout reflow', () => {
     expect(scene.appliedBatches.length).toBe(0);
     expect(scene.poses.get('a')).toEqual({ x: 5, y: 5, width: 10, height: 10 });
   });
+
+  it('routes the translate-only commit through a consumer applyOps hook', () => {
+    // No layout accepts (no getLayout entry for the leaf), so the drag falls
+    // through to the translate-only commit. With a consumer-supplied applyOps
+    // hook, that commit must emit a transform op through the hook (consumer
+    // history) instead of mutating the scene directly inside scene.batch.
+    const scene = makeScene(
+      { a: { x: 0, y: 0, width: 10, height: 10 } },
+      { a: null }, {}, ['a'],
+    );
+    const calls: { ops: { name?: string; args?: { id?: string; to?: P } }[]; label?: string }[] = [];
+    const applyOps = (ops: unknown[], label?: string) =>
+      calls.push({ ops: ops as never, label });
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    // getLayout returns null for everything → translate-only path.
+    const noLayout: GetLayout = () => null;
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, noLayout, applyOps));
+    const drag = { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, noLayout, applyOps) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, noLayout, applyOps) as InvocationCtx, 'commit');
+
+    // The consumer hook took over: scene.batch was NOT used to mutate poses,
+    // and the hook was called exactly once with a transform op for `a`.
+    expect(calls.length).toBe(1);
+    expect(calls[0].label).toBe('Move');
+    const transform = calls[0].ops.find((o) => o.name === 'transform' && o.args?.id === 'a');
+    expect(transform).toBeDefined();
+    expect(transform!.args?.to).toMatchObject({ x: 5, y: 5 });
+  });
 });
