@@ -2,7 +2,7 @@ import { createReorderOp } from 'core/ops/reorder';
 import type { NodeId, Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import { requiresSelection } from './requiresSelection';
 
 // ---------------------------------------------------------------------------
 // Shared helper
@@ -84,7 +84,13 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       opts: { params: { distance: 'adjacent' } },
     },
     {
-      spec: { kind: 'key', key: [']', '}'], mods: { mod: true, shift: true } },
+      // Cmd+Alt+] → bring-to-front. NOT Cmd+Shift+] — Chrome on macOS reserves
+      // Cmd+Shift+[ / Cmd+Shift+] for tab switching and never delivers them to
+      // the page. On macOS Option+] emits the character '‘' (U+2018); whether
+      // Cmd suppresses that transform is browser-dependent, so we match both the
+      // bracket and the Option-produced char (US layout). matchKey is
+      // character-based, so non-US layouts may need a rebind.
+      spec: { kind: 'key', key: [']', '‘'], mods: { mod: true, alt: true } },
       opts: { params: { distance: 'extreme' } },
     },
   ],
@@ -100,7 +106,7 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       reorderSelection(selection, scene, 'forward', distance);
     },
   },
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: requiresSelection,
 };
 
 /**
@@ -120,7 +126,10 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
       opts: { params: { distance: 'adjacent' } },
     },
     {
-      spec: { kind: 'key', key: ['[', '{'], mods: { mod: true, shift: true } },
+      // Cmd+Alt+[ → send-to-back. See the bring-to-front note above: avoids
+      // Chrome's reserved Cmd+Shift+[ tab-switch shortcut. On macOS Option+[
+      // emits '“' (U+201C), included alongside the bracket for robustness.
+      spec: { kind: 'key', key: ['[', '“'], mods: { mod: true, alt: true } },
       opts: { params: { distance: 'extreme' } },
     },
   ],
@@ -136,6 +145,6 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
       reorderSelection(selection, scene, 'backward', distance);
     },
   },
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: requiresSelection,
 };
 

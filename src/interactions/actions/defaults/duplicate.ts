@@ -1,5 +1,5 @@
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import { requiresSelection } from './requiresSelection';
 
 /**
  * @experimental
@@ -20,5 +20,5 @@ export const duplicateAction: Action = {
       void params;
     },
   },
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: requiresSelection,
 };

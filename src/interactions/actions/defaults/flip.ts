@@ -6,7 +6,7 @@ import {
   type FlipAxis,
 } from '../flip/helpers';
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import { requiresSelection } from './requiresSelection';
 import type { SelectionApi } from 'core/selection/useSelection';
 
 /**
@@ -63,5 +63,5 @@ export const flipAction: Action & { requires: string[] } = {
       flipSelection(selection, scene, axis);
     },
   },
-  enabled: () => ActionDisabledReason.SelectionRequired,
+  enabled: requiresSelection,
 };

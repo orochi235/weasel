@@ -131,6 +131,39 @@ describe('createDispatcher', () => {
       expect(run).not.toHaveBeenCalled();
     });
 
+    it('passes deps to the enabled() gate (deps-aware action gates on its dep)', () => {
+      // Regression: the gate previously called `enabled()` with no args, so a
+      // deps-aware predicate always saw `undefined` deps and a selection-gated
+      // action (reorder/duplicate/flip/nudge/setFill/escape-fallthrough) could
+      // never dispatch via the keyboard.
+      const run = vi.fn();
+      const action = {
+        id: 'actionA',
+        label: 'A',
+        defaultBinding: { kind: 'key', key: 'a' } as const,
+        requires: ['selection'],
+        enabled: (deps?: { selection?: unknown[] }): true | 'selection-required' =>
+          deps?.selection?.length ? true : 'selection-required',
+        invoker: { timing: 'immediate' as const, run },
+      } as Action & { requires: string[] };
+      const registry = makeRegistry([action]);
+      const dispatcher = createDispatcher();
+
+      // Empty selection → gate disabled → unhandled, run not called.
+      const empty = makeDepRegistry({ selection: [] });
+      expect(
+        dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry, depRegistry: empty })),
+      ).toBe('unhandled');
+      expect(run).not.toHaveBeenCalled();
+
+      // Non-empty selection → gate enabled → handled, run called.
+      const filled = makeDepRegistry({ selection: ['item1'] });
+      expect(
+        dispatcher.handleInput(keyAEvent, makeCtx({ actions: registry, depRegistry: filled })),
+      ).toBe('handled');
+      expect(run).toHaveBeenCalledOnce();
+    });
+
     it('passes deps from depRegistry to invoker.run', () => {
       const run = vi.fn();
       // `requires` is a field not yet on Action's type; cast to add it.

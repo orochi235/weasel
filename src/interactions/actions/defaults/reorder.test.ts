@@ -63,13 +63,15 @@ describe('reorderForwardAction (descriptor)', () => {
     expect(first.spec.mods).toEqual({ mod: true });
   });
 
-  it('second binding carries distance: "extreme" and key Mod+Shift+]', () => {
+  it('second binding carries distance: "extreme" and key Mod+Alt+]', () => {
+    // Cmd+Alt+] (not Cmd+Shift+], which Chrome reserves for tab switching).
+    // Includes the macOS Option+] character '‘' for robustness.
     const bindings = reorderForwardAction.defaultBinding as BoundGesture[];
     const second = bindings[1] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(second.opts.params.distance).toBe('extreme');
     expect(second.spec.kind).toBe('key');
-    expect(second.spec.key).toEqual([']', '}']);
-    expect(second.spec.mods).toEqual({ mod: true, shift: true });
+    expect(second.spec.key).toEqual([']', '‘']);
+    expect(second.spec.mods).toEqual({ mod: true, alt: true });
   });
 
   it('has timing "immediate"', () => {
@@ -142,8 +144,15 @@ describe('reorderForwardAction (descriptor)', () => {
     }).not.toThrow();
   });
 
-  it('enabled returns SelectionRequired', () => {
+  it('enabled returns SelectionRequired with no deps / empty selection', () => {
     expect(reorderForwardAction.enabled!()).toBe('selection-required');
+    expect(reorderForwardAction.enabled!({ selection: makeSelection([]) } as never)).toBe(
+      'selection-required',
+    );
+  });
+
+  it('enabled returns true when the selection is non-empty', () => {
+    expect(reorderForwardAction.enabled!({ selection: makeSelection(['b']) } as never)).toBe(true);
   });
 });
 
@@ -174,13 +183,15 @@ describe('reorderBackwardAction (descriptor)', () => {
     expect(first.spec.mods).toEqual({ mod: true });
   });
 
-  it('second binding carries distance: "extreme" and key Mod+Shift+[', () => {
+  it('second binding carries distance: "extreme" and key Mod+Alt+[', () => {
+    // Cmd+Alt+[ (not Cmd+Shift+[, which Chrome reserves for tab switching).
+    // Includes the macOS Option+[ character '“' for robustness.
     const bindings = reorderBackwardAction.defaultBinding as BoundGesture[];
     const second = bindings[1] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(second.opts.params.distance).toBe('extreme');
     expect(second.spec.kind).toBe('key');
-    expect(second.spec.key).toEqual(['[', '{']);
-    expect(second.spec.mods).toEqual({ mod: true, shift: true });
+    expect(second.spec.key).toEqual(['[', '“']);
+    expect(second.spec.mods).toEqual({ mod: true, alt: true });
   });
 
   it('has timing "immediate"', () => {
@@ -248,8 +259,15 @@ describe('reorderBackwardAction (descriptor)', () => {
     }).not.toThrow();
   });
 
-  it('enabled returns SelectionRequired', () => {
+  it('enabled returns SelectionRequired with no deps / empty selection', () => {
     expect(reorderBackwardAction.enabled!()).toBe('selection-required');
+    expect(reorderBackwardAction.enabled!({ selection: makeSelection([]) } as never)).toBe(
+      'selection-required',
+    );
+  });
+
+  it('enabled returns true when the selection is non-empty', () => {
+    expect(reorderBackwardAction.enabled!({ selection: makeSelection(['b']) } as never)).toBe(true);
   });
 });
 

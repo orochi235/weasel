@@ -730,8 +730,16 @@ export function createDispatcher(opts?: {
         continue;
       }
 
+      // Build deps before the enabled gate so deps-aware predicates can inspect
+      // them (selection-gated actions, escape's path-edit fall-through, …). The
+      // gate previously ran `enabled()` with no args, so any predicate reading
+      // `deps?.x` saw `undefined` and either fell through forever (constant
+      // `SelectionRequired` stubs) or silently ignored its gate. The winning
+      // action's invoke path below reuses this same bag.
+      const deps = buildDeps(action, ctx.depRegistry);
+
       if (action.enabled) {
-        const result = action.enabled();
+        const result = action.enabled(deps);
         if (result !== true) {
           traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: String(result) });
           // Fall through to the next-best match.
@@ -741,7 +749,6 @@ export function createDispatcher(opts?: {
       traceCandidates.push({ actionId: action.id, scope: match.scope, enabledResult: true });
 
       // --- Invoke ---
-      const deps = buildDeps(action, ctx.depRegistry);
 
       if (action.invoker?.timing === 'immediate') {
         try {

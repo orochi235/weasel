@@ -133,7 +133,7 @@ and returns imperative trigger methods.
 | `useDelete` | Delete, Backspace (off by default) | `deleteSelection(): string[]` | Optional `filter(ids)` to protect locked objects. |
 | `useDuplicate` | Mod+D (on by default) | `duplicate()` | Adapter implements `cloneNode(id, offset)`. Default offset `{8,8}`. |
 | `useNudge` | Arrow keys (Shift = larger step, on by default) | `nudge(direction, large?)` | `step` default 1, `shiftStep` default 10. |
-| `useReorder` | Mod+] / Mod+[ / Mod+Shift+] / Mod+Shift+[ (on by default) | `bringForward()` etc. | No-ops without `OrderedAdapter` methods. |
+| `useReorder` | Mod+] / Mod+[ (forward/backward), Mod+Alt+] / Mod+Alt+[ (to-front/to-back, on by default) | `bringForward()` etc. | No-ops without `OrderedAdapter` methods. Mod+Alt avoids Chrome's reserved Mod+Shift+bracket tab-switch shortcut. |
 | `useDelete` | (see above) | | Pairs with the action via `bindKeyboard`. |
 | `useGroup` | Mod+G (off by default) | `group(): string \| null` | Adapter: `GroupActionAdapter`. Min selection size 2. |
 | `useUngroup` | Mod+Shift+G (off by default) | `ungroup(): string[]` | |

@@ -2,7 +2,7 @@ import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import type { Action } from '../registry';
-import { ActionDisabledReason } from '../registry';
+import { requiresSelection } from './requiresSelection';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 const KEY_FOR: Record<Direction, string> = {
@@ -79,7 +79,7 @@ function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
         nudgeSelection(selection, scene, dx, dy);
       },
     },
-    enabled: () => ActionDisabledReason.SelectionRequired,
+    enabled: requiresSelection,
   };
 }
 
