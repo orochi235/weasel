@@ -46,6 +46,12 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
     setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     batch<T>(_label: string, fn: () => T): T { return fn(); },
+    // Mirrors the real no-journal scene.applyBatch: apply each op against the
+    // commit adapter. resize's commit now routes through applyOps' fallback
+    // (`scene.applyBatch(ops, 'Resize', defaultCommitAdapter(scene))`).
+    applyBatch(ops: { apply: (a: unknown) => void }[], _label: string, adapter: unknown): void {
+      for (const op of ops) op.apply(adapter);
+    },
   };
 }
 
