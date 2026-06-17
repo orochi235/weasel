@@ -114,30 +114,39 @@ This is the one spot that touches the public contract; see *Open decision*.
   step A.7). Rebase each `to` to local under the child's parent (the source
   container, unchanged for these siblings) before building the transform op.
 
-## Open decision (for review): how the drop pose gets rebased
+## Decision: how the drop pose gets rebased (resolved)
 
-`commitDrop` returns opaque `Op[]` with the world drop pose **baked into** a
-`createTransformOp`. The kit cannot transparently rebase a pose inside an opaque
-op. Two ways to resolve, both keeping eric world-native:
+`commitDrop` returns `Op[]` with world poses baked into `createTransformOp`s.
+The `LayoutStrategy` contract stays **world in, world out** (no consumer change,
+eric/`tileGrid`/`freeform`/`snapPoint` all keep authoring world poses). The kit
+owns frame translation at the commit boundary.
 
-- **Option 1 (recommended) — kit owns the dragged node's drop write.** For a
-  *cross-container* drop, the kit ignores `commitDrop`'s transform op for the
-  dragged id and instead writes `rebaseLocalPose(lp.target.pose, destId)` itself
-  (it already has `lp.target`). `commitDrop` still authors any *other* ops
-  (e.g. same-container swaps, domain side-effects). For *same-container* drops
-  (no reparent, frame unchanged) `commitDrop`'s ops apply as-is. Pro: public
-  `LayoutStrategy` contract unchanged; kit owns frame translation, matching
-  `applyReparent`. Con: kit special-cases the dragged id out of `commitDrop`'s
-  output.
+**Chosen mechanism: the kit rebases every `transform` op returned by
+`commitDrop` before applying the batch.** A transform op is introspectable —
+`createTransformOp` (core/ops/transform.ts) produces `{ name: 'transform',
+args: { id, from, to, ... } }`, where `to`/`from` are plain pose data. So the kit
+maps over `commitDrop`'s ops and, for each `name === 'transform'` op, re-emits it
+via `createTransformOp` with `from`/`to` rebased to local under the op target's
+**post-reparent** parent:
 
-- **Option 2 — contract change: `commitDrop` returns world, kit rebases all.**
-  Document that `commitDrop` poses are world and have the kit post-process every
-  returned transform op, rebasing `to` to local under the op's (post-reparent)
-  parent. Pro: uniform, no special-casing. Con: requires the kit to understand
-  op internals / a new "world transform op" variant — a public-surface change.
+- the dragged id → local under `destId` (the destination container);
+- any other id (same-container occupant swaps, etc.) → local under that node's
+  existing parent (unchanged by this gesture).
 
-Recommendation: **Option 1.** Smallest public-surface impact; the kit already
-owns the analogous write in `applyReparent`.
+Non-`transform` ops (e.g. a strategy's own reparent op) pass through untouched.
+The kit's own reparent op (move.ts:603–612) is unchanged.
+
+This is the spirit of the originally-recommended "Option 1" (public contract
+unchanged; kit owns translation, mirroring `applyReparent`) but **broadened from
+the dragged id to every transform op** — necessary because `reflowPoses` /
+same-container swap poses from `tileGrid`/`freeform` also arrive in world under
+the world contract and would otherwise be written as local. It is *not* a
+public-surface change: transform-op poses were always introspectable; no
+"world-op variant" is introduced.
+
+Rejected alternative — "rebase only the dragged id": sufficient for eric (empty
+`reflowPoses`, dragged-only `commitDrop`) but silently wrong for the kit's own
+grid strategies. Not worth the asymmetry.
 
 ### Alternative contract rejected: container-local
 
@@ -176,9 +185,16 @@ implement A+B to green, then (1) and (3).
 
 - `runLayoutPass` and the layout-drop commit are the only kit sites touched.
   `applyReparent`, `reparentOnDrop`, and non-layout move are untouched.
-- Any *other* consumer with a world-native layout strategy benefits identically.
-  A consumer that (incorrectly, today) relied on local poses reaching the
-  strategy would change behavior — none known; the documented `LayoutStrategy`
-  frame was always nominally world (it is for `tileGrid`, whose `cellRectAt`
-  expresses cells in the container-bounds frame).
+- **The subsystem was latently broken for *all* layout strategies**, not just
+  eric. The kit's own `tileGrid`/`freeform`/`snapPoint` produce wrong results
+  under any non-origin layout container with the live local-pose scene model —
+  `tileGrid.cellRectAt` expresses cells in the `container.bounds` frame while the
+  kit passes children in a *different* local frame, so it only works when the
+  container sits at world origin. Nothing exercised that case (the only layout
+  test uses an at-origin absolute-pose stub), so it went unobserved. This change
+  **fixes** those strategies along the same path; it does not regress them.
+- The `LayoutStrategy` public contract is unchanged (world in, world out), so no
+  consumer code changes. A hypothetical consumer that relied on the *buggy*
+  local-frame inputs would change behavior — none known, and that reliance was
+  never part of the contract.
 - Existing layout tests change (expected — they encoded the absolute-pose bug).
