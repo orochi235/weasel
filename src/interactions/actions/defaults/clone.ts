@@ -37,8 +37,12 @@
 
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
-import type { Scene, NodeId } from 'core/scene/types';
+import type { Node, Scene, NodeId } from 'core/scene/types';
+import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { Op } from 'core/ops/types';
+import { createInsertOp } from 'core/ops/create';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -52,6 +56,16 @@ function translatePose(pose: unknown, dx: number, dy: number): unknown {
     x: ((p['x'] as number) ?? 0) + dx,
     y: ((p['y'] as number) ?? 0) + dy,
   };
+}
+
+/** Mint a fresh NodeId for a clone target. The old `scene.add(spec)` path
+ *  (no explicit id) let the scene generate a random id, so the produced id
+ *  was never deterministic/observable — pre-generating one here to feed the
+ *  insert op preserves behavior. Mirrors the scene's default id scheme
+ *  (`n{counter}-{random}`), which `core/scene/scene.ts` keeps module-private. */
+let cloneIdCounter = 0;
+function freshCloneId(): NodeId {
+  return asNodeId(`n${(cloneIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +84,10 @@ interface CloneScratch {
    *  at the translated pose — original stays visible at its committed home,
    *  ghost appears at the drag target). */
   previews: Map<NodeId, unknown>;
+  /** Optional consumer commit hook captured at gesture start. When present,
+   *  the insert ops route through it (consumer history) instead of
+   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+  applyOps?: (ops: Op[], label: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -98,6 +116,7 @@ export const cloneAction: Action & { requires: string[] } = {
     start(ctx: InvocationCtx, _opts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
 
@@ -119,6 +138,7 @@ export const cloneAction: Action & { requires: string[] } = {
         originPoses,
         currentDelta: { dx: 0, dy: 0 },
         previews: new Map<NodeId, unknown>(),
+        applyOps,
       };
 
       return {
@@ -156,21 +176,36 @@ export const cloneAction: Action & { requires: string[] } = {
             return;
           }
 
-          scratch.scene.batch('Clone', () => {
-            for (const id of scratch.ids) {
-              const origin = scratch.originPoses.get(id);
-              const originNode = scratch.scene.get(id);
-              if (origin === undefined || !originNode) continue;
-              const newPose = translatePose(origin, dx, dy);
-              scratch.scene.add({
-                kind: originNode.kind,
-                layer: originNode.layer,
-                pose: newPose,
-                data: originNode.data,
-                parent: originNode.parent ?? undefined,
-              });
-            }
-          });
+          // Build one insert op per clone target — same nodes/values the old
+          // direct `scene.add` loop produced (kind/layer/data/parent preserved,
+          // pose translated by the drag delta), then route the batch through the
+          // consumer `applyOps` hook when present (so an app with its own history
+          // captures the clone as a single undo entry); otherwise commit straight
+          // to the scene's own history. One applyOps / applyBatch call =
+          // one undo entry, matching the prior single `scene.batch('Clone', …)`.
+          const ops: Op[] = [];
+          for (const id of scratch.ids) {
+            const origin = scratch.originPoses.get(id);
+            const originNode = scratch.scene.get(id);
+            if (origin === undefined || !originNode) continue;
+            const newPose = translatePose(origin, dx, dy);
+            // The old `scene.add` (no explicit id) minted a random id; we
+            // pre-generate one so the insert op carries a full node. Id value
+            // was never observable, so behavior is preserved.
+            const node = {
+              id: freshCloneId(),
+              kind: originNode.kind,
+              layer: originNode.layer,
+              pose: newPose,
+              data: originNode.data,
+              parent: originNode.parent ?? null,
+            } as Node<unknown, string, unknown>;
+            ops.push(createInsertOp<Node<unknown, string, unknown>>({ node, label: 'Clone' }));
+          }
+          if (ops.length > 0) {
+            if (scratch.applyOps) scratch.applyOps(ops, 'Clone');
+            else scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene));
+          }
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
