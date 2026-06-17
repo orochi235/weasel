@@ -3,6 +3,9 @@ import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { ActionDisabledReason } from '../registry';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import type { Op } from 'core/ops/types';
+import { createSetDataOp } from 'core/ops/setData';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { mergeAlphaFromPrev } from '../../../util/color';
 
 // ---------------------------------------------------------------------------
@@ -19,6 +22,10 @@ interface SetFillScratch {
   /** Preview data entries — merged fill per selected node.
    *  Populated on start and refreshed on every onMove. */
   previews: Map<NodeId, { fill: string }>;
+  /** Optional consumer commit hook captured at gesture start. When present,
+   *  the ops-based commit routes through it (consumer history) instead of
+   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+  applyOps?: (ops: Op[], label: string) => void;
 }
 
 /** Refresh the preview map from `scratch.currentColor` and `startData`. */
@@ -39,8 +46,13 @@ function refreshPreviews(scratch: SetFillScratch): void {
  * Static descriptor for the `setFill` Action.
  *
  * Ongoing-timing action: on start captures per-node data; on each onMove
- * updates preview fill without touching the scene; on commit writes a single
- * batched `scene.update` per selected node so only one undo entry is created.
+ * updates preview fill without touching the scene; on commit emits one
+ * `createSetDataOp` per selected node (from = pre-commit data, to = merged
+ * fill) and routes the batch through the consumer `applyOps` hook when present
+ * (consumer history) else `scene.applyBatch` + `defaultCommitAdapter` (whose
+ * `setData` delegates to `scene.update({ data })`). Either way the whole fill
+ * is one batch → one undo entry, preserving the old `scene.batch('Set fill', …)`
+ * semantics exactly.
  *
  * Alpha semantics: a 6-char (no-alpha) color adopts the alpha from the node's
  * existing fill. An 8-char color keeps its own alpha.
@@ -55,6 +67,7 @@ export const setFillAction: Action & { requires: string[] } = {
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<{ fill?: string }, string, unknown> | undefined;
+      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
 
@@ -79,6 +92,7 @@ export const setFillAction: Action & { requires: string[] } = {
         startData,
         currentColor: initialColor,
         previews: new Map(),
+        applyOps,
       };
       refreshPreviews(scratch);
 
@@ -94,18 +108,28 @@ export const setFillAction: Action & { requires: string[] } = {
             scratch.previews.clear();
             return;
           }
-          scratch.scene.batch('Set fill', () => {
-            for (const id of scratch.ids) {
-              const prev = scratch.startData.get(id);
-              const merged = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? '#ffffffff');
-              // Re-read so concurrent edits to non-fill fields aren't clobbered on commit.
-              const nodeNow = scratch.scene.get(id);
-              if (!nodeNow) continue;
-              scratch.scene.update(id, {
-                data: { ...(nodeNow.data as object), fill: merged } as never,
-              });
-            }
-          });
+          // Build one setData op per selected node. `from` is the node's
+          // pre-commit data (read here, BEFORE any mutation); `to` is the same
+          // data with the merged final fill — exactly the values the old
+          // `scene.update(id, { data: { …nodeNow.data, fill } })` wrote.
+          const ops: Op[] = [];
+          for (const id of scratch.ids) {
+            const prev = scratch.startData.get(id);
+            const merged = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? '#ffffffff');
+            // Re-read so concurrent edits to non-fill fields aren't clobbered on commit.
+            const nodeNow = scratch.scene.get(id);
+            if (!nodeNow) continue;
+            const from = { ...(nodeNow.data as object) } as { fill?: string };
+            const to = { ...from, fill: merged };
+            ops.push(createSetDataOp<{ fill?: string }>({ id: id as string, from, to }));
+          }
+          if (ops.length > 0) {
+            // Route through the consumer hook when present (consumer history,
+            // one undo entry there); otherwise commit straight to the scene's
+            // own history. Either path is a single batch → one undo entry.
+            if (scratch.applyOps) scratch.applyOps(ops, 'Set fill');
+            else scratch.scene.applyBatch(ops, 'Set fill', defaultCommitAdapter(scratch.scene));
+          }
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
