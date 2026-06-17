@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import type { Op } from 'core/ops/types';
 import { resizeAction } from './resize';
 import type { InvocationCtx } from '../invoker';
 import type { NodeId } from 'core/scene/types';
@@ -20,8 +21,10 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
   const poses = new Map<string, unknown>(
     Object.entries(initial).map(([id, { pose }]) => [id, pose]),
   );
+  const batchLog: Array<{ label: string; ops: Array<{ id: string; pose: unknown }> }> = [];
   return {
     poses,
+    batchLog,
     get(id: NodeId) {
       if (!poses.has(id)) return undefined;
       return { pose: poses.get(id), kind: 'leaf' as const, layer: 'main', data: {}, parent: null };
@@ -29,6 +32,23 @@ function makeStubScene(initial: Record<string, { pose: unknown }> = {}) {
     setPose(id: NodeId, pose: unknown) { poses.set(id, pose); },
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     batch<T>(_label: string, fn: () => T): T { return fn(); },
+    // The commit path now emits transform ops through `commitOps` →
+    // `scene.applyBatch` (when no consumer `applyOps`). Mirror the real scene:
+    // record one undo entry and apply each op via an adapter that writes the
+    // op's target pose to the scene.
+    applyBatch(opList: unknown[], label: string) {
+      const recorded: Array<{ id: string; pose: unknown }> = [];
+      const adapter = {
+        setPose(id: string, pose: unknown) {
+          recorded.push({ id, pose });
+          poses.set(id, pose);
+        },
+      };
+      for (const op of opList as Array<{ apply(a: unknown): void }>) {
+        op.apply(adapter);
+      }
+      batchLog.push({ label, ops: recorded });
+    },
   };
 }
 
@@ -295,6 +315,87 @@ describe('resizeAction descriptor', () => {
     const pose = scene.poses.get('a') as RectPose;
     expect(pose.width).toBeCloseTo(130);
     expect(pose.height).toBeCloseTo(120);
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+  });
+
+  it('onEnd commit with no applyOps routes through scene.applyBatch (one undo entry)', () => {
+    const invoker = getOngoingInvoker(resizeAction);
+    const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });
+    const ctx: InvocationCtx = {
+      world: { x: 100, y: 100 },
+      screen: { x: 100, y: 100 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: {
+        selection: { get: () => ['a' as NodeId] },
+        scene,
+      },
+      drag: {
+        start: { x: 100, y: 100 },
+        current: { x: 100, y: 100 },
+        delta: { x: 0, y: 0 },
+        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'], anchor: { x: 'min', y: 'min' } },
+      },
+    };
+
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({
+      ...ctx,
+      drag: { start: { x: 100, y: 100 }, current: { x: 130, y: 120 }, delta: { x: 30, y: 20 } },
+    });
+    handle.onEnd!({ ...ctx }, 'commit');
+
+    // Exactly one undo entry, labeled 'Resize', applied via applyBatch.
+    expect(scene.batchLog).toHaveLength(1);
+    expect(scene.batchLog[0].label).toBe('Resize');
+    const pose = scene.poses.get('a') as RectPose;
+    expect(pose.width).toBeCloseTo(130);
+    expect(pose.height).toBeCloseTo(120);
+    expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
+  });
+
+  it('onEnd commit routes through consumer applyOps hook when present (once, with Resize label and transform op)', () => {
+    const invoker = getOngoingInvoker(resizeAction);
+    const scene = makeStubScene({ a: { pose: { x: 0, y: 0, width: 100, height: 100 } } });
+    const applyOps = vi.fn<(ops: Op[], label: string) => void>();
+    const ctx: InvocationCtx = {
+      world: { x: 100, y: 100 },
+      screen: { x: 100, y: 100 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: {
+        selection: { get: () => ['a' as NodeId] },
+        scene,
+        applyOps,
+      },
+      drag: {
+        start: { x: 100, y: 100 },
+        current: { x: 100, y: 100 },
+        delta: { x: 0, y: 0 },
+        affordance: { kind: 'handle:bottom-right', fixedPoint: { x: 0, y: 0 }, targetIds: ['a'], anchor: { x: 'min', y: 'min' } },
+      },
+    };
+
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({
+      ...ctx,
+      drag: { start: { x: 100, y: 100 }, current: { x: 130, y: 120 }, delta: { x: 30, y: 20 } },
+    });
+    handle.onEnd!({ ...ctx }, 'commit');
+
+    // Consumer hook owns the commit: called exactly once with the 'Resize'
+    // label and one transform op (from = start pose, to = final preview pose).
+    expect(applyOps).toHaveBeenCalledTimes(1);
+    const [ops, label] = applyOps.mock.calls[0];
+    expect(label).toBe('Resize');
+    expect(ops).toHaveLength(1);
+    expect(ops[0].name).toBe('transform');
+    const args = ops[0].args as { id: string; from: RectPose; to: RectPose };
+    expect(args.id).toBe('a');
+    expect(args.from).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+    expect(args.to.width).toBeCloseTo(130);
+    expect(args.to.height).toBeCloseTo(120);
+
+    // Consumer owns history → scene's own applyBatch path is NOT used.
+    expect(scene.batchLog).toHaveLength(0);
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
   });
 });
