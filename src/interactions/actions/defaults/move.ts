@@ -94,11 +94,20 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   if (!layoutDep || !moveCtx.drag) return;
   const scene = scratch.scene;
   const draggedId = scratch.ids[0];
-  const draggedPose = scratch.previews.get(draggedId);
-  if (draggedPose === undefined) return;
+  const poseAdapter = scenePoseAdapter(scene);
+  if (!scene.get(draggedId)) return;
   const sourceContainerId = scene.get(draggedId)?.parent ?? null;
-  const dr = draggedPose as { x: number; y: number; width?: number; height?: number };
-  const draggedCenter = { x: dr.x + (dr.width ?? 0) / 2, y: dr.y + (dr.height ?? 0) / 2 };
+  const { dx, dy } = scratch.currentDelta;
+  // Dragged preview in WORLD: compose the committed start pose up the parent
+  // chain, then add the world drag delta (same math as `applyReparent`). The
+  // LayoutStrategy contract is world-framed, so every pose handed to it below
+  // is composed to world; reflow results are rebased back to local.
+  const startWorld = composeWorldPose(poseAdapter, draggedId as string, composeRectPose);
+  const draggedWorld: RectPose = { ...startWorld, x: startWorld.x + dx, y: startWorld.y + dy };
+  const draggedCenter = {
+    x: draggedWorld.x + (draggedWorld.width ?? 0) / 2,
+    y: draggedWorld.y + (draggedWorld.height ?? 0) / 2,
+  };
 
   type Layout = LayoutStrategy<unknown>;
   interface Candidate {
@@ -121,10 +130,11 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     if (!layout) return;
     const node = scene.get(id);
     if (!node) return;
-    if (!testInside(node.pose, layout)) return;
+    const worldBounds = composeWorldPose(poseAdapter, id as string, composeRectPose);
+    if (!testInside(worldBounds, layout)) return;
     candidates.push({
       id,
-      bounds: node.pose as { x: number; y: number; width: number; height: number },
+      bounds: worldBounds as { x: number; y: number; width: number; height: number },
       layout,
       zPath,
       depth: zPath.length,
@@ -159,11 +169,14 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   const container: LayoutContainer = { id: dest.id as string, bounds: dest.bounds };
   const children: LayoutChild<unknown>[] = scene.childrenOf(dest.id)
     .filter((cid) => cid !== draggedId || sourceContainerId === (dest!.id as string))
-    .map((cid) => ({ id: cid as string, pose: scene.get(cid)!.pose }));
+    .map((cid) => ({
+      id: cid as string,
+      pose: composeWorldPose(poseAdapter, cid as string, composeRectPose),
+    }));
   const draggedArg = {
     id: draggedId as string,
-    originPose: scratch.startPoses.get(draggedId)!,
-    pose: draggedPose,
+    originPose: startWorld,
+    pose: draggedWorld,
     sourceContainerId,
   };
   const targets = layout.getDropTargets(container, children, draggedArg);
@@ -171,9 +184,13 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   if (!target) return; // not accepted
 
   // Destination reflow → fold into previews (skip the dragged id itself).
+  // `reflowPoses` returns world; previews are local, so rebase to the child's
+  // current parent frame first.
   for (const [cid, pose] of layout.reflowPoses(container, children, draggedArg, target)) {
     if (asNodeId(cid) === draggedId) continue;
-    scratch.previews.set(asNodeId(cid), pose);
+    const parent = scene.get(asNodeId(cid))?.parent ?? null;
+    const local = rebaseLocalPose(poseAdapter, pose as RectPose, parent, composeRectPose, decomposeRectPose);
+    scratch.previews.set(asNodeId(cid), local);
   }
 
   // Source reflow (cross-container) → fold changed leftovers into previews.
@@ -184,19 +201,23 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     if (srcLayout && srcNode) {
       const srcContainer: LayoutContainer = {
         id: sourceContainerId,
-        bounds: srcNode.pose as { x: number; y: number; width: number; height: number },
+        bounds: composeWorldPose(poseAdapter, sourceContainerId, composeRectPose) as { x: number; y: number; width: number; height: number },
       };
       const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(sourceContainerId))
         .filter((cid) => cid !== draggedId)
-        .map((cid) => ({ id: cid as string, pose: scene.get(cid)!.pose }));
+        .map((cid) => ({
+          id: cid as string,
+          pose: composeWorldPose(poseAdapter, cid as string, composeRectPose),
+        }));
       for (const [cid, pose] of srcLayout.childPoses(srcContainer, srcChildren)) {
-        const cur = scene.get(asNodeId(cid))!.pose as Record<string, unknown>;
+        const cur = composeWorldPose(poseAdapter, cid, composeRectPose) as unknown as Record<string, unknown>;
         const next = pose as Record<string, unknown>;
         const same = cur.x === next.x && cur.y === next.y
           && cur.width === next.width && cur.height === next.height;
         if (same) continue;
-        sourceReflow.set(cid, pose);
-        scratch.previews.set(asNodeId(cid), pose);
+        sourceReflow.set(cid, pose); // WORLD — rebased at each consumption point
+        const parent = scene.get(asNodeId(cid))?.parent ?? null;
+        scratch.previews.set(asNodeId(cid), rebaseLocalPose(poseAdapter, pose as RectPose, parent, composeRectPose, decomposeRectPose));
       }
     }
   }
