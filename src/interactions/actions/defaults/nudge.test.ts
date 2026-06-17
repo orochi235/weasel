@@ -11,6 +11,63 @@ import { ActionDisabledReason } from '../registry';
 type Pose = { x: number; y: number; width: number; height: number };
 
 // ---------------------------------------------------------------------------
+// Stub scene
+//
+// The commit now emits `createTransformOp`s routed through `commitOps`:
+// `applyOps(ops, 'Nudge')` when a consumer hook is present, else
+// `scene.applyBatch(ops, 'Nudge', defaultCommitAdapter(scene))`. The stub
+// mirrors the real scene: `applyBatch` records one undo entry and applies each
+// op through the supplied adapter (which writes the op's target pose). The
+// adapter the action passes is `defaultCommitAdapter(scene)`, so the stub also
+// exposes the read/write methods that adapter calls (`get` / `setPose`).
+// ---------------------------------------------------------------------------
+
+interface BatchEntry {
+  label: string;
+  ops: Array<{ id: string; pose: unknown }>;
+}
+
+function makeStubScene(initial: Record<string, Pose>) {
+  const poses = new Map<string, Pose>(Object.entries(initial));
+  const batchLog: BatchEntry[] = [];
+  return {
+    poses,
+    batchLog,
+    renderOrder: () => [...poses.keys()].map((id) => asNodeId(id)),
+    get(id: string) {
+      if (!poses.has(id as string)) return undefined;
+      return { pose: poses.get(id as string) };
+    },
+    setPose(id: string, pose: Pose) {
+      poses.set(id as string, pose);
+    },
+    applyBatch(opList: unknown[], label: string, adapter: unknown) {
+      const recorded: Array<{ id: string; pose: unknown }> = [];
+      const a = adapter as { setPose(id: string, pose: unknown): void };
+      const wrapped = {
+        ...(adapter as object),
+        setPose(id: string, pose: unknown) {
+          recorded.push({ id, pose });
+          a.setPose(id, pose as Pose);
+        },
+      };
+      for (const op of opList as Array<{ apply(x: unknown): void }>) {
+        op.apply(wrapped);
+      }
+      batchLog.push({ label, ops: recorded });
+    },
+  };
+}
+
+function runNudge(
+  action: typeof nudgeUpAction,
+  deps: unknown,
+  params?: unknown,
+): void {
+  (action.invoker as { run: (deps: unknown, params?: unknown) => void }).run(deps, params);
+}
+
+// ---------------------------------------------------------------------------
 // Static descriptor tests
 // ---------------------------------------------------------------------------
 
@@ -34,78 +91,89 @@ describe('nudgeUpAction (magnitude param)', () => {
   });
 
   it('invoker.run with magnitude "small" applies SMALL_STEP (1) upward', () => {
-    const poses: Record<string, Pose> = { a: { x: 10, y: 10, width: 1, height: 1 } };
-    const setPose = vi.fn((id: string, pose: Pose) => { poses[id] = pose; });
-    const scene = {
-      get: (id: string) => ({ pose: poses[id] }),
-      batch: (_label: string, fn: () => void) => fn(),
-      setPose,
-    };
+    const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    nudgeUpAction.invoker!.timing === 'immediate' &&
-      (nudgeUpAction.invoker as { run: (deps: unknown, params?: unknown) => void }).run(
-        { selection, scene },
-        { magnitude: 'small' },
-      );
+    runNudge(nudgeUpAction, { selection, scene }, { magnitude: 'small' });
 
-    expect(setPose).toHaveBeenCalledOnce();
-    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 10, y: 9 });
+    expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 9 });
   });
 
   it('invoker.run with magnitude "big" applies BIG_STEP (10) upward', () => {
-    const poses: Record<string, Pose> = { a: { x: 10, y: 10, width: 1, height: 1 } };
-    const setPose = vi.fn((id: string, pose: Pose) => { poses[id] = pose; });
-    const scene = {
-      get: (id: string) => ({ pose: poses[id] }),
-      batch: (_label: string, fn: () => void) => fn(),
-      setPose,
-    };
+    const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    (nudgeUpAction.invoker as { run: (deps: unknown, params?: unknown) => void }).run(
-      { selection, scene },
-      { magnitude: 'big' },
-    );
+    runNudge(nudgeUpAction, { selection, scene }, { magnitude: 'big' });
 
-    expect(setPose).toHaveBeenCalledOnce();
-    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 10, y: 0 });
+    expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 0 });
   });
 
   it('invoker.run with no params defaults to small step', () => {
-    const poses: Record<string, Pose> = { a: { x: 10, y: 10, width: 1, height: 1 } };
-    const setPose = vi.fn((id: string, pose: Pose) => { poses[id] = pose; });
-    const scene = {
-      get: (id: string) => ({ pose: poses[id] }),
-      batch: (_label: string, fn: () => void) => fn(),
-      setPose,
-    };
+    const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    (nudgeUpAction.invoker as { run: (deps: unknown, params?: unknown) => void }).run(
-      { selection, scene },
-      undefined,
-    );
+    runNudge(nudgeUpAction, { selection, scene }, undefined);
 
-    expect(setPose).toHaveBeenCalledOnce();
-    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 10, y: 9 });
+    expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 9 });
+  });
+
+  it('commits exactly one undo entry labeled "Nudge" (no applyOps)', () => {
+    const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
+    const selection = { get: () => [asNodeId('a')] };
+
+    runNudge(nudgeUpAction, { selection, scene }, { magnitude: 'small' });
+
+    expect(scene.batchLog).toHaveLength(1);
+    expect(scene.batchLog[0].label).toBe('Nudge');
+    expect(scene.batchLog[0].ops).toHaveLength(1);
+    expect(scene.batchLog[0].ops[0]).toMatchObject({ id: 'a', pose: { x: 10, y: 9 } });
+  });
+
+  it('routes the commit through the consumer applyOps hook when present', () => {
+    const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
+    const selection = { get: () => [asNodeId('a')] };
+    const applyOps = vi.fn();
+
+    runNudge(nudgeUpAction, { selection, scene, applyOps }, { magnitude: 'small' });
+
+    // Consumer hook owns the commit — scene.applyBatch is not used.
+    expect(applyOps).toHaveBeenCalledOnce();
+    expect(scene.batchLog).toHaveLength(0);
+
+    const [ops, label] = applyOps.mock.calls[0] as [Array<{ name: string; args: { id: string; from: Pose; to: Pose } }>, string];
+    expect(label).toBe('Nudge');
+    expect(ops).toHaveLength(1);
+    expect(ops[0].name).toBe('transform');
+    expect(ops[0].args.id).toBe('a');
+    expect(ops[0].args.from).toMatchObject({ x: 10, y: 10 });
+    expect(ops[0].args.to).toMatchObject({ x: 10, y: 9 });
+  });
+
+  it('emits one op per selected node, capturing each pre-mutation pose', () => {
+    const scene = makeStubScene({
+      a: { x: 0, y: 0, width: 1, height: 1 },
+      b: { x: 5, y: 5, width: 1, height: 1 },
+    });
+    const selection = { get: () => [asNodeId('a'), asNodeId('b')] };
+    const applyOps = vi.fn();
+
+    runNudge(nudgeRightAction, { selection, scene, applyOps }, { magnitude: 'big' });
+
+    const [ops] = applyOps.mock.calls[0] as [Array<{ args: { id: string; from: Pose; to: Pose } }>];
+    expect(ops).toHaveLength(2);
+    expect(ops[0].args).toMatchObject({ id: 'a', from: { x: 0 }, to: { x: 10 } });
+    expect(ops[1].args).toMatchObject({ id: 'b', from: { x: 5 }, to: { x: 15 } });
   });
 
   it('invoker.run is a no-op on empty selection', () => {
-    const setPose = vi.fn();
-    const scene = {
-      get: vi.fn(),
-      batch: (_label: string, fn: () => void) => fn(),
-      setPose,
-    };
+    const scene = makeStubScene({});
+    const applyOps = vi.fn();
     const selection = { get: () => [] };
 
-    (nudgeUpAction.invoker as { run: (deps: unknown, params?: unknown) => void }).run(
-      { selection, scene },
-      { magnitude: 'small' },
-    );
+    runNudge(nudgeUpAction, { selection, scene, applyOps }, { magnitude: 'small' });
 
-    expect(setPose).not.toHaveBeenCalled();
+    expect(applyOps).not.toHaveBeenCalled();
+    expect(scene.batchLog).toHaveLength(0);
   });
 
   it('enabled always returns SelectionRequired', () => {
@@ -121,21 +189,12 @@ describe('nudgeDownAction descriptor', () => {
   });
 
   it('invoker.run with magnitude "small" applies +SMALL_STEP downward', () => {
-    const poses: Record<string, Pose> = { a: { x: 10, y: 10, width: 1, height: 1 } };
-    const setPose = vi.fn((id: string, pose: Pose) => { poses[id] = pose; });
-    const scene = {
-      get: (id: string) => ({ pose: poses[id] }),
-      batch: (_label: string, fn: () => void) => fn(),
-      setPose,
-    };
+    const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    (nudgeDownAction.invoker as { run: (deps: unknown, params?: unknown) => void }).run(
-      { selection, scene },
-      { magnitude: 'small' },
-    );
+    runNudge(nudgeDownAction, { selection, scene }, { magnitude: 'small' });
 
-    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 10, y: 11 });
+    expect(scene.poses.get('a')).toMatchObject({ x: 10, y: 11 });
   });
 });
 
@@ -155,21 +214,11 @@ describe('nudgeRightAction descriptor', () => {
   });
 
   it('invoker.run with magnitude "big" applies +BIG_STEP rightward', () => {
-    const poses: Record<string, Pose> = { a: { x: 10, y: 10, width: 1, height: 1 } };
-    const setPose = vi.fn((id: string, pose: Pose) => { poses[id] = pose; });
-    const scene = {
-      get: (id: string) => ({ pose: poses[id] }),
-      batch: (_label: string, fn: () => void) => fn(),
-      setPose,
-    };
+    const scene = makeStubScene({ a: { x: 10, y: 10, width: 1, height: 1 } });
     const selection = { get: () => [asNodeId('a')] };
 
-    (nudgeRightAction.invoker as { run: (deps: unknown, params?: unknown) => void }).run(
-      { selection, scene },
-      { magnitude: 'big' },
-    );
+    runNudge(nudgeRightAction, { selection, scene }, { magnitude: 'big' });
 
-    expect(setPose.mock.calls[0][1]).toMatchObject({ x: 20, y: 10 });
+    expect(scene.poses.get('a')).toMatchObject({ x: 20, y: 10 });
   });
 });
-
