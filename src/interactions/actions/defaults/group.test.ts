@@ -1,10 +1,11 @@
 /**
  * Tests for groupAction / ungroupAction descriptors and groupAction behavior.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { groupAction, ungroupAction } from './group';
 import { createScene } from 'core/scene/scene';
 import type { NodeId } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
 import type { ImmediateInvoker } from '../invoker';
 
 describe('groupAction (descriptor)', () => {
@@ -98,6 +99,84 @@ describe('groupAction.run', () => {
 
     expect(scene.nodes.size).toBe(before);
     expect(selection.get()).toEqual([]);
+  });
+
+  it('produces exactly one undo entry (single batch) without applyOps', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const selection = makeSelection([a, b]);
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection } as never, undefined as never);
+
+    const containerId = selection.get()[0]!;
+    expect(scene.get(containerId)!.kind).toBe('container');
+
+    // One undo collapses the whole group operation (container removed, children
+    // reparented back to root).
+    scene.undo();
+    expect(scene.get(containerId)).toBeUndefined();
+    expect(scene.get(a)!.parent).toBe(null);
+    expect(scene.get(b)!.parent).toBe(null);
+  });
+});
+
+describe('groupAction.run — applyOps routing', () => {
+  it('routes commit through the consumer applyOps hook once with insert + reparent ops + "Group" label, and still sets selection', () => {
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const b = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 20, y: 30, width: 10, height: 10 }, data: {} });
+    const selection = makeSelection([a, b]);
+    const applyOps = vi.fn<(ops: Op[], label: string) => void>();
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection, applyOps } as never, undefined as never);
+
+    // applyOps owns the commit — exactly one call with the right label.
+    expect(applyOps).toHaveBeenCalledOnce();
+    const [ops, label] = applyOps.mock.calls[0]!;
+    expect(label).toBe('Group');
+
+    // First op inserts the fresh container (kind=container, layer=main, union
+    // AABB pose, parent=null since the two members share the root).
+    expect(ops[0]!.name).toBe('insert');
+    const containerNode = (ops[0]!.args as {
+      node: { id: string; kind: string; layer: string; pose: unknown; parent: NodeId | null };
+    }).node;
+    expect(containerNode.id).toBeTruthy();
+    expect(containerNode.kind).toBe('container');
+    expect(containerNode.layer).toBe('main');
+    expect(containerNode.parent).toBe(null);
+    expect(containerNode.pose).toEqual({ x: 0, y: 0, width: 30, height: 40 });
+
+    // Remaining ops reparent each selected id under the new container, in order.
+    expect(ops).toHaveLength(3);
+    expect(ops[1]!.name).toBe('reparent');
+    expect(ops[2]!.name).toBe('reparent');
+    const r1 = ops[1]!.args as { id: string; fromParentId: NodeId | null; toParentId: NodeId | null };
+    const r2 = ops[2]!.args as { id: string; fromParentId: NodeId | null; toParentId: NodeId | null };
+    expect(r1.id).toBe(a);
+    expect(r1.fromParentId).toBe(null);
+    expect(r1.toParentId).toBe(containerNode.id);
+    expect(r2.id).toBe(b);
+    expect(r2.fromParentId).toBe(null);
+    expect(r2.toParentId).toBe(containerNode.id);
+
+    // Selection still updates to the new container (selection is not an op).
+    expect(selection.get()).toEqual([containerNode.id]);
+
+    // The scene's own fallback path is untouched — applyOps owns the commit.
+    expect(scene.get(a as NodeId)!.parent).toBe(null);
+  });
+
+  it('does not call applyOps on an empty selection', () => {
+    const scene = makeScene();
+    scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: {} });
+    const selection = makeSelection([]);
+    const applyOps = vi.fn<(ops: Op[], label: string) => void>();
+
+    (groupAction.invoker as ImmediateInvoker).run({ scene, selection, applyOps } as never, undefined as never);
+
+    expect(applyOps).not.toHaveBeenCalled();
   });
 });
 
