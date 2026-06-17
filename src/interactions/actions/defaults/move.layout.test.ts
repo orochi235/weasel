@@ -139,7 +139,7 @@ describe('moveAction layout reflow', () => {
         a: { x: 0, y: 0, width: 50, height: 100 },
         b: { x: 50, y: 0, width: 50, height: 100 },
         D: { x: 200, y: 0, width: 100, height: 100 },
-        d1: { x: 200, y: 0, width: 50, height: 100 },
+        d1: { x: 0, y: 0, width: 50, height: 100 },
       },
       { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
       { C: ['a', 'b'], D: ['d1'] },
@@ -249,6 +249,44 @@ describe('moveAction layout reflow', () => {
     const drop = ops.find((o) => o.name === 'transform' && o.args?.id === 'a');
     expect(drop).toBeDefined();
     expect(drop!.args?.to).toMatchObject({ x: 0, y: 0 });
+  });
+
+  it('lands a drop into a NESTED destination at the correct world position', () => {
+    // Outer O at world {100,0} (no layout). Destination D nested under O at
+    // LOCAL {50,0} → world {150,0}, holding d1 (local {0,0}). Source C at world
+    // {0,0} holds a (local {0,0}). Dragging a into D's cell 0 (world {150,0})
+    // must reparent a → D and write a's pose LOCAL to D ({0,0}), guarding the
+    // rebase direction (D's world origin ≠ its local pose).
+    const scene = makeScene(
+      {
+        O: { x: 100, y: 0, width: 200, height: 100 },
+        D: { x: 50, y: 0, width: 100, height: 100 },
+        d1: { x: 0, y: 0, width: 50, height: 100 },
+        C: { x: 0, y: 0, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+      },
+      { O: null, D: 'O', d1: 'D', C: null, a: 'C' },
+      { O: ['D'], D: ['d1'], C: ['a'] },
+      ['O', 'C'],
+    );
+    const grid = tileGrid<P>({ cols: 2, rows: 1 });
+    const layouts = { C: grid, D: grid }; // O has no layout
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts));
+    // a world center {25,50}; delta {150,0} → world center {175,50}, inside D's
+    // cell 0 (world {150,0,50,100}).
+    const drag = { start: { x: 25, y: 50 }, current: { x: 175, y: 50 }, delta: { x: 150, y: 0 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx, 'commit');
+
+    const ops = scene.appliedBatches[0].ops;
+    const reparent = ops.find((o) => o.name === 'reparent' && o.args?.id === 'a');
+    expect(reparent).toBeDefined();
+    expect(reparent!.args?.toParentId).toBe('D');
+    const drop = ops.find((o) => o.name === 'transform' && o.args?.id === 'a');
+    expect(drop).toBeDefined();
+    expect(drop!.args?.to).toMatchObject({ x: 0, y: 0 }); // local to D; world = {150,0}
   });
 
   it('falls through to translate commit when no layout accepts (no layoutPass)', () => {
