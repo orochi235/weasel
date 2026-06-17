@@ -3,6 +3,7 @@ import { setFillAction } from './setFill';
 import type { InvocationCtx, OngoingHandle, BindingOpts } from '../invoker';
 import { asNodeId } from 'core/scene/types';
 import type { NodeId } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
 
 interface FakeNode { id: NodeId; kind: 'leaf'; pose: unknown; data: { fill?: string; stroke?: string } }
 
@@ -21,6 +22,15 @@ function makeScene(nodes: Record<string, { fill?: string }>) {
     }),
     setPose: vi.fn(),
     batch: vi.fn((label: string, fn: () => void) => { batches.push(label); fn(); }),
+    // Mirror the real scene: applyBatch records one undo entry and applies each
+    // op through the supplied adapter. The action passes `defaultCommitAdapter`,
+    // whose `setData` calls `scene.update({ data })` — so each op routes back
+    // through `update` above, populating `updates`.
+    applyBatch: vi.fn((opList: unknown[], label: string, adapter: unknown) => {
+      batches.push(label);
+      for (const op of opList as Array<{ apply(a: unknown): void }>) op.apply(adapter);
+    }),
+    renderOrder: () => Object.keys(current).map((id) => asNodeId(id)),
     updates,
     batches,
   };
@@ -39,12 +49,17 @@ function makeCtx(opts: {
   selectionIds: string[];
   scene: ReturnType<typeof makeScene>;
   params?: Record<string, unknown>;
+  applyOps?: (ops: Op[], label: string) => void;
 }): InvocationCtx {
   return {
     world: { x: 0, y: 0 },
     screen: { x: 0, y: 0 },
     modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-    deps: { selection: makeSelection(opts.selectionIds), scene: opts.scene },
+    deps: {
+      selection: makeSelection(opts.selectionIds),
+      scene: opts.scene,
+      ...(opts.applyOps ? { applyOps: opts.applyOps } : {}),
+    },
     params: opts.params,
   };
 }
@@ -133,5 +148,48 @@ describe('setFillAction', () => {
     const h = getInvoker().start(ctx, { params: { color: '#ff000040' } });
     h.onEnd?.(ctx, 'commit');
     expect((scene.updates[0].data as { fill: string }).fill).toBe('#ff000040');
+  });
+
+  // -------------------------------------------------------------------------
+  // Ops-based commit routed through the consumer `applyOps` hook
+  // -------------------------------------------------------------------------
+
+  it('routes the commit through the consumer applyOps hook once with setData ops + "Set fill" label', () => {
+    const scene = makeScene({ a: { fill: '#ffffffff' }, b: { fill: '#000000ff' } });
+    const applyOps = vi.fn<(ops: Op[], label: string) => void>();
+    const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { color: '#ff0000' }, applyOps });
+    const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
+    h.onMove?.({ ...ctx, params: { color: '#00ff00' } });
+    h.onEnd?.(ctx, 'commit');
+
+    // Consumer hook owns the commit — scene.applyBatch / direct update are not used.
+    expect(applyOps).toHaveBeenCalledOnce();
+    expect(scene.updates).toHaveLength(0);
+    expect(scene.batches).toHaveLength(0);
+
+    const [ops, label] = applyOps.mock.calls[0];
+    expect(label).toBe('Set fill');
+    expect(ops).toHaveLength(2);
+    for (const op of ops) expect(op.name).toBe('setData');
+    const args0 = ops[0].args as { id: string; from: { fill?: string }; to: { fill?: string } };
+    const args1 = ops[1].args as { id: string; from: { fill?: string }; to: { fill?: string } };
+    expect(args0.id).toBe('a');
+    expect(args1.id).toBe('b');
+    // `from` is the pre-commit data; `to` carries the merged final fill.
+    expect(args0.from.fill).toBe('#ffffffff');
+    expect((args0.to as { fill: string }).fill).toBe('#00ff00ff');
+    expect(args1.from.fill).toBe('#000000ff');
+    expect((args1.to as { fill: string }).fill).toBe('#00ff00ff');
+  });
+
+  it('with no applyOps, falls back to one scene.applyBatch labeled "Set fill"', () => {
+    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
+    const h = getInvoker().start(ctx, { params: { color: '#ff0000' } });
+    h.onEnd?.(ctx, 'commit');
+    expect(scene.applyBatch).toHaveBeenCalledOnce();
+    expect(scene.batches).toEqual(['Set fill']);
+    // The default adapter's setData routed back through scene.update.
+    expect((scene.updates[0].data as { fill: string }).fill).toBe('#ff0000ff');
   });
 });
