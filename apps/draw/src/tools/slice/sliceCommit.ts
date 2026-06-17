@@ -38,8 +38,9 @@ export type WDLeafNode = LeafNode<WDData, 'default', WDPose>;
 export interface SliceLeaf {
   /** The FULL original scene node — carried for faithful undo. */
   node: WDLeafNode;
-  /** Z-order index of this node within its sibling list. Forwarded to
-   *  `createDeleteOp` so undo restores paint order. */
+  /** Global render-order position (DFS-preorder flat index from
+   *  `scene.renderOrder()`). Forwarded to `createDeleteOp` so undo restores
+   *  paint order — matches the convention used by `BooleansAdapterPublisher`. */
   index: number;
   /** Node geometry baked to world space (parent transforms applied). */
   worldPath: Path;
