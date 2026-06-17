@@ -1,6 +1,8 @@
 import { createReorderOp } from 'core/ops/reorder';
-import type { NodeId, Scene } from 'core/scene/types';
+import type { Scene } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
 import type { SelectionApi } from 'core/selection/useSelection';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { Action } from '../registry';
 import { requiresSelection } from './requiresSelection';
 
@@ -11,16 +13,19 @@ import { requiresSelection } from './requiresSelection';
 type ReorderDistance = 'adjacent' | 'extreme';
 
 /**
- * Execute a directional reorder on the current selection using the Scene API.
- * Translates `direction` + `distance` into the four-way `ReorderDirection`
- * understood by `createReorderOp`, then applies the op through an inline
- * adapter synthesised from the Scene.
+ * Execute a directional reorder on the current selection. Translates
+ * `direction` + `distance` into the four-way `ReorderDirection` understood by
+ * `createReorderOp`, then routes the single reorder op through the consumer
+ * `applyOps` commit hook (consumer history) when present, falling back to
+ * `scene.applyBatch` against the shared `defaultCommitAdapter`. Either way the
+ * whole reorder lands as one undo entry labelled `'Reorder'`.
  */
 function reorderSelection(
   selection: SelectionApi,
   scene: Scene<unknown, string, unknown>,
   direction: 'forward' | 'backward',
   distance: ReorderDistance,
+  applyOps: ((ops: Op[], label: string) => void) | undefined,
 ): void {
   const ids = selection.get() as string[];
   if (ids.length === 0) return;
@@ -30,35 +35,13 @@ function reorderSelection(
       ? distance === 'extreme' ? 'front' : 'forward'
       : distance === 'extreme' ? 'back' : 'backward';
 
-  const op = createReorderOp({ ids, direction: reorderDir });
+  // `createReorderOp` partitions `ids` by their current parent and rewrites
+  // each affected parent's child order via the adapter's `getChildren` /
+  // `setChildOrder` (and `getParent`) — all carried by `defaultCommitAdapter`.
+  const op = createReorderOp({ ids, direction: reorderDir, label: 'Reorder' });
 
-  // Inline adapter — mirrors the shape in canvas/sceneAdapter.ts.
-  const adapter = {
-    getParent(id: string): string | null {
-      // For now all nodes live at the root level (flat scene).
-      // Phase N: thread parent lookup through Scene when nested groups land.
-      void id;
-      return null;
-    },
-    getChildren(parentId: string | null): string[] {
-      if (parentId === null) return [...scene.roots] as string[];
-      return [...scene.childrenOf(parentId as NodeId)] as string[];
-    },
-    setChildOrder(parentId: string | null, orderedIds: string[]): void {
-      scene.batch('Reorder', () => {
-        for (let i = 0; i < orderedIds.length; i++) {
-          const current =
-            parentId === null
-              ? (scene.roots as readonly string[])
-              : (scene.childrenOf(parentId as NodeId) as readonly string[]);
-          if (current[i] === orderedIds[i]) continue;
-          scene.reorder(orderedIds[i] as NodeId, i);
-        }
-      });
-    },
-  };
-
-  op.apply(adapter);
+  if (applyOps) applyOps([op], 'Reorder');
+  else scene.applyBatch([op], 'Reorder', defaultCommitAdapter(scene));
 }
 
 // ---------------------------------------------------------------------------
@@ -102,8 +85,9 @@ export const reorderForwardAction: Action & { requires: string[] } = {
       const distance = (params?.distance as ReorderDistance | undefined) ?? 'adjacent';
       const selection = deps.selection as SelectionApi | undefined;
       const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
       if (!selection || !scene) return;
-      reorderSelection(selection, scene, 'forward', distance);
+      reorderSelection(selection, scene, 'forward', distance, applyOps);
     },
   },
   enabled: requiresSelection,
@@ -141,8 +125,9 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
       const distance = (params?.distance as ReorderDistance | undefined) ?? 'adjacent';
       const selection = deps.selection as SelectionApi | undefined;
       const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
+      const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
       if (!selection || !scene) return;
-      reorderSelection(selection, scene, 'backward', distance);
+      reorderSelection(selection, scene, 'backward', distance, applyOps);
     },
   },
   enabled: requiresSelection,
