@@ -183,6 +183,42 @@ describe('moveAction layout reflow', () => {
     expect(reflowIdx).toBeGreaterThan(dropIdx);
   });
 
+  it('finds the destination when the source container is not at world origin', () => {
+    // Source C at world {40,40} holds child a (LOCAL {0,0}); destination D at
+    // world {200,0} holds d1 (LOCAL {0,0}). Pre-migration draggedCenter is
+    // computed in C-local space, so it never lands inside D's world bounds —
+    // the drag falls through to a translate-only commit (no reparent op,
+    // appliedBatches stays empty).
+    const scene = makeScene(
+      {
+        C: { x: 40, y: 40, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+        D: { x: 200, y: 0, width: 100, height: 100 },
+        d1: { x: 0, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C', D: null, d1: 'D' },
+      { C: ['a', 'b'], D: ['d1'] },
+      ['C', 'D'],
+    );
+    const grid = tileGrid<P>({ cols: 2, rows: 1 });
+    const layouts = { C: grid, D: grid };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, layouts));
+    // a world center starts at {40+25, 40+50} = {65,90}. delta {160,-40} puts
+    // the world center at {225,50}, inside D's first cell.
+    const drag = { start: { x: 65, y: 90 }, current: { x: 225, y: 50 }, delta: { x: 160, y: -40 } };
+    handle.onMove!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx);
+    handle.onEnd!(makeCtx(scene, ['a'], drag, layouts) as InvocationCtx, 'commit');
+
+    expect(scene.appliedBatches.length).toBe(1);
+    const ops = scene.appliedBatches[0].ops;
+    const reparent = ops.find((o) => o.name === 'reparent' && o.args?.id === 'a');
+    expect(reparent).toBeDefined();
+    expect(reparent!.args?.toParentId).toBe('D');
+  });
+
   it('falls through to translate commit when no layout accepts (no layoutPass)', () => {
     const scene = makeScene(
       { a: { x: 0, y: 0, width: 10, height: 10 } },
