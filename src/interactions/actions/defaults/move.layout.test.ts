@@ -346,8 +346,16 @@ describe('moveAction layout reflow', () => {
     const drag = { start: { x: 0, y: 0 }, current: { x: 5, y: 5 }, delta: { x: 5, y: 5 } };
     handle.onMove!(makeCtx(scene, ['a'], drag) as InvocationCtx);
     handle.onEnd!(makeCtx(scene, ['a'], drag) as InvocationCtx, 'commit');
-    expect(scene.appliedBatches.length).toBe(0);
-    expect(scene.poses.get('a')).toEqual({ x: 5, y: 5, width: 10, height: 10 });
+    // With no consumer applyOps, the translate-only commit routes through the
+    // scene's own history via applyBatch — one undo entry — emitting a
+    // transform op that lands `a` at the translated pose.
+    expect(scene.appliedBatches.length).toBe(1);
+    expect(scene.appliedBatches[0].label).toBe('Move');
+    const transform = scene.appliedBatches[0].ops.find(
+      (o) => o.name === 'transform' && o.args?.id === 'a',
+    );
+    expect(transform).toBeDefined();
+    expect(transform!.args?.to).toMatchObject({ x: 5, y: 5 });
   });
 
   it('routes the translate-only commit through a consumer applyOps hook', () => {

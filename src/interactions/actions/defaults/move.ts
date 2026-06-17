@@ -699,28 +699,34 @@ export const moveAction: Action & { requires: string[] } = {
             ? resolveDropTarget(endCtx, scratch)
             : null;
 
-          scratch.scene.batch('Move', () => {
-            if (dropTarget) {
+          if (dropTarget) {
+            // Reparent-on-drop still commits directly to the scene. Routing
+            // this path through `commitOps` is a separate later task.
+            scratch.scene.batch('Move', () => {
               applyReparent(scratch, dropTarget, reparentMode, dx, dy);
-            } else {
-              // No reparent — translate-only commit. Under scene v1's
-              // absolute-pose semantics every node stores world coords
-              // independently, so a container drag must explicitly
-              // re-stamp every cascaded descendant by the same dx/dy —
-              // otherwise children stay at their old absolute positions
-              // (visually they snap to the container's former location).
-              for (const id of scratch.ids) {
-                const origin = scratch.startPoses.get(id);
-                if (origin === undefined) continue;
-                scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy, scratch.projection));
-              }
-              for (const id of scratch.cascadeIds) {
-                const origin = scratch.startPoses.get(id);
-                if (origin === undefined) continue;
-                scratch.scene.setPose(id, translatePoseGeneric(origin, dx, dy, scratch.projection));
-              }
+            });
+          } else {
+            // No reparent — translate-only commit, emitted as transform ops so
+            // it routes through the consumer `applyOps` hook (consumer history)
+            // when present, else the scene's own history. Under scene v1's
+            // absolute-pose semantics every node stores world coords
+            // independently, so a container drag must explicitly re-stamp every
+            // cascaded descendant by the same dx/dy — otherwise children stay at
+            // their old absolute positions (visually they snap to the
+            // container's former location).
+            const ops: Op[] = [];
+            for (const id of [...scratch.ids, ...scratch.cascadeIds]) {
+              const origin = scratch.startPoses.get(id);
+              if (origin === undefined) continue;
+              ops.push(createTransformOp<unknown>({
+                id: id as string,
+                from: origin,
+                to: translatePoseGeneric(origin, dx, dy, scratch.projection),
+                label: 'Move',
+              }));
             }
-          });
+            if (ops.length > 0) commitOps(ops, 'Move');
+          }
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),

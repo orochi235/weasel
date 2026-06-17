@@ -41,6 +41,7 @@ interface StubScene {
   get(id: NodeId): { pose: unknown } | undefined;
   setPose(id: NodeId, pose: unknown): void;
   batch<T>(label: string, fn: () => T): T;
+  applyBatch(ops: unknown[], label: string, adapter: unknown): void;
   childrenOf(id: NodeId): readonly NodeId[];
 }
 
@@ -83,6 +84,23 @@ function makeStubScene(
       const result = fn();
       this.setPose = prevSet;
       return result;
+    },
+    // The translate-only commit path now emits transform ops through
+    // `commitOps` → `scene.applyBatch` (no consumer `applyOps`). Mirror the
+    // real scene: record one undo entry and apply each op via an adapter that
+    // writes the op's target pose to the scene.
+    applyBatch(opList: unknown[], label: string) {
+      const recorded: Array<{ id: string; pose: unknown }> = [];
+      const adapter = {
+        setPose(id: string, pose: unknown) {
+          recorded.push({ id, pose });
+          poses.set(id, pose);
+        },
+      };
+      for (const op of opList as Array<{ apply(a: unknown): void }>) {
+        op.apply(adapter);
+      }
+      batchLog.push({ label, ops: recorded });
     },
   };
 }
