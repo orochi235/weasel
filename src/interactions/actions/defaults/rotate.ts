@@ -9,8 +9,11 @@
  *   - `onMove`: derives pointer angle delta from start, applies to each node's
  *     origin rotation. In union-pivot mode (multi-selection) orbits each item's
  *     center around the union center.
- *   - `onEnd('commit')`: emits a single `scene.batch('Rotate', ...)` with
- *     per-node `setPose` calls → one undo entry for the whole drag.
+ *   - `onEnd('commit')`: builds one `createTransformOp` per node (from =
+ *     pre-mutation origin pose, to = rotated pose) and commits them as a
+ *     single batch → one undo entry for the whole drag. Routes through the
+ *     optional `applyOps` dep (consumer history) when present, else
+ *     `scene.applyBatch` + `defaultCommitAdapter`.
  *   - `onEnd('cancel')`: no scene writes (scene never mutated during drag).
  *
  * ## Constraints vs `useRotate`
@@ -27,6 +30,9 @@
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
+import type { Op } from 'core/ops/types';
+import { createTransformOp } from 'core/ops/transform';
+import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import type { SelectionApi } from 'core/selection/useSelection';
 
 // ---------------------------------------------------------------------------
@@ -96,6 +102,10 @@ interface RotateScratch {
   useUnionPivot: boolean;
   /** In-flight preview poses keyed by node id. */
   previews: Map<NodeId, unknown>;
+  /** Optional consumer commit hook captured at gesture start. When present,
+   *  ops-based commits route through it (consumer history) instead of
+   *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
+  applyOps?: (ops: Op[], label: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +135,7 @@ export const rotateAction: Action & { requires: string[] } = {
     start(ctx: InvocationCtx, _opts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
+      const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
 
@@ -171,6 +182,7 @@ export const rotateAction: Action & { requires: string[] } = {
         currentDelta: 0,
         useUnionPivot: ids.length > 1,
         previews: new Map<NodeId, unknown>(),
+        applyOps,
       };
 
       const recomputePreviews = (delta: number) => {
@@ -215,13 +227,29 @@ export const rotateAction: Action & { requires: string[] } = {
             scratch.previews.clear();
             return;
           }
-          scratch.scene.batch('Rotate', () => {
-            for (const id of scratch.ids) {
-              const next = scratch.previews.get(id);
-              if (next === undefined) continue;
-              scratch.scene.setPose(id, next);
-            }
-          });
+          // Build one transform op per affected node — `from` is the
+          // pre-mutation origin pose captured at drag start, `to` the rotated
+          // preview pose. Routing through the consumer `applyOps` hook (when
+          // present) captures the whole drag as one undo entry in the
+          // consumer's history; otherwise `scene.applyBatch` records it in the
+          // scene's own history. Either way: a single batch / undo entry.
+          const ops: Op[] = [];
+          for (const id of scratch.ids) {
+            const next = scratch.previews.get(id);
+            if (next === undefined) continue;
+            const from = scratch.originPoses.get(id);
+            if (from === undefined) continue;
+            ops.push(createTransformOp<unknown>({
+              id: id as string,
+              from,
+              to: next,
+              label: 'Rotate',
+            }));
+          }
+          if (ops.length > 0) {
+            if (scratch.applyOps) scratch.applyOps(ops, 'Rotate');
+            else scratch.scene.applyBatch(ops, 'Rotate', defaultCommitAdapter(scratch.scene));
+          }
           scratch.previews.clear();
         },
         previewIds: () => scratch.previews.keys(),
