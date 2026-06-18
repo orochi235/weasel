@@ -16,6 +16,7 @@ import { render, act, fireEvent } from '@testing-library/react';
 import { useRef, useEffect } from 'react';
 import type React from 'react';
 import { SceneCanvas } from './SceneCanvas';
+import type { SceneCanvasProps } from './SceneCanvas';
 import type { CanvasHelpers } from './Canvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
@@ -146,6 +147,66 @@ describe('SceneCanvas — chrome-caps wiring', () => {
     const isVisible = helpersRef.current!.getIsVisible();
     // Ids the kit has no default for fall through to `always`.
     expect(isVisible('something.custom')).toBe(true);
+  });
+});
+
+describe('SceneCanvas — resize-handles gated by selectTool.resize.resizable', () => {
+  function renderWithResizable(
+    scene: Scene<D, L, P>,
+    selection: NodeId[],
+    resizable: ((id: string) => boolean) | undefined,
+  ) {
+    const helpersRef: React.MutableRefObject<CanvasHelpers<P> | null> = { current: null };
+    const selApi = {
+      current: selection,
+      get() { return [...selection]; },
+      set() {}, add() {}, remove() {}, toggle() {}, clear() {},
+      contains(id: NodeId) { return selection.includes(id); },
+      applyClick() {},
+      adapterMethods: { getSelection: () => [...selection], setSelection: () => {} },
+    };
+    function Probe() {
+      const localRef = useRef<CanvasHelpers<P> | null>(null);
+      useEffect(() => { helpersRef.current = localRef.current; });
+      return (
+        <SceneCanvas
+          scene={scene}
+          layers={{}}
+          width={400}
+          height={400}
+          selection={selApi as Parameters<typeof SceneCanvas>[0]['selection']}
+          selectTool={{ resize: resizable ? { resizable } : undefined } as SceneCanvasProps<D, L, P>['selectTool']}
+          helpersRef={localRef}
+        />
+      );
+    }
+    render(<Probe />);
+    return helpersRef;
+  }
+
+  it('hides resize-handles when the selected node is not resizable', () => {
+    const scene = makeScene();
+    const id = firstId(scene) as string;
+    const helpersRef = renderWithResizable(scene, [firstId(scene)], (nid) => nid !== id);
+    act(() => {});
+    const isVisible = helpersRef.current!.getIsVisible();
+    expect(isVisible('selection.resize-handles')).toBe(false);
+    // Outline + rotation handle stay — only resize is gated.
+    expect(isVisible('selection.outline')).toBe(true);
+  });
+
+  it('shows resize-handles when the selected node is resizable', () => {
+    const scene = makeScene();
+    const helpersRef = renderWithResizable(scene, [firstId(scene)], () => true);
+    act(() => {});
+    expect(helpersRef.current!.getIsVisible()('selection.resize-handles')).toBe(true);
+  });
+
+  it('no predicate → handles show (back-compat)', () => {
+    const scene = makeScene();
+    const helpersRef = renderWithResizable(scene, [firstId(scene)], undefined);
+    act(() => {});
+    expect(helpersRef.current!.getIsVisible()('selection.resize-handles')).toBe(true);
   });
 });
 

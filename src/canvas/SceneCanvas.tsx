@@ -80,6 +80,7 @@ import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { useViewportActions } from './SceneCanvas/useViewportActions';
+import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
@@ -346,7 +347,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     // --- Geometry: hit-test + bounds overrides consumed by the internal
     //     `useSelectTool`. Ignored if the consumer passes their own `tools`. ---
     geometry?: {
-      pickEvery?: (worldX: number, worldY: number) => string | null;
+      /** Hit-test override. Return the topmost id, the full back-to-front hit
+       *  stack (`string[]`), or `null` for empty space. The stack form lets a
+       *  consumer with domain overlap ordering (e.g. children over their
+       *  container) feed the kit's `pickTopMostHit` the true order instead of
+       *  pre-collapsing to one id. Matches `Canvas`'s `pickEvery` shape. */
+      pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
       boundsOf?: (id: string) => Bounds | null;
     };
 
@@ -355,7 +361,12 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     selectTool?: {
       move?: UseMoveOptions<TPose>;
       resize?: UseResizeOptions<TPose>;
-      rotate?: UseRotateOptions<TPose>;
+      /** Rotation options, or `false` to disable rotation entirely — drops the
+       *  `rotate` action AND hides the selection rotation-handle chrome, so a
+       *  consumer whose objects don't rotate (e.g. a floor-plan / garden
+       *  editor) opts out with a single switch instead of pairing
+       *  `actions={{ rotate: null }}` with a `chromeVisibility` override. */
+      rotate?: UseRotateOptions<TPose> | false;
       snap?: SnapStrategy<TPose>;
       handleHitRadius?: number;
       /** Marquee area-select. Default: no behaviors (a drag from empty space
@@ -496,7 +507,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       pinchZoom?: boolean | { min?: number; max?: number };
       animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
       pan?: boolean;
-      zoom?: boolean;
+      /** Wheel/keyboard zoom. `true`/omitted = default Cmd+wheel zoom with the
+       *  kit's 0.1–8 clamp; `false` disables. Pass a {@link ViewportZoomOptions}
+       *  object to bind zoom to plain wheel (`wheel: 'plain'`, pair with
+       *  `pan: false`) and/or set `min`/`max` scale clamps. */
+      zoom?: boolean | ViewportZoomOptions;
       /** Callback invoked by Cmd-0 (`viewport.zoom` action's `reset` branch).
        *  When supplied, replaces the default reset-to-identity behavior —
        *  consumers typically refit the document page into the workspace
@@ -1141,6 +1156,18 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [layers],
   );
 
+  // `selectTool.rotate === false` disables rotation: drop the `rotate` action
+  // (its rotation-handle chrome is hidden via effectiveChromeVisibility above).
+  // A consumer-supplied `rotate` override still wins; `actions === null`
+  // (all defaults disabled) is left untouched.
+  const resolvedActions = useMemo<ActionsProp | undefined>(() => {
+    if (selectToolOpts?.rotate !== false) return actions;
+    if (actions === null) return null;
+    const merged = { ...(actions ?? {}) } as Record<string, unknown>;
+    if (!('rotate' in merged)) merged.rotate = null;
+    return merged as ActionsProp;
+  }, [actions, selectToolOpts?.rotate]);
+
   // Stable action-lookup getter threaded into the dispatcher so
   // beginUiOngoing can resolve action ids at call time. Populated by
   // StandardActionsRegistrar once it has the registry in scope.
@@ -1209,15 +1236,27 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // empty-drag binding still CLAIMS the gesture (keeping it from falling
   // through to other ambient drag actions like insert) but paints nothing.
   // An explicit consumer rule for either id still wins.
-  const effectiveChromeVisibility = useMemo(() => (
-    selectionMode === 'none'
-      ? { 'action.marquee': never, 'action.lasso': never, ...chromeVisibility }
-      : chromeVisibility
-  ), [chromeVisibility, selectionMode]);
+  const effectiveChromeVisibility = useMemo(() => {
+    // Kit defaults first; consumer `chromeVisibility` spread last so it wins.
+    const defaults: import('features/chrome-caps').VisibilityRules = {};
+    if (selectionMode === 'none') {
+      defaults['action.marquee'] = never;
+      defaults['action.lasso'] = never;
+    }
+    // `selectTool.rotate === false` hides the rotation handle (its action is
+    // also dropped below) so a non-rotatable consumer fully opts out.
+    if (selectToolOpts?.rotate === false) defaults['selection.rotation-handle'] = never;
+    if (Object.keys(defaults).length === 0) return chromeVisibility;
+    return { ...defaults, ...chromeVisibility };
+  }, [chromeVisibility, selectionMode, selectToolOpts?.rotate]);
   const chromeVisibilityRef = useRef(effectiveChromeVisibility);
   chromeVisibilityRef.current = effectiveChromeVisibility;
   const getActiveModeRef = useRef(getActiveMode);
   getActiveModeRef.current = getActiveMode;
+  // Per-node resizability predicate from `selectTool.resize.resizable`, folded
+  // over the live selection into the `selectionResizable` rule-ctx flag below.
+  const resizablePredRef = useRef(selectToolOpts?.resize?.resizable);
+  resizablePredRef.current = selectToolOpts?.resize?.resizable;
 
   // The visibility predicate factory passed to <Canvas>. Called fresh per
   // draw / hitTest; builds ChromeCtx from the live refs and resolves
@@ -1244,7 +1283,19 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // accepts both ChromeCtx and RuleCtx and supplies defaults when mode/
     // allowedCapabilities are absent. We attach them inline so the
     // mode-gated default rules can read them.
-    return { ...ctx, mode: modeInfo.id, allowedCapabilities: modeInfo.allowedCapabilities };
+    // `selectionResizable`: true only when every selected node is resizable
+    // (per `selectTool.resize.resizable`); undefined when no predicate is
+    // supplied → the `resizable:` selector treats it as resizable (back-compat).
+    const resizablePred = resizablePredRef.current;
+    const selectionResizable = resizablePred
+      ? sel.every((id) => resizablePred(id as string))
+      : undefined;
+    return {
+      ...ctx,
+      mode: modeInfo.id,
+      allowedCapabilities: modeInfo.allowedCapabilities,
+      selectionResizable,
+    };
   }, [dispatcher, getHover]);
 
   const getIsVisibleForCanvas = useCallback((): (id: string) => boolean => {
@@ -1585,7 +1636,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             scene={scene as Scene<unknown, string, unknown>}
             adapter={adapter as unknown as BridgeAdapter}
             actionDefaults={actionDefaults}
-            actions={actions}
+            actions={resolvedActions}
             currentViewRef={currentViewRef}
             onViewChange={handleViewChange}
             resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
@@ -1593,7 +1644,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             getActionRef={getActionRef}
             pickEvery={internalPickEvery}
             viewportPanEnabled={viewport?.pan !== false}
-            viewportZoomEnabled={viewport?.zoom !== false}
+            viewportZoom={viewport?.zoom ?? true}
             viewportRecenter={viewport?.recenter}
             editAnchorsExternalState={editAnchorsExternalState}
             layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
@@ -1607,6 +1658,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             selectionRef={selectionRef}
             boundsOf={internalBoundsOf}
             pickEvery={internalPickEvery}
+            pickBest={internalPickBest}
             viewRef={currentViewRef}
             dispatcher={dispatcher}
             getIsVisibleForCanvas={getIsVisibleForCanvas}
@@ -1640,6 +1692,7 @@ function GestureDispatcherMounter({
   selectionRef,
   boundsOf,
   pickEvery,
+  pickBest,
   viewRef,
   dispatcher,
   getIsVisibleForCanvas,
@@ -1657,6 +1710,11 @@ function GestureDispatcherMounter({
   selectionRef?: React.RefObject<import('core/selection/useSelection').SelectionApi>;
   boundsOf?: (id: string) => import('core/viewport/fitViewToBounds').Bounds | null;
   pickEvery?: (worldX: number, worldY: number) => string[];
+  /** Single topmost hit (collapses parent/child via `pickTopMostHit`), used to
+   *  classify the body under the pointer. Must match the select tool's own
+   *  resolution so a child node isn't misclassified by its parent's selection.
+   *  Falls back to `pickEvery`'s last id when absent. */
+  pickBest?: (worldX: number, worldY: number) => string | null;
   viewRef?: React.RefObject<View>;
   /** Pre-created dispatcher to pump events into. When omitted,
    *  `useGestureDispatcher` creates one internally (legacy path). */
@@ -1686,6 +1744,8 @@ function GestureDispatcherMounter({
   boundsOfRef.current = boundsOf;
   const pickEveryRef = useRef(pickEvery);
   pickEveryRef.current = pickEvery;
+  const pickBestRef = useRef(pickBest);
+  pickBestRef.current = pickBest;
 
   // `getAnchorState` thunk for `buildAffordanceAt`.
   //
@@ -1761,7 +1821,13 @@ function GestureDispatcherMounter({
     if (!selectionRef || !pickEvery || !viewRef) return undefined;
     return buildClassifyTarget(
       () => selectionRef.current?.current ?? [],
+      // Use the select tool's own topmost-hit resolution (`pickTopMostHit`,
+      // which collapses parent/child) so a child body is classified by ITS
+      // OWN selection — not its parent's. The naive `pickEvery`-last fallback
+      // assumes a bottom-first hit order, which is wrong for adapters whose
+      // `pickEvery` returns topmost-first (it would resolve the parent).
       (wx: number, wy: number) => {
+        if (pickBestRef.current) return pickBestRef.current(wx, wy);
         const ids = pickEveryRef.current?.(wx, wy) ?? [];
         return ids.length > 0 ? ids[ids.length - 1] : null;
       },
@@ -1911,7 +1977,7 @@ function StandardActionsRegistrar({
   getActionRef,
   pickEvery,
   viewportPanEnabled,
-  viewportZoomEnabled,
+  viewportZoom,
   viewportRecenter,
   editAnchorsExternalState,
   layouts,
@@ -1940,8 +2006,9 @@ function StandardActionsRegistrar({
   pickEvery: (worldX: number, worldY: number) => string[];
   /** Resolved `viewport.pan` flag — default true, false to disable. */
   viewportPanEnabled: boolean;
-  /** Resolved `viewport.zoom` flag — default true, false to disable. */
-  viewportZoomEnabled: boolean;
+  /** Resolved `viewport.zoom` setting — `true` (default Cmd+wheel zoom),
+   *  `false` (disabled), or a {@link ViewportZoomOptions} config. */
+  viewportZoom: boolean | ViewportZoomOptions;
   /** Optional recenter callback. When supplied, wires through to the
    *  `view` dep so `viewport.zoom` reset (Cmd-0) calls it instead of
    *  snapping to identity. */
@@ -1988,7 +2055,7 @@ function StandardActionsRegistrar({
   // published just above), so they're registered here rather than in
   // KIT_STANDARD_DESCRIPTORS. Both default ON; consumer opts out via
   // `viewport={{ pan: false }}` / `viewport={{ zoom: false }}`.
-  useViewportActions({ pan: viewportPanEnabled, zoom: viewportZoomEnabled });
+  useViewportActions({ pan: viewportPanEnabled, zoom: viewportZoom });
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.
