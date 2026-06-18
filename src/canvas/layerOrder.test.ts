@@ -13,6 +13,50 @@ describe('composeOrderedLayers', () => {
     expect(out.map(l => l.id)).toEqual(['grid', 'scene', 'sel']);
   });
 
+  it('split scene: emits per-scene-layer canvas layers in order at the scene slot', () => {
+    const out = composeOrderedLayers(
+      {},
+      { grid: L('grid'), selectionOverlay: L('sel') },
+      [
+        { key: 'scene:zones', layer: L('scene:zones') },
+        { key: 'scene:structures', layer: L('scene:structures') },
+        { key: 'scene:plantings', layer: L('scene:plantings') },
+      ],
+    );
+    expect(out.map(l => l.id)).toEqual([
+      'grid', 'scene:zones', 'scene:structures', 'scene:plantings', 'sel',
+    ]);
+  });
+
+  it('split scene: a custom can anchor between two scene layers', () => {
+    const out = composeOrderedLayers(
+      { overlays: { layer: L('overlays'), before: 'scene:plantings' } },
+      { grid: L('grid') },
+      [
+        { key: 'scene:structures', layer: L('scene:structures') },
+        { key: 'scene:plantings', layer: L('scene:plantings') },
+      ],
+    );
+    expect(out.map(l => l.id)).toEqual([
+      'grid', 'scene:structures', 'overlays', 'scene:plantings',
+    ]);
+  });
+
+  it('split scene: before/after "scene" brackets the whole scene group', () => {
+    const out = composeOrderedLayers(
+      {
+        under: { layer: L('under'), before: 'scene' },
+        over: { layer: L('over'), after: 'scene' },
+      },
+      {},
+      [
+        { key: 'scene:zones', layer: L('scene:zones') },
+        { key: 'scene:plantings', layer: L('scene:plantings') },
+      ],
+    );
+    expect(out.map(l => l.id)).toEqual(['under', 'scene:zones', 'scene:plantings', 'over']);
+  });
+
   it('emits custom after a standard slot', () => {
     const out = composeOrderedLayers(
       { paraSky: { layer: L('paraSky'), after: 'scene' } },

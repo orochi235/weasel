@@ -35,7 +35,7 @@ describe('buildSceneTree', () => {
     expect((out[1] as { children: DrawCommand[] }).children).toHaveLength(1);
   });
 
-  it('container with two same-layer children → group with [container_self, child1_group, child2_group]', () => {
+  it('container with two same-layer children → flat bucket [container, child1, child2] in DFS order', () => {
     const scene = makeScene();
     const bed = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'bed' } });
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'p1' }, parent: bed });
@@ -43,31 +43,36 @@ describe('buildSceneTree', () => {
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
     const bgGroup = out[0] as { children: DrawCommand[] };
-    expect(bgGroup.children).toHaveLength(1);
-    const bedGroup = bgGroup.children[0] as { kind: 'group'; children: DrawCommand[] };
-    expect(bedGroup.kind).toBe('group');
-    expect(bedGroup.children).toHaveLength(3);
-    expect((bedGroup.children[0] as { kind: string }).kind).toBe('path');
-    expect((bedGroup.children[1] as { kind: string }).kind).toBe('group');
-    expect((bedGroup.children[2] as { kind: string }).kind).toBe('group');
+    // Nodes are bucketed flat by their own layer (DFS pre-order), not nested
+    // under the container group.
+    expect(bgGroup.children).toHaveLength(3);
+    for (const c of bgGroup.children) expect((c as { kind: string }).kind).toBe('group');
+    const aabb = { kind: 'rect', x: POSE.x, y: POSE.y, width: POSE.width, height: POSE.height };
+    // The container carries its own fallback-silhouette clip…
+    expect((bgGroup.children[0] as { clip?: unknown }).clip).toEqual(aabb);
+    // …and both children inherit it (clipped to the container).
+    expect((bgGroup.children[1] as { clip?: unknown }).clip).toEqual(aabb);
+    expect((bgGroup.children[2] as { clip?: unknown }).clip).toEqual(aabb);
   });
 
-  it('nested containers (3 levels) produce matching draw-group nesting', () => {
+  it('nested containers (3 levels) → each node clipped by its full ancestor chain', () => {
     const scene = makeScene();
     const a = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'a' } });
     const b = scene.add({ kind: 'container', layer: 'bg', pose: POSE, data: { label: 'b' }, parent: a });
     scene.add({ kind: 'leaf', layer: 'bg', pose: POSE, data: { label: 'c' }, parent: b });
     const adapter = sceneToAdapter(scene);
     const out = buildSceneTree(adapter as never, labelDraw as never, VIEW);
-    const aGroup = (out[0] as { children: DrawCommand[] }).children[0] as { children: DrawCommand[] };
-    expect(aGroup.children).toHaveLength(2);
-    const bGroup = aGroup.children[1] as { kind: string; children: DrawCommand[] };
-    expect(bGroup.kind).toBe('group');
-    expect(bGroup.children).toHaveLength(2);
-    const cGroup = bGroup.children[1] as { kind: string; children: DrawCommand[] };
-    expect(cGroup.kind).toBe('group');
-    expect(cGroup.children).toHaveLength(1);
-    expect((cGroup.children[0] as { kind: string }).kind).toBe('path');
+    const bg = (out[0] as { children: DrawCommand[] }).children;
+    // a, b, c all flattened into the bg bucket.
+    expect(bg).toHaveLength(3);
+    // Leaf c is wrapped in TWO nested clip groups (a's clip, then b's clip).
+    const cOuter = bg[2] as { kind: string; clip?: unknown; children: DrawCommand[] };
+    expect(cOuter.kind).toBe('group');
+    expect(cOuter.clip).toBeDefined(); // ancestor a's clip
+    const cInner = cOuter.children[0] as { kind: string; clip?: unknown; children: DrawCommand[] };
+    expect(cInner.clip).toBeDefined(); // b's clip
+    const cLeaf = cInner.children[0] as { children: DrawCommand[] };
+    expect((cLeaf.children[0] as { kind: string }).kind).toBe('path');
   });
 
   it('hidden layer is omitted from output', () => {

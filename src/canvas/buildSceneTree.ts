@@ -10,19 +10,36 @@ interface HierarchicalAdapter<TNode, TPose> {
   getPose(id: string): TPose;
 }
 
+/** Wrap `cmds` in one nested group per clip so the renderer intersects them.
+ *  Outermost group carries the ancestor-most clip; innermost holds `cmds`. */
+function wrapInClips(
+  cmds: DrawCommand[],
+  clips: readonly GroupDrawCommand['clip'][],
+): DrawCommand {
+  let node: GroupDrawCommand = { kind: 'group', children: cmds };
+  for (let i = clips.length - 1; i >= 0; i--) {
+    node = { kind: 'group', children: [node], clip: clips[i] };
+  }
+  return node;
+}
+
 /**
- * Walk the adapter's scene tree and emit nested `GroupDrawCommand`s,
- * grouped by layer. One top-level group per visible layer (in adapter
- * order); within each layer, the roots whose `layer` matches are walked
- * as subtrees.
+ * Walk the adapter's scene tree once and emit each node's own paint into the
+ * bucket for **that node's own `layer`** — not its parent's. So a child whose
+ * `layer` differs from its parent (e.g. a planting tagged into a top-most
+ * `plantings` layer while remaining a scene child of its container) draws in
+ * its own layer's pass, on top of every container body, while staying a tree
+ * child for hit-testing / move / reparent.
  *
- * Each node produces a wrapper group containing:
- *  - its own paint (`drawOne(node, pose, view)`)
- *  - one subgroup per child, recursively
+ * Output is one group per visible layer, in adapter (`getLayers`) order.
  *
- * A leaf with no children still gets a wrapper group — phase 2 attaches
- * per-node effects (clip path, etc.) to this wrapper, so the structure
- * needs to be stable regardless of whether the node has children.
+ * **Positioning** is world-space: `drawOne` returns world-coord commands (the
+ * caller wraps the whole thing in the view transform). The tree nesting is NOT
+ * used for geometry — only to accumulate the **clip chain**. Because a node may
+ * be drawn outside its parent's group, each node's commands are wrapped in the
+ * clips of all its ancestor containers (and its own, if it is a container), so
+ * container clipping survives the per-layer regrouping. Clips therefore must be
+ * world-space too — `clipFromPose` consumers should return world silhouettes.
  */
 export function buildSceneTree<
   TNode extends { id: string; layer: string },
@@ -31,21 +48,26 @@ export function buildSceneTree<
   adapter: HierarchicalAdapter<TNode, TPose>,
   drawOne: (obj: TNode, pose: TPose, view: View) => DrawCommand[],
   view: View,
+  /** When set, only nodes on this layer paint (others are still walked for
+   *  ancestor clips) and only this layer's group is returned. Used to render
+   *  scene layers as separate, individually-orderable canvas slots. */
+  forLayer?: string,
 ): DrawCommand[] {
-  const out: DrawCommand[] = [];
+  const layers = adapter.getLayers();
+  const buckets = new Map<string, DrawCommand[]>();
+  for (const l of layers) buckets.set(l.id, []);
 
-  function buildNodeGroup(id: string): GroupDrawCommand {
+  function visit(id: string, ancestorClips: readonly GroupDrawCommand['clip'][]): void {
     const node = adapter.getNode(id);
-    if (!node) return { kind: 'group', children: [] };
+    if (!node) return;
     const pose = adapter.getPose(id);
-    const self = drawOne(node, pose, view);
-    const childIds = adapter.getChildren(id);
-    const children: DrawCommand[] = [...self];
-    for (const cid of childIds) {
-      children.push(buildNodeGroup(cid));
-    }
+    // Skip the (potentially expensive) painter for nodes we won't emit; their
+    // clip still extends the chain for descendants below.
+    const paints = forLayer === undefined || node.layer === forLayer;
+    const self = paints ? drawOne(node, pose, view) : [];
 
-    const group: GroupDrawCommand = { kind: 'group', children };
+    // Extend the clip chain with this node's own clip when it is a container.
+    let ownClips = ancestorClips;
     const maybeContainer = node as { kind?: string; clipFromPose?: (pose: TPose) => unknown };
     if (maybeContainer.kind === 'container') {
       let clip: unknown;
@@ -62,20 +84,29 @@ export function buildSceneTree<
           pose,
         );
       }
-      if (clip) group.clip = clip as GroupDrawCommand['clip'];
+      if (clip) ownClips = [...ancestorClips, clip as GroupDrawCommand['clip']];
     }
-    return group;
+
+    // Emit this node's own paint into its own layer's bucket, clipped by the
+    // accumulated chain (ancestors + own). Every node emits a wrapper group
+    // even with empty paint, keeping the per-node tree shape stable.
+    if (paints) {
+      const bucket = buckets.get(node.layer);
+      if (bucket) {
+        bucket.push(ownClips.length > 0 ? wrapInClips(self, ownClips) : { kind: 'group', children: self });
+      }
+    }
+
+    for (const cid of adapter.getChildren(id)) visit(cid, ownClips);
   }
 
-  for (const layer of adapter.getLayers()) {
+  for (const rootId of adapter.getChildren(null)) visit(rootId, []);
+
+  const out: DrawCommand[] = [];
+  for (const layer of layers) {
     if (!layer.visible) continue;
-    const layerGroup: GroupDrawCommand = { kind: 'group', children: [] };
-    for (const rootId of adapter.getChildren(null)) {
-      const rootNode = adapter.getNode(rootId);
-      if (!rootNode || rootNode.layer !== layer.id) continue;
-      layerGroup.children.push(buildNodeGroup(rootId));
-    }
-    out.push(layerGroup);
+    if (forLayer !== undefined && layer.id !== forLayer) continue;
+    out.push({ kind: 'group', children: buckets.get(layer.id) ?? [] });
   }
   return out;
 }

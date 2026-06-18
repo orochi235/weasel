@@ -186,6 +186,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     return i;
   }
 
+  /**
+   * A child may sit on its parent's layer **or any layer above it** (higher
+   * render index) — never below. `renderOrder()` / `toJSON()` are layer-major
+   * (each node yielded in its OWN layer's pass) and `buildSceneTree` buckets by
+   * each node's own layer, so a child on a higher layer than its parent renders
+   * correctly on top while staying a tree child for hit-testing / move /
+   * reparent (e.g. plantings tagged into a top `plantings` layer while remaining
+   * children of their container). Rejecting only the *below* case keeps the
+   * sensible invariant that a child never paints under its own parent.
+   */
   function assertSubtreeLayer(
     nodeId: string | undefined,
     nodeLayer: TLayer,
@@ -193,11 +203,11 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     parentLayer: TLayer,
     verb: 'place' | 'relayer' = 'place',
   ): void {
-    if (parentLayer !== nodeLayer) {
+    if (requireLayerIndex(nodeLayer) < requireLayerIndex(parentLayer)) {
       const action = verb === 'place'
         ? `cannot place node '${nodeId ?? '<new>'}' on layer '${nodeLayer}' under parent '${parentId}' on layer '${parentLayer}'`
         : `cannot setLayer('${nodeId ?? '<new>'}', '${nodeLayer}') — node has parent '${parentId}' on layer '${parentLayer}'`;
-      throw new Error(`Scene: ${action} — subtree layer must match parent`);
+      throw new Error(`Scene: ${action} — a child may not render below its parent's layer`);
     }
   }
 
