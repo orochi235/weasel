@@ -131,5 +131,6 @@ describe('registry-unification exports (DepRegistry + dispatcher)', () => {
     expect(Barrel.useDepSource).toBeDefined();
     expect(Barrel.useGestureDispatcher).toBeDefined();
     expect(Barrel.createDispatcher).toBeDefined();
+    expect(Barrel.defaultCommitAdapter).toBeDefined();
   });
 });
