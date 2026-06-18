@@ -33,13 +33,13 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   selection: SelectionApi;
   geometry?: {
-    pickEvery?: (worldX: number, worldY: number) => string | null;
+    pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
     boundsOf?: (id: string) => Bounds | null;
   };
   selectTool?: {
     move?: UseMoveOptions<TPose>;
     resize?: UseResizeOptions<TPose>;
-    rotate?: UseRotateOptions<TPose>;
+    rotate?: UseRotateOptions<TPose> | false;
     snap?: SnapStrategy<TPose>;
     handleHitRadius?: number;
     areaSelect?: UseAreaSelectOptions;
@@ -195,8 +195,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const wiredHitBody = useMemo(() => {
     return (wx: number, wy: number): string[] => {
       if (pickEveryProp) {
-        const id = pickEveryProp(wx, wy);
-        return id ? [id] : [];
+        const r = pickEveryProp(wx, wy);
+        if (r == null) return [];
+        return Array.isArray(r) ? r : [r];
       }
       const out: string[] = [];
       for (const id of scene.renderOrder()) {
