@@ -24,12 +24,14 @@ export const defaultVisibilityRules: VisibilityRules = {
   } as Rule,
 
   // Handles hide during an action so the moving / resizing object isn't
-  // visually crowded; they reappear on commit. Also off in path-edit.
+  // visually crowded; they reappear on commit. Also off in path-edit, and
+  // when the selection isn't resizable (consumer `resizable` predicate).
   'selection.resize-handles': {
     all: [
       { selection: { atLeast: 1 } },
       { not: { gesturing: true } },
       { mode: { not: 'path-edit' } },
+      { resizable: true },
     ],
   } as Rule,
 

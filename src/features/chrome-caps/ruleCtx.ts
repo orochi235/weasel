@@ -25,6 +25,12 @@ export interface RuleCtx {
    *  `ModeDefinition.allows` plus implicit tags). The `capability:`
    *  selector reads this to determine whether a tag is permitted. */
   readonly allowedCapabilities: ReadonlySet<CapabilityTag>;
+  /** Whether the current selection may be resized. `<SceneCanvas>` folds
+   *  `selectTool.resize.resizable` over the selection (true only when every
+   *  selected node is resizable). Read by the `resizable:` selector to gate
+   *  `selection.resize-handles`. Absent (legacy ctx builders) is treated as
+   *  resizable — back-compat: handles show unless a consumer opts a node out. */
+  readonly selectionResizable?: boolean;
 }
 
 export interface BuildRuleCtxArgs {
@@ -37,6 +43,8 @@ export interface BuildRuleCtxArgs {
   view: View;
   mode: string;
   allowedCapabilities: ReadonlySet<CapabilityTag>;
+  /** Optional — omitted means "resizable" (handles show). See {@link RuleCtx}. */
+  selectionResizable?: boolean;
 }
 
 export function buildRuleCtx(args: BuildRuleCtxArgs): RuleCtx {
@@ -50,5 +58,6 @@ export function buildRuleCtx(args: BuildRuleCtxArgs): RuleCtx {
     view: args.view,
     mode: args.mode,
     allowedCapabilities: args.allowedCapabilities,
+    selectionResizable: args.selectionResizable,
   };
 }

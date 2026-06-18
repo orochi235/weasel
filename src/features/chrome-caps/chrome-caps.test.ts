@@ -3,7 +3,7 @@ import { asNodeId, type NodeId } from '../../core/scene/types';
 import type { ChromeCtx, Condition, RuleCtx } from './types';
 import {
   when, and, or, not, always, never,
-  focused, gesturing, actionIs,
+  focused, gesturing, resizable, actionIs,
   selectionEmpty, selectionIs, selectionAtLeast, multiActive,
   hovering, hoveringSelected,
   modifierHeld, zoomAtLeast,
@@ -49,6 +49,12 @@ describe('chrome-caps / atoms', () => {
     expect(selectionAtLeast(1)(ctx({ selection: [NID('a')] }))).toBe(true);
     expect(selectionAtLeast(1)(ctx({ selection: [NID('a'), NID('b')] }))).toBe(true);
     expect(selectionAtLeast(2)(ctx({ selection: [NID('a')] }))).toBe(false);
+  });
+
+  it('resizable — absent flag treated as resizable (back-compat)', () => {
+    expect(resizable(ctx())).toBe(true); // selectionResizable undefined
+    expect(resizable(ctx({ selectionResizable: true }))).toBe(true);
+    expect(resizable(ctx({ selectionResizable: false }))).toBe(false);
   });
 
   it('multiActive', () => {
@@ -155,6 +161,16 @@ describe('chrome-caps / defaults table', () => {
   it('selection.resize-handles also visible in multi-mode (union-bounds resize)', () => {
     const multi = ctx({ selection: [NID('a'), NID('b')], multiActive: true });
     expect(resolveVisibility(undefined, multi)('selection.resize-handles')).toBe(true);
+  });
+
+  it('selection.resize-handles hidden when selection is not resizable', () => {
+    // Default (undefined flag) → handles show; explicit false → hidden.
+    const ok = ctx({ selection: [NID('a')] });
+    expect(resolveVisibility(undefined, ok)('selection.resize-handles')).toBe(true);
+    const notResizable = ctx({ selection: [NID('a')], selectionResizable: false });
+    expect(resolveVisibility(undefined, notResizable)('selection.resize-handles')).toBe(false);
+    // outline + (focused) rotation handle remain unaffected by resizability.
+    expect(resolveVisibility(undefined, notResizable)('selection.outline')).toBe(true);
   });
 
   it('selection.rotation-handle needs focus + at least one selection + idle', () => {
