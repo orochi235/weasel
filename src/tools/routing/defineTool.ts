@@ -139,6 +139,11 @@ export function defineTool<TScratch = void>(
   // Build pointer.onClick handler from click route table.
   const onClick = def.initial.click || def.engaged?.click
     ? (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
+        // Route-table clicks only act on the primary button (left / touch /
+        // pen); secondary / middle buttons return 'pass' so they don't mutate
+        // selection and the context menu / ambient pan tools stay free. An
+        // absent `button` (synthetic / programmatic events) counts as primary.
+        if ((_e.button ?? 0) !== 0) return 'pass';
         const phase = phaseOf(ctx);
         if (!phase.click) return 'pass';
         if (!ctx.target) return 'pass';
@@ -166,6 +171,13 @@ export function defineTool<TScratch = void>(
   // classification.
   const onDown = def.initial.pointerDown || def.engaged?.pointerDown
     ? (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
+        // Route-table pointerDown classifiers (selection, etc.) only act on the
+        // primary button. `pointerdown` reports `button === 0` for the left
+        // mouse button and for touch / pen contact; secondary (right) / middle
+        // mouse buttons return 'pass' so ambient tools that explicitly want them
+        // (e.g. a right-drag pan tool) can claim, and the browser context menu
+        // is left intact. An absent `button` (synthetic events) counts as primary.
+        if ((_e.button ?? 0) !== 0) return 'pass';
         const phase = phaseOf(ctx);
         if (!phase.pointerDown) return 'pass';
         if (!ctx.target) return 'pass';

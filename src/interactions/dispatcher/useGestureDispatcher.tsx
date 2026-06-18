@@ -454,6 +454,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     const onPointerDown = (e: PointerEvent) => {
+      // Only the primary button drives gesture dispatch. `pointerdown` reports
+      // `button === 0` for the left mouse button and for touch / pen contact;
+      // secondary (right, `2`) and middle (`1`) mouse buttons are left for the
+      // consumer's own tools (e.g. right-drag viewport pan) and the browser
+      // context menu. Without this guard a right-drag is classified and routed
+      // exactly like a left-drag — selecting + transforming under the cursor
+      // instead of letting an ambient pan tool claim it. An absent `button`
+      // (synthetic / programmatic events) counts as primary.
+      if ((e.button ?? 0) !== 0) return;
       activePointers.add(e.pointerId);
       pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
