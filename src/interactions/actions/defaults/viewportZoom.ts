@@ -41,80 +41,122 @@ const WHEEL_STEP = 1.1;
 
 /**
  * @experimental
- * Static descriptor for the `viewport.zoom` Action.
+ * Tuning for {@link makeViewportZoomAction}.
+ */
+export interface ViewportZoomOptions {
+  /**
+   * Which wheel gesture triggers zoom.
+   * - `'mod'` (default): Cmd/Ctrl+wheel — coexists with plain-wheel pan
+   *   (`viewport.wheelPan`) and Mac trackpad pinch (ctrl+wheel).
+   * - `'plain'`: bare wheel, no modifier. Pair with `viewport.pan: false`,
+   *   since plain wheel otherwise drives pan and the two would compete.
+   */
+  wheel?: 'plain' | 'mod';
+  /** Lower clamp on the resulting view scale, forwarded to `zoomAt`. Default 0.1. */
+  min?: number;
+  /** Upper clamp on the resulting view scale, forwarded to `zoomAt`. Default 8. */
+  max?: number;
+}
+
+/**
+ * @experimental
+ * Build a `viewport.zoom` Action descriptor with a configurable wheel trigger
+ * and scale clamp. The keyboard bindings (Cmd+=/-/0) are fixed; only the wheel
+ * binding and the `zoomAt` clamp vary.
  *
  * Requires dep-schema entry: `view`.
  */
-export const viewportZoomAction: Action & { requires: string[] } = {
-  id: 'viewport.zoom',
-  label: 'Zoom',
-  group: 'viewport',
-  defaultBinding: [
-    // Cmd+wheel → wheel zoom (also catches Mac trackpad pinch via ctrl+wheel)
-    {
-      spec: { kind: 'wheel', mods: { mod: true } },
-      opts: { params: { kind: 'wheel' } },
-    },
-    // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
-    {
-      spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
-      opts: { params: { kind: 'in' } },
-    },
-    // Cmd+- → zoom out
-    {
-      spec: { kind: 'key', key: '-', mods: { mod: true } },
-      opts: { params: { kind: 'out' } },
-    },
-    // Cmd+0 → reset zoom
-    {
-      spec: { kind: 'key', key: '0', mods: { mod: true } },
-      opts: { params: { kind: 'reset' } },
-    },
-  ],
-  requires: ['view'],
-  invoker: {
-    timing: 'immediate',
-    run(deps, params) {
-      const view = deps.view as ViewApi | undefined;
-      if (!view) return;
-      const current = view.get();
-      const kind = params?.kind as string | undefined;
+export function makeViewportZoomAction(
+  opts: ViewportZoomOptions = {},
+): Action & { requires: string[] } {
+  const clamp = { min: opts.min ?? 0.1, max: opts.max ?? 8 };
+  // 'plain': bare wheel (omitting `mods` forbids any modifier — see the
+  // matcher's strict modifier check). 'mod': Cmd/Ctrl+wheel.
+  const wheelSpec =
+    opts.wheel === 'plain'
+      ? { kind: 'wheel' as const }
+      : { kind: 'wheel' as const, mods: { mod: true } };
 
-      switch (kind) {
-        case 'wheel': {
-          const deltaY = (params?.deltaY as number | undefined) ?? 0;
-          const clientX = (params?.clientX as number | undefined) ?? 0;
-          const clientY = (params?.clientY as number | undefined) ?? 0;
-          const factor = Math.pow(WHEEL_STEP, -deltaY / 100);
-          view.set(zoomAt(current, { x: clientX, y: clientY }, factor));
-          break;
+  return {
+    id: 'viewport.zoom',
+    label: 'Zoom',
+    group: 'viewport',
+    defaultBinding: [
+      // wheel → wheel zoom (mod-gated by default; plain when configured)
+      {
+        spec: wheelSpec,
+        opts: { params: { kind: 'wheel' } },
+      },
+      // Cmd+= → zoom in (also accepts Cmd+Shift+= which is Cmd++ on many keyboards)
+      {
+        spec: { kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } },
+        opts: { params: { kind: 'in' } },
+      },
+      // Cmd+- → zoom out
+      {
+        spec: { kind: 'key', key: '-', mods: { mod: true } },
+        opts: { params: { kind: 'out' } },
+      },
+      // Cmd+0 → reset zoom
+      {
+        spec: { kind: 'key', key: '0', mods: { mod: true } },
+        opts: { params: { kind: 'reset' } },
+      },
+    ],
+    requires: ['view'],
+    invoker: {
+      timing: 'immediate',
+      run(deps, params) {
+        const view = deps.view as ViewApi | undefined;
+        if (!view) return;
+        const current = view.get();
+        const kind = params?.kind as string | undefined;
+
+        switch (kind) {
+          case 'wheel': {
+            const deltaY = (params?.deltaY as number | undefined) ?? 0;
+            const clientX = (params?.clientX as number | undefined) ?? 0;
+            const clientY = (params?.clientY as number | undefined) ?? 0;
+            const factor = Math.pow(WHEEL_STEP, -deltaY / 100);
+            view.set(zoomAt(current, { x: clientX, y: clientY }, factor, clamp));
+            break;
+          }
+          case 'in':
+            // Anchor at origin (canvas top-left). See design notes above.
+            view.set(zoomAt(current, { x: 0, y: 0 }, KEY_STEP, clamp));
+            break;
+          case 'out':
+            view.set(zoomAt(current, { x: 0, y: 0 }, 1 / KEY_STEP, clamp));
+            break;
+          case 'reset':
+            // Prefer the consumer-supplied recenter when available — typically
+            // re-fits the document page into the workspace. Fall back to
+            // identity (origin, scale 1) when no recenter is wired.
+            if (view.recenter) {
+              view.recenter();
+            } else {
+              view.set({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+            }
+            break;
+          default:
+            // Unknown kind — no-op. Legacy bridge calls with params=undefined;
+            // default to zoom-in as a sensible fallback.
+            if (params === undefined) {
+              view.set(zoomAt(current, { x: 0, y: 0 }, KEY_STEP, clamp));
+            }
+            break;
         }
-        case 'in':
-          // Anchor at origin (canvas top-left). See design notes above.
-          view.set(zoomAt(current, { x: 0, y: 0 }, KEY_STEP));
-          break;
-        case 'out':
-          view.set(zoomAt(current, { x: 0, y: 0 }, 1 / KEY_STEP));
-          break;
-        case 'reset':
-          // Prefer the consumer-supplied recenter when available — typically
-          // re-fits the document page into the workspace. Fall back to
-          // identity (origin, scale 1) when no recenter is wired.
-          if (view.recenter) {
-            view.recenter();
-          } else {
-            view.set({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-          }
-          break;
-        default:
-          // Unknown kind — no-op. Legacy bridge calls with params=undefined;
-          // default to zoom-in as a sensible fallback.
-          if (params === undefined) {
-            view.set(zoomAt(current, { x: 0, y: 0 }, KEY_STEP));
-          }
-          break;
-      }
+      },
     },
-  },
-  enabled: () => true,
-};
+    enabled: () => true,
+  };
+}
+
+/**
+ * @experimental
+ * Default `viewport.zoom` descriptor: Cmd/Ctrl+wheel zoom with the kit's
+ * default 0.1–8 scale clamp. Equivalent to `makeViewportZoomAction()`.
+ *
+ * Requires dep-schema entry: `view`.
+ */
+export const viewportZoomAction: Action & { requires: string[] } = makeViewportZoomAction();

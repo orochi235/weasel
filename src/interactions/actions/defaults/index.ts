@@ -41,6 +41,6 @@ export { editAnchorsAction } from './editAnchors';
 export { lassoSelectAction } from './lassoSelect';
 export { pinchZoomAction } from './pinchZoom';
 export { viewportWheelPanAction } from './viewportWheelPan';
-export { viewportZoomAction } from './viewportZoom';
+export { viewportZoomAction, makeViewportZoomAction, type ViewportZoomOptions } from './viewportZoom';
 export { viewportDragPanAction } from './viewportDragPan';
 export { enterTextEditAction, type TextEditDep } from './enterTextEdit';

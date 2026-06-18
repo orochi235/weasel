@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { viewportZoomAction } from './viewportZoom';
+import { viewportZoomAction, makeViewportZoomAction } from './viewportZoom';
 import type { View } from 'core/viewport/view';
 import type { ViewApi } from '../depSchema';
 
@@ -149,5 +149,51 @@ describe('viewportZoomAction invoker', () => {
     invoker.run({ view }, undefined);
     // Defaults to zoom-in (scale > 1).
     expect(view._value.scale.x).toBeGreaterThan(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// makeViewportZoomAction — configurable wheel trigger + clamp
+// ---------------------------------------------------------------------------
+
+describe('makeViewportZoomAction', () => {
+  it('binds the wheel gesture to plain wheel when wheel: "plain"', () => {
+    const action = makeViewportZoomAction({ wheel: 'plain' });
+    const specs = (action.defaultBinding as Array<{ spec: unknown }>).map((b) => b.spec);
+    // Plain wheel: no mods (forbids any modifier).
+    expect(specs).toContainEqual({ kind: 'wheel' });
+    expect(specs).not.toContainEqual({ kind: 'wheel', mods: { mod: true } });
+    // Keyboard bindings are unchanged.
+    expect(specs).toContainEqual({ kind: 'key', key: '0', mods: { mod: true } });
+  });
+
+  it('defaults the wheel gesture to Cmd/Ctrl+wheel', () => {
+    const action = makeViewportZoomAction();
+    const specs = (action.defaultBinding as Array<{ spec: unknown }>).map((b) => b.spec);
+    expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
+  });
+
+  it('clamps the resulting scale to [min, max] on wheel zoom', () => {
+    const action = makeViewportZoomAction({ wheel: 'plain', min: 5, max: 500 });
+    const invoker = getImmediateInvoker(action);
+
+    // Zoom out hard from scale 5 — clamp floor holds it at 5.
+    const low = makeView({ x: 0, y: 0, scale: { x: 5, y: 5 } });
+    invoker.run({ view: low }, { kind: 'wheel', deltaY: 5000, clientX: 0, clientY: 0 });
+    expect(low._value.scale.x).toBeCloseTo(5, 5);
+
+    // Zoom in hard from scale 500 — clamp ceiling holds it at 500.
+    const high = makeView({ x: 0, y: 0, scale: { x: 500, y: 500 } });
+    invoker.run({ view: high }, { kind: 'wheel', deltaY: -5000, clientX: 0, clientY: 0 });
+    expect(high._value.scale.x).toBeCloseTo(500, 5);
+  });
+
+  it('default clamp (0.1–8) matches the shared viewportZoomAction instance', () => {
+    const action = makeViewportZoomAction();
+    const invoker = getImmediateInvoker(action);
+    const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    // Huge zoom-in is clamped at the kit default ceiling of 8.
+    invoker.run({ view }, { kind: 'wheel', deltaY: -5000, clientX: 0, clientY: 0 });
+    expect(view._value.scale.x).toBeCloseTo(8, 5);
   });
 });

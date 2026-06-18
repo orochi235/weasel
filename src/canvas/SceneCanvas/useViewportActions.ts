@@ -12,20 +12,37 @@
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { viewportWheelPanAction } from 'interactions/actions/defaults/viewportWheelPan';
-import { viewportZoomAction } from 'interactions/actions/defaults/viewportZoom';
+import {
+  makeViewportZoomAction,
+  type ViewportZoomOptions,
+} from 'interactions/actions/defaults/viewportZoom';
 
-export function useViewportActions(args: { pan: boolean; zoom: boolean }): void {
+export function useViewportActions(args: {
+  pan: boolean;
+  /** `true`/`false` toggles the default Cmd+wheel zoom; an object tunes the
+   *  wheel trigger + scale clamp (see {@link ViewportZoomOptions}). */
+  zoom: boolean | ViewportZoomOptions;
+}): void {
   const { pan, zoom } = args;
   const reg = useActionsRegistry();
   const regRef = useRef(reg);
   regRef.current = reg;
+
+  // Serialize the zoom config so the effect re-runs when its fields change
+  // (object identity isn't stable across renders for inline literals).
+  const zoomKey = typeof zoom === 'object' ? JSON.stringify(zoom) : String(zoom);
 
   useEffect(() => {
     const r = regRef.current;
     if (!r) return;
     const unregisters: Array<() => void> = [];
     if (pan) unregisters.push(r.register(viewportWheelPanAction));
-    if (zoom) unregisters.push(r.register(viewportZoomAction));
+    if (zoom) {
+      const zoomAction =
+        typeof zoom === 'object' ? makeViewportZoomAction(zoom) : makeViewportZoomAction();
+      unregisters.push(r.register(zoomAction));
+    }
     return () => { for (const u of unregisters) u(); };
-  }, [pan, zoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- zoom tracked via zoomKey
+  }, [pan, zoomKey]);
 }
