@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createHud, type Hud } from '../hud';
 import { attachHud } from '../attach';
-import type { CanvasExtensionApi } from '../../../../src/canvas/canvasExtension';
+import type { CanvasExtensionApi } from '@weasel-js/core';
 
 /**
  * Create a HUD and attach it to a Canvas via its imperative ref handle.

@@ -1,5 +1,5 @@
 import type { Hud } from './hud';
-import type { CanvasExtensionApi } from '../../../src/canvas/canvasExtension';
+import type { CanvasExtensionApi } from '@weasel-js/core';
 import type { RenderLayer } from '../../../src/core/layers/render';
 import type { DrawCommand } from '../../../src/renderer';
 import type { AffordanceBinding } from '../../../src/affordances/types';

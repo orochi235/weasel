@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
 import { Canvas } from '../../../src/canvas/Canvas';
-import type { CanvasExtensionApi } from '../../../src/canvas/canvasExtension';
+import type { CanvasExtensionApi } from '@weasel-js/core';
 import { useTools } from '../../../src/tools/useTools';
 import type { Tool } from '../../../src/tools/types';
 import { useHud } from './react';

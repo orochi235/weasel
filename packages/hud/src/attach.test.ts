@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { attachHud } from './attach';
 import { createHud } from './hud';
-import type { CanvasExtensionApi } from '../../../src/canvas/canvasExtension';
+import type { CanvasExtensionApi } from '@weasel-js/core';
 import { _resetFontRegistryForTests } from '../../../src/features/text/atlas/registerFont';
 
 function makeApi(): CanvasExtensionApi & { _layer?: import('../../../src/core/layers/render').RenderLayer<unknown> } {
