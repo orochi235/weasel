@@ -24,7 +24,6 @@ Priority tags:
 
 **Viewport**
 - Axis-aware elliptical hit shapes under non-uniform zoom → [Viewport](#viewport)
-- Kit-level `viewTransform` zoom integration on `<Canvas>` → [Viewport](#viewport)
 
 **Paths & booleans**
 - Generic CSS cascade for `@weasel-js/svg`'s parser → [Paths & booleans](#paths--booleans)
@@ -55,7 +54,7 @@ Priority tags:
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
 
 **Canvas / SceneCanvas seam**
-- Decide Canvas's public-surface fate → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
+- Drop the public `Canvas` export (fate decided: private) → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
 - Tighten `CanvasProps.adapter` to remove SceneCanvas casts → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
 
 **Documentation**
@@ -110,13 +109,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 ## Viewport
 
 - **(P2) Axis-aware elliptical hit shapes under non-uniform zoom.** Surfaced 2026-05-16 by the per-axis zoom landing. ~50 chrome hit-test sites today use `pxRadius / meanScale(view.scale)` (geometric-mean fallback). At non-uniform zoom this projects a circular screen-pixel hit region to an ellipse in world space — visually accurate handles but the pickable region is slightly too large along one axis and slightly too small along the other. Fix: refactor `composeAffordanceLayer` and the per-tool ad-hoc hit-tests (`penEdit/hitOverride`, `usePenTool` close-hit, `useSelectTool` multi-resize, snap-guide trigger zones) to either compare against an ellipse `(dx/rx)² + (dy/ry)² < 1` or transform the hit-test into screen space. Grid hairline strokes (`1 / meanScale(view.scale)`) have no obvious axis-aware analog — separate judgment call. Worth ~1 day; deferred from per-axis-zoom v1 spec to keep the migration atomic.
-
-- **(P2) Kit-level `viewTransform` integration on `<Canvas>` — zoom phase.** *Pan-only integration shipped in the Tool primitive (hand tool); this tracks the **zoom** half.* Let users zoom and pan the canvas — scroll-wheel to zoom in on detail, click-drag to pan around a scene larger than the viewport, pinch on a trackpad, hit Cmd+0 to reset. Today the kit ships the standalone primitives (`ViewTransform`, `useZoom`, `usePan`, `worldToScreen`, `screenToWorld`) but `<Canvas>` itself ignores them — rendered pixels are 1:1 with content units, pointer events come in as raw canvas coords. The bezier demo's zoom buttons work around this with a CSS scale on a wrapper div, which grows pixels visually but doesn't actually re-render at higher resolution. The rendering side is one line (`ctx.setTransform(...)` before `runLayers`) but "what stays constant under zoom" forks two ways:
-
-  - **Kit-owned chrome** (selection handles, marquee, anchor dots, rotation handle): the kit can decide, and "screen-px constant" is unambiguous. Implies a two-pass renderer: scene + grid layers under the view transform, overlays under identity computing positions via `worldToScreen(...)`.
-  - **Consumer-drawn scene** (path strokes, fills, lineWidths): the kit *can't* decide because it's domain-dependent. Illustrator/Figma scale strokes with zoom; map/diagramming tools pin strokes to screen-px. So the kit must hand the consumer enough info to pick — concretely, `drawOne(ctx, obj, pose)` gains a `view` arg.
-
-  Surface impact: `RenderLayer.draw` signature (needs a `view` arg), `SceneSlotConfig.drawOne` signature (gains `view`), `handleHitRadius` semantics (becomes screen-px), default `clientToWorld` routes through `screenToWorld`. Multi-day; ship when a real second consumer needs it.
 
 - **(P3) `insertTool.create` typed discriminated union for multi-type insert.** Deferred from `docs/specs/2026-05-07-viewport-followups-design.md`. Current shape is a single factory `(bounds) => { pose, data, id? } | null`; multi-type canvases (rect vs image vs ellipse from one `<SceneCanvas>`) wire their own `tools` array (one `useInsertTool` per type) rather than folding a variant switch into `create`. Revisit if a real consumer wants the single-canvas multi-type ergonomic.
 
@@ -331,11 +323,9 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 ### Canvas / SceneCanvas seam
 
-Seam refactor landed 2026-05-24 (plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). After the refactor, `<Canvas>` is a coherent scene-agnostic primitive — WebGL surface + viewport (pinch zoom) + pointer routing + slot composition. Selection, picking, kind registry, scene-aware overlays all live in `<SceneCanvas>`. `<Canvas>` remains `@internal` / `@deprecated`; the re-promotion question is intentionally deferred.
+Seam refactor landed 2026-05-24 (plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). After the refactor, `<Canvas>` is a coherent scene-agnostic primitive — WebGL surface + viewport (pinch zoom) + pointer routing + slot composition. Selection, picking, kind registry, scene-aware overlays all live in `<SceneCanvas>`. `<Canvas>` is `@internal` / `@deprecated` — fate decided as private; the only open work is dropping its public barrel export (below).
 
-- **(P2) Decide Canvas's public-surface fate.** With the seam cleaned up, re-promotion is now a clean decision rather than a re-architecture. Two paths:
-  - Drop the public `Canvas` export entirely in the next minor (originally planned). Internal consumers (`SceneCanvas`, test files) keep importing from `src/canvas/Canvas`.
-  - Re-promote `<Canvas>` as a public scene-agnostic primitive. Surfaced by force-graph-style use cases that wedge on `<SceneCanvas>` because their store isn't `Scene<...>`-shaped.
+- **(P2) Drop the public `Canvas` export.** Fate decided: `<Canvas>` is private — `src/canvas/Canvas.tsx` is already marked `@internal` / `@deprecated` ("Bare `<Canvas>` is not a supported consumer surface"). The remaining step is mechanical: remove `export { Canvas }` from `src/index.ts:231`; internal consumers (`SceneCanvas`, test files) keep importing from `src/canvas/Canvas` directly. Audit `demo/` + `apps/` for any bare-`Canvas` consumer before deleting. If a future force-graph-style use case wedges on `<SceneCanvas>` because its store isn't `Scene<...>`-shaped, re-promotion is a clean decision to revisit then — but don't keep the export alive speculatively.
 
 - **(P3) Remove the `background` prop on `<Canvas>`.** Marked `@deprecated` during the seam refactor in favor of `backgroundFill`. Three demos still use it; migrate them and delete the prop.
 
