@@ -252,7 +252,7 @@ export {
   type NodeRoutingEntry,
   type NodeRouting,
 } from './core/scene/NodeRouting';
-export { defaultNodeRouting, inferredNodeRouting } from './core/scene/defaultNodeRouting';
+export { defaultNodeRouting, inferredNodeRouting } from './canvas/SceneCanvas/defaultNodeRouting';
 export type {
   CanvasProps,
   CanvasHelpers,

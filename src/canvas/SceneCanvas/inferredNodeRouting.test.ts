@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { inferredNodeRouting, defaultNodeRouting } from './defaultNodeRouting';
-import { createNodeRouting } from './NodeRouting';
+import { createNodeRouting } from 'core/scene/NodeRouting';
 
 describe('inferredNodeRouting', () => {
   function classify(data: unknown): string {

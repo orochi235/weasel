@@ -1,5 +1,5 @@
-import { KIT_SHAPE_KINDS } from '../../canvas/SceneCanvas/useBuiltinShapeTools';
-import type { NodeRoutingEntry } from './NodeRouting';
+import { KIT_SHAPE_KINDS } from './useBuiltinShapeTools';
+import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 
 function isObj(d: unknown): d is Record<string, unknown> {
   return typeof d === 'object' && d !== null;
@@ -14,6 +14,11 @@ function isObj(d: unknown): d is Record<string, unknown> {
  * — a consumer can register routing kinds that have no matching shape
  * painter (e.g. `'group'`, `'sticky-note'`).
  *
+ * Lives in the canvas layer (next to the builtin shape tools it mirrors)
+ * rather than `core/scene`: the generic routing machinery (`NodeRouting`)
+ * is core, but this default *population* depends on the canvas-layer
+ * `KIT_SHAPE_KINDS`, so `core` must not own it.
+ *
  * Consumers using the kit's standard data shape spread
  * `defaultNodeRouting` into their `<SceneCanvas routing={...}>` prop;
  * consumers whose data carries no `kind` field but follows the kit's
@@ -21,8 +26,7 @@ function isObj(d: unknown): d is Record<string, unknown> {
  * `inferredNodeRouting` below, which SceneCanvas applies automatically
  * when `routing` is unset.
  *
- * Kept in lockstep with `KIT_SHAPE_KINDS` via the barrel parity test
- * in `src/index.barrel.test.ts`.
+ * In lockstep with `KIT_SHAPE_KINDS` by construction (derived via `.map`).
  */
 export const defaultNodeRouting: readonly NodeRoutingEntry[] = KIT_SHAPE_KINDS.map(
   (name) => ({

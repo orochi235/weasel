@@ -33,7 +33,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from 'interactions/actions/registry';
-import { defaultNodeRouting } from '../core/scene/defaultNodeRouting';
+import { defaultNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import type { NodeRoutingEntry } from '../core/scene/NodeRouting';
 import { useTools } from 'tools/useTools';
 import type { AnyTool } from 'tools/types';

@@ -92,7 +92,7 @@ import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
 import { createNodeRouting, type NodeRoutingEntry } from '../core/scene/NodeRouting';
-import { inferredNodeRouting } from '../core/scene/defaultNodeRouting';
+import { inferredNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import { installTestHookIfRequested } from '../test-hook/install';
 import type { WeaselTestHook } from '../test-hook/types';
 import {
