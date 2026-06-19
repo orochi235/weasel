@@ -8,6 +8,7 @@ import { meanScale } from 'core/viewport/meanScale';
 import type { DebugSink } from '../debug/types';
 import type { FillStyle, Stroke } from 'core/paint-types';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
+import { poseRotationOf } from 'features/paths/poseRotation';
 import type {
   Affordance,
   AffordanceBinding,
@@ -201,13 +202,14 @@ function transformOf(state: ChromeState, targetId: string | null): TargetTransfo
   if (targetId === null) return IDENTITY_XF;
   const b: Bounds | null = state.boundsOf(targetId);
   if (!b) return IDENTITY_XF;
-  const rotation = b.rotation ?? 0;
-  if (rotation === 0) return IDENTITY_XF;
+  // Pivot + angle come from the kit's one rotation convention.
+  const r = poseRotationOf(b);
+  if (!r) return IDENTITY_XF;
   return {
-    cx: b.x + b.width / 2,
-    cy: b.y + b.height / 2,
-    cos: Math.cos(rotation),
-    sin: Math.sin(rotation),
+    cx: r.cx,
+    cy: r.cy,
+    cos: Math.cos(r.rotation),
+    sin: Math.sin(r.rotation),
     identity: false,
   };
 }

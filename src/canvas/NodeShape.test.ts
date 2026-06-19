@@ -2,12 +2,14 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   registerNodeShape,
   findNodeShape,
+  findShapeSilhouette,
   getNodeShapes,
   _resetShapePaintersForTests,
   type NodeShapeEntry,
 } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '../renderer';
+import type { PolygonPath } from 'features/paths/types';
 
 function node<TData>(data: TData): Node<TData, 'default', { x: number; y: number; width: number; height: number }> {
   return {
@@ -85,5 +87,25 @@ describe('shape painter registry', () => {
     dispose();
     dispose();
     expect(getNodeShapes().map((p) => p.id)).not.toContain('once');
+  });
+});
+
+describe('findShapeSilhouette rotation', () => {
+  function poseNode(pose: object): Node<{ color: string }, 'default', object> {
+    return { id: 'n', kind: 'leaf', layer: 'default', pose, data: { color: '#abc' }, parent: null } as never;
+  }
+
+  it('returns the unrotated silhouette for a pose with no rotation', () => {
+    const sil = findShapeSilhouette(poseNode({ x: 0, y: 0, width: 20, height: 10 }), { x: 0, y: 0, width: 20, height: 10 });
+    expect(sil).toEqual({ kind: 'rect', x: 0, y: 0, width: 20, height: 10 });
+  });
+
+  it('bakes pose.rotation into the silhouette — world coords, not the unrotated shape', () => {
+    const pose = { x: 0, y: 0, width: 20, height: 10, rotation: Math.PI / 2 };
+    const sil = findShapeSilhouette(poseNode(pose), pose) as PolygonPath;
+    expect(sil.kind).toBe('polygon');
+    // Corner (0,0) rotated 90° about center (10,5) lands at (15,-5).
+    expect(sil.coords[0]).toBeCloseTo(15);
+    expect(sil.coords[1]).toBeCloseTo(-5);
   });
 });

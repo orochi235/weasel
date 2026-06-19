@@ -1,7 +1,11 @@
 # Rotation representation consistency
 
 - **Date:** 2026-06-18
-- **Status:** Approved (design); pending implementation plan
+- **Status:** Implemented (2026-06-19) — all seven phases landed, incl. the
+  secondary chrome consolidation; one deviation: `poseRotationOf` /
+  `rotatePathAround` / `worldEditToStorage` live in `features/paths` (not
+  `canvas/poseRotation.ts`) so `features` doesn't import `canvas` (strict
+  layering). `pathAtPose` renamed to `pathInPoseFrame`.
 - **Area:** core geometry — pose rotation, hit-testing, anchors, silhouettes, chrome
 
 ## Problem

@@ -8,8 +8,9 @@
  */
 import type { Bounds } from 'tools/builtin/select';
 import { RECT_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
-import { pointInRotatedRect } from 'interactions/actions/rotate/geometry';
+import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { poseRotationOf } from 'features/paths/poseRotation';
 import { pointInPath, strokeHitTest } from 'features/paths/hitTest';
 import type { Path } from 'features/paths/types';
 
@@ -44,24 +45,21 @@ export function poseContains<TPose>(pose: TPose, wx: number, wy: number): boolea
 }
 
 /**
- * Containment for `<SceneCanvas>`'s default `pickEvery`. Delegates to
- * `poseContains` for path-shaped poses and unrotated rects. When the resize
- * geometry exposes a non-zero rotation for the pose, projects the click into
- * the pose's local frame and AABB-tests there. Path poses are intentionally
- * unaffected — their `kind` already encodes their geometry.
+ * Containment for `<SceneCanvas>`'s default `pickEvery`. When the pose carries
+ * an effective rotation (`poseRotationOf`), inverse-rotates the query point
+ * about the AABB center and runs the local `poseContains` — exactly mirroring
+ * the renderer's rotation wrap, so the click target matches the rendered shape.
+ * This covers both rect-shaped poses and rotated `kind:'rect'`/polygon poses
+ * that carry an AABB. Poses with no effective rotation test directly.
+ *
+ * Rotation is read from `pose.rotation` (the kit's one rotation convention),
+ * not from an injected descriptor — the renderer reads it the same way.
  */
-export function poseContainsRotated<TPose>(
-  pose: TPose,
-  wx: number,
-  wy: number,
-  getRotation: ((pose: TPose) => number) | undefined,
-): boolean {
-  if (getRotation && !isPathLike(pose)) {
-    const rot = getRotation(pose);
-    if (rot) {
-      const b = aabbOfPose(pose);
-      return pointInRotatedRect({ ...b, rotation: rot }, wx, wy);
-    }
+export function poseContainsRotated<TPose>(pose: TPose, wx: number, wy: number): boolean {
+  const r = poseRotationOf(pose);
+  if (r) {
+    const local = rotatePoint(wx, wy, r.cx, r.cy, -r.rotation);
+    return poseContains(pose, local.x, local.y);
   }
   return poseContains(pose, wx, wy);
 }

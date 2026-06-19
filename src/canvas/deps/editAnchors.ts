@@ -13,7 +13,7 @@
  *     demo and similar pose-as-polygon consumers).
  *   - `node.data.path` is a polygon → kit pen-tool default. Polygon's
  *     stored coords are pose-local (aligned to pose origin); we project
- *     to world via `pathAtPose`.
+ *     to world via `pathInWorld` (translate + bake `pose.rotation`).
  *
  * `getStorageKind(id)` returns where the polygon lives (`'pose'` /
  * `'data'` / `null`). Actions use this to emit the right preview-ghost
@@ -23,7 +23,7 @@
  * `applyEdit(id, worldPath, label)` commits in the correct storage shape.
  * Pose-as-polygon writes via `scene.setPose`; data.path writes a batched
  * setPose (new bounds) + scene.update({data}) (re-aligned local path) so
- * the kit's render invariant (`pathAtPose(stored, pose) === world`) is
+ * the kit's render invariant (`pathInWorld(stored, pose) === world`) is
  * preserved.
  *
  * Live previews ride the standard `OngoingHandle.previewIds/Pose/Data`
@@ -35,9 +35,7 @@ import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Path, PolygonPath } from 'features/paths/types';
-import { boundsOfPath } from 'features/paths/bounds';
-import { translatePath } from 'features/paths/transform';
-import { pathAtPose } from 'canvas/NodeShape';
+import { pathInWorld, worldEditToStorage } from 'features/paths/pathInWorld';
 import { recordModeSwitch } from 'interactions/dispatcher/dispatcher';
 
 interface OpsApplier {
@@ -86,8 +84,13 @@ export function resolveEditablePathOf(
   if (!node) return null;
   const storage = classifyStorage(node);
   if (!storage) return null;
+  // Pose-as-polygon: the pose IS the polygon (polygon poses can't carry
+  // rotation), so it's already world.
   if (storage.kind === 'pose') return (node as { pose: PolygonPath }).pose;
-  return pathAtPose(storage.data.path, storage.pose) as PolygonPath;
+  // data.path: project to world via the world seam — translate to the pose
+  // origin AND bake `pose.rotation`, so anchors render on the rotated contour
+  // the renderer draws (not the unrotated one).
+  return pathInWorld(storage.data.path, storage.pose) as PolygonPath;
 }
 
 export function useEditAnchorsDepSource(
@@ -167,15 +170,10 @@ export function useEditAnchorsDepSource(
             label,
           );
         } else {
-          const bounds = boundsOfPath(wp);
-          const aligned = translatePath(wp, -bounds.x, -bounds.y) as PolygonPath;
-          const newPose: RectPoseShape = {
-            ...storage.pose,
-            x: bounds.x,
-            y: bounds.y,
-            width: bounds.width,
-            height: bounds.height,
-          };
+          // Edited path arrives in world coords (rotation baked in by
+          // resolveEditablePathOf); invert it back to the unrotated stored
+          // shape so `pose.rotation` is preserved and edits round-trip.
+          const { pose: newPose, path: aligned } = worldEditToStorage(storage.pose, wp);
           const newData = { ...(node.data as object), path: aligned };
           ad.applyOps(
             [

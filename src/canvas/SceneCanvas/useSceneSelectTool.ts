@@ -92,7 +92,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
   const moveOptions = opts?.move;
-  const resizeOptions = opts?.resize;
   const rotateOptions = opts?.rotate;
   const snap = opts?.snap;
   const handleHitRadius = opts?.handleHitRadius;
@@ -187,11 +186,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   // every node whose pose contains the world point. Order matches the
   // `useSelectTool` contract — last element is the topmost — so `pickTopMostHit`
   // picks correctly. Wraps the caller's `pickEvery` (string-or-null) into the
-  // array form `useSelectTool` expects. When the configured resize geometry
-  // exposes `getRotation`, the shared `poseContainsRotated` projects the click
-  // into the pose's local frame so rotated rects pick correctly without a
-  // per-demo override.
-  const getRotation = resizeOptions?.geometry?.getRotation;
+  // array form `useSelectTool` expects. `poseContainsRotated` reads
+  // `pose.rotation` directly (the kit's one rotation convention), so rotated
+  // shapes pick against their rendered, rotated body without a per-demo override.
   const wiredHitBody = useMemo(() => {
     return (wx: number, wy: number): string[] => {
       if (pickEveryProp) {
@@ -202,11 +199,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const out: string[] = [];
       for (const id of scene.renderOrder()) {
         const n = scene.get(id);
-        if (n && poseContainsRotated(n.pose, wx, wy, getRotation)) out.push(n.id);
+        if (n && poseContainsRotated(n.pose, wx, wy)) out.push(n.id);
       }
       return out;
     };
-  }, [scene, pickEveryProp, getRotation]);
+  }, [scene, pickEveryProp]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {

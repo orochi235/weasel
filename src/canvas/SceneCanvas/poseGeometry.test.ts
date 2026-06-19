@@ -82,36 +82,45 @@ describe('poseContainsRotated', () => {
     height: 10,
     rotation: Math.PI / 2,
   };
-  const getRotation = (p: RotatedPose): number => p.rotation;
 
   it('hits inside the rotated body even when outside the AABB', () => {
     // (50, 75): outside AABB [20..80] × [45..55], but inside rotated body.
     expect(poseContains(rotated, 50, 75)).toBe(false);
-    expect(poseContainsRotated(rotated, 50, 75, getRotation)).toBe(true);
+    expect(poseContainsRotated(rotated, 50, 75)).toBe(true);
   });
 
   it('misses inside the AABB but outside the rotated body', () => {
     // (75, 50): inside AABB, outside the 90°-rotated thin strip.
     expect(poseContains(rotated, 75, 50)).toBe(true);
-    expect(poseContainsRotated(rotated, 75, 50, getRotation)).toBe(false);
+    expect(poseContainsRotated(rotated, 75, 50)).toBe(false);
   });
 
-  it('with no getRotation, behavior matches poseContains (AABB)', () => {
-    expect(poseContainsRotated(rotated, 50, 75, undefined)).toBe(false);
-    expect(poseContainsRotated(rotated, 75, 50, undefined)).toBe(true);
+  it('sources rotation from pose.rotation — matching the renderer', () => {
+    // The render wrap reads pose.rotation directly, so the hit-test must too:
+    // a rotated pose hit-tests rotated whether or not a resize descriptor is
+    // wired. (Previously this branch depended on an injected getRotation.)
+    expect(poseContainsRotated(rotated, 50, 75)).toBe(true);
+    expect(poseContainsRotated(rotated, 75, 50)).toBe(false);
+  });
+
+  it('rotated kind:"rect" path pose hit-tests rotated', () => {
+    // A kind:'rect' pose IS path-like, so it previously fell through to an
+    // unrotated AABB/path test. With rotation+AABB it now rotates like everything else.
+    const rectPose = { kind: 'rect', x: 20, y: 45, width: 60, height: 10, rotation: Math.PI / 2 };
+    expect(poseContainsRotated(rectPose as never, 50, 75)).toBe(true);
+    expect(poseContainsRotated(rectPose as never, 75, 50)).toBe(false);
   });
 
   it('rotation==0 degenerates to AABB containment', () => {
     const r: RotatedPose = { x: 0, y: 0, width: 10, height: 10, rotation: 0 };
-    expect(poseContainsRotated(r, 5, 5, getRotation)).toBe(true);
-    expect(poseContainsRotated(r, 11, 5, getRotation)).toBe(false);
+    expect(poseContainsRotated(r, 5, 5)).toBe(true);
+    expect(poseContainsRotated(r, 11, 5)).toBe(false);
   });
 
-  it('path-shaped poses ignore getRotation and use path containment', () => {
-    // Even if a getRotation is wired, path-shaped poses must keep using their
-    // path test — the rotated branch is for rect-shaped poses only.
-    const getRot = (_p: unknown): number => Math.PI / 4;
-    expect(poseContainsRotated(tri, 5, 5, getRot as never)).toBe(true);
-    expect(poseContainsRotated(tri, 100, 100, getRot as never)).toBe(false);
+  it('path-shaped pose without AABB/rotation uses path containment', () => {
+    // A bare polygon pose carries no AABB/rotation, so poseRotationOf returns
+    // null and it keeps using its path test.
+    expect(poseContainsRotated(tri, 5, 5)).toBe(true);
+    expect(poseContainsRotated(tri, 100, 100)).toBe(false);
   });
 });
