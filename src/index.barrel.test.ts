@@ -75,17 +75,9 @@ describe('kit barrel parity', () => {
     expect(missing, `BuiltinShapeToolId members missing from KIT_SHAPE_KINDS: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('exports defaultNodeRouting covering every KIT_SHAPE_KINDS entry', () => {
-    const kinds = (Barrel as Record<string, unknown>).defaultNodeRouting;
-    const shapeKinds = (Barrel as Record<string, unknown>).KIT_SHAPE_KINDS as readonly string[];
-    expect(Array.isArray(kinds), 'defaultNodeRouting must be exported as an array').toBe(true);
-    const names = (kinds as { name: string }[]).map((k) => k.name);
-    const missing = shapeKinds.filter((s) => !names.includes(s));
-    expect(
-      missing,
-      `KIT_SHAPE_KINDS entries missing from defaultNodeRouting: ${missing.join(', ')}`,
-    ).toEqual([]);
-  });
+  // `defaultNodeRouting` is now derived from `KIT_SHAPE_KINDS` via `.map` in the
+  // same (canvas) layer, so it's in lockstep by construction — no cross-layer
+  // parity test needed (the two no longer straddle a boundary).
 
   // `apps/draw/src/dev/registryData.ts` previously mirrored
   // `BUNDLE_DEFINITIONS` from the kit's internal `BUNDLE_TOOLS` map. Now the

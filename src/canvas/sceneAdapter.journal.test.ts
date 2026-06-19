@@ -15,10 +15,10 @@ import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { createHistory } from '@weasel-js/history';
 import type { Journal } from '@weasel-js/history';
-import { useScene } from './useScene';
+import { useScene } from 'core/scene/useScene';
 import { sceneToAdapter } from 'canvas/sceneAdapter';
 import { createTransformOp } from 'core/ops/transform';
-import { asNodeId } from './types';
+import { asNodeId } from 'core/scene/types';
 
 // ── shared test fixture ───────────────────────────────────────────────────────
 
