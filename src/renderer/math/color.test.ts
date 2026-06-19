@@ -1,5 +1,37 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { hexToRgba, normalizeHex, parseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
+import { hexToRgba, hslToRgb, normalizeHex, parseColor, parseColorToRgba255, resolveColor, rgbaToHex, __resetResolveColorCache } from './color';
+
+// Reference chroma-form HSL→RGB — the previous duplicate implementation that
+// lived in `animation/colorHelpers.ts`. Kept here only to prove the shared
+// `hslToRgb` is numerically identical to the formula it replaced.
+function hslToRgbChromaForm(h: number, s: number, l: number): [number, number, number] {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hp = h / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  let r = 0, g = 0, b = 0;
+  if (hp < 1) { r = c; g = x; }
+  else if (hp < 2) { r = x; g = c; }
+  else if (hp < 3) { g = c; b = x; }
+  else if (hp < 4) { g = x; b = c; }
+  else if (hp < 5) { r = x; b = c; }
+  else { r = c; b = x; }
+  const m = l - c / 2;
+  return [r + m, g + m, b + m];
+}
+
+describe('hslToRgb (shared internal)', () => {
+  it('matches the former chroma-form implementation across the hue wheel', () => {
+    for (let h = 0; h < 360; h += 17) {
+      for (const s of [0, 0.25, 0.6, 1]) {
+        for (const l of [0.1, 0.35, 0.5, 0.75, 0.9]) {
+          const a = hslToRgb(h, s, l);
+          const b = hslToRgbChromaForm(h, s, l);
+          for (let k = 0; k < 3; k++) expect(a[k]).toBeCloseTo(b[k], 12);
+        }
+      }
+    }
+  });
+});
 
 describe('parseColorToRgba255', () => {
   it('returns integer 0..255 components for #ffffff', () => {

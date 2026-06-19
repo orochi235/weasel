@@ -273,7 +273,14 @@ function parsePercentOrNumber(tok: string): number | null {
   return Number.isFinite(n) ? clamp01(n) : null;
 }
 
-function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+/**
+ * HSL → RGB, all components 0..1 except hue in degrees (0..360). The single
+ * internal HSL→RGB implementation for the package — `animation/colorHelpers`
+ * re-uses this rather than carrying its own copy.
+ *
+ * @internal Not part of the public API; not re-exported from the barrel.
+ */
+export function hslToRgb(h: number, s: number, l: number): [number, number, number] {
   if (s === 0) return [l, l, l];
   const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
   const p = 2 * l - q;

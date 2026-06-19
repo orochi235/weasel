@@ -12,6 +12,7 @@ import { useRef } from 'react';
 import {
   asNodeId,
   boundsOfPath,
+  DEFAULT_PALETTE,
   ellipsePath,
   linePath,
   rectPath,
@@ -40,9 +41,6 @@ export interface BuiltinToolOptions {
    *  `insertAction` descriptor, which doesn't yet honor this hook. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
-
-/** Default fill palette cycled through for auto-generated shape nodes. */
-const DEFAULT_FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
 
 /**
  * Built-in shape tool ids handled by this synthesizer. Each maps to a kit
@@ -85,7 +83,7 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   // private to the SceneCanvas instance.
   const seqRef = useRef(0);
   const freshId = (prefix: string) => asNodeId(`${prefix}-${++seqRef.current}`);
-  const nextFill = () => DEFAULT_FILLS[seqRef.current % DEFAULT_FILLS.length];
+  const nextFill = () => DEFAULT_PALETTE[seqRef.current % DEFAULT_PALETTE.length];
 
   // First system-or-trivial layer is the default insertion layer. Falls back
   // to 'default' when the scene has none yet (rare — useScene synthesizes

@@ -547,6 +547,14 @@ export { constrainTo45 } from './util/constrainTo45';
 // ─── Utility: hex8 color helpers ────────────────────────────────────────────
 export { toHex8, getAlpha01, withAlpha01, mergeAlphaFromPrev } from './util/color';
 
+// ─── Default paint constants (fill/stroke/palette/ghost) ────────────────────
+export {
+  DEFAULT_FILL_COLOR,
+  DEFAULT_STROKE_COLOR,
+  DEFAULT_PALETTE,
+  GHOST_STROKE,
+} from './util/paint';
+
 // ─── Groups: union the bounds of a node set ─────────────────────────────────
 export { unionBounds } from './features/groups/unionBounds';
 export type { RectPose } from './features/groups/unionBounds';

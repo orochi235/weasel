@@ -7,6 +7,7 @@ import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { mergeAlphaFromPrev } from '../../../util/color';
+import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR } from '../../../util/paint';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -33,7 +34,7 @@ function refreshPreviews(scratch: SetFillScratch): void {
   scratch.previews.clear();
   for (const id of scratch.ids) {
     const prev = scratch.startData.get(id);
-    const next = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? '#ffffffff');
+    const next = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? DEFAULT_FILL_COLOR);
     scratch.previews.set(id, { ...(prev ?? {}), fill: next });
   }
 }
@@ -77,7 +78,7 @@ export const setFillAction: Action & { requires: string[] } = {
       // Resolve initial color: prefer ctx.params, fall back to opts.params.
       const ctxColor = ctx.params?.color as string | undefined;
       const optsColor = (opts?.params as { color?: string } | undefined)?.color;
-      const initialColor = ctxColor ?? optsColor ?? '#000000ff';
+      const initialColor = ctxColor ?? optsColor ?? DEFAULT_STROKE_COLOR;
 
       // Snapshot node data at drag start.
       const startData = new Map<NodeId, { fill?: string }>();
@@ -115,7 +116,7 @@ export const setFillAction: Action & { requires: string[] } = {
           const ops: Op[] = [];
           for (const id of scratch.ids) {
             const prev = scratch.startData.get(id);
-            const merged = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? '#ffffffff');
+            const merged = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? DEFAULT_FILL_COLOR);
             // Re-read so concurrent edits to non-fill fields aren't clobbered on commit.
             const nodeNow = scratch.scene.get(id);
             if (!nodeNow) continue;

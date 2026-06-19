@@ -7,8 +7,8 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../../renderer';
 import type { Tool } from '../../types';
+import { GHOST_STROKE } from '../../../util/paint';
 
-const GHOST_STROKE = '#7fb069';
 const GHOST_LINE_WIDTH = 1;
 const GHOST_DASH: number[] = [4, 4];
 
