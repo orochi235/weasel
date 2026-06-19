@@ -53,9 +53,6 @@ Priority tags:
 - Plugin/bundling convention v1 (`WeaselPlugin` shape) → [Plugins & packaging](#plugins--packaging)
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
 
-**Canvas / SceneCanvas seam**
-- Tighten `CanvasProps.adapter` to remove SceneCanvas casts → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
-
 **Documentation**
 - README pitch sweep → [Documentation](#documentation)
 
@@ -325,8 +322,6 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 Seam refactor landed 2026-05-24 (plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). After the refactor, `<Canvas>` is a coherent scene-agnostic primitive — WebGL surface + viewport (pinch zoom) + pointer routing + slot composition. Selection, picking, kind registry, scene-aware overlays all live in `<SceneCanvas>`. `<Canvas>` is `@internal` / `@deprecated` and no longer exported from the public barrel (2026-06-19) — it's now private. Internal consumers import it directly from `src/canvas/Canvas`.
 
 - **(P3) Remove the `background` prop on `<Canvas>`.** Marked `@deprecated` during the seam refactor in favor of `backgroundFill`. Three demos still use it; migrate them and delete the prop.
-
-- **(P3) Tighten `CanvasProps.adapter` to remove the `getLayers`/`getChildren` casts in SceneCanvas.** The seam refactor left a small type smell where SceneCanvas casts the adapter to access scene-tree methods Canvas's `adapter` type doesn't include. Options: widen `CanvasProps.adapter` to a `SceneLayerAdapter` mixin (clean type, leaks scene-shape into Canvas), or move the `buildSceneLayer` construction out of Canvas (cleaner separation, larger diff). Now that `<Canvas>` is private, this is a pure internal-cleanliness call — no consumer-facing type impact.
 
 - **(P3) `boundsOf` surface inconsistency.** `boundsOf` is kept on `CanvasProps` (still used by Canvas's internal layer composition + bare-Canvas consumers) but explicitly Omitted from `SceneCanvasProps`. Either expose it on SceneCanvas (consistency) or document the asymmetry where it lives.
 

@@ -3,7 +3,13 @@ import type { View } from 'core/viewport/view';
 import { findShapeSilhouette } from './NodeShape';
 import type { Node } from 'core/scene/types';
 
-interface HierarchicalAdapter<TNode, TPose> {
+/**
+ * The scene-tree reading surface `buildSceneTree` walks. A `SceneCanvasAdapter`
+ * satisfies this; flat (non-hierarchical) adapters don't. Canvas exposes these
+ * as *optional* methods on `CanvasProps.adapter` (see `OptionalSceneHierarchy`)
+ * and feature-detects them at draw time.
+ */
+export interface HierarchicalAdapter<TNode, TPose> {
   getLayers(): readonly { id: string; visible: boolean }[];
   getNode(id: string): TNode | undefined;
   getChildren(parentId: string | null): readonly string[];

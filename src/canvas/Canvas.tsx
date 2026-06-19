@@ -70,7 +70,24 @@ import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 
 const alwaysVisible = (_id: string): boolean => true;
-import { buildSceneTree } from './buildSceneTree';
+import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
+
+/**
+ * The scene-tree reading methods Canvas feature-detects at draw time, as an
+ * *optional* mixin. A `SceneCanvasAdapter` supplies them; flat / bare-Canvas
+ * adapters don't. `getPose` already lives on the base move adapter, so only the
+ * three tree-walk methods are added here.
+ */
+type OptionalSceneHierarchy<TNode, TPose> = Partial<
+  Pick<HierarchicalAdapter<TNode, TPose>, 'getLayers' | 'getNode' | 'getChildren'>
+>;
+
+/** The full adapter shape Canvas threads through layers + gesture hooks: the
+ *  move/resize/rotate intersection plus the optional scene-tree methods. */
+type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPose> &
+  ResizeAdapter<TNode, TPose> &
+  RotateAdapter<TNode, TPose> &
+  OptionalSceneHierarchy<TNode, TPose>;
 import { wrapWithPoseRotation } from './poseRotation';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
@@ -179,21 +196,16 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * move/resize/rotate gesture math. Optional — bare-Canvas consumers that
    * don't need a scene slot may omit it.
    *
-   * Canvas threads this adapter into layer factories and gesture hooks. It
-   * does NOT read scene-shaped methods (`kindOf`, `getLayers`) directly from
-   * the CanvasProps type — the `buildSceneLayer` path uses an internal cast to
-   * access optional hierarchy methods (`getLayers`, `getChildren`) that are
-   * present on SceneAdapter but absent from the narrow intersection type here.
-   * That cast is a known smell documented in the audit; promoting those
-   * methods to this type would surface a SceneAdapter-specific concern here and
-   * is tracked in docs/TODO.md as a follow-up.
+   * Canvas threads this adapter into layer factories and gesture hooks. The
+   * type is the move/resize/rotate intersection plus the *optional* scene-tree
+   * methods (`getLayers`/`getNode`/`getChildren`) — present on a hierarchical
+   * `SceneCanvasAdapter`, absent on flat adapters. The `buildSceneLayer` path
+   * feature-detects them at draw time.
    *
    * `<SceneCanvas>` synthesizes this from a `Scene`; bare-`<Canvas>` consumers
    * must supply it explicitly when using the scene or selection-overlay slots.
    */
-  adapter?: MoveAdapter<TNode, TPose>
-    & ResizeAdapter<TNode, TPose>
-    & RotateAdapter<TNode, TPose>;
+  adapter?: CanvasAdapter<TNode, TPose>;
 
   /** Layer map. See module docstring for slot semantics. */
   layers: LayersMap<TNode, TPose>;
@@ -513,9 +525,7 @@ function registerShadersOnRenderer(
  */
 export function buildSceneLayer<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
-  adapter:
-    | (MoveAdapter<TNode, TPose> & ResizeAdapter<TNode, TPose> & RotateAdapter<TNode, TPose>)
-    | undefined,
+  adapter: CanvasAdapter<TNode, TPose> | undefined,
   debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
@@ -535,13 +545,9 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
     label: slot ? `Scene: ${slot.forLayer}` : 'Scene',
     draw: (_data, view) => {
       const hidden = hideIds();
-      const a = adapter as unknown as {
-        getLayers?: () => readonly { id: string; visible: boolean }[];
-        getNode?: (id: string) => unknown;
-        getChildren?: (parentId: string | null) => readonly string[];
-        getPose?: (id: string) => TPose;
-      };
+      const a = adapter;
       if (
+        a &&
         cfg.objects === undefined &&
         typeof a.getLayers === 'function' &&
         typeof a.getNode === 'function' &&
@@ -572,7 +578,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
               ...a,
               getPose: (id: string) => {
                 const obj = a.getNode!(id);
-                return obj ? toPose(obj as TNode) : a.getPose!(id);
+                return obj ? toPose(obj) : a.getPose(id);
               },
             }
           : a;
@@ -627,17 +633,14 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
  */
 export function buildSceneLayers<TNode extends { id: string }, TPose>(
   cfg: SceneSlotConfig<TNode, TPose>,
-  adapter:
-    | (MoveAdapter<TNode, TPose> & ResizeAdapter<TNode, TPose> & RotateAdapter<TNode, TPose>)
-    | undefined,
+  adapter: CanvasAdapter<TNode, TPose> | undefined,
   debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
 ): Array<{ key: string; layer: RenderLayer<unknown> }> {
-  const a = adapter as unknown as { getLayers?: () => readonly { id: string }[] } | undefined;
   const sceneLayerIds =
-    cfg.objects === undefined && typeof a?.getLayers === 'function'
-      ? a.getLayers().map((l) => l.id)
+    cfg.objects === undefined && typeof adapter?.getLayers === 'function'
+      ? adapter.getLayers().map((l) => l.id)
       : null;
   if (!sceneLayerIds || sceneLayerIds.length === 0) {
     return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds) }];
