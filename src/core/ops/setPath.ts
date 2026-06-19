@@ -26,8 +26,11 @@ interface SetPathArgs {
   coalesceKey?: string;
 }
 
+/** `coalesceKey` defaults to `setPath:${id}` so successive geometry writes to
+ *  the same node (dragging a bezier anchor) merge into one undo entry within the
+ *  history's coalesce window. Pass an explicit key to opt out. */
 export function createSetPathOp(args: SetPathArgs): Op {
-  const { id, from, to, label, coalesceKey } = args;
+  const { id, from, to, label, coalesceKey = `setPath:${id}` } = args;
   return {
     name: 'setPath',
     args: { id, from, to, label, coalesceKey },

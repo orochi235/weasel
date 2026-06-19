@@ -14,9 +14,12 @@ interface SetLayerArgs {
   coalesceKey?: string;
 }
 
-/** Op: set a node's `layer` tag, inverting back to `from`. */
+/** Op: set a node's `layer` tag, inverting back to `from`. `coalesceKey`
+ *  defaults to `setLayer:${id}` so successive layer changes to the same node
+ *  merge into one undo entry within the history's coalesce window. Pass an
+ *  explicit key to opt out. */
 export function createSetLayerOp(args: SetLayerArgs): Op {
-  const { id, from, to, label, coalesceKey } = args;
+  const { id, from, to, label, coalesceKey = `setLayer:${id}` } = args;
   return {
     name: 'setLayer',
     args: { id, from, to, label, coalesceKey },

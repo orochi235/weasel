@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createHistory } from './history';
 import { createTransformOp } from 'core/ops/transform';
+import type { Op } from 'core/ops/types';
 
 interface Pose { x: number; y: number }
 
@@ -9,6 +10,18 @@ function makeAdapter() {
   return {
     setPose: (id: string, pose: Pose) => state.set(id, { ...pose }),
     state,
+  };
+}
+
+/** A transform-shaped op with NO `coalesceKey`, to exercise the history's
+ *  keyless path. Built by hand because `createTransformOp` now defaults a key;
+ *  real keyless ops still exist (e.g. `createSetDataOp`). */
+function keylessTransform(id: string, from: Pose, to: Pose): Op {
+  return {
+    name: 'transform',
+    args: { id, from, to },
+    apply: (adapter) => { (adapter as { setPose: (id: string, p: Pose) => void }).setPose(id, to); },
+    invert: () => keylessTransform(id, to, from),
   };
 }
 
@@ -185,10 +198,8 @@ describe('createHistory coalescing', () => {
       id: 'a', from: { x: 0, y: 0 }, to: { x: 1, y: 0 }, coalesceKey: 'transform:a',
     }));
     t = 50;
-    // No coalesceKey on this one.
-    history.apply(createTransformOp<Pose>({
-      id: 'a', from: { x: 1, y: 0 }, to: { x: 2, y: 0 },
-    }));
+    // No coalesceKey on this one — pushes a separate entry.
+    history.apply(keylessTransform('a', { x: 1, y: 0 }, { x: 2, y: 0 }));
     history.undo();
     expect(adapter.state.get('a')).toEqual({ x: 1, y: 0 });
   });

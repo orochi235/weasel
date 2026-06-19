@@ -45,7 +45,7 @@ Priority tags:
 **Selection, actions & UI panels**
 - Per-kind property-row registry for `<PropertiesPanel>` → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Alignment guides / insert snap-to-existing-edges → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- Op coalescing follow-ups (`useScene`, default `coalesceKey`s) → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- Op coalescing in `useScene`'s `LogEntry` history → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Clipboard: OS clipboard / cross-reload serialization → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - WeaselDraw persistence → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
@@ -224,7 +224,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P2) Alignment guides / insert snap-to-existing-edges.** Shows snap lines when an inserted/moved object's edge or center aligns with a sibling's. Slot for a new `SnapStrategy` plus an overlay layer. Originally scoped in `docs/specs/2026-04-30-canvas-kit-resize-insert-design.md:278`.
 
-- **(P2) Op coalescing follow-ups.** Wire matching coalescing into `useScene`'s internal `pushEntry` (it uses a different `LogEntry` shape, not `Op`); auto-set `coalesceKey` defaults at op factories (`transform:${id}`, `setText:${id}`) so consumers get coalescing without per-call boilerplate.
+- **(P2) Op coalescing in `useScene`.** Default `coalesceKey`s landed at the op factories (`transform`/`setText`/`setLayer`/`setPath` now default `<name>:${id}`, joining `reparent`), so the standalone `@weasel-js/history` path coalesces without per-call boilerplate when a consumer sets `coalesceWindowMs > 0`. Remaining: `useScene`'s internal undo log (`scene.ts`) is a separate `LogEntry` history (`{kind, payload}[]`, no `coalesceKey` notion) that ignores coalescing entirely — `Op.coalesceKey` is lost when ops translate to scene mutations. Wiring it needs the coalesce-eligibility + window logic ported into `pushEntry` plus a way to thread the key from the originating `Op` into the `LogEntry`.
 
 - **(P2) Clipboard: OS clipboard / cross-reload serialization.** Currently the kit's clipboard is in-memory only — copy doesn't reach the system clipboard, and reloading drops the buffer. Needs a serialization shape (likely the same op-log shape useScene wants) plus `navigator.clipboard` plumbing with a JSON wire format.
 

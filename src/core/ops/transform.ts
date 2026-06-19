@@ -14,9 +14,12 @@ interface TransformArgs<TPose> {
   coalesceKey?: string;
 }
 
-/** Op: set an object's pose, inverting back to `from`. Optionally tag with `coalesceKey` for batch merging. */
+/** Op: set an object's pose, inverting back to `from`. `coalesceKey` defaults to
+ *  `transform:${id}` so successive pose writes to the same node (drag-move,
+ *  resize, repeated nudges) merge into one undo entry within the history's
+ *  coalesce window. Pass an explicit key (or a unique one) to opt out. */
 export function createTransformOp<TPose>(args: TransformArgs<TPose>): Op {
-  const { id, from, to, label, coalesceKey } = args;
+  const { id, from, to, label, coalesceKey = `transform:${id}` } = args;
   return {
     name: 'transform',
     args: { id, from, to, label, coalesceKey },

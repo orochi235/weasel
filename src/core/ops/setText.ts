@@ -14,9 +14,12 @@ interface SetTextArgs {
   coalesceKey?: string;
 }
 
-/** Op: set a text node's text content, inverting back to `from`. */
+/** Op: set a text node's text content, inverting back to `from`. `coalesceKey`
+ *  defaults to `setText:${id}` so successive edits to the same node (typing)
+ *  merge into one undo entry within the history's coalesce window. Pass an
+ *  explicit key to opt out. */
 export function createSetTextOp(args: SetTextArgs): Op {
-  const { id, from, to, label, coalesceKey } = args;
+  const { id, from, to, label, coalesceKey = `setText:${id}` } = args;
   return {
     name: 'setText',
     args: { id, from, to, label, coalesceKey },
