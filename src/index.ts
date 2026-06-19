@@ -227,8 +227,12 @@ export type {
   PointerGestureCallbackCtx,
 } from './interactions/gestures/usePointerGestures';
 
-// ─── Canvas + SceneCanvas: top-level renderers ──────────────────────────────
-export { Canvas } from './canvas/Canvas';
+// ─── SceneCanvas: the top-level renderer ─────────────────────────────────────
+// `Canvas` is intentionally NOT exported — it is `@internal` / `@deprecated`
+// (bare `<Canvas>` is not a supported consumer surface). Internal consumers
+// import it directly from `./canvas/Canvas`. Its types (`CanvasProps`, slot
+// configs, etc.) remain exported below because they form part of SceneCanvas's
+// public surface.
 export { SceneCanvas, DEFAULT_HANDLE_SIZE, defaultDrawOne } from './canvas/SceneCanvas';
 export type { SceneCanvasProps, SceneCanvasHit } from './canvas/SceneCanvas';
 export { CursorCoordsHud } from './canvas/CursorCoordsHud';
