@@ -1451,7 +1451,7 @@ function EditorWithSharedScene({
             getActiveMode={getActiveMode}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
-            <SliceDepPublisher scene={scene} />
+            <SliceDepPublisher scene={scene} selection={selection} />
           </SceneCanvas>
           )}
         </div>

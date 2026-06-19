@@ -22,7 +22,9 @@ import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/ha
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 import { hitAnchor } from 'interactions/actions/edit-anchors/handles';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
+import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import type { PolygonPath } from 'features/paths/types';
+import { poseRotationOf } from 'features/paths/poseRotation';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -53,20 +55,6 @@ function dist2(ax: number, ay: number, bx: number, by: number): number {
   const dx = ax - bx;
   const dy = ay - by;
   return dx * dx + dy * dy;
-}
-
-/** Rotate (px, py) around (cx, cy) by `rotation` radians. */
-function rotateAround(
-  px: number, py: number,
-  cx: number, cy: number,
-  rotation: number,
-): { x: number; y: number } {
-  if (rotation === 0) return { x: px, y: py };
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const dx = px - cx;
-  const dy = py - cy;
-  return { x: cx + cos * dx - sin * dy, y: cy + sin * dx + cos * dy };
 }
 
 /** Bounds + id of the target to hit-test affordances against. */
@@ -106,9 +94,11 @@ interface CornerDesc {
 }
 
 function cornersFor(b: Bounds): CornerDesc[] {
-  const { x, y, width, height, rotation = 0 } = b;
-  const cx = x + width / 2;
-  const cy = y + height / 2;
+  const { x, y, width, height } = b;
+  // Pivot + angle from the kit's one rotation convention; null = unrotated.
+  const r = poseRotationOf(b);
+  const place = (px: number, py: number): { x: number; y: number } =>
+    r ? rotatePoint(px, py, r.cx, r.cy, r.rotation) : { x: px, y: py };
 
   // Raw (unrotated) corners, their fixed opposites, and the corresponding
   // ResizeAnchor. Anchor convention (matches `anchorFromHandleKind` in
@@ -128,8 +118,8 @@ function cornersFor(b: Bounds): CornerDesc[] {
   ];
 
   return raw.map(({ lx, ly, kind, anchor, fx, fy }) => {
-    const wp = rotateAround(lx, ly, cx, cy, rotation);
-    const fp = rotateAround(fx, fy, cx, cy, rotation);
+    const wp = place(lx, ly);
+    const fp = place(fx, fy);
     return { worldX: wp.x, worldY: wp.y, kind, anchor, fixedX: fp.x, fixedY: fp.y };
   });
 }
@@ -235,16 +225,17 @@ export function buildAffordanceAt(
     // `max(w/√2, w/2 + bandPx)`; `rotateDistance` doubles as `bandPx`).
     const rotateTarget = pickResizeTarget(state);
     if (rotateTarget) {
-      const { x: bx, y: by, width: bw, height: bh, rotation = 0 } = rotateTarget.bounds;
+      const { x: bx, y: by, width: bw, height: bh } = rotateTarget.bounds;
       const halfW = bw / 2;
       const halfH = bh / 2;
       const centerX = bx + halfW;
       const centerY = by + halfH;
       // Inverse-rotate the world point into the bounds' local frame so
       // the ellipse/rect math stays axis-aligned.
-      const lp = rotation === 0
-        ? { x: wx, y: wy }
-        : rotateAround(wx, wy, centerX, centerY, -rotation);
+      const r = poseRotationOf(rotateTarget.bounds);
+      const lp = r
+        ? rotatePoint(wx, wy, centerX, centerY, -r.rotation)
+        : { x: wx, y: wy };
       const insideAabb =
         lp.x >= bx && lp.x <= bx + bw && lp.y >= by && lp.y <= by + bh;
       if (!insideAabb) {

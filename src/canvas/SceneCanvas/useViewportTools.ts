@@ -17,6 +17,7 @@ import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
 import type { View } from 'core/viewport/view';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { AnyTool } from 'tools/types';
+import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 
 export interface ViewportConfig {
   inertia?:
@@ -25,8 +26,10 @@ export interface ViewportConfig {
   pinchZoom?: boolean | { min?: number; max?: number };
   /** Wheel pan (plain wheel → pan). Default: `true`. Set `false` to disable. */
   pan?: boolean;
-  /** Wheel + keyboard zoom (Cmd+wheel, Cmd+=/-/0). Default: `true`. Set `false` to disable. */
-  zoom?: boolean;
+  /** Wheel + keyboard zoom (Cmd+wheel, Cmd+=/-/0). Default: `true`. Set `false`
+   *  to disable, or pass a {@link ViewportZoomOptions} object to tune the wheel
+   *  trigger + scale clamp. */
+  zoom?: boolean | ViewportZoomOptions;
 }
 
 export interface UseViewportToolsArgs {

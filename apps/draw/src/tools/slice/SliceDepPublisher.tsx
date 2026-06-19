@@ -4,6 +4,7 @@ import {
   pathInWorld,
   asNodeId,
   type NodeId,
+  type useSelection,
 } from '@weasel-js/core';
 import { computeSliceOps, type SliceLeaf, type WDLeafNode } from './sliceCommit';
 
@@ -43,12 +44,15 @@ interface SliceAdapter {
  */
 export function SliceDepPublisher({
   scene,
+  selection,
 }: {
   scene: WDScene;
+  selection: ReturnType<typeof useSelection>;
 }): null {
   const idCounterRef = useRef(0);
 
-  // Minimal adapter that op.apply() needs — only insert/remove.
+  // Minimal adapter that op.apply() needs — insert/remove for the slice ops
+  // and setSelection for the trailing selection-inheritance op.
   // Memoized so it doesn't re-create on every render (mirrors
   // BooleansAdapterPublisher's useMemo pattern).
   const adapter = useMemo<SliceAdapter>(
@@ -88,19 +92,27 @@ export function SliceDepPublisher({
             leaves.push({ node: node as WDLeafNode, index: i, worldPath });
           }
 
-          const ops = computeSliceOps({
+          const { ops, nextSelection } = computeSliceOps({
             leaves,
             a,
             b,
             nextId: () => `s-${idCounterRef.current++}`,
+            // Pass the live selection so sliced pieces inherit their source's
+            // selected state.
+            selection: selection.get(),
           });
 
           if (ops.length) {
             scene.applyBatch(ops, 'Slice', adapter);
+            // Apply the post-op selection imperatively, AFTER the geometry
+            // batch. It can't ride in the op batch: `scene.applyBatch` routes
+            // through the modality journal, which applies ops via
+            // `op.apply(scene)` and `Scene` has no `setSelection`.
+            if (nextSelection) selection.set(nextSelection.map(asNodeId));
           }
         },
       }),
-      [scene, adapter],
+      [scene, adapter, selection],
     ),
   );
 

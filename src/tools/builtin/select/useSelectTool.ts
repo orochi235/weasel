@@ -308,6 +308,21 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         },
       });
 
+      // Shared move-binding opts (reparent-on-drop + behaviors). Applied to
+      // both the selected-body and unselected-body move bindings so a
+      // first-touch drag and a re-drag commit identically.
+      const moveOpts: { opts?: BindingOpts } = (() => {
+        const reparent = options.reparentOnDrop && options.reparentOnDrop !== 'off'
+          ? { params: { reparentOnDrop: options.reparentOnDrop } }
+          : undefined;
+        const behaviors = options.move?.behaviors?.length
+          ? { behaviors: options.move.behaviors as BindingOpts['behaviors'] }
+          : undefined;
+        return reparent || behaviors
+          ? { opts: { ...reparent, ...behaviors } satisfies BindingOpts }
+          : {};
+      })();
+
       return {
         ...base,
         initScratch: () => ({ kind: 'idle' as const }),
@@ -315,7 +330,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         // Binding priority (first match wins):
         //   1. Handle drags (resize) — guard on AffordanceHit kind.
         //   2. Rotate-handle drag — single-selection rotation.
-        //   3. Body drag (selected) — move the selection.
+        //   3. Body drag (selected OR unselected) — move the selection.
         //   4. Empty drag — marquee area-select.
         //   5. Click on empty (no modifiers) → clear selection.
         bindings: [
@@ -373,17 +388,22 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
               },
             },
             actionId: 'move',
-            ...((() => {
-              const reparent = options.reparentOnDrop && options.reparentOnDrop !== 'off'
-                ? { params: { reparentOnDrop: options.reparentOnDrop } }
-                : undefined;
-              const behaviors = options.move?.behaviors?.length
-                ? { behaviors: options.move.behaviors as BindingOpts['behaviors'] }
-                : undefined;
-              return reparent || behaviors
-                ? { opts: { ...reparent, ...behaviors } satisfies BindingOpts }
-                : {};
-            })()),
+            ...moveOpts,
+          },
+          // Body-drag on a NOT-yet-selected node → also move. The pointerDown
+          // classifier selects the hit node before the drag fires (same
+          // contract clone relies on), so by the time moveAction.start() runs
+          // the node is in `selection.get()`. Without this active binding an
+          // unselected-body drag finds no active match and falls through to
+          // ambient scope, where the `rotate` catch-all (`{ kind: 'drag' }`,
+          // start()-guarded only on a non-empty selection) hijacks it — the
+          // "first drag rotates, later drags move" bug. Unselected nodes never
+          // carry anchor affordances (those gate on selection), so the plain
+          // string-form target is sufficient here.
+          {
+            spec: { kind: 'drag' as const, target: 'unselected-body' as const },
+            actionId: 'move',
+            ...moveOpts,
           },
           { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
           { spec: { kind: 'click' as const, target: 'empty' as const, mods: {} }, actionId: 'clearSelection' },

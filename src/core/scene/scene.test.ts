@@ -77,16 +77,16 @@ describe('createScene — construction', () => {
     expect(s.canUndo()).toBe(false);
   });
 
-  it('rejects cross-layer subtrees expressed via createScene({ initial })', () => {
-    expect(() =>
-      createScene<{ label: string }, 'structures' | 'plantings', typeof POSE>({
-        systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
-        initial: [
-          { id: asNodeId('bed'), kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } },
-          { id: asNodeId('plant'), kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: asNodeId('bed') },
-        ],
-      }),
-    ).toThrow(/subtree layer must match parent/);
+  it('allows a child on a higher layer than its parent via createScene({ initial })', () => {
+    const scene = createScene<{ label: string }, 'structures' | 'plantings', typeof POSE>({
+      systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
+      initial: [
+        { id: asNodeId('bed'), kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } },
+        { id: asNodeId('plant'), kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: asNodeId('bed') },
+      ],
+    });
+    expect(scene.get(asNodeId('plant'))?.layer).toBe('plantings');
+    expect(scene.childrenOf(asNodeId('bed'))).toEqual([asNodeId('plant')]);
   });
 
   it('createScene({ initial }) preserves clipFromPose on container nodes', () => {
@@ -187,12 +187,23 @@ describe('add / remove / move', () => {
     expect(() => s.move(b, child)).toThrow(/not a container/);
   });
 
-  it('rejects move() onto a parent on a different layer', () => {
+  it('rejects move() onto a parent on a HIGHER layer (child would render below parent)', () => {
     const s = makeScene();
     const bed1 = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed1' } });
     const bed2 = s.add({ kind: 'container', layer: 'plantings',  pose: POSE, data: { label: 'bed2' } });
     const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed1 });
-    expect(() => s.move(plant, bed2)).toThrow(/subtree layer must match parent/);
+    // plant is on 'structures' (below 'plantings'); reparenting under bed2 would
+    // make it render beneath its parent → rejected.
+    expect(() => s.move(plant, bed2)).toThrow(/may not render below its parent/);
+  });
+
+  it('allows move() onto a parent on a LOWER layer (child renders above parent)', () => {
+    const s = makeScene();
+    const bed1 = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed1' } });
+    const bed2 = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed2' } });
+    const plant = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: bed1 });
+    s.move(plant, bed2);
+    expect(s.childrenOf(bed2)).toEqual([plant]);
   });
 
   it('allows move(id, null) regardless of layer', () => {
@@ -212,12 +223,12 @@ describe('add / remove / move', () => {
     expect(s.roots).toEqual([c, a, b]);
   });
 
-  it('rejects a child added on a different layer than its parent', () => {
+  it('accepts a child added on a higher layer than its parent', () => {
     const s = makeScene();
     const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
-    expect(() =>
-      s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: bed }),
-    ).toThrow(/subtree layer must match parent/);
+    const plant = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'plant' }, parent: bed });
+    expect(s.get(plant)?.layer).toBe('plantings');
+    expect(s.childrenOf(bed)).toEqual([plant]);
   });
 
   it('accepts a child added on the same layer as its parent', () => {
@@ -229,11 +240,19 @@ describe('add / remove / move', () => {
 });
 
 describe('setLayer — parent rejection and cascade', () => {
-  it('setLayer rejects when the node has a parent on a different layer', () => {
+  it('setLayer onto a higher layer than the parent is allowed (renders above)', () => {
     const s = makeScene();
     const bed = s.add({ kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' } });
     const plant = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'p' }, parent: bed });
-    expect(() => s.setLayer(plant, 'plantings')).toThrow(/subtree layer must match parent/);
+    s.setLayer(plant, 'plantings');
+    expect(s.get(plant)?.layer).toBe('plantings');
+  });
+
+  it('setLayer below the parent layer is rejected', () => {
+    const s = makeScene();
+    const bed = s.add({ kind: 'container', layer: 'plantings', pose: POSE, data: { label: 'bed' } });
+    const child = s.add({ kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: bed });
+    expect(() => s.setLayer(child, 'structures')).toThrow(/may not render below its parent/);
   });
 
   it('setLayer succeeds on a leaf with no parent', () => {
@@ -797,7 +816,7 @@ describe('sceneFromJSON', () => {
     expect(() => sceneFromJSON(json, { registry: {} })).toThrow(/unknown clipFromPose key 'nonexistent'/);
   });
 
-  it('rejects cross-layer subtrees in JSON via assertSubtreeLayer', () => {
+  it('accepts a higher-layer child subtree in JSON (renders above its parent)', () => {
     const json: SerializedScene<Data, 'structures' | 'plantings', typeof POSE> = {
       version: 1,
       systemLayers: [{ id: 'structures' }, { id: 'plantings' }],
@@ -806,7 +825,8 @@ describe('sceneFromJSON', () => {
         { id: 'plant', kind: 'leaf', layer: 'plantings', pose: POSE, data: { label: 'p' }, parent: 'bed' },
       ],
     };
-    expect(() => sceneFromJSON(json, {})).toThrow(/subtree layer must match parent/);
+    const scene = sceneFromJSON(json, {});
+    expect(scene.get('plant' as never)?.layer).toBe('plantings');
   });
 
   it('full round-trip: toJSON → sceneFromJSON → toJSON produces equivalent output', () => {

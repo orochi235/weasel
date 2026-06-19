@@ -21,6 +21,10 @@ export interface Selector {
   hovering?: boolean;
   hoveringSelected?: boolean;
   zoomAtLeast?: number;
+  /** Matches `ctx.selectionResizable`. Absent flag is treated as `true`
+   *  (resizable), so `{ resizable: true }` passes for legacy ctx builders
+   *  that don't compute it. */
+  resizable?: boolean;
 }
 
 /**
@@ -103,6 +107,12 @@ function evaluateSelector(s: Selector, ctx: RuleCtx): boolean {
     const sx = ctx.view.scale.x, sy = ctx.view.scale.y;
     const z = sx === sy ? sx : Math.sqrt(sx * sy);
     if (z < s.zoomAtLeast) return false;
+  }
+  if (s.resizable !== undefined) {
+    // Absent flag === resizable (back-compat for ctx builders that don't
+    // compute it). Only an explicit `false` opts a selection out.
+    const resizable = ctx.selectionResizable ?? true;
+    if (resizable !== s.resizable) return false;
   }
   return true;
 }

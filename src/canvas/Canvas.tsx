@@ -519,14 +519,20 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
   debugSink: DebugSink | null,
   boundsOfFn: ((id: string) => Bounds | null) | undefined,
   hideIds: () => Set<string> | null,
+  /** When set, the returned layer carries this `id` and paints ONLY the named
+   *  scene layer (the rest are walked for ancestor clips). Used to split the
+   *  scene slot into per-scene-layer, individually-orderable canvas layers
+   *  (`scene:<layerId>`) so consumers can interleave custom layers between
+   *  them. Omit for the single bundled `scene` layer. */
+  slot?: { id: string; forLayer: string },
 ): RenderLayer<unknown> {
   const toPose =
     cfg.toPose ??
     ((obj: TNode) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
   const drawOne = cfg.drawOne;
   return {
-    id: 'scene',
-    label: 'Scene',
+    id: slot?.id ?? 'scene',
+    label: slot ? `Scene: ${slot.forLayer}` : 'Scene',
     draw: (_data, view) => {
       const hidden = hideIds();
       const a = adapter as unknown as {
@@ -575,9 +581,12 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
           hierarchicalAdapter as Parameters<typeof buildSceneTree>[0],
           filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
           view,
+          slot?.forLayer,
         );
       }
-      // Flat fallback — keep existing body verbatim.
+      // Flat fallback — keep existing body verbatim. (Per-layer slotting only
+      // applies on the hierarchical path; a flat adapter has no scene layers,
+      // so the `scene:<layer>` split is a no-op and we emit the whole scene.)
       const objects = cfg.objects ?? adapter?.getNodes() ?? [];
       const children: DrawCommand[] = [];
       for (const obj of objects) {
@@ -605,6 +614,41 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
       return children;
     },
   };
+}
+
+/**
+ * Build the scene slot as one canvas layer **per scene layer** — keyed
+ * `scene:<layerId>` — when the adapter is hierarchical (exposes `getLayers`).
+ * This lets consumers interleave custom layers *between* scene layers via the
+ * standard slot anchoring (`before: 'scene:plantings'`). Each per-layer canvas
+ * layer re-runs the scene walk for its own layer only (others are still walked
+ * for ancestor clips). Falls back to a single `scene` layer for flat adapters
+ * or adapters with no declared layers.
+ */
+export function buildSceneLayers<TNode extends { id: string }, TPose>(
+  cfg: SceneSlotConfig<TNode, TPose>,
+  adapter:
+    | (MoveAdapter<TNode, TPose> & ResizeAdapter<TNode, TPose> & RotateAdapter<TNode, TPose>)
+    | undefined,
+  debugSink: DebugSink | null,
+  boundsOfFn: ((id: string) => Bounds | null) | undefined,
+  hideIds: () => Set<string> | null,
+): Array<{ key: string; layer: RenderLayer<unknown> }> {
+  const a = adapter as unknown as { getLayers?: () => readonly { id: string }[] } | undefined;
+  const sceneLayerIds =
+    cfg.objects === undefined && typeof a?.getLayers === 'function'
+      ? a.getLayers().map((l) => l.id)
+      : null;
+  if (!sceneLayerIds || sceneLayerIds.length === 0) {
+    return [{ key: 'scene', layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds) }];
+  }
+  return sceneLayerIds.map((id) => ({
+    key: `scene:${id}`,
+    layer: buildSceneLayer(cfg, adapter, debugSink, boundsOfFn, hideIds, {
+      id: `scene:${id}`,
+      forLayer: id,
+    }),
+  }));
 }
 
 function resolveToolsCursor(
@@ -1304,12 +1348,13 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     }
 
     const sceneCfg = layersMap.scene as SceneSlotConfig<TNode, TPose> | null | undefined;
+    let sceneLayers: Array<{ key: string; layer: RenderLayer<unknown> }> | undefined;
     if (
       sceneCfg &&
       !isCustomEntry(sceneCfg) &&
       (sceneCfg as SceneSlotConfig<TNode, TPose>).drawOne
     ) {
-      standardLayers.scene = buildSceneLayer<TNode, TPose>(
+      sceneLayers = buildSceneLayers<TNode, TPose>(
         sceneCfg,
         adapter,
         debugSink,
@@ -1400,7 +1445,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const effectiveLayersMap = backgroundLayer
       ? { ...layersMap, backgroundFill: { layer: backgroundLayer, before: 'scene' } }
       : layersMap;
-    const out: RenderLayer<unknown>[] = composeOrderedLayers(effectiveLayersMap, standardLayers);
+    const out: RenderLayer<unknown>[] = composeOrderedLayers(effectiveLayersMap, standardLayers, sceneLayers);
     // Decoration layer: above scene, below tool overlay (per slot ordering doc).
     if (decorationLayer) out.push(decorationLayer);
     if (tools) {

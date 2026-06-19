@@ -57,4 +57,12 @@ export interface UseResizeOptions<TPose> {
    *  the recorded debug hitbox circle radius — does not affect actual hit
    *  math (which lives in `usePointerGestures`). Default `8`. */
   handleHitRadius?: number;
+  /** Per-node resizability predicate. Returns `false` for nodes that should
+   *  never show resize handles (and thus can't start a resize gesture) — e.g.
+   *  fixed-footprint icons, locked layers. `<SceneCanvas>` folds this over the
+   *  current selection into the `selectionResizable` rule-ctx flag, so the
+   *  default `selection.resize-handles` chrome rule hides handles whenever any
+   *  selected node is non-resizable (which also disables the affordance, since
+   *  visible==hittable). Default: every node resizable. */
+  resizable?: (id: string) => boolean;
 }

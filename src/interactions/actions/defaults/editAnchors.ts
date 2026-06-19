@@ -27,8 +27,7 @@ import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import { isAnchorOrControl } from '../../dispatcher/predicates';
 import { withCoord, enumerateAnchors, translateAnchor } from '../edit-anchors/geometry';
-import { boundsOfPath } from 'features/paths/bounds';
-import { translatePath } from 'features/paths/transform';
+import { worldEditToStorage } from 'features/paths/pathInWorld';
 // Commit goes through dep.applyEdit (routes setPose or setPose+update
 // based on the node's path-storage shape); no direct op or dispatch
 // helpers needed here.
@@ -138,8 +137,8 @@ export const editAnchorsAction: Action & { requires: string[] } = {
 
       const { editingId } = dep;
       // World-coord polygon. For pose-as-polygon nodes this equals
-      // node.pose; for data.path nodes it's pathAtPose-projected so the
-      // anchor world coords match what the user clicked.
+      // node.pose; for data.path nodes it's pathInWorld-projected (translate +
+      // rotation) so the anchor world coords match what the user clicked.
       const worldPath = dep.getEditablePath(editingId) as PolygonPath | undefined;
       if (!worldPath || worldPath.kind !== 'polygon') return {};
       const storageKind = dep.getStorageKind(editingId);
@@ -223,20 +222,20 @@ export const editAnchorsAction: Action & { requires: string[] } = {
             // Pose IS the polygon — preview pose is the polygon itself.
             return scratch.currentPose;
           }
-          // data.path: pose is a rect, derived from the edited polygon's bounds.
+          // data.path: invert the world edit the same way the commit does, so
+          // the preview ghost (which re-applies pose.rotation via the render
+          // wrap) matches the committed result — no double-rotation.
           if (!originRectPose) return null;
-          const b = boundsOfPath(scratch.currentPose);
-          return { ...originRectPose, x: b.x, y: b.y, width: b.width, height: b.height };
+          return worldEditToStorage(originRectPose, scratch.currentPose).pose;
         },
         previewData: (id: string): unknown | null => {
           if (!active || id !== scratch.id) return null;
           if (scratch.storageKind !== 'data') return null;
           if (!originData) return null;
-          // Align the world polygon to the new pose origin so the kit's
-          // render invariant (`pathAtPose(stored, pose) === world`) holds.
-          const b = boundsOfPath(scratch.currentPose);
-          const aligned = translatePath(scratch.currentPose, -b.x, -b.y);
-          return { ...originData, path: aligned };
+          // Stored path is the unrotated, origin-aligned contour; the render
+          // invariant `pathInWorld(stored, pose) === world` holds.
+          const { path } = worldEditToStorage(originRectPose!, scratch.currentPose);
+          return { ...originData, path };
         },
       };
     },

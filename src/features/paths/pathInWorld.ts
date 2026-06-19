@@ -19,8 +19,9 @@
  */
 
 import { boundsOfPath } from './bounds';
-import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
+import { type Path, type PolygonPath } from './types';
 import { translatePath } from './transform';
+import { poseRotationOf, rotatePathAround } from './poseRotation';
 
 /** Subset of pose fields this helper consumes. Matches the kit's auto-rotate
  *  convention (`SceneCanvas.defaultDrawOne`): `x/y/width/height` define an
@@ -44,64 +45,37 @@ export function pathInWorld(path: Path, pose: PathInWorldPose): Path {
   const dy = pose.y - b.y;
   const translated = (dx === 0 && dy === 0) ? path : translatePath(path, dx, dy);
 
-  // Step 2: apply pose.rotation about the AABB center, if any.
-  const rotation = pose.rotation ?? 0;
-  if (rotation === 0) return translated;
-
-  const cx = pose.x + pose.width / 2;
-  const cy = pose.y + pose.height / 2;
-
-  // Rect + rotation -> promote to a polygon by baking the four corners.
-  if (translated.kind === 'rect') {
-    return rotateRectCorners(translated.x, translated.y, translated.width, translated.height, cx, cy, rotation);
-  }
-  return rotatePolygon(translated, cx, cy, rotation);
+  // Step 2: apply the pose's rotation about its AABB center, if any. The gate
+  // and the rect->polygon promotion live in `poseRotationOf`/`rotatePathAround`
+  // so every world seam shares one rotation implementation.
+  const r = poseRotationOf(pose);
+  if (!r) return translated;
+  return rotatePathAround(translated, r.cx, r.cy, r.rotation);
 }
 
-function rotatePolygon(path: PolygonPath, cx: number, cy: number, rotation: number): PolygonPath {
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const { commands, coords } = path;
-  const next = new Float32Array(coords.length);
-  let ci = 0;
-  for (let i = 0; i < commands.length; i++) {
-    const len = COORD_COUNT[commands[i]];
-    for (let k = 0; k < len; k += 2) {
-      const dx = coords[ci + k] - cx;
-      const dy = coords[ci + k + 1] - cy;
-      next[ci + k] = cx + dx * cos - dy * sin;
-      next[ci + k + 1] = cy + dx * sin + dy * cos;
-    }
-    ci += len;
-  }
-  return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
-}
-
-function rotateRectCorners(
-  x: number, y: number, w: number, h: number,
-  cx: number, cy: number, rotation: number,
-): PolygonPath {
-  const cos = Math.cos(rotation);
-  const sin = Math.sin(rotation);
-  const rotate = (px: number, py: number): [number, number] => {
-    const dx = px - cx;
-    const dy = py - cy;
-    return [cx + dx * cos - dy * sin, cy + dx * sin + dy * cos];
+/**
+ * Inverse of `pathInWorld` for an editable polygon: given a polygon edited in
+ * **world** space and the node's current pose, produce the unrotated stored
+ * path plus an updated pose. Inverse-rotates about the pose's AABB center (so
+ * the stored path stays unrotated and the pose's `rotation` is preserved),
+ * then realigns the result to its own AABB origin and updates the pose's AABB
+ * fields. The invariant `pathInWorld(result.path, result.pose) === worldPath`
+ * holds (up to the AABB-center pivot), so anchor edits round-trip.
+ *
+ * Generic in the pose type so consumer-defined pose fields (including
+ * `rotation`) survive the round-trip. Used by both the edit-commit seam and the
+ * live anchor-drag preview so they share one world→local inversion.
+ */
+export function worldEditToStorage<P extends PathInWorldPose>(
+  pose: P,
+  worldPath: PolygonPath,
+): { pose: P; path: PolygonPath } {
+  const r = poseRotationOf(pose);
+  const unrotated = r ? rotatePathAround(worldPath, r.cx, r.cy, -r.rotation) : worldPath;
+  const bounds = boundsOfPath(unrotated);
+  const aligned = translatePath(unrotated, -bounds.x, -bounds.y) as PolygonPath;
+  return {
+    pose: { ...pose, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+    path: aligned,
   };
-  const [x0, y0] = rotate(x, y);
-  const [x1, y1] = rotate(x + w, y);
-  const [x2, y2] = rotate(x + w, y + h);
-  const [x3, y3] = rotate(x, y + h);
-  // M, L, L, L, Z
-  const commands = new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]);
-  const coords = new Float32Array([x0, y0, x1, y1, x2, y2, x3, y3]);
-  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
 }
-
-const COORD_COUNT: Readonly<Record<number, number>> = {
-  [PATH_M]: 2,
-  [PATH_L]: 2,
-  [PATH_C]: 6,
-  [PATH_Q]: 4,
-  [PATH_Z]: 0,
-};

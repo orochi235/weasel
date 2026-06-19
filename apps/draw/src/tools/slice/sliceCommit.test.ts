@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { computeSliceOps, type SliceLeaf, type WDLeafNode } from './sliceCommit';
 import { rectPath, type NodeId } from '@weasel-js/core';
 
+
 // ---------------------------------------------------------------------------
 // Fixture helpers
 // ---------------------------------------------------------------------------
@@ -47,7 +48,7 @@ describe('computeSliceOps', () => {
     };
 
     // Slice horizontally across the middle of the 100×100 square.
-    const ops = computeSliceOps({
+    const { ops } = computeSliceOps({
       leaves: [leaf],
       a: { x: -10, y: 50 },
       b: { x: 110, y: 50 },
@@ -79,7 +80,7 @@ describe('computeSliceOps', () => {
     };
 
     // Slice segment entirely to the right of the square — no crossings.
-    const ops = computeSliceOps({
+    const { ops } = computeSliceOps({
       leaves: [leaf],
       a: { x: 200, y: 0 },
       b: { x: 200, y: 100 },
@@ -105,7 +106,7 @@ describe('computeSliceOps', () => {
       worldPath: squarePath,
     };
 
-    const ops = computeSliceOps({
+    const { ops } = computeSliceOps({
       leaves: [leaf],
       a: { x: -10, y: 50 },
       b: { x: 110, y: 50 },
@@ -136,7 +137,7 @@ describe('computeSliceOps', () => {
       worldPath: squarePath,
     };
 
-    const ops = computeSliceOps({
+    const { ops } = computeSliceOps({
       leaves: [leafA, leafB],
       a: { x: -10, y: 50 },
       b: { x: 110, y: 50 },
@@ -166,5 +167,103 @@ describe('computeSliceOps', () => {
       (o) => (o as { args: { node: WDLeafNode } }).args.node.id,
     );
     expect(new Set(insertedIds).size).toBe(4);
+  });
+
+  it('no `selection` arg → nextSelection is null (pure-geometry callers unchanged)', () => {
+    const leaf: SliceLeaf = { node: makeLeafNode(), index: 0, worldPath: squarePath };
+    const { nextSelection } = computeSliceOps({
+      leaves: [leaf],
+      a: { x: -10, y: 50 }, b: { x: 110, y: 50 },
+      nextId,
+    });
+    expect(nextSelection).toBeNull();
+  });
+});
+
+describe('computeSliceOps — post-op selection (pieces inherit source state)', () => {
+  beforeEach(() => { _idCounter = 0; });
+
+  const horizontalSlice = { a: { x: -10, y: 50 }, b: { x: 110, y: 50 } };
+
+  /** Piece ids minted by the inserts, in order. */
+  function insertedIds(ops: ReturnType<typeof computeSliceOps>['ops']): string[] {
+    return ops
+      .filter((o) => o.name === 'insert')
+      .map((o) => (o as { args: { node: WDLeafNode } }).args.node.id);
+  }
+
+  it('selected source → its pieces replace the source in the selection', () => {
+    const leaf: SliceLeaf = {
+      node: makeLeafNode({ id: 'sel' as NodeId }),
+      index: 0,
+      worldPath: squarePath,
+    };
+    const { ops, nextSelection } = computeSliceOps({ leaves: [leaf], ...horizontalSlice, nextId, selection: ['sel'] });
+
+    const pieceIds = insertedIds(ops);
+    expect(pieceIds).toHaveLength(2);
+    // The pieces become the new selection; the deleted source id is gone.
+    expect(nextSelection).toEqual(pieceIds);
+    expect(nextSelection).not.toContain('sel');
+  });
+
+  it('unselected source → pieces are NOT selected (selection unchanged)', () => {
+    const leaf: SliceLeaf = {
+      node: makeLeafNode({ id: 'cut' as NodeId }),
+      index: 0,
+      worldPath: squarePath,
+    };
+    // A different node is selected; slicing `cut` must not select its pieces.
+    const { nextSelection } = computeSliceOps({ leaves: [leaf], ...horizontalSlice, nextId, selection: ['other'] });
+    expect(nextSelection).toEqual(['other']);
+  });
+
+  it('selected node the slice MISSED stays selected; sliced selected source is replaced', () => {
+    const sliced: SliceLeaf = {
+      node: makeLeafNode({ id: 'a' as NodeId }),
+      index: 0,
+      worldPath: squarePath,
+    };
+    const { ops, nextSelection } = computeSliceOps({
+      leaves: [sliced],
+      ...horizontalSlice,
+      nextId,
+      selection: ['a', 'survivor'],
+    });
+    // survivor kept; sliced 'a' replaced by its pieces; order: survivors then pieces.
+    expect(nextSelection).toEqual(['survivor', ...insertedIds(ops)]);
+  });
+
+  it('mixed: only the selected source contributes its pieces', () => {
+    const leafSel: SliceLeaf = {
+      node: makeLeafNode({ id: 'sel' as NodeId }),
+      index: 0,
+      worldPath: squarePath,
+    };
+    const leafUnsel: SliceLeaf = {
+      node: makeLeafNode({ id: 'unsel' as NodeId }),
+      index: 1,
+      worldPath: squarePath,
+    };
+    const { nextSelection } = computeSliceOps({
+      leaves: [leafSel, leafUnsel],
+      ...horizontalSlice,
+      nextId,
+      selection: ['sel'],
+    });
+    // The selected source 'sel' is sliced first → its two pieces are new-1,new-2.
+    expect(nextSelection).toEqual(['new-1', 'new-2']);
+  });
+
+  it('nothing sliced → empty ops and null nextSelection even with a selection', () => {
+    const leaf: SliceLeaf = { node: makeLeafNode({ id: 'a' as NodeId }), index: 0, worldPath: squarePath };
+    const { ops, nextSelection } = computeSliceOps({
+      leaves: [leaf],
+      a: { x: 200, y: 0 }, b: { x: 200, y: 100 }, // misses the square
+      nextId,
+      selection: ['a'],
+    });
+    expect(ops).toHaveLength(0);
+    expect(nextSelection).toBeNull();
   });
 });

@@ -38,6 +38,7 @@ import type { Path } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath } from 'features/paths/builder';
 import { boundsOfPath } from 'features/paths/bounds';
 import { translatePath } from 'features/paths/transform';
+import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 
 export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   /** Stable identifier — used for unregistration and debugging. Pick
@@ -99,17 +100,25 @@ export function findNodeShape<TData, TPose>(
   return undefined;
 }
 
-/** Find the painter for `node` and ask it for the node's silhouette path.
- *  Returns null if no painter matches, or the matching painter has no
- *  `silhouette` method, or the method returns null. Used by clipping,
- *  generic non-rect hit-testing, lasso, and SVG export — anywhere the
- *  kit needs the "closed boundary" of whatever this kind of node draws as. */
+/** Find the painter for `node` and ask it for the node's silhouette path,
+ *  in **world** coords. Returns null if no painter matches, or the matching
+ *  painter has no `silhouette` method, or the method returns null. Used by
+ *  clipping, generic non-rect hit-testing, lasso, and SVG export — anywhere
+ *  the kit needs the "closed boundary" of whatever this kind of node draws as.
+ *
+ *  Painters return their silhouette in the pose's local (unrotated) frame;
+ *  this bakes `pose.rotation` on top via the shared rotation convention, so
+ *  clips/area-select of a rotated node use the rotated boundary the renderer
+ *  draws. (`paint()` is unaffected — it applies rotation via the render wrap,
+ *  not the silhouette, so there is no double-rotation.) */
 export function findShapeSilhouette<TData, TPose>(
   node: Node<TData, string, TPose>,
   pose: TPose,
 ): Path | null {
-  const painter = findNodeShape(node);
-  return painter?.silhouette?.(node, pose) ?? null;
+  const sil = findNodeShape(node)?.silhouette?.(node, pose) ?? null;
+  if (!sil) return null;
+  const r = poseRotationOf(pose);
+  return r ? rotatePathAround(sil, r.cx, r.cy, r.rotation) : sil;
 }
 
 /** Snapshot of the current painters in evaluation order — `'high'` tier
@@ -156,11 +165,16 @@ const TEXT_PAINTER: NodeShapeEntry = {
  * Returns the path unchanged when the delta is zero so the fast-path
  * (no allocation, no Float32Array copy for polygons) stays hot.
  */
-/** Project a stored path to its rendered world position by translating
- *  its coords so the path's AABB origin matches the pose origin. Public
- *  so deps (e.g. useEditAnchorsDepSource) can compute world-space anchor
- *  positions without duplicating the renderer's translation math. */
-export function pathAtPose(path: Path, pose: RectPose): Path {
+/** Project a stored path into the pose's **local frame** — translate (and, for
+ *  rects, rebase to the pose's `width`/`height`) so the path's AABB origin sits
+ *  at the pose origin. This is translate-only: it does NOT apply
+ *  `pose.rotation`. The caller is responsible for the pose transform — the
+ *  renderer wraps the output in `wrapWithPoseRotation`; code that wants the
+ *  fully world-positioned (rotated) path should use `pathInWorld` instead.
+ *
+ *  Used by the local seams: the default painter (paint + silhouette), and as
+ *  the building block `findShapeSilhouette` rotates on top of. */
+export function pathInPoseFrame(path: Path, pose: RectPose): Path {
   if (path.kind === 'rect') {
     // Rebase the rect onto the pose. Resize updates `pose.width/height` (not
     // the path), so we honor those too — otherwise a corner drag would
@@ -198,7 +212,7 @@ const PATH_PAINTER: NodeShapeEntry = {
       strokeWidth?: number;
       color?: string;
     };
-    const projected = pathAtPose(d.path, pose as RectPose);
+    const projected = pathInPoseFrame(d.path, pose as RectPose);
     const hasStroke = !!d.stroke && d.stroke !== 'none' && (d.strokeWidth ?? 0) > 0;
     const fillColor = d.fill ?? d.color;
     // Treat 'none' as "skip fill". When neither fill nor color is set, fall
@@ -217,7 +231,7 @@ const PATH_PAINTER: NodeShapeEntry = {
   },
   silhouette: (node, pose) => {
     const d = node.data as { path: Path };
-    return pathAtPose(d.path, pose as RectPose);
+    return pathInPoseFrame(d.path, pose as RectPose);
   },
 };
 

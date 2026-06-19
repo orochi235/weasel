@@ -34,6 +34,7 @@ import {
   DEFAULT_ROTATION_HANDLE_DISTANCE,
 } from 'interactions/actions/rotate/handle';
 import { rotatePoint } from 'interactions/actions/rotate/geometry';
+import { poseRotationOf } from 'features/paths/poseRotation';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ChromeState } from 'core/selection/chromeState';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
@@ -50,11 +51,6 @@ function projectBounds<B extends Bounds>(b: B, view: View): B {
   return { ...b, x: sx, y: sy, width: b.width * view.scale.x, height: b.height * view.scale.y };
 }
 
-/** Pose with an optional rotation field — surfaced from `getBounds`'s
- *  return value so the overlay can branch into the rotated render path. */
-function rotationOf(b: Bounds): number {
-  return b.rotation ?? 0;
-}
 
 /** Options for `composeSelectionPose`. */
 export interface ComposeSelectionPoseOpts<TPose> {
@@ -390,15 +386,17 @@ function outlineCommandsFor(
       path: rectPathFor(r.x, r.y, r.width, r.height),
       stroke,
     };
-    const rotation = rotationOf(worldB);
-    if (rotation === 0) {
+    // Rotation gate + angle from the kit's one convention; pivot is the
+    // selection center in SCREEN space (the chrome is drawn post-projection).
+    const rot = poseRotationOf(worldB);
+    if (!rot) {
       out.push(cmd);
     } else {
       const cx = b.x + b.width / 2;
       const cy = b.y + b.height / 2;
       out.push({
         kind: 'group',
-        transform: rotateAroundMat3(cx, cy, rotation),
+        transform: rotateAroundMat3(cx, cy, rot.rotation),
         children: [cmd],
       });
     }
@@ -422,13 +420,15 @@ function handleCommandsFor(
     const worldB = resolveBounds(id);
     if (!worldB) continue;
     const b = projectBounds(worldB, view);
-    const rotation = rotationOf(worldB);
+    // Rotation gate + angle from the kit's one convention; pivot is the
+    // selection center in SCREEN space (handles are placed post-projection).
+    const r = poseRotationOf(worldB);
     const cx = b.x + b.width / 2;
     const cy = b.y + b.height / 2;
     for (const hWorld of handlesOf(worldB)) {
       const t = viewToTransform(view);
       const [hsx, hsy] = worldToScreen(hWorld.x, hWorld.y, t);
-      const center = rotation === 0 ? { x: hsx, y: hsy } : rotatePoint(hsx, hsy, cx, cy, rotation);
+      const center = r ? rotatePoint(hsx, hsy, cx, cy, r.rotation) : { x: hsx, y: hsy };
       const baseRect = {
         x: center.x - half,
         y: center.y - half,
@@ -446,12 +446,12 @@ function handleCommandsFor(
         path: rectPathFor(sr.x, sr.y, sr.width, sr.height),
         stroke: handles.outline,
       };
-      if (rotation === 0) {
+      if (!r) {
         out.push(fillCmd, strokeCmd);
       } else {
         out.push({
           kind: 'group',
-          transform: rotateAroundMat3(center.x, center.y, rotation),
+          transform: rotateAroundMat3(center.x, center.y, r.rotation),
           children: [fillCmd, strokeCmd],
         });
       }
@@ -471,7 +471,7 @@ function rotationHandleCommands(
   distance: number,
   view: View,
 ): DrawCommand[] {
-  const rotation = rotationOf(worldB);
+  const rotation = worldB.rotation ?? 0;
   const hWorld = rotationHandle({ ...worldB, rotation }, distance / meanScale(view.scale));
   const t = viewToTransform(view);
   const [scx, scy] = worldToScreen(hWorld.cx, hWorld.cy, t);

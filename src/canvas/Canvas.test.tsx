@@ -1026,15 +1026,15 @@ describe('buildSceneLayer hierarchical path', () => {
       () => null,
     );
     // buildSceneLayer emits raw world-space commands; drawLayers wraps in
-    // viewToMat3 at orchestration. The layer's output is the inner subtree.
+    // viewToMat3 at orchestration. The output is one group per layer; within a
+    // layer, nodes are bucketed FLAT by their own layer (bed + plant siblings),
+    // not nested under the container (buildSceneTree per-node-layer bucketing).
     const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
-    expect(out).toHaveLength(1);
+    expect(out).toHaveLength(1); // one 'bg' layer group
     const bgGroup = out[0] as { kind: string; children: DrawCommand[] };
     expect(bgGroup.kind).toBe('group');
-    expect(bgGroup.children).toHaveLength(1);
-    const bedGroup = bgGroup.children[0] as { kind: string; children: DrawCommand[] };
-    expect(bedGroup.kind).toBe('group');
-    expect(bedGroup.children).toHaveLength(2); // bed paint + plant wrapper
+    expect(bgGroup.children).toHaveLength(2); // bed + plant, flattened
+    for (const c of bgGroup.children) expect((c as { kind: string }).kind).toBe('group');
   });
 
   it('cfg.toPose is honored on the hierarchical path', () => {

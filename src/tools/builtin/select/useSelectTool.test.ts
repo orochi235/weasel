@@ -291,6 +291,66 @@ describe('useSelectTool', () => {
   // (also covered at the dispatcher level).
 });
 
+import { matchSorted, type ScopedBinding } from '../../../interactions/dispatcher/matcher';
+
+describe('useSelectTool — drag on an unselected body routes to move', () => {
+  // Regression: dragging a not-yet-selected object must MOVE it, not rotate.
+  //
+  // The pointerdown classifier (`pointer.onDown`) selects the hit node, but the
+  // gesture dispatcher bakes the `bodyTarget` BEFORE that selection lands — so
+  // the first drag on a fresh object carries `bodyTarget: 'unselected-body'`.
+  // With only a `'selected-body'` move binding, that drag found no ACTIVE match
+  // and fell through to the ambient `rotate` catch-all (`{ kind: 'drag' }`,
+  // whose `start()` only guards on a non-empty selection — which the classifier
+  // has by then established). Result: first drag rotated, subsequent drags
+  // (now pre-selected) moved. The select tool must own an active
+  // `unselected-body` → move binding so the active scope wins, exactly as
+  // `clone` already binds both selected- and unselected-body variants.
+  function downEvent(bodyTarget: 'selected-body' | 'unselected-body') {
+    return {
+      kind: 'pointerdown' as const,
+      x: 0, y: 0, clientX: 0, clientY: 0,
+      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+      bodyTarget,
+    };
+  }
+
+  // The ambient rotate catch-all that hijacked the first drag pre-fix.
+  const ambientRotate: ScopedBinding = {
+    binding: { spec: { kind: 'drag' }, actionId: 'rotate' },
+    scope: 'ambient',
+    ownerToolId: null,
+  };
+
+  function selectBindings(): ScopedBinding[] {
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['hit-id'],
+        boundsOf: () => ({ x: 0, y: 0, width: 40, height: 30 }),
+      }),
+    );
+    return (result.current.bindings ?? []).map((binding) => ({
+      binding,
+      scope: 'active' as const,
+      ownerToolId: 'select',
+    }));
+  }
+
+  it('unselected-body drag (no modifiers) wins for move over the ambient rotate catch-all', () => {
+    const bindings = [...selectBindings(), ambientRotate];
+    const top = matchSorted(downEvent('unselected-body'), bindings, false)[0];
+    expect(top?.binding.actionId).toBe('move');
+    expect(top?.scope).toBe('active');
+  });
+
+  it('selected-body drag still routes to move (unchanged)', () => {
+    const bindings = [...selectBindings(), ambientRotate];
+    const top = matchSorted(downEvent('selected-body'), bindings, false)[0];
+    expect(top?.binding.actionId).toBe('move');
+    expect(top?.scope).toBe('active');
+  });
+});
+
 import { createDebugSink } from '../../../debug/createDebugSink';
 
 describe('useSelectTool — debug recording', () => {

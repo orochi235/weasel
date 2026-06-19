@@ -129,6 +129,11 @@ export { enterTextEditAction } from './interactions/actions/defaults/enterTextEd
 export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
 export { useStandardActions } from './interactions/actions/useStandardActions';
 export type { UseStandardActionsOptions } from './interactions/actions/useStandardActions';
+// Scene-backed op applier for the consumer `applyOps` commit hook — applies a
+// default action's committed ops directly to the scene in its native (local)
+// frame. Consumers route their own history integration through `applyOps` and
+// use this to perform the actual mutation (see DepSchema['applyOps']).
+export { defaultCommitAdapter } from './interactions/actions/defaultCommitAdapter';
 
 // ─── Invoker / GestureBinding / ActiveToolContext ───
 export type {
@@ -477,6 +482,9 @@ export {
   translatePolygonInPlace,
   scalePathToBounds,
   pathInWorld,
+  worldEditToStorage,
+  poseRotationOf,
+  rotatePathAround,
   createPathLayer,
   flattenCubic,
   flattenQuadratic,

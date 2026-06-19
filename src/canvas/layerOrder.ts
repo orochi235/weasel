@@ -24,6 +24,12 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
 export function composeOrderedLayers(
   layersMap: Record<string, LayerSlotValue<any, any> | null | undefined>,
   standardLayers: Partial<Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>>,
+  /** When the `scene` slot is split into per-scene-layer canvas layers (keyed
+   *  `scene:<layerId>`), pass them here in render order. Each key becomes an
+   *  anchor point, so customs can target `before/after: 'scene:<layerId>'`.
+   *  `before/after: 'scene'` still works (before the first / after the last).
+   *  When omitted, the `scene` slot uses `standardLayers.scene` as before. */
+  sceneLayers?: ReadonlyArray<{ key: string; layer: RenderLayer<unknown> }>,
 ): RenderLayer<unknown>[] {
   // Map<parent key, [{ key, layer }, ...]> — children grouped by their declared anchor.
   const afterByParent = new Map<string, Array<{ key: string; layer: RenderLayer<unknown> }>>();
@@ -81,6 +87,18 @@ export function composeOrderedLayers(
   }
 
   for (const slot of STANDARD_SLOTS) {
+    if (slot === 'scene' && sceneLayers) {
+      // Split scene slot: emit each per-scene-layer canvas layer in order, with
+      // its own anchor point. `before/after: 'scene'` brackets the whole group.
+      emitBefore('scene');
+      for (const sl of sceneLayers) {
+        emitBefore(sl.key);
+        out.push(sl.layer);
+        emitAfter(sl.key);
+      }
+      emitAfter('scene');
+      continue;
+    }
     emitBefore(slot);
     const layer = standardLayers[slot];
     if (layer) out.push(layer);

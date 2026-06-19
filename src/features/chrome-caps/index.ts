@@ -28,6 +28,7 @@ export {
   never,
   focused,
   gesturing,
+  resizable,
   actionIs,
   selectionEmpty,
   selectionIs,
