@@ -10,6 +10,7 @@ import { worldToScreen } from 'core/viewport/viewTransform';
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../../renderer';
 import type { Tool, ToolCtx } from '../../types';
+import { GHOST_STROKE } from '../../../util/paint';
 
 export interface EllipseBounds {
   x: number;
@@ -31,7 +32,7 @@ export interface UseEllipseToolOptions<TNode extends { id: string }> {
 
 const DEFAULT_STYLE = {
   fill: 'rgba(127, 176, 105, 0.25)',
-  stroke: '#7fb069',
+  stroke: GHOST_STROKE,
   dash: [4, 4] as number[],
   lineWidth: 1,
 };

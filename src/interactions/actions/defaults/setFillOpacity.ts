@@ -7,6 +7,7 @@ import type { Op } from 'core/ops/types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { withAlpha01 } from '../../../util/color';
+import { DEFAULT_FILL_COLOR } from '../../../util/paint';
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -33,7 +34,7 @@ function refreshPreviews(scratch: SetFillOpacityScratch): void {
   scratch.previews.clear();
   for (const id of scratch.ids) {
     const prev = scratch.startData.get(id);
-    const next = withAlpha01(prev?.fill ?? '#ffffffff', scratch.currentAlpha);
+    const next = withAlpha01(prev?.fill ?? DEFAULT_FILL_COLOR, scratch.currentAlpha);
     scratch.previews.set(id, { ...(prev ?? {}), fill: next });
   }
 }
@@ -116,7 +117,7 @@ export const setFillOpacityAction: Action & { requires: string[] } = {
           const ops: Op[] = [];
           for (const id of scratch.ids) {
             const prev = scratch.startData.get(id);
-            const next = withAlpha01(prev?.fill ?? '#ffffffff', scratch.currentAlpha);
+            const next = withAlpha01(prev?.fill ?? DEFAULT_FILL_COLOR, scratch.currentAlpha);
             // Re-read so concurrent edits to non-fill fields aren't clobbered on commit.
             const nodeNow = scratch.scene.get(id);
             if (!nodeNow) continue;

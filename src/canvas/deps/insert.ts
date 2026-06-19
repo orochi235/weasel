@@ -26,12 +26,11 @@ import {
   polygonFromPoints,
 } from 'features/paths/builder';
 import { schneiderFit } from 'features/paths/schneiderFit';
+import { DEFAULT_PALETTE } from '../../util/paint';
 
 interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
 }
-
-const DEFAULT_FILLS = ['#7fb069', '#d4a574', '#a48bd4', '#7ab8d4', '#d47a7a'];
 
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
@@ -62,7 +61,7 @@ export function useInsertDepSource(
           seq = ++insertSeqRef.current;
           id = asNodeId(`kit-${kind}-${seq}`);
         }
-        const fill = DEFAULT_FILLS[seq % DEFAULT_FILLS.length];
+        const fill = DEFAULT_PALETTE[seq % DEFAULT_PALETTE.length];
         const layer = (sc.layers[0]?.id ?? 'default') as string;
 
         let data: unknown;

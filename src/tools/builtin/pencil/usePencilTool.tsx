@@ -8,8 +8,8 @@ import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../../../renderer';
 import type { Tool } from '../../types';
 import type { PolygonPath } from 'features/paths/types';
+import { GHOST_STROKE } from '../../../util/paint';
 
-const GHOST_STROKE = '#7fb069';
 const GHOST_LINE_WIDTH = 1;
 
 /** A single pointer sample captured during a freehand pencil stroke.

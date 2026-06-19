@@ -18,7 +18,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ActivePaint } from '../../ActiveSwatches';
 import { DEFAULT_FILL, DEFAULT_STROKE } from '../../ActiveSwatches';
-import { getAlpha01, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@weasel-js/core';
+import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, getAlpha01, mergeAlphaFromPrev, toHex8, withAlpha01 } from '@weasel-js/core';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -109,13 +109,13 @@ export function ColorContextProvider({
   // — 8-char inputs win outright.
   const setFillColor = useCallback((color: string) => {
     setPaints((cur) => {
-      const prev = cur.fill.kind === 'solid' ? cur.fill.color : '#ffffffff';
+      const prev = cur.fill.kind === 'solid' ? cur.fill.color : DEFAULT_FILL_COLOR;
       return { ...cur, fill: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
     });
   }, []);
   const setStrokeColor = useCallback((color: string) => {
     setPaints((cur) => {
-      const prev = cur.stroke.kind === 'solid' ? cur.stroke.color : '#000000ff';
+      const prev = cur.stroke.kind === 'solid' ? cur.stroke.color : DEFAULT_STROKE_COLOR;
       return { ...cur, stroke: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
     });
   }, []);
@@ -123,10 +123,10 @@ export function ColorContextProvider({
     setPaints((cur) => {
       const which = focusedRef.current;
       if (which === 'fill') {
-        const prev = cur.fill.kind === 'solid' ? cur.fill.color : '#ffffffff';
+        const prev = cur.fill.kind === 'solid' ? cur.fill.color : DEFAULT_FILL_COLOR;
         return { ...cur, fill: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
       } else {
-        const prev = cur.stroke.kind === 'solid' ? cur.stroke.color : '#000000ff';
+        const prev = cur.stroke.kind === 'solid' ? cur.stroke.color : DEFAULT_STROKE_COLOR;
         return { ...cur, stroke: { kind: 'solid', color: color.length === 9 ? color : mergeAlphaFromPrev(color, prev) } };
       }
     });

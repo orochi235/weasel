@@ -2,6 +2,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { enumerateAnchors } from './geometry';
 import type { DrawCommand } from '../../../renderer';
+import { GHOST_STROKE } from '../../../util/paint';
 
 const CIRCLE_SEGMENTS = 12;
 
@@ -55,7 +56,7 @@ export function createAnchorEditOverlayLayer(opts: AnchorEditOverlayOpts): Rende
   const controlRadius = opts.controlRadius ?? 3;
   const anchorFill = opts.anchorFill ?? '#fff';
   const anchorStroke = opts.anchorStroke ?? '#1a130d';
-  const selectedAnchorFill = opts.selectedAnchorFill ?? '#7fb069';
+  const selectedAnchorFill = opts.selectedAnchorFill ?? GHOST_STROKE;
   const controlFill = opts.controlFill ?? '#1a130d';
   const controlStroke = opts.controlStroke ?? '#fff';
   return {

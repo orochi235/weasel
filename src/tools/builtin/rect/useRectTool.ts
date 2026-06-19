@@ -7,6 +7,7 @@ import { createInsertOp } from 'core/ops/create';
 import { marqueeDrawCommands, type InsertOverlayStyle } from '../marquee';
 import type { Tool, ToolCtx } from '../../types';
 import type { View } from 'core/viewport/view';
+import { GHOST_STROKE } from '../../../util/paint';
 
 export interface RectBounds {
   x: number;
@@ -28,7 +29,7 @@ export interface UseRectToolOptions<TNode extends { id: string }> {
 
 const DEFAULT_STYLE = {
   fill: 'rgba(127, 176, 105, 0.25)',
-  stroke: '#7fb069',
+  stroke: GHOST_STROKE,
   dash: [4, 4] as number[],
   lineWidth: 1,
 };

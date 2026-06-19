@@ -30,6 +30,14 @@ describe('oklchToHex', () => {
     const hex = oklchToHex(0.7, 0.5, 30);
     expect(hex).toMatch(/^#[0-9a-f]{6}$/);
   });
+
+  it('matches known in-gamut L/C/H → hex values', () => {
+    // Pinned outputs from the pre-dedup implementation; the kit pipeline
+    // must stay numerically equivalent for in-gamut inputs.
+    expect(oklchToHex(0.7, 0.15, 30)).toBe('#ed7665');
+    expect(oklchToHex(0.6, 0.1, 150)).toBe('#519160');
+    expect(oklchToHex(0.5, 0.08, 260)).toBe('#486491');
+  });
 });
 
 describe('chromaAt', () => {

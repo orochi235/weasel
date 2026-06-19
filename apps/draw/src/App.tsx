@@ -55,6 +55,7 @@ import {
   worldToScreen,
   ActiveToolContextProvider,
   useActiveToolContext,
+  DEFAULT_STROKE_COLOR,
 } from '@weasel-js/core';
 import { SidebarPanel, ToolPalette } from '@weasel-js/ui';
 
@@ -308,6 +309,12 @@ const PALETTE: { value: string | null; label: string }[] = [
   { value: '#9d174dff', label: 'Pink 800' },
   { value: '#831843ff', label: 'Pink 900' },
 ];
+
+/** Seed fill for a fresh document. Intentionally a friendly blue rather than
+ *  the kit's white `DEFAULT_FILL_COLOR` — a new shape lands visible against
+ *  the white page instead of disappearing into it. Keep distinct from the
+ *  kit default on purpose. */
+const INITIAL_FILL_COLOR = '#7ab8d4ff';
 
 // ─── Toolbar host: bridges the Actions Registry into ActionBar's flat-prop API ─
 
@@ -1049,8 +1056,8 @@ export function App(): ReactElement {
     return () => clearTimeout(id);
   });
 
-  const initialFill: ActivePaint = { kind: 'solid', color: '#7ab8d4ff' };
-  const initialStroke: ActivePaint = { kind: 'solid', color: '#000000ff' };
+  const initialFill: ActivePaint = { kind: 'solid', color: INITIAL_FILL_COLOR };
+  const initialStroke: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR };
 
   return (
     <ColorContextProvider

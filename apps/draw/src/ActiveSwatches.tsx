@@ -11,7 +11,7 @@
  */
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { useRef } from 'react';
-import { mergeAlphaFromPrev, useActionsRegistry } from '@weasel-js/core';
+import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR, mergeAlphaFromPrev, useActionsRegistry } from '@weasel-js/core';
 import type { UiOngoingControl } from '@weasel-js/core';
 import { useColorContext } from './tools/colorContext';
 
@@ -20,8 +20,8 @@ export type ActivePaint =
   | { kind: 'none' }
   | { kind: 'transparent' };
 
-export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: '#ffffffff' };
-export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: '#000000ff' };
+export const DEFAULT_FILL: ActivePaint = { kind: 'solid', color: DEFAULT_FILL_COLOR };
+export const DEFAULT_STROKE: ActivePaint = { kind: 'solid', color: DEFAULT_STROKE_COLOR };
 
 /** Slice an `#rrggbbaa` color to the 6-char form that
  *  `<input type="color">` accepts as `value`. */
@@ -140,8 +140,8 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
   const colors = useColorContext();
   const fillColor = colors.fill.kind === 'solid' ? toHex6(colors.fill.color) : '#ffffff';
   const strokeColor = colors.stroke.kind === 'solid' ? toHex6(colors.stroke.color) : '#000000';
-  const fillPrev = colors.fill.kind === 'solid' ? colors.fill.color : '#ffffffff';
-  const strokePrev = colors.stroke.kind === 'solid' ? colors.stroke.color : '#000000ff';
+  const fillPrev = colors.fill.kind === 'solid' ? colors.fill.color : DEFAULT_FILL_COLOR;
+  const strokePrev = colors.stroke.kind === 'solid' ? colors.stroke.color : DEFAULT_STROKE_COLOR;
   const containerClass = `wd-active-swatches${p.compact ? ' wd-active-swatches--compact' : ''}`;
   // Shift-click toggles between solid/none. Plain click updates focus and
   // lets the native color input (which receives the bubbled click) open
@@ -153,7 +153,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
       e.preventDefault();
       const cur = which === 'fill' ? colors.fill : colors.stroke;
       const next: ActivePaint = cur.kind === 'none'
-        ? { kind: 'solid', color: which === 'fill' ? '#ffffffff' : '#000000ff' }
+        ? { kind: 'solid', color: which === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR }
         : { kind: 'none' };
       if (which === 'fill') colors.setFill(next);
       else colors.setStroke(next);
@@ -167,7 +167,7 @@ export function ActiveSwatches(p: ActiveSwatchesProps) {
   const toggleNone = (): void => {
     const cur = colors.focused === 'fill' ? colors.fill : colors.stroke;
     const next: ActivePaint = cur.kind === 'none'
-      ? { kind: 'solid', color: colors.focused === 'fill' ? '#ffffffff' : '#000000ff' }
+      ? { kind: 'solid', color: colors.focused === 'fill' ? DEFAULT_FILL_COLOR : DEFAULT_STROKE_COLOR }
       : { kind: 'none' };
     if (colors.focused === 'fill') colors.setFill(next);
     else colors.setStroke(next);

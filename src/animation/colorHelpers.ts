@@ -6,6 +6,7 @@ import type {
 } from './types';
 import type { VertexColorChannel } from './colorRegistry';
 import { lerpColorArray, type ColorSpace } from './colorSpaces';
+import { hslToRgb } from '../renderer/math/color';
 
 /**
  * Color interpolator: receives two flat RGBA float arrays (values in
@@ -320,20 +321,10 @@ export function solidVertexColors(
   return out;
 }
 
-/** HSL → RGB in 0..1. Standard formula; mirrors the internal one in
- *  `renderer/math/color.ts` but exported here so consumers building
- *  hue-cycled color arrays don't have to roll their own. */
+/** HSL → RGB in 0..1 (hue in degrees). Delegates to the single internal
+ *  implementation in `renderer/math/color.ts` so there's only one HSL→RGB
+ *  formula in the package. Kept local so consumers building hue-cycled
+ *  color arrays via `huesweepVertexColors` don't have to roll their own. */
 function hslToRgbUnit(h: number, s: number, l: number): [number, number, number] {
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const hp = h / 60;
-  const x = c * (1 - Math.abs((hp % 2) - 1));
-  let r = 0, g = 0, b = 0;
-  if (hp < 1) { r = c; g = x; }
-  else if (hp < 2) { r = x; g = c; }
-  else if (hp < 3) { g = c; b = x; }
-  else if (hp < 4) { g = x; b = c; }
-  else if (hp < 5) { r = x; b = c; }
-  else { r = c; b = x; }
-  const m = l - c / 2;
-  return [r + m, g + m, b + m];
+  return hslToRgb(h, s, l);
 }
