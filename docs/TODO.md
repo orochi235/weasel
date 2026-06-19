@@ -54,7 +54,6 @@ Priority tags:
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
 
 **Canvas / SceneCanvas seam**
-- Drop the public `Canvas` export (fate decided: private) → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
 - Tighten `CanvasProps.adapter` to remove SceneCanvas casts → [Canvas / SceneCanvas seam](#canvas--scenecanvas-seam)
 
 **Documentation**
@@ -323,13 +322,11 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 ### Canvas / SceneCanvas seam
 
-Seam refactor landed 2026-05-24 (plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). After the refactor, `<Canvas>` is a coherent scene-agnostic primitive — WebGL surface + viewport (pinch zoom) + pointer routing + slot composition. Selection, picking, kind registry, scene-aware overlays all live in `<SceneCanvas>`. `<Canvas>` is `@internal` / `@deprecated` — fate decided as private; the only open work is dropping its public barrel export (below).
-
-- **(P2) Drop the public `Canvas` export.** Fate decided: `<Canvas>` is private — `src/canvas/Canvas.tsx` is already marked `@internal` / `@deprecated` ("Bare `<Canvas>` is not a supported consumer surface"). The remaining step is mechanical: remove `export { Canvas }` from `src/index.ts:231`; internal consumers (`SceneCanvas`, test files) keep importing from `src/canvas/Canvas` directly. Audit `demo/` + `apps/` for any bare-`Canvas` consumer before deleting. If a future force-graph-style use case wedges on `<SceneCanvas>` because its store isn't `Scene<...>`-shaped, re-promotion is a clean decision to revisit then — but don't keep the export alive speculatively.
+Seam refactor landed 2026-05-24 (plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). After the refactor, `<Canvas>` is a coherent scene-agnostic primitive — WebGL surface + viewport (pinch zoom) + pointer routing + slot composition. Selection, picking, kind registry, scene-aware overlays all live in `<SceneCanvas>`. `<Canvas>` is `@internal` / `@deprecated` and no longer exported from the public barrel (2026-06-19) — it's now private. Internal consumers import it directly from `src/canvas/Canvas`.
 
 - **(P3) Remove the `background` prop on `<Canvas>`.** Marked `@deprecated` during the seam refactor in favor of `backgroundFill`. Three demos still use it; migrate them and delete the prop.
 
-- **(P3) Tighten `CanvasProps.adapter` to remove the `getLayers`/`getChildren` casts in SceneCanvas.** The seam refactor left a small type smell where SceneCanvas casts the adapter to access scene-tree methods Canvas's `adapter` type doesn't include. Options: widen `CanvasProps.adapter` to a `SceneLayerAdapter` mixin (clean type, leaks scene-shape into Canvas), or move the `buildSceneLayer` construction out of Canvas (cleaner separation, larger diff). Decide alongside the public-surface fate question above.
+- **(P3) Tighten `CanvasProps.adapter` to remove the `getLayers`/`getChildren` casts in SceneCanvas.** The seam refactor left a small type smell where SceneCanvas casts the adapter to access scene-tree methods Canvas's `adapter` type doesn't include. Options: widen `CanvasProps.adapter` to a `SceneLayerAdapter` mixin (clean type, leaks scene-shape into Canvas), or move the `buildSceneLayer` construction out of Canvas (cleaner separation, larger diff). Now that `<Canvas>` is private, this is a pure internal-cleanliness call — no consumer-facing type impact.
 
 - **(P3) `boundsOf` surface inconsistency.** `boundsOf` is kept on `CanvasProps` (still used by Canvas's internal layer composition + bare-Canvas consumers) but explicitly Omitted from `SceneCanvasProps`. Either expose it on SceneCanvas (consistency) or document the asymmetry where it lives.
 
