@@ -58,23 +58,23 @@ export * from './features/viewports';
 export * from './features/parallax';
 export * from './features/simulation';
 
-// ─── Pointer input: stylus / coalesced events / pressure ────────────────────
+// ─── Stylus input: stylus / coalesced events / pressure ─────────────────────
 export {
   getStylusData,
   forEachCoalesced,
   pressureToWidth,
-} from './core/pointer/stylus';
+} from './core/stylus/stylus';
 export type {
   StylusData,
   PointerSample,
   CoalescedCtx,
   PressureToWidthOptions,
-} from './core/pointer/stylus';
-export { usePointerStylus } from './core/pointer/usePointerStylus';
+} from './core/stylus/stylus';
+export { usePointerStylus } from './core/stylus/usePointerStylus';
 export type {
   PointerStylusState,
   UsePointerStylusOptions,
-} from './core/pointer/usePointerStylus';
+} from './core/stylus/usePointerStylus';
 
 // ─── Viewport: ViewTransform + helpers ──────────────────────────────────────
 export * from './core/viewport/viewTransform';
