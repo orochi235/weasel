@@ -6,3 +6,4 @@ export { identity, translate, scale, rotate, multiply, invert, applyToPoint, box
 export { boundsOfCoords, unionBox, boxContainsPoint, rectToContour, type Box } from './box';
 export { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, forEachSegment } from './commands';
 export { cubicEvalAt, elevateQuadraticToCubic, flattenCubic, cubicBounds } from './curve';
+export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
