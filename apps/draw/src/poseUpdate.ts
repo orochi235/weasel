@@ -1,5 +1,4 @@
 import type { BooleanOp, Path, TextStyle } from '@weasel-js/core';
-import { scalePathToBounds, translatePath } from '@weasel-js/core';
 
 export type ToolKind =
   | 'rect' | 'ellipse' | 'polygon' | 'star' | 'line'
@@ -46,32 +45,3 @@ export type Obj = PathObj | TextObj;
  *  means "clear rotation". */
 export interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
-/** Apply a new pose to an Obj, mirroring the shape-aware rules in the
- *  WeaselDraw adapter: text rescales fontSize with height, paths rescale
- *  their geometry. Rotation is stored on the resulting Obj. */
-export function applyPoseToObj(prev: Obj, pose: Pose): Obj {
-  // Decide what rotation to write. `rotation: undefined` in `pose` means
-  // "preserve". `rotation: 0` clears.
-  const nextRotation = pose.rotation === undefined ? prev.rotation : pose.rotation;
-  const rectFields = { x: pose.x, y: pose.y, width: pose.width, height: pose.height, rotation: nextRotation };
-  if (prev.tool === 'text' && pose.height !== prev.height) {
-    const fontSize = Math.max(8, Math.round(pose.height * 0.7));
-    const style = { ...(prev.style ?? {}), fontSize };
-    return { ...prev, ...rectFields, style };
-  }
-  if (prev.tool !== 'text') {
-    // PathObj — narrow via tool discriminator.
-    const moved = pose.width !== prev.width || pose.height !== prev.height;
-    const path = moved
-      ? scalePathToBounds(prev.path, {
-          kind: 'rect',
-          x: pose.x, y: pose.y,
-          width: pose.width, height: pose.height,
-        })
-      : translatePath(prev.path, pose.x - prev.x, pose.y - prev.y);
-    // `tool` and `params` carry through via spread — resize is intentionally
-    // tool/params-blind (drift is acceptable per the spec).
-    return { ...prev, ...rectFields, path };
-  }
-  return { ...prev, ...rectFields };
-}
