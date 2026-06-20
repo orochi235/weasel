@@ -36,7 +36,6 @@ Priority tags:
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
 - Group resize with rotated children → [Scene, adapters & layout](#scene-adapters--layout)
 - SceneCanvas → useSceneAdapter for adapter construction → [Scene, adapters & layout](#scene-adapters--layout)
-- `useScene`: user-layer mutation methods → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: AABB-fallback assumes rect-shaped TPose → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
@@ -160,7 +159,6 @@ Core five + Crop shipped. Remaining:
 
 ### `useScene` follow-ups
 
-- **(P2) User-layer mutation methods** (`addLayer`/`removeLayer`/`renameLayer`/`moveLayer`). Layers are fixed at construction via `systemLayers`; only `setLayer`/`setLayerVisible`/`setLayerLocked` exist.
 - **(P3) Container layout strategies in `useScene`** (today: absolute-positioning only).
 - **(P3) Selection-in-Scene vs external.**
 - **(P3) Tree-mutation invariants documented explicitly** (`remove(container)` cascade, `move` cycle detection, `setLayer` on container). All three are already pinned by tests in `src/core/scene/scene.test.ts`; the remaining gap is explicit prose documentation.
