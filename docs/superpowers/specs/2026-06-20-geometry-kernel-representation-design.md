@@ -13,7 +13,7 @@ follow-up migration. It deliberately does **not** carry the migration itself —
 the seven canonical ops, deleting duplicates, and fixing the resize-after-boolean bug live
 in Spec 2 (`...-geometry-migration-design.md`), written and executed against this foundation.
 
-Companion analysis: `GEOMETRY_AUDIT_REPORT.md` (root) — the seven canonical seams, the
+Companion analysis: `2026-06-20-geometry-consolidation-analysis.md` (same dir) — the seven canonical seams, the
 geometry-representation split, the 13 ranked work items. This spec is the foundation those
 work items build on.
 
