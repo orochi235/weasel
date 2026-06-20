@@ -6,8 +6,10 @@ import type {
   ResizePose,
 } from 'interactions/gestures/types';
 import { meanScale } from 'core/viewport/meanScale';
+import { unionBounds } from 'features/groups/unionBounds';
 import type {
   AlignAnchor,
+  AlignBounds,
   AlignBoundsProjection,
   AlignmentBehaviorBase,
 } from './types';
@@ -26,20 +28,27 @@ function worldTol(base: AlignmentBehaviorBase): number {
   return base.getView ? t / Math.max(1e-9, meanScale(base.getView().scale)) : t;
 }
 
-/** Move behavior: snap the dragged box's edges/center to candidates, shaping
- *  the proposed translate. Publishes the matched line(s); clears on miss/end. */
+/** Move behavior: snap the dragged selection's union box (edges + center) to
+ *  candidates, shaping the proposed translate. The gesture applies the
+ *  transform uniformly to every dragged id, so the selection shifts together
+ *  and stays rigid. Single-select is the degenerate one-box union. Publishes
+ *  the matched line(s); clears on miss/end. */
 export function alignMoveBehavior<TPose>(args: AlignMoveArgs<TPose>): MoveBehavior<TPose> {
   const proj = args.projection ?? (RECT_ALIGN_PROJECTION as unknown as AlignBoundsProjection<TPose>);
   return {
     onMove(ctx, transform) {
       if (args.bypassKey && ctx.modifiers[args.bypassKey]) { args.setActiveGuides([]); return; }
       if (transform.kind !== 'translate') return;
-      const primaryId = ctx.draggedIds[0];
-      if (primaryId === undefined) return;
-      const originPose = ctx.origin.get(primaryId);
-      if (originPose === undefined) return;
-      const proposed = proj.translate(originPose, transform.dx, transform.dy);
-      const m = matchAlignment(proj.boundsOf(proposed), args.getCandidates(), worldTol(args), MOVE_ANCHORS);
+      // Union AABB of every dragged id at its proposed (translated) position.
+      const boxes: AlignBounds[] = [];
+      for (const id of ctx.draggedIds) {
+        const originPose = ctx.origin.get(id);
+        if (originPose === undefined) continue;
+        boxes.push(proj.boundsOf(proj.translate(originPose, transform.dx, transform.dy)));
+      }
+      const union = unionBounds(boxes);
+      if (union === null) return;
+      const m = matchAlignment(union, args.getCandidates(), worldTol(args), MOVE_ANCHORS);
       if (m.activeX === null && m.activeY === null) { args.setActiveGuides([]); return; }
       args.setActiveGuides(activeList(m));
       return { transform: { kind: 'translate', dx: transform.dx + m.dx, dy: transform.dy + m.dy } };

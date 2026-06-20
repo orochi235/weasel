@@ -79,6 +79,51 @@ describe('alignMoveBehavior', () => {
     expect(b.onMove!(ctx({ alt: true }), tt(0, 0))).toBeUndefined();
     expect(active).toEqual([]);
   });
+
+  it('matches the union box of a multi-id selection and returns one shared delta', () => {
+    // Two dragged boxes: A at x∈[100,150], B at x∈[180,260]. Union L=100, R=260.
+    const o = new Map<string, Pose>([
+      ['a', { x: 100, y: 100, width: 50, height: 50 }],
+      ['b', { x: 180, y: 100, width: 80, height: 50 }],
+    ]);
+    const c: GestureContext<Pose> = {
+      draggedIds: ['a', 'b'], origin: o, current: new Map(), snap: null,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+      adapter: {} as never, scratch: {},
+    };
+    let active: readonly Guide[] = [];
+    const b = alignMoveBehavior<Pose>({
+      // candidate near the union's RIGHT edge (260) — neither box's own right edge.
+      getCandidates: () => [{ id: 'ur', axis: 'x', offset: 262 }],
+      setActiveGuides: (g) => { active = g; },
+      tolerance: 5,
+    });
+    // proposed translate (0,0): union right = 260, candidate 262 → dx +2.
+    expect(b.onMove!(c, tt(0, 0))).toEqual({ transform: { kind: 'translate', dx: 2, dy: 0 } });
+    expect(active).toEqual([{ id: 'ur', axis: 'x', offset: 262 }]);
+  });
+
+  it('snaps the union center across two boxes', () => {
+    const o = new Map<string, Pose>([
+      ['a', { x: 100, y: 100, width: 40, height: 40 }],
+      ['b', { x: 200, y: 100, width: 40, height: 40 }],
+    ]);
+    const c: GestureContext<Pose> = {
+      draggedIds: ['a', 'b'], origin: o, current: new Map(), snap: null,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      pointer: { worldX: 0, worldY: 0, clientX: 0, clientY: 0 },
+      adapter: {} as never, scratch: {},
+    };
+    let active: readonly Guide[] = [];
+    const b = alignMoveBehavior<Pose>({
+      getCandidates: () => [{ id: 'uc', axis: 'x', offset: 171 }], // union cx = (100+240)/2 = 170
+      setActiveGuides: (g) => { active = g; },
+      tolerance: 5,
+    });
+    expect(b.onMove!(c, tt(0, 0))).toEqual({ transform: { kind: 'translate', dx: 1, dy: 0 } });
+    expect(active[0]!.id).toBe('uc');
+  });
 });
 
 describe('alignInsertBehavior', () => {

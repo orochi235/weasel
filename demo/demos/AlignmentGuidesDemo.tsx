@@ -28,7 +28,9 @@ export function AlignmentGuidesDemo() {
       { id: 'drag' as never, kind: 'leaf', layer: 'default', pose: { x: 200, y: 60, width: 70, height: 70 }, data: { color: '#b07fd0' } },
     ],
   });
-  const selection = useSelection();
+  // Multi-select so shift-clicking several rects and dragging snaps the
+  // selection's union box, not just one rect.
+  const selection = useSelection({ mode: 'multi' });
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   // Active guides live in a ref so the layer reads them each draw without a
@@ -63,6 +65,7 @@ export function AlignmentGuidesDemo() {
       className="ckd-canvas"
       scene={scene}
       selection={selection}
+      selectionMode="multi"
       selectTool={{ move: { behaviors } }}
       view={view}
       onViewChange={setView}
