@@ -3,3 +3,4 @@ export const GEOM_PACKAGE = '@weasel-js/geom';
 
 export { cross, dot, sub, len2, sign, approxEq, EPS } from './scalar';
 export { identity, translate, scale, rotate, multiply, invert, applyToPoint, boxToBox, rotateAboutPoint, type Mat3 } from './mat3';
+export { boundsOfCoords, unionBox, boxContainsPoint, rectToContour, type Box } from './box';
