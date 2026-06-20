@@ -36,6 +36,9 @@ export interface UseModalityReturn {
   decorations: ModeDecorations;
   scopingDim: ScopingDim;
   decorationLayer: RenderLayer<unknown>;
+  /** The live undo/redo History backing the mode machine. Exposed so the app
+   *  can `serialize()` it for persistence and `restore()` it on reload. */
+  history: History;
 }
 
 // ─── Hook ────────────────────────────────────────────────────────────────────
@@ -143,5 +146,5 @@ export function useModality(
     [decorations],
   );
 
-  return { machine, decorations, scopingDim, decorationLayer };
+  return { machine, decorations, scopingDim, decorationLayer, history };
 }

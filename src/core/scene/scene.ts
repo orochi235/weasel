@@ -14,6 +14,7 @@ import {
   type SerializedScene,
   type SystemLayerSpec,
   type UseSceneOptions,
+  type UserLayerRecord,
 } from './types';
 
 interface LogEntry {
@@ -184,6 +185,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     const i = state.layerIndex.get(layer);
     if (i === undefined) throw new Error(`Scene: unknown layer "${layer}"`);
     return i;
+  }
+
+  /** Repopulate `state.layerIndex` from the current `state.layers` order.
+   *  Call after any op that inserts, removes, or reorders a layer record. */
+  function rebuildLayerIndex(): void {
+    state.layerIndex.clear();
+    for (let i = 0; i < state.layers.length; i++) {
+      state.layerIndex.set(state.layers[i].id, i);
+    }
   }
 
   /**
@@ -363,6 +373,50 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   registerKitOp<{ layer: TLayer; from: boolean; to: boolean }>('kit:setLayerLocked', {
     apply: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.to; },
     revert: (p) => { state.layers[requireLayerIndex(p.layer)].locked = p.from; },
+  });
+
+  registerKitOp<{ record: UserLayerRecord<TLayer>; index: number }>('kit:addLayer', {
+    apply: (p) => {
+      state.layers.splice(p.index, 0, { ...p.record });
+      rebuildLayerIndex();
+    },
+    revert: (p) => {
+      state.layers.splice(p.index, 1);
+      rebuildLayerIndex();
+    },
+  });
+
+  registerKitOp<{ record: LayerRecord<TLayer>; index: number }>('kit:removeLayer', {
+    apply: (p) => {
+      state.layers.splice(p.index, 1);
+      rebuildLayerIndex();
+    },
+    revert: (p) => {
+      state.layers.splice(p.index, 0, { ...p.record } as LayerRecord<TLayer>);
+      rebuildLayerIndex();
+    },
+  });
+
+  registerKitOp<{ layer: TLayer; from: string; to: string }>('kit:renameLayer', {
+    apply: (p) => {
+      (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.to;
+    },
+    revert: (p) => {
+      (state.layers[requireLayerIndex(p.layer)] as UserLayerRecord<TLayer>).name = p.from;
+    },
+  });
+
+  registerKitOp<{ layer: TLayer; from: number; to: number }>('kit:moveLayer', {
+    apply: (p) => {
+      const [rec] = state.layers.splice(p.from, 1);
+      state.layers.splice(p.to, 0, rec);
+      rebuildLayerIndex();
+    },
+    revert: (p) => {
+      const [rec] = state.layers.splice(p.to, 1);
+      state.layers.splice(p.from, 0, rec);
+      rebuildLayerIndex();
+    },
   });
 
   // ── Op execution (used by both kit mutations and consumer recordOp) ────
@@ -563,6 +617,78 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     setLayerLocked(layer, locked) {
       const i = requireLayerIndex(layer);
       executeAndLog('kit:setLayerLocked', { layer, from: state.layers[i].locked, to: locked }, 'setLayerLocked');
+    },
+
+    addLayer(spec) {
+      if (state.layerIndex.has(spec.id)) {
+        throw new Error(`Scene: duplicate layer id "${spec.id}"`);
+      }
+      const index = spec.index ?? state.layers.length;
+      const clamped = Math.max(0, Math.min(index, state.layers.length));
+      const record: UserLayerRecord<TLayer> = {
+        kind: 'user',
+        id: spec.id,
+        name: spec.name,
+        visible: spec.visible ?? true,
+        locked: spec.locked ?? false,
+      };
+      executeAndLog('kit:addLayer', { record, index: clamped }, 'addLayer');
+    },
+
+    removeLayer(layer) {
+      const index = requireLayerIndex(layer);
+      const rec = state.layers[index];
+      if (rec.kind !== 'user') {
+        throw new Error(`Scene: cannot remove system layer "${layer}"`);
+      }
+      scene.batch('removeLayer', () => {
+        // Cascade-delete every node tagged to this layer. Each remove() cascades
+        // its subtree, so repeatedly pull any still-present tagged node until
+        // none remain — this naturally avoids double-removing a node already
+        // dropped as a descendant of an earlier removal.
+        for (;;) {
+          let next: NodeId | undefined;
+          for (const [id, node] of state.nodes) {
+            if (node.layer === layer) { next = id; break; }
+          }
+          if (next === undefined) break;
+          scene.remove(next);
+        }
+        const finalIndex = requireLayerIndex(layer);
+        executeAndLog('kit:removeLayer', { record: rec, index: finalIndex }, 'removeLayer');
+      });
+    },
+
+    renameLayer(layer, name) {
+      const rec = state.layers[requireLayerIndex(layer)];
+      if (rec.kind !== 'user') {
+        throw new Error(`Scene: cannot rename system layer "${layer}"`);
+      }
+      executeAndLog('kit:renameLayer', { layer, from: rec.name, to: name }, 'renameLayer');
+    },
+
+    moveLayer(layer, index) {
+      const from = requireLayerIndex(layer);
+      const to = Math.max(0, Math.min(index, state.layers.length - 1));
+      if (from === to) return;
+      // Build the proposed order and a temp index map, then verify the
+      // child-below-parent invariant holds for every node before mutating.
+      const proposed = [...state.layers];
+      const [rec] = proposed.splice(from, 1);
+      proposed.splice(to, 0, rec);
+      const tempIndex = new Map<TLayer, number>();
+      for (let i = 0; i < proposed.length; i++) tempIndex.set(proposed[i].id, i);
+      for (const node of state.nodes.values()) {
+        if (node.parent === null) continue;
+        const parent = state.nodes.get(node.parent);
+        if (!parent) continue;
+        if (tempIndex.get(node.layer)! < tempIndex.get(parent.layer)!) {
+          throw new Error(
+            `Scene: moveLayer("${layer}", ${index}) — a child may not render below its parent's layer`,
+          );
+        }
+      }
+      executeAndLog('kit:moveLayer', { layer, from, to }, 'moveLayer');
     },
 
     registerOp(kind, handler) {
