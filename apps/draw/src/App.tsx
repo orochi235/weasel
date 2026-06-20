@@ -83,6 +83,8 @@ import { useOpacityScrub } from './opacityScrub/useOpacityScrub';
 import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter } from '@weasel-js/core';
 import { sliceAction } from '@weasel-js/core';
+import type { SerializedHistory } from '@weasel-js/history';
+import { serializeReplacer, reviveTypedArrays } from './persistence';
 import { useSliceTool } from './tools/slice/useSliceTool';
 import { SliceDepPublisher } from './tools/slice/SliceDepPublisher';
 import { parseSvg } from '@weasel-js/svg';
@@ -135,48 +137,8 @@ const PAPER_PRESETS: Record<PaperSizeKey, { width: number; height: number }> = {
 
 const LS_KEY = 'weaseldraw:scene-v1';
 const DOC_KEY = 'weaseldraw:doc-v1';
+const HISTORY_KEY = 'weaseldraw:history-v1';
 
-// PolygonPath stores `commands` as Uint8Array and `coords` as Float32Array.
-// JSON.stringify renders typed arrays as `{"0":1,"1":2,...}` plain objects
-// — the painter then sees a non-iterable shape and silently fails to draw.
-// Tag typed arrays on save and reconstruct them on load (with tolerance for
-// older saves that wrote the broken numeric-key object shape).
-type TaggedTypedArray = { __ta: 'u8' | 'f32'; data: number[] };
-function serializeReplacer(_key: string, value: unknown): unknown {
-  if (value instanceof Uint8Array) return { __ta: 'u8', data: Array.from(value) } satisfies TaggedTypedArray;
-  if (value instanceof Float32Array) return { __ta: 'f32', data: Array.from(value) } satisfies TaggedTypedArray;
-  return value;
-}
-function reviveTypedArrays<T>(node: T): T {
-  if (node == null || typeof node !== 'object') return node;
-  const obj = node as Record<string, unknown>;
-  const tag = obj.__ta;
-  if (tag === 'u8' && Array.isArray(obj.data)) return Uint8Array.from(obj.data as number[]) as unknown as T;
-  if (tag === 'f32' && Array.isArray(obj.data)) return Float32Array.from(obj.data as number[]) as unknown as T;
-  for (const k of Object.keys(obj)) {
-    if (k === 'commands' || k === 'coords') {
-      const v = obj[k];
-      if (v instanceof Uint8Array || v instanceof Float32Array) continue;
-      if (Array.isArray(v)) {
-        obj[k] = k === 'commands' ? Uint8Array.from(v as number[]) : Float32Array.from(v as number[]);
-        continue;
-      }
-      if (v && typeof v === 'object') {
-        // Recover from older saves that lost the typed-array shape.
-        const src = v as Record<string, unknown>;
-        if (src.__ta) { obj[k] = reviveTypedArrays(v); continue; }
-        const len = Object.keys(src).filter((kk) => /^\d+$/.test(kk)).length;
-        const arr = new Array<number>(len);
-        for (let i = 0; i < len; i++) arr[i] = Number(src[String(i)] ?? 0);
-        obj[k] = k === 'commands' ? Uint8Array.from(arr) : Float32Array.from(arr);
-        continue;
-      }
-    } else {
-      reviveTypedArrays(obj[k]);
-    }
-  }
-  return node;
-}
 const DEFAULT_FILENAME = 'untitled.svg';
 const DEFAULT_BG_COLOR = '#ffffff';
 /** Synthetic id for the locked "Background" row in the Layers panel.
@@ -937,6 +899,22 @@ function loadInitial(): Array<{
   }];
 }
 
+/** Read the persisted undo/redo history snapshot, reviving the typed arrays
+ *  inside its serialized op payloads (poses/paths carry Float32Array coords).
+ *  Best-effort — returns null on absent/corrupt data or a version mismatch,
+ *  in which case the app starts with an empty undo stack. */
+function loadHistory(): SerializedHistory | null {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return null;
+    const snap = JSON.parse(raw) as SerializedHistory;
+    if (snap && snap.version === 1) return reviveTypedArrays(snap);
+  } catch {
+    // fall through to no-history
+  }
+  return null;
+}
+
 // ─── Outer App: install the color context so swatches + actions resolve ─────
 
 /** Publishes a `BooleansAdapter` as a dep so the kit's Pathfinder
@@ -1043,12 +1021,30 @@ export function App(): ReactElement {
     scene as unknown as import('@weasel-js/core').Scene<unknown, string, unknown>,
   );
 
+  // Restore the persisted undo stack once on mount. Scene state is already in
+  // place — it's restored synchronously at scene construction via
+  // `initial: loadInitial()` — so the restored entries' inverts land on the
+  // correct adapter state. `restoredRef` then unblocks the persist effect so
+  // it can't clobber the saved history with the empty initial stack first.
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    const snap = loadHistory();
+    if (snap) modality.history.restore(snap);
+    restoredRef.current = true;
+    // Run once; scene/modality are stable for the app lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Persist on every commit. The 300ms debounce coalesces drag bursts so
-  // we hit localStorage at most a few times per second.
+  // we hit localStorage at most a few times per second. Scene and history go
+  // under separate keys (mirroring the doc key) so a shape migration of one
+  // never disturbs the other.
   useEffect(() => {
     const id = setTimeout(() => {
+      if (!restoredRef.current) return;
       try {
         localStorage.setItem(LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer));
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(modality.history.serialize(), serializeReplacer));
       } catch {
         // Persistence is best-effort.
       }

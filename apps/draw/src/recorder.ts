@@ -14,7 +14,34 @@
  *  before firing the first event.
  */
 
-import type { SceneSnapshot } from './sceneStore';
+import type { SerializedHistory } from '@weasel-js/history';
+import type { Obj } from './poseUpdate';
+
+/** Per-document metadata bundled into a recording's baseline snapshot. */
+export interface Document {
+  size: { width: number; height: number };
+}
+
+export interface View {
+  x: number;
+  y: number;
+  scale: { x: number; y: number };
+}
+
+/** Self-contained baseline scene captured at `start()` time so replay can
+ *  restore the scene before firing the first recorded event. (Formerly lived
+ *  in the now-removed IndexedDB `sceneStore`; the recorder is its sole
+ *  consumer.) */
+export interface SceneSnapshot {
+  version: 1;
+  items: Obj[];
+  doc: Document;
+  view: View;
+  /** Optional — older snapshots predate selection persistence. */
+  selection?: string[];
+  /** Optional — older snapshots predate history persistence. */
+  history?: SerializedHistory;
+}
 
 /** Controls how aggressively the recorder samples pointermove. Other event
  *  types (down/up/cancel/wheel/key) are always captured regardless.
