@@ -13,6 +13,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type React from 'react';
 import { screenToWorld, type ViewTransform } from 'core/viewport/viewTransform';
+import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 import { pointToGridCell } from 'interactions/gestures/shared/strategies/grid';
 import type { UnitSystem, UnitValue } from 'core/units';
 import type { RenderLayer } from 'core/layers/render';
@@ -98,8 +99,7 @@ export function useGridFeature(opts: UseGridFeatureOptions): {
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLElement>) => {
     const o = optsRef.current;
     const rect = e.currentTarget.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
+    const [sx, sy] = clientToCanvasRect(rect, e.clientX, e.clientY);
     const [wx, wy] = screenToWorld(sx, sy, o.view());
     update(pointToGridCell({ x: wx, y: wy }, o.spacing, o.unitSystem, o.origin));
   }, [update]);

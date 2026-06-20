@@ -10,6 +10,7 @@ import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { NodeId } from 'core/scene/types';
 import type { ToolDef, PhaseDef, RouteTable } from './routing/types';
 import { resolveRoute } from './routing/lookup';
+import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 
 /** Build a HitResult for the dispatcher's context.
  *  - Affordance hits → 'affordance:unknown' kind (placeholder until the
@@ -253,7 +254,8 @@ function screenPointFor(
   canvasRect: DOMRect | undefined,
 ): { x: number; y: number } | undefined {
   if (!canvasRect) return undefined;
-  return { x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top };
+  const [x, y] = clientToCanvasRect(canvasRect, e.clientX, e.clientY);
+  return { x, y };
 }
 
 function dispatchOnce<E>(

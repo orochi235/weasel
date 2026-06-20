@@ -87,6 +87,7 @@ import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispa
 import { useActionsRegistry } from 'interactions/actions/registry';
 import { buildAffordanceAt, buildClassifyTarget, HANDLE_HIT_RADIUS } from './affordanceAt';
 import { meanScale } from 'core/viewport/meanScale';
+import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
@@ -1210,10 +1211,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     const view = currentViewRef.current;
     if (!canvas) return { x: clientX, y: clientY };
     const rect = canvas.getBoundingClientRect();
-    return {
-      x: (clientX - rect.left) / view.scale.x + view.x,
-      y: (clientY - rect.top) / view.scale.y + view.y,
-    };
+    const [x, y] = clientToWorldHelper(clientX, clientY, rect, view);
+    return { x, y };
   }, []);
   const getHover = useHoverTracking({
     canvasRef: internalCanvasRef,
@@ -1846,10 +1845,8 @@ function GestureDispatcherMounter({
       return { x: clientX, y: clientY };
     }
     const rect = canvas.getBoundingClientRect();
-    const world = {
-      x: (clientX - rect.left) / view.scale.x + view.x,
-      y: (clientY - rect.top) / view.scale.y + view.y,
-    };
+    const [wx, wy] = clientToWorldHelper(clientX, clientY, rect, view);
+    const world = { x: wx, y: wy };
     recordCoordTrace({
       ts: Date.now(), clientX, clientY,
       rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },

@@ -1,3 +1,4 @@
+import { clientToWorld } from 'core/viewport/clientToWorld';
 /**
  * Stylus / Pencil pointer-event helpers.
  *
@@ -150,15 +151,15 @@ export function forEachCoalesced(
   const sub = typeof get === 'function' ? get.call(event) : [];
   const list = sub.length > 0 ? sub : [event];
   for (const e of list) {
-    const screenX = e.clientX - ctx.canvasRect.left;
-    const screenY = e.clientY - ctx.canvasRect.top;
+    const [screenX, screenY] = [e.clientX - ctx.canvasRect.left, e.clientY - ctx.canvasRect.top];
+    const [worldX, worldY] = clientToWorld(e.clientX, e.clientY, ctx.canvasRect, ctx.view);
     cb({
       clientX: e.clientX,
       clientY: e.clientY,
       screenX,
       screenY,
-      worldX: screenX / ctx.view.scale.x + ctx.view.x,
-      worldY: screenY / ctx.view.scale.y + ctx.view.y,
+      worldX,
+      worldY,
       stylus: getStylusData(e),
       event: e,
     });

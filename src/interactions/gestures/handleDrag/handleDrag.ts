@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 
 /** A 2D point in the rect element's local coordinate space. */
 export interface HandleDragPoint {
@@ -51,10 +52,10 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       const target = e.currentTarget;
       const rectEl = getRect ? getRect(target) : defaultRectEl(target);
       const rect = rectEl.getBoundingClientRect();
-      const localOf = (clientX: number, clientY: number): HandleDragPoint => ({
-        x: clientX - rect.left,
-        y: clientY - rect.top,
-      });
+      const localOf = (clientX: number, clientY: number): HandleDragPoint => {
+        const [x, y] = clientToCanvasRect(rect, clientX, clientY);
+        return { x, y };
+      };
 
       target.setPointerCapture(e.pointerId);
       onStart?.(localOf(e.clientX, e.clientY), e);

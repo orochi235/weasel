@@ -10,6 +10,7 @@
  */
 import { useEffect, useState } from 'react';
 import type { View } from 'core/viewport/view';
+import { clientToWorld } from 'core/viewport/clientToWorld';
 
 export interface CursorCoordsHudProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -79,10 +80,8 @@ export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudP
       const inCanvas =
         e.clientX >= rect.left && e.clientX <= rect.right &&
         e.clientY >= rect.top  && e.clientY <= rect.bottom;
-      const world = {
-        x: (e.clientX - rect.left) / view.scale.x + view.x,
-        y: (e.clientY - rect.top)  / view.scale.y + view.y,
-      };
+      const [wx, wy] = clientToWorld(e.clientX, e.clientY, rect, view);
+      const world = { x: wx, y: wy };
       setState({ client, world, inCanvas, anchor });
     };
 
