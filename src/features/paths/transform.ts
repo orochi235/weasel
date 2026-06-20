@@ -10,7 +10,9 @@
  * zero or refusing to resize.
  */
 
+import { boxToBox } from '@weasel-js/geom';
 import { boundsOfPath } from './bounds';
+import { transformPath } from './transformPath';
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath, type RectPath } from './types';
 
 /**
@@ -76,20 +78,9 @@ export function scalePathToBounds(path: Path, target: RectPath): Path {
 }
 
 function scalePolygon(path: PolygonPath, src: RectPath, dst: RectPath): PolygonPath {
-  const sx = src.width === 0 ? 0 : dst.width / src.width;
-  const sy = src.height === 0 ? 0 : dst.height / src.height;
-  const next = new Float32Array(path.coords.length);
-  const { commands, coords } = path;
-  let ci = 0;
-  for (let i = 0; i < commands.length; i++) {
-    const len = COORD_COUNT[commands[i]];
-    for (let k = 0; k < len; k += 2) {
-      next[ci + k] = dst.x + (coords[ci + k] - src.x) * sx;
-      next[ci + k + 1] = dst.y + (coords[ci + k + 1] - src.y) * sy;
-    }
-    ci += len;
-  }
-  return { kind: 'polygon', commands: path.commands, coords: next, fillRule: path.fillRule };
+  const m = boxToBox(src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height);
+  // src/dst are axis-aligned, so the polygon stays a polygon after this pure scale+translate.
+  return transformPath(path, m) as PolygonPath;
 }
 
 const COORD_COUNT: Readonly<Record<number, number>> = {
