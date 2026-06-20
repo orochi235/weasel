@@ -75,7 +75,9 @@ import {
   useDispatcherDepSource,
   useResizePolicy,
   useLayoutDepSource,
+  useGeometryProjection,
 } from './deps';
+import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
@@ -320,6 +322,20 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  to `sceneToAdapter` so `useMove`'s layout pass runs on configured
      *  containers (reflow on enter, reparent + reflow on commit). */
     layouts?: SceneToAdapterOptions<TData, TLayer, TPose>['layouts'];
+
+    /**
+     * Optional consumer seam for eager geometry sync: lets pose-transform
+     * actions (move, resize, nudge, flip — NOT rotate) also rewrite a node's
+     * data-held geometry. Given a node and the affine `m` applied to its pose,
+     * `transform(node, m)` returns updated `data` (geometry mapped by `m`) or
+     * `null` for nodes with no data-held geometry.
+     *
+     * Strictly opt-in: when absent, the kit emits only the pose op and leaves
+     * `data` untouched. Consumers wire this via `geometryProjection={myProjection}`.
+     *
+     * @see GeometryProjection
+     */
+    geometryProjection?: GeometryProjection;
 
     /**
      * Routing-trait classifiers — list of `NodeRoutingEntry` entries. The kit
@@ -717,6 +733,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolOpts,
     insertTool,
     layouts,
+    geometryProjection,
     routing,
     selection: selectionProp,
     selectionOptions,
@@ -1639,6 +1656,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             currentViewRef={currentViewRef}
             onViewChange={handleViewChange}
             resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+            geometryProjection={geometryProjection}
             dispatcher={dispatcher}
             getActionRef={getActionRef}
             pickEvery={internalPickEvery}
@@ -1970,6 +1988,7 @@ function StandardActionsRegistrar({
   currentViewRef,
   onViewChange,
   resizeOptions,
+  geometryProjection,
   dispatcher,
   getActionRef,
   pickEvery,
@@ -1991,6 +2010,10 @@ function StandardActionsRegistrar({
    *  `useResizeTool` consumes the same options separately (both paths run
    *  in parallel during the dispatcher migration). */
   resizeOptions?: UseResizeOptions<unknown>;
+  /** Forwarded from `SceneCanvasProps.geometryProjection` — wires the
+   *  `geometryProjection` dep consumed by pose-transform actions (move,
+   *  resize, nudge, flip). Conditionally mounted so absent → dep undefined. */
+  geometryProjection?: GeometryProjection;
   /** Forwarded so `cancelGestureAction` and other actions that need to
    *  abort in-flight handles can read the dispatcher's control surface. */
   dispatcher: Dispatcher;
@@ -2073,7 +2096,15 @@ function StandardActionsRegistrar({
   // here would race with child-component registrations — React runs child
   // effects before parent effects, so the parent's empty default would
   // overwrite the child's real value. The conditional mount avoids that.
-  return resizeOptions ? <ResizePolicyRegistrar options={resizeOptions} /> : null;
+  //
+  // Same pattern for `geometryProjection`: only mount when the consumer
+  // passed the prop so absent → dep undefined → actions stay pose-only.
+  return (
+    <>
+      {resizeOptions ? <ResizePolicyRegistrar options={resizeOptions} /> : null}
+      {geometryProjection ? <GeometryProjectionRegistrar projection={geometryProjection} /> : null}
+    </>
+  );
 }
 
 /** Subcomponent so we can conditionally render (and thus conditionally
@@ -2090,6 +2121,19 @@ function ResizePolicyRegistrar({
     expandIds: options.expandIds,
     projection: options.geometry,
   });
+  return null;
+}
+
+/** Subcomponent so we can conditionally render (and thus conditionally
+ *  call) `useGeometryProjection`. Mirrors `ResizePolicyRegistrar` — the
+ *  conditional mount ensures the dep is registered only when the consumer
+ *  supplies a projection, so absent → dep undefined → actions stay pose-only. */
+function GeometryProjectionRegistrar({
+  projection,
+}: {
+  projection: GeometryProjection;
+}) {
+  useGeometryProjection(projection);
   return null;
 }
 

@@ -17,3 +17,4 @@ export {
   type UseResizePolicyOptions,
 } from './resizePolicy';
 export { useLayoutDepSource } from './layout';
+export { useGeometryProjection } from './geometryProjection';
