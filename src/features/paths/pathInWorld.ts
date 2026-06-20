@@ -23,7 +23,7 @@ import { boundsOfPath } from './bounds';
 import { type Path, type PolygonPath } from './types';
 import { translatePath } from './transform';
 import { transformPath } from './transformPath';
-import { poseRotationOf, rotatePathAround } from './poseRotation';
+import { poseRotationOf } from './poseRotation';
 
 /** Subset of pose fields this helper consumes. Matches the kit's auto-rotate
  *  convention (`SceneCanvas.defaultDrawOne`): `x/y/width/height` define an
@@ -111,7 +111,15 @@ export function worldEditToStorage<P extends PathInWorldPose>(
   worldPath: PolygonPath,
 ): { pose: P; path: PolygonPath } {
   const r = poseRotationOf(pose);
-  const unrotated = r ? rotatePathAround(worldPath, r.cx, r.cy, -r.rotation) : worldPath;
+  // Inverse of `pathInWorld`'s forward rotation, composed on the kernel. The
+  // exact inverse of `rotateAboutPoint(cx, cy, θ)` is `rotateAboutPoint(cx, cy,
+  // -θ)` (same pivot, negated angle) — preferred over `invert(...)` here because
+  // it's exact by construction, mirrors the forward seam symmetrically, and
+  // avoids the `Mat3|null` (a rotation is always invertible). The ≈0 gate and
+  // AABB-center pivot come from `poseRotationOf`, shared with the forward bake.
+  const unrotated = r
+    ? (transformPath(worldPath, rotateAboutPoint(r.cx, r.cy, -r.rotation)) as PolygonPath)
+    : worldPath;
   const bounds = boundsOfPath(unrotated);
   const aligned = translatePath(unrotated, -bounds.x, -bounds.y) as PolygonPath;
   return {
