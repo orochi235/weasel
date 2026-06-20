@@ -661,8 +661,29 @@ export {
   DEFAULT_GUIDE_TOLERANCE_PX,
 } from './interactions/gestures/shared/strategies/guides';
 export type { GuideSnapOptions } from './interactions/gestures/shared/strategies/guides';
-export { useGuides, createGuidesLayer } from './features/guides';
-export type { Guide, UseGuidesReturn, GuidesLayerOpts } from './features/guides';
+export {
+  useGuides,
+  createGuidesLayer,
+  deriveAlignmentGuides,
+  matchAlignment,
+  MOVE_ANCHORS,
+  RECT_ALIGN_PROJECTION,
+  alignMoveBehavior,
+  alignInsertBehavior,
+  alignResizeBehavior,
+} from './features/guides';
+export type {
+  Guide,
+  UseGuidesReturn,
+  GuidesLayerOpts,
+  AlignBounds,
+  AlignAnchor,
+  AlignMatchResult,
+  AlignBoundsProjection,
+  DeriveAlignmentGuidesOptions,
+  AlignmentBehaviorBase,
+  AlignMoveArgs,
+} from './features/guides';
 
 // ─── Drag-action hooks: move / resize / rotate / insert / area-select / etc. ─
 export type { UseMoveOptions } from './interactions/actions/move';
