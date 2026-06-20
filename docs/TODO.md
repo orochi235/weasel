@@ -42,7 +42,6 @@ Priority tags:
 
 **Selection, actions & UI panels**
 - Per-kind property-row registry for `<PropertiesPanel>` → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- Alignment guides / insert snap-to-existing-edges → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Op coalescing in `useScene`'s `LogEntry` history → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Clipboard: OS clipboard / cross-reload serialization → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
@@ -214,7 +213,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P2) Per-kind property-row registry for `<PropertiesPanel>`.** Surfaced 2026-05-13 while wiring object-kind-aware property rows in WeaselDraw's selection panel. Today `<PropertiesPanel>` is a presentation slot — every consumer hand-rolls property rows inline and branches on `primary.tool` / ad-hoc feature flags (`hasStrokeProps`, etc.) to decide what to render. Likely shape: kinds register a property-row contributor that takes the current selection + adapter and returns an array of `<PropertyRow>` children; the panel composes contributors for the union of selected kinds. Open questions: (a) registration site — kit-side keyed off the future object-kind registry vs. a consumer-owned `Map<kind, PropertyContributor>` passed to `<PropertiesPanel>` as a prop; (b) interplay with kit-shipped panels like `<TextPropertiesPanel>` / `<PathfinderPanel>`; (c) how to express rows that apply to a subset of the selection; (d) presentation order. Blocked on the object-kind registry. Defer until ≥2 consumer apps want this.
 
-- **(P2) Alignment guides / insert snap-to-existing-edges.** Shows snap lines when an inserted/moved object's edge or center aligns with a sibling's. The primitives exist — `guideSnapStrategy` (`src/interactions/gestures/shared/strategies/guides.ts`) + `createGuidesLayer` (`src/features/guides/layer.ts`) — but they only snap to manually-supplied guide lines (`useGuides` is plain CRUD storage). Remaining work: auto-derive guides from sibling object edges/centers during insert/move and wire them in. Originally scoped in `docs/specs/2026-04-30-canvas-kit-resize-insert-design.md:278`.
+- **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `demo/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Deferred from v1: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box; (d) **multi-select drag alignment** of the selection's union box (v1 matches single moving boxes).
 
 - **(P2) Op coalescing in `useScene`.** Default `coalesceKey`s landed at the op factories (`transform`/`setText`/`setLayer`/`setPath` now default `<name>:${id}`, joining `reparent`), so the standalone `@weasel-js/history` path coalesces without per-call boilerplate when a consumer sets `coalesceWindowMs > 0`. Remaining: `useScene`'s internal undo log (`scene.ts`) is a separate `LogEntry` history (`{kind, payload}[]`, no `coalesceKey` notion) that ignores coalescing entirely — `Op.coalesceKey` is lost when ops translate to scene mutations. Wiring it needs the coalesce-eligibility + window logic ported into `pushEntry` plus a way to thread the key from the originating `Op` into the `LogEntry`.
 
@@ -242,6 +241,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) Palette presets / recently-used colors.**
 - **(P3) Multi-page documents.**
 - **(P3) Richer text style controls** (font, size, weight pickers).
+- **(P3) `loadInitial` restores only leaf nodes — groups/nesting lost on reload.** Surfaced 2026-06-19 while wiring history persistence. `apps/draw/src/App.tsx` `loadInitial` filters `n.kind === 'leaf'` and drops `parent`, flattening every node onto the `'default'` layer. So containers (Cmd+G groups) and any parent/child nesting don't survive a page reload even though `scene.toJSON()` persists the full tree. Fix: rebuild the full node list (containers + parent links + layers) from the snapshot via `scene.loadState(json)` instead of the leaf-only map. Independent of the history-persistence work.
 
 ---
 
