@@ -19,10 +19,8 @@
  */
 import {
   type Scene,
-  type RectPath,
   type Path,
-  boundsOfPath,
-  translatePath,
+  pathInPoseFrame,
   rectPath,
 } from '@weasel-js/core';
 import {
@@ -52,24 +50,6 @@ interface WeaselDrawData {
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
 
-function pathAtPose(path: Path, pose: WeaselDrawPose): Path {
-  // Rect path: pose is authoritative — emit a fresh rect from pose dims.
-  if (path.kind === 'rect') {
-    return {
-      kind: 'rect',
-      x: pose.x,
-      y: pose.y,
-      width: pose.width,
-      height: pose.height,
-    } as RectPath;
-  }
-  // Polygon path: translate so the path's AABB origin lands at pose.x/y.
-  const b = boundsOfPath(path);
-  const dx = pose.x - b.x;
-  const dy = pose.y - b.y;
-  return (dx === 0 && dy === 0) ? path : translatePath(path, dx, dy);
-}
-
 /**
  * Lower a leaf node's `{data, pose}` to an `Obj` for `objToSvgNode`. The
  * pose is baked into the geometry (rect → fresh rect from pose dims;
@@ -89,7 +69,7 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     return o;
   }
   if (data.path == null) return null;
-  const path = pathAtPose(data.path, pose);
+  const path = pathInPoseFrame(data.path, pose);
   const o: PathObj = {
     id,
     tool: 'imported',

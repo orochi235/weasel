@@ -46,7 +46,7 @@ export {
   translatePolygonInPlace,
   scalePathToBounds,
 } from './transform';
-export { pathInWorld, worldEditToStorage, type PathInWorldPose } from './pathInWorld';
+export { pathInPoseFrame, pathInWorld, worldEditToStorage, type PathInWorldPose } from './pathInWorld';
 export { poseRotationOf, rotatePathAround, type PoseRotation } from './poseRotation';
 export { createPathLayer, type CreatePathLayerOpts } from './pathLayer';
 export {

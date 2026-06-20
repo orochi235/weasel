@@ -485,6 +485,7 @@ export {
   translatePath,
   translatePolygonInPlace,
   scalePathToBounds,
+  pathInPoseFrame,
   pathInWorld,
   worldEditToStorage,
   poseRotationOf,

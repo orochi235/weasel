@@ -117,6 +117,7 @@ export function useModality(
         const localAnchors = enumerateAnchors(typedPath);
         const b = boundsOfPath(typedPath);
         const pose = node.pose as { x?: number; y?: number };
+        // origin-align matches pathInPoseFrame (the canonical owner)
         const dx = (pose.x ?? 0) - b.x;
         const dy = (pose.y ?? 0) - b.y;
         if (dx === 0 && dy === 0) return localAnchors;
