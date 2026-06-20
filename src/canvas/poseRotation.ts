@@ -13,17 +13,21 @@
  */
 import type { DrawCommand } from '../renderer';
 import { poseRotationOf } from 'features/paths/poseRotation';
+import { rotateAboutPoint, type Mat3 } from '@weasel-js/geom';
 
-/** Compose `T(cx,cy) · R(θ) · T(-cx,-cy)` about `(cx, cy)` into a column-major
- *  3×3 affine. Matches the `[a, b, 0, c, d, 0, tx, ty, 1]` layout
- *  `kind: 'group'` consumes. */
+/** Expand a kernel 6-tuple affine `[a, b, c, d, e, f]` (DOMMatrix order) into
+ *  the 9-element column-major `[a, b, 0, c, d, 0, tx, ty, 1]` `Float32Array`
+ *  the `kind: 'group'` DrawCommand wrap consumes for `uniformMatrix3fv`. Pure
+ *  shape glue — the rotate-about-point MATH lives in the kernel. */
+function mat3ToRenderMatrix(m: Mat3): Float32Array {
+  return new Float32Array([m[0], m[1], 0, m[2], m[3], 0, m[4], m[5], 1]);
+}
+
+/** Rotation by `rotation` about `(cx, cy)` as the render-tree's column-major
+ *  3×3 affine. Composes on the kernel's `rotateAboutPoint` (single owner of the
+ *  rotate-about-point math); this only reshapes 6→9 for the WebGL upload. */
 function rotationMatrixAbout(cx: number, cy: number, rotation: number): Float32Array {
-  const cs = Math.cos(rotation);
-  const sn = Math.sin(rotation);
-  const a = cs, b = sn, c = -sn, d = cs;
-  const tx = cx - a * cx - c * cy;
-  const ty = cy - b * cx - d * cy;
-  return new Float32Array([a, b, 0, c, d, 0, tx, ty, 1]);
+  return mat3ToRenderMatrix(rotateAboutPoint(cx, cy, rotation));
 }
 
 /** Rotation matrix about the AABB center of `(x, y, width, height)`. The pivot

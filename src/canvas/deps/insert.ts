@@ -69,7 +69,12 @@ export function useInsertDepSource(
 
         switch (kind) {
           case 'rect':
-            data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };
+            // Geometry-in-local-frame: the rect path lives at the origin and the
+            // pose carries position (`pose = {x: bounds.x, y: bounds.y, …}` above).
+            // The renderer's `pathInPoseFrame` rebases a rect path onto the pose box
+            // regardless of the stored coords, so origin vs. duplicated-pose-coords
+            // render/hit-test identically — don't double-count the position. (#13)
+            data = { path: rectPath(0, 0, bounds.width, bounds.height), fill };
             break;
           case 'ellipse':
             data = { path: ellipsePath(bounds), fill };
@@ -133,7 +138,9 @@ export function useInsertDepSource(
                 stroke: fill, strokeWidth: 2,
               };
             } else {
-              data = { path: rectPath(bounds.x, bounds.y, bounds.width, bounds.height), fill };
+              // Origin rect; pose (set above) carries position. See the 'rect'
+              // case for why duplicating bounds.x/y into the path is redundant. (#13)
+              data = { path: rectPath(0, 0, bounds.width, bounds.height), fill };
             }
             break;
           }

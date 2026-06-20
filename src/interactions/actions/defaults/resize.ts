@@ -60,6 +60,7 @@ import { boxToBox } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
+import { unionBounds } from 'features/groups/unionBounds';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -219,17 +220,6 @@ function computeProposedBounds(
   return { x: nx, y: ny, width: nw, height: nh };
 }
 
-function computeUnionBounds(bounds: ResizePose[]): ResizePose {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const b of bounds) {
-    if (b.x < minX) minX = b.x;
-    if (b.y < minY) minY = b.y;
-    if (b.x + b.width > maxX) maxX = b.x + b.width;
-    if (b.y + b.height > maxY) maxY = b.y + b.height;
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
 // ---------------------------------------------------------------------------
 // Internal scratch
 // ---------------------------------------------------------------------------
@@ -328,9 +318,11 @@ export const resizeAction: Action & { requires: string[] } = {
       }
       if (startPoses.size === 0) return {};
 
+      // `leafBounds` is non-empty here (startPoses.size === 0 guarded above),
+      // and the union branch only runs for length >= 2 → `!` is safe.
       const originBounds = leafBounds.length === 1
         ? leafBounds[0]
-        : computeUnionBounds(leafBounds);
+        : unionBounds(leafBounds)!;
 
       // Rotation captured only for the single-write-id path; group-resize
       // takes the AABB-frame (unrotated) path even if leaves have rotation

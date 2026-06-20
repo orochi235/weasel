@@ -115,7 +115,8 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
     snapPoint,
     create: (b) => makeLeaf(freshId('rc'),
       { x: b.x, y: b.y, width: b.width, height: b.height },
-      { path: rectPath(b.x, b.y, b.width, b.height), fill: nextFill() }) as LeafNode,
+      // geometry-in-local-frame: pose carries position, path is at origin (#13)
+      { path: rectPath(0, 0, b.width, b.height), fill: nextFill() }) as LeafNode,
   });
   const ellipse = useEllipseTool<LeafNode>({
     snapPoint,

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useAlign, alignDeltaFor, translatePoseViaDescriptor } from './align';
 import type { AlignAdapter } from './align';
+import { unionBounds } from 'features/groups/unionBounds';
 import type { Op } from 'core/ops/types';
 import { type NodeId } from 'core/scene/types';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
@@ -190,6 +191,30 @@ describe('useAlign', () => {
     };
     const out = translatePoseViaDescriptor({ x: 5, y: 6, width: 1, height: 1 }, 10, 20, geom);
     expect(out).toMatchObject({ x: 15, y: 26 });
+  });
+
+  // Cross-consumer invariant (#5 dedup): align and resize both derive their
+  // shared union frame from the canonical `unionBounds`. For a multi-item set,
+  // align's union (driving `alignDeltaFor`) and resize's `originBounds` union
+  // are the same envelope. We assert the canonical owner produces the expected
+  // frame so both consumers stay in lockstep by construction.
+  it('align and resize derive the same union frame for a shared set', () => {
+    const bounds = [
+      { x: 0,  y: 0,  width: 10, height: 10 },
+      { x: 50, y: 5,  width: 20, height: 20 },
+      { x: 30, y: 40, width: 5,  height: 5 },
+    ];
+    // union: x [0, 70], y [0, 45].
+    const frame = unionBounds(bounds);
+    expect(frame).toEqual({ x: 0, y: 0, width: 70, height: 45 });
+
+    // align consumes this exact frame via `alignDeltaFor`.
+    const dLeft = alignDeltaFor(bounds[1], frame!, 'left');
+    expect(dLeft).toEqual({ dx: -50, dy: 0 });
+    // resize consumes the same frame as its `originBounds` for the group/multi
+    // path — width/height are the AABB envelope both paths share.
+    expect(frame!.width).toBe(70);
+    expect(frame!.height).toBe(45);
   });
 
   it('align identity stable across renders', () => {

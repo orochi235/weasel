@@ -27,6 +27,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import type { UseAreaSelectOptions } from 'interactions/actions/area-select/options';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { translateRectPose, type RectPose } from 'features/groups/composePose';
 import { aabbOfPose, isPathLike, poseContainsRotated } from './poseGeometry';
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
@@ -43,6 +44,11 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     snap?: SnapStrategy<TPose>;
     handleHitRadius?: number;
     areaSelect?: UseAreaSelectOptions;
+    /** Override the body-pick used on click/pointerdown. Alt-aware: receives
+     *  the live alt state + current selection so consumers can implement
+     *  alt-cycling through an overlapping stack. Default: top-most hit
+     *  (alt ignored). Forwarded verbatim to `useSelectTool`. */
+    pickBest?: (worldX: number, worldY: number, alt: boolean, sel: readonly string[]) => string | null;
   };
   insertTool?: {
     create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
@@ -130,8 +136,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           for (const cid of desc) {
             const cn = scene.get(asNodeId(cid));
             if (!cn) continue;
-            const cp = cn.pose as unknown as { x: number; y: number };
-            base.setPose(cid, { ...(cn.pose as object), x: cp.x + dx, y: cp.y + dy } as unknown as TPose);
+            // Container cascade is rect-only: translate each descendant's
+            // top-level (x, y) by the same delta via the shared helper.
+            base.setPose(cid, translateRectPose(cn.pose as unknown as RectPose, dx, dy) as unknown as TPose);
           }
         });
       },
@@ -226,6 +233,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     boundsOf: wiredBoundsOf,
     move: wiredMoveOptions,
     ...(areaSelectOptions ? { areaSelect: areaSelectOptions } : {}),
+    ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     getNode: (id: string) => scene.get(asNodeId(id)) ?? null,
     getSelection: () => selection.current,
   });

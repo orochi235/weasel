@@ -11,6 +11,10 @@
  *   7. SceneCanvas backgroundFill wires a layer (mounts, layer appears in debug)
  *   8. cursorCoordsHud / pickHud render into the DOM when enabled
  *   9. viewport.pan / viewport.zoom register their action descriptors
+ *
+ * Public-prop forwards (appended; not part of the 9-behavior seam list):
+ *   - selectTool.pickBest forwards an alt-aware body-pick into useSelectTool
+ *   - clickFallback forwards into the patch-form useTools `fallback` slot
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
@@ -19,6 +23,7 @@ import { useEffect } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
+import type { AnyTool } from 'tools/types';
 import { useActionsRegistry } from 'interactions/actions/registry';
 
 // ---------------------------------------------------------------------------
@@ -422,5 +427,167 @@ describe('Behavior 9: viewport.pan and viewport.zoom register action descriptors
 
     expect(capturedIds).toContain('viewport.wheelPan');
     expect(capturedIds).toContain('viewport.zoom');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Seam: selectTool.pickBest forwards through to the internal useSelectTool
+// ---------------------------------------------------------------------------
+
+/** Minimal mutable SelectionApi stub — `applyClick` replaces the selection
+ *  with the clicked id (single-select), enough to observe which id a body
+ *  pick settled on. */
+function makeSelectionStub(initial: NodeId[] = []) {
+  let selState: NodeId[] = [...initial];
+  return {
+    get current() { return selState; },
+    get() { return [...selState]; },
+    set(ids: NodeId[]) { selState = ids; },
+    add(id: NodeId) { if (!selState.includes(id)) selState = [...selState, id]; },
+    remove(id: NodeId) { selState = selState.filter(i => i !== id); },
+    toggle(id: NodeId) {
+      selState.includes(id) ? (selState = selState.filter(i => i !== id)) : (selState = [...selState, id]);
+    },
+    clear() { selState = []; },
+    contains(id: NodeId) { return selState.includes(id); },
+    applyClick(id: NodeId, _mods: unknown) { selState = [id]; },
+    adapterMethods: {
+      getSelection: () => [...selState],
+      setSelection: (ids: NodeId[]) => { selState = ids; },
+    },
+  };
+}
+
+describe('Seam: selectTool.pickBest forwards into the internal select tool', () => {
+  it('alt-click selects the pickBest-returned id even when it is NOT the top-most hit', () => {
+    // Two fully-overlapping nodes. The default body pick (pickEvery +
+    // pickTopMostHit) settles on the top-most (last in renderOrder = idB).
+    // A pickBest that returns the BOTTOM id (idA) on alt proves the option
+    // threaded through and overrode the default top-pick.
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    scene.batch('seed', () => {
+      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+        pose: { x: 0, y: 0, width: 100, height: 100 } as P });
+      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+        pose: { x: 0, y: 0, width: 100, height: 100 } as P });
+    });
+    const [idA, idB] = idsOf(scene);
+
+    const selApi = makeSelectionStub();
+    const pickBest = vi.fn(
+      (_wx: number, _wy: number, alt: boolean, _sel: readonly string[]) =>
+        (alt ? (idA as string) : (idB as string)),
+    );
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={200}
+        height={200}
+        selection={selApi as Parameters<typeof SceneCanvas>[0]['selection']}
+        selectTool={{ pickBest }}
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+
+    act(() => {
+      pd(canvas, 50, 50, { altKey: true });
+      pu(canvas, 50, 50, { altKey: true });
+    });
+
+    expect(pickBest).toHaveBeenCalled();
+    // alt → pickBest returned idA (the bottom node), overriding the top pick.
+    expect(selApi.current).toEqual([idA]);
+    expect(selApi.current).not.toContain(idB);
+  });
+
+  it('without pickBest, the default top-most pick is used (byte-identical baseline)', () => {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    scene.batch('seed', () => {
+      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+        pose: { x: 0, y: 0, width: 100, height: 100 } as P });
+      scene.add({ kind: 'leaf', data: { kind: 'rect' }, layer: 'main' as L,
+        pose: { x: 0, y: 0, width: 100, height: 100 } as P });
+    });
+    const [, idB] = idsOf(scene);
+
+    const selApi = makeSelectionStub();
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={200}
+        height={200}
+        selection={selApi as Parameters<typeof SceneCanvas>[0]['selection']}
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+
+    act(() => {
+      pd(canvas, 50, 50, { altKey: true });
+      pu(canvas, 50, 50, { altKey: true });
+    });
+
+    // Top-most hit (last in renderOrder) is selected; alt is ignored by default.
+    expect(selApi.current).toEqual([idB]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Seam: clickFallback forwards into the internal useTools fallback slot
+// ---------------------------------------------------------------------------
+
+describe('Seam: clickFallback forwards into the internal useTools fallback slot', () => {
+  it('fires the clickFallback tool\'s pointer.onClick when the active tool passes an empty-space click', () => {
+    // Empty scene → click in empty space → the active select tool returns
+    // `pass` (nothing to select) → the dispatcher consults the fallback slot.
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const onFallbackClick = vi.fn();
+    const clickFallback: AnyTool = {
+      id: 'click-fallback',
+      pointer: { onClick: () => { onFallbackClick(); return 'claim'; } },
+    };
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={200}
+        height={200}
+        clickFallback={clickFallback}
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+
+    act(() => {
+      pd(canvas, 50, 50);
+      pu(canvas, 50, 50);
+    });
+
+    expect(onFallbackClick).toHaveBeenCalledOnce();
+  });
+
+  it('without clickFallback, nothing extra fires on an empty-space click (baseline)', () => {
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const onFallbackClick = vi.fn();
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={200}
+        height={200}
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+
+    act(() => {
+      pd(canvas, 50, 50);
+      pu(canvas, 50, 50);
+    });
+
+    // No fallback wired → the spy (which is not attached to anything) stays at 0.
+    expect(onFallbackClick).not.toHaveBeenCalled();
   });
 });
