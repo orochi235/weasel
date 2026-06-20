@@ -27,6 +27,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import type { UseAreaSelectOptions } from 'interactions/actions/area-select/options';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
+import { translateRectPose, type RectPose } from 'features/groups/composePose';
 import { aabbOfPose, isPathLike, poseContainsRotated } from './poseGeometry';
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
@@ -135,8 +136,9 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
           for (const cid of desc) {
             const cn = scene.get(asNodeId(cid));
             if (!cn) continue;
-            const cp = cn.pose as unknown as { x: number; y: number };
-            base.setPose(cid, { ...(cn.pose as object), x: cp.x + dx, y: cp.y + dy } as unknown as TPose);
+            // Container cascade is rect-only: translate each descendant's
+            // top-level (x, y) by the same delta via the shared helper.
+            base.setPose(cid, translateRectPose(cn.pose as unknown as RectPose, dx, dy) as unknown as TPose);
           }
         });
       },
