@@ -19,6 +19,7 @@ import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool, ToolCtx } from '../../tools/types';
 import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
+import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 import type { InputEvent } from './matcher';
 
 // ---------------------------------------------------------------------------
@@ -425,8 +426,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // viewport coords. Without this, anchored-wheel zoom drifts by the
       // canvas's offset from the viewport top-left.
       const rect = canvas?.getBoundingClientRect();
-      const localX = rect ? e.clientX - rect.left : e.clientX;
-      const localY = rect ? e.clientY - rect.top : e.clientY;
+      const [localX, localY] = rect
+        ? clientToCanvasRect(rect, e.clientX, e.clientY)
+        : [e.clientX, e.clientY];
       const ev: InputEvent = {
         kind: 'wheel',
         altKey: e.altKey,

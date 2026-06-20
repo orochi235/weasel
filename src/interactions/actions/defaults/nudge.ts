@@ -1,11 +1,14 @@
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
+import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
-import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
+import type { PoseProjection } from '../resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
+import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
 const KEY_FOR: Record<Direction, string> = {
@@ -47,10 +50,14 @@ function nudgeSelection(
   dx: number,
   dy: number,
   applyOps?: (ops: Op[], label: string) => void,
+  geometryProjection?: GeometryProjection,
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
-  const translate = (RECT_POSE_DESCRIPTOR as PoseProjection<unknown>).translate!;
+  const translate = (AUTO_POSE_DESCRIPTOR as PoseProjection<unknown>).translate!;
+  // Pure translation by the nudge step. Pushed alongside each transform op so
+  // a wired geometryProjection mirrors the node's data-held geometry too.
+  const m: Mat3 = [1, 0, 0, 1, dx, dy];
 
   // Read poses BEFORE building ops so each op's `from` is the pre-mutation
   // value (the same value the old direct mutation captured implicitly).
@@ -64,6 +71,13 @@ function nudgeSelection(
       to: translate(node.pose, dx, dy),
       label: 'Nudge',
     }));
+    const dataOp = geometryDataOp(
+      geometryProjection,
+      { id: id as string, data: node.data, pose: node.pose },
+      m,
+      'Nudge',
+    );
+    if (dataOp) ops.push(dataOp);
   }
   if (ops.length === 0) return;
 
@@ -99,8 +113,9 @@ function makeNudgeAction(dir: Direction): Action & { requires: string[] } {
         const selection = deps.selection as SelectionApi | undefined;
         const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
         const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+        const geometryProjection = deps.geometryProjection as GeometryProjection | undefined;
         if (!selection || !scene) return;
-        nudgeSelection(selection, scene, dx, dy, applyOps);
+        nudgeSelection(selection, scene, dx, dy, applyOps, geometryProjection);
       },
     },
     enabled: requiresSelection,

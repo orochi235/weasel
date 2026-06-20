@@ -12,3 +12,16 @@ export function clientToCanvas(
   const rect = canvas.getBoundingClientRect();
   return [clientX - rect.left, clientY - rect.top];
 }
+
+/**
+ * Rect-taking variant of `clientToCanvas` for call sites that already hold a
+ * `DOMRect` (or any `{ left, top }` object) and don't have a canvas element
+ * in scope.
+ */
+export function clientToCanvasRect(
+  rect: { left: number; top: number },
+  clientX: number,
+  clientY: number,
+): [number, number] {
+  return [clientX - rect.left, clientY - rect.top];
+}

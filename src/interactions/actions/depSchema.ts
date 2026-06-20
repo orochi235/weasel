@@ -43,6 +43,7 @@ import type {
   ResizePose,
 } from '../gestures/types';
 import type { PoseProjection } from './resize/geometry';
+import type { GeometryProjection } from './geometryProjection';
 
 /** Minimal view API the action layer consumes. May be refined later. */
 export interface ViewApi {
@@ -374,4 +375,17 @@ export interface DepSchema {
    *  coords). Local-pose consumers supply { compose: composeRectPose,
    *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
   poseComposition?: import('../../features/groups/composePose').PoseComposition<unknown>;
+  /**
+   * Optional consumer seam for the eager-sync layer: lets pose-transform
+   * actions (resize/move/nudge/flip — NOT rotate) ALSO rewrite a node's
+   * data-held geometry. Given a node and the affine `m` applied to its pose,
+   * `transform(node, m)` returns updated `data` (geometry mapped by `m`) or
+   * `null` for nodes with no data-held geometry.
+   *
+   * Strictly opt-in: when absent (or when `transform` returns null), the kit
+   * emits only the pose op and leaves `data` untouched. apps/draw wires this
+   * to mirror `data.path` through `transformPath`. Rotate intentionally never
+   * consults this seam (rotation lives on the pose, baked at render).
+   */
+  geometryProjection?: GeometryProjection;
 }

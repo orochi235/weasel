@@ -1,8 +1,9 @@
 import type { Scene } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import type { PoseProjection } from '../resize/geometry';
-import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import {
   flipPoseViaDescriptor,
   type FlipAxis,
@@ -11,6 +12,7 @@ import type { Action } from '../registry';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { requiresSelection } from './requiresSelection';
 import type { SelectionApi } from 'core/selection/useSelection';
+import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 
 /**
  * Flip the current selection in `scene` along `axis`, using the kit's default
@@ -32,10 +34,11 @@ function flipSelection(
   scene: Scene<unknown, string, unknown>,
   axis: FlipAxis,
   applyOps?: (ops: Op[], label: string) => void,
+  geometryProjection?: GeometryProjection,
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
-  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
+  const geom = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
 
   // Read poses BEFORE building ops so each op's `from` is the pre-flip value
   // (the same value the old direct mutation captured implicitly).
@@ -49,6 +52,22 @@ function flipSelection(
       to: flipPoseViaDescriptor(node.pose, axis, geom),
       label: 'Flip',
     }));
+    // Mirror the data-held geometry about the SAME pivot the pose flip uses
+    // (the node's own pose-bounds center), so a wired geometryProjection
+    // reflects the contents in lock-step with the frame. A pose-only flip of
+    // a bare-AABB pose is identity, so this data op is the only way an
+    // asymmetric shape actually mirrors.
+    const g = geom.getBounds(node.pose);
+    const cx = g.x + g.width / 2;
+    const cy = g.y + g.height / 2;
+    const m: Mat3 = axis === 'x' ? [-1, 0, 0, 1, 2 * cx, 0] : [1, 0, 0, -1, 0, 2 * cy];
+    const dataOp = geometryDataOp(
+      geometryProjection,
+      { id: id as string, data: node.data, pose: node.pose },
+      m,
+      'Flip',
+    );
+    if (dataOp) ops.push(dataOp);
   }
   if (ops.length === 0) return;
 
@@ -82,8 +101,9 @@ export const flipAction: Action & { requires: string[] } = {
       const selection = deps.selection as SelectionApi | undefined;
       const scene = deps.scene as Scene<unknown, string, unknown> | undefined;
       const applyOps = deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const geometryProjection = deps.geometryProjection as GeometryProjection | undefined;
       if (!selection || !scene) return;
-      flipSelection(selection, scene, axis, applyOps);
+      flipSelection(selection, scene, axis, applyOps, geometryProjection);
     },
   },
   enabled: requiresSelection,

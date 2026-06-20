@@ -41,8 +41,10 @@ import { resolveParams } from '../invoker';
 import type { Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { createReparentOp } from 'core/ops/reparent';
+import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { NodeAtPointDep, LayoutDep } from '../depSchema';
 import type {
@@ -304,6 +306,10 @@ interface MoveScratch {
    *  ops-based commits route through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
   applyOps?: (ops: Op[], label: string) => void;
+  /** Optional eager-sync seam captured at gesture start. When present, the
+   *  translate-only commit path emits a `setData` op per moved node mapping
+   *  its data-held geometry by the (dx,dy) translation. Undefined → pose-only. */
+  geometryProjection?: GeometryProjection;
 }
 
 /** Resolved drop target — the new parent + layer + (for `'above'` mode)
@@ -461,6 +467,7 @@ export const moveAction: Action & { requires: string[] } = {
       const projection = policy?.projection;
       const layout = ctx.deps.layout as LayoutDep | undefined;
       const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const geometryProjection = ctx.deps.geometryProjection as GeometryProjection | undefined;
       // Pose-composition strategy: how the consumer's scene folds local poses
       // up to world (and back). Absent → IDENTITY (absolute-pose: nodes store
       // world coords, parents are grouping-only). Local-pose consumers supply
@@ -532,6 +539,7 @@ export const moveAction: Action & { requires: string[] } = {
         layoutPass: null,
         pc,
         applyOps,
+        geometryProjection,
       };
 
       return {
@@ -634,6 +642,9 @@ export const moveAction: Action & { requires: string[] } = {
 
           // Layout drop commit — takes precedence over reparent-on-drop when a
           // layout container accepted the drag this gesture (single-select).
+          // TODO: geometryProjection for drop-reflow — left pose-only because the
+          // reflow distributes per-child poses with no single global delta; not
+          // exercised by the geometry contract gate.
           if (scratch.layout && scratch.ids.length === 1 && scratch.layoutPass) {
             const lp = scratch.layoutPass;
             const pc = scratch.pc as PoseComposition<RectPose>;
@@ -728,6 +739,9 @@ export const moveAction: Action & { requires: string[] } = {
             // cascaded descendant by the same dx/dy — otherwise children stay at
             // their old absolute positions (visually they snap to the
             // container's former location).
+            // Translate the data-held geometry by the same (dx,dy). Opt-in via
+            // the geometryProjection seam; a no-op when the dep is absent.
+            const m: Mat3 = [1, 0, 0, 1, dx, dy];
             const ops: Op[] = [];
             for (const id of [...scratch.ids, ...scratch.cascadeIds]) {
               const origin = scratch.startPoses.get(id);
@@ -738,6 +752,18 @@ export const moveAction: Action & { requires: string[] } = {
                 to: translatePoseGeneric(origin, dx, dy, scratch.projection),
                 label: 'Move',
               }));
+              if (scratch.geometryProjection) {
+                const node = scratch.scene.get(id);
+                if (node) {
+                  const dataOp = geometryDataOp(
+                    scratch.geometryProjection,
+                    { id: id as string, data: node.data, pose: origin },
+                    m,
+                    'Move',
+                  );
+                  if (dataOp) ops.push(dataOp);
+                }
+              }
             }
             if (ops.length > 0) commitOps(ops, 'Move');
           }

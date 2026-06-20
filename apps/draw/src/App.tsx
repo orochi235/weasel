@@ -40,6 +40,7 @@ import {
   splitSubpaths,
   PATH_M,
   gridSnapStrategy,
+  transformPath,
   type ToolsApi,
   type Path,
   type AlignEdge,
@@ -944,6 +945,10 @@ function BooleansAdapterPublisher({
         return order.indexOf(asNodeId(x)) - order.indexOf(asNodeId(y));
       },
       createPathNode: (path) => {
+        // Mint convention: pose = boundsOfPath(path); geometry lives in data.path.
+        // Booleans, slice (sliceCommit.ts), and release-compound (onReleaseCompound)
+        // all follow this same convention — the data payload that varies per site
+        // is too context-specific (style inheritance source) to share a helper.
         // Inherit the topmost selected leaf's paint so the result reads as a
         // continuation of the source style. Falls back to a neutral fill if
         // no leaf is selected (shouldn't happen — `enabled` gates the op).
@@ -1452,6 +1457,13 @@ function EditorWithSharedScene({
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
             onDoubleClick={onDoubleClick}
             getActiveMode={getActiveMode}
+            geometryProjection={{
+              transform: (node, m) => {
+                const data = node.data as WeaselDrawData;
+                if (!data.path) return null; // text / no geometry — kit leaves data alone
+                return { ...data, path: transformPath(data.path, m) };
+              },
+            }}
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
             <SliceDepPublisher scene={scene} selection={selection} />

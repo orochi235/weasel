@@ -18,9 +18,11 @@
  * where operating on the unrotated source path produces wrong shapes.
  */
 
+import { boxToBox } from '@weasel-js/geom';
 import { boundsOfPath } from './bounds';
 import { type Path, type PolygonPath } from './types';
 import { translatePath } from './transform';
+import { transformPath } from './transformPath';
 import { poseRotationOf, rotatePathAround } from './poseRotation';
 
 /** Subset of pose fields this helper consumes. Matches the kit's auto-rotate
@@ -58,15 +60,17 @@ export function pathInPoseFrame(path: Path, pose: PathInWorldPose): Path {
     ) return path;
     return { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
   }
-  // Polygon paths: translate by the AABB-origin delta. Resize on a polygon
-  // path scales the vertices via `pathPoseDescriptor.remapBounds` (applied by
-  // the resize action), so the polygon's own bounds already track the pose;
-  // here we only align the path to the pose origin.
+  // Polygon: rebase the path's own AABB into the pose box via a box→box affine.
+  // Identity when the bounds already equal the pose box (geometry already tracks
+  // the pose) — behavior-preserving there; for geometry-in-data nodes whose pose
+  // box was resized independently, it scales the contents to fill the box,
+  // fixing the anchor bug.
   const b = boundsOfPath(path);
-  const dx = pose.x - b.x;
-  const dy = pose.y - b.y;
-  if (dx === 0 && dy === 0) return path;
-  return translatePath(path, dx, dy);
+  if (b.x === pose.x && b.y === pose.y && b.width === pose.width && b.height === pose.height) {
+    return path;
+  }
+  const m = boxToBox(b.x, b.y, b.width, b.height, pose.x, pose.y, pose.width, pose.height);
+  return transformPath(path, m);
 }
 
 /**

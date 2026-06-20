@@ -1,7 +1,11 @@
 # Geometry Migration — Re-point Seams, Dedup, Fix Resize (Spec 2 of 2)
 
 Date: 2026-06-20
-Status: design, pending implementation plan
+Status: implemented (2026-06-20) — Phase 2 (seam re-points 1/4/7 + dedups) and Phase 3
+(anchor fix + opt-in `geometryProjection` seam) landed on `feat/geometry-migration-impl`;
+both contract gates green (kit 54/54, apps/draw 36/36). Deferred to follow-ups: seams 2/3/5/6
+kernel re-points, and selection/dead-code items #3/#6/#8/#9/#12/#13. Plan:
+`docs/superpowers/plans/2026-06-20-geometry-migration.md`.
 Branch: `feat/geometry-kernel`
 Depends on: `2026-06-20-geometry-kernel-representation-design.md` (Spec 1 — builds `@weasel-js/geom`)
 Companion analysis: `2026-06-20-geometry-consolidation-analysis.md` (the seven seams, the split, the 13 ranked items)

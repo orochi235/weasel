@@ -485,6 +485,7 @@ export {
   translatePath,
   translatePolygonInPlace,
   scalePathToBounds,
+  pathInPoseFrame,
   pathInWorld,
   worldEditToStorage,
   poseRotationOf,
@@ -515,6 +516,7 @@ export {
   pathIntersectsPolygon,
   pathDistanceToPoint,
   splitPathByLine,
+  transformPath,
 } from './features/paths';
 export type {
   Path,

@@ -12,6 +12,7 @@
  * `hitTest.ts` which handles beziers and fill rules correctly.
  */
 
+import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
 import { pointInPath } from './hitTest';
 import {
   polygonContainsRect,
@@ -62,54 +63,38 @@ function rectToVerts(r: Rect): Vec2[] {
   ];
 }
 
+/** Flatten a Vec2 array into an interleaved [x0,y0,x1,y1,...] array. */
+function flattenVerts(poly: readonly Vec2[]): number[] {
+  const flat: number[] = new Array(poly.length * 2);
+  for (let i = 0; i < poly.length; i++) {
+    flat[i * 2] = poly[i].x;
+    flat[i * 2 + 1] = poly[i].y;
+  }
+  return flat;
+}
+
 /** Convex/concave polygon containment: every vertex of `inner` lies inside `outer`. */
 function polygonContainsPolygon(outer: readonly Vec2[], inner: readonly Vec2[]): boolean {
   if (inner.length === 0) return false; // empty inner can't be "contained"
-  return inner.every((p) => pointInPolygon(outer, p.x, p.y));
-}
-
-/** Even-odd ray-cast point-in-polygon. */
-function pointInPolygon(poly: readonly Vec2[], px: number, py: number): boolean {
-  if (poly.length < 3) return false;
-  let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const xi = poly[i].x, yi = poly[i].y;
-    const xj = poly[j].x, yj = poly[j].y;
-    const crosses =
-      yi > py !== yj > py &&
-      px < ((xj - xi) * (py - yi)) / (yj - yi) + xi;
-    if (crosses) inside = !inside;
-  }
-  return inside;
+  const flatOuter = flattenVerts(outer);
+  return inner.every((p) => pointInPolygon(flatOuter, p.x, p.y));
 }
 
 /** Edge-vs-edge segment intersection check. */
 function polygonsIntersect(a: readonly Vec2[], b: readonly Vec2[]): boolean {
   if (a.length === 0 || b.length === 0) return false; // nothing to intersect
   // Quick containment check — one polygon fully inside the other?
-  if (pointInPolygon(a, b[0].x, b[0].y)) return true;
-  if (pointInPolygon(b, a[0].x, a[0].y)) return true;
+  if (pointInPolygon(flattenVerts(a), b[0].x, b[0].y)) return true;
+  if (pointInPolygon(flattenVerts(b), a[0].x, a[0].y)) return true;
   // Edge-vs-edge crossings.
   for (let i = 0; i < a.length; i++) {
     const a0 = a[i], a1 = a[(i + 1) % a.length];
     for (let j = 0; j < b.length; j++) {
       const b0 = b[j], b1 = b[(j + 1) % b.length];
-      if (segmentsCross(a0, a1, b0, b1)) return true;
+      if (segmentsCross(a0.x, a0.y, a1.x, a1.y, b0.x, b0.y, b1.x, b1.y)) return true;
     }
   }
   return false;
-}
-
-function segmentsCross(a: Vec2, b: Vec2, c: Vec2, d: Vec2): boolean {
-  const d1 = sign((d.x - c.x) * (a.y - c.y) - (d.y - c.y) * (a.x - c.x));
-  const d2 = sign((d.x - c.x) * (b.y - c.y) - (d.y - c.y) * (b.x - c.x));
-  const d3 = sign((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
-  const d4 = sign((b.x - a.x) * (d.y - a.y) - (b.y - a.y) * (d.x - a.x));
-  return d1 !== d2 && d3 !== d4;
-}
-
-function sign(n: number): -1 | 0 | 1 {
-  return n > 0 ? 1 : n < 0 ? -1 : 0;
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
