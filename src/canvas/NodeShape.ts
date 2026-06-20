@@ -36,9 +36,8 @@ import { textCommand } from 'features/text/textCommand';
 import type { TextStyle } from 'features/text/textStyle';
 import type { Path } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath } from 'features/paths/builder';
-import { boundsOfPath } from 'features/paths/bounds';
-import { translatePath } from 'features/paths/transform';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
+import { pathInPoseFrame } from 'features/paths/pathInWorld';
 
 export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   /** Stable identifier — used for unregistration and debugging. Pick
@@ -152,51 +151,6 @@ const TEXT_PAINTER: NodeShapeEntry = {
     return [textCommand(p.x, p.y + fontSize, d.text, d.style)];
   },
 };
-
-/**
- * Translate a path so its AABB origin lands on `pose.x, pose.y`. The bundled
- * shape tools (`useBuiltinShapeTools`) initialise paths in absolute world
- * coordinates matching the initial pose, so painters that ignored pose
- * rendered at the original location after a move/resize. By aligning the
- * path's bounds to the live pose origin every paint, both committed pose
- * mutations AND in-flight preview poses (preview-ghost layer)
- * render at the right place without needing the actions to mutate `data.path`.
- *
- * Returns the path unchanged when the delta is zero so the fast-path
- * (no allocation, no Float32Array copy for polygons) stays hot.
- */
-/** Project a stored path into the pose's **local frame** — translate (and, for
- *  rects, rebase to the pose's `width`/`height`) so the path's AABB origin sits
- *  at the pose origin. This is translate-only: it does NOT apply
- *  `pose.rotation`. The caller is responsible for the pose transform — the
- *  renderer wraps the output in `wrapWithPoseRotation`; code that wants the
- *  fully world-positioned (rotated) path should use `pathInWorld` instead.
- *
- *  Used by the local seams: the default painter (paint + silhouette), and as
- *  the building block `findShapeSilhouette` rotates on top of. */
-export function pathInPoseFrame(path: Path, pose: RectPose): Path {
-  if (path.kind === 'rect') {
-    // Rebase the rect onto the pose. Resize updates `pose.width/height` (not
-    // the path), so we honor those too — otherwise a corner drag would
-    // translate the path's old size onto the new origin instead of growing
-    // the rendered fill to match the new pose.
-    if (
-      path.x === pose.x && path.y === pose.y
-      && path.width === pose.width && path.height === pose.height
-    ) return path;
-    return { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
-  }
-  // Polygon paths: translate by the AABB-origin delta. Resize on a polygon
-  // path needs a per-vertex scale; that's `pathPoseDescriptor.remapBounds`,
-  // which the resize action ALREADY applies to the pose's bounds via the
-  // configured `PoseProjection`. Here we just align the path to the pose
-  // origin — the rendered polygon then matches the new bounds.
-  const b = boundsOfPath(path);
-  const dx = pose.x - b.x;
-  const dy = pose.y - b.y;
-  if (dx === 0 && dy === 0) return path;
-  return translatePath(path, dx, dy);
-}
 
 const PATH_PAINTER: NodeShapeEntry = {
   id: 'kit:path',

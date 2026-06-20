@@ -35,22 +35,56 @@ export interface PathInWorldPose {
 }
 
 /**
+ * Project a stored path into the pose's **local frame** — translate (and, for
+ * rects, rebase to the pose's `width`/`height`) so the path's AABB origin sits
+ * at the pose origin. This is translate-only: it does NOT apply
+ * `pose.rotation`. Callers that want the fully world-positioned (rotated) path
+ * should use `pathInWorld`, which composes this with the rotation wrap.
+ *
+ * Rects rebase onto the pose's `width`/`height` because resize updates the pose,
+ * not the stored `RectPath` — so the live size lives on the pose. Honoring it
+ * here keeps this in lockstep with the renderer (`SceneCanvas` paints the rect
+ * at `pose.width/height`); otherwise world-space consumers (slice, booleans,
+ * release-compound) would operate on the stale pre-resize dimensions.
+ *
+ * Used by the local seams: the default painter (paint + silhouette), and as the
+ * building block `pathInWorld`/`findShapeSilhouette` rotate on top of.
+ */
+export function pathInPoseFrame(path: Path, pose: PathInWorldPose): Path {
+  if (path.kind === 'rect') {
+    if (
+      path.x === pose.x && path.y === pose.y
+      && path.width === pose.width && path.height === pose.height
+    ) return path;
+    return { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height };
+  }
+  // Polygon paths: translate by the AABB-origin delta. Resize on a polygon
+  // path scales the vertices via `pathPoseDescriptor.remapBounds` (applied by
+  // the resize action), so the polygon's own bounds already track the pose;
+  // here we only align the path to the pose origin.
+  const b = boundsOfPath(path);
+  const dx = pose.x - b.x;
+  const dy = pose.y - b.y;
+  if (dx === 0 && dy === 0) return path;
+  return translatePath(path, dx, dy);
+}
+
+/**
  * Bake `pose` into `path`'s coordinates so the returned path is positioned
  * in world space. Returns a fresh `Path` instance; never mutates inputs.
  */
 export function pathInWorld(path: Path, pose: PathInWorldPose): Path {
-  // Step 1: translate so source AABB origin == pose origin.
-  const b = boundsOfPath(path);
-  const dx = pose.x - b.x;
-  const dy = pose.y - b.y;
-  const translated = (dx === 0 && dy === 0) ? path : translatePath(path, dx, dy);
+  // Step 1: project into the pose's local frame (translate; rebase rect dims).
+  // Shares `pathInPoseFrame` with the renderer so world geometry never diverges
+  // from what's painted — notably for resized rects (pose dims, not path dims).
+  const local = pathInPoseFrame(path, pose);
 
   // Step 2: apply the pose's rotation about its AABB center, if any. The gate
   // and the rect->polygon promotion live in `poseRotationOf`/`rotatePathAround`
   // so every world seam shares one rotation implementation.
   const r = poseRotationOf(pose);
-  if (!r) return translated;
-  return rotatePathAround(translated, r.cx, r.cy, r.rotation);
+  if (!r) return local;
+  return rotatePathAround(local, r.cx, r.cy, r.rotation);
 }
 
 /**

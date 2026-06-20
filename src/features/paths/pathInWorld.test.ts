@@ -17,6 +17,27 @@ describe('pathInWorld', () => {
     expect(out).toBe(r);
   });
 
+  it('honors pose width/height for a resized rect (pose dims, not stored path dims)', () => {
+    // A rect drawn 300×740 but resized to 400×547 — resize updates the pose,
+    // not the stored RectPath. World geometry must match what the renderer
+    // draws (pose dims), otherwise pathInWorld consumers (slice, booleans,
+    // release-compound) operate on the stale pre-resize size.
+    const r = rectPath(100, 80, 300, 740);
+    const out = pathInWorld(r, { x: 100, y: 80, width: 400, height: 547 });
+    expect(out).toEqual({ kind: 'rect', x: 100, y: 80, width: 400, height: 547 });
+  });
+
+  it('honors pose width/height for a resized + rotated rect', () => {
+    const r = rectPath(100, 80, 300, 740);
+    const out = pathInWorld(r, { x: 100, y: 80, width: 400, height: 547, rotation: Math.PI / 2 });
+    if (out.kind !== 'polygon') throw new Error('expected polygon');
+    const b = boundsOfPath(out);
+    // Rotated 90° about pose AABB center: the unrotated 400×547 swaps to a
+    // 547×400 AABB. (Stale path dims would give 740×300.)
+    expect(b.width).toBeCloseTo(547, 4);
+    expect(b.height).toBeCloseTo(400, 4);
+  });
+
   it('translates a polygon so its AABB lands at pose.{x,y}', () => {
     const p = polygonFromPoints([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]);
     const out = pathInWorld(p, { x: 100, y: 50, width: 10, height: 10 });
