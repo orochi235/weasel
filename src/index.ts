@@ -515,6 +515,7 @@ export {
   pathIntersectsPolygon,
   pathDistanceToPoint,
   splitPathByLine,
+  transformPath,
 } from './features/paths';
 export type {
   Path,

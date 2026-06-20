@@ -79,4 +79,5 @@ export {
   pathExclude,
   pathDivide,
 } from './booleans';
+export { transformPath } from './transformPath';
 export * from './curves';
