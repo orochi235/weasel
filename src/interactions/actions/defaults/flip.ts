@@ -3,7 +3,7 @@ import type { Op } from 'core/ops/types';
 import type { Mat3 } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import type { PoseProjection } from '../resize/geometry';
-import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
+import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import {
   flipPoseViaDescriptor,
   type FlipAxis,
@@ -38,7 +38,7 @@ function flipSelection(
 ): void {
   const ids = selection.get();
   if (ids.length === 0) return;
-  const geom = RECT_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
+  const geom = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>;
 
   // Read poses BEFORE building ops so each op's `from` is the pre-flip value
   // (the same value the old direct mutation captured implicitly).
