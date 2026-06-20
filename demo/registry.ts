@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import { MoveDemo } from './demos/MoveDemo';
 import { MoveSnapDemo } from './demos/MoveSnapDemo';
+import { AlignmentGuidesDemo } from './demos/AlignmentGuidesDemo';
 import { ResizeDemo } from './demos/ResizeDemo';
 import { RotateDemo } from './demos/RotateDemo';
 import { RotatedResizeMathDemo } from './demos/RotatedResizeMathDemo';
@@ -41,6 +42,7 @@ import { LayerListDemo } from './demos/LayerListDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import MoveSnapDemoFull from './demos/MoveSnapDemo.tsx?raw';
+import AlignmentGuidesDemoFull from './demos/AlignmentGuidesDemo.tsx?raw';
 import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
 import RotateDemoFull from './demos/RotateDemo.tsx?raw';
 import RotatedResizeMathDemoFull from './demos/RotatedResizeMathDemo.tsx?raw';
@@ -162,6 +164,16 @@ export const DEMOS: DemoEntry[] = [
     Component: MoveSnapDemo,
     full: MoveSnapDemoFull,
     path: 'demo/demos/MoveSnapDemo.tsx',
+  },
+  {
+    id: 'alignment-guides',
+    title: 'Alignment guides',
+    category: 'Tools',
+    description: 'Drag the purple rect: its edges and center snap to the other rects and the page, drawing a full-length guide line. Candidates are derived from sibling bounds via deriveAlignmentGuides + alignMoveBehavior; the matched line is published to a ref the createGuidesLayer overlay reads each frame.',
+    hint: 'Drag the purple rectangle near another rect’s edge or center.',
+    Component: AlignmentGuidesDemo,
+    full: AlignmentGuidesDemoFull,
+    path: 'demo/demos/AlignmentGuidesDemo.tsx',
   },
   {
     id: 'resize',
