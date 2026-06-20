@@ -21,6 +21,7 @@
  * origin — the convention used elsewhere in the kit for missing geometry.
  */
 
+import { cubicBounds, elevateQuadraticToCubic } from '@weasel-js/geom';
 import {
   PATH_C,
   PATH_L,
@@ -71,16 +72,21 @@ export function boundsOfPath(path: Path): RectPath {
         const x1 = coords[ci],     y1 = coords[ci + 1];
         const x2 = coords[ci + 2], y2 = coords[ci + 3];
         const x3 = coords[ci + 4], y3 = coords[ci + 5];
-        includeCubicExtrema(px, py, x1, y1, x2, y2, x3, y3, include);
+        const [bMinX, bMinY, bMaxX, bMaxY] = cubicBounds(px, py, x1, y1, x2, y2, x3, y3);
+        include(bMinX, bMinY);
+        include(bMaxX, bMaxY);
         px = x3; py = y3;
         ci += 6;
         break;
       }
       case PATH_Q: {
-        const x1 = coords[ci],     y1 = coords[ci + 1];
-        const x2 = coords[ci + 2], y2 = coords[ci + 3];
-        includeQuadraticExtrema(px, py, x1, y1, x2, y2, include);
-        px = x2; py = y2;
+        const qx1 = coords[ci],     qy1 = coords[ci + 1];
+        const qx2 = coords[ci + 2], qy2 = coords[ci + 3];
+        const [c1x, c1y, c2x, c2y] = elevateQuadraticToCubic(px, py, qx1, qy1, qx2, qy2);
+        const [bMinX, bMinY, bMaxX, bMaxY] = cubicBounds(px, py, c1x, c1y, c2x, c2y, qx2, qy2);
+        include(bMinX, bMinY);
+        include(bMaxX, bMaxY);
+        px = qx2; py = qy2;
         ci += 4;
         break;
       }
@@ -95,102 +101,3 @@ export function boundsOfPath(path: Path): RectPath {
   return { kind: 'rect', x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
-type Include = (x: number, y: number) => void;
-
-/** Include the endpoints + any axis-aligned extrema of a cubic Bezier
- *  segment from (x0,y0) → (x3,y3) with controls (x1,y1)(x2,y2). */
-function includeCubicExtrema(
-  x0: number, y0: number,
-  x1: number, y1: number,
-  x2: number, y2: number,
-  x3: number, y3: number,
-  include: Include,
-): void {
-  // Endpoints are always on the curve.
-  include(x0, y0);
-  include(x3, y3);
-  // Per axis: solve the derivative B'(t) = 0 for extrema in (0, 1).
-  // B'(t) is quadratic: a t^2 + b t + c, with
-  //   a = -p0 + 3p1 - 3p2 + p3
-  //   b = 2(p0 - 2p1 + p2)
-  //   c = -p0 + p1
-  // (Standard cubic Bezier derivative coefficients.)
-  for (const [p0, p1, p2, p3, axis] of [
-    [x0, x1, x2, x3, 'x'] as const,
-    [y0, y1, y2, y3, 'y'] as const,
-  ]) {
-    const a = -p0 + 3 * p1 - 3 * p2 + p3;
-    const b = 2 * (p0 - 2 * p1 + p2);
-    const c = -p0 + p1;
-    for (const t of solveQuadratic(a, b, c)) {
-      if (t <= 0 || t >= 1) continue;
-      const v = evaluateCubic(p0, p1, p2, p3, t);
-      // Include the extremum on the appropriate axis; for the other
-      // axis at the same t, pass a value inside the current bounds so
-      // include() doesn't expand it spuriously. Simpler: evaluate both
-      // axes at this t.
-      if (axis === 'x') {
-        const y = evaluateCubic(y0, y1, y2, y3, t);
-        include(v, y);
-      } else {
-        const x = evaluateCubic(x0, x1, x2, x3, t);
-        include(x, v);
-      }
-    }
-  }
-}
-
-/** Include the endpoints + any axis-aligned extremum of a quadratic
- *  Bezier from (x0,y0) → (x2,y2) with control (x1,y1). */
-function includeQuadraticExtrema(
-  x0: number, y0: number,
-  x1: number, y1: number,
-  x2: number, y2: number,
-  include: Include,
-): void {
-  include(x0, y0);
-  include(x2, y2);
-  // B'(t) = 2 ( (1-t)(p1 - p0) + t(p2 - p1) ) = 0
-  // → t = (p0 - p1) / (p0 - 2 p1 + p2)
-  for (const [p0, p1, p2, axis] of [
-    [x0, x1, x2, 'x'] as const,
-    [y0, y1, y2, 'y'] as const,
-  ]) {
-    const denom = p0 - 2 * p1 + p2;
-    if (denom === 0) continue;
-    const t = (p0 - p1) / denom;
-    if (t <= 0 || t >= 1) continue;
-    const v = evaluateQuadratic(p0, p1, p2, t);
-    if (axis === 'x') {
-      const y = evaluateQuadratic(y0, y1, y2, t);
-      include(v, y);
-    } else {
-      const x = evaluateQuadratic(x0, x1, x2, t);
-      include(x, v);
-    }
-  }
-}
-
-function evaluateCubic(p0: number, p1: number, p2: number, p3: number, t: number): number {
-  const u = 1 - t;
-  return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3;
-}
-
-function evaluateQuadratic(p0: number, p1: number, p2: number, t: number): number {
-  const u = 1 - t;
-  return u * u * p0 + 2 * u * t * p1 + t * t * p2;
-}
-
-/** Real roots of a t² + b t + c. Returns [] for no real roots; handles
- *  the linear degenerate case (a == 0). */
-function solveQuadratic(a: number, b: number, c: number): number[] {
-  if (a === 0) {
-    if (b === 0) return [];
-    return [-c / b];
-  }
-  const disc = b * b - 4 * a * c;
-  if (disc < 0) return [];
-  if (disc === 0) return [-b / (2 * a)];
-  const sq = Math.sqrt(disc);
-  return [(-b + sq) / (2 * a), (-b - sq) / (2 * a)];
-}
