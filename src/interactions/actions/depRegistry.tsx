@@ -5,18 +5,22 @@
  * the dispatcher calls `registry.get('selection')` at invocation time to
  * build a typed Deps bag.
  *
- * `DepSchema` is intentionally an empty interface so consumers (apps,
- * features) augment it via declaration merging. The kit ships extensions
- * for `selection`, `view`, etc. as feature modules land.
+ * `DepSchema` — the map of dep name → value type — is the single source of
+ * truth for what `requires`/`register`/`get` accept. Its concrete fields live
+ * in `./depSchema` (co-located with the dep value types). It is declared there
+ * as a plain `export interface` rather than via a cross-module
+ * `declare module './depRegistry'` augmentation: that augmentation does NOT
+ * merge once rollup-plugin-dts flattens both files into one `.d.ts` chunk,
+ * which silently emptied `DepSchema` for consumers. Consumers still extend it
+ * via `declare module '@weasel-js/core'` augmentation.
  */
 import {
   createContext, useContext, useEffect, useMemo, useRef,
   type ReactNode,
 } from 'react';
+import type { DepSchema } from './depSchema';
 
-// Empty by design — see module JSDoc. Extend via declaration merging.
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface DepSchema {}
+export type { DepSchema };
 export type DepName = keyof DepSchema;
 
 export interface DepRegistry {

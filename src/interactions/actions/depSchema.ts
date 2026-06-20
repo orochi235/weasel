@@ -243,139 +243,135 @@ export interface LayoutDep {
   getLayout(containerId: string): import('../../layout/types').LayoutStrategy<unknown> | null;
 }
 
-declare module './depRegistry' {
-  interface DepSchema {
-    /** Kit selection state — ids of currently selected nodes. */
-    selection: SelectionApi;
-    /** Current viewport — camera position + scale. */
-    view: ViewApi;
-    /**
-     * Scene tree — structural reads + undoable mutations.
-     *
-     * The entry uses the fully-erased form `Scene<unknown, string, unknown>`
-     * because `DepSchema` must be concrete. Actions that need a typed scene
-     * should cast: `deps.scene as Scene<MyData, MyLayer, MyPose>`.
-     */
-    scene: Scene<unknown, string, unknown>;
-    /** Undo/redo history bound to the current scene. */
-    history: History;
-    /**
-     * Canvas pointer position in world space.
-     *
-     * Exposes `pointerRef` (mutable live ref) and `getDropPoint()` thunk.
-     * Marked `@experimental` in the source.
-     */
-    pointer: PointerContextValue;
-    /** Currently active tool id + hotkey-hold stack. */
-    activeTool: ActiveToolContextValue;
-    /**
-     * Area-select dep — AABB hit-test + selection read/write.
-     *
-     * Sourced from `<SceneCanvas>` via AABB overlap over all scene
-     * nodes. Override per-consumer for custom hit-testing (e.g. contain-mode,
-     * lock-aware filtering).
-     */
-    areaSelect: AreaSelectDep;
-    /**
-     * Topmost node at a world-space point. Sourced by `<SceneCanvas>` from
-     * the same picker that feeds the tool dispatcher's `getNodeAtPoint`.
-     * Optional: actions that read this (e.g. `moveAction` reparent-on-drop)
-     * fall back to a no-op when the dep isn't registered.
-     */
-    nodeAtPoint?: NodeAtPointDep;
-    /**
-     * Insert dep — node factory for drag-to-insert.
-     *
-     * Sourced from `<SceneCanvas>`. The `kind` param comes from
-     * the active binding's `opts.params.kind`. Override per-consumer to
-     * provide a typed node factory (e.g. with custom data payloads).
-     */
-    insert: InsertDep;
-    /**
-     * Lasso-select dep — polygon hit-test + selection read/write.
-     *
-     * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>`.
-     * Falls back to AABB hit-test when `hitTestLasso` is absent.
-     */
-    lassoSelect: LassoSelectDep;
-    /**
-     * Edit-anchors dep — narrow read/write of one polygon's path pose.
-     *
-     * Sourced from consumer. Wraps `getPose`/`setPose`/`applyOps`
-     * for the currently-being-edited polygon node.
-     *
-     * The `editAnchorsAction` requires this dep to be registered when anchor
-     * editing is active. If absent, `start` returns an empty handle (no-op).
-     */
-    editAnchors: EditAnchorsDep;
-    /**
-     * Text-edit dep — activates the in-place text editing overlay.
-     *
-     * Sourced from consumer via `useTextEdit` / `useSceneTextEdit`.
-     * The `enterTextEditAction` requires this dep to be registered by the text
-     * tool when text editing is available.
-     *
-     * The optional `isTextNode` predicate guards against entering edit mode on
-     * non-text nodes when no per-kind binding filter is available (Phase 14e
-     * follow-up will add per-kind classification to `classifyTarget`).
-     */
-    textEdit: TextEditDep;
-    /**
-     * Resize-policy dep — bounds constraints, point-snap behaviors,
-     * group expansion, and pose↔bounds projection for `resizeAction`.
-     *
-     * Optional: when omitted, `resizeAction` falls back to identity defaults
-     * (no constraints, no snap, identity expandIds, `RECT_POSE_DESCRIPTOR`).
-     * Consumers wire via `useDepSource('resizePolicy', ...)` or the
-     * `useResizePolicy` helper.
-     */
-    resizePolicy?: ResizePolicy<unknown>;
-    /**
-     * Booleans adapter — read selection ids, fetch world-space `Path`s,
-     * compare z-order, and mint result nodes for Pathfinder ops.
-     *
-     * Consumers wire via `useBooleansAdapter(adapter)` (a thin wrapper
-     * around `useDepSource('booleansAdapter', ...)`). The descriptor's
-     * `enabled` predicate reads `deps.selection` for the count check; the
-     * invoker reads `deps.booleansAdapter` to execute the op.
-     */
-    booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
-    /**
-     * Gesture dispatcher control surface — exposes `cancelAll(reason)` so
-     * actions that need to abort an in-flight handle (Escape cancels a
-     * drag, etc.) can do so. Sourced by `<SceneCanvas>` from the
-     * dispatcher instance it already owns.
-     */
-    dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };
-    /**
-     * Layout-strategy lookup. Sourced by `<SceneCanvas>` from `layouts`.
-     * Optional: absent (or all-null) → `moveAction` skips reflow.
-     */
-    layout?: LayoutDep;
-    /**
-     * Slice dep — consumer-supplied commit for the Slice action.
-     *
-     * Receives the finite slice segment in world coordinates; the consumer
-     * scans the scene, splits crossed paths via `splitPathByLine`, and
-     * applies the result as one undoable batch.
-     *
-     * Optional: when absent, `sliceAction` is a no-op.
-     */
-    slice?: SliceDep;
-    /**
-     * Optional consumer commit hook. When present, `moveAction` (and other
-     * default actions) submit their committed ops through it instead of
-     * `scene.applyBatch`, so apps with their own history integration
-     * (checkpoint + push entry) capture the gesture as one undo entry.
-     * When absent, commits fall back to `scene.applyBatch`.
-     */
-    applyOps?: (ops: Op[], label: string) => void;
-    /** Optional pose-composition strategy for hierarchical (local-pose) scenes.
-     *  When absent, defaults to IDENTITY (absolute-pose: nodes store world
-     *  coords). Local-pose consumers supply { compose: composeRectPose,
-     *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
-    poseComposition?: import('../../features/groups/composePose').PoseComposition<unknown>;
-  }
+export interface DepSchema {
+  /** Kit selection state — ids of currently selected nodes. */
+  selection: SelectionApi;
+  /** Current viewport — camera position + scale. */
+  view: ViewApi;
+  /**
+   * Scene tree — structural reads + undoable mutations.
+   *
+   * The entry uses the fully-erased form `Scene<unknown, string, unknown>`
+   * because `DepSchema` must be concrete. Actions that need a typed scene
+   * should cast: `deps.scene as Scene<MyData, MyLayer, MyPose>`.
+   */
+  scene: Scene<unknown, string, unknown>;
+  /** Undo/redo history bound to the current scene. */
+  history: History;
+  /**
+   * Canvas pointer position in world space.
+   *
+   * Exposes `pointerRef` (mutable live ref) and `getDropPoint()` thunk.
+   * Marked `@experimental` in the source.
+   */
+  pointer: PointerContextValue;
+  /** Currently active tool id + hotkey-hold stack. */
+  activeTool: ActiveToolContextValue;
+  /**
+   * Area-select dep — AABB hit-test + selection read/write.
+   *
+   * Sourced from `<SceneCanvas>` via AABB overlap over all scene
+   * nodes. Override per-consumer for custom hit-testing (e.g. contain-mode,
+   * lock-aware filtering).
+   */
+  areaSelect: AreaSelectDep;
+  /**
+   * Topmost node at a world-space point. Sourced by `<SceneCanvas>` from
+   * the same picker that feeds the tool dispatcher's `getNodeAtPoint`.
+   * Optional: actions that read this (e.g. `moveAction` reparent-on-drop)
+   * fall back to a no-op when the dep isn't registered.
+   */
+  nodeAtPoint?: NodeAtPointDep;
+  /**
+   * Insert dep — node factory for drag-to-insert.
+   *
+   * Sourced from `<SceneCanvas>`. The `kind` param comes from
+   * the active binding's `opts.params.kind`. Override per-consumer to
+   * provide a typed node factory (e.g. with custom data payloads).
+   */
+  insert: InsertDep;
+  /**
+   * Lasso-select dep — polygon hit-test + selection read/write.
+   *
+   * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>`.
+   * Falls back to AABB hit-test when `hitTestLasso` is absent.
+   */
+  lassoSelect: LassoSelectDep;
+  /**
+   * Edit-anchors dep — narrow read/write of one polygon's path pose.
+   *
+   * Sourced from consumer. Wraps `getPose`/`setPose`/`applyOps`
+   * for the currently-being-edited polygon node.
+   *
+   * The `editAnchorsAction` requires this dep to be registered when anchor
+   * editing is active. If absent, `start` returns an empty handle (no-op).
+   */
+  editAnchors: EditAnchorsDep;
+  /**
+   * Text-edit dep — activates the in-place text editing overlay.
+   *
+   * Sourced from consumer via `useTextEdit` / `useSceneTextEdit`.
+   * The `enterTextEditAction` requires this dep to be registered by the text
+   * tool when text editing is available.
+   *
+   * The optional `isTextNode` predicate guards against entering edit mode on
+   * non-text nodes when no per-kind binding filter is available (Phase 14e
+   * follow-up will add per-kind classification to `classifyTarget`).
+   */
+  textEdit: TextEditDep;
+  /**
+   * Resize-policy dep — bounds constraints, point-snap behaviors,
+   * group expansion, and pose↔bounds projection for `resizeAction`.
+   *
+   * Optional: when omitted, `resizeAction` falls back to identity defaults
+   * (no constraints, no snap, identity expandIds, `RECT_POSE_DESCRIPTOR`).
+   * Consumers wire via `useDepSource('resizePolicy', ...)` or the
+   * `useResizePolicy` helper.
+   */
+  resizePolicy?: ResizePolicy<unknown>;
+  /**
+   * Booleans adapter — read selection ids, fetch world-space `Path`s,
+   * compare z-order, and mint result nodes for Pathfinder ops.
+   *
+   * Consumers wire via `useBooleansAdapter(adapter)` (a thin wrapper
+   * around `useDepSource('booleansAdapter', ...)`). The descriptor's
+   * `enabled` predicate reads `deps.selection` for the count check; the
+   * invoker reads `deps.booleansAdapter` to execute the op.
+   */
+  booleansAdapter?: import('./booleans/booleans').BooleansAdapter;
+  /**
+   * Gesture dispatcher control surface — exposes `cancelAll(reason)` so
+   * actions that need to abort an in-flight handle (Escape cancels a
+   * drag, etc.) can do so. Sourced by `<SceneCanvas>` from the
+   * dispatcher instance it already owns.
+   */
+  dispatcher?: { cancelAll(reason: 'commit' | 'cancel'): void };
+  /**
+   * Layout-strategy lookup. Sourced by `<SceneCanvas>` from `layouts`.
+   * Optional: absent (or all-null) → `moveAction` skips reflow.
+   */
+  layout?: LayoutDep;
+  /**
+   * Slice dep — consumer-supplied commit for the Slice action.
+   *
+   * Receives the finite slice segment in world coordinates; the consumer
+   * scans the scene, splits crossed paths via `splitPathByLine`, and
+   * applies the result as one undoable batch.
+   *
+   * Optional: when absent, `sliceAction` is a no-op.
+   */
+  slice?: SliceDep;
+  /**
+   * Optional consumer commit hook. When present, `moveAction` (and other
+   * default actions) submit their committed ops through it instead of
+   * `scene.applyBatch`, so apps with their own history integration
+   * (checkpoint + push entry) capture the gesture as one undo entry.
+   * When absent, commits fall back to `scene.applyBatch`.
+   */
+  applyOps?: (ops: Op[], label: string) => void;
+  /** Optional pose-composition strategy for hierarchical (local-pose) scenes.
+   *  When absent, defaults to IDENTITY (absolute-pose: nodes store world
+   *  coords). Local-pose consumers supply { compose: composeRectPose,
+   *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
+  poseComposition?: import('../../features/groups/composePose').PoseComposition<unknown>;
 }
-
-export {};
