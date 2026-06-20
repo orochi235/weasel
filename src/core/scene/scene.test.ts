@@ -924,3 +924,150 @@ describe('Scene.loadState', () => {
     expect([...dst.renderOrder()]).toEqual([bedId, children[0]]);
   });
 });
+
+describe('user-layer mutations', () => {
+  const baseOpts = () => ({ systemLayers: [{ id: 'base' as const }] });
+
+  it('addLayer appends a user layer to the top by default', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    expect(scene.layers.map((l) => l.id)).toEqual(['base', 'fx']);
+    const fx = scene.layers[1];
+    expect(fx.kind).toBe('user');
+    expect(fx.kind === 'user' && fx.name).toBe('Effects');
+    expect(fx.visible).toBe(true);
+    expect(fx.locked).toBe(false);
+  });
+
+  it('addLayer respects an explicit index', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
+    scene.addLayer({ id: 'fx', name: 'Effects', index: 0 });
+    expect(scene.layers.map((l) => l.id)).toEqual(['fx', 'base']);
+  });
+
+  it('addLayer throws on a duplicate id', () => {
+    const scene = createScene<{ v: number }, 'base', { x: number }>(baseOpts());
+    expect(() => scene.addLayer({ id: 'base', name: 'dupe' })).toThrow(/duplicate/);
+  });
+
+  it('addLayer is undoable', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    scene.undo();
+    expect(scene.layers.map((l) => l.id)).toEqual(['base']);
+    scene.redo();
+    expect(scene.layers.map((l) => l.id)).toEqual(['base', 'fx']);
+  });
+
+  it('renameLayer updates a user layer name and is undoable', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    scene.renameLayer('fx', 'Glow');
+    const fx = () => scene.layers.find((l) => l.id === 'fx')!;
+    expect(fx().kind === 'user' && (fx() as { name: string }).name).toBe('Glow');
+    scene.undo();
+    expect(fx().kind === 'user' && (fx() as { name: string }).name).toBe('Effects');
+  });
+
+  it('renameLayer throws on a system layer', () => {
+    const scene = createScene<{ v: number }, 'base', { x: number }>(baseOpts());
+    expect(() => scene.renameLayer('base', 'nope')).toThrow(/system/);
+  });
+
+  it('renameLayer throws on an unknown layer', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>(baseOpts());
+    expect(() => scene.renameLayer('fx', 'nope')).toThrow(/unknown/);
+  });
+
+  it('moveLayer reorders and is undoable', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx' | 'top', { x: number }>({
+      systemLayers: [{ id: 'base' }, { id: 'fx' }, { id: 'top' }],
+    });
+    scene.moveLayer('top', 0);
+    expect(scene.layers.map((l) => l.id)).toEqual(['top', 'base', 'fx']);
+    scene.undo();
+    expect(scene.layers.map((l) => l.id)).toEqual(['base', 'fx', 'top']);
+  });
+
+  it('moveLayer clamps an out-of-range index', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+      systemLayers: [{ id: 'base' }, { id: 'fx' }],
+    });
+    scene.moveLayer('base', 99);
+    expect(scene.layers.map((l) => l.id)).toEqual(['fx', 'base']);
+  });
+
+  it('moveLayer throws if the reorder would push a child below its parent', () => {
+    // parent on 'base', child on 'fx' (higher). Moving 'fx' below 'base' is illegal.
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+      systemLayers: [{ id: 'base' }, { id: 'fx' }],
+    });
+    const parent = scene.add({ kind: 'container', layer: 'base', pose: { x: 0 }, data: { v: 1 } });
+    scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 1 }, data: { v: 2 }, parent });
+    expect(() => scene.moveLayer('fx', 0)).toThrow(/below its parent/);
+    expect(scene.layers.map((l) => l.id)).toEqual(['base', 'fx']);
+  });
+
+  it('removeLayer drops the record and cascade-deletes tagged nodes', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+      systemLayers: [{ id: 'base' }],
+    });
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    scene.add({ kind: 'leaf', layer: 'base', pose: { x: 0 }, data: { v: 1 } });
+    const onFx = scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 1 }, data: { v: 2 } });
+    scene.removeLayer('fx');
+    expect(scene.layers.map((l) => l.id)).toEqual(['base']);
+    expect(scene.get(onFx)).toBeUndefined();
+    expect(scene.nodes.size).toBe(1);
+  });
+
+  it('removeLayer cascade-deletes a subtree that spans layers', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+      systemLayers: [{ id: 'base' }],
+    });
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    const c = scene.add({ kind: 'container', layer: 'fx', pose: { x: 0 }, data: { v: 1 } });
+    const child = scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 1 }, data: { v: 2 }, parent: c });
+    scene.removeLayer('fx');
+    expect(scene.get(c)).toBeUndefined();
+    expect(scene.get(child)).toBeUndefined();
+    expect(scene.nodes.size).toBe(0);
+  });
+
+  it('removeLayer is undoable — restores the layer and all its nodes in one step', () => {
+    const scene = createScene<{ v: number }, 'base' | 'fx', { x: number }>({
+      systemLayers: [{ id: 'base' }],
+    });
+    scene.addLayer({ id: 'fx', name: 'Effects' });
+    const a = scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 0 }, data: { v: 1 } });
+    const b = scene.add({ kind: 'leaf', layer: 'fx', pose: { x: 1 }, data: { v: 2 } });
+    scene.removeLayer('fx');
+    scene.undo();
+    expect(scene.layers.map((l) => l.id)).toEqual(['base', 'fx']);
+    expect(scene.get(a)).toBeDefined();
+    expect(scene.get(b)).toBeDefined();
+  });
+
+  it('removeLayer throws on a system layer', () => {
+    const scene = createScene<{ v: number }, 'base', { x: number }>({
+      systemLayers: [{ id: 'base' }],
+    });
+    expect(() => scene.removeLayer('base')).toThrow(/system/);
+  });
+
+  it('removeLayer keeps layerIndex consistent for surviving layers', () => {
+    // 'mid' and 'top' are user layers (added at runtime) so removeLayer is legal.
+    const scene = createScene<{ v: number }, 'base' | 'mid' | 'top', { x: number }>({
+      systemLayers: [{ id: 'base' }],
+    });
+    scene.addLayer({ id: 'mid', name: 'Mid' }); // index 1
+    scene.addLayer({ id: 'top', name: 'Top' }); // index 2
+    const node = scene.add({ kind: 'leaf', layer: 'top', pose: { x: 0 }, data: { v: 1 } });
+    scene.removeLayer('mid'); // layers -> [base, top]; 'top' shifts index 2 -> 1
+    expect(scene.layers.map((l) => l.id)).toEqual(['base', 'top']);
+    // requireLayerIndex must resolve 'top' to its new slot for later mutations.
+    scene.setLayerVisible('top', false);
+    expect(scene.layers.find((l) => l.id === 'top')!.visible).toBe(false);
+    expect(scene.get(node)!.layer).toBe('top');
+  });
+});

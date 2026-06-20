@@ -131,6 +131,19 @@ export interface SystemLayerSpec<TLayer extends string> {
   locked?: boolean;
 }
 
+/** Argument to `Scene.addLayer`. Always produces a `UserLayerRecord`
+ *  (`kind: 'user'`). */
+export interface AddLayerSpec<TLayer extends string> {
+  id: TLayer;
+  name: string;
+  /** Default `true`. */
+  visible?: boolean;
+  /** Default `false`. */
+  locked?: boolean;
+  /** Render-stack position. Default: top of stack (highest render index). */
+  index?: number;
+}
+
 /** JSON-serializable shape of a Scene's current state. Produced by
  *  `scene.toJSON()`; consumed by `sceneFromJSON()`. Function fields
  *  (e.g., `clipFromPose`) appear as string keys (`clipFromPoseKey`) and
@@ -212,6 +225,10 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   reorder(id: NodeId, index: number): void;
   setLayerVisible(layer: TLayer, visible: boolean): void;
   setLayerLocked(layer: TLayer, locked: boolean): void;
+  addLayer(spec: AddLayerSpec<TLayer>): void;
+  removeLayer(layer: TLayer): void;
+  renameLayer(layer: TLayer, name: string): void;
+  moveLayer(layer: TLayer, index: number): void;
 
   // Custom op seam
   registerOp<P>(kind: string, handler: RegisteredOp<P>): void;
