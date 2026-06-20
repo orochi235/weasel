@@ -18,7 +18,7 @@
  * where operating on the unrotated source path produces wrong shapes.
  */
 
-import { boxToBox } from '@weasel-js/geom';
+import { boxToBox, rotateAboutPoint } from '@weasel-js/geom';
 import { boundsOfPath } from './bounds';
 import { type Path, type PolygonPath } from './types';
 import { translatePath } from './transform';
@@ -83,12 +83,14 @@ export function pathInWorld(path: Path, pose: PathInWorldPose): Path {
   // from what's painted — notably for resized rects (pose dims, not path dims).
   const local = pathInPoseFrame(path, pose);
 
-  // Step 2: apply the pose's rotation about its AABB center, if any. The gate
-  // and the rect->polygon promotion live in `poseRotationOf`/`rotatePathAround`
-  // so every world seam shares one rotation implementation.
+  // Step 2: apply the pose's rotation about its AABB center, if any. The ≈0
+  // gate + AABB-center pivot come from `poseRotationOf` (the shared rotation
+  // convention); the rotation itself composes on the kernel — `transformPath`
+  // handles the rect->polygon promotion and bezier control-point rotation,
+  // identically to the bespoke `rotatePathAround` it replaces.
   const r = poseRotationOf(pose);
   if (!r) return local;
-  return rotatePathAround(local, r.cx, r.cy, r.rotation);
+  return transformPath(local, rotateAboutPoint(r.cx, r.cy, r.rotation)) as PolygonPath;
 }
 
 /**
