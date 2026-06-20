@@ -5,6 +5,7 @@ import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
 import { RECT_POSE_DESCRIPTOR, type PoseProjection } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
+import { unionBounds } from 'features/groups/unionBounds';
 
 /** Edge or center the selection should align to within the selection's union AABB. */
 export type AlignEdge = 'left' | 'right' | 'top' | 'bottom' | 'center-x' | 'center-y';
@@ -34,17 +35,6 @@ export interface UseAlignOptions<TPose> {
 export interface UseAlignReturn {
   /** Imperative trigger. No-op when fewer than 2 items selected. */
   align(edge: AlignEdge): void;
-}
-
-function unionBounds(rs: ResizePose[]): ResizePose {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const r of rs) {
-    if (r.x < minX) minX = r.x;
-    if (r.y < minY) minY = r.y;
-    if (r.x + r.width > maxX) maxX = r.x + r.width;
-    if (r.y + r.height > maxY) maxY = r.y + r.height;
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
 /** Compute the (dx, dy) translation that moves AABB `b` so that the requested
@@ -96,7 +86,8 @@ export function useAlign<TPose>(
       (RECT_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>);
     const poses = sel.map((id) => a.getPose(id));
     const bounds = poses.map((p) => geom.getBounds(p));
-    const union = unionBounds(bounds);
+    // Guarded non-empty by `sel.length < 2` above → `!` is safe.
+    const union = unionBounds(bounds)!;
     const ops: Op[] = [];
     for (let i = 0; i < sel.length; i++) {
       const { dx, dy } = alignDeltaFor(bounds[i], union, edge);

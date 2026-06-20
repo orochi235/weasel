@@ -4,6 +4,7 @@ import type { PoseProjection } from '../resize/geometry';
 import { RECT_POSE_DESCRIPTOR } from '../resize/geometry';
 import type { ResizePose } from '../../gestures/types';
 import { alignDeltaFor, translatePoseViaDescriptor, type AlignEdge } from '../align/align';
+import { unionBounds } from 'features/groups/unionBounds';
 import type { Action } from '../registry';
 import { ActionDisabledReason } from '../registry';
 import type { SelectionApi } from 'core/selection/useSelection';
@@ -41,17 +42,6 @@ const ICON_FOR: Record<AlignEdge, ReactNode> = {
   'center-y': <AlignCenterYIcon />,
 };
 
-function unionBounds(rs: ResizePose[]): ResizePose {
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const r of rs) {
-    if (r.x < minX) minX = r.x;
-    if (r.y < minY) minY = r.y;
-    if (r.x + r.width > maxX) maxX = r.x + r.width;
-    if (r.y + r.height > maxY) maxY = r.y + r.height;
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
-
 // ---------------------------------------------------------------------------
 // Shared helper for descriptor invokers
 // ---------------------------------------------------------------------------
@@ -74,7 +64,8 @@ function alignSelection(
     return node?.pose ?? { x: 0, y: 0, width: 0, height: 0 };
   });
   const bounds = poses.map((p) => geom.getBounds(p) as ResizePose);
-  const union = unionBounds(bounds);
+  // Guarded non-empty by `ids.length < 2` above → `!` is safe.
+  const union = unionBounds(bounds)!;
   scene.batch('Align', () => {
     for (let i = 0; i < ids.length; i++) {
       const { dx, dy } = alignDeltaFor(bounds[i], union, edge);
