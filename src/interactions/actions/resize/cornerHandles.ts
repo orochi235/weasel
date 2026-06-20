@@ -8,17 +8,63 @@ export interface CornerHandle {
   anchor: ResizeAnchor;
 }
 
+/** Which AABB edge a corner sits on, per axis. `'min'` = the x/y origin
+ *  edge; `'max'` = the origin + extent edge. */
+type Edge = 'min' | 'max';
+
+/** One entry of the canonical 4-corner resize layout. The single source of
+ *  truth for "which corner maps to which anchor / handle-kind". */
+export interface CornerAnchor {
+  /** Which x-edge the corner sits on (`'min'` = left, `'max'` = right). */
+  xEdge: Edge;
+  /** Which y-edge the corner sits on (`'min'` = top, `'max'` = bottom). */
+  yEdge: Edge;
+  /** Anchor that pins the diagonally-opposite (fixed) corner. Always the
+   *  axis-wise opposite of `{xEdge, yEdge}`. */
+  anchor: ResizeAnchor;
+  /** Affordance/handle discriminator string for this corner. */
+  kind: string;
+  /** Short positional tag (`'<xEdge>-<yEdge>'`), e.g. `'min-max'`. */
+  tag: string;
+}
+
+/**
+ * The single ordered corner→anchor table. Order is **load-bearing**: every
+ * consumer iterates it in this sequence (TL, TR, BL, BR) so positional
+ * meaning (the i-th handle / `kind` / `tag`) stays consistent across the
+ * resize-handle affordance, the affordance-hit classifier, and
+ * `cornerResizeHandles`. Each corner's `anchor` names the diagonally
+ * opposite corner, so dragging the corner scales the box from that fixed
+ * point.
+ */
+export const CORNER_ANCHORS: readonly CornerAnchor[] = [
+  { xEdge: 'min', yEdge: 'min', anchor: { x: 'max', y: 'max' }, kind: 'handle:top-left',     tag: 'min-min' },
+  { xEdge: 'max', yEdge: 'min', anchor: { x: 'min', y: 'max' }, kind: 'handle:top-right',    tag: 'max-min' },
+  { xEdge: 'min', yEdge: 'max', anchor: { x: 'max', y: 'min' }, kind: 'handle:bottom-left',  tag: 'min-max' },
+  { xEdge: 'max', yEdge: 'max', anchor: { x: 'min', y: 'min' }, kind: 'handle:bottom-right', tag: 'max-max' },
+];
+
+/** Resolve a corner's world-space position for the given bounds. `xEdge`
+ *  `'max'` → `x + width`; `yEdge` `'max'` → `y + height`. */
+export function cornerPoint(
+  bounds: Bounds,
+  entry: Pick<CornerAnchor, 'xEdge' | 'yEdge'>,
+): { x: number; y: number } {
+  return {
+    x: entry.xEdge === 'max' ? bounds.x + bounds.width : bounds.x,
+    y: entry.yEdge === 'max' ? bounds.y + bounds.height : bounds.y,
+  };
+}
+
 /** Standard 4-corner resize-handle layout: each corner pins the opposite
  *  corner via an anchor of `{x: 'min'|'max', y: 'min'|'max'}` so dragging it
- *  scales the box from the fixed opposite corner. */
+ *  scales the box from the fixed opposite corner. Decodes {@link CORNER_ANCHORS}
+ *  against `bounds`. */
 export function cornerResizeHandles(bounds: Bounds): CornerHandle[] {
-  const { x, y, width, height } = bounds;
-  return [
-    { cx: x,         cy: y,          anchor: { x: 'max', y: 'max' } },
-    { cx: x + width, cy: y,          anchor: { x: 'min', y: 'max' } },
-    { cx: x,         cy: y + height, anchor: { x: 'max', y: 'min' } },
-    { cx: x + width, cy: y + height, anchor: { x: 'min', y: 'min' } },
-  ];
+  return CORNER_ANCHORS.map((c) => {
+    const p = cornerPoint(bounds, c);
+    return { cx: p.x, cy: p.y, anchor: c.anchor };
+  });
 }
 
 /** Square hit-test for a handle: returns true if `(px, py)` is within

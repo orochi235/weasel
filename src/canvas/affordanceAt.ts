@@ -23,6 +23,7 @@ import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 import { hitAnchor } from 'interactions/actions/edit-anchors/handles';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
 import { rotatePoint } from 'interactions/actions/rotate/geometry';
+import { CORNER_ANCHORS, cornerPoint, fixedCornerOf } from 'interactions/actions/resize/cornerHandles';
 import type { PolygonPath } from 'features/paths/types';
 import { poseRotationOf } from 'features/paths/poseRotation';
 
@@ -94,33 +95,24 @@ interface CornerDesc {
 }
 
 function cornersFor(b: Bounds): CornerDesc[] {
-  const { x, y, width, height } = b;
   // Pivot + angle from the kit's one rotation convention; null = unrotated.
   const r = poseRotationOf(b);
   const place = (px: number, py: number): { x: number; y: number } =>
     r ? rotatePoint(px, py, r.cx, r.cy, r.rotation) : { x: px, y: py };
 
-  // Raw (unrotated) corners, their fixed opposites, and the corresponding
-  // ResizeAnchor. Anchor convention (matches `anchorFromHandleKind` in
-  // resize.ts and `cornerResizeHandles`): the anchor names the FIXED corner.
+  // Decode the canonical corner→anchor table. Each entry's `anchor` names
+  // the FIXED corner; the dragged corner is `cornerPoint`, the fixed opposite
+  // is `fixedCornerOf(b, anchor)`:
   //   top-left dragged    → bottom-right fixed → { x:'max', y:'max' }
   //   top-right dragged   → bottom-left fixed  → { x:'min', y:'max' }
   //   bottom-left dragged → top-right fixed    → { x:'max', y:'min' }
   //   bottom-right dragged→ top-left fixed     → { x:'min', y:'min' }
-  const raw: {
-    lx: number; ly: number; kind: string;
-    anchor: ResizeAnchor; fx: number; fy: number;
-  }[] = [
-    { lx: x,           ly: y,           kind: 'handle:top-left',     anchor: { x: 'max', y: 'max' }, fx: x + width, fy: y + height },
-    { lx: x + width,   ly: y,           kind: 'handle:top-right',    anchor: { x: 'min', y: 'max' }, fx: x,         fy: y + height },
-    { lx: x,           ly: y + height,  kind: 'handle:bottom-left',  anchor: { x: 'max', y: 'min' }, fx: x + width, fy: y          },
-    { lx: x + width,   ly: y + height,  kind: 'handle:bottom-right', anchor: { x: 'min', y: 'min' }, fx: x,         fy: y          },
-  ];
-
-  return raw.map(({ lx, ly, kind, anchor, fx, fy }) => {
-    const wp = place(lx, ly);
-    const fp = place(fx, fy);
-    return { worldX: wp.x, worldY: wp.y, kind, anchor, fixedX: fp.x, fixedY: fp.y };
+  return CORNER_ANCHORS.map((c) => {
+    const corner = cornerPoint(b, c);
+    const fixed = fixedCornerOf(b, c.anchor);
+    const wp = place(corner.x, corner.y);
+    const fp = place(fixed.x, fixed.y);
+    return { worldX: wp.x, worldY: wp.y, kind: c.kind, anchor: c.anchor, fixedX: fp.x, fixedY: fp.y };
   });
 }
 

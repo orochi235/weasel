@@ -2,6 +2,7 @@ import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { DragChannel } from 'tools/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
+import { CORNER_ANCHORS, cornerPoint } from 'interactions/actions/resize/cornerHandles';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
 export interface CornerResizeAffordanceOptions {
@@ -65,12 +66,10 @@ export function createCornerResizeAffordance(
       const target = pickRenderTarget(state);
       if (!target) return [];
       const b = target.bounds;
-      const corners: { lx: number; ly: number; anchor: ResizeAnchor; tag: string }[] = [
-        { lx: b.x,           ly: b.y,            anchor: { x: 'max', y: 'max' }, tag: 'min-min' },
-        { lx: b.x + b.width, ly: b.y,            anchor: { x: 'min', y: 'max' }, tag: 'max-min' },
-        { lx: b.x,           ly: b.y + b.height, anchor: { x: 'max', y: 'min' }, tag: 'min-max' },
-        { lx: b.x + b.width, ly: b.y + b.height, anchor: { x: 'min', y: 'min' }, tag: 'max-max' },
-      ];
+      const corners = CORNER_ANCHORS.map((c) => {
+        const p = cornerPoint(b, c);
+        return { lx: p.x, ly: p.y, anchor: c.anchor, tag: c.tag };
+      });
       return corners.map(({ lx, ly, anchor, tag }) => ({
         id: `corner-${tag}`,
         targetId: target.id,
