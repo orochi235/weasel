@@ -36,6 +36,7 @@ import {
   pathUnion,
   pathIntersect,
   pathSubtract,
+  transformPath,
 } from 'features/paths';
 import type { Path } from 'features/paths/types';
 import { splitPathByLine } from 'features/paths/splitByLine';
@@ -136,11 +137,16 @@ function makeStubScene(node: TestNode): StubScene {
   return scene;
 }
 
-/** Adapter that writes each committed op's pose back to the stub scene. */
+/** Adapter that writes each committed op's pose / data back to the stub scene.
+ *  The `setData` method lets a committed `setData` op (emitted by the opt-in
+ *  geometryProjection seam) update the data the test reads from. */
 function applyOpsTo(scene: StubScene): (ops: Op[], label: string) => void {
   const adapter = {
     setPose(id: string, pose: unknown) {
       scene.setPose(id as NodeId, pose as AABBPose);
+    },
+    setData(id: string, data: unknown) {
+      scene.datas.set(id as string, data as DrawData);
     },
   };
   return (ops) => {
@@ -170,6 +176,17 @@ function baseDeps(scene: StubScene, id: string) {
     selection: { get: () => [id as NodeId] },
     scene,
     applyOps: applyOpsTo(scene),
+    // Mirror apps/draw's real consumer: a flip / resize / move / nudge of a
+    // geometry-in-data node ALSO rewrites its `data.path` via the affine the
+    // pose underwent. This is the only way an asymmetric shape's contents
+    // mirror under flip-x (a bare-AABB pose flip is identity).
+    geometryProjection: {
+      transform: (node: { data: unknown }, m: import('@weasel-js/geom').Mat3) => {
+        const data = node.data as { path: Path } | undefined;
+        if (!data || !data.path) return null;
+        return { ...data, path: transformPath(data.path, m) };
+      },
+    },
   };
 }
 

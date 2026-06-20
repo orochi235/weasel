@@ -55,8 +55,11 @@ import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
 import type { Op } from 'core/ops/types';
+import type { Mat3 } from '@weasel-js/geom';
+import { boxToBox } from '@weasel-js/geom';
 import { createTransformOp } from 'core/ops/transform';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { geometryDataOp, type GeometryProjection } from '../geometryProjection';
 
 // ---------------------------------------------------------------------------
 // Defaults applied when `resizePolicy` dep is absent. Mirrors the
@@ -259,6 +262,10 @@ interface ResizeScratch {
    *  the final pose commit routes through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
   applyOps?: (ops: Op[], label: string) => void;
+  /** Optional eager-sync seam captured at gesture start. When present, the
+   *  commit emits a `setData` op per leaf mapping its data-held geometry by
+   *  the box→box affine the pose underwent. Undefined → pose-only commit. */
+  geometryProjection?: GeometryProjection;
 }
 
 // ---------------------------------------------------------------------------
@@ -285,6 +292,7 @@ export const resizeAction: Action & { requires: string[] } = {
       const selection = ctx.deps.selection as SelectionApi | undefined;
       const scene = ctx.deps.scene as Scene<unknown, string, unknown> | undefined;
       const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
+      const geometryProjection = ctx.deps.geometryProjection as GeometryProjection | undefined;
 
       if (!selection || !scene) return {};
 
@@ -379,6 +387,7 @@ export const resizeAction: Action & { requires: string[] } = {
         pointSnap,
         gestureCtx,
         applyOps,
+        geometryProjection,
       };
 
       return {
@@ -524,6 +533,27 @@ export const resizeAction: Action & { requires: string[] } = {
               to: next,
               label: 'Resize',
             }));
+            // Eager-sync: map data-held geometry by the box→box affine the
+            // pose underwent (start-pose bounds → final-pose bounds). Opt-in
+            // via the geometryProjection seam; a no-op when the dep is absent.
+            if (scratch.geometryProjection) {
+              const node = scratch.scene.get(id);
+              if (node) {
+                const sb = scratch.geometry.getBounds(from);
+                const db = scratch.geometry.getBounds(next);
+                const m: Mat3 = boxToBox(
+                  sb.x, sb.y, sb.width, sb.height,
+                  db.x, db.y, db.width, db.height,
+                );
+                const dataOp = geometryDataOp(
+                  scratch.geometryProjection,
+                  { id: id as string, data: node.data, pose: from },
+                  m,
+                  'Resize',
+                );
+                if (dataOp) ops.push(dataOp);
+              }
+            }
           }
           if (ops.length > 0) {
             if (scratch.applyOps) scratch.applyOps(ops, 'Resize');
