@@ -59,6 +59,31 @@ in scope at the projection call site. Verify in `src/interactions/actions/resize
 
 Either way the *math* is identical and lives in the kernel; only the wiring site differs.
 
+### Resolution (2026-06-20, Phase 1 investigation)
+
+**Verdict: kit-level (b) is not possible with the current action signature, and (b) is the chosen direction — implemented via a new generic geometry seam.**
+
+Phase 1 proved the resize/move/nudge/flip actions operate purely on poses: `PoseProjection<TPose>` has no `data` parameter (`resize/geometry.ts:15-43`), and the action only reads `node.pose`, never the node body (`defaults/resize.ts:314,319,428`). So there is no existing seam to remap data-held geometry.
+
+Critically, the kit is **generic over `TData`** (`Scene<TData, TLayer, TPose>`) — it cannot reach into `data.path` directly, because `data` is consumer-defined. So (b) is **not** "thread `data.path` through the projection." (b) is: **add a generic, consumer-supplied geometry-projection seam** — a real public hook, not an internal reach — that the actions invoke.
+
+**Seam shape (the key new public API; confirm on plan review):** an optional per-`SceneCanvas` (and/or per-node-kind) projection the consumer supplies:
+
+```
+geometryProjection?: {
+  /** Return updated data with the node's data-held geometry transformed by `m`,
+   *  or null if this node has no data-held geometry (kit leaves it alone). */
+  transform(node: SceneNode<TData, TPose>, m: Mat3): TData | null;
+}
+```
+
+- The action computes the affine it applied to the **pose** as a `Mat3` and calls `geometryProjection.transform(node, m)`, committing the pose op **and** the data op in one undoable batch.
+- Per op: resize → `boxToBox(originBounds, proposedBounds)`; move/nudge → `translate(dx,dy)`; flip → mirror across the centerline; **rotate → no data call** (rotation is stored on the pose and baked at render; `data.path` is unchanged — matches the green rotate tests).
+- `apps/draw` implements `transform` via the kernel: `{ ...data, path: pathFromCoords(transformCoords(data.path.coords, m), data.path.commands) }`. This is the first consumer of the seam; it replaces the hand-rolled `applyPoseToObj` `scalePathToBounds`.
+- This keeps the kit's pose-only model intact for pose-held geometry and adds a clean, generic extension for data-held geometry — no `@internal` leak, no side-effecting projection reaching into the scene (which is why interim (a) is rejected).
+
+**`mintPathLeaf`** still consolidates the booleans/slice/release-compound leaf minting so the convention is enforced once and the seam applies uniformly.
+
 ## Seam re-pointing (the seven)
 
 Each canonical owner stays in its layer home and is rewritten to compose on the kernel. The
