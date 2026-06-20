@@ -43,6 +43,11 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     snap?: SnapStrategy<TPose>;
     handleHitRadius?: number;
     areaSelect?: UseAreaSelectOptions;
+    /** Override the body-pick used on click/pointerdown. Alt-aware: receives
+     *  the live alt state + current selection so consumers can implement
+     *  alt-cycling through an overlapping stack. Default: top-most hit
+     *  (alt ignored). Forwarded verbatim to `useSelectTool`. */
+    pickBest?: (worldX: number, worldY: number, alt: boolean, sel: readonly string[]) => string | null;
   };
   insertTool?: {
     create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
@@ -226,6 +231,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     boundsOf: wiredBoundsOf,
     move: wiredMoveOptions,
     ...(areaSelectOptions ? { areaSelect: areaSelectOptions } : {}),
+    ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     getNode: (id: string) => scene.get(asNodeId(id)) ?? null,
     getSelection: () => selection.current,
   });

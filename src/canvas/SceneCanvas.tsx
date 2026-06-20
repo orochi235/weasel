@@ -390,6 +390,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
        *  doesn't mutate the selection). Pass
        *  `{ behaviors: [selectFromMarquee()] }` to enable rubber-band select. */
       areaSelect?: UseAreaSelectOptions;
+      /** Override the body-pick used on click/pointerdown. Alt-aware: receives
+       *  the live alt state + current selection so consumers can implement
+       *  alt-cycling through an overlapping stack. Default: top-most hit
+       *  (alt ignored). */
+      pickBest?: (worldX: number, worldY: number, alt: boolean, sel: readonly string[]) => string | null;
     };
 
     // --- Insert tool: when `create` is supplied, the synthesized adapter
@@ -505,6 +510,16 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  the default select. If you supply your own `tools` prop, this is
      *  ignored — wire `ambient` through your own `useTools` call instead. */
     ambient?: AnyTool[];
+
+    /** Click-only fallback tool. Its `pointer.onClick` fires only when the
+     *  in-flight tool didn't claim the click (e.g. the active select tool
+     *  returned `pass` on an empty-space click). Use it for a
+     *  click-to-deselect or click-to-spawn behavior that shouldn't interfere
+     *  with the active tool's own clicks. Forwarded to the internal
+     *  `useTools` as its `fallback` slot. If you supply your own `tools`
+     *  prop (takeover form), this is ignored — pass `fallback` to your own
+     *  `useTools` call instead. */
+    clickFallback?: AnyTool;
 
     /** Viewport feature wiring.
      *
@@ -747,6 +762,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     toolOptions,
     initialActiveTool,
     ambient,
+    clickFallback,
     viewport,
     layers,
     actions,
@@ -1094,6 +1110,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     active: initialActiveTool ?? 'select',
     registry: internalRegistry,
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
+    ...(clickFallback ? { fallback: clickFallback } : {}),
   });
 
   // Auto-wire keybindings against whichever registry is live.
