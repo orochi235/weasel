@@ -45,7 +45,6 @@ Priority tags:
 - Alignment guides / insert snap-to-existing-edges → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Op coalescing in `useScene`'s `LogEntry` history → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Clipboard: OS clipboard / cross-reload serialization → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- WeaselDraw: wire `usePersistedScene` autosave into App → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Plugins & packaging**
 - Plugin/bundling convention v1 (`WeaselPlugin` shape) → [Plugins & packaging](#plugins--packaging)
@@ -221,7 +220,6 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P2) Clipboard: OS clipboard / cross-reload serialization.** Currently the kit's clipboard is in-memory only — copy doesn't reach the system clipboard, and reloading drops the buffer. Needs a serialization shape (likely the same op-log shape useScene wants) plus `navigator.clipboard` plumbing with a JSON wire format.
 
-- **(P2) WeaselDraw: wire `usePersistedScene` autosave into App.** SVG save/load/export already shipped (`apps/draw/src/App.tsx` `onSaveSvg`/`onOpenSvg`), and an IndexedDB scene+history persistence layer exists (`apps/draw/src/sceneStore.ts`, `usePersistedScene.ts`, with `historyPersistence.test.ts`) — but `usePersistedScene` is referenced only by its own test, not mounted in `App`. Remaining work: wire the autosave hook into the app so reloads restore the scene.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
