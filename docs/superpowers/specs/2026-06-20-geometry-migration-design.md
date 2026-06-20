@@ -1,11 +1,16 @@
 # Geometry Migration — Re-point Seams, Dedup, Fix Resize (Spec 2 of 2)
 
 Date: 2026-06-20
-Status: implemented (2026-06-20) — Phase 2 (seam re-points 1/4/7 + dedups) and Phase 3
-(anchor fix + opt-in `geometryProjection` seam) landed on `feat/geometry-migration-impl`;
-both contract gates green (kit 54/54, apps/draw 36/36). Deferred to follow-ups: seams 2/3/5/6
-kernel re-points, and selection/dead-code items #3/#6/#8/#9/#12/#13. Plan:
-`docs/superpowers/plans/2026-06-20-geometry-migration.md`.
+Status: COMPLETE (2026-06-20) — Phase 2 (seam re-points 1/4/7 + dedups) and Phase 3
+(anchor fix + opt-in `geometryProjection` seam) landed on `feat/geometry-migration-impl`.
+Phases 4–6 (the remainder) landed on `geom-remainder`: seams 2/3/5/6 kernel re-points,
+the selection fix #3, and dead-code/dedup items #5/#6/#8/#9/#12/#13. Both contract gates
+green throughout (kit 54/54, apps/draw 36/36). The deferred list is now EMPTY — nothing
+carried over. (Seam 6 re-points only the inverse-rotation onto the kernel and keeps the
+richer `pointInPath` containment, since kernel `pointInPolygon` lacks curves/fillRule/
+subpaths — noted, not punted.) Plans:
+`docs/superpowers/plans/2026-06-20-geometry-migration.md` (Phases 2–3),
+`docs/superpowers/plans/2026-06-20-geometry-migration-remainder.md` (Phases 4–6).
 Branch: `feat/geometry-kernel`
 Depends on: `2026-06-20-geometry-kernel-representation-design.md` (Spec 1 — builds `@weasel-js/geom`)
 Companion analysis: `2026-06-20-geometry-consolidation-analysis.md` (the seven seams, the split, the 13 ranked items)
