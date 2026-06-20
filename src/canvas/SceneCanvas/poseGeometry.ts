@@ -7,8 +7,8 @@
  * SceneCanvas defaults work uniformly across rect-shaped and path-shaped poses.
  */
 import type { Bounds } from 'tools/builtin/select';
+import { applyToPoint, rotateAboutPoint } from '@weasel-js/geom';
 import { RECT_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
-import { rotatePoint } from 'interactions/actions/rotate/geometry';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { poseRotationOf } from 'features/paths/poseRotation';
 import { pointInPath, strokeHitTest } from 'features/paths/hitTest';
@@ -58,8 +58,13 @@ export function poseContains<TPose>(pose: TPose, wx: number, wy: number): boolea
 export function poseContainsRotated<TPose>(pose: TPose, wx: number, wy: number): boolean {
   const r = poseRotationOf(pose);
   if (r) {
-    const local = rotatePoint(wx, wy, r.cx, r.cy, -r.rotation);
-    return poseContains(pose, local.x, local.y);
+    // Inverse of `rotateAboutPoint(cx, cy, θ)` is `rotateAboutPoint(cx, cy, -θ)`
+    // (same pivot + negated angle) — composes on the kernel rather than the
+    // bespoke trig in `rotate/geometry.rotatePoint`. Matches `pathInWorld`'s
+    // inverse convention; the silhouette dispatch + stroke-slop below are
+    // unchanged.
+    const [lx, ly] = applyToPoint(rotateAboutPoint(r.cx, r.cy, -r.rotation), wx, wy);
+    return poseContains(pose, lx, ly);
   }
   return poseContains(pose, wx, wy);
 }
