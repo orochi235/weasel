@@ -7,3 +7,4 @@ export { boundsOfCoords, unionBox, boxContainsPoint, rectToContour, type Box } f
 export { PATH_M, PATH_L, PATH_C, PATH_Q, PATH_Z, PATH_CMD_LENGTHS, forEachSegment } from './commands';
 export { cubicEvalAt, elevateQuadraticToCubic, flattenCubic, cubicBounds } from './curve';
 export { pointInPolygon, segmentsCross, pointSegmentDist2 } from './polyline';
+export { transformCoords } from './affine';
