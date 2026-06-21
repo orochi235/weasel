@@ -23,7 +23,6 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@weasel-js/core": "*",
     "@weasel-js/theme": "*"
   }
 }
