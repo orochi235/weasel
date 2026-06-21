@@ -39,6 +39,7 @@ import { CustomShaderDemo } from './demos/CustomShaderDemo';
 import { LassoDemo } from './demos/LassoDemo';
 import { HudDemo } from './demos/HudDemo';
 import { LayerListDemo } from './demos/LayerListDemo';
+import { GesturesDemo } from './demos/GesturesDemo';
 
 import MoveDemoFull from './demos/MoveDemo.tsx?raw';
 import MoveSnapDemoFull from './demos/MoveSnapDemo.tsx?raw';
@@ -80,6 +81,7 @@ import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
 import LayerListDemoFull from './demos/LayerListDemo.tsx?raw';
+import GesturesDemoFull from './demos/GesturesDemo.tsx?raw';
 import { PointSnapDemo } from './demos/PointSnapDemo';
 import PointSnapDemoFull from './demos/PointSnapDemo.tsx?raw';
 import { ShapeToolsDemo } from './demos/ShapeToolsDemo';
@@ -142,6 +144,16 @@ export const DEMOS: DemoEntry[] = [
     full: SceneDemoFull,
     path: 'demo/demos/SceneDemo.tsx',
     extras: [{ path: 'demo/demos/data/scene.scene.json', code: SceneSceneJson, language: 'json' }],
+  },
+  {
+    id: 'gestures',
+    title: 'Gestures',
+    category: 'Foundations',
+    description: 'Every gesture *form* in `src/interactions/gestures` on one surface — pick a mode and the canvas binds to that one gesture, drawing a live overlay so the differences between the drag variants are visible, not just described. `useDragGesture` traces the pointer and reports world + client coords and phase; `useDragRect` reports normalized marquee bounds; `useDragRadial` reports angle + radius instead of x/y; `startThresholdDrag` suppresses move events until the pointer crosses a dead-zone; the same `useDragGesture` with a `thresholdReached` predicate distinguishes click from drag via `wasSubThreshold`; `useHandleDrag` reports coords local to a rect element; `useDragHandle` + `useDropZone` route a typed payload to the drop zone whose `accepts()` matches. A footer shows live modifier state.',
+    hint: 'Pick a gesture above, then drag on the canvas. Watch the overlay + readout — each drag variant reports motion differently.',
+    Component: GesturesDemo,
+    full: GesturesDemoFull,
+    path: 'demo/demos/GesturesDemo.tsx',
   },
 
   // ─── Tools ────────────────────────────────────────────────────────────────

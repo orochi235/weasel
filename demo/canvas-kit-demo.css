@@ -419,6 +419,124 @@ a:hover { text-decoration: underline; }
   margin-left: auto;
 }
 
+/* ---------- Gestures demo ---------- */
+.ckd-gestures {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.ckd-gestures-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ckd-gestures-mode {
+  appearance: none;
+  background: var(--ckd-surface-2);
+  border: 1px solid var(--ckd-border-2);
+  color: var(--ckd-muted);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ckd-gestures-mode:hover {
+  color: var(--ckd-text);
+  border-color: var(--ckd-border);
+}
+
+.ckd-gestures-mode.is-active {
+  background: var(--ckd-accent-dim);
+  border-color: var(--ckd-accent);
+  color: var(--ckd-text);
+}
+
+.ckd-gestures-surface {
+  position: relative;
+  width: 520px;
+  height: 360px;
+}
+
+/* Transparent hit-target overlaying the drawn rect in local-space mode. */
+.ckd-gestures-hit {
+  position: absolute;
+  left: 180px;
+  top: 120px;
+  width: 160px;
+  height: 110px;
+  cursor: crosshair;
+}
+
+.ckd-gestures-dnd {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.ckd-gestures-chip {
+  background: var(--ckd-accent-dim);
+  border: 1px solid var(--ckd-accent);
+  color: var(--ckd-text);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  cursor: grab;
+}
+
+.ckd-gestures-zone {
+  width: 220px;
+  padding: 18px;
+  text-align: center;
+  border: 2px dashed var(--ckd-border);
+  border-radius: 6px;
+  color: var(--ckd-muted);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.ckd-gestures-zone.is-over {
+  border-color: var(--ckd-accent);
+  background: rgba(127, 176, 105, 0.14);
+  color: var(--ckd-text);
+}
+
+.ckd-gestures-readout {
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--ckd-text);
+  min-height: 1.4em;
+}
+
+.ckd-gestures-mods {
+  display: flex;
+  gap: 6px;
+}
+
+.ckd-gestures-mod {
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--ckd-border-2);
+  color: var(--ckd-faint);
+}
+
+.ckd-gestures-mod.is-on {
+  background: var(--ckd-accent-dim);
+  border-color: var(--ckd-accent);
+  color: var(--ckd-text);
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 880px) {
   .ckd-app {
