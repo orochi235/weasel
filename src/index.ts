@@ -735,6 +735,26 @@ export type {
   DragGesturePoint,
   DragGesturePhase,
 } from './interactions/gestures/dragGesture';
+export { useDragRadial } from './interactions/gestures/dragRadial';
+export type {
+  DragRadialPoint,
+  DragRadialState,
+  DragRadialCtx,
+  DragRadialEndCtx,
+  UseDragRadialOptions,
+  DragRadialController,
+} from './interactions/gestures/dragRadial';
+export { useHandleDrag } from './interactions/gestures/handleDrag';
+export type {
+  HandleDragPoint,
+  UseHandleDragOptions,
+  UseHandleDragReturn,
+} from './interactions/gestures/handleDrag';
+export { startThresholdDrag } from './interactions/gestures/thresholdDrag';
+export type {
+  ThresholdDragOptions,
+  ThresholdDragHandle,
+} from './interactions/gestures/thresholdDrag';
 export {
   hitAnchor,
   enumerateAnchors,
