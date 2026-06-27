@@ -79,9 +79,36 @@ make them learn even the builders just to drop one shape on the canvas.*
 and accepts the full SVG `d` grammar (`M L H V C S Q T A Z`, absolute +
 relative, smooth-curve reflection, arc→cubic), lowering it to the stored
 `Path`. `@weasel-js/svg`'s document parser imports the same function, so the
-`d` coverage is shared. Remaining open question (whether composition APIs
-accept a raw `d` string inline vs. an explicit `pathFromD` call) is tracked
-in `docs/TODO.md`.
+`d` coverage is shared.
+
+**Ratified rule: kit APIs speak `Path`; `pathFromD` is the only string
+doorway.** Every path-bearing kit parameter takes the typed `Path`
+(`PolygonPath | RectPath`) — `createSetPathOp`, the boolean ops,
+`PathBuilder.fromPath`, `createPathLayer`, the hit-tests, the geometry slot
+in a node's `data`. **Do not introduce a `string | Path` (`PathLike`) union
+into those signatures.** A `d` string is converted exactly once, at the
+boundary, via an explicit `pathFromD(d)` call; the resulting `Path` is what
+flows through the kit.
+
+Three reasons this is the settled choice, not a deferral:
+
+1. **Preserves a property the surface already has.** The path-bearing
+   surface is homogeneous on `Path` today — there are zero string-shaped
+   path params. Accepting `d` inline would *introduce* polymorphism where
+   none exists, not remove friction from it.
+2. **It can't be made universal anyway.** The kit is generic over `TNode` /
+   `TData` and does not own where geometry lives in a consumer's node. An
+   inline-`d` convention could only intercept the kit's own typed slots, not
+   `node.data` — so it would buy an inconsistent surface (strings work
+   *here* but not *there*), which is worse than one uniform rule.
+3. **Honest about cost.** `pathFromD` parses on each call. An explicit call
+   at the boundary parses once and reuses the `Path`; a buried `string | Path`
+   invites silent re-parsing in loops / re-inserts, and leaves `onWarn` with
+   nowhere clean to go.
+
+The terse-authoring win is fully delivered by `pathFromD` *existing* — a
+consumer writes `pathFromD("M0 0 …")` instead of hand-assembling a builder.
+That one call is the ergonomic, and it's enough.
 
 **Scope.** Applies to public hooks, ops, and component props that ingest
 or emit geometry. Internal kit code uses the typed-array form directly —
