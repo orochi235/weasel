@@ -12,30 +12,18 @@ import type { ToolDef, PhaseDef, RouteTable } from './routing/types';
 import { resolveRoute } from './routing/lookup';
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 
-/** Build a HitResult for the dispatcher's context.
- *  - Affordance hits → 'affordance:unknown' kind (placeholder until the
- *    affordance layer carries kind metadata).
- *  - For nodes carried on the affordance binding via `targetId`, the
- *    kind is resolved by calling `adapter.kindOf(targetId)`. The
- *    `<SceneCanvas>` synthesizer populates `kindOf` from its `kinds`
- *    prop (see `docs/superpowers/specs/2026-05-21-node-kind-registry-design.md`).
- *    Consumers using bare `<Canvas>` with a custom adapter may still set
- *    `adapter.kindOf` directly; that escape hatch is supported but
- *    deprecated and will be removed once all consumers migrate. */
-function buildAffordanceTarget(
-  affordanceHit: AffordanceBinding,
-  adapter: unknown,
-): HitResult {
+/** Build a HitResult for the dispatcher's context. Affordance hits carry a
+ *  placeholder `'affordance:unknown'` kind — affordance gestures bypass the
+ *  declarative route tables (they're dispatched straight to the layer-supplied
+ *  drag channel), so no consumer keys on the underlying node's kind here. The
+ *  `targetId` carried on the binding is preserved as the hit's `id`. */
+function buildAffordanceTarget(affordanceHit: AffordanceBinding): HitResult {
   // AffordanceBinding doesn't carry a standard targetId.
   // Cast defensively to pick up any consumer-supplied targetId.
   const targetId = (affordanceHit as { targetId?: NodeId }).targetId;
-  const kind =
-    targetId != null
-      ? ((adapter as { kindOf?: (id: NodeId) => string }).kindOf?.(targetId) ?? 'affordance:unknown')
-      : 'affordance:unknown';
   return {
     category: 'affordance',
-    kind,
+    kind: 'affordance:unknown',
     id: targetId ?? ('' as NodeId),
     pose: {},
     data: {},
@@ -409,7 +397,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     // Populate ctx.target for affordance gestures — placeholder kind.
     const baseCtx = {
       ...rawBaseCtx,
-      target: buildAffordanceTarget(result, rawBaseCtx.adapter),
+      target: buildAffordanceTarget(result),
       screenPoint: screenPointFor(e, rawBaseCtx.canvasRect),
     };
     const startCtx = ctxFor(result.initialScratch, baseCtx, reportRoute);

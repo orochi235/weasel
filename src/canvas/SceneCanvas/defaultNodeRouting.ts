@@ -50,7 +50,7 @@ export const defaultNodeRouting: readonly NodeRoutingEntry[] = KIT_SHAPE_KINDS.m
  * carrying a fallback `path` routes to text-edit. Consumers wanting
  * different precedence pass their own `routing` array.
  *
- * Without this default the `kindOf` classifier is undefined when
+ * Without this default the kind classifier is undefined when
  * `routing` is unset and every hit comes back as `kind: 'unknown'`,
  * silently breaking `Hit.kind`-based routing (e.g. modality's
  * `dispatchDoubleClickEntry`).

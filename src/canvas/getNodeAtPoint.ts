@@ -4,8 +4,9 @@
  *
  * Extracted from `Canvas.tsx`'s inline `__setGetNodeAtPoint` synthesizer so
  * that `SceneCanvas` (and any other scene-aware wrapper) can build the
- * function externally and hand it to `<Canvas>` as a prop, eliminating
- * Canvas's direct read of `adapter.kindOf`.
+ * function externally and hand it to `<Canvas>` as a prop. The caller supplies
+ * a `nodeResolver` that derives each hit's kind/pose/data (SceneCanvas
+ * classifies the node's `data` via its routing registry).
  */
 
 /** The hit record returned by a `getNodeAtPoint` function.  Matches the

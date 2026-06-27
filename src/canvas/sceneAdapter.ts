@@ -78,13 +78,6 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       insertNode(node: Node<TData, TLayer, TPose>): void;
       removeNode(id: string): void;
       applyOps(ops: Op[], label?: string): void;
-      /** Optional classifier producing a kind string for the given node id.
-       *  Set when the synthesizing `<SceneCanvas>` (or other producer) was
-       *  given a `kinds` registry; consulted by the dispatcher
-       *  (`src/tools/dispatcher.ts`) and Canvas's `getNodeAtPoint` synthesis
-       *  (`src/canvas/Canvas.tsx`) to derive `target.kind` for declarative
-       *  routing tables. Returns 'unknown' when the id is not in the scene. */
-      kindOf?: (id: string) => string;
     };
 
 /** Optional extras for the synthesized adapter. Pass `commitInsert` to wire
@@ -126,11 +119,6 @@ export interface SceneToAdapterOptions<TData, TLayer extends string, TPose> {
    *  `(pose, dx, dy) => pose` for non-rect pose shapes. Omit to leave setPose
    *  primitive — containers move but their descendants don't follow. */
   cascadeContainerPose?: 'rect' | ((pose: TPose, dx: number, dy: number) => TPose);
-  /** Classifier producing a kind string from a node's `data` payload. When
-   *  provided, the synthesized adapter exposes `kindOf(id)` that resolves
-   *  the node and delegates to this function; `'unknown'` for missing ids.
-   *  `<SceneCanvas>` builds this from its `kinds` prop. */
-  kindOf?: (data: TData) => string;
 }
 
 // ─── Clip-aware hierarchical walk ────────────────────────────────────────────
@@ -444,15 +432,6 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       : {}),
   };
 
-  if (options.kindOf) {
-    const classify = options.kindOf;
-    adapter.kindOf = (id: string) => {
-      const node = scene.get(asNodeId(id));
-      if (!node) return 'unknown';
-      return classify(node.data);
-    };
-  }
-
   return adapter;
 }
 
@@ -470,9 +449,9 @@ export function useSceneAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},
 ): SceneCanvasAdapter<TData, TLayer, TPose> {
-  const { selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose, kindOf } = options;
+  const { selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose } = options;
   return useMemo(
-    () => sceneToAdapter(scene, { selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose, kindOf }),
-    [scene, selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose, kindOf],
+    () => sceneToAdapter(scene, { selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose }),
+    [scene, selection, commitInsert, insertLayer, layouts, poseBounds, cascadeContainerPose],
   );
 }

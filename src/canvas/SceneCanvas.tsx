@@ -340,8 +340,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     /**
      * Routing-trait classifiers — list of `NodeRoutingEntry` entries. The kit
      * constructs a `NodeRouting` registry per-`<SceneCanvas>` from this prop,
-     * then threads the resulting classifier into `sceneToAdapter` so the
-     * synthesized adapter exposes `kindOf(id)`. Tool routing tables (e.g.
+     * then uses the resulting classifier to derive each hit's `kind` when
+     * building `getNodeAtPoint`. Tool routing tables (e.g.
      * `{ target: 'rect', actionId: 'move' }`) match against the produced
      * kind strings.
      *
@@ -944,14 +944,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),
-    ...(kindClassifier ? { kindOf: kindClassifier } : {}),
   });
 
   // Build getNodeAtPoint from the adapter + internalPickEvery. Canvas no longer
   // synthesizes this itself — it accepts it as a prop (seam refactor).
-  // The node resolver reads adapter.kindOf (set from kindClassifier when kinds
-  // are registered), getPose, and getNode, matching the old Canvas synthesizer
-  // algorithm exactly (see src/canvas/getNodeAtPoint.ts).
+  // The node resolver classifies each hit's `data` directly via kindClassifier
+  // (the registry-backed kind function), plus getPose and getNode, matching the
+  // old Canvas synthesizer algorithm (see src/canvas/getNodeAtPoint.ts).
   //
   // When isPointerInteractive is supplied, the result is filtered: ids for
   // which the predicate returns false cause getNodeAtPoint to return null,
@@ -959,9 +958,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const getNodeAtPoint = useMemo(() => {
     if (!internalPickEvery) return undefined;
     const nodeResolver = (id: string) => {
-      const kind = (adapter as typeof adapter & { kindOf?: (id: string) => string }).kindOf?.(id) ?? 'unknown';
+      const node = adapter.getNode(id);
+      const kind = node && kindClassifier ? kindClassifier(node.data) : 'unknown';
       const pose = adapter.getPose(id);
-      const data = (adapter as typeof adapter & { getNode?: (id: string) => unknown }).getNode?.(id) ?? { id };
+      const data = node ?? { id };
       return { kind, pose, data };
     };
     const base = makeGetNodeAtPoint(internalPickEvery, nodeResolver);
@@ -972,7 +972,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       if (isPointerInteractive(hit.id) === false) return null;
       return hit;
     };
-  }, [adapter, internalPickEvery, isPointerInteractive]);
+  }, [adapter, internalPickEvery, isPointerInteractive, kindClassifier]);
 
   // Viewport tools: Canvas now owns the full `useViewportTools` call (including
   // pinch zoom via its own canvasRef). SceneCanvas only needs the hand tool for

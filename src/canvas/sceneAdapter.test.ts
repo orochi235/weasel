@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
-import { sceneToAdapter, useSceneAdapter } from './sceneAdapter';
+import { sceneToAdapter } from './sceneAdapter';
 
 interface Data { label: string; }
 interface Pose { x: number; y: number; width: number; height: number; }
@@ -330,69 +329,5 @@ describe('I3: walkClipAware gates containers on ancestor clips', () => {
     expect(ids.has(region)).toBe(true);
     expect(ids.has(bed)).toBe(true);
     expect(ids.has(leaf)).toBe(true);
-  });
-});
-
-describe('sceneToAdapter — kindOf', () => {
-  interface KData { label: string; kind?: string; }
-  interface KPose { x: number; y: number; width: number; height: number; }
-  function makeKindScene() {
-    const scene = createScene<KData, 'bg' | 'fg', KPose>({
-      systemLayers: [{ id: 'bg' }, { id: 'fg' }],
-    });
-    const id = scene.add({
-      kind: 'leaf',
-      layer: 'bg',
-      pose: { x: 0, y: 0, width: 1, height: 1 },
-      data: { label: 'r', kind: 'rect' },
-    });
-    return { scene, id };
-  }
-
-  it('exposes no kindOf when no classifier is supplied', () => {
-    const { scene } = makeKindScene();
-    const adapter = sceneToAdapter(scene);
-    expect(adapter.kindOf).toBeUndefined();
-  });
-
-  it('exposes kindOf(id) backed by the supplied classifier', () => {
-    const { scene, id } = makeKindScene();
-    const adapter = sceneToAdapter(scene, {
-      kindOf: (data) => (data as { kind?: string }).kind ?? 'unknown',
-    });
-    expect(adapter.kindOf).toBeDefined();
-    expect(adapter.kindOf!(id)).toBe('rect');
-  });
-
-  it("returns 'unknown' from kindOf when the node id is missing", () => {
-    const { scene } = makeKindScene();
-    const adapter = sceneToAdapter(scene, {
-      kindOf: (data) => (data as { kind?: string }).kind ?? 'unknown',
-    });
-    expect(adapter.kindOf!('does-not-exist')).toBe('unknown');
-  });
-});
-
-describe('useSceneAdapter — kindOf', () => {
-  interface KData { label: string; kind?: string; }
-  interface KPose { x: number; y: number; width: number; height: number; }
-
-  it('forwards kindOf option to the underlying adapter', () => {
-    const scene = createScene<KData, 'bg' | 'fg', KPose>({
-      systemLayers: [{ id: 'bg' }, { id: 'fg' }],
-    });
-    const id = scene.add({
-      kind: 'leaf',
-      layer: 'bg',
-      pose: { x: 0, y: 0, width: 1, height: 1 },
-      data: { label: 'r', kind: 'rect' },
-    });
-    const { result } = renderHook(() =>
-      useSceneAdapter(scene, {
-        kindOf: (data) => (data as { kind?: string }).kind ?? 'unknown',
-      }),
-    );
-    expect(result.current.kindOf).toBeDefined();
-    expect(result.current.kindOf!(id)).toBe('rect');
   });
 });

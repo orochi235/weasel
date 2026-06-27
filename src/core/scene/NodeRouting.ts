@@ -29,9 +29,9 @@ export interface NodeRoutingEntry {
  * `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md`.
  *
  * Instances are constructed by `<SceneCanvas>` from its `routing` prop
- * and threaded into the synthesized adapter as a `kindOf(id)` method.
- * Direct use from consumer code is supported but not required for the
- * common SceneCanvas flow.
+ * and used to classify each hit node's `data` into a `kind` string when
+ * building `getNodeAtPoint`. Direct use from consumer code is supported
+ * but not required for the common SceneCanvas flow.
  */
 export interface NodeRouting {
   /** Register a kind. Order matters: first match wins during `classify`.
