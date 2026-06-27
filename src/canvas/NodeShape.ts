@@ -35,9 +35,10 @@ import type { DrawCommand } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import type { TextStyle } from 'features/text/textStyle';
 import type { Path } from 'features/paths/types';
-import { ellipsePath, regularPolygonPath, starPath } from 'features/paths/builder';
+import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
+import { getImageBitmap, imageStatus } from 'features/images/imageCache';
 
 export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   /** Stable identifier — used for unregistration and debugging. Pick
@@ -244,6 +245,53 @@ function pathForShape(
   }
 }
 
+/** Raster-image painter. Renders `data.image.src` (URL / blob: / data-URI)
+ *  via an `ImageDrawCommand` once the bitmap has decoded; until then it paints
+ *  a faint placeholder outline so the node stays visible + selectable (a
+ *  reddish outline + slash marks a failed load). The decoded bitmap is owned
+ *  by `imageCache`, keyed on `src`; the node holds only the serializable `src`.
+ *  Registered before `kit:rect-fallback` so image nodes don't fall through. */
+const IMAGE_PAINTER: NodeShapeEntry = {
+  id: 'kit:image',
+  matches: (node) => {
+    const src = (node.data as { image?: { src?: unknown } } | null)?.image?.src;
+    return typeof src === 'string' && src.length > 0;
+  },
+  paint: (node, pose) => {
+    const d = node.data as { image: { src: string; opacity?: number } };
+    const p = pose as RectPose;
+    const bmp = getImageBitmap(d.image.src);
+    if (bmp) {
+      return [{
+        kind: 'image',
+        image: bmp,
+        x: p.x, y: p.y, w: p.width, h: p.height,
+        ...(d.image.opacity !== undefined ? { opacity: d.image.opacity } : {}),
+      }];
+    }
+    // Not ready — faint placeholder (grey while loading, reddish + slash on error).
+    const error = imageStatus(d.image.src) === 'error';
+    const color = error ? '#d08a8a' : '#bbbbbb';
+    const cmds: DrawCommand[] = [{
+      kind: 'path',
+      path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+      stroke: { paint: { color }, width: 1 },
+    }];
+    if (error) {
+      cmds.push({
+        kind: 'path',
+        path: linePath({ x: p.x, y: p.y }, { x: p.x + p.width, y: p.y + p.height }),
+        stroke: { paint: { color }, width: 1 },
+      });
+    }
+    return cmds;
+  },
+  silhouette: (_node, pose) => {
+    const p = pose as RectPose;
+    return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
+  },
+};
+
 const RECT_FALLBACK_PAINTER: NodeShapeEntry = {
   // Last-resort painter — always matches, so it must be registered last
   // within `'normal'`. Consumers who want a different fallback should
@@ -270,6 +318,7 @@ function registerBuiltInShapePainters(): void {
   registerNodeShape(TEXT_PAINTER);
   registerNodeShape(PATH_PAINTER);
   registerNodeShape(SHAPE_PAINTER);
+  registerNodeShape(IMAGE_PAINTER);
   registerNodeShape(RECT_FALLBACK_PAINTER);
 }
 

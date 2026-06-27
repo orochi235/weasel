@@ -10,6 +10,7 @@ export { default as SelectIcon } from './SelectIcon';
 export { default as LassoIcon } from './LassoIcon';
 export { default as RectIcon } from './RectIcon';
 export { default as EllipseIcon } from './EllipseIcon';
+export { default as ImageIcon } from './ImageIcon';
 export { default as EyedropperIcon } from './EyedropperIcon';
 export { default as LineIcon } from './LineIcon';
 export { default as PolygonIcon } from './PolygonIcon';

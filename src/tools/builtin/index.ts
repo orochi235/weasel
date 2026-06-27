@@ -36,6 +36,7 @@ export {
 } from './pen';
 export { useRectTool, type UseRectToolOptions, type RectBounds } from './rect';
 export { useEllipseTool, type UseEllipseToolOptions, type EllipseBounds } from './ellipse';
+export { useImageTool, type UseImageToolOptions } from './image';
 export {
   useEyedropperTool,
   type UseEyedropperToolOptions,

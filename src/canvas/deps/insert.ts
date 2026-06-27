@@ -144,6 +144,20 @@ export function useInsertDepSource(
             }
             break;
           }
+          case 'image': {
+            // `src` rides along on the binding params (set by `useImageTool`).
+            // The bitmap is loaded + cached by `imageCache` keyed on `src`;
+            // only the (serializable) `src` lives on the node. Pose carries
+            // position + size from the drawn bounds (set above).
+            const e = extras as Partial<{ src: string; opacity: number }>;
+            data = {
+              image: {
+                src: e.src ?? '',
+                ...(e.opacity !== undefined ? { opacity: e.opacity } : {}),
+              },
+            };
+            break;
+          }
           default:
             console.warn(`weasel insertDep: no factory for kind="${kind}". Skipping insert.`);
             return null;

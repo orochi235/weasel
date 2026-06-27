@@ -249,6 +249,12 @@ export type {
   NodeShapeEntry,
   RegisterNodeShapeOptions,
 } from './canvas/NodeShape';
+export {
+  getImageBitmap,
+  imageStatus,
+  subscribeImageReady,
+} from './features/images/imageCache';
+export type { ImageNodeData, ImageStatus } from './features/images/imageCache';
 export { sceneToAdapter, useSceneAdapter } from './canvas/sceneAdapter';
 export type { SceneCanvasAdapter } from './canvas/sceneAdapter';
 export {

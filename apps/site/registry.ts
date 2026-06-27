@@ -78,6 +78,8 @@ import { PointSnapDemo } from './demos/PointSnapDemo';
 import PointSnapDemoFull from './demos/PointSnapDemo.tsx?raw';
 import { ShapeToolsDemo } from './demos/ShapeToolsDemo';
 import ShapeToolsDemoFull from './demos/ShapeToolsDemo.tsx?raw';
+import { ImageDemo } from './demos/ImageDemo';
+import ImageDemoFull from './demos/ImageDemo.tsx?raw';
 import { ToolReflectionDemo } from './demos/ToolReflectionDemo';
 import ToolReflectionDemoFull from './demos/ToolReflectionDemo.tsx?raw';
 import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
@@ -219,6 +221,16 @@ export const DEMOS: DemoEntry[] = [
     Component: PointSnapDemo,
     full: PointSnapDemoFull,
     path: 'apps/site/demos/PointSnapDemo.tsx',
+  },
+  {
+    id: 'image',
+    title: 'Image (embedded)',
+    category: 'Tools',
+    description: 'Raster image nodes rendered by the built-in `kit:image` painter. Each node\'s `data.image.src` is an embedded `data:image/svg+xml,…` URI — the whole image is a string, so it lives on the node and round-trips through `scene.toJSON()` with no external asset or blob plumbing. The kit\'s `imageCache` decodes each `src` to an `ImageBitmap` once (keyed by the string), painting a faint placeholder until it resolves, and `<SceneCanvas>` repaints when it does. The Image tool in the palette drag-inserts another copy via the standard `insertAction` + insert dep.',
+    hint: 'Pick the Image tool and drag on empty space to drop a copy; click/drag to select and move.',
+    Component: ImageDemo,
+    full: ImageDemoFull,
+    path: 'apps/site/demos/ImageDemo.tsx',
   },
 
   // ─── Selection & actions ──────────────────────────────────────────────────

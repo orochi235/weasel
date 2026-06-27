@@ -25,6 +25,7 @@ import { type Action, type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
+import { subscribeImageReady } from 'features/images/imageCache';
 import { findNodeShape } from './NodeShape';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
@@ -834,6 +835,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     });
     return unsubscribe;
   }, [animator]);
+
+  // Image-ready subscription: the `kit:image` painter reads decoded bitmaps
+  // synchronously from `imageCache`, but loads resolve asynchronously. When
+  // any image finishes decoding, request a redraw so the painter re-runs and
+  // swaps its placeholder for the real bitmap.
+  useEffect(() => subscribeImageReady(() => {
+    canvasApiRef.current?.requestRedraw?.();
+  }), []);
 
   // SceneCanvas owns the view state so writes from immediate-timing actions
   // (viewport.pan / viewport.zoom via the dep registry's `view.set`) drive a
