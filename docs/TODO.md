@@ -343,9 +343,3 @@ From the WebGL transition spec — all deferred:
 - **(P2) README pitch sweep.** Initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface). A re-pass before 0.1.0.
 
 - **(P3) JSDoc audit at definition sites.** A one-pass sweep at definition sites for any public export still lacking a JSDoc string. (Barrel section headers already landed in `src/index.ts`; per-symbol JSDoc lives at original definitions.) File a follow-up if a specific export turns up undocumented.
-
----
-
-## Cosmetic cleanup
-
-- **(P3) Registry unification leftover.** Stale `bindingsOverrideDrag` comments and test naming in `src/canvas/SceneCanvas.smoke.test.tsx`, `src/canvas/SceneCanvas.useSelectTool.integration.test.tsx`, several `src/tools/builtin/use*Tool/*.tsx` comments, and live test names in `src/tools/builtin/{insert,text}/use*Tool.test.ts` — rename when next in the area.

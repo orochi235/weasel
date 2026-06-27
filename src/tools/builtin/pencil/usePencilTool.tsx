@@ -126,9 +126,7 @@ export function usePencilTool<TNode extends { id: string }>(
           icon: <PencilIcon />,
         },
         // Declarative binding routes empty-space drags through the
-        // dispatcher + insertAction. bindingsOverrideDrag suppresses the
-        // legacy drag channel in the dispatcher; the route-table entry below
-        // is retained as dead code until Phase 14e removes it.
+        // dispatcher + insertAction.
         bindings: [
           {
             spec: { kind: 'drag', target: 'empty' },

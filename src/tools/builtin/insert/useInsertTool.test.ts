@@ -34,7 +34,7 @@ describe('useInsertTool surface', () => {
     expect(cursor).toBe('crosshair');
   });
 
-  it('declares an insert binding with rect kind and bindingsOverrideDrag', () => {
+  it('declares an insert binding with rect kind', () => {
     const { result } = renderHook(() => useInsertTool(baseAdapter, {}));
     expect(result.current.bindings).toHaveLength(1);
     expect(result.current.bindings![0]).toMatchObject({

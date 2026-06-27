@@ -305,7 +305,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
   });
 
   // --------------------------------------------------------------------------
-  // Thread 2: bindingsOverrideDrag flag
+  // Thread 2: drag routes through moveAction (dispatcher)
   // --------------------------------------------------------------------------
 
   // --------------------------------------------------------------------------
@@ -385,11 +385,10 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     expect(selectionState).toEqual([id]);
   });
 
-  it('bindingsOverrideDrag is true under SceneCanvas (dispatcher always mounted)', () => {
-    // Indirect verification: the old dispatcher's drag channel is suppressed,
-    // meaning the OLD useMove-based drag does NOT fire. Instead, moveAction does.
-    // We verify this by confirming the scene.batch label is 'Move' (moveAction's
-    // label) not some other label from the old path.
+  it('drag routes through moveAction under SceneCanvas (dispatcher always mounted)', () => {
+    // Indirect verification: a drag fires moveAction (not any legacy useMove
+    // path). We verify this by confirming the scene.batch label is 'Move'
+    // (moveAction's label).
     const scene = makeScene();
     const id = firstId(scene);
 

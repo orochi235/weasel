@@ -25,7 +25,7 @@ describe('useTextTool surface', () => {
     expect(cursor).toBe('text');
   });
 
-  it('declares insert (kind=text) and enterTextEdit bindings with bindingsOverrideDrag', () => {
+  it('declares insert (kind=text) and enterTextEdit bindings', () => {
     const { result } = renderHook(() =>
       useTextTool({ pointInsert: () => ({ id: 't', x: 0, y: 0, width: 0, height: 0, text: '' }) }),
     );

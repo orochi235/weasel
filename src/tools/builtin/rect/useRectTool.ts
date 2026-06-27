@@ -97,9 +97,8 @@ export function useRectTool<TNode extends { id: string }>(
           icon: createElement(RectIcon),
           group: 'shape',
         },
-        // Declarative binding routes empty-space drags through the new
-        // dispatcher + insertAction. The legacy route-table drag channel
-        // has been removed alongside `Tool.bindingsOverrideDrag`.
+        // Declarative binding routes empty-space drags through the
+        // dispatcher + insertAction.
         bindings: [
           // Single binding; insertAction toggles corner ⇄ center based on
           // live Alt state so users can engage/disengage Alt mid-drag and

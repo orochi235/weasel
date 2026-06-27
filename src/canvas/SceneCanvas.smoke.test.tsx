@@ -391,7 +391,6 @@ describe('clone smoke (alt-drag via select tool)', () => {
 //
 // The hand tool's primary gesture binding is:
 //   bindings: [{ spec: { kind: 'drag' }, actionId: 'viewport.dragPan' }]
-// with `bindingsOverrideDrag: true` when the gesture dispatcher is mounted.
 // This fires when the hand tool is the ACTIVE tool in the dispatcher context.
 //
 // useKeybindings attaches to `document` for tool-switch keydowns, so we

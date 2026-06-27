@@ -137,9 +137,7 @@ export function useEllipseTool<TNode extends { id: string }>(
           icon: <EllipseIcon />,
         },
         // Declarative binding routes empty-space drags through the
-        // dispatcher + insertAction. bindingsOverrideDrag suppresses the
-        // legacy drag channel in the dispatcher; the route-table entry below
-        // is retained as dead code until Phase 14e removes it.
+        // dispatcher + insertAction.
         bindings: [
           // Single binding; Alt toggles to from-center mid-drag via
           // insertAction's live modifier read.

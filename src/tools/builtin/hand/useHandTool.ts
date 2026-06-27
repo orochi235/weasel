@@ -72,9 +72,8 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
           cursor: 'grabbing',
         },
       }), {
-        // Declarative binding routes drag through the new dispatcher +
-        // viewportDragPanAction. The legacy route-table drag block has
-        // been removed alongside `Tool.bindingsOverrideDrag`.
+        // Declarative binding routes drag through the dispatcher +
+        // viewportDragPanAction.
         bindings: [{ spec: { kind: 'drag' as const }, actionId: 'viewport.dragPan' }],
       }) as Tool<HandScratch | null>,
     // eslint-disable-next-line react-hooks/exhaustive-deps
