@@ -8,24 +8,34 @@ import {
 import type { DrawCommand } from '../../src/renderer';
 import type { View } from '../../src/core/viewport/view';
 
-interface NodeData { color: string; pin: 'screen' | 'world' }
+interface NodeData { color: string; pin: 'screen' | 'world' | 'none' }
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
 
 const W = 400, H = 300;
 
-export function ZoomDemo() {
+/**
+ * Viewport navigation in one place: pan via the hand tool (H = sticky, hold
+ * space = momentary) and the wheel-pan tool, zoom via ctrl/⌘+wheel and the
+ * keyboard (⌘+= / ⌘+- / ⌘+0). The rects spread across a coordinate range far
+ * larger than the 400×300 viewport so panning has somewhere to go. The two
+ * center rects show the stroke trade-off under zoom: the green one divides its
+ * line width by `meanScale(view.scale)` (screen-pinned — constant pixel width
+ * at every zoom), the purple one uses a plain world-px stroke (grows and
+ * shrinks with the zoom).
+ */
+export function PanZoomDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'default' }],
     initial: [
-      // Left rect: stroke pinned to 2 screen px (compensates for view.scale).
       { id: 'screen-pin' as never, kind: 'leaf', layer: 'default',
-        pose: { x:  60, y: 80, width: 120, height: 90 },
-        data: { color: '#7fb069', pin: 'screen' } },
-      // Right rect: stroke pinned to 2 world px (grows with zoom).
+        pose: { x: 130, y: 110, width: 120, height: 90 }, data: { color: '#7fb069', pin: 'screen' } },
       { id: 'world-pin' as never, kind: 'leaf', layer: 'default',
-        pose: { x: 220, y: 80, width: 120, height: 90 },
-        data: { color: '#a48bd4', pin: 'world' } },
+        pose: { x: 290, y: 110, width: 120, height: 90 }, data: { color: '#a48bd4', pin: 'world' } },
+      { id: 'far-a' as never, kind: 'leaf', layer: 'default',
+        pose: { x: -180, y: -120, width: 80, height: 60 }, data: { color: '#d4a574', pin: 'none' } },
+      { id: 'far-b' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 560, y: 360, width: 80, height: 60 }, data: { color: '#f0e0a8', pin: 'none' } },
     ],
   });
   const selection = useSelection();
@@ -33,19 +43,15 @@ export function ZoomDemo() {
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: 'monospace' }}>
+    <div className="ckd-demo">
+      <div className="ckd-toolbar">
+        <span className="ckd-readout">
           view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) · scale: ({view.scale.x.toFixed(2)}, {view.scale.y.toFixed(2)})
         </span>
         <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset view</button>
-        <span style={{ color: '#888' }}>
-          ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0 · H drag · space drag
+        <span className="ckd-toolbar-note">
+          H = hand · hold space = momentary · ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0
         </span>
-      </div>
-      <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#d4c4a8' }}>
-        <span>Left (green): stroke = 2 / meanScale(view.scale) (screen-pinned)</span>
-        <span>Right (purple): stroke = 2 (world-scaled)</span>
       </div>
       <SceneCanvas
         width={W}
@@ -64,7 +70,9 @@ export function ZoomDemo() {
                 kind: 'path',
                 path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
                 fill: { color: n.data.color },
-                stroke: { paint: { color: '#d4c4a8' }, width: lineWidth },
+                ...(n.data.pin === 'none'
+                  ? {}
+                  : { stroke: { paint: { color: '#d4c4a8' }, width: lineWidth } }),
               }];
             },
           },

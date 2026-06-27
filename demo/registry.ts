@@ -1,13 +1,10 @@
 import type { ComponentType } from 'react';
-import { MoveDemo } from './demos/MoveDemo';
+import { TransformDemo } from './demos/TransformDemo';
 import { MoveSnapDemo } from './demos/MoveSnapDemo';
 import { AlignmentGuidesDemo } from './demos/AlignmentGuidesDemo';
-import { ResizeDemo } from './demos/ResizeDemo';
-import { RotateDemo } from './demos/RotateDemo';
 import { RotatedResizeMathDemo } from './demos/RotatedResizeMathDemo';
 import { MultiSelectDemo } from './demos/MultiSelectDemo';
 import { InsertDemo } from './demos/InsertDemo';
-import { CloneDemo } from './demos/CloneDemo';
 import { TextDemo } from './demos/TextDemo';
 import { QuadtreeDemo } from './demos/QuadtreeDemo';
 import { PathPoseDemo } from './demos/PathPoseDemo';
@@ -16,8 +13,7 @@ import { BezierEditDemo } from './demos/BezierEditDemo';
 import { CurveLabDemo } from './demos/CurveLabDemo';
 import { BooleanOpsDemo } from './demos/BooleanOpsDemo';
 import { SceneDemo } from './demos/SceneDemo';
-import { PanDemo } from './demos/PanDemo';
-import { ZoomDemo } from './demos/ZoomDemo';
+import { PanZoomDemo } from './demos/PanZoomDemo';
 import { PerAxisZoomDemo } from './demos/PerAxisZoomDemo';
 import { AnimationDemo } from './demos/AnimationDemo';
 import { LayoutDemo } from './demos/LayoutDemo';
@@ -41,15 +37,12 @@ import { HudDemo } from './demos/HudDemo';
 import { LayerListDemo } from './demos/LayerListDemo';
 import { GesturesDemo } from './demos/GesturesDemo';
 
-import MoveDemoFull from './demos/MoveDemo.tsx?raw';
+import TransformDemoFull from './demos/TransformDemo.tsx?raw';
 import MoveSnapDemoFull from './demos/MoveSnapDemo.tsx?raw';
 import AlignmentGuidesDemoFull from './demos/AlignmentGuidesDemo.tsx?raw';
-import ResizeDemoFull from './demos/ResizeDemo.tsx?raw';
-import RotateDemoFull from './demos/RotateDemo.tsx?raw';
 import RotatedResizeMathDemoFull from './demos/RotatedResizeMathDemo.tsx?raw';
 import MultiSelectDemoFull from './demos/MultiSelectDemo.tsx?raw';
 import InsertDemoFull from './demos/InsertDemo.tsx?raw';
-import CloneDemoFull from './demos/CloneDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
@@ -58,8 +51,7 @@ import BezierEditDemoFull from './demos/BezierEditDemo.tsx?raw';
 import CurveLabDemoFull from './demos/CurveLabDemo.tsx?raw';
 import BooleanOpsDemoFull from './demos/BooleanOpsDemo.tsx?raw';
 import SceneDemoFull from './demos/SceneDemo.tsx?raw';
-import PanDemoFull from './demos/PanDemo.tsx?raw';
-import ZoomDemoFull from './demos/ZoomDemo.tsx?raw';
+import PanZoomDemoFull from './demos/PanZoomDemo.tsx?raw';
 import PerAxisZoomDemoFull from './demos/PerAxisZoomDemo.tsx?raw';
 import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
 import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
@@ -158,14 +150,14 @@ export const DEMOS: DemoEntry[] = [
 
   // ─── Tools ────────────────────────────────────────────────────────────────
   {
-    id: 'move',
-    title: 'Move',
+    id: 'transform',
+    title: 'Transform (move · resize · rotate · clone)',
     category: 'Tools',
-    description: 'useMove with a grid-snap behavior — drag any rectangle and watch it snap to the 20-unit grid.',
-    hint: 'Drag a rectangle.',
-    Component: MoveDemo,
-    full: MoveDemoFull,
-    path: 'demo/demos/MoveDemo.tsx',
+    description: 'The select tool\'s full transform surface on one canvas. Body-drag moves (snapping to the 20-unit grid via gridSnapStrategy); corner handles resize in each leaf\'s local frame (ROTATED_POSE_DESCRIPTOR keeps the diagonal corner pinned even on a rotated rect); the handle above a selection rotates it; Alt+drag clones (the select tool\'s default alt-drag binding → cloneAction). toolBundle="exhaustive" registers the select/rotate tools and the clone action — no palette is rendered, so select stays active throughout.',
+    hint: 'Drag a body to move; drag a corner to resize; drag the top handle to rotate; Alt+drag to clone. Shift-click to multi-select.',
+    Component: TransformDemo,
+    full: TransformDemoFull,
+    path: 'demo/demos/TransformDemo.tsx',
   },
   {
     id: 'move-snap',
@@ -188,26 +180,6 @@ export const DEMOS: DemoEntry[] = [
     path: 'demo/demos/AlignmentGuidesDemo.tsx',
   },
   {
-    id: 'resize',
-    title: 'Resize',
-    category: 'Tools',
-    description: 'useResize — grab one of the four corner handles to resize the rectangle from the opposite anchor.',
-    hint: 'Drag a corner handle.',
-    Component: ResizeDemo,
-    full: ResizeDemoFull,
-    path: 'demo/demos/ResizeDemo.tsx',
-  },
-  {
-    id: 'rotate',
-    title: 'Rotate',
-    category: 'Tools',
-    description: 'useRotate — drag the rotation handle (above the top-center of the bounding box) to rotate the object around its AABB center. Body-drag still moves; corner handles resize in the leaf\'s local frame (the diagonal corner stays pinned in world space).',
-    hint: 'Click a rect to select; drag the small handle above it to rotate.',
-    Component: RotateDemo,
-    full: RotateDemoFull,
-    path: 'demo/demos/RotateDemo.tsx',
-  },
-  {
     id: 'insert',
     title: 'Insert',
     category: 'Tools',
@@ -216,16 +188,6 @@ export const DEMOS: DemoEntry[] = [
     Component: InsertDemo,
     full: InsertDemoFull,
     path: 'demo/demos/InsertDemo.tsx',
-  },
-  {
-    id: 'clone',
-    title: 'Clone',
-    category: 'Tools',
-    description: 'Alt+drag a selected rectangle to duplicate it at the drop point. Routed via the select tool\'s alt-drag binding to `cloneAction`.',
-    hint: 'Hold Alt and drag a rectangle.',
-    Component: CloneDemo,
-    full: CloneDemoFull,
-    path: 'demo/demos/CloneDemo.tsx',
   },
   {
     id: 'layer-list',
@@ -378,24 +340,14 @@ export const DEMOS: DemoEntry[] = [
 
   // ─── Viewport ─────────────────────────────────────────────────────────────
   {
-    id: 'pan',
-    title: 'Pan (Phase 2b)',
+    id: 'pan-zoom',
+    title: 'Pan & Zoom',
     category: 'Viewport',
-    description: 'useHandTool wired with <Canvas view={...} onViewChange={...}>. Three rectangles spread across a coordinate range larger than the 400×300 viewport. H switches to the hand tool (sticky); space engages it momentarily. Drag to pan. The select tool remains available when neither hand activation is engaged.',
-    hint: 'H = hand tool · hold space = momentary hand · drag to pan · Reset view to return home.',
-    Component: PanDemo,
-    full: PanDemoFull,
-    path: 'demo/demos/PanDemo.tsx',
-  },
-  {
-    id: 'zoom',
-    title: 'Zoom (Phase 2c)',
-    category: 'Viewport',
-    description: 'Three opt-in always-on tools wired alongside select + hand: useWheelZoomTool (ctrl/meta+wheel zooms about the cursor), useWheelPanTool (plain wheel pans), useKeyboardZoomTool (Cmd+= / Cmd+- / Cmd+0). Selection-overlay handles, marquee, and insert overlays now live in screen space, so chrome stays at fixed pixel size under zoom. The two demo rects show the trade-off in scene strokes: the green rect divides lineWidth by view.scale (screen-pinned, looks the same at every zoom); the purple rect uses a plain world-px stroke (grows and shrinks with zoom).',
-    hint: 'ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0 · H drag · space drag.',
-    Component: ZoomDemo,
-    full: ZoomDemoFull,
-    path: 'demo/demos/ZoomDemo.tsx',
+    description: 'Viewport navigation in one place. Pan via the hand tool (H = sticky, hold space = momentary) and the wheel-pan tool; zoom via ctrl/⌘+wheel (about the cursor) and the keyboard (⌘+= / ⌘+- / ⌘+0). Selection-overlay handles, marquee, and insert overlays live in screen space, so chrome stays a fixed pixel size under zoom. The two center rects show the scene-stroke trade-off: the green rect divides its line width by meanScale(view.scale) (screen-pinned — constant at every zoom); the purple rect uses a plain world-px stroke (grows and shrinks with zoom). Two further rects sit well outside the viewport so panning has somewhere to go.',
+    hint: 'H = hand · hold space = momentary · drag to pan · ctrl/⌘+wheel zoom · plain wheel pan · ⌘+= / ⌘+- / ⌘+0 · Reset view to return home.',
+    Component: PanZoomDemo,
+    full: PanZoomDemoFull,
+    path: 'demo/demos/PanZoomDemo.tsx',
   },
   {
     id: 'per-axis-zoom',
@@ -621,8 +573,8 @@ function extToLang(ext: string): DemoExtra['language'] {
 }
 
 function resolvePath(fromPath: string, importPath: string): string {
-  // fromPath: 'demo/demos/RotateDemo.tsx'; importPath: './data/rotate.scene.json'
-  // → 'demo/demos/data/rotate.scene.json'
+  // fromPath: 'demo/demos/TransformDemo.tsx'; importPath: './data/transform.scene.json'
+  // → 'demo/demos/data/transform.scene.json'
   const dir = fromPath.substring(0, fromPath.lastIndexOf('/'));
   const parts = (dir + '/' + importPath).split('/');
   const stack: string[] = [];
