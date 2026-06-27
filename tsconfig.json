@@ -48,6 +48,6 @@
       "debug/*": ["./src/debug/*"]
     }
   },
-  "include": ["src", "demo", "apps", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/history/src", "packages/modes/src"],
+  "include": ["src", "apps", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/history/src", "packages/modes/src"],
   "exclude": ["node_modules", "dist"]
 }

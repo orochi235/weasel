@@ -40,7 +40,7 @@ export default defineConfig({
           setupFiles: ['./vitest.setup.ts'],
           include: [
             'src/**/*.test.{ts,tsx}',
-            'demo/**/*.test.{ts,tsx}',
+            'apps/site/**/*.test.{ts,tsx}',
             'tests/e2e/helpers/**/*.test.{ts,tsx}',
           ],
           exclude: ['**/*.smoke.test.{ts,tsx}', '**/node_modules/**'],
@@ -57,7 +57,6 @@ export default defineConfig({
             'src/**/*.smoke.test.{ts,tsx}',
             'packages/**/*.smoke.test.{ts,tsx}',
             'apps/**/*.smoke.test.{ts,tsx}',
-            'demo/**/*.smoke.test.{ts,tsx}',
           ],
           // labkit's smoke test runs in the dedicated `labkit` project (own setup).
           exclude: ['**/node_modules/**', 'dist/**', '.claude/**', 'packages/labkit/**'],

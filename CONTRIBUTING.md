@@ -72,7 +72,7 @@ match CI.
 
 ### Adding a new demo
 
-1. Add the demo to `demo/registry.ts` as usual.
+1. Add the demo to `apps/site/registry.ts` as usual.
 2. Create `tests/visual/<demo-id>.spec.ts` following the template in
    `tests/visual/scene.spec.ts`.
 3. Run `npm run test:visual:update` (on the correct runner) to capture the

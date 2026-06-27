@@ -9,7 +9,6 @@ on:
     paths:
       - 'src/**'
       - 'apps/**'
-      - 'demo/**'
       - 'packages/**'
       - '.storybook/**'
       - 'scripts/**'

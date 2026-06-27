@@ -20,9 +20,9 @@ Read in roughly this order:
   `sceneFromJSON()`: snapshot + restore a scene, the JSON shape, the function
   registry for `clipFromPose`, and loading static `*.scene.json` files.
 
-For working code, the `demo/` directory has runnable consumers
-(`MoveDemo`, `RotateDemo`, `CompoundPathsDemo`, `InsertDemo`, …); run them
-with `bun run dev` from the repo root.
+For working code, the `apps/site/` directory has runnable consumers
+(`TransformDemo`, `CompoundPathsDemo`, `InsertDemo`, …); run them
+with `npm run dev:kit` from the repo root.
 
 `docs/specs/`, `docs/plans/`, and `docs/TODO.md` are internal — design
 notes, in-flight work, and historical decisions. They are not part of the

@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 interface RectPose { x: number; y: number; width: number; height: number }
 
 test('move — drag translates the dragged item by the gesture delta', async ({ demo }) => {
-  await demo.goto('move');
+  await demo.goto('transform');
   const before = await demo.getScene();
   const a = before.nodes.find((n) => n.id === 'a');
   expect(a, 'demo seeds item with id "a"').toBeTruthy();

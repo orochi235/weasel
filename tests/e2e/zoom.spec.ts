@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import { sceneToCss } from './helpers/coords';
 
 test('zoom — wheel zoom keeps the cursor-anchored scene point pinned', async ({ demo }) => {
-  await demo.goto('zoom');
+  await demo.goto('pan-zoom');
 
   const viewBefore = await demo.getView();
   // Pick an off-center scene point so anchor regressions are visible.
@@ -18,7 +18,7 @@ test('zoom — wheel zoom keeps the cursor-anchored scene point pinned', async (
   };
   const [cssX, cssY] = sceneToCss(scenePoint, viewBefore, rectBeforeCss);
 
-  // ZoomDemo binds zoom to ⌘+wheel (mod = Meta on Mac, Ctrl elsewhere); plain
+  // The Pan & Zoom demo binds zoom to ⌘+wheel (mod = Meta on Mac, Ctrl elsewhere); plain
   // wheel pans. Use ControlOrMeta so this works on both platforms.
   await demo.page.mouse.move(cssX, cssY);
   await demo.page.keyboard.down('ControlOrMeta');

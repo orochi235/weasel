@@ -64,7 +64,7 @@ function serveApiDocsInDev(): PluginOption {
 }
 
 export default defineConfig({
-  root: 'demo',
+  root: 'apps/site',
   base: '/weasel/',
   publicDir: resolve(__dirname, 'assets/fonts'),
   resolve: {
@@ -101,7 +101,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../dist-demo',
+    outDir: '../../dist-demo',
     emptyOutDir: true,
   },
 });
