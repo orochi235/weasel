@@ -311,8 +311,6 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 Seam refactor landed 2026-05-24 (plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). After the refactor, `<Canvas>` is a coherent scene-agnostic primitive — WebGL surface + viewport (pinch zoom) + pointer routing + slot composition. Selection, picking, kind registry, scene-aware overlays all live in `<SceneCanvas>`. `<Canvas>` is `@internal` / `@deprecated` and no longer exported from the public barrel (2026-06-19) — it's now private. Internal consumers import it directly from `src/canvas/Canvas`.
 
-- **(P3) Remove the `background` prop on `<Canvas>`.** Marked `@deprecated` during the seam refactor in favor of `backgroundFill`. Three demos still use it (`ViewportDemo`, `CompoundPathsDemo`, `TextDemo`); migrate them and delete the prop.
-
 ---
 
 ## Backends (WebGL future)

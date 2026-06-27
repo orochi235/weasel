@@ -93,7 +93,7 @@ export function TextDemo() {
         width={W}
         height={H}
         className="ckd-canvas"
-        background="#fafafa"
+        backgroundFill={{ color: '#fafafa' }}
         scene={scene}
         helpersRef={helpersRef}
         selectTool={{

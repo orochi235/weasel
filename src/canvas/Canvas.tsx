@@ -269,14 +269,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   clientToWorld?: (canvas: HTMLCanvasElement, cx: number, cy: number) => [number, number];
 
   // --- Visuals / DOM passthrough ---
-  /**
-   * @deprecated Use `backgroundFill` instead. This prop accepts a plain CSS
-   * color string and is rendered before the scene as a screen-space rect fill.
-   * `backgroundFill` accepts the full `FillStyle` union (solid, pattern,
-   * gradient) and is the preferred API. Both props may coexist; `background`
-   * is prepended as a raw DrawCommand before `backgroundFill`'s layer.
-   */
-  background?: string;
   className?: string;
   style?: React.CSSProperties;
   tabIndex?: number;
@@ -691,7 +683,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     pickEvery,
     clientToWorld,
     geometry = AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<TPose>,
-    background,
     className,
     style,
     tabIndex = 0,
@@ -1526,16 +1517,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       effectiveView,
       { width, height },
     );
-    // Honor the `background` prop by prepending a screen-space rect command.
-    if (background) {
-      commands.unshift({
-        kind: 'path',
-        path: { kind: 'rect', x: 0, y: 0, width, height },
-        fill: { color: background },
-      });
-    }
     renderer.render(commands);
-  }, [layersWithDebug, width, height, background, effectiveView, debugSink, redrawNonce]);
+  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce]);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
   useEffect(() => {

@@ -59,7 +59,7 @@ export function ViewportDemo() {
         scene={scene}
         width={480}
         height={320}
-        background="#1a130d"
+        backgroundFill={{ color: '#1a130d' }}
         viewport={{
           inertia: inertiaConfig,
           pinchZoom: true,
