@@ -82,5 +82,5 @@ npx vitest run packages/svg
 Three test files:
 
 - `roundtrip.test.ts` — 8 hand-rolled fixtures, each asserting `nodes == parse(serialize(parse(svg)))`.
-- `path-parser.test.ts` — every SVG path command letter exercised at least once.
+- `path-commands.test.ts` — every SVG path command letter exercised at least once (through `parseSvg`; the `d`-string parser itself now lives in core as `pathFromD`).
 - `warnings.test.ts` — unsupported elements (`<text>`, `<clipPath>`, `<filter>`, `<use>`, `<foreignObject>`) produce warnings and don't throw.

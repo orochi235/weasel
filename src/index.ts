@@ -472,6 +472,7 @@ export {
   PATH_Z,
   PATH_CMD_LENGTHS,
   PathBuilder,
+  pathFromD,
   polygonFromPoints,
   rectPath,
   ellipsePath,

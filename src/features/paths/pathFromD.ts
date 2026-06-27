@@ -1,24 +1,33 @@
 /**
- * SVG path `d=` attribute parser. Lowers every supported command
- * (M/m L/l H/h V/v C/c S/s Q/q T/t A/a Z/z) into weasel's `PathBuilder`
- * primitives (move, line, cubic, quadratic, close).
+ * `pathFromD` — build a weasel `Path` from an **SVG path-data string** (the
+ * value of SVG's `d` attribute, e.g. `"M0 0 L100 0 Z"`).
  *
- * Smooth (`S`/`s`/`T`/`t`) commands resolve their implicit reflected
- * control point from the previous cubic / quadratic. Arc commands
- * (`A`/`a`) convert to a series of cubic Bezier curves using the
- * standard endpoint-parameterization formulas (F.6.5 in the SVG spec):
- * we reconstruct the center, sweep angle, and a fixed number of
- * (≤ 90°) cubic segments per arc.
+ * This is the terse, declarative composition surface for geometry: a
+ * consumer authors a shape as `d` and hands it straight to a scene/op API,
+ * instead of chaining imperative builder calls. SVG `d` is deliberately the
+ * language — it's a standard every consumer already knows, so the kit gets
+ * path-language expressiveness without minting a new one. See
+ * `docs/conventions.md` ("Compose scenes in a terse path language").
  *
- * No runtime dependency — this is a small hand-rolled parser sized to
- * weasel-svg's coverage matrix.
+ * Lowers every supported command (M/m L/l H/h V/v C/c S/s Q/q T/t A/a Z/z)
+ * into weasel's `PathBuilder` primitives (move, line, cubic, quadratic,
+ * close). Smooth (`S`/`s`/`T`/`t`) commands resolve their implicit reflected
+ * control point from the previous cubic / quadratic. Arc commands (`A`/`a`)
+ * convert to a series of cubic Bezier curves using the standard
+ * endpoint-parameterization formulas (F.6.5 in the SVG spec): we reconstruct
+ * the center, sweep angle, and a fixed number of (≤ 90°) cubic segments per
+ * arc.
+ *
+ * No runtime dependency — a small hand-rolled parser. `@weasel-js/svg`'s
+ * document parser (`parseSvg`) calls this for `<path d=…>` elements, so the
+ * `d` grammar coverage is shared between the two entry points.
  */
 
-import { PathBuilder } from '@weasel-js/core';
+import { PathBuilder } from './builder';
 
 const NUM_RE = /[+-]?(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?/g;
 
-/** Tokenize the command stream from a `d=` attribute. */
+/** Tokenize the command stream from a `d` string. */
 function tokenize(d: string): { cmd: string; args: number[] }[] {
   const out: { cmd: string; args: number[] }[] = [];
   // Walk character by character so we can group command-letter + arg-run.
@@ -73,10 +82,11 @@ interface ParseState {
 }
 
 /**
- * Parse a `d=` string into a weasel `PolygonPath`. Returns `null` for
- * pathologically malformed input (we log a warning at the call site).
+ * Build a weasel `PolygonPath` from an SVG path-data (`d`) string. Unknown
+ * command letters are skipped (and reported via `onWarn` when provided); the
+ * builder still returns whatever valid commands preceded them.
  */
-export function parsePathD(
+export function pathFromD(
   d: string,
   onWarn?: (message: string) => void,
 ): ReturnType<PathBuilder['build']> {
@@ -334,4 +344,3 @@ function arcToCubics(
     prevDy = dyNew;
   }
 }
-

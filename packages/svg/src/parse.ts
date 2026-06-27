@@ -9,12 +9,11 @@
  */
 
 import type { Path, PolygonPath } from '@weasel-js/core';
-import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/core';
+import { PATH_L, PATH_M, PATH_Z, pathFromD } from '@weasel-js/core';
 import {
   rectElementToPath, circleToPath, ellipseToPath, lineToPath,
   parsePoints, polylineToPath, polygonToPath,
 } from './shapes';
-import { parsePathD } from './path-parser';
 import { transformPath } from './shapes';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
@@ -356,7 +355,7 @@ function lowerLeaf(
       onWarn('<path> with empty d=');
       return null;
     }
-    const raw = parsePathD(d, onWarn);
+    const raw = pathFromD(d, onWarn);
     const transformed = transformPath(raw, m);
     // Reconstitute axis-aligned rectangles so a `{ kind: 'rect' }` source
     // node round-trips back into a `{ kind: 'rect' }` parsed node.

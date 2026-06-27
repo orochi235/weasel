@@ -3,6 +3,14 @@
 Project-wide API design rules for weasel. Add new entries as patterns
 emerge — keep each one short, with a rule and a brief rationale.
 
+## Terminology
+
+- **`d`** — shorthand throughout these docs (and the API, e.g.
+  `pathFromD`) for **SVG path data**: the string held by SVG's `d`
+  attribute (`"M0 0 L100 0 Z"`). When you see "`d` string" or "a `d`",
+  it means SVG path data, not a kit-invented format. See *Compose scenes
+  in a terse path language* below for why this is the geometry surface.
+
 ## Defaults stay explicitly declarable
 
 Props, attributes, and config fields with default values must still
@@ -16,3 +24,65 @@ consumers self-document.
 **Scope.** Applies to React component props, HTML attributes, and JS
 config objects. Does *not* apply to positional function arguments or
 anywhere requiring explicit defaults would cause organizational chaos.
+
+## Compose scenes in a terse path language, not builder calls
+
+We want the **expressive power of a path language** at the composition
+boundary — but **without minting a new external standard** for consumers
+to learn or for us to document, version, and maintain. The resolution is
+to adopt the path language the world already speaks: **SVG `d` syntax.**
+It's universal, needs no learning, and the kit parses it into a `Path`
+via `pathFromD(d)`. A bespoke weasel path DSL — even a
+"small" compact literal grammar — is exactly the wrong move: it's a new
+standard wearing a terse costume.
+
+So a composer gets a **choice**, and the terse end of it is just SVG:
+
+1. **Terse declarative form — SVG `d`.** Declare a shape inline,
+   `pathFromD("M0 0 L100 0 L100 100 Z")`, and hand it to a scene/op API.
+   Full path-language expressiveness, zero new vocabulary. Usually the
+   right default.
+2. **Imperative builders.** `PathBuilder`, `polygonFromPoints`,
+   `rectPath`, `ellipsePath`, `regularPolygonPath`, `starPath`,
+   `linePath` remain a first-class choice — sometimes the clearest one.
+   For a quick triangle `polygonFromPoints([[0,0],[10,0],[5,10]])` may
+   read better than a string, and for *computed* geometry (loops,
+   parametric shapes) a builder is the natural fit. These are ordinary
+   function calls with plain args — not a grammar — so they cost no new
+   standard either. The terse form makes them less frequently
+   *necessary*, not unavailable.
+3. **Typed-array `Path` (internal performance form).** The
+   `commands: Uint8Array` / `coords: Float32Array` command stream
+   (`src/features/paths/types.ts`) is for the kit's monomorphic hot loops
+   and low GC pressure. A consumer can reach for it for power, but is
+   never required to construct or read it by hand.
+
+Two principles, both load-bearing: **choice** (don't push a composer
+toward a builder for simple authored geometry because nothing terser
+exists) and **no new standard** (reach the power through SVG `d`, which
+every consumer already knows, rather than a kit-invented path grammar).
+
+On the read/interchange side, standard formats stay first-class:
+`pathToAnchors` / `decomposePath` for friendly reads, `@weasel-js/svg`'s
+`parseSvg` / `serializeSvg` for document round-trips.
+
+**Why — and the paradox.** Adding a small path-language parser *reduces*
+net implementation complexity rather than adding to it. Without it, every
+consumer hand-assembles `polygonFromPoints([...])` (or worse) at each
+call site; the friction is paid N times across the ecosystem and the
+imperative code obscures intent. A terse declarative form pays the parser
+cost once, in the kit, and lets scene composition read as data. *Let
+consumers learn the typed-array form when they want its power — don't
+make them learn even the builders just to drop one shape on the canvas.*
+
+**Status.** `pathFromD(d)` ships from core (`src/features/paths/pathFromD.ts`)
+and accepts the full SVG `d` grammar (`M L H V C S Q T A Z`, absolute +
+relative, smooth-curve reflection, arc→cubic), lowering it to the stored
+`Path`. `@weasel-js/svg`'s document parser imports the same function, so the
+`d` coverage is shared. Remaining open question (whether composition APIs
+accept a raw `d` string inline vs. an explicit `pathFromD` call) is tracked
+in `docs/TODO.md`.
+
+**Scope.** Applies to public hooks, ops, and component props that ingest
+or emit geometry. Internal kit code uses the typed-array form directly —
+this rule governs the consumer boundary, not kit internals.

@@ -56,6 +56,7 @@ export {
   flattenQuadraticWithArcLen,
   DEFAULT_FLATTEN_TOLERANCE,
 } from './flatten';
+export { pathFromD } from './pathFromD';
 export { composePath, decomposePath } from './compose';
 export { splitSubpaths } from './splitSubpaths';
 export { splitPathByLine, type SplitByLineOptions } from './splitByLine';
