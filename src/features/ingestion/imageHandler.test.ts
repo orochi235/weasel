@@ -91,4 +91,20 @@ describe('kitImageHandler', () => {
     expect(c.insert.commit).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalled();
   });
+
+  it('a rejecting resolveSrc is skipped with a warn; others proceed', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let n = 0;
+    const c = ctx({
+      point: { x: 0, y: 0 },
+      resolveSrc: async () => {
+        if (n++ === 0) throw new Error('upload failed');
+        return 'https://cdn/ok.png';
+      },
+    });
+    await kitImageHandler.handle([item(file('bad.png')), item(file('ok.png'))], c);
+    expect(c.insert.commit).toHaveBeenCalledTimes(1);
+    expect(c.insert.commit.mock.calls[0][1]).toEqual({ kind: 'image', src: 'https://cdn/ok.png' });
+    expect(warn).toHaveBeenCalled();
+  });
 });

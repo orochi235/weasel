@@ -49,8 +49,10 @@ export const kitImageHandler: ContentHandlerEntry = {
     let index = 0;
     for (const file of files) {
       try {
-        const src = ctx.resolveSrc ? await ctx.resolveSrc(file) : await toDataUri(file);
+        // Measure first: a corrupt file should fail cheaply here, not after
+        // a consumer `resolveSrc` has already uploaded it somewhere.
         const natural = await measure(file);
+        const src = ctx.resolveSrc ? await ctx.resolveSrc(file) : await toDataUri(file);
         const view = ctx.viewportWorldRect();
         const scale = Math.min(
           1,
