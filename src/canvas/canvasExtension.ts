@@ -2,11 +2,12 @@ import type { RenderLayer } from '../core/layers/render';
 import type { IngestItem } from '../features/ingestion/ingestItems';
 
 /**
- * The **public imperative ref handle** for `<SceneCanvas>` (and `<Canvas>`).
- * Obtain it via a ref:
+ * The **base imperative ref handle** shared by the canvas components. For
+ * `<SceneCanvas>` refs use {@link SceneCanvasApi} (this type plus the
+ * scene-level surfaces, e.g. a non-optional `ingest`):
  *
  * ```tsx
- * const ref = useRef<CanvasExtensionApi>(null);
+ * const ref = useRef<SceneCanvasApi>(null);
  * <SceneCanvas ref={ref} … />;
  * ref.current?.element?.focus();
  * ```
