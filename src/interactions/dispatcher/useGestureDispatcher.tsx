@@ -24,6 +24,15 @@ import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestio
 import type { InputEvent } from './matcher';
 
 // ---------------------------------------------------------------------------
+// Drop-over styling — class toggled on the canvas while an OS drag hovers it;
+// consumers style it. Not exported: the string is an observable public value
+// but the symbol is internal.
+// ---------------------------------------------------------------------------
+
+/** Class toggled on the canvas while an OS drag hovers it — consumers style it. */
+const DROPOVER_CLASS = 'weasel-dropover';
+
+// ---------------------------------------------------------------------------
 // Platform detection — module-level constant so it's stable across renders.
 // ---------------------------------------------------------------------------
 
@@ -263,6 +272,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
   useEffect(() => {
     if (!enabled) return;
+
+    let disposed = false;
 
     const dispatcher = dispatcherRef.current!;
     const canvas = canvasRef.current;
@@ -776,19 +787,27 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // the event stack); dispatch happens when materialization resolves.
     // -----------------------------------------------------------------------
 
+    // Attached to both dragover and dragenter: cancelling dragenter (WHATWG)
+    // guarantees the element stays the active drop target and shows the copy
+    // cursor on entry rather than waiting for the first dragover tick.
     const onDragOver = (e: DragEvent) => {
       if (!e.dataTransfer) return;
       // preventDefault is what makes the canvas a valid drop target.
       e.preventDefault();
-      canvas?.classList.add('weasel-dropover');
+      e.dataTransfer.dropEffect = 'copy';
+      canvas?.classList.add(DROPOVER_CLASS);
     };
 
     const onDragLeave = () => {
-      canvas?.classList.remove('weasel-dropover');
+      canvas?.classList.remove(DROPOVER_CLASS);
     };
 
+    // No stopPropagation: handled-ness is only known after the async
+    // materialization microtask, so a conditional stop (wheel-style) is
+    // impossible; an unconditional one would swallow drops the kit doesn't
+    // dispatch. Callers that need exclusivity should gate on the action result.
     const onDrop = (e: DragEvent) => {
-      canvas?.classList.remove('weasel-dropover');
+      canvas?.classList.remove(DROPOVER_CLASS);
       const dt = e.dataTransfer;
       if (!dt) return;
       e.preventDefault();
@@ -800,6 +819,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
       };
       void itemsFromDataTransfer(dt).then((items) => {
+        if (disposed) return;
         if (items.length === 0) return;
         dispatch({
           kind: 'drop', items,
@@ -839,6 +859,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     canvas?.addEventListener('pointerup', onPointerUp);
     canvas?.addEventListener('pointercancel', onPointerCancel);
     canvas?.addEventListener('contextmenu', onContextMenu);
+    canvas?.addEventListener('dragenter', onDragOver);
     canvas?.addEventListener('dragover', onDragOver);
     canvas?.addEventListener('dragleave', onDragLeave);
     canvas?.addEventListener('drop', onDrop);
@@ -859,11 +880,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('pointerup', onPointerUp);
       canvas?.removeEventListener('pointercancel', onPointerCancel);
       canvas?.removeEventListener('contextmenu', onContextMenu);
+      canvas?.removeEventListener('dragenter', onDragOver);
       canvas?.removeEventListener('dragover', onDragOver);
       canvas?.removeEventListener('dragleave', onDragLeave);
       canvas?.removeEventListener('drop', onDrop);
       window.removeEventListener('paste', onPaste);
-      canvas?.classList.remove('weasel-dropover');
+      canvas?.classList.remove(DROPOVER_CLASS);
+      disposed = true;
       dispatcher.cancelAll('cancel');
     };
   }, [enabled, keyboard, canvasRef]);
