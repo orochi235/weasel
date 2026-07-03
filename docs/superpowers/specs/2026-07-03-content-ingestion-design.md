@@ -156,7 +156,8 @@ Registered by default (low priority so consumers can override):
   scene stays fully serializable with zero consumer work. Override:
   `resolveSrc(file) => Promise<string>` — the seam for consumers that
   upload to their own asset store or want `blob:` URLs.
-- **Size:** decode (via the existing `imageCache` path) for natural pixel
+- **Size:** decode (via `createImageBitmap(file)`; as-built — the shared
+  `imageCache` keys on `src`, wrong shape for a pre-`src` file) for natural pixel
   size; clamp to fit the current viewport if larger, preserving aspect.
 - **Placement:** node centered on `ctx.point` (drop); when `point` is
   null (paste / point-less imperative calls) → `viewportCenterWorld()`.
