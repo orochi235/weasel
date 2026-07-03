@@ -1801,6 +1801,13 @@ Carried into the later tasks' dispatch (deltas vs. the task text above):
 - **Task 6 (=):** keep forwarding real modifiers on drop events (the optional-
   mods binding absorbs them); paste keeps all-false (ClipboardEvent carries no
   modifier state) — already in the task text, now load-bearing.
+- **Task 9 (±, from Task 3 review):** the kit-handler registration guard in
+  SceneCanvas must NOT be a naive skip-if-present: with two mounted canvases,
+  if mount A registered `kit:image` and unmounts first, mount B is left with
+  no image handler. Refcount instead — module-level
+  `let kitImageRegistrations = 0` beside a shared disposer: mount increments
+  (registering on 0→1), unmount decrements (disposing on 1→0). Test with two
+  mounted canvases unmounting in registration order.
 - **Task 10 (+):** extend the comment above `SPEC_KIND_TO_GESTURE` in
   `apps/draw/src/dev/registryProbe.tsx` to cover drop/paste (currently explains
   only the multiTouch gap); note route-grammar names for drop/paste as a
