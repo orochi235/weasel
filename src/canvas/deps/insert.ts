@@ -12,7 +12,7 @@
  */
 import { useRef } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
-import type { InsertDep } from 'interactions/actions/depSchema';
+import type { InsertDep, InsertExtras } from 'interactions/actions/depSchema';
 import type { Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
@@ -32,14 +32,33 @@ interface OpsApplier {
   applyOps(ops: Op[], label?: string): void;
 }
 
+/**
+ * Consumer-supplied node factory for one insert `kind`. Given the drag AABB
+ * and the tool's `extras`, returns the node's `data` (in the consumer's own
+ * data shape) plus an optional `pose` override — the dep supplies id, layer,
+ * and the undoable insert op. Return `null` to reject the insert.
+ *
+ * A factory registered for a kit kind (`rect`, `line`, …) fully replaces the
+ * kit's default `{ path, fill }` factory for that kind; a factory for a novel
+ * kind adds support the kit doesn't ship (e.g. `text`). See
+ * `SceneCanvas`'s `insertNodeFactories` prop.
+ */
+export type InsertNodeFactory = (
+  bounds: { x: number; y: number; width: number; height: number },
+  extras: InsertExtras,
+) => { data: unknown; pose?: unknown } | null;
+
 export function useInsertDepSource(
   scene: Scene<unknown, string, unknown>,
   adapter: OpsApplier,
+  factories?: Record<string, InsertNodeFactory>,
 ): void {
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
+  const factoriesRef = useRef(factories);
+  factoriesRef.current = factories;
   const insertSeqRef = useRef(0);
 
   useDepSource('insert', (): InsertDep => {
@@ -63,6 +82,22 @@ export function useInsertDepSource(
         }
         const fill = DEFAULT_PALETTE[seq % DEFAULT_PALETTE.length];
         const layer = (sc.layers[0]?.id ?? 'default') as string;
+
+        // Consumer factory wins over the kit default for this kind (and is the
+        // only way to insert consumer-defined kinds like `text`). It owns the
+        // node's data + optional pose; the dep still supplies id/layer/op.
+        const factory = factoriesRef.current?.[kind];
+        if (factory) {
+          const built = factory(bounds, extras);
+          if (built === null) return null;
+          const factoredPose = built.pose ??
+            { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+          ad.applyOps(
+            [createInsertOp({ node: { id, kind: 'leaf', layer, pose: factoredPose, data: built.data } as unknown as { id: string }, label: `Insert ${kind}` })],
+            `Insert ${kind}`,
+          );
+          return id;
+        }
 
         let data: unknown;
         let pose: unknown = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };

@@ -10,7 +10,7 @@ export { useNodeAtPointDepSource } from './nodeAtPoint';
 export { useLassoSelectDepSource } from './lassoSelect';
 export { useTextEditDepSource } from './textEdit';
 export { useEditAnchorsDepSource } from './editAnchors';
-export { useInsertDepSource } from './insert';
+export { useInsertDepSource, type InsertNodeFactory } from './insert';
 export { useDispatcherDepSource } from './dispatcher';
 export {
   useResizePolicy,

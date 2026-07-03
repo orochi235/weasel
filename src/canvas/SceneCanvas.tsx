@@ -77,6 +77,7 @@ import {
   useResizePolicy,
   useLayoutDepSource,
   useGeometryProjection,
+  type InsertNodeFactory,
 } from './deps';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import { resolveEditablePathOf } from './deps/editAnchors';
@@ -405,6 +406,15 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
       layer?: TLayer;
     };
+
+    /** Consumer node factories for the `insert` action, keyed by tool `kind`.
+     *  Each factory receives the drag AABB + tool `extras` and returns the
+     *  node's `data` (in this canvas's own data shape) plus an optional `pose`.
+     *  A factory for a kit kind (`rect`, `line`, …) replaces the kit's default
+     *  `{ path, fill }` node for that kind; a factory for a novel kind (e.g.
+     *  `text`) adds insert support the kit doesn't ship. The dep supplies id,
+     *  layer, and the undoable op. Return `null` to reject an insert. */
+    insertNodeFactories?: Record<string, InsertNodeFactory>;
 
     // --- Selection ---
     selection?: SelectionApi;
@@ -748,6 +758,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     geometry,
     selectTool: selectToolOpts,
     insertTool,
+    insertNodeFactories,
     layouts,
     geometryProjection,
     routing,
@@ -1691,6 +1702,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             viewportRecenter={viewport?.recenter}
             editAnchorsExternalState={editAnchorsExternalState}
             layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+            insertNodeFactories={insertNodeFactories}
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
@@ -2023,6 +2035,7 @@ function StandardActionsRegistrar({
   viewportRecenter,
   editAnchorsExternalState,
   layouts,
+  insertNodeFactories,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -2065,6 +2078,9 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps` so the `layout` dep source can wire
    *  the per-container layout strategy lookup consumed by `moveAction`. */
   layouts?: SceneCanvasProps<unknown, string, unknown>['layouts'];
+  /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
+   *  consumer's per-kind node factories into the `insert` dep. */
+  insertNodeFactories?: Record<string, InsertNodeFactory>;
 }) {
   const registry = useActionsRegistry();
 
@@ -2108,7 +2124,7 @@ function StandardActionsRegistrar({
   useAreaSelectDepSource(scene, selection);
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
-  useInsertDepSource(scene, adapter);
+  useInsertDepSource(scene, adapter, insertNodeFactories);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState);
