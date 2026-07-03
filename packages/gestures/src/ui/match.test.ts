@@ -363,6 +363,34 @@ describe('matchPhase', () => {
   });
 });
 
+describe('matchSpec — drop / paste', () => {
+  const mods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+  const png = { kind: 'file' as const, mime: 'image/png', file: {} as File };
+  const txt = { kind: 'string' as const, mime: 'text/plain', text: 'hi' };
+
+  it('drop spec matches a drop event', () => {
+    expect(matchSpec({ kind: 'drop', items: [png], ...mods }, { kind: 'drop' }, false)).toBe(true);
+  });
+
+  it('drop spec does not match a paste event (and vice versa)', () => {
+    expect(matchSpec({ kind: 'paste', items: [png], ...mods }, { kind: 'drop' }, false)).toBe(false);
+    expect(matchSpec({ kind: 'drop', items: [png], ...mods }, { kind: 'paste' }, false)).toBe(false);
+  });
+
+  it('types filters by MIME glob — any item matching any glob', () => {
+    expect(matchSpec({ kind: 'drop', items: [txt], ...mods }, { kind: 'drop', types: ['image/*'] }, false)).toBe(false);
+    expect(matchSpec({ kind: 'drop', items: [txt, png], ...mods }, { kind: 'drop', types: ['image/*'] }, false)).toBe(true);
+    expect(matchSpec({ kind: 'drop', items: [png], ...mods }, { kind: 'drop', types: ['image/png'] }, false)).toBe(true);
+    expect(matchSpec({ kind: 'drop', items: [png], ...mods }, { kind: 'drop', types: ['image/jpeg'] }, false)).toBe(false);
+  });
+
+  it('paste spec honors mods', () => {
+    const shifted = { ...mods, shiftKey: true };
+    expect(matchSpec({ kind: 'paste', items: [png], ...shifted }, { kind: 'paste' }, false)).toBe(false);
+    expect(matchSpec({ kind: 'paste', items: [png], ...shifted }, { kind: 'paste', mods: { shift: true } }, false)).toBe(true);
+  });
+});
+
 describe('matchSpec — phase gate', () => {
   const wheelEv = { kind: 'wheel' as const, ...noMods, ...noWheelData };
   const polygonEngaged: PhaseContext = { selfChannel: 'polygon', engagedChannels: new Set(['polygon']) };

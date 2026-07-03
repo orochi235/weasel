@@ -65,6 +65,7 @@ export type {
   InputEvent,
   EventModifiers,
   BodyTarget,
+  IngestItem,
   KeyEvent,
   KeyHeldEvent,
   WheelEvent,
@@ -77,6 +78,8 @@ export type {
   ContextMenuEvent,
   MultitouchEvent,
   MultitouchTapEvent,
+  DropEvent,
+  PasteEvent,
 } from './ui/inputEvent';
 
 // GestureSpec union + sub-types + ModSpec + TargetSpec + PhaseSpec
@@ -84,6 +87,7 @@ export type {
   GestureSpec,
   KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DoubleClickSpec, DragSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
+  DropSpec, PasteSpec,
   ModSpec, TargetSpec, PhaseSpec,
 } from './ui/spec';
 

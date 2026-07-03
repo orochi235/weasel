@@ -140,6 +140,33 @@ export interface MultitouchTapEvent extends EventModifiers {
 }
 
 /**
+ * One piece of external content arriving via OS drop, clipboard paste, or a
+ * file picker — fully materialized (string contents already read), so it is
+ * safe to hold past the originating DOM event. `File` is a lib.dom type;
+ * no runtime DOM dependency.
+ */
+export type IngestItem =
+  | { kind: 'file'; mime: string; file: File }
+  | { kind: 'string'; mime: string; text: string };
+
+/** External content dropped onto the canvas (OS drag-and-drop). */
+export interface DropEvent extends EventModifiers {
+  kind: 'drop';
+  items: readonly IngestItem[];
+  /** World-space drop point (post view transform). */
+  x?: number;
+  y?: number;
+  clientX?: number;
+  clientY?: number;
+}
+
+/** External content pasted from the system clipboard. Carries no point. */
+export interface PasteEvent extends EventModifiers {
+  kind: 'paste';
+  items: readonly IngestItem[];
+}
+
+/**
  * Normalized input-event shape consumed by the pure matcher. Built by the
  * React seam (`useGestureDispatcher`) from DOM events. Pump-only events
  * ({@link PointerMoveEvent}, {@link PointerUpEvent}, {@link PointerCancelEvent})
@@ -162,4 +189,6 @@ export type InputEvent =
   | DoubleClickEvent
   | ContextMenuEvent
   | MultitouchEvent
-  | MultitouchTapEvent;
+  | MultitouchTapEvent
+  | DropEvent
+  | PasteEvent;

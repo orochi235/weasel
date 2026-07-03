@@ -234,6 +234,8 @@ const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined>
   drag: 'drag',
   multiTouch: undefined,
   multiTouchTap: 'multiTouchTap',
+  drop: undefined,
+  paste: undefined,
 };
 
 function bindingRouteRefs(

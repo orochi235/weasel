@@ -157,6 +157,25 @@ export interface MultiTouchTapSpec {
   phase?: PhaseSpec;
 }
 
+/** OS drag-and-drop of external content onto the canvas. `types` filters by
+ *  MIME glob (`'image/*'`, `'text/plain'`); the spec matches when ANY item's
+ *  MIME matches ANY glob. Omitted = matches any drop. */
+export interface DropSpec {
+  kind: 'drop';
+  types?: string[];
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
+/** System-clipboard paste of external content. Same `types` semantics as
+ *  {@link DropSpec}. */
+export interface PasteSpec {
+  kind: 'paste';
+  types?: string[];
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
 /** The full union of supported gesture spec kinds. New invocation forms
  *  (long-press, two-stage, modal-dialog) extend this union without touching
  *  the `Action` type. */
@@ -169,4 +188,6 @@ export type GestureSpec =
   | ContextMenuSpec
   | DragSpec
   | MultiTouchSpec
-  | MultiTouchTapSpec;
+  | MultiTouchTapSpec
+  | DropSpec
+  | PasteSpec;

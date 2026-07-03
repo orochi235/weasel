@@ -8,6 +8,8 @@ export type {
   MultiTouchSpec,
   ContextMenuSpec,
   MultiTouchTapSpec,
+  DropSpec,
+  PasteSpec,
   ModSpec,
   TargetSpec,
   PhaseSpec,

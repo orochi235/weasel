@@ -217,6 +217,28 @@ function matchPhaseAtom(a: PhaseAtom, ctx: PhaseContext): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// matchIngestTypes
+// ---------------------------------------------------------------------------
+
+/** MIME-glob match: `'image/*'` prefix-matches the major type; anything
+ *  else is an exact (case-insensitive) match; bare `'*'` matches all. */
+function mimeMatchesGlob(mime: string, glob: string): boolean {
+  const m = mime.toLowerCase();
+  const g = glob.toLowerCase();
+  if (g === '*' || g === '*/*') return true;
+  if (g.endsWith('/*')) return m.startsWith(g.slice(0, -1));
+  return m === g;
+}
+
+function matchIngestTypes(
+  items: readonly { mime: string }[],
+  types: string[] | undefined,
+): boolean {
+  if (!types || types.length === 0) return true;
+  return items.some((it) => types.some((g) => mimeMatchesGlob(it.mime, g)));
+}
+
+// ---------------------------------------------------------------------------
 // matchSpec
 // ---------------------------------------------------------------------------
 
@@ -303,6 +325,18 @@ export function matchSpec(
     case 'multiTouchTap': {
       if (e.kind !== 'multitouchtap') return false;
       if (e.fingers !== spec.fingers) return false;
+      return matchModifiers(e, spec.mods, isMac);
+    }
+
+    case 'drop': {
+      if (e.kind !== 'drop') return false;
+      if (!matchIngestTypes(e.items, spec.types)) return false;
+      return matchModifiers(e, spec.mods, isMac);
+    }
+
+    case 'paste': {
+      if (e.kind !== 'paste') return false;
+      if (!matchIngestTypes(e.items, spec.types)) return false;
       return matchModifiers(e, spec.mods, isMac);
     }
 
