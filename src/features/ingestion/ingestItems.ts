@@ -11,6 +11,10 @@
  * MIME strings are normalized to bare lowercase `type/subtype` (parameters
  * like `;charset=utf-8` stripped) — downstream exact matching (binding
  * `types`, content-handler `match`) assumes the bare form.
+ *
+ * Output shape: **files first (source order), then strings (item order)**.
+ * For paste (`itemsFromClipboardData`) string flavors are emitted in
+ * `INGEST_STRING_MIMES` order: text/plain, text/html, text/uri-list.
  */
 import type { IngestItem } from '@weasel-js/gestures';
 
@@ -43,16 +47,20 @@ export function itemsFromDataTransfer(dt: DataTransfer): Promise<IngestItem[]> {
     if (item.kind === 'file') {
       const file = item.getAsFile();
       if (file) files.push({ kind: 'file', mime: normalizeMime(file.type), file });
-    } else if (item.kind === 'string' && INGEST_STRING_MIMES.has(normalizeMime(item.type))) {
+    } else if (item.kind === 'string') {
       const mime = normalizeMime(item.type);
-      reads.push(
-        new Promise((resolve) => {
-          item.getAsString((text) => {
-            strings.push({ kind: 'string', mime, text });
-            resolve();
-          });
-        }),
-      );
+      if (INGEST_STRING_MIMES.has(mime)) {
+        const slot = strings.length;
+        strings.push(null as never);
+        reads.push(
+          new Promise((resolve) => {
+            item.getAsString((text) => {
+              strings[slot] = { kind: 'string', mime, text };
+              resolve();
+            });
+          }),
+        );
+      }
     }
   }
 

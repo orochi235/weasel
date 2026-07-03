@@ -45,6 +45,44 @@ describe('itemsFromDataTransfer', () => {
     expect(out[0]).toMatchObject({ mime: 'application/octet-stream' });
   });
 
+  it('kicks off getAsString reads synchronously (while DataTransfer is live)', async () => {
+    let kickedOff = false;
+    const syncCheckItem = {
+      kind: 'string' as const,
+      type: 'text/plain',
+      getAsFile: () => null,
+      getAsString: (cb: (s: string) => void) => {
+        kickedOff = true;
+        setTimeout(() => cb('sync-test'), 0);
+      },
+    };
+    const promise = itemsFromDataTransfer(dt([syncCheckItem]));
+    expect(kickedOff).toBe(true);
+    const out = await promise;
+    expect(out).toEqual([{ kind: 'string', mime: 'text/plain', text: 'sync-test' }]);
+  });
+
+  it('preserves item order regardless of callback resolution order', async () => {
+    // html resolves immediately, plain resolves after a delay — output must
+    // still be plain first (item order), not html first (resolution order).
+    const fastHtml = {
+      kind: 'string' as const,
+      type: 'text/plain',
+      getAsFile: () => null,
+      getAsString: (cb: (s: string) => void) => cb('plain-slow'),
+    };
+    const slowPlain = {
+      kind: 'string' as const,
+      type: 'text/html',
+      getAsFile: () => null,
+      getAsString: (cb: (s: string) => void) => setTimeout(() => cb('<b>fast</b>'), 0),
+    };
+    const out = await itemsFromDataTransfer(dt([fastHtml, slowPlain]));
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ kind: 'string', mime: 'text/plain', text: 'plain-slow' });
+    expect(out[1]).toMatchObject({ kind: 'string', mime: 'text/html', text: '<b>fast</b>' });
+  });
+
   it('normalizes MIME parameters and case (bare type/subtype)', async () => {
     const f = new File(['x'], 'a.png', { type: 'IMAGE/PNG' });
     const out = await itemsFromDataTransfer(dt([], [f]));
