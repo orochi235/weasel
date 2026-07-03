@@ -170,7 +170,10 @@ export interface LassoSelectDep {
 export interface IngestionDep {
   /** Visible canvas area in world coordinates. */
   viewportWorldRect(): { x: number; y: number; width: number; height: number };
-  /** Consumer file→src resolver (from SceneCanvas's `ingestion` prop). */
+  /** Consumer file→src resolver (from SceneCanvas's `ingestion` prop).
+   *  Live accessor — read it at use time. Destructuring (or copying the
+   *  property early) snapshots the current value and won't track later
+   *  prop changes across an `await`. */
   resolveSrc?: (file: File) => Promise<string>;
 }
 
@@ -395,8 +398,8 @@ export interface DepSchema {
    * viewport rect for paste-placement and image fit-clamping, and forwards
    * the consumer's optional `resolveSrc` seam.
    *
-   * Optional: when absent, `ingestAction` falls back to placing content at
-   * the origin.
+   * Optional: when absent, the `ingest` action no-ops (there is no
+   * placement geometry to work with).
    */
   ingestion?: IngestionDep;
   /**

@@ -5,7 +5,6 @@ import {
   useDepRegistry,
   type DepRegistry,
 } from 'interactions/actions/depRegistry';
-import type { IngestionDep } from 'interactions/actions/depSchema';
 import { useIngestionDepSource } from './ingestion';
 import type { View } from 'core/viewport/view';
 
@@ -42,10 +41,49 @@ describe('useIngestionDepSource', () => {
       </DepRegistryProvider>,
     );
 
-    const dep = reg.get('ingestion') as IngestionDep;
-    const rect = dep.viewportWorldRect();
+    const dep = reg.get('ingestion');
+    expect(dep).toBeDefined();
+    const rect = dep!.viewportWorldRect();
     expect(rect.x).toBeCloseTo(0);
     expect(rect.y).toBeCloseTo(0);
+    expect(rect.width).toBeCloseTo(400);
+    expect(rect.height).toBeCloseTo(300);
+  });
+
+  it('maps an off-origin canvas rect through an offset view (full transform)', () => {
+    // Non-zero rect origin + non-zero view offset so a corner-wiring bug
+    // (e.g. width/height passed where right/bottom client coords belong)
+    // cannot cancel out. world = (client - rect.left) / scale + view.x.
+    const fakeCanvas = {
+      getBoundingClientRect: () => ({
+        left: 100,
+        top: 40,
+        width: 800,
+        height: 600,
+        right: 900,
+        bottom: 640,
+      }),
+    } as unknown as HTMLCanvasElement;
+    const canvasRef = { current: fakeCanvas } as React.RefObject<HTMLCanvasElement | null>;
+    const getView = (): View => ({ x: 50, y: -20, scale: { x: 2, y: 2 } });
+
+    let reg!: DepRegistry;
+    function Wire() {
+      useIngestionDepSource(canvasRef, getView);
+      return null;
+    }
+    render(
+      <DepRegistryProvider>
+        <Wire />
+        <Capture onR={(r) => { reg = r; }} />
+      </DepRegistryProvider>,
+    );
+
+    const dep = reg.get('ingestion');
+    expect(dep).toBeDefined();
+    const rect = dep!.viewportWorldRect();
+    expect(rect.x).toBeCloseTo(50);   // (100 - 100) / 2 + 50
+    expect(rect.y).toBeCloseTo(-20);  // (40 - 40) / 2 + (-20)
     expect(rect.width).toBeCloseTo(400);
     expect(rect.height).toBeCloseTo(300);
   });
@@ -66,8 +104,9 @@ describe('useIngestionDepSource', () => {
       </DepRegistryProvider>,
     );
 
-    const dep = reg.get('ingestion') as IngestionDep;
-    const rect = dep.viewportWorldRect();
+    const dep = reg.get('ingestion');
+    expect(dep).toBeDefined();
+    const rect = dep!.viewportWorldRect();
     expect(rect).toEqual({ x: 0, y: 0, width: 0, height: 0 });
   });
 
@@ -91,8 +130,9 @@ describe('useIngestionDepSource', () => {
       </DepRegistryProvider>,
     );
 
-    const dep = reg.get('ingestion') as IngestionDep;
-    expect(dep.resolveSrc).toBe(resolve);
+    const dep = reg.get('ingestion');
+    expect(dep).toBeDefined();
+    expect(dep!.resolveSrc).toBe(resolve);
   });
 
   it('resolveSrc is absent when not provided', () => {
@@ -114,7 +154,8 @@ describe('useIngestionDepSource', () => {
       </DepRegistryProvider>,
     );
 
-    const dep = reg.get('ingestion') as IngestionDep;
-    expect(dep.resolveSrc).toBeUndefined();
+    const dep = reg.get('ingestion');
+    expect(dep).toBeDefined();
+    expect(dep!.resolveSrc).toBeUndefined();
   });
 });
