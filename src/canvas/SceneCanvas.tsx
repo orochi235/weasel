@@ -77,8 +77,16 @@ import {
   useResizePolicy,
   useLayoutDepSource,
   useGeometryProjection,
+  useIngestionDepSource,
   type InsertNodeFactory,
 } from './deps';
+import {
+  acquireKitContentHandlers,
+  registerContentHandler,
+  itemsFromFiles,
+  type ContentHandlerEntry,
+  type IngestItem,
+} from 'features/ingestion';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
 import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
@@ -88,7 +96,7 @@ import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewport
 import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
-import { useActionsRegistry } from 'interactions/actions/registry';
+import { useActionsRegistry, type ActionsRegistry } from 'interactions/actions/registry';
 import { buildAffordanceAt, buildClassifyTarget, HANDLE_HIT_RADIUS } from './affordanceAt';
 import { meanScale } from 'core/viewport/meanScale';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
@@ -415,6 +423,16 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  `text`) adds insert support the kit doesn't ship. The dep supplies id,
      *  layer, and the undoable op. Return `null` to reject an insert. */
     insertNodeFactories?: Record<string, InsertNodeFactory>;
+
+    /** External-content ingestion (OS drop / clipboard paste / picker).
+     *  `handlers` are consumer content handlers registered for this canvas's
+     *  lifetime (priority 0 by default — they beat the kit's `image/*`
+     *  handler at -100). `resolveSrc` overrides the image handler's
+     *  `data:`-URI embed (e.g. upload to an asset store, return the URL). */
+    ingestion?: {
+      handlers?: ContentHandlerEntry[];
+      resolveSrc?: (file: File) => Promise<string>;
+    };
 
     // --- Selection ---
     selection?: SelectionApi;
@@ -759,6 +777,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     selectTool: selectToolOpts,
     insertTool,
     insertNodeFactories,
+    ingestion,
     layouts,
     geometryProjection,
     routing,
@@ -833,6 +852,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     dlog('scene-canvas', 'mount');
     return () => dlog('scene-canvas', 'unmount');
   }, []);
+
+  // Content-handler registration: the kit's defaults are refcounted (they
+  // stay registered while ANY SceneCanvas is mounted — see
+  // `acquireKitContentHandlers`); consumer handlers from the `ingestion`
+  // prop live for this canvas's lifetime.
+  const consumerHandlers = ingestion?.handlers;
+  useEffect(() => {
+    const disposers = [acquireKitContentHandlers()];
+    for (const h of consumerHandlers ?? []) disposers.push(registerContentHandler(h));
+    return () => disposers.forEach((d) => d());
+  }, [consumerHandlers]);
 
   // Animator subscription: when an animator is provided, request a redraw
   // on every active frame so consumer `drawOne` functions reading
@@ -1579,16 +1609,42 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // so the resolved actions always read current state. `useStandardActions`
   // stabilizes via refs internally — these closures are passed every render
   // but the registered Action descriptors are not re-registered.
+  // `CanvasExtensionApi.ingest` — imperative entry into the same
+  // content-handler pipeline OS drop / clipboard paste hit. Routed through
+  // `registry.trigger('ingest', …)` so the action's `requires` deps
+  // (insert, ingestion, …) are resolved exactly as on the dispatcher path.
+  // The registry lives inside `<ActionsProviderIfRoot>` below us, so
+  // `StandardActionsRegistrar` stashes it into this ref.
+  const actionsRegistryRef = useRef<ActionsRegistry | null>(null);
+  const ingestImpl = useCallback(
+    (input: File[] | IngestItem[], point?: { x: number; y: number }) => {
+      const items: IngestItem[] = (input as (File | IngestItem)[]).map((entry) =>
+        entry instanceof File ? itemsFromFiles([entry])[0] : entry,
+      );
+      if (items.length === 0) return;
+      actionsRegistryRef.current?.trigger('ingest', {
+        items,
+        ...(point ? { worldX: point.x, worldY: point.y } : {}),
+      });
+    },
+    [],
+  );
+
   // Merge the forwarded ref with our internalCanvasRef so usePinchZoomTool
   // can read the canvas element even when the consumer also forwards a ref.
+  // The handle exposed to consumers extends the primitive's with `ingest`
+  // (SceneCanvas-only — it needs the action stack).
   const mergedRef = useCallback(
     (node: CanvasExtensionApi | null) => {
       internalCanvasRef.current = node?.element ?? null;
-      canvasApiRef.current = node;
-      if (typeof ref === 'function') ref(node);
-      else if (ref) (ref as React.MutableRefObject<CanvasExtensionApi | null>).current = node;
+      const extended: CanvasExtensionApi | null = node
+        ? { ...node, ingest: ingestImpl }
+        : null;
+      canvasApiRef.current = extended;
+      if (typeof ref === 'function') ref(extended);
+      else if (ref) (ref as React.MutableRefObject<CanvasExtensionApi | null>).current = extended;
     },
-    [ref],
+    [ref, ingestImpl],
   );
 
   const canvas = (
@@ -1703,6 +1759,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             editAnchorsExternalState={editAnchorsExternalState}
             layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
             insertNodeFactories={insertNodeFactories}
+            canvasRef={internalCanvasRef}
+            ingestionResolveSrc={ingestion?.resolveSrc}
+            actionsRegistryRef={actionsRegistryRef}
           />
           <GestureDispatcherMounter
             canvasRef={internalCanvasRef}
@@ -2036,6 +2095,9 @@ function StandardActionsRegistrar({
   editAnchorsExternalState,
   layouts,
   insertNodeFactories,
+  canvasRef,
+  ingestionResolveSrc,
+  actionsRegistryRef,
 }: {
   selection: SelectionApi;
   scene: Scene<unknown, string, unknown>;
@@ -2081,8 +2143,24 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
+  /** The canvas element ref, so `useIngestionDepSource` can compute the
+   *  visible world rect from the client rect + current view. */
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  /** Forwarded from `SceneCanvasProps.ingestion.resolveSrc` — consumer
+   *  file→src override for the kit image handler. */
+  ingestionResolveSrc?: (file: File) => Promise<string>;
+  /** Populated with the live registry so `CanvasExtensionApi.ingest`
+   *  (assembled in SceneCanvasInner, OUTSIDE the actions provider) can call
+   *  `registry.trigger('ingest', …)`. Cleared on unmount. */
+  actionsRegistryRef: React.MutableRefObject<ActionsRegistry | null>;
 }) {
   const registry = useActionsRegistry();
+
+  // Stash the registry for SceneCanvasInner's imperative `ingest` handle.
+  useEffect(() => {
+    actionsRegistryRef.current = registry;
+    return () => { actionsRegistryRef.current = null; };
+  }, [registry, actionsRegistryRef]);
 
   // Wire the dispatcher into the registry so registry.begin() can delegate
   // to dispatcher.beginUiOngoing() for UI-driven ongoing actions (color,
@@ -2125,6 +2203,7 @@ function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
+  useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState);

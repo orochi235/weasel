@@ -1,4 +1,5 @@
 import type { RenderLayer } from '../core/layers/render';
+import type { IngestItem } from '../features/ingestion/ingestItems';
 
 /**
  * The **public imperative ref handle** for `<SceneCanvas>` (and `<Canvas>`).
@@ -27,4 +28,15 @@ export interface CanvasExtensionApi {
    *  draw stack and, if it implements `hitTest`, in the dispatcher's hit-test
    *  pipeline (see `src/tools/dispatcher.ts`'s `getHitTestContext`). */
   registerLayer(layer: RenderLayer<unknown>): () => void;
+  /** Feed external content into the ingestion pipeline imperatively — the
+   *  same content-handler registry that OS drop and clipboard paste hit.
+   *  `input` may be raw `File[]` (e.g. from `openFilePicker`) or
+   *  pre-normalized `IngestItem[]`. `point` is a world-space placement
+   *  anchor; omitted → handlers use their point-less policy (the kit image
+   *  handler centers on the viewport).
+   *
+   *  Optional because ingestion needs the SceneCanvas action stack — the
+   *  handle is always populated on `<SceneCanvas>` refs, absent on the
+   *  bare-primitive handle. */
+  ingest?(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
 }

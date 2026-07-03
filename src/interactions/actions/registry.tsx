@@ -379,21 +379,23 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         if (!a) return false;
         try {
           if (a.invoker && a.invoker.timing === 'immediate') {
-            // Build a live deps bag from the dep registry (when present);
-            // invokers tolerate undefined deps and default to a sensible
-            // variant when `params` is undefined (imperative path).
             const r = depRegRef.current;
-            const deps = r
-              ? {
-                  selection: r.get('selection' as DepName),
-                  scene: r.get('scene' as DepName),
-                  history: r.get('history' as DepName),
-                  view: r.get('view' as DepName),
-                  pointer: r.get('pointer' as DepName),
-                  activeTool: r.get('activeTool' as DepName),
-                  booleansAdapter: r.get('booleansAdapter' as DepName),
-                }
-              : {};
+            // Prefer the action's declared `requires` (same contract the
+            // dispatcher's buildDeps uses); legacy fixed bag otherwise.
+            const requires = (a as unknown as { requires?: string[] }).requires;
+            const deps = !r
+              ? {}
+              : requires
+                ? Object.fromEntries(requires.map((n) => [n, r.get(n as DepName)]))
+                : {
+                    selection: r.get('selection' as DepName),
+                    scene: r.get('scene' as DepName),
+                    history: r.get('history' as DepName),
+                    view: r.get('view' as DepName),
+                    pointer: r.get('pointer' as DepName),
+                    activeTool: r.get('activeTool' as DepName),
+                    booleansAdapter: r.get('booleansAdapter' as DepName),
+                  };
             a.invoker.run(deps as never, params);
           }
         } catch (err) {

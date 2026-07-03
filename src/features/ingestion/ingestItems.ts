@@ -36,6 +36,13 @@ function normalizeMime(raw: string): string {
   return bare || FALLBACK_MIME;
 }
 
+/** Wrap raw `File`s (file picker, `CanvasExtensionApi.ingest`) as
+ *  `IngestItem`s, normalizing each MIME the same way the drop/paste paths
+ *  do. Synchronous — `File` objects are already fully owned. */
+export function itemsFromFiles(files: File[]): IngestItem[] {
+  return files.map((file) => ({ kind: 'file', mime: normalizeMime(file.type), file }));
+}
+
 /** Materialize a drop's `DataTransfer`. MUST be called during the `drop`
  *  event dispatch (see module doc). */
 export function itemsFromDataTransfer(dt: DataTransfer): Promise<IngestItem[]> {

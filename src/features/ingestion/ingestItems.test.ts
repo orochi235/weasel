@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { itemsFromDataTransfer, itemsFromClipboardData } from './ingestItems';
+import { itemsFromDataTransfer, itemsFromClipboardData, itemsFromFiles } from './ingestItems';
 
 /** Minimal DataTransferItem stand-in (jsdom has no DataTransfer constructor). */
 function fileItem(name: string, type: string) {
@@ -94,6 +94,19 @@ describe('itemsFromDataTransfer', () => {
       dt([stringItem('text/plain;charset=utf-8', 'hi')]),
     );
     expect(withParams).toEqual([{ kind: 'string', mime: 'text/plain', text: 'hi' }]);
+  });
+});
+
+describe('itemsFromFiles', () => {
+  it('wraps files with normalized MIMEs (case, params, empty→octet-stream)', () => {
+    const png = new File(['x'], 'a.png', { type: 'IMAGE/PNG' });
+    const csv = new File(['x'], 'b.csv', { type: 'text/csv;charset=utf-8' });
+    const bare = new File(['x'], 'noext', { type: '' });
+    expect(itemsFromFiles([png, csv, bare])).toEqual([
+      { kind: 'file', mime: 'image/png', file: png },
+      { kind: 'file', mime: 'text/csv', file: csv },
+      { kind: 'file', mime: 'application/octet-stream', file: bare },
+    ]);
   });
 });
 

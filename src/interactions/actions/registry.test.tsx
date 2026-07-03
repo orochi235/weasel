@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, render } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { ActionsProvider, useActionsRegistry, type Action, type ActionsRegistry } from './registry';
+import { DepRegistryProvider, useDepSource } from './depRegistry';
 import type { GestureSpec } from '../gestures/spec';
 
 function wrap({ children }: { children: ReactNode }) {
@@ -80,6 +81,35 @@ describe('ActionsRegistry — full coverage', () => {
     let ret = true;
     expect(() => act(() => { ret = reg.trigger('missing'); })).not.toThrow();
     expect(ret).toBe(false);
+  });
+
+  it('trigger builds deps from the action\'s declared `requires` (insert dep passes through)', () => {
+    const insertDep = { commit: vi.fn() };
+    function InsertSource() {
+      (useDepSource as (n: string, s: () => unknown) => void)('insert', () => insertDep);
+      return null;
+    }
+    const seen: unknown[] = [];
+    let reg: ActionsRegistry | null = null;
+    function Capture() { reg = useActionsRegistry(); return null; }
+    render(
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <InsertSource />
+          <Capture />
+        </ActionsProvider>
+      </DepRegistryProvider>,
+    );
+    const action = {
+      id: 'needsInsert', label: 'Needs insert',
+      requires: ['insert'],
+      invoker: {
+        timing: 'immediate' as const,
+        run: (deps: Record<string, unknown>) => { seen.push(deps.insert); },
+      },
+    } as unknown as Action;
+    act(() => { reg!.register(action); reg!.trigger('needsInsert'); });
+    expect(seen).toEqual([insertDep]);
   });
 
   it('list() snapshot mutation does not affect internal state', () => {
