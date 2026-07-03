@@ -1808,6 +1808,18 @@ Carried into the later tasks' dispatch (deltas vs. the task text above):
   `let kitImageRegistrations = 0` beside a shared disposer: mount increments
   (registering on 0→1), unmount decrements (disposing on 1→0). Test with two
   mounted canvases unmounting in registration order.
+- **Task 10 (+, from Task 9 review):** add `SceneCanvasApi extends
+  CanvasExtensionApi` declaring `ingest(...)` required; type SceneCanvas's
+  forwarded ref as `React.Ref<SceneCanvasApi>` and export the interface —
+  removes the `ref.current!.ingest!(…)` tax (the optional method stays on the
+  base for the bare-primitive handle). Also unify the two hand-rolled dep-bag
+  builders: extract a shared `buildDepsFromRequires(action, depRegistry)`
+  (with the dispatcher's dev-mode undeclared-dep proxy guard) used by BOTH
+  `dispatcher.buildDeps` and `registry.trigger`; consider promoting
+  `requires?: DepName[]` onto `Action` to kill the duplicated casts. Plus one
+  10-line integration test: `ingestion={{ resolveSrc }}` on SceneCanvas →
+  inserted node's `src` is the resolved URL (the prop-threading hop is
+  currently untested end-to-end).
 - **Task 10 (+):** extend the comment above `SPEC_KIND_TO_GESTURE` in
   `apps/draw/src/dev/registryProbe.tsx` to cover drop/paste (currently explains
   only the multiTouch gap); note route-grammar names for drop/paste as a
