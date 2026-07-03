@@ -19,6 +19,7 @@
  * can override either by passing their own `moveOptions.cascadeWorldPose`.
  */
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { dwarn } from '../debug';
 import type React from 'react';
 import type { ReactNode } from 'react';
 import { type Action, type ActionsProp } from 'interactions/actions/registry';
@@ -428,7 +429,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  `handlers` are consumer content handlers registered for this canvas's
      *  lifetime (priority 0 by default — they beat the kit's `image/*`
      *  handler at -100). `resolveSrc` overrides the image handler's
-     *  `data:`-URI embed (e.g. upload to an asset store, return the URL). */
+     *  `data:`-URI embed (e.g. upload to an asset store, return the URL).
+     *  Memoize `handlers` (useState/useMemo/module const) — an inline array
+     *  literal re-registers the handlers on every render. */
     ingestion?: {
       handlers?: ContentHandlerEntry[];
       resolveSrc?: (file: File) => Promise<string>;
@@ -1622,7 +1625,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         entry instanceof File ? itemsFromFiles([entry])[0] : entry,
       );
       if (items.length === 0) return;
-      actionsRegistryRef.current?.trigger('ingest', {
+      if (!actionsRegistryRef.current) {
+        // The registry is stashed by a descendant effect — a consumer calling
+        // ingest() from its own ref callback / layout effect lands here.
+        dwarn('ingest', 'CanvasExtensionApi.ingest called before the action registry mounted — call ignored. Defer to an effect or event handler.');
+        return;
+      }
+      actionsRegistryRef.current.trigger('ingest', {
         items,
         ...(point ? { worldX: point.x, worldY: point.y } : {}),
       });
