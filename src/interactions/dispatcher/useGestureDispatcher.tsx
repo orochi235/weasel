@@ -20,6 +20,7 @@ import type { AffordanceHit } from '../actions/invoker';
 import type { Tool, ToolCtx } from '../../tools/types';
 import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
+import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestion/ingestItems';
 import type { InputEvent } from './matcher';
 
 // ---------------------------------------------------------------------------
@@ -770,6 +771,61 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     // -----------------------------------------------------------------------
+    // External-content ingestion: OS drop on the canvas, paste on window.
+    // Items are materialized DURING the event (DataTransfer is only live on
+    // the event stack); dispatch happens when materialization resolves.
+    // -----------------------------------------------------------------------
+
+    const onDragOver = (e: DragEvent) => {
+      if (!e.dataTransfer) return;
+      // preventDefault is what makes the canvas a valid drop target.
+      e.preventDefault();
+      canvas?.classList.add('weasel-dropover');
+    };
+
+    const onDragLeave = () => {
+      canvas?.classList.remove('weasel-dropover');
+    };
+
+    const onDrop = (e: DragEvent) => {
+      canvas?.classList.remove('weasel-dropover');
+      const dt = e.dataTransfer;
+      if (!dt) return;
+      e.preventDefault();
+      const w = toWorld(e.clientX, e.clientY);
+      // Real modifiers forwarded (Option-drag is a copy-drag on macOS); the
+      // kit ingest binding declares all modifiers optional, so they can't
+      // block the default route — but a consumer binding may key on them.
+      const base = {
+        altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+      };
+      void itemsFromDataTransfer(dt).then((items) => {
+        if (items.length === 0) return;
+        dispatch({
+          kind: 'drop', items,
+          x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY,
+          ...base,
+        });
+      });
+    };
+
+    const onPaste = (e: ClipboardEvent) => {
+      // Text-editing surfaces (inputs, the text-edit overlay) own their own
+      // paste — never steal it for scene ingestion.
+      if (isEditableTarget(e.target)) return;
+      const cd = e.clipboardData;
+      if (!cd) return;
+      const items = itemsFromClipboardData(cd);
+      if (items.length === 0) return;
+      e.preventDefault();
+      dispatch({
+        kind: 'paste', items,
+        // ClipboardEvent carries no modifier state.
+        altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+      });
+    };
+
+    // -----------------------------------------------------------------------
     // Attach
     // -----------------------------------------------------------------------
 
@@ -783,6 +839,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     canvas?.addEventListener('pointerup', onPointerUp);
     canvas?.addEventListener('pointercancel', onPointerCancel);
     canvas?.addEventListener('contextmenu', onContextMenu);
+    canvas?.addEventListener('dragover', onDragOver);
+    canvas?.addEventListener('dragleave', onDragLeave);
+    canvas?.addEventListener('drop', onDrop);
+    window.addEventListener('paste', onPaste);
 
     // -----------------------------------------------------------------------
     // Cleanup
@@ -799,6 +859,11 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('pointerup', onPointerUp);
       canvas?.removeEventListener('pointercancel', onPointerCancel);
       canvas?.removeEventListener('contextmenu', onContextMenu);
+      canvas?.removeEventListener('dragover', onDragOver);
+      canvas?.removeEventListener('dragleave', onDragLeave);
+      canvas?.removeEventListener('drop', onDrop);
+      window.removeEventListener('paste', onPaste);
+      canvas?.classList.remove('weasel-dropover');
       dispatcher.cancelAll('cancel');
     };
   }, [enabled, keyboard, canvasRef]);
