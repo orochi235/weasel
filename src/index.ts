@@ -174,6 +174,7 @@ export type {
 export type {
   AreaSelectDep,
   EditAnchorsDep,
+  IngestionDep,
   InsertDep,
   InsertExtras,
   LassoSelectDep,
