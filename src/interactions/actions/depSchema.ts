@@ -163,6 +163,18 @@ export interface LassoSelectDep {
 }
 
 /**
+ * Dep for the `ingest` action (external-content ingestion).
+ * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>` via
+ * `useIngestionDepSource` — canvas rect + current view.
+ */
+export interface IngestionDep {
+  /** Visible canvas area in world coordinates. */
+  viewportWorldRect(): { x: number; y: number; width: number; height: number };
+  /** Consumer file→src resolver (from SceneCanvas's `ingestion` prop). */
+  resolveSrc?: (file: File) => Promise<string>;
+}
+
+/**
  * Per-kind extra geometry passed to `InsertDep.commit`.
  *
  * Built-in tools populate a typed variant so the kit's default factory can
@@ -375,6 +387,18 @@ export interface DepSchema {
    *  coords). Local-pose consumers supply { compose: composeRectPose,
    *  decompose: decomposeRectPose } (or their pose shape's equivalent). */
   poseComposition?: import('../../features/groups/composePose').PoseComposition<unknown>;
+  /**
+   * Ingestion dep — canvas viewport rect + consumer file→src resolver.
+   *
+   * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>` via
+   * `useIngestionDepSource`. Feeds `ingestAction` with the world-space
+   * viewport rect for paste-placement and image fit-clamping, and forwards
+   * the consumer's optional `resolveSrc` seam.
+   *
+   * Optional: when absent, `ingestAction` falls back to placing content at
+   * the origin.
+   */
+  ingestion?: IngestionDep;
   /**
    * Optional consumer seam for the eager-sync layer: lets pose-transform
    * actions (resize/move/nudge/flip — NOT rotate) ALSO rewrite a node's

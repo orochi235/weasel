@@ -18,3 +18,4 @@ export {
 } from './resizePolicy';
 export { useLayoutDepSource } from './layout';
 export { useGeometryProjection } from './geometryProjection';
+export { useIngestionDepSource } from './ingestion';
