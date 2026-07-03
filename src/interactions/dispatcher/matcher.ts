@@ -64,7 +64,8 @@ function modsCount(mods: ModSpec | undefined): number {
  *    [1] mods   — count of required modifier keys (shift/alt/ctrl/meta/mod).
  *                 `'optional'` does NOT count.
  *    [2] phase  — 1 if the spec declares a `phase` field, else 0.
- *    [3] exact  — placeholder, always 1. Reserved for per-kind tiebreaks.
+ *    [3] exact  — per-kind tiebreak: 2 for a drop/paste spec with a
+ *                 non-empty `types` MIME filter, else 1.
  *
  *  Identical tuples fall back to registration order in the matcher's
  *  stable sort, preserving the pre-specificity tiebreaker. */
@@ -75,7 +76,14 @@ export function specificity(
   const mods = ('mods' in spec ? spec.mods : undefined) as ModSpec | undefined;
   const m = modsCount(mods);
   const p = ('phase' in spec && spec.phase !== undefined) ? 1 : 0;
-  return [t, m, p, 1];
+  // Per-kind tiebreak: a MIME-typed drop/paste spec beats an untyped one
+  // in the same scope (a consumer's `types: ['text/csv']` binding should
+  // win over the kit's catch-all ingest binding).
+  const typed =
+    (spec.kind === 'drop' || spec.kind === 'paste') &&
+    spec.types !== undefined && spec.types.length > 0
+      ? 2 : 1;
+  return [t, m, p, typed];
 }
 
 /** Lexicographic compare for use as an Array.prototype.sort callback.

@@ -66,6 +66,7 @@ import { setFillAction } from './defaults/setFill';
 import { setStrokeAction } from './defaults/setStroke';
 import { setFillOpacityAction } from './defaults/setFillOpacity';
 import { setStrokeOpacityAction } from './defaults/setStrokeOpacity';
+import { ingestAction } from './defaults/ingest';
 
 // viewportWheelPanAction / viewportZoomAction are NOT in KIT_STANDARD_DESCRIPTORS.
 // They are wired conditionally by SceneCanvas via `useViewportActions`
@@ -94,8 +95,10 @@ export interface UseStandardActionsOptions {
  * Count: 3 (escape/cancelGesture/selectAll) + 1 (delete) + 1 (duplicate) + 1 (group) +
  *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
  *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) +
- *        6 (resize/rotate/areaSelect/insert/insertRotate/clone) + 3 (editAnchors/lassoSelect/pinchZoom) +
- *        1 (viewport.dragPan) + 1 (clearSelection) + 1 (enterTextEdit) + 4 (setFill/setStroke/setFillOpacity/setStrokeOpacity) = 47
+ *        6 (resize/rotate/areaSelect/insert/insertRotate/clone) +
+ *        6 (editAnchors/enterPathEdit/exitPathEdit/insertPathAnchor/lassoSelect/pinchZoom) +
+ *        1 (viewport.dragPan) + 1 (clearSelection) + 1 (enterTextEdit) +
+ *        4 (setFill/setStroke/setFillOpacity/setStrokeOpacity) + 1 (ingest) = 51
  *
  * `viewport.pan` and `viewport.zoom` are NOT in this list — they're registered
  * conditionally by SceneCanvas's `useViewportActions` based on the
@@ -152,6 +155,7 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   setStrokeAction,
   setFillOpacityAction,
   setStrokeOpacityAction,
+  ingestAction,
 ];
 
 /**

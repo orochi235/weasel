@@ -773,6 +773,17 @@ export function createDispatcher(opts?: {
               worldY: event.worldY,
               ...resolved,
             };
+          } else if (event.kind === 'drop' || event.kind === 'paste') {
+            // External-content events: forward the materialized items and,
+            // for drops, the world-space arrival point.
+            params = {
+              items: event.items,
+              via: event.kind,
+              ...(event.kind === 'drop' && event.x !== undefined
+                ? { worldX: event.x, worldY: event.y }
+                : {}),
+              ...resolved,
+            };
           } else {
             params = resolved;
           }

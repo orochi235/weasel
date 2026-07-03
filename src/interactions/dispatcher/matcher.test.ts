@@ -200,4 +200,20 @@ describe('matchSorted (specificity ordering)', () => {
       'ambient-targeted',
     ]);
   });
+
+  it('MIME-typed drop spec beats untyped catch-all in the same scope regardless of registration order', () => {
+    const e: InputEvent = {
+      kind: 'drop',
+      items: [{ kind: 'string', mime: 'text/csv', text: 'a,b' }],
+      x: 0, y: 0, ...noMods,
+    };
+    const bs: ScopedBinding[] = [
+      // Untyped catch-all registered FIRST (the kit's ambient ingest binding).
+      { binding: binding({ kind: 'drop' }, 'ingest'), scope: 'ambient', ownerToolId: null },
+      // Typed consumer binding registered SECOND — should still sort first.
+      { binding: binding({ kind: 'drop', types: ['text/csv'] }, 'csv-import'), scope: 'ambient', ownerToolId: null },
+    ];
+    const sorted = matchSorted(e, bs, false);
+    expect(sorted.map((m) => m.binding.actionId)).toEqual(['csv-import', 'ingest']);
+  });
 });

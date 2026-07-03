@@ -84,6 +84,7 @@ const KIT_IDS = [
   'clearSelection',
   'enterTextEdit',
   'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
+  'ingest',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -91,7 +92,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 50 kit-standard action descriptors', () => {
+  it('registers all 51 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>
