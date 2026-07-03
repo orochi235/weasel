@@ -13,7 +13,7 @@ import {
   ROTATED_POSE_DESCRIPTOR,
   useResizePolicy,
 } from '@weasel-js/core';
-import type { RotatedPose, PoseProjection, CanvasExtensionApi } from '@weasel-js/core';
+import type { RotatedPose, PoseProjection, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '../../../src/renderer';
 
 interface Rect extends RotatedPose {
@@ -89,7 +89,7 @@ function PointSnapDemoInner() {
     ambient: [rotateTool],
   });
 
-  const canvasRef = useRef<CanvasExtensionApi | null>(null);
+  const canvasRef = useRef<SceneCanvasApi | null>(null);
   useEffect(() => { canvasRef.current?.element?.focus(); }, []);
 
   const setSelection = selection.set;

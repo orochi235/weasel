@@ -18,8 +18,7 @@ Priority tags:
 
 ### P1 — foundational genericity gaps
 
-**Tools & gestures**
-- External-content ingestion: OS file drop / system-clipboard paste / file picker → [Tools & gestures](#tools--gestures)
+(none currently open)
 
 ### P2 — broad reuse / friction-likely
 
@@ -57,7 +56,21 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P1) External-content ingestion — OS file drop, system-clipboard paste, file picker.** Surfaced 2026-07-03 while designing the raster-image tool. The kit has **no** path for external content to enter a weasel app: nothing handles `dragenter`/`dragover`/`drop` with `dataTransfer.files` (the `pointerDrag` drop zones are kit-internal drag payloads, not OS drops), the clipboard feature is the in-memory `ClipboardSnapshot` node buffer (no `ClipboardEvent`/`navigator.clipboard` file handling), and there's no file-picker helper. Any consumer wanting "drag a file onto the canvas" or "Cmd+V an image" hand-rolls DOM listeners today. Wanted shape: a generic ingestion surface on the canvas host (drop-target + paste listener + picker trigger) that normalizes all three arrival paths into one "content arrived (files/items, world-point)" event, with per-content-type handlers registered on top — the image tool being the first consumer. Design in flight with the 2026-07 image-tool brainstorm. Each kind-keyed concern (label/icon, propertyRows, bindings, subkinds, serialize/deserialize) lands as its own per-trait registry per the **node-traits reframe** at `docs/superpowers/specs/2026-05-24-node-traits-reframe-design.md` (which superseded the 2026-05-22 facets spec). The routing trait's registry (`src/core/scene/NodeRouting.ts`) is reframed; the other per-trait registries are still open. Tracked individually under the relevant TODO sections (per-kind property-row registry, default action icons).
+- **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
+  `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`, plan
+  `docs/superpowers/plans/2026-07-03-content-ingestion.md`): drop/paste
+  gesture kinds (`DropSpec`/`PasteSpec`, MIME-glob `types`), dispatcher DOM
+  channels (drop/dragover/dragenter/paste + `weasel-dropover` class), ambient
+  `ingest` action, content-handler registry (`src/features/ingestion/`,
+  refcounted kit-handler registration), kit `image/*` handler (data-URI embed
+  / `resolveSrc` override, fit-clamp, cascade), `openFilePicker`,
+  `SceneCanvasApi.ingest`, `<SceneCanvas ingestion={…}>`. Remaining:
+  (a) richer drag-over feedback (insertion ghost / per-handler accept cursor —
+  v1 is the class toggle); (b) SVG-file drop → scene-node parsing (future
+  handler; proves registry extensibility); (c) kit `text/plain` handler →
+  text-node insert; (d) route-grammar names for drop/paste (registry probe
+  shows them as `undefined`); (e) paste could mirror wheel's
+  dispatch-then-preventDefault instead of preventDefaulting on content.
 
 - **(P3) Reshape `selectionOverlay` into a thin override hook.** The chrome-affordances spec shipped (2026-06-13): the multi-resize union now has a single owner — `ChromeState.unionBounds` — which both the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`) and the overlay layer read at draw time. The inline `poseById` re-derivations in `Canvas`/`SceneCanvas` are deleted, `createSelectionOverlayLayer` resolves the synthetic union from the draw-time chromeState envelope, and `MULTI_RESIZE_TARGET_ID` moved to `core/selection/` (fixing the backwards `affordances→tools` import). Residual: the synthetic-id plumbing (`getSelection` → `[MULTI_RESIZE_TARGET_ID]`, `getOutlineIds` → real members) still lives in the Canvas/SceneCanvas wiring rather than inside `createSelectionOverlayLayer`. Fold it into the layer so the slot is purely a consumer override hook.
 

@@ -192,6 +192,12 @@ emits world-space data. Examples: `dragRect` (rectangular drag → bounds),
 `usePointerGestures` (the underlying pointer-event normalizer). Plain clicks and
 keystrokes are gestures too, just trivial ones.
 
+OS file drop and clipboard paste are gestures as well (`DropSpec` / `PasteSpec`,
+filtered by a MIME-glob `types` field) — external content *arriving* is a form of
+input like any other. Their default routing targets the ambient `ingest` action,
+which fans out to the content-handler registry. See
+`docs/superpowers/specs/2026-07-03-content-ingestion-design.md`.
+
 Gestures are orthogonal to [Actions](#action) in this taxonomy. A gesture is *how*
 input arrives; an action is *what to do* with it. The same gesture (a rectangular
 drag) can power different actions (insert a rect, marquee-select, area-erase); the

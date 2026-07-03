@@ -39,6 +39,7 @@ import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
 import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts, AffordanceHit } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
+import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted } from './matcher';
@@ -535,36 +536,6 @@ export function createDispatcher(opts?: {
     return map;
   }
 
-  /** Build the deps bag for an action. */
-  function buildDeps(action: Action, depRegistry: DepRegistry): ActionDeps {
-    // `requires` is not on Action's public interface yet.
-    // Cast through unknown to read it if present without a type error.
-    const requires = (action as unknown as { requires?: string[] }).requires ?? [];
-    const entries = requires.map((name) => [name, depRegistry.get(name as never)]);
-    const deps = Object.fromEntries(entries) as ActionDeps;
-
-    // Dev-only: wrap deps in a Proxy that warns when the invoker reads a
-    // key not declared in `requires`. Catches silent-failure-by-typo or
-    // forgotten-requires (the #1 bug class in this codebase pre-Phase-14e).
-    // Production builds: bypass the Proxy entirely (zero overhead).
-    if (DEV) {
-      const declared = new Set(requires);
-      return new Proxy(deps as Record<string, unknown>, {
-        get(target, prop, receiver) {
-          if (typeof prop === 'string' && !declared.has(prop) && prop !== 'then') {
-            // eslint-disable-next-line no-console
-            console.warn(
-              `[weasel:dispatcher] action "${action.id}" read deps.${prop} but did not declare it in \`requires\`. ` +
-              `Add \`requires: [...'${prop}']\` to the descriptor or the dep will be undefined at runtime.`,
-            );
-          }
-          return Reflect.get(target, prop, receiver);
-        },
-      }) as ActionDeps;
-    }
-    return deps;
-  }
-
   // -------------------------------------------------------------------------
   // handleInput
   // -------------------------------------------------------------------------
@@ -736,7 +707,9 @@ export function createDispatcher(opts?: {
       // `deps?.x` saw `undefined` and either fell through forever (constant
       // `SelectionRequired` stubs) or silently ignored its gate. The winning
       // action's invoke path below reuses this same bag.
-      const deps = buildDeps(action, ctx.depRegistry);
+      // Shared with `ActionsRegistry.trigger` — includes the dev-mode
+      // undeclared-read guard (Proxy warn on deps not in `requires`).
+      const deps = buildDepsFromRequires(action, ctx.depRegistry);
 
       if (action.enabled) {
         const result = action.enabled(deps);

@@ -15,6 +15,7 @@ import {
 import type { GestureSpec, PhaseSpec } from '../gestures/spec';
 import type { ActionDeps, BindingOpts, Invoker } from './invoker';
 import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
+import { buildDepsFromRequires } from './buildDeps';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
 import type { Dispatcher, UiOngoingControl } from '../dispatcher/dispatcher';
 export type { UiOngoingControl } from '../dispatcher/dispatcher';
@@ -45,6 +46,12 @@ export interface Action {
    *  with `axis: 'x'` vs `'y'`). The dispatcher extracts `opts.params` and
    *  passes them to `ImmediateInvoker.run` as its second argument. */
   defaultBinding?: GestureSpec | BoundGesture[];
+  /** Names of the deps this action's invoker reads (keys of `DepSchema`).
+   *  The dispatcher (and `trigger`, when `requires` is present) resolves
+   *  each name against the `DepRegistry` at invocation time and passes the
+   *  resulting bag to the invoker. Dev builds warn when the invoker reads a
+   *  dep it didn't declare here — see `buildDepsFromRequires`. */
+  requires?: readonly DepName[];
   /** Inline-SVG icon for palette / toolbar surfaces. Mirrors
    *  `ToolPresentation.icon` so a generic `<ActionBar>` can render from
    *  action metadata the same way `<ToolPalette>` renders from tool
@@ -381,12 +388,13 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
           if (a.invoker && a.invoker.timing === 'immediate') {
             const r = depRegRef.current;
             // Prefer the action's declared `requires` (same contract the
-            // dispatcher's buildDeps uses); legacy fixed bag otherwise.
-            const requires = (a as unknown as { requires?: string[] }).requires;
+            // dispatcher uses — shared `buildDepsFromRequires`, including
+            // the dev-mode undeclared-read guard); legacy fixed bag
+            // otherwise.
             const deps = !r
               ? {}
-              : requires
-                ? Object.fromEntries(requires.map((n) => [n, r.get(n as DepName)]))
+              : a.requires
+                ? buildDepsFromRequires(a, r)
                 : {
                     selection: r.get('selection' as DepName),
                     scene: r.get('scene' as DepName),

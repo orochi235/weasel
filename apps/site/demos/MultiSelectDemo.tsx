@@ -9,7 +9,7 @@ import {
   useSelectTool,
   useTools,
 } from '@weasel-js/core';
-import type { CanvasExtensionApi } from '@weasel-js/core';
+import type { SceneCanvasApi } from '@weasel-js/core';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -44,7 +44,7 @@ function MultiSelectDemoInner() {
 
   // Cmd/Ctrl+A is auto-registered by SceneCanvas's default actions.
 
-  const canvasRef = useRef<CanvasExtensionApi | null>(null);
+  const canvasRef = useRef<SceneCanvasApi | null>(null);
   useEffect(() => {
     canvasRef.current?.element?.focus();
   }, []);

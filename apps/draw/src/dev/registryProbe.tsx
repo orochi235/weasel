@@ -223,7 +223,10 @@ function collectToolRoutes(def: ToolDef<unknown>): CollectedRoutes {
 
 /** Map of `GestureSpec.kind` → `GestureName` used by the route grammar.
  *  `multiTouch` has no route-grammar gesture (only its tap synthesis does),
- *  so specs of that kind are skipped. */
+ *  so specs of that kind are skipped. Likewise `drop` / `paste`: the
+ *  content-ingestion gestures shipped without route-grammar names, so the
+ *  inspector skips their bindings too. Adding `drop` / `paste` to the route
+ *  grammar is a tracked follow-up (docs/TODO.md, ingestion residuals). */
 const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined> = {
   key: 'keyDown',
   'key-held': 'keyHeld',

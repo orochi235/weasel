@@ -31,7 +31,7 @@ import { findNodeShape } from './NodeShape';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
-import type { CanvasExtensionApi } from './canvasExtension';
+import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
@@ -772,7 +772,7 @@ function isToolsApi(
 
 function SceneCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose>,
-  ref: React.ForwardedRef<CanvasExtensionApi>,
+  ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   const {
     scene: sceneInput,
@@ -1646,12 +1646,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const mergedRef = useCallback(
     (node: CanvasExtensionApi | null) => {
       internalCanvasRef.current = node?.element ?? null;
-      const extended: CanvasExtensionApi | null = node
+      const extended: SceneCanvasApi | null = node
         ? { ...node, ingest: ingestImpl }
         : null;
       canvasApiRef.current = extended;
       if (typeof ref === 'function') ref(extended);
-      else if (ref) (ref as React.MutableRefObject<CanvasExtensionApi | null>).current = extended;
+      else if (ref) (ref as React.MutableRefObject<SceneCanvasApi | null>).current = extended;
     },
     [ref, ingestImpl],
   );
@@ -2278,7 +2278,7 @@ const SceneCanvasInnerForwardRef = forwardRef(SceneCanvasInner);
 // instead of the outer (live 'hand'/'select'/etc.) one.
 function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
   props: SceneCanvasProps<TData, TLayer, TPose>,
-  ref: React.ForwardedRef<CanvasExtensionApi>,
+  ref: React.ForwardedRef<SceneCanvasApi>,
 ) {
   return (
     <ActiveToolContextProviderIfRoot>
@@ -2290,5 +2290,5 @@ function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
 export const SceneCanvas = forwardRef(SceneCanvasWrapper) as <
   TData, TLayer extends string, TPose,
 >(
-  props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<CanvasExtensionApi> },
+  props: SceneCanvasProps<TData, TLayer, TPose> & { ref?: React.Ref<SceneCanvasApi> },
 ) => ReturnType<typeof SceneCanvasInner>;

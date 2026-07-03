@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { SceneCanvas, useScene } from '../../../src';
-import type { CanvasExtensionApi } from '../../../src';
+import type { SceneCanvasApi } from '../../../src';
 import { useHud } from '../../../packages/hud/src/react';
 import type { ButtonWidget } from '../../../packages/hud/src';
 
@@ -9,7 +9,7 @@ const W = 600, H = 400;
 interface Empty { id: string }
 
 export function HudDemo() {
-  const ref = useRef<CanvasExtensionApi>(null);
+  const ref = useRef<SceneCanvasApi>(null);
   const hud = useHud(ref);
   const [count, setCount] = useState(0);
   const btnRef = useRef<ButtonWidget | null>(null);

@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { createRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
-import type { CanvasExtensionApi } from './canvasExtension';
+import type { SceneCanvasApi } from './canvasExtension';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import {
@@ -80,6 +80,10 @@ function pngFile(name = 'pic.png'): File {
   return new File(['x'], name, { type: 'image/png' });
 }
 
+// Module const so the `ingestion` prop is referentially stable across
+// renders (SceneCanvas keys its dep wiring off the prop identity).
+const RESOLVE_SRC_INGESTION = { resolveSrc: async () => 'https://cdn/x.png' };
+
 describe('SceneCanvas ingestion — handler registration lifecycle', () => {
   it('two mounted canvases share one refcounted kit:image handler', () => {
     const a = render(<SceneCanvas scene={makeScene()} layers={{}} width={64} height={64} />);
@@ -114,7 +118,7 @@ describe('SceneCanvas ingestion — handler registration lifecycle', () => {
   });
 });
 
-describe('CanvasExtensionApi.ingest', () => {
+describe('SceneCanvasApi.ingest', () => {
   beforeEach(() => {
     __setImageMeasureForTests(async () => ({ width: 100, height: 80 }));
     __setFileToDataUriForTests(async () => 'data:image/png;base64,TEST');
@@ -122,12 +126,13 @@ describe('CanvasExtensionApi.ingest', () => {
 
   it('ingest([pngFile], point) inserts an image node centered on the point', async () => {
     const scene = makeScene();
-    const ref = createRef<CanvasExtensionApi>();
+    const ref = createRef<SceneCanvasApi>();
     render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />);
     expect(ref.current?.ingest).toBeTypeOf('function');
 
     await act(async () => {
-      ref.current!.ingest!([pngFile()], { x: 50, y: 60 });
+      // `SceneCanvasApi.ingest` is non-optional — no `!` needed on the method.
+      ref.current!.ingest([pngFile()], { x: 50, y: 60 });
     });
     await vi.waitFor(() => {
       expect(imageNodes(scene)).toHaveLength(1);
@@ -146,11 +151,11 @@ describe('CanvasExtensionApi.ingest', () => {
 
   it('ingest with no point centers the node in the viewport', async () => {
     const scene = makeScene();
-    const ref = createRef<CanvasExtensionApi>();
+    const ref = createRef<SceneCanvasApi>();
     render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />);
 
     await act(async () => {
-      ref.current!.ingest!([pngFile()]);
+      ref.current!.ingest([pngFile()]);
     });
     await vi.waitFor(() => {
       expect(imageNodes(scene)).toHaveLength(1);
@@ -163,5 +168,25 @@ describe('CanvasExtensionApi.ingest', () => {
     expect(pose.y).toBeCloseTo(35);
     expect(pose.width).toBeCloseTo(100);
     expect(pose.height).toBeCloseTo(80);
+  });
+
+  it('ingestion.resolveSrc overrides the data-URI embed end-to-end', async () => {
+    const scene = makeScene();
+    const ref = createRef<SceneCanvasApi>();
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref}
+        ingestion={RESOLVE_SRC_INGESTION} />,
+    );
+
+    await act(async () => {
+      ref.current!.ingest([pngFile()], { x: 10, y: 10 });
+    });
+    await vi.waitFor(() => {
+      expect(imageNodes(scene)).toHaveLength(1);
+    });
+
+    // The consumer resolver's URL landed on the node — not the data URI the
+    // (still-stubbed) fileToDataUri seam would have produced.
+    expect((imageNodes(scene)[0].data as D).image!.src).toBe('https://cdn/x.png');
   });
 });

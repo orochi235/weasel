@@ -40,3 +40,14 @@ export interface CanvasExtensionApi {
    *  bare-primitive handle. */
   ingest?(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
 }
+
+/**
+ * The imperative ref handle for `<SceneCanvas>` — everything on
+ * {@link CanvasExtensionApi} plus the surfaces only the scene-level canvas
+ * can provide. `ingest` is always populated here (the optional declaration
+ * on the base type exists for the bare-primitive handle).
+ * @public
+ */
+export interface SceneCanvasApi extends CanvasExtensionApi {
+  ingest(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+}

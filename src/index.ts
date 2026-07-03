@@ -271,7 +271,23 @@ export type {
   CustomLayerEntry,
   GridSlotConfig,
 } from './canvas/Canvas';
-export type { CanvasExtensionApi } from './canvas/canvasExtension';
+export type { CanvasExtensionApi, SceneCanvasApi } from './canvas/canvasExtension';
+
+// ─── External-content ingestion ──────────────────────────────────────────────
+// OS file drop / clipboard paste / file picker → content-handler registry.
+// `runIngest`, `getContentHandlers`, `kitImageHandler`, and the refcounted
+// kit-handler registration are deliberately NOT exported — consumers reach
+// the pipeline via `<SceneCanvas ingestion={…}>` and `SceneCanvasApi.ingest`.
+export {
+  registerContentHandler,
+  openFilePicker,
+} from './features/ingestion';
+export type {
+  ContentHandlerEntry,
+  IngestCtx,
+  IngestItem,
+  OpenFilePickerOptions,
+} from './features/ingestion';
 
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
@@ -654,6 +670,8 @@ export type {
   ClickSpec,
   DragSpec,
   MultiTouchSpec,
+  DropSpec,
+  PasteSpec,
   GestureSpec,
 } from './interactions/gestures/spec';
 
