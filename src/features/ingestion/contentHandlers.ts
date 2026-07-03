@@ -75,7 +75,14 @@ export function getContentHandlers(): readonly ContentHandlerEntry[] {
 
 function entryMatches(entry: ContentHandlerEntry, item: IngestItem): boolean {
   const { match } = entry;
-  if (typeof match === 'function') return match(item);
+  if (typeof match === 'function') {
+    try {
+      return match(item);
+    } catch (err) {
+      console.warn(`weasel ingest: handler "${entry.id}" match predicate threw`, err);
+      return false;
+    }
+  }
   const globs = Array.isArray(match) ? match : [match];
   return globs.some((g) => mimeMatchesGlob(item.mime, g));
 }

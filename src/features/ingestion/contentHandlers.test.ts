@@ -18,11 +18,16 @@ beforeEach(() => _resetContentHandlersForTests());
 afterEach(() => vi.restoreAllMocks());
 
 describe('registerContentHandler', () => {
-  it('returns a disposer that removes the entry', () => {
+  it('returns a disposer that removes the entry; double-call is safe', () => {
     const off = registerContentHandler({ id: 't', match: 'text/plain', handle: () => {} });
     expect(getContentHandlers().some((h) => h.id === 't')).toBe(true);
     off();
     expect(getContentHandlers().some((h) => h.id === 't')).toBe(false);
+    // Register a second handler to verify the second off() doesn't remove it via a stale splice index.
+    const off2 = registerContentHandler({ id: 'u', match: 'text/plain', handle: () => {} });
+    off(); // second call — must be a no-op
+    expect(getContentHandlers().some((h) => h.id === 'u')).toBe(true);
+    off2();
   });
 });
 
@@ -75,5 +80,46 @@ describe('runIngest', () => {
     await runIngest([png], ctx);
     expect(first).toHaveBeenCalledWith([png], ctx);
     expect(second).not.toHaveBeenCalled();
+  });
+
+  it('a throwing match predicate warns and treats item as non-match; later handler still receives it', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const ok = vi.fn();
+    registerContentHandler({
+      id: 'boom-pred',
+      priority: 10,
+      match: () => { throw new Error('predicate exploded'); },
+      handle: vi.fn(),
+    });
+    registerContentHandler({ id: 'fallback', priority: 0, match: 'image/*', handle: ok });
+    await runIngest([png], ctx);
+    expect(ok).toHaveBeenCalledWith([png], ctx);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('"boom-pred" match predicate threw'),
+      expect.any(Error),
+    );
+  });
+
+  it('handlers run concurrently (deadlocks under sequential execution)', async () => {
+    // Handler A awaits a deferred that handler B resolves synchronously on its
+    // own items. If handlers ran sequentially A would never get its resolution.
+    let resolveDeferred!: () => void;
+    const deferred = new Promise<void>((res) => { resolveDeferred = res; });
+
+    registerContentHandler({
+      id: 'waiter',
+      priority: 10,
+      match: 'image/*',
+      handle: async () => { await deferred; },
+    });
+    registerContentHandler({
+      id: 'resolver',
+      priority: 0,
+      match: 'text/plain',
+      handle: () => { resolveDeferred(); },
+    });
+
+    // Under concurrent execution this completes; under sequential it times out.
+    await runIngest([png, txt], ctx);
   });
 });
