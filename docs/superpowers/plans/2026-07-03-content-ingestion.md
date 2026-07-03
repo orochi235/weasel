@@ -1773,6 +1773,39 @@ git add -A && git commit -m "chore(ingestion): release-gate fixes"
 
 ---
 
+## Amendments from Task 1 code review (2026-07-03)
+
+Carried into the later tasks' dispatch (deltas vs. the task text above):
+
+- **Task 2 (+):** normalize MIME strings at materialization — strip parameters
+  (`'text/plain;charset=utf-8'` → `'text/plain'`) in both `itemsFromDataTransfer`
+  and `itemsFromClipboardData` (`mime.split(';')[0].trim().toLowerCase()`), + test.
+  Exact matching downstream assumes bare `type/subtype`.
+- **Task 3 (±):** do NOT duplicate `mimeMatchesGlob` kit-side. Instead export
+  `mimeMatchesGlob` + `matchIngestTypes` from `@weasel-js/gestures` (barrel) and
+  import in `contentHandlers.ts` — the binding filter and the handler registry
+  are two halves of one routing decision and must not drift. While in the
+  package: document that `types: []` ≡ omitted ("omitted or empty = match any"),
+  and add edge tests (empty `items`, `types: []`, bare `'*'`, case-insensitivity).
+- **Task 5 (+):** the ingest action's `defaultBinding` must use all-optional
+  mods — `matchModifiers` treats omitted as forbidden, so a bare
+  `{ kind: 'drop' }` would fail on macOS Option-drag (and any modified paste):
+  `const ANY_MODS = { alt: 'optional', ctrl: 'optional', meta: 'optional', shift: 'optional' } as const;`
+  on both binding specs. (`'optional'` is supported on every modifier —
+  `packages/gestures/src/ui/match.ts:52`.)
+- **Task 5 (+):** `specificity()` (`src/interactions/dispatcher/matcher.ts:71`)
+  gives `types` no weight — two ambient drop bindings (kit ingest vs. a
+  consumer's `types: ['text/csv']`) tie and resolve by registration order.
+  Use the reserved `[3]` slot: `2` when the spec has a non-empty `types`,
+  else `1`, + a `matchSorted` test showing the typed binding wins.
+- **Task 6 (=):** keep forwarding real modifiers on drop events (the optional-
+  mods binding absorbs them); paste keeps all-false (ClipboardEvent carries no
+  modifier state) — already in the task text, now load-bearing.
+- **Task 10 (+):** extend the comment above `SPEC_KIND_TO_GESTURE` in
+  `apps/draw/src/dev/registryProbe.tsx` to cover drop/paste (currently explains
+  only the multiTouch gap); note route-grammar names for drop/paste as a
+  follow-up in TODO.md's residuals list.
+
 ## Self-review notes
 
 - **Spec coverage:** gesture layer (T1), normalization incl. eager string reads + editable-paste guard (T2, T6), ambient `ingest` action + interception via scopes (T5), registry partition/priority/dwarn/error-isolation (T3), image handler embed/resolveSrc/fit-clamp/cascade/placement (T7), picker + imperative ingest (T8, T9), dropover class (T6, T11), docs (T10), demo w/ custom text handler (T11). Out-of-scope items from spec §7 untouched.
