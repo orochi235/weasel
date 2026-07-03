@@ -49,6 +49,12 @@ describe('itemsFromDataTransfer', () => {
     const f = new File(['x'], 'a.png', { type: 'IMAGE/PNG' });
     const out = await itemsFromDataTransfer(dt([], [f]));
     expect(out[0]).toMatchObject({ mime: 'image/png' });
+    // Parameter stripping: a string item advertising a charset still filters
+    // into the supported set and stores the bare mime.
+    const withParams = await itemsFromDataTransfer(
+      dt([stringItem('text/plain;charset=utf-8', 'hi')]),
+    );
+    expect(withParams).toEqual([{ kind: 'string', mime: 'text/plain', text: 'hi' }]);
   });
 });
 
