@@ -159,7 +159,7 @@ export interface MultiTouchTapSpec {
 
 /** OS drag-and-drop of external content onto the canvas. `types` filters by
  *  MIME glob (`'image/*'`, `'text/plain'`); the spec matches when ANY item's
- *  MIME matches ANY glob. Omitted = matches any drop. */
+ *  MIME matches ANY glob. Omitted or empty = matches any drop. */
 export interface DropSpec {
   kind: 'drop';
   types?: string[];
@@ -168,7 +168,7 @@ export interface DropSpec {
 }
 
 /** System-clipboard paste of external content. Same `types` semantics as
- *  {@link DropSpec}. */
+ *  {@link DropSpec} — omitted or empty = matches any paste. */
 export interface PasteSpec {
   kind: 'paste';
   types?: string[];

@@ -221,8 +221,8 @@ function matchPhaseAtom(a: PhaseAtom, ctx: PhaseContext): boolean {
 // ---------------------------------------------------------------------------
 
 /** MIME-glob match: `'image/*'` prefix-matches the major type; anything
- *  else is an exact (case-insensitive) match; bare `'*'` matches all. */
-function mimeMatchesGlob(mime: string, glob: string): boolean {
+ *  else is an exact (case-insensitive) match; bare `'*'` or `'*\/*'` matches all. */
+export function mimeMatchesGlob(mime: string, glob: string): boolean {
   const m = mime.toLowerCase();
   const g = glob.toLowerCase();
   if (g === '*' || g === '*/*') return true;
@@ -230,7 +230,9 @@ function mimeMatchesGlob(mime: string, glob: string): boolean {
   return m === g;
 }
 
-function matchIngestTypes(
+/** True if ANY item's MIME matches ANY of the `types` globs.
+ *  `types: []` (empty) ≡ omitted = match any. */
+export function matchIngestTypes(
   items: readonly { mime: string }[],
   types: string[] | undefined,
 ): boolean {

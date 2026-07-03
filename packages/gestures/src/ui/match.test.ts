@@ -4,6 +4,8 @@ import {
   matchKey,
   matchSpec,
   matchPhase,
+  mimeMatchesGlob,
+  matchIngestTypes,
   type PhaseContext,
 } from './match';
 import type { InputEvent } from './inputEvent';
@@ -424,5 +426,46 @@ describe('matchSpec — phase gate', () => {
     expect(matchSpec(wheelEv, spec, false, polygonEngaged)).toBe(false);
     // Cmd held but idle: phase gate fails.
     expect(matchSpec(cmdWheel, spec, false, polygonIdle)).toBe(false);
+  });
+});
+
+describe('mimeMatchesGlob / matchIngestTypes — edge cases', () => {
+  it('bare * matches anything', () => {
+    expect(mimeMatchesGlob('image/png', '*')).toBe(true);
+    expect(mimeMatchesGlob('text/plain', '*')).toBe(true);
+  });
+
+  it('*/* matches anything', () => {
+    expect(mimeMatchesGlob('application/pdf', '*/*')).toBe(true);
+  });
+
+  it('image/* prefix-matches image subtypes', () => {
+    expect(mimeMatchesGlob('image/png', 'image/*')).toBe(true);
+    expect(mimeMatchesGlob('image/jpeg', 'image/*')).toBe(true);
+    expect(mimeMatchesGlob('text/plain', 'image/*')).toBe(false);
+  });
+
+  it('case-insensitive: IMAGE/PNG item matches image/* glob', () => {
+    expect(mimeMatchesGlob('IMAGE/PNG', 'image/*')).toBe(true);
+    expect(mimeMatchesGlob('image/png', 'IMAGE/*')).toBe(true);
+  });
+
+  it('matchIngestTypes: empty types [] matches anything (same as omitted)', () => {
+    expect(matchIngestTypes([{ mime: 'image/png' }], [])).toBe(true);
+    expect(matchIngestTypes([{ mime: 'text/plain' }], [])).toBe(true);
+    expect(matchIngestTypes([], [])).toBe(true);
+  });
+
+  it('matchIngestTypes: undefined types matches anything', () => {
+    expect(matchIngestTypes([{ mime: 'image/png' }], undefined)).toBe(true);
+  });
+
+  it('matchIngestTypes: empty items [] fails a typed spec', () => {
+    expect(matchIngestTypes([], ['image/*'])).toBe(false);
+  });
+
+  it('matchIngestTypes: empty items [] matches untyped spec', () => {
+    expect(matchIngestTypes([], undefined)).toBe(true);
+    expect(matchIngestTypes([], [])).toBe(true);
   });
 });
