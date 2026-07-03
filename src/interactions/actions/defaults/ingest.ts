@@ -64,11 +64,21 @@ export const ingestAction: Action & { requires: string[] } = {
         },
         scene,
         selection,
+        // Snapshot per ingest event — intentional. The dep's live getter is
+        // fresh at dispatch time, and one consistent resolver per drop/paste
+        // beats half a multi-file drop resolving through a swapped-in one.
         resolveSrc: ingestion.resolveSrc,
         deps,
       };
-      void runIngest(items, ctx);
+      // Fire-and-forget: handler errors are caught inside runIngest, but a
+      // malformed item (non-string mime via untyped JS) can still throw in
+      // the matching path — keep the rejection out of the event loop.
+      runIngest(items, ctx).catch((err) => console.warn('weasel ingest:', err));
     },
   },
+  // No `eligible` rule (always eligible): external-content arrival is
+  // mode-agnostic in v1. Revisit if a capability-restricted mode needs to
+  // refuse drops/pastes (the listener-level editable-target guard already
+  // keeps text-editing pastes away from the scene).
   enabled: () => true,
 };
