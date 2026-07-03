@@ -63,21 +63,22 @@ describe('itemsFromDataTransfer', () => {
   });
 
   it('preserves item order regardless of callback resolution order', async () => {
-    // html resolves immediately, plain resolves after a delay — output must
-    // still be plain first (item order), not html first (resolution order).
-    const fastHtml = {
+    // Item 0 (plain) delivers LATE, item 1 (html) delivers immediately —
+    // output must still be plain first (item order), not html first
+    // (resolution order). This is what the slot-reservation guarantees.
+    const slowPlain = {
       kind: 'string' as const,
       type: 'text/plain',
       getAsFile: () => null,
-      getAsString: (cb: (s: string) => void) => cb('plain-slow'),
+      getAsString: (cb: (s: string) => void) => setTimeout(() => cb('plain-slow'), 0),
     };
-    const slowPlain = {
+    const fastHtml = {
       kind: 'string' as const,
       type: 'text/html',
       getAsFile: () => null,
-      getAsString: (cb: (s: string) => void) => setTimeout(() => cb('<b>fast</b>'), 0),
+      getAsString: (cb: (s: string) => void) => cb('<b>fast</b>'),
     };
-    const out = await itemsFromDataTransfer(dt([fastHtml, slowPlain]));
+    const out = await itemsFromDataTransfer(dt([slowPlain, fastHtml]));
     expect(out).toHaveLength(2);
     expect(out[0]).toMatchObject({ kind: 'string', mime: 'text/plain', text: 'plain-slow' });
     expect(out[1]).toMatchObject({ kind: 'string', mime: 'text/html', text: '<b>fast</b>' });
