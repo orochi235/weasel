@@ -632,3 +632,11 @@ a:hover { text-decoration: underline; }
   grid-auto-rows: min-content;
   gap: 8px;
 }
+
+/* ---------- Ingestion demo ---------- */
+/* External-content drag feedback: the dispatcher toggles this class on the
+   canvas while an OS drag hovers it. */
+.ckd-canvas.weasel-dropover {
+  outline: 2px dashed #4a90d9;
+  outline-offset: -2px;
+}
