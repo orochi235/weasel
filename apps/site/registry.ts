@@ -238,7 +238,7 @@ export const DEMOS: DemoEntry[] = [
     id: 'ingestion',
     title: 'Content ingestion',
     category: 'Tools',
-    description: 'OS file drop, clipboard paste, and a file picker all landing through one content-handler registry. Images are handled by the kit\'s built-in `kit:image` handler; plain text is intercepted by a consumer handler that echoes it in the readout — demonstrating the registered-handler path a real app extends with its own MIME types. The `weasel-dropover` class on the canvas provides drag-hover feedback. All three arrival paths call the same `runIngest` pipeline: each handler declares a MIME glob (`match`), and the dispatcher partitions items in priority order.',
+    description: 'OS file drop, clipboard paste, and a file picker all landing through one content-handler registry. Raster images are handled by the kit\'s built-in `kit:image` handler; SVG files land through `kit:svg` as a single embedded node with the source bytes preserved (`ingestion={{ svg: { unpack: true } }}` would parse them into native scene nodes instead); plain text is intercepted by a consumer handler that echoes it in the readout — demonstrating the registered-handler path a real app extends with its own MIME types. The `weasel-dropover` class on the canvas provides drag-hover feedback. All three arrival paths call the same `runIngest` pipeline: each handler declares a MIME glob (`match`), and the dispatcher partitions items in priority order.',
     hint: 'Drop an image file onto the canvas; paste an image from the clipboard; or click "Insert image…" to use the file picker. Try pasting or dropping plain text too.',
     Component: IngestionDemo,
     full: IngestionDemoFull,

@@ -18,7 +18,7 @@ import { dwarn } from '../../debug';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
-import type { InsertDep } from 'interactions/actions/depSchema';
+import type { InsertDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { ActionDeps } from 'interactions/actions/invoker';
 import type { IngestItem } from './ingestItems';
 
@@ -40,6 +40,9 @@ export interface IngestCtx {
   /** Consumer file→src resolver (SceneCanvas `ingestion.resolveSrc`).
    *  When absent, the kit image handler embeds as a `data:` URI. */
   resolveSrc?: (file: File) => Promise<string>;
+  /** Kit SVG-handler options (SceneCanvas `ingestion.svg`) — e.g.
+   *  `{ unpack: true }` to parse SVG files into scene nodes. */
+  svg?: SvgIngestOptions;
   /** Full action-deps bag, for consumer handlers that need more. */
   deps: ActionDeps;
 }

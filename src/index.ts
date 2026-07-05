@@ -180,6 +180,7 @@ export type {
   LassoSelectDep,
   NodeAtPointDep,
   ResizePolicy,
+  SvgIngestOptions,
   ViewApi,
 } from './interactions/actions/depSchema';
 export {

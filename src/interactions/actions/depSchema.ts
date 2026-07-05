@@ -163,6 +163,17 @@ export interface LassoSelectDep {
 }
 
 /**
+ * Options for the kit `image/svg+xml` content handler, threaded from
+ * SceneCanvas's `ingestion={{ svg }}` prop.
+ */
+export interface SvgIngestOptions {
+  /** Parse dropped/pasted/picked SVG files into native scene nodes (path /
+   *  text leaves under containers mirroring the source `<g>` structure)
+   *  instead of the default single embedded-image node. */
+  unpack?: boolean;
+}
+
+/**
  * Dep for the `ingest` action (external-content ingestion).
  * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>` via
  * `useIngestionDepSource` — canvas rect + current view.
@@ -175,6 +186,9 @@ export interface IngestionDep {
    *  property early) snapshots the current value and won't track later
    *  prop changes across an `await`. */
   resolveSrc?: (file: File) => Promise<string>;
+  /** Kit SVG-handler options (from SceneCanvas's `ingestion` prop).
+   *  Live accessor, same caveat as `resolveSrc`. */
+  svg?: SvgIngestOptions;
 }
 
 /**

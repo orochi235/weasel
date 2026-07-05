@@ -23,6 +23,10 @@ import {
   __setFileToDataUriForTests,
   _resetImageHandlerSeamsForTests,
 } from 'features/ingestion/imageHandler';
+import {
+  __setSvgMeasureForTests,
+  _resetSvgHandlerSeamsForTests,
+} from 'features/ingestion/svgHandler';
 
 type D = { image?: { src: string } };
 type L = 'main';
@@ -62,6 +66,7 @@ beforeEach(() => {
   _resetContentHandlersForTests();
   _resetKitContentHandlersForTests();
   _resetImageHandlerSeamsForTests();
+  _resetSvgHandlerSeamsForTests();
 });
 
 function makeScene(): Scene<D, L, P> {
@@ -81,9 +86,10 @@ function pngFile(name = 'pic.png'): File {
   return new File(['x'], name, { type: 'image/png' });
 }
 
-// Module const so the `ingestion` prop is referentially stable across
+// Module consts so the `ingestion` prop is referentially stable across
 // renders (SceneCanvas keys its dep wiring off the prop identity).
 const RESOLVE_SRC_INGESTION = { resolveSrc: async () => 'https://cdn/x.png' };
+const UNPACK_INGESTION = { svg: { unpack: true } };
 
 describe('SceneCanvas ingestion — handler registration lifecycle', () => {
   it('two mounted canvases share one refcounted kit:image handler', () => {
@@ -169,6 +175,66 @@ describe('SceneCanvasApi.ingest', () => {
     expect(pose.y).toBeCloseTo(35);
     expect(pose.width).toBeCloseTo(100);
     expect(pose.height).toBeCloseTo(80);
+  });
+
+  it('an SVG file embeds as ONE image node with a data:image/svg+xml src (default)', async () => {
+    __setSvgMeasureForTests(async () => ({ width: 100, height: 80 }));
+    const scene = makeScene();
+    const ref = createRef<SceneCanvasApi>();
+    render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+
+    const svg = new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], 'art.svg', { type: 'image/svg+xml' });
+    await act(async () => {
+      ref.current!.ingest([svg], { x: 50, y: 60 });
+    });
+    await vi.waitFor(() => {
+      expect(scene.roots).toHaveLength(1);
+    });
+
+    const node = scene.get(scene.roots[0])!;
+    expect(node.kind).toBe('leaf');
+    // The stubbed embed seam reports the file's own MIME; the SVG handler
+    // must have forced image/svg+xml regardless.
+    expect((node.data as D).image!.src).toMatch(/^data:image\/svg\+xml/);
+  });
+
+  it('ingestion.svg.unpack parses an SVG file into native scene nodes', async () => {
+    const scene = makeScene();
+    const ref = createRef<SceneCanvasApi>();
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref}
+        ingestion={UNPACK_INGESTION} />,
+    );
+
+    const svg = new File([
+      `<svg xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="40" height="30" fill="#ff0000"/>
+        <g><rect x="50" y="50" width="10" height="10" fill="#00ff00"/></g>
+      </svg>`,
+    ], 'art.svg', { type: 'image/svg+xml' });
+    await act(async () => {
+      ref.current!.ingest([svg], { x: 100, y: 75 });
+    });
+    await vi.waitFor(() => {
+      expect(scene.roots).toHaveLength(1);
+    });
+
+    // Multi-root file → one wrapper container holding the rect leaf and the
+    // <g> container (which holds the inner rect leaf).
+    const wrapper = scene.get(scene.roots[0])!;
+    expect(wrapper.kind).toBe('container');
+    const children = scene.childrenOf(scene.roots[0]).map((id) => scene.get(id)!);
+    expect(children).toHaveLength(2);
+    const leaf = children.find((n) => n.kind === 'leaf')!;
+    const group = children.find((n) => n.kind === 'container')!;
+    expect(leaf).toBeDefined();
+    expect(group).toBeDefined();
+    const leafData = leaf.data as { path?: { kind: string }; fill?: string };
+    expect(leafData.path?.kind).toBeDefined();
+    expect(leafData.fill).toBe('#ff0000');
+    // Undoable: one batch → a single undo removes the whole import.
+    scene.undo();
+    expect(scene.roots).toHaveLength(0);
   });
 
   it('works under a consumer root <ActionsProvider> mounted above SceneCanvas', async () => {

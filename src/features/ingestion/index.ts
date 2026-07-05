@@ -13,6 +13,8 @@ export {
   type IngestItem,
 } from './ingestItems';
 export { kitImageHandler } from './imageHandler';
+export { kitSvgHandler, isSvgFileItem, SVG_MIME } from './svgHandler';
+export { svgNodesToKitDrafts, unpackSvgFiles, type SvgSceneDraft, type SvgDraftBounds } from './svgUnpack';
 // Internal-ish: refcounted default-handler registration for mounted canvases.
 export { acquireKitContentHandlers } from './registerKitHandlers';
 export { openFilePicker, type OpenFilePickerOptions } from './openFilePicker';

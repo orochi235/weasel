@@ -8,13 +8,17 @@
  */
 import { registerContentHandler } from './contentHandlers';
 import { kitImageHandler } from './imageHandler';
+import { kitSvgHandler } from './svgHandler';
 
 let refs = 0;
 let dispose: (() => void) | null = null;
 
 export function acquireKitContentHandlers(): () => void {
   refs++;
-  if (refs === 1) dispose = registerContentHandler(kitImageHandler);
+  if (refs === 1) {
+    const disposers = [kitImageHandler, kitSvgHandler].map(registerContentHandler);
+    dispose = () => { for (const d of disposers) d(); };
+  }
   let released = false;
   return () => {
     if (released) return;

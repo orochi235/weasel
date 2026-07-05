@@ -89,6 +89,7 @@ import {
   type IngestItem,
 } from 'features/ingestion';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
+import type { SvgIngestOptions } from 'interactions/actions/depSchema';
 import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
@@ -427,14 +428,18 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** External-content ingestion (OS drop / clipboard paste / picker).
      *  `handlers` are consumer content handlers registered for this canvas's
-     *  lifetime (priority 0 by default — they beat the kit's `image/*`
-     *  handler at -100). `resolveSrc` overrides the image handler's
-     *  `data:`-URI embed (e.g. upload to an asset store, return the URL).
+     *  lifetime (priority 0 by default — they beat the kit's `image/*` /
+     *  `image/svg+xml` handlers at -100/-90). `resolveSrc` overrides the
+     *  image handler's `data:`-URI embed (e.g. upload to an asset store,
+     *  return the URL). `svg.unpack` makes the kit SVG handler parse dropped
+     *  SVG files into native scene nodes instead of keeping each one a
+     *  single embedded-image node.
      *  Memoize `handlers` (useState/useMemo/module const) — an inline array
      *  literal re-registers the handlers on every render. */
     ingestion?: {
       handlers?: ContentHandlerEntry[];
       resolveSrc?: (file: File) => Promise<string>;
+      svg?: SvgIngestOptions;
     };
 
     // --- Selection ---
@@ -1770,6 +1775,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             insertNodeFactories={insertNodeFactories}
             canvasRef={internalCanvasRef}
             ingestionResolveSrc={ingestion?.resolveSrc}
+            ingestionSvg={ingestion?.svg}
             actionsRegistryRef={actionsRegistryRef}
           />
           <GestureDispatcherMounter
@@ -2106,6 +2112,7 @@ function StandardActionsRegistrar({
   insertNodeFactories,
   canvasRef,
   ingestionResolveSrc,
+  ingestionSvg,
   actionsRegistryRef,
 }: {
   selection: SelectionApi;
@@ -2158,6 +2165,9 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps.ingestion.resolveSrc` — consumer
    *  file→src override for the kit image handler. */
   ingestionResolveSrc?: (file: File) => Promise<string>;
+  /** Forwarded from `SceneCanvasProps.ingestion.svg` — kit SVG-handler
+   *  options (`unpack`). */
+  ingestionSvg?: SvgIngestOptions;
   /** Populated with the live registry so `CanvasExtensionApi.ingest`
    *  (assembled in SceneCanvasInner, OUTSIDE the actions provider) can call
    *  `registry.trigger('ingest', …)`. Cleared on unmount. */
@@ -2223,7 +2233,7 @@ function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
-  useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc);
+  useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState);

@@ -64,10 +64,11 @@ export const ingestAction: Action & { requires: string[] } = {
         },
         scene,
         selection,
-        // Snapshot per ingest event — intentional. The dep's live getter is
+        // Snapshot per ingest event — intentional. The dep's live getters are
         // fresh at dispatch time, and one consistent resolver per drop/paste
         // beats half a multi-file drop resolving through a swapped-in one.
         resolveSrc: ingestion.resolveSrc,
+        svg: ingestion.svg,
         deps,
       };
       // Fire-and-forget: handler errors are caught inside runIngest, but a

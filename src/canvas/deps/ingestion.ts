@@ -6,7 +6,7 @@
  */
 import { useRef, type RefObject } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
-import type { IngestionDep } from 'interactions/actions/depSchema';
+import type { IngestionDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import type { View } from 'core/viewport/view';
 
@@ -14,11 +14,14 @@ export function useIngestionDepSource(
   canvasRef: RefObject<HTMLCanvasElement | null>,
   getView: () => View,
   resolveSrc?: (file: File) => Promise<string>,
+  svg?: SvgIngestOptions,
 ): void {
   const getViewRef = useRef(getView);
   getViewRef.current = getView;
   const resolveSrcRef = useRef(resolveSrc);
   resolveSrcRef.current = resolveSrc;
+  const svgRef = useRef(svg);
+  svgRef.current = svg;
 
   useDepSource('ingestion', (): IngestionDep => ({
     viewportWorldRect() {
@@ -32,6 +35,9 @@ export function useIngestionDepSource(
     },
     get resolveSrc() {
       return resolveSrcRef.current;
+    },
+    get svg() {
+      return svgRef.current;
     },
   }));
 }
