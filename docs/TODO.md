@@ -22,6 +22,9 @@ Priority tags:
 
 ### P2 — broad reuse / friction-likely
 
+**Tools & gestures**
+- SVG-file ingestion: single node by default, `unpack` opt-in for scene nodes → [Tools & gestures](#tools--gestures)
+
 **Viewport**
 - Axis-aware elliptical hit shapes under non-uniform zoom → [Viewport](#viewport)
 
@@ -56,6 +59,44 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P2) SVG-file ingestion — single node by default, `unpack` opt-in for
+  scene nodes.** Promoted 2026-07-04 from residual (b) of the ingestion
+  follow-ups (below). Today a dropped `.svg` *fails*, it isn't merely
+  unsupported: the kit `image/*` handler matches `image/svg+xml` (its
+  predicate is `mime.startsWith('image/')`), then dies at the measure step —
+  Chromium's `createImageBitmap` rejects raw SVG blobs — so the file is
+  skipped with a `console.warn`. Two-level design, ratified 2026-07-04:
+  - **Base kit: a dropped SVG stays one scene node** — the existing
+    embedded-image contract (`data.image.src` as a `data:image/svg+xml`
+    URI, bytes preserved verbatim). The render path is already capable:
+    `imageCache` loads via `new Image()` + `decode()`, which browsers
+    rasterize for SVG; only the ingest-time measure needs an
+    `Image`-element fallback for `svg+xml` (plus a default-size policy for
+    SVGs with no intrinsic width/height — viewBox-only files report
+    unreliable natural sizes). Known caveat to note in the handler doc:
+    the cached `ImageBitmap` is rasterized once at natural size, so an
+    embedded SVG blurs under zoom — re-rasterizing at view scale (or
+    drawing from the live `Image` element for `svg+xml` srcs) is the
+    follow-up if crispness matters.
+  - **`unpack` opt-in: parse to real scene nodes** — the same kit handler
+    grows a flag (riding the `ingestion` prop, e.g.
+    `ingestion={{ svg: { unpack: true } }}`) that switches to parsing the
+    file into a subtree of native scene nodes under a container at the
+    drop point, instead of the single-node embed. Implementation = hoist
+    the SvgNode→scene-draft mapping from `apps/draw/src/svgInterop.ts`
+    (`parseSvg` → `svgNodesToSceneDrafts` → parent-before-child
+    `scene.batch` insert) into the kit — the mapping must generalize from
+    weaseldraw's app data shape to kit-native node kinds (likely via the
+    insert dep's per-kind factories). weaseldraw then just flips the flag
+    and can eventually retire its app-local drop-import duplication (its
+    file-menu import shares the same machinery).
+
+  The handler should sniff the `.svg` extension in its match, since files
+  can arrive with an empty MIME (normalized to `application/octet-stream`).
+  Cross-ref: embedded-image residual (a) below (`<image>` elements are
+  dropped on parse) bites only the `unpack` path — the single-node embed
+  keeps them.
+
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
   `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`, plan
   `docs/superpowers/plans/2026-07-03-content-ingestion.md`): drop/paste
@@ -66,11 +107,11 @@ Priority tags:
   / `resolveSrc` override, fit-clamp, cascade), `openFilePicker`,
   `SceneCanvasApi.ingest`, `<SceneCanvas ingestion={…}>`. Remaining:
   (a) richer drag-over feedback (insertion ghost / per-handler accept cursor —
-  v1 is the class toggle); (b) SVG-file drop → scene-node parsing (future
-  handler; proves registry extensibility); (c) kit `text/plain` handler →
-  text-node insert; (d) route-grammar names for drop/paste (registry probe
-  shows them as `undefined`); (e) paste could mirror wheel's
-  dispatch-then-preventDefault instead of preventDefaulting on content.
+  v1 is the class toggle); (b) SVG-file drop → promoted to its own (P2)
+  entry above; (c) kit `text/plain` handler → text-node insert; (d)
+  route-grammar names for drop/paste (registry probe shows them as
+  `undefined`); (e) paste could mirror wheel's dispatch-then-preventDefault
+  instead of preventDefaulting on content.
 
 - **(P3) Reshape `selectionOverlay` into a thin override hook.** The chrome-affordances spec shipped (2026-06-13): the multi-resize union now has a single owner — `ChromeState.unionBounds` — which both the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`) and the overlay layer read at draw time. The inline `poseById` re-derivations in `Canvas`/`SceneCanvas` are deleted, `createSelectionOverlayLayer` resolves the synthetic union from the draw-time chromeState envelope, and `MULTI_RESIZE_TARGET_ID` moved to `core/selection/` (fixing the backwards `affordances→tools` import). Residual: the synthetic-id plumbing (`getSelection` → `[MULTI_RESIZE_TARGET_ID]`, `getOutlineIds` → real members) still lives in the Canvas/SceneCanvas wiring rather than inside `createSelectionOverlayLayer`. Fold it into the layer so the slot is purely a consumer override hook.
 
