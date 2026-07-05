@@ -9,6 +9,7 @@ import { render, act } from '@testing-library/react';
 import { createRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
+import { ActionsProvider } from 'interactions/actions/registry';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import {
@@ -168,6 +169,28 @@ describe('SceneCanvasApi.ingest', () => {
     expect(pose.y).toBeCloseTo(35);
     expect(pose.width).toBeCloseTo(100);
     expect(pose.height).toBeCloseTo(80);
+  });
+
+  it('works under a consumer root <ActionsProvider> mounted above SceneCanvas', async () => {
+    // Regression: a root ActionsProvider (the demo site's keydown
+    // consolidation pattern) sits OUTSIDE any DepRegistryProvider, so its
+    // trigger() saw no dep registry and the ingest invoker bailed silently.
+    // SceneCanvas must wire its own dep registry into whatever registry is
+    // in scope, same as it wires the dispatcher.
+    const scene = makeScene();
+    const ref = createRef<SceneCanvasApi>();
+    render(
+      <ActionsProvider>
+        <SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />
+      </ActionsProvider>,
+    );
+
+    await act(async () => {
+      ref.current!.ingest([pngFile()], { x: 50, y: 60 });
+    });
+    await vi.waitFor(() => {
+      expect(imageNodes(scene)).toHaveLength(1);
+    });
   });
 
   it('ingestion.resolveSrc overrides the data-URI embed end-to-end', async () => {

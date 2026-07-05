@@ -251,6 +251,14 @@ export interface ActionsRegistry {
   /** Wire a dispatcher into the registry so `begin()` can delegate to it.
    *  Call with `null` to detach. Idempotent. */
   setDispatcher(d: Dispatcher | null): void;
+
+  /** Wire a `DepRegistry` into the registry so `trigger()` / `begin()` can
+   *  resolve action deps even when this provider is mounted ABOVE the dep
+   *  registry (e.g. a consumer's root `<ActionsProvider>` reused by
+   *  SceneCanvas's `ActionsProviderIfRoot`). Takes precedence over the dep
+   *  registry read from context at the provider's own level. Call with
+   *  `null` to detach. */
+  setDepRegistry(r: DepRegistry | null): void;
 }
 
 // ─── Registration-time validation ─────────────────────────────────────────
@@ -326,6 +334,11 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const depRegRef = useRef<DepRegistry | null>(depReg);
   depRegRef.current = depReg;
 
+  // Dep registry wired via setDepRegistry — set by SceneCanvas's registrar
+  // when this provider sits above the dep-registry scope (consumer root
+  // <ActionsProvider>). Preferred over the context read above.
+  const wiredDepRegRef = useRef<DepRegistry | null>(null);
+
   // Dispatcher ref — wired from SceneCanvas via setDispatcher so that
   // begin() can delegate to beginUiOngoing.
   const dispatcherRef = useRef<Dispatcher | null>(null);
@@ -386,7 +399,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         if (!a) return false;
         try {
           if (a.invoker && a.invoker.timing === 'immediate') {
-            const r = depRegRef.current;
+            const r = wiredDepRegRef.current ?? depRegRef.current;
             // Prefer the action's declared `requires` (same contract the
             // dispatcher uses — shared `buildDepsFromRequires`, including
             // the dev-mode undeclared-read guard); legacy fixed bag
@@ -420,10 +433,13 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
       setDispatcher: (d: Dispatcher | null) => {
         dispatcherRef.current = d;
       },
+      setDepRegistry: (r: DepRegistry | null) => {
+        wiredDepRegRef.current = r;
+      },
       begin: (id: string, params?: Record<string, unknown>) => {
         const disp = dispatcherRef.current;
         if (!disp) return null;
-        const r = depRegRef.current;
+        const r = wiredDepRegRef.current ?? depRegRef.current;
         const deps = r
           ? {
               selection: r.get('selection' as DepName),

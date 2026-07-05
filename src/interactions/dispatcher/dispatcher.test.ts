@@ -26,6 +26,7 @@ function makeRegistry(actions: Action[]): ActionsRegistry {
     subscribe: vi.fn().mockReturnValue(() => {}),
     begin: vi.fn().mockReturnValue(null),
     setDispatcher: vi.fn(),
+    setDepRegistry: vi.fn(),
   };
 }
 

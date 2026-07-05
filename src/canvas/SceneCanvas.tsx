@@ -2180,6 +2180,17 @@ function StandardActionsRegistrar({
     return () => registry.setDispatcher(null);
   }, [registry, dispatcher]);
 
+  // Wire the dep registry the same way: when the ActionsProvider in scope
+  // is a consumer root mounted ABOVE DepRegistryProviderIfRoot, its own
+  // context read finds no dep registry — trigger()/begin() would build an
+  // empty deps bag and dep-guarded invokers (e.g. ingest) bail silently.
+  const wiredDepRegistry = useDepRegistry();
+  useEffect(() => {
+    if (!registry) return;
+    registry.setDepRegistry(wiredDepRegistry);
+    return () => registry.setDepRegistry(null);
+  }, [registry, wiredDepRegistry]);
+
   // Populate the action-lookup ref so the dispatcher's getAction closure
   // can resolve action ids once the registry is in scope.
   useEffect(() => {
