@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createToastQueue, racQueueOf, toast, defaultToastQueue } from './queue';
 
 describe('ToastQueue', () => {
@@ -57,13 +57,14 @@ describe('ToastQueue', () => {
     }
   });
 
-  it('prunes keysById when a toast with an id is closed, so re-adding does not throw', () => {
+  it('prunes keysById on close, so re-adding the same id fires one notification, not a stale-close extra', () => {
     const q = createToastQueue();
     q.add('info', 'first', { id: 'save-status' });
-    const key = racQueueOf(q).visibleToasts[0].key;
-    racQueueOf(q).close(key);
-    expect(racQueueOf(q).visibleToasts).toHaveLength(0);
+    racQueueOf(q).close(racQueueOf(q).visibleToasts[0].key);
+    const notify = vi.fn();
+    racQueueOf(q).subscribe(notify);
     q.add('info', 'second', { id: 'save-status' });
+    expect(notify).toHaveBeenCalledTimes(1); // pre-fix: 2 (stale close + add)
     expect(racQueueOf(q).visibleToasts).toHaveLength(1);
   });
 
@@ -72,5 +73,12 @@ describe('ToastQueue', () => {
     q.add('info', 'first', { id: 'save-status' });
     q.dismiss('save-status');
     expect(racQueueOf(q).visibleToasts).toHaveLength(0);
+  });
+
+  it('dismiss(id) is a no-op when no toast with that id is live', () => {
+    const q = createToastQueue();
+    q.add('info', 'first', { id: 'save-status' });
+    expect(() => q.dismiss('missing')).not.toThrow();
+    expect(racQueueOf(q).visibleToasts).toHaveLength(1);
   });
 });
