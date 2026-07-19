@@ -27,6 +27,7 @@ export const DEFAULT_TOKENS = {
   '--wzl-accent-strong': '#5841b8',
   '--wzl-danger-base':   '#d94a3f',
   '--wzl-warning-base':  '#d99a3f',
+  '--wzl-success-base':  '#2ec27e',
 
   // Geometry
   '--wzl-radius-sm':   '3px',
@@ -74,6 +75,7 @@ export const DEFAULT_TOKENS = {
   '--wzl-accent-hover': '#5841b8',
   '--wzl-danger':       '#d94a3f',
   '--wzl-warning':      '#d99a3f',
+  '--wzl-success':      '#2ec27e',
   '--wzl-focus-ring':   '#5841b8',
 
   // Semantic — glass

@@ -57,4 +57,16 @@ describe('ToastRegion', () => {
     const toastEl = screen.getByText('two').closest('[class*="toast"]');
     expect(toastEl?.className).toMatch(/toneWarning/);
   });
+
+  it('orders toasts newest-first in the DOM, so corner CSS keeps the newest at the edge', () => {
+    const q = createToastQueue();
+    render(<ToastRegion queue={q} />);
+    act(() => {
+      q.add('info', 'one', { ttlMs: null });
+      q.add('info', 'two', { ttlMs: null });
+    });
+    const items = screen.getAllByRole('alertdialog');
+    expect(items[0].textContent).toContain('two');
+    expect(items[1].textContent).toContain('one');
+  });
 });

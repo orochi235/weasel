@@ -31,6 +31,10 @@ const RAC_QUEUES = new WeakMap<ToastQueue, UNSTABLE_ToastQueue<ToastContent>>();
  * Kit-owned toast queue. Create isolated instances with
  * `createToastQueue()` (tests, secondary roots); most apps use the
  * module-level `defaultToastQueue` via `toast()`.
+ *
+ * At most 5 toasts are visible at once; adding a 6th shows immediately
+ * and hides the oldest (it returns when a slot frees, with its ttl
+ * restarted).
  */
 export class ToastQueue {
   private keysById = new Map<string, string>();

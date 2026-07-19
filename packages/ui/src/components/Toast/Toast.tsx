@@ -47,7 +47,7 @@ export function ToastRegion(props: ToastRegionProps) {
       className={[s.region, placementClass[placement], className].filter(Boolean).join(' ')}
     >
       {({ toast: t }) => (
-        <RACToast toast={t} className={[s.toast, toneClass[t.content.tone]].join(' ')}>
+        <RACToast toast={t} className={[s.toast, toneClass[t.content.tone]].filter(Boolean).join(' ')}>
           <RACToastContent className={s.content}>
             <Text slot="title" className={s.title}>{t.content.title}</Text>
             {t.content.description !== undefined && (

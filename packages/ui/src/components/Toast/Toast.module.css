@@ -2,7 +2,13 @@
   position: fixed;
   z-index: 1100;
   display: flex;
-  flex-direction: column;
+  /* RAC unshifts new toasts to the front of the DOM (newest-first), and the
+   * ol/li wrappers are display:contents, so the flex direction alone
+   * decides which end of the stack the newest toast lands on. Base
+   * (bottom corners): column-reverse puts DOM-first (newest) at the
+   * bottom, hugging the corner. Top corners override back to column so
+   * DOM-first still hugs the top edge. */
+  flex-direction: column-reverse;
   gap: 8px;
   max-width: 360px;
   outline: none;
@@ -10,8 +16,8 @@
 
 .bottomRight { bottom: 16px; right: 16px; }
 .bottomLeft { bottom: 16px; left: 16px; }
-.topRight { top: 16px; right: 16px; flex-direction: column-reverse; }
-.topLeft { top: 16px; left: 16px; flex-direction: column-reverse; }
+.topRight { top: 16px; right: 16px; flex-direction: column; }
+.topLeft { top: 16px; left: 16px; flex-direction: column; }
 
 .toast {
   --toast-accent: var(--wzl-accent-strong);
@@ -29,6 +35,13 @@
   outline: none;
 }
 
+.region[data-focus-visible],
+.toast[data-focus-visible] {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+}
+
+.toneInfo { /* default accent — uses --toast-accent fallback */ }
 .toneSuccess { --toast-accent: var(--wzl-success, #2ec27e); }
 .toneWarning { --toast-accent: var(--wzl-warning, #e5a50a); }
 .toneError { --toast-accent: var(--wzl-danger, #ff5b5b); }
