@@ -191,6 +191,13 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   /** CSS-pixel height. */
   height: number;
 
+  /** Drawing-buffer density (device pixels per CSS pixel). When omitted the
+   *  canvas reads `window.devicePixelRatio` per paint — the long-standing
+   *  screen behavior. Supplying it makes density an explicit parameter, the
+   *  same contract the headless `renderSceneToPixels` path follows (that
+   *  path never reads ambient density at all). */
+  dpr?: number;
+
   /**
    * Combined adapter for scene-slot rendering, bounds computation, and
    * move/resize/rotate gesture math. Optional — bare-Canvas consumers that
@@ -675,6 +682,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const {
     width,
     height,
+    dpr: dprProp,
     adapter: adapterProp,
     layers: layersMap,
     selection,
@@ -1477,7 +1485,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
     let renderer = glRendererRef.current;
     if (!renderer) {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = dprProp ?? (window.devicePixelRatio || 1);
       const gl = c.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
       if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
         // jsdom or unsupported environment — bail silently (test envs hit
@@ -1501,7 +1509,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       // Shader registration is handled entirely by the shaderIdKey effect below;
       // do not call registerShadersOnRenderer here to avoid double compilation.
     } else {
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = dprProp ?? (window.devicePixelRatio || 1);
       const last = lastResizeRef.current;
       if (!last || last.w !== width || last.h !== height || last.dpr !== dpr) {
         renderer.resize({ width, height, dpr });
@@ -1518,7 +1526,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       { width, height },
     );
     renderer.render(commands);
-  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce]);
+  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp]);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
   useEffect(() => {
