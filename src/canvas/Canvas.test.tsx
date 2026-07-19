@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent, createEvent, act } from '@testing-library/react';
 import React, { createRef, useRef, useState } from 'react';
-import { Canvas, buildSceneLayer } from './Canvas';
+import { Canvas, buildSceneLayer, buildSceneLayers } from './Canvas';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
@@ -1089,5 +1089,159 @@ describe('buildSceneLayer hierarchical path', () => {
     const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
     expect(out).toHaveLength(1);
     expect(out[0].kind).toBe('path');
+  });
+});
+
+describe('buildSceneLayer postProcess', () => {
+  const RED_RECT: DrawCommand[] = [
+    { kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { color: 'red' } },
+  ];
+
+  function makeHierarchicalAdapter(layers: string[] = ['bg']) {
+    const scene = createScene<{ label: string }, string, typeof POSE>({
+      systemLayers: layers.map((id) => ({ id })),
+    });
+    for (const layer of layers) {
+      scene.add({ kind: 'leaf', layer, pose: POSE, data: { label: `node-${layer}` } });
+    }
+    return sceneToAdapter(scene);
+  }
+
+  it('receives the scene commands and its return value replaces them', () => {
+    const adapter = makeHierarchicalAdapter();
+    const seen: DrawCommand[][] = [];
+    const layer = buildSceneLayer(
+      {
+        drawOne: () => RED_RECT,
+        postProcess: (cmds) => {
+          seen.push(cmds);
+          return [{ kind: 'group', alpha: 0.5, children: cmds }];
+        },
+      },
+      adapter as never,
+      null,
+      () => null,
+      () => null,
+    );
+    const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
+    // The wrapper is what reaches the renderer, scene content nested inside.
+    expect(out).toHaveLength(1);
+    const wrapper = out[0] as { kind: string; alpha?: number; children: DrawCommand[] };
+    expect(wrapper.kind).toBe('group');
+    expect(wrapper.alpha).toBe(0.5);
+    // The hook saw exactly what the scene would otherwise emit.
+    expect(seen).toHaveLength(1);
+    expect(wrapper.children).toBe(seen[0]);
+    expect(seen[0]).toHaveLength(1); // one 'bg' layer group
+  });
+
+  it('is called with view and dims', () => {
+    const adapter = makeHierarchicalAdapter();
+    const seenArgs: unknown[][] = [];
+    const layer = buildSceneLayer(
+      {
+        drawOne: () => RED_RECT,
+        postProcess: (cmds, view, dims) => {
+          seenArgs.push([view, dims]);
+          return cmds;
+        },
+      },
+      adapter as never,
+      null,
+      () => null,
+      () => null,
+    );
+    layer.draw(null, VIEW, DIMS);
+    expect(seenArgs).toEqual([[VIEW, DIMS]]);
+  });
+
+  it('identity hook emits commands deep-equal to the no-hook baseline', () => {
+    const cfg = { drawOne: () => RED_RECT };
+    const baseline = buildSceneLayer(
+      cfg, makeHierarchicalAdapter() as never, null, () => null, () => null,
+    ).draw(null, VIEW, DIMS);
+    const withHook = buildSceneLayer(
+      { ...cfg, postProcess: (cmds: DrawCommand[]) => cmds },
+      makeHierarchicalAdapter() as never, null, () => null, () => null,
+    ).draw(null, VIEW, DIMS);
+    expect(withHook).toEqual(baseline);
+  });
+
+  it('runs once per scene:<layerId> canvas layer with only that layer\'s commands', () => {
+    const adapter = makeHierarchicalAdapter(['bg', 'fg']);
+    const calls: DrawCommand[][] = [];
+    const countPaths = (cmds: DrawCommand[]): number =>
+      cmds.reduce(
+        (n, c) =>
+          n + (c.kind === 'path' ? 1 : 0) +
+          (c.kind === 'group' ? countPaths((c as { children: DrawCommand[] }).children) : 0),
+        0,
+      );
+    const entries = buildSceneLayers(
+      {
+        drawOne: () => RED_RECT,
+        postProcess: (cmds) => {
+          calls.push(cmds);
+          return cmds;
+        },
+      },
+      adapter as never,
+      null,
+      () => null,
+      () => null,
+    );
+    expect(entries.map((e) => e.key)).toEqual(['scene:bg', 'scene:fg']);
+    for (const entry of entries) entry.layer.draw(null, VIEW, DIMS);
+    // Hook ran once per split canvas layer, each seeing only its own layer's
+    // node (one path each — the bundled scene layer would carry both).
+    expect(calls).toHaveLength(2);
+    expect(calls.map(countPaths)).toEqual([1, 1]);
+  });
+
+  it('flat fallback path (cfg.objects) routes through the hook', () => {
+    const objects = [{ id: 'a' }, { id: 'b' }];
+    const seen: DrawCommand[][] = [];
+    const layer = buildSceneLayer(
+      {
+        objects,
+        toPose: () => POSE,
+        drawOne: () => RED_RECT,
+        postProcess: (cmds) => {
+          seen.push(cmds);
+          return [{ kind: 'group', alpha: 0.25, children: cmds }];
+        },
+      },
+      undefined,
+      null,
+      () => null,
+      () => null,
+    );
+    const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toHaveLength(2); // one path per object
+    expect(out).toHaveLength(1);
+    expect((out[0] as { alpha?: number }).alpha).toBe(0.25);
+  });
+
+  it('is called even when the scene emits zero commands', () => {
+    const seen: DrawCommand[][] = [];
+    const layer = buildSceneLayer(
+      {
+        objects: [],
+        toPose: () => POSE,
+        drawOne: () => RED_RECT,
+        postProcess: (cmds) => {
+          seen.push(cmds);
+          return cmds;
+        },
+      },
+      undefined,
+      null,
+      () => null,
+      () => null,
+    );
+    const out = layer.draw(null, VIEW, DIMS) as DrawCommand[];
+    expect(seen).toEqual([[]]);
+    expect(out).toEqual([]);
   });
 });
