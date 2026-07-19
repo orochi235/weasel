@@ -6,6 +6,7 @@
  */
 
 export { WeaselRenderer, type WeaselRendererOptions } from './WeaselRenderer';
+export type { ImageMinification } from './cache/GLImageCache';
 export type {
   DrawCommand,
   GroupDrawCommand,

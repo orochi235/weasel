@@ -306,6 +306,13 @@ export {
   renderSceneToCanvas,
 } from './canvas/sceneViewRender';
 export type { SceneViewDrawOne, RenderSceneToCanvasArgs } from './canvas/sceneViewRender';
+export { renderSceneToPixels, planPixelRender } from './canvas/renderSceneToPixels';
+export type {
+  RenderSceneToPixelsArgs,
+  RasterImage,
+  HeadlessCanvasLike,
+  PixelRenderPlan,
+} from './canvas/renderSceneToPixels';
 export {
   FALLBACK_FIT_VIEW,
   computeFitView,
@@ -930,6 +937,7 @@ export type {
   ShaderProgramHandle,
   ShaderUniform,
   Mat3,
+  ImageMinification,
 } from './renderer';
 // World-space RenderLayer draw functions wrap their commands in a
 // `kind: 'group'` whose transform is `viewToMat3(view)`. Exported here so
