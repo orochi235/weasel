@@ -135,8 +135,11 @@ Notes against the spec:
   8-bit output.
 - Acceptance: `canvas-gl.spec.ts` no longer exists; the real-GL spec is
   `tests/visual/render-to-pixels.spec.ts` (no committed baseline).
-- lbx-editor migration remains a follow-up in that repo; `labelRender.ts`
-  maps to unit math + one `renderSceneToPixels` call
-  (`scale.x = dotsPerPt`, `scale.y = dotsPerPt × printableDots / (tapeWidthPt × dotsPerPt)`,
-  `sourceRect = {0, 0, labelLengthPt, tapeWidthPt}`, `background: '#ffffff'`,
-  `resolveImage` from its bitmap cache).
+- lbx-editor migration: **DONE 2026-07-19** (lbx-editor commit `8597c90`).
+  `labelRender.ts` is now unit math + one `renderSceneToPixels` call, passing
+  the app's screen `drawOne` (so its text/image bitmap caches ride along;
+  `resolveImage` unused). Mapping as predicted:
+  `scale.x = dpi/72`, `scale.y = printableDots / tapeWidthPt`,
+  `sourceRect = {0, 0, labelLengthPt, tapeWidthPt}`, `background: '#ffffff'`.
+  Verified in-app: the print click's OffscreenCanvas held the correct
+  360×128 raster for a 144pt label on 24mm tape.
