@@ -40,7 +40,12 @@ export type CalloutProps = Omit<
    * the app stays interactive; Esc / outside click / close button dismiss.
    */
   modal?: boolean;
-  /** Show the × button. Defaults to `!modal`. */
+  /**
+   * Show the × button. Defaults to `!modal`. In programmatic
+   * `triggerRef`/`anchorRect` modes the close button requires controlled
+   * open (`isOpen` + `onOpenChange`); with only `defaultOpen` it has no
+   * open-state setter to call and cannot close.
+   */
   showCloseButton?: boolean;
   /** Anchor to an arbitrary element (programmatic use, with `isOpen`). */
   triggerRef?: RefObject<Element | null>;

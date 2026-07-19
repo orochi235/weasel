@@ -112,7 +112,11 @@ describe('Callout', () => {
   it('blocks outside-click dismissal when modal', () => {
     render(<ProgrammaticSubject modal />);
     expect(screen.getByRole('alertdialog')).toBeTruthy();
+    // useInteractOutside needs the full pointer cycle (down, up, then the
+    // resulting click) to register as an outside interaction in jsdom.
     fireEvent.pointerDown(document.body);
+    fireEvent.pointerUp(document.body);
+    fireEvent.click(document.body);
     expect(screen.getByRole('alertdialog')).toBeTruthy();
   });
 
