@@ -18,6 +18,7 @@ import type { GradientRampCache } from './cache/GradientRampCache';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 import { mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
+import { tessellate } from 'features/paths/tessellate/tessellate';
 import { resolveColor } from './math/color';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
 import { ensureFontTexture, textureCacheKey } from 'features/text/atlas/registerFont';
@@ -50,6 +51,11 @@ export interface DrawContext {
    * incremented/decremented symmetrically by drawGroup around cmd.clip pushes.
    */
   clipDepth: number;
+  /** Flatness tolerance for curve tessellation, in WORLD units. When set,
+   *  fill meshes bypass the Path-identity cache (whose key excludes
+   *  tolerance) and are tessellated fresh per frame via the transient pool.
+   *  See `WeaselRendererOptions.flattenTolerance`. */
+  flattenTolerance?: number;
 }
 
 /**
@@ -72,6 +78,19 @@ function setColorMatrixUniforms(ctx: DrawContext, prog: ShaderProgram): void {
   const bLoc = prog.uniform('u_colorBias');
   if (mLoc !== undefined) gl.uniformMatrix4fv(mLoc, false, m4);
   if (bLoc !== undefined) gl.uniform4f(bLoc, cm[4], cm[9], cm[14], cm[19]);
+}
+
+/**
+ * Resolve a fill mesh handle honoring ctx.flattenTolerance: default route is
+ * the persistent Path-identity cache; a custom tolerance tessellates fresh
+ * and rides the transient pool (freed at end of frame), because the
+ * persistent cache's key does not include tolerance.
+ */
+function fillMeshHandle(ctx: DrawContext, path: Path): GLMeshHandle {
+  if (ctx.flattenTolerance !== undefined) {
+    return ctx.meshCache.uploadTransient(tessellate(path, { flattenTolerance: ctx.flattenTolerance }));
+  }
+  return ctx.meshCache.handleFor(getMesh(path));
 }
 
 export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
@@ -267,8 +286,7 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
     if (isSolidRectFast && cmd.path.kind === 'rect') {
       drawRectFast(ctx, cmd.path, cmd.fill as { color: string; opacity?: number });
     } else {
-      const mesh = getMesh(cmd.path);
-      const handle = ctx.meshCache.handleFor(mesh);
+      const handle = fillMeshHandle(ctx, cmd.path);
       if (cmd.vertexColors && cmd.vertexColors.length > 0 &&
           (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')) {
         drawPathFillVColor(ctx, cmd, cmd.fill as { color: string; opacity?: number }, handle);
@@ -540,8 +558,7 @@ function ancestorMask(depth: number): number {
  */
 function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
   const gl = ctx.gl;
-  const mesh = getMesh(path);
-  const handle = ctx.meshCache.handleFor(mesh);
+  const handle = fillMeshHandle(ctx, path);
   gl.useProgram(ctx.pathFill.handle);
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.pathFill);
@@ -666,7 +683,7 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const stroke = cmd.stroke!;
   const solid = stroke.paint as { color: string; opacity?: number };
-  const mesh = tessellateStroke(cmd.path, stroke);
+  const mesh = tessellateStroke(cmd.path, stroke, { flattenTolerance: ctx.flattenTolerance });
   if (mesh.indices.length === 0) return;
   // tessellateStroke returns a freshly-built Mesh every frame; route through
   // the transient pool so the renderer frees these at end-of-frame.
@@ -717,10 +734,8 @@ function drawPathStrokeStenciled(
   const solid = stroke.paint as { color: string; opacity?: number };
   const widerStroke: Stroke = { ...stroke, width: (stroke.width ?? 1) * 2, align: 'center' };
 
-  // getMesh memoizes by Path identity, so fillMesh is safe to cache normally.
-  const fillMesh = getMesh(cmd.path);
-  const fillHandle = ctx.meshCache.handleFor(fillMesh);
-  const ribbonMesh = tessellateStroke(cmd.path, widerStroke);
+  const fillHandle = fillMeshHandle(ctx, cmd.path);
+  const ribbonMesh = tessellateStroke(cmd.path, widerStroke, { flattenTolerance: ctx.flattenTolerance });
   if (ribbonMesh.indices.length === 0) return;
   // The ribbon mesh is freshly tessellated each frame; transient.
   const ribbonHandle = ctx.meshCache.uploadTransient(ribbonMesh);

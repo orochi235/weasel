@@ -70,6 +70,14 @@ export interface WeaselRendererOptions {
    *  `renderSceneToPixels` path passes `'mipmap'` for print-quality
    *  minification. Explicitly passing `'linear'` is always valid. */
   imageMinification?: ImageMinification;
+  /** Flatness tolerance for curve tessellation, in WORLD units (see
+   *  `TessellateOptions.flattenTolerance`). When set, path fills are
+   *  tessellated fresh at this tolerance per frame (transient pool) instead
+   *  of served from the Path-identity mesh cache — the cache key does not
+   *  include tolerance. Default: unset — the existing cached behavior at
+   *  `DEFAULT_FLATTEN_TOLERANCE`. The headless path derives this from the
+   *  requested output scale; screen callers normally leave it unset. */
+  flattenTolerance?: number;
 }
 
 export class WeaselRenderer {
@@ -96,6 +104,7 @@ export class WeaselRenderer {
   private dpr: number;
   private canvas: HTMLCanvasElement | null = null;
   private readonly imageMinification: ImageMinification;
+  private readonly flattenTolerance?: number;
   private contextLost = false;
   private boundOnLost = (e: Event) => this.onContextLost(e);
   private boundOnRestored = () => this.onContextRestored();
@@ -112,6 +121,7 @@ export class WeaselRenderer {
     this.heightCss = opts.height;
     this.dpr = opts.dpr;
     this.imageMinification = opts.imageMinification ?? 'linear';
+    this.flattenTolerance = opts.flattenTolerance;
 
     this.canvas = opts.canvas ?? null;
     if (this.canvas) {
@@ -323,6 +333,7 @@ export class WeaselRenderer {
       widthCss: this.widthCss,
       heightCss: this.heightCss,
       clipDepth: 0,
+      flattenTolerance: this.flattenTolerance,
     };
     for (const cmd of commands) dispatch(ctx, cmd);
     // Free transient resources allocated during this frame (e.g. per-frame

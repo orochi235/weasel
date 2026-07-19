@@ -111,7 +111,7 @@ describe('WeaselRenderer.render — kind: path (nonzero solid)', () => {
 });
 
 import type { PolygonPath } from '@weasel-js/core';
-import { PATH_M as M, PATH_L as L, PATH_Z as Z } from '@weasel-js/core';
+import { PATH_M as M, PATH_L as L, PATH_Z as Z, PATH_C as C } from '@weasel-js/core';
 
 describe('WeaselRenderer.render — kind: path (evenodd stencil two-pass)', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -733,6 +733,38 @@ describe('drawText synthetic-bold', () => {
       .filter((c) => c.name === 'uniform1f')
       .map((c) => c.args[1] as number);
     expect(synthBoldVals.some((v) => Math.abs(v - 0.08) < 1e-6)).toBe(false);
+  });
+});
+
+// Curved polygon (bezier segments) so the solid-rect fast path can't
+// intercept — needed to prove getMesh vs. fresh tessellate() is actually
+// exercised by flattenTolerance.
+const POLYGON_CURVED: PolygonPath = {
+  kind: 'polygon',
+  commands: new Uint8Array([M, C, C, Z]),
+  coords: new Float32Array([
+    0, 0,
+    40, -40, 80, -40, 100, 0,
+    80, 100, 20, 100, 0, 0,
+  ]),
+  fillRule: 'nonzero',
+};
+
+describe('flattenTolerance option', () => {
+  it('routes fills through the transient pool when flattenTolerance is set', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, flattenTolerance: 0.01 });
+    r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { fill: 'solid', color: '#000' } }]);
+    // Transient meshes are freed at end of render(): deleteVertexArray proves
+    // the fill did NOT come from the persistent cache.
+    expect(rec.calls.map((c) => c.name)).toContain('deleteVertexArray');
+  });
+
+  it('default path (no option) keeps the persistent cache route', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
+    r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { fill: 'solid', color: '#000' } }]);
+    expect(rec.calls.map((c) => c.name)).not.toContain('deleteVertexArray');
   });
 });
 
