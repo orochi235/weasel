@@ -11,7 +11,10 @@ export interface ToastContent {
 
 export interface ToastOptions {
   description?: string;
-  /** Auto-dismiss delay in ms. Default 8000. `null` — sticky until dismissed. */
+  /**
+   * Auto-dismiss delay in ms. Default 8000. `null` — sticky until dismissed.
+   * Must be > 0; RAC treats 0 as no timer (sticky).
+   */
   ttlMs?: number | null;
   /** Stable identity: re-adding with the same id replaces the earlier toast. */
   id?: string;
@@ -43,11 +46,22 @@ export class ToastQueue {
       const existing = this.keysById.get(id);
       if (existing !== undefined) rac.close(existing);
     }
-    const key = rac.add(
-      { title, description, tone },
-      ttlMs === null ? {} : { timeout: ttlMs },
-    );
+    let key: string;
+    const racOptions: { timeout?: number; onClose?: () => void } =
+      ttlMs === null ? {} : { timeout: ttlMs };
+    if (id !== undefined) {
+      racOptions.onClose = () => {
+        if (this.keysById.get(id) === key) this.keysById.delete(id);
+      };
+    }
+    key = rac.add({ title, description, tone }, racOptions);
     if (id !== undefined) this.keysById.set(id, key);
+  }
+
+  /** Dismiss the toast previously added with this `id`. No-op if none is live. */
+  dismiss(id: string): void {
+    const key = this.keysById.get(id);
+    if (key !== undefined) RAC_QUEUES.get(this)!.close(key);
   }
 
   /** Dismiss every queued toast. */

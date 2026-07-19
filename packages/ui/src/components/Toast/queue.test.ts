@@ -23,6 +23,7 @@ describe('ToastQueue', () => {
     q.add('info', 'sticky', { ttlMs: null });
     const [sticky, timed] = racQueueOf(q).visibleToasts;
     expect(timed.timer).toBeDefined();
+    expect(timed.timeout).toBe(8000);
     expect(sticky.timer).toBeUndefined();
   });
 
@@ -44,12 +45,32 @@ describe('ToastQueue', () => {
   });
 
   it('toast() convenience writes to the default queue with tones', () => {
-    toast('plain');
-    toast.error('bad');
-    const visible = racQueueOf(defaultToastQueue).visibleToasts;
-    // RAC's underlying ToastState queue unshifts new toasts, so the most
-    // recently added toast is visibleToasts[0] (newest-on-top stacking).
-    expect(visible.map((t) => t.content.tone)).toEqual(['error', 'info']);
-    defaultToastQueue.clear();
+    try {
+      toast('plain');
+      toast.error('bad');
+      const visible = racQueueOf(defaultToastQueue).visibleToasts;
+      // RAC's underlying ToastState queue unshifts new toasts, so the most
+      // recently added toast is visibleToasts[0] (newest-on-top stacking).
+      expect(visible.map((t) => t.content.tone)).toEqual(['error', 'info']);
+    } finally {
+      defaultToastQueue.clear();
+    }
+  });
+
+  it('prunes keysById when a toast with an id is closed, so re-adding does not throw', () => {
+    const q = createToastQueue();
+    q.add('info', 'first', { id: 'save-status' });
+    const key = racQueueOf(q).visibleToasts[0].key;
+    racQueueOf(q).close(key);
+    expect(racQueueOf(q).visibleToasts).toHaveLength(0);
+    q.add('info', 'second', { id: 'save-status' });
+    expect(racQueueOf(q).visibleToasts).toHaveLength(1);
+  });
+
+  it('dismiss(id) closes the toast previously added with that id', () => {
+    const q = createToastQueue();
+    q.add('info', 'first', { id: 'save-status' });
+    q.dismiss('save-status');
+    expect(racQueueOf(q).visibleToasts).toHaveLength(0);
   });
 });
