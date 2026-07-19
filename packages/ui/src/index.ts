@@ -28,6 +28,7 @@ export * from './components/Select';
 export * from './components/ComboBox';
 export * from './components/RangeSlider';
 export * from './components/Dialog';
+export * from './components/Tooltip';
 export * from './components/Plot2D';
 export * from './components/CurveEditor';
 export * from './components/PointPlotter';
