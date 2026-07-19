@@ -109,6 +109,22 @@ describe('kit barrel parity', () => {
   });
 });
 
+describe('scene postProcess exports', () => {
+  it('SceneSlotConfig.postProcess signature is expressible with barrel types only', () => {
+    // Type-level check (enforced by `tsc --noEmit`, not at runtime): the hook
+    // and every type in its signature — DrawCommand, View, Dims — are
+    // reachable from the public barrel, so consumers can annotate a
+    // postProcess implementation without internal imports.
+    type Cfg = Barrel.SceneSlotConfig<{ id: string }, unknown>;
+    const hook: NonNullable<Cfg['postProcess']> = (
+      cmds: Barrel.DrawCommand[],
+      _view: Barrel.View,
+      _dims: Barrel.Dims,
+    ) => cmds;
+    expect(typeof hook).toBe('function');
+  });
+});
+
 describe('registry-unification exports (ActiveToolContext)', () => {
   it('exposes the ActiveToolContext value exports on the main barrel', () => {
     expect(Barrel.ActiveToolContextProvider).toBeDefined();

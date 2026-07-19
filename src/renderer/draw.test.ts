@@ -474,6 +474,40 @@ describe('drawGroup clip integration', () => {
     expect(idxPop).toBeGreaterThan(idxChildTest);
   });
 
+  it('drawGroup with cmd.clip stencils an image child (EQUAL against clip bit)', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const cmd: GroupDrawCommand = {
+      kind: 'group',
+      clip: { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 },
+      children: [{ kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }],
+    };
+    drawGroup(ctx, cmd);
+
+    // The image draw's applyClipTest at clipDepth=1: EQUAL against ancestor
+    // mask 0x02 (bit 1), KEEP on all ops. Find that stencilFunc, then confirm
+    // STENCIL_TEST is enabled at that point and a drawElements follows it
+    // before the popClip clear pass (stencilOp ..., ZERO).
+    const clipTestIdx = calls.findIndex(
+      (c) => c.name === 'stencilFunc' && c.args[0] === gl.EQUAL && c.args[1] === 0x02 && c.args[2] === 0x02,
+    );
+    expect(clipTestIdx).toBeGreaterThanOrEqual(0);
+    let enabled = false;
+    for (let i = clipTestIdx; i >= 0; i--) {
+      if (calls[i].name === 'disable' && calls[i].args[0] === gl.STENCIL_TEST) break;
+      if (calls[i].name === 'enable' && calls[i].args[0] === gl.STENCIL_TEST) { enabled = true; break; }
+    }
+    expect(enabled).toBe(true);
+    const popClipIdx = calls.findIndex(
+      (c) => c.name === 'stencilOp' && c.args[2] === gl.ZERO,
+    );
+    const drawAfterClipTest = calls.findIndex(
+      (c, i) => i > clipTestIdx && c.name === 'drawElements',
+    );
+    expect(drawAfterClipTest).toBeGreaterThan(clipTestIdx);
+    expect(popClipIdx).toBeGreaterThan(drawAfterClipTest);
+  });
+
   it('drawGroup without cmd.clip does not touch clip-level stencil bits', () => {
     const { ctx, calls } = createRecorderCtx();
     const cmd: GroupDrawCommand = {

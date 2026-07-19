@@ -1,5 +1,20 @@
 # Handoff: `postProcess` hook on the scene slot
 
+## Status (2026-07-19)
+
+Landed on branch `scene-postprocess`. Notes for the reader:
+
+- The functions named `makeSceneLayer`/`makeSceneLayers` below are actually
+  `buildSceneLayer`/`buildSceneLayers` (`src/canvas/Canvas.tsx`).
+- `Dims` was already public via `export * from './core/layers/render'` in the
+  barrel — no new export needed. A type-level reachability test was added to
+  `src/index.barrel.test.ts`.
+- Test #5 (clip stencils an `image` command) had no existing coverage; added
+  to `src/renderer/draw.test.ts` (`drawGroup clip integration`).
+- The target lbx-editor snippet typechecks against the built dist types
+  (verified via a scratch consumer). **Follow-up (separate task): wire the
+  double-draw into lbx-editor's `App.tsx`.**
+
 ## Goal
 
 Add a `postProcess` hook to `SceneSlotConfig` so a consumer can wrap the scene

@@ -41,7 +41,7 @@ import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
-import { drawLayers, type RenderLayer } from 'core/layers/render';
+import { drawLayers, type Dims, type RenderLayer } from 'core/layers/render';
 import { WeaselRenderer, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   type SelectionApi,
@@ -125,6 +125,22 @@ export interface SceneSlotConfig<TNode extends { id: string }, TPose> {
    * Defaults to `() => 1` (no effect).
    */
   alphaFor?: (id: string) => number;
+  /**
+   * Optional post-processor for the scene slot's emitted commands. Called
+   * with the final world-space `DrawCommand[]` each time a scene canvas
+   * layer draws (after per-node rotation wrapping and `alphaFor`); the
+   * return value replaces the array handed to the renderer. When the scene
+   * slot is split into per-scene-layer canvas layers (`scene:<layerId>`),
+   * it runs once per layer. Identity by default.
+   *
+   * Commands are world-space — `drawLayers` applies the view transform
+   * afterward, so e.g. a `clip` path in a wrapping group is authored in
+   * world coordinates. Note clip nesting is capped at 7 levels; a wrapping
+   * group with `clip` consumes one.
+   *
+   * The move-overlay ghost (drag preview) is not post-processed.
+   */
+  postProcess?: (cmds: DrawCommand[], view: View, dims: Dims) => DrawCommand[];
 }
 
 /** Selection-overlay slot config — passed through to `createSelectionOverlayLayer`,
@@ -539,10 +555,11 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
     cfg.toPose ??
     ((obj: TNode) => (adapter ? adapter.getPose(obj.id) : (obj as unknown as TPose)));
   const drawOne = cfg.drawOne;
+  const postProcess = cfg.postProcess;
   return {
     id: slot?.id ?? 'scene',
     label: slot ? `Scene: ${slot.forLayer}` : 'Scene',
-    draw: (_data, view) => {
+    draw: (_data, view, dims) => {
       const hidden = hideIds();
       const a = adapter;
       if (
@@ -582,12 +599,13 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
             }
           : a;
         // World-space commands; drawLayers wraps in viewToMat3 automatically.
-        return buildSceneTree(
+        const tree = buildSceneTree(
           hierarchicalAdapter as Parameters<typeof buildSceneTree>[0],
           filteredDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
           view,
           slot?.forLayer,
         );
+        return postProcess ? postProcess(tree, view, dims) : tree;
       }
       // Flat fallback — keep existing body verbatim. (Per-layer slotting only
       // applies on the hierarchical path; a flat adapter has no scene layers,
@@ -616,7 +634,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         }
       }
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
-      return children;
+      return postProcess ? postProcess(children, view, dims) : children;
     },
   };
 }
