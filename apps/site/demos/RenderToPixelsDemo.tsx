@@ -1,0 +1,60 @@
+import { useEffect, useRef, useState } from 'react';
+import { SceneCanvas, useScene, renderSceneToPixels } from '@weasel-js/core';
+
+const W = 480, H = 240;
+
+// `RECT_FALLBACK_PAINTER` (src/canvas/NodeShape.ts) reads `data.color` and
+// emits a solid fill — no stroke — so that's the shape that guarantees a
+// probe-able interior fill color rather than an outline.
+interface NodeData { color?: string }
+type LayerId = 'default';
+interface Pose { x: number; y: number; width: number; height: number }
+
+export function RenderToPixelsDemo() {
+  const scene = useScene<NodeData, LayerId, Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: [
+      { id: 'a' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 40, y: 40, width: 120, height: 160 }, data: { color: '#7fb069' } },
+      { id: 'b' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 180, y: 70, width: 120, height: 100 }, data: { color: '#4a7fb0' } },
+      { id: 'c' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 330, y: 50, width: 110, height: 140 }, data: { color: '#d4a574' } },
+    ],
+  });
+  const outRef = useRef<HTMLCanvasElement>(null);
+  const [readout, setReadout] = useState('rendering…');
+
+  useEffect(() => {
+    // Anisotropic on purpose: 2 px/unit horizontally, 1 px/unit vertically —
+    // the label-print shape (full dot pitch across, squeezed vertically).
+    const opts = {
+      scene,
+      sourceRect: { x: 0, y: 0, width: W, height: H },
+      scale: { x: 2, y: 1 },
+      background: '#ffffff',
+    } as const;
+    const first = renderSceneToPixels(opts);
+    const second = renderSceneToPixels(opts);
+    const identical =
+      first.data.length === second.data.length &&
+      first.data.every((v, i) => v === second.data[i]);
+
+    const out = outRef.current;
+    if (out) {
+      out.width = first.width;
+      out.height = first.height;
+      out.getContext('2d')?.putImageData(
+        new ImageData(Uint8ClampedArray.from(first.data), first.width, first.height), 0, 0);
+    }
+    setReadout(`headless ${first.width}×${first.height} px · identical: ${identical ? 'yes' : 'no'}`);
+  }, [scene]);
+
+  return (
+    <div>
+      <SceneCanvas width={W} height={H} className="ckd-canvas" scene={scene} toolBundle="minimal" />
+      <p data-testid="rtp-readout">{readout}</p>
+      <canvas ref={outRef} className="ckd-canvas" data-testid="rtp-output" />
+    </div>
+  );
+}

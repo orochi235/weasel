@@ -36,6 +36,7 @@ import { LassoDemo } from './demos/LassoDemo';
 import { HudDemo } from './demos/HudDemo';
 import { LayerListDemo } from './demos/LayerListDemo';
 import { GesturesDemo } from './demos/GesturesDemo';
+import { RenderToPixelsDemo } from './demos/RenderToPixelsDemo';
 
 import TransformDemoFull from './demos/TransformDemo.tsx?raw';
 import MoveSnapDemoFull from './demos/MoveSnapDemo.tsx?raw';
@@ -74,6 +75,7 @@ import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
 import LayerListDemoFull from './demos/LayerListDemo.tsx?raw';
 import GesturesDemoFull from './demos/GesturesDemo.tsx?raw';
+import RenderToPixelsDemoFull from './demos/RenderToPixelsDemo.tsx?raw';
 import { PointSnapDemo } from './demos/PointSnapDemo';
 import PointSnapDemoFull from './demos/PointSnapDemo.tsx?raw';
 import { ShapeToolsDemo } from './demos/ShapeToolsDemo';
@@ -494,6 +496,16 @@ export const DEMOS: DemoEntry[] = [
     Component: CustomShaderDemo,
     full: CustomShaderDemoFull,
     path: 'apps/site/demos/CustomShaderDemo.tsx',
+  },
+  {
+    id: 'render-to-pixels',
+    title: 'Headless render-to-pixels',
+    category: 'Rendering & paint',
+    description: 'renderSceneToPixels() rasterizes a scene-space rect to raw RGBA at an explicit per-axis scale — no on-screen canvas, no ambient devicePixelRatio. The snapshot below is rendered at an anisotropic 2×1 px/unit onto a white background and blitted into a 2D canvas; the readout re-renders and byte-compares to demonstrate same-context determinism. This is the print/thumbnail/export primitive: physical units (dpi, mm) stay the caller\'s business.',
+    hint: 'The top canvas is the live scene; the bottom image is the headless raster at 2×1 px/unit. The readout confirms two headless renders produced identical bytes.',
+    Component: RenderToPixelsDemo,
+    full: RenderToPixelsDemoFull,
+    path: 'apps/site/demos/RenderToPixelsDemo.tsx',
   },
 
   // ─── Diagnostics ──────────────────────────────────────────────────────────
