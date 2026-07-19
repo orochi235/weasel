@@ -49,4 +49,18 @@ export class GLTextureCache {
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, tex);
   }
+
+  /**
+   * Delete every uploaded GL texture and clear the map. Called by
+   * `WeaselRenderer.dispose()`. The cache is unusable but refillable
+   * afterward — a subsequent `upload()` for a previously-seen id re-creates
+   * the texture rather than restoring the deleted one.
+   */
+  free(): void {
+    const gl = this.gl;
+    for (const tex of this.map.values()) {
+      gl.deleteTexture(tex);
+    }
+    this.map.clear();
+  }
 }

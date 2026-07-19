@@ -107,4 +107,20 @@ export class GradientRampCache {
     this.totalQueries = 0;
     this.cacheHits = 0;
   }
+
+  /**
+   * Delete every uploaded GL ramp texture and clear the map. Called by
+   * `WeaselRenderer.dispose()`. Only the GL textures are owned resources —
+   * `buildGradientRamp`'s CPU-side `Uint8ClampedArray` is transient per
+   * `upload()` call and already gone by the time a ramp is cached. The
+   * cache is unusable but refillable afterward (stats are left as-is; call
+   * `resetStats()` separately if desired).
+   */
+  free(): void {
+    const gl = this.gl;
+    for (const tex of this.map.values()) {
+      gl.deleteTexture(tex);
+    }
+    this.map.clear();
+  }
 }

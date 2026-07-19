@@ -48,4 +48,16 @@ describe('GLTextureCache', () => {
     cache.upload('inter', fakeImage);
     expect(cache.has('inter')).toBe(true);
   });
+
+  it('free() deletes every uploaded texture and clears the cache', () => {
+    const { gl, calls, reset } = makeGLRecorder();
+    const cache = new GLTextureCache(gl);
+    cache.upload('a', fakeImage);
+    cache.upload('b', fakeImage);
+    reset();
+    cache.free();
+    expect(calls.filter((c) => c.name === 'deleteTexture').length).toBe(2);
+    expect(cache.has('a')).toBe(false);
+    expect(cache.has('b')).toBe(false);
+  });
 });

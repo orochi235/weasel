@@ -108,6 +108,9 @@ export class WeaselRenderer {
   private contextLost = false;
   private boundOnLost = (e: Event) => this.onContextLost(e);
   private boundOnRestored = () => this.onContextRestored();
+  /** True after `dispose()`. A disposed renderer ignores further `render()`
+   *  calls and `registerProgram()` calls. */
+  private disposed = false;
 
   constructor(opts: WeaselRendererOptions) {
     if (!opts.gl && !opts.canvas) {
@@ -225,6 +228,8 @@ export class WeaselRenderer {
    * @experimental
    */
   registerProgram(handle: ShaderProgramHandle): void {
+    // A disposed renderer must not compile programs into the cleared registry.
+    if (this.disposed) return;
     const src = getProgramSource(handle.id);
     if (!src) {
       throw new Error(
@@ -301,22 +306,30 @@ export class WeaselRenderer {
     }
   }
 
-  /** True after `dispose()`. A disposed renderer ignores further `render()`
+  /** Free the GL resources this renderer itself owns and detach context-loss
+   *  listeners when a canvas was supplied. Idempotent.
+   *
+   *  Scope: built-in shader programs, any consumer-registered programs, the
+   *  shared quad/rect geometry, any in-flight transient meshes, and the
+   *  enumerable Map-keyed caches (`GLTextureCache` atlas/image textures,
+   *  `GradientRampCache` ramp textures) ARE freed.
+   *
+   *  NOT freed: `GLImageCache` (bitmap/pattern textures) and `GLMeshCache`'s
+   *  persistent per-Path mesh cache are keyed by `WeakMap`, not enumerable,
+   *  and are only reclaimed when the GL context itself goes away (cf.
+   *  `GLImageCache`'s own "deferred to v2" note). On a caller-owned
+   *  long-lived context — the headless render-to-pixels path hands the same
+   *  `gl` to many short-lived renderers — the image/pattern textures and
+   *  persistent Path meshes each renderer uploads DO accumulate across
+   *  renderer instances until the caller recycles the context.
+   *
+   *  Also: a Mesh that gets GC'd after `dispose()` still lands in
+   *  `GLMeshCache`'s `pendingDeletes` queue via its `FinalizationRegistry`,
+   *  but nothing drains that queue post-dispose (only `render()` does) —
+   *  those GL resources leak until the context goes away too.
+   *
+   *  A disposed renderer ignores further `render()` and `registerProgram()`
    *  calls. */
-  private disposed = false;
-
-  /** Free the GL resources this renderer itself owns: compiled programs
-   *  (built-ins + registered), the shared quad/rect geometry, and any
-   *  transient meshes. Also detaches context-loss listeners when a canvas
-   *  was supplied. Idempotent.
-   *
-   *  Scope: persistent per-content caches (meshes keyed by Path, textures
-   *  keyed by bitmap/atlas id) are NOT enumerated here — they are reclaimed
-   *  with the GL context itself. Callers that hand a long-lived `gl` to
-   *  many short-lived renderers (the headless render-to-pixels path) get
-   *  the important part: programs and buffers do not accumulate.
-   *
-   *  A disposed renderer ignores further `render()` calls. */
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
@@ -334,6 +347,8 @@ export class WeaselRenderer {
       gl.deleteProgram(prog.handle);
     }
     this.programRegistry.clear();
+    this.textureCache.free();
+    this.gradRampCache.free();
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
     if (this.rectVbo) gl.deleteBuffer(this.rectVbo);

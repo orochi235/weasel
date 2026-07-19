@@ -121,4 +121,19 @@ describe('GradientRampCache', () => {
     expect(rate).toBeGreaterThanOrEqual(0);
     expect(rate).toBeLessThanOrEqual(1);
   });
+
+  it('free() deletes every uploaded ramp texture and clears the cache', () => {
+    const { gl, calls, reset } = makeGLRecorder();
+    const cache = new GradientRampCache(gl);
+    cache.upload(BLACK_WHITE);
+    cache.upload(RED_BLUE);
+    reset();
+    cache.free();
+    expect(calls.filter((c) => c.name === 'deleteTexture').length).toBe(2);
+    // Re-uploading after free() creates fresh textures (not served from a
+    // stale cache entry).
+    reset();
+    cache.upload(BLACK_WHITE);
+    expect(calls.some((c) => c.name === 'createTexture')).toBe(true);
+  });
 });

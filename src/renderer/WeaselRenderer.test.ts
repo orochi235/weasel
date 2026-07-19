@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
+import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
+
+const MINIMAL_FRAG = `#version 300 es
+precision highp float;
+out vec4 outColor;
+void main() { outColor = vec4(0.0, 0.5, 1.0, 1.0); }
+`;
 
 describe('WeaselRenderer (constructor)', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -146,6 +153,8 @@ describe('WeaselRenderer context loss', () => {
 });
 
 describe('dispose', () => {
+  beforeEach(() => _resetProgramRegistryForTests());
+
   it('deletes owned GL programs and shared geometry, removes canvas listeners', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
@@ -154,6 +163,32 @@ describe('dispose', () => {
     // 5 built-in programs: pathFill, pathFillVColor, textSdf, imageFill, gradFill
     expect(names.filter((n) => n === 'deleteProgram').length).toBeGreaterThanOrEqual(5);
     expect(names).toContain('deleteBuffer');
+    // rectVao (shared rect-fill geometry) must also be freed.
+    expect(names).toContain('deleteVertexArray');
+  });
+
+  it('deletes a consumer-registered program alongside the built-ins', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
+    const handle = registerProgram('dispose-test-prog', '', MINIMAL_FRAG);
+    r.registerProgram(handle);
+    rec.reset();
+    r.dispose();
+    const names = rec.calls.map((c) => c.name);
+    // 5 built-ins + 1 registered.
+    expect(names.filter((n) => n === 'deleteProgram').length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('ignores registerProgram() after dispose (does not compile into the cleared registry)', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
+    r.dispose();
+    const handle = registerProgram('post-dispose-prog', '', MINIMAL_FRAG);
+    rec.reset();
+    r.registerProgram(handle);
+    const names = rec.calls.map((c) => c.name);
+    expect(names).not.toContain('compileShader');
+    expect(names).not.toContain('linkProgram');
   });
 
   it('is idempotent', () => {
@@ -165,20 +200,26 @@ describe('dispose', () => {
     expect(rec.calls.filter((c) => c.name === 'deleteProgram').length).toBe(countAfterFirst);
   });
 
-  it('removes context-loss listeners from a supplied canvas', () => {
+  it('removes context-loss listeners from a supplied canvas, using the same function references passed to addEventListener', () => {
     const rec = makeGLRecorder();
+    const addEventListener = vi.fn();
     const removeEventListener = vi.fn();
     const canvas = {
       width: 0,
       height: 0,
       getContext: () => rec.gl,
-      addEventListener: () => {},
+      addEventListener,
       removeEventListener,
     } as unknown as HTMLCanvasElement;
     const r = new WeaselRenderer({ canvas, width: 10, height: 10, dpr: 1 });
     r.dispose();
-    const types = removeEventListener.mock.calls.map((c) => c[0]);
-    expect(types).toContain('webglcontextlost');
-    expect(types).toContain('webglcontextrestored');
+
+    const addedByType = new Map(addEventListener.mock.calls.map((c) => [c[0], c[1]]));
+    const removedByType = new Map(removeEventListener.mock.calls.map((c) => [c[0], c[1]]));
+
+    expect(addedByType.has('webglcontextlost')).toBe(true);
+    expect(addedByType.has('webglcontextrestored')).toBe(true);
+    expect(removedByType.get('webglcontextlost')).toBe(addedByType.get('webglcontextlost'));
+    expect(removedByType.get('webglcontextrestored')).toBe(addedByType.get('webglcontextrestored'));
   });
 });
