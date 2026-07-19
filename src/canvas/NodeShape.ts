@@ -276,7 +276,7 @@ const IMAGE_PAINTER: NodeShapeEntry = {
     const d = node.data as { image: { src: string; opacity?: number } };
     const p = pose as RectPose;
     const bmp = ctx?.resolveImage
-      ? ctx.resolveImage(node as Node<unknown, string, unknown>)
+      ? ctx.resolveImage(node)
       : getImageBitmap(d.image.src);
     if (bmp) {
       return [{

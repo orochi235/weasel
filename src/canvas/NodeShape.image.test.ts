@@ -65,10 +65,17 @@ describe('kit:image painter', () => {
       expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp, x: 10, y: 20, w: 30, h: 40 });
     });
 
-    it('deterministic grey placeholder when the resolver returns undefined', () => {
+    it('deterministic grey placeholder when the resolver returns undefined', async () => {
       // A supplied resolver is authoritative: no global-cache read, no ambient
       // load-status read — the fallback is always the single grey outline
       // (never the error variant, which depends on ambient state).
+      // Prime src 'a' into ambient ERROR state first, so this test actually
+      // proves the resolver bypasses the ambient read rather than merely
+      // passing because the cache happens to be in a non-error state.
+      __setImageLoaderForTests(() => Promise.reject(new Error('boom')));
+      getImageBitmap('a');
+      await flush();
+
       const painter = findNodeShape(imageNode('a'))!;
       const cmds = painter.paint(imageNode('a'), POSE, { resolveImage: () => undefined });
       expect(cmds).toHaveLength(1);

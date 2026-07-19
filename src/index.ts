@@ -251,6 +251,7 @@ export {
 export type {
   NodeShapeEntry,
   RegisterNodeShapeOptions,
+  NodePaintCtx,
 } from './canvas/NodeShape';
 export {
   getImageBitmap,
