@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 
@@ -142,5 +142,43 @@ describe('WeaselRenderer context loss', () => {
     // New compileShader should appear in the recorded calls after restore.
     const names = recorder.calls.map((c) => c.name);
     expect(names).toContain('compileShader');
+  });
+});
+
+describe('dispose', () => {
+  it('deletes owned GL programs and shared geometry, removes canvas listeners', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
+    r.dispose();
+    const names = rec.calls.map((c) => c.name);
+    // 5 built-in programs: pathFill, pathFillVColor, textSdf, imageFill, gradFill
+    expect(names.filter((n) => n === 'deleteProgram').length).toBeGreaterThanOrEqual(5);
+    expect(names).toContain('deleteBuffer');
+  });
+
+  it('is idempotent', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
+    r.dispose();
+    const countAfterFirst = rec.calls.filter((c) => c.name === 'deleteProgram').length;
+    r.dispose();
+    expect(rec.calls.filter((c) => c.name === 'deleteProgram').length).toBe(countAfterFirst);
+  });
+
+  it('removes context-loss listeners from a supplied canvas', () => {
+    const rec = makeGLRecorder();
+    const removeEventListener = vi.fn();
+    const canvas = {
+      width: 0,
+      height: 0,
+      getContext: () => rec.gl,
+      addEventListener: () => {},
+      removeEventListener,
+    } as unknown as HTMLCanvasElement;
+    const r = new WeaselRenderer({ canvas, width: 10, height: 10, dpr: 1 });
+    r.dispose();
+    const types = removeEventListener.mock.calls.map((c) => c[0]);
+    expect(types).toContain('webglcontextlost');
+    expect(types).toContain('webglcontextrestored');
   });
 });

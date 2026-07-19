@@ -301,8 +301,48 @@ export class WeaselRenderer {
     }
   }
 
+  /** True after `dispose()`. A disposed renderer ignores further `render()`
+   *  calls. */
+  private disposed = false;
+
+  /** Free the GL resources this renderer itself owns: compiled programs
+   *  (built-ins + registered), the shared quad/rect geometry, and any
+   *  transient meshes. Also detaches context-loss listeners when a canvas
+   *  was supplied. Idempotent.
+   *
+   *  Scope: persistent per-content caches (meshes keyed by Path, textures
+   *  keyed by bitmap/atlas id) are NOT enumerated here — they are reclaimed
+   *  with the GL context itself. Callers that hand a long-lived `gl` to
+   *  many short-lived renderers (the headless render-to-pixels path) get
+   *  the important part: programs and buffers do not accumulate.
+   *
+   *  A disposed renderer ignores further `render()` calls. */
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    const gl = this.gl;
+    if (this.canvas) {
+      this.canvas.removeEventListener('webglcontextlost', this.boundOnLost);
+      this.canvas.removeEventListener('webglcontextrestored', this.boundOnRestored);
+    }
+    this.meshCache.freeTransient();
+    this.meshCache.drainPendingDeletes();
+    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.imageFill, this.gradFill]) {
+      gl.deleteProgram(prog.handle);
+    }
+    for (const prog of this.programRegistry.values()) {
+      gl.deleteProgram(prog.handle);
+    }
+    this.programRegistry.clear();
+    if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
+    if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
+    if (this.rectVbo) gl.deleteBuffer(this.rectVbo);
+    if (this.rectIbo) gl.deleteBuffer(this.rectIbo);
+    if (this.rectVao) gl.deleteVertexArray(this.rectVao);
+  }
+
   render(commands: DrawCommand[]): void {
-    if (this.contextLost) return;
+    if (this.contextLost || this.disposed) return;
     const gl = this.gl;
     // Free GL resources whose Mesh was GC'd since the last frame. Done here
     // (top of render, before any draws) because GL state is known clean —
