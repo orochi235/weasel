@@ -97,8 +97,8 @@ export function ActionBar(props: ActionBarProps) {
         const disabled = !enabled;
         const title = resolveTitle(label, action.shortcut);
         return (
-          <TooltipTrigger key={action.id}>
-            <Focusable>
+          <TooltipTrigger key={action.id} isDisabled={disabled}>
+            <Focusable isDisabled={disabled}>
               <button
                 type="button"
                 data-testid={`action-bar-item-${action.id}`}
