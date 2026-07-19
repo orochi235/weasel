@@ -271,7 +271,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) Per-feature *style* configuration.** Per-feature *color* config already shipped (`DebugConfig.theme` → flat `DebugTheme` color map, `src/debug/types.ts`). Remaining: per-feature line-width / dash style.
 - **(P3) Debug overlay for hand/zoom tools.**
-- **(P3) Printable snapshot mode** — rasterize debug + scene to a single image for bug reports.
+- **(P3) Printable snapshot mode** — rasterize debug + scene to a single image for bug reports. Should compose with `renderSceneToPixels` (`src/canvas/renderSceneToPixels.ts`) as the underlying primitive.
 - **(P3) FPS panel extensions** — ms-per-frame readout alongside FPS, draw-call count per frame, per-layer draw-cost breakdown (needs renderer-side instrumentation seams).
 
 ### WeaselDraw app follow-ups (defer)
@@ -357,7 +357,10 @@ From the WebGL transition spec — all deferred:
 - **(P3) WebGPU backend.** Separate future spec.
 - **(P3) Worker-thread render offload.** Rendering the GL pipeline in a worker — major perf win, significant API complexity. Defer until measured pain on the single-thread pipeline. (Note: `OffscreenCanvas` is already used on the main thread for pattern-tile rasterization in `src/features/patterns/` — that's not worker offload; the worker move is the open item.)
 - **(P3) Exotic composite operations** (xor, custom Porter-Duff) via framebuffer pingpong — deferred from v1 GL.
-- **(P3) Headless server-side rendering** (Node + headless-gl) — possible but not a v1 commitment.
+- **(P3) Headless server-side rendering in Node.** The browser/worker headless path landed 2026-07-19 as `renderSceneToPixels` (`src/canvas/renderSceneToPixels.ts`, public) — it accepts a caller-supplied `gl`, so it already works with an `OffscreenCanvas` in a worker. Remaining P3 scope is specifically Node: verify against a caller-supplied `gl` from `headless-gl` (untested there), or wire up a worker + `OffscreenCanvas` path for a Node-hosted consumer.
+- **(P3) Raster session API** — amortize per-call shader compilation when a consumer renders many thumbnails/pages against one context. `renderSceneToPixels` currently constructs + disposes a `WeaselRenderer` per call; on a caller-owned context the WeakMap-keyed image/mesh caches also accumulate across calls until the context is recycled — a session would own both.
+- **(P3) Screen adoption of mipmap image minification** — `imageMinification: 'mipmap'` exists on `WeaselRenderer` but the screen path stays `'linear'`; evaluate upload-time `generateMipmap` cost before flipping the default (print already gets it).
+- **(P3) Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
 
 (WebGL1 fallback explicitly rejected — WebGL2 only.)
 
