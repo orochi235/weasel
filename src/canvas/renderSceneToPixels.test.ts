@@ -80,6 +80,10 @@ describe('planPixelRender', () => {
     expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: RECT, scale: { x: -1, y: 1 } })).toThrow();
     expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: RECT, scale: { x: NaN, y: 1 } })).toThrow();
   });
+
+  it('rejects a non-finite sourceRect origin (negative/zero origins remain valid)', () => {
+    expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: { x: NaN, y: 0, width: 10, height: 10 }, scale: { x: 1, y: 1 } })).toThrow();
+  });
 });
 
 describe('renderSceneToPixels — GL execution (glRecorder)', () => {
@@ -95,6 +99,8 @@ describe('renderSceneToPixels — GL execution (glRecorder)', () => {
     expect(read?.args.slice(0, 4)).toEqual([0, 0, 120, 40]);
   });
 
+  // Structural smoke only: compares recorded GL call NAMES, not byte output,
+  // under jsdom. Real byte determinism is covered by tests/visual/render-to-pixels.spec.ts.
   it('same-context determinism: identical call sequences across runs', () => {
     const run = () => {
       const rec = makeGLRecorder();

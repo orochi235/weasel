@@ -82,5 +82,9 @@ describe('minification: mipmap', () => {
     const cache = new GLImageCache(rec.gl);
     cache.upload({}, {} as ImageBitmap);
     expect(rec.calls.map((c) => c.name)).not.toContain('generateMipmap');
+    const minFilter = rec.calls.find(
+      (c) => c.name === 'texParameteri' && c.args[1] === rec.gl.TEXTURE_MIN_FILTER,
+    );
+    expect(minFilter?.args[2]).toBe(rec.gl.LINEAR);
   });
 });

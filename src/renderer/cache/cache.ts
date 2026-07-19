@@ -1,6 +1,6 @@
 import type { Path } from '@weasel-js/core';
 import type { Mesh } from './mesh';
-import { tessellate, type TessellateOptions } from 'features/paths/tessellate/tessellate';
+import { tessellate } from 'features/paths/tessellate/tessellate';
 
 let cache = new WeakMap<Path, Mesh>();
 
@@ -12,11 +12,15 @@ let cache = new WeakMap<Path, Mesh>();
  * Note: solid-fill rect paths bypass this cache entirely via `drawRectFast`
  * in `draw.ts`. The cache only serves polygon paths (where tessellation is
  * non-trivial and Path-object stability is the right contract).
+ *
+ * Also bypassed whenever `DrawContext.flattenTolerance` is set: `fillMeshHandle`
+ * (see `../draw`) routes custom-tolerance fills through a fresh transient
+ * tessellation instead of this cache.
  */
-export function getMesh(path: Path, opts: TessellateOptions = {}): Mesh {
+export function getMesh(path: Path): Mesh {
   const cached = cache.get(path);
   if (cached !== undefined) return cached;
-  const mesh = tessellate(path, opts);
+  const mesh = tessellate(path);
   cache.set(path, mesh);
   return mesh;
 }

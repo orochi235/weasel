@@ -20,14 +20,4 @@ describe('mesh cache', () => {
     const b = getMesh({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
     expect(a).not.toBe(b);
   });
-
-  it('honors flattenTolerance via a per-tolerance cache slot (loose vs tight gives different meshes)', () => {
-    _resetCacheForTests();
-    const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
-    const a = getMesh(path, { flattenTolerance: 0.5 });
-    const b = getMesh(path, { flattenTolerance: 0.5 });
-    expect(a).toBe(b);
-    // RectPath ignores tolerance, so a different tolerance still hits the same Path-object cache entry.
-    // For PolygonPath this would matter; covered via PolygonPath integration tests later.
-  });
 });
