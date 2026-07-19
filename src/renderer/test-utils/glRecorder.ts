@@ -80,6 +80,8 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   // Wrap modes (step 4)
   REPEAT: 0x2901,
   MIRRORED_REPEAT: 0x8370,
+  // Mipmap minification filter
+  LINEAR_MIPMAP_LINEAR: 0x2703,
 };
 
 function syntheticHandle(name: string, seq: number): { __id: string } {

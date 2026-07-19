@@ -28,7 +28,7 @@ import {
 } from './shaders/gradFill';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
-import { GLImageCache } from './cache/GLImageCache';
+import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
 import { GradientRampCache } from './cache/GradientRampCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
@@ -65,6 +65,11 @@ export interface WeaselRendererOptions {
   width: number;
   height: number;
   dpr: number;
+  /** MIN_FILTER strategy for image/pattern textures (`GLImageCache`).
+   *  Default `'linear'` — the existing screen behavior. The headless
+   *  `renderSceneToPixels` path passes `'mipmap'` for print-quality
+   *  minification. Explicitly passing `'linear'` is always valid. */
+  imageMinification?: ImageMinification;
 }
 
 export class WeaselRenderer {
@@ -90,6 +95,7 @@ export class WeaselRenderer {
   private heightCss: number;
   private dpr: number;
   private canvas: HTMLCanvasElement | null = null;
+  private readonly imageMinification: ImageMinification;
   private contextLost = false;
   private boundOnLost = (e: Event) => this.onContextLost(e);
   private boundOnRestored = () => this.onContextRestored();
@@ -105,6 +111,7 @@ export class WeaselRenderer {
     this.widthCss = opts.width;
     this.heightCss = opts.height;
     this.dpr = opts.dpr;
+    this.imageMinification = opts.imageMinification ?? 'linear';
 
     this.canvas = opts.canvas ?? null;
     if (this.canvas) {
@@ -149,7 +156,7 @@ export class WeaselRenderer {
     if (aPos === undefined) throw new Error('WeaselRenderer: a_position not found in path-fill shader');
     this.meshCache = new GLMeshCache(this.gl, aPos);
     this.textureCache = new GLTextureCache(this.gl);
-    this.imageCache = new GLImageCache(this.gl);
+    this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRampCache = new GradientRampCache(this.gl);
     this.uploadQuadGeometry();
     this.uploadRectGeometry(aPos);
@@ -263,7 +270,7 @@ export class WeaselRenderer {
     if (aPos === undefined) throw new Error('a_position missing after restore');
     this.meshCache = new GLMeshCache(this.gl, aPos);
     this.textureCache = new GLTextureCache(this.gl);
-    this.imageCache = new GLImageCache(this.gl);
+    this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRampCache = new GradientRampCache(this.gl);
     _markAllFontsNotUploaded();
 

@@ -63,3 +63,24 @@ describe('GLImageCache', () => {
     expect(hasRepeat).toBe(true);
   });
 });
+
+describe('minification: mipmap', () => {
+  it('uploads with LINEAR_MIPMAP_LINEAR and generates mipmaps', () => {
+    const rec = makeGLRecorder();
+    const cache = new GLImageCache(rec.gl, 'mipmap');
+    cache.upload({}, {} as ImageBitmap);
+    const names = rec.calls.map((c) => c.name);
+    expect(names).toContain('generateMipmap');
+    const minFilter = rec.calls.find(
+      (c) => c.name === 'texParameteri' && c.args[1] === rec.gl.TEXTURE_MIN_FILTER,
+    );
+    expect(minFilter?.args[2]).toBe(rec.gl.LINEAR_MIPMAP_LINEAR);
+  });
+
+  it("default 'linear' behavior is unchanged (no mipmap calls)", () => {
+    const rec = makeGLRecorder();
+    const cache = new GLImageCache(rec.gl);
+    cache.upload({}, {} as ImageBitmap);
+    expect(rec.calls.map((c) => c.name)).not.toContain('generateMipmap');
+  });
+});

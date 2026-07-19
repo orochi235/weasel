@@ -16,12 +16,24 @@
 
 export type PatternRepetition = 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat';
 
+/** MIN_FILTER strategy for uploaded textures. */
+export type ImageMinification = 'linear' | 'mipmap';
+
 type TexSource = ImageBitmap | ImageData | HTMLCanvasElement | HTMLImageElement;
 
 export class GLImageCache {
   private readonly map = new WeakMap<object, WebGLTexture>();
 
-  constructor(private readonly gl: WebGL2RenderingContext) {}
+  /** `minification` selects the MIN_FILTER strategy for uploaded textures.
+   *  `'linear'` (default) is the screen path's existing behavior. `'mipmap'`
+   *  generates mipmaps and filters LINEAR_MIPMAP_LINEAR — required for
+   *  quality minification when a large source bitmap is drawn small (the
+   *  headless print/export path); bilinear-only minification undersamples
+   *  and produces moiré. */
+  constructor(
+    private readonly gl: WebGL2RenderingContext,
+    private readonly minification: ImageMinification = 'linear',
+  ) {}
 
   upload(
     key: object,
@@ -37,12 +49,17 @@ export class GLImageCache {
 
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(
+      gl.TEXTURE_2D,
+      gl.TEXTURE_MIN_FILTER,
+      this.minification === 'mipmap' ? gl.LINEAR_MIPMAP_LINEAR : gl.LINEAR,
+    );
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
     const [wrapS, wrapT] = wrapModes(gl, repetition);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapS);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapT);
+    if (this.minification === 'mipmap') gl.generateMipmap(gl.TEXTURE_2D);
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     this.map.set(key, tex);
