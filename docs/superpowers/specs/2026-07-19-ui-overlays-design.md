@@ -102,6 +102,31 @@ Two usage modes:
 - The programmatic path (`triggerRef`) is first-class: in-canvas guidance
   usually isn't opened by clicking the target element.
 
+### Scene-node anchoring (static, v1)
+
+Callouts can point at an object inside a weasel scene — a canvas-drawn node
+with no DOM element of its own.
+
+- `Callout` gains a third anchor mode: `anchorRect?: { x, y, width, height }`
+  in **client (viewport) coordinates**. Internally the component renders an
+  invisible `position: fixed` element at that rect and uses it as the
+  popover trigger ref, so RAC placement/flipping/arrow all work unchanged.
+  `anchorRect` is plain data — `@weasel-js/ui` stays decoupled from core.
+- `@weasel-js/core` exports one composition helper,
+  `sceneNodeClientRect(opts): { x, y, width, height } | null`, where `opts`
+  supplies the node `id`, the pose-resolution pieces already used by
+  selection chrome (`composeSelectionPose` inputs — container ids collapse
+  to the union AABB of their leaves), the current `View`, and the canvas
+  element (for `getBoundingClientRect` offset). It composes existing
+  primitives (`composeSelectionPose` → world AABB → `worldToScreen` →
+  client offset); no new geometry code.
+- **Static by design (accepted):** the rect is computed when the callout
+  opens and does not track pan/zoom or scene mutations. Live tracking
+  (re-anchoring on view change) is explicitly deferred to a future round.
+- Tooltip does not get scene anchoring (tooltips are hover-driven on DOM
+  elements; canvas-hover tooltips would route through hit-testing — out of
+  scope). Toast is unanchored by definition.
+
 ## 3. Toast
 
 **Location:** `packages/ui/src/components/Toast/`
@@ -169,7 +194,11 @@ prematurely).
 - **Callout:** trigger-composed open/close; programmatic `triggerRef` open;
   `modal` blocks outside interaction and traps focus, non-modal doesn't;
   Esc/outside-click dismiss in non-modal; `role="alertdialog"` when modal;
-  tone class mapping.
+  tone class mapping; `anchorRect` mode positions the popover at the given
+  client rect.
+- **sceneNodeClientRect:** leaf node → composed world AABB → client rect
+  (view + canvas offset applied); container id → union AABB of leaves;
+  unknown id → `null`.
 - **Toast:** queue add/dismiss; auto-dismiss at `ttlMs`, sticky with
   `null`; hover pause; multiple toasts stack; region landmark present;
   ported draw coverage.
