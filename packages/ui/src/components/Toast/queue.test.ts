@@ -15,15 +15,15 @@ describe('ToastQueue', () => {
   });
 
   it('defaults to an 8s timeout and honors ttlMs null as sticky', () => {
-    // Note: RAC only arms toast timers once a <ToastRegion> renders, so the
-    // timer-presence assertion (timed.timer defined / sticky.timer undefined)
-    // can't be exercised at this queue-only layer. That behavior is covered
-    // by Task 6's region tests (fake timers). Here we just confirm both
-    // toasts land in the queue regardless of ttlMs.
+    // RAC's underlying ToastState queue unshifts new toasts, so
+    // visibleToasts is newest-first: 'sticky' (added last) is index 0,
+    // 'timed' (added first) is index 1.
     const q = createToastQueue();
     q.add('info', 'timed');
     q.add('info', 'sticky', { ttlMs: null });
-    expect(racQueueOf(q).visibleToasts).toHaveLength(2);
+    const [sticky, timed] = racQueueOf(q).visibleToasts;
+    expect(timed.timer).toBeDefined();
+    expect(sticky.timer).toBeUndefined();
   });
 
   it('replaces an earlier toast with the same id', () => {
