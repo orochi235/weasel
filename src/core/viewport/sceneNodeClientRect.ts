@@ -8,10 +8,10 @@ export interface SceneNodeClientRectOpts {
   /** Node (or container) id to locate. */
   id: string;
   /**
-   * Resolve an id to its world-space AABB, or null when unknown. Build
-   * container-aware resolvers with `composeSelectionPose` (plus
-   * `boundsOfPath` via its `getBounds` option for Path poses); a plain
-   * stored-pose lookup suffices for leaf rect poses.
+   * Resolve an id to its world-space AABB, or null when unknown.
+   * Typically adapts a pose resolver (e.g. from `composeSelectionPose`):
+   * `(id) => { const p = resolvePose(id); return p ? boundsOfPath(p) : null; }`
+   * — for rect poses the pose is its own AABB and can be returned directly.
    */
   getWorldBounds: (id: string) => Bounds | null;
   /** Current viewport. */
@@ -39,10 +39,10 @@ export function sceneNodeClientRect(opts: SceneNodeClientRectOpts): NodeClientRe
   if (bounds === null) return null;
   const t = viewToTransform(opts.view);
   const [sx, sy] = worldToScreen(bounds.x, bounds.y, t);
-  const host = opts.canvas.getBoundingClientRect();
+  const canvasRect = opts.canvas.getBoundingClientRect();
   return {
-    x: host.left + sx,
-    y: host.top + sy,
+    x: canvasRect.left + sx,
+    y: canvasRect.top + sy,
     width: bounds.width * opts.view.scale.x,
     height: bounds.height * opts.view.scale.y,
   };
