@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import {
   ActionsProvider,
   useAction,
@@ -127,7 +127,7 @@ describe('ActionBar', () => {
     expect(screen.getByTestId('default-icon-b')).toBeTruthy();
   });
 
-  it('labels prop overrides aria-label and title for that id only', () => {
+  it('labels prop overrides aria-label and tooltip for that id only', () => {
     render(
       <Harness
         actions={[
@@ -139,11 +139,13 @@ describe('ActionBar', () => {
     );
     const a = screen.getByTestId('action-bar-item-a');
     expect(a.getAttribute('aria-label')).toBe('Aleph');
-    expect(a.getAttribute('title')).toBe('Aleph');
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => a.focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Aleph');
     expect(screen.getByTestId('action-bar-item-b').getAttribute('aria-label')).toBe('Beta');
   });
 
-  it('shortcut appears in title (in parentheses)', () => {
+  it('shortcut appears in tooltip (in parentheses)', () => {
     render(
       <Harness
         actions={[makeAction({ id: 'a', label: 'Alpha', shortcut: 'A' })]}
@@ -151,7 +153,9 @@ describe('ActionBar', () => {
       />,
     );
     const a = screen.getByTestId('action-bar-item-a');
-    expect(a.getAttribute('title')).toBe('Alpha (A)');
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => a.focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Alpha (A)');
   });
 
   it('orientation="vertical" applies the vertical class', () => {
