@@ -40,6 +40,19 @@ import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { getImageBitmap, imageStatus } from 'features/images/imageCache';
 
+/** Optional per-call paint context, threaded through `defaultDrawOne`'s third
+ *  argument. Lets a rendering entry point override ambient environment reads
+ *  — the headless `renderSceneToPixels` path supplies its own bitmap resolver
+ *  here so consumers reuse their own decode caches. Custom painters may
+ *  ignore it entirely. */
+export interface NodePaintCtx {
+  /** Override bitmap resolution for image nodes. When set it is authoritative:
+   *  the global `imageCache` is not consulted, and an `undefined` result
+   *  paints the deterministic grey placeholder outline (never the ambient
+   *  load-status error variant). */
+  resolveImage?: (node: Node<unknown, string, unknown>) => ImageBitmap | undefined;
+}
+
 export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   /** Stable identifier — used for unregistration and debugging. Pick
    *  something descriptive: `'kit:text'`, `'app:image'`, etc. */
@@ -47,8 +60,10 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   /** Returns true when this painter renders the node. The first matching
    *  painter (`'high'` tier first, then `'normal'`) wins. */
   matches(node: Node<TData, string, TPose>): boolean;
-  /** Emits the draw commands for the node's primary visual. */
-  paint(node: Node<TData, string, TPose>, pose: TPose): DrawCommand[];
+  /** Emits the draw commands for the node's primary visual. `ctx` is an
+   *  optional per-call paint context (see `NodePaintCtx`); painters that
+   *  don't need it can keep a two-argument signature. */
+  paint(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodePaintCtx): DrawCommand[];
   /** Optional: derive the node's silhouette path from its pose.
    *  Used by clipping (when the container has no explicit
    *  `clipFromPose`), by non-rect hit-testing, by lasso/area-select,
@@ -257,10 +272,12 @@ const IMAGE_PAINTER: NodeShapeEntry = {
     const src = (node.data as { image?: { src?: unknown } } | null)?.image?.src;
     return typeof src === 'string' && src.length > 0;
   },
-  paint: (node, pose) => {
+  paint: (node, pose, ctx) => {
     const d = node.data as { image: { src: string; opacity?: number } };
     const p = pose as RectPose;
-    const bmp = getImageBitmap(d.image.src);
+    const bmp = ctx?.resolveImage
+      ? ctx.resolveImage(node as Node<unknown, string, unknown>)
+      : getImageBitmap(d.image.src);
     if (bmp) {
       return [{
         kind: 'image',
@@ -269,8 +286,10 @@ const IMAGE_PAINTER: NodeShapeEntry = {
         ...(d.image.opacity !== undefined ? { opacity: d.image.opacity } : {}),
       }];
     }
-    // Not ready — faint placeholder (grey while loading, reddish + slash on error).
-    const error = imageStatus(d.image.src) === 'error';
+    // Not ready — faint placeholder (grey while loading, reddish + slash on
+    // error). With a caller-supplied resolver the fallback is deterministic:
+    // always the plain grey outline, no ambient load-status read.
+    const error = ctx?.resolveImage ? false : imageStatus(d.image.src) === 'error';
     const color = error ? '#d08a8a' : '#bbbbbb';
     const cmds: DrawCommand[] = [{
       kind: 'path',

@@ -55,4 +55,28 @@ describe('kit:image painter', () => {
       kind: 'rect', x: 10, y: 20, width: 30, height: 40,
     });
   });
+
+  describe('NodePaintCtx.resolveImage', () => {
+    it('uses the supplied resolver instead of the global cache', () => {
+      const bmp = fakeBitmap();
+      const painter = findNodeShape(imageNode('a'))!;
+      const cmds = painter.paint(imageNode('a'), POSE, { resolveImage: () => bmp });
+      expect(cmds).toHaveLength(1);
+      expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp, x: 10, y: 20, w: 30, h: 40 });
+    });
+
+    it('deterministic grey placeholder when the resolver returns undefined', () => {
+      // A supplied resolver is authoritative: no global-cache read, no ambient
+      // load-status read — the fallback is always the single grey outline
+      // (never the error variant, which depends on ambient state).
+      const painter = findNodeShape(imageNode('a'))!;
+      const cmds = painter.paint(imageNode('a'), POSE, { resolveImage: () => undefined });
+      expect(cmds).toHaveLength(1);
+      expect(cmds[0]).toMatchObject({
+        kind: 'path',
+        path: { kind: 'rect', x: 10, y: 20, width: 30, height: 40 },
+        stroke: { paint: { color: '#bbbbbb' }, width: 1 },
+      });
+    });
+  });
 });
