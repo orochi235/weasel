@@ -1,4 +1,4 @@
-import { useRef, type ReactNode, type RefObject } from 'react';
+import { useId, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DialogTrigger,
@@ -17,6 +17,8 @@ export type CalloutTone = 'info' | 'warning' | 'danger';
  * `<CalloutTrigger><Pressable>…</Pressable><Callout>…</Callout></CalloutTrigger>`.
  * Re-exported RAC DialogTrigger — non-RAC trigger elements must be wrapped
  * in `<Pressable>` from react-aria-components.
+ * In composed mode, put `defaultOpen` on `CalloutTrigger`, not `Callout` —
+ * RAC detaches to local open state on the trigger, not the popover.
  */
 export { DialogTrigger as CalloutTrigger };
 
@@ -76,12 +78,24 @@ export function Callout(props: CalloutProps) {
     anchorRect,
     placement = 'top',
     offset = 12,
+    maxHeight = 400,
+    onOpenChange,
+    shouldCloseOnInteractOutside,
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledby,
     ...rest
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
   const showClose = showCloseButton ?? !modal;
+  const titleId = useId();
+  // RAC's popover role-heuristic misses alertdialog; label the outer role
+  // it stamps. Upstream: react-spectrum Popover.mjs querySelector('[role=dialog]').
+  const popoverAriaLabelledby =
+    modal && title !== undefined ? titleId : ariaLabelledby;
+  const popoverAriaLabel = modal ? ariaLabel : undefined;
   return (
     <>
+      {/* Harmless while closed — RAC reads the ref only when the popover is open. */}
       {anchorRect !== undefined &&
         createPortal(
           <span
@@ -105,6 +119,13 @@ export function Callout(props: CalloutProps) {
         isNonModal={!modal}
         placement={placement}
         offset={offset}
+        maxHeight={maxHeight}
+        onOpenChange={onOpenChange}
+        shouldCloseOnInteractOutside={
+          shouldCloseOnInteractOutside ?? (modal ? () => false : undefined)
+        }
+        aria-label={popoverAriaLabel}
+        aria-labelledby={popoverAriaLabelledby}
         className={[s.popover, toneClass[tone], className].filter(Boolean).join(' ')}
       >
         <OverlayArrow className={s.arrow}>
@@ -112,19 +133,34 @@ export function Callout(props: CalloutProps) {
             <path d="M0 0 L6 6 L12 0" />
           </svg>
         </OverlayArrow>
-        <RACDialog role={modal ? 'alertdialog' : 'dialog'} className={s.dialog}>
+        <RACDialog
+          role={modal ? 'alertdialog' : 'dialog'}
+          className={s.dialog}
+          aria-label={ariaLabel}
+          aria-labelledby={ariaLabelledby}
+        >
           {({ close }) => (
             <>
               {(title !== undefined || showClose) && (
                 <header className={s.header}>
                   {title !== undefined && (
-                    <Heading slot="title" className={s.title}>{title}</Heading>
+                    <Heading id={titleId} slot="title" className={s.title}>
+                      {title}
+                    </Heading>
                   )}
                   {showClose && (
                     <button
                       type="button"
                       className={s.close}
-                      onClick={close}
+                      onClick={() => {
+                        // `close()` resolves OverlayTriggerStateContext, only
+                        // provided by DialogTrigger (composed mode). In
+                        // triggerRef/anchorRect modes there is no such
+                        // context, so `close()` is a no-op there — the
+                        // controlled-open fallback below does the work.
+                        close();
+                        onOpenChange?.(false);
+                      }}
                       aria-label="Close callout"
                     >
                       ×

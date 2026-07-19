@@ -70,7 +70,7 @@ export const Modal: Story = {
               </>
             }
           >
-            This clears the whole document. The app is blocked until you choose.
+            This clears the whole document. The app is blocked until you choose (or press Esc).
           </Callout>
         </>
       );
