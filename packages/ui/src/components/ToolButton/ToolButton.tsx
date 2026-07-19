@@ -47,8 +47,8 @@ export function ToolButton(props: ToolButtonProps) {
   const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
-    <TooltipTrigger>
-      <Focusable>
+    <TooltipTrigger isDisabled={disabled}>
+      <Focusable isDisabled={disabled}>
         <button
           type="button"
           tabIndex={tabbable ? 0 : -1}

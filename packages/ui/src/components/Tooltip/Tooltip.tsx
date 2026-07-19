@@ -15,6 +15,10 @@ export type TooltipTriggerProps = TooltipTriggerComponentProps;
  * Wrap a focusable trigger plus a `<Tooltip>`. Non-RAC triggers (plain
  * `<button>` etc.) must be wrapped in `<Focusable>` from
  * react-aria-components so hover/focus props reach the DOM node.
+ *
+ * Caveat: while a tooltip is open, react-aria captures the first Escape
+ * keydown (document-level, capture phase) to dismiss it — app-level
+ * Escape handlers (deselect, cancel gesture) see only the second press.
  */
 export function TooltipTrigger(props: TooltipTriggerProps) {
   const { delay = 600, closeDelay = 0, ...rest } = props;

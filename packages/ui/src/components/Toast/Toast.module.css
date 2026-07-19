@@ -43,8 +43,8 @@
 
 .toneInfo { /* default accent — uses --toast-accent fallback */ }
 .toneSuccess { --toast-accent: var(--wzl-success, #2ec27e); }
-.toneWarning { --toast-accent: var(--wzl-warning, #e5a50a); }
-.toneError { --toast-accent: var(--wzl-danger, #ff5b5b); }
+.toneWarning { --toast-accent: var(--wzl-warning, #d99a3f); }
+.toneError { --toast-accent: var(--wzl-danger, #d94a3f); }
 
 .content {
   flex: 1;

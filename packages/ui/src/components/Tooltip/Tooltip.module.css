@@ -1,4 +1,6 @@
 .tooltip {
+  /* Above Dialog overlay (1000) and ToastRegion (1100) — RAC sets no z-index. */
+  z-index: 1200;
   background: var(--wzl-surface);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);

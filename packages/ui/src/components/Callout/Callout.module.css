@@ -4,6 +4,8 @@
 }
 
 .popover {
+  /* Above Dialog overlay (1000) and ToastRegion (1100) — RAC sets no z-index. */
+  z-index: 1200;
   --callout-accent: var(--wzl-accent-strong);
   background: var(--wzl-surface);
   border: 1px solid var(--callout-accent);
@@ -21,11 +23,11 @@
 }
 
 .toneWarning {
-  --callout-accent: var(--wzl-warning, #e5a50a);
+  --callout-accent: var(--wzl-warning, #d99a3f);
 }
 
 .toneDanger {
-  --callout-accent: var(--wzl-danger, #ff5b5b);
+  --callout-accent: var(--wzl-danger, #d94a3f);
 }
 
 .arrow svg {
