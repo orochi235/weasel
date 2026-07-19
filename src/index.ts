@@ -235,7 +235,8 @@ export type {
 // import it directly from `./canvas/Canvas`. Its types (`CanvasProps`, slot
 // configs, etc.) remain exported below because they form part of SceneCanvas's
 // public surface.
-export { SceneCanvas, DEFAULT_HANDLE_SIZE, defaultDrawOne } from './canvas/SceneCanvas';
+export { SceneCanvas, DEFAULT_HANDLE_SIZE } from './canvas/SceneCanvas';
+export { defaultDrawOne } from './canvas/defaultDrawOne';
 export type { SceneCanvasProps, SceneCanvasHit } from './canvas/SceneCanvas';
 export { CursorCoordsHud } from './canvas/CursorCoordsHud';
 export type { CursorCoordsHudProps } from './canvas/CursorCoordsHud';

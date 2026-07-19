@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultDrawOne } from './SceneCanvas';
+import { defaultDrawOne } from './defaultDrawOne';
 import type { Node } from 'core/scene/types';
 import type { PathDrawCommand, TextDrawCommand } from '../renderer';
 
@@ -119,5 +119,12 @@ describe('defaultDrawOne', () => {
       POSE,
     );
     expect(cmds).toHaveLength(1);
+  });
+
+  it('threads NodePaintCtx to the painter (image resolver)', () => {
+    const bmp = { width: 2, height: 2, close() {} } as unknown as ImageBitmap;
+    const n = node({ image: { src: 'x' } });
+    const cmds = defaultDrawOne(n, POSE, { resolveImage: () => bmp });
+    expect(cmds[0]).toMatchObject({ kind: 'image', image: bmp });
   });
 });
