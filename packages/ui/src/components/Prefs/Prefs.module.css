@@ -1,0 +1,165 @@
+/* Ported from WeaselDraw's wd-prefs-* rules (apps/draw/src/app.css),
+ * generalized onto theme tokens. Column width is overridable via
+ * --wzl-prefs-column-width at any ancestor scope. */
+
+.columns {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.column {
+  flex: 0 0 var(--wzl-prefs-column-width, 300px);
+  width: var(--wzl-prefs-column-width, 300px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+}
+
+.subpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px 8px 8px 10px;
+  background: var(--wzl-surface-sunken);
+  border-left: 2px solid var(--wzl-border);
+  border-radius: 2px;
+}
+
+.groupHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--wzl-border);
+}
+
+.subpanel .groupHeader {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wzl-fg);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.subpanel .groupTitle {
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.groupDesc {
+  margin: 0;
+  font-size: 11px;
+  color: var(--wzl-fg-subtle);
+  line-height: 1.35;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--wzl-fg);
+  cursor: default;
+}
+
+.rowLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Description affordance — quiet until hovered/focused. */
+.help {
+  flex: 0 0 auto;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--wzl-fg-subtle);
+  font-size: 11px;
+  line-height: 1;
+  cursor: help;
+  border-radius: var(--wzl-radius-sm);
+}
+
+.help:hover {
+  color: var(--wzl-fg);
+}
+
+.help:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring);
+  outline-offset: 1px;
+  color: var(--wzl-fg);
+}
+
+/* Control slot — fixed width so the label can take the rest of the row.
+ * Kit form controls render as block-level flex columns that fill it. */
+.rowControl {
+  flex: 0 0 110px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.textarea {
+  width: 100%;
+  padding: 4px 8px;
+  background: var(--wzl-input-bg);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  font: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.unrenderable {
+  font-family: var(--wzl-font-mono);
+  font-size: 11px;
+  color: var(--wzl-fg-subtle);
+}
+
+/* PrefsDialog header row: title text + optional headerExtra chrome. */
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow > span:first-child {
+  flex: 1;
+  min-width: 0;
+}

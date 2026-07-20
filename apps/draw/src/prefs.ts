@@ -28,6 +28,9 @@ interface WeaselDrawPrefBase<K extends WeaselDrawPrefKind, Value> {
    *  user shouldn't toggle directly — set by other code paths. In dev
    *  mode, the "Show hidden" toggle reveals them. */
   hidden?: boolean;
+  /** Render full-width with no label row (kit PrefsForm `block` leaves —
+   *  editors that bring their own chrome, like the panels editor). */
+  block?: boolean;
 }
 
 /**
@@ -152,6 +155,7 @@ export const PREFS = {
           kind: 'object',
           name: 'Panel visibility',
           description: 'Hidden/collapsed state per properties-panel section.',
+          block: true,
           // Document panel is hidden by default: its fields (title, paper
           // size) are also reachable by selecting the document in the
           // layers panel, so showing the dedicated panel on first run is
@@ -433,4 +437,21 @@ export function usePref<P extends WeaselDrawPrefPath>(
   );
 
   return [value, set];
+}
+
+/**
+ * Whole-tree binding for the Preferences dialog (kit `PrefsForm` is
+ * controlled: values tree + dotted-path onChange). Reads the persisted
+ * root once per mount; writes ride the same coalesced
+ * `schedulePrefsWrite` path as `usePref`. Like `usePref` instances, it
+ * doesn't sync with other live bindings — the dialog is expected to be
+ * the only whole-tree editor.
+ */
+export function usePrefsValues(): [unknown, (path: string, value: unknown) => void] {
+  const [values, setValues] = useState<Record<string, unknown>>(() => readRoot() ?? {});
+  const setAt = useCallback((path: string, value: unknown) => {
+    setValues((prev) => setAtPath(prev, path, value));
+    schedulePrefsWrite(path, value);
+  }, []);
+  return [values, setAt];
 }

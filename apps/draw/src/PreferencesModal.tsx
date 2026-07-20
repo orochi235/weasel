@@ -1,27 +1,24 @@
-/** Preferences modal — renders the entire `PREFS` registry as a centered
- *  overlay. Top-level groups become columns; nested sub-groups render as
- *  indented inner panels. Each leaf binds to `usePref(<dotted path>)` so
- *  changes persist immediately to localStorage.
+/** Preferences modal — kit `PrefsDialog` over the `PREFS` registry.
  *
- *  The path argument to `usePref` is computed by walking the tree at
- *  render time, so TS can't infer the literal-string union through the
- *  recursion — we cast to `WeaselDrawPrefPath` at the leaf only. That's the
- *  one type pragmatism the recursive walk requires.
+ *  The kit owns the walk (columns, sub-panels, label rows, hidden
+ *  filtering, built-in control mapping); this file supplies only what is
+ *  WeaselDraw-specific: the values binding (`usePrefsValues` →
+ *  localStorage), renderers for the app's two custom kinds
+ *  (`registry-enum`, `object`), and the dev-only "Show hidden" switch.
  */
 import { useMemo, useState } from 'react';
-import { Checkbox, Dialog, Input, NumberField, RangeSlider, Select, Switch } from '@weasel-js/ui';
+import {
+  Checkbox,
+  PrefsDialog,
+  Switch,
+  type PrefRenderContext,
+} from '@weasel-js/ui';
 import {
   PREFS,
-  usePref,
-  type WeaselDrawPref,
+  usePrefsValues,
   type WeaselDrawPrefGroup,
-  type WeaselDrawPrefBoolean,
-  type WeaselDrawPrefNumber,
-  type WeaselDrawPrefString,
-  type WeaselDrawPrefEnum,
-  type WeaselDrawPrefRegistryEnum,
   type WeaselDrawPrefObject,
-  type WeaselDrawPrefPath,
+  type WeaselDrawPrefRegistryEnum,
 } from './prefs';
 import type { RegistryEnumSources } from './registry/types';
 import { RegistryEnumSourcesContext, RegistrySelect } from './registry/RegistrySelect';
@@ -37,26 +34,6 @@ const isDevMode = (): boolean => {
   }
 };
 
-/** Recursively walk a group, omitting hidden leaves unless `showHidden`.
- *  Returns null when the entire subtree is hidden so empty columns and
- *  empty inner panels disappear too. */
-function visibleSubtree(
-  node: WeaselDrawPref | WeaselDrawPrefGroup,
-  showHidden: boolean,
-): WeaselDrawPref | WeaselDrawPrefGroup | null {
-  if ('kind' in node) {
-    if (node.hidden && !showHidden) return null;
-    return node;
-  }
-  const children: Record<string, WeaselDrawPref | WeaselDrawPrefGroup> = {};
-  for (const [k, child] of Object.entries(node.children)) {
-    const v = visibleSubtree(child as WeaselDrawPref | WeaselDrawPrefGroup, showHidden);
-    if (v) children[k] = v;
-  }
-  if (Object.keys(children).length === 0) return null;
-  return { ...node, children };
-}
-
 export interface PreferencesModalProps {
   open: boolean;
   onClose: () => void;
@@ -70,186 +47,39 @@ export function PreferencesModal({ open, onClose, registryEnumSources }: Prefere
   const sources = useMemo(() => registryEnumSources ?? {}, [registryEnumSources]);
   const dev = useMemo(isDevMode, []);
   const [showHidden, setShowHidden] = useState(false);
-  const filteredRoot = useMemo(
-    () => visibleSubtree(PREFS, showHidden) as WeaselDrawPrefGroup | null,
-    [showHidden],
-  );
+  const [values, setAt] = usePrefsValues();
 
   return (
     <RegistryEnumSourcesContext.Provider value={sources}>
-      <Dialog
+      <PrefsDialog
         isOpen={open}
         onOpenChange={(o) => { if (!o) onClose(); }}
-        aria-label="Preferences"
-        title={
-          <span className="wd-prefs-title-row">
-            <span>{PREFS.name}</span>
-            {dev && (
-              <Switch isSelected={showHidden} onChange={setShowHidden}>
-                Show hidden
-              </Switch>
-            )}
-          </span>
+        schema={PREFS as WeaselDrawPrefGroup}
+        values={values}
+        onChange={setAt}
+        showHidden={showHidden}
+        renderers={{
+          'registry-enum': RegistryEnumControl,
+          object: ObjectControl,
+        }}
+        headerExtra={
+          dev ? (
+            <Switch isSelected={showHidden} onChange={setShowHidden}>
+              Show hidden
+            </Switch>
+          ) : undefined
         }
-      >
-        <div className="wd-prefs-columns">
-          {Object.entries(filteredRoot?.children ?? {}).map(([key, rawChild]) => {
-            // Widen here: `PREFS.children` has narrow inferred entries (each
-            // top-level child is a distinct group shape from `satisfies`), so
-            // TS won't accept the structural narrowing inside the loop.
-            const child = rawChild as WeaselDrawPref | WeaselDrawPrefGroup;
-            if ('kind' in child) {
-              // Top-level leaves are unusual in this registry but render
-              // them in their own column for symmetry.
-              return (
-                <div key={key} className="wd-prefs-column">
-                  <PrefRow path={key} pref={child} />
-                </div>
-              );
-            }
-            return (
-              <div key={key} className="wd-prefs-column">
-                <PrefGroupBody group={child} path={key} depth={0} />
-              </div>
-            );
-          })}
-        </div>
-      </Dialog>
+      />
     </RegistryEnumSourcesContext.Provider>
   );
 }
 
-interface PrefGroupBodyProps {
-  group: WeaselDrawPrefGroup;
-  path: string;
-  depth: number;
-}
-
-function PrefGroupBody({ group, path, depth }: PrefGroupBodyProps) {
-  return (
-    <div className={depth === 0 ? 'wd-prefs-panel' : 'wd-prefs-subpanel'}>
-      <div className="wd-prefs-group-header">
-        <h3 className="wd-prefs-group-title">{group.name}</h3>
-      </div>
-      <div className="wd-prefs-rows">
-        {Object.entries(group.children).map(([key, child]) => {
-          const childPath = `${path}.${key}`;
-          if ('kind' in child) return <PrefRow key={key} path={childPath} pref={child} />;
-          return <PrefGroupBody key={key} group={child} path={childPath} depth={depth + 1} />;
-        })}
-      </div>
-    </div>
-  );
-}
-
-interface PrefRowProps {
-  path: string;
-  pref: WeaselDrawPref;
-}
-
-function PrefRow({ path, pref }: PrefRowProps) {
-  // Object-kind prefs render as their own embedded sub-panel (the editor
-  // supplies its own header). Skip the label/control row wrapper so the
-  // editor can stretch full-width inside its parent column.
-  if (pref.kind === 'object') {
-    return <PrefInput path={path} pref={pref} />;
-  }
-  return (
-    <label className="wd-prefs-row" title={pref.description}>
-      <span className="wd-prefs-row-label">{pref.name}</span>
-      <span className="wd-prefs-row-control">
-        <PrefInput path={path} pref={pref} />
-      </span>
-    </label>
-  );
-}
-
-function PrefInput({ path, pref }: { path: string; pref: WeaselDrawPref }) {
-  // The path is statically known at the call site (built by walking the
-  // tree from a literal-typed root), but TS can't propagate that through
-  // the recursion. Cast once, at the boundary into `usePref`.
-  switch (pref.kind) {
-    case 'boolean':
-      return <BooleanInput path={path} pref={pref} />;
-    case 'number':
-      return <NumberInput path={path} pref={pref} />;
-    case 'string':
-      return <StringInput path={path} pref={pref} />;
-    case 'enum':
-      return <EnumInput path={path} pref={pref} />;
-    case 'registry-enum':
-      return <RegistryEnumInput path={path} pref={pref} />;
-    case 'object':
-      return <ObjectInput path={path} pref={pref} />;
-  }
-}
-
-function BooleanInput({ path, pref: _pref }: { path: string; pref: WeaselDrawPrefBoolean }) {
-  const [value, setValue] = usePref(path as WeaselDrawPrefPath) as unknown as [
-    boolean,
-    (v: boolean) => void,
-  ];
-  return <Checkbox isSelected={value} onChange={setValue} />;
-}
-
-function NumberInput({ path, pref }: { path: string; pref: WeaselDrawPrefNumber }) {
-  const [value, setValue] = usePref(path as WeaselDrawPrefPath) as unknown as [
-    number,
-    (v: number) => void,
-  ];
-  if (pref.control === 'slider') {
-    return (
-      <RangeSlider
-        value={Number.isFinite(value) ? value : 0}
-        onChange={(v) => setValue(typeof v === 'number' ? v : v[0])}
-        minValue={pref.min}
-        maxValue={pref.max}
-        step={pref.step ?? 1}
-      />
-    );
-  }
-  return (
-    <NumberField
-      value={Number.isFinite(value) ? value : 0}
-      onChange={setValue}
-      minValue={pref.min}
-      maxValue={pref.max}
-      step={pref.step ?? 1}
-    />
-  );
-}
-
-function StringInput({ path, pref: _pref }: { path: string; pref: WeaselDrawPrefString }) {
-  const [value, setValue] = usePref(path as WeaselDrawPrefPath) as unknown as [
-    string,
-    (v: string) => void,
-  ];
-  return <Input value={value} onChange={setValue} />;
-}
-
-function EnumInput({ path, pref }: { path: string; pref: WeaselDrawPrefEnum }) {
-  const [value, setValue] = usePref(path as WeaselDrawPrefPath) as unknown as [
-    string,
-    (v: string) => void,
-  ];
-  return (
-    <Select<string>
-      options={pref.options.map((o) => ({ value: o.value, label: o.label }))}
-      selectedKey={value}
-      onSelectionChange={setValue}
-    />
-  );
-}
-
-function RegistryEnumInput({ path, pref }: { path: string; pref: WeaselDrawPrefRegistryEnum }) {
-  const [value, setValue] = usePref(path as WeaselDrawPrefPath) as unknown as [
-    string,
-    (v: string) => void,
-  ];
+function RegistryEnumControl(ctx: PrefRenderContext) {
+  const pref = ctx.pref as WeaselDrawPrefRegistryEnum;
   return (
     <RegistrySelect
-      value={value}
-      onChange={setValue}
+      value={String(ctx.value)}
+      onChange={(v) => ctx.setValue(v)}
       source={pref.source}
       filter={pref.filter}
       selectClassName="wd-prefs-select"
@@ -258,13 +88,14 @@ function RegistryEnumInput({ path, pref }: { path: string; pref: WeaselDrawPrefR
   );
 }
 
-function ObjectInput({ path, pref }: { path: string; pref: WeaselDrawPrefObject }) {
-  // Object-kind prefs need bespoke UI. `ui.panels` has a known shape
-  // (Record<string, { hidden?, collapsed? }>) so render it as an embedded
-  // sub-panel — one row per known panel with hide / collapse toggles.
-  if (path === 'ui.panels') return <PanelsEditor pref={pref} />;
+function ObjectControl(ctx: PrefRenderContext) {
+  // `ui.panels` has a known shape; anything else object-kind is data
+  // other code paths own — show it read-only rather than guessing.
+  if (ctx.path === 'ui.panels') return <PanelsEditor ctx={ctx} />;
   return <span className="wd-prefs-readonly">(object)</span>;
 }
+
+type PanelsValue = Record<string, { hidden?: boolean; collapsed?: boolean }>;
 
 // Keys here mirror the panel ids currently rendered in the right sidebar
 // (see App.tsx) plus the History panel. Listed explicitly so unconfigured
@@ -280,48 +111,38 @@ const KNOWN_PANELS: { id: string; label: string }[] = [
   { id: 'view',      label: 'View' },
 ];
 
-function PanelsEditor({ pref }: { pref: WeaselDrawPrefObject }) {
-  const [panels, setPanels] = usePref('ui.panels');
-  const update = (
-    id: string,
-    field: 'hidden' | 'collapsed',
-    next: boolean,
-  ): void => {
-    setPanels((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: next },
-    }));
+function PanelsEditor({ ctx }: { ctx: PrefRenderContext }) {
+  const pref = ctx.pref as WeaselDrawPrefObject;
+  const panels = (ctx.value ?? {}) as PanelsValue;
+  const update = (id: string, field: 'hidden' | 'collapsed', next: boolean): void => {
+    ctx.setValue({ ...panels, [id]: { ...panels[id], [field]: next } });
   };
   return (
-    <div className="wd-prefs-subpanel wd-prefs-subpanel-inline">
-      <div className="wd-prefs-group-header">
-        <h3 className="wd-prefs-group-title">{pref.name}</h3>
+    <div className="wd-prefs-panels">
+      <div className="wd-prefs-panels-title">{pref.name}</div>
+      <div className="wd-prefs-panels-head">
+        <span className="wd-prefs-panels-head-name">Panel</span>
+        <span className="wd-prefs-panels-head-flag">Hidden</span>
+        <span className="wd-prefs-panels-head-flag">Collapsed</span>
       </div>
-      <div className="wd-prefs-rows">
-        <div className="wd-prefs-panels-head">
-          <span className="wd-prefs-panels-head-name">Panel</span>
-          <span className="wd-prefs-panels-head-flag">Hidden</span>
-          <span className="wd-prefs-panels-head-flag">Collapsed</span>
-        </div>
-        {KNOWN_PANELS.map(({ id, label }) => {
-          const state = panels[id] ?? {};
-          return (
-            <div key={id} className="wd-prefs-panels-row">
-              <span className="wd-prefs-panels-row-name">{label}</span>
-              <Checkbox
-                isSelected={!!state.hidden}
-                onChange={(v) => update(id, 'hidden', v)}
-                aria-label={`Hide ${label} panel`}
-              />
-              <Checkbox
-                isSelected={!!state.collapsed}
-                onChange={(v) => update(id, 'collapsed', v)}
-                aria-label={`Collapse ${label} panel`}
-              />
-            </div>
-          );
-        })}
-      </div>
+      {KNOWN_PANELS.map(({ id, label }) => {
+        const state = panels[id] ?? {};
+        return (
+          <div key={id} className="wd-prefs-panels-row">
+            <span className="wd-prefs-panels-row-name">{label}</span>
+            <Checkbox
+              isSelected={!!state.hidden}
+              onChange={(v) => update(id, 'hidden', v)}
+              aria-label={`Hide ${label} panel`}
+            />
+            <Checkbox
+              isSelected={!!state.collapsed}
+              onChange={(v) => update(id, 'collapsed', v)}
+              aria-label={`Collapse ${label} panel`}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
