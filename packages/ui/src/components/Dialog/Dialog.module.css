@@ -7,7 +7,7 @@
   justify-content: center;
   z-index: 1000;
   opacity: 0;
-  transition: opacity 120ms;
+  transition: opacity var(--wzl-motion-fast);
 }
 
 .overlay[data-entering] {

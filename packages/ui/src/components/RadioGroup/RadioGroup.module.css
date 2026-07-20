@@ -41,7 +41,7 @@
   background: var(--wzl-input-bg);
   border: 1px solid var(--wzl-border-strong);
   border-radius: 50%;
-  transition: border-color 100ms, box-shadow 100ms;
+  transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
 .radio[data-focus-visible] .dot {
@@ -63,7 +63,7 @@
   border-radius: 50%;
   background: var(--wzl-accent-strong);
   transform: scale(0);
-  transition: transform 100ms;
+  transition: transform var(--wzl-motion-fast);
 }
 
 .radio[data-selected] .dot::after {

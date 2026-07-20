@@ -21,7 +21,7 @@
   font-size: 13px;
   line-height: 1;
   cursor: pointer;
-  transition: border-color 100ms, box-shadow 100ms;
+  transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
 .trigger[data-focus-visible] {

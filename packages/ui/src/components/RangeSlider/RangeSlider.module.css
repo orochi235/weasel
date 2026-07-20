@@ -64,7 +64,7 @@
   border-radius: 50%;
   cursor: ew-resize;
   outline: none;
-  transition: box-shadow 100ms;
+  transition: box-shadow var(--wzl-motion-fast);
 }
 
 .slider[data-orientation="vertical"] .thumb {

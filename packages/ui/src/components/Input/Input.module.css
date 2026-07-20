@@ -19,7 +19,7 @@
   font-family: var(--wzl-font-ui);
   font-size: 13px;
   line-height: 1;
-  transition: border-color 100ms, box-shadow 100ms;
+  transition: border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
 .frame:focus-within {

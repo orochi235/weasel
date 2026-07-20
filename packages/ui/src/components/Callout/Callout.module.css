@@ -14,7 +14,7 @@
   color: var(--wzl-fg);
   font-family: var(--wzl-font-ui);
   max-width: 320px;
-  transition: opacity 120ms;
+  transition: opacity var(--wzl-motion-fast);
 }
 
 .popover[data-entering],

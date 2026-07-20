@@ -47,7 +47,7 @@
   border-radius: 0;
   isolation: isolate;
   overflow: hidden;
-  transition: color 120ms;
+  transition: color var(--wzl-motion-fast);
 }
 
 .segment:first-child {

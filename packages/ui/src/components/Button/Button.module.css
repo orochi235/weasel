@@ -62,7 +62,7 @@
   -webkit-user-select: none;
   isolation: isolate;
   overflow: hidden;
-  transition: filter 120ms, box-shadow 120ms, transform 80ms;
+  transition: filter var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast), transform 80ms;
 }
 
 /* Specular gloss — covers the upper hemisphere of the pill with a bright
@@ -87,7 +87,7 @@
   );
   pointer-events: none;
   z-index: 1;
-  transition: opacity 120ms;
+  transition: opacity var(--wzl-motion-fast);
 }
 
 .button > * {

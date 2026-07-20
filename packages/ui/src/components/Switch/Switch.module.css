@@ -23,7 +23,7 @@
   background: var(--wzl-input-bg);
   border: 1px solid var(--wzl-border-strong);
   border-radius: 8px;
-  transition: background-color 120ms, border-color 120ms, box-shadow 120ms;
+  transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
 .switch[data-focus-visible] .track {
@@ -43,7 +43,7 @@
   height: 12px;
   background: var(--wzl-fg);
   border-radius: 50%;
-  transition: transform 120ms;
+  transition: transform var(--wzl-motion-fast);
 }
 
 .switch[data-selected] .thumb {

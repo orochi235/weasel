@@ -23,7 +23,7 @@
   background: var(--wzl-input-bg);
   border: 1px solid var(--wzl-border-strong);
   border-radius: var(--wzl-radius-sm);
-  transition: background-color 100ms, border-color 100ms, box-shadow 100ms;
+  transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);
 }
 
 .checkbox[data-focus-visible] .box {

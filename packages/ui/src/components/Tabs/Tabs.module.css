@@ -38,7 +38,7 @@
   font-size: 12px;
   cursor: pointer;
   outline: none;
-  transition: color 100ms;
+  transition: color var(--wzl-motion-fast);
 }
 
 .tab[data-hovered]:not([data-disabled]) {
