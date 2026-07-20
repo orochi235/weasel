@@ -36,6 +36,14 @@ export const DEFAULT_TOKENS = {
   '--wzl-line-width':  '2px',
   '--wzl-curve-width': '3px',
 
+  // Motion — durations + CSS equivalents of the JS easing library
+  '--wzl-motion-fast':       '120ms',
+  '--wzl-motion-medium':     '240ms',
+  '--wzl-ease-in-cubic':     'cubic-bezier(0.32, 0, 0.67, 0)',
+  '--wzl-ease-out-cubic':    'cubic-bezier(0.33, 1, 0.68, 1)',
+  '--wzl-ease-in-out-cubic': 'cubic-bezier(0.65, 0, 0.35, 1)',
+  '--wzl-ease-out-back':     'cubic-bezier(0.34, 1.56, 0.64, 1)',
+
   // Structural lines — three opacity levels of fg. color-mix at runtime;
   // hex approximations here resolve against the dark default fg.
   '--wzl-line-subtle': 'rgba(230, 231, 233, 0.10)',
