@@ -1,0 +1,53 @@
+/* View-transition choreography for the toast stack.
+ *
+ * Deliberately global (not a CSS module): view-transition pseudo-elements
+ * attach to the document root, and the `.wzl-toast` argument must match
+ * the literal `view-transition-class` set in Toast.module.css — none of
+ * these idents may be hashed.
+ *
+ * Everything is scoped by `:root.wzl-toast-vt`, which queue.ts holds set
+ * only for the lifetime of a toast-triggered transition:
+ *   - un-naming :root keeps the rest of the page out of the transition,
+ *     so it stays live (canvas keeps animating) instead of freezing into
+ *     a snapshot;
+ *   - pointer-events: none keeps the transition overlay from swallowing
+ *     input while a background notification animates.
+ *
+ * Timing rides the theme motion tokens; entries use the medium/ease-out
+ * pair, exits the fast/ease-in pair. Reduced-motion users never get here
+ * (queue.ts skips the view transition entirely).
+ */
+
+:root.wzl-toast-vt {
+  view-transition-name: none;
+}
+
+:root.wzl-toast-vt::view-transition {
+  pointer-events: none;
+}
+
+/* Entering toast: rise + fade. `:only-child` restricts the rule to
+ * genuine entries — a group with an old+new pair is a surviving toast
+ * reflowing, which keeps the default smooth position animation. */
+:root.wzl-toast-vt::view-transition-new(.wzl-toast):only-child {
+  animation: wzl-toast-enter var(--wzl-motion-medium, 240ms) var(--wzl-ease-out-cubic, ease-out) both;
+}
+
+/* Exiting toast: quick fade + slight shrink. */
+:root.wzl-toast-vt::view-transition-old(.wzl-toast):only-child {
+  animation: wzl-toast-exit var(--wzl-motion-fast, 120ms) var(--wzl-ease-in-cubic, ease-in) both;
+}
+
+@keyframes wzl-toast-enter {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+}
+
+@keyframes wzl-toast-exit {
+  to {
+    opacity: 0;
+    scale: 0.92;
+  }
+}

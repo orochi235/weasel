@@ -1,4 +1,5 @@
 import { UNSTABLE_ToastQueue } from 'react-aria-components';
+import { flushSync } from 'react-dom';
 
 export type ToastTone = 'info' | 'success' | 'warning' | 'error';
 
@@ -22,6 +23,39 @@ export interface ToastOptions {
 
 const DEFAULT_TTL_MS = 8000;
 
+// Tracks overlapping toast-triggered view transitions so the `:root`
+// marker class survives until the *last* one settles.
+let activeToastTransitions = 0;
+
+/**
+ * RAC's sanctioned toast-animation hook: wrap every queue mutation in a
+ * view transition so entry, exit, and the surviving stack's reflow all
+ * animate (choreography lives in `toastViewTransitions.css`). Falls back
+ * to a plain synchronous update when the browser lacks the API or the
+ * user prefers reduced motion — i.e. exactly the pre-animation behavior.
+ * The jsdom test environment always takes the fallback path.
+ */
+function viewTransitionWrapUpdate(fn: () => void): void {
+  const reduceMotion =
+    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typeof document === 'undefined' || !('startViewTransition' in document) || reduceMotion) {
+    fn();
+    return;
+  }
+  // The marker class scopes the CSS that un-names `:root` (keeps the rest
+  // of the page live and interactive during the transition) to
+  // toast-owned transitions only.
+  const root = document.documentElement;
+  activeToastTransitions++;
+  root.classList.add('wzl-toast-vt');
+  // flushSync: the DOM must reflect the queue change inside the
+  // transition callback, before the browser snapshots the new state.
+  const vt = document.startViewTransition(() => flushSync(fn));
+  void vt.finished.finally(() => {
+    if (--activeToastTransitions === 0) root.classList.remove('wzl-toast-vt');
+  });
+}
+
 // The wrapped RAC queue lives in a module-scoped WeakMap so the public
 // class surface carries no RAC (UNSTABLE_) types — see the design spec's
 // containment rule. `racQueueOf` below is the folder-internal accessor.
@@ -40,7 +74,13 @@ export class ToastQueue {
   private keysById = new Map<string, string>();
 
   constructor() {
-    RAC_QUEUES.set(this, new UNSTABLE_ToastQueue<ToastContent>({ maxVisibleToasts: 5 }));
+    RAC_QUEUES.set(
+      this,
+      new UNSTABLE_ToastQueue<ToastContent>({
+        maxVisibleToasts: 5,
+        wrapUpdate: viewTransitionWrapUpdate,
+      }),
+    );
   }
 
   add(tone: ToastTone, title: string, options: ToastOptions = {}): void {

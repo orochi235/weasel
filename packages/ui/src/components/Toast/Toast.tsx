@@ -7,6 +7,7 @@ import {
 } from 'react-aria-components';
 import { defaultToastQueue, racQueueOf, type ToastQueue, type ToastTone } from './queue';
 import s from './Toast.module.css';
+import './toastViewTransitions.css';
 
 export type ToastPlacement = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 
@@ -47,7 +48,15 @@ export function ToastRegion(props: ToastRegionProps) {
       className={[s.region, placementClass[placement], className].filter(Boolean).join(' ')}
     >
       {({ toast: t }) => (
-        <RACToast toast={t} className={[s.toast, toneClass[t.content.tone]].filter(Boolean).join(' ')}>
+        <RACToast
+          toast={t}
+          className={[s.toast, toneClass[t.content.tone]].filter(Boolean).join(' ')}
+          // Inline style is the one sanctioned exception here: each toast
+          // needs a *unique* view-transition-name (so enter/exit/reflow
+          // track per-toast), and a class can't mint unique idents. The
+          // prefix keeps the ident valid (RAC keys can start with digits).
+          style={{ viewTransitionName: `wzl-toast-${t.key.replace(/[^a-zA-Z0-9_-]/g, '_')}` }}
+        >
           <RACToastContent className={s.content}>
             <Text slot="title" className={s.title}>{t.content.title}</Text>
             {t.content.description !== undefined && (

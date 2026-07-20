@@ -21,6 +21,10 @@
 
 .toast {
   --toast-accent: var(--wzl-accent-strong);
+  /* Groups every toast under one ident so toastViewTransitions.css can
+   * target `::view-transition-new/old(.wzl-toast)` without knowing the
+   * per-toast view-transition-name (set inline in Toast.tsx). */
+  view-transition-class: wzl-toast;
   display: flex;
   align-items: flex-start;
   gap: 8px;

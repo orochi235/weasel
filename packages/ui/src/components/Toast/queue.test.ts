@@ -82,3 +82,53 @@ describe('ToastQueue', () => {
     expect(racQueueOf(q).visibleToasts).toHaveLength(1);
   });
 });
+
+describe('view-transition wrapping', () => {
+  // jsdom has no startViewTransition, so every other test in this file
+  // exercises the synchronous fallback path implicitly. lib.dom types the
+  // method as always-present, so mocking/removing it needs the cast.
+  const vtDoc = document as unknown as {
+    startViewTransition?: (cb: () => void) => { finished: Promise<void> };
+  };
+
+  it('wraps queue updates in document.startViewTransition when available', async () => {
+    const startViewTransition = vi.fn((cb: () => void) => {
+      cb();
+      return { finished: Promise.resolve() };
+    });
+    vtDoc.startViewTransition = startViewTransition;
+    try {
+      const q = createToastQueue();
+      q.add('info', 'animated');
+      expect(startViewTransition).toHaveBeenCalledTimes(1);
+      // The update ran inside the transition callback, not before it.
+      expect(racQueueOf(q).visibleToasts).toHaveLength(1);
+      // Marker class is held while the transition runs…
+      expect(document.documentElement.classList.contains('wzl-toast-vt')).toBe(true);
+      // …and released once `finished` settles.
+      await Promise.resolve().then(() => {});
+      await new Promise((r) => setTimeout(r, 0));
+      expect(document.documentElement.classList.contains('wzl-toast-vt')).toBe(false);
+    } finally {
+      delete vtDoc.startViewTransition;
+    }
+  });
+
+  it('skips the view transition under prefers-reduced-motion', () => {
+    const startViewTransition = vi.fn((cb: () => void) => {
+      cb();
+      return { finished: Promise.resolve() };
+    });
+    vtDoc.startViewTransition = startViewTransition;
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+    try {
+      const q = createToastQueue();
+      q.add('info', 'instant');
+      expect(startViewTransition).not.toHaveBeenCalled();
+      expect(racQueueOf(q).visibleToasts).toHaveLength(1);
+    } finally {
+      delete vtDoc.startViewTransition;
+      vi.unstubAllGlobals();
+    }
+  });
+});
