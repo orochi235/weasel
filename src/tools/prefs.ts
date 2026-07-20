@@ -19,6 +19,10 @@ interface ToolPrefBase<K extends ToolPrefKind, Value> {
   default: Value;
   /** Hide from a host app's settings UI by default. */
   hidden?: boolean;
+  /** Render full-width with no label row in schema-driven settings UIs
+   *  (weasel-ui `PrefsForm` honors this for leaves whose control brings
+   *  its own chrome). */
+  block?: boolean;
 }
 
 export type ToolPrefNumberControl = 'input' | 'slider';
