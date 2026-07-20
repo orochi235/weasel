@@ -21,10 +21,13 @@ function partitionByGroup(list: AnyTool[]): Map<string, AnyTool[]> {
   return groups;
 }
 
-function orderedGroupKeys(groups: Map<string, AnyTool[]>): string[] {
+function orderedGroupKeys(
+  groups: Map<string, AnyTool[]>,
+  groupOrder: readonly string[],
+): string[] {
   const seen = new Set(groups.keys());
   const ordered: string[] = [];
-  for (const known of DEFAULT_GROUP_ORDER) {
+  for (const known of groupOrder) {
     if (seen.has(known)) {
       ordered.push(known);
       seen.delete(known);
@@ -63,13 +66,22 @@ export interface ToolPaletteProps {
    * (preserves existing behaviour in consumers that haven't wired a registry).
    */
   modeRegistry?: ModeRegistry;
+  /**
+   * Presentation-group display order. Groups not listed keep their registry
+   * insertion order after the listed ones; `misc` always renders last.
+   * Defaults to `['select', 'shape', 'draw', 'type', 'view']`.
+   */
+  groupOrder?: readonly string[];
 }
 
 export function ToolPalette(props: ToolPaletteProps) {
-  const { tools, orientation = 'vertical', className, lookupShortcut, modeRegistry } = props;
+  const {
+    tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,
+    groupOrder = DEFAULT_GROUP_ORDER,
+  } = props;
   const list = Object.values(tools.registry);
   const groups = partitionByGroup(list);
-  const groupKeys = orderedGroupKeys(groups);
+  const groupKeys = orderedGroupKeys(groups, groupOrder);
   const cls = [s.palette, orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');
 

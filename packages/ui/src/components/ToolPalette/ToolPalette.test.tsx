@@ -105,6 +105,23 @@ describe('ToolPalette — grouping', () => {
     expect(buttons[buttons.length - 1].textContent).toContain('Orphan');
   });
 
+  it('honors an explicit groupOrder prop', () => {
+    const tools = fakeTools([
+      fakeTool('text', 'type'),
+      fakeTool('select', 'select'),
+      fakeTool('hand', 'view'),
+      fakeTool('rect', 'shape'),
+    ]);
+    render(<ToolPalette tools={tools} groupOrder={['select', 'view', 'shape', 'type']} />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map((b) => b.textContent)).toEqual([
+      expect.stringContaining('select'),
+      expect.stringContaining('hand'),
+      expect.stringContaining('rect'),
+      expect.stringContaining('text'),
+    ]);
+  });
+
   it('separates groups with a visible divider', () => {
     const tools = fakeTools([
       fakeTool('select', 'select'),
