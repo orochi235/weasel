@@ -70,6 +70,18 @@ async function main(): Promise<void> {
       // resolution back through `this.resolve`, so rollup-plugin-dts supplies
       // the `.ts`/`.tsx` extension for the rewritten (extensionless) paths.
       alias({ entries: weaselAliases(weaselRoot) }),
+      // Stub style imports: CSS carries no type information, but a bare
+      // side-effect import (e.g. Toast's toastViewTransitions.css) survives
+      // tree-shaking, and rollup would otherwise parse the CSS as JS.
+      {
+        name: 'stub-css',
+        resolveId(source: string) {
+          return source.endsWith('.css') ? `\0css:${source}` : null;
+        },
+        load(id: string) {
+          return id.startsWith('\0css:') ? 'export default {};' : null;
+        },
+      },
       dts({
         tsconfig: resolve(pkgRoot, 'tsconfig.dts.json'),
         // Don't follow into node_modules; third-party types stay external.
