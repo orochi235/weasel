@@ -33,36 +33,36 @@ interface WeaselDrawPrefBase<K extends WeaselDrawPrefKind, Value> {
 /**
  * Optional rendering hint per kind. The renderer reads this to pick
  * between visually-equivalent presentations of the same value type —
- * e.g. a `'number'` with `expression: 'slider'` becomes a range input,
- * while the same field without `expression` stays a number input.
+ * e.g. a `'number'` with `control: 'slider'` becomes a range input,
+ * while the same field without `control` stays a number input.
  *
  * Each kind exposes its own union so the type system can keep callers
- * honest: you can't set `expression: 'slider'` on a boolean pref. Add
+ * honest: you can't set `control: 'slider'` on a boolean pref. Add
  * new variants here as the renderer learns to draw them — the
  * persisted value is unchanged either way, so legacy data keeps
  * working.
  */
-export type WeaselDrawPrefNumberExpression = 'input' | 'slider';
-export type WeaselDrawPrefBooleanExpression = 'checkbox' | 'switch';
-export type WeaselDrawPrefStringExpression = 'input' | 'textarea';
-export type WeaselDrawPrefEnumExpression = 'select' | 'radio';
+export type WeaselDrawPrefNumberControl = 'input' | 'slider';
+export type WeaselDrawPrefBooleanControl = 'checkbox' | 'switch';
+export type WeaselDrawPrefStringControl = 'input' | 'textarea';
+export type WeaselDrawPrefEnumControl = 'select' | 'radio';
 
 export interface WeaselDrawPrefNumber extends WeaselDrawPrefBase<'number', number> {
   min?: number;
   max?: number;
   step?: number;
-  expression?: WeaselDrawPrefNumberExpression;
+  control?: WeaselDrawPrefNumberControl;
 }
 export interface WeaselDrawPrefBoolean extends WeaselDrawPrefBase<'boolean', boolean> {
-  expression?: WeaselDrawPrefBooleanExpression;
+  control?: WeaselDrawPrefBooleanControl;
 }
 export interface WeaselDrawPrefString extends WeaselDrawPrefBase<'string', string> {
-  expression?: WeaselDrawPrefStringExpression;
+  control?: WeaselDrawPrefStringControl;
 }
 export interface WeaselDrawPrefEnum<T extends string = string>
   extends WeaselDrawPrefBase<'enum', T> {
   options: readonly { value: T; label: string }[];
-  expression?: WeaselDrawPrefEnumExpression;
+  control?: WeaselDrawPrefEnumControl;
 }
 /** Enum whose options come from a runtime registry instead of a static
  *  list — e.g. `tools.lastTool` picks from whichever tools the app has
@@ -75,7 +75,7 @@ export interface WeaselDrawPrefRegistryEnum
   /** Key into the modal's `registryEnumSources` prop. */
   source: string;
   /** Same hints as a plain enum — `'select'` (default) or `'radio'`. */
-  expression?: WeaselDrawPrefEnumExpression;
+  control?: WeaselDrawPrefEnumControl;
   /** Optional narrowing applied by the source's resolver. Two forms:
    *   • a key/value criteria map (e.g. `{ kind: 'rect', layer: 'fg' }`)
    *     — declarative; the resolver matches each candidate against it.
@@ -178,7 +178,7 @@ export const PREFS = {
           min: 4,
           max: 288,
           step: 4,
-          expression: 'slider',
+          control: 'slider',
         },
         snapToGrid: {
           kind: 'boolean',

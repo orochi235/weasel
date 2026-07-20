@@ -18,9 +18,9 @@ export type {
   ToolPrefBoolean,
   ToolPrefString,
   ToolPrefEnum,
-  ToolPrefNumberExpression,
-  ToolPrefBooleanExpression,
-  ToolPrefStringExpression,
-  ToolPrefEnumExpression,
+  ToolPrefNumberControl,
+  ToolPrefBooleanControl,
+  ToolPrefStringControl,
+  ToolPrefEnumControl,
 } from './prefs';
 export * from './builtin';

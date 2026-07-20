@@ -197,7 +197,7 @@ function NumberInput({ path, pref }: { path: string; pref: WeaselDrawPrefNumber 
     number,
     (v: number) => void,
   ];
-  if (pref.expression === 'slider') {
+  if (pref.control === 'slider') {
     return (
       <RangeSlider
         value={Number.isFinite(value) ? value : 0}

@@ -21,27 +21,27 @@ interface ToolPrefBase<K extends ToolPrefKind, Value> {
   hidden?: boolean;
 }
 
-export type ToolPrefNumberExpression = 'input' | 'slider';
-export type ToolPrefBooleanExpression = 'checkbox' | 'switch';
-export type ToolPrefStringExpression = 'input' | 'textarea';
-export type ToolPrefEnumExpression = 'select' | 'radio';
+export type ToolPrefNumberControl = 'input' | 'slider';
+export type ToolPrefBooleanControl = 'checkbox' | 'switch';
+export type ToolPrefStringControl = 'input' | 'textarea';
+export type ToolPrefEnumControl = 'select' | 'radio';
 
 export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
   min?: number;
   max?: number;
   step?: number;
-  expression?: ToolPrefNumberExpression;
+  control?: ToolPrefNumberControl;
 }
 export interface ToolPrefBoolean extends ToolPrefBase<'boolean', boolean> {
-  expression?: ToolPrefBooleanExpression;
+  control?: ToolPrefBooleanControl;
 }
 export interface ToolPrefString extends ToolPrefBase<'string', string> {
-  expression?: ToolPrefStringExpression;
+  control?: ToolPrefStringControl;
 }
 export interface ToolPrefEnum<T extends string = string>
   extends ToolPrefBase<'enum', T> {
   options: readonly { value: T; label: string }[];
-  expression?: ToolPrefEnumExpression;
+  control?: ToolPrefEnumControl;
 }
 
 export type ToolPref =
