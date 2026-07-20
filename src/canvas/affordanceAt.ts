@@ -200,6 +200,12 @@ export function buildAffordanceAt(
               fixedPoint: { x: c.fixedX, y: c.fixedY },
               targetIds: [resizeTarget.id],
               anchor: c.anchor,
+              // Diagonal by fixed-corner parity: a matched-axis anchor
+              // (min-min / max-max fixed) means the dragged corner sits on
+              // the ↘ diagonal; mixed axes sit on the ↗ diagonal. Cursor is
+              // not rotation-aware — a rotated target keeps the unrotated
+              // hint (same policy as every mainstream editor short of Figma).
+              cursor: c.anchor.x === c.anchor.y ? 'nwse-resize' : 'nesw-resize',
             };
           }
         }
@@ -241,6 +247,7 @@ export function buildAffordanceAt(
               kind: 'rotate-handle',
               fixedPoint: { x: centerX, y: centerY }, // pivot
               targetIds: [rotateTarget.id],
+              cursor: 'grab',
             };
           }
         }

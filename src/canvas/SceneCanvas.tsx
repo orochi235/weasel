@@ -1965,50 +1965,10 @@ function GestureDispatcherMounter({
     canvasApiRef?.current?.requestRedraw?.();
   }, [canvasApiRef]);
 
-  // Hover-cursor pump. On every pointermove (no gesture in flight), run
-  // `affordanceAt` and map the hit's `kind` to a cursor. Writes the
-  // override directly to `canvas.style.cursor` — the active tool's
-  // React-managed cursor is the implicit base, so clearing our override
-  // restores it without effect churn. Mid-gesture the dispatcher's
-  // existing cursor pipeline (tool.cursor receiving live scratch) takes
-  // over; we skip the affordance walk while a handle is in flight.
-  const wrappedAffordanceAtRef = useRef(wrappedAffordanceAt);
-  wrappedAffordanceAtRef.current = wrappedAffordanceAt;
-  const dispatcherRef = useRef(dispatcher);
-  dispatcherRef.current = dispatcher;
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    let overridden = false;
-    const clear = () => {
-      if (overridden) {
-        canvas.style.cursor = '';
-        overridden = false;
-      }
-    };
-    const onMove = (e: PointerEvent) => {
-      const disp = dispatcherRef.current;
-      if (disp && disp.getActiveAction().id !== null) { clear(); return; }
-      const aff = wrappedAffordanceAtRef.current;
-      if (!aff) { clear(); return; }
-      const hit = aff({ x: e.clientX, y: e.clientY });
-      const cursor = hit ? cursorForAffordance(hit.kind) : null;
-      if (cursor) {
-        canvas.style.cursor = cursor;
-        overridden = true;
-      } else {
-        clear();
-      }
-    };
-    canvas.addEventListener('pointermove', onMove);
-    canvas.addEventListener('pointerleave', clear);
-    return () => {
-      canvas.removeEventListener('pointermove', onMove);
-      canvas.removeEventListener('pointerleave', clear);
-      clear();
-    };
-  }, [canvasRef]);
-
+  // Hover cursors live in `useGestureDispatcher`'s hover-cursor pump:
+  // affordance hits carry `AffordanceHit.cursor` (set by `buildAffordanceAt`),
+  // and everything else is predicted via `Dispatcher.resolveOnly` +
+  // `Action.cursor`. Nothing SceneCanvas-specific remains here.
   useGestureDispatcher({
     canvasRef,
     actions: registry!,
@@ -2022,18 +1982,6 @@ function GestureDispatcherMounter({
     requestRedraw,
     getRuleCtx,
   });
-  return null;
-}
-
-/** Map an affordance hit's `kind` discriminator to a CSS cursor. Returns
- *  `null` to defer to the active tool's cursor. Add entries here as new
- *  affordance kinds gain hover-cursor support. */
-function cursorForAffordance(kind: string): string | null {
-  if (kind === 'rotate-handle') return 'grab';
-  // Corner-resize handles emit `'handle:min-min'` / `'handle:max-min'` /
-  // etc. Mapping each to a diagonal-resize cursor is a small follow-up;
-  // the resize handles are small filled squares whose visual is already
-  // unambiguous, so the active tool's cursor wins for now.
   return null;
 }
 

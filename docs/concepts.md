@@ -292,6 +292,36 @@ key is set by the host caller (Lasso, Eyedropper); the same `useKeybindings`
 effect picks up those configurable keybindings and appends entries to the
 consolidated `tool.activate` action's bindings dynamically.
 
+### Hover cursors predict the drag route
+
+While no gesture is in flight, the dispatcher's hover-cursor pump (in
+`useGestureDispatcher`) resolves what the pointer is over on every
+pointermove and writes a cursor override to the canvas. Precedence:
+
+1. **Affordance hits** — `buildAffordanceAt` stamps `AffordanceHit.cursor`
+   on its hits (resize corners → `nwse/nesw-resize`, rotate ring → `grab`);
+   a declared cursor wins outright.
+2. **Predicted action** — otherwise the pump asks
+   `Dispatcher.resolveOnly(...)` which action a drag starting here would
+   route to (the same specificity-sorted, `enabled()`-gated walk a real
+   pointerdown takes) and applies that action's optional `Action.cursor`.
+   E.g. `viewport.dragPan` declares `cursor: 'grab'`, so empty canvas shows
+   the open hand whenever pan would actually win the drag — including when
+   a higher-specificity marquee binding falls through because its deps
+   aren't wired.
+3. **Tool base** — no override; the active tool's `Tool.cursor` (React-
+   managed on the canvas host) shows through.
+
+Give a consumer action a hover hint by declaring `cursor` on its
+descriptor — no pump wiring needed. Because prediction runs `enabled()`
+but cannot run the invoker, keep `enabled` truthful for actions that
+declare a cursor: an action that matches but bails inside `start()` (the
+empty-handle pattern) will still show its cursor.
+
+Modifier and hotkey changes (e.g. holding Space to engage the hand tool)
+re-run the prediction at the last hover position, so the cursor re-routes
+without pointer movement.
+
 Inspector surfaces (the ToolPalette's shortcut chips, the HotkeyTrigger
 detail view) read from the action registry — there is no per-tool
 keybinding field driving them. The `keyHeld` gesture has a first-class

@@ -612,6 +612,109 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         shiftKey: e.shiftKey,
       };
       dispatch(ev);
+
+      lastHover = {
+        clientX: e.clientX, clientY: e.clientY,
+        altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+      };
+      refreshHoverCursor();
+    };
+
+    // -----------------------------------------------------------------------
+    // Hover-cursor pump
+    // -----------------------------------------------------------------------
+    //
+    // On every idle pointermove (no pressed pointer, no in-flight handle),
+    // resolve what sits under the pointer and write a cursor override
+    // directly to `canvas.style.cursor`. Precedence:
+    //
+    //   1. Affordance hit declaring `AffordanceHit.cursor` (resize corners,
+    //      rotate ring) — the same `affordanceAt` hit-test pointerdown uses.
+    //   2. The action a drag from here would route to (`resolveOnly`, the
+    //      same match walk pointerdown takes), when it declares
+    //      `Action.cursor` — e.g. `viewport.dragPan` → 'grab' over empty
+    //      canvas when pan would win the drag.
+    //   3. No override — clear the inline style so the active tool's
+    //      React-managed `Tool.cursor` (the implicit base) shows through.
+    //
+    // Mid-gesture the pump stands down; the tool-cursor pipeline
+    // (function-form `Tool.cursor` re-resolving on `gestureTick`) owns the
+    // cursor there. The override is an inline style on purpose: clearing it
+    // restores the React-managed base without effect churn.
+    //
+    // `lastHover` lets modifier keydown/keyup refresh the prediction without
+    // pointer movement (a held Space re-routes the drag to the hand tool).
+    // That refresh is deferred a tick so React can commit the hotkey-stack /
+    // active-tool state the key event just changed — `ctxRef` is only
+    // rewritten on render.
+    let lastHover: {
+      clientX: number; clientY: number;
+      altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean;
+    } | null = null;
+    let cursorOverridden = false;
+    const clearHoverCursor = () => {
+      if (cursorOverridden && canvas) {
+        canvas.style.cursor = '';
+        cursorOverridden = false;
+      }
+    };
+    const applyHoverCursor = (cursor: string | null) => {
+      if (cursor && canvas) {
+        canvas.style.cursor = cursor;
+        cursorOverridden = true;
+      } else {
+        clearHoverCursor();
+      }
+    };
+    function refreshHoverCursor(): void {
+      if (!canvas || !lastHover) return;
+      if (activePointers.size > 0 || dispatcher.inFlight().size > 0) {
+        clearHoverCursor();
+        return;
+      }
+      const h = lastHover;
+      const screenPoint = { x: h.clientX, y: h.clientY };
+      const affordance = affordanceAtRef.current?.(screenPoint) ?? undefined;
+      if (affordance?.cursor) {
+        applyHoverCursor(affordance.cursor);
+        return;
+      }
+      const bodyTarget = classifyTargetRef.current?.(screenPoint) ?? undefined;
+      const w = toWorld(h.clientX, h.clientY);
+      const predicted = dispatcher.resolveOnly(
+        {
+          kind: 'pointerdown',
+          x: w.x,
+          y: w.y,
+          clientX: h.clientX,
+          clientY: h.clientY,
+          altKey: h.altKey,
+          ctrlKey: h.ctrlKey,
+          metaKey: h.metaKey,
+          shiftKey: h.shiftKey,
+          ...(affordance !== undefined ? { affordance } : {}),
+          ...(bodyTarget !== undefined ? { bodyTarget } : {}),
+        },
+        ctxRef.current,
+      );
+      applyHoverCursor(predicted?.action.cursor ?? null);
+    }
+    /** Modifier/hotkey changes re-route the predicted drag without pointer
+     *  movement. Refresh after a tick so the key event's React state
+     *  (hotkey stack, active tool) has committed into `ctxRef`. */
+    const scheduleHoverCursorRefresh = (e: KeyboardEvent) => {
+      if (!lastHover) return;
+      lastHover = {
+        ...lastHover,
+        altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+      };
+      setTimeout(() => {
+        if (!disposed) refreshHoverCursor();
+      }, 0);
+    };
+    const onHoverPointerLeave = () => {
+      lastHover = null;
+      clearHoverCursor();
     };
 
     const onPointerUp = (e: PointerEvent) => {
@@ -740,6 +843,17 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           lastClickRef.current = { t: now, clientX: e.clientX, clientY: e.clientY };
         }
       }
+
+      // Re-resolve the hover cursor at the release point — deferred a tick
+      // so any state the up/click actions changed (selection, active tool)
+      // has committed before prediction reruns.
+      lastHover = {
+        clientX: e.clientX, clientY: e.clientY,
+        altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
+      };
+      setTimeout(() => {
+        if (!disposed) refreshHoverCursor();
+      }, 0);
     };
 
     const onPointerCancel = (e: PointerEvent) => {
@@ -853,6 +967,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       window.addEventListener('keydown', onKeyDown);
       window.addEventListener('keyup', onKeyUp);
     }
+    // Hover-cursor refresh on modifier/hotkey changes — separate listeners
+    // (not folded into onKeyDown/onKeyUp) so the pump also tracks modifiers
+    // when `keyboard: false` disables gesture key dispatch.
+    window.addEventListener('keydown', scheduleHoverCursorRefresh);
+    window.addEventListener('keyup', scheduleHoverCursorRefresh);
+    canvas?.addEventListener('pointerleave', onHoverPointerLeave);
     canvas?.addEventListener('wheel', onWheel, { passive: false });
     canvas?.addEventListener('pointerdown', onPointerDown);
     canvas?.addEventListener('pointermove', onPointerMove);
@@ -874,6 +994,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('keyup', onKeyUp);
       }
+      window.removeEventListener('keydown', scheduleHoverCursorRefresh);
+      window.removeEventListener('keyup', scheduleHoverCursorRefresh);
+      canvas?.removeEventListener('pointerleave', onHoverPointerLeave);
       canvas?.removeEventListener('wheel', onWheel);
       canvas?.removeEventListener('pointerdown', onPointerDown);
       canvas?.removeEventListener('pointermove', onPointerMove);
@@ -886,6 +1009,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       canvas?.removeEventListener('drop', onDrop);
       window.removeEventListener('paste', onPaste);
       canvas?.classList.remove(DROPOVER_CLASS);
+      clearHoverCursor();
       disposed = true;
       dispatcher.cancelAll('cancel');
     };

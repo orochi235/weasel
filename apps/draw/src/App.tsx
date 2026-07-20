@@ -1454,7 +1454,10 @@ function EditorWithSharedScene({
               // chrome is now an invisible elliptical ring around the
               // selection AABB (the affordance in
               // `src/affordances/rotationHandle.ts`) — hover the band
-              // outside the corners and the cursor becomes `'grab'`.
+              // outside the corners and the cursor becomes `'grab'`;
+              // hovering a corner shows the matching diagonal resize
+              // cursor. Both come from the kit's hover-cursor pump
+              // (`AffordanceHit.cursor`), no wiring here.
               // The selection-overlay's `rotationHandle: true` option
               // would paint the legacy small-dot handle; we deliberately
               // skip it.

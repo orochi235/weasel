@@ -206,6 +206,20 @@ export interface UiOngoingControl {
   end(reason: 'commit' | 'cancel'): void;
 }
 
+/**
+ * Successful `Dispatcher.resolveOnly` prediction: the binding + action that
+ * would fire if `event` were dispatched for real. `action` is the resolved
+ * descriptor so callers (the hover-cursor pump) can read metadata like
+ * `Action.cursor` without a second registry lookup.
+ */
+export interface ResolveOnlyResult {
+  actionId: string;
+  action: Action;
+  scope: BindingScope;
+  /** Tool id owning the winning binding; `null` for ambient action bindings. */
+  ownerToolId: string | null;
+}
+
 export interface Dispatcher {
   /**
    * Route an input event through the binding pipeline. Returns `'handled'`
@@ -214,6 +228,22 @@ export interface Dispatcher {
    * the matched action's `enabled()` returned a disabled reason.
    */
   handleInput(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled';
+
+  /**
+   * Predict which action `event` would route to WITHOUT invoking it. Replays
+   * the same walk as `handleInput` — scope assembly, specificity-sorted
+   * match, eligibility filter, per-candidate `enabled()` gate — and returns
+   * the first candidate that would fire, or `null` when the event would go
+   * unhandled. Pure query: no invoker runs, no in-flight state changes, no
+   * trace-log entry.
+   *
+   * Known divergence from a real dispatch: an ongoing invoker that matches
+   * but returns an empty handle at `start()` (runtime bail) makes the real
+   * dispatch fall through to the next candidate; prediction cannot see that
+   * and reports the bailing action. Keep `enabled()` accurate on actions
+   * that rely on prediction (hover cursors).
+   */
+  resolveOnly(event: InputEvent, ctx: DispatcherContext): ResolveOnlyResult | null;
 
   /**
    * Synthesize an end-of-gesture for every in-flight ongoing handle.
@@ -824,6 +854,45 @@ export function createDispatcher(opts?: {
   }
 
   // -------------------------------------------------------------------------
+  // resolveOnly
+  // -------------------------------------------------------------------------
+
+  function resolveOnly(event: InputEvent, ctx: DispatcherContext): ResolveOnlyResult | null {
+    const scopedBindings = assembleScopedBindings(ctx);
+    const engagedChannels = snapshotEngagedChannels();
+    const rawMatches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
+    if (rawMatches.length === 0) return null;
+
+    const actionMap = buildActionMap(ctx.actions);
+    const ruleCtx = ctx.getRuleCtx?.();
+    const matches = ruleCtx
+      ? filterEligible(rawMatches, (id) => actionMap.get(id), ruleCtx)
+      : rawMatches;
+
+    // Same specificity-ordered fall-through as handleInput, minus invocation:
+    // each action is tried at most once; the first one whose `enabled()`
+    // passes is the predicted winner.
+    const triedActionIds = new Set<string>();
+    for (const match of matches) {
+      if (triedActionIds.has(match.binding.actionId)) continue;
+      triedActionIds.add(match.binding.actionId);
+      const action = actionMap.get(match.binding.actionId);
+      if (!action) continue;
+      if (action.enabled) {
+        const deps = buildDepsFromRequires(action, ctx.depRegistry);
+        if (action.enabled(deps) !== true) continue;
+      }
+      return {
+        actionId: action.id,
+        action,
+        scope: match.scope,
+        ownerToolId: match.ownerToolId,
+      };
+    }
+    return null;
+  }
+
+  // -------------------------------------------------------------------------
   // cancelAll
   // -------------------------------------------------------------------------
 
@@ -968,6 +1037,7 @@ export function createDispatcher(opts?: {
 
   return {
     handleInput: handleInputWithNotify,
+    resolveOnly,
     cancelAll: cancelAllWithNotify,
     inFlight,
     getInFlightHandles,

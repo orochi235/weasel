@@ -119,6 +119,22 @@ export interface Action {
   eligible?:
     | import('../../features/chrome-caps').Rule
     | import('../../features/chrome-caps').Condition;
+  /**
+   * CSS cursor shown while the pointer hovers a spot where this action
+   * would win the drag. The hover-cursor pump (in `useGestureDispatcher`)
+   * runs `Dispatcher.resolveOnly` on each idle pointermove — the same
+   * match walk a real pointerdown takes — and applies the winning
+   * action's `cursor`, so the hint and the actual click target stay in
+   * sync by construction. Omitted = no override (the active tool's
+   * `Tool.cursor` shows). Affordance hits are resolved earlier in the
+   * pump via `AffordanceRegion.cursor` and never reach this field.
+   *
+   * Static string only. Prediction runs `enabled()` but cannot run the
+   * invoker, so an action that matches yet bails at `start()` (empty
+   * handle) may still show its cursor — keep `enabled` accurate for
+   * actions that declare one.
+   */
+  cursor?: string;
 }
 
 /**

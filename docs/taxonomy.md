@@ -239,6 +239,12 @@ Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 register automatically via `<SceneCanvas>`; consumer-level actions register
 explicitly. See `src/interactions/actions/registry.tsx`.
 
+An action may declare an optional `cursor` — the hover hint shown while the
+pointer rests where a drag would route to that action. The hover-cursor pump
+predicts the route via `Dispatcher.resolveOnly` (the same match walk a real
+pointerdown takes), so hint and behavior can't drift. See "Hover cursors
+predict the drag route" in `docs/concepts.md`.
+
 ### Interaction
 
 A [Gesture](#gesture) composed with an [Action](#action). The composition is the

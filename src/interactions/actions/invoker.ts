@@ -52,6 +52,11 @@ export interface AffordanceHit {
    *  Other affordance kinds (rotate-handle, anchor:N, controlIn:N, controlOut:N)
    *  leave this undefined. */
   anchor?: ResizeAnchor;
+  /** CSS cursor to show while the pointer hovers this affordance (no
+   *  gesture in flight). Consumed by the hover-cursor pump in
+   *  `useGestureDispatcher`; unset = the pump falls through to
+   *  action-cursor prediction, then to the active tool's cursor. */
+  cursor?: string;
 }
 
 /** Per-invocation runtime context the dispatcher hands to an Invoker.

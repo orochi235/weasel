@@ -14,7 +14,12 @@ import {
   buildToolOffhandBindings,
 } from '../actions/defaults/toolOffhand';
 
-function Probe({ actionDef, enabled = true }: { actionDef: Action; enabled?: boolean }) {
+function Probe({ actionDef, enabled = true, affordanceAt, classifyTarget }: {
+  actionDef: Action;
+  enabled?: boolean;
+  affordanceAt?: (p: { x: number; y: number }) => import('../actions/invoker').AffordanceHit | null;
+  classifyTarget?: (p: { x: number; y: number }) => 'empty' | 'selected-body' | 'unselected-body';
+}) {
   const registry = useActionsRegistry();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   // Always register (last-writer-wins is safe here)
@@ -24,6 +29,8 @@ function Probe({ actionDef, enabled = true }: { actionDef: Action; enabled?: boo
     actions: registry!,
     toolsById: new Map(),
     enabled,
+    affordanceAt,
+    classifyTarget,
   });
   return <canvas ref={canvasRef} />;
 }
@@ -189,6 +196,80 @@ describe('useGestureDispatcher', () => {
         window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' }));
       });
       expect(ctxValue.hotkeyStack).toEqual([]);
+    });
+  });
+
+  describe('hover-cursor pump', () => {
+    /** Fires a synthetic PointerEvent on the canvas element. */
+    function fire(el: Element, type: string, init: PointerEventInit = {}) {
+      el.dispatchEvent(new PointerEvent(type, { bubbles: true, ...init }));
+    }
+
+    const panAction: Action = {
+      id: 'viewport.dragPan',
+      label: 'pan',
+      defaultBinding: { kind: 'drag' },
+      cursor: 'grab',
+      invoker: {
+        timing: 'ongoing',
+        start: () => ({ onMove: () => {}, onEnd: () => {} }),
+      },
+    };
+
+    it('idle pointermove applies the predicted action cursor; pointerleave clears it', () => {
+      const { container } = render(
+        <Harness>
+          <Probe actionDef={panAction} classifyTarget={() => 'empty'} />
+        </Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40 }); });
+      expect(canvas.style.cursor).toBe('grab');
+      act(() => { fire(canvas, 'pointerleave'); });
+      expect(canvas.style.cursor).toBe('');
+    });
+
+    it('affordance hit cursor wins over action prediction', () => {
+      const { container } = render(
+        <Harness>
+          <Probe
+            actionDef={panAction}
+            classifyTarget={() => 'empty'}
+            affordanceAt={() => ({ kind: 'handle:min-min', cursor: 'nwse-resize' })}
+          />
+        </Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40 }); });
+      expect(canvas.style.cursor).toBe('nwse-resize');
+    });
+
+    it('clears the override while a gesture is in flight', () => {
+      const { container } = render(
+        <Harness>
+          <Probe actionDef={panAction} classifyTarget={() => 'empty'} />
+        </Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointermove', { clientX: 0, clientY: 0 }); });
+      expect(canvas.style.cursor).toBe('grab');
+      // Press + drag past threshold: the pan handle opens; override clears.
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 30, clientY: 30, pointerId: 1 }); });
+      expect(canvas.style.cursor).toBe('');
+    });
+
+    it('leaves the cursor alone when the predicted action declares none', () => {
+      const noCursorAction: Action = { ...panAction, id: 'no-cursor' };
+      delete (noCursorAction as { cursor?: string }).cursor;
+      const { container } = render(
+        <Harness>
+          <Probe actionDef={noCursorAction} classifyTarget={() => 'empty'} />
+        </Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40 }); });
+      expect(canvas.style.cursor).toBe('');
     });
   });
 

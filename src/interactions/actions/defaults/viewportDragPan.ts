@@ -66,6 +66,10 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
   label: 'Drag to pan viewport',
   group: 'viewport',
   defaultBinding: { kind: 'drag' },
+  // Hover hint: when this action would win the drag at the hovered point
+  // (e.g. empty canvas with no marquee-capable tool ahead of it), the
+  // hover-cursor pump shows the open hand.
+  cursor: 'grab',
   requires: ['view'],
   invoker: {
     timing: 'ongoing',

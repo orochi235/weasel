@@ -89,10 +89,13 @@ export interface AffordanceRegion<TScratch = unknown> {
     | { kind: 'annulus';  fill?: FillStyle; stroke?: Stroke; insetPx?: number }
     | { kind: 'custom';   draw: (ctx: CustomPaintContext) => DrawCommand[] };
 
-  /** Optional CSS cursor to apply while the pointer hovers this region
-   *  (and no gesture is captured). When unset, the active tool's cursor
-   *  wins. The cursor pump runs the same hit-test the dispatcher uses
-   *  for pointerdown, so cursor + click target stay in sync by construction. */
+  /** Declared CSS cursor for this region. NOTE: nothing consumes this
+   *  field yet — the hover-cursor pump lives on the dispatcher pipeline
+   *  (`useGestureDispatcher`) and reads `AffordanceHit.cursor` from
+   *  `buildAffordanceAt`'s synthesized hits, which do not go through
+   *  region objects. Honoring this field is part of the pending
+   *  affordance-layer unification (see the selection-overlay note in
+   *  `docs/taxonomy.md`). */
   cursor?: string;
 
   /** Drag binding produced when this region is hit. Lazily called so

@@ -143,6 +143,7 @@ export type {
   InvocationCtx,
   BindingOpts,
   ActionDeps,
+  AffordanceHit,
   OngoingHandle,
   OngoingOverlay,
   ImmediateInvoker,
@@ -203,6 +204,7 @@ export type {
   BindingScope,
   ScopedBinding,
   MatchResult,
+  ResolveOnlyResult,
   UseGestureDispatcherOptions,
 } from './interactions/dispatcher';
 

@@ -19,6 +19,7 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
   const map = new Map<string, OngoingHandle>(handles.map((h, i) => [`gid-${i}`, h]));
   return {
     handleInput: () => 'unhandled',
+    resolveOnly: () => null,
     cancelAll: () => {},
     inFlight: () => map,
     getInFlightHandles: () => map.values(),
