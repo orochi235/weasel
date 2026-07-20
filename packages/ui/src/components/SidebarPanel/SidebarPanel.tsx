@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Focusable } from 'react-aria-components';
+import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './SidebarPanel.module.css';
 
 export interface SidebarPanelProps {
@@ -56,15 +58,19 @@ export function SidebarPanel(props: SidebarPanelProps) {
             <span className={s.title}>{title}</span>
           )}
           {onHide !== undefined && (
-            <button
-              type="button"
-              className={s.hideButton}
-              onClick={onHide}
-              title="Hide panel"
-              aria-label="Hide panel"
-            >
-              ×
-            </button>
+            <TooltipTrigger>
+              <Focusable>
+                <button
+                  type="button"
+                  className={s.hideButton}
+                  onClick={onHide}
+                  aria-label="Hide panel"
+                >
+                  ×
+                </button>
+              </Focusable>
+              <Tooltip>Hide panel</Tooltip>
+            </TooltipTrigger>
           )}
         </div>
       )}

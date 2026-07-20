@@ -33,6 +33,7 @@
 
   --wzl-danger-base:  #d94a3f;
   --wzl-warning-base: #d99a3f;
+  --wzl-success-base: #2ec27e;
 
   /* Geometry */
   --wzl-radius-sm: 3px;
@@ -109,6 +110,7 @@
   --wzl-accent-hover: var(--wzl-accent-strong);
   --wzl-danger:       var(--wzl-danger-base);
   --wzl-warning:      var(--wzl-warning-base);
+  --wzl-success:      var(--wzl-success-base);
   --wzl-focus-ring:   var(--wzl-accent-strong);
 
   /* Frosted glass — the kit's signature treatment. Components compose:

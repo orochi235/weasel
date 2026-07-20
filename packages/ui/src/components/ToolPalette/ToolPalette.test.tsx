@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ToolPalette } from './ToolPalette';
 import type { AnyTool, ToolsApi } from '@weasel-js/core';
 import { createModeRegistry } from '@weasel-js/modes';
@@ -156,21 +156,25 @@ describe('ToolPalette — shortcuts', () => {
     expect(screen.queryByText('V')).toBeNull();
   });
 
-  it('button title combines label and shortcut', () => {
+  it('button tooltip combines label and shortcut', () => {
     const tools = fakeTools([withKeybinding('select', { key: 'v' })]);
     render(<ToolPalette tools={tools} />);
     const btn = screen.getByRole('button', { name: /select/i });
-    const title = btn.getAttribute('title') ?? '';
-    expect(title).toMatch(/select/i);
-    expect(title).toMatch(/V/);
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => btn.focus());
+    const tip = screen.getByRole('tooltip');
+    expect(tip.textContent).toMatch(/select/i);
+    expect(tip.textContent).toMatch(/V/);
   });
 
-  it('button title is just the label when no shortcut is available', () => {
+  it('button tooltip is just the label when no shortcut is available', () => {
     const tool = { id: 'select', presentation: { label: 'Select', group: 'select' } } as AnyTool;
     const tools = fakeTools([tool]);
     render(<ToolPalette tools={tools} />);
     const btn = screen.getByRole('button', { name: /select/i });
-    expect(btn.getAttribute('title')).toBe('Select');
+    fireEvent.keyDown(document.body, { key: 'Tab' });
+    act(() => btn.focus());
+    expect(screen.getByRole('tooltip').textContent).toBe('Select');
   });
 });
 

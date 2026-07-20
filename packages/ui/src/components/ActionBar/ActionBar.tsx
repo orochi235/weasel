@@ -1,10 +1,12 @@
 import { useSyncExternalStore, type ReactNode } from 'react';
+import { Focusable } from 'react-aria-components';
 import {
   useActionsRegistry,
   useOptionalDepRegistry,
   evaluateEnabled,
   type Action,
 } from '@weasel-js/core';
+import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './ActionBar.module.css';
 
 const EMPTY_LIST: readonly Action[] = Object.freeze([]);
@@ -95,25 +97,28 @@ export function ActionBar(props: ActionBarProps) {
         const disabled = !enabled;
         const title = resolveTitle(label, action.shortcut);
         return (
-          <button
-            key={action.id}
-            type="button"
-            data-testid={`action-bar-item-${action.id}`}
-            aria-label={label}
-            aria-disabled={disabled || undefined}
-            disabled={disabled}
-            title={title}
-            className={s.button}
-            onClick={() => {
-              if (disabled) return;
-              // Dispatch through the registry so the enabled() guard runs.
-              // If no registry is in scope the click is a no-op — ActionBar
-              // is expected to render under an `ActionsProvider`.
-              registry?.trigger(action.id);
-            }}
-          >
-            {icon}
-          </button>
+          <TooltipTrigger key={action.id} isDisabled={disabled}>
+            <Focusable isDisabled={disabled}>
+              <button
+                type="button"
+                data-testid={`action-bar-item-${action.id}`}
+                aria-label={label}
+                aria-disabled={disabled || undefined}
+                disabled={disabled}
+                className={s.button}
+                onClick={() => {
+                  if (disabled) return;
+                  // Dispatch through the registry so the enabled() guard runs.
+                  // If no registry is in scope the click is a no-op — ActionBar
+                  // is expected to render under an `ActionsProvider`.
+                  registry?.trigger(action.id);
+                }}
+              >
+                {icon}
+              </button>
+            </Focusable>
+            <Tooltip>{title}</Tooltip>
+          </TooltipTrigger>
         );
       })}
     </div>

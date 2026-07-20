@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Focusable } from 'react-aria-components';
+import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './ToolButton.module.css';
 
 export interface ToolButtonProps {
@@ -28,8 +30,7 @@ export interface ToolButtonProps {
   /** Click handler. */
   onClick(): void;
   /**
-   * Tooltip / accessible name. Defaults to `label` (plus `shortcut` if
-   * provided). Pass an explicit string to override.
+   * Tooltip content. Defaults to `label` (plus `shortcut` if provided).
    */
   title?: string;
   /** Additional class for the root button. */
@@ -46,19 +47,23 @@ export function ToolButton(props: ToolButtonProps) {
   const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
-    <button
-      type="button"
-      tabIndex={tabbable ? 0 : -1}
-      title={resolvedTitle}
-      className={cls}
-      aria-current={active ? 'true' : undefined}
-      aria-disabled={ariaDisabled ? 'true' : undefined}
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <span className={s.icon} aria-hidden="true">{icon}</span>
-      <span className={s.label}>{label}</span>
-      {shortcut && <span className={s.shortcut}>{shortcut}</span>}
-    </button>
+    <TooltipTrigger isDisabled={disabled}>
+      <Focusable isDisabled={disabled}>
+        <button
+          type="button"
+          tabIndex={tabbable ? 0 : -1}
+          className={cls}
+          aria-current={active ? 'true' : undefined}
+          aria-disabled={ariaDisabled ? 'true' : undefined}
+          disabled={disabled}
+          onClick={onClick}
+        >
+          <span className={s.icon} aria-hidden="true">{icon}</span>
+          <span className={s.label}>{label}</span>
+          {shortcut && <span className={s.shortcut}>{shortcut}</span>}
+        </button>
+      </Focusable>
+      <Tooltip>{resolvedTitle}</Tooltip>
+    </TooltipTrigger>
   );
 }

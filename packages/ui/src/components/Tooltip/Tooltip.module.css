@@ -1,0 +1,39 @@
+.tooltip {
+  /* Above Dialog overlay (1000) and ToastRegion (1100) — RAC sets no z-index. */
+  z-index: 1200;
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  color: var(--wzl-fg);
+  font-family: var(--wzl-font-ui);
+  font-size: 12px;
+  line-height: 1.3;
+  padding: 4px 8px;
+  max-width: 260px;
+  transition: opacity 100ms;
+}
+
+.tooltip[data-entering],
+.tooltip[data-exiting] {
+  opacity: 0;
+}
+
+.arrow svg {
+  display: block;
+  fill: var(--wzl-surface);
+  stroke: var(--wzl-border);
+  stroke-width: 1;
+}
+
+.arrow[data-placement='bottom'] svg {
+  transform: rotate(180deg);
+}
+
+.arrow[data-placement='left'] svg {
+  transform: rotate(-90deg);
+}
+
+.arrow[data-placement='right'] svg {
+  transform: rotate(90deg);
+}

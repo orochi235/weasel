@@ -92,6 +92,8 @@ export { zoomAt } from './core/viewport/zoomAt';
 export type { ZoomClampOpts } from './core/viewport/zoomAt';
 export { clampView } from './core/viewport/clampView';
 export type { ClampBounds, CanvasSize } from './core/viewport/clampView';
+export { sceneNodeClientRect } from './core/viewport/sceneNodeClientRect';
+export type { SceneNodeClientRectOpts, NodeClientRect } from './core/viewport/sceneNodeClientRect';
 export * from './core/viewport/useZoom';
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
