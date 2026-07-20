@@ -2168,8 +2168,12 @@ function StandardActionsRegistrar({
 
   // Build the ViewApi (stable identity, refreshed closures) and hand it to
   // useStandardActions (which publishes the `view` dep along with selection,
-  // scene, history, pointer, activeTool).
-  const view = useViewDepSource(currentViewRef, onViewChange, viewportRecenter);
+  // scene, history, pointer, activeTool). `hostSize` reads the live canvas
+  // element so keyboard zoom (Cmd+=/-) can anchor at the visible center.
+  const view = useViewDepSource(currentViewRef, onViewChange, viewportRecenter, () => {
+    const el = canvasRef.current;
+    return el ? { width: el.clientWidth, height: el.clientHeight } : null;
+  });
   // Scene owns its own undo/redo stacks via `useScene`. `undoAction` /
   // `redoAction` only call `history.undo()` / `history.redo()`, so the scene
   // satisfies the runtime contract — cast through `unknown` since `Scene`'s

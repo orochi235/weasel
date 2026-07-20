@@ -14,11 +14,9 @@
  *   The dispatcher merges wheel event data into params at dispatch time, and
  *   converts the wheel event's client coords to canvas-local (subtracting the
  *   canvas's bounding rect) before merging — `zoomAt` expects canvas-local.
- * - `'in'`/`'out'`: step zoom by ×1.25 / ×0.8, anchored at origin (0, 0)
- *   (canvas top-left in screen space). A canvas-center anchor is not available
- *   to immediate invokers because the canvas rect is not in the dep registry.
- *   This is a known limitation; the zoom still feels correct — it just anchors
- *   at the top-left corner of the canvas rather than the center.
+ * - `'in'`/`'out'`: step zoom by ×1.25 / ×0.8, anchored at the host center
+ *   when the `view` dep wires `hostSize()` (SceneCanvas does), falling back
+ *   to the canvas top-left origin for consumers that don't.
  * - `'reset'`: resets scale to 1, translation to 0.
  *
  * ## Key binding modifier notes
@@ -32,6 +30,13 @@ import { zoomAt } from 'core/viewport/zoomAt';
 
 // Multiplicative step for keyboard zoom (matches useKeyboardZoomTool default).
 const KEY_STEP = 1.25;
+
+/** Keyboard-zoom anchor: the host center when the view dep can measure it,
+ *  else the canvas top-left origin (see design notes). */
+function keyAnchor(view: ViewApi): { x: number; y: number } {
+  const size = view.hostSize?.();
+  return size ? { x: size.width / 2, y: size.height / 2 } : { x: 0, y: 0 };
+}
 // Wheel step per 100 px of deltaY (matches useWheelZoomTool default).
 const WHEEL_STEP = 1.1;
 
@@ -122,11 +127,10 @@ export function makeViewportZoomAction(
             break;
           }
           case 'in':
-            // Anchor at origin (canvas top-left). See design notes above.
-            view.set(zoomAt(current, { x: 0, y: 0 }, KEY_STEP, clamp));
+            view.set(zoomAt(current, keyAnchor(view), KEY_STEP, clamp));
             break;
           case 'out':
-            view.set(zoomAt(current, { x: 0, y: 0 }, 1 / KEY_STEP, clamp));
+            view.set(zoomAt(current, keyAnchor(view), 1 / KEY_STEP, clamp));
             break;
           case 'reset':
             // Prefer the consumer-supplied recenter when available — typically

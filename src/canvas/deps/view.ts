@@ -20,6 +20,7 @@ export function useViewDepSource(
   currentViewRef: React.RefObject<View>,
   onViewChange: (v: View) => void,
   recenter?: () => void,
+  hostSize?: () => { width: number; height: number } | null,
 ): ViewApi {
   const viewApiRef = useRef<ViewApi>({
     get: () => currentViewRef.current,
@@ -30,6 +31,7 @@ export function useViewDepSource(
     get: () => currentViewRef.current,
     set: (v: View) => onViewChange(v),
     ...(recenter ? { recenter } : {}),
+    ...(hostSize ? { hostSize } : {}),
   };
   return viewApiRef.current;
 }

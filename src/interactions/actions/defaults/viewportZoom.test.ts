@@ -127,6 +127,30 @@ describe('viewportZoomAction invoker', () => {
     });
   });
 
+  describe('keyboard zoom anchor', () => {
+    it('anchors at the host center when view.hostSize is wired', () => {
+      const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+      view.hostSize = () => ({ width: 800, height: 600 });
+      const invoker = getImmediateInvoker(viewportZoomAction);
+      invoker.run({ view }, { kind: 'in' });
+      // The world point under the canvas center (400, 300) must stay fixed.
+      const worldX = 400 / view._value.scale.x + view._value.x;
+      const worldY = 300 / view._value.scale.y + view._value.y;
+      expect(worldX).toBeCloseTo(400, 5);
+      expect(worldY).toBeCloseTo(300, 5);
+      expect(view._value.scale.x).toBeCloseTo(1.25, 5);
+    });
+
+    it('falls back to the origin without hostSize', () => {
+      const view = makeView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+      const invoker = getImmediateInvoker(viewportZoomAction);
+      invoker.run({ view }, { kind: 'in' });
+      // Anchored at (0,0): translation unchanged.
+      expect(view._value.x).toBeCloseTo(0, 5);
+      expect(view._value.y).toBeCloseTo(0, 5);
+    });
+  });
+
   describe("kind: 'reset'", () => {
     it('resets to scale 1 at origin', () => {
       const view = makeView({ x: 100, y: 50, scale: { x: 3, y: 3 } });

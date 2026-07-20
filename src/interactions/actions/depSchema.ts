@@ -55,6 +55,11 @@ export interface ViewApi {
    *  the workspace. Receives no args; the consumer reads its own bounds
    *  + host dims and dispatches `setView(...)`. */
   recenter?(): void;
+  /** Optional canvas-local host dimensions (CSS px). When wired,
+   *  `viewportZoomAction`'s keyboard branches (Cmd+= / Cmd+-) anchor at the
+   *  host center instead of the top-left origin. Null when the host isn't
+   *  measurable (unmounted). */
+  hostSize?(): { width: number; height: number } | null;
 }
 
 /**
