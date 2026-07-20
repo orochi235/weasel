@@ -88,13 +88,13 @@ describe('view-transition wrapping', () => {
   // exercises the synchronous fallback path implicitly. lib.dom types the
   // method as always-present, so mocking/removing it needs the cast.
   const vtDoc = document as unknown as {
-    startViewTransition?: (cb: () => void) => { finished: Promise<void> };
+    startViewTransition?: (cb: () => void) => { finished: Promise<void>; ready: Promise<void> };
   };
 
   it('wraps queue updates in document.startViewTransition when available', async () => {
     const startViewTransition = vi.fn((cb: () => void) => {
       cb();
-      return { finished: Promise.resolve() };
+      return { finished: Promise.resolve(), ready: Promise.resolve() };
     });
     vtDoc.startViewTransition = startViewTransition;
     try {
@@ -117,7 +117,7 @@ describe('view-transition wrapping', () => {
   it('skips the view transition under prefers-reduced-motion', () => {
     const startViewTransition = vi.fn((cb: () => void) => {
       cb();
-      return { finished: Promise.resolve() };
+      return { finished: Promise.resolve(), ready: Promise.resolve() };
     });
     vtDoc.startViewTransition = startViewTransition;
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));

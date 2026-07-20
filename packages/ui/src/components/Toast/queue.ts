@@ -51,6 +51,12 @@ function viewTransitionWrapUpdate(fn: () => void): void {
   // flushSync: the DOM must reflect the queue change inside the
   // transition callback, before the browser snapshots the new state.
   const vt = document.startViewTransition(() => flushSync(fn));
+  // `ready` rejects when the browser skips the transition — routine under
+  // a rapid burst of toasts, where each new transition supersedes the
+  // in-flight one. The DOM update has still applied by then, but an
+  // untouched `ready` surfaces the rejection as a console error, so
+  // consume it.
+  vt.ready.catch(() => {});
   void vt.finished.finally(() => {
     if (--activeToastTransitions === 0) root.classList.remove('wzl-toast-vt');
   });
