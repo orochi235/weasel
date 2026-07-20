@@ -7,8 +7,9 @@
  *   - `expandIds`     — group-expansion at gesture start.
  *   - `projection`    — pose↔bounds projection (`PoseProjection`).
  *
- * Every field is optional; omitted fields fall back to identity defaults
- * (`[]`, `[]`, `ids => ids`, `AUTO_POSE_DESCRIPTOR`). The AUTO projection
+ * Every field is optional; omitted fields fall back to kit defaults
+ * (`DEFAULT_RESIZE_BEHAVIORS` — shift = aspect lock; pass `[]` to disable —
+ * then `[]`, `ids => ids`, `AUTO_POSE_DESCRIPTOR`). The AUTO projection
  * dispatches per-call to `pathPoseDescriptor` for Path-shaped poses and
  * to `RECT_POSE_DESCRIPTOR` for everything else, so unwired path consumers
  * get correct translate/resize/intersect behavior without having to
@@ -30,6 +31,7 @@ import type {
 } from 'interactions/gestures/types';
 import { type PoseProjection } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import { DEFAULT_RESIZE_BEHAVIORS } from 'interactions/actions/resize/behaviors';
 
 export interface UseResizePolicyOptions<TPose> {
   constraints?: TPose extends ResizePose ? BoundsConstraint<TPose>[] : never[];
@@ -50,7 +52,7 @@ export function useResizePolicy<TPose>(
   useDepSource('resizePolicy', (): ResizePolicy<unknown> => {
     const o = optsRef.current;
     return {
-      constraints: (o.constraints ?? (EMPTY as unknown[])) as ResizePolicy<unknown>['constraints'],
+      constraints: (o.constraints ?? DEFAULT_RESIZE_BEHAVIORS) as ResizePolicy<unknown>['constraints'],
       pointSnap: (o.pointSnap ?? (EMPTY as unknown[])) as ResizePolicy<unknown>['pointSnap'],
       expandIds: o.expandIds ?? IDENTITY_EXPAND,
       projection: (o.projection ?? AUTO_POSE_DESCRIPTOR) as PoseProjection<unknown>,

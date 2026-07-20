@@ -398,4 +398,38 @@ describe('resizeAction descriptor', () => {
     expect(scene.batchLog).toHaveLength(0);
     expect(Array.from(handle.previewIds!() ?? [])).toEqual([]);
   });
+
+  describe('default aspect lock (no resizePolicy dep)', () => {
+    const startPose: RectPose = { x: 0, y: 0, width: 100, height: 50 };
+
+    function dragCorner(shift: boolean): RectPose {
+      const invoker = getOngoingInvoker(resizeAction);
+      const ctx = makeCtx(['a'], { a: { pose: startPose } }, 'handle:bottom-right');
+      const handle = invoker.start(ctx, undefined);
+      handle.onMove!({
+        ...ctx,
+        modifiers: { alt: false, ctrl: false, meta: false, shift },
+        drag: {
+          ...ctx.drag!,
+          current: { x: 20, y: 40 },
+          delta: { x: 20, y: 40 },
+        },
+      });
+      return handle.previewPose!('a') as RectPose;
+    }
+
+    it('shift-drag on a corner keeps the start pose aspect ratio', () => {
+      const pose = dragCorner(true);
+      // dy (40) dominates: height 50 → 90; width follows the 2:1 ratio.
+      expect(pose.height).toBeCloseTo(90);
+      expect(pose.width).toBeCloseTo(180);
+      expect(pose.width / pose.height).toBeCloseTo(startPose.width / startPose.height);
+    });
+
+    it('unmodified drag stays free-form', () => {
+      const pose = dragCorner(false);
+      expect(pose.width).toBeCloseTo(120);
+      expect(pose.height).toBeCloseTo(90);
+    });
+  });
 });

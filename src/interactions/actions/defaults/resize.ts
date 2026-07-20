@@ -50,6 +50,7 @@ import type {
   ResizePose,
 } from '../../gestures/types';
 import type { ResizePolicy } from '../depSchema';
+import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
 import { type PoseProjection } from '../resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
@@ -68,7 +69,6 @@ import { unionBounds } from 'features/groups/unionBounds';
 // ---------------------------------------------------------------------------
 
 const IDENTITY_EXPAND = (ids: string[]) => ids;
-const EMPTY_BEHAVIORS: BoundsConstraint<ResizePose>[] = [];
 const EMPTY_POINT_SNAP: PointSnapBehavior<ResizePose>[] = [];
 
 function resolveDeps(ctx: InvocationCtx): {
@@ -80,7 +80,9 @@ function resolveDeps(ctx: InvocationCtx): {
   const dep = ctx.deps.resizePolicy as ResizePolicy<unknown> | undefined;
   if (!dep) {
     return {
-      behaviors: EMPTY_BEHAVIORS,
+      // Standard kit behaviors (shift = aspect lock) apply even with no
+      // policy wired; consumers opt out via an explicit `behaviors: []`.
+      behaviors: DEFAULT_RESIZE_BEHAVIORS as BoundsConstraint<ResizePose>[],
       pointSnap: EMPTY_POINT_SNAP,
       expandIds: IDENTITY_EXPAND,
       // AUTO dispatches per-call to pathPoseDescriptor for Path-shaped
