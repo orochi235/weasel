@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import { Checkbox } from '../Checkbox';
+import { ColorField } from '../ColorField';
 import { Input } from '../Input';
 import { NumberField } from '../NumberField';
 import { RadioGroup, Radio } from '../RadioGroup';
@@ -13,6 +14,7 @@ import {
   prefValueAtPath,
   visiblePrefSubtree,
   type PrefBoolean,
+  type PrefColor,
   type PrefEnum,
   type PrefGroup,
   type PrefLeaf,
@@ -236,6 +238,18 @@ function renderBuiltin(ctx: PrefRenderContext): ReactNode {
           options={p.options.map((o) => ({ value: o.value, label: o.label }))}
           selectedKey={selected}
           onSelectionChange={(v) => setValue(v)}
+          aria-label={p.name}
+        />
+      );
+    }
+    case 'color': {
+      const p = pref as PrefColor;
+      const hex = typeof value === 'string' ? value : p.default;
+      return (
+        <ColorField
+          value={hex}
+          alpha={p.alpha}
+          onChange={setValue}
           aria-label={p.name}
         />
       );

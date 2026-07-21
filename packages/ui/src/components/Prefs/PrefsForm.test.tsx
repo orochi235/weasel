@@ -161,6 +161,32 @@ describe('PrefsForm', () => {
   });
 });
 
+describe('PrefsForm color leaf', () => {
+  it('renders color leaves with ColorField and applies commits', () => {
+    const onChange = vi.fn();
+    render(
+      <PrefsForm
+        schema={{
+          name: 'root',
+          children: {
+            paint: {
+              name: 'Paint',
+              children: {
+                accent: { kind: 'color', name: 'Accent', description: 'Accent color.', default: '#112233' },
+              },
+            },
+          },
+        }}
+        onChange={onChange}
+      />,
+    );
+    const input = screen.getByLabelText('Accent', { selector: 'input[type="color"]' });
+    fireEvent.input(input, { target: { value: '#445566' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('paint.accent', '#445566');
+  });
+});
+
 describe('visiblePrefSubtree', () => {
   it('prunes groups whose leaves are all hidden', () => {
     const schema: PrefGroup = {
