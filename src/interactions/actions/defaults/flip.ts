@@ -93,7 +93,7 @@ export const flipAction: Action & { requires: string[] } = {
     { spec: { kind: 'key', key: ['v', 'V'], mods: { shift: true } }, opts: { params: { axis: 'y' } } },
   ],
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'applyOps'],
+  requires: ['selection', 'scene', 'applyOps', 'geometryProjection'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {

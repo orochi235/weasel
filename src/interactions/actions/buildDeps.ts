@@ -34,11 +34,15 @@ export function buildDepsFromRequires(action: Action, depRegistry: DepRegistry):
     return new Proxy(deps as Record<string, unknown>, {
       get(target, prop, receiver) {
         if (typeof prop === 'string' && !declared.has(prop) && prop !== 'then') {
-          // eslint-disable-next-line no-console
-          console.warn(
+          const message =
             `[weasel:dispatcher] action "${action.id}" read deps.${prop} but did not declare it in \`requires\`. ` +
-            `Add \`requires: [...'${prop}']\` to the descriptor or the dep will be undefined at runtime.`,
-          );
+            `Add \`requires: [...'${prop}']\` to the descriptor or the dep will be undefined at runtime.`;
+          // Warn first so the console trail survives even when the throw is
+          // swallowed by a caller, then throw so the gesture fails visibly
+          // instead of silently running without the dep.
+          // eslint-disable-next-line no-console
+          console.warn(message);
+          throw new Error(message);
         }
         return Reflect.get(target, prop, receiver);
       },
