@@ -1,4 +1,5 @@
 import type { Action } from '../registry';
+import { ActionDisabledReason } from '../registry';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '../invoker';
 import type { DrawCommand } from '../../../renderer';
 import { linePath } from '../../../features/paths/builder';
@@ -63,5 +64,8 @@ export const sliceAction: Action & { requires: string[] } = {
       };
     },
   },
-  enabled: () => true as const,
+  // Slice can only act when a `slice` dep is wired (its `onEnd` no-ops
+  // otherwise), so reflect dep presence for any UI reading action-enabled
+  // state. The dispatcher still self-guards via the empty-handle path.
+  enabled: (deps) => (deps?.['slice'] ? true : ActionDisabledReason.NotApplicable),
 };

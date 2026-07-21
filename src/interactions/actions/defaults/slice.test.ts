@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { sliceAction } from './slice';
 import type { SliceDep } from './slice';
 import type { InvocationCtx } from '../invoker';
+import { ActionDisabledReason } from '../registry';
 
 const ctxAt = (x: number, y: number, start = { x: 0, y: 0 }): InvocationCtx => ({
   world: { x, y },
@@ -16,6 +17,14 @@ describe('sliceAction', () => {
     expect(sliceAction.id).toBe('slice');
     expect(sliceAction.invoker?.timing).toBe('ongoing');
     expect(sliceAction.defaultBinding).toEqual({ kind: 'drag' });
+  });
+
+  it('enabled reflects slice-dep presence', () => {
+    // With the dep wired, Slice is enabled; without it the action can't do
+    // anything (onEnd no-ops), so a UI reading enabled() should show it off.
+    expect(sliceAction.enabled?.({ slice: { commit: () => {} } } as never)).toBe(true);
+    expect(sliceAction.enabled?.({} as never)).toBe(ActionDisabledReason.NotApplicable);
+    expect(sliceAction.enabled?.(undefined)).toBe(ActionDisabledReason.NotApplicable);
   });
 
   it('no-ops (empty handle) when no slice dep is present', () => {
