@@ -277,7 +277,7 @@ export const resizeAction: Action & { requires: string[] } = {
   label: 'Resize',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'applyOps'],
+  requires: ['selection', 'scene', 'resizePolicy', 'applyOps', 'geometryProjection'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -521,12 +521,7 @@ export const resizeAction: Action & { requires: string[] } = {
             if (next === undefined) continue;
             const from = scratch.startPoses.get(id);
             if (from === undefined) continue;
-            ops.push(createTransformOp<unknown>({
-              id: id as string,
-              from,
-              to: next,
-              label: 'Resize',
-            }));
+            let committed = next;
             // Eager-sync: map data-held geometry by the box→box affine the
             // pose underwent (start-pose bounds → final-pose bounds). Opt-in
             // via the geometryProjection seam; a no-op when the dep is absent.
@@ -545,9 +540,33 @@ export const resizeAction: Action & { requires: string[] } = {
                   m,
                   'Resize',
                 );
-                if (dataOp) ops.push(dataOp);
+                if (dataOp) {
+                  ops.push(dataOp);
+                  // The data absorbed the affine — including any mirror from a
+                  // drag past the opposite edge — so the pose must commit as a
+                  // normalized AABB. Leaving signed extents on the pose makes
+                  // the node unhittable (hit-testing assumes normalized boxes).
+                  // Without the seam the signed pose is kept: a bare-AABB pose
+                  // is the only carrier of the flip there.
+                  if (db.width < 0 || db.height < 0) {
+                    const nb = {
+                      ...db,
+                      x: db.width < 0 ? db.x + db.width : db.x,
+                      y: db.height < 0 ? db.y + db.height : db.y,
+                      width: Math.abs(db.width),
+                      height: Math.abs(db.height),
+                    };
+                    committed = scratch.geometry.remapBounds(next, db, nb) as typeof next;
+                  }
+                }
               }
             }
+            ops.push(createTransformOp<unknown>({
+              id: id as string,
+              from,
+              to: committed,
+              label: 'Resize',
+            }));
           }
           if (ops.length > 0) {
             if (scratch.applyOps) scratch.applyOps(ops, 'Resize');

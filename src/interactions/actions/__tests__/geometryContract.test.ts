@@ -411,6 +411,21 @@ const OPS: OpCase[] = [
     fillsPoseBox: true,
   },
   {
+    name: 'resize-flip-y',
+    drive: (scene, id, before) => {
+      // Fix top-left, drag the bottom-right corner UP past the top edge:
+      // the box flips vertically with a signed height of -40 (the WeaselDraw
+      // flip-corruption repro: an unselectable negative-extent node).
+      const p = before.pose;
+      driveResize(scene, id, { x: 'min', y: 'min' }, { x: p.x + p.width, y: p.y + p.height }, 0, -(p.height + 40));
+    },
+    // The contents follow the SIGNED box→box map (mirror). The committed pose
+    // must come out normalized — asserted via fillsPoseBox against the world
+    // bounds, plus the explicit non-negative-extent check in the test body.
+    expectedMap: (before) => boxToBoxMap(aabbOf(before.pose), { x: before.pose.x, y: before.pose.y, width: before.pose.width, height: -40 }),
+    fillsPoseBox: true,
+  },
+  {
     name: 'move',
     drive: (scene, id) => driveMove(scene, id, 37, -19),
     expectedMap: () => (x, y) => [x + 37, y - 19],
@@ -486,6 +501,11 @@ describe('geometry contract (kit-level) — transforms move contents, not just t
         //     legitimately exceed the unrotated pose AABB.
         if (op.fillsPoseBox) {
           expectRectClose(boundsOfPath(afterWorld), aabbOf(afterNode.pose));
+          // (3) with a geometryProjection wired, the data absorbs any mirror,
+          //     so the committed pose must be a normalized AABB — negative
+          //     extents break hit-testing (unselectable nodes).
+          expect(afterNode.pose.width).toBeGreaterThanOrEqual(0);
+          expect(afterNode.pose.height).toBeGreaterThanOrEqual(0);
         }
       });
     }
