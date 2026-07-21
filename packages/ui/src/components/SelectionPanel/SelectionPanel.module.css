@@ -1,0 +1,77 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: var(--wzl-text, #d7d8de);
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 10px;
+  border-block-end: 1px solid var(--wzl-border, #33343c);
+}
+
+.kind {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.breakdown {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.section {
+  padding: 6px 10px 8px;
+  border-block-end: 1px solid var(--wzl-border-subtle, #2a2b31);
+}
+
+.section:last-child {
+  border-block-end: none;
+}
+
+.sectionTitle {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 6px;
+  align-items: center;
+  margin-block-end: 5px;
+}
+
+.rowLabel {
+  opacity: 0.75;
+}
+
+.rowControls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-inline-size: 0;
+}
+
+.rowControls > * {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.number :global(input),
+.select {
+  font-size: 11px;
+}
+
+.unrenderable {
+  font-size: 11px;
+  opacity: 0.5;
+  font-style: italic;
+}

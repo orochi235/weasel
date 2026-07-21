@@ -1,5 +1,6 @@
-// `@weasel-js/ui` ships generic UI primitives — building blocks the
-// kit's apps compose. Specialized panels (LayerList, etc.) live in their
+// `@weasel-js/ui` ships generic UI primitives plus scene-aware panels
+// that stay generic over consumer data (SelectionPanel). App-specific
+// policy panels (LayerList composition, document props) live in their
 // consuming app (today: `apps/draw/src/ui/`).
 export { dlog, isDebugEnabled } from './dlog';
 export * from './components/ActionBar';
@@ -13,6 +14,7 @@ export * from './components/OptionsBar';
 export * from './components/ActionsBar';
 export * from './components/Powerline';
 export * from './components/Prefs';
+export * from './components/SelectionPanel';
 export * from './components/Sidebar';
 export * from './components/SidebarPanel';
 export * from './components/ToolButton';
