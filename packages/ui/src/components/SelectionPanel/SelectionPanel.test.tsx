@@ -268,4 +268,49 @@ describe('SelectionPanel', () => {
     );
     expect(screen.getByText('(sparkle: no renderer)')).toBeInTheDocument();
   });
+
+  it('null-returning renderer collapses chrome: lone rows drop their section title, pair rows survive', () => {
+    // Appearance holds a single-leaf row (Fill) — nulling it must remove
+    // the row AND the now-empty section title. Layout's Position pair
+    // loses only X; the row survives with Y.
+    const props: NodePropertiesEntry[] = [
+      {
+        name: 'rect',
+        schema: {
+          name: 'Properties',
+          children: {
+            layout: {
+              name: 'Layout',
+              children: {
+                'pose.x': { kind: 'number', name: 'X', description: 'x', default: 0, pair: 'Position' },
+                'pose.y': { kind: 'number', name: 'Y', description: 'y', default: 0, pair: 'Position' },
+              },
+            },
+            appearance: {
+              name: 'Appearance',
+              children: {
+                'data.fill': { kind: 'color', name: 'Fill', description: 'f', default: '#000000ff', alpha: true },
+              },
+            },
+          },
+        },
+      },
+    ];
+    render(
+      <SelectionPanel
+        scene={makeScene()}
+        selection={selectionOf(['a'])}
+        properties={props}
+        routing={routing}
+        renderers={{ 'data.fill': () => null, 'pose.x': () => null }}
+      />,
+    );
+    // Single-leaf row: row label and section title both gone.
+    expect(screen.queryByText('Fill')).not.toBeInTheDocument();
+    expect(screen.queryByText('Appearance')).not.toBeInTheDocument();
+    // Pair row: X collapsed, row remains with Y.
+    expect(screen.queryByLabelText('Position X')).not.toBeInTheDocument();
+    expect(screen.getByText('Position')).toBeInTheDocument();
+    expect(screen.getByLabelText('Position Y')).toHaveValue('20');
+  });
 });
