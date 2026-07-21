@@ -55,16 +55,51 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
 }
 
 /**
+ * Lazily builds `target` on first real use and forwards every array
+ * operation to it via `Proxy`.
+ *
+ * `useBuiltinShapeTools.tsx` imports the package's own barrel
+ * (`@weasel-js/core`), so any module that both (a) is reachable from the
+ * barrel's export graph and (b) eagerly reads `KIT_SHAPE_KINDS` at
+ * module-evaluation time can observe an *incomplete* module during a
+ * circular re-entry (e.g. a test that imports `defaultNodeRouting.ts`
+ * directly, which imports `useBuiltinShapeTools.tsx`, which imports the
+ * barrel, which imports this module — before `useBuiltinShapeTools.tsx`
+ * has finished assigning `KIT_SHAPE_KINDS`). Deferring construction
+ * until first access sidesteps that window entirely; by the time any
+ * consumer actually reads the array, module loading has settled.
+ */
+function lazyArray<T>(build: () => readonly T[]): readonly T[] {
+  let built: readonly T[] | undefined;
+  const resolve = (): readonly T[] => (built ??= build());
+  return new Proxy([] as T[], {
+    get(_target, prop, receiver) {
+      return Reflect.get(resolve(), prop, receiver);
+    },
+    has(_target, prop) {
+      return Reflect.has(resolve(), prop);
+    },
+    ownKeys() {
+      return Reflect.ownKeys(resolve());
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+      return Reflect.getOwnPropertyDescriptor(resolve(), prop);
+    },
+  }) as readonly T[];
+}
+
+/**
  * Default properties-trait entries covering the kit's built-in shape
  * kinds (`KIT_SHAPE_KINDS`) — the sibling of `defaultNodeRouting`. Every
  * kind gets the standard box schema; `text` adds a Text group. In
  * lockstep with `KIT_SHAPE_KINDS` by construction (derived via `.map`).
  */
-export const defaultNodeProperties: readonly NodePropertiesEntry[] =
+export const defaultNodeProperties: readonly NodePropertiesEntry[] = lazyArray(() =>
   KIT_SHAPE_KINDS.map((name) => ({
     name,
     schema: shapeSchema({ text: name === 'text' }),
-  }));
+  })),
+);
 
 /**
  * Properties-trait entries for the *inferred* routing kinds
@@ -72,8 +107,9 @@ export const defaultNodeProperties: readonly NodePropertiesEntry[] =
  * consumers produce when they don't tag `data.kind` (e.g. WeaselDraw).
  * In lockstep with `inferredNodeRouting` by construction.
  */
-export const inferredNodeProperties: readonly NodePropertiesEntry[] =
+export const inferredNodeProperties: readonly NodePropertiesEntry[] = lazyArray(() =>
   inferredNodeRouting.map((e) => ({
     name: e.name,
     schema: shapeSchema({ text: e.name === 'text' }),
-  }));
+  })),
+);

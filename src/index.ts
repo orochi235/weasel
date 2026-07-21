@@ -271,6 +271,13 @@ export {
   type NodeRouting,
 } from './core/scene/NodeRouting';
 export { defaultNodeRouting, inferredNodeRouting } from './canvas/SceneCanvas/defaultNodeRouting';
+export { createNodeProperties } from './core/scene/NodeProperties';
+export type { NodeProperties, NodePropertiesEntry } from './core/scene/NodeProperties';
+export {
+  defaultNodeProperties,
+  inferredNodeProperties,
+  rotationDegreesUnit,
+} from './canvas/SceneCanvas/defaultNodeProperties';
 export type {
   CanvasProps,
   CanvasHelpers,
