@@ -6,7 +6,8 @@
  * `interactions → canvas → interactions` cycle). Carries exactly the methods
  * the move behaviors call (`getParent` / `getNodes` / `getNode`) plus the
  * mutators the committed ops apply through (`setPose` / `setParent` /
- * `removeNode` / `insertNode`).
+ * `setData` / `removeNode` / `insertNode` — `setData` carries the
+ * geometryProjection seam's data-sync op).
  */
 import type { Node, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -16,6 +17,7 @@ export type MoveGestureAdapter<TPose> = MoveAdapter<Node<unknown, string, TPose>
   /** Required override — this adapter always provides parent lookup. */
   getParent(id: string): string | null;
   setParent(id: string, parentId: string | null): void;
+  setData(id: string, data: unknown): void;
   removeNode(id: string): void;
   insertNode(node: Node<unknown, string, TPose>): void;
 };
@@ -38,6 +40,7 @@ export function moveGestureAdapter<TPose>(
     setPose: (id, pose) => scene.setPose(asNodeId(id), pose),
     setParent: (id, parentId) =>
       scene.move(asNodeId(id), parentId === null ? null : asNodeId(parentId)),
+    setData: (id, data) => scene.update(asNodeId(id), { data } as never),
     removeNode: (id) => scene.remove(asNodeId(id)),
     insertNode: (node) =>
       scene.add({

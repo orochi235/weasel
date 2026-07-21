@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { createScene } from 'core/scene/scene';
-import { asNodeId } from 'core/scene/types';
+import { asNodeId, type NodeId } from 'core/scene/types';
 import { moveGestureAdapter } from './gestureAdapter';
+import { moveAction } from '../defaults/move';
+import type { InvocationCtx } from '../invoker';
+import type { Mat3 } from '@weasel-js/geom';
 
 interface D { color: string }
 type L = 'main';
@@ -39,5 +42,45 @@ describe('moveGestureAdapter', () => {
     expect(scene.get(asNodeId(leaf as string))).toBeUndefined();
     a.insertNode(node);
     expect(scene.get(asNodeId(leaf as string))?.id).toBe(leaf);
+  });
+
+  // The move commit's no-`applyOps` fallback is `scene.applyBatch(ops, label,
+  // moveGestureAdapter(scene))`. With a geometryProjection wired, that batch
+  // includes a `setData` op per moved node — the adapter must apply it, or
+  // the batch throws mid-apply and leaves pose and data desynced (pose moved,
+  // data stranded — observed live in WeaselDraw).
+  it('move commit applies the geometryProjection setData op (no applyOps hook)', () => {
+    const { scene, leaf } = fixture();
+    const ctx = {
+      world: { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: {
+        selection: { get: () => [leaf as NodeId] },
+        scene,
+        geometryProjection: {
+          transform: (n: { data: unknown }, m: Mat3) => ({
+            ...(n.data as D),
+            color: `#f00-moved-by-${m[4]},${m[5]}`,
+          }),
+        },
+        // NO applyOps — the commit must fall back to scene.applyBatch.
+      },
+      drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 } },
+    } as unknown as InvocationCtx;
+
+    const inv = moveAction.invoker;
+    if (!inv || inv.timing !== 'ongoing') throw new Error('expected ongoing invoker');
+    const handle = inv.start(ctx, undefined);
+    const moved = {
+      ...ctx,
+      drag: { start: { x: 0, y: 0 }, current: { x: 5, y: 3 }, delta: { x: 5, y: 3 } },
+    } as unknown as InvocationCtx;
+    handle.onMove!(moved);
+    handle.onEnd!(moved, 'commit');
+
+    const after = scene.get(asNodeId(leaf as string))!;
+    expect(after.pose).toMatchObject({ x: 15, y: 13 });
+    expect(after.data.color).toBe('#f00-moved-by-5,3');
   });
 });
