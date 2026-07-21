@@ -28,6 +28,7 @@ import {
 } from '@weasel-js/core';
 import type { AnyTool, LassoHitMode, NodeId, Path, PolygonPath, Scene, SceneNode } from '@weasel-js/core';
 import type { SceneCanvasAdapter } from '../sceneAdapter';
+import type { BuiltinShapeToolId } from './shapeKinds';
 
 /** Per-tool option overrides for the built-in shape/lasso tools.
  *  Each entry is a narrow subset of the underlying hook's options surface
@@ -42,26 +43,12 @@ export interface BuiltinToolOptions {
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
 
-/**
- * Built-in shape tool ids handled by this synthesizer. Each maps to a kit
- * tool hook + a default `create` that produces a leaf node compatible with
- * `PATH_PAINTER`.
- *
- * Runtime mirror in `KIT_SHAPE_KINDS` below — keep the two in sync. The
- * `src/index.barrel.test.ts` parity gate enforces that every member of this
- * union is present in the exported tuple.
- */
-export type BuiltinShapeToolId =
-  | 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pen' | 'pencil'
-  | 'lasso' | 'text';
-
-/** Runtime, iterable list of the shape-tool ids in `BuiltinShapeToolId`.
- *  Surfaced so consumers (e.g. the Bundle Inspector) can enumerate the
- *  builtin shape kinds without re-encoding the union. */
-export const KIT_SHAPE_KINDS = [
-  'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil',
-  'lasso', 'text',
-] as const satisfies readonly BuiltinShapeToolId[];
+// `BuiltinShapeToolId` / `KIT_SHAPE_KINDS` live in `./shapeKinds`, a
+// dependency-free module, so barrel-reachable code can import them without
+// entering this file's `@weasel-js/core` self-import cycle. Re-exported here
+// so existing importers of this module keep working unchanged.
+export { KIT_SHAPE_KINDS } from './shapeKinds';
+export type { BuiltinShapeToolId } from './shapeKinds';
 
 export interface UseBuiltinShapeToolsArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;

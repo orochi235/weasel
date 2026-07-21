@@ -61,8 +61,10 @@ describe('kit barrel parity', () => {
     expect(arr.length).toBeGreaterThan(0);
     // Source the canonical list from the type-defining file. The string
     // literals in the `BuiltinShapeToolId` union are the contract.
+    // (`BuiltinShapeToolId` / `KIT_SHAPE_KINDS` live in the dependency-free
+    // `shapeKinds.ts`; `useBuiltinShapeTools.tsx` just re-exports them.)
     const shapeToolsSrc = readFileSync(
-      join(ROOT, 'canvas', 'SceneCanvas', 'useBuiltinShapeTools.tsx'),
+      join(ROOT, 'canvas', 'SceneCanvas', 'shapeKinds.ts'),
       'utf8',
     );
     const unionMatch = shapeToolsSrc.match(

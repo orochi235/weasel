@@ -62,7 +62,8 @@ import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlay
 import { createSlopsDebugLayer } from './slopsDebugLayer';
 import type { PenScratch } from 'tools/builtin/pen';
 import type { Tool } from 'tools/types';
-import { useBuiltinShapeTools, type BuiltinShapeToolId, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
+import { useBuiltinShapeTools, type BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
+import type { BuiltinShapeToolId } from './SceneCanvas/shapeKinds';
 export type { BuiltinToolOptions } from './SceneCanvas/useBuiltinShapeTools';
 import { DepRegistryProviderIfRoot } from './SceneCanvas/DepRegistryProviderIfRoot';
 import {
