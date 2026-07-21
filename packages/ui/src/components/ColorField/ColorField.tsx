@@ -6,7 +6,10 @@ export interface ColorFieldProps {
   /** Current color, `#rrggbb` or `#rrggbbaa`. Omit when `mixed`. */
   value?: string;
   /** Indeterminate presentation (multi-selection with differing colors):
-   *  checkered chip, empty value. The first edit produces a real value. */
+   *  checkered chip, empty value. The first color edit produces a real
+   *  value; the opacity slider stays disabled until then (an alpha-only
+   *  edit would otherwise commit a value composed against the
+   *  placeholder black). */
   mixed?: boolean;
   /** Show the opacity slider; emitted values are `#rrggbbaa`. */
   alpha?: boolean;
@@ -42,6 +45,11 @@ export function ColorField(props: ColorFieldProps) {
 
   const compose = (rgb: string, a01: number): string =>
     alpha ? withAlpha01(rgb, a01) : rgb;
+
+  // Mixed with no color edit yet: the alpha slider has nothing real to
+  // compose against (rgb6 is the placeholder black), so keep it disabled
+  // until the first color edit lands.
+  const alphaLocked = mixed && colorDraft === null;
 
   // Commit only when a gesture actually changed something — blur with no
   // preceding input must not emit (it would create a no-op undo entry).
@@ -80,7 +88,8 @@ export function ColorField(props: ColorFieldProps) {
             max={100}
             step={1}
             value={visibleAlphaPct}
-            aria-label="Opacity"
+            disabled={alphaLocked}
+            aria-label={props['aria-label'] ? `${props['aria-label']} opacity` : 'Opacity'}
             onInput={(e) => {
               const pct = Number((e.target as HTMLInputElement).value);
               setAlphaDraft(pct);
@@ -89,8 +98,9 @@ export function ColorField(props: ColorFieldProps) {
             onPointerUp={() => commit(visibleRgb, visibleAlphaPct / 100)}
             onPointerCancel={() => commit(visibleRgb, visibleAlphaPct / 100)}
             onKeyUp={() => commit(visibleRgb, visibleAlphaPct / 100)}
+            onBlur={() => commit(visibleRgb, visibleAlphaPct / 100)}
           />
-          <span className={s.alphaReadout}>{visibleAlphaPct}</span>
+          <span className={s.alphaReadout} aria-hidden="true">{visibleAlphaPct}</span>
         </>
       )}
     </span>

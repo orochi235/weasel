@@ -1,10 +1,11 @@
 // Preference-schema vocabulary for PrefsForm / PrefsDialog.
 //
 // Deliberately field-compatible with core's `ToolPref*` family
-// (src/tools/prefs.ts): weasel-ui does not depend on @weasel-js/core, so
-// the contract is structural — a `ToolPrefGroup` (and any host-app
-// superset, like WeaselDraw's registry) assigns into `PrefGroup` with no
-// import and no cast. Keep the two in sync field-for-field.
+// (src/tools/prefs.ts): this schema module deliberately avoids importing
+// @weasel-js/core, so the contract is structural — a `ToolPrefGroup` (and
+// any host-app superset, like WeaselDraw's registry) assigns into
+// `PrefGroup` with no import and no cast. Keep the two in sync
+// field-for-field.
 
 /** Control-presentation hints per kind — visually-equivalent renderings
  *  of the same value type. The persisted value is unchanged either way. */

@@ -42,6 +42,10 @@
   accent-color: var(--wzl-accent, #7ab8d4);
 }
 
+.alphaRange:disabled {
+  opacity: 0.45;
+}
+
 .alphaReadout {
   min-inline-size: 3ch;
   text-align: end;
