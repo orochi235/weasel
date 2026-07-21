@@ -10,6 +10,9 @@
 // snapshot (whose serialized op payloads also carry path poses), so they live
 // outside App's component module to stay independently testable.
 
+import type { AddNodeSpec, SerializedScene } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core';
+
 type TaggedTypedArray = { __ta: 'u8' | 'f32'; data: number[] };
 
 /** `JSON.stringify` replacer: tag typed arrays so they survive the round-trip. */
@@ -50,4 +53,26 @@ export function reviveTypedArrays<T>(node: T): T {
     }
   }
   return node;
+}
+
+/** Rebuild the full node list from a persisted scene snapshot, shaped for
+ *  `useScene`'s `initial` option. Preserves every node's `kind`, `layer`, and
+ *  `parent`, so containers (Cmd+G groups) and nesting survive a reload — the
+ *  old leaf-only path dropped both. `toJSON()` emits nodes in layer-major
+ *  DFS-preorder (parents before children), so a sequential `add` finds each
+ *  node's parent already present.
+ *
+ *  Note: container clip-paths (`clipFromPoseKey`) are not restored — WeaselDraw
+ *  groups carry no clip today. Wire a `SceneRegistry` here if that changes. */
+export function nodeSpecsFromSnapshot<TData, TLayer extends string, TPose>(
+  json: SerializedScene<TData, TLayer, TPose>,
+): AddNodeSpec<TData, TLayer, TPose>[] {
+  return json.nodes.map((n) => ({
+    kind: n.kind,
+    layer: n.layer,
+    pose: n.pose,
+    data: reviveTypedArrays(n.data),
+    id: asNodeId(n.id),
+    ...(n.parent != null ? { parent: asNodeId(n.parent) } : {}),
+  }));
 }

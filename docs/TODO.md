@@ -274,7 +274,6 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 - **(P3) Palette presets / recently-used colors.**
 - **(P3) Multi-page documents.**
 - **(P3) Richer text style controls** (font, size, weight pickers).
-- **(P3) `loadInitial` restores only leaf nodes — groups/nesting lost on reload.** Surfaced 2026-06-19 while wiring history persistence. `apps/draw/src/App.tsx` `loadInitial` filters `n.kind === 'leaf'` and drops `parent`, flattening every node onto the `'default'` layer. So containers (Cmd+G groups) and any parent/child nesting don't survive a page reload even though `scene.toJSON()` persists the full tree. Fix: rebuild the full node list (containers + parent links + layers) from the snapshot via `scene.loadState(json)` instead of the leaf-only map. Independent of the history-persistence work.
 
 ---
 

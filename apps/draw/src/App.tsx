@@ -46,6 +46,7 @@ import {
   type AlignEdge,
   type DistributeAxis,
   type SerializedScene,
+  type AddNodeSpec,
   type BooleansAdapter,
   type NodeId,
   type View,
@@ -87,7 +88,7 @@ import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter } from '@weasel-js/core';
 import { sliceAction } from '@weasel-js/core';
 import type { SerializedHistory } from '@weasel-js/history';
-import { serializeReplacer, reviveTypedArrays } from './persistence';
+import { serializeReplacer, reviveTypedArrays, nodeSpecsFromSnapshot } from './persistence';
 import { useSliceTool } from './tools/slice/useSliceTool';
 import { SliceDepPublisher } from './tools/slice/SliceDepPublisher';
 import { parseSvg } from '@weasel-js/svg';
@@ -815,29 +816,17 @@ function useModeId(machine: ModeMachine): string {
 
 /** Restore the persisted scene (if any) from localStorage. Returns the
  *  initial node list shaped for `useScene`'s full-form call signature.
+ *  Rebuilds the FULL tree (containers + parent links + layers) via
+ *  `nodeSpecsFromSnapshot`, so Cmd+G groups and nesting survive a reload.
  *  Best-effort — any parse error yields a fresh starter scene with one
  *  example rectangle so the canvas isn't empty on first run. */
-function loadInitial(): Array<{
-  kind: 'leaf';
-  layer: WeaselDrawLayer;
-  pose: WeaselDrawPose;
-  data: WeaselDrawData;
-  id: ReturnType<typeof asNodeId>;
-}> {
+function loadInitial(): AddNodeSpec<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>[] {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) {
       const json = JSON.parse(raw) as SerializedScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>;
       if (json && json.version === 1 && Array.isArray(json.nodes)) {
-        return json.nodes
-          .filter((n) => n.kind === 'leaf')
-          .map((n) => ({
-            kind: 'leaf' as const,
-            layer: 'default' as WeaselDrawLayer,
-            pose: n.pose,
-            data: reviveTypedArrays(n.data),
-            id: asNodeId(n.id),
-          }));
+        return nodeSpecsFromSnapshot(json);
       }
     }
   } catch {

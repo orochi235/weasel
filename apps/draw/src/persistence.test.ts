@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
-import type { Op } from '@weasel-js/core';
-import { reviveTypedArrays, serializeReplacer } from './persistence';
+import type { Op, SerializedScene } from '@weasel-js/core';
+import { asNodeId } from '@weasel-js/core';
+import { nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './persistence';
 
 // These cover the new bit of App's localStorage autosave: the undo history is
 // now persisted alongside the scene. The risk is that a history snapshot's
@@ -70,5 +71,54 @@ describe('persistence — history snapshot round-trip', () => {
 
     expect(h2.canUndo()).toBe(true);
     expect(h2.entries().undo.map((e) => e.label)).toEqual(['push 7']);
+  });
+});
+
+// Regression for the reload bug where `loadInitial` filtered `kind === 'leaf'`
+// and dropped `parent`, flattening every node onto the default layer — so
+// containers (Cmd+G groups) and nesting were lost on reload even though
+// `toJSON()` persisted the full tree. `nodeSpecsFromSnapshot` rebuilds the
+// full node list (containers + parent links + layers).
+describe('persistence — scene snapshot → node specs', () => {
+  type Data = { kind?: string; fill?: string; coords?: unknown };
+  type Layer = 'default';
+  type Pose = { x: number; y: number; width: number; height: number };
+
+  it('preserves containers and parent links so nesting survives reload', () => {
+    const json: SerializedScene<Data, Layer, Pose> = {
+      version: 1,
+      systemLayers: [{ id: 'default' }],
+      // Layer-major DFS-preorder, exactly as toJSON() emits: parent before child.
+      nodes: [
+        { id: 'g', kind: 'container', layer: 'default', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { kind: 'group' } },
+        { id: 'a', kind: 'leaf', layer: 'default', pose: { x: 10, y: 10, width: 20, height: 20 }, data: { fill: '#fff' }, parent: 'g' },
+        { id: 'b', kind: 'leaf', layer: 'default', pose: { x: 50, y: 0, width: 20, height: 20 }, data: { fill: '#000' } },
+      ],
+    };
+
+    const specs = nodeSpecsFromSnapshot(json);
+
+    // All three nodes survive, in preorder.
+    expect(specs.map((s) => s.id)).toEqual([asNodeId('g'), asNodeId('a'), asNodeId('b')]);
+    // The container is restored as a container (not filtered out).
+    expect(specs.find((s) => s.id === asNodeId('g'))!.kind).toBe('container');
+    // The nested leaf keeps its parent link.
+    expect(specs.find((s) => s.id === asNodeId('a'))!.parent).toBe(asNodeId('g'));
+    // The root leaf has no parent.
+    expect(specs.find((s) => s.id === asNodeId('b'))!.parent ?? null).toBeNull();
+  });
+
+  it('revives typed arrays inside node data', () => {
+    const json: SerializedScene<Data, Layer, Pose> = {
+      version: 1,
+      systemLayers: [{ id: 'default' }],
+      nodes: [
+        { id: 'a', kind: 'leaf', layer: 'default', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { coords: [1.5, 2.5, 3.5] } },
+      ],
+    };
+
+    const specs = nodeSpecsFromSnapshot(json);
+    const coords = (specs[0].data as { coords: unknown }).coords;
+    expect(coords).toBeInstanceOf(Float32Array);
   });
 });
