@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { Fragment, useState, useSyncExternalStore, type ReactNode } from 'react';
 import {
   asNodeId,
   type NodePropertiesEntry,
@@ -9,7 +9,6 @@ import {
   type ToolPrefEnum,
   type ToolPrefLeaf,
   type ToolPrefNumber,
-  type ToolPrefString,
 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
 import { Input } from '../Input';
@@ -22,6 +21,7 @@ import {
   classifyKind,
   effectiveSections,
   kindBreakdown,
+  splitNodePath,
   type AnyNode,
   type PanelLeaf,
 } from './model';
@@ -54,7 +54,10 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> {
   /** Routing-trait classifiers used to derive each node's kind — pass
    *  the same list the canvas uses. Memoize or hoist. */
   routing: readonly NodeRoutingEntry[];
-  /** Per-kind control overrides / app-defined kinds (PrefsForm-style). */
+  /** Control overrides / app-defined kinds (PrefsForm-style). Keys are
+   *  leaf paths (`data.fill`, checked first) or leaf kinds (`color`).
+   *  A renderer returning `null` collapses its leaf (and the row, when
+   *  every leaf in it collapses). */
   renderers?: Record<string, PropertyRenderer>;
   /** Kind → header label. Default: capitalized kind name. */
   kindLabel?: (kind: string) => string;
@@ -93,22 +96,17 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
     .filter((n): n is NonNullable<typeof n> => n != null) as readonly AnyNode[];
 
   const kinds = nodes.map((n) => classifyKind(n, routing));
-  const sections = useMemo(
-    () => effectiveSections(kinds, properties),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- kinds is
-    // rebuilt per render; key on its content.
-    [kinds.join(' '), properties],
-  );
+  const sections = effectiveSections(kinds, properties);
 
   if (nodes.length === 0) {
     return <div className={[s.root, className].filter(Boolean).join(' ')}>{emptyState}</div>;
   }
 
   const commit = (leaf: PanelLeaf, value: unknown): void => {
+    const split = splitNodePath(leaf.path);
+    if (split === null) return;
+    const { head, key } = split;
     const ids = selection.current.map(asNodeId);
-    const dot = leaf.path.indexOf('.');
-    const head = leaf.path.slice(0, dot);
-    const key = leaf.path.slice(dot + 1);
     scene.batch(`Edit ${leaf.leaf.name}`, () => {
       for (const id of ids) {
         const node = scene.get(id);
@@ -134,42 +132,59 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
           </>
         )}
       </header>
-      {sections.map((section) => (
-        <section key={section.key} className={s.section}>
-          {section.name !== '' && <h4 className={s.sectionTitle}>{section.name}</h4>}
-          {section.rows.map((row) => (
-            <div key={row.leaves[0].path} className={s.row}>
-              <span className={s.rowLabel}>{row.label}</span>
-              <span className={s.rowControls}>
-                {row.leaves.map((panelLeaf) => (
-                  <LeafControl
-                    key={panelLeaf.path}
-                    panelLeaf={panelLeaf}
-                    nodes={nodes}
-                    renderers={renderers}
-                    commit={commit}
-                  />
-                ))}
-              </span>
-            </div>
-          ))}
-        </section>
-      ))}
+      {sections.map((section) => {
+        // Render controls before emitting row chrome so a null-rendering
+        // leaf (custom renderer opting out) collapses its cell — and the
+        // whole row / section when nothing survives. PrefsForm precedent.
+        const rows = section.rows
+          .map((row) => {
+            const controls = row.leaves
+              .map((panelLeaf) => ({
+                panelLeaf,
+                content: renderLeafControl(
+                  panelLeaf,
+                  row.leaves.length > 1
+                    ? `${row.label} ${panelLeaf.leaf.name}`
+                    : panelLeaf.leaf.name,
+                  nodes,
+                  renderers,
+                  commit,
+                ),
+              }))
+              .filter((c) => c.content != null);
+            return { row, controls };
+          })
+          .filter(({ controls }) => controls.length > 0);
+        if (rows.length === 0) return null;
+        return (
+          <section key={section.key} className={s.section}>
+            {section.name !== '' && <h3 className={s.sectionTitle}>{section.name}</h3>}
+            {rows.map(({ row, controls }) => (
+              <div key={row.leaves[0].path} className={s.row}>
+                <span className={s.rowLabel} title={row.leaves[0].leaf.description}>
+                  {row.label}
+                </span>
+                <span className={s.rowControls}>
+                  {controls.map(({ panelLeaf, content }) => (
+                    <Fragment key={panelLeaf.path}>{content}</Fragment>
+                  ))}
+                </span>
+              </div>
+            ))}
+          </section>
+        );
+      })}
     </div>
   );
 }
 
-function LeafControl({
-  panelLeaf,
-  nodes,
-  renderers,
-  commit,
-}: {
-  panelLeaf: PanelLeaf;
-  nodes: readonly AnyNode[];
-  renderers?: Record<string, PropertyRenderer>;
-  commit: (leaf: PanelLeaf, value: unknown) => void;
-}) {
+function renderLeafControl(
+  panelLeaf: PanelLeaf,
+  ariaLabel: string,
+  nodes: readonly AnyNode[],
+  renderers: Record<string, PropertyRenderer> | undefined,
+  commit: (leaf: PanelLeaf, value: unknown) => void,
+): ReactNode {
   const { path, leaf } = panelLeaf;
   const aggregated = aggregateValue(nodes, path);
   const mixed = aggregated === MIXED;
@@ -183,19 +198,19 @@ function LeafControl({
     setValue: (v) => commit(panelLeaf, v),
   };
 
-  const custom = renderers?.[leaf.kind];
-  if (custom) return <>{custom(ctx)}</>;
-  return <>{renderBuiltin(ctx)}</>;
+  const custom = renderers?.[path] ?? renderers?.[leaf.kind];
+  if (custom) return custom(ctx);
+  return renderBuiltin(ctx, ariaLabel);
 }
 
-function renderBuiltin(ctx: PropertyRenderContext): ReactNode {
+function renderBuiltin(ctx: PropertyRenderContext, ariaLabel: string): ReactNode {
   const { pref, value, mixed, setValue } = ctx;
   switch (pref.kind) {
     case 'number': {
       const p = pref as ToolPrefNumber;
       const stored = typeof value === 'number' && Number.isFinite(value) ? value : undefined;
       const display = stored !== undefined ? (p.unit ? p.unit.toDisplay(stored) : stored) : NaN;
-      return (
+      const field = (
         <NumberField
           className={s.number}
           value={mixed || stored === undefined ? NaN : display}
@@ -204,32 +219,44 @@ function renderBuiltin(ctx: PropertyRenderContext): ReactNode {
           maxValue={p.max}
           step={p.step ?? 1}
           hideSteppers
-          aria-label={p.name}
+          aria-label={ariaLabel}
           onChange={(n) => {
             if (Number.isNaN(n)) return;
             setValue(p.unit ? p.unit.fromDisplay(n) : n);
           }}
         />
       );
+      if (p.unit?.suffix === undefined) return field;
+      return (
+        <>
+          {field}
+          <span className={s.unitSuffix} aria-hidden="true">
+            {p.unit.suffix}
+          </span>
+        </>
+      );
     }
     case 'string': {
-      const p = pref as ToolPrefString;
       return (
         <DraftInput
           text={mixed ? undefined : typeof value === 'string' ? value : ''}
           placeholder={mixed ? 'Mixed' : undefined}
-          ariaLabel={p.name}
+          ariaLabel={ariaLabel}
           onCommit={setValue}
         />
       );
     }
     case 'boolean': {
+      const control = (
+        <Switch isSelected={Boolean(value)} onChange={setValue} aria-label={ariaLabel} />
+      );
+      // Switch has no indeterminate state; a reduced-opacity wrapper with
+      // a title is the cheap honest cue for a mixed selection.
+      if (!mixed) return control;
       return (
-        <Switch
-          isSelected={Boolean(value)}
-          onChange={setValue}
-          aria-label={pref.name}
-        />
+        <span className={s.mixedSwitch} title="Mixed">
+          {control}
+        </span>
       );
     }
     case 'enum': {
@@ -239,9 +266,9 @@ function renderBuiltin(ctx: PropertyRenderContext): ReactNode {
           className={s.select}
           options={p.options.map((o) => ({ value: o.value, label: o.label }))}
           selectedKey={mixed ? null : typeof value === 'string' ? value : p.default}
-          placeholder="Mixed"
+          placeholder={mixed ? 'Mixed' : undefined}
           onSelectionChange={setValue}
-          aria-label={p.name}
+          aria-label={ariaLabel}
         />
       );
     }
@@ -253,7 +280,7 @@ function renderBuiltin(ctx: PropertyRenderContext): ReactNode {
           mixed={mixed}
           alpha={p.alpha}
           onChange={setValue}
-          aria-label={p.name}
+          aria-label={ariaLabel}
         />
       );
     }

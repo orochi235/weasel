@@ -117,17 +117,20 @@ export function effectiveSections(
   const flatFirst = flatten(first);
   if (rest.length === 0) return flatFirst;
 
+  // '\0' delimiter: path and kind strings are unconstrained, so a
+  // printable separator could collide with real content.
+  const leafKey = (l: PanelLeaf): string => `${l.path}\0${l.leaf.kind}`;
   const restKeys = rest.map(
     (schema) =>
       new Set(
         flatten(schema)
           .flatMap((s) => s.rows)
           .flatMap((r) => r.leaves)
-          .map((l) => `${l.path} ${l.leaf.kind}`),
+          .map(leafKey),
       ),
   );
   const keep = (l: PanelLeaf): boolean =>
-    restKeys.every((set) => set.has(`${l.path} ${l.leaf.kind}`));
+    restKeys.every((set) => set.has(leafKey(l)));
 
   return flatFirst
     .map((section) => ({
@@ -139,12 +142,19 @@ export function effectiveSections(
     .filter((section) => section.rows.length > 0);
 }
 
+/** Split a two-segment node path (`pose.x` / `data.fill`) into its root
+ *  and key. Returns `null` for a dotless path. */
+export function splitNodePath(path: string): { head: string; key: string } | null {
+  const dot = path.indexOf('.');
+  if (dot < 0) return null;
+  return { head: path.slice(0, dot), key: path.slice(dot + 1) };
+}
+
 /** Read a node value at a two-segment path (`pose.x` / `data.fill`). */
 export function nodeValueAt(node: AnyNode, path: string): unknown {
-  const dot = path.indexOf('.');
-  if (dot < 0) return undefined;
-  const head = path.slice(0, dot);
-  const key = path.slice(dot + 1);
+  const split = splitNodePath(path);
+  if (split === null) return undefined;
+  const { head, key } = split;
   const root = head === 'pose' ? node.pose : head === 'data' ? node.data : undefined;
   if (root == null || typeof root !== 'object') return undefined;
   return (root as Record<string, unknown>)[key];

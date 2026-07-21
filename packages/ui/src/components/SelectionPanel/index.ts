@@ -10,6 +10,7 @@ export {
   classifyKind,
   effectiveSections,
   kindBreakdown,
+  splitNodePath,
   type Mixed,
   type PanelLeaf,
   type PanelRow,

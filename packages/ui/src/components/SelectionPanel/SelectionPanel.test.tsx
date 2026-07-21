@@ -77,7 +77,7 @@ describe('SelectionPanel', () => {
     );
     expect(screen.getByText('Rect')).toBeInTheDocument();
     expect(screen.getByText('Layout')).toBeInTheDocument();
-    expect(screen.getByLabelText('X')).toHaveValue('10');
+    expect(screen.getByLabelText('Position X')).toHaveValue('10');
     expect(screen.getByLabelText('Fill')).toHaveValue('#ff0000');
   });
 
@@ -92,8 +92,8 @@ describe('SelectionPanel', () => {
     );
     expect(screen.getByText('2 selected')).toBeInTheDocument();
     expect(screen.getByText('rect ×2')).toBeInTheDocument();
-    expect(screen.getByLabelText('X')).toHaveAttribute('placeholder', 'Mixed');
-    expect(screen.getByLabelText('Y')).toHaveValue('20'); // shared value renders
+    expect(screen.getByLabelText('Position X')).toHaveAttribute('placeholder', 'Mixed');
+    expect(screen.getByLabelText('Position Y')).toHaveValue('20'); // shared value renders
   });
 
   it('editing a number fans out to every selected node in one undo step', () => {
@@ -106,7 +106,7 @@ describe('SelectionPanel', () => {
         routing={routing}
       />,
     );
-    const y = screen.getByLabelText('Y');
+    const y = screen.getByLabelText('Position Y');
     fireEvent.change(y, { target: { value: '99' } });
     fireEvent.blur(y);
     expect((scene.get(asNodeId('a')) as { pose: Pose }).pose.y).toBe(99);
