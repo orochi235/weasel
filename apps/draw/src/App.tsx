@@ -934,7 +934,7 @@ function BooleansAdapterPublisher({
         return { parentId: node?.parent ?? null, index: idx };
       },
       setSelection: (ids) => selection.set(ids),
-      insertNode: (node) => {
+      insertNode: (node, index?: number) => {
         const n = node as { id: string; kind: 'leaf' | 'container'; layer: WeaselDrawLayer; pose: WeaselDrawPose; data: WeaselDrawData; parent?: NodeId | null };
         scene.add({
           kind: n.kind,
@@ -942,6 +942,7 @@ function BooleansAdapterPublisher({
           pose: n.pose,
           data: n.data,
           id: asNodeId(n.id),
+          ...(index !== undefined ? { index } : {}),
           ...(n.parent != null ? { parent: n.parent } : {}),
         });
       },

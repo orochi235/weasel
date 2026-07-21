@@ -57,13 +57,14 @@ export function SliceDepPublisher({
   // BooleansAdapterPublisher's useMemo pattern).
   const adapter = useMemo<SliceAdapter>(
     () => ({
-      insertNode(node: WDLeafNode) {
+      insertNode(node: WDLeafNode, index?: number) {
         scene.add({
           kind: node.kind,
           layer: node.layer,
           pose: node.pose,
           data: node.data,
           id: node.id as NodeId,
+          ...(index !== undefined ? { index } : {}),
           ...(node.parent !== null ? { parent: node.parent } : {}),
         });
       },

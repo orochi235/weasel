@@ -126,7 +126,6 @@ From `docs/specs/2026-05-03-tool-overlay-channel-design.md`:
 
 From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-17):
 
-- **(P3) Forward insert `index` through app publisher adapters.** `SliceDepPublisher.insertNode` drops the `index` arg when calling `scene.add`, identical to `BooleansAdapterPublisher.insertNode` and the canonical `sceneAdapter.insertNode`. In the real app the journal path (installed by `useModality`) places ops, so the inline adapter is not consulted and this is moot; it only affects the no-journal fallback. If undo re-insertion position ever regresses, forward `index` in all three adapters together.
 - **(P3) Dep-aware `enabled` for `sliceAction`.** `sliceAction.enabled` returns `true` unconditionally. The action declares `requires: ['slice']` and its `onEnd` no-ops when the dep is absent, so behavior is safe, but a UI reading `enabled()` would show Slice enabled even when no slice dep is wired. Reflect dep presence if/when a consumer surfaces action-enabled state for slice.
 - **(P3) Bézier-preserving + concave finite-cut (Approach B).** v1 flattens béziers on cut pieces and an infinite-line half-plane clip can over-cut concave shapes the finite stroke only partly crosses (pinned in `splitByLine.test.ts`). `splitPathByLine` is the single swap point for a chord-split Approach B + `schneiderFit` curve re-fitting.
 

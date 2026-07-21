@@ -37,6 +37,21 @@ describe('sceneToAdapter', () => {
     expect(scene.nodes.has('fixture-0' as never)).toBe(true);
   });
 
+  it('insertNode forwards the index arg so re-insert restores z-order', () => {
+    // `createInsertOp.apply` calls `insertNode(node, index)`; undo of a
+    // multi-delete relies on the index to restore paint order instead of
+    // appending. Insert `c` at index 1 → it must land between a and b.
+    const scene = makeScene();
+    const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });
+    const b = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'b' } });
+    const adapter = sceneToAdapter(scene);
+    adapter.insertNode!(
+      { kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'c' }, id: 'c', parent: null } as never,
+      1,
+    );
+    expect(adapter.getNodes().map((n) => n.id)).toEqual([a, 'c', b]);
+  });
+
   it('getNodes returns nodes in render order, hidden layers filtered', () => {
     const scene = makeScene();
     const a = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 0, y: 0, width: 1, height: 1 }, data: { label: 'a' } });

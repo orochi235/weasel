@@ -75,7 +75,7 @@ export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
       getParent(id: string): string | null;
       getSelection(): string[];
       setSelection(ids: string[]): void;
-      insertNode(node: Node<TData, TLayer, TPose>): void;
+      insertNode(node: Node<TData, TLayer, TPose>, index?: number): void;
       removeNode(id: string): void;
       applyOps(ops: Op[], label?: string): void;
     };
@@ -355,13 +355,14 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     // useNest wrapping the selection in a new container node, or its
     // inverse). Re-adds via the full structural spec so the round-trip
     // survives undo/redo; removes by id.
-    insertNode(node: Node<TData, TLayer, TPose>) {
+    insertNode(node: Node<TData, TLayer, TPose>, index?: number) {
       scene.add({
         kind: node.kind,
         layer: node.layer,
         pose: node.pose,
         data: node.data,
         id: node.id,
+        ...(index !== undefined ? { index } : {}),
         ...(node.parent !== null ? { parent: node.parent } : {}),
         ...(node.kind === 'container' && node.clipFromPose
           ? { clipFromPose: node.clipFromPose }
