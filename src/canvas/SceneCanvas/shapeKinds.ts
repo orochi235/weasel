@@ -7,9 +7,9 @@
 // `useBuiltinShapeTools.tsx` <-> barrel cycle in the first place.
 
 /**
- * Built-in shape tool ids handled by this synthesizer. Each maps to a kit
- * tool hook + a default `create` that produces a leaf node compatible with
- * `PATH_PAINTER`.
+ * Built-in shape tool ids handled by `useBuiltinShapeTools`. Each maps to a
+ * kit tool hook + a default `create` that produces a leaf node compatible
+ * with `PATH_PAINTER`.
  *
  * Runtime mirror in `KIT_SHAPE_KINDS` below — keep the two in sync. The
  * `src/index.barrel.test.ts` parity gate enforces that every member of this

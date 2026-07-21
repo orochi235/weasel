@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
-import { KIT_SHAPE_KINDS } from './useBuiltinShapeTools';
+import { KIT_SHAPE_KINDS } from './shapeKinds';
 import { inferredNodeRouting } from './defaultNodeRouting';
 
 describe('defaultNodeProperties', () => {

@@ -279,23 +279,6 @@ export {
   rotationDegreesUnit,
 } from './canvas/SceneCanvas/defaultNodeProperties';
 export type {
-  ToolPref,
-  ToolPrefBoolean,
-  ToolPrefBooleanControl,
-  ToolPrefColor,
-  ToolPrefCustom,
-  ToolPrefEnum,
-  ToolPrefEnumControl,
-  ToolPrefGroup,
-  ToolPrefKind,
-  ToolPrefLeaf,
-  ToolPrefNumber,
-  ToolPrefNumberControl,
-  ToolPrefNumberUnit,
-  ToolPrefString,
-  ToolPrefStringControl,
-} from './tools/prefs';
-export type {
   CanvasProps,
   CanvasHelpers,
   CanvasSelectionMode,
@@ -982,8 +965,9 @@ export type {
 } from './canvas/Canvas';
 export type { BuiltinToolId, ToolBundle } from './canvas/SceneCanvas';
 export { BUNDLE_TOOLS, rotateAroundAABBCenter } from './canvas/SceneCanvas';
-export { KIT_SHAPE_KINDS } from './canvas/SceneCanvas/useBuiltinShapeTools';
-export type { BuiltinShapeToolId, BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
+export { KIT_SHAPE_KINDS } from './canvas/SceneCanvas/shapeKinds';
+export type { BuiltinShapeToolId } from './canvas/SceneCanvas/shapeKinds';
+export type { BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
 export type { ViewportConfig } from './canvas/SceneCanvas/useViewportTools';
 export type { InsertNodeFactory } from './canvas/deps';
 export type {

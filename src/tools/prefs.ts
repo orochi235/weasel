@@ -85,6 +85,15 @@ export type ToolPref =
   | ToolPrefEnum
   | ToolPrefColor;
 
+// Compile-time tie: every built-in leaf kind must appear in ToolPrefKind
+// and vice versa (ToolPrefBase's K is open for ToolPrefCustom's sake, so
+// the union no longer enforces it).
+type _BuiltinKindsExact = [ToolPref['kind']] extends [ToolPrefKind]
+  ? [ToolPrefKind] extends [ToolPref['kind']] ? true : never
+  : never;
+const _builtinKindsExact: _BuiltinKindsExact = true;
+void _builtinKindsExact;
+
 /** Built-in or app-defined leaf. */
 export type ToolPrefLeaf = ToolPref | ToolPrefCustom;
 
