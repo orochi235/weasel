@@ -279,6 +279,23 @@ export {
   rotationDegreesUnit,
 } from './canvas/SceneCanvas/defaultNodeProperties';
 export type {
+  ToolPref,
+  ToolPrefBoolean,
+  ToolPrefBooleanControl,
+  ToolPrefColor,
+  ToolPrefCustom,
+  ToolPrefEnum,
+  ToolPrefEnumControl,
+  ToolPrefGroup,
+  ToolPrefKind,
+  ToolPrefLeaf,
+  ToolPrefNumber,
+  ToolPrefNumberControl,
+  ToolPrefNumberUnit,
+  ToolPrefString,
+  ToolPrefStringControl,
+} from './tools/prefs';
+export type {
   CanvasProps,
   CanvasHelpers,
   CanvasSelectionMode,
