@@ -1,7 +1,6 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@weasel-js/core';
-import { defaultNodeRouting, type NodeRoutingEntry } from '@weasel-js/core';
-import type { NodePropertiesEntry, ToolPrefGroup } from '@weasel-js/core';
+import { defaultNodeRouting, defaultNodeProperties, type NodeRoutingEntry, type NodePropertiesEntry, type ToolPrefGroup } from '@weasel-js/core';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
@@ -607,7 +606,7 @@ export function collectRoutingTrait(
 export function collectPropertiesTrait(
   live?: readonly NodePropertiesEntry[],
 ): readonly PropertiesKindEntry[] {
-  const source = live ?? Weasel.defaultNodeProperties;
+  const source = live ?? defaultNodeProperties;
   const flattenPaths = (group: ToolPrefGroup): string[] =>
     Object.entries(group.children).flatMap(([key, child]) =>
       'kind' in child ? [key] : flattenPaths(child),

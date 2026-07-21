@@ -5,7 +5,11 @@ import {
   useSelection,
   defaultNodeRouting,
   defaultNodeProperties,
+  PATH_M,
+  PATH_L,
+  PATH_Z,
 } from '@weasel-js/core';
+import type { PolygonPath } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
 import type { DrawCommand } from '../../../src/renderer';
 import type { View } from '../../../src/core/viewport/view';
@@ -15,6 +19,21 @@ type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
 
 const W = 460, H = 320;
+
+/** 32-gon ellipse approximation inscribed in a pose's box. */
+function ellipse(cx: number, cy: number, rx: number, ry: number, n = 32): PolygonPath {
+  const commands = new Uint8Array(n + 1);
+  const coords = new Float32Array(n * 2);
+  commands[0] = PATH_M;
+  for (let i = 1; i < n; i++) commands[i] = PATH_L;
+  commands[n] = PATH_Z;
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2;
+    coords[i * 2] = cx + Math.cos(t) * rx;
+    coords[i * 2 + 1] = cy + Math.sin(t) * ry;
+  }
+  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
+}
 
 export function SelectionPanelDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
@@ -43,13 +62,14 @@ export function SelectionPanelDemo() {
         viewport={{}}
         layers={{
           scene: {
-            // The renderer's Path union has no ellipse variant — every node
-            // paints as a rect regardless of its routing kind. Node "b" keeps
-            // data.kind: 'ellipse' so the panel still demonstrates a mixed-
-            // kind selection (see the SelectionPanel below).
+            // The renderer's Path union has no ellipse variant, so an
+            // 'ellipse'-kind node paints as a 32-gon polygon approximation
+            // (see `ellipse` above) inscribed in its pose box.
             drawOne: (n, p): DrawCommand[] => [{
               kind: 'path',
-              path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+              path: n.data.kind === 'ellipse'
+                ? ellipse(p.x + p.width / 2, p.y + p.height / 2, p.width / 2, p.height / 2)
+                : { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
               fill: { color: n.data.fill },
               ...(n.data.stroke ? { stroke: { paint: { color: n.data.stroke }, width: n.data.strokeWidth ?? 1 } } : {}),
             }],

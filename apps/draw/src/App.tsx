@@ -313,8 +313,6 @@ const WD_RENDERERS: Record<string, PropertyRenderer> = {
   'data.stroke': wdActionColorRenderer('setStroke', 'setStrokeOpacity'),
 };
 
-// ─── Toolbar host: bridges the Actions Registry into ActionBar's flat-prop API ─
-
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
 
 interface RightSidebarProps {

@@ -401,6 +401,23 @@ a:hover { text-decoration: underline; }
   --wzl-thumb-fill: var(--ckd-muted);
   --wzl-thumb-border: var(--ckd-border);
   --wzl-thumb-text: #000;
+  /* Newer semantic tokens consumed by SelectionPanel / ColorField /
+     NumberField / Input / Select / Switch — not covered by the
+     deprecated-alias names above. */
+  --wzl-surface: var(--ckd-surface);
+  --wzl-surface-raised: color-mix(in srgb, var(--ckd-surface) 88%, white);
+  --wzl-border: var(--ckd-border-2);
+  --wzl-border-strong: var(--ckd-border);
+  --wzl-fg: var(--ckd-text);
+  --wzl-fg-muted: var(--ckd-muted);
+  --wzl-fg-subtle: var(--ckd-faint);
+  --wzl-fg-on-accent: var(--ckd-bg);
+  --wzl-accent-strong: var(--ckd-accent);
+  --wzl-focus-ring: var(--ckd-accent-dim);
+  --wzl-font-ui: 'Oswald', 'Helvetica Neue Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --wzl-radius-sm: 3px;
+  --wzl-radius-md: 5px;
+  --wzl-motion-fast: 120ms;
 }
 
 /* ---------- Boolean ops demo ---------- */

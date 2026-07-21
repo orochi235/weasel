@@ -107,14 +107,22 @@ describe('collectPropertiesTrait', () => {
     }
   });
 
-  it('flattens nested schema groups into dotted leaf paths', () => {
+  it('flattens the rect kind\'s nested schema groups into its exact 8 dotted leaf paths', () => {
     const entries = collectPropertiesTrait();
-    const withLeaves = entries.find((e) => e.leafPaths.length > 0);
-    expect(withLeaves).toBeDefined();
-    // Leaf keys are two-segment dotted paths rooted at pose/data.
-    for (const path of withLeaves!.leafPaths) {
-      expect(path.startsWith('pose.') || path.startsWith('data.')).toBe(true);
-    }
+    const rect = entries.find((e) => e.id === 'rect');
+    expect(rect).toBeDefined();
+    expect(rect!.leafPaths).toEqual([
+      'pose.x', 'pose.y', 'pose.width', 'pose.height', 'pose.rotation',
+      'data.fill', 'data.stroke', 'data.strokeWidth',
+    ]);
+  });
+
+  it('adds data.text as a ninth leaf for the text kind', () => {
+    const entries = collectPropertiesTrait();
+    const text = entries.find((e) => e.id === 'text');
+    expect(text).toBeDefined();
+    expect(text!.leafPaths).toContain('data.text');
+    expect(text!.leafPaths.length).toBe(9);
   });
 
   it('uses a supplied live registry instead of the defaults', () => {
@@ -128,4 +136,3 @@ describe('collectPropertiesTrait', () => {
     expect(entries[0].leafPaths).toEqual([]);
   });
 });
-
