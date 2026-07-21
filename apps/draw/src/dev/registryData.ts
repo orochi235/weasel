@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import * as Weasel from '@weasel-js/core';
 import { defaultNodeRouting, type NodeRoutingEntry } from '@weasel-js/core';
+import type { NodePropertiesEntry, ToolPrefGroup } from '@weasel-js/core';
 import { canonicalModifiers, parseRoute as kitParseRoute, type ParsedRoute as KitParsedRoute } from '@weasel-js/core/routing';
 import * as ActionIcons from '../actionIcons';
 import * as KindIcons from '../kindIcons';
@@ -11,6 +12,7 @@ export type TreeEntry =
   | ActionEntry
   | ShapeKindEntry
   | RoutingKindEntry
+  | PropertiesKindEntry
   | BundleEntry
   | IconEntry
   | OpFactoryEntry
@@ -186,6 +188,16 @@ export interface RoutingKindEntry {
   shapeKindId?: string;
 }
 
+/** One properties-trait kind. `leafPaths` lists the schema's dotted node
+ *  paths so the detail pane can show what the kind exposes. */
+export interface PropertiesKindEntry {
+  kind: 'propertiesKind';
+  trait: 'properties';
+  id: string;
+  label: string;
+  leafPaths: readonly string[];
+}
+
 export interface BundleEntry {
   kind: 'bundle';
   id: 'minimal' | 'standard' | 'exhaustive';
@@ -304,7 +316,7 @@ export function collectMeta(): readonly MetaEntry[] {
 }
 
 export type TreeCategory =
-  | 'tools' | 'actions' | 'shape' | 'routing' | 'bundles'
+  | 'tools' | 'actions' | 'shape' | 'routing' | 'properties' | 'bundles'
   | 'icons' | 'ops'
   | 'phases' | 'gestures' | 'phaseOutputs'
   | 'slots' | 'routes' | 'routeTargets' | 'modifierSets' | 'groups'
@@ -590,4 +602,21 @@ export function collectRoutingTrait(
   }
 
   return out;
+}
+
+export function collectPropertiesTrait(
+  live?: readonly NodePropertiesEntry[],
+): readonly PropertiesKindEntry[] {
+  const source = live ?? Weasel.defaultNodeProperties;
+  const flattenPaths = (group: ToolPrefGroup): string[] =>
+    Object.entries(group.children).flatMap(([key, child]) =>
+      'kind' in child ? [key] : flattenPaths(child),
+    );
+  return source.map((e) => ({
+    kind: 'propertiesKind',
+    trait: 'properties',
+    id: e.name,
+    label: e.name,
+    leafPaths: flattenPaths(e.schema),
+  }));
 }

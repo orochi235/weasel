@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   SceneCanvas,
   defaultNodeRouting,
+  defaultNodeProperties,
   useActionsRegistry,
   useScene,
   type GestureSpec,
   type ModSpec,
+  type NodePropertiesEntry,
   type NodeRoutingEntry,
   type TargetSpec,
   type ToolsApi,
@@ -27,6 +29,7 @@ export interface RegistrySnapshot {
   readonly tools: readonly ToolEntry[];
   readonly actions: readonly ActionEntry[];
   readonly routing: readonly NodeRoutingEntry[];
+  readonly properties: readonly NodePropertiesEntry[];
 }
 
 interface ProbeProps {
@@ -160,7 +163,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     });
     if (sig === lastRef.current) return;
     lastRef.current = sig;
-    onSnapshot({ tools: toolEntries, actions: actionEntries, routing: defaultNodeRouting });
+    onSnapshot({ tools: toolEntries, actions: actionEntries, routing: defaultNodeRouting, properties: defaultNodeProperties });
   });
 
   return (

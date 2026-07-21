@@ -3,10 +3,11 @@ import {
   collectIcons,
   collectBundles,
   collectRoutingTrait,
+  collectPropertiesTrait,
   collectOpFactories,
   collectShapeTrait,
 } from './registryData';
-import { defaultNodeRouting, type NodeRoutingEntry } from '@weasel-js/core';
+import { defaultNodeRouting, defaultNodeProperties, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 
 describe('registryData static collectors', () => {
   it('collectIcons returns named entries for action and kind icons', () => {
@@ -92,6 +93,39 @@ describe('collectRoutingTrait', () => {
     const entries = collectRoutingTrait(live);
     const rectEntry = entries.find((e) => e.id === 'rect');
     expect(rectEntry?.source).toBe('override');
+  });
+});
+
+describe('collectPropertiesTrait', () => {
+  it('returns every default kind, tagged with trait: properties, when no live registry is supplied', () => {
+    const entries = collectPropertiesTrait();
+    expect(entries.length).toBe(defaultNodeProperties.length);
+    for (const entry of entries) {
+      expect(entry.kind).toBe('propertiesKind');
+      expect(entry.trait).toBe('properties');
+      expect(Array.isArray(entry.leafPaths)).toBe(true);
+    }
+  });
+
+  it('flattens nested schema groups into dotted leaf paths', () => {
+    const entries = collectPropertiesTrait();
+    const withLeaves = entries.find((e) => e.leafPaths.length > 0);
+    expect(withLeaves).toBeDefined();
+    // Leaf keys are two-segment dotted paths rooted at pose/data.
+    for (const path of withLeaves!.leafPaths) {
+      expect(path.startsWith('pose.') || path.startsWith('data.')).toBe(true);
+    }
+  });
+
+  it('uses a supplied live registry instead of the defaults', () => {
+    const custom: NodePropertiesEntry = {
+      name: 'sticky',
+      schema: { name: 'Sticky', children: {} },
+    };
+    const entries = collectPropertiesTrait([custom]);
+    expect(entries.length).toBe(1);
+    expect(entries[0].id).toBe('sticky');
+    expect(entries[0].leafPaths).toEqual([]);
   });
 });
 

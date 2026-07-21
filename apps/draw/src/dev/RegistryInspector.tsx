@@ -12,6 +12,7 @@ import {
   collectMeta,
   collectModifierSets,
   collectRoutingTrait,
+  collectPropertiesTrait,
   collectOpFactories,
   collectOpKinds,
   collectPhases,
@@ -59,7 +60,7 @@ export function RegistryInspector() {
     return () => { document.title = prev; };
   }, []);
 
-  const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [] });
+  const [runtime, setRuntime] = useState<RegistrySnapshot>({ tools: [], actions: [], routing: [], properties: [] });
   const [bundleFilter, setBundleFilter] = useState<string>('all');
   const [textFilter, setTextFilter] = useState<string>('');
   const [selected, setSelected] = useState<TreeEntry | null>(null);
@@ -77,6 +78,7 @@ export function RegistryInspector() {
   const opFactories = useMemo(() => collectOpFactories(), []);
   const shapeKinds = useMemo(() => collectShapeTrait(runtime.tools), [runtime.tools]);
   const routingEntries = useMemo(() => collectRoutingTrait(runtime.routing), [runtime.routing]);
+  const propertiesEntries = useMemo(() => collectPropertiesTrait(runtime.properties), [runtime.properties]);
   const phases = useMemo(() => collectPhases(), []);
   const gestures = useMemo(() => collectGestures(), []);
   const phaseOutputs = useMemo(() => collectPhaseOutputs(), []);
@@ -110,6 +112,7 @@ export function RegistryInspector() {
       { id: 'actions', label: 'Actions', entries: runtime.actions },
       { id: 'shape', label: 'Shape', group: { id: 'traits', label: 'Traits' }, entries: shapeKinds },
       { id: 'routing', label: 'Routing', group: { id: 'traits', label: 'Traits' }, entries: routingEntries },
+      { id: 'properties', label: 'Properties', group: { id: 'traits', label: 'Traits' }, entries: propertiesEntries },
       { id: 'bundles', label: 'Bundles', entries: bundles },
       { id: 'icons', label: 'Icons', entries: icons },
       { id: 'ops', label: 'Ops', entries: opKinds },
@@ -141,7 +144,7 @@ export function RegistryInspector() {
         if (top !== 0) return top;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
-  }, [runtime, activeBundle, bundles, icons, opFactories, shapeKinds, routingEntries, phases, gestures, phaseOutputs, opKinds, slots, routes, routeTargets, modifierSets, groups, meta]);
+  }, [runtime, activeBundle, bundles, icons, opFactories, shapeKinds, routingEntries, propertiesEntries, phases, gestures, phaseOutputs, opKinds, slots, routes, routeTargets, modifierSets, groups, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();

@@ -117,7 +117,7 @@ function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefine
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
-  ShapeKindEntry, RoutingKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
+  ShapeKindEntry, RoutingKindEntry, PropertiesKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef, TreeCategoryNode,
 } from './registryData';
@@ -326,6 +326,7 @@ function renderEntryBody(
     case 'bundle':        return <BundleDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'shapeKind':     return <ShapeKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'routingKind':   return <RoutingKindDetail entry={entry} onNavigate={onNavigate} />;
+    case 'propertiesKind': return <PropertiesKindDetail entry={entry} />;
     case 'icon':          return <IconDetail entry={entry} />;
     case 'opFactory':     return <OpFactoryDetail entry={entry} />;
     case 'phase':         return <PhaseDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
@@ -1668,6 +1669,28 @@ function RoutingKindDetail({
             </dd>
           </>
         )}
+      </dl>
+    </div>
+  );
+}
+
+function PropertiesKindDetail({ entry }: { entry: PropertiesKindEntry }) {
+  return (
+    <div>
+      <div className={s.toolHeader}>
+        <h2 className={s.detailHeading}>{entry.id}</h2>
+      </div>
+      <dl className={s.detailList}>
+        <dt>trait</dt><dd><KindBadge label={entry.trait} /></dd>
+        <dt>kind</dt><dd><KindBadge label="properties-kind" /></dd>
+        <dt>leaf paths</dt>
+        <dd>
+          {entry.leafPaths.length === 0
+            ? <span className={s.empty}>No editable leaves in this kind's schema.</span>
+            : entry.leafPaths.map((path) => (
+                <code key={path} className={s.tag}>{path}</code>
+              ))}
+        </dd>
       </dl>
     </div>
   );
