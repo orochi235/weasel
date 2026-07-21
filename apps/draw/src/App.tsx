@@ -57,8 +57,10 @@ import {
   ActiveToolContextProvider,
   useActiveToolContext,
   DEFAULT_STROKE_COLOR,
+  inferredNodeProperties,
+  inferredNodeRouting,
 } from '@weasel-js/core';
-import { SidebarPanel, ToolPalette } from '@weasel-js/ui';
+import { SidebarPanel, SelectionPanel, ToolPalette, type PropertyRenderer } from '@weasel-js/ui';
 
 import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
@@ -70,7 +72,6 @@ import {
   PropertiesPanel,
   PropertiesGrid,
   PropertyRow,
-  PropertyNumberInput,
   PropertyTextInput,
   PropertyColorInput,
   PropertySwatchGrid,
@@ -286,6 +287,29 @@ const PALETTE: { value: string | null; label: string }[] = [
  *  kit default on purpose. */
 const INITIAL_FILL_COLOR = '#7ab8d4ff';
 
+/** WeaselDraw's kinds come from the kit's inferred routing (`text` /
+ *  `path` / `image` — no `data.kind` tag), so the panel classifies with
+ *  the same entries SceneCanvas applies when `routing` is unset. */
+const WD_PROPERTIES = inferredNodeProperties;
+
+/** Fill/stroke keep their ActionsRegistry begin/update/end path (drag-
+ *  coalesced live preview + one undo entry per gesture) by overriding
+ *  the built-in color renderer with the existing PropertyColorInput. */
+const wdColorRenderer: PropertyRenderer = (ctx) => {
+  const ids =
+    ctx.path === 'data.fill'
+      ? { color: 'setFill', opacity: 'setFillOpacity' }
+      : { color: 'setStroke', opacity: 'setStrokeOpacity' };
+  return (
+    <PropertyColorInput
+      value={typeof ctx.value === 'string' ? ctx.value : '#000000'}
+      colorActionId={ids.color}
+      opacityActionId={ids.opacity}
+    />
+  );
+};
+const WD_RENDERERS: Record<string, PropertyRenderer> = { color: wdColorRenderer };
+
 // ─── Toolbar host: bridges the Actions Registry into ActionBar's flat-prop API ─
 
 // ─── Right sidebar: LayerList + PropertiesPanel ─────────────────────────────
@@ -359,39 +383,16 @@ function RightSidebar({
     onSelect: onLayerSelect,
   };
 
-  const selectedIds = selection.current;
-  const selectedCount = selectedIds.length;
-  const firstSelected = selectedCount > 0 ? scene.get(asNodeId(selectedIds[0])) : null;
-
   const [layersCollapsed, setLayersCollapsed] = usePersistedFlag('wd:panel:layers:collapsed', false);
   const [historyCollapsed, setHistoryCollapsed] = usePersistedFlag('wd:panel:history:collapsed', false);
 
-  const patchSelection = useCallback(
-    (patch: Partial<WeaselDrawData>) => {
-      const ids = selection.current;
-      if (ids.length === 0) return;
-      scene.batch('Edit properties', () => {
-        for (const id of ids) {
-          const n = scene.get(asNodeId(id));
-          if (!n) continue;
-          scene.update(asNodeId(id), { data: { ...(n.data as WeaselDrawData), ...patch } as WeaselDrawData });
-        }
-      });
-    },
-    [scene, selection],
-  );
-
   return (
     <>
-      <PropertiesPanel title={docSelected ? 'Document' : 'Properties'}>
-        {docSelected && (
+      <SidebarPanel title={docSelected ? 'Document' : 'Properties'}>
+        {docSelected ? (
           <PropertiesGrid>
             <PropertyRow label="file">
-              <PropertyTextInput
-                value={filename}
-                placeholder={DEFAULT_FILENAME}
-                onChange={setFilename}
-              />
+              <PropertyTextInput value={filename} placeholder={DEFAULT_FILENAME} onChange={setFilename} />
             </PropertyRow>
             <PropertyRow label="paper">
               <PropertySelect<PaperSizeKey>
@@ -405,74 +406,20 @@ function RightSidebar({
               />
             </PropertyRow>
             <PropertyRow label="bg">
-              <PropertyColorInput
-                value={backgroundColor}
-                onChange={setBackgroundColor}
-              />
+              <PropertyColorInput value={backgroundColor} onChange={setBackgroundColor} />
             </PropertyRow>
           </PropertiesGrid>
+        ) : (
+          <SelectionPanel
+            scene={scene}
+            selection={selection}
+            properties={WD_PROPERTIES}
+            routing={inferredNodeRouting}
+            renderers={WD_RENDERERS}
+            emptyState={<em className="wd-no-selection">No selection</em>}
+          />
         )}
-        {!docSelected && selectedCount === 0 && (
-          <div style={{ padding: 8, fontSize: 12, opacity: 0.6 }}>
-            <em>No selection</em>
-          </div>
-        )}
-        {!docSelected && selectedCount > 0 && firstSelected && (
-          <PropertiesGrid>
-            <PropertyRow label="x">
-              <PropertyNumberInput
-                value={(firstSelected.pose as WeaselDrawPose).x}
-                onChange={(x) => scene.setPose(asNodeId(firstSelected.id), { ...(firstSelected.pose as WeaselDrawPose), x })}
-              />
-            </PropertyRow>
-            <PropertyRow label="y">
-              <PropertyNumberInput
-                value={(firstSelected.pose as WeaselDrawPose).y}
-                onChange={(y) => scene.setPose(asNodeId(firstSelected.id), { ...(firstSelected.pose as WeaselDrawPose), y })}
-              />
-            </PropertyRow>
-            <PropertyRow label="w">
-              <PropertyNumberInput
-                value={(firstSelected.pose as WeaselDrawPose).width}
-                onChange={(width) => scene.setPose(asNodeId(firstSelected.id), { ...(firstSelected.pose as WeaselDrawPose), width })}
-              />
-            </PropertyRow>
-            <PropertyRow label="h">
-              <PropertyNumberInput
-                value={(firstSelected.pose as WeaselDrawPose).height}
-                onChange={(height) => scene.setPose(asNodeId(firstSelected.id), { ...(firstSelected.pose as WeaselDrawPose), height })}
-              />
-            </PropertyRow>
-            <PropertyRow label="fill">
-              <PropertyColorInput
-                value={(firstSelected.data as WeaselDrawData).fill ?? '#000000'}
-                colorActionId="setFill"
-                opacityActionId="setFillOpacity"
-              />
-            </PropertyRow>
-            <PropertyRow label="stroke">
-              <PropertyColorInput
-                value={(firstSelected.data as WeaselDrawData).stroke ?? '#000000'}
-                colorActionId="setStroke"
-                opacityActionId="setStrokeOpacity"
-              />
-            </PropertyRow>
-            <PropertyRow label="stroke w">
-              <PropertyNumberInput
-                value={(firstSelected.data as WeaselDrawData).strokeWidth ?? 0}
-                min={0}
-                step={0.5}
-                onChange={(strokeWidth) => patchSelection({ strokeWidth })}
-              />
-            </PropertyRow>
-            {selectedCount > 1 && (
-              <PropertyRow label="">
-                <em style={{ opacity: 0.55, fontSize: 11 }}>color/stroke apply to {selectedCount} items</em>
-              </PropertyRow>
-            )}
-          </PropertiesGrid>
-        )}
-      </PropertiesPanel>
+      </SidebarPanel>
       <ColorsPanel />
       <SidebarPanel
         title="Layers"

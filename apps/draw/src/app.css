@@ -232,6 +232,14 @@ html, body, #root {
   flex-shrink: 0;
 }
 
+/* Empty-selection placeholder in the Properties panel (SelectionPanel
+   `emptyState`). */
+.wd-no-selection {
+  padding: 8px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
 /* Pull LayerList rows out to the panel edges by absorbing the parent
    SidebarPanel's 8px body padding via negative margin. */
 .wd-layerlist-fill {
