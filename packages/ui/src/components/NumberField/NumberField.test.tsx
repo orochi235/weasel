@@ -41,4 +41,9 @@ describe('NumberField', () => {
     const { container } = render(<NumberField label="X" hideSteppers defaultValue={0} />);
     expect(container.querySelector('[slot="increment"]')).toBeNull();
   });
+
+  it('threads placeholder to the input', () => {
+    const { container } = render(<NumberField aria-label="X" value={NaN} placeholder="Mixed" />);
+    expect(getInput(container)).toHaveAttribute('placeholder', 'Mixed');
+  });
 });

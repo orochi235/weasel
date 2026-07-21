@@ -19,6 +19,9 @@ export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className
   errorMessage?: ReactNode | ((v: ValidationResult) => ReactNode);
   /** Hide the up/down stepper buttons. Defaults to false. */
   hideSteppers?: boolean;
+  /** Native input placeholder — e.g. `'Mixed'` for a multi-selection
+   *  editor with no shared value. */
+  placeholder?: string;
   className?: string;
 };
 
@@ -26,7 +29,7 @@ export const NumberField = forwardRef(function NumberField(
   props: NumberFieldProps,
   ref: Ref<HTMLInputElement>,
 ) {
-  const { label, description, errorMessage, hideSteppers, className, ...rest } = props;
+  const { label, description, errorMessage, hideSteppers, placeholder, className, ...rest } = props;
   return (
     <RACNumberField
       {...rest}
@@ -34,7 +37,7 @@ export const NumberField = forwardRef(function NumberField(
     >
       {label !== undefined && <Label className={fieldClasses.label}>{label}</Label>}
       <Group className={s.frame}>
-        <RACInput ref={ref} />
+        <RACInput ref={ref} placeholder={placeholder} />
         {!hideSteppers && (
           <div className={s.steppers}>
             <RACButton slot="increment" className={s.stepper} aria-label="Increment">▲</RACButton>
