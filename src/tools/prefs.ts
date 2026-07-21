@@ -7,9 +7,9 @@
 // boolean, string, enum, plus rendering hints — so it's a clean
 // structural subset of whatever a host app already has.
 
-export type ToolPrefKind = 'number' | 'boolean' | 'string' | 'enum';
+export type ToolPrefKind = 'number' | 'boolean' | 'string' | 'enum' | 'color';
 
-interface ToolPrefBase<K extends ToolPrefKind, Value> {
+interface ToolPrefBase<K extends string, Value> {
   kind: K;
   /** Human-readable label. */
   name: string;
@@ -23,6 +23,11 @@ interface ToolPrefBase<K extends ToolPrefKind, Value> {
    *  (weasel-ui `PrefsForm` honors this for leaves whose control brings
    *  its own chrome). */
   block?: boolean;
+  /** Row-pairing hint for compact property UIs (weasel-ui
+   *  `SelectionPanel`): leaves sharing a `pair` id render side-by-side
+   *  on one row labeled with the `pair` string (e.g. `'Position'` for
+   *  `pose.x` / `pose.y`). Purely presentational. */
+  pair?: string;
 }
 
 export type ToolPrefNumberControl = 'input' | 'slider';
@@ -30,11 +35,22 @@ export type ToolPrefBooleanControl = 'checkbox' | 'switch';
 export type ToolPrefStringControl = 'input' | 'textarea';
 export type ToolPrefEnumControl = 'select' | 'radio';
 
+/** Display-unit conversion for number leaves whose stored value uses a
+ *  canonical unit the user shouldn't see (e.g. radians stored, degrees
+ *  shown). The stored value stays canonical; UIs convert at the edge. */
+export interface ToolPrefNumberUnit {
+  toDisplay: (stored: number) => number;
+  fromDisplay: (display: number) => number;
+  /** Shown after the input, e.g. `'°'`. */
+  suffix?: string;
+}
+
 export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
   min?: number;
   max?: number;
   step?: number;
   control?: ToolPrefNumberControl;
+  unit?: ToolPrefNumberUnit;
 }
 export interface ToolPrefBoolean extends ToolPrefBase<'boolean', boolean> {
   control?: ToolPrefBooleanControl;
@@ -48,15 +64,33 @@ export interface ToolPrefEnum<T extends string = string>
   control?: ToolPrefEnumControl;
 }
 
+export interface ToolPrefColor extends ToolPrefBase<'color', string> {
+  /** Value is `#rrggbb`, or `#rrggbbaa` when `alpha` is set (UIs then
+   *  offer an opacity control). */
+  alpha?: boolean;
+}
+
+/**
+ * Open leaf: any node with a `kind` outside the built-ins. Schema-driven
+ * UIs (weasel-ui `PrefsForm` / `SelectionPanel`) dispatch it to an
+ * app-supplied renderer. Deliberately NOT index-signatured so concrete
+ * app interfaces stay assignable. Mirrors weasel-ui's `PrefCustom`.
+ */
+export interface ToolPrefCustom extends ToolPrefBase<string, unknown> {}
+
 export type ToolPref =
   | ToolPrefNumber
   | ToolPrefBoolean
   | ToolPrefString
-  | ToolPrefEnum;
+  | ToolPrefEnum
+  | ToolPrefColor;
+
+/** Built-in or app-defined leaf. */
+export type ToolPrefLeaf = ToolPref | ToolPrefCustom;
 
 /** Nestable group: branch nodes a tool can use to organize its prefs. */
 export interface ToolPrefGroup {
   name: string;
   description?: string;
-  children: Record<string, ToolPref | ToolPrefGroup>;
+  children: Record<string, ToolPrefLeaf | ToolPrefGroup>;
 }
