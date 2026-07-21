@@ -202,8 +202,7 @@ Core five + Crop shipped. Remaining:
 
 > **Status note (2026-06-15): layout reflow is reconnected to the live action path.** `moveAction` consults the `layout` dep during single-node drags (`runLayoutPass`), folds destination + source reflow poses into the preview-ghost channel, and on commit emits the strategy's `commitDrop` ops + a cross-container reparent + source-reflow ops. The `LayoutStrategy` methods were renamed `childPoses` / `reflowPoses`, and the orphaned `MoveOverlay` type was deleted. See `docs/superpowers/specs/2026-06-15-revive-container-layout-reflow-design.md`. The bullets below are the genuinely-deferred remainder.
 >
-> Two follow-ups surfaced during the revival:
-> - **`nodeAtPoint` is missing from `moveAction.requires`**, so the dispatcher's `buildDeps` leaves `ctx.deps.nodeAtPoint` undefined — the opt-in `reparentOnDrop` param (the non-layout reparent path) is silently inert end-to-end. Add `'nodeAtPoint'` to `requires`. A `moveAction — reparentOnDrop` unit suite exists (`move.test.ts:402`) but injects `nodeAtPoint` into deps manually, bypassing `buildDeps` — so a dispatcher-level end-to-end test is the real remaining coverage.
+> One follow-up remains from the revival:
 > - **Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
 
 - **(P2) Drop rejection signal.** v1 layout commits a free-space `setPose` when no container accepted a drag. Needs a cleaner semantic — candidates: a dedicated cancel op, a snap-back-to-source-pose path, or having the source layout's `commitDrop` re-place the child at its origin slot.

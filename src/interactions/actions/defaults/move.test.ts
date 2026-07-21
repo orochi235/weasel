@@ -5,6 +5,8 @@ import { createScene } from 'core/scene/scene';
 import type { NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 import type { NodeAtPointDep } from '../depSchema';
+import { buildDepsFromRequires } from '../buildDeps';
+import type { DepRegistry } from '../depRegistry';
 import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
 
 /** Local-pose composition strategy. The reparentOnDrop tests below assert
@@ -566,5 +568,48 @@ describe('moveAction — reparentOnDrop', () => {
     expect(scene.get(movingId)!.layer).toBe('b');
     // World (120, 120) under parent at world (100, 100) → local (20, 20).
     expect(scene.get(movingId)!.pose).toEqual({ x: 20, y: 20, width: 10, height: 10 });
+  });
+
+  // End-to-end via the dispatcher's own dep builder. The other tests inject
+  // `nodeAtPoint` into `ctx.deps` by hand, bypassing `buildDepsFromRequires` —
+  // which only surfaces deps the action declared in `requires`. This test
+  // builds the deps bag exactly the way the dispatcher does, so it fails if
+  // `nodeAtPoint` is missing from `moveAction.requires` (the dep never reaches
+  // the invoker and reparent-on-drop silently no-ops).
+  it('reparentOnDrop fires when deps are built via buildDepsFromRequires (nodeAtPoint declared)', () => {
+    const scene = buildScene();
+    const movingId = scene.add({ kind: 'leaf', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: { kind: 'rect' } });
+    const containerId = scene.add({ kind: 'container', layer: 'main', pose: { x: 50, y: 50, width: 100, height: 100 }, data: { kind: 'group' } });
+    const selection = { get: () => [movingId] as NodeId[] };
+    const nodeAtPoint: NodeAtPointDep = () => asNodeId(containerId);
+
+    // Stub registry mirroring the dispatcher's DepRegistry.get contract.
+    const sources: Record<string, () => unknown> = {
+      selection: () => selection,
+      scene: () => scene as unknown as Scene<unknown, string, unknown>,
+      poseComposition: () => LOCAL_PC,
+      nodeAtPoint: () => nodeAtPoint,
+    };
+    const registry = {
+      get: (name: string) => sources[name]?.(),
+      register: () => () => {},
+    } as unknown as DepRegistry;
+
+    const deps = buildDepsFromRequires(moveAction, registry);
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const baseCtx = {
+      world: { x: 0, y: 0 },
+      screen: { x: 0, y: 0 },
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps,
+    };
+    const opts: BindingOpts = { params: { reparentOnDrop: 'top' } };
+    const drag = { start: { x: 0, y: 0 }, current: { x: 105, y: 105 }, delta: { x: 105, y: 105 } };
+    const handle = invoker.start(baseCtx as InvocationCtx, opts);
+    handle.onMove!({ ...baseCtx, drag } as InvocationCtx);
+    handle.onEnd!({ ...baseCtx, world: { x: 105, y: 105 }, drag } as InvocationCtx, 'commit');
+
+    expect(scene.get(movingId)!.parent).toBe(containerId);
   });
 });

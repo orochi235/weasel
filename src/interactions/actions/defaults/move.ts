@@ -460,7 +460,7 @@ export const moveAction: Action & { requires: string[] } = {
   // is target-qualified instead of universal.
   defaultBinding: { kind: 'drag', target: 'selected-body' },
   eligible: { capability: 'transforms-selection' },
-  requires: ['selection', 'scene', 'resizePolicy', 'layout', 'applyOps', 'poseComposition', 'geometryProjection'],
+  requires: ['selection', 'scene', 'resizePolicy', 'layout', 'applyOps', 'poseComposition', 'geometryProjection', 'nodeAtPoint'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
