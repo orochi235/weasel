@@ -59,6 +59,7 @@ import {
   DEFAULT_STROKE_COLOR,
   inferredNodeProperties,
   inferredNodeRouting,
+  type ToolPrefColor,
 } from '@weasel-js/core';
 import { SidebarPanel, SelectionPanel, ToolPalette, type PropertyRenderer } from '@weasel-js/ui';
 
@@ -287,32 +288,34 @@ const PALETTE: { value: string | null; label: string }[] = [
  *  kit default on purpose. */
 const INITIAL_FILL_COLOR = '#7ab8d4ff';
 
-/** WeaselDraw's kinds come from the kit's inferred routing (`text` /
- *  `path` / `image` — no `data.kind` tag), so the panel classifies with
- *  the same entries SceneCanvas applies when `routing` is unset. */
-const WD_PROPERTIES = inferredNodeProperties;
-
 /** Fill/stroke keep their ActionsRegistry begin/update/end path (drag-
  *  coalesced live preview + one undo entry per gesture) by overriding
- *  the built-in color renderer with the existing PropertyColorInput. */
-const wdColorRenderer: PropertyRenderer = (ctx) => {
-  const ids =
-    ctx.path === 'data.fill'
-      ? { color: 'setFill', opacity: 'setFillOpacity' }
-      : { color: 'setStroke', opacity: 'setStrokeOpacity' };
-  return (
-    <PropertyColorInput
-      value={typeof ctx.value === 'string' ? ctx.value : '#000000'}
-      colorActionId={ids.color}
-      opacityActionId={ids.opacity}
-    />
-  );
+ *  the built-in color renderer with the existing PropertyColorInput.
+ *  Keyed by path (not `color` kind) so a future third color leaf can't
+ *  silently fall through to the wrong pair of actions. */
+function wdActionColorRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
+  return (ctx) => {
+    const fallback = (ctx.pref as ToolPrefColor).default;
+    const value = typeof ctx.value === 'string' ? ctx.value : fallback;
+    const input = (
+      <PropertyColorInput value={value} colorActionId={colorActionId} opacityActionId={opacityActionId} />
+    );
+    if (!ctx.mixed) return input;
+    return (
+      <span title="Mixed" className="wd-mixed">
+        {input}
+      </span>
+    );
+  };
+}
+const WD_RENDERERS: Record<string, PropertyRenderer> = {
+  'data.fill': wdActionColorRenderer('setFill', 'setFillOpacity'),
+  'data.stroke': wdActionColorRenderer('setStroke', 'setStrokeOpacity'),
 };
-const WD_RENDERERS: Record<string, PropertyRenderer> = { color: wdColorRenderer };
 
 // ─── Toolbar host: bridges the Actions Registry into ActionBar's flat-prop API ─
 
-// ─── Right sidebar: LayerList + PropertiesPanel ─────────────────────────────
+// ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
 
 interface RightSidebarProps {
   scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
@@ -413,7 +416,10 @@ function RightSidebar({
           <SelectionPanel
             scene={scene}
             selection={selection}
-            properties={WD_PROPERTIES}
+            // WeaselDraw's kinds come from the kit's inferred routing (`text` /
+            // `path` / `image` — no `data.kind` tag), so the panel classifies
+            // with the same entries SceneCanvas applies when `routing` is unset.
+            properties={inferredNodeProperties}
             routing={inferredNodeRouting}
             renderers={WD_RENDERERS}
             emptyState={<em className="wd-no-selection">No selection</em>}

@@ -240,6 +240,12 @@ html, body, #root {
   opacity: 0.6;
 }
 
+/* Honest mixed-value cue for action-backed color renderers in the
+   Properties panel (SelectionPanel renderers). */
+.wd-mixed {
+  opacity: 0.55;
+}
+
 /* Pull LayerList rows out to the panel edges by absorbing the parent
    SidebarPanel's 8px body padding via negative margin. */
 .wd-layerlist-fill {
