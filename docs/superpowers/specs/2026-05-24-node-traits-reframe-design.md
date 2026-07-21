@@ -265,7 +265,9 @@ consumer wants it. Likely first to land:
 - **`NodeLabel` / `NodeIcon`** — layer panel and command palette
   display.
 - **`NodePropertyRows`** — `<PropertiesPanel>` contributions per
-  kind.
+  kind. *Landed as `NodeProperties` (schema-valued, not row
+  contributors): see
+  `2026-07-20-selection-panel-design.md`.*
 
 Each justifies its consumer; speculatively-declared traits don't
 ship.
