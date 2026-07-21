@@ -35,6 +35,7 @@ import { CustomShaderDemo } from './demos/CustomShaderDemo';
 import { LassoDemo } from './demos/LassoDemo';
 import { HudDemo } from './demos/HudDemo';
 import { LayerListDemo } from './demos/LayerListDemo';
+import { SelectionPanelDemo } from './demos/SelectionPanelDemo';
 import { GesturesDemo } from './demos/GesturesDemo';
 import { RenderToPixelsDemo } from './demos/RenderToPixelsDemo';
 
@@ -74,6 +75,7 @@ import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
 import LayerListDemoFull from './demos/LayerListDemo.tsx?raw';
+import SelectionPanelDemoFull from './demos/SelectionPanelDemo.tsx?raw';
 import GesturesDemoFull from './demos/GesturesDemo.tsx?raw';
 import RenderToPixelsDemoFull from './demos/RenderToPixelsDemo.tsx?raw';
 import { PointSnapDemo } from './demos/PointSnapDemo';
@@ -204,6 +206,17 @@ export const DEMOS: DemoEntry[] = [
     Component: LayerListDemo,
     full: LayerListDemoFull,
     path: 'apps/site/demos/LayerListDemo.tsx',
+  },
+  {
+    id: 'selection-panel',
+    title: 'Selection properties panel',
+    category: 'Tools',
+    description:
+      'SelectionPanel from @weasel-js/ui wired to a scene with the kit\'s pre-baked property schemas (defaultNodeProperties). Click a shape to inspect and edit its kind-specific properties; shift-click several — including different kinds — to see the schema intersection and per-field Mixed state. Edits fan out to the whole selection as one undo step.',
+    hint: 'Select shapes and edit X/Y/W/H, fill, stroke. Shift-click a rect and the ellipse for Mixed state.',
+    Component: SelectionPanelDemo,
+    full: SelectionPanelDemoFull,
+    path: 'apps/site/demos/SelectionPanelDemo.tsx',
   },
   {
     id: 'text',

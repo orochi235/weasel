@@ -284,6 +284,22 @@ a:hover { text-decoration: underline; }
   font-style: italic;
 }
 
+/* Canvas + side panel demos (e.g. SelectionPanelDemo). */
+.ckd-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ckd-panel {
+  width: 230px;
+  flex-shrink: 0;
+  background: var(--wzl-surface);
+  border: 1px solid var(--ckd-border);
+  border-radius: 4px;
+}
+
 /* ---------- Code panel ---------- */
 .ckd-code-panel {
   border: 1px solid var(--ckd-border-2);
