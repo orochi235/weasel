@@ -49,7 +49,7 @@ Per the traits-spec convergence policy:
      /** Kind name — same vocabulary as the routing trait. */
      name: string;
      /** Property schema for this kind. */
-     schema: PropertySchemaGroup;
+     schema: ToolPrefGroup;
    }
    ```
 
@@ -106,10 +106,12 @@ generic over consumer data — what stays out is app-specific policy.
 ```ts
 interface SelectionPanelProps<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;          // useScene handle (reactive)
-  selection: SelectionApi;                      // useSelection handle
+  selection: Pick<SelectionApi, 'current'>;     // useSelection handle
   properties: readonly NodePropertiesEntry[];   // e.g. defaultNodeProperties
-  routing?: readonly NodeRoutingEntry[];        // default: inferredNodeRouting
-  renderers?: Record<string, PropertyRenderer>; // custom leaf kinds / overrides
+  routing: readonly NodeRoutingEntry[];         // required — pass the canvas's list
+  renderers?: Record<string, PropertyRenderer>; // keyed by leaf PATH (checked
+                                                // first) or leaf kind; null
+                                                // collapses the row
   kindLabel?: (kind: string) => string;         // default: title-case
   emptyState?: ReactNode;                       // rendered when nothing selected
   className?: string;
@@ -135,8 +137,8 @@ prop convention.
 5. Header: single node → kind label; multiple → `"N selected"` + kind
    breakdown (`rect ×2 · text`).
 
-Steps 2–4 are pure functions (`classifyNodes`, `intersectSchemas`,
-`aggregateValues`) exported for testing and reuse.
+Steps 2–4 are pure functions (`classifyKind`, `effectiveSections`,
+`aggregateValue`, plus `splitNodePath`) exported for testing and reuse.
 
 ### Rendering
 
@@ -153,12 +155,14 @@ Steps 2–4 are pure functions (`classifyNodes`, `intersectSchemas`,
   `ColorField` shows a checkered chip. First edit replaces the mixed
   state and fans out.
 - `renderers` map overrides/extends built-ins with the PrefsForm
-  contract, context widened with mixed-awareness:
+  contract, context widened with mixed-awareness. Keys are leaf paths
+  (checked first — lets `data.fill` and `data.stroke` differ) or leaf
+  kinds:
 
   ```ts
   type PropertyRenderer = (ctx: {
     path: string;
-    pref: PropertyLeaf;
+    pref: ToolPrefLeaf;
     value: unknown;      // aggregated; undefined when mixed
     mixed: boolean;
     setValue: (v: unknown) => void;  // fans out + batches
@@ -191,13 +195,15 @@ schema-validation error until a use case shows up.
 Replace the hand-rolled object branch of `RightSidebar`
 (`apps/draw/src/App.tsx`) with `<SelectionPanel>`:
 
-- Routing: existing entries; properties: `defaultNodeProperties` plus a
-  WeaselDraw-flavored override where its data diverges.
+- Routing: `inferredNodeRouting` (WeaselDraw doesn't tag `data.kind`);
+  properties: `inferredNodeProperties`.
 - Fill/opacity keep their ActionsRegistry begin/update/end behavior via
-  a custom `renderers` override for the relevant paths — this proves the
-  escape hatch and preserves drag-coalesced live color preview.
-- The document branch (filename/paper/background) moves into
-  `emptyState`.
+  path-keyed `renderers` overrides (`data.fill` / `data.stroke`) — this
+  proves the escape hatch and preserves drag-coalesced live color
+  preview.
+- The document branch (filename/paper/background) stays a sibling
+  branch inside the same `SidebarPanel`; `emptyState` renders the
+  "No selection" note.
 - Delete the now-dead inline inspector JSX (~170 lines) and any
   `PropertiesPanel` row primitives that stop being referenced;
   primitives still used elsewhere stay.

@@ -92,8 +92,8 @@ Trait registries are named `Node<TraitName>`:
 - `NodeIcon` — future, palette/layer icons per kind.
 - `NodeAffordances` — future, list of affordances per kind. Consumer:
   chrome-caps.
-- `NodePropertyRows` — future, `<PropertiesPanel>` contributors per
-  kind.
+- `NodePropertyRows` — landed 2026-07 as `NodeProperties`
+  (schema-valued; see `2026-07-20-selection-panel-design.md`).
 - `NodeBindings` — future, per-kind routing-table fragments.
 - `NodeSerializer` — future, op-log serialization per kind.
 
