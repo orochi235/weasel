@@ -54,9 +54,9 @@ Per the traits-spec convergence policy:
    ```
 
    The schema **reuses** the existing `ToolPrefGroup` / `ToolPref` types
-   (`src/tools/prefs.ts`) — `PropertySchemaGroup` / `PropertyLeaf` are
-   exported aliases, not parallel types — extended per "Schema-type
-   additions" below. **Leaf keys are dotted node paths** (`pose.x`,
+   (`src/tools/prefs.ts`) directly — no parallel types, no aliases; a new
+   `ToolPrefLeaf` union adds an open `ToolPrefCustom` member (mirror of
+   ui's `PrefCustom`) — extended per "Schema-type additions" below. **Leaf keys are dotted node paths** (`pose.x`,
    `pose.width`, `data.fill`, `data.text`) so generic
    read/aggregate/write needs no per-kind code. Groups render as panel
    sections (`Layout`, `Appearance`).
@@ -69,7 +69,10 @@ Per the traits-spec convergence policy:
    Layout = `pose.x/y/width/height/rotation`; Appearance =
    `data.fill/stroke/strokeWidth`; `data.text` for the text kind), kept
    in lockstep with `KIT_SHAPE_KINDS` the same way `defaultNodeRouting`
-   is. Consumers spread their own entries after it.
+   is. Also `inferredNodeProperties` for the inferred routing kinds
+   (`text` / `path` / `image`) — the vocabulary consumers like WeaselDraw
+   actually produce when they rely on `inferredNodeRouting`. Consumers
+   spread their own entries after either.
 6. **Inspector surface**: `RegistryInspector` gains a `'properties'`
    child under `'traits'`, listing kinds and their schema leaf paths.
 
@@ -92,9 +95,10 @@ too:
 
 ## Part 2 — ui: `<SelectionPanel>`
 
-`packages/ui` adds `@weasel-js/core` as a **peer dependency** (precedent:
-`@weasel-js/modes` already is one). The barrel comment's "no scene-aware
-panels" rule is amended: scene-aware components are allowed when they are
+`packages/ui` imports `@weasel-js/core` resolved the way the apps do —
+repo-wide tsconfig `paths` + `weaselAliases` (no package.json entry while
+ui is `private`; a real peer dependency is deferred to if/when ui
+publishes). The barrel comment's "no scene-aware panels" rule is amended: scene-aware components are allowed when they are
 generic over consumer data — what stays out is app-specific policy.
 
 ### Props
