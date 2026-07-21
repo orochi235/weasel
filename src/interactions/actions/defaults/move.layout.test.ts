@@ -5,6 +5,19 @@ import { tileGrid } from '../../../layout/strategies';
 import type { LayoutDep } from '../depSchema';
 import type { NodeId } from 'core/scene/types';
 import { composeRectPose, decomposeRectPose } from 'features/groups/composePose';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
+
+/** Axis-aligned square as a PolygonPath — a container pose that carries NO
+ *  direct `x/y/width/height`, so the layout hit-test must derive its AABB via
+ *  the pose descriptor rather than casting to a rect. */
+function squarePolygon(x: number, y: number, w: number, h: number): PolygonPath {
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+    coords: new Float32Array([x, y, x + w, y, x + w, y + h, x, y + h]),
+    fillRule: 'nonzero',
+  };
+}
 
 /** Local-pose composition strategy (parent translation). Supplied as the
  *  `poseComposition` dep so the existing tests below keep exercising the
@@ -119,6 +132,38 @@ describe('moveAction layout reflow', () => {
 
     const ids = [...(handle.previewIds!() as Iterable<string>)];
     expect(ids).toContain('b'); // sibling reflowed into the preview channel
+    const bPose = handle.previewPose!('b') as P;
+    expect(bPose.x).toBe(0); // b swapped to cell 0
+  });
+
+  it('finds a container whose pose is non-rect (PolygonPath) via its AABB', () => {
+    // Container C carries a PolygonPath pose (no direct x/y/width/height).
+    // Absolute-pose model (no poseComposition) so composeWorldPose leaves the
+    // non-rect pose intact. The layout hit-test must derive C's AABB from the
+    // pose descriptor; casting the polygon to `{x,y,width,height}` yields NaN
+    // and the container is never found — no reflow fires.
+    const scene = makeScene(
+      {
+        C: squarePolygon(0, 0, 100, 100) as unknown as P,
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C' },
+      { C: ['a', 'b'] },
+      ['C'],
+    );
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    // `null` → omit poseComposition → IDENTITY (absolute) default.
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, undefined, undefined, null));
+    handle.onMove!(makeCtx(scene, ['a'], {
+      start: { x: 25, y: 50 },
+      current: { x: 75, y: 50 },
+      delta: { x: 50, y: 0 },
+    }, undefined, undefined, null) as InvocationCtx);
+
+    const ids = [...(handle.previewIds!() as Iterable<string>)];
+    expect(ids).toContain('b'); // sibling reflowed → container WAS found
     const bPose = handle.previewPose!('b') as P;
     expect(bPose.x).toBe(0); // b swapped to cell 0
   });

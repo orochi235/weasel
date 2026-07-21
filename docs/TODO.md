@@ -36,7 +36,6 @@ Priority tags:
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
 - Group resize with rotated children → [Scene, adapters & layout](#scene-adapters--layout)
 - SceneCanvas → useSceneAdapter for adapter construction → [Scene, adapters & layout](#scene-adapters--layout)
-- Layout strategies: AABB-fallback assumes rect-shaped TPose → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
@@ -207,7 +206,6 @@ Core five + Crop shipped. Remaining:
 > - **`nodeAtPoint` is missing from `moveAction.requires`**, so the dispatcher's `buildDeps` leaves `ctx.deps.nodeAtPoint` undefined — the opt-in `reparentOnDrop` param (the non-layout reparent path) is silently inert end-to-end. Add `'nodeAtPoint'` to `requires`. A `moveAction — reparentOnDrop` unit suite exists (`move.test.ts:402`) but injects `nodeAtPoint` into deps manually, bypassing `buildDeps` — so a dispatcher-level end-to-end test is the real remaining coverage.
 > - **Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
 
-- **(P2) AABB-fallback assumes rect-shaped TPose.** When `LayoutStrategy.contains` is absent, `moveAction`'s `runLayoutPass` hit-test (`testInside`) reads `pose.x/y/width/height` directly. For non-rect TPose (e.g. `Path`) the call is broken. Either (a) require `contains` on every `LayoutStrategy<NonRectPose>`, (b) thread a `PoseDescriptor` through the layout pass to derive an AABB, or (c) document the constraint and lint it.
 - **(P2) Drop rejection signal.** v1 layout commits a free-space `setPose` when no container accepted a drag. Needs a cleaner semantic — candidates: a dedicated cancel op, a snap-back-to-source-pose path, or having the source layout's `commitDrop` re-place the child at its origin slot.
 - **(P2) Multi-select drag into a layout container.** Currently falls through to the per-id transform batch (no `commitDrop` invocation, no sibling reflow). Layout-aware reflow + commit only fire when `scratch.ids.length === 1` in `moveAction`. Decide multi-select-into-layout semantics (sequential commitDrops? grouped layout API?) before lifting the guard.
 - **(P3) Full-opacity live reflow.** Reflowing siblings currently render at the preview-ghost layer's blanket `0.85` alpha (same as dragged ghosts), so mid-drag they look semi-transparent at their destination slots. A polished sortable-list feel wants them fully opaque; needs the ghost layer to treat reflow ids differently from dragged ids.

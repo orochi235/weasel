@@ -121,11 +121,17 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     depth: number;
   }
   const candidates: Candidate[] = [];
-  const testInside = (cPose: unknown, layout: Layout): boolean => {
+  // Derive a container's AABB from its (possibly non-rect) world pose. Mirrors
+  // `translatePoseGeneric`'s fallback: the consumer's projection when wired,
+  // else `AUTO_POSE_DESCRIPTOR` which dispatches on pose shape (Path → path
+  // bounds, else rect). Casting a non-rect pose (e.g. PolygonPath) straight to
+  // `{x,y,width,height}` yields NaN, so the container would never be found.
+  const boundsOf = scratch.projection?.getBounds ?? AUTO_POSE_DESCRIPTOR.getBounds;
+  type AABB = { x: number; y: number; width: number; height: number };
+  const testInside = (cPose: unknown, aabb: AABB, layout: Layout): boolean => {
     if (layout.contains) return layout.contains(cPose, draggedCenter);
-    const b = cPose as { x: number; y: number; width: number; height: number };
-    return draggedCenter.x >= b.x && draggedCenter.x < b.x + b.width
-      && draggedCenter.y >= b.y && draggedCenter.y < b.y + b.height;
+    return draggedCenter.x >= aabb.x && draggedCenter.x < aabb.x + aabb.width
+      && draggedCenter.y >= aabb.y && draggedCenter.y < aabb.y + aabb.height;
   };
   const consider = (id: NodeId, zPath: number[]): void => {
     if (id === draggedId) return;
@@ -133,11 +139,12 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     if (!layout) return;
     const node = scene.get(id);
     if (!node) return;
-    const worldBounds = composeWorldPose(poseAdapter, id as string, pc.compose);
-    if (!testInside(worldBounds, layout)) return;
+    const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
+    const worldAABB = boundsOf(worldPose) as AABB;
+    if (!testInside(worldPose, worldAABB, layout)) return;
     candidates.push({
       id,
-      bounds: worldBounds as { x: number; y: number; width: number; height: number },
+      bounds: worldAABB,
       layout,
       zPath,
       depth: zPath.length,
