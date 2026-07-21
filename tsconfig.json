@@ -22,7 +22,7 @@
     "outDir": "./dist",
     "incremental": true,
     "tsBuildInfoFile": "./.tsbuildinfo/main.tsbuildinfo",
-    "types": ["vitest/globals", "node"],
+    "types": ["vitest/globals", "node", "@testing-library/jest-dom"],
     "ignoreDeprecations": "6.0",
     "paths": {
       "@weasel-js/core": ["./src/index.ts"],

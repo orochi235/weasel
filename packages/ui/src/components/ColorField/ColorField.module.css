@@ -1,0 +1,50 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.color {
+  inline-size: 28px;
+  block-size: 20px;
+  padding: 0;
+  border: 1px solid var(--wzl-border, #444);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+/* Indeterminate (mixed) presentation: checkerboard overlay atop the
+ * swatch. pointer-events: none so the input stays clickable. */
+.root[data-mixed] .chip::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 3px;
+  pointer-events: none;
+  background: repeating-conic-gradient(
+      var(--wzl-border, #666) 0% 25%,
+      var(--wzl-surface, #2e2f36) 0% 50%
+    )
+    50% / 8px 8px;
+}
+
+.alphaRange {
+  flex: 1;
+  min-inline-size: 48px;
+  accent-color: var(--wzl-accent, #7ab8d4);
+}
+
+.alphaReadout {
+  min-inline-size: 3ch;
+  text-align: end;
+  font-size: 11px;
+  opacity: 0.7;
+}

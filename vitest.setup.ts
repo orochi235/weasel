@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom';
+
 /**
  * jsdom does not ship PointerEvent. When @testing-library/dom tries to use
  * window.PointerEvent to create pointer events it falls back to window.Event,

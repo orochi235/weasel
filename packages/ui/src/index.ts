@@ -35,6 +35,7 @@ export * from './components/Toast';
 export * from './components/Plot2D';
 export * from './components/CurveEditor';
 export * from './components/PointPlotter';
+export * from './components/ColorField';
 export { paintGradientTrack } from './paintGradientTrack';
 export type { GradientTrackOpts } from './paintGradientTrack';
 export { oklchToHex, chromaAt } from './color/oklch';
