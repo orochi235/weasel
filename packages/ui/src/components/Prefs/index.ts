@@ -7,6 +7,7 @@ export {
   type BuiltinPref,
   type PrefBoolean,
   type PrefBooleanControl,
+  type PrefColor,
   type PrefCustom,
   type PrefEnum,
   type PrefEnumControl,
@@ -14,6 +15,7 @@ export {
   type PrefLeaf,
   type PrefNumber,
   type PrefNumberControl,
+  type PrefNumberUnit,
   type PrefString,
   type PrefStringControl,
 } from './schema';

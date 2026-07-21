@@ -27,6 +27,19 @@ interface PrefBase<K extends string, Value> {
    *  controls that supply their own chrome (embedded sub-panel editors).
    *  The `description` still applies wherever the renderer surfaces it. */
   block?: boolean;
+  /** Row-pairing hint for compact property UIs (`SelectionPanel`):
+   *  leaves sharing a `pair` id render side-by-side on one row labeled
+   *  with the `pair` string. Purely presentational. */
+  pair?: string;
+}
+
+/** Display-unit conversion for number leaves whose stored value uses a
+ *  canonical unit the user shouldn't see (radians → degrees). Mirrors
+ *  core's `ToolPrefNumberUnit`. */
+export interface PrefNumberUnit {
+  toDisplay: (stored: number) => number;
+  fromDisplay: (display: number) => number;
+  suffix?: string;
 }
 
 export interface PrefNumber extends PrefBase<'number', number> {
@@ -34,6 +47,7 @@ export interface PrefNumber extends PrefBase<'number', number> {
   max?: number;
   step?: number;
   control?: PrefNumberControl;
+  unit?: PrefNumberUnit;
 }
 export interface PrefBoolean extends PrefBase<'boolean', boolean> {
   control?: PrefBooleanControl;
@@ -46,7 +60,12 @@ export interface PrefEnum<T extends string = string> extends PrefBase<'enum', T>
   control?: PrefEnumControl;
 }
 
-export type BuiltinPref = PrefNumber | PrefBoolean | PrefString | PrefEnum;
+export interface PrefColor extends PrefBase<'color', string> {
+  /** Value is `#rrggbb`, or `#rrggbbaa` when `alpha` is set. */
+  alpha?: boolean;
+}
+
+export type BuiltinPref = PrefNumber | PrefBoolean | PrefString | PrefEnum | PrefColor;
 
 /**
  * Open leaf: any node with a `kind` the form doesn't know renders via the
