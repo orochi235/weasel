@@ -89,7 +89,15 @@ Priority tags:
   (a) richer drag-over feedback (insertion ghost / per-handler accept cursor —
   v1 is the class toggle); (b) SVG-file drop → shipped 2026-07-04, see the
   SVG-file ingestion entry above; (c) kit `text/plain` handler → text-node
-  insert; (d) route-grammar names for drop/paste (registry probe shows them
+  insert. Unblocked 2026-07-23: `text` is now a kit-native insert kind
+  (`useInsertDepSource` `case 'text'` mints `{ text }`, defaulting content to
+  `''` and reading `extras.text` when present). Remaining for the handler
+  itself: a dropped/pasted string has no drag rect, so the handler must choose
+  a **box size** — either measure the string (needs a text-measure context) or
+  default to a fixed box and let edit reflow it. Whether we even want
+  drop/paste-text-to-canvas is an open question (see the discussion that
+  spawned this — it's a marginal convenience with no consumer asking);
+  (d) route-grammar names for drop/paste (registry probe shows them
   as `undefined`); (e) paste could mirror wheel's dispatch-then-preventDefault
   instead of preventDefaulting on content.
 

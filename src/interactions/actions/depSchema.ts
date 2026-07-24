@@ -215,6 +215,7 @@ export type InsertExtras =
   | { kind: 'polygon'; sides: number; rotation: number; center?: { x: number; y: number }; radius?: number }
   | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
   | { kind: 'pencil'; samples: ReadonlyArray<{ x: number; y: number }> }
+  | { kind: 'text'; text?: string }
   | { kind: string; [extra: string]: unknown };
 
 /**

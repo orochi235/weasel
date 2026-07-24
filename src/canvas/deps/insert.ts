@@ -179,6 +179,18 @@ export function useInsertDepSource(
             }
             break;
           }
+          case 'text': {
+            // The built-in `useTextTool` drags an empty text box you then
+            // type into (edit is entered via `enterTextEdit`), so `extras`
+            // carries no content and `text` defaults to `''`. An ambient
+            // ingest (e.g. a future `text/plain` handler) may pass `text`.
+            // The kit:text painter matches on `data.text != null`, and style
+            // defaults (fontSize 16, `#000`) are applied at render time, so a
+            // bare `{ text }` is a complete, editable node. Pose = drag bounds.
+            const e = extras as Partial<{ text: string }>;
+            data = { text: e.text ?? '' };
+            break;
+          }
           case 'image': {
             // `src` rides along on the binding params (set by `useImageTool`).
             // The bitmap is loaded + cached by `imageCache` keyed on `src`;
