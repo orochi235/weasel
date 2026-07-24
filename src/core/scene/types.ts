@@ -217,11 +217,39 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
 
   // Mutations (all auto-undoable)
   add(spec: AddNodeSpec<TData, TLayer, TPose>): NodeId;
+  /** Delete `id` **and its entire subtree** — every descendant is removed in
+   *  the same operation. Recorded as one undoable step; `undo()` restores the
+   *  whole subtree (root + descendants, child order intact). */
   remove(id: NodeId): void;
   update(id: NodeId, patch: { data: TData }): void;
   setPose(id: NodeId, pose: TPose): void;
+  /** Retag `id` to `layer`. On a **container this cascades**: every descendant
+   *  is moved to the same layer, recorded as a **single** undo step.
+   *
+   *  Invariants:
+   *  - **Layer floor** — a child may not render below its parent, so retagging
+   *    to a layer *below* the node's parent throws. Retagging to the parent's
+   *    layer or any higher one is allowed; a node with no parent is
+   *    unconstrained.
+   *  - **No-op elision** — setting the layer a node already has does nothing
+   *    and pushes **no** history entry. */
   setLayer(id: NodeId, layer: TLayer): void;
+  /** Reparent `id` under `parent` (or to a root when `parent` is `null`) at
+   *  `index` within the new sibling list, appending when `index` is omitted.
+   *  Siblings are reindexed. Recorded as one undoable step.
+   *
+   *  Rejected (throws) when:
+   *  - `parent` exists but is a **leaf**, not a container;
+   *  - the move would form a **cycle** — `parent` is `id` itself or one of
+   *    `id`'s own descendants;
+   *  - it would drop `id` **below its new parent's layer** (child may not
+   *    render below its parent).
+   *
+   *  `move(id, null)` — detaching to a root — is always allowed regardless of
+   *  layer, since a root has no parent to render beneath. */
   move(id: NodeId, parent: NodeId | null, index?: number): void;
+  /** Shift `id` to `index` within its **current** parent's child list. Unlike
+   *  {@link move}, the parent never changes — only sibling order. */
   reorder(id: NodeId, index: number): void;
   setLayerVisible(layer: TLayer, visible: boolean): void;
   setLayerLocked(layer: TLayer, locked: boolean): void;

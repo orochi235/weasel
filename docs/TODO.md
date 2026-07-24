@@ -192,7 +192,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Container layout strategies in `useScene`** (today: absolute-positioning only).
 - **(P3) Selection-in-Scene vs external.**
-- **(P3) Tree-mutation invariants documented explicitly** (`remove(container)` cascade, `move` cycle detection, `setLayer` on container). All three are already pinned by tests in `src/core/scene/scene.test.ts`; the remaining gap is explicit prose documentation.
 - **(P3) Full tier unification** (collapse inline-props/explicit-adapter onto Scene). Same effort as the P2 "`arrayAdapter` as the default Canvas adapter — full unification" above — track there.
 - **(P3) Container-pose cascade as a scene-primitive semantic.** Today opt-in via `sceneToAdapter({ cascadeContainerPose: 'rect' })` shipped 2026-05-11 to absorb NestingDemo boilerplate — the deeper move is letting `scene.setPose` on a container cascade natively, which would require a `translatePose` plumbing decision on the `useScene` constructor.
 
