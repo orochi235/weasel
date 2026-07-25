@@ -3,6 +3,7 @@ import { createScene, sceneFromJSON } from './scene';
 import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
 import type { Op } from 'core/ops/types';
+import { registerOpFactory } from 'core/ops/registry';
 
 type Layer = 'background' | 'structures' | 'plantings';
 interface Data { label: string }
@@ -1276,5 +1277,141 @@ describe('coalescing (coalesceWindowMs)', () => {
     vi.advanceTimersByTime(100);
     restored.setPose(id, { x: 2, y: 0, width: 10, height: 10 });
     expect(restored.historyEntries().length).toBe(before + 1);
+  });
+});
+
+describe('history persistence (serializeHistory / restoreHistory)', () => {
+  /** Serialize scene A's state+history, rebuild both into a fresh scene. */
+  function roundTrip(a: ReturnType<typeof makeScene>) {
+    const snap = a.serializeHistory();
+    const b = makeScene();
+    b.loadState(a.toJSON());
+    b.restoreHistory(snap);
+    return b;
+  }
+
+  it('native-op entries undo/redo after a round-trip', () => {
+    const a = makeScene();
+    const id = a.add({ id: asNodeId('n1'), kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    a.setPose(id, { x: 5, y: 5, width: 10, height: 10 });
+    const b = roundTrip(a);
+    expect(b.historyEntries()).toHaveLength(2);
+    expect(b.undo()).toBe(true);
+    expect(b.get(asNodeId('n1'))?.pose).toEqual(POSE);
+    b.undo();
+    expect(b.get(asNodeId('n1'))).toBeUndefined();
+    b.redo(); b.redo();
+    expect(b.get(asNodeId('n1'))?.pose).toEqual({ x: 5, y: 5, width: 10, height: 10 });
+  });
+
+  it('consumer registerOp kinds round-trip when re-registered before restore', () => {
+    let ext = 'initial';
+    const handler = {
+      apply: (p: { from: string; to: string }) => { ext = p.to; },
+      revert: (p: { from: string; to: string }) => { ext = p.from; },
+    };
+    const a = makeScene();
+    a.registerOp('app:rename', handler);
+    a.recordOp({ kind: 'app:rename', payload: { from: 'initial', to: 'renamed' } });
+    const snap = a.serializeHistory();
+
+    const b = makeScene();
+    b.registerOp('app:rename', handler);
+    b.loadState(a.toJSON());
+    b.restoreHistory(snap);
+    ext = 'renamed'; // state at snapshot head
+    b.undo();
+    expect(ext).toBe('initial');
+    b.redo();
+    expect(ext).toBe('renamed');
+  });
+
+  it('external-op entries replay through the lazy history adapter (wired after restore)', () => {
+    const NAME = 'scenetest:cellSet';
+    let cell = 0;
+    const mk = (f: number, t: number): Op => ({
+      name: NAME, args: { from: f, to: t },
+      apply: (adapter) => { (adapter as { set(v: number): void }).set(t); },
+      invert: () => mk(t, f),
+    });
+    registerOpFactory(NAME, (args) => {
+      const { from, to } = args as { from: number; to: number };
+      return mk(from, to);
+    });
+    const liveAdapter = { set: (v: number) => { cell = v; } };
+    const a = makeScene();
+    a.applyBatch([mk(0, 7)], 'set cell', liveAdapter);
+    expect(cell).toBe(7);
+
+    const b = roundTrip(a);
+    // Adapter wired AFTER restore — lazy binding must not care.
+    b.setHistoryAdapter(() => liveAdapter);
+    b.undo();
+    expect(cell).toBe(0);
+    b.redo();
+    expect(cell).toBe(7);
+  });
+
+  it('restored external ops with no history adapter are warning no-ops, never throws', () => {
+    const NAME = 'scenetest:noAdapter';
+    let cell = 0;
+    registerOpFactory(NAME, (args) => {
+      const { to } = args as { to: number };
+      const mk = (t: number): Op => ({
+        name: NAME, args: { to: t },
+        apply: (adapter) => { (adapter as { set(v: number): void }).set(t); },
+        invert: () => mk(0),
+      });
+      return mk(to);
+    });
+    const a = makeScene();
+    a.applyBatch([{
+      name: NAME, args: { to: 9 },
+      apply: (adapter) => { (adapter as { set(v: number): void }).set(9); },
+      invert: () => ({ name: NAME, args: { to: 0 }, apply: () => { cell = 0; }, invert: () => { throw new Error('unused'); } }),
+    }], 'set', { set: (v: number) => { cell = v; } });
+    const b = roundTrip(a);
+    expect(() => b.undo()).not.toThrow(); // no adapter wired: no-op with a debug warning
+    expect(cell).toBe(9);
+  });
+
+  it('unknown op kinds restore as placeholders that keep their stack slot', () => {
+    const a = makeScene();
+    a.registerOp('app:oneoff', { apply: () => {}, revert: () => {} });
+    a.recordOp({ kind: 'app:oneoff', payload: null });
+    a.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    const snap = a.serializeHistory();
+    const b = makeScene();       // 'app:oneoff' NOT re-registered
+    b.loadState(a.toJSON());
+    b.restoreHistory(snap);
+    expect(b.historyEntries()).toHaveLength(2); // slot preserved
+    b.undo();                                    // undoes the add
+    b.undo();                                    // placeholder — no throw, no effect
+    expect(b.canUndo()).toBe(false);
+  });
+
+  it('restoreHistory replaces existing history and restored entries never coalesce', () => {
+    const a = makeScene();
+    a.add({ id: asNodeId('n1'), kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    const snap = a.serializeHistory();
+    const b = makeScene();
+    b.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'pre' } });
+    b.loadState(a.toJSON());     // clears history + state
+    b.restoreHistory(snap);
+    expect(b.historyEntries()).toHaveLength(1);
+    b.setPose(asNodeId('n1'), { x: 1, y: 1, width: 10, height: 10 });
+    expect(b.historyEntries()).toHaveLength(2); // no merge into the restored entry
+  });
+
+  it('restoreHistory notifies subscribers exactly once', () => {
+    const a = makeScene();
+    a.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+    const snap = a.serializeHistory();
+    const b = makeScene();
+    b.loadState(a.toJSON());
+    let n = 0;
+    b.subscribe(() => { n++; });
+    b.restoreHistory(snap);
+    expect(n).toBe(1);
   });
 });

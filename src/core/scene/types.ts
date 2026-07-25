@@ -1,5 +1,6 @@
 import type { RectPose } from 'features/groups/composePose';
 import type { Path } from 'features/paths/types';
+import type { SerializedHistory } from '@weasel-js/history';
 
 /**
  * # SceneNode — the thing in the scene
@@ -315,6 +316,32 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** Jump to the given history index by calling undo/redo repeatedly.
    *  Clamps to [0, total]. Returns true if any movement occurred. */
   jumpToHistoryIndex(index: number): boolean;
+
+  // History persistence
+  /** Snapshot the undo/redo history in a JSON-serializable form (the
+   *  engine's `SerializedHistory`). Entries containing any nameless op are
+   *  dropped (hand-rolled anonymous ops passed to `applyBatch`); kit and
+   *  consumer-registered ops always carry names. Payload JSON-safety
+   *  (e.g. typed arrays inside poses) is the caller's concern. Do not call
+   *  mid-`batch` — the open batch's ops are not yet recorded. */
+  serializeHistory(): SerializedHistory;
+  /** Replace the undo/redo history from a `serializeHistory()` snapshot.
+   *  Call on a scene whose node/layer state already matches the snapshot's
+   *  head state (i.e. right after `loadState` from the paired scene
+   *  snapshot); node state is NOT mutated. Ops re-registered via
+   *  `registerOp` before this call round-trip; unknown kinds become no-op
+   *  placeholders; external ops rebuild via the global op-factory registry
+   *  and replay against the `setHistoryAdapter` accessor. Restored entries
+   *  never coalesce with new ones. Notifies once. */
+  restoreHistory(snapshot: SerializedHistory): void;
+  /** Install (or clear with `null`) the accessor for the adapter that
+   *  RESTORED external ops (recorded via `applyBatch`, rebuilt from a
+   *  `restoreHistory` snapshot) apply against on undo/redo. Resolved lazily
+   *  at each apply, so wiring order relative to `restoreHistory` doesn't
+   *  matter. Live `applyBatch` entries are unaffected (they bind their
+   *  call-site adapter). If unset when a restored op applies, the op is a
+   *  debug-warned no-op. */
+  setHistoryAdapter(fn: (() => unknown) | null): void;
 
   // Serialization
   /** Snapshot the current scene state to a JSON-serializable shape.

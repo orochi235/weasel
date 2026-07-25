@@ -178,7 +178,13 @@ export interface CreateHistoryOptions {
    *  op-factory registry. Return `null` to fall through (global registry,
    *  then a no-op placeholder). Lets an owner rebuild ops whose handlers
    *  live in per-instance state the global registry can't reach (e.g. a
-   *  Scene's registered op kinds). */
+   *  Scene's registered op kinds).
+   *
+   *  May be invoked more than once per entry with the same `(name, args)` —
+   *  once per op for `forwardOps` and again for `baseOps` (the same array
+   *  until a coalesce splits them). Unlike `onEvict`, a throwing hook is
+   *  NOT caught: it aborts `restore()` mid-rebuild and can leave the
+   *  stacks partially rebuilt. */
   rebuildOp?: (name: string, args: unknown) => Op | null;
 }
 

@@ -1,5 +1,7 @@
-import { createHistory, type Journal } from '@weasel-js/history';
+import { createHistory, type Journal, type SerializedHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
+import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
+import { dwarn } from 'debug/flag';
 import {
   asNodeId,
   type AddNodeSpec,
@@ -96,6 +98,31 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   const listeners = new Set<() => void>();
   const registered = new Map<string, RegisteredOp<unknown>>();
 
+  // Accessor for the adapter restored external ops apply against.
+  let historyAdapterAccessor: (() => unknown) | null = null;
+
+  /** Wrap a globally-rebuilt external op so apply resolves the history
+   *  adapter lazily — wiring order vs restoreHistory doesn't matter. An
+   *  unset accessor makes the op a debug-warned no-op (never throws
+   *  mid-undo), matching the placeholder degradation policy. */
+  function bindOpToHistoryAdapter(op: Op): Op {
+    return {
+      name: op.name,
+      args: op.args,
+      label: op.label,
+      coalesceKey: op.coalesceKey,
+      apply: () => {
+        const get = historyAdapterAccessor;
+        if (!get) {
+          dwarn('scene', `restored op "${op.name ?? '?'}" has no history adapter — skipping (setHistoryAdapter was not wired)`);
+          return 'noop';
+        }
+        return op.apply(get());
+      },
+      invert: () => bindOpToHistoryAdapter(op.invert()),
+    };
+  }
+
   // The scene's undo/redo engine. Recorded ops are `makeOp` wrappers over
   // `registered` handlers, so the engine's adapter argument is unused (the
   // wrappers close over their payloads). Eviction (branch-edit redo-clears
@@ -108,6 +135,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // them, so the double scan is cheap today and correct later.
       pruneCacheForDroppedOps(entry.forwardOps);
       pruneCacheForDroppedOps(entry.baseOps);
+    },
+    // Restore-time rebuild: scene-registered kinds (kit:* + consumer
+    // registerOp) rebuild via makeOp; external ops rebuild via the global
+    // op-factory registry, wrapped in the lazy history-adapter binding.
+    // Return null only when the global registry also misses — the engine
+    // then places its no-op placeholder. (The engine's own global-registry
+    // fallback never fires for scene histories: this hook already
+    // consulted it.)
+    rebuildOp: (name, args) => {
+      if (registered.has(name)) return makeOp(name, args);
+      const rebuilt = rebuildGlobalOp(name, args);
+      return rebuilt === null ? null : bindOpToHistoryAdapter(rebuilt);
     },
   });
 
@@ -861,6 +900,19 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       withRecordingSuppressed(() => history.goto(target));
       notify();
       return true;
+    },
+
+    serializeHistory: () => history.serialize(),
+
+    restoreHistory(snapshot: SerializedHistory) {
+      // restore() only rebuilds the stacks — no op applies, no node-state
+      // mutation. The caller guarantees state already matches the head.
+      history.restore(snapshot);
+      notify();
+    },
+
+    setHistoryAdapter(fn) {
+      historyAdapterAccessor = fn;
     },
 
     batch(label, fn) {
