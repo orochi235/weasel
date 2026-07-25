@@ -38,6 +38,14 @@ describe('historyLimit', () => {
     expect(history.entries().undo.map((e) => e.label)).toEqual(['two']);
   });
 
+  it('clamps a negative historyLimit to 0 instead of hanging', () => {
+    const cell: Cell = { x: 0 };
+    const history = createHistory(null, { historyLimit: -1 });
+    history.applyOps([setX(cell, 0, 1)], 'one'); // must terminate
+    expect(history.canUndo()).toBe(false);
+    expect(cell.x).toBe(1); // the op still applied; only the entry was evicted
+  });
+
   it('coalescing does not evict (stack depth unchanged)', () => {
     const cell: Cell = { x: 0 };
     let t = 1000;
@@ -123,5 +131,14 @@ describe('onEvict', () => {
     history.applyOps([setX(cell, 1, 5)], 'three');
     history.clear();       // wholesale drop — no per-entry eviction
     expect(onEvict).not.toHaveBeenCalled();
+  });
+
+  it('a throwing onEvict does not desync the stacks or skip the cap', () => {
+    const cell: Cell = { x: 0 };
+    const onEvict = vi.fn(() => { throw new Error('boom'); });
+    const history = createHistory(null, { historyLimit: 1, onEvict });
+    history.applyOps([setX(cell, 0, 1)], 'one');
+    expect(() => history.applyOps([setX(cell, 1, 2)], 'two')).not.toThrow();
+    expect(history.entries().undo.map((e) => e.label)).toEqual(['two']); // cap still enforced
   });
 });

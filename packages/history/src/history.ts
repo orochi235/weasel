@@ -157,13 +157,16 @@ export interface CreateHistoryOptions {
   now?: () => number;
   /** Maximum undo-stack depth. When a push overflows the cap the oldest
    *  entry is evicted (reported via `onEvict`) and can no longer be undone.
-   *  Default: unbounded. */
+   *  `0` disables the undo stack entirely — every push is evicted
+   *  synchronously (negative values are clamped to `0`). Default: unbounded. */
   historyLimit?: number;
   /** Fired once per entry that permanently leaves the reachable stacks:
    *  redo entries dropped by a branch edit (a new push / coalesce /
    *  `recordEntry` after undo) and undo entries evicted by `historyLimit`.
    *  NOT fired by `clear()` or `restore()` — those wholesale-replace the
-   *  history and the caller already knows. */
+   *  history and the caller already knows. Note `restore()` does not enforce
+   *  `historyLimit` either: a restored snapshot may exceed the cap, which
+   *  re-applies (evicting via `onEvict`) on the next push. */
   onEvict?: (entry: EvictedEntry) => void;
 }
 
@@ -174,7 +177,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   let activeJournal: Journal | null = null;
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
-  const historyLimit = options.historyLimit ?? Infinity;
+  const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
   const onEvict = options.onEvict;
   let nextEntryId = 1;
   let version = 0;
@@ -184,11 +187,17 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     for (const l of listeners) l();
   }
 
-  /** Report entries that just became permanently unreachable. */
+  /** Report entries that just became permanently unreachable. A throwing
+   *  callback must not desync the stacks mid-mutation, so failures are
+   *  contained and surfaced via the debug flag. */
   function reportEvicted(entries: Entry[]): void {
     if (!onEvict) return;
     for (const e of entries) {
-      onEvict({ id: e.id, label: e.label, forwardOps: e.forwardOps, baseOps: e.baseOps });
+      try {
+        onEvict({ id: e.id, label: e.label, forwardOps: e.forwardOps, baseOps: e.baseOps });
+      } catch (err) {
+        dwarn('history', `onEvict callback threw for entry id=${e.id} "${e.label}": ${String(err)}`);
+      }
     }
   }
 
