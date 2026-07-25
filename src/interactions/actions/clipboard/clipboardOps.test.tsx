@@ -297,13 +297,23 @@ describe('useClipboardOps', () => {
 });
 
 describe('useClipboardOps — OS clipboard flavor seam', () => {
+  // Real Chromium accepts only these MIME types unprefixed; every other type
+  // must carry the "web " prefix or the ClipboardItem constructor throws.
+  const WELL_KNOWN = new Set(['text/plain', 'text/html', 'image/png']);
+
   // Minimal jsdom stand-in for the real ClipboardItem — jsdom doesn't ship
   // one. Captures the constructor arg so tests can inspect the flavors a
-  // write attempt carried.
+  // write attempt carried, and — mirroring real Chromium — throws if any
+  // type is neither well-known nor "web "-prefixed.
   class FakeClipboardItem {
     types: string[];
     private parts: Record<string, Blob>;
     constructor(items: Record<string, Blob>) {
+      for (const mime of Object.keys(items)) {
+        if (!WELL_KNOWN.has(mime) && !mime.startsWith('web ')) {
+          throw new Error(`FakeClipboardItem: type "${mime}" requires the "web " prefix`);
+        }
+      }
       this.parts = items;
       this.types = Object.keys(items);
     }
@@ -378,7 +388,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     expect(await blobText(item, 'text/plain')).toBe(expected);
   });
 
-  it('(b) first write rejection retries with standard-only flavors then resolves', async () => {
+  it('(b) first write rejection retries with ONLY well-known flavors then resolves', async () => {
     const write = vi.fn()
       .mockRejectedValueOnce(new Error('custom format unsupported'))
       .mockResolvedValueOnce(undefined);
@@ -393,7 +403,9 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     const secondItem = write.mock.calls[1][0][0] as InstanceType<typeof FakeClipboardItem>;
     expect(secondItem.types).not.toContain(WEASEL_CLIPBOARD_MIME_WEB);
     expect(secondItem.types).not.toContain(WEASEL_CLIPBOARD_MIME);
-    expect(secondItem.types).toContain('text/plain');
+    // Retry drops every non-well-known type outright — only 'text/plain'
+    // survives from the default flavor map.
+    expect(secondItem.types).toEqual(['text/plain']);
   });
 
   it('(c) both write rejections do not throw; in-memory paste still works', async () => {
@@ -421,7 +433,7 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     expect(result.current.isEmpty()).toBe(false);
   });
 
-  it('(e) produceFlavors override replaces the default map; empty object skips the write', async () => {
+  it('(e) produceFlavors override with a non-well-known MIME (image/svg+xml) succeeds first-attempt, arriving web-prefixed', async () => {
     const write = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { write } });
     const helpers = makeAdapter();
@@ -435,23 +447,28 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     act(() => { result.current.copy(); });
     await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
     const item = write.mock.calls[0][0][0] as InstanceType<typeof FakeClipboardItem>;
-    expect(item.types).toEqual(['image/svg+xml']);
-    expect(item.types).not.toContain('text/plain');
+    expect(item.types).toEqual(['web image/svg+xml']);
+    expect(await blobText(item, 'web image/svg+xml')).toBe('<svg/>');
+  });
 
-    write.mockClear();
-    const { result: result2 } = renderHook(() =>
+  it('(f) produceFlavors returning an empty object skips the write entirely', async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { write } });
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
       useClipboardOps(helpers.adapter, {
         getSelection: () => [asNodeId('a')],
         produceFlavors: () => ({}),
       }),
     );
-    act(() => { result2.current.copy(); });
+    act(() => { result.current.copy(); });
     // Give the microtask/macrotask queue a chance to run; write must never fire.
     await new Promise((r) => setTimeout(r, 0));
     expect(write).not.toHaveBeenCalled();
   });
 
-  it('(f) jsonReplacer reaches the default flavor builder', async () => {
+  it('(g) jsonReplacer reaches the default flavor builder', async () => {
     const write = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { write } });
     const helpers = makeAdapter();
@@ -469,5 +486,24 @@ describe('useClipboardOps — OS clipboard flavor seam', () => {
     const text = await blobText(item, 'text/plain');
     expect(text).toBe(buildWeaselClipboardText([{ id: 'a', x: 0, y: 0 }], replacer));
     expect(text).toContain('REPLACED');
+  });
+
+  it('(h) a throwing produceFlavors does not throw from copy(); write never called; in-memory paste still works', async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { write } });
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        produceFlavors: () => { throw new Error('boom'); },
+      }),
+    );
+    expect(() => act(() => { result.current.copy(); })).not.toThrow();
+    // Give the microtask/macrotask queue a chance to run; write must never fire.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(write).not.toHaveBeenCalled();
+    act(() => { result.current.paste(); });
+    expect(helpers.batches).toHaveLength(1);
   });
 });

@@ -8,7 +8,7 @@ import type { InsertAdapter } from 'core/adapters/types';
 import type { ClipboardSnapshot } from './types';
 import { usePointerContext } from 'features/pointer/PointerContext';
 import { dwarn } from 'debug/flag';
-import { WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText } from './wireFormat';
+import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText } from './wireFormat';
 
 type Replacer = (key: string, value: unknown) => unknown;
 
@@ -79,10 +79,17 @@ export function useClipboardOps<TNode extends { id: string }>(
     // Best-effort OS write. Never blocks or throws — the in-memory ref is
     // already set, and OS clipboard support varies (custom formats are
     // Chromium-only via the "web " prefix; jsdom/non-secure contexts have
-    // no API at all).
-    const flavors = optsRef.current.produceFlavors?.(clipboardRef.current)
-      ?? defaultFlavors(clipboardRef.current, optsRef.current.jsonReplacer);
-    void writeOsClipboard(flavors);
+    // no API at all). The flavor producer itself is untrusted consumer code
+    // (`produceFlavors`), so guard its call too — a throwing producer must
+    // not break `copy()`, it just skips the OS write.
+    let flavors: Record<string, string> | null = null;
+    try {
+      flavors = optsRef.current.produceFlavors?.(clipboardRef.current)
+        ?? defaultFlavors(clipboardRef.current, optsRef.current.jsonReplacer);
+    } catch (err) {
+      dwarn('clipboard', `flavor producer threw — skipping OS write: ${String(err)}`);
+    }
+    if (flavors) void writeOsClipboard(flavors);
   }, []);
 
   const paste = useCallback(() => {
@@ -121,8 +128,14 @@ function defaultFlavors(snapshot: ClipboardSnapshot, replacer?: Replacer): Recor
   return { [WEASEL_CLIPBOARD_MIME]: text, 'text/plain': text };
 }
 
-/** Degradation ladder: full map (custom MIME web-prefixed) → standard-only
- *  → give up with a dwarn.
+/** MIME types the async Clipboard API accepts unprefixed. Every other type
+ *  (including our own custom MIME, and app-supplied flavors like
+ *  `image/svg+xml`) must carry Chromium's `web ` prefix or `ClipboardItem`'s
+ *  constructor throws. */
+const WELL_KNOWN_CLIPBOARD_MIMES = new Set(['text/plain', 'text/html', 'image/png']);
+
+/** Degradation ladder: full map (every non-well-known MIME web-prefixed) →
+ *  well-known-only → give up with a dwarn.
  *  @internal test seam — exported so unit tests can await the fire-and-forget
  *  write directly; tests should still exercise this at least once through
  *  the public `copy()` (see clipboardOps.test.tsx). */
@@ -131,16 +144,17 @@ export async function writeOsClipboard(flavors: Record<string, string>): Promise
   if (entries.length === 0) return;
   const cb = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
   if (!cb?.write || typeof ClipboardItem === 'undefined') return;
+  const wireMime = (mime: string) => (WELL_KNOWN_CLIPBOARD_MIMES.has(mime) ? mime : `web ${mime}`);
   const toItem = (fs: [string, string][]) => new ClipboardItem(Object.fromEntries(
-    fs.map(([mime, text]) => [
-      mime === WEASEL_CLIPBOARD_MIME ? WEASEL_CLIPBOARD_MIME_WEB : mime,
-      new Blob([text], { type: mime === WEASEL_CLIPBOARD_MIME ? WEASEL_CLIPBOARD_MIME_WEB : mime }),
-    ]),
+    fs.map(([mime, text]) => {
+      const wire = wireMime(mime);
+      return [wire, new Blob([text], { type: wire })];
+    }),
   ));
   try {
     await cb.write([toItem(entries)]);
   } catch {
-    const standard = entries.filter(([mime]) => mime !== WEASEL_CLIPBOARD_MIME);
+    const standard = entries.filter(([mime]) => WELL_KNOWN_CLIPBOARD_MIMES.has(mime));
     if (standard.length === 0) { dwarn('clipboard', 'OS write failed; no standard flavors to fall back to'); return; }
     try {
       await cb.write([toItem(standard)]);
