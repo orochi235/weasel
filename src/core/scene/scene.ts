@@ -304,7 +304,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   registerKitOp<{
     id: NodeId; kind: 'leaf' | 'container'; layer: TLayer; pose: TPose; data: TData;
-    parent: NodeId | null; index: number;
+    parent: NodeId | null; index: number; clipKey?: string;
   }>('kit:add', {
     apply: (p) => {
       if (state.nodes.has(p.id)) {
@@ -323,6 +323,17 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         const cached = pendingClipPatches.get(p.id);
         if (cached) {
           (node as ContainerNode<TData, TLayer, TPose>).clipFromPose = cached;
+        } else if (p.clipKey !== undefined) {
+          // Restore path: a fresh session has an empty cache, but the payload
+          // carries the registry key the function was registered under. Seed
+          // the cache so later undo/redo cycles behave like the live path.
+          const fn = registry.clipFromPose?.[p.clipKey];
+          if (fn) {
+            (node as ContainerNode<TData, TLayer, TPose>).clipFromPose = fn;
+            pendingClipPatches.set(p.id, fn as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
+          } else {
+            dwarn('scene', `kit:add: clipKey "${p.clipKey}" not in this scene's registry — container "${p.id}" restored without clip`);
+          }
         }
       }
     },
@@ -616,9 +627,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }
       const sibs = siblingsOf(parent);
       const index = spec.index ?? sibs.length;
+      const clipKey = spec.kind === 'container' && spec.clipFromPose !== undefined
+        ? reverseClipFromPose.get(spec.clipFromPose as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>)
+        : undefined;
       executeAndLog('kit:add', {
         id, kind: spec.kind, layer: spec.layer, pose: spec.pose, data: spec.data,
         parent, index,
+        ...(clipKey !== undefined ? { clipKey } : {}),
       }, `add ${spec.kind}`);
       // clipFromPose is a function and cannot travel through the serializable
       // op payload. Patch it directly onto the live node after the op applies.

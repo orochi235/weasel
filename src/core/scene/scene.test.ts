@@ -1459,4 +1459,23 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     b.restoreHistory(snap);
     expect(n).toBe(1);
   });
+
+  it('clip containers re-attach clipFromPose on redo after a round-trip (clipKey)', () => {
+    const fn = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    const mk = () => createScene<Data, 'structures', typeof POSE>({
+      systemLayers: [{ id: 'structures' }],
+      registry: { clipFromPose: { ellipse: fn } },
+    });
+    const a = mk();
+    a.add({ id: asNodeId('bed'), kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPose: fn });
+    a.undo(); // head state: container absent; the add entry sits on the redo stack
+    const snap = a.serializeHistory();
+    const b = mk();
+    b.loadState(a.toJSON());
+    b.restoreHistory(snap);
+    b.redo(); // re-adds the container in a fresh session — cache is empty
+    const node = b.get(asNodeId('bed'));
+    expect(node?.kind).toBe('container');
+    expect((node as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
+  });
 });
