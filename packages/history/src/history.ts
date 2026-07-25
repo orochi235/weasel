@@ -145,6 +145,10 @@ export interface CreateHistoryOptions {
   coalesceWindowMs?: number;
   /** Clock injection point for tests. Defaults to `Date.now`. */
   now?: () => number;
+  /** Maximum undo-stack depth. When a push overflows the cap the oldest
+   *  entry is evicted (reported via `onEvict`) and can no longer be undone.
+   *  Default: unbounded. */
+  historyLimit?: number;
 }
 
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
@@ -154,12 +158,20 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   let activeJournal: Journal | null = null;
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
+  const historyLimit = options.historyLimit ?? Infinity;
   let nextEntryId = 1;
   let version = 0;
   const listeners = new Set<() => void>();
   function bump(): void {
     version++;
     for (const l of listeners) l();
+  }
+
+  /** Evict the oldest undo entries past `historyLimit`. */
+  function enforceLimit(): void {
+    while (undoStack.length > historyLimit) {
+      undoStack.shift();
+    }
   }
 
   function applyOps(ops: Op[]): void {
@@ -248,6 +260,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     dlog('history', `push '${label}' (${ops.length} ops)`);
     undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: incoming });
     redoStack.length = 0;
+    enforceLimit();
     bump();
   }
 
@@ -333,6 +346,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (ops.length === 0) return;
       undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: touchedIdsFromOps(ops) });
       redoStack.length = 0;
+      enforceLimit();
       bump();
     },
     allForwardOps(): Op[] {
