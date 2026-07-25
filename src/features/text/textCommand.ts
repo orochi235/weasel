@@ -9,6 +9,7 @@ import type { DrawCommand } from '../../renderer';
 import type { TextStyle } from './textStyle';
 import { resolveTextStyle } from './textStyle';
 import { resolveRuns } from './runs/resolveRuns';
+import type { TextVerticalAlign } from './verticalAlign';
 
 export function textCommand(
   x: number,
@@ -16,6 +17,8 @@ export function textCommand(
   text: string,
   style?: TextStyle,
   maxWidth?: number,
+  height?: number,
+  verticalAlign?: TextVerticalAlign,
 ): DrawCommand {
   const resolved = resolveTextStyle(style);
   const runs = resolveRuns([{ text }], resolved);
@@ -27,5 +30,7 @@ export function textCommand(
     align: resolved.align,
     maxWidth,
     style: style ?? {},
+    height,
+    verticalAlign,
   };
 }

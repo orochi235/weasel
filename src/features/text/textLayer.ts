@@ -15,6 +15,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { resolveRuns } from './runs/resolveRuns';
 import { runsToPlainText, toRuns, type StyledRun } from './runs';
 import { type TextStyle, resolveTextStyle } from './textStyle';
+import type { TextVerticalAlign } from './verticalAlign';
 
 /** Pose for a text node: bounding rect plus the text and optional style. */
 export interface TextPose {
@@ -26,6 +27,8 @@ export interface TextPose {
   /** Rich-text runs. When present, `runsToPlainText(runs)` must equal `text`. */
   runs?: StyledRun[];
   style?: TextStyle;
+  /** Box vertical alignment within `[y, y+height]`. Default 'top'. */
+  verticalAlign?: TextVerticalAlign;
 }
 
 /** Options for `createTextLayer`. */
@@ -72,6 +75,8 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
           maxWidth: pose.width,
           align: style.align,
           style: pose.style ?? {},
+          height: pose.height,
+          verticalAlign: pose.verticalAlign,
         };
         if (clipToBounds) {
           children.push({

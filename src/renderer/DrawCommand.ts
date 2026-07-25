@@ -6,6 +6,7 @@ import type { Path } from 'features/paths/types';
 import type { FillStyle, Stroke } from 'core/paint-types';
 import type { TextStyle } from 'features/text/textStyle';
 import type { ResolvedRun } from 'features/text/runs/resolveRuns';
+import type { TextVerticalAlign } from 'features/text/verticalAlign';
 import type { Mat3 } from './math/mat3';
 import type { ShaderProgramHandle, ShaderUniform } from './shaders/registerProgram';
 
@@ -88,6 +89,11 @@ export interface TextDrawCommand {
   maxWidth?: number;
   align?: 'left' | 'center' | 'right';
   style: TextStyle;
+  /** Box height for vertical alignment. When set with `verticalAlign`,
+   *  the laid-out block shifts within `[y, y+height]`. */
+  height?: number;
+  /** Default 'top' — the legacy top-anchored behavior. */
+  verticalAlign?: TextVerticalAlign;
 }
 
 /**

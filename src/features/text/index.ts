@@ -35,6 +35,8 @@ export type { UseSceneTextEditOptions } from './useSceneTextEdit';
 export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
 export { textCommand } from './textCommand';
+export { verticalAlignOffset } from './verticalAlign';
+export type { TextVerticalAlign } from './verticalAlign';
 export {
   runsToDom,
   domToRuns,
