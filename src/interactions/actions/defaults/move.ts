@@ -6,15 +6,17 @@
  *     current drag delta in scratch each frame.
  *   - `onMove`: update the in-scratch `currentDelta` only — no scene writes.
  *     This avoids polluting the undo stack with O(N-frames) entries.
- *   - `onEnd('commit')`: apply the final delta via `scene.batch('Move', ...)`,
- *     which produces exactly one undo entry for the whole drag.
+ *   - `onEnd('commit')`: emit the final delta as transform ops and route
+ *     them through the consumer `applyOps` hook when present, else
+ *     `scene.applyBatch(ops, 'Move', adapter)` — either way a single batch
+ *     → exactly one undo entry for the whole drag.
  *   - `onEnd('cancel')`: no scene writes — the scene was never mutated during
  *     the drag, so no restoration is needed.
  *
  * ## Why no per-frame scene writes
  *
- * `Scene.setPose` calls `executeAndLog` → `pushEntry`, which immediately
- * appends to the undo stack. Per-frame writes during drag would create
+ * `Scene.setPose` calls `executeAndLog`, which immediately records an undo
+ * entry on the scene's history engine. Per-frame writes during drag would create
  * O(frames) history entries — matching `useMove`'s approach of tracking
  * poses only in React state (overlay) during the drag and committing a
  * single `createTransformOp` batch at the end.

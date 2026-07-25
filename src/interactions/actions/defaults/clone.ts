@@ -3,16 +3,18 @@
  *
  * ## Status: REAL (scene-direct, no overlay)
  *
- * Implements the core clone-by-drag logic via `scene.add` + `scene.batch`:
+ * Implements the core clone-by-drag logic via insert ops committed through
+ * `scene.applyBatch`:
  *   - `start`: validates selection + scene; captures origin poses for all
  *     selected nodes. The alt-modifier check that activates cloning in
  *     `useClone` (via `CloneBehavior.activates`) is intentionally NOT applied
  *     here — the descriptor fires when the dispatcher routes to it; modifier
  *     discrimination is a dispatcher concern (Phase 12 TODO for alt-gating).
  *   - `onMove`: tracks current drag delta in scratch (no scene writes).
- *   - `onEnd('commit')`: emits a single `scene.batch('Clone', ...)` that
- *     calls `scene.add(...)` for each selected node with the translated pose.
- *     Produces one undo entry for the whole batch.
+ *   - `onEnd('commit')`: emits one insert op per selected node (translated
+ *     pose) and commits them as a single batch — via the consumer `applyOps`
+ *     hook when present, else `scene.applyBatch(ops, 'Clone', ...)`. One
+ *     undo entry for the whole batch.
  *   - `onEnd('cancel')`: no-op (scene never mutated during drag).
  *
  * ## What this does NOT wire (vs `useClone`)
@@ -101,7 +103,8 @@ interface CloneScratch {
  * Requires dep-schema entries: `selection`, `scene`.
  *
  * Clones selected nodes into new scene nodes translated by the drag delta.
- * Uses `scene.batch('Clone', ...)` for a single undo entry.
+ * Commits insert ops via `scene.applyBatch(ops, 'Clone', ...)` (or the
+ * consumer `applyOps` hook) for a single undo entry.
  *
  * @see useClone — the React hook this descriptor partially mirrors.
  */

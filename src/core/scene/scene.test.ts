@@ -1143,6 +1143,22 @@ describe('applyBatch (no journal)', () => {
     expect(notified).toBe(1);
   });
 
+  it('applyBatch nested in a batch does not swallow the outer batch dirt', () => {
+    const s = makeScene();
+    let notified = 0;
+    s.subscribe(() => { notified++; });
+    const cell = { x: 0 };
+    const ext: Op = {
+      apply: () => { cell.x = 1; },
+      invert: () => ext,
+    };
+    s.batch('outer', () => {
+      s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+      s.applyBatch([ext], 'inner', null);
+    });
+    expect(notified).toBe(1);
+  });
+
   it('all-noop batches push no entry', () => {
     const s = makeScene();
     const op: Op = {

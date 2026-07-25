@@ -787,6 +787,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // scene.batch); exactly one listener dispatch fires at the end —
       // mirroring the single-notification semantics callers expect.
       const prevSuppress = suppressRecording;
+      const prevDirty = batchDirty;
       suppressRecording = true;
       batchDepth++;
       batchDirty = false;
@@ -802,6 +803,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       } finally {
         batchDepth--;
         suppressRecording = prevSuppress;
+        // Re-merge any outer batch's pending dirt so a nested call can't
+        // swallow it; at true top level prevDirty is always false.
+        batchDirty = batchDirty || prevDirty;
         // Flush inside finally so a throwing op can't strand subscribers
         // after earlier ops in the batch already mutated state (mirrors
         // scene.batch). Depth-guarded: a nested context defers to the
