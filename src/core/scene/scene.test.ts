@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createScene, sceneFromJSON } from './scene';
 import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
+import type { Op } from 'core/ops/types';
 
 type Layer = 'background' | 'structures' | 'plantings';
 interface Data { label: string }
@@ -1069,5 +1070,66 @@ describe('user-layer mutations', () => {
     scene.setLayerVisible('top', false);
     expect(scene.layers.find((l) => l.id === 'top')!.visible).toBe(false);
     expect(scene.get(node)!.layer).toBe('top');
+  });
+});
+
+describe('applyBatch (no journal)', () => {
+  it('records one entry; undo replays inverted ops, redo replays forward ops', () => {
+    const s = makeScene();
+    const cell = { x: 0 };
+    const mk = (from: number, to: number): Op => ({
+      apply: () => { cell.x = to; },
+      invert: () => mk(to, from),
+    });
+    s.applyBatch([mk(0, 5)], 'set x', null);
+    expect(cell.x).toBe(5);
+    expect(s.historyEntries()).toHaveLength(1);
+    expect(s.undo()).toBe(true);
+    expect(cell.x).toBe(0);
+    s.redo();
+    expect(cell.x).toBe(5);
+  });
+
+  it('ops are applied against the adapter passed at the call site', () => {
+    const s = makeScene();
+    const seen: unknown[] = [];
+    const op: Op = {
+      apply: (adapter) => { seen.push(adapter); },
+      invert: () => op,
+    };
+    const adapter = { marker: true };
+    s.applyBatch([op], 'probe', adapter);
+    expect(seen).toEqual([adapter]);
+  });
+
+  it('ops that re-enter scene mutation methods do not double-record', () => {
+    const s = makeScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const P2 = { x: 9, y: 9, width: 10, height: 10 };
+    const mk = (from: typeof POSE, to: typeof POSE): Op => ({
+      apply: (adapter) => { (adapter as typeof s).setPose(id, to); },
+      invert: () => mk(to, from),
+    });
+    // The op mutates via the "adapter" (here: the scene itself, standing in
+    // for a SceneCanvasAdapter that forwards to scene.setPose).
+    s.applyBatch([mk(POSE, P2)], 'move', s);
+    // Exactly two entries: the add and the applyBatch — the inner setPose
+    // must not have recorded a third.
+    expect(s.historyEntries()).toHaveLength(2);
+    expect(s.get(id)?.pose).toEqual(P2);
+    s.undo();
+    expect(s.get(id)?.pose).toEqual(POSE);
+    s.redo();
+    expect(s.get(id)?.pose).toEqual(P2);
+  });
+
+  it('all-noop batches push no entry', () => {
+    const s = makeScene();
+    const op: Op = {
+      apply: () => 'noop' as const,
+      invert: () => op,
+    };
+    s.applyBatch([op], 'nothing', null);
+    expect(s.canUndo()).toBe(false);
   });
 });

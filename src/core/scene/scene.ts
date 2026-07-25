@@ -434,6 +434,22 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     };
   }
 
+  /** Rebind an external op to the adapter supplied at the `applyBatch` call
+   *  site — the scene's engine was constructed without an adapter, so ops
+   *  it stores and later replays must close over the right one. Forwards
+   *  the apply return value (no-op detection) and preserves
+   *  `coalesceKey`/`name`/`args`/`label` for coalescing and eviction. */
+  function bindOpToAdapter(op: Op, adapter: unknown): Op {
+    return {
+      name: op.name,
+      args: op.args,
+      label: op.label,
+      coalesceKey: op.coalesceKey,
+      apply: () => op.apply(adapter),
+      invert: () => bindOpToAdapter(op.invert(), adapter),
+    };
+  }
+
   /** Best-effort coalesce-grouping token: node ops carry `payload.id`,
    *  layer ops `payload.layer`. Payloads with neither get no key and never
    *  coalesce (the engine treats a missing key on either side as
@@ -762,32 +778,32 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     applyBatch(ops, label, adapter) {
       const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
-      if (journal) {
-        // Route through the journal. The journal's inner history will track the
-        // ops; the scene's own history must NOT also record them. We reuse
-        // the `suppressRecording` flag (which already blocks scene-side
-        // recording) while op mutations happen through the adapter.
-        //
-        // We also increment batchDepth to coalesce the per-op notify() calls
-        // (same as scene.batch does), then fire exactly one notify() at the
-        // end — mirroring the single-notification semantics callers expect.
-        suppressRecording = true;
-        batchDepth++;
-        batchDirty = false;
-        try {
+      // Either route drives mutations from a history engine (the journal's
+      // inner history, or the scene's own), so scene-side recording is
+      // suppressed for the duration: op applies that re-enter scene
+      // mutation methods via the adapter must mutate without re-recording.
+      // batchDepth coalesces the per-op notify() calls (same as
+      // scene.batch); exactly one listener dispatch fires at the end —
+      // mirroring the single-notification semantics callers expect.
+      suppressRecording = true;
+      batchDepth++;
+      batchDirty = false;
+      try {
+        if (journal) {
           journal.applyBatch(ops, label);
-        } finally {
-          batchDepth--;
-          suppressRecording = false;
+        } else {
+          // Native path: record the external ops themselves as one engine
+          // entry — coalescible across applyBatch calls via their own
+          // coalesceKeys — rebound to this call's adapter.
+          history.applyOps(ops.map((op) => bindOpToAdapter(op, adapter)), label);
         }
-        if (batchDirty) {
-          batchDirty = false;
-          for (const listener of listeners) listener();
-        }
-      } else {
-        scene.batch(label, () => {
-          for (const op of ops) op.apply(adapter);
-        });
+      } finally {
+        batchDepth--;
+        suppressRecording = false;
+      }
+      if (batchDirty) {
+        batchDirty = false;
+        for (const listener of listeners) listener();
       }
     },
 

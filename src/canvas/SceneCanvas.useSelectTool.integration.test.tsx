@@ -132,7 +132,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     // With `useResizeTool` deleted, resize flows entirely
     // through the dispatcher-side `resizeAction`, which gates on
     // `SelectionRequired` by default — override to bypass the static
-    // placeholder gate. resizeAction commits on `onEnd` via `scene.batch`.
+    // placeholder gate. resizeAction commits on `onEnd` via `scene.applyBatch`.
     const scene = makeScene();
     const id = firstId(scene);
 
@@ -154,15 +154,15 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     const canvas = container.querySelector('canvas');
     if (!canvas) throw new Error('No canvas element');
 
-    const batchSpy = vi.spyOn(scene, 'batch');
+    const batchSpy = vi.spyOn(scene, 'applyBatch');
 
     act(() => {
       gesture(canvas, { downX: 0, downY: 0, moveX: 20, moveY: 0 });
     });
 
-    // resizeAction commits via scene.batch('Resize', ...) on onEnd.
+    // resizeAction commits via scene.applyBatch(ops, 'Resize', adapter) on onEnd.
     const resizeCalls = batchSpy.mock.calls.filter(
-      ([label]) => label === 'Resize',
+      ([, label]) => label === 'Resize',
     );
     expect(resizeCalls.length).toBeGreaterThanOrEqual(1);
 
@@ -177,7 +177,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     batchSpy.mockRestore();
   });
 
-  it('drag on selected body fires moveAction → scene.batch("Move", ...)', () => {
+  it('drag on selected body fires moveAction → scene.applyBatch(..., "Move", ...)', () => {
     const scene = makeScene();
     const id = firstId(scene);
 
@@ -201,16 +201,16 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     const canvas = container.querySelector('canvas');
     if (!canvas) throw new Error('No canvas element');
 
-    const batchSpy = vi.spyOn(scene, 'batch');
+    const batchSpy = vi.spyOn(scene, 'applyBatch');
 
     act(() => {
       // Down at body center, move right 20px.
       gesture(canvas, { downX: 25, downY: 25, moveX: 45, moveY: 25 });
     });
 
-    // moveAction commits via scene.batch('Move', ...) on onEnd.
+    // moveAction commits via scene.applyBatch(ops, 'Move', adapter) on onEnd.
     const moveCalls = batchSpy.mock.calls.filter(
-      ([label]) => label === 'Move',
+      ([, label]) => label === 'Move',
     );
     expect(moveCalls.length).toBeGreaterThanOrEqual(1);
 
@@ -261,7 +261,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     expect(areaSelectSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('drag on rotate handle fires rotateAction → scene.batch("Rotate", ...)', () => {
+  it('drag on rotate handle fires rotateAction → scene.applyBatch(..., "Rotate", ...)', () => {
     const scene = makeScene();
     const id = firstId(scene);
 
@@ -288,16 +288,16 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     const canvas = container.querySelector('canvas');
     if (!canvas) throw new Error('No canvas element');
 
-    const batchSpy = vi.spyOn(scene, 'batch');
+    const batchSpy = vi.spyOn(scene, 'applyBatch');
 
     act(() => {
       // Down at rotate handle position (25, -24), move right 10px.
       gesture(canvas, { downX: 25, downY: -24, moveX: 35, moveY: -24 });
     });
 
-    // rotateAction commits via scene.batch('Rotate', ...) on onEnd.
+    // rotateAction commits via scene.applyBatch(ops, 'Rotate', adapter) on onEnd.
     const rotateCalls = batchSpy.mock.calls.filter(
-      ([label]) => label === 'Rotate',
+      ([, label]) => label === 'Rotate',
     );
     expect(rotateCalls.length).toBeGreaterThanOrEqual(1);
 
@@ -387,8 +387,8 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
 
   it('drag routes through moveAction under SceneCanvas (dispatcher always mounted)', () => {
     // Indirect verification: a drag fires moveAction (not any legacy useMove
-    // path). We verify this by confirming the scene.batch label is 'Move'
-    // (moveAction's label).
+    // path). We verify this by confirming the scene.applyBatch commit label
+    // is 'Move' (moveAction's label).
     const scene = makeScene();
     const id = firstId(scene);
 
@@ -408,19 +408,19 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
     const canvas = container.querySelector('canvas');
     if (!canvas) throw new Error('No canvas element');
 
-    const batchSpy = vi.spyOn(scene, 'batch');
+    const batchSpy = vi.spyOn(scene, 'applyBatch');
 
     act(() => {
       gesture(canvas, { downX: 25, downY: 25, moveX: 45, moveY: 25 });
     });
 
-    // With old dispatcher firing: would produce a 'Transform' or 'Move' label
-    // from adapter.applyOps (not scene.batch). The new moveAction uses scene.batch('Move').
-    // Filter to only 'Move' labels to distinguish from setup batches ('seed', etc.).
-    const moveBatches = batchSpy.mock.calls.filter(([label]) => label === 'Move');
+    // The legacy useMove path committed under a 'Transform' label; the
+    // moveAction commits via applyBatch with label 'Move'. Filter to only
+    // 'Move' labels to distinguish from setup batches ('seed', etc.).
+    const moveBatches = batchSpy.mock.calls.filter(([, label]) => label === 'Move');
     expect(moveBatches).toHaveLength(1);
-    // Should NOT see a 'Transform' batch (that's the old useMove path via applyOps).
-    const transformBatches = batchSpy.mock.calls.filter(([label]) => label === 'Transform');
+    // Should NOT see a 'Transform' commit (that's the old useMove path).
+    const transformBatches = batchSpy.mock.calls.filter(([, label]) => label === 'Transform');
     expect(transformBatches).toHaveLength(0);
 
     batchSpy.mockRestore();

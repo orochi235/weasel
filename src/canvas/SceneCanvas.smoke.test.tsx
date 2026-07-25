@@ -146,7 +146,7 @@ const FORCE_ENABLED: { enabled: () => true | ActionDisabledReason } = { enabled:
 // ---------------------------------------------------------------------------
 
 describe('useSelectTool smoke', () => {
-  it('move: drag on selected body translates node via scene.batch("Move")', () => {
+  it('move: drag on selected body translates node via scene.applyBatch("Move")', () => {
     const scene = makeScene();
     const id = firstId(scene);
 
@@ -162,7 +162,7 @@ describe('useSelectTool smoke', () => {
     );
 
     const canvas = getCanvas(container);
-    const batchSpy = vi.spyOn(scene, 'batch');
+    const batchSpy = vi.spyOn(scene, 'applyBatch');
 
     act(() => {
       // Body center at (140, 130) — well inside the node at {x:100,y:100,w:80,h:60}.
@@ -170,7 +170,7 @@ describe('useSelectTool smoke', () => {
       drag(canvas, 140, 130, 170, 160);
     });
 
-    const moveCalls = batchSpy.mock.calls.filter(([label]) => label === 'Move');
+    const moveCalls = batchSpy.mock.calls.filter(([, label]) => label === 'Move');
     expect(moveCalls.length).toBeGreaterThanOrEqual(1);
 
     const finalPose = scene.get(id)?.pose as P | undefined;
@@ -314,7 +314,7 @@ describe('useSelectTool smoke', () => {
 // ---------------------------------------------------------------------------
 
 describe('clone smoke (alt-drag via select tool)', () => {
-  it('alt-drag on selected body fires cloneAction → scene.batch("Clone")', () => {
+  it('alt-drag on selected body fires cloneAction → scene.applyBatch("Clone")', () => {
     const scene = makeScene();
     const id = firstId(scene);
     const countBefore = nodeCount(scene);
@@ -336,13 +336,13 @@ describe('clone smoke (alt-drag via select tool)', () => {
     );
 
     const canvas = getCanvas(container);
-    const batchSpy = vi.spyOn(scene, 'batch');
+    const batchSpy = vi.spyOn(scene, 'applyBatch');
 
     act(() => {
       drag(canvas, 140, 130, 170, 160, { altKey: true });
     });
 
-    const cloneCalls = batchSpy.mock.calls.filter(([label]) => label === 'Clone');
+    const cloneCalls = batchSpy.mock.calls.filter(([, label]) => label === 'Clone');
     expect(cloneCalls.length).toBeGreaterThanOrEqual(1);
     expect(nodeCount(scene)).toBe(countBefore + 1);
 
@@ -353,7 +353,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
   // pre-selected. Without the unselected-body clone binding, alt-drag on a
   // node with empty initial selection routes to areaSelect (or nothing) and
   // no Clone batch fires.
-  it('alt-drag on UNSELECTED body fires cloneAction → scene.batch("Clone")', () => {
+  it('alt-drag on UNSELECTED body fires cloneAction → scene.applyBatch("Clone")', () => {
     const scene = makeScene();
     const countBefore = nodeCount(scene);
 
@@ -372,13 +372,13 @@ describe('clone smoke (alt-drag via select tool)', () => {
     );
 
     const canvas = getCanvas(container);
-    const batchSpy = vi.spyOn(scene, 'batch');
+    const batchSpy = vi.spyOn(scene, 'applyBatch');
 
     act(() => {
       drag(canvas, 140, 130, 170, 160, { altKey: true });
     });
 
-    const cloneCalls = batchSpy.mock.calls.filter(([label]) => label === 'Clone');
+    const cloneCalls = batchSpy.mock.calls.filter(([, label]) => label === 'Clone');
     expect(cloneCalls.length).toBeGreaterThanOrEqual(1);
     expect(nodeCount(scene)).toBe(countBefore + 1);
 
