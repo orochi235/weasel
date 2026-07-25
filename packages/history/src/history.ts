@@ -120,9 +120,10 @@ export interface History {
    *  entry. The in-memory stacks aren't modified. */
   serialize(): SerializedHistory;
   /** Replace the current undo + redo stacks with the deserialized contents
-   *  of `snapshot`. Ops are rebuilt via `rebuildOp`; unknown names become
-   *  no-op placeholders so stack ordering survives across kit-version
-   *  skew. Bumps `version` and notifies subscribers exactly once. */
+   *  of `snapshot`. Ops are rebuilt via the `rebuildOp` option when
+   *  provided, then the global registry; unknown names become no-op
+   *  placeholders so stack ordering survives across kit-version skew.
+   *  Bumps `version` and notifies subscribers exactly once. */
   restore(snapshot: SerializedHistory): void;
   /** Push an entry whose ops have already been applied to the adapter.
    *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
@@ -173,6 +174,12 @@ export interface CreateHistoryOptions {
    *  `historyLimit` either: a restored snapshot may exceed the cap, which
    *  re-applies (evicting via `onEvict`) on the next push. */
   onEvict?: (entry: EvictedEntry) => void;
+  /** Custom op rebuilder consulted by `restore()` before the global
+   *  op-factory registry. Return `null` to fall through (global registry,
+   *  then a no-op placeholder). Lets an owner rebuild ops whose handlers
+   *  live in per-instance state the global registry can't reach (e.g. a
+   *  Scene's registered op kinds). */
+  rebuildOp?: (name: string, args: unknown) => Op | null;
 }
 
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
@@ -184,6 +191,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const now = options.now ?? (() => Date.now());
   const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
   const onEvict = options.onEvict;
+  const customRebuild = options.rebuildOp;
   let nextEntryId = 1;
   let version = 0;
   const listeners = new Set<() => void>();
@@ -424,10 +432,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       undoStack.length = 0;
       redoStack.length = 0;
       for (const se of snapshot.undoStack) {
-        undoStack.push(serialToEntry(se));
+        undoStack.push(serialToEntry(se, customRebuild));
       }
       for (const se of snapshot.redoStack) {
-        redoStack.push(serialToEntry(se));
+        redoStack.push(serialToEntry(se, customRebuild));
       }
       // Seed nextEntryId from the snapshot, then defensively bump past any
       // restored id — a malformed snapshot with duplicate or out-of-range
@@ -506,21 +514,25 @@ function placeholderOp(name: string, args: unknown, label?: string): Op {
   return op;
 }
 
+/** Signature of a per-instance op rebuilder (`CreateHistoryOptions.rebuildOp`). */
+type CustomRebuild = (name: string, args: unknown) => Op | null;
+
+/** Rebuild a single serialized op, consulting `custom` (if provided) before
+ *  the global registry, then falling back to a no-op placeholder. */
+function rebuildSerialOp(so: SerializedOp, label: string, custom: CustomRebuild | undefined): Op {
+  const viaCustom = custom ? custom(so.name, so.args) : null;
+  if (viaCustom !== null) return viaCustom;
+  const built = rebuildOp(so.name, so.args);
+  if (built !== null) return built;
+  dlog('history', `restore: unknown op name "${so.name}" — substituting no-op placeholder`);
+  return placeholderOp(so.name, so.args, label);
+}
+
 /** Rebuild a runtime entry from its serialized form. Unknown op names become
  *  no-op placeholders so the entry still occupies its slot in the stack. */
-function serialToEntry(se: SerializedHistoryEntry): Entry {
-  const forwardOps = se.forwardOps.map((so) => {
-    const built = rebuildOp(so.name, so.args);
-    if (built !== null) return built;
-    dlog('history', `restore: unknown op name "${so.name}" — substituting no-op placeholder`);
-    return placeholderOp(so.name, so.args, se.label);
-  });
-  const baseOps = se.baseOps.map((so) => {
-    const built = rebuildOp(so.name, so.args);
-    if (built !== null) return built;
-    dlog('history', `restore: unknown op name "${so.name}" — substituting no-op placeholder`);
-    return placeholderOp(so.name, so.args, se.label);
-  });
+function serialToEntry(se: SerializedHistoryEntry, custom?: CustomRebuild): Entry {
+  const forwardOps = se.forwardOps.map((so) => rebuildSerialOp(so, se.label, custom));
+  const baseOps = se.baseOps.map((so) => rebuildSerialOp(so, se.label, custom));
   return {
     id: se.id,
     label: se.label,
