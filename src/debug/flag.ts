@@ -19,6 +19,7 @@
  *   - dispatch        — gesture start / end / cancel (dispatcher)
  *   - drag-rect       — useDragRect lifecycle
  *   - drag-radial     — useDragRadial lifecycle
+ *   - scene           — restored-op replay gaps (history persistence)
  *   - scene-canvas    — SceneCanvas mount / unmount
  *   - history         — applyOps push, no-op suppression, serialize/restore
  */

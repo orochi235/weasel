@@ -1417,16 +1417,35 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
   });
 
   it('restoreHistory replaces existing history and restored entries never coalesce', () => {
-    const a = makeScene();
-    a.add({ id: asNodeId('n1'), kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
-    const snap = a.serializeHistory();
-    const b = makeScene();
-    b.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'pre' } });
-    b.loadState(a.toJSON());     // clears history + state
-    b.restoreHistory(snap);
-    expect(b.historyEntries()).toHaveLength(1);
-    b.setPose(asNodeId('n1'), { x: 1, y: 1, width: 10, height: 10 });
-    expect(b.historyEntries()).toHaveLength(2); // no merge into the restored entry
+    // Coalescing enabled + fake timers so a merge is actually possible —
+    // the assertion exercises the engine's timestamp-0 anti-coalesce rule
+    // for restored entries, not a coalescing-disabled tautology.
+    vi.useFakeTimers();
+    try {
+      const mkTimed = () => createScene<Data, Layer>({
+        systemLayers: [
+          { id: 'background' },
+          { id: 'structures' },
+          { id: 'plantings' },
+        ],
+        coalesceWindowMs: 500,
+      });
+      const a = mkTimed();
+      a.add({ id: asNodeId('n1'), kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'x' } });
+      a.setPose(asNodeId('n1'), { x: 2, y: 2, width: 10, height: 10 });
+      const snap = a.serializeHistory();
+      const b = mkTimed();
+      b.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'pre' } });
+      b.loadState(a.toJSON());   // clears history + state
+      b.restoreHistory(snap);
+      expect(b.historyEntries()).toHaveLength(2);
+      // Immediately setPose n1 again — matching coalesce key, well inside
+      // the 500ms window — must NOT merge into the restored setPose entry.
+      b.setPose(asNodeId('n1'), { x: 5, y: 5, width: 10, height: 10 });
+      expect(b.historyEntries()).toHaveLength(3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('restoreHistory notifies subscribers exactly once', () => {

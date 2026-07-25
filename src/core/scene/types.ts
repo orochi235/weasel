@@ -332,7 +332,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  `registerOp` before this call round-trip; unknown kinds become no-op
    *  placeholders; external ops rebuild via the global op-factory registry
    *  and replay against the `setHistoryAdapter` accessor. Restored entries
-   *  never coalesce with new ones. Notifies once. */
+   *  never coalesce with new ones. Notifies once. Do not call mid-`batch`:
+   *  the stacks are replaced underneath the open batch, whose eventual
+   *  flush would graft onto (and evict against) the restored stacks. */
   restoreHistory(snapshot: SerializedHistory): void;
   /** Install (or clear with `null`) the accessor for the adapter that
    *  RESTORED external ops (recorded via `applyBatch`, rebuilt from a
