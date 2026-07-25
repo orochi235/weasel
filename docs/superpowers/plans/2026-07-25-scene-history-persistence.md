@@ -575,3 +575,14 @@ function loadSceneHistory(): SerializedHistory | null {
 - Spec §1 (engine hook) → Task 1. §2 (scene surface, hook branches, lazy binding, no-adapter dwarn) → Task 2. §4 (`clipKey`) → Task 3. §5 (draw) → Task 4. Degradation policy → Tasks 2/3 tests (placeholder, no-adapter no-op, clipKey). Testing section fully mapped; open questions resolved in the header.
 - Type consistency: `bindOpToHistoryAdapter` (Task 2) vs `bindOpToAdapter` (existing) — distinct names, both defined; `SerializedHistory` imported in `types.ts` (kit) and already present in draw.
 - Known test-code roughness: Task 2 Step 1's third test contains a redundant construction the implementer is explicitly told to simplify — intent (one `mk` helper shared by factory and live op) is stated.
+
+---
+
+## Errata (discovered during execution)
+
+- **Task 4 Step 4 as originally written was wrong**: it wired `setHistoryAdapter` to the
+  `useSceneAdapter(scene, {})` canvas adapter, which lacks `setData`/`setLayer` — restored
+  nudge entries (which carry geometry-projection `setData` ops) threw on undo. The browser
+  reload-smoke caught it. Implemented instead: `defaultCommitAdapter(scene)` (hoisted once
+  per mount), the same surface live action commits bind — which is also what the spec's §5
+  ("the same adapter the actions commit through") actually asked for.
