@@ -83,6 +83,7 @@
     "test:draw": "vitest run --project=draw",
     "test:smoke": "vitest run --project=smoke",
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
+    "gen:font": "node scripts/gen-font.ts",
     "test:stories": "vitest run --project=storybook",
     "test:watch": "vitest",
     "test:changed": "vitest run --changed",
