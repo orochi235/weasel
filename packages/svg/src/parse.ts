@@ -25,7 +25,7 @@ import { boundsOfPath } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';
-import { deriveStyle, EMPTY_STYLE, type StyleContext } from './cascade';
+import { deriveStyle, EMPTY_STYLE, resolveCurrentColor, type StyleContext } from './cascade';
 
 /** Element tags we accept and lower; anything else triggers a warning. */
 const SUPPORTED_LEAF_TAGS = new Set([
@@ -421,8 +421,8 @@ function readPaint(
   gradients: GradientTable,
   onWarn: (msg: string) => void,
 ): SvgPaint {
-  const raw = style[attr] ?? null;
-  const opacityRaw = style[`${attr}-opacity`];
+  const raw = resolveCurrentColor(style[attr] ?? null, style);
+  const opacityRaw = style[`${attr}-opacity`] ?? null;
   const opacity = opacityRaw != null ? clamp01(parseFloat(opacityRaw)) : undefined;
   if (raw == null) {
     if (attr === 'stroke') return { kind: 'none' };
@@ -462,7 +462,7 @@ function readStroke(
   if (paint.kind === 'none') return undefined;
   const width = inheritedWidth != null ? parseFloat(inheritedWidth) : 1;
   const stroke: SvgStroke = { paint, width };
-  const opacityRaw = style['stroke-opacity'];
+  const opacityRaw = style['stroke-opacity'] ?? null;
   if (opacityRaw != null) {
     const a = clamp01(parseFloat(opacityRaw));
     if (Number.isFinite(a)) stroke.opacity = a;

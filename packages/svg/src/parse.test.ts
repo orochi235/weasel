@@ -209,3 +209,20 @@ describe('Ghostscript-tiger-style fixture', () => {
     expect(inner.fill).toEqual({ kind: 'solid', color: '#0066cc' });
   });
 });
+
+describe('currentColor', () => {
+  it('resolves fill="currentColor" against an inherited color', () => {
+    const p = firstPath('<svg><g color="#00ff00"><rect width="4" height="4" fill="currentColor"/></g></svg>');
+    expect(p.fill).toMatchObject({ color: '#00ff00' });
+  });
+
+  it('defaults currentColor to black when color is unset', () => {
+    const p = firstPath('<svg><rect width="4" height="4" fill="currentColor"/></svg>');
+    expect(p.fill).toMatchObject({ color: '#000000' });
+  });
+
+  it('resolves stroke="currentColor" against an inherited color', () => {
+    const p = firstPath('<svg><g color="#0000ff"><rect width="4" height="4" stroke="currentColor" stroke-width="2"/></g></svg>');
+    expect(p.stroke?.paint).toMatchObject({ color: '#0000ff' });
+  });
+});
