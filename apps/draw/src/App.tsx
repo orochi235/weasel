@@ -998,12 +998,13 @@ export function App(): ReactElement {
   // Restored external-op history entries (nudges, drags, action commits)
   // replay against this adapter after a reload. `defaultCommitAdapter` is the
   // same scene-backed adapter the default actions bind at live commit time —
-  // it carries every op-apply method the built-in op factories call
-  // (setPose / setData / setParent / setLayer / setChildOrder / insert /
-  // remove), unlike the canvas adapter. Lazy accessor: wiring order vs the
-  // boot-time restoreHistory doesn't matter.
+  // it carries every op-apply method the built-in op factories call, where
+  // the canvas adapter lacks `setData` and `setLayer` (a restored nudge's
+  // geometry-projection setData op would throw against it). Lazy accessor:
+  // wiring order vs the boot-time restoreHistory doesn't matter.
   useEffect(() => {
-    scene.setHistoryAdapter(() => defaultCommitAdapter(scene));
+    const a = defaultCommitAdapter(scene);
+    scene.setHistoryAdapter(() => a);
     return () => scene.setHistoryAdapter(null);
   }, [scene]);
 
