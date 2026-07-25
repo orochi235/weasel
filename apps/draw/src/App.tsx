@@ -1019,7 +1019,15 @@ export function App(): ReactElement {
     const snap = loadHistory();
     if (snap) modality.history.restore(snap);
     const sceneSnap = loadSceneHistory();
-    if (sceneSnap) scene.restoreHistory(sceneSnap);
+    if (sceneSnap) {
+      try {
+        scene.restoreHistory(sceneSnap);
+      } catch {
+        // A parseable-but-malformed snapshot must not wedge every boot:
+        // drop it and start with an empty undo stack.
+        try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }
+      }
+    }
     restoredRef.current = true;
     // Run once; scene/modality are stable for the app lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
