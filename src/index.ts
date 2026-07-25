@@ -955,6 +955,10 @@ export type {
 // custom layers in consumer code can construct that wrapper without reaching
 // into the renderer subpath.
 export { viewToMat3 } from './renderer';
+
+// MSDF font registration — consumers register (family, variant, metrics
+// JSON URL, atlas PNG URL) at startup so TextDrawCommand can resolve glyphs.
+export { registerFont, type FontVariant } from 'features/text/atlas/registerFont';
 export type { TextureHandle } from './renderer/textures/registerTexture';
 export type {
   LayersMap,

@@ -87,6 +87,66 @@ describe('registerFont variants', () => {
     const second = getFont('inter', 700, 'normal');
     expect(first).toBe(second);
   });
+
+  it('does not drop a variant when the second-issued call resolves before the first (concurrent race)', async () => {
+    // Regression for 7aa2a347: registerFont used to snapshot the family's
+    // Map before its awaits, so if two variants of the same new family are
+    // registered concurrently (e.g. weight 400 and 700 via Promise.all) and
+    // the second-issued call's fetches resolve first, the first-issued
+    // call's stale snapshot (still undefined) would recreate the family Map
+    // on completion and silently drop whichever variant landed first.
+    //
+    // Gate the first-issued call's metrics fetch on a manually-released
+    // promise so the second-issued call's registerFont() provably resolves
+    // first, then release the gate — deterministic ordering, no timers.
+    let firstJsonCallSeen = false;
+    let releaseFirstMetrics: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      releaseFirstMetrics = resolve;
+    });
+
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        if (!firstJsonCallSeen) {
+          firstJsonCallSeen = true;
+          // First-issued call (weight 400): metrics fetch waits for release.
+          return gate.then(() => ({
+            ok: true,
+            json: () => Promise.resolve(FIXTURE_FONT),
+          }));
+        }
+        // Second-issued call (weight 700): resolves immediately.
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(FIXTURE_FONT),
+        });
+      }
+      if (url.endsWith('.png')) {
+        return Promise.resolve({
+          ok: true,
+          blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+        });
+      }
+      return Promise.reject(new Error(`unexpected url: ${url}`));
+    }) as typeof fetch;
+
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+
+    const firstCall = registerFont('newfam', { weight: 400 }, '/fonts/newfam/newfam.json', '/fonts/newfam/newfam.png');
+    const secondCall = registerFont('newfam', { weight: 700 }, '/fonts/newfam/newfam.json', '/fonts/newfam/newfam.png');
+
+    // The second-issued call is unblocked and resolves first.
+    await secondCall;
+    // Now release the first-issued call's gated metrics fetch.
+    releaseFirstMetrics();
+    await firstCall;
+
+    expect(getFont('newfam', 400, 'normal')).not.toBeNull();
+    expect(getFont('newfam', 700, 'normal')).not.toBeNull();
+  });
 });
 
 describe('resolveFontVariant', () => {

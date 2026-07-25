@@ -23,6 +23,7 @@ import { resolveColor } from './math/color';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
 import { ensureFontTexture, textureCacheKey } from 'features/text/atlas/registerFont';
 import { layoutRuns, type LaidOutGroup } from 'features/text/atlas/layoutRuns';
+import { verticalAlignOffset } from 'features/text/verticalAlign';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -801,6 +802,13 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     { x: cmd.x, y: cmd.y },
   );
   if (laid.groups.length === 0) return;
+
+  const dy = verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
+  if (dy !== 0) {
+    for (const group of laid.groups) {
+      for (const q of group.quads) { q.y0 += dy; q.y1 += dy; q.baselineY += dy; }
+    }
+  }
 
   const gl = ctx.gl;
   gl.useProgram(ctx.textSdf.handle);

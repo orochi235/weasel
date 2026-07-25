@@ -17,6 +17,7 @@ export type { TextStyle, ResolvedTextStyle } from './textStyle';
 export { measureText } from './measureText';
 export type { MeasuredText } from './measureText';
 export { measureTextBounds } from './measureTextBounds';
+export type { MeasureTextBoundsOpts } from './measureTextBounds';
 export { createTextLayer } from './textLayer';
 export type { TextPose, CreateTextLayerOpts } from './textLayer';
 export { pointInTextPose, caretIndexAt } from './hitTest';
@@ -35,6 +36,8 @@ export type { UseSceneTextEditOptions } from './useSceneTextEdit';
 export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
 export { textCommand } from './textCommand';
+export { verticalAlignOffset } from './verticalAlign';
+export type { TextVerticalAlign } from './verticalAlign';
 export {
   runsToDom,
   domToRuns,

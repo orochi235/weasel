@@ -50,4 +50,28 @@ describe('textCommand', () => {
     if (cmdWithStyle.kind !== 'text') throw new Error('unreachable');
     expect(cmdWithStyle.style.fontSize).toBe(24);
   });
+
+  it('height is forwarded as-is', () => {
+    const cmd = textCommand(0, 0, 'x', undefined, undefined, 120);
+    if (cmd.kind !== 'text') throw new Error('unreachable');
+    expect(cmd.height).toBe(120);
+  });
+
+  it('height defaults to undefined when omitted', () => {
+    const cmd = textCommand(0, 0, 'x');
+    if (cmd.kind !== 'text') throw new Error('unreachable');
+    expect(cmd.height).toBeUndefined();
+  });
+
+  it('verticalAlign is forwarded as-is', () => {
+    const cmd = textCommand(0, 0, 'x', undefined, undefined, 120, 'center');
+    if (cmd.kind !== 'text') throw new Error('unreachable');
+    expect(cmd.verticalAlign).toBe('center');
+  });
+
+  it('verticalAlign defaults to undefined when omitted', () => {
+    const cmd = textCommand(0, 0, 'x');
+    if (cmd.kind !== 'text') throw new Error('unreachable');
+    expect(cmd.verticalAlign).toBeUndefined();
+  });
 });

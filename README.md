@@ -63,10 +63,10 @@ Text is rendered via MSDF atlases. Register fonts before the first paint:
 ```tsx
 import { registerFont } from '@weasel-js/core';
 
-await registerFont('Inter', '/fonts/inter.json');
+await registerFont('Inter', { weight: 400 }, '/fonts/Inter-400.json', '/fonts/Inter-400.png');
 ```
 
-The kit ships a prebuilt Inter atlas under `assets/fonts/inter/`. To regenerate or add fonts, see the `gen:font` workflow notes in the docs.
+Core doesn't ship a prebuilt atlas — bake one with `npm run gen:font -- <font.ttf> --name Inter-400 --out public/fonts` (see `scripts/gen-font.ts`) and serve the resulting `.json`/`.png` pair. The `hud` package ships its own bundled Inter atlas for consumers who don't need custom fonts.
 
 ## Actions registry
 
