@@ -18,7 +18,7 @@ import { dwarn } from '../../debug';
 import type { Scene } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
-import type { InsertDep, SvgIngestOptions } from 'interactions/actions/depSchema';
+import type { ClipboardIngestCtx, InsertDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import type { ActionDeps } from 'interactions/actions/invoker';
 import type { IngestItem } from './ingestItems';
 
@@ -43,6 +43,11 @@ export interface IngestCtx {
   /** Kit SVG-handler options (SceneCanvas `ingestion.svg`) — e.g.
    *  `{ unpack: true }` to parse SVG files into scene nodes. */
   svg?: SvgIngestOptions;
+  /** Clipboard-paste seam — present when the hosting `SceneCanvas` supplied
+   *  an adapter with `commitPaste`. `reviver` comes from
+   *  `SceneCanvasProps.ingestion.clipboard`. Absent ⇒ the kit weasel-JSON
+   *  handler declines and other handlers get their shot. */
+  clipboard?: ClipboardIngestCtx;
   /** Full action-deps bag, for consumer handlers that need more. */
   deps: ActionDeps;
 }

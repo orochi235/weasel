@@ -32,6 +32,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { View } from 'core/viewport/view';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { Op } from 'core/ops/types';
+import type { InsertAdapter } from 'core/adapters/types';
 import type { History } from '@weasel-js/history';
 import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
@@ -179,6 +180,21 @@ export interface SvgIngestOptions {
 }
 
 /**
+ * Clipboard-paste seam consumed by the kit weasel-JSON content handler
+ * (`IngestCtx.clipboard`). Built by `<SceneCanvas>` from its own synthesized
+ * adapter + the `ingestion.clipboard` prop; absent when the consumer set
+ * `ingestion.clipboard.enabled === false` or the adapter lacks `commitPaste`.
+ */
+export interface ClipboardIngestCtx {
+  /** The hosting canvas's adapter — `commitPaste` materializes the pasted
+   *  nodes (fresh ids, offset applied); insertion still goes through ops. */
+  adapter: InsertAdapter<{ id: string }>;
+  /** JSON reviver for the weasel wire payload (typed arrays etc.) — from
+   *  `SceneCanvasProps.ingestion.clipboard.reviver`. */
+  reviver?: (key: string, value: unknown) => unknown;
+}
+
+/**
  * Dep for the `ingest` action (external-content ingestion).
  * Sourced from `<SceneCanvas>` / `<StandardActionsRegistrar>` via
  * `useIngestionDepSource` — canvas rect + current view.
@@ -194,6 +210,9 @@ export interface IngestionDep {
   /** Kit SVG-handler options (from SceneCanvas's `ingestion` prop).
    *  Live accessor, same caveat as `resolveSrc`. */
   svg?: SvgIngestOptions;
+  /** Clipboard-paste seam for the kit weasel-JSON handler.
+   *  Live accessor, same caveat as `resolveSrc`. */
+  clipboard?: ClipboardIngestCtx;
 }
 
 /**

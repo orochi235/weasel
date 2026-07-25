@@ -27,6 +27,7 @@ import {
   __setSvgMeasureForTests,
   _resetSvgHandlerSeamsForTests,
 } from 'features/ingestion/svgHandler';
+import { buildWeaselClipboardText } from 'interactions/actions/clipboard/wireFormat';
 
 type D = { image?: { src: string } };
 type L = 'main';
@@ -90,6 +91,7 @@ function pngFile(name = 'pic.png'): File {
 // renders (SceneCanvas keys its dep wiring off the prop identity).
 const RESOLVE_SRC_INGESTION = { resolveSrc: async () => 'https://cdn/x.png' };
 const UNPACK_INGESTION = { svg: { unpack: true } };
+const CLIPBOARD_DISABLED_INGESTION = { clipboard: { enabled: false } };
 
 describe('SceneCanvas ingestion — handler registration lifecycle', () => {
   it('two mounted canvases share one refcounted kit:image handler', () => {
@@ -257,6 +259,56 @@ describe('SceneCanvasApi.ingest', () => {
     await vi.waitFor(() => {
       expect(imageNodes(scene)).toHaveLength(1);
     });
+  });
+
+  it('a weasel-JSON payload pastes through the canvas adapter (fresh id, cascade offset, one undo)', async () => {
+    const scene = makeScene();
+    const ref = createRef<SceneCanvasApi>();
+    render(<SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref} />);
+
+    const text = buildWeaselClipboardText([
+      {
+        kind: 'leaf', id: 'src-1', layer: 'main', parent: null,
+        pose: { x: 10, y: 10, width: 20, height: 20 }, data: {},
+      },
+    ]);
+    await act(async () => {
+      ref.current!.ingest([{ kind: 'string', mime: 'text/plain', text }]);
+    });
+    await vi.waitFor(() => {
+      expect(scene.roots).toHaveLength(1);
+    });
+
+    const node = scene.get(scene.roots[0])!;
+    expect(node.id).not.toBe('src-1'); // fresh id, not the wire id
+    const pose = node.pose as P;
+    expect(pose.x).toBeCloseTo(22); // 10 + the 12px cascade offset
+    expect(pose.y).toBeCloseTo(22);
+    // One undo entry for the whole paste (insert + selection ops batched).
+    act(() => scene.undo());
+    expect(scene.roots).toHaveLength(0);
+  });
+
+  it('ingestion.clipboard.enabled === false leaves weasel payloads un-ingested', async () => {
+    const scene = makeScene();
+    const ref = createRef<SceneCanvasApi>();
+    render(
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64} ref={ref}
+        ingestion={CLIPBOARD_DISABLED_INGESTION} />,
+    );
+
+    const text = buildWeaselClipboardText([
+      {
+        kind: 'leaf', id: 'src-1', layer: 'main', parent: null,
+        pose: { x: 10, y: 10, width: 20, height: 20 }, data: {},
+      },
+    ]);
+    await act(async () => {
+      ref.current!.ingest([{ kind: 'string', mime: 'text/plain', text }]);
+      // Let the fire-and-forget ingest pipeline flush before asserting.
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    expect(scene.roots).toHaveLength(0);
   });
 
   it('ingestion.resolveSrc overrides the data-URI embed end-to-end', async () => {

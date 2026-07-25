@@ -176,6 +176,7 @@ export type {
 } from './interactions/actions/depRegistry';
 export type {
   AreaSelectDep,
+  ClipboardIngestCtx,
   EditAnchorsDep,
   IngestionDep,
   InsertDep,

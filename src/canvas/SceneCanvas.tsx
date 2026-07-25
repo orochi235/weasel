@@ -89,7 +89,8 @@ import {
   type IngestItem,
 } from 'features/ingestion';
 import type { GeometryProjection } from 'interactions/actions/geometryProjection';
-import type { SvgIngestOptions } from 'interactions/actions/depSchema';
+import type { ClipboardIngestCtx, SvgIngestOptions } from 'interactions/actions/depSchema';
+import type { InsertAdapter } from 'core/adapters/types';
 import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
@@ -392,12 +393,22 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  return the URL). `svg.unpack` makes the kit SVG handler parse dropped
      *  SVG files into native scene nodes instead of keeping each one a
      *  single embedded-image node.
+     *  `clipboard` configures the kit weasel-JSON paste handler: enabled by
+     *  default (pastes of weasel clipboard payloads re-materialize through
+     *  this canvas's adapter); `reviver` restores JSON-unfriendly values the
+     *  copying side encoded via `jsonReplacer` (typed arrays etc.);
+     *  `enabled: false` opts the canvas out — weasel payloads then fall
+     *  through to other handlers.
      *  Memoize `handlers` (useState/useMemo/module const) — an inline array
      *  literal re-registers the handlers on every render. */
     ingestion?: {
       handlers?: ContentHandlerEntry[];
       resolveSrc?: (file: File) => Promise<string>;
       svg?: SvgIngestOptions;
+      clipboard?: {
+        reviver?: (key: string, value: unknown) => unknown;
+        enabled?: boolean;
+      };
     };
 
     // --- Selection ---
@@ -1582,6 +1593,23 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // The registry lives inside `<ActionsProviderIfRoot>` below us, so
   // `StandardActionsRegistrar` stashes it into this ref.
   const actionsRegistryRef = useRef<ActionsRegistry | null>(null);
+
+  // Clipboard-paste ctx for the kit weasel-JSON content handler
+  // (`IngestCtx.clipboard`). Built from THIS canvas's synthesized adapter so
+  // OS-arriving pastes re-materialize through the same `commitPaste` path
+  // `useClipboardOps` uses. Absent (⇒ the handler declines) when the
+  // consumer set `ingestion.clipboard.enabled: false` or the adapter lacks
+  // `commitPaste` (always present on the synthesized adapter; guarded for
+  // future adapter overrides).
+  const ingestionClipboardReviver = ingestion?.clipboard?.reviver;
+  const ingestionClipboardEnabled = ingestion?.clipboard?.enabled !== false;
+  const ingestionClipboard = useMemo<ClipboardIngestCtx | undefined>(() => {
+    if (!ingestionClipboardEnabled || !adapter?.commitPaste) return undefined;
+    return {
+      adapter: adapter as unknown as InsertAdapter<{ id: string }>,
+      ...(ingestionClipboardReviver ? { reviver: ingestionClipboardReviver } : {}),
+    };
+  }, [adapter, ingestionClipboardEnabled, ingestionClipboardReviver]);
   const ingestImpl = useCallback(
     (input: File[] | IngestItem[], point?: { x: number; y: number }) => {
       const items: IngestItem[] = (input as (File | IngestItem)[]).map((entry) =>
@@ -1734,6 +1762,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             canvasRef={internalCanvasRef}
             ingestionResolveSrc={ingestion?.resolveSrc}
             ingestionSvg={ingestion?.svg}
+            ingestionClipboard={ingestionClipboard}
             actionsRegistryRef={actionsRegistryRef}
           />
           <GestureDispatcherMounter
@@ -2019,6 +2048,7 @@ function StandardActionsRegistrar({
   canvasRef,
   ingestionResolveSrc,
   ingestionSvg,
+  ingestionClipboard,
   actionsRegistryRef,
 }: {
   selection: SelectionApi;
@@ -2074,6 +2104,10 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps.ingestion.svg` — kit SVG-handler
    *  options (`unpack`). */
   ingestionSvg?: SvgIngestOptions;
+  /** Clipboard-paste ctx (this canvas's adapter + the consumer's reviver)
+   *  for the kit weasel-JSON handler — built in SceneCanvasInner where the
+   *  typed adapter is in scope; absent when disabled. */
+  ingestionClipboard?: ClipboardIngestCtx;
   /** Populated with the live registry so `CanvasExtensionApi.ingest`
    *  (assembled in SceneCanvasInner, OUTSIDE the actions provider) can call
    *  `registry.trigger('ingest', …)`. Cleared on unmount. */
@@ -2143,7 +2177,7 @@ function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
-  useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg);
+  useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);
   useEditAnchorsDepSource(scene, selection, adapter, editAnchorsExternalState);

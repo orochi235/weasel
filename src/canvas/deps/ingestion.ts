@@ -6,7 +6,7 @@
  */
 import { useRef, type RefObject } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
-import type { IngestionDep, SvgIngestOptions } from 'interactions/actions/depSchema';
+import type { ClipboardIngestCtx, IngestionDep, SvgIngestOptions } from 'interactions/actions/depSchema';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 import type { View } from 'core/viewport/view';
 
@@ -15,6 +15,7 @@ export function useIngestionDepSource(
   getView: () => View,
   resolveSrc?: (file: File) => Promise<string>,
   svg?: SvgIngestOptions,
+  clipboard?: ClipboardIngestCtx,
 ): void {
   const getViewRef = useRef(getView);
   getViewRef.current = getView;
@@ -22,6 +23,8 @@ export function useIngestionDepSource(
   resolveSrcRef.current = resolveSrc;
   const svgRef = useRef(svg);
   svgRef.current = svg;
+  const clipboardRef = useRef(clipboard);
+  clipboardRef.current = clipboard;
 
   useDepSource('ingestion', (): IngestionDep => ({
     viewportWorldRect() {
@@ -38,6 +41,9 @@ export function useIngestionDepSource(
     },
     get svg() {
       return svgRef.current;
+    },
+    get clipboard() {
+      return clipboardRef.current;
     },
   }));
 }

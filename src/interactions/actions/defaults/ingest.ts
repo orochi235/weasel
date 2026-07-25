@@ -60,7 +60,12 @@ export const ingestAction: Action & { requires: string[] } = {
         insert,
         applyOps: (ops, label) => {
           if (applyOps) applyOps(ops, label ?? 'Ingest');
-          else scene.applyBatch(ops, label ?? 'Ingest', defaultCommitAdapter(scene));
+          // `setSelection` is a documented exclusion from the scene-backed
+          // commit adapter (the scene doesn't own selection) — spread the
+          // SelectionApi's adapter methods over it so selection-carrying
+          // batches (e.g. the weasel-JSON paste handler's SetSelectionOp)
+          // replay instead of throwing mid-batch.
+          else scene.applyBatch(ops, label ?? 'Ingest', { ...defaultCommitAdapter(scene), ...selection.adapterMethods });
         },
         scene,
         selection,
@@ -69,6 +74,7 @@ export const ingestAction: Action & { requires: string[] } = {
         // beats half a multi-file drop resolving through a swapped-in one.
         resolveSrc: ingestion.resolveSrc,
         svg: ingestion.svg,
+        clipboard: ingestion.clipboard,
         deps,
       };
       // Fire-and-forget: handler errors are caught inside runIngest, but a
