@@ -276,8 +276,11 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** Apply a batch of ops with journal-aware routing.
    *
    *  - **Without active journal** (or no `getActiveJournal` in options):
-   *    equivalent to `scene.batch(label, () => ops.forEach(op => op.apply(adapter)))`.
-   *    Records one undo entry on the scene's own history.
+   *    the ops themselves are recorded as one undo entry on the scene's own
+   *    history, rebound to `adapter` — undo replays each op's `invert()`
+   *    against that same adapter. Consecutive `applyBatch` entries can
+   *    coalesce via matching op `coalesceKey`s when the scene opts into
+   *    `coalesceWindowMs`.
    *  - **With active journal**: routes ops to `journal.applyBatch(ops, label)`.
    *    The scene's history recording is suppressed for the duration so the
    *    journal's inner history — not the scene's undo stack — tracks the batch.

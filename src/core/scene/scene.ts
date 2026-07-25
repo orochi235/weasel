@@ -785,6 +785,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       // batchDepth coalesces the per-op notify() calls (same as
       // scene.batch); exactly one listener dispatch fires at the end —
       // mirroring the single-notification semantics callers expect.
+      const prevSuppress = suppressRecording;
       suppressRecording = true;
       batchDepth++;
       batchDirty = false;
@@ -799,11 +800,15 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         }
       } finally {
         batchDepth--;
-        suppressRecording = false;
-      }
-      if (batchDirty) {
-        batchDirty = false;
-        for (const listener of listeners) listener();
+        suppressRecording = prevSuppress;
+        // Flush inside finally so a throwing op can't strand subscribers
+        // after earlier ops in the batch already mutated state (mirrors
+        // scene.batch). Depth-guarded: a nested context defers to the
+        // outermost flush.
+        if (batchDepth === 0 && batchDirty) {
+          batchDirty = false;
+          for (const listener of listeners) listener();
+        }
       }
     },
 

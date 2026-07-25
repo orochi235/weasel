@@ -1123,6 +1123,26 @@ describe('applyBatch (no journal)', () => {
     expect(s.get(id)?.pose).toEqual(P2);
   });
 
+  it('a throwing op mid-batch still flushes the deferred notify', () => {
+    const s = makeScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    let notified = 0;
+    s.subscribe(() => { notified++; });
+    const P2 = { x: 9, y: 9, width: 10, height: 10 };
+    const mutate: Op = {
+      apply: (adapter) => { (adapter as typeof s).setPose(id, P2); },
+      invert: () => mutate,
+    };
+    const boom: Op = {
+      apply: () => { throw new Error('boom'); },
+      invert: () => boom,
+    };
+    expect(() => s.applyBatch([mutate, boom], 'partial', s)).toThrow('boom');
+    // The first op's mutation landed and subscribers must hear about it.
+    expect(s.get(id)?.pose).toEqual(P2);
+    expect(notified).toBe(1);
+  });
+
   it('all-noop batches push no entry', () => {
     const s = makeScene();
     const op: Op = {
