@@ -1,14 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
-import { SceneCanvas, useScene, renderSceneToPixels } from '@weasel-js/core';
+import {
+  SceneCanvas, useScene, renderSceneToPixels, defaultDrawOne, textCommand,
+} from '@weasel-js/core';
+import type { TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
 
 const W = 480, H = 240;
 
 // `RECT_FALLBACK_PAINTER` (src/canvas/NodeShape.ts) reads `data.color` and
 // emits a solid fill — no stroke — so that's the shape that guarantees a
 // probe-able interior fill color rather than an outline.
-interface NodeData { color?: string }
+//
+// `text`/`style`/`verticalAlign` drive a second, box-aligned text node
+// (see `drawOne` below). The generic `kit:text` painter forwards pose
+// `height` but not `verticalAlign` (no data/style slot for it yet — see
+// `NodeShape.ts`), so this demo builds that one node's command directly
+// via the public `textCommand()` to exercise the renderer's box vertical
+// alignment (`TextDrawCommand.height`/`verticalAlign`) end-to-end.
+interface NodeData {
+  color?: string;
+  text?: string;
+  style?: TextStyle;
+  verticalAlign?: TextVerticalAlign;
+}
 type LayerId = 'default';
 interface Pose { x: number; y: number; width: number; height: number }
+
+const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose) => {
+  const d = node.data;
+  if (d.text != null) {
+    return [textCommand(pose.x, pose.y, d.text, d.style, undefined, pose.height, d.verticalAlign)];
+  }
+  return defaultDrawOne(node, pose);
+};
 
 export function RenderToPixelsDemo() {
   const scene = useScene<NodeData, LayerId, Pose>({
@@ -20,6 +43,12 @@ export function RenderToPixelsDemo() {
         pose: { x: 180, y: 70, width: 120, height: 100 }, data: { color: '#4a7fb0' } },
       { id: 'c' as never, kind: 'leaf', layer: 'default',
         pose: { x: 330, y: 50, width: 110, height: 140 }, data: { color: '#d4a574' } },
+      // Bottom strip, box-aligned text: box is much taller than one line of
+      // text, `verticalAlign: 'bottom'` should push the glyphs to the
+      // bottom of the box instead of the (legacy default) top.
+      { id: 'd' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 10, y: 202, width: 460, height: 36 },
+        data: { text: 'WWWWWWWWWWWWWWWW', style: { fontSize: 16 }, verticalAlign: 'bottom' } },
     ],
   });
   const outRef = useRef<HTMLCanvasElement>(null);
@@ -33,6 +62,7 @@ export function RenderToPixelsDemo() {
       sourceRect: { x: 0, y: 0, width: W, height: H },
       scale: { x: 2, y: 1 },
       background: '#ffffff',
+      drawOne,
     } as const;
     const first = renderSceneToPixels(opts);
     const second = renderSceneToPixels(opts);
@@ -52,7 +82,10 @@ export function RenderToPixelsDemo() {
 
   return (
     <div>
-      <SceneCanvas width={W} height={H} className="ckd-canvas" scene={scene} toolBundle="minimal" />
+      <SceneCanvas
+        width={W} height={H} className="ckd-canvas" scene={scene} toolBundle="minimal"
+        layers={{ scene: { drawOne } }}
+      />
       <p data-testid="rtp-readout">{readout}</p>
       <canvas ref={outRef} className="ckd-canvas" data-testid="rtp-output" />
     </div>

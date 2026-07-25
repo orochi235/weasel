@@ -30,3 +30,41 @@ test('render-to-pixels — dims, background, and same-context determinism', asyn
   expect(Math.abs(b - 0x69)).toBeLessThanOrEqual(2);
   expect(a).toBe(255);
 });
+
+test('render-to-pixels — verticalAlign: bottom pushes text to the lower part of its box', async ({ page }) => {
+  await page.goto('/#render-to-pixels');
+  const readout = page.getByTestId('rtp-readout');
+  await expect(readout).toHaveText(/identical: yes/, { timeout: 15_000 });
+
+  // Node 'd': scene box (x:10, y:202, width:460, height:36), verticalAlign
+  // 'bottom', rendered via a demo-local `drawOne` that forwards
+  // TextDrawCommand's height/verticalAlign directly (see
+  // RenderToPixelsDemo.tsx). Output scale is {x:2, y:1}, so box-local scene
+  // y offsets map 1:1 to output rows; box top → output y 202, box bottom →
+  // output y 238.
+  const darkness = await page.evaluate(() => {
+    const c = document.querySelector<HTMLCanvasElement>('[data-testid="rtp-output"]')!;
+    const ctx = c.getContext('2d')!;
+    // Average how far each sampled pixel's luminance falls below white
+    // (0 = pure background, 255 = solid ink) across a wide horizontal
+    // sample of the box, at a given box-local scene y.
+    const rowInk = (sceneY: number) => {
+      const y = sceneY; // scale.y === 1
+      const { data } = ctx.getImageData(20, y, 900, 1); // x in output px, covers box width×scale.x
+      let total = 0;
+      let n = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        total += 255 - data[i]; // red channel vs. white background
+        n++;
+      }
+      return total / n;
+    };
+    return {
+      top: rowInk(206),    // just below the box top — should be empty (legacy top-align would land text here)
+      bottom: rowInk(232), // near the box bottom — should contain glyph ink
+    };
+  });
+
+  expect(darkness.top).toBeLessThan(2); // background only, no glyph ink
+  expect(darkness.bottom).toBeGreaterThan(20); // dense glyph row pulls the average well below white
+});
