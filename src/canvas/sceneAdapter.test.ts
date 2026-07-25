@@ -479,6 +479,51 @@ describe('clipboard seam', () => {
     expect(created[1].pose).toMatchObject({ x: 102, y: 52 });
   });
 
+  it('commitPaste leaves non-rect poses untranslated instead of corrupting them', () => {
+    // No cascadeContainerPose translator and no top-level x/y on the pose:
+    // the fallback must NOT write bogus/NaN x/y into a shape it doesn't
+    // understand — overlap beats corruption.
+    const scene = createScene<Data, 'bg', { cx: number; cy: number; r: number }>({
+      systemLayers: [{ id: 'bg' }],
+    });
+    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { cx: 5, cy: 6, r: 7 }, data: { label: 'dot' } });
+    const adapter = sceneToAdapter(scene);
+    const snap = adapter.snapshotSelection!([id]);
+    const created = adapter.commitPaste!(snap, { dx: 12, dy: 12 }) as unknown as Array<{
+      id: string;
+      pose: Record<string, number>;
+    }>;
+    expect(created).toHaveLength(1);
+    expect(created[0].id).toMatch(/^paste-/);
+    // Exact equality: fields unchanged, no extra x/y keys, no NaN.
+    expect(created[0].pose).toEqual({ cx: 5, cy: 6, r: 7 });
+  });
+
+  it('commitPaste filters container children refs that are absent from the snapshot', () => {
+    const scene = makeScene();
+    const adapter = sceneToAdapter(scene);
+    // Hand-built snapshot (e.g. a stale wire payload): the container's
+    // children lists a ghost id with no corresponding snapshot item.
+    const snap = {
+      items: [
+        {
+          kind: 'container', id: 'p', layer: 'bg', parent: null,
+          pose: { x: 0, y: 0, width: 10, height: 10 }, data: { label: 'p' },
+          children: ['ghost', 'c'],
+        },
+        {
+          kind: 'leaf', id: 'c', layer: 'bg', parent: 'p',
+          pose: { x: 1, y: 1, width: 2, height: 2 }, data: { label: 'c' },
+        },
+      ],
+    };
+    const created = adapter.commitPaste!(snap, { dx: 0, dy: 0 }) as unknown as SnapItem[];
+    expect(created).toHaveLength(2);
+    // The ghost ref is dropped; the real child is remapped onto its fresh id.
+    expect(created[0].children).toEqual([created[1].id]);
+    expect(created[1].parent).toBe(created[0].id);
+  });
+
   it('getPasteOffset returns the constant cascade offset', () => {
     const scene = makeScene();
     const adapter = sceneToAdapter(scene);

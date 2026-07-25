@@ -13,6 +13,7 @@
  * via `composeWorldPose`, not the adapter's.
  */
 import { useMemo } from 'react';
+import { dwarn } from '../debug';
 import type {
   AreaSelectAdapter,
   ClipboardSnapshot,
@@ -230,16 +231,19 @@ function adapterFallbackId(): string {
 // Fresh ids for pasted nodes. The scene's own `generateId` isn't reachable
 // from the adapter, so `commitPaste` mints ids in the same shape as
 // `defaultGenerateId` with a `paste-` prefix (module-scoped counter + random
-// suffix keeps them unique across adapters and repeated pastes).
+// suffix keeps them unique across adapters and repeated pastes). Accepted
+// risk: the counter is per-tab, so cross-tab paste (the OS-clipboard path)
+// leans on the random suffix alone for uniqueness — a collision makes
+// `scene.add` throw rather than silently overwrite.
 let pasteIdCounter = 0;
 function pasteNodeId(): string {
   return `paste-${(pasteIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// Copy one node slot (pose / data / children) so clipboard snapshots don't
+// Copy one node field (pose / data / children) so clipboard snapshots don't
 // alias live scene state. Spread-level copy per the clipboard contract:
 // mutating a snapshot's pose/data/children must not touch the scene.
-function copySlot<T>(value: T): T {
+function copyField<T>(value: T): T {
   if (Array.isArray(value)) return [...value] as T;
   if (value !== null && typeof value === 'object') return { ...(value as object) } as T;
   return value;
@@ -267,13 +271,29 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       ? (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose)
       : options.cascadeContainerPose ?? null;
 
-  // Pose translator for `commitPaste`. Reuses the consumer's cascade
-  // translator when one is configured (non-rect pose shapes); otherwise
-  // falls back to `translateRectPose`, matching `poseBounds`'s default
-  // assumption that TPose carries top-level x/y.
-  const pasteTranslatePose: (pose: TPose, dx: number, dy: number) => TPose =
-    cascadeTranslate
-      ?? (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose);
+  // Pose translator for `commitPaste`. Resolution chain:
+  //   1. the consumer's cascade translator, when configured (the same seam
+  //      non-rect pose shapes already use for container drags);
+  //   2. `translateRectPose`, but only when the pose actually carries
+  //      top-level numeric x/y (the default `poseBounds` shape assumption);
+  //   3. identity + dwarn — pasted nodes land untranslated (overlapping the
+  //      source) rather than having bogus/NaN x/y written into a pose shape
+  //      the kit doesn't understand. Mirrors `cascadeContainerPose`'s opt-in
+  //      posture: exotic poses must supply their own translator.
+  const pasteTranslatePose = (pose: TPose, dx: number, dy: number): TPose => {
+    if (cascadeTranslate !== null) return cascadeTranslate(pose, dx, dy);
+    const p = pose as unknown as { x?: unknown; y?: unknown };
+    if (typeof p.x === 'number' && typeof p.y === 'number') {
+      return (translateRectPose as unknown as (pose: TPose, dx: number, dy: number) => TPose)(
+        pose, dx, dy,
+      );
+    }
+    dwarn(
+      'scene-canvas',
+      'commitPaste: pose has no top-level numeric x/y and no cascadeContainerPose translator is configured — pasting untranslated',
+    );
+    return pose;
+  };
 
   const adapter: SceneCanvasAdapter<TData, TLayer, TPose> = {
     getNode(id) {
@@ -489,8 +509,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             id: n.id,
             layer: n.layer,
             parent: n.parent,
-            pose: copySlot(n.pose),
-            data: copySlot(n.data),
+            pose: copyField(n.pose),
+            data: copyField(n.data),
             children: [...n.children],
             ...(n.clipFromPose ? { clipFromPose: n.clipFromPose } : {}),
           });
@@ -501,8 +521,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
             id: n.id,
             layer: n.layer,
             parent: n.parent,
-            pose: copySlot(n.pose),
-            data: copySlot(n.data),
+            pose: copyField(n.pose),
+            data: copyField(n.data),
           });
         }
       };
@@ -557,8 +577,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
           id: idMap.get(item.id)!,
           layer: item.layer,
           parent: isRoot(item) ? null : idMap.get(item.parent as string)!,
-          pose: pasteTranslatePose(copySlot(item.pose), dx, dy),
-          data: copySlot(item.data),
+          pose: pasteTranslatePose(copyField(item.pose), dx, dy),
+          data: copyField(item.data),
         };
         if (item.kind === 'container') {
           out.push({
