@@ -1,7 +1,8 @@
 /**
  * Box vertical alignment for text draw commands. Given the command's box
  * `height` and the laid-out text block's height, returns the Y offset to
- * apply to every quad. `top` (and no box) is the legacy behavior: 0.
+ * apply to every quad. `'top'` (or an undefined `align`, or a missing box
+ * `height`) is the legacy behavior: offset 0.
  */
 export type TextVerticalAlign = 'top' | 'center' | 'bottom';
 

@@ -72,6 +72,20 @@ describe('createTextLayer', () => {
     expect(cmd.runs[0].text).toBe('B');
   });
 
+  it('forwards pose.height and pose.verticalAlign onto the TextDrawCommand', () => {
+    const layer = createTextLayer<Node>({
+      getTexts: () => [{
+        id: 'n',
+        pose: { x: 0, y: 0, width: 200, height: 80, text: 'hi', verticalAlign: 'center' },
+      }],
+      getPose: (n) => n.pose,
+    });
+    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
+    const cmd = tree[0] as { height: number; verticalAlign: string };
+    expect(cmd.height).toBe(80);
+    expect(cmd.verticalAlign).toBe('center');
+  });
+
   it('throws when runs are present but runsToPlainText(runs) !== text', () => {
     const layer = createTextLayer<Node>({
       getTexts: () => [{

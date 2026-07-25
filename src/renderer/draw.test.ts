@@ -284,6 +284,10 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
 import { registerFont, _resetFontRegistryForTests } from 'features/text/atlas/registerFont';
 import { FIXTURE_FONT } from 'features/text/atlas/FontAtlas';
 import { vi } from 'vitest';
+import { resolveTextStyle } from '@weasel-js/core';
+import { layoutRuns } from 'features/text/atlas/layoutRuns';
+import { verticalAlignOffset } from 'features/text/verticalAlign';
+import type { ResolvedRun } from 'features/text/runs/resolveRuns';
 
 describe('WeaselRenderer.render — color matrix on text + image', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
@@ -853,5 +857,82 @@ describe('drawText synthetic-italic', () => {
       .filter((c) => c.name === 'uniform1f')
       .map((c) => c.args[1] as number);
     expect(uniform1fVals.some((v) => Math.abs(v - 0.2094) < 1e-3)).toBe(false);
+  });
+});
+
+describe('drawText verticalAlign', () => {
+  beforeEach(() => {
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+  });
+
+  // First vertex of the first quad in the first (and only, for this fixture
+  // font/text) bufferData upload of the text VBO: stride is [x, y, u, v,
+  // baselineY], so index 1 is y0.
+  function firstQuadY0(calls: ReturnType<typeof makeGLRecorder>['calls']): number {
+    const upload = calls.find(
+      (c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array,
+    );
+    if (!upload) throw new Error('no text vertex bufferData call recorded');
+    return (upload.args[1] as Float32Array)[1];
+  }
+
+  it('shifts emitted quad y-coordinates by verticalAlignOffset(verticalAlign, height, textHeight)', async () => {
+    _resetFontRegistryForTests();
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+
+    const runs: ResolvedRun[] = [{
+      text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
+      fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+    }];
+    const style = {};
+
+    const { ctx: ctxTop, calls: callsTop } = createRecorderCtx();
+    dispatch(ctxTop, { kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style });
+    const y0Top = firstQuadY0(callsTop);
+
+    const boxHeight = 100;
+    const { ctx: ctxCentered, calls: callsCentered } = createRecorderCtx();
+    dispatch(ctxCentered, {
+      kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style,
+      height: boxHeight, verticalAlign: 'center',
+    });
+    const y0Centered = firstQuadY0(callsCentered);
+
+    const resolved = resolveTextStyle(style);
+    const laid = layoutRuns(runs, { maxWidth: Infinity, lineHeight: resolved.lineHeight, align: 'left' }, { x: 0, y: 0 });
+    const expectedDy = verticalAlignOffset('center', boxHeight, laid.bounds.height);
+
+    expect(expectedDy).not.toBe(0);
+    expect(y0Centered - y0Top).toBeCloseTo(expectedDy, 5);
+  });
+
+  it('leaves quads untouched (dy=0) when verticalAlign/height are omitted', async () => {
+    _resetFontRegistryForTests();
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+
+    const runs: ResolvedRun[] = [{
+      text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
+      fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+    }];
+
+    const { ctx: ctxA, calls: callsA } = createRecorderCtx();
+    dispatch(ctxA, { kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style: {} });
+
+    const { ctx: ctxB, calls: callsB } = createRecorderCtx();
+    dispatch(ctxB, { kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style: {}, verticalAlign: 'top' });
+
+    expect(firstQuadY0(callsB)).toBe(firstQuadY0(callsA));
   });
 });
