@@ -1352,6 +1352,32 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     expect(cell).toBe(7);
   });
 
+  it('external-op entries replay through the lazy history adapter (wired before restore)', () => {
+    const NAME = 'scenetest:cellSetPre';
+    let cell = 0;
+    const mk = (f: number, t: number): Op => ({
+      name: NAME, args: { from: f, to: t },
+      apply: (adapter) => { (adapter as { set(v: number): void }).set(t); },
+      invert: () => mk(t, f),
+    });
+    registerOpFactory(NAME, (args) => {
+      const { from, to } = args as { from: number; to: number };
+      return mk(from, to);
+    });
+    const liveAdapter = { set: (v: number) => { cell = v; } };
+    const a = makeScene();
+    a.applyBatch([mk(0, 7)], 'set cell', liveAdapter);
+    const snap = a.serializeHistory();
+    const b = makeScene();
+    b.loadState(a.toJSON());
+    b.setHistoryAdapter(() => liveAdapter); // wired BEFORE restore
+    b.restoreHistory(snap);
+    b.undo();
+    expect(cell).toBe(0);
+    b.redo();
+    expect(cell).toBe(7);
+  });
+
   it('restored external ops with no history adapter are warning no-ops, never throws', () => {
     const NAME = 'scenetest:noAdapter';
     let cell = 0;
