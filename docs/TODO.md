@@ -37,7 +37,7 @@ Priority tags:
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
 **Selection, actions & UI panels**
-- Op coalescing in `useScene`'s `LogEntry` history → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- Op coalescing in `useScene` — done 2026-07-25; Phase 2 (serialization on the unified op-log) pending → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - Clipboard: OS clipboard / cross-reload serialization → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Plugins & packaging**
@@ -250,7 +250,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `demo/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
-- **(P2) Op coalescing in `useScene`.** Default `coalesceKey`s landed at the op factories (`transform`/`setText`/`setLayer`/`setPath` now default `<name>:${id}`, joining `reparent`), so the standalone `@weasel-js/history` path coalesces without per-call boilerplate when a consumer sets `coalesceWindowMs > 0`. Remaining: `useScene`'s internal undo log (`scene.ts`) is a separate `LogEntry` history (`{kind, payload}[]`, no `coalesceKey` notion) that ignores coalescing entirely — `Op.coalesceKey` is lost when ops translate to scene mutations. Wiring it needs the coalesce-eligibility + window logic ported into `pushEntry` plus a way to thread the key from the originating `Op` into the `LogEntry`.
+- **(P2) Op coalescing in `useScene`.** Done 2026-07-25 — `createScene` now delegates undo/redo to a `@weasel-js/history` instance (design: `docs/superpowers/specs/2026-07-25-unify-scene-history-engine-design.md`); opt-in via `UseSceneOptions.coalesceWindowMs` (default `0` = discrete entries, prior behavior), also forwarded through `sceneFromJSON`. The engine gained `historyLimit` + `onEvict` + O(1) `undoDepth`/`redoDepth`; `applyBatch`'s non-journal fork now records the external ops themselves on the same engine, so external-op batches coalesce too. Follow-up: **Phase 2** — clipboard / cross-reload serialization + persistence on the unified op-log (separate spec, not started).
 
 - **(P2) Clipboard: OS clipboard / cross-reload serialization.** Currently the kit's clipboard is in-memory only — copy doesn't reach the system clipboard, and reloading drops the buffer. Needs a serialization shape (likely the same op-log shape useScene wants) plus `navigator.clipboard` plumbing with a JSON wire format.
 
