@@ -50,3 +50,34 @@ describe('measureTextBounds', () => {
     expect(large.width).toBeGreaterThan(small.width);
   });
 });
+
+describe('measureTextBounds with maxWidth', () => {
+  it('wrapped text is taller and narrower than unwrapped', async () => {
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const unwrapped = measureTextBounds('AB AB AB', { fontFamily: 'inter', fontSize: 16 });
+    const wrapped = measureTextBounds(
+      'AB AB AB',
+      { fontFamily: 'inter', fontSize: 16 },
+      { maxWidth: unwrapped.width / 2 },
+    );
+    expect(wrapped.height).toBeGreaterThan(unwrapped.height);
+    expect(wrapped.width).toBeLessThan(unwrapped.width);
+  });
+
+  it('lineHeight opt overrides the style multiplier', async () => {
+    await registerFont('inter', {}, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    const unwrapped = measureTextBounds('AB AB AB', { fontFamily: 'inter', fontSize: 16 });
+    const maxWidth = unwrapped.width / 2;
+    const base = measureTextBounds(
+      'AB AB AB',
+      { fontFamily: 'inter', fontSize: 16 },
+      { maxWidth, lineHeight: 1.2 },
+    );
+    const doubled = measureTextBounds(
+      'AB AB AB',
+      { fontFamily: 'inter', fontSize: 16 },
+      { maxWidth, lineHeight: 2.4 },
+    );
+    expect(doubled.height).toBeCloseTo(base.height * 2, 5);
+  });
+});
