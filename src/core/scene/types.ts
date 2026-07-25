@@ -184,6 +184,14 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   initial?: readonly AddNodeSpec<TData, TLayer, TPose>[];
   ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
   historyLimit?: number;
+  /** Window (ms) within which consecutive same-shaped mutations merge into
+   *  the previous undo entry (matching per-op coalesce keys — e.g. repeated
+   *  `setPose` on the same node, or repeated `applyBatch` calls whose ops
+   *  carry matching `coalesceKey` multisets). `0` (default) disables
+   *  coalescing: every mutation is a discrete undo entry. Undo of a
+   *  coalesced entry returns to the state before the first merged mutation;
+   *  redo restores the latest. `scene.batch` entries never coalesce. */
+  coalesceWindowMs?: number;
   generateId?: () => NodeId;
   /** Per-scene registry for non-serializable function fields (clipFromPose, etc.).
    *  Required only when serializing/deserializing scenes that use function fields. */

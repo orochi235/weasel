@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createScene, sceneFromJSON } from './scene';
 import { asNodeId } from './types';
 import type { NodeId, SerializedScene, SystemLayerSpec } from './types';
@@ -1151,5 +1151,97 @@ describe('applyBatch (no journal)', () => {
     };
     s.applyBatch([op], 'nothing', null);
     expect(s.canUndo()).toBe(false);
+  });
+});
+
+describe('coalescing (coalesceWindowMs)', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  function timedScene() {
+    return createScene<Data, Layer>({
+      systemLayers: [
+        { id: 'background' },
+        { id: 'structures' },
+        { id: 'plantings' },
+      ],
+      coalesceWindowMs: 500,
+    });
+  }
+
+  it('rapid setPose on one node merges into a single entry', () => {
+    const s = timedScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const before = s.historyEntries().length; // the add
+    s.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
+    vi.advanceTimersByTime(100);
+    s.setPose(id, { x: 2, y: 0, width: 10, height: 10 });
+    vi.advanceTimersByTime(100);
+    s.setPose(id, { x: 3, y: 0, width: 10, height: 10 });
+    expect(s.historyEntries().length).toBe(before + 1);
+    expect(s.get(id)?.pose).toEqual({ x: 3, y: 0, width: 10, height: 10 });
+  });
+
+  it('undo of a coalesced entry returns to the pre-burst state; redo to the final', () => {
+    const s = timedScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    s.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
+    vi.advanceTimersByTime(100);
+    s.setPose(id, { x: 5, y: 0, width: 10, height: 10 });
+    s.undo();
+    expect(s.get(id)?.pose).toEqual(POSE);
+    s.redo();
+    expect(s.get(id)?.pose).toEqual({ x: 5, y: 0, width: 10, height: 10 });
+  });
+
+  it('a gap larger than the window starts a new entry', () => {
+    const s = timedScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const before = s.historyEntries().length;
+    s.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
+    vi.advanceTimersByTime(600); // outside the 500ms window
+    s.setPose(id, { x: 2, y: 0, width: 10, height: 10 });
+    expect(s.historyEntries().length).toBe(before + 2);
+    s.undo();
+    expect(s.get(id)?.pose).toEqual({ x: 1, y: 0, width: 10, height: 10 });
+  });
+
+  it('mutations on different nodes never merge', () => {
+    const s = timedScene();
+    const a = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const b = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'b' } });
+    const before = s.historyEntries().length;
+    s.setPose(a, { x: 1, y: 0, width: 10, height: 10 });
+    s.setPose(b, { x: 1, y: 0, width: 10, height: 10 });
+    expect(s.historyEntries().length).toBe(before + 2);
+  });
+
+  it('scene.batch entries are always discrete (recordEntry never coalesces)', () => {
+    const s = timedScene();
+    const id = s.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const before = s.historyEntries().length;
+    s.batch('drag', () => { s.setPose(id, { x: 1, y: 0, width: 10, height: 10 }); });
+    vi.advanceTimersByTime(100);
+    s.batch('drag', () => { s.setPose(id, { x: 2, y: 0, width: 10, height: 10 }); });
+    expect(s.historyEntries().length).toBe(before + 2);
+  });
+
+  it('applyBatch entries coalesce on matching key multisets, order-independent', () => {
+    const s = timedScene();
+    const cell = { a: 0, b: 0 };
+    const mk = (k: 'a' | 'b', from: number, to: number): Op => ({
+      coalesceKey: `set:${k}`,
+      apply: () => { cell[k] = to; },
+      invert: () => mk(k, to, from),
+    });
+    s.applyBatch([mk('a', 0, 1), mk('b', 0, 1)], 'drag', null);
+    vi.advanceTimersByTime(100);
+    s.applyBatch([mk('b', 1, 2), mk('a', 1, 2)], 'drag', null); // reordered — multiset match
+    expect(cell).toEqual({ a: 2, b: 2 });
+    expect(s.historyEntries()).toHaveLength(1);
+    s.undo();
+    expect(cell).toEqual({ a: 0, b: 0 });
+    s.redo();
+    expect(cell).toEqual({ a: 2, b: 2 });
   });
 });

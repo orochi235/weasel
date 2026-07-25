@@ -101,6 +101,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   // wrappers close over their payloads). Eviction (branch-edit redo-clears
   // + historyLimit overflow) drives pendingClipPatches pruning via onEvict.
   const history = createHistory(undefined, {
+    ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
     onEvict: (entry) => {
       // forwardOps and baseOps are the same array until a coalesce splits
@@ -453,9 +454,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   /** Best-effort coalesce-grouping token: node ops carry `payload.id`,
    *  layer ops `payload.layer`. Payloads with neither get no key and never
    *  coalesce (the engine treats a missing key on either side as
-   *  "new entry"). Keys are inert until a scene opts in via the engine's
-   *  `coalesceWindowMs` (wired by a later task) — the default window of 0
-   *  disables coalescing entirely. */
+   *  "new entry"). Keys only take effect when the scene opts in via
+   *  `UseSceneOptions.coalesceWindowMs` (default `0`, which disables
+   *  coalescing entirely). */
   function coalesceKeyFor(kind: string, payload: unknown): string | undefined {
     if (payload === null || typeof payload !== 'object') return undefined;
     const p = payload as { id?: unknown; layer?: unknown };
