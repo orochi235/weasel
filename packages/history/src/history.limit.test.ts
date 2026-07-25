@@ -142,3 +142,17 @@ describe('onEvict', () => {
     expect(history.entries().undo.map((e) => e.label)).toEqual(['two']); // cap still enforced
   });
 });
+
+describe('undoDepth / redoDepth', () => {
+  it('reports stack depths matching entries() without materializing views', () => {
+    const cell: Cell = { x: 0 };
+    const history = createHistory(null, {});
+    history.applyOps([setX(cell, 0, 1)], 'one');
+    history.applyOps([setX(cell, 1, 2)], 'two');
+    history.undo();
+    expect(history.undoDepth()).toBe(1);
+    expect(history.redoDepth()).toBe(1);
+    expect(history.undoDepth()).toBe(history.entries().undo.length);
+    expect(history.redoDepth()).toBe(history.entries().redo.length);
+  });
+});

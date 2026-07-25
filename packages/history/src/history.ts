@@ -90,6 +90,11 @@ export interface History {
   redo(): void;
   canUndo(): boolean;
   canRedo(): boolean;
+  /** Number of entries on the undo stack (O(1); `entries().undo.length`
+   *  without materializing the views). */
+  undoDepth(): number;
+  /** Number of entries on the redo stack (O(1)). */
+  redoDepth(): number;
   clear(): void;
   /** Snapshot of the current undo + redo stacks. `undo` is oldest→newest
    *  (i.e. the last element is what `undo()` would pop next); `redo` is
@@ -327,6 +332,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     },
     canUndo: () => undoStack.length > 0,
     canRedo: () => redoStack.length > 0,
+    undoDepth: () => undoStack.length,
+    redoDepth: () => redoStack.length,
     clear: () => {
       const had = undoStack.length > 0 || redoStack.length > 0;
       undoStack.length = 0;

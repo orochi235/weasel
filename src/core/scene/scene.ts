@@ -103,6 +103,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   const history = createHistory(undefined, {
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
     onEvict: (entry) => {
+      // forwardOps and baseOps are the same array until a coalesce splits
+      // them, so the double scan is cheap today and correct later.
       pruneCacheForDroppedOps(entry.forwardOps);
       pruneCacheForDroppedOps(entry.baseOps);
     },
@@ -435,7 +437,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   /** Best-effort coalesce-grouping token: node ops carry `payload.id`,
    *  layer ops `payload.layer`. Payloads with neither get no key and never
    *  coalesce (the engine treats a missing key on either side as
-   *  "new entry"). */
+   *  "new entry"). Keys are inert until a scene opts in via the engine's
+   *  `coalesceWindowMs` (wired by a later task) — the default window of 0
+   *  disables coalescing entirely. */
   function coalesceKeyFor(kind: string, payload: unknown): string | undefined {
     if (payload === null || typeof payload !== 'object') return undefined;
     const p = payload as { id?: unknown; layer?: unknown };
@@ -451,6 +455,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    *  engine-applied ops may re-enter scene mutation methods, which must
    *  apply but not record. The caller fires exactly one `notify()` after. */
   function withRecordingSuppressed<T>(fn: () => T): T {
+    const prevSuppress = suppressRecording;
     suppressRecording = true;
     batchDepth++;
     const prevDirty = batchDirty;
@@ -458,7 +463,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       return fn();
     } finally {
       batchDepth--;
-      suppressRecording = false;
+      suppressRecording = prevSuppress;
       batchDirty = prevDirty;
     }
   }
@@ -817,17 +822,16 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
 
     /** Index of the "current state". `0` = nothing applied (initial);
-     *  `undoStack.length` = at the head of history. Equals the count of
-     *  entries currently on the undo stack. */
-    historyIndex: () => history.entries().undo.length,
+     *  equals the number of applied (undoable) entries —
+     *  `historyEntries().length` when fully redone. */
+    historyIndex: () => history.undoDepth(),
 
     /** Walk to a target history index by calling undo/redo repeatedly.
      *  Caps at the valid range; returns true if the index changed. */
     jumpToHistoryIndex(targetIndex: number) {
-      const { undo, redo } = history.entries();
-      const total = undo.length + redo.length;
+      const total = history.undoDepth() + history.redoDepth();
       const target = Math.max(0, Math.min(total, targetIndex));
-      if (target === undo.length) return false;
+      if (target === history.undoDepth()) return false;
       withRecordingSuppressed(() => history.goto(target));
       notify();
       return true;
