@@ -62,6 +62,7 @@ import {
   inferredNodeProperties,
   inferredNodeRouting,
   type ToolPrefColor,
+  useClipboardOps,
 } from '@weasel-js/core';
 import { SidebarPanel, SelectionPanel, ToolPalette, type PropertyRenderer } from '@weasel-js/ui';
 
@@ -550,56 +551,25 @@ function Toolbar({
     registry?.trigger(id);
   }, [registry]);
 
-  // Clipboard is in-memory only — the kit's clipboard actions weren't
-  // wired here (see TODO.md). Copy/cut snapshot the selected leaves;
-  // paste re-adds them as fresh ids at a small offset.
-  const clipboardRef = useRef<Array<{ pose: WeaselDrawPose; data: WeaselDrawData }>>([]);
+  const adapter = useSceneAdapter(scene, {});
   const [clipboardEmpty, setClipboardEmpty] = useState(true);
-
-  const snapshotSelection = useCallback(() => {
-    const snaps: Array<{ pose: WeaselDrawPose; data: WeaselDrawData }> = [];
-    for (const id of selection.current) {
-      const node = scene.get(asNodeId(id));
-      if (node && node.kind === 'leaf') {
-        snaps.push({ pose: { ...node.pose }, data: { ...node.data } });
-      }
-    }
-    return snaps;
-  }, [scene, selection]);
-
+  const clipboard = useClipboardOps(adapter, {
+    getSelection: () => selection.current as NodeId[],
+    onPaste: (ids) => selection.set(ids.map(asNodeId)),
+  });
   const onCopy = useCallback(() => {
-    const snaps = snapshotSelection();
-    if (snaps.length === 0) return;
-    clipboardRef.current = snaps;
-    setClipboardEmpty(false);
-  }, [snapshotSelection]);
-
+    clipboard.copy();
+    setClipboardEmpty(clipboard.isEmpty());
+  }, [clipboard]);
   const onCut = useCallback(() => {
-    const snaps = snapshotSelection();
-    if (snaps.length === 0) return;
-    clipboardRef.current = snaps;
+    clipboard.copy();
+    if (clipboard.isEmpty()) return;
     setClipboardEmpty(false);
     scene.batch('Cut', () => {
       for (const id of selection.current) scene.remove(asNodeId(id));
     });
-  }, [snapshotSelection, scene, selection]);
-
-  const onPaste = useCallback(() => {
-    if (clipboardRef.current.length === 0) return;
-    const newIds: ReturnType<typeof asNodeId>[] = [];
-    scene.batch('Paste', () => {
-      for (const snap of clipboardRef.current) {
-        const id = scene.add({
-          kind: 'leaf',
-          layer: 'default',
-          pose: { ...snap.pose, x: snap.pose.x + 12, y: snap.pose.y + 12 },
-          data: { ...snap.data },
-        });
-        newIds.push(id);
-      }
-    });
-    selection.set(newIds);
-  }, [scene, selection]);
+  }, [clipboard, scene, selection]);
+  const onPaste = useCallback(() => { clipboard.paste(); }, [clipboard]);
 
   // Selection-aware z-order: rough "is the top selection at front/back?" guard.
   // Cheap heuristic — only inspects render order length, not per-id position,
