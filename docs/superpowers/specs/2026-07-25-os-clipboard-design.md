@@ -129,6 +129,26 @@ unrecognized/corrupt weasel payloads decline so the ingestion chain's other hand
 text) get their shot; a missing `commitPaste`/`snapshotSelection` on the adapter keeps today's
 no-op behavior.
 
+## Corrections at planning (scope expansion, discovered 2026-07-25)
+
+The Problem section above overstated the "internal half": `useClipboardOps` is **dormant API** —
+the kit's `sceneAdapter` implements none of `snapshotSelection`/`commitPaste`/`getPasteOffset`,
+and no app consumes the hook. apps/draw hand-rolls a leaves-only clipboard in `App.tsx` (its own
+comment admits the kit actions were never wired). The per-app flavor seam presupposes a working
+seam, so two foundation tasks precede the OS work:
+
+- **Kit adapter clipboard seam**: implement `snapshotSelection` (subtree-aware: selected roots
+  deduped against selected ancestors, containers + descendants captured parents-before-children)
+  and `commitPaste` (fresh ids with parent remapping, offset applied to roots, returns nodes
+  shaped for `insertNode` so the existing insert-op path performs the actual insertion) plus a
+  cascade `getPasteOffset` on `sceneAdapter`. `clone.ts` has no reusable subtree machinery
+  (leaf-only drag-clone) — this is new code.
+- **Draw migration**: replace the hand-rolled `clipboardRef`/`onCopy`/`onCut`/`onPaste` with
+  `useClipboardOps` over the canvas adapter (cut = copy + batched remove). Side benefit: groups
+  become copyable (the hand-rolled version silently dropped containers).
+
+The OS design above is unchanged; it now sits on a real seam.
+
 ## What we explicitly are NOT doing
 
 - `navigator.clipboard.read` for imperative paste buttons (in-memory covers same-session; Cmd+V
