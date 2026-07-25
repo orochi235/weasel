@@ -332,7 +332,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
             (node as ContainerNode<TData, TLayer, TPose>).clipFromPose = fn;
             pendingClipPatches.set(p.id, fn as NonNullable<ContainerNode<TData, TLayer, TPose>['clipFromPose']>);
           } else {
-            dwarn('scene', `kit:add: clipKey "${p.clipKey}" not in this scene's registry — container "${p.id}" restored without clip`);
+            dwarn('scene', `kit:add: clipKey "${p.clipKey}" not in this scene's registry — container "${p.id}" restored without clip. Register a function with this key in the registry option to restore the clip.`);
           }
         }
       }

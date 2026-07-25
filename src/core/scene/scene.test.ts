@@ -1478,4 +1478,25 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     expect(node?.kind).toBe('container');
     expect((node as { clipFromPose?: unknown }).clipFromPose).toBe(fn);
   });
+
+  it('clipKey miss against an empty registry restores the container without a clip, no throw', () => {
+    const fn = (_pose: typeof POSE) => ({ kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 });
+    const a = createScene<Data, 'structures', typeof POSE>({
+      systemLayers: [{ id: 'structures' }],
+      registry: { clipFromPose: { ellipse: fn } },
+    });
+    a.add({ id: asNodeId('bed'), kind: 'container', layer: 'structures', pose: POSE, data: { label: 'bed' }, clipFromPose: fn });
+    a.undo(); // head state: container absent; the add entry carries the clipKey
+    const snap = a.serializeHistory();
+    const b = createScene<Data, 'structures', typeof POSE>({
+      systemLayers: [{ id: 'structures' }],
+      registry: {},
+    });
+    b.loadState(a.toJSON());
+    b.restoreHistory(snap);
+    expect(() => b.redo()).not.toThrow();
+    const node = b.get(asNodeId('bed'));
+    expect(node?.kind).toBe('container');
+    expect((node as { clipFromPose?: unknown }).clipFromPose).toBeUndefined();
+  });
 });
