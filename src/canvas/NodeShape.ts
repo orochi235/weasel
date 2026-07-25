@@ -164,7 +164,14 @@ const TEXT_PAINTER: NodeShapeEntry = {
     const d = node.data as { text: string; style?: TextStyle };
     const p = pose as RectPose;
     const fontSize = d.style?.fontSize ?? 16;
-    return [textCommand(p.x, p.y + fontSize, d.text, d.style)];
+    // Forward the pose's box height so a future `verticalAlign` opt-in has
+    // something to align within. Default `verticalAlign` is 'top', which
+    // resolves to a zero offset regardless of `height` — so this is a no-op
+    // for every existing kit:text node. `maxWidth` (word-wrap) is
+    // deliberately NOT forwarded: generic kit:text nodes have no data/style
+    // slot for opting into wrap or box vertical-align yet, and forwarding
+    // maxWidth would silently start wrapping consumers' existing text.
+    return [textCommand(p.x, p.y + fontSize, d.text, d.style, undefined, p.height)];
   },
 };
 

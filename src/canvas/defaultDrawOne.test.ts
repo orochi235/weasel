@@ -107,6 +107,29 @@ describe('defaultDrawOne', () => {
     expect(cmd.y).toBe(40); // POSE.y + fontSize (20)
   });
 
+  it('text branch: forwards the pose box height but not maxWidth/verticalAlign, and rendering is unchanged', () => {
+    // Snapshot-style assertion: the generic kit:text node has no data/style
+    // slot for verticalAlign yet, and forwarding maxWidth would newly
+    // word-wrap existing consumers' text — neither should be sent. `height`
+    // is forwarded (pose already carries it for the box "H" property), but
+    // with the default verticalAlign ('top') it resolves to a zero offset,
+    // so the emitted command — and thus the pixels — are unchanged.
+    const cmds = defaultDrawOne(
+      node({ text: 'Hello', style: { fontFamily: 'sans-serif', fontSize: 20 } }),
+      POSE,
+    );
+    const cmd = cmds[0] as TextDrawCommand;
+    expect(cmd).toMatchObject({
+      kind: 'text',
+      x: 10,
+      y: 40,
+      align: 'left',
+      maxWidth: undefined,
+      height: POSE.height, // 40 — forwarded, but a no-op with default verticalAlign
+      verticalAlign: undefined,
+    });
+  });
+
   it('text branch: defaults baseline shift to 16px when style is missing', () => {
     const cmds = defaultDrawOne(node({ text: 'Hello' }), POSE);
     const cmd = cmds[0] as TextDrawCommand;
