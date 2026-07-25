@@ -25,9 +25,6 @@ Priority tags:
 **Viewport**
 - Axis-aware elliptical hit shapes under non-uniform zoom → [Viewport](#viewport)
 
-**Paths & booleans**
-- Generic CSS cascade for `@weasel-js/svg`'s parser → [Paths & booleans](#paths--booleans)
-
 **Text**
 - Cross-browser overlay alignment → [Text](#text)
 - Text properties panel (Character + Paragraph) → [Text](#text)
@@ -148,7 +145,7 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Paths & booleans
 
-- **(P2) Generic CSS cascade for `@weasel-js/svg`'s parser.** Surfaced 2026-05-13 importing the Ghostscript tiger — `<g fill="...">` groups containing `<path>` elements with no direct fill were falling back to black. The targeted fix has since shipped: `packages/svg/src/parse.ts:432` `readInheritedAttr` walks up parents (honoring `inherit`/absence), plus `style=` parsing and inherited stroke/width. That's the per-attr walk-up the deeper refactor replaces — SVG has a long list of inheritable presentation attributes — paint (fill/stroke/fill-rule/fill-opacity/stroke-opacity), stroke decoration (linecap/linejoin/miterlimit/dasharray/dashoffset), font-* (family/size/weight/style/text-anchor/letter-spacing/decoration), color (for `currentColor` resolution), opacity, visibility, display, color-interpolation, image-rendering, shape-rendering, text-rendering, clip-rule, clip-path, mask, filter, marker-*. Per-attr walk-up code accumulates as the matrix grows; the right answer is **threading a cascading style context down through the recursive parse**: at each element, compute "current cascade" = parent cascade + element's own attrs + style attr; leaf parsers read from the threaded context, not from the DOM. Browser-only fast path could use `getComputedStyle` against a hidden DOM node, with the threaded-context fallback for Node/jsdom tests.
+- **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`, plan `docs/superpowers/plans/2026-07-25-svg-cascade-context.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Add when a real consumer imports an SVG that styles via `<style>`/classes; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
 ### Pathfinder follow-ups (post-v1)
 
