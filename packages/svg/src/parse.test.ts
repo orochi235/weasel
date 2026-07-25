@@ -271,4 +271,9 @@ describe('text cascade', () => {
     const t = firstText('<svg><g color="#00ff00"><text x="0" y="10" fill="currentColor">hi</text></g></svg>');
     expect(t.style?.fill).toMatchObject({ color: '#00ff00' });
   });
+
+  it('resolves <tspan fill="currentColor"> against inherited color', () => {
+    const t = firstText('<svg><g color="#00ff00"><text x="0" y="10"><tspan fill="currentColor">a</tspan></text></g></svg>');
+    expect(t.runs?.[0]?.fill).toMatchObject({ color: '#00ff00' });
+  });
 });

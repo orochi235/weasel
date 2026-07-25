@@ -18,7 +18,10 @@ export type ParsedColor =
 /**
  * Parse an SVG paint string. Returns `null` for inputs we don't recognize
  * (so the caller can emit a warning and fall back). `currentColor` resolves
- * to black — weasel-svg doesn't track CSS context.
+ * to black here as a last-resort default; callers that participate in the
+ * cascade (`readPaint`, `readTextStyle`, `readTspanRun`) pre-resolve
+ * `currentColor` against the inherited `color` via `resolveCurrentColor`
+ * before this function ever sees it.
  */
 export function parsePaintAttr(raw: string | null | undefined): ParsedColor | null {
   if (raw == null) return null;

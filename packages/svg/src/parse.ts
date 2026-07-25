@@ -594,7 +594,7 @@ function parseTextElement(
         if (t) { runs.push({ text: t }); plain += t; }
         continue;
       }
-      const run = readTspanRun(sp, gradients);
+      const run = readTspanRun(sp, gradients, leafStyle);
       runs.push(run);
       plain += run.text;
     }
@@ -647,7 +647,7 @@ function parseTextElement(
   return node;
 }
 
-function readTspanRun(el: Element, gradients: GradientTable): StyledRun {
+function readTspanRun(el: Element, gradients: GradientTable, style: StyleContext): StyledRun {
   const text = el.textContent ?? '';
   const run: StyledRun = { text };
   const fw = ownProp(el, 'font-weight');
@@ -661,7 +661,8 @@ function readTspanRun(el: Element, gradients: GradientTable): StyledRun {
     const n = parseFloat(sz);
     if (Number.isFinite(n)) run.fontSize = n;
   }
-  const fillAttr = ownProp(el, 'fill');
+  const tspanStyle = deriveStyle(style, el);
+  const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
     const parsed = parsePaintAttr(fillAttr);
     if (parsed?.kind === 'solid') {
