@@ -832,6 +832,11 @@ export {
 // ─── Action hooks: selection-driven keyboard / button actions ───────────────
 export {
   useClipboardOps,
+  WEASEL_CLIPBOARD_MIME,
+  WEASEL_CLIPBOARD_MIME_WEB,
+  buildWeaselClipboardText,
+  sniffWeaselClipboardText,
+  parseWeaselClipboardText,
 } from './interactions/actions/clipboard';
 export type {
   UseClipboardOpsOptions,

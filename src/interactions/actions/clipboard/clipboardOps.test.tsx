@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClipboardOps } from './clipboardOps';
 import type { InsertAdapter, Op } from '../../..';
 import { asNodeId } from 'core/scene/types';
 import { PointerContextProvider, usePointerContext } from 'features/pointer/PointerContext';
 import type { ReactNode } from 'react';
+import { WEASEL_CLIPBOARD_MIME, WEASEL_CLIPBOARD_MIME_WEB, buildWeaselClipboardText } from './wireFormat';
 
 interface Obj { id: string; x: number; y: number }
 
@@ -292,5 +293,181 @@ describe('useClipboardOps', () => {
     act(() => { result.current.copy(); });
     act(() => { result.current.paste(); });
     expect(helpers.pasteCtxLog).toEqual([{ dropPoint: { worldX: 1, worldY: 2 } }]);
+  });
+});
+
+describe('useClipboardOps — OS clipboard flavor seam', () => {
+  // Minimal jsdom stand-in for the real ClipboardItem — jsdom doesn't ship
+  // one. Captures the constructor arg so tests can inspect the flavors a
+  // write attempt carried.
+  class FakeClipboardItem {
+    types: string[];
+    private parts: Record<string, Blob>;
+    constructor(items: Record<string, Blob>) {
+      this.parts = items;
+      this.types = Object.keys(items);
+    }
+    async getType(type: string): Promise<Blob> {
+      const blob = this.parts[type];
+      if (!blob) throw new Error(`FakeClipboardItem has no type "${type}"`);
+      return blob;
+    }
+  }
+
+  let hadClipboard = false;
+  let originalClipboard: unknown;
+  let hadClipboardItem = false;
+  let originalClipboardItem: unknown;
+
+  beforeEach(() => {
+    hadClipboard = Object.prototype.hasOwnProperty.call(navigator, 'clipboard');
+    originalClipboard = (navigator as unknown as { clipboard?: unknown }).clipboard;
+    hadClipboardItem = Object.prototype.hasOwnProperty.call(globalThis, 'ClipboardItem');
+    originalClipboardItem = (globalThis as unknown as { ClipboardItem?: unknown }).ClipboardItem;
+    if (typeof (globalThis as unknown as { ClipboardItem?: unknown }).ClipboardItem === 'undefined') {
+      (globalThis as unknown as { ClipboardItem: unknown }).ClipboardItem = FakeClipboardItem;
+    }
+  });
+
+  afterEach(() => {
+    if (hadClipboard) {
+      Object.assign(navigator, { clipboard: originalClipboard });
+    } else {
+      delete (navigator as unknown as { clipboard?: unknown }).clipboard;
+    }
+    if (hadClipboardItem) {
+      (globalThis as unknown as { ClipboardItem: unknown }).ClipboardItem = originalClipboardItem;
+    } else {
+      delete (globalThis as unknown as { ClipboardItem?: unknown }).ClipboardItem;
+    }
+  });
+
+  // jsdom's Blob doesn't implement `.text()`/`.arrayBuffer()`; FileReader is
+  // the one API jsdom does implement for reading Blob content synchronously
+  // enough to await.
+  function readBlobText(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error ?? new Error('FileReader error'));
+      reader.readAsText(blob);
+    });
+  }
+
+  async function blobText(item: InstanceType<typeof FakeClipboardItem>, type: string): Promise<string> {
+    return readBlobText(await item.getType(type));
+  }
+
+  it('(a) copy with default flavors calls write once with the web-prefixed custom MIME and text/plain', async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { write } });
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
+    );
+    act(() => { result.current.copy(); });
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    const items = write.mock.calls[0][0] as InstanceType<typeof FakeClipboardItem>[];
+    expect(items).toHaveLength(1);
+    const item = items[0];
+    expect(item.types).toContain(WEASEL_CLIPBOARD_MIME_WEB);
+    expect(item.types).toContain('text/plain');
+    const expected = buildWeaselClipboardText([{ id: 'a', x: 0, y: 0 }]);
+    expect(await blobText(item, WEASEL_CLIPBOARD_MIME_WEB)).toBe(expected);
+    expect(await blobText(item, 'text/plain')).toBe(expected);
+  });
+
+  it('(b) first write rejection retries with standard-only flavors then resolves', async () => {
+    const write = vi.fn()
+      .mockRejectedValueOnce(new Error('custom format unsupported'))
+      .mockResolvedValueOnce(undefined);
+    Object.assign(navigator, { clipboard: { write } });
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
+    );
+    act(() => { result.current.copy(); });
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2));
+    const secondItem = write.mock.calls[1][0][0] as InstanceType<typeof FakeClipboardItem>;
+    expect(secondItem.types).not.toContain(WEASEL_CLIPBOARD_MIME_WEB);
+    expect(secondItem.types).not.toContain(WEASEL_CLIPBOARD_MIME);
+    expect(secondItem.types).toContain('text/plain');
+  });
+
+  it('(c) both write rejections do not throw; in-memory paste still works', async () => {
+    const write = vi.fn().mockRejectedValue(new Error('nope'));
+    Object.assign(navigator, { clipboard: { write } });
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
+    );
+    expect(() => act(() => { result.current.copy(); })).not.toThrow();
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2));
+    act(() => { result.current.paste(); });
+    expect(helpers.batches).toHaveLength(1);
+  });
+
+  it('(d) missing navigator.clipboard does not throw', () => {
+    delete (navigator as unknown as { clipboard?: unknown }).clipboard;
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, { getSelection: () => [asNodeId('a')] }),
+    );
+    expect(() => act(() => { result.current.copy(); })).not.toThrow();
+    expect(result.current.isEmpty()).toBe(false);
+  });
+
+  it('(e) produceFlavors override replaces the default map; empty object skips the write', async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { write } });
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        produceFlavors: () => ({ 'image/svg+xml': '<svg/>' }),
+      }),
+    );
+    act(() => { result.current.copy(); });
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    const item = write.mock.calls[0][0][0] as InstanceType<typeof FakeClipboardItem>;
+    expect(item.types).toEqual(['image/svg+xml']);
+    expect(item.types).not.toContain('text/plain');
+
+    write.mockClear();
+    const { result: result2 } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        produceFlavors: () => ({}),
+      }),
+    );
+    act(() => { result2.current.copy(); });
+    // Give the microtask/macrotask queue a chance to run; write must never fire.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(write).not.toHaveBeenCalled();
+  });
+
+  it('(f) jsonReplacer reaches the default flavor builder', async () => {
+    const write = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { write } });
+    const helpers = makeAdapter();
+    helpers.seed({ id: 'a', x: 0, y: 0 });
+    const replacer = (key: string, value: unknown) => (key === 'x' ? 'REPLACED' : value);
+    const { result } = renderHook(() =>
+      useClipboardOps(helpers.adapter, {
+        getSelection: () => [asNodeId('a')],
+        jsonReplacer: replacer,
+      }),
+    );
+    act(() => { result.current.copy(); });
+    await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1));
+    const item = write.mock.calls[0][0][0] as InstanceType<typeof FakeClipboardItem>;
+    const text = await blobText(item, 'text/plain');
+    expect(text).toBe(buildWeaselClipboardText([{ id: 'a', x: 0, y: 0 }], replacer));
+    expect(text).toContain('REPLACED');
   });
 });

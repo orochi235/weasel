@@ -22,6 +22,7 @@
  *   - scene           — restored-op replay gaps (history persistence)
  *   - scene-canvas    — SceneCanvas mount / unmount
  *   - history         — applyOps push, no-op suppression, serialize/restore
+ *   - clipboard       — OS clipboard write/read failures, malformed payloads
  */
 
 const KEYS = ['weasel.debug', 'weaseldraw.debug'] as const;
