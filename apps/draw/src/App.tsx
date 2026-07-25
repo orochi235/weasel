@@ -58,6 +58,7 @@ import {
   ActiveToolContextProvider,
   useActiveToolContext,
   DEFAULT_STROKE_COLOR,
+  defaultCommitAdapter,
   inferredNodeProperties,
   inferredNodeRouting,
   type ToolPrefColor,
@@ -863,6 +864,26 @@ function loadHistory(): SerializedHistory | null {
   return null;
 }
 
+const SCENE_HISTORY_KEY = 'weaseldraw:scene-history-v1';
+
+/** Read the persisted SCENE undo/redo snapshot (the scene's own history
+ *  engine, distinct from the modality history above). Best-effort; on
+ *  absent/corrupt/mismatched data returns null AND removes the key so a
+ *  broken snapshot can't wedge every boot. */
+function loadSceneHistory(): SerializedHistory | null {
+  try {
+    const raw = localStorage.getItem(SCENE_HISTORY_KEY);
+    if (raw) {
+      const snap = JSON.parse(raw) as SerializedHistory;
+      if (snap && snap.version === 1) return reviveTypedArrays(snap);
+    }
+  } catch {
+    // fall through to wipe
+  }
+  try { localStorage.removeItem(SCENE_HISTORY_KEY); } catch { /* best-effort */ }
+  return null;
+}
+
 // ─── Outer App: install the color context so swatches + actions resolve ─────
 
 /** Publishes a `BooleansAdapter` as a dep so the kit's Pathfinder
@@ -974,15 +995,30 @@ export function App(): ReactElement {
     scene as unknown as import('@weasel-js/core').Scene<unknown, string, unknown>,
   );
 
-  // Restore the persisted undo stack once on mount. Scene state is already in
-  // place — it's restored synchronously at scene construction via
-  // `initial: loadInitial()` — so the restored entries' inverts land on the
-  // correct adapter state. `restoredRef` then unblocks the persist effect so
-  // it can't clobber the saved history with the empty initial stack first.
+  // Restored external-op history entries (nudges, drags, action commits)
+  // replay against this adapter after a reload. `defaultCommitAdapter` is the
+  // same scene-backed adapter the default actions bind at live commit time —
+  // it carries every op-apply method the built-in op factories call
+  // (setPose / setData / setParent / setLayer / setChildOrder / insert /
+  // remove), unlike the canvas adapter. Lazy accessor: wiring order vs the
+  // boot-time restoreHistory doesn't matter.
+  useEffect(() => {
+    scene.setHistoryAdapter(() => defaultCommitAdapter(scene));
+    return () => scene.setHistoryAdapter(null);
+  }, [scene]);
+
+  // Restore the persisted undo stacks once on mount (modality history, then
+  // the scene's own history). Scene state is already in place — it's restored
+  // synchronously at scene construction via `initial: loadInitial()` — so the
+  // restored entries' inverts land on the correct adapter state. `restoredRef`
+  // then unblocks the persist effect so it can't clobber the saved history
+  // with the empty initial stack first.
   const restoredRef = useRef(false);
   useEffect(() => {
     const snap = loadHistory();
     if (snap) modality.history.restore(snap);
+    const sceneSnap = loadSceneHistory();
+    if (sceneSnap) scene.restoreHistory(sceneSnap);
     restoredRef.current = true;
     // Run once; scene/modality are stable for the app lifetime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -998,6 +1034,7 @@ export function App(): ReactElement {
       try {
         localStorage.setItem(LS_KEY, JSON.stringify(scene.toJSON(), serializeReplacer));
         localStorage.setItem(HISTORY_KEY, JSON.stringify(modality.history.serialize(), serializeReplacer));
+        localStorage.setItem(SCENE_HISTORY_KEY, JSON.stringify(scene.serializeHistory(), serializeReplacer));
       } catch {
         // Persistence is best-effort.
       }
