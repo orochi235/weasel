@@ -25,6 +25,7 @@ import { boundsOfPath } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';
+import { deriveStyle, EMPTY_STYLE, type StyleContext } from './cascade';
 
 /** Element tags we accept and lower; anything else triggers a warning. */
 const SUPPORTED_LEAF_TAGS = new Set([
@@ -69,7 +70,8 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   const documentMeta = collectDocumentMeta(root, uriToPrefix);
 
   const gradients = collectGradients(root, onWarn);
-  const nodes = parseChildren(root, IDENTITY_MATRIX, gradients, onWarn, uriToPrefix);
+  const rootStyle = deriveStyle(EMPTY_STYLE, root);
+  const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, gradients, onWarn, uriToPrefix);
 
   const result: ParseResult = { nodes, warnings };
   if (documentMeta) result.documentMeta = documentMeta;
@@ -212,6 +214,7 @@ function collectElementMeta(
 function parseChildren(
   parent: Element,
   ctm: Matrix,
+  style: StyleContext,
   gradients: GradientTable,
   onWarn: (m: string) => void,
   uriToPrefix: Map<string, string>,
@@ -223,7 +226,7 @@ function parseChildren(
     // (DOM gives SVG-native elements `http://www.w3.org/2000/svg`.)
     const ns = el.namespaceURI;
     if (ns && ns !== 'http://www.w3.org/2000/svg') continue;
-    const node = parseElement(el, ctm, gradients, onWarn, uriToPrefix);
+    const node = parseElement(el, ctm, style, gradients, onWarn, uriToPrefix);
     if (node) {
       if (Array.isArray(node)) out.push(...node);
       else out.push(node);
@@ -235,6 +238,7 @@ function parseChildren(
 function parseElement(
   el: Element,
   ctm: Matrix,
+  style: StyleContext,
   gradients: GradientTable,
   onWarn: (m: string) => void,
   uriToPrefix: Map<string, string>,
@@ -244,7 +248,8 @@ function parseElement(
   if (tag === 'g') {
     const local = parseTransform(el.getAttribute('transform'), onWarn);
     const childCtm = multiply(ctm, local);
-    const children = parseChildren(el, childCtm, gradients, onWarn, uriToPrefix);
+    const childStyle = deriveStyle(style, el);
+    const children = parseChildren(el, childCtm, childStyle, gradients, onWarn, uriToPrefix);
     const opacity = readOpacityAttr(el, 'opacity');
     const group: SvgNode = { kind: 'group', children };
     if (opacity != null) group.opacity = opacity;
@@ -253,11 +258,12 @@ function parseElement(
     return group;
   }
   if (SUPPORTED_GROUP_TAGS.has(tag)) {
-    // Nested <svg> — treat as a transparent group.
-    return parseChildren(el, ctm, gradients, onWarn, uriToPrefix);
+    // Nested <svg> — transparent group; inheritance flows through it.
+    const childStyle = deriveStyle(style, el);
+    return parseChildren(el, ctm, childStyle, gradients, onWarn, uriToPrefix);
   }
   if (tag === 'text') {
-    const textNode = parseTextElement(el, ctm, gradients, onWarn);
+    const textNode = parseTextElement(el, ctm, style, gradients, onWarn);
     if (textNode && !Array.isArray(textNode) && textNode.kind === 'text') {
       const meta = collectElementMeta(el, uriToPrefix);
       if (meta) textNode.meta = meta;
@@ -294,13 +300,13 @@ function parseElement(
       }
     }
   }
-  const fill = readPaint(el, 'fill', '#000000', gradients, onWarn);
-  const stroke = readStroke(el, gradients, onWarn);
+  const leafStyle = deriveStyle(style, el);
+  const fill = readPaint(leafStyle, 'fill', '#000000', gradients, onWarn);
+  const stroke = readStroke(leafStyle, gradients, onWarn);
   const opacity = readOpacityAttr(el, 'opacity');
-  // `fill-rule` defaults to `nonzero` per SVG spec; only stamp the field when
-  // the source explicitly says `evenodd` and the lowered geometry is a
-  // PolygonPath (RectPath has no fillRule slot).
-  const fillRuleRaw = readInheritedAttr(el, 'fill-rule');
+  // `fill-rule` defaults to `nonzero`; only stamp when explicitly `evenodd`
+  // and the lowered geometry is a PolygonPath (RectPath has no fillRule slot).
+  const fillRuleRaw = leafStyle['fill-rule'] ?? null;
   if (fillRuleRaw === 'evenodd' && path.kind === 'polygon') {
     path = { ...path, fillRule: 'evenodd' };
   }
@@ -308,9 +314,9 @@ function parseElement(
   if (stroke) node.stroke = stroke;
   if (opacity != null) node.opacity = opacity;
   if (rotation != null) node.rotation = rotation;
-  // Lines are stroke-only by SVG convention; force fill=none if neither
-  // the line nor an ancestor group specifies a fill.
-  if (tag === 'line' && readInheritedAttr(el, 'fill') == null) {
+  // Lines are stroke-only by SVG convention; force fill=none if neither the
+  // line nor an ancestor group specifies a fill.
+  if (tag === 'line' && (leafStyle['fill'] ?? null) == null) {
     node.fill = { kind: 'none' };
   }
   if (tag === 'polyline' && !el.hasAttribute('fill')) {
@@ -408,64 +414,15 @@ function pathAabb(path: Path): { x: number; y: number; width: number; height: nu
   return boundsOfPath(path);
 }
 
-/**
- * Extract a single CSS-style declaration's value from a `style="..."`
- * attribute. Returns the trimmed value (e.g. `"#ff0000"`) or null when
- * the property is absent. Case-sensitive on property names per CSS
- * (SVG presentation properties are lower-case anyway).
- */
-function readStyleProp(el: Element, prop: string): string | null {
-  const style = el.getAttribute('style');
-  if (!style) return null;
-  // (?:^|;)\s*PROP\s*:\s*([^;]+) — anchors at start or after a `;`
-  // separator, allows whitespace around the colon, captures up to the
-  // next `;` or end of string.
-  const re = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`, 'i');
-  const m = re.exec(style);
-  if (!m) return null;
-  return m[1].trim();
-}
-
-/**
- * Read a paint-related attribute (fill / stroke / fill-opacity / etc.)
- * honoring SVG2 cascade rules:
- *
- *   1. `style="prop:value"` beats presentation attribute on the same
- *      element (style is a CSS rule; presentation attrs have specificity
- *      zero — see https://www.w3.org/TR/SVG2/styling.html#PresentationAttributes).
- *   2. `inherit` keyword (or absence of a value) walks up the parent
- *      chain looking for an ancestor with the same property set.
- *   3. Stops at the SVG root; returns null when nothing is found.
- *
- * Returns the raw string value as it appeared in the SVG; the caller is
- * responsible for parsing it (color, gradient ref, number, etc.).
- */
-function readInheritedAttr(el: Element | null, name: string): string | null {
-  let cur: Element | null = el;
-  while (cur) {
-    const styleVal = readStyleProp(cur, name);
-    const attrVal = cur.getAttribute(name);
-    // style beats presentation attr on the SAME element.
-    const own = styleVal ?? attrVal;
-    if (own != null && own !== 'inherit') return own;
-    // `inherit` (or nothing): walk up. Stop after we leave <svg>.
-    if (cur.tagName.toLowerCase() === 'svg') return null;
-    cur = cur.parentElement;
-  }
-  return null;
-}
-
 function readPaint(
-  el: Element,
+  style: StyleContext,
   attr: 'fill' | 'stroke',
   defaultColor: string,
   gradients: GradientTable,
   onWarn: (msg: string) => void,
 ): SvgPaint {
-  // Per SVG2 cascade: style="fill:..." beats fill="..." on the same
-  // element; absent/inherit values cascade from ancestor groups.
-  const raw = readInheritedAttr(el, attr);
-  const opacityRaw = readInheritedAttr(el, `${attr}-opacity`);
+  const raw = style[attr] ?? null;
+  const opacityRaw = style[`${attr}-opacity`];
   const opacity = opacityRaw != null ? clamp01(parseFloat(opacityRaw)) : undefined;
   if (raw == null) {
     if (attr === 'stroke') return { kind: 'none' };
@@ -494,31 +451,29 @@ function readPaint(
 }
 
 function readStroke(
-  el: Element,
+  style: StyleContext,
   gradients: GradientTable,
   onWarn: (msg: string) => void,
 ): SvgStroke | undefined {
-  // Inherited gate: if no ancestor (incl. self) sets stroke or
-  // stroke-width via attr or style, there's no stroke to read.
-  const inheritedStroke = readInheritedAttr(el, 'stroke');
-  const inheritedWidth = readInheritedAttr(el, 'stroke-width');
+  const inheritedStroke = style['stroke'] ?? null;
+  const inheritedWidth = style['stroke-width'] ?? null;
   if (inheritedStroke == null && inheritedWidth == null) return undefined;
-  const paint = readPaint(el, 'stroke', '#000000', gradients, onWarn);
+  const paint = readPaint(style, 'stroke', '#000000', gradients, onWarn);
   if (paint.kind === 'none') return undefined;
   const width = inheritedWidth != null ? parseFloat(inheritedWidth) : 1;
   const stroke: SvgStroke = { paint, width };
-  const opacityRaw = readInheritedAttr(el, 'stroke-opacity');
+  const opacityRaw = style['stroke-opacity'];
   if (opacityRaw != null) {
     const a = clamp01(parseFloat(opacityRaw));
     if (Number.isFinite(a)) stroke.opacity = a;
   }
-  const cap = readInheritedAttr(el, 'stroke-linecap');
+  const cap = style['stroke-linecap'] ?? null;
   if (cap === 'butt' || cap === 'round' || cap === 'square') {
     stroke.cap = cap;
   } else if (cap != null) {
     onWarn(`unsupported stroke-linecap: ${cap}`);
   }
-  const join = readInheritedAttr(el, 'stroke-linejoin');
+  const join = style['stroke-linejoin'] ?? null;
   if (join === 'miter' || join === 'round' || join === 'bevel') {
     stroke.join = join;
   } else if (join === 'arcs' || join === 'miter-clip') {
@@ -527,13 +482,13 @@ function readStroke(
   } else if (join != null) {
     onWarn(`unsupported stroke-linejoin: ${join}`);
   }
-  const dashAttr = readInheritedAttr(el, 'stroke-dasharray');
+  const dashAttr = style['stroke-dasharray'] ?? null;
   if (dashAttr != null && dashAttr.trim() !== '' && dashAttr.trim() !== 'none') {
     const parsed = parseDashArray(dashAttr);
     if (parsed) stroke.dash = parsed;
     else onWarn(`unrecognized stroke-dasharray: ${dashAttr}`);
   }
-  const miterAttr = readInheritedAttr(el, 'stroke-miterlimit');
+  const miterAttr = style['stroke-miterlimit'] ?? null;
   if (miterAttr != null) {
     const m = parseFloat(miterAttr);
     if (Number.isFinite(m) && m >= 1) stroke.miterLimit = m;
@@ -583,9 +538,11 @@ function clamp01(n: number): number {
 function parseTextElement(
   el: Element,
   ctm: Matrix,
+  style: StyleContext,
   gradients: GradientTable,
   onWarn: (m: string) => void,
 ): SvgNode | null {
+  void style; // wired in Task 4
   const num = (raw: string | null, fallback: number): number => {
     if (raw == null) return fallback;
     const n = parseFloat(raw);
@@ -606,9 +563,9 @@ function parseTextElement(
   const ax = m[0] * rawX + m[2] * rawY + m[4];
   const ay = m[1] * rawX + m[3] * rawY + m[5];
 
-  const style = readTextStyle(el, gradients, onWarn);
-  const fontSize = style.fontSize ?? 16;
-  const lineHeight = style.lineHeight ?? 1.2;
+  const textStyle = readTextStyle(el, gradients, onWarn);
+  const fontSize = textStyle.fontSize ?? 16;
+  const lineHeight = textStyle.lineHeight ?? 1.2;
 
   const dominantBaseline = el.getAttribute('dominant-baseline');
   const explicitTopAnchor = dominantBaseline === 'text-before-edge'
@@ -668,7 +625,7 @@ function parseTextElement(
       || (r.fill && (('color' in r.fill) || ('fill' in r.fill))),
   );
   if (hasStyling) node.runs = runs;
-  if (Object.keys(style).length > 0) node.style = style;
+  if (Object.keys(textStyle).length > 0) node.style = textStyle;
   if (opacity != null) node.opacity = opacity;
   // Try to extract the element-local transform as a pure rotation about
   // the text box's center. When it doesn't decompose cleanly but contains
