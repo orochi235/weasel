@@ -4,10 +4,13 @@
  * Default actions route data/layer/pose/parent mutations through the
  * consumer's `applyOps` commit hook when one is present; when it isn't, they
  * fall back to applying the committed ops directly against the scene through
- * this adapter. It carries every op-apply method the built-in op factories
- * call (`setPose` / `setParent` / `setData` / `setLayer` / `removeNode` /
- * `insertNode` / `setChildOrder`) plus the read-side queries (`getNode` /
- * `getNodes` / `getPose` / `getParent` / `getChildren`).
+ * this adapter. It carries the scene-backed op-apply methods (`setPose` /
+ * `setParent` / `setData` / `setLayer` / `removeNode` / `insertNode` /
+ * `setChildOrder`) plus the read-side queries (`getNode` / `getNodes` /
+ * `getPose` / `getParent` / `getChildren`). Known exclusions from the op
+ * factory roster — surfaces the scene doesn't own: `setSelection` (spread
+ * `SelectionApi.adapterMethods` over this adapter when selection-carrying
+ * ops must replay), `setPath`, and `setText`.
  *
  * Lives in `interactions/actions/` (not `canvas/sceneAdapter.ts`) so default
  * actions never import from `canvas/` — that back-edge would create an
@@ -54,7 +57,7 @@ export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>
     setData: (id: string, data: unknown) => scene.update(asNodeId(id), { data } as never),
     setLayer: (id: string, layer: string) => scene.setLayer(asNodeId(id), layer as never),
     removeNode: (id: string) => scene.remove(asNodeId(id)),
-    insertNode: (node: Node<unknown, string, TPose>) =>
+    insertNode: (node: Node<unknown, string, TPose>, index?: number) =>
       scene.add({
         kind: node.kind,
         layer: node.layer,
@@ -62,6 +65,10 @@ export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>
         data: node.data,
         id: node.id,
         ...(node.parent != null ? { parent: node.parent } : {}),
+        // Sibling-index passthrough: undo of a delete (or a boolean op's
+        // source removal) re-inserts at the recorded z-order slot instead
+        // of appending at the end.
+        ...(index !== undefined ? { index } : {}),
       }),
   };
 }

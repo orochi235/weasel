@@ -586,3 +586,5 @@ function loadSceneHistory(): SerializedHistory | null {
   reload-smoke caught it. Implemented instead: `defaultCommitAdapter(scene)` (hoisted once
   per mount), the same surface live action commits bind — which is also what the spec's §5
   ("the same adapter the actions commit through") actually asked for.
+- The spec's draw-side automated typed-array round-trip test was substituted by the manual
+  browser reload smoke (Task 4 Step 5); the smoke's localStorage evidence covers the same path.

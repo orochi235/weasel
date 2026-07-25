@@ -103,10 +103,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   /** Wrap a globally-rebuilt external op so apply resolves the history
    *  adapter lazily — wiring order vs restoreHistory doesn't matter. An
-   *  unset accessor makes the op a debug-warned no-op (never throws
-   *  mid-undo), matching the placeholder degradation policy. See
-   *  `bindOpToAdapter` for the live `applyBatch` path (fixed call-site
-   *  adapter). */
+   *  unset accessor makes the op a debug-warned no-op, and an apply that
+   *  throws (e.g. the wired adapter lacks a method the op calls) degrades
+   *  the same way — never throws mid-undo, matching the placeholder
+   *  degradation policy. (The engine pops entries before applying, so an
+   *  uncaught throw would corrupt the stacks.) See `bindOpToAdapter` for
+   *  the live `applyBatch` path (fixed call-site adapter). */
   function bindOpToHistoryAdapter(op: Op): Op {
     return {
       name: op.name,
@@ -119,7 +121,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           dwarn('scene', `restored op "${op.name ?? '?'}" has no history adapter — skipping (setHistoryAdapter was not wired)`);
           return 'noop';
         }
-        return op.apply(get());
+        try {
+          return op.apply(get());
+        } catch (err) {
+          dwarn('scene', `restored op "${op.name ?? '?'}" failed against the history adapter — skipping: ${String(err)}`);
+          return 'noop';
+        }
       },
       invert: () => bindOpToHistoryAdapter(op.invert()),
     };

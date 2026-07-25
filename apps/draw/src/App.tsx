@@ -998,15 +998,18 @@ export function App(): ReactElement {
   // Restored external-op history entries (nudges, drags, action commits)
   // replay against this adapter after a reload. `defaultCommitAdapter` is the
   // same scene-backed adapter the default actions bind at live commit time —
-  // it carries every op-apply method the built-in op factories call, where
-  // the canvas adapter lacks `setData` and `setLayer` (a restored nudge's
-  // geometry-projection setData op would throw against it). Lazy accessor:
-  // wiring order vs the boot-time restoreHistory doesn't matter.
+  // it carries the scene-owned op-apply surface, where the canvas adapter
+  // lacks `setData` and `setLayer` (a restored nudge's geometry-projection
+  // setData op would fail against it). Spreading `selection.adapterMethods`
+  // adds the `setSelection` the scene doesn't own, so boolean-op entries
+  // (which record selection changes) replay against the same selection store
+  // Pathfinder's live BooleansAdapter uses. Lazy accessor: wiring order vs
+  // the boot-time restoreHistory doesn't matter.
   useEffect(() => {
-    const a = defaultCommitAdapter(scene);
+    const a = { ...defaultCommitAdapter(scene), ...selection.adapterMethods };
     scene.setHistoryAdapter(() => a);
     return () => scene.setHistoryAdapter(null);
-  }, [scene]);
+  }, [scene, selection.adapterMethods]);
 
   // Restore the persisted undo stacks once on mount (modality history, then
   // the scene's own history). Scene state is already in place — it's restored

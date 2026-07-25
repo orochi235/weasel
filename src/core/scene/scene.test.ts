@@ -1401,6 +1401,31 @@ describe('history persistence (serializeHistory / restoreHistory)', () => {
     expect(cell).toBe(9);
   });
 
+  it('restored external ops whose apply throws against the wired adapter degrade to no-ops', () => {
+    const NAME = 'scenetest:adapterGap';
+    let cell = 0;
+    const mk = (t: number): Op => ({
+      name: NAME, args: { to: t },
+      // Rebuilt op calls a method the wired adapter may not have — mirrors a
+      // live-adapter/history-adapter surface mismatch (e.g. setData).
+      apply: (adapter) => { (adapter as { missing(v: number): void }).missing(t); },
+      invert: () => mk(0),
+    });
+    registerOpFactory(NAME, (args) => mk((args as { to: number }).to));
+    const a = makeScene();
+    a.applyBatch([{
+      name: NAME, args: { to: 9 },
+      apply: (adapter) => { (adapter as { missing(v: number): void }).missing(9); },
+      invert: () => ({ name: NAME, args: { to: 0 }, apply: () => { cell = 0; }, invert: () => { throw new Error('unused'); } }),
+    }], 'set', { missing: (v: number) => { cell = v; } });
+    expect(cell).toBe(9);
+    const b = roundTrip(a);
+    b.setHistoryAdapter(() => ({})); // wired adapter lacks `missing`
+    expect(() => b.undo()).not.toThrow(); // throw degrades to a warned no-op
+    expect(b.canRedo()).toBe(true);       // entry still lands on the redo stack
+    expect(cell).toBe(9);                 // state untouched by the failed replay
+  });
+
   it('unknown op kinds restore as placeholders that keep their stack slot', () => {
     const a = makeScene();
     a.registerOp('app:oneoff', { apply: () => {}, revert: () => {} });
