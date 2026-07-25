@@ -1,4 +1,5 @@
-import type { Journal } from '@weasel-js/history';
+import { createHistory, type Journal } from '@weasel-js/history';
+import type { Op } from 'core/ops/types';
 import {
   asNodeId,
   type AddNodeSpec,
@@ -16,17 +17,6 @@ import {
   type UseSceneOptions,
   type UserLayerRecord,
 } from './types';
-
-interface LogEntry {
-  id: string;
-  label: string;
-  ops: { kind: string; payload: unknown }[];
-}
-
-let logEntryCounter = 0;
-function nextLogEntryId(): string {
-  return `h${++logEntryCounter}`;
-}
 
 interface SceneState<TData, TLayer extends string, TPose> {
   nodes: Map<NodeId, Node<TData, TLayer, TPose>>;
@@ -75,12 +65,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
    * `patchClipFromPose`, we also store the function here so the `kit:add`
    * redo path can re-attach it after replaying the op.
    *
-   * Entries are pruned at two natural hook points to prevent unbounded growth:
-   *   1. When `redoStack` is cleared by a new op (branch-on-edit): any kit:add
-   *      in the discarded entries that references a node absent from
+   * Entries are pruned at two natural hook points — both delivered via the
+   * history engine's `onEvict` callback — to prevent unbounded growth:
+   *   1. When the redo stack is cleared by a new op (branch-on-edit): any
+   *      kit:add in the discarded entries that references a node absent from
    *      `state.nodes` is permanently unreachable — its cache entry is dropped.
-   *   2. When `undoStack` overflows `historyLimit` and evicts the oldest entry:
-   *      same reasoning applies to the evicted entries.
+   *   2. When the undo stack overflows `historyLimit` and evicts the oldest
+   *      entry: same reasoning applies to the evicted entries.
    * Invariant: after pruning, no entry remains for a node that is both absent
    * from `state.nodes` AND unreachable via any remaining undo/redo log entry.
    */
@@ -101,18 +92,29 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   }
 
   const generateId = options.generateId ?? defaultGenerateId;
-  const historyLimit = options.historyLimit ?? Infinity;
 
-  const undoStack: LogEntry[] = [];
-  const redoStack: LogEntry[] = [];
   const listeners = new Set<() => void>();
   const registered = new Map<string, RegisteredOp<unknown>>();
 
+  // The scene's undo/redo engine. Recorded ops are `makeOp` wrappers over
+  // `registered` handlers, so the engine's adapter argument is unused (the
+  // wrappers close over their payloads). Eviction (branch-edit redo-clears
+  // + historyLimit overflow) drives pendingClipPatches pruning via onEvict.
+  const history = createHistory(undefined, {
+    ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
+    onEvict: (entry) => {
+      pruneCacheForDroppedOps(entry.forwardOps);
+      pruneCacheForDroppedOps(entry.baseOps);
+    },
+  });
+
   let version = 0;
   let batchDepth = 0;
-  let currentBatch: LogEntry | null = null;
-  /** True while inside undo/redo replay — suppresses log writes. */
-  let replaying = false;
+  let currentBatch: { label: string; ops: Op[] } | null = null;
+  /** True while the history engine drives mutations (undo/redo/goto, journal
+   *  routing) — suppresses scene-side history recording so engine-applied
+   *  ops that re-enter scene mutation methods don't record twice. */
+  let suppressRecording = false;
 
   // ── Helpers ────────────────────────────────────────────────────────────
   // When `batchDepth > 0` the per-op `notify()` is coalesced: we still bump
@@ -136,42 +138,21 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   }
 
   /**
-   * Prune `pendingClipPatches` entries for nodes that were referenced only by
-   * the given dropped log entries (redoStack entries being discarded, or
-   * undoStack entries evicted by `historyLimit`). An entry is safe to drop
-   * when the node is absent from `state.nodes` — meaning its only path back
-   * into the scene was through these now-unreachable log entries.
+   * Prune `pendingClipPatches` entries for nodes referenced only by ops in
+   * entries that just became permanently unreachable (redo entries dropped
+   * by a branch edit, or undo entries evicted by `historyLimit`) — wired to
+   * the engine's `onEvict`. An entry is safe to drop when the node is absent
+   * from `state.nodes`: its only path back into the scene was through these
+   * now-unreachable ops.
    */
-  function pruneCacheForDroppedEntries(droppedEntries: LogEntry[]): void {
+  function pruneCacheForDroppedOps(ops: readonly Op[]): void {
     if (pendingClipPatches.size === 0) return;
-    for (const entry of droppedEntries) {
-      for (const op of entry.ops) {
-        if (op.kind !== 'kit:add') continue;
-        const id = (op.payload as { id?: NodeId }).id;
-        if (id && !state.nodes.has(id) && pendingClipPatches.has(id)) {
-          pendingClipPatches.delete(id);
-        }
+    for (const op of ops) {
+      if (op.name !== 'kit:add') continue;
+      const id = (op.args as { id?: NodeId } | null)?.id;
+      if (id && !state.nodes.has(id) && pendingClipPatches.has(id)) {
+        pendingClipPatches.delete(id);
       }
-    }
-  }
-
-  function pushEntry(entry: LogEntry): void {
-    if (replaying) return;
-    if (currentBatch) {
-      currentBatch.ops.push(...entry.ops);
-      return;
-    }
-    undoStack.push(entry);
-    // Hook 1: clear the redo stack ("branch on edit"). Any kit:add in the
-    // cleared entries that refers to a node no longer in state.nodes is
-    // permanently unreachable — drop the corresponding cache entry.
-    const droppedRedo = redoStack.splice(0);
-    pruneCacheForDroppedEntries(droppedRedo);
-    // Hook 2: evict the oldest undo entries that overflow historyLimit.
-    // Evicted entries are also permanently unreachable.
-    while (undoStack.length > historyLimit) {
-      const evicted = undoStack.shift()!;
-      pruneCacheForDroppedEntries([evicted]);
     }
   }
 
@@ -426,9 +407,77 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     handler.apply(payload);
   }
 
+  /** Bridge a registered scene op into an engine `Op`: a direction-flipping
+   *  wrapper over the `RegisteredOp`'s `apply`/`revert` pair. `invert()`
+   *  flips the direction with the same payload, so undo replays `revert`
+   *  and redo replays `apply` — no per-op inverse code. `name`/`args` carry
+   *  the (kind, payload) pair for eviction pruning (and, later,
+   *  serialization). Handler lookup happens at apply time so re-registered
+   *  kinds take effect on replay, but existence is checked eagerly to fail
+   *  fast at the call site. */
+  function makeOp(kind: string, payload: unknown, dir: 'fwd' | 'rev' = 'fwd'): Op {
+    if (!registered.has(kind)) {
+      throw new Error(`Scene: no registered op for kind "${kind}"`);
+    }
+    return {
+      name: kind,
+      args: payload,
+      coalesceKey: coalesceKeyFor(kind, payload),
+      apply: () => {
+        const handler = registered.get(kind);
+        if (!handler) throw new Error(`Scene: no registered op for kind "${kind}"`);
+        (dir === 'fwd' ? handler.apply : handler.revert)(payload);
+      },
+      invert: () => makeOp(kind, payload, dir === 'fwd' ? 'rev' : 'fwd'),
+    };
+  }
+
+  /** Best-effort coalesce-grouping token: node ops carry `payload.id`,
+   *  layer ops `payload.layer`. Payloads with neither get no key and never
+   *  coalesce (the engine treats a missing key on either side as
+   *  "new entry"). */
+  function coalesceKeyFor(kind: string, payload: unknown): string | undefined {
+    if (payload === null || typeof payload !== 'object') return undefined;
+    const p = payload as { id?: unknown; layer?: unknown };
+    const token =
+      typeof p.id === 'string' ? p.id
+      : typeof p.layer === 'string' ? p.layer
+      : undefined;
+    return token === undefined ? undefined : `${kind}:${token}`;
+  }
+
+  /** Run `fn` with scene-side recording suppressed and per-op notifies
+   *  batched. Used whenever the engine drives mutations (undo/redo/goto):
+   *  engine-applied ops may re-enter scene mutation methods, which must
+   *  apply but not record. The caller fires exactly one `notify()` after. */
+  function withRecordingSuppressed<T>(fn: () => T): T {
+    suppressRecording = true;
+    batchDepth++;
+    const prevDirty = batchDirty;
+    try {
+      return fn();
+    } finally {
+      batchDepth--;
+      suppressRecording = false;
+      batchDirty = prevDirty;
+    }
+  }
+
   function executeAndLog(kind: string, payload: unknown, label: string): void {
-    runOp(kind, payload);
-    pushEntry({ id: nextLogEntryId(), label, ops: [{ kind, payload }] });
+    if (suppressRecording) {
+      runOp(kind, payload);
+      notify();
+      return;
+    }
+    if (currentBatch) {
+      runOp(kind, payload);
+      currentBatch.ops.push(makeOp(kind, payload));
+      notify();
+      return;
+    }
+    // The engine applies the op itself (inside applyOps) — no separate
+    // runOp call, or the mutation would run twice.
+    history.applyOps([makeOp(kind, payload)], label);
     notify();
   }
 
@@ -710,21 +759,21 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       const journal: Journal | null = (activeJournalAccessor ?? (() => null))();
       if (journal) {
         // Route through the journal. The journal's inner history will track the
-        // ops; the scene's own undo stack must NOT also record them. We reuse
-        // the `replaying` flag (which already suppresses `pushEntry`) to block
-        // scene-side recording while op mutations happen through the adapter.
+        // ops; the scene's own history must NOT also record them. We reuse
+        // the `suppressRecording` flag (which already blocks scene-side
+        // recording) while op mutations happen through the adapter.
         //
         // We also increment batchDepth to coalesce the per-op notify() calls
         // (same as scene.batch does), then fire exactly one notify() at the
         // end — mirroring the single-notification semantics callers expect.
-        replaying = true;
+        suppressRecording = true;
         batchDepth++;
         batchDirty = false;
         try {
           journal.applyBatch(ops, label);
         } finally {
           batchDepth--;
-          replaying = false;
+          suppressRecording = false;
         }
         if (batchDirty) {
           batchDirty = false;
@@ -738,81 +787,54 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
 
     undo() {
-      const entry = undoStack.pop();
-      if (!entry) return false;
-      replaying = true;
-      try {
-        for (let i = entry.ops.length - 1; i >= 0; i--) {
-          const o = entry.ops[i];
-          const h = registered.get(o.kind);
-          if (!h) throw new Error(`Scene: no registered op for kind "${o.kind}" during undo`);
-          h.revert(o.payload);
-        }
-      } finally {
-        replaying = false;
-      }
-      redoStack.push(entry);
+      if (!history.canUndo()) return false;
+      withRecordingSuppressed(() => history.undo());
       notify();
       return true;
     },
 
     redo() {
-      const entry = redoStack.pop();
-      if (!entry) return false;
-      replaying = true;
-      try {
-        for (const o of entry.ops) runOp(o.kind, o.payload);
-      } finally {
-        replaying = false;
-      }
-      undoStack.push(entry);
+      if (!history.canRedo()) return false;
+      withRecordingSuppressed(() => history.redo());
       notify();
       return true;
     },
 
-    canUndo: () => undoStack.length > 0,
-    canRedo: () => redoStack.length > 0,
+    canUndo: () => history.canUndo(),
+    canRedo: () => history.canRedo(),
 
     /** Read-only snapshot of every history entry currently reachable from
      *  the present state. Order: oldest applied first, then redoable
      *  entries in the order they'd be re-applied (top of redo stack last).
      *  Each entry's `id` is stable for the entry's lifetime. */
     historyEntries() {
+      const { undo, redo } = history.entries();
       const out: { id: string; label: string }[] = [];
-      for (const e of undoStack) out.push({ id: e.id, label: e.label });
-      // redoStack is stored newest-first (push on undo); reverse so the
-      // list reads oldest-first (next-redo is just past currentIndex).
-      for (let i = redoStack.length - 1; i >= 0; i--) {
-        const e = redoStack[i];
-        out.push({ id: e.id, label: e.label });
-      }
+      for (const e of undo) out.push({ id: String(e.id), label: e.label });
+      // entries().redo is already chronological: the next redo comes first.
+      for (const e of redo) out.push({ id: String(e.id), label: e.label });
       return out;
     },
 
     /** Index of the "current state". `0` = nothing applied (initial);
      *  `undoStack.length` = at the head of history. Equals the count of
      *  entries currently on the undo stack. */
-    historyIndex: () => undoStack.length,
+    historyIndex: () => history.entries().undo.length,
 
     /** Walk to a target history index by calling undo/redo repeatedly.
      *  Caps at the valid range; returns true if the index changed. */
     jumpToHistoryIndex(targetIndex: number) {
-      const total = undoStack.length + redoStack.length;
+      const { undo, redo } = history.entries();
+      const total = undo.length + redo.length;
       const target = Math.max(0, Math.min(total, targetIndex));
-      let moved = false;
-      while (undoStack.length > target) {
-        if (!this.undo()) break;
-        moved = true;
-      }
-      while (undoStack.length < target) {
-        if (!this.redo()) break;
-        moved = true;
-      }
-      return moved;
+      if (target === undo.length) return false;
+      withRecordingSuppressed(() => history.goto(target));
+      notify();
+      return true;
     },
 
     batch(label, fn) {
-      if (batchDepth === 0) currentBatch = { id: nextLogEntryId(), label, ops: [] };
+      if (batchDepth === 0) currentBatch = { label, ops: [] };
       batchDepth++;
       try {
         return fn();
@@ -822,16 +844,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
           if (currentBatch) {
             const finished = currentBatch;
             currentBatch = null;
+            // Ops were applied live as they were issued (state stays
+            // readable mid-batch); recordEntry pushes without re-applying.
             if (finished.ops.length > 0) {
-              undoStack.push(finished);
-              // Hook 1 (batch path): same redo-stack clear as pushEntry.
-              const droppedRedo = redoStack.splice(0);
-              pruneCacheForDroppedEntries(droppedRedo);
-              // Hook 2 (batch path): historyLimit eviction.
-              while (undoStack.length > historyLimit) {
-                const evicted = undoStack.shift()!;
-                pruneCacheForDroppedEntries([evicted]);
-              }
+              history.recordEntry(finished.ops, finished.label);
             }
           }
           // Fire one coalesced notify if any op inside the batch dirtied
@@ -902,8 +918,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
         state.layerIndex.set(spec.id, i);
       }
       // Clear history + transient batch/clip caches.
-      undoStack.length = 0;
-      redoStack.length = 0;
+      history.clear();
       pendingClipPatches.clear();
       currentBatch = null;
       batchDepth = 0;
