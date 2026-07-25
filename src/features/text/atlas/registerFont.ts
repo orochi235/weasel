@@ -58,8 +58,7 @@ export async function registerFont(
   const { weight, style } = normalizeVariant(variant);
   const key = variantKey(weight, style);
 
-  let familyMap = registry.get(family);
-  if (familyMap?.has(key)) return;
+  if (registry.get(family)?.has(key)) return;
 
   try {
     const [metricsRes, atlasRes] = await Promise.all([
@@ -82,6 +81,13 @@ export async function registerFont(
     const font = parseBmFont(rawJson);
     const bitmap = await createImageBitmap(blob);
 
+    // Re-read the registry here (not the pre-await snapshot): concurrent
+    // registerFont() calls for other variants of the same family (e.g. the
+    // 400/700 weights registered together in Promise.all) may have created
+    // the family's Map while this call was awaiting its fetch. Reusing a
+    // stale local reference would recreate the Map and silently drop
+    // whichever variant's registerFont() resolved first.
+    let familyMap = registry.get(family);
     if (!familyMap) {
       familyMap = new Map();
       registry.set(family, familyMap);
