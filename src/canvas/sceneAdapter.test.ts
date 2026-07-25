@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
 import { createScene } from 'core/scene/scene';
+import type { NodeId } from 'core/scene/types';
+import { useClipboardOps } from 'interactions/actions/clipboard/clipboardOps';
 import { sceneToAdapter } from './sceneAdapter';
 
 interface Data { label: string; }
@@ -351,5 +354,176 @@ describe('I3: walkClipAware gates containers on ancestor clips', () => {
     expect(ids.has(region)).toBe(true);
     expect(ids.has(bed)).toBe(true);
     expect(ids.has(leaf)).toBe(true);
+  });
+});
+
+// ─── Clipboard seam: snapshotSelection / commitPaste / getPasteOffset ─────────
+
+/** Adapter-shaped snapshot item, as captured from a scene node. */
+interface SnapItem {
+  kind: 'leaf' | 'container';
+  id: string;
+  layer: string;
+  parent: string | null;
+  pose: Pose;
+  data: Data;
+  children?: string[];
+}
+
+describe('clipboard seam', () => {
+  it('snapshotSelection captures a leaf as a deep copy (mutation does not touch the scene)', () => {
+    const scene = makeScene();
+    const id = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 10, y: 20, width: 30, height: 40 }, data: { label: 'a' } });
+    const adapter = sceneToAdapter(scene);
+    const snap = adapter.snapshotSelection!([id]);
+    const items = snap.items as SnapItem[];
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ kind: 'leaf', id, layer: 'bg', parent: null });
+    expect(items[0].pose).toEqual({ x: 10, y: 20, width: 30, height: 40 });
+    expect(items[0].data).toEqual({ label: 'a' });
+    // Copies, not references into the scene.
+    expect(items[0].pose).not.toBe(scene.get(id)!.pose);
+    expect(items[0].data).not.toBe(scene.get(id)!.data);
+    items[0].pose.x = 999;
+    items[0].data.label = 'mutated';
+    expect(scene.get(id)!.pose.x).toBe(10);
+    expect(scene.get(id)!.data.label).toBe('a');
+  });
+
+  it('snapshotSelection captures a container subtree parents-first and dedupes selected descendants', () => {
+    const scene = makeScene();
+    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 10, y: 10, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 20, y: 20, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
+    const adapter = sceneToAdapter(scene);
+    // c1 listed alongside its selected ancestor p (and before it) — the
+    // ancestor wins; c1 must not appear twice in the snapshot.
+    const snap = adapter.snapshotSelection!([c1, p]);
+    const items = snap.items as SnapItem[];
+    expect(items.map((i) => i.id)).toEqual([p, c1, c2]);
+    expect(items[0].children).toEqual([c1, c2]);
+    expect(items[1].parent).toBe(p);
+    expect(items[2].parent).toBe(p);
+    // children array is a copy, not the live scene array.
+    items[0].children!.push('bogus');
+    expect(scene.childrenOf(p)).toEqual([c1, c2]);
+  });
+
+  it('commitPaste mints fresh ids, remaps parents/children, translates the whole subtree, and does not insert', () => {
+    const scene = makeScene();
+    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 15, y: 15, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 30, y: 30, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
+    const adapter = sceneToAdapter(scene);
+    const snap = adapter.snapshotSelection!([p]);
+    const nodeCountBefore = scene.nodes.size;
+
+    const created = adapter.commitPaste!(snap, { dx: 12, dy: 12 }) as unknown as SnapItem[];
+    expect(created).toHaveLength(3);
+
+    // Fresh ids: paste-prefixed, unique, disjoint from the originals.
+    const newIds = created.map((n) => n.id);
+    for (const id of newIds) expect(id).toMatch(/^paste-/);
+    expect(new Set(newIds).size).toBe(3);
+    for (const id of [p, c1, c2]) expect(newIds).not.toContain(id);
+
+    // Parents-before-children; internal parent refs remapped onto fresh ids.
+    const [np, nc1, nc2] = created;
+    expect(np.kind).toBe('container');
+    expect(np.parent).toBeNull();
+    expect(nc1.parent).toBe(np.id);
+    expect(nc2.parent).toBe(np.id);
+    expect(np.children).toEqual([nc1.id, nc2.id]);
+
+    // Scene v1 poses are absolute (see sceneAdapter's cascade notes), so the
+    // subtree translates rigidly: every node shifts by the offset.
+    expect(np.pose).toEqual({ x: 22, y: 22, width: 100, height: 100 });
+    expect(nc1.pose).toEqual({ x: 27, y: 27, width: 5, height: 5 });
+    expect(nc2.pose).toEqual({ x: 42, y: 42, width: 5, height: 5 });
+
+    // commitPaste is a pure factory — insertion happens via the hook's
+    // InsertOps, never here.
+    expect(scene.nodes.size).toBe(nodeCountBefore);
+    for (const id of newIds) expect(scene.nodes.has(id as never)).toBe(false);
+  });
+
+  it('commitPaste turns items whose parent is outside the snapshot into roots', () => {
+    const scene = makeScene();
+    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 10, y: 10, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const adapter = sceneToAdapter(scene);
+    // Snapshot the child alone: its captured parent (p) is not in the snapshot.
+    const snap = adapter.snapshotSelection!([c1]);
+    expect((snap.items as SnapItem[])[0].parent).toBe(p);
+    const created = adapter.commitPaste!(snap, { dx: 12, dy: 12 }) as unknown as SnapItem[];
+    expect(created).toHaveLength(1);
+    expect(created[0].parent).toBeNull();
+    expect(created[0].pose).toEqual({ x: 22, y: 22, width: 5, height: 5 });
+  });
+
+  it('commitPaste uses ctx.dropPoint as the cluster origin, ignoring the offset', () => {
+    const scene = makeScene();
+    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 12, y: 12, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    void c1;
+    const adapter = sceneToAdapter(scene);
+    const snap = adapter.snapshotSelection!([p]);
+    const created = adapter.commitPaste!(
+      snap,
+      { dx: 12, dy: 12 },
+      { dropPoint: { worldX: 100, worldY: 50 } },
+    ) as unknown as SnapItem[];
+    // Cluster origin (root bounds min corner: 10,10) lands on the drop point;
+    // the subtree rides along rigidly.
+    expect(created[0].pose).toMatchObject({ x: 100, y: 50 });
+    expect(created[1].pose).toMatchObject({ x: 102, y: 52 });
+  });
+
+  it('getPasteOffset returns the constant cascade offset', () => {
+    const scene = makeScene();
+    const adapter = sceneToAdapter(scene);
+    expect(adapter.getPasteOffset!({ items: [] })).toEqual({ dx: 12, dy: 12 });
+  });
+
+  it('round-trips copy → paste through useClipboardOps: subtree inserted, one undo entry, selection = new ids', () => {
+    const scene = makeScene();
+    const p = scene.add({ kind: 'container', layer: 'bg', pose: { x: 10, y: 10, width: 100, height: 100 }, data: { label: 'p' } });
+    const c1 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 15, y: 15, width: 5, height: 5 }, data: { label: 'c1' }, parent: p });
+    const c2 = scene.add({ kind: 'leaf', layer: 'bg', pose: { x: 30, y: 30, width: 5, height: 5 }, data: { label: 'c2' }, parent: p });
+    let selection: string[] = [p];
+    const adapter = sceneToAdapter(scene, {
+      selection: { get: () => selection, set: (ids) => { selection = [...ids]; } },
+    });
+    const { result } = renderHook(() =>
+      useClipboardOps(adapter, { getSelection: () => selection as NodeId[] }),
+    );
+
+    act(() => { result.current.copy(); });
+    const nodeCountBefore = scene.nodes.size;
+    const entriesBefore = scene.historyEntries().length;
+    act(() => { result.current.paste(); });
+
+    // The whole subtree exists as fresh nodes.
+    expect(scene.nodes.size).toBe(nodeCountBefore + 3);
+    const newIds = [...scene.nodes.keys()].filter((id) => String(id).startsWith('paste-'));
+    expect(newIds).toHaveLength(3);
+    const newContainer = newIds.map((id) => scene.get(id)!).find((n) => n.kind === 'container')!;
+    expect(newContainer).toBeDefined();
+    expect(scene.childrenOf(newContainer.id)).toHaveLength(2);
+    for (const cid of scene.childrenOf(newContainer.id)) {
+      expect(String(cid)).toMatch(/^paste-/);
+      expect(scene.get(cid)!.parent).toBe(newContainer.id);
+    }
+    // Originals untouched.
+    for (const id of [p, c1, c2]) expect(scene.nodes.has(id)).toBe(true);
+
+    // Selection moved to the pasted ids.
+    expect([...selection].sort()).toEqual(newIds.map(String).sort());
+
+    // ONE undo entry for the whole paste; undo removes the entire subtree.
+    expect(scene.historyEntries().length).toBe(entriesBefore + 1);
+    scene.undo();
+    expect(scene.nodes.size).toBe(nodeCountBefore);
+    for (const id of newIds) expect(scene.nodes.has(id)).toBe(false);
   });
 });
