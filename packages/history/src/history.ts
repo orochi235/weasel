@@ -56,6 +56,16 @@ export interface SerializedHistory {
   droppedEntries: number;
 }
 
+/** Snapshot of an entry handed to `onEvict` when it permanently leaves the
+ *  reachable stacks. Ops are live references — read `name`/`args`, don't
+ *  mutate. */
+export interface EvictedEntry {
+  id: number;
+  label: string;
+  forwardOps: readonly Op[];
+  baseOps: readonly Op[];
+}
+
 /** Read-only view of a history entry exposed via `History.entries()`. */
 export interface HistoryEntry {
   /** Stable monotonic id (preserved across coalesce merges). */
@@ -149,6 +159,12 @@ export interface CreateHistoryOptions {
    *  entry is evicted (reported via `onEvict`) and can no longer be undone.
    *  Default: unbounded. */
   historyLimit?: number;
+  /** Fired once per entry that permanently leaves the reachable stacks:
+   *  redo entries dropped by a branch edit (a new push / coalesce /
+   *  `recordEntry` after undo) and undo entries evicted by `historyLimit`.
+   *  NOT fired by `clear()` or `restore()` — those wholesale-replace the
+   *  history and the caller already knows. */
+  onEvict?: (entry: EvictedEntry) => void;
 }
 
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
@@ -159,6 +175,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
   const historyLimit = options.historyLimit ?? Infinity;
+  const onEvict = options.onEvict;
   let nextEntryId = 1;
   let version = 0;
   const listeners = new Set<() => void>();
@@ -167,10 +184,24 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     for (const l of listeners) l();
   }
 
-  /** Evict the oldest undo entries past `historyLimit`. */
+  /** Report entries that just became permanently unreachable. */
+  function reportEvicted(entries: Entry[]): void {
+    if (!onEvict) return;
+    for (const e of entries) {
+      onEvict({ id: e.id, label: e.label, forwardOps: e.forwardOps, baseOps: e.baseOps });
+    }
+  }
+
+  /** Clear the redo stack (branch-on-edit), reporting dropped entries. */
+  function dropRedo(): void {
+    if (redoStack.length === 0) return;
+    reportEvicted(redoStack.splice(0));
+  }
+
+  /** Evict the oldest undo entries past `historyLimit`, reporting each. */
   function enforceLimit(): void {
     while (undoStack.length > historyLimit) {
-      undoStack.shift();
+      reportEvicted([undoStack.shift()!]);
     }
   }
 
@@ -252,14 +283,14 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // baseOps + label + id intentionally preserved — undo returns to the
       // pre-edit state, the original label sticks, and the entry id stays
       // stable so React lists keyed on id don't flicker.
-      redoStack.length = 0;
+      dropRedo();
       dlog('history', `coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
       bump();
       return;
     }
     dlog('history', `push '${label}' (${ops.length} ops)`);
     undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: incoming });
-    redoStack.length = 0;
+    dropRedo();
     enforceLimit();
     bump();
   }
@@ -345,7 +376,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     recordEntry(ops: Op[], label: string): void {
       if (ops.length === 0) return;
       undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: touchedIdsFromOps(ops) });
-      redoStack.length = 0;
+      dropRedo();
       enforceLimit();
       bump();
     },

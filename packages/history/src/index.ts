@@ -3,6 +3,7 @@ export type {
   History,
   CreateHistoryOptions,
   HistoryEntry,
+  EvictedEntry,
   SerializedOp,
   SerializedHistoryEntry,
   SerializedHistory,

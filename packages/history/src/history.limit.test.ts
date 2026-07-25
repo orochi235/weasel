@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createHistory } from './history';
 import type { Op } from 'core/ops/types';
 
@@ -36,5 +36,92 @@ describe('historyLimit', () => {
     history.recordEntry([setX(cell, 0, 1)], 'one');
     history.recordEntry([setX(cell, 1, 2)], 'two');
     expect(history.entries().undo.map((e) => e.label)).toEqual(['two']);
+  });
+
+  it('coalescing does not evict (stack depth unchanged)', () => {
+    const cell: Cell = { x: 0 };
+    let t = 1000;
+    const onEvict = vi.fn();
+    const history = createHistory(null, {
+      historyLimit: 2, coalesceWindowMs: 500, now: () => t, onEvict,
+    });
+    history.applyOps([setX(cell, 0, 1, 'x')], 'drag');
+    t += 100;
+    history.applyOps([setX(cell, 1, 2, 'x')], 'drag'); // merges
+    t += 100;
+    history.applyOps([setX(cell, 2, 3, 'x')], 'drag'); // merges
+    expect(history.entries().undo).toHaveLength(1);
+    expect(onEvict).not.toHaveBeenCalled();
+  });
+});
+
+describe('onEvict', () => {
+  it('fires with the evicted entry on historyLimit overflow', () => {
+    const cell: Cell = { x: 0 };
+    const onEvict = vi.fn();
+    const history = createHistory(null, { historyLimit: 1, onEvict });
+    history.applyOps([setX(cell, 0, 1)], 'one');
+    history.applyOps([setX(cell, 1, 2)], 'two');
+    expect(onEvict).toHaveBeenCalledTimes(1);
+    const entry = onEvict.mock.calls[0][0];
+    expect(entry.label).toBe('one');
+    expect(entry.forwardOps[0].name).toBe('test:setX');
+  });
+
+  it('fires for each redo entry dropped by a branch edit', () => {
+    const cell: Cell = { x: 0 };
+    const onEvict = vi.fn();
+    const history = createHistory(null, { onEvict });
+    history.applyOps([setX(cell, 0, 1)], 'one');
+    history.applyOps([setX(cell, 1, 2)], 'two');
+    history.applyOps([setX(cell, 2, 3)], 'three');
+    history.undo();
+    history.undo(); // redo stack now holds 'two' and 'three'
+    history.applyOps([setX(cell, 1, 9)], 'branch');
+    expect(onEvict).toHaveBeenCalledTimes(2);
+    const labels = onEvict.mock.calls.map((c) => c[0].label).sort();
+    expect(labels).toEqual(['three', 'two']);
+  });
+
+  it('fires on the coalesce path when the merge clears the redo stack', () => {
+    const cell: Cell = { x: 0 };
+    let t = 1000;
+    const onEvict = vi.fn();
+    const history = createHistory(null, { coalesceWindowMs: 500, now: () => t, onEvict });
+    history.applyOps([setX(cell, 0, 1, 'x')], 'drag');
+    history.applyOps([setX(cell, 1, 2)], 'other'); // no key — discrete
+    history.undo();                                // redo: ['other']
+    t += 100;
+    history.applyOps([setX(cell, 1, 3, 'x')], 'drag'); // coalesces into 'drag'
+    expect(history.entries().undo.map((e) => e.label)).toEqual(['drag']);
+    expect(onEvict).toHaveBeenCalledTimes(1);
+    expect(onEvict.mock.calls[0][0].label).toBe('other');
+  });
+
+  it('fires on recordEntry redo-clear and recordEntry overflow', () => {
+    const cell: Cell = { x: 0 };
+    const onEvict = vi.fn();
+    const history = createHistory(null, { historyLimit: 1, onEvict });
+    history.applyOps([setX(cell, 0, 1)], 'one');
+    history.undo();                                 // redo: ['one']
+    history.recordEntry([setX(cell, 0, 2)], 'rec'); // drops 'one' from redo
+    expect(onEvict).toHaveBeenCalledTimes(1);
+    expect(onEvict.mock.calls[0][0].label).toBe('one');
+    history.recordEntry([setX(cell, 2, 3)], 'rec2'); // overflow → evicts 'rec'
+    expect(onEvict).toHaveBeenCalledTimes(2);
+    expect(onEvict.mock.calls[1][0].label).toBe('rec');
+  });
+
+  it('does NOT fire on clear() or restore()', () => {
+    const cell: Cell = { x: 0 };
+    const onEvict = vi.fn();
+    const history = createHistory(null, { onEvict });
+    history.applyOps([setX(cell, 0, 1)], 'one');
+    const snap = history.serialize();
+    history.applyOps([setX(cell, 1, 2)], 'two');
+    history.restore(snap); // wholesale replace — no per-entry eviction
+    history.applyOps([setX(cell, 1, 5)], 'three');
+    history.clear();       // wholesale drop — no per-entry eviction
+    expect(onEvict).not.toHaveBeenCalled();
   });
 });
