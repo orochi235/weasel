@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from './index';
-import type { SvgPathNode } from './types';
+import type { SvgPathNode, SvgTextNode } from './types';
 
 function firstPath(svg: string): SvgPathNode {
   const { nodes } = parseSvg(svg);
@@ -224,5 +224,51 @@ describe('currentColor', () => {
   it('resolves stroke="currentColor" against an inherited color', () => {
     const p = firstPath('<svg><g color="#0000ff"><rect width="4" height="4" stroke="currentColor" stroke-width="2"/></g></svg>');
     expect(p.stroke?.paint).toMatchObject({ color: '#0000ff' });
+  });
+});
+
+function firstText(svg: string): SvgTextNode {
+  const { nodes } = parseSvg(svg);
+  const walk = (ns: typeof nodes): SvgTextNode | null => {
+    for (const n of ns) {
+      if (n.kind === 'text') return n;
+      if (n.kind === 'group') {
+        const t = walk(n.children);
+        if (t) return t;
+      }
+    }
+    return null;
+  };
+  const t = walk(nodes);
+  if (!t) throw new Error('no <text> node produced');
+  return t;
+}
+
+describe('text cascade', () => {
+  it('inherits fill from an ancestor <g>', () => {
+    const t = firstText('<svg><g fill="#ff0000"><text x="0" y="10">hi</text></g></svg>');
+    expect(t.style?.fill).toMatchObject({ color: '#ff0000' });
+  });
+
+  it('inherits font-family from an ancestor <g>', () => {
+    const t = firstText('<svg><g font-family="Georgia"><text x="0" y="10">hi</text></g></svg>');
+    expect(t.style?.fontFamily).toBe('Georgia');
+  });
+
+  it('honors style="" on the text element', () => {
+    const t = firstText('<svg><text x="0" y="10" style="font-family:Georgia">hi</text></svg>');
+    expect(t.style?.fontFamily).toBe('Georgia');
+  });
+
+  it('a <tspan> inherits the base font from an ancestor <g> via the text style', () => {
+    const t = firstText('<svg><g font-family="Georgia"><text x="0" y="10"><tspan>a</tspan></text></g></svg>');
+    expect(t.style?.fontFamily).toBe('Georgia');
+    // The run carries no redundant fontFamily override — the base style holds it.
+    expect(t.runs).toBeUndefined();
+  });
+
+  it('resolves text fill="currentColor" against inherited color', () => {
+    const t = firstText('<svg><g color="#00ff00"><text x="0" y="10" fill="currentColor">hi</text></g></svg>');
+    expect(t.style?.fill).toMatchObject({ color: '#00ff00' });
   });
 });

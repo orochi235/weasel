@@ -25,7 +25,7 @@ import { boundsOfPath } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';
-import { deriveStyle, EMPTY_STYLE, resolveCurrentColor, type StyleContext } from './cascade';
+import { deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext } from './cascade';
 
 /** Element tags we accept and lower; anything else triggers a warning. */
 const SUPPORTED_LEAF_TAGS = new Set([
@@ -542,7 +542,6 @@ function parseTextElement(
   gradients: GradientTable,
   onWarn: (m: string) => void,
 ): SvgNode | null {
-  void style; // wired in Task 4
   const num = (raw: string | null, fallback: number): number => {
     if (raw == null) return fallback;
     const n = parseFloat(raw);
@@ -563,7 +562,8 @@ function parseTextElement(
   const ax = m[0] * rawX + m[2] * rawY + m[4];
   const ay = m[1] * rawX + m[3] * rawY + m[5];
 
-  const textStyle = readTextStyle(el, gradients, onWarn);
+  const leafStyle = deriveStyle(style, el);
+  const textStyle = readTextStyle(leafStyle, el, gradients, onWarn);
   const fontSize = textStyle.fontSize ?? 16;
   const lineHeight = textStyle.lineHeight ?? 1.2;
 
@@ -650,18 +650,18 @@ function parseTextElement(
 function readTspanRun(el: Element, gradients: GradientTable): StyledRun {
   const text = el.textContent ?? '';
   const run: StyledRun = { text };
-  const fw = el.getAttribute('font-weight');
+  const fw = ownProp(el, 'font-weight');
   if (fw === 'bold' || fw === '700' || fw === 'bolder') run.bold = true;
-  const fs = el.getAttribute('font-style');
+  const fs = ownProp(el, 'font-style');
   if (fs === 'italic' || fs === 'oblique') run.italic = true;
-  const ff = el.getAttribute('font-family');
+  const ff = ownProp(el, 'font-family');
   if (ff) run.fontFamily = ff;
-  const sz = el.getAttribute('font-size');
+  const sz = ownProp(el, 'font-size');
   if (sz != null) {
     const n = parseFloat(sz);
     if (Number.isFinite(n)) run.fontSize = n;
   }
-  const fillAttr = el.getAttribute('fill');
+  const fillAttr = ownProp(el, 'fill');
   if (fillAttr) {
     const parsed = parsePaintAttr(fillAttr);
     if (parsed?.kind === 'solid') {
@@ -675,29 +675,30 @@ function readTspanRun(el: Element, gradients: GradientTable): StyledRun {
 }
 
 function readTextStyle(
+  style: StyleContext,
   el: Element,
   gradients: GradientTable,
   onWarn: (m: string) => void,
 ): TextStyle {
-  const style: TextStyle = {};
-  const sz = el.getAttribute('font-size');
+  const out: TextStyle = {};
+  const sz = style['font-size'];
   if (sz != null) {
     const n = parseFloat(sz);
-    if (Number.isFinite(n)) style.fontSize = n;
+    if (Number.isFinite(n)) out.fontSize = n;
   }
-  const ff = el.getAttribute('font-family');
-  if (ff) style.fontFamily = ff;
-  const fw = el.getAttribute('font-weight');
+  const ff = style['font-family'];
+  if (ff) out.fontFamily = ff;
+  const fw = style['font-weight'];
   if (fw != null) {
     const n = parseFloat(fw);
-    style.fontWeight = Number.isFinite(n) ? n : fw;
+    out.fontWeight = Number.isFinite(n) ? n : fw;
   }
-  const fs = el.getAttribute('font-style');
-  if (fs === 'italic' || fs === 'normal') style.fontStyle = fs;
-  const anchor = el.getAttribute('text-anchor');
-  if (anchor === 'start') style.align = 'left';
-  else if (anchor === 'middle') style.align = 'center';
-  else if (anchor === 'end') style.align = 'right';
+  const fs = style['font-style'];
+  if (fs === 'italic' || fs === 'normal') out.fontStyle = fs;
+  const anchor = style['text-anchor'];
+  if (anchor === 'start') out.align = 'left';
+  else if (anchor === 'middle') out.align = 'center';
+  else if (anchor === 'end') out.align = 'right';
   // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
   // attribute. WeaselDraw carries it through the generic namespace bag
   // as `meta.wd.attrs['line-height']`; svgInterop lifts it into / out of
@@ -706,20 +707,19 @@ function readTextStyle(
   // Edit-overlay-only chrome (`caretColor`, `selectionBackground`,
   // `selectionColor`) is intentionally not persisted — those are UI state,
   // not document content.
-  const fillAttr = el.getAttribute('fill');
-  if (fillAttr) {
-    const parsed = parsePaintAttr(fillAttr);
+  const fillRaw = resolveCurrentColor(style['fill'] ?? null, style);
+  if (fillRaw) {
+    const parsed = parsePaintAttr(fillRaw);
     if (parsed?.kind === 'solid') {
-      style.fill = { fill: 'solid', color: parsed.color } as FillStyle;
+      out.fill = { fill: 'solid', color: parsed.color } as FillStyle;
     } else if (parsed?.kind === 'ref') {
       const paint = gradients.get(parsed.id);
-      if (paint) style.fill = paint;
-    } else if (parsed?.kind === 'none') {
-      // Leave fill undefined; defaults to black per resolveTextStyle.
+      if (paint) out.fill = paint;
     }
+    // parsed.kind === 'none' → leave fill undefined (defaults to black downstream).
   }
   if (el.hasAttribute('stroke')) {
     onWarn('<text stroke="..."> not supported on text; ignoring');
   }
-  return style;
+  return out;
 }
