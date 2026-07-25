@@ -1244,4 +1244,21 @@ describe('coalescing (coalesceWindowMs)', () => {
     s.redo();
     expect(cell).toEqual({ a: 2, b: 2 });
   });
+
+  it('sceneFromJSON forwards coalesceWindowMs', () => {
+    const src = createScene<Data, Layer>({
+      systemLayers: [
+        { id: 'background' },
+        { id: 'structures' },
+        { id: 'plantings' },
+      ],
+    });
+    const restored = sceneFromJSON(src.toJSON(), { coalesceWindowMs: 500 });
+    const id = restored.add({ kind: 'leaf', layer: 'structures', pose: POSE, data: { label: 'a' } });
+    const before = restored.historyEntries().length;
+    restored.setPose(id, { x: 1, y: 0, width: 10, height: 10 });
+    vi.advanceTimersByTime(100);
+    restored.setPose(id, { x: 2, y: 0, width: 10, height: 10 });
+    expect(restored.historyEntries().length).toBe(before + 1);
+  });
 });

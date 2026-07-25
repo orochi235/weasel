@@ -1052,6 +1052,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
   options: {
     registry?: SceneRegistry<TPose>;
     historyLimit?: number;
+    coalesceWindowMs?: number;
     generateId?: () => NodeId;
     ops?: Readonly<Record<string, RegisteredOp<unknown>>>;
   },
@@ -1063,6 +1064,7 @@ export function sceneFromJSON<TData, TLayer extends string, TPose>(
     initial,
     registry,
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
+    ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.generateId !== undefined ? { generateId: options.generateId } : {}),
     ...(options.ops !== undefined ? { ops: options.ops } : {}),
   });
