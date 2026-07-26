@@ -3,6 +3,7 @@ import {
   registerCanvasFont, isCanvasFont, unregisterCanvasFont, getDynamicFace,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
   PAGE_SIZE, _getPagesForTests,
+  resetBakeBudget, subscribeGlyphReady,
 } from './dynamicAtlas';
 import { BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
 
@@ -119,5 +120,61 @@ describe('unregisterCanvasFont', () => {
     unregisterCanvasFont('Futura');
     expect(getDynamicFace('Futura', 400, 'normal')).not.toBe(face);
     expect(_getPagesForTests().length).toBe(1);
+  });
+});
+
+describe('bake budget and overflow queue', () => {
+  it('bakes N within budget now, K after the deferred flush, and notifies', () => {
+    vi.useFakeTimers();
+    try {
+      const notified = vi.fn();
+      const unsub = subscribeGlyphReady(notified);
+      resetBakeBudget(2);
+      const face = getDynamicFace('Futura', 400, 'normal');
+      const chars = [65, 66, 67, 68, 69].map((cp) => face.requestGlyph(cp));
+
+      // N=2 baked synchronously, K=3 queued.
+      expect(chars.filter((c) => c.page >= 0).length).toBe(2);
+      expect(chars.filter((c) => c.page === -1).length).toBe(3);
+      // Advances are valid immediately even for queued glyphs.
+      for (const c of chars) expect(c.xadvance).toBe(22);
+      expect(notified).not.toHaveBeenCalled();
+
+      vi.runAllTimers();
+      expect(chars.every((c) => c.page >= 0)).toBe(true);
+      expect(notified).toHaveBeenCalled();
+      unsub();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('Infinity budget never defers (headless print path)', () => {
+    vi.useFakeTimers();
+    try {
+      resetBakeBudget(Infinity);
+      const face = getDynamicFace('Futura', 400, 'normal');
+      const chars: number[] = [];
+      for (let cp = 33; cp < 33 + 50; cp++) chars.push(face.requestGlyph(cp).page);
+      expect(chars.every((p) => p >= 0)).toBe(true);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('unsubscribe stops notifications', () => {
+    vi.useFakeTimers();
+    try {
+      const notified = vi.fn();
+      const unsub = subscribeGlyphReady(notified);
+      unsub();
+      resetBakeBudget(0);
+      getDynamicFace('Futura', 400, 'normal').requestGlyph(65);
+      vi.runAllTimers();
+      expect(notified).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
