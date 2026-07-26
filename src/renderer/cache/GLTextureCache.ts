@@ -42,6 +42,38 @@ export class GLTextureCache {
     return id;
   }
 
+  /** Create a single-channel R8 texture from raw bytes (full upload).
+   *  No-op if `id` already exists. Same LINEAR/CLAMP params as `upload`;
+   *  UNPACK_ALIGNMENT dropped to 1 for non-4-aligned row widths. */
+  uploadR8(id: string, width: number, height: number, data: Uint8Array): void {
+    if (this.map.has(id)) return;
+    const gl = this.gl;
+    const tex = gl.createTexture();
+    if (!tex) throw new Error(`GLTextureCache: createTexture failed for id="${id}"`);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0, gl.RED, gl.UNSIGNED_BYTE, data);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.map.set(id, tex);
+  }
+
+  /** Patch a rect of an existing R8 texture with tightly-packed w×h bytes. */
+  subImageR8(id: string, x: number, y: number, w: number, h: number, data: Uint8Array): void {
+    const tex = this.map.get(id);
+    if (!tex) throw new Error(`GLTextureCache: texture "${id}" not uploaded`);
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, x, y, w, h, gl.RED, gl.UNSIGNED_BYTE, data);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  }
+
   bind(id: string, unit: number): void {
     const tex = this.map.get(id);
     if (!tex) throw new Error(`GLTextureCache: texture "${id}" not uploaded`);

@@ -1,0 +1,123 @@
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import {
+  registerCanvasFont, isCanvasFont, unregisterCanvasFont, getDynamicFace,
+  _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
+  PAGE_SIZE, _getPagesForTests,
+} from './dynamicAtlas';
+import { BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
+
+/** Deterministic fake: every glyph is a solid 20×24 box; space is blank. */
+function fakeRasterizer(): GlyphRasterizer {
+  return {
+    faceMetrics: () => ({ ascent: 40, descent: 8 }),
+    rasterize: (_family, _weight, _style, cp) => {
+      if (cp === 32) {
+        return { width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance: 12 };
+      }
+      const w = 20, h = 24;
+      return {
+        width: w, height: h,
+        alpha: new Uint8ClampedArray(w * h).fill(255),
+        left: -8, top: 26, advance: 22,
+      };
+    },
+  };
+}
+
+beforeEach(() => {
+  _resetDynamicFontsForTests();
+  __setGlyphRasterizerForTests(fakeRasterizer());
+});
+afterEach(() => vi.restoreAllMocks());
+
+describe('canvas font registry', () => {
+  it('register/is/unregister round-trips', () => {
+    expect(isCanvasFont('Futura')).toBe(false);
+    registerCanvasFont('Futura');
+    expect(isCanvasFont('Futura')).toBe(true);
+    unregisterCanvasFont('Futura');
+    expect(isCanvasFont('Futura')).toBe(false);
+  });
+});
+
+describe('getDynamicFace', () => {
+  it('builds a BmFont-shaped face from canvas metrics', () => {
+    const face = getDynamicFace('Futura', 400, 'normal');
+    expect(face.font.info.size).toBe(BAKE_SIZE);
+    expect(face.font.common.base).toBe(40);
+    expect(face.font.common.lineHeight).toBe(48);
+    expect(face.font.common.scaleW).toBe(PAGE_SIZE);
+    expect(face.font.common.scaleH).toBe(PAGE_SIZE);
+    expect(face.font.charMap.size).toBe(0);
+  });
+
+  it('caches faces per (family, weight, style)', () => {
+    const a = getDynamicFace('Futura', 400, 'normal');
+    expect(getDynamicFace('Futura', 400, 'normal')).toBe(a);
+    expect(getDynamicFace('Futura', 700, 'normal')).not.toBe(a);
+  });
+});
+
+describe('requestGlyph', () => {
+  it('measures and bakes a glyph synchronously', () => {
+    const face = getDynamicFace('Futura', 400, 'normal');
+    const ch = face.requestGlyph(65);
+    expect(ch.xadvance).toBe(22);
+    expect(ch.xoffset).toBe(-8);
+    expect(ch.yoffset).toBe(40 - 26); // base − top
+    expect(ch.width).toBe(20);
+    expect(ch.height).toBe(24);
+    expect(ch.page).toBe(0);
+    expect(face.requestGlyph(65)).toBe(ch); // cached record
+  });
+
+  it('writes SDF bytes into the page and logs a patch', () => {
+    const face = getDynamicFace('Futura', 400, 'normal');
+    const ch = face.requestGlyph(65);
+    const pages = _getPagesForTests();
+    expect(pages.length).toBe(1);
+    expect(pages[0].version).toBe(1);
+    expect(pages[0].patches).toEqual([{ seq: 1, x: ch.x, y: ch.y, w: 20, h: 24 }]);
+    // Solid-alpha input → interior of the glyph rect saturates high.
+    const centerIdx = (ch.y + 12) * PAGE_SIZE + ch.x + 10;
+    expect(pages[0].data[centerIdx]).toBeGreaterThan(200);
+  });
+
+  it('handles blank glyphs (space) without allocating atlas space', () => {
+    const face = getDynamicFace('Futura', 400, 'normal');
+    const ch = face.requestGlyph(32);
+    expect(ch.xadvance).toBe(12);
+    expect(ch.width).toBe(0);
+    expect(ch.page).toBe(0); // marked done, never queued
+    expect(_getPagesForTests().length).toBe(0);
+  });
+
+  it('leaves the glyph invisible (width 0) when pages are full', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: PAGE_SIZE, height: PAGE_SIZE,
+        alpha: new Uint8ClampedArray(PAGE_SIZE * PAGE_SIZE).fill(255),
+        left: 0, top: 0, advance: PAGE_SIZE,
+      }),
+    });
+    const face = getDynamicFace('Big', 400, 'normal');
+    for (let i = 0; i < 4; i++) expect(face.requestGlyph(65 + i).page).toBe(i);
+    const fifth = face.requestGlyph(70);
+    expect(fifth.page).toBe(-1);
+    expect(fifth.width).toBe(0);
+    expect(fifth.xadvance).toBe(PAGE_SIZE); // advance still valid
+  });
+});
+
+describe('unregisterCanvasFont', () => {
+  it('drops the family faces but keeps baked pages (no eviction)', () => {
+    registerCanvasFont('Futura');
+    const face = getDynamicFace('Futura', 400, 'normal');
+    face.requestGlyph(65);
+    unregisterCanvasFont('Futura');
+    expect(getDynamicFace('Futura', 400, 'normal')).not.toBe(face);
+    expect(_getPagesForTests().length).toBe(1);
+  });
+});
