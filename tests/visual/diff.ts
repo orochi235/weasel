@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import type { Locator, Page } from '@playwright/test';
@@ -99,6 +99,21 @@ export async function waitForRepaint(page: Page): Promise<void> {
 }
 
 /**
+ * Where failed captures and diff images are written, for CI to upload as
+ * artifacts. Gitignored; `test-results/` is also where Playwright puts traces.
+ */
+const FAILURE_DIR = resolve(process.cwd(), 'test-results', 'visual');
+
+/**
+ * Write evidence for a failing spec. Without this a failure reports only a
+ * percentage, leaving no way to see what actually changed.
+ */
+function writeFailureArtifact(name: string, kind: 'actual' | 'diff', png: Buffer): void {
+  mkdirSync(FAILURE_DIR, { recursive: true });
+  writeFileSync(resolve(FAILURE_DIR, `${name}-${kind}.png`), png);
+}
+
+/**
  * Assert that `actual` (PNG buffer) matches `baselinePath` within tolerance.
  *
  * If UPDATE_SNAPSHOTS env var is set (set automatically by test:visual:update),
@@ -126,11 +141,16 @@ export function assertMatchesBaseline(
 
   const baselinePng = PNG.sync.read(readFileSync(baselinePath));
   const actualPng = PNG.sync.read(actual);
+  const name = basename(baselinePath, '.png');
 
   // Dimensions must match exactly. Since we read the backing store, the capture
   // size is exactly the demo's canvas size — so a mismatch means the demo
   // genuinely resized, not that the environment drifted. Treat it as a baseline
-  // invalidation rather than a pixel diff.
+  // invalidation rather than a pixel diff. No diff image is possible here, but
+  // the capture itself is the evidence.
+  if (actualPng.width !== baselinePng.width || actualPng.height !== baselinePng.height) {
+    writeFailureArtifact(name, 'actual', actual);
+  }
   expect(actualPng.width, 'Canvas width changed vs baseline').toBe(baselinePng.width);
   expect(actualPng.height, 'Canvas height changed vs baseline').toBe(baselinePng.height);
 
@@ -147,6 +167,10 @@ export function assertMatchesBaseline(
   );
 
   const diffRatio = mismatchedPixels / (width * height);
+  if (diffRatio > maxDiffRatio) {
+    writeFailureArtifact(name, 'actual', actual);
+    writeFailureArtifact(name, 'diff', PNG.sync.write(diffPng));
+  }
   expect(
     diffRatio,
     `Pixel diff ${(diffRatio * 100).toFixed(2)}% exceeds ${(maxDiffRatio * 100).toFixed(0)}% threshold`,

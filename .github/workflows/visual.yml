@@ -1,17 +1,25 @@
 name: Visual Regression
 
-# Manual-trigger only for now. Auto-running on every PR/push was producing
-# false negatives because (a) baselines haven't been captured against the
-# pinned ubuntu-22.04 runner yet, and (b) the existing baseline files have a
-# pre-existing 2.81% diff on `easings` that's unrelated to most PRs.
-# Switching to workflow_dispatch keeps the rig available without gating
-# normal development. To run: GitHub → Actions → Visual Regression → Run.
+# Runs on every PR and on pushes to main. This was workflow_dispatch-only while
+# the rig produced false negatives — baselines predated the pinned runner and
+# `easings` carried a 2.81% diff unrelated to most PRs. Both causes are gone:
+# captures now read the canvas backing store rather than screenshotting the
+# element, which removed the layout-dependent ±1px drift, and every baseline was
+# recaptured on this runner (easings is now 0.003%).
 #
 # CRITICAL: this workflow is pinned to ubuntu-22.04. Changing the runner
 # image will corrupt all baseline PNGs — you must run test:visual:update
 # in a matching environment and commit new baselines. See CONTRIBUTING.md.
 on:
+  pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
+
+# A superseded push's run tells us nothing; don't queue behind it.
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   visual-regression:
@@ -39,12 +47,15 @@ jobs:
       - name: Run visual regression tests
         run: npm run test:visual
 
-      # On failure, upload diff artifacts so reviewers can inspect what changed.
+      # On failure, upload the captured PNGs, the pixelmatch diff images, and
+      # Playwright's traces. (This used to upload tests/visual/baselines/, which
+      # is just the committed baselines — already in git, and no help at all in
+      # seeing what changed.)
       - name: Upload test results on failure
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: visual-regression-results
           path: |
-            tests/visual/baselines/
+            test-results/
           retention-days: 14
