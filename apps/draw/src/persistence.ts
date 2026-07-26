@@ -55,6 +55,17 @@ export function reviveTypedArrays<T>(node: T): T {
   return node;
 }
 
+/** `JSON.parse`-style reviver for clipboard payloads (the shape
+ *  `IngestCtx.clipboard.reviver` expects): one `reviveTypedArrays` pass over
+ *  the fully-parsed tree, applied at the reviver's final root call
+ *  (`key === ''`). NOT interchangeable with `reviveTypedArrays` itself —
+ *  a JSON reviver is `(key, value) => value`, and wiring the one-arg walker
+ *  in directly makes it receive each KEY (a string) and return it, collapsing
+ *  the whole parse to `''`. */
+export function clipboardJsonReviver(key: string, value: unknown): unknown {
+  return key === '' ? reviveTypedArrays(value) : value;
+}
+
 /** Rebuild the full node list from a persisted scene snapshot, shaped for
  *  `useScene`'s `initial` option. Preserves every node's `kind`, `layer`, and
  *  `parent`, so containers (Cmd+G groups) and nesting survive a reload — the

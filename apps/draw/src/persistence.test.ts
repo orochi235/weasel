@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { createHistory } from '@weasel-js/history';
 import type { SerializedHistory } from '@weasel-js/history';
 import type { Op, SerializedScene } from '@weasel-js/core';
-import { asNodeId } from '@weasel-js/core';
-import { nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './persistence';
+import { asNodeId, buildWeaselClipboardText, parseWeaselClipboardText } from '@weasel-js/core';
+import { clipboardJsonReviver, nodeSpecsFromSnapshot, reviveTypedArrays, serializeReplacer } from './persistence';
 
 // These cover the new bit of App's localStorage autosave: the undo history is
 // now persisted alongside the scene. The risk is that a history snapshot's
@@ -71,6 +71,41 @@ describe('persistence — history snapshot round-trip', () => {
 
     expect(h2.canUndo()).toBe(true);
     expect(h2.entries().undo.map((e) => e.label)).toEqual(['push 7']);
+  });
+});
+
+// Regression: `IngestCtx.clipboard.reviver` is a `JSON.parse`-style
+// `(key, value)` reviver, but draw originally wired the one-arg tree walker
+// `reviveTypedArrays` straight in. Called as a reviver, the walker receives
+// the KEY (a string) and returns it, collapsing every parsed value to its
+// key — the root call yields `''`, `parseWeaselClipboardText` returns null,
+// and the weasel-JSON paste handler silently declines. `clipboardJsonReviver`
+// adapts the walker to the reviver contract (one whole-tree pass at the
+// root call).
+describe('persistence — clipboard JSON reviver', () => {
+  it('revives a weasel clipboard payload through parseWeaselClipboardText', () => {
+    const items = [{
+      id: 'a',
+      data: { path: { coords: new Float32Array([1.5, 2.5]), commands: new Uint8Array([0, 1]) } },
+    }];
+    const wire = buildWeaselClipboardText(items, serializeReplacer);
+
+    const nodes = parseWeaselClipboardText(wire, clipboardJsonReviver);
+
+    expect(nodes).not.toBeNull();
+    const path = (nodes![0] as { data: { path: { coords: unknown; commands: unknown } } }).data.path;
+    expect(path.coords).toBeInstanceOf(Float32Array);
+    expect(Array.from(path.coords as Float32Array)).toEqual([1.5, 2.5]);
+    expect(path.commands).toBeInstanceOf(Uint8Array);
+    expect(Array.from(path.commands as Uint8Array)).toEqual([0, 1]);
+  });
+
+  it('preserves plain values untouched at non-root keys', () => {
+    const parsed = JSON.parse('{"weaselClipboard":1,"nodes":[{"id":"a","fill":"#fff"}]}', clipboardJsonReviver) as {
+      weaselClipboard: number; nodes: Array<{ id: string; fill: string }>;
+    };
+    expect(parsed.weaselClipboard).toBe(1);
+    expect(parsed.nodes[0]).toEqual({ id: 'a', fill: '#fff' });
   });
 });
 

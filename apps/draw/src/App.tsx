@@ -93,7 +93,7 @@ import { OpacityHud } from './opacityScrub/OpacityHud';
 import { useSceneAdapter } from '@weasel-js/core';
 import { sliceAction } from '@weasel-js/core';
 import type { SerializedHistory } from '@weasel-js/history';
-import { serializeReplacer, reviveTypedArrays, nodeSpecsFromSnapshot } from './persistence';
+import { serializeReplacer, reviveTypedArrays, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
 import { useSliceTool } from './tools/slice/useSliceTool';
 import { SliceDepPublisher } from './tools/slice/SliceDepPublisher';
 import { parseSvg } from '@weasel-js/svg';
@@ -157,10 +157,12 @@ const DEFAULT_BG_COLOR = '#ffffff';
 // leaf data IS the kit-native `{path, fill, stroke}` painter shape, so
 // unpacked nodes render and edit like any other object. `clipboard.reviver`
 // revives typed-array node data (Uint8Array/Float32Array path commands)
-// carried by weasel-JSON clipboard payloads, mirroring `nodeSpecsFromSnapshot`'s
-// use of the same reviver for scene persistence. Module const: SceneCanvas
-// keys its dep wiring off the prop identity.
-const DRAW_INGESTION = { svg: { unpack: true }, clipboard: { reviver: reviveTypedArrays } };
+// carried by weasel-JSON clipboard payloads — via `clipboardJsonReviver`,
+// the JSON-reviver adapter over the same `reviveTypedArrays` walk that scene
+// persistence uses (the walker itself is NOT `(key, value)`-shaped; see
+// persistence.ts). Module const: SceneCanvas keys its dep wiring off the
+// prop identity.
+const DRAW_INGESTION = { svg: { unpack: true }, clipboard: { reviver: clipboardJsonReviver } };
 /** Synthetic id for the locked "Background" row in the Layers panel.
  *  Selecting this row surfaces the Document properties branch in the
  *  Properties panel; clicking any real node clears it. */
