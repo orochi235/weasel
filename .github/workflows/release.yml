@@ -6,6 +6,9 @@ on:
     paths:
       - '.changeset/*.md'
       - '.github/workflows/release.yml'
+  # The push trigger is path-filtered, so a fix that touches only a package's
+  # manifest can't retrigger a publish. Manual dispatch covers that case.
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}

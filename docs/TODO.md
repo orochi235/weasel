@@ -290,6 +290,19 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
   Questions to settle in a spec: (a) is the source of truth CSS custom properties, the TS token object, or a build step that generates both from one input — and how do canvas/WebGL surfaces read it without a DOM `getComputedStyle` round-trip per frame; (b) how do themes compose (light/dark, brand override, per-instance override) without `!important` or specificity fights; (c) what does a consumer import — is `@weasel-js/ui/style.css` mandatory, and what breaks if they skip it; (d) how do tokens version across a lockstep release without every rename being a breaking change; (e) whether unthemed/partial-token states should fall back visibly or silently. Surfaced 2026-07-26 while making theme/ui/hud publishable: the packaging work forced each surface's theming assumptions into the open and they don't currently line up.
 
+### Unscoped alias package name
+
+- **(P2) `weasel-js` is unpublishable under that name.** npm rejects it as too
+  similar to an existing package, so `packages/weasel-js` is marked `private`
+  and `changeset publish` skips it (2026-07-26). Everything else about it is
+  live: it builds in `build:downstream`, the consumer smoke test still audits
+  that every dist entry is a shim re-exporting core, and it stays in the
+  lockstep `fixed` group so its version tracks the scoped packages. Publishing
+  is one `private` flag away once a name is settled. Options: pick a different
+  unscoped name, or decide the scoped `@weasel-js/core` is the only entry point
+  we want and delete the alias. Until then `npm install weasel-js` doesn't work
+  and no docs should claim it does.
+
 ### Plugin/bundling convention
 
 The kit's primitives are already pluggable — what's missing is a convention for bundling a feature's parts so a single `useFooPlugin()` call returns `{ tool, layers, ops, ... }` that the consumer spreads in, instead of wiring three or four separate exports per feature.

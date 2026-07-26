@@ -4,6 +4,13 @@ An alias for **[`@weasel-js/core`](https://www.npmjs.com/package/@weasel-js/core
 the batteries-included entry point of weasel, a domain-agnostic 2D scene-graph
 canvas kit for React.
 
+> **Not published yet.** npm rejects the name `weasel-js` as too similar to an
+> existing package, so this package is marked `private` and `changeset publish`
+> skips it. It still builds and is covered by the consumer smoke test, and it
+> stays version-locked to the rest of the kit, so flipping `private` off is the
+> only step needed once a publishable name is settled. Use
+> `@weasel-js/core` in the meantime.
+
 This package exists only so `npm install weasel-js` works. It re-exports
 `@weasel-js/core` in full, including every subpath. The two are interchangeable
 and released in lockstep at the same version.
