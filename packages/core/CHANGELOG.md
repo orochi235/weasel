@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.5.0
+
+### Minor Changes
+
+- 7e1982f: Publish the sub-packages. `@weasel-js/geom`, `/gestures`, `/history`, `/modes`,
+  `/svg`, `/d3`, `/theme`, `/ui`, and `/hud` are now real published packages
+  rather than source inlined into `@weasel-js/core`'s bundle.
+
+  For consumers of `@weasel-js/core` this is close to transparent — the public
+  API is unchanged and the sub-packages install as dependencies. It matters if
+  you were using any of those packages' types indirectly, or if you want to
+  depend on one alone: the geometry kernel (`@weasel-js/geom`) and the headless
+  undo engine (`@weasel-js/history`) are dependency-free and usable without the
+  React canvas.
+
+  The change also removes a latent duplicate-module hazard: while the packages
+  were inlined, a consumer holding both `@weasel-js/core` and one of them would
+  have gotten two copies of it.
+
+  `@weasel-js/ui` ships its styles as one bundled stylesheet — import
+  `@weasel-js/ui/style.css`. `@weasel-js/theme` exposes its tokens at
+  `@weasel-js/theme/tokens.css`.
+
+### Patch Changes
+
+- @weasel-js/geom@0.5.0
+- @weasel-js/gestures@0.5.0
+- @weasel-js/history@0.5.0
+- @weasel-js/modes@0.5.0
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -19,8 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Membership-group apparatus removed.** The old `Group` record / `GroupAdapter`
   are gone. `group` / `ungroup` now create and dissolve a structural
   `ContainerNode` (`kind: 'container'`) and reparent the selection under it; the
-  container persists in the scene tree and round-trips to SVG `<g>`. A *saved
-  selection* is just a consumer-held `string[]` passed to `selection.set` — it is
+  container persists in the scene tree and round-trips to SVG `<g>`. A _saved
+  selection_ is just a consumer-held `string[]` passed to `selection.set` — it is
   no longer a scene entity. See `docs/taxonomy.md` ("Group vs Selection").
 - **`LayoutStrategy` renames:** `getChildPositions` → `childPoses`,
   `reflowFor` → `reflowPoses`. Update implementations and call sites.
@@ -193,7 +223,7 @@ These items shipped as the `@experimental` GL backend during Steps 1–9; in 0.2
   path).
 - New `ROTATED_POSE_DESCRIPTOR: PoseDescriptor<RotatedPose>` for the standard
   rotated-rect case. `PoseDescriptor` gains optional `getRotation?(pose):
-  number` so consumer pose types can opt into the rotation-aware path.
+number` so consumer pose types can opt into the rotation-aware path.
 - New `fixedCornerOf(bounds, anchor): {x, y}` helper exposed via the
   `/resize` subpath barrel.
 - Hit-test rotates handle positions to match the overlay's drawn handles —
