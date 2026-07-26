@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerFont, getFont, resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
 import { FIXTURE_FONT } from './FontAtlas';
+import {
+  registerCanvasFont, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
+} from '../dynamic/dynamicAtlas';
+import { BAKE_SIZE } from '../dynamic/glyphRasterizer';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -228,5 +232,76 @@ describe('resolveFontVariant', () => {
     const r = resolveFontVariant('missing', 750, 'italic');
     expect(r.entry).toBeNull();
     expect(r.resolved).toEqual({ weight: 750, style: 'italic' });
+  });
+});
+
+describe('resolveFontVariant — canvas-dynamic tier', () => {
+  beforeEach(() => {
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255),
+        left: -8, top: 26, advance: 22,
+      }),
+    });
+  });
+
+  it('serves a canvas-registered family with no baked atlas as source "canvas"', () => {
+    registerCanvasFont('Futura');
+    const r = resolveFontVariant('Futura', 400, 'normal');
+    expect(r.entry).toBeNull();
+    expect(r.source).toBe('canvas');
+    expect(r.dynamicFace).toBeDefined();
+    expect(r.dynamicFace!.font.info.size).toBe(BAKE_SIZE);
+    expect(r.resolved).toEqual({ weight: 400, style: 'normal' });
+    expect(r.synthetic).toEqual({ bold: false, italic: false });
+  });
+
+  it('baked always wins: a registered atlas shadows the canvas registration', async () => {
+    await registerFont('Futura', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    registerCanvasFont('Futura');
+    const r = resolveFontVariant('Futura', 400, 'normal');
+    expect(r.entry).not.toBeNull();
+    expect(r.source).toBe('atlas');
+    expect(r.dynamicFace).toBeUndefined();
+  });
+
+  it('dynamic face carries the requested weight/style (real bold, no synthetic)', () => {
+    registerCanvasFont('Futura');
+    const r = resolveFontVariant('Futura', 700, 'italic');
+    expect(r.source).toBe('canvas');
+    expect(r.dynamicFace!.weight).toBe(700);
+    expect(r.dynamicFace!.style).toBe('italic');
+    expect(r.synthetic).toEqual({ bold: false, italic: false });
+  });
+
+  it('an unregistered family is still a plain miss', () => {
+    const r = resolveFontVariant('Nope', 400, 'normal');
+    expect(r.entry).toBeNull();
+    expect(r.source).toBe('atlas');
+    expect(r.dynamicFace).toBeUndefined();
+  });
+
+  it('serves the canvas tier when the fallback chain finds no anchor among the baked variants', async () => {
+    // Only a 700/italic atlas is baked, but 400/normal is requested. The chain
+    // has no same-style (normal) or same-weight (400) anchor to select, so it
+    // falls through to the canvas tier — which rasterizes a clean 400/normal
+    // upright rather than mangling the 700/italic baked atlas synthetically.
+    await registerFont('Futura', { weight: 700, style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    registerCanvasFont('Futura');
+    const r = resolveFontVariant('Futura', 400, 'normal');
+    expect(r.source).toBe('canvas');
+    expect(r.dynamicFace).toBeDefined();
+  });
+
+  it('partial-baked family with only one variant still resolves via the synthetic fallback chain, not the canvas tier', async () => {
+    await registerFont('Futura', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    registerCanvasFont('Futura');
+    const r = resolveFontVariant('Futura', 700, 'italic');
+    expect(r.entry).not.toBeNull();
+    expect(r.source).toBe('atlas');
+    expect(r.dynamicFace).toBeUndefined();
+    expect(r.synthetic).toEqual({ bold: true, italic: true });
   });
 });

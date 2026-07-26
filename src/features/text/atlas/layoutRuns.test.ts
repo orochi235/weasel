@@ -3,6 +3,10 @@ import { _resetFontRegistryForTests, registerFont } from './registerFont';
 import { FIXTURE_FONT } from './FontAtlas';
 import { layoutRuns } from './layoutRuns';
 import type { ResolvedRun } from '../runs/resolveRuns';
+import {
+  registerCanvasFont, resetBakeBudget,
+  _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
+} from '../dynamic/dynamicAtlas';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -184,5 +188,62 @@ describe('layoutRuns — word wrap', () => {
     const quads = out.groups[0].quads;
     expect(quads).toHaveLength(2);
     expect(quads[1].y0).toBeGreaterThan(quads[0].y0);
+  });
+});
+
+describe('layoutRuns — canvas-dynamic faces', () => {
+  beforeEach(() => {
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: (_f, _w, _s, cp) =>
+        cp === 32
+          ? { width: 0, height: 0, alpha: new Uint8ClampedArray(0), left: 0, top: 0, advance: 12 }
+          : { width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255), left: -8, top: 26, advance: 22 },
+    });
+    registerCanvasFont('Dyn');
+  });
+
+  const dynRun = (text: string): ResolvedRun => ({
+    text,
+    fontFamily: 'Dyn',
+    fontWeight: 400,
+    fontStyle: 'normal',
+    fontSize: 24, // scale = 24/48 = 0.5
+    fill: { fill: 'solid', color: '#000' },
+  });
+
+  it('lays out a dynamic run into a canvas-source group with quads', () => {
+    const laid = layoutRuns([dynRun('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
+    expect(laid.groups.length).toBe(1);
+    const g = laid.groups[0];
+    expect(g.source).toBe('canvas');
+    expect(g.page).toBe(0);
+    expect(g.quads.length).toBe(2);
+    // Advance 22 at scale 0.5 → second glyph starts 11 units right of the first.
+    expect(laid.groups[0].quads[1].x0 - laid.groups[0].quads[0].x0).toBeCloseTo(11);
+    expect(laid.bounds.width).toBeCloseTo(22);
+  });
+
+  it('unbaked glyphs advance the pen but emit no quads', () => {
+    resetBakeBudget(0);
+    const laid = layoutRuns([dynRun('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
+    expect(laid.groups.flatMap((g) => g.quads).length).toBe(0);
+    expect(laid.bounds.width).toBeCloseTo(22); // measureText advances still count
+  });
+
+  it('spaces contribute real measured advances without quads', () => {
+    const laid = layoutRuns([dynRun('A B')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
+    expect(laid.groups.flatMap((g) => g.quads).length).toBe(2);
+    // A(22) + space(12) + B(22) at scale 0.5.
+    expect(laid.bounds.width).toBeCloseTo(28);
+  });
+
+  it('atlas groups still report source "atlas" and page 0', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
+    const group = out.groups[0];
+    expect(group.source).toBe('atlas');
+    expect(group.page).toBe(0);
   });
 });

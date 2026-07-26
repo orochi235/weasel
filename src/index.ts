@@ -965,6 +965,16 @@ export { viewToMat3 } from './renderer';
 // MSDF font registration — consumers register (family, variant, metrics
 // JSON URL, atlas PNG URL) at startup so TextDrawCommand can resolve glyphs.
 export { registerFont, type FontVariant } from 'features/text/atlas/registerFont';
+
+// Canvas-sourced dynamic SDF fonts — render any installed machine font with
+// no baked atlas (canvas fillText → distance transform → R8 glyph pages).
+// Baked MSDF (registerFont) always wins; this is the fallback tier.
+export {
+  registerCanvasFont,
+  isCanvasFont,
+  unregisterCanvasFont,
+  subscribeGlyphReady,
+} from 'features/text/dynamic/dynamicAtlas';
 export type { TextureHandle } from './renderer/textures/registerTexture';
 export type {
   LayersMap,

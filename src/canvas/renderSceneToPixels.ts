@@ -214,6 +214,9 @@ export function renderSceneToPixels<TData, TLayer extends string, TPose>(
     dpr: 1,
     imageMinification: 'mipmap',
     flattenTolerance: flattenTolerancePx / Math.max(args.scale.x, args.scale.y),
+    // Dynamic canvas-SDF glyphs must all bake inline — this path is
+    // synchronous with no notify-and-redraw, and print must be complete.
+    bakeBudget: Infinity,
   });
   try {
     renderer.render(plan.commands);

@@ -9,6 +9,7 @@
 
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GLTextureCache } from '../../../renderer/cache/GLTextureCache';
+import { isCanvasFont, getDynamicFace, type DynamicFace } from '../dynamic/dynamicAtlas';
 
 export interface FontEntry {
   font: BmFont;
@@ -136,13 +137,32 @@ export interface ResolveResult {
    */
   resolved: { weight: number; style: FontStyle };
   synthetic: { bold: boolean; italic: boolean };
+  /** Which tier resolved: a baked MSDF atlas, or the runtime canvas-SDF
+   *  dynamic atlas. Misses report 'atlas' (the default tier). */
+  source: 'atlas' | 'canvas';
+  /** Set only when source === 'canvas': the dynamic face whose BmFont-shaped
+   *  `font` layoutRuns consumes in place of `entry.font`. */
+  dynamicFace?: DynamicFace;
 }
 
-function nullResolveResult(weight: number, style: FontStyle): ResolveResult {
+function missResolveResult(family: string, weight: number, style: FontStyle): ResolveResult {
+  // Canvas-dynamic tier: reached only when the fallback chain selected no
+  // baked variant, so any selected baked match always wins. Dynamic faces
+  // rasterize the real weight/style — no synthetic flags.
+  if (isCanvasFont(family)) {
+    return {
+      entry: null,
+      dynamicFace: getDynamicFace(family, weight, style),
+      resolved: { weight, style },
+      synthetic: { bold: false, italic: false },
+      source: 'canvas',
+    };
+  }
   return {
     entry: null,
     resolved: { weight, style },
     synthetic: { bold: false, italic: false },
+    source: 'atlas',
   };
 }
 
@@ -162,7 +182,7 @@ export function resolveFontVariant(
   style: FontStyle,
 ): ResolveResult {
   const familyMap = registry.get(family);
-  if (!familyMap || familyMap.size === 0) return nullResolveResult(weight, style);
+  if (!familyMap || familyMap.size === 0) return missResolveResult(family, weight, style);
 
   // 1. Exact match
   const exact = familyMap.get(variantKey(weight, style));
@@ -171,6 +191,7 @@ export function resolveFontVariant(
       entry: exact,
       resolved: { weight, style },
       synthetic: { bold: false, italic: false },
+      source: 'atlas',
     };
   }
 
@@ -196,6 +217,7 @@ export function resolveFontVariant(
       entry: bestSameStyle.entry,
       resolved: { weight: bestSameStyle.weight, style },
       synthetic: { bold: false, italic: false },
+      source: 'atlas',
     };
   }
 
@@ -209,6 +231,7 @@ export function resolveFontVariant(
         bold: weight >= 600,
         italic: false,
       },
+      source: 'atlas',
     };
   }
 
@@ -222,6 +245,7 @@ export function resolveFontVariant(
         bold: false,
         italic: style === 'italic',
       },
+      source: 'atlas',
     };
   }
 
@@ -249,6 +273,7 @@ export function resolveFontVariant(
         bold: false,
         italic: style === 'italic',
       },
+      source: 'atlas',
     };
   }
 
@@ -262,8 +287,9 @@ export function resolveFontVariant(
         bold: weight >= 600,
         italic: style === 'italic',
       },
+      source: 'atlas',
     };
   }
 
-  return nullResolveResult(weight, style);
+  return missResolveResult(family, weight, style);
 }

@@ -11,9 +11,11 @@ import {
 import {
   TEXT_VERT_SRC,
   TEXT_FRAG_SRC,
+  TEXT_FRAG_R8_SRC,
   TEXT_SDF_UNIFORMS,
   TEXT_SDF_ATTRIBUTES,
 } from './shaders/textSdf';
+import { resetBakeBudget, DEFAULT_BAKE_BUDGET } from 'features/text/dynamic/dynamicAtlas';
 import {
   IMAGE_VERT_SRC,
   IMAGE_FRAG_SRC,
@@ -78,6 +80,10 @@ export interface WeaselRendererOptions {
    *  `DEFAULT_FLATTEN_TOLERANCE`. The headless path derives this from the
    *  requested output scale; screen callers normally leave it unset. */
   flattenTolerance?: number;
+  /** Per-render synchronous bake budget for dynamic canvas-SDF glyphs.
+   *  Default DEFAULT_BAKE_BUDGET (16). The headless renderSceneToPixels
+   *  path passes Infinity so print never defers a glyph. */
+  bakeBudget?: number;
 }
 
 export class WeaselRenderer {
@@ -85,6 +91,7 @@ export class WeaselRenderer {
   private pathFill: ShaderProgram;
   private pathFillVColor: ShaderProgram;
   private textSdf: ShaderProgram;
+  private textSdfR8: ShaderProgram;
   private imageFill: ShaderProgram;
   private gradFill: ShaderProgram;
   private meshCache: GLMeshCache;
@@ -105,6 +112,7 @@ export class WeaselRenderer {
   private canvas: HTMLCanvasElement | null = null;
   private readonly imageMinification: ImageMinification;
   private readonly flattenTolerance?: number;
+  private readonly bakeBudget: number;
   private contextLost = false;
   private boundOnLost = (e: Event) => this.onContextLost(e);
   private boundOnRestored = () => this.onContextRestored();
@@ -125,6 +133,7 @@ export class WeaselRenderer {
     this.dpr = opts.dpr;
     this.imageMinification = opts.imageMinification ?? 'linear';
     this.flattenTolerance = opts.flattenTolerance;
+    this.bakeBudget = opts.bakeBudget ?? DEFAULT_BAKE_BUDGET;
 
     this.canvas = opts.canvas ?? null;
     if (this.canvas) {
@@ -156,6 +165,10 @@ export class WeaselRenderer {
     this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
     this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
     this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
+
+    this.textSdfR8 = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_R8_SRC);
+    this.textSdfR8.lookupUniforms(TEXT_SDF_UNIFORMS);
+    this.textSdfR8.lookupAttributes(TEXT_SDF_ATTRIBUTES);
 
     this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
     this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
@@ -275,6 +288,9 @@ export class WeaselRenderer {
     this.textSdf = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_SRC);
     this.textSdf.lookupUniforms(TEXT_SDF_UNIFORMS);
     this.textSdf.lookupAttributes(TEXT_SDF_ATTRIBUTES);
+    this.textSdfR8 = new ShaderProgram(this.gl, TEXT_VERT_SRC, TEXT_FRAG_R8_SRC);
+    this.textSdfR8.lookupUniforms(TEXT_SDF_UNIFORMS);
+    this.textSdfR8.lookupAttributes(TEXT_SDF_ATTRIBUTES);
     this.imageFill = new ShaderProgram(this.gl, IMAGE_VERT_SRC, IMAGE_FRAG_SRC);
     this.imageFill.lookupUniforms(IMAGE_FILL_UNIFORMS);
     this.imageFill.lookupAttributes(IMAGE_FILL_ATTRIBUTES);
@@ -340,7 +356,7 @@ export class WeaselRenderer {
     }
     this.meshCache.freeTransient();
     this.meshCache.drainPendingDeletes();
-    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.imageFill, this.gradFill]) {
+    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.textSdfR8, this.imageFill, this.gradFill]) {
       gl.deleteProgram(prog.handle);
     }
     for (const prog of this.programRegistry.values()) {
@@ -364,6 +380,8 @@ export class WeaselRenderer {
     // no VAO bound, no draw in flight. Deleting from the FinalizationRegistry
     // callback directly was racy and caused mid-draw crashes.
     this.meshCache.drainPendingDeletes();
+    // New frame: refill the dynamic-glyph synchronous bake budget.
+    resetBakeBudget(this.bakeBudget);
     // Ensure all stencil bits are cleared regardless of any mask left over
     // from the previous frame's clip ops.
     gl.stencilMask(0xFF);
@@ -373,6 +391,7 @@ export class WeaselRenderer {
       pathFill: this.pathFill,
       pathFillVColor: this.pathFillVColor,
       textSdf: this.textSdf,
+      textSdfR8: this.textSdfR8,
       imageFill: this.imageFill,
       gradFill: this.gradFill,
       meshCache: this.meshCache,
@@ -416,6 +435,7 @@ export class WeaselRenderer {
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
   /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
+  /** @internal */ _textSdfR8(): ShaderProgram { return this.textSdfR8; }
   /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }

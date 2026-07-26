@@ -22,6 +22,7 @@ import { tessellate } from 'features/paths/tessellate/tessellate';
 import { resolveColor } from './math/color';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
 import { ensureFontTexture, textureCacheKey } from 'features/text/atlas/registerFont';
+import { syncDynamicPageTexture, dynamicPageTextureId } from 'features/text/dynamic/dynamicAtlas';
 import { layoutRuns, type LaidOutGroup } from 'features/text/atlas/layoutRuns';
 import { verticalAlignOffset } from 'features/text/verticalAlign';
 
@@ -30,6 +31,7 @@ export interface DrawContext {
   pathFill: ShaderProgram;
   pathFillVColor: ShaderProgram;
   textSdf: ShaderProgram;
+  textSdfR8: ShaderProgram;
   imageFill: ShaderProgram;
   gradFill: ShaderProgram;
   meshCache: GLMeshCache;
@@ -811,20 +813,32 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   }
 
   const gl = ctx.gl;
-  gl.useProgram(ctx.textSdf.handle);
-  setProjAndModel(ctx, ctx.textSdf);
-  setColorMatrixUniforms(ctx, ctx.textSdf);
-  gl.uniform1f(ctx.textSdf.uniform('u_alpha')!, ctx.state.alpha);
-  gl.uniform1f(ctx.textSdf.uniform('u_aaWidth')!, 0.05);
   applyClipTest(ctx);
-
+  const preparedPrograms = new Set<ShaderProgram>();
+  let currentProg: ShaderProgram | null = null;
   for (const group of laid.groups) {
-    drawTextGroup(ctx, group);
+    const prog = group.source === 'canvas' ? ctx.textSdfR8 : ctx.textSdf;
+    if (prog !== currentProg) {
+      gl.useProgram(prog.handle);
+      currentProg = prog;
+    }
+    if (!preparedPrograms.has(prog)) {
+      preparedPrograms.add(prog);
+      setProjAndModel(ctx, prog);
+      setColorMatrixUniforms(ctx, prog);
+      gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
+      gl.uniform1f(prog.uniform('u_aaWidth')!, 0.05);
+    }
+    drawTextGroup(ctx, group, prog);
   }
 }
 
-function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
-  if (!ensureFontTexture(group.family, group.weight, group.style, ctx.textureCache)) return;
+function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgram): void {
+  if (group.source === 'canvas') {
+    if (!syncDynamicPageTexture(ctx.textureCache, group.page)) return;
+  } else {
+    if (!ensureFontTexture(group.family, group.weight, group.style, ctx.textureCache)) return;
+  }
   if (group.quads.length === 0) return;
 
   const gl = ctx.gl;
@@ -856,9 +870,9 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
   gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
 
   const stride = 20;
-  const aPosLoc = ctx.textSdf.attribute('a_position');
-  const aUvLoc  = ctx.textSdf.attribute('a_uv');
-  const aBaseLoc = ctx.textSdf.attribute('a_baselineY');
+  const aPosLoc = prog.attribute('a_position');
+  const aUvLoc  = prog.attribute('a_uv');
+  const aBaseLoc = prog.attribute('a_baselineY');
   if (aPosLoc !== undefined) {
     gl.enableVertexAttribArray(aPosLoc);
     gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, stride, 0);
@@ -882,24 +896,27 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup): void {
   if ('color' in group.fill) {
     [r, g, b, a] = resolveColor(group.fill.color);
   }
-  gl.uniform4f(ctx.textSdf.uniform('u_color')!, r, g, b, a);
+  gl.uniform4f(prog.uniform('u_color')!, r, g, b, a);
 
   // u_synthBold: SDF threshold shift when the resolver fell back from a
   // missing bold variant to the regular atlas. 0.08 was tuned empirically
   // to thicken Inter strokes ~1px at 16px size without breaking topology.
   const synthBoldAmount = group.synthetic.bold ? 0.08 : 0;
-  const uSynthBold = ctx.textSdf.uniform('u_synthBold');
+  const uSynthBold = prog.uniform('u_synthBold');
   if (uSynthBold !== undefined) gl.uniform1f(uSynthBold, synthBoldAmount);
 
   // u_synthItalic: vertex-shader skew angle (radians) applied when the
   // resolver fell back from a missing italic variant to the upright atlas.
   // 12° (≈0.2094 rad) matches the conventional CSS `font-style: oblique`.
   const synthItalicAmount = group.synthetic.italic ? 0.2094 : 0;
-  const uSynthItalic = ctx.textSdf.uniform('u_synthItalic');
+  const uSynthItalic = prog.uniform('u_synthItalic');
   if (uSynthItalic !== undefined) gl.uniform1f(uSynthItalic, synthItalicAmount);
 
-  ctx.textureCache.bind(textureCacheKey(group.family, group.weight, group.style), 0);
-  gl.uniform1i(ctx.textSdf.uniform('u_atlas')!, 0);
+  const texId = group.source === 'canvas'
+    ? dynamicPageTextureId(group.page)
+    : textureCacheKey(group.family, group.weight, group.style);
+  ctx.textureCache.bind(texId, 0);
+  gl.uniform1i(prog.uniform('u_atlas')!, 0);
 
   gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);

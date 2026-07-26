@@ -26,6 +26,7 @@ import { type Action, type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { subscribeImageReady } from 'features/images/imageCache';
+import { subscribeGlyphReady } from 'features/text/dynamic/dynamicAtlas';
 import { defaultDrawOne } from './defaultDrawOne';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
@@ -864,6 +865,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // any image finishes decoding, request a redraw so the painter re-runs and
   // swaps its placeholder for the real bitmap.
   useEffect(() => subscribeImageReady(() => {
+    canvasApiRef.current?.requestRedraw?.();
+  }), []);
+
+  // Deferred dynamic-glyph bakes (over-budget frames) redraw exactly like
+  // late image decodes: bake lands → notify → repaint with the new quads.
+  useEffect(() => subscribeGlyphReady(() => {
     canvasApiRef.current?.requestRedraw?.();
   }), []);
 
