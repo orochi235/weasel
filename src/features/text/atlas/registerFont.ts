@@ -146,9 +146,9 @@ export interface ResolveResult {
 }
 
 function missResolveResult(family: string, weight: number, style: FontStyle): ResolveResult {
-  // Canvas-dynamic tier: only reached when NO baked variant matched at all,
-  // so baked always wins. Dynamic faces rasterize the real weight/style —
-  // no synthetic flags.
+  // Canvas-dynamic tier: reached only when the fallback chain selected no
+  // baked variant, so any selected baked match always wins. Dynamic faces
+  // rasterize the real weight/style — no synthetic flags.
   if (isCanvasFont(family)) {
     return {
       entry: null,

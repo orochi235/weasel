@@ -283,6 +283,18 @@ describe('resolveFontVariant — canvas-dynamic tier', () => {
     expect(r.dynamicFace).toBeUndefined();
   });
 
+  it('serves the canvas tier when the fallback chain finds no anchor among the baked variants', async () => {
+    // Only a 700/italic atlas is baked, but 400/normal is requested. The chain
+    // has no same-style (normal) or same-weight (400) anchor to select, so it
+    // falls through to the canvas tier — which rasterizes a clean 400/normal
+    // upright rather than mangling the 700/italic baked atlas synthetically.
+    await registerFont('Futura', { weight: 700, style: 'italic' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    registerCanvasFont('Futura');
+    const r = resolveFontVariant('Futura', 400, 'normal');
+    expect(r.source).toBe('canvas');
+    expect(r.dynamicFace).toBeDefined();
+  });
+
   it('partial-baked family with only one variant still resolves via the synthetic fallback chain, not the canvas tier', async () => {
     await registerFont('Futura', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
     registerCanvasFont('Futura');

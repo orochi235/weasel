@@ -32,6 +32,11 @@ export interface LaidOutGroup {
   style: 'normal' | 'italic';
   /** Gap between the request and the resolved match. Drives shader uniforms. */
   synthetic: { bold: boolean; italic: boolean };
+  /** Which glyph source (and therefore shader/texture) this group binds:
+   *  baked MSDF atlas or the runtime canvas-SDF dynamic atlas. */
+  source: 'atlas' | 'canvas';
+  /** Dynamic-atlas page index for 'canvas' groups; 0 for atlas groups. */
+  page: number;
   fill: FillStyle;
   quads: LaidOutQuad[];
 }
@@ -72,23 +77,29 @@ function groupKey(
   style: 'normal' | 'italic',
   synthetic: { bold: boolean; italic: boolean },
   fill: FillStyle,
+  source: 'atlas' | 'canvas',
+  page: number,
 ): string {
-  return `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}|${fillKey(fill)}`;
+  return `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}|${fillKey(fill)}|${source}|${page}`;
 }
 
 function getOrCreateGroup(
   ctx: LayoutContext,
   run: ResolvedRun,
   resolved: ResolveResult,
+  page: number,
 ): LaidOutGroup {
   const resolvedWeight = resolved.resolved.weight;
   const resolvedStyle = resolved.resolved.style;
+  const source = resolved.source;
   const key = groupKey(
     run.fontFamily,
     resolvedWeight,
     resolvedStyle,
     resolved.synthetic,
     run.fill,
+    source,
+    page,
   );
   let g = ctx.groups.get(key);
   if (!g) {
@@ -97,6 +108,8 @@ function getOrCreateGroup(
       weight: resolvedWeight,
       style: resolvedStyle,
       synthetic: { ...resolved.synthetic },
+      source,
+      page,
       fill: run.fill,
       quads: [],
     };
@@ -132,7 +145,7 @@ export function layoutRuns(
     kerningBefore: number;   // kerning gap consumed before this glyph
     isSpace: boolean;
     isNewline: boolean;
-    group: LaidOutGroup;
+    resolved: ResolveResult;
     fontSize: number;
   }
 
@@ -145,13 +158,12 @@ export function layoutRuns(
 
   for (const run of runs) {
     const resolved = resolveFontVariant(run.fontFamily, run.fontWeight, run.fontStyle);
-    if (!resolved.entry) {
+    const font = resolved.entry?.font ?? resolved.dynamicFace?.font;
+    if (!font) {
       prevCp = undefined; prevFont = undefined; prevFontSize = undefined;
       continue;
     }
-    const font = resolved.entry.font;
     const scale = run.fontSize / font.info.size;
-    const group = getOrCreateGroup(ctx, run, resolved);
 
     for (const ch of [...run.text]) {
       const cp = ch.codePointAt(0)!;
@@ -163,7 +175,7 @@ export function layoutRuns(
           run, font,
           glyph: { id: cp, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           cp, advance: 0, kerningBefore: 0, isSpace: false, isNewline: true,
-          group, fontSize: run.fontSize,
+          resolved, fontSize: run.fontSize,
         });
         prevCp = undefined; prevFont = undefined; prevFontSize = undefined;
         continue;
@@ -172,7 +184,7 @@ export function layoutRuns(
       if (isSpace) {
         // Use atlas glyph if present; otherwise synthesize a zero-size entry
         // with a reasonable advance so spaces still participate in line-fitting.
-        const spaceGlyph = font.charMap.get(32);
+        const spaceGlyph = resolved.dynamicFace ? resolved.dynamicFace.requestGlyph(32) : font.charMap.get(32);
         const advance = spaceGlyph
           ? spaceGlyph.xadvance * scale
           : run.fontSize * 0.25;
@@ -185,13 +197,13 @@ export function layoutRuns(
           run, font,
           glyph: spaceGlyph ?? { id: 32, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
           cp, advance, kerningBefore, isSpace: true, isNewline: false,
-          group, fontSize: run.fontSize,
+          resolved, fontSize: run.fontSize,
         });
         prevCp = cp; prevFont = font; prevFontSize = run.fontSize;
         continue;
       }
 
-      const glyph = resolveGlyph(font, cp);
+      const glyph = resolved.dynamicFace ? resolved.dynamicFace.requestGlyph(cp) : resolveGlyph(font, cp);
       if (!glyph) {
         prevCp = cp; prevFont = font; prevFontSize = run.fontSize;
         continue;
@@ -208,7 +220,7 @@ export function layoutRuns(
         advance: glyph.xadvance * scale,
         kerningBefore,
         isSpace, isNewline: false,
-        group, fontSize: run.fontSize,
+        resolved, fontSize: run.fontSize,
       });
 
       prevCp = cp; prevFont = font; prevFontSize = run.fontSize;
@@ -288,6 +300,13 @@ export function layoutRuns(
     for (const e of line.entries) {
       penX += e.kerningBefore;
       if (e.advance === 0) continue;
+      if (e.resolved.source === 'canvas' && (e.glyph.width === 0 || e.glyph.page < 0)) {
+        // Dynamic glyph not baked yet (or blank, e.g. space): advance the pen
+        // so the line doesn't reflow when the bake lands, but emit no quad.
+        penX += e.advance;
+        continue;
+      }
+      const group = getOrCreateGroup(ctx, e.run, e.resolved, e.glyph.page);
       const scale = e.fontSize / e.font.info.size;
       const atlasW = e.font.common.scaleW;
       const atlasH = e.font.common.scaleH;
@@ -302,7 +321,7 @@ export function layoutRuns(
       // Typographic baseline (not the top of the line box) — above-baseline
       // vertices have y < baselineY so synthetic italic skew leans them right.
       const baselineY = penY + e.font.common.base * scale;
-      e.group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1, baselineY });
+      group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1, baselineY });
       penX += e.advance;
     }
     maxLineWidth = Math.max(maxLineWidth, line.width);
