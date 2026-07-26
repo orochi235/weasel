@@ -175,9 +175,30 @@ export interface LassoSelectDep {
 export interface SvgIngestOptions {
   /** Parse dropped/pasted/picked SVG files into native scene nodes (path /
    *  text leaves under containers mirroring the source `<g>` structure)
-   *  instead of the default single embedded-image node. */
-  unpack?: boolean;
+   *  instead of the default single embedded-image node.
+   *
+   *  Pass `unpackSvgFiles` from `@weasel-js/svg`:
+   *
+   *  ```ts
+   *  import { unpackSvgFiles } from '@weasel-js/svg';
+   *  <SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }} />
+   *  ```
+   *
+   *  It is injected rather than flagged on with `true` because the SVG parser
+   *  lives in `@weasel-js/svg`, which depends on this package — core importing
+   *  it back would make the two mutually dependent and unpublishable
+   *  separately. Passing the function keeps the parser out of core's bundle
+   *  for consumers who never unpack. */
+  unpack?: SvgUnpacker;
 }
+
+/** Parses SVG files and inserts the resulting nodes into `ctx.scene`, as one
+ *  `applyOps` batch per file. Implemented by `unpackSvgFiles` in
+ *  `@weasel-js/svg`; see {@link SvgIngestOptions.unpack}. */
+export type SvgUnpacker = (
+  files: File[],
+  ctx: import('../../features/ingestion/contentHandlers').IngestCtx,
+) => Promise<void>;
 
 /**
  * Clipboard-paste seam consumed by the kit weasel-JSON content handler

@@ -58,8 +58,8 @@ Priority tags:
   SVG as **one embedded-image node** (`data:image/svg+xml` URI, bytes
   verbatim; measured via an `Image` element since `createImageBitmap`
   rejects SVG blobs, 300×150 fallback for no-intrinsic-size files).
-  `ingestion={{ svg: { unpack: true } }}` parses to native scene nodes
-  instead (`svgUnpack.ts`: kit-painter-native path/text leaves under
+  `ingestion={{ svg: { unpack: unpackSvgFiles } }}` parses to native scene nodes
+  instead (`@weasel-js/svg`'s `unpack.ts`: kit-painter-native path/text leaves under
   containers mirroring `<g>` structure, multi-root files wrapped in one
   container, pose-only fit-clamp + drop-point placement, one undoable
   batch per file). weaseldraw runs with `unpack` on. Remaining:

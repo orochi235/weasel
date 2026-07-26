@@ -3,7 +3,7 @@
  * file into **native scene nodes** — path/text leaves under containers that
  * mirror the source `<g>` structure — instead of the default single
  * embedded-image node. Opted into via
- * `<SceneCanvas ingestion={{ svg: { unpack: true } }}>`.
+ * `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>`.
  *
  * Leaf data targets the kit's built-in painters (`NodeShape.ts`): paths as
  * `{ path, fill?, stroke?, strokeWidth? }` (the `kit:path` contract), text
@@ -24,12 +24,15 @@
  * fallback solid color (the `kit:path` painter takes color strings only),
  * and text `fontSize` does not participate in the fit-clamp scale.
  */
-import { parseSvg, type SvgNode, type SvgPaint } from '@weasel-js/svg';
-import { boundsOfPath } from 'features/paths/bounds';
-import { createInsertOp } from 'core/ops/create';
-import type { Op } from 'core/ops/types';
-import { dwarn } from '../../debug';
-import type { IngestCtx } from './contentHandlers';
+import { parseSvg } from './parse';
+import type { SvgNode, SvgPaint } from './types';
+import {
+  boundsOfPath,
+  createInsertOp,
+  dwarn,
+  type IngestCtx,
+  type Op,
+} from '@weasel-js/core';
 
 const CASCADE_OFFSET_PX = 24;
 const VIEWPORT_FIT = 0.9;
