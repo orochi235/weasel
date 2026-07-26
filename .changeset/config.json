@@ -13,7 +13,8 @@
       "@weasel-js/d3",
       "@weasel-js/theme",
       "@weasel-js/ui",
-      "@weasel-js/hud"
+      "@weasel-js/hud",
+      "weasel-js"
     ]
   ],
   "linked": [],

@@ -1,0 +1,87 @@
+{
+  "name": "weasel-js",
+  "version": "0.5.0",
+  "description": "Alias for @weasel-js/core \u2014 the batteries-included entry point of the weasel 2D scene-graph canvas kit for React.",
+  "license": "MIT",
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/weasel-js"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./move": {
+      "import": "./dist/move.js",
+      "types": "./dist/move.d.ts"
+    },
+    "./resize": {
+      "import": "./dist/resize.js",
+      "types": "./dist/resize.d.ts"
+    },
+    "./insert": {
+      "import": "./dist/insert.js",
+      "types": "./dist/insert.d.ts"
+    },
+    "./clipboard": {
+      "import": "./dist/clipboard.js",
+      "types": "./dist/clipboard.d.ts"
+    },
+    "./clone": {
+      "import": "./dist/clone.js",
+      "types": "./dist/clone.d.ts"
+    },
+    "./patterns-builtin": {
+      "import": "./dist/patterns-builtin.js",
+      "types": "./dist/patterns-builtin.d.ts"
+    },
+    "./renderer": {
+      "import": "./dist/renderer.js",
+      "types": "./dist/renderer.d.ts"
+    },
+    "./routing": {
+      "import": "./dist/routing.js",
+      "types": "./dist/routing.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsup"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@weasel-js/core": "0.5.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "react",
+    "canvas",
+    "scene-graph",
+    "2d",
+    "weasel"
+  ]
+}

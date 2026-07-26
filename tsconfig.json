@@ -63,6 +63,6 @@
       "debug/*": ["./packages/core/src/debug/*"]
     }
   },
-  "include": ["apps", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/history/src", "packages/modes/src"],
+  "include": ["apps", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/history/src", "packages/modes/src"],
   "exclude": ["node_modules", "dist"]
 }
