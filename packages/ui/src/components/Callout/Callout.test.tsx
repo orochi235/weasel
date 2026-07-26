@@ -20,6 +20,7 @@ function ProgrammaticSubject(props: {
   modal?: boolean;
   onOutsideClick?: () => void;
   footer?: React.ReactNode;
+  onDismiss?: () => void;
 }) {
   const anchor = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(true);
@@ -34,6 +35,7 @@ function ProgrammaticSubject(props: {
         modal={props.modal}
         title="Note"
         footer={props.footer}
+        onDismiss={props.onDismiss}
       >
         Pointed content
       </Callout>
@@ -169,6 +171,54 @@ describe('Callout', () => {
   it('renders the footer slot', () => {
     render(<ProgrammaticSubject footer={<button type="button">Footer action</button>} />);
     expect(screen.getByRole('button', { name: 'Footer action' })).toBeTruthy();
+  });
+
+  it('reports the close button as a dismissal', () => {
+    const onDismiss = vi.fn();
+    render(<ProgrammaticSubject onDismiss={onDismiss} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Close callout' }));
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports Escape as a dismissal', () => {
+    const onDismiss = vi.fn();
+    render(<ProgrammaticSubject onDismiss={onDismiss} />);
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not report interaction or focus leaving as a dismissal', () => {
+    // The distinction onDismiss exists for: a non-modal popover gives up on
+    // interaction and focus leaving it, which on a canvas is every click on
+    // the artwork. A consumer that owns dismissal must not hear those as "the
+    // user read this and waved it away".
+    const onDismiss = vi.fn();
+    render(<ProgrammaticSubject onDismiss={onDismiss} />);
+    fireEvent.pointerDown(document.body);
+    fireEvent.pointerUp(document.body);
+    fireEvent.click(document.body);
+    fireEvent.focusOut(screen.getByRole('dialog'));
+    expect(onDismiss).not.toHaveBeenCalled();
+  });
+
+  it('leaves a pinned-open callout up until it is dismissed', () => {
+    // The shape a consumer owning dismissal uses: isOpen stays true while the
+    // message stands, so RAC's own close paths can't retire it early.
+    const onDismiss = vi.fn();
+    render(
+      <Callout isOpen anchorRect={{ x: 0, y: 0, width: 10, height: 10 }} title="Note" onDismiss={onDismiss}>
+        Pinned
+      </Callout>,
+    );
+    fireEvent.pointerDown(document.body);
+    fireEvent.pointerUp(document.body);
+    fireEvent.click(document.body);
+    fireEvent.focusOut(screen.getByRole('dialog'));
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close callout' }));
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
   it('prefers anchorRect over triggerRef when both are provided', () => {

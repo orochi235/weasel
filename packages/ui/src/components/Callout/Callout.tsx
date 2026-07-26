@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
+import { useCallback, useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DialogTrigger,
@@ -42,11 +42,21 @@ export type CalloutProps = Omit<
   modal?: boolean;
   /**
    * Show the × button. Defaults to `!modal`. In programmatic
-   * `triggerRef`/`anchorRect` modes the close button requires controlled
-   * open (`isOpen` + `onOpenChange`); with only `defaultOpen` it has no
-   * open-state setter to call and cannot close.
+   * `triggerRef`/`anchorRect` modes the close button requires either
+   * controlled open (`isOpen` + `onOpenChange`) or `onDismiss`; with only
+   * `defaultOpen` it has no open-state setter to call and cannot close.
    */
   showCloseButton?: boolean;
+  /**
+   * The user asked for this callout to go away — the × button or Escape.
+   *
+   * Distinct from `onOpenChange`, which a non-modal popover *also* fires when
+   * interaction or focus merely leaves it. On a canvas that's every click on
+   * the artwork, so a consumer that pins `isOpen` and treats `onOpenChange`
+   * as dismissal retires messages nobody read. Use this instead: it fires
+   * only on a deliberate act, and never on incidental focus loss.
+   */
+  onDismiss?: () => void;
   /** Anchor to an arbitrary element (programmatic use, with `isOpen`). */
   triggerRef?: RefObject<Element | null>;
   /**
@@ -79,6 +89,7 @@ export function Callout(props: CalloutProps) {
     tone = 'info',
     modal = false,
     showCloseButton,
+    onDismiss,
     triggerRef,
     anchorRect,
     placement = 'top',
@@ -92,6 +103,21 @@ export function Callout(props: CalloutProps) {
   } = props;
   const anchorRef = useRef<HTMLSpanElement>(null);
   const showClose = showCloseButton ?? !modal;
+  // Escape is a dismissal like the × is. It can't ride on a React `onKeyDown`:
+  // RAC's Dialog runs its props through filterDOMProps, which drops handlers
+  // it doesn't know, so the listener goes on the section itself. RAC's own
+  // Escape handling is untouched — this only adds the signal.
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+  const escapeListener = useRef((e: KeyboardEvent) => {
+    if (e.key === 'Escape') onDismissRef.current?.();
+  });
+  const listeningTo = useRef<HTMLElement | null>(null);
+  const dialogRef = useCallback((node: HTMLElement | null) => {
+    listeningTo.current?.removeEventListener('keydown', escapeListener.current);
+    listeningTo.current = node;
+    node?.addEventListener('keydown', escapeListener.current);
+  }, []);
   const titleId = useId();
   // RAC positions on open and recomputes on scroll, resize, and a
   // ResizeObserver on the anchor — none of which fire when `anchorRect` is
@@ -153,6 +179,7 @@ export function Callout(props: CalloutProps) {
           className={s.dialog}
           aria-label={ariaLabel}
           aria-labelledby={ariaLabelledby}
+          ref={dialogRef}
         >
           {({ close }) => (
             <>
@@ -175,6 +202,7 @@ export function Callout(props: CalloutProps) {
                         // controlled-open fallback below does the work.
                         close();
                         onOpenChange?.(false);
+                        onDismiss?.();
                       }}
                       aria-label="Close callout"
                     >
