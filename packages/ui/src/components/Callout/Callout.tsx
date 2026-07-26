@@ -1,4 +1,4 @@
-import { useId, useRef, type ReactNode, type RefObject } from 'react';
+import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DialogTrigger,
@@ -50,10 +50,10 @@ export type CalloutProps = Omit<
   /** Anchor to an arbitrary element (programmatic use, with `isOpen`). */
   triggerRef?: RefObject<Element | null>;
   /**
-   * Anchor to a client-coordinate rect — e.g. a scene node located via
-   * core's `sceneNodeClientRect`. Snapshot semantics: the callout does not
-   * re-anchor on pan/zoom or scene changes. Takes precedence over
-   * `triggerRef`.
+   * Anchor to a client-coordinate rect — e.g. a scene node's on-screen box.
+   * The callout re-anchors whenever this rect changes, so a consumer that
+   * recomputes it on pan, zoom, or scene edits keeps the arrow on its target.
+   * Takes precedence over `triggerRef`.
    */
   anchorRect?: { x: number; y: number; width: number; height: number };
 };
@@ -93,6 +93,16 @@ export function Callout(props: CalloutProps) {
   const anchorRef = useRef<HTMLSpanElement>(null);
   const showClose = showCloseButton ?? !modal;
   const titleId = useId();
+  // RAC positions on open and recomputes on scroll, resize, and a
+  // ResizeObserver on the anchor — none of which fire when `anchorRect` is
+  // merely *translated*, as it is when a consumer tracks a scene node across a
+  // pan. (Zoom happens to work, since scaling also changes the anchor's size.)
+  // Nudging RAC's own resize listener is the supported way to make it
+  // recompute; there's no public updatePosition on Popover.
+  useEffect(() => {
+    if (anchorRect === undefined || typeof window === 'undefined') return;
+    window.dispatchEvent(new Event('resize'));
+  }, [anchorRect?.x, anchorRect?.y, anchorRect?.width, anchorRect?.height]);
   // RAC's popover role-heuristic misses alertdialog; label the outer role
   // it stamps. Upstream: react-spectrum Popover.mjs querySelector('[role=dialog]').
   const popoverAriaLabelledby =

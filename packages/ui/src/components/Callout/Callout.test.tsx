@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { Pressable } from 'react-aria-components';
@@ -85,6 +85,47 @@ describe('Callout', () => {
     expect(anchor.style.top).toBe('80px');
     expect(anchor.style.width).toBe('40px');
     expect(anchor.style.height).toBe('20px');
+  });
+
+  it('moves its anchor and asks RAC to reposition when anchorRect changes', () => {
+    // A consumer tracking a scene node recomputes the rect on pan/zoom. RAC
+    // recomputes overlay position on window resize, so the re-anchor rides on
+    // that; without the nudge a pure translation leaves the popover behind
+    // (the anchor's ResizeObserver only fires when its *size* changes).
+    const onResize = vi.fn();
+    window.addEventListener('resize', onResize);
+    const { rerender } = render(
+      <Callout isOpen anchorRect={{ x: 10, y: 10, width: 40, height: 20 }} title="Here">
+        Anchored
+      </Callout>,
+    );
+    onResize.mockClear();
+
+    rerender(
+      <Callout isOpen anchorRect={{ x: 90, y: 60, width: 40, height: 20 }} title="Here">
+        Anchored
+      </Callout>,
+    );
+
+    const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
+    expect(anchor.style.left).toBe('90px');
+    expect(anchor.style.top).toBe('60px');
+    expect(onResize).toHaveBeenCalled();
+    window.removeEventListener('resize', onResize);
+  });
+
+  it('does not nudge when the anchor rect is unchanged', () => {
+    const rect = { x: 10, y: 10, width: 40, height: 20 };
+    const onResize = vi.fn();
+    window.addEventListener('resize', onResize);
+    const { rerender } = render(
+      <Callout isOpen anchorRect={rect} title="Here">Anchored</Callout>,
+    );
+    onResize.mockClear();
+    // New object, same numbers — the effect keys on the values, not identity.
+    rerender(<Callout isOpen anchorRect={{ ...rect }} title="Here">Anchored</Callout>);
+    expect(onResize).not.toHaveBeenCalled();
+    window.removeEventListener('resize', onResize);
   });
 
   it('applies the tone class', () => {
