@@ -18,7 +18,8 @@ Priority tags:
 
 ### P1 — foundational genericity gaps
 
-(none currently open)
+**Plugins & packaging**
+- Resilient theming that "just works" across implementations → [Plugins & packaging](#plugins--packaging)
 
 ### P2 — broad reuse / friction-likely
 
@@ -280,6 +281,14 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 ---
 
 ## Plugins & packaging
+
+### Theming
+
+- **(P1) Make theming resilient and implementation-agnostic — it should "just work."** Today theming is a set of loosely-coupled conventions that each consumer has to re-derive, and every new surface (canvas-drawn chrome, DOM chrome, HUD widgets, published packages) re-solves it differently. The pieces that exist: `@weasel-js/theme` ships `tokens.css` (`--wzl-*` custom properties) plus a parallel TS export (`DEFAULT_TOKENS`/`TokenName`); `@weasel-js/ui` consumes tokens through 41 CSS Modules; `@weasel-js/hud` renders widgets into the canvas via WebGL and so can't read CSS custom properties at all without an explicit bridge; apps/draw layers its own `wd-` prefixed CSS on top; and the Storybook CSS Vars addon parses `tokens.css` off disk through `scripts/vite-plugin-weasel-tokens.ts`. Nothing enforces that these agree.
+
+  The goal is a single theming contract that holds regardless of *where* a pixel is drawn (DOM vs canvas vs WebGL), *how* the consumer builds (bundler, plain `<link>`, SSR), and *whether* they use our CSS at all — with sensible defaults so a consumer who does nothing still gets a coherent look, and one override point that reaches every surface at once.
+
+  Questions to settle in a spec: (a) is the source of truth CSS custom properties, the TS token object, or a build step that generates both from one input — and how do canvas/WebGL surfaces read it without a DOM `getComputedStyle` round-trip per frame; (b) how do themes compose (light/dark, brand override, per-instance override) without `!important` or specificity fights; (c) what does a consumer import — is `@weasel-js/ui/style.css` mandatory, and what breaks if they skip it; (d) how do tokens version across a lockstep release without every rename being a breaking change; (e) whether unthemed/partial-token states should fall back visibly or silently. Surfaced 2026-07-26 while making theme/ui/hud publishable: the packaging work forced each surface's theming assumptions into the open and they don't currently line up.
 
 ### Plugin/bundling convention
 

@@ -1,0 +1,44 @@
+{
+  // Declaration-only emit for the published package. The repo-root tsconfig
+  // remains the solution-wide config used by `npm run typecheck`; this one
+  // narrows to src and drops tests/stories so they stay out of `dist`.
+  //
+  // `paths` is CLEARED rather than inherited. The root config maps every
+  // `@weasel-js/*` specifier to a sibling's `src/`, which is right for the
+  // dev loop but wrong here: following core into source drags in core's own
+  // bare aliases (`core/…`, `features/…`) that only core's tsconfig maps, and
+  // it would inline core's declarations into ui's instead of referencing them.
+  //
+  // With no mappings, tsc resolves each sibling through the node_modules
+  // workspace symlink and its `exports`/`types` — i.e. against core's BUILT
+  // declarations, exactly as a consumer does. That is the whole payoff of
+  // making these real packages, and it requires the dependency-ordered build
+  // (siblings are built before ui; see the root `build` script).
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    // Without this, a resolution mistake is silently destructive: tsc emits
+    // even when it errors, so the first version of this config — which mapped
+    // @weasel-js/core to core's SOURCE — pulled core's whole tree into the
+    // program and scattered 1000+ .d.ts files across packages/core/src/,
+    // which then broke core's own dts build. Fail before writing anything.
+    "noEmitOnError": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "tsBuildInfoFile": "../../.tsbuildinfo/ui-build.tsbuildinfo",
+    "types": ["node"],
+    "paths": {}
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.stories.ts",
+    "**/*.stories.tsx",
+    "**/__tests__/**"
+  ]
+}

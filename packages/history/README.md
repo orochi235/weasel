@@ -1,6 +1,6 @@
-# @weasel-js/hud
+# @weasel-js/history
 
-WebGL-rendered UI widgets that composite into a weasel canvas
+Undo/redo history with scoped sub-history (Journal) primitive. No React, no DOM.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -9,14 +9,13 @@ scene-graph canvas kit for React. See the
 ## Install
 
 ```sh
-npm install @weasel-js/hud
+npm install @weasel-js/history
 ```
 
 ## Usage
 
 ```ts
-import { /* … */ } from '@weasel-js/hud';
-import { /* … */ } from '@weasel-js/hud/react';
+import { /* … */ } from '@weasel-js/history';
 ```
 
 ## License

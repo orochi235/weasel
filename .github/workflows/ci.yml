@@ -40,10 +40,14 @@ jobs:
       # (js+dts) for leaked @weasel-js specifiers. Runs after the build above.
       # See packages/labkit/scripts/smoke-consumer-bundle.mjs.
       - run: npm run test:smoke:consumer -w @weasel-js/labkit
-      # Bundle the built `@weasel-js/core` entry from outside the monorepo to
-      # prove no path-alias / bare workspace-package specifier leaked into dist.
-      # The in-repo vitest `smoke` project can't catch this — it inherits the
-      # repo tsconfig baseUrl. See scripts/smoke-consumer-bundle.mjs.
+      # `npm pack` every published @weasel-js package, extract them into a tree
+      # outside the monorepo, then bundle + typecheck a consumer against it.
+      # Proves the cross-package `exports`/`types` maps resolve, that no
+      # repo-internal path alias leaked into dist, and that core externalizes
+      # (rather than inlines) its siblings — inlining would hand consumers
+      # duplicate module instances. The in-repo vitest `smoke` project can't
+      # catch any of this; it inherits the repo tsconfig paths.
+      # See scripts/smoke-consumer-bundle.mjs.
       - run: npm run test:smoke:consumer
       # `npm run build-storybook` removed — pages.yml already builds Storybook on every
       # main-branch push that touches user-visible source, so this CI step was a slow

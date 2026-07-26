@@ -1,12 +1,8 @@
 import type { Hud } from './hud';
-import type { CanvasExtensionApi } from '@weasel-js/core';
-import type { RenderLayer } from '../../core/src/core/layers/render';
-import type { DrawCommand } from '../../core/src/renderer';
-import type { AffordanceBinding } from '../../core/src/affordances/types';
-import type { DragChannel } from '../../core/src/tools/types';
-import type { View } from '../../core/src/core/viewport/view';
-import { viewToTransform } from '../../core/src/core/viewport/view';
-import { worldToScreen } from '../../core/src/core/viewport/viewTransform';
+import type { CanvasExtensionApi, RenderLayer, AffordanceBinding, DragChannel, View } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/core/renderer';
+import { viewToTransform } from '@weasel-js/core';
+import { worldToScreen } from '@weasel-js/core';
 import { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
 import type { Widget, HudPointerEvent } from './widget';
 import { readTokens } from './theme';

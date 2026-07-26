@@ -27,22 +27,17 @@ export default defineConfig({
   splitting: true,
   target: 'es2022',
   external: ['react', 'react-dom'],
-  // The @weasel-js/* workspace sub-packages (history, gestures, modes) are
-  // NOT independently buildable — they reach into this package's src/core and
-  // src/debug via shared tsconfig path aliases, not public API. They must be
-  // inlined into dist (both JS and .d.ts), never emitted as bare
-  // `import ... from '@weasel-js/history'` specifiers pointing at raw,
-  // un-built source — a downstream bundler with no baseUrl can't resolve those
-  // (e.g. `core/ops/registry`), so consumers get TS2307s and an empty DepSchema.
-  // Two things make that happen, and BOTH are required:
-  //   1. These packages are NOT in `dependencies` (see package.json) — tsup
-  //      builds its .d.ts `external` list from deps+peerDeps, so listing them
-  //      there would force the declaration bundler to externalize them no
-  //      matter what. They're devDependencies (bundled, not installed by
-  //      consumers).
-  //   2. tsconfig `paths` alias them to `packages/*/src` (like @weasel-js/ui),
-  //      so both esbuild and rollup-plugin-dts resolve them as program-internal
-  //      source and inline their declarations alongside core/*.
-  // `noExternal` covers the JS bundle explicitly; the .d.ts side relies on (1)+(2).
-  noExternal: [/^@weasel-js\//],
+  // No `noExternal`. The @weasel-js/* sub-packages used to be inlined here —
+  // both JS and .d.ts — because they reached into this package's src/core and
+  // src/debug via shared tsconfig aliases and so weren't independently
+  // buildable. That stopped being true once Op moved into history (56f5193f)
+  // and SVG ingestion into svg (ea0df120): geom, gestures, history, and modes
+  // now have zero reach-back. They are real `dependencies` and real published
+  // packages, so tsup externalizes them by default for the bundle AND the
+  // declarations (its dts external list is derived from deps + peerDeps).
+  //
+  // Inlining is not a safe default to fall back to: a consumer holding both
+  // core and, say, @weasel-js/geom would get two copies of it — the same
+  // duplicate-module-identity failure documented above for the font registry.
+  // scripts/smoke-consumer-bundle.mjs asserts single-copy resolution.
 });

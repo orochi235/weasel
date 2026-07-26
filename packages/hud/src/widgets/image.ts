@@ -1,5 +1,5 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
-import type { DrawCommand, ImageDrawCommand } from '../../../core/src/renderer';
+import type { DrawCommand, ImageDrawCommand } from '@weasel-js/core/renderer';
 
 export interface ImageOptions {
   id: string;

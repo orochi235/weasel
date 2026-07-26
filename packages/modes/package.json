@@ -1,22 +1,45 @@
 {
   "name": "@weasel-js/modes",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.4.0",
   "description": "App-level modality primitives: capability tags, mode definitions, mode registry, and decoration layer.",
   "license": "MIT",
   "type": "module",
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./presets/default": {
-      "import": "./src/presets/default.ts",
-      "types": "./src/presets/default.ts"
+      "import": "./dist/presets/default.js",
+      "types": "./dist/presets/default.d.ts"
     },
     "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/modes"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

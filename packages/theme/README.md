@@ -1,29 +1,26 @@
-# weasel-theme
+# @weasel-js/theme
 
-Design tokens shared by `@weasel-js/ui` (DOM/React widgets) and
-`@weasel-js/hud` (WebGL widgets). Single namespace: `--wzl-*`.
+Design tokens shared by weasel-ui and weasel-hud — CSS variables + a parallel TS export.
+
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
+scene-graph canvas kit for React. See the
+[API reference](https://orochi235.github.io/weasel/api/).
+
+## Install
+
+```sh
+npm install @weasel-js/theme
+```
 
 ## Usage
 
 ```ts
-// In your app shell, import the CSS for default values:
+import { /* … */ } from '@weasel-js/theme';
 import '@weasel-js/theme/tokens.css';
 ```
 
-Override individual tokens at any DOM level:
+The stylesheet is required — component styles ship as one bundled file.
 
-```css
-[data-theme="dark"] {
-  --wzl-text: #f4f4f4;
-  --wzl-panel-bg: #1a1a1a;
-}
-```
+## License
 
-For non-DOM consumers (weasel-hud), the TS export `DEFAULT_TOKENS` provides
-the same values as a typed object for fallback when CSS isn't loaded.
-
-## Editing tokens
-
-`tokens.ts` and `tokens.css` are maintained side-by-side. The parity test
-in `tokens.test.ts` catches drift between them. If you edit one, edit
-the other and run `pnpm exec vitest run packages/theme/`.
+MIT

@@ -1,4 +1,4 @@
-import type { RenderLayer } from '../../core/src/core/layers/render';
+import type { RenderLayer } from '@weasel-js/core';
 
 export interface HudHost {
   requestRedraw(): void;

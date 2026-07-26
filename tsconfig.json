@@ -33,8 +33,18 @@
       // `exports` into the built `dist/`. That made typecheck silently depend
       // on a prior build; mapping to source removes that ordering hazard.
       "@weasel-js/core/*": ["./packages/core/src/import-shims/*"],
+      // Every workspace referenced from apps/ or another package needs an entry
+      // here. Unlike the vite aliases — which scripts/vite-aliases.ts generates
+      // by reading packages/ at config-load time — this list is hand-maintained,
+      // so a new workspace is easy to miss. A missing entry used to be harmless
+      // (the package's `types` pointed at src, so node resolution found the
+      // source anyway); now that they point at `dist`, a missing entry makes
+      // `npm run typecheck` silently depend on a prior `npm run build`.
       "@weasel-js/ui": ["./packages/ui/src/index.ts"],
       "@weasel-js/svg": ["./packages/svg/src/index.ts"],
+      "@weasel-js/d3": ["./packages/d3/src/index.ts"],
+      "@weasel-js/hud": ["./packages/hud/src/index.ts"],
+      "@weasel-js/hud/react": ["./packages/hud/src/react/index.ts"],
       "@weasel-js/geom": ["./packages/geom/src/index.ts"],
       "@weasel-js/geom/booleans": ["./packages/geom/src/booleans/index.ts"],
       "@weasel-js/geom/*": ["./packages/geom/src/*"],

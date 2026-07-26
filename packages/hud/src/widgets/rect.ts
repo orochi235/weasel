@@ -1,6 +1,6 @@
 import type { Widget, HudDrawCtx, HudPointerEvent, PointerClaim, WidgetBounds } from '../widget';
-import type { DrawCommand, PathDrawCommand } from '../../../core/src/renderer';
-import type { RectPath } from '../../../core/src/features/paths/types';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
+import type { RectPath } from '@weasel-js/core';
 
 export interface RectOptions {
   id: string;

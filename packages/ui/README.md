@@ -1,38 +1,26 @@
-# weasel-ui
+# @weasel-js/ui
 
-UI chrome primitives for weasel-based apps — selection-aware property
-panels, toolbar shells, etc. Sibling to `@weasel-js/core`; consumed
-today only by the WeaselDraw demo via a vite alias (no workspaces
-yet).
+UI chrome primitives for weasel apps (properties panel, etc.)
 
-## What's here
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
+scene-graph canvas kit for React. See the
+[API reference](https://orochi235.github.io/weasel/api/).
 
-- `<PropertiesPanel>` — sidebar shell with title + 12-column grid.
-- `<PropertyRow>` — label-in-column-1 + value-cells layout helper.
-- Input primitives — `PropertyTextInput`, `PropertyNumberInput`,
-  `PropertyAxisInput` (X/Y or W/H pair), `PropertyColorInput`,
-  `PropertySelect`, `PropertyButton`, `PropertyReadOnly`.
+## Install
 
-## CSS variables
+```sh
+npm install @weasel-js/ui
+```
 
-Components read `--wzl-*` tokens from `@weasel-js/theme`. Import
-`@weasel-js/theme/tokens.css` in your app shell for sensible
-defaults, or define the variables yourself at any DOM scope.
+## Usage
 
-| Variable | Purpose |
-|---|---|
-| `--wzl-text` | Primary text |
-| `--wzl-text-muted` | Labels, secondary text |
-| `--wzl-panel-bg` | Panel background |
-| `--wzl-panel-border` | Panel/input border |
-| `--wzl-input-bg` | Input field background |
-| `--wzl-accent` | Focused-input border, primary action |
-| `--wzl-danger` | Destructive button text |
+```ts
+import { /* … */ } from '@weasel-js/ui';
+import '@weasel-js/ui/style.css';
+```
 
-## Why a separate package
+The stylesheet is required — component styles ship as one bundled file.
 
-The peer-package layout matches `docs/specs/2026-05-03-weasel-den-design.md`:
-core stays focused on primitives, finished tools migrate to weasel-den,
-and UI chrome lives here. Today only this package exists; weasel-den is
-a placeholder. Full monorepo conversion (moving core into
-`packages/weasel/`, declaring workspaces, etc.) is deferred.
+## License
+
+MIT
