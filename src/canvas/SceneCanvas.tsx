@@ -403,7 +403,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  falling through. Only items that never match (non-weasel text)
      *  flow on to other handlers.
      *  Memoize `handlers` (useState/useMemo/module const) — an inline array
-     *  literal re-registers the handlers on every render. */
+     *  literal re-registers the handlers on every render. The same applies
+     *  to `clipboard.reviver`: an inline function identity-churns the
+     *  memoized clipboard ctx each render (harmless but wasteful). */
     ingestion?: {
       handlers?: ContentHandlerEntry[];
       resolveSrc?: (file: File) => Promise<string>;

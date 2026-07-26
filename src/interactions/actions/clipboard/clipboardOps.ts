@@ -1,13 +1,11 @@
 import { useCallback, useRef } from 'react';
-import { createInsertOp } from 'core/ops/create';
-import { createSetSelectionOp } from 'core/ops/select';
-import type { Op } from 'core/ops/types';
 import type { NodeId } from 'core/scene/types';
 import { dispatchApplyBatch } from 'core/applyOps';
 import type { InsertAdapter } from 'core/adapters/types';
 import type { ClipboardSnapshot } from './types';
 import { usePointerContext } from 'features/pointer/PointerContext';
 import { dwarn } from 'debug/flag';
+import { materializePaste } from './materializePaste';
 import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText } from './wireFormat';
 
 type Replacer = (key: string, value: unknown) => unknown;
@@ -96,26 +94,19 @@ export function useClipboardOps<TNode extends { id: string }>(
     const cb = clipboardRef.current;
     if (cb.items.length === 0) return;
     const a = adapterRef.current;
-    if (!a.commitPaste) return;
-    const offset = a.getPasteOffset?.(cb) ?? { dx: 0, dy: 0 };
-    const dropPoint = optsRef.current.getDropPoint?.();
-    const ctx = dropPoint != null ? { dropPoint } : undefined;
-    const created = a.commitPaste(cb, offset, ctx);
-    if (created.length === 0) return;
-    const newIds = created.map((o) => o.id as NodeId);
-    const beforeSel = optsRef.current.getSelection();
-    const ops: Op[] = [
-      ...created.map((o) => createInsertOp({ node: o })),
-      createSetSelectionOp({ from: beforeSel, to: newIds }),
-    ];
-    dispatchApplyBatch(a, ops, optsRef.current.pasteLabel);
+    const result = materializePaste(a, cb, {
+      currentSelection: optsRef.current.getSelection(),
+      dropPoint: optsRef.current.getDropPoint?.(),
+    });
+    if (!result) return;
+    dispatchApplyBatch(a, result.ops, optsRef.current.pasteLabel);
     // Use the just-created objects as the next cascade source. Re-snapshotting
     // via `adapter.snapshotSelection(newIds)` would read adapter state, but
     // React-state adapters haven't flushed yet — `itemsRef.current` still
     // points at the pre-insert array, so the snapshot would come back empty
     // and the next paste would no-op.
-    clipboardRef.current = { items: created };
-    optsRef.current.onPaste?.(newIds);
+    clipboardRef.current = { items: result.created };
+    optsRef.current.onPaste?.(result.newIds as NodeId[]);
   }, []);
 
   const isEmpty = useCallback(() => clipboardRef.current.items.length === 0, []);

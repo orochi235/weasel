@@ -76,6 +76,12 @@ describe('kitWeaselJsonHandler.match', () => {
     expect(matches(stringItem(buildWeaselClipboardText(NODES), 'text/plain'))).toBe(true);
   });
 
+  it('declines non-string items even when they carry the custom MIME', () => {
+    const file = new File(['x'], 'x.json', { type: WEASEL_CLIPBOARD_MIME });
+    expect(matches({ kind: 'file', mime: WEASEL_CLIPBOARD_MIME, file })).toBe(false);
+    expect(matches({ kind: 'file', mime: WEASEL_CLIPBOARD_MIME_WEB, file })).toBe(false);
+  });
+
   it('declines non-weasel text/plain', () => {
     expect(matches(stringItem('just some prose', 'text/plain'))).toBe(false);
     expect(matches(stringItem('{"nodes":[]}', 'text/plain'))).toBe(false);
@@ -97,8 +103,9 @@ describe('kitWeaselJsonHandler.handle — paste', () => {
     await kitWeaselJsonHandler.handle([stringItem(buildWeaselClipboardText(NODES))], c);
 
     expect(adapter.commitPaste).toHaveBeenCalledTimes(1);
-    expect(adapter.commitPaste).toHaveBeenCalledWith({ items: NODES }, { dx: 12, dy: 12 });
-    // ctx.point is null for paste — no dropPoint ctx is threaded.
+    // ctx.point is null for paste — no dropPoint ctx is threaded (the shared
+    // materializePaste always passes the ctx slot, undefined when absent).
+    expect(adapter.commitPaste).toHaveBeenCalledWith({ items: NODES }, { dx: 12, dy: 12 }, undefined);
     expect(adapter.commitPaste.mock.calls[0][2]).toBeUndefined();
 
     expect(c.applyOps).toHaveBeenCalledTimes(1);
@@ -120,7 +127,7 @@ describe('kitWeaselJsonHandler.handle — paste', () => {
     (adapter as { getPasteOffset?: unknown }).getPasteOffset = undefined;
     const c = ctx({ clipboard: { adapter } });
     await kitWeaselJsonHandler.handle([stringItem(buildWeaselClipboardText(NODES))], c);
-    expect(adapter.commitPaste).toHaveBeenCalledWith({ items: NODES }, { dx: 0, dy: 0 });
+    expect(adapter.commitPaste).toHaveBeenCalledWith({ items: NODES }, { dx: 0, dy: 0 }, undefined);
   });
 
   it('threads ctx.clipboard.reviver into the payload parse', async () => {
