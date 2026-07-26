@@ -40,6 +40,34 @@ export function isSvgFileItem(item: IngestItem): boolean {
   return item.mime === 'application/octet-stream' && /\.svg$/i.test(item.file.name);
 }
 
+/**
+ * Strict-prefix sniff: could this text be an SVG document? `<svg` (or an XML
+ * declaration, then optional whitespace/comments, then `<svg`) must open the
+ * document — no mid-document substring scans, same discipline as
+ * `sniffWeaselClipboardText`. Exists because Safari drops both custom MIMEs
+ * and `image/svg+xml` from async clipboard writes, leaving `text/plain` as
+ * the only surviving flavor of an SVG copy.
+ */
+export function sniffSvgText(text: string): boolean {
+  let t = text.trimStart();
+  if (t.startsWith('<?xml')) {
+    const end = t.indexOf('?>');
+    if (end < 0) return false;
+    t = t.slice(end + 2);
+  }
+  for (;;) {
+    t = t.trimStart();
+    if (t.startsWith('<!--')) {
+      const end = t.indexOf('-->');
+      if (end < 0) return false;
+      t = t.slice(end + 3);
+      continue;
+    }
+    break;
+  }
+  return /^<svg[\s>/]/i.test(t);
+}
+
 const defaultMeasure: Measure = async (file) => {
   const url = URL.createObjectURL(file);
   try {
@@ -59,10 +87,25 @@ let measure: Measure = defaultMeasure;
 
 export const kitSvgHandler: ContentHandlerEntry = {
   id: 'kit:svg',
-  match: isSvgFileItem,
+  // Files by MIME/extension, plus the text/plain fallback flavor: SVG markup
+  // pasted as plain text (the only flavor Safari lets an SVG copy keep).
+  match: (item) =>
+    isSvgFileItem(item)
+    || (item.kind === 'string' && item.mime === 'text/plain' && sniffSvgText(item.text)),
   priority: -90,
   handle(items, ctx: IngestCtx) {
     const files = items.flatMap((it) => (it.kind === 'file' ? [it.file] : []));
+    // String items (the text/plain SVG fallback flavor) enter the same file
+    // path — wrap the markup in a File so unpack/embed stays one code path.
+    // BUT skip them when the weasel-JSON handler already pasted this event's
+    // copy: draw writes weasel-JSON + SVG together, so ingesting both would
+    // double-paste. (ctx is shared per event; the weasel handler runs first.)
+    if (!ctx.consumedWeaselPayload) {
+      for (const it of items) {
+        if (it.kind === 'string') files.push(new File([it.text], 'pasted.svg', { type: SVG_MIME }));
+      }
+    }
+    if (files.length === 0) return;
     if (ctx.svg?.unpack) return unpackSvgFiles(files, ctx);
     // Thunk (not the variable) so the test seam is read at call time.
     return embedFilesAsImageNodes(files, ctx, {

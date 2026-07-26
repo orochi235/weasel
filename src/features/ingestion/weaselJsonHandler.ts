@@ -66,5 +66,8 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
     if (!result) return;
     ctx.applyOps(result.ops, 'Paste');
     ctx.selection.set(result.newIds as NodeId[]);
+    // Flag the shared event ctx so kit:svg's text/plain fallback declines the
+    // SVG flavor of this same copy (draw writes weasel-JSON + SVG together).
+    ctx.consumedWeaselPayload = true;
   },
 };

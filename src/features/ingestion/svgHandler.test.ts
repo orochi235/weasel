@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   kitSvgHandler,
   isSvgFileItem,
+  sniffSvgText,
   __setSvgMeasureForTests,
   _resetSvgHandlerSeamsForTests,
 } from './svgHandler';
@@ -10,8 +11,18 @@ import {
   __setFileToDataUriForTests,
   _resetImageHandlerSeamsForTests,
 } from './imageHandler';
-import type { IngestCtx } from './contentHandlers';
+import { kitWeaselJsonHandler } from './weaselJsonHandler';
+import {
+  registerContentHandler,
+  runIngest,
+  _resetContentHandlersForTests,
+  type IngestCtx,
+} from './contentHandlers';
 import type { IngestItem } from './ingestItems';
+import {
+  WEASEL_CLIPBOARD_MIME,
+  buildWeaselClipboardText,
+} from 'interactions/actions/clipboard/wireFormat';
 
 const svgFile = (name = 'pic.svg', type = 'image/svg+xml') =>
   new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'], name, { type });
@@ -32,6 +43,7 @@ function ctx(overrides: Partial<IngestCtx> = {}): IngestCtx & { insert: { commit
 }
 
 beforeEach(() => {
+  _resetContentHandlersForTests();
   _resetSvgHandlerSeamsForTests();
   _resetImageHandlerSeamsForTests();
   __setSvgMeasureForTests(async () => ({ width: 400, height: 300 }));
@@ -94,5 +106,97 @@ describe('kitSvgHandler — default single-node embed', () => {
     await kitSvgHandler.handle([item(svgFile('bad.svg')), item(svgFile('ok.svg'))], c);
     expect(c.insert.commit).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalled();
+  });
+});
+
+// ─── text/plain SVG fallback flavor ─────────────────────────────────────────
+// Safari drops custom MIMEs AND image/svg+xml from async clipboard writes, so
+// a paste of draw's flavor set can arrive as text/plain SVG markup only.
+
+const SVG_TEXT = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>';
+const svgTextItem = (text = SVG_TEXT): IngestItem =>
+  ({ kind: 'string', mime: 'text/plain', text });
+const matches = (i: IngestItem): boolean =>
+  (kitSvgHandler.match as (i: IngestItem) => boolean)(i);
+
+/** Ctx with the weasel-paste seam wired (or not) plus selection mocks, for
+ *  precedence tests that run BOTH kit handlers through real runIngest. */
+function pasteCtx(withClipboard: boolean) {
+  const adapter = {
+    insertNode: vi.fn(),
+    setSelection: vi.fn(),
+    getSelection: () => [] as string[],
+    getPasteOffset: () => ({ dx: 12, dy: 12 }),
+    commitPaste: vi.fn((cb: { items: unknown[] }) =>
+      cb.items.map((n, i) => ({ ...(n as object), id: `paste-${i}` }))),
+  };
+  const c = ctx({
+    selection: { get: vi.fn(() => []), set: vi.fn() } as never,
+    ...(withClipboard ? { clipboard: { adapter } } : {}),
+  });
+  return { c, adapter };
+}
+
+const weaselItem = (): IngestItem => ({
+  kind: 'string',
+  mime: WEASEL_CLIPBOARD_MIME,
+  text: buildWeaselClipboardText([{ id: 'a', parent: null, pose: { x: 1 }, data: {} }]),
+});
+
+describe('sniffSvgText', () => {
+  it('accepts a bare <svg> prefix (leading whitespace ok)', () => {
+    expect(sniffSvgText(SVG_TEXT)).toBe(true);
+    expect(sniffSvgText('  \n<svg>')).toBe(true);
+    expect(sniffSvgText('<svg/>')).toBe(true);
+  });
+
+  it('accepts an XML declaration and comments before <svg>', () => {
+    expect(sniffSvgText('<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="x">')).toBe(true);
+    expect(sniffSvgText('<?xml version="1.0"?>\n<!-- exported -->\n<svg>')).toBe(true);
+  });
+
+  it('rejects prose, mid-document mentions, JSON, and near-miss tags', () => {
+    expect(sniffSvgText('plain prose')).toBe(false);
+    expect(sniffSvgText('prose mentioning <svg> later')).toBe(false);
+    expect(sniffSvgText('{"weaselClipboard":1,"nodes":[]}')).toBe(false);
+    expect(sniffSvgText('<svgg>')).toBe(false);
+    expect(sniffSvgText('<div><svg></div>')).toBe(false);
+  });
+});
+
+describe('kitSvgHandler — text/plain SVG fallback', () => {
+  it('matches text/plain carrying SVG markup; declines prose and weasel JSON', () => {
+    expect(matches(svgTextItem())).toBe(true);
+    expect(matches(svgTextItem('plain prose'))).toBe(false);
+    // Weasel wire text is JSON — never claimed by the SVG branch, whether or
+    // not the weasel handler is registered.
+    expect(matches(svgTextItem(buildWeaselClipboardText([{ id: 'a' }])))).toBe(false);
+  });
+
+  it('ingests a text/plain SVG item through the same path as an SVG file', async () => {
+    const c = ctx({ point: { x: 100, y: 100 } });
+    await kitSvgHandler.handle([svgTextItem()], c);
+    expect(c.insert.commit).toHaveBeenCalledTimes(1);
+    const [, extras] = c.insert.commit.mock.calls[0];
+    expect(extras.kind).toBe('image');
+    expect(extras.src).toMatch(/^data:image\/svg\+xml/);
+  });
+
+  it('does NOT double-paste: weasel-JSON wins when both flavors arrive in one event', async () => {
+    registerContentHandler(kitWeaselJsonHandler);
+    registerContentHandler(kitSvgHandler);
+    const { c } = pasteCtx(true);
+    await runIngest([weaselItem(), svgTextItem()], c);
+    expect(c.applyOps).toHaveBeenCalledTimes(1); // the weasel paste
+    expect(c.insert.commit).not.toHaveBeenCalled(); // svg fallback declined
+  });
+
+  it('the SVG text flavor still ingests when the weasel handler declines (clipboard not wired)', async () => {
+    registerContentHandler(kitWeaselJsonHandler);
+    registerContentHandler(kitSvgHandler);
+    const { c } = pasteCtx(false);
+    await runIngest([weaselItem(), svgTextItem()], c);
+    expect(c.applyOps).not.toHaveBeenCalled(); // weasel declined inert
+    expect(c.insert.commit).toHaveBeenCalledTimes(1); // fallback flavor lands
   });
 });
