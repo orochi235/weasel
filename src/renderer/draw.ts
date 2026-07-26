@@ -815,9 +815,13 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const gl = ctx.gl;
   applyClipTest(ctx);
   const preparedPrograms = new Set<ShaderProgram>();
+  let currentProg: ShaderProgram | null = null;
   for (const group of laid.groups) {
     const prog = group.source === 'canvas' ? ctx.textSdfR8 : ctx.textSdf;
-    gl.useProgram(prog.handle);
+    if (prog !== currentProg) {
+      gl.useProgram(prog.handle);
+      currentProg = prog;
+    }
     if (!preparedPrograms.has(prog)) {
       preparedPrograms.add(prog);
       setProjAndModel(ctx, prog);

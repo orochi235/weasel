@@ -970,7 +970,7 @@ describe('drawText — canvas-dynamic routing', () => {
     const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
     expect(used).toContain(ctx.textSdfR8.handle);
     expect(used).not.toContain(ctx.textSdf.handle);
-    // Full R8 page upload happened (texImage2D with R8-format args).
+    // Full page upload happened (texImage2D — the recorder can't see the R8 format args).
     expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
   });
 });
