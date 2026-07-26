@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SceneCanvas, asNodeId, useScene, useSelection } from '@weasel-js/core';
-import type { DrawCommand } from '../../../../packages/core/src/renderer';
-import type { CurveRepresentation, SharedAnchor } from '../../../../packages/core/src/features/paths/curves';
+import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { CurveRepresentation, SharedAnchor } from '@weasel-js/core';
 import {
   createAnchorsLayer,
   createCurvatureCombLayer,

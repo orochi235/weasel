@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createPathEditPainter, type Anchor } from './pathEditPainter';
-import type { PathDrawCommand } from '../../../../packages/core/src/renderer/DrawCommand';
+import type { PathDrawCommand } from '@weasel-js/core/renderer';
 
 describe('createPathEditPainter', () => {
   it('returns empty draw commands when targetId is null', () => {

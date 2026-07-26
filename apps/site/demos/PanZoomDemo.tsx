@@ -5,8 +5,8 @@ import {
   useSelection,
   meanScale,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
-import type { View } from '../../../packages/core/src/core/viewport/view';
+import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { View } from '@weasel-js/core';
 
 interface NodeData { color: string; pin: 'screen' | 'world' | 'none' }
 type LayerId = 'default';

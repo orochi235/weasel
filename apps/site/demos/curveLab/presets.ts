@@ -1,4 +1,4 @@
-import type { SharedAnchor } from '../../../../packages/core/src/features/paths/curves';
+import type { SharedAnchor } from '@weasel-js/core';
 
 export interface CurvePreset {
   id: string;

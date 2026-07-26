@@ -9,10 +9,9 @@ import {
   PATH_L,
   PATH_Z,
 } from '@weasel-js/core';
-import type { PolygonPath } from '@weasel-js/core';
+import type { PolygonPath, View } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
-import type { View } from '../../../packages/core/src/core/viewport/view';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface NodeData { kind: string; fill: string; stroke?: string; strokeWidth?: number }
 type LayerId = 'default';
