@@ -46,7 +46,9 @@ export interface IngestCtx {
   /** Clipboard-paste seam — present when the hosting `SceneCanvas` supplied
    *  an adapter with `commitPaste`. `reviver` comes from
    *  `SceneCanvasProps.ingestion.clipboard`. Absent ⇒ the kit weasel-JSON
-   *  handler declines and other handlers get their shot. */
+   *  handler declines inert (dwarn, nothing ingested) — its matched items
+   *  were already consumed at match time, so they do NOT fall through;
+   *  only match-level misses flow on to other handlers. */
   clipboard?: ClipboardIngestCtx;
   /** Full action-deps bag, for consumer handlers that need more. */
   deps: ActionDeps;

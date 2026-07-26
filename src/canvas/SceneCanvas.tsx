@@ -397,8 +397,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  default (pastes of weasel clipboard payloads re-materialize through
      *  this canvas's adapter); `reviver` restores JSON-unfriendly values the
      *  copying side encoded via `jsonReplacer` (typed arrays etc.);
-     *  `enabled: false` opts the canvas out — weasel payloads then fall
-     *  through to other handlers.
+     *  `enabled: false` opts the canvas out — but note the kit handler
+     *  still consumes weasel-matching items at match time; on a disabled
+     *  canvas it declines inert (a dwarn, nothing ingested) rather than
+     *  falling through. Only items that never match (non-weasel text)
+     *  flow on to other handlers.
      *  Memoize `handlers` (useState/useMemo/module const) — an inline array
      *  literal re-registers the handlers on every render. */
     ingestion?: {

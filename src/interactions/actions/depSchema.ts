@@ -184,6 +184,9 @@ export interface SvgIngestOptions {
  * (`IngestCtx.clipboard`). Built by `<SceneCanvas>` from its own synthesized
  * adapter + the `ingestion.clipboard` prop; absent when the consumer set
  * `ingestion.clipboard.enabled === false` or the adapter lacks `commitPaste`.
+ * Absence makes the handler decline inert (dwarn, nothing ingested) — its
+ * matched items were already consumed at match time and do not fall through
+ * to other handlers.
  */
 export interface ClipboardIngestCtx {
   /** The hosting canvas's adapter — `commitPaste` materializes the pasted
