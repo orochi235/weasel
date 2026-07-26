@@ -20,7 +20,7 @@
  *   - drag-rect       — useDragRect lifecycle
  *   - drag-radial     — useDragRadial lifecycle
  *   - scene           — restored-op replay gaps (history persistence)
- *   - scene-canvas    — SceneCanvas mount / unmount
+ *   - scene-canvas    — SceneCanvas mount / unmount; adapter paste-translation warnings
  *   - history         — applyOps push, no-op suppression, serialize/restore
  *   - clipboard       — OS clipboard write/read failures, malformed payloads
  */
