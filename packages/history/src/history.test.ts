@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { createHistory } from './history';
-import { createTransformOp } from 'core/ops/transform';
 import type { Op } from './op';
 
 interface Pose { x: number; y: number }
@@ -11,6 +10,39 @@ function makeAdapter() {
     setPose: (id: string, pose: Pose) => state.set(id, { ...pose }),
     state,
   };
+}
+
+/** Local stand-in for core's `createTransformOp`, kept here so this package's
+ *  suite depends on nothing outside it. Mirrors the real op's contract: a
+ *  `transform:${id}` coalesce key by default, and a `false` return when the
+ *  pose didn't actually change (which history reads as "skip the entry"). */
+function createTransformOp<TPose>(args: {
+  id: string; from: TPose; to: TPose; label?: string; coalesceKey?: string;
+}): Op {
+  const { id, from, to, label, coalesceKey = `transform:${id}` } = args;
+  return {
+    name: 'transform',
+    args: { id, from, to, label, coalesceKey },
+    label,
+    coalesceKey,
+    apply(adapter) {
+      (adapter as { setPose: (id: string, p: TPose) => void }).setPose(id, to);
+      return poseShallowEqual(from, to) ? false : undefined;
+    },
+    invert: () => createTransformOp<TPose>({ id, from: to, to: from, label, coalesceKey }),
+  };
+}
+
+function poseShallowEqual<TPose>(a: TPose, b: TPose): boolean {
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
+  const ka = Object.keys(a as object);
+  const kb = Object.keys(b as object);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) {
+    if ((a as Record<string, unknown>)[k] !== (b as Record<string, unknown>)[k]) return false;
+  }
+  return true;
 }
 
 /** A transform-shaped op with NO `coalesceKey`, to exercise the history's
