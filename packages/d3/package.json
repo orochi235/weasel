@@ -17,7 +17,7 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "0.4.0"
+    "@weasel-js/core": ">=0.4.0"
   },
   "peerDependenciesMeta": {
     "d3-force": {

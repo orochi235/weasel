@@ -1,7 +1,7 @@
 # Sub-package publishing: reversing the tsup inlining
 
 **Date:** 2026-07-26
-**Status:** design — pending approval
+**Status:** SHIPPED 2026-07-26 (all four phases)
 **Supersedes the packaging half of:** `2026-06-20-core-package-extraction-design.md`
 
 ## Problem
@@ -238,10 +238,52 @@ Each phase ends green and is independently mergeable.
    built `dist/` (making typecheck silently depend on a prior build). All
    three fixed; see the commit body. Gates: typecheck, 5113 tests, core +
    labkit builds, both consumer smoke tests, `build:demo`, typedoc 0 warnings.
-2. **Tier A + B independent builds.** Per-package tsup configs; packages go
-   public; core's deps flip; `noExternal` deleted; smoke test inverted.
-3. **Tier C Vite library builds.** `theme`, then `ui`, then `hud`.
-4. **Release wiring.** Changesets `fixed`, fan-out build, CI, first publish.
+2. ~~**Tier A + B independent builds.**~~ **SHIPPED.** Build shape shared via
+   `scripts/tsup-preset.ts`. Root `build` fans out explicitly — npm does not
+   topologically order `--workspaces` script runs.
+3. ~~**Tier C Vite library builds.**~~ **SHIPPED**, with one deviation: `theme`
+   stayed on tsup. It has no CSS Modules and no `?url` imports, just a plain
+   stylesheet of custom properties, so it copies `tokens.css` verbatim; running
+   it through a bundler would only risk rewriting it. Only `ui` and `hud`
+   needed Vite.
+4. ~~**Release wiring.**~~ **SHIPPED** (config + changeset; the publish itself
+   is Mike's to run).
 
 Phase 1 is the one worth doing carefully — it is large, touches every config,
 and everything after it is straightforward.
+
+
+## What phases 2–4 changed about the design
+
+Three things the design got wrong or left open, settled by implementation:
+
+1. **`theme` does not need Vite.** The design grouped it into Tier C on the
+   strength of "ships CSS", but shipping a *raw stylesheet* is not the same
+   problem as CSS Modules or `?url` assets. It stays on tsup + `cp`.
+
+2. **Peer dependencies fight lockstep versioning.** Open question 4 recommended
+   `peerDependencies` on core for `ui`/`hud`/`d3`, and that is semantically
+   right — all three use core at runtime (`useScene`, `useAnimator`,
+   `registerFont`'s module-level registry), so two copies would be silently
+   broken, not merely wasteful. But changesets bumps any package whose *peer*
+   range changes at **major**, and under a `fixed` group one major drags all
+   ten to 1.0.0 — on every core minor, forever.
+
+   Resolved by pairing the peer dep with a range wide enough to survive
+   in-line bumps (`>=0.4.0` rather than an exact pin) plus
+   `___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH.onlyUpdatePeerDependentsWhenOutOfRange`.
+   Verified: all ten now bump minor together to 0.5.0, none at major.
+   Revisit the range at 1.0 — caret (`^1.0.0`) becomes the right shape then,
+   since caret on a 0.x version only admits that one minor line.
+
+3. **`updateInternalDependencies` cannot be `"exact"`** — changesets rejects
+   anything but `patch`/`minor`. It is `patch`, and exact internal pins are
+   preserved anyway: changesets keeps the existing range *style*, so
+   `"@weasel-js/geom": "0.4.0"` becomes `"0.5.0"`, not `"^0.5.0"`.
+
+### Verified end state
+
+`npx changeset version` (run, inspected, reverted) produces core, geom,
+gestures, history, modes, svg, d3, theme, ui, hud all at **0.5.0** with exact
+internal pins rewritten in step, and labkit independently at 0.1.0 off its own
+pre-existing changeset — confirming it is correctly outside the `fixed` group.

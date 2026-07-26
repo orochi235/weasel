@@ -2,10 +2,26 @@
   "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [],
+  "fixed": [
+    [
+      "@weasel-js/core",
+      "@weasel-js/geom",
+      "@weasel-js/gestures",
+      "@weasel-js/history",
+      "@weasel-js/modes",
+      "@weasel-js/svg",
+      "@weasel-js/d3",
+      "@weasel-js/theme",
+      "@weasel-js/ui",
+      "@weasel-js/hud"
+    ]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": []
+  "ignore": [],
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "onlyUpdatePeerDependentsWhenOutOfRange": true
+  }
 }

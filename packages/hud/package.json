@@ -20,7 +20,7 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "@weasel-js/core": "0.4.0"
+    "@weasel-js/core": ">=0.4.0"
   },
   "dependencies": {
     "@weasel-js/theme": "0.4.0"
