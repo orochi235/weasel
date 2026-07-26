@@ -10,15 +10,15 @@ export interface CornerHandle {
 
 /** Which AABB edge a corner sits on, per axis. `'min'` = the x/y origin
  *  edge; `'max'` = the origin + extent edge. */
-type Edge = 'min' | 'max';
+export type CornerEdge = 'min' | 'max';
 
 /** One entry of the canonical 4-corner resize layout. The single source of
  *  truth for "which corner maps to which anchor / handle-kind". */
 export interface CornerAnchor {
   /** Which x-edge the corner sits on (`'min'` = left, `'max'` = right). */
-  xEdge: Edge;
+  xEdge: CornerEdge;
   /** Which y-edge the corner sits on (`'min'` = top, `'max'` = bottom). */
-  yEdge: Edge;
+  yEdge: CornerEdge;
   /** Anchor that pins the diagonally-opposite (fixed) corner. Always the
    *  axis-wise opposite of `{xEdge, yEdge}`. */
   anchor: ResizeAnchor;

@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 export interface DiffOptions {
@@ -12,23 +12,80 @@ export interface DiffOptions {
   maxDiffRatio?: number;
 }
 
+export interface CaptureOptions {
+  /** Which <canvas> to read when a demo mounts several. Default 0 (the first). */
+  nth?: number;
+  /** Wait until at least this many canvases are mounted before reading. Default 1. */
+  expectCanvases?: number;
+  /** Extra settle time after the rAF ticks, for async resources. Default 150ms. */
+  settleMs?: number;
+}
+
+const PNG_DATA_URL_PREFIX = 'data:image/png;base64,';
+
 /**
- * Navigate to `url`, wait for the canvas to stabilize, capture a screenshot
- * of the first <canvas> element, and return the PNG buffer.
+ * Read a canvas's backing store as a PNG buffer.
+ *
+ * Deliberately NOT `locator.screenshot()`. An element screenshot clips to the
+ * element's *layout* box, so the captured height depends on whether the canvas
+ * happens to sit at a fractional y offset — and that offset is the accumulated
+ * height of the text above it, which differs between platforms with different
+ * font metrics. That produced ±1px baseline drift between macOS and the CI
+ * runner. It also silently resamples any canvas whose CSS box differs from its
+ * backing store (the `gestures` demo draws 520×360 into a 522×362 box).
+ *
+ * Reading the backing store yields exactly `canvas.width × canvas.height`
+ * pixels of what the renderer actually drew, independent of layout, fonts,
+ * borders, scrollbars, viewport size, and the compositor. Every WebGL2 context
+ * the kit creates sets `preserveDrawingBuffer: true` (see Canvas.tsx), so the
+ * buffer is still readable after the frame is composited.
+ *
+ * Note this captures only canvas pixels — the CSS background painted behind a
+ * transparent canvas is not included, by design: these baselines test the
+ * renderer, not the demo page's styling.
  */
-export async function captureCanvas(page: Page, url: string): Promise<Buffer> {
+export async function readCanvasPixels(canvas: Locator): Promise<Buffer> {
+  const dataUrl = await canvas.evaluate((el) => {
+    const c = el as HTMLCanvasElement;
+    if (!c.width || !c.height) {
+      throw new Error(`Canvas has zero-sized backing store (${c.width}×${c.height})`);
+    }
+    return c.toDataURL('image/png');
+  });
+  if (!dataUrl.startsWith(PNG_DATA_URL_PREFIX)) {
+    throw new Error(`toDataURL() did not return a PNG (got "${dataUrl.slice(0, 32)}…")`);
+  }
+  return Buffer.from(dataUrl.slice(PNG_DATA_URL_PREFIX.length), 'base64');
+}
+
+/**
+ * Navigate to `url`, wait for the canvas to stabilize, and return its pixels
+ * as a PNG buffer.
+ */
+export async function captureCanvas(
+  page: Page,
+  url: string,
+  opts: CaptureOptions = {},
+): Promise<Buffer> {
+  const { nth = 0, expectCanvases = 1, settleMs = 150 } = opts;
   await page.goto(url);
   await page.waitForSelector('canvas');
   await page.waitForFunction(() => document.readyState === 'complete');
+  if (expectCanvases > 1) {
+    // Multi-canvas demos: don't read panel N before every panel has mounted.
+    await page.waitForFunction(
+      (n) => document.querySelectorAll('canvas').length >= n,
+      expectCanvases,
+    );
+  }
   // Two rAF ticks: first clears any synchronous layout paint; second ensures
   // async effects (React state updates, font loads) have flushed.
   await page.evaluate(() => new Promise<void>((r) =>
     requestAnimationFrame(() => requestAnimationFrame(() => r()))
   ));
   // Extra settle for demos with async resource loading (font atlas, images).
-  await page.waitForTimeout(150);
-  const canvas = page.locator('canvas').first();
-  return await canvas.screenshot();
+  await page.waitForTimeout(settleMs);
+  return await readCanvasPixels(page.locator('canvas').nth(nth));
 }
 
 /**
@@ -39,6 +96,21 @@ export async function waitForRepaint(page: Page): Promise<void> {
   await page.evaluate(() => new Promise<void>((r) =>
     requestAnimationFrame(() => requestAnimationFrame(() => r()))
   ));
+}
+
+/**
+ * Where failed captures and diff images are written, for CI to upload as
+ * artifacts. Gitignored; `test-results/` is also where Playwright puts traces.
+ */
+const FAILURE_DIR = resolve(process.cwd(), 'test-results', 'visual');
+
+/**
+ * Write evidence for a failing spec. Without this a failure reports only a
+ * percentage, leaving no way to see what actually changed.
+ */
+function writeFailureArtifact(name: string, kind: 'actual' | 'diff', png: Buffer): void {
+  mkdirSync(FAILURE_DIR, { recursive: true });
+  writeFileSync(resolve(FAILURE_DIR, `${name}-${kind}.png`), png);
 }
 
 /**
@@ -69,9 +141,16 @@ export function assertMatchesBaseline(
 
   const baselinePng = PNG.sync.read(readFileSync(baselinePath));
   const actualPng = PNG.sync.read(actual);
+  const name = basename(baselinePath, '.png');
 
-  // Dimensions must match exactly. A mismatch means the viewport changed or
-  // the canvas size changed — treat as a baseline invalidation, not a pixel diff.
+  // Dimensions must match exactly. Since we read the backing store, the capture
+  // size is exactly the demo's canvas size — so a mismatch means the demo
+  // genuinely resized, not that the environment drifted. Treat it as a baseline
+  // invalidation rather than a pixel diff. No diff image is possible here, but
+  // the capture itself is the evidence.
+  if (actualPng.width !== baselinePng.width || actualPng.height !== baselinePng.height) {
+    writeFailureArtifact(name, 'actual', actual);
+  }
   expect(actualPng.width, 'Canvas width changed vs baseline').toBe(baselinePng.width);
   expect(actualPng.height, 'Canvas height changed vs baseline').toBe(baselinePng.height);
 
@@ -88,6 +167,10 @@ export function assertMatchesBaseline(
   );
 
   const diffRatio = mismatchedPixels / (width * height);
+  if (diffRatio > maxDiffRatio) {
+    writeFailureArtifact(name, 'actual', actual);
+    writeFailureArtifact(name, 'diff', PNG.sync.write(diffPng));
+  }
   expect(
     diffRatio,
     `Pixel diff ${(diffRatio * 100).toFixed(2)}% exceeds ${(maxDiffRatio * 100).toFixed(0)}% threshold`,

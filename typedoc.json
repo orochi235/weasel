@@ -11,15 +11,39 @@
   "exclude": ["**/*.test.ts", "**/*.test.tsx"],
   "readme": "README.md",
   "skipErrorChecking": true,
+  // `InputEvent` and friends are re-exported from @weasel-js/gestures, which
+  // builds its own doc site next door (see build:api:gestures). Point the links
+  // at those real pages rather than dropping them.
+  "externalSymbolLinkMappings": {
+    "@weasel-js/gestures": {
+      "PointerDownEvent": "../api-gestures/interfaces/PointerDownEvent.html",
+      "PointerMoveEvent": "../api-gestures/interfaces/PointerMoveEvent.html",
+      "PointerUpEvent": "../api-gestures/interfaces/PointerUpEvent.html",
+      "PointerCancelEvent": "../api-gestures/interfaces/PointerCancelEvent.html"
+    }
+  },
+  // Types deliberately kept off the public doc surface. Adapter contracts
+  // (HitAdapter, ReorderAdapter, CanvasAdapter) and per-op `*Args` shapes are
+  // internal composition details — consumers reach them through the op
+  // factories and through SceneCanvas, which synthesizes the adapter.
   "intentionallyNotExported": [
     "DeleteArgs",
     "InsertArgs",
     "MoveToIndexArgs",
     "ReparentArgs",
+    "SetDataArgs",
+    "SetLayerArgs",
     "SetPathArgs",
     "SetSelectionArgs",
     "SetTextArgs",
     "TransformArgs",
+    "CanvasAdapter",
+    "Replacer",
+    "Reviver",
+    // cubicMath's `{x,y}`. Not surfaced at the root: `Point2` is already the
+    // public point type, and `Vec2` is a third spelling of the same shape —
+    // consolidating them is a real API decision, not a docs fix.
+    "Point",
     "HandScratch",
     "LineScratch",
     "PencilScratch",
@@ -27,7 +51,6 @@
     "PenEditState",
     "HitAdapter",
     "BooleanZOrder",
-    "OrderedSceneShape",
     "ReorderAdapter",
     "ToolsDispatcherOptions",
     "CreateDebugOverlayLayerOpts",

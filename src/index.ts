@@ -170,10 +170,12 @@ export {
   useDepSource,
 } from './interactions/actions/depRegistry';
 export type {
-  DepSchema,
   DepName,
   DepRegistry,
 } from './interactions/actions/depRegistry';
+// Exported from its defining module rather than through depRegistry's
+// re-export, so `DepName = keyof DepSchema` resolves to a documented symbol.
+export type { DepSchema } from './interactions/actions/depSchema';
 export type {
   AreaSelectDep,
   ClipboardIngestCtx,
@@ -182,15 +184,19 @@ export type {
   InsertDep,
   InsertExtras,
   LassoSelectDep,
+  LayoutDep,
   NodeAtPointDep,
   ResizePolicy,
   SvgIngestOptions,
   ViewApi,
 } from './interactions/actions/depSchema';
+export type { GeometryProjection } from './interactions/actions/geometryProjection';
 export {
   useResizePolicy,
   type UseResizePolicyOptions,
 } from './canvas/deps/resizePolicy';
+export { CORNER_ANCHORS, cornerPoint } from './interactions/actions/resize/cornerHandles';
+export type { CornerAnchor, CornerEdge } from './interactions/actions/resize/cornerHandles';
 export { useSliceDep } from './canvas/deps/slice';
 
 // ─── Gesture dispatcher ───
@@ -578,6 +584,7 @@ export type {
   PathEditingOverlayStyle,
   PathInWorldPose,
   SplitByLineOptions,
+  PoseRotation,
 } from './features/paths';
 // ─── Curves: alternate path representations (Bezier, NURBS, Spiro) ──────────
 export {
@@ -624,6 +631,7 @@ export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 // ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
 export { createScene, sceneFromJSON, useScene, asNodeId } from './core/scene';
 export type {
+  AddLayerSpec,
   AddNodeSpec,
   ContainerNode,
   LayerRecord,

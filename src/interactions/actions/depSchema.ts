@@ -458,3 +458,13 @@ export interface DepSchema {
    */
   geometryProjection?: GeometryProjection;
 }
+
+/**
+ * Every dep name the registry knows about — derived from {@link DepSchema} so
+ * the two can't drift.
+ *
+ * Declared here rather than beside the registry so that this `keyof` reference
+ * resolves to the exported `DepSchema` declaration; from another module it
+ * resolves to that module's import alias, which the API docs can't link.
+ */
+export type DepName = keyof DepSchema;
