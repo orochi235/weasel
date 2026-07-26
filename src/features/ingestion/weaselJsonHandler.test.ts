@@ -13,7 +13,10 @@ import {
   WEASEL_CLIPBOARD_MIME,
   WEASEL_CLIPBOARD_MIME_WEB,
   buildWeaselClipboardText,
+  embedWeaselMetadataInSvg,
 } from 'interactions/actions/clipboard/wireFormat';
+import { __setSvgMeasureForTests, _resetSvgHandlerSeamsForTests } from './svgHandler';
+import { __setFileToDataUriForTests, _resetImageHandlerSeamsForTests } from './imageHandler';
 
 const NODES = [
   { id: 'a', parent: null, pose: { x: 1, y: 2 }, data: { fill: '#f00' } },
@@ -167,6 +170,89 @@ describe('kitWeaselJsonHandler — declines', () => {
     await kitWeaselJsonHandler.handle([stringItem(buildWeaselClipboardText(NODES))], c);
     expect(c.applyOps).not.toHaveBeenCalled();
     expect(c.selection.set).not.toHaveBeenCalled();
+  });
+});
+
+// ─── SVG-with-embedded-metadata flavor (draw→draw DOM paste fidelity) ───────
+// Chromium's DOM paste event carries ONLY text/plain; draw puts SVG there
+// with the weasel JSON embedded in <metadata> so nothing is lost in transit.
+
+const PLAIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>';
+const LABELED_NODES = [
+  { id: 'a', parent: null, pose: { x: 1, y: 2, width: 10, height: 10 }, data: { fill: '#f00', label: 'my label' } },
+];
+const metadataSvg = (nodes: unknown[] = LABELED_NODES): string =>
+  embedWeaselMetadataInSvg(PLAIN_SVG, buildWeaselClipboardText(nodes));
+
+describe('kitWeaselJsonHandler — SVG with embedded weasel metadata', () => {
+  beforeEach(() => {
+    _resetSvgHandlerSeamsForTests();
+    _resetImageHandlerSeamsForTests();
+    __setSvgMeasureForTests(async () => ({ width: 400, height: 300 }));
+    __setFileToDataUriForTests(async (f) => `data:${f.type};base64,${f.name}`);
+  });
+
+  it('matches text/plain SVG carrying weasel metadata', () => {
+    expect(matches(stringItem(metadataSvg(), 'text/plain'))).toBe(true);
+  });
+
+  it('does NOT match plain external SVG (no metadata)', () => {
+    expect(matches(stringItem(PLAIN_SVG, 'text/plain'))).toBe(false);
+  });
+
+  it('does NOT match SVG with non-weasel metadata', () => {
+    const svg = '<svg xmlns="x"><metadata><rdf:RDF>dc</rdf:RDF></metadata><rect/></svg>';
+    expect(matches(stringItem(svg, 'text/plain'))).toBe(false);
+  });
+
+  it('pastes the embedded payload with full fidelity (label survives)', async () => {
+    const adapter = stubAdapter();
+    const c = ctx({ clipboard: { adapter } });
+    await kitWeaselJsonHandler.handle([stringItem(metadataSvg(), 'text/plain')], c);
+
+    expect(adapter.commitPaste).toHaveBeenCalledTimes(1);
+    const snapshot = adapter.commitPaste.mock.calls[0][0] as { items: typeof LABELED_NODES };
+    expect(snapshot.items).toEqual(LABELED_NODES);
+    expect(snapshot.items[0].data.label).toBe('my label');
+
+    const [ops] = c.applyOps.mock.calls[0];
+    expect(ops[0].name).toBe('insert');
+    expect(ops[0].args.node.data.label).toBe('my label');
+  });
+
+  it('plain external SVG still ingests via kit:svg, untouched by the weasel handler', async () => {
+    registerContentHandler(kitWeaselJsonHandler);
+    registerContentHandler(kitSvgHandler);
+    const adapter = stubAdapter();
+    const c = ctx({ clipboard: { adapter }, point: { x: 0, y: 0 } });
+    await runIngest([stringItem(PLAIN_SVG, 'text/plain')], c);
+    expect(c.applyOps).not.toHaveBeenCalled();
+    expect(adapter.commitPaste).not.toHaveBeenCalled();
+    expect((c.insert.commit as Mock)).toHaveBeenCalledTimes(1); // svg image embed
+  });
+
+  it('SVG with non-weasel metadata falls through to kit:svg', async () => {
+    registerContentHandler(kitWeaselJsonHandler);
+    registerContentHandler(kitSvgHandler);
+    const adapter = stubAdapter();
+    const c = ctx({ clipboard: { adapter }, point: { x: 0, y: 0 } });
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg"><metadata><rdf:RDF>dc</rdf:RDF></metadata><rect/></svg>';
+    await runIngest([stringItem(svg, 'text/plain')], c);
+    expect(c.applyOps).not.toHaveBeenCalled();
+    expect((c.insert.commit as Mock)).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT double-paste when the flavor set is custom-MIME + metadata-bearing SVG text', async () => {
+    registerContentHandler(kitWeaselJsonHandler);
+    registerContentHandler(kitSvgHandler);
+    const adapter = stubAdapter();
+    const c = ctx({ clipboard: { adapter }, point: { x: 0, y: 0 } });
+    await runIngest([
+      stringItem(buildWeaselClipboardText(LABELED_NODES), WEASEL_CLIPBOARD_MIME),
+      stringItem(metadataSvg(), 'text/plain'),
+    ], c);
+    expect(c.applyOps).toHaveBeenCalledTimes(1); // ONE paste
+    expect((c.insert.commit as Mock)).not.toHaveBeenCalled(); // svg fallback declined
   });
 });
 

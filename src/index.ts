@@ -838,6 +838,8 @@ export {
   buildWeaselClipboardText,
   sniffWeaselClipboardText,
   parseWeaselClipboardText,
+  embedWeaselMetadataInSvg,
+  extractWeaselClipboardFromSvg,
 } from './interactions/actions/clipboard';
 export type {
   UseClipboardOpsOptions,

@@ -33,6 +33,55 @@ export function sniffWeaselClipboardText(text: string): boolean {
   }
 }
 
+// Opening `<svg ...>` tag of a serialized document. `[^>]*` is safe for OUR
+// serializer's output (attribute values are XML-escaped, so no raw `>` can
+// appear inside the tag) — see embedWeaselMetadataInSvg's contract note.
+const SVG_OPEN_TAG = /<svg(?:\s[^>]*)?>/i;
+
+/**
+ * Embed a weasel clipboard payload in an SVG document as a `<metadata>`
+ * child of the root — legal SVG 1.1, ignored by external tools — so one
+ * `text/plain` flavor serves both audiences: external tools parse the SVG,
+ * weasel extracts the JSON for full fidelity on draw→draw DOM paste.
+ *
+ * The payload rides in CDATA so JSON's `<` / `&` need no entity escaping; a
+ * literal `]]>` inside the payload is split across CDATA sections
+ * (`]]]]><![CDATA[>`), which {@link extractWeaselClipboardFromSvg} rejoins.
+ *
+ * Intended for OUR serializer's output only (`serializeSvg` — single
+ * `<svg ...>` open tag, XML-escaped attributes). When no open tag is found
+ * the input is returned unchanged with a debug warning.
+ */
+export function embedWeaselMetadataInSvg(svgText: string, payloadText: string): string {
+  const open = SVG_OPEN_TAG.exec(svgText);
+  if (!open) {
+    dwarn('clipboard', 'embedWeaselMetadataInSvg: no <svg ...> open tag found — returning input unchanged');
+    return svgText;
+  }
+  const cdata = `<![CDATA[${payloadText.replaceAll(']]>', ']]]]><![CDATA[>')}]]>`;
+  const at = open.index + open[0].length;
+  return `${svgText.slice(0, at)}<metadata>${cdata}</metadata>${svgText.slice(at)}`;
+}
+
+/**
+ * Recover an embedded weasel clipboard payload from SVG text: read the first
+ * `<metadata>` block, rejoin its CDATA sections (concatenation restores the
+ * `]]>` split by {@link embedWeaselMetadataInSvg}; plain non-CDATA content
+ * passes through as-is), and return the payload text iff it sniffs as the
+ * weasel wire format — else null (external/non-weasel metadata declines).
+ *
+ * A text scan, not an XML parse — the payload is small and ours.
+ */
+export function extractWeaselClipboardFromSvg(svgText: string): string | null {
+  const block = /<metadata(?:\s[^>]*)?>([\s\S]*?)<\/metadata>/i.exec(svgText);
+  if (!block) return null;
+  const inner = block[1];
+  const payload = inner.includes('<![CDATA[')
+    ? Array.from(inner.matchAll(/<!\[CDATA\[([\s\S]*?)\]\]>/g), (m) => m[1]).join('')
+    : inner;
+  return sniffWeaselClipboardText(payload) ? payload : null;
+}
+
 /** Parse wire text to snapshot items, or null when malformed/mismatched
  *  (callers decline to the next content handler). */
 export function parseWeaselClipboardText(text: string, reviver?: Reviver): unknown[] | null {

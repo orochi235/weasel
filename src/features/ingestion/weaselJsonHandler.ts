@@ -3,8 +3,12 @@
  *
  * Consumes `application/x-weasel-clipboard+json` payloads (either MIME
  * spelling — Chromium's async-clipboard API round-trips custom formats with
- * a `web ` prefix — plus `text/plain` that sniffs as the wire format) and
- * replays them as a paste through the hosting canvas's adapter: parse →
+ * a `web ` prefix — plus `text/plain` that sniffs as the wire format, plus
+ * `text/plain` SVG carrying the wire format embedded in a `<metadata>`
+ * element: Chromium's DOM paste event exposes ONLY `text/plain`, and draw
+ * puts metadata-bearing SVG there so draw→draw paste keeps full JSON
+ * fidelity) and replays them as a paste through the hosting canvas's
+ * adapter: parse →
  * `commitPaste` (fresh ids, cascade offset) → one undoable batch of
  * `InsertOp`s + a selection op. Mirrors `useClipboardOps.paste`'s op
  * construction exactly so OS-arriving pastes and in-memory pastes are
@@ -24,9 +28,22 @@ import {
   WEASEL_CLIPBOARD_MIME_WEB,
   sniffWeaselClipboardText,
   parseWeaselClipboardText,
+  extractWeaselClipboardFromSvg,
 } from 'interactions/actions/clipboard/wireFormat';
 import { dwarn } from '../../debug';
 import type { ContentHandlerEntry, IngestCtx } from './contentHandlers';
+// Direct module import (not the ./index barrel) to avoid a cycle — the
+// barrel re-exports this handler.
+import { sniffSvgText } from './svgHandler';
+
+/** text/plain SVG whose `<metadata>` carries a verified weasel payload —
+ *  the draw→draw DOM-paste flavor (Chromium exposes only text/plain there).
+ *  The `"weaselClipboard"` substring guard keeps match cheap on arbitrary
+ *  external SVG pastes before the extraction regex runs. */
+const isMetadataBearingSvg = (text: string): boolean =>
+  text.includes('"weaselClipboard"')
+  && sniffSvgText(text)
+  && extractWeaselClipboardFromSvg(text) !== null;
 
 export const kitWeaselJsonHandler: ContentHandlerEntry = {
   id: 'kit:weasel-json',
@@ -37,7 +54,8 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
     item.kind === 'string'
     && (item.mime === WEASEL_CLIPBOARD_MIME
       || item.mime === WEASEL_CLIPBOARD_MIME_WEB
-      || (item.mime === 'text/plain' && sniffWeaselClipboardText(item.text))),
+      || (item.mime === 'text/plain'
+        && (sniffWeaselClipboardText(item.text) || isMetadataBearingSvg(item.text)))),
   handle(items, ctx: IngestCtx) {
     const clipboard = ctx.clipboard;
     if (!clipboard) {
@@ -50,7 +68,17 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
     }
     const item = items.find((it) => it.kind === 'string');
     if (!item || item.kind !== 'string') return;
-    const nodes = parseWeaselClipboardText(item.text, clipboard.reviver);
+    // The metadata-bearing-SVG flavor: unwrap the embedded payload before
+    // parsing. Extraction was already verified at match time, so a null here
+    // is the same inert-decline class as a corrupt custom-MIME payload.
+    const text = sniffSvgText(item.text)
+      ? extractWeaselClipboardFromSvg(item.text)
+      : item.text;
+    if (text === null) {
+      dwarn('clipboard', 'weasel payload vanished from the SVG metadata between match and handle — declining');
+      return;
+    }
+    const nodes = parseWeaselClipboardText(text, clipboard.reviver);
     if (nodes === null) {
       dwarn('clipboard', 'weasel payload unusable — declining (see prior warning if the parse threw)');
       return;

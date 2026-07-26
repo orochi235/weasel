@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { WEASEL_CLIPBOARD_MIME, buildWeaselClipboardText, sniffWeaselClipboardText, parseWeaselClipboardText } from './wireFormat';
+import {
+  WEASEL_CLIPBOARD_MIME,
+  buildWeaselClipboardText,
+  sniffWeaselClipboardText,
+  parseWeaselClipboardText,
+  embedWeaselMetadataInSvg,
+  extractWeaselClipboardFromSvg,
+} from './wireFormat';
 
 describe('weasel clipboard wire format', () => {
   it('round-trips items through build/parse', () => {
@@ -28,6 +35,67 @@ describe('weasel clipboard wire format', () => {
     expect(sniffWeaselClipboardText('the word weaselClipboard in prose')).toBe(false); // not JSON
     expect(sniffWeaselClipboardText('{"weaselClipboard":2,"nodes":[]}')).toBe(false);  // wrong version
     expect(parseWeaselClipboardText('{"weaselClipboard":1}')).toBeNull();      // nodes missing
+  });
+
+  describe('embedWeaselMetadataInSvg / extractWeaselClipboardFromSvg', () => {
+    const SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
+
+    it('round-trips a payload containing <, &, and unicode', () => {
+      const payload = buildWeaselClipboardText([
+        { id: 'a', data: { label: '<b>&amp; — ünïcode ✂️</b>' } },
+      ]);
+      const embedded = embedWeaselMetadataInSvg(SVG, payload);
+      expect(extractWeaselClipboardFromSvg(embedded)).toBe(payload);
+    });
+
+    it('round-trips a payload containing a literal ]]> (CDATA split + rejoin)', () => {
+      const payload = buildWeaselClipboardText([{ id: 'a', data: { label: 'end]]>of cdata' } }]);
+      expect(payload).toContain(']]>');
+      const embedded = embedWeaselMetadataInSvg(SVG, payload);
+      // The split discipline: no raw ]]> may terminate a CDATA section early.
+      expect(embedded).toContain(']]]]><![CDATA[>');
+      expect(extractWeaselClipboardFromSvg(embedded)).toBe(payload);
+    });
+
+    it('inserts the metadata element immediately after the opening <svg ...> tag', () => {
+      const payload = buildWeaselClipboardText([{ id: 'a' }]);
+      const embedded = embedWeaselMetadataInSvg(SVG, payload);
+      expect(embedded.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><metadata>')).toBe(true);
+      expect(embedded.endsWith('<rect width="10" height="10"/></svg>')).toBe(true);
+    });
+
+    it('returns tagless input unchanged (decline path)', () => {
+      const payload = buildWeaselClipboardText([{ id: 'a' }]);
+      expect(embedWeaselMetadataInSvg('not an svg at all', payload)).toBe('not an svg at all');
+      expect(embedWeaselMetadataInSvg('<svgg bogus="1">', payload)).toBe('<svgg bogus="1">');
+    });
+
+    it('extract returns null for SVG without metadata', () => {
+      expect(extractWeaselClipboardFromSvg(SVG)).toBeNull();
+    });
+
+    it('extract returns null for metadata without the weasel marker', () => {
+      const svg = '<svg xmlns="x"><metadata><rdf:RDF>dublin core stuff</rdf:RDF></metadata></svg>';
+      expect(extractWeaselClipboardFromSvg(svg)).toBeNull();
+      const cdata = '<svg xmlns="x"><metadata><![CDATA[{"nodes":[]}]]></metadata></svg>';
+      expect(extractWeaselClipboardFromSvg(cdata)).toBeNull();
+    });
+
+    it('extract returns null for non-SVG text', () => {
+      expect(extractWeaselClipboardFromSvg('plain prose')).toBeNull();
+      expect(extractWeaselClipboardFromSvg(buildWeaselClipboardText([{ id: 'a' }]))).toBeNull();
+    });
+
+    it('extract rejoins multiple CDATA sections into one payload', () => {
+      const svg = '<svg><metadata><![CDATA[{"weaselClipboard":1,]]><![CDATA["nodes":[]}]]></metadata></svg>';
+      expect(extractWeaselClipboardFromSvg(svg)).toBe('{"weaselClipboard":1,"nodes":[]}');
+    });
+
+    it('extract tolerates plain (non-CDATA) metadata content, still gated by the sniff', () => {
+      const payload = '{"weaselClipboard":1,"nodes":[]}';
+      const svg = `<svg><metadata>${payload}</metadata></svg>`;
+      expect(extractWeaselClipboardFromSvg(svg)).toBe(payload);
+    });
   });
 
   it('drops function-valued fields (e.g. a container clipFromPose) and still parses back without them', () => {

@@ -7,7 +7,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from '@weasel-js/svg';
-import { selectionToSvgString, clipboardSnapshotRootIds } from './svgExport';
+import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
+import {
+  selectionToSvgString,
+  selectionToClipboardSvgString,
+  clipboardSnapshotRootIds,
+} from './svgExport';
 
 // Minimal fake `Scene` — only the members `sceneToSvgNodes`'s `SceneSource`
 // plumbing reads (`roots`, `childrenOf`, `get`). Cast through `never` since
@@ -130,6 +135,35 @@ describe('selectionToSvgString', () => {
     // Bounds come from the container's own pose (the union-AABB convention
     // group creation already maintains), not a re-derivation from children.
     expect(parsed.viewBox).toEqual({ x: 0, y: 0, width: 30, height: 10 });
+  });
+});
+
+describe('selectionToClipboardSvgString', () => {
+  const scene = () => fakeScene({
+    a: {
+      kind: 'leaf',
+      pose: { x: 0, y: 0, width: 10, height: 10 },
+      data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: '#ff0000' },
+    },
+  }, ['a']);
+  // A payload with a field the SVG mapping drops (label) — surviving the
+  // text/plain round-trip is the point of the metadata embed.
+  const payload = () => buildWeaselClipboardText([
+    { id: 'a', parent: null, pose: { x: 0, y: 0, width: 10, height: 10 }, data: { fill: '#ff0000', label: 'my label' } },
+  ]);
+
+  it('embeds the weasel payload extractably, byte-equal to the JSON flavor text', () => {
+    const svg = selectionToClipboardSvgString(scene(), ['a'], payload());
+    expect(extractWeaselClipboardFromSvg(svg)).toBe(payload());
+  });
+
+  it('external parse is unaffected: parseSvg succeeds and renders the same shapes', () => {
+    const plain = parseSvg(selectionToSvgString(scene(), ['a']));
+    const withMeta = parseSvg(selectionToClipboardSvgString(scene(), ['a'], payload()));
+    expect(withMeta.warnings).toEqual(plain.warnings);
+    expect(withMeta.nodes).toEqual(plain.nodes);
+    expect(withMeta.nodes).toHaveLength(1);
+    expect(withMeta.viewBox).toEqual(plain.viewBox);
   });
 });
 

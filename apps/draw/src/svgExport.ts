@@ -20,6 +20,7 @@
 import {
   type Scene,
   type Path,
+  embedWeaselMetadataInSvg,
   pathInPoseFrame,
   rectPath,
   unionBounds,
@@ -207,4 +208,25 @@ export function selectionToSvgString<TLayer extends string>(
     height: bounds.height,
     namespaces: SWILL_NAMESPACES,
   });
+}
+
+/**
+ * {@link selectionToSvgString} plus the weasel clipboard payload embedded in
+ * a `<metadata>` element (CDATA-wrapped) — the string `produceFlavors` puts
+ * on `image/svg+xml` AND `text/plain`. External tools parse the SVG exactly
+ * as before (`parseSvg` skips `<metadata>`); weasel's `kit:weasel-json`
+ * handler extracts the payload so a draw→draw DOM paste — where Chromium
+ * exposes ONLY `text/plain` — keeps full JSON fidelity (labels, typed data
+ * the SVG mapping drops).
+ *
+ * `weaselPayloadText` must be the SAME text the custom-MIME JSON flavor
+ * carries (built by `buildWeaselClipboardText`), so every flavor of one copy
+ * decodes to one payload.
+ */
+export function selectionToClipboardSvgString<TLayer extends string>(
+  scene: Scene<WeaselDrawData, TLayer, WeaselDrawPose>,
+  ids: readonly string[],
+  weaselPayloadText: string,
+): string {
+  return embedWeaselMetadataInSvg(selectionToSvgString(scene, ids), weaselPayloadText);
 }

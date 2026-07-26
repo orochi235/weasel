@@ -105,7 +105,7 @@ import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
 import type { SceneCanvasHit } from '@weasel-js/core';
 import { IMPLICIT_TAGS } from '@weasel-js/modes';
-import { sceneToSvgString, selectionToSvgString, clipboardSnapshotRootIds } from './svgExport';
+import { sceneToSvgString, selectionToClipboardSvgString, clipboardSnapshotRootIds } from './svgExport';
 import type { RecordingProfile } from './recorder';
 
 import './app.css';
@@ -575,12 +575,16 @@ function Toolbar({
     const roots = clipboardSnapshotRootIds(
       snapshot.items as Array<{ id: string; parent: string | null }>,
     );
-    const svg = selectionToSvgString(scene, roots);
+    // The SVG flavors carry `json` embedded in <metadata> too: Chromium's
+    // DOM paste event exposes ONLY text/plain, so this is what preserves
+    // full fidelity (labels, typed data) on a draw→draw paste.
+    const svg = selectionToClipboardSvgString(scene, roots, json);
     return {
       [WEASEL_CLIPBOARD_MIME]: json,
       'image/svg+xml': svg,
-      // External design tools sniff text/plain for SVG markup; the JSON
-      // rides the custom MIME (and cross-tab clipboardData) instead.
+      // External design tools sniff text/plain for SVG markup (<metadata>
+      // is legal SVG 1.1, ignored by their parsers); the JSON also rides
+      // the custom MIME (and cross-tab clipboardData) for lossless paths.
       'text/plain': svg,
     };
   }, [scene]);

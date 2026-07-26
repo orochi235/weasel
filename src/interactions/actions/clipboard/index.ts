@@ -6,4 +6,6 @@ export {
   buildWeaselClipboardText,
   sniffWeaselClipboardText,
   parseWeaselClipboardText,
+  embedWeaselMetadataInSvg,
+  extractWeaselClipboardFromSvg,
 } from './wireFormat';
