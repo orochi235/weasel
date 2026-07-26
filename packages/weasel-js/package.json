@@ -1,8 +1,8 @@
 {
   "name": "weasel-js",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
-  "description": "Alias for @weasel-js/core \u2014 the batteries-included entry point of the weasel 2D scene-graph canvas kit for React.",
+  "description": "Alias for @weasel-js/core — the batteries-included entry point of the weasel 2D scene-graph canvas kit for React.",
   "license": "MIT",
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
@@ -73,7 +73,7 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@weasel-js/core": "0.5.0"
+    "@weasel-js/core": "0.5.1"
   },
   "publishConfig": {
     "access": "public"
