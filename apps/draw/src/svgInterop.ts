@@ -347,8 +347,13 @@ export interface SceneSource {
  * `meta.wd.attrs['group-id']` = its scene id, so the structure round-trips
  * back through {@link svgNodesToSceneDrafts}. Every leaf becomes the result
  * of {@link objToSvgNode}.
+ *
+ * `roots`, when supplied, walks exactly those ids (in the given order)
+ * instead of `source.roots` — used for a selection-subset export (see
+ * `selectionToSvgString` in `svgExport.ts`). Omitting it is byte-identical
+ * to the whole-scene walk.
  */
-export function sceneToSvgNodes(source: SceneSource): SvgNode[] {
+export function sceneToSvgNodes(source: SceneSource, roots?: readonly string[]): SvgNode[] {
   const emit = (id: string): SvgNode | null => {
     if (source.kindOf(id) === 'container') {
       const children: SvgNode[] = [];
@@ -364,7 +369,7 @@ export function sceneToSvgNodes(source: SceneSource): SvgNode[] {
     return obj ? objToSvgNode(obj) : null;
   };
   const out: SvgNode[] = [];
-  for (const id of source.roots) {
+  for (const id of roots ?? source.roots) {
     const n = emit(id);
     if (n) out.push(n);
   }

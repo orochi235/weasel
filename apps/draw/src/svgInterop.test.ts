@@ -292,6 +292,46 @@ describe('sceneToSvgNodes — scene container tree → <g>', () => {
   });
 });
 
+describe('sceneToSvgNodes — optional roots override', () => {
+  const a: RectObjT = {
+    id: 'a', tool: 'rect', x: 0, y: 0, width: 10, height: 10,
+    path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, closed: true,
+    fill: '#111111', stroke: '#000', strokeWidth: 0,
+  };
+  const b: RectObjT = {
+    id: 'b', tool: 'rect', x: 20, y: 0, width: 10, height: 10,
+    path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 }, closed: true,
+    fill: '#222222', stroke: '#000', strokeWidth: 0,
+  };
+  const source: SceneSource = {
+    roots: ['a', 'b'],
+    childrenOf: () => [],
+    kindOf: () => 'leaf',
+    objOf: (id) => (id === 'a' ? (a as never) : id === 'b' ? (b as never) : undefined),
+  };
+
+  it('walks exactly the given roots, matching the corresponding nodes of the full walk', () => {
+    const full = sceneToSvgNodes(source);
+    expect(full).toHaveLength(2);
+
+    const subset = sceneToSvgNodes(source, ['b']);
+    expect(subset).toHaveLength(1);
+    expect(subset[0]).toEqual(full[1]);
+  });
+
+  it('walks in the requested order, independent of source.roots order', () => {
+    const subset = sceneToSvgNodes(source, ['b', 'a']);
+    expect(subset.map((n) => (n.kind === 'path' ? n.fill : null))).toEqual([
+      { kind: 'solid', color: '#222222' },
+      { kind: 'solid', color: '#111111' },
+    ]);
+  });
+
+  it('is byte-identical to the whole-scene walk when roots is omitted', () => {
+    expect(sceneToSvgNodes(source, undefined)).toEqual(sceneToSvgNodes(source));
+  });
+});
+
 describe('container round-trip: drafts → svg → drafts (stable ids)', () => {
   it('a container holding two leaves survives export + re-import with its id', () => {
     // Build a scene source: container 'c1' with two rect leaves.

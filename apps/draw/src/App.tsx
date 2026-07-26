@@ -63,6 +63,9 @@ import {
   inferredNodeRouting,
   type ToolPrefColor,
   useClipboardOps,
+  type ClipboardSnapshot,
+  WEASEL_CLIPBOARD_MIME,
+  buildWeaselClipboardText,
 } from '@weasel-js/core';
 import { SidebarPanel, SelectionPanel, ToolPalette, type PropertyRenderer } from '@weasel-js/ui';
 
@@ -102,7 +105,7 @@ import { ModeBreadcrumb } from './modality/chrome/ModeBreadcrumb';
 import { ModeStatusIndicator } from './modality/chrome/ModeStatusIndicator';
 import type { SceneCanvasHit } from '@weasel-js/core';
 import { IMPLICIT_TAGS } from '@weasel-js/modes';
-import { sceneToSvgString } from './svgExport';
+import { sceneToSvgString, selectionToSvgString, clipboardSnapshotRootIds } from './svgExport';
 import type { RecordingProfile } from './recorder';
 
 import './app.css';
@@ -151,9 +154,12 @@ const DEFAULT_BG_COLOR = '#ffffff';
 // OS-dropped / pasted SVG files import as real scene nodes (the kit's
 // `unpack` path) rather than a single embedded-image node — WeaselDraw's
 // leaf data IS the kit-native `{path, fill, stroke}` painter shape, so
-// unpacked nodes render and edit like any other object. Module const:
-// SceneCanvas keys its dep wiring off the prop identity.
-const SVG_UNPACK_INGESTION = { svg: { unpack: true } };
+// unpacked nodes render and edit like any other object. `clipboard.reviver`
+// revives typed-array node data (Uint8Array/Float32Array path commands)
+// carried by weasel-JSON clipboard payloads, mirroring `nodeSpecsFromSnapshot`'s
+// use of the same reviver for scene persistence. Module const: SceneCanvas
+// keys its dep wiring off the prop identity.
+const SVG_UNPACK_INGESTION = { svg: { unpack: true }, clipboard: { reviver: reviveTypedArrays } };
 /** Synthetic id for the locked "Background" row in the Layers panel.
  *  Selecting this row surfaces the Document properties branch in the
  *  Properties panel; clicking any real node clears it. */
@@ -553,9 +559,33 @@ function Toolbar({
 
   const adapter = useSceneAdapter(scene, {});
   const [clipboardEmpty, setClipboardEmpty] = useState(true);
+  // `snapshot.items` are adapter-shaped copies (`sceneAdapter.snapshotSelection`),
+  // not live scene nodes — but their `id`s are the ORIGINAL scene ids at copy
+  // time, and `produceFlavors` runs synchronously inside `clipboard.copy()`,
+  // so walking the live `scene` by those ids here is correct: nothing has
+  // had a chance to mutate the scene in between. (Verified: `sceneToSvgNodes`
+  // skips ids it can't resolve — `kindOf`/`objOf` both fall through to
+  // "not found" — rather than throwing, so no id-existence filter is needed
+  // even in the shouldn't-happen case.)
+  const produceFlavors = useCallback((snapshot: ClipboardSnapshot) => {
+    const json = buildWeaselClipboardText(snapshot.items, serializeReplacer);
+    const roots = clipboardSnapshotRootIds(
+      snapshot.items as Array<{ id: string; parent: string | null }>,
+    );
+    const svg = selectionToSvgString(scene, roots);
+    return {
+      [WEASEL_CLIPBOARD_MIME]: json,
+      'image/svg+xml': svg,
+      // External design tools sniff text/plain for SVG markup; the JSON
+      // rides the custom MIME (and cross-tab clipboardData) instead.
+      'text/plain': svg,
+    };
+  }, [scene]);
   const clipboard = useClipboardOps(adapter, {
     getSelection: () => selection.current as NodeId[],
     onPaste: (ids) => selection.set(ids.map(asNodeId)),
+    produceFlavors,
+    jsonReplacer: serializeReplacer,
   });
   const onCopy = useCallback(() => {
     clipboard.copy();

@@ -22,6 +22,7 @@ import {
   type Path,
   pathInPoseFrame,
   rectPath,
+  unionBounds,
 } from '@weasel-js/core';
 import {
   serializeSvg,
@@ -31,6 +32,7 @@ import {
 import {
   docToSerializeOptions,
   sceneToSvgNodes,
+  SWILL_NAMESPACES,
   type SceneSource,
   type WeaselDrawPaperSize,
 } from './svgInterop';
@@ -102,6 +104,28 @@ export interface SceneToSvgOptions {
 }
 
 /**
+ * Build the `SceneSource` `sceneToSvgNodes` walks: `objOf` lowers a leaf's
+ * stored `{data, pose}` to an `Obj` (pose baked into the path);
+ * `sceneToSvgNodes` stamps each container's scene id onto `wd:group-id` so
+ * groups round-trip. Shared by {@link sceneToSvgString} (whole scene) and
+ * {@link selectionToSvgString} (selection subset, via the `roots` param).
+ */
+function sceneSourceOf<TLayer extends string>(
+  scene: Scene<WeaselDrawData, TLayer, WeaselDrawPose>,
+): SceneSource {
+  return {
+    roots: scene.roots.map(String),
+    childrenOf: (id) => scene.childrenOf(id as never).map(String),
+    kindOf: (id) => (scene.get(id as never)?.kind === 'container' ? 'container' : 'leaf'),
+    objOf: (id) => {
+      const node = scene.get(id as never);
+      if (!node || node.kind !== 'leaf') return undefined;
+      return leafToObj(id, node.data, node.pose) ?? undefined;
+    },
+  };
+}
+
+/**
  * Serialize a WeaselDraw scene to an SVG document string. Caller is
  * responsible for triggering the download (see `downloadSvg` in
  * `./svgInterop`).
@@ -122,24 +146,65 @@ export function sceneToSvgString<TLayer extends string>(
     });
   }
 
-  // Walk the container tree. `objOf` lowers a leaf's stored {data, pose}
-  // to an `Obj` (pose baked into the path); `sceneToSvgNodes` stamps each
-  // container's scene id onto `wd:group-id` so groups round-trip.
-  const source: SceneSource = {
-    roots: scene.roots.map(String),
-    childrenOf: (id) => scene.childrenOf(id as never).map(String),
-    kindOf: (id) => (scene.get(id as never)?.kind === 'container' ? 'container' : 'leaf'),
-    objOf: (id) => {
-      const node = scene.get(id as never);
-      if (!node || node.kind !== 'leaf') return undefined;
-      return leafToObj(id, node.data, node.pose) ?? undefined;
-    },
-  };
-  nodes.push(...sceneToSvgNodes(source));
+  nodes.push(...sceneToSvgNodes(sceneSourceOf(scene)));
 
   return serializeSvg(nodes, docToSerializeOptions({
     title: opts.filename,
     size: { width: opts.paperWidth, height: opts.paperHeight },
     paperSize: opts.paperSize,
   }));
+}
+
+/**
+ * Recover the true selected roots from a `ClipboardSnapshot.items` list
+ * (adapter-shaped node copies from `sceneAdapter.snapshotSelection`).
+ *
+ * A copied container's snapshot flattens its full subtree alongside it
+ * (parents-before-children) — not just the ids the user selected. Feeding
+ * every item's id to {@link selectionToSvgString} as a walk root would
+ * double-emit descendants: once nested under the exported `<g>`, once
+ * again as spurious top-level siblings. This mirrors the same `isRoot`
+ * predicate `sceneAdapter.commitPaste` uses on the paste side: an item is
+ * a root when its captured `parent` is null or wasn't itself captured in
+ * this snapshot.
+ */
+export function clipboardSnapshotRootIds(
+  items: readonly { id: string; parent: string | null }[],
+): string[] {
+  const itemIds = new Set(items.map((n) => n.id));
+  return items
+    .filter((n) => n.parent == null || !itemIds.has(n.parent))
+    .map((n) => n.id);
+}
+
+/**
+ * Serialize a subset of a WeaselDraw scene — exactly the given root ids
+ * (and, for selected containers, their descendants) — to an SVG document
+ * string, fitted to the union bounds of those roots rather than the full
+ * page. This is the clipboard `produceFlavors` override's `image/svg+xml`
+ * / `text/plain` source (see `apps/draw/src/App.tsx`).
+ *
+ * Bounds are read directly from each root's own `pose`: a container's pose
+ * is already the union-AABB of its leaf descendants (the same convention
+ * the kit `group` action maintains), so no re-derivation from children is
+ * needed.
+ */
+export function selectionToSvgString<TLayer extends string>(
+  scene: Scene<WeaselDrawData, TLayer, WeaselDrawPose>,
+  ids: readonly string[],
+): string {
+  const nodes = sceneToSvgNodes(sceneSourceOf(scene), ids);
+
+  const bounds = unionBounds(
+    ids
+      .map((id) => scene.get(id as never)?.pose)
+      .filter((p): p is WeaselDrawPose => p != null),
+  ) ?? { x: 0, y: 0, width: 0, height: 0 };
+
+  return serializeSvg(nodes, {
+    viewBox: bounds,
+    width: bounds.width,
+    height: bounds.height,
+    namespaces: SWILL_NAMESPACES,
+  });
 }
