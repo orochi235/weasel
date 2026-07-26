@@ -18,6 +18,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     pathFill: r._pathFill(),
     pathFillVColor: r._pathFillVColor(),
     textSdf: r._textSdf(),
+    textSdfR8: r._textSdfR8(),
     imageFill: r._imageFill(),
     gradFill: r._gradFill(),
     meshCache: r._meshCache(),
@@ -934,5 +935,42 @@ describe('drawText verticalAlign', () => {
     dispatch(ctxB, { kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style: {}, verticalAlign: 'top' });
 
     expect(firstQuadY0(callsB)).toBe(firstQuadY0(callsA));
+  });
+});
+
+import {
+  registerCanvasFont, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
+} from 'features/text/dynamic/dynamicAtlas';
+
+describe('drawText — canvas-dynamic routing', () => {
+  beforeEach(() => {
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255),
+        left: -8, top: 26, advance: 22,
+      }),
+    });
+    registerCanvasFont('Dyn');
+  });
+
+  it('binds the R8 program and dynamic page texture for a canvas group', () => {
+    const { ctx, calls } = createRecorderCtx();
+    const cmd: DrawCommand = {
+      kind: 'text',
+      x: 10, y: 10,
+      runs: [{
+        text: 'A', fontFamily: 'Dyn', fontWeight: 400, fontStyle: 'normal',
+        fontSize: 24, fill: { fill: 'solid', color: '#000' },
+      }],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand;
+    dispatch(ctx, cmd);
+    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
+    expect(used).toContain(ctx.textSdfR8.handle);
+    expect(used).not.toContain(ctx.textSdf.handle);
+    // Full R8 page upload happened (texImage2D with R8-format args).
+    expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
   });
 });

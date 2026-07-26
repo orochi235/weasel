@@ -78,6 +78,37 @@ void main() {
 }
 `;
 
+/**
+ * Single-channel sibling of TEXT_FRAG_SRC for runtime canvas-SDF glyphs
+ * (DynamicGlyphAtlas R8 pages): the R channel IS the distance field, so no
+ * median. Accepted trade: slight corner rounding at extreme zoom — invisible
+ * at label print resolution. Threshold semantics (0.5 edge, u_synthBold
+ * shift) match the MSDF shader because the bake encodes the edge at ~128.
+ */
+export const TEXT_FRAG_R8_SRC = /* glsl */ `#version 300 es
+precision highp float;
+in vec2 v_uv;
+uniform sampler2D u_atlas;
+uniform vec4 u_color;
+uniform float u_alpha;
+uniform float u_aaWidth;
+uniform float u_synthBold;
+uniform mat4 u_colorMatrix;
+uniform vec4 u_colorBias;
+out vec4 outColor;
+
+void main() {
+  float sdfVal = texture(u_atlas, v_uv).r;
+  float aaW = u_aaWidth > 0.0 ? u_aaWidth : 0.05;
+  float threshold = 0.5 - u_synthBold;
+  float sdfAlpha = smoothstep(threshold - aaW, threshold + aaW, sdfVal);
+  vec4 src = vec4(u_color.rgb, u_color.a);
+  vec4 mapped = clamp(u_colorMatrix * src + u_colorBias, 0.0, 1.0);
+  float a = mapped.a * sdfAlpha * u_alpha;
+  outColor = vec4(mapped.rgb * a, a);
+}
+`;
+
 export const TEXT_SDF_UNIFORMS = [
   'u_proj', 'u_model', 'u_atlas', 'u_color', 'u_alpha', 'u_aaWidth',
   'u_synthBold', 'u_synthItalic', 'u_colorMatrix', 'u_colorBias',
