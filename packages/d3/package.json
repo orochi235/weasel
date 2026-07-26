@@ -1,29 +1,57 @@
 {
   "name": "@weasel-js/d3",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.4.0",
   "description": "d3 bridge for weasel: data-join + transition chain over useScene and useAnimator. d3-force already integrates via useSimulation in the main kit.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
-  "main": "./src/index.ts",
-  "module": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "react": ">=18"
+    "react": ">=18",
+    "@weasel-js/core": "0.4.0"
   },
   "peerDependenciesMeta": {
-    "d3-force": { "optional": true },
-    "d3-ease": { "optional": true }
+    "d3-force": {
+      "optional": true
+    },
+    "d3-ease": {
+      "optional": true
+    }
   },
   "dependencies": {
     "d3-interpolate": "^3.0.1"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/d3"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -1,6 +1,6 @@
-# @weasel-js/svg
+# @weasel-js/history
 
-SVG import/export for @weasel-js/core: parse SVG strings into weasel-native shapes and serialize them back.
+Undo/redo history with scoped sub-history (Journal) primitive. No React, no DOM.
 
 Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
 scene-graph canvas kit for React. See the
@@ -9,13 +9,13 @@ scene-graph canvas kit for React. See the
 ## Install
 
 ```sh
-npm install @weasel-js/svg
+npm install @weasel-js/history
 ```
 
 ## Usage
 
 ```ts
-import { /* … */ } from '@weasel-js/svg';
+import { /* … */ } from '@weasel-js/history';
 ```
 
 ## License

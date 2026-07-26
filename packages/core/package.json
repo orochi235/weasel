@@ -74,14 +74,12 @@
     "react": ">=18"
   },
   "dependencies": {
+    "@weasel-js/geom": "0.4.0",
+    "@weasel-js/gestures": "0.4.0",
+    "@weasel-js/history": "0.4.0",
+    "@weasel-js/modes": "0.4.0",
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7"
-  },
-  "devDependencies": {
-    "@weasel-js/gestures": "*",
-    "@weasel-js/geom": "*",
-    "@weasel-js/history": "*",
-    "@weasel-js/modes": "*"
   },
   "publishConfig": {
     "access": "public"
