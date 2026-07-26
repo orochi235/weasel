@@ -19,7 +19,7 @@ import {
 } from '@weasel-js/core';
 import type { BooleansAdapter, NodeId, Op, PolygonPath } from '@weasel-js/core';
 import { ActionBar } from '@weasel-js/ui';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 
 const W = 240;
 const H = 200;

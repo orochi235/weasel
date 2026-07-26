@@ -49,7 +49,7 @@ import type {
   ResizeAnchor,
   ResizePose,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 
 type PanelId = 'green' | 'orange' | 'purple' | 'teal';
 

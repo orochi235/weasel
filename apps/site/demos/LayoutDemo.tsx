@@ -7,7 +7,7 @@ import {
   snapPoint,
 } from '@weasel-js/core';
 import type { SerializedScene } from '@weasel-js/core';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 import sceneJson from './data/layout.scene.json';
 
 // --- Scene model ---

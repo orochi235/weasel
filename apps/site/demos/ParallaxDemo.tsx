@@ -10,9 +10,8 @@ import {
   ellipsePath,
   polygonFromPoints,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
-import type { View } from '../../../packages/core/src/core/viewport/view';
-import type { RenderLayer } from '../../../packages/core/src/core/layers/render';
+import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { View, RenderLayer } from '@weasel-js/core';
 
 interface NodeData { color: string }
 type LayerId = 'default';

@@ -1,7 +1,5 @@
-import type { DrawCommand } from '../../../../packages/core/src/renderer';
-import type { RenderLayer } from '../../../../packages/core/src/core/layers/render';
-import type { View } from '../../../../packages/core/src/core/viewport/view';
-import type { CurveRepresentation, SharedAnchor } from '../../../../packages/core/src/features/paths/curves';
+import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { RenderLayer, View, CurveRepresentation, SharedAnchor } from '@weasel-js/core';
 
 interface ViewLike { x: number; y: number; scale: { x: number; y: number } }
 

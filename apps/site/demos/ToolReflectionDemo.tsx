@@ -17,7 +17,7 @@ import {
   type Conflict,
   type ToolDef,
 } from '@weasel-js/core/routing';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 import styles from './ToolReflectionDemo.module.css';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }

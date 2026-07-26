@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
 import { snapToContainer, snapBackOrDelete } from '@weasel-js/core/move';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
-import type { View } from '../../../packages/core/src/core/viewport/view';
+import type { DrawCommand } from '@weasel-js/core/renderer';
+import type { View } from '@weasel-js/core';
 
 interface NodeData { color: string }
 type LayerId = 'default';

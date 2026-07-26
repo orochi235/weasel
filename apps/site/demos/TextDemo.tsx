@@ -8,7 +8,7 @@ import {
   type CanvasHelpers,
   type RenderLayer,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 import { INITIAL_TEXT_NODES, type TextNode, type Pose } from './textDemoScene';
 
 const W = 600, H = 360;

@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import { SceneCanvas, useScene } from '../../../packages/core/src';
-import type { SceneCanvasApi } from '../../../packages/core/src';
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import type { SceneCanvasApi } from '@weasel-js/core';
 import { useHud } from '../../../packages/hud/src/react';
 import type { ButtonWidget } from '../../../packages/hud/src';
 

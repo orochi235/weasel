@@ -8,11 +8,9 @@ import {
   ellipsePath,
   linePath,
   meanScale,
-} from '../../../packages/core/src';
-import type { SimulationNode } from '../../../packages/core/src';
-import type { View } from '../../../packages/core/src/core/viewport/view';
-import type { RenderLayer } from '../../../packages/core/src/core/layers/render';
-import type { DrawCommand } from '../../../packages/core/src/renderer';
+} from '@weasel-js/core';
+import type { SimulationNode, View, RenderLayer } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 
 const W = 600, H = 400;
 const NODE_R = 8;
