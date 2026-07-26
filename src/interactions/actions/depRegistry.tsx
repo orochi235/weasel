@@ -18,10 +18,9 @@ import {
   createContext, useContext, useEffect, useMemo, useRef,
   type ReactNode,
 } from 'react';
-import type { DepSchema } from './depSchema';
+import type { DepSchema, DepName } from './depSchema';
 
-export type { DepSchema };
-export type DepName = keyof DepSchema;
+export type { DepSchema, DepName };
 
 export interface DepRegistry {
   register<K extends DepName>(name: K, source: () => DepSchema[K]): () => void;

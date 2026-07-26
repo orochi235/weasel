@@ -2,6 +2,7 @@ export { createScene, sceneFromJSON } from './scene';
 export { useScene } from './useScene';
 export { asNodeId } from './types';
 export type {
+  AddLayerSpec,
   AddNodeSpec,
   ContainerNode,
   LayerRecord,
