@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   SceneCanvas, useScene, renderSceneToPixels, defaultDrawOne, textCommand,
+  registerCanvasFont,
 } from '@weasel-js/core';
 import type { TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
 
 const W = 480, H = 240;
+
+// Exercise the dynamic canvas-SDF tier end-to-end: Arial has no baked atlas
+// here, so it resolves through DynamicGlyphAtlas. (If Arial isn't installed,
+// canvas fillText falls back to another face — the test only asserts that
+// glyph ink renders, not which face.)
+registerCanvasFont('Arial');
 
 // `RECT_FALLBACK_PAINTER` (src/canvas/NodeShape.ts) reads `data.color` and
 // emits a solid fill — no stroke — so that's the shape that guarantees a
@@ -49,6 +56,10 @@ export function RenderToPixelsDemo() {
       { id: 'd' as never, kind: 'leaf', layer: 'default',
         pose: { x: 10, y: 202, width: 460, height: 36 },
         data: { text: 'WWWWWWWWWWWWWWWW', style: { fontSize: 16 }, verticalAlign: 'bottom' } },
+      // Dynamic canvas-SDF text (see registerCanvasFont above).
+      { id: 'e' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 10, y: 4, width: 460, height: 32 },
+        data: { text: 'Dynamic SDF 123', style: { fontFamily: 'Arial', fontSize: 22 } } },
     ],
   });
   const outRef = useRef<HTMLCanvasElement>(null);
