@@ -1,6 +1,4 @@
-import type { Op } from 'core/ops/types';
-import { rebuildOp } from 'core/ops/registry';
-import { dwarn, dlog } from 'debug/flag';
+import type { Op } from './op';
 import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 
 interface Entry {
@@ -186,7 +184,23 @@ export interface CreateHistoryOptions {
    *  NOT caught: it aborts `restore()` mid-rebuild and can leave the
    *  stacks partially rebuilt. */
   rebuildOp?: (name: string, args: unknown) => Op | null;
+  /** Diagnostics sink. Omitted, the engine is silent — it deliberately owns no
+   *  logging utility, so that this package depends on nothing. `@weasel-js/core`'s
+   *  `createHistory` wrapper routes these into its `debug/flag` namespace, which
+   *  is what makes `DEBUG=history` work for kit consumers. */
+  debug?: HistoryLogger;
 }
+
+/** Diagnostics sink for {@link CreateHistoryOptions.debug}. Messages arrive
+ *  pre-formatted and unconditional; deciding whether to emit them is the
+ *  caller's job. */
+export interface HistoryLogger {
+  log(message: string): void;
+  warn(message: string): void;
+}
+
+/** Silent default — keeps every call site unconditional. */
+const SILENT: HistoryLogger = { log: () => {}, warn: () => {} };
 
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
@@ -198,6 +212,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
   const onEvict = options.onEvict;
   const customRebuild = options.rebuildOp;
+  const logger = options.debug ?? SILENT;
   let nextEntryId = 1;
   let version = 0;
   const listeners = new Set<() => void>();
@@ -215,7 +230,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       try {
         onEvict({ id: e.id, label: e.label, forwardOps: e.forwardOps, baseOps: e.baseOps });
       } catch (err) {
-        dwarn('history', `onEvict callback threw for entry id=${e.id} "${e.label}": ${String(err)}`);
+        logger.warn(`onEvict callback threw for entry id=${e.id} "${e.label}": ${String(err)}`);
       }
     }
   }
@@ -290,8 +305,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // flag so the upstream caller can consider avoiding the dispatch
       // entirely. Hidden by default; enable via
       // `localStorage.setItem('weasel.debug', '1')`.
-      dwarn(
-        'history',
+      logger.warn(
         `'${label}' batch was a no-op — every op reported false/'noop'. ` +
         `Skipping the undo entry; consider gating the dispatch upstream to avoid the wasted work.`,
       );
@@ -312,11 +326,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // pre-edit state, the original label sticks, and the entry id stays
       // stable so React lists keyed on id don't flicker.
       dropRedo();
-      dlog('history', `coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
+      logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
       bump();
       return;
     }
-    dlog('history', `push '${label}' (${ops.length} ops)`);
+    logger.log(`push '${label}' (${ops.length} ops)`);
     undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: incoming });
     dropRedo();
     enforceLimit();
@@ -391,7 +405,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     serialize(): SerializedHistory {
       let dropped = 0;
       const project = (e: Entry): SerializedHistoryEntry | null => {
-        const s = entryToSerial(e);
+        const s = entryToSerial(e, logger);
         if (s === null) dropped++;
         return s;
       };
@@ -438,10 +452,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       undoStack.length = 0;
       redoStack.length = 0;
       for (const se of snapshot.undoStack) {
-        undoStack.push(serialToEntry(se, customRebuild));
+        undoStack.push(serialToEntry(se, customRebuild, logger));
       }
       for (const se of snapshot.redoStack) {
-        redoStack.push(serialToEntry(se, customRebuild));
+        redoStack.push(serialToEntry(se, customRebuild, logger));
       }
       // Seed nextEntryId from the snapshot, then defensively bump past any
       // restored id — a malformed snapshot with duplicate or out-of-range
@@ -484,12 +498,12 @@ function opToSerial(op: Op): SerializedOp | null {
 /** Project a runtime entry to its serialized form, or `null` if any op in
  *  the entry can't be serialized (we drop the whole entry then — a partially
  *  serializable entry would invert against the wrong baseline on undo). */
-function entryToSerial(e: Entry): SerializedHistoryEntry | null {
+function entryToSerial(e: Entry, logger: HistoryLogger): SerializedHistoryEntry | null {
   const forwardOps: SerializedOp[] = [];
   for (const op of e.forwardOps) {
     const s = opToSerial(op);
     if (s === null) {
-      dlog('history', `serialize: dropping entry id=${e.id} "${e.label}" — forwardOp without name`);
+      logger.log(`serialize: dropping entry id=${e.id} "${e.label}" — forwardOp without name`);
       return null;
     }
     forwardOps.push(s);
@@ -498,7 +512,7 @@ function entryToSerial(e: Entry): SerializedHistoryEntry | null {
   for (const op of e.baseOps) {
     const s = opToSerial(op);
     if (s === null) {
-      dlog('history', `serialize: dropping entry id=${e.id} "${e.label}" — baseOp without name`);
+      logger.log(`serialize: dropping entry id=${e.id} "${e.label}" — baseOp without name`);
       return null;
     }
     baseOps.push(s);
@@ -523,22 +537,26 @@ function placeholderOp(name: string, args: unknown, label?: string): Op {
 /** Signature of a per-instance op rebuilder (`CreateHistoryOptions.rebuildOp`). */
 type CustomRebuild = (name: string, args: unknown) => Op | null;
 
-/** Rebuild a single serialized op, consulting `custom` (if provided) before
- *  the global registry, then falling back to a no-op placeholder. */
-function rebuildSerialOp(so: SerializedOp, label: string, custom: CustomRebuild | undefined): Op {
+/** Rebuild a single serialized op via `custom` (if provided), falling back to
+ *  a no-op placeholder.
+ *
+ *  This engine deliberately knows nothing about any op registry: hydrating a
+ *  `(name, args)` pair back into an op is the caller's concern, injected
+ *  through `CreateHistoryOptions.rebuildOp`. `@weasel-js/core`'s
+ *  `createHistory` wrapper supplies its global op-factory registry as that
+ *  hook, so core consumers see unchanged behavior. */
+function rebuildSerialOp(so: SerializedOp, label: string, custom: CustomRebuild | undefined, logger: HistoryLogger): Op {
   const viaCustom = custom ? custom(so.name, so.args) : null;
   if (viaCustom !== null) return viaCustom;
-  const built = rebuildOp(so.name, so.args);
-  if (built !== null) return built;
-  dlog('history', `restore: unknown op name "${so.name}" — substituting no-op placeholder`);
+  logger.log(`restore: unknown op name "${so.name}" — substituting no-op placeholder`);
   return placeholderOp(so.name, so.args, label);
 }
 
 /** Rebuild a runtime entry from its serialized form. Unknown op names become
  *  no-op placeholders so the entry still occupies its slot in the stack. */
-function serialToEntry(se: SerializedHistoryEntry, custom?: CustomRebuild): Entry {
-  const forwardOps = se.forwardOps.map((so) => rebuildSerialOp(so, se.label, custom));
-  const baseOps = se.baseOps.map((so) => rebuildSerialOp(so, se.label, custom));
+function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undefined, logger: HistoryLogger): Entry {
+  const forwardOps = se.forwardOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
+  const baseOps = se.baseOps.map((so) => rebuildSerialOp(so, se.label, custom, logger));
   return {
     id: se.id,
     label: se.label,

@@ -619,6 +619,10 @@ export { unionBounds } from './features/groups/unionBounds';
 export type { RectPose } from './features/groups/unionBounds';
 
 // ─── Undo history: createHistory + entry shape ──────────────────────────────
+// The explicit `createHistory` shadows the engine's own in the star re-export
+// below: core's wrapper injects the global op-factory registry as the
+// restore-time rebuild hook (see ./core/ops/createHistory).
+export { createHistory } from './core/ops/createHistory';
 export * from '@weasel-js/history';
 
 // ─── Adapters: contract types + reference arrayAdapter ──────────────────────

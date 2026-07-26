@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createHistory } from './history';
-import type { Op } from 'core/ops/types';
-import { registerOpFactory } from 'core/ops/registry';
+import type { Op } from './op';
 
 interface Cell { x: number }
 
@@ -39,33 +38,6 @@ describe('CreateHistoryOptions.rebuildOp', () => {
     expect(dst.x).toBe(0);
     b.redo();
     expect(dst.x).toBe(5);
-  });
-
-  it('hook returning null falls back to the global registry', () => {
-    const cell: Cell = { x: 0 };
-    // Unique name per test run — the global registry has no reset in the barrel.
-    const NAME = 'rebuildtest:global-fallback';
-    registerOpFactory(NAME, (args) => {
-      const { from, to } = args as { from: number; to: number };
-      const mk = (f: number, t: number): Op => ({
-        name: NAME, args: { from: f, to: t },
-        apply: () => { cell.x = t; },
-        invert: () => mk(t, f),
-      });
-      return mk(from, to);
-    });
-    const a = createHistory(null);
-    a.applyOps([{
-      name: NAME, args: { from: 0, to: 3 },
-      apply: () => { cell.x = 3; },
-      invert: () => ({ name: NAME, args: { from: 3, to: 0 }, apply: () => { cell.x = 0; }, invert: () => { throw new Error('unused'); } }),
-    }], 'set');
-    const snap = a.serialize();
-
-    const b = createHistory(null, { rebuildOp: () => null });
-    b.restore(snap);
-    b.undo();
-    expect(cell.x).toBe(0);
   });
 
   it('hook null + unknown global name still yields a no-op placeholder', () => {
