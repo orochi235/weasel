@@ -1,4 +1,4 @@
-import { registerFont } from '../../../../src/features/text/atlas/registerFont';
+import { registerFont } from '../../../core/src/features/text/atlas/registerFont';
 
 // Vite/esbuild URL imports — these resolve to the bundled asset paths at build time.
 // In dev, they resolve to dev-server URLs the renderer can fetch.

@@ -5,7 +5,7 @@ import {
   nurbs,
   spiro,
   type SharedAnchor,
-} from '../../../src/features/paths/curves';
+} from '../../../packages/core/src/features/paths/curves';
 import { CURVE_PRESETS } from './curveLab/presets';
 import { RepresentationPanel, type OverlayFlags } from './curveLab/RepresentationPanel';
 

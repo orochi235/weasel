@@ -11,7 +11,7 @@ import type {
   Path,
   DebugConfig,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 const DEBUG_STATES: Array<{ label: string; config: DebugConfig | false }> = [
   { label: 'off',          config: false },

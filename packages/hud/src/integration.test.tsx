@@ -2,14 +2,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { Canvas } from '../../../src/canvas/Canvas';
+import { Canvas } from '../../core/src/canvas/Canvas';
 import type { CanvasExtensionApi } from '@weasel-js/core';
-import { useTools } from '../../../src/tools/useTools';
-import type { Tool } from '../../../src/tools/types';
+import { useTools } from '../../core/src/tools/useTools';
+import type { Tool } from '../../core/src/tools/types';
 import { useHud } from './react';
-import { _resetFontRegistryForTests } from '../../../src/features/text/atlas/registerFont';
+import { _resetFontRegistryForTests } from '../../core/src/features/text/atlas/registerFont';
 import { readTokens } from './theme';
-import { ActiveToolContextProvider } from '../../../src/interactions/actions/activeToolContext';
+import { ActiveToolContextProvider } from '../../core/src/interactions/actions/activeToolContext';
 
 const defaultResolved = readTokens(null);
 

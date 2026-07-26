@@ -4,12 +4,12 @@ import importPlugin from 'eslint-plugin-import';
  * Minimal ESLint flat config.
  *
  * Currently the only rule we enforce is the one-way dependency arrow
- * between `src/core/` and `src/features/`: features may import from core,
- * core must NOT import from features.
+ * between `packages/core/src/core/` and `packages/core/src/features/`:
+ * features may import from core, core must NOT import from features.
  */
 export default [
   {
-    files: ['src/**/*.{ts,tsx,js,jsx}'],
+    files: ['packages/core/src/**/*.{ts,tsx,js,jsx}'],
     plugins: {
       import: importPlugin,
     },
@@ -27,14 +27,14 @@ export default [
         {
           zones: [
             {
-              target: './src/core',
-              from: './src/features',
+              target: './packages/core/src/core',
+              from: './packages/core/src/features',
               message:
                 'core/ must not import from features/. Dependencies flow one way: features → core.',
             },
             {
-              target: './src/core',
-              from: './src/interactions',
+              target: './packages/core/src/core',
+              from: './packages/core/src/interactions',
               message:
                 'core/ must not import from interactions/. Dependencies flow one way.',
             },

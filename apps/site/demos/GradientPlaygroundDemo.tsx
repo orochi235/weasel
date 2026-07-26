@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { SceneCanvas, hexToRgba, rgbaToHex, useHandleDrag, useScene } from '@weasel-js/core';
 import type { FillStyle, RenderLayer } from '@weasel-js/core';
-import { viewToMat3, type DrawCommand } from '../../../src/renderer';
+import { viewToMat3, type DrawCommand } from '../../../packages/core/src/renderer';
 import { Slider, paintGradientTrack, type Thumb } from '@weasel-js/ui';
 
 const W = 600;

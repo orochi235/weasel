@@ -142,11 +142,11 @@ Each hook pins the proposed/result shape; pick the matching alias
 
 **Reference behaviors in the source:**
 
-- `src/interactions/actions/move/behaviors/snapToGrid.ts` — pure pose refinement.
-- `src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
-- `src/interactions/actions/area-select/behaviors/selectFromMarquee.ts` — `defaultTransient`, `onEnd`-only.
-- `src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
-- `src/interactions/actions/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
+- `packages/core/src/interactions/actions/move/behaviors/snapToGrid.ts` — pure pose refinement.
+- `packages/core/src/interactions/actions/move/behaviors/snapToContainer.ts` — scratch state, dwell timer, custom `onEnd`.
+- `packages/core/src/interactions/actions/area-select/behaviors/selectFromMarquee.ts` — `defaultTransient`, `onEnd`-only.
+- `packages/core/src/interactions/actions/resize/behaviors/clampMinSize.ts` — width/height clamp.
+- `packages/core/src/interactions/actions/clone/behaviors/cloneByAltDrag.ts` — modifier activation + paste flow.
 
 ## Non-rect poses
 

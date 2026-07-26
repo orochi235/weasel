@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createPathEditPainter, type Anchor } from './pathEditPainter';
-import type { PathDrawCommand } from '../../../../src/renderer/DrawCommand';
+import type { PathDrawCommand } from '../../../../packages/core/src/renderer/DrawCommand';
 
 describe('createPathEditPainter', () => {
   it('returns empty draw commands when targetId is null', () => {

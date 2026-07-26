@@ -14,8 +14,8 @@ npm is canonical: `package-lock.json` is the committed lockfile and `workspaces`
 
 When building new tools, read these first:
 
-- **`src/tools/builtin/useHandTool.ts`** — simplest possible tool structure: scratch, drag channel, view mutation via `ctx.setView`. No ops, no adapter. Start here.
-- **`src/tools/builtin/useRectTool.ts`** — canonical pattern for tools that create scene objects: drag gesture via `useDragRect`, undoable commit via `ctx.applyBatch([createInsertOp(...)])`. The `create` factory lives on the tool, not on the adapter.
+- **`packages/core/src/tools/builtin/useHandTool.ts`** — simplest possible tool structure: scratch, drag channel, view mutation via `ctx.setView`. No ops, no adapter. Start here.
+- **`packages/core/src/tools/builtin/useRectTool.ts`** — canonical pattern for tools that create scene objects: drag gesture via `useDragRect`, undoable commit via `ctx.applyBatch([createInsertOp(...)])`. The `create` factory lives on the tool, not on the adapter.
 
 ## Demo conventions
 

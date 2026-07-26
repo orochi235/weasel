@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { useHud } from './useHud';
 import type { CanvasExtensionApi } from '@weasel-js/core';
-import { _resetFontRegistryForTests } from '../../../../src/features/text/atlas/registerFont';
+import { _resetFontRegistryForTests } from '../../../core/src/features/text/atlas/registerFont';
 
 function makeApi(): CanvasExtensionApi {
   return {

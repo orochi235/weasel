@@ -8,11 +8,11 @@ import {
   ellipsePath,
   linePath,
   meanScale,
-} from '../../../src';
-import type { SimulationNode } from '../../../src';
-import type { View } from '../../../src/core/viewport/view';
-import type { RenderLayer } from '../../../src/core/layers/render';
-import type { DrawCommand } from '../../../src/renderer';
+} from '../../../packages/core/src';
+import type { SimulationNode } from '../../../packages/core/src';
+import type { View } from '../../../packages/core/src/core/viewport/view';
+import type { RenderLayer } from '../../../packages/core/src/core/layers/render';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 const W = 600, H = 400;
 const NODE_R = 8;

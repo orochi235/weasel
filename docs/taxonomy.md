@@ -112,13 +112,13 @@ Distinct from [Gesture hooks](#gesture) in that a Tool is a stateful mode (the u
 switches between tools) while a gesture hook is a direct binding to a pointer
 interaction. Tools in modal states (pen mid-path, text mid-edit) can opt into an
 optional `claimsAll(ctx)` predicate that bypasses the affordance layer hit-test
-pipeline for the duration of the modal state. See `src/tools/types.ts:103`.
+pipeline for the duration of the modal state. See `packages/core/src/tools/types.ts:103`.
 
 ### Affordance
 
-A reusable factory primitive that produces a `{ id, render, hitTest? }` triple consumed by tools. Lives in `src/affordances/`. Tools compose multiple affordances into a single overlay layer via `composeAffordanceLayer`. The dispatcher consults each composite layer's `hitTest` on pointerdown (top-down z-order) before falling through to the active-tool slot walk — so visible chrome is hittable regardless of which tool is currently active.
+A reusable factory primitive that produces a `{ id, render, hitTest? }` triple consumed by tools. Lives in `packages/core/src/affordances/`. Tools compose multiple affordances into a single overlay layer via `composeAffordanceLayer`. The dispatcher consults each composite layer's `hitTest` on pointerdown (top-down z-order) before falling through to the active-tool slot walk — so visible chrome is hittable regardless of which tool is currently active.
 
-Examples: `createCornerResizeAffordance`, `createRotationAffordance`. See `src/affordances/types.ts`.
+Examples: `createCornerResizeAffordance`, `createRotationAffordance`. See `packages/core/src/affordances/types.ts`.
 
 The factory pattern: each affordance instance is bound to one tool/context at runtime (it closes over that tool's controllers via the wrapper drag channel), but the factory function is reusable across tools.
 
@@ -129,7 +129,7 @@ records, the active-slot id, and the hotkey-engaged id. Returns a `ToolsApi` wit
 `setActive`, `engageHotkey`, `getActiveOverlays`, and the `dispatcher` that
 `<Canvas>` wires to DOM events. Ambient tools listen on all events regardless of
 which tool is active (used for always-on zoom and pan tools). See
-`src/tools/useTools.ts`.
+`packages/core/src/tools/useTools.ts`.
 
 ### Layer
 
@@ -137,7 +137,7 @@ A `RenderLayer<TData>` is a named draw function: `{ id, label, draw(data, view, 
 Layers are the kit's composable rendering primitive. Each frame the canvas reduces
 the active layer stack into a flat `DrawCommand[]` tree and hands it to the
 WebGL renderer. Layers declare whether they operate in world space (default) or
-screen space. Layers may declare an optional `hitTest(worldX, worldY, data, view, dims)` that the dispatcher consults on pointerdown before the slot walk; first non-null result wins. See `src/core/layers/render.ts`.
+screen space. Layers may declare an optional `hitTest(worldX, worldY, data, view, dims)` that the dispatcher consults on pointerdown before the slot walk; first non-null result wins. See `packages/core/src/core/layers/render.ts`.
 
 ### Slot
 
@@ -146,7 +146,7 @@ canonical z-order: `grid`, `cellHighlight`, `scene`, `selectionOverlay`. Custom
 slots declare an `after` or `before` anchor relative to a standard slot; unanchored
 custom slots land at the top of the stack. Slot configs are distinct from raw
 `RenderLayer` values — the canvas constructs a `RenderLayer` from each slot config
-internally. See `src/canvas/Canvas.tsx:70`.
+internally. See `packages/core/src/canvas/Canvas.tsx:70`.
 
 ### Adapter
 
@@ -158,12 +158,12 @@ narrow and structural: `MoveAdapter`, `ResizeAdapter`, `RotateAdapter`,
 all of them at once is the common pattern. The opaque `adapter: unknown` on
 [`ToolCtx`](#toolctx-gesturecontext) is the same concept but intentionally
 untyped at the tool layer; tools cast it when they need a specific facet. See
-`src/core/adapters/types.ts` and `docs/adapters.md`.
+`packages/core/src/core/adapters/types.ts` and `docs/adapters.md`.
 
 ### Op
 
 An invertible, adapter-agnostic mutation: `{ apply(adapter), invert(): Op, label?, coalesceKey? }`.
-Op constructors live in `src/core/ops/`: `createTransformOp`, `createInsertOp`,
+Op constructors live in `packages/core/src/core/ops/`: `createTransformOp`, `createInsertOp`,
 `createDeleteOp`, `createSetSelectionOp`, `createSetTextOp`, `createReorderOp`,
 `createSetPathOp`, etc. `dispatchApplyBatch(adapter, ops, label)` applies them in
 order (or hands them to `adapter.applyBatch` for history integration).
@@ -182,7 +182,7 @@ user-intent operations; the action↔op mapping is many-to-many:
 
 The `coalesceKey` field lets `createHistory({ coalesceWindowMs })` merge consecutive
 entries within a window when their op multiset (keyed by `coalesceKey`) matches —
-so scrubs of a property slider land as one undo step. See `src/core/ops/types.ts`.
+so scrubs of a property slider land as one undo step. See `packages/core/src/core/ops/types.ts`.
 
 ### Gesture
 
@@ -204,13 +204,13 @@ drag) can power different actions (insert a rect, marquee-select, area-erase); t
 same action (`delete`) can be invoked by different gestures (a keystroke, a button
 click, a swipe). See [Interaction](#interaction) for the composition.
 
-Source layout: `src/interactions/gestures/` holds the input primitives — per-primitive
+Source layout: `packages/core/src/interactions/gestures/` holds the input primitives — per-primitive
 subdirectories `dragGesture/`, `dragRect/`, `dragRadial/`, `usePointerGestures/`, plus
 the shared `shared/` snap helpers and `types.ts` carrying the cross-system base types
 (`ModifierState`, `GestureContext`, `ActionBehavior`, etc.). Drag-based actions
 (`move/`, `resize/`, `rotate/`, `clone/`, `area-select/`, `lasso-select/`,
 `edit-anchors/`, `insert/`) live alongside the one-shot actions under
-`src/interactions/actions/`.
+`packages/core/src/interactions/actions/`.
 
 ### Action
 
@@ -228,7 +228,7 @@ invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 
 Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
 and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
-under `src/interactions/actions/`. All default actions are registered as descriptors
+under `packages/core/src/interactions/actions/`. All default actions are registered as descriptors
 with `defaultBinding` and dispatched through the action registry. The remaining gap: drag-based action descriptors
 (`resize`, `rotate`, `areaSelect`, `insert`, `clone`) have stub invokers — their
 real behavior still flows through `useResize`, `useRotate`, etc. via `useSelectTool`'s
@@ -237,7 +237,7 @@ route tables; full invoker implementations are tracked in `docs/TODO.md`.
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
 register automatically via `<SceneCanvas>`; consumer-level actions register
-explicitly. See `src/interactions/actions/registry.tsx`.
+explicitly. See `packages/core/src/interactions/actions/registry.tsx`.
 
 An action may declare an optional `cursor` — the hover hint shown while the
 pointer rests where a drag would route to that action. The hover-cursor pump
@@ -268,7 +268,7 @@ the shapes per action: `MoveBehavior`, `ResizeBehavior`, `RotateBehavior`,
 `InsertBehavior`, `AreaSelectBehavior`, `CloneBehavior`.
 
 Distinct from [component-level behaviors](#mixin--lifecycle-behavior-deferred)
-which do not exist yet. See `src/interactions/gestures/types.ts` for the
+which do not exist yet. See `packages/core/src/interactions/gestures/types.ts` for the
 `ActionBehavior` interface (renamed from `GestureBehavior` in 2026-05).
 
 ### Snap strategy
@@ -279,7 +279,7 @@ Passed to gesture hooks (e.g. `useMove({ snap: gridSnapStrategy(20) })`) or
 via the `ToolCtx` snap field to tools. Built-in: `gridSnapStrategy(spacing)`
 snaps the pose origin to the nearest grid multiple; `OriginProjection` adapts
 non-rect poses (e.g. `Path`) so `gridSnapStrategy` can read and write the
-correct origin. See `src/interactions/gestures/shared/strategies/grid.ts`.
+correct origin. See `packages/core/src/interactions/gestures/shared/strategies/grid.ts`.
 
 ### Layout strategy
 
@@ -289,7 +289,7 @@ an optional `contains` predicate. When a container in the scene exposes a layout
 strategy via `adapter.getLayout(containerId)`, `useMove` runs a layout pass on
 drag: reflows siblings live and calls `commitDrop` on release. Built-in strategies:
 `freeform` (absolute positioning), `tileGrid` (row/column grid), `snapPoint`
-(named anchor positions). See `src/layout/types.ts` and `src/layout/strategies/`.
+(named anchor positions). See `packages/core/src/layout/types.ts` and `packages/core/src/layout/strategies/`.
 
 ### Selection
 
@@ -300,9 +300,9 @@ click policy (`'single'` replaces; `'multi'` toggles with extend key). The
 `adapterMethods` sub-object (`{ getSelection, setSelection }`) is designed to be
 spread directly into adapters. Selection participates in the `@experimental`
 [`SelectionContext`](#selectioncontext) for non-canvas UI. See
-`src/core/selection/useSelection.ts`. The kit-level `ChromeState` (the
+`packages/core/src/core/selection/useSelection.ts`. The kit-level `ChromeState` (the
 affordance-facing read-only view) is built from the `SelectionApi` via
-`buildChromeState`; lives in `src/core/selection/chromeState.ts`.
+`buildChromeState`; lives in `packages/core/src/core/selection/chromeState.ts`.
 
 ### SelectionContext
 
@@ -311,7 +311,7 @@ affordance-facing read-only view) is built from the `SelectionApi` via
 prop-drilling. Provides the current selection ids and optional per-id `kinds`
 labels. The `kinds` parallel array is a temporary half-step toward typed scene
 references (see `docs/TODO.md` Tier 1.5). See
-`src/features/selection/SelectionContext.tsx`.
+`packages/core/src/features/selection/SelectionContext.tsx`.
 
 ---
 
@@ -321,7 +321,7 @@ The vocabulary kit authors use when extending or organizing the kit.
 
 ### Feature
 
-A directory under `src/features/<name>/` that bundles related primitives sharing a
+A directory under `packages/core/src/features/<name>/` that bundles related primitives sharing a
 domain. Examples: `focus`, `selection`, `grid`, `groups`, `text`, `paths`,
 `viewport`, `drag`, `patterns`. Not a runtime concept — an organizing principle
 for the repo. The mental model (from `docs/TODO.md`): the fix for "the kit is
@@ -354,11 +354,11 @@ kit's internal partial order.
 
 **Feature-authoring guide.** When adding or restructuring a feature:
 
-1. **Each feature is a directory under `src/features/<name>/`.** The directory bundles related primitives that share a domain.
+1. **Each feature is a directory under `packages/core/src/features/<name>/`.** The directory bundles related primitives that share a domain.
 
 2. **Each feature has an `index.ts` barrel.** The barrel re-exports the feature's public primitives — every hook, layer factory, exported type, or helper a consumer or another feature might import. Internal helpers stay un-exported (or are exported only through deeper paths if needed for internal cross-feature wiring).
 
-3. **The kit's main barrel (`src/index.ts`) imports from feature barrels, not from feature-internal paths.** This is the load-bearing discipline — once enforced, internal restructures (renaming a file, splitting a primitive into two) don't ripple through the main barrel.
+3. **The kit's main barrel (`packages/core/src/index.ts`) imports from feature barrels, not from feature-internal paths.** This is the load-bearing discipline — once enforced, internal restructures (renaming a file, splitting a primitive into two) don't ripple through the main barrel.
 
 4. **The [Role taxonomy](#role-taxonomy) is a thinking tool, not a code shape.** When authoring a feature's primitives, sort them mentally: which are state surfaces (api), which contribute DOM attrs (attrs), which contribute render layers (layers). The categorization helps decide what belongs in the barrel and what stays internal. It does NOT manifest as TypeScript types or runtime structures — there's no `Api<S>` alias, no `<SceneCanvas features={[…]}>` prop, no `useFooFeature()` convenience hook by convention.
 
@@ -396,7 +396,7 @@ this shape.
 
 ### Chrome state
 
-The `ChromeState` object built once per Canvas render and passed to every affordance's `render` and `hitTest` call. Source of truth for selection ids, derived bounds (overlay-aware), multi-union AABB (lazy), and modifier flags. Read-only; affordances dispatch gestures via their drag channel's `ToolCtx`, not through `ChromeState`. See `src/core/selection/chromeState.ts`.
+The `ChromeState` object built once per Canvas render and passed to every affordance's `render` and `hitTest` call. Source of truth for selection ids, derived bounds (overlay-aware), multi-union AABB (lazy), and modifier flags. Read-only; affordances dispatch gestures via their drag channel's `ToolCtx`, not through `ChromeState`. See `packages/core/src/core/selection/chromeState.ts`.
 
 ### Hook
 
@@ -413,10 +413,10 @@ what protocols they consume. Documented here so authors of new features know whe
 they fit.
 
 - **Foundation** (nothing kit-internal depends on these): `viewport`, `scene`,
-  `selection`. Of these, `viewport` is core infrastructure (lives under `src/core/`
+  `selection`. Of these, `viewport` is core infrastructure (lives under `packages/core/src/core/`
   — every canvas needs a `View`, so it's not optional in any meaningful sense);
   `scene` is also core; `selection` is a protocol-shaped feature (lives under
-  `src/features/`) that most editor-style apps will pull in.
+  `packages/core/src/features/`) that most editor-style apps will pull in.
 - **Mid-layer** (depend on foundation): `groups` (scene + selection), `grid`
   (viewport), `focus` (nothing internal), `paths`, `patterns`, `text`.
 - **Gestures** (depend on foundation + adapter contracts): `useMove`, `useResize`,
@@ -465,8 +465,8 @@ Shape is generic (`TPose`). Common shapes: rect (`{x, y, width, height}`),
 `Path` (polygon/bezier command stream), `TextPose`. Poses are **local-coordinate**
 — relative to the object's direct parent (world-frame for root objects). The
 kit composes world poses via `composeWorldPose` for rendering and hit-testing.
-See `src/interactions/gestures/types.ts:108` (`ResizePose`, `RotatedPose`) and
-`src/features/paths/types.ts` (`Path`).
+See `packages/core/src/interactions/gestures/types.ts:108` (`ResizePose`, `RotatedPose`) and
+`packages/core/src/features/paths/types.ts` (`Path`).
 
 ### PoseDescriptor
 
@@ -477,7 +477,7 @@ scale). Optional: `translate`, `intersectsRect`, `lerp`, `getRotation`. Used by
 `useResize`, area-select, snap, and animation helpers. Built-ins:
 `RECT_POSE_DESCRIPTOR` (identity for `ResizePose`), `ROTATED_POSE_DESCRIPTOR`,
 `pathPoseDescriptor`. Distinct from [OriginProjection](#snap-strategy) which handles
-snap-point extraction for non-rect poses. See `src/interactions/actions/resize/geometry.ts:15`.
+snap-point extraction for non-rect poses. See `packages/core/src/interactions/actions/resize/geometry.ts:15`.
 
 ### Scene
 
@@ -487,7 +487,7 @@ undo/redo. Created by `useScene`; passed to `<SceneCanvas>`. Exposes `add`,
 `subscribe` seam for React integration. Mutations are auto-undoable; the
 `recordOp` seam extends the history with consumer-defined ops. Distinct from a
 flat-array adapter wired through `useArrayAdapter` — the Scene is the higher-level
-path with first-class containers and layers built in. See `src/core/scene/types.ts:83`.
+path with first-class containers and layers built in. See `packages/core/src/core/scene/types.ts:83`.
 
 ### Node
 
@@ -495,7 +495,7 @@ path with first-class containers and layers built in. See `src/core/scene/types.
 (`kind: 'leaf'`) or a `ContainerNode` (`kind: 'container'`, with `children: NodeId[]`).
 Every node carries `id`, `layer`, `pose`, `data`, and `parent`. The opaque `data`
 field holds the consumer's domain payload; the kit never inspects it. See
-`src/core/scene/types.ts:17`.
+`packages/core/src/core/scene/types.ts:17`.
 
 ### Group vs Selection — not the same axis
 
@@ -524,7 +524,7 @@ point rendered at the canvas top-left and `scale` is pixels per world unit. The
 canonical pan+zoom representation used throughout the kit. `ViewTransform` is a
 legacy shape (`{ panX, panY, zoom }`) with the opposite sign convention for
 translation; `viewToTransform(view)` bridges between them. See
-`src/core/viewport/view.ts`.
+`packages/core/src/core/viewport/view.ts`.
 
 ### Bounds / ResizeAnchor
 
@@ -532,7 +532,7 @@ translation; `viewToTransform(view)` bridges between them. See
 `{ x, y, width, height }` — the minimum rect shape the resize machinery requires.
 `ResizeAnchor` describes which corner/edge stays fixed during a resize:
 `{ x: 'min' | 'max' | 'free', y: 'min' | 'max' | 'free' }`. The pair is the
-spatial vocabulary of resize math. See `src/interactions/gestures/types.ts:102`.
+spatial vocabulary of resize math. See `packages/core/src/interactions/gestures/types.ts:102`.
 
 ### Path
 
@@ -541,7 +541,7 @@ is an SVG-style command stream (`commands: Uint8Array`, `coords: Float32Array`);
 `RectPath` is an axis-aligned-rectangle fast path. Multi-contour shapes use
 multiple `M`/`Z` pairs. The `kind` discriminant lets the polygon kernels
 short-circuit on `'rect'` without the full path kernel. See
-`src/features/paths/types.ts`.
+`packages/core/src/features/paths/types.ts`.
 
 ---
 
@@ -568,7 +568,7 @@ snap target), `ResizeOverlay` (id, current/target pose, anchor), `RotateOverlay`
 `InsertOverlay`, `AreaSelectOverlay`. Post-Tool-primitive migration the overlay is
 surfaced through the active `Tool`'s `previewPose` / `previewBounds` / `previewIds`
 so `<Canvas>` can compose it without knowing which gesture hook is internally active.
-See `src/interactions/gestures/types.ts`.
+See `packages/core/src/interactions/gestures/types.ts`.
 
 ### ToolCtx / GestureContext
 
@@ -577,13 +577,13 @@ Two distinct context shapes that appear at different layers:
 - **`ToolCtx<TScratch>`** — the per-event context injected into every tool channel
   handler by `<Canvas>`. Carries `worldX/Y`, `modifiers`, `selection`, an opaque
   `adapter`, `applyBatch`, `view`, `setView`, `canvasRect`, and `scratch` (the
-  tool's per-gesture mutable store). See `src/tools/types.ts:28`.
+  tool's per-gesture mutable store). See `packages/core/src/tools/types.ts:28`.
 
 - **`GestureContext<TPose>`** — the per-frame context passed to
   [Behavior](#behavior) methods inside gesture hooks. Carries `draggedIds`,
   `origin`, `current` (live pose map), `snap`, `modifiers`, `pointer`, `adapter`
   (typed as `MoveAdapter`), and `scratch` (per-gesture key/value store). More
-  gesture-specific than `ToolCtx`. See `src/interactions/gestures/types.ts:26`.
+  gesture-specific than `ToolCtx`. See `packages/core/src/interactions/gestures/types.ts:26`.
 
 ### Pointer gestures (`usePointerGestures`)
 
@@ -591,7 +591,7 @@ Two distinct context shapes that appear at different layers:
 `useRotate`, `useInsert`, and `useAreaSelect` controllers into a single set of
 `onPointerDown/Move/Up/Cancel` React handlers. This is the pre-Tool-primitive
 entry point; most new code uses `useTools` + `useSelectTool` / `useInsertTool`
-instead. See `src/interactions/usePointerGestures.ts`.
+instead. See `packages/core/src/interactions/usePointerGestures.ts`.
 
 ---
 
@@ -601,7 +601,7 @@ instead. See `src/interactions/usePointerGestures.ts`.
 
 The kit renders exclusively via **WebGL2** through `WeaselRenderer`
 (`@weasel-js/gl` was a separate package until Step 10; its sources are now
-folded into `src/renderer/`). The 2D canvas codepath was deleted in Step 10
+folded into `packages/core/src/renderer/`). The 2D canvas codepath was deleted in Step 10
 (2026-05-09). The `backend` prop existed temporarily during the soak period and is
 gone. WebGPU is a future option tracked in `docs/TODO.md`. See
 `docs/superpowers/plans/2026-05-09-webgl-step-10-done.md`.
@@ -623,7 +623,7 @@ combined `createSelectionOverlayLayer`. The overlay reads overlay-aware pose
 lookups (live gesture pose wins over committed adapter pose) so handles track
 objects during a drag. The selection overlay is screen-space-constant for handle
 sizes but world-space for object positions. See
-`src/features/selection/overlay.ts`. Phases of the chrome-affordances refactor
+`packages/core/src/features/selection/overlay.ts`. Phases of the chrome-affordances refactor
 (spec: `docs/superpowers/specs/2026-05-10-chrome-affordances-design.md`) introduced
 kit-level affordance factories (`createCornerResizeAffordance`,
 `createRotationAffordance`) that render the same chrome via reusable primitives;

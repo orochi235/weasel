@@ -25,20 +25,20 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@weasel-js/core": ["../../src/index.ts"],
-      "@weasel-js/core/routing": ["../../src/tools/routing/index.ts"],
-      "@weasel-js/core/*": ["../../src/*"],
+      "@weasel-js/core": ["../core/src/index.ts"],
+      "@weasel-js/core/routing": ["../core/src/tools/routing/index.ts"],
+      "@weasel-js/core/*": ["../core/src/*"],
       "@weasel-js/ui": ["../ui/src/index.ts"],
       "@weasel-js/modes": ["../modes/src/index.ts"],
       "@weasel-js/theme": ["../theme/src/index.ts"],
       "@weasel-js/theme/tokens.css": ["../theme/src/tokens.css"],
-      "core/*": ["../../src/core/*"],
-      "features/*": ["../../src/features/*"],
-      "affordances/*": ["../../src/affordances/*"],
-      "interactions/*": ["../../src/interactions/*"],
-      "tools/*": ["../../src/tools/*"],
-      "canvas/*": ["../../src/canvas/*"],
-      "debug/*": ["../../src/debug/*"]
+      "core/*": ["../core/src/core/*"],
+      "features/*": ["../core/src/features/*"],
+      "affordances/*": ["../core/src/affordances/*"],
+      "interactions/*": ["../core/src/interactions/*"],
+      "tools/*": ["../core/src/tools/*"],
+      "canvas/*": ["../core/src/canvas/*"],
+      "debug/*": ["../core/src/debug/*"]
     }
   },
   "include": ["src/**/*", "../ui/src/**/*", "../modes/src/**/*"]

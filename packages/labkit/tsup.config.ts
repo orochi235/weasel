@@ -44,7 +44,7 @@ export default defineConfig({
   esbuildOptions(options) {
     options.alias = {
       ...(options.alias ?? {}),
-      '@weasel-js/core': resolve(weaselRoot, 'dist/index.js'),
+      '@weasel-js/core': resolve(weaselRoot, 'packages/core/dist/index.js'),
     };
   },
   splitting: true,

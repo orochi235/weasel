@@ -1,6 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src/index.ts"],
+  "entryPoints": ["packages/core/src/index.ts"],
   "entryPointStrategy": "resolve",
   "out": "dist-demo/api",
   "name": "weasel API",
@@ -61,7 +61,6 @@
     "MoveController",
     "ResizeController",
     "RotateController",
-    "ColorContextValue",
     "PenAnchor",
     "PencilPoint",
     "View"

@@ -1,6 +1,6 @@
 import type { Widget, HudDrawCtx, HudPointerEvent, PointerClaim, WidgetBounds } from '../widget';
-import type { DrawCommand, PathDrawCommand } from '../../../../src/renderer';
-import type { RectPath } from '../../../../src/features/paths/types';
+import type { DrawCommand, PathDrawCommand } from '../../../core/src/renderer';
+import type { RectPath } from '../../../core/src/features/paths/types';
 
 export interface RectOptions {
   id: string;

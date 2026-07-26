@@ -8,8 +8,8 @@ import {
   alignMoveBehavior,
 } from '@weasel-js/core';
 import type { Guide } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
-import type { View } from '../../../src/core/viewport/view';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { View } from '../../../packages/core/src/core/viewport/view';
 
 interface NodeData { color: string }
 type LayerId = 'default';

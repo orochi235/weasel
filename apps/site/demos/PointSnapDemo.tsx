@@ -14,7 +14,7 @@ import {
   useResizePolicy,
 } from '@weasel-js/core';
 import type { RotatedPose, PoseProjection, SceneCanvasApi } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 interface Rect extends RotatedPose {
   id: string;

@@ -24,7 +24,7 @@ corner-handle resize, and a marquee for free.
 
 You can override any of the internal controllers by passing your own
 (`move`, `resize`, `selection`, …); supply `*Options` to configure the
-default ones. See [hooks.md](./hooks.md) and `src/canvas/Canvas.tsx`.
+default ones. See [hooks.md](./hooks.md) and `packages/core/src/canvas/Canvas.tsx`.
 
 ## `<SceneViewCanvas>` and `<MinimapCanvas>` (detached views)
 
@@ -141,7 +141,7 @@ interface Op {
 }
 ```
 
-Constructors live under `src/core/ops/`: `createTransformOp`,
+Constructors live under `packages/core/src/core/ops/`: `createTransformOp`,
 `createInsertOp`, `createDeleteOp`, `createSetSelectionOp`,
 `createBringForwardOp`, etc. Every gesture and action hook produces ops on
 commit; `dispatchApplyBatch(adapter, ops, label)` calls
@@ -198,10 +198,10 @@ Everything the user does to the scene is an **interaction**. The kit splits
 interactions into two kinds:
 
 - **Gestures** — pointer-driven, with a start/move/end lifecycle. They live
-  under `src/interactions/gestures/`. Each one returns a controller with a
+  under `packages/core/src/interactions/gestures/`. Each one returns a controller with a
   live `overlay` so the in-flight state can render between frames.
 - **Actions** — discrete, one-shot mutations that don't have a drag phase.
-  They live under `src/interactions/actions/`. Most are keybinding-driven
+  They live under `packages/core/src/interactions/actions/`. Most are keybinding-driven
   (Esc, Cmd+A, Cmd+D, arrows, Cmd+Z), but they're really just functions
   that produce ops; the keybinding wiring is optional.
 
@@ -266,7 +266,7 @@ coalescing, and `applyBatch` overrides all work uniformly. See
 
 Tool-switch shortcuts (`V` → Select) and held-key activations (Space → Hand)
 are registered as actions in the actions registry, not as fields on
-`ToolDef`. The factories in `src/interactions/actions/defaults/` produce
+`ToolDef`. The factories in `packages/core/src/interactions/actions/defaults/` produce
 them:
 
 - `makeToolActivateAction(bindings)` — single parametric action registered
@@ -286,7 +286,7 @@ them:
   entries with `buildToolOffhandBindings(specs)`.
 
 Built-in tools wire these via `BUILTIN_SELECT_KEYS` and
-`BUILTIN_OFFHAND_ACTIONS` maps in `src/tools/useKeybindings.ts`. The
+`BUILTIN_OFFHAND_ACTIONS` maps in `packages/core/src/tools/useKeybindings.ts`. The
 `ToolKeybinding` field on `ToolDef` is reserved for tools whose activation
 key is set by the host caller (Lasso, Eyedropper); the same `useKeybindings`
 effect picks up those configurable keybindings and appends entries to the
@@ -330,7 +330,7 @@ strings like `[*:initial] keyHeld(Space)` parse, format, and render in
 the inspector exactly like other gestures.
 
 A known carryover: the document-level `keydown` listener in
-`src/tools/useKeybindings.ts` still serves as the authoritative tap-switch
+`packages/core/src/tools/useKeybindings.ts` still serves as the authoritative tap-switch
 path for the bundled `SceneCanvas` mount topology, while the action
 registry path is exercised by tests and other consumers. Unifying these
 paths is a follow-up; the action registry path is now the canonical
@@ -409,21 +409,21 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 | **Canvas layers** | Slot name string | Component lifetime, fixed at render | Constructor-fixed (prop value at render time) | `LayersMap` prop on `<Canvas>` / `<SceneCanvas>` | Implicitly — `Object.entries` over the prop | `<Canvas>` layer compositor |
 | **Object-kind classifier** | Target kind string | — | — | — | — | Status: **in design** — see `docs/superpowers/specs/2026-05-12-declarative-tool-routing-design.md`; ships an adapter `kindOf?` hook as a temporary contract |
 
-**Fonts** (`src/features/text/atlas/registerFont.ts`) use a two-level Map — outer key is the font family, inner key is `weight|style` — so `resolveFontVariant` can walk the fallback chain within a family without scanning everything. Idempotent: re-registering an existing variant is a no-op.
+**Fonts** (`packages/core/src/features/text/atlas/registerFont.ts`) use a two-level Map — outer key is the font family, inner key is `weight|style` — so `resolveFontVariant` can walk the fallback chain within a family without scanning everything. Idempotent: re-registering an existing variant is a no-op.
 
-**Tools** (`src/tools/useTools.ts`) — the `registry` prop passed to `useTools` is held in a ref so new object references re-read cleanly each render without rebuilding the dispatcher. Tools not in `registry` can still appear in the `ambient` array (always-on tools); `ToolsApi.has(id)` checks both.
+**Tools** (`packages/core/src/tools/useTools.ts`) — the `registry` prop passed to `useTools` is held in a ref so new object references re-read cleanly each render without rebuilding the dispatcher. Tools not in `registry` can still appear in the `ambient` array (always-on tools); `ToolsApi.has(id)` checks both.
 
-**Ops** (`src/core/scene/scene.ts`) — the internal `registered` Map is seeded with the kit's own `kit:*` ops at construction time, then consumer ops from `UseSceneOptions.ops`, then any later `scene.registerOp()` calls. `kit:*` kind strings are reserved; consumer ops that try to use the prefix throw at registration time.
+**Ops** (`packages/core/src/core/scene/scene.ts`) — the internal `registered` Map is seeded with the kit's own `kit:*` ops at construction time, then consumer ops from `UseSceneOptions.ops`, then any later `scene.registerOp()` calls. `kit:*` kind strings are reserved; consumer ops that try to use the prefix throw at registration time.
 
-**Scene function fields** (`SceneRegistry` in `src/core/scene/types.ts`) — a separate registry from ops. Its sole purpose is serialization: `clipFromPose` is a function and can't travel through JSON, so `scene.toJSON()` replaces it with a string key and `sceneFromJSON()` restores the function from the registry. Reserved for future non-serializable node fields.
+**Scene function fields** (`SceneRegistry` in `packages/core/src/core/scene/types.ts`) — a separate registry from ops. Its sole purpose is serialization: `clipFromPose` is a function and can't travel through JSON, so `scene.toJSON()` replaces it with a string key and `sceneFromJSON()` restores the function from the registry. Reserved for future non-serializable node fields.
 
-**Actions** (`src/interactions/actions/registry.tsx`) — the only registry backed by React context. Entries are owned by components (registered in `useEffect`, cleaned up on unmount). `register()` returns its own cleanup function and implements last-writer-wins semantics so hot-module replacement doesn't orphan stale entries.
+**Actions** (`packages/core/src/interactions/actions/registry.tsx`) — the only registry backed by React context. Entries are owned by components (registered in `useEffect`, cleaned up on unmount). `register()` returns its own cleanup function and implements last-writer-wins semantics so hot-module replacement doesn't orphan stale entries.
 
-**Easings** (`src/animation/easings.ts`) — not a registry in the dynamic sense; `EASINGS` is a frozen `as const` object. It appears here because it fits the "keyed lookup" pattern and is consumed the same way by animation pickers and demos. `SPRING_PRESETS` follows the same shape for the four named spring curves.
+**Easings** (`packages/core/src/animation/easings.ts`) — not a registry in the dynamic sense; `EASINGS` is a frozen `as const` object. It appears here because it fits the "keyed lookup" pattern and is consumed the same way by animation pickers and demos. `SPRING_PRESETS` follows the same shape for the four named spring curves.
 
 **Shader programs** split across two levels. The module-level source registry (`registerProgram.ts`) is GL-context-agnostic and shared across all renderers. Each `WeaselRenderer` instance maintains its own compiled-program registry (`programRegistry`), rebuilt from source on GL context restore. This mirrors the font registry pattern: fonts store `ImageBitmap` at module scope; each renderer's `GLTextureCache` handles the per-context upload.
 
-**Textures** (`src/renderer/textures/registerTexture.ts`) — entries are keyed by auto-assigned opaque ids (`tex_N`), not caller-chosen names, so collision is impossible. The `TextureHandle` returned by `registerTexture()` is what callers pass as a `ShaderUniform` value. No unregister in v1; texture lifetime is the app lifetime.
+**Textures** (`packages/core/src/renderer/textures/registerTexture.ts`) — entries are keyed by auto-assigned opaque ids (`tex_N`), not caller-chosen names, so collision is impossible. The `TextureHandle` returned by `registerTexture()` is what callers pass as a `ShaderUniform` value. No unregister in v1; texture lifetime is the app lifetime.
 
 **Canvas layers** — the `LayersMap` prop is not a traditional registry but fits the pattern: it maps string slot names to layer configs, the compositor enumerates them at render time, and custom entries declare ordering via `before?` / `after?` anchors. Scope is per-`<Canvas>` instance; the map is treated as immutable for a given render pass.
 

@@ -23,7 +23,7 @@ import type {
   Path,
   PolygonPath,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 const H = 360, HANDLE = DEFAULT_HANDLE_SIZE;
 const ID = 'curve';

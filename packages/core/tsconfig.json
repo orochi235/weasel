@@ -1,0 +1,36 @@
+{
+  // Core's own build/typecheck config. The repo-root tsconfig.json remains the
+  // solution-wide config (apps + every package) used by `npm run typecheck`;
+  // this one exists so `tsup` — which reads tsconfig.json from its cwd — and
+  // `tsc --noEmit -p .` see core in isolation.
+  //
+  // `paths` is declared in full rather than inherited via `extends`, because
+  // path mappings resolve relative to the config file that declares them and
+  // this file sits two levels below the root.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "tsBuildInfoFile": "../../.tsbuildinfo/core.tsbuildinfo",
+    "paths": {
+      "@weasel-js/core": ["./src/index.ts"],
+      "@weasel-js/core/*": ["./src/import-shims/*"],
+      "@weasel-js/geom": ["../geom/src/index.ts"],
+      "@weasel-js/geom/booleans": ["../geom/src/booleans/index.ts"],
+      "@weasel-js/geom/*": ["../geom/src/*"],
+      "@weasel-js/gestures": ["../gestures/src/index.ts"],
+      "@weasel-js/history": ["../history/src/index.ts"],
+      "@weasel-js/modes": ["../modes/src/index.ts"],
+      "@weasel-js/modes/presets/default": ["../modes/src/presets/default.ts"],
+      "@weasel-js/svg": ["../svg/src/index.ts"],
+      "core/*": ["./src/core/*"],
+      "features/*": ["./src/features/*"],
+      "affordances/*": ["./src/affordances/*"],
+      "interactions/*": ["./src/interactions/*"],
+      "tools/*": ["./src/tools/*"],
+      "canvas/*": ["./src/canvas/*"],
+      "debug/*": ["./src/debug/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
+}

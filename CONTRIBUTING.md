@@ -93,7 +93,7 @@ the rig for the first time:
 ## Adding a `@weasel-js/*` sub-package
 
 The sub-packages under `packages/` (e.g. `gestures`, `history`, `modes`) are
-**not independently published**. They reach back into this package's `src/`
+**not independently published**. They reach back into this package's `packages/core/src/`
 internals (via the shared tsconfig aliases) and are **bundled into
 `@weasel-js/core`'s `dist/`** — both JS and `.d.ts`. They are an internal
 source-organization tool, not public dependencies.

@@ -1,4 +1,4 @@
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../core/src/renderer';
 import type { ResolvedTokens } from './theme';
 
 export interface WidgetBounds {

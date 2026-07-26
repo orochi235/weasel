@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
-import { SceneCanvas, useScene } from '../../../src';
-import type { SceneCanvasApi } from '../../../src';
+import { SceneCanvas, useScene } from '../../../packages/core/src';
+import type { SceneCanvasApi } from '../../../packages/core/src';
 import { useHud } from '../../../packages/hud/src/react';
 import type { ButtonWidget } from '../../../packages/hud/src';
 

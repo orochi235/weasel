@@ -39,7 +39,7 @@ export default defineConfig({
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: [
-            'src/**/*.test.{ts,tsx}',
+            'packages/core/src/**/*.test.{ts,tsx}',
             'apps/site/**/*.test.{ts,tsx}',
             'tests/e2e/helpers/**/*.test.{ts,tsx}',
           ],
@@ -54,12 +54,11 @@ export default defineConfig({
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: [
-            'src/**/*.smoke.test.{ts,tsx}',
             'packages/**/*.smoke.test.{ts,tsx}',
             'apps/**/*.smoke.test.{ts,tsx}',
           ],
           // labkit's smoke test runs in the dedicated `labkit` project (own setup).
-          exclude: ['**/node_modules/**', 'dist/**', '.claude/**', 'packages/labkit/**'],
+          exclude: ['**/node_modules/**', '**/dist/**', '.claude/**', 'packages/labkit/**'],
         },
       },
       {
@@ -71,7 +70,10 @@ export default defineConfig({
           setupFiles: ['./vitest.setup.ts'],
           include: ['packages/**/*.test.{ts,tsx}'],
           // labkit runs in its own project below (own setup + css handling).
-          exclude: ['packages/labkit/**', '**/node_modules/**'],
+          // core runs in the `kit` project above — it lived at the repo root
+          // until the move into packages/, and this glob would otherwise
+          // swallow its entire suite and run it twice.
+          exclude: ['packages/labkit/**', 'packages/core/**', '**/node_modules/**'],
         },
       },
       {

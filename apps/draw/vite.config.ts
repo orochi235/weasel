@@ -33,8 +33,8 @@ export default defineConfig({
     react(),
     callbackSourcePlugin({
       includeDirs: [
-        resolve(repoRoot, 'src/tools'),
-        resolve(repoRoot, 'src/interactions/actions'),
+        resolve(repoRoot, 'packages/core/src/tools'),
+        resolve(repoRoot, 'packages/core/src/interactions/actions'),
         resolve(repoRoot, 'apps/draw/src'),
       ],
     }),

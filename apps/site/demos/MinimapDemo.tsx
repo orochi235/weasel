@@ -6,8 +6,8 @@ import {
   useSelection,
   type SceneViewDrawOne,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
-import type { View } from '../../../src/core/viewport/view';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { View } from '../../../packages/core/src/core/viewport/view';
 import styles from './MinimapDemo.module.css';
 
 interface NodeData { color: string }

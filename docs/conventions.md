@@ -53,7 +53,7 @@ So a composer gets a **choice**, and the terse end of it is just SVG:
    *necessary*, not unavailable.
 3. **Typed-array `Path` (internal performance form).** The
    `commands: Uint8Array` / `coords: Float32Array` command stream
-   (`src/features/paths/types.ts`) is for the kit's monomorphic hot loops
+   (`packages/core/src/features/paths/types.ts`) is for the kit's monomorphic hot loops
    and low GC pressure. A consumer can reach for it for power, but is
    never required to construct or read it by hand.
 
@@ -75,7 +75,7 @@ cost once, in the kit, and lets scene composition read as data. *Let
 consumers learn the typed-array form when they want its power — don't
 make them learn even the builders just to drop one shape on the canvas.*
 
-**Status.** `pathFromD(d)` ships from core (`src/features/paths/pathFromD.ts`)
+**Status.** `pathFromD(d)` ships from core (`packages/core/src/features/paths/pathFromD.ts`)
 and accepts the full SVG `d` grammar (`M L H V C S Q T A Z`, absolute +
 relative, smooth-curve reflection, arc→cubic), lowering it to the stored
 `Path`. `@weasel-js/svg`'s document parser imports the same function, so the

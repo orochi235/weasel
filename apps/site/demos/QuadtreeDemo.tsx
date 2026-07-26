@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer, CanvasHelpers } from '@weasel-js/core';
-import { viewToMat3, type DrawCommand } from '../../../src/renderer';
+import { viewToMat3, type DrawCommand } from '../../../packages/core/src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 

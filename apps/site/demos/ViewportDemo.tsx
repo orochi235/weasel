@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SceneCanvas, useScene, textCommand, meanScale } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 type Layer = 'scene';
 interface Data { color: string; label: string }

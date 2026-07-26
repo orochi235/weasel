@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { CurveRepresentation, SharedAnchor } from '../../../../src/features/paths/curves';
+import type { CurveRepresentation, SharedAnchor } from '../../../../packages/core/src/features/paths/curves';
 
 interface ReadoutHudProps {
   rep: CurveRepresentation;

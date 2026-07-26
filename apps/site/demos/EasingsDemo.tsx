@@ -8,7 +8,7 @@ import {
   textCommand,
 } from '@weasel-js/core';
 import { PATH_M, PATH_L, type EasingName, type RenderLayer } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 import { Slider } from '@weasel-js/ui';
 
 interface Marker { id: string; x: number; y: number; width: number; height: number; easing: EasingName; color: string }
