@@ -82,6 +82,10 @@ export function unregisterCanvasFont(family: string): void {
   }
 }
 
+/**
+ * Internal resolver helper — not part of the public barrel; consumers go
+ * through registerCanvasFont + resolveFontVariant.
+ */
 export function getDynamicFace(
   family: string, weight: number, style: 'normal' | 'italic',
 ): DynamicFace {
