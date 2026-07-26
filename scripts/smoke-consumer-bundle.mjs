@@ -37,7 +37,7 @@ import { execFileSync } from 'node:child_process';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Published packages, in dependency order. */
-const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'core', 'svg', 'd3'];
+const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'theme', 'core', 'svg', 'd3', 'ui', 'hud'];
 
 const fail = (msg, detail) => {
   console.error(`[smoke] ${msg}\n`);
@@ -194,8 +194,19 @@ await writeFile(
     `import * as booleans from '@weasel-js/geom/booleans';\n` +
     `import * as history from '@weasel-js/history';\n` +
     `import * as svg from '@weasel-js/svg';\n` +
-    `for (const [n, m] of Object.entries({ weasel, geom, booleans, history, svg })) {\n` +
+    `import * as theme from '@weasel-js/theme';\n` +
+    // Tier C — built with Vite library mode rather than tsup because they ship
+    // assets. ui pulls in its bundled stylesheet and hud its data-URI font
+    // atlas, so these two lines are what prove the asset pipeline published
+    // something a consumer can actually load.
+    `import * as ui from '@weasel-js/ui';\n` +
+    `import '@weasel-js/ui/style.css';\n` +
+    `import * as hud from '@weasel-js/hud';\n` +
+    `import '@weasel-js/theme/tokens.css';\n` +
+    `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud };\n` +
+    `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +
+    `  if (Object.keys(m).length === 0) throw new Error('no exports: ' + n);\n` +
     `}\n`,
 );
 
@@ -208,8 +219,20 @@ try {
     platform: 'browser',
     absWorkingDir: workDir,
     logLevel: 'silent',
+    // Required before esbuild will accept a CSS import, even with write:false —
+    // it needs somewhere the emitted stylesheet *would* go. Nothing is written.
+    outdir: join(workDir, 'out'),
     // A real consumer installs these; they are irrelevant to resolution here.
-    external: ['react', 'react-dom', 'earcut', 'polygon-clipping'],
+    // react-aria-components is a genuine `dependencies` entry of @weasel-js/ui
+    // and is deliberately NOT bundled into it — see packages/ui/vite.config.ts.
+    external: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react-aria-components',
+      'earcut',
+      'polygon-clipping',
+    ],
   });
 } catch (err) {
   fail(

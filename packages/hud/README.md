@@ -1,9 +1,24 @@
-# weasel-hud
+# @weasel-js/hud
 
-WebGL-rendered UI widgets that composite directly into a weasel canvas —
-the "heads-up display" sibling of `@weasel-js/ui` (which renders
-DOM/React chrome). Use `weasel-hud` for controls that need to live
-inside the rendered scene at native frame rate; use `weasel-ui` for
-panels, dialogs, and standard application chrome.
+WebGL-rendered UI widgets that composite into a weasel canvas
 
-Empty scaffold today. APIs to be designed.
+Part of [weasel](https://github.com/orochi235/weasel), a domain-agnostic 2D
+scene-graph canvas kit for React. See the
+[API reference](https://orochi235.github.io/weasel/api/).
+
+## Install
+
+```sh
+npm install @weasel-js/hud
+```
+
+## Usage
+
+```ts
+import { /* … */ } from '@weasel-js/hud';
+import { /* … */ } from '@weasel-js/hud/react';
+```
+
+## License
+
+MIT

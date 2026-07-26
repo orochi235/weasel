@@ -1,6 +1,6 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
-import type { DrawCommand, PathDrawCommand } from '../../../core/src/renderer';
-import { textCommand } from '../../../core/src/features/text/textCommand';
+import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
+import { textCommand } from '@weasel-js/core';
 
 export type ButtonEvent = 'press' | 'hover' | 'leave';
 export type ButtonHandler = () => void;
