@@ -96,7 +96,7 @@ import type { SerializedHistory } from '@weasel-js/history';
 import { serializeReplacer, reviveTypedArrays, clipboardJsonReviver, nodeSpecsFromSnapshot } from './persistence';
 import { useSliceTool } from './tools/slice/useSliceTool';
 import { SliceDepPublisher } from './tools/slice/SliceDepPublisher';
-import { parseSvg } from '@weasel-js/svg';
+import { parseSvg, unpackSvgFiles } from '@weasel-js/svg';
 import { downloadSvg, pickSvgFile, svgNodesToSceneDrafts, parsedToDoc, SWILL_NAMESPACES } from './svgInterop';
 import { useModality } from './modality/useModality';
 import type { ModeMachine } from './modality';
@@ -162,7 +162,7 @@ const DEFAULT_BG_COLOR = '#ffffff';
 // persistence uses (the walker itself is NOT `(key, value)`-shaped; see
 // persistence.ts). Module const: SceneCanvas keys its dep wiring off the
 // prop identity.
-const DRAW_INGESTION = { svg: { unpack: true }, clipboard: { reviver: clipboardJsonReviver } };
+const DRAW_INGESTION = { svg: { unpack: unpackSvgFiles }, clipboard: { reviver: clipboardJsonReviver } };
 /** Synthetic id for the locked "Background" row in the Layers panel.
  *  Selecting this row surfaces the Document properties branch in the
  *  Properties panel; clicking any real node clears it. */

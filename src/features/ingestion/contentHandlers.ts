@@ -41,7 +41,8 @@ export interface IngestCtx {
    *  When absent, the kit image handler embeds as a `data:` URI. */
   resolveSrc?: (file: File) => Promise<string>;
   /** Kit SVG-handler options (SceneCanvas `ingestion.svg`) — e.g.
-   *  `{ unpack: true }` to parse SVG files into scene nodes. */
+   *  `{ unpack: unpackSvgFiles }` (from `@weasel-js/svg`) to parse SVG files
+   *  into scene nodes. */
   svg?: SvgIngestOptions;
   /** Clipboard-paste seam — present when the hosting `SceneCanvas` supplied
    *  an adapter with `commitPaste`. `reviver` comes from

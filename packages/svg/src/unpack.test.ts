@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { SvgNode } from '@weasel-js/svg';
-import { svgNodesToKitDrafts, unpackSvgFiles } from './svgUnpack';
-import type { IngestCtx } from './contentHandlers';
-import type { Op } from 'core/ops/types';
+import type { SvgNode } from './types';
+import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
+import type { IngestCtx, Op } from '@weasel-js/core';
 
 const rectNode = (x: number, y: number, w: number, h: number, extra: Record<string, unknown> = {}): SvgNode => ({
   kind: 'path',

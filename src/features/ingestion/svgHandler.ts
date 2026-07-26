@@ -10,8 +10,10 @@
  * an `Image` element instead, falling back to 300×150 (the CSS default
  * object size) when the file declares no intrinsic dimensions.
  *
- * `<SceneCanvas ingestion={{ svg: { unpack: true } }}>` switches to parsing
- * the file into native scene nodes — see `svgUnpack.ts`.
+ * `<SceneCanvas ingestion={{ svg: { unpack: unpackSvgFiles } }}>` switches to
+ * parsing the file into native scene nodes. The unpacker is injected (see
+ * `SvgIngestOptions.unpack`) because the SVG parser lives in
+ * `@weasel-js/svg`, which depends on this package.
  *
  * Registered at priority -90: ahead of `kit:image` (-100) so SVG files
  * never hit the raster measure path, still behind any consumer handler
@@ -20,7 +22,6 @@
 import type { ContentHandlerEntry, IngestCtx } from './contentHandlers';
 import type { IngestItem } from './ingestItems';
 import { embedFilesAsImageNodes, type Measure } from './imageHandler';
-import { unpackSvgFiles } from './svgUnpack';
 
 export const SVG_MIME = 'image/svg+xml';
 
@@ -118,7 +119,7 @@ export const kitSvgHandler: ContentHandlerEntry = {
       }
     }
     if (files.length === 0) return;
-    if (ctx.svg?.unpack) return unpackSvgFiles(files, ctx);
+    if (ctx.svg?.unpack) return ctx.svg.unpack(files, ctx);
     // Thunk (not the variable) so the test seam is read at call time.
     return embedFilesAsImageNodes(files, ctx, {
       measure: (f) => measure(f),

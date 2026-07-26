@@ -188,6 +188,7 @@ export type {
   NodeAtPointDep,
   ResizePolicy,
   SvgIngestOptions,
+  SvgUnpacker,
   ViewApi,
 } from './interactions/actions/depSchema';
 export type { GeometryProjection } from './interactions/actions/geometryProjection';

@@ -10,11 +10,23 @@
  *   leaf serializes as a `<path>`; gradients are gathered into a single
  *   `<defs>` block with stable ids.
  *
+ * `unpackSvgFiles` bridges the two into `@weasel-js/core`'s ingestion
+ * pipeline — pass it as `<SceneCanvas ingestion={{ svg: { unpack:
+ * unpackSvgFiles } }}>`. It lives here, not in core, because core would
+ * otherwise have to import this package's parser while this package imports
+ * core's path/paint model, leaving the two mutually dependent.
+ *
  * See README for the supported element / attribute matrix.
  */
 
 export { parseSvg } from './parse';
 export { serializeSvg } from './serialize';
+export {
+  unpackSvgFiles,
+  svgNodesToKitDrafts,
+  type SvgSceneDraft,
+  type SvgDraftBounds,
+} from './unpack';
 export type {
   NamespaceMeta,
   NamespacedElement,

@@ -10,6 +10,8 @@ import { createRef } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import type { SceneCanvasApi } from './canvasExtension';
 import { ActionsProvider } from 'interactions/actions/registry';
+// The real unpacker, to keep this an end-to-end check of the injected seam.
+import { unpackSvgFiles } from '@weasel-js/svg';
 import { createScene } from 'core/scene/scene';
 import type { Scene } from 'core/scene/types';
 import {
@@ -90,7 +92,7 @@ function pngFile(name = 'pic.png'): File {
 // Module consts so the `ingestion` prop is referentially stable across
 // renders (SceneCanvas keys its dep wiring off the prop identity).
 const RESOLVE_SRC_INGESTION = { resolveSrc: async () => 'https://cdn/x.png' };
-const UNPACK_INGESTION = { svg: { unpack: true } };
+const UNPACK_INGESTION = { svg: { unpack: unpackSvgFiles } };
 const CLIPBOARD_DISABLED_INGESTION = { clipboard: { enabled: false } };
 
 describe('SceneCanvas ingestion — handler registration lifecycle', () => {
