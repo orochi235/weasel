@@ -1,4 +1,4 @@
-import type { Op } from 'core/ops/types';
+import type { Op } from './op';
 import { createHistory, type History, type HistoryEntry } from './history';
 
 const RESUMERS = new WeakMap<Journal, () => void>();

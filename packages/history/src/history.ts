@@ -1,5 +1,4 @@
-import type { Op } from 'core/ops/types';
-import { rebuildOp } from 'core/ops/registry';
+import type { Op } from './op';
 import { dwarn, dlog } from 'debug/flag';
 import { createJournalInternal, _resumeJournalInternal, type Journal, type BeginJournalOptions } from './journal';
 
@@ -523,13 +522,17 @@ function placeholderOp(name: string, args: unknown, label?: string): Op {
 /** Signature of a per-instance op rebuilder (`CreateHistoryOptions.rebuildOp`). */
 type CustomRebuild = (name: string, args: unknown) => Op | null;
 
-/** Rebuild a single serialized op, consulting `custom` (if provided) before
- *  the global registry, then falling back to a no-op placeholder. */
+/** Rebuild a single serialized op via `custom` (if provided), falling back to
+ *  a no-op placeholder.
+ *
+ *  This engine deliberately knows nothing about any op registry: hydrating a
+ *  `(name, args)` pair back into an op is the caller's concern, injected
+ *  through `CreateHistoryOptions.rebuildOp`. `@weasel-js/core`'s
+ *  `createHistory` wrapper supplies its global op-factory registry as that
+ *  hook, so core consumers see unchanged behavior. */
 function rebuildSerialOp(so: SerializedOp, label: string, custom: CustomRebuild | undefined): Op {
   const viaCustom = custom ? custom(so.name, so.args) : null;
   if (viaCustom !== null) return viaCustom;
-  const built = rebuildOp(so.name, so.args);
-  if (built !== null) return built;
   dlog('history', `restore: unknown op name "${so.name}" — substituting no-op placeholder`);
   return placeholderOp(so.name, so.args, label);
 }

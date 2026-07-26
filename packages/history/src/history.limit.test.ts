@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createHistory } from './history';
-import type { Op } from 'core/ops/types';
+import type { Op } from './op';
 
 interface Cell { x: number }
 

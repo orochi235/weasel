@@ -8,4 +8,5 @@ export type {
   SerializedHistoryEntry,
   SerializedHistory,
 } from './history';
+export type { Op } from './op';
 export type { Journal, BeginJournalOptions } from './journal';

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createHistory } from './history';
-import type { Op } from 'core/ops/types';
+import type { Op } from './op';
 
 function pushOp(value: number): Op {
   return {

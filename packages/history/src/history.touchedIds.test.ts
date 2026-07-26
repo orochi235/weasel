@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createHistory, touchedIdsFromOps } from './history';
-import type { Op } from 'core/ops/types';
+import type { Op } from './op';
 
 // ---------------------------------------------------------------------------
 // Minimal op factories for tests — carry id/node.id in args so touchedIds
