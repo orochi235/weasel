@@ -35,6 +35,12 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: npm ci
       - run: npm run build
+      # labkit is published too, but the root `build` script does not cover it
+      # (it bundles the other packages, so it must run after them).
+      - run: npm run build -w @weasel-js/labkit
+      # Last gate before anything reaches npm: refuse to publish a package whose
+      # `exports`/`types` map promises files the tarball does not contain.
+      - run: npm run check:manifests
       - name: Create Release Pull Request or Publish
         uses: changesets/action@v1
         with:

@@ -35,6 +35,18 @@ jobs:
       # labkit bundles the (private) weasel packages into a self-contained dist;
       # build it after the core so its esbuild alias resolves the built core.
       - run: npm run build -w @weasel-js/labkit
+      # Every path a publishable package advertises in `main`/`module`/`types`/
+      # `exports` must actually be in its tarball. See scripts/check-publish-manifests.mjs.
+      - run: npm run check:manifests
+      # Build the two Vite-built packages a SECOND time and re-check. This is the
+      # only step that exercises a WARM build, and a warm build is precisely the
+      # blind spot that let @weasel-js/ui@0.5.0 and @weasel-js/hud@0.5.0 ship with
+      # zero .d.ts while CI stayed green: a cold checkout builds each package once,
+      # but `vite build` empties dist, so from the second build onward an
+      # incremental tsc would consider the deleted declarations already emitted and
+      # skip them — silently, exit 0. Cheap insurance; these two builds are seconds.
+      - run: npm run build -w @weasel-js/ui -w @weasel-js/hud
+      - run: npm run check:manifests
       # labkit's premise is a self-contained dist with ZERO @weasel-js runtime/type
       # imports. Bundle every labkit entry from outside the monorepo + grep dist
       # (js+dts) for leaked @weasel-js specifiers. Runs after the build above.

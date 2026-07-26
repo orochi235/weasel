@@ -316,7 +316,16 @@ await writeFile(
     `type _G = GestureSpec;\n` +
     `type _S = SelectionApi;\n` +
     `type _O = Op;\n` +
-    `export type { _Sel, _View, _Scene, _Hist, _Ptr, _M, _G, _S, _O };\n` +
+    // Tier C gets its .d.ts from a standalone `tsc --emitDeclarationOnly` pass
+    // rather than from the bundler that emits its JS — a second step, able to
+    // fail on its own, and it did: ui@0.5.0 and hud@0.5.0 were published with
+    // no declarations at all while their `exports` maps advertised some. Phase 3
+    // could not see it, because esbuild strips types and resolves the JS fine.
+    // These name no export on purpose, so they cannot rot as the API changes:
+    // under `strict`, a module with no declarations is TS7016 right here.
+    `type _Ui = typeof import('@weasel-js/ui');\n` +
+    `type _Hud = typeof import('@weasel-js/hud');\n` +
+    `export type { _Sel, _View, _Scene, _Hist, _Ptr, _M, _G, _S, _O, _Ui, _Hud };\n` +
     `export const _key = _k;\n` +
     `export const _h = _viaDirect;\n`,
 );
@@ -355,6 +364,8 @@ try {
       '\n[smoke] Likely causes:\n' +
       '  • a package emits a type import for something missing from its dependencies\n' +
       '  • a subpath `exports` entry has no matching `types` field\n' +
+      '  • a package shipped NO .d.ts at all (TS7016 on its import above) — its\n' +
+      '    declaration build step silently emitted nothing; see npm run check:manifests\n' +
       '  • DepSchema came back empty (its fields must be a plain `export interface`\n' +
       "    in depSchema.ts, not a `declare module './depRegistry'` augmentation)\n" +
       '  • core inlined a sibling\'s declarations instead of importing them, so the\n' +

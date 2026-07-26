@@ -25,9 +25,19 @@
     // which then broke core's own dts build. Fail before writing anything.
     "noEmitOnError": true,
     "declarationMap": true,
+    // NOT incremental (the repo root turns it on; this overrides it). `vite
+    // build` runs first with `emptyOutDir`, so it deletes the .d.ts files tsc
+    // wrote last time — but tsc's incremental state still records them as
+    // emitted, and plain `--incremental` checks input signatures, never
+    // whether the outputs are still on disk. The second and every subsequent
+    // build therefore emitted NOTHING and exited 0, and `@weasel-js/hud@0.5.0`
+    // shipped an `exports` map pointing at .d.ts files that were not in the
+    // tarball. CI never caught it because a cold checkout only ever builds
+    // once. Keep this off: a bundler owns this outDir, so a tsc-side cache of
+    // what's in it is always a lie waiting to happen.
+    "incremental": false,
     "outDir": "./dist",
     "rootDir": "./src",
-    "tsBuildInfoFile": "../../.tsbuildinfo/hud-build.tsbuildinfo",
     "types": ["node"],
     "paths": {}
   },
