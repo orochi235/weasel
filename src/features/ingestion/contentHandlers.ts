@@ -106,9 +106,14 @@ function entryMatches(entry: ContentHandlerEntry, item: IngestItem): boolean {
 }
 
 /**
- * Route one ingest event's items through the registry. Handlers run
- * concurrently (each already owns a disjoint item set); a throwing or
- * rejecting handler `console.warn`s and doesn't block the others.
+ * Route one ingest event's items through the registry. Handlers are queued
+ * as microtasks in priority order and their async work then overlaps (each
+ * already owns a disjoint item set); a throwing or rejecting handler
+ * `console.warn`s and doesn't block the others. The queue order is a real
+ * invariant: a higher-priority handler's `handle` body runs before lower
+ * ones start, so ctx-flag coordination (e.g. `consumedWeaselPayload`)
+ * works — but only while the writing handler stays synchronous up to the
+ * write and the reading handler reads before its first `await`.
  * Unmatched items are ignored with a debug-gated `dwarn('ingest', ...)`.
  */
 export async function runIngest(items: IngestItem[], ctx: IngestCtx): Promise<void> {

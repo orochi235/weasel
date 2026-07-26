@@ -42,8 +42,8 @@ export function isSvgFileItem(item: IngestItem): boolean {
 
 /**
  * Strict-prefix sniff: could this text be an SVG document? `<svg` (or an XML
- * declaration, then optional whitespace/comments, then `<svg`) must open the
- * document — no mid-document substring scans, same discipline as
+ * declaration, then optional whitespace/comments/DOCTYPE, then `<svg`) must
+ * open the document — no mid-document substring scans, same discipline as
  * `sniffWeaselClipboardText`. Exists because Safari drops both custom MIMEs
  * and `image/svg+xml` from async clipboard writes, leaving `text/plain` as
  * the only surviving flavor of an SVG copy.
@@ -61,6 +61,16 @@ export function sniffSvgText(text: string): boolean {
       const end = t.indexOf('-->');
       if (end < 0) return false;
       t = t.slice(end + 3);
+      continue;
+    }
+    // Illustrator-style preamble: <!DOCTYPE svg PUBLIC "..." "...">. Skipping
+    // ANY doctype is safe — a non-SVG doctype's root element fails the final
+    // `<svg` check anyway. (No internal-subset handling; clipboard SVG
+    // preambles don't carry `[...]` blocks.)
+    if (/^<!doctype/i.test(t)) {
+      const end = t.indexOf('>');
+      if (end < 0) return false;
+      t = t.slice(end + 1);
       continue;
     }
     break;
@@ -100,6 +110,8 @@ export const kitSvgHandler: ContentHandlerEntry = {
     // BUT skip them when the weasel-JSON handler already pasted this event's
     // copy: draw writes weasel-JSON + SVG together, so ingesting both would
     // double-paste. (ctx is shared per event; the weasel handler runs first.)
+    // WARNING: this read must stay before any `await` in this handle — the
+    // sync-ordering of handler microtasks is what makes the flag visible.
     if (!ctx.consumedWeaselPayload) {
       for (const it of items) {
         if (it.kind === 'string') files.push(new File([it.text], 'pasted.svg', { type: SVG_MIME }));

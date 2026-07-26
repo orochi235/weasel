@@ -155,6 +155,16 @@ describe('sniffSvgText', () => {
     expect(sniffSvgText('<?xml version="1.0"?>\n<!-- exported -->\n<svg>')).toBe(true);
   });
 
+  it('accepts the canonical Illustrator-style DOCTYPE preamble; rejects HTML doctypes', () => {
+    expect(sniffSvgText(
+      '<?xml version="1.0" encoding="utf-8"?>\n'
+      + '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n'
+      + '<svg version="1.1" xmlns="http://www.w3.org/2000/svg">',
+    )).toBe(true);
+    expect(sniffSvgText('<!DOCTYPE svg>\n<svg>')).toBe(true);
+    expect(sniffSvgText('<!DOCTYPE html>\n<html><body>hi</body></html>')).toBe(false);
+  });
+
   it('rejects prose, mid-document mentions, JSON, and near-miss tags', () => {
     expect(sniffSvgText('plain prose')).toBe(false);
     expect(sniffSvgText('prose mentioning <svg> later')).toBe(false);

@@ -151,6 +151,7 @@ const HISTORY_KEY = 'weaseldraw:history-v1';
 const DEFAULT_FILENAME = 'untitled.svg';
 const DEFAULT_BG_COLOR = '#ffffff';
 
+// Draw's full ingestion config: SVG unpack + clipboard revival.
 // OS-dropped / pasted SVG files import as real scene nodes (the kit's
 // `unpack` path) rather than a single embedded-image node — WeaselDraw's
 // leaf data IS the kit-native `{path, fill, stroke}` painter shape, so
@@ -159,7 +160,7 @@ const DEFAULT_BG_COLOR = '#ffffff';
 // carried by weasel-JSON clipboard payloads, mirroring `nodeSpecsFromSnapshot`'s
 // use of the same reviver for scene persistence. Module const: SceneCanvas
 // keys its dep wiring off the prop identity.
-const SVG_UNPACK_INGESTION = { svg: { unpack: true }, clipboard: { reviver: reviveTypedArrays } };
+const DRAW_INGESTION = { svg: { unpack: true }, clipboard: { reviver: reviveTypedArrays } };
 /** Synthetic id for the locked "Background" row in the Layers panel.
  *  Selecting this row surfaces the Document properties branch in the
  *  Properties panel; clicking any real node clears it. */
@@ -1411,7 +1412,7 @@ function EditorWithSharedScene({
             toolBundle="exhaustive"
             tools={{ slice: sliceTool }}
             actions={{ slice: sliceAction }}
-            ingestion={SVG_UNPACK_INGESTION}
+            ingestion={DRAW_INGESTION}
             viewport={{ pinchZoom: true, recenter }}
             cursorCoordsHud
             pickHud

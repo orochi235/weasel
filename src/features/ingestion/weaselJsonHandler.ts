@@ -68,6 +68,8 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
     ctx.selection.set(result.newIds as NodeId[]);
     // Flag the shared event ctx so kit:svg's text/plain fallback declines the
     // SVG flavor of this same copy (draw writes weasel-JSON + SVG together).
+    // WARNING: do not add an `await` earlier in this handle — the flag must
+    // be written before lower-priority handlers' microtasks run.
     ctx.consumedWeaselPayload = true;
   },
 };
