@@ -25,18 +25,33 @@ and are small enough to run in full when needed.
 
 ## Visual regression tests
 
-The visual regression suite (`tests/visual/`) captures per-demo screenshots and
-diffs them against committed PNG baselines using pixelmatch.
+The visual regression suite (`tests/visual/`) captures each demo's canvas and
+diffs it against a committed PNG baseline using pixelmatch.
 
-### Runner pinning (IMPORTANT)
+Captures read the canvas **backing store** (`readCanvasPixels` in
+`tests/visual/diff.ts`), not an element screenshot. A baseline is therefore
+exactly `canvas.width × canvas.height` pixels of what the renderer drew, with
+no dependence on page layout, font metrics, borders, scrollbars, viewport size,
+or the compositor. Anything drawn over the canvas in the DOM (SVG handle
+overlays, HUDs) is not captured, and neither is the CSS background behind a
+transparent canvas.
 
-Baseline PNGs are pixel-exact and are NOT portable across OS or renderer
-versions. They must be captured on `ubuntu-22.04` with headless Chromium (the
-version pinned by `package-lock.json`). The `visual.yml` GitHub Actions workflow
-enforces this.
+### Runner pinning
 
-**Do not update baselines on macOS, Windows, or an `ubuntu-latest` runner.**
-Doing so will produce baselines that fail in CI.
+Baselines are captured on `ubuntu-22.04` with the headless Chromium pinned by
+`package-lock.json`, and `visual.yml` verifies against that same image. Keep the
+two workflows' runner images coordinated.
+
+CI remains the canonical capture environment, but baselines are no longer
+OS-sensitive in the way they once were: as of the backing-store switch, a local
+macOS run passes against CI-captured baselines, with 21 of 25 byte-identical
+and the rest sub-1% antialiasing noise on curve-heavy demos. Running
+`npm run test:visual` locally is expected to be green — a failure there is a
+real signal, not environment drift.
+
+**Still capture baselines via CI rather than locally.** A local capture bakes in
+that sub-1% antialiasing delta, which is harmless today but erodes the headroom
+under the 2% threshold for no benefit.
 
 ### Updating baselines
 
@@ -55,28 +70,24 @@ the rig for the first time:
    ```bash
    gh run download <run-id> --name visual-baselines --dir tests/visual/baselines
    ```
-4. If `tests/visual/baselines/.gitignore` still exists, delete it now (first
-   commit of baselines for the rig).
-5. Review the changed PNGs (`git diff --stat tests/visual/baselines/`) and
+4. Review the changed PNGs (`git diff --stat tests/visual/baselines/`) and
    visually spot-check any that look wrong before staging.
-6. Commit the spec changes (if any) and the new/updated PNGs together.
+5. Commit the spec changes (if any) and the new/updated PNGs together.
+6. Run `npm run test:visual` locally — it should be green against the fresh
+   baselines. If it isn't, something other than environment drift changed.
 7. Trigger the verification workflow to confirm green:
    ```bash
    gh workflow run visual.yml
    ```
 
-**Local capture is not supported.** Baselines are pixel-exact and must come
-from `ubuntu-22.04` with the Playwright Chromium pinned by
-`package-lock.json`. macOS / Windows / `ubuntu-latest` captures will not
-match CI.
-
 ### Adding a new demo
 
 1. Add the demo to `apps/site/registry.ts` as usual.
 2. Create `tests/visual/<demo-id>.spec.ts` following the template in
-   `tests/visual/scene.spec.ts`.
-3. Run `npm run test:visual:update` (on the correct runner) to capture the
-   baseline.
+   `tests/visual/scene.spec.ts`. If the demo mounts more than one canvas, pass
+   `captureCanvas`'s `nth` / `expectCanvases` options (see
+   `tests/visual/custom-shader.spec.ts`).
+3. Capture the baseline via the update workflow above.
 4. Commit the spec and the baseline PNG together.
 
 ## Adding a `@weasel-js/*` sub-package
