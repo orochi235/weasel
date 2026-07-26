@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
-import { viewToMat3, type DrawCommand } from '../../../src/renderer';
+import { viewToMat3, type DrawCommand } from '../../../packages/core/src/renderer';
 
 const W = 720;
 const H = 360;

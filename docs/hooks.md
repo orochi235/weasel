@@ -101,7 +101,7 @@ the ghost copy).
 Selection-state primitive. Returns `{ current, get, set, add, remove,
 toggle, clear, contains, applyClick, adapterMethods }`. Options: `mode`
 (`single` | `multi`), `extend` (`shift` | `meta` | `ctrl`, default
-`shift`), `initial`. See `src/core/selection/useSelection.ts`.
+`shift`), `initial`. See `packages/core/src/core/selection/useSelection.ts`.
 
 Spread `selection.adapterMethods` into your adapter so action hooks read
 the same selection state `<Canvas>` does.
@@ -146,15 +146,15 @@ and returns imperative trigger methods.
 Keybinding behavior: bindings ignore keystrokes targeting `<input>`,
 `<textarea>`, or `[contenteditable]`, and ignore variants with extra
 modifiers (so `Cmd+Backspace` for "go back" still works). See
-`src/interactions/actions/useKeybinding.ts`.
+`packages/core/src/interactions/actions/useKeybinding.ts`.
 
 ## Affordance factories
 
 Reusable chrome primitives consumed by tools. See `docs/extending.md` for the composition pattern.
 
-- `createCornerResizeAffordance(opts)` — four corner-handle hit zones for the active selection (single member) or union AABB (multi-mode). `src/affordances/cornerResize.ts`.
-- `createRotationAffordance(opts)` — circular handle above the bounds top-center for rotation. `src/affordances/rotationHandle.ts`.
-- `composeAffordanceLayer(id, label, [...affordances])` — bundle multiple affordances into a single `RenderLayer` whose `draw` iterates them and whose `hitTest` walks them top-down (last → first). `src/affordances/composeAffordanceLayer.ts`.
+- `createCornerResizeAffordance(opts)` — four corner-handle hit zones for the active selection (single member) or union AABB (multi-mode). `packages/core/src/affordances/cornerResize.ts`.
+- `createRotationAffordance(opts)` — circular handle above the bounds top-center for rotation. `packages/core/src/affordances/rotationHandle.ts`.
+- `composeAffordanceLayer(id, label, [...affordances])` — bundle multiple affordances into a single `RenderLayer` whose `draw` iterates them and whose `hitTest` walks them top-down (last → first). `packages/core/src/affordances/composeAffordanceLayer.ts`.
 
 ## Other hooks (not gesture or action)
 

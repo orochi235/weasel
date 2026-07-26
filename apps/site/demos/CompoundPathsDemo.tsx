@@ -11,7 +11,7 @@ import {
   textCommand,
 } from '@weasel-js/core';
 import type { Path } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 interface Shape { id: string; pose: Path; fill: string; stroke?: string; label?: string }
 interface ShapeData { fill: string; stroke?: string; label?: string }

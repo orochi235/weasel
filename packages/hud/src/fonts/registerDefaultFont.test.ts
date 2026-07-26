@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerDefaultFont, DEFAULT_FONT_FAMILY } from './registerDefaultFont';
-import { _resetFontRegistryForTests, getFont } from '../../../../src/features/text/atlas/registerFont';
+import { _resetFontRegistryForTests, getFont } from '../../../core/src/features/text/atlas/registerFont';
 
 describe('registerDefaultFont', () => {
   beforeEach(() => { _resetFontRegistryForTests(); });

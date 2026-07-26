@@ -7,7 +7,6 @@ on:
     # repo plumbing (CHANGELOG, .changeset/, etc.) don't need to spin up the
     # demo + Storybook builds.
     paths:
-      - 'src/**'
       - 'apps/**'
       - 'packages/**'
       - '.storybook/**'

@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { attachHud } from './attach';
 import { createHud } from './hud';
 import type { CanvasExtensionApi } from '@weasel-js/core';
-import { _resetFontRegistryForTests } from '../../../src/features/text/atlas/registerFont';
+import { _resetFontRegistryForTests } from '../../core/src/features/text/atlas/registerFont';
 
-function makeApi(): CanvasExtensionApi & { _layer?: import('../../../src/core/layers/render').RenderLayer<unknown> } {
+function makeApi(): CanvasExtensionApi & { _layer?: import('../../core/src/core/layers/render').RenderLayer<unknown> } {
   const api = {
     element: null,
     requestRedraw: vi.fn(),

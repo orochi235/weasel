@@ -32,14 +32,14 @@ repo. It indexes the canonical docs rather than restating them.
 
 ## Reference implementations (start here for new tools)
 
-- `src/tools/builtin/useHandTool.ts` — simplest tool: scratch + drag channel +
+- `packages/core/src/tools/builtin/useHandTool.ts` — simplest tool: scratch + drag channel +
   view mutation. No ops, no adapter.
-- `src/tools/builtin/useRectTool.ts` — canonical scene-object-creating tool:
+- `packages/core/src/tools/builtin/useRectTool.ts` — canonical scene-object-creating tool:
   `useDragRect` gesture + undoable `ctx.applyBatch([createInsertOp(...)])`.
 
 ## Layout
 
-- `src/` — the kit (`@weasel-js/core`). Paths live under `src/features/paths/`.
+- `packages/core/src/` — the kit (`@weasel-js/core`). Paths live under `packages/core/src/features/paths/`.
 - `packages/*` — bundled-into-core sub-packages (`svg`, `history`, `modes`,
   `ui`, `hud`, `theme`, `geom`, …). Not independently published; see
   `CONTRIBUTING.md`. Some carry their own scoped `AGENTS.md` (e.g. `labkit`).

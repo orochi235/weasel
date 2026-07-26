@@ -23,7 +23,7 @@ const adapter: MoveAdapter<Rect, Pose>
   & AreaSelectAdapter = makeAdapter();
 ```
 
-The narrow shapes live in `src/core/adapters/types.ts`. Action hooks
+The narrow shapes live in `packages/core/src/core/adapters/types.ts`. Action hooks
 (`useDelete`, `useDuplicate`, `useNudge`, `useGroup`, `useReorder`,
 `useUndoRedo`, `useClipboard`) each have their own narrow adapter type
 co-located with the hook.
@@ -141,7 +141,7 @@ you use require. Compose narrow types via intersection.
   (index 0 = bottom). Hit-tests iterate in reverse; render layers iterate
   forward. Reorder ops and `useReorder` no-op if either method is missing.
 - **`GroupAdapter`** — groups (lasso side-records) with first-class ids and
-  multi-membership. See `src/features/groups/types.ts`.
+  multi-membership. See `packages/core/src/features/groups/types.ts`.
 
 ## Snap targets
 

@@ -1,7 +1,7 @@
-import type { DrawCommand } from '../../../../src/renderer';
-import type { RenderLayer } from '../../../../src/core/layers/render';
-import type { View } from '../../../../src/core/viewport/view';
-import type { CurveRepresentation, SharedAnchor } from '../../../../src/features/paths/curves';
+import type { DrawCommand } from '../../../../packages/core/src/renderer';
+import type { RenderLayer } from '../../../../packages/core/src/core/layers/render';
+import type { View } from '../../../../packages/core/src/core/viewport/view';
+import type { CurveRepresentation, SharedAnchor } from '../../../../packages/core/src/features/paths/curves';
 
 interface ViewLike { x: number; y: number; scale: { x: number; y: number } }
 

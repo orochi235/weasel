@@ -1,7 +1,8 @@
 {
-  "name": "@weasel-js/core",
+  "name": "weasel",
+  "private": true,
   "version": "0.4.0",
-  "description": "Domain-agnostic 2D scene graph primitives for React: viewport math, drag/resize/insert/clone interactions, layered canvas rendering.",
+  "description": "Monorepo root for the weasel canvas kit. Not published — the workspaces under packages/ are. See packages/core for @weasel-js/core.",
   "license": "MIT",
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",
@@ -13,64 +14,18 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "type": "module",
-  "sideEffects": false,
   "engines": {
     "node": ">=20"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "CHANGELOG.md"
+  "workspaces": [
+    "packages/*"
   ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./move": {
-      "import": "./dist/move.js",
-      "types": "./dist/move.d.ts"
-    },
-    "./resize": {
-      "import": "./dist/resize.js",
-      "types": "./dist/resize.d.ts"
-    },
-    "./insert": {
-      "import": "./dist/insert.js",
-      "types": "./dist/insert.d.ts"
-    },
-    "./clipboard": {
-      "import": "./dist/clipboard.js",
-      "types": "./dist/clipboard.d.ts"
-    },
-    "./clone": {
-      "import": "./dist/clone.js",
-      "types": "./dist/clone.d.ts"
-    },
-    "./patterns-builtin": {
-      "import": "./dist/patterns-builtin.js",
-      "types": "./dist/patterns-builtin.d.ts"
-    },
-    "./renderer": {
-      "import": "./dist/renderer.js",
-      "types": "./dist/renderer.d.ts"
-    },
-    "./routing": {
-      "import": "./dist/routing.js",
-      "types": "./dist/routing.d.ts"
-    },
-    "./package.json": "./package.json"
-  },
   "scripts": {
     "dev": "concurrently -n kit,draw,storybook -c green,blue,magenta \"npm:dev:kit\" \"npm:dev:draw\" \"npm:dev:storybook\"",
     "dev:kit": "vite",
     "dev:draw": "vite --config apps/draw/vite.config.ts",
     "dev:storybook": "storybook dev -p 6010 --no-open",
-    "build": "tsup",
+    "build": "npm run build -w @weasel-js/core",
     "build:demo": "vite build && npm run build:api",
     "build:draw": "vite build --config apps/draw/vite.config.ts",
     "build:api": "typedoc && npm run build:api:gestures",
@@ -101,14 +56,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
-  "peerDependencies": {
-    "react": ">=18"
-  },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
-    "@weasel-js/gestures": "*",
-    "@weasel-js/history": "*",
-    "@weasel-js/modes": "*",
     "@fontsource/inter": "5.0.20",
     "@playwright/test": "1.47.2",
     "@storybook/addon-a11y": "^10.4.0",
@@ -146,24 +95,5 @@
     "typescript": "~6.0.2",
     "vite": "^8.0.4",
     "vitest": "^4.1.4"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "keywords": [
-    "react",
-    "canvas",
-    "scene-graph",
-    "drag",
-    "resize",
-    "viewport",
-    "2d"
-  ],
-  "dependencies": {
-    "earcut": "2.2.4",
-    "polygon-clipping": "^0.15.7"
-  },
-  "workspaces": [
-    "packages/*"
-  ]
+  }
 }

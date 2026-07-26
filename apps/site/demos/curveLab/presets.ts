@@ -1,4 +1,4 @@
-import type { SharedAnchor } from '../../../../src/features/paths/curves';
+import type { SharedAnchor } from '../../../../packages/core/src/features/paths/curves';
 
 export interface CurvePreset {
   id: string;

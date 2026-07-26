@@ -43,7 +43,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const distDir = join(repoRoot, 'dist');
+const distDir = join(repoRoot, 'packages', 'core', 'dist');
 const distEntry = join(distDir, 'index.js');
 
 try {

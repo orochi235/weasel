@@ -10,7 +10,7 @@ import {
   useTools,
   easeInOutCubic,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 const W = 600, H = 400;
 const BAR_W = 40, BAR_STRIDE = 45, ORIGIN_X = 30;

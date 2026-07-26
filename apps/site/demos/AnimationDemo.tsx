@@ -14,7 +14,7 @@ import {
   useSelectTool,
   useTools,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
 interface Pose { x: number; y: number; width: number; height: number }

@@ -9,7 +9,7 @@ import type {
   DebugConfig,
   DebugFeature,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 interface Box { id: string; x: number; y: number; width: number; height: number; color: string }
 

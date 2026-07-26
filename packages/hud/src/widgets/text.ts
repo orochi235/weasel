@@ -1,6 +1,6 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
-import type { DrawCommand } from '../../../../src/renderer';
-import { textCommand } from '../../../../src/features/text/textCommand';
+import type { DrawCommand } from '../../../core/src/renderer';
+import { textCommand } from '../../../core/src/features/text/textCommand';
 
 export interface TextOptions {
   id: string;

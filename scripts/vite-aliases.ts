@@ -1,18 +1,21 @@
 /**
- * Generate vite/vitest alias entries for every workspace under `packages/`
- * plus the kit itself. Reads the directory at config-load time so adding a
- * new `packages/<name>/` workspace is one mkdir; no further config edits.
+ * Generate vite/vitest alias entries for every workspace under `packages/`.
+ * Reads the directory at config-load time so adding a new
+ * `packages/<name>/` workspace is one mkdir; no further config edits.
  *
  * Each package emits two entries (specific first, since vite matches in
  * order):
  *   1. A wildcard alias    `@weasel-js/<name>/(.*)` → `packages/<name>/src/$1`
  *   2. A bare-package alias `@weasel-js/<name>`     → `packages/<name>/src/index.ts`
  *
- * Plus the kit's own aliases:
- *   - `@weasel-js/core/(.*)`  → `src/import-shims/$1.ts` (subpath convention)
- *   - `@weasel-js/core`       → `src/index.ts`
- *   - Bare top-level kit paths  (`core/...`, `features/...`, etc.) to match
- *     the kit's tsconfig `baseUrl: src` setup.
+ * `core` is the one workspace excluded from that generic treatment, because
+ * its published subpaths don't map 1:1 onto its source tree — they resolve
+ * through `src/import-shims/` (`@weasel-js/core/move` →
+ * `src/import-shims/move.ts`). It gets an explicit block instead:
+ *   - `@weasel-js/core/(.*)`  → `packages/core/src/import-shims/$1.ts`
+ *   - `@weasel-js/core`       → `packages/core/src/index.ts`
+ *   - Bare top-level kit paths  (`core/...`, `features/...`, etc.) matching
+ *     core's tsconfig path mappings.
  *
  * Workspaces that need to override a specific subpath (e.g.
  * `@weasel-js/theme/tokens.css`) prepend their overrides — vite
@@ -43,6 +46,9 @@ function packageAliases(repoRoot: string): ViteAlias[] {
   }
   for (const name of entries) {
     const dir = join(packagesDir, name);
+    // `core` is aliased explicitly in weaselAliases() — its subpaths route
+    // through src/import-shims/, which the generic `src/$1` rule would break.
+    if (name === 'core') continue;
     try {
       if (!statSync(dir).isDirectory()) continue;
     } catch {
@@ -79,8 +85,8 @@ function escapeRegex(s: string): string {
 
 /**
  * Full alias list for any consumer of the weasel monorepo. Pass `repoRoot`
- * (the directory containing `packages/` and `src/`) and an optional list of
- * extra aliases that should win over the auto-generated entries.
+ * (the directory containing `packages/`) and an optional list of extra
+ * aliases that should win over the auto-generated entries.
  */
 export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): ViteAlias[] {
   return [
@@ -88,23 +94,24 @@ export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): Vi
     ...overrides,
     // Auto-generated package aliases (wildcard + bare for each workspace).
     ...packageAliases(repoRoot),
-    // Kit subpath + bare entries — these aren't in `packages/`, they're the
-    // main kit source under `src/`.
+    // Core's subpath + bare entries. Skipped by packageAliases() above because
+    // `@weasel-js/core/<name>` resolves through the import-shim layer rather
+    // than mirroring the source tree.
     {
       find: /^@weasel-js\/core\/(.*)$/,
-      replacement: join(repoRoot, 'src/import-shims/$1.ts'),
+      replacement: join(repoRoot, 'packages/core/src/import-shims/$1.ts'),
     },
     {
       find: '@weasel-js/core',
-      replacement: join(repoRoot, 'src/index.ts'),
+      replacement: join(repoRoot, 'packages/core/src/index.ts'),
     },
-    // Bare top-level kit paths — match the kit's tsconfig `baseUrl: src`.
-    { find: /^core\/(.*)$/, replacement: resolve(repoRoot, 'src/core/$1') },
-    { find: /^features\/(.*)$/, replacement: resolve(repoRoot, 'src/features/$1') },
-    { find: /^affordances\/(.*)$/, replacement: resolve(repoRoot, 'src/affordances/$1') },
-    { find: /^interactions\/(.*)$/, replacement: resolve(repoRoot, 'src/interactions/$1') },
-    { find: /^tools\/(.*)$/, replacement: resolve(repoRoot, 'src/tools/$1') },
-    { find: /^canvas\/(.*)$/, replacement: resolve(repoRoot, 'src/canvas/$1') },
-    { find: /^debug\/(.*)$/, replacement: resolve(repoRoot, 'src/debug/$1') },
+    // Bare top-level kit paths — mirror core's tsconfig path mappings.
+    { find: /^core\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/core/$1') },
+    { find: /^features\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/features/$1') },
+    { find: /^affordances\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/affordances/$1') },
+    { find: /^interactions\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/interactions/$1') },
+    { find: /^tools\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/tools/$1') },
+    { find: /^canvas\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/canvas/$1') },
+    { find: /^debug\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/debug/$1') },
   ];
 }

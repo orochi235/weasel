@@ -25,9 +25,14 @@
     "types": ["vitest/globals", "node", "@testing-library/jest-dom"],
     "ignoreDeprecations": "6.0",
     "paths": {
-      "@weasel-js/core": ["./src/index.ts"],
-      "@weasel-js/core/*": ["./src/*"],
-      "@weasel-js/core/routing": ["./src/tools/routing/index.ts"],
+      "@weasel-js/core": ["./packages/core/src/index.ts"],
+      // Subpaths resolve through the import-shim layer, mirroring both the
+      // published `exports` map and scripts/vite-aliases.ts. Before core moved
+      // into packages/, `@weasel-js/core/move` resolved by *package
+      // self-reference* — the root package.json was core's, so tsc followed its
+      // `exports` into the built `dist/`. That made typecheck silently depend
+      // on a prior build; mapping to source removes that ordering hazard.
+      "@weasel-js/core/*": ["./packages/core/src/import-shims/*"],
       "@weasel-js/ui": ["./packages/ui/src/index.ts"],
       "@weasel-js/svg": ["./packages/svg/src/index.ts"],
       "@weasel-js/geom": ["./packages/geom/src/index.ts"],
@@ -39,15 +44,15 @@
       "@weasel-js/history": ["./packages/history/src/index.ts"],
       "@weasel-js/modes": ["./packages/modes/src/index.ts"],
       "@weasel-js/modes/presets/default": ["./packages/modes/src/presets/default.ts"],
-      "core/*": ["./src/core/*"],
-      "features/*": ["./src/features/*"],
-      "affordances/*": ["./src/affordances/*"],
-      "interactions/*": ["./src/interactions/*"],
-      "tools/*": ["./src/tools/*"],
-      "canvas/*": ["./src/canvas/*"],
-      "debug/*": ["./src/debug/*"]
+      "core/*": ["./packages/core/src/core/*"],
+      "features/*": ["./packages/core/src/features/*"],
+      "affordances/*": ["./packages/core/src/affordances/*"],
+      "interactions/*": ["./packages/core/src/interactions/*"],
+      "tools/*": ["./packages/core/src/tools/*"],
+      "canvas/*": ["./packages/core/src/canvas/*"],
+      "debug/*": ["./packages/core/src/debug/*"]
     }
   },
-  "include": ["src", "apps", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/history/src", "packages/modes/src"],
+  "include": ["apps", "packages/core/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/history/src", "packages/modes/src"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,9 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { registerFont } from '../../src/renderer';
+import { registerFont } from '../../packages/core/src/renderer';
 import { WeaselDemos } from './WeaselDemos';
-import { ActionsProvider } from '../../src/interactions/actions/registry';
-import { SelectionContextProvider } from '../../src/features/selection/SelectionContext';
+import { ActionsProvider } from '../../packages/core/src/interactions/actions/registry';
+import { SelectionContextProvider } from '../../packages/core/src/features/selection/SelectionContext';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');

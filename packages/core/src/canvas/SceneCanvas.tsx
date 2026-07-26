@@ -164,15 +164,26 @@ export interface CoordTraceEntry {
   fallback: boolean;
 }
 
-const COORD_TRACE_LIMIT = 200;
-const coordTrace: CoordTraceEntry[] = [];
-const COORD_DEV: boolean = (() => {
+/**
+ * `import.meta.env.DEV`, read through a cast rather than off a typed
+ * `ImportMeta`. Core must not depend on a bundler's ambient augmentation
+ * (`vite/client`) to compile — until core moved into `packages/core/`, two
+ * call sites below read `import.meta.env` bare and only type-checked because
+ * `apps/site/vite-env.d.ts` leaked its `/// <reference types="vite/client" />`
+ * into the shared root-tsconfig program. Isolating core's build surfaced it.
+ * Mirrors the same cast in dispatcher.ts and buildDeps.ts.
+ */
+const IS_DEV: boolean = (() => {
   try {
     return Boolean((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV);
   } catch {
     return false;
   }
 })();
+
+const COORD_TRACE_LIMIT = 200;
+const coordTrace: CoordTraceEntry[] = [];
+const COORD_DEV: boolean = IS_DEV;
 if (COORD_DEV && typeof window !== 'undefined') {
   (window as unknown as { __weaselCoordLog__: CoordTraceEntry[] }).__weaselCoordLog__ = coordTrace;
 }
@@ -1070,7 +1081,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     for (const [id, value] of Object.entries(toolsPatchExtras)) {
       if (value !== true) continue;
       if (!KNOWN_BUILTIN_IDS.has(id as BuiltinToolId)) {
-        if (import.meta.env?.DEV) {
+        if (IS_DEV) {
           // eslint-disable-next-line no-console
           console.warn(`[SceneCanvas] tools.${id}=true is not a known built-in id; ignoring`);
         }
@@ -1133,7 +1144,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         // Already pulled in via the `wants()`-driven if-ladder above.
         continue;
       } else {
-        if (import.meta.env?.DEV && id in internalRegistry) {
+        if (IS_DEV && id in internalRegistry) {
           // eslint-disable-next-line no-console
           console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
         }

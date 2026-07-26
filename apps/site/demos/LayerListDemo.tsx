@@ -11,7 +11,7 @@ import {
 // (kit/app split): they live under `apps/draw/src/ui/`. Imported
 // via relative path because both directories are part of this monorepo.
 import { LayerList, useLayerList } from '../../draw/src/ui/LayerList';
-import type { DrawCommand } from '../../../src/renderer';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 

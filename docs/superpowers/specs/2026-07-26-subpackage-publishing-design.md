@@ -228,8 +228,16 @@ work does not touch that; it changes only the shape of the published artifact.
 
 Each phase ends green and is independently mergeable.
 
-1. **Move core to `packages/core/`.** Pure mechanical relocation; no packaging
-   semantics change. `noExternal` stays. Gate: full `prepublishOnly`.
+1. ~~**Move core to `packages/core/`.**~~ **SHIPPED 2026-07-26** (branch
+   `core-to-packages`). `node_modules/@weasel-js/core` now exists. Isolating
+   core's build surfaced three latent leaks where it compiled only because a
+   demo app's ambient types shared its tsconfig program — bare
+   `import.meta.env` (typed by `apps/site/vite-env.d.ts`'s `vite/client`
+   reference), CSS Module imports with no declaration of core's own, and
+   `@weasel-js/core/<subpath>` resolving by package self-reference into the
+   built `dist/` (making typecheck silently depend on a prior build). All
+   three fixed; see the commit body. Gates: typecheck, 5113 tests, core +
+   labkit builds, both consumer smoke tests, `build:demo`, typedoc 0 warnings.
 2. **Tier A + B independent builds.** Per-package tsup configs; packages go
    public; core's deps flip; `noExternal` deleted; smoke test inverted.
 3. **Tier C Vite library builds.** `theme`, then `ui`, then `hud`.

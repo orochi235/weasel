@@ -11,8 +11,8 @@ import {
 } from '@weasel-js/core';
 import type { PolygonPath } from '@weasel-js/core';
 import { SelectionPanel } from '@weasel-js/ui';
-import type { DrawCommand } from '../../../src/renderer';
-import type { View } from '../../../src/core/viewport/view';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { View } from '../../../packages/core/src/core/viewport/view';
 
 interface NodeData { kind: string; fill: string; stroke?: string; strokeWidth?: number }
 type LayerId = 'default';

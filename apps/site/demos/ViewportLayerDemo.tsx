@@ -5,9 +5,9 @@ import {
   useSelection,
   createViewportLayer,
 } from '@weasel-js/core';
-import type { DrawCommand } from '../../../src/renderer';
-import type { View } from '../../../src/core/viewport/view';
-import type { RenderLayer } from '../../../src/core/layers/render';
+import type { DrawCommand } from '../../../packages/core/src/renderer';
+import type { View } from '../../../packages/core/src/core/viewport/view';
+import type { RenderLayer } from '../../../packages/core/src/core/layers/render';
 
 interface NodeData { color: string }
 type LayerId = 'default';
