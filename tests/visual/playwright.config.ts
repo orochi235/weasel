@@ -8,9 +8,11 @@ const repoRoot = resolve(here, '../..');
 export default defineConfig({
   testDir: here,
   testMatch: /\.spec\.ts$/,
-  // Pixel determinism requires a fixed viewport size. All baselines are
-  // captured at 1280×800, deviceScaleFactor 1. Changing either value
-  // invalidates ALL baselines — regenerate via test:visual:update.
+  // Captures read the canvas backing store (see diff.ts readCanvasPixels), so
+  // baseline dimensions are the demo's own canvas size and do NOT depend on the
+  // viewport or on layout above the canvas. deviceScaleFactor still matters —
+  // the kit sizes the backing store by DPR, so changing it rescales every
+  // baseline. The viewport is fixed mainly to keep demo layout stable.
   use: {
     baseURL: 'http://localhost:5174',   // separate port from smoke suite (5173)
     headless: true,

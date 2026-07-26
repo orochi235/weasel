@@ -7,9 +7,9 @@
  * Interaction sequence:
  *   1. Initial mount — capture default linear gradient.
  *
- * Notes: Static after mount; the SVG handle overlay sits above the canvas
- * and is not part of the screenshot (`captureCanvas` screenshots the canvas
- * element directly).
+ * Notes: Static after mount; the SVG handle overlay sits above the canvas and
+ * is not part of the capture (`captureCanvas` reads the canvas backing store,
+ * so nothing composited over the element is included).
  */
 import { test } from '@playwright/test';
 import { resolve } from 'node:path';
