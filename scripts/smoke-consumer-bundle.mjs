@@ -234,6 +234,15 @@ await writeFile(
     // something a consumer can actually load.
     `import * as ui from '@weasel-js/ui';\n` +
     `import '@weasel-js/ui/style.css';\n` +
+    // The `./components/*` wildcard subpath — what lets a consumer pull one
+    // component instead of the whole barrel, and what the multi-entry Vite
+    // build exists to back. check:manifests cannot cover this: a wildcard
+    // describes a family of paths, not a file it can look for in the tarball.
+    // So these four (the set a real downstream editor imports) are the check.
+    `import * as toolPalette from '@weasel-js/ui/components/ToolPalette';\n` +
+    `import * as prefs from '@weasel-js/ui/components/Prefs';\n` +
+    `import * as callout from '@weasel-js/ui/components/Callout';\n` +
+    `import * as toastSub from '@weasel-js/ui/components/Toast';\n` +
     `import * as hud from '@weasel-js/hud';\n` +
     `import '@weasel-js/theme/tokens.css';\n` +
     // The unscoped alias resolves through the same specifiers as core. Note
@@ -246,7 +255,8 @@ await writeFile(
     `import { registerFont as aliasFont } from 'weasel-js/renderer';\n` +
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
     `void AliasCanvas; void CoreCanvas; void aliasFont; void coreFont;\n` +
-    `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud, alias };\n` +
+    `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud, alias,\n` +
+    `  toolPalette, prefs, callout, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
     `  if (!m || typeof m !== 'object') throw new Error('empty namespace: ' + n);\n` +
     `  if (Object.keys(m).length === 0) throw new Error('no exports: ' + n);\n` +
@@ -325,7 +335,11 @@ await writeFile(
     // under `strict`, a module with no declarations is TS7016 right here.
     `type _Ui = typeof import('@weasel-js/ui');\n` +
     `type _Hud = typeof import('@weasel-js/hud');\n` +
-    `export type { _Sel, _View, _Scene, _Hist, _Ptr, _M, _G, _S, _O, _Ui, _Hud };\n` +
+    // The subpath must carry types too, not just resolve as JS. The wildcard's
+    // `types` condition points into the tsc-emitted tree, which is laid out to
+    // mirror the Vite entry keys; if those two ever drift, this is TS7016.
+    `type _UiSubpath = typeof import('@weasel-js/ui/components/Toast');\n` +
+    `export type { _Sel, _View, _Scene, _Hist, _Ptr, _M, _G, _S, _O, _Ui, _Hud, _UiSubpath };\n` +
     `export const _key = _k;\n` +
     `export const _h = _viaDirect;\n`,
 );

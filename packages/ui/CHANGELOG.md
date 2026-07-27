@@ -1,5 +1,32 @@
 # @weasel-js/ui
 
+## 0.6.0
+
+### Minor Changes
+
+- Add `./components/*` subpath exports, so a consumer can import one component
+  instead of the whole barrel:
+
+  ```ts
+  import { ToolPalette } from "@weasel-js/ui/components/ToolPalette";
+  import { ToastRegion, toast } from "@weasel-js/ui/components/Toast";
+  ```
+
+  This needed a build change, not just an `exports` entry: the package built as a
+  single `dist/index.js`, so there was nothing for a subpath to point at. The Vite
+  build now emits one entry per component directory, keyed to mirror the source
+  tree — which is also where `tsc --emitDeclarationOnly` already put the matching
+  `index.d.ts`, so a single `*` wildcard lines up the JS and the types, and a
+  component added later is reachable with no further change.
+
+  Code shared between entries is hoisted into `dist/chunks/` rather than copied
+  into each, so module-level state stays single: importing the barrel and a
+  subpath in the same app yields one `defaultToastQueue`, not two.
+
+### Patch Changes
+
+- @weasel-js/modes@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes

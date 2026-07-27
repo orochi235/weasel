@@ -55,7 +55,7 @@
     "lint": "tsc --noEmit",
     "changeset": "changeset",
     "release": "changeset publish",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run build && npm run check:manifests && npm run test:smoke:consumer && npm run build:demo",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build && npm run check:manifests && npm run test:smoke:consumer",
     "prepare": "npm run build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"

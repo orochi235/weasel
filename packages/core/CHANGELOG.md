@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0
+
+### Patch Changes
+
+- @weasel-js/geom@0.6.0
+- @weasel-js/gestures@0.6.0
+- @weasel-js/history@0.6.0
+- @weasel-js/modes@0.6.0
+
 ## 0.5.1
 
 ### Patch Changes
