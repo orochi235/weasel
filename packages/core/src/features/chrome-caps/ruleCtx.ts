@@ -1,7 +1,7 @@
 import type { NodeId } from '../../core/scene/types';
 import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
-import type { CapabilityTag } from '@weasel-js/modes';
+import { IMPLICIT_TAGS, NORMAL, type CapabilityTag } from '@weasel-js/modes';
 
 /**
  * Live state read by rule evaluation. Built once per frame on the consuming
@@ -46,6 +46,22 @@ export interface BuildRuleCtxArgs {
   /** Optional — omitted means "resizable" (handles show). See {@link RuleCtx}. */
   selectionResizable?: boolean;
 }
+
+/**
+ * Capability set to assume when no mode registry is wired.
+ *
+ * "No modes configured" means *everything the default mode permits*, not
+ * *nothing permitted*. The empty set is the wrong default: it makes every
+ * `capability:` rule evaluate false, so a kit default written the
+ * recommended way (capability rules outlive new modes; mode rules have to
+ * be edited) would silently hide its chrome for every consumer that hasn't
+ * opted into modality. `NORMAL.allows` plus the implicit tags is what a
+ * mode-less canvas actually behaves like.
+ */
+export const DEFAULT_ALLOWED_CAPABILITIES: ReadonlySet<CapabilityTag> = new Set<CapabilityTag>([
+  ...NORMAL.allows,
+  ...IMPLICIT_TAGS,
+]);
 
 export function buildRuleCtx(args: BuildRuleCtxArgs): RuleCtx {
   return {

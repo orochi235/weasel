@@ -99,8 +99,17 @@ their own ids and gate their own overlays through the same table.
 
 - **Prefer `capability:` over `mode:`.** A capability rule keeps working when a
   new mode is added that allows the same capability; a mode rule has to be
-  edited. `defaults.ts` still uses `mode:` in places — that's history, not a
-  recommendation.
+  found and edited. `defaults.ts` follows this: transform chrome gates on
+  `capability: 'transforms-selection'`, and the selection outline on
+  `capability: { not: 'edits-anchors' }`. The `path-edit.*` ids are the
+  deliberate exception — they're the visual signature of one specific mode,
+  not a claim about what the user may do.
+- **An empty capability set is not a safe default.** "No modes wired" means
+  *everything the default mode permits*; the empty set would make every
+  `capability:` rule false and silently hide the chrome it gates. Both
+  fallback paths (`resolve.ts` for legacy `ChromeCtx`, `SceneCanvas` when
+  `getActiveMode` is absent) use `DEFAULT_ALLOWED_CAPABILITIES`. Keep it that
+  way when adding a third.
 - **`when` is the escape hatch, not the default.** Its closure is opaque to
   introspection, which costs the Bundle Inspector and any future rule-diffing
   its ability to explain *why* something is hidden. Reach for a declarative

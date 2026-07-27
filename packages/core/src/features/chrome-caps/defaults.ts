@@ -9,41 +9,52 @@ import type { Rule } from './rule';
  * each rule depends on are immediately visible. The fluent atoms compile
  * to the same trees; either form is valid in a VisibilityRules entry.
  *
- * Mode gating: selection chrome is suppressed in `path-edit` because the
- * path-editing overlay takes over visually. Path-edit-specific chrome
- * ids (`path-edit.*`) are positively gated to that mode. This replaces
- * the old `suppressedIds` set, which only the selection-outline path
- * honored.
+ * Gating is written in terms of **capabilities, not mode ids**. A
+ * capability rule keeps holding when a new mode is added that permits the
+ * same thing; a mode rule has to be found and edited every time. The one
+ * exception is the `path-edit.*` chrome below, which is genuinely
+ * mode-specific: it's the visual signature of that mode, not a statement
+ * about what the user is allowed to do.
+ *
+ * Chrome that gates on the *absence* of a capability (the selection
+ * outline, suppressed while an anchor-editing overlay owns the visuals)
+ * uses `capability: { not: … }` for the same reason.
  */
 export const defaultVisibilityRules: VisibilityRules = {
   // Static selection chrome — visible while a selection exists, but off
-  // in path-edit (the path-editing overlay takes over).
+  // whenever an anchor-editing overlay has taken over the visuals (today:
+  // path-edit mode; tomorrow: anything else that allows `edits-anchors`).
   'selection.outline': {
-    selection: { atLeast: 1 },
-    mode: { not: 'path-edit' },
+    all: [
+      { selection: { atLeast: 1 } },
+      { capability: { not: 'edits-anchors' } },
+    ],
   } as Rule,
 
   // Handles hide during an action so the moving / resizing object isn't
-  // visually crowded; they reappear on commit. Also off in path-edit, and
-  // when the selection isn't resizable (consumer `resizable` predicate).
+  // visually crowded; they reappear on commit. Gated on the mode actually
+  // permitting transforms — grabbing a resize handle in a mode that
+  // forbids `transforms-selection` could only ever be a no-op — and on the
+  // selection being resizable (consumer `resizable` predicate).
   'selection.resize-handles': {
     all: [
       { selection: { atLeast: 1 } },
       { not: { gesturing: true } },
-      { mode: { not: 'path-edit' } },
+      { capability: 'transforms-selection' },
       { resizable: true },
     ],
   } as Rule,
 
   // Rotation handle visible whenever any selection is focused — single
   // mode pivots around the selected node's center; multi mode pivots
-  // around the union AABB center. Off in path-edit and during action.
+  // around the union AABB center. Same transform gating as resize; also
+  // off during an action.
   'selection.rotation-handle': {
     all: [
       { selection: { atLeast: 1 } },
       { focused: true },
       { not: { gesturing: true } },
-      { mode: { not: 'path-edit' } },
+      { capability: 'transforms-selection' },
     ],
   } as Rule,
 

@@ -1,5 +1,6 @@
 import type { ChromeCtx, ChromeId, VisibilityRules } from './types';
 import type { RuleCtx } from './ruleCtx';
+import { DEFAULT_ALLOWED_CAPABILITIES } from './ruleCtx';
 import { evaluate } from './rule';
 import { defaultVisibilityRules } from './defaults';
 
@@ -14,10 +15,9 @@ import { defaultVisibilityRules } from './defaults';
  * Predicates are O(1) and run once per chrome id per frame; no
  * memoization in v1 — profile before adding any.
  *
- * `ChromeCtx` is the legacy shape; surfaces still on it supply
- * `mode='normal'` and an empty `allowedCapabilities` to satisfy
- * `RuleCtx` when calling. We do the same here so callers in
- * legacy shape keep working transparently.
+ * `ChromeCtx` is the legacy shape; surfaces still on it get `mode='normal'`
+ * and `DEFAULT_ALLOWED_CAPABILITIES` filled in here, so a caller that never
+ * opted into modality behaves exactly like one sitting in normal mode.
  */
 export function resolveVisibility(
   consumer: VisibilityRules | undefined,
@@ -28,7 +28,7 @@ export function resolveVisibility(
     : defaultVisibilityRules;
   const ruleCtx: RuleCtx = 'mode' in ctx
     ? ctx
-    : { ...ctx, mode: 'normal', allowedCapabilities: new Set() };
+    : { ...ctx, mode: 'normal', allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES };
   return (id) => {
     const entry = merged[id];
     if (entry === undefined) return true;

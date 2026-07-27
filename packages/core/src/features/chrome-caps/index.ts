@@ -48,7 +48,7 @@ export {
 } from './conditions';
 
 export { evaluate, ALWAYS, NEVER } from './rule';
-export { buildRuleCtx } from './ruleCtx';
+export { buildRuleCtx, DEFAULT_ALLOWED_CAPABILITIES } from './ruleCtx';
 export { defaultVisibilityRules } from './defaults';
 export { resolveVisibility } from './resolve';
 export { buildChromeCtx, type BuildChromeCtxArgs } from './buildChromeCtx';

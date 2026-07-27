@@ -10,8 +10,23 @@ import {
 } from './conditions';
 import { defaultVisibilityRules } from './defaults';
 import { resolveVisibility } from './resolve';
+import { byId, DEFAULT_MODES, IMPLICIT_TAGS, type CapabilityTag } from '@weasel-js/modes';
+
+/** Capabilities the named mode actually allows, per the default preset.
+ *  The fixture derives these rather than taking a hand-written set: a ctx
+ *  claiming `mode: 'path-edit'` while allowing everything (or claiming
+ *  `mode: 'normal'` while allowing nothing) can't exercise a capability rule
+ *  honestly, and the defaults table is written in capabilities. */
+function capsFor(mode: string): ReadonlySet<CapabilityTag> {
+  // Consumer-defined mode ids aren't in the preset; those tests pass an
+  // explicit `allowedCapabilities` and never reach this.
+  const known = DEFAULT_MODES.some((m) => m.id === mode);
+  const allows = known ? byId(mode).allows : [];
+  return new Set<CapabilityTag>([...allows, ...IMPLICIT_TAGS]);
+}
 
 function ctx(over: Partial<RuleCtx> = {}): RuleCtx {
+  const mode = over.mode ?? 'normal';
   return {
     focused: false,
     selection: [],
@@ -20,8 +35,8 @@ function ctx(over: Partial<RuleCtx> = {}): RuleCtx {
     action: { kind: null, id: null },
     hover: null,
     view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
-    mode: 'normal',
-    allowedCapabilities: new Set(),
+    mode,
+    allowedCapabilities: capsFor(mode),
     ...over,
   };
 }
@@ -254,6 +269,53 @@ describe('mode-gated defaults', () => {
   it('selection chrome is ON in normal mode', () => {
     const c = baseCtx({ selection: [NID('n1')], focused: true, mode: 'normal' });
     const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.outline')).toBe(true);
+    expect(isVisible('selection.resize-handles')).toBe(true);
+    expect(isVisible('selection.rotation-handle')).toBe(true);
+  });
+
+  // The point of gating on `transforms-selection` rather than
+  // `mode: { not: 'path-edit' }`: modes that forbid transforms get the right
+  // answer without anyone editing this table. Grabbing a resize handle in
+  // crop or text-edit could only ever be a no-op, so it shouldn't be offered.
+  it.each([
+    ['text-edit', false],
+    ['crop', false],
+    ['free-transform', true],
+    ['isolation', true],
+  ] as const)('transform chrome in %s mode follows the capability, not a mode id', (mode, shown) => {
+    const c = baseCtx({ selection: [NID('n1')], focused: true, mode });
+    const isVisible = resolveVisibility(undefined, c);
+    expect(isVisible('selection.resize-handles')).toBe(shown);
+    expect(isVisible('selection.rotation-handle')).toBe(shown);
+  });
+
+  // The outline is suppressed by *anchor editing owning the visuals*, not by
+  // the literal id 'path-edit' — so a future anchor-editing mode inherits the
+  // behavior for free.
+  it('selection.outline follows edits-anchors, not the path-edit id', () => {
+    const anchorish = baseCtx({
+      selection: [NID('n1')],
+      mode: 'some-future-anchor-mode',
+      allowedCapabilities: new Set<CapabilityTag>(['edits-anchors']),
+    });
+    expect(resolveVisibility(undefined, anchorish)('selection.outline')).toBe(false);
+  });
+
+  // Regression guard: a consumer that never wired `getActiveMode` must not
+  // lose its chrome. `resolveVisibility` fills the legacy ChromeCtx shape
+  // with normal-mode capabilities, so capability rules stay true.
+  it('legacy ChromeCtx (no mode wired) still shows transform chrome', () => {
+    const legacy: ChromeCtx = {
+      focused: true,
+      selection: [NID('n1')],
+      multiActive: false,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      action: { kind: null, id: null },
+      hover: null,
+      view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
+    };
+    const isVisible = resolveVisibility(undefined, legacy);
     expect(isVisible('selection.outline')).toBe(true);
     expect(isVisible('selection.resize-handles')).toBe(true);
     expect(isVisible('selection.rotation-handle')).toBe(true);

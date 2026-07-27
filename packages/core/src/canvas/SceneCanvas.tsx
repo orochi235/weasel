@@ -122,6 +122,7 @@ import {
   never,
   resolveVisibility,
   useHoverTracking,
+  DEFAULT_ALLOWED_CAPABILITIES,
 } from 'features/chrome-caps';
 import type { RuleCtx } from 'features/chrome-caps';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
@@ -1352,7 +1353,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
    *  eligibility filter so both see the same view of the world. */
   const buildCurrentRuleCtx = useCallback(() => {
     const sel = selectionForCapsRef.current;
-    const modeInfo = getActiveModeRef.current?.() ?? { id: 'normal', allowedCapabilities: new Set<string>() };
+    // No mode registry wired → behave as normal mode, capabilities included.
+    // An empty set here would make every `capability:` rule false and hide
+    // the chrome those rules gate. See DEFAULT_ALLOWED_CAPABILITIES.
+    const modeInfo = getActiveModeRef.current?.()
+      ?? { id: 'normal', allowedCapabilities: DEFAULT_ALLOWED_CAPABILITIES };
     const ctx = buildChromeCtx({
       focused: getFocusedPropRef.current ? getFocusedPropRef.current() : true,
       selection: sel,
