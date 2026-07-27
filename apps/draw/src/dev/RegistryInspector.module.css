@@ -220,6 +220,14 @@
   font-family: var(--wzl-font-mono, ui-monospace, monospace);
 }
 .callbackLink:hover { text-decoration: underline; }
+/* Grid cells that legitimately hold nothing. Dimmer than body text so an
+   empty cell reads as "not applicable", not "failed to populate". */
+.absentCell { color: var(--wzl-muted, var(--wzl-fg-muted)); opacity: 0.55; }
+.wildcardCell {
+  color: var(--wzl-muted, var(--wzl-fg-muted));
+  font-style: italic;
+  font-size: 13px;
+}
 .jsdoc {
   background: var(--wzl-bg, var(--wzl-surface-sunken));
   border: 1px solid var(--wzl-panel-border, var(--wzl-border-strong));

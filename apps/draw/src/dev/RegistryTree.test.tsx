@@ -20,9 +20,9 @@ const NODES: readonly TreeCategoryNode[] = [
     id: 'tools',
     label: 'Tools',
     entries: [
-      { kind: 'tool', id: 'rect', label: 'useRectTool', routes: [], slot: 'registry',
+      { kind: 'tool', id: 'rect', label: 'useRectTool', routes: [], declaredRoutes: [], slot: 'registry',
         phases: { initial: EMPTY_PHASE }, capabilities: EMPTY_CAPS },
-      { kind: 'tool', id: 'ellipse', label: 'useEllipseTool', routes: [], slot: 'registry',
+      { kind: 'tool', id: 'ellipse', label: 'useEllipseTool', routes: [], declaredRoutes: [], slot: 'registry',
         phases: { initial: EMPTY_PHASE }, capabilities: EMPTY_CAPS },
     ],
   },

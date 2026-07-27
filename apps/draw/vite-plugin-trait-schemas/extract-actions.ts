@@ -1,7 +1,7 @@
 /**
  * Extract `ActionSchema`s from the kit's default-actions barrel.
  *
- * The barrel `src/interactions/actions/defaults/index.ts` re-exports each
+ * The barrel `packages/core/src/interactions/actions/defaults/index.ts` re-exports each
  * action descriptor. For every named export whose declaration is an
  * `Action`-shaped object literal, capture `id`, `label`, `group`,
  * `shortcut`, `defaultBinding` (raw source text), and a `SourceRef`
@@ -26,7 +26,7 @@ export function extractActions(
 ): Record<string, ActionSchema> {
   const barrel = sourceFileOrThrow(
     project,
-    resolve(repoRoot, 'src/interactions/actions/defaults/index.ts'),
+    resolve(repoRoot, 'packages/core/src/interactions/actions/defaults/index.ts'),
   );
 
   const out: ActionSchema[] = [];

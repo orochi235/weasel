@@ -13,7 +13,7 @@ import {
   type ToolsApi,
 } from '@weasel-js/core';
 import type { PhaseSpec } from '@weasel-js/gestures';
-import { buildActionRegistry, formatRoute, type RegistryEntry } from '@weasel-js/core/routing';
+import { buildActionRegistry, formatRoute, mods, parseRoute, type ModifierCombo, type RegistryEntry } from '@weasel-js/core/routing';
 import type {
   GestureName,
   ParsedModifiers,
@@ -21,7 +21,7 @@ import type {
   ToolDef,
 } from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
-import type { PhaseSummary, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
+import type { DeclaredRoute, PhaseSummary, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
 import { formatShortcutParts } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 
@@ -89,7 +89,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
     // Union of registry (active/hotkey) + ambient slots — both groups are
     // built-in tools the canvas mounted. Ambient holds resize / rotate /
     // wheel-zoom etc., so omitting them misses ~3 tools per bundle.
-    type Slot = { id: string; def?: unknown; cursor?: unknown };
+    type Slot = { id: string; def?: unknown; cursor?: unknown; bindings?: unknown; overlay?: unknown };
     const tagged: Array<{ slot: 'registry' | 'ambient'; t: Slot }> = [
       ...Object.values(tools.registry).map((t) => ({ slot: 'registry' as const, t })),
       ...tools.ambient.map((t) => ({ slot: 'ambient' as const, t })),
@@ -99,12 +99,27 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
       .filter(({ t }) => (seen.has(t.id) ? false : (seen.add(t.id), true)))
       .map(({ slot, t }): ToolEntry => {
         const def = t.def as ToolDef<unknown> | undefined;
-        const routeInfo = def ? collectToolRoutes(def) : { routes: [], bindingActionByRoute: {} };
-        const routes = routeInfo.routes;
-        const initial = def ? summarizePhase(def.initial) : EMPTY_PHASE;
+        const callbacks = def ? collectToolCallbacks(def) : [];
+        const declaredRoutes = def
+          ? collectDeclaredRoutes(
+              def,
+              t.bindings as ToolDef<unknown>['bindings'],
+              callbacks,
+              actionsByID,
+            )
+          : [];
+        // Catalog view: the distinct route signatures this tool contributes.
+        const routes = [...new Set(declaredRoutes.map((r) => r.route))];
+        const summarized = def ? summarizePhase(def.initial) : EMPTY_PHASE;
+        // Same Tool-vs-def split as `bindings`: `defineTool` derives the
+        // Tool's overlay from `def.initial.overlay`, but a hook can attach one
+        // to the returned Tool instead (`useRotateTool` does — it's an
+        // overlay-only ambient tool). Reading the def alone reported "emits no
+        // overlay" for exactly the tools that are nothing but an overlay.
+        const initial: PhaseSummary = t.overlay === undefined
+          ? summarized
+          : { ...summarized, outputs: { ...summarized.outputs, overlay: true } };
         const engaged = def?.engaged ? summarizePhase(def.engaged) : undefined;
-        const phaseTableCallbacks = def ? collectToolCallbacks(def) : [];
-        const bindingCallbacks = synthBindingCallbacks(routeInfo.bindingActionByRoute, actionsByID);
         return {
           kind: 'tool',
           id: t.id,
@@ -115,6 +130,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           hookName: def?.hookName,
           cursor: typeof t.cursor === 'string' ? t.cursor : undefined,
           routes,
+          declaredRoutes,
           slot,
           switchShortcutParts: formatShortcutParts(def?.keybinding),
           hotkey: def?.hotkey,
@@ -131,7 +147,7 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
             onDeactivate: !!def?.onDeactivate,
             hitOverride: !!def?.hitOverride,
           },
-          callbacks: [...phaseTableCallbacks, ...bindingCallbacks],
+          callbacks,
         };
       });
     // `actionsByID` is derived from actionsList; we re-enter the memo when
@@ -193,35 +209,89 @@ function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
   }));
 }
 
-interface CollectedRoutes {
-  /** Formatted route strings, de-duped, source order: phase-table first,
-   *  then binding-sourced. */
-  routes: readonly string[];
-  /** Route string → owning `actionId` for binding-sourced rows. Lets the
-   *  inspector look up an action's handler source per route. Phase-table
-   *  routes are absent from this map (their callbacks come from the tool's
-   *  PhaseDef function members, tagged directly by the Vite plugin). */
-  bindingActionByRoute: Readonly<Record<string, string>>;
+/** Every route a tool declares, in declaration order: phase-table routes
+ *  (`def.initial` / `def.engaged`) first, then binding routes. Built-in tools
+ *  route most gestures through bindings now — without folding them in, the
+ *  inspector would show tools with empty / vestigial route lists.
+ *
+ *  Phase-table routes are de-duped on the formatted string (they come out of
+ *  `buildActionRegistry`, which can emit the same signature twice). Binding
+ *  routes are NOT: several bindings legitimately format to the same string
+ *  while dispatching to different actions — select declares three
+ *  predicate-target drags (resize / rotate / move) and the grammar renders
+ *  every one of them `[*] drag => predicate`. Collapsing those hid two real
+ *  routes and mislabeled the third.
+ *
+ *  `bindings` is read off the runtime `Tool`, not off `def`, because that's
+ *  what the dispatcher reads. `defineTool` copies `def.bindings` onto the
+ *  Tool it returns, but a hook is free to attach bindings to the returned
+ *  Tool instead of declaring them in the def (`useSelectTool` does exactly
+ *  that — it spreads the defineTool result and appends `bindings`). Reading
+ *  `def.bindings` alone missed every one of those. */
+function collectDeclaredRoutes(
+  def: ToolDef<unknown>,
+  bindings: ToolDef<unknown>['bindings'],
+  phaseCallbacks: readonly CallbackRef[],
+  actionsByID: ReadonlyMap<string, unknown>,
+): readonly DeclaredRoute[] {
+  const seen = new Set<string>();
+  const out: DeclaredRoute[] = [];
+  for (const route of formatRoutes(buildActionRegistry([def]))) {
+    if (seen.has(route)) continue;
+    seen.add(route);
+    out.push({ route, source: findPhaseCallback(route, phaseCallbacks)?.source });
+  }
+  for (const { route, actionId } of bindingRouteRefs(bindings ?? def.bindings)) {
+    // Bindings are plain object literals, so the source-tag plugin has no
+    // function to tag. Cite the action's invoker instead — that's the code
+    // that actually runs when the route fires.
+    out.push({ route, actionId, source: bestActionHandlerSource(actionsByID.get(actionId)) });
+  }
+  return out;
 }
 
-/** Union of phase-table routes (`def.initial` / `def.engaged`) and binding
- *  routes (`def.bindings`). Built-in tools route most gestures through
- *  bindings now — without folding them in, the inspector would show tools
- *  with empty / vestigial route lists. De-duped on the formatted string. */
-function collectToolRoutes(def: ToolDef<unknown>): CollectedRoutes {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const r of formatRoutes(buildActionRegistry([def]))) {
-    if (!seen.has(r)) { seen.add(r); out.push(r); }
+/** Locate the phase-table handler behind a formatted route string, by
+ *  reconstructing the dotted label `collectPhaseCallbacks` assigned it
+ *  (`initial.click.empty:shift`, `engaged.keyDown.Escape`, …). Returns
+ *  undefined when the dev plugin didn't tag the function. */
+function findPhaseCallback(
+  route: string,
+  callbacks: readonly CallbackRef[],
+): CallbackRef | undefined {
+  const parsed = parseRoute(route);
+  const phase = parsed.phases[0]?.phase;
+  if (!phase) return undefined;
+  const g = parsed.gesture;
+  const candidates: string[] = [];
+  if (g === 'wheel') {
+    candidates.push(`${phase}.wheel`);
+  } else if (g === 'keyDown' || g === 'keyUp') {
+    if (parsed.arg) candidates.push(`${phase}.${g}.${parsed.arg}`);
+  } else if (g === 'click' || g === 'pointerDown' || g === 'dblTap' || g === 'drag') {
+    const target = parsed.target ?? '*';
+    // Sub-table keys are `ModifierCombo` strings (`mods('mod','shift')` →
+    // `'mod+shift'`), NOT the `name=requiredness` form `canonicalModifiers`
+    // emits — matching on the latter never hit, which is why every
+    // modifier-variant route showed a blank source.
+    const modKey = modifierComboOf(parsed.modifiers);
+    if (modKey !== 'default') candidates.push(`${phase}.${g}.${target}:${modKey}`);
+    candidates.push(`${phase}.${g}.${target}`);
+    // Bare drag function lives at `${phase}.drag` with no target/mod suffix.
+    if (g === 'drag') candidates.push(`${phase}.drag`);
   }
-  const bindingActionByRoute: Record<string, string> = {};
-  for (const { route, actionId } of bindingRouteRefs(def.bindings)) {
-    if (!seen.has(route)) { seen.add(route); out.push(route); }
-    // First binding wins if multiple bindings produced the same formatted
-    // route (rare; only when two specs collapse to identical strings).
-    if (!(route in bindingActionByRoute)) bindingActionByRoute[route] = actionId;
+  for (const label of candidates) {
+    const hit = callbacks.find((c) => c.label === label);
+    if (hit) return hit;
   }
-  return { routes: out, bindingActionByRoute };
+  return undefined;
+}
+
+/** `ParsedModifiers` → the `ModifierCombo` key a route sub-table is authored
+ *  with. Optional modifiers don't participate: they widen a route rather than
+ *  selecting a distinct sub-table. */
+function modifierComboOf(parsed: ParsedModifiers): ModifierCombo {
+  const required = (['mod', 'shift', 'alt'] as const).filter((n) => parsed[n] === 'required');
+  return mods(...required);
 }
 
 /** Map of `GestureSpec.kind` → `GestureName` used by the route grammar.
@@ -253,28 +323,6 @@ function bindingRouteRefs(
     for (const route of specToRouteStrings(b.spec)) {
       out.push({ route, actionId: b.actionId });
     }
-  }
-  return out;
-}
-
-/** Synthesize per-route `CallbackRef`s for binding-sourced routes. The
- *  Vite source-tag plugin only tags functions, and bindings are plain
- *  object literals — so binding routes have no native handler source.
- *  We bridge that gap by pointing each binding-route at its action's first
- *  invoker callback (the function that actually runs when the route fires).
- *
- *  The synthetic `label` is the formatted route string itself; the inspector's
- *  `findRouteCallback` matches by that exact string ahead of its legacy
- *  phase-keyed label probes. */
-function synthBindingCallbacks(
-  bindingActionByRoute: Readonly<Record<string, string>>,
-  actionsByID: ReadonlyMap<string, unknown>,
-): readonly CallbackRef[] {
-  const out: CallbackRef[] = [];
-  for (const [route, actionId] of Object.entries(bindingActionByRoute)) {
-    const action = actionsByID.get(actionId);
-    const source = bestActionHandlerSource(action);
-    if (source) out.push({ label: route, source });
   }
   return out;
 }

@@ -24,13 +24,13 @@ import type { OpFactorySchema, PropertyDescriptor } from '../src/dev/traitSchema
 import { srcRef, readJsDoc, sourceFileOrThrow } from './extract';
 
 const SOURCES: readonly string[] = [
-  'src/core/ops/create.ts',
-  'src/core/ops/delete.ts',
-  'src/core/ops/transform.ts',
-  'src/core/ops/reparent.ts',
-  'src/core/ops/select.ts',
-  'src/core/ops/setText.ts',
-  'src/core/ops/setPath.ts',
+  'packages/core/src/core/ops/create.ts',
+  'packages/core/src/core/ops/delete.ts',
+  'packages/core/src/core/ops/transform.ts',
+  'packages/core/src/core/ops/reparent.ts',
+  'packages/core/src/core/ops/select.ts',
+  'packages/core/src/core/ops/setText.ts',
+  'packages/core/src/core/ops/setPath.ts',
 ];
 
 export function extractOps(project: Project, repoRoot: string): Record<string, OpFactorySchema> {

@@ -79,6 +79,40 @@ describe('RegistryProbe', () => {
     expect(rect!.routes).toContain('[*] drag');
   });
 
+  // `useSelectTool` attaches its bindings to the Tool it returns (it spreads
+  // the `defineTool` result and appends `bindings`), not to the ToolDef. The
+  // probe used to read `def.bindings` only, so select's eight drag/click
+  // bindings — the bulk of what the tool does — were absent from the
+  // inspector entirely. Reading them off the runtime Tool is what the
+  // dispatcher does; the probe must match.
+  it('reflects Tool-level bindings, not just ToolDef.bindings', async () => {
+    const snapshots: {
+      tools: readonly {
+        id: string;
+        declaredRoutes: readonly { route: string; actionId?: string }[];
+      }[];
+    }[] = [];
+    render(
+      <ActionsProvider>
+        <RegistryProbe onSnapshot={(s) => { snapshots.push(s); }} />
+      </ActionsProvider>,
+    );
+    await waitFor(() => {
+      expect(snapshots[snapshots.length - 1]?.tools.length).toBeGreaterThan(3);
+    });
+    const select = snapshots[snapshots.length - 1]!.tools.find((t) => t.id === 'select');
+    expect(select, 'select tool should be probed').toBeTruthy();
+    const actionIds = select!.declaredRoutes.map((d) => d.actionId).filter(Boolean);
+    expect(actionIds).toEqual(
+      expect.arrayContaining(['resize', 'rotate', 'clone', 'move', 'areaSelect', 'clearSelection']),
+    );
+    // The three predicate-target drags all format to the same route string
+    // but dispatch to different actions — de-duping on the string would drop
+    // two of them.
+    const predicateDrags = select!.declaredRoutes.filter((d) => d.route === '[*] drag => predicate');
+    expect(predicateDrags.map((d) => d.actionId)).toEqual(['resize', 'rotate', 'move']);
+  });
+
   // Parity: every built-in tool surfaced by the probe must carry the kit
   // barrel's hook name on its def (e.g. id 'rect' → hookName 'useRectTool').
   // Drift here means a hook was renamed without updating the def — surfaces

@@ -1,7 +1,7 @@
 /**
  * Extract `GestureSchema`s for the inspector's gesture catalog.
  *
- * The kit's `src/interactions/gestures/types.ts` defines a few payload-bearing
+ * The kit's `packages/core/src/interactions/gestures/types.ts` defines a few payload-bearing
  * types (`PointerState`, `GroupTransform`) but does not declare a payload alias
  * for every gesture id. For ids without a discoverable payload type we
  * fall back to a hand-encoded shape that matches the runtime dispatch.
@@ -23,7 +23,7 @@ export function extractGestures(
   project: Project,
   repoRoot: string,
 ): Record<string, GestureSchema> {
-  const typesPath = resolve(repoRoot, 'src/interactions/gestures/types.ts');
+  const typesPath = resolve(repoRoot, 'packages/core/src/interactions/gestures/types.ts');
   const sf = sourceFileOrThrow(project, typesPath);
 
   const pointer = sf.getInterface('PointerState') ?? sf.getTypeAlias('PointerState');

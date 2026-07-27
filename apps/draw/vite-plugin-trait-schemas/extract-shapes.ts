@@ -1,7 +1,7 @@
 /**
  * Shape-kind extractor.
  *
- * Reads `src/canvas/SceneCanvas/useBuiltinShapeTools.tsx` and produces a
+ * Reads `packages/core/src/canvas/SceneCanvas/useBuiltinShapeTools.tsx` and produces a
  * `ShapeSchema` per member of `KIT_SHAPE_KINDS`. Each kit shape is created
  * via `makeLeaf(idCall, poseLiteral, dataLiteral)`. We find the `const <id> =`
  * binding that synthesizes the tool and walk its initializer for the first
@@ -26,7 +26,7 @@ import { resolve } from 'node:path';
 import type { PropertyDescriptor, ShapeSchema } from '../src/dev/traitSchemas.types';
 import { srcRef, sourceFileOrThrow, readJsDoc } from './extract';
 
-const SOURCE = 'src/canvas/SceneCanvas/useBuiltinShapeTools.tsx';
+const SOURCE = 'packages/core/src/canvas/SceneCanvas/useBuiltinShapeTools.tsx';
 
 /** Map from binding identifier inside the hook to public shape-kind id. They
  *  happen to match for every kind except `pen` (whose binding destructures

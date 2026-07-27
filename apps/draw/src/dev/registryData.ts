@@ -71,6 +71,22 @@ export interface CallbackRef {
   source: CallbackSource;
 }
 
+/** One route as the tool declared it — either an entry in a `PhaseDef` route
+ *  table or a `GestureBinding`. The two differ in what handles the route:
+ *  a phase-table route runs an inline `ActionFn` (no id to name), a binding
+ *  dispatches to a registered `Action`. */
+export interface DeclaredRoute {
+  /** Formatted v3 grammar string, e.g. `[initial] click => empty +shift`. */
+  route: string;
+  /** Id of the `Action` this route dispatches to. Binding-sourced routes
+   *  only — undefined for phase-table routes. */
+  actionId?: string;
+  /** Where the handler is written, when the dev `weasel:callback-source`
+   *  plugin tagged it. For bindings this is the action's invoker (bindings
+   *  are object literals and carry no function of their own). */
+  source?: CallbackSource;
+}
+
 export interface ToolEntry {
   kind: 'tool';
   id: string;
@@ -84,6 +100,13 @@ export interface ToolEntry {
    *  `[phase] gesture(arg) => target +mod`, e.g.
    *  `[initial] click => empty` or `[initial] drag => node +shift`. */
   routes: readonly string[];
+  /** Every route the tool declares, in declaration order and *without*
+   *  de-duping — the row-level view `routes` flattens. Several bindings can
+   *  format to the same route string yet dispatch to different actions
+   *  (select's resize / rotate / move drags all render as
+   *  `[*] drag => predicate`, because the grammar has no notation for a
+   *  predicate target), so collapsing on the string loses real routes. */
+  declaredRoutes: readonly DeclaredRoute[];
   /** Where the tool currently sits in the mounted SceneCanvas. `registry`
    *  covers the regular active/hotkey slots; `ambient` is the always-on
    *  slot (resize / rotate / wheel-zoom). */

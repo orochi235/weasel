@@ -4,7 +4,9 @@
  * gestures, and the SceneNode discriminated union.
  *
  * The extractor is intentionally read-only: it never invokes the type checker
- * on app code, only on the kit source under `${repoRoot}/src`. The Vite
+ * on app code, only on the kit source under `${repoRoot}/packages/core/src`.
+ * Paths stay repo-relative so the source refs it emits line up with the rest
+ * of the inspector's citations. The Vite
  * plugin calls this once on first virtual-module load and again whenever the
  * watched files change.
  */
@@ -26,19 +28,19 @@ import { extractNode } from './extract-node';
  *  Vite plugin can wire them into the dev-server file watcher. */
 export function watchedFilesFor(repoRoot: string): readonly string[] {
   return [
-    resolve(repoRoot, 'src/canvas/SceneCanvas/useBuiltinShapeTools.tsx'),
-    resolve(repoRoot, 'src/core/ops/index.ts'),
-    resolve(repoRoot, 'src/core/ops/create.ts'),
-    resolve(repoRoot, 'src/core/ops/delete.ts'),
-    resolve(repoRoot, 'src/core/ops/transform.ts'),
-    resolve(repoRoot, 'src/core/ops/reparent.ts'),
-    resolve(repoRoot, 'src/core/ops/select.ts'),
-    resolve(repoRoot, 'src/core/ops/setText.ts'),
-    resolve(repoRoot, 'src/core/ops/setPath.ts'),
-    resolve(repoRoot, 'src/interactions/actions/registry.tsx'),
-    resolve(repoRoot, 'src/interactions/actions/defaults/index.ts'),
-    resolve(repoRoot, 'src/interactions/gestures/types.ts'),
-    resolve(repoRoot, 'src/core/scene/types.ts'),
+    resolve(repoRoot, 'packages/core/src/canvas/SceneCanvas/useBuiltinShapeTools.tsx'),
+    resolve(repoRoot, 'packages/core/src/core/ops/index.ts'),
+    resolve(repoRoot, 'packages/core/src/core/ops/create.ts'),
+    resolve(repoRoot, 'packages/core/src/core/ops/delete.ts'),
+    resolve(repoRoot, 'packages/core/src/core/ops/transform.ts'),
+    resolve(repoRoot, 'packages/core/src/core/ops/reparent.ts'),
+    resolve(repoRoot, 'packages/core/src/core/ops/select.ts'),
+    resolve(repoRoot, 'packages/core/src/core/ops/setText.ts'),
+    resolve(repoRoot, 'packages/core/src/core/ops/setPath.ts'),
+    resolve(repoRoot, 'packages/core/src/interactions/actions/registry.tsx'),
+    resolve(repoRoot, 'packages/core/src/interactions/actions/defaults/index.ts'),
+    resolve(repoRoot, 'packages/core/src/interactions/gestures/types.ts'),
+    resolve(repoRoot, 'packages/core/src/core/scene/types.ts'),
   ];
 }
 
@@ -79,7 +81,7 @@ function safe<T>(label: string, fn: () => T): T | null {
 const FALLBACK_NODE: SceneNodeSchema = {
   kinds: [],
   variants: [],
-  source: { file: 'src/core/scene/types.ts', line: 1 },
+  source: { file: 'packages/core/src/core/scene/types.ts', line: 1 },
 };
 
 // ----- shared helpers used by per-surface extractors --------------------

@@ -11,6 +11,10 @@ describe('RegistryDetail', () => {
       id: 'rect',
       label: 'useRectTool',
       routes: ['[initial] click => empty', '[initial] drag => empty +shift'],
+      declaredRoutes: [
+        { route: '[initial] click => empty' },
+        { route: '[initial] drag => empty +shift' },
+      ],
       slot: 'registry',
       phases: {
         initial: {

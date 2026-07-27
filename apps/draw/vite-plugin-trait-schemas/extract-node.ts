@@ -1,7 +1,7 @@
 /**
  * Extract the SceneNode discriminated union shape.
  *
- * Reads `src/core/scene/types.ts` and assembles a `SceneNodeSchema`:
+ * Reads `packages/core/src/core/scene/types.ts` and assembles a `SceneNodeSchema`:
  *   - `kinds`: the discriminator values pulled from each variant's `kind`
  *     property string-literal type.
  *   - `variants`: one entry per variant interface (`LeafNode`, `ContainerNode`)
@@ -31,7 +31,7 @@ const UNION_NAME = 'Node';
 export function extractNode(project: Project, repoRoot: string): SceneNodeSchema {
   const sf = sourceFileOrThrow(
     project,
-    resolve(repoRoot, 'src/core/scene/types.ts'),
+    resolve(repoRoot, 'packages/core/src/core/scene/types.ts'),
   );
 
   const base = sf.getInterface(BASE_NAME);
@@ -60,7 +60,7 @@ export function extractNode(project: Project, repoRoot: string): SceneNodeSchema
   const unionAlias = sf.getTypeAlias(UNION_NAME);
   const source = unionAlias
     ? srcRef(unionAlias, repoRoot)
-    : { file: 'src/core/scene/types.ts', line: 1 };
+    : { file: 'packages/core/src/core/scene/types.ts', line: 1 };
 
   return { kinds, variants, source };
 }

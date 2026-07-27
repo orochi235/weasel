@@ -49,24 +49,49 @@ export function callbackSourcePlugin(opts: Options): Plugin {
       let mutated = false;
       const lineOffsets = buildLineOffsets(code);
 
+      const tag = (fn: Node): void => {
+        const range = (fn as unknown as { start?: number; end?: number });
+        if (range.start == null || range.end == null) return;
+        const { line, col } = offsetToLineCol(lineOffsets, range.start);
+        const meta = JSON.stringify({ file: id, line, col });
+        ms.appendLeft(range.start, '/*#__PURE__*/Object.assign(');
+        ms.appendRight(range.end, `,{__source:${meta}})`);
+        mutated = true;
+      };
+
       walk(ast, {
         enter(node) {
-          if (node.type !== 'Property') return;
-          if (node.computed || node.shorthand) return;
-          const v = node.value;
-          if (v.type !== 'FunctionExpression' && v.type !== 'ArrowFunctionExpression') return;
-          // Skip getters/setters/methods — they aren't plain function-valued
-          // properties.
-          if (node.kind !== 'init') return;
-          if ((node as { method?: boolean }).method) return;
-
-          const range = (v as unknown as { start?: number; end?: number });
-          if (range.start == null || range.end == null) return;
-          const { line, col } = offsetToLineCol(lineOffsets, range.start);
-          const meta = JSON.stringify({ file: id, line, col });
-          ms.appendLeft(range.start, '/*#__PURE__*/Object.assign(');
-          ms.appendRight(range.end, `,{__source:${meta}})`);
-          mutated = true;
+          if (node.type === 'Property') {
+            if (node.shorthand) return;
+            const v = node.value;
+            if (v.type !== 'FunctionExpression' && v.type !== 'ArrowFunctionExpression') return;
+            // Skip getters/setters/methods — they aren't plain function-valued
+            // properties.
+            if (node.kind !== 'init') return;
+            if ((node as { method?: boolean }).method) return;
+            // Computed keys are tagged too: route sub-tables key on
+            // `[mods('shift')]`, and skipping those left every modifier
+            // variant in the inspector without a source link.
+            tag(v);
+            return;
+          }
+          // Named handler consts (`const collapseDeferredClick = (ctx) => …`)
+          // referenced from a route table by identifier. Without this the
+          // property rule above sees an Identifier, not a function, and the
+          // route's source column comes up blank — which is most of what
+          // `useSelectTool` does.
+          if (node.type === 'VariableDeclarator') {
+            const init = node.init;
+            if (!init) return;
+            if (init.type !== 'FunctionExpression' && init.type !== 'ArrowFunctionExpression') return;
+            if (node.id.type !== 'Identifier') return;
+            // Capitalized names are React components by convention, and
+            // react-refresh only registers those. Wrapping one in
+            // `Object.assign(...)` hides the declaration from Fast Refresh and
+            // downgrades the module to a full reload — not worth a source link.
+            if (!/^[a-z_$]/.test(node.id.name)) return;
+            tag(init);
+          }
         },
       });
 

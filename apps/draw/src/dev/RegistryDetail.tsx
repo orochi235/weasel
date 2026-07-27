@@ -119,7 +119,7 @@ import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
   ShapeKindEntry, RoutingKindEntry, PropertiesKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
   OpKindEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
-  MetaEntry, CallbackRef, TreeCategoryNode,
+  MetaEntry, CallbackRef, CallbackSource, TreeCategoryNode,
 } from './registryData';
 import { BOOLEAN_BADGE_PROPS, BUNDLE_BADGE_PROPS, CHANNEL_BADGE_PROPS, GESTURE_BADGE_PROPS, KIND_BADGE_PROPS, PHASE_BADGE_PROPS, TOKEN_SETS, type TokenSet } from './badgeTokens';
 import traitSchemas from 'virtual:weasel-trait-schemas';
@@ -322,7 +322,7 @@ function renderEntryBody(
 ) {
   switch (entry.kind) {
     case 'tool':          return <ToolDetail entry={entry} onNavigate={onNavigate} />;
-    case 'action':        return <ActionDetail entry={entry} onNavigate={onNavigate} />;
+    case 'action':        return <ActionDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'bundle':        return <BundleDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'shapeKind':     return <ShapeKindDetail entry={entry} onNavigate={onNavigate} />;
     case 'routingKind':   return <RoutingKindDetail entry={entry} onNavigate={onNavigate} />;
@@ -1093,6 +1093,32 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
   const caps = (Object.entries(entry.capabilities) as [string, boolean][])
     .filter(([, v]) => v)
     .map(([k]) => k);
+
+  // Two bindings can format to the same route string (predicate targets all
+  // render `predicate`), so the row key can't be the route alone.
+  const routeRows = entry.declaredRoutes.map((d, i) => {
+    const parsed = parseRoute(d.route);
+    return {
+      id: `${i}:${d.route}`,
+      phase: parsed.phases.map(formatPhaseAtom).join(', '),
+      gesture: parsed.gesture,
+      arg: parsed.arg ?? '',
+      target: parsed.target ?? '',
+      modifiers: parsed.modifiers,
+      actionId: d.actionId,
+      source: d.source,
+    };
+  });
+
+  // Callbacks already cited by a Routes row would otherwise appear twice —
+  // once in this list and once in the table's `source` column. Keep only the
+  // ones the table can't show: lifecycle members (initScratch / onActivate /
+  // cursor / hitOverride) and any handler whose route didn't resolve.
+  const citedInRoutes = new Set(
+    routeRows.map((r) => r.source && sourceKey(r.source)).filter((k): k is string => k !== undefined),
+  );
+  const unlistedCallbacks = (entry.callbacks ?? []).filter((c) => !citedInRoutes.has(sourceKey(c.source)));
+
   return (
     <div>
       <div className={s.toolHeader}>
@@ -1169,64 +1195,84 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
           </>
         )}
         {match?.path && (<><dt>source</dt><dd><SourceLink match={match} /></dd></>)}
-        {entry.callbacks && entry.callbacks.length > 0 && (
+        {unlistedCallbacks.length > 0 && (
           <>
             <dt>callbacks</dt>
-            <dd><CallbackList callbacks={entry.callbacks} /></dd>
+            <dd><CallbackList callbacks={unlistedCallbacks} /></dd>
           </>
         )}
       </dl>
-      {entry.routes.length > 0 && (
-        <>
-          <h3 className={s.subHeading}>Routes</h3>
+      {/* Rendered even when empty: a tool with no routes (an overlay-only
+          ambient tool like `rotate`) should say so, not silently omit the
+          section and leave the reader guessing whether it failed to load. */}
+      <>
+        <h3 className={s.subHeading}>Routes</h3>
           <DataGrid
-            rows={entry.routes.map((r) => {
-              const parsed = parseRoute(r);
-              return {
-                id: r,
-                phase: parsed.phases.map(formatPhaseAtom).join(', '),
-                gesture: parsed.gesture,
-                arg: parsed.arg ?? '',
-                target: parsed.target ?? '',
-                modifiers: parsed.modifiers,
-                callback: findRouteCallback(r, parsed, entry.callbacks ?? []),
-              };
-            })}
+            rows={routeRows}
             columns={[
-              { id: 'phase', header: 'phase', accessor: (r) => r.phase },
+              {
+                id: 'phase',
+                header: 'phase',
+                accessor: (r) => r.phase,
+                render: (r) => <Wildcardable value={r.phase} />,
+              },
               { id: 'gesture', header: 'gesture', accessor: (r) => r.gesture },
-              { id: 'arg', header: 'arg', accessor: (r) => r.arg },
+              {
+                id: 'arg',
+                header: 'arg',
+                accessor: (r) => r.arg,
+                render: (r) => r.arg ? <code className={s.tag}>{r.arg}</code> : <Absent />,
+              },
               {
                 id: 'target',
                 header: 'target',
                 accessor: (r) => r.target,
-                render: (r) => r.target
-                  ? <EntryLink kind="routeTarget" id={r.target} onNavigate={onNavigate} />
-                  : null,
+                // `*` is the grammar's "any target", not a nameable target —
+                // linking it sends the reader to a catalog entry that just
+                // re-lists everything. Render it as prose instead.
+                render: (r) => r.target === '*'
+                  ? <Wildcardable value="*" />
+                  : r.target
+                    ? <EntryLink kind="routeTarget" id={r.target} onNavigate={onNavigate} />
+                    : <Absent />,
               },
               {
                 id: 'modifiers',
                 header: 'modifiers',
                 sortable: false,
                 render: (r) => (
-                  <span>
-                    {Object.entries(r.modifiers).map(([name, req]) => (
-                      <code key={name} className={s.tag}>{(req === 'required' ? '+' : '?') + name}</code>
-                    ))}
-                  </span>
+                  Object.keys(r.modifiers).length === 0
+                    ? <Absent />
+                    : (
+                      <span>
+                        {Object.entries(r.modifiers).map(([name, req]) => (
+                          <code key={name} className={s.tag}>{(req === 'required' ? '+' : '?') + name}</code>
+                        ))}
+                      </span>
+                    )
                 ),
               },
               {
                 id: 'action',
                 header: 'action',
+                accessor: (r) => r.actionId ?? '',
+                render: (r) => r.actionId
+                  ? <EntryLink kind="action" id={r.actionId} onNavigate={onNavigate} />
+                  : <Absent title="Handled inline by an ActionFn on the tool's phase table — no registered Action to link." />,
+              },
+              {
+                id: 'source',
+                header: 'source',
                 sortable: false,
-                render: (r) => r.callback ? <CallbackSourceLink callback={r.callback} /> : null,
+                render: (r) => r.source
+                  ? <SourceRefLink source={r.source} />
+                  : <Absent title="No source location — the dev callback-source plugin didn't tag this handler." />,
               },
             ]}
-            empty="—"
+            empty="This tool declares no routes."
           />
-        </>
-      )}
+      </>
+
       {match?.jsdoc && <Jsdoc text={match.jsdoc} />}
     </div>
   );
@@ -1238,23 +1284,19 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
  *  blank. */
 function CallbackList({ callbacks }: { callbacks: readonly CallbackRef[] }) {
   if (callbacks.length === 0) return null;
-  const root = WEASEL_REPO_ROOT;
   return (
     <ul className={s.callbackList}>
-      {callbacks.map((cb) => {
-        const rel = root && cb.source.file.startsWith(root + '/')
-          ? cb.source.file.slice(root.length + 1)
-          : cb.source.file;
-        const href = `vscode://file/${cb.source.file}:${cb.source.line}:${cb.source.col + 1}`;
-        return (
-          <li key={`${cb.label}@${cb.source.file}:${cb.source.line}`}>
-            <code className={s.tag}>{cb.label}</code>
-            <a className={s.callbackLink} href={href}>
-              {rel}:{cb.source.line}
-            </a>
-          </li>
-        );
-      })}
+      {callbacks.map((cb) => (
+        <li key={`${cb.label}@${sourceKey(cb.source)}`}>
+          <code className={s.tag}>{cb.label}</code>
+          <a
+            className={s.callbackLink}
+            href={`vscode://file/${cb.source.file}:${cb.source.line}:${cb.source.col + 1}`}
+          >
+            {relSourcePath(cb.source)}:{cb.source.line}
+          </a>
+        </li>
+      ))}
     </ul>
   );
 }
@@ -1263,60 +1305,52 @@ declare const __WEASEL_REPO_ROOT__: string | undefined;
 const WEASEL_REPO_ROOT: string | undefined =
   typeof __WEASEL_REPO_ROOT__ === 'string' ? __WEASEL_REPO_ROOT__ : undefined;
 
-/** Inline source-link cell for the Tool routes DataGrid's `action` column.
- *  Renders a `vscode://file/...` anchor at the callback's source location,
- *  with `path:line` text trimmed to a repo-relative form when possible. */
-function CallbackSourceLink({ callback }: { callback: CallbackRef }) {
-  const root = WEASEL_REPO_ROOT;
-  const rel = root && callback.source.file.startsWith(root + '/')
-    ? callback.source.file.slice(root.length + 1)
-    : callback.source.file;
-  const href = `vscode://file/${callback.source.file}:${callback.source.line}:${callback.source.col + 1}`;
-  return (
-    <a className={s.callbackLink} href={href}>
-      {rel}:{callback.source.line}
-    </a>
-  );
+/** A grid cell with genuinely no value — an em-dash in muted type rather
+ *  than blank space, so "this route has no modifiers" reads differently from
+ *  "the inspector failed to fill this in". `title` explains *why* on hover. */
+function Absent({ title }: { title?: string }) {
+  return <span className={s.absentCell} title={title}>—</span>;
 }
 
-/** Given a parsed route and a tool's `callbacks` list (populated by the
- *  Vite source-location plugin), return the callback whose label matches
- *  the route's coordinates. Mirrors the label-format `collectPhaseCallbacks`
- *  uses in `registryProbe.tsx` so a route round-trips to its handler.
- *  Returns `null` when no match (e.g. the dev plugin didn't tag this fn). */
-function findRouteCallback(
-  routeString: string,
-  parsed: { phases: readonly { phase: string }[]; gesture: GestureName; target: string | undefined; arg: string | undefined; modifiers: ParsedModifiers },
-  callbacks: readonly CallbackRef[],
-): CallbackRef | null {
-  // Binding-sourced rows: the probe attaches a synthetic CallbackRef whose
-  // `label` is the formatted route string itself, pointing at the owning
-  // action's handler source. Match that first so binding routes get a
-  // citation; the legacy phase-keyed probes below are for phase-table
-  // routes whose handlers the Vite plugin tagged directly.
-  const exact = callbacks.find((c) => c.label === routeString);
-  if (exact) return exact;
-  const phase = parsed.phases[0]?.phase;
-  if (!phase) return null;
-  const g = parsed.gesture;
-  const candidates: string[] = [];
-  if (g === 'wheel') {
-    candidates.push(`${phase}.wheel`);
-  } else if (g === 'keyDown' || g === 'keyUp') {
-    if (parsed.arg) candidates.push(`${phase}.${g}.${parsed.arg}`);
-  } else if (g === 'click' || g === 'pointerDown' || g === 'dblTap' || g === 'drag') {
-    const target = parsed.target ?? '*';
-    const modKey = canonicalModifiers(parsed.modifiers);
-    if (modKey) candidates.push(`${phase}.${g}.${target}:${modKey}`);
-    candidates.push(`${phase}.${g}.${target}`);
-    // Bare drag function lives at `${phase}.drag` with no target/mod suffix.
-    if (g === 'drag') candidates.push(`${phase}.drag`);
-  }
-  for (const label of candidates) {
-    const hit = callbacks.find((c) => c.label === label);
-    if (hit) return hit;
-  }
-  return null;
+/** Route fields whose `*` means "any" rather than a literal token. Rendered
+ *  as the word so a column of asterisks doesn't read as missing data. */
+function Wildcardable({ value }: { value: string }) {
+  if (value !== '*') return <>{value}</>;
+  return <span className={s.wildcardCell} title="matches any value">any</span>;
+}
+
+/** Stable identity for a tagged source location — used to tell which
+ *  callbacks a route table already cites. */
+function sourceKey(source: CallbackSource): string {
+  return `${source.file}:${source.line}:${source.col}`;
+}
+
+/** Repo-relative form of a tagged source path, when the repo root is known
+ *  (Vite `define`; absent in test environments). */
+function relSourcePath(source: CallbackSource): string {
+  const root = WEASEL_REPO_ROOT;
+  return root && source.file.startsWith(root + '/')
+    ? source.file.slice(root.length + 1)
+    : source.file;
+}
+
+/** Inline source-link cell for the Tool routes DataGrid's `source` column.
+ *  Renders a `vscode://file/...` anchor at the handler's source location.
+ *  Shows only `basename:line` — the full repo-relative path goes in the
+ *  tooltip, since a column of identical directory prefixes crowds out the
+ *  route fields that actually vary row to row. */
+function SourceRefLink({ source }: { source: CallbackSource }) {
+  const rel = relSourcePath(source);
+  const base = rel.slice(rel.lastIndexOf('/') + 1);
+  return (
+    <a
+      className={s.callbackLink}
+      href={`vscode://file/${source.file}:${source.line}:${source.col + 1}`}
+      title={`${rel}:${source.line}`}
+    >
+      {base}:{source.line}
+    </a>
+  );
 }
 
 /** Render a `findSourceMatch` result as a `vscode://file/...` link with
@@ -1355,10 +1389,23 @@ function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
   );
 }
 
-function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: Props['onNavigate'] }) {
+function ActionDetail({ entry, tools, onNavigate }: {
+  entry: ActionEntry;
+  tools: readonly ToolEntry[];
+  onNavigate: Props['onNavigate'];
+}) {
   const match = findSourceMatch(entry.id);
   const { paramNames, rows: paramRows } = summarizeActionParams(entry.defaultBinding);
   const hasParams = paramNames.length > 0 || paramRows.some((r) => r.params !== null);
+
+  // The reverse of the tool detail's `action` column: which tool gestures
+  // dispatch here. Without it, following a route into an action is a one-way
+  // trip — the action page never names its callers.
+  const routedBy = tools.flatMap((t) =>
+    t.declaredRoutes
+      .filter((d) => d.actionId === entry.id)
+      .map((d, i) => ({ id: `${t.id}:${i}:${d.route}`, toolId: t.id, route: d.route })),
+  );
   return (
     <div>
       <div className={s.toolHeader}>
@@ -1440,6 +1487,29 @@ function ActionDetail({ entry, onNavigate }: { entry: ActionEntry; onNavigate: P
               },
             ]}
             empty="No bindings."
+          />
+        </>
+      )}
+      {routedBy.length > 0 && (
+        <>
+          <h3 className={s.subHeading}>Routed by</h3>
+          <DataGrid
+            rows={routedBy}
+            columns={[
+              {
+                id: 'toolId',
+                header: 'tool',
+                accessor: (r) => r.toolId,
+                render: (r) => <EntryLink kind="tool" id={r.toolId} onNavigate={onNavigate} />,
+              },
+              {
+                id: 'route',
+                header: 'route',
+                accessor: (r) => r.route,
+                render: (r) => <RouteBadge route={r.route} />,
+              },
+            ]}
+            empty="—"
           />
         </>
       )}
