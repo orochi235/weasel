@@ -235,7 +235,8 @@ explicitly. See [extending.md](./extending.md) for writing one.
 
 Built-in behaviors: `snap(gridSnapStrategy(...))`, `snapToContainer(...)`,
 `snapBackOrDelete(...)` for move; `snapToGrid`, `clampMinSize` for resize;
-`selectFromMarquee()` for area-select; `cloneByAltDrag()` for clone.
+`cloneByAltDrag()` for clone. Marquee area-select is unconditional — it is
+`areaSelectAction`'s built-in behavior, not an opt-in one.
 
 ## Action
 

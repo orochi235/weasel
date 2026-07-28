@@ -105,7 +105,7 @@ The vocabulary an app developer uses to wire up the kit.
 ### Tool
 
 A `Tool<TScratch>` record that encapsulates one interaction mode. It declares
-channel handlers (`pointer`, `drag`, `keyboard`, `wheel`, `dblTap`), a keybinding,
+channel handlers (`pointer`, `drag`, `keyboard`, `wheel`), a keybinding,
 an optional hotkey-slot trigger, and a `cursor`. The active tool receives pointer
 and keyboard events routed from the canvas by the [Tool registry](#tool-registry).
 Distinct from [Gesture hooks](#gesture) in that a Tool is a stateful mode (the user
@@ -188,9 +188,10 @@ so scrubs of a property slider land as one undo step. See `packages/core/src/cor
 
 The *form* of user input. A primitive that consumes pointer / keyboard events and
 emits world-space data. Examples: `dragRect` (rectangular drag → bounds),
-`dragRadial` (radial drag → center + radius), `lasso` (free-form polygon),
-`usePointerGestures` (the underlying pointer-event normalizer). Plain clicks and
-keystrokes are gestures too, just trivial ones.
+`dragRadial` (radial drag → center + radius), `lasso` (free-form polygon).
+Normalization of raw DOM events into the kit's `InputEvent` union is
+`useGestureDispatcher`'s job. Plain clicks and keystrokes are gestures too, just
+trivial ones.
 
 OS file drop and clipboard paste are gestures as well (`DropSpec` / `PasteSpec`,
 filtered by a MIME-glob `types` field) — external content *arriving* is a form of
@@ -205,12 +206,11 @@ same action (`delete`) can be invoked by different gestures (a keystroke, a butt
 click, a swipe). See [Interaction](#interaction) for the composition.
 
 Source layout: `packages/core/src/interactions/gestures/` holds the input primitives — per-primitive
-subdirectories `dragGesture/`, `dragRect/`, `dragRadial/`, `usePointerGestures/`, plus
-the shared `shared/` snap helpers and `types.ts` carrying the cross-system base types
-(`ModifierState`, `GestureContext`, `ActionBehavior`, etc.). Drag-based actions
-(`move/`, `resize/`, `rotate/`, `clone/`, `area-select/`, `lasso-select/`,
-`edit-anchors/`, `insert/`) live alongside the one-shot actions under
-`packages/core/src/interactions/actions/`.
+subdirectories `dragGesture/`, `dragRect/`, `dragRadial/`, plus the shared `shared/`
+snap helpers and `types.ts` carrying the cross-system base types (`ModifierState`,
+`GestureContext`, `ActionBehavior`, etc.). Drag-based actions (`move/`, `resize/`,
+`rotate/`, `clone/`, `lasso-select/`, `insert/`) live alongside the one-shot actions
+under `packages/core/src/interactions/actions/`.
 
 ### Action
 
@@ -229,10 +229,13 @@ invoke. Each one either produces an [Op](#op) batch (for undoable mutations like
 Source layout reflects this: both one-shot actions (`delete`, `align`, `escape`, …)
 and drag-based actions (`move`, `resize`, `rotate`, `insert`, `area-select`, …) live
 under `packages/core/src/interactions/actions/`. All default actions are registered as descriptors
-with `defaultBinding` and dispatched through the action registry. The remaining gap: drag-based action descriptors
-(`resize`, `rotate`, `areaSelect`, `insert`, `clone`) have stub invokers — their
-real behavior still flows through `useResize`, `useRotate`, etc. via `useSelectTool`'s
-route tables; full invoker implementations are tracked in `docs/TODO.md`.
+with `defaultBinding` and dispatched through the action registry, and the drag-based
+descriptors (`resize`, `rotate`, `areaSelect`, `insert`, `clone`, `editAnchors`) now
+carry real invokers — the `useResize` / `useRotate` / `useMove` / `useAreaSelect` /
+`useInsert` / `useClone` / `useEditAnchors` gesture hooks they used to delegate to
+have been deleted. What remains of the split is the phase-table route grammar; see
+§4b of the 2026-07-27 inspector handoff and the layer-audit handoff for the
+retirement plan.
 
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults
@@ -275,8 +278,9 @@ which do not exist yet. See `packages/core/src/interactions/gestures/types.ts` f
 
 `SnapStrategy<TPose>` — a pluggable point-snap policy with one method:
 `snap(pose, ctx): TPose | null`. Returns the snapped pose or `null` to skip.
-Passed to gesture hooks (e.g. `useMove({ snap: gridSnapStrategy(20) })`) or
-via the `ToolCtx` snap field to tools. Built-in: `gridSnapStrategy(spacing)`
+Passed through the action layer (e.g. the `resizePolicy` dep's `pointSnap`) or
+via the `ToolCtx` snap field to tools. World-space point snapping for insertion
+is the `snap` dep — see `SnapDep` in `interactions/actions/depSchema.ts`. Built-in: `gridSnapStrategy(spacing)`
 snaps the pose origin to the nearest grid multiple; `OriginProjection` adapts
 non-rect poses (e.g. `Path`) so `gridSnapStrategy` can read and write the
 correct origin. See `packages/core/src/interactions/gestures/shared/strategies/grid.ts`.
@@ -286,7 +290,7 @@ correct origin. See `packages/core/src/interactions/gestures/shared/strategies/g
 `LayoutStrategy<TPose>` — a pluggable container-layout policy. Implements
 `getChildPositions`, `getDropTargets`, `reflowFor`, `commitDrop`, `snap`, and
 an optional `contains` predicate. When a container in the scene exposes a layout
-strategy via `adapter.getLayout(containerId)`, `useMove` runs a layout pass on
+strategy via the `layout` dep, `moveAction` runs a layout pass on
 drag: reflows siblings live and calls `commitDrop` on release. Built-in strategies:
 `freeform` (absolute positioning), `tileGrid` (row/column grid), `snapPoint`
 (named anchor positions). See `packages/core/src/layout/types.ts` and `packages/core/src/layout/strategies/`.
@@ -419,13 +423,16 @@ they fit.
   `packages/core/src/features/`) that most editor-style apps will pull in.
 - **Mid-layer** (depend on foundation): `groups` (scene + selection), `grid`
   (viewport), `focus` (nothing internal), `paths`, `patterns`, `text`.
-- **Gestures** (depend on foundation + adapter contracts): `useMove`, `useResize`,
-  `useRotate`, `useAreaSelect`, `useInsert`, `useClone`, `useDragRect`.
+- **Gestures** (depend on foundation + adapter contracts): `useDragRect`,
+  `useDragRadial`, `useDragGesture` — the spatial input primitives. The
+  per-action gesture hooks (`useMove`, `useResize`, `useRotate`, `useAreaSelect`,
+  `useInsert`, `useClone`, `useEditAnchors`) are gone; their behavior lives in
+  the action descriptors under `interactions/actions/`.
 - **Actions** (depend on selection + scene): `useDuplicate`, `useDelete`,
   `useNudge`, `useReorder`, `useSelectAll`, `useEscape`, plus the
   [Actions Registry](#action) defaults.
-- **Tools** (depend on gestures + actions): `useSelectTool`, `useInsertTool`,
-  `useHandTool`, `useUserPenTool`, the viewport tools.
+- **Tools** (depend on gestures + actions): `useSelectTool`, `useRectTool` and
+  the other shape tools, `useHandTool`, `usePenTool`, the viewport tools.
 - **Top-level** (depends on most things): `<Canvas>`, `<SceneCanvas>`.
 
 This order is not enforced at runtime; TypeScript module imports are the actual
@@ -474,7 +481,7 @@ See `packages/core/src/interactions/gestures/types.ts:108` (`ResizePose`, `Rotat
 the kit's rect-driven machinery. Required methods: `getBounds(pose) → ResizePose`
 (AABB), `remapBounds(pose, src, dst) → TPose` (affine remap on resize or group
 scale). Optional: `translate`, `intersectsRect`, `lerp`, `getRotation`. Used by
-`useResize`, area-select, snap, and animation helpers. Built-ins:
+`resizeAction`, area-select, snap, and animation helpers. Built-ins:
 `RECT_POSE_DESCRIPTOR` (identity for `ResizePose`), `ROTATED_POSE_DESCRIPTOR`,
 `pathPoseDescriptor`. Distinct from [OriginProjection](#snap-strategy) which handles
 snap-point extraction for non-rect poses. See `packages/core/src/interactions/actions/resize/geometry.ts:15`.
@@ -549,26 +556,29 @@ short-circuit on `'rect'` without the full path kernel. See
 
 Vocabulary for pointer-driven interactions.
 
-### Gesture
+### Gesture (spatial input primitives)
 
 A pointer-driven interaction with a `start` / `move` / `end` / `cancel` lifecycle.
-Each gesture is a hook that returns a **controller** (`MoveController`,
-`ResizeController`, `RotateController`, `InsertController`, `AreaSelectController`)
-whose `overlay` field holds live in-flight state for rendering ghosts and chrome.
-Gesture hooks: `useMove`, `useResize`, `useRotate`, `useInsert`, `useAreaSelect`,
-`useClone`, `useDragRect`, `useDragGesture`, `useEditAnchors`. Distinct from
-[Actions](#action) which are one-shot and have no drag phase.
+The surviving primitives are `useDragRect` (drag → bounds), `useDragRadial`
+(drag → center + radius), and `useDragGesture`. They are *input* primitives: a
+tool decides what to do with the geometry they emit.
+
+The per-action gesture hooks that used to live here (`useMove`, `useResize`,
+`useRotate`, `useInsert`, `useAreaSelect`, `useClone`, `useEditAnchors`) and
+their controller objects are **deleted**. Ongoing behavior is now an
+[Action](#action) descriptor with an `ongoing` invoker returning an
+`OngoingHandle`.
 
 ### Gesture overlay
 
-The live state a gesture controller exposes during an active gesture. Consumed by
-overlay layers to render in-flight chrome (move ghost, resize handles, insert
-preview, marquee). Shape varies per gesture: `MoveOverlay` (dragged ids, live poses,
-snap target), `ResizeOverlay` (id, current/target pose, anchor), `RotateOverlay`,
-`InsertOverlay`, `AreaSelectOverlay`. Post-Tool-primitive migration the overlay is
-surfaced through the active `Tool`'s `previewPose` / `previewBounds` / `previewIds`
-so `<Canvas>` can compose it without knowing which gesture hook is internally active.
-See `packages/core/src/interactions/gestures/types.ts`.
+The live state an in-flight ongoing action exposes. Consumed by overlay layers
+to render in-flight chrome. Two distinct surfaces, deliberately separate:
+
+- `OngoingHandle.overlay()` → dispatcher-authored chrome (marquee, lasso
+  polyline, insert preview), painted by `useDispatcherOverlayLayer`.
+- `OngoingHandle.previewIds` / `previewPose` / `previewData` → displaced
+  scene-node silhouettes, painted by `usePreviewGhostLayer` through the scene
+  slot's own `drawOne`.
 
 ### ToolCtx / GestureContext
 
@@ -580,18 +590,15 @@ Two distinct context shapes that appear at different layers:
   tool's per-gesture mutable store). See `packages/core/src/tools/types.ts:28`.
 
 - **`GestureContext<TPose>`** — the per-frame context passed to
-  [Behavior](#behavior) methods inside gesture hooks. Carries `draggedIds`,
-  `origin`, `current` (live pose map), `snap`, `modifiers`, `pointer`, `adapter`
-  (typed as `MoveAdapter`), and `scratch` (per-gesture key/value store). More
-  gesture-specific than `ToolCtx`. See `packages/core/src/interactions/gestures/types.ts:26`.
+  [Behavior](#behavior) methods. Carries `draggedIds`, `origin`, `current` (live
+  pose map), `snap`, `modifiers`, `pointer`, `adapter` (typed as `MoveAdapter`),
+  and `scratch` (per-gesture key/value store). More gesture-specific than
+  `ToolCtx`. See `packages/core/src/interactions/gestures/types.ts:26`.
 
-### Pointer gestures (`usePointerGestures`)
-
-`usePointerGestures` — a lower-level compositor that wires `useMove`, `useResize`,
-`useRotate`, `useInsert`, and `useAreaSelect` controllers into a single set of
-`onPointerDown/Move/Up/Cancel` React handlers. This is the pre-Tool-primitive
-entry point; most new code uses `useTools` + `useSelectTool` / `useInsertTool`
-instead. See `packages/core/src/interactions/usePointerGestures.ts`.
+- **`InvocationCtx`** — the per-invocation context the dispatcher hands to an
+  Action invoker: `world`, `screen`, `modifiers`, `deps`, and gesture-kind
+  fields (`drag`, `wheel`, `multiTouch`, `key`). This is the one new code sees.
+  See `packages/core/src/interactions/actions/invoker.ts`.
 
 ---
 
