@@ -138,11 +138,6 @@ function AnimationDemoInner() {
         }),
       ],
     },
-    drawGhost: (card, pose): DrawCommand[] => card == null ? [] : [{
-      kind: 'path',
-      path: { kind: 'rect', x: pose.x, y: pose.y, width: pose.width, height: pose.height },
-      fill: { color: (card as unknown as Card).color },
-    }],
   });
   const tools = useTools({ active: 'select', registry: { select } });
 

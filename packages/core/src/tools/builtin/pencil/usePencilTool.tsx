@@ -1,16 +1,7 @@
-import { useMemo, useReducer, useRef } from 'react';
+import { useMemo } from 'react';
 import { defineTool } from '../../routing';
 import { PencilIcon } from '../../../icons';
-import { PathBuilder } from 'features/paths/builder';
-import { viewToTransform, type View } from 'core/viewport/view';
-import { worldToScreen } from 'core/viewport/viewTransform';
-import type { RenderLayer } from 'core/layers/render';
-import type { DrawCommand } from '../../../renderer';
 import type { Tool } from '../../types';
-import type { PolygonPath } from 'features/paths/types';
-import { GHOST_STROKE } from '../../../util/paint';
-
-const GHOST_LINE_WIDTH = 1;
 
 /** A single pointer sample captured during a freehand pencil stroke.
  *
@@ -20,102 +11,35 @@ const GHOST_LINE_WIDTH = 1;
  *  `pressure: 0.5` while a button is held, `0` otherwise (per the Pointer
  *  Events spec), so a consumer that wants stylus-only modulation should
  *  gate on `pointerType` from the originating event — the kit exposes
- *  `usePointerStylus()` for that. */
+ *  `usePointerStylus()` for that.
+ *
+ *  The dispatcher accumulates these on the drag trail and hands the whole
+ *  array to `insertAction`, which forwards it as the `pencil` insert
+ *  extras' `samples`. A consumer that wants pressure-driven
+ *  `Stroke.vertexWidths` reads it off the samples in its own `insert` dep
+ *  (`useDepSource('insert', …)`) — see `apps/site/demos/VertexWidthsDemo.tsx`.
+ */
 export interface PencilPoint {
   x: number;
   y: number;
-  /** 0..1. Optional for backward compat — older `create` factories that
-   *  treat samples as `{x,y}` keep working. */
+  /** 0..1. Absent when the originating event carried no pressure. */
   pressure?: number;
   /** Degrees, ±90. Zero for mouse/touch. */
   tiltX?: number;
   /** Degrees, ±90. Zero for mouse/touch. */
   tiltY?: number;
-  /** Per-sample stroke width, populated when the tool's
-   *  `pressureToWidth` option is set. Consumers can read these widths to
-   *  build a parallel `vertexWidths` array for a tapered stroke. */
-  width?: number;
-}
-
-export interface UsePencilToolOptions<TNode extends { id: string }> {
-  create: (path: PolygonPath, opts: { closed: boolean; widths?: number[] }) => TNode | null;
-  label?: string;
-  tolerance?: number;
-  closeThreshold?: number;
-  /** Optional callback that maps a captured sample to a stroke width.
-   *  When provided, every PencilPoint gets a `width` field and the
-   *  consumer's `create` factory also receives `widths`: one width per
-   *  output bezier anchor, ready to drop into `Stroke.vertexWidths`. The
-   *  default `pressureToWidth(p, { minWidth, maxWidth, gamma })` helper
-   *  is a common drop-in. */
-  pressureToWidth?: (sample: PencilPoint) => number;
-}
-
-/** @internal */
-interface PencilScratch {
-  samples: PencilPoint[];
 }
 
 /**
- * Freehand pencil tool. Captures pointer samples through the drag, then
- * runs `schneiderFit` on release to produce a cubic-Bezier path. If the
- * first and last samples are within `closeThreshold` world units, the
- * `create` factory receives `{ closed: true }` so the consumer can close
- * its path.
+ * Freehand pencil tool. The `drag` binding routes to `insertAction`,
+ * which accumulates the pointer trail and commits it as
+ * `{ kind: 'pencil', samples }`. The kit's default `insert` dep runs
+ * `schneiderFit` over the samples to produce a cubic-Bezier path.
  */
-export function usePencilTool<TNode extends { id: string }>(
-  options: UsePencilToolOptions<TNode>,
-): Tool<PencilScratch | null> {
-  const {
-    create,
-    label = 'Insert pencil path',
-    tolerance = 2.0,
-    closeThreshold = 8.0,
-    pressureToWidth,
-  } = options;
-  const createRef = useRef(create);
-  createRef.current = create;
-  const widthFnRef = useRef(pressureToWidth);
-  widthFnRef.current = pressureToWidth;
-
-  // Live samples for the ghost overlay. The ref is the synchronous read
-  // surface the overlay's draw closure consults; the forceRender bump
-  // triggers a re-render so the layer redraws each move. Scratch carries
-  // the same array by reference so both views agree.
-  const samplesRef = useRef<PencilPoint[] | null>(null);
-  const [, forceRender] = useReducer((n: number) => n + 1, 0);
-  const forceRenderRef = useRef(forceRender);
-  forceRenderRef.current = forceRender;
-
-  const overlay = useMemo<RenderLayer<unknown>>(
-    () => ({
-      id: 'pencil-tool-overlay',
-      label: 'Pencil preview',
-      space: 'screen' as const,
-      draw: (_data: unknown, view: View): DrawCommand[] => {
-        const samples = samplesRef.current;
-        if (!samples || samples.length < 2) return [];
-        const t = viewToTransform(view);
-        const b = new PathBuilder();
-        const [sx0, sy0] = worldToScreen(samples[0].x, samples[0].y, t);
-        b.moveTo(sx0, sy0);
-        for (let i = 1; i < samples.length; i++) {
-          const [sx, sy] = worldToScreen(samples[i].x, samples[i].y, t);
-          b.lineTo(sx, sy);
-        }
-        return [{
-          kind: 'path',
-          path: b.build(),
-          stroke: { paint: { color: GHOST_STROKE }, width: GHOST_LINE_WIDTH },
-        }];
-      },
-    }),
-    [],
-  );
-
+export function usePencilTool(): Tool<null> {
   return useMemo(
     () =>
-      defineTool<PencilScratch>({
+      defineTool<null>({
         id: 'pencil',
         capabilities: ['creates-paths'],
         hookName: 'usePencilTool',
@@ -125,8 +49,6 @@ export function usePencilTool<TNode extends { id: string }>(
           group: 'draw',
           icon: <PencilIcon />,
         },
-        // Declarative binding routes empty-space drags through the
-        // dispatcher + insertAction.
         bindings: [
           {
             spec: { kind: 'drag', target: 'empty' },
@@ -134,11 +56,8 @@ export function usePencilTool<TNode extends { id: string }>(
             opts: { params: { kind: 'pencil' } },
           },
         ],
-        initial: {
-          overlay: () => overlay,
-        },
-      }) as Tool<PencilScratch | null>,
-    [label, tolerance, closeThreshold, overlay],
+        initial: {},
+      }),
+    [],
   );
 }
-

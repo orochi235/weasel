@@ -3,7 +3,6 @@ import {
   SceneCanvas,
   WeaselProvider,
   useSceneAdapter,
-  selectFromMarquee,
   useScene,
   useSelection,
   useSelectTool,
@@ -35,10 +34,8 @@ function MultiSelectDemoInner() {
   // pickEvery / boundsOf default to a rect AABB scan over the adapter —
   // no boilerplate needed for the common rect-pose case.
   const select = useSelectTool(selectAdapter, {
-    getSelection: () => selection.current,
     // Marquee is opt-in at the kit level — restored here because the demo's
     // whole point is multi-selection.
-    areaSelect: { behaviors: [selectFromMarquee()] },
   });
   const tools = useTools({ active: 'select', registry: { select } });
 

@@ -20,12 +20,19 @@
  * delegating to the scene's `add()` with a sensible default data payload for
  * the given `kind`. Override per-consumer for custom node factories.
  *
+ * ## Modifiers and snapping
+ *
+ * Grid snapping comes from the optional `snap` dep, applied to the drag's
+ * start and current point (never to freehand pencil samples). The `line`
+ * kind additionally honors Shift (constrain to 15°) and reads Alt/center as
+ * "mirror the start around the pointer" rather than "grow a symmetric AABB".
+ * All of it resolves in `resolveEndpoints`, which both `overlay()` and
+ * `onEnd()` call — so the live preview and the committed node can't disagree.
+ *
  * ## What this does NOT wire (vs `useInsert`)
  *
- * - `InsertBehavior` pipeline (snap, etc.) — deferred to a later phase.
  * - `pointInsert` fallback for click / sub-threshold drags — not wired; a
  *   sub-threshold drag produces no insert.
- * - Live insert overlay — deferred to Phase 7 overlay surface.
  * - `clickOnly` mode — not applicable to the descriptor model.
  *
  * ## Live preview
@@ -51,9 +58,9 @@
  */
 
 import type { Action } from '../registry';
-import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay } from '../invoker';
+import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay, DragSample } from '../invoker';
 import { resolveParams } from '../invoker';
-import type { InsertDep, InsertExtras } from '../depSchema';
+import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
 import type { SelectionApi } from 'core/selection/useSelection';
 
 /** The kit's built-in insert kinds — those the dispatcher overlay layer
@@ -71,22 +78,37 @@ type KitInsertShape = 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil
 
 interface InsertScratch {
   dep: InsertDep;
+  /** World-space point snapper from the `snap` dep, or identity when the
+   *  dep isn't registered. Applied to the drag's start and current point so
+   *  the live preview and the committed geometry agree. Freehand pencil
+   *  samples are deliberately NOT snapped — a grid-quantized freehand trail
+   *  is a staircase, not a stroke. */
+  snap: (p: { x: number; y: number }) => { x: number; y: number };
   /** The active binding's opts — re-resolved at commit time so thunked
    *  params see the latest tool state (e.g. polygon `sides` after ArrowUp). */
   opts: BindingOpts | undefined;
+  /** RAW (unsnapped) drag endpoints in world space. Snapping and the
+   *  line tool's Shift-constrain are applied together in `resolveEndpoints`
+   *  at read time, so the documented modifier ordering — constrain the
+   *  angle first, THEN align the endpoint to the grid — holds for both the
+   *  live preview and the commit. */
   startX: number;
   startY: number;
   currentX: number;
   currentY: number;
   /** Pointer trail accumulated by the dispatcher in world space. Same array
    *  reference as `ctx.drag.points`; pencil-kind commits read from this. */
-  points: ReadonlyArray<{ x: number; y: number }> | null;
+  points: ReadonlyArray<DragSample> | null;
   /** Live Alt-key state from the most recent pump event. Alt INVERTS the
    *  binding's nominal `originMode` (corner → center and vice versa), so
    *  the user can press / release Alt mid-drag and the preview/commit
    *  flip without needing the dispatcher to re-route to a different
    *  binding. Captured per-onMove from `ctx.modifiers.alt`. */
   altHeld: boolean;
+  /** Live Shift-key state from the most recent pump event. Constrains the
+   *  `line` kind to 15° increments (the modifier the line tool documents).
+   *  Captured per-onMove from `ctx.modifiers.shift`. */
+  shiftHeld: boolean;
   /** Cleared once `onEnd` runs so subsequent `overlay()` calls report no
    *  in-flight preview (mirrors the areaSelect/lasso convention). */
   open: boolean;
@@ -141,6 +163,54 @@ function computeBounds(
   };
 }
 
+/** Constrain `end` to the nearest 15° increment around `start`, preserving
+ *  the drag length. The line tool's documented Shift behavior. */
+function snapTo15Degrees(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+): { x: number; y: number } {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const len = Math.hypot(dx, dy);
+  if (len === 0) return end;
+  const step = Math.PI / 12; // 15°
+  const snapped = Math.round(Math.atan2(dy, dx) / step) * step;
+  return { x: start.x + len * Math.cos(snapped), y: start.y + len * Math.sin(snapped) };
+}
+
+/**
+ * Resolve the effective drag endpoints from the raw ones, applying (in
+ * order): the line tool's Shift-constrain, the `snap` dep, and — for the
+ * `line` kind only — the alt/center reading as "mirror the end around the
+ * start" rather than "grow a symmetric AABB".
+ *
+ * Every geometry consumer (bounds, extras, preview) goes through this, so
+ * the live overlay and the committed node can't disagree.
+ */
+function resolveEndpoints(
+  scratch: InsertScratch,
+  kind: string,
+  mode: 'corner' | 'center',
+): { startX: number; startY: number; currentX: number; currentY: number } {
+  let start = { x: scratch.startX, y: scratch.startY };
+  let current = { x: scratch.currentX, y: scratch.currentY };
+
+  // Constrain on RAW coords so the user's intent (lock the angle) survives,
+  // then align the resulting endpoint to the grid.
+  if (kind === 'line' && scratch.shiftHeld) current = snapTo15Degrees(start, current);
+
+  start = scratch.snap(start);
+  current = scratch.snap(current);
+
+  // A line has no area, so "from center" means the drag is a half-line:
+  // mirror the start to the far side of the pointer.
+  if (kind === 'line' && mode === 'center') {
+    start = { x: start.x - (current.x - start.x), y: start.y - (current.y - start.y) };
+  }
+
+  return { startX: start.x, startY: start.y, currentX: current.x, currentY: current.y };
+}
+
 /** Build a typed `InsertExtras` from the static params + gesture context.
  *  Kit-built-in kinds (line / polygon / star / pencil) read kind-specific
  *  fields; unknown kinds pass the raw params through as `{ kind, ... }`. */
@@ -150,7 +220,7 @@ function buildExtras(
   startY: number,
   currentX: number,
   currentY: number,
-  points: ReadonlyArray<{ x: number; y: number }> | null,
+  points: ReadonlyArray<DragSample> | null,
 ): InsertExtras {
   const kind = ((params?.['kind'] as string | undefined) ?? 'rect');
   switch (kind) {
@@ -216,7 +286,7 @@ function buildExtras(
       // dispatcher's accumulated pointer trail.
       return {
         kind: 'pencil',
-        samples: (params?.['samples'] as ReadonlyArray<{ x: number; y: number }> | undefined)
+        samples: (params?.['samples'] as ReadonlyArray<DragSample> | undefined)
           ?? points
           ?? [],
       };
@@ -246,7 +316,7 @@ export const insertAction: Action & { requires: string[] } = {
   group: 'insert',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'creates-shapes' },
-  requires: ['insert', 'selection'],
+  requires: ['insert', 'selection', 'snap'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -264,8 +334,13 @@ export const insertAction: Action & { requires: string[] } = {
         selection.clear();
       }
 
+      const snapDep = ctx.deps.snap as SnapDep | undefined;
+      const snap = snapDep
+        ? (p: { x: number; y: number }) => snapDep.point(p)
+        : (p: { x: number; y: number }) => p;
       const scratch: InsertScratch = {
         dep,
+        snap,
         opts,
         startX: ctx.world.x,
         startY: ctx.world.y,
@@ -273,6 +348,7 @@ export const insertAction: Action & { requires: string[] } = {
         currentY: ctx.world.y,
         points: ctx.drag?.points ?? null,
         altHeld: ctx.modifiers.alt,
+        shiftHeld: ctx.modifiers.shift,
         open: true,
         userRotation: 0,
       };
@@ -283,6 +359,7 @@ export const insertAction: Action & { requires: string[] } = {
         onMove(moveCtx: InvocationCtx): void {
           scratch.currentX = moveCtx.world.x;
           scratch.currentY = moveCtx.world.y;
+          scratch.shiftHeld = moveCtx.modifiers.shift;
           // Track live Alt state for the corner ⇄ center toggle. Each
           // pointermove carries fresh modifier state from the dispatcher;
           // releasing / pressing Alt mid-drag flips the bounds mode on
@@ -299,30 +376,21 @@ export const insertAction: Action & { requires: string[] } = {
           // Resolve params on every overlay() so thunked params (polygon
           // sides ticking via ArrowUp mid-drag) reflect in the live preview.
           const resolved = resolveParams(scratch.opts?.params);
-          const extras = buildExtras(
-            resolved,
-            scratch.startX,
-            scratch.startY,
-            scratch.currentX,
-            scratch.currentY,
-            scratch.points,
-          );
+          const kind = (resolved?.['kind'] as string | undefined) ?? 'rect';
           // Consumer-defined kinds aren't renderable by the kit overlay —
           // skip the preview rather than emit something half-faithful.
-          if (!KIT_INSERT_KINDS.has(extras.kind)) return null;
+          if (!KIT_INSERT_KINDS.has(kind)) return null;
           const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
+          const pts = resolveEndpoints(scratch, kind, mode);
           const bounds = computeBounds(
-            scratch.startX, scratch.startY,
-            scratch.currentX, scratch.currentY,
-            mode,
+            pts.startX, pts.startY, pts.currentX, pts.currentY, mode,
           );
-          // Re-derive extras with the *effective* mode so polygon/star
+          // Derive extras with the *effective* mode so polygon/star
           // center+radius reflect the live Alt toggle, not the binding's
           // nominal originMode.
           const effectiveExtras = buildExtras(
             { ...(resolved ?? {}), originMode: mode },
-            scratch.startX, scratch.startY,
-            scratch.currentX, scratch.currentY,
+            pts.startX, pts.startY, pts.currentX, pts.currentY,
             scratch.points,
           );
           applyUserRotation(effectiveExtras, scratch.userRotation);
@@ -335,7 +403,7 @@ export const insertAction: Action & { requires: string[] } = {
             // is where the drag started." Useful for radial shapes
             // (no vertex at click) and for center mode (dot marks the
             // growth axis).
-            anchorPoint: { x: scratch.startX, y: scratch.startY },
+            anchorPoint: { x: pts.startX, y: pts.startY },
           };
         },
         onEnd(endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -343,13 +411,15 @@ export const insertAction: Action & { requires: string[] } = {
           if (liveInsertScratch === scratch) liveInsertScratch = null;
           if (reason === 'cancel') return;
 
-          const { dep: d, opts: o, startX, startY, currentX, currentY } = scratch;
+          const { dep: d, opts: o } = scratch;
           const points = endCtx.drag?.points ?? scratch.points;
 
           // Resolve params at commit time so thunked params (polygon
           // `sides` adjusted mid-drag, etc.) see the latest tool state.
           const resolved = resolveParams(o?.params);
+          const kind = (resolved?.['kind'] as string | undefined) ?? 'rect';
           const mode = effectiveOriginMode(resolved?.['originMode'], scratch.altHeld);
+          const { startX, startY, currentX, currentY } = resolveEndpoints(scratch, kind, mode);
           const bounds = computeBounds(startX, startY, currentX, currentY, mode);
           const extras = buildExtras(
             { ...(resolved ?? {}), originMode: mode },
@@ -357,10 +427,16 @@ export const insertAction: Action & { requires: string[] } = {
           );
           applyUserRotation(extras, scratch.userRotation);
 
-          // Sub-threshold drag — no insert. Exception: pencil with a real
-          // sample trail can still produce a meaningful path even when the
-          // start ≈ end (e.g. a closed loop).
-          if ((bounds.width === 0 || bounds.height === 0) && extras.kind !== 'pencil') return;
+          // Sub-threshold drag — no insert. The test is kind-aware because
+          // "zero size" isn't one shape:
+          //  - pencil: a sample trail can be meaningful even when start ≈ end
+          //    (a closed loop), so no guard at all.
+          //  - line: has no area by construction. An axis-aligned line has a
+          //    zero-height (or zero-width) AABB and is perfectly valid — only
+          //    a zero-LENGTH drag is degenerate. (Shift-constrain makes
+          //    axis-aligned the common case, which is how this surfaced.)
+          //  - everything else: a zero extent in either axis is degenerate.
+          if (!isCommittableExtent(bounds, extras.kind)) return;
 
           d.commit(bounds, extras);
         },
@@ -376,6 +452,17 @@ export const insertAction: Action & { requires: string[] } = {
    */
   enabled: () => true as const,
 };
+
+/** Whether a drag produced enough extent to be worth committing, per kind.
+ *  See the call site in `onEnd` for why this isn't one uniform test. */
+function isCommittableExtent(
+  bounds: { width: number; height: number },
+  kind: string,
+): boolean {
+  if (kind === 'pencil') return true;
+  if (kind === 'line') return bounds.width !== 0 || bounds.height !== 0;
+  return bounds.width !== 0 && bounds.height !== 0;
+}
 
 /** Add a user-driven rotation offset onto kinds that carry rotation. Rect
  *  / ellipse / line / pencil don't expose a rotation field on their

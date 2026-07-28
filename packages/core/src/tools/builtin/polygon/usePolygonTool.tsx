@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool, claim } from '../../routing';
+import { defineTool } from '../../routing';
 import { PolygonIcon } from '../../../icons';
 import type { Tool } from '../../types';
-import { useAction, type Action } from 'interactions/actions/registry';
+import type { Action } from 'interactions/actions/registry';
 
 export interface PolygonPoint { x: number; y: number }
 
@@ -52,12 +52,17 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
       invoker: {
         timing: 'immediate' as const,
         run: (_deps, params) => {
-          const deltaY = (params as { deltaY?: number } | undefined)?.deltaY ?? 0;
-          if (deltaY === 0) return;
-          // Wheel "up" (deltaY > 0 under Mac natural scrolling /
-          // page-scrolls-up gesture) adds a side; wheel "down" removes
-          // one. Matches the user's mental model: scroll up = more.
-          sidesRef.current = deltaY > 0
+          const p = params as { deltaY?: number; delta?: number } | undefined;
+          // `delta` comes from the ArrowUp/ArrowDown key bindings; `deltaY`
+          // is the dispatcher-injected wheel delta. Wheel "up" (deltaY > 0
+          // under Mac natural scrolling / page-scrolls-up gesture) adds a
+          // side; wheel "down" removes one. Matches the user's mental model:
+          // scroll up = more.
+          const step = p?.delta ?? (p?.deltaY !== undefined && p.deltaY !== 0
+            ? (p.deltaY > 0 ? 1 : -1)
+            : 0);
+          if (step === 0) return;
+          sidesRef.current = step > 0
             ? Math.min(MAX_SIDES, sidesRef.current + 1)
             : Math.max(MIN_SIDES, sidesRef.current - 1);
           bumpSides();
@@ -66,7 +71,6 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
     }),
     [bumpSides],
   );
-  useAction(adjustSidesAction);
 
   // `TNode` is retained for source-compat with callers that previously
   // threaded a node-record type through; the tool no longer mints nodes
@@ -80,6 +84,9 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
         capabilities: ['creates-shapes'],
         hookName: 'usePolygonTool',
         cursor: 'crosshair',
+        // Registered by <ToolActionsMounter>, inside the ActionsProvider —
+        // see `ToolDef.actions` for why the hook can't register it itself.
+        actions: [adjustSidesAction],
         presentation: {
           label: 'Polygon',
           group: 'shape',
@@ -119,22 +126,28 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
             spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } },
             actionId: 'insert.adjustRotation',
           },
-        ],
-        initial: {
-          keyDown: {
-            ArrowUp: () => {
-              sidesRef.current = Math.min(MAX_SIDES, sidesRef.current + 1);
-              bumpSides();
-              return claim();
-            },
-            ArrowDown: () => {
-              sidesRef.current = Math.max(MIN_SIDES, sidesRef.current - 1);
-              bumpSides();
-              return claim();
-            },
+          // ArrowUp/Down → adjust side count. These were phase-table
+          // `initial.keyDown` routes, which put them on the OTHER dispatch
+          // pipeline: the tool route claimed the key but its `claim()` never
+          // reached the DOM as preventDefault/stopPropagation, so `nudge.up`
+          // matched the same keypress on the interactions dispatcher and
+          // moved the selection at the same time (audit §4 — derived there,
+          // reproduced and now covered by a smoke test). As active-scope
+          // bindings they out-prioritize ambient `nudge.*` and the
+          // dispatcher's first-match-wins settles it.
+          {
+            spec: { kind: 'key', key: 'ArrowUp' },
+            actionId: 'polygon.adjustSides',
+            opts: { params: { delta: 1 } },
           },
-        },
+          {
+            spec: { kind: 'key', key: 'ArrowDown' },
+            actionId: 'polygon.adjustSides',
+            opts: { params: { delta: -1 } },
+          },
+        ],
+        initial: {},
       }),
-    [bumpSides],
+    [bumpSides, adjustSidesAction],
   );
 }

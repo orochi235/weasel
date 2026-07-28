@@ -58,7 +58,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       }),
     );
     expect(result.current.id).toBe('select');
@@ -82,7 +81,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['hit-id'],
-        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -108,7 +106,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(adapter, {
         pickEvery: () => ['F', 'f1'], // parent before child — buggy demo order
-        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -120,7 +117,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -136,7 +132,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -156,7 +151,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -175,7 +169,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -192,7 +185,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['a'],
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -209,7 +201,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['a'],
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -228,7 +219,6 @@ describe('useSelectTool', () => {
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['leaf', 'group-1'],
         pickBest,
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -247,7 +237,6 @@ describe('useSelectTool', () => {
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['anything'],
         pickBest: () => null,
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -265,7 +254,6 @@ describe('useSelectTool', () => {
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['outer', 'sub'],
         pickBest,
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -276,7 +264,6 @@ describe('useSelectTool', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => null,
       }),
     );
     expect(result.current.initScratch!()).toEqual({ kind: 'idle' });
@@ -326,7 +313,6 @@ describe('useSelectTool — drag on an unselected body routes to move', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['hit-id'],
-        boundsOf: () => ({ x: 0, y: 0, width: 40, height: 30 }),
       }),
     );
     return (result.current.bindings ?? []).map((binding) => ({
@@ -349,6 +335,31 @@ describe('useSelectTool — drag on an unselected body routes to move', () => {
     expect(top?.binding.actionId).toBe('move');
     expect(top?.scope).toBe('active');
   });
+
+  // The move binding opts out on anchor / control hits so `editAnchors`'s
+  // ambient binding can win. Both sides now read `isAnchorOrControl` from
+  // `interactions/dispatcher/predicates`, so they cannot drift; these cases
+  // pin the boundary that the old hand-rolled `/^(anchor|controlIn|controlOut):/`
+  // regex got wrong (it had no trailing-index requirement).
+  function downOnAffordance(kind: string) {
+    return { ...downEvent('selected-body'), affordance: { kind } };
+  }
+
+  it.each(['anchor:0', 'anchor:12', 'controlIn:3', 'controlOut:0'])(
+    'move declines a selected-body drag that hit %s',
+    (kind) => {
+      const top = matchSorted(downOnAffordance(kind), selectBindings(), false)[0];
+      expect(top?.binding.actionId).not.toBe('move');
+    },
+  );
+
+  it.each(['anchor', 'anchorage', 'anchor:', 'anchor:1x', 'controlInner:2'])(
+    'move still claims a selected-body drag on the non-anchor kind %s',
+    (kind) => {
+      const top = matchSorted(downOnAffordance(kind), selectBindings(), false)[0];
+      expect(top?.binding.actionId).toBe('move');
+    },
+  );
 });
 
 import { createDebugSink } from '../../../debug/createDebugSink';
@@ -365,7 +376,6 @@ describe('useSelectTool — debug recording', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => ({ x: 0, y: 0, width: 40, height: 30 }),
         debug: sink,
       }),
     );
@@ -386,58 +396,6 @@ describe('useSelectTool — debug recording', () => {
 // layer (`usePreviewGhostLayer`). The `useSelectTool overlay` describe
 // block has been deleted — coverage moved to those layers' tests and to
 // the dispatcher actions' own tests.
-
-describe('useSelectTool — declarative dblTap forwards raw event', () => {
-  it('passes the raw PointerEvent to onDoubleTap', () => {
-    // dblTap was migrated to a declarative route that
-    // reads the event via the new optional ActionFn parameter. Pin the
-    // raw-event-forwarding contract so a regression in the routing
-    // factory (or the ActionFn signature) gets caught.
-    const onDoubleTap = vi.fn();
-    const { result } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => ['hit-id'],
-        boundsOf: () => null,
-        onDoubleTap,
-      }),
-    );
-    const ctx = ctxOver({ target: nodeTarget('hit-id') });
-    const event = pe();
-    result.current.dblTap!.onTap!(event, ctx);
-    expect(onDoubleTap).toHaveBeenCalledTimes(1);
-    const call = onDoubleTap.mock.calls[0]?.[0] as
-      | { worldX: number; worldY: number; ids: string[]; event: PointerEvent }
-      | undefined;
-    expect(call?.event).toBe(event);
-    expect(call?.ids).toEqual(['hit-id']);
-    expect(call?.worldX).toBe(50);
-    expect(call?.worldY).toBe(50);
-  });
-
-  it('claims when onDoubleTap is supplied and passes otherwise', () => {
-    // The route returns claim() so the dispatcher suppresses the
-    // regular onClick on the second tap. Without onDoubleTap there's
-    // nothing to forward, so the route returns none() and the
-    // dispatcher falls through to onClick.
-    const { result: withCb } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => [],
-        boundsOf: () => null,
-        onDoubleTap: vi.fn(),
-      }),
-    );
-    const { result: withoutCb } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => [],
-        boundsOf: () => null,
-      }),
-    );
-    const ctxA = ctxOver({ target: emptyTarget() });
-    const ctxB = ctxOver({ target: emptyTarget() });
-    expect(withCb.current.dblTap!.onTap!(pe(), ctxA)).toBe('claim');
-    expect(withoutCb.current.dblTap!.onTap!(pe(), ctxB)).toBe('pass');
-  });
-});
 
 describe('useSelectTool — declarative routing', () => {
   // useSelectTool's gesture surface is
@@ -461,7 +419,6 @@ describe('useSelectTool — declarative routing', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['hit-id'],
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -484,7 +441,6 @@ describe('useSelectTool — declarative routing', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -509,7 +465,6 @@ describe('useSelectTool — declarative routing', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => ['hit-id'],
-        boundsOf: () => null,
       }),
     );
     result.current.pointer!.onDown!(pe(), ctx);
@@ -531,7 +486,6 @@ describe('useSelectTool — declarative routing', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => null,
       }),
     );
     const cursor = result.current.cursor;
@@ -546,7 +500,6 @@ describe('useSelectTool — declarative routing', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => null,
       }),
     );
     const cursor = result.current.cursor;
@@ -561,7 +514,6 @@ describe('useSelectTool — declarative routing', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => null,
       }),
     );
     const cursor = result.current.cursor;

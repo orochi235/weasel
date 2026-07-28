@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   PathBuilder,
+  polygonFromPoints,
   pressureToWidth,
   usePencilTool,
   useScene,
@@ -10,6 +11,7 @@ import {
   WeaselProvider,
 } from '@weasel-js/core';
 import type {
+  DragSample,
   Path,
   PolygonPath,
   Stroke,
@@ -94,41 +96,53 @@ function StaticTaperPanel() {
   );
 }
 
-// ───── Bottom panel: pencil tool with pressureToWidth wired in. Strokes
-// commit into a `useScene` and each is rendered with its own vertexWidths
-// via the `drawOne` slot.
+// ───── Bottom panel: the pencil tool, with stylus pressure mapped to
+// per-anchor stroke width. The tool itself is a declarative shell — the
+// drag is owned by the dispatcher's `insertAction`, which hands the raw
+// pointer trail (pressure and tilt included) to the `insert` dep. Mapping
+// that trail to geometry is the consumer's call, so the pressure→width
+// curve lives in an `insertNodeFactories` entry rather than on the tool.
 interface PencilNode {
   path: PolygonPath;
   widths?: number[];
 }
 
 function PencilPanel() {
-  const nextIdRef = useRef(1);
-
   const scene = useScene<PencilNode, 'default'>({
     systemLayers: [{ id: 'default' }],
     initial: [],
   });
   const selection = useSelection();
 
-  const pencil = usePencilTool({
-    create: (path, opts) => ({
-      id: `pencil-${nextIdRef.current++}`,
-      kind: 'leaf' as const,
-      layer: 'default' as const,
-      pose: { x: 0, y: 0, width: 0, height: 0 },
-      data: { path, widths: opts.widths } as PencilNode,
-    }),
-    pressureToWidth: (sample) => pressureToWidth(sample.pressure ?? 0, {
-      minWidth: 1,
-      maxWidth: 18,
-      gamma: 1.6,
-    }),
-    tolerance: 1.5,
-    closeThreshold: 12,
-  });
-
+  const pencil = usePencilTool();
   const tools = useTools({ active: 'pencil', registry: { pencil } });
+
+  // One anchor per captured sample (`polygonFromPoints`, not a curve fit)
+  // so `widths[i]` lines up with `path`'s anchor i exactly — which is the
+  // whole point of this panel. A curve-fitting pencil would need to
+  // resample the pressure track onto the fitted anchors.
+  const insertNodeFactories = useMemo(() => ({
+    pencil: (_bounds: unknown, extras: unknown) => {
+      const samples = (extras as { samples?: ReadonlyArray<DragSample> }).samples ?? [];
+      if (samples.length < 2) return null;
+      const widths = samples.map((s) => pressureToWidth(s.pressure ?? 0, {
+        minWidth: 1,
+        maxWidth: 18,
+        gamma: 1.6,
+      }));
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const s of samples) {
+        if (s.x < minX) minX = s.x;
+        if (s.y < minY) minY = s.y;
+        if (s.x > maxX) maxX = s.x;
+        if (s.y > maxY) maxY = s.y;
+      }
+      return {
+        data: { path: polygonFromPoints(samples as { x: number; y: number }[]), widths },
+        pose: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+      };
+    },
+  }), []);
 
   const drawStroke = (node: { data: PencilNode }): DrawCommand[] => [{
     kind: 'path',
@@ -155,6 +169,7 @@ function PencilPanel() {
         scene={scene}
         selection={selection}
         tools={tools}
+        insertNodeFactories={insertNodeFactories}
         layers={{
           scene: { drawOne: drawStroke },
         }}

@@ -59,6 +59,24 @@ export interface AffordanceHit {
   cursor?: string;
 }
 
+/**
+ * One accumulated point on a drag trail: world-space position plus whatever
+ * stylus state the originating `PointerEvent` carried.
+ *
+ * The stylus fields are absent for mouse/touch on browsers that don't report
+ * them, and for synthetic events. Consumers that want pressure-driven output
+ * (e.g. `Stroke.vertexWidths` from a pencil stroke) read them off the samples
+ * their `insert` dep receives — see `apps/site/demos/VertexWidthsDemo.tsx`.
+ */
+export interface DragSample extends Point2 {
+  /** 0..1. Mouse/touch report 0.5 while a button is held, per the spec. */
+  pressure?: number;
+  /** Degrees, ±90. Zero for mouse/touch. */
+  tiltX?: number;
+  /** Degrees, ±90. Zero for mouse/touch. */
+  tiltY?: number;
+}
+
 /** Per-invocation runtime context the dispatcher hands to an Invoker.
  *  Gesture-kind-specific fields (`drag`, `wheel`, `multiTouch`, `key`) are
  *  populated only for matching gesture kinds. */
@@ -84,12 +102,14 @@ export interface InvocationCtx {
     screenDelta?: Point2;
     affordance?: AffordanceHit;
     /**
-     * Full pointermove history for the current drag, in world space.
+     * Full pointermove history for the current drag, in world space, with
+     * per-sample stylus state when the browser reported it.
      * Accumulated by the dispatcher on every `pointermove` pump event.
      * Available only during `onMove` and `onEnd` calls (not on `start`).
-     * Used by `lassoSelectAction` to build its polygon vertex list.
+     * Used by `lassoSelectAction` to build its polygon vertex list and by
+     * `insertAction`'s pencil kind to carry the freehand stroke.
      */
-    points?: Point2[];
+    points?: DragSample[];
   };
   wheel?: { deltaX: number; deltaY: number; deltaZ: number };
   multiTouch?: {

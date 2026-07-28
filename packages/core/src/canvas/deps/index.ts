@@ -11,6 +11,7 @@ export { useLassoSelectDepSource } from './lassoSelect';
 export { useTextEditDepSource } from './textEdit';
 export { useEditAnchorsDepSource } from './editAnchors';
 export { useInsertDepSource, type InsertNodeFactory } from './insert';
+export { useSnapDepSource } from './snap';
 export { useDispatcherDepSource } from './dispatcher';
 export {
   useResizePolicy,

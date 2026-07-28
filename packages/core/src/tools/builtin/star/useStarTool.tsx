@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool, claim } from '../../routing';
+import { defineTool } from '../../routing';
 import { StarIcon } from '../../../icons';
 import type { Tool } from '../../types';
-import { useAction, type Action } from 'interactions/actions/registry';
+import type { Action } from 'interactions/actions/registry';
 
 export interface StarPoint { x: number; y: number }
 
@@ -52,10 +52,15 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
       invoker: {
         timing: 'immediate' as const,
         run: (_deps, params) => {
-          const deltaY = (params as { deltaY?: number } | undefined)?.deltaY ?? 0;
-          if (deltaY === 0) return;
-          // Wheel up (deltaY > 0 under natural scrolling) adds a point.
-          pointsRef.current = deltaY > 0
+          const p = params as { deltaY?: number; delta?: number } | undefined;
+          // `delta` comes from the ArrowUp/ArrowDown key bindings; `deltaY`
+          // from the wheel. Wheel up (deltaY > 0 under natural scrolling)
+          // adds a point.
+          const step = p?.delta ?? (p?.deltaY !== undefined && p.deltaY !== 0
+            ? (p.deltaY > 0 ? 1 : -1)
+            : 0);
+          if (step === 0) return;
+          pointsRef.current = step > 0
             ? Math.min(MAX_POINTS, pointsRef.current + 1)
             : Math.max(MIN_POINTS, pointsRef.current - 1);
           bumpPoints();
@@ -64,7 +69,6 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
     }),
     [bumpPoints],
   );
-  useAction(adjustPointsAction);
 
   void ({} as TNode);
 
@@ -75,6 +79,9 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
         capabilities: ['creates-shapes'],
         hookName: 'useStarTool',
         cursor: 'crosshair',
+        // Registered by <ToolActionsMounter>, inside the ActionsProvider —
+        // see `ToolDef.actions` for why the hook can't register it itself.
+        actions: [adjustPointsAction],
         presentation: {
           label: 'Star',
           group: 'shape',
@@ -102,22 +109,23 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
             spec: { kind: 'wheel', phase: 'engaged', mods: { shift: true } },
             actionId: 'insert.adjustRotation',
           },
-        ],
-        initial: {
-          keyDown: {
-            ArrowUp: () => {
-              pointsRef.current = Math.min(MAX_POINTS, pointsRef.current + 1);
-              bumpPoints();
-              return claim();
-            },
-            ArrowDown: () => {
-              pointsRef.current = Math.max(MIN_POINTS, pointsRef.current - 1);
-              bumpPoints();
-              return claim();
-            },
+          // ArrowUp/Down → adjust point count. Ported off the phase table for
+          // the same reason as polygon's: as an `initial.keyDown` route the
+          // key was claimed on the tool pipeline while `nudge.*` matched the
+          // same press on the interactions dispatcher, so both fired.
+          {
+            spec: { kind: 'key', key: 'ArrowUp' },
+            actionId: 'star.adjustPoints',
+            opts: { params: { delta: 1 } },
           },
-        },
+          {
+            spec: { kind: 'key', key: 'ArrowDown' },
+            actionId: 'star.adjustPoints',
+            opts: { params: { delta: -1 } },
+          },
+        ],
+        initial: {},
       }),
-    [bumpPoints],
+    [bumpPoints, adjustPointsAction],
   );
 }

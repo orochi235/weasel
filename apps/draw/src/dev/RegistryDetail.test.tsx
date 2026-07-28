@@ -19,7 +19,7 @@ describe('RegistryDetail', () => {
       phases: {
         initial: {
           gestures: {
-            click: true, pointerDown: false, dblTap: false, drag: true,
+            click: true, pointerDown: false, drag: true,
             wheel: false, keyDown: false, keyUp: false,
           },
           outputs: { cursor: true, overlay: false, claimsAll: false },

@@ -13,9 +13,6 @@ import {
   asNodeId,
   boundsOfPath,
   DEFAULT_PALETTE,
-  ellipsePath,
-  linePath,
-  rectPath,
   useEllipseTool,
   useLassoTool,
   useLineTool,
@@ -36,10 +33,13 @@ import type { BuiltinShapeToolId } from './shapeKinds';
 export interface BuiltinToolOptions {
   lasso?: { mode?: LassoHitMode };
   /** Snap world-space points to the active grid (or any other snap target).
-   *  Applied by the rect / ellipse / line tools to every coord they ingest,
-   *  so both the live overlay and the committed geometry use snapped
-   *  values. polygon / star / pencil / text go through the dispatcher's
-   *  `insertAction` descriptor, which doesn't yet honor this hook. */
+   *
+   *  Registered as the `snap` dep, which `insertAction` applies to the
+   *  drag start and current point — so the live preview and the committed
+   *  geometry agree — and which the pen tool reads for its own anchor
+   *  placement. Covers every drag-to-insert tool (rect / ellipse / line /
+   *  polygon / star / text); freehand pencil samples are deliberately left
+   *  unsnapped. */
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
 }
 
@@ -98,64 +98,23 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
   type LeafNode = SceneNode<TData, TLayer, TPose> & { id: NodeId };
 
   const snapPoint = options?.snapPoint;
-  const rect = useRectTool<LeafNode>({
-    snapPoint,
-    create: (b) => makeLeaf(freshId('rc'),
-      { x: b.x, y: b.y, width: b.width, height: b.height },
-      // geometry-in-local-frame: pose carries position, path is at origin (#13)
-      { path: rectPath(0, 0, b.width, b.height), fill: nextFill() }) as LeafNode,
-  });
-  const ellipse = useEllipseTool<LeafNode>({
-    snapPoint,
-    create: (b) => makeLeaf(freshId('el'),
-      { x: b.x, y: b.y, width: b.width, height: b.height },
-      { path: ellipsePath(b), fill: nextFill() }) as LeafNode,
-  });
-  const line = useLineTool<LeafNode>({
-    snapPoint,
-    create: (a, b) => makeLeaf(freshId('ln'), {
-      x: Math.min(a.x, b.x),
-      y: Math.min(a.y, b.y),
-      width: Math.abs(b.x - a.x) || 1,
-      height: Math.abs(b.y - a.y) || 1,
-    }, {
-      path: linePath(a, b),
-      fill: nextFill(),
-      stroke: nextFill(),
-      strokeWidth: 2,
-    }) as LeafNode,
-  });
-  // Polygon and star are minted by `useInsertDepSource` (the kit's
-  // `insert` dep). Tool-side `create` callbacks were removed when the
-  // dispatcher took over the drag — consumers wanting custom node
-  // factories override the `insert` dep, not the tool.
+  // Every drag-to-insert tool is a declarative shell: the drag is owned by
+  // the dispatcher's `insertAction` and the node is minted by the `insert`
+  // dep (`useInsertDepSource`). Tool-side `create` factories were removed
+  // when the dispatcher took over — consumers wanting custom node
+  // factories override the dep, not the tool.
+  const rect = useRectTool();
+  const ellipse = useEllipseTool();
+  const line = useLineTool();
   const polygon = usePolygonTool();
   const star = useStarTool();
-  const pencil = usePencilTool<LeafNode>({
-    create: (path: PolygonPath) => {
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      for (let i = 0; i < path.coords.length; i += 2) {
-        const px = path.coords[i], py = path.coords[i + 1];
-        if (px < minX) minX = px; if (px > maxX) maxX = px;
-        if (py < minY) minY = py; if (py > maxY) maxY = py;
-      }
-      return makeLeaf(freshId('pe'), {
-        x: isFinite(minX) ? minX : 0,
-        y: isFinite(minY) ? minY : 0,
-        width: isFinite(maxX - minX) ? (maxX - minX) || 1 : 1,
-        height: isFinite(maxY - minY) ? (maxY - minY) || 1 : 1,
-      }, {
-        path: path,
-        fill: nextFill(),
-        stroke: nextFill(),
-        strokeWidth: 2,
-      }) as LeafNode;
-    },
-  });
+  const pencil = usePencilTool();
   // Pen: takes an opaque "pose" carrier (here, the committed PolygonPath +
   // closed flag + AABB) and an addNode/setSelection adapter. We construct
   // the carrier in `wrapPath` and unpack it in `addNode` into a
-  // PATH_PAINTER-shaped leaf, identical to the rect/ellipse/line factories.
+  // PATH_PAINTER-shaped leaf. (Pen is the one built-in still commiting
+  // through its own adapter rather than the `insert` dep — see §4b of the
+  // 2026-07-27 inspector handoff.)
   // Editing a committed path is not the pen's job — double-click it to
   // enter anchor-edit mode (see `usePenTool`'s PenScratch docs).
   type PenCarrier = { path: PolygonPath; closed: boolean; bounds: { x: number; y: number; width: number; height: number } };
@@ -182,10 +141,6 @@ export function useBuiltinShapeTools<TData, TLayer extends string, TPose>(
     },
   });
   const lasso = useLassoTool(adapter, options?.lasso ?? {});
-  const text = useTextTool<LeafNode>({
-    pointInsert: (point) => makeLeaf(freshId('tx'),
-      { x: point.x, y: point.y, width: 80, height: 20 },
-      { path: rectPath(point.x, point.y, 80, 20), fill: nextFill(), text: 'Text' }) as LeafNode,
-  });
+  const text = useTextTool();
   return { rect, ellipse, line, polygon, star, pen, pencil, lasso, text };
 }

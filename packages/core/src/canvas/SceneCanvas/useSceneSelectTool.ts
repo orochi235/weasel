@@ -24,7 +24,6 @@ import type { UseMoveOptions } from 'interactions/actions/move/options';
 import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
-import type { UseAreaSelectOptions } from 'interactions/actions/area-select/options';
 import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { translateRectPose, type RectPose } from 'features/groups/composePose';
@@ -43,7 +42,6 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     rotate?: UseRotateOptions<TPose> | false;
     snap?: SnapStrategy<TPose>;
     handleHitRadius?: number;
-    areaSelect?: UseAreaSelectOptions;
     /** Override the body-pick used on click/pointerdown. Alt-aware: receives
      *  the live alt state + current selection so consumers can implement
      *  alt-cycling through an overlapping stack. Default: top-most hit
@@ -52,6 +50,9 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     /** Forwarded verbatim to `useSelectTool`. See
      *  `UseSelectToolOptions.extendClickLocked`. */
     extendClickLocked?: () => boolean;
+    /** Forwarded verbatim to `useSelectTool`. See
+     *  `UseSelectToolOptions.selectionAllowed`. */
+    selectionAllowed?: () => boolean;
   };
   insertTool?: {
     create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
@@ -98,7 +99,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const rotateOptions = opts?.rotate;
   const snap = opts?.snap;
   const handleHitRadius = opts?.handleHitRadius;
-  const areaSelectOptions = opts?.areaSelect;
   const commitInsert = insertTool?.create;
   const insertLayer = insertTool?.layer;
 
@@ -227,13 +227,10 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const selectTool = useSelectTool<Node<TData, TLayer, TPose>, TPose>(adapter, {
     pickEvery: wiredHitBody,
-    boundsOf: wiredBoundsOf,
     move: wiredMoveOptions,
-    ...(areaSelectOptions ? { areaSelect: areaSelectOptions } : {}),
     ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
-    getNode: (id: string) => scene.get(asNodeId(id)) ?? null,
-    getSelection: () => selection.current,
+    ...(opts?.selectionAllowed ? { selectionAllowed: opts.selectionAllowed } : {}),
   });
 
   const rotateTool = useRotateTool<Node<TData, TLayer, TPose>, TPose>(adapter, {

@@ -86,8 +86,8 @@ Options: `behaviors`, `minBounds` (strictly-greater thresholds; default
 Marquee selection. Adapter: `AreaSelectAdapter` — `hitTestArea(rect)`,
 `getSelection`, `setSelection`, `applyOps`.
 
-Default behavior is `selectFromMarquee()` (transient — selection change
-isn't undoable). Pass `transient: false` to push a history entry.
+Marquee selection is unconditional and transient (the selection change
+isn't undoable).
 
 ### `useClone(adapter, options)`
 
@@ -165,5 +165,5 @@ Reusable chrome primitives consumed by tools. See `docs/extending.md` for the co
 - `useFixedPixelRatio()` — DPR helper.
 - `useGridCellHover(...)` — pointer→cell mapping.
 - `useDragHandle()` / `useDropZone()` — DOM-level drag (cross-surface).
-- `usePointerGestures(...)` — the router `<Canvas>` uses internally; reach
-  for it only if you're building a custom canvas surface.
+- `useGestureDispatcher(...)` — the input router `<SceneCanvas>` mounts;
+  reach for it only if you're building a custom canvas surface.

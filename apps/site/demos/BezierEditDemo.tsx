@@ -8,7 +8,6 @@ import {
   pathToAnchors,
   SceneCanvas,
   countPathAnchors,
-  selectFromMarquee,
   useAnimator,
   useScene,
   useSelection,
@@ -213,10 +212,7 @@ export function BezierEditDemo() {
           scene={scene}
           selection={selection}
           animator={animator}
-          selectTool={{
-            handleHitRadius: HANDLE,
-            areaSelect: { behaviors: [selectFromMarquee()] },
-          }}
+          selectTool={{ handleHitRadius: HANDLE }}
           layers={{
             scene: {
               drawOne: (_o, p): DrawCommand[] => {

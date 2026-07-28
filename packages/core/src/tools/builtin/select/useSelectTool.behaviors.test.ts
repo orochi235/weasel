@@ -24,7 +24,6 @@ describe('useSelectTool move binding behaviors', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
         move: { behaviors: [behavior] },
       }),
     );
@@ -42,7 +41,6 @@ describe('useSelectTool move binding behaviors', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
         reparentOnDrop: 'top',
         move: { behaviors: [behavior] },
       }),
@@ -54,5 +52,50 @@ describe('useSelectTool move binding behaviors', () => {
     expect(moveBinding).toBeDefined();
     expect((moveBinding?.opts?.params as Record<string, unknown>)?.reparentOnDrop).toBe('top');
     expect(moveBinding?.opts?.behaviors).toEqual([behavior]);
+  });
+});
+
+describe('useSelectTool — selectionAllowed gate (audit 3.4)', () => {
+  // The pointerDown classifier is a phase-table route, so it runs on the tool
+  // pipeline where `Action.eligible` is never evaluated. In path-edit mode
+  // that meant clicking a shape re-selected it (classifier, ungated) while
+  // clicking empty canvas did nothing (`clearSelection`, correctly gated) —
+  // one tool, opposite gating, decided by which dispatcher owned the route.
+  function classify(selectionAllowed: (() => boolean) | undefined, applyClick: () => void) {
+    const { result } = renderHook(() =>
+      useSelectTool(minimalAdapter, {
+        pickEvery: () => ['n1'],
+        ...(selectionAllowed ? { selectionAllowed } : {}),
+      }),
+    );
+    const ctx = {
+      worldX: 0, worldY: 0,
+      modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      selection: { current: [] as string[], get: () => [], applyClick },
+      scratch: null,
+    };
+    const route = (result.current.def as {
+      initial?: { pointerDown?: Record<string, (c: unknown) => unknown> };
+    }).initial?.pointerDown?.['*'];
+    expect(route).toBeDefined();
+    route!(ctx as never);
+  }
+
+  it('does not mutate the selection when selection is disallowed', () => {
+    const applyClick = vi.fn();
+    classify(() => false, applyClick);
+    expect(applyClick).not.toHaveBeenCalled();
+  });
+
+  it('mutates the selection when allowed', () => {
+    const applyClick = vi.fn();
+    classify(() => true, applyClick);
+    expect(applyClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('defaults to allowed when no gate is supplied', () => {
+    const applyClick = vi.fn();
+    classify(undefined, applyClick);
+    expect(applyClick).toHaveBeenCalledTimes(1);
   });
 });

@@ -51,8 +51,8 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
-import type { UseAreaSelectOptions } from 'interactions/actions/area-select/options';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
+import { useToolActions } from './SceneCanvas/useToolActions';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useHandTool } from 'tools/builtin/hand';
@@ -72,6 +72,7 @@ import {
   useAreaSelectDepSource,
   useNodeAtPointDepSource,
   useInsertDepSource,
+  useSnapDepSource,
   useLassoSelectDepSource,
   useTextEditDepSource,
   useEditAnchorsDepSource,
@@ -370,10 +371,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       rotate?: UseRotateOptions<TPose> | false;
       snap?: SnapStrategy<TPose>;
       handleHitRadius?: number;
-      /** Marquee area-select. Default: no behaviors (a drag from empty space
-       *  doesn't mutate the selection). Pass
-       *  `{ behaviors: [selectFromMarquee()] }` to enable rubber-band select. */
-      areaSelect?: UseAreaSelectOptions;
       /** Override the body-pick used on click/pointerdown. Alt-aware: receives
        *  the live alt state + current selection so consumers can implement
        *  alt-cycling through an overlapping stack. Default: top-most hit
@@ -1028,6 +1025,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // Shift-click belongs to the anchor selection while a path is being
     // anchor-edited; see `UseSelectToolOptions.extendClickLocked`.
     extendClickLocked: () => effectivePathEditingId() !== '',
+    // Same rule `clearSelection`'s `eligible: { capability:
+    // 'creates-selection' }` enforces on the Action side. The phase-table
+    // pointerDown classifier can't see `Action.eligible`, so without this it
+    // kept mutating the selection in modes that forbid it (audit 3.4).
+    selectionAllowed: () => {
+      const getMode = getActiveModeRef.current;
+      if (!getMode) return true;
+      return getMode().allowedCapabilities.has('creates-selection');
+    },
     ...selectToolOpts,
   }), [selectToolOpts]);
 
@@ -1240,10 +1246,30 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // to the second call when `toolsProp` is absent is a render-stable empty
   // stand-in just to keep the call site valid; it never actually fires
   // because `disable` is true on that branch.
-  useKeybindings(internalTools, { disable: !!toolsTakeover || !enableKeybindings });
-  useKeybindings(toolsTakeover ?? internalTools, {
-    disable: !toolsTakeover || !enableKeybindings,
-  });
+  const toolsForEligibilityRef = useRef<ToolsApi | null>(null);
+  toolsForEligibilityRef.current = toolsTakeover ?? internalTools;
+  //
+  // `isToolEligible` mirrors `eligibleForMode` (packages/modes) — the same
+  // predicate `ToolPalette` uses to grey a button out. Without a mode
+  // registry every tool stays activatable.
+  const isToolEligible = useCallback((toolId: string): boolean => {
+    const getMode = getActiveModeRef.current;
+    if (!getMode) return true;
+    const registry = toolsForEligibilityRef.current?.registry;
+    const caps = registry?.[toolId]?.capabilities ?? [];
+    if (caps.length === 0) return false;
+    const allowed = getMode().allowedCapabilities;
+    for (const c of caps) if (allowed.has(c)) return true;
+    return false;
+  }, []);
+
+  // NOTE: the actual `useKeybindings` calls live in <ToolKeybindingsMounter>,
+  // rendered inside <ActionsProviderIfRoot> below. They used to sit here, but
+  // this component is ABOVE the provider, so `useActionsRegistry()` returned
+  // null and the `tool.activate` / `tool.offhand` registrations silently
+  // no-op'd. That went unnoticed because a parallel document `keydown`
+  // listener inside the hook did the real work; deleting the listener (audit
+  // 3.8) exposed the layering bug.
 
   const tools = toolsTakeover ?? internalTools;
 
@@ -1255,43 +1281,34 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   onToolsCreatedRef.current = onToolsCreated;
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools]);
 
-  // Double-click handler: wire a native `dblclick` listener on the canvas
-  // element that converts client coords → world coords, resolves the hit node
-  // via `getNodeAtPoint`, and fires `onDoubleClick`. A native listener (not a
-  // React synthetic event) is used so it doesn't interfere with the pointer-
-  // gesture pipeline (which is fully handled by Canvas via `onPointerDown`
-  // / `onPointerUp` React events and the document-level tracker).
+  // `onDoubleClick` used to be backed by a native `dblclick` listener on the
+  // canvas, which made it a THIRD independent definition of "double click"
+  // alongside the tool dispatcher's 300ms/8px `dblTap` and the gesture
+  // dispatcher's 600ms/8px synthesized event — so which double-click
+  // behaviors a consumer got depended on the millisecond gap between the two
+  // clicks. The other two are gone; this now observes the gesture
+  // dispatcher's single definition and resolves the hit with the same
+  // `getNodeAtPoint` picker the rest of the canvas uses.
   //
-  // Uses `tools` as a proxy dep for "canvas is mounted" — mirrors Canvas.tsx's
-  // native wheel listener pattern (`[tools]`). By the time `tools` is stable,
-  // `internalCanvasRef.current` is set.
+  // It rides the dispatcher as an OBSERVER rather than an Action binding
+  // because the prop is a notification, not a behavior: as a binding it would
+  // lose first-match-wins to `enterPathEdit` on every body hit and silently
+  // stop firing.
   const onDoubleClickRef = useRef(onDoubleClick);
   onDoubleClickRef.current = onDoubleClick;
   const getNodeAtPointRef = useRef(getNodeAtPoint);
   getNodeAtPointRef.current = getNodeAtPoint;
-  useEffect(() => {
-    if (!onDoubleClick) return;
-    const c = internalCanvasRef.current;
-    if (!c) return;
-    const handler = (e: MouseEvent) => {
+  const onDoubleClickObserver = useMemo(() => {
+    if (!onDoubleClick) return undefined;
+    return (world: { x: number; y: number }): void => {
       const cb = onDoubleClickRef.current;
       if (!cb) return;
-      const gnap = getNodeAtPointRef.current;
-      const view = currentViewRef.current;
-      let hit: SceneCanvasHit | null = null;
-      if (gnap) {
-        const rect = c.getBoundingClientRect();
-        const wx = (e.clientX - rect.left) / view.scale.x + view.x;
-        const wy = (e.clientY - rect.top) / view.scale.y + view.y;
-        const result = gnap(wx, wy);
-        if (result) hit = { id: result.id, kind: result.kind };
-      }
-      cb(hit);
+      const result = getNodeAtPointRef.current?.(world.x, world.y);
+      cb(result ? { id: result.id, kind: result.kind } : null);
     };
-    c.addEventListener('dblclick', handler);
-    return () => c.removeEventListener('dblclick', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tools, onDoubleClick]);
+    // Identity only needs to change between "wired" and "not wired" — the
+    // callback and picker are both read through refs.
+  }, [Boolean(onDoubleClick)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // (Legacy `gestures` prop removed alongside the consumer-facing action
   // hooks; undo/redo and friends now register via the Actions Registry.)
@@ -1858,6 +1875,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             anchorEditingAllowed={anchorEditingAllowed}
             layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
             insertNodeFactories={insertNodeFactories}
+            snapPoint={toolOptions?.snapPoint}
             canvasRef={internalCanvasRef}
             ingestionResolveSrc={ingestion?.resolveSrc}
             ingestionSvg={ingestion?.svg}
@@ -1878,6 +1896,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             dispatcher={dispatcher}
             getIsVisibleForCanvas={getIsVisibleForCanvas}
             getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
+            onDoubleClick={onDoubleClickObserver}
+          />
+          <ToolKeybindingsMounter
+            internalTools={internalTools}
+            toolsTakeover={toolsTakeover ?? undefined}
+            enableKeybindings={enableKeybindings}
+            isToolEligible={isToolEligible}
           />
           {children}
         </ActionsProviderIfRoot>
@@ -1898,6 +1923,43 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
  * These thunks convert client coords → world coords via the canvas rect + view,
  * then classify the pointer position against affordances and scene bodies.
  */
+/**
+ * Mounts `useKeybindings` inside `<ActionsProviderIfRoot>` so its
+ * `tool.activate` / `tool.offhand` / `tool.resetToDefault` registrations
+ * actually reach a registry.
+ *
+ * Two calls, mirroring the pair that used to live in `SceneCanvasInner`: the
+ * hook snapshots the initial active tool for Escape-returns-to-default, so
+ * the internal and consumer-supplied `ToolsApi` each need their own instance
+ * and the hook count has to stay stable across the takeover branch.
+ */
+function ToolKeybindingsMounter({
+  internalTools,
+  toolsTakeover,
+  enableKeybindings,
+  isToolEligible,
+}: {
+  internalTools: ToolsApi;
+  toolsTakeover?: ToolsApi;
+  enableKeybindings: boolean;
+  isToolEligible: (toolId: string) => boolean;
+}) {
+  useKeybindings(internalTools, {
+    disable: !!toolsTakeover || !enableKeybindings,
+    isToolEligible,
+  });
+  useKeybindings(toolsTakeover ?? internalTools, {
+    disable: !toolsTakeover || !enableKeybindings,
+    isToolEligible,
+  });
+  // Tool-owned actions (polygon.adjustSides, star.adjustPoints, …). Same
+  // reason this lives here and not in the tool hooks: the hooks run above the
+  // provider. Not gated on `enableKeybindings` — these back wheel and pointer
+  // bindings too, not just keys.
+  useToolActions(toolsTakeover ?? internalTools);
+  return null;
+}
+
 function GestureDispatcherMounter({
   canvasRef,
   canvasApiRef,
@@ -1912,6 +1974,7 @@ function GestureDispatcherMounter({
   dispatcher,
   getIsVisibleForCanvas,
   getRuleCtx,
+  onDoubleClick,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
@@ -1942,6 +2005,10 @@ function GestureDispatcherMounter({
    *  dispatcher's eligibility filter sees the same mode/capabilities/selection
    *  view of the world that chrome-caps does. */
   getRuleCtx?: () => RuleCtx;
+  /** Fires on every synthesized double click, in world coords. Backs the
+   *  `onDoubleClick` prop — see the option's doc on
+   *  `UseGestureDispatcherOptions` for why it's an observer, not a binding. */
+  onDoubleClick?: (world: { x: number; y: number }) => void;
 }) {
   const registry = useActionsRegistry();
   const depRegistry = useDepRegistry();
@@ -2110,6 +2177,7 @@ function GestureDispatcherMounter({
     clientToWorld,
     requestRedraw,
     getRuleCtx,
+    onDoubleClick,
   });
   return null;
 }
@@ -2145,6 +2213,7 @@ function StandardActionsRegistrar({
   anchorEditingAllowed,
   layouts,
   insertNodeFactories,
+  snapPoint,
   canvasRef,
   ingestionResolveSrc,
   ingestionSvg,
@@ -2199,6 +2268,9 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
+  /** Forwarded from `SceneCanvasProps.toolOptions.snapPoint` so the `snap`
+   *  dep source can expose grid snapping to `insertAction`. */
+  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
   /** The canvas element ref, so `useIngestionDepSource` can compute the
    *  visible world rect from the client rect + current view. */
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -2281,6 +2353,7 @@ function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
+  useSnapDepSource(snapPoint);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);

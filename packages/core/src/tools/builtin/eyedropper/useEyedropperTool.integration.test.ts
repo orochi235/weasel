@@ -10,7 +10,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { createToolsDispatcher } from '../../dispatcher';
-import { defineTool } from '../../defineTool';
 import { useEyedropperTool } from './useEyedropperTool';
 import type { AnyTool, ToolCtx } from '../../types';
 import type { NodeId } from 'core/scene/types';
@@ -85,13 +84,13 @@ describe('useEyedropperTool through the dispatcher', () => {
 
     // Stand-in for useSelectTool: always claims pointerdown so it would
     // consume the gesture if no higher-priority slot pre-empts it.
-    const selectStub: AnyTool = defineTool({
+    const selectStub: AnyTool = {
       id: 'select-stub',
       pointer: {
         onDown: () => 'claim',
         onClick: () => 'claim',
       },
-    });
+    };
 
     const dispatcher = createToolsDispatcher({
       getSlots: () => ({ hotkey: eyedropper, active: selectStub, ambient: [] }),

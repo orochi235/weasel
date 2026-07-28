@@ -96,16 +96,6 @@ export interface WheelChannel<TScratch> {
   onWheel?: (e: WheelEvent, ctx: ToolCtx<TScratch>) => Decision;
 }
 
-/** Double-tap (double-click) channel. Fires on the pointerup of the second
- *  sub-threshold tap when it follows a previous sub-threshold tap within the
- *  dispatcher's `dblTap.windowMs` and `dblTap.maxDistance` (CSS px). The
- *  scratch handed to the handler is fresh — `dblTap` is not part of a drag
- *  pipeline, so `initScratch()` runs immediately before the call. A `'claim'`
- *  return suppresses the regular `pointer.onClick` for this gesture. */
-export interface DblTapChannel<TScratch> {
-  onTap?: (e: PointerEvent, ctx: ToolCtx<TScratch>) => Decision;
-}
-
 /** Hotkey-slot trigger key. The slot is engaged while this key is held —
  *  hence "hotkey": active as long as the key is hot. `null` (or omitted)
  *  means the tool is not eligible for the hotkey slot. */
@@ -149,6 +139,22 @@ export interface Tool<TScratch = unknown> {
    * every implicit-or-declared tag (i.e. `normal` in the default preset).
    */
   capabilities?: CapabilityTag[];
+  /**
+   * Actions this tool owns and needs registered while it is in the tools
+   * registry — e.g. polygon's `polygon.adjustSides`, which its own bindings
+   * reference by id.
+   *
+   * Declared here rather than registered by the hook with `useAction`,
+   * because tool hooks run wherever the consumer calls them — for
+   * `<SceneCanvas>` that is ABOVE `<ActionsProviderIfRoot>`, where
+   * `useActionsRegistry()` returns null and `useAction` silently no-ops. The
+   * result was a binding pointing at an action id nothing had registered, so
+   * the gesture fell through to whatever matched next (polygon's
+   * wheel/arrow-key side adjustment did nothing and `nudge.*` moved the
+   * selection instead). `<ToolActionsMounter>` registers these from inside
+   * the provider.
+   */
+  actions?: import('interactions/actions/registry').Action[];
   /** Optional caller-supplied key. Most built-in tools have their activation
    *  key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`; this field
    *  is for tools that want their activation key to be configurable by the
@@ -164,11 +170,6 @@ export interface Tool<TScratch = unknown> {
   drag?: DragChannel<TScratch>;
   keyboard?: KeyboardChannel<TScratch>;
   wheel?: WheelChannel<TScratch>;
-  /** Double-tap channel — fires when two sub-threshold taps land within
-   *  `dblTap.windowMs` / `dblTap.maxDistance` of each other. Lets tools
-   *  enter modal modes (e.g. select → edit-anchors) without consumers
-   *  attaching `onDoubleClick` to a wrapper DOM node. */
-  dblTap?: DblTapChannel<TScratch>;
   /**
    * State-aware predicate. When true, this tool claims every pointerdown
    * and bypasses the affordance layer hit-test pipeline. Used by tools

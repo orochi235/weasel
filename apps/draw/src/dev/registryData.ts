@@ -31,7 +31,6 @@ export type TreeEntry =
 export interface GestureChannels {
   click: boolean;
   pointerDown: boolean;
-  dblTap: boolean;
   drag: boolean;
   wheel: boolean;
   keyDown: boolean;
@@ -258,7 +257,7 @@ export interface PhaseEntry {
 /** Input-channel keys on `PhaseDef` — the gestures a tool *subscribes to*.
  *  Strictly typed against `GestureChannels` so phase outputs can't sneak in. */
 export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
-  'click', 'pointerDown', 'dblTap', 'drag', 'wheel',
+  'click', 'pointerDown', 'drag', 'wheel',
   'keyDown', 'keyUp',
 ];
 
@@ -269,7 +268,7 @@ export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
  *  catalog page. */
 export const GESTURE_CATALOG_KEYS: readonly string[] = [
   // Legacy phase channels:
-  'click', 'pointerDown', 'dblTap', 'drag', 'wheel',
+  'click', 'pointerDown', 'drag', 'wheel',
   'keyDown', 'keyUp',
   // Modern action-spec kinds the legacy list doesn't cover:
   'doubleClick', 'key', 'key-held', 'multiTouch', 'multiTouchTap', 'pointerdown',

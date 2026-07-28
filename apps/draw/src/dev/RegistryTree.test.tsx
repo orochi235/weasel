@@ -6,7 +6,7 @@ import type { PhaseSummary, TreeCategoryNode } from './registryData';
 
 const EMPTY_PHASE: PhaseSummary = {
   gestures: {
-    click: false, pointerDown: false, dblTap: false, drag: false,
+    click: false, pointerDown: false, drag: false,
     wheel: false, keyDown: false, keyUp: false,
   },
   outputs: { cursor: false, overlay: false, claimsAll: false },

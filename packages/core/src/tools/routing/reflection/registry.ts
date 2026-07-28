@@ -23,7 +23,7 @@ export interface RegistryEntry {
    *  keyDown/keyUp key, multiTouchTap fingers). Undefined for gestures
    *  whose descriptor has no `arg`. */
   arg: string | undefined;
-  /** Route-table key for hit-test gestures (click/dblTap/drag/contextMenu/
+  /** Route-table key for hit-test gestures (click/drag/contextMenu/
    *  pointerDown). Undefined when the descriptor has `hasTarget: false`. */
   target: string | undefined;
 }
@@ -47,7 +47,6 @@ function walkPhase(
 ): void {
   if (phaseDef.click)         walkRouteTable(toolId, phase, 'click',       phaseDef.click,       out);
   if (phaseDef.pointerDown)   walkRouteTable(toolId, phase, 'pointerDown', phaseDef.pointerDown, out);
-  if (phaseDef.dblTap)        walkRouteTable(toolId, phase, 'dblTap',      phaseDef.dblTap,      out);
   if (phaseDef.contextMenu)   walkRouteTable(toolId, phase, 'contextMenu', phaseDef.contextMenu, out);
   if (phaseDef.drag)          walkDrag(toolId, phase, phaseDef.drag, out);
   if (phaseDef.wheel)         walkWheel(toolId, phase, phaseDef.wheel, out);

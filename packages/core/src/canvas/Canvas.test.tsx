@@ -106,9 +106,6 @@ describe('<Canvas>', () => {
       };
       const select = useSelectTool<Rect, Pose>(adapter, {
         pickEvery: () => ['a'],
-        boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
-        drawGhost: () => [],
-        getNode: (id) => adapter.getNode(id) ?? null,
       });
       const tools = useTools({ active: 'select', registry: { select } });
       return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} clientToWorld={() => [5, 5]} />;
@@ -144,9 +141,6 @@ describe('<Canvas>', () => {
       };
       const select = useSelectTool<Rect, Pose>(adapter, {
         pickEvery: () => ['a'],
-        boundsOf: () => ({ x: 0, y: 0, width: 50, height: 50 }),
-        drawGhost: () => [],
-        getNode: () => null,
       });
       const tools = useTools({ active: 'select', registry: { select } });
       return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} />;
@@ -189,10 +183,6 @@ describe('<Canvas>', () => {
             rectsRef.current
               .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
               .map((r) => r.id),
-          boundsOf: (id) => {
-            const r = rectsRef.current.find((x) => x.id === id);
-            return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-          },
         });
         const tools = useTools({ active: 'select', registry: { select } });
         return (
@@ -240,10 +230,6 @@ describe('<Canvas>', () => {
             rectsRef.current
               .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
               .map((r) => r.id),
-          boundsOf: (id) => {
-            const r = rectsRef.current.find((x) => x.id === id);
-            return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-          },
         });
         const tools = useTools({ active: 'select', registry: { select } });
         return (
@@ -307,13 +293,8 @@ describe('<Canvas>', () => {
         rectsRef.current
           .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
           .map((r) => r.id);
-      const boundsOf = (id: string) => {
-        const r = rectsRef.current.find((x) => x.id === id);
-        return r ? { x: r.x, y: r.y, width: r.width, height: r.height } : null;
-      };
       const select = useSelectTool<Rect, Pose>(adapter, {
         pickEvery,
-        boundsOf,
         move: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => props.moveStart?.(ctx.draggedIds) }] },
       });
       const tools = useTools({ active: 'select', registry: { select } });

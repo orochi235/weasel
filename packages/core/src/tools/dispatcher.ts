@@ -8,8 +8,6 @@ import type { AffordanceBinding } from 'affordances/types';
 import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { NodeId } from 'core/scene/types';
-import type { ToolDef, PhaseDef, RouteTable } from './routing/types';
-import { resolveRoute } from './routing/lookup';
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 
 /** Build a HitResult for the dispatcher's context. Affordance hits carry a
@@ -86,7 +84,7 @@ interface SlotsState {
    *  the active slot nor any ambient tool claimed the click. Lets a non-select
    *  tool (pen, ellipse, etc.) stay active while letting unhandled clicks fall
    *  through to the select tool for click-to-select. Not consulted for
-   *  pointerdown, drag, keyboard, wheel, or dblTap. */
+   *  pointerdown, drag, keyboard, or wheel. */
   fallback?: AnyTool | null;
 }
 
@@ -117,16 +115,6 @@ export interface ToolsDispatcherOptions {
    *  dispatcher caches the most recent invocation; consumers read it via
    *  `getLastRoute()`. Useful for the kit's ToolDebugOverlay. */
   onRouteResolved?: (info: RouteResolvedInfo) => void;
-  /** Time source for double-tap detection. Defaults to `Date.now`. Override
-   *  in tests to drive the clock deterministically. */
-  now?: () => number;
-  /** Double-tap detection thresholds. */
-  dblTap?: {
-    /** Maximum interval between the two taps (ms). Default 300. */
-    windowMs?: number;
-    /** Maximum CSS-px distance between the two tap positions. Default 8. */
-    maxDistance?: number;
-  };
   /**
    * Optional. Returns the hit-test pipeline inputs:
    *   - `layers`: visible RenderLayers ordered TOP-DOWN (highest z-index first).
@@ -151,7 +139,7 @@ export interface ToolsDispatcherOptions {
   } | null;
   /** Optional. Returns the scene node at the given world coords, or null
    *  for empty. The dispatcher uses this to populate `ctx.target` on
-   *  pointer events (down/move/up/click/dblTap), so declarative routing
+   *  pointer events (down/move/up/click), so declarative routing
    *  factories can dispatch on target.kind ('rect'/'text'/'path'/'empty').
    *  Omit to leave the dispatcher with the always-empty fallback — see
    *  `nodeHitFor` for the rationale. */
@@ -194,39 +182,6 @@ export interface ToolsDispatcher {
    *  consumers (cursor resolution, debug overlays) can read what the active
    *  tool is currently tracking. Read-only — do NOT mutate via this getter. */
   getActiveScratch: () => unknown;
-  /** Most recent route resolution emitted by a declarative tool, or null
-   *  if none has fired yet. Snapshot — safe to read on every render. */
-  getLastRoute: () => RouteResolvedInfo | null;
-  /** Resolve a synthetic (phase, gesture, hit, modifiers) query against the
-   *  current slot occupants WITHOUT executing the matched action. Walks slots
-   *  in real precedence order (hotkey > active > ambient) and consults each
-   *  tool's attached `def` (the declarative `ToolDef` produced by
-   *  `defineTool`). Tools without an attached `def` (imperative-only) are
-   *  invisible to this query. Returns the first match, or null if no slot
-   *  resolves the query. Pure: no scratch mutation, no scene mutation, no
-   *  RouteResolvedInfo emission. */
-  resolveOnly: (query: ResolveQuery) => ResolveResult | null;
-}
-
-/** Synthetic resolution query — what the static widget asks "if a pointer
- *  event landed on `hit` with these `modifiers`, which declarative route
- *  would the dispatcher fire in this phase + gesture?" */
-export interface ResolveQuery {
-  phase: 'initial' | 'engaged';
-  gesture: 'click' | 'drag' | 'pointerDown' | 'dblTap' | 'wheel';
-  hit: HitResult;
-  modifiers: ToolModifiers;
-}
-
-/** Successful resolution: which tool, in which slot, matched which route-table
- *  key. `matchedKey` is `'*'` for function-form drag (no table to discriminate)
- *  and for wheel routes (single ActionFn). */
-export interface ResolveResult {
-  toolId: string;
-  slot: 'hotkey' | 'active' | 'ambient';
-  gesture: 'click' | 'drag' | 'pointerDown' | 'dblTap' | 'wheel';
-  phase: 'initial' | 'engaged';
-  matchedKey: string;
 }
 
 function ctxFor(
@@ -269,70 +224,10 @@ function dispatchOnce<E>(
   return null;
 }
 
-type PickedTable =
-  | { kind: 'table'; table: RouteTable<unknown> }
-  | { kind: 'functionForm' }
-  | { kind: 'wheel' };
-
-function pickTable(
-  phaseDef: PhaseDef<unknown> | undefined,
-  gesture: ResolveQuery['gesture'],
-): PickedTable | undefined {
-  if (!phaseDef) return undefined;
-  switch (gesture) {
-    case 'click':       return phaseDef.click ? { kind: 'table', table: phaseDef.click } : undefined;
-    case 'pointerDown': return phaseDef.pointerDown ? { kind: 'table', table: phaseDef.pointerDown } : undefined;
-    case 'dblTap':      return phaseDef.dblTap ? { kind: 'table', table: phaseDef.dblTap } : undefined;
-    case 'drag': {
-      const d = phaseDef.drag;
-      if (d == null) return undefined;
-      if (typeof d === 'function') return { kind: 'functionForm' };
-      return { kind: 'table', table: d };
-    }
-    case 'wheel':
-      return phaseDef.wheel != null ? { kind: 'wheel' } : undefined;
-  }
-}
-
-function resolveOnlyForTool(
-  tool: AnyTool,
-  slot: ResolveResult['slot'],
-  query: ResolveQuery,
-): ResolveResult | null {
-  const def = tool.def as ToolDef<unknown> | undefined;
-  if (!def) return null;
-  const phaseDef = (query.phase === 'engaged' ? def.engaged : def.initial) as PhaseDef<unknown> | undefined;
-  const picked = pickTable(phaseDef, query.gesture);
-  if (!picked) return null;
-  if (picked.kind === 'functionForm' || picked.kind === 'wheel') {
-    return { toolId: def.id, slot, gesture: query.gesture, phase: query.phase, matchedKey: '*' };
-  }
-  const match = resolveRoute(picked.table, query.hit, query.modifiers);
-  if (!match) return null;
-  return {
-    toolId: def.id, slot, gesture: query.gesture, phase: query.phase,
-    matchedKey: match.matchedKey,
-  };
-}
-
 export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispatcher {
   const threshold = opts.threshold ?? 4;
-  const now = opts.now ?? (() => Date.now());
-  const dblTapWindowMs = opts.dblTap?.windowMs ?? 300;
-  const dblTapMaxDistance = opts.dblTap?.maxDistance ?? 8;
   let inFlight: InFlight | null = null;
-  /** Recorded on each sub-threshold pointerup. The next sub-threshold release
-   *  within `dblTapWindowMs` and `dblTapMaxDistance` of this point fires
-   *  `dblTap.onTap` on the active slot order. Cleared on fire (so three taps
-   *  don't stack into two dblTaps) and on any drag promotion. */
-  let lastTap: { x: number; y: number; time: number } | null = null;
-  /** Most recent RouteResolvedInfo emitted via ctx.__reportRoute. Updated
-   *  on every successful declarative route hit; left set across gesture
-   *  end / cancel so debug overlays can show "what just fired" even after
-   *  the gesture closes. */
-  let lastRoute: RouteResolvedInfo | null = null;
   const reportRoute = (info: RouteResolvedInfo): void => {
-    lastRoute = info;
     opts.onRouteResolved?.(info);
   };
 
@@ -542,7 +437,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
       const dx = e.clientX - inFlight.startClient.x;
       const dy = e.clientY - inFlight.startClient.y;
       if (dx * dx + dy * dy < threshold * threshold) return;
-      lastTap = null;
       const onStart = inFlight.tool.drag?.onStart;
       if (onStart) {
         const startBaseCtx = inFlight.startTarget
@@ -577,61 +471,27 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     };
 
     if (inFlight.phase === 'pending') {
-      // Sub-threshold release. First check whether this is the *second* tap
-      // of a double-tap; if so, fire `dblTap.onTap` on the active slot order.
-      // A claim suppresses `pointer.onClick`; a pass falls through to click
-      // so single-click handlers still run when no tool wants the dbl-tap.
+      // Sub-threshold release → click. Double-click detection is NOT done
+      // here: it belongs to the gesture dispatcher, which synthesizes a
+      // `doubleclick` InputEvent and routes it through bindings + eligibility
+      // like any other gesture. This pipeline used to run a second,
+      // independent 300ms/8px detector, so which double-click behaviors a
+      // consumer got depended on the millisecond gap between the clicks.
       const slots = opts.getSlots();
-      let dblTapClaimed = false;
-      if (lastTap !== null) {
-        const dx = e.clientX - lastTap.x;
-        const dy = e.clientY - lastTap.y;
-        const dt = now() - lastTap.time;
-        if (dt <= dblTapWindowMs && dx * dx + dy * dy <= dblTapMaxDistance * dblTapMaxDistance) {
-          // Walk slot order — hotkey → active → ambient — and fire the
-          // first tool whose dblTap.onTap returns 'claim'. Each tool gets a
-          // fresh scratch (dblTap is not part of a drag pipeline).
-          const order: AnyTool[] = [];
-          if (slots.hotkey) order.push(slots.hotkey);
-          if (slots.active) order.push(slots.active);
-          for (const t of slots.ambient) order.push(t);
-          for (const tool of order) {
-            const handler = tool.dblTap?.onTap;
-            if (!handler) continue;
-            const ctx = ctxFor(getInitialScratch(tool), baseCtx, reportRoute);
-            const decision = handler(e, ctx);
-            if (decision === 'claim') {
-              dblTapClaimed = true;
-              break;
-            }
-          }
-          // Whether claimed or passed, the dbl-tap event consumed lastTap —
-          // a third tap shouldn't pair with the second to fire again.
-          lastTap = null;
-        }
+      const onClick = inFlight.tool.pointer?.onClick;
+      let claimed = false;
+      if (onClick) {
+        const decision = onClick(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
+        claimed = decision === 'claim';
       }
-      if (!dblTapClaimed) {
-        const onClick = inFlight.tool.pointer?.onClick;
-        let claimed = false;
-        if (onClick) {
-          const decision = onClick(e, ctxFor(inFlight.scratch, baseCtx, reportRoute));
-          claimed = decision === 'claim';
-        }
-        // Fallback slot: ONLY for clicks, ONLY when the active in-flight
-        // tool didn't claim (no handler or returned 'pass'). Lets a non-select
-        // tool stay active while unhandled clicks fall through to select for
-        // click-to-select. Fallback gets a fresh scratch (no gesture context).
-        if (!claimed && slots.fallback && slots.fallback !== inFlight.tool) {
-          const fbHandler = slots.fallback.pointer?.onClick;
-          if (fbHandler) {
-            fbHandler(e, ctxFor(getInitialScratch(slots.fallback), baseCtx, reportRoute));
-          }
-        }
-        // Record this tap as a candidate first-of-pair for the next tap.
-        // (If dblTap claimed above we already cleared lastTap; recording here
-        // would let three taps fire two dblTaps.)
-        if (lastTap === null) {
-          lastTap = { x: e.clientX, y: e.clientY, time: now() };
+      // Fallback slot: ONLY for clicks, ONLY when the active in-flight
+      // tool didn't claim (no handler or returned 'pass'). Lets a non-select
+      // tool stay active while unhandled clicks fall through to select for
+      // click-to-select. Fallback gets a fresh scratch (no gesture context).
+      if (!claimed && slots.fallback && slots.fallback !== inFlight.tool) {
+        const fbHandler = slots.fallback.pointer?.onClick;
+        if (fbHandler) {
+          fbHandler(e, ctxFor(getInitialScratch(slots.fallback), baseCtx, reportRoute));
         }
       }
     } else if (inFlight.phase === 'drag') {
@@ -712,23 +572,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     cancelGesture,
     hasActiveGesture: () => inFlight !== null,
     getActiveScratch: () => inFlight?.scratch ?? null,
-    getLastRoute: () => lastRoute,
-    resolveOnly: (query) => {
-      const slots = opts.getSlots();
-      if (slots.hotkey) {
-        const r = resolveOnlyForTool(slots.hotkey, 'hotkey', query);
-        if (r) return r;
-      }
-      if (slots.active) {
-        const r = resolveOnlyForTool(slots.active, 'active', query);
-        if (r) return r;
-      }
-      for (const t of slots.ambient) {
-        const r = resolveOnlyForTool(t, 'ambient', query);
-        if (r) return r;
-      }
-      return null;
-    },
   };
   api.__setGetCtx = (fn) => { opts.getCtx = fn; };
   api.__setHitTestContext = (fn) => { opts.getHitTestContext = fn; };

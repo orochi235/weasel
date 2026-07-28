@@ -52,6 +52,41 @@ Priority tags:
 
 ## Tools & gestures
 
+- **(P1) Retire the phase-table route grammar (one dispatch pipeline).**
+  The last structural finding from the 2026-07-27 layer audit
+  (`docs/handoffs/2026-07-27-tool-gesture-duplication-audit.md` §3.1 / §3.4 /
+  §3.6). Two complete pointer/keyboard pipelines are still attached to the
+  same `<canvas>`: `<Canvas>` wires React pointer handlers + a document
+  keydown listener into `tools.dispatcher`, and `useGestureDispatcher` wires
+  native listeners into the interactions `Dispatcher`. Every event is
+  processed twice by two independent state machines.
+
+  Most of what the tool pipeline used to serve is gone — the double-click
+  detector, the tool-activation listener, polygon/star's arrow keys, and all
+  four shape tools' gesture bodies were removed in the audit follow-up. What
+  is left on phase tables:
+    - `usePenTool` — the big one (~8KB of routes). Blocked on the
+      scratch-selector decision recorded in
+      `docs/handoffs/2026-07-27-inspector-repairs-and-the-pen-port-question.md` §4b.
+    - `useSelectTool` — a pointerDown classifier + a click sub-table. The
+      classifier is eligibility-gated by hand (`selectionAllowed`) as an
+      interim patch; it wants to be a binding so `Action.eligible` covers it.
+    - `useEyedropperTool` — a small click table.
+
+  Retiring the grammar also removes the second target/modifier matching
+  engine and the `modifierComboToParsed` bridge that exists to translate
+  between the two modifier vocabularies (§3.6), and lets the tool-route
+  reflection (`buildActionRegistry`, which cannot see `Tool.bindings`) be
+  replaced by something that reads the binding grammar. Rename it
+  `buildRouteRegistry` when touched — it has nothing to do with the Actions
+  Registry.
+
+- **(P3) `docs/hooks.md` documents deleted gesture hooks.** `useAreaSelect`,
+  `useClone`, `useMove`, `useResize`, `useRotate`, `useInsert`,
+  `useEditAnchors` all have reference entries; the hooks were replaced by
+  action descriptors. `docs/taxonomy.md` was corrected in the audit
+  follow-up; `hooks.md` needs the same pass.
+
 - **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
   content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
   ahead of `kit:image`, behind consumer handlers) matching `image/svg+xml`

@@ -240,34 +240,6 @@ export interface InsertOverlay<TPose> {
   pose: TPose;
 }
 
-// ----- area-select -----
-
-/** Pose carried through area-select gestures: the world point under the
- *  cursor at gesture start, plus the shift-key state at start. */
-export interface AreaSelectPose {
-  worldX: number;
-  worldY: number;
-  shiftHeld: boolean;
-}
-
-/** Per-frame proposed area-select state: start point, current point, and shift policy. */
-export interface AreaSelectProposed {
-  start: { worldX: number; worldY: number };
-  current: { worldX: number; worldY: number };
-  shiftHeld: boolean;
-}
-
-/** onMove for area-select doesn't shape ops; behaviors only need to react in
- *  onEnd. We return void from onMove. */
-export type AreaSelectMoveResult = void;
-
-/** A behavior plugged into `useAreaSelect`. */
-export type AreaSelectBehavior = ActionBehavior<
-  AreaSelectPose,
-  AreaSelectProposed,
-  AreaSelectMoveResult
->;
-
 /** Live overlay state exposed by `useAreaSelect` for rendering the marquee. */
 export interface AreaSelectOverlay {
   start: { worldX: number; worldY: number };

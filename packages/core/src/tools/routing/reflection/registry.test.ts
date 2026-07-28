@@ -68,7 +68,6 @@ describe('buildActionRegistry', () => {
       id: 'test',
       initial: {
         click:   { 'rect': noOp },
-        dblTap:  { 'rect': noOp },
         drag:    { 'rect': noOp },
         wheel:   noOp,
         keyDown: { 'Escape': noOp },
@@ -77,7 +76,7 @@ describe('buildActionRegistry', () => {
     };
     const r = buildActionRegistry([tool]);
     const gestures = new Set(r.map((e) => e.gesture));
-    expect(gestures).toEqual(new Set(['click', 'dblTap', 'drag', 'wheel', 'keyDown', 'keyUp']));
+    expect(gestures).toEqual(new Set(['click', 'drag', 'wheel', 'keyDown', 'keyUp']));
   });
 
   it('function-form drag emits a single targetless row', () => {

@@ -140,6 +140,7 @@ export { defaultCommitAdapter } from './interactions/actions/defaultCommitAdapte
 // ─── Invoker / GestureBinding / ActiveToolContext ───
 export type {
   Point2,
+  DragSample,
   InvocationCtx,
   BindingOpts,
   ActionDeps,
@@ -182,6 +183,7 @@ export type {
   EditAnchorsDep,
   IngestionDep,
   InsertDep,
+  SnapDep,
   InsertExtras,
   LassoSelectDep,
   LayoutDep,
@@ -226,20 +228,12 @@ export { useViewTween } from './core/viewport/useViewTween';
 export { usePinchGesture } from './core/viewport/usePinchGesture';
 export { useViewAnimation } from './core/viewport/useViewAnimation';
 
-// ─── Pointer gestures: low-level capture wrapper ────────────────────────────
-export { usePointerGestures } from './interactions/gestures/usePointerGestures';
-
 // ─── Tools: dispatcher, registry, declarative routing, built-ins ────────────
 export * from './tools';
 export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/pinchZoom';
 // New declarative routing surface — experimental.
 // import { defineTool } from '@weasel-js/core/routing';
 export * as routing from './tools/routing';
-export type {
-  PointerGestureBindings,
-  UsePointerGesturesOptions,
-  PointerGestureCallbackCtx,
-} from './interactions/gestures/usePointerGestures';
 
 // ─── SceneCanvas: the top-level renderer ─────────────────────────────────────
 // `Canvas` is intentionally NOT exported — it is `@internal` / `@deprecated`
@@ -679,10 +673,6 @@ export type {
   InsertMoveResult,
   InsertBehavior,
   InsertOverlay,
-  AreaSelectPose,
-  AreaSelectProposed,
-  AreaSelectMoveResult,
-  AreaSelectBehavior,
   AreaSelectOverlay,
   LassoSelectPose,
   LassoSelectProposed,
@@ -825,8 +815,6 @@ export type {
   AnchorHit,
   PathAnchor,
 } from './interactions/actions/edit-anchors';
-export type { UseAreaSelectOptions } from './interactions/actions/area-select';
-export { selectFromMarquee } from './interactions/actions/area-select/behaviors';
 // ─── Typed scratch keys: shared typed access to ctx.scratch (behaviors) ─────
 export {
   scratchKey,
@@ -1009,7 +997,6 @@ export type {
 } from './canvas/sceneAdapter';
 export type {
   ToolPresentation,
-  DblTapChannel,
 } from './tools/types';
 export type { ToolHit } from './tools/routing/hitResult';
 export type { RouteMatch } from './tools/routing/lookup';

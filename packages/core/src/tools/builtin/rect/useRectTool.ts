@@ -1,90 +1,22 @@
-import { useMemo, useRef } from 'react';
-import { createElement } from 'react';
+import { useMemo, createElement } from 'react';
 import { defineTool } from '../../routing';
 import { RectIcon } from '../../../icons';
-import { useDragRect } from 'interactions/gestures/dragRect';
-import { createInsertOp } from 'core/ops/create';
-import { marqueeDrawCommands, type InsertOverlayStyle } from '../marquee';
-import type { Tool, ToolCtx } from '../../types';
-import type { View } from 'core/viewport/view';
-import { GHOST_STROKE } from '../../../util/paint';
-
-export interface RectBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface UseRectToolOptions<TNode extends { id: string }> {
-  create: (bounds: RectBounds) => TNode | null;
-  label?: string;
-  minBounds?: { width: number; height: number };
-  overlayStyle?: InsertOverlayStyle;
-  /** Optional: snap world-space points to the active grid (or any other
-   *  snap target). Applied to every coord the gesture ingests, so both the
-   *  live overlay and the committed geometry use the snapped values. */
-  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
-}
-
-const DEFAULT_STYLE = {
-  fill: 'rgba(127, 176, 105, 0.25)',
-  stroke: GHOST_STROKE,
-  dash: [4, 4] as number[],
-  lineWidth: 1,
-};
+import type { Tool } from '../../types';
 
 /**
- * Drag-to-draw rectangle tool. The user drags a rect; on release the `create`
- * factory is called with the final bounds and the returned object is inserted
- * into the scene via an undoable op.
+ * Drag-to-draw rectangle tool.
  *
- * Role model for tools that create scene objects: uses `ctx.applyOps` +
- * `createInsertOp` directly rather than routing through adapter.commitInsert.
+ * The gesture is owned end-to-end by the dispatcher: the `drag` binding
+ * routes to `insertAction`, which tracks the live bounds, paints the
+ * preview through its `overlay()` surface, and commits via the `insert`
+ * dep on release. `<SceneCanvas>` sources that dep from
+ * `useInsertDepSource`; consumers wanting a custom node factory override
+ * the dep (`useDepSource('insert', …)`) rather than the tool.
+ *
+ * Grid snapping comes from the `snap` dep, also read by `insertAction` —
+ * see `SnapDep` in `interactions/actions/depSchema.ts`.
  */
-export function useRectTool<TNode extends { id: string }>(
-  options: UseRectToolOptions<TNode>,
-): Tool<null> {
-  const { create, label = 'Insert rectangle', minBounds, overlayStyle, snapPoint } = options;
-
-  const createRef = useRef(create);
-  createRef.current = create;
-  const applyOpsRef = useRef<ToolCtx['applyOps'] | null>(null);
-  const overlayStyleRef = useRef(overlayStyle);
-  overlayStyleRef.current = overlayStyle;
-  const snapPointRef = useRef(snapPoint);
-  snapPointRef.current = snapPoint;
-
-  const dr = useDragRect({
-    minBounds,
-    snapPoint: (p) => snapPointRef.current?.(p) ?? p,
-    onEnd: (ctx) => {
-      const applyOps = applyOpsRef.current;
-      if (!applyOps) return false;
-      const node = createRef.current(ctx.bounds);
-      if (!node) return false;
-      applyOps([createInsertOp({ node, label })], label);
-      return true;
-    },
-  });
-
-  const drRef = useRef(dr);
-  drRef.current = dr;
-
-  const overlay = useMemo(
-    () => ({
-      id: 'rect-tool-overlay',
-      label: 'Rect preview',
-      space: 'screen' as const,
-      draw: (_data: unknown, view: View) => {
-        const ov = drRef.current.overlay;
-        if (!ov) return [];
-        return marqueeDrawCommands(view, ov.bounds, overlayStyleRef.current, DEFAULT_STYLE);
-      },
-    }),
-    [],
-  );
-
+export function useRectTool(): Tool<null> {
   return useMemo(
     () =>
       defineTool<null>({
@@ -97,22 +29,18 @@ export function useRectTool<TNode extends { id: string }>(
           icon: createElement(RectIcon),
           group: 'shape',
         },
-        // Declarative binding routes empty-space drags through the
-        // dispatcher + insertAction.
+        // Single binding; insertAction toggles corner ⇄ center based on
+        // live Alt state so users can engage/disengage Alt mid-drag and
+        // see the bounds snap between the two modes.
         bindings: [
-          // Single binding; insertAction toggles corner ⇄ center based on
-          // live Alt state so users can engage/disengage Alt mid-drag and
-          // see the bounds snap between the two modes.
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
             opts: { params: { kind: 'rect' } },
           },
         ],
-        initial: {
-          overlay: () => overlay,
-        },
+        initial: {},
       }),
-    [dr.start, dr.move, dr.end, dr.cancel, overlay],
+    [],
   );
 }

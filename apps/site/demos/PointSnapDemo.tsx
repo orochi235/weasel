@@ -63,11 +63,7 @@ function PointSnapDemoInner() {
     return { x: p.x, y: p.y, width: p.width, height: p.height, rotation: p.rotation };
   };
 
-  const select = useSelectTool(adapter, {
-    pickEvery,
-    boundsOf,
-    getSelection: () => selection.current,
-  });
+  const select = useSelectTool(adapter, { pickEvery });
   // Resize is dispatcher-driven via the `resizePolicy` dep — see
   // `ResizePolicyBridge` below, mounted as a child of `<SceneCanvas>` so
   // `<DepRegistryProvider>` is in scope.
