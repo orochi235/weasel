@@ -81,11 +81,24 @@ reflects on the result (Tools / Actions / Routes / Conflicts / Dispatch trace).
 It is the page that already owns a live tool set, so the view lands there rather
 than in `RegistryInspector`.
 
-### 3.1 Routes widget gains `scope` and `specificity`
+### 3.1 Routes widget gains `slot` and `specificity`
 
 The catalog half is the existing Routes widget, under-reported. It lists every
-route but never says which scope the binding rides or how specific it is —
-the two fields that decide who wins.
+route but never says where the binding sits or how specific it is — the two
+things that decide who wins.
+
+**Not `scope`, though this section originally said so.** Scope
+(`hotkey` / `active` / `ambient`) is decided at *dispatch* time from the active
+tool and the hotkey stack; `buildRouteRegistry` walks tools and cannot know it.
+The static fact available is which **slot** the tool was mounted in — `registry`
+vs `ambient` — which ToolkitBuilder already computes for its Tools widget. True
+scope appears only in the Resolution widget, sourced from `resolveAll`.
+
+That distinction turns out to be the single most useful thing the widget shows:
+in the standard bundle a `drag` on a selected body resolves to an **active**
+binding with specificity `0·0·0·1` beating an **ambient** one with `1·0·0·1`.
+The more specific binding loses, because scope is compared first. Nothing in
+the codebase made that visible before.
 
 ### 3.2 New Resolution widget
 
@@ -130,6 +143,32 @@ against a synthesized hit; a predicate reading more than `kind` may differ at
 runtime*. Rows with string targets carry no caveat because they need none.
 Blanketing the whole table in uncertainty would be the easier and less useful
 choice.
+
+### What implementation found out about targets
+
+Three facts the design didn't know, discovered by reading `match.ts` rather
+than assuming, and all now encoded in `resolutionInput.ts`:
+
+1. **There is no `kind: 'drag'` `InputEvent`.** A `drag` *spec* matches a
+   `pointerdown` *event* with `stage` omitted; `pointerDown` specs match the
+   same event with `stage: 'press'`. An earlier draft's test fixtures asserted
+   against a `drag` event that no matcher could ever see, and an
+   `as InputEvent` cast hid it.
+2. **`click` reads its predicate target off the event's `affordance` field,
+   while `doubleClick` and `contextMenu` read off `target`.** Two field names
+   for structurally similar gestures. Missing this silently breaks predicate
+   evaluation for click bindings.
+3. **`wheel` and `key` events carry no target at all**, so the target picker is
+   inert for them — the widget disables it rather than offering a control that
+   does nothing.
+
+One consequence worth recording: `matchTarget` returns `false` for the
+`affordance:*` and `kind:*` string target forms — they are declared in
+`TargetSpec` but not yet supported. So a `chrome:` pick can only ever produce
+candidates from `{ kindOf }` predicates or untargeted bindings, and the kit's
+own bundles offer no `chrome:` options at all, since kit tools describe chrome
+with predicates throughout. The picker still offers them because a consumer
+tool may declare the string form; it just won't match until that gap closes.
 
 ## 5. `findConflicts`'s phase collapse — latent, with a named trigger
 
