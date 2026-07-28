@@ -25,8 +25,8 @@ describe('button widget', () => {
     const press = vi.fn();
     b.on('press', press);
 
-    expect(b.onPointer({ type: 'down', x: 5, y: 5, native: {} as PointerEvent })).toBe('claim');
-    expect(b.onPointer({ type: 'up', x: 5, y: 5, native: {} as PointerEvent })).toBe('pass');
+    expect(b.onPointer({ type: 'down', x: 5, y: 5, native: null })).toBe('claim');
+    expect(b.onPointer({ type: 'up', x: 5, y: 5, native: null })).toBe('pass');
     expect(press).toHaveBeenCalledTimes(1);
   });
 
@@ -43,8 +43,8 @@ describe('button widget', () => {
     const press = vi.fn();
     b.on('press', press);
 
-    b.onPointer({ type: 'down', x: 5, y: 5, native: {} as PointerEvent });
-    b.onPointer({ type: 'up', x: 200, y: 200, native: {} as PointerEvent });
+    b.onPointer({ type: 'down', x: 5, y: 5, native: null });
+    b.onPointer({ type: 'up', x: 200, y: 200, native: null });
     expect(press).not.toHaveBeenCalled();
   });
 
@@ -53,8 +53,8 @@ describe('button widget', () => {
     const press = vi.fn();
     b.on('press', press);
 
-    b.onPointer({ type: 'down', x: 5, y: 5, native: {} as PointerEvent });
-    b.onPointer({ type: 'cancel', native: {} as PointerEvent });
+    b.onPointer({ type: 'down', x: 5, y: 5, native: null });
+    b.onPointer({ type: 'cancel', native: null });
     expect(press).not.toHaveBeenCalled();
   });
 
@@ -71,8 +71,8 @@ describe('button widget', () => {
     const press = vi.fn();
     b.on('press', press);
     b.off('press', press);
-    b.onPointer({ type: 'down', x: 5, y: 5, native: {} as PointerEvent });
-    b.onPointer({ type: 'up', x: 5, y: 5, native: {} as PointerEvent });
+    b.onPointer({ type: 'down', x: 5, y: 5, native: null });
+    b.onPointer({ type: 'up', x: 5, y: 5, native: null });
     expect(press).not.toHaveBeenCalled();
   });
 
@@ -109,9 +109,9 @@ describe('button widget', () => {
     b.on('hover', hover);
     b.on('leave', leave);
 
-    b.onPointer({ type: 'hovermove', x: 5, y: 5, native: {} as PointerEvent });
+    b.onPointer({ type: 'hovermove', x: 5, y: 5, native: null });
     expect(hover).toHaveBeenCalledTimes(1);
-    b.onPointer({ type: 'hovermove', x: 6, y: 6, native: {} as PointerEvent });
+    b.onPointer({ type: 'hovermove', x: 6, y: 6, native: null });
     expect(hover).toHaveBeenCalledTimes(1);  // no re-fire while hovering
     b.onPointer({ type: 'hoverleave', native: null });
     expect(leave).toHaveBeenCalledTimes(1);
@@ -135,7 +135,7 @@ describe('button widget', () => {
 
   it('uses ctx.tokens.buttonFillHover when hovering and opts.hoverFill is omitted', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
-    b.onPointer({ type: 'hovermove', x: 5, y: 5, native: {} as PointerEvent });
+    b.onPointer({ type: 'hovermove', x: 5, y: 5, native: null });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFillHover: '#cafe00' } };
     const cmds = b.draw(customCtx);
     const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
@@ -144,7 +144,7 @@ describe('button widget', () => {
 
   it('uses ctx.tokens.buttonFillPressed when pressed and opts.pressedFill is omitted', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
-    b.onPointer({ type: 'down', x: 5, y: 5, native: {} as PointerEvent });
+    b.onPointer({ type: 'down', x: 5, y: 5, native: null });
     const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFillPressed: '#beadc0' } };
     const cmds = b.draw(customCtx);
     const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };

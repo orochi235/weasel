@@ -33,12 +33,10 @@ function toScreen(deps: ActionDeps, x: number, y: number): [number, number] {
   return worldToScreen(x, y, viewToTransform(view));
 }
 
-/** Synthetic DOM events for the widget protocol, which types `native` as a
- *  real event. The dispatcher hands actions normalized input, not the
- *  originating `PointerEvent`, so there is nothing truer to pass. */
-function nativeStub(type: string): PointerEvent {
-  return new Event(type) as PointerEvent;
-}
+// `HudPointerEvent.native` is `PointerEvent | null` precisely because of this
+// path: the dispatcher hands actions normalized input, not the originating
+// `PointerEvent`, so there is nothing truer to pass than `null`. Widgets read
+// the normalized `x` / `y` and the event `type`.
 
 function pressAction(): Action {
   return {
@@ -52,7 +50,7 @@ function pressAction(): Action {
         const widget = widgetIn(p?.affordance);
         if (!widget || p?.worldX === undefined || p.worldY === undefined) return;
         const [x, y] = toScreen(deps, p.worldX, p.worldY);
-        widget.onPointer({ type: 'down', x, y, native: nativeStub('pointerdown') } satisfies HudPointerEvent);
+        widget.onPointer({ type: 'down', x, y, native: null } satisfies HudPointerEvent);
       },
     },
   };
@@ -70,7 +68,7 @@ function releaseAction(): Action {
         const widget = widgetIn(p?.affordance);
         if (!widget || p?.worldX === undefined || p.worldY === undefined) return;
         const [x, y] = toScreen(deps, p.worldX, p.worldY);
-        widget.onPointer({ type: 'up', x, y, native: nativeStub('pointerup') } satisfies HudPointerEvent);
+        widget.onPointer({ type: 'up', x, y, native: null } satisfies HudPointerEvent);
       },
     },
   };
@@ -91,15 +89,15 @@ function dragAction(): Action {
         return {
           onMove: (moveCtx: InvocationCtx) => {
             const [x, y] = toScreen(moveCtx.deps, moveCtx.world.x, moveCtx.world.y);
-            widget.onPointer({ type: 'move', x, y, native: nativeStub('pointermove') } satisfies HudPointerEvent);
+            widget.onPointer({ type: 'move', x, y, native: null } satisfies HudPointerEvent);
           },
           onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
             if (reason === 'cancel') {
-              widget.onPointer({ type: 'cancel', native: nativeStub('pointercancel') } satisfies HudPointerEvent);
+              widget.onPointer({ type: 'cancel', native: null } satisfies HudPointerEvent);
               return;
             }
             const [x, y] = toScreen(endCtx.deps, endCtx.world.x, endCtx.world.y);
-            widget.onPointer({ type: 'up', x, y, native: nativeStub('pointerup') } satisfies HudPointerEvent);
+            widget.onPointer({ type: 'up', x, y, native: null } satisfies HudPointerEvent);
           },
         };
       },

@@ -19,12 +19,23 @@ export interface HudDrawCtx {
   tokens: ResolvedTokens;
 }
 
+/**
+ * Input handed to a widget, in screen space.
+ *
+ * `native` is the originating DOM event when there is one, and `null`
+ * otherwise — it is **not** guaranteed. Hover is driven by a direct DOM
+ * listener in `attachHud`, so `hovermove` carries the real `PointerEvent`.
+ * Press / move / release arrive through the gesture dispatcher, which hands
+ * actions normalized input rather than the event that produced it, so those
+ * arms carry `null`. A widget that needs `native` must handle its absence;
+ * prefer the normalized `x` / `y` and the event `type`.
+ */
 export type HudPointerEvent =
-  | { type: 'down'; x: number; y: number; native: PointerEvent }
-  | { type: 'move'; x: number; y: number; native: PointerEvent }
-  | { type: 'up'; x: number; y: number; native: PointerEvent }
-  | { type: 'cancel'; native: PointerEvent }
-  | { type: 'hovermove'; x: number; y: number; native: PointerEvent }
+  | { type: 'down'; x: number; y: number; native: PointerEvent | null }
+  | { type: 'move'; x: number; y: number; native: PointerEvent | null }
+  | { type: 'up'; x: number; y: number; native: PointerEvent | null }
+  | { type: 'cancel'; native: PointerEvent | null }
+  | { type: 'hovermove'; x: number; y: number; native: PointerEvent | null }
   | { type: 'hoverleave'; native: PointerEvent | null };
 
 export type PointerClaim = 'claim' | 'pass';

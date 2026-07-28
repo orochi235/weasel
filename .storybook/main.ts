@@ -8,13 +8,13 @@ import { weaselTokensPlugin } from '../scripts/vite-plugin-weasel-tokens.ts';
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 // One Storybook instance for the whole repo. Stories live next to their
-// components in both `packages/ui/` (kit UI primitives) and
-// `apps/swillustrator/` (app-specific surfaces). Sidebar partitioning is
-// driven by each story's CSF `title`: `weasel-ui/...` vs `swillustrator/...`.
+// components in both `packages/ui/` (kit UI primitives) and `apps/draw/`
+// (app-specific surfaces). Sidebar partitioning is driven by each story's
+// CSF `title`: `weasel-ui/...` vs `draw/...`.
 const config: StorybookConfig = {
   stories: [
     '../packages/ui/src/**/*.stories.@(ts|tsx)',
-    '../apps/swillustrator/src/**/*.stories.@(ts|tsx)',
+    '../apps/draw/src/**/*.stories.@(ts|tsx)',
     // labkit stories (titled `labkit/…`); a title-scoped decorator in
     // preview.tsx wraps them in `.lk-root` + labkit CSS so they render themed.
     '../packages/labkit/src/**/*.stories.@(ts|tsx)',
