@@ -12,8 +12,8 @@ describe('clearSelectionAction (descriptor)', () => {
     expect(clearSelectionAction.defaultBinding).toBeUndefined();
   });
 
-  it('requires = ["selection"]', () => {
-    expect(clearSelectionAction.requires).toEqual(['selection']);
+  it('requires selection, plus editAnchors for the enabled gate', () => {
+    expect(clearSelectionAction.requires).toEqual(['selection', 'editAnchors']);
   });
 
   it('invoker.timing = "immediate"', () => {
@@ -36,9 +36,20 @@ describe('clearSelectionAction (descriptor)', () => {
     expect(() => inv.run({} as any, undefined)).not.toThrow();
   });
 
-  it('has no enabled() guard — dispatcher always admits it (gate is the binding spec)', () => {
+  it('enabled() admits the click by default — the binding spec is the real gate', () => {
     // The click target spec ({ kind: 'click', target: 'empty', mods: {} }) is
-    // the real gate. A static enabled() that returns false would break dispatch.
-    expect(clearSelectionAction.enabled).toBeUndefined();
+    // what decides where this fires. There is deliberately no "is anything
+    // selected?" guard; clearing an empty selection is a safe no-op.
+    expect(clearSelectionAction.enabled?.({} as any)).toBe(true);
+    expect(clearSelectionAction.enabled?.(undefined as any)).toBe(true);
+  });
+
+  it('enabled() declines while a path is in anchor-edit mode', () => {
+    // Falls through to selectAnchorAction. See anchorEditing.test.ts for the
+    // handoff, and clearSelection.ts for why eligibility alone is not enough.
+    const deps = { editAnchors: { editingId: 'p1' } };
+    expect(clearSelectionAction.enabled?.(deps as any)).not.toBe(true);
+    const idle = { editAnchors: { editingId: '' } };
+    expect(clearSelectionAction.enabled?.(idle as any)).toBe(true);
   });
 });
