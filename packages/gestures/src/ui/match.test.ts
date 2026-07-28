@@ -212,6 +212,44 @@ describe('matchSpec', () => {
     expect(matchSpec(eNoAffordance, { kind: 'drag', target: { kindOf: (t: any) => !!t } }, false)).toBe(false);
   });
 
+  it('PointerDownSpec matches only the eager press dispatch', () => {
+    const press: InputEvent = { kind: 'pointerdown', stage: 'press', ...noMods };
+    const buffered: InputEvent = { kind: 'pointerdown', ...noMods };
+    expect(matchSpec(press, { kind: 'pointerDown' }, false)).toBe(true);
+    expect(matchSpec(buffered, { kind: 'pointerDown' }, false)).toBe(false);
+  });
+
+  it('DragSpec ignores the eager press dispatch', () => {
+    // The two dispatches come from one physical press. If both matched, the
+    // press would fire its pointerDown binding AND open its drag handle.
+    const press: InputEvent = { kind: 'pointerdown', stage: 'press', ...noMods };
+    expect(matchSpec(press, { kind: 'drag' }, false)).toBe(false);
+  });
+
+  it('PointerDownSpec gates on the affordance, like drag does', () => {
+    const e: InputEvent = {
+      kind: 'pointerdown',
+      stage: 'press',
+      affordance: { kind: 'handle:top-left' },
+      ...noMods,
+    };
+    expect(matchSpec(e, { kind: 'pointerDown', target: { kindOf: (t: any) => t?.kind === 'handle:top-left' } }, false)).toBe(true);
+    expect(matchSpec(e, { kind: 'pointerDown', target: { kindOf: (t: any) => t?.kind === 'rotate-handle' } }, false)).toBe(false);
+  });
+
+  it('PointerDownSpec takes strict modifiers, and `optional` widens them', () => {
+    // Load-bearing for select: its classifier must fire on a shift-extend
+    // click as well as a plain one, so it opts every modifier into 'optional'
+    // rather than relying on the strict default.
+    const shifted: InputEvent = { kind: 'pointerdown', stage: 'press', ...noMods, shiftKey: true };
+    expect(matchSpec(shifted, { kind: 'pointerDown' }, false)).toBe(false);
+    expect(matchSpec(shifted, { kind: 'pointerDown', mods: { shift: true } }, false)).toBe(true);
+    expect(matchSpec(shifted, { kind: 'pointerDown', mods: { shift: 'optional' } }, false)).toBe(true);
+    const plain: InputEvent = { kind: 'pointerdown', stage: 'press', ...noMods };
+    expect(matchSpec(plain, { kind: 'pointerDown', mods: { shift: 'optional' } }, false)).toBe(true);
+    expect(matchSpec(plain, { kind: 'pointerDown', mods: { shift: true } }, false)).toBe(false);
+  });
+
   it('MultiTouchSpec matches when fingers count matches', () => {
     const e: InputEvent = { kind: 'multitouch', fingers: 2, ...noMods };
     expect(matchSpec(e, { kind: 'multiTouch', fingers: 2 }, false)).toBe(true);

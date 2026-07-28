@@ -376,6 +376,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const lastPointerDown = new Map<number, {
       clientX: number;
       clientY: number;
+      /** World-space press point, forwarded onto the synthesized click as
+       *  `pressX`/`pressY` — see `ClickEvent`. */
+      worldX: number;
+      worldY: number;
       bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
       altKey: boolean;
       ctrlKey: boolean;
@@ -555,10 +559,20 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // press-and-release should fire `click`, not start a drag action.
       bufferedDown.set(e.pointerId, { ev, clientX: e.clientX, clientY: e.clientY });
 
+      // ...but dispatch a `stage: 'press'` copy right now, for bindings that
+      // must act while the button is still down and before the gesture is
+      // classified (select highlights the pressed node here). `matchSpec`
+      // routes the two copies to disjoint spec kinds — `pointerDown` matches
+      // only this one, `drag` only the buffered one — so a single press never
+      // fires both.
+      dispatch({ ...ev, stage: 'press' });
+
       // Store pointerdown info for click synthesis (see onPointerUp).
       lastPointerDown.set(e.pointerId, {
         clientX: e.clientX,
         clientY: e.clientY,
+        worldX: w.x,
+        worldY: w.y,
         bodyTarget,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
@@ -849,6 +863,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           shiftKey: e.shiftKey,
           worldX: wClick.x,
           worldY: wClick.y,
+          pressX: down.worldX,
+          pressY: down.worldY,
           ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
         };
         dispatch(clickEv);

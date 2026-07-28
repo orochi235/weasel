@@ -312,9 +312,21 @@ export function matchSpec(
       // Drag begins at pointerdown; the dispatcher promotes to drag after
       // threshold is crossed. The matcher fires on pointerdown.
       if (e.kind !== 'pointerdown') return false;
+      // ...but not on the eager `stage: 'press'` dispatch, which exists for
+      // `pointerDown` specs. Both dispatches come from one physical press;
+      // without this gate a press would open its drag handle twice.
+      if (e.stage === 'press') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
       // Pass the affordance hit as the `target` for `kindOf` predicates.
       // Pass `bodyTarget` for string-form TargetSpec values.
+      return matchTarget(e.affordance, spec.target, e.bodyTarget);
+    }
+
+    case 'pointerDown': {
+      // The mirror of the gate above: only the eager dispatch, never the
+      // buffered one the drag threshold releases.
+      if (e.kind !== 'pointerdown' || e.stage !== 'press') return false;
+      if (!matchModifiers(e, spec.mods, isMac)) return false;
       return matchTarget(e.affordance, spec.target, e.bodyTarget);
     }
 

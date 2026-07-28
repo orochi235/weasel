@@ -784,6 +784,21 @@ export function createDispatcher(opts?: {
             params = {
               worldX: event.worldX,
               worldY: event.worldY,
+              // Press point as well as release point — an action that places
+              // geometry at the click wants the former. See `ClickEvent`.
+              ...(event.kind === 'click'
+                ? { pressX: event.pressX, pressY: event.pressY }
+                : {}),
+              ...resolved,
+            };
+          } else if (event.kind === 'pointerdown') {
+            // Only `stage: 'press'` events reach an immediate invoker — the
+            // buffered copy matches `drag` specs, which are ongoing.
+            params = {
+              worldX: event.x,
+              worldY: event.y,
+              affordance: event.affordance,
+              bodyTarget: event.bodyTarget,
               ...resolved,
             };
           } else if (event.kind === 'drop' || event.kind === 'paste') {
@@ -809,6 +824,21 @@ export function createDispatcher(opts?: {
       }
 
       if (action.invoker?.timing === 'ongoing') {
+        // A `pointerDown` binding fires at press time, on the same
+        // `pointer-mouse` gesture id the drag will use. Letting an ongoing
+        // action open its handle here would make the drag's own dispatch find
+        // a handle already in flight and silently no-op. `PointerDownSpec`
+        // documents itself as immediate-only; enforce it rather than let the
+        // collision happen quietly.
+        if (event.kind === 'pointerdown' && event.stage === 'press') {
+          console.error(
+            `weasel dispatcher: action "${action.id}" has an ongoing invoker but is bound to a `
+            + `pointerDown spec, which fires at press time. Bind it to a drag spec, or give the `
+            + `action an immediate invoker.`,
+          );
+          finishTrace(action.id, 'unhandled');
+          return 'unhandled';
+        }
         const gestureId = gestureIdFor(event);
         // Record the drag origin so subsequent pointermove events can compute delta.
         if (event.kind === 'pointerdown') {

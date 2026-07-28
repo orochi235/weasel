@@ -87,6 +87,7 @@ export type {
 export type {
   GestureSpec,
   KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DoubleClickSpec, DragSpec,
+  PointerDownSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
   DropSpec, PasteSpec,
   ModSpec, TargetSpec, PhaseSpec,

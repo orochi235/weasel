@@ -273,6 +273,105 @@ describe('useGestureDispatcher', () => {
     });
   });
 
+  describe('pointerDown bindings', () => {
+    function fire(el: Element, type: string, init: PointerEventInit = {}) {
+      el.dispatchEvent(new PointerEvent(type, { bubbles: true, ...init }));
+    }
+
+    function pressAction(spy: (p?: Record<string, unknown>) => void): Action {
+      return {
+        id: 'demo.press',
+        label: 'press',
+        defaultBinding: { kind: 'pointerDown' },
+        invoker: { timing: 'immediate', run: (_d, params) => spy(params) },
+      };
+    }
+
+    it('fires while the button is still down, before any movement', () => {
+      const spy = vi.fn();
+      const { container } = render(
+        <Harness><Probe actionDef={pressAction(spy)} classifyTarget={() => 'empty'} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
+      // No pointerup yet — this is the whole point of the spec kind.
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('fires exactly once for a press that becomes a drag', () => {
+      // The eager press dispatch and the buffered drag dispatch come from one
+      // physical pointerdown. If the spec kinds overlapped, this would be 2.
+      const pressSpy = vi.fn();
+      const dragSpy = vi.fn();
+      const dragAction: Action = {
+        id: 'demo.drag',
+        label: 'drag',
+        defaultBinding: { kind: 'drag' },
+        invoker: { timing: 'ongoing', start: () => { dragSpy(); return { onMove: () => {}, onEnd: () => {} }; } },
+      };
+      function TwoActions() {
+        const registry = useActionsRegistry();
+        const canvasRef = useRef<HTMLCanvasElement | null>(null);
+        registry?.register(pressAction(pressSpy));
+        registry?.register(dragAction);
+        useGestureDispatcher({
+          canvasRef, actions: registry!, toolsById: new Map(), enabled: true,
+          classifyTarget: () => 'empty',
+        });
+        return <canvas ref={canvasRef} />;
+      }
+      const { container } = render(<Harness><TwoActions /></Harness>);
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40, pointerId: 1 }); });
+      expect(pressSpy).toHaveBeenCalledTimes(1);
+      expect(dragSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses an ongoing invoker rather than colliding with the drag handle', () => {
+      const startSpy = vi.fn();
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const bad: Action = {
+        id: 'demo.badPress',
+        label: 'bad',
+        defaultBinding: { kind: 'pointerDown' },
+        invoker: { timing: 'ongoing', start: () => { startSpy(); return { onEnd: () => {} }; } },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={bad} classifyTarget={() => 'empty'} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
+      expect(startSpy).not.toHaveBeenCalled();
+      expect(err).toHaveBeenCalledWith(expect.stringContaining('pointerDown spec'));
+      err.mockRestore();
+    });
+
+    it('a synthesized click carries the press point alongside the release point', () => {
+      const spy = vi.fn();
+      const clickAction: Action = {
+        id: 'demo.click',
+        label: 'click',
+        defaultBinding: { kind: 'click' },
+        invoker: { timing: 'immediate', run: (_d, params) => spy(params) },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={clickAction} classifyTarget={() => 'empty'} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      // Press and release 2px apart — under the 4px drag threshold, so this
+      // is still a click, but press and release coords differ.
+      act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointerup', { clientX: 12, clientY: 12, pointerId: 1 }); });
+      expect(spy).toHaveBeenCalledTimes(1);
+      const params = spy.mock.calls[0][0] as Record<string, number>;
+      expect(params.pressX).toBe(10);
+      expect(params.pressY).toBe(10);
+      expect(params.worldX).toBe(12);
+      expect(params.worldY).toBe(12);
+    });
+  });
+
   describe('tool-switch cancellation', () => {
     it('in-flight ongoing handles get onEnd("cancel") when active tool changes', () => {
       const endSpy = vi.fn();
