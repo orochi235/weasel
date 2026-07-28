@@ -211,7 +211,7 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
         <ResolutionWidget
           tools={toolList}
           actions={actions}
-          slots={toolSlots}
+          ambientToolIds={toolSlots.ambient}
           activeToolId={toolSlots.registry[0] ?? ''}
         />
       </section>
@@ -408,10 +408,23 @@ function RoutesWidget({
 // it. `Dispatcher.resolveAll` is that walk without the invoking; this widget
 // is its display.
 //
-// The MODIFIERS are the honest part and the TARGET is the caveated part: a
-// modifier is just a boolean the matcher reads, but a target has to stand in
-// for a real hit-test. See `resolutionInput.ts` for exactly how far the
-// synthesized hit goes and where a `kindOf` predicate can outrun it.
+// What's trustworthy here, and what isn't:
+//
+//  - ORDER is exact. Scope, specificity, and registration order are all
+//    properties of the bindings themselves, so the ranking this shows is the
+//    ranking a real dispatch computes.
+//  - MODIFIERS are exact — a modifier is just a boolean the matcher reads.
+//  - TARGET is caveated. It stands in for a real hit-test, so a `kindOf`
+//    predicate can outrun the synthesized hit. `resolutionInput.ts` says
+//    exactly how far it goes; predicate rows carry a `?`.
+//  - `disabled` REASONS are caveated. `enabled()` runs against a stub
+//    DepRegistry that resolves every dep to undefined, so a predicate like
+//    `requiresSelection` reports "selection-required" whatever is really
+//    selected. Those rows carry a `?` too. Wiring the live canvas's dep
+//    registry through would fix it, and is the obvious next step if this
+//    panel gets real use.
+//  - `ineligible` never appears: no `getRuleCtx` is supplied, so the
+//    eligibility gate is skipped entirely rather than evaluated wrongly.
 // ─────────────────────────────────────────────────────────────────────────
 
 const MOD_KEYS = ['shift', 'alt', 'meta', 'ctrl'] as const;
@@ -440,12 +453,14 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
 export function ResolutionWidget({
   tools,
   actions,
-  slots,
+  ambientToolIds,
   activeToolId,
 }: {
   tools: readonly Tool<unknown>[];
   actions: readonly Action[];
-  slots: { registry: readonly string[]; ambient: readonly string[] };
+  /** Always-on tool ids, assembled at ambient scope. Named to match the
+   *  `DispatcherContext` field this is handed straight to. */
+  ambientToolIds: readonly string[];
   activeToolId: string;
 }): ReactElement {
   const [gesture, setGesture] = useState<ResolutionGesture>('drag');
@@ -470,16 +485,25 @@ export function ResolutionWidget({
 
   const candidates = useMemo(() => {
     const dispatcher = createDispatcher();
-    return dispatcher.resolveAll(synthesizeInput({ gesture, target, mods }), {
-      actions: stubActionsRegistry(actions),
-      depRegistry: STUB_DEP_REGISTRY,
-      activeToolId,
-      hotkeyStack: [],
-      ambientToolIds: slots.ambient,
-      toolsById: new Map(tools.map((t) => [t.id, t])),
-      isMac: false,
-    });
-  }, [gesture, target, mods, actions, activeToolId, slots.ambient, tools]);
+    return dispatcher.resolveAll(
+      synthesizeInput({ gesture, target, mods }),
+      {
+        actions: stubActionsRegistry(actions),
+        depRegistry: STUB_DEP_REGISTRY,
+        activeToolId,
+        hotkeyStack: [],
+        ambientToolIds,
+        toolsById: new Map(tools.map((t) => [t.id, t])),
+        isMac: false,
+      },
+      // The question this panel exists to answer is "why didn't MY binding
+      // fire?", and on the default walk the answer is `shadowed` for
+      // everything below the winner — true but uninformative. Evaluating past
+      // the winner costs nothing here (throwaway dispatcher, no invocation),
+      // and it distinguishes "outranked" from "outranked AND disabled".
+      { evaluateShadowed: true },
+    );
+  }, [gesture, target, mods, actions, activeToolId, ambientToolIds, tools]);
 
   return (
     <div className={s.widget}>
@@ -561,7 +585,15 @@ export function ResolutionWidget({
                   </td>
                   <td><code>{c.actionId}</code></td>
                   <td><code>{c.specificity.join(' · ')}</code></td>
-                  <td>{verdictText(c.verdict)}</td>
+                  <td>
+                    {verdictText(c.verdict)}
+                    {c.verdict.kind === 'disabled' && (
+                      <span
+                        className={s.predicateBadge}
+                        title="`enabled()` ran against a synthesized context with no deps wired, so this reason reflects an empty selection / scene rather than the live one."
+                      >?</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

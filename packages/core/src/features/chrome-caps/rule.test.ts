@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluate, ALWAYS, NEVER, type Rule } from './rule';
+import { describeRule, evaluate, ALWAYS, NEVER, type Rule } from './rule';
 import type { RuleCtx } from './ruleCtx';
 
 function baseCtx(overrides: Partial<RuleCtx> = {}): RuleCtx {
@@ -127,5 +127,84 @@ describe('evaluate — combinators', () => {
     expect(evaluate(r, baseCtx())).toBe(true); // focused=true
     expect(evaluate(r, baseCtx({ focused: false, selection: ['n1'] as never }))).toBe(true);
     expect(evaluate(r, baseCtx({ focused: false }))).toBe(false);
+  });
+});
+
+describe('describeRule', () => {
+  it('renders a single-key selector as key:value', () => {
+    expect(describeRule({ capability: 'edits-page' })).toBe('capability:edits-page');
+    expect(describeRule({ mode: 'normal' })).toBe('mode:normal');
+    expect(describeRule({ focused: true })).toBe('focused:true');
+    expect(describeRule({ zoomAtLeast: 2 })).toBe('zoomAtLeast:2');
+  });
+
+  it('conjoins a multi-key selector, which is what it means', () => {
+    expect(describeRule({ mode: 'normal', focused: true }))
+      .toBe('mode:normal & focused:true');
+  });
+
+  it('renders the empty selector as the wildcard it evaluates to', () => {
+    expect(describeRule({})).toBe('*');
+    expect(evaluate({}, baseCtx())).toBe(true);
+  });
+
+  it('unwraps not / in selector values', () => {
+    expect(describeRule({ mode: { not: 'path-edit' } })).toBe('mode:not(path-edit)');
+    expect(describeRule({ mode: { in: ['normal', 'path-edit'] } }))
+      .toBe('mode:in(normal+path-edit)');
+    expect(describeRule({ capability: { not: 'edits-page' } }))
+      .toBe('capability:not(edits-page)');
+  });
+
+  it('renders a capability array, which ANDs, as a join', () => {
+    expect(describeRule({ capability: ['edits-page', 'navigation'] }))
+      .toBe('capability:edits-page+navigation');
+  });
+
+  it('spells out the fields of a selection selector', () => {
+    expect(describeRule({ selection: { empty: true } })).toBe('selection:empty=true');
+    expect(describeRule({ selection: { atLeast: 2 } })).toBe('selection:atLeast=2');
+    expect(describeRule({ selection: { is: 1, empty: false } }))
+      .toBe('selection:is=1,empty=false');
+  });
+
+  it('renders all / any / not combinators', () => {
+    expect(describeRule({ all: [{ mode: 'normal' }, { focused: true }] }))
+      .toBe('all(mode:normal, focused:true)');
+    expect(describeRule({ any: [{ mode: 'normal' }, { mode: 'path-edit' }] }))
+      .toBe('any(mode:normal, mode:path-edit)');
+    expect(describeRule({ not: { mode: 'path-edit' } })).toBe('not(mode:path-edit)');
+  });
+
+  it('renders the empty combinator constants', () => {
+    expect(describeRule(ALWAYS)).toBe('all()');
+    expect(describeRule(NEVER)).toBe('any()');
+  });
+
+  it('nests', () => {
+    const r: Rule = {
+      all: [{ mode: 'normal' }, { any: [{ selection: { atLeast: 1 } }, { not: { focused: true } }] }],
+    };
+    expect(describeRule(r))
+      .toBe('all(mode:normal, any(selection:atLeast=1, not(focused:true)))');
+  });
+
+  it('names a when predicate, falling back to a glyph when anonymous', () => {
+    function hasOpenPath(): boolean { return true; }
+    expect(describeRule({ when: hasOpenPath })).toBe('when(hasOpenPath)');
+    // An inline arrow assigned to nothing has no inferred name. The `.bind`
+    // wrapper is the reliable way to get a genuinely anonymous function —
+    // `{ when: () => true }` would infer the name `when` from the property.
+    const anon = ((): boolean => true).bind(null);
+    Object.defineProperty(anon, 'name', { value: '' });
+    expect(describeRule({ when: anon })).toBe('when(ƒ)');
+  });
+
+  it('terminates on a cyclic rule instead of throwing, where JSON.stringify throws', () => {
+    const cyclic = { not: null as unknown as Rule };
+    cyclic.not = cyclic as unknown as Rule;
+    expect(() => JSON.stringify(cyclic)).toThrow();
+    expect(() => describeRule(cyclic as Rule)).not.toThrow();
+    expect(describeRule(cyclic as Rule)).toContain('…');
   });
 });

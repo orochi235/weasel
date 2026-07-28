@@ -41,14 +41,14 @@ const ACTIONS: readonly Action[] = [
   invoker: { timing: 'immediate' as const, run: () => {} },
 }));
 
-const SLOTS = { registry: ['select', 'pen'], ambient: ['viewport'] };
+const AMBIENT_TOOL_IDS = ['viewport'];
 
 function renderWidget(activeToolId = 'select') {
   return render(
     <ResolutionWidget
       tools={TOOLS}
       actions={ACTIONS}
-      slots={SLOTS}
+      ambientToolIds={AMBIENT_TOOL_IDS}
       activeToolId={activeToolId}
     />,
   );

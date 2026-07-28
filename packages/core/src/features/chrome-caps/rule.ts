@@ -121,6 +121,69 @@ function evaluateSelector(s: Selector, ctx: RuleCtx): boolean {
   return true;
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Rendering
+// ───────────────────────────────────────────────────────────────────────────
+
+/** Deepest nesting `describeRule` will walk before giving up. `Rule` is plain
+ *  data and can't be cyclic by construction, so this is only a backstop that
+ *  makes termination unconditional — no rule anyone writes gets near it. */
+const MAX_RULE_DEPTH = 10;
+
+/**
+ * Render a selector's value side. Handles the shapes {@link Selector} allows:
+ * primitives, `{ not }` / `{ in }` wrappers, capability arrays (which AND, so
+ * they join with `+`), and the multi-field `selection` object.
+ */
+function describeValue(value: unknown, depth: number): string {
+  if (depth > MAX_RULE_DEPTH) return '…';
+  if (value === null || typeof value !== 'object') return String(value);
+  if (Array.isArray(value)) return value.map((v) => describeValue(v, depth + 1)).join('+');
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj);
+  if (keys.length === 1 && keys[0] === 'not') return `not(${describeValue(obj.not, depth + 1)})`;
+  if (keys.length === 1 && keys[0] === 'in') return `in(${describeValue(obj.in, depth + 1)})`;
+  return keys.map((k) => `${k}=${describeValue(obj[k], depth + 1)}`).join(',');
+}
+
+function describeSelector(s: Selector, depth: number): string {
+  const keys = Object.keys(s) as Array<keyof Selector>;
+  // An empty selector matches every context — `evaluateSelector` has no test
+  // to fail. `*` says that the way a CSS reader expects.
+  if (keys.length === 0) return '*';
+  return keys.map((k) => `${k}:${describeValue(s[k], depth + 1)}`).join(' & ');
+}
+
+function describeAt(rule: Rule, depth: number): string {
+  if (depth > MAX_RULE_DEPTH) return '…';
+  if (isAllRule(rule)) return `all(${rule.all.map((r) => describeAt(r, depth + 1)).join(', ')})`;
+  if (isAnyRule(rule)) return `any(${rule.any.map((r) => describeAt(r, depth + 1)).join(', ')})`;
+  if (isNotRule(rule)) return `not(${describeAt(rule.not, depth + 1)})`;
+  // `when` is the one arm with nothing to introspect — its predicate is a
+  // closure. The function's name is all a reader gets, which is itself an
+  // argument for reaching for a declarative selector instead.
+  if (isWhenRule(rule)) return `when(${rule.when.name || 'ƒ'})`;
+  return describeSelector(rule, depth);
+}
+
+/**
+ * Render a {@link Rule} as a short human-readable string, for inspectors and
+ * diagnostics that need to say WHICH rule decided something.
+ *
+ * ```
+ * { capability: 'edits-page' }               → capability:edits-page
+ * { all: [{ mode: 'normal' }, { focused: true }] } → all(mode:normal, focused:true)
+ * { not: { selection: { empty: true } } }    → not(selection:empty=true)
+ * { when: function hasPath() { … } }         → when(hasPath)
+ * ```
+ *
+ * Never throws and always terminates — unlike `JSON.stringify`, which throws
+ * on a cyclic value and renders the `when` arm as a useless `{}`.
+ */
+export function describeRule(rule: Rule): string {
+  return describeAt(rule, 0);
+}
+
 export function evaluate(rule: Rule, ctx: RuleCtx): boolean {
   if (isAllRule(rule)) return rule.all.every((r) => evaluate(r, ctx));
   if (isAnyRule(rule)) return rule.any.some((r) => evaluate(r, ctx));

@@ -48,7 +48,7 @@ export {
   capabilityNot,
 } from './conditions';
 
-export { evaluate, ALWAYS, NEVER } from './rule';
+export { evaluate, describeRule, ALWAYS, NEVER } from './rule';
 export { buildRuleCtx, DEFAULT_ALLOWED_CAPABILITIES } from './ruleCtx';
 export { defaultVisibilityRules } from './defaults';
 export { resolveVisibility } from './resolve';

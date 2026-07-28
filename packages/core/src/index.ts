@@ -219,6 +219,7 @@ export type {
   MatchResult,
   ResolveOnlyResult,
   ResolvedCandidate,
+  ResolveAllOptions,
   UseGestureDispatcherOptions,
 } from './interactions/dispatcher';
 
@@ -441,6 +442,7 @@ export {
   capabilityAll,
   capabilityNot,
   evaluate,
+  describeRule,
   ALWAYS,
   NEVER,
   buildRuleCtx,
