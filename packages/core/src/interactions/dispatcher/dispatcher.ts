@@ -231,6 +231,36 @@ export interface ResolveOnlyResult {
   ownerToolId: string | null;
 }
 
+/**
+ * One candidate from `Dispatcher.resolveAll` — a binding that matched the
+ * event, with why it did or didn't get to fire.
+ *
+ * Verdicts:
+ *  - `would-fire`  — eligible, `enabled()` passed, and nothing above it fired.
+ *    At most one candidate per call carries this.
+ *  - `ineligible`  — the action's `eligible` rule evaluated false against the
+ *    live `RuleCtx`. `reason` is the rule, serialized.
+ *  - `disabled`    — `enabled()` returned a disabled reason, carried verbatim.
+ *  - `shadowed`    — never asked: something above it fires first, or the same
+ *    action was already evaluated higher in the list (several bindings may
+ *    point at one action, and the dispatcher tries each action once).
+ */
+export interface ResolvedCandidate {
+  actionId: string;
+  action: Action;
+  binding: GestureBinding;
+  scope: BindingScope;
+  ownerToolId: string | null;
+  /** The tuple from `specificity(binding.spec)`, surfaced so a reader can see
+   *  why one candidate outranks another rather than inferring it. */
+  specificity: readonly [number, number, number, number];
+  verdict:
+    | { kind: 'would-fire' }
+    | { kind: 'ineligible'; reason: string }
+    | { kind: 'disabled'; reason: string }
+    | { kind: 'shadowed' };
+}
+
 export interface Dispatcher {
   /**
    * Route an input event through the binding pipeline. Returns `'handled'`
