@@ -13,9 +13,12 @@ import { getGestureDescriptor, isKnownGestureName, type GestureName } from '../g
  */
 export interface RegistryEntry {
   toolId: string;
-  /** Which phase the binding's `phase` spec restricts it to, or `'initial'`
-   *  when it declares none. */
-  phase: 'initial' | 'engaged';
+  /** Which phase the binding's `phase` spec restricts it to. `'any'` when it
+   *  declares none, declares `'*'`, or declares an atom list whose atoms
+   *  don't agree on one phase — such a binding fires in either phase, and
+   *  reporting it as `'initial'` made it collide with genuinely-initial
+   *  bindings in `findConflicts`' bucket key. */
+  phase: 'initial' | 'engaged' | 'any';
   /** Structured v3 modifier requirements. Empty object = "no modifiers
    *  held" (the strict default). */
   modifiers: ParsedModifiers;
@@ -107,10 +110,19 @@ function entryFor(
   };
 }
 
-/** A binding with no `phase` restriction fires in either phase; the registry
- *  reports the resting one, matching how the old `initial` table read. */
-function phaseOf(phase: PhaseSpec | undefined): 'initial' | 'engaged' {
-  return phase === 'engaged' ? 'engaged' : 'initial';
+/** Collapse a `PhaseSpec` to the single phase a binding is restricted to, or
+ *  `'any'` when it isn't restricted to one.
+ *
+ *  `PhaseAtom.channel` says which channel's phase state the binding reads,
+ *  not which phase it fires in, so it plays no part in this collapse — only
+ *  the set of distinct `atom.phase` values matters. */
+function phaseOf(phase: PhaseSpec | undefined): 'initial' | 'engaged' | 'any' {
+  if (phase === undefined || phase === '*') return 'any';
+  if (phase === 'initial' || phase === 'engaged') return phase;
+  const distinct = new Set(phase.map((atom) => atom.phase));
+  if (distinct.size !== 1) return 'any';
+  const only = [...distinct][0];
+  return only === 'initial' || only === 'engaged' ? only : 'any';
 }
 
 /** `ModSpec` (per-key tri-state) → `ParsedModifiers`. `false` and absent both
