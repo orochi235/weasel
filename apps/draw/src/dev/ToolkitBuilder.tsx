@@ -21,6 +21,7 @@ import {
 import {
   asNodeId,
   SceneCanvas,
+  specificity,
   useActionsRegistry,
   useScene,
   type Action,
@@ -193,7 +194,7 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
       <section className={s.catalog}>
         <ToolsWidget defs={toolDefs} slots={toolSlots} actions={actions} />
         <ActionsWidget actions={actions} />
-        <RoutesWidget routes={routes} />
+        <RoutesWidget routes={routes} slots={toolSlots} />
       </section>
 
       {/* Right column: conflicts + live dispatch trace. */}
@@ -307,7 +308,18 @@ function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElemen
 // buildRouteRegistry. One row per binding.
 // ─────────────────────────────────────────────────────────────────────────
 
-function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactElement {
+// `slot` is a static fact (which slot the tool was mounted in); the runtime
+// `scope` the matcher sorts by — hotkey > active > ambient — depends on which
+// tool is active and what's on the hotkey stack at dispatch time, so it lives
+// in the Resolution widget below, sourced from resolveAll.
+function RoutesWidget({
+  routes,
+  slots,
+}: {
+  routes: readonly RegistryEntry[];
+  slots: { registry: readonly string[]; ambient: readonly string[] };
+}): ReactElement {
+  const ambientSet = new Set(slots.ambient);
   const sorted = [...routes].sort((a, b) =>
     a.toolId.localeCompare(b.toolId)
     || a.phase.localeCompare(b.phase)
@@ -325,11 +337,15 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
             <thead>
               <tr>
                 <th>Tool</th>
+                <th>Slot</th>
                 <th>Phase</th>
                 <th>Gesture</th>
                 <th>Arg</th>
                 <th>Target</th>
                 <th>Mods</th>
+                <th title="target, required mods, phase declared, typed drop/paste">
+                  Specificity
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -338,6 +354,7 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
                 return (
                 <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.arg ?? ''}-${r.target ?? ''}-${modKey}-${i}`}>
                   <td><code>{r.toolId}</code></td>
+                  <td>{ambientSet.has(r.toolId) ? 'ambient' : 'registry'}</td>
                   <td>{r.phase}</td>
                   <td>{r.gesture}</td>
                   <td>{r.arg == null
@@ -349,6 +366,7 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
                   <td>{modKey === ''
                     ? <span className={s.empty}>—</span>
                     : <code>{modKey}</code>}</td>
+                  <td><code>{specificity(r.spec).join(' · ')}</code></td>
                 </tr>
                 );
               })}
