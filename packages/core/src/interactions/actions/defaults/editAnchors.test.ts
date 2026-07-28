@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { editAnchorsAction } from './editAnchors';
 import type { InvocationCtx, AffordanceHit } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
+import { makeEditAnchorsDep } from '../testUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -79,14 +80,12 @@ describe('editAnchorsAction descriptor', () => {
 
   it('start returns empty handle when no affordance is hit (open canvas drag)', () => {
     const invoker = getOngoingInvoker(editAnchorsAction);
-    const dep: EditAnchorsDep = {
-      editingId: 'node-a',
-      setEditingId: () => {},
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,
       getEditablePath: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
       applyEdit: () => {},
-    };
+    });
     // No affordance in drag → should return {}
     const handle = invoker.start(makeCtx(dep, undefined), undefined);
     expect(handle).toEqual({});
@@ -94,14 +93,12 @@ describe('editAnchorsAction descriptor', () => {
 
   it('start returns empty handle when affordance is non-anchor (e.g. resize handle)', () => {
     const invoker = getOngoingInvoker(editAnchorsAction);
-    const dep: EditAnchorsDep = {
-      editingId: 'node-a',
-      setEditingId: () => {},
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,
       getEditablePath: () => ({ kind: 'polygon', coords: [0, 0, 10, 0, 10, 10] }),
       applyEdit: () => {},
-    };
+    });
     const resizeAffordance: AffordanceHit = { kind: 'handle:bottom-right' };
     const handle = invoker.start(makeCtx(dep, resizeAffordance), undefined);
     expect(handle).toEqual({});
@@ -154,14 +151,12 @@ function makeRealCtx(
   worldY = 5,
 ): InvocationCtx {
   let currentPose: PolygonPath = pose;
-  const dep: EditAnchorsDep = {
-    editingId: 'node-a',
-      setEditingId: () => {},
+  const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,
     getEditablePath: () => currentPose,
     applyEdit: () => {},
-  };
+  });
   const affordance: AffordanceHit = {
     kind: affordanceKind,
     targetIds: ['node-a'],
@@ -209,14 +204,12 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
   it('onEnd commit dispatches applyEdit (pose changed)', () => {
     const triangle = makeTriangle();
     let applyEditCount = 0;
-    const dep: EditAnchorsDep = {
-      editingId: 'node-a',
-      setEditingId: () => {},
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,
       getEditablePath: () => triangle,
       applyEdit: () => { applyEditCount++; },
-    };
+    });
     const affordance: AffordanceHit = { kind: 'anchor:0', targetIds: ['node-a'] };
     const startCtx: InvocationCtx = {
       world: { x: 0, y: 0 },
@@ -241,14 +234,12 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
   it('onEnd cancel does not dispatch applyEdit', () => {
     const triangle = makeTriangle();
     let opsDispatched = false;
-    const dep: EditAnchorsDep = {
-      editingId: 'node-a',
-      setEditingId: () => {},
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,
       getEditablePath: () => triangle,
       applyEdit: () => { opsDispatched = true; },
-    };
+    });
     const affordance: AffordanceHit = { kind: 'anchor:0', targetIds: ['node-a'] };
     const startCtx: InvocationCtx = {
       world: { x: 0, y: 0 },
@@ -265,14 +256,12 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
 
   it('start returns active handle for controlIn:1 when bezier pose', () => {
     const bezier = makeBezierPath();
-    const dep: EditAnchorsDep = {
-      editingId: 'node-a',
-      setEditingId: () => {},
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,
       getEditablePath: () => bezier,
       applyEdit: () => {},
-    };
+    });
     const affordance: AffordanceHit = { kind: 'controlIn:1', targetIds: ['node-a'] };
     const ctx: InvocationCtx = {
       world: { x: 5, y: 15 },
@@ -288,14 +277,12 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
 
   it('previewIds + previewPose surface the in-flight polygon; cleared after onEnd', () => {
     const triangle = makeTriangle();
-    const dep: EditAnchorsDep = {
-      editingId: 'node-a',
-      setEditingId: () => {},
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,
       getEditablePath: () => triangle,
       applyEdit: () => {},
-    };
+    });
     const affordance: AffordanceHit = { kind: 'anchor:0', targetIds: ['node-a'] };
     const startCtx: InvocationCtx = {
       world: { x: 0, y: 0 },
@@ -325,14 +312,12 @@ describe('editAnchorsAction — REAL invoker (anchors)', () => {
 
   it('start returns empty handle when anchor index is out of range', () => {
     const triangle = makeTriangle(); // only 3 anchors (0,1,2)
-    const dep: EditAnchorsDep = {
-      editingId: 'node-a',
-      setEditingId: () => {},
+    const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,
       getEditablePath: () => triangle,
       applyEdit: () => {},
-    };
+    });
     const affordance: AffordanceHit = { kind: 'anchor:99', targetIds: ['node-a'] };
     const ctx: InvocationCtx = {
       world: { x: 0, y: 0 },

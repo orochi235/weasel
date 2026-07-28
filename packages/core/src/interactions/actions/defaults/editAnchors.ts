@@ -1,32 +1,51 @@
 /**
  * `editAnchorsAction` — ongoing Action descriptor for editing polygon anchors.
  *
- * ## Status: REAL
+ * Owns the whole press-on-an-anchor gesture, because pressing and dragging
+ * an anchor are two outcomes of one interaction rather than two
+ * interactions:
  *
- * The descriptor is fully operational when the consumer wires:
+ *   - **Press** selects. Bare press replaces the anchor selection; Shift
+ *     toggles the pressed anchor in or out of it. Pressing an anchor that
+ *     is already part of a multi-anchor selection leaves the selection
+ *     alone, so you can grab a set and move it.
+ *   - **Drag** then moves whatever the press left selected — one anchor,
+ *     or every selected anchor together.
+ *   - **Dragging a control handle** moves just that handle, mirroring the
+ *     opposite one while the anchor is smooth. Alt breaks the mirror.
+ *
+ * Selection lives on the `editAnchors` dep (flat anchor indices) rather
+ * than in this handle's scratch, because the keyboard actions
+ * (`nudgeAnchors`, `deleteAnchors`) and the overlay all need to read it
+ * between gestures.
+ *
+ * ## Wiring
+ *
+ * The descriptor is operational when the consumer wires:
  *   1. `buildAffordanceAt` with a `getAnchorState` thunk so the dispatcher
  *      classifies anchor/control-handle hits as `anchor:N`, `controlIn:N`,
  *      or `controlOut:N` affordances on pointerdown.
  *   2. The `editAnchors` dep in the DepSchema.
  *
- * The invoker reads `ctx.drag.affordance.kind` to identify the hit anchor,
- * derives the coord index from `enumerateAnchors`, and on every `onMove`
- * writes the new absolute world position via `withCoord`. On `onEnd('commit')`
- * it dispatches a `createTransformOp` through `dispatchApplyBatch` so the
- * edit is undoable.
- *
  * When `ctx.drag.affordance` is absent or is not an anchor/control kind,
  * `start` returns `{}` (no-op) so other bindings can handle the drag.
  *
- * @see useEditAnchors — the React hook this descriptor mirrors.
  * @see buildAffordanceAt — the classifier that produces anchor affordances.
+ * @see anchorEdits — the pure geometry these handlers drive.
  */
 
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { EditAnchorsDep } from '../depSchema';
 import { isAnchorOrControl } from '../../dispatcher/predicates';
-import { withCoord, enumerateAnchors, translateAnchor } from '../edit-anchors/geometry';
+import {
+  anchorAt,
+  editAnchorSet,
+  moveHandleTo,
+  translateAnchorBy,
+  type AnchorSet,
+} from 'features/paths/anchorEdits';
+import { pathToAnchors } from 'features/paths/anchors';
 import { worldEditToStorage } from 'features/paths/pathInWorld';
 // Commit goes through dep.applyEdit (routes setPose or setPose+update
 // based on the node's path-storage shape); no direct op or dispatch
@@ -38,14 +57,12 @@ import type { PolygonPath } from 'features/paths/types';
 // ---------------------------------------------------------------------------
 
 /**
- * Parse an anchor affordance kind string into a coord-index usable by
- * `withCoord`. Returns `null` when the affordance is not an anchor kind.
+ * Parse an anchor affordance kind string into the anchor it names.
+ * Returns `null` when the affordance is not an anchor kind.
  *
- * Format: `'anchor:N'` | `'controlIn:N'` | `'controlOut:N'`
- * where N is the anchorIndex. `withCoord` takes a `coordIndex` derived from
- * `enumerateAnchors`, but that requires the polygon. Since we receive only
- * the affordance kind at pointerdown, we store the raw anchor info and look
- * it up in the geometry on first move.
+ * Format: `'anchor:N'` | `'controlIn:N'` | `'controlOut:N'`, where N is the
+ * flat anchor index — the same numbering `enumerateAnchors` produces and
+ * `anchorEdits` addresses by.
  */
 function parseAnchorAffordance(
   kind: string,
@@ -58,6 +75,28 @@ function parseAnchorAffordance(
   };
 }
 
+/**
+ * Resolve what a press on `anchorIndex` should leave selected.
+ *
+ * Shift toggles. A bare press on an anchor that's already part of the
+ * selection keeps the selection intact (so the drag moves the whole set);
+ * a bare press anywhere else collapses to just that anchor.
+ */
+export function selectionAfterAnchorPress(
+  current: ReadonlySet<number>,
+  anchorIndex: number,
+  additive: boolean,
+): Set<number> {
+  if (additive) {
+    const next = new Set(current);
+    if (next.has(anchorIndex)) next.delete(anchorIndex);
+    else next.add(anchorIndex);
+    return next;
+  }
+  if (current.has(anchorIndex) && current.size > 1) return new Set(current);
+  return new Set([anchorIndex]);
+}
+
 // ---------------------------------------------------------------------------
 // Internal scratch
 // ---------------------------------------------------------------------------
@@ -66,15 +105,16 @@ interface EditAnchorsScratch {
   dep: EditAnchorsDep;
   id: string;
   anchorIndex: number;
-  /** `'anchor'` drags the on-curve point and its attached handles by the
-   *  same delta. `'controlIn'` / `'controlOut'` drag only the control
-   *  point to the new absolute world coord. */
+  /** `'anchor'` drags on-curve points (and their handles) by a delta.
+   *  `'controlIn'` / `'controlOut'` drag one control point to an absolute
+   *  world coord. */
   part: 'anchor' | 'controlIn' | 'controlOut';
-  /** For control drags: index in `coords` of the control point. For
-   *  anchor drags: index of the anchor itself. */
-  coordIndex: number;
-  /** For anchor drags: the world position of the anchor at drag start.
-   *  Used to compute the (dx, dy) translation. Unused for control drags. */
+  /** Anchors this drag moves — the pressed one, or the whole anchor
+   *  selection when the press landed inside it. Flat indices. */
+  dragging: readonly number[];
+  /** World position of the pressed anchor at drag start; the drag delta is
+   *  measured from here rather than accumulated per move, so the geometry
+   *  is always derived from `originPose` in one step. */
   anchorOrigin: { x: number; y: number };
   originPose: PolygonPath;
   currentPose: PolygonPath;
@@ -92,15 +132,6 @@ interface EditAnchorsScratch {
  * Static descriptor for the `editAnchors` Action.
  *
  * Requires dep-schema entries: `selection`, `editAnchors`.
- *
- * The invoker reads `ctx.drag.affordance.kind` to identify the anchor hit.
- * If the affordance is absent or not an anchor kind, `start` returns `{}`
- * (no-op), allowing other bindings to handle the drag.
- *
- * Consumers must provide `buildAffordanceAt` with a `getAnchorState` thunk
- * so that anchor handles are classified at pointerdown.
- *
- * @see useEditAnchors — the React hook this descriptor mirrors.
  */
 export const editAnchorsAction: Action & { requires: string[] } = {
   id: 'editAnchors',
@@ -144,25 +175,31 @@ export const editAnchorsAction: Action & { requires: string[] } = {
       const storageKind = dep.getStorageKind(editingId);
       if (storageKind !== 'pose' && storageKind !== 'data') return {};
 
-      const anchors = enumerateAnchors(worldPath);
-      const anchor = anchors[anchorInfo.anchorIndex];
-      if (!anchor) return {};
+      // Decode once to validate the affordance index against the actual
+      // geometry and to read the press origin. A stale affordance (the
+      // path changed between pointerdown and now) fails here rather than
+      // silently editing whichever anchor now holds that index.
+      const decoded = pathToAnchors(worldPath) as AnchorSet;
+      const origin = anchorAt(decoded, anchorInfo.anchorIndex);
+      if (!origin) return {};
+      if (anchorInfo.part === 'controlIn' && !origin.inHandle) return {};
+      if (anchorInfo.part === 'controlOut' && !origin.outHandle) return {};
 
-      let coordIndex: number;
-      switch (anchorInfo.part) {
-        case 'anchor':
-          coordIndex = anchor.coordIndex;
-          break;
-        case 'controlIn':
-          if (!anchor.controlIn) return {};
-          coordIndex = anchor.controlIn.coordIndex;
-          break;
-        case 'controlOut':
-          if (!anchor.controlOut) return {};
-          coordIndex = anchor.controlOut.coordIndex;
-          break;
-        default:
-          return {};
+      // --- Press semantics: selection updates immediately, before any move.
+      let dragging: readonly number[] = [anchorInfo.anchorIndex];
+      if (anchorInfo.part === 'anchor') {
+        const next = selectionAfterAnchorPress(
+          dep.selectedAnchors,
+          anchorInfo.anchorIndex,
+          ctx.modifiers.shift,
+        );
+        dep.setSelectedAnchors(next);
+        // Shift-pressing an anchor OUT of the selection must not then drag
+        // it; drag whatever the press left selected, intersected with the
+        // pressed anchor's membership.
+        dragging = next.has(anchorInfo.anchorIndex)
+          ? [...next]
+          : [];
       }
 
       // For data.path nodes, we also need the original rect pose + data
@@ -178,8 +215,8 @@ export const editAnchorsAction: Action & { requires: string[] } = {
         id: editingId,
         anchorIndex: anchorInfo.anchorIndex,
         part: anchorInfo.part,
-        coordIndex,
-        anchorOrigin: { x: anchor.x, y: anchor.y },
+        dragging,
+        anchorOrigin: { x: origin.x, y: origin.y },
         originPose: worldPath,
         currentPose: worldPath,
         storageKind,
@@ -191,21 +228,28 @@ export const editAnchorsAction: Action & { requires: string[] } = {
         kind: 'edit-anchors',
         onMove(moveCtx: InvocationCtx): void {
           if (scratch.part === 'anchor') {
+            if (scratch.dragging.length === 0) return;
             const dx = moveCtx.world.x - scratch.anchorOrigin.x;
             const dy = moveCtx.world.y - scratch.anchorOrigin.y;
-            scratch.currentPose = translateAnchor(
-              scratch.originPose,
-              scratch.anchorIndex,
-              dx,
-              dy,
-            );
+            const next = editAnchorSet(scratch.originPose, (set) => {
+              for (const flat of scratch.dragging) translateAnchorBy(set, flat, dx, dy);
+            });
+            if (next) scratch.currentPose = next;
           } else {
-            scratch.currentPose = withCoord(
-              scratch.originPose,
-              scratch.coordIndex,
-              moveCtx.world.x,
-              moveCtx.world.y,
+            const side = scratch.part === 'controlIn' ? 'in' : 'out';
+            const next = editAnchorSet(scratch.originPose, (set) =>
+              moveHandleTo(
+                set,
+                scratch.anchorIndex,
+                side,
+                moveCtx.world.x,
+                moveCtx.world.y,
+                // Alt breaks the smooth mirror for this drag — read live so
+                // the user can press or release Alt mid-drag.
+                moveCtx.modifiers.alt,
+              ),
             );
+            if (next) scratch.currentPose = next;
           }
           active = true;
         },

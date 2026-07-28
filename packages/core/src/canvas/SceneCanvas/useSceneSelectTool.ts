@@ -49,6 +49,9 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
      *  alt-cycling through an overlapping stack. Default: top-most hit
      *  (alt ignored). Forwarded verbatim to `useSelectTool`. */
     pickBest?: (worldX: number, worldY: number, alt: boolean, sel: readonly string[]) => string | null;
+    /** Forwarded verbatim to `useSelectTool`. See
+     *  `UseSelectToolOptions.extendClickLocked`. */
+    extendClickLocked?: () => boolean;
   };
   insertTool?: {
     create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
@@ -228,6 +231,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     move: wiredMoveOptions,
     ...(areaSelectOptions ? { areaSelect: areaSelectOptions } : {}),
     ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
+    ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
     getNode: (id: string) => scene.get(asNodeId(id)) ?? null,
     getSelection: () => selection.current,
   });

@@ -321,13 +321,31 @@ describe('mode-gated defaults', () => {
     expect(isVisible('selection.rotation-handle')).toBe(true);
   });
 
-  it('path-edit.anchors is ON only in path-edit mode', () => {
-    expect(resolveVisibility(undefined, baseCtx({ mode: 'path-edit' }))('path-edit.anchors')).toBe(true);
-    expect(resolveVisibility(undefined, baseCtx({ mode: 'normal' }))('path-edit.anchors')).toBe(false);
-  });
+  // path-edit chrome follows the edit target, not the mode id. It used to
+  // read `{ mode: 'path-edit' }`, which hid the anchors from every
+  // consumer without a mode registry (they report mode 'normal') while
+  // the overlay layer — which consulted no rule at all — drew them
+  // anyway: visible but not grabbable.
+  for (const id of ['path-edit.anchors', 'path-edit.overlay'] as const) {
+    it(`${id} is ON whenever a path is being anchor-edited`, () => {
+      expect(resolveVisibility(undefined, baseCtx({ editingAnchors: true }))(id)).toBe(true);
+      expect(resolveVisibility(undefined, baseCtx({ editingAnchors: false }))(id)).toBe(false);
+    });
 
-  it('path-edit.overlay is ON only in path-edit mode', () => {
-    expect(resolveVisibility(undefined, baseCtx({ mode: 'path-edit' }))('path-edit.overlay')).toBe(true);
-    expect(resolveVisibility(undefined, baseCtx({ mode: 'normal' }))('path-edit.overlay')).toBe(false);
-  });
+    it(`${id} does not depend on the mode id`, () => {
+      // path-edit mode with nothing actually being edited draws nothing...
+      expect(
+        resolveVisibility(undefined, baseCtx({ mode: 'path-edit', editingAnchors: false }))(id),
+      ).toBe(false);
+      // ...and a consumer-defined mode that permits anchor editing gets
+      // the chrome without having to be named 'path-edit'.
+      expect(
+        resolveVisibility(undefined, baseCtx({ mode: 'my-node-editor', editingAnchors: true }))(id),
+      ).toBe(true);
+    });
+
+    it(`${id} is off when the ctx predates the flag`, () => {
+      expect(resolveVisibility(undefined, baseCtx({}))(id)).toBe(false);
+    });
+  }
 });

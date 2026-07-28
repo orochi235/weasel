@@ -91,6 +91,9 @@ export const focused: Condition = cond({ focused: true });
 /** Any action currently in flight (read: user is gesturing). */
 export const gesturing: Condition = cond({ gesturing: true });
 
+/** A path is currently in anchor-edit mode. */
+export const editingAnchors: Condition = cond({ editingAnchors: true });
+
 /** Current selection is resizable (every selected node passes the consumer's
  *  `selectTool.resize.resizable` predicate). Absent predicate → resizable. */
 export const resizable: Condition = cond({ resizable: true });

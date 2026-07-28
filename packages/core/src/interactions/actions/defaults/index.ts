@@ -17,6 +17,11 @@ export {
 } from './booleans';
 export { deleteAction } from './delete';
 export { groupAction, ungroupAction } from './group';
+export {
+  nudgeAnchorsUpAction, nudgeAnchorsDownAction,
+  nudgeAnchorsLeftAction, nudgeAnchorsRightAction,
+  deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
+} from './anchorEditing';
 export { undoAction, redoAction } from './undoRedo';
 export {
   makeToolOffhandAction,

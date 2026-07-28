@@ -26,6 +26,21 @@ export {
 } from './builder';
 export { boundsOfPath } from './bounds';
 export { countPathAnchors, pathToAnchors, anchorsToPath, isAnchorSmooth, nearestSegmentT, type PenAnchor } from './anchors';
+export {
+  anchorAt,
+  anchorCount,
+  anchorsInRect,
+  deleteAnchorsAt,
+  editAnchorSet,
+  flatAnchorIndex,
+  insertAnchorOnSegment,
+  locateAnchor,
+  moveHandleTo,
+  openSubpathAt,
+  translateAnchorBy,
+  type AnchorRect,
+  type AnchorSet,
+} from './anchorEdits';
 export { splitCubicAtT, fitCubicThroughDeletion, type Point } from './cubicMath';
 export { pointInPath, strokeHitTest, type PointInPathOptions, type StrokeHitTestOptions } from './hitTest';
 export {

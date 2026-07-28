@@ -140,6 +140,32 @@ export interface EditAnchorsDep {
    *  (when the polygon lives on data.path). Records one history entry
    *  labelled `label`. */
   applyEdit(id: string, worldPath: unknown, label: string): void;
+
+  /**
+   * Anchors currently selected within the edited path, as **flat anchor
+   * indices** — the same numbering `enumerateAnchors` produces and the
+   * `anchor:N` affordance kinds carry.
+   *
+   * Selection is transient UI state, deliberately not part of the scene:
+   * it is cleared whenever `editingId` changes, and any edit that
+   * renumbers anchors (insert, delete) is responsible for leaving it
+   * coherent. Empty means "no anchor selected" — the keyboard actions
+   * (nudge, delete) no-op rather than acting on all anchors, matching
+   * Illustrator.
+   */
+  selectedAnchors: ReadonlySet<number>;
+  /** Replace the anchor selection. Pass an empty iterable to clear. */
+  setSelectedAnchors(next: Iterable<number>): void;
+
+  /**
+   * In-flight anchor-marquee rect in world coords, or null when no
+   * marquee drag is active. Written by `marqueeAnchorsAction` and read by
+   * the path-editing overlay — the same "ongoing action owns the preview,
+   * chrome just draws it" split the move/resize ghosts use.
+   */
+  marquee: { x: number; y: number; width: number; height: number } | null;
+  /** Set or clear the in-flight marquee rect. */
+  setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
 }
 
 /**

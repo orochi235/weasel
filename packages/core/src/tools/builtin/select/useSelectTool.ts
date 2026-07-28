@@ -64,6 +64,20 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   /** Legacy `useAreaSelect` options. Ignored now —
    *  `areaSelectAction` configuration moved to the action registration. */
   areaSelect?: unknown;
+  /**
+   * When this returns true, a Shift/Meta extend-click must NOT change the
+   * node selection.
+   *
+   * `<SceneCanvas>` wires it to "a path is in anchor-edit mode", where
+   * Shift-click means "add this anchor to the anchor selection". Without
+   * the lock the same click also toggles the edited node out of the node
+   * selection, and the `editAnchors` dep treats that as the edit target
+   * disappearing — so multi-selecting anchors silently exited edit mode.
+   *
+   * Only extend-clicks are locked. A plain click still re-selects, so
+   * clicking a different node exits edit mode as usual.
+   */
+  extendClickLocked?: () => boolean;
   /** Optional debug sink. Reserved for future overlay/affordance hitbox
    *  recording. */
   debug?: DebugSink;
@@ -230,8 +244,16 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       const preClick = sel;
       const hitAlreadySelected = preClick.includes(top as NodeId);
       const isExtend = ctx.modifiers.shift || ctx.modifiers.meta;
+      // While a path is in anchor-edit mode, an extend-click belongs to the
+      // anchor selection, not the node selection. Letting it through would
+      // toggle the edited node out of the node selection, which the
+      // `editAnchors` dep reads as "the edit target is gone" — so
+      // shift-clicking a second anchor silently tore down edit mode.
+      // Plain clicks still fall through: clicking a different node exits
+      // edit mode, which is what you'd expect.
+      const extendLocked = isExtend && options.extendClickLocked?.() === true;
       const deferClick = hitAlreadySelected && preClick.length > 1 && !isExtend;
-      if (!deferClick) ctx.selection.applyClick(top as NodeId, ctx.modifiers);
+      if (!deferClick && !extendLocked) ctx.selection.applyClick(top as NodeId, ctx.modifiers);
       const moveIds: string[] = hitAlreadySelected && preClick.length > 0 ? [...preClick] : [top];
       const moveScratch: SelectScratch = {
         kind: 'move',

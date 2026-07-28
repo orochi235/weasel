@@ -77,6 +77,8 @@ const KIT_IDS = [
   'move',
   'resize', 'rotate', 'areaSelect', 'insert', 'insert.adjustRotation', 'clone',
   'editAnchors', 'enterPathEdit', 'exitPathEdit', 'insertPathAnchor',
+  'nudgeAnchors.up', 'nudgeAnchors.down', 'nudgeAnchors.left', 'nudgeAnchors.right',
+  'deleteAnchors', 'cutPathAtAnchor', 'marqueeAnchors', 'selectAnchor',
   'lassoSelect', 'viewport.pinchZoom',
   // viewport.pan / viewport.zoom are registered conditionally by SceneCanvas's
   // useViewportActions, not by useStandardActions — see useViewportActions.ts.
@@ -92,7 +94,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 51 kit-standard action descriptors', () => {
+  it('registers all 59 kit-standard action descriptors', () => {
     const seen: string[][] = [];
     render(
       <Providers>

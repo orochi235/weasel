@@ -31,6 +31,16 @@ export interface RuleCtx {
    *  `selection.resize-handles`. Absent (legacy ctx builders) is treated as
    *  resizable — back-compat: handles show unless a consumer opts a node out. */
   readonly selectionResizable?: boolean;
+  /** Whether a path is currently in anchor-edit mode. Read by the
+   *  `editingAnchors:` selector, which gates the path-edit chrome.
+   *
+   *  This is deliberately a fact about state, not about permission: the
+   *  anchor overlay and the anchor hit-test must agree, and the thing they
+   *  must agree on is "is there an edited path right now", which no
+   *  capability or mode id answers. A mode that allows `edits-anchors`
+   *  with nothing being edited should draw no anchors. Absent is treated
+   *  as false. */
+  readonly editingAnchors?: boolean;
 }
 
 export interface BuildRuleCtxArgs {
@@ -45,6 +55,8 @@ export interface BuildRuleCtxArgs {
   allowedCapabilities: ReadonlySet<CapabilityTag>;
   /** Optional — omitted means "resizable" (handles show). See {@link RuleCtx}. */
   selectionResizable?: boolean;
+  /** Optional — omitted means "no path is being anchor-edited". */
+  editingAnchors?: boolean;
 }
 
 /**
@@ -75,5 +87,6 @@ export function buildRuleCtx(args: BuildRuleCtxArgs): RuleCtx {
     mode: args.mode,
     allowedCapabilities: args.allowedCapabilities,
     selectionResizable: args.selectionResizable,
+    editingAnchors: args.editingAnchors,
   };
 }

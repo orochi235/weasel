@@ -13,7 +13,7 @@ function setup() {
   const wrapPath = (path: PolygonPath, opts: { closed: boolean }): Pose =>
     ({ kind: 'path', path, closed: opts.closed });
   const { result } = renderHook(() => usePenTool<Pose>({ wrapPath, adapter }));
-  const { tool } = result.current;
+  const tool = result.current;
   const scratch = tool.initScratch!() as PenScratch;
   const layer = createPenPreviewLayer({ penTool: tool });
   return { tool, scratch, layer };
@@ -82,28 +82,6 @@ describe('createPenPreviewLayer', () => {
     expect(linkedTree.length - brokenTree.length).toBe(2);
   });
 
-  it('renders edit-mode anchor chrome when scratch.mode === edit (regression)', () => {
-    // Edit mode populates scratch.edit and clears scratch.current /
-    // scratch.cursor. The early-return guard must NOT bail in this case,
-    // or the anchor squares never paint.
-    const { scratch, layer } = setup();
-    scratch.mode = 'edit';
-    scratch.edit = {
-      objId: 'p1',
-      anchors: [[{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]],
-      closed: [false],
-      selectedAnchors: new Set(),
-      activeHandle: null,
-      dirty: false,
-      preConvert: null,
-      gestureBaseline: null,
-      marquee: null,
-    };
-    const tree = layer.draw(undefined, { x: 0, y: 0, scale: { x: 1, y: 1 } }, DIMS);
-    // Three anchor squares — one path command each. Anchor chrome must render
-    // even though current / cursor are both null in edit mode.
-    expect(tree.length).toBeGreaterThanOrEqual(3);
-  });
 
   it('emits one path for each finished subpath', () => {
     const { scratch, layer } = setup();

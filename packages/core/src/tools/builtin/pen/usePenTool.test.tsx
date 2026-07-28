@@ -67,7 +67,7 @@ function setup(over: {
     wrapPath, adapter, ...over,
   }));
   // Pen state is persistent — initScratch returns the same ref.
-  const rawTool = result.current.tool;
+  const rawTool = result.current;
   const scratch = rawTool.initScratch!();
   const tool = actWrapTool(rawTool);
   return { tool, adapter, wrapPath, scratch };

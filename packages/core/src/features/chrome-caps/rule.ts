@@ -21,6 +21,9 @@ export interface Selector {
   hovering?: boolean;
   hoveringSelected?: boolean;
   zoomAtLeast?: number;
+  /** Matches `ctx.editingAnchors` — true while a path is in anchor-edit
+   *  mode. Absent flag is treated as `false`. */
+  editingAnchors?: boolean;
   /** Matches `ctx.selectionResizable`. Absent flag is treated as `true`
    *  (resizable), so `{ resizable: true }` passes for legacy ctx builders
    *  that don't compute it. */
@@ -103,6 +106,7 @@ function evaluateSelector(s: Selector, ctx: RuleCtx): boolean {
     const isHovSel = ctx.hover !== null && ctx.selection.includes(ctx.hover);
     if (isHovSel !== s.hoveringSelected) return false;
   }
+  if (s.editingAnchors !== undefined && (ctx.editingAnchors ?? false) !== s.editingAnchors) return false;
   if (s.zoomAtLeast !== undefined) {
     const sx = ctx.view.scale.x, sy = ctx.view.scale.y;
     const z = sx === sy ? sx : Math.sqrt(sx * sy);

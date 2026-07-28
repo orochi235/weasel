@@ -50,6 +50,35 @@ interface OpsApplier {
 export interface EditAnchorsStateRef {
   getEditingId(): string;
   setEditingId(id: string | null): void;
+  /** Selected anchors (flat indices) for the node in `editingId`. */
+  getSelectedAnchors(): ReadonlySet<number>;
+  setSelectedAnchors(next: ReadonlySet<number>): void;
+  /** In-flight anchor-marquee rect in world coords. */
+  getMarquee(): { x: number; y: number; width: number; height: number } | null;
+  setMarquee(rect: { x: number; y: number; width: number; height: number } | null): void;
+}
+
+/** Extra wiring for {@link useEditAnchorsDepSource}. */
+export interface EditAnchorsDepOptions {
+  /**
+   * Whether the host currently permits anchor editing — i.e. whether the
+   * active mode allows the `edits-anchors` capability.
+   *
+   * **Omit this when no mode registry is wired.** Absent means "no
+   * modality, so nothing revokes edit mode", which is the correct
+   * behavior for the many consumers that never opt into modes; passing a
+   * predicate built from an empty capability set would revoke edit mode
+   * instantly. Same trap as `DEFAULT_ALLOWED_CAPABILITIES` guards against
+   * on the chrome side.
+   *
+   * When supplied and it returns false, `editingId` reads as empty — the
+   * overlay stops drawing, the anchors stop being hittable, and the
+   * anchor selection is dropped. This is what makes leaving path-edit
+   * mode by ANY route (Escape, breadcrumb, a consumer calling
+   * `exitMode()` directly) tear down edit state, rather than only the one
+   * route that happens to reach `exitPathEditAction`.
+   */
+  anchorEditingAllowed?: () => boolean;
 }
 
 interface RectPoseShape { x: number; y: number; width: number; height: number }
@@ -93,11 +122,14 @@ export function resolveEditablePathOf(
   return pathInWorld(storage.data.path, storage.pose) as PolygonPath;
 }
 
+const EMPTY_ANCHOR_SELECTION: ReadonlySet<number> = new Set<number>();
+
 export function useEditAnchorsDepSource(
   scene: Scene<unknown, string, unknown>,
   selection: SelectionApi,
   adapter: OpsApplier,
   externalState?: EditAnchorsStateRef,
+  options?: EditAnchorsDepOptions,
 ): void {
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
@@ -105,6 +137,8 @@ export function useEditAnchorsDepSource(
   selectionRef.current = selection;
   const adapterRef = useRef(adapter);
   adapterRef.current = adapter;
+  const allowedRef = useRef(options?.anchorEditingAllowed);
+  allowedRef.current = options?.anchorEditingAllowed;
 
   const [localEditingId, setLocalEditingIdState] = useState<string>('');
   const setLocalEditingId = useCallback((id: string | null) => {
@@ -123,12 +157,24 @@ export function useEditAnchorsDepSource(
     const sc = sceneRef.current;
     const ad = adapterRef.current;
     const s = selectionRef.current;
+    const ext = externalRef.current;
     let effectiveId = readEditingId();
     if (effectiveId) {
       const node = sc.get(effectiveId as NodeId);
       const inSelection = (s.current as NodeId[]).includes(effectiveId as NodeId);
-      if (!node || !inSelection) effectiveId = '';
+      // A mode registry that no longer permits `edits-anchors` revokes
+      // edit mode wholesale — see EditAnchorsDepOptions.anchorEditingAllowed.
+      const permitted = allowedRef.current ? allowedRef.current() : true;
+      if (!node || !inSelection || !permitted) effectiveId = '';
     }
+    // Anchor selection and the marquee belong to one specific edited
+    // node. The moment `editingId` reads as empty — exited, deselected,
+    // deleted, or revoked by a mode change — they are stale by
+    // definition, so never hand them out alongside an empty id.
+    const selectedAnchors = effectiveId
+      ? (ext?.getSelectedAnchors() ?? EMPTY_ANCHOR_SELECTION)
+      : EMPTY_ANCHOR_SELECTION;
+    const marquee = effectiveId ? (ext?.getMarquee() ?? null) : null;
     return {
       editingId: effectiveId,
       setEditingId(id: string | null) {
@@ -140,9 +186,22 @@ export function useEditAnchorsDepSource(
             next || null,
             next ? 'enter' : 'exit',
           );
+          // Anchor indices only mean something relative to one path.
+          ext?.setSelectedAnchors(EMPTY_ANCHOR_SELECTION);
+          ext?.setMarquee(null);
         }
         if (externalRef.current) externalRef.current.setEditingId(id);
         else setLocalEditingIdRef.current(id);
+      },
+      selectedAnchors,
+      setSelectedAnchors(next: Iterable<number>) {
+        if (!effectiveId) return;
+        ext?.setSelectedAnchors(new Set(next));
+      },
+      marquee,
+      setMarquee(rect) {
+        if (!effectiveId) return;
+        ext?.setMarquee(rect);
       },
       getEditablePath(id: string): PolygonPath | null {
         const node = sc.get(id as NodeId);
