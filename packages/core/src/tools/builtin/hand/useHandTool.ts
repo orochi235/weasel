@@ -68,12 +68,11 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
         },
         cursor: 'grab',
         initial: {},
-        engaged: {
-          cursor: 'grabbing',
-        },
       }), {
         // Declarative binding routes drag through the dispatcher +
-        // viewportDragPanAction.
+        // viewportDragPanAction, which also owns the grabbing cursor
+        // (`Action.activeCursor`) the tool used to declare as an `engaged`
+        // phase entry.
         bindings: [{ spec: { kind: 'drag' as const }, actionId: 'viewport.dragPan' }],
       }) as Tool<HandScratch | null>,
     // eslint-disable-next-line react-hooks/exhaustive-deps

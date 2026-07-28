@@ -70,6 +70,11 @@ export const viewportDragPanAction: Action & { requires: string[] } = {
   // (e.g. empty canvas with no marquee-capable tool ahead of it), the
   // hover-cursor pump shows the open hand.
   cursor: 'grab',
+  // ...and the closed hand once the pan is actually running. This was
+  // `useHandTool`'s `engaged: { cursor: 'grabbing' }` — a phase-table entry
+  // on a tool, which meant a consumer who bound `viewport.dragPan` without
+  // the hand tool got no state cursor at all.
+  activeCursor: 'grabbing',
   requires: ['view'],
   invoker: {
     timing: 'ongoing',

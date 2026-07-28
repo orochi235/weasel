@@ -719,8 +719,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
     function refreshHoverCursor(): void {
       if (!canvas || !lastHover) return;
+      // Mid-gesture the prediction is meaningless — what matters is what the
+      // gesture IS. An in-flight action's `activeCursor` wins; with none
+      // declared the override clears and the active tool's `Tool.cursor`
+      // shows through, as before.
       if (activePointers.size > 0 || dispatcher.inFlight().size > 0) {
-        clearHoverCursor();
+        applyHoverCursor(dispatcher.inFlightCursor());
         return;
       }
       const h = lastHover;

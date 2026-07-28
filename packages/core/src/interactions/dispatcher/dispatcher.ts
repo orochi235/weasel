@@ -258,6 +258,14 @@ export interface Dispatcher {
   inFlight(): ReadonlyMap<string, OngoingHandle>;
 
   /**
+   * CSS cursor for the gesture currently in flight, or `null` when nothing
+   * is. Reads `Action.activeCursor` (falling back to `Action.cursor`) off the
+   * action whose handle is open — the hover pump applies this instead of its
+   * prediction once a gesture starts, which is how `grab` becomes `grabbing`.
+   */
+  inFlightCursor(): string | null;
+
+  /**
    * Read-only iterator over currently in-flight `OngoingHandle` instances.
    *
    * Surface for the canvas's preview-ghost layer (`usePreviewGhostLayer`)
@@ -350,6 +358,10 @@ export function createDispatcher(opts?: {
    *  `null` when the opening binding came from an ambient action with no
    *  owning tool. */
   const inFlightOwners = new Map<string, string | null>();
+  /** Gesture id -> the Action whose handle is in flight, so the hover-cursor
+   *  pump can ask what the gesture currently IS rather than what a drag from
+   *  here WOULD be. See `Action.activeCursor`. */
+  const inFlightActions = new Map<string, Action>();
 
   // -------------------------------------------------------------------------
   // Helpers
@@ -603,6 +615,7 @@ export function createDispatcher(opts?: {
         handle.onEnd?.(stubCtx, 'commit');
         inFlightHandles.delete(gestureId);
         inFlightOwners.delete(gestureId);
+        inFlightActions.delete(gestureId);
         dragOrigins.delete(gestureId);
       }
       // Whether we had a handle or not, this is a follow-up event, not a new match.
@@ -654,6 +667,7 @@ export function createDispatcher(opts?: {
         handle.onEnd?.(endCtx, 'commit');
         inFlightHandles.delete(gestureId);
         inFlightOwners.delete(gestureId);
+        inFlightActions.delete(gestureId);
         dragOrigins.delete(gestureId);
         dragPoints.delete(gestureId);
       }
@@ -669,6 +683,7 @@ export function createDispatcher(opts?: {
         handle.onEnd?.(endCtx, 'cancel');
         inFlightHandles.delete(gestureId);
         inFlightOwners.delete(gestureId);
+        inFlightActions.delete(gestureId);
         dragOrigins.delete(gestureId);
         dragPoints.delete(gestureId);
       }
@@ -904,6 +919,7 @@ export function createDispatcher(opts?: {
         }
         inFlightHandles.set(gestureId, handle);
         inFlightOwners.set(gestureId, match.ownerToolId);
+        inFlightActions.set(gestureId, action);
         finishTrace(action.id, 'handled');
         return 'handled';
       }
@@ -975,6 +991,7 @@ export function createDispatcher(opts?: {
     }
     inFlightHandles.clear();
     inFlightOwners.clear();
+    inFlightActions.clear();
     uiOngoingByAction.clear();
     dragOrigins.clear();
     dragPoints.clear();
@@ -987,6 +1004,14 @@ export function createDispatcher(opts?: {
 
   function inFlight(): ReadonlyMap<string, OngoingHandle> {
     return inFlightHandles;
+  }
+
+  function inFlightCursor(): string | null {
+    for (const action of inFlightActions.values()) {
+      const cursor = action.activeCursor ?? action.cursor;
+      if (cursor) return cursor;
+    }
+    return null;
   }
 
   function getInFlightHandles(): Iterable<OngoingHandle> {
@@ -1094,6 +1119,7 @@ export function createDispatcher(opts?: {
         }
         inFlightHandles.delete(gestureId);
         inFlightOwners.delete(gestureId);
+        inFlightActions.delete(gestureId);
         if (uiOngoingByAction.get(actionId) === gestureId) {
           uiOngoingByAction.delete(actionId);
         }
@@ -1107,6 +1133,7 @@ export function createDispatcher(opts?: {
     resolveOnly,
     cancelAll: cancelAllWithNotify,
     inFlight,
+    inFlightCursor,
     getInFlightHandles,
     subscribe,
     getActiveAction,

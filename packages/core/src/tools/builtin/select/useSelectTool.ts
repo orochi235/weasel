@@ -97,9 +97,6 @@ export type SelectAdapter<TNode extends { id: string }, TPose> =
  * @internal
  */
 interface PressClassification {
-  /** `'body'` when the press landed on a node, `'empty'` otherwise. Read only
-   *  by the cursor. */
-  kind: 'idle' | 'body' | 'empty';
   /**
    * Set when the press hit an already-selected node inside a multi-selection
    * with no extend modifier.
@@ -207,7 +204,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
   // What the last press classified. Written by `select.pick`, read by
   // `select.collapseDeferred` and the cursor. See `PressClassification`.
-  const pressRef = useRef<PressClassification>({ kind: 'idle', deferredClickId: null });
+  const pressRef = useRef<PressClassification>({ deferredClickId: null });
 
   // Options in a ref so the actions — built once — always see the live
   // callbacks without rebuilding the Tool record.
@@ -257,7 +254,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             })();
 
         if (top === null) {
-          pressRef.current = { kind: 'empty', deferredClickId: null };
+          pressRef.current = { deferredClickId: null };
           return;
         }
 
@@ -279,10 +276,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         if (!deferClick && !extendLocked) {
           selection.applyClick(top as NodeId, mods);
         }
-        pressRef.current = {
-          kind: 'body',
-          deferredClickId: deferClick ? top : null,
-        };
+        pressRef.current = { deferredClickId: deferClick ? top : null };
       },
     },
   }), []);
@@ -313,7 +307,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       timing: 'immediate' as const,
       run: (deps, params) => {
         const deferred = pressRef.current.deferredClickId;
-        pressRef.current = { kind: 'idle', deferredClickId: null };
+        pressRef.current = { deferredClickId: null };
         if (deferred === null) return;
         const selection = deps.selection as SelectionApi | undefined;
         if (!selection) return;
@@ -334,11 +328,11 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         id: 'select',
         capabilities: ['creates-selection'],
         hookName: 'useSelectTool',
-        cursor: () => {
-          if (pressRef.current.kind === 'body') return 'move';
-          if (pressRef.current.kind === 'empty') return 'crosshair';
-          return 'default';
-        },
+        // A plain string: the mid-gesture cursors this used to compute from
+        // gesture scratch now live on the actions that own those gestures
+        // (`moveAction.activeCursor`, `areaSelectAction.activeCursor`), so
+        // they apply to any consumer binding them, not just this tool.
+        cursor: 'default',
         presentation: {
           label: 'Select',
           icon: createElement(SelectIcon),

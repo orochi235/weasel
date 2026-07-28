@@ -244,7 +244,23 @@ describe('useGestureDispatcher', () => {
       expect(canvas.style.cursor).toBe('nwse-resize');
     });
 
-    it('clears the override while a gesture is in flight', () => {
+    it('swaps to the in-flight action cursor once the gesture starts', () => {
+      const grabbing: Action = { ...panAction, activeCursor: 'grabbing' };
+      const { container } = render(
+        <Harness>
+          <Probe actionDef={grabbing} classifyTarget={() => 'empty'} />
+        </Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointermove', { clientX: 0, clientY: 0 }); });
+      expect(canvas.style.cursor).toBe('grab');
+      // Press + drag past threshold: the pan handle opens.
+      act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 30, clientY: 30, pointerId: 1 }); });
+      expect(canvas.style.cursor).toBe('grabbing');
+    });
+
+    it('an in-flight action with no activeCursor holds its hover hint', () => {
       const { container } = render(
         <Harness>
           <Probe actionDef={panAction} classifyTarget={() => 'empty'} />
@@ -252,11 +268,9 @@ describe('useGestureDispatcher', () => {
       );
       const canvas = container.querySelector('canvas')!;
       act(() => { fire(canvas, 'pointermove', { clientX: 0, clientY: 0 }); });
-      expect(canvas.style.cursor).toBe('grab');
-      // Press + drag past threshold: the pan handle opens; override clears.
       act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
       act(() => { fire(canvas, 'pointermove', { clientX: 30, clientY: 30, pointerId: 1 }); });
-      expect(canvas.style.cursor).toBe('');
+      expect(canvas.style.cursor).toBe('grab');
     });
 
     it('leaves the cursor alone when the predicted action declares none', () => {
