@@ -23,10 +23,12 @@ describe('buildRouteRegistry', () => {
     expect(r).toContainEqual<RegistryEntry>({
       toolId: 'select', actionId: 'clearSelection', phase: 'any',
       gesture: 'click', arg: undefined, target: 'empty', modifiers: {},
+      spec: { kind: 'click', target: 'empty' },
     });
     expect(r).toContainEqual<RegistryEntry>({
       toolId: 'select', actionId: 'move', phase: 'any',
       gesture: 'drag', arg: undefined, target: 'selected-body', modifiers: {},
+      spec: { kind: 'drag', target: 'selected-body' },
     });
     expect(r).toHaveLength(2);
   });
@@ -103,6 +105,13 @@ describe('buildRouteRegistry', () => {
       tool('b', [{ spec: { kind: 'click' }, actionId: 'y' }]),
     ]);
     expect(r.map((e) => e.toolId)).toEqual(['a', 'b']);
+  });
+
+  it('carries the source spec on each row', () => {
+    const spec = { kind: 'drag', target: 'selected-body', mods: { shift: true } };
+    const r = buildRouteRegistry([tool('select', [{ spec, actionId: 'move' }])]);
+    expect(r).toHaveLength(1);
+    expect(r[0].spec).toBe(spec);
   });
 
   describe('phase resolution', () => {

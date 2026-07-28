@@ -34,6 +34,11 @@ export interface RegistryEntry {
   target: string | undefined;
   /** The action this binding fires. */
   actionId: string;
+  /** The `GestureSpec` this row was flattened from, by reference. Reflection
+   *  consumers that need something the grammar doesn't capture — the
+   *  specificity tuple, a `kindOf` predicate identity — read it here rather
+   *  than re-walking `Tool.bindings`. */
+  spec: GestureSpec;
 }
 
 /**
@@ -107,6 +112,7 @@ function entryFor(
     target: descriptor.hasTarget
       ? targetOf('target' in spec ? spec.target : undefined)
       : undefined,
+    spec,
   };
 }
 
