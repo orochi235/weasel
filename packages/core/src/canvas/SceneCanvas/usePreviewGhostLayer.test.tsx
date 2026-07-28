@@ -55,6 +55,7 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
   return {
     handleInput: () => 'unhandled',
     resolveOnly: () => null,
+    resolveAll: () => [],
     cancelAll: () => {},
     inFlightCursor: () => null,
   inFlight: () => map,
