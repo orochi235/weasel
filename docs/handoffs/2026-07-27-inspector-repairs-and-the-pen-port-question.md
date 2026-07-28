@@ -23,6 +23,13 @@ Gates: `tsc --noEmit` clean, full suite green (5108 passed / 4 skipped — down
 from 5124 because the pen-edit and duplicate-overlay tests went with their
 implementations; 44 new tests landed). `tsup build` still **not** run.
 
+**Update, later session.** `npm run prepublishOnly` (`tsc --noEmit && vitest
+run && tsup build`) run on this stack: **exit 0**, `tsup build` included — the
+gap above is closed. A bare `npx vitest run` reports 614 files / 5352 passed
+/ 4 skipped, more than `prepublishOnly`'s scoped run; both green. One further
+commit landed since, `75d0cbc3`, closing the "Known rough edge" below.
+Still nothing pushed.
+
 A separate read-only audit of the tool/gesture/dispatch layers ran alongside
 this work — `docs/handoffs/2026-07-27-tool-gesture-duplication-audit.md`. It
 found the two-input-pipeline problem that several items here are downstream of,
@@ -305,15 +312,53 @@ covers both.
    forwards a hand-picked field list rather than spreading — a new
    `useSelectTool` option is invisible until you add it there.
 
-### Known rough edge
+### RESOLVED: the clearSelection / selectAnchor rough edge
+
+Fixed in `75d0cbc3`, and it did **not** need the eligibility-for-tool-routes
+work this section originally assumed.
 
 `selectAnchor` binds ambient `{ kind: 'click' }`. `useSelectTool` binds
 `clearSelection` to `{ click, target: 'empty', mods: {} }` at *active* scope,
 which outranks it. In path-edit mode that action is filtered out by capability
 so anchor clicks win; in a consumer with no mode registry, clicking an anchor
-that happens to sit over empty canvas clears the node selection instead of
-selecting the anchor. Anchors over the path body are unaffected. Fixing it
-properly means the same eligibility-for-tool-routes work as bug 4.
+that happens to sit over empty canvas cleared the node selection instead of
+selecting the anchor. Anchors over the path body were unaffected.
+
+The fix is the **`enabled` fall-through**, the second of the two mechanisms
+this document already describes for the node-level twins:
+`clearSelectionAction.enabled` declines while `editAnchors.editingId` is set,
+and the dispatcher moves to the next candidate. It is the exact click twin of
+the opt-out `areaSelectAction.start` performs for the drag gesture — that one
+was written during the pen port and this one was simply missed. `clearSelection`
+gained `editAnchors` in its `requires` so the deps bag carries it (the
+dev-mode Proxy warns on undeclared reads).
+
+**Why gating on the dep is safe** despite bug 1's Escape leak:
+`useEditAnchorsDepSource` masks `editingId` to `''` unless the node exists, is
+in the selection, *and* the active mode still permits `edits-anchors`. A
+non-empty id therefore means anchor editing is genuinely live.
+
+`clearSelection.ts`'s docblock also claimed an `enabled` guard the code never
+had — the trailing comment said the opposite. Corrected.
+
+**Verification, stated honestly.** Unit-level: `clearSelection.test.ts` and
+`anchorEditing.test.ts` (new `clearSelection / selectAnchor handoff` block)
+pin both directions; full suite green at 5352 passed / 4 skipped, `tsc
+--noEmit` clean, `tsup build` clean. **Not reproduced live** — see the gap
+below, which is the real reason.
+
+### Open: the non-modal fall-through has no live consumer in this repo
+
+Both `enabled` fall-throughs — this one and `areaSelect`/`marqueeAnchors` —
+exist *only* for consumers with no mode registry. There is no such consumer
+here that can enter path-edit: `apps/draw` wires `getActiveMode`, and nothing
+under `apps/site/` does (zero `getActiveMode` hits) or enters path-edit at all.
+
+So the branch these guards protect is unit-tested and never exercised in a
+browser, in either direction. Every bug in §4 was caught by running the app;
+this class structurally can't be. A small non-modal path-edit demo under
+`apps/site/demos/` would give the mechanism a live home and would have caught
+this one. Not done — it's a scope call, not an oversight.
 
 ---
 
