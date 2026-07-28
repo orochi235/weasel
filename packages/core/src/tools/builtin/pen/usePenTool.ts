@@ -486,7 +486,6 @@ export function usePenTool<TPose>(
         { spec: { kind: 'key' as const, key: 'Enter' }, actionId: 'pen.finish' },
         { spec: { kind: 'key' as const, key: 'Escape' }, actionId: 'pen.cancel' },
       ],
-      initial: {},
     });
   }, [actions]);
 }

@@ -117,7 +117,7 @@ function modifierKeys(modifiers: ParsedModifiers): readonly KeySpec[] | undefine
 import s from './RegistryInspector.module.css';
 import type {
   TreeEntry, ToolEntry, ActionEntry, BundleEntry, IconEntry, OpFactoryEntry,
-  ShapeKindEntry, RoutingKindEntry, PropertiesKindEntry, PhaseSummary, PhaseEntry, GestureEntry, PhaseOutputEntry,
+  ShapeKindEntry, RoutingKindEntry, PropertiesKindEntry, ToolSurface, GestureEntry, PhaseOutputEntry,
   OpKindEntry, SlotEntry, RouteEntry, RouteTargetEntry, ModifierSetEntry, GroupEntry,
   MetaEntry, CallbackRef, CallbackSource, TreeCategoryNode,
 } from './registryData';
@@ -329,7 +329,6 @@ function renderEntryBody(
     case 'propertiesKind': return <PropertiesKindDetail entry={entry} />;
     case 'icon':          return <IconDetail entry={entry} />;
     case 'opFactory':     return <OpFactoryDetail entry={entry} />;
-    case 'phase':         return <PhaseDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'gesture':       return <GestureDetail entry={entry} tools={tools} actions={actions} onNavigate={onNavigate} />;
     case 'phaseOutput':   return <PhaseOutputDetail entry={entry} tools={tools} onNavigate={onNavigate} />;
     case 'opKind':        return <OpKindDetail entry={entry} onNavigate={onNavigate} />;
@@ -703,101 +702,12 @@ function GroupDetail({
   );
 }
 
-function PhaseDetail({
-  entry, tools, onNavigate,
-}: { entry: PhaseEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  const declaring = tools.filter((t) =>
-    entry.id === 'initial' ? true : t.phases.engaged !== undefined,
-  );
-  const rows = declaring.map((t) => {
-    const phase = (entry.id === 'initial' ? t.phases.initial : t.phases.engaged) ?? EMPTY_PHASE;
-    return {
-      id: t.id,
-      tool: t,
-      gestures: activeGestures(phase),
-      outputs: activeOutputs(phase),
-    };
-  });
-  return (
-    <div>
-      <h2 className={s.detailHeading}><Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{entry.label}</Badge></h2>
-      <p className={s.empty}>
-        {entry.id === 'initial'
-          ? 'Resting phase — every tool declares an initial phase.'
-          : 'Engaged phase — entered after a gesture transition (e.g. drag start).'}
-      </p>
-      <h3 className={s.subHeading}>Tools declaring this phase</h3>
-      <DataGrid
-        rows={rows}
-        columns={[
-          toolNameColumn(onNavigate),
-          {
-            id: 'gestures',
-            header: 'gestures',
-            sortable: false,
-            render: (r) => r.gestures.length === 0
-              ? <span className={s.empty}>—</span>
-              : <span>{r.gestures.map((g) => (
-                  <Badge key={g} {...(GESTURE_BADGE_PROPS as BadgeProps)}>{g}</Badge>
-                ))}</span>,
-          },
-          {
-            id: 'outputs',
-            header: 'outputs',
-            sortable: false,
-            render: (r) => r.outputs.length === 0
-              ? <span className={s.empty}>—</span>
-              : <span>{r.outputs.map((o) => (
-                  <code key={o} className={s.tag}>{o}</code>
-                ))}</span>,
-          },
-        ]}
-        empty="No tools declare this phase."
-      />
-    </div>
-  );
-}
-
-/** Two-way mapping between legacy `GestureChannels` keys and modern
- *  `GestureSpec.kind` values. The legacy phase grammar uses `pointerDown`
- *  and `keyDown`+`keyUp`; the dispatcher's `GestureSpec` union uses
- *  `pointerdown` and splits keys into `key` (initial press) and `key-held`
- *  (held while something else fires). Double-click has no legacy channel
- *  any more — the phase grammar's `dblTap` was deleted when double-click
- *  detection consolidated onto the dispatcher. A gesture catalog entry can
- *  be either vocabulary; this map normalizes both directions. */
-const SPEC_KIND_ALIASES: Readonly<Record<string, readonly string[]>> = {
-  // Legacy → modern (catalog id is a phase channel; look up actions by these spec kinds).
-  click: ['click'],
-  pointerDown: ['pointerdown'],
-  drag: ['drag'],
-  wheel: ['wheel'],
-  keyDown: ['key', 'key-held'],
-  keyUp: [],
-  // Modern → modern identity (catalog id is a GestureSpec.kind).
-  doubleClick: ['doubleClick'],
-  key: ['key'],
-  'key-held': ['key-held'],
-  multiTouch: ['multiTouch'],
-  multiTouchTap: ['multiTouchTap'],
-  pointerdown: ['pointerdown'],
-};
-
-/** Reverse: given a catalog entry id (legacy OR modern), return the legacy
- *  `GestureChannels` key(s) that map to it, for the phase-grammar tool lookup. */
-const LEGACY_CHANNEL_ALIASES: Readonly<Record<string, readonly string[]>> = {
-  click: ['click'],
-  pointerDown: ['pointerDown'],
-  drag: ['drag'],
-  wheel: ['wheel'],
-  keyDown: ['keyDown'],
-  keyUp: ['keyUp'],
-  // Modern catalog entries map back to legacy channels where there's an
-  // equivalent. Modern-only entries (multiTouch*, key-held) have none —
-  // phase grammar doesn't model them.
-  doubleClick: [],
-  key: ['keyDown', 'keyUp'],
-  pointerdown: ['pointerDown'],
+/** `GestureSpec.kind` → the `GestureChannels` key a tool's surface records
+ *  it under. Only the hyphenated kind differs. This used to be two maps
+ *  translating between phase-channel names and spec kinds in both
+ *  directions, because a route could be authored in either grammar. */
+const CHANNEL_FOR_KIND: Readonly<Record<string, string>> = {
+  'key-held': 'keyHeld',
 };
 
 interface ActionBindingRow {
@@ -878,16 +788,13 @@ function GestureDetail({
   actions: readonly ActionEntry[];
   onNavigate: Props['onNavigate'];
 }) {
-  const legacyChannels = LEGACY_CHANNEL_ALIASES[entry.id] ?? [];
-  const toolRows = tools.flatMap((t) => {
-    const phases: ('initial' | 'engaged')[] = [];
-    const matchesInitial = legacyChannels.some((c) => (t.phases.initial.gestures as unknown as Record<string, unknown>)[c]);
-    const matchesEngaged = legacyChannels.some((c) => (t.phases.engaged?.gestures as unknown as Record<string, unknown> | undefined)?.[c]);
-    if (matchesInitial) phases.push('initial');
-    if (matchesEngaged) phases.push('engaged');
-    return phases.length === 0 ? [] : [{ id: t.id, tool: t, phases }];
-  });
-  const aliasSet = new Set(SPEC_KIND_ALIASES[entry.id] ?? []);
+  const channel = CHANNEL_FOR_KIND[entry.id] ?? entry.id;
+  const toolRows = tools.flatMap((t) =>
+    (t.surface.gestures as unknown as Record<string, unknown>)[channel]
+      ? [{ id: t.id, tool: t }]
+      : [],
+  );
+  const aliasSet = new Set([entry.id]);
   const actionRows = flattenActionBindings(actions)
     .filter((r) => aliasSet.has(r.specKind))
     .map((r) => ({ id: `${r.actionId}::${r.specKind}::${r.bindingText}`, ...r }));
@@ -931,18 +838,6 @@ function GestureDetail({
         rows={toolRows}
         columns={[
           toolNameColumn(onNavigate),
-          {
-            id: 'phases',
-            header: 'phases',
-            sortable: false,
-            render: (r) => (
-              <span>
-                {r.phases.map((p) => (
-                  <Badge key={p} {...(PHASE_BADGE_PROPS as BadgeProps)}>{p}</Badge>
-                ))}
-              </span>
-            ),
-          },
         ]}
         empty="No tools subscribe via phase grammar."
       />
@@ -953,16 +848,12 @@ function GestureDetail({
 function PhaseOutputDetail({
   entry, tools, onNavigate,
 }: { entry: PhaseOutputEntry; tools: readonly ToolEntry[]; onNavigate: Props['onNavigate'] }) {
-  const rows = tools.flatMap((t) => {
-    const phases: ('initial' | 'engaged')[] = [];
-    if (t.phases.initial.outputs[entry.id]) phases.push('initial');
-    if (t.phases.engaged?.outputs[entry.id]) phases.push('engaged');
-    return phases.length === 0 ? [] : [{ id: t.id, tool: t, phases }];
-  });
+  const rows = tools.flatMap((t) =>
+    t.surface.outputs[entry.id] ? [{ id: t.id, tool: t }] : [],
+  );
   // PhaseDef docs: only `initial.overlay` is read by the runtime; the
   // engaged-phase form is currently a declarative no-op. Same caveat doesn't
   // apply to `cursor` / `claimsAll`, which both phases honor.
-  const engagedNoop = entry.id === 'overlay';
   const blurb = entry.id === 'overlay'
     ? 'Render layer emitted while the tool is active. Only `initial.overlay` is read by the runtime today.'
     : entry.id === 'cursor'
@@ -979,25 +870,6 @@ function PhaseOutputDetail({
         rows={rows}
         columns={[
           toolNameColumn(onNavigate),
-          {
-            id: 'phases',
-            header: 'phases',
-            sortable: false,
-            render: (r) => (
-              <span>
-                {r.phases.map((p) => (
-                  <Badge
-                    key={p}
-                    {...(PHASE_BADGE_PROPS as BadgeProps)}
-                    className={engagedNoop && p === 'engaged' ? s.empty : undefined}
-                    aria-label={engagedNoop && p === 'engaged' ? 'Declared but not read by the runtime' : undefined}
-                  >
-                    {p}
-                  </Badge>
-                ))}
-              </span>
-            ),
-          },
         ]}
         empty="No tools declare this output."
       />
@@ -1052,14 +924,6 @@ function mergedToolColumn(
   };
 }
 
-const EMPTY_PHASE: PhaseSummary = {
-  gestures: {
-    click: false, pointerDown: false, drag: false,
-    wheel: false, keyDown: false, keyUp: false,
-  },
-  outputs: { cursor: false, overlay: false, claimsAll: false },
-};
-
 function IconDetail({ entry }: { entry: IconEntry }) {
   const C = entry.Component;
   const match = findSourceMatch(entry.id);
@@ -1079,12 +943,12 @@ function IconDetail({ entry }: { entry: IconEntry }) {
   );
 }
 
-function activeGestures(p: PhaseSummary): readonly (keyof typeof p.gestures)[] {
-  return GESTURE_CHANNEL_KEYS.filter((k) => p.gestures[k]);
+function activeGestures(surface: ToolSurface): readonly (keyof ToolSurface['gestures'])[] {
+  return GESTURE_CHANNEL_KEYS.filter((k) => surface.gestures[k]);
 }
 
-function activeOutputs(p: PhaseSummary): readonly (keyof typeof p.outputs)[] {
-  return PHASE_OUTPUT_KEYS.filter((k) => p.outputs[k]);
+function activeOutputs(surface: ToolSurface): readonly (keyof ToolSurface['outputs'])[] {
+  return PHASE_OUTPUT_KEYS.filter((k) => surface.outputs[k]);
 }
 
 function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props['onNavigate'] }) {
@@ -1166,11 +1030,8 @@ function ToolDetail({ entry, onNavigate }: { entry: ToolEntry; onNavigate: Props
             </dd>
           </>
         )}
-        <dt>phases</dt>
-        <dd>
-          <PhaseRow label="initial" phase={entry.phases.initial} />
-          {entry.phases.engaged && <PhaseRow label="engaged" phase={entry.phases.engaged} />}
-        </dd>
+        <dt>surface</dt>
+        <dd><SurfaceRow surface={entry.surface} /></dd>
         {caps.length > 0 && (
           <>
             <dt>capabilities</dt>
@@ -1367,12 +1228,11 @@ function SourceLink({ match }: { match: { path: string; line: number } }) {
   );
 }
 
-function PhaseRow({ label, phase }: { label: string; phase: PhaseSummary }) {
-  const gestures = activeGestures(phase);
-  const outputs = activeOutputs(phase);
+function SurfaceRow({ surface }: { surface: ToolSurface }) {
+  const gestures = activeGestures(surface);
+  const outputs = activeOutputs(surface);
   return (
     <div className={s.phaseRow}>
-      <Badge {...(PHASE_BADGE_PROPS as BadgeProps)}>{label}</Badge>
       {gestures.length === 0 && outputs.length === 0
         ? <span className={s.empty}>—</span>
         : (

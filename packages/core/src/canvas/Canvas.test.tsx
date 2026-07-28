@@ -181,131 +181,49 @@ describe('<Canvas>', () => {
     expect(leaveSpy).toHaveBeenCalled();
   });
 
-  it('layer.onUncapturedMove is suppressed when a gesture is active', () => {
+  it('layer.onUncapturedMove is suppressed while a pointer is held', () => {
+    // `onUncapturedMove` means "hover", so it stands down while a button is
+    // down. That used to be decided by asking the tool dispatcher whether a
+    // gesture was in flight; `<Canvas>` tracks the press itself now.
     const moveSpy = vi.fn();
     const layer: RenderLayer<unknown> = {
       id: 'tracker', label: 'tracker', space: 'screen',
       draw: () => [],
       onUncapturedMove: moveSpy,
     };
-    // Mock a tools object with a dispatcher that reports an active gesture.
-    const mockDispatcher = {
-      onPointerDown: vi.fn(),
-      onPointerMove: vi.fn(),
-      onPointerUp: vi.fn(),
-      cancelGesture: vi.fn(),
-      onKeyDown: vi.fn(),
-      onKeyUp: vi.fn(),
-      onWheel: vi.fn(),
-      hasActiveGesture: vi.fn(() => true),
-      getActiveScratch: vi.fn(() => null),
-      __setGetCtx: vi.fn(),
-      __setHitTestContext: vi.fn(),
-    };
-    const mockTools = {
-      active: 't',
-      hotkeyEngaged: null,
-      gestureTick: 0,
-      registry: {},
-      dispatcher: mockDispatcher,
-      getActiveOverlays: () => [],
-      has: () => false,
-    } as never;
     const { container } = render(
-      <Canvas
-        width={100} height={100}
-        layers={{ custom: { layer } }}
-        tools={mockTools}
-        clientToWorld={(_canvas, cx, cy) => [cx, cy]}
-      />
+      <Canvas width={100} height={100} layers={{ tracker: { layer } }} />,
     );
     const canvas = container.querySelector('canvas')!;
+
     fireEvent.pointerMove(canvas, { clientX: 10, clientY: 20 });
-    expect(moveSpy).not.toHaveBeenCalled();
+    expect(moveSpy).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 30, clientY: 40 });
+    expect(moveSpy).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerUp(canvas, { clientX: 30, clientY: 40, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 50, clientY: 60 });
+    expect(moveSpy).toHaveBeenCalledTimes(2);
   });
 });
 
 import { defineTool } from 'tools/routing/defineTool';
-import { begin, claim } from 'tools/routing/result';
 import { ROTATED_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 
 describe('Canvas tools mode', () => {
-  it('routes pointer events through tools.dispatcher when tools prop is passed', () => {
-    const onDragStart = vi.fn();
-    const onDragEnd = vi.fn();
-
-    function Test() {
-      const tools = useTools({
-        active: 't',
-        registry: {
-          t: defineTool({
-            id: 't',
-            initial: {
-              drag: () => {
-                onDragStart();
-                return begin({
-                  scratch: null,
-                  onRelease: () => { onDragEnd(); return claim(); },
-                });
-              },
-            },
-          }),
-        },
-      });
-      return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
-    }
-
-    const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-
-    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 50, clientY: 10, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 50, clientY: 10, pointerId: 1 });
-
-    expect(onDragStart).toHaveBeenCalledOnce();
-    expect(onDragEnd).toHaveBeenCalledOnce();
-  });
-
-  it('does NOT invoke usePointerGestures-derived selection clear when tools prop is passed', () => {
-    // Tap on empty space normally calls selection.clear(); with tools wired,
-    // it should route through the dispatcher instead.
-    const select = { current: [], get: vi.fn(() => []), clear: vi.fn(), set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(), applyClick: vi.fn() };
-
-    function Test() {
-      const tools = useTools({
-        active: 't',
-        registry: { t: defineTool({ id: 't', initial: {} }) }, // no handlers — every event passes
-      });
-      return (
-        <Canvas
-          width={100}
-          height={100}
-          adapter={{} as never}
-          layers={{}}
-          selection={select as never}
-          tools={tools}
-        />
-      );
-    }
-
-    const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-
-    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 10, clientY: 10, pointerId: 1 });
-
-    // Without tools, selection.clear() would have been called from the
-    // usePointerGestures empty-space tap path. With tools, it must not.
-    expect(select.clear).not.toHaveBeenCalled();
-  });
+  // `<Canvas>` no longer routes pointer input: the tool-routing dispatcher it
+  // pumped is gone, and `useGestureDispatcher` attaches its own listeners to
+  // the same element (mounted by `<SceneCanvas>`). The two tests that lived
+  // here — "routes pointer events through tools.dispatcher" and its
+  // selection-clear companion — were asserting that plumbing.
 
   it('applies the active tool cursor to the canvas style', () => {
     function Test() {
       const tools = useTools({
         active: 't',
-        registry: { t: defineTool({ id: 't', cursor: 'crosshair', initial: {} }) },
+        registry: { t: defineTool({ id: 't', cursor: 'crosshair' }) },
       });
       return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
@@ -341,7 +259,7 @@ describe('Canvas tools mode', () => {
       };
 
       function Test() {
-        const tool = defineTool({ id: 't', initial: { overlay: () => toolOverlay } });
+        const tool = defineTool({ id: 't', overlay: toolOverlay });
         const tools = useTools({
           active: 't',
           registry: { t: tool },
@@ -375,8 +293,8 @@ describe('Canvas tools mode', () => {
       let capturedHas: ((id: string) => boolean) | undefined;
 
       function Test() {
-        const always = defineTool({ id: 'delete', initial: {} });
-        const active = defineTool({ id: 'select', initial: {} });
+        const always = defineTool({ id: 'delete' });
+        const active = defineTool({ id: 'select' });
         const tools = useTools({
           active: 'select',
           registry: { select: active },

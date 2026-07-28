@@ -25,11 +25,12 @@ import {
   useScene,
   type Action,
   type GestureSpec,
+  type Tool,
   type ToolBundle,
   type ToolsApi,
 } from '@weasel-js/core';
 import {
-  buildActionRegistry,
+  buildRouteRegistry,
   canonicalModifiers,
   findConflicts,
   type Conflict,
@@ -131,6 +132,22 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
     return out;
   }, [toolsSig]);
 
+  // Routes live on the Tool (`bindings`), not the authored def, so the
+  // reflection consumers take the Tools themselves.
+  const toolList = useMemo(() => {
+    void toolsSig;
+    const tools = toolsRef.current;
+    if (!tools) return [];
+    const seen = new Set<string>();
+    const out: Tool<unknown>[] = [];
+    for (const t of [...Object.values(tools.registry), ...tools.ambient]) {
+      if (seen.has(t.id)) continue;
+      seen.add(t.id);
+      out.push(t as Tool<unknown>);
+    }
+    return out;
+  }, [toolsSig]);
+
   const toolSlots = useMemo(() => {
     void toolsSig;
     const tools = toolsRef.current;
@@ -141,8 +158,8 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
     };
   }, [toolsSig]);
 
-  const routes = useMemo(() => buildActionRegistry(toolDefs), [toolDefs]);
-  const conflicts = useMemo(() => findConflicts(toolDefs), [toolDefs]);
+  const routes = useMemo(() => buildRouteRegistry(toolList), [toolList]);
+  const conflicts = useMemo(() => findConflicts(toolList), [toolList]);
 
   // Live action registry (kit-standard + anything else in scope).
   const reg = useActionsRegistry();
@@ -287,7 +304,7 @@ function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElemen
 
 // ─────────────────────────────────────────────────────────────────────────
 // Widget: route signatures pulled from the live ToolDefs via
-// buildActionRegistry. One row per (tool, phase, gesture, target, mods).
+// buildRouteRegistry. One row per binding.
 // ─────────────────────────────────────────────────────────────────────────
 
 function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactElement {

@@ -16,17 +16,16 @@ describe('RegistryDetail', () => {
         { route: '[initial] drag => empty +shift' },
       ],
       slot: 'registry',
-      phases: {
-        initial: {
-          gestures: {
-            click: true, pointerDown: false, drag: true,
-            wheel: false, keyDown: false, keyUp: false,
-          },
-          outputs: { cursor: true, overlay: false, claimsAll: false },
+      surface: {
+        gestures: {
+          click: true, doubleClick: false, pointerDown: false, drag: true,
+          wheel: false, key: false, keyHeld: false, contextMenu: false,
+          multiTouchTap: false,
         },
+        outputs: { cursor: true, overlay: false },
       },
       capabilities: {
-        initScratch: false, onActivate: false, onDeactivate: false, hitOverride: false,
+        initScratch: false, onActivate: false, onDeactivate: false,
       },
     };
     render(<RegistryDetail entry={entry} tools={[]} actions={[]} onNavigate={() => {}} />);

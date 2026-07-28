@@ -44,8 +44,6 @@ function makeToolsApi(): ToolsApi {
     disengageHotkey: () => {},
     ambient: [],
     registry: {},
-    dispatcher: { handleEvent: () => 'pass' } as unknown as ToolsApi['dispatcher'],
-    gestureTick: 0,
     has: () => false,
     getActiveOverlays: () => [],
   };
@@ -116,27 +114,26 @@ describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
       previewIds: () => [a],
       previewPose: (id) => (id === a ? PREVIEW_POSE : null),
     };
-    // Start: one handle in flight → ghost emitted.
-    const dispatcher1 = makeDispatcher([handle]);
     const tools = makeToolsApi();
+
+    // Start: one handle in flight → ghost emitted.
     const { result: r1 } = renderHook(() =>
       usePreviewGhostLayer<Data, 'main', Pose>({
         scene,
         tools,
         sceneSlot: { drawOne },
-        dispatcher: dispatcher1,
+        dispatcher: makeDispatcher([handle]),
       }),
     );
     expect(collectRects(r1.current.draw(undefined, VIEW, DIMS))).toHaveLength(1);
 
     // After commit: dispatcher reports no in-flight handles → no ghost.
-    const dispatcher2 = makeDispatcher([]);
     const { result: r2 } = renderHook(() =>
       usePreviewGhostLayer<Data, 'main', Pose>({
         scene,
         tools,
         sceneSlot: { drawOne },
-        dispatcher: dispatcher2,
+        dispatcher: makeDispatcher([]),
       }),
     );
     expect(collectRects(r2.current.draw(undefined, VIEW, DIMS))).toHaveLength(0);

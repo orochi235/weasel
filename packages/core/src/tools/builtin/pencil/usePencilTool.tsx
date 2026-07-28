@@ -56,7 +56,6 @@ export function usePencilTool(): Tool<null> {
             opts: { params: { kind: 'pencil' } },
           },
         ],
-        initial: {},
       }),
     [],
   );

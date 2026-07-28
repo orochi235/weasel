@@ -1754,7 +1754,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       tools={tools}
       layers={wiredLayers}
       pickEvery={internalPickEvery}
-      getNodeAtPoint={getNodeAtPoint}
       getIsVisible={getIsVisibleForCanvas}
       previewIdsExtra={() => {
         // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
@@ -2001,8 +2000,16 @@ function GestureDispatcherMounter({
     for (const [id, tool] of Object.entries(tools.registry)) {
       m.set(id, tool);
     }
+    // Ambient tools too — their bindings assemble at ambient scope, and the
+    // dispatcher resolves them through this same map.
+    for (const tool of tools.ambient) m.set(tool.id, tool);
     return m;
-  }, [tools.registry]);
+  }, [tools.registry, tools.ambient]);
+
+  const ambientToolIds = useMemo(
+    () => tools.ambient.map((t) => t.id),
+    [tools.ambient],
+  );
 
   // Stable refs for the optional thunk inputs so the thunks themselves are
   // stable function identities across renders (no need to pass them as deps).
@@ -2124,12 +2131,28 @@ function GestureDispatcherMounter({
   }, [canvasRef, viewRef]);
 
   const wrappedAffordanceAt = useMemo(() => {
-    if (!affordanceAt) return undefined;
+    // Note this is NOT gated on `affordanceAt` being built: registered layers
+    // produce affordances of their own, and a consumer with no selection
+    // chrome (a canvas that is nothing but a HUD, say) still needs those.
     return (screenPoint: { x: number; y: number }) => {
       const worldPoint = clientToWorld(screenPoint.x, screenPoint.y);
-      return affordanceAt(worldPoint);
+      // Registered layers first: they draw on top of the kit's own chrome, so
+      // they get first refusal on the point. A hit becomes an `AffordanceHit`
+      // whose kind names the layer, carrying whatever the layer's hit-test
+      // resolved — which is how `@weasel-js/hud` routes a press on one of its
+      // widgets to its own action instead of the active tool.
+      const extra = canvasApiRef?.current?.hitTestExtras?.(worldPoint.x, worldPoint.y);
+      if (extra) {
+        return {
+          kind: `layer:${extra.layerId}`,
+          ...(extra.binding.initialScratch !== undefined
+            ? { payload: extra.binding.initialScratch }
+            : {}),
+        };
+      }
+      return affordanceAt ? affordanceAt(worldPoint) : null;
     };
-  }, [affordanceAt, clientToWorld]);
+  }, [affordanceAt, clientToWorld, canvasApiRef]);
 
   const wrappedClassifyTarget = useMemo(() => {
     if (!classifyTarget) return undefined;
@@ -2153,6 +2176,7 @@ function GestureDispatcherMounter({
     canvasRef,
     actions: registry!,
     toolsById,
+    ambientToolIds,
     enabled,
     keyboard,
     affordanceAt: wrappedAffordanceAt,

@@ -56,7 +56,6 @@ export function useLassoTool(
       bindings: [
         { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'lassoSelect' },
       ],
-      initial: {},
     });
   }, [options.keybinding]);
 }

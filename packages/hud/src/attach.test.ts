@@ -8,7 +8,8 @@ function makeApi(): CanvasExtensionApi & { _layer?: import('../../core/src/core/
   const api = {
     element: null,
     requestRedraw: vi.fn(),
-    registerLayer: vi.fn((layer) => {
+    hitTestExtras: vi.fn(() => null),
+  registerLayer: vi.fn((layer) => {
       (api as { _layer?: unknown })._layer = layer;
       return () => { (api as { _layer?: unknown })._layer = undefined; };
     }),
@@ -79,6 +80,7 @@ describe('attachHud', () => {
       const api: CanvasExtensionApi = {
         element: canvas,
         requestRedraw: vi.fn(),
+        hitTestExtras: vi.fn(() => null),
         registerLayer: vi.fn(() => () => {}),
       };
       attachHud(api, hud);

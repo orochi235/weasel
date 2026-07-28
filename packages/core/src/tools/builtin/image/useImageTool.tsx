@@ -45,7 +45,6 @@ export function useImageTool(options: UseImageToolOptions): Tool<null> {
             opts: { params: { kind: 'image', src } },
           },
         ],
-        initial: {},
       }),
     [src, label],
   );

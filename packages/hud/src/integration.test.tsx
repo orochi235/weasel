@@ -2,28 +2,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { Canvas } from '../../core/src/canvas/Canvas';
-import type { CanvasExtensionApi } from '@weasel-js/core';
-import { useTools } from '../../core/src/tools/useTools';
-import type { Tool } from '../../core/src/tools/types';
-import { useHud } from './react';
+import { SceneCanvas, useScene } from '@weasel-js/core';
+import type { SceneCanvasApi } from '@weasel-js/core';
+import { useHud, useHudTool } from './react';
 import { _resetFontRegistryForTests } from '../../core/src/features/text/atlas/registerFont';
 import { readTokens } from './theme';
-import { ActiveToolContextProvider } from '../../core/src/interactions/actions/activeToolContext';
 
 const defaultResolved = readTokens(null);
 
 interface HarnessApi {
-  toolOnDown: ReturnType<typeof vi.fn<(e: PointerEvent) => void>>;
   press: ReturnType<typeof vi.fn<() => void>>;
   hudRef: { current: ReturnType<typeof useHud> | null };
 }
 
 /**
- * jsdom doesn't implement PointerEvent with clientX/clientY via the constructor;
- * fireEvent.pointerDown produces a nativeEvent with clientX: undefined.
- * Synthesize via Event + Object.assign, which is how the existing tool unit tests
- * (e.g. useTools.test.ts) work around this jsdom gap.
+ * jsdom doesn't implement PointerEvent with clientX/clientY via the
+ * constructor; `fireEvent.pointerDown` produces a nativeEvent with
+ * `clientX: undefined`. Synthesize via Event + Object.assign instead.
  */
 function makePointerEvent(type: string, init: Record<string, unknown> = {}): PointerEvent {
   const ev = new Event(type, { bubbles: true }) as PointerEvent;
@@ -31,37 +26,36 @@ function makePointerEvent(type: string, init: Record<string, unknown> = {}): Poi
   return ev;
 }
 
-function makeMockTool(toolOnDown: ReturnType<typeof vi.fn<(e: PointerEvent) => void>>): Tool {
-  return {
-    id: 'mock',
-    pointer: {
-      onDown: (e, _ctx) => {
-        toolOnDown(e);
-        return 'claim';
-      },
-    },
-  } as Tool;
-}
+interface Empty { id: string }
 
+/**
+ * The HUD's input rides the same dispatcher every tool does: its layer's
+ * hit-test surfaces a `layer:weasel-hud` affordance, and the ambient
+ * `useHudTool()` bindings gate on that.
+ */
 function Harness({ apiOut }: { apiOut: HarnessApi }) {
-  const canvasRef = React.useRef<CanvasExtensionApi>(null);
-  const hud = useHud(canvasRef);
+  const ref = React.useRef<SceneCanvasApi>(null);
+  const hud = useHud(ref);
+  const hudTool = useHudTool();
   apiOut.hudRef.current = hud;
-
-  const mockTool = React.useMemo(() => makeMockTool(apiOut.toolOnDown), [apiOut.toolOnDown]);
-  const tools = useTools({ active: 'mock', registry: { mock: mockTool } });
+  const scene = useScene<Empty>({ items: [] });
 
   return (
-    <Canvas
-      ref={canvasRef}
-      width={200} height={200}
+    <SceneCanvas
+      ref={ref}
+      width={200}
+      height={200}
+      scene={scene}
       layers={{}}
-      tools={tools}
-      // Force identity world↔screen for jsdom; canvas.getBoundingClientRect()
-      // returns zeros so client === world maps cleanly.
-      clientToWorld={(_, cx, cy) => [cx, cy]}
+      ambient={[hudTool]}
     />
   );
+}
+
+async function mount(apiOut: HarnessApi) {
+  const r = render(<Harness apiOut={apiOut} />);
+  await act(async () => {});  // let useHud's attach effect run
+  return r;
 }
 
 describe('weasel-hud integration', () => {
@@ -71,14 +65,9 @@ describe('weasel-hud integration', () => {
     global.createImageBitmap = vi.fn(async () => ({} as ImageBitmap));
   });
 
-  it('button click claims the event before the active tool sees it', async () => {
-    const api: HarnessApi = {
-      toolOnDown: vi.fn<(e: PointerEvent) => void>(),
-      press: vi.fn<() => void>(),
-      hudRef: { current: null },
-    };
-    const { container } = render(<ActiveToolContextProvider><Harness apiOut={api} /></ActiveToolContextProvider>);
-    await act(async () => {});  // let useHud's effect run
+  it('pressing a button widget fires its press handler', async () => {
+    const api: HarnessApi = { press: vi.fn<() => void>(), hudRef: { current: null } };
+    const { container } = await mount(api);
 
     expect(api.hudRef.current).not.toBeNull();
     let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
@@ -92,49 +81,59 @@ describe('weasel-hud integration', () => {
     });
 
     expect(api.press).toHaveBeenCalledTimes(1);
-    expect(api.toolOnDown).not.toHaveBeenCalled();
   });
 
-  it('click outside any widget falls through to the active tool', async () => {
-    const api: HarnessApi = {
-      toolOnDown: vi.fn<(e: PointerEvent) => void>(),
-      press: vi.fn<() => void>(),
-      hudRef: { current: null },
-    };
-    const { container } = render(<ActiveToolContextProvider><Harness apiOut={api} /></ActiveToolContextProvider>);
-    await act(async () => {});
+  it('a press outside every widget does not reach the HUD', async () => {
+    const api: HarnessApi = { press: vi.fn<() => void>(), hudRef: { current: null } };
+    const { container } = await mount(api);
 
-    act(() => { api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
+    let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
+    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
+    btn.on('press', api.press);
+
     const canvas = container.querySelector('canvas')!;
+    act(() => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 150, clientY: 150 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 150, clientY: 150 }));
+    });
 
-    // Click far from the button — should NOT claim.
-    act(() => { canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 150, clientY: 150 })); });
     expect(api.press).not.toHaveBeenCalled();
-    expect(api.toolOnDown).toHaveBeenCalledTimes(1);
+  });
+
+  it('a hidden widget is not pressable', async () => {
+    const api: HarnessApi = { press: vi.fn<() => void>(), hudRef: { current: null } };
+    const { container } = await mount(api);
+
+    let btn!: ReturnType<NonNullable<typeof api.hudRef.current>['button']>;
+    act(() => { btn = api.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
+    btn.on('press', api.press);
+    act(() => { btn.setHidden(true); });
+
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 30, clientY: 20 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 20 }));
+    });
+
+    expect(api.press).not.toHaveBeenCalled();
   });
 
   it('button picks up --wzl-button-fill set on the canvas element via CSS', async () => {
-    const apiOut: HarnessApi = {
-      toolOnDown: vi.fn(),
-      press: vi.fn(),
-      hudRef: { current: null },
-    };
-    const { container } = render(<ActiveToolContextProvider><Harness apiOut={apiOut} /></ActiveToolContextProvider>);
-    await act(async () => {});
+    const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { container } = await mount(apiOut);
 
     const canvas = container.querySelector('canvas')!;
     canvas.style.setProperty('--wzl-button-fill', '#abcdef');
 
     let btn!: ReturnType<NonNullable<typeof apiOut.hudRef.current>['button']>;
     act(() => { btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' }); });
-
-    // Verify the widget's draw output reflects the CSS variable.
     const cmds = btn.draw({
       dims: { width: 200, height: 200 },
-      defaultFont: 'weasel-hud-default',
-      tokens: { ...defaultResolved, buttonFill: '#abcdef' },
+      defaultFont: 'x',
+      tokens: readTokens(canvas),
     });
-    const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
+    const body = cmds.find((c) => c.kind === 'path') as { fill: { color: string } };
     expect(body.fill.color).toBe('#abcdef');
+    expect(defaultResolved.buttonFill).not.toBe('#abcdef');
   });
 });

@@ -1,7 +1,4 @@
 export type { RegistryEntry } from './registry';
-export { buildActionRegistry } from './registry';
+export { buildRouteRegistry, PREDICATE_TARGET } from './registry';
 export type { Conflict } from './conflicts';
 export { findConflicts } from './conflicts';
-export type {
-  RouteResolvedInfo, RoutePhase, RouteGesture,
-} from './route-resolved';

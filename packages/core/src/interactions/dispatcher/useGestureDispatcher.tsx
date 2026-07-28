@@ -72,6 +72,9 @@ export interface UseGestureDispatcherOptions {
   actions: ActionsRegistry;
   /** Tool definitions keyed by id. Typically passes an empty Map. */
   toolsById: ReadonlyMap<string, Tool>;
+  /** Ids (within `toolsById`) of always-on tools, whose bindings assemble at
+   *  ambient scope. See `DispatcherContext.ambientToolIds`. */
+  ambientToolIds?: readonly string[];
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /**
@@ -218,7 +221,7 @@ function computeMultiTouchGeometry(
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
+  const { canvasRef, actions, toolsById, ambientToolIds, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
   const onDoubleClickRef = useRef(onDoubleClick);
   onDoubleClickRef.current = onDoubleClick;
   const activeTool = useActiveToolContext();
@@ -239,6 +242,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
+    ambientToolIds,
     isMac: IS_MAC,
     getRuleCtx,
   });
@@ -248,6 +252,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
+    ambientToolIds,
     isMac: IS_MAC,
     getRuleCtx,
   };
@@ -380,6 +385,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
        *  `pressX`/`pressY` — see `ClickEvent`. */
       worldX: number;
       worldY: number;
+      /** Affordance the press landed on, replayed onto the click. */
+      affordance?: unknown;
       bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
       altKey: boolean;
       ctrlKey: boolean;
@@ -573,6 +580,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         clientY: e.clientY,
         worldX: w.x,
         worldY: w.y,
+        affordance,
         bodyTarget,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
@@ -878,6 +886,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           worldY: wClick.y,
           pressX: down.worldX,
           pressY: down.worldY,
+          ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
           ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
         };
         dispatch(clickEv);

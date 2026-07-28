@@ -1,1 +1,1 @@
-export { useHud } from './useHud';
+export { useHud, useHudTool } from './useHud';

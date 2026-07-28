@@ -1,3 +1,4 @@
+import type { AffordanceBinding } from '../affordances/types';
 import type { RenderLayer } from '../core/layers/render';
 import type { IngestItem } from '../features/ingestion/ingestItems';
 
@@ -26,9 +27,21 @@ export interface CanvasExtensionApi {
   readonly element: HTMLCanvasElement | null;
   requestRedraw(): void;
   /** Register an externally-owned RenderLayer. The layer participates in the
-   *  draw stack and, if it implements `hitTest`, in the dispatcher's hit-test
-   *  pipeline (see `src/tools/dispatcher.ts`'s `getHitTestContext`). */
+   *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;
+  /**
+   * Hit-test the registered layers (topmost-first, last-registered wins) at a
+   * world-space point. Returns the id of the layer that claimed the point and
+   * whatever its `hitTest` resolved, or `null` when none did.
+   *
+   * `<SceneCanvas>` folds this into the `affordanceAt` thunk it hands the
+   * gesture dispatcher — ahead of the kit's own selection chrome, since
+   * registered layers draw on top — so a hit surfaces to actions as an
+   * `AffordanceHit` with kind `layer:<id>` and the binding's `initialScratch`
+   * as its `payload`. A layer's owner binds a `kindOf` predicate on that kind
+   * to claim the gesture; see `@weasel-js/hud` for the worked example.
+   */
+  hitTestExtras(worldX: number, worldY: number): { layerId: string; binding: AffordanceBinding } | null;
   /** Feed external content into the ingestion pipeline imperatively — the
    *  same content-handler registry that OS drop and clipboard paste hit.
    *  `input` may be raw `File[]` (e.g. from `openFilePicker`) or

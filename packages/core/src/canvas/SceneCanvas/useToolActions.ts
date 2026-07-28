@@ -23,11 +23,15 @@ export function useToolActions(tools: ToolsApi): void {
   useEffect(() => {
     if (!registry) return;
     const unregisters: Array<() => void> = [];
-    for (const tool of Object.values(tools.registry)) {
+    // Ambient tools included: an always-on tool owns actions its own bindings
+    // reference exactly as a registry tool does, and leaving them out gives
+    // the same silent failure this hook exists to prevent — a binding
+    // pointing at an id nothing registered.
+    for (const tool of [...Object.values(tools.registry), ...tools.ambient]) {
       for (const action of tool.actions ?? []) {
         unregisters.push(registry.register(action));
       }
     }
     return () => { for (const u of unregisters) u(); };
-  }, [registry, tools.registry]);
+  }, [registry, tools.registry, tools.ambient]);
 }

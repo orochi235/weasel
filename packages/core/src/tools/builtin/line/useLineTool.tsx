@@ -37,7 +37,6 @@ export function useLineTool(): Tool<null> {
             opts: { params: { kind: 'line' } },
           },
         ],
-        initial: {},
       }),
     [],
   );

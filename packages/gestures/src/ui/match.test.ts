@@ -182,10 +182,18 @@ describe('matchSpec', () => {
     expect(matchSpec(e, { kind: 'click' }, false)).toBe(true);
   });
 
-  it('ClickSpec target predicate gates when present', () => {
-    const e: InputEvent = { kind: 'click', target: { foo: 1 }, ...noMods };
-    expect(matchSpec(e, { kind: 'click', target: { kindOf: (t: any) => t.foo === 1 } }, false)).toBe(true);
-    expect(matchSpec(e, { kind: 'click', target: { kindOf: (t: any) => t.foo === 2 } }, false)).toBe(false);
+  it('ClickSpec target predicate receives the affordance, not the DOM target', () => {
+    // Symmetric with drag: one predicate describes a piece of chrome for both
+    // gestures, and `hit == null` reliably means "not chrome" even though the
+    // click event always carries a DOM `target`.
+    const e: InputEvent = {
+      kind: 'click', target: { dom: true }, affordance: { foo: 1 }, ...noMods,
+    };
+    expect(matchSpec(e, { kind: 'click', target: { kindOf: (t: any) => t?.foo === 1 } }, false)).toBe(true);
+    expect(matchSpec(e, { kind: 'click', target: { kindOf: (t: any) => t?.dom === true } }, false)).toBe(false);
+
+    const bare: InputEvent = { kind: 'click', target: { dom: true }, ...noMods };
+    expect(matchSpec(bare, { kind: 'click', target: { kindOf: (t: any) => t == null } }, false)).toBe(true);
   });
 
   it('ClickSpec with no event target and no spec target — matches', () => {

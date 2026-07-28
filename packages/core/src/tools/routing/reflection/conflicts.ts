@@ -1,16 +1,15 @@
-import type { ToolDef } from '../types';
+import type { Tool } from '../../types';
 import type { ParsedModifiers } from '../routeGrammar';
-import type { RoutePhase, RouteGesture } from './route-resolved';
-import { buildActionRegistry, type RegistryEntry } from './registry';
-import { canonicalModifiers } from './modifierComboToParsed';
+import { canonicalModifiers } from '../routeGrammar';
+import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
 
 /** Two or more tools declare the same exact (phase, gesture, arg, target,
  *  modifiers) tuple — the dispatcher's slot precedence picks one
  *  arbitrarily (well, deterministically by slot order, but the author
  *  probably didn't intend the duplication). */
 export interface Conflict {
-  phase: RoutePhase;
-  gesture: RouteGesture;
+  phase: 'initial' | 'engaged';
+  gesture: GestureName;
   arg: string | undefined;
   target: string | undefined;
   modifiers: ParsedModifiers;
@@ -22,19 +21,24 @@ export interface Conflict {
 /** Detect exact-tuple overlaps across a tool registration set.
  *
  *  Intentionally NOT flagged:
- *  - Wildcard vs. specific (e.g., `click['*']` + `click['rect']`) — that's
- *    the cascading-fallback pattern; the lookup engine resolves cleanly.
- *  - Different modifier sub-keys on the same target — they fire on
+ *  - Broad vs. narrow targets (e.g. an untargeted `click` alongside
+ *    `click` on `empty`) — the dispatcher's specificity ordering resolves
+ *    those cleanly, and the broad one is usually the intended fallback.
+ *  - Different modifier requirements on the same target — they fire on
  *    different inputs.
- *  - Ambient stacking where a tool returns `pass`/`none()` from its
- *    ActionFn to intentionally let another ambient tool run. We'd need
- *    to evaluate the ActionFn to detect intent; consumers can suppress
- *    known-intentional compositions in their UI layer.
+ *  - A binding whose action declines via `enabled()` so a lower-priority
+ *    one can take the gesture. Detecting that intent would mean evaluating
+ *    the action; consumers can suppress known-intentional compositions in
+ *    their UI layer.
+ *
+ *  Note that two bindings sharing a tuple on the SAME tool are now possible
+ *  (bindings are an array, where phase tables were objects with unique
+ *  keys) — so a conflict may name one tool twice.
  */
 export function findConflicts(
-  tools: readonly ToolDef<unknown>[],
+  tools: readonly Tool<unknown>[],
 ): Conflict[] {
-  const entries = buildActionRegistry(tools);
+  const entries = buildRouteRegistry(tools);
   const groups = new Map<string, RegistryEntry[]>();
   for (const entry of entries) {
     const key = `${entry.phase}|${entry.gesture}|${entry.arg ?? ''}|${entry.target ?? ''}|${canonicalModifiers(entry.modifiers)}`;
@@ -45,8 +49,6 @@ export function findConflicts(
   const conflicts: Conflict[] = [];
   for (const bucket of groups.values()) {
     if (bucket.length < 2) continue;
-    // Multiple registrations from the same tool can't share a key (Object
-    // literals dedupe), so bucket.length >= 2 implies >= 2 distinct toolIds.
     const first = bucket[0];
     conflicts.push({
       phase: first.phase,

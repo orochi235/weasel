@@ -1,5 +1,6 @@
 export { createHud, type Hud } from './hud';
 export { attachHud } from './attach';
+export { createHudTool, HUD_AFFORDANCE_KIND, type HudHitPayload } from './tool';
 export type {
   Widget,
   WidgetBounds,

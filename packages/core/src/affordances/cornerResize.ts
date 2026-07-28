@@ -1,6 +1,5 @@
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import type { DragChannel } from 'tools/types';
 import type { ResizeAnchor } from 'interactions/gestures/types';
 import { CORNER_ANCHORS, cornerPoint } from 'interactions/actions/resize/cornerHandles';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
@@ -24,13 +23,6 @@ export interface CornerResizeScratch {
 
 const DEFAULT_FILL = '#d4c4a8';
 const DEFAULT_STROKE = '#1a130d';
-
-const stubDrag: DragChannel<CornerResizeScratch> = {
-  onStart: () => 'claim',
-  onMove: () => 'claim',
-  onEnd: () => 'claim',
-  onCancel: () => {},
-};
 
 /**
  * @experimental
@@ -76,7 +68,6 @@ export function createCornerResizeAffordance(
         shape: { kind: 'point' as const, x: lx, y: ly, hitRadiusPx: handleHitRadius },
         paint,
         bind: (): AffordanceBinding => ({
-          drag: stubDrag as unknown as AffordanceBinding['drag'],
           initialScratch: { anchor, targetId: target.id } satisfies CornerResizeScratch,
         }),
       } satisfies AffordanceRegion));

@@ -138,13 +138,11 @@ describe('usePenTool', () => {
     scratch.closeHintActive = false;
   });
 
-  it('declares no phase-table routes', () => {
+  it('declares its whole input surface as bindings', () => {
     const { tool } = setup();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((tool.def as any)?.initial).toEqual({});
-    expect(tool.pointer?.onClick).toBeUndefined();
-    expect(tool.drag).toBeUndefined();
-    expect(tool.keyboard).toBeUndefined();
+    expect((tool.def as any)?.initial).toBeUndefined();
+    expect(tool.bindings).toHaveLength(6);
   });
 
   it('click on empty space (Idle) → places a corner anchor and enters Drawing', () => {

@@ -2,17 +2,18 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { RegistryTree } from './RegistryTree';
-import type { PhaseSummary, TreeCategoryNode } from './registryData';
+import type { ToolSurface, TreeCategoryNode } from './registryData';
 
-const EMPTY_PHASE: PhaseSummary = {
+const EMPTY_SURFACE: ToolSurface = {
   gestures: {
-    click: false, pointerDown: false, drag: false,
-    wheel: false, keyDown: false, keyUp: false,
+    click: false, doubleClick: false, pointerDown: false, drag: false,
+    wheel: false, key: false, keyHeld: false, contextMenu: false,
+    multiTouchTap: false,
   },
-  outputs: { cursor: false, overlay: false, claimsAll: false },
+  outputs: { cursor: false, overlay: false },
 };
 const EMPTY_CAPS = {
-  initScratch: false, onActivate: false, onDeactivate: false, hitOverride: false,
+  initScratch: false, onActivate: false, onDeactivate: false,
 };
 
 const NODES: readonly TreeCategoryNode[] = [
@@ -20,10 +21,8 @@ const NODES: readonly TreeCategoryNode[] = [
     id: 'tools',
     label: 'Tools',
     entries: [
-      { kind: 'tool', id: 'rect', label: 'useRectTool', routes: [], declaredRoutes: [], slot: 'registry',
-        phases: { initial: EMPTY_PHASE }, capabilities: EMPTY_CAPS },
-      { kind: 'tool', id: 'ellipse', label: 'useEllipseTool', routes: [], declaredRoutes: [], slot: 'registry',
-        phases: { initial: EMPTY_PHASE }, capabilities: EMPTY_CAPS },
+      { kind: 'tool', id: 'rect', label: 'useRectTool', routes: [], declaredRoutes: [], slot: 'registry', capabilities: EMPTY_CAPS, surface: EMPTY_SURFACE },
+      { kind: 'tool', id: 'ellipse', label: 'useEllipseTool', routes: [], declaredRoutes: [], slot: 'registry', capabilities: EMPTY_CAPS, surface: EMPTY_SURFACE },
     ],
   },
   {

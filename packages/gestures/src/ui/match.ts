@@ -293,7 +293,12 @@ export function matchSpec(
     case 'click': {
       if (e.kind !== 'click') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.target, spec.target, e.bodyTarget);
+      // A `kindOf` predicate gets the affordance the press landed on — the
+      // same value it would get on a drag — NOT the DOM target. That
+      // symmetry is what lets one predicate describe "this piece of chrome"
+      // for both gestures, and what lets `hit == null` mean "not chrome".
+      // String-form specs read `bodyTarget` and don't look at either.
+      return matchTarget(e.affordance, spec.target, e.bodyTarget);
     }
 
     case 'doubleClick': {

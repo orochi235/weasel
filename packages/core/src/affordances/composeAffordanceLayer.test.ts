@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { composeAffordanceLayer } from './composeAffordanceLayer';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
-import type { DragChannel } from 'tools/types';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -18,20 +17,13 @@ function makeState(boundsById: Record<string, Bounds> = {}): ChromeState {
   };
 }
 
-const STUB_DRAG: DragChannel<unknown> = {
-  onStart: () => 'claim' as const,
-  onMove: () => 'claim' as const,
-  onEnd: () => 'claim' as const,
-  onCancel: () => {},
-};
-
 function pointRegion(
   overrides: Partial<AffordanceRegion> & { id: string },
 ): AffordanceRegion {
   return {
     targetId: null,
     shape: { kind: 'point', x: 0, y: 0, hitRadiusPx: 4 },
-    bind: () => ({ drag: STUB_DRAG }),
+    bind: () => ({}),
     ...overrides,
   };
 }
@@ -79,7 +71,7 @@ describe('composeAffordanceLayer', () => {
         })];
       },
     };
-    const aBinding: AffordanceBinding = { drag: STUB_DRAG, initialScratch: { which: 'b' } };
+    const aBinding: AffordanceBinding = { initialScratch: { which: 'b' } };
     const b: Affordance = {
       id: 'b',
       regions: () => {
@@ -191,7 +183,7 @@ describe('composeAffordanceLayer', () => {
         id: 'r-a',
         targetId: null,
         shape: { kind: 'rect', x: 10, y: 10, width: 20, height: 20 },
-        bind: () => ({ drag: STUB_DRAG }),
+        bind: () => ({}),
       }],
     };
     const layer = composeAffordanceLayer('x', 'X', [aff]);

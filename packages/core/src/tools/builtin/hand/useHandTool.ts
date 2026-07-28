@@ -67,7 +67,6 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
           group: 'view',
         },
         cursor: 'grab',
-        initial: {},
       }), {
         // Declarative binding routes drag through the dispatcher +
         // viewportDragPanAction, which also owns the grabbing cursor

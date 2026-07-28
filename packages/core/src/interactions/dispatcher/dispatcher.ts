@@ -149,6 +149,17 @@ export interface DispatcherContext {
   activeToolId: string;
   /** Held-hotkey stack, top of stack last. */
   hotkeyStack: readonly string[];
+  /**
+   * Ids of always-on tools. Their bindings are assembled at AMBIENT scope, so
+   * they lose to the active tool on a tie — which is what "always listening,
+   * never in the way" needs. Chrome that floats over the scene lives here:
+   * `@weasel-js/hud`'s tool is the worked example.
+   *
+   * Without this an ambient tool's `bindings` were assembled nowhere at all:
+   * the walk covered hotkey and active tools plus actions' `defaultBinding`,
+   * and an ambient tool is in neither set.
+   */
+  ambientToolIds?: readonly string[];
   /** Lookup for tool definitions. */
   toolsById: ReadonlyMap<string, Tool>;
   /** Platform flag for `mod` shorthand resolution. */
@@ -553,7 +564,16 @@ export function createDispatcher(opts?: {
       result.push({ binding, scope: 'active' as BindingScope, ownerToolId: ctx.activeToolId });
     }
 
-    // Ambient scope: walk the actions registry. Actions have no owning
+    // Ambient scope, tools first: an always-on tool's own bindings, which do
+    // carry an owning tool id (so `'&'`-channel phase atoms resolve).
+    for (const toolId of ctx.ambientToolIds ?? []) {
+      const tool = ctx.toolsById.get(toolId);
+      for (const binding of tool?.bindings ?? []) {
+        result.push({ binding, scope: 'ambient' as BindingScope, ownerToolId: toolId });
+      }
+    }
+
+    // Ambient scope, then the actions registry. Actions have no owning
     // tool — `'&'`-channel phase atoms on their bindings won't match.
     for (const action of ctx.actions.list()) {
       const gs = action.defaultBinding;
@@ -821,7 +841,7 @@ export function createDispatcher(opts?: {
               // Press point as well as release point — an action that places
               // geometry at the click wants the former. See `ClickEvent`.
               ...(event.kind === 'click'
-                ? { pressX: event.pressX, pressY: event.pressY }
+                ? { pressX: event.pressX, pressY: event.pressY, affordance: event.affordance }
                 : {}),
               mods: modifiersOf(event),
               ...resolved,

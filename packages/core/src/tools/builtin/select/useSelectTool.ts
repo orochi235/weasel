@@ -237,6 +237,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       run: (deps, params) => {
         const p = params as {
           worldX?: number; worldY?: number;
+          affordance?: unknown;
           mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
         } | undefined;
         const selection = deps.selection as SelectionApi | undefined;
@@ -339,7 +340,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           group: 'select',
         },
         actions: [pickAction, collapseDeferredAction],
-        initial: {},
       });
 
       // Shared move-binding opts (reparent-on-drop + behaviors). Applied to
@@ -368,16 +368,30 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         //   4. Empty drag — marquee area-select.
         //   5. Click on empty (no modifiers) → clear selection.
         bindings: [
-          // Every press, whatever it hits and whatever is held. This is the
-          // former `initial.pointerDown['*']` route: it classifies the press
-          // and applies the selection change, and it does not consume the
-          // gesture — the same press goes on to open a drag or synthesize a
-          // click. Modifiers are all `'optional'` because they are *data*
-          // here (forwarded to `SelectionApi.applyClick`, which resolves them
+          // Every press that landed on the scene rather than on chrome. This
+          // is the former `initial.pointerDown['*']` route: it classifies the
+          // press and applies the selection change, and it does not consume
+          // the gesture — the same press goes on to open a drag or synthesize
+          // a click.
+          //
+          // The no-affordance target is load-bearing twice over. A press on a
+          // resize handle, a rotate ring, a path anchor, or a registered
+          // layer's own chrome is not a body pick, and re-picking underneath
+          // it would change the selection the user was about to act on. And
+          // because it is expressed in the SPEC rather than as an early
+          // return in the action, the press falls through to whatever owns
+          // that chrome instead of being consumed here — which is how an
+          // ambient binding (`@weasel-js/hud`) gets to see it at all. The old
+          // pipeline got both properties by construction: affordance hits
+          // bypassed the active tool entirely.
+          //
+          // Modifiers are all `'optional'` because they are *data* here
+          // (forwarded to `SelectionApi.applyClick`, which resolves them
           // against the host's configured extend key) rather than a route.
           {
             spec: {
               kind: 'pointerDown' as const,
+              target: { kindOf: (hit: unknown) => hit == null },
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.pick',
@@ -387,6 +401,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           {
             spec: {
               kind: 'click' as const,
+              target: { kindOf: (hit: unknown) => hit == null },
               mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
             },
             actionId: 'select.collapseDeferred',
@@ -441,7 +456,19 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             ...moveOpts,
           },
           { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
-          { spec: { kind: 'click' as const, target: 'empty' as const, mods: {} }, actionId: 'clearSelection' },
+          // Click on empty canvas → clear. Same no-affordance requirement as
+          // the press binding above, and for the same two reasons: clicking a
+          // widget that happens to float over empty canvas isn't a click on
+          // empty canvas, and declining in the SPEC lets the chrome's owner
+          // have the click instead of it being consumed here.
+          {
+            spec: {
+              kind: 'click' as const,
+              target: { kindOf: (hit: unknown, body?: string) => hit == null && body === 'empty' },
+              mods: {},
+            },
+            actionId: 'clearSelection',
+          },
         ],
       };
     },

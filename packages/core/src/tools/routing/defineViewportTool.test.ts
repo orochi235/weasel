@@ -1,61 +1,29 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { defineViewportTool } from './defineViewportTool';
-import { begin, hold, cancel } from './result';
+import type { ToolCtx } from '../types';
 
-const noMods = { mod: false, shift: false, alt: false, ctrl: false, meta: false, space: false };
+const CTX = { scratch: null } as unknown as ToolCtx<null>;
 
-function buildCtx(overrides: Record<string, unknown> = {}) {
-  return {
-    worldX: 0, worldY: 0,
-    point: { x: 0, y: 0 },
-    modifiers: noMods,
-    selection: { current: [] },
-    adapter: null,
-    applyOps: vi.fn(),
-    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
-    setView: vi.fn(),
-    canvasRect: { left: 0, top: 0, width: 100, height: 100 } as DOMRect,
-    target: { category: 'empty' as const, kind: 'empty' as const },
-    scratch: null,
-    ...overrides,
-  };
-}
-
+/**
+ * `defineViewportTool` used to narrow the phase-table shape (no click routes,
+ * drag restricted to the function form) and lift it back before delegating —
+ * which is what the deleted half of this file exercised. With one grammar
+ * there is nothing to narrow, so it delegates and survives as an authoring
+ * signal that a tool moves the camera rather than the scene.
+ */
 describe('defineViewportTool', () => {
   it('produces a Tool with id', () => {
-    const tool = defineViewportTool({
-      id: 'hand',
-      initial: {},
-    });
-    expect(tool.id).toBe('hand');
+    expect(defineViewportTool({ id: 'hand' }).id).toBe('hand');
   });
 
-  it('function-form drag fires on pointerdown', () => {
-    const tool = defineViewportTool<{ x: number }>({
-      id: 'hand',
-      initial: {
-        drag: (ctx) => begin({
-          scratch: { x: (ctx as unknown as { point: { x: number } }).point.x },
-          onMove: (ctx) => hold({ x: (ctx as unknown as { point: { x: number } }).point.x + 1 }),
-          onRelease: cancel,
-        }),
-      },
-    });
-    const ctx = buildCtx({ point: { x: 5, y: 0 } });
-    tool.drag?.onStart?.(new MouseEvent('mousedown') as unknown as PointerEvent, ctx as never);
-    expect((ctx as { scratch: unknown }).scratch).toEqual({ x: 5 });
+  it('carries bindings and cursor through, same as defineTool', () => {
+    const bindings = [{ spec: { kind: 'drag' as const }, actionId: 'viewport.dragPan' }];
+    const tool = defineViewportTool<null>({ id: 'hand', cursor: 'grab', bindings });
+    expect(tool.bindings).toBe(bindings);
+    expect((tool.cursor as (c: ToolCtx<null>) => string)(CTX)).toBe('grab');
   });
 
-  it('cursor resolution works with phase override', () => {
-    const tool = defineViewportTool<{ x: number }>({
-      id: 'hand',
-      cursor: 'grab',
-      engaged: { cursor: 'grabbing' },
-      initial: { drag: () => begin({ scratch: { x: 0 } }) },
-    });
-    const ctx = buildCtx();
-    expect(typeof tool.cursor === 'function' ? tool.cursor(ctx as never) : tool.cursor).toBe('grab');
-    tool.drag?.onStart?.(new MouseEvent('mousedown') as unknown as PointerEvent, ctx as never);
-    expect(typeof tool.cursor === 'function' ? tool.cursor(ctx as never) : tool.cursor).toBe('grabbing');
+  it('applies the same id validation', () => {
+    expect(() => defineViewportTool({ id: 'initial' })).toThrow(/reserved phase keyword/);
   });
 });

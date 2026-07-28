@@ -88,12 +88,11 @@ describe('useSelectTool', () => {
     expect(typeof cursor === 'function' ? cursor({} as never) : cursor).toBe('default');
   });
 
-  it('declares no phase-table routes', () => {
+  it('declares its whole input surface as bindings', () => {
     const tool = mount();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect((tool.def as any)?.initial).toEqual({});
-    expect(tool.pointer?.onDown).toBeUndefined();
-    expect(tool.pointer?.onClick).toBeUndefined();
+    expect((tool.def as any)?.initial).toBeUndefined();
+    expect(tool.bindings?.length).toBeGreaterThan(0);
   });
 
   it('press over a body selects it', () => {

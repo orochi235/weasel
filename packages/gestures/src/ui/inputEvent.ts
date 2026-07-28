@@ -146,6 +146,15 @@ export interface ClickEvent extends EventModifiers {
    */
   pressX?: number;
   pressY?: number;
+  /**
+   * Affordance the *press* landed on, carried forward from the pointerdown
+   * exactly like {@link ClickEvent.bodyTarget} is. A click's target is
+   * whatever the press hit — chrome doesn't move out from under a pointer
+   * between down and up — and without this a `kindOf` target on a click spec
+   * would receive the raw DOM element while the same predicate on a drag spec
+   * receives the affordance.
+   */
+  affordance?: unknown;
   bodyTarget?: BodyTarget;
 }
 

@@ -106,9 +106,6 @@ export function useEyedropperTool(opts: UseEyedropperToolOptions): Tool<null> {
       // racing; hotkey scope now outranks active scope in the one dispatcher
       // that remains, so holding Alt wins without a gate.
       bindings: [{ spec: { kind: 'click' as const }, actionId: 'eyedropper.pick' }],
-      // No phase-table routes left. `initial: {}` is what every already-ported
-      // tool carries; the field itself goes away with the grammar.
-      initial: {},
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opts.keybinding, opts.hotkey, pickAction]);

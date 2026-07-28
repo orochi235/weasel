@@ -13,6 +13,7 @@ export {
   RESERVED_ID_NAMES,
   VALID_MOD_NAMES,
   MOD_NAME_SET,
+  canonicalModifiers,
 } from '@weasel-js/gestures';
 export type {
   ParsedRoute,
