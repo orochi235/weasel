@@ -211,7 +211,7 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
         <ResolutionWidget
           tools={toolList}
           actions={actions}
-          slots={toolSlots}
+          ambientToolIds={toolSlots.ambient}
           activeToolId={toolSlots.registry[0] ?? ''}
         />
       </section>
@@ -440,12 +440,14 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
 export function ResolutionWidget({
   tools,
   actions,
-  slots,
+  ambientToolIds,
   activeToolId,
 }: {
   tools: readonly Tool<unknown>[];
   actions: readonly Action[];
-  slots: { registry: readonly string[]; ambient: readonly string[] };
+  /** Always-on tool ids, assembled at ambient scope. Named to match the
+   *  `DispatcherContext` field this is handed straight to. */
+  ambientToolIds: readonly string[];
   activeToolId: string;
 }): ReactElement {
   const [gesture, setGesture] = useState<ResolutionGesture>('drag');
@@ -477,7 +479,7 @@ export function ResolutionWidget({
         depRegistry: STUB_DEP_REGISTRY,
         activeToolId,
         hotkeyStack: [],
-        ambientToolIds: slots.ambient,
+        ambientToolIds,
         toolsById: new Map(tools.map((t) => [t.id, t])),
         isMac: false,
       },
@@ -488,7 +490,7 @@ export function ResolutionWidget({
       // and it distinguishes "outranked" from "outranked AND disabled".
       { evaluateShadowed: true },
     );
-  }, [gesture, target, mods, actions, activeToolId, slots.ambient, tools]);
+  }, [gesture, target, mods, actions, activeToolId, ambientToolIds, tools]);
 
   return (
     <div className={s.widget}>
