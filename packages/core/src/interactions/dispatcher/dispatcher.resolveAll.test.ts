@@ -205,9 +205,9 @@ describe('resolveAll', () => {
     });
     const out = d.resolveAll({ ...dragEvent, bodyTarget: 'selected-body' } as InputEvent, ctx);
     expect(out[0].verdict.kind).toBe('ineligible');
-    // The rule itself, serialized — `evaluate()` yields a bare boolean, so
-    // there is no reason string to carry.
-    expect((out[0].verdict as { reason: string }).reason).toBe('{"capability":"edits-page"}');
+    // The rule itself, rendered by chrome-caps' `describeRule` — `evaluate()`
+    // yields a bare boolean, so there is no reason string to carry.
+    expect((out[0].verdict as { reason: string }).reason).toBe('capability:edits-page');
     expect(out[1].verdict).toEqual({ kind: 'would-fire' });
   });
 
@@ -321,7 +321,7 @@ describe('resolveAll({ evaluateShadowed })', () => {
     const d = createDispatcher();
     const out = d.resolveAll(event, fixture().ctx, { evaluateShadowed: true });
     const gated = out.find((c) => c.actionId === 'gatedBelow');
-    expect(gated!.verdict.kind).toBe('ineligible');
+    expect(gated!.verdict).toEqual({ kind: 'ineligible', reason: 'capability:edits-page' });
   });
 
   it('keeps shadowed for a candidate below the winner that would have passed', () => {

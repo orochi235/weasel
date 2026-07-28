@@ -43,7 +43,7 @@ import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted, specificity } from './matcher';
-import { evaluate, type Rule, type RuleCtx, type Condition } from '../../features/chrome-caps';
+import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../features/chrome-caps';
 
 // ---------------------------------------------------------------------------
 // Dev-only instrumentation
@@ -190,16 +190,11 @@ function isEligible(action: Action, ruleCtx: RuleCtx): boolean {
   return evaluate(eligibleToRule(action.eligible), ruleCtx);
 }
 
-/** Serialize an `eligible` rule for display. `evaluate()` returns a bare
+/** Render an `eligible` rule for display. `evaluate()` returns a bare
  *  boolean, so there is no reason string to carry — the rule itself is the
  *  most informative thing available. */
 function describeEligible(eligible: NonNullable<Action['eligible']>): string {
-  const rule = eligibleToRule(eligible);
-  try {
-    return JSON.stringify(rule) ?? '(rule)';
-  } catch {
-    return '(rule)';
-  }
+  return describeRule(eligibleToRule(eligible));
 }
 
 /**

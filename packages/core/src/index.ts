@@ -442,6 +442,7 @@ export {
   capabilityAll,
   capabilityNot,
   evaluate,
+  describeRule,
   ALWAYS,
   NEVER,
   buildRuleCtx,
