@@ -283,6 +283,24 @@ export interface ResolvedCandidate {
     | { kind: 'shadowed' };
 }
 
+/** Options for {@link Dispatcher.resolveAll}. */
+export interface ResolveAllOptions {
+  /**
+   * Evaluate eligibility and `enabled()` for candidates below the winner
+   * instead of short-circuiting them to `shadowed`.
+   *
+   * Off by default, and deliberately so: the default walk's early exit is what
+   * keeps `resolveOnly`'s `enabled()` call count identical to a real dispatch,
+   * and `enabled()` predicates are only contractually pure — not free.
+   *
+   * Turn it on for diagnostics, where "this one was outranked" is a less
+   * useful answer than "this one was outranked AND would have been disabled
+   * anyway". With it on, `shadowed` narrows to its precise meaning: this
+   * candidate would have fired, but something above it did.
+   */
+  evaluateShadowed?: boolean;
+}
+
 export interface Dispatcher {
   /**
    * Route an input event through the binding pipeline. Returns `'handled'`
@@ -323,8 +341,18 @@ export interface Dispatcher {
    * Shares `resolveOnly`'s known divergence from a real dispatch: an ongoing
    * invoker that matches but returns an empty handle at `start()` makes the
    * real dispatch fall through, and this cannot see that.
+   *
+   * By default everything below the winner is `shadowed` without being asked,
+   * which is what keeps this walk as cheap as the dispatch it replays. Pass
+   * `{ evaluateShadowed: true }` to keep evaluating past the winner, so a
+   * lower candidate that is ALSO ineligible or disabled says so — see
+   * {@link ResolveAllOptions.evaluateShadowed}.
    */
-  resolveAll(event: InputEvent, ctx: DispatcherContext): ResolvedCandidate[];
+  resolveAll(
+    event: InputEvent,
+    ctx: DispatcherContext,
+    opts?: ResolveAllOptions,
+  ): ResolvedCandidate[];
 
   /**
    * Synthesize an end-of-gesture for every in-flight ongoing handle.
@@ -1030,7 +1058,12 @@ export function createDispatcher(opts?: {
   // resolveAll / resolveOnly — prediction without invocation
   // -------------------------------------------------------------------------
 
-  function resolveAll(event: InputEvent, ctx: DispatcherContext): ResolvedCandidate[] {
+  function resolveAll(
+    event: InputEvent,
+    ctx: DispatcherContext,
+    // Not `opts` — `createDispatcher`'s own `opts` is in scope here.
+    resolveOpts?: ResolveAllOptions,
+  ): ResolvedCandidate[] {
     const scopedBindings = assembleScopedBindings(ctx);
     const engagedChannels = snapshotEngagedChannels();
     const matches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
@@ -1055,7 +1088,7 @@ export function createDispatcher(opts?: {
 
       let verdict = verdictByAction.get(actionId);
       if (verdict === undefined) {
-        if (fired) {
+        if (fired && !resolveOpts?.evaluateShadowed) {
           verdict = { kind: 'shadowed' };
         } else if (ruleCtx && action.eligible && !isEligible(action, ruleCtx)) {
           // `action.eligible &&` is redundant with `isEligible` (which passes a
@@ -1067,6 +1100,11 @@ export function createDispatcher(opts?: {
             : true;
           if (disabled !== true) {
             verdict = { kind: 'disabled', reason: String(disabled) };
+          } else if (fired) {
+            // Only reachable under `evaluateShadowed`: passed both gates, but
+            // something above it already won. This is `shadowed` in its exact
+            // sense — nothing about this candidate stopped it.
+            verdict = { kind: 'shadowed' };
           } else {
             verdict = { kind: 'would-fire' };
             fired = true;

@@ -263,6 +263,161 @@ describe('resolveAll', () => {
   });
 });
 
+describe('resolveAll({ evaluateShadowed })', () => {
+  /**
+   * Four bindings on one tool, ranked by specificity so the order is fixed:
+   *
+   *   1. `win`      — bare-drag + target + shift  → wins
+   *   2. `offBelow` — bare-drag + target          → enabled() says no
+   *   3. `gatedBelow` — bare-drag, `capability: 'edits-page'` (not granted)
+   *   4. `okBelow`  — bare-drag                   → nothing wrong with it
+   *
+   * Default walk calls everything below `win` `shadowed`. With the flag on,
+   * only `okBelow` keeps that verdict.
+   */
+  function fixture(): { ctx: DispatcherContext; enabledSpies: Record<string, ReturnType<typeof vi.fn>> } {
+    const offBelowEnabled = vi.fn().mockReturnValue('selection-required');
+    const gatedBelowEnabled = vi.fn().mockReturnValue(true);
+    const okBelowEnabled = vi.fn().mockReturnValue(true);
+    const ctx = makeCtx({
+      actions: makeRegistry([
+        action('win'),
+        action('offBelow', { enabled: offBelowEnabled as never }),
+        action('gatedBelow', {
+          eligible: { capability: 'edits-page' },
+          enabled: gatedBelowEnabled as never,
+        }),
+        action('okBelow', { enabled: okBelowEnabled as never }),
+      ]),
+      activeToolId: 't',
+      getRuleCtx: () => makeRuleCtx({ allowedCapabilities: new Set() }),
+      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+        { spec: { kind: 'drag', target: 'selected-body', mods: { shift: true } }, actionId: 'win' },
+        { spec: { kind: 'drag', target: 'selected-body', mods: { shift: 'optional' } }, actionId: 'offBelow' },
+        { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'gatedBelow' },
+        { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'okBelow' },
+      ])]]),
+    });
+    return {
+      ctx,
+      enabledSpies: {
+        offBelow: offBelowEnabled,
+        gatedBelow: gatedBelowEnabled,
+        okBelow: okBelowEnabled,
+      },
+    };
+  }
+
+  const event = { ...dragEvent, shiftKey: true, bodyTarget: 'selected-body' } as InputEvent;
+
+  it('reports a disabled candidate below the winner as disabled, not shadowed', () => {
+    const d = createDispatcher();
+    const out = d.resolveAll(event, fixture().ctx, { evaluateShadowed: true });
+    const off = out.find((c) => c.actionId === 'offBelow');
+    expect(off!.verdict).toEqual({ kind: 'disabled', reason: 'selection-required' });
+  });
+
+  it('reports an ineligible candidate below the winner as ineligible, not shadowed', () => {
+    const d = createDispatcher();
+    const out = d.resolveAll(event, fixture().ctx, { evaluateShadowed: true });
+    const gated = out.find((c) => c.actionId === 'gatedBelow');
+    expect(gated!.verdict.kind).toBe('ineligible');
+  });
+
+  it('keeps shadowed for a candidate below the winner that would have passed', () => {
+    const d = createDispatcher();
+    const out = d.resolveAll(event, fixture().ctx, { evaluateShadowed: true });
+    const ok = out.find((c) => c.actionId === 'okBelow');
+    expect(ok!.verdict).toEqual({ kind: 'shadowed' });
+  });
+
+  it('still yields exactly one would-fire', () => {
+    const d = createDispatcher();
+    const out = d.resolveAll(event, fixture().ctx, { evaluateShadowed: true });
+    expect(out.map((c) => c.actionId)).toEqual(['win', 'offBelow', 'gatedBelow', 'okBelow']);
+    expect(out.filter((c) => c.verdict.kind === 'would-fire').map((c) => c.actionId))
+      .toEqual(['win']);
+  });
+
+  it('asks enabled() below the winner only with the flag on', () => {
+    const withFlag = fixture();
+    createDispatcher().resolveAll(event, withFlag.ctx, { evaluateShadowed: true });
+    expect(withFlag.enabledSpies.offBelow).toHaveBeenCalledTimes(1);
+    expect(withFlag.enabledSpies.okBelow).toHaveBeenCalledTimes(1);
+    // Ineligible short-circuits before the enabled gate, flag or not.
+    expect(withFlag.enabledSpies.gatedBelow).not.toHaveBeenCalled();
+  });
+
+  it('is unchanged by default: everything below the winner is shadowed, unasked', () => {
+    const plain = fixture();
+    const out = createDispatcher().resolveAll(event, plain.ctx);
+    expect(out.map((c) => c.actionId)).toEqual(['win', 'offBelow', 'gatedBelow', 'okBelow']);
+    expect(out.map((c) => c.verdict.kind))
+      .toEqual(['would-fire', 'shadowed', 'shadowed', 'shadowed']);
+    expect(plain.enabledSpies.offBelow).not.toHaveBeenCalled();
+    expect(plain.enabledSpies.gatedBelow).not.toHaveBeenCalled();
+    expect(plain.enabledSpies.okBelow).not.toHaveBeenCalled();
+  });
+
+  it('is unchanged by an explicitly false flag', () => {
+    const plain = fixture();
+    const out = createDispatcher().resolveAll(event, plain.ctx, { evaluateShadowed: false });
+    expect(out.map((c) => c.verdict.kind))
+      .toEqual(['would-fire', 'shadowed', 'shadowed', 'shadowed']);
+    expect(plain.enabledSpies.offBelow).not.toHaveBeenCalled();
+  });
+
+  it('still inherits a blocked action\'s verdict on a repeat binding', () => {
+    const d = createDispatcher();
+    const ctx = makeCtx({
+      actions: makeRegistry([
+        action('win'),
+        action('same', { enabled: () => 'scene-empty' as never }),
+      ]),
+      activeToolId: 't',
+      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+        { spec: { kind: 'drag', target: 'selected-body', mods: { shift: true } }, actionId: 'win' },
+        { spec: { kind: 'drag', target: 'selected-body', mods: { shift: 'optional' } }, actionId: 'same' },
+        { spec: { kind: 'drag', mods: { shift: 'optional' } }, actionId: 'same' },
+      ])]]),
+    });
+    const out = d.resolveAll(event, ctx, { evaluateShadowed: true });
+    expect(out.map((c) => c.verdict)).toEqual([
+      { kind: 'would-fire' },
+      { kind: 'disabled', reason: 'scene-empty' },
+      { kind: 'disabled', reason: 'scene-empty' },
+    ]);
+  });
+
+  it('still shadows a repeat binding of the winner', () => {
+    const d = createDispatcher();
+    const ctx = makeCtx({
+      actions: makeRegistry([action('same')]),
+      activeToolId: 't',
+      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+        { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'same' },
+        { spec: { kind: 'drag' }, actionId: 'same' },
+      ])]]),
+    });
+    const out = d.resolveAll(
+      { ...dragEvent, bodyTarget: 'selected-body' } as InputEvent,
+      ctx,
+      { evaluateShadowed: true },
+    );
+    expect(out.map((c) => c.verdict.kind)).toEqual(['would-fire', 'shadowed']);
+  });
+
+  it('leaves resolveOnly on the default walk', () => {
+    // resolveOnly must not opt in — its enabled() call count is the thing the
+    // default protects. Nothing below the winner should be asked.
+    const f = fixture();
+    const only = createDispatcher().resolveOnly(event, f.ctx);
+    expect(only!.actionId).toBe('win');
+    expect(f.enabledSpies.offBelow).not.toHaveBeenCalled();
+    expect(f.enabledSpies.okBelow).not.toHaveBeenCalled();
+  });
+});
+
 describe('resolveOnly agrees with resolveAll', () => {
   // The anti-drift property: resolveOnly must be exactly the first would-fire
   // entry, so a change to one can't silently diverge from the other.

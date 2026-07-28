@@ -219,6 +219,7 @@ export type {
   MatchResult,
   ResolveOnlyResult,
   ResolvedCandidate,
+  ResolveAllOptions,
   UseGestureDispatcherOptions,
 } from './interactions/dispatcher';
 

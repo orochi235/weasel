@@ -470,15 +470,24 @@ export function ResolutionWidget({
 
   const candidates = useMemo(() => {
     const dispatcher = createDispatcher();
-    return dispatcher.resolveAll(synthesizeInput({ gesture, target, mods }), {
-      actions: stubActionsRegistry(actions),
-      depRegistry: STUB_DEP_REGISTRY,
-      activeToolId,
-      hotkeyStack: [],
-      ambientToolIds: slots.ambient,
-      toolsById: new Map(tools.map((t) => [t.id, t])),
-      isMac: false,
-    });
+    return dispatcher.resolveAll(
+      synthesizeInput({ gesture, target, mods }),
+      {
+        actions: stubActionsRegistry(actions),
+        depRegistry: STUB_DEP_REGISTRY,
+        activeToolId,
+        hotkeyStack: [],
+        ambientToolIds: slots.ambient,
+        toolsById: new Map(tools.map((t) => [t.id, t])),
+        isMac: false,
+      },
+      // The question this panel exists to answer is "why didn't MY binding
+      // fire?", and on the default walk the answer is `shadowed` for
+      // everything below the winner — true but uninformative. Evaluating past
+      // the winner costs nothing here (throwaway dispatcher, no invocation),
+      // and it distinguishes "outranked" from "outranked AND disabled".
+      { evaluateShadowed: true },
+    );
   }, [gesture, target, mods, actions, activeToolId, slots.ambient, tools]);
 
   return (
