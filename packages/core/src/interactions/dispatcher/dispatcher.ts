@@ -183,6 +183,25 @@ function eligibleToRule(eligible: Rule | Condition): Rule {
   return typeof eligible === 'function' ? (eligible as Condition).rule : eligible;
 }
 
+/** Does `action`'s declared eligibility rule pass against `ruleCtx`?
+ *  An action with no `eligible` rule is always eligible. */
+function isEligible(action: Action, ruleCtx: RuleCtx): boolean {
+  if (!action.eligible) return true;
+  return evaluate(eligibleToRule(action.eligible), ruleCtx);
+}
+
+/** Serialize an `eligible` rule for display. `evaluate()` returns a bare
+ *  boolean, so there is no reason string to carry — the rule itself is the
+ *  most informative thing available. */
+function describeEligible(eligible: NonNullable<Action['eligible']>): string {
+  const rule = eligibleToRule(eligible);
+  try {
+    return JSON.stringify(rule) ?? '(rule)';
+  } catch {
+    return '(rule)';
+  }
+}
+
 /**
  * Filter `matches` to only those whose backing action has no `eligible`
  * rule, or whose rule evaluates true against `ruleCtx`. Exported for
@@ -197,8 +216,8 @@ export function filterEligible<M extends { binding: { actionId: string } }>(
 ): M[] {
   return matches.filter((m) => {
     const action = actionLookup(m.binding.actionId);
-    if (!action?.eligible) return true;
-    return evaluate(eligibleToRule(action.eligible), ruleCtx);
+    if (!action) return true;
+    return isEligible(action, ruleCtx);
   });
 }
 
@@ -241,9 +260,12 @@ export interface ResolveOnlyResult {
  *  - `ineligible`  — the action's `eligible` rule evaluated false against the
  *    live `RuleCtx`. `reason` is the rule, serialized.
  *  - `disabled`    — `enabled()` returned a disabled reason, carried verbatim.
- *  - `shadowed`    — never asked: something above it fires first, or the same
- *    action was already evaluated higher in the list (several bindings may
- *    point at one action, and the dispatcher tries each action once).
+ *  - `shadowed`    — never asked, for one of two reasons: something above it
+ *    already fired, or it is a repeat binding of the action that itself won
+ *    higher in the list (several bindings may point at one action, and the
+ *    dispatcher runs each action at most once). A repeat of an action that was
+ *    already judged `ineligible` or `disabled` is NOT shadowed — it inherits
+ *    that action's verdict, since that is the reason it doesn't fire.
  */
 export interface ResolvedCandidate {
   actionId: string;
@@ -290,9 +312,11 @@ export interface Dispatcher {
    * Every binding that matches `event`, in dispatch precedence order, each
    * with a verdict explaining whether it would fire. Same walk as
    * `resolveOnly` — scope assembly, specificity-sorted match, eligibility
-   * filter, per-candidate `enabled()` gate — without stopping at the winner
-   * and without invoking anything. Pure query: no invoker runs, no in-flight
-   * state changes, no trace-log entry.
+   * check, per-candidate `enabled()` gate — without stopping at the winner
+   * and without invoking anything. Nothing is dropped: candidates that
+   * `resolveOnly`'s walk would filter out are kept here and labelled
+   * `ineligible` instead. Pure query: no invoker runs, no in-flight state
+   * changes, no trace-log entry.
    *
    * `resolveOnly` is the first `would-fire` entry of this list.
    *
@@ -1003,20 +1027,8 @@ export function createDispatcher(opts?: {
   }
 
   // -------------------------------------------------------------------------
-  // resolveOnly
+  // resolveAll / resolveOnly — prediction without invocation
   // -------------------------------------------------------------------------
-
-  /** Serialize an `eligible` rule for display. `evaluate()` returns a bare
-   *  boolean, so there is no reason string to carry — the rule itself is the
-   *  most informative thing available. */
-  function describeEligible(eligible: NonNullable<Action['eligible']>): string {
-    const rule = eligibleToRule(eligible);
-    try {
-      return JSON.stringify(rule) ?? '(rule)';
-    } catch {
-      return '(rule)';
-    }
-  }
 
   function resolveAll(event: InputEvent, ctx: DispatcherContext): ResolvedCandidate[] {
     const scopedBindings = assembleScopedBindings(ctx);
@@ -1045,10 +1057,9 @@ export function createDispatcher(opts?: {
       if (verdict === undefined) {
         if (fired) {
           verdict = { kind: 'shadowed' };
-        } else if (
-          ruleCtx && action.eligible &&
-          !evaluate(eligibleToRule(action.eligible), ruleCtx)
-        ) {
+        } else if (ruleCtx && action.eligible && !isEligible(action, ruleCtx)) {
+          // `action.eligible &&` is redundant with `isEligible` (which passes a
+          // rule-less action); it narrows the type for `describeEligible`.
           verdict = { kind: 'ineligible', reason: describeEligible(action.eligible) };
         } else {
           const disabled = action.enabled

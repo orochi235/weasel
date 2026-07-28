@@ -162,6 +162,33 @@ describe('resolveAll', () => {
     expect(out[1].verdict).toEqual({ kind: 'would-fire' });
   });
 
+  it('asks enabled() once per candidate down to the winner, and never below it', () => {
+    const d = createDispatcher();
+    const offEnabled = vi.fn().mockReturnValue('selection-required');
+    const onEnabled = vi.fn().mockReturnValue(true);
+    const belowEnabled = vi.fn().mockReturnValue(true);
+    const ctx = makeCtx({
+      actions: makeRegistry([
+        action('off', { enabled: offEnabled as never }),
+        action('on', { enabled: onEnabled as never }),
+        action('below', { enabled: belowEnabled as never }),
+      ]),
+      activeToolId: 't',
+      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+        { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'off' },
+        { spec: { kind: 'drag' }, actionId: 'on' },
+        { spec: { kind: 'drag' }, actionId: 'below' },
+      ])]]),
+    });
+    const out = d.resolveAll({ ...dragEvent, bodyTarget: 'selected-body' } as InputEvent, ctx);
+    expect(out.map((c) => c.verdict.kind)).toEqual(['disabled', 'would-fire', 'shadowed']);
+    expect(offEnabled).toHaveBeenCalledTimes(1);
+    expect(onEnabled).toHaveBeenCalledTimes(1);
+    // Anything after the winner is shadowed without ever being asked — the
+    // property that keeps resolveAll as cheap as the dispatch it replays.
+    expect(belowEnabled).not.toHaveBeenCalled();
+  });
+
   it('marks a candidate ineligible when its rule fails', () => {
     const d = createDispatcher();
     const ctx = makeCtx({
@@ -178,7 +205,31 @@ describe('resolveAll', () => {
     });
     const out = d.resolveAll({ ...dragEvent, bodyTarget: 'selected-body' } as InputEvent, ctx);
     expect(out[0].verdict.kind).toBe('ineligible');
+    // The rule itself, serialized — `evaluate()` yields a bare boolean, so
+    // there is no reason string to carry.
+    expect((out[0].verdict as { reason: string }).reason).toBe('{"capability":"edits-page"}');
     expect(out[1].verdict).toEqual({ kind: 'would-fire' });
+  });
+
+  it('reports an ineligible candidate below the winner as shadowed, not ineligible', () => {
+    const d = createDispatcher();
+    const ctx = makeCtx({
+      actions: makeRegistry([
+        action('win'),
+        action('gated', { eligible: { capability: 'edits-page' } }),
+      ]),
+      activeToolId: 't',
+      getRuleCtx: () => makeRuleCtx({ allowedCapabilities: new Set() }),
+      toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+        { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'win' },
+        { spec: { kind: 'drag' }, actionId: 'gated' },
+      ])]]),
+    });
+    const out = d.resolveAll({ ...dragEvent, bodyTarget: 'selected-body' } as InputEvent, ctx);
+    // `fired` is checked before eligibility, so once something has won the
+    // reason a lower candidate stays silent is the shadowing, not its rule.
+    expect(out[0].verdict).toEqual({ kind: 'would-fire' });
+    expect(out[1].verdict).toEqual({ kind: 'shadowed' });
   });
 
   it('gives a repeated action the verdict of its first occurrence', () => {
@@ -252,6 +303,55 @@ describe('resolveOnly agrees with resolveAll', () => {
         toolsById: new Map<string, Tool<unknown>>([
           ['t', tool('t', [{ spec: { kind: 'drag' }, actionId: 'off' }])],
         ]),
+      }),
+    },
+    {
+      // Winner comes from the hotkey scope, so agreement depends on both
+      // methods assembling the scopes in the same order.
+      name: 'candidates spanning hotkey, active and ambient scopes',
+      ctx: () => {
+        const bind = (actionId: string) => ({ spec: { kind: 'drag' }, actionId });
+        return makeCtx({
+          actions: makeRegistry([action('hk'), action('act'), action('amb')]),
+          activeToolId: 'activeTool',
+          hotkeyStack: ['hotkeyTool'],
+          ambientToolIds: ['ambientTool'],
+          toolsById: new Map<string, Tool<unknown>>([
+            ['hotkeyTool', tool('hotkeyTool', [bind('hk')])],
+            ['activeTool', tool('activeTool', [bind('act')])],
+            ['ambientTool', tool('ambientTool', [bind('amb')])],
+          ]),
+        });
+      },
+    },
+    {
+      // resolveOnly used to drop ineligible candidates before the walk;
+      // resolveAll keeps and labels them. Same winner either way.
+      name: 'first candidate ineligible, second fires',
+      ctx: () => makeCtx({
+        actions: makeRegistry([
+          action('gated', { eligible: { capability: 'edits-page' } }),
+          action('open'),
+        ]),
+        activeToolId: 't',
+        getRuleCtx: () => makeRuleCtx({ allowedCapabilities: new Set() }),
+        toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+          { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'gated' },
+          { spec: { kind: 'drag' }, actionId: 'open' },
+        ])]]),
+      }),
+    },
+    {
+      // Two bindings, one action: the per-action dedup must not make
+      // resolveOnly pick a different entry than the first would-fire.
+      name: 'two bindings pointing at the same action',
+      ctx: () => makeCtx({
+        actions: makeRegistry([action('same')]),
+        activeToolId: 't',
+        toolsById: new Map<string, Tool<unknown>>([['t', tool('t', [
+          { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'same' },
+          { spec: { kind: 'drag' }, actionId: 'same' },
+        ])]]),
       }),
     },
   ];
