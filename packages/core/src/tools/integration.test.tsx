@@ -6,7 +6,24 @@ import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
 import { defineTool } from './routing/defineTool';
 import { begin, claim } from './routing/result';
-import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
+import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
+import { ActionsProvider, useActionsRegistry } from '../interactions/actions/registry';
+import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';
+import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
+import { useRef } from 'react';
+
+/** Pumps window key events into the dispatcher and publishes the `activeTool`
+ *  dep. Tool activation is the `tool.activate` Action and nothing else since
+ *  the parallel document listener in `useKeybindings` was deleted (audit
+ *  3.8), so a harness asserting activation has to mount the dispatcher. */
+function KeyDispatchHarness() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const actions = useActionsRegistry();
+  const ctx = useActiveToolContext();
+  useDepSource('activeTool', () => ctx);
+  useGestureDispatcher({ canvasRef, actions: actions!, toolsById: new Map() });
+  return null;
+}
 
 describe('integration: define → use → key → canvas', () => {
   it('keybinding switches active tool, drag routes through new tool', () => {
@@ -43,7 +60,16 @@ describe('integration: define → use → key → canvas', () => {
       return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
 
-    const { container } = render(<ActiveToolContextProvider initialActive="select"><App /></ActiveToolContextProvider>);
+    const { container } = render(
+      <DepRegistryProvider>
+        <ActionsProvider>
+          <ActiveToolContextProvider initialActive="select">
+            <App />
+            <KeyDispatchHarness />
+          </ActiveToolContextProvider>
+        </ActionsProvider>
+      </DepRegistryProvider>,
+    );
     const canvas = container.querySelector('canvas')!;
     canvas.setPointerCapture = vi.fn();
 
@@ -57,7 +83,7 @@ describe('integration: define → use → key → canvas', () => {
 
     // 2. Press 'p' to switch.
     act(() => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'p' }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
     });
 
     // 3. Drag with pen active.

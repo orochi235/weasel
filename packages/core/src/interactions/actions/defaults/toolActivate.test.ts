@@ -99,12 +99,23 @@ describe('buildToolActivateBindings', () => {
     expect(first.opts.params.toolId).toBe('rect');
   });
 
-  it('preserves modifier flags on the spec', () => {
+  it('puts modifier flags under `mods`, where the matcher reads them', () => {
+    // They used to be spread flat onto the spec, with an `as never` cast
+    // hiding the mismatch. `matchModifiers` only looks at `spec.mods`, and
+    // treats an absent modifier as "must NOT be held" — so a modifier-
+    // qualified shortcut could never match. It went unnoticed while
+    // `useKeybindings` matched keys itself in a document listener.
     const bindings = buildToolActivateBindings([
       { toolId: 'rect', keyOpts: { key: 'R', mod: true, shift: 'optional' } },
     ]);
-    const first = bindings[0] as { spec: { mod?: boolean; shift?: boolean | 'optional' } };
-    expect(first.spec.mod).toBe(true);
-    expect(first.spec.shift).toBe('optional');
+    const first = bindings[0] as {
+      spec: { mods?: { mod?: boolean; shift?: boolean | 'optional' } };
+    };
+    expect(first.spec.mods).toEqual({ mod: true, shift: 'optional' });
+  });
+
+  it('omits `mods` entirely for an unmodified key', () => {
+    const bindings = buildToolActivateBindings([{ toolId: 'rect', keyOpts: { key: 'R' } }]);
+    expect((bindings[0] as unknown as { spec: Record<string, unknown> }).spec).not.toHaveProperty('mods');
   });
 });

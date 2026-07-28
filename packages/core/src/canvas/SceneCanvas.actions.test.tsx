@@ -62,11 +62,31 @@ describe('SceneCanvas actions integration', () => {
     expect(last.filter(i => i.startsWith('reorder.'))).toHaveLength(2);
   });
 
-  it('actions={null} → registry empty', () => {
+  it('actions={null} → no default actions, but tool keybindings remain', () => {
     const scene = makeScene();
     const seen: string[][] = [];
     render(
       <SceneCanvas scene={scene} layers={{}} width={64} height={64} actions={null}>
+        <Probe onReg={(ids) => seen.push(ids)} />
+      </SceneCanvas>,
+    );
+    // `actions` governs the kit's DEFAULT action set. Tool activation and
+    // Escape-returns-to-default are keybinding concerns, registered by
+    // `useKeybindings` and gated by `enableKeybindings` instead. They used to
+    // be absent here only because `useKeybindings` was mounted above the
+    // ActionsProvider and its registrations silently no-op'd — a document
+    // `keydown` listener did the real work. Both are gone (audit 3.8).
+    expect(seen.at(-1)).toEqual(['tool.activate', 'tool.resetToDefault']);
+  });
+
+  it('actions={null} + enableKeybindings={false} → registry fully empty', () => {
+    const scene = makeScene();
+    const seen: string[][] = [];
+    render(
+      <SceneCanvas
+        scene={scene} layers={{}} width={64} height={64}
+        actions={null} enableKeybindings={false}
+      >
         <Probe onReg={(ids) => seen.push(ids)} />
       </SceneCanvas>,
     );

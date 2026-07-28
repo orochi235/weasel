@@ -1236,10 +1236,30 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // to the second call when `toolsProp` is absent is a render-stable empty
   // stand-in just to keep the call site valid; it never actually fires
   // because `disable` is true on that branch.
-  useKeybindings(internalTools, { disable: !!toolsTakeover || !enableKeybindings });
-  useKeybindings(toolsTakeover ?? internalTools, {
-    disable: !toolsTakeover || !enableKeybindings,
-  });
+  const toolsForEligibilityRef = useRef<ToolsApi | null>(null);
+  toolsForEligibilityRef.current = toolsTakeover ?? internalTools;
+  //
+  // `isToolEligible` mirrors `eligibleForMode` (packages/modes) — the same
+  // predicate `ToolPalette` uses to grey a button out. Without a mode
+  // registry every tool stays activatable.
+  const isToolEligible = useCallback((toolId: string): boolean => {
+    const getMode = getActiveModeRef.current;
+    if (!getMode) return true;
+    const registry = toolsForEligibilityRef.current?.registry;
+    const caps = registry?.[toolId]?.capabilities ?? [];
+    if (caps.length === 0) return false;
+    const allowed = getMode().allowedCapabilities;
+    for (const c of caps) if (allowed.has(c)) return true;
+    return false;
+  }, []);
+
+  // NOTE: the actual `useKeybindings` calls live in <ToolKeybindingsMounter>,
+  // rendered inside <ActionsProviderIfRoot> below. They used to sit here, but
+  // this component is ABOVE the provider, so `useActionsRegistry()` returned
+  // null and the `tool.activate` / `tool.offhand` registrations silently
+  // no-op'd. That went unnoticed because a parallel document `keydown`
+  // listener inside the hook did the real work; deleting the listener (audit
+  // 3.8) exposed the layering bug.
 
   const tools = toolsTakeover ?? internalTools;
 
@@ -1868,6 +1888,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
             onDoubleClick={onDoubleClickObserver}
           />
+          <ToolKeybindingsMounter
+            internalTools={internalTools}
+            toolsTakeover={toolsTakeover ?? undefined}
+            enableKeybindings={enableKeybindings}
+            isToolEligible={isToolEligible}
+          />
           {children}
         </ActionsProviderIfRoot>
       </PointerProviderIfRoot>
@@ -1887,6 +1913,38 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
  * These thunks convert client coords → world coords via the canvas rect + view,
  * then classify the pointer position against affordances and scene bodies.
  */
+/**
+ * Mounts `useKeybindings` inside `<ActionsProviderIfRoot>` so its
+ * `tool.activate` / `tool.offhand` / `tool.resetToDefault` registrations
+ * actually reach a registry.
+ *
+ * Two calls, mirroring the pair that used to live in `SceneCanvasInner`: the
+ * hook snapshots the initial active tool for Escape-returns-to-default, so
+ * the internal and consumer-supplied `ToolsApi` each need their own instance
+ * and the hook count has to stay stable across the takeover branch.
+ */
+function ToolKeybindingsMounter({
+  internalTools,
+  toolsTakeover,
+  enableKeybindings,
+  isToolEligible,
+}: {
+  internalTools: ToolsApi;
+  toolsTakeover?: ToolsApi;
+  enableKeybindings: boolean;
+  isToolEligible: (toolId: string) => boolean;
+}) {
+  useKeybindings(internalTools, {
+    disable: !!toolsTakeover || !enableKeybindings,
+    isToolEligible,
+  });
+  useKeybindings(toolsTakeover ?? internalTools, {
+    disable: !toolsTakeover || !enableKeybindings,
+    isToolEligible,
+  });
+  return null;
+}
+
 function GestureDispatcherMounter({
   canvasRef,
   canvasApiRef,

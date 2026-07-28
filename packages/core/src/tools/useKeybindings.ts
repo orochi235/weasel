@@ -1,9 +1,5 @@
 // src/tools/useKeybindings.ts
 import { useEffect, useRef } from 'react';
-import {
-  isEditableTarget,
-  matchesKeyBinding,
-} from 'interactions/keyHelpers';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import {
   makeToolOffhandAction,
@@ -15,6 +11,7 @@ import {
   buildToolActivateBindings,
   type ToolActivateBindingSpec,
 } from 'interactions/actions/defaults/toolActivate';
+import { makeToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 import type { ToolsApi } from './useTools';
 
 export interface UseKeybindingsOptions {
@@ -24,6 +21,16 @@ export interface UseKeybindingsOptions {
    *  `tools.active` was when the hook first ran (i.e. the initial active
    *  tool). Pass `null` to disable Escape-returns-to-default behavior. */
   defaultTool?: string | null;
+  /**
+   * Gate for keyboard tool activation: return false to refuse a tool the
+   * active mode doesn't allow. `<SceneCanvas>` wires this from
+   * `getActiveMode` + each tool's `capabilities`, using the same predicate
+   * `ToolPalette` uses to grey a button out — so the grey-out becomes a
+   * guarantee rather than a hint.
+   *
+   * Omit for consumers with no mode registry: every tool stays activatable.
+   */
+  isToolEligible?: (toolId: string) => boolean;
 }
 
 /** Key opts for every built-in tool whose activation key lives here rather
@@ -60,67 +67,6 @@ export function useKeybindings(
   // consumer doesn't pass an explicit `defaultTool`. Captured in a ref
   // (not state) so it survives re-renders without re-syncing.
   const initialActiveRef = useRef(tools.active);
-
-  // --- Tool-activation keybindings (V/R/T/P/...) and Escape. ---
-  // Tool-switch is handled here via a document keydown listener. The
-  // consolidated `tool.activate` action registered below carries the same
-  // bindings in its `defaultBinding[]` (for discoverability via the registry
-  // and for any dispatcher-driven surface), but this document listener is
-  // the authoritative path (e.g. tests and consumers that mount Canvas
-  // without a full SceneCanvas stack).
-  useEffect(() => {
-    if (optionsRef.current.disable) return;
-
-    /** Resolve a keydown event to a tool id. */
-    function resolveSwitch(e: KeyboardEvent): string | null {
-      const reg = toolsRef.current.registry;
-
-      // Statically-registered built-in tools.
-      for (const id in BUILTIN_SELECT_KEYS) {
-        if (!(id in reg)) continue;
-        const binding = BUILTIN_SELECT_KEYS[id];
-        if (matchesKeyBinding(e, binding)) return id;
-      }
-
-      // Declared bindings on the ToolDef (configurable tools
-      // like useLassoTool, useEyedropperTool).
-      for (const id in reg) {
-        if (id in BUILTIN_SELECT_KEYS) continue;
-        const binding = reg[id].keybinding;
-        if (!binding) continue;
-        if (matchesKeyBinding(e, binding)) return id;
-      }
-      return null;
-    }
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (isEditableTarget(e.target)) return;
-
-      // Escape: return to the default tool. The opt's `defaultTool`
-      // wins; when undefined, fall back to the snapshotted initial
-      // active. `null` disables the behavior entirely.
-      if (e.key === 'Escape') {
-        const opt = optionsRef.current.defaultTool;
-        const target = opt === null ? null : (opt ?? initialActiveRef.current);
-        if (target && toolsRef.current.has(target) && toolsRef.current.active !== target) {
-          e.preventDefault();
-          toolsRef.current.setActive(target);
-          return;
-        }
-      }
-
-      const switchTo = resolveSwitch(e);
-      if (switchTo) {
-        e.preventDefault();
-        toolsRef.current.setActive(switchTo);
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, []);
 
   // Tool-offhand: register one parametric `tool.offhand` action whose
   // `defaultBinding[]` carries one key-held entry per built-in tool that
@@ -177,16 +123,43 @@ export function useKeybindings(
       // key spec expects a string. Take the first key in the array case —
       // multi-key aliases are rare in practice and the action system doesn't
       // support them yet.
-      const key = typeof binding.key === 'string' ? binding.key : binding.key[0];
-      if (!key) continue;
-      specs.push({ toolId, keyOpts: { ...binding, key } });
+      // `KeyBinding.key` may be an array of aliases. Emit one binding per
+      // key: the old document listener matched every alias while this path
+      // only took `key[0]`, so a multi-key tool activated on all its keys
+      // through one route and only the first through the other.
+      const keys = typeof binding.key === 'string' ? [binding.key] : binding.key;
+      for (const key of keys) {
+        if (!key) continue;
+        specs.push({ toolId, keyOpts: { ...binding, key } });
+      }
     }
 
-    if (specs.length === 0) return;
+    const unregisters: Array<() => void> = [];
 
-    const bindings = buildToolActivateBindings(specs);
-    const unregister = registry.register(makeToolActivateAction(bindings));
-    return unregister;
+    if (specs.length > 0) {
+      const bindings = buildToolActivateBindings(specs);
+      unregisters.push(registry.register(makeToolActivateAction(
+        bindings,
+        (toolId) => optionsRef.current.isToolEligible?.(toolId) ?? true,
+      )));
+    }
+
+    // Escape-returns-to-default. Registered here rather than in the deleted
+    // document listener so it competes in the dispatcher's Escape ladder
+    // instead of firing in parallel with it — see
+    // `makeToolResetToDefaultAction` for the ordering and the behavior
+    // change that implies.
+    unregisters.push(registry.register(makeToolResetToDefaultAction(() => {
+      const opt = optionsRef.current.defaultTool;
+      if (opt === null) return null;
+      const target = opt ?? initialActiveRef.current;
+      if (!target) return null;
+      const api = toolsRef.current;
+      if (!api.has(target) || api.active === target) return null;
+      return target;
+    })));
+
+    return () => { for (const u of unregisters) u(); };
   }, [registry, tools]);
 }
 

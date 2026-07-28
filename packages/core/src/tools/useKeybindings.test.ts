@@ -5,20 +5,56 @@ import { createElement, type ReactNode } from 'react';
 import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
 import { defineTool } from './routing/defineTool';
-import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
+import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { ActionsProvider } from '../interactions/actions/registry';
 import { useActionsRegistry } from '../interactions/actions/registry';
+import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';
+import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
+import { useRef } from 'react';
 
 function press(key: string, type: 'keydown' | 'keyup' = 'keydown'): void {
   document.dispatchEvent(new KeyboardEvent(type, { key, bubbles: true }));
 }
 
-function makeWrapper(initialActive = 'select') {
+/**
+ * Pumps window key events into the dispatcher and publishes the `activeTool`
+ * dep, which is what `tool.activate` / `tool.resetToDefault` need to run.
+ *
+ * Tool activation used to work in this file without any of this, because
+ * `useKeybindings` also attached its own document `keydown` listener that
+ * called `ToolsApi.setActive` directly. That second listener is gone (audit
+ * 3.8) — activation is the `tool.activate` Action and nothing else — so a
+ * harness that wants to assert activation BEHAVIOR has to mount the
+ * dispatcher. Tests that only assert registration don't need it.
+ */
+function KeyDispatchHarness() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const actions = useActionsRegistry();
+  const ctx = useActiveToolContext();
+  useDepSource('activeTool', () => ctx);
+  useGestureDispatcher({
+    canvasRef,
+    actions: actions!,
+    toolsById: new Map(),
+  });
+  return null;
+}
+
+function makeWrapper(initialActive = 'select', dispatch = false) {
   return function Wrapper({ children }: { children: ReactNode }) {
     return createElement(
-      ActionsProvider,
+      DepRegistryProvider,
       null,
-      createElement(ActiveToolContextProvider, { initialActive, children }),
+      createElement(
+        ActionsProvider,
+        null,
+        createElement(ActiveToolContextProvider, {
+          initialActive,
+          children: dispatch
+            ? [children, createElement(KeyDispatchHarness, { key: 'dispatch' })]
+            : children,
+        }),
+      ),
     );
   };
 }
@@ -31,7 +67,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools);
       return tools;
-    }, { wrapper: makeWrapper('select') });
+    }, { wrapper: makeWrapper('select', true) });
 
     expect(result.current.active).toBe('select');
     act(() => press('p'));
@@ -125,7 +161,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, insert } });
       useKeybindings(tools);
       return tools;
-    }, { wrapper: makeWrapper('select') });
+    }, { wrapper: makeWrapper('select', true) });
 
     // Cmd-R must NOT switch tools (browser reload).
     act(() => {
@@ -144,19 +180,41 @@ describe('useKeybindings', () => {
     expect(result.current.active).toBe('insert');
   });
 
-  it('supports mod-aware bindings (Cmd+D)', () => {
+  it('supports mod-aware bindings (Cmd/Ctrl+D)', () => {
+    // `mod` is now resolved by the dispatcher's matcher, which is
+    // PLATFORM-AWARE: meta on mac, ctrl elsewhere, with the other platform's
+    // key forbidden. The deleted document listener used the looser
+    // `matchesKeyBinding`, where `mod` meant "meta OR ctrl" on every
+    // platform — so Cmd+D fired on Windows too. jsdom reports non-mac, so
+    // the modifier under test here is Ctrl.
+    const IS_MAC = /mac/i.test(
+      (navigator as { platform?: string }).platform ?? navigator.userAgent,
+    );
     const select  = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
     const stylize = defineTool({ id: 'stylize', keybinding: { key: 'd', mod: true }, initial: {} });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, stylize } });
       useKeybindings(tools);
       return tools;
-    }, { wrapper: makeWrapper('select') });
+    }, { wrapper: makeWrapper('select', true) });
 
     act(() => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', metaKey: true, bubbles: true }));
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'd', bubbles: true,
+        ...(IS_MAC ? { metaKey: true } : { ctrlKey: true }),
+      }));
     });
     expect(result.current.active).toBe('stylize');
+
+    // The other platform's modifier must NOT fire it.
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'v', bubbles: true }));
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'd', bubbles: true,
+        ...(IS_MAC ? { ctrlKey: true } : { metaKey: true }),
+      }));
+    });
+    expect(result.current.active).toBe('select');
   });
 
   it('disable: true skips all wiring', () => {
@@ -166,7 +224,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools, { disable: true });
       return tools;
-    }, { wrapper: makeWrapper('select') });
+    }, { wrapper: makeWrapper('select', true) });
 
     act(() => press('p'));
     expect(result.current.active).toBe('select');
@@ -198,7 +256,7 @@ describe('useKeybindings', () => {
       const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools);
       return tools;
-    }, { wrapper: makeWrapper('select') });
+    }, { wrapper: makeWrapper('select', true) });
 
     act(() => {
       input.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
@@ -216,7 +274,7 @@ describe('useKeybindings', () => {
         const tools = useTools({ active: 'select', registry: { select, pen } });
         useKeybindings(tools);
         return tools;
-      }, { wrapper: makeWrapper('select') });
+      }, { wrapper: makeWrapper('select', true) });
 
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
@@ -232,7 +290,7 @@ describe('useKeybindings', () => {
         const tools = useTools({ active: 'select', registry: { select, pen, hand } });
         useKeybindings(tools, { defaultTool: 'hand' });
         return tools;
-      }, { wrapper: makeWrapper('select') });
+      }, { wrapper: makeWrapper('select', true) });
 
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
@@ -247,11 +305,45 @@ describe('useKeybindings', () => {
         const tools = useTools({ active: 'select', registry: { select, pen } });
         useKeybindings(tools, { defaultTool: null });
         return tools;
-      }, { wrapper: makeWrapper('select') });
+      }, { wrapper: makeWrapper('select', true) });
 
       act(() => press('p'));
       expect(result.current.active).toBe('pen');
       act(() => press('Escape'));
+      expect(result.current.active).toBe('pen');
+    });
+  });
+
+  describe('isToolEligible gate', () => {
+    // `Tool.capabilities` used to describe an intent the runtime never
+    // enforced: `ToolPalette` greyed an ineligible tool's button while its
+    // keyboard shortcut still activated it, and once active its routes ran
+    // unfiltered (audit 3.10). Activation now consults the same predicate.
+    function setup(isToolEligible?: (id: string) => boolean) {
+      const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
+      const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
+      return renderHook(() => {
+        const tools = useTools({ active: 'select', registry: { select, pen } });
+        useKeybindings(tools, isToolEligible ? { isToolEligible } : {});
+        return tools;
+      }, { wrapper: makeWrapper('select', true) });
+    }
+
+    it('refuses activation when the tool is ineligible', () => {
+      const { result } = setup((id) => id !== 'pen');
+      act(() => press('p'));
+      expect(result.current.active).toBe('select');
+    });
+
+    it('allows activation when the tool is eligible', () => {
+      const { result } = setup((id) => id === 'pen');
+      act(() => press('p'));
+      expect(result.current.active).toBe('pen');
+    });
+
+    it('every tool stays activatable when no gate is supplied', () => {
+      const { result } = setup();
+      act(() => press('p'));
       expect(result.current.active).toBe('pen');
     });
   });
