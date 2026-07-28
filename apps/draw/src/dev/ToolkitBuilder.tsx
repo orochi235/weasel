@@ -408,10 +408,23 @@ function RoutesWidget({
 // it. `Dispatcher.resolveAll` is that walk without the invoking; this widget
 // is its display.
 //
-// The MODIFIERS are the honest part and the TARGET is the caveated part: a
-// modifier is just a boolean the matcher reads, but a target has to stand in
-// for a real hit-test. See `resolutionInput.ts` for exactly how far the
-// synthesized hit goes and where a `kindOf` predicate can outrun it.
+// What's trustworthy here, and what isn't:
+//
+//  - ORDER is exact. Scope, specificity, and registration order are all
+//    properties of the bindings themselves, so the ranking this shows is the
+//    ranking a real dispatch computes.
+//  - MODIFIERS are exact — a modifier is just a boolean the matcher reads.
+//  - TARGET is caveated. It stands in for a real hit-test, so a `kindOf`
+//    predicate can outrun the synthesized hit. `resolutionInput.ts` says
+//    exactly how far it goes; predicate rows carry a `?`.
+//  - `disabled` REASONS are caveated. `enabled()` runs against a stub
+//    DepRegistry that resolves every dep to undefined, so a predicate like
+//    `requiresSelection` reports "selection-required" whatever is really
+//    selected. Those rows carry a `?` too. Wiring the live canvas's dep
+//    registry through would fix it, and is the obvious next step if this
+//    panel gets real use.
+//  - `ineligible` never appears: no `getRuleCtx` is supplied, so the
+//    eligibility gate is skipped entirely rather than evaluated wrongly.
 // ─────────────────────────────────────────────────────────────────────────
 
 const MOD_KEYS = ['shift', 'alt', 'meta', 'ctrl'] as const;
@@ -572,7 +585,15 @@ export function ResolutionWidget({
                   </td>
                   <td><code>{c.actionId}</code></td>
                   <td><code>{c.specificity.join(' · ')}</code></td>
-                  <td>{verdictText(c.verdict)}</td>
+                  <td>
+                    {verdictText(c.verdict)}
+                    {c.verdict.kind === 'disabled' && (
+                      <span
+                        className={s.predicateBadge}
+                        title="`enabled()` ran against a synthesized context with no deps wired, so this reason reflects an empty selection / scene rather than the live one."
+                      >?</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
