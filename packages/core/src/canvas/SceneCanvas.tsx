@@ -1251,43 +1251,34 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   onToolsCreatedRef.current = onToolsCreated;
   useEffect(() => { onToolsCreatedRef.current?.(tools); }, [tools]);
 
-  // Double-click handler: wire a native `dblclick` listener on the canvas
-  // element that converts client coords → world coords, resolves the hit node
-  // via `getNodeAtPoint`, and fires `onDoubleClick`. A native listener (not a
-  // React synthetic event) is used so it doesn't interfere with the pointer-
-  // gesture pipeline (which is fully handled by Canvas via `onPointerDown`
-  // / `onPointerUp` React events and the document-level tracker).
+  // `onDoubleClick` used to be backed by a native `dblclick` listener on the
+  // canvas, which made it a THIRD independent definition of "double click"
+  // alongside the tool dispatcher's 300ms/8px `dblTap` and the gesture
+  // dispatcher's 600ms/8px synthesized event — so which double-click
+  // behaviors a consumer got depended on the millisecond gap between the two
+  // clicks. The other two are gone; this now observes the gesture
+  // dispatcher's single definition and resolves the hit with the same
+  // `getNodeAtPoint` picker the rest of the canvas uses.
   //
-  // Uses `tools` as a proxy dep for "canvas is mounted" — mirrors Canvas.tsx's
-  // native wheel listener pattern (`[tools]`). By the time `tools` is stable,
-  // `internalCanvasRef.current` is set.
+  // It rides the dispatcher as an OBSERVER rather than an Action binding
+  // because the prop is a notification, not a behavior: as a binding it would
+  // lose first-match-wins to `enterPathEdit` on every body hit and silently
+  // stop firing.
   const onDoubleClickRef = useRef(onDoubleClick);
   onDoubleClickRef.current = onDoubleClick;
   const getNodeAtPointRef = useRef(getNodeAtPoint);
   getNodeAtPointRef.current = getNodeAtPoint;
-  useEffect(() => {
-    if (!onDoubleClick) return;
-    const c = internalCanvasRef.current;
-    if (!c) return;
-    const handler = (e: MouseEvent) => {
+  const onDoubleClickObserver = useMemo(() => {
+    if (!onDoubleClick) return undefined;
+    return (world: { x: number; y: number }): void => {
       const cb = onDoubleClickRef.current;
       if (!cb) return;
-      const gnap = getNodeAtPointRef.current;
-      const view = currentViewRef.current;
-      let hit: SceneCanvasHit | null = null;
-      if (gnap) {
-        const rect = c.getBoundingClientRect();
-        const wx = (e.clientX - rect.left) / view.scale.x + view.x;
-        const wy = (e.clientY - rect.top) / view.scale.y + view.y;
-        const result = gnap(wx, wy);
-        if (result) hit = { id: result.id, kind: result.kind };
-      }
-      cb(hit);
+      const result = getNodeAtPointRef.current?.(world.x, world.y);
+      cb(result ? { id: result.id, kind: result.kind } : null);
     };
-    c.addEventListener('dblclick', handler);
-    return () => c.removeEventListener('dblclick', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tools, onDoubleClick]);
+    // Identity only needs to change between "wired" and "not wired" — the
+    // callback and picker are both read through refs.
+  }, [Boolean(onDoubleClick)]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // (Legacy `gestures` prop removed alongside the consumer-facing action
   // hooks; undo/redo and friends now register via the Actions Registry.)
@@ -1875,6 +1866,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             dispatcher={dispatcher}
             getIsVisibleForCanvas={getIsVisibleForCanvas}
             getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
+            onDoubleClick={onDoubleClickObserver}
           />
           {children}
         </ActionsProviderIfRoot>
@@ -1909,6 +1901,7 @@ function GestureDispatcherMounter({
   dispatcher,
   getIsVisibleForCanvas,
   getRuleCtx,
+  onDoubleClick,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   /** Holds the full `CanvasExtensionApi` so the gesture dispatcher can call
@@ -1939,6 +1932,10 @@ function GestureDispatcherMounter({
    *  dispatcher's eligibility filter sees the same mode/capabilities/selection
    *  view of the world that chrome-caps does. */
   getRuleCtx?: () => RuleCtx;
+  /** Fires on every synthesized double click, in world coords. Backs the
+   *  `onDoubleClick` prop — see the option's doc on
+   *  `UseGestureDispatcherOptions` for why it's an observer, not a binding. */
+  onDoubleClick?: (world: { x: number; y: number }) => void;
 }) {
   const registry = useActionsRegistry();
   const depRegistry = useDepRegistry();
@@ -2107,6 +2104,7 @@ function GestureDispatcherMounter({
     clientToWorld,
     requestRedraw,
     getRuleCtx,
+    onDoubleClick,
   });
   return null;
 }

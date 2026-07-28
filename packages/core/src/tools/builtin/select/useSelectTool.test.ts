@@ -397,55 +397,6 @@ describe('useSelectTool — debug recording', () => {
 // block has been deleted — coverage moved to those layers' tests and to
 // the dispatcher actions' own tests.
 
-describe('useSelectTool — declarative dblTap forwards raw event', () => {
-  it('passes the raw PointerEvent to onDoubleTap', () => {
-    // dblTap was migrated to a declarative route that
-    // reads the event via the new optional ActionFn parameter. Pin the
-    // raw-event-forwarding contract so a regression in the routing
-    // factory (or the ActionFn signature) gets caught.
-    const onDoubleTap = vi.fn();
-    const { result } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => ['hit-id'],
-        onDoubleTap,
-      }),
-    );
-    const ctx = ctxOver({ target: nodeTarget('hit-id') });
-    const event = pe();
-    result.current.dblTap!.onTap!(event, ctx);
-    expect(onDoubleTap).toHaveBeenCalledTimes(1);
-    const call = onDoubleTap.mock.calls[0]?.[0] as
-      | { worldX: number; worldY: number; ids: string[]; event: PointerEvent }
-      | undefined;
-    expect(call?.event).toBe(event);
-    expect(call?.ids).toEqual(['hit-id']);
-    expect(call?.worldX).toBe(50);
-    expect(call?.worldY).toBe(50);
-  });
-
-  it('claims when onDoubleTap is supplied and passes otherwise', () => {
-    // The route returns claim() so the dispatcher suppresses the
-    // regular onClick on the second tap. Without onDoubleTap there's
-    // nothing to forward, so the route returns none() and the
-    // dispatcher falls through to onClick.
-    const { result: withCb } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => [],
-        onDoubleTap: vi.fn(),
-      }),
-    );
-    const { result: withoutCb } = renderHook(() =>
-      useSelectTool(minimalAdapter, {
-        pickEvery: () => [],
-      }),
-    );
-    const ctxA = ctxOver({ target: emptyTarget() });
-    const ctxB = ctxOver({ target: emptyTarget() });
-    expect(withCb.current.dblTap!.onTap!(pe(), ctxA)).toBe('claim');
-    expect(withoutCb.current.dblTap!.onTap!(pe(), ctxB)).toBe('pass');
-  });
-});
-
 describe('useSelectTool — declarative routing', () => {
   // useSelectTool's gesture surface is
   // fully declarative — pointerDown / click / drag / dblTap all route through

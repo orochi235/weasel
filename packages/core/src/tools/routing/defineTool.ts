@@ -300,27 +300,6 @@ export function defineTool<TScratch = void>(
       onEnd: onDragEnd,
       onCancel: onDragCancel,
     } : undefined,
-    dblTap: def.initial.dblTap || def.engaged?.dblTap
-      ? {
-          onTap: (_e: PointerEvent, ctx: ToolCtx<TScratch>): 'claim' | 'pass' => {
-            const table = phaseOf(ctx).dblTap;
-            if (!table) return 'pass';
-            if (!ctx.target) return 'pass';
-            let match = resolveRoute(table, ctx.target, ctx.modifiers);
-            // Universal fallback for empty hits — mirrors onClick / onDown
-            // semantics so consumers writing `dblTap: { '*': fn }` to
-            // handle "double-tap anywhere" get the callback on
-            // empty-canvas double-taps.
-            if (!match && ctx.target.category === 'empty') {
-              const star = table['*'];
-              if (typeof star === 'function') match = { action: star, matchedKey: '*' };
-            }
-            if (!match) return 'pass';
-            report(ctx, phaseNameOf(ctx), 'dblTap', match.matchedKey);
-            return applyResult(ctx, match.action(ctx, _e));
-          },
-        }
-      : undefined,
     keyboard: (def.initial.keyDown || def.engaged?.keyDown || def.initial.keyUp || def.engaged?.keyUp)
       ? {
           onDown: buildKeyHandler('keyDown', (p) => p.keyDown),

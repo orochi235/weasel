@@ -917,3 +917,81 @@ describe('SceneCanvas — routing prop', () => {
     expect(captured).toBe('unknown');
   });
 });
+
+// ---------------------------------------------------------------------------
+// onDoubleClick — routed through the dispatcher's synthesized doubleclick
+// ---------------------------------------------------------------------------
+
+describe('SceneCanvas onDoubleClick', () => {
+  // The prop used to be backed by a native `dblclick` listener, which made it
+  // a third independent definition of "double click" alongside the tool
+  // dispatcher's 300ms/8px dblTap and the gesture dispatcher's 600ms/8px
+  // synthesized event. It now rides the dispatcher's definition, so these
+  // tests exercise two real clicks rather than a synthetic `dblclick`.
+  it('fires with the hit node on two quick clicks on a body', () => {
+    const scene = makeScene();
+    const id = firstId(scene);
+    const onDoubleClick = vi.fn();
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        onDoubleClick={onDoubleClick}
+      />,
+    );
+
+    const canvas = getCanvas(container);
+    act(() => {
+      click(canvas, 140, 130);
+      click(canvas, 140, 130);
+    });
+
+    expect(onDoubleClick).toHaveBeenCalledTimes(1);
+    expect(onDoubleClick.mock.calls[0][0]).toMatchObject({ id });
+  });
+
+  it('fires with null when the double click lands on empty canvas', () => {
+    const scene = makeScene();
+    const onDoubleClick = vi.fn();
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        onDoubleClick={onDoubleClick}
+      />,
+    );
+
+    const canvas = getCanvas(container);
+    act(() => {
+      click(canvas, 350, 350);
+      click(canvas, 350, 350);
+    });
+
+    expect(onDoubleClick).toHaveBeenCalledTimes(1);
+    expect(onDoubleClick.mock.calls[0][0]).toBeNull();
+  });
+
+  it('does not fire on a single click', () => {
+    const scene = makeScene();
+    const onDoubleClick = vi.fn();
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        onDoubleClick={onDoubleClick}
+      />,
+    );
+
+    act(() => { click(getCanvas(container), 140, 130); });
+    expect(onDoubleClick).not.toHaveBeenCalled();
+  });
+});

@@ -72,7 +72,6 @@ export interface PhaseDef<TScratch> {
    *  Predates the imperative
    *  `pointer.onDown` channel that useSelectTool used earlier. */
   pointerDown?: RouteTable<TScratch>;
-  dblTap?:  RouteTable<TScratch>;
   /** Right-click route table. Mirrors `click` semantics — keyed by hit-test
    *  target, modifier-aware. The dispatcher calls `preventDefault()` on the
    *  underlying `contextmenu` DOM event so tools fully own the menu. */
@@ -177,7 +176,7 @@ export interface ToolDef<TScratch = void> {
   engaged?: PhaseDef<TScratch>;
 }
 
-/** Viewport-tool spec — strict subset of ToolDef. Drops click/dblTap,
+/** Viewport-tool spec — strict subset of ToolDef. Drops click,
  *  narrows drag to plain ActionFn. Mechanically derived via Pick/Omit
  *  so the subset relationship is compiler-enforced. */
 export type ViewportPhaseDef<TScratch = void> = Pick<

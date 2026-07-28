@@ -75,6 +75,20 @@ export interface UseGestureDispatcherOptions {
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /**
+   * Observer fired whenever the dispatcher synthesizes a double click, in
+   * world coordinates. Runs BEFORE the event is dispatched and independently
+   * of which binding (if any) handles it.
+   *
+   * This is deliberately not an Action. `<SceneCanvas onDoubleClick>` is a
+   * notification — "the user double-clicked, here's what they hit" — and a
+   * notification must not compete with behavior for the gesture. As a binding
+   * it would lose to `enterPathEdit` on any body hit and silently never fire.
+   * Routing it here keeps a single definition of "double click" (the point of
+   * consolidating the kit's three detectors) without giving it
+   * first-match-wins semantics it shouldn't have.
+   */
+  onDoubleClick?: (world: { x: number; y: number }) => void;
+  /**
    * Default true. Set false to leave the window `keydown`/`keyup` listeners
    * unattached so keyboard-bound actions never dispatch — pointer, wheel, and
    * contextmenu channels stay live. `<SceneCanvas>` wires this to
@@ -204,7 +218,9 @@ function computeMultiTouchGeometry(
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
+  const onDoubleClickRef = useRef(onDoubleClick);
+  onDoubleClickRef.current = onDoubleClick;
   const activeTool = useActiveToolContext();
   const depRegistry = useDepRegistry();
 
@@ -858,6 +874,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
             worldY: wClick.y,
             ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
           };
+          // Notify observers first — see `onDoubleClick`'s doc for why this
+          // is not modeled as a binding.
+          onDoubleClickRef.current?.({ x: wClick.x, y: wClick.y });
           dispatch(dblEv);
           lastClickRef.current = null;
         } else {

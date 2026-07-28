@@ -997,7 +997,6 @@ export type {
 } from './canvas/sceneAdapter';
 export type {
   ToolPresentation,
-  DblTapChannel,
 } from './tools/types';
 export type { ToolHit } from './tools/routing/hitResult';
 export type { RouteMatch } from './tools/routing/lookup';

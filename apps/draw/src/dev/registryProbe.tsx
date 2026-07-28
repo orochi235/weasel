@@ -410,7 +410,7 @@ function targetSpecToString(target: TargetSpec | undefined): string {
 
 const EMPTY_PHASE: PhaseSummary = {
   gestures: {
-    click: false, pointerDown: false, dblTap: false, drag: false,
+    click: false, pointerDown: false, drag: false,
     wheel: false, keyDown: false, keyUp: false,
   },
   outputs: { cursor: false, overlay: false, claimsAll: false },
@@ -425,7 +425,6 @@ function summarizePhase(phase: NonNullable<ToolDef<unknown>['initial']>): PhaseS
     gestures: {
       click: has('click'),
       pointerDown: has('pointerDown'),
-      dblTap: has('dblTap'),
       drag: has('drag'),
       wheel: has('wheel'),
       keyDown: has('keyDown'),
@@ -490,7 +489,7 @@ function collectPhaseCallbacks(
   phase: NonNullable<ToolDef<unknown>['initial']>,
   phaseLabel: string,
 ): void {
-  const routeChannels = ['click', 'pointerDown', 'dblTap'] as const;
+  const routeChannels = ['click', 'pointerDown'] as const;
   for (const ch of routeChannels) {
     const tbl = phase[ch];
     if (!tbl || typeof tbl !== 'object') continue;

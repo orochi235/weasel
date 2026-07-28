@@ -7,7 +7,7 @@ import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
-import { defineTool, mods, begin, claim, none, forwardActionTo } from '../../routing';
+import { defineTool, mods, begin, claim, none } from '../../routing';
 import type { ActionFn } from '../../routing';
 import type { UseMoveOptions } from '../../../interactions/actions/move/options';
 import type { BindingOpts } from '../../../interactions/actions/invoker';
@@ -74,13 +74,6 @@ export interface UseSelectToolOptions<TPose> {
    *  semantics when the hit is itself a container). Requires the
    *  `nodeAtPoint` dep to be registered (sourced by `<SceneCanvas>`). */
   reparentOnDrop?: 'off' | 'top' | 'above';
-  /** Optional double-tap hook. */
-  onDoubleTap?: (args: {
-    worldX: number;
-    worldY: number;
-    ids: string[];
-    event: PointerEvent;
-  }) => void;
 }
 
 /** Intersection of the move + area-select adapter interfaces.
@@ -110,10 +103,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   adapter: SelectAdapter<TNode, TPose>,
   options: UseSelectToolOptions<TPose>,
 ): Tool<SelectScratch> {
-  // Latest-callback ref for `onDoubleTap` so the memoized tool body picks up
-  // re-renders without rebuilding the Tool record.
-  const onDoubleTapRef = useRef(options.onDoubleTap);
-  onDoubleTapRef.current = options.onDoubleTap;
 
   // pickEvery / boundsOf defaults — for any rect-pose adapter the kit can
   // derive both from `adapter.getNodes()` + `adapter.getPose(id)` +
@@ -231,20 +220,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
     return begin<SelectScratch>({ scratch: areaScratch });
   };
 
-  // dblTap forwards to the consumer's onDoubleTap escape-hatch via the
-  // shared `forwardActionTo` routing util.
-  const forwardDblTap = forwardActionTo<SelectScratch, {
-    worldX: number; worldY: number; ids: string[]; event: PointerEvent;
-  }>(
-    onDoubleTapRef,
-    (ctx, e) => ({
-      worldX: ctx.worldX,
-      worldY: ctx.worldY,
-      ids: pickEveryRef.current(ctx.worldX, ctx.worldY),
-      event: e as PointerEvent,
-    }),
-  );
-
   // Click action handlers. Run on sub-threshold release after the
   // pointerDown classifier has populated scratch + selection.
   const collapseDeferredClick: ActionFn<SelectScratch> = (ctx) => {
@@ -288,9 +263,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
               [mods('mod')]:     () => none(),
               [mods('mod', 'shift')]: () => none(),
             },
-          },
-          dblTap: {
-            '*': forwardDblTap,
           },
         },
       });

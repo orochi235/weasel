@@ -759,16 +759,17 @@ function PhaseDetail({
 }
 
 /** Two-way mapping between legacy `GestureChannels` keys and modern
- *  `GestureSpec.kind` values. The legacy phase grammar uses `pointerDown`,
- *  `dblTap`, `keyDown`+`keyUp`; the dispatcher's `GestureSpec` union uses
- *  `pointerdown`, `doubleClick`, and splits keys into `key` (initial press)
- *  and `key-held` (held while something else fires). A gesture catalog
- *  entry can be either vocabulary; this map normalizes both directions. */
+ *  `GestureSpec.kind` values. The legacy phase grammar uses `pointerDown`
+ *  and `keyDown`+`keyUp`; the dispatcher's `GestureSpec` union uses
+ *  `pointerdown` and splits keys into `key` (initial press) and `key-held`
+ *  (held while something else fires). Double-click has no legacy channel
+ *  any more — the phase grammar's `dblTap` was deleted when double-click
+ *  detection consolidated onto the dispatcher. A gesture catalog entry can
+ *  be either vocabulary; this map normalizes both directions. */
 const SPEC_KIND_ALIASES: Readonly<Record<string, readonly string[]>> = {
   // Legacy → modern (catalog id is a phase channel; look up actions by these spec kinds).
   click: ['click'],
   pointerDown: ['pointerdown'],
-  dblTap: ['doubleClick'],
   drag: ['drag'],
   wheel: ['wheel'],
   keyDown: ['key', 'key-held'],
@@ -787,7 +788,6 @@ const SPEC_KIND_ALIASES: Readonly<Record<string, readonly string[]>> = {
 const LEGACY_CHANNEL_ALIASES: Readonly<Record<string, readonly string[]>> = {
   click: ['click'],
   pointerDown: ['pointerDown'],
-  dblTap: ['dblTap'],
   drag: ['drag'],
   wheel: ['wheel'],
   keyDown: ['keyDown'],
@@ -795,7 +795,7 @@ const LEGACY_CHANNEL_ALIASES: Readonly<Record<string, readonly string[]>> = {
   // Modern catalog entries map back to legacy channels where there's an
   // equivalent. Modern-only entries (multiTouch*, key-held) have none —
   // phase grammar doesn't model them.
-  doubleClick: ['dblTap'],
+  doubleClick: [],
   key: ['keyDown', 'keyUp'],
   pointerdown: ['pointerDown'],
 };
@@ -1054,7 +1054,7 @@ function mergedToolColumn(
 
 const EMPTY_PHASE: PhaseSummary = {
   gestures: {
-    click: false, pointerDown: false, dblTap: false, drag: false,
+    click: false, pointerDown: false, drag: false,
     wheel: false, keyDown: false, keyUp: false,
   },
   outputs: { cursor: false, overlay: false, claimsAll: false },
