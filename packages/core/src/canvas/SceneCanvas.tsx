@@ -1025,6 +1025,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // Shift-click belongs to the anchor selection while a path is being
     // anchor-edited; see `UseSelectToolOptions.extendClickLocked`.
     extendClickLocked: () => effectivePathEditingId() !== '',
+    // Same rule `clearSelection`'s `eligible: { capability:
+    // 'creates-selection' }` enforces on the Action side. The phase-table
+    // pointerDown classifier can't see `Action.eligible`, so without this it
+    // kept mutating the selection in modes that forbid it (audit 3.4).
+    selectionAllowed: () => {
+      const getMode = getActiveModeRef.current;
+      if (!getMode) return true;
+      return getMode().allowedCapabilities.has('creates-selection');
+    },
     ...selectToolOpts,
   }), [selectToolOpts]);
 

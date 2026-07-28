@@ -64,6 +64,28 @@ export interface UseSelectToolOptions<TPose> {
    * clicking a different node exits edit mode as usual.
    */
   extendClickLocked?: () => boolean;
+  /**
+   * When this returns false, the pointerDown classifier must not change the
+   * node selection.
+   *
+   * `<SceneCanvas>` wires it to "the active mode allows `creates-selection`"
+   * — the same rule the `clearSelection` binding's
+   * `eligible: { capability: 'creates-selection' }` already enforces.
+   *
+   * The two disagreed: `Action.eligible` is evaluated only on the
+   * interactions dispatcher, and this classifier is a phase-table route on
+   * the OTHER pipeline, where no eligibility check exists at all (audit 3.4).
+   * So in `path-edit` mode — which allows only `edits-anchors` — clicking a
+   * shape still re-selected it while clicking empty canvas correctly did
+   * nothing. One tool, one gesture family, opposite gating, decided purely by
+   * which dispatch system the route happened to live in.
+   *
+   * This is the interim per-route patch the audit recommends. The structural
+   * fix is retiring the phase-table grammar so `Action.eligible` covers
+   * everything uniformly; that is blocked on the pen port's scratch-selector
+   * decision (see the 2026-07-27 inspector handoff §4b).
+   */
+  selectionAllowed?: () => boolean;
   /** Optional debug sink. Reserved for future overlay/affordance hitbox
    *  recording. */
   debug?: DebugSink;
@@ -207,7 +229,10 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       // edit mode, which is what you'd expect.
       const extendLocked = isExtend && options.extendClickLocked?.() === true;
       const deferClick = hitAlreadySelected && preClick.length > 1 && !isExtend;
-      if (!deferClick && !extendLocked) ctx.selection.applyClick(top as NodeId, ctx.modifiers);
+      const allowed = options.selectionAllowed?.() ?? true;
+      if (allowed && !deferClick && !extendLocked) {
+        ctx.selection.applyClick(top as NodeId, ctx.modifiers);
+      }
       const moveIds: string[] = hitAlreadySelected && preClick.length > 0 ? [...preClick] : [top];
       const moveScratch: SelectScratch = {
         kind: 'move',
@@ -223,6 +248,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // Click action handlers. Run on sub-threshold release after the
   // pointerDown classifier has populated scratch + selection.
   const collapseDeferredClick: ActionFn<SelectScratch> = (ctx) => {
+    if (options.selectionAllowed?.() === false) return none();
     if (ctx.scratch.kind === 'move' && ctx.scratch.deferredClickId !== null) {
       ctx.selection.applyClick(ctx.scratch.deferredClickId as NodeId, ctx.modifiers);
       return claim();
