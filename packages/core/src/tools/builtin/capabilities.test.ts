@@ -20,7 +20,6 @@ describe('built-in tool capabilities', () => {
   const cases: Array<[string, () => { capabilities?: readonly string[] } | null, readonly string[]]> = [
     ['hand', () => builtins.useHandTool({}), ['navigation']],
     ['select', () => builtins.useSelectTool({} as never, {} as never), ['creates-selection']],
-    ['nestedSelect', () => builtins.useNestedSelectTool({} as never, {} as never), ['creates-selection']],
     ['lasso', () => builtins.useLassoTool({} as never), ['creates-selection']],
     ['rect', () => builtins.useRectTool({} as never), ['creates-shapes']],
     ['ellipse', () => builtins.useEllipseTool({} as never), ['creates-shapes']],

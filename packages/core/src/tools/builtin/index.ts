@@ -8,11 +8,6 @@ export {
   type AreaSelectOverlayStyle,
   type MoveOverlayStyle,
 } from './select';
-export {
-  useNestedSelectTool,
-  type UseNestedSelectToolOptions,
-  type NestedSelectAdapter,
-} from './useNestedSelectTool';
 // `useResizeTool` and the legacy `useResize` hook are
 // deleted. Resize is dispatcher-driven via `resizeAction` + the
 // `resizePolicy` dep — consumers wire options through

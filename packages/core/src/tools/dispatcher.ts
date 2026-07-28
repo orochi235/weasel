@@ -8,8 +8,6 @@ import type { AffordanceBinding } from 'affordances/types';
 import type { HitResult } from './routing/hitResult';
 import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { NodeId } from 'core/scene/types';
-import type { ToolDef, PhaseDef, RouteTable } from './routing/types';
-import { resolveRoute } from './routing/lookup';
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 
 /** Build a HitResult for the dispatcher's context. Affordance hits carry a
@@ -194,39 +192,6 @@ export interface ToolsDispatcher {
    *  consumers (cursor resolution, debug overlays) can read what the active
    *  tool is currently tracking. Read-only — do NOT mutate via this getter. */
   getActiveScratch: () => unknown;
-  /** Most recent route resolution emitted by a declarative tool, or null
-   *  if none has fired yet. Snapshot — safe to read on every render. */
-  getLastRoute: () => RouteResolvedInfo | null;
-  /** Resolve a synthetic (phase, gesture, hit, modifiers) query against the
-   *  current slot occupants WITHOUT executing the matched action. Walks slots
-   *  in real precedence order (hotkey > active > ambient) and consults each
-   *  tool's attached `def` (the declarative `ToolDef` produced by
-   *  `defineTool`). Tools without an attached `def` (imperative-only) are
-   *  invisible to this query. Returns the first match, or null if no slot
-   *  resolves the query. Pure: no scratch mutation, no scene mutation, no
-   *  RouteResolvedInfo emission. */
-  resolveOnly: (query: ResolveQuery) => ResolveResult | null;
-}
-
-/** Synthetic resolution query — what the static widget asks "if a pointer
- *  event landed on `hit` with these `modifiers`, which declarative route
- *  would the dispatcher fire in this phase + gesture?" */
-export interface ResolveQuery {
-  phase: 'initial' | 'engaged';
-  gesture: 'click' | 'drag' | 'pointerDown' | 'dblTap' | 'wheel';
-  hit: HitResult;
-  modifiers: ToolModifiers;
-}
-
-/** Successful resolution: which tool, in which slot, matched which route-table
- *  key. `matchedKey` is `'*'` for function-form drag (no table to discriminate)
- *  and for wheel routes (single ActionFn). */
-export interface ResolveResult {
-  toolId: string;
-  slot: 'hotkey' | 'active' | 'ambient';
-  gesture: 'click' | 'drag' | 'pointerDown' | 'dblTap' | 'wheel';
-  phase: 'initial' | 'engaged';
-  matchedKey: string;
 }
 
 function ctxFor(
@@ -269,52 +234,6 @@ function dispatchOnce<E>(
   return null;
 }
 
-type PickedTable =
-  | { kind: 'table'; table: RouteTable<unknown> }
-  | { kind: 'functionForm' }
-  | { kind: 'wheel' };
-
-function pickTable(
-  phaseDef: PhaseDef<unknown> | undefined,
-  gesture: ResolveQuery['gesture'],
-): PickedTable | undefined {
-  if (!phaseDef) return undefined;
-  switch (gesture) {
-    case 'click':       return phaseDef.click ? { kind: 'table', table: phaseDef.click } : undefined;
-    case 'pointerDown': return phaseDef.pointerDown ? { kind: 'table', table: phaseDef.pointerDown } : undefined;
-    case 'dblTap':      return phaseDef.dblTap ? { kind: 'table', table: phaseDef.dblTap } : undefined;
-    case 'drag': {
-      const d = phaseDef.drag;
-      if (d == null) return undefined;
-      if (typeof d === 'function') return { kind: 'functionForm' };
-      return { kind: 'table', table: d };
-    }
-    case 'wheel':
-      return phaseDef.wheel != null ? { kind: 'wheel' } : undefined;
-  }
-}
-
-function resolveOnlyForTool(
-  tool: AnyTool,
-  slot: ResolveResult['slot'],
-  query: ResolveQuery,
-): ResolveResult | null {
-  const def = tool.def as ToolDef<unknown> | undefined;
-  if (!def) return null;
-  const phaseDef = (query.phase === 'engaged' ? def.engaged : def.initial) as PhaseDef<unknown> | undefined;
-  const picked = pickTable(phaseDef, query.gesture);
-  if (!picked) return null;
-  if (picked.kind === 'functionForm' || picked.kind === 'wheel') {
-    return { toolId: def.id, slot, gesture: query.gesture, phase: query.phase, matchedKey: '*' };
-  }
-  const match = resolveRoute(picked.table, query.hit, query.modifiers);
-  if (!match) return null;
-  return {
-    toolId: def.id, slot, gesture: query.gesture, phase: query.phase,
-    matchedKey: match.matchedKey,
-  };
-}
-
 export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispatcher {
   const threshold = opts.threshold ?? 4;
   const now = opts.now ?? (() => Date.now());
@@ -326,13 +245,7 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
    *  `dblTap.onTap` on the active slot order. Cleared on fire (so three taps
    *  don't stack into two dblTaps) and on any drag promotion. */
   let lastTap: { x: number; y: number; time: number } | null = null;
-  /** Most recent RouteResolvedInfo emitted via ctx.__reportRoute. Updated
-   *  on every successful declarative route hit; left set across gesture
-   *  end / cancel so debug overlays can show "what just fired" even after
-   *  the gesture closes. */
-  let lastRoute: RouteResolvedInfo | null = null;
   const reportRoute = (info: RouteResolvedInfo): void => {
-    lastRoute = info;
     opts.onRouteResolved?.(info);
   };
 
@@ -712,23 +625,6 @@ export function createToolsDispatcher(opts: ToolsDispatcherOptions): ToolsDispat
     cancelGesture,
     hasActiveGesture: () => inFlight !== null,
     getActiveScratch: () => inFlight?.scratch ?? null,
-    getLastRoute: () => lastRoute,
-    resolveOnly: (query) => {
-      const slots = opts.getSlots();
-      if (slots.hotkey) {
-        const r = resolveOnlyForTool(slots.hotkey, 'hotkey', query);
-        if (r) return r;
-      }
-      if (slots.active) {
-        const r = resolveOnlyForTool(slots.active, 'active', query);
-        if (r) return r;
-      }
-      for (const t of slots.ambient) {
-        const r = resolveOnlyForTool(t, 'ambient', query);
-        if (r) return r;
-      }
-      return null;
-    },
   };
   api.__setGetCtx = (fn) => { opts.getCtx = fn; };
   api.__setHitTestContext = (fn) => { opts.getHitTestContext = fn; };

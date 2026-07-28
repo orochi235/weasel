@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { eligibleTool, eligibleToolByCapabilities } from './eligibility';
+import { eligibleTool } from './eligibility';
 import { createModeRegistry } from './registry';
 import { DEFAULT_MODES } from './presets/default';
 
@@ -24,11 +24,5 @@ describe('eligibleTool', () => {
   it('untagged tools are ineligible everywhere except modes that allow []', () => {
     expect(eligibleTool(reg, { id: 'mystery' })).toBe(false);
     expect(eligibleTool(reg, { id: 'mystery', capabilities: [] })).toBe(false);
-  });
-
-  it('eligibleToolByCapabilities is the pure-arg form', () => {
-    expect(eligibleToolByCapabilities(reg.current(), ['edits-anchors'])).toBe(false);
-    const r2 = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
-    expect(eligibleToolByCapabilities(r2.current(), ['edits-anchors'])).toBe(true);
   });
 });

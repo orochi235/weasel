@@ -810,35 +810,7 @@ describe('dispatcher: ctx.target population on pointer events', () => {
   });
 });
 
-describe('dispatcher: getLastRoute', () => {
-  it('starts null', () => {
-    const tool = defineTool({
-      id: 'test',
-      initial: { click: { '*': () => apply([]) } },
-    });
-    const d = createToolsDispatcher({
-      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
-      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
-    });
-    expect(d.getLastRoute()).toBeNull();
-  });
-
-  it('records the most recent route after a click dispatch', () => {
-    const tool = defineTool({
-      id: 'test',
-      initial: { click: { '*': () => apply([]) } },
-    });
-    const d = createToolsDispatcher({
-      getSlots: () => ({ hotkey: null, active: tool, ambient: [] }),
-      getCtx: makeCtx as unknown as (overrides?: { clientX?: number; clientY?: number }) => Omit<ToolCtx, 'scratch'>,
-    });
-    d.onPointerDown(pointerEvent('pointerdown', { clientX: 10, clientY: 10 }));
-    d.onPointerUp(pointerEvent('pointerup', { clientX: 10, clientY: 10 }));
-    const last = d.getLastRoute();
-    expect(last?.toolId).toBe('test');
-    expect(last?.gesture).toBe('click');
-    expect(last?.matchedKey).toBe('*');
-  });
+describe('dispatcher: route reporting', () => {
 
   it('fires onRouteResolved callback when provided', () => {
     const cb = vi.fn();

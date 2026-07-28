@@ -33,11 +33,3 @@ export interface RouteResolvedInfo {
    *  Used for "resolved Nms ago" displays. */
   timestamp: number;
 }
-
-/** Render-friendly one-line string. Used by ToolDebugOverlay; exported
- *  so non-React consumers can format the same way. */
-export function formatRouteResolved(info: RouteResolvedInfo): string {
-  const argPart = info.arg !== undefined ? `(${info.arg})` : '';
-  const mod = info.modifiers === 'default' ? '' : ` mods=${info.modifiers}`;
-  return `${info.toolId} [${info.phase}] ${info.gesture}${argPart} → ${info.matchedKey}${mod}`;
-}
