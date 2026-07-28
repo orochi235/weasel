@@ -233,9 +233,9 @@ with `defaultBinding` and dispatched through the action registry, and the drag-b
 descriptors (`resize`, `rotate`, `areaSelect`, `insert`, `clone`, `editAnchors`) now
 carry real invokers — the `useResize` / `useRotate` / `useMove` / `useAreaSelect` /
 `useInsert` / `useClone` / `useEditAnchors` gesture hooks they used to delegate to
-have been deleted. What remains of the split is the phase-table route grammar; see
-§4b of the 2026-07-27 inspector handoff and the layer-audit handoff for the
-retirement plan.
+have been deleted. The split is closed: the phase-table route grammar and the
+second dispatcher that read it are gone, so a tool's entire input surface is
+`Tool.bindings` and every gesture resolves through one engine.
 
 Examples: `selectAll`, `escape`, `duplicate`, `nudge`, `reorder`, `delete`,
 `align.{left,...}`, `distribute.{horizontal,vertical}`, `flip.{x,y}`. Kit defaults

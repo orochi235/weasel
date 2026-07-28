@@ -104,9 +104,9 @@ Affordances read state from `ChromeState` — a kit-built read-only object that 
 - `unionBounds: Bounds | null` — multi-union AABB when `multiActive`.
 - `modifiers: ModifierState` — alt/shift/meta/ctrl at the time of the call.
 
-The dispatcher consults each layer's `hitTest` on pointerdown before falling through to the active-tool slot walk — so an affordance hit fires the gesture even when a different tool is active. This is the principle: visible chrome is always hittable.
+Every layer's `hitTest` is consulted on pointerdown, and the result rides the gesture as `InvocationCtx.drag.affordance` — so an affordance hit fires the action bound to it even when a different tool is active. This is the principle: visible chrome is always hittable.
 
-If your tool is in a modal state where chrome hits would interrupt the gesture (pen mid-path, text mid-edit), set `Tool.claimsAll(ctx) => true` for that state. The dispatcher will bypass the layer pipeline entirely.
+A tool that must not lose a gesture to chrome does it in the binding, by declining hits it doesn't own: `target: { kindOf: (hit) => hit == null }` matches only presses that landed on the scene. (`Tool.claimsAll`, which told the retired tool-routing dispatcher to bypass the layer pipeline wholesale, is gone — it was a per-tool override of a global walk, where this is a per-binding statement about what the binding wants.)
 
 ## Custom gesture behaviors
 
