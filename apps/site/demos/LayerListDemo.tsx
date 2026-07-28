@@ -29,7 +29,7 @@ function LayerListDemoInner() {
   const selection = useSelection({ mode: 'multi' });
   const adapter = useSceneAdapter(scene, { selection });
 
-  const select = useSelectTool(adapter, { getSelection: () => selection.current });
+  const select = useSelectTool(adapter, {});
   const tools = useTools({ active: 'select', registry: { select } });
 
   const layerList = useLayerList({

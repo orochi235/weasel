@@ -34,7 +34,7 @@ function ToolReflectionDemoInner() {
   const selection = useSelection({ mode: 'multi' });
   const adapter = useSceneAdapter(scene, { selection });
 
-  const select = useSelectTool(adapter, { getSelection: () => selection.current });
+  const select = useSelectTool(adapter, {});
   const hand = useHandTool();
   const tools = useTools({ active: 'select', registry: { select, hand } });
 

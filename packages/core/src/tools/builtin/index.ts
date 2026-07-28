@@ -3,12 +3,7 @@
 // `defineDragInsertTool` was removed earlier for the same reason: every
 // insert tool now declares its gesture via `Tool.bindings` and delegates
 // to the dispatcher's `insertAction`.
-export {
-  useSelectTool,
-  type UseSelectToolOptions,
-  type AreaSelectOverlayStyle,
-  type MoveOverlayStyle,
-} from './select';
+export { useSelectTool, type UseSelectToolOptions } from './select';
 // `useResizeTool` and the legacy `useResize` hook are
 // deleted. Resize is dispatcher-driven via `resizeAction` + the
 // `resizePolicy` dep — consumers wire options through

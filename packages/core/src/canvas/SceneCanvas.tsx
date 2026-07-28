@@ -51,7 +51,6 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
-import type { UseAreaSelectOptions } from 'interactions/actions/area-select/options';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
@@ -371,10 +370,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       rotate?: UseRotateOptions<TPose> | false;
       snap?: SnapStrategy<TPose>;
       handleHitRadius?: number;
-      /** Marquee area-select. Default: no behaviors (a drag from empty space
-       *  doesn't mutate the selection). Pass
-       *  `{ behaviors: [selectFromMarquee()] }` to enable rubber-band select. */
-      areaSelect?: UseAreaSelectOptions;
       /** Override the body-pick used on click/pointerdown. Alt-aware: receives
        *  the live alt state + current selection so consumers can implement
        *  alt-cycling through an overlapping stack. Default: top-most hit

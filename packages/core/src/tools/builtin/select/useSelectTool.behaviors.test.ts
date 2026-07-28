@@ -24,7 +24,6 @@ describe('useSelectTool move binding behaviors', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
         move: { behaviors: [behavior] },
       }),
     );
@@ -42,7 +41,6 @@ describe('useSelectTool move binding behaviors', () => {
     const { result } = renderHook(() =>
       useSelectTool(minimalAdapter, {
         pickEvery: () => [],
-        boundsOf: () => ({ x: 0, y: 0, width: 10, height: 10 }),
         reparentOnDrop: 'top',
         move: { behaviors: [behavior] },
       }),

@@ -13,30 +13,21 @@ import type { UseMoveOptions } from '../../../interactions/actions/move/options'
 import type { BindingOpts } from '../../../interactions/actions/invoker';
 import type { Tool } from '../../types';
 import type { DebugSink } from '../../../debug/types';
-import type { DrawCommand } from '../../../renderer';
 import { pickTopMostHit } from '../pickTopMostHit';
+// Shared affordance predicates — the single source of truth for "what does
+// this affordance kind mean" (`interactions/dispatcher/predicates.ts`). The
+// action descriptors these bindings route to read the same functions, so a
+// tool binding and its action can't disagree about what a hit is.
+import {
+  isResizeHandle,
+  isRotateHandle,
+  isAnchorOrControl,
+} from '../../../interactions/dispatcher/predicates';
 import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
 
-/** Legacy style hooks for the area-select marquee. The dispatcher
- *  overlay layer (`useDispatcherOverlayLayer`) now owns marquee paint; this
- *  type is retained on the option surface for source-compat with callers
- *  threading it through. */
-export interface AreaSelectOverlayStyle {
-  fill?: string;
-  stroke?: string;
-  dash?: number[];
-  lineWidth?: number;
-}
-
-/** Legacy style hook for the move ghost. The preview-ghost layer
- *  renders moved silhouettes via `drawOne` now. Retained for source-compat. */
-export interface MoveOverlayStyle {
-  ghostAlpha?: number;
-}
-
-export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
+export interface UseSelectToolOptions<TPose> {
   /** Return ids of all objects whose painted body covers (worldX, worldY).
    *  Order doesn't matter — the tool collapses parent/child overlap via
    *  `pickTopMostHit`. When omitted, defaults to a rect AABB-vs-point scan
@@ -52,8 +43,6 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
     alt: boolean,
     selection: readonly string[],
   ) => string | null;
-  /** Return the world-space bounds of `id`, or null if not found. */
-  boundsOf?: (id: string) => Bounds | null;
   /** Project a pose to its AABB. Default: identity. */
   poseBounds?: (pose: TPose) => Bounds;
   /** Move-action options. The move gesture is dispatcher-routed,
@@ -61,9 +50,6 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
    *  `opts.behaviors`. Other `UseMoveOptions` fields are accepted for API shape
    *  but not read by this tool. */
   move?: UseMoveOptions<TPose>;
-  /** Legacy `useAreaSelect` options. Ignored now —
-   *  `areaSelectAction` configuration moved to the action registration. */
-  areaSelect?: unknown;
   /**
    * When this returns true, a Shift/Meta extend-click must NOT change the
    * node selection.
@@ -81,27 +67,6 @@ export interface UseSelectToolOptions<TNode extends { id: string }, TPose> {
   /** Optional debug sink. Reserved for future overlay/affordance hitbox
    *  recording. */
   debug?: DebugSink;
-  /** Style for the area-select marquee. Pre-14e wired the legacy overlay;
-   *  after T3 it's consumed by the dispatcher overlay layer via
-   *  `useDispatcherOverlayLayer`'s `style` arg (not by this tool). Retained
-   *  for option-surface compat. */
-  areaSelectOverlayStyle?: AreaSelectOverlayStyle;
-  /** Style for the move ghost. Pre-14e wired the legacy overlay's alpha;
-   *  preview-ghost layer alpha now lives in `usePreviewGhostLayer`. */
-  moveOverlayStyle?: MoveOverlayStyle;
-  /** Consumer's draw function for ghost objects. Pre-14e the select tool
-   *  invoked this from its own overlay; the preview-ghost layer now calls
-   *  the scene slot's `drawOne` directly, so this option is no longer in
-   *  the runtime path. */
-  drawGhost?: (
-    obj: TNode | null,
-    pose: TPose,
-    view: { x: number; y: number; scale: { x: number; y: number } },
-  ) => DrawCommand[];
-  /** Object lookup paired with `drawGhost`. Pre-14e runtime hook; vestigial. */
-  getNode?: (id: string) => TNode | null;
-  /** Returns the live selection ids. */
-  getSelection?: () => readonly string[];
   /** Reparent-on-drop behavior for drag-to-move. `'off'` (default)
    *  preserves translate-only commits. `'top'` lands the moved nodes at
    *  the top of the container under the drop point. `'above'` lands them
@@ -143,7 +108,7 @@ export type SelectScratch =
  */
 export function useSelectTool<TNode extends { id: string }, TPose>(
   adapter: SelectAdapter<TNode, TPose>,
-  options: UseSelectToolOptions<TNode, TPose>,
+  options: UseSelectToolOptions<TPose>,
 ): Tool<SelectScratch> {
   // Latest-callback ref for `onDoubleTap` so the memoized tool body picks up
   // re-renders without rebuilding the Tool record.
@@ -356,30 +321,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
         //   4. Empty drag — marquee area-select.
         //   5. Click on empty (no modifiers) → clear selection.
         bindings: [
-          {
-            spec: {
-              kind: 'drag' as const,
-              target: {
-                kindOf: (hit: unknown): boolean => {
-                  const h = hit as { kind?: string } | null | undefined;
-                  return typeof h?.kind === 'string' && h.kind.startsWith('handle:');
-                },
-              },
-            },
-            actionId: 'resize',
-          },
-          {
-            spec: {
-              kind: 'drag' as const,
-              target: {
-                kindOf: (hit: unknown): boolean => {
-                  const h = hit as { kind?: string } | null | undefined;
-                  return h?.kind === 'rotate-handle';
-                },
-              },
-            },
-            actionId: 'rotate',
-          },
+          { spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize' },
+          { spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } }, actionId: 'rotate' },
           // Alt-drag on a body → clone (Illustrator convention).
           // Listed BEFORE bare move so the strict-modifier dispatcher
           // picks this when Alt is held; bare move matches no-mod drags.
@@ -395,18 +338,18 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             // body classifier still reports 'selected-body'; without this
             // opt-out, move's active-scope binding beats editAnchors's
             // ambient-scope binding on every anchor drag.
+            //
+            // `isAnchorOrControl` is the SAME predicate `editAnchorsAction`
+            // matches on. That is load-bearing: the two must agree on what
+            // counts as an anchor hit or move steals the drag — which is
+            // exactly the bug this opt-out exists to prevent. (It used to be
+            // a hand-rolled regex here that lacked the trailing-index
+            // requirement, so the two sides could disagree.)
             spec: {
               kind: 'drag' as const,
               target: {
-                kindOf: (afford: unknown, body?: string): boolean => {
-                  if (body !== 'selected-body') return false;
-                  if (
-                    typeof afford === 'object' && afford !== null &&
-                    typeof (afford as { kind?: unknown }).kind === 'string' &&
-                    /^(anchor|controlIn|controlOut):/.test((afford as { kind: string }).kind)
-                  ) return false;
-                  return true;
-                },
+                kindOf: (afford: unknown, body?: string): boolean =>
+                  body === 'selected-body' && !isAnchorOrControl(afford),
               },
             },
             actionId: 'move',
