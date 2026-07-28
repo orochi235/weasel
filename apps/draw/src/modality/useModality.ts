@@ -8,9 +8,6 @@
  */
 import { useEffect, useMemo } from 'react';
 import {
-  asNodeId,
-  boundsOfPath,
-  enumerateAnchors,
   type RenderLayer,
   type DrawCommand,
   type Scene,
@@ -25,7 +22,6 @@ import {
 } from '@weasel-js/modes';
 import {
   createModeMachine,
-  createPathEditPainter,
   type ModeMachine,
 } from './index';
 
@@ -94,44 +90,15 @@ export function useModality(
     [machine],
   );
 
-  // Register the path-edit painter once per decorations instance.
-  useEffect(() => {
-    const painter = createPathEditPainter({
-      getTargetId: () => machine.getActiveTargetId(),
-      getAnchors: (pathId) => {
-        const node = scene.get(asNodeId(pathId));
-        if (!node || node.kind !== 'leaf') return [];
-        const data = node.data as { path?: unknown };
-        const path = data.path;
-        if (!path || typeof path !== 'object') return [];
-        const p = path as { kind?: string; commands?: unknown; coords?: unknown };
-        if (p.kind !== 'polygon' || !(p.commands instanceof Uint8Array) || !(p.coords instanceof Float32Array)) return [];
-        // PolygonPath coords may be stored either in local space (origin
-        // at 0,0, with the pose providing the world offset) or in world
-        // space (coords already at the path's world position, pose AABB
-        // matching). PATH_PAINTER#pathAtPose handles both by translating
-        // the path by `pose.x - b.x, pose.y - b.y` at draw time. We apply
-        // the same delta to enumerated anchors so they land at the
-        // path's actual rendered position.
-        const typedPath = p as Parameters<typeof enumerateAnchors>[0];
-        const localAnchors = enumerateAnchors(typedPath);
-        const b = boundsOfPath(typedPath);
-        const pose = node.pose as { x?: number; y?: number };
-        // origin-align matches pathInPoseFrame (the canonical owner)
-        const dx = (pose.x ?? 0) - b.x;
-        const dy = (pose.y ?? 0) - b.y;
-        if (dx === 0 && dy === 0) return localAnchors;
-        return localAnchors.map((a) => ({
-          ...a,
-          x: a.x + dx,
-          y: a.y + dy,
-          ...(a.controlIn ? { controlIn: { ...a.controlIn, x: a.controlIn.x + dx, y: a.controlIn.y + dy } } : {}),
-          ...(a.controlOut ? { controlOut: { ...a.controlOut, x: a.controlOut.x + dx, y: a.controlOut.y + dy } } : {}),
-        }));
-      },
-    });
-    decorations.register('path-edit', painter);
-  }, [decorations, machine, scene]);
+  // No path-edit anchor painter here on purpose. The kit's
+  // `pathEditingOverlayLayer` (inside SceneCanvas) owns that chrome — it
+  // reads `editAnchors.editingId`, which is the same state the anchor
+  // hit-test and every anchor-editing Action key off. This app used to
+  // register a second painter keyed on `machine.getActiveTargetId()`
+  // instead; the two drew the same anchors from two different sources of
+  // truth, the app's on top and in world space (so its markers grew with
+  // zoom, unlike the kit's screen-space ones). Nothing here needs to
+  // re-add it.
 
   // Build a RenderLayer<unknown> whose draw() calls decorations.paint().
   // World-space commands; drawLayers wraps in viewToMat3 automatically

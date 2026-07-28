@@ -9,10 +9,12 @@
  * `getEditingId()` + `getPose(id)` thunks. Returns `[]` when no editing
  * target is set or the target isn't a polygon — the layer never throws.
  *
- * Visual treatment matches `penEditOverlay.ts` so the two overlays look
- * consistent: anchors render as small white-filled stroked squares;
- * control points as small filled circles connected to their anchor by a
- * thin stem line.
+ * Anchors render as small white-filled stroked squares — filled solid
+ * when selected; control points as small filled circles connected to
+ * their anchor by a thin stem line. This is the kit's only anchor
+ * chrome; the pen tool's parallel overlay and `apps/draw`'s
+ * mode-decoration painter both drew the same thing from different state
+ * and have been removed.
  *
  * All coordinates are projected via `worldToScreen` so the marker sizes
  * stay constant regardless of zoom.
@@ -22,7 +24,7 @@ import type { DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import type { Path, PolygonPath } from './types';
 import { pathToAnchors } from './anchors';
-import { circlePath, linePath, squarePath } from './markers';
+import { circlePath, linePath, rectMarkerPath, squarePath } from './markers';
 
 interface View { x: number; y: number; scale: { x: number; y: number } }
 
@@ -34,7 +36,21 @@ export interface CreatePathEditingOverlayLayerOptions {
   /** Returns the pose for an id, or null if the node has been deleted.
    *  Non-polygon poses are tolerated (the layer no-ops on them). */
   getPose(id: string): Path | null;
-  /** Optional styling overrides. Defaults match `penEditOverlay`. */
+  /** Flat indices of the selected anchors. Selected anchors render
+   *  filled; unselected ones hollow — the standard vector-editor cue for
+   *  "these are what the arrow keys and Delete will act on". Omit when
+   *  the consumer has no anchor selection to show. */
+  getSelectedAnchors?(): ReadonlySet<number>;
+  /** In-flight anchor-marquee rect in world coords, or null. Drawn as a
+   *  rubber band while `marqueeAnchorsAction` is dragging. */
+  getMarquee?(): { x: number; y: number; width: number; height: number } | null;
+  /** Chrome-caps predicate. The layer asks `'path-edit.anchors'` before
+   *  drawing anything, so paint and the anchor hit-test in
+   *  `affordanceAt` consult the same rule — otherwise a consumer that
+   *  hides the chrome still gets grabbable invisible anchors, or vice
+   *  versa. Omit to always draw when an edit target is set. */
+  isVisible?(chromeId: string): boolean;
+  /** Optional styling overrides. */
   style?: PathEditingOverlayStyle;
 }
 
@@ -49,6 +65,13 @@ export interface PathEditingOverlayStyle {
    *  curve / background show through, which matches Figma's "translucent
    *  handle dot" idiom. */
   handleDotFill?: string;
+  /** Fill of a selected anchor square. Defaults to the anchor stroke
+   *  color, so selection reads as "the marker filled in". */
+  anchorFillSelected?: string;
+  /** Stroke of the marquee rubber band. */
+  marqueeStroke?: string;
+  /** Fill of the marquee rubber band. */
+  marqueeFill?: string;
 }
 
 const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
@@ -62,7 +85,12 @@ const DEFAULT_STYLE: Required<PathEditingOverlayStyle> = {
   handleStroke: '#7da7e8',
   // 50%-opacity handle-stroke color. #7da7e8 → rgba(125, 167, 232, 0.5).
   handleDotFill: 'rgba(125, 167, 232, 0.5)',
+  anchorFillSelected: '#3478f6',
+  marqueeStroke: '#3478f6',
+  marqueeFill: 'rgba(52, 120, 246, 0.08)',
 };
+
+const EMPTY_SELECTION: ReadonlySet<number> = new Set();
 
 function w2s(wx: number, wy: number, view: View): [number, number] {
   return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
@@ -80,14 +108,22 @@ export function createPathEditingOverlayLayer(
     draw: (_data, view) => {
       const id = opts.getEditingId();
       if (!id) return [];
+      if (opts.isVisible && !opts.isVisible('path-edit.anchors')) return [];
       const pose = opts.getPose(id);
       if (!pose || pose.kind !== 'polygon') return [];
 
       const { anchors } = pathToAnchors(pose as PolygonPath);
+      const selected = opts.getSelectedAnchors?.() ?? EMPTY_SELECTION;
       const out: DrawCommand[] = [];
 
+      // Flat anchor index, incremented in walk order so it lines up with
+      // `enumerateAnchors` — the same numbering the affordances and the
+      // anchor selection use. See `anchorEdits` for why they agree.
+      let flat = 0;
       for (const sub of anchors) {
         for (const a of sub) {
+          const isSelected = selected.has(flat);
+          flat++;
           const [ax, ay] = w2s(a.x, a.y, view);
 
           // Tangent stems + handle dots first so the anchor square paints on top.
@@ -122,10 +158,26 @@ export function createPathEditingOverlayLayer(
           out.push({
             kind: 'path',
             path: squarePath(ax, ay, style.anchorSizePx),
-            fill: { fill: 'solid', color: style.anchorFill },
+            fill: {
+              fill: 'solid',
+              color: isSelected ? style.anchorFillSelected : style.anchorFill,
+            },
             stroke: { paint: { fill: 'solid', color: style.anchorStroke }, width: 1 },
           });
         }
+      }
+
+      // Marquee rubber band, on top of everything.
+      const marquee = opts.getMarquee?.();
+      if (marquee) {
+        const [mx, my] = w2s(marquee.x, marquee.y, view);
+        const [mx2, my2] = w2s(marquee.x + marquee.width, marquee.y + marquee.height, view);
+        out.push({
+          kind: 'path',
+          path: rectMarkerPath(mx, my, mx2 - mx, my2 - my),
+          fill: { fill: 'solid', color: style.marqueeFill },
+          stroke: { paint: { fill: 'solid', color: style.marqueeStroke }, width: 1 },
+        });
       }
 
       return out;

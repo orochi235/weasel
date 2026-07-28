@@ -75,7 +75,7 @@ export const areaSelectAction: Action & { requires: string[] } = {
   label: 'Area Select',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'creates-selection' },
-  requires: ['areaSelect'],
+  requires: ['areaSelect', 'editAnchors'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, _opts): OngoingHandle {
@@ -95,6 +95,16 @@ export const areaSelectAction: Action & { requires: string[] } = {
       ) {
         return {};
       }
+
+      // Decline for the same reason while a path is in anchor-edit mode:
+      // an empty-canvas drag there means "rubber-band some anchors", which
+      // is `marqueeAnchorsAction`'s job. Capability eligibility already
+      // filters this action out in path-edit mode, but only for consumers
+      // that wired a mode registry — without one the dispatcher skips
+      // eligibility entirely and areaSelect's active scope would beat
+      // marqueeAnchors' ambient scope. Declining here covers both.
+      const editAnchors = ctx.deps.editAnchors as { editingId?: string } | undefined;
+      if (editAnchors?.editingId) return {};
 
       // Drag start is the world point at the moment start() is called.
       const scratch: AreaSelectScratch = {

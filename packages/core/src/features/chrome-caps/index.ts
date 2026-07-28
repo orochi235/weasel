@@ -28,6 +28,7 @@ export {
   never,
   focused,
   gesturing,
+  editingAnchors,
   resizable,
   actionIs,
   selectionEmpty,

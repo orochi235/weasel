@@ -820,12 +820,10 @@ export {
   hitAnchor,
   enumerateAnchors,
   withCoord,
-  createAnchorEditOverlayLayer,
 } from './interactions/actions/edit-anchors';
 export type {
   AnchorHit,
   PathAnchor,
-  AnchorEditOverlayOpts,
 } from './interactions/actions/edit-anchors';
 export type { UseAreaSelectOptions } from './interactions/actions/area-select';
 export { selectFromMarquee } from './interactions/actions/area-select/behaviors';

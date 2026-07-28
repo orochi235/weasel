@@ -16,7 +16,6 @@ import type { Tool } from 'tools/types';
 import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
 import { PATH_C, PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
 import { circlePath } from './markers';
-import { renderPenEditOverlay } from './penEditOverlay';
 
 export interface PenPreviewStyle {
   anchorFill?: string;
@@ -147,10 +146,7 @@ export function createPenPreviewLayer(
       }
 
       const cur = s.current;
-      // Bail early only when there's nothing at all to draw. Edit mode has
-      // a populated `s.edit` even when `s.current` and `s.cursor` are null,
-      // so we must NOT short-circuit before section (6) below.
-      if (!cur && s.cursor === null && s.mode !== 'edit') return out;
+      if (!cur && s.cursor === null) return out;
 
       // (2) Current subpath — bright outline.
       if (cur) {
@@ -260,11 +256,6 @@ export function createPenPreviewLayer(
             stroke: { paint: { fill: 'solid', color: style.closeHintFill }, width: 1.5 },
           });
         }
-      }
-
-      // (6) Edit-mode overlay — anchor squares + handles for selected anchors.
-      if (s.mode === 'edit') {
-        out.push(...renderPenEditOverlay(s, view));
       }
 
       return out;

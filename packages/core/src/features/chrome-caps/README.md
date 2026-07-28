@@ -97,13 +97,26 @@ their own ids and gate their own overlays through the same table.
 
 ## Notes for the next person
 
-- **Prefer `capability:` over `mode:`.** A capability rule keeps working when a
-  new mode is added that allows the same capability; a mode rule has to be
-  found and edited. `defaults.ts` follows this: transform chrome gates on
-  `capability: 'transforms-selection'`, and the selection outline on
-  `capability: { not: 'edits-anchors' }`. The `path-edit.*` ids are the
-  deliberate exception — they're the visual signature of one specific mode,
-  not a claim about what the user may do.
+- **Prefer `capability:` (or a state selector) over `mode:`.** A capability
+  rule keeps working when a new mode is added that allows the same
+  capability; a mode rule has to be found and edited. `defaults.ts` follows
+  this: transform chrome gates on `capability: 'transforms-selection'`, and
+  the selection outline on `capability: { not: 'edits-anchors' }`.
+  **`defaults.ts` no longer contains a single `mode:` rule.** The
+  `path-edit.*` ids used to be the exception, on the theory that they're the
+  visual signature of one mode; that was wrong twice over. Consumers with no
+  mode registry report mode `'normal'`, so the anchor hit-test refused every
+  anchor while the overlay drew them anyway — visible but not grabbable, the
+  failure this whole table exists to prevent — and a consumer defining its
+  own anchor-editing mode under a different id got nothing. They now gate on
+  `editingAnchors`, which is what both surfaces actually care about.
+- **Capability answers "may the user", a state selector answers "is it
+  happening".** Don't reach for `capability:` when you mean the latter.
+  `edits-anchors` being permitted does not mean a path is currently being
+  edited, and drawing anchor chrome for the former would be wrong. When no
+  existing selector fits, add one — it's an additive change that costs
+  nothing to existing rules, and it beats the `when` escape hatch, whose
+  closure is opaque to introspection.
 - **An empty capability set is not a safe default.** "No modes wired" means
   *everything the default mode permits*; the empty set would make every
   `capability:` rule false and silently hide the chrome it gates. Both

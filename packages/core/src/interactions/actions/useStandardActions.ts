@@ -58,6 +58,16 @@ import { editAnchorsAction } from './defaults/editAnchors';
 import { enterPathEditAction } from './defaults/enterPathEdit';
 import { exitPathEditAction } from './defaults/exitPathEdit';
 import { insertPathAnchorAction } from './defaults/insertPathAnchor';
+import {
+  nudgeAnchorsUpAction,
+  nudgeAnchorsDownAction,
+  nudgeAnchorsLeftAction,
+  nudgeAnchorsRightAction,
+  deleteAnchorsAction,
+  cutPathAtAnchorAction,
+  marqueeAnchorsAction,
+  selectAnchorAction,
+} from './defaults/anchorEditing';
 import { lassoSelectAction } from './defaults/lassoSelect';
 import { pinchZoomAction } from './defaults/pinchZoom';
 import { viewportDragPanAction } from './defaults/viewportDragPan';
@@ -146,6 +156,14 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   enterPathEditAction,
   exitPathEditAction,
   insertPathAnchorAction,
+  nudgeAnchorsUpAction,
+  nudgeAnchorsDownAction,
+  nudgeAnchorsLeftAction,
+  nudgeAnchorsRightAction,
+  deleteAnchorsAction,
+  cutPathAtAnchorAction,
+  marqueeAnchorsAction,
+  selectAnchorAction,
   lassoSelectAction,
   pinchZoomAction,
   viewportDragPanAction,

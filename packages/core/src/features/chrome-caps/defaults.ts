@@ -63,9 +63,22 @@ export const defaultVisibilityRules: VisibilityRules = {
   'action.lasso':       { actionIs: 'lasso' } as Rule,
   'action.move-ghosts': { actionIs: 'move' } as Rule,
 
-  // Path-edit chrome — gated positively to path-edit mode.
-  'path-edit.anchors': { mode: 'path-edit' } as Rule,
-  'path-edit.overlay': { mode: 'path-edit' } as Rule,
+  // Path-edit chrome — gated on there actually being an edited path.
+  //
+  // This used to read `{ mode: 'path-edit' }`, which was wrong in both
+  // directions. Consumers with no mode registry report mode `'normal'`,
+  // so the anchor hit-test (which asks `isVisible('path-edit.anchors')`)
+  // refused every anchor while the overlay — which never consulted the
+  // table at all — drew them anyway: visible but not grabbable, the exact
+  // failure this table exists to make impossible. And a consumer defining
+  // its own anchor-editing mode under a different id got neither.
+  //
+  // `editingAnchors` is the state both surfaces actually care about. It's
+  // a state selector rather than a `capability:` one on purpose: the
+  // capability says the user *may* edit anchors, which is not the same as
+  // a path *being* edited, and drawing anchors for the former is wrong.
+  'path-edit.anchors': { editingAnchors: true } as Rule,
+  'path-edit.overlay': { editingAnchors: true } as Rule,
 
   // Snap system — guides during any action; targets consumer-driven for now.
   'snap.guides': { gesturing: true } as Rule,

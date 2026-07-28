@@ -50,7 +50,9 @@ upstream silently loses the optimization).
 `poseRotation.ts`, `poseDescriptor.ts`, `originProjection.ts`
 
 **Editing** — `anchors.ts` (`pathToAnchors` / `anchorsToPath`, `PenAnchor`,
-`nearestSegmentT`), `cubicMath.ts` (`splitCubicAtT`,
+`nearestSegmentT`), `anchorEdits.ts` (the anchor-set mutations: translate,
+handle-drag with smooth mirroring, insert-on-segment, delete-with-refit,
+scissors, rect select), `cubicMath.ts` (`splitCubicAtT`,
 `fitCubicThroughDeletion`), `schneiderFit.ts` (curve fitting for freehand),
 `splitByLine.ts`, `splitSubpaths.ts`, `compose.ts`
 
@@ -58,13 +60,27 @@ upstream silently loses the optimization).
 exclude / minus-front)
 
 **Rendering** — `pathLayer.ts`, `markers.ts`, `flatten.ts`, `tessellate/`,
-`curves/`, plus the pen-specific `penPreviewLayer.ts`, `penEditOverlay.ts`,
-`pathEditingOverlayLayer.ts`
+`curves/`, plus `penPreviewLayer.ts` (the pen's in-progress path) and
+`pathEditingOverlayLayer.ts` (anchor-edit chrome)
 
 ## Anchors are a view, not the storage
 
 `pathToAnchors` / `anchorsToPath` convert between the command stream and the
-anchor+handle model the pen tool edits in. The command stream stays canonical;
-the anchor list is a derived editing representation. Round-tripping is expected
-to be lossless for paths the pen produced — if you add a command form, check
-both directions.
+anchor+handle model anchor editing works in. The command stream stays
+canonical; the anchor list is a derived editing representation. Round-tripping
+is expected to be lossless for paths the pen produced — if you add a command
+form, check both directions.
+
+`anchorEdits.ts` is the mutation vocabulary over that view: decode with
+`editAnchorSet`, mutate, re-encode. Everything there is pure and knows nothing
+about tools, Actions, or React, which is the point — the anchor-editing
+Actions and their tests drive the same functions.
+
+**Anchors are addressed by flat index**, the sequential position in walk order
+across subpaths. That's what `enumerateAnchors` reports and therefore what the
+dispatcher's `anchor:N` / `controlIn:N` / `controlOut:N` affordance kinds
+carry. `anchorEdits` converts to `(sub, idx)` internally where subpath
+structure matters. The two orders agree only because `pathToAnchors` and
+`enumerateAnchors` walk the same stream and emit one anchor per M/L/C/Q — if
+you touch either walker, `anchorEdits.test.ts` has the invariant test that
+catches the divergence.
