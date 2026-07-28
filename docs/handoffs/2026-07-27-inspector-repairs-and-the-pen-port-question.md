@@ -1,8 +1,14 @@
 # Handoff: Bundle Inspector repairs, capability-gated chrome, and the pen-port question
 
-## Status (2026-07-27)
+## Status (updated 2026-07-27, later session)
 
-Four commits on `main`. **Two are pushed, two are not:**
+**§4 is resolved — pen is ported.** See §4 below for what the investigation
+actually found, which inverted this document's original premise. Sections 1–3
+are unchanged and still accurate; they're recorded here for the gotchas, which
+are the parts that cost time to find.
+
+`main` is at `4c0dd47f` (merge of `pen-edit-port`). **Nothing is pushed past
+`675797e4`** — six local commits now:
 
 | Commit | Subject | Pushed |
 | --- | --- | --- |
@@ -10,14 +16,19 @@ Four commits on `main`. **Two are pushed, two are not:**
 | `675797e4` | `docs(chrome-caps): add a README for the module` | ✅ |
 | `647b8a7a` | `refactor(chrome-caps): gate default chrome on capabilities, not mode ids` | ❌ local |
 | `6901e3e4` | `docs(features): add a README to every feature module` | ❌ local |
+| `d5ce4cbb` | `docs(handoff): inspector repairs, capability-gated chrome, pen-port question` | ❌ local |
+| `3069a95d` + `4c0dd47f` | `feat(path-edit): port pen's anchor editing onto the Action layer` (+ merge) | ❌ local |
 
-`origin/main` is at `675797e4`. Gates run before committing: `tsc --noEmit`
-clean, full suite green (5124 passed / 4 skipped, up from 5118 — six new tests).
-`tsup build` was **not** run; every change is under `apps/draw/` or is a
-Markdown file or a `packages/core` source edit covered by the typecheck.
+Gates: `tsc --noEmit` clean, full suite green (5108 passed / 4 skipped — down
+from 5124 because the pen-edit and duplicate-overlay tests went with their
+implementations; 44 new tests landed). `tsup build` still **not** run.
 
-**The open question is §4 — porting pen.** Sections 1–3 are done and recorded
-here for the gotchas, which are the parts that cost time to find.
+A separate read-only audit of the tool/gesture/dispatch layers ran alongside
+this work — `docs/handoffs/2026-07-27-tool-gesture-duplication-audit.md`. It
+found the two-input-pipeline problem that several items here are downstream of,
+plus a live bug (apps/draw's snap-to-grid silently does nothing for
+rect/ellipse/line) and a stale claim in `CLAUDE.md`. Nothing from it is acted
+on yet.
 
 ---
 
@@ -123,8 +134,12 @@ follow it. Converted:
   `capability: 'transforms-selection'`
 - `selection.outline` → `capability: { not: 'edits-anchors' }`
 
-`path-edit.*` stays mode-gated **on purpose** — it's the visual signature of one
-specific mode, not a claim about permissions.
+`path-edit.*` stayed mode-gated at the time, on the theory that it's the visual
+signature of one specific mode rather than a claim about permissions.
+**Superseded — see §4, bug 3.** That reasoning didn't survive contact: mode
+`'normal'` is what every consumer without a mode registry reports, so the rule
+was false exactly where the chrome was needed. Those two ids now gate on
+`editingAnchors`, and `defaults.ts` has no `mode:` rules left at all.
 
 **Behavior change, intended:** handles used to show in `text-edit` and `crop`,
 neither of which allows `transforms-selection`. Grabbing one could only ever
@@ -166,92 +181,155 @@ arriving from `eligible` lands in a directory whose name suggests they're lost.
 
 ---
 
-## 4. OPEN: porting pen to the bindings paradigm
+## 4. RESOLVED: pen ported to the Action layer
 
-Pen's Bundle Inspector entry has an entirely empty `action` column because
-**pen declares no `bindings` at all** — every route is a phase-table route
-running an inline `ActionFn`, so there's no registered Action to name. It's the
-last major built-in on the legacy phase-grammar.
+Shipped in `3069a95d`. The section below records what the investigation found,
+because the conclusion is the opposite of what this document originally
+assumed and the reasoning is worth not re-deriving.
 
-Two findings changed the shape of this task.
+### 4a. The duplicate was real — but the DEAD copy was the richer one
 
-### 4a. Path editing is implemented twice
+The original text said "for the edit half, porting is mostly a deletion." That
+was wrong, and the reason is worth stating plainly:
 
-A complete action-based implementation already exists and is **live**:
+**Pen's edit mode was unreachable in every consumer in the repo.** All three
+entries into it (dblclick, shift+click, alt+click) gate on the `getPathObj`
+option. The only implementation of that option anywhere was the `toolBundle`
+default in `useBuiltinShapeTools`, which requires `pose.kind` to be
+`'polygon' | 'rect'`. No kit-created node has a `kind` on its pose — including
+the ones the pen itself creates. **A path drawn with the pen could not be
+edited by the pen.** It was live only in `usePenTool.edit.test.tsx`, which
+supplies a hand-written `getPathObj`.
 
-- `editAnchorsAction`, `enterPathEditAction`, `exitPathEditAction`,
-  `insertPathAnchorAction`, all registered in `useStandardActions.ts:145-148`
-- bound **ambiently** — see `useSelectTool.ts:374`, which explains that a
-  body-drag opts out when the pointerdown hit an anchor affordance, because
-  otherwise "move's active-scope binding beats editAnchors's ambient-scope
-  binding on every anchor drag"
-- first-class dep at `depSchema.ts:388` (`editAnchors: EditAnchorsDep`)
-- the dispatcher knows `'editAnchors.editingId'` as a logical mode
-  (`dispatcher.ts:84`)
+Meanwhile the Action-based path is what consumers actually get, and it was the
+thinner of the two: drag anchor, drag control handle, alt-click insert,
+enter/exit. Pen had all of that plus anchor selection, marquee, delete, nudge,
+scissors, click-segment insert, and smooth-handle mirroring.
 
-And pen carries its own parallel one: `usePenTool.ts` imports `enterEditMode` /
-`exitEditMode` / `captureGestureBaseline` / `commitGestureOp` from
-`./penEdit/scratch`, maintains `scratch.mode === 'edit'`, and implements its own
-`selectAnchor`, `scissorsAtAnchor`, `nudgeSelectedAnchors`, `deleteAnchors`,
-plus a reactive `isEditing` it hands consumers for styling.
+So this was a migration, not a deletion — net ~1980 added / ~2770 removed, but
+the removals are the dead pen half and two duplicate overlays, not the
+behaviors.
 
-Someone already noticed and deduped exactly one operation —
-`usePenTool.ts:228`: "alt-click insert and `insertPathAnchorAction` share one
-implementation."
+What landed:
 
-**So for the edit half, "porting" is mostly a deletion, not a translation.**
+- **`features/paths/anchorEdits.ts`** — the geometry, lifted off `PenScratch`
+  onto a pure anchor-set model. Anchors are addressed by **flat index** (what
+  the `anchor:N` affordances carry). `anchorEdits.test.ts` pins the invariant
+  that `enumerateAnchors` and `pathToAnchors` agree on that ordering; every
+  ported action edits the wrong anchor if they ever diverge.
+- **New Actions** — `selectAnchor`, `nudgeAnchors.*`, `deleteAnchors`,
+  `cutPathAtAnchor`, `marqueeAnchors`, all in `defaults/anchorEditing.ts`.
+- **`editAnchorsAction`** gained multi-anchor drag and Alt-to-break-smoothness.
+  Note the latter is a *bug fix*, not a port: it previously moved one coord via
+  `withCoord` and never mirrored, so dragging a control handle broke every
+  smooth curve.
+- **`editAnchors` dep** carries the anchor selection (flat indices) and the
+  in-flight marquee rect.
+- Pen is create-only. `penEdit/`, `penEditOverlay`, the hit override,
+  `PenEditState`, `isEditing`, and `getPathObj` are gone; `usePenTool` now
+  returns the `Tool` directly instead of `{ tool, isEditing }`.
 
-**Not yet verified** (this is the actual investigation): whether both paths are
-simultaneously reachable, or whether pen-active-edit and select-plus-path-edit
-are mutually exclusive states; and whether their behavior has diverged. That
-determines clean-delete vs. careful-reconciliation.
+### 4b. The scratch-selector gap didn't block anything
 
-### 4b. Create mode is blocked on a real grammar gap
+§4b's worry — that porting needs a new `Selector` exposing tool scratch to
+`RuleCtx` — turned out not to apply to the edit half at all. That half has no
+tool scratch once it lives on the Action layer: its state is the `editAnchors`
+dep, which actions already read. **The gap is real but belongs to pen's
+*create* mode**, which still runs on the phase table and still branches on
+`scratch.mode` / `scratch.current` / `scratch._pendingDown`. Unchanged, and
+still its own decision.
 
-Pen's routes branch on tool scratch **25 times** — `scratch.mode`,
-`scratch.current`, `scratch._pendingDown`. In the bindings model that would be
-`eligible` rules, but `Selector` has only:
+### The gesture-layer fact that shaped the design
 
-```
-selection · mode · capability · gesturing · actionIs
-modifierHeld · focused · hovering · hoveringSelected · zoomAtLeast · resizable
-```
+Worth knowing before touching anything nearby: **the dispatcher only dispatches
+a drag binding after the pointer crosses the drag threshold.** A press that
+never moves never reaches `start`. Verified in the running app — down/up on an
+anchor logs a bare `click`, down/move-3px/up logs the same, and only a real
+drag logs `pointerdown → editAnchors`.
 
-None reads tool scratch. "When the pen has an open subpath, clicking the first
-anchor closes it, otherwise append" is **not expressible**. The
-`{ when: (ctx) => … }` escape hatch doesn't help either — `when` receives a
-`RuleCtx`, which also has no scratch.
+That kills the obvious design (press-to-select inside `editAnchorsAction.start`,
+where the affordance is already in hand). Clicks carry no affordance — the
+dispatcher attaches those to `pointerdown` only — so `selectAnchor` resolves
+the anchor from the click's world coords, the way `insertPathAnchorAction`
+already did for segments. `editAnchorsAction` still syncs the selection when a
+drag *begins* on an unselected anchor.
 
-Second obstacle: pen's `pointerDown` writes `_pendingDown` to scratch and
-deliberately returns `none()` (does not engage); `click` or `drag` reads it back
-on the next stage. Bindings dispatch to Actions with their own start/move/end
-lifecycle — there is no stash-on-down / read-on-click seam.
+### Two node-level twins had to be kept apart, and it takes both mechanisms
 
-So create mode needs a **new selector exposing tool-scratch predicates to
-`RuleCtx`** before it can port at all. That's a shared-kit-contract change with
-blast radius well beyond pen.
+`deleteAnchors` / `nudgeAnchors.*` / `marqueeAnchors` share gestures with
+`delete` / `nudge.*` / `areaSelect`. Capability eligibility separates them when
+a mode registry is wired; `enabled` fall-through separates them when one isn't
+(no registry → no eligibility filtering at all). **Relying on either alone is
+broken in one direction** — eligibility alone breaks every non-modal consumer,
+`enabled` alone lets a node action fire inside path-edit. `anchorEditing.test.ts`
+covers both.
 
-### Recommended order
+### Four bugs fixed on the way, all reproduced live
 
-1. Reconcile the duplicate path-edit implementation (§4a). Highest value,
-   plausibly net-negative lines, no grammar changes.
-2. Treat the scratch-selector gap (§4b) as its own decision. Leave create mode
-   on the phase table until it's made.
+1. **Escape leaked `editAnchors.editingId`.** apps/draw handles Escape in a
+   capture-phase listener and calls `stopPropagation()`, so `exitPathEditAction`
+   never ran. Mode left path-edit but the id stayed set: inert anchor squares
+   kept drawing and `getSuppressedSelectionIds` kept the selection outline
+   hidden. Fixed by **masking, not clearing** — `effectivePathEditingId()` in
+   `SceneCanvas` returns `''` when the active mode no longer permits
+   `edits-anchors`. Masking because the mode can change without re-rendering
+   `SceneCanvas`, so there's no reliable moment to write state.
+2. **Three overlays drew the same anchors.** The kit's
+   `pathEditingOverlayLayer` (screen-space, keyed on `editingId`), apps/draw's
+   `pathEditPainter` (world-space, keyed on `machine.getActiveTargetId()`, so
+   its markers grew with zoom), and an unused third copy at
+   `interactions/actions/edit-anchors/overlay.ts`. The app's drew on top and
+   hid the kit's, so the duplication was only visible once one key went stale.
+   Kit layer is now the sole owner; the other two are deleted.
+3. **Anchors were visible but not grabbable outside apps/draw.** The overlay
+   consulted no rule at all while `affordanceAt` gated on
+   `isVisible('path-edit.anchors')`, whose default was `{ mode: 'path-edit' }`
+   — false for every consumer without a mode registry. Both now gate on a new
+   `editingAnchors` `RuleCtx` selector. **`defaults.ts` no longer has a single
+   `mode:` rule.** See the chrome-caps README on why this is a *state*
+   selector, not a `capability:` one.
+4. **Shift-clicking a second anchor silently exited edit mode.** The select
+   tool's pointerDown classifier called `applyClick` with shift, toggling the
+   edited node out of the *node* selection; the dep reads that as the target
+   vanishing. New `extendClickLocked` option locks extend-clicks while anchor
+   editing. Only extend-clicks — a plain click still re-selects, so clicking a
+   different node exits edit mode as before.
 
-Don't start §2 to enable §1 — §1 doesn't need it.
+   This is a narrow instance of the audit's §3.4: tool routes are never
+   eligibility-filtered, so `useSelectTool`'s phase-table pointerDown mutates
+   the selection in modes that forbid it, while the same tool's
+   `clearSelection` *binding* is correctly gated off. The general fix is
+   still open.
+
+   Note the option had to be threaded through `useSceneSelectTool`, which
+   forwards a hand-picked field list rather than spreading — a new
+   `useSelectTool` option is invisible until you add it there.
+
+### Known rough edge
+
+`selectAnchor` binds ambient `{ kind: 'click' }`. `useSelectTool` binds
+`clearSelection` to `{ click, target: 'empty', mods: {} }` at *active* scope,
+which outranks it. In path-edit mode that action is filtered out by capability
+so anchor clicks win; in a consumer with no mode registry, clicking an anchor
+that happens to sit over empty canvas clears the node selection instead of
+selecting the anchor. Anchors over the path body are unaffected. Fixing it
+properly means the same eligibility-for-tool-routes work as bug 4.
 
 ---
 
 ## Incidentals
 
-- Pen's `modifiers` column reads all `—`, but pen *does* have modifier behavior:
-  shift makes an anchor nudge 10px instead of 1. It's read imperatively inside
-  the handler (`ctx.modifiers.shift`) rather than declared as a route, so the
-  inspector cannot see it. Declared routes are introspectable; runtime modifier
-  reads are not. Same class of invisibility as §4b.
+- Pen's `modifiers` column read all `—` while shift-nudge was implemented by
+  reading `ctx.modifiers.shift` imperatively inside the handler. **Moot for
+  that specific case now** — anchor nudging moved to `nudgeAnchors.*`, which
+  declares its shift variant as a second binding, so the inspector can see it.
+  The general point stands and is worth remembering: declared routes are
+  introspectable, runtime modifier reads are not. Pen's create mode still reads
+  shift and alt imperatively during the handle drag.
 - `rotate` is an overlay-only ambient tool with genuinely zero routes. Its
   Routes section now renders an explicit "This tool declares no routes." rather
   than being omitted, so "empty" reads differently from "failed to load". Its
   overlay lives on the returned `Tool`, not the def — same Tool-vs-def split as
   §1a, and it used to report "emits no overlay."
-- The dev server for `apps/draw` was left running on :5174.
+- Dev servers left running: :5174 (main checkout) and :5180 (the
+  `weasel-pen-port` worktree, since merged).
