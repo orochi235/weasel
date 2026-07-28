@@ -139,6 +139,22 @@ export interface Tool<TScratch = unknown> {
    * every implicit-or-declared tag (i.e. `normal` in the default preset).
    */
   capabilities?: CapabilityTag[];
+  /**
+   * Actions this tool owns and needs registered while it is in the tools
+   * registry — e.g. polygon's `polygon.adjustSides`, which its own bindings
+   * reference by id.
+   *
+   * Declared here rather than registered by the hook with `useAction`,
+   * because tool hooks run wherever the consumer calls them — for
+   * `<SceneCanvas>` that is ABOVE `<ActionsProviderIfRoot>`, where
+   * `useActionsRegistry()` returns null and `useAction` silently no-ops. The
+   * result was a binding pointing at an action id nothing had registered, so
+   * the gesture fell through to whatever matched next (polygon's
+   * wheel/arrow-key side adjustment did nothing and `nudge.*` moved the
+   * selection instead). `<ToolActionsMounter>` registers these from inside
+   * the provider.
+   */
+  actions?: import('interactions/actions/registry').Action[];
   /** Optional caller-supplied key. Most built-in tools have their activation
    *  key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`; this field
    *  is for tools that want their activation key to be configurable by the

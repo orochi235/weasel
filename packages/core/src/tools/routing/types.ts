@@ -126,6 +126,23 @@ export interface ToolDef<TScratch = void> {
   id: string;
   /** Capability tags for modality eligibility. Forwarded onto `Tool.capabilities`. */
   capabilities?: CapabilityTag[];
+  /**
+   * Actions this tool owns and needs registered while it is in the tools
+   * registry — e.g. polygon's `polygon.adjustSides`, which its own bindings
+   * reference by id.
+   *
+   * Declared here rather than registered by the hook with `useAction`,
+   * because tool hooks run wherever the consumer calls them — for
+   * `<SceneCanvas>` that is ABOVE `<ActionsProviderIfRoot>`, where
+   * `useActionsRegistry()` returns null and `useAction` silently no-ops. The
+   * result was a binding pointing at an action id nothing had registered, so
+   * the gesture fell through to whatever matched next (polygon's
+   * wheel/arrow-key side adjustment did nothing and `nudge.*` moved the
+   * selection instead). `<ToolActionsMounter>` registers these from inside
+   * the provider.
+   */
+  actions?: import('interactions/actions/registry').Action[];
+
   /** Hook name as exported from the kit barrel (e.g. `'useHandTool'`).
    *  Set by built-in hooks for inspector / debugging. Consumer-authored
    *  tools may set this to surface their hook name; omitted is fine.

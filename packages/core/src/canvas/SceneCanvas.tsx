@@ -52,6 +52,7 @@ import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
+import { useToolActions } from './SceneCanvas/useToolActions';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
 import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useHandTool } from 'tools/builtin/hand';
@@ -1942,6 +1943,11 @@ function ToolKeybindingsMounter({
     disable: !toolsTakeover || !enableKeybindings,
     isToolEligible,
   });
+  // Tool-owned actions (polygon.adjustSides, star.adjustPoints, …). Same
+  // reason this lives here and not in the tool hooks: the hooks run above the
+  // provider. Not gated on `enableKeybindings` — these back wheel and pointer
+  // bindings too, not just keys.
+  useToolActions(toolsTakeover ?? internalTools);
   return null;
 }
 

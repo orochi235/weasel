@@ -995,3 +995,84 @@ describe('SceneCanvas onDoubleClick', () => {
     expect(onDoubleClick).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Uncoordinated keydown fan-out (audit §4)
+// ---------------------------------------------------------------------------
+
+describe('keydown fan-out: polygon ArrowUp vs nudge', () => {
+  // The audit derived this from code paths but did not observe it: with the
+  // polygon tool active and a non-empty selection, ArrowUp is claimed by the
+  // tool's phase-table route (bump side count) AND matched by `nudge.up` on
+  // the interactions dispatcher. Two listeners, no arbitration — the tool
+  // route's `claim()` never reaches the DOM as preventDefault/stopPropagation.
+  it('ArrowUp with polygon active does not also nudge the selection', () => {
+    const scene = makeScene();
+    const id = firstId(scene);
+    const before = { ...(scene.get(id)?.pose as P) };
+
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        toolBundle="standard"
+        defaultTools={['select', 'polygon']}
+        selectionOptions={{ initial: [id] }}
+      />,
+    );
+    void container;
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: 'g', code: 'KeyG',
+      }));
+    });
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowUp' }));
+    });
+
+    const after = scene.get(id)?.pose as P;
+    expect(after.y).toBe(before.y);
+  });
+  // The other half: ArrowUp must still DO its job. `polygon.adjustSides` was
+  // registered by the tool hook via `useAction`, which runs above the
+  // ActionsProvider and silently no-op'd — so the binding pointed at an
+  // unregistered id and neither the arrow keys nor the documented
+  // wheel-during-drag adjustment did anything. `ToolDef.actions` +
+  // <ToolActionsMounter> fixed that; this pins it.
+  it('ArrowUp with polygon active changes the committed side count', () => {
+    const scene = emptyScene();
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={400}
+        height={400}
+        toolBundle="standard"
+        defaultTools={['select', 'polygon']}
+      />,
+    );
+    const canvas = getCanvas(container);
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', {
+        bubbles: true, key: 'g', code: 'KeyG',
+      }));
+    });
+    // Default is 6 sides; two ArrowUps → 8.
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowUp' }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowUp' }));
+    });
+    act(() => { drag(canvas, 60, 60, 160, 160); });
+
+    const id = firstId(scene);
+    const path = (scene.get(id)?.data as D)?.path as { coords?: number[] } | undefined;
+    expect(path).toBeDefined();
+    // regularPolygonPath emits one coord pair per side.
+    expect((path!.coords?.length ?? 0) / 2).toBe(8);
+  });
+});
+
