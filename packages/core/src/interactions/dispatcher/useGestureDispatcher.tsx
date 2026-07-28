@@ -773,10 +773,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
 
-      // If pointerdown was buffered (sub-threshold gesture), discard it —
-      // the dispatcher never saw it, so no drag handle is in flight. Click
-      // synthesis below picks up the bare press-and-release path.
-      bufferedDown.delete(e.pointerId);
+      // If pointerdown was still buffered, the pointer never crossed the drag
+      // threshold — the dispatcher never saw the press, so no drag handle is
+      // in flight and this release is a click. Crossing the threshold deletes
+      // the buffer whether or not a drag binding matched, which makes this the
+      // authoritative "did the pointer move?" signal for click synthesis.
+      const staysUnderThreshold = bufferedDown.delete(e.pointerId);
 
       // When pointer count drops below 2, commit any in-flight multitouch handle
       // and (if the centroid never moved past the tap threshold) synthesize a
@@ -848,11 +850,18 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const down = lastPointerDown.get(e.pointerId);
       lastPointerDown.delete(e.pointerId);
 
-      // Synthesize a click when there was no in-flight drag handle — i.e.
-      // the pointerdown never matched a drag binding and the user released
-      // without movement. Carry the `bodyTarget` from the pointerdown so
-      // click specs with string-form targets ('empty', 'selected-body') match.
-      if (!hadDragInFlight && down) {
+      // Synthesize a click when the pointer neither opened a drag handle nor
+      // travelled past the drag threshold. Carry the `bodyTarget` from the
+      // pointerdown so click specs with string-form targets ('empty',
+      // 'selected-body') match.
+      //
+      // The threshold half of that test is load-bearing for any tool that
+      // binds `click` but not `drag`: without it, dragging clear across the
+      // canvas and releasing synthesized a click, because "no drag handle
+      // opened" was the only condition. `ClickSpec` documents itself as
+      // "pointerdown + pointerup without movement past the threshold" — this
+      // is the code finally agreeing with it.
+      if (!hadDragInFlight && staysUnderThreshold && down) {
         const wClick = toWorld(e.clientX, e.clientY);
         const clickEv: InputEvent = {
           kind: 'click',

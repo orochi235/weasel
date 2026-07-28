@@ -1,28 +1,27 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useEyedropperTool } from './useEyedropperTool';
-import type { HitResult } from '../../routing/hitResult';
-import type { ToolCtx } from '../../types';
+import type { Action } from 'interactions/actions/registry';
+import type { ActionDeps } from 'interactions/actions/invoker';
+import type { NodeId } from 'core/scene/types';
 
-function makeCtx(target: HitResult): ToolCtx<null> {
-  return {
-    worldX: 0, worldY: 0,
-    modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
-    target,
-    selection: {} as never,
-    adapter: null,
-    applyOps: vi.fn(),
-    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
-    setView: () => {},
-    canvasRect: new DOMRect(),
-    scratch: null,
-  };
+/** Pull the tool's own `eyedropper.pick` action off `ToolDef.actions`. */
+function pickActionOf(tool: { actions?: readonly Action[] }): Action {
+  const action = tool.actions?.find((a) => a.id === 'eyedropper.pick');
+  if (!action) throw new Error('eyedropper.pick not declared on the tool');
+  return action;
 }
 
-const nodeHit = (id = 'r1', kind = 'rect'): HitResult => ({
-  category: 'node', kind, id: id as never, pose: {}, data: {},
-});
-const emptyHit = (): HitResult => ({ category: 'empty', kind: 'empty' });
+/** Deps with a `nodeAtPoint` that reports `id` for every point, or nothing. */
+function depsHitting(id: string | null): ActionDeps {
+  return { nodeAtPoint: () => (id === null ? null : (id as NodeId)) } as unknown as ActionDeps;
+}
+
+function run(tool: { actions?: readonly Action[] }, deps: ActionDeps, params: Record<string, unknown>) {
+  const action = pickActionOf(tool);
+  if (action.invoker?.timing !== 'immediate') throw new Error('expected an immediate invoker');
+  action.invoker.run(deps, params);
+}
 
 describe('useEyedropperTool', () => {
   it('declares id, I keybinding, alt hotkey, crosshair cursor', () => {
@@ -35,53 +34,53 @@ describe('useEyedropperTool', () => {
     // the runtime Tool interface since Tool.hotkey was removed.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result.current.def as any)?.hotkey).toBe('alt');
-    // cursor is a resolver function from defineTool; call it with a minimal ctx.
+    // `defineTool` wraps a string cursor in a resolver.
     const cursor = typeof result.current.cursor === 'function'
-      ? result.current.cursor(makeCtx(emptyHit()))
+      ? result.current.cursor({} as never)
       : result.current.cursor;
     expect(cursor).toBe('crosshair');
   });
 
-  it('click on a rect hit calls onPick with colorOf(id)', () => {
+  it('binds one click route to its own action, and nothing else', () => {
+    const { result } = renderHook(() =>
+      useEyedropperTool({ onPick: () => {}, colorOf: () => null }),
+    );
+    expect(result.current.bindings).toEqual([
+      { spec: { kind: 'click' }, actionId: 'eyedropper.pick' },
+    ]);
+    // The `pointerDown` claim gate is gone: it existed only to beat the other
+    // dispatch pipeline's select tool to the press.
+    expect(result.current.bindings?.some((b) => b.spec.kind === 'pointerDown')).toBe(false);
+  });
+
+  it('the pick action is eligibility-gated on samples-color', () => {
+    const { result } = renderHook(() =>
+      useEyedropperTool({ onPick: () => {}, colorOf: () => null }),
+    );
+    expect(pickActionOf(result.current).eligible).toEqual({ capability: 'samples-color' });
+  });
+
+  it('click on a node calls onPick with colorOf(id)', () => {
     const onPick = vi.fn();
-    const colorOf = vi.fn((id: string) => id === 'r1' ? '#ff0000' : null);
+    const colorOf = vi.fn((id: string) => (id === 'r1' ? '#ff0000' : null));
     const { result } = renderHook(() => useEyedropperTool({ onPick, colorOf }));
-    const ctx = makeCtx(nodeHit('r1', 'rect'));
-    const decision = result.current.pointer!.onClick!(new Event('click') as PointerEvent, ctx);
-    expect(decision).toBe('claim');
+    run(result.current, depsHitting('r1'), { pressX: 5, pressY: 5 });
     expect(colorOf).toHaveBeenCalledWith('r1');
-    expect(onPick).toHaveBeenCalledWith('#ff0000');
-    expect(onPick).toHaveBeenCalledTimes(1);
+    expect(onPick).toHaveBeenCalledExactlyOnceWith('#ff0000');
   });
 
-  it('click on a text hit routes through the same action', () => {
-    const onPick = vi.fn();
+  it('samples at the press point, not the release point', () => {
+    // A click can drift up to the drag threshold between press and release,
+    // which is enough to land on a different node.
+    const seen: Array<{ x: number; y: number }> = [];
     const { result } = renderHook(() =>
-      useEyedropperTool({ onPick, colorOf: () => '#123456' }),
+      useEyedropperTool({ onPick: () => {}, colorOf: () => '#fff' }),
     );
-    const ctx = makeCtx(nodeHit('t1', 'text'));
-    result.current.pointer!.onClick!(new Event('click') as PointerEvent, ctx);
-    expect(onPick).toHaveBeenCalledWith('#123456');
-  });
-
-  it('click on a path hit routes through the same action', () => {
-    const onPick = vi.fn();
-    const { result } = renderHook(() =>
-      useEyedropperTool({ onPick, colorOf: () => '#abcdef' }),
-    );
-    const ctx = makeCtx(nodeHit('p1', 'path'));
-    result.current.pointer!.onClick!(new Event('click') as PointerEvent, ctx);
-    expect(onPick).toHaveBeenCalledWith('#abcdef');
-  });
-
-  it('click on an unknown node kind falls through to the * route', () => {
-    const onPick = vi.fn();
-    const { result } = renderHook(() =>
-      useEyedropperTool({ onPick, colorOf: () => '#000' }),
-    );
-    const ctx = makeCtx(nodeHit('x1', 'sprite'));
-    result.current.pointer!.onClick!(new Event('click') as PointerEvent, ctx);
-    expect(onPick).toHaveBeenCalledWith('#000');
+    const deps = {
+      nodeAtPoint: (p: { x: number; y: number }) => { seen.push(p); return 'r1' as NodeId; },
+    } as unknown as ActionDeps;
+    run(result.current, deps, { pressX: 10, pressY: 10, worldX: 13, worldY: 13 });
+    expect(seen).toEqual([{ x: 10, y: 10 }]);
   });
 
   it('colorOf returning null forwards null to onPick', () => {
@@ -89,8 +88,7 @@ describe('useEyedropperTool', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick, colorOf: () => null }),
     );
-    const ctx = makeCtx(nodeHit('r1', 'rect'));
-    result.current.pointer!.onClick!(new Event('click') as PointerEvent, ctx);
+    run(result.current, depsHitting('r1'), { pressX: 0, pressY: 0 });
     expect(onPick).toHaveBeenCalledWith(null);
   });
 
@@ -99,28 +97,23 @@ describe('useEyedropperTool', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick, colorOf: () => '#fff' }),
     );
-    const ctx = makeCtx(emptyHit());
-    const decision = result.current.pointer!.onClick!(new Event('click') as PointerEvent, ctx);
+    run(result.current, depsHitting(null), { pressX: 0, pressY: 0 });
     expect(onPick).not.toHaveBeenCalled();
-    // none() resolves to a 'pass' decision in the routing factory.
-    expect(decision).toBe('pass');
   });
 
-  it('drag channel is unbound (no onStart)', () => {
+  it('no nodeAtPoint dep registered → no pick, no throw', () => {
+    const onPick = vi.fn();
     const { result } = renderHook(() =>
-      useEyedropperTool({ onPick: () => {}, colorOf: () => null }),
+      useEyedropperTool({ onPick, colorOf: () => '#fff' }),
     );
-    // defineTool only attaches drag handlers when at least one drag route exists.
-    // No drag routes here → tool.drag is undefined.
-    expect(result.current.drag).toBeUndefined();
+    run(result.current, {} as ActionDeps, { pressX: 0, pressY: 0 });
+    expect(onPick).not.toHaveBeenCalled();
   });
 
   it('hotkey: null override removes the hotkey trigger', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick: () => {}, colorOf: () => null, hotkey: null }),
     );
-    // hotkey lives on the ToolDef (reflection escape hatch) rather than on
-    // the runtime Tool interface since Tool.hotkey was removed.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result.current.def as any)?.hotkey).toBeUndefined();
   });
@@ -135,15 +128,12 @@ describe('useEyedropperTool', () => {
   it('uses the latest onPick / colorOf via refs (no stale closure)', () => {
     const onPick1 = vi.fn();
     const onPick2 = vi.fn();
-    const colorOf1 = () => '#111';
-    const colorOf2 = () => '#222';
     const { result, rerender } = renderHook(
       ({ onPick, colorOf }) => useEyedropperTool({ onPick, colorOf }),
-      { initialProps: { onPick: onPick1, colorOf: colorOf1 } },
+      { initialProps: { onPick: onPick1, colorOf: () => '#111' } },
     );
-    rerender({ onPick: onPick2, colorOf: colorOf2 });
-    const ctx = makeCtx(nodeHit('r1', 'rect'));
-    result.current.pointer!.onClick!(new Event('click') as PointerEvent, ctx);
+    rerender({ onPick: onPick2, colorOf: () => '#222' });
+    run(result.current, depsHitting('r1'), { pressX: 0, pressY: 0 });
     expect(onPick1).not.toHaveBeenCalled();
     expect(onPick2).toHaveBeenCalledWith('#222');
   });

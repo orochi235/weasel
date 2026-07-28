@@ -347,6 +347,27 @@ describe('useGestureDispatcher', () => {
       err.mockRestore();
     });
 
+    it('no click is synthesized once the pointer passes the drag threshold', () => {
+      // Even with nothing bound to `drag`. "No drag handle opened" used to be
+      // the only condition, so a tool that binds click but not drag saw a
+      // full-canvas drag arrive as a click.
+      const spy = vi.fn();
+      const clickAction: Action = {
+        id: 'demo.click',
+        label: 'click',
+        defaultBinding: { kind: 'click' },
+        invoker: { timing: 'immediate', run: () => spy() },
+      };
+      const { container } = render(
+        <Harness><Probe actionDef={clickAction} classifyTarget={() => 'empty'} /></Harness>,
+      );
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointermove', { clientX: 90, clientY: 90, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointerup', { clientX: 90, clientY: 90, pointerId: 1 }); });
+      expect(spy).not.toHaveBeenCalled();
+    });
+
     it('a synthesized click carries the press point alongside the release point', () => {
       const spy = vi.fn();
       const clickAction: Action = {
