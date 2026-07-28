@@ -41,8 +41,27 @@ export interface WheelEvent extends EventModifiers {
   clientY: number;
 }
 
+/**
+ * Stylus state carried alongside a pointer sample. Every field is optional:
+ * the values come straight off the originating `PointerEvent`, and callers
+ * that synthesize events (tests, programmatic drags) omit them.
+ *
+ * Mouse and ordinary touch report `pressure: 0.5` while a button is held
+ * and `0` otherwise, per the Pointer Events spec — a consumer that wants
+ * stylus-only modulation should gate on real pressure variance rather than
+ * on presence of the field.
+ */
+export interface PointerSampleStylus {
+  /** 0..1. */
+  pressure?: number;
+  /** Degrees, ±90. Zero for mouse/touch. */
+  tiltX?: number;
+  /** Degrees, ±90. Zero for mouse/touch. */
+  tiltY?: number;
+}
+
 /** A pointer press — the start of any drag, and the richest event shape. */
-export interface PointerDownEvent extends EventModifiers {
+export interface PointerDownEvent extends EventModifiers, PointerSampleStylus {
   kind: 'pointerdown';
   target?: unknown;
   /** World-space coordinates (post view transform). */
@@ -62,7 +81,7 @@ export interface PointerDownEvent extends EventModifiers {
 
 /** A pump-only pointer move. Carried in the union so the dispatcher's
  *  `handleInput` signature stays uniform; the matcher never matches it. */
-export interface PointerMoveEvent extends EventModifiers {
+export interface PointerMoveEvent extends EventModifiers, PointerSampleStylus {
   kind: 'pointermove';
   x: number;
   y: number;

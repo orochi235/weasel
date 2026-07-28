@@ -3,7 +3,7 @@ import { insertAction } from './insert';
 
 import type { InvocationCtx, BindingOpts } from '../invoker';
 import type { NodeId } from 'core/scene/types';
-import type { InsertDep } from '../depSchema';
+import type { InsertDep, SnapDep } from '../depSchema';
 
 // ---------------------------------------------------------------------------
 // Stub insert dep
@@ -25,14 +25,30 @@ function makeInsertDep(): InsertDep & {
 function makeCtx(overrides: {
   world?: { x: number; y: number };
   dep?: InsertDep;
+  snap?: SnapDep;
+  modifiers?: Partial<InvocationCtx['modifiers']>;
 } = {}): InvocationCtx {
   return {
     world: overrides.world ?? { x: 5, y: 10 },
     screen: { x: 5, y: 10 },
-    modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+    modifiers: {
+      alt: false, ctrl: false, meta: false, shift: false,
+      ...(overrides.modifiers ?? {}),
+    },
     deps: {
       insert: overrides.dep ?? makeInsertDep(),
+      ...(overrides.snap ? { snap: overrides.snap } : {}),
     },
+  };
+}
+
+/** Snaps every coord to a `size` grid. */
+function gridSnap(size: number): SnapDep {
+  return {
+    point: (p) => ({
+      x: Math.round(p.x / size) * size,
+      y: Math.round(p.y / size) * size,
+    }),
   };
 }
 
@@ -377,5 +393,118 @@ describe('insertAction descriptor', () => {
 
     expect(dep.calls).toHaveLength(1);
     expect(dep.calls[0].extras).toMatchObject({ kind: 'pencil' });
+  });
+});
+
+describe('insertAction — snap dep', () => {
+  it('snaps both the drag origin and the current point', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 3, y: 4 }, dep, snap: gridSnap(10) });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({ ...ctx, world: { x: 47, y: 52 } });
+    handle.onEnd!({ ...ctx, world: { x: 47, y: 52 } }, 'commit');
+
+    // origin 3,4 → 0,0 · current 47,52 → 50,50
+    expect(dep.calls[0].bounds).toEqual({ x: 0, y: 0, width: 50, height: 50 });
+  });
+
+  it('is identity when the snap dep is absent', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 3, y: 4 }, dep });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({ ...ctx, world: { x: 47, y: 52 } });
+    handle.onEnd!({ ...ctx, world: { x: 47, y: 52 } }, 'commit');
+
+    expect(dep.calls[0].bounds).toEqual({ x: 3, y: 4, width: 44, height: 48 });
+  });
+
+  it('the live preview reports the same snapped bounds the commit uses', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 3, y: 4 }, dep, snap: gridSnap(10) });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({ ...ctx, world: { x: 47, y: 52 } });
+    const preview = handle.overlay!();
+    handle.onEnd!({ ...ctx, world: { x: 47, y: 52 } }, 'commit');
+
+    expect(preview).toMatchObject({ kind: 'insertPreview' });
+    expect((preview as { bounds: unknown }).bounds).toEqual(dep.calls[0].bounds);
+  });
+
+  it('does not snap freehand pencil samples', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const trail = [{ x: 1, y: 1 }, { x: 4, y: 7 }, { x: 9, y: 2 }];
+    const ctx: InvocationCtx = {
+      ...makeCtx({ world: { x: 1, y: 1 }, dep, snap: gridSnap(10) }),
+      drag: { start: { x: 1, y: 1 }, current: { x: 9, y: 2 }, delta: { x: 8, y: 1 }, points: trail },
+    };
+    const handle = invoker.start(ctx, { params: { kind: 'pencil' } });
+    handle.onEnd!(ctx, 'commit');
+
+    expect(dep.calls[0].extras).toMatchObject({ kind: 'pencil', samples: trail });
+  });
+});
+
+describe('insertAction — line modifiers', () => {
+  it('shift constrains the endpoint to a 15° increment', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+    const handle = invoker.start(ctx, { params: { kind: 'line' } });
+    // 100,10 is ~5.7° off horizontal — shift rounds it down to 0°, keeping
+    // the drag length (hypot ≈ 100.5).
+    handle.onMove!({ ...ctx, world: { x: 100, y: 10 }, modifiers: { ...ctx.modifiers, shift: true } });
+    handle.onEnd!({ ...ctx, world: { x: 100, y: 10 } }, 'commit');
+
+    const extras = dep.calls[0].extras as { b: { x: number; y: number } };
+    expect(extras.b.y).toBeCloseTo(0, 6);
+    expect(extras.b.x).toBeCloseTo(Math.hypot(100, 10), 6);
+  });
+
+  it('shift is not applied to non-line kinds', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+    const handle = invoker.start(ctx, { params: { kind: 'rect' } });
+    handle.onMove!({ ...ctx, world: { x: 100, y: 10 }, modifiers: { ...ctx.modifiers, shift: true } });
+    handle.onEnd!({ ...ctx, world: { x: 100, y: 10 } }, 'commit');
+
+    expect(dep.calls[0].bounds).toEqual({ x: 0, y: 0, width: 100, height: 10 });
+  });
+
+  it('alt mirrors the start around the pointer (half-line drag)', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 50, y: 50 }, dep });
+    const handle = invoker.start(ctx, { params: { kind: 'line' } });
+    handle.onMove!({ ...ctx, world: { x: 80, y: 70 }, modifiers: { ...ctx.modifiers, alt: true } });
+    handle.onEnd!({ ...ctx, world: { x: 80, y: 70 } }, 'commit');
+
+    // start mirrors to 50-(80-50), 50-(70-50) = 20,30; end stays 80,70.
+    expect(dep.calls[0].extras).toMatchObject({
+      kind: 'line',
+      a: { x: 20, y: 30 },
+      b: { x: 80, y: 70 },
+    });
+  });
+
+  it('shift constrains before snap, so the angle survives grid alignment', () => {
+    const invoker = getOngoingInvoker(insertAction);
+    const dep = makeInsertDep();
+    const ctx = makeCtx({ world: { x: 0, y: 0 }, dep, snap: gridSnap(10) });
+    const handle = invoker.start(ctx, { params: { kind: 'line' } });
+    handle.onMove!({ ...ctx, world: { x: 100, y: 10 }, modifiers: { ...ctx.modifiers, shift: true } });
+    handle.onEnd!({ ...ctx, world: { x: 100, y: 10 } }, 'commit');
+
+    // Constrained to 0° → (100.5, 0), then snapped to the 10-grid → (100, 0).
+    // Snapping first would have given (100, 10) — a 5.7° line.
+    expect(dep.calls[0].extras).toMatchObject({
+      kind: 'line',
+      a: { x: 0, y: 0 },
+      b: { x: 100, y: 0 },
+    });
   });
 });

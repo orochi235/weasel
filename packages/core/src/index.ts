@@ -140,6 +140,7 @@ export { defaultCommitAdapter } from './interactions/actions/defaultCommitAdapte
 // ─── Invoker / GestureBinding / ActiveToolContext ───
 export type {
   Point2,
+  DragSample,
   InvocationCtx,
   BindingOpts,
   ActionDeps,
@@ -182,6 +183,7 @@ export type {
   EditAnchorsDep,
   IngestionDep,
   InsertDep,
+  SnapDep,
   InsertExtras,
   LassoSelectDep,
   LayoutDep,

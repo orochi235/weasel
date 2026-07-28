@@ -13,9 +13,7 @@ import { makeCtx } from '../testUtils';
  */
 describe('useTextTool surface', () => {
   it('declares id "text" and text cursor', () => {
-    const { result } = renderHook(() =>
-      useTextTool({ pointInsert: () => ({ id: 't', x: 0, y: 0, width: 0, height: 0, text: '' }) }),
-    );
+    const { result } = renderHook(() => useTextTool());
     expect(result.current.id).toBe('text');
     // keybinding field removed from ToolDef; key activation is now registered
     // as a `tool.shortcut.text` action via useKeybindings.
@@ -26,9 +24,7 @@ describe('useTextTool surface', () => {
   });
 
   it('declares insert (kind=text) and enterTextEdit bindings', () => {
-    const { result } = renderHook(() =>
-      useTextTool({ pointInsert: () => ({ id: 't', x: 0, y: 0, width: 0, height: 0, text: '' }) }),
-    );
+    const { result } = renderHook(() => useTextTool());
     const bindings = result.current.bindings;
     expect(bindings).toHaveLength(2);
     expect(bindings).toEqual(
@@ -43,9 +39,7 @@ describe('useTextTool surface', () => {
   });
 
   it('declares no route-table drag/pointer/overlay handlers (dispatcher-only)', () => {
-    const { result } = renderHook(() =>
-      useTextTool({ pointInsert: () => ({ id: 't', x: 0, y: 0, width: 0, height: 0, text: '' }) }),
-    );
+    const { result } = renderHook(() => useTextTool());
     expect(result.current.drag).toBeUndefined();
     expect(result.current.pointer).toBeUndefined();
     expect(result.current.overlay).toBeUndefined();

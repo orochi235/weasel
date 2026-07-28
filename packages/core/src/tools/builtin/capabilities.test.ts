@@ -21,9 +21,9 @@ describe('built-in tool capabilities', () => {
     ['hand', () => builtins.useHandTool({}), ['navigation']],
     ['select', () => builtins.useSelectTool({} as never, {} as never), ['creates-selection']],
     ['lasso', () => builtins.useLassoTool({} as never), ['creates-selection']],
-    ['rect', () => builtins.useRectTool({} as never), ['creates-shapes']],
-    ['ellipse', () => builtins.useEllipseTool({} as never), ['creates-shapes']],
-    ['line', () => builtins.useLineTool({} as never), ['creates-shapes']],
+    ['rect', () => builtins.useRectTool(), ['creates-shapes']],
+    ['ellipse', () => builtins.useEllipseTool(), ['creates-shapes']],
+    ['line', () => builtins.useLineTool(), ['creates-shapes']],
     ['star', () => builtins.useStarTool({} as never), ['creates-shapes']],
     ['polygon', () => builtins.usePolygonTool({} as never), ['creates-shapes']],
     ['pen', () => {
@@ -37,8 +37,8 @@ describe('built-in tool capabilities', () => {
       };
       return builtins.usePenTool(minOpts as never) as unknown as { capabilities?: readonly string[] };
     }, ['creates-paths']],
-    ['pencil', () => builtins.usePencilTool({} as never), ['creates-paths']],
-    ['text', () => builtins.useTextTool({} as never), ['creates-text']],
+    ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
+    ['text', () => builtins.useTextTool(), ['creates-text']],
     ['eyedropper', () => builtins.useEyedropperTool({} as never), ['samples-color']],
     ['rotate', () => builtins.useRotateTool({} as never, {}), ['transforms-selection']],
   ];

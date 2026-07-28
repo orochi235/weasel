@@ -1,42 +1,29 @@
-import { useMemo } from 'react';
 import {
   SceneCanvas,
   WeaselProvider,
-  sceneToAdapter,
-  useInsertTool,
+  useRectTool,
   useScene,
   useTools,
 } from '@weasel-js/core';
-import type { SceneNode } from '@weasel-js/core';
 
 // Per-shape data the kit's insert dep mints: `{ path, fill }` (see
 // `useInsertDepSource`). Pose is plain `{ x, y, width, height }`.
 interface RectData { path: unknown; fill: string }
 interface RectPose { x: number; y: number; width: number; height: number }
-type RectNode = SceneNode<RectData, 'default', RectPose>;
 
 const W = 400, H = 300;
 
 function InsertDemoInner() {
   const scene = useScene<RectData, 'default', RectPose>({ systemLayers: [{ id: 'default' }] });
 
-  // The kit ships the entire insert flow now:
-  //   - `useInsertDepSource` (wired internally by SceneCanvas) mints node
-  //     data + pose on commit, using the kit's default fill palette.
-  //   - `defaultDrawOne` (the scene-slot default) dispatches through the
-  //     `kit:path` painter to render the minted `data.path` + `data.fill`.
-  // So this demo just sets up the tool; no custom commit / drawOne needed.
-  const adapter = useMemo(() => {
-    const a = sceneToAdapter<RectData, 'default', RectPose>(scene);
-    return Object.assign(a, {
-      commitInsert: () => null,
-      commitPaste: () => [],
-      snapshotSelection: () => ({ items: [] }),
-    });
-  }, [scene]);
-
-  const insert = useInsertTool<RectNode, RectPose>(adapter, { minBounds: { width: 4, height: 4 } });
-  const tools = useTools({ active: 'insert', registry: { insert } });
+  // The kit ships the entire insert flow. The tool is a declarative shell —
+  // its `drag` binding routes to `insertAction`, which owns the live
+  // preview and commits through the `insert` dep that `<SceneCanvas>` wires
+  // internally (`useInsertDepSource` mints `data.path` + `data.fill` from
+  // the kit's default palette, and `defaultDrawOne` paints it via the
+  // `kit:path` painter). So this demo is just tool registration.
+  const rect = useRectTool();
+  const tools = useTools({ active: 'rect', registry: { rect } });
 
   return (
     <SceneCanvas

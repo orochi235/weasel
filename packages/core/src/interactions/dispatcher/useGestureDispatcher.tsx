@@ -32,6 +32,25 @@ import type { InputEvent } from './matcher';
 /** Class toggled on the canvas while an OS drag hovers it — consumers style it. */
 const DROPOVER_CLASS = 'weasel-dropover';
 
+/**
+ * Lift the stylus fields off a DOM `PointerEvent` onto the normalized
+ * `InputEvent`. Kept as a spread-able partial so a synthetic event that
+ * carries none of them stays free of `undefined`-valued keys.
+ *
+ * These ride the drag trail (`InvocationCtx.drag.points`) so pressure- and
+ * tilt-aware actions — `insertAction`'s pencil kind today — can reach the
+ * per-sample data without their own pointer plumbing.
+ */
+function stylusOf(e: PointerEvent): {
+  pressure?: number; tiltX?: number; tiltY?: number;
+} {
+  return {
+    ...(typeof e.pressure === 'number' ? { pressure: e.pressure } : {}),
+    ...(typeof e.tiltX === 'number' ? { tiltX: e.tiltX } : {}),
+    ...(typeof e.tiltY === 'number' ? { tiltY: e.tiltY } : {}),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Platform detection — module-level constant so it's stable across renders.
 // ---------------------------------------------------------------------------
@@ -512,6 +531,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
+        ...stylusOf(e),
         ...(affordance !== undefined ? { affordance } : {}),
         ...(bodyTarget !== undefined ? { bodyTarget } : {}),
       };
@@ -610,6 +630,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
+        ...stylusOf(e),
       };
       dispatch(ev);
 

@@ -45,6 +45,7 @@ import type {
 } from '../gestures/types';
 import type { PoseProjection } from './resize/geometry';
 import type { GeometryProjection } from './geometryProjection';
+import type { DragSample } from './invoker';
 
 /** Minimal view API the action layer consumes. May be refined later. */
 export interface ViewApi {
@@ -283,9 +284,23 @@ export type InsertExtras =
   | { kind: 'line'; a: { x: number; y: number }; b: { x: number; y: number } }
   | { kind: 'polygon'; sides: number; rotation: number; center?: { x: number; y: number }; radius?: number }
   | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
-  | { kind: 'pencil'; samples: ReadonlyArray<{ x: number; y: number }> }
+  | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
   | { kind: 'text'; text?: string }
   | { kind: string; [extra: string]: unknown };
+
+/**
+ * World-space point snapping — grid, guides, or any consumer rule.
+ *
+ * Sourced by `<SceneCanvas>` from its `toolOptions.snapPoint`. Actions apply
+ * it to the coords they ingest so the live preview and the committed
+ * geometry agree; `insertAction` snaps the drag's start and current point.
+ *
+ * Optional: when the dep is absent, actions treat it as identity.
+ */
+export interface SnapDep {
+  /** Snap a world-space point. Return `p` unchanged to opt out. */
+  point(p: { x: number; y: number }): { x: number; y: number };
+}
 
 /**
  * Adapter dep for `insertAction`.
@@ -395,6 +410,13 @@ export interface DepSchema {
    * provide a typed node factory (e.g. with custom data payloads).
    */
   insert: InsertDep;
+  /**
+   * Snap dep — world-space point snapping (grid / guides).
+   *
+   * Sourced by `<SceneCanvas>` from `toolOptions.snapPoint`. Optional:
+   * absent means no snapping (identity).
+   */
+  snap?: SnapDep;
   /**
    * Lasso-select dep — polygon hit-test + selection read/write.
    *

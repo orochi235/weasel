@@ -72,6 +72,7 @@ import {
   useAreaSelectDepSource,
   useNodeAtPointDepSource,
   useInsertDepSource,
+  useSnapDepSource,
   useLassoSelectDepSource,
   useTextEditDepSource,
   useEditAnchorsDepSource,
@@ -1858,6 +1859,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             anchorEditingAllowed={anchorEditingAllowed}
             layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
             insertNodeFactories={insertNodeFactories}
+            snapPoint={toolOptions?.snapPoint}
             canvasRef={internalCanvasRef}
             ingestionResolveSrc={ingestion?.resolveSrc}
             ingestionSvg={ingestion?.svg}
@@ -2145,6 +2147,7 @@ function StandardActionsRegistrar({
   anchorEditingAllowed,
   layouts,
   insertNodeFactories,
+  snapPoint,
   canvasRef,
   ingestionResolveSrc,
   ingestionSvg,
@@ -2199,6 +2202,9 @@ function StandardActionsRegistrar({
   /** Forwarded from `SceneCanvasProps` so `useInsertDepSource` can wire the
    *  consumer's per-kind node factories into the `insert` dep. */
   insertNodeFactories?: Record<string, InsertNodeFactory>;
+  /** Forwarded from `SceneCanvasProps.toolOptions.snapPoint` so the `snap`
+   *  dep source can expose grid snapping to `insertAction`. */
+  snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
   /** The canvas element ref, so `useIngestionDepSource` can compute the
    *  visible world rect from the client rect + current view. */
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -2281,6 +2287,7 @@ function StandardActionsRegistrar({
   useNodeAtPointDepSource(pickEvery);
   useLayoutDepSource(layouts);
   useInsertDepSource(scene, adapter, insertNodeFactories);
+  useSnapDepSource(snapPoint);
   useIngestionDepSource(canvasRef, () => currentViewRef.current, ingestionResolveSrc, ingestionSvg, ingestionClipboard);
   useLassoSelectDepSource(scene, selection);
   useTextEditDepSource(scene);

@@ -37,7 +37,7 @@
 import type { Action, ActionsRegistry, BoundGesture } from '../actions/registry';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
-import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts, AffordanceHit } from '../actions/invoker';
+import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts, AffordanceHit, DragSample } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Tool } from '../../tools/types';
@@ -361,8 +361,12 @@ export function createDispatcher(opts?: {
    * Accumulated on every `pointermove` pump event. Passed as
    * `InvocationCtx.drag.points` so invokers that need the full path
    * (e.g. `lassoSelectAction`) can consume it.
+   *
+   * Samples carry the originating event's stylus fields (pressure / tilt)
+   * when present, so pressure-aware invokers — `insertAction`'s pencil
+   * kind — get per-sample data without their own pointer plumbing.
    */
-  const dragPoints = new Map<string, Array<{ x: number; y: number }>>();
+  const dragPoints = new Map<string, DragSample[]>();
 
   /**
    * Pinch-zoom start spread, keyed by multitouch gestureId.
@@ -607,7 +611,13 @@ export function createDispatcher(opts?: {
         // Accumulate world-space point into drag history before building ctx.
         const pts = dragPoints.get(gestureId);
         if (pts) {
-          pts.push({ x: event.x, y: event.y });
+          pts.push({
+            x: event.x,
+            y: event.y,
+            ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
+            ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
+            ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
+          });
         }
         const moveCtx = buildInvocationCtx(event, {}, gestureId);
         handle.onMove(moveCtx);
@@ -809,7 +819,13 @@ export function createDispatcher(opts?: {
             ...(event.clientY !== undefined ? { clientY: event.clientY } : {}),
           });
           // Initialize empty drag-points history for the new gesture.
-          dragPoints.set(gestureId, [{ x: event.x ?? 0, y: event.y ?? 0 }]);
+          dragPoints.set(gestureId, [{
+            x: event.x ?? 0,
+            y: event.y ?? 0,
+            ...(event.pressure !== undefined ? { pressure: event.pressure } : {}),
+            ...(event.tiltX !== undefined ? { tiltX: event.tiltX } : {}),
+            ...(event.tiltY !== undefined ? { tiltY: event.tiltY } : {}),
+          }]);
         }
         // Record start spread for pinch-zoom gestures.
         if (event.kind === 'multitouch' && event.spread !== undefined) {
