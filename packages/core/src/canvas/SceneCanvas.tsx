@@ -532,16 +532,6 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
      *  ignored — wire `ambient` through your own `useTools` call instead. */
     ambient?: AnyTool[];
 
-    /** Click-only fallback tool. Its `pointer.onClick` fires only when the
-     *  in-flight tool didn't claim the click (e.g. the active select tool
-     *  returned `pass` on an empty-space click). Use it for a
-     *  click-to-deselect or click-to-spawn behavior that shouldn't interfere
-     *  with the active tool's own clicks. Forwarded to the internal
-     *  `useTools` as its `fallback` slot. If you supply your own `tools`
-     *  prop (takeover form), this is ignored — pass `fallback` to your own
-     *  `useTools` call instead. */
-    clickFallback?: AnyTool;
-
     /** Viewport feature wiring.
      *
      *  - `inertia`, `pinchZoom`, `animatedZoom` are opt-in: pass `true`
@@ -786,7 +776,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     toolOptions,
     initialActiveTool,
     ambient,
-    clickFallback,
     viewport,
     layers,
     actions,
@@ -1025,15 +1014,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // Shift-click belongs to the anchor selection while a path is being
     // anchor-edited; see `UseSelectToolOptions.extendClickLocked`.
     extendClickLocked: () => effectivePathEditingId() !== '',
-    // Same rule `clearSelection`'s `eligible: { capability:
-    // 'creates-selection' }` enforces on the Action side. The phase-table
-    // pointerDown classifier can't see `Action.eligible`, so without this it
-    // kept mutating the selection in modes that forbid it (audit 3.4).
-    selectionAllowed: () => {
-      const getMode = getActiveModeRef.current;
-      if (!getMode) return true;
-      return getMode().allowedCapabilities.has('creates-selection');
-    },
+    // `selectionAllowed` used to sit here, hand-checking the active mode for
+    // `creates-selection` because the tool's pointerDown classifier was a
+    // phase-table route and `Action.eligible` was never evaluated on that
+    // pipeline (audit 3.4). The classifier is now `select.pick`, which
+    // declares that capability itself — one rule, evaluated in one place.
     ...selectToolOpts,
   }), [selectToolOpts]);
 
@@ -1229,7 +1214,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     active: initialActiveTool ?? 'select',
     registry: internalRegistry,
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
-    ...(clickFallback ? { fallback: clickFallback } : {}),
   });
 
   // Auto-wire keybindings against whichever registry is live.

@@ -50,9 +50,6 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
     /** Forwarded verbatim to `useSelectTool`. See
      *  `UseSelectToolOptions.extendClickLocked`. */
     extendClickLocked?: () => boolean;
-    /** Forwarded verbatim to `useSelectTool`. See
-     *  `UseSelectToolOptions.selectionAllowed`. */
-    selectionAllowed?: () => boolean;
   };
   insertTool?: {
     create: SceneToAdapterOptions<TData, TLayer, TPose>['commitInsert'];
@@ -230,7 +227,6 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
     move: wiredMoveOptions,
     ...(opts?.pickBest ? { pickBest: opts.pickBest } : {}),
     ...(opts?.extendClickLocked ? { extendClickLocked: opts.extendClickLocked } : {}),
-    ...(opts?.selectionAllowed ? { selectionAllowed: opts.selectionAllowed } : {}),
   });
 
   const rotateTool = useRotateTool<Node<TData, TLayer, TPose>, TPose>(adapter, {

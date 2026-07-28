@@ -1,115 +1,78 @@
 /**
  * z-order regression test for `useSelectTool`'s default `pickEvery`.
  *
- * Drives a real click through the dispatcher onto overlapping rects and
- * asserts the topmost (last in array order = top in paint order) is selected.
+ * Drives a press onto overlapping rects through `select.pick` — the action the
+ * `pointerDown` binding routes to — and asserts the topmost (last in array
+ * order = top in paint order) is selected.
  */
 import { describe, it, expect } from 'vitest';
 import { useRef, useState } from 'react';
-import { render, fireEvent } from '@testing-library/react';
-import { Canvas } from 'canvas/Canvas';
+import { renderHook, act } from '@testing-library/react';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelection } from 'core/selection/useSelection';
-import { useTools } from '../../useTools';
 import { useSelectTool } from './useSelectTool';
 import { asNodeId } from 'core/scene/types';
-import { ActiveToolContextProvider } from '../../../interactions/actions/activeToolContext';
+import type { Action } from '../../../interactions/actions/registry';
+import type { ActionDeps } from '../../../interactions/actions/invoker';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number }
 interface Pose { x: number; y: number; width: number; height: number }
 
-const C2W = (_c: HTMLCanvasElement, cx: number, cy: number): [number, number] => [cx, cy];
+/** Mounts the select tool over an array-adapter scene of the given rects, and
+ *  returns a `press(x, y)` that fires `select.pick` the way the dispatcher's
+ *  eager pointerdown does. No `pickEvery` is supplied — the point is to
+ *  exercise the default (rect AABB scan over `adapter.getNodes()`). */
+function harness(initial: Rect[]) {
+  const { result } = renderHook(() => {
+    const [rects, setRects] = useState<Rect[]>(initial);
+    const rectsRef = useRef(rects);
+    rectsRef.current = rects;
+    const sel = useSelection({ mode: 'single' });
 
-describe('useSelectTool — default pickEvery z-order', () => {
-  it('click on overlapping rects selects the topmost (last in array)', () => {
-    function Harness({ onSel }: { onSel: (ids: readonly string[]) => void }) {
-      // A and B fully overlap; B added second → painted on top.
-      const [rects, setRects] = useState<Rect[]>([
-        { id: 'A', x: 0, y: 0, width: 100, height: 100 },
-        { id: 'B', x: 0, y: 0, width: 100, height: 100 },
-      ]);
-      const rectsRef = useRef(rects);
-      rectsRef.current = rects;
-      const sel = useSelection({ mode: 'single' });
-      // Surface selection externally so the test can assert on it.
-      onSel(sel.current);
-
-      const base = arrayAdapter<Rect, Pose>({
-        ref: rectsRef,
-        setItems: setRects,
-        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-      });
-      const adapter = { ...base, ...sel.adapterMethods };
-
-      // No pickEvery / boundsOf — relies on the new defaults (rect AABB
-      // scan over adapter.getNodes()).
-      const selectTool = useSelectTool(adapter, {});
-      const tools = useTools({ active: 'select', registry: { select: selectTool } });
-
-      return (
-        <Canvas
-          width={200} height={200} layers={{}}
-          adapter={adapter} selection={sel} tools={tools}
-          clientToWorld={C2W}
-        />
-      );
-    }
-
-    let lastSel: readonly string[] = [];
-    const onSel = (ids: readonly string[]) => { lastSel = ids; };
-
-    const { container, rerender } = render(<ActiveToolContextProvider initialActive="select"><Harness onSel={onSel} /></ActiveToolContextProvider>);
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = () => {};
-
-    // Sub-threshold click in the overlap (50, 50). down → tiny move → up.
-    fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
-    fireEvent.pointerUp(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
-
-    rerender(<ActiveToolContextProvider initialActive="select"><Harness onSel={onSel} /></ActiveToolContextProvider>);
-    expect(lastSel).toEqual([asNodeId('B')]); // topmost wins
+    const base = arrayAdapter<Rect, Pose>({
+      ref: rectsRef,
+      setItems: setRects,
+      toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+    });
+    const adapter = { ...base, ...sel.adapterMethods };
+    return { tool: useSelectTool(adapter, {}), sel };
   });
 
-  it('three-rect stack: deepest in array wins on click', () => {
-    function Harness({ onSel }: { onSel: (ids: readonly string[]) => void }) {
-      const [rects, setRects] = useState<Rect[]>([
-        { id: 'A', x: 0, y: 0, width: 100, height: 100 },
-        { id: 'B', x: 0, y: 0, width: 100, height: 100 },
-        { id: 'C', x: 0, y: 0, width: 100, height: 100 },
-      ]);
-      const rectsRef = useRef(rects);
-      rectsRef.current = rects;
-      const sel = useSelection({ mode: 'single' });
-      onSel(sel.current);
-
-      const base = arrayAdapter<Rect, Pose>({
-        ref: rectsRef,
-        setItems: setRects,
-        toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
+  return {
+    press(x: number, y: number) {
+      const tool = result.current.tool as { actions?: readonly Action[] };
+      const invoker = tool.actions?.find((a) => a.id === 'select.pick')?.invoker;
+      if (invoker?.timing !== 'immediate') throw new Error('select.pick missing');
+      act(() => {
+        invoker.run({ selection: result.current.sel } as unknown as ActionDeps, {
+          worldX: x,
+          worldY: y,
+          mods: { alt: false, ctrl: false, meta: false, shift: false },
+        });
       });
-      const adapter = { ...base, ...sel.adapterMethods };
-      const selectTool = useSelectTool(adapter, {});
-      const tools = useTools({ active: 'select', registry: { select: selectTool } });
-      return (
-        <Canvas
-          width={200} height={200} layers={{}}
-          adapter={adapter} selection={sel} tools={tools}
-          clientToWorld={C2W}
-        />
-      );
-    }
+    },
+    selection: () => result.current.sel.current,
+  };
+}
 
-    let lastSel: readonly string[] = [];
-    const onSel = (ids: readonly string[]) => { lastSel = ids; };
+describe('useSelectTool — default pickEvery z-order', () => {
+  it('press on overlapping rects selects the topmost (last in array)', () => {
+    // A and B fully overlap; B added second → painted on top.
+    const h = harness([
+      { id: 'A', x: 0, y: 0, width: 100, height: 100 },
+      { id: 'B', x: 0, y: 0, width: 100, height: 100 },
+    ]);
+    h.press(50, 50);
+    expect(h.selection()).toEqual([asNodeId('B')]);
+  });
 
-    const { container, rerender } = render(<ActiveToolContextProvider initialActive="select"><Harness onSel={onSel} /></ActiveToolContextProvider>);
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = () => {};
-
-    fireEvent.pointerDown(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
-    fireEvent.pointerUp(canvas, { clientX: 50, clientY: 50, pointerId: 1 });
-
-    rerender(<ActiveToolContextProvider initialActive="select"><Harness onSel={onSel} /></ActiveToolContextProvider>);
-    expect(lastSel).toEqual([asNodeId('C')]);
+  it('three-rect stack: deepest in array wins on press', () => {
+    const h = harness([
+      { id: 'A', x: 0, y: 0, width: 100, height: 100 },
+      { id: 'B', x: 0, y: 0, width: 100, height: 100 },
+      { id: 'C', x: 0, y: 0, width: 100, height: 100 },
+    ]);
+    h.press(50, 50);
+    expect(h.selection()).toEqual([asNodeId('C')]);
   });
 });

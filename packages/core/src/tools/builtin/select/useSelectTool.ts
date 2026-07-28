@@ -7,10 +7,12 @@ import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
-import { defineTool, mods, begin, claim, none } from '../../routing';
-import type { ActionFn } from '../../routing';
+import { defineTool } from '../../routing';
 import type { UseMoveOptions } from '../../../interactions/actions/move/options';
 import type { BindingOpts } from '../../../interactions/actions/invoker';
+import type { Action } from '../../../interactions/actions/registry';
+import { ActionDisabledReason } from '../../../interactions/actions/registry';
+import type { SelectionApi } from 'core/selection/useSelection';
 import type { Tool } from '../../types';
 import type { DebugSink } from '../../../debug/types';
 import { pickTopMostHit } from '../pickTopMostHit';
@@ -64,28 +66,6 @@ export interface UseSelectToolOptions<TPose> {
    * clicking a different node exits edit mode as usual.
    */
   extendClickLocked?: () => boolean;
-  /**
-   * When this returns false, the pointerDown classifier must not change the
-   * node selection.
-   *
-   * `<SceneCanvas>` wires it to "the active mode allows `creates-selection`"
-   * — the same rule the `clearSelection` binding's
-   * `eligible: { capability: 'creates-selection' }` already enforces.
-   *
-   * The two disagreed: `Action.eligible` is evaluated only on the
-   * interactions dispatcher, and this classifier is a phase-table route on
-   * the OTHER pipeline, where no eligibility check exists at all (audit 3.4).
-   * So in `path-edit` mode — which allows only `edits-anchors` — clicking a
-   * shape still re-selected it while clicking empty canvas correctly did
-   * nothing. One tool, one gesture family, opposite gating, decided purely by
-   * which dispatch system the route happened to live in.
-   *
-   * This is the interim per-route patch the audit recommends. The structural
-   * fix is retiring the phase-table grammar so `Action.eligible` covers
-   * everything uniformly; that is blocked on the pen port's scratch-selector
-   * decision (see the 2026-07-27 inspector handoff §4b).
-   */
-  selectionAllowed?: () => boolean;
   /** Optional debug sink. Reserved for future overlay/affordance hitbox
    *  recording. */
   debug?: DebugSink;
@@ -104,16 +84,37 @@ export type SelectAdapter<TNode extends { id: string }, TPose> =
   MoveAdapter<TNode, TPose>
   & AreaSelectAdapter;
 
-/** @internal */
-export type SelectScratch =
-  | { kind: 'idle' }
-  | { kind: 'move'; ids: string[]; deferredClickId: string | null }
-  | { kind: 'area' };
+/**
+ * What the press classified, carried from `select.pick` (pointerDown) to
+ * `select.collapseDeferred` (click) and to the tool's cursor.
+ *
+ * This is tool-local bookkeeping between two dispatches of the same gesture,
+ * so it lives in a ref the tool owns rather than in dispatcher state. It used
+ * to be the tool's `SelectScratch`, held by the tool-routing dispatcher, and
+ * carried an `ids` list that nothing ever read — `moveAction` computes its own
+ * ids from the live selection.
+ *
+ * @internal
+ */
+interface PressClassification {
+  /** `'body'` when the press landed on a node, `'empty'` otherwise. Read only
+   *  by the cursor. */
+  kind: 'idle' | 'body' | 'empty';
+  /**
+   * Set when the press hit an already-selected node inside a multi-selection
+   * with no extend modifier.
+   *
+   * The selection is deliberately NOT collapsed on the press: the user may be
+   * starting a drag of the whole set. If the gesture turns out to be a click,
+   * `select.collapseDeferred` collapses to this id on release.
+   */
+  deferredClickId: string | null;
+}
 
 /** Active-slot Tool:
- *  - pointerDown classifier still runs the tool's own pickBest/pickEvery
- *    so click semantics (selection replace, extend, deferred collapse) are
- *    preserved across the same code path.
+ *  - `select.pick` classifies the press (pointerDown) — it runs the tool's own
+ *    pickBest/pickEvery so click semantics (selection replace, extend,
+ *    deferred collapse) live in one place.
  *  - drag is owned exclusively by the dispatcher via `Tool.bindings`
  *    (selected-body → moveAction, rotate-handle → rotateAction, handle:* →
  *    resizeAction, empty → areaSelectAction, click on empty → clearSelection).
@@ -124,7 +125,7 @@ export type SelectScratch =
 export function useSelectTool<TNode extends { id: string }, TPose>(
   adapter: SelectAdapter<TNode, TPose>,
   options: UseSelectToolOptions<TPose>,
-): Tool<SelectScratch> {
+): Tool<null> {
 
   // pickEvery / boundsOf defaults — for any rect-pose adapter the kit can
   // derive both from `adapter.getNodes()` + `adapter.getPose(id)` +
@@ -204,67 +205,138 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   const pickEveryRef = useRef(pickEveryFn);
   pickEveryRef.current = pickEveryFn;
 
-  // pointerDown classifier — declarative route table that classifies the
-  // upcoming gesture into scratch (move vs. area) so click handlers can
-  // distinguish deferred-collapse from deferred-clear cases.
-  const pointerDownBody: ActionFn<SelectScratch> = (ctx) => {
-    const sel = ctx.selection.current;
-    const top = options.pickBest
-      ? options.pickBest(ctx.worldX, ctx.worldY, ctx.modifiers.alt, sel)
-      : (() => {
-          const ids = pickEveryFn(ctx.worldX, ctx.worldY);
-          if (ids.length === 0) return null;
-          return pickTopMostHit(ids, adapter) ?? ids[0];
-        })();
-    if (top !== null) {
-      const preClick = sel;
-      const hitAlreadySelected = preClick.includes(top as NodeId);
-      const isExtend = ctx.modifiers.shift || ctx.modifiers.meta;
-      // While a path is in anchor-edit mode, an extend-click belongs to the
-      // anchor selection, not the node selection. Letting it through would
-      // toggle the edited node out of the node selection, which the
-      // `editAnchors` dep reads as "the edit target is gone" — so
-      // shift-clicking a second anchor silently tore down edit mode.
-      // Plain clicks still fall through: clicking a different node exits
-      // edit mode, which is what you'd expect.
-      const extendLocked = isExtend && options.extendClickLocked?.() === true;
-      const deferClick = hitAlreadySelected && preClick.length > 1 && !isExtend;
-      const allowed = options.selectionAllowed?.() ?? true;
-      if (allowed && !deferClick && !extendLocked) {
-        ctx.selection.applyClick(top as NodeId, ctx.modifiers);
-      }
-      const moveIds: string[] = hitAlreadySelected && preClick.length > 0 ? [...preClick] : [top];
-      const moveScratch: SelectScratch = {
-        kind: 'move',
-        ids: moveIds,
-        deferredClickId: deferClick ? top : null,
-      };
-      return begin<SelectScratch>({ scratch: moveScratch });
-    }
-    const areaScratch: SelectScratch = { kind: 'area' };
-    return begin<SelectScratch>({ scratch: areaScratch });
-  };
+  // What the last press classified. Written by `select.pick`, read by
+  // `select.collapseDeferred` and the cursor. See `PressClassification`.
+  const pressRef = useRef<PressClassification>({ kind: 'idle', deferredClickId: null });
 
-  // Click action handlers. Run on sub-threshold release after the
-  // pointerDown classifier has populated scratch + selection.
-  const collapseDeferredClick: ActionFn<SelectScratch> = (ctx) => {
-    if (options.selectionAllowed?.() === false) return none();
-    if (ctx.scratch.kind === 'move' && ctx.scratch.deferredClickId !== null) {
-      ctx.selection.applyClick(ctx.scratch.deferredClickId as NodeId, ctx.modifiers);
-      return claim();
-    }
-    return none();
-  };
+  // Options in a ref so the actions — built once — always see the live
+  // callbacks without rebuilding the Tool record.
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const adapterRef = useRef(adapter);
+  adapterRef.current = adapter;
+
+  /**
+   * `select.pick` — classifies the press and updates the node selection.
+   *
+   * Bound to `pointerDown` rather than `click` on purpose: pressing an
+   * unselected node must highlight it while the button is still down, and any
+   * drag that follows has to start from the updated selection (both
+   * `moveAction` and `cloneAction` read `selection.get()` in their `start`).
+   *
+   * Eligibility replaces the `selectionAllowed` option the audit added as an
+   * interim per-route patch: this action carries the same
+   * `creates-selection` capability rule the `clearSelection` binding declares,
+   * so a mode that forbids selection now gates both halves of the tool by one
+   * mechanism instead of by which dispatcher the route happened to live on.
+   */
+  const pickAction = useMemo<Action>(() => ({
+    id: 'select.pick',
+    label: 'Select — pick under pointer',
+    eligible: { capability: 'creates-selection' },
+    requires: ['selection'],
+    invoker: {
+      timing: 'immediate' as const,
+      run: (deps, params) => {
+        const p = params as {
+          worldX?: number; worldY?: number;
+          mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
+        } | undefined;
+        const selection = deps.selection as SelectionApi | undefined;
+        if (!selection || p?.worldX === undefined || p.worldY === undefined) return;
+        const mods = p.mods ?? { alt: false, ctrl: false, meta: false, shift: false };
+        const opts = optionsRef.current;
+
+        const sel = selection.get();
+        const top = opts.pickBest
+          ? opts.pickBest(p.worldX, p.worldY, mods.alt, sel)
+          : (() => {
+              const ids = pickEveryRef.current(p.worldX, p.worldY);
+              if (ids.length === 0) return null;
+              return pickTopMostHit(ids, adapterRef.current) ?? ids[0];
+            })();
+
+        if (top === null) {
+          pressRef.current = { kind: 'empty', deferredClickId: null };
+          return;
+        }
+
+        const hitAlreadySelected = sel.includes(top as NodeId);
+        const isExtend = mods.shift || mods.meta;
+        // While a path is in anchor-edit mode, an extend-click belongs to the
+        // anchor selection, not the node selection. Letting it through would
+        // toggle the edited node out of the node selection, which the
+        // `editAnchors` dep reads as "the edit target is gone" — so
+        // shift-clicking a second anchor silently tore down edit mode.
+        // Plain clicks still fall through: clicking a different node exits
+        // edit mode, which is what you'd expect.
+        //
+        // This stays an option rather than becoming `Action.enabled` because
+        // it only applies to *extend* presses, and `enabled` is evaluated
+        // without the event's modifiers.
+        const extendLocked = isExtend && opts.extendClickLocked?.() === true;
+        const deferClick = hitAlreadySelected && sel.length > 1 && !isExtend;
+        if (!deferClick && !extendLocked) {
+          selection.applyClick(top as NodeId, mods);
+        }
+        pressRef.current = {
+          kind: 'body',
+          deferredClickId: deferClick ? top : null,
+        };
+      },
+    },
+  }), []);
+
+  /**
+   * `select.collapseDeferred` — the release half of the deferred multi-click.
+   *
+   * Pressing an already-selected node inside a multi-selection leaves the
+   * selection alone so the press can start a drag of the whole set. If the
+   * gesture ends without a drag, this collapses to the clicked node.
+   */
+  const collapseDeferredAction = useMemo<Action>(() => ({
+    id: 'select.collapseDeferred',
+    label: 'Select — collapse deferred click',
+    eligible: { capability: 'creates-selection' },
+    requires: ['selection'],
+    // Declining when there is nothing deferred is what keeps this binding
+    // from swallowing every click. It is bound with no target (any click can
+    // in principle be the release of a deferred press) at ACTIVE scope, so
+    // without the gate it would outrank ambient click bindings like
+    // `selectAnchor` and silently break anchor selection. Same fall-through
+    // contract `clearSelection.enabled` relies on.
+    enabled: () =>
+      pressRef.current.deferredClickId !== null
+        ? true
+        : ActionDisabledReason.NotApplicable,
+    invoker: {
+      timing: 'immediate' as const,
+      run: (deps, params) => {
+        const deferred = pressRef.current.deferredClickId;
+        pressRef.current = { kind: 'idle', deferredClickId: null };
+        if (deferred === null) return;
+        const selection = deps.selection as SelectionApi | undefined;
+        if (!selection) return;
+        const p = params as {
+          mods?: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean };
+        } | undefined;
+        selection.applyClick(
+          deferred as NodeId,
+          p?.mods ?? { alt: false, ctrl: false, meta: false, shift: false },
+        );
+      },
+    },
+  }), []);
 
   return useMemo(
     () => {
-      const base = defineTool<SelectScratch>({
+      const base = defineTool<null>({
         id: 'select',
         capabilities: ['creates-selection'],
         hookName: 'useSelectTool',
-        cursor: (ctx) => {
-          if (ctx.scratch?.kind === 'move') return 'move';
-          if (ctx.scratch?.kind === 'area') return 'crosshair';
+        cursor: () => {
+          if (pressRef.current.kind === 'body') return 'move';
+          if (pressRef.current.kind === 'empty') return 'crosshair';
           return 'default';
         },
         presentation: {
@@ -272,25 +344,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           icon: createElement(SelectIcon),
           group: 'select',
         },
-        initial: {
-          // pointerDown: body-hit / empty classifier. Runs the tool's own
-          // `pickBest` / `pickEveryFn` regardless of `ctx.target.kind` to
-          // preserve the pre-routing semantic.
-          pointerDown: {
-            '*': pointerDownBody,
-          },
-          // Click route table — modifier sub-tables handle the empty-target
-          // modifier variants; the `clearSelection` binding (in
-          // `Tool.bindings` below) handles the plain (no-modifier) case.
-          click: {
-            '*': collapseDeferredClick,
-            empty: {
-              [mods('shift')]:   () => none(),
-              [mods('mod')]:     () => none(),
-              [mods('mod', 'shift')]: () => none(),
-            },
-          },
-        },
+        actions: [pickAction, collapseDeferredAction],
+        initial: {},
       });
 
       // Shared move-binding opts (reparent-on-drop + behaviors). Applied to
@@ -310,15 +365,38 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
 
       return {
         ...base,
-        initScratch: () => ({ kind: 'idle' as const }),
-        // Declarative drag bindings for the gesture dispatcher.
+        // Declarative bindings for the gesture dispatcher.
         // Binding priority (first match wins):
+        //   0. Press → classify + select (runs before click/drag classification).
         //   1. Handle drags (resize) — guard on AffordanceHit kind.
         //   2. Rotate-handle drag — single-selection rotation.
         //   3. Body drag (selected OR unselected) — move the selection.
         //   4. Empty drag — marquee area-select.
         //   5. Click on empty (no modifiers) → clear selection.
         bindings: [
+          // Every press, whatever it hits and whatever is held. This is the
+          // former `initial.pointerDown['*']` route: it classifies the press
+          // and applies the selection change, and it does not consume the
+          // gesture — the same press goes on to open a drag or synthesize a
+          // click. Modifiers are all `'optional'` because they are *data*
+          // here (forwarded to `SelectionApi.applyClick`, which resolves them
+          // against the host's configured extend key) rather than a route.
+          {
+            spec: {
+              kind: 'pointerDown' as const,
+              mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
+            },
+            actionId: 'select.pick',
+          },
+          // Release half of the deferred multi-click. Same `'optional'`
+          // modifiers, same reason.
+          {
+            spec: {
+              kind: 'click' as const,
+              mods: { shift: 'optional' as const, alt: 'optional' as const, meta: 'optional' as const, ctrl: 'optional' as const },
+            },
+            actionId: 'select.collapseDeferred',
+          },
           { spec: { kind: 'drag' as const, target: { kindOf: isResizeHandle } }, actionId: 'resize' },
           { spec: { kind: 'drag' as const, target: { kindOf: isRotateHandle } }, actionId: 'rotate' },
           // Alt-drag on a body → clone (Illustrator convention).
@@ -374,6 +452,6 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pickEveryFn, options.pickBest, options.debug, options.reparentOnDrop, options.move],
+    [options.debug, options.reparentOnDrop, options.move, pickAction, collapseDeferredAction],
   );
 }
