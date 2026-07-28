@@ -1,7 +1,9 @@
 /**
  * @experimental
- * Actions Registry — owns one `keydown` listener per scope and dispatches to
- * registered `Action` descriptors. Spec: docs/superpowers/specs/2026-05-09-actions-registry-design.md
+ * Actions Registry — owns the registered `Action` descriptors and the
+ * imperative `trigger` path. Keystrokes reach actions through the gesture
+ * dispatcher matching their `defaultBinding`, not through a listener here.
+ * Spec: docs/superpowers/specs/2026-05-09-actions-registry-design.md
  */
 import {
   createContext,
@@ -352,8 +354,9 @@ const ActionsContext = createContext<ActionsRegistry | null>(null);
 
 /**
  * @experimental
- * Mounts an `ActionsRegistry` and one `document` keydown listener for its
- * lifetime. Children call `useActionsRegistry()` or `useAction()` to participate.
+ * Mounts an `ActionsRegistry` for its lifetime. Children call
+ * `useActionsRegistry()` or `useAction()` to participate. Mounts no input
+ * listener of its own — the gesture dispatcher owns input.
  */
 export function ActionsProvider({ children }: { children: ReactNode }): ReactElement {
   const actionsRef = useRef<Map<string, Action>>(new Map());
@@ -379,12 +382,10 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const dispatcherRef = useRef<Dispatcher | null>(null);
 
   // The legacy keystroke loop that walked every action's
-  // `defaultBinding: KeyBinding` and matched against keydown is gone. All
-  // kit-standard descriptors now route through the gesture dispatcher via
-  // `defaultBinding`. Consumer-facing hooks (`useEscape`, `useDelete`, ...)
-  // keep their own `useKeybinding` listener (gated by `reg == null` for
-  // kit-standard-covered ones; ungated for clipboard which has no kit
-  // counterpart).
+  // `defaultBinding: KeyBinding` and matched against keydown is gone, along
+  // with the per-action consumer hooks (`useEscape`, `useDelete`, ...) that
+  // carried their own `useKeybinding` listener. Every kit-standard descriptor
+  // now routes through the gesture dispatcher via `defaultBinding`.
 
   const registry = useMemo<ActionsRegistry>(() => {
     const snapshot = (): readonly Action[] => {

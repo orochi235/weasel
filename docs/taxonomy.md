@@ -428,9 +428,11 @@ they fit.
   per-action gesture hooks (`useMove`, `useResize`, `useRotate`, `useAreaSelect`,
   `useInsert`, `useClone`, `useEditAnchors`) are gone; their behavior lives in
   the action descriptors under `interactions/actions/`.
-- **Actions** (depend on selection + scene): `useDuplicate`, `useDelete`,
-  `useNudge`, `useReorder`, `useSelectAll`, `useEscape`, plus the
-  [Actions Registry](#action) defaults.
+- **Actions** (depend on selection + scene): the
+  [Actions Registry](#action) and its descriptors — `duplicate`, `delete`,
+  `nudge.*`, `reorder.*`, `selectAll`, `escape`, and the rest. The per-action
+  hooks that used to wrap these (`useDuplicate`, `useDelete`, …) are gone;
+  `useStandardActions` registers the descriptors instead.
 - **Tools** (depend on gestures + actions): `useSelectTool`, `useRectTool` and
   the other shape tools, `useHandTool`, `usePenTool`, the viewport tools.
 - **Top-level** (depends on most things): `<Canvas>`, `<SceneCanvas>`.

@@ -52,12 +52,6 @@ Priority tags:
 
 ## Tools & gestures
 
-- **(P3) `docs/hooks.md` documents deleted gesture hooks.** `useAreaSelect`,
-  `useClone`, `useMove`, `useResize`, `useRotate`, `useInsert`,
-  `useEditAnchors` all have reference entries; the hooks were replaced by
-  action descriptors. `docs/taxonomy.md` was corrected in the audit
-  follow-up; `hooks.md` needs the same pass.
-
 - **(P3) SVG-file ingestion — follow-ups.** Shipped 2026-07-04: `kit:svg`
   content handler (`packages/core/src/features/ingestion/svgHandler.ts`, priority -90 —
   ahead of `kit:image`, behind consumer handlers) matching `image/svg+xml`
@@ -229,7 +223,7 @@ Core five + Crop shipped. Remaining:
 
 ### Tiling
 
-- **(P3) Tiled-content layer primitive.** Surfaced 2026-05-17 by the ParallaxDemo loop work (`4c0e98ef`). The demo's local `tiledProject` helper walks every visible copy of a shape along a periodic x axis, giving seamless infinite-pan looping for free. Generalized shape: a `createTiledLayer<TData>({ source, period, axis? })` wrapper that takes any RenderLayer and produces a periodic version, with `tiledProject(visStart, visEnd, period)` as a public helper. Composes cleanly with `createParallaxLayer`. Open questions: 2D wrap (`period: number | { x, y }`); period as a function of view/dims vs constant; per-shape vs per-layer period. Demo today: `demo/demos/ParallaxDemo.tsx`. Likely lives at `packages/core/src/features/tiling/` or alongside `createParallaxLayer` in `packages/core/src/features/parallax/`.
+- **(P3) Tiled-content layer primitive.** Surfaced 2026-05-17 by the ParallaxDemo loop work (`4c0e98ef`). The demo's local `tiledProject` helper walks every visible copy of a shape along a periodic x axis, giving seamless infinite-pan looping for free. Generalized shape: a `createTiledLayer<TData>({ source, period, axis? })` wrapper that takes any RenderLayer and produces a periodic version, with `tiledProject(visStart, visEnd, period)` as a public helper. Composes cleanly with `createParallaxLayer`. Open questions: 2D wrap (`period: number | { x, y }`); period as a function of view/dims vs constant; per-shape vs per-layer period. Demo today: `apps/site/demos/ParallaxDemo.tsx`. Likely lives at `packages/core/src/features/tiling/` or alongside `createParallaxLayer` in `packages/core/src/features/parallax/`.
 
 ### Units
 
@@ -255,7 +249,7 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) Silhouette area-select for geometry-in-`data` shapes.** The 2026-06-20 geometry-migration #3 made marquee/lasso area-select silhouette-aware (`packages/core/src/canvas/deps/hitTestArea.ts`, kernel `pointInPolygon`/`segmentsCross`), but it reads geometry from the **pose** only (`(pose as PolygonPath).coords`). So it fires for polygon-pose consumers and `geometryProjection`-synced nodes, but is inert for the kit's own inserted shapes (rect/ellipse/polygon/star/line/pencil), which store geometry in `node.data.path`/`data.shape` behind a plain `{x,y,w,h}` pose → these take the AABB fast-path. This is **not a regression** (the old rect-only `hitTestAABB` was equally AABB-only for them), but the silhouette benefit isn't realized for default kit geometry. Follow-up: route `hitTestArea`'s silhouette branch through `findShapeSilhouette`/`node.data` (world-frame; mind the coordinate frame) so kit-produced shapes also drop AABB false-positives. Either that or make `geometryProjection` the default so the pose always carries the silhouette.
 
-- **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `demo/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
+- **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
 - **(P2) Op coalescing in `useScene`.** Done 2026-07-25 — `createScene` now delegates undo/redo to a `@weasel-js/history` instance (design: `docs/superpowers/specs/2026-07-25-unify-scene-history-engine-design.md`); opt-in via `UseSceneOptions.coalesceWindowMs` (default `0` = discrete entries, prior behavior), also forwarded through `sceneFromJSON`. The engine gained `historyLimit` + `onEvict` + O(1) `undoDepth`/`redoDepth`; `applyBatch`'s non-journal fork now records the external ops themselves on the same engine, so external-op batches coalesce too. Follow-up shipped 2026-07-25: scene undo history persists across reload (design: `docs/superpowers/specs/2026-07-25-scene-history-persistence-design.md` — `Scene.serializeHistory`/`restoreHistory`/`setHistoryAdapter`, engine `rebuildOp` hook, `clipKey` threading, draw wiring under `weaseldraw:scene-history-v1` with `defaultCommitAdapter` replay). Phase 2b (OS clipboard) shipped 2026-07-25 — see the Clipboard entry.
 
@@ -365,7 +359,7 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 ## Demos & visual regression
 
-- **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`demo/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
+- **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
 
 ### Canvas / SceneCanvas seam
 

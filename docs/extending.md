@@ -1,7 +1,8 @@
 # Extending weasel
 
-Three common extension points: custom layers, custom gesture behaviors, and
-non-rect poses.
+Four common extension points: custom layers, custom affordances, custom
+gesture behaviors, and non-rect poses — plus writing a whole new action when
+none of those fit.
 
 ## Custom layers
 
@@ -51,7 +52,7 @@ Affordances are reusable chrome primitives. Each affordance is a small object: `
 import {
   createCornerResizeAffordance,
   composeAffordanceLayer,
-  type Affordance,
+  defineTool,
 } from '@weasel-js/core';
 
 // 1. Build an affordance instance via a kit-shipped factory.
@@ -60,39 +61,22 @@ const corners = createCornerResizeAffordance({
   handleSize: 8,         // screen-px visual size
 });
 
-// 2. Wrap if you need to substitute the affordance's stub drag channel
-//    with one that drives your own gesture controllers:
-const wrappedCorners: Affordance = {
-  id: corners.id,
-  render: corners.render,
-  hitTest: (wx, wy, state, view) => {
-    const inner = corners.hitTest?.(wx, wy, state, view);
-    if (!inner) return null;
-    const scratch = inner.initialScratch as { anchor: ResizeAnchor; targetId: string };
-    return {
-      drag: {
-        onStart: (_e, ctx) => { /* call into your useResize controller */ return 'claim'; },
-        onMove:  (_e, ctx) => { /* ... */ return 'claim'; },
-        onEnd:   (_e, ctx) => { /* ... */ return 'claim'; },
-        onCancel: () => { /* ... */ },
-      },
-      initialScratch: scratch,
-    };
-  },
-};
-
-// 3. Compose multiple affordances into a single overlay RenderLayer.
+// 2. Compose multiple affordances into a single overlay RenderLayer.
 const overlay = composeAffordanceLayer(
   'my-tool-overlay',
   'My tool chrome',
-  [wrappedCorners /*, ...other affordances */],
+  [corners /*, ...other affordances */],
 );
 
-// 4. Plug it into your tool's overlay field:
+// 3. Plug it into your tool's overlay field, and bind the gestures that
+//    should reach your actions when a press lands on that chrome.
 const myTool = defineTool({
   id: 'my-tool',
   overlay,
-  // ... drag, pointer, keyboard channels ...
+  actions: [myResizeAction],
+  bindings: [
+    { spec: { kind: 'drag', target: { kindOf: isMyHandle } }, actionId: 'my-tool.resize' },
+  ],
 });
 ```
 
@@ -110,7 +94,9 @@ A tool that must not lose a gesture to chrome does it in the binding, by declini
 
 ## Custom gesture behaviors
 
-A behavior plugs into a hook's `options.behaviors` array:
+A behavior plugs into an action's behavior chain — via `BindingOpts.behaviors`
+on the binding that reaches it, or via the options `<SceneCanvas>` forwards
+(`selectTool.move.behaviors`, `selectTool.snap`, …):
 
 ```ts
 interface ActionBehavior<TPose, TProposed, TMoveResult> {
@@ -121,7 +107,7 @@ interface ActionBehavior<TPose, TProposed, TMoveResult> {
 }
 ```
 
-Each hook pins the proposed/result shape; pick the matching alias
+Each action pins the proposed/result shape; pick the matching alias
 (`MoveBehavior<TPose>`, `ResizeBehavior<TPose>`, `InsertBehavior<TPose>`,
 `AreaSelectBehavior`, `CloneBehavior`).
 
@@ -132,7 +118,7 @@ Each hook pins the proposed/result shape; pick the matching alias
   array order — later behaviors see your refinement.
 - `onEnd` decides commit ops. First non-`undefined` return wins: `Op[]`
   commits, `null` aborts, `undefined` falls through to the next behavior
-  or the hook's default ops (move emits one `createTransformOp` per id).
+  or the action's default ops (move emits one `createTransformOp` per id).
 - `ctx.scratch` is a per-gesture mutable map, wiped on every `start`.
   Namespace by behavior id to avoid collisions:
   `ctx.scratch['snapToContainer']`.
@@ -165,9 +151,10 @@ export interface PoseDescriptor<TPose> {
 my AABB to dst") and group resize ("scale me as a leaf inside parent's
 src→dst rect") — they're the same affine map.
 
-Pass via `<Canvas geometry={pathPoseDescriptor}>`. The descriptor drives
-the default `pickEvery`, `boundsOf`, the selection-overlay bounds source,
-and `useResize`'s remap.
+Pass via `<SceneCanvas geometry={{ pickEvery, boundsOf }}>` for the hit-test
+and bounds overrides, and via the pose-descriptor seam for the math. The
+descriptor drives the default `pickEvery`, `boundsOf`, the selection-overlay
+bounds source, and the `resize` action's remap.
 
 The kit ships:
 
@@ -176,44 +163,93 @@ The kit ships:
 
 For grid snapping on a non-rect pose, also pass an `OriginProjection`:
 
-```ts
-import { gridSnapStrategy, snap, pathOriginProjection } from '@weasel-js/core';
+```tsx
+import { gridSnapStrategy, pathOriginProjection } from '@weasel-js/core';
 
-useMove(adapter, {
-  translatePose: pathPoseDescriptor.translate,
-  behaviors: [snap(gridSnapStrategy(20, { origin: pathOriginProjection }))],
+<SceneCanvas
+  selectTool={{ snap: gridSnapStrategy(20, { origin: pathOriginProjection }) }}
+  …
+/>;
+```
+
+`<SceneCanvas>` folds `selectTool.snap` into the `move` action's behavior
+chain.
+
+**Translation is a separate question.** `moveAction`'s `scene` dep is typed
+`Scene<unknown, string, unknown>`, so poses are read and written as `unknown`
+and `translatePoseGeneric` falls back to `RECT_POSE_DESCRIPTOR.translate`,
+which treats any pose as `{ x, y, … }`. Two ways out for a non-rect pose:
+
+- wire the **`geometryProjection`** dep, which `translatePoseGeneric` consults
+  before the rect fallback; or
+- register your own descriptor under the `move` id with a typed
+  `translatePose`.
+
+For an end-to-end working demo of all of the above, see
+`apps/site/demos/CompoundPathsDemo.tsx`.
+
+## Custom actions
+
+When no behavior can express what you want — a different commit shape, a
+different overlay, a gesture the kit doesn't ship — write an **action**, not a
+hook. An action is a static descriptor; you register it and bind a gesture to
+it.
+
+```ts
+import type { Action, InvocationCtx, OngoingHandle } from '@weasel-js/core';
+
+export const smearAction: Action = {
+  id: 'my-app.smear',
+  label: 'Smear',
+  requires: ['scene', 'selection', 'applyOps'],
+  invoker: {
+    timing: 'ongoing',
+    start: (ctx: InvocationCtx): OngoingHandle => {
+      const origin = snapshotPoses(ctx.deps);
+      return {
+        kind: 'smear',                       // what getActiveAction() reports
+        onMove: (m) => { /* update preview state */ },
+        previewIds: () => origin.keys(),     // → preview-ghost layer
+        previewPose: (id) => computed.get(id),
+        onEnd: (e, reason) => {
+          if (reason === 'cancel') return;
+          (e.deps.applyOps as ApplyOps)(buildOps(), 'Smear');
+        },
+      };
+    },
+  },
+};
+```
+
+Then reach it — ambiently via `defaultBinding`, or from a tool:
+
+```ts
+const smearTool = defineTool({
+  id: 'smear',
+  actions: [smearAction],
+  bindings: [{ spec: { kind: 'drag', target: 'selected-body' }, actionId: 'my-app.smear' }],
 });
 ```
 
-`<Canvas>` derives `translatePose` from `geometry.translate` automatically
-(see `derivedMoveOptions` in `Canvas.tsx`); for the lower-level case where
-you call `useMove` yourself, set it explicitly.
+What you get for free by doing it this way: the dispatcher owns the
+threshold, the gesture id, cancel-on-blur/Escape, and the
+`commit`-vs-`cancel` distinction; `previewIds` / `previewPose` /
+`previewData` render through the same preview-ghost layer everything else
+uses; `overlay()` covers non-ghost chrome; and the action is triggerable from
+a palette or toolbar via `registry.trigger('my-app.smear')` without a second
+code path.
 
-For an end-to-end working demo of all of the above, see
-`demo/demos/CompoundPathsDemo.tsx`.
+**Reference implementations** — all under
+`packages/core/src/interactions/actions/defaults/`:
 
-## Custom hooks
-
-If the gesture shape doesn't fit (different proposed-pose pipeline,
-different overlay, different commit timing), write a new hook. The shared
-structure across move/resize/insert/area-select:
-
-1. State machine with `useRef` (`phase: 'idle' | 'pending' | 'active'`).
-   Snapshot origin poses on `start`. Move flips to `active` past
-   `dragThresholdPx` (or immediately, depending on the gesture).
-2. Build `GestureContext` on `start`: `draggedIds`, `origin`, `current`,
-   `modifiers`, `pointer`, `adapter`, empty `scratch`. Update modifiers
-   and pointer on every `move`.
-3. On each `move`, compute proposed pose from raw delta, then fold each
-   `behavior.onMove?.(ctx, proposed)` into the running `proposed`.
-4. `useState` an overlay; `setOverlay(...)` after each move.
-5. Commit at `end`: walk behaviors looking for `onEnd` returns. `null` →
-   cancel, `Op[]` → commit those, all `undefined` → hook's default ops.
-6. Transient resolution: `transient = options.transient ??
-   behaviors.some(b => b.defaultTransient)`. Transient → `applyOps`,
-   otherwise → `dispatchApplyBatch`.
-
-`useMove` is the fullest reference (pending/active threshold, multi-id,
-behavior chain, default ops). `useAreaSelect` is the simplest transient
-example. `useClone` shows a hook that opts out of the proposed-pose
-pipeline entirely.
+- `move.ts` — the fullest: threshold, multi-id, behavior chain, layout
+  reflow, reparent-on-commit.
+- `areaSelect.ts` — the simplest ongoing action, with `overlay()` rather than
+  ghosts (marquee displaces nothing).
+- `clone.ts` — opts out of the shared pose pipeline and sets
+  `previewHidesSource: false` so the original stays put.
+- `editAnchors.ts` — emits `previewData` rather than `previewPose`, for edits
+  that live in `node.data` instead of the pose.
+- `delete.ts` — a minimal `timing: 'immediate'` one-shot.
+- `@weasel-js/hud`'s `src/tool.ts` — a package outside core owning its own
+  input, gating three bindings on a `layer:<id>` affordance kind.

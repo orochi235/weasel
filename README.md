@@ -31,24 +31,31 @@ npm install @weasel-js/core react
 
 Every interaction takes a small, narrow **adapter** — a few methods that read the current scene and apply ops back. The kit doesn't own your scene; it asks. That keeps it agnostic to whether your scene lives in React state, Zustand, Redux, or a CRDT.
 
+Interactions are **actions** — static descriptors registered into an actions
+registry — reached by **gesture bindings**. A tool is an array of
+`{ spec, actionId }` pairs; nothing more.
+
 ```tsx
-import { useMove, useDelete, createHistory, snap, gridSnapStrategy } from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection, gridSnapStrategy } from '@weasel-js/core';
 
-const history = createHistory(adapter);
+const scene = useScene();
+const selection = useSelection({ mode: 'multi' });
 
-// Drag-to-move with snapping, history, and parent reparenting:
-const move = useMove(adapter, {
-  behaviors: [snap(gridSnapStrategy(20))],
-});
-
-// Selection-aware delete with Backspace/Delete bound:
-useDelete(adapter, { bindKeyboard: true });
+// Click-to-select, drag-to-move with grid snapping, corner-handle resize,
+// marquee, and the standard keyboard actions (Cmd+A, Cmd+Z, Delete, …):
+<SceneCanvas
+  scene={scene}
+  selection={selection}
+  layers={{ grid: { spacing: 20 }, selectionOverlay: { handles: true } }}
+  selectTool={{ snap: gridSnapStrategy(20) }}
+/>;
 ```
 
-Most apps don't call the gesture hooks directly — `<SceneCanvas>` owns useMove /
-useResize / useInsert / useAreaSelect / useSelection internally. Drop in a
-`useScene()` tree and a `layers` map and you get click-to-select, drag-to-move,
-corner-handle-resize, and an `tool="insert"` mode for free.
+`<SceneCanvas>` mounts the actions registry, the dep registry, and the gesture
+dispatcher, and registers the kit-standard action set. To change a behavior you
+override the descriptor by id, bind a different gesture to it, or register your
+own — you don't call a hook per interaction. See
+[docs/hooks.md](./docs/hooks.md) for the full action table.
 
 See the live demo for a full working example: <https://orochi235.github.io/weasel/>
 
@@ -70,7 +77,7 @@ Core doesn't ship a prebuilt atlas — bake one with `npm run gen:font -- <font.
 
 ## Actions registry
 
-`<ActionsProvider>` wires a single `keydown` listener and dispatches to a registry of `Action` descriptors. `<SceneCanvas>` auto-mounts a provider (if no parent provider exists) and registers default actions for select-all, escape, duplicate, nudge, and reorder, all derived from the scene/selection/adapter it already owns.
+`<ActionsProvider>` owns a registry of `Action` descriptors; the gesture dispatcher matches input against each descriptor's `defaultBinding` (and against the active tool's `bindings`) and invokes it with deps resolved from the dep registry. `<SceneCanvas>` auto-mounts a provider (if no parent provider exists) and registers the ~50 kit-standard actions — select-all, escape, delete, duplicate, undo/redo, nudge, reorder, group, align, distribute, pathfinder, plus the pointer-driven move/resize/rotate/insert/marquee set — all derived from the scene/selection/adapter it already owns.
 
 ```tsx
 import { ActionsProvider, SceneCanvas } from '@weasel-js/core';
@@ -83,15 +90,18 @@ import { ActionsProvider, SceneCanvas } from '@weasel-js/core';
       selectAll: null,                              // disable the default Cmd+A
       copy: {                                       // add an app-specific action
         label: 'Copy',
-        defaultBinding: { key: 'c', mod: true },
-        run: () => clipboard.copy(selection.current),
+        defaultBinding: { kind: 'key', key: 'c', mods: { mod: true } },
+        invoker: {
+          timing: 'immediate',
+          run: () => clipboard.copy(selection.current),
+        },
       },
     }}
   />
 </ActionsProvider>
 ```
 
-The `actions` prop accepts `null` (disable all defaults), a partial override of any default by id, or a full `Action` descriptor for new ids. Consumers that need finer control can call individual hooks (`useSelectAll`, `useEscape`, `useDuplicate`, `useNudge`, `useReorder`) which auto-register into a parent provider when present and fall back to direct keybindings when not.
+The `actions` prop accepts `null` (disable all defaults), a partial override of any default by id, or a full `Action` descriptor for new ids. There is no per-action hook to reach for — finer control means overriding the descriptor, changing what gesture binds to it, or triggering it imperatively via `registry.trigger(id, params)`.
 
 ## Custom shaders (`@experimental`)
 

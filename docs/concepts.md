@@ -4,11 +4,14 @@ The mental model behind `@weasel-js/core`. Read this before writing code.
 
 ## `<Canvas>`
 
+> `<Canvas>` is `@internal` and no longer exported from the public barrel.
+> Consumers use `<SceneCanvas>`, which mounts it. It's described here because
+> the two split responsibilities and the seam is worth understanding.
+
 A single `<canvas>` element wired up: it owns DPR setup, layer composition,
-the pointer-event router, and (by default) the `useMove` / `useResize` /
-`useRotate` / `useInsert` / `useAreaSelect` / `useSelection` hooks. Drop in an
-adapter and a `layers` map and you get click-to-select, drag-to-move,
-corner-handle resize, and a marquee for free.
+and the pointer-event router. Drop in an adapter and a `layers` map and you
+get scene rendering plus the chrome slots; selection, picking, the kind
+registry and the scene-aware overlays live in `<SceneCanvas>`.
 
 ```tsx
 <Canvas<Rect, Pose>
@@ -22,9 +25,12 @@ corner-handle resize, and a marquee for free.
 />
 ```
 
-You can override any of the internal controllers by passing your own
-(`move`, `resize`, `selection`, …); supply `*Options` to configure the
-default ones. See [hooks.md](./hooks.md) and `packages/core/src/canvas/Canvas.tsx`.
+Behavior isn't configured through controller-override props — there are none.
+Move, resize, rotate, insert and area-select are actions in the Actions
+Registry; you change what they do by binding different gestures to them, by
+passing behaviors through a binding's `opts`, or by registering your own
+descriptor under the same id. See [hooks.md](./hooks.md),
+[extending.md](./extending.md), and `packages/core/src/canvas/Canvas.tsx`.
 
 ## `<SceneViewCanvas>` and `<MinimapCanvas>` (detached views)
 
@@ -125,8 +131,9 @@ rect-driven machinery:
 - `intersectsRect(pose, rect)` — optional, tight test for area-select.
 
 `RECT_POSE_DESCRIPTOR` is the identity for rect poses; `pathPoseDescriptor`
-is the implementation for `Path`. Pass via `<Canvas geometry={...}>` (or
-`useResize`'s `geometry` option for the lower-level path).
+is the implementation for `Path`. `<SceneCanvas geometry={{ pickEvery,
+boundsOf }}>` overrides hit-testing and bounds; `UseResizeOptions.geometry`
+carries the descriptor itself. See [extending.md](./extending.md).
 
 ## Op
 
@@ -151,17 +158,32 @@ directly against the adapter.
 **Transient** ops apply via `adapter.applyOps(ops)` — no history entry.
 Selection-only changes (e.g. marquee result) are transient by default.
 
-## Controller
+## Ongoing handle
 
-Each gesture hook returns a **controller**: lifecycle methods (`start`,
-`move`, `end`, `cancel`) plus a live `overlay` field describing the
-in-flight gesture. Controllers are stateful but pure — they don't touch the
-DOM. `<Canvas>` reads the overlay each render and feeds the layer stack.
+An action with `invoker.timing: 'ongoing'` opens a gesture: `start(ctx)`
+returns an **`OngoingHandle`** that the dispatcher pumps with `onMove` and
+closes exactly once via `onEnd(ctx, 'commit' | 'cancel')`. The handle is
+stateful but pure — it doesn't touch the DOM. It exposes its in-flight visuals
+through optional methods the canvas reads each frame:
 
 ```ts
-const move: MoveController<Rect, Pose> = useMove(adapter, { ... });
-move.overlay; // { draggedIds, poses, snapped, hideIds } | null
+interface OngoingHandle {
+  kind?: string;                      // 'move' | 'marquee' | 'lasso' | … for chrome rules
+  onMove?(ctx): void;
+  onEnd?(ctx, reason: 'commit' | 'cancel'): void;
+  previewIds?(): Iterable<string> | null;   // displaced nodes → preview-ghost layer
+  previewPose?(id): unknown | null;
+  previewData?(id): unknown | null;         // for data-space edits (anchor drag)
+  previewHidesSource?: boolean;             // false for clone: original stays put
+  overlay?(): OngoingOverlay | null;        // non-ghost chrome (marquee rect, lasso polyline)
+}
 ```
+
+`previewIds` / `previewPose` / `previewData` feed `usePreviewGhostLayer`, which
+assembles a synthetic node per id and draws it through the scene slot.
+`overlay()` feeds `useDispatcherOverlayLayer` for gestures that displace
+nothing but still need feedback. Sources compose first-non-null per axis.
+`getActiveAction().kind` is how chrome-visibility rules ask what's in flight.
 
 ## Layer
 
@@ -240,28 +262,38 @@ Built-in behaviors: `snap(gridSnapStrategy(...))`, `snapToContainer(...)`,
 
 ## Action
 
-An **action** is a non-pointer interaction — typically a keyboard shortcut
-or a programmatic call — that produces ops in one shot. No `start`/`move`/
-`end` phases, no overlay. The hooks are bare functions you wire and forget:
+An **action** is a unit of user intent — delete, move, undo, align — declared
+as a static descriptor and registered into the Actions Registry. Actions are
+not hooks. A descriptor says what it does (`invoker.run`), what state it needs
+(`requires`, resolved from the dep registry at dispatch time), when it's
+allowed (`eligible` / `enabled`), and how it's reached by default
+(`defaultBinding`):
 
 ```ts
-useEscape(adapter);                    // Esc clears selection
-useSelectAll(adapter);                 // Cmd+A
-useDuplicate<Pose>(adapter);           // Cmd+D
-useNudge(adapter);                     // arrow keys
-useReorder(adapter);                   // Cmd+[ / Cmd+]
-useDelete(adapter, { bindKeyboard: true });
-useGroup(adapter); useUngroup(adapter);
-useNest(adapter); useUnnest(adapter);
-useUndoRedo({ history });
-useClipboard(adapter);
+export const deleteAction: Action & { requires: string[] } = {
+  id: 'delete',
+  label: 'Delete',
+  defaultBinding: {
+    kind: 'key',
+    key: ['Delete', 'Backspace'],
+    phase: [{ channel: '*', phase: 'initial' }],
+  },
+  eligible: { capability: 'edits-page' },
+  requires: ['scene', 'selection', 'applyOps'],
+  invoker: { timing: 'immediate', run: (deps) => { /* … */ } },
+};
 ```
 
-Each hook accepts a `bindKeyboard: false` opt to skip its default shortcut
-so you can drive it from your own UI. Every action commits via the same
-`dispatchApplyBatch(adapter, ops, label)` pipeline as gestures, so undo,
-coalescing, and `applyBatch` overrides all work uniformly. See
-[hooks.md](./hooks.md) for the full table and default keybindings.
+`useStandardActions` registers the kit-standard set into the surrounding
+`<ActionsProvider>`; `<SceneCanvas>` calls it for you. Actions reached by a
+pointer gesture (`move`, `resize`, `insert`, …) are the same kind of object —
+an `invoker` with `start` / `move` / `end` rather than a one-shot `run`. A
+tool is just an array of `{ spec, actionId }` bindings pointing at them.
+
+Imperative callers — a toolbar button, a command palette — use
+`registry.trigger(id, params)`, which resolves deps exactly as a gesture
+would, so there is one commit path and undo/coalescing behave identically. See
+[hooks.md](./hooks.md) for the full action table and default keybindings.
 
 ### Keyboard activations are actions
 
@@ -279,7 +311,7 @@ them:
   `buildToolActivateBindings(specs)`.
 - `makeToolOffhandAction(bindings)` — single parametric action registered
   under id `tool.offhand` for hold-to-engage hotkeys (e.g. Space-for-hand).
-  `defaultBinding` is a `BoundGesture[]` of `keyHeld` specs, each carrying
+  `defaultBinding` is a `BoundGesture[]` of `key-held` specs, each carrying
   `opts.params.toolId`. On `start` the invoker pushes the tool id onto the
   active-tool context's hotkey stack; `onEnd` pops it. The dispatcher's
   existing `inFlightOwners` machinery advances the channel through the same
@@ -374,11 +406,11 @@ const adapter = {
   ...selection.adapterMethods,
 };
 
-useDuplicate<Pose>(adapter);              // Cmd+D
-useDelete(adapter, { bindKeyboard: true }); // Backspace/Delete
+// No per-action wiring: `duplicate` (Cmd+D) and `delete` (Backspace/Delete)
+// are kit-standard descriptors, registered by the canvas.
 
 return (
-  <Canvas<Rect, Pose>
+  <SceneCanvas<Rect, Pose>
     width={W} height={H}
     adapter={adapter}
     selection={selection}

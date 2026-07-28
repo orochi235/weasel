@@ -23,10 +23,12 @@ const adapter: MoveAdapter<Rect, Pose>
   & AreaSelectAdapter = makeAdapter();
 ```
 
-The narrow shapes live in `packages/core/src/core/adapters/types.ts`. Action hooks
-(`useDelete`, `useDuplicate`, `useNudge`, `useGroup`, `useReorder`,
-`useUndoRedo`, `useClipboard`) each have their own narrow adapter type
-co-located with the hook.
+The narrow shapes live in `packages/core/src/core/adapters/types.ts`.
+
+Selection-driven operations — delete, duplicate, nudge, group, reorder,
+undo/redo — no longer take adapters at all. They're **actions**, and they read
+what they need from the **dep registry** by name (`scene`, `selection`,
+`history`, `applyOps`, …). See [Deps, not adapters](#deps-not-adapters).
 
 ## `arrayAdapter` — the easy default
 
@@ -112,36 +114,61 @@ Reach for a custom adapter when:
 There's no base class; just implement the methods the gestures and actions
 you use require. Compose narrow types via intersection.
 
-## Adapter responsibilities by hook
+## Adapter responsibilities by gesture
 
-| Hook | Required adapter shape |
+Pointer-driven actions still do their math through an adapter. The shapes are
+in `packages/core/src/core/adapters/types.ts`.
+
+| Action | Required adapter shape |
 |---|---|
-| `useMove` | `MoveAdapter<TNode, TPose>` |
-| `useResize` | `ResizeAdapter<TNode, TPose>` |
-| `useRotate` | `RotateAdapter<TNode, TPose>` |
-| `useInsert` | `InsertAdapter<TNode>` |
-| `useAreaSelect` | `AreaSelectAdapter` |
-| `useClone` | `InsertAdapter<TNode>` |
+| `move` | `MoveAdapter<TNode, TPose>` |
+| `resize` | `ResizeAdapter<TNode, TPose>` |
+| `rotate` | `RotateAdapter<TNode, TPose>` |
+| `insert`, `clone` | `InsertAdapter<TNode>` |
+| `areaSelect` | `AreaSelectAdapter` |
+| `lassoSelect` | `LassoSelectAdapter` |
 | `useTextEdit` | none — direct callbacks (see hook signature) |
-| `useDelete` | `DeleteAdapter` (`getSelection`, optional `getNode`, optional `setSelection`/`removeNode`/`applyBatch`) |
-| `useDuplicate` | `DuplicateAdapter<TPose>` (adds `cloneNode(id, offset)`) |
-| `useNudge` | `NudgeAdapter<TPose>` (`getSelection`, `getPose`) |
-| `useReorder` | `ReorderAdapter` (with optional `getChildren`/`setChildOrder` — no-op when absent) |
-| `useGroup` / `useUngroup` | `GroupActionAdapter` (extends `GroupAdapter`) |
-| `useNest` / `useUnnest` | `NestActionAdapter` |
-| `useUndoRedo` | `UndoRedoAdapter` (`undo`, `redo`, optional `canUndo`/`canRedo`) |
-| `useClipboard` | `ClipboardAdapter<TNode>` (extends `InsertAdapter`) |
-| `useSelectAll` | `SelectAllAdapter` (`getSelection`, `listAll`) |
-| `useEscape` | `EscapeAdapter` (`getSelection`) |
+
+`<SceneCanvas>` synthesizes all of these from your `Scene` via
+`sceneToAdapter`; you supply one explicitly only on the bare-adapter tier.
+
+## Deps, not adapters
+
+Everything else an action needs arrives through the **dep registry**: a
+name → live-thunk map published by `useStandardActions` (and by
+`<SceneCanvas>`'s own registrars) and resolved fresh at each invocation. A
+descriptor declares what it reads in `requires`, and dev builds warn when an
+invoker touches a dep it didn't declare.
+
+The schema is `DepSchema` in
+`packages/core/src/interactions/actions/depSchema.ts`. Core keys:
+
+| Dep | What it carries |
+|---|---|
+| `selection` | `SelectionApi` — the same object `<SceneCanvas>` reads |
+| `scene` | the scene tree: structural reads + undoable mutations |
+| `history` | undo/redo bound to the current scene |
+| `view` | camera position + scale |
+| `pointer` | canvas pointer position in world space |
+| `activeTool` | active tool id + the hotkey-hold stack |
+| `applyOps` | optional consumer commit hook — when present, ops route through consumer history as one entry instead of `scene.applyBatch` |
+
+Plus the per-feature deps: `insert`, `areaSelect`, `lassoSelect`,
+`editAnchors`, `textEdit`, `snap`, `layout`, `slice`, `ingestion`,
+`resizePolicy`, `geometryProjection`, `poseComposition`, `booleansAdapter`,
+`nodeAtPoint`, `dispatcher`.
+
+This is why there is no `DeleteAdapter` / `NudgeAdapter` / `UndoRedoAdapter` to
+implement: `delete` declares `requires: ['scene', 'selection', 'applyOps']` and
+gets them.
 
 ## Optional mixins
 
 - **`OrderedAdapter`** — `getChildren?(parentId): string[]`,
   `setChildOrder?(parentId, ids)`. Convention: array order **is** z-order
   (index 0 = bottom). Hit-tests iterate in reverse; render layers iterate
-  forward. Reorder ops and `useReorder` no-op if either method is missing.
-- **`GroupAdapter`** — groups (lasso side-records) with first-class ids and
-  multi-membership. See `packages/core/src/features/groups/types.ts`.
+  forward. Reorder ops and the `reorder.*` actions no-op if either method is
+  missing.
 
 ## Snap targets
 

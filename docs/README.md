@@ -8,9 +8,10 @@ Read in roughly this order:
 
 - [concepts.md](./concepts.md) — the mental model: `<Canvas>`, adapters,
   poses, ops, gestures, selection, layers, tools.
-- [hooks.md](./hooks.md) — the gesture and action hooks. Most consumers don't
-  call the gesture hooks directly because `<Canvas>` owns them; the action
-  hooks (delete, duplicate, undo/redo, …) are typically wired in user code.
+- [hooks.md](./hooks.md) — the hook surface, plus the action table and default
+  keybindings. Interactions are action descriptors reached by gesture
+  bindings, not per-interaction hooks; what's left here is state primitives,
+  drag primitives, and viewport helpers.
 - [adapters.md](./adapters.md) — adapter shape, the structural-typing trick
   (one struct satisfies all the narrow per-hook adapters), and `arrayAdapter`
   as the default.
