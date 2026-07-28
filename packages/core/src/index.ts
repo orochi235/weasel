@@ -215,6 +215,7 @@ export type {
   ScopedBinding,
   MatchResult,
   ResolveOnlyResult,
+  ResolvedCandidate,
   UseGestureDispatcherOptions,
 } from './interactions/dispatcher';
 
