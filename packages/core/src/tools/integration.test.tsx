@@ -1,63 +1,64 @@
 // src/tools/integration.test.tsx
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent, act } from '@testing-library/react';
-import { Canvas } from 'canvas/Canvas';
+import { render, act } from '@testing-library/react';
 import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
 import { defineTool } from './routing/defineTool';
-import { begin, claim } from './routing/result';
 import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { ActionsProvider, useActionsRegistry } from '../interactions/actions/registry';
 import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';
 import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
+import type { Action } from '../interactions/actions/registry';
+import type { Tool } from './types';
 import { useRef } from 'react';
 
-/** Pumps window key events into the dispatcher and publishes the `activeTool`
- *  dep. Tool activation is the `tool.activate` Action and nothing else since
- *  the parallel document listener in `useKeybindings` was deleted (audit
- *  3.8), so a harness asserting activation has to mount the dispatcher. */
-function KeyDispatchHarness() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const actions = useActionsRegistry();
-  const ctx = useActiveToolContext();
-  useDepSource('activeTool', () => ctx);
-  useGestureDispatcher({ canvasRef, actions: actions!, toolsById: new Map() });
-  return null;
+function fire(el: Element, type: string, init: PointerEventInit = {}) {
+  el.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, ...init }));
 }
 
-describe('integration: define → use → key → canvas', () => {
-  it('keybinding switches active tool, drag routes through new tool', () => {
+/** A tool whose entire surface is one drag binding to an action it owns. */
+function dragTool(id: string, key: string, spy: () => void): Tool<null> {
+  const action: Action = {
+    id: `${id}.drag`,
+    label: id,
+    invoker: { timing: 'ongoing', start: () => { spy(); return { onMove: () => {}, onEnd: () => {} }; } },
+  };
+  return defineTool<null>({
+    id,
+    keybinding: { key },
+    actions: [action],
+    bindings: [{ spec: { kind: 'drag' }, actionId: `${id}.drag` }],
+  });
+}
+
+describe('integration: define → use → key → dispatch', () => {
+  it('a keybinding switches the active tool, and the drag routes through the new one', () => {
     const selectDrag = vi.fn();
-    const penDrag    = vi.fn();
+    const penDrag = vi.fn();
 
     function App() {
-      const tools = useTools({
-        active: 'select',
-        registry: {
-          select: defineTool({
-            id: 'select',
-            keybinding: { key: 'v' },
-            initial: {
-              drag: () => {
-                selectDrag();
-                return begin({ scratch: null, onRelease: () => claim() });
-              },
-            },
-          }),
-          pen: defineTool({
-            id: 'pen',
-            keybinding: { key: 'p' },
-            initial: {
-              drag: () => {
-                penDrag();
-                return begin({ scratch: null, onRelease: () => claim() });
-              },
-            },
-          }),
-        },
-      });
+      const canvasRef = useRef<HTMLCanvasElement | null>(null);
+      const actions = useActionsRegistry();
+      const ctx = useActiveToolContext();
+      useDepSource('activeTool', () => ctx);
+
+      const select = dragTool('select', 'v', selectDrag);
+      const pen = dragTool('pen', 'p', penDrag);
+      const tools = useTools({ active: 'select', registry: { select, pen } });
       useKeybindings(tools);
-      return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
+
+      // Tool-owned actions register here rather than via `useToolActions`,
+      // which is `<SceneCanvas>`-specific.
+      for (const tool of [select, pen]) {
+        for (const a of tool.actions ?? []) actions?.register(a);
+      }
+
+      useGestureDispatcher({
+        canvasRef,
+        actions: actions!,
+        toolsById: new Map<string, Tool>([['select', select as Tool], ['pen', pen as Tool]]),
+      });
+      return <canvas ref={canvasRef} />;
     }
 
     const { container } = render(
@@ -65,34 +66,35 @@ describe('integration: define → use → key → canvas', () => {
         <ActionsProvider>
           <ActiveToolContextProvider initialActive="select">
             <App />
-            <KeyDispatchHarness />
           </ActiveToolContextProvider>
         </ActionsProvider>
       </DepRegistryProvider>,
     );
     const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
 
     // 1. Drag with select active.
-    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 50, clientY: 10, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 50, clientY: 10, pointerId: 1 });
-
+    act(() => {
+      fire(canvas, 'pointerdown', { clientX: 10, clientY: 10 });
+      fire(canvas, 'pointermove', { clientX: 50, clientY: 10 });
+      fire(canvas, 'pointerup', { clientX: 50, clientY: 10 });
+    });
     expect(selectDrag).toHaveBeenCalledOnce();
     expect(penDrag).not.toHaveBeenCalled();
 
-    // 2. Press 'p' to switch.
+    // 2. Press 'p' to switch. `tool.activate` is an Action on the same
+    //    dispatcher — the parallel document listener `useKeybindings` used to
+    //    install was deleted in the audit follow-up (3.8).
     act(() => {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true }));
     });
 
     // 3. Drag with pen active.
-    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 50, clientY: 10, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 50, clientY: 10, pointerId: 1 });
-
+    act(() => {
+      fire(canvas, 'pointerdown', { clientX: 10, clientY: 10 });
+      fire(canvas, 'pointermove', { clientX: 50, clientY: 10 });
+      fire(canvas, 'pointerup', { clientX: 50, clientY: 10 });
+    });
     expect(penDrag).toHaveBeenCalledOnce();
     expect(selectDrag).toHaveBeenCalledOnce(); // not called again
   });
-
 });

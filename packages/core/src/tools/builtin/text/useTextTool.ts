@@ -31,7 +31,6 @@ export function useTextTool(): Tool<undefined> {
           { spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'text' } } },
           { spec: { kind: 'click', target: 'selected-body' }, actionId: 'enterTextEdit' },
         ],
-        initial: {},
       }),
     [],
   );

@@ -39,7 +39,6 @@ export function useRectTool(): Tool<null> {
             opts: { params: { kind: 'rect' } },
           },
         ],
-        initial: {},
       }),
     [],
   );

@@ -148,8 +148,8 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
   }
 
   it('auto-wires keybindings when a consumer-supplied `tools` prop is passed', () => {
-    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
-    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
 
     let captured: ReturnType<typeof useTools> | null = null;
     function Harness() {
@@ -174,8 +174,8 @@ describe('SceneCanvas consumer-tools keybindings auto-wiring', () => {
   });
 
   it('`enableKeybindings={false}` suppresses the auto-wiring for consumer tools', () => {
-    const select = defineTool({ id: 'select', keybinding: { key: 'v' }, initial: {} });
-    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' }, initial: {} });
+    const select = defineTool({ id: 'select', keybinding: { key: 'v' } });
+    const pen    = defineTool({ id: 'pen',    keybinding: { key: 'p' } });
 
     let captured: ReturnType<typeof useTools> | null = null;
     function Harness() {
@@ -287,7 +287,7 @@ describe('SceneCanvas tools prop patch form', () => {
   });
 
   it('{ pen: customTool } replaces a bundled tool and warns in dev', () => {
-    const customPen = defineTool({ id: 'pen', initial: {} });
+    const customPen = defineTool({ id: 'pen' });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     let captured: ReturnType<typeof useTools> | null = null;
     function Harness() {

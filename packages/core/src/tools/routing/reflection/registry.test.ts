@@ -1,120 +1,107 @@
 import { describe, it, expect } from 'vitest';
-import { buildActionRegistry, type RegistryEntry } from './registry';
-import { apply, begin } from '../result';
-import { mods } from '../modifiers';
-import type { ToolDef } from '../types';
+import { buildRouteRegistry, PREDICATE_TARGET, type RegistryEntry } from './registry';
+import type { Tool } from '../../types';
 
-const noOp = () => apply<unknown>([]);
+function tool(id: string, bindings: unknown[]): Tool<unknown> {
+  return { id, bindings } as unknown as Tool<unknown>;
+}
 
-describe('buildActionRegistry', () => {
+describe('buildRouteRegistry', () => {
   it('returns an empty array for no tools', () => {
-    expect(buildActionRegistry([])).toEqual([]);
+    expect(buildRouteRegistry([])).toEqual([]);
   });
 
-  it('flattens click routes (plain ActionFn entries)', () => {
-    const tool: ToolDef<unknown> = {
-      id: 'select',
-      initial: {
-        click: {
-          'rect': noOp,
-          'empty': noOp,
-        },
-      },
-    };
-    const r = buildActionRegistry([tool]);
+  it('returns an empty array for a tool with no bindings', () => {
+    expect(buildRouteRegistry([tool('select', [])])).toEqual([]);
+  });
+
+  it('flattens one row per binding', () => {
+    const r = buildRouteRegistry([tool('select', [
+      { spec: { kind: 'click', target: 'empty' }, actionId: 'clearSelection' },
+      { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'move' },
+    ])]);
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined, target: 'rect', modifiers: {},
+      toolId: 'select', actionId: 'clearSelection', phase: 'initial',
+      gesture: 'click', arg: undefined, target: 'empty', modifiers: {},
     });
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', phase: 'initial', gesture: 'click', arg: undefined, target: 'empty', modifiers: {},
+      toolId: 'select', actionId: 'move', phase: 'initial',
+      gesture: 'drag', arg: undefined, target: 'selected-body', modifiers: {},
     });
     expect(r).toHaveLength(2);
   });
 
-  it('explodes modifier sub-tables into one row per key', () => {
-    const tool: ToolDef<unknown> = {
-      id: 'select',
-      initial: {
-        click: {
-          'rect': {
-            [mods()]:        noOp,
-            [mods('shift')]: noOp,
-            [mods('alt')]:   noOp,
-          },
-        },
-      },
-    };
-    const r = buildActionRegistry([tool]);
-    const targets = r.map((e) => {
-      const keys = Object.keys(e.modifiers).sort().join('+');
-      return `${e.target}/${keys || 'default'}`;
-    }).sort();
-    expect(targets).toEqual(['rect/alt', 'rect/default', 'rect/shift']);
+  it('maps spec kinds onto route-grammar gesture names', () => {
+    const r = buildRouteRegistry([tool('t', [
+      { spec: { kind: 'key', key: 'Escape' }, actionId: 'a' },
+      { spec: { kind: 'key-held', key: ' ' }, actionId: 'b' },
+      { spec: { kind: 'doubleClick' }, actionId: 'c' },
+      { spec: { kind: 'pointerDown' }, actionId: 'd' },
+    ])]);
+    expect(r.map((e) => e.gesture)).toEqual(['keyDown', 'keyHeld', 'dblTap', 'pointerDown']);
   });
 
-  it('walks all phases', () => {
-    const tool: ToolDef<unknown> = {
-      id: 'pen',
-      initial: { click: { 'empty': noOp } },
-      engaged: { click: { 'anchor:first': noOp, '*': noOp } },
-    };
-    const r = buildActionRegistry([tool]);
-    expect(r.filter((e) => e.phase === 'initial')).toHaveLength(1);
-    expect(r.filter((e) => e.phase === 'engaged')).toHaveLength(2);
+  it('skips kinds the route grammar has no name for', () => {
+    const r = buildRouteRegistry([tool('t', [
+      { spec: { kind: 'drop' }, actionId: 'ingest' },
+      { spec: { kind: 'paste' }, actionId: 'ingest' },
+      { spec: { kind: 'multiTouch', fingers: 2 }, actionId: 'pinch' },
+      { spec: { kind: 'click' }, actionId: 'keep' },
+    ])]);
+    expect(r.map((e) => e.actionId)).toEqual(['keep']);
   });
 
-  it('walks all gesture channels', () => {
-    const tool: ToolDef<unknown> = {
-      id: 'test',
-      initial: {
-        click:   { 'rect': noOp },
-        drag:    { 'rect': noOp },
-        wheel:   noOp,
-        keyDown: { 'Escape': noOp },
-        keyUp:   { 'Shift':  noOp },
-      },
-    };
-    const r = buildActionRegistry([tool]);
-    const gestures = new Set(r.map((e) => e.gesture));
-    expect(gestures).toEqual(new Set(['click', 'drag', 'wheel', 'keyDown', 'keyUp']));
+  it('carries the gesture arg for arg-bearing kinds', () => {
+    const r = buildRouteRegistry([tool('t', [
+      { spec: { kind: 'key', key: 'ArrowUp' }, actionId: 'nudge' },
+      { spec: { kind: 'key', key: ['a', 'b'] }, actionId: 'either' },
+      { spec: { kind: 'wheel', direction: 'up' }, actionId: 'zoomIn' },
+      { spec: { kind: 'wheel' }, actionId: 'zoomAny' },
+      { spec: { kind: 'multiTouchTap', fingers: 2 }, actionId: 'undo' },
+    ])]);
+    expect(r.map((e) => e.arg)).toEqual(['ArrowUp', 'a|b', 'up', '*', '2']);
   });
 
-  it('function-form drag emits a single targetless row', () => {
-    const tool: ToolDef<unknown> = {
-      id: 'hand',
-      initial: { drag: () => begin<unknown>({ scratch: undefined }) },
-    };
-    const r = buildActionRegistry([tool]);
-    expect(r).toEqual<RegistryEntry[]>([
-      { toolId: 'hand', phase: 'initial', gesture: 'drag', arg: undefined, target: undefined, modifiers: {} },
+  it('reports a predicate target as such — the grammar cannot name a function', () => {
+    const r = buildRouteRegistry([tool('select', [
+      { spec: { kind: 'drag', target: { kindOf: () => true } }, actionId: 'resize' },
+    ])]);
+    expect(r[0].target).toBe(PREDICATE_TARGET);
+  });
+
+  it('leaves target undefined for targetless gestures and untargeted specs', () => {
+    const r = buildRouteRegistry([tool('t', [
+      { spec: { kind: 'key', key: 'Escape', target: 'empty' }, actionId: 'escape' },
+      { spec: { kind: 'click' }, actionId: 'anywhere' },
+    ])]);
+    expect(r.map((e) => e.target)).toEqual([undefined, undefined]);
+  });
+
+  it('translates ModSpec into the parsed form, dropping must-not-be-held keys', () => {
+    const r = buildRouteRegistry([tool('t', [
+      { spec: { kind: 'click', mods: { shift: true, alt: 'optional', meta: false } }, actionId: 'a' },
+      { spec: { kind: 'click', mods: {} }, actionId: 'b' },
+      { spec: { kind: 'click' }, actionId: 'c' },
+    ])]);
+    expect(r[0].modifiers).toEqual({ shift: 'required', alt: 'optional' });
+    expect(r[1].modifiers).toEqual({});
+    expect(r[2].modifiers).toEqual({});
+  });
+
+  it('reports the engaged phase only when the spec restricts to it', () => {
+    const r = buildRouteRegistry([tool('polygon', [
+      { spec: { kind: 'wheel', phase: 'engaged' }, actionId: 'polygon.adjustSides' },
+      { spec: { kind: 'wheel' }, actionId: 'zoom' },
+      { spec: { kind: 'wheel', phase: 'initial' }, actionId: 'other' },
+    ])]);
+    expect(r.map((e) => e.phase)).toEqual(['engaged', 'initial', 'initial']);
+  });
+
+  it('walks every tool it is given', () => {
+    const r = buildRouteRegistry([
+      tool('a', [{ spec: { kind: 'click' }, actionId: 'x' }]),
+      tool('b', [{ spec: { kind: 'click' }, actionId: 'y' }]),
     ]);
-  });
-
-  it('function-form wheel emits a single arg=both row', () => {
-    const tool: ToolDef<unknown> = {
-      id: 'wheel-zoom',
-      initial: { wheel: noOp },
-    };
-    const r = buildActionRegistry([tool]);
-    expect(r).toEqual<RegistryEntry[]>([
-      { toolId: 'wheel-zoom', phase: 'initial', gesture: 'wheel', arg: '*', target: undefined, modifiers: {} },
-    ]);
-  });
-
-  it('keyDown/keyUp use the key name as arg', () => {
-    const tool: ToolDef<unknown> = {
-      id: 'test',
-      initial: { keyDown: { 'Escape': noOp, 'Enter': noOp } },
-    };
-    const r = buildActionRegistry([tool]);
-    expect(r.map((e) => e.arg).sort()).toEqual(['Enter', 'Escape']);
-    for (const e of r) expect(e.target).toBeUndefined();
-  });
-
-  it('aggregates multiple tools', () => {
-    const a: ToolDef<unknown> = { id: 'a', initial: { click: { 'rect': noOp } } };
-    const b: ToolDef<unknown> = { id: 'b', initial: { click: { 'text': noOp } } };
-    const r = buildActionRegistry([a, b]);
-    expect(r.map((e) => e.toolId).sort()).toEqual(['a', 'b']);
+    expect(r.map((e) => e.toolId)).toEqual(['a', 'b']);
   });
 });

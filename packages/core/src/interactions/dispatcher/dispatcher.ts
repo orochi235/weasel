@@ -149,6 +149,17 @@ export interface DispatcherContext {
   activeToolId: string;
   /** Held-hotkey stack, top of stack last. */
   hotkeyStack: readonly string[];
+  /**
+   * Ids of always-on tools. Their bindings are assembled at AMBIENT scope, so
+   * they lose to the active tool on a tie — which is what "always listening,
+   * never in the way" needs. Chrome that floats over the scene lives here:
+   * `@weasel-js/hud`'s tool is the worked example.
+   *
+   * Without this an ambient tool's `bindings` were assembled nowhere at all:
+   * the walk covered hotkey and active tools plus actions' `defaultBinding`,
+   * and an ambient tool is in neither set.
+   */
+  ambientToolIds?: readonly string[];
   /** Lookup for tool definitions. */
   toolsById: ReadonlyMap<string, Tool>;
   /** Platform flag for `mod` shorthand resolution. */
@@ -258,6 +269,14 @@ export interface Dispatcher {
   inFlight(): ReadonlyMap<string, OngoingHandle>;
 
   /**
+   * CSS cursor for the gesture currently in flight, or `null` when nothing
+   * is. Reads `Action.activeCursor` (falling back to `Action.cursor`) off the
+   * action whose handle is open — the hover pump applies this instead of its
+   * prediction once a gesture starts, which is how `grab` becomes `grabbing`.
+   */
+  inFlightCursor(): string | null;
+
+  /**
    * Read-only iterator over currently in-flight `OngoingHandle` instances.
    *
    * Surface for the canvas's preview-ghost layer (`usePreviewGhostLayer`)
@@ -322,6 +341,25 @@ export interface Dispatcher {
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
 
+/**
+ * Modifier flags as an immediate invoker sees them, in the kit's
+ * `ModifierState` spelling rather than the DOM's `*Key` one.
+ *
+ * Ongoing invokers read modifiers off `InvocationCtx`; immediate ones get only
+ * `(deps, params)`, so pointer-driven immediate actions need them merged into
+ * params the same way wheel deltas already are. Most actions should still
+ * express modifier semantics as separate bindings with `opts.params` — that is
+ * what makes them visible to conflict detection and the inspector. This is for
+ * the cases where the modifier is data rather than a route, e.g. select
+ * forwarding the press's modifiers into `SelectionApi.applyClick`, which
+ * resolves them against the host's configured extend key.
+ */
+function modifiersOf(e: {
+  altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean;
+}): { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean } {
+  return { alt: e.altKey, ctrl: e.ctrlKey, meta: e.metaKey, shift: e.shiftKey };
+}
+
 export function createDispatcher(opts?: {
   getAction?: (id: string) => Action | undefined;
 }): Dispatcher {
@@ -331,6 +369,10 @@ export function createDispatcher(opts?: {
    *  `null` when the opening binding came from an ambient action with no
    *  owning tool. */
   const inFlightOwners = new Map<string, string | null>();
+  /** Gesture id -> the Action whose handle is in flight, so the hover-cursor
+   *  pump can ask what the gesture currently IS rather than what a drag from
+   *  here WOULD be. See `Action.activeCursor`. */
+  const inFlightActions = new Map<string, Action>();
 
   // -------------------------------------------------------------------------
   // Helpers
@@ -522,7 +564,16 @@ export function createDispatcher(opts?: {
       result.push({ binding, scope: 'active' as BindingScope, ownerToolId: ctx.activeToolId });
     }
 
-    // Ambient scope: walk the actions registry. Actions have no owning
+    // Ambient scope, tools first: an always-on tool's own bindings, which do
+    // carry an owning tool id (so `'&'`-channel phase atoms resolve).
+    for (const toolId of ctx.ambientToolIds ?? []) {
+      const tool = ctx.toolsById.get(toolId);
+      for (const binding of tool?.bindings ?? []) {
+        result.push({ binding, scope: 'ambient' as BindingScope, ownerToolId: toolId });
+      }
+    }
+
+    // Ambient scope, then the actions registry. Actions have no owning
     // tool — `'&'`-channel phase atoms on their bindings won't match.
     for (const action of ctx.actions.list()) {
       const gs = action.defaultBinding;
@@ -584,6 +635,7 @@ export function createDispatcher(opts?: {
         handle.onEnd?.(stubCtx, 'commit');
         inFlightHandles.delete(gestureId);
         inFlightOwners.delete(gestureId);
+        inFlightActions.delete(gestureId);
         dragOrigins.delete(gestureId);
       }
       // Whether we had a handle or not, this is a follow-up event, not a new match.
@@ -635,6 +687,7 @@ export function createDispatcher(opts?: {
         handle.onEnd?.(endCtx, 'commit');
         inFlightHandles.delete(gestureId);
         inFlightOwners.delete(gestureId);
+        inFlightActions.delete(gestureId);
         dragOrigins.delete(gestureId);
         dragPoints.delete(gestureId);
       }
@@ -650,6 +703,7 @@ export function createDispatcher(opts?: {
         handle.onEnd?.(endCtx, 'cancel');
         inFlightHandles.delete(gestureId);
         inFlightOwners.delete(gestureId);
+        inFlightActions.delete(gestureId);
         dragOrigins.delete(gestureId);
         dragPoints.delete(gestureId);
       }
@@ -784,6 +838,23 @@ export function createDispatcher(opts?: {
             params = {
               worldX: event.worldX,
               worldY: event.worldY,
+              // Press point as well as release point — an action that places
+              // geometry at the click wants the former. See `ClickEvent`.
+              ...(event.kind === 'click'
+                ? { pressX: event.pressX, pressY: event.pressY, affordance: event.affordance }
+                : {}),
+              mods: modifiersOf(event),
+              ...resolved,
+            };
+          } else if (event.kind === 'pointerdown') {
+            // Only `stage: 'press'` events reach an immediate invoker — the
+            // buffered copy matches `drag` specs, which are ongoing.
+            params = {
+              worldX: event.x,
+              worldY: event.y,
+              affordance: event.affordance,
+              bodyTarget: event.bodyTarget,
+              mods: modifiersOf(event),
               ...resolved,
             };
           } else if (event.kind === 'drop' || event.kind === 'paste') {
@@ -809,6 +880,21 @@ export function createDispatcher(opts?: {
       }
 
       if (action.invoker?.timing === 'ongoing') {
+        // A `pointerDown` binding fires at press time, on the same
+        // `pointer-mouse` gesture id the drag will use. Letting an ongoing
+        // action open its handle here would make the drag's own dispatch find
+        // a handle already in flight and silently no-op. `PointerDownSpec`
+        // documents itself as immediate-only; enforce it rather than let the
+        // collision happen quietly.
+        if (event.kind === 'pointerdown' && event.stage === 'press') {
+          console.error(
+            `weasel dispatcher: action "${action.id}" has an ongoing invoker but is bound to a `
+            + `pointerDown spec, which fires at press time. Bind it to a drag spec, or give the `
+            + `action an immediate invoker.`,
+          );
+          finishTrace(action.id, 'unhandled');
+          return 'unhandled';
+        }
         const gestureId = gestureIdFor(event);
         // Record the drag origin so subsequent pointermove events can compute delta.
         if (event.kind === 'pointerdown') {
@@ -853,6 +939,7 @@ export function createDispatcher(opts?: {
         }
         inFlightHandles.set(gestureId, handle);
         inFlightOwners.set(gestureId, match.ownerToolId);
+        inFlightActions.set(gestureId, action);
         finishTrace(action.id, 'handled');
         return 'handled';
       }
@@ -924,6 +1011,7 @@ export function createDispatcher(opts?: {
     }
     inFlightHandles.clear();
     inFlightOwners.clear();
+    inFlightActions.clear();
     uiOngoingByAction.clear();
     dragOrigins.clear();
     dragPoints.clear();
@@ -936,6 +1024,14 @@ export function createDispatcher(opts?: {
 
   function inFlight(): ReadonlyMap<string, OngoingHandle> {
     return inFlightHandles;
+  }
+
+  function inFlightCursor(): string | null {
+    for (const action of inFlightActions.values()) {
+      const cursor = action.activeCursor ?? action.cursor;
+      if (cursor) return cursor;
+    }
+    return null;
   }
 
   function getInFlightHandles(): Iterable<OngoingHandle> {
@@ -1043,6 +1139,7 @@ export function createDispatcher(opts?: {
         }
         inFlightHandles.delete(gestureId);
         inFlightOwners.delete(gestureId);
+        inFlightActions.delete(gestureId);
         if (uiOngoingByAction.get(actionId) === gestureId) {
           uiOngoingByAction.delete(actionId);
         }
@@ -1056,6 +1153,7 @@ export function createDispatcher(opts?: {
     resolveOnly,
     cancelAll: cancelAllWithNotify,
     inFlight,
+    inFlightCursor,
     getInFlightHandles,
     subscribe,
     getActiveAction,

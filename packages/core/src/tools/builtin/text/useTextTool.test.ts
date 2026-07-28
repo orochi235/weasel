@@ -38,10 +38,9 @@ describe('useTextTool surface', () => {
     );
   });
 
-  it('declares no route-table drag/pointer/overlay handlers (dispatcher-only)', () => {
+  it('is dispatcher-only — bindings and nothing else', () => {
     const { result } = renderHook(() => useTextTool());
-    expect(result.current.drag).toBeUndefined();
-    expect(result.current.pointer).toBeUndefined();
     expect(result.current.overlay).toBeUndefined();
+    expect(result.current.bindings?.length).toBeGreaterThan(0);
   });
 });

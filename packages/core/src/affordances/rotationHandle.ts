@@ -1,7 +1,6 @@
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { FillStyle, Stroke } from 'core/paint-types';
-import type { DragChannel } from 'tools/types';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
 export interface RotationAffordanceOptions {
@@ -29,13 +28,6 @@ export interface RotationScratch {
    *  `MULTI_RESIZE_TARGET_ID` for multi-selection. */
   targetId: string;
 }
-
-const stubDrag: DragChannel<RotationScratch> = {
-  onStart: () => 'claim',
-  onMove: () => 'claim',
-  onEnd: () => 'claim',
-  onCancel: () => {},
-};
 
 const DEFAULT_PAINT: { fill?: FillStyle; stroke?: Stroke; insetPx?: number } = {
   fill: { fill: 'solid', color: 'rgba(26, 19, 13, 0.12)' },
@@ -129,7 +121,6 @@ export function createRotationAffordance(
         ...(annulusPaint ? { paint: annulusPaint } : {}),
         cursor,
         bind: (): AffordanceBinding => ({
-          drag: stubDrag as unknown as AffordanceBinding['drag'],
           initialScratch: { targetId: target.id } satisfies RotationScratch,
         }),
       };

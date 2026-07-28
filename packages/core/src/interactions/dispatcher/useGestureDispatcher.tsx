@@ -72,6 +72,9 @@ export interface UseGestureDispatcherOptions {
   actions: ActionsRegistry;
   /** Tool definitions keyed by id. Typically passes an empty Map. */
   toolsById: ReadonlyMap<string, Tool>;
+  /** Ids (within `toolsById`) of always-on tools, whose bindings assemble at
+   *  ambient scope. See `DispatcherContext.ambientToolIds`. */
+  ambientToolIds?: readonly string[];
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /**
@@ -218,7 +221,7 @@ function computeMultiTouchGeometry(
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
+  const { canvasRef, actions, toolsById, ambientToolIds, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
   const onDoubleClickRef = useRef(onDoubleClick);
   onDoubleClickRef.current = onDoubleClick;
   const activeTool = useActiveToolContext();
@@ -239,6 +242,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
+    ambientToolIds,
     isMac: IS_MAC,
     getRuleCtx,
   });
@@ -248,6 +252,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
+    ambientToolIds,
     isMac: IS_MAC,
     getRuleCtx,
   };
@@ -376,6 +381,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const lastPointerDown = new Map<number, {
       clientX: number;
       clientY: number;
+      /** World-space press point, forwarded onto the synthesized click as
+       *  `pressX`/`pressY` — see `ClickEvent`. */
+      worldX: number;
+      worldY: number;
+      /** Affordance the press landed on, replayed onto the click. */
+      affordance?: unknown;
       bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
       altKey: boolean;
       ctrlKey: boolean;
@@ -555,10 +566,21 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // press-and-release should fire `click`, not start a drag action.
       bufferedDown.set(e.pointerId, { ev, clientX: e.clientX, clientY: e.clientY });
 
+      // ...but dispatch a `stage: 'press'` copy right now, for bindings that
+      // must act while the button is still down and before the gesture is
+      // classified (select highlights the pressed node here). `matchSpec`
+      // routes the two copies to disjoint spec kinds — `pointerDown` matches
+      // only this one, `drag` only the buffered one — so a single press never
+      // fires both.
+      dispatch({ ...ev, stage: 'press' });
+
       // Store pointerdown info for click synthesis (see onPointerUp).
       lastPointerDown.set(e.pointerId, {
         clientX: e.clientX,
         clientY: e.clientY,
+        worldX: w.x,
+        worldY: w.y,
+        affordance,
         bodyTarget,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
@@ -705,8 +727,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
     function refreshHoverCursor(): void {
       if (!canvas || !lastHover) return;
+      // Mid-gesture the prediction is meaningless — what matters is what the
+      // gesture IS. An in-flight action's `activeCursor` wins; with none
+      // declared the override clears and the active tool's `Tool.cursor`
+      // shows through, as before.
       if (activePointers.size > 0 || dispatcher.inFlight().size > 0) {
-        clearHoverCursor();
+        applyHoverCursor(dispatcher.inFlightCursor());
         return;
       }
       const h = lastHover;
@@ -759,10 +785,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
 
-      // If pointerdown was buffered (sub-threshold gesture), discard it —
-      // the dispatcher never saw it, so no drag handle is in flight. Click
-      // synthesis below picks up the bare press-and-release path.
-      bufferedDown.delete(e.pointerId);
+      // If pointerdown was still buffered, the pointer never crossed the drag
+      // threshold — the dispatcher never saw the press, so no drag handle is
+      // in flight and this release is a click. Crossing the threshold deletes
+      // the buffer whether or not a drag binding matched, which makes this the
+      // authoritative "did the pointer move?" signal for click synthesis.
+      const staysUnderThreshold = bufferedDown.delete(e.pointerId);
 
       // When pointer count drops below 2, commit any in-flight multitouch handle
       // and (if the centroid never moved past the tap threshold) synthesize a
@@ -834,11 +862,18 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const down = lastPointerDown.get(e.pointerId);
       lastPointerDown.delete(e.pointerId);
 
-      // Synthesize a click when there was no in-flight drag handle — i.e.
-      // the pointerdown never matched a drag binding and the user released
-      // without movement. Carry the `bodyTarget` from the pointerdown so
-      // click specs with string-form targets ('empty', 'selected-body') match.
-      if (!hadDragInFlight && down) {
+      // Synthesize a click when the pointer neither opened a drag handle nor
+      // travelled past the drag threshold. Carry the `bodyTarget` from the
+      // pointerdown so click specs with string-form targets ('empty',
+      // 'selected-body') match.
+      //
+      // The threshold half of that test is load-bearing for any tool that
+      // binds `click` but not `drag`: without it, dragging clear across the
+      // canvas and releasing synthesized a click, because "no drag handle
+      // opened" was the only condition. `ClickSpec` documents itself as
+      // "pointerdown + pointerup without movement past the threshold" — this
+      // is the code finally agreeing with it.
+      if (!hadDragInFlight && staysUnderThreshold && down) {
         const wClick = toWorld(e.clientX, e.clientY);
         const clickEv: InputEvent = {
           kind: 'click',
@@ -849,6 +884,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           shiftKey: e.shiftKey,
           worldX: wClick.x,
           worldY: wClick.y,
+          pressX: down.worldX,
+          pressY: down.worldY,
+          ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
           ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
         };
         dispatch(clickEv);

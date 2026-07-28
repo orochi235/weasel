@@ -1,88 +1,66 @@
 import { describe, it, expect } from 'vitest';
-import { findConflicts, type Conflict } from './conflicts';
-import { apply } from '../result';
-import { mods } from '../modifiers';
-import type { ToolDef } from '../types';
+import { findConflicts } from './conflicts';
+import type { Tool } from '../../types';
 
-const noOp = () => apply<unknown>([]);
+function tool(id: string, bindings: unknown[]): Tool<unknown> {
+  return { id, bindings } as unknown as Tool<unknown>;
+}
+
+const clickRect = (actionId = 'x') => ({ spec: { kind: 'click', target: 'empty' }, actionId });
 
 describe('findConflicts', () => {
-  it('returns empty array when no overlap', () => {
-    const a: ToolDef<unknown> = { id: 'a', initial: { click: { 'rect': noOp } } };
-    const b: ToolDef<unknown> = { id: 'b', initial: { click: { 'text': noOp } } };
-    expect(findConflicts([a, b])).toEqual([]);
+  it('returns nothing for a single tool', () => {
+    expect(findConflicts([tool('a', [clickRect()])])).toEqual([]);
   });
 
-  it('flags exact-tuple overlap', () => {
-    const a: ToolDef<unknown> = { id: 'a', initial: { click: { 'rect': noOp } } };
-    const b: ToolDef<unknown> = { id: 'b', initial: { click: { 'rect': noOp } } };
-    const c = findConflicts([a, b]);
-    expect(c).toEqual<Conflict[]>([{
-      phase: 'initial',
-      gesture: 'click',
-      arg: undefined,
-      target: 'rect',
-      modifiers: {},
-      toolIds: ['a', 'b'],
-    }]);
-  });
-
-  it('flags overlap on a specific modifier sub-key', () => {
-    const a: ToolDef<unknown> = {
-      id: 'a',
-      initial: { click: { 'rect': { [mods('shift')]: noOp } } },
-    };
-    const b: ToolDef<unknown> = {
-      id: 'b',
-      initial: { click: { 'rect': { [mods('shift')]: noOp } } },
-    };
-    const c = findConflicts([a, b]);
+  it('flags two tools claiming the same tuple', () => {
+    const c = findConflicts([tool('a', [clickRect()]), tool('b', [clickRect()])]);
     expect(c).toHaveLength(1);
-    expect(c[0].modifiers).toEqual({ shift: 'required' });
+    expect(c[0].toolIds.sort()).toEqual(['a', 'b']);
+    expect(c[0].gesture).toBe('click');
+    expect(c[0].target).toBe('empty');
   });
 
-  it('does NOT flag wildcard-vs-specific overlap (cascading-fallback is expected)', () => {
-    const a: ToolDef<unknown> = { id: 'a', initial: { click: { '*':    noOp } } };
-    const b: ToolDef<unknown> = { id: 'b', initial: { click: { 'rect': noOp } } };
-    // The lookup engine cleanly resolves: rect → 'rect' on b, anything-else → '*' on a.
-    expect(findConflicts([a, b])).toEqual([]);
-  });
-
-  it('does NOT flag different modifier combos on the same target', () => {
-    const a: ToolDef<unknown> = {
-      id: 'a',
-      initial: { click: { 'rect': { [mods('shift')]: noOp } } },
-    };
-    const b: ToolDef<unknown> = {
-      id: 'b',
-      initial: { click: { 'rect': { [mods('alt')]: noOp } } },
-    };
-    expect(findConflicts([a, b])).toEqual([]);
-  });
-
-  it('does NOT flag same-tool self-overlap (impossible by construction — single key)', () => {
-    // A ToolDef literal can't declare the same target key twice — JS object literal
-    // semantics deduplicate. So self-overlap can only happen across two tools.
-    // This test documents the invariant.
-    const a: ToolDef<unknown> = { id: 'a', initial: { click: { 'rect': noOp } } };
-    expect(findConflicts([a])).toEqual([]);
-  });
-
-  it('flags three-way conflict (>= 2 tools claim same tuple)', () => {
-    const mk = (id: string): ToolDef<unknown> => ({ id, initial: { click: { 'rect': noOp } } });
-    const c = findConflicts([mk('a'), mk('b'), mk('c')]);
+  it('flags a three-way conflict', () => {
+    const c = findConflicts([tool('a', [clickRect()]), tool('b', [clickRect()]), tool('c', [clickRect()])]);
     expect(c).toHaveLength(1);
     expect(c[0].toolIds.sort()).toEqual(['a', 'b', 'c']);
   });
 
-  it('flags conflicts in engaged phase independently of initial phase', () => {
-    const a: ToolDef<unknown> = { id: 'a', engaged: { keyDown: { 'Escape': noOp } }, initial: {} };
-    const b: ToolDef<unknown> = { id: 'b', engaged: { keyDown: { 'Escape': noOp } }, initial: {} };
-    const c = findConflicts([a, b]);
+  it('does NOT flag different targets', () => {
+    const a = tool('a', [{ spec: { kind: 'click', target: 'empty' }, actionId: 'x' }]);
+    const b = tool('b', [{ spec: { kind: 'click', target: 'selected-body' }, actionId: 'y' }]);
+    expect(findConflicts([a, b])).toEqual([]);
+  });
+
+  it('does NOT flag different modifier requirements on the same target', () => {
+    const a = tool('a', [{ spec: { kind: 'click', target: 'empty', mods: { shift: true } }, actionId: 'x' }]);
+    const b = tool('b', [{ spec: { kind: 'click', target: 'empty', mods: { alt: true } }, actionId: 'y' }]);
+    expect(findConflicts([a, b])).toEqual([]);
+  });
+
+  it('does NOT flag a broad binding alongside a narrow one', () => {
+    // Specificity ordering resolves this cleanly, and the untargeted one is
+    // usually the intended fallback.
+    const a = tool('a', [{ spec: { kind: 'click' }, actionId: 'x' }]);
+    const b = tool('b', [{ spec: { kind: 'click', target: 'empty' }, actionId: 'y' }]);
+    expect(findConflicts([a, b])).toEqual([]);
+  });
+
+  it('separates conflicts by phase', () => {
+    const a = tool('a', [{ spec: { kind: 'wheel', phase: 'engaged' }, actionId: 'x' }]);
+    const b = tool('b', [{ spec: { kind: 'wheel', phase: 'engaged' }, actionId: 'y' }]);
+    const c = tool('c', [{ spec: { kind: 'wheel' }, actionId: 'z' }]);
+    const conflicts = findConflicts([a, b, c]);
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0].phase).toBe('engaged');
+  });
+
+  it('flags a tool that binds the same tuple twice', () => {
+    // Newly possible: bindings are an array, where phase tables were objects
+    // whose duplicate keys collapsed.
+    const c = findConflicts([tool('a', [clickRect('x'), clickRect('y')])]);
     expect(c).toHaveLength(1);
-    expect(c[0].phase).toBe('engaged');
-    expect(c[0].gesture).toBe('keyDown');
-    expect(c[0].arg).toBe('Escape');
-    expect(c[0].target).toBeUndefined();
+    expect(c[0].toolIds).toEqual(['a', 'a']);
   });
 });

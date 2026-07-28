@@ -12,9 +12,8 @@
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { Canvas } from './Canvas';
-import { WeaselProvider } from '../WeaselProvider';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.
 beforeAll(() => {
@@ -58,19 +57,8 @@ describe('<Canvas> without selection prop', () => {
     spy.mockRestore();
   });
 
-  it('fires onBackgroundClick when supplied and the canvas receives a non-tool-handled pointer event', () => {
-    // When no `tools` prop is passed there is no gesture dispatcher, so
-    // every pointer event is "not handled by a tool." Canvas should fire
-    // onBackgroundClick on a pointerdown + pointerup pair in this case.
-    const onBackgroundClick = vi.fn();
-    const { container } = render(
-      <WeaselProvider>
-        <Canvas width={100} height={100} layers={{}} onBackgroundClick={onBackgroundClick} />
-      </WeaselProvider>
-    );
-    const canvas = container.querySelector('canvas')!;
-    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10 });
-    fireEvent.pointerUp(canvas, { clientX: 10, clientY: 10 });
-    expect(onBackgroundClick).toHaveBeenCalled();
-  });
+  // `onBackgroundClick` is gone. It fired when the tool dispatcher hadn't
+  // claimed the pointer, which is not a distinction `<Canvas>` can make now
+  // that it doesn't route input. A consumer wanting "clicked empty canvas"
+  // binds `{ kind: 'click', target: 'empty' }`, the way `clearSelection` does.
 });

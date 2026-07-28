@@ -1,8 +1,7 @@
 // src/tools/useTools.ts
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createToolsDispatcher, type ToolsDispatcher, type ToolsDispatcherOptions } from './dispatcher';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { dlog } from '../debug/flag';
-import type { AnyTool, ToolCtx } from './types';
+import type { AnyTool } from './types';
 import type { RenderLayer } from 'core/layers/render';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 
@@ -15,36 +14,18 @@ export interface UseToolsOptions {
   registry: Record<string, AnyTool>;
   /** Always-on tools — listen continuously regardless of active slot. */
   ambient?: AnyTool[];
-  /** Optional fallback tool consulted ONLY for `pointer.onClick` when the
-   *  active tool's click handler returns `'pass'` (or has no handler).
-   *  Lets a non-select tool stay active while unhandled clicks fall through
-   *  to the select tool for click-to-select. Not consulted for pointerdown,
-   *  drag, keyboard, wheel, or dblTap. */
-  fallback?: AnyTool;
-  /** Per-event base ctx supplier. `<Canvas>` wires this to inject world
-   *  coords, modifiers, selection, adapter, applyOps. Tests can supply
-   *  a stub. Optional — the dispatcher works with a default empty ctx
-   *  for tests that don't need the wiring. */
-  getCtx?: (overrides?: {
-    clientX?: number;
-    clientY?: number;
-    modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean };
-  }) => Omit<ToolCtx, 'scratch'>;
-  /** Optional scene hit-test for populating `ctx.target` on pointer events.
-   *  `<Canvas>` wires this from the effective `pickEvery` + adapter. Tests
-   *  may supply a stub; omit for the always-empty fallback. */
-  getNodeAtPoint?: ToolsDispatcherOptions['getNodeAtPoint'];
 }
 
 export interface ToolsApi {
   /** Current active-slot tool id. */
   active: string;
-  /** Set the active-slot tool. Cancels any in-flight gesture. */
+  /** Set the active-slot tool. The gesture dispatcher watches the active
+   *  tool and cancels any in-flight handle itself. */
   setActive: (id: string) => void;
   /** Currently hotkey-engaged tool id (or `null`). Derived as the top of
    *  the hotkey stack for backwards compat with the pre-stack API. */
   hotkeyEngaged: string | null;
-  /** Engage a hotkey-slot tool by id. No-op if a gesture is in flight. */
+  /** Engage a hotkey-slot tool by id. */
   engageHotkey: (id: string) => void;
   /** Disengage the hotkey-slot tool, if any. */
   disengageHotkey: () => void;
@@ -52,13 +33,6 @@ export interface ToolsApi {
   ambient: readonly AnyTool[];
   /** Full registry — for userland UI (palette buttons, etc.). */
   registry: Readonly<Record<string, AnyTool>>;
-  /** The dispatcher `<Canvas>` wires to its DOM events. */
-  dispatcher: ToolsDispatcher;
-  /** Increments whenever an in-flight gesture starts, transitions phase, or
-   *  ends. Consumers (e.g. `<Canvas>` cursor resolution) include this in
-   *  their render deps to re-evaluate derived state on real DOM events
-   *  rather than waiting for an unrelated re-render. */
-  gestureTick: number;
   /** Returns true if a tool with the given id is in the registry or ambient list. */
   has(id: string): boolean;
   /** All overlay layers from currently-engaged tools (active slot, hotkey
@@ -68,24 +42,13 @@ export interface ToolsApi {
   getActiveOverlays(): RenderLayer<unknown>[];
 }
 
-const DEFAULT_CTX: Omit<ToolCtx, 'scratch'> = {
-  worldX: 0,
-  worldY: 0,
-  modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
-  selection: {
-    get: () => [], set: () => {}, add: () => {}, remove: () => {},
-    toggle: () => {}, clear: () => {}, applyClick: () => {},
-  } as never,
-  adapter: null,
-  view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
-  setView: () => {},
-  canvasRect: typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect),
-  applyOps: () => {},
-  debug: undefined,
-};
-
 /**
- * Manages the active tool, hotkey slot, and gesture dispatcher.
+ * Manages the active tool and hotkey slot.
+ *
+ * It used to also own a dispatcher: `useTools` constructed the tool-routing
+ * dispatcher and `<Canvas>` pumped DOM events into it. Input now belongs
+ * entirely to `useGestureDispatcher`, so what's left here is slot state plus
+ * the overlay roll-up.
  *
  * Requires `<ActiveToolContextProvider>` (or `<WeaselProvider>` /
  * `<SceneCanvas>`, which mount one internally) in scope: active/hotkey state
@@ -132,66 +95,36 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
   const hotkeyStack = ctx.hotkeyStack;
   const hotkeyEngaged = hotkeyStack.at(-1) ?? null;
 
-  const [gestureTick, setGestureTick] = useState(0);
-
-  // Refs so the dispatcher's getSlots/getCtx callbacks see latest values
-  // without re-creating the dispatcher.
+  // Refs so the memoized callbacks below see latest values without
+  // re-creating themselves.
   const registryRef = useRef(opts.registry);
   registryRef.current = opts.registry;
   const ambientRef = useRef(opts.ambient ?? []);
   ambientRef.current = opts.ambient ?? [];
-  const fallbackRef = useRef(opts.fallback);
-  fallbackRef.current = opts.fallback;
   const activeRef = useRef(active);
   activeRef.current = active;
   const hotkeyRef = useRef(hotkeyEngaged);
   hotkeyRef.current = hotkeyEngaged;
-  const getCtxRef = useRef(opts.getCtx);
-  getCtxRef.current = opts.getCtx;
-  const getNodeAtPointRef = useRef(opts.getNodeAtPoint);
-  getNodeAtPointRef.current = opts.getNodeAtPoint;
-
-  const dispatcher = useMemo(
-    () =>
-      createToolsDispatcher({
-        getSlots: () => ({
-          hotkey: hotkeyRef.current ? registryRef.current[hotkeyRef.current] ?? null : null,
-          active: registryRef.current[activeRef.current] ?? null,
-          ambient: ambientRef.current,
-          fallback: fallbackRef.current ?? null,
-        }),
-        getCtx: (overrides) => {
-          if (getCtxRef.current) return getCtxRef.current(overrides);
-          return DEFAULT_CTX;
-        },
-        getNodeAtPoint: (wx, wy) => getNodeAtPointRef.current?.(wx, wy) ?? null,
-        onGestureChange: () => setGestureTick((t) => t + 1),
-      }),
-    [],
-  );
-
   const setActive = useCallback(
     (id: string) => {
       if (!(id in registryRef.current)) {
         throw new Error(`setActive: "${id}" not in registry`);
       }
       dlog('tools', 'active:', activeRef.current, '→', id);
-      dispatcher.cancelGesture();
       ctx.setActive(id);
     },
-    [dispatcher, ctx],
+    [ctx],
   );
 
   const engageHotkey = useCallback(
     (id: string) => {
-      if (dispatcher.hasActiveGesture()) return; // mid-gesture lockout
       if (!(id in registryRef.current)) {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
       dlog('tools', 'hotkey engaged:', id);
       ctx.pushHotkey(id);
     },
-    [dispatcher, ctx],
+    [ctx],
   );
 
   const disengageHotkey = useCallback(() => {
@@ -231,11 +164,9 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       disengageHotkey,
       ambient: ambientRef.current,
       registry: registryRef.current,
-      dispatcher,
-      gestureTick,
       has,
       getActiveOverlays,
     }),
-    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, dispatcher, gestureTick, has, getActiveOverlays],
+    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays],
   );
 }

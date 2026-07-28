@@ -13,7 +13,7 @@ import {
   type ToolsApi,
 } from '@weasel-js/core';
 import type { PhaseSpec } from '@weasel-js/gestures';
-import { buildActionRegistry, formatRoute, mods, parseRoute, type ModifierCombo, type RegistryEntry } from '@weasel-js/core/routing';
+import { formatRoute } from '@weasel-js/core/routing';
 import type {
   GestureName,
   ParsedModifiers,
@@ -21,7 +21,7 @@ import type {
   ToolDef,
 } from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
-import type { DeclaredRoute, PhaseSummary, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
+import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';
 import { formatShortcutParts } from '@weasel-js/ui';
 import s from './RegistryInspector.module.css';
 
@@ -110,16 +110,11 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
           : [];
         // Catalog view: the distinct route signatures this tool contributes.
         const routes = [...new Set(declaredRoutes.map((r) => r.route))];
-        const summarized = def ? summarizePhase(def.initial) : EMPTY_PHASE;
-        // Same Tool-vs-def split as `bindings`: `defineTool` derives the
-        // Tool's overlay from `def.initial.overlay`, but a hook can attach one
-        // to the returned Tool instead (`useRotateTool` does — it's an
-        // overlay-only ambient tool). Reading the def alone reported "emits no
-        // overlay" for exactly the tools that are nothing but an overlay.
-        const initial: PhaseSummary = t.overlay === undefined
-          ? summarized
-          : { ...summarized, outputs: { ...summarized.outputs, overlay: true } };
-        const engaged = def?.engaged ? summarizePhase(def.engaged) : undefined;
+        // Read the Tool, not the def: a hook can attach an overlay to the
+        // returned Tool rather than declaring it (`useRotateTool` does — it's
+        // an overlay-only ambient tool), and reading the def alone reported
+        // "emits no overlay" for exactly the tools that are nothing but one.
+        const surface = summarizeSurface(t as Parameters<typeof summarizeSurface>[0]);
         return {
           kind: 'tool',
           id: t.id,
@@ -140,12 +135,11 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
             shortcut: def.presentation.shortcut,
             icon: renderPresentationIcon(def.presentation.icon),
           } : undefined,
-          phases: { initial, engaged },
+          surface,
           capabilities: {
             initScratch: !!def?.initScratch,
             onActivate: !!def?.onActivate,
             onDeactivate: !!def?.onDeactivate,
-            hitOverride: !!def?.hitOverride,
           },
           callbacks,
         };
@@ -196,18 +190,6 @@ export function RegistryProbe({ onSnapshot }: ProbeProps) {
   );
 }
 
-function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
-  return entries.map((e) => formatRoute({
-    // Probe entries carry tool phases ('initial' | 'engaged') as bare
-    // strings; wrap into a `&`-channel atom so the new grammar shape
-    // round-trips to the same `[initial]` / `[engaged]` shorthand.
-    phases: [{ channel: '&', phase: e.phase }],
-    gesture: e.gesture,
-    arg: e.arg,
-    target: e.target,
-    modifiers: e.modifiers,
-  }));
-}
 
 /** Every route a tool declares, in declaration order: phase-table routes
  *  (`def.initial` / `def.engaged`) first, then binding routes. Built-in tools
@@ -231,16 +213,15 @@ function formatRoutes(entries: readonly RegistryEntry[]): readonly string[] {
 function collectDeclaredRoutes(
   def: ToolDef<unknown>,
   bindings: ToolDef<unknown>['bindings'],
-  phaseCallbacks: readonly CallbackRef[],
+  _callbacks: readonly CallbackRef[],
   actionsByID: ReadonlyMap<string, unknown>,
 ): readonly DeclaredRoute[] {
-  const seen = new Set<string>();
   const out: DeclaredRoute[] = [];
-  for (const route of formatRoutes(buildActionRegistry([def]))) {
-    if (seen.has(route)) continue;
-    seen.add(route);
-    out.push({ route, source: findPhaseCallback(route, phaseCallbacks)?.source });
-  }
+  // Bindings are the whole surface. This used to walk the phase tables via
+  // `buildActionRegistry(def)` first and append bindings after — which is
+  // why select reported 6 routes when it declared 14: the phase walk was
+  // blind to `Tool.bindings`, and by the end that was where nearly every
+  // route lived.
   for (const { route, actionId } of bindingRouteRefs(bindings ?? def.bindings)) {
     // Bindings are plain object literals, so the source-tag plugin has no
     // function to tag. Cite the action's invoker instead — that's the code
@@ -248,50 +229,6 @@ function collectDeclaredRoutes(
     out.push({ route, actionId, source: bestActionHandlerSource(actionsByID.get(actionId)) });
   }
   return out;
-}
-
-/** Locate the phase-table handler behind a formatted route string, by
- *  reconstructing the dotted label `collectPhaseCallbacks` assigned it
- *  (`initial.click.empty:shift`, `engaged.keyDown.Escape`, …). Returns
- *  undefined when the dev plugin didn't tag the function. */
-function findPhaseCallback(
-  route: string,
-  callbacks: readonly CallbackRef[],
-): CallbackRef | undefined {
-  const parsed = parseRoute(route);
-  const phase = parsed.phases[0]?.phase;
-  if (!phase) return undefined;
-  const g = parsed.gesture;
-  const candidates: string[] = [];
-  if (g === 'wheel') {
-    candidates.push(`${phase}.wheel`);
-  } else if (g === 'keyDown' || g === 'keyUp') {
-    if (parsed.arg) candidates.push(`${phase}.${g}.${parsed.arg}`);
-  } else if (g === 'click' || g === 'pointerDown' || g === 'dblTap' || g === 'drag') {
-    const target = parsed.target ?? '*';
-    // Sub-table keys are `ModifierCombo` strings (`mods('mod','shift')` →
-    // `'mod+shift'`), NOT the `name=requiredness` form `canonicalModifiers`
-    // emits — matching on the latter never hit, which is why every
-    // modifier-variant route showed a blank source.
-    const modKey = modifierComboOf(parsed.modifiers);
-    if (modKey !== 'default') candidates.push(`${phase}.${g}.${target}:${modKey}`);
-    candidates.push(`${phase}.${g}.${target}`);
-    // Bare drag function lives at `${phase}.drag` with no target/mod suffix.
-    if (g === 'drag') candidates.push(`${phase}.drag`);
-  }
-  for (const label of candidates) {
-    const hit = callbacks.find((c) => c.label === label);
-    if (hit) return hit;
-  }
-  return undefined;
-}
-
-/** `ParsedModifiers` → the `ModifierCombo` key a route sub-table is authored
- *  with. Optional modifiers don't participate: they widen a route rather than
- *  selecting a distinct sub-table. */
-function modifierComboOf(parsed: ParsedModifiers): ModifierCombo {
-  const required = (['mod', 'shift', 'alt'] as const).filter((n) => parsed[n] === 'required');
-  return mods(...required);
 }
 
 /** Map of `GestureSpec.kind` → `GestureName` used by the route grammar.
@@ -308,6 +245,7 @@ const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined>
   doubleClick: 'dblTap',
   contextMenu: 'contextMenu',
   drag: 'drag',
+  pointerDown: 'pointerDown',
   multiTouch: undefined,
   multiTouchTap: 'multiTouchTap',
   drop: undefined,
@@ -408,32 +346,41 @@ function targetSpecToString(target: TargetSpec | undefined): string {
   return 'predicate';
 }
 
-const EMPTY_PHASE: PhaseSummary = {
-  gestures: {
-    click: false, pointerDown: false, drag: false,
-    wheel: false, keyDown: false, keyUp: false,
-  },
-  outputs: { cursor: false, overlay: false, claimsAll: false },
+/** `GestureSpec.kind` -> the `GestureChannels` key it sets. */
+const CHANNEL_FOR_KIND: Readonly<Record<string, string>> = {
+  click: 'click',
+  doubleClick: 'doubleClick',
+  pointerDown: 'pointerDown',
+  drag: 'drag',
+  wheel: 'wheel',
+  key: 'key',
+  'key-held': 'keyHeld',
+  contextMenu: 'contextMenu',
+  multiTouchTap: 'multiTouchTap',
 };
 
-/** Boolean-only digest of a `PhaseDef`, partitioned into gestures (what the
- *  tool subscribes to) and outputs (what it declares / emits). Route
- *  signatures already cover the per-target dispatch detail. */
-function summarizePhase(phase: NonNullable<ToolDef<unknown>['initial']>): PhaseSummary {
-  const has = (k: keyof typeof phase): boolean => phase[k] !== undefined;
+/** Boolean-only digest of a tool's input surface: which gesture kinds its
+ *  bindings declare, and what it emits. Route signatures carry the per-target
+ *  detail; this is the at-a-glance row.
+ *
+ *  Was `summarizePhase(def.initial)` — a walk over the phase tables, which
+ *  meant it reported nothing at all for a tool whose whole surface was
+ *  `Tool.bindings`. That was most of them by the end. */
+function summarizeSurface(tool: { bindings?: readonly { spec: { kind: string } }[]; cursor?: unknown; overlay?: unknown }): ToolSurface {
+  const gestures: Record<string, boolean> = {
+    click: false, doubleClick: false, pointerDown: false, drag: false,
+    wheel: false, key: false, keyHeld: false, contextMenu: false,
+    multiTouchTap: false,
+  };
+  for (const b of tool.bindings ?? []) {
+    const channel = CHANNEL_FOR_KIND[b.spec.kind];
+    if (channel) gestures[channel] = true;
+  }
   return {
-    gestures: {
-      click: has('click'),
-      pointerDown: has('pointerDown'),
-      drag: has('drag'),
-      wheel: has('wheel'),
-      keyDown: has('keyDown'),
-      keyUp: has('keyUp'),
-    },
+    gestures: gestures as unknown as ToolSurface['gestures'],
     outputs: {
-      cursor: has('cursor'),
-      overlay: has('overlay'),
-      claimsAll: has('claimsAll'),
+      cursor: tool.cursor !== undefined,
+      overlay: tool.overlay !== undefined,
     },
   };
 }
@@ -481,68 +428,12 @@ function pushCallback(out: CallbackRef[], label: string, fn: unknown): void {
   if (source) out.push({ label, source });
 }
 
-/** Walks a PhaseDef and pushes a `CallbackRef` for every function-valued
- *  leaf the dispatcher can call. Route tables fan out by target (and by
- *  modifier when the entry is a `ModifierRoute`). */
-function collectPhaseCallbacks(
-  out: CallbackRef[],
-  phase: NonNullable<ToolDef<unknown>['initial']>,
-  phaseLabel: string,
-): void {
-  const routeChannels = ['click', 'pointerDown'] as const;
-  for (const ch of routeChannels) {
-    const tbl = phase[ch];
-    if (!tbl || typeof tbl !== 'object') continue;
-    for (const [target, entry] of Object.entries(tbl)) {
-      if (typeof entry === 'function') {
-        pushCallback(out, `${phaseLabel}.${ch}.${target}`, entry);
-      } else if (entry && typeof entry === 'object') {
-        for (const [mod, fn] of Object.entries(entry)) {
-          pushCallback(out, `${phaseLabel}.${ch}.${target}:${mod}`, fn);
-        }
-      }
-    }
-  }
-  // `drag` may be a route table OR a bare ActionFn.
-  if (typeof phase.drag === 'function') {
-    pushCallback(out, `${phaseLabel}.drag`, phase.drag);
-  } else if (phase.drag && typeof phase.drag === 'object') {
-    for (const [target, entry] of Object.entries(phase.drag)) {
-      if (typeof entry === 'function') {
-        pushCallback(out, `${phaseLabel}.drag.${target}`, entry);
-      } else if (entry && typeof entry === 'object') {
-        for (const [mod, fn] of Object.entries(entry)) {
-          pushCallback(out, `${phaseLabel}.drag.${target}:${mod}`, fn);
-        }
-      }
-    }
-  }
-  pushCallback(out, `${phaseLabel}.wheel`, phase.wheel);
-  for (const ch of ['keyDown', 'keyUp'] as const) {
-    const tbl = phase[ch];
-    if (!tbl) continue;
-    for (const [key, fn] of Object.entries(tbl)) {
-      pushCallback(out, `${phaseLabel}.${ch}.${key}`, fn);
-    }
-  }
-  if (typeof phase.cursor === 'function') {
-    pushCallback(out, `${phaseLabel}.cursor`, phase.cursor);
-  }
-  pushCallback(out, `${phaseLabel}.overlay`, phase.overlay);
-  if (typeof phase.claimsAll === 'function') {
-    pushCallback(out, `${phaseLabel}.claimsAll`, phase.claimsAll);
-  }
-}
-
 function collectToolCallbacks(def: ToolDef<unknown>): readonly CallbackRef[] {
   const out: CallbackRef[] = [];
   pushCallback(out, 'initScratch', def.initScratch);
   pushCallback(out, 'onActivate', def.onActivate);
   pushCallback(out, 'onDeactivate', def.onDeactivate);
-  pushCallback(out, 'hitOverride', def.hitOverride);
   if (typeof def.cursor === 'function') pushCallback(out, 'cursor', def.cursor);
-  if (def.initial) collectPhaseCallbacks(out, def.initial, 'initial');
-  if (def.engaged) collectPhaseCallbacks(out, def.engaged, 'engaged');
   return out;
 }
 

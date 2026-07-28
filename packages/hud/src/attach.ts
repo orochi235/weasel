@@ -1,15 +1,12 @@
 import type { Hud } from './hud';
-import type { CanvasExtensionApi, RenderLayer, AffordanceBinding, DragChannel, View } from '@weasel-js/core';
+import type { CanvasExtensionApi, RenderLayer, AffordanceBinding, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
 import { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
 import type { Widget, HudPointerEvent } from './widget';
+import type { HudHitPayload } from './tool';
 import { readTokens } from './theme';
-
-interface HudDragScratch {
-  widget: Widget;
-}
 
 export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
   if (hud.attached) {
@@ -55,38 +52,16 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
       const [sx, sy] = worldToScreen(worldX, worldY, t);
       const hit = findTopmostHit(sx, sy);
       if (!hit) return null;
-
-      // Build a drag channel that routes events into hit.onPointer.
-      // The dispatcher calls onStart immediately on hit, then onMove on each
-      // pointermove, onEnd on pointerup, onCancel on pointercancel.
-      const drag: DragChannel<HudDragScratch> = {
-        onStart: (e, ctx) => {
-          const [ex, ey] = worldToScreen(ctx.worldX, ctx.worldY, viewToTransform(ctx.view));
-          ctx.scratch.widget.onPointer({ type: 'down', x: ex, y: ey, native: e } satisfies HudPointerEvent);
-          return 'claim';
-        },
-        onMove: (e, ctx) => {
-          const [ex, ey] = worldToScreen(ctx.worldX, ctx.worldY, viewToTransform(ctx.view));
-          ctx.scratch.widget.onPointer({ type: 'move', x: ex, y: ey, native: e } satisfies HudPointerEvent);
-          return 'claim';
-        },
-        onEnd: (e, ctx) => {
-          const [ex, ey] = worldToScreen(ctx.worldX, ctx.worldY, viewToTransform(ctx.view));
-          ctx.scratch.widget.onPointer({ type: 'up', x: ex, y: ey, native: e } satisfies HudPointerEvent);
-          return 'claim';
-        },
-        onCancel: (ctx) => {
-          // No native event available in onCancel — pass a stub. Widget
-          // implementations must accept this case (the protocol type allows it).
-          ctx.scratch.widget.onPointer({ type: 'cancel', native: new Event('pointercancel') as PointerEvent } satisfies HudPointerEvent);
-        },
-      };
-
-      const result: AffordanceBinding<HudDragScratch> = {
-        drag,
-        initialScratch: { widget: hit },
-      };
-      return result as AffordanceBinding;
+      // Report WHICH widget was hit and stop there. `<SceneCanvas>` folds this
+      // into its `affordanceAt` thunk, so the hit reaches actions as an
+      // `AffordanceHit` of kind `layer:weasel-hud` carrying this payload; the
+      // `hud.pointer` action (see `tool.ts`) picks it up from there.
+      //
+      // This used to return a `DragChannel` for the tool-routing dispatcher to
+      // drive directly. That dispatcher is gone, and a hit-test handing back
+      // event handlers was always an odd shape — a hit-test should say what
+      // was hit.
+      return { initialScratch: { widget: hit } } satisfies AffordanceBinding<HudHitPayload>;
     },
     onUncapturedMove: (worldX, worldY, evt, view: View) => {
       const t = viewToTransform(view);

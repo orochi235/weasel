@@ -57,6 +57,17 @@ export interface AffordanceHit {
    *  `useGestureDispatcher`; unset = the pump falls through to
    *  action-cursor prediction, then to the active tool's cursor. */
   cursor?: string;
+  /**
+   * Free-form payload from whatever produced the hit, carried through to the
+   * matching action untouched.
+   *
+   * Kit affordances describe themselves fully in the fields above and leave
+   * this unset. It exists for affordances the kit doesn't know the shape of —
+   * a registered layer's own chrome, where the hit-test already resolved
+   * *which* of its pieces was hit and the action would otherwise have to
+   * redo that work. `@weasel-js/hud` passes the hit widget here.
+   */
+  payload?: unknown;
 }
 
 /**

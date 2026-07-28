@@ -14,7 +14,6 @@
  *
  * Public-prop forwards (appended; not part of the 9-behavior seam list):
  *   - selectTool.pickBest forwards an alt-aware body-pick into useSelectTool
- *   - clickFallback forwards into the patch-form useTools `fallback` slot
  */
 
 import { describe, it, expect, vi, beforeAll } from 'vitest';
@@ -23,7 +22,6 @@ import { useEffect } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
-import type { AnyTool } from 'tools/types';
 import { useActionsRegistry } from 'interactions/actions/registry';
 
 // ---------------------------------------------------------------------------
@@ -534,60 +532,9 @@ describe('Seam: selectTool.pickBest forwards into the internal select tool', () 
   });
 });
 
-// ---------------------------------------------------------------------------
-// Seam: clickFallback forwards into the internal useTools fallback slot
-// ---------------------------------------------------------------------------
-
-describe('Seam: clickFallback forwards into the internal useTools fallback slot', () => {
-  it('fires the clickFallback tool\'s pointer.onClick when the active tool passes an empty-space click', () => {
-    // Empty scene → click in empty space → the active select tool returns
-    // `pass` (nothing to select) → the dispatcher consults the fallback slot.
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const onFallbackClick = vi.fn();
-    const clickFallback: AnyTool = {
-      id: 'click-fallback',
-      pointer: { onClick: () => { onFallbackClick(); return 'claim'; } },
-    };
-
-    const { container } = render(
-      <SceneCanvas
-        scene={scene}
-        layers={{}}
-        width={200}
-        height={200}
-        clickFallback={clickFallback}
-      />,
-    );
-    const canvas = container.querySelector('canvas')!;
-
-    act(() => {
-      pd(canvas, 50, 50);
-      pu(canvas, 50, 50);
-    });
-
-    expect(onFallbackClick).toHaveBeenCalledOnce();
-  });
-
-  it('without clickFallback, nothing extra fires on an empty-space click (baseline)', () => {
-    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
-    const onFallbackClick = vi.fn();
-
-    const { container } = render(
-      <SceneCanvas
-        scene={scene}
-        layers={{}}
-        width={200}
-        height={200}
-      />,
-    );
-    const canvas = container.querySelector('canvas')!;
-
-    act(() => {
-      pd(canvas, 50, 50);
-      pu(canvas, 50, 50);
-    });
-
-    // No fallback wired → the spy (which is not attached to anything) stays at 0.
-    expect(onFallbackClick).not.toHaveBeenCalled();
-  });
-});
+// The `clickFallback` prop is gone. It was a slot on the tool-routing
+// dispatcher, consulted when the active tool's `pointer.onClick` returned
+// `'pass'` — a phase-table concept with no equivalent in the binding grammar,
+// where the same effect is what AMBIENT scope already means: a binding that
+// fires when no active-scope binding claims the gesture. It had no consumer
+// beyond this test.

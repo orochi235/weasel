@@ -80,7 +80,7 @@ describe('createCornerResizeAffordance', () => {
     // Selection at (100, 100, 50, 40). Top-left corner is (100, 100).
     const result = layer.hitTest(100, 100, stateWithSingle(), VIEW, DIMS);
     expect(result).not.toBeNull();
-    expect(result?.drag).toBeDefined();
+    expect(result?.initialScratch).toBeDefined();
   });
 
   it('layer hitTest initialScratch identifies the picked anchor + target', () => {

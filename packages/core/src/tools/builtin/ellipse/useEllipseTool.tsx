@@ -29,7 +29,6 @@ export function useEllipseTool(): Tool<null> {
             opts: { params: { kind: 'ellipse' } },
           },
         ],
-        initial: {},
       }),
     [],
   );

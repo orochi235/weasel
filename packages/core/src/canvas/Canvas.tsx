@@ -3,7 +3,7 @@
  * Composes layers into a single GL render pass, applies a view transform,
  * routes pointer/keyboard events to the supplied `tools.dispatcher`, and
  * exposes scene-agnostic slot props (`backgroundFill`, `cursorCoordsHud`,
- * `pickHud`, `onBackgroundClick`, `getNodeAtPoint`).
+ * `pickHud`).
  *
  * Canvas owns NO scene-shaped state — selection, picking, kind registry,
  * scene-aware overlays — all live in `<SceneCanvas>` (the public consumer
@@ -34,7 +34,6 @@ import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
 import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds } from './toolPreview';
 
-import type { ToolsDispatcher } from 'tools/dispatcher';
 import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
@@ -244,16 +243,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   selection?: SelectionApi;
 
-  /**
-   * Fires when the canvas receives a pointer event that the tool dispatcher
-   * did not handle (no active gesture was started on pointerdown, or the
-   * pointer was released without a gesture). Useful for "click on background
-   * clears selection" — `<SceneCanvas>` wires this to `selection.clear()`.
-   *
-   * The listener is only installed when this callback is supplied. Omitting
-   * the prop means no background-click listener is registered.
-   */
-  onBackgroundClick?: () => void;
 
   /**
    * Pose↔bounds projection for non-rect `TPose` types. When supplied, drives
@@ -455,13 +444,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    */
   pickBest?: (worldX: number, worldY: number) => string | null;
 
-  /** Resolves a single hit (id + kind + pose + data) at world coords for the
-   *  tool dispatcher. `<SceneCanvas>` synthesizes this from its node-kind
-   *  registry and adapter via `makeGetNodeAtPoint`. When omitted, the
-   *  dispatcher receives no hit info and tool routing based on `target.kind`
-   *  will not fire. Bare-`<Canvas>` consumers that need kind-based routing
-   *  should build this with `makeGetNodeAtPoint`. */
-  getNodeAtPoint?: (worldX: number, worldY: number) => { id: string; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> } | null;
 
   /**
    * Optional mode-owned decoration layer. When supplied, Canvas inserts it
@@ -680,14 +662,17 @@ function resolveToolsCursor(
   if (!tool?.cursor) return undefined;
   if (typeof tool.cursor === 'string') return tool.cursor;
   if (!ctxBase) return undefined;
-  // Function form: invoke at render time with the live base ctx and the
-  // dispatcher's current scratch (if a gesture is in flight). Gesture phase
-  // transitions bump `tools.gestureTick`, which forces a re-render so the
-  // cursor re-resolves mid-drag (e.g. grab→grabbing).
+  // Function form: invoke at render time with the live base ctx.
+  //
+  // `ctx.scratch` is always null here. It used to be the tool-routing
+  // dispatcher's in-flight gesture scratch, which is how `grab` became
+  // `grabbing` and how select swapped to `move` — mid-gesture cursors are now
+  // `Action.activeCursor`, applied imperatively by the hover pump. A tool that
+  // wants a cursor driven by its own state closes over its own ref (the pen
+  // does, for its close-path hint).
   try {
     const base = ctxBase();
-    const scratch = tools.dispatcher.getActiveScratch?.() ?? null;
-    return tool.cursor({ ...base, scratch });
+    return tool.cursor({ ...base, scratch: null });
   } catch {
     return undefined;
   }
@@ -704,7 +689,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     adapter: adapterProp,
     layers: layersMap,
     selection,
-    onBackgroundClick,
     boundsOf,
     pickEvery,
     clientToWorld,
@@ -731,7 +715,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     pickHud,
     modalityHud,
     pickBest,
-    getNodeAtPoint,
     decorationLayer,
     getIsVisible,
   } = props;
@@ -758,6 +741,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Read by `hitTestExtras`, which is built once and must see live values.
+  const dimsRef = useRef({ width, height });
+  dimsRef.current = { width, height };
+  const getIsVisibleRef = useRef(getIsVisible);
+  getIsVisibleRef.current = getIsVisible;
+
   const [redrawNonce, setRedrawNonce] = useState(0);
   const requestRedraw = useCallback(() => setRedrawNonce(n => n + 1), []);
 
@@ -771,11 +760,31 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     };
   }, []);
 
+  // Hit-test registered layers topmost-first. Registration order is draw
+  // order, so the last-registered layer is on top and gets first refusal —
+  // the reverse of the Set's iteration order.
+  //
+  // `<SceneCanvas>` folds this into its `affordanceAt` thunk. Canvas can't do
+  // that itself: it has the layers but not the dispatcher.
+  const hitTestExtras = useCallback((worldX: number, worldY: number) => {
+    const layers = [...extrasRef.current].reverse();
+    const view = viewRef.current;
+    const dims = dimsRef.current;
+    const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
+    for (const layer of layers) {
+      if (!layer.hitTest) continue;
+      const binding = layer.hitTest(worldX, worldY, undefined, view, dims, isVisible);
+      if (binding) return { layerId: layer.id, binding };
+    }
+    return null;
+  }, []);
+
   useImperativeHandle(ref, () => ({
     element: canvasRef.current,
     requestRedraw,
     registerLayer,
-  }), [canvasRef, requestRedraw, registerLayer]);
+    hitTestExtras,
+  }), [canvasRef, requestRedraw, registerLayer, hitTestExtras]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
@@ -855,8 +864,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   );
   const effectiveSelection: SelectionApi = selection ?? noopSelection;
 
-  // Build the per-event base ctx the tools dispatcher injects into handlers.
-  // Refs so identity stays stable while the underlying values update.
+  // Base ctx for the function form of `Tool.cursor` — the last consumer of
+  // `ToolCtx` now that the tool-routing dispatcher is gone. Refs so identity
+  // stays stable while the underlying values update.
   const effectiveSelectionRefForCtx = useRef(effectiveSelection);
   effectiveSelectionRefForCtx.current = effectiveSelection;
   const effectiveAdapterRefForCtx = useRef(effectiveAdapter);
@@ -908,29 +918,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     [],
   );
 
-  // If a tools prop was passed, mutate its dispatcher's ctx supplier so
-  // handlers see the live selection/adapter/applyOps — useTools's own
-  // default ctx is the empty test stub.
-  useEffect(() => {
-    if (!tools) return;
-    // Small monkey-patch: replace the dispatcher's getCtx by re-creating it.
-    // Phase 2 cleanup: thread getCtx through useTools properly so this isn't needed.
-    const d = tools.dispatcher as ToolsDispatcher & {
-      __setGetCtx?: (fn: (overrides?: { clientX?: number; clientY?: number; modifiers?: { alt: boolean; shift: boolean; meta: boolean; ctrl: boolean } }) => unknown) => void;
-      __setHitTestContext?: (fn: (() => {
-        layers: readonly RenderLayer<unknown>[];
-        chromeState: ChromeState;
-        view: View;
-        dims: { width: number; height: number };
-      } | null) | undefined) => void;
-    };
-    d.__setGetCtx?.(toolsCtxBase);
-  }, [tools, toolsCtxBase]);
-
   // Stable wrappers for HUD props — read the ref at call time so the HUDs
   // don't reinstall their useEffect on every render when the prop identity
   // changes (e.g. when SceneCanvas re-renders with a new lambda reference).
-  // pickEvery and pickBest are HUD-only; tool routing uses getNodeAtPoint.
+  // pickEvery and pickBest are HUD-only.
   const pickEveryRef = useRef(pickEvery);
   pickEveryRef.current = pickEvery;
   const pickBestRef = useRef(pickBest);
@@ -949,24 +940,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     (wx: number, wy: number): string | null => pickBestRef.current?.(wx, wy) ?? null,
     [],
   );
-  // Wire the dispatcher's scene hit-test with the supplied getNodeAtPoint prop.
-  // SceneCanvas synthesizes this from its node-kind registry + adapter via
-  // makeGetNodeAtPoint; bare-Canvas consumers may pass their own or omit it.
-  useEffect(() => {
-    if (!tools || !getNodeAtPoint) return;
-    const d = tools.dispatcher as ToolsDispatcher & {
-      __setGetNodeAtPoint?: (
-        fn: ((worldX: number, worldY: number) =>
-          | { id: NodeId; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> }
-          | null) | undefined,
-      ) => void;
-    };
-    d.__setGetNodeAtPoint?.(getNodeAtPoint as (wx: number, wy: number) => { id: NodeId; kind: string; pose: unknown; data: unknown; meta?: Record<string, unknown> } | null);
-    return () => {
-      d.__setGetNodeAtPoint?.(undefined);
-    };
-  }, [tools, getNodeAtPoint]);
-
   // Selection-driven action gestures (delete/nudge/undoRedo/duplicate) used
   // to be wired here via legacy hooks. They now go through the Actions
   // Registry / dispatcher path; consumers register them via the kit's
@@ -1063,51 +1036,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     [selectedIdsForWiring, multiActive, effectiveBoundsOf, tools, geometry, adapter],
   );
 
-  // Wire the dispatcher's hit-test context. The active tool's overlay (and
-  // hotkey/ambient overlays) are the affordance-layer pipeline: overlays
-  // that publish a `hitTest` (e.g. select tool's corner-resize affordance)
-  // get walked top-down on pointerdown so cross-tool hits (lasso → corner
-  // resize) route through the affordance instead of the foreground tool's
-  // drag.onStart. The closure reads refs so it always sees the latest
-  // layers / chromeState / view / dims without re-installing on every
-  // paint.
-  const getIsVisibleRef = useRef(getIsVisible);
-  getIsVisibleRef.current = getIsVisible;
-  const hitTestRefs = useRef({ tools, chromeState, view: effectiveView, width, height });
-  hitTestRefs.current = { tools, chromeState, view: effectiveView, width, height };
-  useEffect(() => {
-    if (!tools) return;
-    const d = tools.dispatcher as ToolsDispatcher & {
-      __setHitTestContext?: (fn: (() => {
-        layers: readonly RenderLayer<unknown>[];
-        chromeState: ChromeState;
-        view: View;
-        dims: { width: number; height: number };
-        isVisible?: (id: string) => boolean;
-      } | null) | undefined) => void;
-    };
-    d.__setHitTestContext?.(() => {
-      const r = hitTestRefs.current;
-      if (!r.tools) return null;
-      // `getActiveOverlays` returns [active, hotkey?, ...ambient]; reverse
-      // for top-down so the foreground-most tool's affordances fire first.
-      const overlays = r.tools.getActiveOverlays();
-      const extras = Array.from(extrasRef.current);
-      // Top-down walk order: extras first (HUDs on top), then tool overlays
-      // (reversed so foreground-most tool's overlays fire before ambient ones).
-      const isVisibleFn = getIsVisibleRef.current?.();
-      return {
-        layers: [...extras, ...overlays.reverse()],
-        chromeState: r.chromeState,
-        view: r.view,
-        dims: { width: r.width, height: r.height },
-        ...(isVisibleFn ? { isVisible: isVisibleFn } : {}),
-      };
-    });
-    return () => {
-      d.__setHitTestContext?.(undefined);
-    };
-  }, [tools]);
+  // The affordance-layer hit-test used to be wired into the tool-routing
+  // dispatcher from here, so its pointerdown could walk tool overlays
+  // top-down. `<SceneCanvas>` now composes the equivalent walk into the
+  // `affordanceAt` thunk it hands `useGestureDispatcher` — over registered
+  // layers via `hitTestExtras` above, and over selection chrome itself.
 
   // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
   // call (as the `data` arg) so custom layers can read live overlay state
@@ -1163,159 +1096,46 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   };
   if (helpersRef) helpersRef.current = helpersForLayers;
 
-// Keyboard routing through the dispatcher when tools is set.
-  useEffect(() => {
-    if (!tools) return;
-    const onDown = (e: KeyboardEvent) => tools.dispatcher.onKeyDown(e);
-    const onUp = (e: KeyboardEvent) => tools.dispatcher.onKeyUp(e);
-    document.addEventListener('keydown', onDown);
-    document.addEventListener('keyup', onUp);
-    return () => {
-      document.removeEventListener('keydown', onDown);
-      document.removeEventListener('keyup', onUp);
-    };
-  }, [tools]);
-
-  // Document-level pointerup/pointercancel backstop for the tools dispatcher.
-  // The dispatcher is a pure in-memory state machine — it doesn't attach DOM
-  // listeners. React's onPointerUp on the canvas only fires when the canvas is
-  // still the event target; if the user moves off-canvas and releases there,
-  // the pointerup lands on document and the dispatcher never sees it, leaving
-  // the gesture in flight (move-overlay ghost leaks, no commit).
-  //
-  // Mirrors the doc-listener pattern in usePointerGestures.attachDocListeners
-  // (see the comments there): we don't rely on setPointerCapture or
-  // lostpointercapture because their ordering vs. pointerup is not reliable
-  // when mid-drag re-renders drop implicit capture.
-  //
-  // Listeners are attached on gesture start (pointerdown that the dispatcher
-  // accepted) and detached on the matching up/cancel. They forward to the
-  // dispatcher exactly like the React handlers — endActiveGesture-equivalent
-  // logic lives entirely inside the dispatcher's onPointerUp.
-  // Track whether the pointerdown on the canvas started a tool gesture.
-  // Used to determine whether a matching pointerup is a "background click"
-  // (no gesture was claimed → fire onBackgroundClick).
-  const downStartedGestureRef = useRef(false);
-
-  const onBackgroundClickRef = useRef(onBackgroundClick);
-  onBackgroundClickRef.current = onBackgroundClick;
-
-  const docListenersRef = useRef<{
-    move: (e: PointerEvent) => void;
-    up: (e: PointerEvent) => void;
-    cancel: (e: PointerEvent) => void;
-  } | null>(null);
-  const detachDocListeners = useCallback(() => {
-    const ls = docListenersRef.current;
-    if (!ls) return;
-    document.removeEventListener('pointermove', ls.move);
-    document.removeEventListener('pointerup', ls.up);
-    document.removeEventListener('pointercancel', ls.cancel);
-    docListenersRef.current = null;
-  }, []);
-  const attachDocListeners = useCallback((dispatcher: ToolsDispatcher) => {
-    if (docListenersRef.current) return;
-    const canvas = canvasRef.current;
-    // Forward pointermove too: the React onPointerMove on the canvas only
-    // fires while the cursor is over the canvas. Without doc-level forwarding,
-    // a drag whose pointer leaves the canvas would freeze (no move events,
-    // no threshold promotion if still pending) until the user wanders back.
-    //
-    // Skip events whose target is the canvas — those are already routed via
-    // the React onPointerMove handler, and dispatching twice per move would
-    // double-fire drag.onMove. The same de-dupe applies to pointerup: when
-    // the release lands on the canvas, the React handler runs first; the
-    // doc listener sees the bubbled event and bails because dispatcher's
-    // gesture is already consumed (hasActiveGesture() === false).
-    const isCanvasTarget = (ev: PointerEvent) => ev.target === canvas;
-    const move = (ev: PointerEvent) => {
-      if (isCanvasTarget(ev)) return;
-      dispatcher.onPointerMove(ev);
-    };
-    const up = (ev: PointerEvent) => {
-      if (isCanvasTarget(ev)) return; // React onPointerUp already handled it
-      dispatcher.onPointerUp(ev);
-      detachDocListeners();
-      downStartedGestureRef.current = false;
-    };
-    const cancel = (_ev: PointerEvent) => {
-      dispatcher.cancelGesture();
-      detachDocListeners();
-      downStartedGestureRef.current = false;
-    };
-    document.addEventListener('pointermove', move);
-    document.addEventListener('pointerup', up);
-    document.addEventListener('pointercancel', cancel);
-    docListenersRef.current = { move, up, cancel };
-  }, [detachDocListeners]);
-  // Detach on unmount (no leaked global listeners if Canvas tears down mid-drag).
-  useEffect(() => detachDocListeners, [detachDocListeners]);
+  // Pointer-pressed flag. The only thing `<Canvas>` still needs to know about
+  // pointer state: `onUncapturedMove` means "hover", so it stands down while a
+  // button is held. Everything else about pointer input — thresholds, click and
+  // double-click synthesis, drag handles, the document-level backstop for a
+  // release that lands off-canvas — belongs to `useGestureDispatcher`, which
+  // attaches its own listeners to this same element.
+  const pointerDownRef = useRef(false);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (autoFocusOnPointerDown) e.currentTarget.focus();
-    if (tools) {
-      tools.dispatcher.onPointerDown(e.nativeEvent);
-      const started = tools.dispatcher.hasActiveGesture();
-      downStartedGestureRef.current = started;
-      // Only attach doc listeners if the dispatcher actually started a gesture;
-      // otherwise we'd leak a listener for every empty click on the canvas.
-      if (started) attachDocListeners(tools.dispatcher);
-    } else {
-      downStartedGestureRef.current = false;
-    }
+    pointerDownRef.current = true;
   };
   const handlePointerMove =
     ((e: React.PointerEvent<HTMLCanvasElement>) => {
-      tools?.dispatcher.onPointerMove(e.nativeEvent);
-      // Dispatch onUncapturedMove to layers when no gesture is captured.
-      const gestureActive = tools?.dispatcher.hasActiveGesture() ?? false;
-      if (!gestureActive) {
-        const c = e.currentTarget;
-        const view = viewRef.current;
-        const cw = clientToWorldRef.current;
-        let worldX: number;
-        let worldY: number;
-        if (cw) {
-          [worldX, worldY] = cw(c, e.clientX, e.clientY);
-        } else {
-          const rect = c.getBoundingClientRect();
-          worldX = (e.clientX - rect.left) / view.scale.x + view.x;
-          worldY = (e.clientY - rect.top) / view.scale.y + view.y;
-        }
-        for (const layer of layersWithDebug) {
-          layer.onUncapturedMove?.(worldX, worldY, e.nativeEvent, view, { width, height });
-        }
+      // Dispatch onUncapturedMove to layers when no button is held.
+      if (pointerDownRef.current) return;
+      const c = e.currentTarget;
+      const view = viewRef.current;
+      const cw = clientToWorldRef.current;
+      let worldX: number;
+      let worldY: number;
+      if (cw) {
+        [worldX, worldY] = cw(c, e.clientX, e.clientY);
+      } else {
+        const rect = c.getBoundingClientRect();
+        worldX = (e.clientX - rect.left) / view.scale.x + view.x;
+        worldY = (e.clientY - rect.top) / view.scale.y + view.y;
+      }
+      for (const layer of layersWithDebug) {
+        layer.onUncapturedMove?.(worldX, worldY, e.nativeEvent, view, { width, height });
       }
     });
   const handlePointerLeave = (_e: React.PointerEvent<HTMLCanvasElement>) => {
+    pointerDownRef.current = false;
     for (const layer of layersWithDebug) layer.onUncapturedLeave?.();
   };
-  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (tools) {
-      tools.dispatcher.onPointerUp(e.nativeEvent);
-      // The doc-listener up handler also detaches; this branch covers the
-      // common case where the release lands on the canvas itself.
-      detachDocListeners();
-    }
-    // Fire background click when no tool gesture was started on the matching
-    // pointerdown (i.e., the dispatcher didn't claim the event, or there is
-    // no dispatcher). This is the "click on empty canvas" signal.
-    if (!downStartedGestureRef.current) {
-      onBackgroundClickRef.current?.();
-    }
-    downStartedGestureRef.current = false;
+  const handlePointerUp = (_e: React.PointerEvent<HTMLCanvasElement>) => {
+    pointerDownRef.current = false;
   };
   const handlePointerCancel = undefined;
-  // Native non-passive wheel listener so tools can call event.preventDefault()
-  // (e.g. wheel-zoom holding Ctrl). React attaches `onWheel` as passive, which
-  // would emit "Unable to preventDefault inside passive event listener" warnings.
-  useEffect(() => {
-    const c = canvasRef.current;
-    if (!c || !tools) return;
-    const onWheelNative = (event: WheelEvent) => tools.dispatcher.onWheel(event);
-    c.addEventListener('wheel', onWheelNative, { passive: false });
-    return () => c.removeEventListener('wheel', onWheelNative);
-  }, [tools]);
 
   const selectedIds = effectiveSelection.current;
 

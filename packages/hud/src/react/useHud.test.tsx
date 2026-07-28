@@ -9,7 +9,8 @@ function makeApi(): CanvasExtensionApi {
   return {
     element: null,
     requestRedraw: vi.fn(),
-    registerLayer: vi.fn(() => () => {}),
+    hitTestExtras: vi.fn(() => null),
+  registerLayer: vi.fn(() => () => {}),
   };
 }
 

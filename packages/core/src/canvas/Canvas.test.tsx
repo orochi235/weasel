@@ -1,11 +1,10 @@
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, fireEvent, createEvent, act } from '@testing-library/react';
-import React, { createRef, useRef, useState } from 'react';
+import React, { createRef } from 'react';
 import { Canvas, buildSceneLayer, buildSceneLayers } from './Canvas';
 import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { useSelection } from 'core/selection/useSelection';
-import { type NodeId } from 'core/scene/types';
 import { arrayAdapter } from 'core/adapters/arrayAdapter';
 import { useSelectTool } from 'tools/builtin/select';
 import { useTools } from 'tools/useTools';
@@ -88,35 +87,12 @@ describe('<Canvas>', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
   });
 
-  it('auto-build pointer handler routes through tools.dispatcher', () => {
-    interface Rect { id: string; x: number; y: number; width: number; height: number }
-    interface Pose { x: number; y: number; width: number; height: number }
-    const seen: string[][] = [];
-    function Harness() {
-      const sel = useSelection({ mode: 'multi' });
-      sel.applyClick = vi.fn((id: string) => seen.push([id]));
-      const adapter = {
-        getNodes: () => [{ id: 'a', x: 0, y: 0, width: 50, height: 50 }] as Rect[],
-        getNode: (id: string) => (id === 'a'
-          ? { id: 'a', x: 0, y: 0, width: 50, height: 50 } as Rect
-          : undefined),
-        getPose: (id: string) => (id === 'a' ? { x: 0, y: 0, width: 50, height: 50 } : null) as Pose,
-        setPose: () => {},
-        ...sel.adapterMethods,
-      };
-      const select = useSelectTool<Rect, Pose>(adapter, {
-        pickEvery: () => ['a'],
-      });
-      const tools = useTools({ active: 'select', registry: { select } });
-      return <Canvas width={50} height={50} layers={{}} adapter={adapter} selection={sel} tools={tools} clientToWorld={() => [5, 5]} />;
-    }
-    const { container } = render(<WeaselProvider><Harness /></WeaselProvider>);
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-    fireEvent.pointerDown(canvas, { clientX: 5, clientY: 5 });
-    fireEvent.pointerUp(canvas, { clientX: 5, clientY: 5 });
-    expect(seen).toEqual([['a']]);
-  });
+  // `<Canvas>` no longer carries select's routing: the tool declares bindings,
+  // and bindings are dispatched by `useGestureDispatcher` (mounted by
+  // `<SceneCanvas>`), not by the tool-routing dispatcher this file drives.
+  // Select's own behavior — applyClick on a body press, topmost collapse,
+  // modifier hand-through — is covered directly in
+  // `tools/builtin/select/useSelectTool.test.ts` and its z-order sibling.
 
   it('passes className and style through', () => {
     const { container } = render(
@@ -152,204 +128,10 @@ describe('<Canvas>', () => {
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
   });
 
-  describe('useSelectTool body/handle routing', () => {
-    interface Rect { id: string; x: number; y: number; width: number; height: number }
-    interface Pose { x: number; y: number; width: number; height: number }
+  // The `selectionMode` describe went with the two above. Single- vs
+  // multi-mode `applyClick` semantics belong to `useSelection` and are pinned
+  // in `core/selection/useSelection.test.ts`.
 
-    // jsdom doesn't propagate clientX/Y through fireEvent.pointerDown reliably
-    // and getBoundingClientRect returns zeros — so override clientToWorld with
-    // a closure-driven fixed point per test invocation.
-    let nextWorld: [number, number] = [0, 0];
-    const C2W = (_c: HTMLCanvasElement, _x: number, _y: number): [number, number] => nextWorld;
-
-    it('useSelectTool routes body-hit clicks through selection.applyClick', () => {
-      const seen: string[][] = [];
-      function Harness() {
-        const [rects] = useState<Rect[]>([{ id: 'a', x: 0, y: 0, width: 100, height: 100 }]);
-        const rectsRef = useRef(rects);
-        rectsRef.current = rects;
-        const sel = useSelection();
-        seen.push([...sel.current]);
-        const adapter = {
-          ...arrayAdapter<Rect, Pose>({
-            ref: rectsRef,
-            setItems: () => {},
-            toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-          }),
-          ...sel.adapterMethods,
-        };
-        const select = useSelectTool<Rect, Pose>(adapter, {
-          pickEvery: (wx, wy) =>
-            rectsRef.current
-              .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
-              .map((r) => r.id),
-        });
-        const tools = useTools({ active: 'select', registry: { select } });
-        return (
-          <Canvas
-            width={100}
-            height={100}
-            layers={{}}
-            adapter={adapter}
-            selection={sel}
-            tools={tools}
-            clientToWorld={C2W}
-          />
-        );
-      }
-      const { container } = render(<WeaselProvider><Harness /></WeaselProvider>);
-      const canvas = container.querySelector('canvas')!;
-      canvas.setPointerCapture = vi.fn();
-      nextWorld = [10, 10];
-      fireEvent.pointerDown(canvas);
-      // After the click, selection should contain 'a' at some render.
-      expect(seen.some((s) => s.length === 1 && s[0] === 'a')).toBe(true);
-    });
-
-    it('useSelectTool collapses overlapping body hits to the topmost id', () => {
-      const seen: string[][] = [];
-      // Two overlapping rects; 'b' is on top in render order (last).
-      const rects: Rect[] = [
-        { id: 'a', x: 0, y: 0, width: 50, height: 50 },
-        { id: 'b', x: 0, y: 0, width: 50, height: 50 },
-      ];
-      function Harness() {
-        const rectsRef = useRef(rects);
-        const sel = useSelection();
-        seen.push([...sel.current]);
-        const adapter = {
-          ...arrayAdapter<Rect, Pose>({
-            ref: rectsRef,
-            setItems: () => {},
-            toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-          }),
-          ...sel.adapterMethods,
-        };
-        const select = useSelectTool<Rect, Pose>(adapter, {
-          pickEvery: (wx, wy) =>
-            rectsRef.current
-              .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
-              .map((r) => r.id),
-        });
-        const tools = useTools({ active: 'select', registry: { select } });
-        return (
-          <Canvas
-            width={50}
-            height={50}
-            layers={{}}
-            adapter={adapter}
-            selection={sel}
-            tools={tools}
-            clientToWorld={C2W}
-          />
-        );
-      }
-      const { container } = render(<WeaselProvider><Harness /></WeaselProvider>);
-      const canvas = container.querySelector('canvas')!;
-      canvas.setPointerCapture = vi.fn();
-      nextWorld = [5, 5];
-      fireEvent.pointerDown(canvas);
-      // pickTopMostHit picks the last id in the hit list (siblings → topmost).
-      expect(seen.some((s) => s.length === 1 && s[0] === 'b')).toBe(true);
-    });
-
-    // The "Canvas boundsOf drives the corner-resize
-    // affordance hit-test" test required `useResizeTool` to mount an
-    // ambient affordance overlay. With the legacy tool deleted, the
-    // resize affordance is now produced by the dispatcher-side
-    // `resizeAction` + `resizePolicy` dep, which has no surface inside a
-    // bare `<Canvas>` harness. The equivalent assertion now lives in the
-    // SceneCanvas / dispatcher tests.
-  });
-
-  describe('selectionMode', () => {
-    interface Rect { id: string; x: number; y: number; width: number; height: number }
-    interface Pose { x: number; y: number; width: number; height: number }
-
-    const RECTS: Rect[] = [
-      { id: 'a', x: 0,   y: 0, width: 50, height: 50 },
-      { id: 'b', x: 100, y: 0, width: 50, height: 50 },
-      { id: 'c', x: 200, y: 0, width: 50, height: 50 },
-    ];
-
-    function Harness(props: {
-      mode: 'single' | 'multi';
-      initial?: string[];
-      onSelChange?: (ids: string[]) => void;
-      moveStart?: (ids: string[]) => void;
-    }) {
-      const rectsRef = useRef<Rect[]>(RECTS);
-      const sel = useSelection({ initial: props.initial as readonly NodeId[] | undefined, mode: props.mode });
-      props.onSelChange?.([...sel.current]);
-      const adapter = {
-        ...arrayAdapter<Rect, Pose>({
-          ref: rectsRef,
-          setItems: () => {},
-          toPose: (r) => ({ x: r.x, y: r.y, width: r.width, height: r.height }),
-        }),
-        ...sel.adapterMethods,
-      };
-      const pickEvery = (wx: number, wy: number) =>
-        rectsRef.current
-          .filter((r) => wx >= r.x && wx <= r.x + r.width && wy >= r.y && wy <= r.y + r.height)
-          .map((r) => r.id);
-      const select = useSelectTool<Rect, Pose>(adapter, {
-        pickEvery,
-        move: { behaviors: [{ onStart: (ctx: { draggedIds: string[] }) => props.moveStart?.(ctx.draggedIds) }] },
-      });
-      const tools = useTools({ active: 'select', registry: { select } });
-      return (
-        <Canvas
-          width={300}
-          height={50}
-          layers={{}}
-          adapter={adapter}
-          selection={sel}
-          tools={tools}
-          pickEvery={pickEvery}
-        />
-      );
-    }
-
-    it('single (default): click replaces selection; no shift-extend', () => {
-      const seen: string[][] = [];
-      const { container, rerender } = render(
-        <WeaselProvider><Harness mode="single" onSelChange={(ids) => seen.push(ids)} /></WeaselProvider>,
-      );
-      const canvas = container.querySelector('canvas')!;
-      canvas.setPointerCapture = vi.fn();
-      // In tools mode, Canvas computes world coords from client coords via
-      // getBoundingClientRect (zero in jsdom) — so clientX/Y maps 1:1 to
-      // worldX/Y at scale 1. The C2W stub is unused in tools mode.
-      // jsdom's PointerEvent ignores clientX/Y from the dict-init shorthand;
-      // construct the event explicitly so both reach the dispatcher.
-      const downA = createEvent.pointerDown(canvas, { pointerId: 1 });
-      Object.defineProperty(downA, 'clientX', { value: 10 });
-      Object.defineProperty(downA, 'clientY', { value: 10 });
-      fireEvent(canvas, downA);
-      fireEvent.pointerUp(canvas, { pointerId: 1 });
-      const downB = createEvent.pointerDown(canvas, { pointerId: 2 });
-      Object.defineProperty(downB, 'clientX', { value: 110 });
-      Object.defineProperty(downB, 'clientY', { value: 10 });
-      fireEvent(canvas, downB);
-      fireEvent.pointerUp(canvas, { pointerId: 2 });
-      rerender(<WeaselProvider><Harness mode="single" onSelChange={(ids) => seen.push(ids)} /></WeaselProvider>);
-      const last = seen[seen.length - 1];
-      expect(last).toEqual(['b']);
-    });
-
-    // Bare `<Canvas>` no longer drives move via the
-    // legacy `useMove` hook (deleted from useSelectTool). Drag flows through
-    // the gesture dispatcher mounted by `<SceneCanvas>`, so the
-    // "moveStart behavior fires" assertion that exercised useMove from
-    // bare Canvas has no surface to fire on. The drag-the-whole-set
-    // semantic is now covered by moveAction's own tests (selection
-    // resolution lives in pointerDownBody + moveAction's start).
-
-  });
-});
-
-describe('Canvas onUncapturedMove / onUncapturedLeave', () => {
   it('layer.onUncapturedMove fires on pointermove when no gesture is captured', () => {
     const moveSpy = vi.fn();
     const layer: RenderLayer<unknown> = {
@@ -399,131 +181,49 @@ describe('Canvas onUncapturedMove / onUncapturedLeave', () => {
     expect(leaveSpy).toHaveBeenCalled();
   });
 
-  it('layer.onUncapturedMove is suppressed when a gesture is active', () => {
+  it('layer.onUncapturedMove is suppressed while a pointer is held', () => {
+    // `onUncapturedMove` means "hover", so it stands down while a button is
+    // down. That used to be decided by asking the tool dispatcher whether a
+    // gesture was in flight; `<Canvas>` tracks the press itself now.
     const moveSpy = vi.fn();
     const layer: RenderLayer<unknown> = {
       id: 'tracker', label: 'tracker', space: 'screen',
       draw: () => [],
       onUncapturedMove: moveSpy,
     };
-    // Mock a tools object with a dispatcher that reports an active gesture.
-    const mockDispatcher = {
-      onPointerDown: vi.fn(),
-      onPointerMove: vi.fn(),
-      onPointerUp: vi.fn(),
-      cancelGesture: vi.fn(),
-      onKeyDown: vi.fn(),
-      onKeyUp: vi.fn(),
-      onWheel: vi.fn(),
-      hasActiveGesture: vi.fn(() => true),
-      getActiveScratch: vi.fn(() => null),
-      __setGetCtx: vi.fn(),
-      __setHitTestContext: vi.fn(),
-    };
-    const mockTools = {
-      active: 't',
-      hotkeyEngaged: null,
-      gestureTick: 0,
-      registry: {},
-      dispatcher: mockDispatcher,
-      getActiveOverlays: () => [],
-      has: () => false,
-    } as never;
     const { container } = render(
-      <Canvas
-        width={100} height={100}
-        layers={{ custom: { layer } }}
-        tools={mockTools}
-        clientToWorld={(_canvas, cx, cy) => [cx, cy]}
-      />
+      <Canvas width={100} height={100} layers={{ tracker: { layer } }} />,
     );
     const canvas = container.querySelector('canvas')!;
+
     fireEvent.pointerMove(canvas, { clientX: 10, clientY: 20 });
-    expect(moveSpy).not.toHaveBeenCalled();
+    expect(moveSpy).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 30, clientY: 40 });
+    expect(moveSpy).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerUp(canvas, { clientX: 30, clientY: 40, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 50, clientY: 60 });
+    expect(moveSpy).toHaveBeenCalledTimes(2);
   });
 });
 
 import { defineTool } from 'tools/routing/defineTool';
-import { begin, claim } from 'tools/routing/result';
 import { ROTATED_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 
 describe('Canvas tools mode', () => {
-  it('routes pointer events through tools.dispatcher when tools prop is passed', () => {
-    const onDragStart = vi.fn();
-    const onDragEnd = vi.fn();
-
-    function Test() {
-      const tools = useTools({
-        active: 't',
-        registry: {
-          t: defineTool({
-            id: 't',
-            initial: {
-              drag: () => {
-                onDragStart();
-                return begin({
-                  scratch: null,
-                  onRelease: () => { onDragEnd(); return claim(); },
-                });
-              },
-            },
-          }),
-        },
-      });
-      return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
-    }
-
-    const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-
-    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 50, clientY: 10, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 50, clientY: 10, pointerId: 1 });
-
-    expect(onDragStart).toHaveBeenCalledOnce();
-    expect(onDragEnd).toHaveBeenCalledOnce();
-  });
-
-  it('does NOT invoke usePointerGestures-derived selection clear when tools prop is passed', () => {
-    // Tap on empty space normally calls selection.clear(); with tools wired,
-    // it should route through the dispatcher instead.
-    const select = { current: [], get: vi.fn(() => []), clear: vi.fn(), set: vi.fn(), add: vi.fn(), remove: vi.fn(), toggle: vi.fn(), applyClick: vi.fn() };
-
-    function Test() {
-      const tools = useTools({
-        active: 't',
-        registry: { t: defineTool({ id: 't', initial: {} }) }, // no handlers — every event passes
-      });
-      return (
-        <Canvas
-          width={100}
-          height={100}
-          adapter={{} as never}
-          layers={{}}
-          selection={select as never}
-          tools={tools}
-        />
-      );
-    }
-
-    const { container } = render(<WeaselProvider><Test /></WeaselProvider>);
-    const canvas = container.querySelector('canvas')!;
-    canvas.setPointerCapture = vi.fn();
-
-    fireEvent.pointerDown(canvas, { clientX: 10, clientY: 10, pointerId: 1 });
-    fireEvent.pointerUp(canvas,   { clientX: 10, clientY: 10, pointerId: 1 });
-
-    // Without tools, selection.clear() would have been called from the
-    // usePointerGestures empty-space tap path. With tools, it must not.
-    expect(select.clear).not.toHaveBeenCalled();
-  });
+  // `<Canvas>` no longer routes pointer input: the tool-routing dispatcher it
+  // pumped is gone, and `useGestureDispatcher` attaches its own listeners to
+  // the same element (mounted by `<SceneCanvas>`). The two tests that lived
+  // here — "routes pointer events through tools.dispatcher" and its
+  // selection-clear companion — were asserting that plumbing.
 
   it('applies the active tool cursor to the canvas style', () => {
     function Test() {
       const tools = useTools({
         active: 't',
-        registry: { t: defineTool({ id: 't', cursor: 'crosshair', initial: {} }) },
+        registry: { t: defineTool({ id: 't', cursor: 'crosshair' }) },
       });
       return <Canvas width={100} height={100} adapter={{} as never} layers={{}} tools={tools} />;
     }
@@ -559,7 +259,7 @@ describe('Canvas tools mode', () => {
       };
 
       function Test() {
-        const tool = defineTool({ id: 't', initial: { overlay: () => toolOverlay } });
+        const tool = defineTool({ id: 't', overlay: toolOverlay });
         const tools = useTools({
           active: 't',
           registry: { t: tool },
@@ -593,8 +293,8 @@ describe('Canvas tools mode', () => {
       let capturedHas: ((id: string) => boolean) | undefined;
 
       function Test() {
-        const always = defineTool({ id: 'delete', initial: {} });
-        const active = defineTool({ id: 'select', initial: {} });
+        const always = defineTool({ id: 'delete' });
+        const active = defineTool({ id: 'select' });
         const tools = useTools({
           active: 'select',
           registry: { select: active },

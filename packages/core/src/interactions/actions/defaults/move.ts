@@ -452,6 +452,10 @@ function applyReparent(
 export const moveAction: Action & { requires: string[] } = {
   id: 'move',
   label: 'Move',
+  // No hover `cursor`: pointing at a node shouldn't preemptively promise a
+  // move, matching what `useSelectTool` showed before its scratch-driven
+  // cursor was retired. Once the drag is running, it's a move.
+  activeCursor: 'move',
   // Ambient default targets `selected-body` so a host without an explicit
   // select-tool binding still gets drag-to-move on the selection — but ONLY
   // on the selected body. A bare `{ kind: 'drag' }` catches every drag in

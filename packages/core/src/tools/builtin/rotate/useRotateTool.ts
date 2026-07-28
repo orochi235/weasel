@@ -145,7 +145,6 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
           label: 'Rotate',
           group: 'select',
         },
-        initial: {},
       });
       return {
         ...base,

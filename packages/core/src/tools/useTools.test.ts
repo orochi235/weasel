@@ -1,23 +1,15 @@
 // src/tools/useTools.test.ts
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { useTools } from './useTools';
 import { defineTool } from './routing/defineTool';
-import { begin, claim } from './routing/result';
 import type { RenderLayer } from 'core/layers/render';
 import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
 
 const mkLayer = (id: string): RenderLayer<unknown> => ({
   id, label: id, space: 'screen', draw: () => [],
 });
-
-function pointerEvent(type: string, init: Partial<PointerEventInit> = {}): PointerEvent {
-  // jsdom doesn't implement PointerEvent; synthesize via Event + assign.
-  const ev = new Event(type) as PointerEvent;
-  Object.assign(ev, { clientX: 0, clientY: 0, pointerId: 1, ...init });
-  return ev;
-}
 
 /** Wrapper that provides ActiveToolContextProvider for all useTools tests. */
 function makeWrapper(initialActive = 'select') {
@@ -28,8 +20,8 @@ function makeWrapper(initialActive = 'select') {
 
 describe('useTools', () => {
   it('exposes active id and setActive', () => {
-    const select = defineTool({ id: 'select', initial: {} });
-    const pen    = defineTool({ id: 'pen', initial: {} });
+    const select = defineTool({ id: 'select' });
+    const pen    = defineTool({ id: 'pen' });
     const { result } = renderHook(() =>
       useTools({ active: 'select', registry: { select, pen } }),
       { wrapper: makeWrapper('select') },
@@ -41,9 +33,9 @@ describe('useTools', () => {
   });
 
   it('tracks modifier-slot engagement', () => {
-    const hand = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
+    const hand = defineTool({ id: 'hand', hotkey: 'space' });
     const { result } = renderHook(() =>
-      useTools({ active: 'select', registry: { select: defineTool({ id: 'select', initial: {} }), hand } }),
+      useTools({ active: 'select', registry: { select: defineTool({ id: 'select' }), hand } }),
       { wrapper: makeWrapper('select') },
     );
 
@@ -57,19 +49,19 @@ describe('useTools', () => {
   it('throws when active id is not in registry', () => {
     expect(() =>
       renderHook(() =>
-        useTools({ active: 'nope', registry: { select: defineTool({ id: 'select', initial: {} }) } }),
+        useTools({ active: 'nope', registry: { select: defineTool({ id: 'select' }) } }),
         { wrapper: makeWrapper('select') },
       ),
     ).toThrow(/registry/i);
   });
 
   it('exposes always-on tool list', () => {
-    const del = defineTool({ id: 'delete', initial: {} });
-    const nudge = defineTool({ id: 'nudge', initial: {} });
+    const del = defineTool({ id: 'delete' });
+    const nudge = defineTool({ id: 'nudge' });
     const { result } = renderHook(() =>
       useTools({
         active: 'select',
-        registry: { select: defineTool({ id: 'select', initial: {} }) },
+        registry: { select: defineTool({ id: 'select' }) },
         ambient: [del, nudge],
       }),
       { wrapper: makeWrapper('select') },
@@ -78,56 +70,18 @@ describe('useTools', () => {
     expect(result.current.ambient.map((t) => t.id)).toEqual(['delete', 'nudge']);
   });
 
-  it('explicit setActive cancels in-flight gesture', () => {
-    const onCancel = vi.fn();
-    const select = defineTool({
-      id: 'select',
-      initial: {
-        drag: () => begin({ scratch: null, onCancel: () => { onCancel(); } }),
-      },
-    });
-    const pen = defineTool({ id: 'pen', initial: {} });
-    const { result } = renderHook(() =>
-      useTools({ active: 'select', registry: { select, pen } }),
-      { wrapper: makeWrapper('select') },
-    );
-    const d = result.current.dispatcher;
-
-    d.onPointerDown(pointerEvent('pointerdown', { pointerId: 1 }));
-    d.onPointerMove(pointerEvent('pointermove', { pointerId: 1, clientX: 50, clientY: 50 }));
-    expect(d.hasActiveGesture()).toBe(true);
-
-    act(() => result.current.setActive('pen'));
-    expect(onCancel).toHaveBeenCalledOnce();
-    expect(d.hasActiveGesture()).toBe(false);
-  });
-
-  it('engageHotkey is a no-op while a gesture is in flight', () => {
-    const select = defineTool({
-      id: 'select',
-      initial: {
-        drag: () => begin({ scratch: null, onRelease: () => claim() }),
-      },
-    });
-    const hand = defineTool({ id: 'hand', hotkey: 'space', initial: {} });
-    const { result } = renderHook(() =>
-      useTools({ active: 'select', registry: { select, hand } }),
-      { wrapper: makeWrapper('select') },
-    );
-    const d = result.current.dispatcher;
-
-    d.onPointerDown(pointerEvent('pointerdown', { pointerId: 1 }));
-    d.onPointerMove(pointerEvent('pointermove', { pointerId: 1, clientX: 50, clientY: 50 }));
-
-    act(() => result.current.engageHotkey('hand'));
-    expect(result.current.hotkeyEngaged).toBe(null);
-  });
+  // `setActive` used to cancel the in-flight gesture and `engageHotkey` used
+  // to lock out mid-gesture, both by reaching into the dispatcher `useTools`
+  // owned. Input belongs entirely to `useGestureDispatcher` now: it watches
+  // the active tool and cancels in-flight handles itself, covered by
+  // "in-flight ongoing handles get onEnd('cancel') when active tool changes"
+  // in `useGestureDispatcher.test.tsx`.
 });
 
 describe('ToolsApi.getActiveOverlays', () => {
   it('returns overlay from active tool', () => {
     const aOverlay = mkLayer('a-ov');
-    const a = defineTool({ id: 'a', initial: { overlay: () => aOverlay } });
+    const a = defineTool({ id: 'a', overlay: aOverlay });
     const { result } = renderHook(() => useTools({ active: 'a', registry: { a } }),
       { wrapper: makeWrapper('a') });
     const out = result.current.getActiveOverlays();
@@ -135,7 +89,7 @@ describe('ToolsApi.getActiveOverlays', () => {
   });
 
   it('filters out tools with no overlay', () => {
-    const a = defineTool({ id: 'a', initial: {} });
+    const a = defineTool({ id: 'a' });
     const { result } = renderHook(() => useTools({ active: 'a', registry: { a } }),
       { wrapper: makeWrapper('a') });
     expect(result.current.getActiveOverlays()).toEqual([]);
@@ -146,10 +100,10 @@ describe('ToolsApi.getActiveOverlays', () => {
     const mOverlay = mkLayer('m-ov');
     const w1Overlay = mkLayer('w1-ov');
     const w2Overlay = mkLayer('w2-ov');
-    const a = defineTool({ id: 'a', initial: { overlay: () => aOverlay } });
-    const m = defineTool({ id: 'm', hotkey: 'space', initial: { overlay: () => mOverlay } });
-    const w1 = defineTool({ id: 'w1', initial: { overlay: () => w1Overlay } });
-    const w2 = defineTool({ id: 'w2', initial: { overlay: () => w2Overlay } });
+    const a = defineTool({ id: 'a', overlay: aOverlay });
+    const m = defineTool({ id: 'm', hotkey: 'space', overlay: mOverlay });
+    const w1 = defineTool({ id: 'w1', overlay: w1Overlay });
+    const w2 = defineTool({ id: 'w2', overlay: w2Overlay });
     const { result, rerender } = renderHook(() =>
       useTools({ active: 'a', registry: { a, m }, ambient: [w1, w2] }),
       { wrapper: makeWrapper('a') },
@@ -163,8 +117,8 @@ describe('ToolsApi.getActiveOverlays', () => {
   it('omits modifier overlay when not engaged', () => {
     const aOverlay = mkLayer('a-ov');
     const mOverlay = mkLayer('m-ov');
-    const a = defineTool({ id: 'a', initial: { overlay: () => aOverlay } });
-    const m = defineTool({ id: 'm', hotkey: 'space', initial: { overlay: () => mOverlay } });
+    const a = defineTool({ id: 'a', overlay: aOverlay });
+    const m = defineTool({ id: 'm', hotkey: 'space', overlay: mOverlay });
     const { result } = renderHook(() => useTools({ active: 'a', registry: { a, m } }),
       { wrapper: makeWrapper('a') });
     expect(result.current.getActiveOverlays().map((l) => l.id)).toEqual(['a-ov']);
@@ -173,7 +127,7 @@ describe('ToolsApi.getActiveOverlays', () => {
 
 describe('useTools (context-backed)', () => {
   it('throws when no ActiveToolContextProvider is in scope', () => {
-    const rect = defineTool({ id: 'rect', initial: {} });
+    const rect = defineTool({ id: 'rect' });
     expect(() =>
       renderHook(() =>
         useTools({ active: 'rect', registry: { rect } }),
@@ -184,7 +138,7 @@ describe('useTools (context-backed)', () => {
   it('opts.active populates context on first mount when context is default', async () => {
     const { result } = renderHook(
       () => {
-        useTools({ active: 'rect', registry: { rect: defineTool({ id: 'rect', initial: {} }), select: defineTool({ id: 'select', initial: {} }) } });
+        useTools({ active: 'rect', registry: { rect: defineTool({ id: 'rect' }), select: defineTool({ id: 'select' }) } });
         return useActiveToolContext();
       },
       {
@@ -204,7 +158,7 @@ describe('useTools (context-backed)', () => {
     let ctxValue: ReturnType<typeof useActiveToolContext> | undefined;
     const { result } = renderHook(
       () => {
-        const api = useTools({ active: 'select', registry: { select: defineTool({ id: 'select', initial: {} }), rect: defineTool({ id: 'rect', initial: {} }) } });
+        const api = useTools({ active: 'select', registry: { select: defineTool({ id: 'select' }), rect: defineTool({ id: 'rect' }) } });
         ctxValue = useActiveToolContext();
         return api;
       },
@@ -218,7 +172,7 @@ describe('useTools (context-backed)', () => {
     let ctxValue: ReturnType<typeof useActiveToolContext> | undefined;
     const { result } = renderHook(
       () => {
-        const api = useTools({ active: 'select', registry: { select: defineTool({ id: 'select', initial: {} }), hand: defineTool({ id: 'hand', hotkey: 'space', initial: {} }) } });
+        const api = useTools({ active: 'select', registry: { select: defineTool({ id: 'select' }), hand: defineTool({ id: 'hand', hotkey: 'space' }) } });
         ctxValue = useActiveToolContext();
         return api;
       },
@@ -233,7 +187,7 @@ describe('useTools (context-backed)', () => {
     let ctxValue: ReturnType<typeof useActiveToolContext> | undefined;
     const { result } = renderHook(
       () => {
-        const api = useTools({ active: 'select', registry: { select: defineTool({ id: 'select', initial: {} }), hand: defineTool({ id: 'hand', hotkey: 'space', initial: {} }) } });
+        const api = useTools({ active: 'select', registry: { select: defineTool({ id: 'select' }), hand: defineTool({ id: 'hand', hotkey: 'space' }) } });
         ctxValue = useActiveToolContext();
         return api;
       },

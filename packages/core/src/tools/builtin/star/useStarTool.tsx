@@ -124,7 +124,6 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
             opts: { params: { delta: -1 } },
           },
         ],
-        initial: {},
       }),
     [bumpPoints, adjustPointsAction],
   );

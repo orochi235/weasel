@@ -293,7 +293,12 @@ export function matchSpec(
     case 'click': {
       if (e.kind !== 'click') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.target, spec.target, e.bodyTarget);
+      // A `kindOf` predicate gets the affordance the press landed on — the
+      // same value it would get on a drag — NOT the DOM target. That
+      // symmetry is what lets one predicate describe "this piece of chrome"
+      // for both gestures, and what lets `hit == null` mean "not chrome".
+      // String-form specs read `bodyTarget` and don't look at either.
+      return matchTarget(e.affordance, spec.target, e.bodyTarget);
     }
 
     case 'doubleClick': {
@@ -312,9 +317,21 @@ export function matchSpec(
       // Drag begins at pointerdown; the dispatcher promotes to drag after
       // threshold is crossed. The matcher fires on pointerdown.
       if (e.kind !== 'pointerdown') return false;
+      // ...but not on the eager `stage: 'press'` dispatch, which exists for
+      // `pointerDown` specs. Both dispatches come from one physical press;
+      // without this gate a press would open its drag handle twice.
+      if (e.stage === 'press') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
       // Pass the affordance hit as the `target` for `kindOf` predicates.
       // Pass `bodyTarget` for string-form TargetSpec values.
+      return matchTarget(e.affordance, spec.target, e.bodyTarget);
+    }
+
+    case 'pointerDown': {
+      // The mirror of the gate above: only the eager dispatch, never the
+      // buffered one the drag threshold releases.
+      if (e.kind !== 'pointerdown' || e.stage !== 'press') return false;
+      if (!matchModifiers(e, spec.mods, isMac)) return false;
       return matchTarget(e.affordance, spec.target, e.bodyTarget);
     }
 

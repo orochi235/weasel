@@ -184,13 +184,13 @@ layers={{
 
 See [extending.md](./extending.md) for custom-layer details.
 
-**Hit-test channel.** Layers may declare an optional `hitTest(worldX, worldY, data, view, dims): HitResult | null` that the dispatcher consults on pointerdown. The dispatcher walks layers top-down (highest z-index first); the first layer whose `hitTest` returns a non-null `HitResult` owns the gesture — the supplied `drag` channel runs as if it were the active tool. This is how affordances stay hittable regardless of which tool is active.
+**Hit-test channel.** Layers may declare an optional `hitTest(worldX, worldY, data, view, dims): AffordanceBinding | null`, consulted on pointerdown. Registered layers are walked top-down (last-registered first) by `CanvasExtensionApi.hitTestExtras`; `<SceneCanvas>` folds that walk — plus its own selection chrome — into the `affordanceAt` thunk it hands the gesture dispatcher. A hit reaches actions as an `AffordanceHit` (kind `layer:<id>` for a registered layer, carrying whatever the layer resolved as its `payload`), and the layer's owner claims the gesture with a binding whose `target` predicate matches that kind. This is how chrome stays hittable regardless of which tool is active — see `@weasel-js/hud` for the worked example.
 
 ## Affordance
 
 A reusable factory primitive that produces a `{ render, hitTest? }` triple. Tools that own chrome (selection handles, rotation handle, anchor dots) compose affordances rather than reimplementing the render + hit-test logic inline. The kit ships `createCornerResizeAffordance` and `createRotationAffordance`; both read state from a kit-built `ChromeState` object so the affordance code stays pure (no React, no scene access).
 
-The point of the abstraction: **visible chrome is hittable independent of the active tool.** Without affordances, each tool's overlay rendered handles but each tool's `pointer.onDown` had to hit-test those handles separately. With affordances, the dispatcher walks all visible layers' hit-tests top-down on pointerdown; a corner-handle click fires the resize gesture even when a non-select tool is active.
+The point of the abstraction: **visible chrome is hittable independent of the active tool.** Without affordances, each tool's overlay rendered handles but each tool had to hit-test those handles itself. With affordances, the hit-test walk runs once per pointerdown and the result rides the gesture as `InvocationCtx.drag.affordance`; a corner-handle drag fires the resize action even when a non-select tool is active. The select tool declines any press that landed on an affordance, so chrome is never mistaken for a body pick and the gesture reaches whatever owns it.
 
 ## Interaction
 
@@ -399,7 +399,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 | Registry | Keyed by | Scope | Mutability | Where it lives | Reflection? | Used by |
 |---|---|---|---|---|---|---|
 | **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global `Map` in `registerFont.ts` | No | `WeaselRenderer`, text layout |
-| **Tools** | Tool id string | Component lifetime, pinned at `useTools` call | Constructor-fixed (registry reference is live, but entries are set at hook call) | Hook return (`ToolsApi.registry`) | Yes — `registry` field is enumerable | `<Canvas>` dispatcher, tool palette UI |
+| **Tools** | Tool id string | Component lifetime, pinned at `useTools` call | Constructor-fixed (registry reference is live, but entries are set at hook call) | Hook return (`ToolsApi.registry`) | Yes — `registry` field is enumerable | Gesture dispatcher, tool palette UI |
 | **Ops** | Op kind string (`kit:*` reserved) | Scene lifetime | Constructor-fixed via `ops` option; runtime additions via `scene.registerOp()` | Internal `Map` inside `createScene` closure | No | `Scene.undo()`, `Scene.redo()`, `scene.recordOp()` |
 | **Scene function fields** | Registry key string | Scene lifetime | Constructor-fixed | `SceneRegistry` option on `createScene` / `sceneFromJSON` | No | `scene.toJSON()`, `sceneFromJSON()` serialization round-trip |
 | **Actions** | Action id string | Provider lifetime | Runtime-mutable; entries register/unregister per component | React context (`ActionsContext`) inside `ActionsProvider` | Yes — `registry.list()` | Command palette, keybinding dispatch |
@@ -412,7 +412,7 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 
 **Fonts** (`packages/core/src/features/text/atlas/registerFont.ts`) use a two-level Map — outer key is the font family, inner key is `weight|style` — so `resolveFontVariant` can walk the fallback chain within a family without scanning everything. Idempotent: re-registering an existing variant is a no-op.
 
-**Tools** (`packages/core/src/tools/useTools.ts`) — the `registry` prop passed to `useTools` is held in a ref so new object references re-read cleanly each render without rebuilding the dispatcher. Tools not in `registry` can still appear in the `ambient` array (always-on tools); `ToolsApi.has(id)` checks both.
+**Tools** (`packages/core/src/tools/useTools.ts`) — the `registry` prop passed to `useTools` is held in a ref so new object references re-read cleanly each render. Tools not in `registry` can still appear in the `ambient` array (always-on tools); `ToolsApi.has(id)` checks both.
 
 **Ops** (`packages/core/src/core/scene/scene.ts`) — the internal `registered` Map is seeded with the kit's own `kit:*` ops at construction time, then consumer ops from `UseSceneOptions.ops`, then any later `scene.registerOp()` calls. `kit:*` kind strings are reserved; consumer ops that try to use the prefix throw at registration time.
 

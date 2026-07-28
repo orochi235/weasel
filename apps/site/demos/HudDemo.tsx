@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { SceneCanvasApi } from '@weasel-js/core';
-import { useHud } from '../../../packages/hud/src/react';
+import { useHud, useHudTool } from '../../../packages/hud/src/react';
 import type { ButtonWidget } from '../../../packages/hud/src';
 
 const W = 600, H = 400;
@@ -11,12 +11,14 @@ interface Empty { id: string }
 export function HudDemo() {
   const ref = useRef<SceneCanvasApi>(null);
   const hud = useHud(ref);
+  // The HUD's input routing rides an ambient tool: its bindings gate on the
+  // affordance its own layer hit-test produces, so they never compete with
+  // whatever tool is active.
+  const hudTool = useHudTool();
   const [count, setCount] = useState(0);
   const btnRef = useRef<ButtonWidget | null>(null);
 
   // Empty scene — this demo's content is the HUD layer, not scene nodes.
-  // SceneCanvas auto-mounts the gesture dispatcher (which HUD hit-tests
-  // ride on top of), so we don't need to register a tool just to wire it.
   const scene = useScene<Empty>({ items: [] });
 
   // Create the button once, after the HUD attaches.
@@ -52,6 +54,7 @@ export function HudDemo() {
         className="ckd-canvas"
         scene={scene}
         defaultTools={['select']}
+        ambient={[hudTool]}
       />
       <p style={{ marginTop: 8, color: '#555' }}>
         React state counter: <strong>{count}</strong>

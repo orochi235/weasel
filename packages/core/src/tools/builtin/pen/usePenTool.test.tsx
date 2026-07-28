@@ -1,10 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { usePenTool } from './usePenTool';
-import type { ToolCtx } from '../../types';
+import { usePenTool, type PenScratch } from './usePenTool';
 import type { PolygonPath } from 'features/paths/types';
+import type { Action } from 'interactions/actions/registry';
+import { ActionDisabledReason } from 'interactions/actions/registry';
+import type { ActionDeps, InvocationCtx, OngoingHandle } from 'interactions/actions/invoker';
 
 interface Pose { kind: 'path'; path: PolygonPath; closed: boolean }
+
+type Mods = { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean; space: boolean };
+const NO_MODS: Mods = { alt: false, ctrl: false, meta: false, shift: false, space: false };
 
 function makeAdapter() {
   const added: Pose[] = [];
@@ -21,415 +26,409 @@ function makeAdapter() {
 }
 
 /**
- * Wrap a tool's gesture handlers so each invocation runs inside act(). usePenTool
- * calls forceRender (a useReducer dispatch + setIsEditing) from most handlers to
- * repaint its overlay; driving those handlers directly from a test — outside any
- * act() boundary — makes React log "An update to TestComponent was not wrapped in
- * act(...)". Wrapping the calls acts the updates instead. Deterministic, unlike a
- * trailing flush: a wrapped update never warns.
+ * Drives the pen through its Actions the way the dispatcher does.
+ *
+ * Every call runs inside `act()`: the pen force-renders after each scratch
+ * mutation so the host repaints its preview layer, and an unwrapped update
+ * makes React log an act warning.
  */
-function actWrapTool<T extends {
-  pointer?: unknown; drag?: unknown; keyboard?: unknown; onActivate?: unknown; onDeactivate?: unknown;
-}>(tool: T): T {
-  const wrapFn = (fn: (...a: unknown[]) => unknown) => (...a: unknown[]): unknown => {
-    let r: unknown;
-    act(() => { r = fn(...a); });
-    return r;
-  };
-  const wrapMethod = (fn: unknown): unknown =>
-    typeof fn === 'function' ? wrapFn(fn as (...a: unknown[]) => unknown) : fn;
-  const wrapGroup = (g: unknown): unknown => {
-    if (!g || typeof g !== 'object') return g;
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(g as Record<string, unknown>)) {
-      out[k] = typeof v === 'function' ? wrapFn(v as (...a: unknown[]) => unknown) : v;
-    }
-    return out;
-  };
-  return {
-    ...tool,
-    pointer: wrapGroup(tool.pointer), drag: wrapGroup(tool.drag), keyboard: wrapGroup(tool.keyboard),
-    onActivate: wrapMethod(tool.onActivate), onDeactivate: wrapMethod(tool.onDeactivate),
-  };
-}
-
 function setup(over: {
   autoSelect?: boolean;
   autoCommitOnClose?: boolean;
   closeHitRadius?: number;
   snapPoint?: (p: { x: number; y: number }) => { x: number; y: number };
+  /** Uniform view scale, to exercise the zoom-relative close-hit radius. */
+  scale?: number;
 } = {}) {
+  const { scale = 1, ...toolOpts } = over;
   const adapter = makeAdapter();
   const wrapPath = vi.fn((path: PolygonPath, opts: { closed: boolean }): Pose => ({
     kind: 'path', path, closed: opts.closed,
   }));
-  const { result } = renderHook(() => usePenTool<Pose>({
-    wrapPath, adapter, ...over,
-  }));
-  // Pen state is persistent — initScratch returns the same ref.
-  const rawTool = result.current;
-  const scratch = rawTool.initScratch!();
-  const tool = actWrapTool(rawTool);
-  return { tool, adapter, wrapPath, scratch };
-}
+  const { result } = renderHook(() => usePenTool<Pose>({ wrapPath, adapter, ...toolOpts }));
+  const tool = result.current;
+  // Pen state is persistent — initScratch returns the same ref, which is also
+  // how `penPreviewLayer` reads the in-progress path.
+  const scratch = tool.initScratch!() as PenScratch;
 
-function makeCtx<S>(scratch: S, over: Partial<ToolCtx<S>> = {}): ToolCtx<S> {
-  return {
-    worldX: 0,
-    worldY: 0,
-    modifiers: { alt: false, shift: false, meta: false, ctrl: false, space: false },
-    selection: { current: [], applyClick: vi.fn() } as unknown as ToolCtx['selection'],
-    adapter: {},
-    applyOps: vi.fn(),
-    view: { x: 0, y: 0, scale: { x: 1, y: 1 } },
-    setView: () => {},
-    canvasRect: new DOMRect(),
-    // The declarative routing factory rejects pointerDown/click handlers
-    // when ctx.target is undefined (the dispatcher always supplies one in
-    // production). Default to an empty hit so the '*' route fires.
-    target: { category: 'empty', kind: 'empty' } as ToolCtx['target'],
-    scratch,
-    ...over,
+  const deps = {
+    view: { get: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }), set: () => {} },
+  } as unknown as ActionDeps;
+
+  const actionOf = (id: string): Action => {
+    const a = (result.current.actions ?? []).find((x) => x.id === id);
+    if (!a) throw new Error(`${id} not declared on the tool`);
+    return a;
   };
-}
 
-function pe(clientX = 0, clientY = 0): PointerEvent {
-  const e = new Event('pointerdown') as PointerEvent;
-  Object.assign(e, { pointerId: 1, clientX, clientY, button: 0 });
-  return e;
-}
+  /** Run an immediate action, honoring the `enabled` gate the dispatcher
+   *  consults first. Returns whether it actually ran. */
+  const fire = (id: string, params?: Record<string, unknown>): boolean => {
+    const action = actionOf(id);
+    if (action.enabled && action.enabled(deps) !== true) return false;
+    const invoker = action.invoker;
+    if (invoker?.timing !== 'immediate') throw new Error(`${id} is not immediate`);
+    act(() => { invoker.run(deps, params); });
+    return true;
+  };
 
-function ke(key: string): KeyboardEvent {
-  const e = new Event('keydown') as KeyboardEvent;
-  Object.assign(e, { key });
-  return e;
+  const ctx = (world: { x: number; y: number }, mods: Partial<Mods>, start?: { x: number; y: number }): InvocationCtx => ({
+    world,
+    screen: world,
+    modifiers: { ...NO_MODS, ...mods },
+    deps,
+    drag: { start: start ?? world, current: world, delta: { x: 0, y: 0 } },
+  });
+
+  return {
+    tool, adapter, wrapPath, scratch, actionOf,
+
+    /** A plain click — the `pen.placeAnchor` binding. */
+    click(x: number, y: number) { fire('pen.placeAnchor', { pressX: x, pressY: y }); },
+
+    /** ⌘/Ctrl-click — the `pen.finishOpen` binding. Returns false when the
+     *  action declined, in which case the dispatcher would fall through to
+     *  the plain-click binding. */
+    modClick(x: number, y: number): boolean {
+      return fire('pen.finishOpen', { pressX: x, pressY: y });
+    },
+
+    /** A double click on the canvas. The dispatcher emits `click` for each of
+     *  the two presses and *then* `doubleclick`, so the test does the same. */
+    doubleClick(x: number, y: number) {
+      this.click(x, y);
+      this.click(x, y);
+      fire('pen.finishOpen', { pressX: x, pressY: y, viaDoubleClick: true });
+    },
+
+    /** A drag from `from` to `to`, with optional intermediate moves. */
+    drag(from: { x: number; y: number }, to: { x: number; y: number }, mods: Partial<Mods> = {}, vias: Array<{ x: number; y: number }> = []) {
+      const action = actionOf('pen.dragHandle');
+      const invoker = action.invoker;
+      if (invoker?.timing !== 'ongoing') throw new Error('pen.dragHandle is not ongoing');
+      let handle!: OngoingHandle;
+      act(() => { handle = invoker.start(ctx(from, mods, from))!; });
+      for (const via of vias) act(() => { handle.onMove?.(ctx(via, mods, from)); });
+      act(() => { handle.onEnd?.(ctx(to, mods, from), 'commit'); });
+    },
+
+    /** Enter. Returns false when the action declined. */
+    enter(): boolean { return fire('pen.finish'); },
+    /** Escape. Returns false when the action declined — which is what lets
+     *  the ambient `escape` ladder take over. */
+    escape(): boolean { return fire('pen.cancel'); },
+
+    deactivate() { act(() => { tool.onDeactivate?.({} as never); }); },
+  };
 }
 
 describe('usePenTool', () => {
   it('declares id "pen" and a cursor function', () => {
     const { tool } = setup();
     expect(tool.id).toBe('pen');
-    // keybinding field removed from ToolDef; key activation is now registered
-    // as a `tool.shortcut.pen` action via useKeybindings.
     expect(typeof tool.cursor).toBe('function');
   });
 
   it('cursor is "crosshair" normally, "pointer" when closeHintActive', () => {
     const { tool, scratch } = setup();
-    const cursor = tool.cursor as (c: ToolCtx<typeof scratch>) => string;
-    expect(cursor(makeCtx(scratch))).toBe('crosshair');
+    const cursor = tool.cursor as (ctx: never) => string;
+    expect(cursor({} as never)).toBe('crosshair');
     scratch.closeHintActive = true;
-    expect(cursor(makeCtx(scratch))).toBe('pointer');
+    expect(cursor({} as never)).toBe('pointer');
     scratch.closeHintActive = false;
   });
 
+  it('declares its whole input surface as bindings', () => {
+    const { tool } = setup();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((tool.def as any)?.initial).toBeUndefined();
+    expect(tool.bindings).toHaveLength(6);
+  });
+
   it('click on empty space (Idle) → places a corner anchor and enters Drawing', () => {
-    const { tool, scratch } = setup();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 10, worldY: 20 }));
-    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 10, worldY: 20 }));
-    expect(scratch.current).not.toBeNull();
-    expect(scratch.current!.anchors).toEqual([
-      { x: 10, y: 20 },
-    ]);
-    expect(scratch.finishedSubpaths).toEqual([]);
+    const p = setup();
+    p.click(10, 20);
+    expect(p.scratch.current).not.toBeNull();
+    expect(p.scratch.current!.anchors).toEqual([{ x: 10, y: 20 }]);
+    expect(p.scratch.finishedSubpaths).toEqual([]);
   });
 
   it('second click in Drawing → appends corner anchor', () => {
-    const { tool, scratch } = setup();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 10, worldY: 20 }));
-    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 10, worldY: 20 }));
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 30, worldY: 40 }));
-    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 30, worldY: 40 }));
-    expect(scratch.current!.anchors.length).toBe(2);
-    expect(scratch.current!.anchors[1]).toEqual({ x: 30, y: 40 });
+    const p = setup();
+    p.click(10, 20);
+    p.click(30, 40);
+    expect(p.scratch.current!.anchors.length).toBe(2);
+    expect(p.scratch.current!.anchors[1]).toEqual({ x: 30, y: 40 });
   });
 
-  it('drag → places anchor with outHandle at the drag end', () => {
-    const { tool, scratch } = setup();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 10, worldY: 20 }));
-    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 14, worldY: 20 }));
-    tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 50, worldY: 20 }));
-    tool.drag!.onEnd!(pe(), makeCtx(scratch, { worldX: 50, worldY: 20 }));
-    expect(scratch.current!.anchors.length).toBe(1);
-    const a = scratch.current!.anchors[0];
+  it('drag → places the anchor at the PRESS point with an outHandle at the drag end', () => {
+    // The anchor lands where the pointer went down, not where the drag
+    // threshold happened to be crossed. `InvocationCtx.drag.start` carries
+    // the press position because the dispatcher buffers the pointerdown and
+    // releases it at the threshold — which is why the pen no longer keeps a
+    // `_pendingDown` field of its own.
+    const p = setup();
+    p.drag({ x: 10, y: 20 }, { x: 50, y: 20 }, {}, [{ x: 30, y: 20 }]);
+    expect(p.scratch.current!.anchors.length).toBe(1);
+    const a = p.scratch.current!.anchors[0];
     expect(a.x).toBe(10);
     expect(a.y).toBe(20);
     expect(a.outHandle).toEqual({ x: 50, y: 20 });
   });
 
   it('Alt held during placement drag → marks altBroken on the anchor', () => {
-    const { tool, scratch } = setup();
-    const altMods = { alt: true, shift: false, meta: false, ctrl: false, space: false };
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: altMods }));
-    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 5, worldY: 0, modifiers: altMods }));
-    tool.drag!.onEnd!(pe(), makeCtx(scratch, { worldX: 20, worldY: 0, modifiers: altMods }));
-    expect(scratch.current!.anchors[0].altBroken).toBe(true);
+    const p = setup();
+    p.drag({ x: 0, y: 0 }, { x: 20, y: 0 }, { alt: true });
+    expect(p.scratch.current!.anchors[0].altBroken).toBe(true);
   });
 
   it('Shift held during drag → constrains outHandle direction to 45°', () => {
-    const { tool, scratch } = setup();
-    const shiftMods = { alt: false, shift: true, meta: false, ctrl: false, space: false };
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0, modifiers: shiftMods }));
-    tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 10, worldY: 1, modifiers: shiftMods }));
-    tool.drag!.onEnd!(pe(), makeCtx(scratch, { worldX: 10, worldY: 1, modifiers: shiftMods }));
-    const out = scratch.current!.anchors[0].outHandle!;
-    // (10,1) snaps to horizontal — y close to 0.
+    const p = setup();
+    p.drag({ x: 0, y: 0 }, { x: 10, y: 1 }, { shift: true });
+    const out = p.scratch.current!.anchors[0].outHandle!;
     expect(out.y).toBeCloseTo(0);
     expect(out.x).toBeGreaterThan(0);
   });
 
+  it('a cancelled drag leaves the anchor but drops the in-flight handle state', () => {
+    const p = setup();
+    const invoker = p.actionOf('pen.dragHandle').invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('expected ongoing');
+    act(() => {
+      const handle = invoker.start({
+        world: { x: 0, y: 0 }, screen: { x: 0, y: 0 },
+        modifiers: NO_MODS, deps: {} as ActionDeps,
+        drag: { start: { x: 0, y: 0 }, current: { x: 0, y: 0 }, delta: { x: 0, y: 0 } },
+      })!;
+      handle.onEnd?.({
+        world: { x: 5, y: 5 }, screen: { x: 5, y: 5 },
+        modifiers: NO_MODS, deps: {} as ActionDeps,
+      }, 'cancel');
+    });
+    expect(p.scratch.draggingHandleAt).toBeNull();
+  });
+
   it('clicking first anchor (≥3 anchors) closes the subpath and auto-commits (default)', () => {
-    const { tool, scratch, adapter, wrapPath } = setup({ closeHitRadius: 8 });
-    // Three anchors at (0,0), (100,0), (100,100).
-    for (const [x, y] of [[0, 0], [100, 0], [100, 100]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    // Click within close hit radius of first anchor.
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    expect(wrapPath).toHaveBeenCalledTimes(1);
-    expect(wrapPath.mock.calls[0][1]).toEqual({ closed: true });
-    expect(adapter.addNode).toHaveBeenCalledTimes(1);
-    expect(scratch.current).toBeNull();
-    expect(scratch.finishedSubpaths).toEqual([]);
+    const p = setup({ closeHitRadius: 8 });
+    p.click(0, 0); p.click(100, 0); p.click(100, 100);
+    p.click(1, 1); // within the close-hit radius of the first anchor
+    expect(p.wrapPath).toHaveBeenCalledTimes(1);
+    expect(p.wrapPath.mock.calls[0][1]).toEqual({ closed: true });
+    expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
+    expect(p.scratch.current).toBeNull();
+    expect(p.scratch.finishedSubpaths).toEqual([]);
   });
 
-  it('autoCommitOnClose: false → close-on-first-anchor parks the subpath in scratch (BetweenSubpaths)', () => {
-    const { tool, scratch, adapter } = setup({ closeHitRadius: 8, autoCommitOnClose: false });
-    for (const [x, y] of [[0, 0], [100, 0], [100, 100]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    expect(scratch.current).toBeNull();
-    expect(scratch.finishedSubpaths.length).toBe(1);
-    expect(scratch.finishedSubpaths[0].closed).toBe(true);
-    expect(scratch.finishedSubpaths[0].anchors.length).toBe(3);
-    expect(adapter.addNode).not.toHaveBeenCalled();
+  it('the close-hit radius is measured in screen px, so it shrinks as you zoom in', () => {
+    // radius = closeHitRadius / meanScale(view.scale) — the `view` dep is
+    // what the action reads for it.
+    const p = setup({ closeHitRadius: 8, scale: 4 });
+    p.click(0, 0); p.click(100, 0); p.click(100, 100);
+    // 3 world px away: inside 8px at scale 1, outside the 2px at scale 4.
+    p.click(3, 0);
+    expect(p.adapter.addNode).not.toHaveBeenCalled();
+    expect(p.scratch.current!.anchors).toHaveLength(4);
   });
 
-  it('clicking first anchor with <3 anchors → no-op (degenerate)', () => {
-    const { tool, scratch } = setup();
-    for (const [x, y] of [[0, 0], [50, 0]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    // Should append (or treat as a 3rd-anchor click, not close).
-    expect(scratch.current).not.toBeNull();
-    expect(scratch.finishedSubpaths.length).toBe(0);
-    // The third click landed near (0,0) so it appended at (1,1).
-    expect(scratch.current!.anchors.length).toBe(3);
+  it('autoCommitOnClose: false → close-on-first-anchor parks the subpath in scratch', () => {
+    const p = setup({ closeHitRadius: 8, autoCommitOnClose: false });
+    p.click(0, 0); p.click(100, 0); p.click(100, 100);
+    p.click(1, 1);
+    expect(p.scratch.current).toBeNull();
+    expect(p.scratch.finishedSubpaths.length).toBe(1);
+    expect(p.scratch.finishedSubpaths[0].closed).toBe(true);
+    expect(p.scratch.finishedSubpaths[0].anchors.length).toBe(3);
+    expect(p.adapter.addNode).not.toHaveBeenCalled();
   });
 
-  it('Enter in Drawing → open-finishes current subpath, commits, auto-selects, returns to Idle', () => {
-    const { tool, scratch, adapter, wrapPath } = setup();
-    for (const [x, y] of [[0, 0], [100, 0], [100, 100]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    const dec = tool.keyboard!.onDown!(ke('Enter'), makeCtx(scratch));
-    expect(dec).toBe('claim');
-    expect(wrapPath).toHaveBeenCalledTimes(1);
-    expect(wrapPath.mock.calls[0][1]).toEqual({ closed: false });
-    expect(adapter.addNode).toHaveBeenCalledTimes(1);
-    expect(adapter.setSelection).toHaveBeenCalledWith([adapter.ids[0]]);
-    expect(scratch.current).toBeNull();
-    expect(scratch.finishedSubpaths).toEqual([]);
+  it('clicking first anchor with <3 anchors → appends instead of closing (degenerate)', () => {
+    const p = setup();
+    p.click(0, 0); p.click(50, 0);
+    p.click(1, 1);
+    expect(p.scratch.current).not.toBeNull();
+    expect(p.scratch.finishedSubpaths.length).toBe(0);
+    expect(p.scratch.current!.anchors.length).toBe(3);
+  });
+
+  it('Enter in Drawing → open-finishes, commits, auto-selects, returns to Idle', () => {
+    const p = setup();
+    p.click(0, 0); p.click(100, 0); p.click(100, 100);
+    expect(p.enter()).toBe(true);
+    expect(p.wrapPath).toHaveBeenCalledTimes(1);
+    expect(p.wrapPath.mock.calls[0][1]).toEqual({ closed: false });
+    expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
+    expect(p.adapter.setSelection).toHaveBeenCalledWith([p.adapter.ids[0]]);
+    expect(p.scratch.current).toBeNull();
+    expect(p.scratch.finishedSubpaths).toEqual([]);
   });
 
   it('Enter in BetweenSubpaths → commits, returns to Idle', () => {
-    const { tool, scratch, adapter, wrapPath } = setup({ autoCommitOnClose: false });
-    // Build + close a subpath.
-    for (const [x, y] of [[0, 0], [100, 0], [100, 100]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 1, worldY: 1 }));
-    // BetweenSubpaths now.
-    expect(scratch.current).toBeNull();
-    expect(scratch.finishedSubpaths.length).toBe(1);
-    tool.keyboard!.onDown!(ke('Enter'), makeCtx(scratch));
-    expect(wrapPath).toHaveBeenCalledTimes(1);
-    expect(wrapPath.mock.calls[0][1]).toEqual({ closed: true });
-    expect(adapter.addNode).toHaveBeenCalledTimes(1);
+    const p = setup({ autoCommitOnClose: false });
+    p.click(0, 0); p.click(100, 0); p.click(100, 100);
+    p.click(1, 1);
+    expect(p.scratch.current).toBeNull();
+    expect(p.scratch.finishedSubpaths.length).toBe(1);
+    p.enter();
+    expect(p.wrapPath).toHaveBeenCalledTimes(1);
+    expect(p.wrapPath.mock.calls[0][1]).toEqual({ closed: true });
+    expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
+  });
+
+  it('Enter with nothing drawn declines, so the key falls through', () => {
+    const p = setup();
+    expect(p.enter()).toBe(false);
+    expect(p.actionOf('pen.finish').enabled?.()).toBe(ActionDisabledReason.NotApplicable);
   });
 
   it('Esc → discards everything', () => {
-    const { tool, scratch, adapter } = setup();
-    for (const [x, y] of [[0, 0], [50, 0]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    tool.keyboard!.onDown!(ke('Escape'), makeCtx(scratch));
-    expect(scratch.current).toBeNull();
-    expect(scratch.finishedSubpaths).toEqual([]);
-    expect(adapter.addNode).not.toHaveBeenCalled();
+    const p = setup();
+    p.click(0, 0); p.click(50, 0);
+    expect(p.escape()).toBe(true);
+    expect(p.scratch.current).toBeNull();
+    expect(p.scratch.finishedSubpaths).toEqual([]);
+    expect(p.adapter.addNode).not.toHaveBeenCalled();
+  });
+
+  it('Esc with nothing drawn declines, keeping the escape ladder intact', () => {
+    // An idle pen must not swallow Escape: the ambient `escape` action goes
+    // on to clear the selection / return to the default tool.
+    const p = setup();
+    expect(p.escape()).toBe(false);
+    expect(p.actionOf('pen.cancel').enabled?.()).toBe(ActionDisabledReason.NotApplicable);
   });
 
   it('tool-switch (onDeactivate) discards in-progress path regardless of anchor count', () => {
     // Mirrors the Escape contract: an in-progress path is by definition
-    // incomplete (user didn't close-on-first / cmd-click / press Enter).
-    // Switching tools should NOT auto-commit a stub polyline.
-    const { tool, scratch, adapter } = setup();
-    for (const [x, y] of [[0, 0], [50, 0], [100, 0]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    tool.onDeactivate!(makeCtx(scratch));
-    expect(adapter.addNode).not.toHaveBeenCalled();
-    expect(scratch.current).toBeNull();
-    expect(scratch.finishedSubpaths).toEqual([]);
+    // incomplete (the user didn't close-on-first / ⌘-click / press Enter).
+    // Switching tools must NOT auto-commit a stub polyline.
+    const p = setup();
+    p.click(0, 0); p.click(50, 0); p.click(100, 0);
+    p.deactivate();
+    expect(p.adapter.addNode).not.toHaveBeenCalled();
+    expect(p.scratch.current).toBeNull();
+    expect(p.scratch.finishedSubpaths).toEqual([]);
   });
 
   it('tool-switch with <2 anchors → discards', () => {
-    const { tool, scratch, adapter } = setup();
-    tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-    tool.onDeactivate!(makeCtx(scratch));
-    expect(adapter.addNode).not.toHaveBeenCalled();
-    expect(scratch.current).toBeNull();
+    const p = setup();
+    p.click(0, 0);
+    p.deactivate();
+    expect(p.adapter.addNode).not.toHaveBeenCalled();
+    expect(p.scratch.current).toBeNull();
   });
 
   it('autoSelect: false → addNode called but setSelection not called', () => {
-    const { tool, scratch, adapter } = setup({ autoSelect: false });
-    for (const [x, y] of [[0, 0], [100, 0], [50, 80]] as const) {
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-    }
-    tool.keyboard!.onDown!(ke('Enter'), makeCtx(scratch));
-    expect(adapter.addNode).toHaveBeenCalled();
-    expect(adapter.setSelection).not.toHaveBeenCalled();
+    const p = setup({ autoSelect: false });
+    p.click(0, 0); p.click(100, 0); p.click(50, 80);
+    p.enter();
+    expect(p.adapter.addNode).toHaveBeenCalled();
+    expect(p.adapter.setSelection).not.toHaveBeenCalled();
   });
-
-  // The rubber-band cursor update on hover (no drag in flight) was driven
-  // through drag.onMove in the pre-migration imperative tool. The
-  // declarative routing factory gates drag.onMove behind drag.onStart's
-  // begin() — matching the runtime dispatcher contract, where onMove is
-  // only fired after threshold-promoted onStart. The hover-preview hook
-  // is therefore unreachable through the tool's drag channel and would
-  // need a separate overlay-level onUncapturedMove wiring; the pre-
-  // migration imperative pen tested dead code via a direct method call.
-  // See usePenTool.ts pointerDown/drag comments for details.
 
   it('initScratch returns the same persistent ref across calls', () => {
     const { tool } = setup();
-    let a: unknown, b: unknown;
-    act(() => { a = tool.initScratch!(); });
-    act(() => { b = tool.initScratch!(); });
-    expect(a).toBe(b);
+    expect(tool.initScratch!()).toBe(tool.initScratch!());
   });
 
-  describe('Cmd+click open-finish (Illustrator convention)', () => {
-    it('Cmd+click after ≥2 anchors commits and clears the path', () => {
-      const { tool, adapter, scratch } = setup();
-      for (const [x, y] of [[0, 0], [50, 0], [50, 50]] as const) {
-        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      }
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, {
-        worldX: 200, worldY: 200,
-        modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
-      }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, {
-        worldX: 200, worldY: 200,
-        modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
-      }));
-      expect(adapter.addNode).toHaveBeenCalledTimes(1);
-      expect(scratch.current).toBeNull();
-      // The committed pose is open (Cmd+click is open-finish).
-      const lastWrap = adapter.added[adapter.added.length - 1];
-      expect(lastWrap.closed).toBe(false);
-    });
-
-    it('Cmd+click with <2 anchors does NOT commit', () => {
-      const { tool, adapter, scratch } = setup();
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, {
-        worldX: 50, worldY: 50,
-        modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
-      }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, {
-        worldX: 50, worldY: 50,
-        modifiers: { alt: false, shift: false, meta: true, ctrl: false, space: false },
-      }));
-      expect(adapter.addNode).not.toHaveBeenCalled();
-      // The Cmd+click fell through to corner-anchor placement.
-      expect(scratch.current!.anchors).toHaveLength(2);
-    });
-
-    it('Ctrl+click works the same as Cmd+click (cross-platform)', () => {
-      const { tool, adapter, scratch } = setup();
-      for (const [x, y] of [[0, 0], [50, 0]] as const) {
-        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      }
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, {
-        worldX: 200, worldY: 200,
-        modifiers: { alt: false, shift: false, meta: false, ctrl: true, space: false },
-      }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, {
-        worldX: 200, worldY: 200,
-        modifiers: { alt: false, shift: false, meta: false, ctrl: true, space: false },
-      }));
-      expect(adapter.addNode).toHaveBeenCalledTimes(1);
+  describe('bindings', () => {
+    it('routes plain click, mod-click, double-click, drag, Enter and Escape', () => {
+      const { tool } = setup();
+      const routes = (tool.bindings ?? []).map((b) => [
+        b.spec.kind,
+        'key' in b.spec ? b.spec.key : (b.spec.mods?.mod === true ? 'mod' : ''),
+        b.actionId,
+      ]);
+      expect(routes).toEqual([
+        ['click', '', 'pen.placeAnchor'],
+        ['click', 'mod', 'pen.finishOpen'],
+        ['doubleClick', '', 'pen.finishOpen'],
+        ['drag', '', 'pen.dragHandle'],
+        ['key', 'Enter', 'pen.finish'],
+        ['key', 'Escape', 'pen.cancel'],
+      ]);
     });
   });
 
-  describe('double-click last anchor open-finish (Illustrator convention)', () => {
-    it('two clicks on the same spot within 300ms commit as open path', () => {
-      const { tool, adapter, scratch } = setup();
-      // Place two anchors first.
-      for (const [x, y] of [[0, 0], [50, 0]] as const) {
-        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      }
-      // Second click on the last anchor → open-finish.
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
-      expect(adapter.addNode).toHaveBeenCalledTimes(1);
-      expect(adapter.added[0].closed).toBe(false);
-      expect(scratch.current).toBeNull();
+  describe('⌘-click open-finish (Illustrator convention)', () => {
+    it('⌘-click after ≥2 anchors commits the path open and clears it', () => {
+      const p = setup();
+      p.click(0, 0); p.click(50, 0); p.click(50, 50);
+      expect(p.modClick(200, 200)).toBe(true);
+      expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
+      expect(p.scratch.current).toBeNull();
+      expect(p.adapter.added.at(-1)!.closed).toBe(false);
     });
 
-    it('does NOT trigger when the second click lands far from the last anchor', () => {
-      const { tool, adapter, scratch } = setup();
-      for (const [x, y] of [[0, 0], [50, 0]] as const) {
-        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      }
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 500, worldY: 500 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 500, worldY: 500 }));
-      expect(adapter.addNode).not.toHaveBeenCalled();
-      expect(scratch.current!.anchors).toHaveLength(3);
+    it('⌘-click with <2 anchors declines, so the click falls through to anchor placement', () => {
+      // Strict modifier matching means the two click bindings are distinct
+      // routes; declining is what lets the dispatcher try the plain one.
+      const p = setup();
+      p.click(0, 0);
+      expect(p.modClick(50, 50)).toBe(false);
+      expect(p.adapter.addNode).not.toHaveBeenCalled();
+      p.click(50, 50); // the fall-through
+      expect(p.scratch.current!.anchors).toHaveLength(2);
     });
 
-    it('does NOT trigger when interval exceeds 300ms', () => {
-      const { tool, adapter, scratch } = setup();
-      for (const [x, y] of [[0, 0], [50, 0]] as const) {
-        tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-        tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: x, worldY: y }));
-      }
-      // Force the last-click timestamp far back in time.
-      scratch._lastClick = { t: performance.now() - 1000, x: 50, y: 0 };
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 50, worldY: 0 }));
-      expect(adapter.addNode).not.toHaveBeenCalled();
-      expect(scratch.current!.anchors).toHaveLength(3);
+    it('the binding uses `mod`, which is meta on mac and ctrl elsewhere', () => {
+      // The retired route grammar's modifier matcher accepted meta OR ctrl on
+      // every platform, so ⌘-click's route also fired on Ctrl-click on mac —
+      // where Ctrl-click is the context menu.
+      const { tool } = setup();
+      const modClick = (tool.bindings ?? []).find((b) => b.actionId === 'pen.finishOpen' && b.spec.kind === 'click');
+      expect(modClick?.spec.mods).toMatchObject({ mod: true });
+      expect(modClick?.spec.mods).not.toHaveProperty('ctrl');
+      expect(modClick?.spec.mods).not.toHaveProperty('meta');
+    });
+  });
+
+  describe('double-click open-finish (Illustrator convention)', () => {
+    it('double-clicking the last anchor commits the path open, without a duplicate anchor', () => {
+      // `doubleclick` is synthesized AFTER both clicks, so the second click
+      // has already placed an anchor on top of the first's. The action drops
+      // that duplicate before committing — net effect matches the pen's old
+      // private 300ms detector, using the dispatcher's single definition of
+      // a double click instead of a fourth one.
+      const p = setup();
+      p.click(0, 0);
+      p.doubleClick(50, 0);
+      expect(p.adapter.addNode).toHaveBeenCalledTimes(1);
+      expect(p.adapter.added[0].closed).toBe(false);
+      expect(p.scratch.current).toBeNull();
+      // Two anchors survive: (0,0) and the first of the double-click pair.
+      expect(p.adapter.added[0].path.commands).toHaveLength(2);
     });
 
-    it('does NOT trigger with <2 anchors (single anchor + repeat click)', () => {
-      const { tool, adapter, scratch } = setup();
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      expect(adapter.addNode).not.toHaveBeenCalled();
+    it('drops exactly one anchor, wherever the double-click lands', () => {
+      // The dropped anchor is by construction the one the second click just
+      // appended, so there is no position test to get wrong — the pen's old
+      // detector needed one only because it had to decide, mid-click,
+      // whether a double-click was happening at all.
+      const p = setup();
+      p.click(0, 0); p.click(50, 0);
+      p.doubleClick(500, 500);
+      // (0,0), (50,0) and ONE anchor at (500,500) survive.
+      expect(p.adapter.added[0].path.commands).toHaveLength(3);
+    });
+
+    it('a double-click that closes the subpath keeps every anchor', () => {
+      // The second click landed on the first anchor and closed the path, so
+      // the anchors already moved to `finishedSubpaths` — there is nothing
+      // for the double click to undo.
+      const p = setup({ closeHitRadius: 8, autoCommitOnClose: false });
+      p.click(0, 0); p.click(100, 0); p.click(100, 100);
+      p.doubleClick(1, 1);
+      expect(p.scratch.finishedSubpaths.length + (p.scratch.current ? 1 : 0)).toBe(0);
+      expect(p.adapter.added[0].closed).toBe(true);
+      expect(p.adapter.added[0].path.commands).toHaveLength(4); // M L L Z
+    });
+
+    it('declines with <2 anchors', () => {
+      const p = setup();
+      const action = p.actionOf('pen.finishOpen');
+      expect(action.enabled?.()).toBe(ActionDisabledReason.NotApplicable);
+      p.click(0, 0);
+      expect(action.enabled?.()).toBe(ActionDisabledReason.NotApplicable);
     });
   });
 
@@ -441,40 +440,28 @@ describe('usePenTool', () => {
     });
 
     it('snaps corner-anchor click placement to the grid', () => {
-      const { tool, scratch } = setup({ snapPoint: grid });
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 12, worldY: 18 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 12, worldY: 18 }));
-      expect(scratch.current!.anchors).toEqual([{ x: 10, y: 20 }]);
+      const p = setup({ snapPoint: grid });
+      p.click(12, 18);
+      expect(p.scratch.current!.anchors).toEqual([{ x: 10, y: 20 }]);
     });
 
-    it('snaps smooth-anchor base point on drag.onStart', () => {
-      const { tool, scratch } = setup({ snapPoint: grid });
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 23, worldY: 7 }));
-      tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 25, worldY: 9 }));
-      // Anchor base is the snapped pendingDown coords.
-      expect(scratch.current!.anchors[0].x).toBe(20);
-      expect(scratch.current!.anchors[0].y).toBe(10);
+    it('snaps the smooth-anchor base point at drag start', () => {
+      const p = setup({ snapPoint: grid });
+      p.drag({ x: 23, y: 7 }, { x: 60, y: 7 });
+      expect(p.scratch.current!.anchors[0].x).toBe(20);
+      expect(p.scratch.current!.anchors[0].y).toBe(10);
     });
-
-    // Rubber-band cursor preview (no drag in flight) was driven via
-    // drag.onMove pre-migration — see comment above the deleted
-    // 'pointer-move updates cursor and closeHintActive' test. Path is
-    // unreachable through the declarative factory's drag channel.
 
     it('snaps the outgoing-handle target while dragging a handle', () => {
-      const { tool, scratch } = setup({ snapPoint: grid });
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      tool.drag!.onStart!(pe(), makeCtx(scratch, { worldX: 0, worldY: 0 }));
-      tool.drag!.onMove!(pe(), makeCtx(scratch, { worldX: 27, worldY: 32 }));
-      const a = scratch.current!.anchors[0];
-      expect(a.outHandle).toEqual({ x: 30, y: 30 });
+      const p = setup({ snapPoint: grid });
+      p.drag({ x: 0, y: 0 }, { x: 27, y: 32 });
+      expect(p.scratch.current!.anchors[0].outHandle).toEqual({ x: 30, y: 30 });
     });
 
     it('passthrough (no snapPoint) preserves raw coords', () => {
-      const { tool, scratch } = setup();
-      tool.pointer!.onDown!(pe(), makeCtx(scratch, { worldX: 12, worldY: 18 }));
-      tool.pointer!.onClick!(pe(), makeCtx(scratch, { worldX: 12, worldY: 18 }));
-      expect(scratch.current!.anchors).toEqual([{ x: 12, y: 18 }]);
+      const p = setup();
+      p.click(12, 18);
+      expect(p.scratch.current!.anchors).toEqual([{ x: 12, y: 18 }]);
     });
   });
 });

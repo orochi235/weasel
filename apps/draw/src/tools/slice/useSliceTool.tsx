@@ -16,7 +16,6 @@ export function useSliceTool() {
         },
         keybinding: { key: 'K' },
         bindings: [{ spec: { kind: 'drag' }, actionId: 'slice' }],
-        initial: {},
       }),
     [],
   );

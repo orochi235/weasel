@@ -1,4 +1,3 @@
-import type { DragChannel } from 'tools/types';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { DrawCommand } from '../renderer';
 import type { View } from 'core/viewport/view';
@@ -121,13 +120,19 @@ export interface CustomPaintContext {
 
 /**
  * @experimental
- * Result of an affordance hit — what the dispatcher wires up as the gesture.
- * Nominates the drag channel and (optionally) initial scratch state.
+ * Result of an affordance hit — what the region computed about itself.
+ *
+ * `initialScratch` is the payload: what the region already knows (which
+ * corner, which target id) so the action that picks up the drag doesn't
+ * re-derive it. `<SceneCanvas>` reads it out of the layer hit-test and packs
+ * it into `AffordanceHit`, which flows to the matching action through
+ * `InvocationCtx.drag.affordance`.
+ *
+ * This used to also carry a `drag: DragChannel` naming the handlers the
+ * tool-routing dispatcher should wire up. Every implementation supplied a
+ * no-op stub that claimed, because the real routing had already moved to
+ * bindings; the field went with that dispatcher.
  */
 export interface AffordanceBinding<TScratch = unknown> {
-  drag: DragChannel<TScratch>;
-  /** Initial scratch passed to drag.onStart. Lets the affordance pre-fill
-   *  state from what its region's binding already computed (anchor: 'br',
-   *  targetId: 'g1', etc.) so the tool's onStart doesn't re-derive it. */
   initialScratch?: TScratch;
 }

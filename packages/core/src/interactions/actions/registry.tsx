@@ -135,6 +135,25 @@ export interface Action {
    * actions that declare one.
    */
   cursor?: string;
+  /**
+   * CSS cursor shown while THIS action's ongoing handle is in flight —
+   * grabbing while panning, `move` while dragging a selection, `crosshair`
+   * while pulling a marquee.
+   *
+   * Separate from `cursor` because the two answer different questions:
+   * `cursor` is a prediction ("a drag from here would pan"), this is a state
+   * ("you are panning"). An action can declare either, both, or neither;
+   * with only `cursor` set, the hover hint holds for the duration of the
+   * gesture.
+   *
+   * This is where mid-gesture cursors live now. They used to come from the
+   * tool side — `ViewportToolDef.engaged.cursor` for a phase-gated string,
+   * or a function-form `Tool.cursor` reading the gesture scratch out of the
+   * tool-routing dispatcher. Both belonged to a pipeline whose whole job was
+   * being taken over by bindings, and neither could describe a cursor for an
+   * action a tool doesn't own.
+   */
+  activeCursor?: string;
 }
 
 /**

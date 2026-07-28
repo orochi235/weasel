@@ -10,12 +10,11 @@ import {
   useTools,
 } from '@weasel-js/core';
 import {
-  buildActionRegistry,
+  buildRouteRegistry,
   canonicalModifiers,
   findConflicts,
   type RegistryEntry,
   type Conflict,
-  type ToolDef,
 } from '@weasel-js/core/routing';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import styles from './ToolReflectionDemo.module.css';
@@ -38,16 +37,11 @@ function ToolReflectionDemoInner() {
   const hand = useHandTool();
   const tools = useTools({ active: 'select', registry: { select, hand } });
 
-  // Walk the live tools' attached `def` (set by `defineTool`) to feed the
-  // reflection consumers — no synthetic stubs.
-  const toolDefs = useMemo<readonly ToolDef<unknown>[]>(
-    () => Object.values(tools.registry)
-      .map((t) => t.def as ToolDef<unknown> | undefined)
-      .filter((d): d is ToolDef<unknown> => d != null),
-    [tools.registry],
-  );
-  const registry: RegistryEntry[] = useMemo(() => buildActionRegistry(toolDefs), [toolDefs]);
-  const conflicts: Conflict[] = useMemo(() => findConflicts(toolDefs), [toolDefs]);
+  // Feed the reflection consumers the live Tools — routes are `Tool.bindings`
+  // now, not anything on the authored def.
+  const toolList = useMemo(() => Object.values(tools.registry), [tools.registry]);
+  const registry: RegistryEntry[] = useMemo(() => buildRouteRegistry(toolList), [toolList]);
+  const conflicts: Conflict[] = useMemo(() => findConflicts(toolList), [toolList]);
 
   return (
     <div className={styles.demo}>

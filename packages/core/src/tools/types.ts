@@ -5,16 +5,9 @@ import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
 import type { ToolKeybinding } from './routing/types';
-import type { HitResult } from './routing/hitResult';
-import type { RouteResolvedInfo } from './routing/reflection/route-resolved';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { CapabilityTag } from '@weasel-js/modes';
-
-/** Outcome of a channel handler. `'claim'` stops dispatch for this event;
- *  `'pass'` lets the next slot try. Handlers that return nothing are
- *  treated as `'pass'`. */
-export type Decision = 'claim' | 'pass' | void;
 
 /** Modifier-key snapshot at event dispatch time. `space` is included
  *  because tools commonly use space as a hotkey-slot trigger and may
@@ -35,11 +28,6 @@ export interface ToolCtx<TScratch = unknown> {
   worldX: number;
   worldY: number;
   modifiers: ToolModifiers;
-  /** Hit-test result for the current event. Populated by the dispatcher
-   *  before each handler call. Tools that don't use declarative routing
-   *  can ignore this. Optional for migration; will become
-   *  required once the routing migration is complete. */
-  target?: HitResult;
   selection: SelectionApi;
   /** Adapter/scene access — opaque at this layer; tools that need it
    *  cast to a known shape. This layer doesn't constrain it. */
@@ -66,34 +54,7 @@ export interface ToolCtx<TScratch = unknown> {
    *  rotation handle, etc.) lands in the same overlay as Canvas's own
    *  bounds/origin records. Tools should call this conditionally with `?.`. */
   debug?: DebugSink;
-  /** Kit-internal: route-resolution reporter. The dispatcher populates
-   *  this; the declarative routing factory calls it after each successful
-   *  resolveRoute() hit so the dispatcher can publish the last-resolved
-   *  snapshot to debug-overlay consumers. Underscore prefix signals
-   *  "do not consume in tool code." */
-  __reportRoute?: (info: RouteResolvedInfo) => void;
   scratch: TScratch;
-}
-
-export interface PointerChannel<TScratch> {
-  onDown?: (e: PointerEvent, ctx: ToolCtx<TScratch>) => Decision;
-  onClick?: (e: PointerEvent, ctx: ToolCtx<TScratch>) => Decision;
-}
-
-export interface DragChannel<TScratch> {
-  onStart?: (e: PointerEvent, ctx: ToolCtx<TScratch>) => Decision;
-  onMove?: (e: PointerEvent, ctx: ToolCtx<TScratch>) => Decision;
-  onEnd?: (e: PointerEvent, ctx: ToolCtx<TScratch>) => Decision;
-  onCancel?: (ctx: ToolCtx<TScratch>) => void;
-}
-
-export interface KeyboardChannel<TScratch> {
-  onDown?: (e: KeyboardEvent, ctx: ToolCtx<TScratch>) => Decision;
-  onUp?: (e: KeyboardEvent, ctx: ToolCtx<TScratch>) => Decision;
-}
-
-export interface WheelChannel<TScratch> {
-  onWheel?: (e: WheelEvent, ctx: ToolCtx<TScratch>) => Decision;
 }
 
 /** Hotkey-slot trigger key. The slot is engaged while this key is held —
@@ -166,20 +127,6 @@ export interface Tool<TScratch = unknown> {
   initScratch?: () => TScratch;
   onActivate?: (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
-  pointer?: PointerChannel<TScratch>;
-  drag?: DragChannel<TScratch>;
-  keyboard?: KeyboardChannel<TScratch>;
-  wheel?: WheelChannel<TScratch>;
-  /**
-   * State-aware predicate. When true, this tool claims every pointerdown
-   * and bypasses the affordance layer hit-test pipeline. Used by tools
-   * in modal states (pen mid-path, text mid-edit) where affordance hits
-   * would otherwise interrupt the in-progress gesture.
-   *
-   * Default: undefined (treated as false). Called once per pointerdown
-   * with the tool's current ctx (scratch + view + modifiers).
-   */
-  claimsAll?: (ctx: ToolCtx<TScratch>) => boolean;
   cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
   /** Presentation metadata for tool palettes. See `ToolPresentation`. */
   presentation?: ToolPresentation<TScratch>;
@@ -207,34 +154,18 @@ export interface Tool<TScratch = unknown> {
    *  nothing — typically gated on a scratch field like
    *  `if (!scratch.overlay) return`. */
   overlay?: RenderLayer<unknown>;
-  /** Declarative gesture-bindings the
-   *  dispatcher consults while this tool is active. Empty/undefined keeps
-   *  legacy imperative-channel behavior. See
+  /** Declarative gesture bindings — the tool's entire input surface. The
+   *  gesture dispatcher consults these at active scope while this tool is
+   *  active, and at hotkey scope while it is held. See
    *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
   bindings?: GestureBinding[];
-  /**
-   * Optional. When set, the dispatcher consults this before its built-in
-   * node/empty hit-test. If it returns a value, that target replaces the
-   * default `target` on the routed action's ctx. The string `target` is
-   * the tool's own vocabulary — the dispatcher does not interpret it.
-   *
-   * Used for tools that need richer sub-object hit categories (e.g., pen
-   * edit-mode's anchor/handle/segment vs the default node/empty).
-   */
-  hitOverride?(ctx: {
-    worldX: number;
-    worldY: number;
-    scratch: TScratch;
-    view: View;
-    modifiers: ToolModifiers;
-  }): { target: string; extra?: unknown } | null;
   /** Reflection escape hatch: when this `Tool` was produced by `defineTool`,
    *  the source `ToolDef` is attached here so introspection consumers
-   *  (`buildActionRegistry`, `findConflicts`, the toolkit-builder UI, the
-   *  reflection demo) can walk the declarative source rather than the
-   *  translated runtime channels. Tools constructed without `defineTool`
-   *  may leave this undefined. Typed as `unknown` to keep this file from
-   *  importing the routing types — consumers cast at the use site. */
+   *  (`buildRouteRegistry`, `findConflicts`, the toolkit-builder UI, the
+   *  reflection demo) can read the authored form — `hookName` in particular,
+   *  which the runtime `Tool` doesn't carry. Tools constructed without
+   *  `defineTool` may leave this undefined. Typed as `unknown` to keep this
+   *  file from importing the routing types — consumers cast at the use site. */
   def?: unknown;
 }
 

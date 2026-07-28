@@ -139,6 +139,27 @@ export interface DragSpec {
   phase?: PhaseSpec;
 }
 
+/**
+ * Bare pointer press, matched at down time — before the dispatcher knows
+ * whether the gesture will become a click or a drag.
+ *
+ * Reach for this only when the effect must be visible while the button is
+ * still held. Selection is the motivating case: pressing an unselected node
+ * highlights it immediately, and the drag that may follow then starts from an
+ * already-correct selection. Anything that can wait for the release belongs on
+ * a `click` spec, which does not fire on a press that turns into a drag.
+ *
+ * A matching binding does NOT own the gesture: the same press goes on to open
+ * a drag or synthesize a click as usual. Bind an immediate action here, not an
+ * ongoing one.
+ */
+export interface PointerDownSpec {
+  kind: 'pointerDown';
+  target?: TargetSpec;
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
 /** Multi-touch gesture. `fingers` is the required touch count. */
 export interface MultiTouchSpec {
   kind: 'multiTouch';
@@ -187,6 +208,7 @@ export type GestureSpec =
   | DoubleClickSpec
   | ContextMenuSpec
   | DragSpec
+  | PointerDownSpec
   | MultiTouchSpec
   | MultiTouchTapSpec
   | DropSpec

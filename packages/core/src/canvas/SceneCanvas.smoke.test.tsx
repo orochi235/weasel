@@ -35,9 +35,6 @@ import type { Scene, NodeId } from 'core/scene/types';
 import type { ActionDisabledReason } from 'interactions/actions/registry';
 import { defaultNodeRouting } from './SceneCanvas/defaultNodeRouting';
 import type { NodeRoutingEntry } from '../core/scene/NodeRouting';
-import { useTools } from 'tools/useTools';
-import type { AnyTool } from 'tools/types';
-import { ActiveToolContextProvider } from 'interactions/actions/activeToolContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -836,27 +833,18 @@ describe('useLassoTool smoke', () => {
 // ---------------------------------------------------------------------------
 
 describe('SceneCanvas — routing prop', () => {
-  // Wrapper that builds a ToolsApi from the probe tool and renders SceneCanvas
-  // with it as the active tool. The probe's pointer.onDown captures
-  // `ctx.target.kind` so the test can assert the kind classification flowing
-  // out of the adapter that SceneCanvas synthesizes.
+  // The routing prop feeds the node-kind classifier `SceneCanvas` builds into
+  // `getNodeAtPoint`. These used to read the classification off `ctx.target`
+  // inside a probe tool's `pointer.onDown` route — a phase-table channel. The
+  // surviving consumer of that same picker is the `onDoubleClick` observer,
+  // which reports `{ id, kind }`, so that's what they read now.
   function Harness(props: {
     scene: Scene<D, L, P>;
     id: NodeId;
     routing?: readonly NodeRoutingEntry[];
-    onTarget: (kind: string | undefined) => void;
+    onKind: (kind: string | undefined) => void;
   }) {
-    const { scene, id, routing, onTarget } = props;
-    const probe: AnyTool = {
-      id: 'kind-probe',
-      pointer: {
-        onDown: (_e, ctx) => {
-          onTarget((ctx.target as { kind?: string } | undefined)?.kind);
-          return 'claim';
-        },
-      },
-    };
-    const tools = useTools({ active: 'kind-probe', registry: { 'kind-probe': probe } });
+    const { scene, id, routing, onKind } = props;
     return (
       <SceneCanvas
         scene={scene}
@@ -865,55 +853,42 @@ describe('SceneCanvas — routing prop', () => {
         height={400}
         {...(routing ? { routing } : {})}
         selectionOptions={{ initial: [id] }}
-        tools={tools}
+        onDoubleClick={(hit) => onKind(hit?.kind)}
       />
     );
   }
 
-  it('threads routing into the synthesized adapter so target.kind resolves to "rect"', () => {
+  function doubleClickAt(container: HTMLElement, x: number, y: number) {
+    const canvas = getCanvas(container);
+    act(() => {
+      pd(canvas, x, y);
+      pu(canvas, x, y);
+      pd(canvas, x, y);
+      pu(canvas, x, y);
+    });
+  }
+
+  it('threads routing into the synthesized adapter so the hit kind resolves to "rect"', () => {
     const scene = makeScene();
     const id = firstId(scene);
     let captured: string | undefined;
 
-    // useTools() reads ActiveToolContext, which SceneCanvas provides internally
-    // via IfRoot. Calling useTools at the test seam needs an explicit provider.
     const { container } = render(
-      <ActiveToolContextProvider><Harness
-        scene={scene}
-        id={id}
-        routing={defaultNodeRouting}
-        onTarget={(k) => { captured = k; }}
-      /></ActiveToolContextProvider>,
+      <Harness scene={scene} id={id} routing={defaultNodeRouting} onKind={(k) => { captured = k; }} />,
     );
-
-    const canvas = getCanvas(container);
-    act(() => {
-      pd(canvas, 140, 130);
-      pu(canvas, 140, 130);
-    });
-
+    doubleClickAt(container, 140, 130);
     expect(captured).toBe('rect');
   });
 
-  it('produces target.kind = "unknown" when routing prop is omitted', () => {
+  it('produces kind = "unknown" when the routing prop is omitted', () => {
     const scene = makeScene();
     const id = firstId(scene);
     let captured: string | undefined;
 
     const { container } = render(
-      <ActiveToolContextProvider><Harness
-        scene={scene}
-        id={id}
-        onTarget={(k) => { captured = k; }}
-      /></ActiveToolContextProvider>,
+      <Harness scene={scene} id={id} onKind={(k) => { captured = k; }} />,
     );
-
-    const canvas = getCanvas(container);
-    act(() => {
-      pd(canvas, 140, 130);
-      pu(canvas, 140, 130);
-    });
-
+    doubleClickAt(container, 140, 130);
     expect(captured).toBe('unknown');
   });
 });

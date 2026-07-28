@@ -63,6 +63,24 @@ export interface PointerSampleStylus {
 /** A pointer press — the start of any drag, and the richest event shape. */
 export interface PointerDownEvent extends EventModifiers, PointerSampleStylus {
   kind: 'pointerdown';
+  /**
+   * Which of the two dispatches this press produces.
+   *
+   * A physical pointerdown is dispatched twice, for two different audiences:
+   *
+   * - `'press'` — emitted immediately, at down time. Matches `pointerDown`
+   *   specs only. This is the dispatch that lets a binding act *before* the
+   *   gesture is classified (select applies the selection here, so
+   *   press-and-hold highlights without waiting for a release).
+   * - omitted — the copy the dispatcher buffers and flushes once movement
+   *   crosses the drag threshold. Matches `drag` specs only, and is what
+   *   opens a drag handle.
+   *
+   * The split is what keeps one press from firing both a `pointerDown` and a
+   * `drag` binding. Synthetic probes (the hover pump's `resolveOnly`) leave it
+   * omitted, so drag prediction is unaffected.
+   */
+  stage?: 'press';
   target?: unknown;
   /** World-space coordinates (post view transform). */
   x?: number;
@@ -115,6 +133,28 @@ export interface ClickEvent extends EventModifiers {
    */
   worldX?: number;
   worldY?: number;
+  /**
+   * World-space coordinates of the *press* that opened this click, as opposed
+   * to `worldX`/`worldY`, which are the release. The two differ by up to the
+   * drag threshold (4px screen).
+   *
+   * Actions that place geometry at the click want this one — a click's
+   * location reads as where the user put the pointer down, and pinning to the
+   * press point keeps a snapped coordinate stable against the small drift
+   * between press and release. Absent when the `clientToWorld` thunk isn't
+   * wired, same as `worldX`/`worldY`.
+   */
+  pressX?: number;
+  pressY?: number;
+  /**
+   * Affordance the *press* landed on, carried forward from the pointerdown
+   * exactly like {@link ClickEvent.bodyTarget} is. A click's target is
+   * whatever the press hit — chrome doesn't move out from under a pointer
+   * between down and up — and without this a `kindOf` target on a click spec
+   * would receive the raw DOM element while the same predicate on a drag spec
+   * receives the affordance.
+   */
+  affordance?: unknown;
   bodyTarget?: BodyTarget;
 }
 

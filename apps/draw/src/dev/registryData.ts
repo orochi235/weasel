@@ -15,7 +15,6 @@ export type TreeEntry =
   | BundleEntry
   | IconEntry
   | OpFactoryEntry
-  | PhaseEntry
   | GestureEntry
   | PhaseOutputEntry
   | OpKindEntry
@@ -26,30 +25,36 @@ export type TreeEntry =
   | GroupEntry
   | MetaEntry;
 
-/** Gesture channels — input events a `ToolDef`'s phase *subscribes to*.
- *  `true` when the phase declares the channel (e.g. `initial.click`). */
+/** Gesture kinds a tool binds. `true` when at least one entry in
+ *  `Tool.bindings` declares that kind. */
 export interface GestureChannels {
   click: boolean;
+  doubleClick: boolean;
   pointerDown: boolean;
   drag: boolean;
   wheel: boolean;
-  keyDown: boolean;
-  keyUp: boolean;
+  key: boolean;
+  keyHeld: boolean;
+  contextMenu: boolean;
+  multiTouchTap: boolean;
 }
 
-/** Phase outputs — things a `ToolDef`'s phase *declares or emits* rather
- *  than reacting to. Distinct from gestures and kept partitioned to avoid
- *  the "subscribing tools" framing misrepresenting them. */
-export interface PhaseOutputs {
+/** Things a tool *declares or emits* rather than reacting to. Kept apart
+ *  from gestures so the "subscribing tools" framing doesn't misrepresent
+ *  them. (`claimsAll` used to live here — it was a phase-table field that
+ *  told the tool-routing dispatcher to bypass affordance hit-testing, and it
+ *  went with that dispatcher.) */
+export interface ToolOutputs {
   cursor: boolean;
   overlay: boolean;
-  claimsAll: boolean;
 }
 
-/** Full summary of a single phase. Always split into the two partitions. */
-export interface PhaseSummary {
+/** What a tool's input surface looks like: the gesture kinds it binds plus
+ *  what it declares. Replaces the per-phase summary — a tool has one
+ *  binding list now, not an initial and an engaged route table. */
+export interface ToolSurface {
   gestures: GestureChannels;
-  outputs: PhaseOutputs;
+  outputs: ToolOutputs;
 }
 
 /** Source location attached to a callback function at build time by the
@@ -125,18 +130,13 @@ export interface ToolEntry {
     shortcut?: string;
     icon?: import('react').ReactNode;
   };
-  /** Phase declarations. `engaged` is undefined when the def has no
-   *  engaged-phase routes. */
-  phases: {
-    initial: PhaseSummary;
-    engaged?: PhaseSummary;
-  };
+  /** Which gesture kinds this tool binds, and what it declares. */
+  surface: ToolSurface;
   /** Top-level optional members present on the `ToolDef`. */
   capabilities: {
     initScratch: boolean;
     onActivate: boolean;
     onDeactivate: boolean;
-    hitOverride: boolean;
   };
   /** Source-linked callbacks discovered on the live ToolDef — empty when
    *  the dev `weasel:callback-source` plugin isn't active (e.g. prod
@@ -246,53 +246,47 @@ export interface OpFactoryEntry {
 /** Lifecycle phase a `ToolDef` can declare routes in. `initial` is the
  *  resting phase; `engaged` is entered after a phase transition (e.g.
  *  start of a drag). */
-export type PhaseId = 'initial' | 'engaged';
 
-export interface PhaseEntry {
-  kind: 'phase';
-  id: PhaseId;
-  label: string;
-}
-
-/** Input-channel keys on `PhaseDef` — the gestures a tool *subscribes to*.
- *  Strictly typed against `GestureChannels` so phase outputs can't sneak in. */
+/** Gesture kinds a tool can bind. Strictly typed against
+ *  `GestureChannels` so tool outputs can't sneak in. */
 export const GESTURE_CHANNEL_KEYS: readonly (keyof GestureChannels)[] = [
-  'click', 'pointerDown', 'drag', 'wheel',
-  'keyDown', 'keyUp',
+  'click', 'doubleClick', 'pointerDown', 'drag', 'wheel',
+  'key', 'keyHeld', 'contextMenu', 'multiTouchTap',
 ];
 
-/** Catalog entries for the inspector. Includes both legacy
- *  `GestureChannels` keys (used by phase-grammar tools) and the modern
- *  `GestureSpec.kind` values (used by action `defaultBinding`s). Listing
- *  both lets the inspector surface every binding source on a single
- *  catalog page. */
+/** Catalog entries for the inspector: one page per gesture kind, listing
+ *  every tool binding and action `defaultBinding` that routes through it.
+ *  There used to be two vocabularies here — phase-table channel names and
+ *  `GestureSpec.kind` values — and the catalog listed both because a route
+ *  could live in either. One grammar, one list. */
 export const GESTURE_CATALOG_KEYS: readonly string[] = [
-  // Legacy phase channels:
-  'click', 'pointerDown', 'drag', 'wheel',
-  'keyDown', 'keyUp',
-  // Modern action-spec kinds the legacy list doesn't cover:
-  'doubleClick', 'key', 'key-held', 'multiTouch', 'multiTouchTap', 'pointerdown',
+  'click', 'doubleClick', 'pointerDown', 'drag', 'wheel',
+  'key', 'key-held', 'contextMenu', 'multiTouch', 'multiTouchTap',
 ];
 
-/** Non-gesture `PhaseDef` slots — the tool emits/declares these rather than
- *  reacting to them. Strictly typed against `PhaseOutputs`. */
-export const PHASE_OUTPUT_KEYS: readonly (keyof PhaseOutputs)[] = [
-  'cursor', 'overlay', 'claimsAll',
+/** `GestureSpec.kind` -> `GestureChannels` key, for the two that differ
+ *  (the channel names avoid the hyphen). */
+const GESTURE_KEY_FOR: Readonly<Record<string, string>> = {
+  'key-held': 'keyHeld',
+  multiTouch: 'multiTouch',
+};
+
+/** Non-gesture declarations — the tool emits these rather than reacting to
+ *  them. Strictly typed against `ToolOutputs`. */
+export const PHASE_OUTPUT_KEYS: readonly (keyof ToolOutputs)[] = [
+  'cursor', 'overlay',
 ];
 
 export interface GestureEntry {
   kind: 'gesture';
-  /** Either a legacy `GestureChannels` key (phase grammar) or a modern
-   *  `GestureSpec.kind` value (action grammar). Strictly typed via a
-   *  union of both vocabularies so the inspector can surface every
-   *  binding source on the catalog page. */
+  /** A `GestureSpec.kind` value. */
   id: string;
   label: string;
 }
 
 export interface PhaseOutputEntry {
   kind: 'phaseOutput';
-  id: keyof PhaseOutputs;
+  id: keyof ToolOutputs;
   label: string;
 }
 
@@ -411,12 +405,6 @@ export function collectOpFactories(): readonly OpFactoryEntry[] {
  *  `src/index.barrel.test.ts`). */
 const SHAPE_KIND_IDS: readonly string[] = Weasel.KIT_SHAPE_KINDS;
 
-const PHASE_IDS: readonly PhaseId[] = ['initial', 'engaged'];
-
-export function collectPhases(): readonly PhaseEntry[] {
-  return PHASE_IDS.map((id) => ({ kind: 'phase', id, label: id }));
-}
-
 /** Tree-leaf badge count: how many other entries reference this one. Used
  *  by `RegistryTree` to render `(n)` next to leaves where the count is
  *  meaningful (e.g. gestures → number of tools binding the channel).
@@ -430,32 +418,13 @@ export function countForEntry(
   switch (entry.kind) {
     case 'bundle':
       return entry.tools.length;
-    case 'phase':
-      return entry.id === 'initial'
-        ? tools.length
-        : tools.filter((t) => t.phases.engaged !== undefined).length;
     case 'gesture': {
-      // Count both phase-grammar subscribers (legacy channels on tool
-      // PhaseDefs) AND action bindings (modern dispatcher) so the sidebar
-      // reflects every source of bindings.
-      const legacyAliases: Readonly<Record<string, readonly string[]>> = {
-        click: ['click'], pointerDown: ['pointerDown'], dblTap: ['dblTap'],
-        drag: ['drag'], wheel: ['wheel'], keyDown: ['keyDown'], keyUp: ['keyUp'],
-        doubleClick: ['dblTap'], key: ['keyDown', 'keyUp'], pointerdown: ['pointerDown'],
-      };
-      const specAliases: Readonly<Record<string, readonly string[]>> = {
-        click: ['click'], pointerDown: ['pointerdown'], dblTap: ['doubleClick'],
-        drag: ['drag'], wheel: ['wheel'], keyDown: ['key', 'key-held'], keyUp: [],
-        doubleClick: ['doubleClick'], key: ['key'], 'key-held': ['key-held'],
-        multiTouch: ['multiTouch'], multiTouchTap: ['multiTouchTap'], pointerdown: ['pointerdown'],
-      };
-      const channels = legacyAliases[entry.id] ?? [];
-      const specKinds = new Set(specAliases[entry.id] ?? []);
-      const toolCount = tools.filter((t) => {
-        const init = t.phases.initial.gestures as unknown as Record<string, unknown>;
-        const eng = (t.phases.engaged?.gestures ?? {}) as unknown as Record<string, unknown>;
-        return channels.some((c) => init[c] || eng[c]);
-      }).length;
+      // Tool bindings and action `defaultBinding`s both route through the
+      // same gesture kinds now, so counting is one pass over each.
+      const kind = entry.id;
+      const toolCount = tools.filter(
+        (t) => (t.surface.gestures as unknown as Record<string, unknown>)[GESTURE_KEY_FOR[kind] ?? kind],
+      ).length;
       let actionCount = 0;
       for (const a of actions) {
         const raw = (a as { defaultBinding?: unknown }).defaultBinding;
@@ -463,16 +432,13 @@ export function countForEntry(
         const entries: unknown[] = Array.isArray(raw) ? raw : [raw];
         for (const e of entries) {
           const obj = e as { spec?: { kind?: string }; kind?: string };
-          const k = (obj.spec ?? obj).kind;
-          if (typeof k === 'string' && specKinds.has(k)) actionCount += 1;
+          if ((obj.spec ?? obj).kind === kind) actionCount += 1;
         }
       }
       return toolCount + actionCount;
     }
     case 'phaseOutput':
-      return tools.filter((t) =>
-        t.phases.initial.outputs[entry.id] || t.phases.engaged?.outputs[entry.id]
-      ).length;
+      return tools.filter((t) => t.surface.outputs[entry.id]).length;
     case 'slot':
       return tools.filter((t) => t.slot === entry.id).length;
     case 'route':

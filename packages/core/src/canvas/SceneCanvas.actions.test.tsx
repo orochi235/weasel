@@ -76,10 +76,18 @@ describe('SceneCanvas actions integration', () => {
     // be absent here only because `useKeybindings` was mounted above the
     // ActionsProvider and its registrations silently no-op'd — a document
     // `keydown` listener did the real work. Both are gone (audit 3.8).
-    expect(seen.at(-1)).toEqual(['tool.activate', 'tool.resetToDefault']);
+    //
+    // `select.pick` / `select.collapseDeferred` are the select tool's OWN
+    // actions, declared on its `ToolDef.actions` and registered by
+    // `useToolActions`. A tool that was explicitly mounted has to bring the
+    // actions its own bindings reference, or it is inert — `actions={null}`
+    // opts out of the kit's defaults, not out of the tools you passed.
+    expect(seen.at(-1)).toEqual([
+      'tool.activate', 'tool.resetToDefault', 'select.pick', 'select.collapseDeferred',
+    ]);
   });
 
-  it('actions={null} + enableKeybindings={false} → registry fully empty', () => {
+  it('actions={null} + enableKeybindings={false} → only the mounted tools own actions', () => {
     const scene = makeScene();
     const seen: string[][] = [];
     render(
@@ -90,7 +98,9 @@ describe('SceneCanvas actions integration', () => {
         <Probe onReg={(ids) => seen.push(ids)} />
       </SceneCanvas>,
     );
-    expect(seen.at(-1)).toEqual([]);
+    // Both keybinding actions are gone; what remains is exactly the select
+    // tool's own two, for the reason above.
+    expect(seen.at(-1)).toEqual(['select.pick', 'select.collapseDeferred']);
   });
 
   it('actions={{ selectAll: null }} drops selectAll only', () => {
