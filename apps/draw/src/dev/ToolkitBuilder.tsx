@@ -20,10 +20,15 @@ import {
 } from 'react';
 import {
   asNodeId,
+  createDispatcher,
   SceneCanvas,
+  specificity,
   useActionsRegistry,
   useScene,
   type Action,
+  type ActionsRegistry,
+  type DepRegistry,
+  type ResolvedCandidate,
   type GestureSpec,
   type Tool,
   type ToolBundle,
@@ -39,6 +44,15 @@ import {
 } from '@weasel-js/core/routing';
 import { formatShortcutParts, KeySequence } from '@weasel-js/ui';
 import { lookupShortcutByToolId } from './keybindingsView';
+import {
+  AFFORDANCE_PREFIX,
+  isPredicateTarget,
+  RESOLUTION_BODY_TARGETS,
+  RESOLUTION_GESTURES,
+  synthesizeInput,
+  type ResolutionGesture,
+  type ResolutionMods,
+} from './resolutionInput';
 import {
   formatAge,
   formatEnabled,
@@ -193,7 +207,13 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
       <section className={s.catalog}>
         <ToolsWidget defs={toolDefs} slots={toolSlots} actions={actions} />
         <ActionsWidget actions={actions} />
-        <RoutesWidget routes={routes} />
+        <RoutesWidget routes={routes} slots={toolSlots} />
+        <ResolutionWidget
+          tools={toolList}
+          actions={actions}
+          slots={toolSlots}
+          activeToolId={toolSlots.registry[0] ?? ''}
+        />
       </section>
 
       {/* Right column: conflicts + live dispatch trace. */}
@@ -307,7 +327,18 @@ function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElemen
 // buildRouteRegistry. One row per binding.
 // ─────────────────────────────────────────────────────────────────────────
 
-function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactElement {
+// `slot` is a static fact (which slot the tool was mounted in); the runtime
+// `scope` the matcher sorts by — hotkey > active > ambient — depends on which
+// tool is active and what's on the hotkey stack at dispatch time, so it lives
+// in the Resolution widget below, sourced from resolveAll.
+function RoutesWidget({
+  routes,
+  slots,
+}: {
+  routes: readonly RegistryEntry[];
+  slots: { registry: readonly string[]; ambient: readonly string[] };
+}): ReactElement {
+  const ambientSet = new Set(slots.ambient);
   const sorted = [...routes].sort((a, b) =>
     a.toolId.localeCompare(b.toolId)
     || a.phase.localeCompare(b.phase)
@@ -325,11 +356,15 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
             <thead>
               <tr>
                 <th>Tool</th>
+                <th>Slot</th>
                 <th>Phase</th>
                 <th>Gesture</th>
                 <th>Arg</th>
                 <th>Target</th>
                 <th>Mods</th>
+                <th title="target, required mods, phase declared, typed drop/paste">
+                  Specificity
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -338,6 +373,7 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
                 return (
                 <tr key={`${r.toolId}-${r.phase}-${r.gesture}-${r.arg ?? ''}-${r.target ?? ''}-${modKey}-${i}`}>
                   <td><code>{r.toolId}</code></td>
+                  <td>{ambientSet.has(r.toolId) ? 'ambient' : 'registry'}</td>
                   <td>{r.phase}</td>
                   <td>{r.gesture}</td>
                   <td>{r.arg == null
@@ -349,6 +385,7 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
                   <td>{modKey === ''
                     ? <span className={s.empty}>—</span>
                     : <code>{modKey}</code>}</td>
+                  <td><code>{specificity(r.spec).join(' · ')}</code></td>
                 </tr>
                 );
               })}
@@ -358,6 +395,193 @@ function RoutesWidget({ routes }: { routes: readonly RegistryEntry[] }): ReactEl
       </div>
     </div>
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Widget: resolution — pick an input, see every binding that matches it in
+// dispatch precedence order, with the winner marked and each loser's reason.
+//
+// The phase tables used to make precedence structurally legible: you read
+// which table an entry sat in and knew what beat it. Bindings made precedence
+// computed — scope, then the specificity tuple, then registration order, with
+// fall-through past anything whose `enabled()` says no — and nothing showed
+// it. `Dispatcher.resolveAll` is that walk without the invoking; this widget
+// is its display.
+//
+// The MODIFIERS are the honest part and the TARGET is the caveated part: a
+// modifier is just a boolean the matcher reads, but a target has to stand in
+// for a real hit-test. See `resolutionInput.ts` for exactly how far the
+// synthesized hit goes and where a `kindOf` predicate can outrun it.
+// ─────────────────────────────────────────────────────────────────────────
+
+const MOD_KEYS = ['shift', 'alt', 'meta', 'ctrl'] as const;
+
+/** `resolveAll` reads only what this ctx hands it, so a throwaway dispatcher
+ *  and these two inert stubs are enough — the query never invokes anything
+ *  and never resolves a dep. */
+const STUB_DEP_REGISTRY: DepRegistry = {
+  register: () => () => {},
+  get: () => undefined,
+};
+
+function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
+  return {
+    register: () => () => {},
+    unregister: () => {},
+    list: () => actions,
+    trigger: () => false,
+    subscribe: () => () => {},
+    begin: () => null,
+    setDispatcher: () => {},
+    setDepRegistry: () => {},
+  };
+}
+
+export function ResolutionWidget({
+  tools,
+  actions,
+  slots,
+  activeToolId,
+}: {
+  tools: readonly Tool<unknown>[];
+  actions: readonly Action[];
+  slots: { registry: readonly string[]; ambient: readonly string[] };
+  activeToolId: string;
+}): ReactElement {
+  const [gesture, setGesture] = useState<ResolutionGesture>('drag');
+  const [target, setTarget] = useState<string>('selected-body');
+  const [mods, setMods] = useState<ResolutionMods>({});
+
+  // Chrome options come from the affordance kinds the mounted tools actually
+  // bind against, so the picker can't offer a target nothing listens for.
+  const affordanceKinds = useMemo(() => {
+    const kinds = new Set<string>();
+    for (const entry of buildRouteRegistry(tools)) {
+      if (entry.target?.startsWith(AFFORDANCE_PREFIX)) {
+        kinds.add(entry.target.slice(AFFORDANCE_PREFIX.length));
+      }
+    }
+    return [...kinds].sort();
+  }, [tools]);
+
+  // `wheel` and `key` events carry no target for the matcher to read, so the
+  // picker would be a control with no effect.
+  const targetApplies = gesture !== 'wheel' && gesture !== 'key';
+
+  const candidates = useMemo(() => {
+    const dispatcher = createDispatcher();
+    return dispatcher.resolveAll(synthesizeInput({ gesture, target, mods }), {
+      actions: stubActionsRegistry(actions),
+      depRegistry: STUB_DEP_REGISTRY,
+      activeToolId,
+      hotkeyStack: [],
+      ambientToolIds: slots.ambient,
+      toolsById: new Map(tools.map((t) => [t.id, t])),
+      isMac: false,
+    });
+  }, [gesture, target, mods, actions, activeToolId, slots.ambient, tools]);
+
+  return (
+    <div className={s.widget}>
+      <h2 className={s.widgetTitle}>Resolution · {candidates.length}</h2>
+      <div className={s.resolutionControls}>
+        <label>
+          gesture
+          <select
+            aria-label="gesture"
+            value={gesture}
+            onChange={(e) => setGesture(e.target.value as ResolutionGesture)}
+          >
+            {RESOLUTION_GESTURES.map((g) => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+        </label>
+        <label
+          title={targetApplies
+            ? undefined
+            : `target matching doesn't apply to a ${gesture} event — it carries no target for the matcher to read`}
+        >
+          target
+          <select
+            aria-label="target"
+            value={target}
+            disabled={!targetApplies}
+            onChange={(e) => setTarget(e.target.value)}
+          >
+            {RESOLUTION_BODY_TARGETS.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+            {affordanceKinds.map((k) => (
+              <option key={k} value={`${AFFORDANCE_PREFIX}${k}`}>chrome: {k}</option>
+            ))}
+          </select>
+        </label>
+        {MOD_KEYS.map((m) => (
+          <label key={m}>
+            <input
+              type="checkbox"
+              checked={!!mods[m]}
+              onChange={(e) => setMods((prev) => ({ ...prev, [m]: e.target.checked }))}
+            />
+            {m}
+          </label>
+        ))}
+      </div>
+      <div className={s.widgetBodyScrollXY}>
+        {candidates.length === 0 ? (
+          <p className={s.empty}>No binding matches this input.</p>
+        ) : (
+          <table className={s.table}>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Scope</th>
+                <th>Tool</th>
+                <th>Action</th>
+                <th title="target, required mods, phase declared, typed drop/paste">
+                  Specificity
+                </th>
+                <th>Verdict</th>
+              </tr>
+            </thead>
+            <tbody>
+              {candidates.map((c, i) => (
+                <tr key={`${c.actionId}-${i}`} className={verdictClass(c.verdict.kind)}>
+                  <td>{i + 1}</td>
+                  <td>{c.scope}</td>
+                  <td>
+                    <code>{c.ownerToolId ?? '—'}</code>
+                    {isPredicateTarget(c.binding.spec) && (
+                      <span
+                        className={s.predicateBadge}
+                        title="Evaluated against a synthesized hit — a predicate reading more than `kind` may differ at runtime."
+                      >?</span>
+                    )}
+                  </td>
+                  <td><code>{c.actionId}</code></td>
+                  <td><code>{c.specificity.join(' · ')}</code></td>
+                  <td>{verdictText(c.verdict)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function verdictClass(kind: ResolvedCandidate['verdict']['kind']): string {
+  if (kind === 'would-fire') return s.verdictFires;
+  if (kind === 'shadowed') return s.verdictShadowed;
+  return s.verdictBlocked;
+}
+
+function verdictText(verdict: ResolvedCandidate['verdict']): string {
+  if (verdict.kind === 'would-fire') return 'fires';
+  if (verdict.kind === 'shadowed') return 'shadowed';
+  return `${verdict.kind}: ${verdict.reason}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

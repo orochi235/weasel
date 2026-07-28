@@ -63,4 +63,21 @@ describe('findConflicts', () => {
     expect(c).toHaveLength(1);
     expect(c[0].toolIds).toEqual(['a', 'a']);
   });
+
+  it('does NOT flag an any-phase binding against an initial-phase one', () => {
+    // Regression: `phaseOf` used to collapse every non-'engaged' PhaseSpec to
+    // 'initial', so these two bucketed together and reported a conflict that
+    // isn't one — they fire in different phases.
+    const a = tool('a', [{ spec: { kind: 'click', target: 'empty' }, actionId: 'x' }]);
+    const b = tool('b', [{ spec: { kind: 'click', target: 'empty', phase: 'initial' }, actionId: 'y' }]);
+    expect(findConflicts([a, b])).toEqual([]);
+  });
+
+  it('flags two any-phase bindings on the same tuple', () => {
+    const a = tool('a', [{ spec: { kind: 'click', target: 'empty' }, actionId: 'x' }]);
+    const b = tool('b', [{ spec: { kind: 'click', target: 'empty' }, actionId: 'y' }]);
+    const c = findConflicts([a, b]);
+    expect(c).toHaveLength(1);
+    expect(c[0].phase).toBe('any');
+  });
 });

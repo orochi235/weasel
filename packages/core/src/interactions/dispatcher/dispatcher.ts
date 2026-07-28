@@ -42,7 +42,7 @@ import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
-import { matchSorted } from './matcher';
+import { matchSorted, specificity } from './matcher';
 import { evaluate, type Rule, type RuleCtx, type Condition } from '../../features/chrome-caps';
 
 // ---------------------------------------------------------------------------
@@ -183,6 +183,25 @@ function eligibleToRule(eligible: Rule | Condition): Rule {
   return typeof eligible === 'function' ? (eligible as Condition).rule : eligible;
 }
 
+/** Does `action`'s declared eligibility rule pass against `ruleCtx`?
+ *  An action with no `eligible` rule is always eligible. */
+function isEligible(action: Action, ruleCtx: RuleCtx): boolean {
+  if (!action.eligible) return true;
+  return evaluate(eligibleToRule(action.eligible), ruleCtx);
+}
+
+/** Serialize an `eligible` rule for display. `evaluate()` returns a bare
+ *  boolean, so there is no reason string to carry — the rule itself is the
+ *  most informative thing available. */
+function describeEligible(eligible: NonNullable<Action['eligible']>): string {
+  const rule = eligibleToRule(eligible);
+  try {
+    return JSON.stringify(rule) ?? '(rule)';
+  } catch {
+    return '(rule)';
+  }
+}
+
 /**
  * Filter `matches` to only those whose backing action has no `eligible`
  * rule, or whose rule evaluates true against `ruleCtx`. Exported for
@@ -197,8 +216,8 @@ export function filterEligible<M extends { binding: { actionId: string } }>(
 ): M[] {
   return matches.filter((m) => {
     const action = actionLookup(m.binding.actionId);
-    if (!action?.eligible) return true;
-    return evaluate(eligibleToRule(action.eligible), ruleCtx);
+    if (!action) return true;
+    return isEligible(action, ruleCtx);
   });
 }
 
@@ -231,6 +250,39 @@ export interface ResolveOnlyResult {
   ownerToolId: string | null;
 }
 
+/**
+ * One candidate from `Dispatcher.resolveAll` — a binding that matched the
+ * event, with why it did or didn't get to fire.
+ *
+ * Verdicts:
+ *  - `would-fire`  — eligible, `enabled()` passed, and nothing above it fired.
+ *    At most one candidate per call carries this.
+ *  - `ineligible`  — the action's `eligible` rule evaluated false against the
+ *    live `RuleCtx`. `reason` is the rule, serialized.
+ *  - `disabled`    — `enabled()` returned a disabled reason, carried verbatim.
+ *  - `shadowed`    — never asked, for one of two reasons: something above it
+ *    already fired, or it is a repeat binding of the action that itself won
+ *    higher in the list (several bindings may point at one action, and the
+ *    dispatcher runs each action at most once). A repeat of an action that was
+ *    already judged `ineligible` or `disabled` is NOT shadowed — it inherits
+ *    that action's verdict, since that is the reason it doesn't fire.
+ */
+export interface ResolvedCandidate {
+  actionId: string;
+  action: Action;
+  binding: GestureBinding;
+  scope: BindingScope;
+  ownerToolId: string | null;
+  /** The tuple from `specificity(binding.spec)`, surfaced so a reader can see
+   *  why one candidate outranks another rather than inferring it. */
+  specificity: readonly [number, number, number, number];
+  verdict:
+    | { kind: 'would-fire' }
+    | { kind: 'ineligible'; reason: string }
+    | { kind: 'disabled'; reason: string }
+    | { kind: 'shadowed' };
+}
+
 export interface Dispatcher {
   /**
    * Route an input event through the binding pipeline. Returns `'handled'`
@@ -255,6 +307,24 @@ export interface Dispatcher {
    * that rely on prediction (hover cursors).
    */
   resolveOnly(event: InputEvent, ctx: DispatcherContext): ResolveOnlyResult | null;
+
+  /**
+   * Every binding that matches `event`, in dispatch precedence order, each
+   * with a verdict explaining whether it would fire. Same walk as
+   * `resolveOnly` — scope assembly, specificity-sorted match, eligibility
+   * check, per-candidate `enabled()` gate — without stopping at the winner
+   * and without invoking anything. Nothing is dropped: candidates that
+   * `resolveOnly`'s walk would filter out are kept here and labelled
+   * `ineligible` instead. Pure query: no invoker runs, no in-flight state
+   * changes, no trace-log entry.
+   *
+   * `resolveOnly` is the first `would-fire` entry of this list.
+   *
+   * Shares `resolveOnly`'s known divergence from a real dispatch: an ongoing
+   * invoker that matches but returns an empty handle at `start()` makes the
+   * real dispatch fall through, and this cannot see that.
+   */
+  resolveAll(event: InputEvent, ctx: DispatcherContext): ResolvedCandidate[];
 
   /**
    * Synthesize an end-of-gesture for every in-flight ongoing handle.
@@ -957,42 +1027,79 @@ export function createDispatcher(opts?: {
   }
 
   // -------------------------------------------------------------------------
-  // resolveOnly
+  // resolveAll / resolveOnly — prediction without invocation
   // -------------------------------------------------------------------------
 
-  function resolveOnly(event: InputEvent, ctx: DispatcherContext): ResolveOnlyResult | null {
+  function resolveAll(event: InputEvent, ctx: DispatcherContext): ResolvedCandidate[] {
     const scopedBindings = assembleScopedBindings(ctx);
     const engagedChannels = snapshotEngagedChannels();
-    const rawMatches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
-    if (rawMatches.length === 0) return null;
+    const matches = matchSorted(event, scopedBindings, ctx.isMac, engagedChannels);
+    if (matches.length === 0) return [];
 
     const actionMap = buildActionMap(ctx.actions);
     const ruleCtx = ctx.getRuleCtx?.();
-    const matches = ruleCtx
-      ? filterEligible(rawMatches, (id) => actionMap.get(id), ruleCtx)
-      : rawMatches;
 
-    // Same specificity-ordered fall-through as handleInput, minus invocation:
-    // each action is tried at most once; the first one whose `enabled()`
-    // passes is the predicted winner.
-    const triedActionIds = new Set<string>();
+    // Verdict per action id, so a second binding for an action already
+    // evaluated higher up inherits that verdict instead of being re-asked —
+    // mirroring handleInput's `triedActionIds` dedup.
+    const verdictByAction = new Map<string, ResolvedCandidate['verdict']>();
+    let fired = false;
+    const out: ResolvedCandidate[] = [];
+
     for (const match of matches) {
-      if (triedActionIds.has(match.binding.actionId)) continue;
-      triedActionIds.add(match.binding.actionId);
-      const action = actionMap.get(match.binding.actionId);
+      const actionId = match.binding.actionId;
+      const action = actionMap.get(actionId);
+      // A binding pointing at an unregistered action can never fire. Not a
+      // candidate at all — skip it, as the dispatch loop does.
       if (!action) continue;
-      if (action.enabled) {
-        const deps = buildDepsFromRequires(action, ctx.depRegistry);
-        if (action.enabled(deps) !== true) continue;
+
+      let verdict = verdictByAction.get(actionId);
+      if (verdict === undefined) {
+        if (fired) {
+          verdict = { kind: 'shadowed' };
+        } else if (ruleCtx && action.eligible && !isEligible(action, ruleCtx)) {
+          // `action.eligible &&` is redundant with `isEligible` (which passes a
+          // rule-less action); it narrows the type for `describeEligible`.
+          verdict = { kind: 'ineligible', reason: describeEligible(action.eligible) };
+        } else {
+          const disabled = action.enabled
+            ? action.enabled(buildDepsFromRequires(action, ctx.depRegistry))
+            : true;
+          if (disabled !== true) {
+            verdict = { kind: 'disabled', reason: String(disabled) };
+          } else {
+            verdict = { kind: 'would-fire' };
+            fired = true;
+          }
+        }
+        verdictByAction.set(actionId, verdict);
+      } else if (verdict.kind === 'would-fire') {
+        // The action already won on an earlier binding; this one never runs.
+        verdict = { kind: 'shadowed' };
       }
-      return {
-        actionId: action.id,
+
+      out.push({
+        actionId,
         action,
+        binding: match.binding,
         scope: match.scope,
         ownerToolId: match.ownerToolId,
-      };
+        specificity: specificity(match.binding.spec),
+        verdict,
+      });
     }
-    return null;
+    return out;
+  }
+
+  function resolveOnly(event: InputEvent, ctx: DispatcherContext): ResolveOnlyResult | null {
+    const winner = resolveAll(event, ctx).find((c) => c.verdict.kind === 'would-fire');
+    if (!winner) return null;
+    return {
+      actionId: winner.actionId,
+      action: winner.action,
+      scope: winner.scope,
+      ownerToolId: winner.ownerToolId,
+    };
   }
 
   // -------------------------------------------------------------------------
@@ -1151,6 +1258,7 @@ export function createDispatcher(opts?: {
   return {
     handleInput: handleInputWithNotify,
     resolveOnly,
+    resolveAll,
     cancelAll: cancelAllWithNotify,
     inFlight,
     inFlightCursor,

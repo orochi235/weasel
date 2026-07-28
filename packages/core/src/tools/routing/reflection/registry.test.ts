@@ -21,12 +21,14 @@ describe('buildRouteRegistry', () => {
       { spec: { kind: 'drag', target: 'selected-body' }, actionId: 'move' },
     ])]);
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', actionId: 'clearSelection', phase: 'initial',
+      toolId: 'select', actionId: 'clearSelection', phase: 'any',
       gesture: 'click', arg: undefined, target: 'empty', modifiers: {},
+      spec: { kind: 'click', target: 'empty' },
     });
     expect(r).toContainEqual<RegistryEntry>({
-      toolId: 'select', actionId: 'move', phase: 'initial',
+      toolId: 'select', actionId: 'move', phase: 'any',
       gesture: 'drag', arg: undefined, target: 'selected-body', modifiers: {},
+      spec: { kind: 'drag', target: 'selected-body' },
     });
     expect(r).toHaveLength(2);
   });
@@ -94,7 +96,7 @@ describe('buildRouteRegistry', () => {
       { spec: { kind: 'wheel' }, actionId: 'zoom' },
       { spec: { kind: 'wheel', phase: 'initial' }, actionId: 'other' },
     ])]);
-    expect(r.map((e) => e.phase)).toEqual(['engaged', 'initial', 'initial']);
+    expect(r.map((e) => e.phase)).toEqual(['engaged', 'any', 'initial']);
   });
 
   it('walks every tool it is given', () => {
@@ -103,5 +105,53 @@ describe('buildRouteRegistry', () => {
       tool('b', [{ spec: { kind: 'click' }, actionId: 'y' }]),
     ]);
     expect(r.map((e) => e.toolId)).toEqual(['a', 'b']);
+  });
+
+  it('carries the source spec on each row', () => {
+    const spec = { kind: 'drag', target: 'selected-body', mods: { shift: true } };
+    const r = buildRouteRegistry([tool('select', [{ spec, actionId: 'move' }])]);
+    expect(r).toHaveLength(1);
+    expect(r[0].spec).toBe(spec);
+  });
+
+  describe('phase resolution', () => {
+    const phaseOfBinding = (phase: unknown) =>
+      buildRouteRegistry([tool('t', [
+        { spec: phase === undefined ? { kind: 'click' } : { kind: 'click', phase }, actionId: 'a' },
+      ])])[0].phase;
+
+    it('reports an unrestricted binding as any', () => {
+      expect(phaseOfBinding(undefined)).toBe('any');
+    });
+
+    it('reports the string forms verbatim', () => {
+      expect(phaseOfBinding('initial')).toBe('initial');
+      expect(phaseOfBinding('engaged')).toBe('engaged');
+    });
+
+    it('reports the wildcard as any', () => {
+      expect(phaseOfBinding('*')).toBe('any');
+    });
+
+    it('reports an atom array by its agreed phase', () => {
+      expect(phaseOfBinding([{ channel: '*', phase: 'engaged' }])).toBe('engaged');
+      expect(phaseOfBinding([{ channel: '*', phase: 'initial' }])).toBe('initial');
+      expect(phaseOfBinding([
+        { channel: '&', phase: 'engaged' },
+        { channel: 'select', phase: 'engaged' },
+      ])).toBe('engaged');
+    });
+
+    it('reports any when atoms disagree or any atom is a wildcard', () => {
+      expect(phaseOfBinding([
+        { channel: '&', phase: 'initial' },
+        { channel: 'select', phase: 'engaged' },
+      ])).toBe('any');
+      expect(phaseOfBinding([{ channel: '*', phase: '*' }])).toBe('any');
+    });
+
+    it('reports an empty atom array as any', () => {
+      expect(phaseOfBinding([])).toBe('any');
+    });
   });
 });

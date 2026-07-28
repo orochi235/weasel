@@ -206,6 +206,9 @@ export { useSliceDep } from './canvas/deps/slice';
 export {
   useGestureDispatcher,
   createDispatcher,
+  // The precedence rule itself, so reflection surfaces can show WHY one
+  // binding outranks another instead of re-deriving the tuple.
+  specificity,
 } from './interactions/dispatcher';
 export type {
   Dispatcher,
@@ -215,6 +218,7 @@ export type {
   ScopedBinding,
   MatchResult,
   ResolveOnlyResult,
+  ResolvedCandidate,
   UseGestureDispatcherOptions,
 } from './interactions/dispatcher';
 

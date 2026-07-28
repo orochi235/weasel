@@ -8,7 +8,7 @@ import { buildRouteRegistry, type RegistryEntry, type GestureName } from './regi
  *  arbitrarily (well, deterministically by slot order, but the author
  *  probably didn't intend the duplication). */
 export interface Conflict {
-  phase: 'initial' | 'engaged';
+  phase: 'initial' | 'engaged' | 'any';
   gesture: GestureName;
   arg: string | undefined;
   target: string | undefined;
