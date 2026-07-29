@@ -11,10 +11,11 @@ import type { Rule } from './rule';
  *
  * Gating is written in terms of **capabilities, not mode ids**. A
  * capability rule keeps holding when a new mode is added that permits the
- * same thing; a mode rule has to be found and edited every time. The one
- * exception is the `path-edit.*` chrome below, which is genuinely
- * mode-specific: it's the visual signature of that mode, not a statement
- * about what the user is allowed to do.
+ * same thing; a mode rule has to be found and edited every time. There is
+ * no `mode:` rule left in this table — the `path-edit.*` chrome used to be
+ * the exception, on the theory that it's the visual signature of one mode;
+ * see the comment on those rules below for why that was wrong in both
+ * directions and what replaced it.
  *
  * Chrome that gates on the *absence* of a capability (the selection
  * outline, suppressed while an anchor-editing overlay owns the visuals)
