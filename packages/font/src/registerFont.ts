@@ -222,11 +222,21 @@ function warnMissingFamilyOnce(
   const key = `${family}|${weight}|${style}`;
   if (warnedMissingFamilies.has(key)) return;
   warnedMissingFamilies.add(key);
+  // Two distinct failures land here. Saying "not registered" for a family
+  // that IS registered — just not in a variant the within-family chain can
+  // reach — sends the reader hunting for a registerFont call that already
+  // exists. Name the actual gap so the fix is the obvious one.
+  const cause = registry.has(family)
+    ? `has no variant matching ${weight}/${style}, and none of its registered ` +
+      `variants are close enough for the within-family chain to substitute — ` +
+      `rendering with "${resolved}" instead. Bake that variant with ` +
+      `registerFont("${family}", { weight: ${weight}, style: '${style}' }, …)`
+    : `is not registered — rendering with "${resolved}" instead. ` +
+      `Call registerFont("${family}", …)`;
   console.warn(
-    `weasel: font family "${family}" (${weight}/${style}) is not registered — ` +
-    `rendering with "${resolved}" instead. Advance widths will differ from the ` +
-    `requested font. Call registerFont("${family}", …) or setFontFallbackPolicy('none') ` +
-    `to make this a hard miss.`,
+    `weasel: font family "${family}" (${weight}/${style}) ${cause}. ` +
+    `Advance widths will differ from the requested font. Use ` +
+    `setFontFallbackPolicy('none') to make this a hard miss instead.`,
   );
 }
 

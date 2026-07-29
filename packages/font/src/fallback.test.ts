@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { resolveFontVariant, getFont, _resetFontRegistryForTests } from './registerFont';
 import { setDefaultFontFamily, setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
 import { _resetDynamicFontsForTests } from './dynamic/dynamicAtlas';
@@ -76,6 +76,40 @@ describe('canvas policy', () => {
 
     expect(result.source).toBe('atlas');
     expect(result.entry).not.toBeNull();
+  });
+});
+
+describe('warning accuracy', () => {
+  it('distinguishes an unregistered family from one with no matching variant', async () => {
+    // Slab is registered, but only as 700/italic. A 400/normal request walks
+    // the whole within-family chain (exact → nearest weight in bucket →
+    // (400, style) → (weight, 'normal') → nearest normal → (400, 'normal'))
+    // without ever reaching an italic-only, bold-bucket variant, so it lands
+    // in the same miss path an unregistered family does.
+    await registerTestFont('Inter', 400, 'normal');
+    await registerTestFont('Slab', 700, 'italic');
+    setDefaultFontFamily('Inter');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = resolveFontVariant('Slab', 400, 'normal');
+
+    expect(result.substituted).toEqual({ requested: 'Slab', resolved: 'Inter' });
+    expect(warn).toHaveBeenCalledTimes(1);
+    const message = warn.mock.calls[0][0] as string;
+    expect(message).not.toContain('is not registered');
+    expect(message).toContain('no variant matching 400/normal');
+    warn.mockRestore();
+  });
+
+  it('still says a never-registered family is not registered', async () => {
+    await registerTestFont('Inter', 400, 'normal');
+    setDefaultFontFamily('Inter');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    resolveFontVariant('Comic Sans', 400, 'normal');
+
+    expect(warn.mock.calls[0][0]).toContain('is not registered');
+    warn.mockRestore();
   });
 });
 
