@@ -58,6 +58,7 @@ import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useHandTool } from 'tools/builtin/hand';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
+import { createGestureSource } from './SceneCanvas/dispatcherGestureBounds';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
@@ -1348,6 +1349,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   }
   const dispatcher = dispatcherRef.current;
 
+  // The dispatcher's contribution to `helpersRef` — in-flight preview ids,
+  // nascent-insert bounds, and the pump signal. Reads through the ref so one
+  // stable object keeps pointing at the live dispatcher.
+  const gestureSource = useMemo(() => createGestureSource(() => dispatcherRef.current), []);
+
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`. Walks both the
   // tools registry and the dispatcher's in-flight handles.
@@ -1788,6 +1794,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         }
         return out;
       }}
+      // The gesture surface behind `helpersRef.getGestureBounds()` /
+      // `subscribeGestures()` — Canvas has no dispatcher of its own.
+      gestureSource={gestureSource}
       previewPoseExtra={(id) => {
         // Mirror previewIdsExtra: surface dispatcher in-flight handles'
         // `previewPose(id)` so selection chrome (resize / rotation handles,

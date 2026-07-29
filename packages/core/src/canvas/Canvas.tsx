@@ -33,6 +33,7 @@ export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
 import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds } from './toolPreview';
+import { unionGestureBounds, type GestureSource } from './gestureBounds';
 
 import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
@@ -69,6 +70,9 @@ import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 
 const alwaysVisible = (_id: string): boolean => true;
+/** Returned by `helpersForLayers.subscribeGestures` when no gesture source is
+ *  wired — the subscription is real, it just can never fire. */
+const noOpUnsubscribe = (): void => {};
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 
 /**
@@ -386,6 +390,15 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   previewBoundsExtra?: (id: string) => Bounds | null;
 
   /**
+   * In-flight gesture state `<Canvas>` can't see for itself. Backs the
+   * `getGestureBounds` / `subscribeGestures` / `getGestureVersion` trio on
+   * `helpersRef`; wired by `<SceneCanvas>` from the gesture dispatcher
+   * (`createGestureSource`). Leaving it unwired is fine — those three then
+   * report "no gesture in flight" and never fire.
+   */
+  gestureSource?: GestureSource;
+
+  /**
    * Pinch-zoom DOM listener attachment for the canvas surface. When supplied,
    * `<Canvas>` calls `usePinchZoomTool` with `canvasRef` so two-finger pinch
    * events are handled directly on the canvas element.
@@ -482,6 +495,63 @@ export interface CanvasHelpers<TPose> {
   getEffectivePose(id: string): TPose | null;
   /** Overlay-aware bounds for `id`. */
   getEffectiveBounds(id: string): Bounds | null;
+  /**
+   * World-space AABB of everything the in-flight gesture proposes — the
+   * displaced poses of nodes being moved / resized / rotated / cloned, plus
+   * any nascent insert that has no scene node yet. `null` when no gesture is
+   * in flight.
+   *
+   * This reports the *gesture*, not the document: committed content the
+   * gesture isn't touching is excluded, so a consumer that wants the union
+   * with the rest of the scene still walks its own ids through
+   * `getEffectiveBounds`. It exists because every other lookup here is keyed
+   * by node id, which can't answer "where is the shape the user is drawing
+   * right now" — a drag-to-insert has no id until pointer-up.
+   *
+   * Select-only gestures are deliberately excluded: a marquee or lasso has
+   * geometry but proposes no content, and a consumer sizing itself to the
+   * gesture must not grow because the user swept a selection rectangle.
+   *
+   * The result is a plain AABB — never rotated. Rotated parts are folded in
+   * by their rotated extent (a union of several oriented boxes has no single
+   * orientation to report).
+   */
+  getGestureBounds(): Bounds | null;
+  /**
+   * Subscribe to the gesture layer's change signal — the other half of the
+   * `useSyncExternalStore` contract for everything on this object that moves
+   * during a drag (`getEffectivePose`, `getEffectiveBounds`,
+   * `getGestureBounds`). Returns an unsubscribe.
+   *
+   * Fires once per dispatcher pump: gesture start, every pointermove that
+   * reaches an in-flight handle, end, and cancel — plus UI-driven ongoing
+   * actions (a slider bound to an ongoing action pumps the same way). It
+   * fires on the pump, not on a diff: a pump that changed nothing observable
+   * still notifies, so don't hang expensive work directly off the callback.
+   *
+   * It does **not** cover committed scene edits (subscribe to the scene for
+   * those) or previews a consumer's own tool publishes from React state
+   * (that tool re-renders on its own).
+   *
+   * Without a gesture source wired — a bare `<Canvas>` — this is a no-op
+   * subscription that never fires.
+   */
+  subscribeGestures(fn: () => void): () => void;
+  /**
+   * Monotonic counter bumped on exactly the events `subscribeGestures` fires
+   * on. Pair the two for `useSyncExternalStore`:
+   *
+   * ```ts
+   * const gestureVersion = useSyncExternalStore(
+   *   useCallback((cb) => helpersRef.current?.subscribeGestures(cb) ?? (() => {}), []),
+   *   () => helpersRef.current?.getGestureVersion() ?? 0,
+   * );
+   * ```
+   *
+   * Starts at 0 and only increases. `0` is also what a bare `<Canvas>` with
+   * no gesture source reports, forever.
+   */
+  getGestureVersion(): number;
   /** Returns the live ChromeState built once per render. Affordances and
    *  custom layers that need overlay-aware selection state (selection ids,
    *  bounds, multi-union AABB, modifier flags) read from this. */
@@ -709,6 +779,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     previewIdsExtra,
     previewPoseExtra,
     previewBoundsExtra,
+    gestureSource,
     viewport,
     backgroundFill,
     cursorCoordsHud,
@@ -1090,6 +1161,26 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       const p = committedPoseOf(id);
       return p == null ? null : geometry.getBounds(p);
     },
+    getGestureBounds: (): Bounds | null => {
+      // In-flight ids come from both preview sources the ghost layer walks:
+      // tool-published `previewIds()` and the dispatcher's in-flight handles
+      // (via `gestureSource.ids()`). Using the same sets keeps this from
+      // disagreeing with what the user sees ghosted.
+      const ids = aggregatePreviewIds(tools);
+      const extraIds = gestureSource?.ids();
+      if (extraIds) for (const id of extraIds) ids.add(id);
+
+      const parts: (Bounds | null)[] = [];
+      for (const id of ids) parts.push(previewToolBounds(id));
+      // Nascent inserts have no id to look up — they arrive as ready-made
+      // world AABBs.
+      const extraBounds = gestureSource?.bounds();
+      if (extraBounds) for (const b of extraBounds) parts.push(b);
+      return unionGestureBounds(parts);
+    },
+    subscribeGestures: (fn: () => void): (() => void) =>
+      gestureSource?.subscribe(fn) ?? noOpUnsubscribe,
+    getGestureVersion: (): number => gestureSource?.getVersion() ?? 0,
     getChromeState: () => chromeState,
     getDebug: () => debugSink,
     getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,

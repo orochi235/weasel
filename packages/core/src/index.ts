@@ -294,6 +294,10 @@ export type {
   GridSlotConfig,
 } from './canvas/Canvas';
 export type { CanvasExtensionApi, SceneCanvasApi } from './canvas/canvasExtension';
+// The in-flight gesture seam behind `CanvasHelpers.getGestureBounds()` /
+// `subscribeGestures()`. `<SceneCanvas>` wires it from its dispatcher; bare
+// `<Canvas>` consumers can supply their own.
+export type { GestureSource } from './canvas/gestureBounds';
 
 // ─── External-content ingestion ──────────────────────────────────────────────
 // OS file drop / clipboard paste / file picker → content-handler registry.

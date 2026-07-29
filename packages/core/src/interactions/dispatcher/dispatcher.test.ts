@@ -373,6 +373,84 @@ describe('createDispatcher', () => {
       expect(dispatcher.inFlight().size).toBe(0);
     });
 
+    describe('change signal (subscribe + getVersion)', () => {
+      const pointer = (kind: 'pointerdown' | 'pointermove' | 'pointerup'): InputEvent => ({
+        kind, x: 0, y: 0, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+      } as InputEvent);
+
+      /** Dispatcher with one drag action in flight-able state, plus its ctx. */
+      function dragSetup() {
+        const handle = { onMove: vi.fn(), onEnd: vi.fn() };
+        const action = ongoingAction('drag-action', { kind: 'drag' }, vi.fn().mockReturnValue(handle));
+        const ctx = makeCtx({ actions: makeRegistry([action]) });
+        return { dispatcher: createDispatcher(), ctx };
+      }
+
+      it('starts at version 0 and holds steady while nothing pumps', () => {
+        const dispatcher = createDispatcher();
+        expect(dispatcher.getVersion()).toBe(0);
+        expect(dispatcher.getVersion()).toBe(0);
+      });
+
+      it('fires and bumps on gesture start, each pump, and end', () => {
+        const { dispatcher, ctx } = dragSetup();
+        const sub = vi.fn();
+        dispatcher.subscribe(sub);
+
+        dispatcher.handleInput(pointer('pointerdown'), ctx);
+        expect(sub).toHaveBeenCalledTimes(1);
+        expect(dispatcher.getVersion()).toBe(1);
+
+        dispatcher.handleInput(pointer('pointermove'), ctx);
+        dispatcher.handleInput(pointer('pointermove'), ctx);
+        expect(sub).toHaveBeenCalledTimes(3);
+        expect(dispatcher.getVersion()).toBe(3);
+
+        dispatcher.handleInput(pointer('pointerup'), ctx);
+        expect(sub).toHaveBeenCalledTimes(4);
+        expect(dispatcher.getVersion()).toBe(4);
+      });
+
+      it('bumps on cancelAll', () => {
+        const { dispatcher, ctx } = dragSetup();
+        dispatcher.handleInput(pointer('pointerdown'), ctx);
+        const before = dispatcher.getVersion();
+        dispatcher.cancelAll('cancel');
+        expect(dispatcher.getVersion()).toBe(before + 1);
+      });
+
+      it('the new version is already visible inside the subscriber callback', () => {
+        // useSyncExternalStore re-reads the snapshot synchronously on notify.
+        const { dispatcher, ctx } = dragSetup();
+        const seen: number[] = [];
+        dispatcher.subscribe(() => { seen.push(dispatcher.getVersion()); });
+        dispatcher.handleInput(pointer('pointerdown'), ctx);
+        expect(seen).toEqual([1]);
+      });
+
+      it('unsubscribe stops delivery but the version keeps advancing', () => {
+        const { dispatcher, ctx } = dragSetup();
+        const sub = vi.fn();
+        const unsubscribe = dispatcher.subscribe(sub);
+
+        dispatcher.handleInput(pointer('pointerdown'), ctx);
+        expect(sub).toHaveBeenCalledTimes(1);
+
+        unsubscribe();
+        dispatcher.handleInput(pointer('pointermove'), ctx);
+        expect(sub).toHaveBeenCalledTimes(1);
+        expect(dispatcher.getVersion()).toBe(2);
+      });
+
+      it('bumps once per pump even when the event matches nothing', () => {
+        // Documented contract: it fires on the pump, not on a diff.
+        const dispatcher = createDispatcher();
+        const ctx = makeCtx({ actions: makeRegistry([]) });
+        expect(dispatcher.handleInput(keyAEvent, ctx)).toBe('unhandled');
+        expect(dispatcher.getVersion()).toBe(1);
+      });
+    });
+
     describe('getActiveAction', () => {
       it('returns { kind: null, id: null } when nothing in flight', () => {
         const dispatcher = createDispatcher();

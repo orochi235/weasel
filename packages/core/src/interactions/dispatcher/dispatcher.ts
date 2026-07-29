@@ -390,6 +390,19 @@ export interface Dispatcher {
   subscribe(fn: () => void): () => void;
 
   /**
+   * Monotonic counter bumped on exactly the events {@link subscribe} fires
+   * on. The snapshot half of the `useSyncExternalStore` contract: pair it
+   * with `subscribe` to drive a render off in-flight gesture state without
+   * a `useReducer` force-rerender.
+   *
+   * Starts at 0 and only ever increases. Two reads returning the same number
+   * mean nothing pumped in between; it does **not** guarantee that a bump
+   * changed anything observable (a pump that matched no binding still
+   * counts — see `subscribe`).
+   */
+  getVersion(): number;
+
+  /**
    * Snapshot of the currently active action, for surfaces (chrome-caps
    * visibility rules, debug HUDs) that need to react to "what action
    * is in flight right now."
@@ -487,7 +500,12 @@ export function createDispatcher(opts?: {
   /** Subscribers fired after every state mutation. Layers that read from
    *  `getInFlightHandles()` use this to know when to re-render. */
   const subscribers = new Set<() => void>();
+  /** Bumped before the callbacks run, so a subscriber that re-reads
+   *  `getVersion()` synchronously inside its callback already sees the new
+   *  value (what `useSyncExternalStore` does). */
+  let version = 0;
   function notify(): void {
+    version++;
     for (const fn of subscribers) fn();
   }
 
@@ -1183,6 +1201,10 @@ export function createDispatcher(opts?: {
     return () => { subscribers.delete(fn); };
   }
 
+  function getVersion(): number {
+    return version;
+  }
+
   function getActiveAction(): { kind: string | null; id: string | null } {
     // The most-recently-started in-flight handle wins. `Map` preserves
     // insertion order; each gestureId is set exactly once (any pump
@@ -1297,6 +1319,7 @@ export function createDispatcher(opts?: {
     inFlightCursor,
     getInFlightHandles,
     subscribe,
+    getVersion,
     getActiveAction,
     beginUiOngoing,
   };

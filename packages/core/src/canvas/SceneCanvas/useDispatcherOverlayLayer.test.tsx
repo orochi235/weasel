@@ -26,6 +26,7 @@ function makeDispatcher(handles: OngoingHandle[]): Dispatcher {
   inFlight: () => map,
     getInFlightHandles: () => map.values(),
     subscribe: () => () => {},
+    getVersion: () => 0,
     getActiveAction: () => ({ kind: null, id: null }),
     beginUiOngoing: () => null,
   };
