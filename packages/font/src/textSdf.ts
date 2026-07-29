@@ -95,9 +95,12 @@ void main() {
 /**
  * Single-channel sibling of TEXT_FRAG_SRC for runtime canvas-SDF glyphs
  * (DynamicGlyphAtlas R8 pages): the R channel IS the distance field, so no
- * median. Accepted trade: slight corner rounding at extreme zoom — invisible
- * at label print resolution. Threshold semantics (0.5 edge, u_synthBold
- * shift) match the MSDF shader because the bake encodes the edge at ~128.
+ * median. Threshold semantics (0.5 edge, u_synthBold shift) match the MSDF
+ * shader because the bake encodes the edge at ~128.
+ *
+ * Accepted trade: corner rounding away from the bake size, mildest near it.
+ * `glyphRasterizer.ts` carries the measurements and the reason neither a
+ * larger bake nor extra taps would improve the small-text end.
  */
 export const TEXT_FRAG_R8_SRC = /* glsl */ `#version 300 es
 precision highp float;

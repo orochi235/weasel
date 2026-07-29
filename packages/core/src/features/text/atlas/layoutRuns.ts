@@ -30,7 +30,10 @@
  */
 
 import type { FillStyle } from 'core/paint-types';
-import { resolveFontVariant, type ResolveResult, type BmFontChar, type BmFont } from '@weasel-js/font';
+import {
+  resolveFontVariant, resolveGlyphFallback,
+  type ResolveResult, type BmFontChar, type BmFont,
+} from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
 export interface LaidOutQuad {
@@ -103,8 +106,6 @@ export interface LayoutRunsOrigin {
   x: number;
   y: number;
 }
-
-const FALLBACK_CODEPOINT = 63;
 
 interface LayoutContext {
   groups: Map<string, LaidOutGroup>;
@@ -187,13 +188,77 @@ function getOrCreateGroup(
   return g;
 }
 
-function resolveGlyph(font: BmFont, cp: number): BmFontChar | null {
+/**
+ * A glyph, plus which tier ended up serving it. `resolved`/`font` differ from
+ * the run's own when a codepoint escalated to the dynamic tier — the caller
+ * has to carry both, because they pick the group (shader, texture, page) and
+ * the scale divisor (`font.info.size`).
+ */
+interface GlyphHit {
+  glyph: BmFontChar;
+  font: BmFont;
+  resolved: ResolveResult;
+}
+
+/**
+ * Find a glyph for `cp`, escalating past the run's atlas when it has none.
+ *
+ * Until 2026-07-29 a miss drew codepoint 63 — a literal `?`. That fabricates
+ * a character the author never wrote and is indistinguishable from one they
+ * did, which is how the committed text baseline came to read "Themed editing
+ * ? magenta caret" for a whole commit without anyone noticing. Every real
+ * text stack draws `.notdef` (tofu) precisely because it can't be mistaken
+ * for content; the BmFont atlas format has no such glyph to draw, so the
+ * order here is: the atlas, then the dynamic tier (which rasterizes from
+ * installed fonts and can usually serve the character for real), then
+ * nothing — with a warning naming the codepoint.
+ */
+function resolveGlyph(
+  run: ResolvedRun,
+  font: BmFont,
+  resolved: ResolveResult,
+  cp: number,
+): GlyphHit | null {
   const direct = font.charMap.get(cp);
-  if (direct) return direct;
-  const fb = font.charMap.get(FALLBACK_CODEPOINT);
-  if (fb) return fb;
-  console.warn(`weasel layoutRuns: no glyph for codepoint ${cp} and no fallback '?'; skipping.`);
+  if (direct) return { glyph: direct, font, resolved };
+
+  const fallback = resolveGlyphFallback(run.fontFamily, run.fontWeight, run.fontStyle);
+  const face = fallback?.dynamicFace;
+  if (fallback && face) {
+    const glyph = face.requestGlyph(cp);
+    // A face that can't measure the codepoint reports a zero advance and no
+    // ink — nothing worth switching groups for, so fall through to the warn.
+    if (glyph.xadvance > 0 || glyph.width > 0) {
+      return { glyph, font: face.font, resolved: fallback };
+    }
+  }
+
+  warnMissingGlyphOnce(resolved.resolved.family, cp);
   return null;
+}
+
+// Layout runs per frame, so an unguarded warn would flood the console. Keyed
+// per (family, codepoint): one message per character the app actually can't
+// draw, however many times it appears.
+const warnedMissingGlyphs = new Set<string>();
+
+function warnMissingGlyphOnce(family: string, cp: number): void {
+  const key = `${family}|${cp}`;
+  if (warnedMissingGlyphs.has(key)) return;
+  warnedMissingGlyphs.add(key);
+  const ch = String.fromCodePoint(cp);
+  console.warn(
+    `weasel layoutRuns: no glyph for U+${cp.toString(16).toUpperCase().padStart(4, '0')} ` +
+    `(${JSON.stringify(ch)}) in "${family}", and the dynamic tier could not ` +
+    `rasterize it — skipping the character. Bake it into the atlas, or call ` +
+    `registerCanvasFont("${family}") to serve missing codepoints from ` +
+    `installed fonts.`,
+  );
+}
+
+/** @internal Test seam — the warn-once keys are module state. */
+export function _resetMissingGlyphWarningsForTests(): void {
+  warnedMissingGlyphs.clear();
 }
 
 export function layoutRuns(
@@ -277,11 +342,17 @@ export function layoutRuns(
         continue;
       }
 
-      const glyph = resolved.dynamicFace ? resolved.dynamicFace.requestGlyph(cp) : resolveGlyph(font, cp);
-      if (!glyph) {
+      const hit = resolved.dynamicFace
+        ? { glyph: resolved.dynamicFace.requestGlyph(cp), font, resolved }
+        : resolveGlyph(run, font, resolved, cp);
+      if (!hit) {
         prevCp = cp; prevFont = font; prevFontSize = run.fontSize;
         continue;
       }
+      // An escalated codepoint is served by a different atlas with its own
+      // bake size, so its scale — and the group it lands in — are its own.
+      const glyphFont = hit.font;
+      const glyphScale = run.fontSize / glyphFont.info.size;
 
       let kerningBefore = 0;
       if (prevCp !== undefined && prevFont !== undefined && prevFontSize !== undefined) {
@@ -290,15 +361,15 @@ export function layoutRuns(
       }
 
       entries.push({
-        run, font, glyph, cp,
-        advance: glyph.xadvance * scale,
+        run, font: glyphFont, glyph: hit.glyph, cp,
+        advance: hit.glyph.xadvance * glyphScale,
         tracking,
         kerningBefore,
         isSpace, isNewline: false,
-        resolved, fontSize: run.fontSize,
+        resolved: hit.resolved, fontSize: run.fontSize,
       });
 
-      prevCp = cp; prevFont = font; prevFontSize = run.fontSize;
+      prevCp = cp; prevFont = glyphFont; prevFontSize = run.fontSize;
     }
   }
 

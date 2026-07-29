@@ -220,6 +220,18 @@ Core five + Crop shipped. Remaining:
   matching CSS rather than the GL path's cluster walk. Visible only on text
   with combining marks or emoji sequences.
 
+- **(RESOLVED 2026-07-29) The dynamic tier's bake size is right where it is.**
+  Recorded because the 48px single-channel bake looks like something to
+  improve and isn't. Measured against a direct `fillText` at each display
+  size, registration searched out: coverage error bottoms out *at* the bake
+  size (.024) and rises both ways — .049 at 128px, .096 at 12px. So raising
+  `BAKE_SIZE` moves the sweet spot away from the 12–32px range UI text lives
+  in. The 12–16px end is also not undersampling: 3×3 supersampling halves the
+  error at 24–48px and recovers almost nothing at 12–16px, because what
+  remains is a hinted rasterizer putting stems on the pixel grid, which no
+  size-independent field encodes. Numbers live in `glyphRasterizer.ts`.
+  Mipmaps stay out regardless — mip levels blend across packed glyph rects.
+
 - **(P3) Decoration thickness is derived, not read from font metrics.** The
   underline / strikethrough offsets and weight are the fixed `0.10` / `-0.30`
   / `0.05` em constants in `layoutRuns`. Real fonts ship
