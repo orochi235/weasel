@@ -7,6 +7,14 @@ export interface ToolOptionsBarProps {
    * before the children and doubles as the toolbar's `aria-label`. Omit
    * it and the row still renders (it's a permanently reserved slot), just
    * without an accessible name.
+   *
+   * Using `label` for both the visible text and `aria-label` means a
+   * screen reader announces it twice when landing on the toolbar ("Text,
+   * toolbar", then "Text" again when browsing into the visible span).
+   * `aria-labelledby` would avoid the echo at the cost of id plumbing and
+   * an awkward no-`id`-to-point-at case when `label` is omitted. The
+   * double-announcement is common enough for labelled landmark regions
+   * that it's left as-is — considered, not missed.
    */
   label?: string;
   children?: ReactNode;

@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: var(--wzl-tb-height, 32px);
+  height: var(--wzl-tb-height, 28px);
   padding: 0 8px;
   background: var(--wzl-panel-bg);
   border-bottom: 1px solid var(--wzl-panel-border);
@@ -42,4 +42,23 @@
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
+}
+
+/* Firefox gets a thin scrollbar for free via `scrollbar-width` above.
+ * Chromium/WebKit need it spelled out — on a classic (non-overlay)
+ * scrollbar theme (default on Windows Chrome/Edge), an unstyled
+ * horizontal scrollbar is ~15-17px tall and renders *inside* this box,
+ * clipping/off-centering the row's controls. That would reintroduce the
+ * exact height instability the scroll-over-wrap overflow choice above
+ * exists to avoid — just at the row's inner edge instead of its outer
+ * one. Pin it thin and out of the way instead. */
+.controls::-webkit-scrollbar {
+  height: 4px;
+}
+.controls::-webkit-scrollbar-track {
+  background: transparent;
+}
+.controls::-webkit-scrollbar-thumb {
+  background: var(--wzl-panel-border);
+  border-radius: 2px;
 }

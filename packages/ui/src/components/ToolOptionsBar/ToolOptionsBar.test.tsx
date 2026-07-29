@@ -14,7 +14,7 @@ describe('ToolOptionsBar', () => {
   });
 
   it('renders as an empty reserved row with no children', () => {
-    const { container } = render(<ToolOptionsBar />);
-    expect(container.firstElementChild).toBeInTheDocument();
+    render(<ToolOptionsBar />);
+    expect(screen.getByRole('toolbar')).toBeInTheDocument();
   });
 });
