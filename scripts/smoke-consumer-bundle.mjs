@@ -37,7 +37,7 @@ import { execFileSync } from 'node:child_process';
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Published packages, in dependency order. */
-const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'theme', 'core', 'svg', 'd3', 'ui', 'hud', 'weasel-js'];
+const PACKAGES = ['geom', 'gestures', 'history', 'modes', 'theme', 'font', 'core', 'svg', 'd3', 'ui', 'hud', 'weasel-js'];
 
 const fail = (msg, detail) => {
   console.error(`[smoke] ${msg}\n`);
@@ -254,7 +254,8 @@ await writeFile(
     `import { SceneCanvas as CoreCanvas } from '@weasel-js/core';\n` +
     `import { registerFont as aliasFont } from 'weasel-js/renderer';\n` +
     `import { registerFont as coreFont } from '@weasel-js/core/renderer';\n` +
-    `void AliasCanvas; void CoreCanvas; void aliasFont; void coreFont;\n` +
+    `import { registerFont as directFont } from '@weasel-js/font';\n` +
+    `void AliasCanvas; void CoreCanvas; void aliasFont; void coreFont; void directFont;\n` +
     `const mods = { weasel, geom, booleans, history, svg, theme, ui, hud, alias,\n` +
     `  toolPalette, prefs, callout, toastSub };\n` +
     `for (const [n, m] of Object.entries(mods)) {\n` +
