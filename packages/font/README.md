@@ -12,7 +12,6 @@ no glyphs at all.
 | Module | Role |
 | --- | --- |
 | `FontAtlas` | BMFont metrics parsing |
-| `GlyphLayout` | Kerning-aware glyph walk |
 | `registerFont` | The registry, variant resolution, texture upload |
 | `dynamic/` | Runtime canvas-SDF rasterization for glyphs with no baked atlas |
 | `textureSink` | The `GlyphTextureSink` seam — the renderer injects GL texture upload, so this package never imports one |

@@ -45,7 +45,7 @@ fit-to-box and baseline placement.
 
 | Dir | Role |
 | --- | --- |
-| `atlas/` | `layoutRuns` — the runs-aware glyph layout. The atlas itself (`FontAtlas`, `GlyphLayout`, `registerFont`) and runtime rasterization now live in `@weasel-js/font`. |
+| `atlas/` | `layoutRuns` — the runs-aware glyph layout. The atlas itself (`FontAtlas`, `registerFont`) and runtime rasterization now live in `@weasel-js/font`. |
 | `runs/` | Run resolution. |
 
 ## Editing
