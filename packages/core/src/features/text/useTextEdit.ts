@@ -16,6 +16,7 @@ import type { StyledRun } from './runs';
 import { runsToPlainText } from './runs';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
 import { applyStyleToRange, styleAtRange } from './runs/rangeStyle';
+import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
 
 // TODO: widen to `underline` / `strikethrough`. `rangeStyle.ts` already lists
 // both in its `STYLE_KEYS` / `FLAG_KEYS` sets, so the run algebra is ready —
@@ -41,6 +42,67 @@ function toggleFlagInRange(
 ): StyledRun[] {
   const current = styleAtRange(runs, start, end)[flag];
   return applyStyleToRange(runs, start, end, { [flag]: current !== true });
+}
+
+/**
+ * The caret's character range within the text being edited. Half-open
+ * `[start, end)` over the concatenated run text, normalized so `start <= end`
+ * regardless of which way the user dragged. `start === end` is a collapsed
+ * caret — a real position, not the absence of one, which is why the hook
+ * reports `null` rather than a zero-width range when there is no caret.
+ */
+export interface TextEditSelection {
+  start: number;
+  end: number;
+}
+
+/**
+ * Character offsets of the current DOM selection within `overlay`, or `null`
+ * when there is no selection or it lies outside the overlay. The one
+ * DOM→offset conversion in the hook; everything that needs offsets goes
+ * through here.
+ */
+function readSelectionOffsets(overlay: HTMLElement): TextEditSelection | null {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  const range = sel.getRangeAt(0);
+  if (!overlay.contains(range.startContainer) || !overlay.contains(range.endContainer)) {
+    return null;
+  }
+  // `Range` boundary points are already in document order, so this is the
+  // normalization for a backwards drag — anchor/focus are not consulted.
+  const start = domPositionToCharOffset(overlay, range.startContainer, range.startOffset);
+  const end = domPositionToCharOffset(overlay, range.endContainer, range.endOffset);
+  return start <= end ? { start, end } : { start: end, end: start };
+}
+
+/**
+ * Replace the overlay's contents with `runs` and put the caret back on
+ * `[start, end)`. Rewriting the DOM destroys the selection, and losing it
+ * after every styling change would mean re-selecting the word to apply a
+ * second style — so this is the only way styling writes back.
+ */
+function writeRunsPreservingSelection(
+  overlay: HTMLElement,
+  runs: readonly StyledRun[],
+  start: number,
+  end: number,
+): void {
+  runsToDom(runs, overlay);
+  const a = charOffsetToDomPosition(overlay, start);
+  const b = charOffsetToDomPosition(overlay, end);
+  const sel = window.getSelection();
+  if (!a || !b || !sel) return;
+  const range = document.createRange();
+  range.setStart(a.node, a.offset);
+  range.setEnd(b.node, b.offset);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function sameSelection(a: TextEditSelection | null, b: TextEditSelection | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.start === b.start && a.end === b.end;
 }
 
 /** Screen-space pose passed to `useTextEdit` so the overlay can be placed and sized in CSS pixels. */
@@ -100,6 +162,34 @@ export interface UseTextEditReturn {
   cancelEdit: () => void;
   commit: () => void;
   isEditing: (id: string) => boolean;
+  /**
+   * The caret's character range, or `null` when nothing is being edited (or
+   * the document selection has moved outside the overlay). A collapsed caret
+   * reports `{ start: n, end: n }`, so `null` and "caret at n" stay
+   * distinguishable — a character-styling control routes the collapsed case
+   * to the node's `TextStyle` instead of to a range.
+   *
+   * Follows the DOM selection, which browsers (and jsdom) report from a task
+   * rather than synchronously; anything this hook writes itself updates it
+   * synchronously.
+   */
+  selection: TextEditSelection | null;
+  /**
+   * The styling shared by every run in `selection` — a concrete value where
+   * the range agrees, `MIXED` where it doesn't. `null` exactly when
+   * `selection` is `null`. A collapsed caret reports `{}`: no run is in
+   * range, so the range reader has nothing to say and the node's style is
+   * what applies.
+   */
+  rangeStyle: RangeStyle | null;
+  /**
+   * Write `patch` over `selection`. A no-op with no active edit, with a
+   * collapsed caret (there is no range to style — patch the node's
+   * `TextStyle` instead), or with an empty patch. The caret survives, so a
+   * second style can be applied without re-selecting, and `rangeStyle`
+   * reflects the write before this returns.
+   */
+  applyStyleToSelection: (patch: RunStylePatch) => void;
 }
 
 /** In-place text editing via a contenteditable overlay positioned over the text node's screen-space pose. */
@@ -113,6 +203,23 @@ export function useTextEdit(
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const initialCaretRef = useRef<number | 'all'>('all');
+  const [selection, setSelection] = useState<TextEditSelection | null>(null);
+  const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
+
+  /**
+   * Recompute the published caret range and its styling from the overlay.
+   * Called from the `selectionchange` listener and directly after anything
+   * the hook writes, so a control reading `rangeStyle` right after a patch
+   * sees the new value rather than flickering back to the old one.
+   */
+  const syncSelection = useCallback(() => {
+    const overlay = overlayRef.current;
+    const next = overlay ? readSelectionOffsets(overlay) : null;
+    setSelection((prev) => (sameSelection(prev, next) ? prev : next));
+    setRangeStyle(
+      next && overlay ? styleAtRange(domToRuns(overlay), next.start, next.end) : null,
+    );
+  }, []);
 
   const cancelEdit = useCallback(() => {
     setEditingId(null);
@@ -148,6 +255,20 @@ export function useTextEdit(
 
   const isEditing = useCallback((id: string) => editingId === id, [editingId]);
 
+  const applyStyleToSelection = useCallback((patch: RunStylePatch) => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    // An empty patch would still round-trip the runs through
+    // `applyStyleToRange`, whose normalization applies to the whole array and
+    // not just the patched span. Nothing asked for that, so don't do it.
+    if (Object.keys(patch).length === 0) return;
+    const range = readSelectionOffsets(overlay);
+    if (!range || range.start === range.end) return;
+    const next = applyStyleToRange(domToRuns(overlay), range.start, range.end, patch);
+    writeRunsPreservingSelection(overlay, next, range.start, range.end);
+    syncSelection();
+  }, [syncSelection]);
+
   useEffect(() => {
     if (editingId == null) return;
     const { container, getText, getStyle, getScreenPose } = optsRef.current;
@@ -179,33 +300,28 @@ export function useTextEdit(
     } else {
       placeCaretAt(overlay, range, initial);
     }
+    // Focus first, then place the caret: focusing an editable host is itself
+    // a selection-moving act (jsdom collapses to the start; browsers vary),
+    // so a range set beforehand is not reliably the one the user ends up with.
+    overlay.focus();
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
-    overlay.focus();
+    // The caret exists now, so publish it rather than waiting for the
+    // `selectionchange` task — a control mounted alongside the editor would
+    // otherwise render one frame with no selection.
+    syncSelection();
 
     function handleStyleToggle(flag: StyleFlag): void {
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) return;
-      const range = sel.getRangeAt(0);
-      if (range.collapsed) {
+      const range = readSelectionOffsets(overlay);
+      if (!range) return;
+      if (range.start === range.end) {
         togglePending(flag);
         return;
       }
-      const startChar = domPositionToCharOffset(overlay, range.startContainer, range.startOffset);
-      const endChar = domPositionToCharOffset(overlay, range.endContainer, range.endOffset);
-      const current = domToRuns(overlay);
-      const next = toggleFlagInRange(current, startChar, endChar, flag);
-      runsToDom(next, overlay);
-      const a = charOffsetToDomPosition(overlay, startChar);
-      const b = charOffsetToDomPosition(overlay, endChar);
-      if (a && b) {
-        const newRange = document.createRange();
-        newRange.setStart(a.node, a.offset);
-        newRange.setEnd(b.node, b.offset);
-        sel.removeAllRanges();
-        sel.addRange(newRange);
-      }
+      const next = toggleFlagInRange(domToRuns(overlay), range.start, range.end, flag);
+      writeRunsPreservingSelection(overlay, next, range.start, range.end);
+      syncSelection();
     }
 
     function togglePending(flag: StyleFlag): void {
@@ -276,6 +392,10 @@ export function useTextEdit(
     overlay.addEventListener('keydown', onKeyDown);
     overlay.addEventListener('blur', onBlur);
     overlay.addEventListener('beforeinput', onBeforeInput);
+    // `selectionchange` only exists on the document — there is no per-element
+    // event for it — so this listens globally and `readSelectionOffsets`
+    // filters to selections inside the overlay.
+    document.addEventListener('selectionchange', syncSelection);
 
     const tick = () => {
       const pose = optsRef.current.getScreenPose(editingId);
@@ -290,13 +410,19 @@ export function useTextEdit(
       overlay.removeEventListener('keydown', onKeyDown);
       overlay.removeEventListener('blur', onBlur);
       overlay.removeEventListener('beforeinput', onBeforeInput);
+      document.removeEventListener('selectionchange', syncSelection);
       overlay.remove();
       styleEl?.remove();
       overlayRef.current = null;
+      setSelection(null);
+      setRangeStyle(null);
     };
-  }, [editingId, commit, cancelEdit]);
+  }, [editingId, commit, cancelEdit, syncSelection]);
 
-  return { editingId, startEdit, cancelEdit, commit, isEditing };
+  return {
+    editingId, startEdit, cancelEdit, commit, isEditing,
+    selection, rangeStyle, applyStyleToSelection,
+  };
 }
 
 let OVERLAY_SEQ = 0;

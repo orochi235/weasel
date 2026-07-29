@@ -27,6 +27,7 @@ export type { FitTextPoseOptions } from './fitTextPose';
 export { useTextEdit } from './useTextEdit';
 export type {
   TextEditScreenPose,
+  TextEditSelection,
   StartEditOptions,
   UseTextEditOptions,
   UseTextEditReturn,
