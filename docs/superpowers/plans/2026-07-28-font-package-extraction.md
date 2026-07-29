@@ -176,6 +176,23 @@ In the root `package.json`, extend `build:leaves`:
     "build:leaves": "npm run build -w @weasel-js/geom -w @weasel-js/gestures -w @weasel-js/history -w @weasel-js/modes -w @weasel-js/theme -w @weasel-js/font",
 ```
 
+- [ ] **Step 5b: Copy the license**
+
+`files` advertises `LICENSE`, and every sibling leaf ships a real one
+(`packages/geom/LICENSE` and friends, all added in `5d73a04e`). npm **silently
+drops** an unmatched `files` entry rather than erroring, and
+`check:manifests` validates `main`/`module`/`types`/`exports` — not `files` —
+so nothing in the release gate catches this:
+
+```bash
+cp packages/geom/LICENSE packages/font/LICENSE
+```
+
+Verify it actually ships:
+
+Run: `npm pack --dry-run -w @weasel-js/font`
+Expected: the file list includes `LICENSE`.
+
 - [ ] **Step 6: Install the workspace**
 
 Run: `npm install`
@@ -469,6 +486,15 @@ git commit -m "refactor(core): consume @weasel-js/font for the glyph tier"
 **Files:**
 - Modify: `packages/hud/package.json`, `packages/hud/src/fonts/registerDefaultFont.ts`, root `package.json`
 - Move: `scripts/gen-font.ts`, `scripts/msdf-bmfont-xml.d.ts`
+
+> **Already done in Task 3's commit:** four hud *test* files
+> (`src/attach.test.ts`, `src/fonts/registerDefaultFont.test.ts`,
+> `src/integration.test.tsx`, `src/react/useHud.test.tsx`) imported
+> `registerFont` through a deep relative path into core's source
+> (`../../core/src/features/text/atlas/registerFont`) and broke the moment the
+> file moved. They were repointed at `@weasel-js/font` to get typecheck green.
+> That reach-into-another-package's-`src` pattern is a pre-existing smell worth
+> a separate TODO entry; it is not this plan's job to sweep the rest of it.
 
 - [ ] **Step 1: Repoint hud's import**
 
