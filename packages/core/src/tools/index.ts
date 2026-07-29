@@ -15,6 +15,7 @@ export type {
   ToolPrefString,
   ToolPrefEnum,
   ToolPrefColor,
+  ToolPrefPaint,
   ToolPrefCustom,
   ToolPrefLeaf,
   ToolPrefNumberUnit,

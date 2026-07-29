@@ -314,3 +314,107 @@ describe('SelectionPanel', () => {
     expect(screen.getByLabelText('Position Y')).toHaveValue('20');
   });
 });
+
+/**
+ * The `paint` leaf addresses a whole `FillStyle`. The `color` leaf can't:
+ * pointed at `…fill.color` it reads `undefined` off a gradient, shows its
+ * own default, and writes a hybrid `{ fill: 'gradient', stops, color }` that
+ * the renderer's structural `'color' in paint` checks paint flat solid.
+ */
+describe('SelectionPanel — paint leaf', () => {
+  interface PaintData { kind: string; style?: { fill?: unknown } }
+
+  const paintRouting: NodeRoutingEntry[] = [
+    { name: 'text', matches: (d) => (d as PaintData)?.kind === 'text' },
+  ];
+  const paintProperties: NodePropertiesEntry[] = [
+    {
+      name: 'text',
+      schema: {
+        name: 'Properties',
+        children: {
+          appearance: {
+            name: 'Appearance',
+            children: {
+              'data.style.fill': {
+                kind: 'paint',
+                name: 'Color',
+                description: 'Text color.',
+                default: { fill: 'solid', color: '#000000ff' },
+                alpha: true,
+              },
+            },
+          },
+        },
+      },
+    },
+  ];
+
+  function sceneWithFill(fill: unknown) {
+    const scene = createScene<PaintData, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
+    scene.add({
+      id: asNodeId('t'),
+      kind: 'leaf',
+      layer: 'default',
+      pose: { x: 0, y: 0, width: 10, height: 10 },
+      data: { kind: 'text', style: { fill } },
+    });
+    return scene;
+  }
+
+  function renderPaint(fill: unknown) {
+    return render(
+      <SelectionPanel
+        scene={sceneWithFill(fill)}
+        selection={selectionOf(['t'])}
+        properties={paintProperties}
+        routing={paintRouting}
+      />,
+    );
+  }
+
+  it('shows a solid fill as its color', () => {
+    renderPaint({ fill: 'solid', color: '#ff0000ff' });
+    expect(screen.getByLabelText('Color')).toHaveValue('#ff0000');
+  });
+
+  it('shows an untagged solid fill as its color', () => {
+    // `fill` is optional on the solid member of the union.
+    renderPaint({ color: '#00ff00ff' });
+    expect(screen.getByLabelText('Color')).toHaveValue('#00ff00');
+  });
+
+  it('shows a gradient fill as indeterminate rather than as a color', () => {
+    const { container } = renderPaint({
+      fill: 'linear-gradient',
+      from: { x: 0, y: 0 },
+      to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+    });
+    expect(container.querySelector('[data-mixed]')).not.toBeNull();
+  });
+
+  it('writes a whole solid fill, never a color grafted onto a gradient', () => {
+    const scene = sceneWithFill({
+      fill: 'radial-gradient',
+      center: { x: 0, y: 0 },
+      radius: 1,
+      stops: [{ offset: 0, color: '#000' }],
+    });
+    render(
+      <SelectionPanel
+        scene={scene}
+        selection={selectionOf(['t'])}
+        properties={paintProperties}
+        routing={paintRouting}
+      />,
+    );
+    const input = screen.getByLabelText('Color');
+    fireEvent.input(input, { target: { value: '#123456' } });
+    fireEvent.blur(input);
+    expect(scene.get(asNodeId('t'))?.data.style?.fill).toEqual({
+      fill: 'solid',
+      color: '#123456ff',
+    });
+  });
+});

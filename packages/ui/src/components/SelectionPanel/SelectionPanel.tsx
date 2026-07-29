@@ -9,6 +9,7 @@ import {
   type ToolPrefEnum,
   type ToolPrefLeaf,
   type ToolPrefNumber,
+  type ToolPrefPaint,
 } from '@weasel-js/core';
 import { ColorField } from '../ColorField';
 import { Input } from '../Input';
@@ -206,6 +207,16 @@ function renderLeafControl(
   return renderBuiltin(ctx, ariaLabel);
 }
 
+/** The color of a solid `FillStyle`, or `undefined` for anything else —
+ *  including a value that isn't a paint at all. `fill` is optional on the
+ *  solid member of the union, so the tag alone can't decide it. */
+function solidColorOf(value: unknown): string | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const paint = value as { fill?: string; color?: unknown };
+  if (paint.fill !== undefined && paint.fill !== 'solid') return undefined;
+  return typeof paint.color === 'string' ? paint.color : undefined;
+}
+
 function renderBuiltin(ctx: PropertyRenderContext, ariaLabel: string): ReactNode {
   const { pref, value, mixed, setValue } = ctx;
   switch (pref.kind) {
@@ -283,6 +294,28 @@ function renderBuiltin(ctx: PropertyRenderContext, ariaLabel: string): ReactNode
           mixed={mixed}
           alpha={p.alpha}
           onChange={setValue}
+          aria-label={ariaLabel}
+        />
+      );
+    }
+    case 'paint': {
+      // The value is a whole `FillStyle`. A solid one has a color to show; a
+      // pattern or gradient does not, and showing the control's default there
+      // would claim a color the shape doesn't have. It gets the same
+      // indeterminate chip a genuinely mixed selection gets — in both cases
+      // the honest statement is "there is no single color here".
+      const p = pref as ToolPrefPaint;
+      const solid = solidColorOf(value) ?? (mixed ? undefined : solidColorOf(p.default));
+      return (
+        <ColorField
+          value={mixed ? undefined : solid}
+          mixed={mixed || (value !== undefined && solidColorOf(value) === undefined)}
+          alpha={p.alpha}
+          // Write the whole union member. Setting a `color` key on the
+          // existing paint would leave a `{ fill: 'linear-gradient', stops,
+          // color }` hybrid that every structural `'color' in paint` check
+          // downstream reads as solid.
+          onChange={(color) => setValue({ fill: 'solid', color })}
           aria-label={ariaLabel}
         />
       );

@@ -60,7 +60,9 @@ describe('inferredNodeProperties', () => {
       'data.style.letterSpacing',
       'data.style.underline',
       'data.style.strikethrough',
-      'data.style.fill.color',
+      // The whole paint union, not a color inside it — see the leaf's own
+      // comment in `defaultNodeProperties`.
+      'data.style.fill',
     ]);
   });
 });

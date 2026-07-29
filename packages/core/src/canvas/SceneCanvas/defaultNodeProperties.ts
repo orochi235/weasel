@@ -56,7 +56,12 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
                     'data.style.letterSpacing': { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
                     'data.style.underline': { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false },
                     'data.style.strikethrough': { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false },
-                    'data.style.fill.color': { kind: 'color', name: 'Color', description: 'Text color.', default: '#000000ff', alpha: true },
+                    // A `paint` leaf, not a `color` one pointed at
+                    // `…fill.color`: `TextStyle.fill` is the tagged paint
+                    // union, so a gradient-filled node would read `undefined`
+                    // there, show this default, and take an edit as a `color`
+                    // key grafted onto the gradient.
+                    'data.style.fill': { kind: 'paint', name: 'Color', description: 'Text color.', default: { fill: 'solid', color: '#000000ff' }, alpha: true },
                   },
                 },
                 paragraph: {
