@@ -590,6 +590,24 @@ function sourceFiles(dir: string): string[] {
   return out;
 }
 
+/**
+ * Core's internal path aliases, derived from the root tsconfig rather than
+ * hand-listed — `packages/font/tsconfig.json` extends root without overriding
+ * `paths`, so every one of them resolves inside this package and every one is
+ * a reach-back this guard must catch. Hand-listing them is how you end up
+ * checking three of seven.
+ */
+const CORE_ALIASES = (() => {
+  const root = JSON.parse(
+    readFileSync(join(import.meta.dirname, '../../../tsconfig.json'), 'utf8')
+      .replace(/^\s*\/\/.*$/gm, ''),   // tsconfig allows comments; JSON.parse does not
+  );
+  const names = Object.keys(root.compilerOptions.paths)
+    .filter((k) => k.endsWith('/*') && !k.startsWith('@'))
+    .map((k) => k.slice(0, -2));
+  return new RegExp(`from ['"](${names.join('|')})/`);
+})();
+
 describe('leaf purity', () => {
   it('imports nothing from @weasel-js/core or core-internal aliases', () => {
     const offenders: string[] = [];
@@ -598,8 +616,7 @@ describe('leaf purity', () => {
       // Bare `@weasel-js/core`, and core's internal path aliases
       // (`core/...`, `features/...`, `affordances/...`) which resolve only
       // inside core's tsconfig.
-      if (/from ['"]@weasel-js\/core/.test(src) ||
-          /from ['"](core|features|affordances)\//.test(src)) {
+      if (/from ['"]@weasel-js\/core/.test(src) || CORE_ALIASES.test(src)) {
         offenders.push(file);
       }
     }
@@ -1263,6 +1280,26 @@ surface the swap rather than leaving it to the console.
 ```
 
 Also update the Subdirectories table: `atlas/` now holds only `layoutRuns`, and `dynamic/` is gone from core.
+
+- [ ] **Step 2b: Record two findings review surfaced**
+
+Add to `docs/TODO.md`. Neither is this branch's job to fix:
+
+1. **(P2) Root `eslint.config.js` is never executed.** It defines
+   `import/no-restricted-paths` zones (`core/` vs `features/`) — real
+   architectural enforcement — but root `lint` is `tsc --noEmit`
+   (`package.json`), and `.github/workflows/ci.yml` runs eslint nowhere; its
+   only lint step is `npm run lint -w @weasel-js/labkit`, which is Biome on a
+   different package. So the zone rules are unenforced, and
+   `packages/font/src/leaf-purity.test.ts` had to re-implement a weaker
+   regex version of the same idea to get anything gating at all. Wiring
+   eslint into CI would let that test be deleted in favor of a rule that does
+   real module resolution.
+2. **(P3) Tests reaching into another package's `src/` by relative path.**
+   Four hud tests imported `../../core/src/features/text/atlas/registerFont`
+   and broke when that file moved. They were repointed at `@weasel-js/font`,
+   but the pattern likely exists elsewhere — worth a sweep
+   (`grep -rn "\.\./\.\./[a-z-]*/src/" packages/*/src`).
 
 - [ ] **Step 3: Update the TODO**
 
