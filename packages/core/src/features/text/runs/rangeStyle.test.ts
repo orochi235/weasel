@@ -137,6 +137,11 @@ describe('applyStyleToRange', () => {
     expect(applyStyleToRange(runs, 0, Number.NaN, { bold: true })).toEqual(runs);
   });
 
+  it('normalizes an empty range too, rather than copying the runs verbatim', () => {
+    const messy: StyledRun[] = [{ text: 'ab' }, { text: '' }, { text: 'cd' }];
+    expect(applyStyleToRange(messy, 1, 1, {})).toEqual([{ text: 'abcd' }]);
+  });
+
   it('clamps a negative start', () => {
     const out = applyStyleToRange(runs, -5, 5, { underline: true });
     expect(out[0]).toEqual({ text: 'Hello', underline: true });
