@@ -21,6 +21,7 @@ import {
   classifyKind,
   effectiveSections,
   kindBreakdown,
+  setAtPath,
   type AnyNode,
   type PanelLeaf,
 } from './model';
@@ -68,16 +69,6 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> {
 const defaultKindLabel = (kind: string): string =>
   kind.length === 0 ? kind : kind[0].toUpperCase() + kind.slice(1);
 
-/** Immutably set `value` at a dotted path within `root`, cloning each level
- *  on the way down so React sees new object identities. */
-function setAtPath(root: object, segments: readonly string[], value: unknown): object {
-  const [head, ...rest] = segments;
-  if (rest.length === 0) return { ...root, [head]: value };
-  const child = (root as Record<string, unknown>)[head];
-  const childObj = child != null && typeof child === 'object' ? (child as object) : {};
-  return { ...root, [head]: setAtPath(childObj, rest, value) };
-}
-
 /**
  * Pre-baked selection properties panel. Shows the selected nodes' kind
  * and the properties-trait schema for that kind; multi-selections show
@@ -119,6 +110,10 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
+        // `setAtPath` spreads plain objects/arrays down the schema path;
+        // consumer `pose`/`data` are assumed plain-object-shaped along
+        // that path (a class instance's prototype would be dropped by
+        // the spread) — the `as TPose`/`as TData` casts below rely on it.
         if (head === 'pose') {
           scene.setPose(id, setAtPath(node.pose as object, rest, value) as TPose);
         } else if (head === 'data') {

@@ -5,10 +5,11 @@ import type { ToolPrefGroup } from 'tools/prefs';
  * registry: a declarative schema of the kind's editable properties.
  *
  * Leaf keys inside `schema` are dotted node paths (`pose.x`,
- * `data.fill`) — two segments, rooted at `pose` or `data` — so schema
- * consumers (weasel-ui `SelectionPanel`) can read/aggregate/write
- * generically with no per-kind code. Group keys are organizational
- * only; they do not contribute to the node path.
+ * `data.fill`, `data.style.fontSize`) — a path of any depth rooted at
+ * `pose` or `data` — so schema consumers (weasel-ui `SelectionPanel`)
+ * can read/aggregate/write generically with no per-kind code. Group
+ * keys are organizational only; they do not contribute to the node
+ * path.
  *
  * Kind names share the routing trait's vocabulary — an entry registered
  * as `'rect'` describes nodes `NodeRouting.classify` maps to `'rect'`.

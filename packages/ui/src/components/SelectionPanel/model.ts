@@ -143,19 +143,13 @@ export function effectiveSections(
     .filter((section) => section.rows.length > 0);
 }
 
-/** Split a two-segment node path (`pose.x` / `data.fill`) into its root
- *  and key. Returns `null` for a dotless path. */
-export function splitNodePath(path: string): { head: string; key: string } | null {
-  const dot = path.indexOf('.');
-  if (dot < 0) return null;
-  return { head: path.slice(0, dot), key: path.slice(dot + 1) };
-}
-
 /** Read a node value at a dotted path of any depth (`pose.x`,
  *  `data.style.fontSize`, `data.style.fill.color`). Returns `undefined` if
- *  any intermediate segment is missing or not an object. */
+ *  the path is dotless (mirrors `commit`'s no-op on a malformed schema
+ *  key) or if any intermediate segment is missing or not an object. */
 export function nodeValueAt(node: AnyNode, path: string): unknown {
   const segments = path.split('.');
+  if (segments.length < 2) return undefined;
   const head = segments[0];
   let cursor: unknown = head === 'pose' ? node.pose : head === 'data' ? node.data : undefined;
   for (let i = 1; i < segments.length; i++) {
@@ -163,6 +157,30 @@ export function nodeValueAt(node: AnyNode, path: string): unknown {
     cursor = (cursor as Record<string, unknown>)[segments[i]];
   }
   return cursor;
+}
+
+/** Immutably set `value` at a dotted path within `root`, cloning each level
+ *  on the way down so React sees new object identities. Arrays stay arrays
+ *  (an array intermediate is shallow-copied, not flattened into `{0: ...}`)
+ *  — this is the write-side twin of `nodeValueAt`, so a schema author who
+ *  gets a working read gets a working write. */
+export function setAtPath(root: object, segments: readonly string[], value: unknown): object {
+  const [head, ...rest] = segments;
+  if (rest.length === 0) {
+    return Array.isArray(root)
+      ? Object.assign([...root], { [head]: value })
+      : { ...root, [head]: value };
+  }
+  const child = (root as Record<string, unknown>)[head];
+  const childObj = Array.isArray(child)
+    ? [...child]
+    : child != null && typeof child === 'object'
+      ? { ...child }
+      : {};
+  const nested = setAtPath(childObj, rest, value);
+  return Array.isArray(root)
+    ? Object.assign([...root], { [head]: nested })
+    : { ...root, [head]: nested };
 }
 
 /** Aggregate a path across nodes: the shared value, or `MIXED`. */
