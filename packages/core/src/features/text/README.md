@@ -26,10 +26,11 @@ conversions in `runs.ts` are the boundary with everything else:
 resolved runs and a bounding rect. Word wrap and multi-line layout happen
 *downstream* in `drawText` / `layoutRuns`, not in the layer.
 
-> **The GL renderer uses MSDF text.** The resolved `fontFamily` must be
-> registered with `registerFont(family, variant, metricsUrl, atlasUrl)` *before*
-> the GL backend dispatches the layer. An unregistered family renders a warning
-> and **no glyphs** — that's the usual cause of "my text is invisible."
+> **The GL renderer uses MSDF text.** Font registration lives in
+> `@weasel-js/font` (`registerFont(family, variant, metricsUrl, atlasUrl)`,
+> re-exported from `@weasel-js/core/renderer`). An unregistered family now
+> renders in the default family with a one-time warning; call
+> `setFontFallbackPolicy('none')` to restore the old hard-miss behavior.
 
 Related: never mipmap the GL texture cache for MSDF atlases — mipmapping
 destroys the distance field.
@@ -44,8 +45,7 @@ fit-to-box and baseline placement.
 
 | Dir | Role |
 | --- | --- |
-| `atlas/` | Static MSDF atlas: `FontAtlas`, `GlyphLayout`, `layoutRuns`, `registerFont`. |
-| `dynamic/` | Runtime atlas generation — `glyphRasterizer`, `distanceTransform`, `shelfPack` (bin packing), `dynamicAtlas`. For glyphs not in a prebuilt atlas. |
+| `atlas/` | `layoutRuns` — the runs-aware glyph layout. The atlas itself (`FontAtlas`, `GlyphLayout`, `registerFont`) and runtime rasterization now live in `@weasel-js/font`. |
 | `runs/` | Run resolution. |
 
 ## Editing

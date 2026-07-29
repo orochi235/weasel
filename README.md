@@ -73,7 +73,9 @@ import { registerFont } from '@weasel-js/core';
 await registerFont('Inter', { weight: 400 }, '/fonts/Inter-400.json', '/fonts/Inter-400.png');
 ```
 
-Core doesn't ship a prebuilt atlas — bake one with `npm run gen:font -- <font.ttf> --name Inter-400 --out public/fonts` (see `scripts/gen-font.ts`) and serve the resulting `.json`/`.png` pair. The `hud` package ships its own bundled Inter atlas for consumers who don't need custom fonts.
+Core doesn't ship a prebuilt atlas — bake one with `npm run gen:font -- <font.ttf> --name Inter-400 --out public/fonts` (see `packages/font/scripts/gen-font.ts`) and serve the resulting `.json`/`.png` pair. The `hud` package ships its own bundled Inter atlas for consumers who don't need custom fonts.
+
+The glyph tier lives in `@weasel-js/font`; `registerFont` is re-exported from core, so the import above keeps working. An unregistered family renders in the default family with a one-time warning — see that package's README for `setFontFallbackPolicy`.
 
 ## Actions registry
 
