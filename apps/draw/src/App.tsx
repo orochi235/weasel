@@ -66,8 +66,20 @@ import {
   type ClipboardSnapshot,
   WEASEL_CLIPBOARD_MIME,
   buildWeaselClipboardText,
+  useSceneTextEdit,
+  type StyledRun,
+  type TextStyle,
+  type RangeStyle,
+  type RunStylePatch,
+  type Scene,
 } from '@weasel-js/core';
-import { SidebarPanel, SelectionPanel, ToolPalette, type PropertyRenderer } from '@weasel-js/ui';
+import {
+  SidebarPanel,
+  SelectionPanel,
+  ToolPalette,
+  ToolOptionsBar,
+  type PropertyRenderer,
+} from '@weasel-js/ui';
 
 import { ActionBar, type FlipAxis, type PaperSizeKey } from './ActionBar';
 import { ActiveSwatches, type ActivePaint } from './ActiveSwatches';
@@ -85,6 +97,13 @@ import {
   PropertySelect,
 } from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
+import {
+  CharacterOptions,
+  FontFamilySelect,
+  TextEditDepPublisher,
+  effectiveRangeStyle,
+  textStyleFromPatch,
+} from './ui/CharacterOptions';
 import { DispatchTracePanel } from './dev/DispatchTracePanel';
 import { lookupShortcutByToolId } from './dev/keybindingsView';
 import { useColorContext } from './tools/colorContext';
@@ -127,6 +146,13 @@ interface WeaselDrawPose {
 interface WeaselDrawData {
   path?: Path;
   text?: string;
+  /** Node-level typography. What the sidebar's Character / Paragraph groups
+   *  edit, and what runs inherit from. */
+  style?: TextStyle;
+  /** Inline styling over `text`. Kept in sync with it by every writer —
+   *  `runsToPlainText(runs) === text` — and preferred by the `kit:text`
+   *  painter when present. */
+  runs?: StyledRun[];
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
@@ -320,9 +346,32 @@ function wdActionColorRenderer(colorActionId: string, opacityActionId: string): 
     );
   };
 }
+/** Marks the tool options bar as the text editor's own chrome, so focus
+ *  landing in it doesn't commit the edit those controls are there to style.
+ *  A class rather than a ref because the check is a `closest()` from an
+ *  arbitrary focus target, including one inside a portalled popover. */
+const TEXT_CHROME_CLASS = 'wd-text-chrome';
+
 const WD_RENDERERS: Record<string, PropertyRenderer> = {
   'data.fill': wdActionColorRenderer('setFill', 'setFillOpacity'),
   'data.stroke': wdActionColorRenderer('setStroke', 'setStrokeOpacity'),
+  // The schema's `font-family` leaf has no builtin renderer — the registry it
+  // has to read is a runtime fact, not a static option list. Keyed by kind
+  // rather than path so any future family leaf picks it up.
+  //
+  // The substitution probe runs at 400/normal: `PropertyRenderContext` carries
+  // one leaf's value, not its siblings, so this renderer can't see the node's
+  // `fontWeight` / `fontStyle`. Cross-family substitution — the thing the
+  // label reports — is decided by the family, so the variant only sharpens
+  // the message rather than changing whether there is one.
+  'font-family': (ctx) => (
+    <FontFamilySelect
+      value={ctx.mixed || typeof ctx.value !== 'string' ? undefined : ctx.value}
+      mixed={ctx.mixed}
+      onChange={ctx.setValue}
+      aria-label="Font"
+    />
+  ),
 };
 
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
@@ -1279,6 +1328,62 @@ function EditorWithSharedScene({
 
   const sliceTool = useSliceTool();
 
+  // ── In-place text editing ─────────────────────────────────────────────────
+  // The contenteditable overlay lives inside `.wd-canvas-host` (the workspace),
+  // which is the positioning context it needs. `view` is passed so the overlay
+  // tracks pan/zoom: it is placed at the node's projected screen origin and
+  // CSS-scaled by the view, keeping every metric on it — including run-level
+  // font size and tracking — in the same world units the canvas draws in.
+  //
+  // `hostRef.current` is null on the first render and populated by the time
+  // the ResizeObserver's first sample re-renders (which is also when the
+  // canvas mounts), so the overlay always has a container before an edit can
+  // start.
+  const textEdit = useSceneTextEdit(scene, hostRef.current, {
+    view,
+    // Clicking into the character bar must not end the edit it is editing.
+    isEditorChrome: (el) => el.closest(`.${TEXT_CHROME_CLASS}`) !== null,
+  });
+
+  // What the options bar displays and where its edits go. A real range styles
+  // the runs under it; a collapsed caret has no range, so the same controls
+  // edit the node's own `TextStyle` — the values the sidebar shows.
+  const editingNodeStyle = textEdit.editingId != null
+    ? scene.get(asNodeId(textEdit.editingId))?.data.style
+    : undefined;
+  const hasRange = textEdit.selection != null && textEdit.selection.start !== textEdit.selection.end;
+  const barStyle: RangeStyle = effectiveRangeStyle(
+    hasRange ? textEdit.rangeStyle : null,
+    editingNodeStyle,
+  );
+
+  const onCharacterPatch = useCallback((patch: RunStylePatch) => {
+    const id = textEdit.editingId;
+    if (id == null) return;
+    const sel = textEdit.selection;
+    if (sel != null && sel.start !== sel.end) {
+      textEdit.applyStyleToSelection(patch);
+      return;
+    }
+    const nid = asNodeId(id);
+    const node = scene.get(nid);
+    if (!node) return;
+    scene.update(nid, {
+      data: { ...node.data, style: { ...node.data.style, ...textStyleFromPatch(patch) } },
+    });
+  }, [textEdit, scene]);
+
+  // The overlay draws the node being edited, so the scene layer must not draw
+  // it too — otherwise every keystroke shows against the pre-edit glyphs.
+  // Composed over the modality scoping dim rather than replacing it: both are
+  // per-node alpha, and an isolation-dimmed node can also be the one editing.
+  const scopingAlphaFor = modality.scopingDim.alphaFor;
+  const editingId = textEdit.editingId;
+  const alphaFor = useCallback(
+    (id: string) => (id === editingId ? 0 : scopingAlphaFor(id)),
+    [editingId, scopingAlphaFor],
+  );
+
   const { percent: opacityScrubPercent } = useOpacityScrub({
     scene: scene as unknown as Parameters<typeof useOpacityScrub>[0]['scene'],
     selection,
@@ -1384,6 +1489,17 @@ function EditorWithSharedScene({
         onClearJournalCache={() => modality.machine.clearJournalCache()}
       />
       <PreferencesModal open={prefsOpen} onClose={() => setPrefsOpen(false)} />
+      {/* Permanently reserved, never mounted on demand: the canvas is sized
+          to the workspace, so appearing mid-edit would resize it under the
+          caret. Empty until a text edit is in progress. */}
+      <ToolOptionsBar
+        className={TEXT_CHROME_CLASS}
+        label={textEdit.editingId != null ? 'Text' : undefined}
+      >
+        {textEdit.editingId != null && (
+          <CharacterOptions style={barStyle} onPatch={onCharacterPatch} />
+        )}
+      </ToolOptionsBar>
       <div className="wd-body">
         <div className="wd-sidebar left">
           {tools && (
@@ -1461,7 +1577,7 @@ function EditorWithSharedScene({
               selectionOverlay: { handles: { size: 8 } },
             }}
             decorationLayer={modality.decorationLayer}
-            alphaFor={modality.scopingDim.alphaFor}
+            alphaFor={alphaFor}
             isPointerInteractive={modality.scopingDim.isPointerInteractive}
             onDoubleClick={onDoubleClick}
             getActiveMode={getActiveMode}
@@ -1475,6 +1591,10 @@ function EditorWithSharedScene({
           >
             <BooleansAdapterPublisher scene={scene} selection={selection} />
             <SliceDepPublisher scene={scene} selection={selection} />
+            <TextEditDepPublisher
+              edit={textEdit}
+              scene={scene as unknown as Scene<unknown, string, unknown>}
+            />
           </SceneCanvas>
           )}
         </div>

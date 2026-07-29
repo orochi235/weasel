@@ -1,0 +1,46 @@
+/* One horizontal run of controls inside the tool options bar. The bar owns
+   the strip's height and padding; this only handles the run's rhythm and the
+   widths that keep a numeric field from stretching to fill. */
+.root {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Every control keeps its intrinsic width. Without this the bar's own flex
+   context shrinks them — the toggle group collapses to a sliver, because its
+   segments are `flex: 1 1 0; min-width: 0` and will happily go to zero. */
+.root > * {
+  flex: none;
+}
+
+.family {
+  width: 160px;
+}
+
+/* Abbreviation + field, glued together so the pair reads as one control. */
+.field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.abbr {
+  font-family: var(--wzl-font-ui);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--wzl-fg-muted);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Wide enough for a four-digit size or a signed fractional tracking value,
+   narrow enough that five controls fit a laptop-width bar. */
+.number {
+  width: 56px;
+}
+
+.color {
+  flex: none;
+}
