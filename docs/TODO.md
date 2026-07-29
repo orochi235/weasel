@@ -28,7 +28,8 @@ Priority tags:
 
 **Text**
 - Cross-browser overlay alignment → [Text](#text)
-- Text properties panel (Character + Paragraph) → [Text](#text)
+- Un-setting a flag a text node sets → [Text](#text)
+- Route Cmd+U / Cmd+Shift+X through the run algebra → [Text](#text)
 
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
@@ -193,7 +194,50 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
-- **(P2) Text properties panel** (Character + Paragraph). Surfaced 2026-05-11 while wiring `useTextEdit` into WeaselDraw — the kit ships rich `TextStyle` + `StyledRun` data and `useTextEdit` already handles bold/italic via the runs API, but there's no UI surface for any of it. A `@weasel-js/ui` `<TextPropertiesPanel>` (paralleling `<PropertiesPanel>` / `<PathfinderPanel>`) reading from selection and dispatching style/run mutations would close the gap. Coverage to design: font family (system + web fonts), font size, font weight, italic / underline / strikethrough toggles, fill color, caret/selection colors, line height, letter spacing / tracking (new — not on `TextStyle` yet), paragraph alignment, and per-range run styling on the active text-edit selection. Open questions: (a) split into Character vs Paragraph panels (Illustrator-style) or one combined panel for v1; (b) whether the panel binds to selection or to `editingId` (Illustrator binds to both); (c) how to expose run-level mutators publicly; (d) which fields need new `TextStyle` keys (letter-spacing/tracking, decoration). Likely a multi-day spec once a real consumer demands it.
+- **(P2) Un-setting a flag a text node sets.** Run-level flags are additive:
+  a run turns `bold` / `italic` / `underline` / `strikethrough` on, never off
+  (setting `false` deletes the key, and resolution is `run.flag ||
+  style.flag`). So "select a word inside an underlined node and turn
+  underline off" is unrepresentable, and the character bar's toggle visibly
+  refuses. Two ways out, both model changes: go tri-state (`true` / `false` /
+  inherit) across `valueAt` / `patchRun` / the resolvers and the SVG mapping,
+  or normalize on write — clear the node flag and add it to every run outside
+  the range, which preserves the rendered result and makes the edit
+  expressible without widening the model. Decide before the flags are relied
+  on by a persisted document format.
+
+- **(P2) Route Cmd+U / Cmd+Shift+X through the run algebra.** `useTextEdit`'s
+  `StyleFlag` is `'bold' | 'italic'`, so the decoration shortcuts are never
+  intercepted and the browser's native `formatUnderline` runs instead.
+  `domToRuns`' `<u>` flattening then makes it *look* like it worked while
+  bypassing `toggleFlagInRange` entirely — no toggle-off, no mixed-range
+  rule, no pending style for a collapsed caret. `rangeStyle.ts` already lists
+  both flags; the flattening should stay regardless (it is what makes pasted
+  decoration survive) but it is defense in depth, not the fix.
+
+- **(P3) Per-character tracking in the DOM overlay is CSS-approximate.**
+  `letterSpacing` is applied per code point rather than per grapheme cluster,
+  matching CSS rather than the GL path's cluster walk. Visible only on text
+  with combining marks or emoji sequences.
+
+- **(P3) Decoration thickness is derived, not read from font metrics.** The
+  underline / strikethrough offsets and weight are the fixed `0.10` / `-0.30`
+  / `0.05` em constants in `layoutRuns`. Real fonts ship
+  `underlinePosition` / `underlineThickness`; the BmFont atlas format does
+  not carry them, so honoring them means extending the atlas metrics.
+
+- **(P3) `ToolOptionsBar` is not driven by tool prefs.** Its first tenant
+  (draw's `CharacterOptions`) is hand-assembled. A tool declaring a
+  `ToolPrefGroup` for its options and having the bar render it the way
+  `SelectionPanel` renders node properties is the obvious next step, and is
+  also where the roving-tabindex contract below would plug in.
+
+- **(P3) One `useRovingTabIndex` for the three bars.** `ActionsBar`,
+  `ActionBar`, and `OptionsBar` each reimplement `firstEnabledIndex` /
+  `nextEnabledIndex` / `prevEnabledIndex` verbatim — three near-identical
+  copies. `ToolOptionsBar` deliberately has none (its children are arbitrary
+  compound controls that use arrow keys for their own values), so the shared
+  hook is also where that contract would get designed once.
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/core/src/features/text/atlas/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Defer until a real consumer hits a non-Latin language requirement.
 
