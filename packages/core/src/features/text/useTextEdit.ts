@@ -81,6 +81,21 @@ function readSelectionOffsets(overlay: HTMLElement): TextEditSelection | null {
  * `[start, end)`. Rewriting the DOM destroys the selection, and losing it
  * after every styling change would mean re-selecting the word to apply a
  * second style — so this is the only way styling writes back.
+ *
+ * The caret is **not** restored while focus sits in a text-entry control.
+ * Browsers route editing commands by selection rather than by focus, so a
+ * document selection put back inside the contenteditable while a bar's
+ * number field has focus means the very Enter that committed that field also
+ * runs its `insertParagraph` default over the restored range — replacing the
+ * text that was just styled with a line break. (Observed in Chrome.)
+ *
+ * Focus on a *button* is the opposite case and must still restore: toggling
+ * bold, then italic, then underline is one flow over one selection, and
+ * clicking a toolbar button does take focus. Buttons turn keystrokes into
+ * clicks, not into editing commands, so the range is safe there.
+ *
+ * The hook remembers the range as character offsets either way, so a skipped
+ * restore costs the highlight, never the target.
  */
 function writeRunsPreservingSelection(
   overlay: HTMLElement,
@@ -88,7 +103,15 @@ function writeRunsPreservingSelection(
   start: number,
   end: number,
 ): void {
+  const active = document.activeElement;
+  const inTextEntry =
+    active !== overlay &&
+    !overlay.contains(active) &&
+    (active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      (active instanceof HTMLElement && active.isContentEditable));
   runsToDom(runs, overlay);
+  if (inTextEntry) return;
   const a = charOffsetToDomPosition(overlay, start);
   const b = charOffsetToDomPosition(overlay, end);
   const sel = window.getSelection();
@@ -170,6 +193,21 @@ export interface UseTextEditOptions {
    * been styled doesn't grow a single-run `runs` array just for being edited.
    */
   setRuns?: (id: string, runs: StyledRun[]) => void;
+  /**
+   * Is `el` part of the editor's own chrome — a character-options bar, a
+   * color popover, anything whose whole purpose is to style the text being
+   * edited? Focus moving into one does not end the edit.
+   *
+   * Without this, the controls the feature exists for are exactly what
+   * destroys it: clicking a size field blurs the overlay, blur commits, and
+   * the caret the control was about to act on is gone. Toggle buttons can
+   * dodge it by `preventDefault()`-ing their own mousedown, but a field the
+   * user has to type into cannot.
+   *
+   * Chrome focus does not disturb the reported `selection` either — see
+   * `UseTextEditReturn.selection`.
+   */
+  isEditorChrome?: (el: Element) => boolean;
 }
 
 /** Options for `useTextEdit().startEdit`. */
@@ -188,16 +226,19 @@ export interface UseTextEditReturn {
   cancelEdit: () => void;
   commit: () => void;
   isEditing: (id: string) => boolean;
-  /**
-   * The caret's character range, or `null` when nothing is being edited (or
-   * the document selection has moved outside the overlay). A collapsed caret
-   * reports `{ start: n, end: n }`, so `null` and "caret at n" stay
-   * distinguishable — a character-styling control routes the collapsed case
-   * to the node's `TextStyle` instead of to a range.
+   /**
+   * The caret's character range, or `null` when nothing is being edited. A
+   * collapsed caret reports `{ start: n, end: n }`, so `null` and "caret at
+   * n" stay distinguishable — a character-styling control routes the
+   * collapsed case to the node's `TextStyle` instead of to a range.
    *
    * Follows the DOM selection, which browsers (and jsdom) report from a task
    * rather than synchronously; anything this hook writes itself updates it
-   * synchronously.
+   * synchronously. A DOM selection that leaves the overlay does **not** clear
+   * it: that is what happens when the user clicks a styling control, and
+   * reporting `null` there would read as "collapsed caret" and send the
+   * control's patch to the node instead of to the range. It is cleared on
+   * `startEdit` and when the edit ends.
    */
   selection: TextEditSelection | null;
   /**
@@ -233,18 +274,45 @@ export function useTextEdit(
   const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
 
   /**
+   * The published range, mirrored in a ref. `applyStyleToSelection` reads it
+   * synchronously, and it is the fallback when the DOM selection has moved
+   * into editing chrome. Cleared with the state, never separately.
+   */
+  const selectionRef = useRef<TextEditSelection | null>(null);
+
+  /**
    * Recompute the published caret range and its styling from the overlay.
    * Called from the `selectionchange` listener and directly after anything
    * the hook writes, so a control reading `rangeStyle` right after a patch
    * sees the new value rather than flickering back to the old one.
+   *
+   * A selection that is not inside the overlay leaves the published range
+   * alone rather than clearing it. That state means focus moved into a
+   * control — which is precisely when the range matters most, and reporting
+   * `null` would read to a consumer as "collapsed caret" and send its patch
+   * to the wrong target. The range is cleared where it is actually over: on
+   * `startEdit` and on teardown.
    */
+  /** Publish `range` and the styling the overlay currently carries across it. */
+  const publishRange = useCallback((overlay: HTMLElement, range: TextEditSelection) => {
+    selectionRef.current = range;
+    setSelection((prev) => (sameSelection(prev, range) ? prev : range));
+    setRangeStyle(styleAtRange(domToRuns(overlay), range.start, range.end));
+  }, []);
+
   const syncSelection = useCallback(() => {
     const overlay = overlayRef.current;
-    const next = overlay ? readSelectionOffsets(overlay) : null;
-    setSelection((prev) => (sameSelection(prev, next) ? prev : next));
-    setRangeStyle(
-      next && overlay ? styleAtRange(domToRuns(overlay), next.start, next.end) : null,
-    );
+    if (!overlay) return;
+    const next = readSelectionOffsets(overlay);
+    if (next === null) return;
+    publishRange(overlay, next);
+  }, [publishRange]);
+
+  /** Drop the published range — the edit session it described is over. */
+  const clearSelection = useCallback(() => {
+    selectionRef.current = null;
+    setSelection(null);
+    setRangeStyle(null);
   }, []);
 
   const cancelEdit = useCallback(() => {
@@ -301,12 +369,19 @@ export function useTextEdit(
     // `applyStyleToRange`, whose normalization applies to the whole array and
     // not just the patched span. Nothing asked for that, so don't do it.
     if (Object.keys(patch).length === 0) return;
-    const range = readSelectionOffsets(overlay);
+    // Fall back to the last range that WAS in the overlay: the caller may be
+    // a control that took focus (and with it the DOM selection) to be
+    // clicked. `writeRunsPreservingSelection` puts the range back afterwards,
+    // so a second styling can follow without re-selecting either way.
+    const range = readSelectionOffsets(overlay) ?? selectionRef.current;
     if (!range || range.start === range.end) return;
     const next = applyStyleToRange(domToRuns(overlay), range.start, range.end, patch);
     writeRunsPreservingSelection(overlay, next, range.start, range.end);
-    syncSelection();
-  }, [syncSelection]);
+    // Republish from the range we just styled, not from the DOM selection:
+    // when the patch came from chrome the selection is in that control, and
+    // re-reading it would leave a consumer showing the pre-patch styling.
+    publishRange(overlay, range);
+  }, [publishRange]);
 
   useEffect(() => {
     if (editingId == null) return;
@@ -389,7 +464,12 @@ export function useTextEdit(
         handleStyleToggle(flag);
       }
     };
-    const onBlur = () => commit();
+    const onBlur = (e: FocusEvent) => {
+      const next = e.relatedTarget;
+      const isChrome = optsRef.current.isEditorChrome;
+      if (isChrome && next instanceof Element && isChrome(next)) return;
+      commit();
+    };
 
     const onBeforeInput = (ie: InputEvent) => {
       if (ie.inputType !== 'insertText' || !ie.data) return;
@@ -428,9 +508,24 @@ export function useTextEdit(
       }
     };
 
+    // Blur can't be the only way out. Once focus has moved into editing
+    // chrome the overlay is no longer focused, so nothing blurs when the user
+    // clicks away and the edit would never end. A pointerdown that lands
+    // outside both the overlay and the chrome is that click. Capture phase so
+    // it runs ahead of whatever the click was aimed at (a canvas gesture, a
+    // different tool) rather than after it.
+    const onPointerDownOutside = (e: Event) => {
+      const target = e.target;
+      if (!(target instanceof Node) || overlay.contains(target)) return;
+      const isChrome = optsRef.current.isEditorChrome;
+      if (isChrome && target instanceof Element && isChrome(target)) return;
+      commit();
+    };
+
     overlay.addEventListener('keydown', onKeyDown);
     overlay.addEventListener('blur', onBlur);
     overlay.addEventListener('beforeinput', onBeforeInput);
+    document.addEventListener('pointerdown', onPointerDownOutside, true);
     // `selectionchange` only exists on the document — there is no per-element
     // event for it — so this listens globally and `readSelectionOffsets`
     // filters to selections inside the overlay.
@@ -449,14 +544,14 @@ export function useTextEdit(
       overlay.removeEventListener('keydown', onKeyDown);
       overlay.removeEventListener('blur', onBlur);
       overlay.removeEventListener('beforeinput', onBeforeInput);
+      document.removeEventListener('pointerdown', onPointerDownOutside, true);
       document.removeEventListener('selectionchange', syncSelection);
       overlay.remove();
       styleEl?.remove();
       overlayRef.current = null;
-      setSelection(null);
-      setRangeStyle(null);
+      clearSelection();
     };
-  }, [editingId, commit, cancelEdit, syncSelection]);
+  }, [editingId, commit, cancelEdit, syncSelection, clearSelection]);
 
   return {
     editingId, startEdit, cancelEdit, commit, isEditing,

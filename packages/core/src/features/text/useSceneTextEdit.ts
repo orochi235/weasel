@@ -68,6 +68,12 @@ export interface UseSceneTextEditOptions<TData> {
    * match the canvas.
    */
   view?: View;
+  /**
+   * Forwarded to `useTextEdit`: is `el` part of the editor's own chrome?
+   * Focus moving into it does not end the edit. Wire it to whatever renders
+   * the character controls.
+   */
+  isEditorChrome?: (el: Element) => boolean;
 }
 
 /** Return shape extends `UseTextEditReturn` with an `onDoubleClick`
@@ -101,6 +107,7 @@ export function useSceneTextEdit<
 
   const edit = useTextEdit({
     container,
+    isEditorChrome: (el) => optsRef.current.isEditorChrome?.(el) ?? false,
     getText: (id) => {
       const node = sceneRef.current.get(asNodeId(id));
       if (!node) return '';
