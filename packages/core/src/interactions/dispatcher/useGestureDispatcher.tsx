@@ -22,6 +22,7 @@ import { createDispatcher, type Dispatcher, type DispatcherContext } from './dis
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestion/ingestItems';
 import type { InputEvent } from './matcher';
+import type { BodyTarget, BodyClassification } from '@weasel-js/gestures';
 
 // ---------------------------------------------------------------------------
 // Drop-over styling — class toggled on the canvas while an OS drag hovers it;
@@ -117,20 +118,22 @@ export interface UseGestureDispatcherOptions {
   affordanceAt?: (worldPoint: { x: number; y: number }) => AffordanceHit | null;
 
   /**
-   * Optional body-target classifier. Called on every pointerdown with the
-   * world-space coordinates of the pointer. Returns a classification string
-   * that `matchTarget` uses to resolve string-form `TargetSpec` values in
-   * `Tool.bindings` drag specs.
+   * Optional body classifier. Called on every pointerdown with the world-space
+   * coordinates of the pointer. Its result is packed onto the event as
+   * `bodyTarget` + `bodyKind`, which `matchTarget` reads to resolve the
+   * string-form `TargetSpec` values in `Tool.bindings`.
    *
-   * Returns `'empty'` when nothing is under the pointer, `'selected-body'`
+   * `body` is `'empty'` when nothing is under the pointer, `'selected-body'`
    * when the topmost hit belongs to the current selection, or
-   * `'unselected-body'` when it belongs to a node that isn't selected.
+   * `'unselected-body'` when it belongs to a node that isn't selected. `kind`
+   * is the hit node's semantic kind, when the scene can name it.
    *
-   * When omitted, string-form target specs (`'empty'`, `'selected-body'`,
-   * `'unselected-body'`) never match — bindings using those specs are
-   * silently skipped. `<SceneCanvas>` wires this.
+   * When omitted, every body-derived target form (`'empty'`,
+   * `'selected-body'`, `'unselected-body'`, `kind:<k>`, `kind:<k>:selected`)
+   * never matches — bindings using those specs are silently skipped.
+   * `<SceneCanvas>` wires this.
    */
-  classifyTarget?: (worldPoint: { x: number; y: number }) => 'empty' | 'selected-body' | 'unselected-body';
+  classifyTarget?: (worldPoint: { x: number; y: number }) => BodyClassification;
 
   /**
    * Optional pre-created `Dispatcher`. When provided, this hook pumps events
@@ -387,7 +390,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       worldY: number;
       /** Affordance the press landed on, replayed onto the click. */
       affordance?: unknown;
-      bodyTarget?: 'empty' | 'selected-body' | 'unselected-body';
+      bodyTarget?: BodyTarget;
+      bodyKind?: string;
       altKey: boolean;
       ctrlKey: boolean;
       metaKey: boolean;
@@ -544,7 +548,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // client→world conversion internally via its canvas ref + view.
       const worldPoint = { x: e.clientX, y: e.clientY };
       const affordance = affordanceAtRef.current?.(worldPoint) ?? undefined;
-      const bodyTarget = classifyTargetRef.current?.(worldPoint) ?? undefined;
+      const body = classifyTargetRef.current?.(worldPoint);
+      const bodyTarget = body?.body;
+      const bodyKind = body?.kind;
 
       const w = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
@@ -561,6 +567,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ...stylusOf(e),
         ...(affordance !== undefined ? { affordance } : {}),
         ...(bodyTarget !== undefined ? { bodyTarget } : {}),
+        ...(bodyKind !== undefined ? { bodyKind } : {}),
       };
       // Defer dispatch until the first past-threshold pointermove. A bare
       // press-and-release should fire `click`, not start a drag action.
@@ -582,6 +589,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         worldY: w.y,
         affordance,
         bodyTarget,
+        bodyKind,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
@@ -742,7 +750,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         applyHoverCursor(affordance.cursor);
         return;
       }
-      const bodyTarget = classifyTargetRef.current?.(screenPoint) ?? undefined;
+      const hoverBody = classifyTargetRef.current?.(screenPoint);
+      const bodyTarget = hoverBody?.body;
+      const bodyKind = hoverBody?.kind;
       const w = toWorld(h.clientX, h.clientY);
       const predicted = dispatcher.resolveOnly(
         {
@@ -757,6 +767,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           shiftKey: h.shiftKey,
           ...(affordance !== undefined ? { affordance } : {}),
           ...(bodyTarget !== undefined ? { bodyTarget } : {}),
+          ...(bodyKind !== undefined ? { bodyKind } : {}),
         },
         ctxRef.current,
       );
@@ -888,6 +899,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           pressY: down.worldY,
           ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
           ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
+          ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
         };
         dispatch(clickEv);
 
@@ -911,6 +923,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
             worldX: wClick.x,
             worldY: wClick.y,
             ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
+            ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
           };
           // Notify observers first — see `onDoubleClick`'s doc for why this
           // is not modeled as a binding.
@@ -960,7 +973,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // Suppress native menu so tools/actions own the right-click UX.
       e.preventDefault();
       const worldPoint = { x: e.clientX, y: e.clientY };
-      const bodyTarget = classifyTargetRef.current?.(worldPoint) ?? undefined;
+      const menuBody = classifyTargetRef.current?.(worldPoint);
       const ev: InputEvent = {
         kind: 'contextmenu',
         target: e.target,
@@ -968,7 +981,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
-        ...(bodyTarget !== undefined ? { bodyTarget } : {}),
+        ...(menuBody?.body !== undefined ? { bodyTarget: menuBody.body } : {}),
+        ...(menuBody?.kind !== undefined ? { bodyKind: menuBody.kind } : {}),
       };
       dispatch(ev);
     };

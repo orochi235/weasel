@@ -15,6 +15,7 @@
  * `unionBounds` (same corners, same radius).
  */
 
+import type { BodyClassification } from '@weasel-js/gestures';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { AffordanceHit } from 'interactions/actions/invoker';
 import type { ResizeAnchor } from 'interactions/gestures/types';
@@ -318,15 +319,25 @@ export function buildAffordanceAt(
  *
  * The caller supplies the hit-test function (already wired from
  * `useSceneSelectTool.pickEvery`).
+ *
+ * @param kindOfNode - Optional resolver from a hit node id to its semantic
+ *   kind. `<SceneCanvas>` defaults it to the `data.kind` convention the kit
+ *   already reads in `deps/textEdit` and the shape-tool inserts; consumers
+ *   whose nodes name their kind elsewhere override it. Omitting it leaves
+ *   `kind` undefined, which makes every `kind:` TargetSpec form no-match.
  */
 export function buildClassifyTarget(
   getSelection: () => readonly string[],
   pickBest: (wx: number, wy: number) => string | null,
-): (worldPoint: { x: number; y: number }) => 'empty' | 'selected-body' | 'unselected-body' {
+  kindOfNode?: (id: string) => string | undefined,
+): (worldPoint: { x: number; y: number }) => BodyClassification {
   return function classifyTarget({ x: wx, y: wy }) {
     const hitId = pickBest(wx, wy);
-    if (!hitId) return 'empty';
+    if (!hitId) return { body: 'empty' };
     const sel = getSelection();
-    return sel.includes(hitId) ? 'selected-body' : 'unselected-body';
+    return {
+      body: sel.includes(hitId) ? 'selected-body' : 'unselected-body',
+      kind: kindOfNode?.(hitId),
+    };
   };
 }

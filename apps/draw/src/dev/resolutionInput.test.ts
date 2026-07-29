@@ -38,6 +38,31 @@ describe('synthesizeInput', () => {
     expect(RESOLUTION_BODY_TARGETS).toEqual(['empty', 'selected-body', 'unselected-body']);
   });
 
+  it('sets bodyKind for a node-kind target so kind: specs resolve', () => {
+    const e = synthesizeInput({ gesture: 'click', target: 'kind:text', mods: {} });
+    expect((e as { bodyKind?: string }).bodyKind).toBe('text');
+    expect(matchSpec(e, { kind: 'click', target: 'kind:text' } as GestureSpec, false)).toBe(true);
+    expect(matchSpec(e, { kind: 'click', target: 'kind:rect' } as GestureSpec, false)).toBe(false);
+  });
+
+  it('a node-kind target lands on an unselected body by default', () => {
+    const e = synthesizeInput({ gesture: 'click', target: 'kind:text', mods: {} });
+    expect((e as { bodyTarget?: string }).bodyTarget).toBe('unselected-body');
+    expect(matchSpec(e, { kind: 'click', target: 'kind:text:selected' } as GestureSpec, false)).toBe(false);
+  });
+
+  it('the :selected node-kind target lands on a selected body', () => {
+    const e = synthesizeInput({ gesture: 'click', target: 'kind:text:selected', mods: {} });
+    expect((e as { bodyTarget?: string }).bodyTarget).toBe('selected-body');
+    expect((e as { bodyKind?: string }).bodyKind).toBe('text');
+    expect(matchSpec(e, { kind: 'click', target: 'kind:text:selected' } as GestureSpec, false)).toBe(true);
+  });
+
+  it('a chrome target matches a literal affordance: spec, not only a predicate', () => {
+    const e = synthesizeInput({ gesture: 'drag', target: 'affordance:rotate-handle', mods: {} });
+    expect(matchSpec(e, { kind: 'drag', target: 'affordance:rotate-handle' } as GestureSpec, false)).toBe(true);
+  });
+
   it('produces a drag event that the real matcher matches against a bare drag spec', () => {
     // This is the test that would have caught the fixture bug this task's
     // prompt warns about: a `drag` GestureSpec matches a `pointerdown`

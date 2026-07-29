@@ -1041,6 +1041,19 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     return (data: TData) => registry.classify(data);
   }, [routing]);
 
+  // Node id → routing-trait kind, for the body classifier. Reusing the routing
+  // registry here is what makes `target: 'kind:text'` on a binding speak the
+  // same vocabulary as `Hit.kind` and the routing tables, rather than a second
+  // one invented for bindings. Undefined when `routing={[]}` opts out, which
+  // leaves every `kind:` target form unmatchable.
+  const kindOfNode = useMemo(() => {
+    if (!kindClassifier) return undefined;
+    return (id: string): string | undefined => {
+      const node = scene.get(id as NodeId);
+      return node ? kindClassifier(node.data) : undefined;
+    };
+  }, [kindClassifier, scene]);
+
   const { adapter, selectTool: internalSelect, rotateTool, pickEvery: internalPickEvery, pickBest: internalPickBest, boundsOf: internalBoundsOf } = useSceneSelectTool({
     scene,
     selection,
@@ -1875,6 +1888,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
             boundsOf={internalBoundsOf}
             pickEvery={internalPickEvery}
             pickBest={internalPickBest}
+            kindOfNode={kindOfNode}
             viewRef={currentViewRef}
             dispatcher={dispatcher}
             getIsVisibleForCanvas={getIsVisibleForCanvas}
@@ -1953,6 +1967,7 @@ function GestureDispatcherMounter({
   boundsOf,
   pickEvery,
   pickBest,
+  kindOfNode,
   viewRef,
   dispatcher,
   getIsVisibleForCanvas,
@@ -1976,6 +1991,11 @@ function GestureDispatcherMounter({
    *  resolution so a child node isn't misclassified by its parent's selection.
    *  Falls back to `pickEvery`'s last id when absent. */
   pickBest?: (worldX: number, worldY: number) => string | null;
+  /** Resolves a hit node id to its routing-trait kind, so the body
+   *  classification carries `kind` alongside `bodyTarget` and the
+   *  `kind:<k>` / `kind:<k>:selected` target forms can match. Absent when
+   *  the consumer opted out of routing (`routing={[]}`). */
+  kindOfNode?: (id: string) => string | undefined;
   viewRef?: React.RefObject<View>;
   /** Pre-created dispatcher to pump events into. When omitted,
    *  `useGestureDispatcher` creates one internally (legacy path). */
@@ -2019,6 +2039,8 @@ function GestureDispatcherMounter({
   pickEveryRef.current = pickEvery;
   const pickBestRef = useRef(pickBest);
   pickBestRef.current = pickBest;
+  const kindOfNodeRef = useRef(kindOfNode);
+  kindOfNodeRef.current = kindOfNode;
 
   // `getAnchorState` thunk for `buildAffordanceAt`.
   //
@@ -2104,6 +2126,12 @@ function GestureDispatcherMounter({
         const ids = pickEveryRef.current?.(wx, wy) ?? [];
         return ids.length > 0 ? ids[ids.length - 1] : null;
       },
+      // Node kind comes from the routing trait — the same classifier that
+      // names `Hit.kind` — so `target: 'kind:text'` on a binding speaks the
+      // vocabulary the consumer already declared in `routing`, rather than a
+      // second one invented for bindings. `routing={[]}` opts out and leaves
+      // every `kind:` target unmatchable.
+      (id: string) => kindOfNodeRef.current?.(id),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionRef, pickEvery, viewRef]);

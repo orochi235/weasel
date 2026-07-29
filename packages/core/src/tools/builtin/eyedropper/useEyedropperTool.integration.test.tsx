@@ -87,7 +87,7 @@ function Mount({
     actions: registry!,
     toolsById,
     enabled: true,
-    classifyTarget: () => 'empty',
+    classifyTarget: () => ({ body: 'empty' }),
   });
   return <canvas ref={canvasRef} />;
 }

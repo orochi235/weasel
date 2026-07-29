@@ -46,6 +46,7 @@ import { formatShortcutParts, KeySequence } from '@weasel-js/ui';
 import { lookupShortcutByToolId } from './keybindingsView';
 import {
   AFFORDANCE_PREFIX,
+  KIND_PREFIX,
   isPredicateTarget,
   RESOLUTION_BODY_TARGETS,
   RESOLUTION_GESTURES,
@@ -467,16 +468,24 @@ export function ResolutionWidget({
   const [target, setTarget] = useState<string>('selected-body');
   const [mods, setMods] = useState<ResolutionMods>({});
 
-  // Chrome options come from the affordance kinds the mounted tools actually
-  // bind against, so the picker can't offer a target nothing listens for.
-  const affordanceKinds = useMemo(() => {
-    const kinds = new Set<string>();
+  // Chrome and node-kind options come from the targets the mounted tools
+  // actually bind against, so the picker can't offer a target nothing listens
+  // for. Both lists are empty for a tool set that describes its targets with
+  // predicates only — which is still true of every kit bundle.
+  const { affordanceKinds, nodeKinds } = useMemo(() => {
+    const affordances = new Set<string>();
+    const nodes = new Set<string>();
     for (const entry of buildRouteRegistry(tools)) {
       if (entry.target?.startsWith(AFFORDANCE_PREFIX)) {
-        kinds.add(entry.target.slice(AFFORDANCE_PREFIX.length));
+        affordances.add(entry.target.slice(AFFORDANCE_PREFIX.length));
+      } else if (entry.target?.startsWith(KIND_PREFIX)) {
+        nodes.add(entry.target.slice(KIND_PREFIX.length));
       }
     }
-    return [...kinds].sort();
+    return {
+      affordanceKinds: [...affordances].sort(),
+      nodeKinds: [...nodes].sort(),
+    };
   }, [tools]);
 
   // `wheel` and `key` events carry no target for the matcher to read, so the
@@ -538,6 +547,9 @@ export function ResolutionWidget({
             ))}
             {affordanceKinds.map((k) => (
               <option key={k} value={`${AFFORDANCE_PREFIX}${k}`}>chrome: {k}</option>
+            ))}
+            {nodeKinds.map((k) => (
+              <option key={k} value={`${KIND_PREFIX}${k}`}>node: {k}</option>
             ))}
           </select>
         </label>

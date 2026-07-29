@@ -18,6 +18,37 @@ export interface EventModifiers {
  */
 export type BodyTarget = 'empty' | 'selected-body' | 'unselected-body';
 
+/**
+ * Semantic kind of the node body under the point — `'text'`, `'rect'`, or an
+ * app's own `'app:note'`. Companion to {@link BodyTarget}, which says only how
+ * the body relates to the selection; this says *what it is*. Read by
+ * `matchTarget` to resolve the `kind:<k>` / `kind:<k>:selected` TargetSpec
+ * forms.
+ *
+ * Supplied by the same `classifyTarget` thunk that supplies `bodyTarget`, and
+ * absent for the same reasons plus one more: the thunk hit a body whose kind
+ * the scene can't name. An absent `bodyKind` makes every `kind:` form
+ * no-match, never a wildcard.
+ */
+export type BodyKind = string;
+
+/**
+ * What a scene hit-test found under a point — the shape a `classifyTarget`
+ * thunk returns, and the source of both {@link BodyTarget} and
+ * {@link BodyKind} on the events the matcher sees.
+ *
+ * One thunk returns both halves rather than two thunks returning one each:
+ * the two answers come from the same hit-test, and splitting them would cost
+ * a second pick on every pointer event.
+ */
+export interface BodyClassification {
+  /** How the hit body relates to the current selection. */
+  body: BodyTarget;
+  /** Semantic kind of the hit body. Undefined on empty canvas, and undefined
+   *  on a body whose kind the scene can't name — never guessed. */
+  kind?: BodyKind;
+}
+
 /** A keystroke. */
 export interface KeyEvent extends EventModifiers {
   kind: 'key';
@@ -95,6 +126,7 @@ export interface PointerDownEvent extends EventModifiers, PointerSampleStylus {
   /** Generic affordance payload (the kit narrows this to `AffordanceHit`). */
   affordance?: unknown;
   bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
 }
 
 /** A pump-only pointer move. Carried in the union so the dispatcher's
@@ -156,6 +188,7 @@ export interface ClickEvent extends EventModifiers {
    */
   affordance?: unknown;
   bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
 }
 
 /** A double click. `worldX`/`worldY` carry the same meaning as on {@link ClickEvent}. */
@@ -165,6 +198,7 @@ export interface DoubleClickEvent extends EventModifiers {
   worldX?: number;
   worldY?: number;
   bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
 }
 
 /** A context-menu (right-click) request. */
@@ -172,6 +206,7 @@ export interface ContextMenuEvent extends EventModifiers {
   kind: 'contextmenu';
   target?: unknown;
   bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
 }
 
 /** A running multitouch gesture (e.g. pinch/rotate). */

@@ -18,7 +18,7 @@ function Probe({ actionDef, enabled = true, affordanceAt, classifyTarget }: {
   actionDef: Action;
   enabled?: boolean;
   affordanceAt?: (p: { x: number; y: number }) => import('../actions/invoker').AffordanceHit | null;
-  classifyTarget?: (p: { x: number; y: number }) => 'empty' | 'selected-body' | 'unselected-body';
+  classifyTarget?: (p: { x: number; y: number }) => import('@weasel-js/gestures').BodyClassification;
 }) {
   const registry = useActionsRegistry();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -219,7 +219,7 @@ describe('useGestureDispatcher', () => {
     it('idle pointermove applies the predicted action cursor; pointerleave clears it', () => {
       const { container } = render(
         <Harness>
-          <Probe actionDef={panAction} classifyTarget={() => 'empty'} />
+          <Probe actionDef={panAction} classifyTarget={() => ({ body: 'empty' })} />
         </Harness>,
       );
       const canvas = container.querySelector('canvas')!;
@@ -234,7 +234,7 @@ describe('useGestureDispatcher', () => {
         <Harness>
           <Probe
             actionDef={panAction}
-            classifyTarget={() => 'empty'}
+            classifyTarget={() => ({ body: 'empty' })}
             affordanceAt={() => ({ kind: 'handle:min-min', cursor: 'nwse-resize' })}
           />
         </Harness>,
@@ -248,7 +248,7 @@ describe('useGestureDispatcher', () => {
       const grabbing: Action = { ...panAction, activeCursor: 'grabbing' };
       const { container } = render(
         <Harness>
-          <Probe actionDef={grabbing} classifyTarget={() => 'empty'} />
+          <Probe actionDef={grabbing} classifyTarget={() => ({ body: 'empty' })} />
         </Harness>,
       );
       const canvas = container.querySelector('canvas')!;
@@ -263,7 +263,7 @@ describe('useGestureDispatcher', () => {
     it('an in-flight action with no activeCursor holds its hover hint', () => {
       const { container } = render(
         <Harness>
-          <Probe actionDef={panAction} classifyTarget={() => 'empty'} />
+          <Probe actionDef={panAction} classifyTarget={() => ({ body: 'empty' })} />
         </Harness>,
       );
       const canvas = container.querySelector('canvas')!;
@@ -278,7 +278,7 @@ describe('useGestureDispatcher', () => {
       delete (noCursorAction as { cursor?: string }).cursor;
       const { container } = render(
         <Harness>
-          <Probe actionDef={noCursorAction} classifyTarget={() => 'empty'} />
+          <Probe actionDef={noCursorAction} classifyTarget={() => ({ body: 'empty' })} />
         </Harness>,
       );
       const canvas = container.querySelector('canvas')!;
@@ -304,7 +304,7 @@ describe('useGestureDispatcher', () => {
     it('fires while the button is still down, before any movement', () => {
       const spy = vi.fn();
       const { container } = render(
-        <Harness><Probe actionDef={pressAction(spy)} classifyTarget={() => 'empty'} /></Harness>,
+        <Harness><Probe actionDef={pressAction(spy)} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
       );
       const canvas = container.querySelector('canvas')!;
       act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
@@ -330,7 +330,7 @@ describe('useGestureDispatcher', () => {
         registry?.register(dragAction);
         useGestureDispatcher({
           canvasRef, actions: registry!, toolsById: new Map(), enabled: true,
-          classifyTarget: () => 'empty',
+          classifyTarget: () => ({ body: 'empty' as const }),
         });
         return <canvas ref={canvasRef} />;
       }
@@ -352,7 +352,7 @@ describe('useGestureDispatcher', () => {
         invoker: { timing: 'ongoing', start: () => { startSpy(); return { onEnd: () => {} }; } },
       };
       const { container } = render(
-        <Harness><Probe actionDef={bad} classifyTarget={() => 'empty'} /></Harness>,
+        <Harness><Probe actionDef={bad} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
       );
       const canvas = container.querySelector('canvas')!;
       act(() => { fire(canvas, 'pointerdown', { clientX: 0, clientY: 0, pointerId: 1 }); });
@@ -373,7 +373,7 @@ describe('useGestureDispatcher', () => {
         invoker: { timing: 'immediate', run: () => spy() },
       };
       const { container } = render(
-        <Harness><Probe actionDef={clickAction} classifyTarget={() => 'empty'} /></Harness>,
+        <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
       );
       const canvas = container.querySelector('canvas')!;
       act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
@@ -391,7 +391,7 @@ describe('useGestureDispatcher', () => {
         invoker: { timing: 'immediate', run: (_d, params) => spy(params) },
       };
       const { container } = render(
-        <Harness><Probe actionDef={clickAction} classifyTarget={() => 'empty'} /></Harness>,
+        <Harness><Probe actionDef={clickAction} classifyTarget={() => ({ body: 'empty' })} /></Harness>,
       );
       const canvas = container.querySelector('canvas')!;
       // Press and release 2px apart — under the 4px drag threshold, so this
@@ -451,6 +451,95 @@ describe('useGestureDispatcher', () => {
       // Just mounting shouldn't fire start or end.
       expect(startSpy).not.toHaveBeenCalled();
       expect(endSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('kind: target forms read the classifier’s node kind', () => {
+    function fire(el: Element, type: string, init: PointerEventInit = {}) {
+      el.dispatchEvent(new PointerEvent(type, { bubbles: true, ...init }));
+    }
+
+    function clickOnce(container: HTMLElement) {
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointerdown', { clientX: 10, clientY: 10, pointerId: 1 }); });
+      act(() => { fire(canvas, 'pointerup', { clientX: 10, clientY: 10, pointerId: 1 }); });
+    }
+
+    const clickAction = (spy: () => void, target: string): Action => ({
+      id: 'demo.kinded',
+      label: 'kinded',
+      defaultBinding: { kind: 'click', target: target as 'empty' },
+      invoker: { timing: 'immediate', run: () => spy() },
+    });
+
+    it('fires when the classifier reports the bound kind', () => {
+      const spy = vi.fn();
+      const { container } = render(
+        <Harness>
+          <Probe
+            actionDef={clickAction(spy, 'kind:text')}
+            classifyTarget={() => ({ body: 'unselected-body', kind: 'text' })}
+          />
+        </Harness>,
+      );
+      clickOnce(container);
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fire when the classifier reports a different kind', () => {
+      const spy = vi.fn();
+      const { container } = render(
+        <Harness>
+          <Probe
+            actionDef={clickAction(spy, 'kind:text')}
+            classifyTarget={() => ({ body: 'unselected-body', kind: 'rect' })}
+          />
+        </Harness>,
+      );
+      clickOnce(container);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('does not fire when the classifier names no kind', () => {
+      const spy = vi.fn();
+      const { container } = render(
+        <Harness>
+          <Probe
+            actionDef={clickAction(spy, 'kind:text')}
+            classifyTarget={() => ({ body: 'unselected-body' })}
+          />
+        </Harness>,
+      );
+      clickOnce(container);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('the :selected suffix additionally requires the body to be selected', () => {
+      const spy = vi.fn();
+      const { container } = render(
+        <Harness>
+          <Probe
+            actionDef={clickAction(spy, 'kind:text:selected')}
+            classifyTarget={() => ({ body: 'unselected-body', kind: 'text' })}
+          />
+        </Harness>,
+      );
+      clickOnce(container);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('fires for :selected when the body is in the selection', () => {
+      const spy = vi.fn();
+      const { container } = render(
+        <Harness>
+          <Probe
+            actionDef={clickAction(spy, 'kind:text:selected')}
+            classifyTarget={() => ({ body: 'selected-body', kind: 'text' })}
+          />
+        </Harness>,
+      );
+      clickOnce(container);
+      expect(spy).toHaveBeenCalledTimes(1);
     });
   });
 });

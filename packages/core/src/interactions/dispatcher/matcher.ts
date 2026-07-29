@@ -57,10 +57,32 @@ function modsCount(mods: ModSpec | undefined): number {
   return n;
 }
 
+/**
+ * Rank a `TargetSpec` by how much it narrows. Graduated so a target that
+ * names a specific thing outranks one that only names a class of things:
+ *
+ *    3 — `kind:<k>:selected`: this kind AND in the selection
+ *    2 — `kind:<k>` / `affordance:<k>`: one named kind
+ *    1 — `'empty'` / `'selected-body'` / `'unselected-body'` / `{ kindOf }`
+ *    0 — no target
+ *
+ * A predicate stays at 1 because its narrowness is unknowable statically —
+ * `hit == null` and `isRotateHandle` are the same shape here. That is also
+ * what keeps this addition from reordering any binding that existed before
+ * the `kind:`/`affordance:` forms resolved: every one of them ranks 0 or 1.
+ */
+function targetRank(target: unknown): number {
+  if (target === undefined) return 0;
+  if (typeof target !== 'string') return 1;
+  if (target.startsWith('kind:')) return target.endsWith(':selected') ? 3 : 2;
+  if (target.startsWith('affordance:')) return 2;
+  return 1;
+}
+
 /** CSS-style specificity tuple for a GestureSpec. Higher tuple wins under
  *  lexicographic compare. Dimensions, in order of precedence:
  *
- *    [0] target — 1 if the spec declares a target predicate, else 0.
+ *    [0] target — how much the spec's target narrows; see `targetRank`.
  *    [1] mods   — count of required modifier keys (shift/alt/ctrl/meta/mod).
  *                 `'optional'` does NOT count.
  *    [2] phase  — 1 if the spec declares a `phase` field, else 0.
@@ -72,7 +94,7 @@ function modsCount(mods: ModSpec | undefined): number {
 export function specificity(
   spec: GestureSpec,
 ): readonly [number, number, number, number] {
-  const t = ('target' in spec && spec.target !== undefined) ? 1 : 0;
+  const t = targetRank('target' in spec ? spec.target : undefined);
   const mods = ('mods' in spec ? spec.mods : undefined) as ModSpec | undefined;
   const m = modsCount(mods);
   const p = ('phase' in spec && spec.phase !== undefined) ? 1 : 0;

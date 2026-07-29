@@ -65,6 +65,8 @@ export type {
   InputEvent,
   EventModifiers,
   BodyTarget,
+  BodyKind,
+  BodyClassification,
   IngestItem,
   KeyEvent,
   KeyHeldEvent,

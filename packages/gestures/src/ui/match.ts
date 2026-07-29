@@ -11,12 +11,21 @@
  * This keeps the matcher's output a simple boolean and avoids a three-valued
  * return type.
  *
- * ## TargetSpec string-form decision
- * String-form TargetSpec values ('empty', 'selected-body', `kind:*`, etc.) are
- * sugar for the kit-owned object-kind registry, which hasn't shipped yet
- * (see docs/TODO.md Tier 1). Phase 3 returns `false` for any string-form
- * target spec so that callers get an explicit no-match rather than a silent
- * wildcard or a runtime throw.
+ * ## TargetSpec string forms
+ * Every form `TargetSpec` declares is resolved here, each from a different
+ * field the dispatcher packs onto the event:
+ *
+ * | Form | Read from | Supplied by |
+ * | --- | --- | --- |
+ * | `'empty'` / `'selected-body'` / `'unselected-body'` | `bodyTarget` | the `classifyTarget` thunk |
+ * | `kind:<k>` / `kind:<k>:selected` | `bodyKind` + `bodyTarget` | the `classifyTarget` thunk's node-kind resolver |
+ * | `affordance:<k>` | the raw target's `.kind` | the `affordanceAt` thunk |
+ * | `{ kindOf }` | the raw target + `bodyTarget` | both |
+ *
+ * A form whose source field is absent does not match — an unwired
+ * `classifyTarget` makes every `bodyTarget`/`bodyKind` form `false` rather
+ * than a silent wildcard. That is deliberate: a binding that can't be
+ * evaluated should stay out of the way of one that can.
  */
 
 import type { GestureSpec, ModSpec, PhaseSpec } from './spec';
@@ -113,6 +122,14 @@ export function matchKey(eventKey: string, specKey: string | string[]): boolean 
 // matchTarget
 // ---------------------------------------------------------------------------
 
+/** Read a `.kind` string off an affordance hit, or `undefined` when the hit
+ *  is absent or shaped differently. */
+function affordanceKindOf(target: unknown): string | undefined {
+  if (typeof target !== 'object' || target === null) return undefined;
+  const k = (target as { kind?: unknown }).kind;
+  return typeof k === 'string' ? k : undefined;
+}
+
 /**
  * Match a target value + event against a TargetSpec.
  *
@@ -122,12 +139,30 @@ export function matchKey(eventKey: string, specKey: string | string[]): boolean 
  *   the second arg.
  * - `'empty'`, `'selected-body'`, `'unselected-body'` — compared against
  *   `bodyTarget` on the event (populated by `useGestureDispatcher` when a
- *   `classifyTarget` thunk is supplied). Falls back to `false` when absent
- *   (kind registry not yet wired).
- * - Other string-forms (`kind:*`, `affordance:*`) — not yet supported; return false.
+ *   `classifyTarget` thunk is supplied).
+ * - `kind:<k>` — compared against `bodyKind`, the *semantic* kind of the node
+ *   body under the point (`'text'`, `'rect'`, an app's own `'app:note'`), as
+ *   resolved by `classifyTarget`. Selection-agnostic.
+ * - `kind:<k>:selected` — the same, and additionally requires the body to be
+ *   in the current selection. Only the final `:selected` is a suffix, so a
+ *   kind may itself contain colons.
+ * - `affordance:<k>` — exact match against the affordance hit's own `kind`.
+ *   Kit affordance kinds are `handle:<corner>`, `'rotate-handle'`,
+ *   `anchor:<i>`, `controlIn:<i>` / `controlOut:<i>`, and `layer:<id>` for a
+ *   registered layer's widget. The match is exact and includes any parameter,
+ *   so "any anchor" needs the `isAnchor` predicate rather than this form.
  * - `undefined` spec.target — any target is accepted.
+ *
+ * Every string form resolves to `false` when the field it reads is absent, so
+ * an unwired `classifyTarget`/`affordanceAt` yields no-match rather than a
+ * silent wildcard.
  */
-export function matchTarget(target: unknown, specTarget: unknown, bodyTarget?: string): boolean {
+export function matchTarget(
+  target: unknown,
+  specTarget: unknown,
+  bodyTarget?: string,
+  bodyKind?: string,
+): boolean {
   if (specTarget === undefined) return true;
 
   // kindOf predicate form — receives the raw target (affordance hit for
@@ -141,7 +176,9 @@ export function matchTarget(target: unknown, specTarget: unknown, bodyTarget?: s
     return (specTarget as { kindOf: (t: unknown, bodyTarget?: string) => boolean }).kindOf(target, bodyTarget);
   }
 
-  // String-form: 'empty', 'selected-body', 'unselected-body'
+  if (typeof specTarget !== 'string') return false;
+
+  // Body-class forms: 'empty', 'selected-body', 'unselected-body'.
   // Resolved from the `classifyTarget` result packed into the event's `bodyTarget`.
   if (
     specTarget === 'empty' ||
@@ -153,7 +190,27 @@ export function matchTarget(target: unknown, specTarget: unknown, bodyTarget?: s
     return bodyTarget === specTarget;
   }
 
-  // Other string-forms (kind:*, affordance:*) — not yet supported.
+  // Affordance form: exact match on the hit's own kind.
+  if (specTarget.startsWith('affordance:')) {
+    const wanted = specTarget.slice('affordance:'.length);
+    return affordanceKindOf(target) === wanted;
+  }
+
+  // Node-kind forms. `:selected` is only a suffix when it is the LAST
+  // segment — `kind:app:note` names a kind that happens to contain a colon.
+  if (specTarget.startsWith('kind:')) {
+    if (bodyKind === undefined) return false;
+    let wanted = specTarget.slice('kind:'.length);
+    let requireSelected = false;
+    if (wanted.endsWith(':selected')) {
+      wanted = wanted.slice(0, -':selected'.length);
+      requireSelected = true;
+    }
+    if (bodyKind !== wanted) return false;
+    return requireSelected ? bodyTarget === 'selected-body' : true;
+  }
+
+  // Unrecognized string form.
   return false;
 }
 
@@ -298,19 +355,19 @@ export function matchSpec(
       // symmetry is what lets one predicate describe "this piece of chrome"
       // for both gestures, and what lets `hit == null` mean "not chrome".
       // String-form specs read `bodyTarget` and don't look at either.
-      return matchTarget(e.affordance, spec.target, e.bodyTarget);
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'doubleClick': {
       if (e.kind !== 'doubleclick') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.target, spec.target, e.bodyTarget);
+      return matchTarget(e.target, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'contextMenu': {
       if (e.kind !== 'contextmenu') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.target, spec.target, e.bodyTarget);
+      return matchTarget(e.target, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'drag': {
@@ -324,7 +381,7 @@ export function matchSpec(
       if (!matchModifiers(e, spec.mods, isMac)) return false;
       // Pass the affordance hit as the `target` for `kindOf` predicates.
       // Pass `bodyTarget` for string-form TargetSpec values.
-      return matchTarget(e.affordance, spec.target, e.bodyTarget);
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'pointerDown': {
@@ -332,7 +389,7 @@ export function matchSpec(
       // buffered one the drag threshold releases.
       if (e.kind !== 'pointerdown' || e.stage !== 'press') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.affordance, spec.target, e.bodyTarget);
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'multiTouch': {

@@ -24,8 +24,7 @@
  *
  * ## Self-guard: only act on text nodes
  *
- * The `classifyTarget` thunk yields `'selected-body'` for any selected node
- * kind — there's no per-kind filter yet (that's a Phase 14e follow-up). To
+ * The `'selected-body'` target yields a match for any selected node kind. To
  * avoid entering text-edit mode when the text tool happens to have a non-text
  * node selected, the action self-guards via an optional `isTextNode` predicate
  * on `TextEditDep`:
@@ -35,12 +34,20 @@
  *   text tool).
  * - When `isTextNode(id)` returns `false`: action is a no-op for that node.
  *
- * ### Future: per-kind target classification (Phase 14e)
+ * ### Pre-filtering at dispatch time
  *
- * Once `classifyTarget` surfaces node-kind info on body hits, the binding spec
- * can use a `{ kindOf: hit => hit?.kind === 'text' }` predicate to pre-filter
- * at dispatch time, making the `isTextNode` guard redundant. The action can
- * then drop `isTextNode` from `TextEditDep`.
+ * `classifyTarget` now surfaces node kind, so a binding can pre-filter instead
+ * of relying on the self-guard:
+ *
+ * ```ts
+ * { spec: { kind: 'click', target: 'kind:text:selected' }, actionId: 'enterTextEdit' }
+ * ```
+ *
+ * That reads the *routing trait's* kind, so it matches whatever names the
+ * consumer registered in `<SceneCanvas routing>` — `'text'` under the kit's
+ * inferred default. `isTextNode` stays on `TextEditDep` because it also covers
+ * consumers who bind the broader `'selected-body'` target, and because it is
+ * the only guard for a consumer who opted out of routing entirely.
  *
  * ## Migration plan for useTextTool
  *
@@ -54,7 +61,7 @@
  *    return value, plus an `isTextNode` predicate that checks `data.kind === 'text'`
  *    (or however the consumer identifies text nodes).
  * 3. The existing `hitExisting` gate in `useTextTool`'s click route becomes
- *    redundant — remove it in Phase 14e dead-code cleanup.
+ *    redundant — remove it in the same pass.
  */
 
 import type { Action } from '../registry';

@@ -88,7 +88,7 @@ function MountDispatcher({
     actions: registry!,
     toolsById,
     // All clicks land on 'empty' — no bodies to hit.
-    classifyTarget: () => 'empty',
+    classifyTarget: () => ({ body: 'empty' }),
     // Active tool is 'rect'.
   });
   return <canvas ref={canvasRef} data-testid="canvas" />;

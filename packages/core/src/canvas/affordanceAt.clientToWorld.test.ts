@@ -109,17 +109,17 @@ describe('buildClassifyTarget at scale=2 with non-zero pan', () => {
 
   it('client (50,50) → world (25,25) → "selected-body"', () => {
     const wp = clientToWorld(50, 50, rect, view);
-    expect(classify(wp)).toBe('selected-body');
+    expect(classify(wp).body).toBe('selected-body');
   });
 
   it('client (120,120) → world (60,60) → "empty"', () => {
     const wp = clientToWorld(120, 120, rect, view);
-    expect(classify(wp)).toBe('empty');
+    expect(classify(wp).body).toBe('empty');
   });
 
   it('client (20,20) → world (10,10) → body boundary → "selected-body"', () => {
     const wp = clientToWorld(20, 20, rect, view);
-    expect(classify(wp)).toBe('selected-body');
+    expect(classify(wp).body).toBe('selected-body');
   });
 });
 
@@ -142,12 +142,12 @@ describe('buildClassifyTarget with canvas at non-zero rect offset', () => {
 
   it('client (125, 75) → world (25,25) → "selected-body"', () => {
     const wp = clientToWorld(125, 75, rect, view);
-    expect(classify(wp)).toBe('selected-body');
+    expect(classify(wp).body).toBe('selected-body');
   });
 
   it('client (200, 150) → world (100,100) → "empty"', () => {
     const wp = clientToWorld(200, 150, rect, view);
-    expect(classify(wp)).toBe('empty');
+    expect(classify(wp).body).toBe('empty');
   });
 });
 

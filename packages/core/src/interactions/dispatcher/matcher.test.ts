@@ -132,6 +132,28 @@ describe('specificity (tuple shape)', () => {
     };
     expect(specificity(spec)).toEqual([1, 2, 1, 1]);
   });
+
+  describe('graduated target specificity', () => {
+    const targetRank = (target: unknown): number =>
+      specificity({ kind: 'click', target } as GestureSpec)[0];
+
+    it('a body class and a predicate rank the same as before', () => {
+      expect(targetRank('selected-body')).toBe(1);
+      expect(targetRank({ kindOf: () => true })).toBe(1);
+    });
+
+    it('a node kind outranks a bare body class', () => {
+      expect(targetRank('kind:text')).toBeGreaterThan(targetRank('selected-body'));
+    });
+
+    it('a node kind plus selection outranks the kind alone', () => {
+      expect(targetRank('kind:text:selected')).toBeGreaterThan(targetRank('kind:text'));
+    });
+
+    it('an exact affordance outranks a bare body class', () => {
+      expect(targetRank('affordance:rotate-handle')).toBeGreaterThan(targetRank('empty'));
+    });
+  });
 });
 
 describe('matchSorted (specificity ordering)', () => {

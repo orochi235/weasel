@@ -442,8 +442,9 @@ export interface DepSchema {
    * tool when text editing is available.
    *
    * The optional `isTextNode` predicate guards against entering edit mode on
-   * non-text nodes when no per-kind binding filter is available (Phase 14e
-   * follow-up will add per-kind classification to `classifyTarget`).
+   * non-text nodes. A binding can pre-filter instead with a
+   * `target: 'kind:text:selected'` spec; the guard remains for consumers who
+   * bind the broader `'selected-body'` target or opted out of routing.
    */
   textEdit: TextEditDep;
   /**

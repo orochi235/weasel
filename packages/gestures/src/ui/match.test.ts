@@ -3,6 +3,7 @@ import {
   matchModifiers,
   matchKey,
   matchSpec,
+  matchTarget,
   matchPhase,
   mimeMatchesGlob,
   matchIngestTypes,
@@ -472,6 +473,122 @@ describe('matchSpec — phase gate', () => {
     expect(matchSpec(wheelEv, spec, false, polygonEngaged)).toBe(false);
     // Cmd held but idle: phase gate fails.
     expect(matchSpec(cmdWheel, spec, false, polygonIdle)).toBe(false);
+  });
+});
+
+describe('matchTarget — affordance: string form', () => {
+  it('matches the affordance hit whose kind equals the suffix', () => {
+    expect(matchTarget({ kind: 'rotate-handle' }, 'affordance:rotate-handle')).toBe(true);
+  });
+
+  it('does not match a different affordance kind', () => {
+    expect(matchTarget({ kind: 'handle:top-left' }, 'affordance:rotate-handle')).toBe(false);
+  });
+
+  it('does not match when there is no affordance hit', () => {
+    expect(matchTarget(null, 'affordance:rotate-handle')).toBe(false);
+    expect(matchTarget(undefined, 'affordance:rotate-handle')).toBe(false);
+  });
+
+  it('does not match a hit whose kind is not a string', () => {
+    expect(matchTarget({ kind: 7 }, 'affordance:7')).toBe(false);
+  });
+
+  it('matches parameterized kinds exactly, including the parameter', () => {
+    expect(matchTarget({ kind: 'anchor:3' }, 'affordance:anchor:3')).toBe(true);
+    expect(matchTarget({ kind: 'anchor:3' }, 'affordance:anchor')).toBe(false);
+  });
+
+  it('matches a registered layer hit by its layer:<id> kind', () => {
+    expect(matchTarget({ kind: 'layer:weasel-hud' }, 'affordance:layer:weasel-hud')).toBe(true);
+  });
+});
+
+describe('matchTarget — kind: string form', () => {
+  it('matches the body kind regardless of selection state', () => {
+    expect(matchTarget(null, 'kind:text', 'unselected-body', 'text')).toBe(true);
+    expect(matchTarget(null, 'kind:text', 'selected-body', 'text')).toBe(true);
+  });
+
+  it('does not match a different body kind', () => {
+    expect(matchTarget(null, 'kind:text', 'selected-body', 'rect')).toBe(false);
+  });
+
+  it('does not match when the body kind is unknown', () => {
+    expect(matchTarget(null, 'kind:text', 'selected-body', undefined)).toBe(false);
+  });
+
+  it('does not match empty canvas', () => {
+    expect(matchTarget(null, 'kind:text', 'empty', undefined)).toBe(false);
+  });
+
+  it(':selected suffix additionally requires the body to be selected', () => {
+    expect(matchTarget(null, 'kind:text:selected', 'selected-body', 'text')).toBe(true);
+    expect(matchTarget(null, 'kind:text:selected', 'unselected-body', 'text')).toBe(false);
+  });
+
+  it(':selected suffix still requires the kind to match', () => {
+    expect(matchTarget(null, 'kind:text:selected', 'selected-body', 'rect')).toBe(false);
+  });
+
+  it('treats a kind containing colons as part of the kind, not the :selected suffix', () => {
+    expect(matchTarget(null, 'kind:app:note', 'unselected-body', 'app:note')).toBe(true);
+    expect(matchTarget(null, 'kind:app:note:selected', 'selected-body', 'app:note')).toBe(true);
+    expect(matchTarget(null, 'kind:app:note:selected', 'unselected-body', 'app:note')).toBe(false);
+  });
+});
+
+describe('matchSpec — bodyKind threading', () => {
+  it('a click spec resolves kind: against the event bodyKind', () => {
+    const spec = { kind: 'click' as const, target: 'kind:text' as const };
+    const onText = {
+      kind: 'click' as const, ...noMods,
+      bodyTarget: 'unselected-body' as const, bodyKind: 'text',
+    };
+    const onRect = { ...onText, bodyKind: 'rect' };
+    expect(matchSpec(onText, spec, false)).toBe(true);
+    expect(matchSpec(onRect, spec, false)).toBe(false);
+  });
+
+  it('a drag spec resolves affordance: against the event affordance', () => {
+    const spec = { kind: 'drag' as const, target: 'affordance:rotate-handle' as const };
+    const onRing = {
+      kind: 'pointerdown' as const, ...noMods,
+      affordance: { kind: 'rotate-handle' },
+    };
+    const onCorner = { ...onRing, affordance: { kind: 'handle:top-left' } };
+    expect(matchSpec(onRing, spec, false)).toBe(true);
+    expect(matchSpec(onCorner, spec, false)).toBe(false);
+  });
+
+  it('a doubleClick spec resolves kind: against the event bodyKind', () => {
+    const spec = { kind: 'doubleClick' as const, target: 'kind:text:selected' as const };
+    const e = {
+      kind: 'doubleclick' as const, target: undefined, ...noMods,
+      bodyTarget: 'selected-body' as const, bodyKind: 'text',
+    };
+    expect(matchSpec(e, spec, false)).toBe(true);
+    expect(matchSpec({ ...e, bodyTarget: 'unselected-body' as const }, spec, false)).toBe(false);
+  });
+
+  it('a contextMenu spec resolves kind: against the event bodyKind', () => {
+    const spec = { kind: 'contextMenu' as const, target: 'kind:rect' as const };
+    const e = {
+      kind: 'contextmenu' as const, target: undefined, ...noMods,
+      bodyTarget: 'unselected-body' as const, bodyKind: 'rect',
+    };
+    expect(matchSpec(e, spec, false)).toBe(true);
+    expect(matchSpec({ ...e, bodyKind: 'ellipse' }, spec, false)).toBe(false);
+  });
+
+  it('a pointerDown spec resolves affordance: against the event affordance', () => {
+    const spec = { kind: 'pointerDown' as const, target: 'affordance:layer:weasel-hud' as const };
+    const e = {
+      kind: 'pointerdown' as const, stage: 'press' as const, ...noMods,
+      affordance: { kind: 'layer:weasel-hud' },
+    };
+    expect(matchSpec(e, spec, false)).toBe(true);
+    expect(matchSpec({ ...e, affordance: undefined }, spec, false)).toBe(false);
   });
 });
 

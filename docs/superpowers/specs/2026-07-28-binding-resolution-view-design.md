@@ -170,6 +170,21 @@ own bundles offer no `chrome:` options at all, since kit tools describe chrome
 with predicates throughout. The picker still offers them because a consumer
 tool may declare the string form; it just won't match until that gap closes.
 
+> **Closed 2026-07-28.** `matchTarget` now resolves every form `TargetSpec`
+> declares. `affordance:<k>` matches the hit's own `kind`; `kind:<k>` and
+> `kind:<k>:selected` match a new `bodyKind` field, which `classifyTarget`
+> supplies from the **routing trait** — the same classifier that names
+> `Hit.kind`, so bindings and routing tables share one kind vocabulary rather
+> than each getting its own. `classifyTarget` now returns
+> `{ body, kind }` instead of a bare body string (source-breaking), and target
+> specificity is graduated: `kind:<k>:selected` (3) > `kind:<k>` /
+> `affordance:<k>` (2) > body class / predicate (1). Predicates stay at 1
+> because their narrowness is statically unknowable, which is also what keeps
+> the graduation from reordering any pre-existing binding. The widget's picker
+> now offers `node:` options alongside `chrome:`, enumerated the same
+> self-limiting way. The kit's own bundles still describe chrome with
+> predicates throughout, so both lists stay empty for a kit-only tool set.
+
 ## 5. `findConflicts`'s phase collapse — latent, with a named trigger
 
 Adjacent finding, folded in because this work makes it load-bearing.

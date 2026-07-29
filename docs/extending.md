@@ -92,6 +92,35 @@ Every layer's `hitTest` is consulted on pointerdown, and the result rides the ge
 
 A tool that must not lose a gesture to chrome does it in the binding, by declining hits it doesn't own: `target: { kindOf: (hit) => hit == null }` matches only presses that landed on the scene. (`Tool.claimsAll`, which told the retired tool-routing dispatcher to bypass the layer pipeline wholesale, is gone — it was a per-tool override of a global walk, where this is a per-binding statement about what the binding wants.)
 
+### Naming a target
+
+`spec.target` takes one of five forms. Reach for a predicate when you need
+one; the string forms are shorter and rank higher in specificity, so a binding
+that can say what it wants in a string should.
+
+| Form | Matches | Rank |
+| --- | --- | --- |
+| `'empty'` | a press on open canvas | 1 |
+| `'selected-body'` / `'unselected-body'` | a press on a node body, by selection state | 1 |
+| `kind:<k>` | a press on a body whose **routing-trait kind** is `<k>` | 2 |
+| `kind:<k>:selected` | the same, and that body is in the selection | 3 |
+| `affordance:<k>` | a press on chrome whose hit `kind` is exactly `<k>` | 2 |
+| `{ kindOf: (hit, bodyTarget) => boolean }` | anything you can decide in code | 1 |
+
+`<k>` in the `kind:` forms is a name from the `routing` prop — the same
+vocabulary that names `Hit.kind`, not a second one. Without `routing` the kit
+infers `'text'` / `'path'` / `'image'` from the data shape; `routing={[]}`
+opts out and makes every `kind:` target unmatchable.
+
+Rank is the first element of the CSS-style specificity tuple: within one
+scope, a higher-ranked target wins the gesture. Predicates rank 1 no matter
+how narrow they are, because nothing can tell statically whether a `kindOf`
+means "the rotate ring" or "anything at all".
+
+`affordance:<k>` is an **exact** match including any parameter, so
+`affordance:anchor:3` names one anchor and there is no `affordance:anchor`
+that names them all — that one wants the `isAnchor` predicate.
+
 ## Custom gesture behaviors
 
 A behavior plugs into an action's behavior chain — via `BindingOpts.behaviors`

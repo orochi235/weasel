@@ -43,6 +43,9 @@ export type ResolutionBodyTarget = (typeof RESOLUTION_BODY_TARGETS)[number];
 /** `affordance:` prefix marks a chrome target in the picker's flat list. */
 export const AFFORDANCE_PREFIX = 'affordance:';
 
+/** `kind:` prefix marks a node-kind target in the picker's flat list. */
+export const KIND_PREFIX = 'kind:';
+
 export interface ResolutionMods {
   shift?: boolean;
   alt?: boolean;
@@ -61,11 +64,27 @@ export interface ResolutionInput {
 
 /** Resolve the picker's flat `target` string into the field(s) that
  *  `matchTarget` actually reads for a given event shape: either a
- *  synthesized `{ kind }` hit (chrome) or a `bodyTarget` classification
- *  (scene). Mutually exclusive — see the module doc for why. */
-function resolveTarget(target: string): { hit?: { kind: string }; bodyTarget?: BodyTarget } {
+ *  synthesized `{ kind }` hit (chrome) or a body classification
+ *  (`bodyTarget` + optionally `bodyKind`). Chrome and body are mutually
+ *  exclusive — see the module doc for why. */
+function resolveTarget(
+  target: string,
+): { hit?: { kind: string }; bodyTarget?: BodyTarget; bodyKind?: string } {
   if (target.startsWith(AFFORDANCE_PREFIX)) {
     return { hit: { kind: target.slice(AFFORDANCE_PREFIX.length) } };
+  }
+  if (target.startsWith(KIND_PREFIX)) {
+    // A node-kind pick names a body, so it also has to say how that body
+    // relates to the selection. `:selected` says so explicitly; without it the
+    // pick is selection-agnostic, and 'unselected-body' is the reading that
+    // keeps a `kind:<k>:selected` binding from matching a `kind:<k>` pick.
+    let kind = target.slice(KIND_PREFIX.length);
+    let bodyTarget: BodyTarget = 'unselected-body';
+    if (kind.endsWith(':selected')) {
+      kind = kind.slice(0, -':selected'.length);
+      bodyTarget = 'selected-body';
+    }
+    return { bodyTarget, bodyKind: kind };
   }
   // Caller is expected to have picked this from RESOLUTION_BODY_TARGETS.
   return { bodyTarget: target as BodyTarget };
@@ -96,34 +115,34 @@ export function synthesizeInput(input: ResolutionInput): InputEvent {
 
     case 'click': {
       // click's kindOf predicate reads `affordance`, not `target`.
-      const { hit, bodyTarget } = resolveTarget(input.target);
-      return { kind: 'click', ...mods, affordance: hit, bodyTarget };
+      const { hit, bodyTarget, bodyKind } = resolveTarget(input.target);
+      return { kind: 'click', ...mods, affordance: hit, bodyTarget, bodyKind };
     }
 
     case 'doubleClick': {
       // doubleClick's kindOf predicate reads `target`; there is no
       // `affordance` field on DoubleClickEvent.
-      const { hit, bodyTarget } = resolveTarget(input.target);
-      return { kind: 'doubleclick', ...mods, target: hit, bodyTarget };
+      const { hit, bodyTarget, bodyKind } = resolveTarget(input.target);
+      return { kind: 'doubleclick', ...mods, target: hit, bodyTarget, bodyKind };
     }
 
     case 'contextMenu': {
-      const { hit, bodyTarget } = resolveTarget(input.target);
-      return { kind: 'contextmenu', ...mods, target: hit, bodyTarget };
+      const { hit, bodyTarget, bodyKind } = resolveTarget(input.target);
+      return { kind: 'contextmenu', ...mods, target: hit, bodyTarget, bodyKind };
     }
 
     case 'drag': {
       // The non-eager pointerdown dispatch (stage omitted) is what a `drag`
       // spec matches. `stage` must stay unset — 'press' is reserved for the
       // pointerDown case below.
-      const { hit, bodyTarget } = resolveTarget(input.target);
-      return { kind: 'pointerdown', ...mods, affordance: hit, bodyTarget };
+      const { hit, bodyTarget, bodyKind } = resolveTarget(input.target);
+      return { kind: 'pointerdown', ...mods, affordance: hit, bodyTarget, bodyKind };
     }
 
     case 'pointerDown': {
       // The eager, `stage: 'press'` dispatch of the same physical press.
-      const { hit, bodyTarget } = resolveTarget(input.target);
-      return { kind: 'pointerdown', ...mods, stage: 'press', affordance: hit, bodyTarget };
+      const { hit, bodyTarget, bodyKind } = resolveTarget(input.target);
+      return { kind: 'pointerdown', ...mods, stage: 'press', affordance: hit, bodyTarget, bodyKind };
     }
   }
 }
