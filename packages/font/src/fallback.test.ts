@@ -202,7 +202,6 @@ describe('warning accuracy', () => {
     const result = resolveFontVariant('Slab', 400, 'normal');
 
     expect(result.substituted).toEqual({ requested: 'Slab', resolved: 'Inter' });
-    expect(warn).toHaveBeenCalledTimes(1);
     const message = warn.mock.calls[0][0] as string;
     expect(message).not.toContain('is not registered');
     expect(message).toContain('no variant matching 400/normal');
@@ -217,6 +216,23 @@ describe('warning accuracy', () => {
     resolveFontVariant('Comic Sans', 400, 'normal');
 
     expect(warn.mock.calls[0][0]).toContain('is not registered');
+    warn.mockRestore();
+  });
+
+  it('warns once per variant, not once per resolution', async () => {
+    await registerTestFont('Inter', 400, 'normal');
+    setDefaultFontFamily('Inter');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    resolveFontVariant('Comic Sans', 400, 'normal');
+    resolveFontVariant('Comic Sans', 400, 'normal');
+    // Resolution runs per frame — an unguarded warn floods the console.
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    // …but a different variant is a distinct thing the app asked for and
+    // did not get, so the dedup must be keyed per variant, not per family.
+    resolveFontVariant('Comic Sans', 700, 'normal');
+    expect(warn).toHaveBeenCalledTimes(2);
     warn.mockRestore();
   });
 });
