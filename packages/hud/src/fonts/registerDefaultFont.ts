@@ -1,4 +1,4 @@
-import { registerFont } from '@weasel-js/core/renderer';
+import { registerFont } from '@weasel-js/font';
 
 // Vite/esbuild URL imports — these resolve to the bundled asset paths at build time.
 // In dev, they resolve to dev-server URLs the renderer can fetch.

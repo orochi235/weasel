@@ -1,5 +1,5 @@
 /**
- * Smoke test for the repo-root `scripts/gen-font.ts`. Lives under this
+ * Smoke test for `packages/font/scripts/gen-font.ts`. Lives under this
  * package's `src/` (rather than next to the script) because `scripts/` isn't
  * covered by any vitest project — the `weasel-ui` project's include glob is
  * `packages/**\/*.test.{ts,tsx}`
@@ -18,8 +18,8 @@ import { join, resolve } from 'node:path';
 import { parseBmFont } from './FontAtlas';
 
 const FONT_PATH = '/System/Library/Fonts/Supplemental/Arial.ttf';
-// packages/font/src -> repo root -> scripts/
-const SCRIPT_PATH = resolve(__dirname, '../../../scripts/gen-font.ts');
+// packages/font/src -> packages/font/scripts/
+const SCRIPT_PATH = resolve(__dirname, '../scripts/gen-font.ts');
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 describe.skipIf(!existsSync(FONT_PATH))('gen-font.ts smoke test', () => {

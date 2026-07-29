@@ -42,7 +42,7 @@
     "test:smoke": "vitest run --project=smoke",
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
     "check:manifests": "node scripts/check-publish-manifests.mjs",
-    "gen:font": "node scripts/gen-font.ts",
+    "gen:font": "node packages/font/scripts/gen-font.ts",
     "test:stories": "vitest run --project=storybook",
     "test:watch": "vitest",
     "test:changed": "vitest run --changed",

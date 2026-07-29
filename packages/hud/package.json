@@ -23,6 +23,7 @@
     "@weasel-js/core": ">=0.4.0"
   },
   "dependencies": {
+    "@weasel-js/font": "0.6.0",
     "@weasel-js/theme": "0.6.0"
   },
   "author": "orochi235",
