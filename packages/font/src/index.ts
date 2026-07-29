@@ -1,8 +1,10 @@
+// The published surface of this package. Deliberately narrower than the sum of
+// its modules' exports: adding an export later is free, removing one is
+// breaking. Internal tuning constants and implementation entry points stay
+// internal even though their modules export them for in-package use.
+
 export { parseBmFont, FIXTURE_FONT } from './FontAtlas';
 export type { BmFont, BmFontChar, BmFontInfo, BmFontCommon, BmFontKerning } from './FontAtlas';
-
-export { layoutGlyphs, quadsToVertexBuffer, buildQuadIndexBuffer } from './GlyphLayout';
-export type { GlyphQuad, GlyphLayoutStyle, GlyphLayoutOrigin } from './GlyphLayout';
 
 export {
   registerFont,
@@ -19,21 +21,15 @@ export {
   registerCanvasFont,
   unregisterCanvasFont,
   isCanvasFont,
-  getDynamicFace,
   subscribeGlyphReady,
   syncDynamicPageTexture,
   dynamicPageTextureId,
   resetBakeBudget,
-  PAGE_SIZE,
-  MAX_PAGES,
-  SDF_RADIUS,
-  SDF_CUTOFF,
   DEFAULT_BAKE_BUDGET,
   _getPagesForTests,
   _resetDynamicFontsForTests,
   __setGlyphRasterizerForTests,
 } from './dynamic/dynamicAtlas';
-export type { DynamicFace } from './dynamic/dynamicAtlas';
 
 export type { GlyphTextureSink, TexSource } from './textureSink';
 export {
