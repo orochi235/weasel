@@ -183,6 +183,28 @@ export function styleAtRange(
   return style as RangeStyle;
 }
 
+/**
+ * Does any run carry styling of its own? Per the additive-flags contract
+ * above, absent and `false` are the same state — "no run-level override" —
+ * so an array that is nothing but text reads as `false`, whether it came
+ * from a plain-text edit or from styling that was toggled back off.
+ *
+ * This is how the commit path tells "the edit produced run styling" from
+ * "the edit produced text", which is the question that decides whether a
+ * node grows a `runs` array. Iterating `STYLE_KEYS` rather than the run's
+ * own keys is what keeps it honest as `StyledRun` grows: a new styleable
+ * key is a compile error at `STYLE_KEYS` until it's listed, and then this
+ * sees it for free.
+ */
+export function runsCarryStyling(runs: readonly StyledRun[]): boolean {
+  return runs.some((run) =>
+    STYLE_KEYS.some((key) => {
+      const value = run[key];
+      return value !== undefined && value !== false;
+    }),
+  );
+}
+
 /** Apply `patch` to one run, deleting rather than storing "no override". */
 function patchRun(run: StyledRun, patch: RunStylePatch): StyledRun {
   const next: StyledRun = { ...run };

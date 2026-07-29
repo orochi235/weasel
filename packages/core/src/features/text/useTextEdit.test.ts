@@ -917,3 +917,63 @@ describe('useTextEdit — range styling surface', () => {
     expect(h.textCommits).toEqual([]);
   });
 });
+
+/**
+ * `startEdit` seeds a runs-less node's overlay with `overlay.innerText = …`,
+ * which jsdom does not implement — the assignment lands on an expando and
+ * creates no text nodes. Build the text node a browser would have built, so
+ * the styling and commit paths run against a real DOM rather than against
+ * the gap. Only the seeding is substituted; nothing downstream is faked.
+ */
+function seedPlainOverlay(overlay: HTMLElement, text: string): void {
+  overlay.replaceChildren(document.createTextNode(text));
+}
+
+describe('useTextEdit — commit routes on the styling the edit produced', () => {
+  it('commits runs for a node that never had any when the edit styled a range', async () => {
+    const h = makeRichHarness({ a: { text: 'one two' } });
+    expect(h.data.a.runs).toBeUndefined();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    // The node had no runs, so init took the plain-text branch.
+    expect(overlay.querySelectorAll('span[data-run]')).toHaveLength(0);
+    seedPlainOverlay(overlay, 'one two');
+    await selectCharsAndSettle(overlay, 0, 3);
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits).toEqual([{
+      id: 'a',
+      runs: [{ text: 'one', bold: true }, { text: ' two' }],
+    }]);
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'one two' }]);
+  });
+
+  it('takes the setText-only path when the edit produced no styling', async () => {
+    const h = makeRichHarness({ a: { text: 'one two' } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    seedPlainOverlay(overlay, 'one two');
+    await selectCharsAndSettle(overlay, 0, 3);
+    act(() => result.current.commit());
+    // The committed *text* isn't asserted here: the plain path reads
+    // `innerText`, which jsdom doesn't implement. What this pins is the
+    // routing — no pointless single-run array written back to the node.
+    expect(h.runCommits).toEqual([]);
+    expect(h.textCommits.map((c) => c.id)).toEqual(['a']);
+  });
+
+  it('still writes runs when an edit strips the styling a node already had', () => {
+    const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'ab', bold: true }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 2);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => result.current.commit());
+    // Routing on "did the edit produce styling" alone would leave the node's
+    // stale bold run in place; the node's prior runs have to keep it rich.
+    expect(h.runCommits).toEqual([{ id: 'a', runs: [{ text: 'ab' }] }]);
+  });
+});

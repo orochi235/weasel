@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { styleAtRange, applyStyleToRange, MIXED } from './rangeStyle';
+import { styleAtRange, applyStyleToRange, runsCarryStyling, MIXED } from './rangeStyle';
 import type { StyledRun } from '../runs';
 
 const runs: StyledRun[] = [
@@ -255,5 +255,37 @@ describe('applyStyleToRange', () => {
       { text: 'cd', bold: true },
       { text: 'ef' },
     ]);
+  });
+});
+
+describe('runsCarryStyling', () => {
+  it('is false for runs that are nothing but text', () => {
+    expect(runsCarryStyling([{ text: 'plain' }])).toBe(false);
+    expect(runsCarryStyling([{ text: 'two' }, { text: ' runs' }])).toBe(false);
+  });
+
+  it('is false for no runs at all', () => {
+    expect(runsCarryStyling([])).toBe(false);
+  });
+
+  it('is true when any run sets a flag', () => {
+    expect(runsCarryStyling([{ text: 'a' }, { text: 'b', bold: true }])).toBe(true);
+    expect(runsCarryStyling([{ text: 'a', italic: true }])).toBe(true);
+    expect(runsCarryStyling([{ text: 'a', underline: true }])).toBe(true);
+    expect(runsCarryStyling([{ text: 'a', strikethrough: true }])).toBe(true);
+  });
+
+  it('is true when any run sets a non-flag key', () => {
+    expect(runsCarryStyling([{ text: 'a', fontSize: 24 }])).toBe(true);
+    expect(runsCarryStyling([{ text: 'a', fontFamily: 'serif' }])).toBe(true);
+    expect(runsCarryStyling([{ text: 'a', fill: { fill: 'solid', color: '#f00' } }])).toBe(true);
+  });
+
+  it('counts letterSpacing: 0, which cancels node-level tracking', () => {
+    expect(runsCarryStyling([{ text: 'a', letterSpacing: 0 }])).toBe(true);
+  });
+
+  it('reads an explicit false flag as no styling — a run cannot un-set one', () => {
+    expect(runsCarryStyling([{ text: 'a', bold: false, underline: false }])).toBe(false);
   });
 });

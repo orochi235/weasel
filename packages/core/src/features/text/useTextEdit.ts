@@ -15,7 +15,7 @@ import { fontString, resolveTextStyle } from './textStyle';
 import type { StyledRun } from './runs';
 import { runsToPlainText } from './runs';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
-import { applyStyleToRange, styleAtRange } from './runs/rangeStyle';
+import { applyStyleToRange, runsCarryStyling, styleAtRange } from './runs/rangeStyle';
 import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
 
 // TODO: widen to `underline` / `strikethrough`. `rangeStyle.ts` already lists
@@ -141,7 +141,10 @@ export interface UseTextEditOptions {
    * Optional: commit rich-text runs back to the node. When omitted, only
    * `setText` is called with the plain-text form on commit. When provided,
    * commit calls both `setText` (with `runsToPlainText(runs)`) and
-   * `setRuns(id, runs)`.
+   * `setRuns(id, runs)` — but only when runs are actually in play: the node
+   * already had some, or the edit produced styling. A plain-text edit of a
+   * plain-text node still calls `setText` alone, so a node that has never
+   * been styled doesn't grow a single-run `runs` array just for being edited.
    */
   setRuns?: (id: string, runs: StyledRun[]) => void;
 }
@@ -232,15 +235,28 @@ export function useTextEdit(
       setEditingId(null);
       return;
     }
-    // Match the init-time guard: only treat the overlay as rich-text when
-    // getRuns returned a non-empty array (an empty array fell through to
-    // plain-text init, so commit should too).
-    const currentRuns = optsRef.current.getRuns?.(id);
-    const usedRuns = currentRuns != null && currentRuns.length > 0;
-    if (usedRuns && optsRef.current.setRuns) {
-      const runs = domToRuns(overlay);
+    // What decides this is whether *runs* are in play at the end of the
+    // edit — not whether the overlay was seeded from them. Mirroring the
+    // init-time guard (`getRuns` returned something non-empty) was the old
+    // rule, and it silently dropped every styling a freshly created text
+    // node acquired: no prior runs, so commit took the plain-text branch and
+    // `domToRuns`' output went in the bin. So two ways in:
+    //
+    // - the node already had runs — they have to be rewritten even when the
+    //   edit ended up unstyled, or stale styling survives a Cmd-B that
+    //   turned it off; or
+    // - the edit produced styling, whatever the node started as.
+    //
+    // A plain-text edit of a plain-text node satisfies neither and keeps the
+    // cheap path, so a node that has no `runs` doesn't grow a single-run
+    // array just for being edited.
+    const priorRuns = optsRef.current.getRuns?.(id);
+    const setRuns = optsRef.current.setRuns;
+    const runs = setRuns ? domToRuns(overlay) : [];
+    const hadRuns = priorRuns != null && priorRuns.length > 0;
+    if (setRuns && (hadRuns || runsCarryStyling(runs))) {
       optsRef.current.setText(id, runsToPlainText(runs));
-      optsRef.current.setRuns(id, runs);
+      setRuns(id, runs);
     } else {
       const text = overlay.innerText.replace(/\n$/, '');
       optsRef.current.setText(id, text);
