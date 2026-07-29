@@ -96,6 +96,81 @@ describe('ToggleBar multiple mode', () => {
   });
 });
 
+describe('ToggleBar multiple mode — mixed segments', () => {
+  const triItems = [
+    { value: 'b', label: 'B' },
+    { value: 'i', label: 'I' },
+    { value: 'u', label: 'U' },
+  ];
+
+  it('renders a mixed segment as aria-pressed="mixed"', () => {
+    const { container } = render(
+      <ToggleBar
+        mode="multiple"
+        items={triItems}
+        value={['b']}
+        mixedValues={['i']}
+        onChange={() => {}}
+      />,
+    );
+    const btns = container.querySelectorAll<HTMLElement>('button');
+    expect(btns[0].getAttribute('aria-pressed')).toBe('true');
+    expect(btns[1].getAttribute('aria-pressed')).toBe('mixed');
+    expect(btns[2].getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('turns a mixed segment fully on when clicked', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <ToggleBar
+        mode="multiple"
+        items={triItems}
+        value={['b']}
+        mixedValues={['i']}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(container.querySelectorAll('button')[1]);
+    expect(onChange).toHaveBeenCalledWith(['b', 'i']);
+  });
+
+  it('treats `value` as authoritative when a value is in both lists', () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <ToggleBar
+        mode="multiple"
+        items={triItems}
+        value={['b']}
+        mixedValues={['b']}
+        onChange={onChange}
+      />,
+    );
+    const btn = container.querySelectorAll<HTMLElement>('button')[0];
+    expect(btn.getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(btn);
+    expect(onChange).toHaveBeenCalledWith([]);
+  });
+
+  // `mixedValues` belongs to the multiple-mode union member, but TypeScript's
+  // excess-property check against a union accepts any key declared on *some*
+  // member — so single mode has to reject it at runtime rather than at the
+  // type level. Single mode has nothing to be mixed about: its aggregate is
+  // one value or none.
+  it('ignores mixedValues in single mode', () => {
+    const { container } = render(
+      <ToggleBar
+        items={items}
+        value="center"
+        mixedValues={['left']}
+        onChange={() => {}}
+      />,
+    );
+    const segs = container.querySelectorAll<HTMLElement>('[role="radio"]');
+    expect(segs[0].getAttribute('aria-pressed')).toBeNull();
+    expect(segs[0].getAttribute('aria-checked')).toBe('false');
+  });
+});
+
 describe('ToggleBar keyboard — single mode', () => {
   it('ArrowRight moves selection forward', () => {
     const onChange = vi.fn();

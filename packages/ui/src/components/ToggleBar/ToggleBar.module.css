@@ -127,6 +127,26 @@
   z-index: 2;
 }
 
+/* Mixed segment (`aria-pressed="mixed"`) — the sources disagree. Reads as a
+   deliberate third state rather than a dimmed "on": a flat accent wash with
+   none of the selected segment's gloss/cylinder treatment, so it can't be
+   mistaken for the glass lozenge at a glance. */
+.segmentMixed {
+  background: color-mix(in srgb, var(--wzl-accent) 22%, transparent);
+  color: var(--wzl-fg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wzl-accent) 45%, transparent);
+}
+
+.segmentMixed:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--wzl-accent) 32%, transparent);
+}
+
+.variant_minimal .segmentMixed {
+  background: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
+  box-shadow: none;
+  color: var(--wzl-fg);
+}
+
 /* Small variant — ~60% of the default height, with proportionally reduced
    padding and font. Sized for dense surfaces (lab control panels, inline
    filters, etc.). */
