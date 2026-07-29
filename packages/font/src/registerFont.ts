@@ -13,7 +13,10 @@ import {
   isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace,
   type DynamicFace,
 } from './dynamic/dynamicAtlas';
-import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
+import {
+  getFontFallbackPolicy, getDefaultFontFamily,
+  claimFallbackWarning, _clearFallbackWarnings,
+} from './fallback';
 
 export interface FontEntry {
   font: BmFont;
@@ -43,7 +46,7 @@ function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } 
 /** Test helper. Do not call from product code. */
 export function _resetFontRegistryForTests(): void {
   registry = new Map();
-  warnedMissingFamilies.clear();
+  _clearFallbackWarnings();
 }
 
 /** Exact lookup — does NOT walk the fallback chain. Use `resolveFontVariant` for that. */
@@ -260,15 +263,12 @@ function firstRegisteredFamily(): string | null {
 
 // Resolution runs per frame, so an unguarded warn would flood the console.
 // Keyed per (family, weight, style) variant, not per family: each variant is a
-// distinct thing the app asked for and failed to get.
-const warnedMissingFamilies = new Set<string>();
-
+// distinct thing the app asked for and failed to get. The claimed keys live in
+// fallback.ts so both reset seams clear them.
 function warnMissingFamilyOnce(
   family: string, weight: number, style: FontStyle, resolved: string,
 ): void {
-  const key = `substituted|${family}|${weight}|${style}`;
-  if (warnedMissingFamilies.has(key)) return;
-  warnedMissingFamilies.add(key);
+  if (!claimFallbackWarning(`substituted|${family}|${weight}|${style}`)) return;
   // Two distinct failures land here. Saying "not registered" for a family
   // that IS registered — just not in a variant the within-family chain can
   // reach — sends the reader hunting for a registerFont call that already
@@ -296,9 +296,7 @@ function warnMissingFamilyOnce(
 function warnUnusableDefaultOnce(
   family: string, weight: number, style: FontStyle, fallback: string,
 ): void {
-  const key = `unusable-default|${family}|${weight}|${style}`;
-  if (warnedMissingFamilies.has(key)) return;
-  warnedMissingFamilies.add(key);
+  if (!claimFallbackWarning(`unusable-default|${family}|${weight}|${style}`)) return;
   const origin = getDefaultFontFamily() === fallback
     ? 'set via setDefaultFontFamily'
     : 'the first registered family, since setDefaultFontFamily was never called';

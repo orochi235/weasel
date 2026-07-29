@@ -6,6 +6,7 @@ import {
   registerCanvasFont, unregisterCanvasFont, _resetDynamicFontsForTests,
 } from './dynamic/dynamicAtlas';
 import { registerTestFont } from './testing/registerTestFont';
+import { _resetFallbackForTests as resetFallbackFromBarrel } from './index';
 
 const ALL_POLICIES: readonly FontFallbackPolicy[] = ['substitute', 'canvas', 'none'];
 
@@ -293,6 +294,32 @@ describe('unusable default family', () => {
     resolveFontVariant('Comic Sans', 700, 'normal');
     expect(warn).toHaveBeenCalledTimes(2);
     warn.mockRestore();
+  });
+});
+
+describe('reset seams', () => {
+  it('clears the warn-once cache when only the fallback state is reset', async () => {
+    await registerTestFont('Inter', 400, 'normal');
+    setDefaultFontFamily('Inter');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    resolveFontVariant('Comic Sans', 400, 'normal');
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    // The registry keeps its fonts; only the fallback state goes back to
+    // defaults. A test resetting just this used to swallow its next warning.
+    _resetFallbackForTests();
+    setDefaultFontFamily('Inter');
+    resolveFontVariant('Comic Sans', 400, 'normal');
+
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('is reachable from the package barrel like every other reset seam', () => {
+    // Policy is global module state that changes rendering: a downstream
+    // package's test that sets one has to be able to unset it.
+    expect(resetFallbackFromBarrel).toBe(_resetFallbackForTests);
   });
 });
 

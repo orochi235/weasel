@@ -23,6 +23,12 @@ export {
   getFontFallbackPolicy,
   setDefaultFontFamily,
   getDefaultFontFamily,
+  // Narrow by default, but the reset seams are the exception the other
+  // modules already make: the policy is global module state that changes
+  // rendering, so a downstream package's test that sets one must be able to
+  // put it back. `_clearFallbackWarnings` stays internal — it is an
+  // implementation detail of these two resets.
+  _resetFallbackForTests,
 } from './fallback';
 export type { FontFallbackPolicy } from './fallback';
 

@@ -39,8 +39,32 @@ export function getDefaultFontFamily(): string | null {
   return defaultFamily;
 }
 
+/**
+ * Warn-once gate for the cross-family fallback warnings. The messages are
+ * built in `registerFont.ts` (they read the registry to name the actual gap),
+ * but the dedup state lives here so `_resetFallbackForTests` clears it —
+ * warnings about a fallback are fallback state. While it sat in
+ * `registerFont.ts`, only a registry reset cleared it, and a test that reset
+ * just the policy silently swallowed its next warning.
+ */
+const warnedFallbacks = new Set<string>();
+
+/** @internal Claim `key` for a one-time warning; true the first time only. */
+export function claimFallbackWarning(key: string): boolean {
+  if (warnedFallbacks.has(key)) return false;
+  warnedFallbacks.add(key);
+  return true;
+}
+
+/** @internal Also called by `_resetFontRegistryForTests`: dropping the fonts
+ *  a warning was about has to drop the warning too. */
+export function _clearFallbackWarnings(): void {
+  warnedFallbacks.clear();
+}
+
 /** Test helper. Do not call from product code. */
 export function _resetFallbackForTests(): void {
   policy = 'substitute';
   defaultFamily = null;
+  warnedFallbacks.clear();
 }
