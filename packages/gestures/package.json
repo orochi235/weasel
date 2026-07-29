@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/gestures",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Pure gesture taxonomy, route grammars, and matcher primitives. No React, no DOM, no scene.",
   "license": "MIT",
   "type": "module",
