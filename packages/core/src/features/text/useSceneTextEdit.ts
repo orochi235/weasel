@@ -15,14 +15,17 @@
  * (`getText` / `getStyle` / `getRuns` / `setText` / `setRuns`).
  *
  * Pose component: the helper reads `(x, y, width, height)` straight off
- * the node's pose (typed `RectPose`). Consumers with non-rect poses or
- * zoom-aware screen mapping should drop down to raw `useTextEdit` and
+ * the node's pose (typed `RectPose`). Pass `view` and it projects that box
+ * through the viewport; omit it and world units are handed through as
+ * screen pixels, which is correct only for an unpanned, unzoomed canvas.
+ * Consumers with non-rect poses should drop down to raw `useTextEdit` and
  * supply their own `getScreenPose`.
  */
 import { useCallback, useRef, type MouseEvent } from 'react';
 import { asNodeId } from '../../core/scene/types';
 import type { Scene } from '../../core/scene/types';
 import { clientToCanvas } from '../../core/viewport/clientToCanvas';
+import type { View } from '../../core/viewport/view';
 import type { RectPose } from '../groups/unionBounds';
 import { caretIndexAt, pointInTextPose } from './hitTest';
 import type { StyledRun } from './runs';
@@ -52,6 +55,19 @@ export interface UseSceneTextEditOptions<TData> {
   setRuns?: (data: TData, runs: StyledRun[]) => TData;
   /** Fallback fontSize when `style.fontSize` is unset. Default `16`. */
   defaultFontSize?: number;
+  /**
+   * Current viewport. Supply it on a canvas that pans or zooms: the overlay
+   * is then positioned at the node's projected screen origin and CSS-scaled
+   * by the view, so every typographic metric on it — including the
+   * `fontSize` / `letterSpacing` a *run* carries — stays in world units and
+   * scales together. Omit it and the node's world box is passed through as
+   * screen pixels (correct at `{x: 0, y: 0, scale: 1}`).
+   *
+   * The overlay takes a single scale factor, so a non-uniform view scale is
+   * represented by its `scale.x`; text under `scale.x !== scale.y` will not
+   * match the canvas.
+   */
+  view?: View;
 }
 
 /** Return shape extends `UseTextEditReturn` with an `onDoubleClick`
@@ -104,12 +120,18 @@ export function useSceneTextEdit<
       const style = optsRef.current.getStyle
         ? optsRef.current.getStyle(node.data)
         : node.data.style;
+      const view = optsRef.current.view;
+      const zoom = view ? view.scale.x : 1;
+      // Only the origin is projected. Width, height and font size stay in
+      // world units and reach the screen through the overlay's own
+      // `scale(zoom)` — see `TextEditScreenPose.zoom`.
       return {
-        x: pose.x,
-        y: pose.y,
+        x: view ? (pose.x - view.x) * view.scale.x : pose.x,
+        y: view ? (pose.y - view.y) * view.scale.y : pose.y,
         width: pose.width,
         height: pose.height,
         fontSize: style?.fontSize ?? optsRef.current.defaultFontSize ?? 16,
+        zoom,
       };
     },
     setText: (id, text) => {
@@ -143,7 +165,12 @@ export function useSceneTextEdit<
     const canvas = e.target instanceof HTMLCanvasElement ? e.target : null;
     if (!canvas) return;
 
-    const [cx, cy] = clientToCanvas(canvas, e.clientX, e.clientY);
+    // `pointInTextPose` and `caretIndexAt` both work in world units, so the
+    // canvas-space click has to be un-projected before either sees it.
+    const [canvasX, canvasY] = clientToCanvas(canvas, e.clientX, e.clientY);
+    const view = optsRef.current.view;
+    const cx = view ? canvasX / view.scale.x + view.x : canvasX;
+    const cy = view ? canvasY / view.scale.y + view.y : canvasY;
     const readText = (data: TData): string =>
       optsRef.current.getText ? optsRef.current.getText(data) : (data.text ?? '');
     const readStyle = (data: TData): TextStyle | undefined =>

@@ -107,15 +107,38 @@ function sameSelection(a: TextEditSelection | null, b: TextEditSelection | null)
 
 /** Screen-space pose passed to `useTextEdit` so the overlay can be placed and sized in CSS pixels. */
 export interface TextEditScreenPose {
-  /** Top-left in CSS pixels relative to `container`. */
+  /** Top-left in CSS pixels relative to `container`. Always screen pixels,
+   *  including when `zoom` is set — the scale is anchored at this point, not
+   *  translated by it. */
   x: number;
   y: number;
+  /** Pre-scale — CSS pixels, or world units when `zoom` is set. */
   width: number;
   height: number;
-  /** Effective on-screen font size (style.fontSize * zoom). */
+  /** Pre-scale font size: `style.fontSize * zoom` when `zoom` is omitted, the
+   *  world-unit `style.fontSize` when it is set. */
   fontSize: number;
   /** Effective on-screen line height multiplier (defaults to style.lineHeight). */
   lineHeight?: number;
+  /**
+   * CSS scale applied to the overlay (`transform: scale(zoom)`, anchored at
+   * its top-left). Every other size on this pose, and every typographic
+   * metric the hook writes, is then **pre-scale** — pass world units and the
+   * transform does the world→screen conversion.
+   *
+   * This is the only way run-level typography can be correct at a zoom other
+   * than 1. `runsToDom` emits run `fontSize` / `letterSpacing` in world units
+   * and `domToRuns` reads them straight back; threading a scale through the
+   * writer and its inverse through the reader would go lossy on fractional
+   * zooms. Scaling the whole overlay instead leaves that serializer pure and
+   * scales node-level and run-level values by the same factor for free.
+   *
+   * Omit it (the default, `1`) and the pose is plain screen pixels — the hook
+   * then infers the world→screen factor from `fontSize / style.fontSize` to
+   * scale node-level `letterSpacing`, and run-level overrides are left
+   * unscaled. Correct only at zoom 1.
+   */
+  zoom?: number;
 }
 
 /** Options for `useTextEdit`. */
@@ -539,26 +562,28 @@ function placeOverlay(
   el.style.minHeight = `${pose.height}px`;
   el.style.fontSize = `${pose.fontSize}px`;
   el.style.lineHeight = String(pose.lineHeight ?? style.lineHeight);
+  // A declared `zoom` means every size on the pose is pre-scale and the
+  // overlay carries the view scale as a transform. Anchored at the top-left so
+  // `left`/`top` stay screen pixels — including the +1/-1 nudge above, which
+  // is a screen-pixel rasterization correction and must not scale with the
+  // view. Written unconditionally (`none` at zoom 1) because the overlay
+  // element outlives an edit session and would otherwise keep a stale scale.
+  el.style.transformOrigin = '0 0';
+  el.style.transform = pose.zoom !== undefined && pose.zoom !== 1 ? `scale(${pose.zoom})` : 'none';
   // `letter-spacing` is not part of the CSS `font` shorthand, so
   // `applyOverlayStyle`'s `el.style.font` never carries it — it needs its own
-  // assignment. It also lives here rather than there because it's the one
-  // world-unit typography value that has to be re-scaled as the view zooms.
+  // assignment. It also lives here rather than there because without a
+  // transform it is the one world-unit typography value that has to be
+  // re-scaled as the view zooms.
   //
-  // `pose.fontSize` is documented as `style.fontSize * zoom`, so their ratio
-  // is the overlay's world→screen factor — the same one that already turns
-  // the style's font size into the on-screen one. Run-level overrides come
-  // through `runsToDom`'s spans; CSS inheritance makes a span's own
-  // declaration replace this value rather than add to it.
-  //
-  // TODO: scale the overlay with `transform: scale(zoom)` and keep every
-  // metric on it in world units instead. `runsToDom` emits run-level
-  // `fontSize` and `letterSpacing` in world units (it must — `domToRuns` reads
-  // them straight back, and threading a scale through the writer plus its
-  // inverse through the reader goes lossy on fractional zooms), so today a run
-  // *override* is unscaled while this node-level value is scaled. One
-  // transform fixes both and keeps `runsToDom` a pure world-unit serializer.
-  // Latent rather than live: the only in-repo `getScreenPose`
-  // (`useSceneTextEdit`) returns world units, so zoom is always 1 here.
-  const scale = style.fontSize > 0 ? pose.fontSize / style.fontSize : 1;
+  // Under a transform there is nothing to re-scale: the world value is the
+  // value, and run-level overrides — which `runsToDom` writes in world units
+  // — scale by the same factor. Without one, `pose.fontSize` is documented as
+  // `style.fontSize * zoom`, so their ratio is the world→screen factor; run
+  // overrides then stay unscaled, which is why that path is only correct at
+  // zoom 1. (CSS inheritance makes a run span's own declaration *replace* this
+  // value rather than add to it, in both paths.)
+  const scale =
+    pose.zoom !== undefined ? 1 : style.fontSize > 0 ? pose.fontSize / style.fontSize : 1;
   el.style.letterSpacing = `${style.letterSpacing * scale}px`;
 }

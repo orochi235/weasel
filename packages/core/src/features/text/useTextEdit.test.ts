@@ -627,6 +627,96 @@ describe('useTextEdit — letter-spacing on the overlay', () => {
   });
 });
 
+/** Same as `makeTrackingHarness`, but the pose declares an explicit `zoom`
+ *  so every metric on it is pre-scale (world) and the overlay carries the
+ *  view scale as a CSS transform instead. */
+function makeZoomedHarness(runs: StyledRun[], style: TextStyle, zoom: number) {
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const opts: UseTextEditOptions = {
+    container,
+    getText: () => runs.map((r) => r.text).join(''),
+    getStyle: () => style,
+    getScreenPose: () => ({
+      x: 10,
+      y: 20,
+      width: 200,
+      height: 40,
+      fontSize: style.fontSize ?? 16,
+      zoom,
+    }),
+    setText: () => {},
+    getRuns: () => runs,
+    setRuns: () => {},
+  };
+  return { opts, container };
+}
+
+describe('useTextEdit — zoom-scaled overlay', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('carries the zoom as a CSS scale anchored at the overlay origin', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 2);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.transform).toBe('scale(2)');
+    expect(overlay.style.transformOrigin).toBe('0 0');
+  });
+
+  it('emits no transform at zoom 1', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 1);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.transform).toBe('none');
+  });
+
+  it('keeps x / y in screen pixels — the scale is anchored, not translated', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 2);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    // The same +1 / -1 CSS-vs-canvas nudge as the unscaled path: it is a
+    // screen-pixel correction and `left`/`top` are outside the scaled box.
+    expect(overlay.style.left).toBe('11px');
+    expect(overlay.style.top).toBe('19px');
+  });
+
+  it('leaves width / height / fontSize pre-scale — the transform does the scaling', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 2);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.width).toBe('200px');
+    expect(overlay.style.minHeight).toBe('40px');
+    expect(overlay.style.fontSize).toBe('16px');
+  });
+
+  it('does not pre-scale letterSpacing when the pose declares a zoom', () => {
+    // This is the whole point of the transform: `runsToDom` writes run-level
+    // `fontSize` / `letterSpacing` in world units (`domToRuns` reads them
+    // straight back), so the node level has to stay in world units too or the
+    // two disagree at any zoom but 1.
+    const h = makeZoomedHarness(
+      [{ text: 'a' }, { text: 'b', letterSpacing: 2, fontSize: 24 }],
+      { fontSize: 16, letterSpacing: 3 },
+      2,
+    );
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    const spans = overlay.querySelectorAll<HTMLSpanElement>('span[data-run]');
+    expect(overlay.style.letterSpacing).toBe('3px');
+    expect(spans[1].style.letterSpacing).toBe('2px');
+    expect(spans[1].style.fontSize).toBe('24px');
+    // Asserted here too: raw world values are only correct *because* the
+    // transform scales them. Drop the transform and these numbers are wrong.
+    expect(overlay.style.transform).toBe('scale(2)');
+  });
+});
+
 describe('useTextEdit — node-level decoration on the overlay', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
