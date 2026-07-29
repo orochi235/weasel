@@ -166,9 +166,13 @@ seam shows at the join.
   attributes in `packages/svg/src/cascade.ts`, are read in `parse.ts` (both
   the element and `<tspan>` paths), and are written in `serialize.ts`
   alongside the existing `font-size` handling.
-- **DOM overlay** — `domRuns` emits and parses `<u>` / `<s>` for decoration and
-  maps `letterSpacing` to CSS `letter-spacing`, so a contenteditable session
-  round-trips the new keys instead of dropping them on commit.
+- **DOM overlay** — `runsToDom` builds one `<span data-run>` per run and sets
+  inline styles on it (`fontWeight`, `fontStyle`, `fontSize`, `fontFamily`,
+  `color`). The three new keys follow that same shape —
+  `style.textDecoration` and `style.letterSpacing` — rather than introducing
+  `<u>`/`<s>` element wrappers, which `domToRuns` would then have to unwrap as
+  a second representation. A contenteditable session round-trips the new keys
+  instead of dropping them on commit.
 
 ## 9. Scope boundary
 

@@ -60,8 +60,27 @@
 ## Task 1: Scaffold the package
 
 **Files:**
-- Create: `packages/font/package.json`, `packages/font/tsup.config.ts`, `packages/font/src/index.ts`, `packages/font/README.md`
+- Create: `packages/font/package.json`, `packages/font/tsconfig.json`, `packages/font/tsup.config.ts`, `packages/font/src/index.ts`
 - Modify: `tsconfig.json` (paths), `package.json` (build:leaves)
+
+(The package README is written in Task 11, not here.)
+
+- [ ] **Step 0: Create the package tsconfig**
+
+Every workspace under `packages/` has one, and they are byte-identical across
+the leaves. Without it, tsup falls back to the root config and this package's
+`rootDir` differs from every sibling. `packages/font/tsconfig.json`:
+
+```json
+{
+  "extends": "../../tsconfig.json",
+  "include": ["src"],
+  "compilerOptions": {
+    "rootDir": "src",
+    "noEmit": true
+  }
+}
+```
 
 - [ ] **Step 1: Create the manifest**
 
