@@ -295,6 +295,21 @@ describe('unusable default family', () => {
     expect(warn).toHaveBeenCalledTimes(2);
     warn.mockRestore();
   });
+
+  it('warns when the requested family is itself the unusable default', async () => {
+    await registerTestFont('Inter', 700, 'italic');
+    setDefaultFontFamily('Inter');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = resolveFontVariant('Inter', 400, 'normal');
+
+    expect(result.entry).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    const msg = warn.mock.calls[0][0] as string;
+    expect(msg).toContain('Inter');
+    expect(msg).toContain('400/normal');
+    warn.mockRestore();
+  });
 });
 
 describe('reset seams', () => {

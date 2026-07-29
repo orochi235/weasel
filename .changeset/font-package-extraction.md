@@ -19,7 +19,9 @@ enrolled for itself stops being canvas-served once the policy changes; one
 you name with `registerCanvasFont` is served under every policy. The default
 family may be a canvas-registered family, and when it cannot serve the
 request either, the resulting blank text is reported with its own warning
-naming the default family rather than failing silently.
+naming the default family rather than failing silently. Requesting the
+default family itself, at a variant it can't serve, also warns — there is no
+other family left to fall back to.
 
 `ResolveResult.substituted` reports the substitution structurally, and
 `ResolveResult.resolved` now

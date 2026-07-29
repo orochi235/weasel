@@ -191,7 +191,9 @@ export interface ResolveResult {
   substituted?: { requested: string; resolved: string };
 }
 
-function missResolveResult(family: string, weight: number, style: FontStyle): ResolveResult {
+function missResolveResult(
+  family: string, weight: number, style: FontStyle, suppressWarn = false,
+): ResolveResult {
   // Canvas-dynamic tier: reached only when the fallback chain selected no
   // baked variant, so any selected baked match always wins. Dynamic faces
   // rasterize the real weight/style — no synthetic flags.
@@ -232,18 +234,39 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
     // reject `setDefaultFontFamily` pointed at one.
     if (fallback !== null && fallback !== family) {
       if (registry.has(fallback) || isCanvasFont(fallback)) {
-        const result = resolveFontVariant(fallback, weight, style);
+        // Probing whether the fallback family renders, not resolving a
+        // top-level request for it — suppress so this recursion can't also
+        // land in the `fallback === family` branch below (the fallback
+        // family's own default is itself) and double-warn for one miss.
+        // Whichever of `warnMissingFamilyOnce` / `warnUnusableDefaultOnce`
+        // fires below, based on this probe's result, is the single warning.
+        const result = resolveFontVariantInternal(fallback, weight, style, true);
         // Renderable, not baked: a fallback served by the dynamic tier reports
         // `entry: null` with a dynamicFace, and testing entry alone threw it away.
         if (result.entry !== null || result.dynamicFace !== undefined) {
-          warnMissingFamilyOnce(family, weight, style, fallback);
+          if (!suppressWarn) warnMissingFamilyOnce(family, weight, style, fallback);
           return { ...result, substituted: { requested: family, resolved: fallback } };
         }
       }
       // Substitution was supposed to happen and produced nothing. Falling
       // through silently here is the invisible-text failure this whole policy
       // exists to eliminate, so say which of the two families to fix.
-      warnUnusableDefaultOnce(family, weight, style, fallback);
+      if (!suppressWarn) warnUnusableDefaultOnce(family, weight, style, fallback);
+    } else if (fallback === family && registry.has(family) && !suppressWarn) {
+      // `fallback === family` above exists to stop the request from
+      // substituting for itself — recursion into the same miss forever. But
+      // when the family that can't serve this variant *is* the effective
+      // default, that guard also throws away the one case it was most likely
+      // to hit: a default registered at the wrong variant. Nothing renders
+      // and, without this branch, nothing is logged either. Only fires when
+      // `family` is actually registered — an unset default with nothing
+      // registered at all is not a misconfiguration (see the other branch's
+      // "is not registered" case, and the deliberately-silent test for it).
+      // `suppressWarn` keeps this from firing when a *different* top-level
+      // request's substitution probe happens to recurse into the default
+      // family and find it can't serve either — that miss is reported by the
+      // top-level caller via `warnUnusableDefaultOnce`, not from in here.
+      warnSelfUnusableDefaultOnce(family, weight, style);
     }
   }
 
@@ -312,6 +335,31 @@ function warnUnusableDefaultOnce(
   );
 }
 
+/**
+ * The requested family is also the effective default — there is nowhere left
+ * to fall back to. Distinct from `warnUnusableDefaultOnce`, which names a
+ * *different* fallback family to fix; here the requested and fallback
+ * families are the same one, so repeating the name the way that message does
+ * would read as nonsense ("X is not available, and the fallback X … ").
+ * Named once, with both facts — registered-but-wrong-variant, and also the
+ * fallback — folded into a single sentence.
+ */
+function warnSelfUnusableDefaultOnce(
+  family: string, weight: number, style: FontStyle,
+): void {
+  if (!claimFallbackWarning(`self-unusable-default|${family}|${weight}|${style}`)) return;
+  const origin = getDefaultFontFamily() === family
+    ? 'set via setDefaultFontFamily'
+    : 'the first registered family, since setDefaultFontFamily was never called';
+  console.warn(
+    `weasel: font family "${family}" (${weight}/${style}) has no variant that can ` +
+    `serve this request, and "${family}" is also the fallback family (${origin}) — ` +
+    `there is nothing left to fall back to, so this text will not render at all. ` +
+    `Bake that variant with registerFont("${family}", { weight: ${weight}, ` +
+    `style: '${style}' }, …), or point setDefaultFontFamily() at a different family.`,
+  );
+}
+
 function weightBucket(w: number): 'regular' | 'bold' {
   return w >= 600 ? 'bold' : 'regular';
 }
@@ -327,8 +375,28 @@ export function resolveFontVariant(
   weight: number,
   style: FontStyle,
 ): ResolveResult {
+  return resolveFontVariantInternal(family, weight, style, false);
+}
+
+/**
+ * `suppressWarn` is set only by the recursive substitution probe in
+ * `missResolveResult`, which resolves the fallback family purely to check
+ * whether it renders. That probe is not itself a request anything asked
+ * for, so it must not emit — or claim the warn-once key for — a message
+ * about a resolution the caller never made; the caller's own top-level
+ * `missResolveResult` call decides, from the probe's result, which single
+ * warning (if any) describes the overall miss.
+ */
+function resolveFontVariantInternal(
+  family: string,
+  weight: number,
+  style: FontStyle,
+  suppressWarn: boolean,
+): ResolveResult {
   const familyMap = registry.get(family);
-  if (!familyMap || familyMap.size === 0) return missResolveResult(family, weight, style);
+  if (!familyMap || familyMap.size === 0) {
+    return missResolveResult(family, weight, style, suppressWarn);
+  }
 
   // 1. Exact match
   const exact = familyMap.get(variantKey(weight, style));
@@ -437,5 +505,5 @@ export function resolveFontVariant(
     };
   }
 
-  return missResolveResult(family, weight, style);
+  return missResolveResult(family, weight, style, suppressWarn);
 }
