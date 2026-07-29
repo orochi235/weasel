@@ -87,6 +87,42 @@ describe('canvas policy', () => {
   });
 });
 
+describe('substitute policy — canvas-registered default family', () => {
+  it('substitutes a default family that only the dynamic tier can serve', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    registerCanvasFont('SystemUI');
+    setDefaultFontFamily('SystemUI');
+
+    const result = resolveFontVariant('Comic Sans', 400, 'normal');
+
+    // A canvas family never enters the baked registry, so gating substitution
+    // on registry membership made this configuration a silent hard miss.
+    expect(result.source).toBe('canvas');
+    expect(result.dynamicFace).toBeDefined();
+    expect(result.substituted).toEqual({ requested: 'Comic Sans', resolved: 'SystemUI' });
+    expect(result.resolved).toEqual({ family: 'SystemUI', weight: 400, style: 'normal' });
+    warn.mockRestore();
+  });
+
+  it('accepts a registered default family that resolves through the dynamic tier', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // Baked at 700/italic only: a 400/normal request walks the whole
+    // within-family chain without an anchor and lands on the canvas tier,
+    // which returns `entry: null` plus a dynamicFace.
+    await registerTestFont('SystemUI', 700, 'italic');
+    registerCanvasFont('SystemUI');
+    setDefaultFontFamily('SystemUI');
+
+    const result = resolveFontVariant('Comic Sans', 400, 'normal');
+
+    expect(result.entry).toBeNull();
+    expect(result.dynamicFace).toBeDefined();
+    expect(result.substituted).toEqual({ requested: 'Comic Sans', resolved: 'SystemUI' });
+    expect(result.resolved).toEqual({ family: 'SystemUI', weight: 400, style: 'normal' });
+    warn.mockRestore();
+  });
+});
+
 describe('canvas enrollment provenance', () => {
   it('serves an explicitly registered canvas family under every policy', async () => {
     await registerTestFont('Inter', 400, 'normal');

@@ -10,7 +10,7 @@
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
 import {
-  isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace,
+  isCanvasFont, isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace,
   type DynamicFace,
 } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
@@ -224,10 +224,14 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
 
   if (policy === 'substitute') {
     const fallback = getDefaultFontFamily() ?? firstRegisteredFamily();
-    // Guard against recursing when the default family is itself missing.
-    if (fallback !== null && fallback !== family && registry.has(fallback)) {
+    // Guard against recursing when the default family is itself unknown.
+    // Canvas families never enter `registry`, so membership there alone would
+    // reject `setDefaultFontFamily` pointed at one.
+    if (fallback !== null && fallback !== family && (registry.has(fallback) || isCanvasFont(fallback))) {
       const result = resolveFontVariant(fallback, weight, style);
-      if (result.entry !== null) {
+      // Renderable, not baked: a fallback served by the dynamic tier reports
+      // `entry: null` with a dynamicFace, and testing entry alone threw it away.
+      if (result.entry !== null || result.dynamicFace !== undefined) {
         warnMissingFamilyOnce(family, weight, style, fallback);
         return { ...result, substituted: { requested: family, resolved: fallback } };
       }
