@@ -5,7 +5,8 @@ import {
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
 } from '@weasel-js/font';
 import { layoutRuns } from './layoutRuns';
-import type { ResolvedRun } from '../runs/resolveRuns';
+import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
+import { resolveTextStyle } from '../textStyle';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -39,7 +40,7 @@ async function registerFixture(family: string, opts: Array<{ weight?: number; st
 
 const RUN_PLAIN = (text: string): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-  fill: { fill: 'solid', color: '#000' },
+  fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
 });
 const RUN_BOLD = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), fontWeight: 700 });
 const RUN_ITALIC = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), fontStyle: 'italic' });
@@ -253,6 +254,7 @@ describe('layoutRuns — canvas-dynamic faces', () => {
     fontStyle: 'normal',
     fontSize: 24, // scale = 24/48 = 0.5
     fill: { fill: 'solid', color: '#000' },
+    letterSpacing: 0,
   });
 
   it('lays out a dynamic run into a canvas-source group with quads', () => {
@@ -281,11 +283,133 @@ describe('layoutRuns — canvas-dynamic faces', () => {
     expect(laid.bounds.width).toBeCloseTo(28);
   });
 
+  it('tracks dynamic glyphs too, including the blank ones that emit no quad', () => {
+    const opts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+    const plain = layoutRuns([dynRun('A B')], opts, { x: 0, y: 0 });
+    const tracked = layoutRuns([{ ...dynRun('A B'), letterSpacing: 5 }], opts, { x: 0, y: 0 });
+    // A(11) + space(6) + B(11) at scale 0.5, plus 5 after each of 3 characters.
+    expect(plain.bounds.width).toBeCloseTo(28);
+    expect(tracked.bounds.width).toBeCloseTo(43);
+    // The space emits no quad but must still carry its tracking, so 'B' moves
+    // by two characters' worth — otherwise quads drift out of the line width.
+    const bx = (o: ReturnType<typeof layoutRuns>) =>
+      o.groups.flatMap((g) => g.quads.map((q) => q.x0)).sort((a, b) => a - b)[1];
+    expect(bx(tracked) - bx(plain)).toBeCloseTo(10);
+  });
+
   it('atlas groups still report source "atlas" and page 0', async () => {
     await registerFixture('inter', [{}]);
     const out = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
     const group = out.groups[0];
     expect(group.source).toBe('atlas');
     expect(group.page).toBe(0);
+  });
+});
+
+describe('layoutRuns — letterSpacing', () => {
+  // FIXTURE_FONT at fontSize 32 (scale 1): A xadvance 23 / xoffset 1,
+  // B xadvance 22 / xoffset 2, kerning A→B = -1.
+  //   untracked 'AB': width 44, quad x0s [1, 24].
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+  const ORIGIN = { x: 0, y: 0 };
+  const xs = (o: ReturnType<typeof layoutRuns>) =>
+    o.groups.flatMap((g) => g.quads.map((q) => q.x0)).sort((a, b) => a - b);
+
+  it('adds tracking after every glyph, including the last', async () => {
+    await registerFixture('inter', [{}]);
+    const plain = layoutRuns([RUN_PLAIN('AB')], OPTS, ORIGIN);
+    const tracked = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: 4 }], OPTS, ORIGIN);
+    // Trailing tracking counts toward the measured width (matches CSS).
+    expect(plain.bounds.width).toBeCloseTo(44);
+    expect(tracked.bounds.width).toBeCloseTo(plain.bounds.width + 4 * 2);
+    // ...and the glyphs actually move: the Nth glyph shifts by N * spacing.
+    expect(xs(plain)).toEqual([1, 24]);
+    expect(xs(tracked)).toEqual([1, 28]);
+  });
+
+  it('is a no-op at 0', async () => {
+    await registerFixture('inter', [{}]);
+    const a = layoutRuns([RUN_PLAIN('AB')], OPTS, ORIGIN);
+    const b = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: 0 }], OPTS, ORIGIN);
+    expect(b.bounds.width).toBe(a.bounds.width);
+    expect(xs(b)).toEqual(xs(a));
+  });
+
+  it('is in world units — the same tracking shifts glyphs equally at any fontSize', async () => {
+    await registerFixture('inter', [{}]);
+    const at = (fontSize: number, letterSpacing: number) =>
+      layoutRuns([{ ...RUN_PLAIN('AB'), fontSize, letterSpacing }], OPTS, ORIGIN);
+    for (const fontSize of [32, 16]) {
+      const plain = at(fontSize, 0);
+      const tracked = at(fontSize, 4);
+      // Second glyph moves right by exactly 4 world units at both sizes.
+      expect(xs(tracked)[1] - xs(plain)[1]).toBeCloseTo(4);
+      expect(tracked.bounds.width - plain.bounds.width).toBeCloseTo(8);
+    }
+  });
+
+  it('accepts negative tracking, pulling glyphs together', async () => {
+    await registerFixture('inter', [{}]);
+    const tight = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: -4 }], OPTS, ORIGIN);
+    expect(xs(tight)).toEqual([1, 20]);
+    expect(tight.bounds.width).toBeCloseTo(36);
+  });
+
+  it('tracks spaces like any other character', async () => {
+    await registerFixture('inter', [{}]);
+    // Fixture has no space glyph → synthesized advance fontSize * 0.25 = 8.
+    const plain = layoutRuns([RUN_PLAIN('A B')], OPTS, ORIGIN);
+    const tracked = layoutRuns([{ ...RUN_PLAIN('A B'), letterSpacing: 4 }], OPTS, ORIGIN);
+    expect(plain.bounds.width).toBeCloseTo(53);
+    // Three characters tracked: A, the space, and B.
+    expect(tracked.bounds.width).toBeCloseTo(53 + 12);
+    // (A zero-size quad is emitted for the space, so there are three x's.)
+    // 'B' sits after A + space, so it picks up two characters' worth of tracking.
+    expect(xs(plain)).toHaveLength(3);
+    expect(xs(tracked)[2] - xs(plain)[2]).toBeCloseTo(8);
+  });
+
+  it('applies each run’s own tracking to the gap that follows its glyphs', async () => {
+    await registerFixture('inter', [{}]);
+    const trackedFirst = layoutRuns(
+      [{ ...RUN_PLAIN('A'), letterSpacing: 10 }, RUN_PLAIN('B')],
+      OPTS, ORIGIN,
+    );
+    const trackedSecond = layoutRuns(
+      [RUN_PLAIN('A'), { ...RUN_PLAIN('B'), letterSpacing: 10 }],
+      OPTS, ORIGIN,
+    );
+    // Tracking belongs to the glyph it follows: only the first case pushes B right.
+    expect(xs(trackedFirst)).toEqual([1, 34]);
+    expect(xs(trackedSecond)).toEqual([1, 24]);
+    // Both add exactly one glyph's worth of tracking to the measured width.
+    expect(trackedFirst.bounds.width).toBeCloseTo(54);
+    expect(trackedSecond.bounds.width).toBeCloseTo(54);
+  });
+
+  it('counts toward wrapping, so tracked text breaks into more lines', async () => {
+    await registerFixture('inter', [{}]);
+    const wrapOpts = { maxWidth: 150, lineHeight: 1.2, align: 'left' as const };
+    // Count baselines, not y0 — the synthesized space glyph has yoffset 0 and
+    // so lands at a different y0 than the letters on the same line.
+    const lineCount = (o: ReturnType<typeof layoutRuns>) =>
+      new Set(o.groups.flatMap((g) => g.quads.map((q) => q.baselineY))).size;
+    const text = 'AB AB AB AB AB AB';
+    const plain = layoutRuns([RUN_PLAIN(text)], wrapOpts, ORIGIN);
+    const tracked = layoutRuns([{ ...RUN_PLAIN(text), letterSpacing: 10 }], wrapOpts, ORIGIN);
+    expect(lineCount(plain)).toBe(2);
+    expect(lineCount(tracked)).toBe(3);
+  });
+
+  it('reaches layout through resolveRuns (run value wins, style value inherited)', async () => {
+    await registerFixture('inter', [{}]);
+    const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, letterSpacing: 4 });
+    const fromStyle = layoutRuns(resolveRuns([{ text: 'AB' }], style), OPTS, ORIGIN);
+    const fromRun = layoutRuns(
+      resolveRuns([{ text: 'AB', letterSpacing: 10 }], style),
+      OPTS, ORIGIN,
+    );
+    expect(xs(fromStyle)).toEqual([1, 28]);
+    expect(xs(fromRun)).toEqual([1, 34]);
   });
 });

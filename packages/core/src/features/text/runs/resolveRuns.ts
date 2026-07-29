@@ -6,8 +6,9 @@
  *
  * `bold`/`italic` toggles on a run are folded into `fontWeight`/`fontStyle`:
  * `bold: true` → fontWeight 700, `italic: true` → fontStyle 'italic'.
- * Explicit `fontFamily` / `fontSize` / `fill` on the run override the
- * node-level value.
+ * Explicit `fontFamily` / `fontSize` / `fill` / `letterSpacing` on the run
+ * override the node-level value (`letterSpacing: 0` on a run is an override,
+ * not an absence — it zeroes inherited tracking).
  */
 
 import type { FillStyle } from 'core/paint-types';
@@ -21,6 +22,8 @@ export interface ResolvedRun {
   fontWeight: number;
   fontStyle: 'normal' | 'italic';
   fill: FillStyle;
+  /** Extra advance added after each glyph of this run, in world units. */
+  letterSpacing: number;
 }
 
 function numericWeight(w: number | string): number {
@@ -45,6 +48,7 @@ export function resolveRuns(
       fontWeight: run.bold ? 700 : baseWeight,
       fontStyle: run.italic ? 'italic' : style.fontStyle,
       fill: run.fill ?? style.fill,
+      letterSpacing: run.letterSpacing ?? style.letterSpacing,
     });
   }
   return out;

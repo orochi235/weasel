@@ -6,6 +6,13 @@
  * `(family, resolvedWeight, resolvedStyle, syntheticBold, syntheticItalic, fillKey)`
  * so the renderer issues one draw call per atlas+color group.
  *
+ * A run's `letterSpacing` (world units, so it does not scale with `fontSize`)
+ * is added to the advance *after* every character of that run, including the
+ * last one on a line — matching CSS `letter-spacing`, so the contenteditable
+ * edit overlay and the canvas agree. Trailing tracking therefore widens the
+ * measured line width and counts toward wrapping. Spaces are tracked like any
+ * other character; a newline is not (it consumes no advance).
+ *
  * Word wrap is applied when `maxWidth` is finite: words are committed to
  * a new line when they would exceed the current line width. Forced line
  * breaks are emitted for `\n` codepoints. Mixed-size runs share a
@@ -151,6 +158,7 @@ export function layoutRuns(
     glyph: BmFontChar;
     cp: number;
     advance: number;         // xadvance in world units (already scaled)
+    tracking: number;        // run letterSpacing, added after this glyph (world units)
     kerningBefore: number;   // kerning gap consumed before this glyph
     isSpace: boolean;
     isNewline: boolean;
@@ -173,6 +181,9 @@ export function layoutRuns(
       continue;
     }
     const scale = run.fontSize / font.info.size;
+    // World units — deliberately not scaled by fontSize, so the same tracking
+    // opens the same visual gap whatever size the run is set at.
+    const tracking = run.letterSpacing ?? 0;
 
     for (const ch of [...run.text]) {
       const cp = ch.codePointAt(0)!;
@@ -183,7 +194,8 @@ export function layoutRuns(
         entries.push({
           run, font,
           glyph: { id: cp, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
-          cp, advance: 0, kerningBefore: 0, isSpace: false, isNewline: true,
+          // A newline consumes no advance, so it takes no tracking either.
+          cp, advance: 0, tracking: 0, kerningBefore: 0, isSpace: false, isNewline: true,
           resolved, fontSize: run.fontSize,
         });
         prevCp = undefined; prevFont = undefined; prevFontSize = undefined;
@@ -205,7 +217,7 @@ export function layoutRuns(
         entries.push({
           run, font,
           glyph: spaceGlyph ?? { id: 32, x: 0, y: 0, width: 0, height: 0, xoffset: 0, yoffset: 0, xadvance: 0, page: 0 },
-          cp, advance, kerningBefore, isSpace: true, isNewline: false,
+          cp, advance, tracking, kerningBefore, isSpace: true, isNewline: false,
           resolved, fontSize: run.fontSize,
         });
         prevCp = cp; prevFont = font; prevFontSize = run.fontSize;
@@ -227,6 +239,7 @@ export function layoutRuns(
       entries.push({
         run, font, glyph, cp,
         advance: glyph.xadvance * scale,
+        tracking,
         kerningBefore,
         isSpace, isNewline: false,
         resolved, fontSize: run.fontSize,
@@ -259,7 +272,7 @@ export function layoutRuns(
     if (e.isSpace) {
       if (cur.entries.length > 0) {
         cur.entries.push(e);
-        cur.width += e.kerningBefore + e.advance;
+        cur.width += e.kerningBefore + e.advance + e.tracking;
         cur.height = Math.max(cur.height, e.fontSize * opts.lineHeight);
       }
       i++;
@@ -270,7 +283,7 @@ export function layoutRuns(
     let wordWidth = 0;
     while (j < entries.length && !entries[j].isSpace && !entries[j].isNewline) {
       const w = entries[j];
-      wordWidth += w.kerningBefore + w.advance;
+      wordWidth += w.kerningBefore + w.advance + w.tracking;
       j++;
     }
     if (Number.isFinite(opts.maxWidth) && cur.width + wordWidth > opts.maxWidth && cur.entries.length > 0) {
@@ -280,7 +293,7 @@ export function layoutRuns(
       const w = entries[k];
       const kerningBefore = cur.entries.length === 0 ? 0 : w.kerningBefore;
       cur.entries.push({ ...w, kerningBefore });
-      cur.width += kerningBefore + w.advance;
+      cur.width += kerningBefore + w.advance + w.tracking;
       cur.height = Math.max(cur.height, w.fontSize * opts.lineHeight);
     }
     i = j;
@@ -308,11 +321,15 @@ export function layoutRuns(
     let penX = origin.x + alignShift;
     for (const e of line.entries) {
       penX += e.kerningBefore;
-      if (e.advance === 0) continue;
+      // One step per character: the glyph's advance plus its run's tracking.
+      // Every branch below moves the pen by exactly this, so glyph positions
+      // stay in step with the line width accumulated above.
+      const step = e.advance + e.tracking;
+      if (e.advance === 0) { penX += step; continue; }
       if (e.resolved.source === 'canvas' && (e.glyph.width === 0 || e.glyph.page < 0)) {
         // Dynamic glyph not baked yet (or blank, e.g. space): advance the pen
         // so the line doesn't reflow when the bake lands, but emit no quad.
-        penX += e.advance;
+        penX += step;
         continue;
       }
       const group = getOrCreateGroup(ctx, e.run, e.resolved, e.glyph.page);
@@ -331,7 +348,7 @@ export function layoutRuns(
       // vertices have y < baselineY so synthetic italic skew leans them right.
       const baselineY = penY + e.font.common.base * scale;
       group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1, baselineY });
-      penX += e.advance;
+      penX += step;
     }
     maxLineWidth = Math.max(maxLineWidth, line.width);
     penY += line.height;

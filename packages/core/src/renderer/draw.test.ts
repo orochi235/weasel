@@ -328,7 +328,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: NO_RED,
       children: [
-        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' } }], align: 'left', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
+        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0 }], align: 'left', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
       ],
     };
     r.render([cmd]);
@@ -365,7 +365,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   it('uploads identity u_colorMatrix on text draws with no enclosing group transform', () => {
     const cmd: DrawCommand = {
       kind: 'text', x: 0, y: 0,
-      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' } }],
+      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0 }],
       align: 'left',
       style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } },
     };
@@ -743,6 +743,7 @@ describe('drawText synthetic-bold', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -764,6 +765,7 @@ describe('drawText synthetic-bold', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -832,6 +834,7 @@ describe('drawText synthetic-italic', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'italic', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -850,6 +853,7 @@ describe('drawText synthetic-italic', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'italic', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -895,6 +899,7 @@ describe('drawText verticalAlign', () => {
     const runs: ResolvedRun[] = [{
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      letterSpacing: 0,
     }];
     const style = {};
 
@@ -925,6 +930,7 @@ describe('drawText verticalAlign', () => {
     const runs: ResolvedRun[] = [{
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      letterSpacing: 0,
     }];
 
     const { ctx: ctxA, calls: callsA } = createRecorderCtx();
@@ -1017,6 +1023,7 @@ describe('drawText — substituted family reaches the GPU', () => {
     runs: [{
       text: 'A', fontFamily: 'ghost', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      letterSpacing: 0,
     }],
     maxWidth: Infinity, align: 'left', style: {},
   });
@@ -1053,10 +1060,69 @@ describe('drawText — substituted family reaches the GPU', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
     expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
     expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+  });
+});
+
+/**
+ * Tracking is only real if it reaches the vertex buffer. Layout returning
+ * wider bounds proves nothing here — this asserts the uploaded quad x's.
+ */
+describe('drawText — letterSpacing reaches the GPU', () => {
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    _resetDynamicFontsForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+  });
+
+  // x of each quad's first vertex in the text VBO (stride 5 floats, 4 verts/quad).
+  function quadX0s(calls: ReturnType<typeof makeGLRecorder>['calls']): number[] {
+    const upload = calls.find((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array);
+    if (!upload) throw new Error('no text vertex bufferData call recorded');
+    const data = upload.args[1] as Float32Array;
+    const out: number[] = [];
+    for (let i = 0; i < data.length; i += 20) out.push(data[i]);
+    return out;
+  }
+
+  function drawTracked(letterSpacing: number): number[] {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [{
+        text: 'AB', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
+        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        letterSpacing,
+      }],
+      maxWidth: Infinity, align: 'left', style: {},
+    });
+    return quadX0s(calls);
+  }
+
+  it('shifts uploaded glyph x-coordinates by N * letterSpacing', () => {
+    const plain = drawTracked(0);
+    const tracked = drawTracked(6);
+    expect(plain).toHaveLength(2);
+    expect(tracked).toHaveLength(2);
+    expect(tracked[0]).toBeCloseTo(plain[0]);        // first glyph unmoved
+    expect(tracked[1] - plain[1]).toBeCloseTo(6);    // second glyph tracked once
   });
 });

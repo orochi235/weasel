@@ -53,6 +53,16 @@ describe('resolveRuns', () => {
     expect(resolveRuns(runs, style)[0].fontWeight).toBe(700);
   });
 
+  it('resolves letterSpacing run-over-style, defaulting to 0', () => {
+    const styled = resolveTextStyle({ letterSpacing: 3 });
+    expect(resolveRuns([{ text: 'a' }], styled)[0].letterSpacing).toBe(3);
+    expect(resolveRuns([{ text: 'a', letterSpacing: 8 }], styled)[0].letterSpacing).toBe(8);
+    // A run may deliberately zero out inherited tracking.
+    expect(resolveRuns([{ text: 'a', letterSpacing: 0 }], styled)[0].letterSpacing).toBe(0);
+    // Absent on both → 0.
+    expect(resolveRuns([{ text: 'a' }], resolveTextStyle({}))[0].letterSpacing).toBe(0);
+  });
+
   it('returns an empty array for empty input', () => {
     const style = resolveTextStyle({});
     expect(resolveRuns([], style)).toEqual([]);
