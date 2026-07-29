@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { resolveFontVariant, getFont, _resetFontRegistryForTests } from './registerFont';
+import type { FontFallbackPolicy } from './fallback';
 import { setDefaultFontFamily, setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
-import { _resetDynamicFontsForTests } from './dynamic/dynamicAtlas';
+import {
+  registerCanvasFont, unregisterCanvasFont, _resetDynamicFontsForTests,
+} from './dynamic/dynamicAtlas';
 import { registerTestFont } from './testing/registerTestFont';
+
+const ALL_POLICIES: readonly FontFallbackPolicy[] = ['substitute', 'canvas', 'none'];
 
 beforeEach(() => {
   _resetFontRegistryForTests();
@@ -79,6 +84,67 @@ describe('canvas policy', () => {
 
     expect(result.source).toBe('atlas');
     expect(result.entry).not.toBeNull();
+  });
+});
+
+describe('canvas enrollment provenance', () => {
+  it('serves an explicitly registered canvas family under every policy', async () => {
+    await registerTestFont('Inter', 400, 'normal');
+    setDefaultFontFamily('Inter');
+    registerCanvasFont('Helvetica Neue');
+
+    for (const policy of ALL_POLICIES) {
+      setFontFallbackPolicy(policy);
+      const result = resolveFontVariant('Helvetica Neue', 400, 'normal');
+      // The consumer asked for this family by name; no policy outranks that.
+      expect(result.source, `policy ${policy}`).toBe('canvas');
+      expect(result.dynamicFace, `policy ${policy}`).toBeDefined();
+      expect(result.substituted, `policy ${policy}`).toBeUndefined();
+    }
+  });
+
+  it('forgets an auto-enrolled family once the policy leaves canvas', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await registerTestFont('Inter', 400, 'normal');
+    setDefaultFontFamily('Inter');
+
+    setFontFallbackPolicy('canvas');
+    expect(resolveFontVariant('Comic Sans', 400, 'normal').source).toBe('canvas');
+
+    // 'none' is documented as "the previous behavior" — a prior canvas
+    // exposure must not keep the family alive through the dynamic tier.
+    setFontFallbackPolicy('none');
+    const hard = resolveFontVariant('Comic Sans', 400, 'normal');
+    expect(hard.entry).toBeNull();
+    expect(hard.dynamicFace).toBeUndefined();
+    expect(hard.source).toBe('atlas');
+
+    setFontFallbackPolicy('substitute');
+    const substituted = resolveFontVariant('Comic Sans', 400, 'normal');
+    expect(substituted.entry).toBe(getFont('Inter', 400, 'normal'));
+    expect(substituted.substituted).toEqual({ requested: 'Comic Sans', resolved: 'Inter' });
+    warn.mockRestore();
+  });
+
+  it('promotes an auto-enrolled family to explicit when a consumer registers it', () => {
+    setFontFallbackPolicy('canvas');
+    resolveFontVariant('Helvetica Neue', 400, 'normal');
+
+    registerCanvasFont('Helvetica Neue');
+    setFontFallbackPolicy('none');
+
+    expect(resolveFontVariant('Helvetica Neue', 400, 'normal').source).toBe('canvas');
+  });
+
+  it('leaves no stale provenance behind after unregistering', () => {
+    setFontFallbackPolicy('canvas');
+    resolveFontVariant('Helvetica Neue', 400, 'normal');
+    unregisterCanvasFont('Helvetica Neue');
+
+    registerCanvasFont('Helvetica Neue');
+    setFontFallbackPolicy('none');
+
+    expect(resolveFontVariant('Helvetica Neue', 400, 'normal').source).toBe('canvas');
   });
 });
 

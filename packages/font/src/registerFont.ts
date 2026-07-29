@@ -10,7 +10,8 @@
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
 import {
-  isCanvasFont, registerCanvasFont, getDynamicFace, type DynamicFace,
+  isExplicitCanvasFont, autoEnrollCanvasFont, getDynamicFace,
+  type DynamicFace,
 } from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
 
@@ -191,7 +192,12 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
   // Canvas-dynamic tier: reached only when the fallback chain selected no
   // baked variant, so any selected baked match always wins. Dynamic faces
   // rasterize the real weight/style — no synthetic flags.
-  if (isCanvasFont(family)) {
+  //
+  // Explicit enrollment only. A family the `'canvas'` policy enrolled for
+  // itself must not keep routing here after the policy changes, or `'none'`
+  // could never restore the hard miss it documents once any family had been
+  // auto-enrolled.
+  if (isExplicitCanvasFont(family)) {
     return {
       entry: null,
       dynamicFace: getDynamicFace(family, weight, style),
@@ -206,7 +212,7 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
   if (policy === 'canvas') {
     // Auto-enroll: the browser probably has this family even though no atlas
     // was baked for it. Real typeface, canvas-SDF quality.
-    registerCanvasFont(family);
+    autoEnrollCanvasFont(family);
     return {
       entry: null,
       dynamicFace: getDynamicFace(family, weight, style),

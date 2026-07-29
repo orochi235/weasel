@@ -49,6 +49,12 @@ interface DynamicPage {
 interface PendingBake { char: BmFontChar; raster: RasterizedGlyph; }
 
 const canvasFamilies = new Set<string>();
+// Enrollment provenance. A family the `'canvas'` fallback policy enrolled on
+// its own is only canvas-served while that policy is in force; one a consumer
+// named via registerCanvasFont outranks every policy. Tracked here rather
+// than in fallback.ts so the two sets can only ever be mutated together —
+// every register / unregister / reset path is in this file.
+const autoEnrolledFamilies = new Set<string>();
 let faces = new Map<string, DynamicFace>();
 let pages: DynamicPage[] = [];
 let packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
@@ -67,16 +73,40 @@ function getRasterizer(): GlyphRasterizer {
  *  resolveFontVariant serves it from this dynamic atlas. */
 export function registerCanvasFont(family: string): void {
   canvasFamilies.add(family);
+  // An explicit call promotes a previously auto-enrolled family for good.
+  autoEnrolledFamilies.delete(family);
 }
 
 export function isCanvasFont(family: string): boolean {
   return canvasFamilies.has(family);
 }
 
+/**
+ * @internal Enroll `family` on behalf of the `'canvas'` fallback policy.
+ * Distinct from `registerCanvasFont` only in provenance: the enrollment
+ * lapses (see `isExplicitCanvasFont`) if the policy later changes.
+ */
+export function autoEnrollCanvasFont(family: string): void {
+  if (canvasFamilies.has(family) && !autoEnrolledFamilies.has(family)) return;
+  canvasFamilies.add(family);
+  autoEnrolledFamilies.add(family);
+}
+
+/**
+ * @internal Enrolled by a consumer's own `registerCanvasFont` call rather than
+ * by the `'canvas'` policy. Only these are served by the dynamic tier
+ * regardless of the policy in force; an auto-enrolled family falls back to
+ * whatever the current policy says once that policy is no longer `'canvas'`.
+ */
+export function isExplicitCanvasFont(family: string): boolean {
+  return canvasFamilies.has(family) && !autoEnrolledFamilies.has(family);
+}
+
 /** Remove a canvas family. Its faces are dropped; already-baked glyph
  *  pixels stay in their pages (no eviction in v1). */
 export function unregisterCanvasFont(family: string): void {
   canvasFamilies.delete(family);
+  autoEnrolledFamilies.delete(family);
   for (const key of [...faces.keys()]) {
     if (faces.get(key)!.family === family) faces.delete(key);
   }
@@ -265,6 +295,7 @@ export function _getPagesForTests(): readonly DynamicPage[] {
 /** @internal test seam — clear all dynamic-font state. */
 export function _resetDynamicFontsForTests(): void {
   canvasFamilies.clear();
+  autoEnrolledFamilies.clear();
   faces = new Map();
   pages = [];
   packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
