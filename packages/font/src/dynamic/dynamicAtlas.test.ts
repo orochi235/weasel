@@ -1,11 +1,16 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   registerCanvasFont, isCanvasFont, unregisterCanvasFont, getDynamicFace,
+  autoEnrollCanvasFont,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
   PAGE_SIZE, _getPagesForTests,
   resetBakeBudget, subscribeGlyphReady,
 } from './dynamicAtlas';
+import type { FontFallbackPolicy } from '../fallback';
+import { setFontFallbackPolicy, _resetFallbackForTests } from '../fallback';
 import { BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
+
+const ALL_POLICIES: readonly FontFallbackPolicy[] = ['substitute', 'canvas', 'none'];
 
 /** Deterministic fake: every glyph is a solid 20×24 box; space is blank. */
 function fakeRasterizer(): GlyphRasterizer {
@@ -27,6 +32,9 @@ function fakeRasterizer(): GlyphRasterizer {
 
 beforeEach(() => {
   _resetDynamicFontsForTests();
+  // isCanvasFont reads the fallback policy, which is process-global module
+  // state: a policy another test file left behind would change its answers.
+  _resetFallbackForTests();
   __setGlyphRasterizerForTests(fakeRasterizer());
 });
 afterEach(() => vi.restoreAllMocks());
@@ -38,6 +46,53 @@ describe('canvas font registry', () => {
     expect(isCanvasFont('Futura')).toBe(true);
     unregisterCanvasFont('Futura');
     expect(isCanvasFont('Futura')).toBe(false);
+  });
+});
+
+describe('isCanvasFont answers "served right now", not "enrolled"', () => {
+  it('reports an explicitly registered family under every policy', () => {
+    registerCanvasFont('Futura');
+    for (const policy of ALL_POLICIES) {
+      setFontFallbackPolicy(policy);
+      expect(isCanvasFont('Futura'), `policy ${policy}`).toBe(true);
+    }
+  });
+
+  it('reports an auto-enrolled family only while the policy is canvas', () => {
+    // Enrollment happens under 'canvas'; the family is only actually served
+    // by the dynamic tier for as long as that policy stays in force.
+    setFontFallbackPolicy('canvas');
+    autoEnrollCanvasFont('Helvetica Neue');
+    expect(isCanvasFont('Helvetica Neue')).toBe(true);
+
+    setFontFallbackPolicy('substitute');
+    expect(isCanvasFont('Helvetica Neue')).toBe(false);
+
+    setFontFallbackPolicy('none');
+    expect(isCanvasFont('Helvetica Neue')).toBe(false);
+
+    // …and comes back when the policy does: the enrollment lapses, it is not
+    // discarded.
+    setFontFallbackPolicy('canvas');
+    expect(isCanvasFont('Helvetica Neue')).toBe(true);
+  });
+
+  it('reports an auto-enrolled family promoted to explicit under every policy', () => {
+    setFontFallbackPolicy('canvas');
+    autoEnrollCanvasFont('Helvetica Neue');
+    registerCanvasFont('Helvetica Neue');
+
+    for (const policy of ALL_POLICIES) {
+      setFontFallbackPolicy(policy);
+      expect(isCanvasFont('Helvetica Neue'), `policy ${policy}`).toBe(true);
+    }
+  });
+
+  it('reports false for a family that was never enrolled, even under canvas', () => {
+    setFontFallbackPolicy('canvas');
+    // The 'canvas' policy enrolls families lazily, on first miss. Answering
+    // true for anything at all under this policy would make the query useless.
+    expect(isCanvasFont('Never Asked For')).toBe(false);
   });
 });
 

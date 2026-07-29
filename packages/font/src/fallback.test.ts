@@ -166,6 +166,29 @@ describe('canvas enrollment provenance', () => {
     warn.mockRestore();
   });
 
+  it('will not substitute to an auto-enrolled family once the policy leaves canvas', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // Ghost gets auto-enrolled by the 'canvas' policy…
+    setFontFallbackPolicy('canvas');
+    expect(resolveFontVariant('Ghost', 400, 'normal').source).toBe('canvas');
+
+    // …and is then named as the substitute default under a policy that no
+    // longer serves it. Substituting *to* it here renders nothing at all, so
+    // the guard must reject it rather than reporting a swap that paints
+    // no glyphs.
+    setFontFallbackPolicy('substitute');
+    setDefaultFontFamily('Ghost');
+
+    const result = resolveFontVariant('Comic Sans', 400, 'normal');
+
+    expect(result.entry).toBeNull();
+    expect(result.dynamicFace).toBeUndefined();
+    expect(result.substituted).toBeUndefined();
+    // And the warning names the real gap: Ghost has no baked atlas either.
+    expect(warn.mock.calls[0][0]).toContain('is not registered either');
+    warn.mockRestore();
+  });
+
   it('promotes an auto-enrolled family to explicit when a consumer registers it', () => {
     setFontFallbackPolicy('canvas');
     resolveFontVariant('Helvetica Neue', 400, 'normal');

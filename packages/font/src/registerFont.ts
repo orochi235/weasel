@@ -231,7 +231,10 @@ function missResolveResult(
     const fallback = getDefaultFontFamily() ?? firstRegisteredFamily();
     // Guard against recursing when the default family is itself unknown.
     // Canvas families never enter `registry`, so membership there alone would
-    // reject `setDefaultFontFamily` pointed at one.
+    // reject `setDefaultFontFamily` pointed at one. `isCanvasFont` answers
+    // "served by the dynamic tier right now", which is the question here: a
+    // family the `'canvas'` policy auto-enrolled is not served under this
+    // policy, so substituting *to* it would report a swap that paints nothing.
     if (fallback !== null && fallback !== family) {
       if (registry.has(fallback) || isCanvasFont(fallback)) {
         // Probing whether the fallback family renders, not resolving a
@@ -323,6 +326,10 @@ function warnUnusableDefaultOnce(
   const origin = getDefaultFontFamily() === fallback
     ? 'set via setDefaultFontFamily'
     : 'the first registered family, since setDefaultFontFamily was never called';
+  // Same policy-aware question as the substitution guard: a fallback the
+  // `'canvas'` policy auto-enrolled has nothing serving it under this policy,
+  // so "has no variant" would send the reader looking for a variant to bake
+  // when the family has no atlas at all.
   const gap = registry.has(fallback) || isCanvasFont(fallback)
     ? `has no variant that can serve ${weight}/${style}`
     : 'is not registered either';

@@ -15,6 +15,9 @@
 
 import type { BmFont, BmFontChar } from '../FontAtlas';
 import type { GlyphTextureSink } from '../textureSink';
+// `fallback.ts` imports nothing, so this edge cannot close a cycle; keep it
+// that way. (registerFont.ts imports both this module and fallback.ts.)
+import { getFontFallbackPolicy } from '../fallback';
 import { ShelfPacker } from './shelfPack';
 import { alphaToSdf } from './distanceTransform';
 import {
@@ -77,8 +80,28 @@ export function registerCanvasFont(family: string): void {
   autoEnrolledFamilies.delete(family);
 }
 
+/**
+ * Will `family` be served by the dynamic canvas-SDF tier *right now*?
+ *
+ * Service, not membership — the answer depends on the fallback policy in
+ * force and can change without any enrollment call:
+ *   - explicitly enrolled via `registerCanvasFont` → `true` under every
+ *     policy; a consumer naming a family outranks the policy.
+ *   - auto-enrolled by the `'canvas'` policy → `true` only while that policy
+ *     is still in force. The enrollment lapses rather than being discarded,
+ *     so returning to `'canvas'` makes it `true` again.
+ *   - never enrolled → `false`, including under `'canvas'` (that policy
+ *     enrolls lazily, on the first miss).
+ *
+ * The membership reading would answer `true` for an auto-enrolled family
+ * under `'substitute'` / `'none'`, where nothing routes to this tier — a
+ * caller predicting what renders would be told the opposite of the truth.
+ * Mirrors `listFonts`, which reports the baked registry alone for the same
+ * reason: "enrolled" is not "will render".
+ */
 export function isCanvasFont(family: string): boolean {
-  return canvasFamilies.has(family);
+  if (!canvasFamilies.has(family)) return false;
+  return !autoEnrolledFamilies.has(family) || getFontFallbackPolicy() === 'canvas';
 }
 
 /**
