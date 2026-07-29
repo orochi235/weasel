@@ -10,6 +10,7 @@
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
 import { isCanvasFont, getDynamicFace, type DynamicFace } from './dynamic/dynamicAtlas';
+import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
 
 export interface FontEntry {
   font: BmFont;
@@ -39,6 +40,7 @@ function normalizeVariant(v: FontVariant): { weight: number; style: FontStyle } 
 /** Test helper. Do not call from product code. */
 export function _resetFontRegistryForTests(): void {
   registry = new Map();
+  warnedMissingFamilies.clear();
 }
 
 /** Exact lookup — does NOT walk the fallback chain. Use `resolveFontVariant` for that. */
@@ -143,6 +145,13 @@ export interface ResolveResult {
   /** Set only when source === 'canvas': the dynamic face whose BmFont-shaped
    *  `font` layoutRuns consumes in place of `entry.font`. */
   dynamicFace?: DynamicFace;
+  /**
+   * Set when the requested family was not registered and the fallback policy
+   * substituted a different one. Reported structurally so a UI can say
+   * "Inter — not loaded, showing Roboto" instead of leaving the user to
+   * wonder why the family control did nothing.
+   */
+  substituted?: { requested: string; resolved: string };
 }
 
 function missResolveResult(family: string, weight: number, style: FontStyle): ResolveResult {
@@ -158,12 +167,52 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
       source: 'canvas',
     };
   }
+
+  const policy = getFontFallbackPolicy();
+
+  if (policy === 'substitute') {
+    const fallback = getDefaultFontFamily() ?? firstRegisteredFamily();
+    // Guard against recursing when the default family is itself missing.
+    if (fallback !== null && fallback !== family && registry.has(fallback)) {
+      const result = resolveFontVariant(fallback, weight, style);
+      if (result.entry !== null) {
+        warnMissingFamilyOnce(family, weight, style, fallback);
+        return { ...result, substituted: { requested: family, resolved: fallback } };
+      }
+    }
+  }
+
   return {
     entry: null,
     resolved: { weight, style },
     synthetic: { bold: false, italic: false },
     source: 'atlas',
   };
+}
+
+/** Insertion order of the registry Map — the first family an app registered. */
+function firstRegisteredFamily(): string | null {
+  for (const family of registry.keys()) return family;
+  return null;
+}
+
+// Resolution runs per frame, so an unguarded warn would flood the console.
+// Keyed per (family, weight, style) variant, not per family: each variant is a
+// distinct thing the app asked for and failed to get.
+const warnedMissingFamilies = new Set<string>();
+
+function warnMissingFamilyOnce(
+  family: string, weight: number, style: FontStyle, resolved: string,
+): void {
+  const key = `${family}|${weight}|${style}`;
+  if (warnedMissingFamilies.has(key)) return;
+  warnedMissingFamilies.add(key);
+  console.warn(
+    `weasel: font family "${family}" (${weight}/${style}) is not registered — ` +
+    `rendering with "${resolved}" instead. Advance widths will differ from the ` +
+    `requested font. Call registerFont("${family}", …) or setFontFallbackPolicy('none') ` +
+    `to make this a hard miss.`,
+  );
 }
 
 function weightBucket(w: number): 'regular' | 'bold' {

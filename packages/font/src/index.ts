@@ -18,6 +18,14 @@ export {
 export type { FontEntry, FontVariant, ResolveResult } from './registerFont';
 
 export {
+  setFontFallbackPolicy,
+  getFontFallbackPolicy,
+  setDefaultFontFamily,
+  getDefaultFontFamily,
+} from './fallback';
+export type { FontFallbackPolicy } from './fallback';
+
+export {
   registerCanvasFont,
   unregisterCanvasFont,
   isCanvasFont,
