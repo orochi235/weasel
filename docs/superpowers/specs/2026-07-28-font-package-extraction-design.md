@@ -179,14 +179,30 @@ no-eviction v1 behavior.
 4. **Publish manifests** — `scripts/check-publish-manifests.mjs` and
    `scripts/smoke-consumer-bundle.mjs` cover the new package. Versioning is
    §10.
-5. **Singleton audit** — `scripts/smoke-consumer-bundle.mjs` statically
-   asserts that importing `registerFont` from both `weasel-js/renderer` and
-   `@weasel-js/core/renderer` does not bundle two copies, using the font
-   registry as the canary ("two copies means two React hook instances and two
-   font registries"). After the move, `registerFont` resolves through core's
-   re-export into `@weasel-js/font`, so the canary must be extended to assert
-   that `@weasel-js/font` itself is single-instance — otherwise the check
-   silently starts proving something weaker than it did.
+5. **Singleton audit.** *(Corrected 2026-07-28 during implementation — the
+   original text here misdescribed the mechanism.)* The real duplicate
+   detector in `scripts/smoke-consumer-bundle.mjs` is its **Phase 1 dist
+   audit**, and it is data-driven: it reads core's declared `@weasel-js/*`
+   dependencies, greps core's `src/` for runtime (non-type-only) imports, and
+   asserts each appears as an external specifier in core's built JS. An
+   inlined dependency is absent from the dist and fails with an explicit
+   "INLINED — two copies" message. Because it derives its list from
+   `package.json` and `src/`, it covers `@weasel-js/font` **automatically**
+   the moment font becomes a declared runtime dep. No extension was needed for
+   the duplicate check.
+
+   The genuine gap was elsewhere: `font` was missing from the script's
+   `PACKAGES` array, so Phase 2 never `npm pack`'d it into the synthetic
+   consumer tree — meaning a broken `exports` map or a missing `dist` in the
+   new package would have gone unnoticed. That is what the implementation
+   fixed, along with adding a direct `@weasel-js/font` import to the Phase 3
+   fixture.
+
+   Worth recording for whoever owns this test: Phase 3 (the esbuild consumer
+   bundle) runs with `write: false` and never executes the bundle, so it is
+   **resolution-only** and cannot detect duplicate identity. The single-copy
+   guarantee comes from Phase 1 alone. If Phase 1 is ever weakened, the Phase 3
+   imports will not catch a duplicate-copy regression.
 
 ## 10. Release
 

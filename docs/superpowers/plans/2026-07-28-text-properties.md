@@ -861,7 +861,17 @@ Expected: FAIL — module not found.
 
 - [ ] **Step 4: Implement the font-family renderer**
 
-`FontFamilySelect` calls `listFonts()` from `@weasel-js/font` for its options. When the current value isn't among them, show it as an explicit entry labeled as unregistered, using `ResolveResult.substituted` to name what is actually rendering (`resolveFontVariant(family, weight, style).substituted`). This is the whole point of the structural report added in the font spec — do not reduce it to a console warning.
+`FontFamilySelect` calls `listFonts()` from `@weasel-js/font` for its options.
+
+**Decide how canvas-enrolled families appear.** `listFonts()` deliberately
+reports only the baked-atlas registry. Families enrolled via
+`registerCanvasFont` (or auto-enrolled under the `'canvas'` fallback policy)
+live in a separate set and are *asserted* to exist in the browser — no atlas,
+no baked metrics, possibly not actually installed. Listing them
+indistinguishably would misrepresent them as equally available, which is the
+honesty problem `listFonts()` exists to solve. Either omit them, or tag them
+with the `source: 'atlas' | 'canvas'` vocabulary `ResolveResult` already uses.
+Pick one and say which in the component's doc comment. When the current value isn't among them, show it as an explicit entry labeled as unregistered, using `ResolveResult.substituted` to name what is actually rendering (`resolveFontVariant(family, weight, style).substituted`). This is the whole point of the structural report added in the font spec — do not reduce it to a console warning.
 
 Register it in draw's `WD_RENDERERS` map under the `'font-family'` kind, so `SelectionPanel` dispatches the custom leaf from Task 9 to it. `WD_RENDERERS` is already passed as `renderers={WD_RENDERERS}` in `App.tsx`.
 
