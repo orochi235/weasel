@@ -74,6 +74,7 @@
     "react": ">=18"
   },
   "dependencies": {
+    "@weasel-js/font": "0.6.0",
     "@weasel-js/geom": "0.6.0",
     "@weasel-js/gestures": "0.6.0",
     "@weasel-js/history": "0.6.0",

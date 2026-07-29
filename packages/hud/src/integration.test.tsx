@@ -5,7 +5,7 @@ import React from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { SceneCanvasApi } from '@weasel-js/core';
 import { useHud, useHudTool } from './react';
-import { _resetFontRegistryForTests } from '../../core/src/features/text/atlas/registerFont';
+import { _resetFontRegistryForTests } from '@weasel-js/font';
 import { readTokens } from './theme';
 
 const defaultResolved = readTokens(null);

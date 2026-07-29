@@ -13,9 +13,8 @@
  */
 
 import type { FillStyle } from 'core/paint-types';
-import type { BmFontChar, BmFont } from './FontAtlas';
+import { resolveFontVariant, type ResolveResult, type BmFontChar, type BmFont } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
-import { resolveFontVariant, type ResolveResult } from './registerFont';
 
 export interface LaidOutQuad {
   x0: number; y0: number; x1: number; y1: number;

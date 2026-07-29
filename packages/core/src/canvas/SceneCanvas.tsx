@@ -26,7 +26,7 @@ import { type Action, type ActionsProp } from 'interactions/actions/registry';
 import { useStandardActions } from 'interactions/actions/useStandardActions';
 import type { DrawCommand, ShaderProgramHandle } from '../renderer';
 import { subscribeImageReady } from 'features/images/imageCache';
-import { subscribeGlyphReady } from 'features/text/dynamic/dynamicAtlas';
+import { subscribeGlyphReady } from '@weasel-js/font';
 import { defaultDrawOne } from './defaultDrawOne';
 import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';

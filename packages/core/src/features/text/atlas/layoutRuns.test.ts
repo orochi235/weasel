@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { _resetFontRegistryForTests, registerFont } from './registerFont';
-import { FIXTURE_FONT } from './FontAtlas';
-import { layoutRuns } from './layoutRuns';
-import type { ResolvedRun } from '../runs/resolveRuns';
 import {
+  _resetFontRegistryForTests, registerFont, FIXTURE_FONT,
   registerCanvasFont, resetBakeBudget,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
-} from '../dynamic/dynamicAtlas';
+} from '@weasel-js/font';
+import { layoutRuns } from './layoutRuns';
+import type { ResolvedRun } from '../runs/resolveRuns';
 
 function stubFetch() {
   const encoder = new TextEncoder();

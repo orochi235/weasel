@@ -21,8 +21,12 @@ import { getMesh } from './cache/cache';
 import { tessellate } from 'features/paths/tessellate/tessellate';
 import { resolveColor } from './math/color';
 import { tessellateStroke } from 'features/paths/tessellate/stroke';
-import { ensureFontTexture, textureCacheKey } from 'features/text/atlas/registerFont';
-import { syncDynamicPageTexture, dynamicPageTextureId } from 'features/text/dynamic/dynamicAtlas';
+import {
+  ensureFontTexture,
+  textureCacheKey,
+  syncDynamicPageTexture,
+  dynamicPageTextureId,
+} from '@weasel-js/font';
 import { layoutRuns, type LaidOutGroup } from 'features/text/atlas/layoutRuns';
 import { verticalAlignOffset } from 'features/text/verticalAlign';
 

@@ -282,8 +282,7 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
   });
 });
 
-import { registerFont, _resetFontRegistryForTests } from 'features/text/atlas/registerFont';
-import { FIXTURE_FONT } from 'features/text/atlas/FontAtlas';
+import { registerFont, _resetFontRegistryForTests, FIXTURE_FONT } from '@weasel-js/font';
 import { vi } from 'vitest';
 import { resolveTextStyle } from '@weasel-js/core';
 import { layoutRuns } from 'features/text/atlas/layoutRuns';
@@ -940,7 +939,7 @@ describe('drawText verticalAlign', () => {
 
 import {
   registerCanvasFont, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
-} from 'features/text/dynamic/dynamicAtlas';
+} from '@weasel-js/font';
 
 describe('drawText — canvas-dynamic routing', () => {
   beforeEach(() => {

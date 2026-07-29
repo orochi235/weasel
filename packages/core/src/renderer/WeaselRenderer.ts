@@ -14,8 +14,10 @@ import {
   TEXT_FRAG_R8_SRC,
   TEXT_SDF_UNIFORMS,
   TEXT_SDF_ATTRIBUTES,
-} from './shaders/textSdf';
-import { resetBakeBudget, DEFAULT_BAKE_BUDGET } from 'features/text/dynamic/dynamicAtlas';
+  markAllFontsNotUploaded,
+  resetBakeBudget,
+  DEFAULT_BAKE_BUDGET,
+} from '@weasel-js/font';
 import {
   IMAGE_VERT_SRC,
   IMAGE_FRAG_SRC,
@@ -35,7 +37,6 @@ import { GradientRampCache } from './cache/GradientRampCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import { dispatch, type DrawContext } from './draw';
-import { _markAllFontsNotUploaded } from 'features/text/atlas/registerFont';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,
@@ -303,7 +304,7 @@ export class WeaselRenderer {
     this.textureCache = new GLTextureCache(this.gl);
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRampCache = new GradientRampCache(this.gl);
-    _markAllFontsNotUploaded();
+    markAllFontsNotUploaded();
 
     this.uploadQuadGeometry();
     this.uploadRectGeometry(aPos);
