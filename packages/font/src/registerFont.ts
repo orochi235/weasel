@@ -227,14 +227,20 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
     // Guard against recursing when the default family is itself unknown.
     // Canvas families never enter `registry`, so membership there alone would
     // reject `setDefaultFontFamily` pointed at one.
-    if (fallback !== null && fallback !== family && (registry.has(fallback) || isCanvasFont(fallback))) {
-      const result = resolveFontVariant(fallback, weight, style);
-      // Renderable, not baked: a fallback served by the dynamic tier reports
-      // `entry: null` with a dynamicFace, and testing entry alone threw it away.
-      if (result.entry !== null || result.dynamicFace !== undefined) {
-        warnMissingFamilyOnce(family, weight, style, fallback);
-        return { ...result, substituted: { requested: family, resolved: fallback } };
+    if (fallback !== null && fallback !== family) {
+      if (registry.has(fallback) || isCanvasFont(fallback)) {
+        const result = resolveFontVariant(fallback, weight, style);
+        // Renderable, not baked: a fallback served by the dynamic tier reports
+        // `entry: null` with a dynamicFace, and testing entry alone threw it away.
+        if (result.entry !== null || result.dynamicFace !== undefined) {
+          warnMissingFamilyOnce(family, weight, style, fallback);
+          return { ...result, substituted: { requested: family, resolved: fallback } };
+        }
       }
+      // Substitution was supposed to happen and produced nothing. Falling
+      // through silently here is the invisible-text failure this whole policy
+      // exists to eliminate, so say which of the two families to fix.
+      warnUnusableDefaultOnce(family, weight, style, fallback);
     }
   }
 
@@ -260,7 +266,7 @@ const warnedMissingFamilies = new Set<string>();
 function warnMissingFamilyOnce(
   family: string, weight: number, style: FontStyle, resolved: string,
 ): void {
-  const key = `${family}|${weight}|${style}`;
+  const key = `substituted|${family}|${weight}|${style}`;
   if (warnedMissingFamilies.has(key)) return;
   warnedMissingFamilies.add(key);
   // Two distinct failures land here. Saying "not registered" for a family
@@ -278,6 +284,33 @@ function warnMissingFamilyOnce(
     `weasel: font family "${family}" (${weight}/${style}) ${cause}. ` +
     `Advance widths will differ from the requested font. Use ` +
     `setFontFallbackPolicy('none') to make this a hard miss instead.`,
+  );
+}
+
+/**
+ * The substitute policy engaged and still came up empty. Distinct from
+ * `warnMissingFamilyOnce`, which reports a *successful* swap: here nothing
+ * renders, and the fix is almost always in the fallback family rather than
+ * the requested one — so name it, and say which way it was chosen.
+ */
+function warnUnusableDefaultOnce(
+  family: string, weight: number, style: FontStyle, fallback: string,
+): void {
+  const key = `unusable-default|${family}|${weight}|${style}`;
+  if (warnedMissingFamilies.has(key)) return;
+  warnedMissingFamilies.add(key);
+  const origin = getDefaultFontFamily() === fallback
+    ? 'set via setDefaultFontFamily'
+    : 'the first registered family, since setDefaultFontFamily was never called';
+  const gap = registry.has(fallback) || isCanvasFont(fallback)
+    ? `has no variant that can serve ${weight}/${style}`
+    : 'is not registered either';
+  console.warn(
+    `weasel: font family "${family}" (${weight}/${style}) is not available, and ` +
+    `the fallback family "${fallback}" (${origin}) ${gap} — this text will not ` +
+    `render at all. Bake that variant with registerFont("${fallback}", ` +
+    `{ weight: ${weight}, style: '${style}' }, …), or point ` +
+    `setDefaultFontFamily() at a family that covers it.`,
   );
 }
 

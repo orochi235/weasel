@@ -57,11 +57,14 @@ describe('substitute policy', () => {
   });
 
   it('does not recurse when the default family is itself unregistered', () => {
+    // Silenced only: this now warns (see 'unusable default family' below).
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     setDefaultFontFamily('Ghost');
 
     const result = resolveFontVariant('AlsoGhost', 400, 'normal');
 
     expect(result.entry).toBeNull();
+    warn.mockRestore();
   });
 });
 
@@ -214,6 +217,65 @@ describe('warning accuracy', () => {
     resolveFontVariant('Comic Sans', 400, 'normal');
 
     expect(warn.mock.calls[0][0]).toContain('is not registered');
+    warn.mockRestore();
+  });
+});
+
+describe('unusable default family', () => {
+  it('warns when the default family cannot serve the requested variant', async () => {
+    // Inter is baked only at 700/italic, so substituting it for a 400/normal
+    // request resolves to nothing — the exact invisible-text trap the
+    // fallback policy exists to eliminate, reached by the likeliest
+    // misconfiguration of setDefaultFontFamily.
+    await registerTestFont('Inter', 700, 'italic');
+    setDefaultFontFamily('Inter');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = resolveFontVariant('Comic Sans', 400, 'normal');
+
+    expect(result.entry).toBeNull();
+    expect(result.dynamicFace).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+    const message = warn.mock.calls[0][0] as string;
+    // Naming only the requested family sends the reader to the wrong fix.
+    expect(message).toContain('"Inter"');
+    expect(message).toContain('setDefaultFontFamily');
+    expect(message).toContain('"Comic Sans"');
+    warn.mockRestore();
+  });
+
+  it('warns when the default family is not registered at all', () => {
+    setDefaultFontFamily('Ghost');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    resolveFontVariant('AlsoGhost', 400, 'normal');
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('"Ghost"');
+    warn.mockRestore();
+  });
+
+  it('stays silent when no family is registered and no default is set', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    resolveFontVariant('Nothing', 400, 'normal');
+
+    // Nothing to substitute and nothing configured: not a misconfiguration.
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('warns once per variant', async () => {
+    await registerTestFont('Inter', 700, 'italic');
+    setDefaultFontFamily('Inter');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    resolveFontVariant('Comic Sans', 400, 'normal');
+    resolveFontVariant('Comic Sans', 400, 'normal');
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    resolveFontVariant('Comic Sans', 700, 'normal');
+    expect(warn).toHaveBeenCalledTimes(2);
     warn.mockRestore();
   });
 });
