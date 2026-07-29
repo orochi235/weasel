@@ -526,6 +526,43 @@ function clamp01(n: number): number {
 }
 
 /**
+ * Parse an SVG `letter-spacing` value into world units. Accepts a bare
+ * number, a `px` suffix, or the `normal` keyword (→ `undefined`, via the
+ * `NaN` from `parseFloat('normal')`). Any other unit suffix (`em`, `%`,
+ * `pt`, …) is still numerically coerced — `parseFloat` reads the leading
+ * digits — but flagged, since e.g. `0.1em` silently becomes `0.1` world
+ * units, off by a factor of the font size.
+ */
+function parseLetterSpacing(raw: string, onWarn: (m: string) => void): number | undefined {
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return undefined;
+  const unit = /^-?[\d.]+([a-z%]+)$/i.exec(raw.trim())?.[1]?.toLowerCase();
+  if (unit && unit !== 'px') {
+    onWarn(`letter-spacing "${raw}" uses unit "${unit}", which is not converted; treated as ${n} world units`);
+  }
+  return n;
+}
+
+/**
+ * Parse an SVG `text-decoration` value into the two boolean flags the runs
+ * model uses. `text-decoration` is a space-separated list of line tokens
+ * (`underline`, `line-through`, `overline`, `blink`, `none`), matched
+ * case-insensitively per CSS keyword rules; we only model `underline` and
+ * `line-through` (→ `strikethrough`) — any other token (including `none`,
+ * and unrecognized values like `overline`) is dropped without warning,
+ * since it's either the explicit "no decoration" case or a decoration kind
+ * the runs model has no key for.
+ */
+function parseTextDecoration(raw: string | null): { underline?: boolean; strikethrough?: boolean } {
+  if (raw == null) return {};
+  const tokens = raw.trim().toLowerCase().split(/\s+/);
+  const out: { underline?: boolean; strikethrough?: boolean } = {};
+  if (tokens.includes('underline')) out.underline = true;
+  if (tokens.includes('line-through')) out.strikethrough = true;
+  return out;
+}
+
+/**
  * Parse an SVG `<text>` element into an `SvgTextNode`. Reads geometry
  * from x/y plus optional `data-weasel-width` / `data-weasel-height`
  * (preserved across weasel→SVG round-trips); falls back to font-metric
@@ -594,7 +631,7 @@ function parseTextElement(
         if (t) { runs.push({ text: t }); plain += t; }
         continue;
       }
-      const run = readTspanRun(sp, gradients, leafStyle);
+      const run = readTspanRun(sp, gradients, leafStyle, onWarn);
       runs.push(run);
       plain += run.text;
     }
@@ -648,25 +685,12 @@ function parseTextElement(
   return node;
 }
 
-/**
- * Parse an SVG `text-decoration` value into the two boolean flags the runs
- * model uses. `text-decoration` is a space-separated list of line tokens
- * (`underline`, `line-through`, `overline`, `blink`, `none`); we only model
- * `underline` and `line-through` (→ `strikethrough`) — any other token
- * (including `none`, and unrecognized values like `overline`) is dropped
- * without warning, since it's either the explicit "no decoration" case or a
- * decoration kind the runs model has no key for.
- */
-function parseTextDecoration(raw: string | null): { underline?: boolean; strikethrough?: boolean } {
-  if (raw == null) return {};
-  const tokens = raw.trim().split(/\s+/);
-  const out: { underline?: boolean; strikethrough?: boolean } = {};
-  if (tokens.includes('underline')) out.underline = true;
-  if (tokens.includes('line-through')) out.strikethrough = true;
-  return out;
-}
-
-function readTspanRun(el: Element, gradients: GradientTable, style: StyleContext): StyledRun {
+function readTspanRun(
+  el: Element,
+  gradients: GradientTable,
+  style: StyleContext,
+  onWarn: (m: string) => void,
+): StyledRun {
   const text = el.textContent ?? '';
   const run: StyledRun = { text };
   const fw = ownProp(el, 'font-weight');
@@ -682,8 +706,8 @@ function readTspanRun(el: Element, gradients: GradientTable, style: StyleContext
   }
   const ls = ownProp(el, 'letter-spacing');
   if (ls != null) {
-    const n = parseFloat(ls);
-    if (Number.isFinite(n)) run.letterSpacing = n;
+    const n = parseLetterSpacing(ls, onWarn);
+    if (n != null) run.letterSpacing = n;
   }
   const decoration = parseTextDecoration(ownProp(el, 'text-decoration'));
   if (decoration.underline) run.underline = true;
@@ -729,8 +753,8 @@ function readTextStyle(
   else if (anchor === 'end') out.align = 'right';
   const ls = style['letter-spacing'];
   if (ls != null) {
-    const n = parseFloat(ls);
-    if (Number.isFinite(n)) out.letterSpacing = n;
+    const n = parseLetterSpacing(ls, onWarn);
+    if (n != null) out.letterSpacing = n;
   }
   const decoration = parseTextDecoration(style['text-decoration'] ?? null);
   if (decoration.underline) out.underline = true;

@@ -540,14 +540,89 @@ describe('letter-spacing / text-decoration', () => {
     expect(t.runs?.[1]?.letterSpacing).toBeUndefined();
   });
 
-  it('omits letter-spacing when it is 0 (the default)', () => {
+  it('omits node-level letterSpacing when it is 0 (the default)', () => {
     const node: SvgNode = {
       kind: 'text',
       x: 0, y: 0, width: 100, height: 20,
       text: 'hi',
-      runs: [{ text: 'hi', letterSpacing: 0 }],
+      style: { letterSpacing: 0 },
     };
     const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
     expect(svg).not.toContain('letter-spacing');
+  });
+
+  it('emits run-level letterSpacing even when it is 0 — a real override, not "unset"', () => {
+    // Per the runs model's additive-flags contract (rangeStyle.ts), a run
+    // storing `letterSpacing: 0` is deliberately distinct from a run that
+    // doesn't mention letterSpacing at all (which inherits the node's
+    // value). Dropping it on serialize would silently turn the override
+    // into an inherit, changing what the document renders.
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      style: { letterSpacing: 4 },
+      runs: [{ text: 'hi', letterSpacing: 0 }],
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).toContain('letter-spacing="4"');
+    expect(svg).toContain('<tspan letter-spacing="0">hi</tspan>');
+  });
+
+  it('is idempotent when a run overrides the node letterSpacing down to 0', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'AB',
+      style: { letterSpacing: 4 },
+      runs: [{ text: 'A' }, { text: 'B', letterSpacing: 0 }],
+    };
+    const svg1 = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    const parsed = parseSvg(svg1);
+    const t = parsed.nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.letterSpacing).toBe(4);
+    // The override must survive as an explicit 0, not fall back to
+    // "unset → inherits 4".
+    expect(t.runs?.[1]?.letterSpacing).toBe(0);
+    const svg2 = serializeSvg(parsed.nodes, { viewBox: parsed.viewBox });
+    expect(svg2).toBe(svg1);
+  });
+
+  it('a run with only strikethrough (no other override) still attaches node.runs', () => {
+    // hasStyling in parseTextElement decides whether the run array survives
+    // parse at all — every other test here happens to set `underline`
+    // alongside `strikethrough`, which would mask a hasStyling regression
+    // that only checked one of the two flags.
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan text-decoration="line-through">hi</tspan></text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs).toBeDefined();
+    expect(t.runs?.[0]).toMatchObject({ strikethrough: true });
+    expect(t.runs?.[0]?.underline).toBeUndefined();
+  });
+
+  it('warns on a non-px letter-spacing unit (e.g. em) but still parses the numeric value', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan letter-spacing="0.1em">hi</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.letterSpacing).toBe(0.1);
+    expect(warnings.some((w) => /letter-spacing/.test(w) && /em/.test(w))).toBe(true);
+  });
+
+  it('matches text-decoration tokens case-insensitively', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan text-decoration="UNDERLINE">hi</tspan></text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.underline).toBe(true);
   });
 });

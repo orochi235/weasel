@@ -321,7 +321,10 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: GradientRegi
   if (run.italic) attrs.push(`font-style="italic"`);
   if (run.fontFamily) attrs.push(`font-family="${escapeAttr(run.fontFamily)}"`);
   if (run.fontSize != null) attrs.push(`font-size="${trimNumber(run.fontSize)}"`);
-  if (run.letterSpacing != null && run.letterSpacing !== 0) {
+  // Unlike the node-level style guard above, a run-level `0` is a meaningful
+  // *override* (distinct from "inherit the node's letterSpacing") per the
+  // runs model's additive-flags contract — emit it whenever it's set.
+  if (run.letterSpacing != null) {
     attrs.push(`letter-spacing="${trimNumber(run.letterSpacing)}"`);
   }
   const runDecoration = textDecorationValue(run.underline, run.strikethrough);
