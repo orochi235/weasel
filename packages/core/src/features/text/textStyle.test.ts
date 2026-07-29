@@ -101,3 +101,19 @@ describe('fontString', () => {
     expect(fontString(DEFAULT_TEXT_STYLE)).toBe('normal 400 16px sans-serif');
   });
 });
+
+describe('new typography keys', () => {
+  it('defaults letterSpacing to 0 and decoration to off', () => {
+    const s = resolveTextStyle({});
+    expect(s.letterSpacing).toBe(0);
+    expect(s.underline).toBe(false);
+    expect(s.strikethrough).toBe(false);
+  });
+
+  it('passes explicit values through', () => {
+    const s = resolveTextStyle({ letterSpacing: 1.5, underline: true, strikethrough: true });
+    expect(s.letterSpacing).toBe(1.5);
+    expect(s.underline).toBe(true);
+    expect(s.strikethrough).toBe(true);
+  });
+});

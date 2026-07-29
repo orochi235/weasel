@@ -18,6 +18,9 @@ export interface StyledRun {
   fontFamily?: string;
   fontSize?: number;
   fill?: FillStyle;
+  letterSpacing?: number;
+  underline?: boolean;
+  strikethrough?: boolean;
 }
 
 export function toRuns(input: string | StyledRun[]): StyledRun[] {
