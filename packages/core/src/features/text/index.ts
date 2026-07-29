@@ -14,7 +14,7 @@ export {
   fontString,
 } from './textStyle';
 export type { TextStyle, ResolvedTextStyle } from './textStyle';
-export { measureText } from './measureText';
+export { measureText, measuredWidth } from './measureText';
 export type { MeasuredText } from './measureText';
 export { measureTextBounds } from './measureTextBounds';
 export type { MeasureTextBoundsOpts } from './measureTextBounds';

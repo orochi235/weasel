@@ -72,3 +72,28 @@ describe('fitTextPose', () => {
     expect(fit.style).toEqual({ fontSize: 16, align: 'center' });
   });
 });
+
+describe('fitTextPose — tracking', () => {
+  it("axis 'both' sizes the box to include tracking", () => {
+    // 5 glyphs × 10 + 5 × 3 tracking = 65. Without counting tracking the box
+    // came back 50 wide and clipped the text it was fitted to.
+    const ctx = makeCtx();
+    const pose: TextPose = {
+      x: 0, y: 0, width: 1, height: 1,
+      text: 'abcde',
+      style: { letterSpacing: 3 },
+    };
+    expect(fitTextPose(ctx, pose, { axis: 'both' }).width).toBe(65);
+  });
+
+  it("axis 'height' wraps with tracking counted", () => {
+    const ctx = makeCtx();
+    const pose: TextPose = {
+      x: 0, y: 0, width: 100, height: 1,
+      text: 'the quick brown',
+      style: { letterSpacing: 2 },
+    };
+    // Three lines instead of two — the same break the renderer makes.
+    expect(fitTextPose(ctx, pose, { axis: 'height' }).height).toBe(3 * lh);
+  });
+});

@@ -11,7 +11,7 @@
  * back through `lineStarts`; respects `style.align` for line anchoring.
  */
 
-import { measureText } from './measureText';
+import { measureText, measuredWidth } from './measureText';
 import { fontString, resolveTextStyle } from './textStyle';
 import type { TextPose } from './textLayer';
 
@@ -73,14 +73,11 @@ export function caretIndexAt(
     // `ctx.font = fontString(style)` above never carries it — tracking has to
     // be added to the measured advances by hand or the caret drifts further
     // from the pointer with every glyph. Applied after *every* character
-    // including the last, matching CSS and `layoutRuns`.
-    //
-    // This fixes stepping *within* a line only. `measureText` above still
-    // wraps without tracking (see the TODO there), while `layoutRuns` counts
-    // it toward the wrap decision, so on wrapped tracked text the line this
-    // maps into can still be off by a word.
+    // including the last, matching CSS and `layoutRuns`; `measuredWidth` is
+    // the same formula the wrap above now uses, so the line this maps into
+    // and the line the renderer painted are the same line.
     const tracking = style.letterSpacing;
-    const lineWidth = ctx.measureText(line).width + line.length * tracking;
+    const lineWidth = measuredWidth(ctx, line, style);
 
     let xLeft: number;
     switch (style.align) {

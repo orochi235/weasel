@@ -68,3 +68,34 @@ describe('measureText', () => {
     expect(r.height).toBe(3 * 20 * 1.5);
   });
 });
+
+describe('measureText — tracking', () => {
+  it('counts tracking toward the wrap decision', () => {
+    // Untracked, "the quick" is 9 chars = 90px and fits in 100. With 2 units
+    // of tracking per code point it is 108 and does not — the same rule
+    // `layoutRuns` (the path that actually paints) applies, so the two agree
+    // on where the line breaks.
+    const ctx = makeCtx();
+    const style = { ...DEFAULT_TEXT_STYLE, letterSpacing: 2 };
+    expect(measureText(ctx, 'the quick brown', 100, style).lines).toEqual([
+      'the', 'quick', 'brown',
+    ]);
+  });
+
+  it('leaves untracked text where it was', () => {
+    const ctx = makeCtx();
+    const style = { ...DEFAULT_TEXT_STYLE, letterSpacing: 0 };
+    expect(measureText(ctx, 'the quick brown', 100, style).lines).toEqual([
+      'the quick', 'brown',
+    ]);
+  });
+
+  it('counts trailing tracking, as CSS does', () => {
+    // 'abcde' = 50px of glyphs + 5 * 2 tracking = 60. At maxWidth 59 it must
+    // not fit; the trailing unit is part of the inline box.
+    const ctx = makeCtx();
+    const style = { ...DEFAULT_TEXT_STYLE, letterSpacing: 2 };
+    expect(measureText(ctx, 'abcde fg', 59, style).lines).toEqual(['abcde', 'fg']);
+    expect(measureText(ctx, 'abcde fg', 60, style).lines).toEqual(['abcde', 'fg']);
+  });
+});

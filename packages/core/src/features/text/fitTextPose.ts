@@ -19,7 +19,7 @@
  * `x` / `y` after calling.
  */
 
-import { measureText } from './measureText';
+import { measureText, measuredWidth } from './measureText';
 import { fontString, resolveTextStyle } from './textStyle';
 import type { TextPose } from './textLayer';
 
@@ -52,7 +52,7 @@ export function fitTextPose(
     const lines = pose.text.split('\n');
     let maxWidth = 0;
     for (const line of lines) {
-      const w = ctx.measureText(line).width;
+      const w = measuredWidth(ctx, line, style);
       if (w > maxWidth) maxWidth = w;
     }
     return {
