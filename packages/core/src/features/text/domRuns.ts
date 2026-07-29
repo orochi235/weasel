@@ -18,18 +18,31 @@ function solidColor(p: FillStyle | undefined): string | null {
 interface StyleState {
   bold: boolean;
   italic: boolean;
+  underline: boolean;
+  strikethrough: boolean;
   fontSize?: number;
   fontFamily?: string;
   color?: string;
+  letterSpacing?: number;
 }
 
-const EMPTY_STYLE: StyleState = { bold: false, italic: false };
+const EMPTY_STYLE: StyleState = {
+  bold: false,
+  italic: false,
+  underline: false,
+  strikethrough: false,
+};
 
 function styleStateFromElement(el: Element, parent: StyleState): StyleState {
   const next: StyleState = { ...parent };
   const tag = el.tagName;
   if (tag === 'B' || tag === 'STRONG') next.bold = true;
   if (tag === 'I' || tag === 'EM') next.italic = true;
+  // `runsToDom` never emits these, but a browser contenteditable can (Cmd+U
+  // runs the native `underline` command, which produces `<u>` in Chrome), so
+  // read them for the same reason `<b>`/`<i>` are read.
+  if (tag === 'U') next.underline = true;
+  if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL') next.strikethrough = true;
   if (el instanceof HTMLElement) {
     const fw = el.style.fontWeight;
     if (fw === '700' || fw === 'bold') next.bold = true;
@@ -37,12 +50,27 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     const fs = el.style.fontStyle;
     if (fs === 'italic') next.italic = true;
     if (fs === 'normal') next.italic = false;
+    // One declaration carries both decorations, so a present `text-decoration`
+    // is authoritative for both: `none` clears an inherited underline the same
+    // way `font-weight: normal` clears an inherited bold.
+    const td = el.style.textDecoration;
+    if (td) {
+      next.underline = td.includes('underline');
+      next.strikethrough = td.includes('line-through');
+    }
     if (el.style.fontSize) {
       const px = parseFloat(el.style.fontSize);
       if (Number.isFinite(px)) next.fontSize = px;
     }
     if (el.style.fontFamily) next.fontFamily = el.style.fontFamily;
     if (el.style.color) next.color = el.style.color;
+    const ls = el.style.letterSpacing;
+    if (ls === 'normal') {
+      next.letterSpacing = undefined;
+    } else if (ls) {
+      const px = parseFloat(ls);
+      if (Number.isFinite(px)) next.letterSpacing = px;
+    }
   }
   return next;
 }
@@ -51,9 +79,12 @@ function styleEquals(a: StyleState, b: StyleState): boolean {
   return (
     a.bold === b.bold &&
     a.italic === b.italic &&
+    a.underline === b.underline &&
+    a.strikethrough === b.strikethrough &&
     a.fontSize === b.fontSize &&
     a.fontFamily === b.fontFamily &&
-    a.color === b.color
+    a.color === b.color &&
+    a.letterSpacing === b.letterSpacing
   );
 }
 
@@ -64,6 +95,13 @@ function toRun(text: string, style: StyleState): StyledRun {
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
   if (style.color != null) run.fill = { fill: 'solid', color: style.color };
+  // `letterSpacing: 0` is a meaningful override (it cancels node-level
+  // tracking for this run), so test for presence, not truthiness.
+  if (style.letterSpacing != null) run.letterSpacing = style.letterSpacing;
+  // Run-level flags are additive over the node style — a run cannot un-set
+  // one — so an undecorated run gets an absent key, never `false`.
+  if (style.underline) run.underline = true;
+  if (style.strikethrough) run.strikethrough = true;
   return run;
 }
 
@@ -124,6 +162,18 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
     if (run.fontFamily != null) span.style.fontFamily = run.fontFamily;
     const color = solidColor(run.fill);
     if (color != null) span.style.color = color;
+    // Decoration goes on the span as an inline style rather than `<u>`/`<s>`
+    // wrappers: one representation for `domToRuns` to unwrap, and one element
+    // per run so the caret-offset walkers stay flat.
+    const decorations: string[] = [];
+    if (run.underline) decorations.push('underline');
+    if (run.strikethrough) decorations.push('line-through');
+    if (decorations.length > 0) span.style.textDecoration = decorations.join(' ');
+    // World units — the overlay's own node-level tracking is screen-scaled,
+    // but a run override is stored as-is so the round-trip is lossless. CSS
+    // `letter-spacing` is inherited and a child declaration *replaces* the
+    // inherited value, so this composes with the overlay's rather than adding.
+    if (run.letterSpacing != null) span.style.letterSpacing = `${run.letterSpacing}px`;
     parent.appendChild(span);
   }
 }

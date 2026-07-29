@@ -69,7 +69,13 @@ export function caretIndexAt(
 
     const line = wrapped.lines[rawLine];
     const lineStart = wrapped.lineStarts[rawLine];
-    const lineWidth = ctx.measureText(line).width;
+    // `letter-spacing` is not part of the CSS `font` shorthand, so setting
+    // `ctx.font = fontString(style)` above never carries it — tracking has to
+    // be added to the measured advances by hand or the caret drifts further
+    // from the pointer with every glyph. Applied after *every* character
+    // including the last, matching CSS and `layoutRuns`.
+    const tracking = style.letterSpacing;
+    const lineWidth = ctx.measureText(line).width + line.length * tracking;
 
     let xLeft: number;
     switch (style.align) {
@@ -87,9 +93,11 @@ export function caretIndexAt(
 
     let cursor = xLeft;
     for (let i = 0; i < line.length; i++) {
-      const charW = ctx.measureText(line[i]).width;
-      if (x < cursor + charW / 2) return lineStart + i;
-      cursor += charW;
+      // Snap on the midpoint of the glyph's full advance cell (glyph + its
+      // trailing tracking), which is the step the pen actually takes.
+      const step = ctx.measureText(line[i]).width + tracking;
+      if (x < cursor + step / 2) return lineStart + i;
+      cursor += step;
     }
     return lineStart + line.length;
   } finally {

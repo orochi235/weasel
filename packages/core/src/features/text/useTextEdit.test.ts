@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
 import type { StyledRun } from './runs';
+import type { TextStyle } from './textStyle';
 
 function makeHarness(initial: Record<string, string>) {
   const texts = { ...initial };
@@ -555,5 +556,139 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     act(() => pressKey(overlay, 'b', { ctrl: true }));
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
+  });
+});
+
+/** Rich harness with a caller-supplied node style and screen font size, so
+ *  the world→screen factor (`pose.fontSize / style.fontSize`) is testable. */
+function makeTrackingHarness(
+  runs: StyledRun[],
+  style: TextStyle,
+  screenFontSize = style.fontSize ?? 16,
+) {
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const runCommits: Array<{ id: string; runs: StyledRun[] }> = [];
+  const opts: UseTextEditOptions = {
+    container,
+    getText: () => runs.map((r) => r.text).join(''),
+    getStyle: () => style,
+    getScreenPose: () => ({ x: 0, y: 0, width: 200, height: 40, fontSize: screenFontSize }),
+    setText: () => {},
+    getRuns: () => runs,
+    setRuns: (id, next) => { runCommits.push({ id, runs: next }); },
+  };
+  return { opts, container, runCommits };
+}
+
+describe('useTextEdit — letter-spacing on the overlay', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('applies the node-level letterSpacing to the overlay at zoom 1', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, letterSpacing: 3 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.letterSpacing).toBe('3px');
+  });
+
+  it('scales the node-level letterSpacing by the world→screen factor', () => {
+    // pose.fontSize 32 against style.fontSize 16 → zoom 2.
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, letterSpacing: 3 }, 32);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.letterSpacing).toBe('6px');
+  });
+
+  it('applies zero tracking when the style omits letterSpacing', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16 }, 32);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.letterSpacing).toBe('0px');
+  });
+
+  it('lets a run-level letterSpacing replace the overlay value rather than add to it', () => {
+    // CSS `letter-spacing` is inherited, and a child's own declaration
+    // *replaces* the inherited value — it is not additive. So the run span
+    // must carry the run's own world value, untouched by the node's.
+    const h = makeTrackingHarness(
+      [{ text: 'a' }, { text: 'b', letterSpacing: 2 }],
+      { fontSize: 16, letterSpacing: 3 },
+    );
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    const spans = overlay.querySelectorAll('span[data-run]');
+    expect(overlay.style.letterSpacing).toBe('3px');
+    expect((spans[0] as HTMLSpanElement).style.letterSpacing).toBe('');
+    expect((spans[1] as HTMLSpanElement).style.letterSpacing).toBe('2px');
+  });
+});
+
+describe('useTextEdit — node-level decoration on the overlay', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('carries node-level underline / strikethrough onto the overlay', () => {
+    const h = makeTrackingHarness(
+      [{ text: 'abc' }],
+      { fontSize: 16, underline: true, strikethrough: true },
+    );
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.textDecoration).toBe('underline line-through');
+  });
+
+  it('sets text-decoration: none on an undecorated node', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.textDecoration).toBe('none');
+  });
+
+  it('does not read its own node-level decoration back as a run flag', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, underline: true });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+  });
+});
+
+describe('useTextEdit — decoration and tracking survive the commit path', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('an untouched edit commits the runs it started with', () => {
+    const runs: StyledRun[] = [
+      { text: 'a', underline: true },
+      { text: 'b', strikethrough: true, letterSpacing: 2 },
+      { text: 'c', letterSpacing: 0 },
+    ];
+    const h = makeTrackingHarness(runs, { fontSize: 16, letterSpacing: 3 }, 32);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(h.runCommits).toEqual([{ id: 'a', runs }]);
+  });
+
+  it('Cmd-B on a tracked, decorated range keeps the other keys', () => {
+    const h = makeTrackingHarness(
+      [{ text: 'one two', underline: true, letterSpacing: 2 }],
+      { fontSize: 16 },
+    );
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'one', bold: true, underline: true, letterSpacing: 2 },
+      { text: ' two', underline: true, letterSpacing: 2 },
+    ]);
   });
 });

@@ -62,6 +62,45 @@ describe('runsToDom', () => {
     expect(parent.querySelectorAll('p')).toHaveLength(0);
     expect(parent.querySelectorAll('span[data-run]')).toHaveLength(1);
   });
+
+  it('renders decoration as inline style, not element wrappers', () => {
+    runsToDom([{ text: 'a', underline: true, strikethrough: true }], parent);
+    expect(parent.querySelector('u')).toBeNull();
+    expect(parent.querySelector('s')).toBeNull();
+    expect(parent.firstElementChild).toHaveStyle({ textDecoration: 'underline line-through' });
+  });
+
+  it('emits each decoration on its own', () => {
+    runsToDom([{ text: 'u', underline: true }, { text: 's', strikethrough: true }], parent);
+    const spans = parent.querySelectorAll('span[data-run]');
+    expect((spans[0] as HTMLSpanElement).style.textDecoration).toBe('underline');
+    expect((spans[1] as HTMLSpanElement).style.textDecoration).toBe('line-through');
+  });
+
+  it('leaves text-decoration unset on an undecorated run so the node style shows through', () => {
+    runsToDom([{ text: 'a' }], parent);
+    const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
+    expect(span.style.textDecoration).toBe('');
+    expect(span.style.letterSpacing).toBe('');
+  });
+
+  it('emits letterSpacing in px', () => {
+    runsToDom([{ text: 'a', letterSpacing: 2.5 }], parent);
+    const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
+    expect(span.style.letterSpacing).toBe('2.5px');
+  });
+
+  it('emits an explicit letterSpacing: 0 override rather than dropping it', () => {
+    runsToDom([{ text: 'a', letterSpacing: 0 }], parent);
+    const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
+    expect(span.style.letterSpacing).toBe('0px');
+  });
+
+  it('emits negative tracking', () => {
+    runsToDom([{ text: 'a', letterSpacing: -1 }], parent);
+    const span = parent.querySelector('span[data-run]') as HTMLSpanElement;
+    expect(span.style.letterSpacing).toBe('-1px');
+  });
 });
 
 describe('domToRuns', () => {
@@ -137,6 +176,159 @@ describe('domToRuns', () => {
     ];
     runsToDom(runs, parent);
     expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('reads decoration back off inline text-decoration', () => {
+    const span = document.createElement('span');
+    span.setAttribute('data-run', '');
+    span.style.textDecoration = 'underline line-through';
+    span.textContent = 'x';
+    parent.append(span);
+    expect(domToRuns(parent)).toEqual([{ text: 'x', underline: true, strikethrough: true }]);
+  });
+
+  it('treats text-decoration: none as clearing an inherited decoration', () => {
+    const outer = document.createElement('span');
+    outer.style.textDecoration = 'underline';
+    const inner = document.createElement('span');
+    inner.style.textDecoration = 'none';
+    inner.textContent = 'x';
+    outer.append(inner);
+    parent.append(outer);
+    expect(domToRuns(parent)).toEqual([{ text: 'x' }]);
+  });
+
+  it('flattens <u> / <s> / <strike> wrappers into decoration flags', () => {
+    // `<s>` and `<strike>` produce the same style, so they coalesce.
+    parent.innerHTML = '<u>un</u><s>st</s><strike>rike</strike><u>u2</u>';
+    expect(domToRuns(parent)).toEqual([
+      { text: 'un', underline: true },
+      { text: 'strike', strikethrough: true },
+      { text: 'u2', underline: true },
+    ]);
+  });
+
+  it('reads letterSpacing back as a number', () => {
+    const span = document.createElement('span');
+    span.setAttribute('data-run', '');
+    span.style.letterSpacing = '3.5px';
+    span.textContent = 'x';
+    parent.append(span);
+    expect(domToRuns(parent)).toEqual([{ text: 'x', letterSpacing: 3.5 }]);
+  });
+
+  it('treats letter-spacing: normal as clearing an inherited value', () => {
+    const outer = document.createElement('span');
+    outer.style.letterSpacing = '4px';
+    const inner = document.createElement('span');
+    inner.style.letterSpacing = 'normal';
+    inner.textContent = 'x';
+    outer.append(inner);
+    parent.append(outer);
+    expect(domToRuns(parent)).toEqual([{ text: 'x' }]);
+  });
+
+  it('ignores the overlay root\'s own letter-spacing (it is screen-scaled, not a run value)', () => {
+    // `useTextEdit` sets the node-level tracking on the overlay itself in
+    // *screen* px. Reading it back as a run-level value would both scale the
+    // world value by the zoom and pin an inherited value onto every run.
+    parent.style.letterSpacing = '8px';
+    runsToDom([{ text: 'a' }], parent);
+    expect(domToRuns(parent)).toEqual([{ text: 'a' }]);
+  });
+
+  it('does not coalesce runs that differ only in the new keys', () => {
+    runsToDom([
+      { text: 'a', underline: true },
+      { text: 'b', strikethrough: true },
+      { text: 'c', letterSpacing: 1 },
+      { text: 'd', letterSpacing: 2 },
+    ], parent);
+    expect(domToRuns(parent)).toHaveLength(4);
+  });
+});
+
+describe('domRuns round-trip — decoration and tracking', () => {
+  let parent: HTMLDivElement;
+  beforeEach(() => {
+    parent = document.createElement('div');
+    document.body.appendChild(parent);
+  });
+
+  it('round-trips the new style keys', () => {
+    const runs: StyledRun[] = [
+      { text: 'a', underline: true },
+      { text: 'b', strikethrough: true, letterSpacing: 2 },
+    ];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('round-trips letterSpacing: 0 as an explicit override', () => {
+    const runs: StyledRun[] = [{ text: 'a', letterSpacing: 0 }, { text: 'b', letterSpacing: 4 }];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('round-trips negative and fractional tracking', () => {
+    const runs: StyledRun[] = [{ text: 'a', letterSpacing: -1.25 }, { text: 'b', letterSpacing: 0.5 }];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('normalizes explicit false flags to absent keys', () => {
+    // Run-level flags are additive over the node style — a run cannot un-set
+    // one — so `false` is not a storable value, it is the absence of the key.
+    runsToDom([{ text: 'a', underline: false, strikethrough: false, bold: false }], parent);
+    expect(domToRuns(parent)).toEqual([{ text: 'a' }]);
+  });
+
+  it('round-trips markup-significant characters verbatim', () => {
+    const runs: StyledRun[] = [
+      { text: '<b>&amp;</b>', underline: true },
+      { text: ' "quoted" & <s> ', letterSpacing: 1 },
+    ];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('round-trips the new keys alongside the old ones', () => {
+    const runs: StyledRun[] = [
+      { text: 'a', bold: true, underline: true },
+      {
+        text: 'b',
+        italic: true,
+        strikethrough: true,
+        letterSpacing: 3,
+        fontSize: 24,
+        fontFamily: 'mono',
+        fill: { fill: 'solid', color: 'rgb(255, 0, 0)' },
+      },
+      { text: 'c' },
+    ];
+    runsToDom(runs, parent);
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
+  it('is idempotent across a range of shapes', () => {
+    const shapes: StyledRun[][] = [
+      [{ text: 'plain' }],
+      [{ text: 'a', underline: true }, { text: 'b' }],
+      [{ text: 'a', strikethrough: true, letterSpacing: 0 }],
+      [{ text: 'a\nb', underline: true, letterSpacing: -2 }],
+      [
+        { text: 'mixed ', bold: true, underline: true },
+        { text: 'tail', italic: true, strikethrough: true, letterSpacing: 1.5 },
+      ],
+    ];
+    for (const shape of shapes) {
+      runsToDom(shape, parent);
+      const once = domToRuns(parent);
+      expect(once).toEqual(shape);
+      runsToDom(once, parent);
+      const twice = domToRuns(parent);
+      expect(twice).toEqual(once);
+    }
   });
 });
 

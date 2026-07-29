@@ -331,6 +331,14 @@ function applyOverlayStyle(el: HTMLDivElement, style: ResolvedTextStyle): void {
   el.style.font = fontString(style);
   el.style.lineHeight = String(style.lineHeight);
   el.style.textAlign = style.align;
+  // Node-level decoration, so the overlay looks like the canvas the moment
+  // editing starts. Runs are additive over the node style (a run can't un-set
+  // a flag), which is exactly how CSS decoration propagates to descendants —
+  // a run span adds its own decoration but can't remove this one.
+  const decorations: string[] = [];
+  if (style.underline) decorations.push('underline');
+  if (style.strikethrough) decorations.push('line-through');
+  el.style.textDecoration = decorations.length > 0 ? decorations.join(' ') : 'none';
   el.style.whiteSpace = 'pre-wrap';
   el.style.overflowWrap = 'break-word';
   el.style.wordBreak = 'normal';
@@ -380,4 +388,16 @@ function placeOverlay(
   el.style.minHeight = `${pose.height}px`;
   el.style.fontSize = `${pose.fontSize}px`;
   el.style.lineHeight = String(pose.lineHeight ?? style.lineHeight);
+  // `letter-spacing` is not part of the CSS `font` shorthand, so
+  // `applyOverlayStyle`'s `el.style.font` never carries it — it needs its own
+  // assignment. It also lives here rather than there because it's the one
+  // world-unit typography value that has to be re-scaled as the view zooms.
+  //
+  // `pose.fontSize` is documented as `style.fontSize * zoom`, so their ratio
+  // is the overlay's world→screen factor — the same one that already turns
+  // the style's font size into the on-screen one. Run-level overrides come
+  // through `runsToDom`'s spans; CSS inheritance makes a span's own
+  // declaration replace this value rather than add to it.
+  const scale = style.fontSize > 0 ? pose.fontSize / style.fontSize : 1;
+  el.style.letterSpacing = `${style.letterSpacing * scale}px`;
 }
