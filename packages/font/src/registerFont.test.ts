@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerFont, getFont, resolveFontVariant, _resetFontRegistryForTests } from './registerFont';
+import {
+  registerFont, getFont, resolveFontVariant, listFonts, _resetFontRegistryForTests,
+} from './registerFont';
 import { FIXTURE_FONT } from './FontAtlas';
 import {
   registerCanvasFont, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
 } from './dynamic/dynamicAtlas';
 import { BAKE_SIZE } from './dynamic/glyphRasterizer';
+import { registerTestFont } from './testing/registerTestFont';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -303,5 +306,34 @@ describe('resolveFontVariant — canvas-dynamic tier', () => {
     expect(r.source).toBe('atlas');
     expect(r.dynamicFace).toBeUndefined();
     expect(r.synthetic).toEqual({ bold: true, italic: true });
+  });
+});
+
+describe('listFonts', () => {
+  it('reports each registered family with its variants', async () => {
+    await registerTestFont('Inter', 400, 'normal');
+    await registerTestFont('Inter', 700, 'normal');
+    await registerTestFont('Roboto', 400, 'italic');
+
+    expect(listFonts()).toEqual([
+      { family: 'Inter', variants: [{ weight: 400, style: 'normal' }, { weight: 700, style: 'normal' }] },
+      { family: 'Roboto', variants: [{ weight: 400, style: 'italic' }] },
+    ]);
+  });
+
+  it('is empty before anything registers', () => {
+    expect(listFonts()).toEqual([]);
+  });
+
+  it('sorts variants by weight then style', async () => {
+    await registerTestFont('Inter', 700, 'italic');
+    await registerTestFont('Inter', 400, 'normal');
+    await registerTestFont('Inter', 400, 'italic');
+
+    expect(listFonts()[0].variants).toEqual([
+      { weight: 400, style: 'italic' },
+      { weight: 400, style: 'normal' },
+      { weight: 700, style: 'italic' },
+    ]);
   });
 });

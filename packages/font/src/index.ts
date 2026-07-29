@@ -13,9 +13,10 @@ export {
   textureCacheKey,
   markAllFontsNotUploaded,
   resolveFontVariant,
+  listFonts,
   _resetFontRegistryForTests,
 } from './registerFont';
-export type { FontEntry, FontVariant, ResolveResult } from './registerFont';
+export type { FontEntry, FontVariant, ResolveResult, RegisteredFont } from './registerFont';
 
 export {
   setFontFallbackPolicy,

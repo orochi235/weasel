@@ -54,6 +54,30 @@ export function getFont(
   return registry.get(family)?.get(variantKey(weight, style)) ?? null;
 }
 
+export interface RegisteredFont {
+  family: string;
+  variants: readonly { weight: number; style: FontStyle }[];
+}
+
+/**
+ * Enumerate the registry — what a font picker can honestly offer. Families
+ * come back in registration order; variants sorted by weight, then style, so
+ * the output is stable enough to assert against.
+ */
+export function listFonts(): readonly RegisteredFont[] {
+  const out: RegisteredFont[] = [];
+  for (const [family, variantMap] of registry) {
+    const variants = [...variantMap.keys()]
+      .map((key) => {
+        const [w, s] = key.split('|') as [string, FontStyle];
+        return { weight: Number(w), style: s };
+      })
+      .sort((a, b) => a.weight - b.weight || a.style.localeCompare(b.style));
+    out.push({ family, variants });
+  }
+  return out;
+}
+
 export async function registerFont(
   family: string,
   variant: FontVariant,
