@@ -226,6 +226,16 @@ Core five + Crop shipped. Remaining:
   `underlinePosition` / `underlineThickness`; the BmFont atlas format does
   not carry them, so honoring them means extending the atlas metrics.
 
+- **(P3) The visual suite can't pin decoration geometry.** `text.spec.ts`
+  runs at a 5% diff tolerance (MSDF AA differs from Canvas 2D AA), and the
+  whole decorated `t6` node is well under 5% of a 600×360 canvas — it was
+  added and the spec passed against the *old* baseline without noticing. So
+  the committed baseline documents the current rendering but would not catch
+  a rule drifting a pixel or two. Pinning it wants a structural assertion in
+  the `render-to-pixels.spec.ts` style (a decoration rule is a gap-free
+  horizontal run; glyph rows never are) rather than a tighter tolerance,
+  which the AA difference won't survive.
+
 - **(P3) `ToolOptionsBar` is not driven by tool prefs.** Its first tenant
   (draw's `CharacterOptions`) is hand-assembled. A tool declaring a
   `ToolPrefGroup` for its options and having the bar render it the way

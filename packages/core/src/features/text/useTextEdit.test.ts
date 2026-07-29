@@ -1258,4 +1258,50 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     // stale bold run in place; the node's prior runs have to keep it rich.
     expect(h.runCommits).toEqual([{ id: 'a', runs: [{ text: 'ab' }] }]);
   });
+
+  it('trims the caret-holder newline the way the plain path does', async () => {
+    // A contenteditable keeps a trailing `<br>` so the caret has somewhere to
+    // sit on the last line. `innerText` reports it as a trailing newline and
+    // the plain-text path strips one; `domToRuns` maps it to a literal '\n'
+    // and did not. The divergence was unreachable while only nodes that
+    // already had runs took the rich path — styling a previously-plain node
+    // reaches it, and one edit would commit text a byte longer than the same
+    // edit without the styling.
+    const h = makeRichHarness({ a: { text: 'one' } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    overlay.replaceChildren(document.createTextNode('one'), document.createElement('br'));
+    await selectCharsAndSettle(overlay, 0, 3);
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    act(() => result.current.commit());
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'one' }]);
+    expect(h.runCommits[0].runs).toEqual([{ text: 'one', bold: true }]);
+  });
+
+  it('trims exactly one, so a deliberate trailing blank line survives', async () => {
+    const h = makeRichHarness({ a: { text: 'one' } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    // What the user typed ends in a newline, and the caret holder adds one
+    // more on top of it.
+    overlay.replaceChildren(
+      document.createTextNode('one'),
+      document.createElement('br'),
+      document.createElement('br'),
+    );
+    await selectCharsAndSettle(overlay, 0, 3);
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    act(() => result.current.commit());
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'one\n' }]);
+  });
+
+  it('keeps a newline the user actually typed', () => {
+    const h = makeRichHarness({ a: { text: 'a\nb', runs: [{ text: 'a\nb' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'a\nb' }]);
+  });
 });

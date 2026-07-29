@@ -123,6 +123,26 @@ function writeRunsPreservingSelection(
   sel.addRange(range);
 }
 
+/**
+ * Drop the one trailing newline a contenteditable keeps so the caret has
+ * somewhere to sit on the last line. `innerText` reports it too, and the
+ * plain-text commit path has always stripped it; `domToRuns` maps the `<br>`
+ * to a literal `'\n'`, so without this the same edit commits a byte more
+ * text through the rich path than through the plain one. Exactly one, so a
+ * newline the user actually typed survives — the holder is never doubled.
+ *
+ * An empty run left behind is dropped: it carries no text and would otherwise
+ * defeat `runsCarryStyling`'s "did this edit produce styling" question by
+ * existing.
+ */
+function trimCaretHolder(runs: StyledRun[]): StyledRun[] {
+  const last = runs[runs.length - 1];
+  if (last === undefined || !last.text.endsWith('\n')) return runs;
+  const trimmed = { ...last, text: last.text.slice(0, -1) };
+  const head = runs.slice(0, -1);
+  return trimmed.text === '' ? head : [...head, trimmed];
+}
+
 function sameSelection(a: TextEditSelection | null, b: TextEditSelection | null): boolean {
   if (a === null || b === null) return a === b;
   return a.start === b.start && a.end === b.end;
@@ -343,7 +363,7 @@ export function useTextEdit(
     // array just for being edited.
     const priorRuns = optsRef.current.getRuns?.(id);
     const setRuns = optsRef.current.setRuns;
-    const runs = setRuns ? domToRuns(overlay) : [];
+    const runs = setRuns ? trimCaretHolder(domToRuns(overlay)) : [];
     const hadRuns = priorRuns != null && priorRuns.length > 0;
     if (setRuns && (hadRuns || runsCarryStyling(runs))) {
       optsRef.current.setText(id, runsToPlainText(runs));

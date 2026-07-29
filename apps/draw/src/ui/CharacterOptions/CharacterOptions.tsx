@@ -56,10 +56,15 @@ export function CharacterOptions({ style, onPatch }: CharacterOptionsProps) {
   };
 
   const fill = style.fill;
-  const solidFill = fill !== undefined && fill !== MIXED && 'color' in fill ? fill.color : undefined;
   // A gradient or pattern fill has no single color to show, so it gets the
   // same indeterminate treatment as a genuinely mixed range rather than a
-  // swatch that claims the text is some solid color.
+  // swatch that claims the text is some solid color. The tag is checked as
+  // well as the key: a `{ fill: 'pattern', pattern, color }` hybrid can't be
+  // produced any more, but one can still arrive in an old document.
+  const solidFill =
+    fill !== undefined && fill !== MIXED && (fill.fill === undefined || fill.fill === 'solid')
+      ? (fill as { color?: string }).color
+      : undefined;
   const fillMixed = fill === MIXED || (fill !== undefined && solidFill === undefined);
 
   return (
