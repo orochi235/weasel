@@ -20,6 +20,13 @@
  * a new line when they would exceed the current line width. Forced line
  * breaks are emitted for `\n` codepoints. Mixed-size runs share a
  * baseline; line height is `max(fontSize * lineHeight)` across the line.
+ *
+ * Underline and strikethrough come out on a second channel, `decorations` —
+ * solid rectangles, not textured glyphs, so they cannot ride in a group's
+ * `quads` (which upload UVs into an MSDF program). They are accumulated
+ * during the same per-line pen walk that emits quads, *not* reconstructed
+ * from quad extents afterwards: quads exist only for glyphs with ink, so a
+ * decorated span's spaces would punch holes in a rule derived from them.
  */
 
 import type { FillStyle } from 'core/paint-types';
@@ -53,10 +60,38 @@ export interface LaidOutGroup {
   quads: LaidOutQuad[];
 }
 
+/**
+ * One decoration rule: an axis-aligned solid rectangle in the same world
+ * space as `LaidOutQuad`. Never spans a line break, and carries the fill of
+ * the run(s) it decorates so the rule follows the text colour.
+ */
+export interface LaidOutDecoration {
+  kind: 'underline' | 'strikethrough';
+  x0: number; y0: number; x1: number; y1: number;
+  fill: FillStyle;
+}
+
 export interface LaidOutRuns {
   groups: LaidOutGroup[];
+  /** Underline / strikethrough rules, in line order; underline before
+   *  strikethrough within a span. Empty when nothing is decorated. */
+  decorations: LaidOutDecoration[];
   bounds: { width: number; height: number };
 }
+
+/**
+ * Decoration placement and weight, as fractions of the run's `fontSize`.
+ * Offsets are the *top* edge of the rule, measured down from the baseline.
+ *
+ * DERIVED, NOT MEASURED. `BmFont` exposes only `info.size`, `common.base`
+ * and `common.lineHeight` — a BMFont JSON carries no decoration metrics at
+ * all. A future HarfBuzz / OpenType path would read the real
+ * `underlinePosition` and `underlineThickness` off the `post` table and
+ * retire these three numbers.
+ */
+const UNDERLINE_OFFSET = 0.10;
+const STRIKETHROUGH_OFFSET = -0.30;
+const DECORATION_THICKNESS = 0.05;
 
 export interface LayoutRunsOpts {
   maxWidth: number;
@@ -81,6 +116,21 @@ function fillKey(p: FillStyle): string {
   // every occurrence gets its own group. Acceptable in v1 since per-run
   // non-solid fills are rare; revisit if it bites perf.
   return `nx:${Math.random()}`;
+}
+
+/**
+ * Whether two runs' fills paint the same, for the purpose of merging their
+ * decoration rules. Solid paints compare by value so two separate runs set
+ * to the same colour merge; anything else compares by reference, because a
+ * gradient/pattern has no cheap structural equality and a false positive
+ * would paint one run's rule with another's paint.
+ */
+function sameFill(a: FillStyle, b: FillStyle): boolean {
+  if (a === b) return true;
+  if ('color' in a && 'color' in b) {
+    return a.color === b.color && (a.opacity ?? 1) === (b.opacity ?? 1);
+  }
+  return false;
 }
 
 function groupKey(
@@ -303,7 +353,39 @@ export function layoutRuns(
   }
   if (cur.entries.length > 0) commitLine();
 
-  // 3. Lay out each line: apply alignment, then emit quads.
+  // 3. Lay out each line: apply alignment, then emit quads (and the
+  //    decoration rules that span them).
+  const decorations: LaidOutDecoration[] = [];
+
+  /** An open decoration span: contiguous entries on one line that agree on
+   *  which rules to draw, what colour to draw them, and the metrics that set
+   *  their placement. `x1` grows as the pen walks. */
+  interface DecoSpan {
+    underline: boolean;
+    strikethrough: boolean;
+    fill: FillStyle;
+    fontSize: number;
+    baselineY: number;
+    x0: number;
+    x1: number;
+  }
+  let span: DecoSpan | null = null;
+
+  function flushSpan(): void {
+    const s = span;
+    span = null;
+    if (!s || s.x1 <= s.x0) return;
+    const thickness = s.fontSize * DECORATION_THICKNESS;
+    if (s.underline) {
+      const y0 = s.baselineY + s.fontSize * UNDERLINE_OFFSET;
+      decorations.push({ kind: 'underline', x0: s.x0, y0, x1: s.x1, y1: y0 + thickness, fill: s.fill });
+    }
+    if (s.strikethrough) {
+      const y0 = s.baselineY + s.fontSize * STRIKETHROUGH_OFFSET;
+      decorations.push({ kind: 'strikethrough', x0: s.x0, y0, x1: s.x1, y1: y0 + thickness, fill: s.fill });
+    }
+  }
+
   let penY = origin.y;
   let maxLineWidth = 0;
   const finiteWidth = Number.isFinite(opts.maxWidth) ? opts.maxWidth : 0;
@@ -328,6 +410,41 @@ export function layoutRuns(
       // Every branch below moves the pen by exactly this, so glyph positions
       // stay in step with the line width accumulated above.
       const step = e.advance + e.tracking;
+      const scale = e.fontSize / e.font.info.size;
+      const baselineY = penY + e.font.common.base * scale;
+
+      // Extend or (re)open the decoration span *before* the no-ink bail-out
+      // below, so a decorated span's spaces stay under the rule. `step`
+      // includes this glyph's trailing tracking, so the rule covers it — the
+      // CSS rule, and the same span the line width already accounts for.
+      if (e.run.underline || e.run.strikethrough) {
+        if (
+          span !== null
+          && span.underline === e.run.underline
+          && span.strikethrough === e.run.strikethrough
+          && span.fontSize === e.fontSize
+          && span.baselineY === baselineY
+          && sameFill(span.fill, e.run.fill)
+        ) {
+          // Absorbs the kerning gap we just stepped over, so a run join
+          // between two identically-decorated runs shows no seam.
+          span.x1 = penX + step;
+        } else {
+          flushSpan();
+          span = {
+            underline: e.run.underline,
+            strikethrough: e.run.strikethrough,
+            fill: e.run.fill,
+            fontSize: e.fontSize,
+            baselineY,
+            x0: penX,
+            x1: penX + step,
+          };
+        }
+      } else {
+        flushSpan();
+      }
+
       // Nothing to paint — a zero-advance glyph (e.g. a combining mark), a
       // zero-area one (a space in either source), or a dynamic glyph not baked
       // yet (page < 0). Advance the pen anyway so the line doesn't reflow when
@@ -337,7 +454,6 @@ export function layoutRuns(
         continue;
       }
       const group = getOrCreateGroup(ctx, e.run, e.resolved, e.glyph.page);
-      const scale = e.fontSize / e.font.info.size;
       const atlasW = e.font.common.scaleW;
       const atlasH = e.font.common.scaleH;
       const qx0 = penX + e.glyph.xoffset * scale;
@@ -348,18 +464,21 @@ export function layoutRuns(
       const v0 = e.glyph.y / atlasH;
       const u1 = (e.glyph.x + e.glyph.width) / atlasW;
       const v1 = (e.glyph.y + e.glyph.height) / atlasH;
-      // Typographic baseline (not the top of the line box) — above-baseline
-      // vertices have y < baselineY so synthetic italic skew leans them right.
-      const baselineY = penY + e.font.common.base * scale;
+      // `baselineY` (computed above) is the typographic baseline, not the top
+      // of the line box — above-baseline vertices have y < baselineY so the
+      // synthetic italic skew leans them right.
       group.quads.push({ x0: qx0, y0: qy0, x1: qx1, y1: qy1, u0, v0, u1, v1, baselineY });
       penX += step;
     }
+    // A rule never crosses a line break: close the span at end of line.
+    flushSpan();
     maxLineWidth = Math.max(maxLineWidth, line.width);
     penY += line.height;
   }
 
   return {
     groups: [...ctx.groups.values()],
+    decorations,
     bounds: { width: maxLineWidth, height: penY - origin.y },
   };
 }

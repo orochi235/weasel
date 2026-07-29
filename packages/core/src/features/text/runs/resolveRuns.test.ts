@@ -63,6 +63,26 @@ describe('resolveRuns', () => {
     expect(resolveRuns([{ text: 'a' }], resolveTextStyle({}))[0].letterSpacing).toBe(0);
   });
 
+  it('resolves underline/strikethrough additively — a run may turn them on, never off', () => {
+    const plain = resolveTextStyle({});
+    expect(resolveRuns([{ text: 'a' }], plain)[0].underline).toBe(false);
+    expect(resolveRuns([{ text: 'a' }], plain)[0].strikethrough).toBe(false);
+
+    expect(resolveRuns([{ text: 'a', underline: true }], plain)[0].underline).toBe(true);
+    expect(resolveRuns([{ text: 'a', strikethrough: true }], plain)[0].strikethrough).toBe(true);
+
+    const decorated = resolveTextStyle({ underline: true, strikethrough: true });
+    expect(resolveRuns([{ text: 'a' }], decorated)[0].underline).toBe(true);
+    expect(resolveRuns([{ text: 'a' }], decorated)[0].strikethrough).toBe(true);
+
+    // The additive contract (see runs/rangeStyle.ts header): run-level `false`
+    // is not an un-set. `||`, not `??` — a `??` here would make "turn the
+    // node's underline off for this range" look supported while the range-style
+    // layer discards the `false` that would express it.
+    expect(resolveRuns([{ text: 'a', underline: false }], decorated)[0].underline).toBe(true);
+    expect(resolveRuns([{ text: 'a', strikethrough: false }], decorated)[0].strikethrough).toBe(true);
+  });
+
   it('returns an empty array for empty input', () => {
     const style = resolveTextStyle({});
     expect(resolveRuns([], style)).toEqual([]);
