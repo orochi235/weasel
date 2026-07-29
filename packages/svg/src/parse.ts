@@ -622,6 +622,7 @@ function parseTextElement(
   // must equal `text` per kit invariants, so the array must match exactly.
   const hasStyling = runs.some(
     (r) => r.bold || r.italic || r.fontFamily || r.fontSize != null
+      || r.letterSpacing != null || r.underline || r.strikethrough
       || (r.fill && (('color' in r.fill) || ('fill' in r.fill))),
   );
   if (hasStyling) node.runs = runs;
@@ -647,6 +648,24 @@ function parseTextElement(
   return node;
 }
 
+/**
+ * Parse an SVG `text-decoration` value into the two boolean flags the runs
+ * model uses. `text-decoration` is a space-separated list of line tokens
+ * (`underline`, `line-through`, `overline`, `blink`, `none`); we only model
+ * `underline` and `line-through` (→ `strikethrough`) — any other token
+ * (including `none`, and unrecognized values like `overline`) is dropped
+ * without warning, since it's either the explicit "no decoration" case or a
+ * decoration kind the runs model has no key for.
+ */
+function parseTextDecoration(raw: string | null): { underline?: boolean; strikethrough?: boolean } {
+  if (raw == null) return {};
+  const tokens = raw.trim().split(/\s+/);
+  const out: { underline?: boolean; strikethrough?: boolean } = {};
+  if (tokens.includes('underline')) out.underline = true;
+  if (tokens.includes('line-through')) out.strikethrough = true;
+  return out;
+}
+
 function readTspanRun(el: Element, gradients: GradientTable, style: StyleContext): StyledRun {
   const text = el.textContent ?? '';
   const run: StyledRun = { text };
@@ -661,6 +680,14 @@ function readTspanRun(el: Element, gradients: GradientTable, style: StyleContext
     const n = parseFloat(sz);
     if (Number.isFinite(n)) run.fontSize = n;
   }
+  const ls = ownProp(el, 'letter-spacing');
+  if (ls != null) {
+    const n = parseFloat(ls);
+    if (Number.isFinite(n)) run.letterSpacing = n;
+  }
+  const decoration = parseTextDecoration(ownProp(el, 'text-decoration'));
+  if (decoration.underline) run.underline = true;
+  if (decoration.strikethrough) run.strikethrough = true;
   const tspanStyle = deriveStyle(style, el);
   const fillAttr = resolveCurrentColor(ownProp(el, 'fill'), tspanStyle);
   if (fillAttr) {
@@ -700,6 +727,14 @@ function readTextStyle(
   if (anchor === 'start') out.align = 'left';
   else if (anchor === 'middle') out.align = 'center';
   else if (anchor === 'end') out.align = 'right';
+  const ls = style['letter-spacing'];
+  if (ls != null) {
+    const n = parseFloat(ls);
+    if (Number.isFinite(n)) out.letterSpacing = n;
+  }
+  const decoration = parseTextDecoration(style['text-decoration'] ?? null);
+  if (decoration.underline) out.underline = true;
+  if (decoration.strikethrough) out.strikethrough = true;
   // Note: `lineHeight` is no longer read from a `data-weasel-line-height`
   // attribute. WeaselDraw carries it through the generic namespace bag
   // as `meta.wd.attrs['line-height']`; svgInterop lifts it into / out of
