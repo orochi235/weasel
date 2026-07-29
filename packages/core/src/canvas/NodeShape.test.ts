@@ -109,3 +109,51 @@ describe('findShapeSilhouette rotation', () => {
     expect(sil.coords[1]).toBeCloseTo(-5);
   });
 });
+
+describe('kit:text painter — rich runs', () => {
+  const pose = { x: 10, y: 20, width: 100, height: 40 };
+  const paintText = (data: unknown): DrawCommand[] => {
+    const n = { ...node(data), pose };
+    return findNodeShape(n)!.paint(n, pose);
+  };
+
+  it('paints a plain-text node as one unstyled run', () => {
+    const [cmd] = paintText({ text: 'hi', style: { fontSize: 16 } });
+    expect(cmd.kind).toBe('text');
+    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+    expect(text.runs).toHaveLength(1);
+    expect(text.runs[0].text).toBe('hi');
+  });
+
+  it('paints the node\'s runs when it has them, not the flattened string', () => {
+    // Without this the run algebra is write-only in the default scene layer:
+    // a styled range commits to `data.runs` and paints as if it were never
+    // styled, because the painter re-flattened `data.text`.
+    const [cmd] = paintText({
+      text: 'ab',
+      style: { fontSize: 16 },
+      runs: [{ text: 'a', bold: true }, { text: 'b' }],
+    });
+    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+    expect(text.runs.map((r) => r.text)).toEqual(['a', 'b']);
+    expect(text.runs[0].fontWeight).toBeGreaterThan(text.runs[1].fontWeight);
+  });
+
+  it('carries run-level decoration and tracking through to the command', () => {
+    const [cmd] = paintText({
+      text: 'ab',
+      style: { fontSize: 16 },
+      runs: [{ text: 'a', underline: true, letterSpacing: 2 }, { text: 'b' }],
+    });
+    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+    expect(text.runs[0].underline).toBe(true);
+    expect(text.runs[0].letterSpacing).toBe(2);
+    expect(text.runs[1].underline).toBe(false);
+  });
+
+  it('falls back to the plain string when `runs` is empty', () => {
+    const [cmd] = paintText({ text: 'hi', style: { fontSize: 16 }, runs: [] });
+    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+    expect(text.runs.map((r) => r.text)).toEqual(['hi']);
+  });
+});
