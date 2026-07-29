@@ -5,6 +5,7 @@
   "fixed": [
     [
       "@weasel-js/core",
+      "@weasel-js/font",
       "@weasel-js/geom",
       "@weasel-js/gestures",
       "@weasel-js/history",
