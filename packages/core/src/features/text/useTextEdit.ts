@@ -17,6 +17,15 @@ import { runsToPlainText } from './runs';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
 import { applyStyleToRange, styleAtRange } from './runs/rangeStyle';
 
+// TODO: widen to `underline` / `strikethrough`. `rangeStyle.ts` already lists
+// both in its `STYLE_KEYS` / `FLAG_KEYS` sets, so the run algebra is ready —
+// only this type and the `onKeyDown` / `togglePending` switches are narrower.
+// Until then Cmd+U is never intercepted, so the browser's native
+// `formatUnderline` runs and `domToRuns`' `<u>` flattening makes it *appear*
+// to work while bypassing `toggleFlagInRange` entirely: no toggle-off, no
+// mixed-range "turn the whole selection on" rule, no pending style for a
+// collapsed caret. The flattening should stay regardless — it's what makes
+// pasted decoration survive — but it is defense in depth, not the fix.
 type StyleFlag = 'bold' | 'italic';
 
 /**
@@ -398,6 +407,16 @@ function placeOverlay(
   // the style's font size into the on-screen one. Run-level overrides come
   // through `runsToDom`'s spans; CSS inheritance makes a span's own
   // declaration replace this value rather than add to it.
+  //
+  // TODO: scale the overlay with `transform: scale(zoom)` and keep every
+  // metric on it in world units instead. `runsToDom` emits run-level
+  // `fontSize` and `letterSpacing` in world units (it must — `domToRuns` reads
+  // them straight back, and threading a scale through the writer plus its
+  // inverse through the reader goes lossy on fractional zooms), so today a run
+  // *override* is unscaled while this node-level value is scaled. One
+  // transform fixes both and keeps `runsToDom` a pure world-unit serializer.
+  // Latent rather than live: the only in-repo `getScreenPose`
+  // (`useSceneTextEdit`) returns world units, so zoom is always 1 here.
   const scale = style.fontSize > 0 ? pose.fontSize / style.fontSize : 1;
   el.style.letterSpacing = `${style.letterSpacing * scale}px`;
 }

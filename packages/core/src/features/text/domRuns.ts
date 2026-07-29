@@ -33,6 +33,26 @@ const EMPTY_STYLE: StyleState = {
   strikethrough: false,
 };
 
+/**
+ * Parse a CSS `letter-spacing` value into world units. `runsToDom` only ever
+ * writes `px`, but paste is a live path into the contenteditable and CSSOM
+ * keeps whatever unit the pasted markup used. Any other unit is still
+ * numerically coerced — `parseFloat` reads the leading digits — but flagged,
+ * since e.g. `0.1em` silently becomes `0.1` world units, off by a factor of
+ * the font size. Mirrors `parseLetterSpacing` in the SVG reader.
+ */
+function parseLetterSpacing(raw: string): number | undefined {
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return undefined;
+  const unit = /^-?[\d.]+([a-z%]+)$/i.exec(raw.trim())?.[1]?.toLowerCase();
+  if (unit && unit !== 'px') {
+    console.warn(
+      `weasel domRuns: letter-spacing "${raw}" uses unit "${unit}", which is not converted; treated as ${n} world units`,
+    );
+  }
+  return n;
+}
+
 function styleStateFromElement(el: Element, parent: StyleState): StyleState {
   const next: StyleState = { ...parent };
   const tag = el.tagName;
@@ -50,13 +70,21 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     const fs = el.style.fontStyle;
     if (fs === 'italic') next.italic = true;
     if (fs === 'normal') next.italic = false;
-    // One declaration carries both decorations, so a present `text-decoration`
-    // is authoritative for both: `none` clears an inherited underline the same
-    // way `font-weight: normal` clears an inherited bold.
-    const td = el.style.textDecoration;
-    if (td) {
-      next.underline = td.includes('underline');
-      next.strikethrough = td.includes('line-through');
+    // Decoration accumulates down the tree — unlike `font-weight`/`font-style`
+    // above, `text-decoration` does not inherit, it *propagates*, and a
+    // descendant cannot cancel what an ancestor drew. So OR the flags in
+    // rather than overwriting: `<u><span style="text-decoration: line-through">`
+    // renders both lines, and that is a reachable shape here, since `runsToDom`
+    // emits the span and an unintercepted Cmd+U supplies the `<u>`. An explicit
+    // `none` contributes no tokens and cancels nothing.
+    //
+    // A declaration block carrying only the longhand serializes the shorthand
+    // as `''` (the shorthand needs the full set), and browsers and pasted HTML
+    // both produce that, so fall back to `text-decoration-line`.
+    const td = el.style.textDecoration || el.style.textDecorationLine;
+    if (td && !td.includes('none')) {
+      next.underline ||= td.includes('underline');
+      next.strikethrough ||= td.includes('line-through');
     }
     if (el.style.fontSize) {
       const px = parseFloat(el.style.fontSize);
@@ -68,8 +96,8 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     if (ls === 'normal') {
       next.letterSpacing = undefined;
     } else if (ls) {
-      const px = parseFloat(ls);
-      if (Number.isFinite(px)) next.letterSpacing = px;
+      const px = parseLetterSpacing(ls);
+      if (px != null) next.letterSpacing = px;
     }
   }
   return next;

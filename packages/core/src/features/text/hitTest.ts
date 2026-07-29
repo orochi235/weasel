@@ -74,6 +74,11 @@ export function caretIndexAt(
     // be added to the measured advances by hand or the caret drifts further
     // from the pointer with every glyph. Applied after *every* character
     // including the last, matching CSS and `layoutRuns`.
+    //
+    // This fixes stepping *within* a line only. `measureText` above still
+    // wraps without tracking (see the TODO there), while `layoutRuns` counts
+    // it toward the wrap decision, so on wrapped tracked text the line this
+    // maps into can still be off by a word.
     const tracking = style.letterSpacing;
     const lineWidth = ctx.measureText(line).width + line.length * tracking;
 

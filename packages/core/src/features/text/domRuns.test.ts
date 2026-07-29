@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
 import type { StyledRun } from './runs';
 
@@ -187,7 +187,21 @@ describe('domToRuns', () => {
     expect(domToRuns(parent)).toEqual([{ text: 'x', underline: true, strikethrough: true }]);
   });
 
-  it('treats text-decoration: none as clearing an inherited decoration', () => {
+  it('accumulates an ancestor decoration with a descendant one', () => {
+    // `text-decoration` propagates rather than inherits: a descendant cannot
+    // cancel what an ancestor drew, and a browser renders both lines here.
+    // Reachable in the overlay — `runsToDom` emits the strikethrough span and
+    // an unintercepted Cmd+U supplies the `<u>`.
+    const u = document.createElement('u');
+    const inner = document.createElement('span');
+    inner.style.textDecoration = 'line-through';
+    inner.textContent = 'st';
+    u.append(inner);
+    parent.append(u);
+    expect(domToRuns(parent)).toEqual([{ text: 'st', underline: true, strikethrough: true }]);
+  });
+
+  it('does not let a descendant text-decoration: none cancel an ancestor decoration', () => {
     const outer = document.createElement('span');
     outer.style.textDecoration = 'underline';
     const inner = document.createElement('span');
@@ -195,7 +209,17 @@ describe('domToRuns', () => {
     inner.textContent = 'x';
     outer.append(inner);
     parent.append(outer);
-    expect(domToRuns(parent)).toEqual([{ text: 'x' }]);
+    expect(domToRuns(parent)).toEqual([{ text: 'x', underline: true }]);
+  });
+
+  it('reads text-decoration-line when only the longhand is declared', () => {
+    // A block carrying only the longhand serializes the shorthand as '' —
+    // the shorthand needs the full set. Pasted HTML routinely looks like this.
+    const span = document.createElement('span');
+    span.setAttribute('style', 'text-decoration-line: underline line-through');
+    span.textContent = 'x';
+    parent.append(span);
+    expect(domToRuns(parent)).toEqual([{ text: 'x', underline: true, strikethrough: true }]);
   });
 
   it('flattens <u> / <s> / <strike> wrappers into decoration flags', () => {
@@ -215,6 +239,32 @@ describe('domToRuns', () => {
     span.textContent = 'x';
     parent.append(span);
     expect(domToRuns(parent)).toEqual([{ text: 'x', letterSpacing: 3.5 }]);
+  });
+
+  it('warns on a non-px letter-spacing unit but still parses the numeric value', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const span = document.createElement('span');
+      span.setAttribute('style', 'letter-spacing: 0.1em');
+      span.textContent = 'x';
+      parent.append(span);
+      expect(domToRuns(parent)).toEqual([{ text: 'x', letterSpacing: 0.1 }]);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toMatch(/letter-spacing.*em/);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('does not warn on the px unit it emits itself', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      runsToDom([{ text: 'x', letterSpacing: 2 }], parent);
+      expect(domToRuns(parent)).toEqual([{ text: 'x', letterSpacing: 2 }]);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('treats letter-spacing: normal as clearing an inherited value', () => {

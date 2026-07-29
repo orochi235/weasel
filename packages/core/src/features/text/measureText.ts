@@ -52,6 +52,17 @@ export function measureText(
     for (const word of words) {
       if (current === '') currentStart = pos + consumed;
       const candidate = current + word;
+      // TODO: this wraps without tracking. `letter-spacing` is not part of the
+      // CSS `font` shorthand, so the caller's `ctx.font = fontString(style)`
+      // never carries it, and `style.letterSpacing` is used below for `height`
+      // but not here — while `layoutRuns` (the GL path that actually paints)
+      // counts tracking toward the wrap decision. So tracked text wraps at
+      // different points in the two paths, which shows up as `caretIndexAt`
+      // landing on the wrong line and `fitTextPose({ axis: 'both' })`
+      // under-sizing. Fixing it means adding `candidate.length * tracking`
+      // here and to `fitTextPose`'s own width loop; deferred because this
+      // function is shared with `verticalAlign` / `markdownText` and the
+      // change moves every wrap point on tracked text at once.
       if (current === '' || ctx.measureText(candidate).width <= maxWidth) {
         current = candidate;
       } else {
