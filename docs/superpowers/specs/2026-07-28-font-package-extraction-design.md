@@ -150,9 +150,12 @@ attempt the general `createReflectable<T>()` utility.
   documented "register before you render" entry point; breaking it buys
   nothing and the text README would have to be rewritten around a second
   install step.
-- **`packages/core/tsup.config.ts`** and the root `vite-aliases.ts` /
-  `tsconfig.json` path maps gain the new package, following the four existing
-  leaves.
+- **Build wiring** is thinner than it looks. `scripts/vite-aliases.ts` reads
+  `packages/` at config-load time, so it needs no edit. `packages/core/
+  tsup.config.ts` needs none either — tsup derives its external list from
+  `dependencies`, which is why declaring the dep is the whole job. Only two
+  hand-maintained lists change: the root `tsconfig.json` `paths` map, and the
+  root `package.json`'s `build:leaves` script.
 
 ## 8. Scope boundary
 
