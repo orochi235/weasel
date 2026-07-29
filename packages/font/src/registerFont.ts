@@ -8,8 +8,8 @@
  */
 
 import { parseBmFont, type BmFont } from './FontAtlas';
-import type { GLTextureCache } from '../../../renderer/cache/GLTextureCache';
-import { isCanvasFont, getDynamicFace, type DynamicFace } from '../dynamic/dynamicAtlas';
+import type { GlyphTextureSink } from './textureSink';
+import { isCanvasFont, getDynamicFace, type DynamicFace } from './dynamic/dynamicAtlas';
 
 export interface FontEntry {
   font: BmFont;
@@ -110,7 +110,7 @@ export function ensureFontTexture(
   family: string,
   weight: number,
   style: FontStyle,
-  textureCache: GLTextureCache,
+  textureCache: GlyphTextureSink,
 ): boolean {
   const entry = getFont(family, weight, style);
   if (!entry) return false;
@@ -124,7 +124,7 @@ export function textureCacheKey(family: string, weight: number, style: FontStyle
 }
 
 /** Kept as a no-op for context-restore call sites; per-cache dedup handles it now. */
-export function _markAllFontsNotUploaded(): void {}
+export function markAllFontsNotUploaded(): void {}
 
 export interface ResolveResult {
   entry: FontEntry | null;

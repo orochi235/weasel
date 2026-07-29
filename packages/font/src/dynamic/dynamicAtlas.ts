@@ -13,8 +13,8 @@
  * layout advances the pen but emits no quad).
  */
 
-import type { BmFont, BmFontChar } from '../atlas/FontAtlas';
-import type { GLTextureCache } from '../../../renderer/cache/GLTextureCache';
+import type { BmFont, BmFontChar } from '../FontAtlas';
+import type { GlyphTextureSink } from '../textureSink';
 import { ShelfPacker } from './shelfPack';
 import { alphaToSdf } from './distanceTransform';
 import {
@@ -213,12 +213,12 @@ export function dynamicPageTextureId(page: number): string {
 
 // Per-GL-cache upload progress: last page version each cache has seen.
 // WeakMap-keyed so disposed renderers don't pin anything.
-const uploadedVersions = new WeakMap<GLTextureCache, Map<number, number>>();
+const uploadedVersions = new WeakMap<GlyphTextureSink, Map<number, number>>();
 
 /** Bring `cache`'s copy of page `pageIndex` up to date: full R8 upload the
  *  first time, `texSubImage2D` patches after. Returns false if the page
  *  doesn't exist yet. */
-export function syncDynamicPageTexture(cache: GLTextureCache, pageIndex: number): boolean {
+export function syncDynamicPageTexture(cache: GlyphTextureSink, pageIndex: number): boolean {
   const page = pages[pageIndex];
   if (!page) return false;
   const id = dynamicPageTextureId(pageIndex);

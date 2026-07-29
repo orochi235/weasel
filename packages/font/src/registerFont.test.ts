@@ -3,8 +3,8 @@ import { registerFont, getFont, resolveFontVariant, _resetFontRegistryForTests }
 import { FIXTURE_FONT } from './FontAtlas';
 import {
   registerCanvasFont, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
-} from '../dynamic/dynamicAtlas';
-import { BAKE_SIZE } from '../dynamic/glyphRasterizer';
+} from './dynamic/dynamicAtlas';
+import { BAKE_SIZE } from './dynamic/glyphRasterizer';
 
 function stubFetch() {
   const encoder = new TextEncoder();
