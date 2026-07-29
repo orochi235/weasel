@@ -35,6 +35,8 @@ export { useSceneTextEdit } from './useSceneTextEdit';
 export type { UseSceneTextEditOptions } from './useSceneTextEdit';
 export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
+export { styleAtRange, applyStyleToRange, MIXED_STYLE } from './runs/rangeStyle';
+export type { RangeStyle, MixedStyle, RunStylePatch } from './runs/rangeStyle';
 export { textCommand } from './textCommand';
 export { verticalAlignOffset } from './verticalAlign';
 export type { TextVerticalAlign } from './verticalAlign';

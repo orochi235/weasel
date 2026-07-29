@@ -15,14 +15,14 @@ import { fontString, resolveTextStyle } from './textStyle';
 import type { StyledRun } from './runs';
 import { runsToPlainText } from './runs';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
+import { applyStyleToRange, styleAtRange } from './runs/rangeStyle';
 
 type StyleFlag = 'bold' | 'italic';
 
 /**
- * Split a flat `StyledRun[]` at the given character boundaries and toggle
- * `flag` on every run that overlaps `[start, end)`. Returns a new array
- * with adjacent identical runs coalesced. If every run in range already
- * has the flag set, the function clears the flag; otherwise it sets it.
+ * Toggle `flag` across `[start, end)`: if every run in range already has it,
+ * clear it; otherwise set it — so a mixed range turns fully on, as in every
+ * other text editor. The splitting and coalescing live in the run algebra.
  */
 function toggleFlagInRange(
   runs: readonly StyledRun[],
@@ -30,62 +30,8 @@ function toggleFlagInRange(
   end: number,
   flag: StyleFlag,
 ): StyledRun[] {
-  if (start >= end) return runs.slice();
-  let pos = 0;
-  let allSet = true;
-  for (const r of runs) {
-    const a = Math.max(pos, start);
-    const b = Math.min(pos + r.text.length, end);
-    if (a < b) {
-      if (!r[flag]) { allSet = false; break; }
-    }
-    pos += r.text.length;
-  }
-  const setTo = !allSet;
-
-  const out: StyledRun[] = [];
-  pos = 0;
-  for (const r of runs) {
-    const rEnd = pos + r.text.length;
-    const a = Math.max(pos, start);
-    const b = Math.min(rEnd, end);
-    if (a < b) {
-      if (pos < a) out.push({ ...r, text: r.text.slice(0, a - pos) });
-      const inside: StyledRun = { ...r, text: r.text.slice(a - pos, b - pos) };
-      if (setTo) inside[flag] = true; else delete inside[flag];
-      out.push(inside);
-      if (b < rEnd) out.push({ ...r, text: r.text.slice(b - pos) });
-    } else {
-      out.push({ ...r });
-    }
-    pos = rEnd;
-  }
-
-  return coalesceRuns(out);
-}
-
-function styledKey(r: StyledRun): string {
-  return [
-    r.bold ? '1' : '0',
-    r.italic ? '1' : '0',
-    r.fontFamily ?? '',
-    r.fontSize ?? '',
-    r.fill && 'color' in r.fill ? r.fill.color : '',
-  ].join('|');
-}
-
-function coalesceRuns(runs: readonly StyledRun[]): StyledRun[] {
-  const out: StyledRun[] = [];
-  for (const r of runs) {
-    if (r.text.length === 0) continue;
-    const prev = out[out.length - 1];
-    if (prev && styledKey(prev) === styledKey(r)) {
-      prev.text += r.text;
-    } else {
-      out.push({ ...r });
-    }
-  }
-  return out;
+  const current = styleAtRange(runs, start, end)[flag];
+  return applyStyleToRange(runs, start, end, { [flag]: current !== true });
 }
 
 /** Screen-space pose passed to `useTextEdit` so the overlay can be placed and sized in CSS pixels. */
