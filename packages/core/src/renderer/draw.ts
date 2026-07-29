@@ -875,9 +875,11 @@ function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDeco
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog);
   setColorMatrixUniforms(ctx, prog);
-  // No applyClipTest here: drawText applied it before the glyph loop and
-  // nothing between there and here touches stencil state, so the rules are
-  // already clipped exactly as their glyphs are.
+  // Redundant in the current code — drawText applied this before the glyph
+  // loop and nothing in between touches stencil state — but every other
+  // pathFill entry point sets it here, and relying on a caller invariant this
+  // signature doesn't express is worth less than one stencilFunc.
+  applyClipTest(ctx);
 
   for (const { rgba, rects } of batches.values()) {
     // pathFill takes a_position only: stride 8, no UVs, no baselineY.

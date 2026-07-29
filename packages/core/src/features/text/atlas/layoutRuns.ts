@@ -476,6 +476,13 @@ export function layoutRuns(
     penY += line.height;
   }
 
+  // `bounds` measures line boxes only — a decoration rule can fall outside it.
+  // An underline's bottom sits `base * scale + (UNDERLINE_OFFSET +
+  // DECORATION_THICKNESS) * fontSize` below the line top, so it escapes the
+  // last line once `lineHeight` drops below roughly `base / info.size + 0.15`
+  // (≈1.06 for the bundled atlases). Not reachable at the 1.2 default, so
+  // `measureTextBounds` and `verticalAlign: 'bottom'` are left as they are;
+  // tightening the box would move every existing text bound.
   return {
     groups: [...ctx.groups.values()],
     decorations,

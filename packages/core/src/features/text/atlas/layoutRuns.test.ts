@@ -511,6 +511,16 @@ describe('layoutRuns — decoration geometry', () => {
     expect(out.decorations[0].x1).toBeCloseTo(33, 6);
   });
 
+  it('covers trailing letter-spacing on every glyph of a merged span', async () => {
+    await registerFixture('inter', [{}]);
+    // The single-glyph case above only ever takes the branch that *opens* a
+    // span. Tracking has to reach the branch that *extends* one too, which
+    // needs a second glyph: A(23)+10 + kern(-1) + B(22)+10 = 64.
+    const out = layoutRuns([{ ...UNDERLINED('AB'), letterSpacing: 10 }], OPTS, ORIGIN);
+    expect(out.decorations).toHaveLength(1);
+    expect(out.decorations[0].x1).toBeCloseTo(64, 6);
+  });
+
   it('merges adjacent runs that agree on decoration and fill into one rule', async () => {
     await registerFixture('inter', [{}]);
     const out = layoutRuns([UNDERLINED('A'), UNDERLINED('B')], OPTS, ORIGIN);
@@ -530,8 +540,10 @@ describe('layoutRuns — decoration geometry', () => {
       { fill: 'solid', color: '#000' },
       { fill: 'solid', color: '#f00' },
     ]);
-    // Abutting, not overlapping: the second starts where the first ends
-    // (offset by the A→B kerning of -1).
+    // Each piece covers its own glyphs' advance boxes, so the join carries
+    // the kerning: the pen backs up by 1 before B, and a new span opens at
+    // the pen, so these two overlap by 1. Positive kerning would leave a gap
+    // of the same size instead. Only at zero kerning do they abut exactly.
     expect(out.decorations[0].x1).toBeCloseTo(23, 6);
     expect(out.decorations[1].x0).toBeCloseTo(22, 6);
   });
