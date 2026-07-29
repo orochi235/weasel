@@ -305,6 +305,50 @@ describe('unusable default family', () => {
     warn.mockRestore();
   });
 
+  it('warns when the explicitly set default family was never registered and is what was asked for', () => {
+    // The last silent path: someone named a default that does not exist, and
+    // then asked for it. Nothing renders, and the previous guard — which
+    // required the family to be registered, because its message asserts as
+    // much — skipped it entirely.
+    setDefaultFontFamily('Ghost');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = resolveFontVariant('Ghost', 400, 'normal');
+
+    expect(result.entry).toBeNull();
+    expect(result.dynamicFace).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+    const msg = warn.mock.calls[0][0] as string;
+    expect(msg).toContain('"Ghost"');
+    expect(msg).toContain('never registered');
+    expect(msg).toContain('setDefaultFontFamily');
+    warn.mockRestore();
+  });
+
+  it('warns once per variant for an unregistered default', () => {
+    setDefaultFontFamily('Ghost');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    resolveFontVariant('Ghost', 400, 'normal');
+    resolveFontVariant('Ghost', 400, 'normal');
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    resolveFontVariant('Ghost', 700, 'normal');
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('stays silent when nothing is registered and the request is not the default', () => {
+    // No default was ever set, so there is no misconfiguration to report —
+    // just an app that has not loaded its fonts yet.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    resolveFontVariant('Ghost', 400, 'normal');
+
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('warns once per variant', async () => {
     await registerTestFont('Inter', 700, 'italic');
     setDefaultFontFamily('Inter');

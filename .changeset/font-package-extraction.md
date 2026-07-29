@@ -23,8 +23,11 @@ serve this family right now", so an auto-enrolled family reads `false` under
 family may be a canvas-registered family, and when it cannot serve the
 request either, the resulting blank text is reported with its own warning
 naming the default family rather than failing silently. Requesting the
-default family itself, at a variant it can't serve, also warns — there is no
-other family left to fall back to.
+default family itself also warns — whether it is registered at a variant it
+can't serve, or `setDefaultFontFamily` named a family that was never
+registered at all; either way there is nothing left to fall back to. An app
+that has registered no fonts and set no default stays silent, since that is
+not a misconfiguration.
 
 `ResolveResult.substituted` reports the substitution structurally, and
 `ResolveResult.resolved` now

@@ -255,21 +255,29 @@ function missResolveResult(
       // through silently here is the invisible-text failure this whole policy
       // exists to eliminate, so say which of the two families to fix.
       if (!suppressWarn) warnUnusableDefaultOnce(family, weight, style, fallback);
-    } else if (fallback === family && registry.has(family) && !suppressWarn) {
+    } else if (fallback === family && !suppressWarn) {
       // `fallback === family` above exists to stop the request from
       // substituting for itself — recursion into the same miss forever. But
       // when the family that can't serve this variant *is* the effective
       // default, that guard also throws away the one case it was most likely
       // to hit: a default registered at the wrong variant. Nothing renders
-      // and, without this branch, nothing is logged either. Only fires when
-      // `family` is actually registered — an unset default with nothing
-      // registered at all is not a misconfiguration (see the other branch's
-      // "is not registered" case, and the deliberately-silent test for it).
+      // and, without this branch, nothing is logged either.
       // `suppressWarn` keeps this from firing when a *different* top-level
       // request's substitution probe happens to recurse into the default
       // family and find it can't serve either — that miss is reported by the
       // top-level caller via `warnUnusableDefaultOnce`, not from in here.
-      warnSelfUnusableDefaultOnce(family, weight, style);
+      if (registry.has(family)) {
+        warnSelfUnusableDefaultOnce(family, weight, style);
+      } else {
+        // Unregistered, yet still the effective default: the default can only
+        // have been named explicitly, because the implicit one is the first
+        // *registered* family (and with nothing registered at all, `fallback`
+        // is null and never equals `family`). So this is a real
+        // misconfiguration — someone pointed setDefaultFontFamily at a family
+        // that does not exist — and not the deliberately-silent case of an app
+        // that simply hasn't loaded any fonts yet.
+        warnUnregisteredDefaultOnce(family, weight, style);
+      }
     }
   }
 
@@ -364,6 +372,29 @@ function warnSelfUnusableDefaultOnce(
     `there is nothing left to fall back to, so this text will not render at all. ` +
     `Bake that variant with registerFont("${family}", { weight: ${weight}, ` +
     `style: '${style}' }, …), or point setDefaultFontFamily() at a different family.`,
+  );
+}
+
+/**
+ * The requested family is the explicitly set default, and that default names
+ * a family that was never registered at all. Distinct from
+ * `warnSelfUnusableDefaultOnce`, which reports a default that *is* registered
+ * but not in a variant that can serve the request: there the fix is to bake a
+ * variant, here the family has no atlas whatsoever, so pointing the reader at
+ * a missing variant would send them looking for a `registerFont` call to
+ * amend rather than one to write.
+ */
+function warnUnregisteredDefaultOnce(
+  family: string, weight: number, style: FontStyle,
+): void {
+  if (!claimFallbackWarning(`unregistered-default|${family}|${weight}|${style}`)) return;
+  console.warn(
+    `weasel: font family "${family}" (${weight}/${style}) was never registered, and ` +
+    `it is also the fallback family — setDefaultFontFamily("${family}") names a ` +
+    `family with no registered variants at all, so there is nothing left to fall ` +
+    `back to and this text will not render at all. Call registerFont("${family}", ` +
+    `{ weight: ${weight}, style: '${style}' }, …), or point setDefaultFontFamily() ` +
+    `at a family you have registered.`,
   );
 }
 
