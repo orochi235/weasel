@@ -21,7 +21,6 @@ import {
   classifyKind,
   effectiveSections,
   kindBreakdown,
-  splitNodePath,
   type AnyNode,
   type PanelLeaf,
 } from './model';
@@ -69,6 +68,16 @@ export interface SelectionPanelProps<TData, TLayer extends string, TPose> {
 const defaultKindLabel = (kind: string): string =>
   kind.length === 0 ? kind : kind[0].toUpperCase() + kind.slice(1);
 
+/** Immutably set `value` at a dotted path within `root`, cloning each level
+ *  on the way down so React sees new object identities. */
+function setAtPath(root: object, segments: readonly string[], value: unknown): object {
+  const [head, ...rest] = segments;
+  if (rest.length === 0) return { ...root, [head]: value };
+  const child = (root as Record<string, unknown>)[head];
+  const childObj = child != null && typeof child === 'object' ? (child as object) : {};
+  return { ...root, [head]: setAtPath(childObj, rest, value) };
+}
+
 /**
  * Pre-baked selection properties panel. Shows the selected nodes' kind
  * and the properties-trait schema for that kind; multi-selections show
@@ -103,18 +112,17 @@ export function SelectionPanel<TData, TLayer extends string, TPose>(
   }
 
   const commit = (leaf: PanelLeaf, value: unknown): void => {
-    const split = splitNodePath(leaf.path);
-    if (split === null) return;
-    const { head, key } = split;
+    const [head, ...rest] = leaf.path.split('.');
+    if (rest.length === 0) return;
     const ids = selection.current.map(asNodeId);
     scene.batch(`Edit ${leaf.leaf.name}`, () => {
       for (const id of ids) {
         const node = scene.get(id);
         if (!node) continue;
         if (head === 'pose') {
-          scene.setPose(id, { ...(node.pose as object), [key]: value } as TPose);
+          scene.setPose(id, setAtPath(node.pose as object, rest, value) as TPose);
         } else if (head === 'data') {
-          scene.update(id, { data: { ...(node.data as object), [key]: value } as TData });
+          scene.update(id, { data: setAtPath(node.data as object, rest, value) as TData });
         }
       }
     });

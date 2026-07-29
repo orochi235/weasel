@@ -6,6 +6,7 @@ import {
   classifyKind,
   effectiveSections,
   kindBreakdown,
+  nodeValueAt,
 } from './model';
 
 const routing: NodeRoutingEntry[] = [
@@ -120,5 +121,31 @@ describe('aggregateValue', () => {
 describe('kindBreakdown', () => {
   it('formats counts newest-order-preserving', () => {
     expect(kindBreakdown(['rect', 'text', 'rect'])).toBe('rect ×2 · text');
+  });
+});
+
+describe('nested node paths', () => {
+  const node = leaf('n', { style: { fontSize: 18, fill: { color: '#f00' } } }, { x: 1, y: 0 });
+
+  it('reads a three-segment path', () => {
+    expect(nodeValueAt(node, 'data.style.fontSize')).toBe(18);
+  });
+
+  it('reads a four-segment path', () => {
+    expect(nodeValueAt(node, 'data.style.fill.color')).toBe('#f00');
+  });
+
+  it('returns undefined for a missing intermediate segment', () => {
+    expect(nodeValueAt(leaf('m', {}), 'data.style.fontSize')).toBeUndefined();
+  });
+
+  it('still reads two-segment paths', () => {
+    expect(nodeValueAt(node, 'pose.x')).toBe(1);
+  });
+
+  it('aggregates a nested path to MIXED when nodes disagree', () => {
+    const a = leaf('a', { style: { fontSize: 12 } });
+    const b = leaf('b', { style: { fontSize: 18 } });
+    expect(aggregateValue([a, b], 'data.style.fontSize')).toBe(MIXED);
   });
 });

@@ -2,8 +2,9 @@
 // React so intersection/aggregation semantics are unit-testable.
 //
 // Path convention (see core `NodePropertiesEntry`): a leaf's OWN KEY in
-// the schema is its node path — two dotted segments rooted at `pose` or
-// `data` (`pose.x`, `data.fill`). Group keys are organizational only.
+// the schema is its node path — a dotted path of any depth rooted at
+// `pose` or `data` (`pose.x`, `data.fill`, `data.style.fontSize`). Group
+// keys are organizational only.
 
 import type {
   NodePropertiesEntry,
@@ -150,14 +151,18 @@ export function splitNodePath(path: string): { head: string; key: string } | nul
   return { head: path.slice(0, dot), key: path.slice(dot + 1) };
 }
 
-/** Read a node value at a two-segment path (`pose.x` / `data.fill`). */
+/** Read a node value at a dotted path of any depth (`pose.x`,
+ *  `data.style.fontSize`, `data.style.fill.color`). Returns `undefined` if
+ *  any intermediate segment is missing or not an object. */
 export function nodeValueAt(node: AnyNode, path: string): unknown {
-  const split = splitNodePath(path);
-  if (split === null) return undefined;
-  const { head, key } = split;
-  const root = head === 'pose' ? node.pose : head === 'data' ? node.data : undefined;
-  if (root == null || typeof root !== 'object') return undefined;
-  return (root as Record<string, unknown>)[key];
+  const segments = path.split('.');
+  const head = segments[0];
+  let cursor: unknown = head === 'pose' ? node.pose : head === 'data' ? node.data : undefined;
+  for (let i = 1; i < segments.length; i++) {
+    if (cursor == null || typeof cursor !== 'object') return undefined;
+    cursor = (cursor as Record<string, unknown>)[segments[i]];
+  }
+  return cursor;
 }
 
 /** Aggregate a path across nodes: the shared value, or `MIXED`. */
