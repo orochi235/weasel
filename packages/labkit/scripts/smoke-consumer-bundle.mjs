@@ -61,10 +61,57 @@ async function walk(dir) {
   }
   return out;
 }
+/**
+ * Blank out comment spans, line by line, keeping one output line per input
+ * line so reported line numbers still point at the file.
+ *
+ * A leak is a specifier something *resolves* — esbuild, tsc, a consumer's
+ * bundler. Prose never is. Without this, a JSDoc example naming a package
+ * fails the check: `SvgIngestOptions.unpack` in core documents itself with a
+ * fenced ```import { unpackSvgFiles } from '@weasel-js/svg'``` block, exactly
+ * as it should, and that comment rides into labkit's bundled `.d.ts`.
+ *
+ * Deliberately not a parser. The one thing it gets wrong is a `//` inside a
+ * string literal, which truncates the rest of that line and could hide a real
+ * leak sharing it — but ESM emits imports on their own lines, and check 1
+ * catches any JS leak by failing to resolve it.
+ */
+function stripComments(text) {
+  let inBlock = false;
+  return text.split('\n').map((line) => {
+    let out = '';
+    let i = 0;
+    while (i < line.length) {
+      if (inBlock) {
+        const end = line.indexOf('*/', i);
+        if (end === -1) break;
+        i = end + 2;
+        inBlock = false;
+        continue;
+      }
+      const block = line.indexOf('/*', i);
+      const lineComment = line.indexOf('//', i);
+      if (block !== -1 && (lineComment === -1 || block < lineComment)) {
+        out += line.slice(i, block);
+        i = block + 2;
+        inBlock = true;
+        continue;
+      }
+      if (lineComment !== -1) {
+        out += line.slice(i, lineComment);
+        break;
+      }
+      out += line.slice(i);
+      break;
+    }
+    return out;
+  });
+}
+
 const leaks = [];
 for (const file of await walk(distDir)) {
   const text = await readFile(file, 'utf8');
-  text.split('\n').forEach((line, i) => {
+  stripComments(text).forEach((line, i) => {
     if (LEAK_RE.test(line))
       leaks.push(`${file.slice(pkgRoot.length + 1)}:${i + 1}: ${line.trim()}`);
   });
