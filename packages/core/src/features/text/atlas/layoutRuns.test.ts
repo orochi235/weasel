@@ -190,6 +190,49 @@ describe('layoutRuns — word wrap', () => {
   });
 });
 
+describe('layoutRuns — substituted families', () => {
+  // The renderer looks the group's atlas up by `group.family` (exact
+  // `getFont`). A group tagged with the *requested* family therefore resolves
+  // to nothing and paints nothing, however correct the ResolveResult was.
+  it('tags the group with the atlas family it will be looked up by', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [{ ...RUN_PLAIN('A'), fontFamily: 'ghost' }],
+      { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
+      { x: 0, y: 0 },
+    );
+    expect(out.groups).toHaveLength(1);
+    expect(out.groups[0].family).toBe('inter');
+    expect(out.groups[0].quads).toHaveLength(1);
+  });
+
+  it('merges two families substituting to the same atlas into one group', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [
+        { ...RUN_PLAIN('A'), fontFamily: 'ghost' },
+        { ...RUN_PLAIN('A'), fontFamily: 'phantom' },
+      ],
+      { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
+      { x: 0, y: 0 },
+    );
+    expect(out.groups).toHaveLength(1);
+    expect(out.groups[0].family).toBe('inter');
+    expect(out.groups[0].quads).toHaveLength(2);
+  });
+
+  it('keeps a registered family on its own exact-match atlas', async () => {
+    await registerFixture('inter', [{}]);
+    await registerFixture('slab', [{}]);
+    const out = layoutRuns(
+      [RUN_PLAIN('A'), { ...RUN_PLAIN('A'), fontFamily: 'slab' }],
+      { maxWidth: Infinity, lineHeight: 1.2, align: 'left' },
+      { x: 0, y: 0 },
+    );
+    expect(out.groups.map((g) => g.family).sort()).toEqual(['inter', 'slab']);
+  });
+});
+
 describe('layoutRuns — canvas-dynamic faces', () => {
   beforeEach(() => {
     _resetDynamicFontsForTests();

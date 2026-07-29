@@ -25,6 +25,9 @@ export interface LaidOutQuad {
 }
 
 export interface LaidOutGroup {
+  /** Resolved atlas family — may differ from the requested family when the
+   *  cross-family fallback policy substituted a default. This is what the
+   *  renderer looks the atlas up by, so it must be the one that resolves. */
   family: string;
   /** Resolved variant — matches the registered atlas and the texture-cache key. */
   weight: number;
@@ -88,11 +91,18 @@ function getOrCreateGroup(
   resolved: ResolveResult,
   page: number,
 ): LaidOutGroup {
+  // The *resolved* family, not the requested one. The renderer looks this up
+  // with an exact `getFont`, so a group tagged with a family that has no atlas
+  // uploads no texture and draws no quads — the run would occupy layout space
+  // and paint nothing. It also has to be in the key: two requested families
+  // substituting to different atlases must not collide, and two substituting to
+  // the same atlas should merge into one draw call.
+  const atlasFamily = resolved.resolved.family;
   const resolvedWeight = resolved.resolved.weight;
   const resolvedStyle = resolved.resolved.style;
   const source = resolved.source;
   const key = groupKey(
-    run.fontFamily,
+    atlasFamily,
     resolvedWeight,
     resolvedStyle,
     resolved.synthetic,
@@ -103,7 +113,7 @@ function getOrCreateGroup(
   let g = ctx.groups.get(key);
   if (!g) {
     g = {
-      family: run.fontFamily,
+      family: atlasFamily,
       weight: resolvedWeight,
       style: resolvedStyle,
       synthetic: { ...resolved.synthetic },

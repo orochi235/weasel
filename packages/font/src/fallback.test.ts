@@ -21,6 +21,9 @@ describe('substitute policy', () => {
 
     expect(result.entry).toBe(getFont('Inter', 400, 'normal'));
     expect(result.substituted).toEqual({ requested: 'Comic Sans', resolved: 'Inter' });
+    // The atlas identity a renderer keys its texture lookup on. Reporting the
+    // requested family here is what made substitution a visual no-op.
+    expect(result.resolved).toEqual({ family: 'Inter', weight: 400, style: 'normal' });
   });
 
   it('leaves substituted undefined when the requested family resolves', async () => {

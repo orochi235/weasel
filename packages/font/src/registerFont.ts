@@ -157,13 +157,20 @@ export function markAllFontsNotUploaded(): void {}
 export interface ResolveResult {
   entry: FontEntry | null;
   /**
-   * The (weight, style) pair that was actually matched. May differ from
-   * the requested values when the resolver walked the fallback chain.
-   * Use these for cache-key lookup; the synthetic flags describe the
-   * gap between requested and resolved for shader-side compensation.
-   * When `entry` is null, these mirror the requested values.
+   * The (family, weight, style) triple that was actually matched. May differ
+   * from the requested values when the resolver walked the fallback chain —
+   * including `family`, when the cross-family policy substituted a default.
+   *
+   * This is the atlas identity: pass all three to `getFont` /
+   * `textureCacheKey` and the lookup hits. Describing only weight and style
+   * here once let a caller key its draw on the *requested* family, which
+   * resolves to no atlas at all and paints nothing.
+   *
+   * The synthetic flags describe the gap between requested and resolved for
+   * shader-side compensation. When `entry` is null, these mirror the
+   * requested values.
    */
-  resolved: { weight: number; style: FontStyle };
+  resolved: { family: string; weight: number; style: FontStyle };
   synthetic: { bold: boolean; italic: boolean };
   /** Which tier resolved: a baked MSDF atlas, or the runtime canvas-SDF
    *  dynamic atlas. Misses report 'atlas' (the default tier). */
@@ -188,7 +195,7 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
     return {
       entry: null,
       dynamicFace: getDynamicFace(family, weight, style),
-      resolved: { weight, style },
+      resolved: { family, weight, style },
       synthetic: { bold: false, italic: false },
       source: 'canvas',
     };
@@ -203,7 +210,7 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
     return {
       entry: null,
       dynamicFace: getDynamicFace(family, weight, style),
-      resolved: { weight, style },
+      resolved: { family, weight, style },
       synthetic: { bold: false, italic: false },
       source: 'canvas',
     };
@@ -223,7 +230,7 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
 
   return {
     entry: null,
-    resolved: { weight, style },
+    resolved: { family, weight, style },
     synthetic: { bold: false, italic: false },
     source: 'atlas',
   };
@@ -287,7 +294,7 @@ export function resolveFontVariant(
   if (exact) {
     return {
       entry: exact,
-      resolved: { weight, style },
+      resolved: { family, weight, style },
       synthetic: { bold: false, italic: false },
       source: 'atlas',
     };
@@ -313,7 +320,7 @@ export function resolveFontVariant(
   if (bestSameStyle) {
     return {
       entry: bestSameStyle.entry,
-      resolved: { weight: bestSameStyle.weight, style },
+      resolved: { family, weight: bestSameStyle.weight, style },
       synthetic: { bold: false, italic: false },
       source: 'atlas',
     };
@@ -324,7 +331,7 @@ export function resolveFontVariant(
   if (sameStyleRegular) {
     return {
       entry: sameStyleRegular,
-      resolved: { weight: 400, style },
+      resolved: { family, weight: 400, style },
       synthetic: {
         bold: weight >= 600,
         italic: false,
@@ -338,7 +345,7 @@ export function resolveFontVariant(
   if (sameWeightNormal) {
     return {
       entry: sameWeightNormal,
-      resolved: { weight, style: 'normal' },
+      resolved: { family, weight, style: 'normal' },
       synthetic: {
         bold: false,
         italic: style === 'italic',
@@ -366,7 +373,7 @@ export function resolveFontVariant(
   if (bestNormal) {
     return {
       entry: bestNormal.entry,
-      resolved: { weight: bestNormal.weight, style: 'normal' },
+      resolved: { family, weight: bestNormal.weight, style: 'normal' },
       synthetic: {
         bold: false,
         italic: style === 'italic',
@@ -380,7 +387,7 @@ export function resolveFontVariant(
   if (regular) {
     return {
       entry: regular,
-      resolved: { weight: 400, style: 'normal' },
+      resolved: { family, weight: 400, style: 'normal' },
       synthetic: {
         bold: weight >= 600,
         italic: style === 'italic',

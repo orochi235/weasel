@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
@@ -971,5 +971,92 @@ describe('drawText — canvas-dynamic routing', () => {
     expect(used).not.toContain(ctx.textSdf.handle);
     // Full page upload happened (texImage2D — the recorder can't see the R8 format args).
     expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
+  });
+});
+
+import {
+  setFontFallbackPolicy, setDefaultFontFamily, getFontFallbackPolicy,
+} from '@weasel-js/font';
+
+/**
+ * The 'substitute' fallback policy is only real if the substitute atlas
+ * actually reaches the GPU. A correct `ResolveResult.substituted` proves
+ * nothing here — these assert uploads and draw calls.
+ */
+describe('drawText — substituted family reaches the GPU', () => {
+  let priorPolicy: ReturnType<typeof getFontFallbackPolicy>;
+
+  beforeEach(async () => {
+    priorPolicy = getFontFallbackPolicy();
+    _resetFontRegistryForTests();
+    _resetDynamicFontsForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+    setFontFallbackPolicy('substitute');
+    setDefaultFontFamily('inter');
+  });
+
+  afterEach(() => {
+    setFontFallbackPolicy(priorPolicy);
+  });
+
+  const ghostText = (): DrawCommand => ({
+    kind: 'text', x: 0, y: 0,
+    runs: [{
+      text: 'A', fontFamily: 'ghost', fontSize: 16, fontWeight: 400,
+      fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+    }],
+    maxWidth: Infinity, align: 'left', style: {},
+  });
+
+  it('uploads an atlas texture for text in an unregistered family', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, ghostText());
+    expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
+  });
+
+  it('draws quads for text in an unregistered family', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, ghostText());
+    const draws = calls.filter((c) => c.name === 'drawElements');
+    expect(draws).toHaveLength(1);
+    // 1 glyph → 2 triangles → 6 indices.
+    expect(draws[0].args[1]).toBe(6);
+    const vbo = calls.find((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array);
+    expect(vbo).toBeDefined();
+  });
+
+  it('renders nothing for an unregistered family under the "none" policy', () => {
+    setFontFallbackPolicy('none');
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, ghostText());
+    expect(calls.some((c) => c.name === 'drawElements')).toBe(false);
+    expect(calls.some((c) => c.name === 'texImage2D')).toBe(false);
+  });
+
+  it('still draws a registered family through the exact-match path', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [{
+        text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
+        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      }],
+      maxWidth: Infinity, align: 'left', style: {},
+    });
+    expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
+    expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
   });
 });
