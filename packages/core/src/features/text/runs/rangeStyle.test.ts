@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { styleAtRange, applyStyleToRange, MIXED_STYLE } from './rangeStyle';
+import { styleAtRange, applyStyleToRange, MIXED } from './rangeStyle';
 import type { StyledRun } from '../runs';
 
 const runs: StyledRun[] = [
@@ -13,8 +13,8 @@ describe('styleAtRange', () => {
     expect(styleAtRange(runs, 6, 11).bold).toBe(true);
   });
 
-  it('reports MIXED_STYLE when the range straddles a boundary', () => {
-    expect(styleAtRange(runs, 0, 11).bold).toBe(MIXED_STYLE);
+  it('reports MIXED when the range straddles a boundary', () => {
+    expect(styleAtRange(runs, 0, 11).bold).toBe(MIXED);
   });
 
   it('treats an absent flag as false, not undefined', () => {
@@ -39,9 +39,9 @@ describe('styleAtRange', () => {
     expect(style.fontSize).toBeUndefined();
   });
 
-  it('reports MIXED_STYLE when one run sets a value and another leaves it inherited', () => {
+  it('reports MIXED when one run sets a value and another leaves it inherited', () => {
     const mixed: StyledRun[] = [{ text: 'ab', fontSize: 24 }, { text: 'cd' }];
-    expect(styleAtRange(mixed, 0, 4).fontSize).toBe(MIXED_STYLE);
+    expect(styleAtRange(mixed, 0, 4).fontSize).toBe(MIXED);
   });
 
   it('reads a range that covers exactly one whole run', () => {
@@ -54,7 +54,7 @@ describe('styleAtRange', () => {
   });
 
   it('clamps a range that overruns the text length', () => {
-    expect(styleAtRange(runs, 6, 999).bold).toBe(MIXED_STYLE);
+    expect(styleAtRange(runs, 6, 999).bold).toBe(MIXED);
     expect(styleAtRange(runs, 11, 999).bold).toBe(false);
   });
 
@@ -87,7 +87,7 @@ describe('styleAtRange', () => {
       { text: 'ab', fill: { color: '#f00' } },
       { text: 'cd', fill: { color: '#0f0' } },
     ];
-    expect(styleAtRange(differing, 0, 4).fill).toBe(MIXED_STYLE);
+    expect(styleAtRange(differing, 0, 4).fill).toBe(MIXED);
   });
 
   it('reports the newer flags alongside bold/italic', () => {

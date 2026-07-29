@@ -29,15 +29,17 @@
  * `styleAtRange` reports. Treat `fill` values as immutable.
  */
 
+import { MIXED } from 'core/mixed';
+import type { Mixed } from 'core/mixed';
 import type { StyledRun } from '../runs';
 
-/** Sentinel for "the runs in this range disagree at this key." */
-export const MIXED_STYLE: unique symbol = Symbol('weasel:mixed-style');
-export type MixedStyle = typeof MIXED_STYLE;
+export { MIXED };
+export type { Mixed };
 
-/** Every styleable key of a run, each either a concrete value or MIXED_STYLE. */
+/** Every styleable key of a run, each either a concrete value or MIXED (the
+ *  runs in the range disagree at that key). */
 export type RangeStyle = {
-  [K in Exclude<keyof StyledRun, 'text'>]?: StyledRun[K] | MixedStyle;
+  [K in Exclude<keyof StyledRun, 'text'>]?: StyledRun[K] | Mixed;
 };
 
 /**
@@ -129,7 +131,7 @@ function totalLength(runs: readonly StyledRun[]): number {
 
 /**
  * The styling shared by every run overlapping `[start, end)`: a concrete
- * value where the range agrees, `MIXED_STYLE` where it doesn't. Keys no run
+ * value where the range agrees, `MIXED` where it doesn't. Keys no run
  * in range sets are absent (they inherit the node's `TextStyle`) — except
  * the additive flags, which read as `false` rather than `undefined` since a
  * run cannot un-set them. An empty range reads as `{}`. A reported `fill`
@@ -172,7 +174,7 @@ export function styleAtRange(
 
   const style: Record<string, unknown> = {};
   for (const key of STYLE_KEYS) {
-    if (mixed.has(key)) style[key] = MIXED_STYLE;
+    if (mixed.has(key)) style[key] = MIXED;
     else {
       const value = first.get(key);
       if (value !== undefined) style[key] = value;

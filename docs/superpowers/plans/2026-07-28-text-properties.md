@@ -236,7 +236,7 @@ git commit -m "feat(text): letterSpacing, underline, strikethrough on TextStyle 
 
 ```ts
 import { describe, it, expect } from 'vitest';
-import { styleAtRange, applyStyleToRange, MIXED_STYLE } from './rangeStyle';
+import { styleAtRange, applyStyleToRange, MIXED } from './rangeStyle';
 import type { StyledRun } from '../runs';
 
 const runs: StyledRun[] = [
@@ -250,8 +250,8 @@ describe('styleAtRange', () => {
     expect(styleAtRange(runs, 6, 11).bold).toBe(true);
   });
 
-  it('reports MIXED_STYLE when the range straddles a boundary', () => {
-    expect(styleAtRange(runs, 0, 11).bold).toBe(MIXED_STYLE);
+  it('reports MIXED when the range straddles a boundary', () => {
+    expect(styleAtRange(runs, 0, 11).bold).toBe(MIXED);
   });
 
   it('treats an absent flag as false, not undefined', () => {
@@ -311,15 +311,15 @@ Expected: FAIL — `Cannot find module './rangeStyle'`.
  * same split `SelectionPanel` makes between `model.ts` and its component.
  */
 
+import { MIXED, type Mixed } from 'core/mixed';
 import type { StyledRun } from '../runs';
 
-/** Sentinel for "the runs in this range disagree at this key." */
-export const MIXED_STYLE: unique symbol = Symbol('weasel:mixed-style');
-export type MixedStyle = typeof MIXED_STYLE;
+export { MIXED };
+export type { Mixed };
 
-/** Every styleable key of a run, each either a concrete value or MIXED_STYLE. */
+/** Every styleable key of a run, each either a concrete value or MIXED. */
 export type RangeStyle = {
-  [K in Exclude<keyof StyledRun, 'text'>]?: StyledRun[K] | MixedStyle;
+  [K in Exclude<keyof StyledRun, 'text'>]?: StyledRun[K] | Mixed;
 };
 
 type StyleKey = Exclude<keyof StyledRun, 'text'>;
@@ -330,7 +330,9 @@ const STYLE_KEYS: readonly StyleKey[] = [
 ];
 ```
 
-Implement `styleAtRange(runs, start, end): RangeStyle` by walking runs, tracking each run's `[pos, pos+len)` against `[start, end)`, and for every overlapping run comparing each key against the first seen value — differing values become `MIXED_STYLE`. Boolean flags read as `run[key] ?? false` so absent and `false` agree. A collapsed or empty range returns `{}`.
+**Update (2026-07-28 sentinel unification):** `MIXED` is no longer defined here — it's the kit-wide sentinel at `packages/core/src/core/mixed.ts`, re-exported by this module and by `@weasel-js/ui`'s `SelectionPanel/model.ts` under the same name. A text-properties panel that reads both a `RangeStyle` (this module) and aggregated node values (`SelectionPanel/model.ts`'s `aggregateValue`) gets one sentinel, not two — see the `mixed` scope in that commit for the reasoning. The snippet above reflects that; don't reintroduce a locally-scoped `Symbol('weasel:mixed-style')`.
+
+Implement `styleAtRange(runs, start, end): RangeStyle` by walking runs, tracking each run's `[pos, pos+len)` against `[start, end)`, and for every overlapping run comparing each key against the first seen value — differing values become `MIXED`. Boolean flags read as `run[key] ?? false` so absent and `false` agree. A collapsed or empty range returns `{}`.
 
 Implement `applyStyleToRange(runs, start, end, patch: Partial<StyledRun>): StyledRun[]` by clamping `end` to the total text length, returning a copy unchanged when `start >= end`, then for each run emitting up to three pieces (before / inside / after). The inside piece takes the patch, with `undefined` and `false` **deleting** the key rather than storing it. Finally coalesce: walk the output and merge neighbors whose every non-`text` key is equal.
 
@@ -357,16 +359,18 @@ function toggleFlagInRange(
 }
 ```
 
-`current` is `MIXED_STYLE` for a mixed range, so `current !== true` sets the flag — mixed becomes "all on", which matches every text editor's behavior and the old `allSet` logic.
+`current` is `MIXED` for a mixed range, so `current !== true` sets the flag — mixed becomes "all on", which matches every text editor's behavior and the old `allSet` logic.
 
 - [ ] **Step 6: Export from the barrel**
 
 In `packages/core/src/features/text/index.ts`, beside the existing `resolveRuns` export:
 
 ```ts
-export { styleAtRange, applyStyleToRange, MIXED_STYLE } from './runs/rangeStyle';
-export type { RangeStyle, MixedStyle } from './runs/rangeStyle';
+export { styleAtRange, applyStyleToRange } from './runs/rangeStyle';
+export type { RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
 ```
+
+`MIXED`/`Mixed` aren't re-exported here — they're already public from core's top-level barrel via `./core/mixed` (see the 2026-07-28 sentinel-unification update above), and re-exporting the same binding under two barrel paths just invites drift.
 
 - [ ] **Step 7: Run the full kit suite**
 
@@ -404,7 +408,7 @@ describe('range styling surface', () => {
 
   it('reports rangeStyle for the selection', async () => {
     // …with runs [{text:'ab', bold:true}, {text:'cd'}], select 0..4…
-    expect(result.current.rangeStyle?.bold).toBe(MIXED_STYLE);
+    expect(result.current.rangeStyle?.bold).toBe(MIXED);
   });
 
   it('applies a patch to the selected range', async () => {
@@ -838,7 +842,7 @@ it('toggles bold on the selected range', async () => {
 });
 
 it('renders a mixed range as indeterminate', () => {
-  render(<CharacterOptions rangeStyle={{ bold: MIXED_STYLE }} applyStyleToSelection={vi.fn()} />);
+  render(<CharacterOptions rangeStyle={{ bold: MIXED }} applyStyleToSelection={vi.fn()} />);
   expect(screen.getByRole('button', { name: /bold/i })).toHaveAttribute('aria-pressed', 'mixed');
 });
 ```
@@ -857,7 +861,7 @@ Expected: FAIL — module not found.
 - `FontFamilySelect` (below) for family.
 - `ColorField` for fill.
 
-`MIXED_STYLE` renders indeterminate. Read `packages/ui/src/components/SelectionPanel/SelectionPanel.tsx` for how it renders `mixed` and match that presentation — two mixed-state idioms in one app is one too many.
+`MIXED` renders indeterminate. Read `packages/ui/src/components/SelectionPanel/SelectionPanel.tsx` for how it renders `mixed` and match that presentation — two mixed-state idioms in one app is one too many.
 
 - [ ] **Step 4: Implement the font-family renderer**
 

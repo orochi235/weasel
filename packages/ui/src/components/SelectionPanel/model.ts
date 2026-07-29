@@ -6,17 +6,21 @@
 // `pose` or `data` (`pose.x`, `data.fill`, `data.style.fontSize`). Group
 // keys are organizational only.
 
-import type {
-  NodePropertiesEntry,
-  NodeRoutingEntry,
-  SceneNode,
-  ToolPrefGroup,
-  ToolPrefLeaf,
+import {
+  MIXED,
+  type Mixed,
+  type NodePropertiesEntry,
+  type NodeRoutingEntry,
+  type SceneNode,
+  type ToolPrefGroup,
+  type ToolPrefLeaf,
 } from '@weasel-js/core';
 
-/** Sentinel for "selected nodes disagree at this path". */
-export const MIXED: unique symbol = Symbol('weasel-ui:mixed');
-export type Mixed = typeof MIXED;
+// Re-exported under its existing public name here: the kit-wide "these
+// values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
+// multi-node aggregation, so this panel doesn't get its own symbol.
+export { MIXED };
+export type { Mixed };
 
 export type AnyNode = SceneNode<unknown, string, unknown>;
 

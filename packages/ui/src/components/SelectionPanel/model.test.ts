@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { NodePropertiesEntry, NodeRoutingEntry } from '@weasel-js/core';
+import { styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import {
   MIXED,
   aggregateValue,
@@ -116,6 +116,11 @@ describe('aggregateValue', () => {
     const b = leaf('b', { kind: 'rect' });
     expect(aggregateValue([a, b], 'data.fill')).toBe(MIXED);
     expect(aggregateValue([b], 'data.fill')).toBeUndefined();
+  });
+
+  it('is the same sentinel a core RangeStyle reports for a mixed range — one MIXED, not two', () => {
+    const mixedRange = styleAtRange([{ text: 'ab', bold: true }, { text: 'cd' }], 0, 4);
+    expect(mixedRange.bold).toBe(MIXED);
   });
 });
 
