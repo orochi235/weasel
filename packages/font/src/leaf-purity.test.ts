@@ -14,6 +14,24 @@ import { join } from 'node:path';
  * and not bundled by tsup into `dist/` — so it can't trigger the
  * bundler-duplication failure mode this test guards against.
  */
+/**
+ * Core's internal path aliases, derived from the root tsconfig rather than
+ * hand-listed — `packages/font/tsconfig.json` extends root without overriding
+ * `paths`, so every one of them resolves inside this package and every one is
+ * a reach-back this guard must catch. Hand-listing them is how you end up
+ * checking three of seven.
+ */
+const CORE_ALIASES = (() => {
+  const root = JSON.parse(
+    readFileSync(join(import.meta.dirname, '../../../tsconfig.json'), 'utf8')
+      .replace(/^\s*\/\/.*$/gm, ''),   // tsconfig allows comments; JSON.parse does not
+  );
+  const names = Object.keys(root.compilerOptions.paths)
+    .filter((k) => k.endsWith('/*') && !k.startsWith('@'))
+    .map((k) => k.slice(0, -2));
+  return new RegExp(`from ['"](${names.join('|')})/`);
+})();
+
 function sourceFiles(dir: string): string[] {
   const out: string[] = [];
   for (const name of readdirSync(dir)) {
@@ -29,14 +47,11 @@ describe('leaf purity', () => {
     const offenders: string[] = [];
     for (const file of sourceFiles(join(import.meta.dirname, '.'))) {
       const src = readFileSync(file, 'utf8');
-      // Bare `@weasel-js/core`, and core's internal path aliases
-      // (`core/...`, `features/...`, `affordances/...`) which resolve only
-      // inside core's tsconfig.
-      if (/from ['"]@weasel-js\/core/.test(src) ||
-          /from ['"](core|features|affordances)\//.test(src)) {
+      // Bare `@weasel-js/core`, and core's internal path aliases.
+      if (/from ['"]@weasel-js\/core/.test(src) || CORE_ALIASES.test(src)) {
         offenders.push(file);
       }
     }
-    expect(offenders).toEqual([]);
+    expect(offenders, '@weasel-js/font is a Tier A leaf and must not import core — a reach-back is a cycle the bundler resolves by duplicating the font registry, which renders no glyphs at all').toEqual([]);
   });
 });
