@@ -837,7 +837,9 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
       setProjAndModel(ctx, prog);
       setColorMatrixUniforms(ctx, prog);
       gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
-      gl.uniform1f(prog.uniform('u_aaWidth')!, 0.05);
+      // No AA-width uniform: the text shaders derive their smoothstep band
+      // from fwidth() per fragment. A CPU-side constant cannot be right at
+      // more than one scale — see the textSdf.ts header.
     }
     drawTextGroup(ctx, group, prog);
   }

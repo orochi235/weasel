@@ -236,6 +236,13 @@ Core five + Crop shipped. Remaining:
   horizontal run; glyph rows never are) rather than a tighter tolerance,
   which the AA difference won't survive.
 
+  The same blind spot let a real defect through: the text shaders' AA band was
+  a constant, so glyph edges were hard-quantized at 16px, and `text.spec.ts`
+  passed anyway. Fixed 2026-07-29. `tests/visual/text-aa.spec.ts` is now the
+  worked example of the structural assertion this entry asks for — it samples
+  one known-color node and asserts a coverage-histogram property, no golden
+  image — so pinning the decoration rules is a matter of copying its shape.
+
 - **(P3) `ToolOptionsBar` is not driven by tool prefs.** Its first tenant
   (draw's `CharacterOptions`) is hand-assembled. A tool declaring a
   `ToolPrefGroup` for its options and having the bar render it the way
