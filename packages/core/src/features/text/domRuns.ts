@@ -236,8 +236,15 @@ export function charOffsetToDomPosition(
 /**
  * Inverse of `charOffsetToDomPosition`. Walks text nodes in document order;
  * sums the lengths of every text node preceding `node` and adds `offset`.
- * If `node` is an element (not a text node), counts to the end of the
- * preceding text content.
+ *
+ * When `node` is an element the DOM offset indexes *child nodes*, not
+ * characters, so it can't simply be added — `(overlay, 0)` is the start of
+ * the text and `(overlay, childNodes.length)` its end. That shape is not
+ * exotic: `Range.selectNodeContents`, which `useTextEdit` uses for its
+ * select-all caret, produces exactly it. So resolve an element position by
+ * counting the text that precedes the boundary point. A text node can never
+ * *contain* that point (the container isn't one), so each is wholly before
+ * or wholly after it.
  */
 export function domPositionToCharOffset(
   parent: HTMLElement,
@@ -247,9 +254,19 @@ export function domPositionToCharOffset(
   let total = 0;
   const walker = document.createTreeWalker(parent, NodeFilter.SHOW_TEXT);
   let cur = walker.nextNode() as Text | null;
+  if (node.nodeType === Node.TEXT_NODE) {
+    while (cur) {
+      if (cur === node) return total + offset;
+      total += cur.data.length;
+      cur = walker.nextNode() as Text | null;
+    }
+    return total;
+  }
+  const point = document.createRange();
+  point.setStart(node, Math.max(0, Math.min(offset, node.childNodes.length)));
+  point.collapse(true);
   while (cur) {
-    if (cur === node) return total + offset;
-    total += cur.data.length;
+    if (point.comparePoint(cur, 0) < 0) total += cur.data.length;
     cur = walker.nextNode() as Text | null;
   }
   return total;

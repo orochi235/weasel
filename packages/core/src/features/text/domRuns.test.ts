@@ -447,4 +447,26 @@ describe('domPositionToCharOffset', () => {
       expect(domPositionToCharOffset(parent, pos!.node, pos!.offset)).toBe(Math.min(off, 15));
     }
   });
+
+  // An element container's offset indexes child nodes, not characters — the
+  // shape `Range.selectNodeContents` produces, and so the shape of the
+  // select-all caret `useTextEdit` starts an edit with.
+  it('reads an element position as the text preceding that child index', () => {
+    runsToDom([{ text: 'abc' }, { text: 'def', bold: true }], parent);
+    expect(domPositionToCharOffset(parent, parent, 0)).toBe(0);
+    expect(domPositionToCharOffset(parent, parent, 1)).toBe(3);
+    expect(domPositionToCharOffset(parent, parent, 2)).toBe(6);
+  });
+
+  it('clamps an element offset past the last child to the end of the text', () => {
+    runsToDom([{ text: 'abc' }], parent);
+    expect(domPositionToCharOffset(parent, parent, 99)).toBe(3);
+  });
+
+  it('resolves a position inside a run span, not just on the overlay', () => {
+    runsToDom([{ text: 'abc' }, { text: 'def', bold: true }], parent);
+    const second = parent.querySelectorAll('span[data-run]')[1];
+    expect(domPositionToCharOffset(parent, second, 0)).toBe(3);
+    expect(domPositionToCharOffset(parent, second, 1)).toBe(6);
+  });
 });
