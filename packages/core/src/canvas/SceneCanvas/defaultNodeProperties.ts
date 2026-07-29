@@ -46,6 +46,26 @@ function shapeSchema(opts: { text?: boolean } = {}): ToolPrefGroup {
               name: 'Text',
               children: {
                 'data.text': { kind: 'string', name: 'Text', description: 'Text content.', default: '' },
+                character: {
+                  name: 'Character',
+                  children: {
+                    'data.style.fontSize': { kind: 'number', name: 'Size', description: 'Font size, world units.', default: 16, min: 1, step: 1 },
+                    'data.style.fontFamily': { kind: 'font-family', name: 'Font', description: 'Registered font family.', default: 'sans-serif' },
+                    'data.style.fontWeight': { kind: 'number', name: 'Weight', description: 'Font weight, 100–900.', default: 400, min: 100, max: 900, step: 100 },
+                    'data.style.fontStyle': { kind: 'enum', name: 'Style', description: 'Upright or italic.', default: 'normal', options: [{ value: 'normal', label: 'Normal' }, { value: 'italic', label: 'Italic' }] },
+                    'data.style.letterSpacing': { kind: 'number', name: 'Tracking', description: 'Extra advance per glyph, world units.', default: 0, step: 0.1 },
+                    'data.style.underline': { kind: 'boolean', name: 'Underline', description: 'Underline the text.', default: false },
+                    'data.style.strikethrough': { kind: 'boolean', name: 'Strikethrough', description: 'Strike through the text.', default: false },
+                    'data.style.fill.color': { kind: 'color', name: 'Color', description: 'Text color.', default: '#000000ff', alpha: true },
+                  },
+                },
+                paragraph: {
+                  name: 'Paragraph',
+                  children: {
+                    'data.style.align': { kind: 'enum', name: 'Align', description: 'Horizontal alignment.', default: 'left', options: [{ value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }] },
+                    'data.style.lineHeight': { kind: 'number', name: 'Leading', description: 'Line height as a multiple of font size.', default: 1.2, min: 0.5, step: 0.1 },
+                  },
+                },
               },
             },
           }
