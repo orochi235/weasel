@@ -57,6 +57,35 @@ export const Multiple: Story = {
   },
 };
 
+/** `mixedValues` — the aggregated sources disagree. Here the selected text
+ *  range is bold throughout, italic in part of it, and never underlined.
+ *  Clicking the mixed segment turns it fully on. */
+export const MultipleWithMixed: Story = {
+  render: () => {
+    const [v, setV] = useState<string[]>(['b']);
+    const [mixed, setMixed] = useState<string[]>(['i']);
+    return (
+      <ToggleBar
+        mode="multiple"
+        items={[
+          { value: 'b', label: 'B' },
+          { value: 'i', label: 'I' },
+          { value: 'u', label: 'U' },
+        ]}
+        value={v}
+        mixedValues={mixed}
+        onChange={(next) => {
+          setV(next);
+          // A click resolves the segment it touched — keep only the values
+          // whose on/off state didn't change.
+          setMixed((m) => m.filter((x) => next.includes(x) === v.includes(x)));
+        }}
+        ariaLabel="Text style"
+      />
+    );
+  },
+};
+
 export const Disabled: Story = {
   render: () => {
     const [v, setV] = useState<string | null>('a');

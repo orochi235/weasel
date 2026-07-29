@@ -14,7 +14,7 @@ export {
   fontString,
 } from './textStyle';
 export type { TextStyle, ResolvedTextStyle } from './textStyle';
-export { measureText } from './measureText';
+export { measureText, measuredWidth } from './measureText';
 export type { MeasuredText } from './measureText';
 export { measureTextBounds } from './measureTextBounds';
 export type { MeasureTextBoundsOpts } from './measureTextBounds';
@@ -27,6 +27,7 @@ export type { FitTextPoseOptions } from './fitTextPose';
 export { useTextEdit } from './useTextEdit';
 export type {
   TextEditScreenPose,
+  TextEditSelection,
   StartEditOptions,
   UseTextEditOptions,
   UseTextEditReturn,
@@ -35,6 +36,8 @@ export { useSceneTextEdit } from './useSceneTextEdit';
 export type { UseSceneTextEditOptions } from './useSceneTextEdit';
 export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
+export { styleAtRange, applyStyleToRange } from './runs/rangeStyle';
+export type { RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
 export { textCommand } from './textCommand';
 export { verticalAlignOffset } from './verticalAlign';
 export type { TextVerticalAlign } from './verticalAlign';

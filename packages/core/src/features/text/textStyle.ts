@@ -40,6 +40,12 @@ export interface TextStyle {
   selectionBackground?: string;
   /** Selection text color paired with `selectionBackground`. Default: inherits text color. */
   selectionColor?: string;
+  /** Extra advance added after each glyph, in world units. Default 0. */
+  letterSpacing?: number;
+  /** Default `false`. */
+  underline?: boolean;
+  /** Default `false`. */
+  strikethrough?: boolean;
 }
 
 /** `TextStyle` with all fields filled in from defaults — what the renderer actually consumes. */
@@ -54,6 +60,9 @@ export interface ResolvedTextStyle {
   caretColor: string;
   selectionBackground: string | null;
   selectionColor: string | null;
+  letterSpacing: number;
+  underline: boolean;
+  strikethrough: boolean;
 }
 
 const DEFAULT_FILL: FillStyle = { fill: 'solid', color: '#000' };
@@ -82,6 +91,9 @@ export const DEFAULT_TEXT_STYLE: ResolvedTextStyle = {
   caretColor: paintColor(DEFAULT_FILL),
   selectionBackground: defaultSelectionBackground(paintColor(DEFAULT_FILL)),
   selectionColor: null,
+  letterSpacing: 0,
+  underline: false,
+  strikethrough: false,
 };
 
 /** Fill in a partial `TextStyle` with defaults from `DEFAULT_TEXT_STYLE`. */
@@ -108,6 +120,9 @@ export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
     caretColor,
     selectionBackground,
     selectionColor: style.selectionColor ?? null,
+    letterSpacing: style.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing,
+    underline: style.underline ?? DEFAULT_TEXT_STYLE.underline,
+    strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
   };
 }
 

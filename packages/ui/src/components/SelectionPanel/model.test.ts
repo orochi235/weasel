@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import type { NodePropertiesEntry, NodeRoutingEntry } from '@weasel-js/core';
+import { styleAtRange, type NodePropertiesEntry, type NodeRoutingEntry } from '@weasel-js/core';
 import {
   MIXED,
   aggregateValue,
   classifyKind,
   effectiveSections,
   kindBreakdown,
+  nodeValueAt,
+  setAtPath,
 } from './model';
 
 const routing: NodeRoutingEntry[] = [
@@ -115,10 +117,79 @@ describe('aggregateValue', () => {
     expect(aggregateValue([a, b], 'data.fill')).toBe(MIXED);
     expect(aggregateValue([b], 'data.fill')).toBeUndefined();
   });
+
+  it('is the same sentinel a core RangeStyle reports for a mixed range — one MIXED, not two', () => {
+    const mixedRange = styleAtRange([{ text: 'ab', bold: true }, { text: 'cd' }], 0, 4);
+    expect(mixedRange.bold).toBe(MIXED);
+  });
 });
 
 describe('kindBreakdown', () => {
   it('formats counts newest-order-preserving', () => {
     expect(kindBreakdown(['rect', 'text', 'rect'])).toBe('rect ×2 · text');
+  });
+});
+
+describe('nested node paths', () => {
+  const node = leaf('n', { style: { fontSize: 18, fill: { color: '#f00' } } }, { x: 1, y: 0 });
+
+  it('reads a three-segment path', () => {
+    expect(nodeValueAt(node, 'data.style.fontSize')).toBe(18);
+  });
+
+  it('reads a four-segment path', () => {
+    expect(nodeValueAt(node, 'data.style.fill.color')).toBe('#f00');
+  });
+
+  it('returns undefined for a missing intermediate segment', () => {
+    expect(nodeValueAt(leaf('m', {}), 'data.style.fontSize')).toBeUndefined();
+  });
+
+  it('still reads two-segment paths', () => {
+    expect(nodeValueAt(node, 'pose.x')).toBe(1);
+  });
+
+  it('returns undefined for a dotless path (mirrors commit\'s no-op)', () => {
+    expect(nodeValueAt(node, 'pose')).toBeUndefined();
+    expect(nodeValueAt(node, 'data')).toBeUndefined();
+  });
+
+  it('aggregates a nested path to MIXED when nodes disagree', () => {
+    const a = leaf('a', { style: { fontSize: 12 } });
+    const b = leaf('b', { style: { fontSize: 18 } });
+    expect(aggregateValue([a, b], 'data.style.fontSize')).toBe(MIXED);
+  });
+});
+
+describe('setAtPath', () => {
+  it('creates a missing intermediate object', () => {
+    expect(setAtPath({}, ['style', 'fontSize'], 18)).toEqual({ style: { fontSize: 18 } });
+  });
+
+  it("preserves an existing intermediate's sibling keys", () => {
+    const root = { style: { fontSize: 12, fontWeight: 400 }, other: 'x' };
+    expect(setAtPath(root, ['style', 'fontSize'], 18)).toEqual({
+      style: { fontSize: 18, fontWeight: 400 },
+      other: 'x',
+    });
+  });
+
+  it('replaces a null intermediate rather than throwing', () => {
+    expect(setAtPath({ style: null }, ['style', 'fontSize'], 18)).toEqual({
+      style: { fontSize: 18 },
+    });
+  });
+
+  it('preserves an array intermediate instead of flattening it to an object', () => {
+    const root = { points: [{ x: 1 }, { x: 2 }] };
+    const result = setAtPath(root, ['points', '0', 'x'], 9) as { points: unknown };
+    expect(Array.isArray(result.points)).toBe(true);
+    expect(result).toEqual({ points: [{ x: 9 }, { x: 2 }] });
+  });
+
+  it('does not mutate the original root', () => {
+    const root = { style: { fontSize: 12 } };
+    setAtPath(root, ['style', 'fontSize'], 18);
+    expect(root.style.fontSize).toBe(12);
   });
 });

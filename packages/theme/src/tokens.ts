@@ -35,6 +35,7 @@ export const DEFAULT_TOKENS = {
   '--wzl-border-w':    '1px',
   '--wzl-line-width':  '2px',
   '--wzl-curve-width': '3px',
+  '--wzl-tb-height':   '28px',
 
   // Motion — durations + CSS equivalents of the JS easing library
   '--wzl-motion-fast':       '120ms',

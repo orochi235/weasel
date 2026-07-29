@@ -66,7 +66,7 @@ export const TEXT_PLAIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="
 </svg>`;
 
 export const TEXT_RUNS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60">
-  <text x="10" y="15" dominant-baseline="text-before-edge" data-weasel-width="220" data-weasel-height="30" font-size="18" font-family="sans-serif" fill="#1a130d"><tspan>Hello, </tspan><tspan font-weight="700">bold</tspan><tspan> and </tspan><tspan font-style="italic" fill="#b03030">red italic</tspan><tspan>.</tspan></text>
+  <text x="10" y="15" dominant-baseline="text-before-edge" data-weasel-width="220" data-weasel-height="30" font-size="18" font-family="sans-serif" fill="#1a130d"><tspan>Hello, </tspan><tspan font-weight="700" letter-spacing="2" text-decoration="underline">bold</tspan><tspan> and </tspan><tspan font-style="italic" fill="#b03030">red italic</tspan><tspan>.</tspan></text>
 </svg>`;
 
 /** Generic two-namespace fixture: proves weasel-svg passes through arbitrary
@@ -97,7 +97,7 @@ export const WEASELDRAW_PAPERS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xm
 </svg>`;
 
 export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 200 100">
-  <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" wd:line-height="1.4">Styled</text>
+  <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" letter-spacing="1.5" text-decoration="underline line-through" wd:line-height="1.4">Styled</text>
 </svg>`;
 
 export const WEASELDRAW_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 400 400">

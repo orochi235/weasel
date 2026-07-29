@@ -7,7 +7,7 @@
 // boolean, string, enum, plus rendering hints — so it's a clean
 // structural subset of whatever a host app already has.
 
-export type ToolPrefKind = 'number' | 'boolean' | 'string' | 'enum' | 'color';
+export type ToolPrefKind = 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint';
 
 interface ToolPrefBase<K extends string, Value> {
   kind: K;
@@ -78,12 +78,29 @@ export interface ToolPrefColor extends ToolPrefBase<'color', string> {
  */
 export interface ToolPrefCustom extends ToolPrefBase<string, unknown> {}
 
+/**
+ * A whole `FillStyle`, not a color inside one. Use it wherever the value is
+ * the tagged paint union — a solid color, a pattern, a gradient — rather
+ * than a hex string.
+ *
+ * Addressing `…fill.color` instead reads `undefined` off a gradient (so the
+ * control shows its default and claims the text is black) and writes a
+ * hybrid `{ fill: 'gradient', stops, color }` that the renderer's structural
+ * `'color' in paint` checks then paint flat solid. The union has to be
+ * edited as a union.
+ */
+export interface ToolPrefPaint extends ToolPrefBase<'paint', unknown> {
+  /** Offer an opacity control alongside the color. */
+  alpha?: boolean;
+}
+
 export type ToolPref =
   | ToolPrefNumber
   | ToolPrefBoolean
   | ToolPrefString
   | ToolPrefEnum
-  | ToolPrefColor;
+  | ToolPrefColor
+  | ToolPrefPaint;
 
 // Compile-time tie: every built-in leaf kind must appear in ToolPrefKind
 // and vice versa (ToolPrefBase's K is open for ToolPrefCustom's sake, so

@@ -117,12 +117,32 @@ describe('collectPropertiesTrait', () => {
     ]);
   });
 
-  it('adds data.text as a ninth leaf for the text kind', () => {
+  it('gives the text kind every base shape leaf plus the text-only ones', () => {
     const entries = collectPropertiesTrait();
-    const text = entries.find((e) => e.id === 'text');
+    const rect = entries.find((e) => e.id === 'rect')!;
+    const text = entries.find((e) => e.id === 'text')!;
     expect(text).toBeDefined();
-    expect(text!.leafPaths).toContain('data.text');
-    expect(text!.leafPaths.length).toBe(9);
+    // The text schema is the shape schema with a Text group appended, so the
+    // base leaves must survive in order — a count would only tell us the
+    // total changed, not whether `text` still carries pose and appearance.
+    expect(text.leafPaths.slice(0, rect.leafPaths.length)).toEqual(rect.leafPaths);
+    expect(text.leafPaths.length).toBeGreaterThan(rect.leafPaths.length);
+    // The text-only leaves, one per nesting level of the Text group, so a
+    // group that stops being flattened is caught.
+    expect(text.leafPaths).toContain('data.text');
+    expect(text.leafPaths).toContain('data.style.fontSize');
+    expect(text.leafPaths).toContain('data.style.align');
+  });
+
+  it('flattens nested groups to distinct leaf paths', () => {
+    // `collectPropertiesTrait` flattens on the child *key*, discarding which
+    // group a leaf came from, so the same key under two groups collapses to
+    // two identical paths — one control editing another's field. Nothing in
+    // the schema type prevents it, so assert it here. This is what the old
+    // exact-count assertion on the text kind was standing in for.
+    for (const entry of collectPropertiesTrait()) {
+      expect(new Set(entry.leafPaths).size).toBe(entry.leafPaths.length);
+    }
   });
 
   it('uses a supplied live registry instead of the defaults', () => {

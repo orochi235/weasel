@@ -13,6 +13,7 @@ export {
   textureCacheKey,
   markAllFontsNotUploaded,
   resolveFontVariant,
+  resolveGlyphFallback,
   listFonts,
   _resetFontRegistryForTests,
 } from './registerFont';

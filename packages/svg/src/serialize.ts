@@ -276,6 +276,11 @@ function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Reco
     const anchor = style.align === 'center' ? 'middle' : 'end';
     attrs.push(`text-anchor="${anchor}"`);
   }
+  if (style?.letterSpacing != null && style.letterSpacing !== 0) {
+    attrs.push(`letter-spacing="${trimNumber(style.letterSpacing)}"`);
+  }
+  const decoration = textDecorationValue(style?.underline, style?.strikethrough);
+  if (decoration) attrs.push(`text-decoration="${decoration}"`);
   // Note: `lineHeight` is NOT emitted here. The bridge layer (svgInterop)
   // lifts it into `meta.wd.attrs['line-height']`, which `metaAttrsXml`
   // below emits as `wd:line-height="..."`. There is no compat write of
@@ -316,6 +321,14 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: GradientRegi
   if (run.italic) attrs.push(`font-style="italic"`);
   if (run.fontFamily) attrs.push(`font-family="${escapeAttr(run.fontFamily)}"`);
   if (run.fontSize != null) attrs.push(`font-size="${trimNumber(run.fontSize)}"`);
+  // Unlike the node-level style guard above, a run-level `0` is a meaningful
+  // *override* (distinct from "inherit the node's letterSpacing") per the
+  // runs model's additive-flags contract — emit it whenever it's set.
+  if (run.letterSpacing != null) {
+    attrs.push(`letter-spacing="${trimNumber(run.letterSpacing)}"`);
+  }
+  const runDecoration = textDecorationValue(run.underline, run.strikethrough);
+  if (runDecoration) attrs.push(`text-decoration="${runDecoration}"`);
   if (run.fill) {
     if ('color' in run.fill) {
       attrs.push(`fill="${run.fill.color}"`);
@@ -326,6 +339,18 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: GradientRegi
   }
   const head = attrs.length > 0 ? `<tspan ${attrs.join(' ')}>` : '<tspan>';
   return `${head}${escapeText(run.text)}</tspan>`;
+}
+
+/**
+ * Combine the two decoration flags into an SVG `text-decoration` value —
+ * `"underline line-through"` when both are set, a single token when only
+ * one is, or `null` (omit the attribute) when neither is set.
+ */
+function textDecorationValue(underline: boolean | undefined, strikethrough: boolean | undefined): string | null {
+  const tokens: string[] = [];
+  if (underline) tokens.push('underline');
+  if (strikethrough) tokens.push('line-through');
+  return tokens.length > 0 ? tokens.join(' ') : null;
 }
 
 function escapeAttr(s: string): string {

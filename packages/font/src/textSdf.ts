@@ -12,7 +12,6 @@
  *   u_atlas        sampler2D   the MSDF atlas texture (bound to TEXTURE0)
  *   u_color        vec4        text color (straight RGBA)
  *   u_alpha        float       group alpha multiplier
- *   u_aaWidth      float       smoothstep half-width for AA (default 0.05)
  *   u_colorMatrix  mat4        color transform applied to u_color before alpha modulation
  *   u_colorBias    vec4        bias added after the matrix (identity = zero bias)
  *
@@ -23,6 +22,21 @@
  * signed-distance fields covering different edge directions. The true SDF
  * value is the median of R,G,B; this recovers sharp outlines while averaging
  * out single-channel aliasing artifacts.
+ *
+ * Antialiasing (`aaWidth`, both shaders): the smoothstep band must be one
+ * *screen* pixel wide, so it is derived per-fragment from `fwidth(sdfVal)` —
+ * the rate the field changes between adjacent fragments. That single quantity
+ * already folds in font size, zoom, and DPR: minify the glyph and the field
+ * changes faster, so the band widens in field units to stay one pixel on
+ * screen; magnify it and the band narrows.
+ *
+ * A *constant* band cannot be correct at more than one scale, and this shader
+ * used one (0.05) until 2026-07-29. At 16px text the band collapsed to well
+ * under a pixel and glyph edges quantized to hard stair-steps; at display
+ * sizes the same constant read mushy. `fwidth` is core in GLSL ES 3.00, so
+ * no extension guard is needed. The `max()` floor keeps a degenerate
+ * derivative (flat field, or a driver returning 0) from producing a
+ * zero-width band, which would be the aliased behavior all over again.
  */
 
 export const TEXT_VERT_SRC = /* glsl */ `#version 300 es
@@ -53,7 +67,6 @@ in vec2 v_uv;
 uniform sampler2D u_atlas;
 uniform vec4 u_color;
 uniform float u_alpha;
-uniform float u_aaWidth;
 uniform float u_synthBold;
 uniform mat4 u_colorMatrix;
 uniform vec4 u_colorBias;
@@ -66,7 +79,8 @@ float median(float r, float g, float b) {
 void main() {
   vec3 sdf = texture(u_atlas, v_uv).rgb;
   float sdfVal = median(sdf.r, sdf.g, sdf.b);
-  float aaW = u_aaWidth > 0.0 ? u_aaWidth : 0.05;
+  // Screen-space AA band — see the file header. Half of fwidth spans ~1px.
+  float aaW = max(0.5 * fwidth(sdfVal), 0.0005);
   // u_synthBold shifts the SDF threshold to thicken strokes when the
   // resolver fell back from a missing bold variant to the regular atlas.
   float threshold = 0.5 - u_synthBold;
@@ -81,9 +95,12 @@ void main() {
 /**
  * Single-channel sibling of TEXT_FRAG_SRC for runtime canvas-SDF glyphs
  * (DynamicGlyphAtlas R8 pages): the R channel IS the distance field, so no
- * median. Accepted trade: slight corner rounding at extreme zoom — invisible
- * at label print resolution. Threshold semantics (0.5 edge, u_synthBold
- * shift) match the MSDF shader because the bake encodes the edge at ~128.
+ * median. Threshold semantics (0.5 edge, u_synthBold shift) match the MSDF
+ * shader because the bake encodes the edge at ~128.
+ *
+ * Accepted trade: corner rounding away from the bake size, mildest near it.
+ * `glyphRasterizer.ts` carries the measurements and the reason neither a
+ * larger bake nor extra taps would improve the small-text end.
  */
 export const TEXT_FRAG_R8_SRC = /* glsl */ `#version 300 es
 precision highp float;
@@ -91,7 +108,6 @@ in vec2 v_uv;
 uniform sampler2D u_atlas;
 uniform vec4 u_color;
 uniform float u_alpha;
-uniform float u_aaWidth;
 uniform float u_synthBold;
 uniform mat4 u_colorMatrix;
 uniform vec4 u_colorBias;
@@ -99,7 +115,8 @@ out vec4 outColor;
 
 void main() {
   float sdfVal = texture(u_atlas, v_uv).r;
-  float aaW = u_aaWidth > 0.0 ? u_aaWidth : 0.05;
+  // Screen-space AA band — see the file header. Half of fwidth spans ~1px.
+  float aaW = max(0.5 * fwidth(sdfVal), 0.0005);
   float threshold = 0.5 - u_synthBold;
   float sdfAlpha = smoothstep(threshold - aaW, threshold + aaW, sdfVal);
   vec4 src = vec4(u_color.rgb, u_color.a);
@@ -110,7 +127,7 @@ void main() {
 `;
 
 export const TEXT_SDF_UNIFORMS = [
-  'u_proj', 'u_model', 'u_atlas', 'u_color', 'u_alpha', 'u_aaWidth',
+  'u_proj', 'u_model', 'u_atlas', 'u_color', 'u_alpha',
   'u_synthBold', 'u_synthItalic', 'u_colorMatrix', 'u_colorBias',
 ] as const;
 

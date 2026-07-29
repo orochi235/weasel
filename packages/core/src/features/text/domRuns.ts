@@ -18,18 +18,51 @@ function solidColor(p: FillStyle | undefined): string | null {
 interface StyleState {
   bold: boolean;
   italic: boolean;
+  underline: boolean;
+  strikethrough: boolean;
   fontSize?: number;
   fontFamily?: string;
   color?: string;
+  letterSpacing?: number;
 }
 
-const EMPTY_STYLE: StyleState = { bold: false, italic: false };
+const EMPTY_STYLE: StyleState = {
+  bold: false,
+  italic: false,
+  underline: false,
+  strikethrough: false,
+};
+
+/**
+ * Parse a CSS `letter-spacing` value into world units. `runsToDom` only ever
+ * writes `px`, but paste is a live path into the contenteditable and CSSOM
+ * keeps whatever unit the pasted markup used. Any other unit is still
+ * numerically coerced — `parseFloat` reads the leading digits — but flagged,
+ * since e.g. `0.1em` silently becomes `0.1` world units, off by a factor of
+ * the font size. Mirrors `parseLetterSpacing` in the SVG reader.
+ */
+function parseLetterSpacing(raw: string): number | undefined {
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return undefined;
+  const unit = /^-?[\d.]+([a-z%]+)$/i.exec(raw.trim())?.[1]?.toLowerCase();
+  if (unit && unit !== 'px') {
+    console.warn(
+      `weasel domRuns: letter-spacing "${raw}" uses unit "${unit}", which is not converted; treated as ${n} world units`,
+    );
+  }
+  return n;
+}
 
 function styleStateFromElement(el: Element, parent: StyleState): StyleState {
   const next: StyleState = { ...parent };
   const tag = el.tagName;
   if (tag === 'B' || tag === 'STRONG') next.bold = true;
   if (tag === 'I' || tag === 'EM') next.italic = true;
+  // `runsToDom` never emits these, but a browser contenteditable can (Cmd+U
+  // runs the native `underline` command, which produces `<u>` in Chrome), so
+  // read them for the same reason `<b>`/`<i>` are read.
+  if (tag === 'U') next.underline = true;
+  if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL') next.strikethrough = true;
   if (el instanceof HTMLElement) {
     const fw = el.style.fontWeight;
     if (fw === '700' || fw === 'bold') next.bold = true;
@@ -37,12 +70,35 @@ function styleStateFromElement(el: Element, parent: StyleState): StyleState {
     const fs = el.style.fontStyle;
     if (fs === 'italic') next.italic = true;
     if (fs === 'normal') next.italic = false;
+    // Decoration accumulates down the tree — unlike `font-weight`/`font-style`
+    // above, `text-decoration` does not inherit, it *propagates*, and a
+    // descendant cannot cancel what an ancestor drew. So OR the flags in
+    // rather than overwriting: `<u><span style="text-decoration: line-through">`
+    // renders both lines, and that is a reachable shape here, since `runsToDom`
+    // emits the span and an unintercepted Cmd+U supplies the `<u>`. An explicit
+    // `none` contributes no tokens and cancels nothing.
+    //
+    // A declaration block carrying only the longhand serializes the shorthand
+    // as `''` (the shorthand needs the full set), and browsers and pasted HTML
+    // both produce that, so fall back to `text-decoration-line`.
+    const td = el.style.textDecoration || el.style.textDecorationLine;
+    if (td && !td.includes('none')) {
+      next.underline ||= td.includes('underline');
+      next.strikethrough ||= td.includes('line-through');
+    }
     if (el.style.fontSize) {
       const px = parseFloat(el.style.fontSize);
       if (Number.isFinite(px)) next.fontSize = px;
     }
     if (el.style.fontFamily) next.fontFamily = el.style.fontFamily;
     if (el.style.color) next.color = el.style.color;
+    const ls = el.style.letterSpacing;
+    if (ls === 'normal') {
+      next.letterSpacing = undefined;
+    } else if (ls) {
+      const px = parseLetterSpacing(ls);
+      if (px != null) next.letterSpacing = px;
+    }
   }
   return next;
 }
@@ -51,9 +107,12 @@ function styleEquals(a: StyleState, b: StyleState): boolean {
   return (
     a.bold === b.bold &&
     a.italic === b.italic &&
+    a.underline === b.underline &&
+    a.strikethrough === b.strikethrough &&
     a.fontSize === b.fontSize &&
     a.fontFamily === b.fontFamily &&
-    a.color === b.color
+    a.color === b.color &&
+    a.letterSpacing === b.letterSpacing
   );
 }
 
@@ -64,6 +123,13 @@ function toRun(text: string, style: StyleState): StyledRun {
   if (style.fontSize != null) run.fontSize = style.fontSize;
   if (style.fontFamily != null) run.fontFamily = style.fontFamily;
   if (style.color != null) run.fill = { fill: 'solid', color: style.color };
+  // `letterSpacing: 0` is a meaningful override (it cancels node-level
+  // tracking for this run), so test for presence, not truthiness.
+  if (style.letterSpacing != null) run.letterSpacing = style.letterSpacing;
+  // Run-level flags are additive over the node style — a run cannot un-set
+  // one — so an undecorated run gets an absent key, never `false`.
+  if (style.underline) run.underline = true;
+  if (style.strikethrough) run.strikethrough = true;
   return run;
 }
 
@@ -124,6 +190,18 @@ export function runsToDom(runs: readonly StyledRun[], parent: HTMLElement): void
     if (run.fontFamily != null) span.style.fontFamily = run.fontFamily;
     const color = solidColor(run.fill);
     if (color != null) span.style.color = color;
+    // Decoration goes on the span as an inline style rather than `<u>`/`<s>`
+    // wrappers: one representation for `domToRuns` to unwrap, and one element
+    // per run so the caret-offset walkers stay flat.
+    const decorations: string[] = [];
+    if (run.underline) decorations.push('underline');
+    if (run.strikethrough) decorations.push('line-through');
+    if (decorations.length > 0) span.style.textDecoration = decorations.join(' ');
+    // World units — the overlay's own node-level tracking is screen-scaled,
+    // but a run override is stored as-is so the round-trip is lossless. CSS
+    // `letter-spacing` is inherited and a child declaration *replaces* the
+    // inherited value, so this composes with the overlay's rather than adding.
+    if (run.letterSpacing != null) span.style.letterSpacing = `${run.letterSpacing}px`;
     parent.appendChild(span);
   }
 }
@@ -158,8 +236,15 @@ export function charOffsetToDomPosition(
 /**
  * Inverse of `charOffsetToDomPosition`. Walks text nodes in document order;
  * sums the lengths of every text node preceding `node` and adds `offset`.
- * If `node` is an element (not a text node), counts to the end of the
- * preceding text content.
+ *
+ * When `node` is an element the DOM offset indexes *child nodes*, not
+ * characters, so it can't simply be added — `(overlay, 0)` is the start of
+ * the text and `(overlay, childNodes.length)` its end. That shape is not
+ * exotic: `Range.selectNodeContents`, which `useTextEdit` uses for its
+ * select-all caret, produces exactly it. So resolve an element position by
+ * counting the text that precedes the boundary point. A text node can never
+ * *contain* that point (the container isn't one), so each is wholly before
+ * or wholly after it.
  */
 export function domPositionToCharOffset(
   parent: HTMLElement,
@@ -169,9 +254,19 @@ export function domPositionToCharOffset(
   let total = 0;
   const walker = document.createTreeWalker(parent, NodeFilter.SHOW_TEXT);
   let cur = walker.nextNode() as Text | null;
+  if (node.nodeType === Node.TEXT_NODE) {
+    while (cur) {
+      if (cur === node) return total + offset;
+      total += cur.data.length;
+      cur = walker.nextNode() as Text | null;
+    }
+    return total;
+  }
+  const point = document.createRange();
+  point.setStart(node, Math.max(0, Math.min(offset, node.childNodes.length)));
+  point.collapse(true);
   while (cur) {
-    if (cur === node) return total + offset;
-    total += cur.data.length;
+    if (point.comparePoint(cur, 0) < 0) total += cur.data.length;
     cur = walker.nextNode() as Text | null;
   }
   return total;

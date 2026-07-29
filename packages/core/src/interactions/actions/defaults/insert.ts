@@ -61,6 +61,7 @@ import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle, BindingOpts, OngoingOverlay, DragSample } from '../invoker';
 import { resolveParams } from '../invoker';
 import type { InsertDep, InsertExtras, SnapDep } from '../depSchema';
+import type { TextEditDep } from './enterTextEdit';
 import type { SelectionApi } from 'core/selection/useSelection';
 
 /** The kit's built-in insert kinds — those the dispatcher overlay layer
@@ -78,6 +79,11 @@ type KitInsertShape = 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil
 
 interface InsertScratch {
   dep: InsertDep;
+  /** Text-edit dep captured at gesture start, for the text kind's
+   *  drop-into-the-caret step. Stashed rather than read at commit because
+   *  the dispatcher only builds the deps bag once, on `start` — every later
+   *  pump event carries `deps: {}`. */
+  textEdit: TextEditDep | undefined;
   /** World-space point snapper from the `snap` dep, or identity when the
    *  dep isn't registered. Applied to the drag's start and current point so
    *  the live preview and the committed geometry agree. Freehand pencil
@@ -316,7 +322,7 @@ export const insertAction: Action & { requires: string[] } = {
   group: 'insert',
   defaultBinding: { kind: 'drag' },
   eligible: { capability: 'creates-shapes' },
-  requires: ['insert', 'selection', 'snap'],
+  requires: ['insert', 'selection', 'snap', 'textEdit'],
   invoker: {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
@@ -340,6 +346,7 @@ export const insertAction: Action & { requires: string[] } = {
         : (p: { x: number; y: number }) => p;
       const scratch: InsertScratch = {
         dep,
+        textEdit: ctx.deps.textEdit as TextEditDep | undefined,
         snap,
         opts,
         startX: ctx.world.x,
@@ -438,7 +445,21 @@ export const insertAction: Action & { requires: string[] } = {
           //  - everything else: a zero extent in either axis is degenerate.
           if (!isCommittableExtent(bounds, extras.kind)) return;
 
-          d.commit(bounds, extras);
+          const id = d.commit(bounds, extras);
+
+          // A freshly dragged text box is empty, so it draws nothing and the
+          // tool's own `click on selected body → enterTextEdit` binding has
+          // nothing visible to click. Drop straight into the caret instead —
+          // which is also what every other editor does with a text tool.
+          // `textEdit` is optional: without it the box is still committed,
+          // exactly as before.
+          //
+          // Read from the scratch, not `endCtx.deps`: the dispatcher builds
+          // the deps bag once, at `start`, and passes `deps: {}` on every
+          // later pump event. Same reason the insert dep itself is stashed.
+          if (id !== null && extras.kind === 'text') {
+            scratch.textEdit?.startEdit(String(id), { caret: 0 });
+          }
         },
       };
     },

@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  registerFont, getFont, resolveFontVariant, listFonts, _resetFontRegistryForTests,
+  registerFont, getFont, resolveFontVariant, resolveGlyphFallback, listFonts,
+  _resetFontRegistryForTests,
 } from './registerFont';
+import { setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
 import { FIXTURE_FONT } from './FontAtlas';
 import {
   registerCanvasFont, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
@@ -335,5 +337,67 @@ describe('listFonts', () => {
       { weight: 400, style: 'normal' },
       { weight: 700, style: 'italic' },
     ]);
+  });
+});
+
+describe('resolveGlyphFallback', () => {
+  beforeEach(() => {
+    _resetFontRegistryForTests();
+    _resetDynamicFontsForTests();
+    _resetFallbackForTests();
+  });
+
+  function stubRasterizer() {
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: 12, height: 16, alpha: new Uint8ClampedArray(12 * 16).fill(255),
+        left: -4, top: 18, advance: 14,
+      }),
+    });
+  }
+
+  it('serves the codepoint from the dynamic tier', () => {
+    stubRasterizer();
+    const out = resolveGlyphFallback('Inter', 400, 'normal');
+    expect(out).not.toBeNull();
+    expect(out!.source).toBe('canvas');
+    expect(out!.dynamicFace).toBeDefined();
+    // U+2014 is not in any atlas here; the face bakes it on request.
+    expect(out!.dynamicFace!.requestGlyph(0x2014).xadvance).toBe(14);
+  });
+
+  it('reports the real weight and style, so nothing is synthesized', () => {
+    stubRasterizer();
+    const out = resolveGlyphFallback('Inter', 700, 'italic');
+    expect(out!.resolved).toEqual({ family: 'Inter', weight: 700, style: 'italic' });
+    expect(out!.synthetic).toEqual({ bold: false, italic: false });
+  });
+
+  it('declines under the "none" policy, which documents a hard miss', () => {
+    stubRasterizer();
+    setFontFallbackPolicy('none');
+    expect(resolveGlyphFallback('Inter', 400, 'normal')).toBeNull();
+  });
+
+  it('declines rather than throwing when the rasterizer cannot serve', () => {
+    // The environments this guards are SSR and any headless context without a
+    // canvas, where constructing the rasterizer throws outright. Standing in
+    // for that here with one that fails to measure — same reachable failure,
+    // and it does not depend on what jsdom happens to provide.
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => { throw new Error('no canvas'); },
+      rasterize: () => { throw new Error('no canvas'); },
+    });
+    // Escalation is a nicety; it must not take the layout pass down with it.
+    expect(() => resolveGlyphFallback('Inter', 400, 'normal')).not.toThrow();
+    expect(resolveGlyphFallback('Inter', 400, 'normal')).toBeNull();
+  });
+
+  it('caches the face across calls', () => {
+    stubRasterizer();
+    const a = resolveGlyphFallback('Inter', 400, 'normal');
+    const b = resolveGlyphFallback('Inter', 400, 'normal');
+    expect(a!.dynamicFace).toBe(b!.dynamicFace);
   });
 });

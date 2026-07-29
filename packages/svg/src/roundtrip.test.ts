@@ -197,6 +197,9 @@ describe('round-trip', () => {
     expect(t.style?.fontStyle).toBe('italic');
     expect(t.style?.align).toBe('center');
     expect(t.style?.fill).toEqual({ fill: 'solid', color: '#b03030' });
+    expect(t.style?.letterSpacing).toBe(1.5);
+    expect(t.style?.underline).toBe(true);
+    expect(t.style?.strikethrough).toBe(true);
     // lineHeight rides on meta.wd.attrs['line-height'] — interpreted by
     // svgInterop, not by weasel-svg. From weasel-svg's perspective the
     // value is just a string in the meta bag.
@@ -213,6 +216,8 @@ describe('round-trip', () => {
     expect(out).toContain('text-anchor="middle"');
     expect(out).toContain('wd:line-height="1.4"');
     expect(out).toContain('fill="#b03030"');
+    expect(out).toContain('letter-spacing="1.5"');
+    expect(out).toContain('text-decoration="underline line-through"');
     // Legacy attribute is gone — no compat-write either.
     expect(out).not.toContain('data-weasel-line-height');
 
@@ -453,5 +458,171 @@ describe('rotation round-trip — parse', () => {
     const parsed = parseSvg(svg1);
     const svg2 = serializeSvg(parsed.nodes, { viewBox: parsed.viewBox });
     expect(svg2).toBe(svg1);
+  });
+});
+
+describe('letter-spacing / text-decoration', () => {
+  it('serializes a run with letterSpacing + underline to letter-spacing="2" text-decoration="underline"', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      runs: [{ text: 'hi', letterSpacing: 2, underline: true }],
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).toContain('letter-spacing="2"');
+    expect(svg).toContain('text-decoration="underline"');
+  });
+
+  it('parses a <tspan> letter-spacing + text-decoration="underline" back to run keys', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan letter-spacing="2" text-decoration="underline">hi</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]).toMatchObject({ letterSpacing: 2, underline: true });
+  });
+
+  it('emits both flags as a space-separated list when a run has underline and strikethrough', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      runs: [{ text: 'hi', underline: true, strikethrough: true }],
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).toContain('text-decoration="underline line-through"');
+  });
+
+  it('round-trips text-decoration="underline line-through" on a <tspan> to both flags', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan text-decoration="underline line-through">hi</tspan></text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]).toMatchObject({ underline: true, strikethrough: true });
+  });
+
+  it('text-decoration="none" maps to neither flag', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan text-decoration="none">hi</tspan></text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.underline).toBeUndefined();
+    expect(t.runs?.[0]?.strikethrough).toBeUndefined();
+  });
+
+  it('an unrecognized text-decoration token (e.g. overline) is dropped without crashing', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan text-decoration="overline">hi</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    expect(warnings).toEqual([]);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.underline).toBeUndefined();
+    expect(t.runs?.[0]?.strikethrough).toBeUndefined();
+  });
+
+  it('accepts letter-spacing with a unit suffix and drops the "normal" keyword', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan letter-spacing="2px">a</tspan><tspan letter-spacing="normal">b</tspan></text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.letterSpacing).toBe(2);
+    expect(t.runs?.[1]?.letterSpacing).toBeUndefined();
+  });
+
+  it('omits node-level letterSpacing when it is 0 (the default)', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      style: { letterSpacing: 0 },
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).not.toContain('letter-spacing');
+  });
+
+  it('emits run-level letterSpacing even when it is 0 — a real override, not "unset"', () => {
+    // Per the runs model's additive-flags contract (rangeStyle.ts), a run
+    // storing `letterSpacing: 0` is deliberately distinct from a run that
+    // doesn't mention letterSpacing at all (which inherits the node's
+    // value). Dropping it on serialize would silently turn the override
+    // into an inherit, changing what the document renders.
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'hi',
+      style: { letterSpacing: 4 },
+      runs: [{ text: 'hi', letterSpacing: 0 }],
+    };
+    const svg = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    expect(svg).toContain('letter-spacing="4"');
+    expect(svg).toContain('<tspan letter-spacing="0">hi</tspan>');
+  });
+
+  it('is idempotent when a run overrides the node letterSpacing down to 0', () => {
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 20,
+      text: 'AB',
+      style: { letterSpacing: 4 },
+      runs: [{ text: 'A' }, { text: 'B', letterSpacing: 0 }],
+    };
+    const svg1 = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 20 } });
+    const parsed = parseSvg(svg1);
+    const t = parsed.nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.style?.letterSpacing).toBe(4);
+    // The override must survive as an explicit 0, not fall back to
+    // "unset → inherits 4".
+    expect(t.runs?.[1]?.letterSpacing).toBe(0);
+    const svg2 = serializeSvg(parsed.nodes, { viewBox: parsed.viewBox });
+    expect(svg2).toBe(svg1);
+  });
+
+  it('a run with only strikethrough (no other override) still attaches node.runs', () => {
+    // hasStyling in parseTextElement decides whether the run array survives
+    // parse at all — every other test here happens to set `underline`
+    // alongside `strikethrough`, which would mask a hasStyling regression
+    // that only checked one of the two flags.
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan text-decoration="line-through">hi</tspan></text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs).toBeDefined();
+    expect(t.runs?.[0]).toMatchObject({ strikethrough: true });
+    expect(t.runs?.[0]?.underline).toBeUndefined();
+  });
+
+  it('warns on a non-px letter-spacing unit (e.g. em) but still parses the numeric value', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan letter-spacing="0.1em">hi</tspan></text>
+    </svg>`;
+    const { nodes, warnings } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.letterSpacing).toBe(0.1);
+    expect(warnings.some((w) => /letter-spacing/.test(w) && /em/.test(w))).toBe(true);
+  });
+
+  it('matches text-decoration tokens case-insensitively', () => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20">
+      <text x="0" y="0"><tspan text-decoration="UNDERLINE">hi</tspan></text>
+    </svg>`;
+    const { nodes } = parseSvg(svg);
+    const t = nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+    expect(t.runs?.[0]?.underline).toBe(true);
   });
 });

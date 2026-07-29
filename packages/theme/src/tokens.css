@@ -39,6 +39,12 @@
   --wzl-radius-sm: 3px;
   --wzl-radius-md: 5px;
   --wzl-border-w:  1px;
+  /* Standard height for a horizontal toolbar-shaped strip (ActionsBar,
+   * OptionsBar, ToggleBar, ToolOptionsBar). Was referenced by all four as
+   * `var(--wzl-tb-height, 28px)` without ever being defined here — the
+   * fallback was silently doing the token's job. Defined for real so a
+   * consumer overriding it in one place moves every bar consistently. */
+  --wzl-tb-height: 28px;
 
   /* Motion. Easing names mirror the kit's JS easing library
    * (src/animation/easings.ts) so DOM chrome and canvas animation share

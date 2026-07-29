@@ -2,20 +2,25 @@
 // React so intersection/aggregation semantics are unit-testable.
 //
 // Path convention (see core `NodePropertiesEntry`): a leaf's OWN KEY in
-// the schema is its node path — two dotted segments rooted at `pose` or
-// `data` (`pose.x`, `data.fill`). Group keys are organizational only.
+// the schema is its node path — a dotted path of any depth rooted at
+// `pose` or `data` (`pose.x`, `data.fill`, `data.style.fontSize`). Group
+// keys are organizational only.
 
-import type {
-  NodePropertiesEntry,
-  NodeRoutingEntry,
-  SceneNode,
-  ToolPrefGroup,
-  ToolPrefLeaf,
+import {
+  MIXED,
+  type Mixed,
+  type NodePropertiesEntry,
+  type NodeRoutingEntry,
+  type SceneNode,
+  type ToolPrefGroup,
+  type ToolPrefLeaf,
 } from '@weasel-js/core';
 
-/** Sentinel for "selected nodes disagree at this path". */
-export const MIXED: unique symbol = Symbol('weasel-ui:mixed');
-export type Mixed = typeof MIXED;
+// Re-exported under its existing public name here: the kit-wide "these
+// values disagree" sentinel (`@weasel-js/core`'s `MIXED`) also covers
+// multi-node aggregation, so this panel doesn't get its own symbol.
+export { MIXED };
+export type { Mixed };
 
 export type AnyNode = SceneNode<unknown, string, unknown>;
 
@@ -142,22 +147,44 @@ export function effectiveSections(
     .filter((section) => section.rows.length > 0);
 }
 
-/** Split a two-segment node path (`pose.x` / `data.fill`) into its root
- *  and key. Returns `null` for a dotless path. */
-export function splitNodePath(path: string): { head: string; key: string } | null {
-  const dot = path.indexOf('.');
-  if (dot < 0) return null;
-  return { head: path.slice(0, dot), key: path.slice(dot + 1) };
+/** Read a node value at a dotted path of any depth (`pose.x`,
+ *  `data.style.fontSize`, `data.style.fill.color`). Returns `undefined` if
+ *  the path is dotless (mirrors `commit`'s no-op on a malformed schema
+ *  key) or if any intermediate segment is missing or not an object. */
+export function nodeValueAt(node: AnyNode, path: string): unknown {
+  const segments = path.split('.');
+  if (segments.length < 2) return undefined;
+  const head = segments[0];
+  let cursor: unknown = head === 'pose' ? node.pose : head === 'data' ? node.data : undefined;
+  for (let i = 1; i < segments.length; i++) {
+    if (cursor == null || typeof cursor !== 'object') return undefined;
+    cursor = (cursor as Record<string, unknown>)[segments[i]];
+  }
+  return cursor;
 }
 
-/** Read a node value at a two-segment path (`pose.x` / `data.fill`). */
-export function nodeValueAt(node: AnyNode, path: string): unknown {
-  const split = splitNodePath(path);
-  if (split === null) return undefined;
-  const { head, key } = split;
-  const root = head === 'pose' ? node.pose : head === 'data' ? node.data : undefined;
-  if (root == null || typeof root !== 'object') return undefined;
-  return (root as Record<string, unknown>)[key];
+/** Immutably set `value` at a dotted path within `root`, cloning each level
+ *  on the way down so React sees new object identities. Arrays stay arrays
+ *  (an array intermediate is shallow-copied, not flattened into `{0: ...}`)
+ *  — this is the write-side twin of `nodeValueAt`, so a schema author who
+ *  gets a working read gets a working write. */
+export function setAtPath(root: object, segments: readonly string[], value: unknown): object {
+  const [head, ...rest] = segments;
+  if (rest.length === 0) {
+    return Array.isArray(root)
+      ? Object.assign([...root], { [head]: value })
+      : { ...root, [head]: value };
+  }
+  const child = (root as Record<string, unknown>)[head];
+  const childObj = Array.isArray(child)
+    ? [...child]
+    : child != null && typeof child === 'object'
+      ? { ...child }
+      : {};
+  const nested = setAtPath(childObj, rest, value);
+  return Array.isArray(root)
+    ? Object.assign([...root], { [head]: nested })
+    : { ...root, [head]: nested };
 }
 
 /** Aggregate a path across nodes: the shared value, or `MIXED`. */

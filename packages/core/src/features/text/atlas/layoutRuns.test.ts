@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   _resetFontRegistryForTests, registerFont, FIXTURE_FONT,
-  registerCanvasFont, resetBakeBudget,
+  registerCanvasFont, resetBakeBudget, setFontFallbackPolicy,
+  _resetFallbackForTests,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
 } from '@weasel-js/font';
-import { layoutRuns } from './layoutRuns';
-import type { ResolvedRun } from '../runs/resolveRuns';
+import { layoutRuns, _resetMissingGlyphWarningsForTests } from './layoutRuns';
+import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
+import { resolveTextStyle } from '../textStyle';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -39,7 +41,8 @@ async function registerFixture(family: string, opts: Array<{ weight?: number; st
 
 const RUN_PLAIN = (text: string): ResolvedRun => ({
   text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
-  fill: { fill: 'solid', color: '#000' },
+  fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+  underline: false, strikethrough: false,
 });
 const RUN_BOLD = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), fontWeight: 700 });
 const RUN_ITALIC = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), fontStyle: 'italic' });
@@ -253,6 +256,8 @@ describe('layoutRuns — canvas-dynamic faces', () => {
     fontStyle: 'normal',
     fontSize: 24, // scale = 24/48 = 0.5
     fill: { fill: 'solid', color: '#000' },
+    letterSpacing: 0,
+    underline: false, strikethrough: false,
   });
 
   it('lays out a dynamic run into a canvas-source group with quads', () => {
@@ -281,11 +286,502 @@ describe('layoutRuns — canvas-dynamic faces', () => {
     expect(laid.bounds.width).toBeCloseTo(28);
   });
 
+  it('tracks dynamic glyphs too, including the blank ones that emit no quad', () => {
+    const opts = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+    const plain = layoutRuns([dynRun('A B')], opts, { x: 0, y: 0 });
+    const tracked = layoutRuns([{ ...dynRun('A B'), letterSpacing: 5 }], opts, { x: 0, y: 0 });
+    // A(11) + space(6) + B(11) at scale 0.5, plus 5 after each of 3 characters.
+    expect(plain.bounds.width).toBeCloseTo(28);
+    expect(tracked.bounds.width).toBeCloseTo(43);
+    // The space emits no quad but must still carry its tracking, so 'B' moves
+    // by two characters' worth — otherwise quads drift out of the line width.
+    const bx = (o: ReturnType<typeof layoutRuns>) =>
+      o.groups.flatMap((g) => g.quads.map((q) => q.x0))[1];
+    expect(bx(tracked) - bx(plain)).toBeCloseTo(10);
+  });
+
   it('atlas groups still report source "atlas" and page 0', async () => {
     await registerFixture('inter', [{}]);
     const out = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
     const group = out.groups[0];
     expect(group.source).toBe('atlas');
     expect(group.page).toBe(0);
+  });
+});
+
+describe('layoutRuns — letterSpacing', () => {
+  // FIXTURE_FONT at fontSize 32 (scale 1): A xadvance 23 / xoffset 1,
+  // B xadvance 22 / xoffset 2, kerning A→B = -1.
+  //   untracked 'AB': width 44, quad x0s [1, 24].
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+  const ORIGIN = { x: 0, y: 0 };
+  // Emission order, deliberately unsorted — sorting would hide a bug that
+  // reorders quads, and every case here lays out into a single group.
+  const xs = (o: ReturnType<typeof layoutRuns>) =>
+    o.groups.flatMap((g) => g.quads.map((q) => q.x0));
+
+  it('adds tracking after every glyph, including the last', async () => {
+    await registerFixture('inter', [{}]);
+    const plain = layoutRuns([RUN_PLAIN('AB')], OPTS, ORIGIN);
+    const tracked = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: 4 }], OPTS, ORIGIN);
+    // Trailing tracking counts toward the measured width (matches CSS).
+    expect(plain.bounds.width).toBeCloseTo(44);
+    expect(tracked.bounds.width).toBeCloseTo(plain.bounds.width + 4 * 2);
+    // ...and the glyphs actually move: the Nth glyph shifts by N * spacing.
+    expect(xs(plain)).toEqual([1, 24]);
+    expect(xs(tracked)).toEqual([1, 28]);
+  });
+
+  it('is a no-op at 0', async () => {
+    await registerFixture('inter', [{}]);
+    const a = layoutRuns([RUN_PLAIN('AB')], OPTS, ORIGIN);
+    const b = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: 0 }], OPTS, ORIGIN);
+    expect(b.bounds.width).toBe(a.bounds.width);
+    expect(xs(b)).toEqual(xs(a));
+  });
+
+  it('is in world units — the same tracking shifts glyphs equally at any fontSize', async () => {
+    await registerFixture('inter', [{}]);
+    const at = (fontSize: number, letterSpacing: number) =>
+      layoutRuns([{ ...RUN_PLAIN('AB'), fontSize, letterSpacing }], OPTS, ORIGIN);
+    for (const fontSize of [32, 16]) {
+      const plain = at(fontSize, 0);
+      const tracked = at(fontSize, 4);
+      // Second glyph moves right by exactly 4 world units at both sizes.
+      expect(xs(tracked)[1] - xs(plain)[1]).toBeCloseTo(4);
+      expect(tracked.bounds.width - plain.bounds.width).toBeCloseTo(8);
+    }
+  });
+
+  it('accepts negative tracking, pulling glyphs together', async () => {
+    await registerFixture('inter', [{}]);
+    const tight = layoutRuns([{ ...RUN_PLAIN('AB'), letterSpacing: -4 }], OPTS, ORIGIN);
+    expect(xs(tight)).toEqual([1, 20]);
+    expect(tight.bounds.width).toBeCloseTo(36);
+  });
+
+  it('tracks spaces like any other character', async () => {
+    await registerFixture('inter', [{}]);
+    // Fixture has no space glyph → synthesized advance fontSize * 0.25 = 8.
+    const plain = layoutRuns([RUN_PLAIN('A B')], OPTS, ORIGIN);
+    const tracked = layoutRuns([{ ...RUN_PLAIN('A B'), letterSpacing: 4 }], OPTS, ORIGIN);
+    expect(plain.bounds.width).toBeCloseTo(53);
+    // Three characters tracked: A, the space, and B.
+    expect(tracked.bounds.width).toBeCloseTo(53 + 12);
+    // The space paints nothing, so only A and B emit quads — but its tracking
+    // still separates them: 'B' picks up two characters' worth.
+    expect(xs(plain)).toHaveLength(2);
+    expect(xs(tracked)[1] - xs(plain)[1]).toBeCloseTo(8);
+  });
+
+  it('applies each run’s own tracking to the gap that follows its glyphs', async () => {
+    await registerFixture('inter', [{}]);
+    const trackedFirst = layoutRuns(
+      [{ ...RUN_PLAIN('A'), letterSpacing: 10 }, RUN_PLAIN('B')],
+      OPTS, ORIGIN,
+    );
+    const trackedSecond = layoutRuns(
+      [RUN_PLAIN('A'), { ...RUN_PLAIN('B'), letterSpacing: 10 }],
+      OPTS, ORIGIN,
+    );
+    // Tracking belongs to the glyph it follows: only the first case pushes B right.
+    expect(xs(trackedFirst)).toEqual([1, 34]);
+    expect(xs(trackedSecond)).toEqual([1, 24]);
+    // Both add exactly one glyph's worth of tracking to the measured width.
+    expect(trackedFirst.bounds.width).toBeCloseTo(54);
+    expect(trackedSecond.bounds.width).toBeCloseTo(54);
+  });
+
+  const lineCount = (o: ReturnType<typeof layoutRuns>) =>
+    new Set(o.groups.flatMap((g) => g.quads.map((q) => q.y0))).size;
+
+  it('counts the tracking of the word being fitted, not just of the line so far', async () => {
+    await registerFixture('inter', [{}]);
+    // The wrap decision is `lineSoFar + nextWord > maxWidth`. Both terms must
+    // include tracking; this case is chosen so only the *word* term decides.
+    //   ls 0:  'AB'=44, ' '=8  → 52 + 44 = 96 ≤ 130 → one line.
+    //   ls 10: 'AB'=64, ' '=18 → 82 + 64 = 146 > 130 → two lines.
+    // Drop tracking from the word scan and the second case measures the word
+    // at 44 → 126 ≤ 130 → it stays on one line and this test fails.
+    const wrapOpts = { maxWidth: 130, lineHeight: 1.2, align: 'left' as const };
+    const at = (letterSpacing: number) =>
+      layoutRuns([{ ...RUN_PLAIN('AB AB'), letterSpacing }], wrapOpts, ORIGIN);
+    expect(lineCount(at(0))).toBe(1);
+    expect(lineCount(at(10))).toBe(2);
+  });
+
+  it('counts toward wrapping, so tracked text breaks into more lines', async () => {
+    await registerFixture('inter', [{}]);
+    const wrapOpts = { maxWidth: 150, lineHeight: 1.2, align: 'left' as const };
+    const text = 'AB AB AB AB AB AB';
+    const plain = layoutRuns([RUN_PLAIN(text)], wrapOpts, ORIGIN);
+    const tracked = layoutRuns([{ ...RUN_PLAIN(text), letterSpacing: 10 }], wrapOpts, ORIGIN);
+    expect(lineCount(plain)).toBe(2);
+    expect(lineCount(tracked)).toBe(3);
+  });
+
+  it('reaches layout through resolveRuns (run value wins, style value inherited)', async () => {
+    await registerFixture('inter', [{}]);
+    const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, letterSpacing: 4 });
+    const fromStyle = layoutRuns(resolveRuns([{ text: 'AB' }], style), OPTS, ORIGIN);
+    const fromRun = layoutRuns(
+      resolveRuns([{ text: 'AB', letterSpacing: 10 }], style),
+      OPTS, ORIGIN,
+    );
+    expect(xs(fromStyle)).toEqual([1, 28]);
+    expect(xs(fromRun)).toEqual([1, 34]);
+  });
+});
+
+describe('layoutRuns — decoration geometry', () => {
+  // FIXTURE_FONT: info.size=32, common.base=29, and glyphs for 'A' (xadvance
+  // 23) and 'B' (xadvance 22) only, with kerning A→B = -1. RUN_PLAIN is
+  // fontSize 32, so scale = 1 and every metric below is the raw fixture
+  // number. There is no space glyph, so a space advances fontSize*0.25 = 8.
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+  const ORIGIN = { x: 0, y: 0 };
+  const BASELINE = 29;
+  const UNDER_Y0 = BASELINE + 0.10 * 32;   // 32.2
+  const STRIKE_Y0 = BASELINE - 0.30 * 32;  // 19.4
+  const THICKNESS = 0.05 * 32;             // 1.6
+
+  const UNDERLINED = (text: string): ResolvedRun => ({ ...RUN_PLAIN(text), underline: true });
+
+  it('emits no decorations when neither flag is set', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB')], OPTS, ORIGIN);
+    expect(out.decorations).toEqual([]);
+  });
+
+  it('places an underline rule below the baseline, spanning the run advance', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([UNDERLINED('A')], OPTS, ORIGIN);
+    expect(out.decorations).toHaveLength(1);
+    const d = out.decorations[0];
+    expect(d.kind).toBe('underline');
+    expect(d.x0).toBeCloseTo(0, 6);
+    expect(d.x1).toBeCloseTo(23, 6);
+    expect(d.y0).toBeCloseTo(UNDER_Y0, 6);
+    expect(d.y1 - d.y0).toBeCloseTo(THICKNESS, 6);
+  });
+
+  it('places a strikethrough rule above the baseline', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([{ ...RUN_PLAIN('A'), strikethrough: true }], OPTS, ORIGIN);
+    expect(out.decorations).toHaveLength(1);
+    const d = out.decorations[0];
+    expect(d.kind).toBe('strikethrough');
+    expect(d.y0).toBeCloseTo(STRIKE_Y0, 6);
+    expect(d.y1 - d.y0).toBeCloseTo(THICKNESS, 6);
+    expect(d.y1).toBeLessThan(BASELINE);
+  });
+
+  it('emits both rules for a run carrying both flags', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([{ ...RUN_PLAIN('A'), underline: true, strikethrough: true }], OPTS, ORIGIN);
+    expect(out.decorations.map((d) => d.kind)).toEqual(['underline', 'strikethrough']);
+    // One span, two rules: same horizontal extent.
+    expect(out.decorations[0].x1).toBe(out.decorations[1].x1);
+  });
+
+  it('follows the origin, so a shifted baseline shifts the rule with it', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([UNDERLINED('A')], OPTS, { x: 5, y: 100 });
+    expect(out.decorations[0].x0).toBeCloseTo(5, 6);
+    expect(out.decorations[0].y0).toBeCloseTo(100 + UNDER_Y0, 6);
+  });
+
+  it('runs continuously across interior spaces, which emit no glyph quads', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([UNDERLINED('A B')], OPTS, ORIGIN);
+    expect(out.decorations).toHaveLength(1);
+    // A(23) + space(8) + B(22) = 53.
+    expect(out.decorations[0].x0).toBeCloseTo(0, 6);
+    expect(out.decorations[0].x1).toBeCloseTo(53, 6);
+    // The space emits no quad, so x=27 sits in a hole in the glyph geometry.
+    // A rule assembled per-quad rather than from the pen would break there.
+    const quads = out.groups.flatMap((g) => g.quads);
+    expect(quads.some((q) => q.x0 <= 27 && q.x1 >= 27)).toBe(false);
+  });
+
+  it('covers trailing letter-spacing, matching the CSS inline box', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([{ ...UNDERLINED('A'), letterSpacing: 10 }], OPTS, ORIGIN);
+    // Tracking is applied after every glyph including the last (see the
+    // layoutRuns header), so the rule is 23 + 10 wide, not 23.
+    expect(out.decorations[0].x1).toBeCloseTo(33, 6);
+  });
+
+  it('covers trailing letter-spacing on every glyph of a merged span', async () => {
+    await registerFixture('inter', [{}]);
+    // The single-glyph case above only ever takes the branch that *opens* a
+    // span. Tracking has to reach the branch that *extends* one too, which
+    // needs a second glyph: A(23)+10 + kern(-1) + B(22)+10 = 64.
+    const out = layoutRuns([{ ...UNDERLINED('AB'), letterSpacing: 10 }], OPTS, ORIGIN);
+    expect(out.decorations).toHaveLength(1);
+    expect(out.decorations[0].x1).toBeCloseTo(64, 6);
+  });
+
+  it('merges adjacent runs that agree on decoration and fill into one rule', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([UNDERLINED('A'), UNDERLINED('B')], OPTS, ORIGIN);
+    expect(out.decorations).toHaveLength(1);
+    // A(23) + kern(-1) + B(22) = 44. A seam at the run join would show as two
+    // rects, or as one rect that skipped the kerning gap.
+    expect(out.decorations[0].x0).toBeCloseTo(0, 6);
+    expect(out.decorations[0].x1).toBeCloseTo(44, 6);
+  });
+
+  it('breaks the rule where the fill changes, so each piece takes its run colour', async () => {
+    await registerFixture('inter', [{}]);
+    const RED: ResolvedRun = { ...UNDERLINED('B'), fill: { fill: 'solid', color: '#f00' } };
+    const out = layoutRuns([UNDERLINED('A'), RED], OPTS, ORIGIN);
+    expect(out.decorations).toHaveLength(2);
+    expect(out.decorations.map((d) => d.fill)).toEqual([
+      { fill: 'solid', color: '#000' },
+      { fill: 'solid', color: '#f00' },
+    ]);
+    // Each piece covers its own glyphs' advance boxes, so the join carries
+    // the kerning: the pen backs up by 1 before B, and a new span opens at
+    // the pen, so these two overlap by 1. Positive kerning would leave a gap
+    // of the same size instead. Only at zero kerning do they abut exactly.
+    expect(out.decorations[0].x1).toBeCloseTo(23, 6);
+    expect(out.decorations[1].x0).toBeCloseTo(22, 6);
+  });
+
+  it('does not merge across a font-size change, since offset and thickness scale', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [UNDERLINED('A'), { ...UNDERLINED('B'), fontSize: 16 }],
+      OPTS, ORIGIN,
+    );
+    expect(out.decorations).toHaveLength(2);
+    expect(out.decorations[1].y1 - out.decorations[1].y0).toBeCloseTo(0.05 * 16, 6);
+    // Mixed sizes share a line but not a baseline: base is 29 at scale 1,
+    // 14.5 at scale 0.5.
+    expect(out.decorations[0].y0).not.toBeCloseTo(out.decorations[1].y0, 3);
+  });
+
+  it('stops the rule at an undecorated run and starts a new one after it', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([UNDERLINED('A'), RUN_PLAIN('B'), UNDERLINED('A')], OPTS, ORIGIN);
+    expect(out.decorations).toHaveLength(2);
+    expect(out.decorations[0].x1).toBeLessThan(out.decorations[1].x0);
+  });
+
+  it('emits one rule per line when a decorated span wraps', async () => {
+    await registerFixture('inter', [{}]);
+    // maxWidth 30: 'A' (23) fits; the trailing space takes the line to 31;
+    // 'B' (22) would take it to 53, so it wraps.
+    const out = layoutRuns([UNDERLINED('A B')], { ...OPTS, maxWidth: 30 }, ORIGIN);
+    expect(out.decorations).toHaveLength(2);
+    const [first, second] = out.decorations;
+    expect(second.y0 - first.y0).toBeCloseTo(32 * 1.2, 6);
+    // Neither rule spans the break: each is bounded by its own line.
+    expect(first.x1).toBeCloseTo(31, 6);
+    expect(second.x0).toBeCloseTo(0, 6);
+    expect(second.x1).toBeCloseTo(22, 6);
+  });
+
+  it('follows the alignment shift, since it is applied before the pen walks', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([UNDERLINED('A')], { ...OPTS, maxWidth: 100, align: 'right' }, ORIGIN);
+    expect(out.decorations[0].x0).toBeCloseTo(100 - 23, 6);
+    expect(out.decorations[0].x1).toBeCloseTo(100, 6);
+  });
+
+  it('decorates a whitespace-only run, which contributes no glyph quads at all', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([UNDERLINED('A'), UNDERLINED(' ')], OPTS, ORIGIN);
+    expect(out.groups.flatMap((g) => g.quads)).toHaveLength(1);
+    expect(out.decorations[0].x1).toBeCloseTo(31, 6);
+  });
+
+  it('does not merge an underlined run into an adjacent struck-through one', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns(
+      [UNDERLINED('A'), { ...RUN_PLAIN('B'), strikethrough: true }],
+      OPTS, ORIGIN,
+    );
+    expect(out.decorations.map((d) => d.kind)).toEqual(['underline', 'strikethrough']);
+    // The underline stops at A; it does not run on under B.
+    expect(out.decorations[0].x1).toBeCloseTo(23, 6);
+    expect(out.decorations[1].x0).toBeCloseTo(22, 6);
+  });
+
+  // A second atlas whose baseline sits lower in the same em, so `baselineY`
+  // and `fontSize` can be varied independently — with one font each implies
+  // the other, and either merge guard alone would look sufficient.
+  const TALL_FONT = { ...FIXTURE_FONT, common: { ...FIXTURE_FONT.common, base: 58 } };
+  async function registerTall(): Promise<void> {
+    const prior = global.fetch;
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('tall.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(TALL_FONT) });
+      }
+      return (prior as unknown as (u: string) => unknown)(url);
+    }) as typeof fetch;
+    await registerFont('tall', {}, '/fonts/tall/tall.json', '/fonts/tall/tall.png');
+    global.fetch = prior;
+  }
+
+  it('does not merge across a baseline change at equal font size', async () => {
+    await registerFixture('inter', [{}]);
+    await registerTall();
+    // base 29 vs 58, both at scale 1 → the rules sit 29 apart.
+    const out = layoutRuns(
+      [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall' }],
+      OPTS, ORIGIN,
+    );
+    expect(out.decorations).toHaveLength(2);
+    expect(out.decorations[1].y0 - out.decorations[0].y0).toBeCloseTo(29, 6);
+  });
+
+  it('does not merge across a font-size change at equal baseline', async () => {
+    await registerFixture('inter', [{}]);
+    await registerTall();
+    // tall's base 58 at fontSize 16 (scale 0.5) lands on 29 — exactly where
+    // inter's base 29 at fontSize 32 does. Same baseline, half the weight.
+    const out = layoutRuns(
+      [UNDERLINED('A'), { ...UNDERLINED('B'), fontFamily: 'tall', fontSize: 16 }],
+      OPTS, ORIGIN,
+    );
+    expect(out.decorations).toHaveLength(2);
+    expect(out.decorations[0].y1 - out.decorations[0].y0).toBeCloseTo(0.05 * 32, 6);
+    expect(out.decorations[1].y1 - out.decorations[1].y0).toBeCloseTo(0.05 * 16, 6);
+  });
+
+  it('emits nothing for a span that advances nowhere', async () => {
+    await registerFixture('inter', [{}]);
+    // Tracking exactly cancels the advance, so the span is zero-width. A rect
+    // with x1 === x0 rasterizes nothing; don't pay a draw call for it.
+    const out = layoutRuns([{ ...UNDERLINED('A'), letterSpacing: -23 }], OPTS, ORIGIN);
+    expect(out.decorations).toEqual([]);
+  });
+
+  it('reaches layout through resolveRuns, additively over the node style', async () => {
+    await registerFixture('inter', [{}]);
+    const style = resolveTextStyle({ fontFamily: 'inter', fontSize: 32, underline: true });
+    const out = layoutRuns(resolveRuns([{ text: 'A' }], style), OPTS, ORIGIN);
+    expect(out.decorations.map((d) => d.kind)).toEqual(['underline']);
+  });
+});
+
+describe('layoutRuns — a codepoint the atlas does not cover', () => {
+  // U+2014. The fixture atlas carries 'A' and 'B' and nothing else, so this
+  // is the same shape as the real defect: a run resolves to a perfectly good
+  // atlas that simply never baked the character.
+  const EM_DASH = '—';
+  const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
+  const ORIGIN = { x: 0, y: 0 };
+
+  const run = (text: string): ResolvedRun => ({
+    text, fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal',
+    fill: { fill: 'solid', color: '#000' }, letterSpacing: 0,
+    underline: false, strikethrough: false,
+  });
+
+  function stubRasterizer() {
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255),
+        left: -8, top: 26, advance: 22,
+      }),
+    });
+  }
+
+  beforeEach(() => {
+    _resetDynamicFontsForTests();
+    _resetFallbackForTests();
+    _resetMissingGlyphWarningsForTests();
+    resetBakeBudget();
+  });
+
+  it('escalates it to the dynamic tier instead of dropping it', async () => {
+    await registerFixture('inter', [{}]);
+    stubRasterizer();
+    const out = layoutRuns([run(`A${EM_DASH}B`)], OPTS, ORIGIN);
+
+    // Two groups: the atlas serves A and B, the dynamic tier serves the dash.
+    // They cannot merge — different texture, different shader.
+    const atlas = out.groups.filter((g) => g.source === 'atlas');
+    const canvas = out.groups.filter((g) => g.source === 'canvas');
+    expect(atlas).toHaveLength(1);
+    expect(canvas).toHaveLength(1);
+    expect(atlas[0].quads).toHaveLength(2);
+    expect(canvas[0].quads).toHaveLength(1);
+  });
+
+  it('does not substitute a literal "?"', async () => {
+    // An atlas that DOES carry '?' is the case the old fallback silently hit:
+    // it drew a character the author never wrote, indistinguishable from one
+    // they did.
+    const withQuestion = {
+      ...FIXTURE_FONT,
+      chars: [
+        ...FIXTURE_FONT.chars,
+        { id: 63, x: 48, y: 0, width: 18, height: 28, xoffset: 1, yoffset: 4, xadvance: 20, page: 0 },
+      ],
+    };
+    global.fetch = vi.fn().mockImplementation((url: string) =>
+      url.endsWith('.json')
+        ? Promise.resolve({ ok: true, json: () => Promise.resolve(withQuestion) })
+        : Promise.resolve({ ok: true, blob: () => Promise.resolve(new Blob(['PNG'])) }),
+    ) as typeof fetch;
+    await registerFixture('inter', [{}]);
+    stubRasterizer();
+
+    const out = layoutRuns([run(EM_DASH)], OPTS, ORIGIN);
+    // The one quad is the dash from the dynamic tier, not '?' from the atlas.
+    expect(out.groups).toHaveLength(1);
+    expect(out.groups[0].source).toBe('canvas');
+    expect(out.groups[0].quads).toHaveLength(1);
+  });
+
+  it('sets the escalated glyph between its neighbours, at its own scale', async () => {
+    await registerFixture('inter', [{}]);
+    stubRasterizer();
+    const out = layoutRuns([run(`A${EM_DASH}B`)], OPTS, ORIGIN);
+
+    const [a, b] = out.groups.find((g) => g.source === 'atlas')!.quads;
+    const dash = out.groups.find((g) => g.source === 'canvas')!.quads[0];
+    // Deliberately not a width comparison against 'AB': dropping a glyph also
+    // drops the kerning pair across it, so a bare `wider than` assertion
+    // passes on a 1-unit kerning shift with no dash drawn at all.
+    expect(dash.x0).toBeGreaterThan(a.x0);
+    expect(b.x0).toBeGreaterThan(dash.x1);
+
+    // The stub bakes 20×24 at BAKE_SIZE 48; at fontSize 32 that is scale 2/3.
+    // Getting this wrong means scaling the escalated glyph by the *atlas's*
+    // info.size (32) — it would come out half again too big.
+    expect(dash.x1 - dash.x0).toBeCloseTo(20 * (32 / 48), 6);
+  });
+
+  it('skips the character under the "none" policy, which documents a hard miss', async () => {
+    await registerFixture('inter', [{}]);
+    stubRasterizer();
+    setFontFallbackPolicy('none');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const out = layoutRuns([run(`A${EM_DASH}B`)], OPTS, ORIGIN);
+    expect(out.groups).toHaveLength(1);
+    expect(out.groups[0].source).toBe('atlas');
+    expect(out.groups[0].quads).toHaveLength(2);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('U+2014');
+    warn.mockRestore();
+  });
+
+  it('warns once per codepoint however often it appears', async () => {
+    await registerFixture('inter', [{}]);
+    stubRasterizer();
+    setFontFallbackPolicy('none');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    layoutRuns([run(`${EM_DASH}${EM_DASH}${EM_DASH}`)], OPTS, ORIGIN);
+    layoutRuns([run(EM_DASH)], OPTS, ORIGIN);
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
   });
 });

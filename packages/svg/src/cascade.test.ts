@@ -53,6 +53,20 @@ describe('deriveStyle', () => {
     const style = deriveStyle(EMPTY_STYLE, get('r'));
     expect(style['fill']).toBe('#999999');
   });
+
+  it('inherits letter-spacing from an ancestor <g> into a <text>', () => {
+    const get = els('<svg><g id="g" letter-spacing="3"><text id="t">hi</text></g></svg>');
+    const parent = deriveStyle(EMPTY_STYLE, get('g'));
+    const style = deriveStyle(parent, get('t'));
+    expect(style['letter-spacing']).toBe('3');
+  });
+
+  it('inherits text-decoration from an ancestor <g> into a <text>', () => {
+    const get = els('<svg><g id="g" text-decoration="underline"><text id="t">hi</text></g></svg>');
+    const parent = deriveStyle(EMPTY_STYLE, get('g'));
+    const style = deriveStyle(parent, get('t'));
+    expect(style['text-decoration']).toBe('underline');
+  });
 });
 
 describe('readStyleProp', () => {

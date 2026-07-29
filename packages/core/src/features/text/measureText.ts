@@ -18,6 +18,24 @@
 
 import type { ResolvedTextStyle } from './textStyle';
 
+/**
+ * Advance width of `text` in world units, tracking included.
+ *
+ * `letter-spacing` is not part of the CSS `font` shorthand, so a context
+ * whose `font` was set from `fontString(style)` measures glyphs only. The
+ * GL path (`layoutRuns`) adds `letterSpacing` after **every** code point
+ * including the last, matching CSS, so this does too — and every 2D-side
+ * width has to go through here or the two paths disagree about where a line
+ * breaks.
+ */
+export function measuredWidth(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  style: ResolvedTextStyle,
+): number {
+  return ctx.measureText(text).width + text.length * style.letterSpacing;
+}
+
 /** Result of `measureText`: wrapped lines, per-line source offsets, and total block height. */
 export interface MeasuredText {
   lines: string[];
@@ -52,7 +70,7 @@ export function measureText(
     for (const word of words) {
       if (current === '') currentStart = pos + consumed;
       const candidate = current + word;
-      if (current === '' || ctx.measureText(candidate).width <= maxWidth) {
+      if (current === '' || measuredWidth(ctx, candidate, style) <= maxWidth) {
         current = candidate;
       } else {
         lines.push(current.trimEnd());

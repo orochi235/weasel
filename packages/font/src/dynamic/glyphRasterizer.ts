@@ -9,6 +9,29 @@
  *   pen advance  = advance
  * The bitmap includes a PAD border on all four sides so the SDF field has
  * room to fall off. Blank glyphs (e.g. space) return width/height 0.
+ *
+ * On BAKE_SIZE — measured 2026-07-29, comparing the reconstructed field
+ * against a direct `fillText` of the same glyph at each display size, with
+ * sub-pixel registration searched out so it measures fidelity and not
+ * alignment. Mean per-pixel coverage error, averaged over A/S/e/W/8:
+ *
+ *   display px   12     16     24     32     48     64     96     128
+ *   error        .096   .083   .059   .039   .024   .023   .037   .049
+ *
+ * Two things follow, both of them counterintuitive enough to be worth
+ * writing down. The error is minimized *at* the bake size, so raising
+ * BAKE_SIZE does not improve small text — it moves the sweet spot away from
+ * the 12–32px range where UI text actually lives and makes it worse. And the
+ * magnification side is the mild one: 128px costs about twice the floor,
+ * which is the corner rounding the shader header already owns.
+ *
+ * The 12–16px end is the largest divergence, and it is not undersampling —
+ * 3×3 supersampling the reconstruction roughly halves the error at 24–48px
+ * but recovers almost nothing at 12–16px (.096 → .089, .083 → .068). What is
+ * left there is a hinted rasterizer placing stems on the pixel grid, which no
+ * size-independent field can encode. So there is nothing to buy with more
+ * taps, a bigger bake, or mipmaps (which a packed atlas cannot have anyway —
+ * mip levels blend across glyph rects).
  */
 
 export const BAKE_SIZE = 48;

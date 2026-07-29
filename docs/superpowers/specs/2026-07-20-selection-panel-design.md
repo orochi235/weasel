@@ -138,7 +138,8 @@ prop convention.
    breakdown (`rect ×2 · text`).
 
 Steps 2–4 are pure functions (`classifyKind`, `effectiveSections`,
-`aggregateValue`, plus `splitNodePath`) exported for testing and reuse.
+`aggregateValue`, plus `nodeValueAt`/`setAtPath`) exported for testing and
+reuse.
 
 ### Rendering
 
@@ -187,8 +188,9 @@ switch/select, change-end for color. One edit = one undo step across the
 whole selection — fixing the first-node-only pose bug in today's
 WeaselDraw inspector.
 
-Paths are two-segment (`pose.x`, `data.fill`) in v1; deeper paths are a
-schema-validation error until a use case shows up.
+Paths were two-segment (`pose.x`, `data.fill`) in v1; deeper paths
+(`data.style.fontSize`) are now supported — see the 2026-07-28
+text-properties work.
 
 ## Part 3 — WeaselDraw migration
 

@@ -20,6 +20,24 @@ conversions in `runs.ts` are the boundary with everything else:
 `textStyle.ts` owns `DEFAULT_TEXT_STYLE`, `resolveTextStyle`, and
 `fontString`.
 
+`runs/rangeStyle.ts` is the **public run algebra**: `styleAtRange` reports
+what a character range shares (`MIXED` where the runs disagree),
+`applyStyleToRange` patches one, splitting and re-coalescing around it. A
+caret addresses a range, not a path, which is why this is a separate surface
+from the schema-driven property panel.
+
+> **Run-level flags are additive over the node's `TextStyle`.** A run turns
+> `bold` / `italic` / `underline` / `strikethrough` on, never off — setting
+> one to `false` deletes the key, and resolution reads `run.flag ||
+> style.flag`. See that file's header for why, and `docs/TODO.md` for the two
+> ways out if it needs to change.
+
+`letterSpacing` is **world units**, applied after every glyph including the
+last (CSS semantics), per code point rather than per grapheme cluster. Note
+that `letter-spacing` is not part of the CSS `font` shorthand — every
+`ctx.font = fontString(style)` / `el.style.font = …` site needs its own
+assignment, which is what `measuredWidth` exists to keep consistent.
+
 ## The rendering path, and its one hard requirement
 
 `createTextLayer` emits **one `TextDrawCommand` per text node**, carrying
@@ -39,7 +57,10 @@ destroys the distance field.
 
 `measureText` (advance/metrics) and `measureTextBounds` (ink bounds) are
 distinct; `fitTextPose.ts` and `verticalAlign.ts` build on them for
-fit-to-box and baseline placement.
+fit-to-box and baseline placement. Every 2D-side width goes through
+`measuredWidth`, which adds tracking the way `layoutRuns` does — the two
+paths have to agree on where a line breaks or `caretIndexAt` maps a click to
+the wrong line.
 
 ## Subdirectories
 
@@ -56,10 +77,27 @@ uses real DOM for IME, spellcheck, and accessibility rather than reimplementing
 a caret on canvas. `hitTest.ts` provides `pointInTextPose` and `caretIndexAt`
 to map clicks back into the run model.
 
+Two things a consumer building character controls needs:
+
+- **`isEditorChrome`.** Focus moving into a control that styles the text must
+  not commit the edit. Without it, clicking the bar is what destroys the
+  caret it was about to act on.
+- **`selection` / `rangeStyle` / `applyStyleToSelection`.** The published
+  range survives focus leaving the overlay (it clears on `startEdit` and when
+  the edit ends), so a control can read and patch the range it is pointed at
+  even while it holds focus itself.
+
+Set `TextEditScreenPose.zoom` on a canvas that pans or zooms: the overlay is
+then CSS-scaled and every metric on it stays in world units, which is the
+only arrangement in which run-level `fontSize` / `letterSpacing` are right at
+a zoom other than 1.
+
 ## Odds and ends
 
 - `markdownText.ts` — `createMarkdownRenderer` / `layoutMarkdown`, the richer
   layout path (`PositionedRun`, `LayoutLine`, `LayoutResult`).
 - `renderLabel.ts` — the small pill-with-text used for chrome labels, with a
   pluggable `TextRenderer`. Unrelated to scene text nodes.
-- `textCommand.ts` — the draw-command shape.
+- `textCommand.ts` — the draw-command shape. `textCommandFromRuns` is the
+  one builder; `createTextLayer` and the `kit:text` node painter both go
+  through it so they can't derive `align` or run resolution differently.

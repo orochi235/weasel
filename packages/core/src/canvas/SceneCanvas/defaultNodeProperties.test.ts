@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { defaultNodeProperties, inferredNodeProperties } from './defaultNodeProperties';
 import { KIT_SHAPE_KINDS } from './shapeKinds';
 import { inferredNodeRouting } from './defaultNodeRouting';
+import type { ToolPrefGroup } from 'tools/prefs';
 
 describe('defaultNodeProperties', () => {
   it('stays in lockstep with KIT_SHAPE_KINDS', () => {
@@ -39,5 +40,29 @@ describe('inferredNodeProperties', () => {
     expect(inferredNodeProperties.map((e) => e.name)).toEqual(
       inferredNodeRouting.map((e) => e.name),
     );
+  });
+
+  it('gives text nodes Character and Paragraph groups', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const text = entry.schema.children.text as ToolPrefGroup;
+    expect(Object.keys(text.children)).toContain('character');
+    expect(Object.keys(text.children)).toContain('paragraph');
+  });
+
+  it('addresses typography through nested style paths', () => {
+    const entry = inferredNodeProperties.find((e) => e.name === 'text')!;
+    const character = ((entry.schema.children.text as ToolPrefGroup).children.character) as ToolPrefGroup;
+    expect(Object.keys(character.children)).toEqual([
+      'data.style.fontSize',
+      'data.style.fontFamily',
+      'data.style.fontWeight',
+      'data.style.fontStyle',
+      'data.style.letterSpacing',
+      'data.style.underline',
+      'data.style.strikethrough',
+      // The whole paint union, not a color inside it — see the leaf's own
+      // comment in `defaultNodeProperties`.
+      'data.style.fill',
+    ]);
   });
 });

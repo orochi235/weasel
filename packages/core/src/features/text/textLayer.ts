@@ -12,9 +12,9 @@
 
 import { type DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { resolveRuns } from './runs/resolveRuns';
+import { textCommandFromRuns } from './textCommand';
 import { runsToPlainText, toRuns, type StyledRun } from './runs';
-import { type TextStyle, resolveTextStyle } from './textStyle';
+import type { TextStyle } from './textStyle';
 import type { TextVerticalAlign } from './verticalAlign';
 
 /** Pose for a text node: bounding rect plus the text and optional style. */
@@ -64,20 +64,15 @@ export function createTextLayer<T>(opts: CreateTextLayerOpts<T>): RenderLayer<un
             `synchronized with \`text\`.`,
           );
         }
-        const style = resolveTextStyle(pose.style);
-        const styledRuns = toRuns(pose.runs ?? pose.text);
-        const runs = resolveRuns(styledRuns, style);
-        const textCmd: DrawCommand = {
-          kind: 'text',
-          x: pose.x,
-          y: pose.y,
-          runs,
-          maxWidth: pose.width,
-          align: style.align,
-          style: pose.style ?? {},
-          height: pose.height,
-          verticalAlign: pose.verticalAlign,
-        };
+        const textCmd = textCommandFromRuns(
+          pose.x,
+          pose.y,
+          toRuns(pose.runs ?? pose.text),
+          pose.style,
+          pose.width,
+          pose.height,
+          pose.verticalAlign,
+        );
         if (clipToBounds) {
           children.push({
             kind: 'group',

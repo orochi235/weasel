@@ -27,7 +27,7 @@ import {
   syncDynamicPageTexture,
   dynamicPageTextureId,
 } from '@weasel-js/font';
-import { layoutRuns, type LaidOutGroup } from 'features/text/atlas/layoutRuns';
+import { layoutRuns, type LaidOutGroup, type LaidOutDecoration } from 'features/text/atlas/layoutRuns';
 import { verticalAlignOffset } from 'features/text/verticalAlign';
 
 export interface DrawContext {
@@ -807,13 +807,19 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     { maxWidth, lineHeight, align },
     { x: cmd.x, y: cmd.y },
   );
-  if (laid.groups.length === 0) return;
+  // Decorations are checked too: text whose glyphs are all ink-free — every
+  // one still awaiting a dynamic-atlas bake, say — produces no groups at all
+  // while still carrying a rule that has to be drawn.
+  if (laid.groups.length === 0 && laid.decorations.length === 0) return;
 
   const dy = verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
   if (dy !== 0) {
     for (const group of laid.groups) {
       for (const q of group.quads) { q.y0 += dy; q.y1 += dy; q.baselineY += dy; }
     }
+    // Rules shift with the glyphs they belong to, or they detach from the
+    // text at every verticalAlign other than the default.
+    for (const d of laid.decorations) { d.y0 += dy; d.y1 += dy; }
   }
 
   const gl = ctx.gl;
@@ -831,9 +837,99 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
       setProjAndModel(ctx, prog);
       setColorMatrixUniforms(ctx, prog);
       gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
-      gl.uniform1f(prog.uniform('u_aaWidth')!, 0.05);
+      // No AA-width uniform: the text shaders derive their smoothstep band
+      // from fwidth() per fragment. A CPU-side constant cannot be right at
+      // more than one scale — see the textSdf.ts header.
     }
     drawTextGroup(ctx, group, prog);
+  }
+
+  drawTextDecorations(ctx, laid.decorations);
+}
+
+/**
+ * Paint underline / strikethrough rules. These are untextured solid rects, so
+ * they cannot ride in a `LaidOutGroup`'s quads — those upload a 5-float
+ * stride with atlas UVs into an MSDF program. They go through `pathFill`
+ * instead, batched by resolved colour so a whole decorated paragraph costs
+ * one draw call per distinct rule colour.
+ *
+ * Drawn after the glyphs, so a rule sits on top of glyph ink where they
+ * overlap (the CSS spec allows either order).
+ */
+function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDecoration[]): void {
+  if (decorations.length === 0) return;
+
+  // Colour resolution matches drawTextGroup exactly — including its ignoring
+  // of `fill.opacity` — so a rule can never disagree with the glyphs it
+  // underlines.
+  const batches = new Map<string, { rgba: readonly number[]; rects: LaidOutDecoration[] }>();
+  for (const d of decorations) {
+    const rgba = 'color' in d.fill ? resolveColor(d.fill.color) : [0, 0, 0, 1];
+    const key = rgba.join(',');
+    let batch = batches.get(key);
+    if (!batch) { batch = { rgba, rects: [] }; batches.set(key, batch); }
+    batch.rects.push(d);
+  }
+
+  const gl = ctx.gl;
+  const prog = ctx.pathFill;
+  gl.useProgram(prog.handle);
+  setProjAndModel(ctx, prog);
+  setColorMatrixUniforms(ctx, prog);
+  // Redundant in the current code — drawText applied this before the glyph
+  // loop and nothing in between touches stencil state — but every other
+  // pathFill entry point sets it here, and relying on a caller invariant this
+  // signature doesn't express is worth less than one stencilFunc.
+  applyClipTest(ctx);
+
+  for (const { rgba, rects } of batches.values()) {
+    // pathFill takes a_position only: stride 8, no UVs, no baselineY.
+    const vertices = new Float32Array(rects.length * 4 * 2);
+    let vi = 0;
+    for (const d of rects) {
+      vertices[vi++] = d.x0; vertices[vi++] = d.y0;
+      vertices[vi++] = d.x1; vertices[vi++] = d.y0;
+      vertices[vi++] = d.x0; vertices[vi++] = d.y1;
+      vertices[vi++] = d.x1; vertices[vi++] = d.y1;
+    }
+    const indices = new Uint32Array(rects.length * 6);
+    let ii = 0;
+    for (let r = 0; r < rects.length; r++) {
+      const base = r * 4;
+      indices[ii++] = base;     indices[ii++] = base + 1; indices[ii++] = base + 2;
+      indices[ii++] = base + 1; indices[ii++] = base + 3; indices[ii++] = base + 2;
+    }
+
+    const vao = gl.createVertexArray();
+    if (!vao) throw new Error('drawTextDecorations: createVertexArray returned null');
+    gl.bindVertexArray(vao);
+
+    const vbo = gl.createBuffer();
+    if (!vbo) throw new Error('drawTextDecorations: createBuffer (VBO) returned null');
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
+
+    const aPosLoc = prog.attribute('a_position');
+    if (aPosLoc !== undefined) {
+      gl.enableVertexAttribArray(aPosLoc);
+      gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 8, 0);
+    }
+
+    const ibo = gl.createBuffer();
+    if (!ibo) throw new Error('drawTextDecorations: createBuffer (IBO) returned null');
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
+
+    gl.uniform4f(prog.uniform('u_color')!, rgba[0], rgba[1], rgba[2], rgba[3]);
+    gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
+
+    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
+    gl.bindVertexArray(null);
+    // Per-draw VAO/VBO/IBO, freed immediately — same as drawTextGroup.
+    gl.deleteVertexArray(vao);
+    gl.deleteBuffer(vbo);
+    gl.deleteBuffer(ibo);
   }
 }
 

@@ -74,6 +74,45 @@ describe('caretIndexAt', () => {
     expect(caretIndexAt(ctx, 0, lh + 5, pose)).toBe(10);
   });
 
+  it('steps the caret by advance + tracking when letterSpacing is set', () => {
+    const ctx = makeCtx(); // 10px per char
+    const pose: TextPose = {
+      x: 0, y: 0, width: 200, height: 40, text: 'hello',
+      style: { letterSpacing: 4 },
+    };
+    // Each advance cell is 10 + 4 = 14 wide. 'h' spans 0..14 (mid 7).
+    expect(caretIndexAt(ctx, 6, 5, pose)).toBe(0);
+    expect(caretIndexAt(ctx, 8, 5, pose)).toBe(1);
+    // 'e' spans 14..28 (mid 21).
+    expect(caretIndexAt(ctx, 20, 5, pose)).toBe(1);
+    expect(caretIndexAt(ctx, 22, 5, pose)).toBe(2);
+  });
+
+  it('leaves caret placement unchanged when letterSpacing is 0', () => {
+    const ctx = makeCtx();
+    const pose: TextPose = {
+      x: 0, y: 0, width: 200, height: 40, text: 'hello',
+      style: { letterSpacing: 0 },
+    };
+    expect(caretIndexAt(ctx, 4, 5, pose)).toBe(0);
+    expect(caretIndexAt(ctx, 6, 5, pose)).toBe(1);
+    expect(caretIndexAt(ctx, 15, 5, pose)).toBe(2);
+  });
+
+  it('includes trailing tracking in the line width used for alignment', () => {
+    const ctx = makeCtx();
+    const pose: TextPose = {
+      x: 0, y: 0, width: 100, height: 40, text: 'hi',
+      style: { align: 'right', letterSpacing: 5 },
+    };
+    // CSS applies tracking after every glyph including the last, so 'hi' is
+    // 2*10 + 2*5 = 30 wide and right-aligns to x=70..100.
+    expect(caretIndexAt(ctx, 65, 5, pose)).toBe(0);
+    // 'h' cell spans 70..85 (mid 77.5).
+    expect(caretIndexAt(ctx, 76, 5, pose)).toBe(0);
+    expect(caretIndexAt(ctx, 79, 5, pose)).toBe(1);
+  });
+
   it('honors right alignment when computing the line anchor', () => {
     const ctx = makeCtx();
     const pose: TextPose = {

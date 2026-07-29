@@ -12,6 +12,7 @@ export * from './components/Slider';
 export * from './components/ToggleBar';
 export * from './components/OptionsBar';
 export * from './components/ActionsBar';
+export * from './components/ToolOptionsBar';
 export * from './components/Powerline';
 export * from './components/Prefs';
 export * from './components/SelectionPanel';

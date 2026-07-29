@@ -328,7 +328,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       kind: 'group',
       colorMatrix: NO_RED,
       children: [
-        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' } }], align: 'left', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
+        { kind: 'text', x: 0, y: 0, runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false }], align: 'left', style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } } },
       ],
     };
     r.render([cmd]);
@@ -365,7 +365,7 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
   it('uploads identity u_colorMatrix on text draws with no enclosing group transform', () => {
     const cmd: DrawCommand = {
       kind: 'text', x: 0, y: 0,
-      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' } }],
+      runs: [{ text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400, fontStyle: 'normal', fill: { fill: 'solid', color: '#fff' }, letterSpacing: 0, underline: false, strikethrough: false }],
       align: 'left',
       style: { fontFamily: 'inter', fontSize: 32, fill: { color: '#fff' } },
     };
@@ -743,6 +743,8 @@ describe('drawText synthetic-bold', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
+        underline: false, strikethrough: false,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -764,6 +766,8 @@ describe('drawText synthetic-bold', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 700,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
+        underline: false, strikethrough: false,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -832,6 +836,8 @@ describe('drawText synthetic-italic', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'italic', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
+        underline: false, strikethrough: false,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -850,6 +856,8 @@ describe('drawText synthetic-italic', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'italic', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
+        underline: false, strikethrough: false,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
@@ -895,6 +903,8 @@ describe('drawText verticalAlign', () => {
     const runs: ResolvedRun[] = [{
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      letterSpacing: 0,
+      underline: false, strikethrough: false,
     }];
     const style = {};
 
@@ -925,6 +935,8 @@ describe('drawText verticalAlign', () => {
     const runs: ResolvedRun[] = [{
       text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      letterSpacing: 0,
+      underline: false, strikethrough: false,
     }];
 
     const { ctx: ctxA, calls: callsA } = createRecorderCtx();
@@ -1017,6 +1029,8 @@ describe('drawText — substituted family reaches the GPU', () => {
     runs: [{
       text: 'A', fontFamily: 'ghost', fontSize: 16, fontWeight: 400,
       fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+      letterSpacing: 0,
+      underline: false, strikethrough: false,
     }],
     maxWidth: Infinity, align: 'left', style: {},
   });
@@ -1053,10 +1067,331 @@ describe('drawText — substituted family reaches the GPU', () => {
       runs: [{
         text: 'A', fontFamily: 'inter', fontSize: 16, fontWeight: 400,
         fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        letterSpacing: 0,
+        underline: false, strikethrough: false,
       }],
       maxWidth: Infinity, align: 'left', style: {},
     });
     expect(calls.some((c) => c.name === 'texImage2D')).toBe(true);
     expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+  });
+});
+
+/**
+ * Tracking is only real if it reaches the vertex buffer. Layout returning
+ * wider bounds proves nothing here — this asserts the uploaded quad x's.
+ */
+describe('drawText — letterSpacing reaches the GPU', () => {
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    _resetDynamicFontsForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+  });
+
+  // x of each quad's first vertex in the text VBO (stride 5 floats, 4 verts/quad).
+  function quadX0s(calls: ReturnType<typeof makeGLRecorder>['calls']): number[] {
+    const upload = calls.find((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array);
+    if (!upload) throw new Error('no text vertex bufferData call recorded');
+    const data = upload.args[1] as Float32Array;
+    const out: number[] = [];
+    for (let i = 0; i < data.length; i += 20) out.push(data[i]);
+    return out;
+  }
+
+  function drawTracked(letterSpacing: number): number[] {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [{
+        text: 'AB', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
+        fontStyle: 'normal', fill: { fill: 'solid', color: '#000' },
+        letterSpacing,
+        underline: false, strikethrough: false,
+      }],
+      maxWidth: Infinity, align: 'left', style: {},
+    });
+    return quadX0s(calls);
+  }
+
+  it('shifts uploaded glyph x-coordinates by N * letterSpacing', () => {
+    const plain = drawTracked(0);
+    const tracked = drawTracked(6);
+    expect(plain).toHaveLength(2);
+    expect(tracked).toHaveLength(2);
+    expect(tracked[0]).toBeCloseTo(plain[0]);        // first glyph unmoved
+    expect(tracked[1] - plain[1]).toBeCloseTo(6);    // second glyph tracked once
+  });
+});
+
+import { resetBakeBudget } from '@weasel-js/font';
+
+/**
+ * Decoration is a producer/consumer feature with exactly the shape that hides
+ * bugs: layout can compute a perfect rule and the renderer can silently drop
+ * it, leaving text that measures right and paints no line. So these assert on
+ * the draw calls and the uploaded vertex data, never on `LaidOutRuns`.
+ */
+describe('drawText — decoration reaches the GPU', () => {
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    _resetDynamicFontsForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith('.json')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) });
+      }
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      });
+    }) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue({
+      width: 512, height: 512, close: vi.fn(),
+    } as unknown as ImageBitmap);
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/fonts/inter/inter.json', '/fonts/inter/inter.png');
+  });
+
+  const ARRAY_BUFFER = 0x8892;
+
+  /**
+   * Every drawElements issued while `prog` was the bound program, paired with
+   * the ARRAY_BUFFER upload and `u_color` that fed it. The recorder is a flat
+   * call log, so attribution means replaying the state it records.
+   */
+  function drawsWithProgram(
+    calls: ReturnType<typeof makeGLRecorder>['calls'],
+    prog: { handle: unknown },
+  ): Array<{ vertices: Float32Array; indexCount: number; color: number[] }> {
+    const out: Array<{ vertices: Float32Array; indexCount: number; color: number[] }> = [];
+    let bound: unknown = null;
+    let vertices: Float32Array | null = null;
+    let color: number[] = [];
+    for (const c of calls) {
+      if (c.name === 'useProgram') bound = c.args[0];
+      if (c.name === 'bufferData' && c.args[0] === ARRAY_BUFFER && c.args[1] instanceof Float32Array) {
+        vertices = c.args[1] as Float32Array;
+      }
+      if (c.name === 'uniform4f') color = c.args.slice(1) as number[];
+      if (c.name === 'drawElements' && bound === prog.handle) {
+        out.push({ vertices: vertices!, indexCount: c.args[1] as number, color });
+      }
+    }
+    return out;
+  }
+
+  /** Float32Array truncation means an exact `toEqual` on decimals fails. */
+  function expectVertices(actual: Float32Array, expected: number[]): void {
+    expect(actual).toHaveLength(expected.length);
+    for (let i = 0; i < expected.length; i++) expect(actual[i]).toBeCloseTo(expected[i], 4);
+  }
+
+  const decoratedRun = (extra: Record<string, unknown>) => ({
+    text: 'A', fontFamily: 'inter', fontSize: 32, fontWeight: 400,
+    fontStyle: 'normal' as const, fill: { fill: 'solid' as const, color: '#000' },
+    letterSpacing: 0, underline: false, strikethrough: false, ...extra,
+  });
+
+  // FIXTURE_FONT at fontSize 32 → scale 1: 'A' advances 23, baseline is at
+  // common.base = 29. Underline top = 29 + 0.10*32 = 32.2, 0.05*32 = 1.6 thick.
+  it('emits the underline rect through the path-fill program', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [decoratedRun({ underline: true })],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand);
+
+    const draws = drawsWithProgram(calls, ctx.pathFill);
+    expect(draws).toHaveLength(1);
+    expect(draws[0].indexCount).toBe(6);
+    // 4 vertices, 2 floats each (pathFill takes a_position only — no UVs).
+    expectVertices(draws[0].vertices, [0, 32.2, 23, 32.2, 0, 33.8, 23, 33.8]);
+  });
+
+  it('emits nothing through the path-fill program when decoration is off', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [decoratedRun({})],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand);
+    expect(drawsWithProgram(calls, ctx.pathFill)).toHaveLength(0);
+    // ...but the glyph itself still drew.
+    expect(drawsWithProgram(calls, ctx.textSdf)).toHaveLength(1);
+  });
+
+  it('emits the strikethrough rect above the baseline', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [decoratedRun({ strikethrough: true })],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand);
+    const draws = drawsWithProgram(calls, ctx.pathFill);
+    expect(draws).toHaveLength(1);
+    // Top = 29 - 0.30*32 = 19.4, bottom = 21.
+    expectVertices(draws[0].vertices, [0, 19.4, 23, 19.4, 0, 21, 23, 21]);
+  });
+
+  it('batches both rules of a doubly-decorated run into one draw', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [decoratedRun({ underline: true, strikethrough: true })],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand);
+    const draws = drawsWithProgram(calls, ctx.pathFill);
+    expect(draws).toHaveLength(1);
+    expect(draws[0].indexCount).toBe(12);
+    expect(draws[0].vertices).toHaveLength(16);
+  });
+
+  it('paints the rule in the run fill, and splits the draw when fills differ', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'text', x: 0, y: 0,
+      runs: [
+        decoratedRun({ underline: true }),
+        decoratedRun({ text: 'B', underline: true, fill: { fill: 'solid', color: '#ff0000' } }),
+      ],
+      maxWidth: Infinity, align: 'left', style: {},
+    } as DrawCommand);
+    const draws = drawsWithProgram(calls, ctx.pathFill);
+    expect(draws).toHaveLength(2);
+    expect(draws.map((d) => d.color)).toEqual([[0, 0, 0, 1], [1, 0, 0, 1]]);
+  });
+
+  it('shifts the rule by the verticalAlign offset, with the glyphs', () => {
+    const runs = [decoratedRun({ underline: true })];
+    const cmd = { kind: 'text', x: 0, y: 0, runs, maxWidth: Infinity, align: 'left', style: {} };
+
+    const { ctx: ctxA, calls: callsA } = createRecorderCtx();
+    dispatch(ctxA, cmd as DrawCommand);
+    const { ctx: ctxB, calls: callsB } = createRecorderCtx();
+    dispatch(ctxB, { ...cmd, height: 100, verticalAlign: 'center' } as DrawCommand);
+
+    const yA = drawsWithProgram(callsA, ctxA.pathFill)[0].vertices[1];
+    const yB = drawsWithProgram(callsB, ctxB.pathFill)[0].vertices[1];
+    const glyphYA = drawsWithProgram(callsA, ctxA.textSdf)[0].vertices[1];
+    const glyphYB = drawsWithProgram(callsB, ctxB.textSdf)[0].vertices[1];
+    expect(yB - yA).not.toBe(0);
+    // The rule must move by exactly what the glyphs moved by, or it detaches.
+    expect(yB - yA).toBeCloseTo(glyphYB - glyphYA, 6);
+  });
+
+  it('draws the rule when nothing has baked yet, so there are no groups at all', () => {
+    // A canvas-dynamic glyph past the bake budget lays out with a real advance
+    // but `page: -1`, which emits no quad. Layout therefore returns zero
+    // groups while still carrying the rule; a `groups.length === 0` bail-out
+    // in drawText would swallow it.
+    _resetDynamicFontsForTests();
+    __setGlyphRasterizerForTests({
+      faceMetrics: () => ({ ascent: 40, descent: 8 }),
+      rasterize: () => ({
+        width: 20, height: 24, alpha: new Uint8ClampedArray(20 * 24).fill(255),
+        left: -8, top: 26, advance: 22,
+      }),
+    });
+    registerCanvasFont('Dyn');
+    resetBakeBudget(0);
+    try {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, {
+        kind: 'text', x: 0, y: 0,
+        runs: [decoratedRun({ fontFamily: 'Dyn', underline: true })],
+        maxWidth: Infinity, align: 'left', style: {},
+      } as DrawCommand);
+      expect(drawsWithProgram(calls, ctx.textSdfR8)).toHaveLength(0);
+      expect(drawsWithProgram(calls, ctx.textSdf)).toHaveLength(0);
+      expect(drawsWithProgram(calls, ctx.pathFill)).toHaveLength(1);
+    } finally {
+      resetBakeBudget();
+      _resetDynamicFontsForTests();
+    }
+  });
+
+  it('draws the rule under the enclosing clip, as the glyphs are', () => {
+    const { ctx, calls } = createRecorderCtx();
+    drawGroup(ctx, {
+      kind: 'group',
+      clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      children: [{
+        kind: 'text', x: 0, y: 0,
+        runs: [decoratedRun({ underline: true })],
+        maxWidth: Infinity, align: 'left', style: {},
+      }],
+    } as never);
+    // The rule's draw must be issued with the clip stencil live, or it spills
+    // past the group's clip rect. Anchor on the decoration VBO upload — the
+    // clip's own rasterization also binds pathFill, so the program alone
+    // can't identify our draw.
+    // (The clip rect's own mesh is also 8 floats, so match on the rule's y.)
+    const at = calls.findIndex(
+      (c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array
+        && (c.args[1] as Float32Array).length === 8
+        && Math.abs((c.args[1] as Float32Array)[1] - 32.2) < 1e-3,
+    );
+    expect(at).toBeGreaterThanOrEqual(0);
+    let enabled = false;
+    let func: unknown[] | null = null;
+    for (const c of calls.slice(0, at)) {
+      if (c.name === 'enable' && c.args[0] === 0x0B90) enabled = true;
+      if (c.name === 'disable' && c.args[0] === 0x0B90) enabled = false;
+      if (c.name === 'stencilFunc') func = c.args as unknown[];
+    }
+    expect(enabled).toBe(true);
+    // EQUAL against the depth-1 ancestor mask (bit 1 → 0x02).
+    expect(func).toEqual([0x0202, 0x02, 0x02]);
+  });
+
+  it('uploads the group color matrix and alpha for the rule, as the glyph path does', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, {
+      kind: 'group',
+      alpha: 0.5,
+      // Row-major 4×5 that swaps the red and green channels.
+      colorMatrix: [
+        0, 1, 0, 0, 0,
+        1, 0, 0, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 0, 0, 1, 0,
+      ],
+      children: [{
+        kind: 'text', x: 0, y: 0,
+        runs: [decoratedRun({ underline: true })],
+        maxWidth: Infinity, align: 'left', style: {},
+      }],
+    } as DrawCommand);
+    // Look only at what was uploaded after pathFill was bound for the rule.
+    const from = calls.findIndex((c) => c.name === 'useProgram' && c.args[0] === ctx.pathFill.handle);
+    expect(from).toBeGreaterThanOrEqual(0);
+    const after = calls.slice(from);
+    // Group alpha reaches u_alpha, and the group color matrix reaches
+    // u_colorMatrix — the rule must be tinted and faded like the glyphs.
+    expect(after.some((c) => c.name === 'uniform1f' && c.args[1] === 0.5)).toBe(true);
+    // u_proj / u_model, without which the rect lands in raw clip space.
+    expect(after.filter((c) => c.name === 'uniformMatrix3fv')).toHaveLength(2);
+    const cm = after.find((c) => c.name === 'uniformMatrix4fv');
+    expect(cm).toBeDefined();
+    // The same matrix, transposed to column-major as setColorMatrixUniforms does.
+    expect(Array.from(cm!.args[2] as Float32Array)).toEqual([
+      0, 1, 0, 0,
+      1, 0, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1,
+    ]);
   });
 });

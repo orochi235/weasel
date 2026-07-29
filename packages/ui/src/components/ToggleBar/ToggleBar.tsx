@@ -35,6 +35,23 @@ export type ToggleBarProps<V extends string | number = string> =
       mode: 'multiple';
       items: readonly ToggleBarItem<V>[];
       value: readonly V[];
+      /**
+       * Values that are neither on nor off — the sources this bar
+       * aggregates disagree (a text range that is bold in part of it, a
+       * multi-selection whose nodes differ). Rendered `aria-pressed="mixed"`,
+       * the ARIA tri-state a toggle button actually has, rather than
+       * `SelectionPanel`'s reduced-opacity-plus-`title` workaround for
+       * `Switch`, which has no indeterminate state to render.
+       *
+       * `value` wins where the two lists overlap, so a caller that can't
+       * cheaply keep them disjoint doesn't get an ambiguous segment.
+       *
+       * Clicking a mixed segment turns it fully **on**, matching the
+       * everywhere-else convention (and `toggleFlagInRange`'s rule for a
+       * partially-styled text range) that a mixed toggle resolves toward
+       * the affirmative rather than clearing.
+       */
+      mixedValues?: readonly V[];
       onChange: (next: V[]) => void;
     });
 
@@ -74,6 +91,15 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
   const isSelected = (value: V): boolean => {
     if (mode === 'multiple') return (props.value as readonly V[]).includes(value);
     return (props.value as V | null) === value;
+  };
+
+  /** Mixed only in multiple mode, and only where `value` doesn't already
+   *  claim the segment. Single mode has nothing to be mixed about — its
+   *  aggregate is one value or none. */
+  const isMixed = (value: V): boolean => {
+    if (mode !== 'multiple') return false;
+    const mixed = (props as { mixedValues?: readonly V[] }).mixedValues;
+    return mixed !== undefined && mixed.includes(value) && !isSelected(value);
   };
 
   let tabStopIndex = -1;
@@ -169,14 +195,17 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     >
       {items.map((item, i) => {
         const selected = isSelected(item.value);
-        const cls = `${s.segment}${selected ? ` ${s.segmentSelected}` : ''}`;
+        const mixed = isMixed(item.value);
+        const cls = [s.segment, selected && s.segmentSelected, mixed && s.segmentMixed]
+          .filter(Boolean)
+          .join(' ');
         return (
           <button
             key={item.value}
             type="button"
             role={mode === 'multiple' ? undefined : 'radio'}
             aria-checked={mode === 'multiple' ? undefined : selected}
-            aria-pressed={mode === 'multiple' ? selected : undefined}
+            aria-pressed={mode === 'multiple' ? (mixed ? 'mixed' : selected) : undefined}
             aria-label={item.ariaLabel}
             disabled={item.disabled}
             tabIndex={i === tabStopIndex ? 0 : -1}

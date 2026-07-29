@@ -3,6 +3,8 @@ import { act, renderHook } from '@testing-library/react';
 import { useTextEdit } from './useTextEdit';
 import type { UseTextEditOptions } from './useTextEdit';
 import type { StyledRun } from './runs';
+import { MIXED } from './runs/rangeStyle';
+import type { TextStyle } from './textStyle';
 
 function makeHarness(initial: Record<string, string>) {
   const texts = { ...initial };
@@ -555,5 +557,751 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     act(() => pressKey(overlay, 'b', { ctrl: true }));
     act(() => result.current.commit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
+  });
+});
+
+/** Rich harness with a caller-supplied node style and screen font size, so
+ *  the world→screen factor (`pose.fontSize / style.fontSize`) is testable. */
+function makeTrackingHarness(
+  runs: StyledRun[],
+  style: TextStyle,
+  screenFontSize = style.fontSize ?? 16,
+) {
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const runCommits: Array<{ id: string; runs: StyledRun[] }> = [];
+  const opts: UseTextEditOptions = {
+    container,
+    getText: () => runs.map((r) => r.text).join(''),
+    getStyle: () => style,
+    getScreenPose: () => ({ x: 0, y: 0, width: 200, height: 40, fontSize: screenFontSize }),
+    setText: () => {},
+    getRuns: () => runs,
+    setRuns: (id, next) => { runCommits.push({ id, runs: next }); },
+  };
+  return { opts, container, runCommits };
+}
+
+describe('useTextEdit — letter-spacing on the overlay', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('applies the node-level letterSpacing to the overlay at zoom 1', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, letterSpacing: 3 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.letterSpacing).toBe('3px');
+  });
+
+  it('scales the node-level letterSpacing by the world→screen factor', () => {
+    // pose.fontSize 32 against style.fontSize 16 → zoom 2.
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, letterSpacing: 3 }, 32);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.letterSpacing).toBe('6px');
+  });
+
+  it('applies zero tracking when the style omits letterSpacing', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16 }, 32);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.letterSpacing).toBe('0px');
+  });
+
+  it('lets a run-level letterSpacing replace the overlay value rather than add to it', () => {
+    // CSS `letter-spacing` is inherited, and a child's own declaration
+    // *replaces* the inherited value — it is not additive. So the run span
+    // must carry the run's own world value, untouched by the node's.
+    const h = makeTrackingHarness(
+      [{ text: 'a' }, { text: 'b', letterSpacing: 2 }],
+      { fontSize: 16, letterSpacing: 3 },
+    );
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    const spans = overlay.querySelectorAll('span[data-run]');
+    expect(overlay.style.letterSpacing).toBe('3px');
+    expect((spans[0] as HTMLSpanElement).style.letterSpacing).toBe('');
+    expect((spans[1] as HTMLSpanElement).style.letterSpacing).toBe('2px');
+  });
+});
+
+/** Same as `makeTrackingHarness`, but the pose declares an explicit `zoom`
+ *  so every metric on it is pre-scale (world) and the overlay carries the
+ *  view scale as a CSS transform instead. */
+function makeZoomedHarness(runs: StyledRun[], style: TextStyle, zoom: number) {
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const opts: UseTextEditOptions = {
+    container,
+    getText: () => runs.map((r) => r.text).join(''),
+    getStyle: () => style,
+    getScreenPose: () => ({
+      x: 10,
+      y: 20,
+      width: 200,
+      height: 40,
+      fontSize: style.fontSize ?? 16,
+      zoom,
+    }),
+    setText: () => {},
+    getRuns: () => runs,
+    setRuns: () => {},
+  };
+  return { opts, container };
+}
+
+describe('useTextEdit — zoom-scaled overlay', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('carries the zoom as a CSS scale anchored at the overlay origin', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 2);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.transform).toBe('scale(2)');
+    expect(overlay.style.transformOrigin).toBe('0 0');
+  });
+
+  it('emits no transform at zoom 1', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 1);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.transform).toBe('none');
+  });
+
+  it('keeps x / y in screen pixels — the scale is anchored, not translated', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 2);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    // The same +1 / -1 CSS-vs-canvas nudge as the unscaled path: it is a
+    // screen-pixel correction and `left`/`top` are outside the scaled box.
+    expect(overlay.style.left).toBe('11px');
+    expect(overlay.style.top).toBe('19px');
+  });
+
+  it('leaves width / height / fontSize pre-scale — the transform does the scaling', () => {
+    const h = makeZoomedHarness([{ text: 'abc' }], { fontSize: 16 }, 2);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    expect(overlay.style.width).toBe('200px');
+    expect(overlay.style.minHeight).toBe('40px');
+    expect(overlay.style.fontSize).toBe('16px');
+  });
+
+  it('does not pre-scale letterSpacing when the pose declares a zoom', () => {
+    // This is the whole point of the transform: `runsToDom` writes run-level
+    // `fontSize` / `letterSpacing` in world units (`domToRuns` reads them
+    // straight back), so the node level has to stay in world units too or the
+    // two disagree at any zoom but 1.
+    const h = makeZoomedHarness(
+      [{ text: 'a' }, { text: 'b', letterSpacing: 2, fontSize: 24 }],
+      { fontSize: 16, letterSpacing: 3 },
+      2,
+    );
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    const spans = overlay.querySelectorAll<HTMLSpanElement>('span[data-run]');
+    expect(overlay.style.letterSpacing).toBe('3px');
+    expect(spans[1].style.letterSpacing).toBe('2px');
+    expect(spans[1].style.fontSize).toBe('24px');
+    // Asserted here too: raw world values are only correct *because* the
+    // transform scales them. Drop the transform and these numbers are wrong.
+    expect(overlay.style.transform).toBe('scale(2)');
+  });
+});
+
+describe('useTextEdit — node-level decoration on the overlay', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('carries node-level underline / strikethrough onto the overlay', () => {
+    const h = makeTrackingHarness(
+      [{ text: 'abc' }],
+      { fontSize: 16, underline: true, strikethrough: true },
+    );
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.textDecoration).toBe('underline line-through');
+  });
+
+  it('sets text-decoration: none on an undecorated node', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16 });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(getOverlay(h.container)!.style.textDecoration).toBe('none');
+  });
+
+  it('does not read its own node-level decoration back as a run flag', () => {
+    const h = makeTrackingHarness([{ text: 'abc' }], { fontSize: 16, underline: true });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+  });
+});
+
+describe('useTextEdit — decoration and tracking survive the commit path', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('an untouched edit commits the runs it started with', () => {
+    const runs: StyledRun[] = [
+      { text: 'a', underline: true },
+      { text: 'b', strikethrough: true, letterSpacing: 2 },
+      { text: 'c', letterSpacing: 0 },
+    ];
+    const h = makeTrackingHarness(runs, { fontSize: 16, letterSpacing: 3 }, 32);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(h.runCommits).toEqual([{ id: 'a', runs }]);
+  });
+
+  it('Cmd-B on a tracked, decorated range keeps the other keys', () => {
+    const h = makeTrackingHarness(
+      [{ text: 'one two', underline: true, letterSpacing: 2 }],
+      { fontSize: 16 },
+    );
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'one', bold: true, underline: true, letterSpacing: 2 },
+      { text: ' two', underline: true, letterSpacing: 2 },
+    ]);
+  });
+});
+
+/**
+ * `selectionchange` is fired from a task, not synchronously — jsdom copies the
+ * browser here — so a test that moves the caret has to let a macrotask run
+ * before the hook has observed it. Anything the hook itself writes (its own
+ * style application, edit start) syncs synchronously and needs no flush.
+ */
+async function selectCharsAndSettle(overlay: HTMLElement, start: number, end: number): Promise<void> {
+  await act(async () => {
+    selectChars(overlay, start, end);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
+
+async function placeCaretAndSettle(overlay: HTMLElement, charOffset: number): Promise<void> {
+  await act(async () => {
+    placeCaretAtChar(overlay, charOffset);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
+
+describe('useTextEdit — range styling surface', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('reports the current selection as character offsets', async () => {
+    const h = makeRichHarness({ a: { text: 'abcdefg', runs: [{ text: 'abcdefg' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 0, 5);
+    expect(result.current.selection).toEqual({ start: 0, end: 5 });
+  });
+
+  it('reports the initial select-all caret as the whole range', () => {
+    // `startEdit`'s default caret is `selectNodeContents`, whose boundary
+    // points are on the overlay element rather than in a text node. Reading
+    // that as a collapsed caret at the end would put a consumer bar into
+    // "edit the node, not the range" mode while the user sees a full selection.
+    const h = makeRichHarness({ a: { text: 'abcdefg', runs: [{ text: 'abcdefg' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    expect(result.current.selection).toEqual({ start: 0, end: 7 });
+  });
+
+  it('reports a normalized range when the selection runs backwards', async () => {
+    const h = makeRichHarness({ a: { text: 'abcdefg', runs: [{ text: 'abcdefg' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await act(async () => {
+      const sel = window.getSelection()!;
+      sel.removeAllRanges();
+      const text = overlay.querySelector('span[data-run]')!.firstChild as Text;
+      const range = document.createRange();
+      range.setStart(text, 2);
+      range.setEnd(text, 6);
+      sel.addRange(range);
+      // A backwards drag: same boundary points, opposite anchor/focus.
+      sel.setBaseAndExtent(text, 6, text, 2);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(result.current.selection).toEqual({ start: 2, end: 6 });
+  });
+
+  it('reports rangeStyle for the selection', async () => {
+    const h = makeRichHarness({
+      a: { text: 'abcd', runs: [{ text: 'ab', bold: true }, { text: 'cd' }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 0, 4);
+    expect(result.current.rangeStyle?.bold).toBe(MIXED);
+    await selectCharsAndSettle(overlay, 0, 2);
+    expect(result.current.rangeStyle?.bold).toBe(true);
+    await selectCharsAndSettle(overlay, 2, 4);
+    // Flags are additive over the node style, so an unset one reads as false.
+    expect(result.current.rangeStyle?.bold).toBe(false);
+  });
+
+  it('applies a patch to the selected range', async () => {
+    const h = makeRichHarness({
+      a: { text: 'abcd', runs: [{ text: 'ab', bold: true }, { text: 'cd' }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 0, 2);
+    act(() => result.current.applyStyleToSelection({ underline: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'ab', bold: true, underline: true },
+      { text: 'cd' },
+    ]);
+    expect(h.textCommits[0]).toEqual({ id: 'a', text: 'abcd' });
+  });
+
+  it('applies a non-flag patch value to the selected range', async () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 1, 3);
+    act(() => result.current.applyStyleToSelection({ fontSize: 24, fontFamily: 'Georgia' }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'a' },
+      { text: 'bc', fontSize: 24, fontFamily: 'Georgia' },
+      { text: 'd' },
+    ]);
+  });
+
+  it('reports the new rangeStyle immediately after applying a patch', async () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 0, 2);
+    expect(result.current.rangeStyle?.underline).toBe(false);
+    act(() => result.current.applyStyleToSelection({ underline: true }));
+    expect(result.current.rangeStyle?.underline).toBe(true);
+  });
+
+  it('keeps the selection after a patch so a second style needs no re-select', async () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 0, 2);
+    act(() => result.current.applyStyleToSelection({ underline: true }));
+    expect(result.current.selection).toEqual({ start: 0, end: 2 });
+    act(() => result.current.applyStyleToSelection({ italic: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'ab', italic: true, underline: true },
+      { text: 'cd' },
+    ]);
+  });
+
+  it('composes with the Cmd-B path over the same selection', async () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 0, 2);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    expect(result.current.selection).toEqual({ start: 0, end: 2 });
+    expect(result.current.rangeStyle?.bold).toBe(true);
+    act(() => result.current.applyStyleToSelection({ underline: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'ab', bold: true, underline: true },
+      { text: 'cd' },
+    ]);
+  });
+
+  it('reports a collapsed caret as an empty range at its offset', async () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await placeCaretAndSettle(overlay, 3);
+    expect(result.current.selection).toEqual({ start: 3, end: 3 });
+    // Distinguishable from "no caret at all" (null) so a consumer can route a
+    // collapsed caret to the node's own TextStyle. No run is in range, so
+    // there is nothing for the range reader to report.
+    expect(result.current.rangeStyle).toEqual({});
+  });
+
+  it('leaves the runs alone when a patch is applied with a collapsed caret', async () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await placeCaretAndSettle(overlay, 3);
+    act(() => result.current.applyStyleToSelection({ underline: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abcd' }]);
+  });
+
+  it('leaves the runs alone when the patch is empty', async () => {
+    const h = makeRichHarness({
+      a: { text: 'abcd', runs: [{ text: 'ab', bold: true }, { text: 'cd' }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 0, 4);
+    act(() => result.current.applyStyleToSelection({}));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'ab', bold: true }, { text: 'cd' }]);
+  });
+
+  it('reports null selection when not editing', () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    expect(result.current.selection).toBeNull();
+    expect(result.current.rangeStyle).toBeNull();
+  });
+
+  it('clears the selection surface on commit and on cancel', async () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    await selectCharsAndSettle(getOverlay(h.container)!, 0, 2);
+    act(() => result.current.commit());
+    expect(result.current.selection).toBeNull();
+    expect(result.current.rangeStyle).toBeNull();
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.cancelEdit());
+    expect(result.current.selection).toBeNull();
+    expect(result.current.rangeStyle).toBeNull();
+  });
+
+  it('applyStyleToSelection is a no-op when there is no active edit', () => {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.applyStyleToSelection({ underline: true }));
+    expect(h.runCommits).toEqual([]);
+    expect(h.textCommits).toEqual([]);
+  });
+});
+
+/**
+ * Focus leaving the overlay for a *control that styles the overlay* — a
+ * character bar's size field, a color popover — is the one case where blur
+ * must not mean "done editing". Without this, clicking the control the
+ * feature exists for is what destroys the thing being edited.
+ */
+describe('useTextEdit — editing chrome', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  function makeChromeHarness() {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'abcd' }] } });
+    const chrome = document.createElement('div');
+    const field = document.createElement('input');
+    chrome.appendChild(field);
+    document.body.appendChild(chrome);
+    return {
+      ...h,
+      chrome,
+      field,
+      opts: { ...h.opts, isEditorChrome: (el: Element) => chrome.contains(el) },
+    };
+  }
+
+  function blurTo(overlay: HTMLElement, relatedTarget: Element | null): void {
+    overlay.dispatchEvent(new FocusEvent('blur', { relatedTarget }));
+  }
+
+  it('does not commit when focus moves into editing chrome', () => {
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => blurTo(getOverlay(h.container)!, h.field));
+    expect(result.current.editingId).toBe('a');
+    expect(h.textCommits).toEqual([]);
+  });
+
+  it('still commits when focus moves anywhere else', () => {
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const elsewhere = document.createElement('button');
+    document.body.appendChild(elsewhere);
+    act(() => blurTo(getOverlay(h.container)!, elsewhere));
+    expect(result.current.editingId).toBeNull();
+  });
+
+  it('commits on a blur with no related target', () => {
+    // Clicking the page background, or tabbing out of the document.
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => blurTo(getOverlay(h.container)!, null));
+    expect(result.current.editingId).toBeNull();
+  });
+
+  it('commits on a pointerdown outside the overlay and outside chrome', () => {
+    // Once focus has moved into chrome the overlay can no longer blur, so
+    // `blur` alone would leave no way to finish the edit by clicking away.
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => blurTo(getOverlay(h.container)!, h.field));
+    expect(result.current.editingId).toBe('a');
+    const elsewhere = document.createElement('div');
+    document.body.appendChild(elsewhere);
+    act(() => {
+      elsewhere.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    });
+    expect(result.current.editingId).toBeNull();
+  });
+
+  it('does not commit on a pointerdown inside chrome', () => {
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => {
+      h.field.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    });
+    expect(result.current.editingId).toBe('a');
+  });
+
+  it('does not commit on a pointerdown inside the overlay', () => {
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => {
+      getOverlay(h.container)!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    });
+    expect(result.current.editingId).toBe('a');
+  });
+
+  it('keeps reporting the range while the selection sits in chrome', async () => {
+    // The DOM selection follows focus into the control. Reporting `null`
+    // here would tell a consumer bar "collapsed caret" — and a bar that
+    // routes a collapsed caret to the node's own style would then write the
+    // patch to the wrong target, silently.
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 1, 3);
+    expect(result.current.selection).toEqual({ start: 1, end: 3 });
+    await act(async () => {
+      window.getSelection()!.removeAllRanges();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(result.current.selection).toEqual({ start: 1, end: 3 });
+  });
+
+  it('does not pull the document selection back into the overlay from chrome', async () => {
+    // Browsers route editing commands by *selection*, not by focus. Restoring
+    // the range inside the contenteditable while a bar field has focus means
+    // the Enter that committed that field also runs `insertParagraph` over the
+    // restored range — the styled text is replaced by a line break. Observed
+    // in Chrome, not reproducible from unit tests alone.
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 1, 3);
+    h.field.focus();
+    await act(async () => {
+      window.getSelection()!.removeAllRanges();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    act(() => result.current.applyStyleToSelection({ underline: true }));
+    const sel = window.getSelection()!;
+    expect(
+      sel.rangeCount === 0 || !overlay.contains(sel.getRangeAt(0).startContainer),
+    ).toBe(true);
+    // The range is still the one it will style next — remembered, not read.
+    expect(result.current.selection).toEqual({ start: 1, end: 3 });
+  });
+
+  it('republishes rangeStyle after a patch made from chrome', async () => {
+    // The DOM selection is in the control, so re-reading it after the write
+    // finds nothing and leaves the consumer showing pre-patch styling — the
+    // field snaps back to the old value the moment it commits a new one.
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 1, 3);
+    h.field.focus();
+    await act(async () => {
+      window.getSelection()!.removeAllRanges();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    act(() => result.current.applyStyleToSelection({ fontSize: 34 }));
+    expect(result.current.rangeStyle?.fontSize).toBe(34);
+  });
+
+  it('keeps the caret when a chrome *button* has focus', () => {
+    // Bold, then italic, then underline is one flow over one selection, and
+    // clicking a toolbar button does take focus. A button turns keystrokes
+    // into clicks rather than editing commands, so the range is safe.
+    const h = makeChromeHarness();
+    const button = document.createElement('button');
+    h.chrome.appendChild(button);
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 1, 3);
+    button.focus();
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    const sel = window.getSelection()!;
+    expect(sel.rangeCount).toBe(1);
+    expect(overlay.contains(sel.getRangeAt(0).startContainer)).toBe(true);
+  });
+
+  it('styles the remembered range when the DOM selection has left the overlay', async () => {
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    await selectCharsAndSettle(overlay, 1, 3);
+    await act(async () => {
+      window.getSelection()!.removeAllRanges();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    act(() => result.current.applyStyleToSelection({ underline: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'a' },
+      { text: 'bc', underline: true },
+      { text: 'd' },
+    ]);
+  });
+});
+
+/**
+ * `startEdit` seeds a runs-less node's overlay with `overlay.innerText = …`,
+ * which jsdom does not implement — the assignment lands on an expando and
+ * creates no text nodes. Build the text node a browser would have built, so
+ * the styling and commit paths run against a real DOM rather than against
+ * the gap. Only the seeding is substituted; nothing downstream is faked.
+ */
+function seedPlainOverlay(overlay: HTMLElement, text: string): void {
+  overlay.replaceChildren(document.createTextNode(text));
+}
+
+describe('useTextEdit — commit routes on the styling the edit produced', () => {
+  it('commits runs for a node that never had any when the edit styled a range', async () => {
+    const h = makeRichHarness({ a: { text: 'one two' } });
+    expect(h.data.a.runs).toBeUndefined();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    // The node had no runs, so init took the plain-text branch.
+    expect(overlay.querySelectorAll('span[data-run]')).toHaveLength(0);
+    seedPlainOverlay(overlay, 'one two');
+    await selectCharsAndSettle(overlay, 0, 3);
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits).toEqual([{
+      id: 'a',
+      runs: [{ text: 'one', bold: true }, { text: ' two' }],
+    }]);
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'one two' }]);
+  });
+
+  it('takes the setText-only path when the edit produced no styling', async () => {
+    const h = makeRichHarness({ a: { text: 'one two' } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    seedPlainOverlay(overlay, 'one two');
+    await selectCharsAndSettle(overlay, 0, 3);
+    act(() => result.current.commit());
+    // The committed *text* isn't asserted here: the plain path reads
+    // `innerText`, which jsdom doesn't implement. What this pins is the
+    // routing — no pointless single-run array written back to the node.
+    expect(h.runCommits).toEqual([]);
+    expect(h.textCommits.map((c) => c.id)).toEqual(['a']);
+  });
+
+  it('still writes runs when an edit strips the styling a node already had', () => {
+    const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'ab', bold: true }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 2);
+    act(() => pressKey(overlay, 'b', { meta: true }));
+    act(() => result.current.commit());
+    // Routing on "did the edit produce styling" alone would leave the node's
+    // stale bold run in place; the node's prior runs have to keep it rich.
+    expect(h.runCommits).toEqual([{ id: 'a', runs: [{ text: 'ab' }] }]);
+  });
+
+  it('trims the caret-holder newline the way the plain path does', async () => {
+    // A contenteditable keeps a trailing `<br>` so the caret has somewhere to
+    // sit on the last line. `innerText` reports it as a trailing newline and
+    // the plain-text path strips one; `domToRuns` maps it to a literal '\n'
+    // and did not. The divergence was unreachable while only nodes that
+    // already had runs took the rich path — styling a previously-plain node
+    // reaches it, and one edit would commit text a byte longer than the same
+    // edit without the styling.
+    const h = makeRichHarness({ a: { text: 'one' } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    overlay.replaceChildren(document.createTextNode('one'), document.createElement('br'));
+    await selectCharsAndSettle(overlay, 0, 3);
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    act(() => result.current.commit());
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'one' }]);
+    expect(h.runCommits[0].runs).toEqual([{ text: 'one', bold: true }]);
+  });
+
+  it('trims exactly one, so a deliberate trailing blank line survives', async () => {
+    const h = makeRichHarness({ a: { text: 'one' } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    // What the user typed ends in a newline, and the caret holder adds one
+    // more on top of it.
+    overlay.replaceChildren(
+      document.createTextNode('one'),
+      document.createElement('br'),
+      document.createElement('br'),
+    );
+    await selectCharsAndSettle(overlay, 0, 3);
+    act(() => result.current.applyStyleToSelection({ bold: true }));
+    act(() => result.current.commit());
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'one\n' }]);
+  });
+
+  it('keeps a newline the user actually typed', () => {
+    const h = makeRichHarness({ a: { text: 'a\nb', runs: [{ text: 'a\nb' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    act(() => result.current.commit());
+    expect(h.textCommits).toEqual([{ id: 'a', text: 'a\nb' }]);
   });
 });

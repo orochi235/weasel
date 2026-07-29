@@ -417,6 +417,49 @@ export function resolveFontVariant(
 }
 
 /**
+ * Escalate a *single codepoint* to the dynamic tier when the atlas that
+ * resolved for the run has no glyph for it.
+ *
+ * `resolveFontVariant` answers at family granularity: it picks one tier for a
+ * whole run. But a baked MSDF atlas covers a fixed charset, so a run served by
+ * a perfectly good atlas can still contain a character that atlas never baked
+ * — an em dash, a curly quote, anything outside the subset. The dynamic tier
+ * rasterizes on demand from installed fonts and can serve exactly those.
+ *
+ * Returns a canvas-tier `ResolveResult` whose `dynamicFace` the caller drives
+ * with `requestGlyph(cp)`, or `null` when escalation isn't available:
+ *
+ *   - Policy `'none'` documents a miss as a *hard* miss. Quietly reaching for
+ *     another tier per codepoint would undo that, so it doesn't.
+ *   - No canvas to rasterize into (SSR, a jsdom test without one) makes the
+ *     dynamic tier constructible-but-broken; `getDynamicFace` throws and this
+ *     reports the miss instead of taking the caller down with it.
+ *
+ * Cheap to call per missing codepoint: faces are cached by variant and glyphs
+ * by codepoint, so a repeat is two map lookups.
+ */
+export function resolveGlyphFallback(
+  family: string,
+  weight: number,
+  style: FontStyle,
+): ResolveResult | null {
+  if (getFontFallbackPolicy() === 'none') return null;
+  try {
+    return {
+      entry: null,
+      dynamicFace: getDynamicFace(family, weight, style),
+      resolved: { family, weight, style },
+      // The dynamic tier rasterizes the real weight and style, so there is
+      // nothing for the shader to fake.
+      synthetic: { bold: false, italic: false },
+      source: 'canvas',
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * `suppressWarn` is set only by the recursive substitution probe in
  * `missResolveResult`, which resolves the fallback family purely to check
  * whether it renders. That probe is not itself a request anything asked

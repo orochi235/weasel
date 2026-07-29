@@ -508,3 +508,49 @@ describe('insertAction — line modifiers', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Text: drop into the caret after committing the box
+// ---------------------------------------------------------------------------
+
+function makeTextEditDep() {
+  const calls: Array<{ id: string; opts?: { caret?: number | 'all' } }> = [];
+  return { calls, startEdit(id: string, opts?: { caret?: number | 'all' }) { calls.push({ id, opts }); } };
+}
+
+describe('insertAction — text', () => {
+  /** Run a full drag. The end context deliberately carries **no deps**: the
+   *  dispatcher builds the deps bag once, on `start`, and passes `deps: {}`
+   *  on every later pump event. A test that reuses the start context would
+   *  pass against an implementation that reads `endCtx.deps` — which is
+   *  always empty in the real app. */
+  function drag(kind: string, deps: Record<string, unknown>, dep = makeInsertDep()) {
+    const ctx = makeCtx({ dep });
+    Object.assign(ctx.deps as Record<string, unknown>, deps);
+    const invoker = getOngoingInvoker(insertAction);
+    const handle = invoker.start(ctx, { params: { kind } } as BindingOpts);
+    const end: InvocationCtx = { ...ctx, world: { x: 105, y: 60 }, deps: {} };
+    handle.onMove?.(end);
+    handle.onEnd?.(end, 'commit');
+    return dep;
+  }
+
+  it('enters edit on the node it just inserted', () => {
+    // A text box you can't type into is not a text box. The tool's own
+    // click-to-edit binding needs the node selected first, which an
+    // invisible empty box makes impossible to do by hand.
+    const textEdit = makeTextEditDep();
+    drag('text', { textEdit });
+    expect(textEdit.calls).toEqual([{ id: 'new-node-id', opts: { caret: 0 } }]);
+  });
+
+  it('does not enter edit for other kinds', () => {
+    const textEdit = makeTextEditDep();
+    drag('rect', { textEdit });
+    expect(textEdit.calls).toEqual([]);
+  });
+
+  it('commits the box even with no textEdit dep registered', () => {
+    expect(drag('text', {}).calls).toHaveLength(1);
+  });
+});

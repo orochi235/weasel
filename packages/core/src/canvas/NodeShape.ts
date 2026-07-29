@@ -32,8 +32,9 @@
  */
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '../renderer';
-import { textCommand } from 'features/text/textCommand';
+import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
 import type { TextStyle } from 'features/text/textStyle';
+import type { StyledRun } from 'features/text/runs';
 import type { Path } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
@@ -161,7 +162,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
     return d?.text != null;
   },
   paint: (node, pose) => {
-    const d = node.data as { text: string; style?: TextStyle };
+    const d = node.data as { text: string; style?: TextStyle; runs?: readonly StyledRun[] };
     const p = pose as RectPose;
     const fontSize = d.style?.fontSize ?? 16;
     // Forward the pose's box height so a future `verticalAlign` opt-in has
@@ -171,7 +172,17 @@ const TEXT_PAINTER: NodeShapeEntry = {
     // deliberately NOT forwarded: generic kit:text nodes have no data/style
     // slot for opting into wrap or box vertical-align yet, and forwarding
     // maxWidth would silently start wrapping consumers' existing text.
-    return [textCommand(p.x, p.y + fontSize, d.text, d.style, undefined, p.height)];
+    //
+    // `runs` wins over `text` when present. It is the richer form of the same
+    // content — `useTextEdit` commits both, keeping `runsToPlainText(runs)`
+    // equal to `text` — so re-flattening the string here would make the whole
+    // run algebra write-only for anything painted by the default scene layer.
+    // Empty runs are not a styling, so they fall back rather than paint
+    // nothing.
+    const y = p.y + fontSize;
+    return d.runs && d.runs.length > 0
+      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height)]
+      : [textCommand(p.x, y, d.text, d.style, undefined, p.height)];
   },
 };
 
