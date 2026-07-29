@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { useDeviceProfile, DeviceProfileProvider } from './useDeviceProfile';
-import { COARSE_TARGET_SCALE } from './types';
+import { COARSE_TARGET_SCALE } from './profile';
 
 /** Minimal MediaQueryList double with a manual `fire()`. */
 function makeMatchMedia(matches: Record<string, boolean>) {

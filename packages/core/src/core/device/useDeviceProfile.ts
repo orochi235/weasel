@@ -7,12 +7,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import {
-  DEFAULT_DEVICE_PROFILE,
-  resolveDeviceProfile,
-  type DetectedDeviceFacts,
-  type DeviceProfile,
-} from './types';
+import type { DetectedDeviceFacts, DeviceProfile } from './types';
+import { DEFAULT_DEVICE_PROFILE, resolveDeviceProfile } from './profile';
 
 const COARSE_QUERY = '(pointer: coarse)';
 const HOVER_QUERY = '(hover: hover)';

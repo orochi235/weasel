@@ -1,10 +1,12 @@
 export {
-  COARSE_TARGET_SCALE,
-  DEFAULT_DEVICE_PROFILE,
-  resolveDeviceProfile,
   type DetectedDeviceFacts,
   type DeviceProfile,
 } from './types';
+export {
+  COARSE_TARGET_SCALE,
+  DEFAULT_DEVICE_PROFILE,
+  resolveDeviceProfile,
+} from './profile';
 export {
   HANDLE_BASE_PX,
   ANCHOR_HIT_BASE_PX,

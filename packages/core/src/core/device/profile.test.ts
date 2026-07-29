@@ -3,7 +3,7 @@ import {
   resolveDeviceProfile,
   DEFAULT_DEVICE_PROFILE,
   COARSE_TARGET_SCALE,
-} from './types';
+} from './profile';
 
 describe('resolveDeviceProfile', () => {
   const fine = { coarsePointer: false, canHover: true, dpr: 1 };
@@ -36,6 +36,14 @@ describe('resolveDeviceProfile', () => {
     expect(r.canHover).toBe(true);
     expect(r.dpr).toBe(3);
     expect(r.coarsePointer).toBe(true);
+  });
+
+  it('lets an override replace dpr alone, leaving the other fields untouched', () => {
+    const r = resolveDeviceProfile(fine, { dpr: 3 });
+    expect(r.dpr).toBe(3);
+    expect(r.coarsePointer).toBe(false);
+    expect(r.canHover).toBe(true);
+    expect(r.targetScale).toBe(1);
   });
 
   it('DEFAULT_DEVICE_PROFILE is a fine-pointer, hover-capable, density-1 device', () => {
