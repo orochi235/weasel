@@ -9,7 +9,9 @@
 
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
-import { isCanvasFont, getDynamicFace, type DynamicFace } from './dynamic/dynamicAtlas';
+import {
+  isCanvasFont, registerCanvasFont, getDynamicFace, type DynamicFace,
+} from './dynamic/dynamicAtlas';
 import { getFontFallbackPolicy, getDefaultFontFamily } from './fallback';
 
 export interface FontEntry {
@@ -169,6 +171,19 @@ function missResolveResult(family: string, weight: number, style: FontStyle): Re
   }
 
   const policy = getFontFallbackPolicy();
+
+  if (policy === 'canvas') {
+    // Auto-enroll: the browser probably has this family even though no atlas
+    // was baked for it. Real typeface, canvas-SDF quality.
+    registerCanvasFont(family);
+    return {
+      entry: null,
+      dynamicFace: getDynamicFace(family, weight, style),
+      resolved: { weight, style },
+      synthetic: { bold: false, italic: false },
+      source: 'canvas',
+    };
+  }
 
   if (policy === 'substitute') {
     const fallback = getDefaultFontFamily() ?? firstRegisteredFamily();

@@ -6,6 +6,15 @@
  * invisible".
  */
 
+/**
+ * What happens when a requested family has no baked atlas:
+ *   - `'substitute'` — render with the default family (see
+ *     `setDefaultFontFamily`), reporting the swap on `ResolveResult.substituted`.
+ *   - `'canvas'` — auto-enroll the family with the dynamic canvas-SDF
+ *     rasterizer. The consumer gets the *real* typeface if the browser has it,
+ *     at canvas-SDF quality rather than baked-MSDF quality.
+ *   - `'none'` — hard miss; the run renders nothing.
+ */
 export type FontFallbackPolicy = 'substitute' | 'canvas' | 'none';
 
 let policy: FontFallbackPolicy = 'substitute';

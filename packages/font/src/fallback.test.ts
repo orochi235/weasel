@@ -1,11 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { resolveFontVariant, getFont, _resetFontRegistryForTests } from './registerFont';
 import { setDefaultFontFamily, setFontFallbackPolicy, _resetFallbackForTests } from './fallback';
+import { _resetDynamicFontsForTests } from './dynamic/dynamicAtlas';
 import { registerTestFont } from './testing/registerTestFont';
 
 beforeEach(() => {
   _resetFontRegistryForTests();
   _resetFallbackForTests();
+  // Canvas enrollment is process-global too: without this a family the
+  // 'canvas' policy auto-enrolled stays enrolled for every later test.
+  _resetDynamicFontsForTests();
 });
 
 describe('substitute policy', () => {
@@ -50,6 +54,28 @@ describe('substitute policy', () => {
     const result = resolveFontVariant('AlsoGhost', 400, 'normal');
 
     expect(result.entry).toBeNull();
+  });
+});
+
+describe('canvas policy', () => {
+  it('auto-registers an unknown family with the dynamic rasterizer', () => {
+    setFontFallbackPolicy('canvas');
+
+    const result = resolveFontVariant('Helvetica Neue', 400, 'normal');
+
+    expect(result.source).toBe('canvas');
+    expect(result.dynamicFace).toBeDefined();
+    expect(result.substituted).toBeUndefined();
+  });
+
+  it('prefers a baked atlas over canvas enrollment', async () => {
+    await registerTestFont('Inter', 400, 'normal');
+    setFontFallbackPolicy('canvas');
+
+    const result = resolveFontVariant('Inter', 400, 'normal');
+
+    expect(result.source).toBe('atlas');
+    expect(result.entry).not.toBeNull();
   });
 });
 
