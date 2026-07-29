@@ -8,10 +8,13 @@
  *
  * A run's `letterSpacing` (world units, so it does not scale with `fontSize`)
  * is added to the advance *after* every character of that run, including the
- * last one on a line — matching CSS `letter-spacing`, so the contenteditable
- * edit overlay and the canvas agree. Trailing tracking therefore widens the
- * measured line width and counts toward wrapping. Spaces are tracked like any
- * other character; a newline is not (it consumes no advance).
+ * last one on a line — the CSS `letter-spacing` rule, chosen so a DOM overlay
+ * rendering the same text can be made to agree. Trailing tracking therefore
+ * widens the measured line width and counts toward wrapping. Spaces are
+ * tracked like any other character; a newline is not (it consumes no advance).
+ * One caveat against CSS: tracking is applied per *code point*, not per
+ * grapheme cluster, so `e` + U+0301 takes tracking twice where CSS would
+ * space the cluster once.
  *
  * Word wrap is applied when `maxWidth` is finite: words are committed to
  * a new line when they would exceed the current line width. Forced line
@@ -183,7 +186,7 @@ export function layoutRuns(
     const scale = run.fontSize / font.info.size;
     // World units — deliberately not scaled by fontSize, so the same tracking
     // opens the same visual gap whatever size the run is set at.
-    const tracking = run.letterSpacing ?? 0;
+    const tracking = run.letterSpacing;
 
     for (const ch of [...run.text]) {
       const cp = ch.codePointAt(0)!;
@@ -325,10 +328,11 @@ export function layoutRuns(
       // Every branch below moves the pen by exactly this, so glyph positions
       // stay in step with the line width accumulated above.
       const step = e.advance + e.tracking;
-      if (e.advance === 0) { penX += step; continue; }
-      if (e.resolved.source === 'canvas' && (e.glyph.width === 0 || e.glyph.page < 0)) {
-        // Dynamic glyph not baked yet (or blank, e.g. space): advance the pen
-        // so the line doesn't reflow when the bake lands, but emit no quad.
+      // Nothing to paint — a zero-advance glyph (e.g. a combining mark), a
+      // zero-area one (a space in either source), or a dynamic glyph not baked
+      // yet (page < 0). Advance the pen anyway so the line doesn't reflow when
+      // a bake lands, and so a space's tracking still separates its neighbors.
+      if (e.advance === 0 || e.glyph.width === 0 || e.glyph.page < 0) {
         penX += step;
         continue;
       }

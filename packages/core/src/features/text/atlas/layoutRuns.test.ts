@@ -293,7 +293,7 @@ describe('layoutRuns — canvas-dynamic faces', () => {
     // The space emits no quad but must still carry its tracking, so 'B' moves
     // by two characters' worth — otherwise quads drift out of the line width.
     const bx = (o: ReturnType<typeof layoutRuns>) =>
-      o.groups.flatMap((g) => g.quads.map((q) => q.x0)).sort((a, b) => a - b)[1];
+      o.groups.flatMap((g) => g.quads.map((q) => q.x0))[1];
     expect(bx(tracked) - bx(plain)).toBeCloseTo(10);
   });
 
@@ -312,8 +312,10 @@ describe('layoutRuns — letterSpacing', () => {
   //   untracked 'AB': width 44, quad x0s [1, 24].
   const OPTS = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
   const ORIGIN = { x: 0, y: 0 };
+  // Emission order, deliberately unsorted — sorting would hide a bug that
+  // reorders quads, and every case here lays out into a single group.
   const xs = (o: ReturnType<typeof layoutRuns>) =>
-    o.groups.flatMap((g) => g.quads.map((q) => q.x0)).sort((a, b) => a - b);
+    o.groups.flatMap((g) => g.quads.map((q) => q.x0));
 
   it('adds tracking after every glyph, including the last', async () => {
     await registerFixture('inter', [{}]);
@@ -363,10 +365,10 @@ describe('layoutRuns — letterSpacing', () => {
     expect(plain.bounds.width).toBeCloseTo(53);
     // Three characters tracked: A, the space, and B.
     expect(tracked.bounds.width).toBeCloseTo(53 + 12);
-    // (A zero-size quad is emitted for the space, so there are three x's.)
-    // 'B' sits after A + space, so it picks up two characters' worth of tracking.
-    expect(xs(plain)).toHaveLength(3);
-    expect(xs(tracked)[2] - xs(plain)[2]).toBeCloseTo(8);
+    // The space paints nothing, so only A and B emit quads — but its tracking
+    // still separates them: 'B' picks up two characters' worth.
+    expect(xs(plain)).toHaveLength(2);
+    expect(xs(tracked)[1] - xs(plain)[1]).toBeCloseTo(8);
   });
 
   it('applies each run’s own tracking to the gap that follows its glyphs', async () => {
@@ -387,13 +389,27 @@ describe('layoutRuns — letterSpacing', () => {
     expect(trackedSecond.bounds.width).toBeCloseTo(54);
   });
 
+  const lineCount = (o: ReturnType<typeof layoutRuns>) =>
+    new Set(o.groups.flatMap((g) => g.quads.map((q) => q.y0))).size;
+
+  it('counts the tracking of the word being fitted, not just of the line so far', async () => {
+    await registerFixture('inter', [{}]);
+    // The wrap decision is `lineSoFar + nextWord > maxWidth`. Both terms must
+    // include tracking; this case is chosen so only the *word* term decides.
+    //   ls 0:  'AB'=44, ' '=8  → 52 + 44 = 96 ≤ 130 → one line.
+    //   ls 10: 'AB'=64, ' '=18 → 82 + 64 = 146 > 130 → two lines.
+    // Drop tracking from the word scan and the second case measures the word
+    // at 44 → 126 ≤ 130 → it stays on one line and this test fails.
+    const wrapOpts = { maxWidth: 130, lineHeight: 1.2, align: 'left' as const };
+    const at = (letterSpacing: number) =>
+      layoutRuns([{ ...RUN_PLAIN('AB AB'), letterSpacing }], wrapOpts, ORIGIN);
+    expect(lineCount(at(0))).toBe(1);
+    expect(lineCount(at(10))).toBe(2);
+  });
+
   it('counts toward wrapping, so tracked text breaks into more lines', async () => {
     await registerFixture('inter', [{}]);
     const wrapOpts = { maxWidth: 150, lineHeight: 1.2, align: 'left' as const };
-    // Count baselines, not y0 — the synthesized space glyph has yoffset 0 and
-    // so lands at a different y0 than the letters on the same line.
-    const lineCount = (o: ReturnType<typeof layoutRuns>) =>
-      new Set(o.groups.flatMap((g) => g.quads.map((q) => q.baselineY))).size;
     const text = 'AB AB AB AB AB AB';
     const plain = layoutRuns([RUN_PLAIN(text)], wrapOpts, ORIGIN);
     const tracked = layoutRuns([{ ...RUN_PLAIN(text), letterSpacing: 10 }], wrapOpts, ORIGIN);
