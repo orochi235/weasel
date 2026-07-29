@@ -199,3 +199,15 @@ everything else.
 6. **`ToolOptionsBar`** gets a Storybook story; the Character controls get an
    interaction test asserting a toggle reaches `applyStyleToSelection` with
    the right range.
+
+## 11. Release
+
+Lands as part of **0.7.0** — see §10 of the font-package spec for the
+mechanics. This spec contributes its own `minor` changeset covering the
+`TextStyle` / `StyledRun` additions, the `useTextEdit` return-shape growth,
+the `ToolOptionsBar` export, and `@weasel-js/ui`'s nested-path model change.
+
+Because the release is a single lockstep bump, the two specs can merge in
+either order once both are green; only the *publish* has to wait for both. If
+spec 1 ships alone for any reason, it ships as 0.7.0 and this spec's changeset
+becomes 0.8.0 rather than retroactively joining.

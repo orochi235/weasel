@@ -174,8 +174,8 @@ no-eviction v1 behavior.
    through the dynamic tier; `'none'` reproduces today's `entry: null`.
    Warn-once asserted by spying on the console across repeated resolves.
 4. **Publish manifests** — `scripts/check-publish-manifests.mjs` and
-   `scripts/smoke-consumer-bundle.mjs` cover the new package, and it joins the
-   lockstep `fixed` changeset group at `0.6.0`.
+   `scripts/smoke-consumer-bundle.mjs` cover the new package. Versioning is
+   §10.
 5. **Singleton audit** — `scripts/smoke-consumer-bundle.mjs` statically
    asserts that importing `registerFont` from both `weasel-js/renderer` and
    `@weasel-js/core/renderer` does not bundle two copies, using the font
@@ -184,3 +184,28 @@ no-eviction v1 behavior.
    re-export into `@weasel-js/font`, so the canary must be extended to assert
    that `@weasel-js/font` itself is single-instance — otherwise the check
    silently starts proving something weaker than it did.
+
+## 10. Release
+
+Both specs land together as **0.7.0**. Mechanically:
+
+- `@weasel-js/font` joins the `fixed` array in `.changeset/config.json`. A
+  fixed group aligns every member's version, so omitting it means the new
+  package silently versions on its own — the one packaging mistake that is
+  invisible until a consumer installs mismatched pins.
+- The package is created at `0.6.0` so it enters the group at the current
+  lockstep version and rides the same bump, rather than appearing from
+  nowhere at `0.7.0`.
+- Each spec's implementation lands a `minor` changeset. On 0.x, `minor` is
+  `0.6.0 → 0.7.0`, and the fixed group carries all twelve packages with it.
+  The version bump is not a separate step and no `package.json` version is
+  hand-edited.
+- `updateInternalDependencies: "patch"` rewrites core's pin on
+  `@weasel-js/font` and hud's new pin in the same run.
+- The `weasel-js` alias package gains no `/font` entry. Its dist entries are
+  audited as shims re-exporting **core**, and it remains unpublishable under
+  that name regardless (`docs/TODO.md`, Plugins & packaging).
+
+The 0.x minor is also the right moment for §4's `_markAllFontsNotUploaded` →
+`markAllFontsNotUploaded` rename, which is technically breaking for anyone who
+reached past the underscore.
