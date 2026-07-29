@@ -20,6 +20,7 @@ export * from './components/SidebarPanel';
 export * from './components/ToolButton';
 export * from './components/ToolGroup';
 export * from './components/ToolPalette';
+export * from './components/ToolOptionsBar';
 export * from './components/Field';
 export * from './components/Input';
 export * from './components/Checkbox';

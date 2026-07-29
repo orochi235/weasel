@@ -1,0 +1,45 @@
+/* Horizontal strip reserved above the workspace for contextual tool
+   options. Fixed height so mounting/unmounting content never resizes
+   the workspace beneath it — that's the whole reason this row exists
+   as permanent chrome rather than an on-demand overlay.
+
+   Overflow: when controls exceed the available width, `.controls`
+   scrolls horizontally rather than wrapping (which would grow the row
+   and defeat the fixed-height guarantee above) or clipping (which
+   would hide controls with no way to reach them). A flyout/long-press
+   affordance was considered and rejected — grouped, directly visible
+   layouts are preferred in this repo. */
+
+.root {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--wzl-tb-height, 32px);
+  padding: 0 8px;
+  background: var(--wzl-panel-bg);
+  border-bottom: 1px solid var(--wzl-panel-border);
+  color: var(--wzl-text);
+  overflow: hidden;
+}
+
+.label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--wzl-text-muted);
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
