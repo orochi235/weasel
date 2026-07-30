@@ -15,6 +15,7 @@
       "@weasel-js/theme",
       "@weasel-js/ui",
       "@weasel-js/hud",
+      "@weasel-js/labkit",
       "weasel-js"
     ]
   ],
