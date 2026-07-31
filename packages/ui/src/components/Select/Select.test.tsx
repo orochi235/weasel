@@ -45,4 +45,48 @@ describe('Select', () => {
     render(<Select label="Color" options={OPTIONS} placeholder="Pick one" />);
     expect(screen.getByRole('button', { name: /Pick one/ })).toBeTruthy();
   });
+
+  describe('textValue', () => {
+    /** React Aria warns per row when it can't read a string off the
+     *  children. Each row draws a check mark beside its label, so it never
+     *  can — the string has to be supplied. */
+    function warningsDuring(ui: React.ReactElement): string[] {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      render(ui);
+      act(() => { fireEvent.click(screen.getByRole('button', { name: /Color/ })); });
+      const messages = warn.mock.calls.map((c) => String(c[0]));
+      warn.mockRestore();
+      return messages.filter((m) => m.includes('textValue'));
+    }
+
+    it('derives it from a string label — no warning, nothing for callers to restate', () => {
+      expect(warningsDuring(<Select label="Color" options={OPTIONS} />)).toEqual([]);
+    });
+
+    it('derives it from string children on an explicit row', () => {
+      expect(warningsDuring(
+        <Select label="Color">
+          <SelectItem id="r">Red</SelectItem>
+        </Select>,
+      )).toEqual([]);
+    });
+
+    it('takes an explicit textValue for a label built from elements', () => {
+      expect(warningsDuring(
+        <Select
+          label="Color"
+          options={[{ value: 'r', label: <em>Red</em>, textValue: 'Red' }]}
+        />,
+      )).toEqual([]);
+    });
+
+    it('keeps type-to-select working off the derived value', () => {
+      const onChange = vi.fn();
+      render(<Select label="Color" options={OPTIONS} onSelectionChange={onChange} />);
+      act(() => { fireEvent.click(screen.getByRole('button', { name: /Color/ })); });
+      const listbox = screen.getByRole('listbox');
+      act(() => { fireEvent.keyDown(listbox, { key: 'B' }); fireEvent.keyUp(listbox, { key: 'B' }); });
+      expect(screen.getByRole('option', { name: 'Blue' })).toHaveAttribute('data-focused', 'true');
+    });
+  });
 });

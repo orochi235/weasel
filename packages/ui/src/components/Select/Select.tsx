@@ -20,6 +20,13 @@ export type SelectOption = {
   value: string;
   label: ReactNode;
   isDisabled?: boolean;
+  /**
+   * Plain-text form of `label`, for type-to-select and screen readers.
+   * Only needed when `label` isn't a bare string — a label built from
+   * elements has no text React Aria can read off it. A string label
+   * supplies this itself.
+   */
+  textValue?: string;
 };
 
 type Key = string | number;
@@ -96,7 +103,12 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         <RACListBox className={s.listbox}>
           {options !== undefined
             ? options.map((o) => (
-                <SelectItem key={String(o.value)} id={o.value} isDisabled={o.isDisabled}>
+                <SelectItem
+                  key={String(o.value)}
+                  id={o.value}
+                  isDisabled={o.isDisabled}
+                  textValue={o.textValue}
+                >
                   {o.label}
                 </SelectItem>
               ))
@@ -112,9 +124,27 @@ export type SelectItemProps = Omit<RACListBoxItemProps, 'className' | 'children'
   className?: string;
 };
 
-export function SelectItem({ children, className, ...rest }: SelectItemProps) {
+/**
+ * Every row renders a check mark beside its label, so from React Aria's
+ * side the children are never plain text and it can't derive the string
+ * type-to-select and screen readers need — it warns once per row. A string
+ * label already *is* that string, so derive it rather than making every
+ * call site restate it; anything richer has to say what it reads as.
+ */
+function textValueOf(children: ReactNode, explicit: string | undefined): string | undefined {
+  if (explicit !== undefined) return explicit;
+  return typeof children === 'string' || typeof children === 'number'
+    ? String(children)
+    : undefined;
+}
+
+export function SelectItem({ children, className, textValue, ...rest }: SelectItemProps) {
   return (
-    <RACListBoxItem {...rest} className={[s.option, className].filter(Boolean).join(' ')}>
+    <RACListBoxItem
+      {...rest}
+      textValue={textValueOf(children, textValue)}
+      className={[s.option, className].filter(Boolean).join(' ')}
+    >
       <svg className={s.check} viewBox="0 0 10 10" aria-hidden="true">
         <polyline points="1.5,5 4,7.5 8.5,3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
