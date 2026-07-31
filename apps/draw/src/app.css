@@ -465,6 +465,15 @@ html, body, #root {
   margin-left: auto;
 }
 
+/* Build identity (kit version + compile date). Recedes behind the live
+   readouts either side of it — it's reference material, not state. */
+.wd-build {
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: help;
+}
+
 /* --- Active fill/stroke swatches (Illustrator-style overlap) --------- */
 /* Wraps the paired swatches + the "None" toggle below them. */
 .wd-active-swatches-group {

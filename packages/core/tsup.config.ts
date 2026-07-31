@@ -1,6 +1,20 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'tsup';
 
+// Bake this package's own version into `src/version.ts` so consumers can ask
+// what kit they're running (`import { VERSION } from '@weasel-js/core'`).
+// Reading package.json here means changesets' release bump is the only edit —
+// there's no generated file to keep in sync. In-repo builds resolve core's
+// source instead of this bundle and get the same define from
+// `scripts/vite-build-info.ts`.
+const { version } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+) as { version: string };
+
 export default defineConfig({
+  define: {
+    __WEASEL_CORE_VERSION__: JSON.stringify(version),
+  },
   entry: {
     index: 'src/index.ts',
     move: 'src/import-shims/move.ts',

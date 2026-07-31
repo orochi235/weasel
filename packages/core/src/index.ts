@@ -52,6 +52,9 @@
  *   import { snapToGrid } from '@weasel-js/core/insert';
  */
 
+// ─── Build identity ─────────────────────────────────────────────────────────
+export { VERSION } from './version';
+
 // ─── Features: grids, multi-viewport composition ────────────────────────────
 export * from './features/grid';
 export * from './features/viewports';

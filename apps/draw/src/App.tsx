@@ -97,6 +97,7 @@ import {
   PropertySelect,
 } from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
+import { buildLabel, buildTitle } from './buildInfo';
 import {
   CharacterOptions,
   FontFamilySelect,
@@ -1652,6 +1653,7 @@ function StatusBar({
       <span>stroke: {paintLabel(colors.stroke)}</span>
       <span className="wd-statusbar-spacer" />
       <span>zoom: {(view.scale.x * 100).toFixed(0)}%</span>
+      <span className="wd-build" title={buildTitle()}>{buildLabel()}</span>
     </div>
   );
 }

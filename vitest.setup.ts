@@ -1,5 +1,18 @@
 import '@testing-library/jest-dom';
 
+import { weaselDefines } from './scripts/vite-build-info';
+
+// Build-identity globals (`__WEASEL_CORE_VERSION__`, `__WEASEL_BUILD_DATE__`).
+// Real builds get these from vite `define`, but vitest transforms modules
+// through its own SSR pipeline, where define substitution doesn't run — so
+// under test the identifiers stay live and resolve against globalThis. Every
+// consumer guards with `typeof x === 'string'`, which is exactly what makes
+// that work. Assigning the same values the vite configs inject keeps
+// `VERSION` truthful in tests instead of the unknown-build fallback.
+for (const [name, json] of Object.entries(weaselDefines(process.cwd()))) {
+  (globalThis as Record<string, unknown>)[name] = JSON.parse(json);
+}
+
 /**
  * jsdom does not ship PointerEvent. When @testing-library/dom tries to use
  * window.PointerEvent to create pointer events it falls back to window.Event,

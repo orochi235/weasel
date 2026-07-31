@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { existsSync, statSync, createReadStream } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { weaselAliases } from './scripts/vite-aliases';
+import { weaselDefines } from './scripts/vite-build-info';
 import { demoTimestamps } from './scripts/vite-demo-timestamps';
 
 /**
@@ -76,6 +77,7 @@ export default defineConfig({
     ]),
   },
   plugins: [react(), serveApiDocsInDev(), demoTimestamps({ root: __dirname })],
+  define: weaselDefines(__dirname),
   // Pre-bundle demo-only deps at server start so they don't trigger lazy
   // re-optimization on first import — that race produces 504 "Outdated
   // Optimize Dep" responses on slow ESM packages with many internal modules.

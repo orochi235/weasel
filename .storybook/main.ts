@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mergeConfig } from 'vite';
 import { weaselAliases } from '../scripts/vite-aliases.ts';
+import { weaselDefines } from '../scripts/vite-build-info.ts';
 import { weaselTokensPlugin } from '../scripts/vite-plugin-weasel-tokens.ts';
 // apps/draw's inspector components import `virtual:weasel-trait-schemas`.
 // Storybook needs the plugin that serves it for the same reason
@@ -53,6 +54,7 @@ const config: StorybookConfig = {
         ]),
       },
       plugins: [weaselTokensPlugin({ repoRoot }), traitSchemasPlugin({ repoRoot })],
+      define: weaselDefines(repoRoot),
     });
   },
 };

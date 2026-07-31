@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 import { weaselAliases } from '../../scripts/vite-aliases';
+import { weaselDefines } from '../../scripts/vite-build-info';
 import { callbackSourcePlugin } from './vite-plugin-callback-source';
 import { traitSchemasPlugin } from './vite-plugin-trait-schemas';
 
@@ -42,6 +43,7 @@ export default defineConfig({
   ],
   server: { port: 5174 },
   define: {
+    ...weaselDefines(repoRoot),
     __WEASEL_REPO_ROOT__: JSON.stringify(repoRoot),
   },
   build: {
