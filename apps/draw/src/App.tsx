@@ -62,6 +62,7 @@ import {
   defaultCommitAdapter,
   inferredNodeProperties,
   inferredNodeRouting,
+  resolveTextStyle,
   type ToolPrefColor,
   useClipboardOps,
   type ClipboardSnapshot,
@@ -390,6 +391,24 @@ const WD_RENDERERS: Record<string, PropertyRenderer> = {
 
 // ─── Right sidebar: LayerList + SelectionPanel ──────────────────────────────
 
+/**
+ * The color chip on a layer row. Paths keep their paint in `data.fill`;
+ * text keeps its own in `data.style.fill`, following the kit's `FillStyle`
+ * model, and carries no `data.fill` at all — so reading only the latter left
+ * every text row with a blank chip.
+ *
+ * `resolveTextStyle` is the same function the renderer resolves through, so
+ * an unstyled text node reports the black it actually paints rather than
+ * nothing. Non-solid paints (gradient, pattern) have no single color to show
+ * and return undefined until the row can draw a real preview.
+ */
+function layerSwatch(data: WeaselDrawData): string | undefined {
+  if (typeof data.fill === 'string') return data.fill;
+  if (data.text === undefined) return undefined;
+  const { fill } = resolveTextStyle(data.style);
+  return 'color' in fill ? fill.color : undefined;
+}
+
 interface RightSidebarProps {
   scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
   selection: ReturnType<typeof useSelection>;
@@ -424,7 +443,7 @@ function RightSidebar({
       const data = node.data as WeaselDrawData;
       return {
         label: data.text ?? data.label ?? node.id,
-        swatch: typeof data.fill === 'string' ? data.fill : undefined,
+        swatch: layerSwatch(data),
       };
     },
   });
@@ -1397,10 +1416,24 @@ function EditorWithSharedScene({
   useEffect(() => {
     const prev = prevEditingIdRef.current;
     prevEditingIdRef.current = textEdit.editingId;
-    if (prev != null && textEdit.editingId == null && modeId === 'text-edit') {
-      modality.machine.exitMode();
+    if (prev == null || textEdit.editingId != null) return;
+    if (modeId === 'text-edit') modality.machine.exitMode();
+
+    // An edit that ends with no text leaves a node that paints nothing and
+    // still picks: a full-size invisible rectangle over the canvas, which is
+    // most of why text picking felt haunted. Every editor discards an empty
+    // text box on commit; so do we, and as a history entry so it's undoable.
+    const nid = asNodeId(prev);
+    const node = scene.get(nid);
+    if (node && node.kind === 'leaf') {
+      const data = node.data as WeaselDrawData;
+      const isTextNode = data.text !== undefined;
+      const hasRuns = Array.isArray(data.runs) && data.runs.length > 0;
+      if (isTextNode && data.text === '' && !hasRuns) {
+        scene.batch('Discard empty text', () => { scene.remove(nid); });
+      }
     }
-  }, [modeId, textEdit.editingId, modality.machine]);
+  }, [modeId, textEdit.editingId, modality.machine, scene]);
 
   // ...and the same seam from the other side. The modality key handler
   // intercepts Escape at capture phase and stops propagation, so the kit's
