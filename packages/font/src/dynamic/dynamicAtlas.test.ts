@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   registerCanvasFont, isCanvasFont, unregisterCanvasFont, getDynamicFace,
-  autoEnrollCanvasFont,
+  autoEnrollCanvasFont, listCanvasFonts,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
   PAGE_SIZE, _getPagesForTests,
   resetBakeBudget, subscribeGlyphReady,
@@ -46,6 +46,55 @@ describe('canvas font registry', () => {
     expect(isCanvasFont('Futura')).toBe(true);
     unregisterCanvasFont('Futura');
     expect(isCanvasFont('Futura')).toBe(false);
+  });
+});
+
+describe('listCanvasFonts enumerates what the dynamic tier will serve', () => {
+  it('lists explicitly registered families with their provenance', () => {
+    registerCanvasFont('Impact');
+    registerCanvasFont('Georgia');
+    expect(listCanvasFonts()).toEqual([
+      { family: 'Georgia', enrollment: 'explicit' },
+      { family: 'Impact', enrollment: 'explicit' },
+    ]);
+  });
+
+  it('is empty before anything is enrolled', () => {
+    expect(listCanvasFonts()).toEqual([]);
+  });
+
+  it('drops an unregistered family', () => {
+    registerCanvasFont('Impact');
+    unregisterCanvasFont('Impact');
+    expect(listCanvasFonts()).toEqual([]);
+  });
+
+  it('reports service, not membership — same rule as isCanvasFont', () => {
+    setFontFallbackPolicy('canvas');
+    autoEnrollCanvasFont('Helvetica Neue');
+    registerCanvasFont('Georgia');
+    expect(listCanvasFonts()).toEqual([
+      { family: 'Georgia', enrollment: 'explicit' },
+      { family: 'Helvetica Neue', enrollment: 'auto' },
+    ]);
+
+    // The auto-enrolled one stops being served when the policy changes; the
+    // explicit one outranks every policy.
+    setFontFallbackPolicy('substitute');
+    expect(listCanvasFonts()).toEqual([{ family: 'Georgia', enrollment: 'explicit' }]);
+  });
+
+  it('agrees with isCanvasFont for every enrolled family', () => {
+    setFontFallbackPolicy('canvas');
+    autoEnrollCanvasFont('Helvetica Neue');
+    registerCanvasFont('Georgia');
+    for (const policy of ALL_POLICIES) {
+      setFontFallbackPolicy(policy);
+      const listed = listCanvasFonts().map((c) => c.family);
+      for (const family of ['Helvetica Neue', 'Georgia']) {
+        expect(listed.includes(family), `${family} under ${policy}`).toBe(isCanvasFont(family));
+      }
+    }
   });
 });
 

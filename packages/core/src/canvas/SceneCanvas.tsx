@@ -255,7 +255,10 @@ export type ToolBundle = 'minimal' | 'standard' | 'exhaustive';
  *  non-empty tool list. */
 export const BUNDLE_TOOLS: Record<ToolBundle, readonly BuiltinToolId[]> = {
   minimal: ['select', 'hand'],
-  standard: ['select', 'rotate', 'hand', 'rect', 'ellipse', 'line', 'pencil'],
+  // No `pencil`: freehand is a specialist instrument, not part of the
+  // everyday shape-drawing set. It stays in `exhaustive`, which means
+  // everything.
+  standard: ['select', 'rotate', 'hand', 'rect', 'ellipse', 'line'],
   exhaustive: [
     'select', 'rotate', 'hand',
     'rect', 'ellipse', 'line', 'polygon', 'star', 'pen', 'pencil',

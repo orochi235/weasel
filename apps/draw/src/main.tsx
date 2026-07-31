@@ -8,6 +8,7 @@ import {
   SelectionContextProvider,
 } from '@weasel-js/core';
 import { App } from './App';
+import { registerAvailableFonts } from './fonts';
 import { ToolkitBuilder } from './dev/ToolkitBuilder';
 import { RegistryInspector } from './dev/RegistryInspector';
 
@@ -28,6 +29,11 @@ await registerFont(
 ).catch((err) => {
   console.warn('WeaselDraw: failed to register default font', err);
 });
+
+// Everything past the baked default comes from the machine: each candidate
+// family that's actually installed is enrolled with the kit's dynamic
+// canvas-SDF tier, which rasterizes glyphs on demand. See `./fonts`.
+registerAvailableFonts();
 
 /** Hash-based router: `#/dev/toolkits` mounts ToolkitBuilder, anything else
  *  mounts the main App. Independent surfaces — they don't share providers

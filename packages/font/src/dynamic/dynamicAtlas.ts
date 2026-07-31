@@ -51,6 +51,15 @@ interface DynamicPage {
 
 interface PendingBake { char: BmFontChar; raster: RasterizedGlyph; }
 
+/** One family served by the dynamic canvas-SDF tier. See `listCanvasFonts`. */
+export interface CanvasFontEntry {
+  family: string;
+  /** `'explicit'` — a `registerCanvasFont` call; `'auto'` — the `'canvas'`
+   *  fallback policy enrolled it on a miss, and the enrollment lapses if
+   *  that policy changes. */
+  enrollment: 'explicit' | 'auto';
+}
+
 const canvasFamilies = new Set<string>();
 // Enrollment provenance. A family the `'canvas'` fallback policy enrolled on
 // its own is only canvas-served while that policy is in force; one a consumer
@@ -102,6 +111,31 @@ export function registerCanvasFont(family: string): void {
 export function isCanvasFont(family: string): boolean {
   if (!canvasFamilies.has(family)) return false;
   return !autoEnrolledFamilies.has(family) || getFontFallbackPolicy() === 'canvas';
+}
+
+/**
+ * Every family the dynamic canvas-SDF tier will serve *right now* — the
+ * enumeration companion to `isCanvasFont`, which answers one family at a
+ * time. Same "service, not membership" rule: an auto-enrolled family appears
+ * only while the `'canvas'` policy is in force.
+ *
+ * Exists so a consumer can offer these families in a font picker.
+ * `listFonts` reports the baked registry alone, so without this the only
+ * ways to present canvas-served families were to hard-code a list beside the
+ * `registerCanvasFont` calls or to omit them — a UI inventing its own answer
+ * about what will render.
+ *
+ * `enrollment` distinguishes a consumer's explicit `registerCanvasFont` from
+ * a lazy enrollment the policy made on a miss; both render identically, but
+ * only the explicit one survives a policy change.
+ */
+export function listCanvasFonts(): readonly CanvasFontEntry[] {
+  const out: CanvasFontEntry[] = [];
+  for (const family of canvasFamilies) {
+    if (!isCanvasFont(family)) continue;
+    out.push({ family, enrollment: autoEnrolledFamilies.has(family) ? 'auto' : 'explicit' });
+  }
+  return out.sort((a, b) => a.family.localeCompare(b.family));
 }
 
 /**

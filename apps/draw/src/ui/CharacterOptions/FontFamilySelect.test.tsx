@@ -9,10 +9,12 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 const listFonts = vi.fn();
+const listCanvasFonts = vi.fn();
 const resolveFontVariant = vi.fn();
 
 vi.mock('@weasel-js/font', () => ({
   listFonts: () => listFonts(),
+  listCanvasFonts: () => listCanvasFonts(),
   resolveFontVariant: (...args: unknown[]) => resolveFontVariant(...args),
 }));
 
@@ -24,6 +26,8 @@ function openListbox(): void {
 
 beforeEach(() => {
   listFonts.mockReset();
+  listCanvasFonts.mockReset();
+  listCanvasFonts.mockReturnValue([]);
   resolveFontVariant.mockReset();
   resolveFontVariant.mockReturnValue({ substituted: undefined });
 });
@@ -74,6 +78,38 @@ describe('FontFamilySelect', () => {
       <FontFamilySelect value="Inter" weight={700} fontStyle="italic" onChange={vi.fn()} />,
     );
     expect(resolveFontVariant).toHaveBeenCalledWith('Inter', 700, 'italic');
+  });
+
+  it('offers canvas-served families alongside baked ones', () => {
+    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listCanvasFonts.mockReturnValue([
+      { family: 'Georgia', enrollment: 'explicit' },
+      { family: 'Impact', enrollment: 'explicit' },
+    ]);
+    render(<FontFamilySelect value="Georgia" onChange={vi.fn()} />);
+    openListbox();
+    expect(screen.getByRole('option', { name: 'sans-serif' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Georgia' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Impact' })).toBeInTheDocument();
+  });
+
+  it('does not mark a canvas-served family as unloaded', () => {
+    // Regression guard: before both tiers were listed, selecting one of these
+    // fell through to the unregistered-value path and the menu claimed a
+    // family that renders fine was "not loaded".
+    listFonts.mockReturnValue([{ family: 'sans-serif', variants: [] }]);
+    listCanvasFonts.mockReturnValue([{ family: 'Georgia', enrollment: 'explicit' }]);
+    render(<FontFamilySelect value="Georgia" onChange={vi.fn()} />);
+    openListbox();
+    expect(screen.queryByRole('option', { name: /not loaded/ })).not.toBeInTheDocument();
+  });
+
+  it('lists a family once when both tiers report it', () => {
+    listFonts.mockReturnValue([{ family: 'Georgia', variants: [] }]);
+    listCanvasFonts.mockReturnValue([{ family: 'Georgia', enrollment: 'auto' }]);
+    render(<FontFamilySelect value="Georgia" onChange={vi.fn()} />);
+    openListbox();
+    expect(screen.getAllByRole('option', { name: 'Georgia' })).toHaveLength(1);
   });
 
   it('shows a Mixed placeholder with no selection', () => {

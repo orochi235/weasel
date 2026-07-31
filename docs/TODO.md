@@ -16,6 +16,13 @@ Priority tags:
 
 ## High-priority index
 
+### Next up
+
+- **Loupe tool** → [Tools & gestures](#tools--gestures)
+- **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
+- **Stroked text** → [Text](#text)
+- **Geometry-accurate picking (no hits in a shape's holes)** → [Tools & gestures](#tools--gestures)
+
 ### P1 — foundational genericity gaps
 
 **Plugins & packaging**
@@ -52,6 +59,28 @@ Priority tags:
 ---
 
 ## Tools & gestures
+
+- **Loupe tool.** A magnifier that follows the pointer and paints a
+  zoomed inset of the scene under it — for placing anchors, checking seams,
+  and picking colors at pixel accuracy without disturbing the view. Open
+  questions: whether it re-renders the scene at a higher zoom into an offscreen
+  target or samples the existing backing store (sampling is cheap but blurs on
+  a HiDPI display); whether it's a tool that takes over the pointer, an
+  always-available modifier-held overlay, or a HUD widget; and whether it
+  belongs in `@weasel-js/hud` (it's chrome, not scene content) or ships as a
+  built-in tool. Requested 2026-07-31.
+
+- **Geometry-accurate picking.** A click inside a shape's *hole* — the
+  counter of a donut, the gap between the arms of a compound path, the empty
+  middle of a U — currently picks the shape. Picking resolves against the
+  pose box (and, for paths, a coarse test) rather than the filled region, so
+  overlapping objects are chosen by stacking order over a box that mostly
+  isn't ink. What's wanted is a fill-rule-correct test: even-odd / nonzero
+  crossing count against the actual subpaths, with stroke width taken into
+  account so a hairline outline is still grabbable. `polygonHitTestRect` and
+  `splitSubpaths` are the pieces in hand. Reported against the hand tool, but
+  the picking path is shared — fix it once, below the tools. Requested
+  2026-07-31.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
@@ -182,6 +211,22 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **Fill-mode expansion in WeaselDraw — gradients and textures.** The engine
+  already has the paint model: `FillStyle` (`packages/core/src/core/paint-types.ts`)
+  is a tagged union covering solid, pattern, and linear / radial / conic
+  gradients, with `GradientRampCache` + `gradFill.ts` behind them and
+  `createTilePattern` / the `patterns-builtin` catalog producing texture
+  handles. What's missing is entirely app-side: WeaselDraw's data shape carries
+  `fill` as a color string, its swatches set colors, and nothing can express a
+  paint that isn't solid. Needs, roughly in order: widen `WeaselDrawData.fill`
+  to a `FillStyle` (with a string treated as solid for back-compat, since
+  persisted docs carry strings); a fill-kind switch in the Properties panel; a
+  gradient editor (stop list + angle/center handles — `paintGradientTrack` and
+  `CurveEditor` in weasel-ui are the starting pieces); on-canvas gradient
+  handles; and a texture picker over the builtin patterns before any
+  image-upload story. SVG export needs matching `<linearGradient>` /
+  `<pattern>` emission. Requested 2026-07-31.
+
 - **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`). Defer until a real use case lands.
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three real consumers now exist (plasma / ripple / voronoi panels), enough to validate the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
@@ -191,6 +236,23 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Text
+
+- **Stroked text.** WeaselDraw exposes stroke color + width on text nodes and
+  neither renders — the control lies. The fix is cheap and needs no
+  glyph-to-path conversion: the MSDF shader (`packages/font/src/textSdf.ts`)
+  already reduces each fragment to a signed distance and already shifts its
+  threshold for synthetic bold (`u_synthBold`), which is the same mechanism an
+  outline needs. Add `u_outlineWidth` + `u_outlineColor`, threshold a second
+  time at `0.5 - outlineWidth` for the outer edge, and composite
+  `mix(outline, fill, fillAlpha)` against the outer alpha — one extra
+  smoothstep, no second pass, no new geometry. Then plumb the node's
+  `stroke` / `strokeWidth` through `layoutRuns` → the text draw command,
+  converting world px to SDF units the way `u_synthBold` already does.
+  Known limits to design around: stroke width is bounded by the atlas's
+  distance range (a few px at 1:1, scaling with zoom) and beyond it corners
+  round off; joins/caps aren't real joins; and a non-solid stroke paint
+  (gradient/pattern *on the stroke*) does need the other programs, so keep
+  v1 solid-color. Requested 2026-07-31.
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 

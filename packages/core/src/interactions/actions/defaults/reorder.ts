@@ -63,15 +63,25 @@ export const reorderForwardAction: Action & { requires: string[] } = {
   group: 'reorder',
   defaultBinding: [
     {
-      spec: { kind: 'key', key: [']', '}'], mods: { mod: true } },
+      // Modifier matching is strict, so Shift must be absent here — listing
+      // the shifted `'}'` on this binding would be dead weight, since you
+      // can't type it without the Shift this spec forbids.
+      spec: { kind: 'key', key: [']'], mods: { mod: true } },
       opts: { params: { distance: 'adjacent' } },
     },
     {
-      // Cmd+Alt+] → bring-to-front. NOT Cmd+Shift+] — Chrome on macOS reserves
-      // Cmd+Shift+[ / Cmd+Shift+] for tab switching and never delivers them to
-      // the page. On macOS Option+] emits the character '‘' (U+2018); whether
-      // Cmd suppresses that transform is browser-dependent, so we match both the
-      // bracket and the Option-produced char (US layout). matchKey is
+      // Cmd+Shift+] → bring-to-front, the convention every drawing app uses.
+      // With Shift held the US-layout key reports as '}', so both characters
+      // are listed. Some browsers bind Cmd+Shift+[ / ] to tab switching and
+      // may consume the event before the page sees it — hence the Cmd+Alt
+      // binding below, which nothing reserves.
+      spec: { kind: 'key', key: [']', '}'], mods: { mod: true, shift: true } },
+      opts: { params: { distance: 'extreme' } },
+    },
+    {
+      // Cmd+Alt+] → bring-to-front. On macOS Option+] emits '‘' (U+2018);
+      // whether Cmd suppresses that transform is browser-dependent, so match
+      // both the bracket and the Option-produced char (US layout). matchKey is
       // character-based, so non-US layouts may need a rebind.
       spec: { kind: 'key', key: [']', '‘'], mods: { mod: true, alt: true } },
       opts: { params: { distance: 'extreme' } },
@@ -106,13 +116,17 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
   group: 'reorder',
   defaultBinding: [
     {
-      spec: { kind: 'key', key: ['[', '{'], mods: { mod: true } },
+      spec: { kind: 'key', key: ['['], mods: { mod: true } },
       opts: { params: { distance: 'adjacent' } },
     },
     {
-      // Cmd+Alt+[ → send-to-back. See the bring-to-front note above: avoids
-      // Chrome's reserved Cmd+Shift+[ tab-switch shortcut. On macOS Option+[
-      // emits '“' (U+201C), included alongside the bracket for robustness.
+      // Cmd+Shift+[ → send-to-back. See the bring-to-front notes above.
+      spec: { kind: 'key', key: ['[', '{'], mods: { mod: true, shift: true } },
+      opts: { params: { distance: 'extreme' } },
+    },
+    {
+      // Cmd+Alt+[ → send-to-back, the binding no browser reserves. On macOS
+      // Option+[ emits '“' (U+201C), included alongside the bracket.
       spec: { kind: 'key', key: ['[', '“'], mods: { mod: true, alt: true } },
       opts: { params: { distance: 'extreme' } },
     },

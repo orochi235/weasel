@@ -4,6 +4,8 @@ import { asNodeId, type NodeId } from 'core/scene/types';
 import type { BoundGesture } from '../registry';
 import type { ImmediateInvoker } from '../invoker';
 import type { Op } from 'core/ops/types';
+import { matchSpec } from '@weasel-js/gestures';
+import type { InputEvent, ModifiersEvent } from '@weasel-js/gestures';
 
 // ---------------------------------------------------------------------------
 // Minimal Scene mock for the descriptor invoker
@@ -75,9 +77,9 @@ describe('reorderForwardAction (descriptor)', () => {
     expect(reorderForwardAction.label).toBe('Bring Forward');
   });
 
-  it('declares two parametric defaultBinding entries', () => {
+  it('declares three parametric defaultBinding entries', () => {
     expect(Array.isArray(reorderForwardAction.defaultBinding)).toBe(true);
-    expect((reorderForwardAction.defaultBinding as unknown[]).length).toBe(2);
+    expect((reorderForwardAction.defaultBinding as unknown[]).length).toBe(3);
   });
 
   it('first binding carries distance: "adjacent" and key Mod+]', () => {
@@ -85,19 +87,23 @@ describe('reorderForwardAction (descriptor)', () => {
     const first = bindings[0] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(first.opts.params.distance).toBe('adjacent');
     expect(first.spec.kind).toBe('key');
-    expect(first.spec.key).toEqual([']', '}']);
+    // No shifted '}' here: strict mods forbid Shift on this binding, so a
+    // character you can only type with Shift could never match it.
+    expect(first.spec.key).toEqual([']']);
     expect(first.spec.mods).toEqual({ mod: true });
   });
 
-  it('second binding carries distance: "extreme" and key Mod+Alt+]', () => {
-    // Cmd+Alt+] (not Cmd+Shift+], which Chrome reserves for tab switching).
-    // Includes the macOS Option+] character '‘' for robustness.
+  it('reaches "extreme" from both Mod+Shift+] and Mod+Alt+]', () => {
+    // Mod+Shift+] is the conventional bring-to-front; Mod+Alt+] is the
+    // fallback for browsers that reserve Cmd+Shift+] for tab switching.
+    // Shifted/Option-produced characters are listed alongside the bracket.
     const bindings = reorderForwardAction.defaultBinding as BoundGesture[];
-    const second = bindings[1] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
-    expect(second.opts.params.distance).toBe('extreme');
-    expect(second.spec.kind).toBe('key');
-    expect(second.spec.key).toEqual([']', '‘']);
-    expect(second.spec.mods).toEqual({ mod: true, alt: true });
+    const extreme = bindings.slice(1) as Array<{ spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } }>;
+    expect(extreme.map((b) => b.opts.params.distance)).toEqual(['extreme', 'extreme']);
+    expect(extreme[0].spec.key).toEqual([']', '}']);
+    expect(extreme[0].spec.mods).toEqual({ mod: true, shift: true });
+    expect(extreme[1].spec.key).toEqual([']', '‘']);
+    expect(extreme[1].spec.mods).toEqual({ mod: true, alt: true });
   });
 
   it('has timing "immediate"', () => {
@@ -196,9 +202,9 @@ describe('reorderBackwardAction (descriptor)', () => {
     expect(reorderBackwardAction.label).toBe('Send Backward');
   });
 
-  it('declares two parametric defaultBinding entries', () => {
+  it('declares three parametric defaultBinding entries', () => {
     expect(Array.isArray(reorderBackwardAction.defaultBinding)).toBe(true);
-    expect((reorderBackwardAction.defaultBinding as unknown[]).length).toBe(2);
+    expect((reorderBackwardAction.defaultBinding as unknown[]).length).toBe(3);
   });
 
   it('first binding carries distance: "adjacent" and key Mod+[', () => {
@@ -206,19 +212,18 @@ describe('reorderBackwardAction (descriptor)', () => {
     const first = bindings[0] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
     expect(first.opts.params.distance).toBe('adjacent');
     expect(first.spec.kind).toBe('key');
-    expect(first.spec.key).toEqual(['[', '{']);
+    expect(first.spec.key).toEqual(['[']);
     expect(first.spec.mods).toEqual({ mod: true });
   });
 
-  it('second binding carries distance: "extreme" and key Mod+Alt+[', () => {
-    // Cmd+Alt+[ (not Cmd+Shift+[, which Chrome reserves for tab switching).
-    // Includes the macOS Option+[ character '“' for robustness.
+  it('reaches "extreme" from both Mod+Shift+[ and Mod+Alt+[', () => {
     const bindings = reorderBackwardAction.defaultBinding as BoundGesture[];
-    const second = bindings[1] as { spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } };
-    expect(second.opts.params.distance).toBe('extreme');
-    expect(second.spec.kind).toBe('key');
-    expect(second.spec.key).toEqual(['[', '“']);
-    expect(second.spec.mods).toEqual({ mod: true, alt: true });
+    const extreme = bindings.slice(1) as Array<{ spec: { kind: string; key: unknown; mods: unknown }; opts: { params: { distance: string } } }>;
+    expect(extreme.map((b) => b.opts.params.distance)).toEqual(['extreme', 'extreme']);
+    expect(extreme[0].spec.key).toEqual(['[', '{']);
+    expect(extreme[0].spec.mods).toEqual({ mod: true, shift: true });
+    expect(extreme[1].spec.key).toEqual(['[', '“']);
+    expect(extreme[1].spec.mods).toEqual({ mod: true, alt: true });
   });
 
   it('has timing "immediate"', () => {
@@ -374,3 +379,66 @@ describe('reorder commit routing', () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// Default bindings
+// ---------------------------------------------------------------------------
+
+/**
+ * Modifier matching is strict — an omitted modifier must NOT be held (see
+ * `matchModifiers`). That makes a binding's key list and its mod set a single
+ * claim: `']'` with `{ mod: true }` cannot fire while Shift is down, and the
+ * shifted character `'}'` cannot be produced without Shift. These tests hold
+ * the binding table to the shortcuts a user actually presses.
+ */
+describe('reorder default bindings', () => {
+  const keyEvent = (key: string, mods: Partial<ModifiersEvent> = {}): InputEvent => ({
+    kind: 'key',
+    key,
+    altKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    shiftKey: false,
+    ...mods,
+  } as InputEvent);
+
+  /** The distance param a binding carries, or undefined when nothing matches. */
+  function distanceFor(action: typeof reorderForwardAction, e: InputEvent): string | undefined {
+    const bindings = action.defaultBinding as Array<{
+      spec: Parameters<typeof matchSpec>[1];
+      opts?: { params?: { distance?: string } };
+    }>;
+    const hit = bindings.find((b) => matchSpec(e, b.spec, true));
+    return hit?.opts?.params?.distance;
+  }
+
+  it('sends Cmd+] forward one step', () => {
+    expect(distanceFor(reorderForwardAction, keyEvent(']', { metaKey: true }))).toBe('adjacent');
+  });
+
+  it('sends Cmd+[ backward one step', () => {
+    expect(distanceFor(reorderBackwardAction, keyEvent('[', { metaKey: true }))).toBe('adjacent');
+  });
+
+  it('brings to front on Cmd+Shift+] (the shifted key reports as "}")', () => {
+    expect(distanceFor(reorderForwardAction, keyEvent('}', { metaKey: true, shiftKey: true })))
+      .toBe('extreme');
+  });
+
+  it('sends to back on Cmd+Shift+[ (the shifted key reports as "{")', () => {
+    expect(distanceFor(reorderBackwardAction, keyEvent('{', { metaKey: true, shiftKey: true })))
+      .toBe('extreme');
+  });
+
+  it('keeps Cmd+Alt as the extreme fallback for browsers that eat Cmd+Shift', () => {
+    expect(distanceFor(reorderForwardAction, keyEvent(']', { metaKey: true, altKey: true })))
+      .toBe('extreme');
+    expect(distanceFor(reorderBackwardAction, keyEvent('[', { metaKey: true, altKey: true })))
+      .toBe('extreme');
+  });
+
+  it('leaves an unmodified bracket alone — typing must not reorder', () => {
+    expect(distanceFor(reorderForwardAction, keyEvent(']'))).toBeUndefined();
+    expect(distanceFor(reorderBackwardAction, keyEvent('['))).toBeUndefined();
+  });
+});

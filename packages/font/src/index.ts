@@ -37,6 +37,7 @@ export {
   registerCanvasFont,
   unregisterCanvasFont,
   isCanvasFont,
+  listCanvasFonts,
   subscribeGlyphReady,
   syncDynamicPageTexture,
   dynamicPageTextureId,
@@ -46,6 +47,8 @@ export {
   _resetDynamicFontsForTests,
   __setGlyphRasterizerForTests,
 } from './dynamic/dynamicAtlas';
+
+export type { CanvasFontEntry } from './dynamic/dynamicAtlas';
 
 export type { GlyphTextureSink, TexSource } from './textureSink';
 export {

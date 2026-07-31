@@ -619,8 +619,10 @@ function Toolbar({
   onClearJournalCache,
 }: ToolbarProps): ReactElement {
   const registry = useActionsRegistry();
-  const trigger = useCallback((id: string) => {
-    registry?.trigger(id);
+  // Params forward to the action's invoker — parametric actions (reorder's
+  // `distance`, tool activation) are unreachable without them.
+  const trigger = useCallback((id: string, params?: Record<string, unknown>) => {
+    registry?.trigger(id, params);
   }, [registry]);
 
   const adapter = useSceneAdapter(scene, {});
@@ -765,10 +767,12 @@ function Toolbar({
         onCut={onCut}
         onPaste={onPaste}
         clipboardEmpty={clipboardEmpty}
-        onBringForward={() => trigger('reorder.forward')}
-        onSendBackward={() => trigger('reorder.backward')}
-        onBringToFront={() => trigger('reorder.forward')}
-        onSendToBack={() => trigger('reorder.backward')}
+        onBringForward={() => trigger('reorder.forward', { distance: 'adjacent' })}
+        onSendBackward={() => trigger('reorder.backward', { distance: 'adjacent' })}
+        // Without the param these fell through to the invoker's 'adjacent'
+        // default, so the to-front/to-back buttons only ever moved one step.
+        onBringToFront={() => trigger('reorder.forward', { distance: 'extreme' })}
+        onSendToBack={() => trigger('reorder.backward', { distance: 'extreme' })}
         canMoveForward={hasSelection}
         canMoveBackward={hasSelection}
         onGroup={() => trigger('group')}
@@ -1368,8 +1372,55 @@ function EditorWithSharedScene({
   const textEdit = useSceneTextEdit(scene, hostRef.current, {
     view,
     // Clicking into the character bar must not end the edit it is editing.
-    isEditorChrome: (el) => el.closest(`.${TEXT_CHROME_CLASS}`) !== null,
+    // The bar's dropdowns render in a portal under <body>, so they are not in
+    // the bar's subtree and `closest` alone misses them — picking a font
+    // ended the session, and the style patch then landed on nothing. Kit
+    // overlays carry `data-weasel-overlay` for exactly this question.
+    isEditorChrome: (el) =>
+      el.closest(`.${TEXT_CHROME_CLASS}`) !== null
+      || el.closest('[data-weasel-overlay]') !== null,
   });
+
+  // Keep the mode and the edit session in lockstep. The session can end
+  // several ways — click-away commit, Escape, the node going away — and only
+  // some of them run through the machine. Without this the breadcrumb kept
+  // claiming `text-edit` after the editor was gone, which is the same
+  // mode-vs-session split that left double-click with no editor at all.
+  //
+  // Keyed on the session *ending* (a non-null id going null), not on the
+  // steady state "mode on, no session": the machine and `startEdit` are
+  // driven by the same double-click but publish through different
+  // subscriptions, so there is a render in between where the mode is live and
+  // the session isn't. Reading that as "finished" exits the mode the instant
+  // it's entered.
+  const prevEditingIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevEditingIdRef.current;
+    prevEditingIdRef.current = textEdit.editingId;
+    if (prev != null && textEdit.editingId == null && modeId === 'text-edit') {
+      modality.machine.exitMode();
+    }
+  }, [modeId, textEdit.editingId, modality.machine]);
+
+  // ...and the same seam from the other side. The modality key handler
+  // intercepts Escape at capture phase and stops propagation, so the kit's
+  // own Escape (which would cancel the edit) never fires — the mode ended
+  // while a live editor stayed mounted over the canvas, swallowing
+  // keystrokes into nothing.
+  //
+  // This commits rather than cancels: Escape out of a text edit keeps the
+  // text in every comparable editor, and losing a paragraph to a stray key
+  // is the worse failure. The kit's bare `cancelEdit` still discards — only
+  // this app-level route changed. Flip to `textEdit.cancelEdit()` if Escape
+  // should discard here too.
+  const prevModeIdRef = useRef<string>(modeId);
+  useEffect(() => {
+    const prev = prevModeIdRef.current;
+    prevModeIdRef.current = modeId;
+    if (prev === 'text-edit' && modeId !== 'text-edit' && textEdit.editingId != null) {
+      textEdit.commit();
+    }
+  }, [modeId, textEdit]);
 
   // What the options bar displays and where its edits go. A real range styles
   // the runs under it; a collapsed caret has no range, so the same controls
@@ -1538,7 +1589,21 @@ function EditorWithSharedScene({
           )}
           <ActiveSwatches />
         </Sidebar>
-        <div className="wd-canvas-host" ref={hostRef} data-mode={modeId} data-alt-held={altHeld ? 'true' : undefined}>
+        {/* Two things have to happen on a double-click into text, and they
+            come from different places: `onDoubleClick` on SceneCanvas drives
+            the modality machine into `text-edit` (breadcrumb, scoping dim),
+            while the kit's own handler starts the edit *session* that mounts
+            the contenteditable overlay and seeds the caret at the clicked
+            glyph. Binding only the first flipped the mode with no editor
+            under it — the node looked selected and refused to take a
+            keystroke. */}
+        <div
+          className="wd-canvas-host"
+          ref={hostRef}
+          onDoubleClick={textEdit.onDoubleClick}
+          data-mode={modeId}
+          data-alt-held={altHeld ? 'true' : undefined}
+        >
           <OpacityHud percent={opacityScrubPercent} />
           <ModeBreadcrumb
             modeId={modeId}

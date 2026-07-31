@@ -86,7 +86,13 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
         </Text>
       )}
       <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
-      <RACPopover className={s.popover}>
+      {/* `data-weasel-overlay` marks DOM that belongs to this control but
+          renders in a portal, outside the subtree the trigger sits in. Any
+          consumer reasoning about "did focus leave my component?" via
+          `closest()` gets the wrong answer without it — a text editor whose
+          font menu lives here would end its session the moment the menu is
+          clicked. */}
+      <RACPopover className={s.popover} data-weasel-overlay="">
         <RACListBox className={s.listbox}>
           {options !== undefined
             ? options.map((o) => (
