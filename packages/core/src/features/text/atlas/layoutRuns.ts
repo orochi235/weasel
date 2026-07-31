@@ -74,11 +74,36 @@ export interface LaidOutDecoration {
   fill: FillStyle;
 }
 
+/**
+ * One laid-out line's box, in the same world space as `LaidOutQuad`.
+ *
+ * `[x0, x1]` is the line's own advance width *after* alignment — not the
+ * wrap box — so a short centered line reports the span it actually occupies.
+ * `[y0, y1]` is the full line box: `y0` is the pen's line top, `y1` is
+ * `y0 + max(fontSize * lineHeight)` over the line's runs. Ink can escape it
+ * vertically (a tall accent, a deep descender at a lineHeight below ~1.06 —
+ * see the `bounds` note at the end of `layoutRuns`); this is the typographic
+ * box, not an ink bounding box.
+ *
+ * Emitted for every line including empty ones, so indices line up with the
+ * wrap. An empty line has `x0 === x1`.
+ */
+export interface LaidOutLineBox {
+  x0: number; y0: number; x1: number; y1: number;
+  /** The line's baseline, for callers placing carets or rules against it. */
+  baselineY: number;
+}
+
 export interface LaidOutRuns {
   groups: LaidOutGroup[];
   /** Underline / strikethrough rules, in line order; underline before
    *  strikethrough within a span. Empty when nothing is decorated. */
   decorations: LaidOutDecoration[];
+  /** Per-line boxes in layout order. Lets a caller reason about where the
+   *  text actually sits inside its wrap box without re-running the wrap —
+   *  `textLineBoxes` builds the text silhouette from these, so picking and
+   *  painting cannot drift apart. */
+  lines: LaidOutLineBox[];
   bounds: { width: number; height: number };
 }
 
@@ -380,6 +405,10 @@ export function layoutRuns(
     entries: Entry[];
     width: number;
     height: number;
+    /** Set only for a line with no entries at all — the newline that closed
+     *  it, which is the only carrier of the style a blank line should take
+     *  its height and baseline from. */
+    blank?: Entry;
   }
   const lines: Line[] = [];
   let cur: Line = { entries: [], width: 0, height: 0 };
@@ -392,7 +421,18 @@ export function layoutRuns(
   let i = 0;
   while (i < entries.length) {
     const e = entries[i];
-    if (e.isNewline) { commitLine(); i++; continue; }
+    if (e.isNewline) {
+      // A blank line still advances the pen. `cur.height` is only raised when
+      // an entry is pushed, so without this a line holding nothing but the
+      // newline itself measured zero and `"a\n\nb"` painted `b` directly
+      // under `a` — the blank line vanished instead of opening a gap. The
+      // newline's own run supplies the style, since no other entry can.
+      if (cur.entries.length === 0) {
+        cur.height = Math.max(cur.height, e.fontSize * opts.lineHeight);
+        cur.blank = e;
+      }
+      commitLine(); i++; continue;
+    }
     if (e.isSpace) {
       if (cur.entries.length > 0) {
         cur.entries.push(e);
@@ -457,6 +497,7 @@ export function layoutRuns(
     }
   }
 
+  const lineBoxes: LaidOutLineBox[] = [];
   let penY = origin.y;
   let maxLineWidth = 0;
   const finiteWidth = Number.isFinite(opts.maxWidth) ? opts.maxWidth : 0;
@@ -474,7 +515,19 @@ export function layoutRuns(
       const slack = finiteWidth - line.width;
       return opts.align === 'center' ? slack / 2 : slack;
     })();
-    let penX = origin.x + alignShift;
+    const lineX0 = origin.x + alignShift;
+    // The line's baseline, recorded for the box below. Every entry on a line
+    // shares `penY`, but not necessarily `font`/`fontSize` — a mixed-size line
+    // has one baseline per run under this model, and the first entry's is the
+    // one the box reports. A blank line has no entry at all, so it falls back
+    // to the newline that closed it.
+    const baselineSource = line.entries[0] ?? line.blank;
+    const lineBaselineY = baselineSource
+      ? penY + baselineSource.font.common.base
+        * (baselineSource.fontSize / baselineSource.font.info.size)
+      : penY;
+
+    let penX = lineX0;
     for (const e of line.entries) {
       penX += e.kerningBefore;
       // One step per character: the glyph's advance plus its run's tracking.
@@ -543,6 +596,13 @@ export function layoutRuns(
     }
     // A rule never crosses a line break: close the span at end of line.
     flushSpan();
+    lineBoxes.push({
+      x0: lineX0,
+      y0: penY,
+      x1: lineX0 + line.width,
+      y1: penY + line.height,
+      baselineY: lineBaselineY,
+    });
     maxLineWidth = Math.max(maxLineWidth, line.width);
     penY += line.height;
   }
@@ -557,6 +617,7 @@ export function layoutRuns(
   return {
     groups: [...ctx.groups.values()],
     decorations,
+    lines: lineBoxes,
     bounds: { width: maxLineWidth, height: penY - origin.y },
   };
 }

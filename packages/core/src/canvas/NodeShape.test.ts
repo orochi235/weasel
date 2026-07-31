@@ -1,15 +1,34 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   registerNodeShape,
   findNodeShape,
   findShapeSilhouette,
+  shapeCoversPoint,
   getNodeShapes,
   _resetShapePaintersForTests,
   type NodeShapeEntry,
 } from './NodeShape';
+import { _resetFontRegistryForTests, registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '../renderer';
 import type { PolygonPath } from 'features/paths/types';
+
+/** Serve FIXTURE_FONT (glyphs 'A' and 'B') to `registerFont`. */
+function stubFontFetch(): void {
+  const encoder = new TextEncoder();
+  global.fetch = vi.fn().mockImplementation((url: string) => (
+    url.endsWith('.json')
+      ? Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) })
+      : Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+      })
+  )) as typeof fetch;
+  global.createImageBitmap = vi.fn().mockResolvedValue({
+    width: 512, height: 512, close: vi.fn(),
+  } as unknown as ImageBitmap);
+}
 
 function node<TData>(data: TData): Node<TData, 'default', { x: number; y: number; width: number; height: number }> {
   return {
@@ -184,5 +203,76 @@ describe('kit:text painter — rich runs', () => {
     });
     const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
     expect(text.y).toBe(pose.y);
+  });
+});
+
+describe('kit:text painter — silhouette', () => {
+  // FIXTURE_FONT covers 'A' and 'B' only, and registers under the default
+  // family so `resolveTextStyle` finds it.
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    stubFontFetch();
+    await registerFont('sans-serif', {}, '/f.json', '/f.png');
+  });
+
+  const wide = { x: 0, y: 0, width: 400, height: 100 };
+  const textNode = (data: unknown) => ({ ...node(data), pose: wide });
+
+  it('covers the text, not the empty remainder of the wrap box', () => {
+    const n = textNode({ text: 'AB', style: { fontSize: 20 } });
+    const sil = findShapeSilhouette(n, wide)!;
+    expect(sil).not.toBeNull();
+    // Just right of the glyphs, still well inside the pose rect.
+    expect(pathContainsPoint(sil, 5, 5)).toBe(true);
+    expect(pathContainsPoint(sil, 390, 5)).toBe(false);
+    // Below the single line, still inside the 100-tall pose.
+    expect(pathContainsPoint(sil, 5, 90)).toBe(false);
+  });
+
+  it('is one contour per line', () => {
+    const n = textNode({ text: 'AB\nAB', style: { fontSize: 20, lineHeight: 1.2 } });
+    const sil = findShapeSilhouette(n, wide) as PolygonPath;
+    expect(sil.kind).toBe('polygon');
+    expect(pathContainsPoint(sil, 5, 5)).toBe(true);   // line 1
+    expect(pathContainsPoint(sil, 5, 30)).toBe(true);  // line 2
+    expect(pathContainsPoint(sil, 5, 70)).toBe(false); // past the last line
+  });
+
+  it('returns null for a node with no visible text, so it stays pickable', () => {
+    // An empty box has no lines to cover; a zero-area silhouette would make it
+    // unselectable. `null` means "no opinion" and the caller keeps the AABB.
+    expect(findShapeSilhouette(textNode({ text: '' }), wide)).toBeNull();
+  });
+
+  it('does not wrap where the paint does not', () => {
+    // `paint` deliberately withholds `maxWidth`, so kit:text never wraps. A
+    // silhouette measured against `pose.width` would wrap and report line
+    // boxes the renderer never drew.
+    const n = textNode({ text: 'AAAA BBBB AAAA', style: { fontSize: 20 } });
+    const narrow = { x: 0, y: 0, width: 40, height: 100 };
+    const sil = findShapeSilhouette({ ...node(n.data), pose: narrow }, narrow)!;
+    // One unwrapped line: ink continues past the 40-unit pose width, and
+    // nothing sits on a second line.
+    expect(pathContainsPoint(sil, 60, 5)).toBe(true);
+    expect(pathContainsPoint(sil, 5, 30)).toBe(false);
+  });
+});
+
+describe('shapeCoversPoint', () => {
+  it('narrows a pose rect to the painted shape', () => {
+    // An ellipse inscribed in its pose: the pose corner is inside the rect but
+    // outside the drawn shape.
+    const pose = { x: 0, y: 0, width: 100, height: 100 };
+    const n = { ...node({ shape: 'ellipse', fill: '#000' }), pose };
+    expect(shapeCoversPoint(n, pose, 50, 50)).toBe(true);
+    expect(shapeCoversPoint(n, pose, 2, 2)).toBe(false);
+  });
+
+  it('answers true when the painter has no silhouette', () => {
+    // No opinion — the caller's own AABB test stands. Anything else would
+    // silently make whole classes of node unpickable.
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const n = { ...node({ color: '#abc' }), pose }; // kit:rect-fallback
+    expect(shapeCoversPoint(n, pose, 5, 5)).toBe(true);
   });
 });

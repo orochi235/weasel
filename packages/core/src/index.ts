@@ -260,6 +260,7 @@ export {
   registerNodeShape,
   findNodeShape,
   findShapeSilhouette,
+  shapeCoversPoint,
   getNodeShapes,
 } from './canvas/NodeShape';
 export type {

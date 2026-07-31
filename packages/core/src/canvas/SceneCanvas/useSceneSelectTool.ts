@@ -28,6 +28,7 @@ import { snap as snapBehavior } from 'interactions/gestures/shared/snap';
 import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { translateRectPose, type RectPose } from 'features/groups/composePose';
 import { aabbOfPose, isPathLike, poseContainsRotated } from './poseGeometry';
+import { shapeCoversPoint } from 'canvas/NodeShape';
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
@@ -35,6 +36,10 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   geometry?: {
     pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
     boundsOf?: (id: string) => Bounds | null;
+    /** Refine the default body-pick from the pose rect to the painted shape.
+     *  See `SceneCanvasProps.geometry.picking`. Ignored when `pickEvery` is
+     *  supplied — that override owns the whole test. */
+    picking?: 'pose' | 'shape';
   };
   selectTool?: {
     move?: UseMoveOptions<TPose>;
@@ -92,6 +97,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
+  const shapePicking = geometry?.picking === 'shape';
   const moveOptions = opts?.move;
   const rotateOptions = opts?.rotate;
   const snap = opts?.snap;
@@ -200,11 +206,16 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       const out: string[] = [];
       for (const id of scene.renderOrder()) {
         const n = scene.get(id);
-        if (n && poseContainsRotated(n.pose, wx, wy)) out.push(n.id);
+        if (!n || !poseContainsRotated(n.pose, wx, wy)) continue;
+        // The pose rect is the pre-filter; `shapeCoversPoint` narrows it to
+        // the boundary the painter actually draws (and answers `true` for
+        // painters that have no silhouette, so nothing becomes unpickable).
+        if (shapePicking && !shapeCoversPoint(n, n.pose, wx, wy)) continue;
+        out.push(n.id);
       }
       return out;
     };
-  }, [scene, pickEveryProp]);
+  }, [scene, pickEveryProp, shapePicking]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {

@@ -1659,6 +1659,11 @@ function EditorWithSharedScene({
             tools={{ slice: sliceTool }}
             actions={{ slice: sliceAction }}
             ingestion={DRAW_INGESTION}
+            // Pick on the drawn shape, not the bounding box. In a drawing app
+            // the pose rect is an implementation detail: clicking the blank
+            // right half of a text box, or the notch of a star, should reach
+            // whatever is behind it — which is what every other editor does.
+            geometry={{ picking: 'shape' }}
             viewport={{ pinchZoom: true, recenter }}
             cursorCoordsHud
             pickHud

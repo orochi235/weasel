@@ -62,6 +62,21 @@ fit-to-box and baseline placement. Every 2D-side width goes through
 paths have to agree on where a line breaks or `caretIndexAt` maps a click to
 the wrong line.
 
+`lineBoxes.ts` answers the other measurement question: not how big is the
+text, but **where inside its box does it sit**. A text pose is a *wrap box* —
+`"Away"` in a 600-unit box leaves most of the box empty — so anything treating
+the pose as the node's extent claims empty space. `textLineBoxes` returns the
+per-line rects, read straight off `layoutRuns`'s own line walk rather than
+re-measured, and honoring `align` and `verticalAlign`. The `kit:text`
+silhouette is built from it, which is how shape-accurate picking stops a text
+box from swallowing clicks on whatever is behind it.
+
+> **`TextDrawCommand.y` is the top of the first line box, not a baseline.**
+> `layoutRuns` walks down from it by `common.base * scale`, and
+> `verticalAlign` aligns the block within `[y, y + height]`. Passing a
+> baseline there — the canvas-2D `fillText` convention — puts the text about
+> an em too low and hands `verticalAlign` the wrong box.
+
 ## Subdirectories
 
 | Dir | Role |

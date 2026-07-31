@@ -2,7 +2,8 @@
 
 **Date:** 2026-07-31
 **Branch:** `text-tier-and-picking` (branched from `main` @ `292a4a4a`)
-**Status:** §1 root-caused and fixed. §0 is the new direction for §2. §3 open.
+**Status:** §1 and §3 root-caused and fixed. §0 is the new direction for §2,
+and §2 is the remaining work.
 
 Three defects surfaced after WeaselDraw started offering machine fonts through
 the kit's dynamic canvas-SDF tier (`packages/font/src/dynamic/`). All three are
@@ -179,18 +180,54 @@ raster. Outlines are exact at every zoom and pay for stroked text and non-solid
 text fills on the same trip. Keep the tiered bake in mind only as a cheap
 interim if the outline path stalls on something unforeseen.
 
-## 3. Picking hits blank space inside a text box
+## 3. Picking hits blank space inside a text box — FIXED
 
-`pointInTextPose` (`features/text/hitTest.ts`) is a pose-rect test by design.
-For `"Away"` in a 309-unit-wide box most of the box is empty, and clicking any
-of it selects the node.
+For `"Away"` in a 600-unit-wide box most of the box is empty, and clicking any
+of it selected the node — and swallowed the click, so anything underneath was
+unreachable.
 
-**Planned fix.** `caretIndexAt` in the same file already re-runs the wrap and
-computes `lineStarts` plus per-line widths honoring `style.align`. Factor that
-into a `textLineBoxes(ctx, pose)` returning per-line rects, add a precise mode
-that tests against those (plus a small padding so a hairline is still
-grabbable), and route node picking through it for text nodes. This is the
-text-specific half of the "geometry-accurate picking" TODO entry.
+**Not `pointInTextPose`.** That function is only used by `useSceneTextEdit`'s
+double-click-to-edit; node picking never goes near it. The default body-pick
+lives in `useSceneSelectTool`'s `wiredHitBody`, and it was
+`poseContainsRotated` and nothing else. Note also that
+`useSelectTool`'s own default `pickEvery` is dead code under `<SceneCanvas>` —
+`useSceneSelectTool` always overrides it — so anything wired only there does
+not reach a SceneCanvas consumer.
+
+**Fixed as the general case, not the text case.** Container nodes already
+consulted `findShapeSilhouette` (it is how their clip is derived); leaves never
+did. That asymmetry *is* the "geometry-accurate picking" TODO. So:
+
+- `shapeCoversPoint(node, pose, x, y)` (`canvas/NodeShape.ts`) — one predicate,
+  used by both pick paths so they cannot drift. Returns `true` when the painter
+  has no silhouette, so turning the refinement on can only tighten a pick,
+  never make a node unreachable.
+- `geometry.picking: 'pose' | 'shape'` on `<SceneCanvas>` (default `'pose'`),
+  and `leafPicking: 'aabb' | 'silhouette'` on `useSelectTool` for consumers not
+  going through SceneCanvas. Both off by default: this changes what a click
+  selects for every existing consumer.
+- `kit:text` gained a `silhouette` — the union of its line boxes, one contour
+  per line, `'nonzero'`. `null` when there are no non-blank lines, so an empty
+  text node keeps its pose rect and stays selectable. It passes
+  `maxWidth: Infinity` because `paint` deliberately withholds `maxWidth`;
+  measuring against `pose.width` would wrap where the paint did not.
+- `textLineBoxes(pose, opts)` (`features/text/lineBoxes.ts`) — the per-line
+  rects, from `layoutRuns` rather than from a second canvas-2D measurement, so
+  picking and painting cannot disagree. Honors `align` and `verticalAlign`, and
+  takes `padding` for callers that want slack.
+- `LaidOutRuns` gained `lines: LaidOutLineBox[]`, which the layout walk already
+  had in hand.
+
+`apps/draw` opts in with `geometry={{ picking: 'shape' }}`. Verified in the
+running app: the glyphs of `"Away"` select the text node, the blank half of its
+box selects nothing, and a rect parked under that blank half is selectable
+again. Ellipses, stars and concave polygons get the same treatment for free.
+
+**Fixed alongside: blank lines collapsed.** `layoutRuns` only raised a line's
+height when an entry was pushed, so a line holding nothing but its own newline
+measured zero — `"a\n\nb"` painted `b` one line up, where the blank should have
+been. The newline's own run now supplies the blank line's height, since no
+other entry can.
 
 ## Already fixed (on `main`, `292a4a4a`)
 

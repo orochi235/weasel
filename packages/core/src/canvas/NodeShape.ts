@@ -35,8 +35,11 @@ import type { DrawCommand } from '../renderer';
 import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
 import type { TextStyle } from 'features/text/textStyle';
 import type { StyledRun } from 'features/text/runs';
-import type { Path } from 'features/paths/types';
+import { textLineBoxes } from 'features/text/lineBoxes';
+import type { Path, PolygonPath } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
+import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { getImageBitmap, imageStatus } from 'features/images/imageCache';
@@ -137,6 +140,34 @@ export function findShapeSilhouette<TData, TPose>(
   return r ? rotatePathAround(sil, r.cx, r.cy, r.rotation) : sil;
 }
 
+/**
+ * Does the shape `node` actually paints cover the world point?
+ *
+ * The pose rect says a node covers its whole bounding box. That is wrong for
+ * everything that is not a rectangle: the concave notch of a star, the corner
+ * outside an ellipse, the blank right half of a text box. This asks the
+ * painter's silhouette instead, which is the same boundary used for clipping
+ * and SVG export, so "what you can click" and "what is drawn" answer together.
+ *
+ * A painter with no `silhouette`, or one that returns `null` for this node
+ * (`kit:text` does, for a node with no non-blank lines), reports `true` —
+ * "no opinion", leaving the caller's own AABB test as the answer. Callers
+ * should keep that AABB test as a cheap pre-filter; this is the refinement,
+ * not a replacement.
+ *
+ * Rotation is already baked by `findShapeSilhouette`, so the point is in
+ * plain world coordinates.
+ */
+export function shapeCoversPoint<TData, TPose>(
+  node: Node<TData, string, TPose>,
+  pose: TPose,
+  x: number,
+  y: number,
+): boolean {
+  const sil = findShapeSilhouette(node, pose);
+  return sil === null || pathContainsPoint(sil, x, y);
+}
+
 /** Snapshot of the current painters in evaluation order — `'high'` tier
  *  first, then `'normal'`. Useful for debugging which painter handles a
  *  given node. */
@@ -194,7 +225,55 @@ const TEXT_PAINTER: NodeShapeEntry = {
       ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height)]
       : [textCommand(p.x, y, d.text, d.style, undefined, p.height)];
   },
+  // The pose is a *wrap box*, not a bounding box — "Away" in a 300-unit box
+  // leaves most of it empty, and a pose-rect silhouette claims all of it. The
+  // union of the line boxes is what the node actually covers, so picking,
+  // lasso and clipping stop grabbing blank space. `Infinity` because `paint`
+  // above deliberately does not forward `maxWidth`: this text does not wrap,
+  // and boxes measured against `p.width` would wrap where the paint did not.
+  //
+  // `null` rather than an empty path when there are no non-blank lines: an
+  // empty text node would otherwise become unpickable, and a caller reading
+  // "no silhouette" falls back to the pose rect, which is the behavior an
+  // empty box wants.
+  silhouette: (node, pose) => {
+    const d = node.data as { text: string; style?: TextStyle; runs?: readonly StyledRun[] };
+    const p = pose as RectPose;
+    const boxes = textLineBoxes(
+      {
+        x: p.x, y: p.y, width: p.width, height: p.height,
+        text: d.text, runs: d.runs as StyledRun[] | undefined, style: d.style,
+      },
+      { maxWidth: Infinity },
+    );
+    if (boxes.length === 0) return null;
+    return rectsToPath(boxes);
+  },
 };
+
+/**
+ * Union of axis-aligned rects as one multi-contour `PolygonPath`.
+ *
+ * Every contour winds the same way, so `'nonzero'` reads overlapping rects as
+ * covered rather than punching a hole where two lines happen to overlap —
+ * which they do the moment `lineHeight` drops below 1.
+ */
+function rectsToPath(rects: readonly { x: number; y: number; width: number; height: number }[]): PolygonPath {
+  const commands = new Uint8Array(rects.length * 6);
+  const coords = new Float32Array(rects.length * 10);
+  let ci = 0;
+  let cmd = 0;
+  for (const r of rects) {
+    const { x, y, width: w, height: h } = r;
+    commands[cmd++] = PATH_M; coords[ci++] = x; coords[ci++] = y;
+    commands[cmd++] = PATH_L; coords[ci++] = x + w; coords[ci++] = y;
+    commands[cmd++] = PATH_L; coords[ci++] = x + w; coords[ci++] = y + h;
+    commands[cmd++] = PATH_L; coords[ci++] = x; coords[ci++] = y + h;
+    commands[cmd++] = PATH_L; coords[ci++] = x; coords[ci++] = y;
+    commands[cmd++] = PATH_Z;
+  }
+  return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
+}
 
 const PATH_PAINTER: NodeShapeEntry = {
   id: 'kit:path',

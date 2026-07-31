@@ -2,7 +2,7 @@ import { useMemo, useRef, createElement } from 'react';
 import { SelectIcon } from '../../../icons';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Path } from 'features/paths/types';
-import { findShapeSilhouette } from 'canvas/NodeShape';
+import { findShapeSilhouette, shapeCoversPoint } from 'canvas/NodeShape';
 import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
@@ -47,6 +47,24 @@ export interface UseSelectToolOptions<TPose> {
   ) => string | null;
   /** Project a pose to its AABB. Default: identity. */
   poseBounds?: (pose: TPose) => Bounds;
+  /**
+   * How the default `pickEvery` decides a **leaf** node covers the pointer.
+   * Ignored when `pickEvery` is supplied.
+   *
+   * - `'aabb'` (default) — the pose rect. Cheap, and the historical behavior:
+   *   a click anywhere in the bounding box selects the node.
+   * - `'silhouette'` — the pose rect as a pre-test, then the painter's
+   *   `findShapeSilhouette`. A click inside the bounding box but outside the
+   *   drawn shape misses: the concave notch of a star, the corner outside an
+   *   ellipse, the blank half of a text box.
+   *
+   * Container nodes already consult their silhouette unconditionally (it is
+   * how their clip is derived); this extends the same test to leaves. Not the
+   * default because it changes what a click selects for every existing
+   * consumer, and a painter with no `silhouette` is unaffected either way —
+   * it falls back to the AABB.
+   */
+  leafPicking?: 'aabb' | 'silhouette';
   /** Move-action options. The move gesture is dispatcher-routed,
    *  so only `behaviors` is consumed here — threaded into the move binding's
    *  `opts.behaviors`. Other `UseMoveOptions` fields are accepted for API shape
@@ -128,20 +146,30 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // derive both from `adapter.getNodes()` + `adapter.getPose(id)` +
   // poseBounds (identity by default).
   const poseBoundsFn = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
+  const preciseLeaves = options.leafPicking === 'silhouette';
   const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
     const hier = adapter as unknown as {
       getNode?: (id: string) => unknown;
       getChildren?: (parentId: string | null) => readonly string[];
     };
 
+    /** AABB first (cheap), then the painter's silhouette when asked for and
+     *  available. A painter with no `silhouette` — or one that returns null,
+     *  as `kit:text` does for an empty node — keeps the AABB answer. */
+    const covers = (node: unknown, pose: TPose, b: Bounds): boolean => {
+      if (!(worldX >= b.x && worldX <= b.x + b.width
+            && worldY >= b.y && worldY <= b.y + b.height)) {
+        return false;
+      }
+      if (!preciseLeaves) return true;
+      return shapeCoversPoint(node as Node<unknown, string, TPose>, pose, worldX, worldY);
+    };
+
     if (typeof hier.getChildren !== 'function' || typeof hier.getNode !== 'function') {
       const out: string[] = [];
       for (const obj of adapter.getNodes()) {
-        const b = poseBoundsFn(adapter.getPose(obj.id));
-        if (worldX >= b.x && worldX <= b.x + b.width
-            && worldY >= b.y && worldY <= b.y + b.height) {
-          out.push(obj.id);
-        }
+        const pose = adapter.getPose(obj.id);
+        if (covers(obj, pose, poseBoundsFn(pose))) out.push(obj.id);
       }
       return out;
     }
@@ -187,11 +215,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
           for (const clip of ancestorClips) {
             if (!pathContainsPoint(clip, worldX, worldY)) continue nextChild;
           }
-          const b = poseBoundsFn(pose);
-          if (worldX >= b.x && worldX <= b.x + b.width
-              && worldY >= b.y && worldY <= b.y + b.height) {
-            out.push(childId);
-          }
+          if (covers(node, pose, poseBoundsFn(pose))) out.push(childId);
         }
       }
     }

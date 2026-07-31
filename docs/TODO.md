@@ -21,7 +21,7 @@ Priority tags:
 - **Loupe tool** → [Tools & gestures](#tools--gestures)
 - **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
 - **Stroked text** → [Text](#text)
-- **Geometry-accurate picking (no hits in a shape's holes)** → [Tools & gestures](#tools--gestures)
+- **Geometry-accurate picking — stroke width remainder** → [Tools & gestures](#tools--gestures)
 
 ### P1 — foundational genericity gaps
 
@@ -70,17 +70,27 @@ Priority tags:
   belongs in `@weasel-js/hud` (it's chrome, not scene content) or ships as a
   built-in tool. Requested 2026-07-31.
 
-- **Geometry-accurate picking.** A click inside a shape's *hole* — the
-  counter of a donut, the gap between the arms of a compound path, the empty
-  middle of a U — currently picks the shape. Picking resolves against the
-  pose box (and, for paths, a coarse test) rather than the filled region, so
-  overlapping objects are chosen by stacking order over a box that mostly
-  isn't ink. What's wanted is a fill-rule-correct test: even-odd / nonzero
-  crossing count against the actual subpaths, with stroke width taken into
-  account so a hairline outline is still grabbable. `polygonHitTestRect` and
-  `splitSubpaths` are the pieces in hand. Reported against the hand tool, but
-  the picking path is shared — fix it once, below the tools. Requested
-  2026-07-31.
+- **Geometry-accurate picking — mostly landed 2026-07-31; stroke width is
+  the remainder.** A click inside a shape's *hole* — the counter of a donut,
+  the gap between the arms of a compound path, the empty middle of a U — used
+  to pick the shape, because picking resolved against the pose box rather than
+  the filled region.
+
+  Shipped: `shapeCoversPoint` (`canvas/NodeShape.ts`) refines a pose-rect hit
+  with the painter's `findShapeSilhouette` + `pathContainsPoint`, which is
+  already fill-rule-correct. Opt in with `<SceneCanvas geometry={{ picking:
+  'shape' }}>`, or `useSelectTool({ leafPicking: 'silhouette' })` off the
+  SceneCanvas path; `apps/draw` opts in. Off by default because it changes
+  what a click selects. Painters with no silhouette keep the AABB answer, so
+  it can only tighten a pick. `kit:text` gained a silhouette (union of its
+  line boxes) as part of the same change.
+
+  Remaining: **stroke width is not taken into account**, so a hairline outline
+  with no fill is still only grabbable on its ink. Wanted: widen the test by
+  the stroke's half-width for unfilled or thin-stroked shapes. `strokeHitTest`
+  (`features/paths/hitTest.ts`) is the piece in hand. Also unaddressed: the
+  *hand* tool and the other non-select pick paths do not route through
+  `shapeCoversPoint` yet. Requested 2026-07-31.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`

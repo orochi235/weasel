@@ -360,6 +360,23 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
        *  pre-collapsing to one id. Matches `Canvas`'s `pickEvery` shape. */
       pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
       boundsOf?: (id: string) => Bounds | null;
+      /**
+       * What "the pointer is on this node" means for the default body-pick.
+       *
+       * - `'pose'` (default) — the node's pose rect, rotation honored. Cheap,
+       *   and what every consumer got before this option existed.
+       * - `'shape'` — the pose rect as a pre-filter, then the shape the
+       *   painter actually draws (`findShapeSilhouette`). A click in the
+       *   concave notch of a star, in the corner outside an ellipse, or in
+       *   the blank half of a text box falls through to whatever is beneath.
+       *
+       * Painters with no silhouette are unaffected — they keep the pose-rect
+       * answer either way, so turning this on can only make picking tighter,
+       * never make a node unreachable.
+       *
+       * Ignored when `pickEvery` is supplied: that override owns the test.
+       */
+      picking?: 'pose' | 'shape';
     };
 
     // --- Select tool options. Ignored if the consumer passes their own

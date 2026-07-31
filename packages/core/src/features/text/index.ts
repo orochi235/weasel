@@ -22,6 +22,8 @@ export { createTextLayer } from './textLayer';
 export type { TextPose, CreateTextLayerOpts } from './textLayer';
 export { pointInTextPose, caretIndexAt } from './hitTest';
 export type { PointInTextPoseOpts } from './hitTest';
+export { textLineBoxes } from './lineBoxes';
+export type { TextLineBoxesOpts } from './lineBoxes';
 export { fitTextPose } from './fitTextPose';
 export type { FitTextPoseOptions } from './fitTextPose';
 export { useTextEdit } from './useTextEdit';
