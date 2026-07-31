@@ -14,7 +14,7 @@ export default defineConfig({
   testDir: here,
   testMatch: /\.spec\.ts$/,
   use: {
-    baseURL: 'http://localhost:5176',   // distinct port: 5173 smoke / 5174 visual / 5175 e2e
+    baseURL: 'http://localhost:5176',   // 5173 smoke / 5174 dev:draw / 5175 e2e / 5177 visual
     headless: true,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,

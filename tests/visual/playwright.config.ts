@@ -14,7 +14,14 @@ export default defineConfig({
   // the kit sizes the backing store by DPR, so changing it rescales every
   // baseline. The viewport is fixed mainly to keep demo layout stable.
   use: {
-    baseURL: 'http://localhost:5174',   // separate port from smoke suite (5173)
+    // 5177, not 5174. `dev:draw` binds 5174 (and the kit dev server proxies
+    // /weasel/draw/ there, so that port is spoken for), and with
+    // `reuseExistingServer` below a local run would silently attach to
+    // WeaselDraw instead of the kit demos — every baseline then fails against
+    // the wrong application, which reads like a mass regression rather than a
+    // misconfiguration. Ports: 5173 smoke / 5174 dev:draw / 5175 e2e /
+    // 5176 perf + draw e2e / 5177 visual.
+    baseURL: 'http://localhost:5177',
     headless: true,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
@@ -26,9 +33,9 @@ export default defineConfig({
   // naming conventions.
   snapshotDir: resolve(here, 'baselines'),
   webServer: {
-    command: 'npx vite --config vite.config.ts --port 5174',
+    command: 'npx vite --config vite.config.ts --port 5177',
     cwd: repoRoot,
-    port: 5174,
+    port: 5177,
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
   },

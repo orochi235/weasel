@@ -41,7 +41,7 @@ The fixture (`fixtures.ts`) auto-fails the test on any console/page error. Allow
 
 ## Why this is separate from `tests/visual/`
 
-`tests/visual/` has a strict pixel-baseline contract: serial workers, fixed viewport, 0 retries, baselines committed to git. Mixing interaction-driven tests in would muddy those baselines. The two suites run on different ports (5174 visual, 5175 e2e) so they can run in parallel.
+`tests/visual/` has a strict pixel-baseline contract: serial workers, fixed viewport, 0 retries, baselines committed to git. Mixing interaction-driven tests in would muddy those baselines. The two suites run on different ports (5177 visual, 5175 e2e) so they can run in parallel.
 
 ## Pilots and what they exercise
 

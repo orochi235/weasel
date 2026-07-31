@@ -20,9 +20,9 @@
  *
  * Rig caveat:
  *   This spec targets the WeaselDraw app, served on Vite's dev server
- *   for WeaselDraw (port 5173 by default, see `apps/draw/vite.
- *   config.ts`). The visual rig's `playwright.config.ts` currently boots
- *   only the kit-demos vite config on port 5174; running this spec requires
+ *   for WeaselDraw (port 5174, see `apps/draw/vite.config.ts`). The visual
+ *   rig's `playwright.config.ts` currently boots
+ *   only the kit-demos vite config on port 5177; running this spec requires
  *   either pointing the rig at the WeaselDraw vite config or adding a
  *   second webServer entry. That integration is part of T2.11 baseline
  *   capture in the CI workflow, not local pixel comparison.
