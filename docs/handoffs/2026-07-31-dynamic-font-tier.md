@@ -66,11 +66,49 @@ Checked, not assumed:
   "large text is exact at any zoom" reads as a global promise and would not
   hold for the default face.
 
-`layoutRuns` currently emits `LaidOutGroup[]` of textured quads bucketed by
-atlas + fill. An outline tier needs a third `source` alongside `'atlas'` and
-`'canvas'` that carries a `Path` plus a per-instance transform instead of UVs —
-that is the main structural decision, and it is where the design work should
-start.
+### Decisions taken 2026-07-31
+
+- **Ship a subset Inter TTF** next to the baked atlas. Inter is OFL, so
+  redistribution is fine, and without it the outline tier's promise has a hole
+  exactly where most text lives — the default face. Subset to the atlas's own
+  charset (`inter.json` carries it) to keep the weight down.
+- **Parser: `opentype.js`.** Typr is smaller but unmaintained and untyped;
+  this becomes a runtime dependency of a published package, so maintenance and
+  types win. Worth re-checking bundle cost before committing — it is the one
+  reason to reconsider.
+
+### Work breakdown
+
+1. **`packages/font/src/outline/`** — `glyphOutline(font, codepoint) → Path`
+   in **em space** (units normalized to 1, y-down to match the kit), plus a
+   cache keyed `(family, weight, style, glyphId)`. Source of bytes: a subset
+   Inter TTF for the baked family, `queryLocalFonts` → `FontData.blob()` for
+   machine families. Both are async and permission-gated, so the tier has to
+   degrade rather than block.
+2. **A third `LaidOutGroup.source`.** `layoutRuns` emits textured quads
+   bucketed by atlas + fill today. Outlines want `'outline'` groups carrying
+   `{ path, x, y, scale }` per glyph instead of UVs — keeping layout as the
+   kit's single glyph walk, and letting the renderer own tessellation. This is
+   the main structural change.
+3. **Tessellate once, transform per instance.** Cache the tessellation per
+   `(font, glyphId)` in em space — that is the expensive half and it is
+   zoom-independent. Per instance, run the cached vertices through the glyph's
+   translate+scale on the CPU and append to one shared buffer, so a group is
+   still one draw call. Do **not** give each glyph its own model matrix; that
+   trades the batching the atlas tier already has.
+4. **Threshold.** Select per draw by *on-screen* size (`fontSize × view
+   scale`), not world `fontSize` — a 12px label at 8× zoom wants outlines.
+   Check whether `drawText` can see the view scale; if not, that plumbing is
+   part of the job. Somewhere around 32–48 screen px, guided by the error table
+   in `glyphRasterizer.ts`'s header.
+5. **Fallback ladder**, load-bearing rather than defensive: outlines →
+   canvas-SDF (denied permission, non-Chromium, a face whose bytes will not
+   parse) → baked atlas. A family must never render *nothing* because the
+   outline tier could not get bytes.
+
+Then the two items this is meant to collapse: stroked text (stroke the path)
+and non-solid text fills (paths already take a `FillStyle`), plus "Create
+Outlines" as a destructive command once outlines are in hand.
 
 ## 1. Text is displaced from its pose box — FIXED
 
