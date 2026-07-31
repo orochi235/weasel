@@ -164,7 +164,17 @@ const TEXT_PAINTER: NodeShapeEntry = {
   paint: (node, pose) => {
     const d = node.data as { text: string; style?: TextStyle; runs?: readonly StyledRun[] };
     const p = pose as RectPose;
-    const fontSize = d.style?.fontSize ?? 16;
+    // `y` is the TOP of the first line box, not a baseline: `layoutRuns`
+    // walks down from it by `common.base * scale` to reach the baseline, and
+    // `verticalAlign` aligns the laid-out block within `[y, y + height]`.
+    // This used to pass `p.y + fontSize`, which is the canvas-2D
+    // `fillText` convention and wrong here — it put the baseline nearly two
+    // ems below the box top, hung descenders outside the pose, and made the
+    // box handed to `verticalAlign` a different box from the node's own. It
+    // also disagreed with `createTextLayer` and with the DOM editing overlay
+    // (`useSceneTextEdit.getScreenPose`), both of which anchor on `pose.y` —
+    // so text jumped a full line the moment an edit was committed.
+    //
     // Forward the pose's box height so a future `verticalAlign` opt-in has
     // something to align within. Default `verticalAlign` is 'top', which
     // resolves to a zero offset regardless of `height` — so this is a no-op
@@ -179,7 +189,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
     // run algebra write-only for anything painted by the default scene layer.
     // Empty runs are not a styling, so they fall back rather than paint
     // nothing.
-    const y = p.y + fontSize;
+    const y = p.y;
     return d.runs && d.runs.length > 0
       ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height)]
       : [textCommand(p.x, y, d.text, d.style, undefined, p.height)];

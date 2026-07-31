@@ -156,4 +156,33 @@ describe('kit:text painter — rich runs', () => {
     const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
     expect(text.runs.map((r) => r.text)).toEqual(['hi']);
   });
+
+  // A `TextDrawCommand`'s `y` is the top of the first line box — `layoutRuns`
+  // walks *down* from it to the baseline (`common.base * scale`), and
+  // `verticalAlign` aligns the block within `[y, y + height]`. The painter
+  // used to pass `pose.y + fontSize`, as if `y` were a baseline, which put
+  // every kit:text node's baseline about two ems below its box top and hung
+  // the descenders outside the pose entirely. It also disagreed with
+  // `createTextLayer` and with the DOM editing overlay, both of which anchor
+  // on `pose.y` — so text jumped a whole line on commit.
+  it('anchors the command on the pose box top, not a baseline', () => {
+    for (const fontSize of [16, 48]) {
+      const [cmd] = paintText({ text: 'hi', style: { fontSize } });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.x).toBe(pose.x);
+      expect(text.y).toBe(pose.y);
+      // The box forwarded for vertical alignment is the pose's own box.
+      expect(text.height).toBe(pose.height);
+    }
+  });
+
+  it('anchors runs-form text on the pose box top too', () => {
+    const [cmd] = paintText({
+      text: 'ab',
+      style: { fontSize: 48 },
+      runs: [{ text: 'a' }, { text: 'b' }],
+    });
+    const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+    expect(text.y).toBe(pose.y);
+  });
 });
