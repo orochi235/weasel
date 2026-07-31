@@ -60,6 +60,66 @@ Priority tags:
 
 ## Tools & gestures
 
+<!-- The four items below came out of a read-only review of the arbitration
+     layer against CSS cascade / Flutter's gesture arena / Blender keymaps /
+     tldraw's StateNode chart. Reasoning that did not compress into these
+     entries — including why specificity-ordered fall-through is survivable at
+     all — is in docs/handoffs/2026-07-28-arbitration-followups.md. Reviewed
+     2026-07-28, re-verified against main 2026-07-31. -->
+
+- **(P2) `findConflicts` is written, tested, and never called.**
+  `tools/routing/reflection/conflicts.ts` detects the one class of genuine
+  routing ambiguity the kit has — the same (phase, gesture, arg, target,
+  modifiers) tuple declared by two tools, which the dispatcher resolves by slot
+  order and almost certainly not as the author intended. Its only caller is its
+  own test, so the kit can detect this and never does. Fix is cheap: call it
+  once at tool-registry assembly under `DEV` and `console.warn` each conflict,
+  formatted with `formatRoute` so the message names the tuple in the grammar an
+  author would recognize. Decide deliberately whether a conflict warns or
+  throws — warn is right for consumer tools, but a conflict between two *kit*
+  tools is always a bug.
+
+- **(P3) The `phase` dimension of the specificity tuple is binary.**
+  `specificity()` scores dimension `[2]` as `phase !== undefined ? 1 : 0`, so
+  `{ channel: '*', phase: 'initial' }` — which narrows almost nothing, and is
+  what the kit's own ambient actions use (`escape`, `delete`, `anchorEditing`,
+  `cancelGesture`) — ties with a precise `&:engaged`. This is CSS's `:where()`
+  problem in miniature. Grade it the way `targetRank` already grades targets:
+  2 for a named channel or `&` with a concrete phase, 1 for one wildcard axis,
+  **0 for `*:*`** (which is exactly equivalent to declaring no phase, and
+  scoring it 1 is the bug in its purest form). Pre-emptive, not a live bug —
+  dimension `[0]` dominates and phase-bearing specs are rare. Any change owes
+  the same compat argument `targetRank`'s doc comment makes: enumerate the
+  existing phase-bearing specs and show the ordering is unchanged.
+
+- **(P2) `gestureIdFor` collapses every pointer onto one channel.** It returns
+  the template literal `` `pointer-mouse` `` with nothing interpolated, so
+  every pointer — mouse, each touch, the stylus — keys into the same in-flight
+  handle slot and two simultaneous pointer gestures cannot coexist. The module
+  JSDoc promises `pointer-<pointerId>`; `useGestureDispatcher` already tracks
+  real `e.pointerId` (in `activePointers`, `bufferedDown`, `setPointerCapture`)
+  — the dispatcher just never asks for it. Thread `pointerId` onto the pointer
+  `InputEvent` variants and interpolate. Check three things first: that no pump
+  path hardcodes the literal when reconstructing the id; that a two-finger
+  gesture doesn't start firing two per-pointer drags *and* the
+  `multitouch-${fingers}` handle; and that `getActiveAction()`'s
+  "most-recently-started wins" still holds once it stops being near-vacuous.
+  **Decide the intent first:** either multi-pointer independence, or explicitly
+  ignoring secondary pointers. Aliasing them by accident is the bad third
+  option, which is what happens today.
+
+- **(P3) Sibling z-order is unresolved in hit-picking.** `pickTopMostHit.ts`
+  collapses parent/child (the valuable half, and done) then falls back to "last
+  in the array wins" — a convention the adapter contract doesn't enforce, as
+  its own doc admits by telling z-sorted callers to pre-resolve. Give the
+  adapter an optional `getZIndex(id)` / `compareZ(a, b)`, same shape as the
+  existing optional `getParent`, so it composes with the collapse rather than
+  replacing it. Worth doing for the principle as much as the correctness:
+  **score the target, order the rules** — z-order, distance to pointer and
+  target size are *physical* weights, unlike the hand-assigned ones in
+  `specificity()`, and anything the hit-test can decide shouldn't be pushed
+  into binding precedence.
+
 - **Loupe tool.** A magnifier that follows the pointer and paints a
   zoomed inset of the scene under it — for placing anchors, checking seams,
   and picking colors at pixel accuracy without disturbing the view. Open

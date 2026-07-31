@@ -22,7 +22,10 @@
  *    (resolve before calling) — this helper doesn't try to detect that.
  *
  * Pure sibling z-order without a parent/child relation is not resolved
- * here yet — see `docs/TODO.md`.
+ * here yet — see "Sibling z-order is unresolved in hit-picking" under
+ * Tools & gestures in `docs/TODO.md`. The shape it wants is an optional
+ * `getZIndex` / `compareZ` on the adapter below, composing with the
+ * parent/child collapse rather than replacing it.
  */
 export interface PickTopMostHitAdapter {
   getParent?: (id: string) => string | null;
