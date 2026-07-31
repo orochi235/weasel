@@ -279,7 +279,19 @@ Core five + Crop shipped. Remaining:
   unsolved problem as stroke-to-fill); synthetic italic does not, because a
   shear is exact. Small text stays on the atlas on purpose — outlines carry no
   hinting or stem darkening, so 12–16px from outlines looks *worse* than a
-  platform rasterizer (see `glyphRasterizer.ts`'s measurements).
+  platform rasterizer (see `glyphRasterizer.ts`'s measurements). And `.dfont`
+  (Datafork TrueType) machine faces are not parsed — they degrade to the SDF
+  tier, which is the right failure but a silent one. Unreachable on current
+  macOS (204 `.ttf` / 128 `.ttc` / 38 `.otf`, no `.dfont`), so it is recorded
+  rather than fixed; `sfnt.ts`'s header says where it would go.
+
+  Settled, so it does not get relitigated: the `.ttc` unpacking stays in
+  `packages/font/src/outline/sfnt.ts` rather than becoming an opentype.js PR
+  or a switch to fontkit. The upstream fix is ~10 lines but that library was
+  dormant 2021–2026, so we would carry this file until a release anyway;
+  fontkit handles collections natively but is ~5.6 MB across nine
+  dependencies, which is a shaping engine to buy a glyph outline. Ours runs
+  before any parse, so it also survives swapping the parser.
 
 - **(P3) The two tiers still read different ascender tables.** Untouched by
   the outline work and unchanged in urgency. Chrome reports Inter at 0.896 em

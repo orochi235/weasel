@@ -19,6 +19,35 @@
  * Kept separate from `opentypeParser.ts` so the collection handling is
  * testable without a parser, and so swapping the parser later doesn't drag
  * this along.
+ *
+ * ### Why this lives here rather than upstream or in a bigger library
+ *
+ * Decided 2026-07-31, after looking at both alternatives — recorded so this
+ * doesn't get "tidied up" into one of them later.
+ *
+ * The upstream fix is genuinely small: `parseOpenTypeTableEntries` hardcodes
+ * `p = 12`, so the only thing opentype.js cannot do is be *told* the table
+ * directory starts somewhere other than byte zero. Table records already
+ * carry absolute offsets and the parser already reads them from a
+ * whole-buffer view, so a `dirOffset` parameter and a `ttcf` branch would be
+ * about ten lines. (Typr takes an offset in `readFONT` and gets collections
+ * for free — same capability, one better-chosen signature.) It would make a
+ * good PR. It would also not help for a while: opentype.js sat untouched from
+ * 2021 to 2026, and we would carry this file until a release landed anyway.
+ *
+ * fontkit handles `.ttc` and `.dfont` natively, and WOFF2 besides — but it is
+ * ~5.6 MB unpacked across nine dependencies (brotli, unicode-trie, dfa, …).
+ * That is a shaping engine, and all this tier wants is a glyph outline.
+ *
+ * This version has an advantage over both: it runs *before* anything parses,
+ * so it is parser-agnostic and survives swapping opentype.js out.
+ *
+ * **Known gap: `.dfont`** (Datafork TrueType) is not handled — the signature
+ * check rejects it and the face degrades to the SDF tier, which is the right
+ * failure but a silent one. Not currently reachable on macOS, whose system
+ * font directories are 204 `.ttf` / 128 `.ttc` / 38 `.otf` and no `.dfont`;
+ * it is a real format on older systems, so it is the first thing to suspect
+ * if a machine face inexplicably refuses to sharpen.
  */
 
 const SFNT_HEADER_BYTES = 12;
