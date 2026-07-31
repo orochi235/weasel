@@ -25,7 +25,8 @@
  *     mutation (debounced inside SceneCanvas re-renders).
  */
 import {
-  useCallback, useEffect, useMemo, useRef, useState, type ReactElement,
+  useCallback, useEffect, useMemo, useRef, useState,
+  type CSSProperties, type ReactElement,
 } from 'react';
 import {
   SceneCanvas,
@@ -74,8 +75,13 @@ import {
   type Scene,
 } from '@weasel-js/core';
 import {
+  ResizeHandle,
+  Sidebar,
   SidebarPanel,
   SelectionPanel,
+  StatusBar,
+  StatusBarItem,
+  StatusBarSpacer,
   ToolPalette,
   ToolOptionsBar,
   type PropertyRenderer,
@@ -98,6 +104,13 @@ import {
 } from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
 import { buildLabel, buildTitle } from './buildInfo';
+import { PREFS, usePref } from './prefs';
+
+// Bounds for the sidebar drag come from the pref that stores the result, so
+// the handle and the Preferences number field can't drift apart. app.css
+// clamps to the same numbers as a backstop.
+const RIGHT_SIDEBAR_MIN = PREFS.children.ui.children.rightSidebarWidth.min;
+const RIGHT_SIDEBAR_MAX = PREFS.children.ui.children.rightSidebarWidth.max;
 import {
   CharacterOptions,
   FontFamilySelect,
@@ -1142,6 +1155,18 @@ function EditorWithSharedScene({
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
 
+  // Right-sidebar width. The pref is the durable value; `dragWidth` shadows it
+  // for the duration of a drag so a pointer-rate stream of samples doesn't
+  // schedule a prefs write per frame. Cleared on commit, which hands ownership
+  // back to the pref in the same render.
+  const [prefWidth, setPrefWidth] = usePref('ui.rightSidebarWidth');
+  const [dragWidth, setDragWidth] = useState<number | null>(null);
+  const rightWidth = dragWidth ?? prefWidth;
+  const commitRightWidth = useCallback((next: number) => {
+    setPrefWidth(next);
+    setDragWidth(null);
+  }, [setPrefWidth]);
+
   // Document-level state (filename + background color) persisted alongside
   // the scene under a separate LS key so a doc-shape migration doesn't
   // have to touch the scene snapshot.
@@ -1502,7 +1527,7 @@ function EditorWithSharedScene({
         )}
       </ToolOptionsBar>
       <div className="wd-body">
-        <div className="wd-sidebar left">
+        <Sidebar side="left" className="wd-sidebar left" ariaLabel="Tools">
           {tools && (
             <ToolPalette
               tools={tools}
@@ -1512,7 +1537,7 @@ function EditorWithSharedScene({
             />
           )}
           <ActiveSwatches />
-        </div>
+        </Sidebar>
         <div className="wd-canvas-host" ref={hostRef} data-mode={modeId} data-alt-held={altHeld ? 'true' : undefined}>
           <OpacityHud percent={opacityScrubPercent} />
           <ModeBreadcrumb
@@ -1599,7 +1624,23 @@ function EditorWithSharedScene({
           </SceneCanvas>
           )}
         </div>
-        <div className="wd-sidebar right">
+        <ResizeHandle
+          value={rightWidth}
+          min={RIGHT_SIDEBAR_MIN}
+          max={RIGHT_SIDEBAR_MAX}
+          invert
+          onChange={setDragWidth}
+          onChangeEnd={commitRightWidth}
+          ariaLabel="Resize properties sidebar"
+        />
+        <Sidebar
+          side="right"
+          className="wd-sidebar right"
+          ariaLabel="Properties"
+          // Width lives in a custom property so app.css keeps ownership of the
+          // clamp; only the number crosses the boundary.
+          style={{ '--wd-right-width': `${rightWidth}px` } as CSSProperties}
+        >
           <RightSidebar
             scene={scene}
             selection={selection}
@@ -1612,15 +1653,15 @@ function EditorWithSharedScene({
             docSelected={docSelected}
             setDocSelected={setDocSelected}
           />
-        </div>
+        </Sidebar>
       </div>
-      <StatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
+      <EditorStatusBar scene={scene} selection={selection} view={view} machine={modality.machine} />
     </div>
     </ActiveToolContextProvider>
   );
 }
 
-function StatusBar({
+function EditorStatusBar({
   scene,
   selection,
   view,
@@ -1644,17 +1685,17 @@ function StatusBar({
   const engaged = activeTool.hotkeyStack[activeTool.hotkeyStack.length - 1];
   const toolLabel = engaged ? `${activeTool.active} → ${engaged}` : activeTool.active;
   return (
-    <div className="wd-statusbar">
+    <StatusBar ariaLabel="Editor status" className="wd-statusbar">
       <ModeStatusIndicator modeId={modeId} />
-      <span>tool: {toolLabel}</span>
-      <span>sel: {selection.current.length}</span>
-      <span>groups: {groupCount}</span>
-      <span>fill: {paintLabel(colors.fill)}</span>
-      <span>stroke: {paintLabel(colors.stroke)}</span>
-      <span className="wd-statusbar-spacer" />
-      <span>zoom: {(view.scale.x * 100).toFixed(0)}%</span>
-      <span className="wd-build" title={buildTitle()}>{buildLabel()}</span>
-    </div>
+      <StatusBarItem>tool: {toolLabel}</StatusBarItem>
+      <StatusBarItem>sel: {selection.current.length}</StatusBarItem>
+      <StatusBarItem>groups: {groupCount}</StatusBarItem>
+      <StatusBarItem>fill: {paintLabel(colors.fill)}</StatusBarItem>
+      <StatusBarItem>stroke: {paintLabel(colors.stroke)}</StatusBarItem>
+      <StatusBarSpacer />
+      <StatusBarItem>zoom: {(view.scale.x * 100).toFixed(0)}%</StatusBarItem>
+      <StatusBarItem muted title={buildTitle()}>{buildLabel()}</StatusBarItem>
+    </StatusBar>
   );
 }
 

@@ -208,9 +208,12 @@ html, body, #root {
   padding-top: 1px;
 }
 
-.wd-sidebar {
-  display: flex;
-  flex-direction: column;
+/* Column layout, panel surface, and edge borders come from weasel-ui's
+   <Sidebar>. What stays here is the part that's this app's business: width,
+   padding, and the local chrome palette. Scoped under `.wd-app` so these win
+   over the component's own module rules regardless of stylesheet order —
+   specificity, not !important. */
+.wd-app .wd-sidebar {
   gap: 8px;
   padding: 12px 8px;
   border-right: 1px solid var(--wd-chrome-border);
@@ -219,12 +222,15 @@ html, body, #root {
   flex-shrink: 0;
 }
 
-.wd-sidebar.right {
+.wd-app .wd-sidebar.right {
+  /* The shared rule above borders the trailing edge for left-docked
+     sidebars; this one docks the other way. */
   border-right: none;
   border-left: 1px solid var(--wd-chrome-border);
-  /* Width comes from --wd-right-width (set via inline custom property
-     from the drag handle). Clamped here so CSS owns the floor/ceiling. */
-  width: clamp(220px, var(--wd-right-width, 260px), 420px);
+  /* Width comes from --wd-right-width, set by the ResizeHandle drag in
+     App.tsx. Clamped here so CSS owns the floor/ceiling; the numbers match
+     the min/max on the `ui.rightSidebarWidth` pref that stores the result. */
+  width: clamp(200px, var(--wd-right-width, 260px), 600px);
   align-items: stretch;
   padding: 12px 0;
   gap: 4px;
@@ -253,7 +259,7 @@ html, body, #root {
   margin-right: -8px;
 }
 
-.wd-sidebar.left {
+.wd-app .wd-sidebar.left {
   /* Sized to the ActiveSwatches widget (56px square) — the limiting
      element. The vertical ToolPalette's 44px buttons fit comfortably
      inside. */
@@ -300,16 +306,9 @@ html, body, #root {
   font-size: 10px;
 }
 
-.wd-sidebar-resize {
-  width: 4px;
-  flex-shrink: 0;
-  cursor: ew-resize;
-  background: transparent;
-  border-left: 1px solid var(--wzl-border);
-}
-.wd-sidebar-resize:hover {
-  background: var(--wzl-border);
-}
+/* `.wd-sidebar-resize` used to live here, styling a handle nothing ever
+   rendered. The behavior now comes from weasel-ui's <ResizeHandle>, which
+   brings its own chrome. */
 
 .wd-stage {
   flex: 1;
@@ -449,30 +448,10 @@ html, body, #root {
   100% { rotate: 110deg; translate: 0 120vh; opacity: 0.85; }
 }
 
-.wd-statusbar {
-  padding: 4px 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
-  color: var(--wzl-text-muted, var(--wzl-fg-subtle));
-  background: var(--wzl-panel-bg);
-  border-top: 1px solid var(--wzl-panel-border);
-  display: flex;
-  gap: 16px;
-  flex-shrink: 0;
-}
-
-.wd-statusbar-spacer {
-  margin-left: auto;
-}
-
-/* Build identity (kit version + compile date). Recedes behind the live
-   readouts either side of it — it's reference material, not state. */
-.wd-build {
-  opacity: 0.6;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  cursor: help;
-}
+/* The status bar's chrome — mono type, panel surface, gap, trailing spacer,
+   muted items — is weasel-ui's <StatusBar>. `.wd-statusbar` survives only as
+   a stable hook for app-level selectors; adding rules to it means asking
+   whether they belong in the kit component instead. */
 
 /* --- Active fill/stroke swatches (Illustrator-style overlap) --------- */
 /* Wraps the paired swatches + the "None" toggle below them. */

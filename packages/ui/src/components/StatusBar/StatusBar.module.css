@@ -1,0 +1,29 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  padding: 4px 12px;
+  font-family: var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11px;
+  color: var(--wzl-text-muted, var(--wzl-fg-subtle));
+  background: var(--wzl-panel-bg);
+  border-top: 1px solid var(--wzl-panel-border);
+}
+
+.item {
+  white-space: nowrap;
+}
+
+.muted {
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.hasTitle {
+  cursor: help;
+}
+
+.spacer {
+  margin-left: auto;
+}

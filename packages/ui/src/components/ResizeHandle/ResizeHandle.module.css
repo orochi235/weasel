@@ -1,0 +1,30 @@
+.handle {
+  flex-shrink: 0;
+  width: 4px;
+  align-self: stretch;
+  cursor: ew-resize;
+  background: transparent;
+  border-left: 1px solid var(--wzl-panel-border, var(--wzl-border));
+  /* The bar is 4px of hit area — thin enough to read as a seam, wide
+     enough to grab. `touch-action: none` keeps a touch drag from being
+     stolen by the scroll container it usually sits inside. */
+  touch-action: none;
+}
+
+.handle.horizontal {
+  width: auto;
+  height: 4px;
+  align-self: auto;
+  cursor: ns-resize;
+  border-left: none;
+  border-top: 1px solid var(--wzl-panel-border, var(--wzl-border));
+}
+
+.handle:hover {
+  background: var(--wzl-border);
+}
+
+.handle:focus-visible {
+  outline: 2px solid var(--wzl-focus-ring, var(--wzl-accent));
+  outline-offset: -1px;
+}
