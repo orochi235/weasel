@@ -33,12 +33,13 @@ export {
 } from './fallback';
 export type { FontFallbackPolicy } from './fallback';
 
+export { subscribeGlyphReady } from './glyphReady';
+
 export {
   registerCanvasFont,
   unregisterCanvasFont,
   isCanvasFont,
   listCanvasFonts,
-  subscribeGlyphReady,
   syncDynamicPageTexture,
   dynamicPageTextureId,
   resetBakeBudget,
@@ -49,6 +50,32 @@ export {
 } from './dynamic/dynamicAtlas';
 
 export type { CanvasFontEntry } from './dynamic/dynamicAtlas';
+
+export {
+  registerFontOutlines,
+  unregisterFontOutlines,
+  hasFontOutlines,
+  outlineStatus,
+  listFontOutlines,
+  glyphOutline,
+  _resetFontOutlinesForTests,
+} from './outline/outlineRegistry';
+export type {
+  OutlineSource,
+  OutlineVariant,
+  OutlineFontOptions,
+  OutlineStatus,
+} from './outline/outlineRegistry';
+export type { OutlineFace, OutlineParser, OutlineFontStyle } from './outline/OutlineFace';
+export {
+  enableLocalFontOutlines,
+  canQueryLocalFonts,
+  parseFontStyle,
+} from './outline/localFonts';
+export type {
+  LocalFontOutlinesOptions,
+  LocalFontOutlinesResult,
+} from './outline/localFonts';
 
 export type { GlyphTextureSink, TexSource } from './textureSink';
 export {

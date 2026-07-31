@@ -18,6 +18,7 @@ import type { GlyphTextureSink } from '../textureSink';
 // `fallback.ts` imports nothing, so this edge cannot close a cycle; keep it
 // that way. (registerFont.ts imports both this module and fallback.ts.)
 import { getFontFallbackPolicy } from '../fallback';
+import { notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
 import { ShelfPacker } from './shelfPack';
 import { alphaToSdf } from './distanceTransform';
 import {
@@ -73,7 +74,6 @@ let packer = new ShelfPacker(PAGE_SIZE, MAX_PAGES);
 let pending: PendingBake[] = [];
 let flushScheduled = false;
 let budget = DEFAULT_BAKE_BUDGET;
-const subscribers = new Set<() => void>();
 let rasterizer: GlyphRasterizer | null = null;
 
 function getRasterizer(): GlyphRasterizer {
@@ -269,17 +269,7 @@ function flushPending(): void {
     n++;
   }
   if (pending.length > 0) scheduleFlush();
-  for (const cb of subscribers) cb();
-}
-
-/** Subscribe to deferred-bake completion (fires after each flush batch).
- *  `<SceneCanvas>` subscribes and requests a redraw, mirroring
- *  `subscribeImageReady`. Returns an unsubscribe. */
-export function subscribeGlyphReady(cb: () => void): () => void {
-  subscribers.add(cb);
-  return () => {
-    subscribers.delete(cb);
-  };
+  notifyGlyphReady();
 }
 
 /** Reset the per-frame synchronous bake budget. Called by
@@ -359,6 +349,6 @@ export function _resetDynamicFontsForTests(): void {
   pending = [];
   flushScheduled = false;
   budget = DEFAULT_BAKE_BUDGET;
-  subscribers.clear();
+  _clearGlyphReadySubscribers();
   rasterizer = null;
 }

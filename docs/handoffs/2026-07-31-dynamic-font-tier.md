@@ -1,276 +1,216 @@
 # Dynamic font tier: metrics offset, magnification wobble, text picking
 
 **Date:** 2026-07-31
-**Branch:** `text-tier-and-picking` (branched from `main` @ `292a4a4a`)
-**Status:** §1 and §3 root-caused and fixed. §0 is the new direction for §2,
-and §2 is the remaining work.
+**Branches:** `text-tier-and-picking` (§1, §3 — merged), `text-outline-tier` (§0/§2)
+**Status:** all three defects fixed. §1 and §3 landed on `main` (`292a4a4a`…
+`d0adfb5e`); §2 is fixed by the outline tier described below. What is left is
+follow-on work, not this handoff's defects — see "Still open" at the end.
 
 Three defects surfaced after WeaselDraw started offering machine fonts through
-the kit's dynamic canvas-SDF tier (`packages/font/src/dynamic/`). All three are
-reproducible in `npm run dev:draw`.
+the kit's dynamic canvas-SDF tier (`packages/font/src/dynamic/`).
 
-## 0. Direction: tessellate glyph outlines instead of size-tiering the bake
+## 0. Outline tier — SHIPPED
 
-The planned fix for §2 was a second, larger SDF bake tier. The better move is
-to stop rasterizing for large text at all: parse the font with Typr /
-opentype.js, pull the glyph outlines, and push them through the path pipeline
-the kit already has. No new rendering library — weasel already tessellates
-paths and already ships earcut. Cache the tessellation per `(font, glyph)` in
-em space and transform per instance, so it is zoom-independent and computed
-once.
+The plan was a second, larger SDF bake tier. The better move was to stop
+rasterizing for large text at all: parse the font, take the glyph outlines,
+push them through the path pipeline the kit already has. That is what shipped.
 
-The reason to prefer this over a runtime MSDF/SDF tier is not just glyph
-quality. It collapses three open items at once:
+**Where it lives.**
 
-- large text becomes exact at any zoom (§2 below),
-- **stroked text falls out for free** — it is a path, so stroke it. That
-  retires the TODO entry that currently scopes stroked text as a shader change.
-- **gradient and pattern fills on text come free too**, since paths already
-  take a `FillStyle`. That is the fill-mode-expansion TODO.
+| piece | file |
+|---|---|
+| registry, fallback ladder, warn-once | `packages/font/src/outline/outlineRegistry.ts` |
+| the parsed-face seam, em-space contract | `packages/font/src/outline/OutlineFace.ts` |
+| opentype.js behind a dynamic import | `packages/font/src/outline/opentypeParser.ts` |
+| `.ttc` collection unpacking | `packages/font/src/outline/sfnt.ts` |
+| `queryLocalFonts` → registrations | `packages/font/src/outline/localFonts.ts` |
+| shared "a glyph can paint now" signal | `packages/font/src/glyphReady.ts` |
+| per-glyph tier decision, `'outline'` groups | `features/text/atlas/layoutRuns.ts` |
+| em-space tessellation cache | `renderer/cache/outlineMeshCache.ts` |
+| batching, placement, threshold | `renderer/draw.ts` (`drawTextOutlineGroup`, `OUTLINE_MIN_SCREEN_PX`) |
 
-An Illustrator-style destructive "Create Outlines" command becomes a one-liner
-once outlines are in hand.
+**Public API.** `registerFontOutlines(family, variant, source)` — source is a
+URL, `ArrayBuffer`, `Blob`, or a thunk returning one, so a `queryLocalFonts`
+result can be registered eagerly and read lazily. Plus
+`unregisterFontOutlines`, `hasFontOutlines`, `outlineStatus`,
+`listFontOutlines`, `enableLocalFontOutlines`, `canQueryLocalFonts`, and
+`WeaselRendererOptions.textOutlineMinScreenSize`.
 
-Keep the atlas for small text. Outline rendering has no hinting and no stem
-darkening, so body text at 12–16px looks *worse* than the platform rasterizer —
-`glyphRasterizer.ts`'s header already measures exactly this and explains why
-(a hinted rasterizer places stems on the pixel grid; no size-independent field
-can encode that). A size threshold between the two tiers is the standard
-hybrid, not a compromise.
+### The one design decision worth carrying forward
 
-So the shape of the work: `queryLocalFonts` → font bytes → outlines →
-tessellate through the existing path renderer above a size threshold; atlas
-below it; today's canvas-SDF tier stays as the fallback for denied permission
-or non-Chromium.
+**The tier replaces glyph *painting*, never layout.** Advances, kerning,
+wrapping and baselines keep coming from whichever SDF tier resolved the run;
+only the glyph's shape comes from the outline. The original plan had layout
+metrics coming from the font bytes, which would have meant text **reflowing
+the moment zoom crossed the threshold** — a line rewrapping under the reader's
+cursor. Metric neutrality is what makes a zoom-dependent threshold safe, and
+it also means `measureTextBounds` / `textLineBoxes` needed no changes at all.
 
-### What is already in place, and what is not
+Pinned by `layoutRuns.test.ts` ("is metric-neutral: bounds, lines and advances
+are identical either way").
 
-Checked, not assumed:
+### Decisions taken, and how they turned out
 
-- **The path model fits with nothing added.** `PolygonPath`
-  (`features/paths/types.ts`) is a `Uint8Array` command stream plus a
-  `Float32Array` of coords, with `PATH_M/L/C/Q/Z` and a `fillRule`. That is
-  multi-contour with both quadratic (TrueType) and cubic (CFF) segments and
-  `'nonzero'` — exactly a glyph outline, counters included. No new geometry
-  type, and `pathFromD` already exists if the parser emits SVG `d`.
-- **`queryLocalFonts` is present in this Chrome and its permission reads
-  `'prompt'`** — so the bytes are reachable, but only after a user gesture
-  grants access. The fallback ladder in the paragraph above is load-bearing,
-  not defensive.
-- **No font parser is a dependency yet.** `package.json` has `earcut` and
-  `msdf-bmfont-xml` (build-time) — no `opentype.js`, no `Typr`.
-- **The bundled family has no outlines to tessellate.** `assets/fonts/inter/`
-  ships `inter.json` + `inter.png` and no TTF/OTF/WOFF. So the default
-  `sans-serif` is exactly the family the outline tier *cannot* serve unless we
-  also ship an Inter binary (or subset one). Worth deciding early, because
-  "large text is exact at any zoom" reads as a global promise and would not
-  hold for the default face.
+- **Subset Inter shipped** at `assets/fonts/inter/inter.ttf` (+ `LICENSE.txt`,
+  `README.md` recording the exact `pyftsubset` command). 411 kB → **27 kB**,
+  cut to the atlas's own charset (U+0020–00FF) so the two tiers cover exactly
+  the same characters. Its `hhea.ascender / unitsPerEm` is 0.96875, which is
+  *exactly* the atlas's `base 31 / size 32` — the default face's two tiers
+  agree on metrics by construction, not by luck.
+- **opentype.js** (2.0.0), as planned — but **behind a dynamic import**. It is
+  ~49 kB gzipped and this package's only runtime dependency; the tier is async
+  anyway, so the import rides the load that was already happening and bundlers
+  split it into a chunk nobody fetches until large text appears. Types come
+  from `@types/opentype.js` (1.3.10 — the surface used here is unchanged in
+  2.0). `glyph.getPath(0, 0, 1)` already emits em space, y-down, baseline at
+  origin, so no transform is applied.
+- **Glyphs cross the package boundary as SVG `d`.** `@weasel-js/font` is a
+  Tier A leaf and cannot name core's `PolygonPath`; the alternative was
+  re-declaring core's opcodes in a second package. `d` is the kit's documented
+  language for geometry crossing a boundary and `pathFromD` already existed.
+- **opentype.js does not support `.ttc`**, which was not anticipated and
+  matters: most macOS system families (Helvetica, Times, Courier, Menlo) ship
+  as collections. `sfnt.ts` unpacks a member into a standalone sfnt by copying
+  its tables and rewriting the directory offsets — no re-encoding, so the
+  original checksums stay valid — selected by PostScript name via a minimal
+  `name`-table read.
 
-### Decisions taken 2026-07-31
+### Deliberate limits
 
-- **Ship a subset Inter TTF** next to the baked atlas. Inter is OFL, so
-  redistribution is fine, and without it the outline tier's promise has a hole
-  exactly where most text lives — the default face. Subset to the atlas's own
-  charset (`inter.json` carries it) to keep the weight down.
-- **Parser: `opentype.js`.** Typr is smaller but unmaintained and untyped;
-  this becomes a runtime dependency of a published package, so maintenance and
-  types win. Worth re-checking bundle cost before committing — it is the one
-  reason to reconsider.
+- **Synthetic bold declines the tier** and stays on the SDF. Emboldening
+  geometry means offsetting the outline (the same unsolved problem as
+  stroke-to-fill), and painting the real weight instead would make text get
+  *lighter* as you zoom past the threshold. Synthetic italic does not decline —
+  a shear is exact on geometry, and `drawTextOutlineGroup` applies the same
+  12° the SDF vertex shader does (shared `SYNTHETIC_ITALIC_RADIANS`).
+- **Small text stays on the atlas.** Outlines have no hinting and no stem
+  darkening; `glyphRasterizer.ts` measured why. The threshold is on-screen
+  size (`fontSize × view scale`, from `ctx.state.transform`), so a 12px label
+  at 8× zoom does get outlines.
+- **One draw call per group.** Cached em-space triangles are transformed on
+  the CPU into one shared buffer rather than given a model matrix each, which
+  would have traded away the batching the atlas tier gets for free.
 
-### Work breakdown
+### Two things that came along for free
 
-1. **`packages/font/src/outline/`** — `glyphOutline(font, codepoint) → Path`
-   in **em space** (units normalized to 1, y-down to match the kit), plus a
-   cache keyed `(family, weight, style, glyphId)`. Source of bytes: a subset
-   Inter TTF for the baked family, `queryLocalFonts` → `FontData.blob()` for
-   machine families. Both are async and permission-gated, so the tier has to
-   degrade rather than block.
-2. **A third `LaidOutGroup.source`.** `layoutRuns` emits textured quads
-   bucketed by atlas + fill today. Outlines want `'outline'` groups carrying
-   `{ path, x, y, scale }` per glyph instead of UVs — keeping layout as the
-   kit's single glyph walk, and letting the renderer own tessellation. This is
-   the main structural change.
-3. **Tessellate once, transform per instance.** Cache the tessellation per
-   `(font, glyphId)` in em space — that is the expensive half and it is
-   zoom-independent. Per instance, run the cached vertices through the glyph's
-   translate+scale on the CPU and append to one shared buffer, so a group is
-   still one draw call. Do **not** give each glyph its own model matrix; that
-   trades the batching the atlas tier already has.
-4. **Threshold.** Select per draw by *on-screen* size (`fontSize × view
-   scale`), not world `fontSize` — a 12px label at 8× zoom wants outlines.
-   Check whether `drawText` can see the view scale; if not, that plumbing is
-   part of the job. Somewhere around 32–48 screen px, guided by the error table
-   in `glyphRasterizer.ts`'s header.
-5. **Fallback ladder**, load-bearing rather than defensive: outlines →
-   canvas-SDF (denied permission, non-Chromium, a face whose bytes will not
-   parse) → baked atlas. A family must never render *nothing* because the
-   outline tier could not get bytes.
-
-Then the two items this is meant to collapse: stroked text (stroke the path)
-and non-solid text fills (paths already take a `FillStyle`), plus "Create
-Outlines" as a destructive command once outlines are in hand.
+- **Gradient and pattern fills on text.** `drawTextOutlineGroup` goes through
+  `drawPathFillByKind`, and those programs shade in world space — so
+  non-solid text fills already render above the threshold, with nothing
+  further to build. The TODO entry is now app-side only.
+- **Stroked text is much cheaper**, though not done. A glyph above the
+  threshold is a `PolygonPath`, so `tessellateStroke` gives real joins, caps
+  and miters at any width, instead of the SDF second-threshold trick with its
+  rounded corners and distance-range ceiling. See the rewritten TODO entry.
 
 ## 1. Text is displaced from its pose box — FIXED
 
-**Root cause: not the font tier, and not `layoutRuns`.** The kit's default
-text painter, `TEXT_PAINTER` in `packages/core/src/canvas/NodeShape.ts`,
-passed `pose.y + fontSize` as the draw command's `y`. That is the canvas-2D
-`fillText` convention (y = baseline), but `TextDrawCommand.y` is the **top of
-the first line box**: `layoutRuns` walks *down* from it by `common.base *
-scale` to reach the baseline, and `verticalAlign` aligns the laid-out block
-within `[y, y + height]`.
+**Root cause: not the font tier, and not `layoutRuns`.** `TEXT_PAINTER` in
+`packages/core/src/canvas/NodeShape.ts` passed `pose.y + fontSize` as the draw
+command's `y`. That is the canvas-2D `fillText` convention (y = baseline), but
+`TextDrawCommand.y` is the **top of the first line box**.
 
-Consequences, all of which reproduce with a single family and no dynamic tier
-involved:
+Consequences, all reproducible with a single family and no dynamic tier:
 
-- the baseline landed ~1.97 em below the box top instead of ~0.97 em, so a
+- the baseline landed ~1.97 em below the box top instead of ~0.97, so a
   one-line node at `lineHeight: 1.2` had its baseline at the box's *bottom*
   edge and its descenders outside the pose entirely;
-- the box handed to `verticalAlign` was a different box from the node's own,
-  one em down, so `'center'` / `'bottom'` were wrong by construction;
-- it disagreed with the kit's own `createTextLayer`, which passes `pose.y`
-  directly, and with the DOM editing overlay
-  (`useSceneTextEdit.getScreenPose`), which anchors on `pose.y` — which is why
-  text jumped a whole line the moment an edit was committed.
+- the box handed to `verticalAlign` was one em down from the node's own, so
+  `'center'` / `'bottom'` were wrong by construction;
+- it disagreed with `createTextLayer` and with the DOM editing overlay, which
+  is why text jumped a line the moment an edit was committed.
 
-**Fix.** `const y = p.y;`. Tests in `NodeShape.test.ts` and
-`defaultDrawOne.test.ts` that encoded the old convention were rewritten to
-assert the pose-box anchor; two new tests pin it (including that the anchor no
-longer moves with `fontSize`).
+**Fix.** `const y = p.y;`. Tests that encoded the old convention were
+rewritten; two new ones pin the pose-box anchor.
 
-**Why nothing caught it.** All 30 visual baselines pass unchanged across this
-fix, because *no baseline renders text through `kit:text`*. `TextDemo` uses
-`createTextLayer`; `RenderToPixelsDemo` builds its text command by hand with
-`textCommand(pose.x, pose.y, …)` (to reach `verticalAlign`, which the painter
-does not forward). Both already used the correct anchor — the painter was the
-only caller that didn't, and it was the only one with no pixel coverage. A
-demo that paints a text node through the default drawer would be worth adding.
+**Why nothing caught it.** No visual baseline renders text through `kit:text`
+— `TextDemo` uses `createTextLayer`, `RenderToPixelsDemo` builds its command
+by hand. The painter was the only caller with the wrong anchor and the only
+one with no pixel coverage.
 
-**Rig note, found while verifying this.** `tests/visual/playwright.config.ts`
-wanted port 5174, which is also `dev:draw`'s port; with
-`reuseExistingServer: !CI` a local run silently attached to WeaselDraw and
-failed all 25 baselines against the wrong application. Visual now runs on
-5177. Ports: 5173 smoke / 5174 dev:draw / 5175 e2e / 5176 perf + draw e2e /
-5177 visual.
+**Rig note.** `tests/visual/playwright.config.ts` wanted port 5174, which
+`dev:draw` owns; with `reuseExistingServer: !CI` a local run silently attached
+to WeaselDraw and failed all 25 baselines against the wrong application.
+Visual now runs on 5177. Ports: 5173 smoke / 5174 dev:draw / 5175 e2e /
+5176 perf + draw e2e / 5177 visual.
 
-**The ~84px family-relative figure in the previous draft does not
-reproduce.** Measured directly, by calling `layoutRuns` in the running app for
-the same runs at the same `fontSize` (48) and the same origin:
+**The ~84px family-relative figure in the original draft does not
+reproduce.** Measured by calling `layoutRuns` in the running app at
+`fontSize: 48`: Inter (atlas) baseline 46.5, Impact (canvas) 48.0, Georgia
+(canvas) 44.0. Impact vs Inter is 1.5px at a 48px em — 3% of the em, exactly
+what the ascender table predicts. The real defect was the one-em displacement
+above, which is family-independent.
 
-| family | tier | `info.size` | `common.base` | first-quad baselineY |
-|---|---|---|---|---|
-| Inter (`sans-serif`) | atlas | 32 | 31 | 46.5 |
-| Impact | canvas | 48 | 48 | 48.0 |
-| Georgia | canvas | 48 | 44 | 44.0 |
+## 2. Glyph contours wobble under magnification — FIXED by §0
 
-Impact vs Inter is 1.5px at a 48px em — 3% of the em, exactly the size the
-ascender table predicts, and it *shrinks* rather than grows relative to the
-observed 84px as the font size falls. Whatever produced the earlier side-by-side
-capture, it was not a per-family layout error. The real defect was the
-one-em displacement above, which is family-independent — which is precisely why
-the earlier instrumentation of `info.size` / `common.base` could not find a
-term that accounted for it.
+The tier is TinySDF: `fillText` once at `BAKE_SIZE = 48`, Euclidean distance
+transform, single channel. Contour accuracy is bounded by that 48px raster, so
+at ~8× it becomes ±2–3px of visible wobble with bumps one bake-texel apart.
 
-**Still open, and still worth doing: the two tiers read different ascender
-tables.** Chrome reports Inter at 0.896 em (OS/2 `sTypoAscender`) where
-`msdf-bmfont-xml` / opentype.js baked 0.969 em (`hhea.ascender`).
-`emHeightAscent` / `emHeightDescent` are **undefined** in Chrome, and a DOM
-baseline probe returns exactly the same number as `fontBoundingBoxAscent`
-(measured), so no browser API recovers the hhea value. Measured at a 48px em:
+The superseded plan was a second, larger bake tier. A larger bake buys a
+bounded improvement — the wobble gets finer, it does not go away, because the
+field is still reconstructed from a raster. Outlines are exact at every zoom
+and paid for two other open items on the same trip.
 
-| family | `fontBoundingBoxAscent` | DOM baseline probe | ratio to em |
-|---|---|---|---|
-| Inter | 43 | 43 | 0.896 |
-| Impact | 48 | 48.5 | 1.01 |
-| Georgia | 44 | 44 | 0.917 |
-| Comic Sans MS | 53 | 53 | 1.104 |
-| Papyrus | 45 (descent 29!) | 45 | 0.938 |
+Verified in the running app: the `text-outlines` demo (`apps/site/demos/
+TextOutlinesDemo.tsx`) loads the subset Inter *twice* — as a CSS `FontFace` so
+the canvas tier can rasterize it, and as outline bytes for the same family —
+so the toggle is a controlled experiment on one typeface rather than a font
+swap. At 4× the difference is unmistakable: the bowl of the `R` ripples on the
+SDF side and is a clean curve on the outline side.
 
-Decide a single convention and normalize both tiers onto it. Note Papyrus has
-ascent+descent = 1.54 em, which cannot fit the default 1.2 line box under any
-convention — that case needs a rule of its own. The outline direction in §0
-makes this easier, not harder: reading the font bytes gives access to both
-tables directly instead of to whichever one Chrome chose to expose.
-
-## 2. Glyph contours wobble under magnification
-
-The tier is TinySDF: `fillText` once at `BAKE_SIZE = 48`, take the antialiased
-coverage, run a Euclidean distance transform (`distanceTransform.ts`,
-`SDF_RADIUS = 8`, single channel). Contour accuracy is bounded by that 48px
-raster — roughly ±⅓ texel after sub-pixel refinement. Displayed at ~8× the bake
-size, that becomes ±2–3px of visible wobble, with bumps one bake-texel apart.
-Baked MSDF (Inter) is immune: multi-channel and generated from outlines.
-
-`glyphRasterizer.ts`'s header measured error out to 128px and called
-magnification "the mild one" — its data stops well below where this shows up.
-
-**Superseded plan: size-tiered baking.** Keep 48 for the base tier, add a
-larger tier (~192) and select per draw by on-screen size. The header's argument
-against raising `BAKE_SIZE` (it would spoil 12–32px UI text, where error is
-minimized *at* the bake size) does not apply to tiers — small text keeps the
-48px bake. Work: cache key gains a tier, atlas pages per tier, face resolution
-takes a display size, layout scales by the tier's own `info.size` (which it
-already reads, so this may mostly fall out).
-
-**Do §0 instead.** A larger bake buys a bounded improvement — the wobble gets
-finer, it does not go away, because the field is still reconstructed from a
-raster. Outlines are exact at every zoom and pay for stroked text and non-solid
-text fills on the same trip. Keep the tiered bake in mind only as a cheap
-interim if the outline path stalls on something unforeseen.
+**Found while writing the visual spec, and worth knowing:** the two tiers
+disagree about where a glyph's *ink edge* falls, by up to one bake texel. The
+dynamic tier stores glyph rects as integers off a 48px raster
+(`yoffset = base - raster.top`), and that quantization scales up with
+everything else — 8 device px for a 96px line at 4×. It is the SDF tier's
+rounding, not a placement error, and it is why `text-outlines.spec.ts`
+compares ink bounding boxes with a bake-texel tolerance while
+`layoutRuns.test.ts` pins pen positions to the float.
 
 ## 3. Picking hits blank space inside a text box — FIXED
 
 For `"Away"` in a 600-unit-wide box most of the box is empty, and clicking any
-of it selected the node — and swallowed the click, so anything underneath was
-unreachable.
+of it selected the node — and swallowed the click.
 
-**Not `pointInTextPose`.** That function is only used by `useSceneTextEdit`'s
-double-click-to-edit; node picking never goes near it. The default body-pick
-lives in `useSceneSelectTool`'s `wiredHitBody`, and it was
-`poseContainsRotated` and nothing else. Note also that
-`useSelectTool`'s own default `pickEvery` is dead code under `<SceneCanvas>` —
-`useSceneSelectTool` always overrides it — so anything wired only there does
-not reach a SceneCanvas consumer.
+**Not `pointInTextPose`** — that is only used by double-click-to-edit. The
+default body-pick is `useSceneSelectTool`'s `wiredHitBody`, which was
+`poseContainsRotated` and nothing else. (Note `useSelectTool`'s own default
+`pickEvery` is dead code under `<SceneCanvas>`.)
 
-**Fixed as the general case, not the text case.** Container nodes already
-consulted `findShapeSilhouette` (it is how their clip is derived); leaves never
-did. That asymmetry *is* the "geometry-accurate picking" TODO. So:
-
-- `shapeCoversPoint(node, pose, x, y)` (`canvas/NodeShape.ts`) — one predicate,
-  used by both pick paths so they cannot drift. Returns `true` when the painter
-  has no silhouette, so turning the refinement on can only tighten a pick,
-  never make a node unreachable.
-- `geometry.picking: 'pose' | 'shape'` on `<SceneCanvas>` (default `'pose'`),
-  and `leafPicking: 'aabb' | 'silhouette'` on `useSelectTool` for consumers not
-  going through SceneCanvas. Both off by default: this changes what a click
-  selects for every existing consumer.
-- `kit:text` gained a `silhouette` — the union of its line boxes, one contour
-  per line, `'nonzero'`. `null` when there are no non-blank lines, so an empty
-  text node keeps its pose rect and stays selectable. It passes
-  `maxWidth: Infinity` because `paint` deliberately withholds `maxWidth`;
-  measuring against `pose.width` would wrap where the paint did not.
-- `textLineBoxes(pose, opts)` (`features/text/lineBoxes.ts`) — the per-line
-  rects, from `layoutRuns` rather than from a second canvas-2D measurement, so
-  picking and painting cannot disagree. Honors `align` and `verticalAlign`, and
-  takes `padding` for callers that want slack.
-- `LaidOutRuns` gained `lines: LaidOutLineBox[]`, which the layout walk already
-  had in hand.
-
-`apps/draw` opts in with `geometry={{ picking: 'shape' }}`. Verified in the
-running app: the glyphs of `"Away"` select the text node, the blank half of its
-box selects nothing, and a rect parked under that blank half is selectable
-again. Ellipses, stars and concave polygons get the same treatment for free.
+**Fixed as the general case.** Container nodes already consulted
+`findShapeSilhouette`; leaves never did, and that asymmetry *was* the
+"geometry-accurate picking" TODO. So: `shapeCoversPoint(node, pose, x, y)` as
+one predicate used by both pick paths; `geometry.picking: 'pose' | 'shape'` on
+`<SceneCanvas>` and `leafPicking` on `useSelectTool`, both off by default;
+`kit:text` gained a silhouette (union of its line boxes, `null` when blank so
+an empty node stays selectable); `textLineBoxes` (`features/text/lineBoxes.ts`)
+derives those from `layoutRuns` rather than a second measurement.
+`apps/draw` opts in.
 
 **Fixed alongside: blank lines collapsed.** `layoutRuns` only raised a line's
-height when an entry was pushed, so a line holding nothing but its own newline
-measured zero — `"a\n\nb"` painted `b` one line up, where the blank should have
-been. The newline's own run now supplies the blank line's height, since no
-other entry can.
+height when an entry was pushed, so `"a\n\nb"` painted `b` one line up. The
+newline's own run now supplies the blank line's height.
+
+## Still open
+
+Not defects from this handoff — follow-on work, all recorded in `docs/TODO.md`:
+
+1. **The two tiers read different ascender tables.** Chrome reports Inter at
+   0.896 em (`sTypoAscender`) where the atlas baked 0.969 (`hhea.ascender`),
+   and no browser API recovers the hhea value. Papyrus's ascent+descent of
+   1.54 em cannot fit a 1.2 line box under any convention and needs its own
+   rule. The outline tier makes this easier, not harder — font bytes give
+   access to both tables directly.
+2. **Stroked text**, now a path-stroking job rather than a shader job.
+3. **Non-solid text fills**, now app-side only.
+4. **"Create Outlines"** as a destructive command — a one-liner against
+   `glyphOutline` + `pathFromD`, whenever it is wanted.
+5. **A visual baseline that paints a text node through the default drawer.**
+   §1 shipped with no pixel coverage on the painter that was broken.
 
 ## Already fixed (on `main`, `292a4a4a`)
 
 Empty text nodes are discarded on commit — they were invisible full-size pick
-targets and the loudest part of "text picking is a mess". A document created
-before that fix can still contain them; `kit-text-1` / `kit-text-2` in the dev
-localStorage scene are examples, left in place rather than silently mutating
-the document on load.
+targets. A document created before that fix can still contain them;
+`kit-text-1` / `kit-text-2` in the dev localStorage scene are examples, left
+in place rather than silently mutating the document on load.

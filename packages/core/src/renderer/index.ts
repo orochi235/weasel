@@ -26,7 +26,15 @@ export {
   isCanvasFont,
   unregisterCanvasFont,
   subscribeGlyphReady,
+  registerFontOutlines,
+  unregisterFontOutlines,
+  hasFontOutlines,
+  outlineStatus,
+  listFontOutlines,
+  enableLocalFontOutlines,
+  canQueryLocalFonts,
 } from '@weasel-js/font';
+export { OUTLINE_MIN_SCREEN_PX } from './draw';
 export { buildGradientRamp } from './cache/GradientRampCache';
 export { IDENTITY_COLOR_MATRIX } from './state/GroupState';
 export type { Mesh } from './cache/mesh';

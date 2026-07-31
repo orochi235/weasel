@@ -15,7 +15,10 @@
  * a family that would silently render as something else.
  */
 
-import { registerCanvasFont } from '@weasel-js/font';
+import {
+  registerCanvasFont, listCanvasFonts,
+  enableLocalFontOutlines, unregisterFontOutlines,
+} from '@weasel-js/font';
 
 /** A candidate family and the generic it falls back to if absent. */
 interface FontCandidate {
@@ -100,4 +103,48 @@ export function registerAvailableFonts(): string[] {
  *  not in the candidate list (a baked family, or a document's own value). */
 export function genreOf(family: string): FontCandidate['genre'] | undefined {
   return CANDIDATES.find((c) => c.family === family)?.genre;
+}
+
+/* ------------------------------------------------------------------ */
+/* Outlines for machine fonts                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Upgrade the enrolled machine families from sampled distance fields to real
+ * outlines.
+ *
+ * The dynamic tier above renders any installed family without ever seeing its
+ * bytes — it asks canvas 2D to draw the glyph and takes the pixels. That is
+ * what makes the font menu possible without shipping a single typeface, and
+ * it is also its ceiling: the field is reconstructed from one 48px raster, so
+ * magnifying it past a few times that size shows the raster as rippling
+ * contours. Reading the font file fixes it exactly, and the only web API that
+ * hands one over is `queryLocalFonts` — Chromium-only, and gated behind a
+ * permission the user has to grant from a gesture.
+ *
+ * Scoped to the families already in the menu rather than everything
+ * installed: a machine can carry hundreds of faces, and registering all of
+ * them would hold hundreds of inert entries to serve a list of eighteen.
+ *
+ * Resolves to the families that gained outlines. Rejects when the API is
+ * absent or the user says no — both ordinary, and neither changes what
+ * renders today.
+ */
+export async function enableMachineFontOutlines(): Promise<readonly string[]> {
+  const families = listCanvasFonts().map((f) => f.family);
+  const { families: enabled } = await enableLocalFontOutlines({ families });
+  return enabled;
+}
+
+/** Drop the machine-font outline registrations, returning those families to
+ *  the canvas-SDF tier. The bundled default face is untouched — it is
+ *  registered from a file this app ships, not from the machine. */
+export function disableMachineFontOutlines(): void {
+  for (const { family } of listCanvasFonts()) {
+    for (const weight of [100, 200, 300, 400, 500, 600, 700, 800, 900]) {
+      for (const style of ['normal', 'italic'] as const) {
+        unregisterFontOutlines(family, { weight, style });
+      }
+    }
+  }
 }

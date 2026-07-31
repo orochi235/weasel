@@ -1395,3 +1395,149 @@ describe('drawText — decoration reaches the GPU', () => {
     ]);
   });
 });
+
+import {
+  registerFontOutlines, glyphOutline, _resetFontOutlinesForTests,
+} from '@weasel-js/font';
+import { _resetOutlineMeshCacheForTests } from './cache/outlineMeshCache';
+
+/**
+ * The outline tier's renderer half. Layout decides *which* glyphs escalate
+ * (see `layoutRuns.test.ts`); these assert what the renderer then does with
+ * them — which program it binds, that a group is still one draw call, and
+ * that em-space geometry lands where the glyph was laid out.
+ */
+describe('drawText — outline tier', () => {
+  // A unit triangle: apex one em above the baseline, base on it.
+  const GLYPH_D = 'M0 0L1 0L0.5 -1Z';
+  const SIZE = 100; // comfortably past the 48-screen-px threshold at scale 1
+
+  beforeEach(async () => {
+    _resetFontRegistryForTests();
+    _resetDynamicFontsForTests();
+    _resetFontOutlinesForTests();
+    _resetOutlineMeshCacheForTests();
+    const encoder = new TextEncoder();
+    global.fetch = vi.fn().mockImplementation((url: string) =>
+      url.endsWith('.json')
+        ? Promise.resolve({ ok: true, json: () => Promise.resolve(FIXTURE_FONT) })
+        : Promise.resolve({
+            ok: true,
+            blob: () => Promise.resolve(new Blob([encoder.encode('PNG')], { type: 'image/png' })),
+          })) as typeof fetch;
+    global.createImageBitmap = vi.fn().mockResolvedValue(
+      { width: 512, height: 512, close: vi.fn() } as unknown as ImageBitmap);
+    await registerFont('inter', { weight: 400, style: 'normal' }, '/f.json', '/f.png');
+
+    registerFontOutlines('inter', { weight: 400, style: 'normal' }, new ArrayBuffer(4), {
+      parser: () => ({ unitsPerEm: 1000, glyphD: (cp: number) => (cp === 32 ? null : GLYPH_D) }),
+    });
+    // Drive the (async) face load to ready, the way a second frame would.
+    glyphOutline('inter', 400, 'normal', 65);
+    await new Promise((r) => setTimeout(r, 0));
+  });
+
+  const textCmd = (text: string, extra: Partial<Record<string, unknown>> = {}): DrawCommand => ({
+    kind: 'text',
+    x: 0, y: 0,
+    runs: [{
+      text, fontFamily: 'inter', fontWeight: 400, fontStyle: 'normal',
+      fontSize: SIZE, fill: { fill: 'solid', color: '#000' }, ...extra,
+    }],
+    maxWidth: Infinity, align: 'left', style: {},
+  } as DrawCommand);
+
+  /** Vertex buffers uploaded this frame, in upload order. */
+  const uploads = (calls: readonly { name: string; args: readonly unknown[] }[]): Float32Array[] =>
+    calls.filter((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array)
+      .map((c) => c.args[1] as Float32Array);
+
+  it('draws outline glyphs through pathFill, not the SDF programs', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, textCmd('A'));
+    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
+    expect(used).toContain(ctx.pathFill.handle);
+    expect(used).not.toContain(ctx.textSdf.handle);
+    expect(used).not.toContain(ctx.textSdfR8.handle);
+  });
+
+  it('batches a whole group into one draw call', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, textCmd('AAAA'));
+    // Four glyphs, one buffer, one draw — the batching the atlas tier gets
+    // from packing glyphs into a texture. A model matrix per glyph would have
+    // traded that away.
+    expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+    const verts = uploads(calls);
+    expect(verts).toHaveLength(1);
+    expect(verts[0].length).toBe(4 * 3 * 2); // 4 glyphs × 3 vertices × (x, y)
+  });
+
+  it('places em-space geometry at the pen and baseline, scaled by fontSize', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, textCmd('A'));
+    const v = uploads(calls)[0];
+
+    const ys = [v[1], v[3], v[5]];
+    const xs = [v[0], v[2], v[4]];
+    // The triangle's base sits on the baseline and its apex one em above.
+    const baselineY = Math.max(...ys);
+    expect(Math.min(...ys)).toBeCloseTo(baselineY - SIZE, 4);
+    // One em wide, starting at the pen (x = 0 for the first glyph of a
+    // left-aligned line at origin 0).
+    expect(Math.min(...xs)).toBeCloseTo(0, 4);
+    expect(Math.max(...xs)).toBeCloseTo(SIZE, 4);
+  });
+
+  it('shears synthetic obliques the same way the SDF vertex shader does', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, textCmd('A', { fontStyle: 'italic' }));
+    const v = uploads(calls)[0];
+
+    const ys = [v[1], v[3], v[5]];
+    const xs = [v[0], v[2], v[4]];
+    const apex = ys.indexOf(Math.min(...ys));
+    // `x += (baselineY - y) * tan(12°)`: a vertex one em above the baseline
+    // leans right by tan(12°) em. Below-baseline vertices lean the other way,
+    // which is what keeps the glyph attached to its own baseline.
+    expect(xs[apex] - 0.5 * SIZE).toBeCloseTo(Math.tan(0.2094) * SIZE, 3);
+  });
+
+  it('leaves small text on the atlas tier', () => {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, textCmd('A', { fontSize: 12 }));
+    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
+    expect(used).toContain(ctx.textSdf.handle);
+  });
+
+  it('pulls small text across the threshold once the view is zoomed in', () => {
+    const { ctx, calls } = createRecorderCtx();
+    // 12 world px at 8× is 96 on screen — the rule is what the eye sees, not
+    // what the document says.
+    ctx.state.push({ transform: new Float32Array([8, 0, 0, 0, 8, 0, 0, 0, 1]) });
+    dispatch(ctx, textCmd('A', { fontSize: 12 }));
+    ctx.state.pop();
+    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
+    expect(used).toContain(ctx.pathFill.handle);
+    expect(used).not.toContain(ctx.textSdf.handle);
+  });
+
+  it('honours a renderer that turns the tier off', () => {
+    const { ctx, calls } = createRecorderCtx();
+    ctx.textOutlineMinScreenSize = Infinity;
+    dispatch(ctx, textCmd('A'));
+    const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
+    expect(used).toContain(ctx.textSdf.handle);
+    expect(used).not.toContain(ctx.pathFill.handle);
+  });
+
+  it('moves outline glyphs with verticalAlign, like the quads', () => {
+    const top = createRecorderCtx();
+    dispatch(top.ctx, { ...textCmd('A'), height: 400, verticalAlign: 'top' } as DrawCommand);
+    const bottom = createRecorderCtx();
+    dispatch(bottom.ctx, { ...textCmd('A'), height: 400, verticalAlign: 'bottom' } as DrawCommand);
+
+    const yOf = (calls: readonly { name: string; args: readonly unknown[] }[]) => uploads(calls)[0][1];
+    expect(yOf(bottom.calls)).toBeGreaterThan(yOf(top.calls));
+  });
+});

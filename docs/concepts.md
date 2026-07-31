@@ -430,7 +430,8 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 
 | Registry | Keyed by | Scope | Mutability | Where it lives | Reflection? | Used by |
 |---|---|---|---|---|---|---|
-| **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global `Map` in `registerFont.ts` | No | `WeaselRenderer`, text layout |
+| **Fonts** | `family` → `weight\|style` | App (module) lifetime | Runtime-mutable; entries are idempotent | Module-global `Map` in `registerFont.ts` | Yes — `listFonts()` | `WeaselRenderer`, text layout |
+| **Font outlines** | `family\|weight\|style` | App (module) lifetime | Runtime-mutable; register / unregister | Module-global `Map` in `outline/outlineRegistry.ts` | Yes — `listFontOutlines()` | `layoutRuns` (above the size threshold) |
 | **Tools** | Tool id string | Component lifetime, pinned at `useTools` call | Constructor-fixed (registry reference is live, but entries are set at hook call) | Hook return (`ToolsApi.registry`) | Yes — `registry` field is enumerable | Gesture dispatcher, tool palette UI |
 | **Ops** | Op kind string (`kit:*` reserved) | Scene lifetime | Constructor-fixed via `ops` option; runtime additions via `scene.registerOp()` | Internal `Map` inside `createScene` closure | No | `Scene.undo()`, `Scene.redo()`, `scene.recordOp()` |
 | **Scene function fields** | Registry key string | Scene lifetime | Constructor-fixed | `SceneRegistry` option on `createScene` / `sceneFromJSON` | No | `scene.toJSON()`, `sceneFromJSON()` serialization round-trip |
@@ -443,6 +444,10 @@ The kit maintains several **registry** data structures — keyed lookups that ma
 | **Object-kind classifier** | Target kind string | — | — | — | — | Status: **in design** — see `docs/superpowers/specs/2026-05-12-declarative-tool-routing-design.md`; ships an adapter `kindOf?` hook as a temporary contract |
 
 **Fonts** (`packages/font/src/registerFont.ts`) use a two-level Map — outer key is the font family, inner key is `weight|style` — so `resolveFontVariant` can walk the fallback chain within a family without scanning everything. Idempotent: re-registering an existing variant is a no-op.
+
+**Font outlines** (`packages/font/src/outline/outlineRegistry.ts`) are a *third glyph tier*, not a fourth font registry: they never resolve a family on their own, they only replace how an already-resolved glyph is painted. Above `OUTLINE_MIN_SCREEN_PX` on-screen pixels, a face with registered outlines renders as tessellated geometry — exact at any zoom, and an ordinary path, so it takes gradient and pattern fills. Deliberately a flat `family|weight|style` map with **no** fallback chain: substituting a nearby variant would paint the wrong weight at the right advances, which looks worse than the distance field it replaced, so a miss declines and falls back down the tier ladder (outlines → canvas SDF → baked atlas) instead.
+
+The ladder's ordering rule is worth stating once: **each tier answers only "can I paint this glyph, right now?"** Loading is asynchronous everywhere (`fetch` for a URL, `queryLocalFonts` behind a permission for machine faces), so a tier that cannot answer yet answers `null` and the next one draws. `subscribeGlyphReady` (`packages/font/src/glyphReady.ts`) is the shared signal that a later frame can do better — both the deferred SDF bakes and the outline loads fire it, and `<SceneCanvas>` subscribes once.
 
 **Tools** (`packages/core/src/tools/useTools.ts`) — the `registry` prop passed to `useTools` is held in a ref so new object references re-read cleanly each render. Tools not in `registry` can still appear in the `ambient` array (always-on tools); `ToolsApi.has(id)` checks both.
 

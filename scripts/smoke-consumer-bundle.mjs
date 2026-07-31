@@ -198,6 +198,20 @@ const nodeModules = join(workDir, 'node_modules');
 await mkdir(tarballDir, { recursive: true });
 await mkdir(nodeModules, { recursive: true });
 
+/**
+ * Third-party runtime dependencies **declared** by the packages being packed.
+ *
+ * These are marked external for the consumer bundle below, because a real
+ * consumer's install resolves them from the registry and this clean tree has
+ * no `npm install` step. Collected from each package's own manifest rather
+ * than hand-listed, which is what makes the bundle a real check rather than a
+ * formality: a package that *imports* something it never *declared* is not in
+ * this set, so esbuild fails to resolve it — which is precisely the "names a
+ * real dependency" rule the failure message states. Hand-listing would have
+ * silently absolved exactly that mistake.
+ */
+const thirdPartyDeps = new Set();
+
 for (const name of PACKAGES) {
   const pkgDir = join(repoRoot, 'packages', name);
   const out = execFileSync(
@@ -213,6 +227,9 @@ for (const name of PACKAGES) {
   await mkdir(dest, { recursive: true });
   // --strip-components=1 drops npm's `package/` wrapper directory.
   execFileSync('tar', ['-xzf', join(tarballDir, tarball), '-C', dest, '--strip-components=1']);
+  for (const dep of Object.keys({ ...JSON.parse(await readFile(join(pkgDir, 'package.json'), 'utf8')).dependencies })) {
+    if (!dep.startsWith('@weasel-js/') && dep !== 'weasel-js') thirdPartyDeps.add(dep);
+  }
 }
 console.log(`[smoke] packed + extracted ${PACKAGES.length} packages into a clean tree.`);
 
@@ -276,17 +293,11 @@ try {
     // Required before esbuild will accept a CSS import, even with write:false —
     // it needs somewhere the emitted stylesheet *would* go. Nothing is written.
     outdir: join(workDir, 'out'),
-    // A real consumer installs these; they are irrelevant to resolution here.
-    // react-aria-components is a genuine `dependencies` entry of @weasel-js/ui
-    // and is deliberately NOT bundled into it — see packages/ui/vite.config.ts.
-    external: [
-      'react',
-      'react-dom',
-      'react/jsx-runtime',
-      'react-aria-components',
-      'earcut',
-      'polygon-clipping',
-    ],
+    // Declared third-party deps (see `thirdPartyDeps` above) plus the peer
+    // React surface, which no package lists as a plain dependency.
+    // `react/jsx-runtime` is a subpath, so it needs naming even though
+    // `react` is already here.
+    external: [...thirdPartyDeps, 'react', 'react-dom', 'react/jsx-runtime'],
   });
 } catch (err) {
   fail(

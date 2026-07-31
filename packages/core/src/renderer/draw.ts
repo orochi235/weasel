@@ -27,8 +27,13 @@ import {
   syncDynamicPageTexture,
   dynamicPageTextureId,
 } from '@weasel-js/font';
-import { layoutRuns, type LaidOutGroup, type LaidOutDecoration } from 'features/text/atlas/layoutRuns';
+import {
+  layoutRuns,
+  type LaidOutGroup, type LaidOutDecoration, type LaidOutOutlineGlyph,
+} from 'features/text/atlas/layoutRuns';
 import { verticalAlignOffset } from 'features/text/verticalAlign';
+import type { Mesh } from './cache/mesh';
+import { outlineMesh } from './cache/outlineMeshCache';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -63,6 +68,9 @@ export interface DrawContext {
    *  tolerance) and are tessellated fresh per frame via the transient pool.
    *  See `WeaselRendererOptions.flattenTolerance`. */
   flattenTolerance?: number;
+  /** On-screen glyph size (CSS px) at which text switches to tessellated
+   *  outlines. See `WeaselRendererOptions.textOutlineMinScreenSize`. */
+  textOutlineMinScreenSize?: number;
 }
 
 /**
@@ -796,15 +804,55 @@ function drawPathStrokeStenciled(
   gl.bindVertexArray(null);
 }
 
+/**
+ * On-screen glyph size (CSS px) at or above which a face with registered
+ * outlines is drawn as geometry instead of sampled from a distance field.
+ *
+ * 48 is the dynamic tier's own `BAKE_SIZE`, which makes it the size at which
+ * that tier stops being an interpolation and starts being a magnification:
+ * `glyphRasterizer.ts` measures coverage error bottoming out *at* the bake
+ * size and rising on both sides, and past a few times it the reconstructed
+ * field shows the raster as contour wobble. The same number is a safe
+ * crossing for the baked MSDF atlas, which is still crisp here — outlines are
+ * exact, so switching early costs nothing but the tessellation, and the
+ * hinting the atlas has and outlines don't stopped mattering well below this.
+ */
+export const OUTLINE_MIN_SCREEN_PX = 48;
+
+/**
+ * Uniform scale the model matrix applies, as the geometric mean of its two
+ * axis lengths. Used to turn a screen-pixel threshold into the world-space
+ * size layout compares against.
+ *
+ * The mean rather than either axis alone so a non-uniform scale answers with
+ * something between the two instead of picking a side; anisotropy that
+ * extreme is not a case this threshold needs to be exact about, since being
+ * one glyph-size late or early only changes which of two correct renderings
+ * is used.
+ */
+function modelScale(m: Float32Array): number {
+  const sx = Math.hypot(m[0], m[1]);
+  const sy = Math.hypot(m[3], m[4]);
+  return Math.sqrt(sx * sy) || 1;
+}
+
 function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const style = resolveTextStyle(cmd.style);
   const lineHeight = style.lineHeight;
   const align = cmd.align ?? style.align;
   const maxWidth = cmd.maxWidth ?? Infinity;
 
+  // Screen threshold → world threshold. Zooming in lowers the world size that
+  // qualifies, which is the whole point: a 12px label at 8× zoom is 96 screen
+  // pixels of text and wants outlines exactly as much as a 96px heading does.
+  const minScreen = ctx.textOutlineMinScreenSize ?? OUTLINE_MIN_SCREEN_PX;
+  const outlineMinSize = Number.isFinite(minScreen)
+    ? minScreen / modelScale(ctx.state.transform)
+    : undefined;
+
   const laid = layoutRuns(
     cmd.runs,
-    { maxWidth, lineHeight, align },
+    { maxWidth, lineHeight, align, outlineMinSize },
     { x: cmd.x, y: cmd.y },
   );
   // Decorations are checked too: text whose glyphs are all ink-free — every
@@ -816,6 +864,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   if (dy !== 0) {
     for (const group of laid.groups) {
       for (const q of group.quads) { q.y0 += dy; q.y1 += dy; q.baselineY += dy; }
+      for (const g of group.glyphs) { g.baselineY += dy; }
     }
     // Rules shift with the glyphs they belong to, or they detach from the
     // text at every verticalAlign other than the default.
@@ -827,6 +876,15 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   const preparedPrograms = new Set<ShaderProgram>();
   let currentProg: ShaderProgram | null = null;
   for (const group of laid.groups) {
+    if (group.source === 'outline') {
+      drawTextOutlineGroup(ctx, group);
+      // Outline groups go through the path-fill programs, which bind their
+      // own. The next SDF group has to `useProgram` again; its uniforms
+      // survive (they live on the program object), so `preparedPrograms`
+      // stays as it is.
+      currentProg = null;
+      continue;
+    }
     const prog = group.source === 'canvas' ? ctx.textSdfR8 : ctx.textSdf;
     if (prog !== currentProg) {
       gl.useProgram(prog.handle);
@@ -845,6 +903,83 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   }
 
   drawTextDecorations(ctx, laid.decorations);
+}
+
+/**
+ * Synthetic-oblique angle, in radians — 12°, the conventional CSS
+ * `font-style: oblique`. Shared by the two tiers that fake an italic: the SDF
+ * shader takes it as `u_synthItalic` and skews in the vertex stage, the
+ * outline tier applies the same shear on the CPU while placing glyph
+ * geometry. One constant so a face that falls back to the upright atlas leans
+ * the same amount however it ends up being drawn.
+ */
+const SYNTHETIC_ITALIC_RADIANS = 0.2094;
+
+/**
+ * Paint one group of tessellated glyph outlines.
+ *
+ * The whole group becomes a single mesh: cached em-space triangles are
+ * transformed on the CPU into world space and appended to one buffer, so a
+ * paragraph set in one face and colour is one draw call — the same batching
+ * the atlas tier gets from packing glyphs into one texture. The alternative,
+ * a model matrix per glyph, would be a draw call per glyph.
+ *
+ * Going through `drawPathFillByKind` rather than straight to `pathFill` is
+ * what makes gradient- and pattern-filled text fall out for free: a glyph
+ * here is geometry like any other, and those programs shade in world space,
+ * so they need nothing from the text pipeline.
+ */
+function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup): void {
+  const mesh = outlineGroupMesh(group);
+  if (!mesh) return;
+  drawPathFillByKind(ctx, group.fill, ctx.meshCache.uploadTransient(mesh));
+}
+
+/**
+ * Merge a group's glyphs into one world-space mesh, or `null` when nothing in
+ * it has area.
+ *
+ * Every glyph mesh here is `'nonzero'` (that is what `pathFromD` produces and
+ * what a font outline means), so none of them sets `requiresStencil` and
+ * concatenating their triangles is sound — an even-odd mesh would be a naive
+ * per-contour fan that only resolves correctly through a stencil pass, and
+ * merging one into a batch would fill its counters solid.
+ */
+function outlineGroupMesh(group: LaidOutGroup): Mesh | null {
+  const parts: { mesh: Mesh; glyph: LaidOutOutlineGlyph }[] = [];
+  let vertexFloats = 0;
+  let indexCount = 0;
+  for (const glyph of group.glyphs) {
+    const mesh = outlineMesh(glyph.key, glyph.d);
+    if (mesh.indices.length === 0) continue;
+    parts.push({ mesh, glyph });
+    vertexFloats += mesh.vertices.length;
+    indexCount += mesh.indices.length;
+  }
+  if (parts.length === 0) return null;
+
+  // Matches the SDF vertex shader's skew exactly: x moves by
+  // `(baselineY - y) * tan(angle)`, and in em space `baselineY - y` is
+  // `-ey * scale`, so above-baseline vertices (negative ey) lean right.
+  const shear = group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;
+
+  const vertices = new Float32Array(vertexFloats);
+  const indices = new Uint32Array(indexCount);
+  let vi = 0;
+  let ii = 0;
+  let base = 0;
+  for (const { mesh, glyph } of parts) {
+    const { x, baselineY, scale } = glyph;
+    for (let k = 0; k < mesh.vertices.length; k += 2) {
+      const ex = mesh.vertices[k];
+      const ey = mesh.vertices[k + 1];
+      vertices[vi++] = x + (ex - ey * shear) * scale;
+      vertices[vi++] = baselineY + ey * scale;
+    }
+    for (let k = 0; k < mesh.indices.length; k++) indices[ii++] = base + mesh.indices[k];
+    base += mesh.vertices.length / 2;
+  }
+  return { vertices, indices };
 }
 
 /**
@@ -1007,8 +1142,8 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
 
   // u_synthItalic: vertex-shader skew angle (radians) applied when the
   // resolver fell back from a missing italic variant to the upright atlas.
-  // 12° (≈0.2094 rad) matches the conventional CSS `font-style: oblique`.
-  const synthItalicAmount = group.synthetic.italic ? 0.2094 : 0;
+  // See SYNTHETIC_ITALIC_RADIANS — shared with the outline tier's CPU shear.
+  const synthItalicAmount = group.synthetic.italic ? SYNTHETIC_ITALIC_RADIANS : 0;
   const uSynthItalic = prog.uniform('u_synthItalic');
   if (uSynthItalic !== undefined) gl.uniform1f(uSynthItalic, synthItalicAmount);
 

@@ -106,6 +106,7 @@ import {
 import { HistoryList } from './ui/HistoryList';
 import { buildLabel, buildTitle } from './buildInfo';
 import { PREFS, usePref } from './prefs';
+import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';
 
 // Bounds for the sidebar drag come from the pref that stores the result, so
 // the handle and the Preferences number field can't drift apart. app.css
@@ -1184,6 +1185,29 @@ function EditorWithSharedScene({
   // back to the pref in the same render.
   const [prefWidth, setPrefWidth] = usePref('ui.rightSidebarWidth');
   const [dragWidth, setDragWidth] = useState<number | null>(null);
+
+  // Machine-font outlines. The switch is the user gesture the permission
+  // prompt needs; on a later load the pref is already on and, with permission
+  // granted, `queryLocalFonts` resolves without prompting again.
+  const [machineOutlines, setMachineOutlines] = usePref('text.machineFontOutlines');
+  useEffect(() => {
+    if (!machineOutlines) {
+      disableMachineFontOutlines();
+      return;
+    }
+    void enableMachineFontOutlines().catch((err: unknown) => {
+      // A refusal is the user's answer, so put the switch back to match it.
+      // Anything else — no API in this browser, a transient failure — leaves
+      // the preference alone: it is a standing wish that costs nothing to
+      // keep, and flipping it off would make the user re-express it on a
+      // browser that might support this next time.
+      if (err instanceof DOMException && err.name === 'NotAllowedError') {
+        setMachineOutlines(false);
+        return;
+      }
+      console.warn('WeaselDraw: machine-font outlines unavailable —', err);
+    });
+  }, [machineOutlines, setMachineOutlines]);
   const rightWidth = dragWidth ?? prefWidth;
   const commitRightWidth = useCallback((next: number) => {
     setPrefWidth(next);

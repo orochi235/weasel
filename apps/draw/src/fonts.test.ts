@@ -5,11 +5,22 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const registerCanvasFont = vi.fn();
+const listCanvasFonts = vi.fn(() => [] as { family: string; enrollment: string }[]);
+const enableLocalFontOutlines = vi.fn(async (_opts?: { families?: readonly string[] }) =>
+  ({ families: [] as string[], faces: 0 }));
+const unregisterFontOutlines = vi.fn();
 vi.mock('@weasel-js/font', () => ({
   registerCanvasFont: (family: string) => registerCanvasFont(family),
+  listCanvasFonts: () => listCanvasFonts(),
+  enableLocalFontOutlines: (opts?: { families?: readonly string[] }) => enableLocalFontOutlines(opts),
+  unregisterFontOutlines: (family: string, variant: unknown) =>
+    unregisterFontOutlines(family, variant),
 }));
 
-const { registerAvailableFonts, genreOf } = await import('./fonts');
+const {
+  registerAvailableFonts, genreOf,
+  enableMachineFontOutlines, disableMachineFontOutlines,
+} = await import('./fonts');
 
 /** Stub `document.fonts.check` to accept exactly `installed`. */
 function withInstalled(installed: string[] | Error): void {
@@ -25,6 +36,11 @@ function withInstalled(installed: string[] | Error): void {
 
 beforeEach(() => {
   registerCanvasFont.mockReset();
+  listCanvasFonts.mockReset();
+  listCanvasFonts.mockReturnValue([]);
+  enableLocalFontOutlines.mockReset();
+  enableLocalFontOutlines.mockResolvedValue({ families: [], faces: 0 });
+  unregisterFontOutlines.mockReset();
 });
 
 describe('registerAvailableFonts', () => {
@@ -60,5 +76,38 @@ describe('registerAvailableFonts', () => {
     withInstalled(['Georgia', 'Courier New', 'Impact', 'Comic Sans MS', 'Arial']);
     const genres = new Set(registerAvailableFonts().map((f) => genreOf(f)));
     expect(genres).toEqual(new Set(['serif', 'mono', 'display', 'script', 'sans']));
+  });
+});
+
+describe('machine-font outlines', () => {
+  it('asks only for the families already in the menu', async () => {
+    listCanvasFonts.mockReturnValue([
+      { family: 'Georgia', enrollment: 'explicit' },
+      { family: 'Impact', enrollment: 'explicit' },
+    ]);
+    enableLocalFontOutlines.mockResolvedValue({ families: ['Georgia'], faces: 3 });
+
+    await expect(enableMachineFontOutlines()).resolves.toEqual(['Georgia']);
+    // A machine can carry hundreds of faces; registering all of them to serve
+    // a list of eighteen would hold hundreds of inert entries.
+    expect(enableLocalFontOutlines).toHaveBeenCalledWith({ families: ['Georgia', 'Impact'] });
+  });
+
+  it('propagates a refusal rather than swallowing it', async () => {
+    enableLocalFontOutlines.mockRejectedValue(
+      new DOMException('denied', 'NotAllowedError'));
+    await expect(enableMachineFontOutlines()).rejects.toThrow('denied');
+  });
+
+  it('returns the enrolled families to the SDF tier when switched off', () => {
+    listCanvasFonts.mockReturnValue([{ family: 'Impact', enrollment: 'explicit' }]);
+    disableMachineFontOutlines();
+
+    const families = new Set(unregisterFontOutlines.mock.calls.map((c) => c[0]));
+    expect(families).toEqual(new Set(['Impact']));
+    // Every weight and slant the local-font indexer could have filed a face
+    // under — the registry is keyed by exact variant, so missing one would
+    // leave it stranded and still painting outlines.
+    expect(unregisterFontOutlines.mock.calls).toHaveLength(18);
   });
 });

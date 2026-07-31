@@ -31,7 +31,7 @@
 
 import type { FillStyle } from 'core/paint-types';
 import {
-  resolveFontVariant, resolveGlyphFallback,
+  resolveFontVariant, resolveGlyphFallback, glyphOutline,
   type ResolveResult, type BmFontChar, type BmFont,
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
@@ -42,6 +42,32 @@ export interface LaidOutQuad {
   /** Y coordinate of the line's baseline (penY at quad emission). Used by the
    *  synthetic-italic vertex skew so above-baseline vertices lean right. */
   baselineY: number;
+}
+
+/**
+ * One glyph the renderer should tessellate rather than sample: real font
+ * outline geometry, for text large enough that a distance field shows the
+ * raster it was reconstructed from.
+ *
+ * `d` is em-space SVG path data straight from `@weasel-js/font`'s outline
+ * registry — 1 unit is 1 em, y grows down, origin on the baseline at the pen.
+ * Placing it is therefore a uniform scale by `scale` (world units per em)
+ * followed by a translate to `(x, baselineY)`, and nothing here depends on
+ * zoom: the same glyph at the same size in two places is the same geometry
+ * twice, which is what lets the renderer tessellate it once and cache it.
+ *
+ * `key` identifies that cached tessellation — face identity plus codepoint,
+ * assembled here because layout is where both are in hand.
+ */
+export interface LaidOutOutlineGlyph {
+  d: string;
+  key: string;
+  /** Pen position: where em-space x = 0 lands, in world units. */
+  x: number;
+  /** The line's baseline: where em-space y = 0 lands, in world units. */
+  baselineY: number;
+  /** World units per em — the run's `fontSize`, since em space is unit-scale. */
+  scale: number;
 }
 
 export interface LaidOutGroup {
@@ -55,12 +81,18 @@ export interface LaidOutGroup {
   /** Gap between the request and the resolved match. Drives shader uniforms. */
   synthetic: { bold: boolean; italic: boolean };
   /** Which glyph source (and therefore shader/texture) this group binds:
-   *  baked MSDF atlas or the runtime canvas-SDF dynamic atlas. */
-  source: 'atlas' | 'canvas';
-  /** Dynamic-atlas page index for 'canvas' groups; 0 for atlas groups. */
+   *  baked MSDF atlas, the runtime canvas-SDF dynamic atlas, or tessellated
+   *  font outlines. */
+  source: 'atlas' | 'canvas' | 'outline';
+  /** Dynamic-atlas page index for 'canvas' groups; 0 for the others. */
   page: number;
   fill: FillStyle;
+  /** Textured glyph quads. Always empty for an `'outline'` group. */
   quads: LaidOutQuad[];
+  /** Outline geometry. Always empty for an `'atlas'` / `'canvas'` group —
+   *  the two channels are exclusive, since the group is also the draw call
+   *  and one draw call binds one program. */
+  glyphs: LaidOutOutlineGlyph[];
 }
 
 /**
@@ -125,6 +157,22 @@ export interface LayoutRunsOpts {
   maxWidth: number;
   lineHeight: number;
   align: 'left' | 'center' | 'right';
+  /**
+   * World-space `fontSize` at or above which glyphs are emitted as outline
+   * geometry, when the resolved face has outlines registered. Omit (the
+   * default) to keep every glyph on its SDF tier.
+   *
+   * A *world* size rather than a screen size because layout knows nothing
+   * about the view; `drawText` divides its screen-pixel threshold by the view
+   * scale before calling, so zooming in lowers the world size that qualifies.
+   *
+   * This is a rendering switch only. Advances, kerning, wrapping and
+   * baselines are identical either way — the outline tier changes what a
+   * glyph looks like, never where it sits — so measurement callers
+   * (`measureTextBounds`, `textLineBoxes`) leave it unset and still agree
+   * with the paint, and crossing the threshold cannot reflow text.
+   */
+  outlineMinSize?: number;
 }
 
 export interface LayoutRunsOrigin {
@@ -165,17 +213,24 @@ function groupKey(
   style: 'normal' | 'italic',
   synthetic: { bold: boolean; italic: boolean },
   fill: FillStyle,
-  source: 'atlas' | 'canvas',
+  source: 'atlas' | 'canvas' | 'outline',
   page: number,
 ): string {
   return `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}|${fillKey(fill)}|${source}|${page}`;
 }
 
+/**
+ * `source` overrides the tier the resolver picked. Passed for outline glyphs,
+ * which are served by a face the *resolver* still reports as atlas or canvas
+ * — the tier decision for a glyph is made per glyph, at its size, not per run
+ * — and which must not share a draw call with the quads around them.
+ */
 function getOrCreateGroup(
   ctx: LayoutContext,
   run: ResolvedRun,
   resolved: ResolveResult,
   page: number,
+  sourceOverride?: 'outline',
 ): LaidOutGroup {
   // The *resolved* family, not the requested one. The renderer looks this up
   // with an exact `getFont`, so a group tagged with a family that has no atlas
@@ -186,7 +241,7 @@ function getOrCreateGroup(
   const atlasFamily = resolved.resolved.family;
   const resolvedWeight = resolved.resolved.weight;
   const resolvedStyle = resolved.resolved.style;
-  const source = resolved.source;
+  const source = sourceOverride ?? resolved.source;
   const key = groupKey(
     atlasFamily,
     resolvedWeight,
@@ -207,6 +262,7 @@ function getOrCreateGroup(
       page,
       fill: run.fill,
       quads: [],
+      glyphs: [],
     };
     ctx.groups.set(key, g);
   }
@@ -464,6 +520,30 @@ export function layoutRuns(
   }
   if (cur.entries.length > 0) commitLine();
 
+  /**
+   * Em-space outline for `e`, or `null` to leave it on its SDF tier.
+   *
+   * Every `null` here is a rung of the fallback ladder, and they are all
+   * ordinary: the caller never opted in, the glyph is too small to be worth
+   * it, the face has no outlines registered, its bytes are still loading or
+   * failed to load, or the font simply has no such glyph. The tier is an
+   * upgrade applied where it is available, never a requirement.
+   */
+  function outlineFor(e: Entry): string | null {
+    const min = opts.outlineMinSize;
+    if (min === undefined || e.fontSize < min) return null;
+    // Synthetic bold is an SDF threshold shift, and a path has no threshold.
+    // Emboldening geometry properly means offsetting the outline — the same
+    // problem as stroke-to-fill, which the kit does not solve yet — and
+    // painting the regular weight instead would make text get *lighter* as
+    // you zoom past the threshold. Leave it with the tier that can fake it.
+    // Synthetic italic is not in the same position: a shear is exact on
+    // geometry, and the renderer applies it.
+    if (e.resolved.synthetic.bold) return null;
+    const r = e.resolved.resolved;
+    return glyphOutline(r.family, r.weight, r.style, e.cp);
+  }
+
   // 3. Lay out each line: apply alignment, then emit quads (and the
   //    decoration rules that span them).
   const decorations: LaidOutDecoration[] = [];
@@ -567,6 +647,26 @@ export function layoutRuns(
         }
       } else {
         flushSpan();
+      }
+
+      // Outline tier, decided per glyph at its own size. Checked before the
+      // no-ink bail-out below, not after: a dynamic-tier glyph still waiting
+      // for its bake has `page < 0` and no atlas rect, but its outline is
+      // available right now — there is no reason to draw nothing while the
+      // exact geometry is in hand.
+      const outlineD = outlineFor(e);
+      if (outlineD !== null) {
+        const group = getOrCreateGroup(ctx, e.run, e.resolved, 0, 'outline');
+        group.glyphs.push({
+          d: outlineD,
+          key: `${e.resolved.resolved.family}|${e.resolved.resolved.weight}|${e.resolved.resolved.style}|${e.cp}`,
+          x: penX,
+          baselineY,
+          // Em space is unit-scale, so world units per em is just the size.
+          scale: e.fontSize,
+        });
+        penX += step;
+        continue;
       }
 
       // Nothing to paint — a zero-advance glyph (e.g. a combining mark), a

@@ -192,6 +192,19 @@ export const PREFS = {
         },
       },
     },
+    text: {
+      name: 'Text',
+      description: 'How type is rendered.',
+      children: {
+        machineFontOutlines: {
+          kind: 'boolean',
+          name: 'Sharp text from installed fonts',
+          description:
+            'Read the outlines of your installed fonts so large text is drawn as exact geometry instead of a distance field sampled from a 48px raster — which ripples visibly once you zoom in. Needs your permission to list local fonts, and only Chromium-based browsers offer it; without it, large text keeps rendering the way it does today. The bundled default face is already sharp either way.',
+          default: false,
+        },
+      },
+    },
     drawing: {
       name: 'Drawing',
       description: 'Defaults applied to newly-created paths and shapes.',

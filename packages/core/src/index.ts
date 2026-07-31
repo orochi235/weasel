@@ -994,6 +994,30 @@ export {
   unregisterCanvasFont,
   subscribeGlyphReady,
 } from '@weasel-js/font';
+
+// Outline text tier — real glyph geometry, tessellated by the path renderer,
+// for text above `OUTLINE_MIN_SCREEN_PX` on screen. Exact at any zoom where a
+// distance field is a sampling of one, and a glyph becomes an ordinary path
+// so it takes gradient and pattern fills. Purely a rendering upgrade:
+// advances and line breaking still come from the SDF tier, so text cannot
+// reflow when zoom crosses the threshold. `enableLocalFontOutlines` needs a
+// user gesture (and Chromium); everything degrades to SDF without it.
+export {
+  registerFontOutlines,
+  unregisterFontOutlines,
+  hasFontOutlines,
+  outlineStatus,
+  listFontOutlines,
+  enableLocalFontOutlines,
+  canQueryLocalFonts,
+} from '@weasel-js/font';
+export type {
+  OutlineSource,
+  OutlineVariant,
+  OutlineStatus,
+  OutlineFontStyle,
+  LocalFontOutlinesResult,
+} from '@weasel-js/font';
 export type { TextureHandle } from './renderer/textures/registerTexture';
 export type {
   LayersMap,

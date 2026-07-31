@@ -6,6 +6,7 @@ import { RotatedResizeMathDemo } from './demos/RotatedResizeMathDemo';
 import { MultiSelectDemo } from './demos/MultiSelectDemo';
 import { InsertDemo } from './demos/InsertDemo';
 import { TextDemo } from './demos/TextDemo';
+import { TextOutlinesDemo } from './demos/TextOutlinesDemo';
 import { QuadtreeDemo } from './demos/QuadtreeDemo';
 import { PathPoseDemo } from './demos/PathPoseDemo';
 import { CompoundPathsDemo } from './demos/CompoundPathsDemo';
@@ -46,6 +47,7 @@ import RotatedResizeMathDemoFull from './demos/RotatedResizeMathDemo.tsx?raw';
 import MultiSelectDemoFull from './demos/MultiSelectDemo.tsx?raw';
 import InsertDemoFull from './demos/InsertDemo.tsx?raw';
 import TextDemoFull from './demos/TextDemo.tsx?raw';
+import TextOutlinesDemoFull from './demos/TextOutlinesDemo.tsx?raw';
 import QuadtreeDemoFull from './demos/QuadtreeDemo.tsx?raw';
 import PathPoseDemoFull from './demos/PathPoseDemo.tsx?raw';
 import CompoundPathsDemoFull from './demos/CompoundPathsDemo.tsx?raw';
@@ -220,13 +222,24 @@ export const DEMOS: DemoEntry[] = [
   },
   {
     id: 'text',
-    title: 'Text',
-    category: 'Tools',
+    title: 'Text editing',
+    category: 'Text',
     description: 'createTextLayer + useTextEdit + createSetTextOp, composed with useMove, useResize, and the selection overlay. Click to select, drag the body to move (snaps to a 10-unit grid), drag the bottom-right handle to resize (which re-wraps the text), double-click to edit at the clicked glyph (caretIndexAt resolves the click to a character offset and seeds the contenteditable caret); commits flow through createSetTextOp so they\'re undoable. The fourth node demonstrates themed editing — TextStyle.caretColor, selectionBackground, and selectionColor flow through to the contenteditable overlay so the in-place editor matches the canvas palette.',
     hint: 'Click to select, drag to move, drag the bottom-right handle to resize, double-click to edit. Enter commits, Shift+Enter newline, Escape cancels.',
     Component: TextDemo,
     full: TextDemoFull,
     path: 'apps/site/demos/TextDemo.tsx',
+  },
+
+  {
+    id: 'text-outlines',
+    title: 'Outline tier',
+    category: 'Text',
+    description: 'Above a size threshold (48 on-screen px by default) text stops being sampled from a distance field and is drawn as real glyph geometry: registerFontOutlines() supplies the font bytes, the glyph outline is tessellated once in em space, and every instance is a scale-and-translate of the cached triangles into one batched draw call. Exact at any zoom, where an SDF reconstructed from a raster shows contour wobble as you magnify it — and because a glyph becomes an ordinary path, gradient and pattern fills come along for free. The tier is metric-neutral by construction: advances, kerning and line breaking still come from the SDF tier, so crossing the threshold changes what glyphs look like and never where they sit.',
+    hint: 'Toggle the checkbox: the same lines fall back to the baked MSDF atlas, without moving. Zoom in and the small lines cross the threshold too — the rule is on-screen size, not document size.',
+    Component: TextOutlinesDemo,
+    full: TextOutlinesDemoFull,
+    path: 'apps/site/demos/TextOutlinesDemo.tsx',
   },
 
   {

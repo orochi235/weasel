@@ -4,6 +4,7 @@ import {
   registerCanvasFont, resetBakeBudget, setFontFallbackPolicy,
   _resetFallbackForTests,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
+  registerFontOutlines, glyphOutline, _resetFontOutlinesForTests,
 } from '@weasel-js/font';
 import { layoutRuns, _resetMissingGlyphWarningsForTests } from './layoutRuns';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
@@ -783,5 +784,156 @@ describe('layoutRuns — a codepoint the atlas does not cover', () => {
     layoutRuns([run(EM_DASH)], OPTS, ORIGIN);
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
+  });
+});
+
+/**
+ * The outline tier's layout half: which glyphs escalate, what they carry, and
+ * — the invariant everything else rests on — that escalating changes nothing
+ * about where they sit.
+ */
+describe('layoutRuns — outline tier', () => {
+  const OUTLINE_D = 'M0 0L0.5 -0.7L1 0Z';
+
+  beforeEach(() => {
+    _resetFontOutlinesForTests();
+  });
+
+  function registerOutlines(family: string, weight = 400, style: 'normal' | 'italic' = 'normal') {
+    registerFontOutlines(family, { weight, style }, new ArrayBuffer(4), {
+      // A real face reports `null` for a space — no contours, nothing to
+      // tessellate — and the stub has to as well, or the tier would emit
+      // geometry for whitespace.
+      parser: () => ({ unitsPerEm: 1000, glyphD: (cp: number) => (cp === 32 ? null : OUTLINE_D) }),
+    });
+    // The registry answers `null` until the (async) load lands; drive it to
+    // ready the same way a second frame would.
+    glyphOutline(family, weight, style, 65);
+    return new Promise<void>((r) => setTimeout(r, 0));
+  }
+
+  const OPTS_OUT = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const, outlineMinSize: 20 };
+
+  it('leaves every glyph on the SDF tier when the caller does not opt in', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const out = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
+    expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
+    expect(out.groups[0].glyphs).toEqual([]);
+  });
+
+  it('emits an outline group at or above the threshold', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const out = layoutRuns([RUN_PLAIN('AB')], OPTS_OUT, { x: 0, y: 0 });
+    expect(out.groups).toHaveLength(1);
+    expect(out.groups[0].source).toBe('outline');
+    expect(out.groups[0].quads).toEqual([]);
+    expect(out.groups[0].glyphs).toHaveLength(2);
+    expect(out.groups[0].glyphs[0].d).toBe(OUTLINE_D);
+    // Em space is unit-scale, so world units per em is the run's own size.
+    expect(out.groups[0].glyphs[0].scale).toBe(32);
+  });
+
+  it('stays on the SDF tier below the threshold', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const out = layoutRuns([RUN_PLAIN('AB')], { ...OPTS_OUT, outlineMinSize: 48 }, { x: 0, y: 0 });
+    expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
+  });
+
+  it('places outline glyphs at the pen and the baseline, not the quad corner', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const atlas = layoutRuns([RUN_PLAIN('AB')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 10, y: 7 });
+    const outline = layoutRuns([RUN_PLAIN('AB')], OPTS_OUT, { x: 10, y: 7 });
+
+    // The atlas quad carries the glyph's own baseline; an outline glyph's
+    // origin IS that baseline, and its x is the pen — which for the first
+    // glyph of a left-aligned line is the origin.
+    expect(outline.groups[0].glyphs[0].x).toBe(10);
+    expect(outline.groups[0].glyphs[0].baselineY).toBe(atlas.groups[0].quads[0].baselineY);
+  });
+
+  it('is metric-neutral: bounds, lines and advances are identical either way', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const atlas = layoutRuns([RUN_PLAIN('Away we go')], { maxWidth: 200, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
+    const outline = layoutRuns([RUN_PLAIN('Away we go')], { ...OPTS_OUT, maxWidth: 200 }, { x: 0, y: 0 });
+
+    // This is what lets the threshold depend on zoom: crossing it must not
+    // move a single glyph, or text reflows under the user's cursor.
+    expect(outline.bounds).toEqual(atlas.bounds);
+    expect(outline.lines).toEqual(atlas.lines);
+    expect(outline.decorations).toEqual(atlas.decorations);
+  });
+
+  it('advances the pen by the same step on either tier', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const atlas = layoutRuns([RUN_PLAIN('AAA')], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' }, { x: 0, y: 0 });
+    const outline = layoutRuns([RUN_PLAIN('AAA')], OPTS_OUT, { x: 0, y: 0 });
+
+    // The absolute numbers differ by the glyph's left side bearing — an atlas
+    // quad starts at the ink, an outline starts at the pen — but the step
+    // between two of the same glyph is the advance, and that must match.
+    const step = (xs: number[]) => xs.slice(1).map((x, i) => x - xs[i]);
+    expect(step(outline.groups[0].glyphs.map((g) => g.x)))
+      .toEqual(step(atlas.groups[0].quads.map((q) => q.x0)));
+  });
+
+  it('declines outlines for a synthetically emboldened run', async () => {
+    // The regular atlas is thickened by an SDF threshold shift; a path has no
+    // threshold, so painting the real outline would make text get *lighter*
+    // above the tier boundary.
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const out = layoutRuns([RUN_BOLD('A')], OPTS_OUT, { x: 0, y: 0 });
+    expect(out.groups[0].source).toBe('atlas');
+    expect(out.groups[0].synthetic.bold).toBe(true);
+  });
+
+  it('accepts outlines for a synthetically obliqued run — a shear is exact', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const out = layoutRuns([RUN_ITALIC('A')], OPTS_OUT, { x: 0, y: 0 });
+    expect(out.groups[0].source).toBe('outline');
+    expect(out.groups[0].synthetic).toEqual({ bold: false, italic: true });
+  });
+
+  it('falls back to the SDF tier when the face has no outlines registered', async () => {
+    await registerFixture('inter', [{}]);
+    const out = layoutRuns([RUN_PLAIN('AB')], OPTS_OUT, { x: 0, y: 0 });
+    expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
+  });
+
+  it('keys each glyph tessellation by face and codepoint', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const out = layoutRuns([RUN_PLAIN('AA B')], OPTS_OUT, { x: 0, y: 0 });
+    const keys = out.groups[0].glyphs.map((g) => g.key);
+    expect(keys[0]).toBe('inter|400|normal|65');
+    expect(keys[1]).toBe(keys[0]);
+    expect(keys[2]).toBe('inter|400|normal|66');
+  });
+
+  it('keeps outline and atlas glyphs in separate groups, so each is one draw call', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    // Two runs of the same face and fill at different sizes, one either side
+    // of the threshold.
+    const small: ResolvedRun = { ...RUN_PLAIN('A'), fontSize: 10 };
+    const out = layoutRuns([small, RUN_PLAIN('B')], OPTS_OUT, { x: 0, y: 0 });
+    expect(out.groups.map((g) => g.source).sort()).toEqual(['atlas', 'outline']);
   });
 });

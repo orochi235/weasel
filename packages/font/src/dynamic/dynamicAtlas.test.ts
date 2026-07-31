@@ -4,8 +4,9 @@ import {
   autoEnrollCanvasFont, listCanvasFonts,
   _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
   PAGE_SIZE, _getPagesForTests,
-  resetBakeBudget, subscribeGlyphReady,
+  resetBakeBudget,
 } from './dynamicAtlas';
+import { subscribeGlyphReady } from '../glyphReady';
 import type { FontFallbackPolicy } from '../fallback';
 import { setFontFallbackPolicy, _resetFallbackForTests } from '../fallback';
 import { BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';

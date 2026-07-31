@@ -20,7 +20,7 @@ Priority tags:
 
 - **Loupe tool** → [Tools & gestures](#tools--gestures)
 - **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
-- **Stroked text** → [Text](#text)
+- **Stroked text** (cheaper now that glyphs are paths) → [Text](#text)
 - **Geometry-accurate picking — stroke width remainder** → [Tools & gestures](#tools--gestures)
 
 ### P1 — foundational genericity gaps
@@ -237,6 +237,14 @@ Core five + Crop shipped. Remaining:
   image-upload story. SVG export needs matching `<linearGradient>` /
   `<pattern>` emission. Requested 2026-07-31.
 
+  Note on **text**: non-solid fills on text used to be a shader problem — the
+  MSDF program takes a single colour uniform. Since the outline tier landed
+  (2026-07-31) it is not: above the size threshold a glyph is a `PolygonPath`
+  drawn through `drawPathFillByKind`, so gradient- and pattern-filled text
+  already renders with nothing further to build. Below the threshold it still
+  falls back to solid. So this item is app-side for text too — widen the data
+  shape and the UI, and large text simply works.
+
 - **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`). Defer until a real use case lands.
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three real consumers now exist (plasma / ripple / voronoi panels), enough to validate the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
@@ -247,22 +255,59 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
+- **(RESOLVED 2026-07-31) Outline text tier — glyph contours no longer wobble
+  under magnification.** Above `OUTLINE_MIN_SCREEN_PX` (48 on-screen px) a
+  registered face renders as tessellated glyph geometry rather than a sampled
+  distance field. `registerFontOutlines(family, variant, source)` supplies the
+  bytes (a URL, a buffer, or a thunk); `enableLocalFontOutlines()` indexes
+  installed fonts through `queryLocalFonts` for machine families, behind a
+  permission and a user gesture. WeaselDraw ships a 27 kB subset Inter beside
+  the atlas so the default face is covered, and exposes the machine-font half
+  as Preferences → Text → "Sharp text from installed fonts".
+
+  The tier is **metric-neutral by construction**: advances, kerning, wrapping
+  and baselines still come from whichever SDF tier resolved the run, so
+  crossing the threshold changes what a glyph looks like and never where it
+  sits — which is what lets the threshold depend on zoom without text
+  reflowing. Tessellation is cached per `(face, codepoint)` in em space and
+  transformed per instance into one shared buffer, so a group is still one
+  draw call, and it goes through `drawPathFillByKind`, so gradient- and
+  pattern-filled text came along for free.
+
+  Known limits, all deliberate: synthetic **bold** declines the tier and stays
+  on the SDF (emboldening geometry means offsetting the outline, the same
+  unsolved problem as stroke-to-fill); synthetic italic does not, because a
+  shear is exact. Small text stays on the atlas on purpose — outlines carry no
+  hinting or stem darkening, so 12–16px from outlines looks *worse* than a
+  platform rasterizer (see `glyphRasterizer.ts`'s measurements).
+
+- **(P3) The two tiers still read different ascender tables.** Untouched by
+  the outline work and unchanged in urgency. Chrome reports Inter at 0.896 em
+  (`sTypoAscender`) where `msdf-bmfont-xml` baked 0.969 em (`hhea.ascender`),
+  and `emHeightAscent` is undefined in Chrome, so no browser API recovers the
+  hhea value — a DOM baseline probe returns exactly
+  `fontBoundingBoxAscent`. Measured at a 48px em: Inter 43/43 (0.896), Impact
+  48/48.5 (1.01), Georgia 44/44 (0.917), Comic Sans MS 53/53 (1.104), Papyrus
+  45 with descent 29 (0.938). Decide one convention and normalize both tiers
+  onto it. Papyrus's ascent+descent of 1.54 em cannot fit the default 1.2 line
+  box under any convention and needs a rule of its own. The outline tier makes
+  this *easier*: reading font bytes gives access to both tables directly
+  instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
+
 - **Stroked text.** WeaselDraw exposes stroke color + width on text nodes and
-  neither renders — the control lies. The fix is cheap and needs no
-  glyph-to-path conversion: the MSDF shader (`packages/font/src/textSdf.ts`)
-  already reduces each fragment to a signed distance and already shifts its
-  threshold for synthetic bold (`u_synthBold`), which is the same mechanism an
-  outline needs. Add `u_outlineWidth` + `u_outlineColor`, threshold a second
-  time at `0.5 - outlineWidth` for the outer edge, and composite
-  `mix(outline, fill, fillAlpha)` against the outer alpha — one extra
-  smoothstep, no second pass, no new geometry. Then plumb the node's
-  `stroke` / `strokeWidth` through `layoutRuns` → the text draw command,
-  converting world px to SDF units the way `u_synthBold` already does.
-  Known limits to design around: stroke width is bounded by the atlas's
-  distance range (a few px at 1:1, scaling with zoom) and beyond it corners
-  round off; joins/caps aren't real joins; and a non-solid stroke paint
-  (gradient/pattern *on the stroke*) does need the other programs, so keep
-  v1 solid-color. Requested 2026-07-31.
+  neither renders — the control lies. **The outline tier (shipped 2026-07-31)
+  changed which fix is right.** The old plan was an SDF shader trick: threshold
+  a second time at `0.5 - outlineWidth` and composite, cheap but bounded by the
+  atlas's distance range, with rounded corners past it and no real joins or
+  caps. Above `OUTLINE_MIN_SCREEN_PX` a glyph is now an ordinary `PolygonPath`,
+  so `tessellateStroke` gives real joins, caps, miters and any paint, at any
+  width — which is the answer for exactly the sizes anyone strokes text at.
+  Shape of the work: carry `stroke` on `LaidOutGroup` (it is already per-run
+  state), stroke the group's merged mesh in `drawTextOutlineGroup`, and decide
+  what small text does — either the SDF second-threshold as a lower tier, or
+  nothing until the text is big enough to qualify, which is defensible since a
+  1px outline on 12px text is not a design anyone asked for. Requested
+  2026-07-31.
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 

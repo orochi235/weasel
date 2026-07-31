@@ -36,7 +36,7 @@ import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
 import { GradientRampCache } from './cache/GradientRampCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
-import { dispatch, type DrawContext } from './draw';
+import { dispatch, OUTLINE_MIN_SCREEN_PX, type DrawContext } from './draw';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,
@@ -85,6 +85,14 @@ export interface WeaselRendererOptions {
    *  Default DEFAULT_BAKE_BUDGET (16). The headless renderSceneToPixels
    *  path passes Infinity so print never defers a glyph. */
   bakeBudget?: number;
+  /** On-screen glyph size, in CSS pixels, at or above which text renders from
+   *  tessellated font outlines instead of a distance field — see
+   *  `OUTLINE_MIN_SCREEN_PX`. Only faces registered with
+   *  `registerFontOutlines` are affected; everything else keeps its SDF tier
+   *  whatever this says. Pass `Infinity` to disable the tier outright, or 0
+   *  to use outlines wherever they exist (what the headless path does, since
+   *  print has no reason to sample a field it could evaluate exactly). */
+  textOutlineMinScreenSize?: number;
 }
 
 export class WeaselRenderer {
@@ -114,6 +122,7 @@ export class WeaselRenderer {
   private readonly imageMinification: ImageMinification;
   private readonly flattenTolerance?: number;
   private readonly bakeBudget: number;
+  private readonly textOutlineMinScreenSize: number;
   private contextLost = false;
   private boundOnLost = (e: Event) => this.onContextLost(e);
   private boundOnRestored = () => this.onContextRestored();
@@ -135,6 +144,7 @@ export class WeaselRenderer {
     this.imageMinification = opts.imageMinification ?? 'linear';
     this.flattenTolerance = opts.flattenTolerance;
     this.bakeBudget = opts.bakeBudget ?? DEFAULT_BAKE_BUDGET;
+    this.textOutlineMinScreenSize = opts.textOutlineMinScreenSize ?? OUTLINE_MIN_SCREEN_PX;
 
     this.canvas = opts.canvas ?? null;
     if (this.canvas) {
@@ -409,6 +419,7 @@ export class WeaselRenderer {
       heightCss: this.heightCss,
       clipDepth: 0,
       flattenTolerance: this.flattenTolerance,
+      textOutlineMinScreenSize: this.textOutlineMinScreenSize,
     };
     for (const cmd of commands) dispatch(ctx, cmd);
     // Free transient resources allocated during this frame (e.g. per-frame
