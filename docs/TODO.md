@@ -67,17 +67,26 @@ Priority tags:
      all — is in docs/handoffs/2026-07-28-arbitration-followups.md. Reviewed
      2026-07-28, re-verified against main 2026-07-31. -->
 
-- **(P2) `findConflicts` is written, tested, and never called.**
-  `tools/routing/reflection/conflicts.ts` detects the one class of genuine
-  routing ambiguity the kit has — the same (phase, gesture, arg, target,
-  modifiers) tuple declared by two tools, which the dispatcher resolves by slot
-  order and almost certainly not as the author intended. Its only caller is its
-  own test, so the kit can detect this and never does. Fix is cheap: call it
-  once at tool-registry assembly under `DEV` and `console.warn` each conflict,
-  formatted with `formatRoute` so the message names the tuple in the grammar an
-  author would recognize. Decide deliberately whether a conflict warns or
-  throws — warn is right for consumer tools, but a conflict between two *kit*
-  tools is always a bug.
+- **(P2) ~~`findConflicts` is written, tested, and never called.~~ Done
+  2026-08-01.** `useTools` runs `reportRouteConflicts` at registry assembly
+  under a `NODE_ENV !== 'production'` guard and warns each conflict through
+  `formatRoute`. Runtime warns, never throws; kit-vs-kit conflicts fail in
+  `canvas/SceneCanvas.routeConflicts.test.tsx` instead, over all three tool
+  bundles.
+
+  Wiring it up found the raw detector over-reports twice over, both fixed:
+  `{ kindOf }` predicate targets all render as one grammar token (so select's
+  resize / rotate / move drags looked like a three-way collision) and now
+  bucket by function identity; and `matchSorted` resolves *cross-scope* ties by
+  scope priority, so only same-scope overlaps are reachable —
+  `findScopedConflicts` reports a tool colliding with itself, two ambient
+  tools, or two hotkey-capable tools, and stays quiet about two registry tools
+  that can never hold the active slot at once.
+
+  Not covered: the actions registry's `defaultBinding`s, which the dispatcher
+  also folds into ambient/hotkey scope but which are assembled in
+  `ActionsRegistry`, not `useTools`. Catching tool-vs-action collisions needs
+  a second input `findScopedConflicts` doesn't have yet.
 
 - **(P3) The `phase` dimension of the specificity tuple is binary.**
   `specificity()` scores dimension `[2]` as `phase !== undefined ? 1 : 0`, so
@@ -92,21 +101,34 @@ Priority tags:
   the same compat argument `targetRank`'s doc comment makes: enumerate the
   existing phase-bearing specs and show the ordering is unchanged.
 
-- **(P2) `gestureIdFor` collapses every pointer onto one channel.** It returns
-  the template literal `` `pointer-mouse` `` with nothing interpolated, so
-  every pointer — mouse, each touch, the stylus — keys into the same in-flight
-  handle slot and two simultaneous pointer gestures cannot coexist. The module
-  JSDoc promises `pointer-<pointerId>`; `useGestureDispatcher` already tracks
-  real `e.pointerId` (in `activePointers`, `bufferedDown`, `setPointerCapture`)
-  — the dispatcher just never asks for it. Thread `pointerId` onto the pointer
-  `InputEvent` variants and interpolate. Check three things first: that no pump
-  path hardcodes the literal when reconstructing the id; that a two-finger
-  gesture doesn't start firing two per-pointer drags *and* the
-  `multitouch-${fingers}` handle; and that `getActiveAction()`'s
-  "most-recently-started wins" still holds once it stops being near-vacuous.
-  **Decide the intent first:** either multi-pointer independence, or explicitly
-  ignoring secondary pointers. Aliasing them by accident is the bad third
-  option, which is what happens today.
+- **(P2) ~~`gestureIdFor` collapses every pointer onto one channel.~~ Done
+  2026-08-01.** Pointer `InputEvent` variants carry `pointerId` (via
+  `PointerIdentity` in `@weasel-js/gestures`) and `gestureIdFor` interpolates
+  it through the exported `pointerGestureId`. Events without one — synthetic
+  probes, programmatic drags, most tests — still key to `pointer-mouse`.
+
+  Intent decided: **explicit multitouch ownership, with honest ids.** When a
+  second pointer lands, the multitouch channel claims every pointer that hasn't
+  already committed to a gesture (by dropping its buffered press), which
+  suppresses both drags and taps from those pointers; a drag already in flight
+  survives, so resting a palm mid-drag doesn't cancel it. That behavior used to
+  hold only by accident, because every pointer aliased to one slot.
+
+  All three checks from the original entry: the one hardcoded literal
+  (`inFlight().has('pointer-mouse')` in `onPointerUp`) now goes through
+  `pointerGestureId`; the two-finger case is covered by the claim above and
+  pinned in `useGestureDispatcher.test.tsx`; `getActiveAction()`'s
+  most-recently-started rule still holds, and its doc now says when it's
+  actually load-bearing.
+
+- **(P3) A second finger still fires `pointerDown`-spec bindings.** Found while
+  doing the above. `onPointerDown` dispatches the eager `stage: 'press'` copy
+  before the multitouch claim runs, so starting a pinch runs `select.pick` for
+  the second finger and can change the selection under the gesture. Pre-existing
+  — the press dispatch was always unconditional — and out of scope for the
+  gestureId fix, but it's the same family of bug: a pointer that is part of a
+  pinch shouldn't be acting on its own. Fix is probably to defer the press
+  dispatch by a frame, or to re-dispatch a cancel for claimed pointers.
 
 - **(P3) Sibling z-order is unresolved in hit-picking.** `pickTopMostHit.ts`
   collapses parent/child (the valuable half, and done) then falls back to "last
@@ -218,7 +240,40 @@ Priority tags:
 
 - **(P3) Reshape `selectionOverlay` into a thin override hook.** The chrome-affordances spec shipped (2026-06-13): the multi-resize union now has a single owner — `ChromeState.unionBounds` — which both the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`) and the overlay layer read at draw time. The inline `poseById` re-derivations in `Canvas`/`SceneCanvas` are deleted, `createSelectionOverlayLayer` resolves the synthetic union from the draw-time chromeState envelope, and `MULTI_RESIZE_TARGET_ID` moved to `core/selection/` (fixing the backwards `affordances→tools` import). Residual: the synthetic-id plumbing (`getSelection` → `[MULTI_RESIZE_TARGET_ID]`, `getOutlineIds` → real members) still lives in the Canvas/SceneCanvas wiring rather than inside `createSelectionOverlayLayer`. Fold it into the layer so the slot is purely a consumer override hook.
 
-- **(P3) Consolidate the two affordance hit-test mechanisms.** Selection chrome is hit-tested two ways: `composeAffordanceLayer`'s `RenderLayer.hitTest` walk (reached via `tools.getActiveOverlays()`, which is why `<SceneCanvas>` mounts the rotate tool as `ambient`) and `affordanceAt`/`buildAffordanceAt` (a chromeState-based classifier in `<SceneCanvas>`). Both now resolve resize/rotate/anchor targets from `ChromeState`, so they overlap. Pick one. This subsumes the former "affordances of registered-but-not-active tools" item: `affordanceAt` already makes built-in selection/resize/rotate/anchor chrome hittable cross-tool with no ambient registration (LassoDemo no longer registers select as `ambient`), and the audit of other chrome families (anchor-edit dots gated by `path-edit.anchors`; snap-highlights / debug-rings visualization-only) came back clean. The only uncovered case is surfacing an *arbitrary third-party tool's* affordances cross-tool — no consumer needs that today. Related seam (2026-07-20): hover cursors are honored only on the `buildAffordanceAt` side (`AffordanceHit.cursor`, read by the dispatcher's hover-cursor pump); `AffordanceRegion.cursor` on the `composeAffordanceLayer` side is declared and *set* (`rotationHandle` defaults it to `'grab'`, customizable via `RotationHandleOptions.cursor`) but unconsumed at runtime — `affordanceAt` hardcodes the same `'grab'` on the live path instead. Fold it in (surface `region.cursor` through the region-walk hit path) rather than delete — deleting drops the customizable declarative source in favor of the hardcode, betting against the consolidation. Resolve when the two mechanisms consolidate.
+- **(P3) ~~Consolidate the two affordance hit-test mechanisms.~~ Done
+  2026-08-01.** Picked the declarative one. `hitAffordanceRegions` is now the
+  single walk; `composeAffordanceLayer.hitTest` and `buildAffordanceAt` both
+  delegate to it, so an `Affordance`'s `regions()` is the one source of truth
+  for where kit chrome is and what a press on it means. `affordanceAt.ts` lost
+  its corner table, its rotate-ring ellipse and its anchor walk (~200 lines) and
+  is now assembly plus a region-hit → `AffordanceHit` mapping. Anchors and
+  control handles became real affordances (`affordances/pathAnchors.ts`);
+  `cornerResize.ts` stopped being dead code.
+
+  The premise in the original entry was half stale and worth recording: the
+  `composeAffordanceLayer.hitTest` side was **not** a live competing mechanism.
+  `tools.getActiveOverlays()` feeds Canvas's *draw* stack only — the sole caller
+  of `RenderLayer.hitTest` is `hitTestExtras`, which walks layers a consumer
+  attached via `registerLayer` (that's the HUD path, hand-rolled, still live and
+  still legitimate). So the rotate tool's overlay `hitTest` was unreachable and
+  is deleted, and `RenderLayer.hitTest`'s doc no longer claims every layer is
+  consulted.
+
+  `AffordanceRegion.cursor` is folded in, as the entry asked: hits carry the
+  region's declared cursor, so `RotationHandleOptions.cursor` finally does
+  something. Three picking bugs fell out of having one implementation:
+  corner handles hit-tested as a circle (dead corners on a square handle) now
+  hit as a square; overlapping regions resolved by declaration order (all four
+  corners of a small selection answered "top-left") now resolve nearest-first;
+  and the rotate band's `bandPx` floor was applied in world units, so it thinned
+  on screen as you zoomed — it's now `minBandPx`, resolved against the live view
+  for both paint and hit.
+
+  Left standing: the ambient rotate-tool mount, now near-vestigial (no bindings,
+  and its overlay paints nothing unless a consumer opts into a visible ring).
+  Removing it means removing `'rotate'` from `BuiltinToolId` / `BUNDLE_TOOLS`
+  and unexporting `useRotateTool` — a public-API change, so it wants its own
+  decision rather than riding along here.
 
 - **(P3) Embedded image support — follow-ups.** Shipped 2026-06-27: serializable `data.image.src` contract (URL / blob: / `data:` URI), kit-owned `imageCache` (`packages/core/src/features/images/`, sync read + lazy de-duped async load + `subscribeImageReady`→`requestRedraw`), the `kit:image` shape painter (`NodeShape.ts`, emits `ImageDrawCommand`, faint placeholder while loading), and the `useImageTool` drag-insert tool (`packages/core/src/tools/builtin/image/`, routes through `useInsertDepSource`'s `'image'` case). Demo: `apps/site/demos/ImageDemo.tsx`. Remaining: (a) **SVG `<image>` interop** — `packages/svg` parse/emit of `<image>` (href + embedded base64) is still unsupported (`<image>` elements are dropped on import); (b) **live drag-preview for image inserts** — `insertAction`'s ghost only previews `KIT_INSERT_KINDS` (rect/ellipse/line/polygon/star/pencil), so an image commits on release with no preview; extend that set to include `image`.
 

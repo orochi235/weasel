@@ -43,6 +43,9 @@ function clientToWorld(
 // clientToWorld formula
 // ---------------------------------------------------------------------------
 
+/** Identity view — hit radii are screen px, so scale 1 makes them world px. */
+const UNIT_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
 describe('clientToWorld formula', () => {
   it('identity transform: scale=1, pan=0 — worldX equals screenX', () => {
     const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -174,7 +177,7 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
     get unionBounds() { return null; },
   };
 
-  const affordanceAt = buildAffordanceAt(() => chromeState as any);
+  const affordanceAt = buildAffordanceAt({ getChromeState: () => chromeState as any, getView: () => view });
 
   it('client (40, 40) at scale=2 → world (20,20) → top-left handle hit', () => {
     const wp = clientToWorld(40, 40, rect, view);
@@ -212,7 +215,7 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       get unionBounds() { return null; },
     };
-    const pannedAffordanceAt = buildAffordanceAt(() => pannedChrome as any);
+    const pannedAffordanceAt = buildAffordanceAt({ getChromeState: () => pannedChrome as any, getView: () => pannedView });
     const hit = pannedAffordanceAt(wp);
     // Not near any corner (corner at (20,20), distance from (40,27.5) ≈ 22 > 8).
     expect(hit).toBeNull();
@@ -234,7 +237,7 @@ describe('buildAffordanceAt at scale=2 with non-zero pan (T7 audit)', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       get unionBounds() { return null; },
     };
-    const pannedAffordanceAt = buildAffordanceAt(() => pannedChrome as any);
+    const pannedAffordanceAt = buildAffordanceAt({ getChromeState: () => pannedChrome as any, getView: () => pannedView });
     const hit = pannedAffordanceAt(wp);
     expect(hit).not.toBeNull();
     expect(hit?.kind).toBe('handle:top-left');
@@ -289,12 +292,11 @@ describe('buildAffordanceAt — anchor hits on selected polygon paths', () => {
     getPose: (id) => id === 'path-1' ? triangle : undefined,
   };
 
-  const affordanceAt = buildAffordanceAt(
-    () => chromeState as any,
-    8,   // hitRadius
-    24,  // rotateDistance
-    () => anchorState,
-  );
+  const affordanceAt = buildAffordanceAt({
+    getChromeState: () => chromeState as any,
+    getView: () => UNIT_VIEW,
+    getAnchorState: () => anchorState,
+  });
 
   it('pointer near anchor 0 (0,0) returns anchor:0', () => {
     const hit = affordanceAt({ x: 0, y: 0 });
@@ -326,11 +328,11 @@ describe('buildAffordanceAt — anchor hits on selected polygon paths', () => {
       editingId: null,
       getPose: (id) => id === 'path-1' ? bezier : undefined,
     };
-    const afAt = buildAffordanceAt(
-      () => makeChromeState() as any,
-      8, 24,
-      () => noEditAnchorState,
-    );
+    const afAt = buildAffordanceAt({
+      getChromeState: () => makeChromeState() as any,
+      getView: () => UNIT_VIEW,
+      getAnchorState: () => noEditAnchorState,
+    });
     // controlOut of anchor 0 is at (5,-5). Outside edit mode, only anchor
     // points are tested. dist(5,-5 → 0,0) ≈ 7.07 < 8 so anchor:0 should hit
     // rather than controlOut:0.
@@ -348,11 +350,11 @@ describe('buildAffordanceAt — control-handle hits when in edit mode', () => {
     getPose: (id) => id === 'path-1' ? bezier : undefined,
   };
 
-  const affordanceAt = buildAffordanceAt(
-    () => chromeState as any,
-    8, 24,
-    () => anchorState,
-  );
+  const affordanceAt = buildAffordanceAt({
+    getChromeState: () => chromeState as any,
+    getView: () => UNIT_VIEW,
+    getAnchorState: () => anchorState,
+  });
 
   it('pointer near controlOut of anchor 0 (5,-5) returns controlOut:0', () => {
     // anchor 0 controlOut at (5,-5); anchor 0 at (0,0).
@@ -394,9 +396,10 @@ describe('buildAffordanceAt — no anchor state wired → no anchor hits', () =>
   const chromeState = makeChromeState();
 
   // No getAnchorState passed → anchors never hittable.
-  const affordanceAt = buildAffordanceAt(
-    () => chromeState as any,
-  );
+  const affordanceAt = buildAffordanceAt({
+    getChromeState: () => chromeState as any,
+    getView: () => UNIT_VIEW,
+  });
 
   it('pointer exactly on anchor 0 returns null (no anchor classifier wired)', () => {
     // Without getAnchorState, the classifier ignores path poses.
@@ -412,11 +415,11 @@ describe('buildAffordanceAt — non-polygon pose is skipped', () => {
     getPose: () => ({ kind: 'rect', x: 0, y: 0, width: 100, height: 100 }),
   };
 
-  const affordanceAt = buildAffordanceAt(
-    () => chromeState as any,
-    8, 24,
-    () => anchorState,
-  );
+  const affordanceAt = buildAffordanceAt({
+    getChromeState: () => chromeState as any,
+    getView: () => UNIT_VIEW,
+    getAnchorState: () => anchorState,
+  });
 
   it('rect pose returns null (not hittable as anchor)', () => {
     const hit = affordanceAt({ x: 0, y: 0 });

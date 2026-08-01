@@ -1,8 +1,9 @@
-import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
+import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { ResizeAnchor } from 'interactions/gestures/types';
-import { CORNER_ANCHORS, cornerPoint } from 'interactions/actions/resize/cornerHandles';
+import { CORNER_ANCHORS, cornerPoint, fixedCornerOf } from 'interactions/actions/resize/cornerHandles';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
+import { localToWorld, transformOf } from './hitAffordanceRegions';
 
 export interface CornerResizeAffordanceOptions {
   /** Hit radius (screen-px) for the corner handles. Default 8. */
@@ -13,12 +14,16 @@ export interface CornerResizeAffordanceOptions {
   stroke?: string;
 }
 
-export interface CornerResizeScratch {
+export interface CornerResizeScratch extends CommonAffordanceScratch {
   /** Resize anchor identifying the OPPOSITE corner (the one that stays
    *  fixed). Matches the kit's existing ResizeAnchor convention. */
   anchor: ResizeAnchor;
   /** Id of the resize target. In multi-mode this is `MULTI_RESIZE_TARGET_ID`. */
   targetId: string;
+  /** The fixed corner in **world** coords, with the target's rotation already
+   *  applied. `resizeAction` scales from this point, and it has no access to
+   *  the target transform, so the affordance resolves it here. */
+  fixedPoint: { x: number; y: number };
 }
 
 const DEFAULT_FILL = '#d4c4a8';
@@ -58,19 +63,35 @@ export function createCornerResizeAffordance(
       const target = pickRenderTarget(state);
       if (!target) return [];
       const b = target.bounds;
-      const corners = CORNER_ANCHORS.map((c) => {
-        const p = cornerPoint(b, c);
-        return { lx: p.x, ly: p.y, anchor: c.anchor, tag: c.tag };
+      // The transform the framework applies to these regions. Needed here too,
+      // because `fixedPoint` leaves the local frame — it travels to
+      // `resizeAction`, which works in world coords.
+      const xf = transformOf(state, target.id);
+      return CORNER_ANCHORS.map((c) => {
+        const corner = cornerPoint(b, c);
+        const fixedLocal = fixedCornerOf(b, c.anchor);
+        const fixedPoint = localToWorld(xf, fixedLocal.x, fixedLocal.y);
+        return {
+          id: `corner-${c.tag}`,
+          targetId: target.id,
+          shape: { kind: 'point' as const, x: corner.x, y: corner.y, hitRadiusPx: handleHitRadius },
+          paint,
+          hitKind: c.kind,
+          // Diagonal by fixed-corner parity: a matched-axis anchor (min-min /
+          // max-max fixed) means the dragged corner sits on the ↘ diagonal;
+          // mixed axes sit on the ↗ diagonal. Not rotation-aware — a rotated
+          // target keeps the unrotated hint, the same policy as every
+          // mainstream editor short of Figma.
+          cursor: c.anchor.x === c.anchor.y ? 'nwse-resize' : 'nesw-resize',
+          bind: (): AffordanceBinding => ({
+            initialScratch: {
+              anchor: c.anchor,
+              targetId: target.id,
+              fixedPoint,
+            } satisfies CornerResizeScratch,
+          }),
+        } satisfies AffordanceRegion;
       });
-      return corners.map(({ lx, ly, anchor, tag }) => ({
-        id: `corner-${tag}`,
-        targetId: target.id,
-        shape: { kind: 'point' as const, x: lx, y: ly, hitRadiusPx: handleHitRadius },
-        paint,
-        bind: (): AffordanceBinding => ({
-          initialScratch: { anchor, targetId: target.id } satisfies CornerResizeScratch,
-        }),
-      } satisfies AffordanceRegion));
     },
   };
 }

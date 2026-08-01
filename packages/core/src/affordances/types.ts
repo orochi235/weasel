@@ -72,6 +72,17 @@ export interface AffordanceRegion<TScratch = unknown> {
         /** Inner rect (target-local) — the cutout. Typically the
          *  selection's AABB. */
         innerX: number; innerY: number; innerWidth: number; innerHeight: number;
+        /** Minimum band thickness outside the inner rect, in **screen**
+         *  pixels. The framework widens `rx`/`ry` to at least
+         *  `innerHalfExtent + minBandPx / meanScale(view.scale)` for both
+         *  paint and hit-test.
+         *
+         *  This exists because the clamp has to know the view and the
+         *  affordance doesn't: `ChromeState` carries no scale. Expressing the
+         *  floor in world units instead (which is what the rotate ring used
+         *  to do) makes the band shrink on screen as you zoom in, until the
+         *  ring around a small shape is too thin to hover. */
+        minBandPx?: number;
       };
 
   /** Optional paint. World position is derived from `shape` + target
@@ -88,13 +99,17 @@ export interface AffordanceRegion<TScratch = unknown> {
     | { kind: 'annulus';  fill?: FillStyle; stroke?: Stroke; insetPx?: number }
     | { kind: 'custom';   draw: (ctx: CustomPaintContext) => DrawCommand[] };
 
-  /** Declared CSS cursor for this region. NOTE: nothing consumes this
-   *  field yet — the hover-cursor pump lives on the dispatcher pipeline
-   *  (`useGestureDispatcher`) and reads `AffordanceHit.cursor` from
-   *  `buildAffordanceAt`'s synthesized hits, which do not go through
-   *  region objects. Honoring this field is part of the pending
-   *  affordance-layer unification (see the selection-overlay note in
-   *  `docs/taxonomy.md`). */
+  /** Discriminator a press on this region reports as `AffordanceHit.kind` —
+   *  the string routing specs match on (`'handle:top-left'`,
+   *  `'rotate-handle'`, `'anchor:3'`). Omit for regions that only exist
+   *  inside a consumer-registered layer, where the layer id is the
+   *  discriminator; `buildAffordanceAt` falls back to
+   *  `<affordanceId>:<regionId>`. */
+  hitKind?: string;
+
+  /** CSS cursor to show while hovering this region. Read by the hover-cursor
+   *  pump in `useGestureDispatcher` via `AffordanceHit.cursor`, which
+   *  `buildAffordanceAt` fills in from the region the walk landed on. */
   cursor?: string;
 
   /** Drag binding produced when this region is hit. Lazily called so
@@ -135,4 +150,28 @@ export interface CustomPaintContext {
  */
 export interface AffordanceBinding<TScratch = unknown> {
   initialScratch?: TScratch;
+}
+
+/**
+ * The fields `buildAffordanceAt` lifts out of a region's `initialScratch`
+ * when it turns a region hit into an `AffordanceHit`.
+ *
+ * Scratch is otherwise opaque — whatever the affordance wants to hand the
+ * action that picks up the drag. These few names are the exception: they mean
+ * the same thing to every affordance, and the actions that consume them
+ * (`resizeAction`, `rotateAction`) read them off `AffordanceHit` rather than
+ * out of scratch. An affordance that doesn't set them simply produces a hit
+ * without those fields.
+ */
+export interface CommonAffordanceScratch {
+  /** The node (or `MULTI_RESIZE_TARGET_ID`) this chrome acts on. Becomes
+   *  `AffordanceHit.targetIds`. */
+  targetId?: string;
+  /** For resize chrome: which corner stays pinned. Mirrors the kit's
+   *  `ResizeAnchor`, spelled inline so `affordances/` doesn't take a type
+   *  dependency on the gesture layer for one field. */
+  anchor?: { x: 'min' | 'max' | 'free'; y: 'min' | 'max' | 'free' };
+  /** World-space invariant point of the transform — the fixed corner for a
+   *  resize, the pivot for a rotation. */
+  fixedPoint?: { x: number; y: number };
 }

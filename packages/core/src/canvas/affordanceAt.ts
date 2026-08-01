@@ -1,310 +1,148 @@
 /**
- * affordanceAt — chrome-state-based affordance classifier for SceneCanvas.
+ * affordanceAt — the dispatcher-side affordance classifier.
  *
- * Walks the current selection's corner handles + rotation handle and
- * returns an `AffordanceHit` when the pointer lands within hit radius,
- * or `null` when it's on open canvas / a scene body.
+ * Answers "what piece of selection chrome is under this world point?" and
+ * returns an `AffordanceHit`, which `GestureDispatcherMounter` packs onto
+ * `InputEvent.pointerdown.affordance` so `resizeAction` / `rotateAction` /
+ * `editAnchorsAction` can guard on affordance kind, and which the hover-cursor
+ * pump reads `cursor` off of.
  *
- * Used by `GestureDispatcherMounter` (SceneCanvas) to populate
- * `InputEvent.pointerdown.affordance` so `resizeAction` / `rotateAction`
- * invokers can guard on affordance kind.
+ * It used to answer that question with its own geometry: its own corner
+ * table, its own rotate-ring ellipse, its own anchor walk — all duplicating
+ * the `Affordance` region declarations in `src/affordances/`, which had a
+ * hit-tester of their own that nothing reached for kit chrome. Two
+ * implementations of one question, and the declarative one was the dead
+ * branch, which is why `AffordanceRegion.cursor` could be declared and set
+ * and never consumed.
  *
- * Only unrotated single-selection handles are classified. Rotated
- * handle positions require rotating the corner around the AABB center —
- * see rotationHandle.ts for the rotation math. Multi-selection resize uses
- * `unionBounds` (same corners, same radius).
+ * Now this assembles the kit's affordances and runs the one shared walk
+ * (`hitAffordanceRegions`). What remains here is the assembly and the
+ * region-hit → `AffordanceHit` mapping.
  */
 
 import type { BodyClassification } from '@weasel-js/gestures';
-import type { ChromeState, Bounds } from 'core/selection/chromeState';
+import type { ChromeState } from 'core/selection/chromeState';
+import type { View } from 'core/viewport/view';
 import type { AffordanceHit } from 'interactions/actions/invoker';
-import type { ResizeAnchor } from 'interactions/gestures/types';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
-import { hitAnchor } from 'interactions/actions/edit-anchors/handles';
-import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
-import { rotatePoint } from 'interactions/actions/rotate/geometry';
-import { CORNER_ANCHORS, cornerPoint, fixedCornerOf } from 'interactions/actions/resize/cornerHandles';
-import type { PolygonPath } from 'features/paths/types';
-import { poseRotationOf } from 'features/paths/poseRotation';
+import type { Affordance, CommonAffordanceScratch } from 'affordances/types';
+import { hitAffordanceRegions, type AffordanceRegionHit } from 'affordances/hitAffordanceRegions';
+import { createCornerResizeAffordance } from 'affordances/cornerResize';
+import { createRotationAffordance } from 'affordances/rotationHandle';
+import { createPathAnchorAffordances, type AnchorState } from 'affordances/pathAnchors';
+
+export type { AnchorState };
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Default hit-test radius in world units. Mirrors DEFAULT_HANDLE_SIZE from
- *  SceneCanvas (8px CSS). Only correct at scale=1; callers that know the
- *  view scale should pass a thunk that returns `8 / meanScale(view.scale)`
- *  so the world-unit radius matches the visual handle's screen size across
- *  zoom. Without that, the hit zone shrinks below the visual handle at
- *  zoom > 1 and clicks on the handle slip through to body → move. */
+/** Default hit-test radius for corner handles, in **screen** pixels. Mirrors
+ *  DEFAULT_HANDLE_SIZE from SceneCanvas (8px CSS).
+ *
+ *  This used to be a world-unit radius, which every caller had to scale-correct
+ *  by hand (`8 / meanScale(view.scale)`) or else watch the hit zone shrink
+ *  under the visual handle at zoom > 1. Regions express hit radii in screen
+ *  pixels and the framework converts, so the correction happens once, in the
+ *  one place that knows the view. */
 export const HANDLE_HIT_RADIUS = 8;
 
-/** Hit-test radius for anchor and control-handle points in world units.
+/** Hit-test radius for anchor and control-handle points, in screen pixels.
  *  Mirrors `useEditAnchors` default (`hitRadius = 8`). */
 export const ANCHOR_HIT_RADIUS = 8;
-
-/** Default rotation-handle distance from the top edge of the selection bounds
- *  in world units. Mirrors DEFAULT_ROTATION_HANDLE_DISTANCE (24). */
-const ROTATE_DISTANCE = DEFAULT_ROTATION_HANDLE_DISTANCE;
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/** Squared distance from a point to another point. */
-function dist2(ax: number, ay: number, bx: number, by: number): number {
-  const dx = ax - bx;
-  const dy = ay - by;
-  return dx * dx + dy * dy;
-}
-
-/** Bounds + id of the target to hit-test affordances against. */
-interface ResizeTarget {
-  id: string;
-  bounds: Bounds;
-}
-
-/** Pick the resize target: multi-selection → union bounds, single → own bounds. */
-function pickResizeTarget(state: ChromeState): ResizeTarget | null {
-  if (state.multiActive && state.unionBounds) {
-    return { id: MULTI_RESIZE_TARGET_ID, bounds: state.unionBounds };
-  }
-  if (state.selection.length === 1) {
-    const id = state.selection[0];
-    const b = state.boundsOf(id);
-    return b ? { id, bounds: b } : null;
-  }
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Corner descriptors — (corner world position, handle kind, fixed-point)
-// ---------------------------------------------------------------------------
-
-interface CornerDesc {
-  worldX: number;
-  worldY: number;
-  kind: string;
-  /** Which corner stays fixed during the resize. Mirrors the convention in
-   *  `cornerResizeHandles`: 'min'/'max' identifies the FIXED edge, the
-   *  dragged corner is diagonally opposite. */
-  anchor: ResizeAnchor;
-  /** Fixed point (diagonally opposite corner) — world coords. */
-  fixedX: number;
-  fixedY: number;
-}
-
-function cornersFor(b: Bounds): CornerDesc[] {
-  // Pivot + angle from the kit's one rotation convention; null = unrotated.
-  const r = poseRotationOf(b);
-  const place = (px: number, py: number): { x: number; y: number } =>
-    r ? rotatePoint(px, py, r.cx, r.cy, r.rotation) : { x: px, y: py };
-
-  // Decode the canonical corner→anchor table. Each entry's `anchor` names
-  // the FIXED corner; the dragged corner is `cornerPoint`, the fixed opposite
-  // is `fixedCornerOf(b, anchor)`:
-  //   top-left dragged    → bottom-right fixed → { x:'max', y:'max' }
-  //   top-right dragged   → bottom-left fixed  → { x:'min', y:'max' }
-  //   bottom-left dragged → top-right fixed    → { x:'max', y:'min' }
-  //   bottom-right dragged→ top-left fixed     → { x:'min', y:'min' }
-  return CORNER_ANCHORS.map((c) => {
-    const corner = cornerPoint(b, c);
-    const fixed = fixedCornerOf(b, c.anchor);
-    const wp = place(corner.x, corner.y);
-    const fp = place(fixed.x, fixed.y);
-    return { worldX: wp.x, worldY: wp.y, kind: c.kind, anchor: c.anchor, fixedX: fp.x, fixedY: fp.y };
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Anchor state thunk
-// ---------------------------------------------------------------------------
-
-/**
- * Optional live state for anchor-handle hit-testing. When provided to
- * `buildAffordanceAt`, the returned classifier will also test anchor points
- * (and, when a path is in edit mode, its control handles) on selected paths.
- *
- * The thunk is called on every pointer event, so it must be cheap (O(1)
- * field reads). Pose enumeration happens inside the classifier only when
- * the caller lands on a path node.
- */
-export interface AnchorState {
-  /**
-   * Id of the path currently in anchor-edit mode, or `null` when no path is
-   * being edited. When non-null, control handles (controlIn / controlOut) are
-   * hit-testable in addition to anchor points.
-   */
-  editingId: string | null;
-  /**
-   * Return the current pose for the given node id. The classifier only calls
-   * this for selected polygon paths. Non-polygon return values are ignored.
-   */
-  getPose(id: string): unknown;
-}
 
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
+export interface BuildAffordanceAtOptions {
+  /** Live ChromeState at call time — current selection plus effective bounds,
+   *  including in-flight move/resize ghost poses. */
+  getChromeState: () => ChromeState;
+  /** Live view. Needed because region hit radii and the rotate band are
+   *  declared in screen pixels and resolved against the current scale. */
+  getView: () => View;
+  /** Corner-handle hit radius in screen px. Default {@link HANDLE_HIT_RADIUS}. */
+  handleHitRadius?: number;
+  /** Anchor / control hit radius in screen px. Default {@link ANCHOR_HIT_RADIUS}. */
+  anchorHitRadius?: number;
+  /** Minimum rotate-band thickness outside the selection AABB, in screen px.
+   *  Default {@link DEFAULT_ROTATION_HANDLE_DISTANCE}. */
+  rotateBandPx?: number;
+  /** Anchor-editing state. When omitted, anchors aren't hit-tested. */
+  getAnchorState?: () => AnchorState | null;
+  /** Chrome-caps resolver. Keeps the hit-test and the renderer agreeing on
+   *  which chrome is live (resize handles gated by
+   *  `'selection.resize-handles'`, rotation by `'selection.rotation-handle'`,
+   *  anchors by `'path-edit.anchors'`). Omitting defaults to always-visible. */
+  getIsVisible?: () => (id: string) => boolean;
+}
+
 /**
  * Build the `affordanceAt` thunk for `GestureDispatcherMounter`.
  *
- * Returns a function: `(worldPoint) => AffordanceHit | null`.
+ * Returns `(worldPoint) => AffordanceHit | null`. The point is **world-space**;
+ * callers convert from client coords first.
  *
- * The returned thunk is called with a **world-space** point. Callers
- * (currently `GestureDispatcherMounter` inside SceneCanvas) are
- * responsible for converting client/screen coords to world space before
- * calling it.
- *
- * @param getChromeState - Returns the live ChromeState at call time.
- *   Should always reflect current selection + effective bounds (including
- *   in-flight move/resize ghost poses).
- * @param hitRadius - World-unit hit radius for corner handles and anchor
- *   handles (default 8).
- * @param rotateDistance - World-unit distance above top edge for rotation
- *   handle (default DEFAULT_ROTATION_HANDLE_DISTANCE = 24).
- * @param getAnchorState - Optional thunk returning anchor-editing state.
- *   When provided, the classifier also walks selected polygon paths for
- *   anchor hits. Anchors are always hittable on selected paths; control
- *   handles are only hittable when `editingId` matches the node id.
- * @param getIsVisible - Optional resolver from chrome-caps. When provided,
- *   the classifier consults it before claiming an affordance kind — keeps
- *   the affordance pipeline and the renderer in agreement on which chrome
- *   is live (e.g., resize handles are gated by `'selection.resize-handles'`,
- *   rotation by `'selection.rotation-handle'`, anchors by `'path-edit.anchors'`).
- *   Omitting defaults to always-visible (back-compat).
+ * Priority runs anchors → controls → resize handles → rotate ring, top to
+ * bottom, matching how the chrome paints: a corner handle beats the rotate
+ * band it sits inside, and a control handle beats everything.
  */
 export function buildAffordanceAt(
-  getChromeState: () => ChromeState,
-  hitRadius: number | (() => number) = HANDLE_HIT_RADIUS,
-  rotateDistance: number | (() => number) = ROTATE_DISTANCE,
-  getAnchorState?: () => AnchorState | null,
-  getIsVisible?: () => (id: string) => boolean,
+  opts: BuildAffordanceAtOptions,
 ): (worldPoint: { x: number; y: number }) => AffordanceHit | null {
+  const {
+    getChromeState,
+    getView,
+    handleHitRadius = HANDLE_HIT_RADIUS,
+    anchorHitRadius = ANCHOR_HIT_RADIUS,
+    rotateBandPx = DEFAULT_ROTATION_HANDLE_DISTANCE,
+    getAnchorState,
+    getIsVisible,
+  } = opts;
+
+  // Bottom → top. The rotate ring wraps the whole selection, so it sits under
+  // the corner handles that punctuate it; anchors and their controls ride on
+  // top of both, because in anchor-edit mode they're what the pointer is for.
+  const affordances: Affordance[] = [
+    createRotationAffordance({ bandPx: rotateBandPx, paint: null }),
+    createCornerResizeAffordance({ handleHitRadius }),
+    ...(getAnchorState
+      ? createPathAnchorAffordances(getAnchorState, { hitRadius: anchorHitRadius })
+      : []),
+  ];
+
   return function affordanceAt({ x: wx, y: wy }) {
-    const state = getChromeState();
-    const isVisible = getIsVisible?.() ?? (() => true);
-    const hr = typeof hitRadius === 'function' ? hitRadius() : hitRadius;
-    const rd = typeof rotateDistance === 'function' ? rotateDistance() : rotateDistance;
-    const r2 = hr * hr;
-
-    // -- Corner resize handles -- gated by 'selection.resize-handles' --
-    if (isVisible('selection.resize-handles')) {
-      const resizeTarget = pickResizeTarget(state);
-      if (resizeTarget) {
-        for (const c of cornersFor(resizeTarget.bounds)) {
-          if (dist2(wx, wy, c.worldX, c.worldY) <= r2) {
-            return {
-              kind: c.kind,
-              fixedPoint: { x: c.fixedX, y: c.fixedY },
-              targetIds: [resizeTarget.id],
-              anchor: c.anchor,
-              // Diagonal by fixed-corner parity: a matched-axis anchor
-              // (min-min / max-max fixed) means the dragged corner sits on
-              // the ↘ diagonal; mixed axes sit on the ↗ diagonal. Cursor is
-              // not rotation-aware — a rotated target keeps the unrotated
-              // hint (same policy as every mainstream editor short of Figma).
-              cursor: c.anchor.x === c.anchor.y ? 'nwse-resize' : 'nesw-resize',
-            };
-          }
-        }
-      }
-    }
-
-    // -- Rotation zone -- gated by 'selection.rotation-handle' --
-    if (isVisible('selection.rotation-handle')) {
-    // The rotation affordance is now an invisible elliptical ring
-    // around the selection AABB: smallest ellipse containing the AABB,
-    // minus the AABB itself. Hit-test = inside outer ellipse AND
-    // outside inner rect, both expressed in the bounds' local frame so
-    // the ring follows target rotation. Mirrors the geometry in
-    // `src/affordances/rotationHandle.ts` (semi-axes clamped to
-    // `max(w/√2, w/2 + bandPx)`; `rotateDistance` doubles as `bandPx`).
-    const rotateTarget = pickResizeTarget(state);
-    if (rotateTarget) {
-      const { x: bx, y: by, width: bw, height: bh } = rotateTarget.bounds;
-      const halfW = bw / 2;
-      const halfH = bh / 2;
-      const centerX = bx + halfW;
-      const centerY = by + halfH;
-      // Inverse-rotate the world point into the bounds' local frame so
-      // the ellipse/rect math stays axis-aligned.
-      const r = poseRotationOf(rotateTarget.bounds);
-      const lp = r
-        ? rotatePoint(wx, wy, centerX, centerY, -r.rotation)
-        : { x: wx, y: wy };
-      const insideAabb =
-        lp.x >= bx && lp.x <= bx + bw && lp.y >= by && lp.y <= by + bh;
-      if (!insideAabb) {
-        const rx = Math.max(halfW * Math.SQRT2, halfW + rd);
-        const ry = Math.max(halfH * Math.SQRT2, halfH + rd);
-        if (rx > 0 && ry > 0) {
-          const ex = (lp.x - centerX) / rx;
-          const ey = (lp.y - centerY) / ry;
-          if (ex * ex + ey * ey <= 1) {
-            return {
-              kind: 'rotate-handle',
-              fixedPoint: { x: centerX, y: centerY }, // pivot
-              targetIds: [rotateTarget.id],
-              cursor: 'grab',
-            };
-          }
-        }
-      }
-    }
-    }
-
-    // -- Anchor / control-handle hits (selected polygon paths) --
-    // Gated by 'path-edit.anchors'.
-    if (isVisible('path-edit.anchors') && getAnchorState) {
-      const anchorState = getAnchorState();
-      if (anchorState) {
-        const { editingId } = anchorState;
-        for (const id of state.selection) {
-          const pose = anchorState.getPose(id);
-          if (!pose || (pose as { kind?: string }).kind !== 'polygon') continue;
-          const polygon = pose as PolygonPath;
-          // Control handles are only hittable when this node is in edit mode.
-          const inEditMode = editingId === id;
-          if (inEditMode) {
-            // When in edit mode, use hitAnchor which prefers control handles
-            // over anchors when both are within radius — matches visual layering
-            // (controls render on top).
-            const hit = hitAnchor(polygon, wx, wy, hr);
-            if (hit) {
-              const kindStr =
-                hit.kind === 'anchor'
-                  ? `anchor:${hit.anchorIndex}`
-                  : hit.kind === 'controlIn'
-                    ? `controlIn:${hit.anchorIndex}`
-                    : `controlOut:${hit.anchorIndex}`;
-              return { kind: kindStr, targetIds: [id] };
-            }
-          } else {
-            // Outside edit mode: only test anchor points, not control handles.
-            const anchors = enumerateAnchors(polygon);
-            const r2anchor = hr * hr;
-            let best: { d2: number; anchorIndex: number } | null = null;
-            for (const a of anchors) {
-              const dx = a.x - wx;
-              const dy = a.y - wy;
-              const d2 = dx * dx + dy * dy;
-              if (d2 <= r2anchor && (!best || d2 < best.d2)) {
-                best = { d2, anchorIndex: a.anchorIndex };
-              }
-            }
-            if (best !== null) {
-              return { kind: `anchor:${best.anchorIndex}`, targetIds: [id] };
-            }
-          }
-        }
-      }
-    }
-
-    return null;
+    const hit = hitAffordanceRegions(
+      affordances,
+      wx,
+      wy,
+      getChromeState(),
+      getView(),
+      getIsVisible?.(),
+    );
+    return hit ? toAffordanceHit(hit) : null;
   };
+}
+
+/**
+ * Region hit → `AffordanceHit`.
+ *
+ * `hitKind` is the routing discriminator; the handful of scratch fields named
+ * by {@link CommonAffordanceScratch} are lifted onto the hit because the
+ * actions that consume them read them there. Everything else in scratch rides
+ * along untouched as `payload`.
+ */
+function toAffordanceHit(hit: AffordanceRegionHit): AffordanceHit {
+  const scratch = (hit.binding.initialScratch ?? {}) as CommonAffordanceScratch;
+  return {
+    kind: hit.region.hitKind ?? `${hit.affordanceId}:${hit.regionId}`,
+    ...(scratch.targetId !== undefined ? { targetIds: [scratch.targetId] } : {}),
+    ...(scratch.anchor !== undefined ? { anchor: scratch.anchor } : {}),
+    ...(scratch.fixedPoint !== undefined ? { fixedPoint: scratch.fixedPoint } : {}),
+    ...(hit.region.cursor !== undefined ? { cursor: hit.region.cursor } : {}),
+    ...(hit.binding.initialScratch !== undefined ? { payload: hit.binding.initialScratch } : {}),
+  } as AffordanceHit;
 }
 
 // ---------------------------------------------------------------------------

@@ -92,6 +92,9 @@ describe('createCornerResizeAffordance', () => {
     expect(result?.initialScratch as CornerResizeScratch).toEqual({
       anchor: { x: 'min', y: 'min' },
       targetId: 'a',
+      // World-space fixed corner, resolved by the affordance because
+      // `resizeAction` scales from it and has no target transform.
+      fixedPoint: { x: 100, y: 100 },
     });
   });
 
@@ -103,6 +106,7 @@ describe('createCornerResizeAffordance', () => {
     expect(result?.initialScratch as CornerResizeScratch).toEqual({
       anchor: { x: 'max', y: 'max' },
       targetId: MULTI_RESIZE_TARGET_ID,
+      fixedPoint: { x: 150, y: 150 },
     });
   });
 

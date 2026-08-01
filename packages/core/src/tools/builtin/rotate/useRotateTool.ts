@@ -114,9 +114,15 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
   );
 
   // Combined Tool overlay: ghost layer (bottom) + affordance layer (top).
-  // hitTest comes from the affordance layer so dispatcher-side hit-test
-  // pipelines can route rotation-handle hits through it. Ghosts have no
-  // hitTest of their own.
+  //
+  // Paint only. This used to forward `hitTest` to the affordance layer "so
+  // dispatcher-side hit-test pipelines can route rotation-handle hits through
+  // it" — but no pipeline ever did. `tools.getActiveOverlays()` feeds Canvas's
+  // *draw* stack; the only thing that calls `RenderLayer.hitTest` is
+  // `hitTestExtras`, which walks layers a consumer attached with
+  // `registerLayer`, and a tool overlay is not one of those. Rotation hits
+  // come from `buildAffordanceAt`, which owns the same
+  // `createRotationAffordance` this layer paints.
   const overlay = useMemo<RenderLayer<unknown>>(
     () => ({
       id: 'rotate-overlay',
@@ -127,8 +133,6 @@ export function useRotateTool<TNode extends { id: string }, _TPose>(
         const aff = affordanceOverlay.draw(toChromeState(data), view, dims);
         return [...ghosts, ...aff];
       },
-      hitTest: (wx, wy, data, view, dims) =>
-        affordanceOverlay.hitTest(wx, wy, toChromeState(data), view, dims),
     }),
     [ghostOverlay, affordanceOverlay],
   );

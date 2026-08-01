@@ -103,10 +103,8 @@ import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeTool
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
 import { useActionsRegistry, type ActionsRegistry } from 'interactions/actions/registry';
-import { buildAffordanceAt, buildClassifyTarget, HANDLE_HIT_RADIUS } from './affordanceAt';
-import { meanScale } from 'core/viewport/meanScale';
+import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
-import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
@@ -1186,14 +1184,20 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // (lasso mode, clone-selection) thread through `toolOptions`.
   const shapeTools = useBuiltinShapeTools({ scene, adapter, options: toolOptions });
 
-  // WHY ambient (not registry) for rotate: `useTools.getActiveOverlays()`
-  // returns only active + hotkey + ambient overlays. The Canvas affordance
-  // pipeline (`__setHitTestContext`) walks those exclusively, so a registry
-  // entry that is neither active nor ambient would never have its hitTest
-  // routed. Rotate is affordance-driven (no foreground activation, no
-  // hotkey), so ambient is the correct slot. Resize is handled entirely
-  // through the dispatcher-side `resizeAction` + `resizePolicy` dep — no
-  // ambient tool is mounted for it.
+  // WHY ambient (not registry) for rotate: rotate is affordance-driven — no
+  // foreground activation, no hotkey — so the active slot is wrong for it and
+  // ambient is what's left. Resize doesn't get a tool at all; it runs entirely
+  // through the dispatcher-side `resizeAction` + `resizePolicy` dep.
+  //
+  // The reason this comment used to give — that `getActiveOverlays()` is what
+  // routes a tool's `hitTest`, so rotate had to be in one of those slots — was
+  // describing a pipeline (`__setHitTestContext`) that no longer exists.
+  // Nothing hit-tests tool overlays now; `buildAffordanceAt` owns the rotation
+  // affordance directly. What the ambient mount still buys is the overlay's
+  // *paint* slot, which for rotate draws nothing by default (`paint: null` —
+  // the cursor change is the only cue). Left in place because `useRotateTool`
+  // is public and consumers can give the ring a visible paint, but see the
+  // TODO entry: the mount is close to vestigial.
   const builtinAmbient: AnyTool[] = [];
   if (wants('rotate')) builtinAmbient.push(rotateTool);
 
@@ -2094,8 +2098,8 @@ function GestureDispatcherMounter({
   // internally, then delegates to `buildAffordanceAt` for handle hit-testing.
   const affordanceAt = useMemo(() => {
     if (!selectionRef || !boundsOf || !viewRef) return undefined;
-    return buildAffordanceAt(
-      () => {
+    return buildAffordanceAt({
+      getChromeState: () => {
         const sel = selectionRef.current;
         const selection = sel?.current ?? [];
         const multiActive = selection.length >= 2;
@@ -2121,21 +2125,18 @@ function GestureDispatcherMounter({
           },
         };
       },
-      // Hit radius / rotate-band distance in WORLD units, derived from the
-      // screen-px visual size divided by current view scale. Without this
-      // the world-unit radius shrinks below the screen-px handle at zoom > 1
-      // and clicks on the handle slip past affordance hit-test → fall through
-      // to body classification → move binding fires instead of resize.
-      () => HANDLE_HIT_RADIUS / meanScale(viewRef.current?.scale ?? { x: 1, y: 1 }),
-      () => DEFAULT_ROTATION_HANDLE_DISTANCE / meanScale(viewRef.current?.scale ?? { x: 1, y: 1 }),
+      // Radii are declared in screen pixels and converted against this view.
+      // The caller used to do that division itself (`8 / meanScale(scale)`),
+      // in two places, with a comment explaining what breaks if you forget.
+      getView: () => viewRef.current ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
       getAnchorState,
       // Chrome-caps resolver: keep the affordance hit-test in sync with what
       // the renderer is actually painting. Without this, a click on a (no
       // longer visible) resize handle position still classifies as a resize
       // handle — e.g. an anchor drag in path-edit mode resizes the path's
       // bounding box instead of moving the anchor.
-      getIsVisibleForCanvas ? () => getIsVisibleForCanvas() : undefined,
-    );
+      ...(getIsVisibleForCanvas ? { getIsVisible: () => getIsVisibleForCanvas() } : {}),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas]);
 

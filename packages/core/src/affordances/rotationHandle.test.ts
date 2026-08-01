@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRotationAffordance, type RotationScratch } from './rotationHandle';
 import { composeAffordanceLayer } from './composeAffordanceLayer';
+import { annulusSemiAxes } from './hitAffordanceRegions';
 import type { ChromeState } from 'core/selection/chromeState';
 import { asNodeId } from 'core/scene/types';
 import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/shared/selectionTarget';
@@ -63,6 +64,8 @@ describe('createRotationAffordance', () => {
 
   it('annulus geometry: outer ellipse clamped to bandPx beyond AABB for thin selections', () => {
     // 20x20 AABB, bandPx=24. Natural = 10·√2 ≈ 14.14. Clamp = 10+24 = 34. Clamp wins.
+    // The region declares the natural ellipse plus a screen-space floor; the
+    // framework resolves the two together, because only it knows the scale.
     const aff = createRotationAffordance({ bandPx: 24 });
     const state: ChromeState = {
       selection: [asNodeId('a')],
@@ -73,8 +76,29 @@ describe('createRotationAffordance', () => {
     };
     const r = aff.regions(state)[0]!;
     const s = r.shape as Extract<typeof r.shape, { kind: 'annulus' }>;
-    expect(s.rx).toBe(34);
-    expect(s.ry).toBe(34);
+    expect(s.rx).toBeCloseTo(10 * Math.SQRT2, 4);
+    expect(s.minBandPx).toBe(24);
+    expect(annulusSemiAxes(s, VIEW)).toEqual({ rx: 34, ry: 34 });
+  });
+
+  it('the band holds its screen thickness under zoom', () => {
+    // Regression: the clamp used to be applied in `regions()` in world units,
+    // so at scale 2 a 24px band became 12 screen px and the ring around a
+    // small shape got progressively harder to grab as you zoomed in.
+    const aff = createRotationAffordance({ bandPx: 24 });
+    const state: ChromeState = {
+      selection: [asNodeId('a')],
+      multiActive: false,
+      boundsOf: () => ({ x: 0, y: 0, width: 20, height: 20 }),
+      unionBounds: null,
+      modifiers: NO_MOD,
+    };
+    const s = aff.regions(state)[0]!.shape as Extract<
+      ReturnType<typeof aff.regions>[number]['shape'], { kind: 'annulus' }
+    >;
+    const zoomed = { ...VIEW, scale: { x: 2, y: 2 } };
+    // 24 screen px at scale 2 is 12 world units past the 10-unit half-extent.
+    expect(annulusSemiAxes(s, zoomed)).toEqual({ rx: 22, ry: 22 });
   });
 
   it('region carries cursor=grab by default', () => {

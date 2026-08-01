@@ -1,4 +1,4 @@
-import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
+import type { Affordance, AffordanceBinding, AffordanceRegion, CommonAffordanceScratch } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { FillStyle, Stroke } from 'core/paint-types';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
@@ -23,10 +23,12 @@ export interface RotationAffordanceOptions {
   cursor?: string;
 }
 
-export interface RotationScratch {
+export interface RotationScratch extends CommonAffordanceScratch {
   /** Id of the rotation target — single selection id, or
    *  `MULTI_RESIZE_TARGET_ID` for multi-selection. */
   targetId: string;
+  /** Rotation pivot in world coords — the AABB (or union AABB) center. */
+  fixedPoint: { x: number; y: number };
 }
 
 const DEFAULT_PAINT: { fill?: FillStyle; stroke?: Stroke; insetPx?: number } = {
@@ -87,22 +89,15 @@ export function createRotationAffordance(
       if (!target) return [];
       const b = target.bounds;
 
-      // Convert bandPx to world coords. ChromeState doesn't carry view
-      // scale — use a sentinel value that the kit's paint pipeline will
-      // narrow at draw time. For now: use a fixed world-space band that
-      // approximates 24px at scale=1. The kit's `meanScale(view.scale)`
-      // can't reach the affordance from here (composeAffordanceLayer
-      // doesn't pass it down). Acceptable: the natural corner-passing
-      // ellipse (`w/√2`, `h/√2`) already gives a hoverable band for any
-      // selection wider than ~2× bandPx, and the clamp below covers
-      // thin selections. Zoom adjustment is a follow-up if it matters.
-      const minBand = bandPx;
+      // The natural ring: the smallest ellipse containing the AABB. For a
+      // small or thin selection that band is too tight to hover, so
+      // `minBandPx` asks the framework to widen it to at least `bandPx`
+      // screen pixels outside the rect. The floor is declared in screen units
+      // rather than applied here because `ChromeState` carries no view scale
+      // — the framework applies it at paint and hit time, where the view is
+      // known, so the ring holds its apparent thickness at any zoom.
       const halfW = b.width / 2;
       const halfH = b.height / 2;
-      const naturalRx = halfW * Math.SQRT2;
-      const naturalRy = halfH * Math.SQRT2;
-      const rx = Math.max(naturalRx, halfW + minBand);
-      const ry = Math.max(naturalRy, halfH + minBand);
 
       const region: AffordanceRegion = {
         id: 'selection.rotation-handle',
@@ -111,17 +106,24 @@ export function createRotationAffordance(
           kind: 'annulus',
           cx: b.x + halfW,
           cy: b.y + halfH,
-          rx,
-          ry,
+          rx: halfW * Math.SQRT2,
+          ry: halfH * Math.SQRT2,
           innerX: b.x,
           innerY: b.y,
           innerWidth: b.width,
           innerHeight: b.height,
+          minBandPx: bandPx,
         },
         ...(annulusPaint ? { paint: annulusPaint } : {}),
+        hitKind: 'rotate-handle',
         cursor,
         bind: (): AffordanceBinding => ({
-          initialScratch: { targetId: target.id } satisfies RotationScratch,
+          initialScratch: {
+            targetId: target.id,
+            // Pivot. `rotateAction` recomputes its own union pivot for
+            // multi-selection, but the single-target case reads this.
+            fixedPoint: { x: b.x + halfW, y: b.y + halfH },
+          } satisfies RotationScratch,
         }),
       };
       return [region];

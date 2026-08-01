@@ -409,14 +409,23 @@ export type { Unit, UnitSystem, UnitValue } from './core/units';
 // ─── Affordances: cross-tool hittable chrome (resize/rotate handles) ────────
 export {
   composeAffordanceLayer,
+  hitAffordanceRegions,
+  annulusSemiAxes,
   createCornerResizeAffordance,
   createRotationAffordance,
+  createPathAnchorAffordances,
+  PATH_ANCHOR_CHROME_ID,
   type Affordance,
   type AffordanceBinding,
   type AffordanceRegion,
+  type AffordanceRegionHit,
+  type AnchorScratch,
+  type AnchorState,
+  type CommonAffordanceScratch,
   type CornerResizeAffordanceOptions,
   type CornerResizeScratch,
   type CustomPaintContext,
+  type PathAnchorAffordanceOptions,
   type RotationAffordanceOptions,
   type RotationScratch,
 } from './affordances';

@@ -1,6 +1,6 @@
 import type { RenderLayer } from 'core/layers/render';
 import type { DrawCommand } from '../renderer';
-import type { ChromeState, Bounds } from 'core/selection/chromeState';
+import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
@@ -8,7 +8,13 @@ import { meanScale } from 'core/viewport/meanScale';
 import type { DebugSink } from '../debug/types';
 import type { FillStyle, Stroke } from 'core/paint-types';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
-import { poseRotationOf } from 'features/paths/poseRotation';
+import {
+  annulusSemiAxes,
+  hitAffordanceRegions,
+  localToWorld,
+  transformOf,
+  type TargetTransform,
+} from './hitAffordanceRegions';
 import type {
   Affordance,
   AffordanceBinding,
@@ -69,25 +75,12 @@ export function composeAffordanceLayer(
       }
       return out;
     },
-    hitTest: (wx, wy, state, view, _dims, isVisible): AffordanceBinding | null => {
-      // Walk affordances last → first (top → bottom in paint order); within
-      // each affordance, walk regions last → first for the same reason.
-      // `isVisible` (when supplied) gates by the same chrome id used at
-      // paint time so a hidden affordance can't be hit either.
-      for (let i = affordances.length - 1; i >= 0; i--) {
-        const a = affordances[i];
-        if (isVisible && !isVisible(a.id)) continue;
-        const regs = a.regions(state);
-        for (let j = regs.length - 1; j >= 0; j--) {
-          const region = regs[j];
-          const xf = transformOf(state, region.targetId);
-          if (hitRegion(region, wx, wy, xf, view)) {
-            return region.bind();
-          }
-        }
-      }
-      return null;
-    },
+    // The walk itself lives in `hitAffordanceRegions` so this layer and
+    // `buildAffordanceAt` share one implementation rather than two that can
+    // drift. This wrapper exists because `RenderLayer.hitTest` wants only the
+    // binding back.
+    hitTest: (wx, wy, state, view, _dims, isVisible): AffordanceBinding | null =>
+      hitAffordanceRegions(affordances, wx, wy, state, view, isVisible)?.binding ?? null,
   };
 }
 
@@ -149,11 +142,12 @@ function recordRegionHitbox(
     // actual ring. Consumers that want a precise debug overlay can match
     // against the affordance id and render the annulus themselves.
     const s = region.shape;
+    const { rx, ry } = annulusSemiAxes(s, view);
     const pts = [
-      localToWorld(xf, s.cx + s.rx, s.cy),
-      localToWorld(xf, s.cx - s.rx, s.cy),
-      localToWorld(xf, s.cx, s.cy + s.ry),
-      localToWorld(xf, s.cx, s.cy - s.ry),
+      localToWorld(xf, s.cx + rx, s.cy),
+      localToWorld(xf, s.cx - rx, s.cy),
+      localToWorld(xf, s.cx, s.cy + ry),
+      localToWorld(xf, s.cx, s.cy - ry),
     ];
     const minX = Math.min(...pts.map((p) => p.x));
     const minY = Math.min(...pts.map((p) => p.y));
@@ -181,60 +175,6 @@ function recordRegionHitbox(
     height: r.height,
     ...(xf.identity ? {} : { rotation: Math.atan2(xf.sin, xf.cos) }),
   });
-}
-
-// ─── Transform helpers ──────────────────────────────────────────────────────
-
-/** Local↔world transform for an affordance target. Translation is the AABB
- *  origin; rotation is around the AABB center. Returning `null` rotation
- *  signals identity rotation (no math needed). */
-interface TargetTransform {
-  cx: number;        // rotation pivot (AABB center) in world coords
-  cy: number;
-  cos: number;       // cos(rotation), 1 when identity
-  sin: number;       // sin(rotation), 0 when identity
-  identity: boolean; // true when rotation is 0 or bounds is null
-}
-
-const IDENTITY_XF: TargetTransform = { cx: 0, cy: 0, cos: 1, sin: 0, identity: true };
-
-function transformOf(state: ChromeState, targetId: string | null): TargetTransform {
-  if (targetId === null) return IDENTITY_XF;
-  const b: Bounds | null = state.boundsOf(targetId);
-  if (!b) return IDENTITY_XF;
-  // Pivot + angle come from the kit's one rotation convention.
-  const r = poseRotationOf(b);
-  if (!r) return IDENTITY_XF;
-  return {
-    cx: r.cx,
-    cy: r.cy,
-    cos: Math.cos(r.rotation),
-    sin: Math.sin(r.rotation),
-    identity: false,
-  };
-}
-
-/** local point → world point. */
-function localToWorld(xf: TargetTransform, lx: number, ly: number): { x: number; y: number } {
-  if (xf.identity) return { x: lx, y: ly };
-  const dx = lx - xf.cx;
-  const dy = ly - xf.cy;
-  return {
-    x: xf.cx + xf.cos * dx - xf.sin * dy,
-    y: xf.cy + xf.sin * dx + xf.cos * dy,
-  };
-}
-
-/** world point → local point. */
-function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number; y: number } {
-  if (xf.identity) return { x: wx, y: wy };
-  const dx = wx - xf.cx;
-  const dy = wy - xf.cy;
-  // Inverse rotation: cos stays, sin negates.
-  return {
-    x: xf.cx + xf.cos * dx + xf.sin * dy,
-    y: xf.cy - xf.sin * dx + xf.cos * dy,
-  };
 }
 
 // ─── FillStyle ──────────────────────────────────────────────────────────────────
@@ -273,13 +213,15 @@ function paintRegion(
     // matches at any zoom. `localToWorld` is rotation+translation (no
     // scale), so target-local units equal world units for ring math.
     const insetLocal = (paint.insetPx ?? 0) / meanScale(view.scale);
-    const cmd = annulusCommand(s, insetLocal, xf, viewT, paint.fill, paint.stroke);
+    // Same `minBandPx` clamp the hit-test applies, so the ring you can see is
+    // the ring you can grab.
+    const cmd = annulusCommand(s, annulusSemiAxes(s, view), insetLocal, xf, viewT, paint.fill, paint.stroke);
     if (cmd) out.push(cmd);
     return;
   }
   if (paint.kind === 'custom') {
     const ctx: CustomPaintContext = {
-      world: worldOf(region, xf),
+      world: worldOf(region, xf, view),
       local: region.shape,
       view,
       state,
@@ -298,14 +240,15 @@ function paintRegion(
  *  when the band collapses on both axes. */
 function annulusCommand(
   shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
+  semiAxes: { rx: number; ry: number },
   insetLocal: number,
   xf: TargetTransform,
   viewT: ReturnType<typeof viewToTransform>,
   fill: FillStyle | undefined,
   stroke: Stroke | undefined,
 ): DrawCommand | null {
-  const rx = shape.rx - insetLocal;
-  const ry = shape.ry - insetLocal;
+  const rx = semiAxes.rx - insetLocal;
+  const ry = semiAxes.ry - insetLocal;
   if (rx <= 0 || ry <= 0) return null;
   const cx = shape.cx;
   const cy = shape.cy;
@@ -384,7 +327,7 @@ function annulusCommand(
   };
 }
 
-function worldOf(region: AffordanceRegion, xf: TargetTransform): CustomPaintContext['world'] {
+function worldOf(region: AffordanceRegion, xf: TargetTransform, view: View): CustomPaintContext['world'] {
   if (region.shape.kind === 'point') {
     const w = localToWorld(xf, region.shape.x, region.shape.y);
     return { x: w.x, y: w.y };
@@ -394,11 +337,12 @@ function worldOf(region: AffordanceRegion, xf: TargetTransform): CustomPaintCont
     // extrema through the target transform and AABB the result. (Rotated
     // ellipses are still ellipses; their AABB needs all four points.)
     const s = region.shape;
+    const { rx, ry } = annulusSemiAxes(s, view);
     const pts = [
-      localToWorld(xf, s.cx + s.rx, s.cy),
-      localToWorld(xf, s.cx - s.rx, s.cy),
-      localToWorld(xf, s.cx, s.cy + s.ry),
-      localToWorld(xf, s.cx, s.cy - s.ry),
+      localToWorld(xf, s.cx + rx, s.cy),
+      localToWorld(xf, s.cx - rx, s.cy),
+      localToWorld(xf, s.cx, s.cy + ry),
+      localToWorld(xf, s.cx, s.cy - ry),
     ];
     const minX = Math.min(...pts.map((p) => p.x));
     const minY = Math.min(...pts.map((p) => p.y));
@@ -422,36 +366,4 @@ function worldOf(region: AffordanceRegion, xf: TargetTransform): CustomPaintCont
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
-// ─── Hit-test ───────────────────────────────────────────────────────────────
-
-function hitRegion(
-  region: AffordanceRegion,
-  wx: number,
-  wy: number,
-  xf: TargetTransform,
-  view: View,
-): boolean {
-  const local = worldToLocal(xf, wx, wy);
-  if (region.shape.kind === 'point') {
-    const radiusWorld = region.shape.hitRadiusPx / meanScale(view.scale);
-    return Math.abs(local.x - region.shape.x) <= radiusWorld
-        && Math.abs(local.y - region.shape.y) <= radiusWorld;
-  }
-  if (region.shape.kind === 'annulus') {
-    const s = region.shape;
-    // Outside the inner-rect cutout?
-    const insideInner =
-      local.x >= s.innerX && local.x <= s.innerX + s.innerWidth &&
-      local.y >= s.innerY && local.y <= s.innerY + s.innerHeight;
-    if (insideInner) return false;
-    // Inside the outer ellipse? `((x-cx)/rx)² + ((y-cy)/ry)² ≤ 1`.
-    if (s.rx <= 0 || s.ry <= 0) return false;
-    const ex = (local.x - s.cx) / s.rx;
-    const ey = (local.y - s.cy) / s.ry;
-    return ex * ex + ey * ey <= 1;
-  }
-  // rect: axis-aligned in local frame.
-  const r = region.shape;
-  return local.x >= r.x && local.x <= r.x + r.width
-      && local.y >= r.y && local.y <= r.y + r.height;
-}
+// Hit-testing lives in `hitAffordanceRegions.ts` — see `hitRegion` there.

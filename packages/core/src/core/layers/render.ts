@@ -60,10 +60,18 @@ export interface RenderLayer<TData> {
    */
   space?: 'world' | 'screen';
   /**
-   * Optional hit-test. When defined, the dispatcher consults this on
-   * pointerdown (top-down layer order) before falling through to the
-   * active tool's slot walk. First non-null result wins; null means
-   * "I don't claim this hit, try the next layer."
+   * Optional hit-test for **consumer-attached** layers.
+   *
+   * Only layers registered through `CanvasExtensionApi.registerLayer` are
+   * hit-tested: `hitTestExtras` walks them last-registered-first on
+   * pointerdown, and `<SceneCanvas>` folds the result into its `affordanceAt`
+   * thunk ahead of the kit's own selection chrome. First non-null result
+   * wins; null means "I don't claim this hit, try the next layer."
+   *
+   * Layers that reach the draw stack some other way — a `Tool.overlay`, an
+   * entry in the `layers` map — are painted but never hit-tested, so defining
+   * `hitTest` on one has no effect. (The kit's own chrome doesn't need it: it
+   * goes through `buildAffordanceAt`.)
    *
    * Coordinates are world-space. The `data` arg is the layer's
    * configured data slot (same as `draw`); `view` and `dims` mirror

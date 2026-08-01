@@ -2,9 +2,15 @@ export type {
   Affordance,
   AffordanceBinding,
   AffordanceRegion,
+  CommonAffordanceScratch,
   CustomPaintContext,
 } from './types';
 export { composeAffordanceLayer } from './composeAffordanceLayer';
+export {
+  hitAffordanceRegions,
+  annulusSemiAxes,
+  type AffordanceRegionHit,
+} from './hitAffordanceRegions';
 export {
   createCornerResizeAffordance,
   type CornerResizeAffordanceOptions,
@@ -15,3 +21,10 @@ export {
   type RotationAffordanceOptions,
   type RotationScratch,
 } from './rotationHandle';
+export {
+  createPathAnchorAffordances,
+  PATH_ANCHOR_CHROME_ID,
+  type AnchorState,
+  type AnchorScratch,
+  type PathAnchorAffordanceOptions,
+} from './pathAnchors';

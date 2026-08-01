@@ -3,6 +3,8 @@ import { buildAffordanceAt } from './affordanceAt';
 import type { ChromeState } from 'core/selection/chromeState';
 import type { NodeId } from 'core/scene/types';
 
+const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
 function makeState(opts: {
   selection?: string[];
   bounds?: { x: number; y: number; width: number; height: number; rotation?: number };
@@ -20,13 +22,11 @@ function makeState(opts: {
 
 describe('buildAffordanceAt visibility gating', () => {
   it('returns a resize-handle hit when selection.resize-handles is visible', () => {
-    const fn = buildAffordanceAt(
-      () => makeState(),
-      8,
-      24,
-      undefined,
-      () => () => true,
-    );
+    const fn = buildAffordanceAt({
+      getChromeState: () => makeState(),
+      getView: () => VIEW,
+      getIsVisible: () => () => true,
+    });
     // The top-left corner of bounds 0,0,100x100 is exactly (0, 0).
     const hit = fn({ x: 0, y: 0 });
     expect(hit?.kind).toBe('handle:top-left');
@@ -34,13 +34,13 @@ describe('buildAffordanceAt visibility gating', () => {
 
   it('returns null on a corner when selection.resize-handles is NOT visible', () => {
     const isVisible = vi.fn((id: string) => id !== 'selection.resize-handles');
-    const fn = buildAffordanceAt(
-      () => makeState(),
-      8,
-      24,
-      undefined,
-      () => isVisible,
-    );
+    const fn = buildAffordanceAt({
+      getChromeState: () => makeState(),
+      getView: () => VIEW,
+      getIsVisible: () => isVisible,
+    });
+    // The rotate ring is still live and (0,0) is a corner of the AABB, which
+    // the ring's inner cutout excludes — so nothing claims the point.
     const hit = fn({ x: 0, y: 0 });
     expect(hit).toBeNull();
   });
@@ -49,13 +49,11 @@ describe('buildAffordanceAt visibility gating', () => {
     // Rotate ring sits in the band just outside the AABB; (50, -24) sits above
     // the top edge inside the rotation band but outside the AABB.
     const isVisible = vi.fn((id: string) => id !== 'selection.rotation-handle');
-    const fn = buildAffordanceAt(
-      () => makeState(),
-      8,
-      24,
-      undefined,
-      () => isVisible,
-    );
+    const fn = buildAffordanceAt({
+      getChromeState: () => makeState(),
+      getView: () => VIEW,
+      getIsVisible: () => isVisible,
+    });
     const hit = fn({ x: 50, y: -24 });
     expect(hit).toBeNull();
   });
@@ -70,14 +68,13 @@ describe('buildAffordanceAt visibility gating', () => {
       }),
     }));
     const isVisible = vi.fn((id: string) => id !== 'path-edit.anchors');
-    const fn = buildAffordanceAt(
+    const fn = buildAffordanceAt({
       // Bounds far from the click point so corner/rotate gates don't match.
-      () => makeState({ bounds: { x: 1000, y: 1000, width: 10, height: 10 } }),
-      8,
-      24,
-      anchorStateThunk,
-      () => isVisible,
-    );
+      getChromeState: () => makeState({ bounds: { x: 1000, y: 1000, width: 10, height: 10 } }),
+      getView: () => VIEW,
+      getAnchorState: anchorStateThunk,
+      getIsVisible: () => isVisible,
+    });
     const hit = fn({ x: 0, y: 0 });
     expect(hit).toBeNull();
     // The anchor-state thunk should NOT have been called: the gate fires first.
@@ -85,12 +82,10 @@ describe('buildAffordanceAt visibility gating', () => {
   });
 
   it('omitting getIsVisible defaults to always-visible (backward-compat)', () => {
-    const fn = buildAffordanceAt(
-      () => makeState(),
-      8,
-      24,
-      // no getAnchorState, no getIsVisible
-    );
+    const fn = buildAffordanceAt({
+      getChromeState: () => makeState(),
+      getView: () => VIEW,
+    });
     const hit = fn({ x: 0, y: 0 });
     expect(hit?.kind).toBe('handle:top-left');
   });
