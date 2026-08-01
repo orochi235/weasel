@@ -29,6 +29,18 @@ import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { translateRectPose, type RectPose } from 'features/groups/composePose';
 import { aabbOfPose, isPathLike, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint } from 'canvas/NodeShape';
+import { meanScale } from 'core/viewport/meanScale';
+
+/**
+ * Default grab slop around a shape's outline, in screen pixels.
+ *
+ * Four is the same number the path-pose stroke test has always used, and it's
+ * the difference between a hairline being clickable and not: a 1px stroke is
+ * half a world unit of reach at scale 1, which no pointing device can hit
+ * reliably. It also lets a filled shape be grabbed a few pixels outside its
+ * edge, which is what makes edge-adjacent dragging feel possible.
+ */
+export const DEFAULT_PICK_TOLERANCE_PX = 4;
 
 export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
@@ -40,7 +52,13 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
      *  See `SceneCanvasProps.geometry.picking`. Ignored when `pickEvery` is
      *  supplied — that override owns the whole test. */
     picking?: 'pose' | 'shape';
+    /** Grab slop around a shape's outline, in screen pixels. See
+     *  `SceneCanvasProps.geometry.pickTolerancePx`. */
+    pickTolerancePx?: number;
   };
+  /** Live view, for converting the screen-pixel pick tolerance into world
+   *  units. Omitted in tests and non-viewport hosts, where scale is 1. */
+  getView?: () => { scale: { x: number; y: number } } | null;
   selectTool?: {
     move?: UseMoveOptions<TPose>;
     resize?: UseResizeOptions<TPose>;
@@ -93,11 +111,12 @@ export interface UseSceneSelectToolReturn<TData, TLayer extends string, TPose> {
 export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   args: UseSceneSelectToolArgs<TData, TLayer, TPose>,
 ): UseSceneSelectToolReturn<TData, TLayer, TPose> {
-  const { scene, selection, geometry, selectTool: opts, insertTool, layouts } = args;
+  const { scene, selection, geometry, selectTool: opts, insertTool, layouts, getView } = args;
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
   const shapePicking = geometry?.picking === 'shape';
+  const pickTolerancePx = geometry?.pickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const moveOptions = opts?.move;
   const rotateOptions = opts?.rotate;
   const snap = opts?.snap;
@@ -203,19 +222,26 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
         if (r == null) return [];
         return Array.isArray(r) ? r : [r];
       }
+      // Screen-pixel slop → world units, so the grab zone around an outline
+      // stays the same apparent thickness at any zoom.
+      const tolerance = pickTolerancePx / meanScale(getView?.()?.scale ?? { x: 1, y: 1 });
       const out: string[] = [];
       for (const id of scene.renderOrder()) {
         const n = scene.get(id);
-        if (!n || !poseContainsRotated(n.pose, wx, wy)) continue;
-        // The pose rect is the pre-filter; `shapeCoversPoint` narrows it to
-        // the boundary the painter actually draws (and answers `true` for
-        // painters that have no silhouette, so nothing becomes unpickable).
-        if (shapePicking && !shapeCoversPoint(n, n.pose, wx, wy)) continue;
+        // The pose rect is the pre-filter — grown by the tolerance, because a
+        // shape's outline (and the slop around it) reaches outside its own
+        // bounds, and an un-grown pre-filter would reject those hits before
+        // the refinement ever ran.
+        if (!n || !poseContainsRotated(n.pose, wx, wy, tolerance)) continue;
+        // `shapeCoversPoint` narrows the rect to the ink the painter actually
+        // lays down (and answers `true` for painters that have no silhouette,
+        // so nothing becomes unpickable).
+        if (shapePicking && !shapeCoversPoint(n, n.pose, wx, wy, { tolerance })) continue;
         out.push(n.id);
       }
       return out;
     };
-  }, [scene, pickEveryProp, shapePicking]);
+  }, [scene, pickEveryProp, shapePicking, pickTolerancePx, getView]);
 
   const wiredBoundsOf = useMemo(() => {
     return (id: string): Bounds | null => {

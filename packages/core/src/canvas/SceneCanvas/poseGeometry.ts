@@ -32,16 +32,32 @@ export function aabbOfPose<TPose>(pose: TPose): Bounds {
  *  stroke's actual rendered width (which the hit-test layer doesn't know). */
 const DEFAULT_PATH_STROKE_SLOP = 4;
 
-export function poseContains<TPose>(pose: TPose, wx: number, wy: number): boolean {
+/**
+ * @param tolerance - Grab slop in **world** units. Grows the AABB test and
+ *   the path stroke-distance test alike. Defaults to
+ *   {@link DEFAULT_PATH_STROKE_SLOP} for path-like poses (the historical
+ *   fixed slop) and to `0` for rect poses, whose edges were never fuzzy.
+ */
+export function poseContains<TPose>(
+  pose: TPose,
+  wx: number,
+  wy: number,
+  tolerance?: number,
+): boolean {
   if (isPathLike(pose)) {
     // Precise inside-filled-region OR within-stroke-slop. Replaces the old
     // "AABB-conservative-fallback" path that returned true anywhere inside
     // the path's bounding box (which over-picked on open / non-convex paths).
     if (pointInPath(pose, wx, wy)) return true;
-    return strokeHitTest(pose, wx, wy, DEFAULT_PATH_STROKE_SLOP);
+    return strokeHitTest(pose, wx, wy, tolerance ?? DEFAULT_PATH_STROKE_SLOP);
   }
   const b = aabbOfPose(pose);
-  return wx >= b.x && wx <= b.x + b.width && wy >= b.y && wy <= b.y + b.height;
+  // The pre-filter has to be at least as generous as the refinement that
+  // follows it, or a hit on a shape's outline is rejected before the outline
+  // is ever consulted.
+  const t = tolerance ?? 0;
+  return wx >= b.x - t && wx <= b.x + b.width + t
+      && wy >= b.y - t && wy <= b.y + b.height + t;
 }
 
 /**
@@ -55,7 +71,12 @@ export function poseContains<TPose>(pose: TPose, wx: number, wy: number): boolea
  * Rotation is read from `pose.rotation` (the kit's one rotation convention),
  * not from an injected descriptor — the renderer reads it the same way.
  */
-export function poseContainsRotated<TPose>(pose: TPose, wx: number, wy: number): boolean {
+export function poseContainsRotated<TPose>(
+  pose: TPose,
+  wx: number,
+  wy: number,
+  tolerance?: number,
+): boolean {
   const r = poseRotationOf(pose);
   if (r) {
     // Inverse of `rotateAboutPoint(cx, cy, θ)` is `rotateAboutPoint(cx, cy, -θ)`
@@ -64,7 +85,9 @@ export function poseContainsRotated<TPose>(pose: TPose, wx: number, wy: number):
     // inverse convention; the silhouette dispatch + stroke-slop below are
     // unchanged.
     const [lx, ly] = applyToPoint(rotateAboutPoint(r.cx, r.cy, -r.rotation), wx, wy);
-    return poseContains(pose, lx, ly);
+    // Rotation is rigid, so a world-unit tolerance is the same distance in
+    // the local frame — no rescaling needed.
+    return poseContains(pose, lx, ly, tolerance);
   }
-  return poseContains(pose, wx, wy);
+  return poseContains(pose, wx, wy, tolerance);
 }

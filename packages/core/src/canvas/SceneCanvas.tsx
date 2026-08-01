@@ -363,18 +363,31 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
        *
        * - `'pose'` (default) — the node's pose rect, rotation honored. Cheap,
        *   and what every consumer got before this option existed.
-       * - `'shape'` — the pose rect as a pre-filter, then the shape the
-       *   painter actually draws (`findShapeSilhouette`). A click in the
-       *   concave notch of a star, in the corner outside an ellipse, or in
-       *   the blank half of a text box falls through to whatever is beneath.
+       * - `'shape'` — the pose rect as a pre-filter, then the ink the painter
+       *   actually lays down: its silhouette (`findShapeSilhouette`) filled
+       *   or not per the painter's `ink`, plus its outline widened by the
+       *   stroke half-width and `pickTolerancePx`. A click in the concave
+       *   notch of a star, in the corner outside an ellipse, or in the blank
+       *   half of a text box falls through to whatever is beneath; a click on
+       *   the thin outline of an unfilled shape hits it.
        *
        * Painters with no silhouette are unaffected — they keep the pose-rect
-       * answer either way, so turning this on can only make picking tighter,
-       * never make a node unreachable.
+       * answer either way, so turning this on can never make a node
+       * unreachable.
        *
        * Ignored when `pickEvery` is supplied: that override owns the test.
        */
       picking?: 'pose' | 'shape';
+      /**
+       * Grab slop around a shape's outline, in **screen** pixels. Default 4.
+       *
+       * Screen pixels rather than world units so the target keeps its
+       * apparent size at any zoom. It widens the outline test under
+       * `picking: 'shape'` (a 1px hairline is otherwise a half-world-unit
+       * target, which is unhittable), and it grows the pose-rect pre-filter
+       * so those outline hits survive it. Set `0` for exact geometry.
+       */
+      pickTolerancePx?: number;
     };
 
     // --- Select tool options. Ignored if the consumer passes their own
@@ -1077,6 +1090,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     scene,
     selection,
     geometry,
+    // The pick tolerance is declared in screen pixels; this is what converts it.
+    getView: () => currentViewRef.current,
     selectTool: selectToolWithDefaults,
     ...(insertTool ? { insertTool } : {}),
     ...(layouts ? { layouts } : {}),

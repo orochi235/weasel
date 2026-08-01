@@ -53,10 +53,13 @@ export interface UseSelectToolOptions<TPose> {
    *
    * - `'aabb'` (default) — the pose rect. Cheap, and the historical behavior:
    *   a click anywhere in the bounding box selects the node.
-   * - `'silhouette'` — the pose rect as a pre-test, then the painter's
-   *   `findShapeSilhouette`. A click inside the bounding box but outside the
-   *   drawn shape misses: the concave notch of a star, the corner outside an
-   *   ellipse, the blank half of a text box.
+   * - `'silhouette'` — the pose rect as a pre-test, then the ink the painter
+   *   lays down: `findShapeSilhouette` filled or not per the painter's `ink`,
+   *   plus its outline widened by the stroke half-width and `pickTolerance`.
+   *   A click inside the bounding box but outside the drawn shape misses —
+   *   the concave notch of a star, the corner outside an ellipse, the blank
+   *   half of a text box — while a click on the thin outline of an unfilled
+   *   shape hits.
    *
    * Container nodes already consult their silhouette unconditionally (it is
    * how their clip is derived); this extends the same test to leaves. Not the
@@ -65,6 +68,15 @@ export interface UseSelectToolOptions<TPose> {
    * it falls back to the AABB.
    */
   leafPicking?: 'aabb' | 'silhouette';
+  /**
+   * Grab slop around a shape's outline, in **world** units. Default 0.
+   *
+   * Only consulted under `leafPicking: 'silhouette'`. World units because
+   * this hook has no view; `<SceneCanvas>` takes a screen-pixel figure
+   * (`geometry.pickTolerancePx`) and divides by scale on its own pick path.
+   * Without some slop a hairline outline is an unhittable target.
+   */
+  pickTolerance?: number;
   /** Move-action options. The move gesture is dispatcher-routed,
    *  so only `behaviors` is consumed here — threaded into the move binding's
    *  `opts.behaviors`. Other `UseMoveOptions` fields are accepted for API shape
@@ -147,22 +159,34 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
   // poseBounds (identity by default).
   const poseBoundsFn = options.poseBounds ?? ((p: TPose) => p as unknown as Bounds);
   const preciseLeaves = options.leafPicking === 'silhouette';
+  // World units here, not screen: this hook has no view. `<SceneCanvas>`
+  // converts from screen px on its own pick path; a bare `useSelectTool`
+  // consumer that zooms should pass `pickTolerance` from its own scale.
+  const tolerance = options.pickTolerance ?? 0;
   const pickEveryFn = options.pickEvery ?? ((worldX: number, worldY: number): string[] => {
     const hier = adapter as unknown as {
       getNode?: (id: string) => unknown;
       getChildren?: (parentId: string | null) => readonly string[];
     };
 
-    /** AABB first (cheap), then the painter's silhouette when asked for and
+    /** AABB first (cheap), then the painter's ink when asked for and
      *  available. A painter with no `silhouette` — or one that returns null,
-     *  as `kit:text` does for an empty node — keeps the AABB answer. */
+     *  as `kit:text` does for an empty node — keeps the AABB answer.
+     *
+     *  The AABB pre-filter is grown by `tolerance` for the same reason
+     *  `<SceneCanvas>`'s is: a shape's outline, and the slop around it, reach
+     *  outside the shape's own bounds, and an un-grown pre-filter would
+     *  discard those hits before the refinement could claim them. */
     const covers = (node: unknown, pose: TPose, b: Bounds): boolean => {
-      if (!(worldX >= b.x && worldX <= b.x + b.width
-            && worldY >= b.y && worldY <= b.y + b.height)) {
+      const t = preciseLeaves ? tolerance : 0;
+      if (!(worldX >= b.x - t && worldX <= b.x + b.width + t
+            && worldY >= b.y - t && worldY <= b.y + b.height + t)) {
         return false;
       }
       if (!preciseLeaves) return true;
-      return shapeCoversPoint(node as Node<unknown, string, TPose>, pose, worldX, worldY);
+      return shapeCoversPoint(
+        node as Node<unknown, string, TPose>, pose, worldX, worldY, { tolerance },
+      );
     };
 
     if (typeof hier.getChildren !== 'function' || typeof hier.getNode !== 'function') {

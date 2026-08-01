@@ -167,12 +167,30 @@ Priority tags:
   it can only tighten a pick. `kit:text` gained a silhouette (union of its
   line boxes) as part of the same change.
 
-  Remaining: **stroke width is not taken into account**, so a hairline outline
-  with no fill is still only grabbable on its ink. Wanted: widen the test by
-  the stroke's half-width for unfilled or thin-stroked shapes. `strokeHitTest`
-  (`features/paths/hitTest.ts`) is the piece in hand. Also unaddressed: the
-  *hand* tool and the other non-select pick paths do not route through
-  `shapeCoversPoint` yet. Requested 2026-07-31.
+  Stroke width: **done 2026-08-01.** `NodeShapeEntry.ink` declares how a
+  painter inks its silhouette (`{ filled, strokeWidth }`, cheap field reads —
+  deliberately not read back off `paint`, which may lay out glyphs and runs on
+  every pointer move). `shapeCoversPoint` fills only when the painter fills,
+  and ORs in `strokeHitTest` at `strokeWidth / 2 + tolerance`. So an outlined
+  rect is grabbed by its outline and *not* through its empty middle, and a
+  bare line — zero area, previously unpickable by any fill test — is grabbed
+  along its length. `tolerance` comes from `geometry.pickTolerancePx`
+  (screen px, default 4, converted against the live view), because a 1px
+  hairline is a half-world-unit target that no pointing device can hit. The
+  pose-rect pre-filter grows by the same tolerance, or it would reject outline
+  hits before the refinement ever ran.
+
+  The other half of this entry was stale: the **hand tool does no picking** —
+  it pans, and never resolves a node. The real second pick path was
+  `useSelectTool`'s own default `pickEvery` (what non-`SceneCanvas` consumers
+  get), which had its own copy of the coverage test; it now takes the same
+  `shapeCoversPoint` refinement and a world-unit `pickTolerance`. Both scene
+  pick paths agree.
+
+  Still open: **`picking: 'shape'` is opt-in.** The default is still the pose
+  rect, which is the wrong answer for anything non-rectangular. Flipping it
+  changes what a click selects for every consumer, so it wants a deliberate
+  call rather than riding along with the machinery. Requested 2026-07-31.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`

@@ -40,6 +40,7 @@ import type { Path, PolygonPath } from 'features/paths/types';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
+import { strokeHitTest } from 'features/paths/hitTest';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { getImageBitmap, imageStatus } from 'features/images/imageCache';
@@ -74,7 +75,31 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
    *  and by SVG export. Painters whose visual has no meaningful closed
    *  silhouette (e.g. text) leave this undefined. */
   silhouette?(node: Node<TData, string, TPose>, pose: TPose): Path | null;
+  /** Optional: how the silhouette is inked — whether the interior is filled,
+   *  and how wide the outline is. Read by picking, so that an unfilled shape
+   *  is grabbable by its outline rather than by its empty middle.
+   *
+   *  This is declared separately from `paint` rather than read back off the
+   *  emitted draw commands because picking runs on every pointer move, and
+   *  `paint` is allowed to be expensive (`kit:text` lays out glyphs). Keep it
+   *  to cheap field reads.
+   *
+   *  Painters that leave it undefined are treated as `{ filled: true,
+   *  strokeWidth: 0 }` — the pre-`ink` behavior, where the whole silhouette
+   *  interior is grabbable and the outline adds nothing. */
+  ink?(node: Node<TData, string, TPose>, pose: TPose): NodeInk | null;
 }
+
+/** How a painter inks its silhouette. See {@link NodeShapeEntry.ink}. */
+export interface NodeInk {
+  /** True when the silhouette's interior is painted, and so grabbable. */
+  filled: boolean;
+  /** Stroke width in world units. `0` for no stroke. */
+  strokeWidth: number;
+}
+
+/** What a painter that declares no `ink` is assumed to do. */
+const DEFAULT_INK: NodeInk = { filled: true, strokeWidth: 0 };
 
 export interface RegisterNodeShapeOptions {
   /** `'high'` puts the painter ahead of all normally-registered ones (so
@@ -140,6 +165,29 @@ export function findShapeSilhouette<TData, TPose>(
   return r ? rotatePathAround(sil, r.cx, r.cy, r.rotation) : sil;
 }
 
+/** Find the painter for `node` and ask how it inks its silhouette. Returns
+ *  the painter's declared {@link NodeInk}, or `null` when no painter matches
+ *  or it declares none — callers substitute {@link DEFAULT_INK}. */
+export function findShapeInk<TData, TPose>(
+  node: Node<TData, string, TPose>,
+  pose: TPose,
+): NodeInk | null {
+  return findNodeShape(node)?.ink?.(node, pose) ?? null;
+}
+
+/** Options for {@link shapeCoversPoint}. */
+export interface ShapeCoversPointOptions {
+  /** Extra grab distance around the outline, in **world** units. Callers
+   *  derive it from a screen-pixel slop and the view scale, the same way
+   *  affordance hit radii work.
+   *
+   *  Without slop a hairline is a mathematically zero-width target: the
+   *  stroke of a 1px outline is half a world unit wide at scale 1, which no
+   *  one can hit. Defaults to `0` so a caller that hasn't thought about the
+   *  view still gets exact geometry rather than a wrong guess. */
+  tolerance?: number;
+}
+
 /**
  * Does the shape `node` actually paints cover the world point?
  *
@@ -148,6 +196,12 @@ export function findShapeSilhouette<TData, TPose>(
  * outside an ellipse, the blank right half of a text box. This asks the
  * painter's silhouette instead, which is the same boundary used for clipping
  * and SVG export, so "what you can click" and "what is drawn" answer together.
+ *
+ * "What is drawn" includes the *ink*, not just the boundary. A shape whose
+ * interior isn't filled — an outlined rect, a pencil stroke, a bare line — is
+ * grabbable along its outline and not through its empty middle, which is the
+ * opposite of what a fill test alone answers. The outline's grab width is the
+ * stroke's half-width plus `tolerance`.
  *
  * A painter with no `silhouette`, or one that returns `null` for this node
  * (`kit:text` does, for a node with no non-blank lines), reports `true` —
@@ -163,9 +217,18 @@ export function shapeCoversPoint<TData, TPose>(
   pose: TPose,
   x: number,
   y: number,
+  opts: ShapeCoversPointOptions = {},
 ): boolean {
   const sil = findShapeSilhouette(node, pose);
-  return sil === null || pathContainsPoint(sil, x, y);
+  if (sil === null) return true;
+  const ink = findShapeInk(node, pose) ?? DEFAULT_INK;
+  if (ink.filled && pathContainsPoint(sil, x, y)) return true;
+  // Half the stroke lies outside the silhouette, so half-width is the reach.
+  // `tolerance` widens it to something a pointer can actually land on, and
+  // also makes a filled shape grabbable a few pixels outside its edge — which
+  // is what every editor does and what makes edge-dragging feel possible.
+  const reach = ink.strokeWidth / 2 + (opts.tolerance ?? 0);
+  return reach > 0 && strokeHitTest(sil, x, y, reach);
 }
 
 /** Snapshot of the current painters in evaluation order — `'high'` tier
@@ -310,6 +373,24 @@ const PATH_PAINTER: NodeShapeEntry = {
     const d = node.data as { path: Path };
     return pathInPoseFrame(d.path, pose as RectPose);
   },
+  // Mirrors the fill/stroke decisions `paint` makes above — same reads, same
+  // 'none' handling, same "no fill declared and a stroke present means
+  // stroke-only" fallback. Kept in step with `paint` by
+  // `NodeShape.ink.test.ts`, which asserts the two agree.
+  ink: (node) => {
+    const d = node.data as {
+      fill?: string;
+      stroke?: string;
+      strokeWidth?: number;
+      color?: string;
+    };
+    const hasStroke = !!d.stroke && d.stroke !== 'none' && (d.strokeWidth ?? 0) > 0;
+    const fillColor = d.fill ?? d.color;
+    return {
+      filled: fillColor !== 'none' && (fillColor !== undefined || !hasStroke),
+      strokeWidth: hasStroke ? (d.strokeWidth ?? 1) : 0,
+    };
+  },
 };
 
 /** Built-in shape dispatcher — matches when `data.shape` names a kit-known
@@ -337,6 +418,13 @@ const SHAPE_PAINTER: NodeShapeEntry = {
   silhouette: (node, pose) => {
     const d = node.data as { shape: string; sides?: number; points?: number };
     return pathForShape(d, pose as RectPose);
+  },
+  // `paint` above always emits a fill (defaulting to '#888'), so this shape
+  // family is always filled — unlike `kit:path`, it has no stroke-only form.
+  ink: (node) => {
+    const d = node.data as { stroke?: string; strokeWidth?: number };
+    const hasStroke = !!d.stroke && (d.strokeWidth ?? 0) > 0;
+    return { filled: true, strokeWidth: hasStroke ? (d.strokeWidth ?? 1) : 0 };
   },
 };
 

@@ -260,13 +260,16 @@ export {
   registerNodeShape,
   findNodeShape,
   findShapeSilhouette,
+  findShapeInk,
   shapeCoversPoint,
   getNodeShapes,
 } from './canvas/NodeShape';
 export type {
   NodeShapeEntry,
+  NodeInk,
   RegisterNodeShapeOptions,
   NodePaintCtx,
+  ShapeCoversPointOptions,
 } from './canvas/NodeShape';
 export {
   getImageBitmap,
