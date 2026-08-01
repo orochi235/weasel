@@ -55,8 +55,15 @@ function harness(picking?: 'pose' | 'shape') {
 }
 
 describe('useSceneSelectTool — geometry.picking', () => {
-  it('defaults to the pose rect: the ellipse claims its whole bounding box', () => {
+  it('defaults to the painted shape: the ellipse does not claim its corner', () => {
+    // (2, 2) is inside the ellipse's 100×100 pose box but outside the ellipse.
+    // The default used to hand it to the ellipse, burying `under`.
     const pick = harness();
+    expect(pick(2, 2)).toEqual(['under']);
+  });
+
+  it("'pose' opts back down to the bounding box", () => {
+    const pick = harness('pose');
     expect(pick(2, 2)).toEqual(['under', 'ellipse']);
   });
 

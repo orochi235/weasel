@@ -361,9 +361,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       /**
        * What "the pointer is on this node" means for the default body-pick.
        *
-       * - `'pose'` (default) — the node's pose rect, rotation honored. Cheap,
-       *   and what every consumer got before this option existed.
-       * - `'shape'` — the pose rect as a pre-filter, then the ink the painter
+       * - `'pose'` — the node's pose rect, rotation honored. What every
+       *   consumer got before `'shape'` existed, and now the opt-out.
+       * - `'shape'` (default) — the pose rect as a pre-filter, then the ink the painter
        *   actually lays down: its silhouette (`findShapeSilhouette`) filled
        *   or not per the painter's `ink`, plus its outline widened by the
        *   stroke half-width and `pickTolerancePx`. A click in the concave
@@ -372,8 +372,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
        *   the thin outline of an unfilled shape hits it.
        *
        * Painters with no silhouette are unaffected — they keep the pose-rect
-       * answer either way, so turning this on can never make a node
-       * unreachable.
+       * answer either way, so this can never make a node unreachable.
        *
        * Ignored when `pickEvery` is supplied: that override owns the test.
        */

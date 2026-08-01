@@ -187,10 +187,13 @@ Priority tags:
   `shapeCoversPoint` refinement and a world-unit `pickTolerance`. Both scene
   pick paths agree.
 
-  Still open: **`picking: 'shape'` is opt-in.** The default is still the pose
-  rect, which is the wrong answer for anything non-rectangular. Flipping it
-  changes what a click selects for every consumer, so it wants a deliberate
-  call rather than riding along with the machinery. Requested 2026-07-31.
+  **`picking: 'shape'` is now the default** (2026-08-01). `'pose'` is the
+  opt-out. Affordable because the rect pre-filter runs first and rejects every
+  node the pointer isn't over, and the survivors' painter match + silhouette
+  are memoized per node (`NodeShape`'s `SHAPE_CACHE`, keyed on node identity +
+  `pose`/`data` references + a painter generation). Measured on a 1000-node
+  scene: pose-only 27.7 µs/pick, shape 30.7 µs (+11%) warm, 109 µs cold.
+  Requested 2026-07-31.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
@@ -353,6 +356,20 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Rendering & paint
+
+- **(P2) Extend the per-node memo to `paint`, and lift it out of `NodeShape`.**
+  Found while benchmarking shape-accurate picking (see § Tools & gestures).
+  `renderer/cache/cache.ts` is a `WeakMap<Path, Mesh>` tessellation cache keyed
+  on **Path identity** — but `painter.paint()` allocates a fresh `Path` every
+  frame (`pathForShape` for `kit:shape`, `pathInPoseFrame` for `kit:path`
+  polygons), so it misses for essentially every scene node on every frame. That
+  cache exists and is doing close to nothing; making paint return a stable
+  `Path` turns it on. The memo landed in `NodeShape` for picking is keyed on an
+  engine-wide fact (the scene replaces `pose`/`data` by reference on every
+  edit), so it generalizes — extract it as `core/scene/nodeMemo.ts`.
+  **Read the handoff before starting**: there are four traps, including
+  `defaultDrawOne` mutating the painter's returned array, which would corrupt a
+  cached value. `docs/handoffs/2026-08-01-node-memo-paint-caching.md`.
 
 - **Fill-mode expansion in WeaselDraw — gradients and textures.** The engine
   already has the paint model: `FillStyle` (`packages/core/src/core/paint-types.ts`)

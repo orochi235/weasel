@@ -48,8 +48,9 @@ export interface UseSceneSelectToolArgs<TData, TLayer extends string, TPose> {
   geometry?: {
     pickEvery?: (worldX: number, worldY: number) => string | string[] | null;
     boundsOf?: (id: string) => Bounds | null;
-    /** Refine the default body-pick from the pose rect to the painted shape.
-     *  See `SceneCanvasProps.geometry.picking`. Ignored when `pickEvery` is
+    /** How the default body-pick decides a node covers the pointer. Defaults
+     *  to `'shape'`; `'pose'` opts back down to the bare pose rect. See
+     *  `SceneCanvasProps.geometry.picking`. Ignored when `pickEvery` is
      *  supplied — that override owns the whole test. */
     picking?: 'pose' | 'shape';
     /** Grab slop around a shape's outline, in screen pixels. See
@@ -115,7 +116,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
 
   const pickEveryProp = geometry?.pickEvery;
   const boundsOfProp = geometry?.boundsOf;
-  const shapePicking = geometry?.picking === 'shape';
+  // Default. The pose rect is the wrong answer for anything that isn't a
+  // rectangle, so `'pose'` is the opt-out rather than the baseline. Cheap to
+  // leave on: the rect pre-filter runs first and rejects every node the
+  // pointer isn't over, and the survivors' silhouettes are memoized per node.
+  const shapePicking = (geometry?.picking ?? 'shape') === 'shape';
   const pickTolerancePx = geometry?.pickTolerancePx ?? DEFAULT_PICK_TOLERANCE_PX;
   const moveOptions = opts?.move;
   const rotateOptions = opts?.rotate;
