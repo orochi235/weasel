@@ -33,7 +33,7 @@ export {
 } from './fallback';
 export type { FontFallbackPolicy } from './fallback';
 
-export { subscribeGlyphReady } from './glyphReady';
+export { subscribeGlyphReady, glyphGeneration } from './glyphReady';
 
 export {
   registerCanvasFont,

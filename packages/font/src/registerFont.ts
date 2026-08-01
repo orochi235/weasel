@@ -7,6 +7,7 @@
  * variants for the fallback chain.
  */
 
+import { notifyGlyphReady } from './glyphReady';
 import { parseBmFont, type BmFont } from './FontAtlas';
 import type { GlyphTextureSink } from './textureSink';
 import {
@@ -126,6 +127,11 @@ export async function registerFont(
       registry.set(family, familyMap);
     }
     familyMap.set(key, { font, bitmap });
+    // Same meaning the lazy tiers give it: text that was painting from a
+    // fallback face — or painting nothing — can now paint from this one. The
+    // early return above covers the already-registered case, so this fires
+    // once per variant that actually lands.
+    notifyGlyphReady();
   } catch (err) {
     throw new Error(
       `weasel registerFont("${family}" ${weight}/${style}): ${err instanceof Error ? err.message : String(err)}`,

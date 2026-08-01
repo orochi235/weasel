@@ -10,6 +10,7 @@ import {
 } from './dynamic/dynamicAtlas';
 import { BAKE_SIZE } from './dynamic/glyphRasterizer';
 import { registerTestFont } from './testing/registerTestFont';
+import { subscribeGlyphReady } from './glyphReady';
 
 function stubFetch() {
   const encoder = new TextEncoder();
@@ -399,5 +400,41 @@ describe('resolveGlyphFallback', () => {
     const a = resolveGlyphFallback('Inter', 400, 'normal');
     const b = resolveGlyphFallback('Inter', 400, 'normal');
     expect(a!.dynamicFace).toBe(b!.dynamicFace);
+  });
+});
+
+describe('registerFont and the glyph-ready signal', () => {
+  it('notifies subscribers once a family is registered', async () => {
+    // `subscribeGlyphReady` means "a glyph the renderer asked for can now
+    // paint", which is exactly true of a family finishing registration: text
+    // that was falling back to another face — or painting nothing — can now
+    // paint from it. Both lazy tiers already fire it; the static path did not,
+    // so a font registered mid-session left the canvas showing the pre-load
+    // rendering until something unrelated forced a redraw. It also gates the
+    // renderer's text-layout cache, which must not keep serving a layout
+    // measured against the face this replaces.
+    const seen = vi.fn();
+    const unsubscribe = subscribeGlyphReady(seen);
+    try {
+      await registerFont('notify-me', {}, '/fonts/x.json', '/fonts/x.png');
+      expect(seen).toHaveBeenCalled();
+    } finally {
+      unsubscribe();
+    }
+  });
+
+  it('does not notify when the variant was already registered', async () => {
+    // The early return for an already-present variant does no work, so it has
+    // nothing to announce — and a redraw per redundant call would be a cheap
+    // way to pin the canvas at full tilt.
+    await registerFont('already', {}, '/fonts/x.json', '/fonts/x.png');
+    const seen = vi.fn();
+    const unsubscribe = subscribeGlyphReady(seen);
+    try {
+      await registerFont('already', {}, '/fonts/x.json', '/fonts/x.png');
+      expect(seen).not.toHaveBeenCalled();
+    } finally {
+      unsubscribe();
+    }
   });
 });
