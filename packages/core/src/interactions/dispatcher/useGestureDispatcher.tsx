@@ -18,7 +18,7 @@ import { useDepRegistry } from '../actions/depRegistry';
 import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool, ToolCtx } from '../../tools/types';
-import { createDispatcher, type Dispatcher, type DispatcherContext } from './dispatcher';
+import { createDispatcher, pointerGestureId, type Dispatcher, type DispatcherContext } from './dispatcher';
 import { clientToCanvasRect } from 'core/viewport/clientToCanvas';
 import { itemsFromDataTransfer, itemsFromClipboardData } from 'features/ingestion/ingestItems';
 import type { InputEvent } from './matcher';
@@ -556,6 +556,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const ev: InputEvent = {
         kind: 'pointerdown',
         target: e.target,
+        pointerId: e.pointerId,
         x: w.x,
         y: w.y,
         clientX: e.clientX,
@@ -598,6 +599,25 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
       // Synthesize a multi-touch event when >= 2 pointers are active.
       if (activePointers.size >= 2) {
+        // MULTI-POINTER POLICY: the multitouch channel takes ownership of
+        // every pointer that hasn't already committed to a gesture. Dropping
+        // the buffered press is what enforces it — a claimed pointer opens no
+        // drag handle on the next move, and synthesizes no click on release
+        // (both of those read the buffer). The `multitouch-<fingers>` handle
+        // and the `multitouchtap` synthesis below are the whole gesture.
+        //
+        // This used to hold by accident: `gestureIdFor` returned one key for
+        // every pointer, so a second finger's press found the first's handle
+        // in flight and no-oped. Per-pointer keying removes the accident, so
+        // the policy has to be stated. Stating it is the improvement — a
+        // pointer that is part of a pinch is not also dragging something.
+        //
+        // Note the asymmetry: a pointer that already opened a drag has no
+        // buffer left to claim, so its gesture survives the second finger
+        // landing. Yanking a drag out from under someone who rested a palm is
+        // worse than letting it finish.
+        for (const id of activePointers) bufferedDown.delete(id);
+
         const { centroid, spread } = computeMultiTouchGeometry(pointerPositions);
         // Capture start state for tap synthesis. On the first 1→2 transition
         // we record the centroid; subsequent pointerdowns at higher finger
@@ -668,6 +688,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const w = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
         kind: 'pointermove',
+        pointerId: e.pointerId,
         x: w.x,
         y: w.y,
         clientX: e.clientX,
@@ -812,9 +833,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         const mtGestureId = `multitouch-${prevSize}`;
         if (dispatcher.inFlight().has(mtGestureId)) {
           // Synthesize a pointerup for the multitouch gesture — dispatcher needs
-          // a pointerup to route to onEnd, but multitouch handles aren't keyed as
-          // 'pointer-mouse'. We use cancelAll to safely commit all in-flight handles
-          // of this gesture; only the multitouch handle should be active.
+          // a pointerup to route to onEnd, but multitouch handles are keyed by
+          // finger count, not by pointer. We use cancelAll to safely commit all
+          // in-flight handles of this gesture; only the multitouch handle
+          // should be active (see the multi-pointer policy in onPointerMove).
           // Use 'commit' because this is a natural lift (not a cancel).
           dispatcher.cancelAll('commit');
         }
@@ -844,7 +866,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       }
 
       // Check whether a drag handle is in-flight BEFORE sending pointerup.
-      // If the pointer-mouse handle is in-flight AND the pointer moved between
+      // If THIS pointer's handle is in-flight AND the pointer moved between
       // down and up, this is the end of a real drag — pump it and don't
       // synthesize a click. If no handle is in-flight, or the handle was
       // opened but the pointer never moved (sub-threshold "tap" that an
@@ -854,11 +876,13 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const movedDuringDrag = downForClick
         ? (downForClick.clientX !== e.clientX || downForClick.clientY !== e.clientY)
         : true;
-      const hadDragInFlight = dispatcher.inFlight().has('pointer-mouse') && movedDuringDrag;
+      const hadDragInFlight =
+        dispatcher.inFlight().has(pointerGestureId(e.pointerId)) && movedDuringDrag;
 
       const wUp = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
         kind: 'pointerup',
+        pointerId: e.pointerId,
         x: wUp.x,
         y: wUp.y,
         clientX: e.clientX,
@@ -957,6 +981,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       multiTouchStart = null;
       const ev: InputEvent = {
         kind: 'pointercancel',
+        pointerId: e.pointerId,
         altKey: e.altKey,
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,

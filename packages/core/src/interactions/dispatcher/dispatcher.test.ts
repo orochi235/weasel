@@ -503,6 +503,84 @@ describe('createDispatcher', () => {
         );
         expect(dispatcher.getActiveAction()).toEqual({ kind: null, id: null });
       });
+
+      it('keys the gestureId to the event\'s pointerId', () => {
+        const handle = { kind: 'marquee', onMove: vi.fn(), onEnd: vi.fn() };
+        const action = ongoingAction('marquee-action', { kind: 'drag' }, vi.fn().mockReturnValue(handle));
+        const dispatcher = createDispatcher();
+
+        dispatcher.handleInput(
+          { kind: 'pointerdown', pointerId: 7, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false },
+          makeCtx({ actions: makeRegistry([action]) }),
+        );
+        expect(dispatcher.getActiveAction()).toEqual({ kind: 'marquee', id: 'pointer-7' });
+      });
+    });
+
+    describe('per-pointer gesture handles', () => {
+      it('two pointers open two independent handles', () => {
+        // Before pointerId threading, `gestureIdFor` returned the literal
+        // `pointer-mouse` for every pointer, so the second press found the
+        // first's handle already in flight and silently no-oped.
+        const handleA = { kind: 'move', onMove: vi.fn(), onEnd: vi.fn() };
+        const handleB = { kind: 'move', onMove: vi.fn(), onEnd: vi.fn() };
+        const startFn = vi.fn()
+          .mockReturnValueOnce(handleA)
+          .mockReturnValueOnce(handleB);
+        const action = ongoingAction('move', { kind: 'drag' }, startFn);
+        const dispatcher = createDispatcher();
+        const ctx = makeCtx({ actions: makeRegistry([action]) });
+        const down = (pointerId: number): InputEvent => ({
+          kind: 'pointerdown', pointerId, x: 0, y: 0,
+          altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+        });
+
+        dispatcher.handleInput(down(1), ctx);
+        dispatcher.handleInput(down(2), ctx);
+
+        expect(startFn).toHaveBeenCalledTimes(2);
+        expect([...dispatcher.inFlight().keys()].sort()).toEqual(['pointer-1', 'pointer-2']);
+      });
+
+      it('pumps and ends each pointer\'s handle independently', () => {
+        const handleA = { kind: 'move', onMove: vi.fn(), onEnd: vi.fn() };
+        const handleB = { kind: 'move', onMove: vi.fn(), onEnd: vi.fn() };
+        const startFn = vi.fn()
+          .mockReturnValueOnce(handleA)
+          .mockReturnValueOnce(handleB);
+        const action = ongoingAction('move', { kind: 'drag' }, startFn);
+        const dispatcher = createDispatcher();
+        const ctx = makeCtx({ actions: makeRegistry([action]) });
+        const mods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+
+        dispatcher.handleInput({ kind: 'pointerdown', pointerId: 1, x: 0, y: 0, ...mods }, ctx);
+        dispatcher.handleInput({ kind: 'pointerdown', pointerId: 2, x: 0, y: 0, ...mods }, ctx);
+        dispatcher.handleInput({ kind: 'pointermove', pointerId: 1, x: 10, y: 0, ...mods }, ctx);
+
+        expect(handleA.onMove).toHaveBeenCalledTimes(1);
+        expect(handleB.onMove).not.toHaveBeenCalled();
+
+        dispatcher.handleInput({ kind: 'pointerup', pointerId: 1, x: 10, y: 0, ...mods }, ctx);
+
+        expect(handleA.onEnd).toHaveBeenCalledTimes(1);
+        expect(handleB.onEnd).not.toHaveBeenCalled();
+        expect([...dispatcher.inFlight().keys()]).toEqual(['pointer-2']);
+      });
+
+      it('keys events with no pointerId to `pointer-mouse`', () => {
+        // Synthesized events (tests, programmatic drags, the hover pump's
+        // resolveOnly probe) carry no pointerId and share one slot, which is
+        // exactly the pre-threading behavior.
+        const handle = { kind: 'marquee', onMove: vi.fn(), onEnd: vi.fn() };
+        const action = ongoingAction('marquee', { kind: 'drag' }, vi.fn().mockReturnValue(handle));
+        const dispatcher = createDispatcher();
+
+        dispatcher.handleInput(
+          { kind: 'pointerdown', altKey: false, ctrlKey: false, metaKey: false, shiftKey: false },
+          makeCtx({ actions: makeRegistry([action]) }),
+        );
+        expect([...dispatcher.inFlight().keys()]).toEqual(['pointer-mouse']);
+      });
     });
 
     it('key-held down starts a handle; up calls onEnd("commit") and clears', () => {

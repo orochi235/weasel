@@ -91,8 +91,23 @@ export interface PointerSampleStylus {
   tiltY?: number;
 }
 
+/**
+ * Which physical pointer a sample came from.
+ *
+ * Carried by every pointer-kind event so the dispatcher can key in-flight
+ * gesture handles per pointer (`pointer-<pointerId>`) instead of funneling
+ * mouse, each touch, and the stylus into one slot. Optional because
+ * synthesized events (tests, programmatic drags, the hover pump's
+ * `resolveOnly` probe) have no originating `PointerEvent`; those all key to
+ * the same default slot, which is the pre-`pointerId` behavior.
+ */
+export interface PointerIdentity {
+  /** `PointerEvent.pointerId` from the originating DOM event. */
+  pointerId?: number;
+}
+
 /** A pointer press — the start of any drag, and the richest event shape. */
-export interface PointerDownEvent extends EventModifiers, PointerSampleStylus {
+export interface PointerDownEvent extends EventModifiers, PointerSampleStylus, PointerIdentity {
   kind: 'pointerdown';
   /**
    * Which of the two dispatches this press produces.
@@ -131,7 +146,7 @@ export interface PointerDownEvent extends EventModifiers, PointerSampleStylus {
 
 /** A pump-only pointer move. Carried in the union so the dispatcher's
  *  `handleInput` signature stays uniform; the matcher never matches it. */
-export interface PointerMoveEvent extends EventModifiers, PointerSampleStylus {
+export interface PointerMoveEvent extends EventModifiers, PointerSampleStylus, PointerIdentity {
   kind: 'pointermove';
   x: number;
   y: number;
@@ -140,7 +155,7 @@ export interface PointerMoveEvent extends EventModifiers, PointerSampleStylus {
 }
 
 /** A pump-only pointer release. Not matched by the matcher. */
-export interface PointerUpEvent extends EventModifiers {
+export interface PointerUpEvent extends EventModifiers, PointerIdentity {
   kind: 'pointerup';
   x: number;
   y: number;
@@ -149,7 +164,7 @@ export interface PointerUpEvent extends EventModifiers {
 }
 
 /** A pump-only pointer cancel. Not matched by the matcher. */
-export interface PointerCancelEvent extends EventModifiers {
+export interface PointerCancelEvent extends EventModifiers, PointerIdentity {
   kind: 'pointercancel';
 }
 

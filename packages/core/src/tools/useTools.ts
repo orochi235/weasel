@@ -4,6 +4,7 @@ import { dlog } from '../debug/flag';
 import type { AnyTool } from './types';
 import type { RenderLayer } from 'core/layers/render';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
+import { reportRouteConflicts } from './routing/reflection';
 
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
@@ -131,6 +132,29 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     if (hotkeyRef.current) dlog('tools', 'hotkey disengaged:', hotkeyRef.current);
     ctx.popHotkey();
   }, [ctx]);
+
+  // Route-conflict check. Two tools declaring the same (phase, gesture, arg,
+  // target, modifiers) tuple are resolved by slot order and almost certainly
+  // not as either author intended — the kit has been able to detect that
+  // since `findConflicts` was written and never looked. This is where the
+  // tool set is assembled, so this is where it looks.
+  //
+  // Dev-only, and deduped on a signature of the tool set: the check walks
+  // every binding of every tool, and `registry` / `ambient` are usually fresh
+  // object literals each render, so keying the effect on them directly would
+  // re-warn on every keystroke.
+  const lastConflictSigRef = useRef<string | null>(null);
+  const toolSetSig = Object.keys(opts.registry).join(',')
+    + '|' + (opts.ambient ?? []).map(t => t.id).join(',');
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+    if (lastConflictSigRef.current === toolSetSig) return;
+    lastConflictSigRef.current = toolSetSig;
+    reportRouteConflicts({
+      registry: registryRef.current,
+      ambient: ambientRef.current,
+    });
+  }, [toolSetSig]);
 
   // `has` and `getActiveOverlays` read live state via refs, so they're
   // safe to memoize once for the lifetime of the hook.

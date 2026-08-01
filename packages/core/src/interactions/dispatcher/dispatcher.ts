@@ -20,9 +20,11 @@
  * ## gestureId scheme
  * - `key-held` ongoing actions: `key-held-<key>` (e.g. `key-held- ` for Space).
  *   Chosen because key-held gestures are identified by the held key alone.
- * - `pointerdown` / drag ongoing actions: `pointer-<pointerId>`, where
- *   `pointerId` defaults to `'mouse'` (Phase 3 has no real pointer IDs; the
- *   React seam in Task 4 will supply the actual DOM pointerId).
+ * - `pointerdown` / drag ongoing actions: `pointer-<pointerId>`, taken from
+ *   the originating DOM `PointerEvent`. Each physical pointer — mouse, each
+ *   touch, the stylus — gets its own handle slot. Events with no
+ *   `pointerId` (synthesized probes, programmatic drags, most tests) key to
+ *   `pointer-mouse`, so a single synthetic pointer behaves as it always has.
  * - `multitouch` ongoing actions: `multitouch-<fingers>`.
  * - Fallback for any other kind that triggers an ongoing invoker: `ongoing-<kind>`.
  *
@@ -44,6 +46,22 @@ import type { Tool } from '../../tools/types';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted, specificity } from './matcher';
 import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../features/chrome-caps';
+
+/**
+ * The in-flight handle slot a pointer's gestures key into.
+ *
+ * Exported because the React seam (`useGestureDispatcher`) has to name the
+ * same slot when it asks `dispatcher.inFlight()` whether a given pointer is
+ * mid-drag. That used to be the string literal `'pointer-mouse'` on both
+ * sides, which was correct only because `gestureIdFor` ignored the pointer id
+ * entirely — the two lies cancelled out.
+ *
+ * @param pointerId - `PointerEvent.pointerId`, or `undefined` for a
+ *   synthesized event with no originating DOM pointer.
+ */
+export function pointerGestureId(pointerId: number | undefined): string {
+  return `pointer-${pointerId ?? 'mouse'}`;
+}
 
 // ---------------------------------------------------------------------------
 // Dev-only instrumentation
@@ -410,7 +428,7 @@ export interface Dispatcher {
    * - `kind` — the `OngoingHandle.kind` reported by the in-flight
    *   handle (e.g. `'marquee'`, `'move'`). `null` when no action is
    *   in flight OR the handle didn't declare a kind.
-   * - `id` — the dispatcher's internal `gestureId` (`pointer-mouse`,
+   * - `id` — the dispatcher's internal `gestureId` (`pointer-1`,
    *   `key-held-Space`, …) — the pointer/key channel the action rode
    *   in on. `null` when no action is in flight.
    *
@@ -418,6 +436,13 @@ export interface Dispatcher {
    * action overlapping a pointer action), the most-recently-started
    * handle wins. This matches user intent: the latest interaction is
    * the one consumers care about.
+   *
+   * That rule used to be near-vacuous on the pointer side, because every
+   * pointer shared one handle slot and two pointer drags could not coexist.
+   * With per-pointer keying they can — but only via paths that bypass the
+   * multi-pointer policy in `useGestureDispatcher` (which stops a second
+   * finger from opening a drag while a pinch is live), such as a mouse and
+   * a pen used together. Latest-start remains the right answer there.
    */
   getActiveAction(): { kind: string | null; id: string | null };
 
@@ -647,7 +672,7 @@ export function createDispatcher(opts?: {
       event.kind === 'pointerup' ||
       event.kind === 'pointercancel'
     ) {
-      return `pointer-mouse`;
+      return pointerGestureId(event.pointerId);
     }
     if (event.kind === 'multitouch') {
       return `multitouch-${event.fingers}`;
@@ -992,7 +1017,7 @@ export function createDispatcher(opts?: {
 
       if (action.invoker?.timing === 'ongoing') {
         // A `pointerDown` binding fires at press time, on the same
-        // `pointer-mouse` gesture id the drag will use. Letting an ongoing
+        // `pointer-<id>` gesture id the drag will use. Letting an ongoing
         // action open its handle here would make the drag's own dispatch find
         // a handle already in flight and silently no-op. `PointerDownSpec`
         // documents itself as immediate-only; enforce it rather than let the

@@ -72,6 +72,7 @@ export type {
   KeyHeldEvent,
   WheelEvent,
   PointerSampleStylus,
+  PointerIdentity,
   PointerDownEvent,
   PointerMoveEvent,
   PointerUpEvent,
