@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { defaultDrawOne } from './defaultDrawOne';
+import { registerNodeShape } from './NodeShape';
 import type { Node } from 'core/scene/types';
-import type { PathDrawCommand, TextDrawCommand } from '../renderer';
+import type { DrawCommand, PathDrawCommand, TextDrawCommand } from '../renderer';
 
 // Minimal Node-shaped fixture. The runtime fields the kit actually reads
 // from `node.data` are duck-typed inside `defaultDrawOne`; the rest of the
@@ -150,6 +151,32 @@ describe('defaultDrawOne', () => {
       POSE,
     );
     expect(cmds).toHaveLength(1);
+  });
+
+  it('does not mutate the array its painter returned', () => {
+    // A painter is entitled to return a memoized array — that is the whole
+    // point of caching `paint` — and `defaultDrawOne` appending the label
+    // overlay in place would grow that array by one command per frame,
+    // unboundedly. The label has to be a copy-on-append.
+    const cached: DrawCommand[] = [{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+      fill: { color: '#abc' },
+    }];
+    const dispose = registerNodeShape(
+      { id: 'test:cached-paint', matches: () => true, paint: () => cached },
+      { priority: 'high' },
+    );
+    try {
+      const n = node({ label: 'Hi' });
+      const first = defaultDrawOne(n, POSE);
+      const second = defaultDrawOne(n, POSE);
+      expect(cached).toHaveLength(1);
+      expect(first).toHaveLength(2);
+      expect(second).toHaveLength(2);
+    } finally {
+      dispose();
+    }
   });
 
   it('threads NodePaintCtx to the painter (image resolver)', () => {

@@ -40,12 +40,15 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
   const data = node.data as { label?: string; text?: string } | null;
   if (data?.label && data.text == null) {
     const p = pose as unknown as { x: number; y: number };
-    primary.push(textCommand(
+    // Copy rather than `push`. A painter's return value is not ours to grow:
+    // one that memoizes its command list — which is the point of caching
+    // `paint` — would gain another label command on every frame, forever.
+    return [...primary, textCommand(
       p.x + 6,
       p.y + 14,
       data.label,
       { fontFamily: 'sans-serif', fontSize: 11, fill: { fill: 'solid', color: 'rgba(0,0,0,0.7)' } },
-    ));
+    )];
   }
 
   // Pose-rotation wrap moved to `wrapWithPoseRotation` in
