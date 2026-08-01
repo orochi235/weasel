@@ -1,5 +1,7 @@
 # @weasel-js/labkit
 
+## 0.7.1
+
 ## 0.1.0
 
 ### Minor Changes

@@ -1,5 +1,35 @@
 # @weasel-js/ui
 
+## 0.7.1
+
+### Patch Changes
+
+- d22624c: `Select` rows now carry a `textValue`, derived from a string label or the
+  new per-option `textValue` for labels built from elements. Every row draws a
+  check mark beside its label, so React Aria could never read a string off the
+  children — it warned once per row on every open, and type-to-select did
+  nothing.
+- 6af4806: `@weasel-js/font` gains `listCanvasFonts()`, the enumeration companion to
+  `isCanvasFont`. Families served by the dynamic canvas-SDF tier could only be
+  queried one at a time, so a font picker had no way to offer them without
+  hard-coding a list beside the `registerCanvasFont` calls. Reports service
+  rather than membership, matching `isCanvasFont`: an auto-enrolled family
+  appears only while the `'canvas'` fallback policy is in force.
+
+  `@weasel-js/ui`'s `Select` marks its portalled popover with
+  `data-weasel-overlay`. A consumer asking "did focus leave my component?" via
+  `closest()` gets the wrong answer for portalled DOM — a text editor whose
+  font menu is a `Select` ended its edit session the moment the menu was
+  clicked, discarding the style patch that click was making.
+
+- 6df0f1e: Add `StatusBar` (with `StatusBarItem` / `StatusBarSpacer`) and `ResizeHandle`
+  — the two pieces of editor shell that every app was otherwise rebuilding.
+  `ResizeHandle` is the window-splitter pattern: pointer drag or arrow keys,
+  `role="separator"` with a live value range, snapping to a `step` grid so
+  fractional pointer coordinates don't leak into persisted layouts. Both are
+  layout-agnostic; the consumer still owns the shell.
+  - @weasel-js/modes@0.7.1
+
 ## 0.7.0
 
 ### Minor Changes

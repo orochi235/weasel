@@ -1,5 +1,14 @@
 # @weasel-js/hud
 
+## 0.7.1
+
+### Patch Changes
+
+- Updated dependencies [6af4806]
+- Updated dependencies [a3af158]
+  - @weasel-js/font@0.7.1
+  - @weasel-js/theme@0.7.1
+
 ## 0.7.0
 
 ### Minor Changes

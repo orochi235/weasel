@@ -1,5 +1,99 @@
 # Changelog
 
+## 0.7.1
+
+### Patch Changes
+
+- a3af158: Gestures are now keyed per pointer. `gestureIdFor` returned the literal string
+  `pointer-mouse` with nothing interpolated — despite its own docs promising
+  `pointer-<pointerId>` — so every pointer shared one in-flight handle slot and
+  two pointer gestures could not coexist. Pointer events carry `pointerId` now
+  and the id interpolates; events without one (synthetic probes, most tests)
+  still key to `pointer-mouse`.
+
+  That removes an accident the pinch path was relying on, so the multitouch
+  policy is stated rather than implied: when a second pointer lands, the
+  multitouch channel claims every pointer that hasn't already committed to a
+  gesture, suppressing both drags and taps from those pointers. A drag already in
+  flight keeps running — yanking a gesture away from someone who rested a palm is
+  worse than letting it finish.
+
+  `useTools` also reports routing conflicts now. `findConflicts` had been
+  written, tested, and never called, so the kit could detect its one class of
+  genuine routing ambiguity and never looked. It runs at registry assembly under
+  a dev guard and warns each conflict in the grammar the route was written in. It
+  warns and never throws: a consumer tool colliding with a kit tool can be
+  deliberate, since the loser may still take the gesture by declining through
+  `enabled()`.
+
+- a3af158: Scenes with many shapes or much text draw far less work per frame. Two caches
+  the kit already had were missing on essentially every node of every frame,
+  because the values they key on were rebuilt each time.
+
+  The tessellation cache (`WeakMap<Path, Mesh>`) keys on `Path` identity, but
+  `kit:shape` allocated a fresh path for every ellipse, polygon and star on every
+  draw. Painters now memoize `paint` against the node, so the same path comes
+  back and the cache does its job: 1000 shape nodes went from 6.69 to 0.20
+  ms/frame through paint and tessellation.
+
+  Text layout is the larger one. `layoutRuns` — which walks every codepoint,
+  resolves a face per run, measures, wraps and places each glyph — ran per text
+  command per frame. It is now cached in the renderer, keyed on the resolved
+  runs. 200 wrapped paragraphs went from 31.8 to 0.06 ms/frame, 1000 short
+  labels from 12.5 to 0.42. The cache drops itself when a font becomes
+  available, so text still reflows the moment the real face lands.
+
+  Two contracts follow from this, for anyone writing a custom painter or calling
+  these directly:
+
+  - The array a painter's `paint` returns belongs to the painter. Treat it as
+    immutable and copy before appending — `defaultDrawOne` now does, for its
+    label overlay.
+  - `registerFont` now notifies `subscribeGlyphReady` when a family finishes
+    registering, so a font loaded mid-session repaints without waiting for an
+    unrelated redraw. `glyphGeneration()` is a new pull-based companion to that
+    signal, for caches that can't hold a subscription.
+
+- 6af4806: Reorder: `Cmd/Ctrl+Shift+]` and `Cmd/Ctrl+Shift+[` now bring-to-front and
+  send-to-back. The shortcut every drawing app uses could never fire — modifier
+  matching is strict, so a binding without `shift` in its spec cannot match a
+  keystroke that holds it, which also made the shifted `'}'` / `'{'` characters
+  in those key lists unreachable. `Cmd+Alt+]` / `Cmd+Alt+[` remain as the
+  fallback for browsers that reserve `Cmd+Shift+[`/`]` for tab switching.
+
+  `BUNDLE_TOOLS.standard` no longer includes `pencil`. Freehand is a specialist
+  instrument rather than part of the everyday shape-drawing set; it is still in
+  `exhaustive`. Consumers wanting it back can pass `tools={{ pencil: true }}`
+  alongside the bundle.
+
+- a3af158: Clicks now land on the shape a node actually paints, not on its bounding box.
+  The pose rect is the wrong answer for anything that isn't a rectangle: a click
+  in a star's notch, in the corner outside an ellipse, or in the blank half of a
+  text box went to the node that merely bounds that point, burying whatever was
+  really underneath. `picking: 'shape'` had been available since it shipped and
+  was opt-in only because flipping it changes what a click selects.
+
+  Ink counts too, not just the boundary. A shape whose interior isn't filled —
+  an outlined rect, a pencil stroke, a bare line — is now grabbable along its
+  outline and not through its empty middle, which is the opposite of what a fill
+  test alone answers. Painters declare this through the new `NodeShapeEntry.ink`;
+  one that declares none is treated as filled, the previous behavior.
+
+  Pass `geometry={{ picking: 'pose' }}` to `SceneCanvas` for the old rect
+  behavior. Painters with no silhouette are unaffected either way, so nothing
+  becomes unreachable.
+
+- 2003597: Export `VERSION` — the kit version a build was compiled from, baked in at
+  build time. Apps can pair it with their own compile timestamp to report what
+  they're running (WeaselDraw now shows `0.7.0 · Jul 30` in its status bar).
+- Updated dependencies [6af4806]
+- Updated dependencies [a3af158]
+  - @weasel-js/font@0.7.1
+  - @weasel-js/geom@0.7.1
+  - @weasel-js/gestures@0.7.1
+  - @weasel-js/history@0.7.1
+  - @weasel-js/modes@0.7.1
+
 ## 0.7.0
 
 ### Minor Changes
