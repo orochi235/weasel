@@ -44,6 +44,7 @@ import { strokeHitTest } from 'features/paths/hitTest';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
 import { getImageBitmap, imageStatus } from 'features/images/imageCache';
+import { nodeMemo, bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
 
 /** Optional per-call paint context, threaded through `defaultDrawOne`'s third
  *  argument. Lets a rendering entry point override ambient environment reads
@@ -67,7 +68,13 @@ export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   matches(node: Node<TData, string, TPose>): boolean;
   /** Emits the draw commands for the node's primary visual. `ctx` is an
    *  optional per-call paint context (see `NodePaintCtx`); painters that
-   *  don't need it can keep a two-argument signature. */
+   *  don't need it can keep a two-argument signature.
+   *
+   *  **The returned array belongs to the painter.** Callers must treat it as
+   *  immutable and copy before appending — a painter is free to memoize its
+   *  command list (`kit:shape` and `kit:path` do), and an in-place `push`
+   *  would grow that list on every frame. `defaultDrawOne` copies before
+   *  adding its label overlay for exactly this reason. */
   paint(node: Node<TData, string, TPose>, pose: TPose, ctx?: NodePaintCtx): DrawCommand[];
   /** Optional: derive the node's silhouette path from its pose.
    *  Used by clipping (when the container has no explicit
@@ -112,10 +119,6 @@ const PAINTERS: { high: NodeShapeEntry[]; normal: NodeShapeEntry[] } = {
   normal: [],
 };
 
-/** Bumped whenever the painter set changes, so cached per-node lookups made
- *  against an older set are discarded rather than served stale. */
-let painterGeneration = 0;
-
 /** Register a shape painter. Returns a disposer that removes it. */
 export function registerNodeShape<TData, TPose>(
   painter: NodeShapeEntry<TData, TPose>,
@@ -123,75 +126,55 @@ export function registerNodeShape<TData, TPose>(
 ): () => void {
   const list = opts.priority === 'high' ? PAINTERS.high : PAINTERS.normal;
   list.push(painter as NodeShapeEntry);
-  painterGeneration++;
+  // The painter set is exactly the ambient state `findNodeShape` reads, and a
+  // memo keyed on the node alone cannot see it change. See `nodeMemo`.
+  bumpNodeMemoGeneration();
   return () => {
     const i = list.indexOf(painter as NodeShapeEntry);
     if (i >= 0) list.splice(i, 1);
-    painterGeneration++;
+    bumpNodeMemoGeneration();
   };
 }
 
-// ─── Per-node shape cache ───────────────────────────────────────────────────
+// ─── Per-node shape memo ────────────────────────────────────────────────────
 
 /**
- * Memoizes the two things picking asks per node per pointer move: which
- * painter matches, and that painter's silhouette path.
+ * Slot names for the two things picking asks per node per pointer move: which
+ * painter matches, and that painter's silhouette path. Both go through
+ * {@link nodeMemo}, so they invalidate on `data` (and, for the silhouette,
+ * `pose`) reference changes and on a painter registration.
  *
- * Worth caching because both are hot and neither is free. `findNodeShape`
+ * Worth memoizing because both are hot and neither is free. `findNodeShape`
  * runs every registered painter's `matches` predicate; `silhouette` *builds*
  * a path — `pathForShape` allocates a fresh `Float32Array` for every ellipse,
  * polygon and star. Picking runs on every pointermove through both the
  * hover-cursor pump and `classifyTarget`, so that's two rebuilds per move per
  * node under the pointer, and shape-accurate picking is now the default.
  *
- * **Validity.** The scene mutates node objects in place but *replaces*
- * `pose` and `data` with new references (see the `kit:setPose` / `kit:setData`
- * ops), so the node object is a stable identity and those two references are
- * an exact freshness signal. A caller may also pass a pose that isn't
- * `node.pose` — a preview pose mid-drag — which simply misses and recomputes,
- * as it should. `painterGeneration` covers a painter being registered or
- * disposed underneath us.
- *
- * The assumption this rests on: nobody mutates `node.data` in place without
- * replacing the reference. That's the kit's own op contract; a consumer who
- * violates it sees a stale silhouette until the next real edit.
+ * Separate slots rather than one entry: they mostly invalidate together, but
+ * not always, and a shared entry would force the stricter key on both.
  */
-interface ShapeCacheEntry {
-  generation: number;
-  painter: NodeShapeEntry | undefined;
-  /** Pose the silhouette was built from — reference-compared. */
-  pose: unknown;
-  /** Data the silhouette was built from — reference-compared. */
-  data: unknown;
-  /** Rotation already baked in, as `findShapeSilhouette` returns it. */
-  silhouette: Path | null;
-  /** Set once the silhouette has actually been computed for this pose+data. */
-  hasSilhouette: boolean;
-}
+const PAINTER_SLOT = 'shape:painter';
+const SILHOUETTE_SLOT = 'shape:silhouette';
 
-const SHAPE_CACHE = new WeakMap<object, ShapeCacheEntry>();
-
-/** Fetch (or start) this node's cache entry, invalidating on a painter-set
- *  change. Entries are per node object, so a scene of N nodes holds N. */
-function cacheEntryFor(node: object): ShapeCacheEntry {
-  const existing = SHAPE_CACHE.get(node);
-  if (existing && existing.generation === painterGeneration) return existing;
-  const fresh: ShapeCacheEntry = {
-    generation: painterGeneration,
-    painter: undefined,
-    pose: undefined,
-    data: undefined,
-    silhouette: null,
-    hasSilhouette: false,
-  };
-  SHAPE_CACHE.set(node, fresh);
-  return fresh;
-}
-
-/** Test-only: drop every memoized painter/silhouette. */
-export function _resetShapeCacheForTests(): void {
-  painterGeneration++;
-}
+/**
+ * Slot for a painter's memoized `paint` output.
+ *
+ * Distinct from {@link SILHOUETTE_SLOT} even though the two mostly invalidate
+ * together: the silhouette bakes `pose.rotation` in (paint does not — the
+ * render wrap applies it), and paint alone can depend on `NodePaintCtx` and on
+ * ambient readiness. One entry keyed the same way for both would be wrong in
+ * both directions.
+ *
+ * **Only for painters that are a pure function of `(node, pose, data)`.**
+ * `kit:shape` and `kit:path` qualify and are also precisely the painters that
+ * allocated a fresh `Path` per frame, defeating the tessellation cache in
+ * `renderer/cache/cache.ts` (`WeakMap<Path, Mesh>`, keyed on Path identity).
+ * `kit:text` and `kit:image` do not qualify — see the tests in
+ * `NodeShape.cache.test.ts` that pin their opt-out, and the handoff at
+ * `docs/handoffs/2026-08-01-node-memo-paint-caching.md`.
+ */
+const PAINT_SLOT = 'shape:paint';
 
 /** Find the painter that will render `node` — first match in priority
  *  order. Returns undefined if no painter (including the built-in
@@ -199,19 +182,10 @@ export function _resetShapeCacheForTests(): void {
 export function findNodeShape<TData, TPose>(
   node: Node<TData, string, TPose>,
 ): NodeShapeEntry<TData, TPose> | undefined {
-  const entry = cacheEntryFor(node as object);
-  // `matches` predicates read `node.data`, so the match is only reusable
-  // while `data` is the same reference.
-  if (entry.data === node.data && entry.painter !== undefined) {
-    return entry.painter as NodeShapeEntry<TData, TPose>;
-  }
-  const found = matchNodeShape(node);
-  if (entry.data !== node.data) {
-    entry.data = node.data;
-    entry.hasSilhouette = false;
-  }
-  entry.painter = found as NodeShapeEntry | undefined;
-  return found;
+  // No pose in the key: `matches` predicates read `node.data`, never the pose.
+  return nodeMemo(node as { data?: unknown }, PAINTER_SLOT, undefined, () =>
+    matchNodeShape(node),
+  );
 }
 
 function matchNodeShape<TData, TPose>(
@@ -245,20 +219,11 @@ export function findShapeSilhouette<TData, TPose>(
   node: Node<TData, string, TPose>,
   pose: TPose,
 ): Path | null {
-  // `findNodeShape` refreshes the entry's `data` and clears `hasSilhouette`
-  // when the node's data changed, so run it before reading the cached path.
-  const painter = findNodeShape(node);
-  const entry = cacheEntryFor(node as object);
-  if (entry.hasSilhouette && entry.pose === pose) return entry.silhouette;
-
-  const sil = painter?.silhouette?.(node, pose) ?? null;
-  const r = sil ? poseRotationOf(pose) : null;
-  const out = sil && r ? rotatePathAround(sil, r.cx, r.cy, r.rotation) : sil;
-
-  entry.pose = pose;
-  entry.silhouette = out;
-  entry.hasSilhouette = true;
-  return out;
+  return nodeMemo(node as { data?: unknown }, SILHOUETTE_SLOT, pose, () => {
+    const sil = findNodeShape(node)?.silhouette?.(node, pose) ?? null;
+    const r = sil ? poseRotationOf(pose) : null;
+    return sil && r ? rotatePathAround(sil, r.cx, r.cy, r.rotation) : sil;
+  });
 }
 
 /** Find the painter for `node` and ask how it inks its silhouette. Returns
@@ -340,8 +305,9 @@ export function _resetShapePaintersForTests(): void {
   PAINTERS.normal.length = 0;
   registerBuiltInShapePainters();
   // Swapping the painter set out from under a node invalidates anything
-  // memoized against the old one.
-  painterGeneration++;
+  // memoized against the old one. (`registerNodeShape` already bumps, but the
+  // clearing above happens without one.)
+  bumpNodeMemoGeneration();
 }
 
 // ─── Built-in painters ─────────────────────────────────────────────────
@@ -443,7 +409,10 @@ const PATH_PAINTER: NodeShapeEntry = {
     const d = node.data as { path?: Path } | null;
     return d?.path != null;
   },
-  paint: (node, pose) => {
+  // Memoized: a pure function of `(data, pose)`, and `pathInPoseFrame`
+  // allocates on every call but the identity (`kind: 'rect'`) branch. See
+  // PAINT_SLOT.
+  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as {
       path: Path;
       fill?: string;
@@ -467,7 +436,7 @@ const PATH_PAINTER: NodeShapeEntry = {
         : {}),
     };
     return [cmd];
-  },
+  }),
   silhouette: (node, pose) => {
     const d = node.data as { path: Path };
     return pathInPoseFrame(d.path, pose as RectPose);
@@ -502,7 +471,10 @@ const SHAPE_PAINTER: NodeShapeEntry = {
     const s = (node.data as { shape?: string } | null)?.shape;
     return s != null && SHAPE_KINDS.has(s);
   },
-  paint: (node, pose) => {
+  // Memoized: a pure function of `(data, pose)`, and `pathForShape` builds a
+  // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
+  // See PAINT_SLOT.
+  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as { shape: string; color?: string; fill?: string; stroke?: string; strokeWidth?: number; sides?: number; points?: number };
     const path = pathForShape(d, pose as RectPose);
     return [{
@@ -513,7 +485,7 @@ const SHAPE_PAINTER: NodeShapeEntry = {
         ? { stroke: { paint: { color: d.stroke }, width: d.strokeWidth ?? 1 } }
         : {}),
     }];
-  },
+  }),
   silhouette: (node, pose) => {
     const d = node.data as { shape: string; sides?: number; points?: number };
     return pathForShape(d, pose as RectPose);

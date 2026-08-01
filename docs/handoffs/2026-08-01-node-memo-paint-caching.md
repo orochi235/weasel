@@ -8,8 +8,61 @@
 
 ## Status
 
-Not started. This document is the design plus the traps found while landing
-the picking-side cache it generalizes.
+**Done** (2026-08-01), steps 1–4 as proposed; step 5 investigated and
+deliberately declined, with the reason below. Everything under "Proposed
+shape", "Traps" and "Suggested order" is kept as written — read it as the
+design record, and this block as what it turned into.
+
+What landed:
+
+1. `packages/core/src/core/scene/nodeMemo.ts` — `nodeMemo(node, slot, pose,
+   derive)` + `bumpNodeMemoGeneration()`, exactly the proposed signature.
+   `NodeShape` is its first consumer, not the owner of a `WeakMap`; its two
+   uses ported unchanged and `NodeShape.cache.test.ts` stayed green untouched.
+2. Trap 1 fixed: `defaultDrawOne` copies before appending the label overlay.
+   Pinned by `defaultDrawOne.test.ts` › "does not mutate the array its painter
+   returned", which uses a painter returning a memoized array — it grew to 3
+   commands in two draws before the fix.
+3. `kit:shape` and `kit:path` memoize `paint` under a `shape:paint` slot,
+   separate from the silhouette's per trap 5.
+4. Measured. `NodeShape.meshCache.test.ts` drives `getMesh` from real paint
+   output and counts distinct meshes, with the **pre-memo painter as a control
+   arm in the same file** — so the regression is guarded by the number in the
+   other column rather than by a historical red.
+
+| 1000 shape nodes (ellipse / polygon / star), paint → `getMesh` | ms/frame |
+|---|---|
+| before (fresh `Path` per frame) | 6.69 |
+| after (memoized `paint`) | 0.20 |
+
+Meshes built over 5 frames of 200 nodes: **1000 → 200**. The mesh cache's hit
+rate went from 0% to (frames−1)/frames. So the diagnosis in step 4's "if it
+doesn't move, something else is defeating `WeakMap<Path, Mesh>`" was right and
+the check passes — the allocation upstream was the whole story.
+
+### Step 5: neither `kit:text` nor `kit:image` should join, and trap 4 is wrong
+
+**Trap 4 mis-locates the cost.** `kit:text`'s `paint` does *not* run
+`layoutRuns`. It builds a `TextDrawCommand` via `resolveTextStyle` +
+`resolveRuns` — pure style merging, no font reads, measured at **0.139
+ms/frame for 1000 text nodes** (shape paint, memoized, is 0.101 for
+comparison). There is nothing there worth caching.
+
+`layoutRuns` runs one layer down, in `drawText` (`renderer/draw.ts`), on the
+emitted command. And it is not memoizable per node at all: its `outlineMinSize`
+argument is `textOutlineMinScreenSize / modelScale(ctx.state.transform)` — the
+**view zoom** — because that is what picks the atlas-vs-outline tier per glyph.
+A `(node, pose, data)` key structurally cannot represent it. Text layout wants
+a renderer-side cache with its own key; filed as its own P3 entry in
+`docs/TODO.md` § Rendering & paint.
+
+**`kit:image` stays out**, and traps 2 and 3 both hold up: `ctx.resolveImage`
+is authoritative when set and absent from the key, and `getImageBitmap` flips
+when an async decode lands with no change to `data`. The win would also be
+nil — image paint emits one command and tessellates nothing.
+
+Both opt-outs are pinned by tests in `NodeShape.cache.test.ts` so a later pass
+doesn't quietly fold them in.
 
 ## Why
 
@@ -147,6 +200,11 @@ subscription to also bump their entry, or `kit:image` opts out.
 `layoutRuns`, the most expensive derivation in the kit, so it benefits most.
 But its output depends on the loaded font set, which is ambient and mutable.
 Whatever signal invalidates text layout on font load has to reach the memo.
+
+> **This trap is wrong** — see the Status block. `kit:text`'s `paint` does not
+> run `layoutRuns`; the renderer does, one layer down, keyed partly on view
+> zoom. Left in place because the reasoning is the trap worth remembering even
+> though this instance of it was misfiled.
 
 **5. Don't cache `silhouette` and `paint` into one entry keyed the same way
 and assume they invalidate together.** They mostly do, but `ctx` and image

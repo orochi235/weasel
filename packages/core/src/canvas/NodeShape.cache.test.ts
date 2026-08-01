@@ -17,6 +17,8 @@ import {
 } from './NodeShape';
 import type { Node } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
+import type { PathDrawCommand } from '../renderer';
+import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 
 interface RectPose { x: number; y: number; width: number; height: number }
 
@@ -86,6 +88,91 @@ describe('silhouette caching', () => {
     expect(silB).not.toBe(silA);
     // Re-reading A still gets A's.
     expect(findShapeSilhouette(a, a.pose)).toBe(silA);
+  });
+});
+
+describe('paint caching', () => {
+  // The point of caching `paint` is not the command objects — it is the `Path`
+  // inside them. `renderer/cache/cache.ts` memoizes tessellation as
+  // `WeakMap<Path, Mesh>`, keyed on Path *identity*, so it only ever pays off
+  // if the same Path object comes back frame after frame. `pathForShape` and
+  // the non-identity branch of `pathInPoseFrame` both allocate, which meant
+  // that cache was consulted, missed and repopulated on every draw.
+  function paintOf(node: Node<unknown, string, RectPose>, pose: RectPose): PathDrawCommand {
+    const painter = findNodeShape(node);
+    return painter!.paint(node, pose)[0] as PathDrawCommand;
+  }
+
+  it('kit:shape hands back the identical path object for an unchanged node', () => {
+    const node = makeNode(ELLIPSE, POSE);
+    const first = paintOf(node, node.pose);
+    const second = paintOf(node, node.pose);
+    expect(second.path).toBe(first.path);
+  });
+
+  it('kit:shape rebuilds the path when the pose reference changes', () => {
+    const node = makeNode(ELLIPSE, POSE);
+    const before = paintOf(node, node.pose);
+    (node as { pose: RectPose }).pose = { x: 500, y: 500, width: 100, height: 60 };
+    const after = paintOf(node, node.pose);
+    expect(after.path).not.toBe(before.path);
+    const coords = (after.path as { coords: Float32Array }).coords;
+    expect(Math.min(...coords)).toBeGreaterThan(400);
+  });
+
+  it('kit:shape rebuilds when the data reference changes', () => {
+    // Both the geometry (`points`) and the paint (`fill`) live in data.
+    const node = makeNode({ shape: 'star', points: 5, fill: '#f00' }, POSE);
+    const five = paintOf(node, node.pose);
+    expect(five.fill).toEqual({ color: '#f00' });
+    (node as { data: unknown }).data = { shape: 'star', points: 9, fill: '#0f0' };
+    const nine = paintOf(node, node.pose);
+    expect((nine.path as { commands: Uint8Array }).commands.length)
+      .toBeGreaterThan((five.path as { commands: Uint8Array }).commands.length);
+    expect(nine.fill).toEqual({ color: '#0f0' });
+  });
+
+  it('kit:path hands back the identical command for an unchanged node', () => {
+    const path = { kind: 'polygon' as const, commands: new Uint8Array([PATH_M, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 10]), fillRule: 'nonzero' as const };
+    const node = makeNode({ path, fill: '#00f' }, POSE);
+    const first = paintOf(node, node.pose);
+    const second = paintOf(node, node.pose);
+    expect(second).toBe(first);
+    expect(second.path).toBe(first.path);
+  });
+
+  it('does not memoize kit:image — its paint reads state the key cannot see', () => {
+    // An async decode landing changes what `paint` returns with no change to
+    // `data`, and `NodePaintCtx.resolveImage` (supplied by the headless
+    // render path) is authoritative but absent from the key. Both make image
+    // paint unsafe to cache under `(node, pose, data)`.
+    const node = makeNode({ image: { src: 'x' } }, POSE);
+    const painter = findNodeShape(node);
+    expect(painter?.id).toBe('kit:image');
+    const bmp = { width: 2, height: 2, close() {} } as unknown as ImageBitmap;
+    const pending = painter!.paint(node, node.pose, { resolveImage: () => undefined });
+    expect(pending[0].kind).toBe('path'); // placeholder outline
+    const ready = painter!.paint(node, node.pose, { resolveImage: () => bmp });
+    expect(ready[0]).toMatchObject({ kind: 'image', image: bmp });
+  });
+
+  it('does not memoize kit:text — there is nothing here worth memoizing', () => {
+    // Worth stating precisely, because the obvious guess is wrong: `kit:text`'s
+    // `paint` does NOT lay out glyphs. It builds a `TextDrawCommand` out of
+    // `resolveTextStyle` + `resolveRuns` — pure style merging, measured at
+    // 0.14 ms/frame for 1000 text nodes. `layoutRuns`, the expensive part,
+    // runs downstream in the renderer (`drawText`), and its result depends on
+    // the **view zoom** — `outlineMinSize` is derived from the model
+    // transform, to decide the atlas/outline tier per glyph. A key made of
+    // `(node, pose, data)` cannot represent that, so this is a renderer-side
+    // cache with a different key, not a `nodeMemo` slot.
+    const node = makeNode({ text: 'Hi' }, POSE);
+    const painter = findNodeShape(node);
+    expect(painter?.id).toBe('kit:text');
+    const a = painter!.paint(node, node.pose);
+    const b = painter!.paint(node, node.pose);
+    expect(b).not.toBe(a);
   });
 });
 

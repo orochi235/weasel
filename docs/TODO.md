@@ -357,19 +357,17 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P2) Extend the per-node memo to `paint`, and lift it out of `NodeShape`.**
-  Found while benchmarking shape-accurate picking (see § Tools & gestures).
-  `renderer/cache/cache.ts` is a `WeakMap<Path, Mesh>` tessellation cache keyed
-  on **Path identity** — but `painter.paint()` allocates a fresh `Path` every
-  frame (`pathForShape` for `kit:shape`, `pathInPoseFrame` for `kit:path`
-  polygons), so it misses for essentially every scene node on every frame. That
-  cache exists and is doing close to nothing; making paint return a stable
-  `Path` turns it on. The memo landed in `NodeShape` for picking is keyed on an
-  engine-wide fact (the scene replaces `pose`/`data` by reference on every
-  edit), so it generalizes — extract it as `core/scene/nodeMemo.ts`.
-  **Read the handoff before starting**: there are four traps, including
-  `defaultDrawOne` mutating the painter's returned array, which would corrupt a
-  cached value. `docs/handoffs/2026-08-01-node-memo-paint-caching.md`.
+- **(P3) Cache text layout in the renderer.** `layoutRuns` is the most
+  expensive derivation the kit runs, and it runs per text command per frame in
+  `drawText` (`renderer/draw.ts`). It is deliberately *not* reachable from
+  `nodeMemo` — its result depends on the view zoom, via
+  `outlineMinSize = textOutlineMinScreenSize / modelScale(transform)`, which
+  picks the atlas/outline tier per glyph. So the key is
+  `(runs, maxWidth, lineHeight, align, outlineMinSize)`, quantized on the last
+  one, and the cache belongs next to `outlineMeshCache` rather than on the
+  node. Note `drawText` currently mutates `laid.groups` in place to apply
+  `verticalAlign`, which a shared layout would have to stop doing. Unmeasured
+  — establish the per-frame cost before building it.
 
 - **Fill-mode expansion in WeaselDraw — gradients and textures.** The engine
   already has the paint model: `FillStyle` (`packages/core/src/core/paint-types.ts`)
