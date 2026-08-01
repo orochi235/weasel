@@ -320,7 +320,15 @@ const TEXT_PAINTER: NodeShapeEntry = {
     const d = node.data as { text?: string } | null;
     return d?.text != null;
   },
-  paint: (node, pose) => {
+  // Memoized, and not for its own sake — `resolveTextStyle` + `resolveRuns`
+  // are cheap (0.14 ms/frame at 1000 text nodes). It is the enabler: the
+  // renderer's layout cache keys on the `ResolvedRun[]` array identity, and
+  // `layoutRuns` costs 25.9 ms/frame for 200 wrapped paragraphs. Handing back
+  // a fresh runs array per frame would leave that cache missing on every
+  // draw, exactly as a fresh `Path` per frame defeated the mesh cache. Both
+  // resolvers are pure style merging — no font reads — so `(data, pose)` is
+  // the whole key. See PAINT_SLOT.
+  paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as { text: string; style?: TextStyle; runs?: readonly StyledRun[] };
     const p = pose as RectPose;
     // `y` is the TOP of the first line box, not a baseline: `layoutRuns`
@@ -352,7 +360,7 @@ const TEXT_PAINTER: NodeShapeEntry = {
     return d.runs && d.runs.length > 0
       ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height)]
       : [textCommand(p.x, y, d.text, d.style, undefined, p.height)];
-  },
+  }),
   // The pose is a *wrap box*, not a bounding box — "Away" in a 300-unit box
   // leaves most of it empty, and a pose-rect silhouette claims all of it. The
   // union of the line boxes is what the node actually covers, so picking,

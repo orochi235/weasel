@@ -157,22 +157,31 @@ describe('paint caching', () => {
     expect(ready[0]).toMatchObject({ kind: 'image', image: bmp });
   });
 
-  it('does not memoize kit:text — there is nothing here worth memoizing', () => {
-    // Worth stating precisely, because the obvious guess is wrong: `kit:text`'s
-    // `paint` does NOT lay out glyphs. It builds a `TextDrawCommand` out of
-    // `resolveTextStyle` + `resolveRuns` — pure style merging, measured at
-    // 0.14 ms/frame for 1000 text nodes. `layoutRuns`, the expensive part,
-    // runs downstream in the renderer (`drawText`), and its result depends on
-    // the **view zoom** — `outlineMinSize` is derived from the model
-    // transform, to decide the atlas/outline tier per glyph. A key made of
-    // `(node, pose, data)` cannot represent that, so this is a renderer-side
-    // cache with a different key, not a `nodeMemo` slot.
+  it('memoizes kit:text, so its runs array stays stable frame to frame', () => {
+    // Not for `paint`'s own cost — `resolveTextStyle` + `resolveRuns` are
+    // pure style merging and measure 0.14 ms/frame at 1000 text nodes.
+    // It is the enabler for the renderer's layout cache, which keys on the
+    // `ResolvedRun[]` identity the way the mesh cache keys on `Path`
+    // identity. `layoutRuns` is 25.9 ms/frame for 200 wrapped paragraphs, and
+    // a fresh runs array per frame would leave that cache missing on every
+    // draw. Same shape of win as `kit:shape`: memoizing a cheap thing to turn
+    // an expensive cache on.
     const node = makeNode({ text: 'Hi' }, POSE);
     const painter = findNodeShape(node);
     expect(painter?.id).toBe('kit:text');
-    const a = painter!.paint(node, node.pose);
-    const b = painter!.paint(node, node.pose);
-    expect(b).not.toBe(a);
+    const a = painter!.paint(node, node.pose)[0] as { runs: unknown };
+    const b = painter!.paint(node, node.pose)[0] as { runs: unknown };
+    expect(b).toBe(a);
+    expect(b.runs).toBe(a.runs);
+  });
+
+  it('rebuilds kit:text when the text changes', () => {
+    const node = makeNode({ text: 'Hi' }, POSE);
+    const before = findNodeShape(node)!.paint(node, node.pose)[0] as { runs: { text: string }[] };
+    expect(before.runs[0].text).toBe('Hi');
+    (node as { data: unknown }).data = { text: 'Bye' };
+    const after = findNodeShape(node)!.paint(node, node.pose)[0] as { runs: { text: string }[] };
+    expect(after.runs[0].text).toBe('Bye');
   });
 });
 
