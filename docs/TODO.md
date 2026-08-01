@@ -357,17 +357,14 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P3) Cache text layout in the renderer.** `layoutRuns` is the most
-  expensive derivation the kit runs, and it runs per text command per frame in
-  `drawText` (`renderer/draw.ts`). It is deliberately *not* reachable from
-  `nodeMemo` — its result depends on the view zoom, via
-  `outlineMinSize = textOutlineMinScreenSize / modelScale(transform)`, which
-  picks the atlas/outline tier per glyph. So the key is
-  `(runs, maxWidth, lineHeight, align, outlineMinSize)`, quantized on the last
-  one, and the cache belongs next to `outlineMeshCache` rather than on the
-  node. Note `drawText` currently mutates `laid.groups` in place to apply
-  `verticalAlign`, which a shared layout would have to stop doing. Unmeasured
-  — establish the per-frame cost before building it.
+- **(P3) Lay text out relative to its origin, not in absolute coordinates.**
+  `layoutRuns` bakes `origin` into every quad, so `layoutCache` has to carry it
+  in the key and a text node re-lays out on every frame of a drag. If layout
+  emitted origin-relative geometry and `drawText` translated at upload — it
+  already threads `dy` for `verticalAlign`, so `dx`/`dy` is the same shape —
+  the entry would survive moves too. Needs confirming that alignment is
+  genuinely translation-equivariant in `origin.x` first. Low priority: pan and
+  zoom already hit, and those are the frames that repeat.
 
 - **Fill-mode expansion in WeaselDraw — gradients and textures.** The engine
   already has the paint model: `FillStyle` (`packages/core/src/core/paint-types.ts`)
