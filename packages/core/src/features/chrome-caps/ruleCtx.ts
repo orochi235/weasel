@@ -1,6 +1,7 @@
 import type { NodeId } from '../../core/scene/types';
 import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
+import type { DeviceProfile } from '../../core/device/types';
 import { IMPLICIT_TAGS, NORMAL, type CapabilityTag } from '@weasel-js/modes';
 
 /**
@@ -41,6 +42,13 @@ export interface RuleCtx {
    *  with nothing being edited should draw no anchors. Absent is treated
    *  as false. */
   readonly editingAnchors?: boolean;
+  /** Device facts — pointer coarseness, hover capability, density.
+   *
+   *  Absent (legacy ctx builders) is treated as
+   *  {@link DEFAULT_DEVICE_PROFILE}: a fine pointer that can hover, at
+   *  density 1. That is what the kit assumed before this field existed, so
+   *  an absent profile is behavior-preserving by construction. */
+  readonly device?: DeviceProfile;
 }
 
 export interface BuildRuleCtxArgs {
@@ -57,6 +65,8 @@ export interface BuildRuleCtxArgs {
   selectionResizable?: boolean;
   /** Optional — omitted means "no path is being anchor-edited". */
   editingAnchors?: boolean;
+  /** Optional — omitted means {@link DEFAULT_DEVICE_PROFILE}. */
+  device?: DeviceProfile;
 }
 
 /**
@@ -88,5 +98,6 @@ export function buildRuleCtx(args: BuildRuleCtxArgs): RuleCtx {
     allowedCapabilities: args.allowedCapabilities,
     selectionResizable: args.selectionResizable,
     editingAnchors: args.editingAnchors,
+    device: args.device,
   };
 }

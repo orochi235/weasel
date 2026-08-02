@@ -160,3 +160,15 @@ export const capabilityAll = (caps: readonly string[]): Condition => cond({ capa
 
 /** Active mode's `allows` does NOT include capability `cap`. */
 export const capabilityNot = (cap: string): Condition => cond({ capability: { not: cap } });
+
+// ─── Device atoms ───────────────────────────────────────────────────
+
+/** Primary pointer is imprecise (touch, most styluses). Absent device
+ *  profile → false, so a rule written with this atom is inert on the
+ *  mouse-shaped default rather than silently flipping. */
+export const coarsePointer: Condition = cond({ coarsePointer: true });
+
+/** Primary pointer can hover. Absent device profile → true. Pair with
+ *  `not(...)` to gate chrome that only makes sense with a hovering
+ *  pointer: `not(canHover)` is "this device cannot hover". */
+export const canHover: Condition = cond({ canHover: true });

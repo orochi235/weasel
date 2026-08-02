@@ -88,6 +88,19 @@ export * from './interactions/gestures/handleDrag';
 export * from './interactions/gestures/pointerDrag';
 export * from './interactions/gestures/thresholdDrag';
 export * from './core/viewport/useCanvasSize';
+export {
+  COARSE_TARGET_SCALE,
+  DEFAULT_DEVICE_PROFILE,
+  DeviceProfileProvider,
+  HANDLE_BASE_PX,
+  ANCHOR_HIT_BASE_PX,
+  ROTATION_HANDLE_BASE_PX,
+  resolveDeviceProfile,
+  useDeviceProfile,
+  type DeviceProfile,
+  type DeviceProfileProviderProps,
+  type DetectedDeviceFacts,
+} from './core/device';
 export * from './core/viewport/fitToBounds';
 export { fitViewToBounds } from './core/viewport/fitViewToBounds';
 export type { Bounds, ViewportDims, FitViewToBoundsOptions } from './core/viewport/fitViewToBounds';
@@ -454,6 +467,8 @@ export {
   hoveringSelected,
   modifierHeld,
   zoomAtLeast,
+  canHover,
+  coarsePointer,
   modeIs,
   modeIn,
   modeNot,

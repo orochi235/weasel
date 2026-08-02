@@ -208,3 +208,32 @@ describe('describeRule', () => {
     expect(describeRule(cyclic as Rule)).toContain('…');
   });
 });
+
+describe('device selectors', () => {
+  const coarse = baseCtx({
+    device: { coarsePointer: true, canHover: false, dpr: 3, targetScale: 1.75 },
+  });
+
+  const fine = baseCtx({
+    device: { coarsePointer: false, canHover: true, dpr: 1, targetScale: 1 },
+  });
+
+  it('coarsePointer matches a coarse device', () => {
+    expect(evaluate({ coarsePointer: true }, coarse)).toBe(true);
+    expect(evaluate({ coarsePointer: true }, fine)).toBe(false);
+  });
+
+  it('canHover matches a hover-capable device', () => {
+    expect(evaluate({ canHover: true }, fine)).toBe(true);
+    expect(evaluate({ canHover: true }, coarse)).toBe(false);
+  });
+
+  it('absent device is treated as fine-pointer and hover-capable', () => {
+    expect(evaluate({ coarsePointer: false }, baseCtx())).toBe(true);
+    expect(evaluate({ canHover: true }, baseCtx())).toBe(true);
+  });
+
+  it('describeRule renders the new selectors', () => {
+    expect(describeRule({ coarsePointer: true })).toBe('coarsePointer:true');
+  });
+});

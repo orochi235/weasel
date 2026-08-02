@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useRef } from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { useCanvasSize } from './useCanvasSize';
+import { makeMatchMedia } from '../device/testing/matchMedia';
 
 beforeAll(() => {
   if (typeof (globalThis as { ResizeObserver?: unknown }).ResizeObserver === 'undefined') {
@@ -88,6 +89,54 @@ describe('useCanvasSize', () => {
     expect(result.current.height).toBe(175);
 
     (window as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver = original;
+  });
+
+  // The hole this hook had: density was only re-read inside the resize
+  // callback, so dragging a window to a different-density display without
+  // resizing it left `dpr` stale.
+  it('picks up a density change without a resize', () => {
+    const originalRO = window.ResizeObserver;
+    MockResizeObserver.instances = [];
+    (window as unknown as { ResizeObserver: typeof MockResizeObserver }).ResizeObserver =
+      MockResizeObserver;
+
+    const dprDescriptor = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio');
+    Object.defineProperty(window, 'devicePixelRatio', { value: 1, configurable: true });
+
+    const h = makeMatchMedia({
+      '(pointer: coarse)': false,
+      '(hover: hover)': true,
+      '(resolution: 1dppx)': true,
+    });
+    vi.stubGlobal('matchMedia', h.mm);
+
+    const el = document.createElement('div');
+    Object.defineProperty(el, 'getBoundingClientRect', {
+      value: () => ({
+        width: 800, height: 600, x: 0, y: 0,
+        left: 0, top: 0, right: 800, bottom: 600, toJSON() {},
+      }),
+    });
+
+    const { result } = renderHook(() => {
+      const ref = useRef<HTMLDivElement>(el);
+      return useCanvasSize(ref);
+    });
+
+    expect(result.current).toEqual({ width: 800, height: 600, dpr: 1 });
+
+    // Move to a 2x display. No resize happens — only the media query fires.
+    const observerCallsBefore = MockResizeObserver.instances.length;
+    Object.defineProperty(window, 'devicePixelRatio', { value: 2, configurable: true });
+    act(() => { h.fire('(resolution: 1dppx)', false); });
+
+    expect(result.current).toEqual({ width: 800, height: 600, dpr: 2 });
+    // Nothing re-observed: this update did not come from a resize.
+    expect(MockResizeObserver.instances.length).toBe(observerCallsBefore);
+
+    vi.unstubAllGlobals();
+    if (dprDescriptor) Object.defineProperty(window, 'devicePixelRatio', dprDescriptor);
+    (window as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver = originalRO;
   });
 
   it('disconnects ResizeObserver on unmount', () => {

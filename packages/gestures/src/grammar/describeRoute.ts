@@ -109,6 +109,8 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
       return `the user taps with ${parsed.arg ?? 'multiple'} fingers`;
     case 'contextMenu':
       return `the user ${modPrefix}opens the context menu${target}`;
+    case 'longPress':
+      return `the user ${modPrefix}presses and holds${target}`;
     case 'click':
       return `the user ${modPrefix}clicks${target}`;
     case 'pointerDown':

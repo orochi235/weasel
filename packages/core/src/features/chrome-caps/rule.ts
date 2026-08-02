@@ -1,6 +1,7 @@
 import type { ModifierState } from '../../interactions/gestures/types';
 import type { CapabilityTag } from '@weasel-js/modes';
 import type { RuleCtx } from './ruleCtx';
+import { DEFAULT_DEVICE_PROFILE } from '../../core/device/profile';
 
 /**
  * A selector is a conjunction of key/value tests. Multiple keys at the same
@@ -28,6 +29,12 @@ export interface Selector {
    *  (resizable), so `{ resizable: true }` passes for legacy ctx builders
    *  that don't compute it. */
   resizable?: boolean;
+  /** Matches `ctx.device.coarsePointer` — the primary pointer is imprecise
+   *  (touch, most styluses). Absent device is treated as `false`. */
+  coarsePointer?: boolean;
+  /** Matches `ctx.device.canHover` — the primary pointer can hover. Absent
+   *  device is treated as `true`. */
+  canHover?: boolean;
 }
 
 /**
@@ -117,6 +124,14 @@ function evaluateSelector(s: Selector, ctx: RuleCtx): boolean {
     // compute it). Only an explicit `false` opts a selection out.
     const resizable = ctx.selectionResizable ?? true;
     if (resizable !== s.resizable) return false;
+  }
+  if (s.coarsePointer !== undefined) {
+    const device = ctx.device ?? DEFAULT_DEVICE_PROFILE;
+    if (device.coarsePointer !== s.coarsePointer) return false;
+  }
+  if (s.canHover !== undefined) {
+    const device = ctx.device ?? DEFAULT_DEVICE_PROFILE;
+    if (device.canHover !== s.canHover) return false;
   }
   return true;
 }

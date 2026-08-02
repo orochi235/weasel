@@ -224,6 +224,22 @@ export interface ContextMenuEvent extends EventModifiers {
   bodyKind?: BodyKind;
 }
 
+/** A press held past the long-press threshold without moving. */
+export interface LongPressEvent extends EventModifiers {
+  kind: 'longpress';
+  target?: unknown;
+  /** World-space position of the originating press. */
+  x?: number;
+  y?: number;
+  clientX?: number;
+  clientY?: number;
+  /** Affordance hit at press time, if any — lets a binding long-press a
+   *  resize handle, not just body. */
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
+}
+
 /** A running multitouch gesture (e.g. pinch/rotate). */
 export interface MultitouchEvent extends EventModifiers {
   kind: 'multitouch';
@@ -297,6 +313,7 @@ export type InputEvent =
   | ClickEvent
   | DoubleClickEvent
   | ContextMenuEvent
+  | LongPressEvent
   | MultitouchEvent
   | MultitouchTapEvent
   | DropEvent
