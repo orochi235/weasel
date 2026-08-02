@@ -20,6 +20,7 @@
 import {
   type Scene,
   type Path,
+  type TextStyle,
   embedWeaselMetadataInSvg,
   pathInPoseFrame,
   rectPath,
@@ -46,9 +47,25 @@ interface WeaselDrawPose {
 interface WeaselDrawData {
   path?: Path;
   text?: string;
+  /** Node-level typography, the same field `kit:text` paints from. */
+  style?: TextStyle;
   fill?: string;
   stroke?: string;
   strokeWidth?: number;
+}
+
+/**
+ * Fold the kit-native leaf stroke fields into a text node's style, exactly as
+ * `kit:text` does when painting it — so what the document exports is what the
+ * canvas shows. An explicit `style.stroke` is the richer form and wins.
+ */
+function textStyleFor(data: WeaselDrawData): TextStyle | undefined {
+  const style = data.style;
+  if (style?.stroke !== undefined) return style;
+  if (!data.stroke || data.stroke === 'none') return style;
+  const width = data.strokeWidth ?? 1;
+  if (width <= 0) return style;
+  return { ...style, stroke: { paint: { fill: 'solid', color: data.stroke }, width } };
 }
 
 const WHITE = /^#?fff(fff)?(ff)?$/i;
@@ -68,6 +85,8 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
       x: pose.x, y: pose.y, width: pose.width, height: pose.height,
       text: data.text,
     };
+    const style = textStyleFor(data);
+    if (style && Object.keys(style).length > 0) o.style = style;
     if (pose.rotation) o.rotation = pose.rotation;
     return o;
   }

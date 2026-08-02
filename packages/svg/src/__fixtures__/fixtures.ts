@@ -100,6 +100,13 @@ export const TEXT_STYLE_FULL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmln
   <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="18" font-family="Inter, sans-serif" font-weight="700" font-style="italic" text-anchor="middle" fill="#b03030" letter-spacing="1.5" text-decoration="underline line-through" wd:line-height="1.4">Styled</text>
 </svg>`;
 
+/** Stroked text: node-level stroke plus a differently-stroked run. Text
+ *  strokes were dropped on parse ("not supported on text") until the outline
+ *  tier gave a glyph real geometry to stroke. */
+export const TEXT_STROKE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <text x="10" y="20" dominant-baseline="text-before-edge" data-weasel-width="180" data-weasel-height="60" font-size="48" fill="#101010" stroke="#c0392b" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-miterlimit="6" stroke-dasharray="4 2">Out<tspan stroke="#1e90ff" stroke-width="1.5">line</tspan></text>
+</svg>`;
+
 export const WEASELDRAW_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wd="https://weaseldraw.app/svg-ext" viewBox="0 0 400 400">
   <g wd:group-id="g1">
     <path d="M 10 10 L 60 10 L 60 60 L 10 60 Z" fill="#ff0000" stroke="none"/>

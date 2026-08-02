@@ -857,8 +857,17 @@ function Toolbar({
                 const textFill = o.tool === 'text' && o.style?.fill && (o.style.fill.fill === 'solid' || o.style.fill.fill === undefined)
                   ? o.style.fill.color
                   : undefined;
+                // `style` carries the typography the painter reads —
+                // size, family, and the stroke. Dropping it imported every
+                // `<text>` as default-black 16px, however it was written.
+                // `data.fill` stays alongside it for the layer-row swatch,
+                // which reads the leaf field first.
                 const data: WeaselDrawData = o.tool === 'text'
-                  ? { text: o.text, fill: textFill ?? '#000000' }
+                  ? {
+                      text: o.text,
+                      fill: textFill ?? '#000000',
+                      ...(o.style ? { style: o.style } : {}),
+                    }
                   : { path: o.path, fill: o.fill, stroke: o.stroke, strokeWidth: o.strokeWidth };
                 const sceneId = scene.add({
                   kind: 'leaf',

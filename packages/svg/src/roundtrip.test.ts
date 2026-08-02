@@ -228,6 +228,83 @@ describe('round-trip', () => {
     expect(t2.meta?.wd?.attrs?.['line-height']).toBe('1.4');
   });
 
+  /**
+   * Text strokes used to be dropped on parse with a warning, because the
+   * renderer had nothing to stroke — an SDF glyph is a sampled field, not
+   * geometry. The outline tier changed that, so they now round-trip like any
+   * other paint.
+   */
+  it('text stroke: node-level and per-run, with joins/caps/dashes', () => {
+    const first = parseSvg(F.TEXT_STROKE_SVG);
+    expect(first.warnings).toEqual([]);
+    const t = first.nodes[0];
+    if (t.kind !== 'text') throw new Error('expected text');
+
+    expect(t.style?.stroke).toEqual({
+      paint: { fill: 'solid', color: '#c0392b' },
+      width: 3,
+      join: 'round',
+      cap: 'round',
+      miterLimit: 6,
+      dash: [4, 2],
+    });
+    // The run overrides colour and width and inherits nothing else — a run's
+    // stroke replaces the node's rather than merging with it.
+    expect(t.runs?.[1].stroke).toEqual({
+      paint: { fill: 'solid', color: '#1e90ff' },
+      width: 1.5,
+    });
+
+    const out = serializeSvg(first.nodes, { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
+    expect(out).toContain('stroke="#c0392b"');
+    expect(out).toContain('stroke-width="3"');
+    expect(out).toContain('stroke-linejoin="round"');
+    expect(out).toContain('stroke-linecap="round"');
+    expect(out).toContain('stroke-miterlimit="6"');
+    expect(out).toContain('stroke-dasharray="4 2"');
+    expect(out).toContain('stroke="#1e90ff"');
+
+    const second = parseSvg(out);
+    const t2 = second.nodes[0];
+    if (t2.kind !== 'text') throw new Error('expected text');
+    expect(t2.style?.stroke).toEqual(t.style?.stroke);
+    expect(t2.runs?.[1].stroke).toEqual(t.runs?.[1].stroke);
+  });
+
+  it('a gradient-stroked text node gets its gradient into <defs>', () => {
+    // `<defs>` is written before the body, so a paint first seen while
+    // emitting an element would reference an id nothing defines.
+    const node: SvgNode = {
+      kind: 'text',
+      x: 0, y: 0, width: 100, height: 40,
+      text: 'grad',
+      style: {
+        stroke: {
+          paint: {
+            fill: 'linear-gradient',
+            from: { x: 0, y: 0 },
+            to: { x: 1, y: 0 },
+            stops: [
+              { offset: 0, color: '#ff0000' },
+              { offset: 1, color: '#0000ff' },
+            ],
+          },
+          width: 2,
+        },
+      },
+    };
+    const out = serializeSvg([node], { viewBox: { x: 0, y: 0, width: 100, height: 40 } });
+    const ref = /stroke="url\(#([^)]+)\)"/.exec(out);
+    expect(ref).not.toBeNull();
+    expect(out).toContain(`id="${ref![1]}"`);
+  });
+
+  it('unstroked text emits no stroke attribute at all', () => {
+    const first = parseSvg(F.TEXT_PLAIN_SVG);
+    const out = serializeSvg(first.nodes, { viewBox: { x: 0, y: 0, width: 200, height: 100 } });
+    expect(out).not.toContain('stroke=');
+  });
+
   it('generic namespace pass-through: two declared namespaces stay isolated', () => {
     const namespaces = {
       foo: 'https://example.com/foo',

@@ -7,6 +7,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseSvg } from '@weasel-js/svg';
+import type { TextStyle } from '@weasel-js/core';
+import { svgNodesToSceneDrafts } from './svgInterop';
 import { buildWeaselClipboardText, extractWeaselClipboardFromSvg } from '@weasel-js/core';
 import {
   selectionToSvgString,
@@ -21,7 +23,10 @@ import {
 function fakeScene(nodes: Record<string, {
   kind: 'leaf' | 'container';
   pose: { x: number; y: number; width: number; height: number };
-  data?: { path?: unknown; fill?: string };
+  data?: {
+    path?: unknown; fill?: string; text?: string; style?: unknown;
+    stroke?: string; strokeWidth?: number;
+  };
   children?: string[];
 }>, roots: string[]) {
   return {
@@ -34,6 +39,88 @@ function fakeScene(nodes: Record<string, {
     childrenOf: (id: string) => nodes[id]?.children ?? [],
   } as never;
 }
+
+describe('text export', () => {
+  /**
+   * A text node's typography — including its stroke — lives in `data.style`
+   * (or, for the kit-native leaf fields, in `data.stroke` / `data.strokeWidth`
+   * the way `kit:shape` reads them). Export dropped all of it, so a styled
+   * text node came back as unstyled black text.
+   */
+  it('carries the node style through to the <text> element', () => {
+    const scene = fakeScene({
+      t: {
+        kind: 'leaf',
+        pose: { x: 5, y: 6, width: 120, height: 40 },
+        data: {
+          text: 'Hi',
+          style: { fontSize: 32, fontFamily: 'Inter', fill: { fill: 'solid', color: '#123456' } },
+        },
+      },
+    }, ['t']);
+
+    const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+    const n = parsed.nodes[0];
+    if (n.kind !== 'text') throw new Error('expected text');
+    expect(n.style?.fontSize).toBe(32);
+    expect(n.style?.fontFamily).toBe('Inter');
+    expect(n.style?.fill).toEqual({ fill: 'solid', color: '#123456' });
+  });
+
+  it('exports the leaf stroke fields as a text stroke', () => {
+    const scene = fakeScene({
+      t: {
+        kind: 'leaf',
+        pose: { x: 5, y: 6, width: 120, height: 40 },
+        data: { text: 'Hi', style: { fontSize: 32 }, stroke: '#c0392b', strokeWidth: 3 },
+      },
+    }, ['t']);
+
+    const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+    const n = parsed.nodes[0];
+    if (n.kind !== 'text') throw new Error('expected text');
+    expect(n.style?.stroke).toEqual({ paint: { fill: 'solid', color: '#c0392b' }, width: 3 });
+  });
+
+  it('survives the whole loop: scene → SVG → parse → import drafts', () => {
+    const scene = fakeScene({
+      t: {
+        kind: 'leaf',
+        pose: { x: 5, y: 6, width: 120, height: 40 },
+        data: { text: 'Hi', style: { fontSize: 32 }, stroke: '#c0392b', strokeWidth: 3 },
+      },
+    }, ['t']);
+
+    const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+    let n = 0;
+    const drafts = svgNodesToSceneDrafts(parsed.nodes, () => `n${n++}`);
+    const leaf = drafts.find(
+      (d) => 'obj' in d && (d as { obj?: { tool?: string } }).obj?.tool === 'text',
+    ) as { obj: { style?: TextStyle } };
+
+    expect(leaf.obj.style?.fontSize).toBe(32);
+    expect(leaf.obj.style?.stroke).toEqual({
+      paint: { fill: 'solid', color: '#c0392b' },
+      width: 3,
+    });
+  });
+
+  it('does not invent a stroke for stroke:none or a zero width', () => {
+    for (const data of [
+      { text: 'Hi', stroke: 'none', strokeWidth: 3 },
+      { text: 'Hi', stroke: '#c0392b', strokeWidth: 0 },
+      { text: 'Hi' },
+    ]) {
+      const scene = fakeScene({
+        t: { kind: 'leaf', pose: { x: 0, y: 0, width: 50, height: 20 }, data },
+      }, ['t']);
+      const parsed = parseSvg(selectionToSvgString(scene, ['t']));
+      const n = parsed.nodes[0];
+      if (n.kind !== 'text') throw new Error('expected text');
+      expect(n.style?.stroke).toBeUndefined();
+    }
+  });
+});
 
 describe('selectionToSvgString', () => {
   it('emits only the selected subtree, matching the full-scene walk for that node', () => {

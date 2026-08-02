@@ -19,7 +19,7 @@ import type {
   Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
 } from './types';
-import type { StyledRun, TextStyle, FillStyle } from '@weasel-js/core';
+import type { StyledRun, TextStyle, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rotationComponent, isIdentity } from './transform';
 import { boundsOfPath } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
@@ -498,6 +498,54 @@ function readStroke(
 }
 
 /**
+ * The stroke keys `readStroke` consults, collected off one element's own
+ * attributes rather than the inherited cascade.
+ *
+ * A `<tspan>` inherits its parent `<text>`'s stroke per the SVG cascade, but
+ * the runs model resolves a run's stroke against the node's already — so
+ * lifting an inherited value onto the run would write the same paint twice
+ * and make an unstyled run look deliberately styled.
+ */
+const STROKE_KEYS = [
+  'stroke', 'stroke-width', 'stroke-opacity', 'stroke-linecap',
+  'stroke-linejoin', 'stroke-dasharray', 'stroke-miterlimit',
+] as const;
+
+function ownStrokeStyle(el: Element): StyleContext {
+  const out: Record<string, string> = {};
+  for (const k of STROKE_KEYS) {
+    const v = ownProp(el, k);
+    if (v != null) out[k] = v;
+  }
+  return out;
+}
+
+/**
+ * Lower an {@link SvgStroke} to the kit's `Stroke`, whose paint is a
+ * `FillStyle` rather than an `SvgPaint`. Returns `undefined` for a stroke
+ * that paints nothing, so callers can leave the field absent.
+ */
+function coreStroke(stroke: SvgStroke | undefined): Stroke | undefined {
+  if (!stroke) return undefined;
+  let paint: FillStyle;
+  if (stroke.paint.kind === 'gradient') {
+    paint = stroke.paint.paint;
+  } else if (stroke.paint.kind === 'solid') {
+    paint = stroke.paint.opacity != null
+      ? { fill: 'solid', color: stroke.paint.color, opacity: stroke.paint.opacity }
+      : { fill: 'solid', color: stroke.paint.color };
+  } else {
+    return undefined;
+  }
+  const out: Stroke = { paint, width: stroke.width };
+  if (stroke.cap) out.cap = stroke.cap;
+  if (stroke.join) out.join = stroke.join;
+  if (stroke.dash) out.dash = stroke.dash;
+  if (stroke.miterLimit != null) out.miterLimit = stroke.miterLimit;
+  return out;
+}
+
+/**
  * Parse an SVG `stroke-dasharray` value into a non-negative number array.
  * Per spec, odd-length lists are duplicated to make the dash pattern even.
  * Returns null if any token fails to parse as a non-negative finite number.
@@ -600,7 +648,7 @@ function parseTextElement(
   const ay = m[1] * rawX + m[3] * rawY + m[5];
 
   const leafStyle = deriveStyle(style, el);
-  const textStyle = readTextStyle(leafStyle, el, gradients, onWarn);
+  const textStyle = readTextStyle(leafStyle, gradients, onWarn);
   const fontSize = textStyle.fontSize ?? 16;
   const lineHeight = textStyle.lineHeight ?? 1.2;
 
@@ -657,10 +705,14 @@ function parseTextElement(
   // Only attach `runs` when at least one run carries non-default styling —
   // single-run plain text is cleaner without it. `runsToPlainText(runs)`
   // must equal `text` per kit invariants, so the array must match exactly.
+  //
+  // "Any key but `text`" rather than an enumeration of the styling keys:
+  // `readTspanRun` sets a field only when it parsed one, so the two are
+  // equivalent, and the enumerated form silently dropped every run whose
+  // only styling was a key added later — which is exactly how `stroke`
+  // arrived and vanished.
   const hasStyling = runs.some(
-    (r) => r.bold || r.italic || r.fontFamily || r.fontSize != null
-      || r.letterSpacing != null || r.underline || r.strikethrough
-      || (r.fill && (('color' in r.fill) || ('fill' in r.fill))),
+    (r) => Object.entries(r).some(([k, v]) => k !== 'text' && v !== undefined),
   );
   if (hasStyling) node.runs = runs;
   if (Object.keys(textStyle).length > 0) node.style = textStyle;
@@ -723,12 +775,14 @@ function readTspanRun(
       if (paint) run.fill = paint;
     }
   }
+  // Own attributes only — see `ownStrokeStyle`.
+  const stroke = coreStroke(readStroke(ownStrokeStyle(el), gradients, onWarn));
+  if (stroke) run.stroke = stroke;
   return run;
 }
 
 function readTextStyle(
   style: StyleContext,
-  el: Element,
   gradients: GradientTable,
   onWarn: (m: string) => void,
 ): TextStyle {
@@ -778,8 +832,11 @@ function readTextStyle(
     }
     // parsed.kind === 'none' → leave fill undefined (defaults to black downstream).
   }
-  if (el.hasAttribute('stroke')) {
-    onWarn('<text stroke="..."> not supported on text; ignoring');
-  }
+  // Text strokes used to be dropped here with a warning: an SDF glyph is a
+  // sampled field, with no geometry to stroke. The outline tier gave large
+  // text real contours, so a stroke is now a paint like any other — and one
+  // that stays in the document even at sizes that render it unstroked.
+  const stroke = coreStroke(readStroke(style, gradients, onWarn));
+  if (stroke) out.stroke = stroke;
   return out;
 }
