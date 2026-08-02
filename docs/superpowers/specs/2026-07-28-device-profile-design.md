@@ -171,14 +171,15 @@ same profile it provides to context.
 
 ### Sizing
 
-`8` is currently written five times as five independent constants, and `24`
+`8` is currently written six times as six independent constants, and `24`
 once:
 
 | Site | Constant |
 | --- | --- |
 | `canvas/SceneCanvas.tsx:150` | `DEFAULT_HANDLE_SIZE = 8` |
 | `features/selection/overlay.ts:291` | `DEFAULT_HANDLE_SIZE = 8` (separate copy) |
-| `affordances/cornerResize.ts:43` | `handleSize = 8` (parameter default) |
+| `affordances/cornerResize.ts:43` | `handleHitRadius = 8` (parameter default) |
+| `affordances/cornerResize.ts:44` | `handleSize = 8` (parameter default) |
 | `canvas/affordanceAt.ts:40` | `HANDLE_HIT_RADIUS = 8` |
 | `canvas/affordanceAt.ts:44` | `ANCHOR_HIT_RADIUS = 8` |
 | `interactions/actions/rotate/handle.ts:6` | `DEFAULT_ROTATION_HANDLE_DISTANCE = 24` |
