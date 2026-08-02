@@ -451,7 +451,19 @@ Core five + Crop shipped. Remaining:
   this *easier*: reading font bytes gives access to both tables directly
   instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
 
-- **Stroked text.** WeaselDraw exposes stroke color + width on text nodes and
+- **Stroked text — implemented 2026-08-02 on branch `text-stroke`, not merged.**
+  Handoff: `docs/handoffs/2026-08-02-stroked-text.md`. `TextStyle.stroke` /
+  `StyledRun.stroke` carry a real `Stroke`; `drawTextOutlineGroup` paints it as
+  a second batched draw call over the group's merged geometry, so glyphs above
+  the threshold get real joins, caps and miters in any paint. Small text stays
+  bare by design. `kit:text` also lifts the kit-native `data.stroke` /
+  `data.strokeWidth` leaf fields onto the style, which is what stops the app
+  control lying. **Open before merge:** small notches render at contour seams
+  that the geometry probes say should not be there — see the handoff's last
+  section, and note the dev-server staleness caveat on that evidence.
+
+  Original entry, kept for the reasoning: WeaselDraw exposes stroke color +
+  width on text nodes and
   neither renders — the control lies. **The outline tier (shipped 2026-07-31)
   changed which fix is right.** The old plan was an SDF shader trick: threshold
   a second time at `0.5 - outlineWidth` and composite, cheap but bounded by the
