@@ -166,6 +166,47 @@ describe('outline registry', () => {
     expect(glyphOutline('Fake', 400, 'normal', 65)).toBeNull();
   });
 
+  /**
+   * A glyph contour is closed by definition — TrueType and CFF have no other
+   * kind — but not every serializer says so, and the ones that don't are
+   * invisible until someone strokes the result: a fill closes the contour
+   * implicitly (earcut joins last to first), while a stroke follows the path
+   * it is given and leaves the closing edge unpainted, capped at both ends.
+   */
+  describe('contour closure', () => {
+    const openParser: OutlineParser = () => ({
+      unitsPerEm: 1000,
+      glyphD: (cp) => (cp === 65 ? 'M0 0L0.5-0.7L1 0' : null),
+    });
+
+    const twoContourParser: OutlineParser = () => ({
+      unitsPerEm: 1000,
+      glyphD: (cp) => (cp === 65 ? 'M0 0L1 0L1-1M0.2-0.2L0.8-0.2L0.8-0.8' : null),
+    });
+
+    it('closes a contour the parser left open', async () => {
+      registerFontOutlines('Open', {}, new ArrayBuffer(4), { parser: openParser });
+      glyphOutline('Open', 400, 'normal', 65);
+      await settle();
+      expect(glyphOutline('Open', 400, 'normal', 65)).toBe('M0 0L0.5-0.7L1 0Z');
+    });
+
+    it('closes every contour, not just the last', async () => {
+      registerFontOutlines('Two', {}, new ArrayBuffer(4), { parser: twoContourParser });
+      glyphOutline('Two', 400, 'normal', 65);
+      await settle();
+      expect(glyphOutline('Two', 400, 'normal', 65))
+        .toBe('M0 0L1 0L1-1ZM0.2-0.2L0.8-0.2L0.8-0.8Z');
+    });
+
+    it('leaves an already-closed contour alone', async () => {
+      registerFontOutlines('Closed', {}, new ArrayBuffer(4), { parser: stubParser });
+      glyphOutline('Closed', 400, 'normal', 65);
+      await settle();
+      expect(glyphOutline('Closed', 400, 'normal', 65)).toBe('M0 0L0.5 -0.7L1 0Z');
+    });
+  });
+
   it('enumerates registered faces in a stable order', () => {
     registerFontOutlines('Zed', { weight: 700 }, new ArrayBuffer(4), { parser: stubParser });
     registerFontOutlines('Abe', { weight: 400, style: 'italic' }, new ArrayBuffer(4), { parser: stubParser });
