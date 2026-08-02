@@ -77,6 +77,29 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
     return next;
   };
 
+  /**
+   * A closed contour's last point repeating its first is redundant — Z already
+   * says "return to the start" — and it is *harmful*: it leaves a zero-length
+   * closing segment, which the stroker discards along with the wrap-around
+   * join it should have carried, notching the ribbon at the contour's start.
+   *
+   * Every font outline serialized by opentype.js is written this way, as is a
+   * great deal of hand-written and exported SVG, so this is the common case
+   * rather than a defensive edge. Exact equality is the right test: the
+   * duplicate is a re-emission of the same number, not an approach to it, and
+   * a near-miss is a genuine (if tiny) segment the author asked for.
+   */
+  const dropDuplicateClosingPoint = (): void => {
+    if (!pts || !aA || !aB || !aT) return;
+    const n = pts.length / 2;
+    if (n < 2) return;
+    if (pts[0] !== pts[(n - 1) * 2] || pts[1] !== pts[(n - 1) * 2 + 1]) return;
+    pts.length -= 2;
+    aA.length -= 1;
+    aB.length -= 1;
+    aT.length -= 1;
+  };
+
   const commit = (target: Polyline): void => {
     if (!pts || !aA || !aB || !aT) return;
     target.anchorA = new Uint32Array(aA);
@@ -163,7 +186,10 @@ function extractPolygon(p: PolygonPath, opts: ExtractOptions): Polyline[] {
         break;
       }
       case PATH_Z: {
-        if (current) current.closed = true;
+        if (current) {
+          current.closed = true;
+          dropDuplicateClosingPoint();
+        }
         break;
       }
       default:
