@@ -53,6 +53,7 @@
     "build": "vite build && tsc -p tsconfig.build.json"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }

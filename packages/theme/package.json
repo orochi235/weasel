@@ -40,6 +40,7 @@
     "build": "tsup && cp src/tokens.css dist/tokens.css"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }

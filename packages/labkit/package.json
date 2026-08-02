@@ -96,5 +96,9 @@
     "rollup-plugin-dts": "^6.4.1",
     "tsx": "^4.19.0",
     "vitepress": "^1.6.4"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

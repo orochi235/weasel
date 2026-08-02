@@ -21,6 +21,9 @@ Read in roughly this order:
   `sceneFromJSON()`: snapshot + restore a scene, the JSON shape, the function
   registry for `clipFromPose`, and loading static `*.scene.json` files.
 
+[releasing.md](./releasing.md) is the maintainer runbook — the changeset flow,
+OIDC trusted publishing, and how to publish by hand when CI can't.
+
 For working code, the `apps/site/` directory has runnable consumers
 (`TransformDemo`, `CompoundPathsDemo`, `InsertDemo`, …); run them
 with `npm run dev:kit` from the repo root.
