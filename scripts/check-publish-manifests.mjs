@@ -94,8 +94,25 @@ function packedFiles(dir) {
     ['pack', '--dry-run', '--json', '--ignore-scripts', '--loglevel=error'],
     { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
   );
-  const [report] = JSON.parse(raw);
-  return new Set((report?.files ?? []).map((f) => f.path));
+  // `npm pack --json` has changed shape across majors: npm 11 returned an array
+  // of reports, npm 12 returns an object keyed by package name. The release job
+  // deliberately runs a newer npm than most laptops have, so this has to read
+  // both — and it packs one directory per call either way.
+  const parsed = JSON.parse(raw);
+  const report = Array.isArray(parsed) ? parsed[0] : (parsed?.files ? parsed : Object.values(parsed)[0]);
+
+  // Never fall back to an empty set. A shape this function cannot read would
+  // otherwise look like a package that ships no files at all, and report every
+  // advertised path as missing — burying "npm changed its output" under 82
+  // plausible-looking failures.
+  if (!Array.isArray(report?.files)) {
+    throw new Error(
+      `could not read a file list out of \`npm pack --json\` in ${dir}. ` +
+        `npm ${execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim()} ` +
+        `returned: ${raw.slice(0, 200)}`,
+    );
+  }
+  return new Set(report.files.map((f) => f.path));
 }
 
 const failures = [];
