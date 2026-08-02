@@ -34,6 +34,7 @@ import { cachedLayoutRuns } from './cache/layoutCache';
 import { verticalAlignOffset } from 'features/text/verticalAlign';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
+import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -929,8 +930,16 @@ const SYNTHETIC_ITALIC_RADIANS = 0.2094;
  */
 function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dy: number): void {
   const mesh = outlineGroupMesh(group, dy);
-  if (!mesh) return;
-  drawPathFillByKind(ctx, group.fill, ctx.meshCache.uploadTransient(mesh));
+  if (mesh) drawPathFillByKind(ctx, group.fill, ctx.meshCache.uploadTransient(mesh));
+
+  // Stroke after fill — Canvas2D's fillText-then-strokeText convention, and
+  // SVG's default paint-order. A second batched draw call over the same
+  // group, not a call per glyph.
+  if (!group.stroke) return;
+  const strokeMesh = outlineGroupStrokeMesh(group, dy);
+  if (strokeMesh) {
+    drawPathFillByKind(ctx, group.stroke.paint, ctx.meshCache.uploadTransient(strokeMesh));
+  }
 }
 
 /**
@@ -944,12 +953,52 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dy: number)
  * merging one into a batch would fill its counters solid.
  */
 function outlineGroupMesh(group: LaidOutGroup, dy: number): Mesh | null {
+  return mergeGlyphMeshes(group, dy, (glyph) => outlineMesh(glyph.key, glyph.d));
+}
+
+/**
+ * The same merge for the group's stroke: one ribbon per glyph, tessellated in
+ * em space and batched into one buffer, so a stroked paragraph is one extra
+ * draw call rather than one per glyph.
+ *
+ * The width crosses into em space by dividing by the glyph's `scale`, which
+ * is world units per em — so `stroke.width` stays a world-unit measure and
+ * does not grow with `fontSize`, matching every other stroke in the kit.
+ *
+ * A synthetic oblique shears the ribbon along with the glyph. That is a real
+ * (small) distortion — a sheared circle is an ellipse, so the outline is
+ * marginally thicker across the lean than along it — and it is deliberate:
+ * shearing the finished ribbon is what keeps the outline glued to the glyph
+ * it outlines, which re-tessellating in sheared space would not.
+ */
+function outlineGroupStrokeMesh(group: LaidOutGroup, dy: number): Mesh | null {
+  const stroke = group.stroke;
+  if (!stroke) return null;
+  const width = stroke.width ?? 1;
+  if (!(width > 0)) return null;
+  return mergeGlyphMeshes(group, dy, (glyph) =>
+    glyph.scale > 0
+      ? outlineStrokeMesh(glyph.key, glyph.d, quantizeEmWidth(width / glyph.scale), stroke)
+      : null);
+}
+
+/**
+ * Transform each glyph's em-space mesh into world space and concatenate.
+ * Shared by the fill and stroke paths, which differ only in which mesh they
+ * ask for per glyph — the placement math must not fork, or an outline would
+ * drift off the glyph it outlines.
+ */
+function mergeGlyphMeshes(
+  group: LaidOutGroup,
+  dy: number,
+  meshFor: (glyph: LaidOutOutlineGlyph) => Mesh | null,
+): Mesh | null {
   const parts: { mesh: Mesh; glyph: LaidOutOutlineGlyph }[] = [];
   let vertexFloats = 0;
   let indexCount = 0;
   for (const glyph of group.glyphs) {
-    const mesh = outlineMesh(glyph.key, glyph.d);
-    if (mesh.indices.length === 0) continue;
+    const mesh = meshFor(glyph);
+    if (!mesh || mesh.indices.length === 0) continue;
     parts.push({ mesh, glyph });
     vertexFloats += mesh.vertices.length;
     indexCount += mesh.indices.length;

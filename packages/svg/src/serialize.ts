@@ -5,7 +5,7 @@
  * label. Gradient paints are gathered into a single `<defs>` block.
  */
 
-import type { Path } from '@weasel-js/core';
+import type { Path, Stroke } from '@weasel-js/core';
 import { boundsOfPath } from '@weasel-js/core';
 import type {
   NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode, SvgNode,
@@ -123,14 +123,27 @@ function registerGradients(nodes: SvgNode[], registry: GradientRegistry): void {
       if (n.fill.kind === 'gradient') registry.register(n.fill.paint);
       if (n.stroke && n.stroke.paint.kind === 'gradient') registry.register(n.stroke.paint.paint);
     } else if (n.kind === 'text') {
-      // Text gradient fills flow through style.fill rather than a top-level
-      // SvgPaint, so register direct FillStyle references when present.
-      const styleFill = n.style?.fill;
-      if (styleFill && !('color' in styleFill)) {
-        registry.register(styleFill);
+      // Text paints flow through `style` / `runs` rather than a top-level
+      // SvgPaint, so register direct FillStyle references when present. This
+      // pre-pass is load-bearing: `<defs>` is emitted before the body, so a
+      // paint first seen while writing an element would be referenced by an
+      // id that no definition backs.
+      registerTextPaint(n.style?.fill, registry);
+      registerTextPaint(n.style?.stroke?.paint, registry);
+      for (const run of n.runs ?? []) {
+        registerTextPaint(run.fill, registry);
+        registerTextPaint(run.stroke?.paint, registry);
       }
     }
   }
+}
+
+/** Register one text paint if it is a gradient/pattern rather than a colour. */
+function registerTextPaint(
+  paint: import('@weasel-js/core').FillStyle | undefined,
+  registry: GradientRegistry,
+): void {
+  if (paint && !('color' in paint)) registry.register(paint);
 }
 
 function nodeXml(node: SvgNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
@@ -207,6 +220,38 @@ function paintAttrs(
   // gradient
   const id = registry.register(paint.paint);
   return [`${name}="url(#${id})"`];
+}
+
+/**
+ * Attributes for a kit `Stroke` — the shape text carries, whose `paint` is a
+ * `FillStyle` rather than an `SvgPaint`. Text strokes ride inside
+ * `TextStyle` / `StyledRun` rather than as a node-level `SvgStroke`, because
+ * that is where the kit's text model puts them.
+ *
+ * Absent, or zero-width, emits nothing at all: unstroked text should not
+ * carry a `stroke` attribute, and SVG's own default (`none`) already says so.
+ */
+function coreStrokeAttrs(stroke: Stroke | undefined, registry: GradientRegistry): string[] {
+  if (!stroke) return [];
+  const width = stroke.width ?? 1;
+  if (!(width > 0)) return [];
+  const attrs: string[] = [];
+  if ('color' in stroke.paint) {
+    attrs.push(`stroke="${stroke.paint.color}"`);
+    if (stroke.paint.opacity != null && stroke.paint.opacity !== 1) {
+      attrs.push(`stroke-opacity="${trimNumber(stroke.paint.opacity)}"`);
+    }
+  } else {
+    attrs.push(`stroke="url(#${registry.register(stroke.paint)})"`);
+  }
+  attrs.push(`stroke-width="${trimNumber(width)}"`);
+  if (stroke.cap) attrs.push(`stroke-linecap="${stroke.cap}"`);
+  if (stroke.join) attrs.push(`stroke-linejoin="${stroke.join}"`);
+  if (stroke.dash && stroke.dash.length > 0) {
+    attrs.push(`stroke-dasharray="${stroke.dash.map(trimNumber).join(' ')}"`);
+  }
+  if (stroke.miterLimit != null) attrs.push(`stroke-miterlimit="${trimNumber(stroke.miterLimit)}"`);
+  return attrs;
 }
 
 function strokeAttrsFor(stroke: SvgStroke, registry: GradientRegistry): string[] {
@@ -297,6 +342,7 @@ function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Reco
       attrs.push(`fill="url(#${id})"`);
     }
   }
+  for (const a of coreStrokeAttrs(style?.stroke, registry)) attrs.push(a);
   if (node.opacity != null && node.opacity !== 1) {
     attrs.push(`opacity="${trimNumber(node.opacity)}"`);
   }
@@ -337,6 +383,7 @@ function runXml(run: import('@weasel-js/core').StyledRun, registry: GradientRegi
       attrs.push(`fill="url(#${id})"`);
     }
   }
+  for (const a of coreStrokeAttrs(run.stroke, registry)) attrs.push(a);
   const head = attrs.length > 0 ? `<tspan ${attrs.join(' ')}>` : '<tspan>';
   return `${head}${escapeText(run.text)}</tspan>`;
 }

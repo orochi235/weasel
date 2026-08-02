@@ -182,6 +182,41 @@ export function listFontOutlines(): readonly {
  * `notifyGlyphReady` asks the canvas to draw again and the second frame gets
  * the outline. Same shape as the dynamic tier's deferred bakes.
  */
+/**
+ * Close every contour of a glyph's path data.
+ *
+ * A glyph contour is closed by definition — neither TrueType nor CFF has any
+ * other kind — but not every serializer writes the `Z` that says so, and the
+ * omission is invisible until someone *strokes* the outline: a fill closes the
+ * contour implicitly (earcut joins last point to first), while a stroke
+ * follows exactly the path it is handed and leaves the closing edge unpainted,
+ * with a cap at each loose end. That showed up as glyphs missing part of their
+ * outline along long straight edges, which is where a contour's seam usually
+ * falls.
+ *
+ * Normalized here rather than in one parser because the same hole is open to
+ * every consumer-supplied `OutlineParser`, and a contract that says "closed"
+ * is cheaper to guarantee than to document.
+ */
+export function closeContours(d: string): string {
+  let out = '';
+  let start = 0;
+  for (let i = 1; i < d.length; i++) {
+    const c = d[i];
+    if (c !== 'M' && c !== 'm') continue;
+    out += closeOne(d.slice(start, i));
+    start = i;
+  }
+  return out + closeOne(d.slice(start));
+}
+
+function closeOne(contour: string): string {
+  const trimmed = contour.trimEnd();
+  if (trimmed.length === 0) return '';
+  const last = trimmed[trimmed.length - 1];
+  return last === 'Z' || last === 'z' ? trimmed : `${trimmed}Z`;
+}
+
 export function glyphOutline(
   family: string,
   weight: number,
@@ -200,7 +235,8 @@ export function glyphOutline(
   if (cached !== undefined) return cached;
   let d: string | null = null;
   try {
-    d = slot.face!.glyphD(cp);
+    const raw = slot.face!.glyphD(cp);
+    d = raw === null ? null : closeContours(raw);
   } catch (err) {
     // A parser that throws on one glyph should cost that glyph, not the face.
     warnOnce(`glyph|${slotKey(family, weight, style)}`,

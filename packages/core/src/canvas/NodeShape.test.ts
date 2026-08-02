@@ -176,6 +176,52 @@ describe('kit:text painter — rich runs', () => {
     expect(text.runs.map((r) => r.text)).toEqual(['hi']);
   });
 
+  // `kit:shape` already reads `data.stroke` / `data.strokeWidth` off the
+  // kit-native leaf shape. Text reading the same two fields is what makes a
+  // consumer's one pair of stroke controls mean the same thing on a text node
+  // as on a rect, instead of silently doing nothing.
+  describe('kit-native stroke fields', () => {
+    it('lifts data.stroke / data.strokeWidth onto the text style', () => {
+      const [cmd] = paintText({ text: 'hi', stroke: '#f00', strokeWidth: 3 });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.style.stroke).toEqual({ paint: { color: '#f00' }, width: 3 });
+    });
+
+    it('defaults the width to 1 when only a colour is set', () => {
+      const [cmd] = paintText({ text: 'hi', stroke: '#f00' });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.style.stroke?.width).toBe(1);
+    });
+
+    it('leaves the style alone for stroke: none or a zero width', () => {
+      for (const data of [
+        { text: 'hi', stroke: 'none', strokeWidth: 3 },
+        { text: 'hi', stroke: '#f00', strokeWidth: 0 },
+        { text: 'hi' },
+      ]) {
+        const [cmd] = paintText(data);
+        expect((cmd as Extract<DrawCommand, { kind: 'text' }>).style.stroke).toBeUndefined();
+      }
+    });
+
+    it('an explicit style.stroke wins over the leaf fields', () => {
+      const explicit = { paint: { color: '#00f' }, width: 8, join: 'round' as const };
+      const [cmd] = paintText({
+        text: 'hi', stroke: '#f00', strokeWidth: 3, style: { stroke: explicit },
+      });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.style.stroke).toBe(explicit);
+    });
+
+    it('reaches runs-form text too', () => {
+      const [cmd] = paintText({
+        text: 'ab', stroke: '#f00', strokeWidth: 2, runs: [{ text: 'a' }, { text: 'b' }],
+      });
+      const text = cmd as Extract<DrawCommand, { kind: 'text' }>;
+      expect(text.runs.every((r) => r.stroke?.width === 2)).toBe(true);
+    });
+  });
+
   // A `TextDrawCommand`'s `y` is the top of the first line box — `layoutRuns`
   // walks *down* from it to the baseline (`common.base * scale`), and
   // `verticalAlign` aligns the block within `[y, y + height]`. The painter

@@ -1540,4 +1540,75 @@ describe('drawText — outline tier', () => {
     const yOf = (calls: readonly { name: string; args: readonly unknown[] }[]) => uploads(calls)[0][1];
     expect(yOf(bottom.calls)).toBeGreaterThan(yOf(top.calls));
   });
+
+  /**
+   * Stroked text. A glyph on this tier is an ordinary `PolygonPath`, so the
+   * stroke is the same tessellated ribbon any path gets — real joins, caps
+   * and miters, at any width, in any paint.
+   */
+  describe('stroke', () => {
+    const STROKE = { paint: { fill: 'solid' as const, color: '#f00' }, width: 4 };
+
+    it('adds a second draw call for the stroke, batched like the fill', () => {
+      const plain = createRecorderCtx();
+      dispatch(plain.ctx, textCmd('AAAA'));
+      expect(plain.calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+
+      const stroked = createRecorderCtx();
+      dispatch(stroked.ctx, textCmd('AAAA', { stroke: STROKE }));
+      // One for the four glyphs' fill, one for the four glyphs' stroke — the
+      // stroke batches over the group exactly as the fill does.
+      expect(stroked.calls.filter((c) => c.name === 'drawElements')).toHaveLength(2);
+      expect(uploads(stroked.calls)).toHaveLength(2);
+    });
+
+    it('paints the stroke over the fill', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, textCmd('A', { stroke: STROKE }));
+      const order = calls.filter((c) => c.name === 'bufferData' && c.args[1] instanceof Float32Array);
+      const [fillVerts, strokeVerts] = order.map((c) => c.args[1] as Float32Array);
+      // The fill is the glyph's 3 vertices; the stroke ribbon is larger. That
+      // asymmetry is what identifies which upload is which, and the order is
+      // the assertion: fill first, stroke on top, as Canvas2D and SVG's
+      // default paint-order both do it.
+      expect(fillVerts.length).toBe(3 * 2);
+      expect(strokeVerts.length).toBeGreaterThan(fillVerts.length);
+    });
+
+    it('straddles the glyph edge by half the stroke width', () => {
+      const { ctx, calls } = createRecorderCtx();
+      // Round joins on purpose: their outer boundary is an arc of half the
+      // width about each corner, so the ribbon is bounded by exactly half a
+      // width everywhere. A miter at this glyph's sharp corners overshoots
+      // that legitimately, which would make the assertion about the join
+      // rather than about the width.
+      dispatch(ctx, textCmd('A', { stroke: { ...STROKE, join: 'round', cap: 'round' } }));
+      const strokeVerts = uploads(calls)[1];
+      const xs: number[] = [];
+      for (let i = 0; i < strokeVerts.length; i += 2) xs.push(strokeVerts[i]);
+      // The glyph spans x ∈ [0, SIZE]. A centred 4-unit stroke reaches half a
+      // width outside it on each side, in world units — the stroke width is
+      // not scaled by the font size. Precision 1 because the join arcs are
+      // flattened at OUTLINE_FLATTEN_TOLERANCE em, which is ~0.02 world units
+      // at this size.
+      expect(Math.min(...xs)).toBeCloseTo(-STROKE.width / 2, 1);
+      expect(Math.max(...xs)).toBeCloseTo(SIZE + STROKE.width / 2, 1);
+    });
+
+    it('draws nothing extra for a zero-width stroke', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, textCmd('A', { stroke: { ...STROKE, width: 0 } }));
+      expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
+    });
+
+    it('leaves small text unstroked rather than faking it on the SDF', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, textCmd('A', { fontSize: 12, stroke: STROKE }));
+      const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
+      // Below the threshold a glyph is a sampled distance field with no
+      // geometry to stroke. Nothing is drawn rather than something wrong.
+      expect(used).toContain(ctx.textSdf.handle);
+      expect(used).not.toContain(ctx.pathFill.handle);
+    });
+  });
 });

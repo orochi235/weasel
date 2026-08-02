@@ -9,7 +9,8 @@
  * (300/500/900) are out of scope for slice 1.
  */
 
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
+import type { TextStyle } from './textStyle';
 
 export interface StyledRun {
   text: string;
@@ -18,6 +19,10 @@ export interface StyledRun {
   fontFamily?: string;
   fontSize?: number;
   fill?: FillStyle;
+  /** Outline over this run's glyphs. Overrides the node style's stroke;
+   *  absent inherits it. Only painted on the outline tier — see
+   *  {@link TextStyle.stroke}. */
+  stroke?: Stroke;
   letterSpacing?: number;
   underline?: boolean;
   strikethrough?: boolean;

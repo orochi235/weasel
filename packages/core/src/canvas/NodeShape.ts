@@ -314,6 +314,32 @@ export function _resetShapePaintersForTests(): void {
 
 interface RectPose { x: number; y: number; width: number; height: number }
 
+/**
+ * Fold the kit-native leaf stroke fields into a text node's `TextStyle`.
+ *
+ * `kit:shape` reads `data.stroke` (a colour string) and `data.strokeWidth`
+ * off the same leaf shape, and an app that draws both shapes and text has one
+ * pair of stroke controls writing those two fields. Before this, setting them
+ * on a text node did nothing at all — the control lied. Reading them here is
+ * what makes it mean the same thing on both kinds of node.
+ *
+ * `style.stroke` is the richer form (any paint, joins, caps, dashes), so an
+ * explicit one wins outright rather than merging: a caller that has reached
+ * for the full `Stroke` is not also asking for the colour string. Same
+ * `'none'` and zero-width handling as `kit:shape`, for the same reason.
+ */
+function withLeafStroke(
+  style: TextStyle | undefined,
+  stroke: string | undefined,
+  strokeWidth: number | undefined,
+): TextStyle | undefined {
+  if (style?.stroke !== undefined) return style;
+  if (!stroke || stroke === 'none') return style;
+  const width = strokeWidth ?? 1;
+  if (width <= 0) return style;
+  return { ...style, stroke: { paint: { color: stroke }, width } };
+}
+
 const TEXT_PAINTER: NodeShapeEntry = {
   id: 'kit:text',
   matches: (node) => {
@@ -329,7 +355,13 @@ const TEXT_PAINTER: NodeShapeEntry = {
   // resolvers are pure style merging — no font reads — so `(data, pose)` is
   // the whole key. See PAINT_SLOT.
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as { text: string; style?: TextStyle; runs?: readonly StyledRun[] };
+    const d = node.data as {
+      text: string;
+      style?: TextStyle;
+      runs?: readonly StyledRun[];
+      stroke?: string;
+      strokeWidth?: number;
+    };
     const p = pose as RectPose;
     // `y` is the TOP of the first line box, not a baseline: `layoutRuns`
     // walks down from it by `common.base * scale` to reach the baseline, and
@@ -357,9 +389,10 @@ const TEXT_PAINTER: NodeShapeEntry = {
     // Empty runs are not a styling, so they fall back rather than paint
     // nothing.
     const y = p.y;
+    const style = withLeafStroke(d.style, d.stroke, d.strokeWidth);
     return d.runs && d.runs.length > 0
-      ? [textCommandFromRuns(p.x, y, d.runs, d.style, undefined, p.height)]
-      : [textCommand(p.x, y, d.text, d.style, undefined, p.height)];
+      ? [textCommandFromRuns(p.x, y, d.runs, style, undefined, p.height)]
+      : [textCommand(p.x, y, d.text, style, undefined, p.height)];
   }),
   // The pose is a *wrap box*, not a bounding box — "Away" in a 300-unit box
   // leaves most of it empty, and a pose-rect silhouette claims all of it. The

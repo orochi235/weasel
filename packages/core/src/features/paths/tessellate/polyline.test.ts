@@ -29,6 +29,49 @@ describe('extractPolylines', () => {
     expect(out[0].points).toEqual([0, 0, 10, 0, 10, 10, 0, 10]);
   });
 
+  // Every font outline serialized by opentype.js ends each contour back at
+  // its start point AND emits Z, and hand-written SVG does it constantly
+  // ("…L0 0Z"). Keeping the duplicate leaves a zero-length closing segment,
+  // which the stroker drops — taking the wrap-around join with it and
+  // notching the ribbon at every contour's start.
+  it('drops a closed contour\'s duplicate final point', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 0]),
+      fillRule: 'nonzero',
+    };
+    const out = extractPolylines(p);
+    expect(out[0].closed).toBe(true);
+    expect(out[0].points).toEqual([0, 0, 10, 0, 10, 10]);
+    // The anchor arrays are indexed by point, so they have to shrink with it.
+    expect(out[0].anchorA).toHaveLength(3);
+    expect(out[0].anchorB).toHaveLength(3);
+    expect(out[0].anchorT).toHaveLength(3);
+  });
+
+  it('keeps a repeated point that is not the closing one', () => {
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 0, 0, 10]),
+      fillRule: 'nonzero',
+    };
+    expect(extractPolylines(p)[0].points).toEqual([0, 0, 10, 0, 10, 0, 0, 10]);
+  });
+
+  it('leaves an open contour\'s repeated endpoint alone', () => {
+    // Without Z the two coincident endpoints are the caller's business — the
+    // path is a line that returns to its start, not a closed loop.
+    const p: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 10, 0, 0, 0]),
+      fillRule: 'nonzero',
+    };
+    expect(extractPolylines(p)[0].points).toEqual([0, 0, 10, 0, 0, 0]);
+  });
+
   it('emits an open polyline for a polygon without Z', () => {
     const p: PolygonPath = {
       kind: 'polygon',
