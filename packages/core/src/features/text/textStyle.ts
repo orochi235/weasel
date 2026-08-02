@@ -9,7 +9,7 @@
  * since the browser can't paint with a texture handle.
  */
 
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 
 /** User-facing text style. All fields optional; defaults applied at render time via `resolveTextStyle`. */
 export interface TextStyle {
@@ -46,6 +46,19 @@ export interface TextStyle {
   underline?: boolean;
   /** Default `false`. */
   strikethrough?: boolean;
+  /**
+   * Outline painted over the glyph fill. Omitted (the default) means no
+   * outline — there is no such thing as a default text stroke.
+   *
+   * Only glyphs on the outline tier are stroked: above
+   * `textOutlineMinScreenSize` a glyph is a real `PolygonPath`, so it gets
+   * the ordinary tessellated ribbon with real joins, caps and miters, in any
+   * paint. Below it a glyph is a sampled distance field with no geometry to
+   * stroke, and it renders unstroked rather than approximated. `width` is in
+   * world units, like every other stroke in the kit — it does not scale with
+   * `fontSize`.
+   */
+  stroke?: Stroke;
 }
 
 /** `TextStyle` with all fields filled in from defaults — what the renderer actually consumes. */
@@ -63,6 +76,9 @@ export interface ResolvedTextStyle {
   letterSpacing: number;
   underline: boolean;
   strikethrough: boolean;
+  /** Absent means no outline — unlike the other fields, this one has no
+   *  default to fall back to. See {@link TextStyle.stroke}. */
+  stroke?: Stroke;
 }
 
 const DEFAULT_FILL: FillStyle = { fill: 'solid', color: '#000' };
@@ -123,6 +139,7 @@ export function resolveTextStyle(style?: TextStyle): ResolvedTextStyle {
     letterSpacing: style.letterSpacing ?? DEFAULT_TEXT_STYLE.letterSpacing,
     underline: style.underline ?? DEFAULT_TEXT_STYLE.underline,
     strikethrough: style.strikethrough ?? DEFAULT_TEXT_STYLE.strikethrough,
+    ...(style.stroke !== undefined ? { stroke: style.stroke } : {}),
   };
 }
 

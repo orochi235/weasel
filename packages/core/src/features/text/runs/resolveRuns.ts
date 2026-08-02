@@ -16,7 +16,7 @@
  * `runs/rangeStyle.ts` for why the model collapses the tri-state.
  */
 
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 
@@ -27,6 +27,9 @@ export interface ResolvedRun {
   fontWeight: number;
   fontStyle: 'normal' | 'italic';
   fill: FillStyle;
+  /** Outline over this run's glyphs, or absent for none. Painted only on the
+   *  outline tier — a distance field has no geometry to stroke. */
+  stroke?: Stroke;
   /** Extra advance added after each glyph of this run, in world units. */
   letterSpacing: number;
   /** Draw a rule below this run's baseline. Additive over the node style. */
@@ -57,6 +60,11 @@ export function resolveRuns(
       fontWeight: run.bold ? 700 : baseWeight,
       fontStyle: run.italic ? 'italic' : style.fontStyle,
       fill: run.fill ?? style.fill,
+      // Unlike the decorations below, a run's stroke *replaces* the node's
+      // rather than adding to it — there is only one outline to paint.
+      ...((run.stroke ?? style.stroke) !== undefined
+        ? { stroke: run.stroke ?? style.stroke }
+        : {}),
       letterSpacing: run.letterSpacing ?? style.letterSpacing,
       // `||`, not `??`: run-level decorations are additive over the node style.
       underline: run.underline || style.underline,

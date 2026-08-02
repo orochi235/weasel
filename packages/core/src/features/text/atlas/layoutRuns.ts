@@ -29,7 +29,7 @@
  * decorated span's spaces would punch holes in a rule derived from them.
  */
 
-import type { FillStyle } from 'core/paint-types';
+import type { FillStyle, Stroke } from 'core/paint-types';
 import {
   resolveFontVariant, resolveGlyphFallback, glyphOutline,
   type ResolveResult, type BmFontChar, type BmFont,
@@ -87,6 +87,10 @@ export interface LaidOutGroup {
   /** Dynamic-atlas page index for 'canvas' groups; 0 for the others. */
   page: number;
   fill: FillStyle;
+  /** Outline painted over the glyphs, or absent for none. Only ever set on
+   *  an `'outline'` group: the SDF tiers have no geometry to stroke, so a
+   *  stroked run that stays on the atlas carries the request no further. */
+  stroke?: Stroke;
   /** Textured glyph quads. Always empty for an `'outline'` group. */
   quads: LaidOutQuad[];
   /** Outline geometry. Always empty for an `'atlas'` / `'canvas'` group —
@@ -207,16 +211,32 @@ function sameFill(a: FillStyle, b: FillStyle): boolean {
   return false;
 }
 
+/**
+ * Draw state for a stroke, for grouping. Two runs stroked the same way share
+ * a draw call; anything else has to split, since the group *is* the draw call
+ * and one call paints one ribbon. Paint identity reuses `fillKey`, so a
+ * gradient-stroked run gets its own group the same way a gradient-filled one
+ * does.
+ */
+function strokeKey(s: Stroke | undefined): string {
+  if (!s) return '-';
+  return [
+    fillKey(s.paint), s.width ?? 1, s.join ?? 'miter', s.cap ?? 'butt',
+    s.miterLimit ?? '', s.align ?? 'center', (s.dash ?? []).join(','),
+  ].join(':');
+}
+
 function groupKey(
   family: string,
   weight: number,
   style: 'normal' | 'italic',
   synthetic: { bold: boolean; italic: boolean },
   fill: FillStyle,
+  stroke: Stroke | undefined,
   source: 'atlas' | 'canvas' | 'outline',
   page: number,
 ): string {
-  return `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}|${fillKey(fill)}|${source}|${page}`;
+  return `${family}|${weight}|${style}|${synthetic.bold ? 1 : 0}${synthetic.italic ? 1 : 0}|${fillKey(fill)}|${strokeKey(stroke)}|${source}|${page}`;
 }
 
 /**
@@ -248,6 +268,7 @@ function getOrCreateGroup(
     resolvedStyle,
     resolved.synthetic,
     run.fill,
+    source === 'outline' ? run.stroke : undefined,
     source,
     page,
   );
@@ -261,6 +282,9 @@ function getOrCreateGroup(
       source,
       page,
       fill: run.fill,
+      // Only the outline tier can paint it, and carrying it on an SDF group
+      // would be a promise the renderer cannot keep.
+      ...(source === 'outline' && run.stroke !== undefined ? { stroke: run.stroke } : {}),
       quads: [],
       glyphs: [],
     };

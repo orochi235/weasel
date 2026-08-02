@@ -60,6 +60,7 @@ const STYLE_KEYS = [
   'fontSize',
   'letterSpacing',
   'fill',
+  'stroke',
 ] as const satisfies readonly StyleKey[];
 
 // Every function here iterates STYLE_KEYS, so a key missing from the list is
@@ -111,10 +112,12 @@ function valueAt(run: StyledRun, key: StyleKey): StyledRun[StyleKey] {
   return value;
 }
 
+/** The structural values. Everything else is a primitive, and
+ *  `applyStyleToRange` spreads runs, so reference identity isn't reliable. */
+const STRUCTURAL_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>(['fill', 'stroke']);
+
 function sameValue(key: StyleKey, a: unknown, b: unknown): boolean {
-  // `fill` is the only structural value; the rest are primitives, and
-  // `applyStyleToRange` spreads runs, so reference identity isn't reliable.
-  return key === 'fill' ? deepEqual(a, b) : Object.is(a, b);
+  return STRUCTURAL_KEYS.has(key) ? deepEqual(a, b) : Object.is(a, b);
 }
 
 /** Do two runs carry the same styling (their `text` aside)? */
