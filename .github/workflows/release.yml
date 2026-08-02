@@ -24,6 +24,9 @@ jobs:
     # Hide `npm warn Unknown ... config` noise from `.npmrc`'s pnpm-only keys.
     env:
       NPM_CONFIG_LOGLEVEL: error
+      # Must match ci.yml, so CI runs the release's own tooling and can fail
+      # before a release does. See the note there.
+      NPM_VERSION: 12.0.2
     steps:
       - uses: actions/checkout@v6
         with:
@@ -37,7 +40,7 @@ jobs:
       # so this stays even on the newer runtime. Without it the publish silently
       # falls back to the classic token path and fails as E404/ENEEDAUTH, which
       # reads like a missing package rather than an out-of-date CLI.
-      - run: npm install -g npm@latest
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       # Covers all thirteen workspaces, labkit included — it is last in
       # `build:downstream` because it bundles the others.
