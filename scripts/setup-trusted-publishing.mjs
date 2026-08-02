@@ -64,9 +64,7 @@ function repoSlug() {
  * Whether this npm knows `--allow-publish`.
  *
  * The permission flags arrived with staged publishing, after `npm trust` itself
- * — npm 11.13.0 has the command but rejects the flag as unknown. Passing it
- * blind breaks on older CLIs; omitting it blind means newer CLIs may refuse a
- * config that names no permitted action. So ask the CLI in front of us.
+ * — npm 11.13.0 has the command but rejects the flag as unknown.
  */
 function supportsPermissionFlags() {
   try {
@@ -75,6 +73,23 @@ function supportsPermissionFlags() {
   } catch {
     return false;
   }
+}
+
+/**
+ * How to invoke npm, given the flags the local one supports.
+ *
+ * Omitting the permission flag is not a graceful degradation — the registry has
+ * required a config to name at least one permitted action since 2026-05-20, and
+ * rejects a request without one as a bare `400 Bad Request`, no body, from
+ * inside npm's 2FA wrapper. It reads like an auth failure and is not one.
+ *
+ * So an npm too old to send permissions is not usable here at all, and we fetch
+ * one that is rather than fail. This deliberately does not touch the globally
+ * installed npm: this script is the only thing that needs the newer CLI.
+ */
+function npmCommand() {
+  if (supportsPermissionFlags()) return { bin: 'npm', prefix: [], via: 'npm (local)' };
+  return { bin: 'npx', prefix: ['-y', 'npm@latest'], via: 'npx npm@latest (local npm predates --allow-publish)' };
 }
 
 const argvIn = process.argv.slice(2);
@@ -87,39 +102,37 @@ const listOnly = args.has('--list');
 const otp = argvIn.find((a) => a.startsWith('--otp='));
 const packages = publishablePackages();
 const slug = repoSlug();
-const permissionFlags = supportsPermissionFlags() ? ['--allow-publish'] : [];
+const npmCmd = npmCommand();
 
 console.log(`${listOnly ? 'Listing' : 'Configuring'} ${packages.length} packages`);
 console.log(`  repository: ${slug}`);
 console.log(`  workflow:   .github/workflows/${WORKFLOW}`);
-if (!listOnly) {
-  console.log(
-    permissionFlags.length
-      ? '  permissions: --allow-publish'
-      : '  permissions: default (this npm predates --allow-publish; upgrade to grant them explicitly)',
-  );
-}
+if (!listOnly) console.log('  permissions: publish');
+console.log(`  npm:        ${npmCmd.via}`);
 console.log();
 
 let failed = 0;
 for (const [i, pkg] of packages.entries()) {
-  const argv = listOnly
-    ? ['trust', 'list', pkg]
-    : [
-        'trust',
-        'github',
-        pkg,
-        '--file',
-        WORKFLOW,
-        '--repo',
-        slug,
-        ...permissionFlags,
-        ...(otp ? [otp] : []),
-        '--yes',
-      ];
+  const argv = [
+    ...npmCmd.prefix,
+    ...(listOnly
+      ? ['trust', 'list', pkg]
+      : [
+          'trust',
+          'github',
+          pkg,
+          '--file',
+          WORKFLOW,
+          '--repo',
+          slug,
+          '--allow-publish',
+          ...(otp ? [otp] : []),
+          '--yes',
+        ]),
+  ];
 
   if (dryRun) {
-    console.log(`[dry-run] npm ${argv.join(' ')}`);
+    console.log(`[dry-run] ${npmCmd.bin} ${argv.join(' ')}`);
     continue;
   }
 
@@ -128,7 +141,7 @@ for (const [i, pkg] of packages.entries()) {
     // Fully inherited stdio, deliberately. npm's 2FA challenge is interactive —
     // capturing its output to prettify this loop swallows the prompt, and the
     // run stalls looking like a hang. Legible progress is not worth that.
-    execFileSync('npm', argv, { stdio: 'inherit' });
+    execFileSync(npmCmd.bin, argv, { stdio: 'inherit' });
   } catch {
     failed += 1;
     console.error(`✗ ${pkg} failed (see npm output above)`);
