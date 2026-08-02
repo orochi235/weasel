@@ -1,16 +1,16 @@
 # Handoff — stroked text on the outline tier
 
 **Date:** 2026-08-02
-**Branch:** `text-stroke` (4 commits, off `main` @ `70205932`), local only
+**Branch:** `text-stroke` (7 commits, off `main` @ `70205932`), local only
 **Backlog entry:** `docs/TODO.md` § Text — "Stroked text"
 
 ---
 
 ## Status
 
-**Implemented and green, with one unresolved visual question — read the last
-section before merging.** `npm run typecheck` clean; `vitest` 647 files /
-6003 tests passing.
+**Done, verified on screen.** `npm run typecheck` clean; `vitest` 647 files /
+6006 tests passing. The seam artifact that held this up is root-caused and
+fixed — see below.
 
 ## What landed
 
