@@ -51,6 +51,8 @@ import type { UseResizeOptions } from 'interactions/actions/resize/options';
 import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
+import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
+import type { DeviceProfile } from '../core/device/types';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { useToolActions } from './SceneCanvas/useToolActions';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
@@ -682,6 +684,17 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     getActiveMode?: () => { id: string; allowedCapabilities: ReadonlySet<string> };
 
     /**
+     * Override detected device facts. Merged over what `matchMedia` reports;
+     * `targetScale` is re-derived from the merged `coarsePointer` unless you
+     * override it explicitly.
+     *
+     * Reach for this in three cases: tests that need a coarse profile without
+     * stubbing `matchMedia`, demos that want to show touch-sized chrome on a
+     * desktop, and hybrid devices where the media query guesses wrong.
+     */
+    device?: Partial<DeviceProfile>;
+
+    /**
      * Optional live focus getter for chrome-caps' `focused` ctx field.
      * SceneCanvas does not own focus state by default — wire this when
      * your visibility rules read the `focused` atom (e.g. the kit's
@@ -826,8 +839,14 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     chromeVisibility,
     getActiveMode,
     getFocused: getFocusedProp,
+    device,
     ...rest
   } = props;
+
+  // Resolved once here and provided to the subtree, so overlays, affordances
+  // and consumer chrome all read the same object rather than each running
+  // their own media queries.
+  const deviceProfile = useDeviceProfile(device);
 
   // `scene` accepts either a live `Scene` or a `SerializedScene` JSON
   // object. JSON is baked once via useState init; subsequent renders
@@ -1457,6 +1476,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   chromeVisibilityRef.current = effectiveChromeVisibility;
   const getActiveModeRef = useRef(getActiveMode);
   getActiveModeRef.current = getActiveMode;
+  // Read through a ref for the same reason as the others here:
+  // `buildCurrentRuleCtx` is a stable `useCallback`, and adding the profile to
+  // its deps would rebuild it whenever a media query changes.
+  const deviceProfileRef = useRef(deviceProfile);
+  deviceProfileRef.current = deviceProfile;
   // Per-node resizability predicate from `selectTool.resize.resizable`, folded
   // over the live selection into the `selectionResizable` rule-ctx flag below.
   const resizablePredRef = useRef(selectToolOpts?.resize?.resizable);
@@ -1504,6 +1528,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       allowedCapabilities: modeInfo.allowedCapabilities,
       selectionResizable,
       editingAnchors: effectivePathEditingId() !== '',
+      device: deviceProfileRef.current,
     };
   }, [dispatcher, getHover]);
 
@@ -1893,65 +1918,67 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   }, []);
 
   return (
-    <DepRegistryProviderIfRoot>
-      <PointerProviderIfRoot>
-        <ActionsProviderIfRoot>
-          {canvas}
-          <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
-          <StandardActionsRegistrar
-            selection={selection}
-            scene={scene as Scene<unknown, string, unknown>}
-            adapter={adapter as unknown as BridgeAdapter}
-            actionDefaults={actionDefaults}
-            actions={resolvedActions}
-            currentViewRef={currentViewRef}
-            onViewChange={handleViewChange}
-            resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-            geometryProjection={geometryProjection}
-            dispatcher={dispatcher}
-            getActionRef={getActionRef}
-            pickEvery={internalPickEvery}
-            viewportPanEnabled={viewport?.pan !== false}
-            viewportZoom={viewport?.zoom ?? true}
-            viewportRecenter={viewport?.recenter}
-            editAnchorsExternalState={editAnchorsExternalState}
-            anchorEditingAllowed={anchorEditingAllowed}
-            layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
-            insertNodeFactories={insertNodeFactories}
-            snapPoint={toolOptions?.snapPoint}
-            canvasRef={internalCanvasRef}
-            ingestionResolveSrc={ingestion?.resolveSrc}
-            ingestionSvg={ingestion?.svg}
-            ingestionClipboard={ingestionClipboard}
-            actionsRegistryRef={actionsRegistryRef}
-          />
-          <GestureDispatcherMounter
-            canvasRef={internalCanvasRef}
-            canvasApiRef={canvasApiRef}
-            tools={tools}
-            enabled={enableGestureDispatcher}
-            keyboard={enableKeybindings}
-            selectionRef={selectionRef}
-            boundsOf={internalBoundsOf}
-            pickEvery={internalPickEvery}
-            pickBest={internalPickBest}
-            kindOfNode={kindOfNode}
-            viewRef={currentViewRef}
-            dispatcher={dispatcher}
-            getIsVisibleForCanvas={getIsVisibleForCanvas}
-            getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
-            onDoubleClick={onDoubleClickObserver}
-          />
-          <ToolKeybindingsMounter
-            internalTools={internalTools}
-            toolsTakeover={toolsTakeover ?? undefined}
-            enableKeybindings={enableKeybindings}
-            isToolEligible={isToolEligible}
-          />
-          {children}
-        </ActionsProviderIfRoot>
-      </PointerProviderIfRoot>
-    </DepRegistryProviderIfRoot>
+    <DeviceProfileProvider value={device}>
+      <DepRegistryProviderIfRoot>
+        <PointerProviderIfRoot>
+          <ActionsProviderIfRoot>
+            {canvas}
+            <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+            <StandardActionsRegistrar
+              selection={selection}
+              scene={scene as Scene<unknown, string, unknown>}
+              adapter={adapter as unknown as BridgeAdapter}
+              actionDefaults={actionDefaults}
+              actions={resolvedActions}
+              currentViewRef={currentViewRef}
+              onViewChange={handleViewChange}
+              resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+              geometryProjection={geometryProjection}
+              dispatcher={dispatcher}
+              getActionRef={getActionRef}
+              pickEvery={internalPickEvery}
+              viewportPanEnabled={viewport?.pan !== false}
+              viewportZoom={viewport?.zoom ?? true}
+              viewportRecenter={viewport?.recenter}
+              editAnchorsExternalState={editAnchorsExternalState}
+              anchorEditingAllowed={anchorEditingAllowed}
+              layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+              insertNodeFactories={insertNodeFactories}
+              snapPoint={toolOptions?.snapPoint}
+              canvasRef={internalCanvasRef}
+              ingestionResolveSrc={ingestion?.resolveSrc}
+              ingestionSvg={ingestion?.svg}
+              ingestionClipboard={ingestionClipboard}
+              actionsRegistryRef={actionsRegistryRef}
+            />
+            <GestureDispatcherMounter
+              canvasRef={internalCanvasRef}
+              canvasApiRef={canvasApiRef}
+              tools={tools}
+              enabled={enableGestureDispatcher}
+              keyboard={enableKeybindings}
+              selectionRef={selectionRef}
+              boundsOf={internalBoundsOf}
+              pickEvery={internalPickEvery}
+              pickBest={internalPickBest}
+              kindOfNode={kindOfNode}
+              viewRef={currentViewRef}
+              dispatcher={dispatcher}
+              getIsVisibleForCanvas={getIsVisibleForCanvas}
+              getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
+              onDoubleClick={onDoubleClickObserver}
+            />
+            <ToolKeybindingsMounter
+              internalTools={internalTools}
+              toolsTakeover={toolsTakeover ?? undefined}
+              enableKeybindings={enableKeybindings}
+              isToolEligible={isToolEligible}
+            />
+            {children}
+          </ActionsProviderIfRoot>
+        </PointerProviderIfRoot>
+      </DepRegistryProviderIfRoot>
+    </DeviceProfileProvider>
   );
 }
 
