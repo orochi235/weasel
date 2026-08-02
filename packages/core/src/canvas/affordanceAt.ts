@@ -30,6 +30,7 @@ import { hitAffordanceRegions, type AffordanceRegionHit } from 'affordances/hitA
 import { createCornerResizeAffordance } from 'affordances/cornerResize';
 import { createRotationAffordance } from 'affordances/rotationHandle';
 import { createPathAnchorAffordances, type AnchorState } from 'affordances/pathAnchors';
+import { ANCHOR_HIT_BASE_PX, HANDLE_BASE_PX } from 'core/device/targets';
 
 export type { AnchorState };
 
@@ -45,11 +46,11 @@ export type { AnchorState };
  *  under the visual handle at zoom > 1. Regions express hit radii in screen
  *  pixels and the framework converts, so the correction happens once, in the
  *  one place that knows the view. */
-export const HANDLE_HIT_RADIUS = 8;
+export const HANDLE_HIT_RADIUS = HANDLE_BASE_PX;
 
 /** Hit-test radius for anchor and control-handle points, in screen pixels.
  *  Mirrors `useEditAnchors` default (`hitRadius = 8`). */
-export const ANCHOR_HIT_RADIUS = 8;
+export const ANCHOR_HIT_RADIUS = ANCHOR_HIT_BASE_PX;
 
 // ---------------------------------------------------------------------------
 // Public API

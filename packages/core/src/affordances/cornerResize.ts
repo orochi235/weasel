@@ -4,6 +4,7 @@ import type { ResizeAnchor } from 'interactions/gestures/types';
 import { CORNER_ANCHORS, cornerPoint, fixedCornerOf } from 'interactions/actions/resize/cornerHandles';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import { localToWorld, transformOf } from './hitAffordanceRegions';
+import { HANDLE_BASE_PX } from 'core/device/targets';
 
 export interface CornerResizeAffordanceOptions {
   /** Hit radius (screen-px) for the corner handles. Default 8. */
@@ -44,8 +45,8 @@ export function createCornerResizeAffordance(
   opts: CornerResizeAffordanceOptions = {},
 ): Affordance {
   const {
-    handleHitRadius = 8,
-    handleSize = 8,
+    handleHitRadius = HANDLE_BASE_PX,
+    handleSize = HANDLE_BASE_PX,
     fill = DEFAULT_FILL,
     stroke = DEFAULT_STROKE,
   } = opts;

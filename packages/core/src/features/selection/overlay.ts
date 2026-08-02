@@ -43,6 +43,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import { meanScale } from 'core/viewport/meanScale';
 import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
+import { HANDLE_BASE_PX } from 'core/device/targets';
 
 /** Project world AABB into screen-space AABB using the active view. */
 function projectBounds<B extends Bounds>(b: B, view: View): B {
@@ -288,7 +289,7 @@ const DEFAULT_HANDLE_OUTLINE: Stroke = {
   paint: { fill: 'solid', color: '#1a130d' },
   width: 1,
 };
-const DEFAULT_HANDLE_SIZE = 8;
+const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;
 
 function defaultHandlesOf(b: Bounds): { x: number; y: number }[] {
   return [

@@ -1,9 +1,11 @@
 import { aabbCenter, rotatePoint } from './geometry';
+import { ROTATION_HANDLE_BASE_PX } from 'core/device/targets';
 
 /** Default world-space distance from the rect's top edge to the rotation
  *  handle's center. Matches the demo's visual default; consumers can
- *  override per-call. */
-export const DEFAULT_ROTATION_HANDLE_DISTANCE = 24;
+ *  override per-call. Unscaled — kit-internal use sites multiply by
+ *  `DeviceProfile.targetScale`. */
+export const DEFAULT_ROTATION_HANDLE_DISTANCE = ROTATION_HANDLE_BASE_PX;
 
 /** Rotation handle position in world coords. */
 export interface RotationHandle {

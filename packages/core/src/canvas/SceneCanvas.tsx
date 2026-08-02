@@ -53,6 +53,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import type { DeviceProfile } from '../core/device/types';
+import { HANDLE_BASE_PX } from '../core/device/targets';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
 import { useToolActions } from './SceneCanvas/useToolActions';
 import { PointerProviderIfRoot, PointerPublisher } from './SceneCanvas/PointerProviderIfRoot';
@@ -145,9 +146,14 @@ interface BridgeAdapter {
 }
 
 /** Default size in CSS pixels for selection corner-handles AND their
- *  hit-test radius. Used by the SceneCanvas defaults; consumers override
- *  via `selectTool.handleHitRadius` or `layers.selectionOverlay.handles.size`. */
-export const DEFAULT_HANDLE_SIZE = 8;
+ *  hit-test radius, at `targetScale = 1`. Used by the SceneCanvas defaults;
+ *  consumers override via `selectTool.handleHitRadius` or
+ *  `layers.selectionOverlay.handles.size`.
+ *
+ *  Deliberately unscaled: consumers reading this constant keep getting the
+ *  number they always got. Kit-internal use sites multiply by
+ *  `DeviceProfile.targetScale`. */
+export const DEFAULT_HANDLE_SIZE = HANDLE_BASE_PX;
 
 // ---------------------------------------------------------------------------
 // Dev-only coord trace
@@ -202,16 +208,21 @@ export { defaultDrawOne } from './defaultDrawOne';
  *  doesn't mention get filled with defaults; slots explicitly set to
  *  `null` are dropped (the existing "disable this slot" convention).
  *  Partial slot configs (e.g. `{ scene: { drawOne: customFn } }`) are
- *  shallow-spread on top of the default slot config. */
+ *  shallow-spread on top of the default slot config.
+ *
+ *  `targetScale` comes from the resolved {@link DeviceProfile}. It is a
+ *  parameter rather than a read because this function is module-scope and
+ *  the profile is a hook value; the caller inside the component passes it. */
 export function mergeLayersWithDefaults<TData, TLayer extends string, TPose>(
   user: LayersMap<Node<TData, TLayer, TPose>, TPose> | undefined,
+  targetScale = 1,
 ): LayersMap<Node<TData, TLayer, TPose>, TPose> {
   const defaults = {
     scene: { drawOne: defaultDrawOne as (
       node: Node<TData, TLayer, TPose>,
       pose: TPose,
     ) => DrawCommand[] },
-    selectionOverlay: { handles: { size: DEFAULT_HANDLE_SIZE } },
+    selectionOverlay: { handles: { size: HANDLE_BASE_PX * targetScale } },
   };
 
   if (!user) return defaults as LayersMap<Node<TData, TLayer, TPose>, TPose>;
@@ -1057,10 +1068,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   }), []);
 
   // Adapter + select tool — folded into a single hook that synthesizes both.
-  // Apply the DEFAULT_HANDLE_SIZE fallback here so useSceneSelectTool always
-  // receives a concrete radius even when the caller omits selectTool entirely.
+  // Apply the handle-size fallback here so useSceneSelectTool always receives
+  // a concrete radius even when the caller omits selectTool entirely. Scaled
+  // by the device profile so the hit radius tracks the painted size — the
+  // overlay's handle size goes through the same base in
+  // `mergeLayersWithDefaults`.
   const selectToolWithDefaults = useMemo(() => ({
-    handleHitRadius: DEFAULT_HANDLE_SIZE,
+    handleHitRadius: HANDLE_BASE_PX * deviceProfile.targetScale,
     // Shift-click belongs to the anchor selection while a path is being
     // anchor-edited; see `UseSelectToolOptions.extendClickLocked`.
     extendClickLocked: () => effectivePathEditingId() !== '',
@@ -1070,7 +1084,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // pipeline (audit 3.4). The classifier is now `select.pick`, which
     // declares that capability itself — one rule, evaluated in one place.
     ...selectToolOpts,
-  }), [selectToolOpts]);
+  }), [selectToolOpts, deviceProfile.targetScale]);
 
   // Stable ref to the live selection; updated every render so the affordanceAt
   // and classifyTarget thunks (which live in an effect closure) always read
@@ -1372,8 +1386,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // the result is the full default set (scene + selectionOverlay). Partial
   // configs deep-merge; `null` slot values suppress a default explicitly.
   const mergedLayers = useMemo(
-    () => mergeLayersWithDefaults(layers),
-    [layers],
+    () => mergeLayersWithDefaults(layers, deviceProfile.targetScale),
+    [layers, deviceProfile.targetScale],
   );
 
   // `selectTool.rotate === false` disables rotation: drop the `rotate` action
