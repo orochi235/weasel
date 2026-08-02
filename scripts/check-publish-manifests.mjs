@@ -155,6 +155,30 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
+// Provenance is verified server-side against the manifest, so a package that
+// asks for an attestation without a `repository.url` is rejected at PUT — after
+// its siblings have already published. `@weasel-js/labkit@0.7.2` failed exactly
+// this way, alone, in a release whose other eleven packages went out fine. The
+// check is cheap and belongs beside the other "what will the registry think of
+// this tarball" questions.
+const provenanceGaps = packages.filter(({ manifest }) => {
+  if (manifest.publishConfig?.provenance !== true) return false;
+  const url = typeof manifest.repository === 'string' ? manifest.repository : manifest.repository?.url;
+  return !url;
+});
+
+if (provenanceGaps.length > 0) {
+  console.error(
+    `[manifests] ${provenanceGaps.length} package(s) request provenance but declare no repository:\n\n` +
+      provenanceGaps.map(({ manifest }) => `  ${manifest.name}`).join('\n') +
+      '\n\nnpm verifies the attestation against `repository.url` and rejects the\n' +
+      'upload with E422 when it is missing. Because publishing is per package,\n' +
+      'this fails partway through a release rather than before it. Add the field\n' +
+      '(matching the siblings, with `directory`) or drop `publishConfig.provenance`.\n',
+  );
+  process.exit(1);
+}
+
 const total = packages.reduce((n, { manifest }) => n + advertisedPaths(manifest).length, 0);
 console.log(
   `[manifests] OK — ${total} advertised path(s) across ${packages.length} publishable ` +

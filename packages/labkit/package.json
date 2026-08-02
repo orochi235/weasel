@@ -2,6 +2,17 @@
   "name": "@weasel-js/labkit",
   "version": "0.7.2",
   "description": "React widgets for building self-contained interactive lab pages",
+  "license": "MIT",
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/labkit"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=22"
