@@ -33,11 +33,15 @@ jobs:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm >= 11.5.1; Node 22 bundles npm 10.9.x, and
+      # even Node 24 only reaches 11.0. Without this the publish silently falls
+      # back to the classic token path and fails as E404/ENEEDAUTH, which reads
+      # like a missing package rather than an out-of-date CLI.
+      - run: npm install -g npm@latest
       - run: npm ci
+      # Covers all thirteen workspaces, labkit included — it is last in
+      # `build:downstream` because it bundles the others.
       - run: npm run build
-      # labkit is published too, but the root `build` script does not cover it
-      # (it bundles the other packages, so it must run after them).
-      - run: npm run build -w @weasel-js/labkit
       # Last gate before anything reaches npm: refuse to publish a package whose
       # `exports`/`types` map promises files the tarball does not contain.
       - run: npm run check:manifests
@@ -48,7 +52,10 @@ jobs:
           version: npx changeset version
           commit: "chore: version packages"
           title: "chore: version packages"
+        # No NPM_TOKEN. Authentication is OIDC trusted publishing: the job mints
+        # a short-lived credential from `id-token: write` above, scoped to this
+        # run. Setting NPM_TOKEN/NODE_AUTH_TOKEN here would be actively harmful —
+        # npm prefers a token when it finds one, taking the classic path that npm
+        # revoked in December 2025 and losing provenance with it.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

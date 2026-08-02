@@ -41,6 +41,7 @@
     "@weasel-js/core": "0.7.1"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }

@@ -83,7 +83,8 @@
     "polygon-clipping": "^0.15.7"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "keywords": [
     "react",
