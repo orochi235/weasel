@@ -18,6 +18,7 @@ export type GestureName =
   | 'keyUp'
   | 'keyHeld'
   | 'contextMenu'
+  | 'longPress'
   | 'multiTouchTap';
 
 export interface GestureArgSpec {
@@ -50,6 +51,7 @@ export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'keyUp',         hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'keyHeld',       hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'contextMenu',   hasTarget: true  },
+  { name: 'longPress',     hasTarget: true  },
   { name: 'multiTouchTap', hasTarget: false, arg: { name: 'fingers',   values: ['2', '3', '4'] } },
 ];
 

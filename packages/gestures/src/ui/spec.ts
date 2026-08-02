@@ -160,6 +160,25 @@ export interface PointerDownSpec {
   phase?: PhaseSpec;
 }
 
+/**
+ * Press held past the long-press threshold without crossing the drag
+ * threshold. Synthesized by `useGestureDispatcher` from the pointer stream.
+ *
+ * Fires for `touch` and `pen` pointers only. A mouse held still for half a
+ * second is an ordinary slow click, and firing on it would produce a context
+ * menu nobody asked for.
+ *
+ * When a long-press matches no binding, the dispatcher re-dispatches it as a
+ * `contextmenu` event — so `contextMenu` bindings work under a finger with no
+ * consumer changes, while `longPress` stays independently bindable.
+ */
+export interface LongPressSpec {
+  kind: 'longPress';
+  target?: TargetSpec;
+  mods?: ModSpec;
+  phase?: PhaseSpec;
+}
+
 /** Multi-touch gesture. `fingers` is the required touch count. */
 export interface MultiTouchSpec {
   kind: 'multiTouch';
@@ -198,7 +217,7 @@ export interface PasteSpec {
 }
 
 /** The full union of supported gesture spec kinds. New invocation forms
- *  (long-press, two-stage, modal-dialog) extend this union without touching
+ *  (two-stage, modal-dialog) extend this union without touching
  *  the `Action` type. */
 export type GestureSpec =
   | KeySpec
@@ -209,6 +228,7 @@ export type GestureSpec =
   | ContextMenuSpec
   | DragSpec
   | PointerDownSpec
+  | LongPressSpec
   | MultiTouchSpec
   | MultiTouchTapSpec
   | DropSpec

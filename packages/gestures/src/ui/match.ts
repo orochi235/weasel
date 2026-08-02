@@ -370,6 +370,15 @@ export function matchSpec(
       return matchTarget(e.target, spec.target, e.bodyTarget, e.bodyKind);
     }
 
+    case 'longPress': {
+      if (e.kind !== 'longpress') return false;
+      if (!matchModifiers(e, spec.mods, isMac)) return false;
+      // Match on the affordance like `drag` does, not the DOM target like
+      // `contextMenu` does: a long-press begins as a press, so the useful
+      // target is what was under the finger in scene terms.
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
+    }
+
     case 'drag': {
       // Drag begins at pointerdown; the dispatcher promotes to drag after
       // threshold is crossed. The matcher fires on pointerdown.

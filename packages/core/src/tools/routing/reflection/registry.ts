@@ -62,6 +62,7 @@ const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined>
   click: 'click',
   doubleClick: 'dblTap',
   contextMenu: 'contextMenu',
+  longPress: 'longPress',
   drag: 'drag',
   pointerDown: 'pointerDown',
   multiTouch: undefined,

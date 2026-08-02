@@ -329,6 +329,38 @@ describe('matchSpec — contextMenu', () => {
   });
 });
 
+describe('matchSpec — longPress', () => {
+  const ev = {
+    kind: 'longpress' as const,
+    x: 10, y: 20, clientX: 10, clientY: 20,
+    ...noMods,
+    bodyTarget: 'empty' as const,
+  };
+
+  it('matches a bare longPress spec', () => {
+    expect(matchSpec(ev, { kind: 'longPress' as const }, false)).toBe(true);
+  });
+
+  it('does not match a pointerdown', () => {
+    expect(
+      matchSpec({ ...ev, kind: 'pointerdown' as const }, { kind: 'longPress' as const }, false),
+    ).toBe(false);
+  });
+
+  it('respects the target selector', () => {
+    expect(matchSpec(ev, { kind: 'longPress' as const, target: 'empty' as const }, false))
+      .toBe(true);
+    expect(matchSpec(ev, { kind: 'longPress' as const, target: 'selected-body' as const }, false))
+      .toBe(false);
+  });
+
+  it('respects modifiers', () => {
+    const spec = { kind: 'longPress' as const, mods: { shift: true } };
+    expect(matchSpec(ev, spec, false)).toBe(false);
+    expect(matchSpec({ ...ev, shiftKey: true }, spec, false)).toBe(true);
+  });
+});
+
 describe('matchSpec — multiTouchTap', () => {
   it('matches a multitouchtap with the right fingers count', () => {
     const spec = { kind: 'multiTouchTap' as const, fingers: 2 };
