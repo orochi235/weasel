@@ -54,8 +54,10 @@ node scripts/setup-trusted-publishing.mjs             # configure all packages
 node scripts/setup-trusted-publishing.mjs --list      # verify
 ```
 
-The first call prompts for 2FA; the npm page it opens offers a "skip 2FA for the
-next 5 minutes" toggle that lets the rest run unattended. Re-running is safe.
+The first call prompts for 2FA. **Tick "skip 2FA for the next 5 minutes"** on the
+npm page it opens — that is what lets the remaining eleven run unattended;
+without it every package challenges you again. If the window lapses partway,
+re-run with `--otp=<code>` to finish the tail. Re-running is always safe.
 
 Needs npm >= 11.10.0 for `npm trust`. The `--allow-publish` permission flag came
 later, with staged publishing — the script probes for it and passes it only when

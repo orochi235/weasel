@@ -77,9 +77,14 @@ function supportsPermissionFlags() {
   }
 }
 
-const args = new Set(process.argv.slice(2));
+const argvIn = process.argv.slice(2);
+const args = new Set(argvIn);
 const dryRun = args.has('--dry-run');
 const listOnly = args.has('--list');
+// `--otp=123456` skips the interactive 2FA prompt. A code is good for ~30s, so
+// it will not carry all twelve packages on its own — its real use is retrying
+// the tail after the 5-minute skip window lapsed.
+const otp = argvIn.find((a) => a.startsWith('--otp='));
 const packages = publishablePackages();
 const slug = repoSlug();
 const permissionFlags = supportsPermissionFlags() ? ['--allow-publish'] : [];
@@ -100,19 +105,33 @@ let failed = 0;
 for (const [i, pkg] of packages.entries()) {
   const argv = listOnly
     ? ['trust', 'list', pkg]
-    : ['trust', 'github', pkg, '--file', WORKFLOW, '--repo', slug, ...permissionFlags, '--yes'];
+    : [
+        'trust',
+        'github',
+        pkg,
+        '--file',
+        WORKFLOW,
+        '--repo',
+        slug,
+        ...permissionFlags,
+        ...(otp ? [otp] : []),
+        '--yes',
+      ];
 
   if (dryRun) {
     console.log(`[dry-run] npm ${argv.join(' ')}`);
     continue;
   }
 
+  console.log(`→ ${pkg}`);
   try {
-    const out = execFileSync('npm', argv, { encoding: 'utf8', stdio: ['inherit', 'pipe', 'pipe'] });
-    console.log(`✓ ${pkg}${out.trim() ? `\n${out.trim()}` : ''}`);
-  } catch (err) {
+    // Fully inherited stdio, deliberately. npm's 2FA challenge is interactive —
+    // capturing its output to prettify this loop swallows the prompt, and the
+    // run stalls looking like a hang. Legible progress is not worth that.
+    execFileSync('npm', argv, { stdio: 'inherit' });
+  } catch {
     failed += 1;
-    console.error(`✗ ${pkg}: ${(err.stderr || err.message).toString().trim()}`);
+    console.error(`✗ ${pkg} failed (see npm output above)`);
   }
 
   // Rate limiting, per npm's bulk-configuration guidance. Skipped after the last
