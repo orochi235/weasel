@@ -57,6 +57,12 @@ node scripts/setup-trusted-publishing.mjs --list      # verify
 The first call prompts for 2FA; the npm page it opens offers a "skip 2FA for the
 next 5 minutes" toggle that lets the rest run unattended. Re-running is safe.
 
+Needs npm >= 11.10.0 for `npm trust`. The `--allow-publish` permission flag came
+later, with staged publishing — the script probes for it and passes it only when
+the local CLI understands it, so an older npm gets the registry default
+(publish-only) rather than an "unknown flag" error. Upgrading npm is worth doing
+anyway if you want the permission stated explicitly rather than defaulted.
+
 A package must already exist on npm before it can be given a trusted publisher,
 so the very first publish of a brand-new package still has to be done by hand
 from a logged-in machine.

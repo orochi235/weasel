@@ -60,23 +60,47 @@ function repoSlug() {
   return match[1];
 }
 
+/**
+ * Whether this npm knows `--allow-publish`.
+ *
+ * The permission flags arrived with staged publishing, after `npm trust` itself
+ * — npm 11.13.0 has the command but rejects the flag as unknown. Passing it
+ * blind breaks on older CLIs; omitting it blind means newer CLIs may refuse a
+ * config that names no permitted action. So ask the CLI in front of us.
+ */
+function supportsPermissionFlags() {
+  try {
+    const help = execFileSync('npm', ['trust', 'github', '--help'], { encoding: 'utf8' });
+    return help.includes('--allow-publish');
+  } catch {
+    return false;
+  }
+}
+
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has('--dry-run');
 const listOnly = args.has('--list');
 const packages = publishablePackages();
 const slug = repoSlug();
+const permissionFlags = supportsPermissionFlags() ? ['--allow-publish'] : [];
 
 console.log(`${listOnly ? 'Listing' : 'Configuring'} ${packages.length} packages`);
 console.log(`  repository: ${slug}`);
-console.log(`  workflow:   .github/workflows/${WORKFLOW}\n`);
+console.log(`  workflow:   .github/workflows/${WORKFLOW}`);
+if (!listOnly) {
+  console.log(
+    permissionFlags.length
+      ? '  permissions: --allow-publish'
+      : '  permissions: default (this npm predates --allow-publish; upgrade to grant them explicitly)',
+  );
+}
+console.log();
 
 let failed = 0;
 for (const [i, pkg] of packages.entries()) {
-  // `--allow-publish` is not optional: since 2026-05-20 npm requires every new
-  // trust config to name at least one permitted action explicitly.
   const argv = listOnly
     ? ['trust', 'list', pkg]
-    : ['trust', 'github', pkg, '--file', WORKFLOW, '--repo', slug, '--allow-publish', '--yes'];
+    : ['trust', 'github', pkg, '--file', WORKFLOW, '--repo', slug, ...permissionFlags, '--yes'];
 
   if (dryRun) {
     console.log(`[dry-run] npm ${argv.join(' ')}`);
