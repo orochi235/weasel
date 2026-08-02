@@ -39,6 +39,8 @@ export {
   hoveringSelected,
   modifierHeld,
   zoomAtLeast,
+  canHover,
+  coarsePointer,
   modeIs,
   modeIn,
   modeNot,
