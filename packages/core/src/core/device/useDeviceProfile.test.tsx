@@ -2,31 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { useDeviceProfile, DeviceProfileProvider } from './useDeviceProfile';
 import { COARSE_TARGET_SCALE } from './profile';
-
-/** Minimal MediaQueryList double with a manual `fire()`. */
-function makeMatchMedia(matches: Record<string, boolean>) {
-  const listeners = new Map<string, Set<(e: { matches: boolean }) => void>>();
-  const state = { ...matches };
-  const mm = (query: string) => ({
-    matches: state[query] ?? false,
-    media: query,
-    addEventListener: (_: string, cb: (e: { matches: boolean }) => void) => {
-      if (!listeners.has(query)) listeners.set(query, new Set());
-      listeners.get(query)!.add(cb);
-    },
-    removeEventListener: (_: string, cb: (e: { matches: boolean }) => void) => {
-      listeners.get(query)?.delete(cb);
-    },
-  });
-  return {
-    mm,
-    fire(query: string, matches: boolean) {
-      state[query] = matches;
-      for (const cb of listeners.get(query) ?? []) cb({ matches });
-    },
-    listenerCount: (query: string) => listeners.get(query)?.size ?? 0,
-  };
-}
+import { makeMatchMedia } from './testing/matchMedia';
 
 function Probe() {
   const d = useDeviceProfile();

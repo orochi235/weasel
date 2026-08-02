@@ -1,27 +1,38 @@
 import { type RefObject, useCallback, useEffect, useState } from 'react';
 import type { CanvasSize } from './clampView';
+import { useDeviceProfile } from '../device/useDeviceProfile';
 
 /** Size snapshot returned by `useCanvasSize` — the kit-wide `CanvasSize`
- *  (width × height in CSS pixels) plus the current `devicePixelRatio`. */
+ *  (width × height in CSS pixels) plus the current devicePixelRatio. */
 export interface CanvasSizeSnapshot extends CanvasSize {
   dpr: number;
 }
 
-/** Track a container's content-rect size and the current devicePixelRatio via `ResizeObserver`.
- *  This hook is the screen path's designated ambient-density source — rendering code should
- *  take density as a parameter (cf. `renderSceneToPixels`, `renderSceneToCanvas`'s `dpr`)
- *  rather than reading `window.devicePixelRatio` inline. */
+/** Track a container's content-rect size via `ResizeObserver`, and density via
+ *  the ambient `DeviceProfile`.
+ *
+ *  This hook is the screen path's designated ambient-density source —
+ *  rendering code should take density as a parameter (cf.
+ *  `renderSceneToPixels`, `renderSceneToCanvas`'s `dpr`) rather than reading
+ *  `window.devicePixelRatio` inline.
+ *
+ *  Density deliberately does NOT come from a `window.devicePixelRatio` read
+ *  inside the resize callback: that only refreshes when the element resizes,
+ *  so dragging a window to a different-density display without resizing it
+ *  left the snapshot stale. The profile watches a re-armed resolution media
+ *  query instead. */
 export function useCanvasSize(containerRef: RefObject<HTMLDivElement | null>): CanvasSizeSnapshot {
-  const [size, setSize] = useState<CanvasSizeSnapshot>({ width: 0, height: 0, dpr: 1 });
+  const { dpr } = useDeviceProfile();
+  const [size, setSize] = useState<CanvasSize>({ width: 0, height: 0 });
 
   const measure = useCallback(() => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    setSize({
-      width: rect.width,
-      height: rect.height,
-      dpr: window.devicePixelRatio || 1,
-    });
+    setSize((prev) =>
+      prev.width === rect.width && prev.height === rect.height
+        ? prev
+        : { width: rect.width, height: rect.height },
+    );
   }, [containerRef]);
 
   useEffect(() => {
@@ -33,5 +44,5 @@ export function useCanvasSize(containerRef: RefObject<HTMLDivElement | null>): C
     return () => observer.disconnect();
   }, [measure, containerRef]);
 
-  return size;
+  return { width: size.width, height: size.height, dpr };
 }
