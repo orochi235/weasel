@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.7.2
+
+### Patch Changes
+
+- 8bc719a: Every package now declares `engines.node: ">=22"`, up from `">=20"`. Node 20
+  reached end of life on 2026-04-30, so the old floor advertised support for a
+  runtime that no longer receives security patches — a claim in each published
+  tarball that had quietly stopped being true. `@weasel-js/labkit` had no `engines`
+  field at all and now matches its siblings.
+
+  Nothing in the kit required a Node 20 feature, so this changes what is promised
+  rather than what runs. CI tests both ends of the range: the 22 floor and the 24
+  Active LTS the release and docs workflows build on.
+
+- a19124d: `VERSION` reports the right number again. `@weasel-js/core@0.7.1` was published
+  from a working tree whose `dist/` predated the version bump, so the constant
+  baked into that tarball reads `0.7.0` while the package it ships in is `0.7.1` —
+  the one export whose entire job is to say what you are running, saying the wrong
+  thing. Nothing else in 0.7.1 is affected: the value is stamped at build time by
+  `tsup`'s `define`, so only a stale build can desync it, and only `core` bakes it.
+
+  npm tarballs are immutable, so 0.7.1 cannot be corrected in place. Anything
+  pinned there should move to this release; `0.7.1` is deprecated on npm pointing
+  here.
+
+- Updated dependencies [8bc719a]
+  - @weasel-js/font@0.7.2
+  - @weasel-js/geom@0.7.2
+  - @weasel-js/gestures@0.7.2
+  - @weasel-js/history@0.7.2
+  - @weasel-js/modes@0.7.2
+
 ## 0.7.1
 
 ### Patch Changes
