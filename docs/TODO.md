@@ -476,9 +476,10 @@ Core five + Crop shipped. Remaining:
   stroked as open polylines. Fills close contours implicitly; only a stroke
   reads the difference.
 
-  Still open: **SVG export**. `apps/draw`'s `leafToObj` builds a `TextObj` with
-  no stroke, so a stroked text node exports unstroked — needs `stroke` /
-  `stroke-width` emission and the matching parse side.
+  **SVG round-trip landed too.** `weasel-svg` reads and writes text strokes
+  (node-level and per-`<tspan>`), and draw's export/import stopped dropping
+  `TextStyle` entirely — which had been costing every exported text node its
+  font size and family, not just its stroke.
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 

@@ -1,7 +1,7 @@
 # Handoff — stroked text on the outline tier
 
 **Date:** 2026-08-02
-**Branch:** `text-stroke` (7 commits, off `main` @ `70205932`), local only
+**Branch:** `text-stroke` (10 commits, off `main` @ `70205932`), local only
 **Backlog entry:** `docs/TODO.md` § Text — "Stroked text"
 
 ---
@@ -80,10 +80,34 @@ Two process notes worth keeping, since they cost most of the debugging time:
   probe that contradicts a screenshot deserves the same scrutiny as the code
   it is testing.
 
+## SVG round-trip
+
+Done (`67fe4d61`). It was three gaps, one per hop, and the stroke was only the
+most recent thing to fall through each:
+
+- **weasel-svg** turned `<text stroke="...">` into a warning and dropped it —
+  written when an SDF glyph had nothing to stroke. It now reads into
+  `TextStyle.stroke`, and per-run off a `<tspan>`'s *own* attributes (the runs
+  model already resolves a run's stroke against the node's, so lifting the
+  inherited cascade value would write the same paint twice and make an
+  unstyled run look deliberate). The serializer emits from the same fields.
+- **draw's export** built a `TextObj` with no `style` at all, so every text
+  node exported as unstyled black — font size and family included. It now
+  forwards the style, folding in the kit-native `data.stroke` /
+  `data.strokeWidth` leaf fields exactly as `kit:text` does when painting.
+- **draw's import** dropped `o.style` when building leaf data, so every
+  imported `<text>` became default-black 16px however it was written.
+
+Two hand-maintained lists silently swallowed the new field and were fixed to
+stop doing it to the next one: the runs-have-styling check enumerated styling
+keys (now "any key but `text`"), and the gradient pre-pass registered only
+`style.fill` — a gradient-stroked text would have emitted `url(#id)` against a
+`<defs>` that never defined it, since defs are written before the body.
+
+`svgExport.test.ts` pins the whole loop: scene → SVG → parse → import drafts,
+with `fontSize` and `stroke` intact at the far end.
+
 ## Not done
 
-- **SVG export.** `apps/draw`'s `leafToObj` builds a `TextObj` with no stroke,
-  so a stroked text node exports unstroked. Needs matching `stroke` /
-  `stroke-width` emission (and the parse side, for round-tripping).
 - **Draw's own UI** was not touched — it did not need to be, since the leaf
-  fields it already writes now reach the painter.
+  fields it already writes now reach both the painter and the exporter.
