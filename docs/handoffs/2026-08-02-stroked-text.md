@@ -51,35 +51,34 @@ section before merging.** `npm run typecheck` clean; `vitest` 647 files /
 
 6. **A demo toggle** beside the outline-tier toggle in `text-outlines`.
 
-## The unresolved part — read this before merging
+## The seam artifact — found and fixed
 
-Rendered in the browser, stroked glyphs show **small notches at contour
-seams** (visible on `R`'s counter, `a`'s bowl, `m`'s left stem, `b`'s bowl).
-I could not root-cause them, and the evidence is contradictory:
+Stroked glyphs initially rendered with pieces of their outline missing, along
+long straight edges. Root cause: **the `d` reaching the renderer had no `Z`**,
+so every glyph contour was stroked as an *open* polyline — no closing edge, a
+cap at each loose end. The fill never noticed, because earcut closes a contour
+implicitly; only a stroke follows exactly the path it is handed.
 
-- The CPU-side ribbon is **provably complete**. A point-in-mesh probe over
-  ~50k samples spanning the full half-width band around every contour vertex
-  of `R`, `a` and `m` found zero uncovered points, for both round and miter
-  joins, in em space and at world scale alike. Merged world-space meshes match
-  the per-glyph triangle sums exactly, with no index corruption.
-- The fill alone renders perfectly; only the stroke shows the notches.
-- Tessellating per glyph in world space (bypassing the em-space cache entirely)
-  produced a pixel-identical result, so it is not the cache or the merge.
+Fixed in `packages/font/src/outline/outlineRegistry.ts` (`0b94b637`):
+`closeContours` normalizes every glyph's path data on the way out of
+`glyphOutline`. It lives in the registry rather than in `opentypeParser`
+because the same hole is open to every consumer-supplied `OutlineParser` — and
+because the *same* opentype version emitted `Z` under node while omitting it in
+the browser build, so a parser-level fix would not have been reliable.
 
-**Caveat on all of the above:** late in the session the demo dev server proved
-untrustworthy — it served my edited module over HTTP (verified with `curl`)
-while the page kept executing an older copy, so a control experiment (width
-2 → 8, colour change) rendered pixel-identical. Several of the browser
-comparisons above may therefore have been made against stale code. The unit
-tests and the node-side probes are unaffected by this and are the parts to
-trust.
+Two process notes worth keeping, since they cost most of the debugging time:
 
-**Suggested next step:** re-check in a browser from a cold server (or better,
-add a `tests/visual/` spec, which renders through the built demo rather than
-the dev server) before deciding whether there is a real stroker defect here.
-If there is, `emitJoin`'s closed-path wrap (`tessellate/stroke.ts`) is the
-place to look — the notches sit at contour seams, which is exactly where the
-closer segment and its wrap-around join meet.
+- **The dev server's watcher did not pick up edits in this worktree.** It
+  serves whatever was on disk when it started; a control experiment (stroke
+  width 2 → 8 plus a colour change) rendered pixel-identical, and several
+  earlier comparisons were consequently made against stale code. Restart the
+  server after every edit, or verify freshness with an in-page marker.
+- **Two of my geometry probes were wrong in ways that produced false
+  "all clear" results** — one counted degenerate triangles as covering every
+  query, the other had a sign error in its barycentric test. Both agreed the
+  ribbon was complete while the render disagreed. The render was right. A
+  probe that contradicts a screenshot deserves the same scrutiny as the code
+  it is testing.
 
 ## Not done
 

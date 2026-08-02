@@ -451,32 +451,34 @@ Core five + Crop shipped. Remaining:
   this *easier*: reading font bytes gives access to both tables directly
   instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
 
-- **Stroked text — implemented 2026-08-02 on branch `text-stroke`, not merged.**
-  Handoff: `docs/handoffs/2026-08-02-stroked-text.md`. `TextStyle.stroke` /
-  `StyledRun.stroke` carry a real `Stroke`; `drawTextOutlineGroup` paints it as
-  a second batched draw call over the group's merged geometry, so glyphs above
-  the threshold get real joins, caps and miters in any paint. Small text stays
-  bare by design. `kit:text` also lifts the kit-native `data.stroke` /
-  `data.strokeWidth` leaf fields onto the style, which is what stops the app
-  control lying. **Open before merge:** small notches render at contour seams
-  that the geometry probes say should not be there — see the handoff's last
-  section, and note the dev-server staleness caveat on that evidence.
+- **(RESOLVED 2026-08-02) Stroked text.** Branch `text-stroke`; handoff
+  `docs/handoffs/2026-08-02-stroked-text.md`. `TextStyle.stroke` /
+  `StyledRun.stroke` carry a real `Stroke`, and `drawTextOutlineGroup` paints
+  it as a second batched draw call over the group's merged geometry — so a
+  glyph above the threshold gets real joins, caps and miters in any paint,
+  because it is an ordinary `PolygonPath` by then. Stroke width stays a world
+  measure: it crosses into the cached em-space tessellation by dividing by the
+  glyph's scale, so it does not grow with `fontSize`.
 
-  Original entry, kept for the reasoning: WeaselDraw exposes stroke color +
-  width on text nodes and
-  neither renders — the control lies. **The outline tier (shipped 2026-07-31)
-  changed which fix is right.** The old plan was an SDF shader trick: threshold
-  a second time at `0.5 - outlineWidth` and composite, cheap but bounded by the
-  atlas's distance range, with rounded corners past it and no real joins or
-  caps. Above `OUTLINE_MIN_SCREEN_PX` a glyph is now an ordinary `PolygonPath`,
-  so `tessellateStroke` gives real joins, caps, miters and any paint, at any
-  width — which is the answer for exactly the sizes anyone strokes text at.
-  Shape of the work: carry `stroke` on `LaidOutGroup` (it is already per-run
-  state), stroke the group's merged mesh in `drawTextOutlineGroup`, and decide
-  what small text does — either the SDF second-threshold as a lower tier, or
-  nothing until the text is big enough to qualify, which is defensible since a
-  1px outline on 12px text is not a design anyone asked for. Requested
-  2026-07-31.
+  Small text stays **unstroked** rather than approximated. Below the threshold
+  a glyph is a sampled distance field with no geometry to stroke, and the SDF
+  second-threshold trick has no real joins to give.
+
+  `kit:text` also lifts the kit-native `data.stroke` / `data.strokeWidth` leaf
+  fields onto the style, with the same `'none'` / zero-width handling
+  `kit:shape` applies — which is what stops WeaselDraw's stroke control lying,
+  in any consumer on that data shape rather than only in draw.
+
+  Two bugs fell out of building it, both older than this work and both
+  invisible to fills: `extractPolylines` kept a closed contour's duplicate
+  final point (zero-length closing segment, dropped wrap-around join), and
+  `glyphOutline` passed through path data whose contours had no `Z`, so glyphs
+  stroked as open polylines. Fills close contours implicitly; only a stroke
+  reads the difference.
+
+  Still open: **SVG export**. `apps/draw`'s `leafToObj` builds a `TextObj` with
+  no stroke, so a stroked text node exports unstroked — needs `stroke` /
+  `stroke-width` emission and the matching parse side.
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
