@@ -142,6 +142,18 @@ Priority tags:
   `specificity()`, and anything the hit-test can decide shouldn't be pushed
   into binding precedence.
 
+- **(P3) World-unit hit radii are only correct at scale 1.**
+  `canvas/affordanceAt.ts` documents this on `HANDLE_HIT_RADIUS`; callers who
+  know the view scale must pass a thunk. The device `targetScale` composes
+  with that correction but does not supply it. Folding view-scale correction
+  into the constants themselves would remove a class of caller mistake.
+  Recorded 2026-08-02.
+
+- **(P3) Long-press has no feedback.** No haptic, no visual "press is
+  registering" affordance during the 500ms hold. Users get no signal that
+  holding will do something. Recorded 2026-08-02, alongside the `longPress`
+  gesture kind landing.
+
 - **Loupe tool.** A magnifier that follows the pointer and paints a
   zoomed inset of the scene under it — for placing anchors, checking seams,
   and picking colors at pixel accuracy without disturbing the view. Open
@@ -332,6 +344,12 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 ## Viewport
 
 - **(P2) Axis-aware elliptical hit shapes under non-uniform zoom.** Surfaced 2026-05-16 by the per-axis zoom landing. ~50 chrome hit-test sites today use `pxRadius / meanScale(view.scale)` (geometric-mean fallback). At non-uniform zoom this projects a circular screen-pixel hit region to an ellipse in world space — visually accurate handles but the pickable region is slightly too large along one axis and slightly too small along the other. Fix: refactor `composeAffordanceLayer` and the per-tool ad-hoc hit-tests (`penEdit/hitOverride`, `usePenTool` close-hit, `useSelectTool` multi-resize, snap-guide trigger zones) to either compare against an ellipse `(dx/rx)² + (dy/ry)² < 1` or transform the hit-test into screen space. Grid hairline strokes (`1 / meanScale(view.scale)`) have no obvious axis-aware analog — separate judgment call. Worth ~1 day; deferred from per-axis-zoom v1 spec to keep the migration atomic.
+
+- **(P3) Two-finger pan.** `viewport.pinchZoom` zooms about the gesture
+  centroid but never translates by the centroid delta, so a two-finger drag
+  zooms without panning. `packages/core/src/interactions/actions/defaults/pinchZoom.ts`.
+  Noted 2026-08-02 while landing the device profile — deliberately out of its
+  scope, which was sizing and long-press.
 
 - **(P3) Typed discriminated union for multi-type insert.** Deferred from `docs/specs/2026-05-07-viewport-followups-design.md`. Current shape splits into `posefromBounds(bounds) → TPose` + `pointInsert(point) → TNode` (`packages/core/src/interactions/actions/insert/options.ts`); multi-type canvases (rect vs image vs ellipse from one `<SceneCanvas>`) wire their own `tools` array (one `useInsertTool` per type) rather than folding a variant switch into the insert options. Revisit if a real consumer wants the single-canvas multi-type ergonomic.
 

@@ -138,3 +138,10 @@ their own ids and gate their own overlays through the same table.
 - **`selectionResizable` absent means resizable.** Only an explicit `false` opts
   a selection out of resize handles — back-compat for ctx builders predating
   the flag.
+- **Device facts arrive via `RuleCtx.device`.** `coarsePointer:` and
+  `canHover:` read the ambient `DeviceProfile` (`core/device/`). Absent
+  profile means a fine pointer that can hover — the mouse-shaped default the
+  kit assumed before the field existed, so old ctx builders are unaffected.
+  Note that these selectors only decide *visibility*; making chrome bigger on
+  a coarse pointer is `DeviceProfile.targetScale`'s job, applied at the
+  sizing sites, not something a rule can express.
