@@ -382,6 +382,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // `bodyTarget` from the pointerdown is carried forward so click specs that
     // use string-form targets ('empty', 'selected-body') match correctly.
     const lastPointerDown = new Map<number, {
+      /** DOM event target of the press. Replayed onto a synthesized
+       *  `contextmenu`, whose matcher resolves targets against it. */
+      target: unknown;
       clientX: number;
       clientY: number;
       /** World-space press point, forwarded onto the synthesized click as
@@ -397,6 +400,57 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       metaKey: boolean;
       shiftKey: boolean;
     }>();
+
+    // Long-press synthesis. Armed on pointerdown for touch/pen, cancelled by
+    // movement past DRAG_THRESHOLD_PX, by release, by cancel, or by a second
+    // pointer landing (so it can never fire mid-pinch).
+    const LONG_PRESS_MS = 500;
+    const longPressTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+    const cancelLongPress = (pointerId: number): void => {
+      const t = longPressTimers.get(pointerId);
+      if (t !== undefined) {
+        clearTimeout(t);
+        longPressTimers.delete(pointerId);
+      }
+    };
+
+    const cancelAllLongPress = (): void => {
+      for (const t of longPressTimers.values()) clearTimeout(t);
+      longPressTimers.clear();
+    };
+
+    /** Fire a synthesized long-press, falling back to contextmenu when the
+     *  long-press matched nothing. The fallback is what makes existing
+     *  `contextMenu` bindings reachable by touch with no consumer change. */
+    const fireLongPress = (pointerId: number): void => {
+      const down = lastPointerDown.get(pointerId);
+      if (!down) return;
+
+      const shared = {
+        target: down.target,
+        altKey: down.altKey,
+        ctrlKey: down.ctrlKey,
+        metaKey: down.metaKey,
+        shiftKey: down.shiftKey,
+        ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
+        ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
+      };
+
+      const result = dispatch({
+        kind: 'longpress',
+        x: down.worldX,
+        y: down.worldY,
+        clientX: down.clientX,
+        clientY: down.clientY,
+        ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
+        ...shared,
+      } as InputEvent);
+
+      if (result === 'unhandled') {
+        dispatch({ kind: 'contextmenu', ...shared } as InputEvent);
+      }
+    };
 
     // Double-click synthesis thresholds. 600ms matches the upper end of OS
     // double-click settings; 8px tolerates the natural drift of a real
@@ -584,6 +638,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
       // Store pointerdown info for click synthesis (see onPointerUp).
       lastPointerDown.set(e.pointerId, {
+        target: e.target,
         clientX: e.clientX,
         clientY: e.clientY,
         worldX: w.x,
@@ -597,8 +652,24 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         shiftKey: e.shiftKey,
       });
 
+      // Arm long-press for touch / pen only, and only for a lone pointer —
+      // a second finger means a multi-touch gesture, not a long-press.
+      if ((e.pointerType === 'touch' || e.pointerType === 'pen')
+          && activePointers.size === 1) {
+        cancelLongPress(e.pointerId);
+        longPressTimers.set(
+          e.pointerId,
+          setTimeout(() => {
+            longPressTimers.delete(e.pointerId);
+            if (disposed) return;
+            fireLongPress(e.pointerId);
+          }, LONG_PRESS_MS),
+        );
+      }
+
       // Synthesize a multi-touch event when >= 2 pointers are active.
       if (activePointers.size >= 2) {
+        cancelAllLongPress();
         // MULTI-POINTER POLICY: the multitouch channel takes ownership of
         // every pointer that hasn't already committed to a gesture. Dropping
         // the buffered press is what enforces it — a claimed pointer opens no
@@ -661,6 +732,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         const dy = e.clientY - buffered.clientY;
         if (Math.hypot(dx, dy) >= DRAG_THRESHOLD_PX) {
           bufferedDown.delete(e.pointerId);
+          cancelLongPress(e.pointerId);
           dispatch(buffered.ev);
         }
       }
@@ -813,6 +885,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const onPointerUp = (e: PointerEvent) => {
+      cancelLongPress(e.pointerId);
       const prevSize = activePointers.size;
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
@@ -972,6 +1045,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const onPointerCancel = (e: PointerEvent) => {
+      cancelLongPress(e.pointerId);
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
       lastPointerDown.delete(e.pointerId);
@@ -1127,6 +1201,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       window.removeEventListener('paste', onPaste);
       canvas?.classList.remove(DROPOVER_CLASS);
       clearHoverCursor();
+      cancelAllLongPress();
       disposed = true;
       dispatcher.cancelAll('cancel');
     };
