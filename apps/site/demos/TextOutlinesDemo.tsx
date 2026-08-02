@@ -43,6 +43,20 @@ const style = (fontSize: number): TextStyle => ({
   fontSize, fontFamily: FAMILY, fill: { color: '#1a1a1a' },
 });
 
+/**
+ * The stroke the toggle applies. Round joins because a glyph's outline has
+ * corners sharper than any miter limit flatters, and 2 world units because
+ * that is a visible hairline on the 96px line and a heavy slab on the 13px
+ * one — which is the point: stroke width is a world measure and does not
+ * scale with the type.
+ */
+const DEMO_STROKE = {
+  paint: { color: '#c0392b' },
+  width: 2,
+  join: 'round' as const,
+  cap: 'round' as const,
+};
+
 const NODES = [
   { id: 'a', text: 'Ramble 96', size: 96, y: 24, h: 130 },
   { id: 'b', text: 'Handgloves at 28', size: 28, y: 170, h: 44 },
@@ -55,12 +69,14 @@ const NODES = [
   data: { text: n.text, style: style(n.size) },
 }));
 
-const makeDrawOne = (ready: boolean): SceneViewDrawOne<NodeData, LayerId, Pose> =>
+const makeDrawOne = (ready: boolean, stroked: boolean): SceneViewDrawOne<NodeData, LayerId, Pose> =>
   (node, pose) => {
     if (!ready) return [];
-    return node.data.text
-      ? [textCommand(pose.x, pose.y, node.data.text, node.data.style)]
-      : defaultDrawOne(node, pose);
+    if (!node.data.text) return defaultDrawOne(node, pose);
+    const style = stroked
+      ? { ...node.data.style, stroke: DEMO_STROKE }
+      : node.data.style;
+    return [textCommand(pose.x, pose.y, node.data.text, style)];
   };
 
 /**
@@ -88,6 +104,7 @@ export function TextOutlinesDemo() {
   });
   const canvasRef = useRef<SceneCanvasApi | null>(null);
   const [outlines, setOutlines] = useState(true);
+  const [stroked, setStroked] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [status, setStatus] = useState('loading');
   // Nothing is drawn until the face is in the document. Not cosmetic: the
@@ -133,6 +150,20 @@ export function TextOutlinesDemo() {
           {status} · switches at {OUTLINE_MIN_SCREEN_PX}px on screen
         </span>
       </label>
+      <label style={{ display: 'block', marginBottom: 6 }}>
+        <input
+          type="checkbox"
+          checked={stroked}
+          data-testid="stroke-toggle"
+          onChange={(e) => setStroked(e.target.checked)}
+        />
+        {' '}Stroke
+        <span style={{ marginLeft: 12, opacity: 0.6 }}>
+          only glyphs on the outline tier can be stroked — a distance field has
+          no geometry to stroke, so the small line stays bare until you zoom it
+          past the threshold
+        </span>
+      </label>
       <label style={{ display: 'block', marginBottom: 8 }}>
         Zoom{' '}
         <input
@@ -156,7 +187,7 @@ export function TextOutlinesDemo() {
         scene={scene}
         view={{ x: 0, y: 0, scale: { x: zoom, y: zoom } }}
         toolBundle="minimal"
-        layers={{ scene: { drawOne: makeDrawOne(faceReady) } }}
+        layers={{ scene: { drawOne: makeDrawOne(faceReady, stroked) } }}
       />
     </div>
   );
