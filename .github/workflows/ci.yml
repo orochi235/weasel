@@ -14,7 +14,10 @@ jobs:
       NPM_CONFIG_LOGLEVEL: error
     strategy:
       matrix:
-        node: [22]
+        # The floor and the target. 22 is what `engines` promises, so it gets
+        # tested rather than assumed; 24 is Active LTS and what the other
+        # workflows run. Node 20 is gone — it went EOL 2026-04-30.
+        node: [22, 24]
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6

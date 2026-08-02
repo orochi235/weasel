@@ -42,7 +42,7 @@
     "url": "https://github.com/orochi235/weasel/issues"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "files": [
     "dist",

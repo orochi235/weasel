@@ -30,13 +30,13 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
-      # Trusted publishing needs npm >= 11.5.1; Node 22 bundles npm 10.9.x, and
-      # even Node 24 only reaches 11.0. Without this the publish silently falls
-      # back to the classic token path and fails as E404/ENEEDAUTH, which reads
-      # like a missing package rather than an out-of-date CLI.
+      # Trusted publishing needs npm >= 11.5.1, and Node 24 only bundles 11.0 —
+      # so this stays even on the newer runtime. Without it the publish silently
+      # falls back to the classic token path and fails as E404/ENEEDAUTH, which
+      # reads like a missing package rather than an out-of-date CLI.
       - run: npm install -g npm@latest
       - run: npm ci
       # Covers all thirteen workspaces, labkit included — it is last in
