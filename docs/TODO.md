@@ -488,17 +488,6 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
-- **(P2) `duplicateAction`'s invoker is a documented no-op, so Cmd+D does
-  nothing.** The descriptor routes — the dispatch trace shows `key d →
-  duplicate` — but `defaults/duplicate.ts`'s `run` body is `void params` with a
-  comment deferring to "the typed deps bag the consumer supplies via
-  SceneCanvas's legacy bridge", a bridge that no longer exists. Draw's toolbar
-  Duplicate button triggers the same id and is equally inert. Either give it a
-  real invoker over `scene`/`selection`/`applyOps` (`cloneAction` is the
-  nearest working shape) or delete the descriptor; a registered action that
-  silently does nothing is worse than an absent one. Found 2026-08-08 while
-  binding the clipboard shortcuts.
-
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 ### Align/distribute/flip follow-ups

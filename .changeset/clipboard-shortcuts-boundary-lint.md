@@ -23,12 +23,18 @@ Two older bugs, both found by actually pressing the keys:
   and its contents at once — what Cmd+A does — was enough. `deleteAction` and
   `clipboard.cut` now share one op builder that skips any id with a selected
   ancestor.
-- **`duplicate` threw before its `enabled` gate could answer**, so Cmd+D did
-  nothing at all: the gate reads `deps.selection` and the descriptor never
-  declared it, which the dev-build deps Proxy treats as an error. Declared now,
-  with a sweep test over every `requiresSelection`-gated descriptor so the next
-  one can't ship the same way. (`duplicate`'s invoker is still a no-op stub —
-  tracked separately.)
+- **Cmd+D did nothing at all.** Two faults stacked. `duplicate` threw before
+  its `enabled` gate could answer, because the gate reads `deps.selection` and
+  the descriptor never declared it — an undeclared read the dev-build deps
+  Proxy treats as an error. Declared now, with a sweep test over every
+  `requiresSelection`-gated descriptor so the next one can't ship the same way.
+  And underneath that, the invoker was a stub whose body was `void params`,
+  deferring to a "legacy bridge" that no longer exists. `duplicateAction` now
+  really duplicates: each selected node with its whole subtree (so a duplicated
+  group comes out populated, not empty), offset by the same 12 units a paste
+  gets, as one undoable batch, with the copies selected afterward. Descendants
+  are offset only for absolute-pose scenes — with a `poseComposition`
+  registered, poses are relative and moving the root already carries them.
 
 `polygonHitTestRect` moved from `features/paths/` to `core/geometry/`: it is
 pure geometry, `core/adapters/arrayAdapter.ts` needs it, and core may not import
