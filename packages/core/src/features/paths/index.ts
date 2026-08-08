@@ -55,7 +55,7 @@ export {
   polygonContainsRectCenter,
   polygonContainsRect,
   polygonIntersectsRect,
-} from './polygonHitTestRect';
+} from 'core/geometry/polygonHitTestRect';
 export {
   translatePath,
   translatePolygonInPlace,

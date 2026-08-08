@@ -387,6 +387,32 @@ Override per-prop (`selection`, `pickEvery`, `boundsOf`, `resizeTarget`,
 `onBodyHit`, `onTapEmpty`, `selectionOptions.mode`) when the mode-derived
 default isn't enough.
 
+## Picking
+
+A click resolves against a node's **inked region**, not its pose box —
+`<SceneCanvas geometry={{ picking: 'shape' }}>` is the default, and `'pose'`
+is the opt-out. `shapeCoversPoint` (`canvas/NodeShape.ts`) takes a pose-rect
+hit and refines it with the painter's `findShapeSilhouette` +
+`pathContainsPoint`, so the counter of a donut, the gap between the arms of a
+compound path, and the empty middle of a U all fall through to whatever is
+behind them. A painter with no silhouette keeps the AABB answer, so the
+refinement can only ever tighten a pick.
+
+Whether the fill counts at all comes from `NodeShapeEntry.ink(node, pose)`,
+which returns `{ filled, strokeWidth }` off cheap node fields — deliberately
+*not* read back off `paint`, which may lay out glyphs on every pointer move.
+The fill test only runs when the painter fills; either way `shapeCoversPoint`
+ORs in `strokeHitTest` at `strokeWidth / 2 + tolerance`, so an outlined rect is
+grabbable by its outline and a bare line — zero area, unpickable by any fill
+test — is grabbable along its length. `tolerance` is
+`geometry.pickTolerancePx` (screen px, default 4, converted against the live
+view), because a hairline is a sub-world-unit target no pointing device can
+hit; the pose-rect pre-filter grows by the same amount or it would reject
+outline hits before the refinement ran.
+
+Off the `SceneCanvas` path, `useSelectTool({ leafPicking, pickTolerance })`
+is the same behavior with a world-unit tolerance. Both scene pick paths agree.
+
 ## Tool
 
 `<Canvas tool="select" | "insert">` flips what an empty-space drag does:

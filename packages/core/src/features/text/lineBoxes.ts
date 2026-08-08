@@ -20,7 +20,7 @@
  * an `x` harder to click than an `X`.
  */
 
-import type { Rect } from '../paths/polygonHitTestRect';
+import type { Rect } from 'core/geometry/polygonHitTestRect';
 import { resolveTextStyle } from './textStyle';
 import { resolveRuns } from './runs/resolveRuns';
 import { toRuns } from './runs';

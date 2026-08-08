@@ -34,6 +34,12 @@ jobs:
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npm run typecheck
+      # Architectural boundaries only (eslint.config.js): the core/ ← features/
+      # arrow and @weasel-js/font's leaf purity. Both are one-way dependency
+      # arrows whose violation is a bundler-duplicated module — a silent
+      # failure tsc can't see. The config existed unrun until 2026-08-08 and
+      # four real violations had accumulated behind it.
+      - run: npm run lint
       # labkit carries its own biome config + class-prefix check (its tests run
       # in the `labkit` vitest project below).
       - run: npm run lint -w @weasel-js/labkit

@@ -23,6 +23,7 @@ export {
   deleteAnchorsAction, cutPathAtAnchorAction, marqueeAnchorsAction, selectAnchorAction,
 } from './anchorEditing';
 export { undoAction, redoAction } from './undoRedo';
+export { clipboardCopyAction, clipboardCutAction, type ClipboardDep } from './clipboard';
 export {
   makeToolOffhandAction,
   buildToolOffhandBindings,

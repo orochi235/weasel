@@ -38,6 +38,7 @@ import type { PointerContextValue } from 'features/pointer/PointerContext';
 import type { ActiveToolContextValue } from './activeToolContext';
 import type { TextEditDep } from './defaults/enterTextEdit';
 import type { SliceDep } from './defaults/slice';
+import type { ClipboardDep } from './defaults/clipboard';
 import type {
   PointSnapBehavior,
   BoundsConstraint,
@@ -489,6 +490,15 @@ export interface DepSchema {
    * Optional: when absent, `sliceAction` is a no-op.
    */
   slice?: SliceDep;
+  /**
+   * Clipboard dep — the imperative surface `useClipboardOps` returns.
+   *
+   * Published by the consumer (`useDepSource('clipboard', …)` from under
+   * `<SceneCanvas>`), because `useClipboardOps` needs an adapter and a
+   * selection reader only the consumer has. Feeds `clipboard.copy` /
+   * `clipboard.cut`; both no-op when the dep is absent.
+   */
+  clipboard?: ClipboardDep;
   /**
    * Optional consumer commit hook. When present, `moveAction` (and other
    * default actions) submit their committed ops through it instead of

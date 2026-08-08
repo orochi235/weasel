@@ -5,11 +5,15 @@ import { requiresSelection } from './requiresSelection';
  * @experimental
  * Static descriptor for the `duplicate` Action. Duplicates selection.
  */
-export const duplicateAction: Action = {
+export const duplicateAction: Action & { requires: string[] } = {
   id: 'duplicate',
   label: 'Duplicate',
   defaultBinding: { kind: 'key', key: 'd', mods: { mod: true } },
   eligible: { capability: ['edits-page', 'creates-selection'] },
+  // Read by the `enabled` gate below, not by this invoker. Undeclared, the
+  // dev-build deps Proxy throws before the gate can answer — so Cmd+D did
+  // nothing at all.
+  requires: ['selection'],
   invoker: {
     timing: 'immediate',
     run: (_deps, params) => {

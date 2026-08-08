@@ -77,6 +77,7 @@ import { setStrokeAction } from './defaults/setStroke';
 import { setFillOpacityAction } from './defaults/setFillOpacity';
 import { setStrokeOpacityAction } from './defaults/setStrokeOpacity';
 import { ingestAction } from './defaults/ingest';
+import { clipboardCopyAction, clipboardCutAction } from './defaults/clipboard';
 
 // viewportWheelPanAction / viewportZoomAction are NOT in KIT_STANDARD_DESCRIPTORS.
 // They are wired conditionally by SceneCanvas via `useViewportActions`
@@ -108,7 +109,8 @@ export interface UseStandardActionsOptions {
  *        6 (resize/rotate/areaSelect/insert/insertRotate/clone) +
  *        6 (editAnchors/enterPathEdit/exitPathEdit/insertPathAnchor/lassoSelect/pinchZoom) +
  *        1 (viewport.dragPan) + 1 (clearSelection) + 1 (enterTextEdit) +
- *        4 (setFill/setStroke/setFillOpacity/setStrokeOpacity) + 1 (ingest) = 51
+ *        4 (setFill/setStroke/setFillOpacity/setStrokeOpacity) + 1 (ingest) +
+ *        2 (clipboard.copy/clipboard.cut) = 53
  *
  * `viewport.pan` and `viewport.zoom` are NOT in this list — they're registered
  * conditionally by SceneCanvas's `useViewportActions` based on the
@@ -174,6 +176,8 @@ const KIT_STANDARD_DESCRIPTORS: Action[] = [
   setFillOpacityAction,
   setStrokeOpacityAction,
   ingestAction,
+  clipboardCopyAction,
+  clipboardCutAction,
 ];
 
 /**

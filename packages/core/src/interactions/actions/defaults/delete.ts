@@ -14,6 +14,53 @@ function hostIndex(scene: Scene<unknown, string, unknown>, id: NodeId): number {
   return siblings.indexOf(id);
 }
 
+/** True when any ancestor of `id` is itself in `set`. */
+function hasSelectedAncestor(
+  scene: Scene<unknown, string, unknown>,
+  id: NodeId,
+  set: ReadonlySet<string>,
+): boolean {
+  let parent = scene.get(id)?.parent ?? null;
+  while (parent != null) {
+    if (set.has(parent)) return true;
+    parent = scene.get(parent)?.parent ?? null;
+  }
+  return false;
+}
+
+/**
+ * Delete ops for `ids`, in the order given. Each op captures the node and its
+ * host-array index BEFORE any removal, so `invert()` re-inserts at the right
+ * slot and undo restores paint order. Ids with no live node are skipped.
+ *
+ * Descendants of another id in the set are skipped too: `removeNode` cascades
+ * the subtree, so a container's op already takes its children with it and a
+ * second op for a child would throw `unknown node id` mid-batch. Selecting a
+ * group and its members at once (Cmd+A does exactly that) is the ordinary way
+ * to hit this.
+ *
+ * Shared with `clipboardCutAction` — cut is copy plus exactly this.
+ */
+export function buildDeleteOps(
+  scene: Scene<unknown, string, unknown>,
+  ids: readonly string[],
+  label: string,
+): Op[] {
+  const set = new Set<string>(ids);
+  const ops: Op[] = [];
+  for (const id of ids) {
+    const node = scene.get(id as NodeId);
+    if (!node) continue;
+    if (hasSelectedAncestor(scene, id as NodeId, set)) continue;
+    ops.push(createDeleteOp<Node<unknown, string, unknown>>({
+      node,
+      index: hostIndex(scene, id as NodeId),
+      label,
+    }));
+  }
+  return ops;
+}
+
 /**
  * @experimental
  * Static descriptor for the `delete` Action. Removes every selected
@@ -45,21 +92,7 @@ export const deleteAction: Action & { requires: string[] } = {
       const ids = selection.get();
       if (ids.length === 0) return;
 
-      // Capture each node + its host-array index BEFORE any removal — the op's
-      // `invert()` re-inserts the full node at that slot so undo restores paint
-      // order. `createDeleteOp.apply` calls `adapter.removeNode(id)` which
-      // delegates to `scene.remove` (cascading the subtree), exactly mirroring
-      // the prior `for (id of ids) scene.remove(id)` loop and its ordering.
-      const ops: Op[] = [];
-      for (const id of ids) {
-        const node = scene.get(id as NodeId);
-        if (!node) continue;
-        ops.push(createDeleteOp<Node<unknown, string, unknown>>({
-          node,
-          index: hostIndex(scene, id as NodeId),
-          label: 'Delete',
-        }));
-      }
+      const ops = buildDeleteOps(scene, ids, 'Delete');
 
       if (ops.length > 0) {
         if (applyOps) applyOps(ops, 'Delete');
