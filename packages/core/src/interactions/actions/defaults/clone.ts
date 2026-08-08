@@ -40,11 +40,11 @@
 import type { Action } from '../registry';
 import type { InvocationCtx, OngoingHandle } from '../invoker';
 import type { Node, Scene, NodeId } from 'core/scene/types';
-import { asNodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import { createInsertOp } from 'core/ops/create';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
+import { freshNodeId } from './freshNodeId';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -58,16 +58,6 @@ function translatePose(pose: unknown, dx: number, dy: number): unknown {
     x: ((p['x'] as number) ?? 0) + dx,
     y: ((p['y'] as number) ?? 0) + dy,
   };
-}
-
-/** Mint a fresh NodeId for a clone target. The old `scene.add(spec)` path
- *  (no explicit id) let the scene generate a random id, so the produced id
- *  was never deterministic/observable — pre-generating one here to feed the
- *  insert op preserves behavior. Mirrors the scene's default id scheme
- *  (`n{counter}-{random}`), which `core/scene/scene.ts` keeps module-private. */
-let cloneIdCounter = 0;
-function freshCloneId(): NodeId {
-  return asNodeId(`n${(cloneIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -196,7 +186,7 @@ export const cloneAction: Action & { requires: string[] } = {
             // pre-generate one so the insert op carries a full node. Id value
             // was never observable, so behavior is preserved.
             const node = {
-              id: freshCloneId(),
+              id: freshNodeId(),
               kind: originNode.kind,
               layer: originNode.layer,
               pose: newPose,

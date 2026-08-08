@@ -20,8 +20,6 @@ Priority tags:
 
 - **Loupe tool** → [Tools & gestures](#tools--gestures)
 - **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
-- **Stroked text** (cheaper now that glyphs are paths) → [Text](#text)
-- **Geometry-accurate picking — stroke width remainder** → [Tools & gestures](#tools--gestures)
 
 ### P1 — foundational genericity gaps
 
@@ -41,17 +39,13 @@ Priority tags:
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
 - Group resize with rotated children → [Scene, adapters & layout](#scene-adapters--layout)
-- SceneCanvas → useSceneAdapter for adapter construction → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
-
-**Selection, actions & UI panels**
-- Op coalescing in `useScene` — done 2026-07-25; serialization follow-up shipped 2026-07-25 → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- Clipboard: OS clipboard / cross-reload serialization — done 2026-07-25 → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Plugins & packaging**
 - Plugin/bundling convention v1 (`WeaselPlugin` shape) → [Plugins & packaging](#plugins--packaging)
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
+- `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
 
 **Documentation**
 - README pitch sweep → [Documentation](#documentation)
@@ -60,33 +54,20 @@ Priority tags:
 
 ## Tools & gestures
 
-<!-- The four items below came out of a read-only review of the arbitration
+<!-- The arbitration-layer items below came out of a read-only review of that
      layer against CSS cascade / Flutter's gesture arena / Blender keymaps /
      tldraw's StateNode chart. Reasoning that did not compress into these
      entries — including why specificity-ordered fall-through is survivable at
      all — is in docs/handoffs/2026-07-28-arbitration-followups.md. Reviewed
      2026-07-28, re-verified against main 2026-07-31. -->
 
-- **(P2) ~~`findConflicts` is written, tested, and never called.~~ Done
-  2026-08-01.** `useTools` runs `reportRouteConflicts` at registry assembly
-  under a `NODE_ENV !== 'production'` guard and warns each conflict through
-  `formatRoute`. Runtime warns, never throws; kit-vs-kit conflicts fail in
-  `canvas/SceneCanvas.routeConflicts.test.tsx` instead, over all three tool
-  bundles.
-
-  Wiring it up found the raw detector over-reports twice over, both fixed:
-  `{ kindOf }` predicate targets all render as one grammar token (so select's
-  resize / rotate / move drags looked like a three-way collision) and now
-  bucket by function identity; and `matchSorted` resolves *cross-scope* ties by
-  scope priority, so only same-scope overlaps are reachable —
-  `findScopedConflicts` reports a tool colliding with itself, two ambient
-  tools, or two hotkey-capable tools, and stays quiet about two registry tools
-  that can never hold the active slot at once.
-
-  Not covered: the actions registry's `defaultBinding`s, which the dispatcher
-  also folds into ambient/hotkey scope but which are assembled in
-  `ActionsRegistry`, not `useTools`. Catching tool-vs-action collisions needs
-  a second input `findScopedConflicts` doesn't have yet.
+- **(P3) Route-conflict detection can't see tool-vs-action collisions.**
+  `useTools` runs `reportRouteConflicts` at registry assembly (dev-only warn,
+  shipped 2026-08-01), but it only sees tool bindings. The actions registry's
+  `defaultBinding`s, which the dispatcher also folds into ambient/hotkey scope,
+  are assembled in `ActionsRegistry`, not `useTools`, so a tool binding that
+  collides with an action's default binding goes unreported.
+  `findScopedConflicts` needs a second input it doesn't have yet.
 
 - **(P3) The `phase` dimension of the specificity tuple is binary.**
   `specificity()` scores dimension `[2]` as `phase !== undefined ? 1 : 0`, so
@@ -101,28 +82,9 @@ Priority tags:
   the same compat argument `targetRank`'s doc comment makes: enumerate the
   existing phase-bearing specs and show the ordering is unchanged.
 
-- **(P2) ~~`gestureIdFor` collapses every pointer onto one channel.~~ Done
-  2026-08-01.** Pointer `InputEvent` variants carry `pointerId` (via
-  `PointerIdentity` in `@weasel-js/gestures`) and `gestureIdFor` interpolates
-  it through the exported `pointerGestureId`. Events without one — synthetic
-  probes, programmatic drags, most tests — still key to `pointer-mouse`.
-
-  Intent decided: **explicit multitouch ownership, with honest ids.** When a
-  second pointer lands, the multitouch channel claims every pointer that hasn't
-  already committed to a gesture (by dropping its buffered press), which
-  suppresses both drags and taps from those pointers; a drag already in flight
-  survives, so resting a palm mid-drag doesn't cancel it. That behavior used to
-  hold only by accident, because every pointer aliased to one slot.
-
-  All three checks from the original entry: the one hardcoded literal
-  (`inFlight().has('pointer-mouse')` in `onPointerUp`) now goes through
-  `pointerGestureId`; the two-finger case is covered by the claim above and
-  pinned in `useGestureDispatcher.test.tsx`; `getActiveAction()`'s
-  most-recently-started rule still holds, and its doc now says when it's
-  actually load-bearing.
-
 - **(P3) A second finger still fires `pointerDown`-spec bindings.** Found while
-  doing the above. `onPointerDown` dispatches the eager `stage: 'press'` copy
+  giving each pointer its own gesture channel (2026-08-01).
+  `onPointerDown` dispatches the eager `stage: 'press'` copy
   before the multitouch claim runs, so starting a pinch runs `select.pick` for
   the second finger and can change the selection under the gesture. Pre-existing
   — the press dispatch was always unconditional — and out of scope for the
@@ -163,49 +125,6 @@ Priority tags:
   always-available modifier-held overlay, or a HUD widget; and whether it
   belongs in `@weasel-js/hud` (it's chrome, not scene content) or ships as a
   built-in tool. Requested 2026-07-31.
-
-- **Geometry-accurate picking — mostly landed 2026-07-31; stroke width is
-  the remainder.** A click inside a shape's *hole* — the counter of a donut,
-  the gap between the arms of a compound path, the empty middle of a U — used
-  to pick the shape, because picking resolved against the pose box rather than
-  the filled region.
-
-  Shipped: `shapeCoversPoint` (`canvas/NodeShape.ts`) refines a pose-rect hit
-  with the painter's `findShapeSilhouette` + `pathContainsPoint`, which is
-  already fill-rule-correct. Opt in with `<SceneCanvas geometry={{ picking:
-  'shape' }}>`, or `useSelectTool({ leafPicking: 'silhouette' })` off the
-  SceneCanvas path; `apps/draw` opts in. Off by default because it changes
-  what a click selects. Painters with no silhouette keep the AABB answer, so
-  it can only tighten a pick. `kit:text` gained a silhouette (union of its
-  line boxes) as part of the same change.
-
-  Stroke width: **done 2026-08-01.** `NodeShapeEntry.ink` declares how a
-  painter inks its silhouette (`{ filled, strokeWidth }`, cheap field reads —
-  deliberately not read back off `paint`, which may lay out glyphs and runs on
-  every pointer move). `shapeCoversPoint` fills only when the painter fills,
-  and ORs in `strokeHitTest` at `strokeWidth / 2 + tolerance`. So an outlined
-  rect is grabbed by its outline and *not* through its empty middle, and a
-  bare line — zero area, previously unpickable by any fill test — is grabbed
-  along its length. `tolerance` comes from `geometry.pickTolerancePx`
-  (screen px, default 4, converted against the live view), because a 1px
-  hairline is a half-world-unit target that no pointing device can hit. The
-  pose-rect pre-filter grows by the same tolerance, or it would reject outline
-  hits before the refinement ever ran.
-
-  The other half of this entry was stale: the **hand tool does no picking** —
-  it pans, and never resolves a node. The real second pick path was
-  `useSelectTool`'s own default `pickEvery` (what non-`SceneCanvas` consumers
-  get), which had its own copy of the coverage test; it now takes the same
-  `shapeCoversPoint` refinement and a world-unit `pickTolerance`. Both scene
-  pick paths agree.
-
-  **`picking: 'shape'` is now the default** (2026-08-01). `'pose'` is the
-  opt-out. Affordable because the rect pre-filter runs first and rejects every
-  node the pointer isn't over, and the survivors' painter match + silhouette
-  are memoized per node (`NodeShape`'s `SHAPE_CACHE`, keyed on node identity +
-  `pose`/`data` references + a painter generation). Measured on a 1000-node
-  scene: pose-only 27.7 µs/pick, shape 30.7 µs (+11%) warm, 109 µs cold.
-  Requested 2026-07-31.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
@@ -273,40 +192,13 @@ Priority tags:
 
 - **(P3) Reshape `selectionOverlay` into a thin override hook.** The chrome-affordances spec shipped (2026-06-13): the multi-resize union now has a single owner — `ChromeState.unionBounds` — which both the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`) and the overlay layer read at draw time. The inline `poseById` re-derivations in `Canvas`/`SceneCanvas` are deleted, `createSelectionOverlayLayer` resolves the synthetic union from the draw-time chromeState envelope, and `MULTI_RESIZE_TARGET_ID` moved to `core/selection/` (fixing the backwards `affordances→tools` import). Residual: the synthetic-id plumbing (`getSelection` → `[MULTI_RESIZE_TARGET_ID]`, `getOutlineIds` → real members) still lives in the Canvas/SceneCanvas wiring rather than inside `createSelectionOverlayLayer`. Fold it into the layer so the slot is purely a consumer override hook.
 
-- **(P3) ~~Consolidate the two affordance hit-test mechanisms.~~ Done
-  2026-08-01.** Picked the declarative one. `hitAffordanceRegions` is now the
-  single walk; `composeAffordanceLayer.hitTest` and `buildAffordanceAt` both
-  delegate to it, so an `Affordance`'s `regions()` is the one source of truth
-  for where kit chrome is and what a press on it means. `affordanceAt.ts` lost
-  its corner table, its rotate-ring ellipse and its anchor walk (~200 lines) and
-  is now assembly plus a region-hit → `AffordanceHit` mapping. Anchors and
-  control handles became real affordances (`affordances/pathAnchors.ts`);
-  `cornerResize.ts` stopped being dead code.
-
-  The premise in the original entry was half stale and worth recording: the
-  `composeAffordanceLayer.hitTest` side was **not** a live competing mechanism.
-  `tools.getActiveOverlays()` feeds Canvas's *draw* stack only — the sole caller
-  of `RenderLayer.hitTest` is `hitTestExtras`, which walks layers a consumer
-  attached via `registerLayer` (that's the HUD path, hand-rolled, still live and
-  still legitimate). So the rotate tool's overlay `hitTest` was unreachable and
-  is deleted, and `RenderLayer.hitTest`'s doc no longer claims every layer is
-  consulted.
-
-  `AffordanceRegion.cursor` is folded in, as the entry asked: hits carry the
-  region's declared cursor, so `RotationHandleOptions.cursor` finally does
-  something. Three picking bugs fell out of having one implementation:
-  corner handles hit-tested as a circle (dead corners on a square handle) now
-  hit as a square; overlapping regions resolved by declaration order (all four
-  corners of a small selection answered "top-left") now resolve nearest-first;
-  and the rotate band's `bandPx` floor was applied in world units, so it thinned
-  on screen as you zoomed — it's now `minBandPx`, resolved against the live view
-  for both paint and hit.
-
-  Left standing: the ambient rotate-tool mount, now near-vestigial (no bindings,
-  and its overlay paints nothing unless a consumer opts into a visible ring).
-  Removing it means removing `'rotate'` from `BuiltinToolId` / `BUNDLE_TOOLS`
+- **(P3) The ambient rotate-tool mount is near-vestigial.** Left standing when
+  the two affordance hit-test mechanisms were consolidated onto
+  `hitAffordanceRegions` (2026-08-01): the rotate tool now has no bindings, and
+  its overlay paints nothing unless a consumer opts into a visible ring.
+  Removing it means dropping `'rotate'` from `BuiltinToolId` / `BUNDLE_TOOLS`
   and unexporting `useRotateTool` — a public-API change, so it wants its own
-  decision rather than riding along here.
+  decision.
 
 - **(P3) Embedded image support — follow-ups.** Shipped 2026-06-27: serializable `data.image.src` contract (URL / blob: / `data:` URI), kit-owned `imageCache` (`packages/core/src/features/images/`, sync read + lazy de-duped async load + `subscribeImageReady`→`requestRedraw`), the `kit:image` shape painter (`NodeShape.ts`, emits `ImageDrawCommand`, faint placeholder while loading), and the `useImageTool` drag-insert tool (`packages/core/src/tools/builtin/image/`, routes through `useInsertDepSource`'s `'image'` case). Demo: `apps/site/demos/ImageDemo.tsx`. Remaining: (a) **SVG `<image>` interop** — `packages/svg` parse/emit of `<image>` (href + embedded base64) is still unsupported (`<image>` elements are dropped on import); (b) **live drag-preview for image inserts** — `insertAction`'s ghost only previews `KIT_INSERT_KINDS` (rect/ellipse/line/polygon/star/pencil), so an image commits on release with no preview; extend that set to include `image`.
 
@@ -418,43 +310,21 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
-- **(RESOLVED 2026-07-31) Outline text tier — glyph contours no longer wobble
-  under magnification.** Above `OUTLINE_MIN_SCREEN_PX` (48 on-screen px) a
-  registered face renders as tessellated glyph geometry rather than a sampled
-  distance field. `registerFontOutlines(family, variant, source)` supplies the
-  bytes (a URL, a buffer, or a thunk); `enableLocalFontOutlines()` indexes
-  installed fonts through `queryLocalFonts` for machine families, behind a
-  permission and a user gesture. WeaselDraw ships a 27 kB subset Inter beside
-  the atlas so the default face is covered, and exposes the machine-font half
-  as Preferences → Text → "Sharp text from installed fonts".
-
-  The tier is **metric-neutral by construction**: advances, kerning, wrapping
-  and baselines still come from whichever SDF tier resolved the run, so
-  crossing the threshold changes what a glyph looks like and never where it
-  sits — which is what lets the threshold depend on zoom without text
-  reflowing. Tessellation is cached per `(face, codepoint)` in em space and
-  transformed per instance into one shared buffer, so a group is still one
-  draw call, and it goes through `drawPathFillByKind`, so gradient- and
-  pattern-filled text came along for free.
-
-  Known limits, all deliberate: synthetic **bold** declines the tier and stays
-  on the SDF (emboldening geometry means offsetting the outline, the same
-  unsolved problem as stroke-to-fill); synthetic italic does not, because a
-  shear is exact. Small text stays on the atlas on purpose — outlines carry no
-  hinting or stem darkening, so 12–16px from outlines looks *worse* than a
-  platform rasterizer (see `glyphRasterizer.ts`'s measurements). And `.dfont`
-  (Datafork TrueType) machine faces are not parsed — they degrade to the SDF
-  tier, which is the right failure but a silent one. Unreachable on current
-  macOS (204 `.ttf` / 128 `.ttc` / 38 `.otf`, no `.dfont`), so it is recorded
-  rather than fixed; `sfnt.ts`'s header says where it would go.
+- **(P3) `.dfont` machine faces decline the outline tier silently.** Datafork
+  TrueType is not parsed, so such a face degrades to the SDF tier — the right
+  failure, but a soundless one. Unreachable on current macOS (204 `.ttf` /
+  128 `.ttc` / 38 `.otf`, no `.dfont`), so it is recorded rather than fixed;
+  `packages/font/src/outline/sfnt.ts`'s header says where it would go.
+  Design record for the whole tier: `docs/concepts.md` ("Font outlines") and
+  `docs/handoffs/2026-07-31-dynamic-font-tier.md`.
 
   Settled, so it does not get relitigated: the `.ttc` unpacking stays in
-  `packages/font/src/outline/sfnt.ts` rather than becoming an opentype.js PR
-  or a switch to fontkit. The upstream fix is ~10 lines but that library was
-  dormant 2021–2026, so we would carry this file until a release anyway;
-  fontkit handles collections natively but is ~5.6 MB across nine
-  dependencies, which is a shaping engine to buy a glyph outline. Ours runs
-  before any parse, so it also survives swapping the parser.
+  `sfnt.ts` rather than becoming an opentype.js PR or a switch to fontkit. The
+  upstream fix is ~10 lines but that library was dormant 2021–2026, so we would
+  carry this file until a release anyway; fontkit handles collections natively
+  but is ~5.6 MB across nine dependencies, which is a shaping engine to buy a
+  glyph outline. Ours runs before any parse, so it also survives swapping the
+  parser.
 
 - **(P3) The two tiers still read different ascender tables.** Untouched by
   the outline work and unchanged in urgency. Chrome reports Inter at 0.896 em
@@ -468,36 +338,6 @@ Core five + Crop shipped. Remaining:
   box under any convention and needs a rule of its own. The outline tier makes
   this *easier*: reading font bytes gives access to both tables directly
   instead of to whichever one Chrome chose to expose. Recorded 2026-07-31.
-
-- **(RESOLVED 2026-08-02) Stroked text.** Branch `text-stroke`; handoff
-  `docs/handoffs/2026-08-02-stroked-text.md`. `TextStyle.stroke` /
-  `StyledRun.stroke` carry a real `Stroke`, and `drawTextOutlineGroup` paints
-  it as a second batched draw call over the group's merged geometry — so a
-  glyph above the threshold gets real joins, caps and miters in any paint,
-  because it is an ordinary `PolygonPath` by then. Stroke width stays a world
-  measure: it crosses into the cached em-space tessellation by dividing by the
-  glyph's scale, so it does not grow with `fontSize`.
-
-  Small text stays **unstroked** rather than approximated. Below the threshold
-  a glyph is a sampled distance field with no geometry to stroke, and the SDF
-  second-threshold trick has no real joins to give.
-
-  `kit:text` also lifts the kit-native `data.stroke` / `data.strokeWidth` leaf
-  fields onto the style, with the same `'none'` / zero-width handling
-  `kit:shape` applies — which is what stops WeaselDraw's stroke control lying,
-  in any consumer on that data shape rather than only in draw.
-
-  Two bugs fell out of building it, both older than this work and both
-  invisible to fills: `extractPolylines` kept a closed contour's duplicate
-  final point (zero-length closing segment, dropped wrap-around join), and
-  `glyphOutline` passed through path data whose contours had no `Z`, so glyphs
-  stroked as open polylines. Fills close contours implicitly; only a stroke
-  reads the difference.
-
-  **SVG round-trip landed too.** `weasel-svg` reads and writes text strokes
-  (node-level and per-`<tspan>`), and draw's export/import stopped dropping
-  `TextStyle` entirely — which had been costing every exported text node its
-  font size and family, not just its stroke.
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
@@ -648,11 +488,6 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
-- **(P2) Op coalescing in `useScene`.** Done 2026-07-25 — `createScene` now delegates undo/redo to a `@weasel-js/history` instance (design: `docs/superpowers/specs/2026-07-25-unify-scene-history-engine-design.md`); opt-in via `UseSceneOptions.coalesceWindowMs` (default `0` = discrete entries, prior behavior), also forwarded through `sceneFromJSON`. The engine gained `historyLimit` + `onEvict` + O(1) `undoDepth`/`redoDepth`; `applyBatch`'s non-journal fork now records the external ops themselves on the same engine, so external-op batches coalesce too. Follow-up shipped 2026-07-25: scene undo history persists across reload (design: `docs/superpowers/specs/2026-07-25-scene-history-persistence-design.md` — `Scene.serializeHistory`/`restoreHistory`/`setHistoryAdapter`, engine `rebuildOp` hook, `clipKey` threading, draw wiring under `weaseldraw:scene-history-v1` with `defaultCommitAdapter` replay). Phase 2b (OS clipboard) shipped 2026-07-25 — see the Clipboard entry.
-
-- **(P2) Clipboard: OS clipboard / cross-reload serialization.** Done 2026-07-25 (design: `docs/superpowers/specs/2026-07-25-os-clipboard-design.md`). Surface: the adapter clipboard seam (`snapshotSelection`/`commitPaste`/`getPasteOffset` on `sceneAdapter`) + `useClipboardOps`'s `produceFlavors`/`jsonReplacer` outbound seam with a best-effort `navigator.clipboard.write` ladder + the `kit:weasel-json` ingestion handler (priority −50, `IngestCtx.clipboard` wired by `SceneCanvas.ingestion.clipboard`) + a text/plain SVG fallback through `kit:svg` with a weasel-precedence guard + draw's SVG flavor override (`selectionToSvgString` over a selection-subset `sceneToSvgNodes` walk). Draw's hand-rolled clipboard was migrated onto the kit seam, so groups now copy/paste structurally. Imperative paste (toolbar button) stays in-memory by design — only Cmd+V's DOM `paste` event reaches the OS payload. Smoke-verified limitations: Chromium never surfaces `web `-prefixed custom formats on `ClipboardEvent.clipboardData` (async read shows `web application/x-weasel-clipboard+json`; the paste event carries only `text/plain`), so draw→draw cross-reload paste rides the SVG text flavor (since 2026-07-26 that flavor embeds the weasel JSON in `<metadata>` — `embedWeaselMetadataInSvg`/`extractWeaselClipboardFromSvg` + the `kit:weasel-json` SVG branch — so labels/typed data survive it too); and draw binds no Cmd+C shortcut — copy is toolbar-button only, as before the migration.
-
-
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 ### Align/distribute/flip follow-ups
@@ -784,7 +619,17 @@ From the WebGL transition spec — all deferred:
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
 
-- **(P2) Root `eslint.config.js` is never executed.** It defines `import/no-restricted-paths` zones (`core/` vs `features/`) — real architectural enforcement — but root `lint` is `tsc --noEmit` (`package.json`), and `.github/workflows/ci.yml` runs eslint nowhere; its only lint step is `npm run lint -w @weasel-js/labkit`, which is Biome on a different package. So the zone rules are unenforced, and `packages/font/src/leaf-purity.test.ts` had to re-implement a weaker regex version of the same idea to get anything gating at all. Wiring eslint into CI would let that test be deleted in favor of a rule that does real module resolution.
+- **(P3) `core/` names three `features/` and `interactions/` types.**
+  Surfaced 2026-08-08 when the boundary lint first ran: `core/scene/types.ts`
+  imports `RectPose` from `features/groups/composePose` and `Path` from
+  `features/paths/types`; `core/selection/chromeState.ts` imports
+  `ModifierState` from `interactions/gestures/types`. All three are
+  `import type`, so they're erased and cannot form the bundler cycle the rule
+  exists to prevent — which is why `allowTypeImports` lets them through rather
+  than failing the build. But core's own types naming upper-layer types is
+  still an inverted arrow. Fix is to move the three type declarations down into
+  `core/` and re-export upward, the same move `polygonHitTestRect.ts` got (it
+  was the one *runtime* violation and is now `core/geometry/`).
 
 - **(P3) Tests reaching into another package's `src/` by relative path.** Four hud tests imported `../../core/src/features/text/atlas/registerFont` and broke when that file moved during the `@weasel-js/font` extraction. They were repointed at `@weasel-js/font`, but the pattern likely exists elsewhere — worth a sweep (`grep -rn "\.\./\.\./[a-z-]*/src/" packages/*/src`).
 

@@ -143,6 +143,11 @@ export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
 export { sliceAction } from './interactions/actions/defaults/slice';
 export type { SliceDep } from './interactions/actions/defaults/slice';
 export { pinchZoomAction } from './interactions/actions/defaults/pinchZoom';
+export {
+  clipboardCopyAction,
+  clipboardCutAction,
+} from './interactions/actions/defaults/clipboard';
+export type { ClipboardDep } from './interactions/actions/defaults/clipboard';
 export { enterTextEditAction } from './interactions/actions/defaults/enterTextEdit';
 export type { TextEditDep } from './interactions/actions/defaults/enterTextEdit';
 export { useStandardActions } from './interactions/actions/useStandardActions';
@@ -1087,7 +1092,7 @@ export type { SnapPattern } from './layout/strategies/snapPoint';
 export type {
   Vec2,
   Rect,
-} from './features/paths/polygonHitTestRect';
+} from './core/geometry/polygonHitTestRect';
 // `Pt` is the local-only point-shape alias used by `snapPoint`; surface it so
 // custom snap behaviors can name the same shape rather than redeclaring it.
 export type { Pt } from './layout/strategies/snapPoint';

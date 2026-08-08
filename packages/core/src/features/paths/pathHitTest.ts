@@ -19,7 +19,7 @@ import {
   polygonIntersectsRect,
   type Vec2,
   type Rect,
-} from './polygonHitTestRect';
+} from 'core/geometry/polygonHitTestRect';
 import {
   PATH_M,
   PATH_L,

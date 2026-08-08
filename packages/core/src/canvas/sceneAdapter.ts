@@ -34,7 +34,7 @@ import {
   polygonContainsRect,
   polygonContainsRectCenter,
   polygonIntersectsRect,
-} from 'features/paths/polygonHitTestRect';
+} from 'core/geometry/polygonHitTestRect';
 import type { Path } from 'features/paths/types';
 import { findShapeSilhouette } from './NodeShape';
 import { pathIntersectsRect } from 'features/paths/pathHitTest';

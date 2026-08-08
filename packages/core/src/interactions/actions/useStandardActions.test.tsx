@@ -12,6 +12,7 @@ import type { UseStandardActionsOptions } from './useStandardActions';
 
 // Import depSchema augmentation so DepSchema entries are typed
 import './depSchema';
+import { requiresSelection } from './defaults/requiresSelection';
 
 // ---------------------------------------------------------------------------
 // Test wrappers
@@ -87,6 +88,9 @@ const KIT_IDS = [
   'enterTextEdit',
   'setFill', 'setStroke', 'setFillOpacity', 'setStrokeOpacity',
   'ingest',
+  // No 'clipboard.paste' — Cmd+V arrives as a DOM paste event and routes
+  // through `ingest`; a key binding would double-fire. See clipboard.ts.
+  'clipboard.copy', 'clipboard.cut',
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -94,7 +98,7 @@ const KIT_IDS = [
 // ---------------------------------------------------------------------------
 
 describe('useStandardActions', () => {
-  it('registers all 59 kit-standard action descriptors', () => {
+  it('registers every kit-standard action descriptor', () => {
     const seen: string[][] = [];
     render(
       <Providers>
@@ -107,6 +111,25 @@ describe('useStandardActions', () => {
       expect(last, `expected "${id}" to be registered`).toContain(id);
     }
     expect(last).toHaveLength(KIT_IDS.length);
+  });
+
+  it('every descriptor gated on `requiresSelection` declares the `selection` dep', () => {
+    // The gate reads `deps.selection`, and the dev-build deps Proxy throws on
+    // an undeclared read — before the gate can answer, so the action silently
+    // never fires. `duplicate` shipped that way (Cmd+D did nothing) until
+    // 2026-08-08; sweep instead of a per-descriptor assertion.
+    let list: readonly Action[] = [];
+    function ProbeAll() {
+      const reg = useActionsRegistry();
+      useEffect(() => { list = reg ? reg.list() : []; });
+      return null;
+    }
+    render(<Providers><Host /><ProbeAll /></Providers>);
+    const offenders = list
+      .filter((a) => a.enabled === requiresSelection)
+      .filter((a) => !(a.requires ?? []).includes('selection'))
+      .map((a) => a.id);
+    expect(offenders).toEqual([]);
   });
 
   it('each registered action has an invoker (withLegacyRunBridge deleted; trigger routes via invoker.run with deps from depRegistry)', () => {

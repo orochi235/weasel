@@ -65,6 +65,8 @@ import {
   resolveTextStyle,
   type ToolPrefColor,
   useClipboardOps,
+  useDepSource,
+  type ClipboardDep,
   type ClipboardSnapshot,
   WEASEL_CLIPBOARD_MIME,
   buildWeaselClipboardText,
@@ -679,18 +681,19 @@ function Toolbar({
     produceFlavors,
     jsonReplacer: serializeReplacer,
   });
-  const onCopy = useCallback(() => {
-    clipboard.copy();
-    setClipboardEmpty(clipboard.isEmpty());
-  }, [clipboard]);
-  const onCut = useCallback(() => {
-    clipboard.copy();
-    if (clipboard.isEmpty()) return;
-    setClipboardEmpty(false);
-    scene.batch('Cut', () => {
-      for (const id of selection.current) scene.remove(asNodeId(id));
-    });
-  }, [clipboard, scene, selection]);
+  // Published as the `clipboard` dep so Cmd+C / Cmd+X reach the same object
+  // the buttons do — `copy` is wrapped rather than passed raw so the
+  // paste-button's disabled state updates on the keyboard route too.
+  const clipboardDep = useMemo<ClipboardDep>(() => ({
+    copy: () => {
+      clipboard.copy();
+      setClipboardEmpty(clipboard.isEmpty());
+    },
+    paste: clipboard.paste,
+    isEmpty: clipboard.isEmpty,
+  }), [clipboard]);
+  useDepSource('clipboard', () => clipboardDep);
+
   const onPaste = useCallback(() => { clipboard.paste(); }, [clipboard]);
 
   // Selection-aware z-order: rough "is the top selection at front/back?" guard.
@@ -783,8 +786,8 @@ function Toolbar({
         selectionSize={selectionSize}
         onDelete={() => trigger('delete')}
         onDuplicate={() => trigger('duplicate')}
-        onCopy={onCopy}
-        onCut={onCut}
+        onCopy={() => trigger('clipboard.copy')}
+        onCut={() => trigger('clipboard.cut')}
         onPaste={onPaste}
         clipboardEmpty={clipboardEmpty}
         onBringForward={() => trigger('reorder.forward', { distance: 'adjacent' })}

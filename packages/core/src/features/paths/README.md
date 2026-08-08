@@ -43,8 +43,10 @@ upstream silently loses the optimization).
 > are a co-equal choice, not a lesser one. See `docs/conventions.md`.
 
 **Query** — `bounds.ts`, `hitTest.ts` (`pointInPath`, `strokeHitTest`),
-`pathHitTest.ts`, `polygonHitTestRect.ts`, `pathDistance.ts`,
-`unionBoundsPath.ts`
+`pathHitTest.ts`, `pathDistance.ts`, `unionBoundsPath.ts`. The polygon-vs-rect
+kernel `pathHitTest.ts` builds on lives in `core/geometry/polygonHitTestRect.ts`
+— `core/adapters/arrayAdapter.ts` needs it too, and core may not import from
+here.
 
 **Transform** — `transform.ts`, `transformPath.ts`, `pathInWorld.ts`,
 `poseRotation.ts`, `poseDescriptor.ts`, `originProjection.ts`
