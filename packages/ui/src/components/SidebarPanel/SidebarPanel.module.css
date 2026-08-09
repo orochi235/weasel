@@ -1,7 +1,7 @@
 .panel {
   padding: 8px;
-  background: var(--wzl-panel-bg);
-  color: var(--wzl-text);
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
 }
 
 .title {
@@ -9,7 +9,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
 }
 
 .titleRow {
@@ -34,14 +34,14 @@
   text-align: left;
 }
 .titleButton:hover {
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
 }
 
 .chevron {
   display: inline-block;
   font-size: 10px;
   line-height: 1;
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   transition: transform var(--wzl-motion-fast) ease;
 }
 .chevronCollapsed {
@@ -54,11 +54,11 @@
   padding: 0 6px;
   font-size: 14px;
   line-height: 1;
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   cursor: pointer;
 }
 .hideButton:hover {
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
 }
 
 .panel.collapsed {

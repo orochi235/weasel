@@ -1,5 +1,5 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { ResolvedTokens } from './theme';
+import type { ResolvedTheme } from '@weasel-js/theme';
 
 export interface WidgetBounds {
   x: number;
@@ -13,10 +13,10 @@ export interface HudDrawCtx {
   dims: { width: number; height: number };
   /** Family name of the auto-registered default font. */
   defaultFont: string;
-  /** Resolved design tokens from the canvas element's computed style.
-   *  Re-read on every draw, so live CSS changes (dark-mode toggle, etc.)
-   *  take effect on the next state-driven redraw. */
-  tokens: ResolvedTokens;
+  /** The resolved theme, keyed by CSS custom-property name. Supplied by the
+   *  caller rather than read back off the DOM, so a HUD drawn headlessly is
+   *  themed the same way one drawn in a browser is. */
+  tokens: ResolvedTheme;
 }
 
 /**

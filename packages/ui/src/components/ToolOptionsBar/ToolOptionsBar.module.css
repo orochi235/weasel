@@ -16,9 +16,9 @@
   gap: 8px;
   height: var(--wzl-tb-height, 28px);
   padding: 0 8px;
-  background: var(--wzl-panel-bg);
-  border-bottom: 1px solid var(--wzl-panel-border);
-  color: var(--wzl-text);
+  background: var(--wzl-surface);
+  border-bottom: 1px solid var(--wzl-border);
+  color: var(--wzl-fg);
   overflow: hidden;
 }
 
@@ -28,7 +28,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   white-space: nowrap;
 }
 
@@ -59,6 +59,6 @@
   background: transparent;
 }
 .controls::-webkit-scrollbar-thumb {
-  background: var(--wzl-panel-border);
+  background: var(--wzl-border);
   border-radius: 2px;
 }

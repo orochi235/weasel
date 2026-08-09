@@ -10,7 +10,7 @@
   display: flex;
   align-items: stretch;
   height: 24px;
-  background: var(--wzl-input-bg);
+  background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);

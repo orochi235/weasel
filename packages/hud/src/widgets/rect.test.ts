@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createRect } from './rect';
-import { readTokens } from '../theme';
+import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
-const DEFAULT_RESOLVED_TOKENS = readTokens(null);
+const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
 
 describe('rect widget', () => {
   it('emits a path DrawCommand for its bounds', () => {

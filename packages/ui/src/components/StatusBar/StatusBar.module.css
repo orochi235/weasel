@@ -6,9 +6,9 @@
   padding: 4px 12px;
   font-family: var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-size: 11px;
-  color: var(--wzl-text-muted, var(--wzl-fg-subtle));
-  background: var(--wzl-panel-bg);
-  border-top: 1px solid var(--wzl-panel-border);
+  color: var(--wzl-fg-muted));
+  background: var(--wzl-surface);
+  border-top: 1px solid var(--wzl-border);
 }
 
 .item {

@@ -135,7 +135,7 @@
 .textarea {
   width: 100%;
   padding: 4px 8px;
-  background: var(--wzl-input-bg);
+  background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);

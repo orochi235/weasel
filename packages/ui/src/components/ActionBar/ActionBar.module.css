@@ -8,8 +8,8 @@
   display: flex;
   flex-direction: row;
   gap: 1px;
-  background: var(--wzl-panel-bg);
-  border: 1px solid var(--wzl-panel-border);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
   border-radius: 4px;
   padding: 2px;
   user-select: none;
@@ -29,16 +29,16 @@
   background: transparent;
   border: 0;
   border-radius: 2px;
-  color: var(--wzl-text);
+  color: var(--wzl-fg);
   cursor: default;
 }
 
 .button:hover:not([disabled]) {
-  background: var(--wzl-panel-border);
+  background: var(--wzl-border);
 }
 
 .button:active:not([disabled]) {
-  background: color-mix(in srgb, var(--wzl-panel-border) 70%, transparent);
+  background: color-mix(in srgb, var(--wzl-border) 70%, transparent);
 }
 
 .button[disabled] {

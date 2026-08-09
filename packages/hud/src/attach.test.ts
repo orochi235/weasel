@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { attachHud } from './attach';
 import { createHud } from './hud';
 import type { CanvasExtensionApi } from '@weasel-js/core';
@@ -71,10 +72,12 @@ describe('attachHud', () => {
     expect(hoverFn).toHaveBeenCalledTimes(1);
   });
 
-  it('layer.draw resolves tokens from the canvas element', () => {
+  it('layer.draw draws with the theme passed to attachHud', () => {
     const hud = createHud();
     const canvas = document.createElement('canvas');
-    canvas.style.setProperty('--wzl-button-fill', '#abcdef');
+    // Set the property the pre-Plan-B implementation would have read back.
+    // It must NOT reach the HUD any more — the theme argument is the only input.
+    canvas.style.setProperty('--wzl-surface-raised', '#abcdef');
     document.body.appendChild(canvas);
     try {
       const api: CanvasExtensionApi = {
@@ -83,14 +86,26 @@ describe('attachHud', () => {
         hitTestExtras: vi.fn(() => null),
         registerLayer: vi.fn(() => () => {}),
       };
-      attachHud(api, hud);
+      const theme = { ...resolveTheme(weaselTheme, 'dark'), '--wzl-surface-raised': '#123456' };
+      attachHud(api, hud, { theme });
       hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
       const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
       const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
       const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
-      expect(buttonBody.fill.color).toBe('#abcdef');
+      expect(buttonBody.fill.color).toBe('#123456');
     } finally {
       canvas.remove();
     }
+  });
+
+  it('defaults to the built-in theme when none is passed', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.button({ id: 'b', x: 0, y: 0, w: 50, h: 20, label: 'x' });
+    const registeredLayer = (api.registerLayer as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    const cmds = registeredLayer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 100, height: 100 });
+    const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
+    expect(buttonBody.fill.color).toBe(resolveTheme(weaselTheme, 'dark')['--wzl-surface-raised']);
   });
 });

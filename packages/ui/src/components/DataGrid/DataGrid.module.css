@@ -23,12 +23,12 @@
 
 .table th {
   font-weight: 600;
-  color: var(--wzl-muted, #9ea1a8);
+  color: var(--wzl-fg-muted);
   position: sticky;
   top: 0;
   background: var(--wzl-surface, #2a2018);
   z-index: 1;
-  border-bottom: 1px solid var(--wzl-panel-border, #25272c);
+  border-bottom: 1px solid var(--wzl-border);
 }
 
 .sortable {
@@ -39,7 +39,7 @@
 .sortActive { color: var(--wzl-fg, #e6e7e9); }
 
 .empty {
-  color: var(--wzl-muted, #9ea1a8);
+  color: var(--wzl-fg-muted);
   font-style: italic;
   padding: 8px 0;
   text-align: center;
@@ -50,7 +50,7 @@
 .handleCell {
   width: 14px;
   cursor: grab;
-  color: var(--wzl-muted, #9ea1a8);
+  color: var(--wzl-fg-muted);
   user-select: none;
   text-align: center;
 }

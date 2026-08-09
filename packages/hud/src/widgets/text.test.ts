@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createText } from './text';
-import { readTokens } from '../theme';
+import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
-const DEFAULT_RESOLVED_TOKENS = readTokens(null);
+const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
 const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'Default', tokens: DEFAULT_RESOLVED_TOKENS };
 
 describe('text widget', () => {
@@ -41,11 +41,11 @@ describe('text widget', () => {
     expect(t.hitTest(0, 0)).toBe(false);
   });
 
-  it('uses ctx.tokens.text when opts.color is omitted', () => {
+  it('uses ctx.tokens.--wzl-fg when opts.color is omitted', () => {
     const t = createText({ id: 't', x: 0, y: 10, text: 'hi', fontSize: 14 });
     const customCtx = {
       ...ctx,
-      tokens: { ...ctx.tokens, text: '#facade' },
+      tokens: { ...ctx.tokens, '--wzl-fg': '#facade' },
     };
     const cmds = t.draw(customCtx);
     const fill = (cmds[0] as { style: { fill: { color: string } } }).style.fill;
@@ -56,7 +56,7 @@ describe('text widget', () => {
     const t = createText({ id: 't', x: 0, y: 10, text: 'hi', fontSize: 14, color: '#ff0000' });
     const customCtx = {
       ...ctx,
-      tokens: { ...ctx.tokens, text: '#facade' },
+      tokens: { ...ctx.tokens, '--wzl-fg': '#facade' },
     };
     const cmds = t.draw(customCtx);
     const fill = (cmds[0] as { style: { fill: { color: string } } }).style.fill;

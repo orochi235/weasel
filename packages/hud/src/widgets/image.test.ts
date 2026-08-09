@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createImage } from './image';
-import { readTokens } from '../theme';
+import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
-const DEFAULT_RESOLVED_TOKENS = readTokens(null);
+const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
 
 describe('image widget', () => {
   it('emits an ImageDrawCommand for its bounds', () => {

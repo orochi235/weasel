@@ -6,9 +6,20 @@ import { worldToScreen } from '@weasel-js/core';
 import { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
 import type { Widget, HudPointerEvent } from './widget';
 import type { HudHitPayload } from './tool';
-import { readTokens } from './theme';
+import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
 
-export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
+export interface AttachHudOptions {
+  /** Resolved theme the widgets draw with. Defaults to the built-in theme's
+   *  default mode; pass `useTheme().resolved` to follow a live theme. */
+  readonly theme?: ResolvedTheme;
+}
+
+export function attachHud(
+  api: CanvasExtensionApi,
+  hud: Hud,
+  options: AttachHudOptions = {},
+): () => void {
+  const theme = options.theme ?? resolveTheme(weaselTheme, weaselTheme.defaultMode);
   if (hud.attached) {
     throw new Error('weasel-hud: this HUD is already attached to a canvas.');
   }
@@ -38,7 +49,7 @@ export function attachHud(api: CanvasExtensionApi, hud: Hud): () => void {
     label: 'HUD',
     space: 'screen',
     draw: (_data, _view, dims): DrawCommand[] => {
-      const ctx = { dims, defaultFont: DEFAULT_FONT_FAMILY, tokens: readTokens(api.element) };
+      const ctx = { dims, defaultFont: DEFAULT_FONT_FAMILY, tokens: theme };
       const out: DrawCommand[] = [];
       for (const w of hud.widgets()) {
         if (w.hidden) continue;

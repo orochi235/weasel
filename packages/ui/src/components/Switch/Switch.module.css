@@ -20,7 +20,7 @@
   flex: 0 0 auto;
   width: 28px;
   height: 16px;
-  background: var(--wzl-input-bg);
+  background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border-strong);
   border-radius: 8px;
   transition: background-color var(--wzl-motion-fast), border-color var(--wzl-motion-fast), box-shadow var(--wzl-motion-fast);

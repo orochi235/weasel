@@ -42,7 +42,7 @@ export function createText(opts: TextOptions): TextWidget {
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setText(t) { assertNotDisposed(); text = t; opts.onChange?.(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
-      const color = opts.color ?? ctx.tokens.text;
+      const color = opts.color ?? ctx.tokens['--wzl-fg'];
       return [textCommand(
         bounds.x,
         bounds.y,

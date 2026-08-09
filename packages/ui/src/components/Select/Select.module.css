@@ -13,7 +13,7 @@
   gap: 6px;
   height: 24px;
   padding: 0 6px 0 10px;
-  background: var(--wzl-input-bg);
+  background: var(--wzl-surface-sunken);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
   color: var(--wzl-fg);

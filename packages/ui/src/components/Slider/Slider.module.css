@@ -16,8 +16,8 @@
   flex: 1;
   min-width: 0;
   height: var(--rp-track-height, 24px);
-  background: var(--wzl-track-bg);
-  border: 1px solid var(--wzl-track-border);
+  background: var(--wzl-surface-sunken);
+  border: 1px solid var(--wzl-border);
   border-radius: 3px;
   cursor: crosshair;
   /* No `overflow: hidden` here — thumbs at extreme values would get
@@ -43,8 +43,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--wzl-thumb-fill) 70%, transparent);
-  border: 1px solid var(--wzl-thumb-border);
+  background: color-mix(in srgb, var(--wzl-fg-muted) 70%, transparent);
+  border: 1px solid var(--wzl-border-strong);
   border-radius: 3px;
   cursor: ew-resize;
   /* Frosted-glass over the (often colorful) track. Cheap on modern GPUs;
@@ -59,7 +59,7 @@
   /* Thumb text reads against `--wzl-thumb-fill`, which can differ from the
    * surrounding panel text color. Default = dark; consumers re-skin via
    * `--wzl-thumb-text` if they pick a dark thumb fill. */
-  color: var(--wzl-thumb-text);
+  color: var(--wzl-fg-inverse);
   /* White halo so labels stay legible over wildly varying gradient
    * backgrounds (e.g. labels 'T' / 'P' / 'B' over teal, hue 200° over
    * yellow-green, etc.). */
@@ -86,7 +86,7 @@
   position: absolute;
   transform: translateX(-50%);
   font: 500 0.65rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   white-space: nowrap;
 }
 
@@ -94,7 +94,7 @@
   display: inline-block;
   margin-left: 8px;
   font: 500 0.7rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  color: var(--wzl-text-muted);
+  color: var(--wzl-fg-muted);
   vertical-align: middle;
 }
 

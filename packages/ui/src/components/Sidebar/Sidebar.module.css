@@ -2,13 +2,13 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  background: var(--wzl-panel-bg);
-  color: var(--wzl-text);
+  background: var(--wzl-surface);
+  color: var(--wzl-fg);
 }
 
 .sidebar.left {
-  border-right: 1px solid var(--wzl-panel-border);
+  border-right: 1px solid var(--wzl-border);
 }
 .sidebar.right {
-  border-left: 1px solid var(--wzl-panel-border);
+  border-left: 1px solid var(--wzl-border);
 }

@@ -7,9 +7,9 @@
   font-size: var(--badge-font-size, 10px);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--badge-fg, var(--wzl-muted, #9ea1a8));
-  --badge-edge: var(--wzl-panel-border, #25272c);
-  --badge-fill: var(--wzl-bg, #181a1e);
+  color: var(--badge-fg, var(--wzl-fg-muted));
+  --badge-edge: var(--wzl-border);
+  --badge-fill: var(--wzl-surface);
   --badge-fg: var(--badge-edge);
   background: transparent;
   border: 0;
@@ -60,11 +60,11 @@
 .badge[data-tone='info']    { --badge-edge: #7ab8d4; }
 .badge[data-tone='warn']    { --badge-edge: #d4a574; }
 .badge[data-tone='danger']  { --badge-edge: #c43c3c; }
-.badge[data-tone='muted']   { --badge-edge: var(--wzl-muted, #9ea1a8); }
-.badge[data-tone='neutral'] { --badge-edge: var(--wzl-panel-border, #25272c); --badge-fg: var(--wzl-muted, #9ea1a8); }
+.badge[data-tone='muted']   { --badge-edge: var(--wzl-fg-muted); }
+.badge[data-tone='neutral'] { --badge-edge: var(--wzl-border); --badge-fg: var(--wzl-fg-muted); }
 
 .badge[data-variant='outline'] {
-  --badge-fill: var(--wzl-bg, #181a1e);
+  --badge-fill: var(--wzl-surface);
   --badge-fg: var(--badge-edge);
 }
 .badge[data-variant='solid'] {
@@ -79,7 +79,7 @@
 /* Neutral's edge is a border gray that vanishes when the outline/subtle
    variants (above) reuse it as the text color — re-assert the muted fg.
    Solid keeps the variant's white fg on the gray fill. */
-.badge[data-tone='neutral']:not([data-variant='solid']) { --badge-fg: var(--wzl-muted, #9ea1a8); }
+.badge[data-tone='neutral']:not([data-variant='solid']) { --badge-fg: var(--wzl-fg-muted); }
 
 .badge {
   padding:

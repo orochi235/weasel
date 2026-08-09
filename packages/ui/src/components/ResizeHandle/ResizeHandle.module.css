@@ -4,7 +4,7 @@
   align-self: stretch;
   cursor: ew-resize;
   background: transparent;
-  border-left: 1px solid var(--wzl-panel-border, var(--wzl-border));
+  border-left: 1px solid var(--wzl-border));
   /* The bar is 4px of hit area — thin enough to read as a seam, wide
      enough to grab. `touch-action: none` keeps a touch drag from being
      stolen by the scroll container it usually sits inside. */
@@ -17,7 +17,7 @@
   align-self: auto;
   cursor: ns-resize;
   border-left: none;
-  border-top: 1px solid var(--wzl-panel-border, var(--wzl-border));
+  border-top: 1px solid var(--wzl-border));
 }
 
 .handle:hover {

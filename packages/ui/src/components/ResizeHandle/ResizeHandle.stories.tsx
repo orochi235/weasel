@@ -19,7 +19,7 @@ type Story = StoryObj<typeof ResizeHandle>;
 function RightSidebarDemo() {
   const [width, setWidth] = useState(260);
   return (
-    <div style={{ display: 'flex', height: 240, border: '1px solid var(--wzl-panel-border)' }}>
+    <div style={{ display: 'flex', height: 240, border: '1px solid var(--wzl-border)' }}>
       <div style={{ flex: 1, minWidth: 0, padding: 12, fontSize: 12 }}>
         Content area. Drag the divider, or focus it and use the arrow keys
         (Shift for a coarse step, Home/End for the bounds). Width: {width}px
@@ -49,7 +49,7 @@ function BottomDrawerDemo() {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', height: 240,
-      border: '1px solid var(--wzl-panel-border)',
+      border: '1px solid var(--wzl-border)',
     }}>
       <div style={{ flex: 1, minHeight: 0, padding: 12, fontSize: 12 }}>
         Content area. Height below: {height}px
@@ -64,7 +64,7 @@ function BottomDrawerDemo() {
         ariaLabel="Resize drawer"
       />
       <div style={{
-        height, background: 'var(--wzl-panel-bg)', padding: 12, fontSize: 12,
+        height, background: 'var(--wzl-surface)', padding: 12, fontSize: 12,
       }}>
         Drawer
       </div>

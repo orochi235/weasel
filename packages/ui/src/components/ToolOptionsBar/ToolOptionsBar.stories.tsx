@@ -32,7 +32,7 @@ export const OneControlGroup: Story = {
 // no way to reach them).
 export const ManyControlsOverflow: Story = {
   render: () => (
-    <div style={{ width: 360, border: '1px dashed var(--wzl-panel-border)' }}>
+    <div style={{ width: 360, border: '1px dashed var(--wzl-border)' }}>
       <ToolOptionsBar label="Text">
         {Array.from({ length: 16 }, (_, i) => (
           <Button key={i} size="sm" variant="ghost">

@@ -17,7 +17,7 @@ type Story = StoryObj;
 function Row({ route }: { route: string }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', alignItems: 'center', gap: 16, padding: '4px 0' }}>
-      <code style={{ fontSize: 12, color: 'var(--wzl-muted, #a59685)' }}>{route}</code>
+      <code style={{ fontSize: 12, color: 'var(--wzl-fg-muted)' }}>{route}</code>
       <Powerline {...routeToPowerline(route)} />
     </div>
   );
@@ -27,7 +27,7 @@ function Section({ title, routes }: { title: string; routes: readonly string[] }
   return (
     <section style={{ marginBottom: 24 }}>
       <h3 style={{ font: '600 14px/1.4 system-ui', margin: '12px 0 6px', color: 'var(--wzl-fg, #d4c4a8)' }}>{title}</h3>
-      <div style={{ borderTop: '1px solid var(--wzl-panel-border, #4a3c2e)' }}>
+      <div style={{ borderTop: '1px solid var(--wzl-border)' }}>
         {routes.map((r) => <Row key={r} route={r} />)}
       </div>
     </section>

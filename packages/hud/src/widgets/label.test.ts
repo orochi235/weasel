@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createLabel } from './label';
-import { readTokens } from '../theme';
+import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
-const DEFAULT_RESOLVED_TOKENS = readTokens(null);
+const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
 
 describe('label widget', () => {
   it('uses sensible defaults for fontSize when omitted', () => {
@@ -23,9 +23,9 @@ describe('label widget', () => {
     expect((cmds[0] as { style: { fontSize: number } }).style.fontSize).toBe(20);
   });
 
-  it('uses ctx.tokens.text when color is omitted', () => {
+  it('uses ctx.tokens.--wzl-fg when color is omitted', () => {
     const l = createLabel({ id: 'l', x: 0, y: 0, text: 'x' });
-    const customTokens = { ...DEFAULT_RESOLVED_TOKENS, text: '#abcdef' };
+    const customTokens = { ...DEFAULT_RESOLVED_TOKENS, '--wzl-fg': '#abcdef' };
     const cmds = l.draw({
       dims: { width: 100, height: 100 },
       defaultFont: 'Default',
@@ -37,7 +37,7 @@ describe('label widget', () => {
 
   it('respects explicit color when supplied (theme overridden)', () => {
     const l = createLabel({ id: 'l', x: 0, y: 0, text: 'x', color: '#ff0000' });
-    const customTokens = { ...DEFAULT_RESOLVED_TOKENS, text: '#abcdef' };
+    const customTokens = { ...DEFAULT_RESOLVED_TOKENS, '--wzl-fg': '#abcdef' };
     const cmds = l.draw({
       dims: { width: 100, height: 100 },
       defaultFont: 'D',

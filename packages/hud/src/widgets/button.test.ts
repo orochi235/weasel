@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createButton } from './button';
-import { readTokens } from '../theme';
+import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
-const DEFAULT_RESOLVED_TOKENS = readTokens(null);
+const DEFAULT_RESOLVED_TOKENS = resolveTheme(weaselTheme, 'dark');
 const ctx = { dims: { width: 100, height: 100 }, defaultFont: 'D', tokens: DEFAULT_RESOLVED_TOKENS };
 
 describe('button widget', () => {
@@ -117,9 +117,9 @@ describe('button widget', () => {
     expect(leave).toHaveBeenCalledTimes(1);
   });
 
-  it('uses ctx.tokens.buttonFill when opts.fill is omitted', () => {
+  it('uses ctx.tokens.--wzl-surface-raised when opts.fill is omitted', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
-    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFill: '#abcdef' } };
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-raised': '#abcdef' } };
     const cmds = b.draw(customCtx);
     const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
     expect(body.fill.color).toBe('#abcdef');
@@ -127,33 +127,33 @@ describe('button widget', () => {
 
   it('respects opts.fill when supplied (theme overridden)', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', fill: '#ff0000' });
-    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFill: '#abcdef' } };
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-raised': '#abcdef' } };
     const cmds = b.draw(customCtx);
     const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
     expect(body.fill.color).toBe('#ff0000');
   });
 
-  it('uses ctx.tokens.buttonFillHover when hovering and opts.hoverFill is omitted', () => {
+  it('uses ctx.tokens.--wzl-surface-hover when hovering and opts.hoverFill is omitted', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     b.onPointer({ type: 'hovermove', x: 5, y: 5, native: null });
-    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFillHover: '#cafe00' } };
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-hover': '#cafe00' } };
     const cmds = b.draw(customCtx);
     const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
     expect(body.fill.color).toBe('#cafe00');
   });
 
-  it('uses ctx.tokens.buttonFillPressed when pressed and opts.pressedFill is omitted', () => {
+  it('uses ctx.tokens.--wzl-surface-pressed when pressed and opts.pressedFill is omitted', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     b.onPointer({ type: 'down', x: 5, y: 5, native: null });
-    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonFillPressed: '#beadc0' } };
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-surface-pressed': '#beadc0' } };
     const cmds = b.draw(customCtx);
     const body = cmds.find(c => c.kind === 'path') as { fill: { color: string } };
     expect(body.fill.color).toBe('#beadc0');
   });
 
-  it('uses ctx.tokens.buttonText when opts.textColor is omitted', () => {
+  it('uses ctx.tokens.--wzl-fg when opts.textColor is omitted', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
-    const customCtx = { ...ctx, tokens: { ...ctx.tokens, buttonText: '#decade' } };
+    const customCtx = { ...ctx, tokens: { ...ctx.tokens, '--wzl-fg': '#decade' } };
     const cmds = b.draw(customCtx);
     const text = cmds.find(c => c.kind === 'text') as { style: { fill: { color: string } } };
     expect(text.style.fill.color).toBe('#decade');

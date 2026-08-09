@@ -14,11 +14,11 @@
 }
 
 .keysEmpty {
-  color: var(--wzl-muted, #9ea1a8);
+  color: var(--wzl-fg-muted);
 }
 
 .sep {
-  color: var(--wzl-muted, #9ea1a8);
+  color: var(--wzl-fg-muted);
   font-size: 11px;
   line-height: 1;
 }
@@ -36,7 +36,7 @@
   border: 1px solid #25272c;
   border-bottom-width: 2px;
   border-radius: 3px;
-  color: var(--wzl-bg, #181a1e);
+  color: var(--wzl-surface);
   /* Keycaps are a deliberate exception to the site theme — the design-
      system UI font (often a display face like Oswald) is wrong for
      keyboard chips. Use a neutral sans stack so labels read like real
@@ -73,7 +73,7 @@
    to 60% opacity; dotted border drops to 40% opacity. Three soft cues
    stacked for "may be held but isn't required." */
 .key[data-inverted] {
-  background: var(--wzl-bg, #181a1e);
+  background: var(--wzl-surface);
   color: color-mix(in srgb, var(--wzl-fg, #e6e7e9) 60%, transparent);
   border-style: dotted;
   border-color: color-mix(in srgb, var(--wzl-fg, #e6e7e9) 40%, transparent);

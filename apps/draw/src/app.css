@@ -44,13 +44,13 @@ html, body, #root {
   gap: 6px;
   padding: 4px 8px;
   /* Match the left tool palette, which renders via weasel-ui's Sidebar
-     (`background: var(--wzl-panel-bg)`). The theme package's tokens.css
+     (`background: var(--wzl-surface)`). The theme package's tokens.css
      loads after app.css and resolves the token to a light
      gray, so the palette ends up gray rather than the local chrome
      brown — pointing the bars at the same token keeps the three
      surfaces in sync regardless of how the theme is configured. */
-  background: var(--wzl-panel-bg);
-  border-bottom: 1px solid var(--wzl-panel-border);
+  background: var(--wzl-surface);
+  border-bottom: 1px solid var(--wzl-border);
   font-size: 11px;
   flex-wrap: wrap;
   flex-shrink: 0;
@@ -65,8 +65,8 @@ html, body, #root {
   gap: 1px;
   /* Same surface as the actionbar itself — border outline alone marks
      the segmented grouping. */
-  background: var(--wzl-panel-bg);
-  border: 1px solid var(--wzl-panel-border);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
   border-radius: 4px;
   padding: 2px;
   user-select: none;
@@ -104,10 +104,10 @@ html, body, #root {
   display: block;
 }
 .wd-actionbar-button:hover:not(:disabled) {
-  background: var(--wzl-panel-border);
+  background: var(--wzl-border);
 }
 .wd-actionbar-button:active:not(:disabled) {
-  background: color-mix(in srgb, var(--wzl-panel-border) 70%, transparent);
+  background: color-mix(in srgb, var(--wzl-border) 70%, transparent);
 }
 .wd-actionbar-button-active:not(:disabled) {
   background: var(--wd-accent-bg);
@@ -135,7 +135,7 @@ html, body, #root {
   line-height: 1.2;
 }
 .wd-actionbar-select:hover:not(:disabled) {
-  background: var(--wzl-panel-border);
+  background: var(--wzl-border);
 }
 .wd-actionbar-select:disabled {
   opacity: 0.4;
@@ -201,7 +201,7 @@ html, body, #root {
 /* Thin divider above any locked row in the layer list — separates
    user layers from system rows (currently just the Page row). */
 .wd-layerlist-host [data-locked="true"] {
-  border-top: 1px solid var(--wzl-panel-border);
+  border-top: 1px solid var(--wzl-border);
   /* Visually offset the row so the divider sits in its own gutter rather
      than hugging the previous row. */
   margin-top: 4px;
@@ -760,7 +760,7 @@ html, body, #root {
   width: 100%;
   height: 24px;
   padding: 0 8px;
-  background: var(--wzl-input-bg);
+  background: var(--wzl-surface-sunken);
   color: var(--wzl-fg);
   border: 1px solid var(--wzl-border);
   border-radius: var(--wzl-radius-sm);
