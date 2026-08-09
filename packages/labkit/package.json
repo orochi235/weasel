@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/labkit",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "React widgets for building self-contained interactive lab pages",
   "license": "MIT",
   "author": "orochi235",

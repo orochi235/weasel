@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/core",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "description": "Domain-agnostic 2D scene graph primitives for React: viewport math, drag/resize/insert/clone interactions, layered canvas rendering.",
   "license": "MIT",
   "author": "orochi235",
@@ -74,11 +74,11 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@weasel-js/font": "0.7.2",
-    "@weasel-js/geom": "0.7.2",
-    "@weasel-js/gestures": "0.7.2",
-    "@weasel-js/history": "0.7.2",
-    "@weasel-js/modes": "0.7.2",
+    "@weasel-js/font": "0.8.0",
+    "@weasel-js/geom": "0.8.0",
+    "@weasel-js/gestures": "0.8.0",
+    "@weasel-js/history": "0.8.0",
+    "@weasel-js/modes": "0.8.0",
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7"
   },

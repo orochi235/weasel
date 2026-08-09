@@ -1,5 +1,133 @@
 # Changelog
 
+## 0.8.0
+
+### Minor Changes
+
+- bdcdfe5: Clipboard keyboard actions, and two bugs the wiring flushed out.
+
+  `clipboard.copy` (Cmd/Ctrl+C) and `clipboard.cut` (Cmd/Ctrl+X) are kit-standard
+  descriptors. Publish the imperative surface `useClipboardOps` returns as the new
+  `clipboard` dep and both work; the buttons a consumer already has and the
+  shortcut then route through one implementation instead of two. Cut is copy plus
+  the same batched delete `deleteAction` performs — one undo entry.
+
+  There is deliberately no `clipboard.paste`. Cmd/Ctrl+V already arrives as a DOM
+  `paste` event, which the dispatcher routes to `ingest` and the content-handler
+  registry — the path that reaches the OS payload. A key binding would fire
+  alongside it and paste twice.
+
+  Two older bugs, both found by actually pressing the keys:
+
+  - **Deleting a container together with its children threw mid-batch.**
+    `removeNode` cascades the subtree, so a group's op already takes its members
+    with it and the members' own ops then hit `unknown node id`. Selecting a group
+    and its contents at once — what Cmd+A does — was enough. `deleteAction` and
+    `clipboard.cut` now share one op builder that skips any id with a selected
+    ancestor.
+  - **Cmd+D did nothing at all.** Two faults stacked. `duplicate` threw before
+    its `enabled` gate could answer, because the gate reads `deps.selection` and
+    the descriptor never declared it — an undeclared read the dev-build deps
+    Proxy treats as an error. Declared now, with a sweep test over every
+    `requiresSelection`-gated descriptor so the next one can't ship the same way.
+    And underneath that, the invoker was a stub whose body was `void params`,
+    deferring to a "legacy bridge" that no longer exists. `duplicateAction` now
+    really duplicates: each selected node with its whole subtree (so a duplicated
+    group comes out populated, not empty), offset by the same 12 units a paste
+    gets, as one undoable batch, with the copies selected afterward. Descendants
+    are offset only for absolute-pose scenes — with a `poseComposition`
+    registered, poses are relative and moving the root already carries them.
+
+  `polygonHitTestRect` moved from `features/paths/` to `core/geometry/`: it is
+  pure geometry, `core/adapters/arrayAdapter.ts` needs it, and core may not import
+  from features. Same exports from the package barrel.
+
+- e0ab60e: Device profile: the kit stops assuming a mouse.
+
+  `DeviceProfile` is one object holding pointer coarseness, hover capability and
+  pixel density, resolved once per `<SceneCanvas>` and published to its subtree.
+  Two things read it. The chrome-caps rule layer gains `coarsePointer:` and
+  `canHover:` selectors (plus matching fluent atoms), so consumers can gate
+  chrome on the device. And every handle size and hit radius — six independent
+  literal `8`s and one `24` before this — now derives from one base module times
+  `DeviceProfile.targetScale`, so a coarse pointer gets 14px handles and a 42px
+  rotation distance without paint and hit-test ever drifting apart. The public
+  `DEFAULT_HANDLE_SIZE` / `DEFAULT_ROTATION_HANDLE_DISTANCE` constants keep
+  their unscaled values.
+
+  `longPress` is a real gesture kind: spec, event, matcher, and route grammar.
+  The dispatcher synthesizes it for touch and pen presses held 500ms without
+  crossing the drag threshold — never for a mouse, and cancelled by movement,
+  release, cancel, or a second finger landing. An unmatched long-press
+  re-dispatches as `contextmenu`, so existing `contextMenu` bindings become
+  reachable by touch with no consumer change.
+
+  Also fixes a density bug: `useCanvasSize` read `devicePixelRatio` only inside
+  its `ResizeObserver` callback, so moving a window to a different-density
+  display without resizing it left the snapshot stale. Density now comes from
+  the profile, which watches a re-armed resolution media query.
+
+  Override any of it with the new `<SceneCanvas device={{ coarsePointer: true }}>`
+  prop — for tests, for demos that want touch-sized chrome on a desktop, and for
+  hybrid devices where the media query guesses wrong.
+
+- 3d693c7: Underline and strikethrough shortcuts, and the core boundary goes strict.
+
+  Cmd/Ctrl+U toggles underline and Cmd/Ctrl+Shift+X toggles strikethrough, both
+  through `toggleFlagInRange` like bold and italic — so they toggle _off_, a mixed
+  range turns fully on, and a collapsed caret gets a pending style that styles the
+  next character only. `rangeStyle.ts` had listed both flags all along; only
+  `useTextEdit`'s `StyleFlag` and its keydown switch were narrower.
+
+  Underline in particular had to be intercepted rather than merely supported.
+  Left alone, the browser ran its own `formatUnderline` and `domToRuns`' `<u>`
+  flattening made that look like it had worked while bypassing the run algebra
+  entirely. The flattening stays — it's what lets pasted decoration survive — but
+  it was never the mechanism. Bare Cmd+X is deliberately left to the browser so
+  cutting text mid-edit still works; only Cmd+Shift+X is claimed.
+
+  The `core/` ← `features/`/`interactions/` lint rule no longer exempts type
+  imports. Three types core named across the boundary moved down to where core
+  can own them — `Path` to `core/geometry/path.ts`, `RectPose` to
+  `core/scene/types.ts` (whose doc comment already claimed it lived in core), and
+  `ModifierState` to `core/modifierState.ts` — each with a re-export left at its
+  old address, so no importer changes.
+
+- e264d62: Stroked text.
+
+  `TextStyle.stroke` and `StyledRun.stroke` carry a real `Stroke`, and the
+  outline tier paints it as a second batched draw call over the group's merged
+  geometry — so a glyph above `textOutlineMinScreenSize` gets real joins, caps
+  and miters in any paint, because by then it is an ordinary `PolygonPath`.
+  Width stays a world measure: it crosses into the cached em-space tessellation
+  by dividing by the glyph's scale, so it does not grow with `fontSize`. Below
+  the threshold a glyph is a sampled distance field with no geometry to stroke,
+  and renders unstroked rather than approximated.
+
+  `kit:text` also reads the kit-native `data.stroke` / `data.strokeWidth` leaf
+  fields that `kit:shape` already honors, so one pair of stroke controls means
+  the same thing on a text node as on a rect.
+
+  `@weasel-js/svg` round-trips all of it — node-level and per-`<tspan>` — where
+  it previously parsed a text stroke into a warning and dropped it.
+
+  Two older bugs fell out of building it, both invisible to fills and both
+  fixed: `extractPolylines` kept a closed contour's duplicate final point
+  (zero-length closing segment, dropped wrap-around join), and glyph path data
+  whose contours carried no `Z` stroked as open polylines — a missing closing
+  edge with a cap at each loose end. A fill closes a contour implicitly; only a
+  stroke reads the difference.
+
+### Patch Changes
+
+- Updated dependencies [e0ab60e]
+- Updated dependencies [e264d62]
+  - @weasel-js/gestures@0.8.0
+  - @weasel-js/font@0.8.0
+  - @weasel-js/geom@0.8.0
+  - @weasel-js/history@0.8.0
+  - @weasel-js/modes@0.8.0
+
 ## 0.7.2
 
 ### Patch Changes
