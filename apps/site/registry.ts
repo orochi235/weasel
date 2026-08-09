@@ -35,6 +35,7 @@ import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
 import { CustomShaderDemo } from './demos/CustomShaderDemo';
 import { LassoDemo } from './demos/LassoDemo';
 import { HudDemo } from './demos/HudDemo';
+import { LoupeDemo } from './demos/LoupeDemo';
 import { LayerListDemo } from './demos/LayerListDemo';
 import { SelectionPanelDemo } from './demos/SelectionPanelDemo';
 import { GesturesDemo } from './demos/GesturesDemo';
@@ -76,6 +77,7 @@ import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
 import CustomShaderDemoFull from './demos/CustomShaderDemo.tsx?raw';
 import LassoDemoFull from './demos/LassoDemo.tsx?raw';
 import HudDemoFull from './demos/HudDemo.tsx?raw';
+import LoupeDemoFull from './demos/LoupeDemo.tsx?raw';
 import LayerListDemoFull from './demos/LayerListDemo.tsx?raw';
 import SelectionPanelDemoFull from './demos/SelectionPanelDemo.tsx?raw';
 import GesturesDemoFull from './demos/GesturesDemo.tsx?raw';
@@ -613,6 +615,16 @@ export const DEMOS: DemoEntry[] = [
     Component: HudDemo,
     full: HudDemoFull,
     path: 'apps/site/demos/HudDemo.tsx',
+  },
+  {
+    id: 'loupe',
+    title: 'Loupe (hud window)',
+    category: 'weasel-hud',
+    description: 'A hud window — drag the titlebar to move it, drag any edge or corner to resize. Vector mode re-renders the scene through a magnified inner view (crisp at any zoom, but the colors along antialiased edges are not the colors on screen). Pixel mode reads the framebuffer back at 1:1 device pixels with NEAREST magnification, which is the honest source for color. The content freezes while the pointer is over the window so the borders stay reachable.',
+    hint: 'Move the pointer over the canvas to aim; drag the titlebar to move the window, an edge or corner to resize. Switch to pixel mode to see device pixels.',
+    Component: LoupeDemo,
+    full: LoupeDemoFull,
+    path: 'apps/site/demos/LoupeDemo.tsx',
   },
 ];
 
