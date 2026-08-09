@@ -1,0 +1,15 @@
+{
+  "color": {
+    "$type": "color",
+    "surface":        { "$value": "{color.gray-50}" },
+    "surface-raised": { "$value": "{color.gray-100}" },
+    "surface-sunken": { "$value": "{color.gray-200}" },
+    "fg":             { "$value": "{color.gray-900}" },
+    "fg-muted":       { "$value": "{color.gray-600}" },
+    "fg-subtle":      { "$value": "{color.gray-500}" },
+    "border":         { "$value": "{color.gray-200}" },
+    "border-strong":  { "$value": "{color.gray-300}" },
+    "accent-fg":      { "$value": "{color.accent-base}", "$description": "Flips to the deep base in light mode, where it is the legible one." },
+    "thumb-text":     { "$value": "{color.gray-50}" }
+  }
+}

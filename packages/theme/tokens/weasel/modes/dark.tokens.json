@@ -1,0 +1,15 @@
+{
+  "color": {
+    "$type": "color",
+    "surface":        { "$value": "{color.gray-800}" },
+    "surface-raised": { "$value": "{color.gray-700}" },
+    "surface-sunken": { "$value": "{color.gray-900}" },
+    "fg":             { "$value": "{color.gray-100}" },
+    "fg-muted":       { "$value": "{color.gray-300}" },
+    "fg-subtle":      { "$value": "{color.gray-400}" },
+    "border":         { "$value": "{color.gray-700}" },
+    "border-strong":  { "$value": "{color.gray-600}" },
+    "accent-fg":      { "$value": "{color.accent-strong}", "$description": "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces." },
+    "thumb-text":     { "$value": "{color.gray-900}" }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "weasel",
+  "defaultMode": "dark",
+  "modes": {
+    "dark": { "colorScheme": "dark" },
+    "light": { "colorScheme": "light" }
+  }
+}
