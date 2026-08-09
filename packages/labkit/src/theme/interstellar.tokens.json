@@ -1,0 +1,57 @@
+{
+  "name": "interstellar",
+  "defaultMode": "dark",
+  "primitives": {
+    "dimension": {
+      "$type": "dimension",
+      "radius-md": { "$value": "6px" },
+      "glass-blur": { "$value": "12px" }
+    },
+    "fontWeight": {
+      "$type": "fontWeight",
+      "font-weight-light": { "$value": 300 },
+      "font-weight-medium": { "$value": 500 },
+      "font-weight-bold": { "$value": 700 }
+    }
+  },
+  "modes": {
+    "dark": {
+      "color": {
+        "$type": "color",
+        "surface": { "$value": "#0a0a14" },
+        "surface-raised": { "$value": "rgba(20, 20, 36, 0.55)" },
+        "surface-sunken": { "$value": "#02020a" },
+        "border": { "$value": "rgba(255, 255, 255, 0.14)" },
+        "line-subtle": { "$value": "rgba(255, 255, 255, 0.08)" },
+        "fg": { "$value": "#e8e8f0" },
+        "fg-muted": { "$value": "#a8a8c0" },
+        "fg-subtle": { "$value": "#5a5a78" },
+        "accent": { "$value": "#b08adb" },
+        "accent-hover": { "$value": "#c6a3ee" },
+        "focus-ring": { "$value": "rgba(176, 138, 219, 0.45)" }
+      },
+      "gradient": {
+        "$type": "gradient",
+        "backdrop": {
+          "$value": "radial-gradient(ellipse 60% 80% at 18% 30%, rgba(150, 80, 200, 0.22), transparent 70%), radial-gradient(ellipse 55% 90% at 78% 70%, rgba(220, 100, 140, 0.18), transparent 65%), radial-gradient(ellipse 50% 70% at 50% 50%, rgba(60, 110, 200, 0.18), transparent 75%), radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)"
+        }
+      }
+    },
+    "light": {
+      "color": {
+        "$type": "color",
+        "surface": { "$value": "#fafaf7" },
+        "surface-raised": { "$value": "#ffffff" },
+        "surface-sunken": { "$value": "#f0ebe2" },
+        "border": { "$value": "#c9bba5" },
+        "line-subtle": { "$value": "rgba(0, 0, 0, 0.08)" },
+        "fg": { "$value": "#2a2018" },
+        "fg-muted": { "$value": "#6b5c4a" },
+        "fg-subtle": { "$value": "#a89b85" },
+        "accent": { "$value": "#a86f3c" },
+        "accent-hover": { "$value": "#c2854f" },
+        "focus-ring": { "$value": "rgba(168, 111, 60, 0.35)" }
+      }
+    }
+  }
+}

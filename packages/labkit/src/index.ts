@@ -63,6 +63,7 @@ export type {
   WorkspaceRecord,
 } from './state/types';
 export { useExperimentState } from './state/useExperimentState';
+export { interstellarTheme } from './theme/interstellar';
 export * from './ui/layers';
 export * from './ui/properties';
 export type { EventBus, EventListener } from './undo';

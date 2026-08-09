@@ -95,6 +95,7 @@
     "react-dom": "^19.0.0"
   },
   "dependencies": {
+    "@weasel-js/theme": "*",
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7",
     "react-aria-components": "^1.5.0",
@@ -105,7 +106,6 @@
     "@rollup/plugin-alias": "^6.0.0",
     "@testing-library/jest-dom": "^6.6.0",
     "@weasel-js/modes": "*",
-    "@weasel-js/theme": "*",
     "@weasel-js/ui": "*",
     "less": "^4.2.0",
     "rollup-plugin-dts": "^6.4.1",
