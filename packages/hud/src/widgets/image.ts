@@ -6,6 +6,8 @@ export interface ImageOptions {
   x: number; y: number; w: number; h: number;
   image: ImageBitmap;
   opacity?: number;
+  /** Magnification filter for the drawn bitmap. See `ImageDrawCommand.sampling`. */
+  sampling?: 'linear' | 'nearest';
   /** Injected by Hud factories to trigger redraw on mutation. */
   onChange?: () => void;
   /** Injected by Hud factories. Called from dispose() to remove this widget
@@ -45,6 +47,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
         kind: 'image', image,
         x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h,
         opacity: opts.opacity,
+        sampling: opts.sampling,
       };
       return [cmd];
     },
