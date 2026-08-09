@@ -113,3 +113,19 @@ That one call is the ergonomic, and it's enough.
 **Scope.** Applies to public hooks, ops, and component props that ingest
 or emit geometry. Internal kit code uses the typed-array form directly —
 this rule governs the consumer boundary, not kit internals.
+
+## Design tokens
+
+`--wzl-*` tokens are generated. Edit `packages/theme/tokens/<theme>/*.json`
+(DTCG) and run `npm run gen:tokens -w @weasel-js/theme`; never edit
+`packages/theme/src/generated/`. A determinism test fails CI if the committed
+output doesn't match what the generator produces from the source.
+
+Token names are flat leaf keys inside `$type` groups — `color.fg-muted` becomes
+`--wzl-fg-muted`. The type group carries `$type` and contributes nothing to the
+name, because `--wzl-accent` and `--wzl-accent-base` are both real tokens and
+DTCG forbids a token that is also a group.
+
+Two things DTCG can't express are namespaced `$extensions`: alpha-over-alias
+(`com.weasel.alpha`, which emits `color-mix()` in CSS and a computed `rgba()` in
+JS) and modes (sibling token sets under `modes/`).
