@@ -6,18 +6,19 @@ import '@weasel-js/theme/tokens.css';
 import '../packages/labkit/src/styles.less';
 import '../packages/labkit/src/theme/light.less';
 import '../packages/labkit/src/theme/interstellar.less';
-import labkitOswaldUrl from '../packages/labkit/src/fonts/oswald-latin-variable.woff2?url';
+import oswaldUrl from '../packages/theme/fonts/oswald-latin-variable.woff2?url';
 
 // labkit's CSS @font-face resolves its URL relative to the COMPILED dist
 // stylesheet, so re-declare Oswald here for Vite, plus the framing class used by
-// the `.lk-root` wrapper decorator below.
+// the `.lk-root` wrapper decorator below. The face is @weasel-js/theme's copy —
+// labkit's build copies that same file into its dist/fonts.
 if (typeof document !== 'undefined') {
   const id = 'labkit-sb-styles';
   if (!document.getElementById(id)) {
     const style = document.createElement('style');
     style.id = id;
     style.textContent =
-      `@font-face { font-family: 'Oswald'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('${labkitOswaldUrl}') format('woff2'); }` +
+      `@font-face { font-family: 'Oswald'; font-style: normal; font-weight: 200 700; font-display: swap; src: url('${oswaldUrl}') format('woff2'); }` +
       '.lk-sb-frame { padding: 16px; min-height: 100vh; }';
     document.head.appendChild(style);
   }
