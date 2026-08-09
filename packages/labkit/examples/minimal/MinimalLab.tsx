@@ -8,7 +8,7 @@ export function MinimalLab() {
       defaultInstrument="Stub"
       storage={localStorageAdapter}
       storageKey="minimal-lab"
-      theme="interstellar"
+      mode="dark"
       title="Minimal Lab"
     />
   );

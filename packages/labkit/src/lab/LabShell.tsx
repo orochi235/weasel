@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
-
-export type LabTheme = 'auto' | 'light' | 'interstellar';
+import { ThemeProvider, useThemeOptional } from '@weasel-js/theme/react';
+import type { LabMode } from '../state/types';
+import { interstellarTheme } from '../theme/interstellar';
+import { useResolvedMode } from './useSystemMode';
 
 export interface LabShellProps {
   title: string;
@@ -9,19 +11,16 @@ export interface LabShellProps {
   header?: ReactNode;
   /** Optional content rendered into the footer. */
   footer?: ReactNode;
-  /** Theme override. "auto" (default) follows prefers-color-scheme. */
-  theme?: LabTheme;
+  /** Color mode. "auto" (default) follows prefers-color-scheme. */
+  mode?: LabMode;
 }
 
-export function LabShell({ title, children, header, footer, theme = 'auto' }: LabShellProps) {
-  const themeClass =
-    theme === 'light'
-      ? ' lk-theme-light'
-      : theme === 'interstellar'
-        ? ' lk-theme-interstellar'
-        : '';
-  return (
-    <div className={`lk-root lk-shell${themeClass}`}>
+export function LabShell({ title, children, header, footer, mode = 'auto' }: LabShellProps) {
+  const resolved = useResolvedMode(mode);
+  const outer = useThemeOptional();
+
+  const shell = (
+    <div className="lk-root lk-shell">
       <header className="lk-shell-header">
         <h1 className="lk-shell-title">{title}</h1>
         {header && <div className="lk-shell-header-actions">{header}</div>}
@@ -29,5 +28,15 @@ export function LabShell({ title, children, header, footer, theme = 'auto' }: La
       <main className="lk-shell-body">{children}</main>
       {footer && <footer className="lk-shell-footer">{footer}</footer>}
     </div>
+  );
+
+  // Inside <Lab> the theme is already applied on `.lk-lab`; wrapping again
+  // would only add a div.
+  return outer ? (
+    shell
+  ) : (
+    <ThemeProvider theme={interstellarTheme} mode={resolved}>
+      {shell}
+    </ThemeProvider>
   );
 }

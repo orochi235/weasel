@@ -8,7 +8,7 @@ export function DragLab() {
       defaultInstrument="Garden"
       storage={localStorageAdapter}
       storageKey="drag-lab"
-      theme="interstellar"
+      mode="dark"
       title="Drag Lab"
     />
   );

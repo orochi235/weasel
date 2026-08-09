@@ -276,7 +276,7 @@ export const LeftSidebar: Story = {
 
 // ── Right sidebar: tails ───────────────────────────────────────────
 // Each tail is an EffectCard with a per-instance accent (--lk-panel-accent)
-// that re-binds --lk-accent inside the card. Drag the badge handle to reorder.
+// that re-binds --wzl-accent inside the card. Drag the badge handle to reorder.
 
 interface TailItem {
   id: number;

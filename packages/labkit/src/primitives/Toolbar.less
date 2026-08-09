@@ -1,17 +1,17 @@
 .lk-toolbar {
   display: flex;
   align-items: center;
-  gap: var(--lk-spacing-sm);
-  padding: var(--lk-spacing-xs) var(--lk-spacing-sm);
-  background: var(--lk-bg-elevated);
-  border-bottom: 1px solid var(--lk-border);
-  min-height: calc(var(--lk-control-height) + 2 * var(--lk-spacing-xs));
+  gap: var(--wzl-space-sm);
+  padding: var(--wzl-space-xs) var(--wzl-space-sm);
+  background: var(--wzl-surface-raised);
+  border-bottom: 1px solid var(--wzl-border);
+  min-height: calc(var(--wzl-control-h) + 2 * var(--wzl-space-xs));
 }
 
 .lk-toolbar-title {
   font-weight: 600;
-  color: var(--lk-text);
-  margin-right: var(--lk-spacing-sm);
+  color: var(--wzl-fg);
+  margin-right: var(--wzl-space-sm);
 }
 
 .lk-toolbar-spacer {
@@ -19,25 +19,25 @@
 }
 
 .lk-toolbar-button {
-  height: var(--lk-control-height);
-  padding: 0 var(--lk-spacing-sm);
-  font-size: var(--lk-font-size);
-  color: var(--lk-text);
+  height: var(--wzl-control-h);
+  padding: 0 var(--wzl-space-sm);
+  font-size: var(--wzl-font-size);
+  color: var(--wzl-fg);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--lk-radius);
+  border-radius: var(--wzl-radius-md);
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: var(--lk-bg);
-    border-color: var(--lk-border);
+    background: var(--wzl-surface);
+    border-color: var(--wzl-border);
   }
   &:focus-visible {
-    outline: 2px solid var(--lk-focus-ring);
+    outline: 2px solid var(--wzl-focus-ring);
     outline-offset: 1px;
   }
   &:disabled {
-    color: var(--lk-text-disabled);
+    color: var(--wzl-fg-subtle);
     cursor: not-allowed;
   }
 }

@@ -22,10 +22,13 @@ export interface SavedSnapshot {
   savedAt: number;
 }
 
+/** `auto` follows the OS; the other two are an explicit choice. */
+export type LabMode = 'auto' | 'light' | 'dark';
+
 export interface LabStoreState {
   workspaces: WorkspaceRecord[];
   savedSnapshots: SavedSnapshot[];
-  theme: 'light' | 'interstellar' | 'auto';
+  mode: LabMode;
 }
 
 export interface StorageAdapter {
@@ -44,7 +47,7 @@ export interface ExperimentStateHandle<TS, TC> {
 export interface CreateLabStoreOptions {
   storageKey: string;
   storage: StorageAdapter;
-  initialTheme?: 'light' | 'interstellar' | 'auto';
+  initialMode?: LabMode;
 }
 
 export type InstrumentSerializers = Record<

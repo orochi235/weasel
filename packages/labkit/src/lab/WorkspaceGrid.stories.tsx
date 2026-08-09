@@ -12,10 +12,10 @@ type Story = StoryObj<typeof WorkspaceGrid>;
 const Tile = ({ children }: { children: React.ReactNode }) => (
   <div
     style={{
-      background: 'var(--lk-bg-elevated)',
-      border: '1px solid var(--lk-border)',
-      borderRadius: 'var(--lk-radius)',
-      padding: 'var(--lk-spacing-md)',
+      background: 'var(--wzl-surface-raised)',
+      border: '1px solid var(--wzl-border)',
+      borderRadius: 'var(--wzl-radius-md)',
+      padding: 'var(--wzl-space-md)',
       minHeight: 120,
       display: 'grid',
       placeItems: 'center',

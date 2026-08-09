@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { Instrument } from '../instrument/types';
-import type { SavedSnapshot, WorkspaceRecord } from '../state/types';
+import type { LabMode, SavedSnapshot, WorkspaceRecord } from '../state/types';
 
 export interface LabContextValue {
   instruments: Instrument[];
@@ -13,8 +13,8 @@ export interface LabContextValue {
   saveSnapshot: (workspaceId: string, name?: string) => void;
   loadSnapshot: (workspaceId: string, snapshotId: string) => void;
   deleteSnapshot: (snapshotId: string) => void;
-  theme: 'auto' | 'light' | 'interstellar';
-  setTheme: (t: 'auto' | 'light' | 'interstellar') => void;
+  mode: LabMode;
+  setMode: (m: LabMode) => void;
 }
 
 export const LabContext = createContext<LabContextValue | null>(null);

@@ -1,8 +1,8 @@
 .lk-palette {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--lk-spacing-sm, 8px);
-  padding: var(--lk-spacing-sm, 8px);
+  gap: var(--wzl-space-sm);
+  padding: var(--wzl-space-sm);
 }
 
 .lk-palette__item {
@@ -10,9 +10,9 @@
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  padding: var(--lk-spacing-sm, 8px);
-  background: var(--lk-color-surface, #fff);
-  border: 1px solid var(--lk-color-border, #d0d0d0);
+  padding: var(--wzl-space-sm);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
   border-radius: 4px;
   cursor: grab;
   font: inherit;
@@ -21,7 +21,7 @@
   touch-action: none;
 
   &:hover {
-    background: var(--lk-color-surface-hover, #f4f4f4);
+    background: var(--wzl-surface-hover);
   }
 
   &:active {

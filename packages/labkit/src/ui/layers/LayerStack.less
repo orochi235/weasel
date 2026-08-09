@@ -12,10 +12,10 @@
 
 .lk-layer-stack__title {
   margin: 0;
-  font-family: var(--lk-font-display);
-  font-weight: var(--lk-font-weight-light, 300);
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
   font-size: 1rem;
-  color: var(--lk-text);
+  color: var(--wzl-fg);
 }
 
 .lk-layer-stack__palette {
@@ -25,17 +25,17 @@
 
 .lk-layer-stack__add {
   background: transparent;
-  border: 1px dashed var(--lk-border);
-  border-radius: var(--lk-radius-sm, 6px);
+  border: 1px dashed var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
   padding: 2px 8px;
   font-size: 0.78rem;
-  color: var(--lk-text-dim);
+  color: var(--wzl-fg-subtle);
   cursor: pointer;
 }
 
 .lk-layer-stack__add:hover {
-  background: var(--lk-bg-elevated);
-  color: var(--lk-text);
+  background: var(--wzl-surface-raised);
+  color: var(--wzl-fg);
 }
 
 .lk-layer-stack__list {
@@ -45,29 +45,29 @@
 
 .lk-layer-stack__drop-hint {
   height: 2px;
-  background: var(--lk-accent, #6cf);
+  background: var(--wzl-accent);
   border-radius: 1px;
 }
 
 .lk-layer-stack__empty {
-  color: var(--lk-text-dim);
+  color: var(--wzl-fg-subtle);
   font-size: 0.85rem;
   padding: 8px;
   text-align: center;
 }
 
 .lk-layer-card {
-  background: var(--lk-bg-elevated);
-  border: 1px solid var(--lk-border);
-  border-radius: var(--lk-radius-md, 8px);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
   overflow: hidden;
 }
 
 .lk-layer-card.has-accent {
-  // Re-bind --lk-accent inside the card so descendant controls (slider tracks
+  // Re-bind --wzl-accent inside the card so descendant controls (slider tracks
   // and thumbs, readouts, etc.) tint to the per-card accent instead of the
   // global theme accent. Mirrors EffectCard's behavior.
-  --lk-accent: var(--lk-layer-card-accent);
+  --wzl-accent: var(--lk-layer-card-accent);
   border-left: 3px solid var(--lk-layer-card-accent);
 }
 
@@ -87,7 +87,7 @@
 .lk-root .lk-layer-card__handle {
   background: transparent;
   border: 0;
-  color: var(--lk-text-dim);
+  color: var(--wzl-fg-subtle);
   padding: 2px 4px;
   cursor: grab;
   display: inline-flex;
@@ -95,7 +95,7 @@
   justify-content: center;
   min-width: 22px;
   height: 22px;
-  border-radius: var(--lk-radius-sm, 6px);
+  border-radius: var(--wzl-radius-sm);
   font-weight: 600;
   font-size: 0.85rem;
 }
@@ -118,7 +118,7 @@
 .lk-layer-card__primary {
   background: transparent;
   border: 0;
-  color: var(--lk-text);
+  color: var(--wzl-fg);
   font: inherit;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -127,17 +127,17 @@
 .lk-root .lk-layer-card__remove {
   background: transparent;
   border: 0;
-  color: var(--lk-text-dim);
+  color: var(--wzl-fg-subtle);
   font-size: 1rem;
   cursor: pointer;
   padding: 2px 6px;
 }
 
 .lk-layer-card__remove:hover {
-  color: var(--lk-text);
+  color: var(--wzl-fg);
 }
 
 .lk-layer-card__body {
   padding: 8px;
-  border-top: 1px solid var(--lk-border);
+  border-top: 1px solid var(--wzl-border);
 }

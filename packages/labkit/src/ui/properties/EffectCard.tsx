@@ -26,7 +26,7 @@ export function Subpanel({ title, children, className }: SubpanelProps) {
 
 // ── EffectCard ───────────────────────────────────────────────────────
 // Draggable, collapsible card for stacked effect editors. Optional --lk-panel-accent
-// per-instance recolors the title bar, border-left, and (via re-binding --lk-accent
+// per-instance recolors the title bar, border-left, and (via re-binding --wzl-accent
 // inside the card) every descendant control that reads from the accent token.
 
 export interface EffectCardProps {
@@ -82,7 +82,7 @@ export function EffectCard({
   const stateClass = `${expanded ? 'is-expanded' : 'is-collapsed'}${dragging ? ' is-dragging' : ''}${accent ? ' has-accent' : ''}`;
   const cls = `lk-effect-card ${stateClass}${className ? ` ${className}` : ''}`;
   // Per-instance dynamic color → CSS custom property requires inline style.
-  // The card's CSS re-binds --lk-accent to --lk-panel-accent so descendants tint.
+  // The card's CSS re-binds --wzl-accent to --lk-panel-accent so descendants tint.
   const style = accent ? ({ '--lk-panel-accent': accent } as CSSProperties) : undefined;
 
   // When a toggle handler is supplied the header acts as a disclosure button:

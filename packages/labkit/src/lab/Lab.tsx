@@ -1,10 +1,13 @@
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
+import { ThemeProvider } from '@weasel-js/theme/react';
 import type { Instrument } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore, type LabStore } from '../state/store';
-import type { StorageAdapter, WorkspaceRecord } from '../state/types';
+import type { LabMode, StorageAdapter, WorkspaceRecord } from '../state/types';
+import { interstellarTheme } from '../theme/interstellar';
+import { useResolvedMode } from './useSystemMode';
 import { Workspace } from '../workspace/Workspace';
 import {
   addWorkspace as addWorkspaceOp,
@@ -21,12 +24,12 @@ export interface LabProps {
   defaultInstrument: string;
   storage?: StorageAdapter | null;
   storageKey?: string;
-  theme?: 'auto' | 'light' | 'interstellar';
+  mode?: LabMode;
   /**
    * Optional list of CSS colors used to compose the interstellar theme's
    * cosmic backdrop. Each color becomes one radial-gradient blob on the
    * dark void base. Order maps to a fixed spread of positions; extras wrap
-   * around. Ignored unless `theme="interstellar"` is active.
+   * around. Ignored unless the resolved mode is dark.
    */
   nebula?: readonly string[];
   title?: string;
@@ -38,9 +41,9 @@ function buildStore(
   defaultInstrument: string,
   storage: StorageAdapter,
   storageKey: string,
-  initialTheme: 'auto' | 'light' | 'interstellar',
+  initialMode: LabMode,
 ): LabStore {
-  const store = createLabStore({ storageKey, storage, initialTheme });
+  const store = createLabStore({ storageKey, storage, initialMode });
   if (store.getState().workspaces.length === 0) {
     const seeded = addWorkspaceOp([], instruments, defaultInstrument);
     const record = seeded[0];
@@ -78,7 +81,7 @@ export function Lab({
   defaultInstrument,
   storage,
   storageKey,
-  theme,
+  mode,
   nebula,
   title,
   children,
@@ -94,20 +97,21 @@ export function Lab({
       defaultInstrument,
       storage ?? noneAdapter,
       storageKey ?? 'labkit',
-      theme ?? 'auto',
+      mode ?? 'auto',
     );
   }
   const store = storeRef.current;
 
   const workspaces = useStore(store, (s) => s.workspaces);
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
-  const themeValue = useStore(store, (s) => s.theme);
+  const modeValue = useStore(store, (s) => s.mode);
+  const resolvedMode = useResolvedMode(modeValue);
 
   useEffect(() => {
-    if (theme && theme !== store.getState().theme) {
-      store.getState().setTheme(theme);
+    if (mode && mode !== store.getState().mode) {
+      store.getState().setMode(mode);
     }
-  }, [theme, store]);
+  }, [mode, store]);
 
   const contextValue = useMemo<LabContextValue>(() => {
     const replaceWorkspaces = (next: WorkspaceRecord[]): void => {
@@ -115,7 +119,7 @@ export function Lab({
       const merged = next.map((w) => currentById.get(w.id) ?? w);
       store.setState({ workspaces: merged });
       // Trigger persistence flush via a tracked action.
-      store.getState().setTheme(store.getState().theme);
+      store.getState().setMode(store.getState().mode);
     };
 
     return {
@@ -156,40 +160,37 @@ export function Lab({
       deleteSnapshot: (snapshotId) => {
         store.getState().deleteSnapshot(snapshotId);
       },
-      theme: themeValue,
-      setTheme: (t) => {
-        store.getState().setTheme(t);
+      mode: modeValue,
+      setMode: (m) => {
+        store.getState().setMode(m);
       },
     };
-  }, [instruments, workspaces, savedSnapshots, themeValue, store]);
+  }, [instruments, workspaces, savedSnapshots, modeValue, store]);
 
-  const themeClass =
-    themeValue === 'light'
-      ? 'lk-theme-light'
-      : themeValue === 'interstellar'
-        ? 'lk-theme-interstellar'
-        : '';
-
-  // Only apply the nebula override when interstellar is active and at
-  // least one color is provided. Setting a CSS custom property is the
-  // sanctioned use of inline style.
-  const nebulaStyle =
-    themeValue === 'interstellar' && nebula && nebula.length > 0
-      ? ({ ['--lk-space-nebula' as string]: buildNebula(nebula) } as CSSProperties)
+  // Only override the backdrop in dark, where there is one to override.
+  // Setting a CSS custom property is the sanctioned use of inline style.
+  const backdropStyle =
+    resolvedMode === 'dark' && nebula && nebula.length > 0
+      ? ({ ['--wzl-backdrop' as string]: buildNebula(nebula) } as CSSProperties)
       : undefined;
 
   return (
     <LabStoreContext.Provider value={{ store }}>
       <LabContext.Provider value={contextValue}>
-        <div className={`lk-lab ${themeClass}`.trim()} style={nebulaStyle}>
-          <LabShell title={title ?? 'Labkit'} theme={themeValue} header={children}>
+        <ThemeProvider
+          theme={interstellarTheme}
+          mode={resolvedMode}
+          className="lk-lab"
+          style={backdropStyle}
+        >
+          <LabShell title={title ?? 'Labkit'} mode={modeValue} header={children}>
             <WorkspaceGrid>
               {workspaces.map((w) => (
                 <Workspace key={w.id} id={w.id} />
               ))}
             </WorkspaceGrid>
           </LabShell>
-        </div>
+        </ThemeProvider>
       </LabContext.Provider>
     </LabStoreContext.Provider>
   );

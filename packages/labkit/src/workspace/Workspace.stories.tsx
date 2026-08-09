@@ -38,8 +38,8 @@ function Harness() {
     saveSnapshot: noop,
     loadSnapshot: noop,
     deleteSnapshot: noop,
-    theme: 'auto',
-    setTheme: noop,
+    mode: 'auto',
+    setMode: noop,
   };
   return (
     <LabStoreContext.Provider value={{ store }}>

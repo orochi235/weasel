@@ -56,6 +56,7 @@ export {
 export type {
   CreateLabStoreOptions,
   ExperimentStateHandle,
+  LabMode,
   LabStoreState,
   SavedSnapshot,
   StorageAdapter,

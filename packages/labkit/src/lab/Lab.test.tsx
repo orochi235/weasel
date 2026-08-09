@@ -89,27 +89,32 @@ describe('<Lab>', () => {
     expect(reset?.state).toEqual({ value: 0 });
   });
 
-  it('theme="light" applies lk-theme-light class', () => {
-    const { container } = mountLab({ theme: 'light' });
-    expect(container.querySelector('.lk-lab')?.className).toMatch(/lk-theme-light/);
+  it('mode="light" stamps light on the lab root', () => {
+    const { container } = mountLab({ mode: 'light' });
+    expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('light');
   });
 
-  it('theme="interstellar" applies lk-theme-interstellar class', () => {
-    const { container } = mountLab({ theme: 'interstellar' });
-    expect(container.querySelector('.lk-lab')?.className).toMatch(/lk-theme-interstellar/);
+  it('mode="dark" stamps dark on the lab root', () => {
+    const { container } = mountLab({ mode: 'dark' });
+    expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('dark');
   });
 
-  it('theme="auto" applies neither class', () => {
-    const { container } = mountLab({ theme: 'auto' });
-    const cls = container.querySelector('.lk-lab')?.className ?? '';
-    expect(cls).not.toMatch(/lk-theme-light/);
-    expect(cls).not.toMatch(/lk-theme-interstellar/);
+  it('mode="auto" resolves to a concrete mode', () => {
+    const { container } = mountLab({ mode: 'auto' });
+    expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toMatch(
+      /^(light|dark)$/,
+    );
   });
 
-  it('setTheme updates class at runtime', () => {
-    const { container } = mountLab({ theme: 'auto' });
-    act(() => labRef?.setTheme('light'));
-    expect(container.querySelector('.lk-lab')?.className).toMatch(/lk-theme-light/);
+  it('applies the interstellar theme in every mode', () => {
+    const { container } = mountLab({ mode: 'light' });
+    expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-theme')).toBe('interstellar');
+  });
+
+  it('setMode updates the stamped mode at runtime', () => {
+    const { container } = mountLab({ mode: 'auto' });
+    act(() => labRef?.setMode('light'));
+    expect(container.querySelector('.lk-lab')?.getAttribute('data-wzl-mode')).toBe('light');
   });
 
   it('throws when instruments is empty', () => {

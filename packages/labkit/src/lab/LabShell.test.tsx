@@ -22,38 +22,25 @@ describe('LabShell', () => {
     expect(screen.getByRole('button', { name: 'action' })).toBeInTheDocument();
   });
 
-  test('applies lk-theme-light class when theme="light"', () => {
+  test('stamps the requested mode under the interstellar theme', () => {
     const { container } = render(
-      <LabShell title="t" theme="light">
+      <LabShell title="t" mode="light">
         x
       </LabShell>,
     );
     const root = container.firstChild as HTMLElement;
-    expect(root.classList.contains('lk-theme-light')).toBe(true);
-    expect(root.classList.contains('lk-theme-interstellar')).toBe(false);
+    expect(root.getAttribute('data-wzl-theme')).toBe('interstellar');
+    expect(root.getAttribute('data-wzl-mode')).toBe('light');
   });
 
-  test('applies lk-theme-interstellar class when theme="interstellar"', () => {
-    const { container } = render(
-      <LabShell title="t" theme="interstellar">
-        x
-      </LabShell>,
-    );
-    const root = container.firstChild as HTMLElement;
-    expect(root.classList.contains('lk-theme-interstellar')).toBe(true);
-    expect(root.classList.contains('lk-theme-light')).toBe(false);
-  });
-
-  test('applies neither theme class when theme="auto" (default)', () => {
+  test('resolves mode="auto" to a concrete mode', () => {
     const { container } = render(<LabShell title="t">x</LabShell>);
     const root = container.firstChild as HTMLElement;
-    expect(root.classList.contains('lk-theme-light')).toBe(false);
-    expect(root.classList.contains('lk-theme-interstellar')).toBe(false);
+    expect(root.getAttribute('data-wzl-mode')).toMatch(/^(light|dark)$/);
   });
 
   test('always applies lk-root class', () => {
     const { container } = render(<LabShell title="t">x</LabShell>);
-    const root = container.firstChild as HTMLElement;
-    expect(root.classList.contains('lk-root')).toBe(true);
+    expect(container.querySelector('.lk-root')).not.toBeNull();
   });
 });

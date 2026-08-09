@@ -14,6 +14,9 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export interface ThemeProviderProps {
   readonly theme?: Theme;
   readonly mode?: string;
+  /** Applied to the wrapper element, so it can be the layout element too. */
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
   readonly children: React.ReactNode;
 }
 
@@ -22,10 +25,16 @@ export interface ThemeProviderProps {
  *
  * Consumers that draw outside the DOM (the WebGL HUD) read `resolved` and
  * never touch `getComputedStyle`.
+ *
+ * The wrapper is a real element in the layout. Pass `className` rather than
+ * nesting your own div inside — an anonymous div between a flex parent and
+ * its child breaks percentage heights.
  */
 export function ThemeProvider({
   theme = weaselTheme,
   mode,
+  className,
+  style,
   children,
 }: ThemeProviderProps): React.ReactElement {
   const ref = useRef<HTMLDivElement>(null);
@@ -42,7 +51,13 @@ export function ThemeProvider({
 
   return (
     <ThemeContext.Provider value={value}>
-      <div ref={ref} data-wzl-theme={theme.name} data-wzl-mode={effectiveMode}>
+      <div
+        ref={ref}
+        className={className}
+        style={style}
+        data-wzl-theme={theme.name}
+        data-wzl-mode={effectiveMode}
+      >
         {children}
       </div>
     </ThemeContext.Provider>

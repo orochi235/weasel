@@ -8,7 +8,7 @@ import type { ReactNode } from 'react';
 export function SideBySide({ block, inline }: { block: ReactNode; inline: ReactNode }) {
   const labelStyle = {
     font: '300 0.72rem/1 Oswald, system-ui',
-    color: 'var(--lk-text-muted)',
+    color: 'var(--wzl-fg-muted)',
     textTransform: 'uppercase' as const,
     letterSpacing: '0.08em',
     margin: '0 0 8px',

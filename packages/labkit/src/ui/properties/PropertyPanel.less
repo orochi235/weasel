@@ -4,21 +4,21 @@
 // everything else spans the full width.
 
 .lk-property-panel {
-  background: var(--lk-bg-elevated);
-  border: 1px solid var(--lk-border);
-  border-radius: var(--lk-radius-lg, 14px);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-lg);
   padding: 14px 16px;
-  backdrop-filter: blur(var(--lk-glass-blur, 0));
-  -webkit-backdrop-filter: blur(var(--lk-glass-blur, 0));
+  backdrop-filter: blur(var(--wzl-glass-blur));
+  -webkit-backdrop-filter: blur(var(--wzl-glass-blur));
 }
 
 .lk-property-panel__title {
-  font-family: var(--lk-font-display);
-  font-weight: var(--lk-font-weight-light, 300);
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
   font-size: 1.05rem;
   line-height: 1.2;
   letter-spacing: 0.01em;
-  color: var(--lk-text);
+  color: var(--wzl-fg);
   margin: 0 0 12px;
 }
 
@@ -83,11 +83,11 @@
 }
 
 .lk-property-row__label {
-  font-family: var(--lk-font-display);
-  font-weight: var(--lk-font-weight-light, 300);
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
   font-size: 0.78rem;
   line-height: 1.2;
-  color: var(--lk-text-muted);
+  color: var(--wzl-fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   display: flex;
@@ -97,8 +97,8 @@
 
 .lk-property-row__readout {
   font-style: normal;
-  font-weight: var(--lk-font-weight-medium, 500);
-  color: var(--lk-accent);
+  font-weight: var(--wzl-font-weight-medium);
+  color: var(--wzl-accent);
   margin-left: auto;
 }
 
@@ -107,12 +107,12 @@
 // so visual density matches the source.
 .lk-property-row__readout-input {
   font: inherit;
-  font-weight: var(--lk-font-weight-medium, 500);
+  font-weight: var(--wzl-font-weight-medium);
   // Force line-height 1 (the label parent inherits 1.2, which would make
   // the input box ~3px taller than the SB reference). Matches SB
   // styles.css:385 `font: 500 0.78rem/1`.
   line-height: 1;
-  color: var(--lk-accent);
+  color: var(--wzl-accent);
   background: transparent;
   border: 1px solid transparent;
   border-radius: 3px;
@@ -130,7 +130,7 @@
 }
 .lk-property-row__readout-input:focus {
   background: rgba(0, 0, 0, 0.4);
-  border-color: var(--lk-accent);
+  border-color: var(--wzl-accent);
 }
 .lk-property-row__readout-input::-webkit-inner-spin-button,
 .lk-property-row__readout-input::-webkit-outer-spin-button {
@@ -147,7 +147,7 @@
 }
 // Word-style units (e.g. "px") read as a small dim suffix next to the digits.
 .lk-property-row__readout-unit {
-  color: var(--lk-text-muted);
+  color: var(--wzl-fg-muted);
   font-size: 0.78em;
   line-height: 1;
   pointer-events: none;
@@ -156,13 +156,13 @@
 // positioning. Just dim them to match — do NOT set line-height: 0, that
 // would re-collapse the glyph onto the baseline.
 .lk-property-row__readout-group sup {
-  color: var(--lk-text-muted);
+  color: var(--wzl-fg-muted);
   font-size: 0.7em;
   pointer-events: none;
 }
 
 .lk-property-row input[type='range'] {
-  // Hairline track + small translucent thumb, tinted with the active --lk-accent.
+  // Hairline track + small translucent thumb, tinted with the active --wzl-accent.
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
@@ -175,12 +175,12 @@
 .lk-property-row input[type='range']::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 2px;
-  background: color-mix(in srgb, var(--lk-accent) 18%, transparent);
+  background: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
 }
 .lk-property-row input[type='range']::-moz-range-track {
   height: 4px;
   border-radius: 2px;
-  background: color-mix(in srgb, var(--lk-accent) 18%, transparent);
+  background: color-mix(in srgb, var(--wzl-accent) 18%, transparent);
 }
 .lk-property-row input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -188,7 +188,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--lk-accent) 70%, transparent);
+  background: color-mix(in srgb, var(--wzl-accent) 70%, transparent);
   border: none;
   margin-top: -2px;
 }
@@ -196,7 +196,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--lk-accent) 70%, transparent);
+  background: color-mix(in srgb, var(--wzl-accent) 70%, transparent);
   border: none;
 }
 
@@ -226,16 +226,16 @@
 .lk-property-row input[type='text']:not(.lk-property-row__readout-input),
 .lk-property-row input[type='number'] {
   background: rgba(0, 0, 0, 0.35);
-  color: var(--lk-text);
-  border: 1px solid var(--lk-border);
-  border-radius: var(--lk-radius-sm);
+  color: var(--wzl-fg);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
   padding: 6px 8px;
-  font: 400 0.85rem/1 var(--lk-font);
+  font: 400 0.85rem/1 var(--wzl-font-ui);
 }
 
 .lk-property-row input[type='text']:not(.lk-property-row__readout-input):focus,
 .lk-property-row input[type='number']:focus {
-  outline: 1px solid var(--lk-accent);
+  outline: 1px solid var(--wzl-accent);
 }
 
 // Selects in property rows render borderless — chevron only, transparent
@@ -244,15 +244,15 @@
 // still see something clickable.
 .lk-property-row select {
   background: transparent;
-  color: var(--lk-text);
+  color: var(--wzl-fg);
   border: 0;
   border-radius: 0;
   padding: 2px 0;
-  font: 400 0.85rem/1 var(--lk-font);
+  font: 400 0.85rem/1 var(--wzl-font-ui);
   cursor: pointer;
 }
 .lk-property-row select:focus {
-  outline: 1px solid var(--lk-accent);
+  outline: 1px solid var(--wzl-accent);
   outline-offset: 2px;
 }
 
@@ -290,7 +290,7 @@
   height: 18px;
   background: transparent;
   border: 0;
-  border-radius: var(--lk-radius-sm);
+  border-radius: var(--wzl-radius-sm);
   padding: 0;
   cursor: pointer;
   flex-shrink: 0;
@@ -305,10 +305,10 @@
   margin: 0;
 }
 .lk-property-row--color input[type='range'].lk-property-row__alpha::-webkit-slider-runnable-track {
-  background: color-mix(in srgb, var(--lk-accent) 10%, transparent);
+  background: color-mix(in srgb, var(--wzl-accent) 10%, transparent);
 }
 .lk-property-row--color input[type='range'].lk-property-row__alpha::-moz-range-track {
-  background: color-mix(in srgb, var(--lk-accent) 10%, transparent);
+  background: color-mix(in srgb, var(--wzl-accent) 10%, transparent);
 }
 // Disabled state: dim the track, hide the thumb, swap the cursor — used when
 // the consumer of the color drops alpha so the affordance reads as inert.
@@ -345,13 +345,13 @@
   text-transform: none;
   letter-spacing: normal;
   font-size: 0.85rem;
-  color: var(--lk-text);
+  color: var(--wzl-fg);
   // Place the label after the checkbox visually.
   order: 1;
 }
 
 .lk-property-row--checkbox input[type='checkbox'] {
-  accent-color: var(--lk-accent);
+  accent-color: var(--wzl-accent);
   width: 14px;
   height: 14px;
   cursor: pointer;
@@ -361,8 +361,8 @@
 .lk-property-row__toggle {
   display: flex;
   width: 100%;
-  border: 1px solid var(--lk-border);
-  border-radius: var(--lk-radius-sm);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
   overflow: hidden;
 }
 
@@ -371,28 +371,28 @@
   height: 26px;
   padding: 0 8px;
   background: rgba(0, 0, 0, 0.25);
-  color: var(--lk-text-muted);
+  color: var(--wzl-fg-muted);
   border: 0;
   border-radius: 0;
-  font: 400 0.78rem/1 var(--lk-font);
+  font: 400 0.78rem/1 var(--wzl-font-ui);
   cursor: pointer;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
 .lk-property-row__toggle-button + .lk-property-row__toggle-button {
-  border-left: 1px solid var(--lk-border);
+  border-left: 1px solid var(--wzl-border);
 }
 
 .lk-property-row__toggle-button:hover {
-  color: var(--lk-text);
-  border-color: var(--lk-border);
+  color: var(--wzl-fg);
+  border-color: var(--wzl-border);
 }
 
 .lk-property-row__toggle-button--selected {
-  background: var(--lk-accent);
+  background: var(--wzl-accent);
   color: #0a0a14;
-  font-weight: var(--lk-font-weight-medium, 500);
+  font-weight: var(--wzl-font-weight-medium);
 }
 
 .lk-property-row__toggle-button--selected:hover {
@@ -419,11 +419,11 @@
   grid-column: 1 / -1;
 }
 .lk-subpanel__title {
-  font-family: var(--lk-font-display);
+  font-family: var(--wzl-font-display);
   font-weight: 400;
   font-size: 0.72rem;
   line-height: 1;
-  color: var(--lk-text);
+  color: var(--wzl-fg);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0;
@@ -442,12 +442,12 @@
 
 // ── EffectCard ──────────────────────────────────────────────────────
 // Draggable, collapsible card. Optional --lk-panel-accent re-binds the
-// local --lk-accent so every descendant control auto-tints. Ported from
+// local --wzl-accent so every descendant control auto-tints. Ported from
 // speech-balloons styles.css:597-758 with class renames.
 .lk-effect-card {
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--lk-border);
-  border-radius: var(--lk-radius-sm);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -457,12 +457,12 @@
 .lk-effect-card.is-expanded { background: rgba(0, 0, 0, 0.3); }
 
 .lk-effect-card.has-accent {
-  // Re-bind --lk-accent inside the card so every descendant style that paints
-  // with var(--lk-accent) (readouts, slider thumb, etc.) picks up the
+  // Re-bind --wzl-accent inside the card so every descendant style that paints
+  // with var(--wzl-accent) (readouts, slider thumb, etc.) picks up the
   // per-card tint automatically.
-  --lk-accent: var(--lk-panel-accent);
+  --wzl-accent: var(--lk-panel-accent);
   background: color-mix(in srgb, var(--lk-panel-accent) 4%, rgba(0, 0, 0, 0.28));
-  border-color: color-mix(in srgb, var(--lk-panel-accent) 28%, var(--lk-border));
+  border-color: color-mix(in srgb, var(--lk-panel-accent) 28%, var(--wzl-border));
   border-left-width: 4px;
   border-left-color: var(--lk-panel-accent);
 }
@@ -490,7 +490,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--lk-text-muted);
+  color: var(--wzl-fg-muted);
   cursor: grab;
   padding: 0 2px;
 }
@@ -507,7 +507,7 @@
   justify-content: center;
   min-width: 14px;
   padding: 0 2px;
-  color: var(--lk-panel-accent, var(--lk-text-muted));
+  color: var(--lk-panel-accent, var(--wzl-fg-muted));
   font-size: 14px;
   font-weight: 700;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -515,21 +515,21 @@
 }
 
 .lk-effect-card__title {
-  font-family: var(--lk-font-display);
+  font-family: var(--wzl-font-display);
   font-weight: 500;
   font-size: 0.9rem;
   line-height: 1;
-  color: var(--lk-text);
+  color: var(--wzl-fg);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .lk-effect-card__primary {
-  font: 400 0.75rem/1 var(--lk-font);
-  color: var(--lk-text);
+  font: 400 0.75rem/1 var(--wzl-font-ui);
+  color: var(--wzl-fg);
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--lk-border);
-  border-radius: var(--lk-radius-sm);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
   padding: 2px 6px;
   margin-left: auto;
 }
@@ -545,7 +545,7 @@
 
 .lk-effect-card__remove {
   background: transparent;
-  color: var(--lk-text-muted);
+  color: var(--wzl-fg-muted);
   border: 1px solid transparent;
   border-radius: 4px;
   width: 22px;
@@ -564,7 +564,7 @@
 
 .lk-effect-card__body {
   padding: 4px 12px 12px;
-  border-top: 1px solid var(--lk-border);
+  border-top: 1px solid var(--wzl-border);
   // Body content is typically a PropertyList — the consumer chooses pack mode.
 }
 
@@ -577,16 +577,16 @@
 .lk-effect-card-list__wrap { position: relative; }
 .lk-effect-card-list__drop-hint {
   height: 0;
-  border-top: 2px solid var(--lk-accent);
+  border-top: 2px solid var(--wzl-accent);
   border-radius: 2px;
   margin: 2px 0;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--lk-accent) 60%, transparent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--wzl-accent) 60%, transparent);
 }
 .lk-effect-card-list__empty {
-  font: var(--lk-font-weight-light, 300) 0.78rem/1.4 var(--lk-font-display);
-  color: var(--lk-text-muted);
+  font: var(--wzl-font-weight-light) 0.78rem/1.4 var(--wzl-font-display);
+  color: var(--wzl-fg-muted);
   text-align: center;
   padding: 16px 12px;
-  border: 1px dashed var(--lk-border);
-  border-radius: var(--lk-radius-sm);
+  border: 1px dashed var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
 }

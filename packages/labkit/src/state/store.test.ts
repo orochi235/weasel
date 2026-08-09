@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from './adapters';
+import { labStorageKey } from './helpers';
 import { createLabStore } from './store';
 
 function makeStore(overrides?: Partial<Parameters<typeof createLabStore>[0]>) {
@@ -17,14 +18,14 @@ describe('createLabStore — initial state', () => {
     expect(s.getState().savedSnapshots).toEqual([]);
   });
 
-  it('uses initialTheme when provided', () => {
-    const s = makeStore({ initialTheme: 'light' });
-    expect(s.getState().theme).toBe('light');
+  it('uses initialMode when provided', () => {
+    const s = makeStore({ initialMode: 'light' });
+    expect(s.getState().mode).toBe('light');
   });
 
-  it('defaults theme to auto', () => {
+  it('defaults mode to auto', () => {
     const s = makeStore();
-    expect(s.getState().theme).toBe('auto');
+    expect(s.getState().mode).toBe('auto');
   });
 });
 
@@ -104,11 +105,18 @@ describe('updateWorkspaceConfig', () => {
   });
 });
 
-describe('setTheme', () => {
-  it('updates theme', () => {
+describe('setMode', () => {
+  it('updates mode', () => {
     const s = makeStore();
-    s.getState().setTheme('interstellar');
-    expect(s.getState().theme).toBe('interstellar');
+    s.getState().setMode('dark');
+    expect(s.getState().mode).toBe('dark');
+  });
+
+  it('hydrates a stored interstellar preference as dark', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('test', 'theme'), 'interstellar');
+    const s = createLabStore({ storageKey: 'test', storage });
+    expect(s.getState().mode).toBe('dark');
   });
 });
 

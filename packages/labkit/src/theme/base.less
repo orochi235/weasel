@@ -1,5 +1,3 @@
-@import './tokens.less';
-
 // Self-hosted Oswald (variable font, wght axis 200–700) for the headline
 // typeface. Sourced from @weasel-js/theme; build:fonts copies it into dist/fonts.
 @font-face {
@@ -18,11 +16,11 @@
 
 // Resets and global element defaults.
 .lk-root {
-  font-family: var(--lk-font);
-  font-size: var(--lk-font-size);
-  font-weight: var(--lk-font-weight-light, 300);
-  color: var(--lk-text);
-  background: var(--lk-bg);
+  font-family: var(--wzl-font-ui);
+  font-size: var(--wzl-font-size);
+  font-weight: var(--wzl-font-weight-light);
+  color: var(--wzl-fg);
+  background: var(--wzl-surface);
   line-height: 1.4;
 
   *, *::before, *::after {
@@ -32,33 +30,33 @@
   button {
     font: inherit;
     color: inherit;
-    background: var(--lk-bg-elevated);
-    border: 1px solid var(--lk-border);
-    border-radius: var(--lk-radius);
-    height: var(--lk-control-height);
-    padding: 0 var(--lk-spacing-md);
+    background: var(--wzl-surface-raised);
+    border: 1px solid var(--wzl-border);
+    border-radius: var(--wzl-radius-md);
+    height: var(--wzl-control-h);
+    padding: 0 var(--wzl-space-md);
     cursor: pointer;
-    backdrop-filter: blur(var(--lk-glass-blur, 0));
-    -webkit-backdrop-filter: blur(var(--lk-glass-blur, 0));
+    backdrop-filter: blur(var(--wzl-glass-blur));
+    -webkit-backdrop-filter: blur(var(--wzl-glass-blur));
 
     &:hover {
-      border-color: var(--lk-accent);
-      color: var(--lk-accent);
+      border-color: var(--wzl-accent);
+      color: var(--wzl-accent);
     }
 
     &:focus-visible {
-      outline: 2px solid var(--lk-focus-ring);
+      outline: 2px solid var(--wzl-focus-ring);
       outline-offset: 1px;
     }
 
     &:disabled {
-      color: var(--lk-text-disabled);
+      color: var(--wzl-fg-subtle);
       cursor: not-allowed;
     }
   }
 
   input[type="range"] {
-    accent-color: var(--lk-accent);
+    accent-color: var(--wzl-accent);
   }
 }
 
@@ -67,7 +65,11 @@
 .lk-lab {
   position: relative;
   isolation: isolate;
-  background: var(--lk-space-nebula, var(--lk-bg));
+  background-color: var(--wzl-surface);
+  // `none` in any theme without a signature backdrop, which leaves the
+  // surface color. Splitting color from image is what lets one rule serve
+  // both modes — a shorthand would paint `background: none` transparent.
+  background-image: var(--wzl-backdrop);
   background-attachment: fixed;
 }
 
@@ -102,13 +104,13 @@
   background-repeat: no-repeat;
 }
 
-// Light theme opts out of the cosmic backdrop & starscape.
-.lk-theme-light.lk-lab {
-  background: var(--lk-bg);
+// The backdrop follows the token, but a starfield is structure, not a color —
+// it needs the mode.
+.lk-lab[data-wzl-mode='light'] {
   background-attachment: scroll;
 }
 
-.lk-theme-light.lk-lab::before {
+.lk-lab[data-wzl-mode='light']::before {
   display: none;
 }
 
@@ -116,8 +118,8 @@
 .lk-lab h1,
 .lk-lab h2,
 .lk-lab h3 {
-  font-family: var(--lk-font-display);
-  font-weight: var(--lk-font-weight-light, 300);
+  font-family: var(--wzl-font-display);
+  font-weight: var(--wzl-font-weight-light);
   letter-spacing: 0.01em;
   line-height: 1.2;
 }

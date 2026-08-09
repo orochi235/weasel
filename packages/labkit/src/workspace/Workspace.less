@@ -2,9 +2,9 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--lk-bg);
-  border: 1px solid var(--lk-border);
-  border-radius: var(--lk-radius);
+  background: var(--wzl-surface);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-md);
   overflow: hidden;
 
   &__body {
@@ -24,35 +24,35 @@
 
   &__toolbar {
     flex-shrink: 0;
-    border-bottom: 1px solid var(--lk-divider);
+    border-bottom: 1px solid var(--wzl-line-subtle);
   }
 
   &__status {
     flex-shrink: 0;
-    border-top: 1px solid var(--lk-divider);
+    border-top: 1px solid var(--wzl-line-subtle);
   }
 
   &--unknown {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--lk-text-muted);
-    font-size: var(--lk-font-size-sm);
+    color: var(--wzl-fg-muted);
+    font-size: var(--wzl-font-size-sm);
   }
 }
 
 .lk-toolbar__zoom-label {
-  font-size: var(--lk-font-size-sm);
-  color: var(--lk-text-muted);
-  padding: 0 var(--lk-space-2);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+  padding: 0 var(--wzl-space-sm);
 }
 
 .lk-toolbar__load-select {
-  font-size: var(--lk-font-size-sm);
+  font-size: var(--wzl-font-size-sm);
 }
 
 .lk-sidebar__placeholder {
-  padding: var(--lk-space-2);
-  color: var(--lk-text-muted);
-  font-size: var(--lk-font-size-sm);
+  padding: var(--wzl-space-sm);
+  color: var(--wzl-fg-muted);
+  font-size: var(--wzl-font-size-sm);
 }

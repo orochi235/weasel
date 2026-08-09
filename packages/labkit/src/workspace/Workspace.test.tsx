@@ -130,8 +130,8 @@ function ChromeHarness({
     saveSnapshot: vi.fn(),
     loadSnapshot: vi.fn(),
     deleteSnapshot: vi.fn(),
-    theme: 'auto',
-    setTheme: vi.fn(),
+    mode: 'auto',
+    setMode: vi.fn(),
     ...labOverrides,
   };
   return (

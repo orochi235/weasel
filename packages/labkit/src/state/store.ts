@@ -8,6 +8,7 @@ import {
 import type {
   CreateLabStoreOptions,
   InstrumentSerializers,
+  LabMode,
   LabStoreState,
   SavedSnapshot,
   WorkspaceRecord,
@@ -30,7 +31,7 @@ export interface LabStoreActions {
   loadSnapshot: (snapshotId: string, workspaceId: string) => void;
   deleteSnapshot: (snapshotId: string) => void;
   listSnapshots: (workspaceId?: string) => SavedSnapshot[];
-  setTheme: (theme: 'light' | 'interstellar' | 'auto') => void;
+  setMode: (mode: LabMode) => void;
 }
 
 export type LabStore = StoreApi<LabStoreState & LabStoreActions> & {
@@ -58,18 +59,20 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
     }
   }
 
-  const themeRaw = options.storage.read(labStorageKey(options.storageKey, 'theme'));
-  let hydratedTheme: 'light' | 'interstellar' | 'auto';
-  if (themeRaw === 'light' || themeRaw === 'interstellar' || themeRaw === 'auto') {
-    hydratedTheme = themeRaw;
+  const modeRaw = options.storage.read(labStorageKey(options.storageKey, 'theme'));
+  // `interstellar` was the dark mode's name back when it was a theme.
+  const stored = modeRaw === 'interstellar' ? 'dark' : modeRaw;
+  let hydratedMode: LabMode;
+  if (stored === 'light' || stored === 'dark' || stored === 'auto') {
+    hydratedMode = stored;
   } else {
-    hydratedTheme = options.initialTheme ?? 'auto';
+    hydratedMode = options.initialMode ?? 'auto';
   }
 
   const store = createStore<LabStoreState & LabStoreActions>()((set, get) => ({
     workspaces: hydratedWorkspaces,
     savedSnapshots: hydratedSnapshots,
-    theme: hydratedTheme,
+    mode: hydratedMode,
 
     addWorkspace: (record) => {
       set((s) => ({
@@ -194,8 +197,8 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       return [...filtered].sort((a, b) => b.savedAt - a.savedAt);
     },
 
-    setTheme: (theme) => {
-      set({ theme });
+    setMode: (mode) => {
+      set({ mode });
       scheduleFlush();
     },
   }));
@@ -212,7 +215,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         labStorageKey(options.storageKey, 'saves'),
         JSON.stringify(s.savedSnapshots),
       );
-      options.storage.write(labStorageKey(options.storageKey, 'theme'), s.theme);
+      options.storage.write(labStorageKey(options.storageKey, 'theme'), s.mode);
       flushTimer = null;
     }, 300);
   }
