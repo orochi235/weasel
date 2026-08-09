@@ -22,6 +22,8 @@ Four readers of the same intent exist today, none of which the others enforce:
    `ResolvedTokens`. Every one of those 16 points at a *deprecated* alias.
 4. `scripts/vite-plugin-weasel-tokens.ts` — 125 lines of regex parsing
    `tokens.css` off disk to populate the Storybook CSS Vars panel.
+5. `packages/labkit/src/theme/*.less` — an entirely separate `--lk-*` token
+   system with its own named themes, built by `lessc`. See §10.
 
 Themes are not pluggable in any meaningful sense. A "theme" is
 `data-theme="light"|"dark"` hardcoded in our own stylesheet, or a consumer
@@ -50,6 +52,10 @@ gap in a published package (`@weasel-js/labkit@0.7.2`, not marked private).
 4. **The deprecated alias tier is deleted**, not preserved as generated
    aliases. ~264 call sites get migrated.
 5. **Fonts are bundled, not fetched.** The Google Fonts `@import` is removed.
+6. **labkit converges onto the shared system**, and its `interstellar` theme is
+   the proof case for pluggability. Its additional token groups (data-viz
+   swatches, spacing scale, z-layers, gradients) are contributed to the shared
+   source, so the schema must express them from the start.
 
 ## Design
 
@@ -258,9 +264,58 @@ packages/theme/
 - **Consumer smoke test:** `@weasel-js/theme` imports and resolves with no CSS
   import present.
 
+### 10. labkit convergence
+
+`packages/labkit` carries a complete parallel theming system, discovered while
+planning. It is a fifth reader, and the only place in the repo that already does
+named pluggable themes:
+
+- `src/theme/tokens.less` defines 42 `--lk-*` custom properties — surface, text,
+  accent, radius, spacing, typography, z-layers — sharing no names with
+  `--wzl-*` while covering much of the same ground. 22 files reference them
+  across 24 Less files.
+- Two named themes ship as public exports (`@weasel-js/labkit/theme-light.css`,
+  `/theme-interstellar.css`), applied by `<LabShell theme="…">` via
+  `.lk-theme-*` classes, with a `prefers-color-scheme` default on top.
+- `build:css` shells out to `lessc` three times.
+
+It diverged because it was vendored in from its own repo — its README still
+documents `file:../labkit` installation and a separate docs site.
+
+**`interstellar` becomes the proof case for the whole design.** A theme
+mechanism whose only exercise is our own light/dark pair demonstrates nothing;
+interstellar is a genuinely different look (cosmic gradient, glass surfaces,
+violet accent) authored by a different hand, which is exactly the third-party
+case `defineTheme`/`extends` exists to serve.
+
+Convergence:
+
+- `interstellar` and `lk-light` become DTCG themes extending `weasel`.
+- `--lk-*` collapses into `--wzl-*` wherever it duplicates an existing concept.
+- labkit's genuinely additional tokens are contributed as **new token groups in
+  the shared source**, not as a labkit-private tier: a ten-color data-viz swatch
+  set, a spacing scale, z-layer constants, and a `gradient` `$type` for
+  `--lk-space-nebula`. The DTCG schema must express all four from the start —
+  designing the schema around only weasel's current token set would force a v2.
+- The `lessc` pipeline and the three CSS exports are replaced by generated
+  output; `<LabShell theme>` routes through `applyTheme`.
+
+## Delivery
+
+Three plans, each shippable on its own:
+
+- **Plan A — token source of truth.** Fonts/OFL, DTCG source, generator,
+  generated artifacts replacing `tokens.css` / `tokens.ts` / the Storybook
+  plugin. Everything renders identically; nothing hand-mirrors anything.
+- **Plan B — runtime themes.** `resolveTheme` / `applyTheme` / `defineTheme` /
+  `loadDTCG`, the React entry, HUD bridge removal, the alias migration and its
+  three new semantic tokens, the `data-theme` rename, `apps/draw` as a theme.
+- **Plan C — labkit convergence.** §10.
+
 ## Out of scope
 
-- Generalized mode axes (density, contrast). Light/dark only.
+- Generalized mode axes (density, contrast). Named themes plus a light/dark
+  mode axis only.
 - A per-component token override API.
 - A runtime theme-editing UI.
 - Migrating `apps/site/canvas-kit-demo.css`'s raw `--wzl-font-ui` override
