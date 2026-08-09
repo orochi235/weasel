@@ -345,7 +345,7 @@ function ThemedSwatch({ token, theme }: { token: string; theme: 'dark' | 'light'
     setValue(cs.getPropertyValue(token).trim() || cs.backgroundColor);
   }, [token]);
   return (
-    <div ref={ref} data-theme={theme} className={s.swatchPair}>
+    <div ref={ref} data-wzl-mode={theme} className={s.swatchPair}>
       <div className={s.swatchPairChip} style={{ background: `var(${token})` }} />
       <code className={s.swatchPairValue}>{rgbToHex(value)}</code>
     </div>
@@ -358,7 +358,7 @@ function ColorsView(): ReactElement {
       <p className={s.colorsIntro}>
         Every semantic and primitive color token, rendered side-by-side in both themes. Hex values
         are read from the live document — drag the theme toggle and watch only the "current" side
-        update (the opposite side reads its values from a forced data-theme override).
+        update (the opposite side reads its values from a forced data-wzl-mode override).
       </p>
       {COLOR_TOKEN_GROUPS.map((group) => (
         <div key={group.title} className={s.colorsGroup}>
