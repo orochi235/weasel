@@ -21,4 +21,6 @@ export {
   type WindowZone, type WindowMetrics,
 } from './widgets/window/zones';
 export type { HudContentCtx } from './widget';
+export { createLoupe, type LoupeOptions, type LoupeHandle, type LoupeMode } from './loupe/createLoupe';
+export { loupeInnerView } from './loupe/innerView';
 export type { ResolvedTheme } from '@weasel-js/theme';
