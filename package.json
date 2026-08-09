@@ -55,7 +55,7 @@
     "lint": "eslint packages",
     "changeset": "changeset",
     "release": "changeset publish",
-    "prepublishOnly": "npm run typecheck && npm run lint && npm run test && npm run build && npm run check:manifests && npm run test:smoke:consumer",
+    "prepublishOnly": "npm run typecheck && npm run lint && npm run test && npm run test:stories && npm run build && npm run check:manifests && npm run test:smoke:consumer",
     "prepare": "npm run build",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
