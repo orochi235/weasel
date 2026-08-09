@@ -31,7 +31,7 @@
       "@weasel-js/ui": ["../ui/src/index.ts"],
       "@weasel-js/modes": ["../modes/src/index.ts"],
       "@weasel-js/theme": ["../theme/src/index.ts"],
-      "@weasel-js/theme/tokens.css": ["../theme/src/tokens.css"],
+      "@weasel-js/theme/tokens.css": ["../theme/src/generated/tokens.css"],
       "core/*": ["../core/src/core/*"],
       "features/*": ["../core/src/features/*"],
       "affordances/*": ["../core/src/affordances/*"],

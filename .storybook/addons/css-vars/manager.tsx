@@ -2,8 +2,8 @@
  * CSS Vars addon — manager-side panel.
  *
  * Two tabs:
- *   1. **Theme** — every `--wzl-*` token harvested from `tokens.css` at
- *      build time (via `virtual:weasel-tokens`).
+ *   1. **Theme** — every `--wzl-*` token, from the generated token
+ *      manifest.
  *   2. **Story** — every `var(--...)` reference the preview side scrapes
  *      out of the currently-rendered story's computed styles. Catches
  *      component-local vars like `--curve-line`.
@@ -18,9 +18,8 @@ import ReactDOM from 'react-dom';
 import { addons, types, useChannel } from 'storybook/manager-api';
 import { AddonPanel } from 'storybook/internal/components';
 // `tokens.generated.ts` is materialized by `preset.ts` on Storybook
-// start — see comments there. We import from the generated file rather
-// than `virtual:weasel-tokens` because the manager bundle is built by
-// esbuild, which doesn't see Vite virtual modules.
+// start — see comments there. The manager bundle is built by esbuild,
+// which can't resolve the workspace package, so it reads the copy.
 import tokens from './tokens.generated';
 
 const ADDON_ID = 'weasel/css-vars';

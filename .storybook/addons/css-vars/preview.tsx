@@ -14,7 +14,7 @@
  * mutation callbacks back-to-back.
  */
 import { addons } from 'storybook/preview-api';
-import tokens from 'virtual:weasel-tokens';
+import { TOKEN_MANIFEST as tokens } from '@weasel-js/theme';
 
 const EVT_INTROSPECT_RESULT = 'WEASEL_CSS_VARS/INTROSPECT_RESULT';
 const EVT_OVERRIDE = 'WEASEL_CSS_VARS/OVERRIDE';
@@ -151,7 +151,7 @@ function walkRules(rules: CSSRuleList, record: (name: string) => void): void {
 /**
  * Snapshot the computed value of every known theme token off `:root`,
  * so the Theme tab can show "current" (post-override, post-cascade)
- * alongside the static default we parsed from `tokens.css`.
+ * alongside the generated default.
  */
 function snapshotThemeComputed(): Record<string, string> {
   if (typeof document === 'undefined') return {};

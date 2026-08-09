@@ -26,7 +26,7 @@ export default defineConfig({
       // generic wildcard would otherwise rewrite to a `.ts` lookup.
       {
         find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(repoRoot, 'packages/theme/src/tokens.css'),
+        replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
       },
     ]),
   },

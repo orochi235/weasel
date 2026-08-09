@@ -506,11 +506,30 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ### Theming
 
-- **(P1) Make theming resilient and implementation-agnostic — it should "just work."** Today theming is a set of loosely-coupled conventions that each consumer has to re-derive, and every new surface (canvas-drawn chrome, DOM chrome, HUD widgets, published packages) re-solves it differently. The pieces that exist: `@weasel-js/theme` ships `tokens.css` (`--wzl-*` custom properties) plus a parallel TS export (`DEFAULT_TOKENS`/`TokenName`); `@weasel-js/ui` consumes tokens through 41 CSS Modules; `@weasel-js/hud` renders widgets into the canvas via WebGL and so can't read CSS custom properties at all without an explicit bridge; apps/draw layers its own `wd-` prefixed CSS on top; and the Storybook CSS Vars addon parses `tokens.css` off disk through `scripts/vite-plugin-weasel-tokens.ts`. Nothing enforces that these agree.
+- **(P1) Make theming resilient and implementation-agnostic.** Spec:
+  `docs/superpowers/specs/2026-08-08-dtcg-pluggable-theming-design.md`.
 
-  The goal is a single theming contract that holds regardless of *where* a pixel is drawn (DOM vs canvas vs WebGL), *how* the consumer builds (bundler, plain `<link>`, SSR), and *whether* they use our CSS at all — with sensible defaults so a consumer who does nothing still gets a coherent look, and one override point that reaches every surface at once.
+  **Plan A (DTCG source of truth) is done** (`docs/superpowers/plans/2026-08-09-dtcg-token-source.md`).
+  `packages/theme/tokens/` is now the only hand-edited token artifact, and one
+  generator emits `tokens.css`, the TS theme objects, the `TokenName` union, and
+  the Storybook manifest. The hand-mirrored `DEFAULT_TOKENS` and both regex
+  parsers (`scripts/vite-plugin-weasel-tokens.ts` and the css-vars preset's own
+  copy) are gone; a determinism test fails CI if the committed output drifts
+  from the source. Fonts are bundled under OFL instead of fetched from Google,
+  which also closed a live compliance gap — labkit was publishing Oswald with no
+  license or attribution.
 
-  Questions to settle in a spec: (a) is the source of truth CSS custom properties, the TS token object, or a build step that generates both from one input — and how do canvas/WebGL surfaces read it without a DOM `getComputedStyle` round-trip per frame; (b) how do themes compose (light/dark, brand override, per-instance override) without `!important` or specificity fights; (c) what does a consumer import — is `@weasel-js/ui/style.css` mandatory, and what breaks if they skip it; (d) how do tokens version across a lockstep release without every rename being a breaking change; (e) whether unthemed/partial-token states should fall back visibly or silently. Surfaced 2026-07-26 while making theme/ui/hud publishable: the packaging work forced each surface's theming assumptions into the open and they don't currently line up.
+  Remaining:
+
+  - **Plan B — runtime themes.** `resolveTheme` / `applyTheme` / `defineTheme` /
+    `loadDTCG`, the `@weasel-js/theme/react` entry, HUD bridge removal (drops
+    `getComputedStyle`, making headless render themeable), the
+    deprecated-alias migration (~264 refs) and its three new semantic tokens
+    (`--wzl-fg-inverse`, `--wzl-surface-hover`, `--wzl-surface-pressed`), and
+    `apps/draw`'s `--wd-*` becoming an `extends`-based theme.
+  - **Plan C — labkit convergence.** labkit's 42 `--lk-*` tokens and its `lessc`
+    pipeline collapse into the shared source, and `interstellar` becomes the
+    proof case for a third-party pluggable theme.
 
 ### Unscoped alias package name
 
