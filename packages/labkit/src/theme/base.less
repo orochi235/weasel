@@ -66,9 +66,7 @@
   position: relative;
   isolation: isolate;
   background-color: var(--wzl-surface);
-  // `none` in any theme without a signature backdrop, which leaves the
-  // surface color. Splitting color from image is what lets one rule serve
-  // both modes — a shorthand would paint `background: none` transparent.
+  // Not the shorthand: `background: none` paints transparent, not the surface.
   background-image: var(--wzl-backdrop);
   background-attachment: fixed;
 }
