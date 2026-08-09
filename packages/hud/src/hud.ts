@@ -5,6 +5,7 @@ import { createText, type TextOptions, type TextWidget } from './widgets/text';
 import { createImage, type ImageOptions, type ImageWidget } from './widgets/image';
 import { createLabel, type LabelOptions, type LabelWidget } from './widgets/label';
 import { createButton, type ButtonOptions, type ButtonWidget } from './widgets/button';
+import { createWindow, type WindowOptions, type WindowWidget } from './widgets/window/window';
 
 export interface Hud {
   add(widget: Widget): void;
@@ -25,6 +26,8 @@ export interface Hud {
   label(opts: LabelOptions): LabelWidget;
   /** Create a button widget, add it to the HUD, and wire onChange → markDirty. */
   button(opts: ButtonOptions): ButtonWidget;
+  /** Create a window widget, add it to the HUD, and wire onChange → markDirty. */
+  window(opts: WindowOptions): WindowWidget;
 }
 
 export function createHud(): Hud {
@@ -120,6 +123,14 @@ export function createHud(): Hud {
       let w: ButtonWidget | null = null;
       const removeFromHud = makeRemoveFromHud(() => w);
       w = createButton({ ...opts, onChange: () => requestRedraw(), removeFromHud });
+      list.push(w);
+      requestRedraw();
+      return w;
+    },
+    window(opts) {
+      let w: WindowWidget | null = null;
+      const removeFromHud = makeRemoveFromHud(() => w);
+      w = createWindow({ ...opts, onChange: () => requestRedraw(), removeFromHud });
       list.push(w);
       requestRedraw();
       return w;

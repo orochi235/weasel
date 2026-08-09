@@ -123,4 +123,23 @@ describe('Hud', () => {
     expect(() => r.dispose()).not.toThrow();
     expect(hud.widgets()).toEqual([]);
   });
+
+  it('window() adds the widget and wires onChange to markDirty', () => {
+    const hud = createHud();
+    const redraw = vi.fn();
+    hud.bind({ requestRedraw: redraw, registerLayer: () => () => {} });
+    const win = hud.window({ id: 'w', x: 0, y: 0, w: 200, h: 150, title: 'T' });
+    expect(hud.widgets()).toContain(win);
+    redraw.mockClear();
+    win.setTitle('U');
+    expect(redraw).toHaveBeenCalled();
+  });
+
+  it('a disposed window removes itself from the hud', () => {
+    const hud = createHud();
+    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    const win = hud.window({ id: 'w', x: 0, y: 0, w: 200, h: 150, title: 'T' });
+    win.dispose();
+    expect(hud.widgets()).not.toContain(win);
+  });
 });

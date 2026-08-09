@@ -15,4 +15,10 @@ export type { TextOptions, TextWidget } from './widgets/text';
 export type { ImageOptions, ImageWidget } from './widgets/image';
 export type { LabelOptions, LabelWidget } from './widgets/label';
 export type { ButtonOptions, ButtonWidget, ButtonEvent, ButtonHandler } from './widgets/button';
+export type { WindowOptions, WindowWidget } from './widgets/window/window';
+export {
+  DEFAULT_WINDOW_METRICS, cursorForZone,
+  type WindowZone, type WindowMetrics,
+} from './widgets/window/zones';
+export type { HudContentCtx } from './widget';
 export type { ResolvedTheme } from '@weasel-js/theme';
