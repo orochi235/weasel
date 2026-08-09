@@ -37,21 +37,10 @@
   --wzl-focus-ring: var(--wzl-accent-strong);
   /* Frosted-glass tint. Components compose it as color-mix(in srgb, var(--wzl-glass-tint) 78%, transparent) with backdrop-filter: blur(3px). */
   --wzl-glass-tint: var(--wzl-accent);
-  --wzl-text: var(--wzl-fg);
-  --wzl-text-muted: var(--wzl-fg-muted);
-  --wzl-bg: var(--wzl-surface);
-  --wzl-muted: var(--wzl-fg-muted);
-  --wzl-panel-bg: var(--wzl-surface);
-  --wzl-panel-border: var(--wzl-border);
-  --wzl-input-bg: var(--wzl-surface-sunken);
-  --wzl-track-bg: var(--wzl-surface-sunken);
-  --wzl-track-border: var(--wzl-border);
-  --wzl-thumb-fill: var(--wzl-fg-muted);
-  --wzl-thumb-border: var(--wzl-border-strong);
-  --wzl-button-fill: var(--wzl-surface-raised);
-  --wzl-button-fill-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
-  --wzl-button-fill-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
-  --wzl-button-text: var(--wzl-fg);
+  /* Hover wash over a raised surface. Same formula as line-subtle, different job — do not collapse them. */
+  --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
+  /* Pressed wash over a raised surface. */
+  --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
   --wzl-radius-sm: 3px;
   --wzl-radius-md: 5px;
   --wzl-border-w: 1px;
@@ -87,7 +76,8 @@
   --wzl-border-strong: var(--wzl-gray-600);
   /* Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces. */
   --wzl-accent-fg: var(--wzl-accent-strong);
-  --wzl-thumb-text: var(--wzl-gray-900);
+  /* Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive. */
+  --wzl-fg-inverse: var(--wzl-gray-900);
 }
 
 :root {
@@ -107,7 +97,7 @@
   --wzl-border: var(--wzl-gray-700);
   --wzl-border-strong: var(--wzl-gray-600);
   --wzl-accent-fg: var(--wzl-accent-strong);
-  --wzl-thumb-text: var(--wzl-gray-900);
+  --wzl-fg-inverse: var(--wzl-gray-900);
 }
 
 [data-wzl-theme='weasel'][data-wzl-mode='light'],
@@ -122,5 +112,5 @@
   --wzl-border: var(--wzl-gray-200);
   --wzl-border-strong: var(--wzl-gray-300);
   --wzl-accent-fg: var(--wzl-accent-base);
-  --wzl-thumb-text: var(--wzl-gray-50);
+  --wzl-fg-inverse: var(--wzl-gray-50);
 }

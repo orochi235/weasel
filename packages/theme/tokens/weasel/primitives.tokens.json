@@ -36,21 +36,8 @@
     "focus-ring":   { "$value": "{color.accent-strong}" },
     "glass-tint":   { "$value": "{color.accent}", "$description": "Frosted-glass tint. Components compose it as color-mix(in srgb, var(--wzl-glass-tint) 78%, transparent) with backdrop-filter: blur(3px)." },
 
-    "text":                { "$value": "{color.fg}" },
-    "text-muted":          { "$value": "{color.fg-muted}" },
-    "bg":                  { "$value": "{color.surface}" },
-    "muted":               { "$value": "{color.fg-muted}" },
-    "panel-bg":            { "$value": "{color.surface}" },
-    "panel-border":        { "$value": "{color.border}" },
-    "input-bg":            { "$value": "{color.surface-sunken}" },
-    "track-bg":            { "$value": "{color.surface-sunken}" },
-    "track-border":        { "$value": "{color.border}" },
-    "thumb-fill":          { "$value": "{color.fg-muted}" },
-    "thumb-border":        { "$value": "{color.border-strong}" },
-    "button-fill":         { "$value": "{color.surface-raised}" },
-    "button-fill-hover":   { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.10 } },
-    "button-fill-pressed": { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.18 } },
-    "button-text":         { "$value": "{color.fg}" }
+    "surface-hover":   { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.10 }, "$description": "Hover wash over a raised surface. Same formula as line-subtle, different job — do not collapse them." },
+    "surface-pressed": { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.18 }, "$description": "Pressed wash over a raised surface." }
   },
 
   "dimension": {

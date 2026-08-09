@@ -9,8 +9,8 @@ const tokensDir = resolve(here, '../../tokens/weasel');
 
 const readJson = (p: string) => JSON.parse(readFileSync(resolve(tokensDir, p), 'utf8'));
 
-/** Every `--wzl-*` name declared in the pre-DTCG tokens.css. */
-const LEGACY_NAMES = [
+/** The intended token vocabulary. */
+const EXPECTED_NAMES = [
   'gray-50', 'gray-100', 'gray-200', 'gray-300', 'gray-400',
   'gray-500', 'gray-600', 'gray-700', 'gray-800', 'gray-900',
   'accent-soft', 'accent-base', 'accent-strong',
@@ -26,20 +26,16 @@ const LEGACY_NAMES = [
   'border', 'border-strong',
   'accent', 'accent-fg', 'accent-hover',
   'danger', 'warning', 'success', 'focus-ring', 'glass-tint',
-  'text', 'text-muted', 'bg', 'muted',
-  'panel-bg', 'panel-border', 'input-bg',
-  'track-bg', 'track-border',
-  'thumb-fill', 'thumb-border', 'thumb-text',
-  'button-fill', 'button-fill-hover', 'button-fill-pressed', 'button-text',
+  'fg-inverse', 'surface-hover', 'surface-pressed',
 ].sort();
 
 describe('DTCG source', () => {
-  it('declares exactly the token names the legacy tokens.css declared', () => {
+  it('declares exactly the intended token vocabulary', () => {
     const names = new Set([
       ...Object.keys(flattenTokens(readJson('primitives.tokens.json'))),
       ...Object.keys(flattenTokens(readJson('modes/dark.tokens.json'))),
     ]);
-    expect([...names].sort()).toEqual(LEGACY_NAMES);
+    expect([...names].sort()).toEqual(EXPECTED_NAMES);
   });
 
   it('declares the same token names in every mode', () => {

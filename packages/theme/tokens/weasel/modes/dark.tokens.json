@@ -10,6 +10,6 @@
     "border":         { "$value": "{color.gray-700}" },
     "border-strong":  { "$value": "{color.gray-600}" },
     "accent-fg":      { "$value": "{color.accent-strong}", "$description": "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces." },
-    "thumb-text":     { "$value": "{color.gray-900}" }
+    "fg-inverse":   { "$value": "{color.gray-900}", "$description": "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive." }
   }
 }

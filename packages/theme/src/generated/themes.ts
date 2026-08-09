@@ -9,14 +9,9 @@ export type TokenName =
   | '--wzl-accent-hover'
   | '--wzl-accent-soft'
   | '--wzl-accent-strong'
-  | '--wzl-bg'
   | '--wzl-border'
   | '--wzl-border-strong'
   | '--wzl-border-w'
-  | '--wzl-button-fill'
-  | '--wzl-button-fill-hover'
-  | '--wzl-button-fill-pressed'
-  | '--wzl-button-text'
   | '--wzl-curve-color'
   | '--wzl-curve-width'
   | '--wzl-danger'
@@ -26,6 +21,7 @@ export type TokenName =
   | '--wzl-ease-out-back'
   | '--wzl-ease-out-cubic'
   | '--wzl-fg'
+  | '--wzl-fg-inverse'
   | '--wzl-fg-muted'
   | '--wzl-fg-on-accent'
   | '--wzl-fg-subtle'
@@ -48,31 +44,22 @@ export type TokenName =
   | '--wzl-gray-700'
   | '--wzl-gray-800'
   | '--wzl-gray-900'
-  | '--wzl-input-bg'
   | '--wzl-line'
   | '--wzl-line-strong'
   | '--wzl-line-subtle'
   | '--wzl-line-width'
   | '--wzl-motion-fast'
   | '--wzl-motion-medium'
-  | '--wzl-muted'
-  | '--wzl-panel-bg'
-  | '--wzl-panel-border'
   | '--wzl-radius-md'
   | '--wzl-radius-sm'
   | '--wzl-success'
   | '--wzl-success-base'
   | '--wzl-surface'
+  | '--wzl-surface-hover'
+  | '--wzl-surface-pressed'
   | '--wzl-surface-raised'
   | '--wzl-surface-sunken'
   | '--wzl-tb-height'
-  | '--wzl-text'
-  | '--wzl-text-muted'
-  | '--wzl-thumb-border'
-  | '--wzl-thumb-fill'
-  | '--wzl-thumb-text'
-  | '--wzl-track-bg'
-  | '--wzl-track-border'
   | '--wzl-warning'
   | '--wzl-warning-base';
 
@@ -117,27 +104,8 @@ export const THEMES = {
       '--wzl-success': "#2ec27e",
       '--wzl-focus-ring': "#5841b8",
       '--wzl-glass-tint': "#2e1f7a",
-      '--wzl-text': "#e6e7e9",
-      '--wzl-fg-muted': "#9ea1a8",
-      '--wzl-text-muted': "#9ea1a8",
-      '--wzl-surface': "#181a1e",
-      '--wzl-bg': "#181a1e",
-      '--wzl-muted': "#9ea1a8",
-      '--wzl-panel-bg': "#181a1e",
-      '--wzl-border': "#25272c",
-      '--wzl-panel-border': "#25272c",
-      '--wzl-surface-sunken': "#0e0f12",
-      '--wzl-input-bg': "#0e0f12",
-      '--wzl-track-bg': "#0e0f12",
-      '--wzl-track-border': "#25272c",
-      '--wzl-thumb-fill': "#9ea1a8",
-      '--wzl-border-strong': "#383b42",
-      '--wzl-thumb-border': "#383b42",
-      '--wzl-surface-raised': "#25272c",
-      '--wzl-button-fill': "#25272c",
-      '--wzl-button-fill-hover': "rgba(230, 231, 233, 0.1)",
-      '--wzl-button-fill-pressed': "rgba(230, 231, 233, 0.18)",
-      '--wzl-button-text': "#e6e7e9",
+      '--wzl-surface-hover': "rgba(230, 231, 233, 0.1)",
+      '--wzl-surface-pressed': "rgba(230, 231, 233, 0.18)",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
       '--wzl-border-w': "1px",
@@ -157,9 +125,15 @@ export const THEMES = {
       '--wzl-font-weight-light': "200",
       '--wzl-font-weight-normal': "300",
       '--wzl-font-weight-bold': "400",
+      '--wzl-surface': "#181a1e",
+      '--wzl-surface-raised': "#25272c",
+      '--wzl-surface-sunken': "#0e0f12",
+      '--wzl-fg-muted': "#9ea1a8",
       '--wzl-fg-subtle': "#6f737b",
+      '--wzl-border': "#25272c",
+      '--wzl-border-strong': "#383b42",
       '--wzl-accent-fg': "#5841b8",
-      '--wzl-thumb-text': "#0e0f12",
+      '--wzl-fg-inverse': "#0e0f12",
     },
     "light": {
       '--wzl-gray-50': "#f5f5f6",
@@ -191,27 +165,8 @@ export const THEMES = {
       '--wzl-success': "#2ec27e",
       '--wzl-focus-ring': "#5841b8",
       '--wzl-glass-tint': "#2e1f7a",
-      '--wzl-text': "#0e0f12",
-      '--wzl-fg-muted': "#383b42",
-      '--wzl-text-muted': "#383b42",
-      '--wzl-surface': "#f5f5f6",
-      '--wzl-bg': "#f5f5f6",
-      '--wzl-muted': "#383b42",
-      '--wzl-panel-bg': "#f5f5f6",
-      '--wzl-border': "#c9cbcf",
-      '--wzl-panel-border': "#c9cbcf",
-      '--wzl-surface-sunken': "#c9cbcf",
-      '--wzl-input-bg': "#c9cbcf",
-      '--wzl-track-bg': "#c9cbcf",
-      '--wzl-track-border': "#c9cbcf",
-      '--wzl-thumb-fill': "#383b42",
-      '--wzl-border-strong': "#9ea1a8",
-      '--wzl-thumb-border': "#9ea1a8",
-      '--wzl-surface-raised': "#e6e7e9",
-      '--wzl-button-fill': "#e6e7e9",
-      '--wzl-button-fill-hover': "rgba(14, 15, 18, 0.1)",
-      '--wzl-button-fill-pressed': "rgba(14, 15, 18, 0.18)",
-      '--wzl-button-text': "#0e0f12",
+      '--wzl-surface-hover': "rgba(14, 15, 18, 0.1)",
+      '--wzl-surface-pressed': "rgba(14, 15, 18, 0.18)",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
       '--wzl-border-w': "1px",
@@ -231,9 +186,15 @@ export const THEMES = {
       '--wzl-font-weight-light': "200",
       '--wzl-font-weight-normal': "300",
       '--wzl-font-weight-bold': "400",
+      '--wzl-surface': "#f5f5f6",
+      '--wzl-surface-raised': "#e6e7e9",
+      '--wzl-surface-sunken': "#c9cbcf",
+      '--wzl-fg-muted': "#383b42",
       '--wzl-fg-subtle': "#4d5058",
+      '--wzl-border': "#c9cbcf",
+      '--wzl-border-strong': "#9ea1a8",
       '--wzl-accent-fg': "#2e1f7a",
-      '--wzl-thumb-text': "#f5f5f6",
+      '--wzl-fg-inverse': "#f5f5f6",
     },
     },
   },
@@ -370,67 +331,17 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "value": "{color.accent}",
         "description": "Frosted-glass tint. Components compose it as color-mix(in srgb, var(--wzl-glass-tint) 78%, transparent) with backdrop-filter: blur(3px)."
       },
-      "text": {
-        "type": "color",
-        "value": "{color.fg}"
-      },
-      "text-muted": {
-        "type": "color",
-        "value": "{color.fg-muted}"
-      },
-      "bg": {
-        "type": "color",
-        "value": "{color.surface}"
-      },
-      "muted": {
-        "type": "color",
-        "value": "{color.fg-muted}"
-      },
-      "panel-bg": {
-        "type": "color",
-        "value": "{color.surface}"
-      },
-      "panel-border": {
-        "type": "color",
-        "value": "{color.border}"
-      },
-      "input-bg": {
-        "type": "color",
-        "value": "{color.surface-sunken}"
-      },
-      "track-bg": {
-        "type": "color",
-        "value": "{color.surface-sunken}"
-      },
-      "track-border": {
-        "type": "color",
-        "value": "{color.border}"
-      },
-      "thumb-fill": {
-        "type": "color",
-        "value": "{color.fg-muted}"
-      },
-      "thumb-border": {
-        "type": "color",
-        "value": "{color.border-strong}"
-      },
-      "button-fill": {
-        "type": "color",
-        "value": "{color.surface-raised}"
-      },
-      "button-fill-hover": {
+      "surface-hover": {
         "type": "color",
         "value": "{color.fg}",
-        "alpha": 0.1
+        "alpha": 0.1,
+        "description": "Hover wash over a raised surface. Same formula as line-subtle, different job — do not collapse them."
       },
-      "button-fill-pressed": {
+      "surface-pressed": {
         "type": "color",
         "value": "{color.fg}",
-        "alpha": 0.18
-      },
-      "button-text": {
-        "type": "color",
-        "value": "{color.fg}"
+        "alpha": 0.18,
+        "description": "Pressed wash over a raised surface."
       },
       "radius-sm": {
         "type": "dimension",
@@ -598,9 +509,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
           "value": "{color.accent-strong}",
           "description": "Accent for foreground use — text, icons, selected labels drawn on a surface. accent is a fill; the midnight base is too dim to read as text on dark surfaces."
         },
-        "thumb-text": {
+        "fg-inverse": {
           "type": "color",
-          "value": "{color.gray-900}"
+          "value": "{color.gray-900}",
+          "description": "Text drawn on a filled foreground-colored element (e.g. a slider thumb). Flips with the mode, so it is a semantic, not an alias to a primitive."
         }
       },
       "light": {
@@ -641,9 +553,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
           "value": "{color.accent-base}",
           "description": "Flips to the deep base in light mode, where it is the legible one."
         },
-        "thumb-text": {
+        "fg-inverse": {
           "type": "color",
-          "value": "{color.gray-50}"
+          "value": "{color.gray-50}",
+          "description": "Flips with the mode — see the dark layer."
         }
       }
     }
