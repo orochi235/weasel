@@ -90,6 +90,14 @@ describe('window widget', () => {
     expect(win.contentRect.w).toBe(230 - M.edge * 2);
   });
 
+  it('setBounds mid-drag ends the drag rather than rebasing from a stale origin', () => {
+    const win = createWindow(opts);
+    win.onPointer({ type: 'down', x: 150, y: 100 + M.titleH / 2, native: null });
+    win.setBounds({ x: 400, y: 400, w: 200, h: 150 });
+    win.onPointer({ type: 'move', x: 250, y: 200, native: null });
+    expect(win.bounds).toMatchObject({ x: 400, y: 400 });
+  });
+
   it('setBounds clamps to the minimum size', () => {
     const win = createWindow({ ...opts, minW: 80, minH: 60 });
     win.setBounds({ x: 0, y: 0, w: 10, h: 10 });

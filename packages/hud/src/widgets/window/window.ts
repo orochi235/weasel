@@ -75,7 +75,9 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     get cursor() { return hoverZone ? cursorForZone(hoverZone) : 'default'; },
     content: opts.content,
 
-    setBounds(b) { assertNotDisposed(); bounds = clamp(b); opts.onChange?.(); },
+    // Ends any drag in flight: `dragStart` would otherwise still hold the
+    // pre-call bounds, so the next move would rebase from stale origin.
+    setBounds(b) { assertNotDisposed(); bounds = clamp(b); dragZone = null; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setTitle(t) { assertNotDisposed(); title = t; opts.onChange?.(); },
 
