@@ -21,7 +21,7 @@ const shared = {
     alias: weaselAliases(__dirname, [
       {
         find: '@weasel-js/theme/tokens.css',
-        replacement: resolve(__dirname, 'packages/theme/src/tokens.css'),
+        replacement: resolve(__dirname, 'packages/theme/src/generated/tokens.css'),
       },
     ]),
   },

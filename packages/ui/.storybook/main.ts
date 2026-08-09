@@ -20,7 +20,7 @@ const config: StorybookConfig = {
         alias: [
           {
             find: '@weasel-js/theme/tokens.css',
-            replacement: resolve(repoRoot, 'packages/theme/src/tokens.css'),
+            replacement: resolve(repoRoot, 'packages/theme/src/generated/tokens.css'),
           },
           {
             find: '@weasel-js/theme',
