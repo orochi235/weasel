@@ -94,6 +94,19 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
       // Border ring: a stroked rect, no fill, so the interior stays a hole
       // for the content painter drawn beneath this widget.
+      // The grab bands sit outside contentRect, so nothing else paints them —
+      // without these the scene shows through the window's own border.
+      const band = ctx.tokens['--wzl-surface-raised'];
+      const below = y + m.titleH;
+      const bandH = h - m.titleH;
+      for (const r of [
+        { x, y: below, width: m.edge, height: bandH },
+        { x: x + w - m.edge, y: below, width: m.edge, height: bandH },
+        { x: x + m.edge, y: y + h - m.edge, width: w - m.edge * 2, height: m.edge },
+      ]) {
+        out.push({ kind: 'path', path: { kind: 'rect', ...r }, fill: { fill: 'solid', color: band } });
+      }
+
       const ring: PathDrawCommand = {
         kind: 'path',
         path: { kind: 'rect', x, y, width: w, height: h },

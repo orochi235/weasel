@@ -33,6 +33,21 @@ describe('window widget', () => {
     expect(covers).toBe(false);
   });
 
+  it('paints the resize bands, so the scene cannot show through the border', () => {
+    const win = createWindow(opts);
+    const filled = win.draw(ctx).filter(
+      (c) => c.kind === 'path' && c.path.kind === 'rect' && c.fill !== undefined,
+    ) as Array<{ path: { x: number; y: number; width: number; height: number } }>;
+    const covered = (px: number, py: number) => filled.some(
+      (c) => px >= c.path.x && px < c.path.x + c.path.width
+        && py >= c.path.y && py < c.path.y + c.path.height,
+    );
+    const cr = win.contentRect;
+    expect(covered(100 + M.edge / 2, cr.y + 10)).toBe(true);        // left band
+    expect(covered(300 - M.edge / 2, cr.y + 10)).toBe(true);        // right band
+    expect(covered(200, 250 - M.edge / 2)).toBe(true);              // bottom band
+  });
+
   it('hitTest covers the whole window including the interior', () => {
     const win = createWindow(opts);
     expect(win.hitTest(200, 200)).toBe(true);
