@@ -5,4 +5,9 @@ import { packagePreset } from '../../scripts/tsup-preset';
 // than run through a bundler. Neither uses CSS Modules, and a bundler would
 // rewrite fonts.css's `../fonts/*.woff2` URLs, which are deliberately relative
 // to the published package root.
-export default defineConfig(packagePreset({ entry: { index: 'src/index.ts' } }));
+export default defineConfig(
+  packagePreset({
+    entry: { index: 'src/index.ts', react: 'src/react.tsx' },
+    external: ['react'],
+  }),
+);

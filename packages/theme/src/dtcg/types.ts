@@ -7,8 +7,8 @@ export interface RawToken {
   readonly type: string;
   readonly value: TokenValue;
   /** Render the referenced color at this alpha, 0–1. */
-  readonly alpha: number | undefined;
-  readonly description: string | undefined;
+  readonly alpha?: number | undefined;
+  readonly description?: string | undefined;
 }
 
 export type FlatTokens = Record<string, RawToken>;
