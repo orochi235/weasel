@@ -114,11 +114,19 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       };
       out.push(ring);
 
-      out.push(textCommand(x + m.edge + 2, y + m.titleH / 2 + 4, title, {
-        fontFamily: ctx.defaultFont,
-        fontSize: 12,
-        fill: { fill: 'solid', color: ctx.tokens['--wzl-fg-muted'] },
-      }));
+      out.push(textCommand(
+        x + m.edge + 2, y, title,
+        {
+          fontFamily: ctx.defaultFont,
+          fontSize: 12,
+          fill: { fill: 'solid', color: ctx.tokens['--wzl-fg-muted'] },
+        },
+        // Reserve the close box so a long title is ellipsized rather than
+        // running under the ✕.
+        w - m.edge * 2 - m.closeSize - 4,
+        m.titleH,
+        'center',
+      ));
 
       const c = closeBox();
       const inset = 3;
