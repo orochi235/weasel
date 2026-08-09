@@ -110,15 +110,29 @@ Priority tags:
   holding will do something. Recorded 2026-08-02, alongside the `longPress`
   gesture kind landing.
 
-- **Loupe tool.** A magnifier that follows the pointer and paints a
-  zoomed inset of the scene under it — for placing anchors, checking seams,
-  and picking colors at pixel accuracy without disturbing the view. Open
-  questions: whether it re-renders the scene at a higher zoom into an offscreen
-  target or samples the existing backing store (sampling is cheap but blurs on
-  a HiDPI display); whether it's a tool that takes over the pointer, an
-  always-available modifier-held overlay, or a HUD widget; and whether it
-  belongs in `@weasel-js/hud` (it's chrome, not scene content) or ships as a
-  built-in tool. Requested 2026-07-31.
+- **(P2) Active tools swallow drags on HUD chrome.** `rect`, `ellipse`,
+  `polygon`, `star`, `hand`, `pen` and `lasso` each bind a bare
+  `{ kind: 'drag' }` in active scope with no target predicate, so a drag that a
+  registered layer's hit-test already claimed still reaches them — a HUD window
+  won't drag while any of them is active. `select`'s area-select had the same
+  hole and was fixed narrowly (`{ kind: 'drag', target: 'empty' }` resolves
+  `target` from the body only, ignoring the affordance). The real fix is a
+  dispatcher rule — an affordance a registered layer claimed outranks an active
+  binding that doesn't name it — not the same predicate copied into seven tools.
+  `createHudTool`'s doc block already claims this behavior exists. Found
+  2026-08-09 building the loupe.
+
+- **(P3) Interacting through a viewport.** `createViewportLayer` has no
+  hit-test re-projection, so a press inside a loupe or minimap targets the outer
+  view — it would act on whatever sits under the window on the real canvas, not
+  on what the user sees magnified. `hud.window()` claims every interior press to
+  prevent that. Wiring re-projection would let anchor placement happen *in* the
+  magnified view, which is the point of a loupe for precision work.
+
+- **(P3) Loupe pixel mode drops samples during a fast drag.** `refreshPixels`
+  skips while a `createImageBitmap` is in flight and schedules no trailing
+  refresh, so the readback can settle several samples behind the final pointer
+  position. Recorded 2026-08-09.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
