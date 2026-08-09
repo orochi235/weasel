@@ -23,6 +23,15 @@ describe('generated themes.ts', () => {
     expect(THEMES.weasel.modes.light['--wzl-line']).toBe('rgba(14, 15, 18, 0.2)');
   });
 
+  it('exposes unresolved sources so extends can rebase aliases', async () => {
+    const { THEME_SOURCES } = await import('./themes');
+    // --wzl-accent is an alias, not a literal, in the source form.
+    expect(THEME_SOURCES.weasel.primitives['accent'].value).toBe('{color.accent-base}');
+    // Mode layers carry only what differs.
+    expect(Object.keys(THEME_SOURCES.weasel.modes.dark)).toContain('surface');
+    expect(Object.keys(THEME_SOURCES.weasel.modes.dark)).not.toContain('gray-50');
+  });
+
   it('flips accent-fg per mode', () => {
     expect(THEMES.weasel.modes.dark['--wzl-accent-fg']).toBe('#5841b8');
     expect(THEMES.weasel.modes.light['--wzl-accent-fg']).toBe('#2e1f7a');
