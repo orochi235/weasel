@@ -1,0 +1,19 @@
+/* Opt-in webfont loading. Import this only if you want the kit's intended
+ * faces; the token font stacks fall back to system-ui without it.
+ * Licenses: ../fonts/OFL-Oswald.txt, ../fonts/OFL-Inter.txt */
+
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 200 700;
+  font-display: swap;
+  src: url('../fonts/oswald-latin-variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/inter-latin.woff2') format('woff2');
+}

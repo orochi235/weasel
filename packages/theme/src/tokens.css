@@ -7,8 +7,6 @@
  *   2. Semantic tokens — what components reference
  *   3. Deprecated aliases — kept so older components keep rendering
  */
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400&display=swap');
-
 :root {
   /* ---------- 1. Primitive scale ---------- */
 

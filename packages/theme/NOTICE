@@ -1,0 +1,18 @@
+@weasel-js/theme
+
+The package's source code is licensed under the MIT License (see LICENSE).
+
+This package additionally redistributes two font binaries under the SIL Open
+Font License, Version 1.1. The OFL applies to these files only:
+
+  fonts/oswald-latin-variable.woff2
+    Copyright 2016 The Oswald Project Authors
+    https://github.com/googlefonts/OswaldFont
+    License: fonts/OFL-Oswald.txt
+
+  fonts/inter-latin.woff2
+    Copyright (c) 2016 The Inter Project Authors
+    https://github.com/rsms/inter
+    License: fonts/OFL-Inter.txt
+
+See fonts/README.md for the exact subsetting commands used.

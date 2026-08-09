@@ -16,6 +16,7 @@
       "types": "./dist/index.d.ts"
     },
     "./tokens.css": "./dist/tokens.css",
+    "./fonts.css": "./dist/fonts.css",
     "./package.json": "./package.json"
   },
   "author": "orochi235",
@@ -33,11 +34,13 @@
   },
   "files": [
     "dist",
+    "fonts",
+    "NOTICE",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup && cp src/tokens.css dist/tokens.css"
+    "build": "tsup && cp src/tokens.css dist/tokens.css && cp src/fonts.css dist/fonts.css"
   },
   "publishConfig": {
     "access": "public",
