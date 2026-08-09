@@ -50,6 +50,7 @@
       "@weasel-js/geom/*": ["./packages/geom/src/*"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
       "@weasel-js/theme": ["./packages/theme/src/index.ts"],
+      "@weasel-js/theme/react": ["./packages/theme/src/react.tsx"],
       "@weasel-js/theme/tokens.css": ["./packages/theme/src/generated/tokens.css"],
       "@weasel-js/gestures": ["./packages/gestures/src/index.ts"],
       "@weasel-js/history": ["./packages/history/src/index.ts"],

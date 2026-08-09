@@ -7,7 +7,10 @@ import {
   DepRegistryProvider,
   SelectionContextProvider,
 } from '@weasel-js/core';
+import { ThemeProvider } from '@weasel-js/theme/react';
 import { App } from './App';
+import { drawTheme } from './theme';
+import { ColorModeProvider } from './colorMode';
 import { registerAvailableFonts } from './fonts';
 import { ToolkitBuilder } from './dev/ToolkitBuilder';
 import { RegistryInspector } from './dev/RegistryInspector';
@@ -57,9 +60,22 @@ function Root() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
-  if (hash.startsWith('#/dev/toolkits')) return <ToolkitBuilder />;
-  if (hash.startsWith('#/dev/registry')) return <RegistryInspector />;
-  return <App />;
+  const surface = hash.startsWith('#/dev/toolkits') ? (
+    <ToolkitBuilder />
+  ) : hash.startsWith('#/dev/registry') ? (
+    <RegistryInspector />
+  ) : (
+    <App />
+  );
+  return (
+    <ColorModeProvider>
+      {(mode) => (
+        <ThemeProvider theme={drawTheme} mode={mode}>
+          {surface}
+        </ThemeProvider>
+      )}
+    </ColorModeProvider>
+  );
 }
 
 // Stash the React root on the container element so Vite HMR doesn't construct

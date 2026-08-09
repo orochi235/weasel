@@ -295,7 +295,7 @@ export function PropertySwatchGrid(props: {
   const { onAltChange } = props;
   return (
     <div
-      className={`${s.swatchGrid} ${s.span12}`}
+      className={s.swatchGrid}
       style={cols === 6 ? undefined : { gridTemplateColumns: `repeat(${cols}, 1fr)` }}
     >
       {props.options.map((o, i) => {

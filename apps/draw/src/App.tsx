@@ -28,6 +28,7 @@ import {
   useCallback, useEffect, useMemo, useRef, useState,
   type CSSProperties, type ReactElement,
 } from 'react';
+import { useColorModeControl } from './colorMode';
 import {
   SceneCanvas,
   useScene,
@@ -1814,6 +1815,7 @@ function EditorStatusBar({
   const modeId = useModeId(machine);
   const activeTool = useActiveToolContext();
   const colors = useColorContext();
+  const colorMode = useColorModeControl();
   let groupCount = 0;
   for (const id of scene.renderOrder()) {
     const n = scene.get(id);
@@ -1833,6 +1835,19 @@ function EditorStatusBar({
       <StatusBarItem>stroke: {paintLabel(colors.stroke)}</StatusBarItem>
       <StatusBarSpacer />
       <StatusBarItem>zoom: {(view.scale.x * 100).toFixed(0)}%</StatusBarItem>
+      {colorMode && (
+        <StatusBarItem>
+          <button
+            type="button"
+            className="wd-mode-toggle"
+            onClick={colorMode.toggle}
+            title={`Switch to ${colorMode.mode === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={`Switch to ${colorMode.mode === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {colorMode.mode === 'dark' ? '\u25D1 dark' : '\u25D0 light'}
+          </button>
+        </StatusBarItem>
+      )}
       <StatusBarItem muted title={buildTitle()}>{buildLabel()}</StatusBarItem>
     </StatusBar>
   );

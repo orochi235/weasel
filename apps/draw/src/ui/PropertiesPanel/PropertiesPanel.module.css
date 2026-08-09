@@ -112,7 +112,13 @@
 
 .swatchGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, var(--wzl-swatch-size, 28px));
+  /* Span the whole row, not `span 12` of the parent's `auto repeat(12, 1fr)`.
+     Spanning 12 left the parent's leading `auto` track's width stranded at the
+     right edge, so the palette sat 4px from the left and ~23px from the right.
+     Paired with flexible tracks, the swatches now divide the full content
+     width and the block is flush with the panel padding on both sides. */
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(auto-fill, minmax(var(--wzl-swatch-size, 28px), 1fr));
   gap: 0;
 }
 .swatch {

@@ -54,3 +54,14 @@ export function useTheme(): ThemeContextValue {
   if (!ctx) throw new Error('useTheme must be used inside a <ThemeProvider>');
   return ctx;
 }
+
+/**
+ * The theme if one is provided, `null` otherwise.
+ *
+ * For kit internals that should follow a theme when the app supplies one but
+ * must still work in an app that never mounted a provider — `useHud` is the
+ * motivating case.
+ */
+export function useThemeOptional(): ThemeContextValue | null {
+  return useContext(ThemeContext);
+}
