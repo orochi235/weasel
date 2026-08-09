@@ -56,11 +56,9 @@ export function windowContentRect(b: WidgetBounds, m: WindowMetrics): WidgetBoun
 }
 
 /**
- * Bounds after dragging `zone` by `(dx, dy)` from `start`.
- *
- * West and north drags move an edge while the opposite edge stays put, so
- * clamping to the minimum has to hold that opposite edge — clamping width
- * alone would walk the window sideways once it bottoms out.
+ * Bounds after dragging `zone` by `(dx, dy)` from `start`. West/north
+ * clamping holds the opposite edge; clamping the extent alone would walk the
+ * window sideways once it bottoms out.
  */
 export function applyWindowDrag(
   start: WidgetBounds,
