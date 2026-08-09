@@ -405,14 +405,23 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     expect(magCalls.at(-1)?.args[2]).toBe(recorder.gl.NEAREST);
   });
 
-  it('defaults to LINEAR mag filter when sampling is omitted', () => {
+  it('restores LINEAR for an unsampled draw following a nearest one', () => {
+    // The first render warms GLImageCache, whose upload() emits its own
+    // MAG_FILTER call. Resetting after it leaves only the per-draw calls, so
+    // this fails if drawImage stops setting the filter — which the naive
+    // version of this test could not detect.
     const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
-    const cmd: DrawCommand = { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 };
-    r.render([cmd]);
-    const magCalls = recorder.calls.filter(
-      (c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER,
-    );
-    expect(magCalls.at(-1)?.args[2]).toBe(recorder.gl.LINEAR);
+    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 }]);
+    recorder.reset();
+
+    r.render([
+      { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64, sampling: 'nearest' },
+      { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 },
+    ]);
+    const magFilters = recorder.calls
+      .filter((c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER)
+      .map((c) => c.args[2]);
+    expect(magFilters).toEqual([recorder.gl.NEAREST, recorder.gl.LINEAR]);
   });
 });
 
