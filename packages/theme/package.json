@@ -40,10 +40,14 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup && cp src/tokens.css dist/tokens.css && cp src/fonts.css dist/fonts.css"
+    "gen:tokens": "tsx scripts/build-tokens.ts",
+    "build": "npm run gen:tokens && tsup && cp src/tokens.css dist/tokens.css && cp src/fonts.css dist/fonts.css"
   },
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "devDependencies": {
+    "tsx": "^4.23.11"
   }
 }
