@@ -1255,6 +1255,13 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   setProjAndModel(ctx, ctx.imageFill);
   setColorMatrixUniforms(ctx, ctx.imageFill);
   ctx.imageCache.bind(cmd.image, 0);
+  // Set per-draw, not at upload: GLImageCache keys textures by bitmap
+  // identity, so the same bitmap can be drawn at both filters in one frame.
+  gl.texParameteri(
+    gl.TEXTURE_2D,
+    gl.TEXTURE_MAG_FILTER,
+    cmd.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
+  );
   gl.uniform1i(ctx.imageFill.uniform('u_sampler')!, 0);
   gl.uniform1f(ctx.imageFill.uniform('u_opacity')!, cmd.opacity ?? 1);
   gl.uniform1f(ctx.imageFill.uniform('u_alpha')!, ctx.state.alpha);

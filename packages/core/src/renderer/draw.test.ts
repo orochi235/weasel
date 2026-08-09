@@ -392,6 +392,28 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
     });
     expect(identityUploaded).toBe(true);
   });
+
+  it('sets NEAREST mag filter for sampling:"nearest" image draws', () => {
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const cmd: DrawCommand = {
+      kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64, sampling: 'nearest',
+    };
+    r.render([cmd]);
+    const magCalls = recorder.calls.filter(
+      (c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER,
+    );
+    expect(magCalls.at(-1)?.args[2]).toBe(recorder.gl.NEAREST);
+  });
+
+  it('defaults to LINEAR mag filter when sampling is omitted', () => {
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const cmd: DrawCommand = { kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 64, h: 64 };
+    r.render([cmd]);
+    const magCalls = recorder.calls.filter(
+      (c) => c.name === 'texParameteri' && c.args[1] === recorder.gl.TEXTURE_MAG_FILTER,
+    );
+    expect(magCalls.at(-1)?.args[2]).toBe(recorder.gl.LINEAR);
+  });
 });
 
 describe('pushClip / popClip', () => {

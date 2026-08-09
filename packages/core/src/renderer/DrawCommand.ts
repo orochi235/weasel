@@ -109,6 +109,10 @@ export interface ImageDrawCommand {
   w: number;
   h: number;
   opacity?: number;
+  /** Magnification filter. `'linear'` (default) smooths; `'nearest'` shows
+   *  device pixels as hard squares — required by anything magnifying a
+   *  framebuffer readback, where blur destroys the point of the readback. */
+  sampling?: 'linear' | 'nearest';
 }
 
 /**
