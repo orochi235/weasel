@@ -43,13 +43,21 @@ function MyLab() {
 }
 ```
 
-## Theme
+## Theming
 
-Theme follows the OS by default. To force a theme:
+labkit ships one theme, `interstellar` — a cosmic dark and a warm parchment
+light — as a value, not a stylesheet:
 
 ```tsx
-<LabShell title="..." theme="dark">...</LabShell>
+import { interstellarTheme } from '@weasel-js/labkit';
+import { ThemeProvider } from '@weasel-js/theme/react';
+
+<ThemeProvider theme={interstellarTheme} mode="dark">…</ThemeProvider>
 ```
+
+`<Lab>` and `<LabShell>` do this for you; `mode` is `"auto"` (follow the OS),
+`"light"` or `"dark"`. Only `styles.css` needs importing — the token values
+arrive through the provider.
 
 ## Development
 

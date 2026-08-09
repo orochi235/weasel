@@ -21,11 +21,6 @@ Priority tags:
 - **Loupe tool** → [Tools & gestures](#tools--gestures)
 - **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
 
-### P1 — foundational genericity gaps
-
-**Plugins & packaging**
-- Resilient theming that "just works" across implementations → [Plugins & packaging](#plugins--packaging)
-
 ### P2 — broad reuse / friction-likely
 
 **Viewport**
@@ -504,36 +499,6 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Plugins & packaging
 
-### Theming
-
-- **(P1) Make theming resilient and implementation-agnostic.** Spec:
-  `docs/superpowers/specs/2026-08-08-dtcg-pluggable-theming-design.md`.
-
-  **Plan A (DTCG source of truth) is done** (`docs/superpowers/plans/2026-08-09-dtcg-token-source.md`).
-  `packages/theme/tokens/` is now the only hand-edited token artifact, and one
-  generator emits `tokens.css`, the TS theme objects, the `TokenName` union, and
-  the Storybook manifest. The hand-mirrored `DEFAULT_TOKENS` and both regex
-  parsers (`scripts/vite-plugin-weasel-tokens.ts` and the css-vars preset's own
-  copy) are gone; a determinism test fails CI if the committed output drifts
-  from the source. Fonts are bundled under OFL instead of fetched from Google,
-  which also closed a live compliance gap — labkit was publishing Oswald with no
-  license or attribution.
-
-  **Plan B (runtime themes) is done** (`docs/superpowers/plans/2026-08-09-runtime-pluggable-themes.md`).
-  `defineTheme` / `resolveTheme` / `applyTheme` / `loadDTCG` and the
-  `@weasel-js/theme/react` entry ship; the HUD receives the resolved record
-  instead of reading `getComputedStyle`, which makes headless render themeable;
-  the sixteen deprecated aliases are gone (264 refs migrated) and three became
-  real semantics (`--wzl-fg-inverse`, `--wzl-surface-hover`,
-  `--wzl-surface-pressed`); `apps/draw`'s `--wd-*` palette is now an
-  `extends`-based theme with a working light/dark switch.
-
-  Remaining:
-
-  - **Plan C — labkit convergence.** labkit's 42 `--lk-*` tokens and its `lessc`
-    pipeline collapse into the shared source, and `interstellar` becomes the
-    proof case for a third-party pluggable theme.
-
 ### Unscoped alias package name
 
 - **(P2) `weasel-js` is unpublishable under that name.** npm rejects it as too
@@ -634,6 +599,15 @@ From the WebGL transition spec — all deferred:
 - **(P3) Tests reaching into another package's `src/` by relative path.** Four hud tests imported `../../core/src/features/text/atlas/registerFont` and broke when that file moved during the `@weasel-js/font` extraction. They were repointed at `@weasel-js/font`, but the pattern likely exists elsewhere — worth a sweep (`grep -rn "\.\./\.\./[a-z-]*/src/" packages/*/src`).
 
 - **(P3) Last 4 React `act()` warnings in CI vitest.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The remaining 4 all come from `packages/core/src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test — a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`). A real fix has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log. Low value; defer.
+
+- **(P2) `packages/labkit/src` is outside `npm run typecheck`.** The root
+  `tsconfig.json` `include` lists every workspace's `src` except labkit's, so
+  `tsc --noEmit` never sees it. It is not uncovered — labkit's own
+  `build:dts` typechecks it via `tsconfig.lib.json` — but that only runs under
+  `npm run build`, so a type error in labkit passes `typecheck` and surfaces
+  much later. Found during Plan C, where a rename left `store.getState().setTheme`
+  in `Lab.tsx` and `typecheck` stayed green. Adding `packages/labkit/src` to the
+  include needs the `@weasel-js/labkit` path mapping too.
 
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.
 
