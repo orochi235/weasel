@@ -1,5 +1,5 @@
 import type { NodeId } from '../scene/types';
-import type { ModifierState } from 'interactions/gestures/types';
+import type { ModifierState } from '../modifierState';
 import type { Bounds } from '../viewport/fitViewToBounds';
 
 export type { Bounds };

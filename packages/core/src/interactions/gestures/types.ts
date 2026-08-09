@@ -1,13 +1,8 @@
 import type { Op } from 'core/ops/types';
 import type { InsertAdapter, MoveAdapter, SnapTarget } from 'core/adapters/types';
 
-/** Snapshot of modifier-key state at gesture dispatch. */
-export interface ModifierState {
-  alt: boolean;
-  shift: boolean;
-  meta: boolean;
-  ctrl: boolean;
-}
+import type { ModifierState } from 'core/modifierState';
+export type { ModifierState };
 
 /** Pointer position in both world and client coords. */
 export interface PointerState {

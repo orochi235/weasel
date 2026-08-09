@@ -62,13 +62,12 @@ export default [
      * duplicating a module — and a duplicated registry is a silent, total
      * failure rather than a loud one.
      *
-     * `allowTypeImports` is deliberate, and is why this is
-     * `@typescript-eslint/no-restricted-imports` rather than
-     * `import/no-restricted-paths` (which has no equivalent option): a
-     * type-only import is erased before a bundler ever sees it, so it cannot
-     * form the cycle this rule exists to prevent. Whether core's *types* ought
-     * to name features' types is a real design question — but it's a different
-     * one, and answering it with a build failure would be wrong.
+     * The arrow holds for type imports too: core named three upper-layer types
+     * (`Path`, `RectPose`, `ModifierState`) until 2026-08-08, when they moved
+     * down to `core/geometry/path.ts`, `core/scene/types.ts` and
+     * `core/modifierState.ts` with re-exports left at their old addresses. An
+     * erased import can't form the bundler cycle this rule mainly guards, but
+     * nothing needs the exemption now, so it isn't granted.
      */
     files: ['packages/core/src/core/**/*.{ts,tsx}'],
     languageOptions,
@@ -80,9 +79,8 @@ export default [
           patterns: [
             {
               group: ['features/*', 'interactions/*', '**/features/**', '**/interactions/**'],
-              allowTypeImports: true,
               message:
-                'core/ must not import from features/ or interactions/ at runtime. Dependencies flow one way.',
+                'core/ must not import from features/ or interactions/. Dependencies flow one way.',
             },
           ],
         },

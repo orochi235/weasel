@@ -18,16 +18,39 @@ import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset 
 import { applyStyleToRange, runsCarryStyling, styleAtRange } from './runs/rangeStyle';
 import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
 
-// TODO: widen to `underline` / `strikethrough`. `rangeStyle.ts` already lists
-// both in its `STYLE_KEYS` / `FLAG_KEYS` sets, so the run algebra is ready —
-// only this type and the `onKeyDown` / `togglePending` switches are narrower.
-// Until then Cmd+U is never intercepted, so the browser's native
-// `formatUnderline` runs and `domToRuns`' `<u>` flattening makes it *appear*
-// to work while bypassing `toggleFlagInRange` entirely: no toggle-off, no
-// mixed-range "turn the whole selection on" rule, no pending style for a
-// collapsed caret. The flattening should stay regardless — it's what makes
-// pasted decoration survive — but it is defense in depth, not the fix.
-type StyleFlag = 'bold' | 'italic';
+type StyleFlag = 'bold' | 'italic' | 'underline' | 'strikethrough';
+
+/**
+ * The shortcut each flag answers to. Strikethrough takes Cmd+Shift+X (Docs'
+ * binding) and MUST require shift: bare Cmd+X is cut, and swallowing it here
+ * would break cutting text mid-edit.
+ *
+ * Underline has to be intercepted, not merely supported. Left alone, the
+ * browser runs its own `formatUnderline` and `domToRuns`' `<u>` flattening
+ * makes that *look* like it worked while bypassing `toggleFlagInRange`
+ * entirely — no toggle-off, no mixed-range "turn the whole selection on"
+ * rule, no pending style for a collapsed caret. The flattening stays
+ * regardless, since it is what lets pasted decoration survive, but it is
+ * defense in depth and was never the mechanism.
+ */
+const FLAG_SHORTCUTS: ReadonlyArray<{ key: string; shift: boolean; flag: StyleFlag }> = [
+  { key: 'b', shift: false, flag: 'bold' },
+  { key: 'i', shift: false, flag: 'italic' },
+  { key: 'u', shift: false, flag: 'underline' },
+  { key: 'x', shift: true, flag: 'strikethrough' },
+];
+
+/** The flag `e` toggles, or null when it isn't a decoration shortcut. */
+function flagForKey(e: KeyboardEvent): StyleFlag | null {
+  if (!e.metaKey && !e.ctrlKey) return null;
+  const key = e.key.toLowerCase();
+  return FLAG_SHORTCUTS.find((s) => s.key === key && s.shift === e.shiftKey)?.flag ?? null;
+}
+
+/** `overlay.dataset` key holding the pending state of `flag` for a collapsed caret. */
+function pendingKey(flag: StyleFlag): string {
+  return `pending${flag[0].toUpperCase()}${flag.slice(1)}`;
+}
 
 /**
  * Toggle `flag` across `[start, end)`: if every run in range already has it,
@@ -459,7 +482,7 @@ export function useTextEdit(
     }
 
     function togglePending(flag: StyleFlag): void {
-      const key = flag === 'bold' ? 'pendingBold' : 'pendingItalic';
+      const key = pendingKey(flag);
       if (overlay.dataset[key] === '1') {
         delete overlay.dataset[key];
       } else {
@@ -478,9 +501,9 @@ export function useTextEdit(
         cancelEdit();
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'i' || e.key === 'B' || e.key === 'I')) {
+      const flag = flagForKey(e);
+      if (flag) {
         e.preventDefault();
-        const flag: StyleFlag = e.key.toLowerCase() === 'b' ? 'bold' : 'italic';
         handleStyleToggle(flag);
       }
     };
@@ -493,19 +516,27 @@ export function useTextEdit(
 
     const onBeforeInput = (ie: InputEvent) => {
       if (ie.inputType !== 'insertText' || !ie.data) return;
-      const pendingBold = overlay.dataset.pendingBold === '1';
-      const pendingItalic = overlay.dataset.pendingItalic === '1';
+      const pending = FLAG_SHORTCUTS
+        .map((s) => s.flag)
+        .filter((flag) => overlay.dataset[pendingKey(flag)] === '1');
       ie.preventDefault();
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0) return;
       const range = sel.getRangeAt(0);
       range.deleteContents();
-      if (pendingBold || pendingItalic) {
-        // Insert a new styled span for the pending-style character.
+      if (pending.length > 0) {
+        // Insert a new styled span for the pending-style character. The CSS
+        // written here is what `domToRuns` reads back, so it has to match the
+        // shapes `runsToDom` emits — both decorations share one
+        // `text-decoration`, since a second assignment would replace the first.
         const span = document.createElement('span');
         span.setAttribute('data-run', '');
-        if (pendingBold) span.style.fontWeight = '700';
-        if (pendingItalic) span.style.fontStyle = 'italic';
+        if (pending.includes('bold')) span.style.fontWeight = '700';
+        if (pending.includes('italic')) span.style.fontStyle = 'italic';
+        const decorations: string[] = [];
+        if (pending.includes('underline')) decorations.push('underline');
+        if (pending.includes('strikethrough')) decorations.push('line-through');
+        if (decorations.length > 0) span.style.textDecoration = decorations.join(' ');
         span.textContent = ie.data;
         range.insertNode(span);
         const after = document.createRange();
@@ -513,8 +544,7 @@ export function useTextEdit(
         after.collapse(true);
         sel.removeAllRanges();
         sel.addRange(after);
-        delete overlay.dataset.pendingBold;
-        delete overlay.dataset.pendingItalic;
+        for (const flag of pending) delete overlay.dataset[pendingKey(flag)];
       } else {
         // No pending style — insert the character as a plain text node at the
         // caret position so the surrounding run's span absorbs it.

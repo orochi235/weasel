@@ -416,14 +416,21 @@ function selectChars(overlay: HTMLElement, start: number, end: number): void {
   sel?.addRange(range);
 }
 
-function pressKey(overlay: HTMLElement, key: string, mods: { meta?: boolean; ctrl?: boolean } = {}): void {
-  overlay.dispatchEvent(new KeyboardEvent('keydown', {
+function pressKey(
+  overlay: HTMLElement,
+  key: string,
+  mods: { meta?: boolean; ctrl?: boolean; shift?: boolean } = {},
+): KeyboardEvent {
+  const ev = new KeyboardEvent('keydown', {
     key,
     metaKey: mods.meta ?? false,
     ctrlKey: mods.ctrl ?? false,
+    shiftKey: mods.shift ?? false,
     bubbles: true,
     cancelable: true,
-  }));
+  });
+  overlay.dispatchEvent(ev);
+  return ev;
 }
 
 function placeCaretAtChar(overlay: HTMLElement, charOffset: number): void {
@@ -1303,5 +1310,98 @@ describe('useTextEdit — commit routes on the styling the edit produced', () =>
     act(() => result.current.startEdit('a'));
     act(() => result.current.commit());
     expect(h.textCommits).toEqual([{ id: 'a', text: 'a\nb' }]);
+  });
+});
+
+describe('useTextEdit — decoration shortcuts route through the run algebra', () => {
+  it('Cmd-U over plain text wraps the selected range in an underlined run', () => {
+    const h = makeRichHarness({ a: { text: 'one two three', runs: [{ text: 'one two three' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 4, 7);
+    act(() => pressKey(overlay, 'u', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'one ' },
+      { text: 'two', underline: true },
+      { text: ' three' },
+    ]);
+  });
+
+  it('Cmd-U over an already-underlined range removes it', () => {
+    // The whole point: the native `formatUnderline` this replaces only ever
+    // turned decoration ON, and `domToRuns`' <u> flattening hid that.
+    const h = makeRichHarness({
+      a: { text: 'abc', runs: [{ text: 'abc', underline: true }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    act(() => pressKey(overlay, 'u', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abc' }]);
+  });
+
+  it('Cmd-U over a mixed range turns the whole selection on', () => {
+    const h = makeRichHarness({
+      a: { text: 'ab', runs: [{ text: 'a', underline: true }, { text: 'b' }] },
+    });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 2);
+    act(() => pressKey(overlay, 'u', { meta: true }));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'ab', underline: true }]);
+  });
+
+  it('Cmd-Shift-X toggles strikethrough; bare Cmd-X is left alone for cut', () => {
+    const h = makeRichHarness({ a: { text: 'abc', runs: [{ text: 'abc' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    const cut = pressKey(overlay, 'x', { meta: true });
+    expect(cut.defaultPrevented).toBe(false);
+    act(() => { pressKey(overlay, 'x', { meta: true, shift: true }); });
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([{ text: 'abc', strikethrough: true }]);
+  });
+
+  it('Cmd-U at a collapsed caret underlines the next typed character only', () => {
+    const h = makeRichHarness({ a: { text: 'a', runs: [{ text: 'a' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 1);
+    act(() => pressKey(overlay, 'u', { meta: true }));
+    act(() => dispatchBeforeInput(overlay, 'X'));
+    act(() => dispatchBeforeInput(overlay, 'Y'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'a' },
+      { text: 'X', underline: true },
+      { text: 'Y' },
+    ]);
+  });
+
+  it('pending underline + strikethrough share one text-decoration', () => {
+    // Two assignments to `span.style.textDecoration` would replace, not merge,
+    // so the second decoration would vanish on read-back.
+    const h = makeRichHarness({ a: { text: 'a', runs: [{ text: 'a' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    placeCaretAtChar(overlay, 1);
+    act(() => pressKey(overlay, 'u', { meta: true }));
+    act(() => pressKey(overlay, 'x', { meta: true, shift: true }));
+    act(() => dispatchBeforeInput(overlay, 'Z'));
+    act(() => result.current.commit());
+    expect(h.runCommits[0].runs).toEqual([
+      { text: 'a' },
+      { text: 'Z', underline: true, strikethrough: true },
+    ]);
   });
 });
