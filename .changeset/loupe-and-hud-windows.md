@@ -25,6 +25,12 @@ Aiming uses its own `pointermove` listener rather than hud hover, because hud
 hover comes from the layer's `onUncapturedMove` and stops during a captured drag
 — exactly when a magnifier is most wanted.
 
+Also fixed in the HUD: `hud.drag` pumped **world** coordinates into widgets
+while `hud.press` sent screen coordinates, because the dispatcher builds
+move/end contexts with an empty dep bag and the `view` lookup silently fell
+through. Invisible at zoom 1, and a window that jumped and tracked backwards at
+any other zoom. The drag action now captures its deps at gesture start.
+
 `ImageDrawCommand` gains `sampling: 'linear' | 'nearest'`, applied per draw at
 bind time rather than at upload, since `GLImageCache` keys textures by bitmap
 identity. Without `nearest`, magnifying a framebuffer readback comes back

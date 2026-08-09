@@ -129,6 +129,13 @@ Priority tags:
   prevent that. Wiring re-projection would let anchor placement happen *in* the
   magnified view, which is the point of a loupe for precision work.
 
+- **(P3) Detached scene renders drop rotation and per-node opacity.**
+  `wrapWithPoseRotation` and `alphaFor` live in `buildSceneLayer`, not in
+  `defaultDrawOne`, and aren't exported — so everything rendering a scene
+  outside the main canvas (`SceneViewCanvas`, `MinimapCanvas`,
+  `renderSceneToPixels`, and now the loupe) silently omits both. Moving them
+  into the shared draw path would fix all four at once. Recorded 2026-08-09.
+
 - **(P3) Loupe pixel mode drops samples during a fast drag.** `refreshPixels`
   skips while a `createImageBitmap` is in flight and schedules no trailing
   refresh, so the readback can settle several samples behind the final pointer
