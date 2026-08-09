@@ -31,6 +31,20 @@ describe('resolveTokens', () => {
     expect(out['ease-out-cubic']).toBe('cubic-bezier(0.33, 1, 0.68, 1)');
   });
 
+  it('passes gradient and number values through verbatim', () => {
+    const out = resolveTokens({
+      backdrop: {
+        type: 'gradient',
+        value: 'radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)',
+        alpha: undefined,
+        description: undefined,
+      },
+      'z-modal': { type: 'number', value: 30, alpha: undefined, description: undefined },
+    });
+    expect(out.backdrop).toBe('radial-gradient(ellipse at center, #0a0a18 0%, #02020a 100%)');
+    expect(out['z-modal']).toBe('30');
+  });
+
   it('throws naming the token when a reference is unresolvable', () => {
     expect(() => resolveTokens({ fg: t('{color.nope}') })).toThrow(/fg.*nope/);
   });

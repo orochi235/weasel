@@ -9,9 +9,11 @@ export type TokenName =
   | '--wzl-accent-hover'
   | '--wzl-accent-soft'
   | '--wzl-accent-strong'
+  | '--wzl-backdrop'
   | '--wzl-border'
   | '--wzl-border-strong'
   | '--wzl-border-w'
+  | '--wzl-control-h'
   | '--wzl-curve-color'
   | '--wzl-curve-width'
   | '--wzl-danger'
@@ -29,10 +31,14 @@ export type TokenName =
   | '--wzl-font-body'
   | '--wzl-font-display'
   | '--wzl-font-mono'
+  | '--wzl-font-size'
+  | '--wzl-font-size-sm'
   | '--wzl-font-ui'
   | '--wzl-font-weight-bold'
   | '--wzl-font-weight-light'
+  | '--wzl-font-weight-medium'
   | '--wzl-font-weight-normal'
+  | '--wzl-glass-blur'
   | '--wzl-glass-tint'
   | '--wzl-gray-100'
   | '--wzl-gray-200'
@@ -50,8 +56,13 @@ export type TokenName =
   | '--wzl-line-width'
   | '--wzl-motion-fast'
   | '--wzl-motion-medium'
+  | '--wzl-radius-lg'
   | '--wzl-radius-md'
   | '--wzl-radius-sm'
+  | '--wzl-space-lg'
+  | '--wzl-space-md'
+  | '--wzl-space-sm'
+  | '--wzl-space-xs'
   | '--wzl-success'
   | '--wzl-success-base'
   | '--wzl-surface'
@@ -59,9 +70,22 @@ export type TokenName =
   | '--wzl-surface-pressed'
   | '--wzl-surface-raised'
   | '--wzl-surface-sunken'
+  | '--wzl-swatch-amber'
+  | '--wzl-swatch-cyan'
+  | '--wzl-swatch-gold'
+  | '--wzl-swatch-green'
+  | '--wzl-swatch-magenta'
+  | '--wzl-swatch-mint'
+  | '--wzl-swatch-orange'
+  | '--wzl-swatch-pink'
+  | '--wzl-swatch-sky'
+  | '--wzl-swatch-violet'
   | '--wzl-tb-height'
   | '--wzl-warning'
-  | '--wzl-warning-base';
+  | '--wzl-warning-base'
+  | '--wzl-z-modal'
+  | '--wzl-z-overlay'
+  | '--wzl-z-toolbar';
 
 export interface GeneratedTheme {
   readonly name: string;
@@ -106,12 +130,35 @@ export const THEMES = {
       '--wzl-glass-tint': "#2e1f7a",
       '--wzl-surface-hover': "rgba(230, 231, 233, 0.1)",
       '--wzl-surface-pressed': "rgba(230, 231, 233, 0.18)",
+      '--wzl-swatch-green': "#2fdd18",
+      '--wzl-swatch-pink': "#ff5885",
+      '--wzl-swatch-cyan': "#00dfff",
+      '--wzl-swatch-gold': "#dcb700",
+      '--wzl-swatch-amber': "#ff8c00",
+      '--wzl-swatch-violet': "#a497ff",
+      '--wzl-swatch-mint': "#00e7af",
+      '--wzl-swatch-sky': "#00b8ff",
+      '--wzl-swatch-orange': "#ff6b00",
+      '--wzl-swatch-magenta': "#ff6eff",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
       '--wzl-border-w': "1px",
       '--wzl-line-width': "2px",
       '--wzl-curve-width': "3px",
       '--wzl-tb-height': "28px",
+      '--wzl-radius-lg': "14px",
+      '--wzl-control-h': "28px",
+      '--wzl-glass-blur': "3px",
+      '--wzl-font-size': "13px",
+      '--wzl-font-size-sm': "11px",
+      '--wzl-space-xs': "4px",
+      '--wzl-space-sm': "8px",
+      '--wzl-space-md': "12px",
+      '--wzl-space-lg': "16px",
+      '--wzl-z-toolbar': "10",
+      '--wzl-z-overlay': "20",
+      '--wzl-z-modal': "30",
+      '--wzl-backdrop': "none",
       '--wzl-motion-fast': "120ms",
       '--wzl-motion-medium': "240ms",
       '--wzl-ease-in-cubic': "cubic-bezier(0.32, 0, 0.67, 0)",
@@ -124,6 +171,7 @@ export const THEMES = {
       '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       '--wzl-font-weight-light': "200",
       '--wzl-font-weight-normal': "300",
+      '--wzl-font-weight-medium': "350",
       '--wzl-font-weight-bold': "400",
       '--wzl-surface': "#181a1e",
       '--wzl-surface-raised': "#25272c",
@@ -167,12 +215,35 @@ export const THEMES = {
       '--wzl-glass-tint': "#2e1f7a",
       '--wzl-surface-hover': "rgba(14, 15, 18, 0.1)",
       '--wzl-surface-pressed': "rgba(14, 15, 18, 0.18)",
+      '--wzl-swatch-green': "#2fdd18",
+      '--wzl-swatch-pink': "#ff5885",
+      '--wzl-swatch-cyan': "#00dfff",
+      '--wzl-swatch-gold': "#dcb700",
+      '--wzl-swatch-amber': "#ff8c00",
+      '--wzl-swatch-violet': "#a497ff",
+      '--wzl-swatch-mint': "#00e7af",
+      '--wzl-swatch-sky': "#00b8ff",
+      '--wzl-swatch-orange': "#ff6b00",
+      '--wzl-swatch-magenta': "#ff6eff",
       '--wzl-radius-sm': "3px",
       '--wzl-radius-md': "5px",
       '--wzl-border-w': "1px",
       '--wzl-line-width': "2px",
       '--wzl-curve-width': "3px",
       '--wzl-tb-height': "28px",
+      '--wzl-radius-lg': "14px",
+      '--wzl-control-h': "28px",
+      '--wzl-glass-blur': "3px",
+      '--wzl-font-size': "13px",
+      '--wzl-font-size-sm': "11px",
+      '--wzl-space-xs': "4px",
+      '--wzl-space-sm': "8px",
+      '--wzl-space-md': "12px",
+      '--wzl-space-lg': "16px",
+      '--wzl-z-toolbar': "10",
+      '--wzl-z-overlay': "20",
+      '--wzl-z-modal': "30",
+      '--wzl-backdrop': "none",
       '--wzl-motion-fast': "120ms",
       '--wzl-motion-medium': "240ms",
       '--wzl-ease-in-cubic': "cubic-bezier(0.32, 0, 0.67, 0)",
@@ -185,6 +256,7 @@ export const THEMES = {
       '--wzl-font-mono': "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       '--wzl-font-weight-light': "200",
       '--wzl-font-weight-normal': "300",
+      '--wzl-font-weight-medium': "350",
       '--wzl-font-weight-bold': "400",
       '--wzl-surface': "#f5f5f6",
       '--wzl-surface-raised': "#e6e7e9",
@@ -343,6 +415,47 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "alpha": 0.18,
         "description": "Pressed wash over a raised surface."
       },
+      "swatch-green": {
+        "type": "color",
+        "value": "#2fdd18",
+        "description": "First of ten categorical spot colors for plotting, status and data viz. Ordered — take them in sequence. Mode-invariant on purpose: a series keeps its color when the mode flips."
+      },
+      "swatch-pink": {
+        "type": "color",
+        "value": "#ff5885"
+      },
+      "swatch-cyan": {
+        "type": "color",
+        "value": "#00dfff"
+      },
+      "swatch-gold": {
+        "type": "color",
+        "value": "#dcb700"
+      },
+      "swatch-amber": {
+        "type": "color",
+        "value": "#ff8c00"
+      },
+      "swatch-violet": {
+        "type": "color",
+        "value": "#a497ff"
+      },
+      "swatch-mint": {
+        "type": "color",
+        "value": "#00e7af"
+      },
+      "swatch-sky": {
+        "type": "color",
+        "value": "#00b8ff"
+      },
+      "swatch-orange": {
+        "type": "color",
+        "value": "#ff6b00"
+      },
+      "swatch-magenta": {
+        "type": "color",
+        "value": "#ff6eff"
+      },
       "radius-sm": {
         "type": "dimension",
         "value": "3px"
@@ -369,6 +482,61 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
         "type": "dimension",
         "value": "28px",
         "description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToggleBar, ToolOptionsBar)."
+      },
+      "radius-lg": {
+        "type": "dimension",
+        "value": "14px"
+      },
+      "control-h": {
+        "type": "dimension",
+        "value": "28px",
+        "description": "Height of an interactive control — button, input, select. Distinct from tb-height, which sizes the strip a row of them sits in."
+      },
+      "glass-blur": {
+        "type": "dimension",
+        "value": "3px",
+        "description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint."
+      },
+      "font-size": {
+        "type": "dimension",
+        "value": "13px"
+      },
+      "font-size-sm": {
+        "type": "dimension",
+        "value": "11px"
+      },
+      "space-xs": {
+        "type": "dimension",
+        "value": "4px"
+      },
+      "space-sm": {
+        "type": "dimension",
+        "value": "8px"
+      },
+      "space-md": {
+        "type": "dimension",
+        "value": "12px"
+      },
+      "space-lg": {
+        "type": "dimension",
+        "value": "16px"
+      },
+      "z-toolbar": {
+        "type": "number",
+        "value": 10
+      },
+      "z-overlay": {
+        "type": "number",
+        "value": 20
+      },
+      "z-modal": {
+        "type": "number",
+        "value": 30
+      },
+      "backdrop": {
+        "type": "gradient",
+        "value": "none",
+        "description": "Layered backdrop fill for a page or lab root. `none` here; a theme with a signature background sets it."
       },
       "motion-fast": {
         "type": "duration",
@@ -464,6 +632,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
       "font-weight-normal": {
         "type": "fontWeight",
         "value": 300
+      },
+      "font-weight-medium": {
+        "type": "fontWeight",
+        "value": 350
       },
       "font-weight-bold": {
         "type": "fontWeight",

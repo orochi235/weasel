@@ -32,6 +32,18 @@ describe('generated themes.ts', () => {
     expect(Object.keys(THEME_SOURCES.weasel.modes.dark)).not.toContain('gray-50');
   });
 
+  it('carries the token groups labkit contributed', async () => {
+    const { THEME_SOURCES } = await import('./themes');
+    const dark = THEMES.weasel.modes.dark;
+    expect(dark['--wzl-space-md']).toBe('12px');
+    expect(dark['--wzl-z-modal']).toBe('30');
+    expect(dark['--wzl-swatch-cyan']).toBe('#00dfff');
+    expect(dark['--wzl-backdrop']).toBe('none');
+    // Mode-invariant: the swatch set does not flip.
+    expect(THEMES.weasel.modes.light['--wzl-swatch-cyan']).toBe('#00dfff');
+    expect(THEME_SOURCES.weasel.primitives['backdrop'].type).toBe('gradient');
+  });
+
   it('flips accent-fg per mode', () => {
     expect(THEMES.weasel.modes.dark['--wzl-accent-fg']).toBe('#5841b8');
     expect(THEMES.weasel.modes.light['--wzl-accent-fg']).toBe('#2e1f7a');

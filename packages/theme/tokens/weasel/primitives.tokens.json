@@ -37,7 +37,18 @@
     "glass-tint":   { "$value": "{color.accent}", "$description": "Frosted-glass tint. Components compose it as color-mix(in srgb, var(--wzl-glass-tint) 78%, transparent) with backdrop-filter: blur(3px)." },
 
     "surface-hover":   { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.10 }, "$description": "Hover wash over a raised surface. Same formula as line-subtle, different job — do not collapse them." },
-    "surface-pressed": { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.18 }, "$description": "Pressed wash over a raised surface." }
+    "surface-pressed": { "$value": "{color.fg}", "$extensions": { "com.weasel.alpha": 0.18 }, "$description": "Pressed wash over a raised surface." },
+
+    "swatch-green":   { "$value": "#2fdd18", "$description": "First of ten categorical spot colors for plotting, status and data viz. Ordered — take them in sequence. Mode-invariant on purpose: a series keeps its color when the mode flips." },
+    "swatch-pink":    { "$value": "#ff5885" },
+    "swatch-cyan":    { "$value": "#00dfff" },
+    "swatch-gold":    { "$value": "#dcb700" },
+    "swatch-amber":   { "$value": "#ff8c00" },
+    "swatch-violet":  { "$value": "#a497ff" },
+    "swatch-mint":    { "$value": "#00e7af" },
+    "swatch-sky":     { "$value": "#00b8ff" },
+    "swatch-orange":  { "$value": "#ff6b00" },
+    "swatch-magenta": { "$value": "#ff6eff" }
   },
 
   "dimension": {
@@ -47,7 +58,30 @@
     "border-w":    { "$value": "1px" },
     "line-width":  { "$value": "2px", "$description": "Structural lines — gridlines, dividers, axes." },
     "curve-width": { "$value": "3px", "$description": "Drawn data curves. Heavier than structural lines so data reads as primary content." },
-    "tb-height":   { "$value": "28px", "$description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToggleBar, ToolOptionsBar)." }
+    "tb-height":   { "$value": "28px", "$description": "Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToggleBar, ToolOptionsBar)." },
+    "radius-lg":   { "$value": "14px" },
+    "control-h":   { "$value": "28px", "$description": "Height of an interactive control — button, input, select. Distinct from tb-height, which sizes the strip a row of them sits in." },
+    "glass-blur":  { "$value": "3px", "$description": "Backdrop blur radius for frosted surfaces. Pairs with glass-tint." },
+
+    "font-size":    { "$value": "13px" },
+    "font-size-sm": { "$value": "11px" },
+
+    "space-xs": { "$value": "4px" },
+    "space-sm": { "$value": "8px" },
+    "space-md": { "$value": "12px" },
+    "space-lg": { "$value": "16px" }
+  },
+
+  "number": {
+    "$type": "number",
+    "z-toolbar": { "$value": 10 },
+    "z-overlay": { "$value": 20 },
+    "z-modal":   { "$value": 30 }
+  },
+
+  "gradient": {
+    "$type": "gradient",
+    "backdrop": { "$value": "none", "$description": "Layered backdrop fill for a page or lab root. `none` here; a theme with a signature background sets it." }
   },
 
   "duration": {
@@ -76,6 +110,7 @@
     "$type": "fontWeight",
     "font-weight-light":  { "$value": 200 },
     "font-weight-normal": { "$value": 300 },
+    "font-weight-medium": { "$value": 350 },
     "font-weight-bold":   { "$value": 400 }
   }
 }

@@ -41,6 +41,17 @@
   --wzl-surface-hover: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   /* Pressed wash over a raised surface. */
   --wzl-surface-pressed: color-mix(in srgb, var(--wzl-fg) 18%, transparent);
+  /* First of ten categorical spot colors for plotting, status and data viz. Ordered — take them in sequence. Mode-invariant on purpose: a series keeps its color when the mode flips. */
+  --wzl-swatch-green: #2fdd18;
+  --wzl-swatch-pink: #ff5885;
+  --wzl-swatch-cyan: #00dfff;
+  --wzl-swatch-gold: #dcb700;
+  --wzl-swatch-amber: #ff8c00;
+  --wzl-swatch-violet: #a497ff;
+  --wzl-swatch-mint: #00e7af;
+  --wzl-swatch-sky: #00b8ff;
+  --wzl-swatch-orange: #ff6b00;
+  --wzl-swatch-magenta: #ff6eff;
   --wzl-radius-sm: 3px;
   --wzl-radius-md: 5px;
   --wzl-border-w: 1px;
@@ -50,6 +61,22 @@
   --wzl-curve-width: 3px;
   /* Height of a horizontal toolbar strip (ActionsBar, OptionsBar, ToggleBar, ToolOptionsBar). */
   --wzl-tb-height: 28px;
+  --wzl-radius-lg: 14px;
+  /* Height of an interactive control — button, input, select. Distinct from tb-height, which sizes the strip a row of them sits in. */
+  --wzl-control-h: 28px;
+  /* Backdrop blur radius for frosted surfaces. Pairs with glass-tint. */
+  --wzl-glass-blur: 3px;
+  --wzl-font-size: 13px;
+  --wzl-font-size-sm: 11px;
+  --wzl-space-xs: 4px;
+  --wzl-space-sm: 8px;
+  --wzl-space-md: 12px;
+  --wzl-space-lg: 16px;
+  --wzl-z-toolbar: 10;
+  --wzl-z-overlay: 20;
+  --wzl-z-modal: 30;
+  /* Layered backdrop fill for a page or lab root. `none` here; a theme with a signature background sets it. */
+  --wzl-backdrop: none;
   /* Micro-interactions — hover, focus, pressed. */
   --wzl-motion-fast: 120ms;
   /* Entrances and exits — toasts, popovers, panels. */
@@ -65,6 +92,7 @@
   --wzl-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --wzl-font-weight-light: 200;
   --wzl-font-weight-normal: 300;
+  --wzl-font-weight-medium: 350;
   --wzl-font-weight-bold: 400;
   --wzl-surface: var(--wzl-gray-800);
   --wzl-surface-raised: var(--wzl-gray-700);
