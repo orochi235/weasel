@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect, useState } from 'react';
+import { useTheme } from '@weasel-js/theme/react';
+import type { TokenName } from '@weasel-js/theme';
 import {
   CheckboxRow,
   ColorRow,
@@ -17,7 +18,7 @@ const meta: Meta = {
       description: {
         component:
           'The interstellar theme: deep-space cosmic gradient + starscape backdrop, glass surfaces, Oswald display type, purple accent. ' +
-          'Tokens live in `src/theme/tokens.less` (defaults) and `src/theme/interstellar.less` (explicit `.lk-theme-interstellar` overrides).',
+          'Authored as DTCG in `src/theme/interstellar.tokens.json` and loaded with `loadDTCG`; it extends the built-in weasel theme, overriding values rather than adding tokens.',
       },
     },
   },
@@ -34,58 +35,40 @@ interface Swatch {
 }
 
 const SURFACE_TOKENS: Swatch[] = [
-  { name: 'bg', cssVar: '--lk-bg' },
-  { name: 'bg-elevated', cssVar: '--lk-bg-elevated' },
-  { name: 'bg-canvas', cssVar: '--lk-bg-canvas' },
-  { name: 'border', cssVar: '--lk-border' },
-  { name: 'divider', cssVar: '--lk-divider' },
+  { name: 'bg', cssVar: '--wzl-surface' },
+  { name: 'bg-elevated', cssVar: '--wzl-surface-raised' },
+  { name: 'bg-canvas', cssVar: '--wzl-surface-sunken' },
+  { name: 'border', cssVar: '--wzl-border' },
+  { name: 'divider', cssVar: '--wzl-line-subtle' },
 ];
 
 const TEXT_TOKENS: Swatch[] = [
-  { name: 'text', cssVar: '--lk-text' },
-  { name: 'text-muted', cssVar: '--lk-text-muted' },
-  { name: 'text-disabled', cssVar: '--lk-text-disabled' },
+  { name: 'text', cssVar: '--wzl-fg' },
+  { name: 'text-muted', cssVar: '--wzl-fg-muted' },
+  { name: 'text-disabled', cssVar: '--wzl-fg-subtle' },
 ];
 
 const ACCENT_TOKENS: Swatch[] = [
-  { name: 'accent', cssVar: '--lk-accent' },
-  { name: 'accent-hover', cssVar: '--lk-accent-hover' },
-  { name: 'focus-ring', cssVar: '--lk-focus-ring' },
+  { name: 'accent', cssVar: '--wzl-accent' },
+  { name: 'accent-hover', cssVar: '--wzl-accent-hover' },
+  { name: 'focus-ring', cssVar: '--wzl-focus-ring' },
 ];
 
 const PALETTE_TOKENS: Swatch[] = [
-  { name: 'green', cssVar: '--lk-swatch-green' },
-  { name: 'pink', cssVar: '--lk-swatch-pink' },
-  { name: 'cyan', cssVar: '--lk-swatch-cyan' },
-  { name: 'gold', cssVar: '--lk-swatch-gold' },
-  { name: 'amber', cssVar: '--lk-swatch-amber' },
-  { name: 'violet', cssVar: '--lk-swatch-violet' },
-  { name: 'mint', cssVar: '--lk-swatch-mint' },
-  { name: 'sky', cssVar: '--lk-swatch-sky' },
-  { name: 'orange', cssVar: '--lk-swatch-orange' },
-  { name: 'magenta', cssVar: '--lk-swatch-magenta' },
+  { name: 'green', cssVar: '--wzl-swatch-green' },
+  { name: 'pink', cssVar: '--wzl-swatch-pink' },
+  { name: 'cyan', cssVar: '--wzl-swatch-cyan' },
+  { name: 'gold', cssVar: '--wzl-swatch-gold' },
+  { name: 'amber', cssVar: '--wzl-swatch-amber' },
+  { name: 'violet', cssVar: '--wzl-swatch-violet' },
+  { name: 'mint', cssVar: '--wzl-swatch-mint' },
+  { name: 'sky', cssVar: '--wzl-swatch-sky' },
+  { name: 'orange', cssVar: '--wzl-swatch-orange' },
+  { name: 'magenta', cssVar: '--wzl-swatch-magenta' },
 ];
 
-/**
- * Resolves a CSS custom property's computed value off `document.documentElement`
- * so swatch cards can display the actual color alongside the var name.
- * Returns null until the first effect runs.
- */
-function useResolvedVars(vars: readonly string[]): Record<string, string> {
-  const key = vars.join('|');
-  const [resolved, setResolved] = useState<Record<string, string>>({});
-  useEffect(() => {
-    const root = document.querySelector('.lk-theme-interstellar') ?? document.documentElement;
-    const cs = window.getComputedStyle(root);
-    const out: Record<string, string> = {};
-    for (const v of key.split('|')) out[v] = cs.getPropertyValue(v).trim();
-    setResolved(out);
-  }, [key]);
-  return resolved;
-}
-
 function SwatchGrid({ tokens, title }: { tokens: readonly Swatch[]; title: string }) {
-  const resolved = useResolvedVars(tokens.map((t) => t.cssVar));
+  const { resolved } = useTheme();
   return (
     <div>
       <h3 className="lk-theme-doc__heading">{title}</h3>
@@ -96,7 +79,7 @@ function SwatchGrid({ tokens, title }: { tokens: readonly Swatch[]; title: strin
             <div className="lk-theme-doc__swatch-meta">
               <div className="lk-theme-doc__swatch-name">{t.name}</div>
               <code className="lk-theme-doc__swatch-var">{t.cssVar}</code>
-              <code className="lk-theme-doc__swatch-value">{resolved[t.cssVar] ?? '…'}</code>
+              <code className="lk-theme-doc__swatch-value">{resolved[t.cssVar as TokenName]}</code>
             </div>
           </div>
         ))}
@@ -108,8 +91,8 @@ function SwatchGrid({ tokens, title }: { tokens: readonly Swatch[]; title: strin
 function NebulaPreview() {
   return (
     <div>
-      <h3 className="lk-theme-doc__heading">Cosmic backdrop (`--lk-space-nebula`)</h3>
-      <div className="lk-theme-doc__nebula" style={{ background: 'var(--lk-space-nebula)' }} />
+      <h3 className="lk-theme-doc__heading">Cosmic backdrop (`--wzl-backdrop`)</h3>
+      <div className="lk-theme-doc__nebula" style={{ background: 'var(--wzl-backdrop)' }} />
       <p className="lk-theme-doc__note">
         Default: four radial gradients (purple, pink, blue, then a dark void base). Override per-Lab
         by passing <code>nebula={'{[colors]}'}</code> to the <code>&lt;Lab&gt;</code> component.
@@ -123,29 +106,29 @@ function TypographySample() {
     <div>
       <h3 className="lk-theme-doc__heading">Typography</h3>
       <div className="lk-theme-doc__type-stack">
-        <h1 style={{ font: '300 2.6rem/1 var(--lk-font-display)', color: 'var(--lk-text)' }}>
+        <h1 style={{ font: '300 2.6rem/1 var(--wzl-font-display)', color: 'var(--wzl-fg)' }}>
           Heading display 300
         </h1>
-        <h2 style={{ font: '300 1.4rem/1.2 var(--lk-font-display)', color: 'var(--lk-text)' }}>
+        <h2 style={{ font: '300 1.4rem/1.2 var(--wzl-font-display)', color: 'var(--wzl-fg)' }}>
           Heading 300
         </h2>
         <div
           style={{
-            font: '300 0.78rem/1 var(--lk-font-display)',
-            color: 'var(--lk-text-muted)',
+            font: '300 0.78rem/1 var(--wzl-font-display)',
+            color: 'var(--wzl-fg-muted)',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
           }}
         >
           Label uppercase 300
         </div>
-        <p style={{ font: '400 0.9rem/1.5 var(--lk-font)', color: 'var(--lk-text)' }}>
+        <p style={{ font: '400 0.9rem/1.5 var(--wzl-font-ui)', color: 'var(--wzl-fg)' }}>
           Body 400. Free-form prose at the default font size and line height.
         </p>
         <code
           style={{
-            font: '400 0.85rem/1 var(--lk-font-mono)',
-            color: 'var(--lk-text)',
+            font: '400 0.85rem/1 var(--wzl-font-mono)',
+            color: 'var(--wzl-fg)',
             background: 'rgba(0,0,0,0.35)',
             padding: '4px 8px',
             borderRadius: 3,
@@ -188,20 +171,21 @@ function LivePanelPreview() {
 export const Overview: Story = {
   render: () => (
     <div
-      className="lk-theme-interstellar lk-theme-doc"
+      className="lk-theme-doc"
       style={{
-        background: 'var(--lk-space-nebula)',
+        backgroundColor: 'var(--wzl-surface)',
+        backgroundImage: 'var(--wzl-backdrop)',
         padding: 32,
         minHeight: '100vh',
       }}
     >
-      <h1 style={{ font: '300 2.6rem/1 var(--lk-font-display)', color: 'var(--lk-text)' }}>
+      <h1 style={{ font: '300 2.6rem/1 var(--wzl-font-display)', color: 'var(--wzl-fg)' }}>
         Interstellar
       </h1>
       <p
         style={{
-          font: '300 1.05rem/1.4 var(--lk-font-display)',
-          color: 'var(--lk-text-muted)',
+          font: '300 1.05rem/1.4 var(--wzl-font-display)',
+          color: 'var(--wzl-fg-muted)',
           maxWidth: 640,
           margin: '12px 0 32px',
         }}
@@ -225,9 +209,10 @@ export const Overview: Story = {
 export const Palette: Story = {
   render: () => (
     <div
-      className="lk-theme-interstellar lk-theme-doc"
+      className="lk-theme-doc"
       style={{
-        background: 'var(--lk-space-nebula)',
+        backgroundColor: 'var(--wzl-surface)',
+        backgroundImage: 'var(--wzl-backdrop)',
         padding: 32,
         minHeight: '100vh',
       }}

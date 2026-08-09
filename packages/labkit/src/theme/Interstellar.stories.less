@@ -2,8 +2,8 @@
 // into the library — imported by Interstellar.stories.tsx for vite/storybook.
 
 .lk-theme-doc {
-  font-family: var(--lk-font);
-  color: var(--lk-text);
+  font-family: var(--wzl-font-ui);
+  color: var(--wzl-fg);
 }
 
 .lk-theme-doc__grid {
@@ -13,8 +13,8 @@
 }
 
 .lk-theme-doc__heading {
-  font: 300 0.72rem/1 var(--lk-font-display);
-  color: var(--lk-text-muted);
+  font: 300 0.72rem/1 var(--wzl-font-display);
+  color: var(--wzl-fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 12px;
@@ -30,19 +30,19 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--lk-bg-elevated);
-  border: 1px solid var(--lk-border);
-  border-radius: var(--lk-radius-lg);
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-lg);
   padding: 10px 12px;
-  backdrop-filter: blur(var(--lk-glass-blur, 0));
-  -webkit-backdrop-filter: blur(var(--lk-glass-blur, 0));
+  backdrop-filter: blur(var(--wzl-glass-blur));
+  -webkit-backdrop-filter: blur(var(--wzl-glass-blur));
 }
 
 .lk-theme-doc__swatch-fill {
   width: 48px;
   height: 48px;
-  border-radius: var(--lk-radius-sm);
-  border: 1px solid var(--lk-border);
+  border-radius: var(--wzl-radius-sm);
+  border: 1px solid var(--wzl-border);
   flex-shrink: 0;
 }
 
@@ -55,31 +55,31 @@
 }
 
 .lk-theme-doc__swatch-name {
-  font: 300 0.95rem/1 var(--lk-font-display);
-  color: var(--lk-text);
+  font: 300 0.95rem/1 var(--wzl-font-display);
+  color: var(--wzl-fg);
 }
 
 .lk-theme-doc__swatch-var,
 .lk-theme-doc__swatch-value {
-  font: 400 0.7rem/1.2 var(--lk-font-mono);
-  color: var(--lk-text-muted);
+  font: 400 0.7rem/1.2 var(--wzl-font-mono);
+  color: var(--wzl-fg-muted);
   word-break: break-all;
 }
 
 .lk-theme-doc__swatch-value {
-  color: var(--lk-text);
+  color: var(--wzl-fg);
 }
 
 .lk-theme-doc__nebula {
   width: 100%;
   height: 200px;
-  border-radius: var(--lk-radius-lg);
-  border: 1px solid var(--lk-border);
+  border-radius: var(--wzl-radius-lg);
+  border: 1px solid var(--wzl-border);
 }
 
 .lk-theme-doc__note {
-  font: 400 0.85rem/1.5 var(--lk-font);
-  color: var(--lk-text-muted);
+  font: 400 0.85rem/1.5 var(--wzl-font-ui);
+  color: var(--wzl-fg-muted);
   margin-top: 12px;
   max-width: 640px;
 }
