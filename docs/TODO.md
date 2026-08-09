@@ -519,14 +519,17 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
   which also closed a live compliance gap — labkit was publishing Oswald with no
   license or attribution.
 
+  **Plan B (runtime themes) is done** (`docs/superpowers/plans/2026-08-09-runtime-pluggable-themes.md`).
+  `defineTheme` / `resolveTheme` / `applyTheme` / `loadDTCG` and the
+  `@weasel-js/theme/react` entry ship; the HUD receives the resolved record
+  instead of reading `getComputedStyle`, which makes headless render themeable;
+  the sixteen deprecated aliases are gone (264 refs migrated) and three became
+  real semantics (`--wzl-fg-inverse`, `--wzl-surface-hover`,
+  `--wzl-surface-pressed`); `apps/draw`'s `--wd-*` palette is now an
+  `extends`-based theme with a working light/dark switch.
+
   Remaining:
 
-  - **Plan B — runtime themes.** `resolveTheme` / `applyTheme` / `defineTheme` /
-    `loadDTCG`, the `@weasel-js/theme/react` entry, HUD bridge removal (drops
-    `getComputedStyle`, making headless render themeable), the
-    deprecated-alias migration (~264 refs) and its three new semantic tokens
-    (`--wzl-fg-inverse`, `--wzl-surface-hover`, `--wzl-surface-pressed`), and
-    `apps/draw`'s `--wd-*` becoming an `extends`-based theme.
   - **Plan C — labkit convergence.** labkit's 42 `--lk-*` tokens and its `lessc`
     pipeline collapse into the shared source, and `interstellar` becomes the
     proof case for a third-party pluggable theme.

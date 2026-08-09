@@ -31,6 +31,32 @@ Modes are selected with a data attribute, which cascades:
 <html data-wzl-mode="light">
 ```
 
+## Custom themes
+
+```ts
+import { defineTheme, applyTheme } from '@weasel-js/theme';
+
+const acme = defineTheme({
+  name: 'acme',
+  tokens: { 'accent-base': '#ff3366' },   // aliases rebase onto it
+  modes: { light: { surface: '#fffdf8' } },
+});
+
+applyTheme(document.documentElement, acme, 'light');
+```
+
+`extends` defaults to the built-in theme, so a partial theme can never be
+accidentally incomplete. Overriding a primitive rebases every alias that
+references it — set `accent-base` and `--wzl-accent`, `--wzl-accent-hover`,
+`--wzl-focus-ring` and `--wzl-glass-tint` all follow.
+
+Themes exported from a design tool load through `loadDTCG(json)`.
+
+In React, `<ThemeProvider theme={acme} mode="light">` from
+`@weasel-js/theme/react` does the same and publishes the resolved record via
+`useTheme()` — which is how canvas and WebGL surfaces stay in sync without
+reading the DOM.
+
 ## Editing tokens
 
 `src/generated/` is generated — never edit it. Change `tokens/weasel/*.json`,
