@@ -1148,7 +1148,7 @@ describe('readbackRegion', () => {
     const calls: unknown[][] = [];
     readbackRegion(fakeGl(calls), { width: 800, height: 600 }, { x: 0, y: 0 }, 1, 40, 20);
     expect(calls[0][0]).toBe(0);
-    expect(calls[0][1]).toBe(590);
+    expect(calls[0][1]).toBe(580);
   });
 
   it('returns ImageData whose rows are flipped back to top-down', () => {
