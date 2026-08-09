@@ -63,6 +63,30 @@ if (typeof HTMLCanvasElement !== 'undefined') {
   };
 }
 
+// Same gap as getContext above: jsdom only defines `ImageData` when the native
+// `canvas` package is installed, so code that legitimately constructs one in a
+// browser (a GL texture source) throws here.
+if (typeof globalThis.ImageData === 'undefined') {
+  class ImageDataStub {
+    readonly data: Uint8ClampedArray;
+    readonly width: number;
+    readonly height: number;
+    readonly colorSpace = 'srgb' as const;
+    constructor(data: Uint8ClampedArray | number, width: number, height?: number) {
+      if (typeof data === 'number') {
+        this.width = data;
+        this.height = width;
+        this.data = new Uint8ClampedArray(this.width * this.height * 4);
+      } else {
+        this.data = data;
+        this.width = width;
+        this.height = height ?? data.length / 4 / width;
+      }
+    }
+  }
+  (globalThis as { ImageData: unknown }).ImageData = ImageDataStub;
+}
+
 if (typeof window !== 'undefined' && !window.PointerEvent) {
   class PointerEvent extends MouseEvent {
     // PointerEvent-specific fields
