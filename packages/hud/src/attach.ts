@@ -48,9 +48,26 @@ export function attachHud(
     id: 'weasel-hud',
     label: 'HUD',
     space: 'screen',
-    draw: (_data, _view, dims): DrawCommand[] => {
+    draw: (data, view, dims): DrawCommand[] => {
       const ctx = { dims, defaultFont: DEFAULT_FONT_FAMILY, tokens: theme };
       const out: DrawCommand[] = [];
+      // Pass 1: interiors. All content precedes all frames so one window's
+      // content can never paint over another window's border.
+      for (const w of hud.widgets()) {
+        if (w.hidden || !w.content || !w.contentRect) continue;
+        const rect = w.contentRect;
+        if (rect.w <= 0 || rect.h <= 0) continue;
+        const children = w.content({
+          data, view, dims, rect, defaultFont: DEFAULT_FONT_FAMILY, tokens: theme,
+        });
+        if (children.length === 0) continue;
+        out.push({
+          kind: 'group',
+          clip: { kind: 'rect', x: rect.x, y: rect.y, width: rect.w, height: rect.h },
+          children,
+        });
+      }
+      // Pass 2: frames.
       for (const w of hud.widgets()) {
         if (w.hidden) continue;
         for (const cmd of w.draw(ctx)) out.push(cmd);

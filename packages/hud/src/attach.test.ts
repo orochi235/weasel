@@ -108,4 +108,29 @@ describe('attachHud', () => {
     const buttonBody = cmds.find((c: { kind: string }) => c.kind === 'path') as { fill: { color: string } };
     expect(buttonBody.fill.color).toBe(resolveTheme(weaselTheme, 'dark')['--wzl-surface-raised']);
   });
+
+  it('draws content beneath frames, clipped to contentRect', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    const layer = api._layer!;
+
+    const win = hud.window({
+      id: 'w', x: 10, y: 10, w: 100, h: 80, title: 'T',
+      content: () => [{
+        kind: 'path',
+        path: { kind: 'rect', x: 0, y: 0, width: 5, height: 5 },
+        fill: { fill: 'solid', color: '#f00' },
+      }],
+    });
+
+    const cmds = layer.draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300 });
+    expect(cmds[0].kind).toBe('group');
+    expect((cmds[0] as { clip?: unknown }).clip).toMatchObject({
+      kind: 'rect',
+      x: win.contentRect.x, y: win.contentRect.y,
+      width: win.contentRect.w, height: win.contentRect.h,
+    });
+    expect(cmds.length).toBeGreaterThan(1);   // frame commands follow
+  });
 });
