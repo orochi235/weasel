@@ -106,11 +106,11 @@ describe('RegistryProbe', () => {
     expect(actionIds).toEqual(
       expect.arrayContaining(['resize', 'rotate', 'clone', 'move', 'areaSelect', 'clearSelection']),
     );
-    // The three predicate-target drags all format to the same route string
-    // but dispatch to different actions — de-duping on the string would drop
-    // two of them.
+    // The predicate-target drags all format to the same route string but
+    // dispatch to different actions — de-duping on the string would drop all
+    // but one of them.
     const predicateDrags = select!.declaredRoutes.filter((d) => d.route === '[*] drag => predicate');
-    expect(predicateDrags.map((d) => d.actionId)).toEqual(['resize', 'rotate', 'move']);
+    expect(predicateDrags.map((d) => d.actionId)).toEqual(['resize', 'rotate', 'move', 'areaSelect']);
   });
 
   // Parity: every built-in tool surfaced by the probe must carry the kit
