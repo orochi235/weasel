@@ -839,3 +839,40 @@ html, body, #root {
 .wd-mode-toggle:focus-visible {
   opacity: 1;
 }
+
+/* ── Loupe controls (tool-options strip) ────────────────────────────────── */
+
+.wd-loupe-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-sm);
+}
+
+/* The magnification field is a bare number — the default field width leaves
+   most of it empty and pushes the readout off the strip. */
+.wd-loupe-factor {
+  inline-size: 5.5em;
+}
+
+.wd-loupe-readout {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-xs);
+  font-size: 12px;
+  color: var(--wzl-fg);
+}
+
+.wd-loupe-readout code {
+  font-variant-numeric: tabular-nums;
+  min-inline-size: 8ch;
+}
+
+/* Dynamic color arrives as --wd-loupe-swatch-color, set inline on the
+   element (the app's pattern for per-element paint — see .wd-swatch). */
+.wd-loupe-swatch {
+  inline-size: var(--wzl-space-md);
+  block-size: var(--wzl-space-md);
+  border: var(--wzl-border-w) solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm);
+  background: var(--wd-loupe-swatch-color, transparent);
+}

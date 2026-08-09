@@ -77,7 +77,12 @@ import {
   type RangeStyle,
   type RunStylePatch,
   type Scene,
+  type SceneCanvasApi,
+  buildSceneViewCommands,
+  defaultDrawOne,
+  viewToMat3,
 } from '@weasel-js/core';
+import { useHudTool } from '@weasel-js/hud/react';
 import {
   ResizeHandle,
   Sidebar,
@@ -109,6 +114,7 @@ import {
 import { HistoryList } from './ui/HistoryList';
 import { buildLabel, buildTitle } from './buildInfo';
 import { PREFS, usePref } from './prefs';
+import { LoupeControls } from './LoupeControls';
 import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';
 
 // Bounds for the sidebar drag come from the pref that stores the result, so
@@ -1412,6 +1418,43 @@ function EditorWithSharedScene({
     }],
   }), [paper.width, paper.height, backgroundColor]);
 
+  // What the loupe magnifies: the page and the scene on top of it, the same
+  // two the canvas paints. Screen space with a self-applied view —
+  // `createViewportLayer` hands source layers its inner view and applies no
+  // transform of its own, so a world-space layer would come out unmagnified.
+  const loupeSource = useMemo<RenderLayer<unknown>[]>(() => [
+    {
+      id: 'loupe-paper',
+      label: 'Loupe paper',
+      space: 'screen',
+      draw: (data, v, dims) => [{
+        kind: 'group',
+        transform: viewToMat3(v),
+        children: paperLayer.draw(data, v, dims),
+      }],
+    },
+    {
+      id: 'loupe-scene',
+      label: 'Loupe scene',
+      space: 'screen',
+      draw: (_data, v) => buildSceneViewCommands(scene, v, (node, pose) => defaultDrawOne(node, pose)),
+    },
+  ], [paperLayer, scene]);
+
+  const hudTool = useHudTool();
+  const hudAmbient = useMemo(() => [hudTool], [hudTool]);
+
+  // `useHud` and `createLoupe` both read the canvas handle in a mount effect
+  // and neither retries, so the loupe chrome can only mount once the handle
+  // exists — which is a render later than this component's first, because
+  // `<SceneCanvas>` waits on the host's measured size.
+  const canvasRef = useRef<SceneCanvasApi | null>(null);
+  const [canvasReady, setCanvasReady] = useState(false);
+  const attachCanvas = useCallback((api: SceneCanvasApi | null) => {
+    canvasRef.current = api;
+    setCanvasReady(api !== null);
+  }, []);
+
   const sliceTool = useSliceTool();
 
   // ── In-place text editing ─────────────────────────────────────────────────
@@ -1646,6 +1689,9 @@ function EditorWithSharedScene({
         {textEdit.editingId != null && (
           <CharacterOptions style={barStyle} onPatch={onCharacterPatch} />
         )}
+        {canvasReady && (
+          <LoupeControls canvasRef={canvasRef} source={loupeSource} />
+        )}
       </ToolOptionsBar>
       <div className="wd-body">
         <Sidebar side="left" className="wd-sidebar left" ariaLabel="Tools">
@@ -1685,6 +1731,8 @@ function EditorWithSharedScene({
           />
           {hostDims.width > 0 && hostDims.height > 0 && (
           <SceneCanvas<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>
+            ref={attachCanvas}
+            ambient={hudAmbient}
             width={hostDims.width}
             height={hostDims.height}
             view={view}
