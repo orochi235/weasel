@@ -84,11 +84,15 @@ function dragAction(): Action {
       start: (ctx: InvocationCtx) => {
         const widget = widgetIn(ctx.drag?.affordance);
         if (!widget) return {};
+        // Captured here because the dispatcher builds move/end pump ctxs with
+        // an empty dep bag: reading `view` off those silently skips the
+        // world→screen conversion and the drag runs in the wrong space.
+        const deps = ctx.deps;
         // No `down` here — `hud.press` already sent it at press time, from the
         // eager pointerdown dispatch that precedes this one.
         return {
           onMove: (moveCtx: InvocationCtx) => {
-            const [x, y] = toScreen(moveCtx.deps, moveCtx.world.x, moveCtx.world.y);
+            const [x, y] = toScreen(deps, moveCtx.world.x, moveCtx.world.y);
             widget.onPointer({ type: 'move', x, y, native: null } satisfies HudPointerEvent);
           },
           onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
@@ -96,7 +100,7 @@ function dragAction(): Action {
               widget.onPointer({ type: 'cancel', native: null } satisfies HudPointerEvent);
               return;
             }
-            const [x, y] = toScreen(endCtx.deps, endCtx.world.x, endCtx.world.y);
+            const [x, y] = toScreen(deps, endCtx.world.x, endCtx.world.y);
             widget.onPointer({ type: 'up', x, y, native: null } satisfies HudPointerEvent);
           },
         };

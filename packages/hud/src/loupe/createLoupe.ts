@@ -28,6 +28,9 @@ export interface LoupeOptions {
    *  re-render whose edge colors differ from the screen's, so reading the
    *  color off it would report something the user cannot see. */
   onColorChange?: (hex: string) => void;
+  /** Fired by the window's close box. The window does not hide itself —
+   *  whoever owns the loupe's visibility decides what closing means. */
+  onClose?: () => void;
   /** Opaque backdrop behind vector content, so the outer canvas does not
    *  show through where the inner view is empty. */
   background?: string;
@@ -139,6 +142,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     title: opts.title ?? 'Loupe',
     content,
     onResize: () => { refreshPixels(); },
+    ...(opts.onClose ? { onClose: opts.onClose } : {}),
   });
 
   const onPointerMove = (evt: PointerEvent) => {
