@@ -32,7 +32,10 @@ export interface HudContentCtx {
   /** The outer view. A painter deriving an inner view starts from this. */
   view: View;
   dims: { width: number; height: number };
-  /** Where the content is painted, in screen-space CSS px. */
+  /** Where the content is painted, in screen-space CSS px. The group the
+   *  painter's commands land in carries a clip but no transform, so those
+   *  commands are in absolute canvas coordinates — a painter that treats the
+   *  rect's origin as (0,0) silently draws nothing. */
   rect: WidgetBounds;
   defaultFont: string;
   tokens: ResolvedTheme;

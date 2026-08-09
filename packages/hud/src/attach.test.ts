@@ -133,4 +133,27 @@ describe('attachHud', () => {
     });
     expect(cmds.length).toBeGreaterThan(1);   // frame commands follow
   });
+
+  it('draws every content pass before any frame, across windows', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    const layer = api._layer!;
+
+    const painter = () => [{
+      kind: 'path' as const,
+      path: { kind: 'rect' as const, x: 0, y: 0, width: 5, height: 5 },
+      fill: { fill: 'solid' as const, color: '#f00' },
+    }];
+    hud.window({ id: 'a', x: 10, y: 10, w: 100, h: 80, title: 'A', content: painter });
+    hud.window({ id: 'b', x: 200, y: 10, w: 100, h: 80, title: 'B', content: painter });
+
+    const kinds = layer
+      .draw(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 300 })
+      .map((c) => c.kind);
+    // Interleaving per widget (content, frame, content, frame) would let the
+    // second window's content paint over the first window's border.
+    expect(kinds.slice(0, 2)).toEqual(['group', 'group']);
+    expect(kinds.indexOf('path')).toBeGreaterThan(kinds.lastIndexOf('group'));
+  });
 });
