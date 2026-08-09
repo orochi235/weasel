@@ -6,7 +6,7 @@
   padding: 4px 12px;
   font-family: var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-size: 11px;
-  color: var(--wzl-fg-muted));
+  color: var(--wzl-fg-muted);
   background: var(--wzl-surface);
   border-top: 1px solid var(--wzl-border);
 }
