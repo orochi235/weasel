@@ -34,7 +34,6 @@ Priority tags:
 **Text**
 - Cross-browser overlay alignment → [Text](#text)
 - Un-setting a flag a text node sets → [Text](#text)
-- Route Cmd+U / Cmd+Shift+X through the run algebra → [Text](#text)
 
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
@@ -353,15 +352,6 @@ Core five + Crop shipped. Remaining:
   expressible without widening the model. Decide before the flags are relied
   on by a persisted document format.
 
-- **(P2) Route Cmd+U / Cmd+Shift+X through the run algebra.** `useTextEdit`'s
-  `StyleFlag` is `'bold' | 'italic'`, so the decoration shortcuts are never
-  intercepted and the browser's native `formatUnderline` runs instead.
-  `domToRuns`' `<u>` flattening then makes it *look* like it worked while
-  bypassing `toggleFlagInRange` entirely — no toggle-off, no mixed-range
-  rule, no pending style for a collapsed caret. `rangeStyle.ts` already lists
-  both flags; the flattening should stay regardless (it is what makes pasted
-  decoration survive) but it is defense in depth, not the fix.
-
 - **(P3) Per-character tracking in the DOM overlay is CSS-approximate.**
   `letterSpacing` is applied per code point rather than per grapheme cluster,
   matching CSS rather than the GL path's cluster walk. Visible only on text
@@ -618,18 +608,6 @@ From the WebGL transition spec — all deferred:
 ## Release-gate & build hygiene
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
-
-- **(P3) `core/` names three `features/` and `interactions/` types.**
-  Surfaced 2026-08-08 when the boundary lint first ran: `core/scene/types.ts`
-  imports `RectPose` from `features/groups/composePose` and `Path` from
-  `features/paths/types`; `core/selection/chromeState.ts` imports
-  `ModifierState` from `interactions/gestures/types`. All three are
-  `import type`, so they're erased and cannot form the bundler cycle the rule
-  exists to prevent — which is why `allowTypeImports` lets them through rather
-  than failing the build. But core's own types naming upper-layer types is
-  still an inverted arrow. Fix is to move the three type declarations down into
-  `core/` and re-export upward, the same move `polygonHitTestRect.ts` got (it
-  was the one *runtime* violation and is now `core/geometry/`).
 
 - **(P3) Tests reaching into another package's `src/` by relative path.** Four hud tests imported `../../core/src/features/text/atlas/registerFont` and broke when that file moved during the `@weasel-js/font` extraction. They were repointed at `@weasel-js/font`, but the pattern likely exists elsewhere — worth a sweep (`grep -rn "\.\./\.\./[a-z-]*/src/" packages/*/src`).
 

@@ -1,6 +1,23 @@
-import type { RectPose } from 'features/groups/composePose';
-import type { Path } from 'features/paths/types';
+import type { Path } from '../geometry/path';
 import type { SerializedHistory } from '@weasel-js/history';
+
+/**
+ * Axis-aligned rectangle pose with optional rotation. The canonical pose
+ * shape used by `composeRectPose` and the `unionBounds` helper. Rotation is
+ * in radians, pivoted on the unrotated AABB center; absent === 0. Kit-side
+ * code that consumes rotation already reads `pose.rotation ?? 0`
+ * (`SceneCanvas.defaultDrawOne`, `rotate/handle.ts`, `pathInWorld.ts`), so
+ * the slot exists on every default scene whether or not the consumer
+ * populates it.
+ */
+export interface RectPose {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Rotation in radians around the unrotated AABB center. Absent === 0. */
+  rotation?: number;
+}
 
 /**
  * # SceneNode — the thing in the scene
