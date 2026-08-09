@@ -4,8 +4,8 @@ import '@weasel-js/theme/tokens.css';
 // labkit stories render under `.lk-root` with labkit's own CSS + Oswald face; a
 // title-scoped decorator (below) applies the wrapper to `labkit/…` stories only.
 import '../packages/labkit/src/styles.less';
-import '../packages/labkit/src/theme/light.less';
-import '../packages/labkit/src/theme/interstellar.less';
+import { ThemeProvider } from '@weasel-js/theme/react';
+import { interstellarTheme } from '../packages/labkit/src/theme/interstellar';
 import oswaldUrl from '../packages/theme/fonts/oswald-latin-variable.woff2?url';
 
 // labkit's CSS @font-face resolves its URL relative to the COMPILED dist
@@ -96,17 +96,18 @@ const preview: Preview = {
     // `theme` is driven by the manager-side toggle button in `manager.tsx`;
     // no `toolbar` config here so it doesn't render as a dropdown.
     //
-    // labkit stories carry their own light/interstellar theming, independent of
-    // the weasel `theme` toggle. This toolbar drives the `.lk-root` decorator.
-    lkTheme: {
-      name: 'labkit theme',
+    // labkit stories carry the interstellar theme, whose mode axis is
+    // independent of the weasel `theme` toggle. This toolbar drives the
+    // `.lk-root` decorator.
+    lkMode: {
+      name: 'labkit mode',
       defaultValue: 'auto',
       toolbar: {
         icon: 'circlehollow',
         items: [
           { value: 'auto', title: 'labkit: Auto (OS)' },
           { value: 'light', title: 'labkit: Light' },
-          { value: 'interstellar', title: 'labkit: Interstellar' },
+          { value: 'dark', title: 'labkit: Dark' },
         ],
         dynamicTitle: true,
       },
@@ -259,17 +260,21 @@ const preview: Preview = {
     // passthrough for everything else.
     (Story, context) => {
       if (!context.title?.startsWith('labkit/')) return <Story />;
-      const theme = String(context.globals.lkTheme ?? 'auto');
-      const className =
-        theme === 'light'
-          ? 'lk-root lk-theme-light lk-sb-frame'
-          : theme === 'interstellar'
-            ? 'lk-root lk-theme-interstellar lk-sb-frame'
-            : 'lk-root lk-sb-frame';
+      const picked = String(context.globals.lkMode ?? 'auto');
+      const mode =
+        picked === 'auto'
+          ? window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light'
+            : 'dark'
+          : picked;
       return (
-        <div className={className}>
+        <ThemeProvider
+          theme={interstellarTheme}
+          mode={mode}
+          className="lk-root lk-sb-frame"
+        >
           <Story />
-        </div>
+        </ThemeProvider>
       );
     },
   ],

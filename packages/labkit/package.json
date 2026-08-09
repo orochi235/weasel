@@ -67,9 +67,7 @@
       "types": "./dist/ui/layers/index.d.ts",
       "import": "./dist/ui/layers/index.js"
     },
-    "./styles.css": "./dist/styles.css",
-    "./theme-light.css": "./dist/theme-light.css",
-    "./theme-interstellar.css": "./dist/theme-interstellar.css"
+    "./styles.css": "./dist/styles.css"
   },
   "scripts": {
     "dev": "vite",
@@ -78,7 +76,7 @@
     "build": "tsup && npm run build:dts && npm run build:css && npm run build:fonts",
     "build:dts": "tsx scripts/build-dts.mts",
     "prepublishOnly": "npm run build",
-    "build:css": "lessc src/styles.less dist/styles.css && lessc src/theme/light.less dist/theme-light.css && lessc src/theme/interstellar.less dist/theme-interstellar.css",
+    "build:css": "lessc src/styles.less dist/styles.css",
     "build:fonts": "mkdir -p dist/fonts && cp ../theme/fonts/*.woff2 dist/fonts/",
     "test": "vitest run",
     "test:watch": "vitest",
