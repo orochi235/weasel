@@ -97,11 +97,29 @@ function specTargetOf(spec: GestureSpec): unknown {
   return 'target' in spec ? spec.target : undefined;
 }
 
+function claimOf(e: InputEvent): { owner?: string; strength?: 'exclusive' | 'shared' } | undefined {
+  return ('affordance' in e ? e.affordance : undefined) as
+    { owner?: string; strength?: 'exclusive' | 'shared' } | undefined;
+}
+
 /** `'exclusive'` when the event carries a claim that bars unnamed bindings. */
 function isExclusiveClaim(e: InputEvent): boolean {
-  const hit = ('affordance' in e ? e.affordance : undefined) as
-    { strength?: 'exclusive' | 'shared' } | undefined;
-  return hit?.strength === 'exclusive';
+  return claimOf(e)?.strength === 'exclusive';
+}
+
+const warnedDeadClaims = new Set<string>();
+
+/** Dev-only. An exclusive claim no binding can receive drops the press with no
+ *  diagnostic, which reads exactly like deliberate blocking. */
+function reportDeadClaim(owner: string | undefined, warn: (message: string) => void): void {
+  if (process.env.NODE_ENV === 'production') return;
+  const key = String(owner);
+  if (warnedDeadClaims.has(key)) return;
+  warnedDeadClaims.add(key);
+  warn(
+    `[weasel] exclusive claim by "${key}" matched no binding: nothing declares an `
+    + '`affordance:` or `kindOf` target, so the press was dropped.',
+  );
 }
 
 /** CSS-style specificity tuple for a GestureSpec. Higher tuple wins under
@@ -186,6 +204,7 @@ export function matchSorted(
   bindings: readonly ScopedBinding[],
   isMac: boolean,
   engagedChannels?: ReadonlySet<string>,
+  warn: (message: string) => void = (m) => console.warn(m),
 ): MatchResult[] {
   const out: MatchResult[] = [];
   const engaged = engagedChannels ?? EMPTY_ENGAGED;
@@ -193,9 +212,13 @@ export function matchSorted(
   // key below, so without this a vague active binding beats the claim owner's
   // precise ambient one — the whole reason chrome got swallowed by whichever
   // tool was active.
-  const pool = isExclusiveClaim(e)
+  const exclusive = isExclusiveClaim(e);
+  const pool = exclusive
     ? bindings.filter(sb => targetConsultsAffordance(specTargetOf(sb.binding.spec)))
     : bindings;
+  if (exclusive && pool.length === 0 && bindings.length > 0) {
+    reportDeadClaim(claimOf(e)?.owner, warn);
+  }
   for (const scope of SCOPE_PRIORITY) {
     const scopeMatches: MatchResult[] = [];
     for (const sb of pool) {

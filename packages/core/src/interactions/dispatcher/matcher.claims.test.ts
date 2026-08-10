@@ -5,7 +5,7 @@
  * An exclusive claim reverses it: only bindings that consult the affordance
  * are candidates at all.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { matchSorted, type ScopedBinding } from './matcher';
 import type { InputEvent } from '@weasel-js/gestures';
 
@@ -66,5 +66,59 @@ describe('exclusive claims outrank the scope tier', () => {
     const e = { ...dragOn({ kind: 'layer:weasel-hud', owner: 'weasel-hud', strength: 'exclusive' }), bodyTarget: 'empty' } as unknown as InputEvent;
     const sorted = matchSorted(e, [bodyOnly, namedAmbient], false);
     expect(sorted.map(m => m.binding.actionId)).toEqual(['hud.drag']);
+  });
+
+  it('admits the `affordance:<kind>` string form, not just predicates', () => {
+    const namedByString: ScopedBinding = {
+      binding: { spec: { kind: 'drag', target: 'affordance:layer:weasel-hud' }, actionId: 'hud.drag' },
+      scope: 'ambient',
+      ownerToolId: 'weasel-hud',
+    };
+    const hit = { kind: 'layer:weasel-hud', owner: 'weasel-hud', strength: 'exclusive' };
+    const sorted = matchSorted(dragOn(hit), [vagueActive, namedByString], false);
+    expect(sorted.map(m => m.binding.actionId)).toEqual(['hud.drag']);
+  });
+
+  it('keeps scope ordering among the survivors', () => {
+    // Ambient is listed first, so registration order would put it first; scope
+    // ordering inside the filtered set is what makes the active binding win.
+    const activeConsulting: ScopedBinding = {
+      binding: { spec: { kind: 'drag', target: 'affordance:layer:weasel-hud' }, actionId: 'tool.onHud' },
+      scope: 'active',
+      ownerToolId: 'rect',
+    };
+    const hit = { kind: 'layer:weasel-hud', owner: 'weasel-hud', strength: 'exclusive' };
+    const sorted = matchSorted(dragOn(hit), [namedAmbient, activeConsulting], false);
+    expect(sorted.map(m => m.binding.actionId)).toEqual(['tool.onHud', 'hud.drag']);
+  });
+
+  it('returns nothing when no binding consults the affordance', () => {
+    const hit = { kind: 'layer:no-taker', owner: 'no-taker', strength: 'exclusive' };
+    expect(matchSorted(dragOn(hit), [vagueActive], false, undefined, () => {})).toEqual([]);
+  });
+});
+
+describe('an exclusive claim no binding can receive warns in dev', () => {
+  it('names the owner, once per owner', () => {
+    const warn = vi.fn();
+    const hit = { kind: 'layer:silent-widget', owner: 'silent-widget', strength: 'exclusive' };
+    matchSorted(dragOn(hit), [vagueActive], false, undefined, warn);
+    matchSorted(dragOn(hit), [vagueActive], false, undefined, warn);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('exclusive claim by "silent-widget"');
+  });
+
+  it('stays silent for a shared claim', () => {
+    const warn = vi.fn();
+    const hit = { kind: 'layer:quiet-widget', owner: 'quiet-widget', strength: 'shared' };
+    matchSorted(dragOn(hit), [vagueActive], false, undefined, warn);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('stays silent when there were no bindings to begin with', () => {
+    const warn = vi.fn();
+    const hit = { kind: 'layer:empty-set', owner: 'empty-set', strength: 'exclusive' };
+    matchSorted(dragOn(hit), [], false, undefined, warn);
+    expect(warn).not.toHaveBeenCalled();
   });
 });
