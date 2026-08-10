@@ -23,6 +23,9 @@ export interface LoupeOptions {
   factor?: number;
   bounds?: WidgetBounds;
   title?: string;
+  /** Draw the window's titlebar and close box. Default `true`. Pass `false`
+   *  for a bare lens; the interior then doubles as the move handle. */
+  titlebar?: boolean;
   /** Called with the hex color under the aim point whenever it changes.
    *  Sampled from the framebuffer in both modes — vector content is a
    *  re-render whose edge colors differ from the screen's, so reading the
@@ -140,6 +143,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     id: 'weasel-loupe',
     x: b.x, y: b.y, w: b.w, h: b.h,
     title: opts.title ?? 'Loupe',
+    titlebar: opts.titlebar,
     content,
     onResize: () => { refreshPixels(); },
     ...(opts.onClose ? { onClose: opts.onClose } : {}),

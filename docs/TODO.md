@@ -110,6 +110,19 @@ Priority tags:
   holding will do something. Recorded 2026-08-02, alongside the `longPress`
   gesture kind landing.
 
+- **(P2) Cursor and gesture dispatch over HUD elements.** Two halves of the
+  same missing wiring. **Cursor:** `WindowWidget.cursor` resolves the right CSS
+  cursor per zone (`ns-resize`, `nwse-resize`, `move`) and nothing reads it —
+  `Tool.cursor` drives `style.cursor` on the host, but a HUD widget is not a
+  tool, so hovering a resize band shows the active tool's cursor and the
+  affordance is invisible until you try it. **Gestures:** only the three
+  bindings in `createHudTool` reach widgets, so a HUD element can be pressed,
+  dragged and hovered and nothing else — no double-click, no wheel, no
+  long-press, no right-click, no keyboard focus. A widget wanting any of them
+  has no way to ask. Both want the same fix: registered layers declaring what
+  they can receive, and the host reading cursor and gesture eligibility from
+  the hit affordance rather than from the active tool. Recorded 2026-08-09.
+
 - **(P2) Active tools swallow drags on HUD chrome.** `rect`, `ellipse`,
   `polygon`, `star`, `hand`, `pen` and `lasso` each bind a bare
   `{ kind: 'drag' }` in active scope with no target predicate, so a drag that a

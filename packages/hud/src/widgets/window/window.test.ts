@@ -48,6 +48,40 @@ describe('window widget', () => {
     expect(covered(200, 250 - M.edge / 2)).toBe(true);              // bottom band
   });
 
+  describe('titlebar: false', () => {
+    const bare = { ...opts, titlebar: false as const };
+
+    it('draws no title and no close glyph', () => {
+      const cmds = createWindow(bare).draw(ctx);
+      expect(cmds.some((c) => c.kind === 'text')).toBe(false);
+      expect(cmds.some((c) => c.kind === 'path' && c.path.kind === 'polygon')).toBe(false);
+    });
+
+    it('insets the content by the resize band on all four sides', () => {
+      const cr = createWindow(bare).contentRect;
+      expect(cr).toEqual({
+        x: 100 + M.edge, y: 100 + M.edge,
+        w: 200 - M.edge * 2, h: 150 - M.edge * 2,
+      });
+    });
+
+    it('moves when the interior is dragged, since there is no bar to grab', () => {
+      const onMove = vi.fn();
+      const win = createWindow({ ...bare, onMove });
+      win.onPointer({ type: 'down', x: 200, y: 175, native: null });
+      win.onPointer({ type: 'move', x: 230, y: 195, native: null });
+      expect(win.bounds).toMatchObject({ x: 130, y: 120, w: 200, h: 150 });
+      expect(onMove).toHaveBeenCalled();
+    });
+
+    it('still resizes from the edges', () => {
+      const win = createWindow(bare);
+      win.onPointer({ type: 'down', x: 299, y: 175, native: null });
+      win.onPointer({ type: 'move', x: 329, y: 175, native: null });
+      expect(win.bounds).toMatchObject({ w: 230 });
+    });
+  });
+
   it('hitTest covers the whole window including the interior', () => {
     const win = createWindow(opts);
     expect(win.hitTest(200, 200)).toBe(true);

@@ -97,6 +97,9 @@ export function LoupeDemo() {
       element: api.element,
       source,
       requestRedraw: () => api.requestRedraw(),
+      // Bare lens: the demo has nowhere to put a closed loupe back, so a
+      // close box would be a dead control. Drag the interior to move it.
+      titlebar: false,
       background: PAPER,
       onColorChange: setColor,
     });
