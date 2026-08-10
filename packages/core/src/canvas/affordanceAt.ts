@@ -138,6 +138,8 @@ function toAffordanceHit(hit: AffordanceRegionHit): AffordanceHit {
   const scratch = (hit.binding.initialScratch ?? {}) as CommonAffordanceScratch;
   return {
     kind: hit.region.hitKind ?? `${hit.affordanceId}:${hit.regionId}`,
+    owner: hit.affordanceId,
+    strength: 'shared',
     ...(scratch.targetId !== undefined ? { targetIds: [scratch.targetId] } : {}),
     ...(scratch.anchor !== undefined ? { anchor: scratch.anchor } : {}),
     ...(scratch.fixedPoint !== undefined ? { fixedPoint: scratch.fixedPoint } : {}),

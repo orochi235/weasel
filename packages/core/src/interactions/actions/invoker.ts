@@ -43,6 +43,13 @@ export interface Point2 {
 export interface AffordanceHit {
   /** Discriminator string, e.g. `'handle:bottom-right'`. */
   kind: string;
+  /** Id of whatever produced this hit — a kit affordance's `id`, or the
+   *  registered layer's id. Bindings name it; the dispatcher ranks by it. */
+  owner?: string;
+  /** `'exclusive'` means no binding may act on this point unless its target
+   *  consults the affordance. `'shared'` (the default) competes on scope and
+   *  specificity as bindings always have. */
+  strength?: 'exclusive' | 'shared';
   /** World-space fixed/pivot point. For resize: opposite corner. For rotate: pivot. */
   fixedPoint?: { x: number; y: number };
   /** Which nodes this affordance belongs to. */

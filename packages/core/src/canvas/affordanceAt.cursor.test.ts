@@ -84,3 +84,18 @@ describe('AffordanceHit payload', () => {
     });
   });
 });
+
+describe('AffordanceHit carries its owner and claim strength', () => {
+  const affordanceAt = buildAffordanceAt({
+    getChromeState: () => makeState(),
+    getView: () => VIEW,
+  });
+
+  it('names the affordance that produced the hit as its owner', () => {
+    expect(affordanceAt({ x: 0, y: 0 })?.owner).toBe('selection.resize-handles');
+  });
+
+  it('claims shared, so kit chrome keeps competing on scope as it always has', () => {
+    expect(affordanceAt({ x: 0, y: 0 })?.strength).toBe('shared');
+  });
+});
