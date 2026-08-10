@@ -446,6 +446,7 @@ export {
   type CornerResizeAffordanceOptions,
   type CornerResizeScratch,
   type CustomPaintContext,
+  type LayerHit,
   type PathAnchorAffordanceOptions,
   type RotationAffordanceOptions,
   type RotationScratch,

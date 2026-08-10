@@ -1,4 +1,4 @@
-import type { AffordanceBinding } from '../affordances/types';
+import type { LayerHit } from '../affordances/types';
 import type { RenderLayer } from '../core/layers/render';
 import type { IngestItem } from '../features/ingestion/ingestItems';
 
@@ -41,7 +41,7 @@ export interface CanvasExtensionApi {
    * as its `payload`. A layer's owner binds a `kindOf` predicate on that kind
    * to claim the gesture; see `@weasel-js/hud` for the worked example.
    */
-  hitTestExtras(worldX: number, worldY: number): { layerId: string; binding: AffordanceBinding } | null;
+  hitTestExtras(worldX: number, worldY: number): { layerId: string; binding: LayerHit } | null;
   /** Feed external content into the ingestion pipeline imperatively — the
    *  same content-handler registry that OS drop and clipboard paste hit.
    *  `input` may be raw `File[]` (e.g. from `openFilePicker`) or
