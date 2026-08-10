@@ -151,10 +151,12 @@ Create `packages/core/src/canvas/SceneCanvas.layerClaim.test.tsx`:
 
 ```tsx
 /**
- * A registered layer's hit reaches the dispatcher as a full claim: its own id
- * as `owner`, its declared `claim` as `strength`, and its `cursor` intact.
- * The cursor is the half that silently didn't work — the hover pump reads
- * `AffordanceHit.cursor` and the layer branch never set it.
+ * A registered layer's declared cursor reaches `canvas.style.cursor`.
+ *
+ * Assert through the hover-cursor pump, NOT on `hitTestExtras` — that return
+ * value passes the layer's object through verbatim and was never broken. The
+ * defect is one layer downstream, where `wrappedAffordanceAt` rebuilds the hit
+ * and drops everything it doesn't name.
  */
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -192,16 +194,34 @@ function Harness({ apiOut }: { apiOut: { ref: React.RefObject<SceneCanvasApi | n
   return <SceneCanvas ref={ref} width={200} height={200} scene={scene} layers={{}} />;
 }
 
+/** jsdom's PointerEvent constructor drops clientX/clientY; synthesize. */
+function makePointerEvent(type: string, init: Record<string, unknown> = {}): PointerEvent {
+  const ev = new Event(type, { bubbles: true }) as PointerEvent;
+  Object.assign(ev, { clientX: 0, clientY: 0, pointerId: 1, ...init });
+  return ev;
+}
+
 describe('a registered layer produces a full claim', () => {
-  it('carries owner, strength and cursor through hitTestExtras', async () => {
+  it('reports its cursor through the hover-cursor pump', async () => {
+    const apiOut = { ref: { current: null } as React.RefObject<SceneCanvasApi | null> };
+    const { container } = render(<Harness apiOut={apiOut} />);
+    await act(async () => {});
+
+    const canvas = container.querySelector('canvas')!;
+    await act(async () => {
+      canvas.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    });
+
+    expect(canvas.style.cursor).toBe('nwse-resize');
+  });
+
+  it('carries strength through hitTestExtras', async () => {
+    // Passthrough only: `strength` gets its first runtime consumer in Task 3.
     const apiOut = { ref: { current: null } as React.RefObject<SceneCanvasApi | null> };
     render(<Harness apiOut={apiOut} />);
     await act(async () => {});
 
-    const extra = apiOut.ref.current!.hitTestExtras(10, 10);
-    expect(extra).not.toBeNull();
-    expect(extra!.binding.cursor).toBe('nwse-resize');
-    expect(extra!.binding.strength).toBe('exclusive');
+    expect(apiOut.ref.current!.hitTestExtras(10, 10)!.binding.strength).toBe('exclusive');
   });
 });
 ```
@@ -209,7 +229,9 @@ describe('a registered layer produces a full claim', () => {
 - [ ] **Step 2: Run it and confirm it fails**
 
 Run: `npx vitest run packages/core/src/canvas/SceneCanvas.layerClaim.test.tsx`
-Expected: FAIL — a TypeScript error that `cursor` and `claim` do not exist on `AffordanceBinding`.
+Expected: FAIL — `expected 'default' to be 'nwse-resize'`.
+
+**Do not expect vitest to surface a type error.** It transforms with esbuild and never typechecks, so a `cursor` field TypeScript would reject still runs fine; type errors surface only under `npx tsc --noEmit` from the repo root (the per-package `tsc -p .` excludes test files). That is why the cursor assertion must be behavioral — it is the one that can fail for the right reason. Asserting on `hitTestExtras().binding.cursor` would not: that return value passes the layer's own object through verbatim and was never broken.
 
 - [ ] **Step 3: Add the `LayerHit` type**
 
