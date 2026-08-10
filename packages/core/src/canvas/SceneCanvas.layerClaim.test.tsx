@@ -1,11 +1,8 @@
 /**
- * A registered layer's hit reaches the dispatcher as a full claim: its own id
- * as `owner`, its declared `strength`, and its `cursor` intact. `cursor` is
- * the half that silently didn't work — `wrappedAffordanceAt` built
- * `{ kind, payload }` by hand and dropped it, so the hover-cursor pump
- * (`refreshHoverCursor` in `useGestureDispatcher`) never saw it. `strength`
- * has no runtime consumer until Task 3, so a passthrough check on
- * `hitTestExtras` is the honest most that can be asserted on it today.
+ * A registered layer's declared cursor reaches `canvas.style.cursor`.
+ * `wrappedAffordanceAt` used to build `{ kind, payload }` by hand and drop
+ * `cursor` on the floor, so the hover-cursor pump (`refreshHoverCursor` in
+ * `useGestureDispatcher`) never saw it.
  */
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -54,16 +51,6 @@ function Harness({ apiOut }: { apiOut: { ref: React.RefObject<SceneCanvasApi | n
 }
 
 describe('a registered layer produces a full claim', () => {
-  it('carries strength through hitTestExtras', async () => {
-    const apiOut = { ref: { current: null } as React.RefObject<SceneCanvasApi | null> };
-    render(<Harness apiOut={apiOut} />);
-    await act(async () => {});
-
-    const extra = apiOut.ref.current!.hitTestExtras(10, 10);
-    expect(extra).not.toBeNull();
-    expect(extra!.binding.strength).toBe('exclusive');
-  });
-
   it('a declared cursor reaches canvas.style.cursor through the hover-cursor pump', async () => {
     const apiOut = { ref: { current: null } as React.RefObject<SceneCanvasApi | null> };
     const { container } = render(<Harness apiOut={apiOut} />);

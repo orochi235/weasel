@@ -38,8 +38,10 @@ export interface CanvasExtensionApi {
    * gesture dispatcher — ahead of the kit's own selection chrome, since
    * registered layers draw on top — so a hit surfaces to actions as an
    * `AffordanceHit` with kind `layer:<id>` and the binding's `initialScratch`
-   * as its `payload`. A layer's owner binds a `kindOf` predicate on that kind
-   * to claim the gesture; see `@weasel-js/hud` for the worked example.
+   * as its `payload`. `owner` is set to the layer id, and `cursor` /
+   * `strength` carry through from the binding when the layer sets them.
+   * A layer's owner binds a `kindOf` predicate on that kind to claim the
+   * gesture; see `@weasel-js/hud` for the worked example.
    */
   hitTestExtras(worldX: number, worldY: number): { layerId: string; binding: LayerHit } | null;
   /** Feed external content into the ingestion pipeline imperatively — the
