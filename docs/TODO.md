@@ -18,7 +18,9 @@ Priority tags:
 
 ### Next up
 
-- **Loupe tool** → [Tools & gestures](#tools--gestures)
+- **Contributions: one registry, declared eligibility, claims that outrank scope**
+  → `docs/superpowers/specs/2026-08-10-contributor-registry-design.md`. Subsumes
+  the two HUD P2s below → [Tools & gestures](#tools--gestures)
 - **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
 
 ### P2 — broad reuse / friction-likely
