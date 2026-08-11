@@ -844,8 +844,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
-      const binding = layer.hitTest(worldX, worldY, undefined, view, dims, isVisible);
-      if (binding) return { layerId: layer.id, binding };
+      const hit = layer.hitTest(worldX, worldY, undefined, view, dims, isVisible);
+      if (hit) return { layerId: layer.id, hit };
     }
     return null;
   }, []);

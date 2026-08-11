@@ -37,13 +37,13 @@ export interface CanvasExtensionApi {
    * `<SceneCanvas>` folds this into the `affordanceAt` thunk it hands the
    * gesture dispatcher — ahead of the kit's own selection chrome, since
    * registered layers draw on top — so a hit surfaces to actions as an
-   * `AffordanceHit` with kind `layer:<id>` and the binding's `initialScratch`
+   * `AffordanceHit` with kind `layer:<id>` and the hit's `initialScratch`
    * as its `payload`. `owner` is set to the layer id, and `cursor` /
-   * `strength` carry through from the binding when the layer sets them.
+   * `strength` carry through from the hit when the layer sets them.
    * A layer's owner binds a `kindOf` predicate on that kind to claim the
    * gesture; see `@weasel-js/hud` for the worked example.
    */
-  hitTestExtras(worldX: number, worldY: number): { layerId: string; binding: LayerHit } | null;
+  hitTestExtras(worldX: number, worldY: number): { layerId: string; hit: LayerHit } | null;
   /** Feed external content into the ingestion pipeline imperatively — the
    *  same content-handler registry that OS drop and clipboard paste hit.
    *  `input` may be raw `File[]` (e.g. from `openFilePicker`) or

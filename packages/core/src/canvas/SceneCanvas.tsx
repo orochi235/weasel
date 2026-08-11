@@ -2256,7 +2256,7 @@ function GestureDispatcherMounter({
       // widgets to its own action instead of the active tool.
       const extra = canvasApiRef?.current?.hitTestExtras?.(worldPoint.x, worldPoint.y);
       if (extra) {
-        const claim = extra.binding;
+        const claim = extra.hit;
         return {
           kind: `layer:${extra.layerId}`,
           owner: extra.layerId,
