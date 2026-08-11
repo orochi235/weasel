@@ -102,16 +102,39 @@ follows below in the per-concept sections.
 
 The vocabulary an app developer uses to wire up the kit.
 
+### Contribution
+
+A registry entry: what it contributes, and when it is eligible. Every role is
+optional and independent — `bindings` (its entire input surface), `actions`,
+an `overlay` layer, `presentation` for a palette. An entry that only routes
+input declares only the first two. See
+`packages/core/src/contributions/types.ts`.
+
+**Eligibility** is a *set* of conditions, not one value, because one entry holds
+several at once — the hand tool is palette-selectable and space-held:
+
+- `focus` — selectable as the focused entry; exclusive, one at a time.
+- `offhand: HotkeyTrigger` — also live while that key is held.
+- `always` — live regardless of what is focused.
+- `claimed` — live only for input this entry's own affordances produced.
+- `capabilities` — modality filter, applied wherever it would otherwise be live.
+
+The scope tier a binding matches at is *derived* from whichever condition is
+live (`liveScope`), ordered to match the dispatcher's own hotkey > active >
+ambient walk. So an entry lands in a tier because of what it declares about
+itself, not because of which argument a consumer passed it in.
+
 ### Tool
 
-A `Tool<TScratch>` record that encapsulates one interaction mode. It declares a
-keybinding, an optional hotkey-slot trigger, a `cursor`, and — its entire input
-surface — an array of [gesture bindings](#gesture). The active tool receives
-pointer and keyboard events routed from the canvas by the
-[Tool registry](#tool-registry). Distinct from [Gesture hooks](#gesture) in that
-a Tool is a stateful mode (the user switches between tools) while a gesture hook
-is a direct binding to a pointer interaction. See
-`packages/core/src/tools/types.ts`.
+A `Tool<TScratch>` is the **focus-declaring case** of a Contribution: it adds
+the fields that only mean something for a mode the user switches into —
+`initScratch`, `onActivate`/`onDeactivate`, the preview hooks, a `cursor`
+closing over its own scratch. Distinct from [Gesture hooks](#gesture) in that a
+Tool is a stateful mode while a gesture hook is a direct binding to a pointer
+interaction. See `packages/core/src/tools/types.ts`.
+
+Not every entry is a Tool. `@weasel-js/hud` contributes bindings and actions and
+declares `claimed`; it has no scratch, no palette icon, and nothing to preview.
 
 ### Affordance
 
@@ -133,13 +156,20 @@ returning a `LayerHit` from its `hitTest`.
 Exclusivity is a hard filter, not a preference: if nothing eligible remains, the
 press does nothing. A dev-only warning names the owner when that happens.
 
-### Tool registry
+### Contribution registry
 
-`useTools({ active, registry, ambient })` — holds the set of registered `Tool`
-records, the active-slot id, and the hotkey-engaged id. Returns a `ToolsApi` with
-`setActive`, `engageHotkey`, `getActiveOverlays`, and the `dispatcher` that
-`<Canvas>` wires to DOM events. Ambient tools listen on all events regardless of
-which tool is active (used for always-on zoom and pan tools). See
+`useContributions({ entries, focused })` — the assembly point. It holds the
+entries and the focused id, and returns `scopedBindings()` (every live binding
+paired with the tier its declaration resolves to) plus `overlays()`. The
+dispatcher matches against that, so one place decides eligibility. It is also
+where route-conflict reporting sees both entry bindings and action
+`defaultBinding`s, which is what lets a collision between them be reported at
+all. See `packages/core/src/contributions/useContributions.ts`.
+
+`useTools({ active, registry, ambient })` remains as a shim over it, unchanged
+in shape: `registry` entries get `focus`, `ambient` entries get `always`, a
+`hotkey` declaration becomes `offhand`. Note it returns shallow copies for those
+last two categories, since it adds the declaration. See
 `packages/core/src/tools/useTools.ts`.
 
 ### Layer

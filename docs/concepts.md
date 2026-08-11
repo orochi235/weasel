@@ -318,11 +318,13 @@ them:
   `[initial]` → `[engaged]` → `[initial]` lifecycle that drag uses. Build
   entries with `buildToolOffhandBindings(specs)`.
 
-Built-in tools wire these via `BUILTIN_SELECT_KEYS` and
-`BUILTIN_OFFHAND_ACTIONS` maps in `packages/core/src/tools/useKeybindings.ts`. The
-`ToolKeybinding` field on `ToolDef` is reserved for tools whose activation
-key is set by the host caller (Lasso, Eyedropper); the same `useKeybindings`
-effect picks up those configurable keybindings and appends entries to the
+Built-in activation keys come from `BUILTIN_SELECT_KEYS` in
+`packages/core/src/tools/useKeybindings.ts`. Held-key engagement is not wired
+there: a tool declares `hotkey` on its `ToolDef`, that becomes
+`eligibility.offhand`, and assembly registers the consolidated `tool.offhand`
+action from the declaration. The `ToolKeybinding` field on `ToolDef` is reserved
+for tools whose activation key is set by the host caller (Lasso, Eyedropper);
+the `useKeybindings` effect picks those up and appends entries to the
 consolidated `tool.activate` action's bindings dynamically.
 
 ### Hover cursors predict the drag route
