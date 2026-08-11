@@ -74,6 +74,10 @@ export interface Widget {
   /** Region `content` is clipped to. Required when `content` is set. */
   readonly contentRect?: WidgetBounds;
   hitTest(x: number, y: number): boolean;
+  /** CSS cursor for a point inside this widget, in screen space. Resolved per
+   *  point rather than read off hover state, because the layer's `hitTest`
+   *  runs for a point and hover state may lag it. */
+  cursorAt?(x: number, y: number): string;
   onPointer(evt: HudPointerEvent): PointerClaim;
   /** Called by Hud.remove or widget.dispose. Detach event listeners, etc. */
   dispose(): void;
