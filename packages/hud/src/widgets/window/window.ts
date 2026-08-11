@@ -34,8 +34,6 @@ export interface WindowOptions {
 
 export interface WindowWidget extends Widget {
   readonly contentRect: WidgetBounds;
-  /** CSS cursor for the last hovered zone; `'default'` when not hovered. */
-  readonly cursor: string;
   setBounds(b: WidgetBounds): void;
   setHidden(hidden: boolean): void;
   setTitle(title: string): void;
@@ -62,7 +60,6 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   let dragZone: WindowZone | null = null;
   let dragStart: WidgetBounds = bounds;
   let dragOrigin = { x: 0, y: 0 };
-  let hoverZone: WindowZone | null = null;
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
@@ -86,7 +83,6 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     get bounds() { return bounds; },
     get hidden() { return hidden; },
     get contentRect() { return windowContentRect(bounds, m); },
-    get cursor() { return hoverZone ? cursorForZone(hoverZone) : 'default'; },
     cursorAt(x, y) { const z = asDrag(zoneAt(bounds, m, x, y)); return z ? cursorForZone(z) : 'default'; },
     content: opts.content,
 
@@ -197,15 +193,11 @@ export function createWindow(opts: WindowOptions): WindowWidget {
           }
           return 'claim';
         }
-        case 'hovermove': {
-          const z = asDrag(zoneAt(bounds, m, evt.x, evt.y));
-          if (z !== hoverZone) { hoverZone = z; opts.onChange?.(); }
+        // The cursor is resolved per point via `cursorAt`, so hover carries no
+        // state and needs no redraw.
+        case 'hovermove':
+        case 'hoverleave':
           return 'pass';
-        }
-        case 'hoverleave': {
-          if (hoverZone) { hoverZone = null; opts.onChange?.(); }
-          return 'pass';
-        }
       }
     },
 
