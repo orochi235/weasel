@@ -163,6 +163,19 @@ export interface AffordanceBinding<TScratch = unknown> {
  * out of scratch. An affordance that doesn't set them simply produces a hit
  * without those fields.
  */
+export interface CommonAffordanceScratch {
+  /** The node (or `MULTI_RESIZE_TARGET_ID`) this chrome acts on. Becomes
+   *  `AffordanceHit.targetIds`. */
+  targetId?: string;
+  /** For resize chrome: which corner stays pinned. Mirrors the kit's
+   *  `ResizeAnchor`, spelled inline so `affordances/` doesn't take a type
+   *  dependency on the gesture layer for one field. */
+  anchor?: { x: 'min' | 'max' | 'free'; y: 'min' | 'max' | 'free' };
+  /** World-space invariant point of the transform — the fixed corner for a
+   *  resize, the pivot for a rotation. */
+  fixedPoint?: { x: number; y: number };
+}
+
 /**
  * What a **registered layer's** `hitTest` returns. Extends `AffordanceBinding`
  * so existing implementations keep typechecking; the added fields are how a
@@ -178,17 +191,4 @@ export interface LayerHit<TScratch = unknown> extends AffordanceBinding<TScratch
    *  affordance. Omitted means `'shared'` — today's behavior. Same name and
    *  meaning as `AffordanceHit.strength`, which it becomes. */
   strength?: 'exclusive' | 'shared';
-}
-
-export interface CommonAffordanceScratch {
-  /** The node (or `MULTI_RESIZE_TARGET_ID`) this chrome acts on. Becomes
-   *  `AffordanceHit.targetIds`. */
-  targetId?: string;
-  /** For resize chrome: which corner stays pinned. Mirrors the kit's
-   *  `ResizeAnchor`, spelled inline so `affordances/` doesn't take a type
-   *  dependency on the gesture layer for one field. */
-  anchor?: { x: 'min' | 'max' | 'free'; y: 'min' | 'max' | 'free' };
-  /** World-space invariant point of the transform — the fixed corner for a
-   *  resize, the pivot for a rotation. */
-  fixedPoint?: { x: number; y: number };
 }

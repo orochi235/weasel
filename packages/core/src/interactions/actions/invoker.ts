@@ -44,7 +44,7 @@ export interface AffordanceHit {
   /** Discriminator string, e.g. `'handle:bottom-right'`. */
   kind: string;
   /** Id of whatever produced this hit — a kit affordance's `id`, or the
-   *  registered layer's id. Bindings name it; the dispatcher ranks by it. */
+   *  registered layer's id. Read only by the dispatcher's dead-claim warning today. */
   owner?: string;
   /** `'exclusive'` means no binding may act on this point unless its target
    *  consults the affordance. `'shared'` (the default) competes on scope and
