@@ -175,3 +175,20 @@ export interface CommonAffordanceScratch {
    *  resize, the pivot for a rotation. */
   fixedPoint?: { x: number; y: number };
 }
+
+/**
+ * What a **registered layer's** `hitTest` returns. Extends `AffordanceBinding`
+ * so existing implementations keep typechecking; the added fields are how a
+ * consumer's own chrome says the things kit chrome says through
+ * `AffordanceRegion` — which cursor to show, and whether it owns the point
+ * outright.
+ */
+export interface LayerHit<TScratch = unknown> extends AffordanceBinding<TScratch> {
+  /** CSS cursor while the pointer is over this hit. Reaches the hover-cursor
+   *  pump as `AffordanceHit.cursor`, the same path kit chrome uses. */
+  cursor?: string;
+  /** `'exclusive'` bars every binding whose target doesn't consult the
+   *  affordance. Omitted means `'shared'` — today's behavior. Same name and
+   *  meaning as `AffordanceHit.strength`, which it becomes. */
+  strength?: 'exclusive' | 'shared';
+}

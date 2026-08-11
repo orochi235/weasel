@@ -54,7 +54,8 @@ export function createText(opts: TextOptions): TextWidget {
         },
       )];
     },
-    hitTest() { return false; },   // text is passive in v1
+    hitTest() { return false; },
+    claimsPointer: false,
     onPointer(_e: HudPointerEvent): PointerClaim { return 'pass'; },
     dispose() {
       if (disposed) return;

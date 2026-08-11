@@ -79,6 +79,49 @@ function targetRank(target: unknown): number {
   return 1;
 }
 
+/**
+ * True when a spec's target actually consults the affordance hit rather than
+ * only the body classification. `kindOf` predicates are handed the hit;
+ * `affordance:<k>` matches on its `kind`. The body-class strings (`'empty'`,
+ * `'selected-body'`, `'unselected-body'`) and the `kind:` forms resolve from
+ * `bodyTarget` / `bodyKind` and never see it — which is why chrome floating
+ * over empty canvas used to read as empty canvas.
+ */
+export function targetConsultsAffordance(specTarget: unknown): boolean {
+  if (specTarget === undefined) return false;
+  if (typeof specTarget === 'object' && specTarget !== null && 'kindOf' in specTarget) return true;
+  return typeof specTarget === 'string' && specTarget.startsWith('affordance:');
+}
+
+function specTargetOf(spec: GestureSpec): unknown {
+  return 'target' in spec ? spec.target : undefined;
+}
+
+function claimOf(e: InputEvent): { owner?: string; strength?: 'exclusive' | 'shared' } | undefined {
+  return ('affordance' in e ? e.affordance : undefined) as
+    { owner?: string; strength?: 'exclusive' | 'shared' } | undefined;
+}
+
+/** `'exclusive'` when the event carries a claim that bars unnamed bindings. */
+function isExclusiveClaim(e: InputEvent): boolean {
+  return claimOf(e)?.strength === 'exclusive';
+}
+
+const warnedDeadClaims = new Set<string>();
+
+/** Dev-only. An exclusive claim that matches no binding drops the press with
+ *  no diagnostic, which reads exactly like deliberate blocking. */
+function reportDeadClaim(owner: string | undefined, warn: (message: string) => void): void {
+  if (process.env.NODE_ENV === 'production') return;
+  const key = String(owner);
+  if (warnedDeadClaims.has(key)) return;
+  warnedDeadClaims.add(key);
+  warn(
+    `[weasel] exclusive claim by "${key}" matched no binding: no `
+    + '`affordance:` or `kindOf` target resolved against it, so the press was dropped.',
+  );
+}
+
 /** CSS-style specificity tuple for a GestureSpec. Higher tuple wins under
  *  lexicographic compare. Dimensions, in order of precedence:
  *
@@ -161,12 +204,21 @@ export function matchSorted(
   bindings: readonly ScopedBinding[],
   isMac: boolean,
   engagedChannels?: ReadonlySet<string>,
+  warn: (message: string) => void = (m) => console.warn(m),
 ): MatchResult[] {
   const out: MatchResult[] = [];
   const engaged = engagedChannels ?? EMPTY_ENGAGED;
+  // An exclusive claim outranks the scope tier. Scope is the outermost sort
+  // key below, so without this a vague active binding beats the claim owner's
+  // precise ambient one — the whole reason chrome got swallowed by whichever
+  // tool was active.
+  const exclusive = isExclusiveClaim(e);
+  const pool = exclusive
+    ? bindings.filter(sb => targetConsultsAffordance(specTargetOf(sb.binding.spec)))
+    : bindings;
   for (const scope of SCOPE_PRIORITY) {
     const scopeMatches: MatchResult[] = [];
-    for (const sb of bindings) {
+    for (const sb of pool) {
       if (sb.scope !== scope) continue;
       const phaseCtx: PhaseContext = { selfChannel: sb.ownerToolId, engagedChannels: engaged };
       if (matchSpec(e, sb.binding.spec, isMac, phaseCtx)) {
@@ -177,6 +229,12 @@ export function matchSorted(
     // keep their registration order (Array.prototype.sort is stable per ES2019).
     scopeMatches.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec));
     out.push(...scopeMatches);
+  }
+  // Checked against the final result, not the pool: a binding can declare a
+  // `kindOf`/`affordance:` target and still fail to match this particular
+  // claim, which used to read as "handled" even though nothing fired.
+  if (exclusive && out.length === 0 && bindings.length > 0) {
+    reportDeadClaim(claimOf(e)?.owner, warn);
   }
   return out;
 }

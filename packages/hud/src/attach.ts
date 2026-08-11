@@ -1,5 +1,5 @@
 import type { Hud } from './hud';
-import type { CanvasExtensionApi, RenderLayer, AffordanceBinding, View } from '@weasel-js/core';
+import type { CanvasExtensionApi, RenderLayer, LayerHit, View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
@@ -39,6 +39,10 @@ export function attachHud(
     const list = hud.widgets();
     for (let i = list.length - 1; i >= 0; i--) {
       const w = list[i];
+      // Decoration is skipped rather than downgraded: a hit at all would let
+      // `hud.press` consume the press, and the walk has to keep descending to
+      // whatever is beneath — another widget, or the scene.
+      if (w.claimsPointer === false) continue;
       if (!w.hidden && w.hitTest(sx, sy)) return w;
     }
     return null;
@@ -74,7 +78,7 @@ export function attachHud(
       }
       return out;
     },
-    hitTest: (worldX, worldY, _data, view, _dims): AffordanceBinding | null => {
+    hitTest: (worldX, worldY, _data, view, _dims): LayerHit | null => {
       // Convert world to screen so we can hit-test widget bounds.
       const t = viewToTransform(view);
       const [sx, sy] = worldToScreen(worldX, worldY, t);
@@ -89,7 +93,14 @@ export function attachHud(
       // drive directly. That dispatcher is gone, and a hit-test handing back
       // event handlers was always an odd shape — a hit-test should say what
       // was hit.
-      return { initialScratch: { widget: hit } } satisfies AffordanceBinding<HudHitPayload>;
+      // Exclusive: hud chrome floats over the scene, so a press on it is not a
+      // press on whatever sits underneath. Bindings that don't consult the
+      // affordance are barred from it by the dispatcher.
+      return {
+        initialScratch: { widget: hit },
+        strength: 'exclusive',
+        ...(hit.cursorAt ? { cursor: hit.cursorAt(sx, sy) } : {}),
+      } satisfies LayerHit<HudHitPayload>;
     },
     onUncapturedMove: (worldX, worldY, evt, view: View) => {
       const t = viewToTransform(view);

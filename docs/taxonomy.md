@@ -104,15 +104,14 @@ The vocabulary an app developer uses to wire up the kit.
 
 ### Tool
 
-A `Tool<TScratch>` record that encapsulates one interaction mode. It declares
-channel handlers (`pointer`, `drag`, `keyboard`, `wheel`), a keybinding,
-an optional hotkey-slot trigger, and a `cursor`. The active tool receives pointer
-and keyboard events routed from the canvas by the [Tool registry](#tool-registry).
-Distinct from [Gesture hooks](#gesture) in that a Tool is a stateful mode (the user
-switches between tools) while a gesture hook is a direct binding to a pointer
-interaction. Tools in modal states (pen mid-path, text mid-edit) can opt into an
-optional `claimsAll(ctx)` predicate that bypasses the affordance layer hit-test
-pipeline for the duration of the modal state. See `packages/core/src/tools/types.ts:103`.
+A `Tool<TScratch>` record that encapsulates one interaction mode. It declares a
+keybinding, an optional hotkey-slot trigger, a `cursor`, and — its entire input
+surface — an array of [gesture bindings](#gesture). The active tool receives
+pointer and keyboard events routed from the canvas by the
+[Tool registry](#tool-registry). Distinct from [Gesture hooks](#gesture) in that
+a Tool is a stateful mode (the user switches between tools) while a gesture hook
+is a direct binding to a pointer interaction. See
+`packages/core/src/tools/types.ts`.
 
 ### Affordance
 
@@ -121,6 +120,18 @@ A reusable factory primitive that produces a `{ id, render, hitTest? }` triple c
 Examples: `createCornerResizeAffordance`, `createRotationAffordance`. See `packages/core/src/affordances/types.ts`.
 
 The factory pattern: each affordance instance is bound to one tool/context at runtime (it closes over that tool's controllers via the wrapper drag channel), but the factory function is reusable across tools.
+
+An affordance **hit** is a claim: `{ kind, owner, strength, cursor?, payload? }`.
+`owner` names what produced it — a kit affordance's `id`, or a registered
+layer's id. `strength: 'exclusive'` bars every binding whose `target` doesn't
+consult the affordance (a `kindOf` predicate, or the `affordance:<kind>` string
+form), which is how chrome floating over the scene stays reachable no matter
+which tool is active; `'shared'` is the default and competes on scope and
+specificity as bindings always have. A registered layer declares both by
+returning a `LayerHit` from its `hitTest`.
+
+Exclusivity is a hard filter, not a preference: if nothing eligible remains, the
+press does nothing. A dev-only warning names the owner when that happens.
 
 ### Tool registry
 

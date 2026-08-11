@@ -55,6 +55,7 @@ export function createImage(opts: ImageOptions): ImageWidget {
       if (hidden) return false;
       return x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
     },
+    claimsPointer: false,
     onPointer(_e: HudPointerEvent): PointerClaim { return 'pass'; },
     dispose() {
       if (disposed) return;

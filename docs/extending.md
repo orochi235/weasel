@@ -90,7 +90,9 @@ Affordances read state from `ChromeState` — a kit-built read-only object that 
 
 Every layer's `hitTest` is consulted on pointerdown, and the result rides the gesture as `InvocationCtx.drag.affordance` — so an affordance hit fires the action bound to it even when a different tool is active. This is the principle: visible chrome is always hittable.
 
-A tool that must not lose a gesture to chrome does it in the binding, by declining hits it doesn't own: `target: { kindOf: (hit) => hit == null }` matches only presses that landed on the scene. (`Tool.claimsAll`, which told the retired tool-routing dispatcher to bypass the layer pipeline wholesale, is gone — it was a per-tool override of a global walk, where this is a per-binding statement about what the binding wants.)
+A layer that owns its chrome outright returns `strength: 'exclusive'` from its `hitTest`. That bars every binding whose `target` doesn't consult the affordance — a `kindOf` predicate or the `affordance:<kind>` form — so a tool needs no predicate of its own to keep its hands off; a bare `{ kind: 'drag' }` simply doesn't compete for a claimed press. The default, `'shared'`, competes on scope and specificity as bindings always have.
+
+A tool can still decline hits explicitly (`target: { kindOf: (hit) => hit == null }` matches only presses that landed on the scene), but that is now for cases the claim doesn't cover, not the general defense against chrome.
 
 ### Naming a target
 

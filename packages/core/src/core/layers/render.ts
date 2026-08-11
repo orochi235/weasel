@@ -87,7 +87,7 @@ export interface RenderLayer<TData> {
      *  not return a hit from any chrome element whose id reports
      *  `false`. Absent → every element is hittable. */
     isVisible?: (id: string) => boolean,
-  ) => import('../../affordances/types').AffordanceBinding | null;
+  ) => import('../../affordances/types').LayerHit | null;
   /**
    * Called on every pointermove when no gesture is currently captured.
    * Lets layers (e.g. HUD widgets) track hover state without participating

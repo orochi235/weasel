@@ -59,6 +59,7 @@ export function createRect(opts: RectOptions): RectWidget {
       if (hidden) return false;
       return px >= bounds.x && px < bounds.x + bounds.w && py >= bounds.y && py < bounds.y + bounds.h;
     },
+    claimsPointer: false,
     onPointer(_evt: HudPointerEvent): PointerClaim { return 'pass'; },
     dispose() {
       if (disposed) return;

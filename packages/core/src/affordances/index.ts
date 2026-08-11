@@ -4,6 +4,7 @@ export type {
   AffordanceRegion,
   CommonAffordanceScratch,
   CustomPaintContext,
+  LayerHit,
 } from './types';
 export { composeAffordanceLayer } from './composeAffordanceLayer';
 export {

@@ -131,9 +131,9 @@ function dragAction(): Action {
  * - `drag` pumps `move` and closes with `up` / `cancel`.
  *
  * All three gate on the affordance kind, so they fire only for presses the
- * HUD's own layer hit-test claimed. That gate is also why ambient scope is
- * safe: nothing else produces a `layer:weasel-hud` hit, and kit tools decline
- * presses that landed on chrome.
+ * HUD's own layer hit-test claimed. That gate is also what keeps them in
+ * contention: the layer claims exclusively, and an exclusive claim bars every
+ * binding whose target doesn't consult the affordance.
  *
  * This replaces a `DragChannel` the HUD's `hitTest` used to hand back for the
  * tool-routing dispatcher to drive. That dispatcher is gone.

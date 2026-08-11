@@ -2256,11 +2256,13 @@ function GestureDispatcherMounter({
       // widgets to its own action instead of the active tool.
       const extra = canvasApiRef?.current?.hitTestExtras?.(worldPoint.x, worldPoint.y);
       if (extra) {
+        const claim = extra.hit;
         return {
           kind: `layer:${extra.layerId}`,
-          ...(extra.binding.initialScratch !== undefined
-            ? { payload: extra.binding.initialScratch }
-            : {}),
+          owner: extra.layerId,
+          strength: claim.strength ?? 'shared',
+          ...(claim.cursor !== undefined ? { cursor: claim.cursor } : {}),
+          ...(claim.initialScratch !== undefined ? { payload: claim.initialScratch } : {}),
         };
       }
       return affordanceAt ? affordanceAt(worldPoint) : null;
