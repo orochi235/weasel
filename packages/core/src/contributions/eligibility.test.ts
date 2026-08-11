@@ -1,0 +1,41 @@
+/**
+ * One entry can satisfy several conditions at once — the hand tool is
+ * palette-selectable and space-held — so this resolves to the HIGHEST-priority
+ * live tier, matching the dispatcher's existing hotkey > active > ambient walk.
+ */
+import { describe, expect, it } from 'vitest';
+import { liveScope } from './eligibility';
+import type { Eligibility } from './types';
+
+const state = { focusedId: 'hand', heldTriggers: new Set<string>() };
+
+describe('liveScope', () => {
+  it('gives the focused entry active scope', () => {
+    const e: Eligibility = { focus: true };
+    expect(liveScope('hand', e, state)).toBe('active');
+  });
+
+  it('gives an unfocused focus-only entry no scope at all', () => {
+    const e: Eligibility = { focus: true };
+    expect(liveScope('rect', e, state)).toBeNull();
+  });
+
+  it('gives an always-on entry ambient scope regardless of focus', () => {
+    expect(liveScope('viewport', { always: true }, state)).toBe('ambient');
+  });
+
+  it('gives a claimed-only entry ambient scope', () => {
+    expect(liveScope('weasel-hud', { claimed: true }, state)).toBe('ambient');
+  });
+
+  it('prefers hotkey over active when both conditions are live', () => {
+    // The hand tool, focused AND space-held. The dispatcher walks hotkey first,
+    // so reporting 'active' here would change which tier its bindings land in.
+    const held = { focusedId: 'hand', heldTriggers: new Set(['space']) };
+    expect(liveScope('hand', { focus: true, offhand: 'space' }, held)).toBe('hotkey');
+  });
+
+  it('gives an offhand entry no scope while its trigger is up', () => {
+    expect(liveScope('hand', { offhand: 'space' }, state)).toBeNull();
+  });
+});
