@@ -121,4 +121,21 @@ describe('an exclusive claim no binding can receive warns in dev', () => {
     matchSorted(dragOn(hit), [], false, undefined, warn);
     expect(warn).not.toHaveBeenCalled();
   });
+
+  it('warns even when a binding declares a kindOf target, if that target rejects the claim', () => {
+    // The old guard checked "does any binding declare a target that consults
+    // the affordance" — a syntactic question a `kindOf` predicate always
+    // answers yes to, even when it goes on to reject this particular hit.
+    // A near-miss like this used to read as handled; it must not.
+    const nearMiss: ScopedBinding = {
+      binding: { spec: { kind: 'drag', target: { kindOf: () => false } }, actionId: 'never' },
+      scope: 'active',
+      ownerToolId: 'some-tool',
+    };
+    const warn = vi.fn();
+    const hit = { kind: 'layer:almost-taken', owner: 'almost-taken', strength: 'exclusive' };
+    matchSorted(dragOn(hit), [nearMiss], false, undefined, warn);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain('exclusive claim by "almost-taken"');
+  });
 });

@@ -109,16 +109,16 @@ function isExclusiveClaim(e: InputEvent): boolean {
 
 const warnedDeadClaims = new Set<string>();
 
-/** Dev-only. An exclusive claim no binding can receive drops the press with no
- *  diagnostic, which reads exactly like deliberate blocking. */
+/** Dev-only. An exclusive claim that matches no binding drops the press with
+ *  no diagnostic, which reads exactly like deliberate blocking. */
 function reportDeadClaim(owner: string | undefined, warn: (message: string) => void): void {
   if (process.env.NODE_ENV === 'production') return;
   const key = String(owner);
   if (warnedDeadClaims.has(key)) return;
   warnedDeadClaims.add(key);
   warn(
-    `[weasel] exclusive claim by "${key}" matched no binding: nothing declares an `
-    + '`affordance:` or `kindOf` target, so the press was dropped.',
+    `[weasel] exclusive claim by "${key}" matched no binding: no `
+    + '`affordance:` or `kindOf` target resolved against it, so the press was dropped.',
   );
 }
 
@@ -216,9 +216,6 @@ export function matchSorted(
   const pool = exclusive
     ? bindings.filter(sb => targetConsultsAffordance(specTargetOf(sb.binding.spec)))
     : bindings;
-  if (exclusive && pool.length === 0 && bindings.length > 0) {
-    reportDeadClaim(claimOf(e)?.owner, warn);
-  }
   for (const scope of SCOPE_PRIORITY) {
     const scopeMatches: MatchResult[] = [];
     for (const sb of pool) {
@@ -232,6 +229,12 @@ export function matchSorted(
     // keep their registration order (Array.prototype.sort is stable per ES2019).
     scopeMatches.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec));
     out.push(...scopeMatches);
+  }
+  // Checked against the final result, not the pool: a binding can declare a
+  // `kindOf`/`affordance:` target and still fail to match this particular
+  // claim, which used to read as "handled" even though nothing fired.
+  if (exclusive && out.length === 0 && bindings.length > 0) {
+    reportDeadClaim(claimOf(e)?.owner, warn);
   }
   return out;
 }
