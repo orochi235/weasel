@@ -64,3 +64,94 @@ describe('a registered layer produces a full claim', () => {
     expect(canvas.style.cursor).toBe('nwse-resize');
   });
 });
+
+// `strength: claim.strength ?? 'shared'` is the compatibility promise every
+// pre-`LayerHit` layer relies on; `@weasel-js/hud` is the only one that
+// opts into `'exclusive'`.
+
+const bareLayer: RenderLayer<unknown> = {
+  id: 'bare-claimer',
+  label: 'Bare claimer',
+  space: 'screen',
+  draw: () => [],
+  hitTest: () => ({ initialScratch: { note: 'no strength here' } }),
+};
+
+function RectHarness({ apiOut }: { apiOut: { sceneRef: { current: ReturnType<typeof useScene<Empty>> | null } } }) {
+  const ref = React.useRef<SceneCanvasApi>(null);
+  const scene = useScene<Empty>({ items: [] });
+  apiOut.sceneRef.current = scene;
+  React.useEffect(() => ref.current?.registerLayer(bareLayer), []);
+  return (
+    <SceneCanvas
+      ref={ref}
+      width={200}
+      height={200}
+      scene={scene}
+      layers={{}}
+      defaultTools={['rect']}
+      initialActiveTool="rect"
+    />
+  );
+}
+
+describe('a layer hit with no declared strength defaults to shared', () => {
+  it('a drag over the layer still reaches the active tool', async () => {
+    const apiOut = { sceneRef: { current: null } as { current: ReturnType<typeof useScene<Empty>> | null } };
+    const { container } = render(<RectHarness apiOut={apiOut} />);
+    await act(async () => {});
+
+    const canvas = container.querySelector('canvas')!;
+    await act(async () => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 20, clientY: 20 }));
+      canvas.dispatchEvent(makePointerEvent('pointermove', { clientX: 60, clientY: 60 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 60, clientY: 60 }));
+    });
+
+    // The bare claim (no `strength`) must not become exclusive; if it did,
+    // rect's untargeted `drag` binding would be filtered out of the pool
+    // and no node would be inserted.
+    expect(apiOut.sceneRef.current!.nodes.size).toBe(1);
+  });
+});
+
+// `owner: extra.layerId` (`SceneCanvas.tsx`) has no test either. Field
+// assertion, not behavioral: `owner`'s only production reader is the
+// dispatcher's dead-claim warning, and that's unreachable through a full
+// `<SceneCanvas>` — the standard `editAnchors` / `enterPathEdit` actions are
+// always-ambient `kindOf` bindings, so the warning's "nothing consults the
+// affordance" pool is never empty. This asserts the value `SceneCanvas.tsx`
+// copies verbatim into `owner`: `hitTestExtras`'s `layerId`.
+
+function ownerProbeLayer(id: string): RenderLayer<unknown> {
+  return {
+    id,
+    label: 'Owner probe',
+    space: 'screen',
+    draw: () => [],
+    hitTest: () => ({ strength: 'exclusive' }),
+  };
+}
+
+function OwnerProbeHarness({ apiOut, layerId }: {
+  apiOut: { ref: React.RefObject<SceneCanvasApi | null> };
+  layerId: string;
+}) {
+  const ref = React.useRef<SceneCanvasApi>(null);
+  apiOut.ref = ref;
+  const scene = useScene<Empty>({ items: [] });
+  React.useEffect(() => ref.current?.registerLayer(ownerProbeLayer(layerId)), [layerId]);
+  return <SceneCanvas ref={ref} width={200} height={200} scene={scene} layers={{}} />;
+}
+
+describe('the claim carries the layer id as owner', () => {
+  it('hitTestExtras reports the registered layer id', async () => {
+    const layerId = 'owner-probe-layer';
+    const apiOut = { ref: { current: null } as React.RefObject<SceneCanvasApi | null> };
+    render(<OwnerProbeHarness apiOut={apiOut} layerId={layerId} />);
+    await act(async () => {});
+
+    const extra = apiOut.ref.current!.hitTestExtras!(10, 10);
+    expect(extra?.layerId).toBe(layerId);
+  });
+});
