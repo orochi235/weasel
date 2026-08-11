@@ -1073,6 +1073,7 @@ export type {
 export type {
   ToolPresentation,
 } from './tools/types';
+export type { Contribution, Eligibility } from './contributions';
 export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';
 export type { AnimateToBoundsOptions } from './core/viewport/useViewAnimation';
