@@ -87,7 +87,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     get hidden() { return hidden; },
     get contentRect() { return windowContentRect(bounds, m); },
     get cursor() { return hoverZone ? cursorForZone(hoverZone) : 'default'; },
-    cursorAt(x, y) { const z = zoneAt(bounds, m, x, y); return z ? cursorForZone(z) : 'default'; },
+    cursorAt(x, y) { const z = asDrag(zoneAt(bounds, m, x, y)); return z ? cursorForZone(z) : 'default'; },
     content: opts.content,
 
     // Ends any drag in flight: `dragStart` would otherwise still hold the

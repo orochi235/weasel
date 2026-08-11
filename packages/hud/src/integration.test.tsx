@@ -197,4 +197,21 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
     });
     expect(canvas.style.cursor).toBe('move');
   });
+
+  it('a titlebar-less window reports move over the interior that drags it', async () => {
+    const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { container } = await mount(apiOut, { initialActiveTool: 'rect' });
+
+    await act(async () => {
+      apiOut.hudRef.current!.window({
+        id: 'w1', x: 20, y: 20, w: 100, h: 80, title: 'Loupe', titlebar: false,
+      });
+    });
+
+    const canvas = container.querySelector('canvas')!;
+    await act(async () => {
+      canvas.dispatchEvent(makePointerEvent('pointermove', { clientX: 60, clientY: 60 }));
+    });
+    expect(canvas.style.cursor).toBe('move');
+  });
 });
