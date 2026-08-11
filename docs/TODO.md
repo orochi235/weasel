@@ -112,30 +112,33 @@ Priority tags:
   holding will do something. Recorded 2026-08-02, alongside the `longPress`
   gesture kind landing.
 
-- **(P2) Cursor and gesture dispatch over HUD elements.** Two halves of the
-  same missing wiring. **Cursor:** `WindowWidget.cursor` resolves the right CSS
-  cursor per zone (`ns-resize`, `nwse-resize`, `move`) and nothing reads it —
-  `Tool.cursor` drives `style.cursor` on the host, but a HUD widget is not a
-  tool, so hovering a resize band shows the active tool's cursor and the
-  affordance is invisible until you try it. **Gestures:** only the three
-  bindings in `createHudTool` reach widgets, so a HUD element can be pressed,
-  dragged and hovered and nothing else — no double-click, no wheel, no
-  long-press, no right-click, no keyboard focus. A widget wanting any of them
-  has no way to ask. Both want the same fix: registered layers declaring what
-  they can receive, and the host reading cursor and gesture eligibility from
-  the hit affordance rather than from the active tool. Recorded 2026-08-09.
+- **(P2) Gesture dispatch over HUD elements.** Only the three bindings in
+  `createHudTool` reach widgets, so a HUD element can be pressed, dragged and
+  hovered and nothing else — no double-click, no wheel, no long-press, no
+  right-click, no keyboard focus. A widget wanting any of them has no way to
+  ask. The cursor half of this item shipped 2026-08-10: widgets answer
+  `cursorAt(x, y)` and the claim carries it to the hover pump. Recorded
+  2026-08-09.
 
-- **(P2) Active tools swallow drags on HUD chrome.** `rect`, `ellipse`,
-  `polygon`, `star`, `hand`, `pen` and `lasso` each bind a bare
-  `{ kind: 'drag' }` in active scope with no target predicate, so a drag that a
-  registered layer's hit-test already claimed still reaches them — a HUD window
-  won't drag while any of them is active. `select`'s area-select had the same
-  hole and was fixed narrowly (`{ kind: 'drag', target: 'empty' }` resolves
-  `target` from the body only, ignoring the affordance). The real fix is a
-  dispatcher rule — an affordance a registered layer claimed outranks an active
-  binding that doesn't name it — not the same predicate copied into seven tools.
-  `createHudTool`'s doc block already claims this behavior exists. Found
-  2026-08-09 building the loupe.
+- **(P3) Only `window` implements `cursorAt`.** `button`, `label`, `image`,
+  `rect` and `text` don't, so hovering a HUD button while a drawing tool is
+  active still shows that tool's cursor. Not a regression — it was the prior
+  behavior everywhere — but the asymmetry is visible now that windows answer.
+  `cursor: 'pointer'` on button is the obvious next opt-in. Recorded
+  2026-08-10.
+
+- **(P3) `Widget.claimsPointer` is static.** A widget that is decoration in one
+  mode and interactive in another can't flip it without being swapped out.
+  Fine while `rect` / `text` / `image` are unconditionally decorative; revisit
+  when a stateful-claims widget appears. Recorded 2026-08-10.
+
+- **(P3) Three unlinked enumerations of `TargetSpec` forms.** `targetRank` and
+  `targetConsultsAffordance` (`interactions/dispatcher/matcher.ts`) and
+  `matchTarget` (`@weasel-js/gestures`, `ui/match.ts`) each enumerate the target
+  forms independently, across two packages, with nothing linking them — unlike
+  the `_exhaustive: never` guard `matchSpec` uses for gesture kinds. A new
+  target form needs three edits from memory and the compiler will not say so.
+  Recorded 2026-08-10.
 
 - **(P3) Interacting through a viewport.** `createViewportLayer` has no
   hit-test re-projection, so a press inside a loupe or minimap targets the outer
