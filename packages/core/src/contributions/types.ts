@@ -2,7 +2,7 @@ import type { RenderLayer } from 'core/layers/render';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { Action } from '../interactions/actions/registry';
 import type { CapabilityTag } from '@weasel-js/modes';
-import type { HotkeyTrigger, ToolCtx, ToolPresentation } from '../tools/types';
+import type { HotkeyTrigger, ToolPresentation } from '../tools/types';
 
 /**
  * When an entry's bindings are live. A set, not one value: the hand tool is
@@ -32,7 +32,6 @@ export interface Contribution {
   bindings?: GestureBinding[];
   actions?: Action[];
   overlay?: RenderLayer<unknown>;
-  cursor?: string | ((ctx: ToolCtx) => string);
   presentation?: ToolPresentation;
   /** Reflection escape hatch — the authored form, when there was one. */
   def?: unknown;

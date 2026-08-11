@@ -46,11 +46,10 @@ export function defineTool<TScratch = void>(
 
   // Normalize `string | ((ctx) => string)` to the function form so callers
   // have one shape to deal with. Returns '' (not undefined) so the signature
-  // satisfies `Tool.cursor: (ctx) => string`. `Contribution.cursor` isn't
-  // parameterized by scratch, so this reads `def.cursor` through a cast.
-  const resolveCursor = (ctx: ToolCtx): string => {
+  // satisfies `Tool.cursor: (ctx) => string`.
+  const resolveCursor = (ctx: ToolCtx<TScratch>): string => {
     if (def.cursor == null) return '';
-    return typeof def.cursor === 'function' ? def.cursor(ctx as ToolCtx<TScratch>) : def.cursor;
+    return typeof def.cursor === 'function' ? def.cursor(ctx) : def.cursor;
   };
 
   return {

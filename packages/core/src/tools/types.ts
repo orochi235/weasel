@@ -89,12 +89,8 @@ export interface ToolPresentation<TScratch = unknown> {
 /**
  * The focus-declaring case of a `Contribution`: a mode the user switches
  * into, plus the hooks that only make sense for one (`initScratch`,
- * activate/deactivate, live preview). Everything else — bindings, actions,
- * overlay, presentation, cursor — is inherited. `cursor` isn't narrowed to
- * `TScratch` here: `Contribution.cursor` takes a plain `ToolCtx`, and TS
- * rejects narrowing a property's function parameter on an extending
- * interface (contravariance), so a tool's cursor callback receives
- * `ctx.scratch` typed `unknown`.
+ * activate/deactivate, live preview, `cursor`). Everything else — bindings,
+ * actions, overlay, presentation — is inherited.
  */
 export interface Tool<TScratch = unknown> extends Contribution {
   /** Optional caller-supplied key. Most built-in tools have their activation
@@ -106,6 +102,7 @@ export interface Tool<TScratch = unknown> extends Contribution {
    *  the invoker knows which tool to switch to). */
   keybinding?: ToolKeybinding;
   initScratch?: () => TScratch;
+  cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
   onActivate?: (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
   /** Returns the in-flight preview pose for `id` if this tool is mid-gesture
