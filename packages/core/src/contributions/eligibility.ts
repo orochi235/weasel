@@ -6,6 +6,9 @@ import type { Eligibility } from './types';
 export interface EligibilityState {
   focusedId: string | null;
   heldTriggers: ReadonlySet<string>;
+  /** Ids the host reports as hotkey-engaged. The kit tracks the held-key
+   *  stack by entry id; `offhand` declarations do not populate it yet. */
+  engagedIds?: ReadonlySet<string>;
   /** Whether the active mode allows these capability tags. Omitted → allow. */
   allows?: (tags: readonly CapabilityTag[]) => boolean;
 }
@@ -21,6 +24,7 @@ export function liveScope(
 ): BindingScope | null {
   const tags = eligibility.capabilities;
   if (tags && tags.length > 0 && state.allows && !state.allows(tags)) return null;
+  if (state.engagedIds?.has(id)) return 'hotkey';
   if (eligibility.offhand && state.heldTriggers.has(eligibility.offhand)) return 'hotkey';
   if (eligibility.focus && state.focusedId === id) return 'active';
   if (eligibility.always || eligibility.claimed) return 'ambient';

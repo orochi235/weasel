@@ -1,10 +1,11 @@
 // src/tools/useTools.ts
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { dlog } from '../debug/flag';
-import type { AnyTool } from './types';
+import type { AnyTool, HotkeyTrigger } from './types';
 import type { RenderLayer } from 'core/layers/render';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
-import { reportRouteConflicts } from './routing/reflection';
+import { useContributions } from '../contributions/useContributions';
+import type { Contribution, Eligibility } from '../contributions/types';
 
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
@@ -43,13 +44,34 @@ export interface ToolsApi {
   getActiveOverlays(): RenderLayer<unknown>[];
 }
 
+/** The slot a caller passed a tool in, restated as declared eligibility.
+ *  `ToolDef.hotkey` becomes `offhand` — it is the same declaration, read off
+ *  the authored form via the `def` reflection handle. A tool that already
+ *  declares what its slot implies is returned as-is: `ToolsApi.registry`
+ *  hands back the objects the caller passed, and consumers compare identity. */
+function declareSlot(tool: AnyTool, slot: 'focus' | 'always'): AnyTool {
+  const hotkey = (tool.def as { hotkey?: HotkeyTrigger } | undefined)?.hotkey;
+  const eligibility: Eligibility = {
+    ...tool.eligibility,
+    [slot]: true,
+    ...(hotkey ? { offhand: hotkey } : {}),
+  };
+  return sameEligibility(tool.eligibility, eligibility) ? tool : { ...tool, eligibility };
+}
+
+function sameEligibility(a: Eligibility | undefined, b: Eligibility): boolean {
+  if (!a) return false;
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof Eligibility>;
+  for (const key of keys) if (a[key] !== b[key]) return false;
+  return true;
+}
+
 /**
  * Manages the active tool and hotkey slot.
  *
- * It used to also own a dispatcher: `useTools` constructed the tool-routing
- * dispatcher and `<Canvas>` pumped DOM events into it. Input now belongs
- * entirely to `useGestureDispatcher`, so what's left here is slot state plus
- * the overlay roll-up.
+ * A thin shim over {@link useContributions}: the `registry` / `ambient`
+ * arguments are restated as declared eligibility (`focus` / `always`), and
+ * assembly happens in one place for tools and non-tool contributions alike.
  *
  * Requires `<ActiveToolContextProvider>` (or `<WeaselProvider>` /
  * `<SceneCanvas>`, which mount one internally) in scope: active/hotkey state
@@ -58,8 +80,8 @@ export interface ToolsApi {
  *
  * **First-mount-wins semantics**: if `opts.active` differs from the context
  * default (`'select'`) on first mount, `useTools` pushes `opts.active` to
- * the context via a microtask. Subsequent mounts respect whatever the
- * context currently holds (the first caller wins).
+ * the context. Subsequent mounts respect whatever the context currently
+ * holds (the first caller wins).
  */
 export function useTools(opts: UseToolsOptions): ToolsApi {
   if (!(opts.active in opts.registry)) {
@@ -68,58 +90,49 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
 
   const ctx = useActiveToolContext();
 
-  // First-mount sync: if context is at its default ('select') and caller wants
-  // something else, push opts.active to the context. The decision is captured at
-  // first render; the actual setState runs in a post-commit effect (below) rather
-  // than a render-phase microtask, so it never updates state during render and is
-  // wrapped in act() under test.
-  const hasInitializedRef = useRef(false);
-  const isFirstRender = !hasInitializedRef.current;
-  const needsFirstMountSyncRef = useRef(false);
-  if (isFirstRender) {
-    hasInitializedRef.current = true;
-    needsFirstMountSyncRef.current = ctx.active === 'select' && opts.active !== 'select';
-  }
-  useEffect(() => {
-    if (!needsFirstMountSyncRef.current) return;
-    needsFirstMountSyncRef.current = false;
-    ctx.setActive(opts.active);
-    // First-mount sync only — deliberately runs once after mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const slotted = useMemo(() => {
+    const registry: Record<string, AnyTool> = {};
+    for (const [id, tool] of Object.entries(opts.registry)) {
+      registry[id] = declareSlot(tool, 'focus');
+    }
+    const ambient = (opts.ambient ?? []).map((t) => declareSlot(t, 'always'));
+    const byId = new Map<string, Contribution>();
+    for (const tool of [...Object.values(registry), ...ambient]) {
+      const prior = byId.get(tool.id);
+      if (prior) byId.set(tool.id, { ...tool, eligibility: { ...prior.eligibility, ...tool.eligibility } });
+      else byId.set(tool.id, tool);
+    }
+    return { registry, ambient, entries: [...byId.values()] };
+  }, [opts.registry, opts.ambient]);
 
-  // On the very first render, if context hasn't yet been updated to match
-  // opts.active, use opts.active directly to avoid a flash of the wrong tool.
-  const active = isFirstRender && ctx.active === 'select' && opts.active !== 'select'
-    ? opts.active
-    : ctx.active;
-  const hotkeyStack = ctx.hotkeyStack;
-  const hotkeyEngaged = hotkeyStack.at(-1) ?? null;
+  const contributions = useContributions({ entries: slotted.entries, focused: opts.active });
+
+  const hotkeyEngaged = ctx.hotkeyStack.at(-1) ?? null;
 
   // Refs so the memoized callbacks below see latest values without
   // re-creating themselves.
-  const registryRef = useRef(opts.registry);
-  registryRef.current = opts.registry;
-  const ambientRef = useRef(opts.ambient ?? []);
-  ambientRef.current = opts.ambient ?? [];
-  const activeRef = useRef(active);
-  activeRef.current = active;
+  const slottedRef = useRef(slotted);
+  slottedRef.current = slotted;
+  const activeRef = useRef(contributions.focused);
+  activeRef.current = contributions.focused;
   const hotkeyRef = useRef(hotkeyEngaged);
   hotkeyRef.current = hotkeyEngaged;
+
+  const setFocused = contributions.setFocused;
   const setActive = useCallback(
     (id: string) => {
-      if (!(id in registryRef.current)) {
+      if (!(id in slottedRef.current.registry)) {
         throw new Error(`setActive: "${id}" not in registry`);
       }
       dlog('tools', 'active:', activeRef.current, '→', id);
-      ctx.setActive(id);
+      setFocused(id);
     },
-    [ctx],
+    [setFocused],
   );
 
   const engageHotkey = useCallback(
     (id: string) => {
-      if (!(id in registryRef.current)) {
+      if (!(id in slottedRef.current.registry)) {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
       dlog('tools', 'hotkey engaged:', id);
@@ -133,52 +146,19 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
     ctx.popHotkey();
   }, [ctx]);
 
-  // Route-conflict check. Two tools declaring the same (phase, gesture, arg,
-  // target, modifiers) tuple are resolved by slot order and almost certainly
-  // not as either author intended — the kit has been able to detect that
-  // since `findConflicts` was written and never looked. This is where the
-  // tool set is assembled, so this is where it looks.
-  //
-  // Dev-only, and deduped on a signature of the tool set: the check walks
-  // every binding of every tool, and `registry` / `ambient` are usually fresh
-  // object literals each render, so keying the effect on them directly would
-  // re-warn on every keystroke.
-  const lastConflictSigRef = useRef<string | null>(null);
-  const toolSetSig = Object.keys(opts.registry).join(',')
-    + '|' + (opts.ambient ?? []).map(t => t.id).join(',');
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
-    if (lastConflictSigRef.current === toolSetSig) return;
-    lastConflictSigRef.current = toolSetSig;
-    reportRouteConflicts({
-      registry: registryRef.current,
-      ambient: ambientRef.current,
-    });
-  }, [toolSetSig]);
-
-  // `has` and `getActiveOverlays` read live state via refs, so they're
-  // safe to memoize once for the lifetime of the hook.
   const has = useCallback(
     (id: string): boolean =>
-      id in registryRef.current || ambientRef.current.some(t => t.id === id),
+      id in slottedRef.current.registry
+      || slottedRef.current.ambient.some((t) => t.id === id),
     [],
   );
-  const getActiveOverlays = useCallback((): RenderLayer<unknown>[] => {
-    const out: RenderLayer<unknown>[] = [];
-    const activeTool = registryRef.current[activeRef.current];
-    if (activeTool?.overlay) out.push(activeTool.overlay);
-    const mod = hotkeyRef.current ? registryRef.current[hotkeyRef.current] : null;
-    if (mod?.overlay) out.push(mod.overlay);
-    for (const t of ambientRef.current) {
-      if (t.overlay) out.push(t.overlay);
-    }
-    return out;
-  }, []);
 
   // Memoize the returned ToolsApi so consumers using `tools` as a dep (e.g.
   // SceneCanvas's `onToolsCreated` useEffect) don't see identity churn on
   // every render — which otherwise loops infinitely when the consumer
   // setStates from inside `onToolsCreated`.
+  const active = contributions.focused;
+  const getActiveOverlays = contributions.overlays;
   return useMemo(
     () => ({
       active,
@@ -186,8 +166,8 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       hotkeyEngaged,
       engageHotkey,
       disengageHotkey,
-      ambient: ambientRef.current,
-      registry: registryRef.current,
+      ambient: slottedRef.current.ambient,
+      registry: slottedRef.current.registry,
       has,
       getActiveOverlays,
     }),
