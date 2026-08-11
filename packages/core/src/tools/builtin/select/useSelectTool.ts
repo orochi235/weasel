@@ -503,18 +503,7 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             actionId: 'move',
             ...moveOpts,
           },
-          // Drag on empty canvas → marquee. Same no-affordance requirement as
-          // the `clearSelection` click below: a bare `target: 'empty'` reads
-          // only `bodyTarget`, so a drag starting on chrome that floats over
-          // empty canvas (a hud window titlebar) matched here and beat the
-          // chrome owner's ambient drag binding on scope priority alone.
-          {
-            spec: {
-              kind: 'drag' as const,
-              target: { kindOf: (hit: unknown, body?: string) => hit == null && body === 'empty' },
-            },
-            actionId: 'areaSelect',
-          },
+          { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
           // Click on empty canvas → clear. Same no-affordance requirement as
           // the press binding above, and for the same two reasons: clicking a
           // widget that happens to float over empty canvas isn't a click on
