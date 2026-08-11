@@ -6,8 +6,9 @@ import type { Eligibility } from './types';
 export interface EligibilityState {
   focusedId: string | null;
   heldTriggers: ReadonlySet<string>;
-  /** Ids the host reports as hotkey-engaged. The kit tracks the held-key
-   *  stack by entry id; `offhand` declarations do not populate it yet. */
+  /** Ids the host reports as hotkey-engaged — the bridge while the held-key
+   *  stack is tracked by entry id. Retired once a declared `offhand` wires
+   *  itself and populates `heldTriggers` instead. */
   engagedIds?: ReadonlySet<string>;
   /** Whether the active mode allows these capability tags. Omitted → allow. */
   allows?: (tags: readonly CapabilityTag[]) => boolean;

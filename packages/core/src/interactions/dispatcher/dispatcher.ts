@@ -43,6 +43,7 @@ import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSampl
 import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Tool } from '../../tools/types';
+import { scopeBindings } from '../../contributions/assemble';
 import type { InputEvent, BindingScope, ScopedBinding } from './matcher';
 import { matchSorted, specificity } from './matcher';
 import { evaluate, describeRule, type Rule, type RuleCtx, type Condition } from '../../features/chrome-caps';
@@ -167,17 +168,6 @@ export interface DispatcherContext {
   activeToolId: string;
   /** Held-hotkey stack, top of stack last. */
   hotkeyStack: readonly string[];
-  /**
-   * Ids of always-on tools. Their bindings are assembled at AMBIENT scope, so
-   * they lose to the active tool on a tie — which is what "always listening,
-   * never in the way" needs. Chrome that floats over the scene lives here:
-   * `@weasel-js/hud`'s tool is the worked example.
-   *
-   * Without this an ambient tool's `bindings` were assembled nowhere at all:
-   * the walk covered hotkey and active tools plus actions' `defaultBinding`,
-   * and an ambient tool is in neither set.
-   */
-  ambientToolIds?: readonly string[];
   /** Lookup for tool definitions. */
   toolsById: ReadonlyMap<string, Tool>;
   /** Platform flag for `mod` shorthand resolution. */
@@ -470,6 +460,7 @@ export interface Dispatcher {
 // createDispatcher
 // ---------------------------------------------------------------------------
 
+const EMPTY_TRIGGERS: ReadonlySet<string> = new Set<string>();
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();
 
 /**
@@ -680,37 +671,26 @@ export function createDispatcher(opts?: {
     return `ongoing-${event.kind}`;
   }
 
-  /** Assemble the ScopedBinding list from all three scopes. */
+  /** Assemble the ScopedBinding list: every registered entry, tiered by what
+   *  it declares about its own eligibility, then the actions registry. */
   function assembleScopedBindings(ctx: DispatcherContext): ScopedBinding[] {
-    const result: ScopedBinding[] = [];
-
-    // Hotkey scope (top of stack = highest priority, iterated last so they
-    // appear first in matchBest's inner loop — but matchBest itself iterates
-    // by scope priority, so order within scope matters: last-in-stack = last-declared).
-    for (const toolId of ctx.hotkeyStack) {
-      const tool = ctx.toolsById.get(toolId);
-      for (const binding of tool?.bindings ?? []) {
-        result.push({ binding, scope: 'hotkey' as BindingScope, ownerToolId: toolId });
-      }
+    // Hotkey-engaged entries lead, so stack order breaks ties within that tier.
+    const ordered: Tool[] = [];
+    for (const id of ctx.hotkeyStack) {
+      const tool = ctx.toolsById.get(id);
+      if (tool && !ordered.includes(tool)) ordered.push(tool);
     }
-
-    // Active scope.
-    const activeTool = ctx.toolsById.get(ctx.activeToolId);
-    for (const binding of activeTool?.bindings ?? []) {
-      result.push({ binding, scope: 'active' as BindingScope, ownerToolId: ctx.activeToolId });
+    for (const tool of ctx.toolsById.values()) {
+      if (!ordered.includes(tool)) ordered.push(tool);
     }
+    const result: ScopedBinding[] = scopeBindings(ordered, {
+      focusedId: ctx.activeToolId,
+      heldTriggers: EMPTY_TRIGGERS,
+      engagedIds: new Set(ctx.hotkeyStack),
+    });
 
-    // Ambient scope, tools first: an always-on tool's own bindings, which do
-    // carry an owning tool id (so `'&'`-channel phase atoms resolve).
-    for (const toolId of ctx.ambientToolIds ?? []) {
-      const tool = ctx.toolsById.get(toolId);
-      for (const binding of tool?.bindings ?? []) {
-        result.push({ binding, scope: 'ambient' as BindingScope, ownerToolId: toolId });
-      }
-    }
-
-    // Ambient scope, then the actions registry. Actions have no owning
-    // tool — `'&'`-channel phase atoms on their bindings won't match.
+    // Actions have no owning tool — `'&'`-channel phase atoms on their
+    // bindings won't match.
     for (const action of ctx.actions.list()) {
       const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
       for (const binding of actionBindings(action)) {
