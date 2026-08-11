@@ -1,4 +1,5 @@
 import type { Tool } from '../../types';
+import { actionBindings, type Action } from '../../../interactions/actions/registry';
 import type { ParsedModifiers } from '../routeGrammar';
 import { canonicalModifiers, formatRoute } from '../routeGrammar';
 import { buildRouteRegistry, PREDICATE_TARGET, type RegistryEntry, type GestureName } from './registry';
@@ -107,6 +108,15 @@ export interface ToolScopes {
   registry: readonly Tool<unknown>[] | Readonly<Record<string, Tool<unknown>>>;
   /** Always-on tools. Every one of these is live at once. */
   ambient?: readonly Tool<unknown>[];
+  /** Registered actions. Their `defaultBinding`s assemble at ambient scope
+   *  (hotkey scope when `Action.scope` says so), alongside the tools above. */
+  actions?: readonly Action[];
+}
+
+/** An action's `defaultBinding`s in the shape the route registry reads, so a
+ *  tool-vs-action collision buckets with the tool-vs-tool ones. */
+function actionAsTool(action: Action): Tool<unknown> {
+  return { id: action.id, eligibility: {}, bindings: actionBindings(action) };
 }
 
 /**
@@ -127,16 +137,19 @@ export interface ToolScopes {
  *    ordered only by registration;
  *  - two **hotkey-capable** tools, which can stack.
  *
- * Not covered: the actions registry's `defaultBinding`s, which the dispatcher
- * also folds into ambient/hotkey scope. They're assembled somewhere else
- * entirely (`ActionsRegistry`, not `useTools`), so catching tool-vs-action
- * collisions means giving this function a second input it doesn't have yet.
+ * Registered actions join the same two buckets: their `defaultBinding`s
+ * assemble at ambient scope (hotkey scope when `Action.scope` says so), so an
+ * ambient tool and an action claiming one tuple really do fall back on
+ * declaration order.
  */
 export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const registry = Array.isArray(scopes.registry)
     ? (scopes.registry as readonly Tool<unknown>[])
     : Object.values(scopes.registry as Readonly<Record<string, Tool<unknown>>>);
-  const ambient = scopes.ambient ?? [];
+  const actions = scopes.actions ?? [];
+  const ambientActions = actions.filter((a) => a.scope !== 'hotkey').map(actionAsTool);
+  const hotkeyActions = actions.filter((a) => a.scope === 'hotkey').map(actionAsTool);
+  const ambient = [...(scopes.ambient ?? []), ...ambientActions];
 
   const out: Conflict[] = [];
   const seen = new Set<string>();
@@ -151,17 +164,18 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   };
 
   // Self-collisions: every tool, whichever slot it lands in.
-  for (const tool of [...registry, ...ambient]) add(findConflicts([tool]));
-  // Ambient tools are all live together.
+  for (const tool of [...registry, ...(scopes.ambient ?? [])]) add(findConflicts([tool]));
+  // Ambient tools and ambient-scope actions are all live together.
   if (ambient.length > 1) add(findConflicts(ambient));
   // Hotkey-capable tools can stack on each other. `hotkey` is declared on the
   // authored `ToolDef`, not carried onto the runtime `Tool` — `Tool.def` is
   // the reflection handle for exactly this kind of read, and it's typed
   // `unknown` so consumers cast at the use site.
-  const hotkeyTools = registry.filter(
-    (t) => (t.def as { hotkey?: unknown } | undefined)?.hotkey !== undefined,
-  );
-  if (hotkeyTools.length > 1) add(findConflicts(hotkeyTools));
+  const hotkey = [
+    ...registry.filter((t) => (t.def as { hotkey?: unknown } | undefined)?.hotkey !== undefined),
+    ...hotkeyActions,
+  ];
+  if (hotkey.length > 1) add(findConflicts(hotkey));
 
   return out;
 }

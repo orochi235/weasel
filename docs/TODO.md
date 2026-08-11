@@ -18,10 +18,14 @@ Priority tags:
 
 ### Next up
 
-- **Contributions: one registry, declared eligibility, claims that outrank scope**
-  → `docs/superpowers/specs/2026-08-10-contributor-registry-design.md`. Subsumes
-  the two HUD P2s below → [Tools & gestures](#tools--gestures)
 - **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
+- **`targetConsultsAffordance` is syntactic** — the exclusive-claim filter is
+  defeated by the kit's own `predicates.ts` helpers → [Tools & gestures](#tools--gestures)
+
+> The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
+> shipped in two plans, 2026-08-10: claims that outrank scope, then the
+> contribution record with declared eligibility. What it left open is the P2
+> immediately above.
 
 ### P2 — broad reuse / friction-likely
 
@@ -39,7 +43,6 @@ Priority tags:
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
 **Plugins & packaging**
-- Plugin/bundling convention v1 (`WeaselPlugin` shape) → [Plugins & packaging](#plugins--packaging)
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
 - `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
 
@@ -56,14 +59,6 @@ Priority tags:
      entries — including why specificity-ordered fall-through is survivable at
      all — is in docs/handoffs/2026-07-28-arbitration-followups.md. Reviewed
      2026-07-28, re-verified against main 2026-07-31. -->
-
-- **(P3) Route-conflict detection can't see tool-vs-action collisions.**
-  `useTools` runs `reportRouteConflicts` at registry assembly (dev-only warn,
-  shipped 2026-08-01), but it only sees tool bindings. The actions registry's
-  `defaultBinding`s, which the dispatcher also folds into ambient/hotkey scope,
-  are assembled in `ActionsRegistry`, not `useTools`, so a tool binding that
-  collides with an action's default binding goes unreported.
-  `findScopedConflicts` needs a second input it doesn't have yet.
 
 - **(P3) The `phase` dimension of the specificity tuple is binary.**
   `specificity()` scores dimension `[2]` as `phase !== undefined ? 1 : 0`, so
@@ -113,7 +108,7 @@ Priority tags:
   gesture kind landing.
 
 - **(P2) Gesture dispatch over HUD elements.** Only the three bindings in
-  `createHudTool` reach widgets, so a HUD element can be pressed, dragged and
+  `createHudContribution` reach widgets, so a HUD element can be pressed, dragged and
   hovered and nothing else — no double-click, no wheel, no long-press, no
   right-click, no keyboard focus. A widget wanting any of them has no way to
   ask. The cursor half of this item shipped 2026-08-10: widgets answer
@@ -263,7 +258,17 @@ Priority tags:
   its overlay paints nothing unless a consumer opts into a visible ring.
   Removing it means dropping `'rotate'` from `BuiltinToolId` / `BUNDLE_TOOLS`
   and unexporting `useRotateTool` — a public-API change, so it wants its own
-  decision.
+  decision. **Now decidable by inspection** (2026-08-10): one registry holds
+  every entry with its declared eligibility, so "contributes no bindings and no
+  overlay" is a property you can read off the assembled set rather than infer.
+
+- **(P3) `EligibilityState.heldTriggers` is unexercised in production.**
+  `Eligibility.offhand` names a trigger key and `liveScope` resolves it, but
+  nothing populates `heldTriggers` — `tool.offhand`'s invoker still reports
+  engagement by pushing a tool *id* onto the hotkey stack, which
+  `engagedIds` reads. So the declaration registers the binding while the id
+  keeps carrying the tier. Retiring `engagedIds` means changing
+  `tool.offhand`'s contract. Recorded 2026-08-10.
 
 - **(P3) Embedded image support — follow-ups.** Shipped 2026-06-27: serializable `data.image.src` contract (URL / blob: / `data:` URI), kit-owned `imageCache` (`packages/core/src/features/images/`, sync read + lazy de-duped async load + `subscribeImageReady`→`requestRedraw`), the `kit:image` shape painter (`NodeShape.ts`, emits `ImageDrawCommand`, faint placeholder while loading), and the `useImageTool` drag-insert tool (`packages/core/src/tools/builtin/image/`, routes through `useInsertDepSource`'s `'image'` case). Demo: `apps/site/demos/ImageDemo.tsx`. Remaining: (a) **SVG `<image>` interop** — `packages/svg` parse/emit of `<image>` (href + embedded base64) is still unsupported (`<image>` elements are dropped on import); (b) **live drag-preview for image inserts** — `insertAction`'s ghost only previews `KIT_INSERT_KINDS` (rect/ellipse/line/polygon/star/pencil), so an image commits on release with no preview; extend that set to include `image`.
 
@@ -585,12 +590,10 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ### Plugin/bundling convention
 
-The kit's primitives are already pluggable — what's missing is a convention for bundling a feature's parts so a single `useFooPlugin()` call returns `{ tool, layers, ops, ... }` that the consumer spreads in, instead of wiring three or four separate exports per feature.
+**v1 shipped 2026-08-10** as `Contribution[]` + `mergeContributions(...)`: a feature returns entries a consumer spreads in, instead of wiring three or four separate exports. `@weasel-js/hud`'s `useHudContribution()` is the worked example. What remains is the heavier tier.
 
-- **(P2) Lightweight v1:** a documented `WeaselPlugin = { tool?, layers?, behaviors?, ... }` shape plus a `mergePluginConfig(...plugins)` helper. ~30 lines + a docs page. Defer until we have ≥2 plugin-shaped features in flight (pen, debug overlay, future grid) — designing before multiple examples risks YAGNI.
 - **(P3) Heavier v2** (only if needed for true third-party plugins): Canvas lifecycle hooks (mount/unmount/pre-render/post-render), capability/version negotiation against kit semver, sub-package layout (`@weasel-js/pen`?). Don't pursue without a real third-party consumer asking.
 
-Pen tool and debug overlay both ship as separate exports first (tool + layer factory). After 2–3 plugin-shaped features have shipped this way, do a small spec pass to extract the bundling convention from the actual pattern.
 
 ### Feature-roles taxonomy — risks to monitor
 

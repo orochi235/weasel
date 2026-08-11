@@ -1,6 +1,7 @@
 import type { Action, BoundGesture } from '../registry';
 import { resolveParams, type InvocationCtx, type BindingOpts } from '../invoker';
 import type { ActiveToolContextValue } from '../activeToolContext';
+import type { HotkeyTrigger } from '../../../tools/types';
 
 /** Canonical id of the consolidated tool-offhand action. One descriptor
  *  serves every tool; the matched binding supplies `params.toolId` to select
@@ -12,6 +13,18 @@ export const TOOL_OFFHAND_ID = 'tool.offhand';
 export interface ToolOffhandBindingSpec {
   toolId: string;
   key: string | string[];
+}
+
+/** `KeyboardEvent.key` for a declared `Eligibility.offhand` trigger. Only
+ *  `space` is exercised today; the modifier arms follow the DOM's names. */
+export function offhandKeyFor(trigger: HotkeyTrigger): string {
+  switch (trigger) {
+    case 'space': return ' ';
+    case 'alt': return 'Alt';
+    case 'ctrl': return 'Control';
+    case 'meta': return 'Meta';
+    case 'shift': return 'Shift';
+  }
 }
 
 /** Build the per-tool `BoundGesture` list for the consolidated action's

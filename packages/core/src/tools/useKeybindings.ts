@@ -2,11 +2,6 @@
 import { useEffect, useRef } from 'react';
 import { useActionsRegistry } from 'interactions/actions/registry';
 import {
-  makeToolOffhandAction,
-  buildToolOffhandBindings,
-  type ToolOffhandBindingSpec,
-} from 'interactions/actions/defaults/toolOffhand';
-import {
   makeToolActivateAction,
   buildToolActivateBindings,
   type ToolActivateBindingSpec,
@@ -47,14 +42,6 @@ const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
   pen: { key: 'P' },
 };
 
-/** Offhand-action key bindings for built-in tools that engage while a key
- *  is held (e.g. Space-for-hand). Each entry contributes one
- *  `BoundGesture` to the consolidated `tool.offhand` action's
- *  `defaultBinding[]`. */
-const BUILTIN_OFFHAND_ACTIONS: Record<string, string> = {
-  hand: ' ',
-};
-
 export function useKeybindings(
   tools: ToolsApi,
   options: UseKeybindingsOptions = {},
@@ -68,29 +55,9 @@ export function useKeybindings(
   // (not state) so it survives re-renders without re-syncing.
   const initialActiveRef = useRef(tools.active);
 
-  // Tool-offhand: register one parametric `tool.offhand` action whose
-  // `defaultBinding[]` carries one key-held entry per built-in tool that
-  // engages while a key is held (e.g. Space-for-hand). Keys are declared in
-  // BUILTIN_OFFHAND_ACTIONS rather than on the ToolDef so the registration
-  // is purely static. `useGestureDispatcher` fires these via key-held
-  // bindings; the invoker reads `params.toolId` from the matched binding.
+  // Held-key engagement is not here: a tool declares `ToolDef.hotkey` and
+  // assembly registers `tool.offhand` from the declaration.
   const registry = useActionsRegistry();
-
-  useEffect(() => {
-    if (optionsRef.current.disable) return;
-    if (!registry) return;
-
-    const specs: ToolOffhandBindingSpec[] = [];
-    for (const [toolId, key] of Object.entries(BUILTIN_OFFHAND_ACTIONS)) {
-      if (toolsRef.current.has(toolId)) {
-        specs.push({ toolId, key });
-      }
-    }
-    if (specs.length === 0) return;
-
-    const bindings = buildToolOffhandBindings(specs);
-    return registry.register(makeToolOffhandAction(bindings));
-  }, [registry, tools]);
 
   // --- Tool-activate: register one parametric `tool.activate` action.
   // The single descriptor carries a `defaultBinding: BoundGesture[]` with one

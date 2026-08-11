@@ -3,8 +3,8 @@ import { useThemeOptional } from '@weasel-js/theme/react';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createHud, type Hud } from '../hud';
 import { attachHud } from '../attach';
-import type { CanvasExtensionApi, Tool } from '@weasel-js/core';
-import { createHudTool } from '../tool';
+import type { CanvasExtensionApi, Contribution } from '@weasel-js/core';
+import { createHudContribution } from '../tool';
 
 /**
  * Create a HUD and attach it to a Canvas via its imperative ref handle.
@@ -45,12 +45,12 @@ export function useHud(canvasRef: { current: CanvasExtensionApi | null }): Hud {
 }
 
 /**
- * Memoize the HUD's input tool. Pass the result to the canvas as an ambient
- * tool — see {@link createHudTool} for why ambient and how the routing works.
+ * Memoize the HUD's input contribution — see {@link createHudContribution}
+ * for how the routing works.
  *
- * The tool is stateless (its actions resolve the hit widget from the gesture's
+ * It is stateless (its actions resolve the hit widget from the gesture's
  * affordance payload), so one instance serves any number of HUDs on the page.
  */
-export function useHudTool(): Tool<null> {
-  return useMemo(() => createHudTool(), []);
+export function useHudContribution(): Contribution {
+  return useMemo(() => createHudContribution(), []);
 }

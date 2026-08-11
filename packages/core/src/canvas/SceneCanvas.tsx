@@ -1325,7 +1325,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     const getMode = getActiveModeRef.current;
     if (!getMode) return true;
     const registry = toolsForEligibilityRef.current?.registry;
-    const caps = registry?.[toolId]?.capabilities ?? [];
+    const caps = registry?.[toolId]?.eligibility.capabilities ?? [];
     if (caps.length === 0) return false;
     const allowed = getMode().allowedCapabilities;
     for (const c of caps) if (allowed.has(c)) return true;
@@ -2114,10 +2114,6 @@ function GestureDispatcherMounter({
     return m;
   }, [tools.registry, tools.ambient]);
 
-  const ambientToolIds = useMemo(
-    () => tools.ambient.map((t) => t.id),
-    [tools.ambient],
-  );
 
   // Stable refs for the optional thunk inputs so the thunks themselves are
   // stable function identities across renders (no need to pass them as deps).
@@ -2291,7 +2287,6 @@ function GestureDispatcherMounter({
     canvasRef,
     actions: registry!,
     toolsById,
-    ambientToolIds,
     enabled,
     keyboard,
     affordanceAt: wrappedAffordanceAt,

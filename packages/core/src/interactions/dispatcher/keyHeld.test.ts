@@ -63,7 +63,7 @@ function makeTool(
   toolId: string,
   bindings: Tool['bindings'],
 ): { tool: Tool; toolsById: Map<string, Tool> } {
-  const tool: Tool = { id: toolId, bindings };
+  const tool: Tool = { id: toolId, eligibility: { focus: true }, bindings };
   return { tool, toolsById: new Map([[toolId, tool]]) };
 }
 
@@ -459,6 +459,7 @@ describe('keyHeld engagement', () => {
 
     const toolA: Tool = {
       id: 'toolA',
+      eligibility: { focus: true },
       bindings: [
         { spec: { kind: 'key-held', key: ' ', phase: 'initial' }, actionId: 'space-held' },
         { spec: { kind: 'key', key: 'z', phase: 'engaged' }, actionId: 'space-engaged' },
@@ -466,6 +467,7 @@ describe('keyHeld engagement', () => {
     };
     const toolB: Tool = {
       id: 'toolB',
+      eligibility: { focus: true },
       bindings: [
         { spec: { kind: 'key-held', key: 'a', phase: [{ channel: 'toolB', phase: 'initial' }] }, actionId: 'a-held' },
         { spec: { kind: 'key', key: 'q', phase: [{ channel: 'toolB', phase: 'engaged' }] }, actionId: 'a-engaged' },

@@ -211,6 +211,7 @@ describe('createDispatcher', () => {
 
       const activeTool: Tool = {
         id: 'myTool',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
       const toolsById = new Map([['myTool', activeTool]]);
@@ -237,10 +238,12 @@ describe('createDispatcher', () => {
 
       const activeTool: Tool = {
         id: 'myTool',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
       const hotkeyTool: Tool = {
         id: 'hotkeyTool',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'hotkey-action' }],
       };
       const toolsById = new Map([
@@ -271,6 +274,7 @@ describe('createDispatcher', () => {
 
       const activeTool: Tool = {
         id: 'myTool',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
       const toolsById = new Map([['myTool', activeTool]]);
@@ -298,6 +302,7 @@ describe('createDispatcher', () => {
       const registry = makeRegistry([activeAction, hotkeyAction]);
       const activeTool: Tool = {
         id: 'editor',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active.a' }],
       };
       const toolsById = new Map([['editor', activeTool]]);
@@ -626,6 +631,7 @@ describe('createDispatcher', () => {
       const registry = makeRegistry([]); // no actions
       const activeTool: Tool = {
         id: 'myTool',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'nonexistent' }],
       };
       const toolsById = new Map([['myTool', activeTool]]);
@@ -721,6 +727,7 @@ describe('createDispatcher', () => {
 
       const activeTool: Tool = {
         id: 'myTool',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
       const toolsById = new Map([['myTool', activeTool]]);
@@ -752,6 +759,7 @@ describe('createDispatcher', () => {
       const registry = makeRegistry([activeAction, ambientAction]);
       const activeTool: Tool = {
         id: 'myTool',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
       const toolsById = new Map([['myTool', activeTool]]);
@@ -774,6 +782,7 @@ describe('createDispatcher', () => {
       const registry = makeRegistry([ambientAction]);
       const activeTool: Tool = {
         id: 'myTool',
+        eligibility: { focus: true },
         // References an actionId that doesn't exist in the registry.
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'ghost' }],
       };
@@ -802,6 +811,7 @@ describe('createDispatcher', () => {
       const registry = makeRegistry([activeAction, ambientAction]);
       const activeTool: Tool = {
         id: 'myTool',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'key', key: 'a' }, actionId: 'active' }],
       };
       const toolsById = new Map([['myTool', activeTool]]);
@@ -917,6 +927,7 @@ describe('createDispatcher', () => {
       const registry = makeRegistry([toolAction]);
       const activeTool: Tool = {
         id: 'hand',
+        eligibility: { focus: true },
         bindings: [{ spec: { kind: 'drag' }, actionId: 'hand.pan' }],
       };
       const dispatcher = createDispatcher();

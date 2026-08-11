@@ -54,10 +54,14 @@ export function defineTool<TScratch = void>(
 
   return {
     id: def.id,
-    capabilities: def.capabilities,
+    eligibility: {
+      focus: true,
+      capabilities: def.capabilities,
+      ...(def.hotkey ? { offhand: def.hotkey } : {}),
+    },
     actions: def.actions,
     def,
-    presentation: def.presentation,
+    presentation: def.presentation as Tool<TScratch>['presentation'],
     keybinding: def.keybinding,
     onActivate: def.onActivate,
     onDeactivate: def.onDeactivate,

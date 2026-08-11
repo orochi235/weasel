@@ -1,7 +1,7 @@
 import { Fragment, useRef, type ReactNode } from 'react';
 import { UnknownIcon } from '@weasel-js/core';
 import type { AnyTool, ToolsApi } from '@weasel-js/core';
-import { eligibleTool, type ModeRegistry } from '@weasel-js/modes';
+import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
 import s from './ToolPalette.module.css';
@@ -145,7 +145,7 @@ export function ToolPalette(props: ToolPaletteProps) {
               const label = tool.presentation?.label ?? tool.id;
               const shortcut = tool.presentation?.shortcut
                 ?? formatShortcut(lookupShortcut ? lookupShortcut(tool.id) : tool.keybinding);
-              const enabled = modeRegistry ? eligibleTool(modeRegistry, tool) : true;
+              const enabled = modeRegistry ? eligibleContribution(modeRegistry, tool) : true;
               const modeName = modeRegistry ? modeRegistry.current().id : undefined;
               const resolvedTitle = !enabled && modeName
                 ? `${label}${shortcut ? ` (${shortcut})` : ''} — disabled in ${modeName} mode`

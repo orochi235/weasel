@@ -61,13 +61,10 @@ export interface ToolDef<TScratch = void> {
    *  to the consolidated `tool.activate` action (with `opts.params.toolId`
    *  set so the invoker knows which tool to switch to). */
   keybinding?: ToolKeybinding;
-  /** Declarative held-key trigger (reflection / inspector only). When set,
-   *  signals to the host that this tool can engage via a held key; the host
-   *  must register the activation via the consolidated `tool.offhand` action
-   *  (`makeToolOffhandAction` + `buildToolOffhandBindings`). Built-in tools
-   *  declare held keys in `BUILTIN_OFFHAND_ACTIONS`; configurable-hotkey
-   *  tools rely on the host to wire the binding. Setting this field does NOT
-   *  automatically engage the held-key behavior. */
+  /** Held-key trigger: this tool engages while the key is down and
+   *  disengages on release. Carried onto `Tool.eligibility.offhand`, which
+   *  assembly reads to register the consolidated `tool.offhand` action — the
+   *  declaration is the wiring, with nothing for the host to do. */
   hotkey?: HotkeyTrigger;
   onActivate?:   (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;

@@ -16,6 +16,7 @@ import {
 } from 'react';
 import type { GestureSpec, PhaseSpec } from '../gestures/spec';
 import type { ActionDeps, BindingOpts, Invoker } from './invoker';
+import type { GestureBinding } from './binding';
 import { useOptionalDepRegistry, type DepRegistry, type DepName } from './depRegistry';
 import { buildDepsFromRequires } from './buildDeps';
 import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES, type PhaseAtom } from '../../tools/routing/routeGrammar';
@@ -32,6 +33,23 @@ export type { UiOngoingControl } from '../dispatcher/dispatcher';
  * them to `ImmediateInvoker.run` as its second argument.
  */
 export type BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts };
+
+/**
+ * @experimental
+ * Flatten an action's `defaultBinding` into `GestureBinding`s. A bare
+ * `GestureSpec` has `kind` at top level; the object form has `spec`.
+ */
+export function actionBindings(action: Action): GestureBinding[] {
+  const gs = action.defaultBinding;
+  if (!gs) return [];
+  const raw: BoundGesture[] = Array.isArray(gs) ? gs : [gs as BoundGesture];
+  return raw.map((entry) => {
+    const isBoundObj = !('kind' in entry);
+    const spec = isBoundObj ? (entry as { spec: GestureSpec }).spec : (entry as GestureSpec);
+    const opts = isBoundObj ? (entry as { opts: BindingOpts }).opts : undefined;
+    return { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
+  });
+}
 
 /**
  * @experimental

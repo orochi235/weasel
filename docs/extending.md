@@ -270,6 +270,31 @@ uses; `overlay()` covers non-ghost chrome; and the action is triggerable from
 a palette or toolbar via `registry.trigger('my-app.smear')` without a second
 code path.
 
+### When it isn't a tool
+
+A tool is the entry that declares `eligibility.focus` — a mode the user
+switches into, with scratch and previews. Plenty of things route input without
+being one: chrome that owns its own presses, an always-on viewport behavior, a
+feature that only ever reacts to its own affordances. Those are contributions
+with the same `bindings` and `actions` fields and a different declaration:
+
+```ts
+const hud: Contribution = {
+  id: 'my-app.hud',
+  eligibility: { claimed: true },   // only input my own affordances produced
+  actions: [pressAction, dragAction],
+  bindings: [{ spec: { kind: 'drag', target: { kindOf: isMyHit } }, actionId: 'my-app.hud.drag' }],
+};
+```
+
+The four conditions — `focus`, `offhand`, `always`, `claimed` — are a set, not
+a choice: an entry can be palette-selectable *and* held-key engaged, as the hand
+tool is. Ship several entries as one bundle with `mergeContributions(...)`.
+
+A `claimed` entry must give its bindings a target that consults the affordance
+(a `kindOf` predicate or `affordance:<kind>`), or its own exclusive claim
+filters them out — a dev-only warning names it if that happens.
+
 **Reference implementations** — all under
 `packages/core/src/interactions/actions/defaults/`:
 

@@ -10,6 +10,7 @@ import type { ActionsRegistry, Action } from '../actions/registry';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { InputEvent } from './matcher';
 import type { Tool } from '../../tools/types';
+import type { Eligibility } from '../../contributions/types';
 import type { RuleCtx } from '../../features/chrome-caps';
 
 function makeRegistry(actions: Action[]): ActionsRegistry {
@@ -68,8 +69,14 @@ function action(id: string, extra: Partial<Action> = {}): Action {
   };
 }
 
-function tool(id: string, bindings: unknown[]): Tool<unknown> {
-  return { id, bindings } as unknown as Tool<unknown>;
+/** Default `{ focus: true }` — every tool here but the ambient one is the
+ *  active-slot tool of its case. */
+function tool(
+  id: string,
+  bindings: unknown[],
+  eligibility: Eligibility = { focus: true },
+): Tool<unknown> {
+  return { id, eligibility, bindings } as unknown as Tool<unknown>;
 }
 
 /** The event a `{ kind: 'drag' }` spec matches: a buffered pointerdown (one
@@ -95,11 +102,10 @@ describe('resolveAll', () => {
       actions: makeRegistry([action('hk'), action('act'), action('amb')]),
       activeToolId: 'activeTool',
       hotkeyStack: ['hotkeyTool'],
-      ambientToolIds: ['ambientTool'],
       toolsById: new Map<string, Tool<unknown>>([
         ['hotkeyTool', tool('hotkeyTool', [bind('hk')])],
         ['activeTool', tool('activeTool', [bind('act')])],
-        ['ambientTool', tool('ambientTool', [bind('amb')])],
+        ['ambientTool', tool('ambientTool', [bind('amb')], { always: true })],
       ]),
     });
     const out = d.resolveAll(dragEvent, ctx);
@@ -470,11 +476,10 @@ describe('resolveOnly agrees with resolveAll', () => {
           actions: makeRegistry([action('hk'), action('act'), action('amb')]),
           activeToolId: 'activeTool',
           hotkeyStack: ['hotkeyTool'],
-          ambientToolIds: ['ambientTool'],
-          toolsById: new Map<string, Tool<unknown>>([
+              toolsById: new Map<string, Tool<unknown>>([
             ['hotkeyTool', tool('hotkeyTool', [bind('hk')])],
             ['activeTool', tool('activeTool', [bind('act')])],
-            ['ambientTool', tool('ambientTool', [bind('amb')])],
+            ['ambientTool', tool('ambientTool', [bind('amb')], { always: true })],
           ]),
         });
       },

@@ -4,7 +4,7 @@ import { render, act } from '@testing-library/react';
 import React from 'react';
 import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
 import type { BuiltinToolId, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
-import { useHud, useHudTool } from './react';
+import { useHud, useHudContribution } from './react';
 import { _resetFontRegistryForTests } from '@weasel-js/font';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
@@ -33,7 +33,7 @@ interface Empty { id: string }
 /**
  * The HUD's input rides the same dispatcher every tool does: its layer's
  * hit-test surfaces a `layer:weasel-hud` affordance, and the ambient
- * `useHudTool()` bindings gate on that.
+ * `useHudContribution()` bindings gate on that.
  */
 function Harness(
   { apiOut, initialActiveTool, items }:
@@ -41,7 +41,7 @@ function Harness(
 ) {
   const ref = React.useRef<SceneCanvasApi>(null);
   const hud = useHud(ref);
-  const hudTool = useHudTool();
+  const hudTool = useHudContribution();
   apiOut.hudRef.current = hud;
   const scene = useScene<Empty>({ items: items ?? [] });
   if (apiOut.sceneRef) apiOut.sceneRef.current = scene;

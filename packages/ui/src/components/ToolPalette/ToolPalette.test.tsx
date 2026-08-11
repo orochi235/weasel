@@ -256,7 +256,7 @@ describe('ToolPalette — mode eligibility', () => {
    * 'navigation' (the hand tool) is always allowed.
    */
   function toolWithCaps(id: string, capabilities: string[], group = 'select'): AnyTool {
-    return { id, capabilities, presentation: { label: id, group } } as AnyTool;
+    return { id, eligibility: { focus: true, capabilities }, presentation: { label: id, group } } as AnyTool;
   }
 
   const selectTool = toolWithCaps('select', ['creates-selection']);

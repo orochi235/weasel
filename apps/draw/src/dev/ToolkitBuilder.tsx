@@ -134,8 +134,8 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
     if (!tools) return [];
     type Slot = { id: string; def?: unknown };
     const all: Slot[] = [
-      ...(Object.values(tools.registry) as Slot[]),
-      ...(tools.ambient as Slot[]),
+      ...(Object.values(tools.registry) as unknown as Slot[]),
+      ...(tools.ambient as unknown as Slot[]),
     ];
     const seen = new Set<string>();
     const out: ToolDef<unknown>[] = [];
@@ -212,7 +212,6 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
         <ResolutionWidget
           tools={toolList}
           actions={actions}
-          ambientToolIds={toolSlots.ambient}
           activeToolId={toolSlots.registry[0] ?? ''}
         />
       </section>
@@ -454,14 +453,12 @@ function stubActionsRegistry(actions: readonly Action[]): ActionsRegistry {
 export function ResolutionWidget({
   tools,
   actions,
-  ambientToolIds,
   activeToolId,
 }: {
+  /** Live `Tool`s off the `ToolsApi`, each carrying the declared eligibility
+   *  that decides which scope tier its bindings assemble at. */
   tools: readonly Tool<unknown>[];
   actions: readonly Action[];
-  /** Always-on tool ids, assembled at ambient scope. Named to match the
-   *  `DispatcherContext` field this is handed straight to. */
-  ambientToolIds: readonly string[];
   activeToolId: string;
 }): ReactElement {
   const [gesture, setGesture] = useState<ResolutionGesture>('drag');
@@ -501,7 +498,6 @@ export function ResolutionWidget({
         depRegistry: STUB_DEP_REGISTRY,
         activeToolId,
         hotkeyStack: [],
-        ambientToolIds,
         toolsById: new Map(tools.map((t) => [t.id, t])),
         isMac: false,
       },
@@ -512,7 +508,7 @@ export function ResolutionWidget({
       // and it distinguishes "outranked" from "outranked AND disabled".
       { evaluateShadowed: true },
     );
-  }, [gesture, target, mods, actions, activeToolId, ambientToolIds, tools]);
+  }, [gesture, target, mods, actions, activeToolId, tools]);
 
   return (
     <div className={s.widget}>

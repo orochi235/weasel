@@ -2,12 +2,10 @@
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import type { View } from 'core/viewport/view';
-import type { RenderLayer } from 'core/layers/render';
 import type { DebugSink } from '../debug/types';
 import type { ToolKeybinding } from './routing/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
-import type { GestureBinding } from '../interactions/actions/binding';
-import type { CapabilityTag } from '@weasel-js/modes';
+import type { Contribution } from '../contributions/types';
 
 /** Modifier-key snapshot at event dispatch time. `space` is included
  *  because tools commonly use space as a hotkey-slot trigger and may
@@ -71,8 +69,8 @@ export type ToolBounds = Bounds;
  *  tool — consumers that render a palette (`<ToolPalette>`) read these
  *  fields to display the tool; consumers that don't can ignore them.
  *
- *  Note: cursor is NOT here. The top-level `Tool.cursor` field below is
- *  already plumbed through `<Canvas>` to `style.cursor` on the host. */
+ *  Note: cursor is NOT here. `Tool.cursor` (inherited from `Contribution`)
+ *  is already plumbed through `<Canvas>` to `style.cursor` on the host. */
 export interface ToolPresentation<TScratch = unknown> {
   /** Human-readable label, distinct from the `id`. Falls back to `id`. */
   label?: string;
@@ -88,34 +86,13 @@ export interface ToolPresentation<TScratch = unknown> {
   shortcut?: string;
 }
 
-/** Full Tool record. */
-export interface Tool<TScratch = unknown> {
-  id: string;
-  /**
-   * App-level capability tags for modality. The `weasel-modes` package's
-   * `eligibleForMode(mode, capabilities)` predicate consumes these to decide
-   * whether the tool is usable in the active mode. Tags are extensible
-   * strings — apps can define their own. Untagged tools are treated as
-   * ineligible by all modes except those whose `allows` list includes
-   * every implicit-or-declared tag (i.e. `normal` in the default preset).
-   */
-  capabilities?: CapabilityTag[];
-  /**
-   * Actions this tool owns and needs registered while it is in the tools
-   * registry — e.g. polygon's `polygon.adjustSides`, which its own bindings
-   * reference by id.
-   *
-   * Declared here rather than registered by the hook with `useAction`,
-   * because tool hooks run wherever the consumer calls them — for
-   * `<SceneCanvas>` that is ABOVE `<ActionsProviderIfRoot>`, where
-   * `useActionsRegistry()` returns null and `useAction` silently no-ops. The
-   * result was a binding pointing at an action id nothing had registered, so
-   * the gesture fell through to whatever matched next (polygon's
-   * wheel/arrow-key side adjustment did nothing and `nudge.*` moved the
-   * selection instead). `<ToolActionsMounter>` registers these from inside
-   * the provider.
-   */
-  actions?: import('interactions/actions/registry').Action[];
+/**
+ * The focus-declaring case of a `Contribution`: a mode the user switches
+ * into, plus the hooks that only make sense for one (`initScratch`,
+ * activate/deactivate, live preview, `cursor`). Everything else — bindings,
+ * actions, overlay, presentation — is inherited.
+ */
+export interface Tool<TScratch = unknown> extends Contribution {
   /** Optional caller-supplied key. Most built-in tools have their activation
    *  key declared in `BUILTIN_SELECT_KEYS` in `useKeybindings.ts`; this field
    *  is for tools that want their activation key to be configurable by the
@@ -125,11 +102,9 @@ export interface Tool<TScratch = unknown> {
    *  the invoker knows which tool to switch to). */
   keybinding?: ToolKeybinding;
   initScratch?: () => TScratch;
+  cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
   onActivate?: (ctx: ToolCtx<TScratch>) => void;
   onDeactivate?: (ctx: ToolCtx<TScratch>) => void;
-  cursor?: string | ((ctx: ToolCtx<TScratch>) => string);
-  /** Presentation metadata for tool palettes. See `ToolPresentation`. */
-  presentation?: ToolPresentation<TScratch>;
   /** Returns the in-flight preview pose for `id` if this tool is mid-gesture
    *  on it; otherwise `null`. Lets `Canvas.helpersRef.getEffectivePose`
    *  reflect live gesture state without reaching into hook internals. The
@@ -147,26 +122,6 @@ export interface Tool<TScratch = unknown> {
    *  consults this alongside `previewPose` to avoid double-rendering. Returns
    *  `null` when no gesture is in flight. */
   previewIds?: () => Iterable<string> | null;
-  /** Optional overlay layer rendered on top of the scene/chrome whenever
-   *  this tool is in any active slot (active, hotkey, or ambient).
-   *  The layer's `draw` function reads from this tool's scratch via React
-   *  closure (re-evaluated each render). Return early from `draw` to render
-   *  nothing — typically gated on a scratch field like
-   *  `if (!scratch.overlay) return`. */
-  overlay?: RenderLayer<unknown>;
-  /** Declarative gesture bindings — the tool's entire input surface. The
-   *  gesture dispatcher consults these at active scope while this tool is
-   *  active, and at hotkey scope while it is held. See
-   *  `docs/superpowers/specs/2026-05-16-registry-unification-design.md`. */
-  bindings?: GestureBinding[];
-  /** Reflection escape hatch: when this `Tool` was produced by `defineTool`,
-   *  the source `ToolDef` is attached here so introspection consumers
-   *  (`buildRouteRegistry`, `findConflicts`, the toolkit-builder UI, the
-   *  reflection demo) can read the authored form — `hookName` in particular,
-   *  which the runtime `Tool` doesn't carry. Tools constructed without
-   *  `defineTool` may leave this undefined. Typed as `unknown` to keep this
-   *  file from importing the routing types — consumers cast at the use site. */
-  def?: unknown;
 }
 
 /** Internal — which slot a tool occupies in the dispatch order. */

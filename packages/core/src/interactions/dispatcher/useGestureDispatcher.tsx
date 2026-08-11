@@ -73,9 +73,6 @@ export interface UseGestureDispatcherOptions {
   actions: ActionsRegistry;
   /** Tool definitions keyed by id. Typically passes an empty Map. */
   toolsById: ReadonlyMap<string, Tool>;
-  /** Ids (within `toolsById`) of always-on tools, whose bindings assemble at
-   *  ambient scope. See `DispatcherContext.ambientToolIds`. */
-  ambientToolIds?: readonly string[];
   /** Default true. Set false to opt out of dispatcher wiring (e.g. demos that disable it). */
   enabled?: boolean;
   /**
@@ -224,7 +221,7 @@ function computeMultiTouchGeometry(
 // ---------------------------------------------------------------------------
 
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, ambientToolIds, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
   const onDoubleClickRef = useRef(onDoubleClick);
   onDoubleClickRef.current = onDoubleClick;
   const activeTool = useActiveToolContext();
@@ -245,7 +242,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
-    ambientToolIds,
     isMac: IS_MAC,
     getRuleCtx,
   });
@@ -255,7 +251,6 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     activeToolId: activeTool.active,
     hotkeyStack: activeTool.hotkeyStack,
     toolsById,
-    ambientToolIds,
     isMac: IS_MAC,
     getRuleCtx,
   };
