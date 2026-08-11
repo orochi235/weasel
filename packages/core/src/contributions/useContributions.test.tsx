@@ -4,12 +4,18 @@
  * consumer passed it in.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { act, render, renderHook } from '@testing-library/react';
+import { useRef, type ReactNode } from 'react';
 import { useContributions } from './useContributions';
 import type { Contribution } from './types';
-import { ActiveToolContextProvider } from '../interactions/actions/activeToolContext';
-import { ActionsProvider, useAction, type Action } from '../interactions/actions/registry';
+import {
+  ActiveToolContextProvider,
+  useActiveToolContext,
+  type ActiveToolContextValue,
+} from '../interactions/actions/activeToolContext';
+import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';
+import { useGestureDispatcher } from '../interactions/dispatcher/useGestureDispatcher';
+import { ActionsProvider, useAction, useActionsRegistry, type Action } from '../interactions/actions/registry';
 
 const rect: Contribution = {
   id: 'rect',
@@ -86,5 +92,72 @@ describe('route-conflict reporting sees action default bindings', () => {
     expect(conflict).toBeDefined();
     expect(conflict).toContain('ambient-entry');
     expect(conflict).toContain('colliding.action');
+  });
+});
+
+describe('a declared offhand trigger engages its entry', () => {
+  const hand: Contribution = {
+    id: 'hand',
+    eligibility: { focus: true, offhand: 'space' },
+    bindings: [{ spec: { kind: 'drag' }, actionId: 'viewport.dragPan' }],
+  };
+
+  function OffhandHarness({ children }: { children: ReactNode }) {
+    return (
+      <DepRegistryProvider>
+        <ActiveToolContextProvider>
+          <ActionsProvider>{children}</ActionsProvider>
+        </ActiveToolContextProvider>
+      </DepRegistryProvider>
+    );
+  }
+
+  function ActiveToolDepSource() {
+    const ctx = useActiveToolContext();
+    useDepSource('activeTool', () => ctx);
+    return null;
+  }
+
+  function Mount({ onCtx }: { onCtx: (v: ActiveToolContextValue) => void }) {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const registry = useActionsRegistry();
+    onCtx(useActiveToolContext());
+    useContributions({ entries: [hand], focused: 'select' });
+    useGestureDispatcher({ canvasRef, actions: registry!, toolsById: new Map() });
+    return <canvas ref={canvasRef} />;
+  }
+
+  it('holds the entry at hotkey scope while its trigger is down, with no host wiring', () => {
+    // Nothing here calls buildToolOffhandBindings or registers tool.offhand.
+    let ctx!: ActiveToolContextValue;
+    render(
+      <OffhandHarness>
+        <ActiveToolDepSource />
+        <Mount onCtx={(v) => { ctx = v; }} />
+      </OffhandHarness>,
+    );
+    expect(ctx.hotkeyStack).toEqual([]);
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ' })); });
+    expect(ctx.hotkeyStack).toEqual(['hand']);
+    act(() => { window.dispatchEvent(new KeyboardEvent('keyup', { key: ' ' })); });
+    expect(ctx.hotkeyStack).toEqual([]);
+  });
+
+  it('registers exactly one tool.offhand action', () => {
+    // Two registrations of the same id is how space-for-hand engages twice.
+    let registry: ReturnType<typeof useActionsRegistry> = null;
+    function Capture() { registry = useActionsRegistry(); return null; }
+    render(
+      <OffhandHarness>
+        <ActiveToolDepSource />
+        <Mount onCtx={() => {}} />
+        <Capture />
+      </OffhandHarness>,
+    );
+    const offhands = (registry!.list()).filter((a) => a.id === 'tool.offhand');
+    expect(offhands).toHaveLength(1);
+    expect(offhands[0].defaultBinding).toEqual([
+      { spec: { kind: 'key-held', key: ' ' }, opts: { params: { toolId: 'hand' } } },
+    ]);
   });
 });

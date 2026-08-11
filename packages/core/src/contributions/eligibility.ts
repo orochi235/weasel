@@ -6,9 +6,9 @@ import type { Eligibility } from './types';
 export interface EligibilityState {
   focusedId: string | null;
   heldTriggers: ReadonlySet<string>;
-  /** Ids the host reports as hotkey-engaged — the bridge while the held-key
-   *  stack is tracked by entry id. Retired once a declared `offhand` wires
-   *  itself and populates `heldTriggers` instead. */
+  /** Ids the host reports as hotkey-engaged. A declared `offhand` registers
+   *  the binding, but `tool.offhand`'s invoker still reports engagement by
+   *  pushing an id — this retires only if that contract changes. */
   engagedIds?: ReadonlySet<string>;
   /** Whether the active mode allows these capability tags. Omitted → allow. */
   allows?: (tags: readonly CapabilityTag[]) => boolean;

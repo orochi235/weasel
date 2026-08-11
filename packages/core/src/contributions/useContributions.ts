@@ -4,8 +4,14 @@ import type { RenderLayer } from 'core/layers/render';
 import type { ScopedBinding } from '../interactions/dispatcher/matcher';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useActionsRegistry } from '../interactions/actions/registry';
+import {
+  buildToolOffhandBindings,
+  makeToolOffhandAction,
+  offhandKeyFor,
+  type ToolOffhandBindingSpec,
+} from '../interactions/actions/defaults/toolOffhand';
 import { reportRouteConflicts } from '../tools/routing/reflection';
-import type { Tool } from '../tools/types';
+import type { HotkeyTrigger, Tool } from '../tools/types';
 import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
 import type { Contribution } from './types';
@@ -119,6 +125,22 @@ export function useContributions(opts: UseContributionsOptions): ContributionsAp
     }
     return [...active, ...hotkey, ...ambient];
   }, [snapshot]);
+
+  // A declared `offhand` trigger registers its own engagement. One
+  // consolidated `tool.offhand` action serves every entry that declares one;
+  // its invoker reads `params.toolId` off the matched binding.
+  const offhandSig = opts.entries
+    .map((e) => (e.eligibility?.offhand ? `${e.id}:${e.eligibility.offhand}` : ''))
+    .filter(Boolean)
+    .join(',');
+  useEffect(() => {
+    if (!actionsRegistry || offhandSig === '') return;
+    const specs: ToolOffhandBindingSpec[] = offhandSig.split(',').map((entry) => {
+      const [toolId, trigger] = entry.split(':');
+      return { toolId, key: offhandKeyFor(trigger as HotkeyTrigger) };
+    });
+    return actionsRegistry.register(makeToolOffhandAction(buildToolOffhandBindings(specs)));
+  }, [actionsRegistry, offhandSig]);
 
   // Route-conflict check. Two entries declaring the same (phase, gesture, arg,
   // target, modifiers) tuple in one scope are resolved by declaration order and

@@ -60,6 +60,7 @@ export function useHandTool(opts: UseHandToolOptions = {}): Tool<HandScratch | n
       Object.assign(defineViewportTool<HandScratch>({
         id: 'hand',
         capabilities: ['navigation'],
+        hotkey: 'space',
         hookName: 'useHandTool',
         presentation: {
           label: 'Hand',

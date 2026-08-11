@@ -118,31 +118,30 @@ describe('useKeybindings', () => {
     expect(lassoEntry?.spec).toMatchObject({ kind: 'key', key: 'L' });
   });
 
-  it('registers a single tool.offhand action with one key-held entry per built-in offhand tool', () => {
+  it('leaves tool.offhand to assembly, and registers it exactly once', () => {
+    // Held-key engagement moved to the tool's own `hotkey` declaration, which
+    // `useTools` reads. A second registration here is how Space-for-hand
+    // would engage twice.
     const select = defineTool({ id: 'select' });
-    const hand   = defineTool({ id: 'hand' });
+    const hand   = defineTool({ id: 'hand', hotkey: 'space' });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select, hand } });
       useKeybindings(tools);
       return useActionsRegistry();
     }, { wrapper: makeWrapper('select') });
 
-    const ids = result.current?.list().map((a) => a.id) ?? [];
-    expect(ids).toContain('tool.offhand');
-
-    const offhand = result.current?.list().find((a) => a.id === 'tool.offhand');
-    const bindings = (offhand?.defaultBinding ?? []) as unknown as Array<{
+    const offhands = result.current?.list().filter((a) => a.id === 'tool.offhand') ?? [];
+    expect(offhands).toHaveLength(1);
+    const bindings = (offhands[0].defaultBinding ?? []) as unknown as Array<{
       spec: { kind: string; key: string };
       opts: { params: { toolId: string } };
     }>;
-    const handEntry = bindings.find((b) => b.opts.params.toolId === 'hand');
-    expect(handEntry).toBeDefined();
-    expect(handEntry?.spec).toMatchObject({ kind: 'key-held', key: ' ' });
-    // No entry for select (not in BUILTIN_OFFHAND_ACTIONS).
-    expect(bindings.find((b) => b.opts.params.toolId === 'select')).toBeUndefined();
+    expect(bindings).toHaveLength(1);
+    expect(bindings[0].opts.params.toolId).toBe('hand');
+    expect(bindings[0].spec).toMatchObject({ kind: 'key-held', key: ' ' });
   });
 
-  it('does not register tool.offhand when no offhand-eligible tool is in the registry', () => {
+  it('does not register tool.offhand when no tool declares a held key', () => {
     const select = defineTool({ id: 'select' });
     const { result } = renderHook(() => {
       const tools = useTools({ active: 'select', registry: { select } });
