@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { SceneCanvasApi } from '@weasel-js/core';
-import { useHud, useHudTool } from '../../../packages/hud/src/react';
+import { useHud, useHudContribution } from '../../../packages/hud/src/react';
 import type { ButtonWidget } from '../../../packages/hud/src';
 
 const W = 600, H = 400;
@@ -14,7 +14,7 @@ export function HudDemo() {
   // The HUD's input routing rides an ambient tool: its bindings gate on the
   // affordance its own layer hit-test produces, so they never compete with
   // whatever tool is active.
-  const hudTool = useHudTool();
+  const hudTool = useHudContribution();
   const [count, setCount] = useState(0);
   const btnRef = useRef<ButtonWidget | null>(null);
 

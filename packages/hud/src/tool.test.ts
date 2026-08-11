@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Action, InvocationCtx, View } from '@weasel-js/core';
-import { createHudTool, HUD_AFFORDANCE_KIND } from './tool';
+import { createHudContribution, HUD_AFFORDANCE_KIND } from './tool';
+import { scopeBindings } from '@weasel-js/core';
 import type { HudPointerEvent, PointerClaim, Widget } from './widget';
 
 function stubWidget(seen: HudPointerEvent[]): Widget {
@@ -28,7 +29,7 @@ function ctx(over: Partial<InvocationCtx>): InvocationCtx {
 }
 
 function actionById(id: string): Action {
-  const tool = createHudTool() as unknown as { actions: Action[] };
+  const tool = createHudContribution() as unknown as { actions: Action[] };
   const found = tool.actions.find((a) => a.id === id);
   if (!found) throw new Error(`no action ${id}`);
   return found;
@@ -64,5 +65,20 @@ describe('hud.drag', () => {
       { type: 'move', x: 200, y: 100, native: null },
       { type: 'up', x: 300, y: 150, native: null },
     ]);
+  });
+});
+
+describe('createHudContribution eligibility', () => {
+  it('is live at ambient scope whatever tool is focused', () => {
+    // The HUD floats over the active tool. Nothing here passes it in an
+    // "ambient" slot — the entry's own declaration is what puts it there.
+    const scoped = scopeBindings([createHudContribution()], {
+      focusedId: 'rect',
+      heldTriggers: new Set<string>(),
+    });
+    expect(scoped).toHaveLength(3);
+    expect(scoped.map((s) => s.scope)).toEqual(['ambient', 'ambient', 'ambient']);
+    expect(scoped.map((s) => s.binding.actionId))
+      .toEqual(['hud.press', 'hud.release', 'hud.drag']);
   });
 });

@@ -82,7 +82,7 @@ import {
   defaultDrawOne,
   viewToMat3,
 } from '@weasel-js/core';
-import { useHudTool } from '@weasel-js/hud/react';
+import { useHudContribution } from '@weasel-js/hud/react';
 import {
   ResizeHandle,
   Sidebar,
@@ -1441,7 +1441,7 @@ function EditorWithSharedScene({
     },
   ], [paperLayer, scene]);
 
-  const hudTool = useHudTool();
+  const hudTool = useHudContribution();
   const hudAmbient = useMemo(() => [hudTool], [hudTool]);
 
   // `useHud` and `createLoupe` both read the canvas handle in a mount effect

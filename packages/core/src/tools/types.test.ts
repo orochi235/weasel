@@ -45,7 +45,7 @@ describe('Tool is a Contribution', () => {
   });
 
   it('accepts a bindings-only entry as a contribution without casting', () => {
-    // `createHudTool` used `as unknown as Tool<null>` to get here.
+    // `createHudContribution` used `as unknown as Tool<null>` to get here.
     const c: Contribution = { id: 'weasel-hud', eligibility: { claimed: true }, bindings: [] };
     expect(c.eligibility.claimed).toBe(true);
   });

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { useHud, useHudTool } from '@weasel-js/hud/react';
+import { useHud, useHudContribution } from '@weasel-js/hud/react';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
 
 const W = 600, H = 400;
@@ -78,7 +78,7 @@ function detailLayer(): RenderLayer<unknown> {
 export function LoupeDemo() {
   const ref = useRef<SceneCanvasApi>(null);
   const hud = useHud(ref);
-  const hudTool = useHudTool();
+  const hudTool = useHudContribution();
   const loupeRef = useRef<LoupeHandle | null>(null);
   const [mode, setMode] = useState<LoupeMode>('vector');
   const [factor, setFactor] = useState(8);

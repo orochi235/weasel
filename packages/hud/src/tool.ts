@@ -1,4 +1,4 @@
-import type { Action, ActionDeps, InvocationCtx, Tool, View } from '@weasel-js/core';
+import type { Action, ActionDeps, Contribution, InvocationCtx, View } from '@weasel-js/core';
 import { viewToTransform, worldToScreen } from '@weasel-js/core';
 import type { Widget, HudPointerEvent } from './widget';
 
@@ -110,14 +110,14 @@ function dragAction(): Action {
 }
 
 /**
- * A `Tool` carrying the HUD's input routing. Pass it to the canvas as an
- * AMBIENT tool — the HUD is chrome floating over whatever tool is active, so
- * it must not occupy the active slot:
+ * The HUD's input routing as a `Contribution` — bindings and actions, no
+ * focus. It declares `claimed` eligibility: the HUD is chrome floating over
+ * whatever tool is active, live only for input its own layer claimed.
  *
  * ```tsx
  * const hud = useHud(ref);
- * const hudTool = useHudTool();
- * <SceneCanvas ref={ref} ambient={[hudTool]} … />
+ * const hudContribution = useHudContribution();
+ * <SceneCanvas ref={ref} ambient={[hudContribution]} … />
  * ```
  *
  * Three bindings, because the widget protocol (`down` / `move` / `up`) spans
@@ -138,14 +138,15 @@ function dragAction(): Action {
  * This replaces a `DragChannel` the HUD's `hitTest` used to hand back for the
  * tool-routing dispatcher to drive. That dispatcher is gone.
  */
-export function createHudTool(): Tool<null> {
+export function createHudContribution(): Contribution {
   return {
     id: 'weasel-hud',
+    eligibility: { claimed: true },
     actions: [pressAction(), releaseAction(), dragAction()],
     bindings: [
       { spec: { kind: 'pointerDown', target: { kindOf: isHudHit }, mods: MODS_ANY }, actionId: 'hud.press' },
       { spec: { kind: 'click', target: { kindOf: isHudHit }, mods: MODS_ANY }, actionId: 'hud.release' },
       { spec: { kind: 'drag', target: { kindOf: isHudHit }, mods: MODS_ANY }, actionId: 'hud.drag' },
     ],
-  } as unknown as Tool<null>;
+  };
 }
