@@ -2,8 +2,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
-import { SceneCanvas, useScene } from '@weasel-js/core';
-import type { BuiltinToolId, SceneCanvasApi } from '@weasel-js/core';
+import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
+import type { BuiltinToolId, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
 import { useHud, useHudTool } from './react';
 import { _resetFontRegistryForTests } from '@weasel-js/font';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
@@ -14,6 +14,7 @@ interface HarnessApi {
   press: ReturnType<typeof vi.fn<() => void>>;
   hudRef: { current: ReturnType<typeof useHud> | null };
   sceneRef?: { current: ReturnType<typeof useScene<Empty>> | null };
+  selectionRef?: { current: SelectionApi | null };
 }
 
 /**
@@ -34,13 +35,18 @@ interface Empty { id: string }
  * hit-test surfaces a `layer:weasel-hud` affordance, and the ambient
  * `useHudTool()` bindings gate on that.
  */
-function Harness({ apiOut, initialActiveTool }: { apiOut: HarnessApi; initialActiveTool?: BuiltinToolId }) {
+function Harness(
+  { apiOut, initialActiveTool, items }:
+  { apiOut: HarnessApi; initialActiveTool?: BuiltinToolId; items?: readonly Empty[] },
+) {
   const ref = React.useRef<SceneCanvasApi>(null);
   const hud = useHud(ref);
   const hudTool = useHudTool();
   apiOut.hudRef.current = hud;
-  const scene = useScene<Empty>({ items: [] });
+  const scene = useScene<Empty>({ items: items ?? [] });
   if (apiOut.sceneRef) apiOut.sceneRef.current = scene;
+  const selection = useSelection();
+  if (apiOut.selectionRef) apiOut.selectionRef.current = selection;
 
   return (
     <SceneCanvas
@@ -48,6 +54,7 @@ function Harness({ apiOut, initialActiveTool }: { apiOut: HarnessApi; initialAct
       width={200}
       height={200}
       scene={scene}
+      selection={selection}
       layers={{}}
       ambient={[hudTool]}
       {...(initialActiveTool
@@ -57,8 +64,11 @@ function Harness({ apiOut, initialActiveTool }: { apiOut: HarnessApi; initialAct
   );
 }
 
-async function mount(apiOut: HarnessApi, opts: { initialActiveTool?: BuiltinToolId } = {}) {
-  const r = render(<Harness apiOut={apiOut} initialActiveTool={opts.initialActiveTool} />);
+async function mount(
+  apiOut: HarnessApi,
+  opts: { initialActiveTool?: BuiltinToolId; items?: readonly Empty[] } = {},
+) {
+  const r = render(<Harness apiOut={apiOut} initialActiveTool={opts.initialActiveTool} items={opts.items} />);
   await act(async () => {});  // let useHud's attach effect run
   return r;
 }
@@ -170,6 +180,35 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
     expect(win.bounds.x).toBe(50);
     expect(win.bounds.y).toBe(50);
     expect(apiOut.sceneRef!.current!.nodes.size).toBe(0);
+  });
+
+  // Unlike the rect test above (select never mounts there), select is active
+  // here, so areaSelect's plain `target: 'empty'` binding is in the pool.
+  it('drags the window instead of running a marquee, with select active', async () => {
+    const apiOut: HarnessApi = {
+      press: vi.fn(), hudRef: { current: null }, sceneRef: { current: null }, selectionRef: { current: null },
+    };
+    const { container } = await mount(apiOut, { initialActiveTool: 'select', items: [{ id: 'n1' }] });
+    const nodeId = apiOut.sceneRef!.current!.roots[0];
+    act(() => { apiOut.selectionRef!.current!.set([nodeId]); });
+
+    let win!: ReturnType<NonNullable<typeof apiOut.hudRef.current>['window']>;
+    await act(async () => {
+      win = apiOut.hudRef.current!.window({ id: 'w1', x: 20, y: 20, w: 100, h: 80, title: 'Loupe' });
+    });
+
+    const canvas = container.querySelector('canvas')!;
+    await act(async () => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 60, clientY: 26 }));
+      canvas.dispatchEvent(makePointerEvent('pointermove', { clientX: 90, clientY: 56 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup',   { clientX: 90, clientY: 56 }));
+    });
+
+    expect(win.bounds.x).toBe(50);
+    expect(win.bounds.y).toBe(50);
+    // A marquee over this rect with nothing under it would replace the
+    // selection with []. It staying put means no marquee ran.
+    expect(apiOut.selectionRef!.current!.get()).toEqual([nodeId]);
   });
 
   it('hovering a resize band sets the matching cursor', async () => {

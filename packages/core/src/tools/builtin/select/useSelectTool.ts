@@ -504,11 +504,8 @@ export function useSelectTool<TNode extends { id: string }, TPose>(
             ...moveOpts,
           },
           { spec: { kind: 'drag' as const, target: 'empty' as const }, actionId: 'areaSelect' },
-          // Click on empty canvas → clear. Same no-affordance requirement as
-          // the press binding above, and for the same two reasons: clicking a
-          // widget that happens to float over empty canvas isn't a click on
-          // empty canvas, and declining in the SPEC lets the chrome's owner
-          // have the click instead of it being consumed here.
+          // resize/rotate bind only drag (no click), so a click on either handle
+          // (body genuinely empty) would hit target:'empty' and wrongly clear selection.
           {
             spec: {
               kind: 'click' as const,
