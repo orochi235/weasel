@@ -63,3 +63,21 @@ describe('liveScope honors the capability filter', () => {
     expect(liveScope('pen', { focus: true, capabilities: [] }, { ...focused, allows: () => false })).toBe('active');
   });
 });
+
+describe('liveScope reads the host-reported hotkey engagement', () => {
+  // The held-key stack is tracked by entry id, not by trigger key, until a
+  // declared `offhand` wires itself. Both roads reach the hotkey tier.
+  const engaged = {
+    focusedId: 'hand',
+    heldTriggers: new Set<string>(),
+    engagedIds: new Set(['hand']),
+  };
+
+  it('gives an engaged entry hotkey scope over its own focus', () => {
+    expect(liveScope('hand', { focus: true }, engaged)).toBe('hotkey');
+  });
+
+  it('leaves an entry the host did not engage at its declared tier', () => {
+    expect(liveScope('rect', { always: true }, engaged)).toBe('ambient');
+  });
+});
