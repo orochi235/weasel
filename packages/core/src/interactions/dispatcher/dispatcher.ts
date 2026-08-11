@@ -36,10 +36,10 @@
  * the misconfiguration at dev time.
  */
 
-import type { Action, ActionsRegistry, BoundGesture } from '../actions/registry';
+import { actionBindings, type Action, type ActionsRegistry } from '../actions/registry';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { GestureBinding } from '../actions/binding';
-import type { OngoingHandle, InvocationCtx, ActionDeps, BindingOpts, AffordanceHit, DragSample } from '../actions/invoker';
+import type { OngoingHandle, InvocationCtx, ActionDeps, AffordanceHit, DragSample } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { buildDepsFromRequires } from '../actions/buildDeps';
 import type { Tool } from '../../tools/types';
@@ -712,25 +712,9 @@ export function createDispatcher(opts?: {
     // Ambient scope, then the actions registry. Actions have no owning
     // tool — `'&'`-channel phase atoms on their bindings won't match.
     for (const action of ctx.actions.list()) {
-      const gs = action.defaultBinding;
-      if (!gs) continue;
-      // Normalize to a flat array of { spec, opts? } pairs.
-      // defaultBinding is GestureSpec | BoundGesture[].
-      // BoundGesture = GestureSpec | { spec: GestureSpec; opts: BindingOpts }.
-      // A bare GestureSpec has a `kind` field at top level; the object form
-      // has a `spec` field (which itself has `kind`).
-      const raw: BoundGesture[] = Array.isArray(gs) ? gs : [gs as BoundGesture];
-      for (const entry of raw) {
-        const isBoundObj = !('kind' in entry);
-        const spec = isBoundObj
-          ? (entry as { spec: import('../gestures/spec').GestureSpec; opts: BindingOpts }).spec
-          : (entry as import('../gestures/spec').GestureSpec);
-        const opts: BindingOpts | undefined = isBoundObj
-          ? (entry as { spec: import('../gestures/spec').GestureSpec; opts: BindingOpts }).opts
-          : undefined;
-        const defaultBinding: GestureBinding = { spec, actionId: action.id, ...(opts !== undefined ? { opts } : {}) };
-        const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
-        result.push({ binding: defaultBinding, scope: targetScope, ownerToolId: null });
+      const targetScope: BindingScope = action.scope === 'hotkey' ? 'hotkey' : 'ambient';
+      for (const binding of actionBindings(action)) {
+        result.push({ binding, scope: targetScope, ownerToolId: null });
       }
     }
 
