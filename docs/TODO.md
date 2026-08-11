@@ -132,6 +132,38 @@ Priority tags:
   Fine while `rect` / `text` / `image` are unconditionally decorative; revisit
   when a stateful-claims widget appears. Recorded 2026-08-10.
 
+- **(P2) `targetConsultsAffordance` is syntactic, and the kit ships four
+  counterexamples.** The exclusive-claim filter treats "has a `kindOf`" as
+  "consults the affordance". But `interactions/dispatcher/predicates.ts`'s
+  `isBody` / `isSelectedBody` / `isUnselectedBody` / `isEmpty` — the kit's own
+  canonical body-class predicates, the shape it *recommends* — read only the
+  second argument and never look at the hit. A binding written the way the kit
+  teaches survives the filter and can win a claimed press. Unexploited today
+  (`isBody` is bound only to `doubleClick`, which carries no affordance), but
+  the rule is defeated by the kit's own helpers, which is the wrong direction
+  for a rule to fail in. Either the predicates declare what they read, or the
+  filter stops guessing from shape. Recorded 2026-08-10.
+
+- **(P3) An exclusive claim doesn't bar `contextmenu` or `doubleclick`.** Those
+  events carry no affordance, so the filter never sees them and a right-click
+  or double-click on HUD chrome acts on the scene underneath; long-press falls
+  back to `contextmenu` for the same reason. Distinct from the gesture-dispatch
+  entry above, which is about widgets *receiving* those gestures — this is
+  about the claim failing to *bar* them. Recorded 2026-08-10.
+
+- **(P3) `composeAffordanceLayer` still returns `AffordanceBinding`.** The kit's
+  own layer-composition helper can't declare a cursor or a claim, while
+  `attachHud` can. Structurally assignable so nothing breaks, and it has no
+  consumer outside its tests. Recorded 2026-08-10.
+
+- **(P3) `PointerClaim` is dead, and now has a live twin.** `onPointer`'s
+  `'claim' | 'pass'` return is discarded at every call site, while
+  `Widget.claimsPointer` does the job for real — so `rect` / `text` / `image`
+  decline the pointer twice, once in a field that works and once in a return
+  value that doesn't. A consumer will reasonably expect `return 'pass'` to pass
+  the press through. Either make the return live or delete it. Recorded
+  2026-08-10.
+
 - **(P3) Three unlinked enumerations of `TargetSpec` forms.** `targetRank` and
   `targetConsultsAffordance` (`interactions/dispatcher/matcher.ts`) and
   `matchTarget` (`@weasel-js/gestures`, `ui/match.ts`) each enumerate the target
