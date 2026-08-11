@@ -17,7 +17,7 @@ import * as builtins from './index';
 // It is tracked as DONE_WITH_CONCERNS in the implementation notes.
 
 describe('built-in tool capabilities', () => {
-  const cases: Array<[string, () => { capabilities?: readonly string[] } | null, readonly string[]]> = [
+  const cases: Array<[string, () => { eligibility?: { capabilities?: readonly string[] } } | null, readonly string[]]> = [
     ['hand', () => builtins.useHandTool({}), ['navigation']],
     ['select', () => builtins.useSelectTool({} as never, {} as never), ['creates-selection']],
     ['lasso', () => builtins.useLassoTool({} as never), ['creates-selection']],
@@ -35,7 +35,7 @@ describe('built-in tool capabilities', () => {
         adapter: { applyOps: () => {}, addNode: () => 'id', getNodes: () => [], getPose: () => ({}), getChildren: () => [], getParent: () => null },
         getPathObj: () => null,
       };
-      return builtins.usePenTool(minOpts as never) as unknown as { capabilities?: readonly string[] };
+      return builtins.usePenTool(minOpts as never) as unknown as { eligibility?: { capabilities?: readonly string[] } };
     }, ['creates-paths']],
     ['pencil', () => builtins.usePencilTool(), ['creates-paths']],
     ['text', () => builtins.useTextTool(), ['creates-text']],
@@ -47,9 +47,9 @@ describe('built-in tool capabilities', () => {
     it(`${name} declares capabilities: [${expected.join(', ')}]`, () => {
       const { result } = renderHook(hook);
       const tool = (result.current && typeof result.current === 'object' && 'tool' in result.current)
-        ? (result.current as { tool: { capabilities?: readonly string[] } }).tool
-        : (result.current as { capabilities?: readonly string[] } | null);
-      expect(tool?.capabilities).toEqual(expected);
+        ? (result.current as { tool: { eligibility?: { capabilities?: readonly string[] } } }).tool
+        : (result.current as { eligibility?: { capabilities?: readonly string[] } } | null);
+      expect(tool?.eligibility?.capabilities).toEqual(expected);
     });
   }
 });

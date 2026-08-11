@@ -1325,7 +1325,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     const getMode = getActiveModeRef.current;
     if (!getMode) return true;
     const registry = toolsForEligibilityRef.current?.registry;
-    const caps = registry?.[toolId]?.capabilities ?? [];
+    const caps = registry?.[toolId]?.eligibility.capabilities ?? [];
     if (caps.length === 0) return false;
     const allowed = getMode().allowedCapabilities;
     for (const c of caps) if (allowed.has(c)) return true;

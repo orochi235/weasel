@@ -16,10 +16,12 @@ const isAnchor = (hit: unknown): boolean =>
 const TOOLS: readonly Tool<unknown>[] = [
   {
     id: 'select',
+    eligibility: { focus: true },
     bindings: [{ spec: { kind: 'drag', target: 'selected-body' }, actionId: 'move' }],
   },
   {
     id: 'pen',
+    eligibility: { focus: true },
     bindings: [
       { spec: { kind: 'drag', target: { kindOf: isAnchor } }, actionId: 'pen.adjust' },
       // A string `affordance:` target — this is what the widget walks to
@@ -29,6 +31,7 @@ const TOOLS: readonly Tool<unknown>[] = [
   },
   {
     id: 'viewport',
+    eligibility: { always: true },
     bindings: [{ spec: { kind: 'drag' }, actionId: 'viewport.dragPan' }],
   },
 ];

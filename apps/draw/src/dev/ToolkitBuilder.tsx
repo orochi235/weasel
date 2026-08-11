@@ -134,8 +134,8 @@ function ToolkitForBundle({ bundle }: { bundle: ToolBundle }): ReactElement {
     if (!tools) return [];
     type Slot = { id: string; def?: unknown };
     const all: Slot[] = [
-      ...(Object.values(tools.registry) as Slot[]),
-      ...(tools.ambient as Slot[]),
+      ...(Object.values(tools.registry) as unknown as Slot[]),
+      ...(tools.ambient as unknown as Slot[]),
     ];
     const seen = new Set<string>();
     const out: ToolDef<unknown>[] = [];
