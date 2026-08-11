@@ -44,14 +44,11 @@ const ACTIONS: readonly Action[] = [
   invoker: { timing: 'immediate' as const, run: () => {} },
 }));
 
-const AMBIENT_TOOL_IDS = ['viewport'];
-
 function renderWidget(activeToolId = 'select') {
   return render(
     <ResolutionWidget
       tools={TOOLS}
       actions={ACTIONS}
-      ambientToolIds={AMBIENT_TOOL_IDS}
       activeToolId={activeToolId}
     />,
   );
