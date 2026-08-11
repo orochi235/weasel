@@ -115,13 +115,15 @@ describe('a layer hit with no declared strength defaults to shared', () => {
   });
 });
 
-// `owner: extra.layerId` (`SceneCanvas.tsx`) has no test either. Field
-// assertion, not behavioral: `owner`'s only production reader is the
-// dispatcher's dead-claim warning, and that's unreachable through a full
-// `<SceneCanvas>` — the standard `editAnchors` / `enterPathEdit` actions are
-// always-ambient `kindOf` bindings, so the warning's "nothing consults the
-// affordance" pool is never empty. This asserts the value `SceneCanvas.tsx`
-// copies verbatim into `owner`: `hitTestExtras`'s `layerId`.
+// `owner: extra.layerId` (`SceneCanvas.tsx`) also has no test. Its one
+// production reader is the dispatcher's dead-claim warning: an exclusive
+// claim whose kind nothing recognizes (not `editAnchors`, not
+// `enterPathEdit`, not any tool binding) reaches the dispatcher, matches
+// nothing, and warns naming `owner`. No option threads a `warn` override
+// through `<SceneCanvas>` — `dispatcher.ts` calls `matchSorted` with no
+// `warn` argument at both call sites — so `console.warn` is the real sink
+// a consumer sees too; spying on it observes production behavior, not an
+// internal.
 
 function ownerProbeLayer(id: string): RenderLayer<unknown> {
   return {
@@ -141,17 +143,35 @@ function OwnerProbeHarness({ apiOut, layerId }: {
   apiOut.ref = ref;
   const scene = useScene<Empty>({ items: [] });
   React.useEffect(() => ref.current?.registerLayer(ownerProbeLayer(layerId)), [layerId]);
-  return <SceneCanvas ref={ref} width={200} height={200} scene={scene} layers={{}} />;
+  return (
+    <SceneCanvas
+      ref={ref}
+      width={200}
+      height={200}
+      scene={scene}
+      layers={{}}
+      defaultTools={['rect']}
+      initialActiveTool="rect"
+    />
+  );
 }
 
 describe('the claim carries the layer id as owner', () => {
-  it('hitTestExtras reports the registered layer id', async () => {
-    const layerId = 'owner-probe-layer';
+  it('an exclusive claim from an unrecognized layer warns naming the layer id', async () => {
+    const layerId = 'owner-warn-layer';
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const apiOut = { ref: { current: null } as React.RefObject<SceneCanvasApi | null> };
-    render(<OwnerProbeHarness apiOut={apiOut} layerId={layerId} />);
+    const { container } = render(<OwnerProbeHarness apiOut={apiOut} layerId={layerId} />);
     await act(async () => {});
 
-    const extra = apiOut.ref.current!.hitTestExtras!(10, 10);
-    expect(extra?.layerId).toBe(layerId);
+    const canvas = container.querySelector('canvas')!;
+    await act(async () => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 20, clientY: 20 }));
+      canvas.dispatchEvent(makePointerEvent('pointermove', { clientX: 60, clientY: 60 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 60, clientY: 60 }));
+    });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`"${layerId}"`));
+    warn.mockRestore();
   });
 });
