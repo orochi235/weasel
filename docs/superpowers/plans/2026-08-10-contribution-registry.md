@@ -31,7 +31,13 @@ So for every test in this plan: **revert the production change, run it, confirm 
 
 `Tool<TScratch>` (`packages/core/src/tools/types.ts`) already carries `bindings`, `actions`, `overlay`, `cursor`, `presentation`, `capabilities`, `keybinding`, plus focus-only fields: `initScratch`, `onActivate`/`onDeactivate`, `previewPose`, `previewBounds`, `previewIds`.
 
-`useTools({ active, registry, ambient })` (`packages/core/src/tools/useTools.ts`) holds slot state and rolls up overlays. `assembleScopedBindings` (`packages/core/src/interactions/dispatcher/dispatcher.ts:684-738`) walks exactly three sources — `ctx.hotkeyStack`, `ctx.activeToolId`, `ctx.ambientToolIds` — so **a merely-registered tool contributes no bindings at all.** Verify this yourself before relying on it; plan 1 shipped a wrong claim about it.
+`useTools({ active, registry, ambient })` (`packages/core/src/tools/useTools.ts`) holds slot state and rolls up overlays. `assembleScopedBindings` (`packages/core/src/interactions/dispatcher/dispatcher.ts:684-738`) walks **four** sources: `ctx.hotkeyStack`, `ctx.activeToolId`, `ctx.ambientToolIds`, and then every action's `defaultBinding` from `ctx.actions.list()` (at ambient scope, or hotkey when `Action.scope === 'hotkey'`).
+
+Two consequences worth having straight:
+- **A merely-registered tool contributes no bindings at all** — only those three id sources reach `toolsById`.
+- **The dispatcher has always folded action defaults in for matching.** The gap this plan closes is in `reportRouteConflicts`, which never saw them — not in dispatch.
+
+This paragraph said "three sources" in the first draft, which was wrong. Read the function before relying on any description of it, this one included.
 
 Two facts that shape the eligibility design:
 1. **The hand tool is both** palette-selectable and space-held. So eligibility cannot be one enum value.
@@ -486,7 +492,7 @@ Read `useTools.ts` first and preserve its behaviors: first-mount-wins focus sync
 
 - [ ] **Step 4: Fold in the action `defaultBinding`s**
 
-`ActionsRegistry` assembles these separately, which is why `reportRouteConflicts` sees tool bindings and never action defaults — a tool binding colliding with an action's default goes unreported. Have `useContributions` include them in what it hands the conflict reporter.
+The dispatcher already matches against these (see "The shape of what exists"). What never sees them is `reportRouteConflicts`, which is handed only tool bindings — so a tool binding colliding with an action's default goes unreported. Have `useContributions` include them in what it hands the conflict reporter.
 
 Add a test: a contribution binding that collides with an action `defaultBinding` is reported. **Verify it fails before the change** — this is the P3 gap this task closes, and a test that passes either way proves nothing.
 
