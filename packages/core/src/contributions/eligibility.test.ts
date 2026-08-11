@@ -39,3 +39,21 @@ describe('liveScope', () => {
     expect(liveScope('hand', { offhand: 'space' }, state)).toBeNull();
   });
 });
+
+describe('liveScope honors the capability filter', () => {
+  const focused = { focusedId: 'pen', heldTriggers: new Set<string>() };
+
+  it('withholds scope from an entry the active mode disallows', () => {
+    const e: Eligibility = { focus: true, capabilities: ['creates-paths'] };
+    expect(liveScope('pen', e, { ...focused, allows: () => false })).toBeNull();
+  });
+
+  it('grants scope when the mode allows the entry', () => {
+    const e: Eligibility = { focus: true, capabilities: ['creates-paths'] };
+    expect(liveScope('pen', e, { ...focused, allows: () => true })).toBe('active');
+  });
+
+  it('ignores the filter when the entry declares no capabilities', () => {
+    expect(liveScope('pen', { focus: true }, { ...focused, allows: () => false })).toBe('active');
+  });
+});

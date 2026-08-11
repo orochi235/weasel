@@ -11,3 +11,11 @@ export interface ToolLike {
 export function eligibleTool(reg: ModeRegistry, tool: ToolLike): boolean {
   return eligibleForMode(reg.current(), tool.capabilities ?? []);
 }
+
+/** True iff a contribution is usable in the registry's active mode. */
+export function eligibleContribution(
+  reg: ModeRegistry,
+  entry: { id: string; eligibility?: { capabilities?: readonly CapabilityTag[] } },
+): boolean {
+  return eligibleForMode(reg.current(), entry.eligibility?.capabilities ?? []);
+}

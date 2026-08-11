@@ -1,10 +1,13 @@
 import type { BindingScope } from '../interactions/dispatcher/matcher';
+import type { CapabilityTag } from '@weasel-js/modes';
 import type { Eligibility } from './types';
 
 /** What the registry knows at dispatch time. */
 export interface EligibilityState {
   focusedId: string | null;
   heldTriggers: ReadonlySet<string>;
+  /** Whether the active mode allows these capability tags. Omitted → allow. */
+  allows?: (tags: readonly CapabilityTag[]) => boolean;
 }
 
 /**
@@ -16,6 +19,8 @@ export function liveScope(
   eligibility: Eligibility,
   state: EligibilityState,
 ): BindingScope | null {
+  const tags = eligibility.capabilities;
+  if (tags && tags.length > 0 && state.allows && !state.allows(tags)) return null;
   if (eligibility.offhand && state.heldTriggers.has(eligibility.offhand)) return 'hotkey';
   if (eligibility.focus && state.focusedId === id) return 'active';
   if (eligibility.always || eligibility.claimed) return 'ambient';
