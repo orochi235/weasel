@@ -39,6 +39,10 @@ export function attachHud(
     const list = hud.widgets();
     for (let i = list.length - 1; i >= 0; i--) {
       const w = list[i];
+      // Decoration is skipped rather than downgraded: a hit at all would let
+      // `hud.press` consume the press, and the walk has to keep descending to
+      // whatever is beneath — another widget, or the scene.
+      if (w.claimsPointer === false) continue;
       if (!w.hidden && w.hitTest(sx, sy)) return w;
     }
     return null;

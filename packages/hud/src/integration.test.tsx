@@ -215,3 +215,43 @@ describe('a HUD window is reachable while a drawing tool is active', () => {
     expect(canvas.style.cursor).toBe('move');
   });
 });
+
+describe('decorative widgets stay transparent to input', () => {
+  it('a rect backdrop covering the canvas does not block a rect-tool drag', async () => {
+    const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null }, sceneRef: { current: null } };
+    const { container } = await mount(apiOut, { initialActiveTool: 'rect' });
+
+    await act(async () => {
+      apiOut.hudRef.current!.rect({ id: 'dim', x: 0, y: 0, w: 200, h: 200, fill: '#0008' });
+    });
+
+    const canvas = container.querySelector('canvas')!;
+    await act(async () => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 60, clientY: 26 }));
+      canvas.dispatchEvent(makePointerEvent('pointermove', { clientX: 90, clientY: 56 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup',   { clientX: 90, clientY: 56 }));
+    });
+
+    expect(apiOut.sceneRef!.current!.nodes.size).toBe(1);
+  });
+
+  it('a button beneath that backdrop still receives the press', async () => {
+    const apiOut: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { container } = await mount(apiOut, { initialActiveTool: 'rect' });
+
+    await act(async () => {
+      const btn = apiOut.hudRef.current!.button({ id: 'save', x: 10, y: 10, w: 60, h: 24, label: 'Save' });
+      btn.on('press', apiOut.press);
+      // Added after the button, so it sits above it in the hit-test walk.
+      apiOut.hudRef.current!.rect({ id: 'dim', x: 0, y: 0, w: 200, h: 200, fill: '#0008' });
+    });
+
+    const canvas = container.querySelector('canvas')!;
+    await act(async () => {
+      canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 30, clientY: 20 }));
+      canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 20 }));
+    });
+
+    expect(apiOut.press).toHaveBeenCalledTimes(1);
+  });
+});
