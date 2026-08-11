@@ -49,8 +49,9 @@ const RIVAL_ID = 'rival';
 function makeRival(): Tool<null> {
   return {
     id: RIVAL_ID,
+    eligibility: { focus: true },
     bindings: [{ spec: { kind: 'click' }, actionId: 'rival.click' }],
-  } as unknown as Tool<null>;
+  };
 }
 
 function Mount({
@@ -79,7 +80,7 @@ function Mount({
 
   const toolsById = new Map<string, Tool>([
     ['eyedropper', eyedropper as unknown as Tool],
-    ...(rivalSpy ? ([[RIVAL_ID, makeRival() as unknown as Tool]] as const) : []),
+    ...(rivalSpy ? ([[RIVAL_ID, makeRival() as Tool]] as const) : []),
   ]);
 
   useGestureDispatcher({
