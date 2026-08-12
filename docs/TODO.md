@@ -32,7 +32,6 @@ Priority tags:
 
 **Text**
 - Cross-browser overlay alignment → [Text](#text)
-- Un-setting a flag a text node sets → [Text](#text)
 
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
@@ -417,17 +416,19 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
-- **(P2) Un-setting a flag a text node sets.** Run-level flags are additive:
-  a run turns `bold` / `italic` / `underline` / `strikethrough` on, never off
-  (setting `false` deletes the key, and resolution is `run.flag ||
-  style.flag`). So "select a word inside an underlined node and turn
-  underline off" is unrepresentable, and the character bar's toggle visibly
-  refuses. Two ways out, both model changes: go tri-state (`true` / `false` /
-  inherit) across `valueAt` / `patchRun` / the resolvers and the SVG mapping,
-  or normalize on write — clear the node flag and add it to every run outside
-  the range, which preserves the rendered result and makes the edit
-  expressible without widening the model. Decide before the flags are relied
-  on by a persisted document format.
+- **(P3) The character bar has no `setStyle` wired.** The model question
+  closed 2026-08-12: `setFlagOverRange` normalizes on write — clear the node
+  flag, raise it on the runs outside the range — rather than going tri-state,
+  because `bold` and `italic` are `fontWeight` / `fontStyle` at node level and
+  a tri-state run boolean has nothing there to override. All four flags work;
+  the persisted shape is unchanged. `useTextEdit` takes an optional
+  `setStyle(id, style)` and declines the toggle without it, which is where
+  things stand: **apps/draw does not pass one**, so the bar still refuses in
+  the app even though the kit no longer has to. Wiring it needs the app's
+  text-node commit path to accept a `TextStyle` write alongside the runs
+  write. A node at `fontWeight: 900` stays declined on purpose (`applied:
+  false`) — `run.bold` is exactly 700, so pushing the weight onto the runs
+  would lighten the text that was not edited.
 
 - **(P3) Per-character tracking in the DOM overlay is CSS-approximate.**
   `letterSpacing` is applied per code point rather than per grapheme cluster,

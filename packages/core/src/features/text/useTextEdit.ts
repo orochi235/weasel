@@ -16,9 +16,10 @@ import type { StyledRun } from './runs';
 import { runsToPlainText } from './runs';
 import { runsToDom, domToRuns, charOffsetToDomPosition, domPositionToCharOffset } from './domRuns';
 import { applyStyleToRange, runsCarryStyling, styleAtRange } from './runs/rangeStyle';
+import { nodeHasFlag, setFlagOverRange, type FlagKey } from './runs/flagRange';
 import type { RangeStyle, RunStylePatch } from './runs/rangeStyle';
 
-type StyleFlag = 'bold' | 'italic' | 'underline' | 'strikethrough';
+type StyleFlag = FlagKey;
 
 /**
  * The shortcut each flag answers to. Strikethrough takes Cmd+Shift+X (Docs'
@@ -215,6 +216,15 @@ export interface UseTextEditOptions {
   getText: (id: string) => string;
   /** Read style for `id` (used for font setup on the overlay). */
   getStyle: (id: string) => TextStyle | undefined;
+  /**
+   * Write style back for `id`. Optional; needed only to turn a flag **off**
+   * inside a node whose own `TextStyle` sets it. Run flags are additive, so
+   * that edit is expressed by lowering the node flag and raising it on the
+   * runs outside the selection — which needs somewhere to put the new node
+   * style. Without this, such a toggle is declined and nothing changes, as
+   * before. See `runs/flagRange`.
+   */
+  setStyle?: (id: string, style: TextStyle) => void;
   /** Read screen-space pose for `id`. Called per frame while editing. */
   getScreenPose: (id: string) => TextEditScreenPose | null;
   /** Commit text. Caller wraps in op/undo. */
@@ -476,7 +486,25 @@ export function useTextEdit(
         togglePending(flag);
         return;
       }
-      const next = toggleFlagInRange(domToRuns(overlay), range.start, range.end, flag);
+      if (editingId === null) return;
+      const runs = domToRuns(overlay);
+      const nodeStyle = optsRef.current.getStyle(editingId) ?? {};
+      const setStyle = optsRef.current.setStyle;
+
+      // Turning a flag off that the NODE sets is not expressible additively:
+      // the run algebra can only add. Rewriting is, and needs the node style.
+      const current = styleAtRange(runs, range.start, range.end)[flag];
+      const unsetting = current === true;
+      if (unsetting && setStyle && nodeHasFlag(nodeStyle, flag)) {
+        const r = setFlagOverRange(runs, nodeStyle, range.start, range.end, flag, false);
+        if (!r.applied) return;
+        setStyle(editingId, r.style);
+        writeRunsPreservingSelection(overlay, r.runs, range.start, range.end);
+        syncSelection();
+        return;
+      }
+
+      const next = toggleFlagInRange(runs, range.start, range.end, flag);
       writeRunsPreservingSelection(overlay, next, range.start, range.end);
       syncSelection();
     }

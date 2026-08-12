@@ -40,6 +40,8 @@ export { resolveRuns } from './runs/resolveRuns';
 export type { ResolvedRun } from './runs/resolveRuns';
 export { styleAtRange, applyStyleToRange } from './runs/rangeStyle';
 export type { RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
+export { setFlagOverRange, nodeHasFlag } from './runs/flagRange';
+export type { FlagKey, SetFlagResult } from './runs/flagRange';
 export { textCommand } from './textCommand';
 export { verticalAlignOffset } from './verticalAlign';
 export type { TextVerticalAlign } from './verticalAlign';
