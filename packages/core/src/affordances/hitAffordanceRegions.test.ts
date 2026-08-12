@@ -137,6 +137,41 @@ describe('hitAffordanceRegions', () => {
     });
   });
 
+  describe('under non-uniform zoom', () => {
+    // 4:1. meanScale collapses this to 2, so the old test allowed 4 world
+    // units on both axes: 16 screen px across, 4 screen px down, for a
+    // handle declared at 8.
+    const SQUISHED = { ...VIEW, scale: { x: 4, y: 1 } };
+    const a = affordance('a', [pointRegion('r', 0, 0, 8)]);
+
+    it('stops accepting a point that is beyond the handle on the tight axis', () => {
+      expect(hitAffordanceRegions([a], 3, 0, state(), SQUISHED)).toBeNull();
+      expect(hitAffordanceRegions([a], 2, 0, state(), SQUISHED)).not.toBeNull();
+    });
+
+    it('starts accepting a point that is inside the handle on the loose axis', () => {
+      expect(hitAffordanceRegions([a], 0, 5, state(), SQUISHED)).not.toBeNull();
+      expect(hitAffordanceRegions([a], 0, 8, state(), SQUISHED)).not.toBeNull();
+      expect(hitAffordanceRegions([a], 0, 9, state(), SQUISHED)).toBeNull();
+    });
+
+    it('keeps the hit region square on screen, corners included', () => {
+      expect(hitAffordanceRegions([a], 2, 8, state(), SQUISHED)).not.toBeNull();
+      expect(hitAffordanceRegions([a], 2.1, 8, state(), SQUISHED)).toBeNull();
+    });
+
+    it('gives the annulus band a per-axis floor', () => {
+      const shape = {
+        kind: 'annulus' as const,
+        cx: 50, cy: 50, rx: 10, ry: 10,
+        innerX: 0, innerY: 0, innerWidth: 100, innerHeight: 100,
+        minBandPx: 24,
+      };
+      // 24px is 6 world units across and 24 down, not 12 on both.
+      expect(annulusSemiAxes(shape, SQUISHED)).toEqual({ rx: 56, ry: 74 });
+    });
+  });
+
   it('hits a point region square, matching the square handle it paints', () => {
     // The diagonal corner of an 8px handle: |dx| and |dy| are both within
     // radius, but the radial distance (≈11.3) is not. The old classifier used

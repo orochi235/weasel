@@ -30,9 +30,6 @@ Priority tags:
 
 ### P2 — broad reuse / friction-likely
 
-**Viewport**
-- Axis-aware elliptical hit shapes under non-uniform zoom → [Viewport](#viewport)
-
 **Text**
 - Cross-browser overlay alignment → [Text](#text)
 - Un-setting a flag a text node sets → [Text](#text)
@@ -294,7 +291,28 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Viewport
 
-- **(P2) Axis-aware elliptical hit shapes under non-uniform zoom.** Surfaced 2026-05-16 by the per-axis zoom landing. ~50 chrome hit-test sites today use `pxRadius / meanScale(view.scale)` (geometric-mean fallback). At non-uniform zoom this projects a circular screen-pixel hit region to an ellipse in world space — visually accurate handles but the pickable region is slightly too large along one axis and slightly too small along the other. Fix: refactor `composeAffordanceLayer` and the per-tool ad-hoc hit-tests (`penEdit/hitOverride`, `usePenTool` close-hit, `useSelectTool` multi-resize, snap-guide trigger zones) to either compare against an ellipse `(dx/rx)² + (dy/ry)² < 1` or transform the hit-test into screen space. Grid hairline strokes (`1 / meanScale(view.scale)`) have no obvious axis-aware analog — separate judgment call. Worth ~1 day; deferred from per-axis-zoom v1 spec to keep the migration atomic.
+- **(P3) Two `meanScale` residuals under non-uniform zoom.** The hit-test half
+  shipped 2026-08-12: `core/viewport/pxExtent` (`pxExtent` / `withinPxBox` /
+  `withinPxRadius`), affordance `point` regions compared in screen space, the
+  annulus band floor and paint inset per-axis, the pen close-hit a screen-space
+  circle, and every snap-guide tolerance per-axis. Two sites deliberately did
+  not move:
+
+  (a) **`useSceneSelectTool`'s pick tolerance** still divides by `meanScale`.
+  It is a forgiveness margin around an outline rather than a hit target, and
+  per-axis would mean widening `poseContainsRotated`, `poseContains` and
+  `shapeCoversPoint` to a `{x,y}` tolerance — for a result that stays
+  approximate under rotation anyway, since a screen-axis ellipse pulled back
+  through a rotation is not axis-separable in the local frame.
+
+  (b) **Painted chrome placement** — `rotationHandleCommands` in
+  `features/selection/overlay.ts`, and the matching positions in
+  `slopsDebugLayer` / `createDebugOverlayLayer`. Same rotation coupling, and
+  they must move together with each other or the visible handle and the
+  grabbable ring diverge. Wants someone looking at the render.
+
+  Grid hairline strokes (`1 / meanScale`) have no per-axis analog at all — the
+  renderer takes one width.
 
 - **(P3) Two-finger pan.** `viewport.pinchZoom` zooms about the gesture
   centroid but never translates by the centroid delta, so a two-finger drag
