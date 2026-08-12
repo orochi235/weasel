@@ -35,25 +35,39 @@ the wheel zoom while a scrollable panel can take it.
 
 ```ts
 // affordances/types.ts
+export type ClaimableGesture =
+  | 'pointer'        // pointerDown / click / drag — one press protocol
+  | 'doubleClick'
+  | 'contextMenu'
+  | 'longPress'
+  | 'wheel';
+
 interface LayerHit<TScratch = unknown> extends AffordanceBinding<TScratch> {
   cursor?: string;
   strength?: 'exclusive' | 'shared';
   /** Gesture kinds this claim bars. Undefined bars all — today's meaning. */
-  claimedKinds?: readonly GestureKind[];
+  claimedKinds?: readonly ClaimableGesture[];
 }
 
 // interactions/dispatcher/matcher.ts
 function isExclusiveClaim(e: InputEvent): boolean {
   const c = claimOf(e);
   if (c?.strength !== 'exclusive') return false;
-  return c.claimedKinds === undefined || c.claimedKinds.includes(specKindOf(e));
+  const g = claimGestureOf(e);
+  return g !== null && (c.claimedKinds === undefined || c.claimedKinds.includes(g));
 }
 ```
 
-`claimedKinds` is spelled in the **spec** vocabulary (`'doubleClick'`), not the
-`InputEvent` one (`'doubleclick'`), so a consumer writes the same word here as
-in the binding it is protecting. `specKindOf` is the mapping; `match.ts`
-already carries it implicitly in its switch.
+`ClaimableGesture` is spelled in the **spec** vocabulary (`'doubleClick'`), not
+the `InputEvent` one (`'doubleclick'`), so a consumer writes the same word here
+as in the binding it is protecting. `claimGestureOf` is the mapping, and it
+answers `null` for events a positional claim has no opinion about — keys,
+drops, pastes, multitouch — which leaves them unbarred as they are today.
+
+`'pointer'` is one token rather than three because `pointerDown`, `click` and
+`drag` are a single down/move/up protocol and, at the event level, the first
+two are the same `kind: 'pointerdown'` distinguished only by `stage`. There is
+no way to claim one without the others, so the type shouldn't offer to.
 
 ## Four layers
 
@@ -73,13 +87,46 @@ Both existing call sites pass client coordinates despite one being named
 
 `longpress` already carries the affordance.
 
-### 2. `wheel` gains a target
+Three of the four events also lack the fields an action would need. `wheel`
+and `doubleclick` gain an `affordance`; `contextmenu` gains world coordinates
+as well, having carried none at all. The dispatcher's immediate-invoker param
+builder forwards position and affordance for `click` and `pointerdown` only,
+so it grows branches for `contextmenu` and `longpress` and passes the
+affordance on for `doubleclick` and `wheel`.
+
+### 2. `wheel` gains a target, and two kinds start matching on the affordance
 
 `WheelSpec` has no `target` field, so no wheel binding can gate on anything.
 
 - `target?: TargetSpec` on `WheelSpec` (`gestures/src/ui/spec.ts`)
 - the `matchTarget` call in `match.ts`'s `case 'wheel'`
-- `hasTarget: true` in `grammar/gestures.ts`, so route strings can name it
+- `hasTarget: true` in `grammar/gestures.ts`, so route strings can name it.
+  The route-grammar tests use `wheel` as their canonical targetless gesture
+  and move to `keyDown`.
+
+`doubleClick` and `contextMenu` pass `e.target` — the **DOM** target — to
+`matchTarget`, where `click`, `drag` and `longPress` all pass `e.affordance`.
+A `kindOf` predicate on those two kinds therefore receives a DOM element,
+which is not what any predicate in the kit expects. They move onto
+`e.affordance` with the others. The only existing binding affected is
+`enterPathEdit`, whose `isBody` reads the second argument.
+
+### 2a. The kit's body predicates declare that they ignore the affordance
+
+`targetConsultsAffordance` infers "consults the affordance" from having a
+`kindOf` at all, and `isBody` / `isSelectedBody` / `isUnselectedBody` /
+`isEmpty` have one while reading only `bodyTarget`. That is a recorded P2 of
+its own, latent today because no affordance-carrying event reaches those
+bindings. This design makes it live: with `doubleclick` carrying the HUD's
+affordance, `enterPathEdit`'s `target: { kindOf: isBody }` survives the
+exclusive-claim filter and enters path-edit mode on a double-click over
+chrome — a hole in the opacity this design otherwise promises.
+
+Fixed here in the narrow way, the first of the two the P2 names: the four
+body-class predicates carry `readsAffordance: false`, and
+`targetConsultsAffordance` honors it. The broader question — whether the
+filter should stop guessing from shape at all — stays open, and the P2 entry
+is rewritten rather than closed.
 
 ### 3. The claim carries the kinds
 
@@ -91,19 +138,19 @@ above.
 
 ```ts
 // packages/hud/src/widget.ts
-type HudGestureKind = 'pointer' | 'doubleClick' | 'contextMenu' | 'longPress' | 'wheel';
+import type { ClaimableGesture } from '@weasel-js/core';
 
 interface Widget {
   /** What this widget consumes. Default: every kind but 'wheel'. `[]` is
    *  decoration — the hit-test walk descends past it. */
-  readonly claims?: readonly HudGestureKind[];
+  readonly claims?: readonly ClaimableGesture[];
   onPointer(evt: HudPointerEvent): void;
   // …
 }
 ```
 
-`'pointer'` covers `pointerDown` / `click` / `drag` as one token. They are a
-single down/move/up protocol, not three independent claims.
+The HUD reuses core's `ClaimableGesture` rather than declaring a parallel
+union of the same five names.
 
 The default set is everything but `wheel`: chrome stops leaking right-clicks
 and double-clicks to the scene, which is what chrome should do, while
@@ -147,7 +194,8 @@ kind-aware `hitTest` signature across every registered layer.
 ## Testing
 
 - `matcher.claims.test.ts` — the per-kind filter: a claim listing `pointer`
-  does not bar a wheel binding; one listing nothing bars all, as today.
+  does not bar a wheel binding; one listing nothing bars all, as today; and
+  `isBody` no longer survives an exclusive claim.
 - `useGestureDispatcher.test.tsx` — the affordance reaches `doubleclick`,
   `contextmenu` (both routes) and `wheel`.
 - the gestures matcher — a `wheel` spec with a target.
@@ -156,6 +204,14 @@ kind-aware `hitTest` signature across every registered layer.
   doesn't claim a kind never sees it.
 - integration, the two user-visible claims: a right-click on chrome does not
   reach a scene binding, and a wheel over a non-claiming widget still zooms.
+
+## TODO entries this settles
+
+Closes the P2 "Gesture dispatch over HUD elements" less keyboard focus, and
+the P3s "An exclusive claim doesn't bar `contextmenu` or `doubleclick`" and
+"`PointerClaim` is dead, and now has a live twin". Rewrites, rather than
+closes, "`targetConsultsAffordance` is syntactic" (narrow fix only, §2a) and
+"`Widget.claimsPointer` is static" (still static, now one field).
 
 ## Out of scope
 
