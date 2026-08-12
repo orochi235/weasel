@@ -1,4 +1,4 @@
-import type { Widget, HudDrawCtx, HudPointerEvent, PointerClaim, WidgetBounds } from '../widget';
+import type { Widget, HudDrawCtx, HudPointerEvent, WidgetBounds } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import type { RectPath } from '@weasel-js/core';
 
@@ -59,8 +59,8 @@ export function createRect(opts: RectOptions): RectWidget {
       if (hidden) return false;
       return px >= bounds.x && px < bounds.x + bounds.w && py >= bounds.y && py < bounds.y + bounds.h;
     },
-    claimsPointer: false,
-    onPointer(_evt: HudPointerEvent): PointerClaim { return 'pass'; },
+    claims: [],
+    onPointer(_evt: HudPointerEvent): void {},
     dispose() {
       if (disposed) return;
       disposed = true;

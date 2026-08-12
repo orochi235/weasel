@@ -33,9 +33,9 @@ describe('rect widget', () => {
     expect(r.bounds).toEqual({ x: 5, y: 5, w: 20, h: 20 });
   });
 
-  it('onPointer always returns pass (rect is not interactive in v1)', () => {
+  it('claims nothing, so the hit walk descends past it', () => {
     const r = createRect({ id: 'r1', x: 0, y: 0, w: 10, h: 10, fill: '#fff' });
-    expect(r.onPointer({ type: 'down', x: 5, y: 5, native: null })).toBe('pass');
+    expect(r.claims).toEqual([]);
   });
 
   it('onChange fires when state mutates', () => {

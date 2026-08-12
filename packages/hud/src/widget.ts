@@ -1,5 +1,5 @@
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { View } from '@weasel-js/core';
+import type { ClaimableGesture, View } from '@weasel-js/core';
 import type { ResolvedTheme } from '@weasel-js/theme';
 
 export interface WidgetBounds {
@@ -48,9 +48,9 @@ export interface HudContentCtx {
  * otherwise — it is **not** guaranteed. Hover arrives through the layer's
  * `onUncapturedMove`, so `hovermove` carries the real `PointerEvent` — and,
  * being uncaptured-only, stops for the duration of any drag.
- * Press / move / release arrive through the gesture dispatcher, which hands
- * actions normalized input rather than the event that produced it, so those
- * arms carry `null`. A widget that needs `native` must handle its absence;
+ * Every other arm arrives through the gesture dispatcher, which hands
+ * actions normalized input rather than the event that produced it, so they
+ * carry `null`. A widget that needs `native` must handle its absence;
  * prefer the normalized `x` / `y` and the event `type`.
  */
 export type HudPointerEvent =
@@ -59,9 +59,24 @@ export type HudPointerEvent =
   | { type: 'up'; x: number; y: number; native: PointerEvent | null }
   | { type: 'cancel'; native: PointerEvent | null }
   | { type: 'hovermove'; x: number; y: number; native: PointerEvent | null }
-  | { type: 'hoverleave'; native: PointerEvent | null };
+  | { type: 'hoverleave'; native: PointerEvent | null }
+  | { type: 'doubleclick'; x: number; y: number; native: PointerEvent | null }
+  | { type: 'contextmenu'; x: number; y: number; native: PointerEvent | null }
+  | { type: 'longpress'; x: number; y: number; native: PointerEvent | null }
+  | {
+      type: 'wheel'; x: number; y: number;
+      deltaX: number; deltaY: number; native: PointerEvent | null;
+    };
 
-export type PointerClaim = 'claim' | 'pass';
+/** What a widget consumes when it declares nothing: chrome is opaque to every
+ *  pointer-family gesture except the wheel, which stays with the viewport
+ *  unless a widget asks for it. */
+export const DEFAULT_WIDGET_CLAIMS: readonly ClaimableGesture[] =
+  ['pointer', 'doubleClick', 'contextMenu', 'longPress'];
+
+export function claimsOf(w: Widget): readonly ClaimableGesture[] {
+  return w.claims ?? DEFAULT_WIDGET_CLAIMS;
+}
 
 export interface Widget {
   readonly id: string;
@@ -74,14 +89,16 @@ export interface Widget {
   /** Region `content` is clipped to. Required when `content` is set. */
   readonly contentRect?: WidgetBounds;
   hitTest(x: number, y: number): boolean;
-  /** Whether a press inside `hitTest` is this widget's to take. Decoration
-   *  returns false and stays transparent to input. Absent means it claims. */
-  readonly claimsPointer?: boolean;
+  /** Which gestures this widget consumes. Absent means
+   *  {@link DEFAULT_WIDGET_CLAIMS}; `[]` is decoration, and the hit-test walk
+   *  descends past it to whatever lies beneath. Anything not listed falls
+   *  through to the scene. */
+  readonly claims?: readonly ClaimableGesture[];
   /** CSS cursor for a point inside this widget, in screen space. Resolved per
    *  point rather than read off hover state, because the layer's `hitTest`
    *  runs for a point and hover state may lag it. */
   cursorAt?(x: number, y: number): string;
-  onPointer(evt: HudPointerEvent): PointerClaim;
+  onPointer(evt: HudPointerEvent): void;
   /** Called by Hud.remove or widget.dispose. Detach event listeners, etc. */
   dispose(): void;
 }

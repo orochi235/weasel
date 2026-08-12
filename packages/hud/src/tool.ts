@@ -1,6 +1,8 @@
-import type { Action, ActionDeps, Contribution, InvocationCtx, View } from '@weasel-js/core';
+import type {
+  Action, ActionDeps, ClaimableGesture, Contribution, InvocationCtx, View,
+} from '@weasel-js/core';
 import { viewToTransform, worldToScreen } from '@weasel-js/core';
-import type { Widget, HudPointerEvent } from './widget';
+import { claimsOf, type Widget, type HudPointerEvent } from './widget';
 
 /** What the HUD layer's `hitTest` resolves and hands to the actions below. */
 export interface HudHitPayload {
@@ -23,6 +25,21 @@ function isHudHit(hit: unknown): boolean {
 
 function widgetIn(affordance: unknown): Widget | null {
   return (affordance as { payload?: HudHitPayload } | null | undefined)?.payload?.widget ?? null;
+}
+
+/** A target matching a HUD hit only when the widget under it consumes this
+ *  gesture. Without the claim half, a widget that declines a kind would still
+ *  win it: declining leaves the claim non-exclusive, which puts the scene's
+ *  binding and the HUD's own in contention at once. */
+function hudHitClaiming(gesture: ClaimableGesture): (hit: unknown) => boolean {
+  return Object.assign(
+    (hit: unknown): boolean => {
+      if (!isHudHit(hit)) return false;
+      const widget = widgetIn(hit);
+      return widget !== null && claimsOf(widget).includes(gesture);
+    },
+    { readsAffordance: true as const },
+  );
 }
 
 /** World → screen, the space widgets lay themselves out in. Reads the `view`
@@ -109,6 +126,56 @@ function dragAction(): Action {
   };
 }
 
+/** The three point gestures share a shape: resolve the widget, convert the
+ *  world point to screen, deliver one event. */
+function pointAction(
+  id: string,
+  label: string,
+  type: 'doubleclick' | 'contextmenu' | 'longpress',
+): Action {
+  return {
+    id,
+    label,
+    requires: ['view'],
+    invoker: {
+      timing: 'immediate' as const,
+      run: (deps, params) => {
+        const p = params as { worldX?: number; worldY?: number; affordance?: unknown } | undefined;
+        const widget = widgetIn(p?.affordance);
+        if (!widget || p?.worldX === undefined || p.worldY === undefined) return;
+        const [x, y] = toScreen(deps, p.worldX, p.worldY);
+        widget.onPointer({ type, x, y, native: null } satisfies HudPointerEvent);
+      },
+    },
+  };
+}
+
+function wheelAction(): Action {
+  return {
+    id: 'hud.wheel',
+    label: 'HUD — wheel over widget',
+    invoker: {
+      timing: 'immediate' as const,
+      run: (_deps, params) => {
+        const p = params as {
+          clientX?: number; clientY?: number;
+          deltaX?: number; deltaY?: number; affordance?: unknown;
+        } | undefined;
+        const widget = widgetIn(p?.affordance);
+        if (!widget || p?.clientX === undefined || p.clientY === undefined) return;
+        // A wheel's client coords are already canvas-local, the space widgets
+        // lay out in — no view conversion, unlike the point gestures.
+        widget.onPointer({
+          type: 'wheel',
+          x: p.clientX, y: p.clientY,
+          deltaX: p.deltaX ?? 0, deltaY: p.deltaY ?? 0,
+          native: null,
+        } satisfies HudPointerEvent);
+      },
+    },
+  };
+}
+
 /**
  * The HUD's input routing as a `Contribution` — bindings and actions, no
  * focus. It declares `claimed` eligibility: the HUD is chrome floating over
@@ -120,8 +187,7 @@ function dragAction(): Action {
  * <SceneCanvas ref={ref} ambient={[hudContribution]} … />
  * ```
  *
- * Three bindings, because the widget protocol (`down` / `move` / `up`) spans
- * two gesture kinds:
+ * The press protocol alone spans three gesture kinds:
  *
  * - `pointerDown` sends `down` at press time, before the dispatcher knows
  *   whether this becomes a click or a drag. A button that highlights on press
@@ -130,10 +196,9 @@ function dragAction(): Action {
  *   the common case for a button.
  * - `drag` pumps `move` and closes with `up` / `cancel`.
  *
- * All three gate on the affordance kind, so they fire only for presses the
- * HUD's own layer hit-test claimed. That gate is also what keeps them in
- * contention: the layer claims exclusively, and an exclusive claim bars every
- * binding whose target doesn't consult the affordance.
+ * The other four are one binding each. Every binding gates on both the
+ * affordance kind and the hit widget's claim set, so it fires only for input
+ * the HUD's own layer claimed *and* the widget under it consumes.
  *
  * This replaces a `DragChannel` the HUD's `hitTest` used to hand back for the
  * tool-routing dispatcher to drive. That dispatcher is gone.
@@ -142,11 +207,21 @@ export function createHudContribution(): Contribution {
   return {
     id: 'weasel-hud',
     eligibility: { claimed: true },
-    actions: [pressAction(), releaseAction(), dragAction()],
+    actions: [
+      pressAction(), releaseAction(), dragAction(),
+      pointAction('hud.doubleClick', 'HUD — double-click widget', 'doubleclick'),
+      pointAction('hud.contextMenu', 'HUD — right-click widget', 'contextmenu'),
+      pointAction('hud.longPress', 'HUD — long-press widget', 'longpress'),
+      wheelAction(),
+    ],
     bindings: [
-      { spec: { kind: 'pointerDown', target: { kindOf: isHudHit }, mods: MODS_ANY }, actionId: 'hud.press' },
-      { spec: { kind: 'click', target: { kindOf: isHudHit }, mods: MODS_ANY }, actionId: 'hud.release' },
-      { spec: { kind: 'drag', target: { kindOf: isHudHit }, mods: MODS_ANY }, actionId: 'hud.drag' },
+      { spec: { kind: 'pointerDown', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.press' },
+      { spec: { kind: 'click', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.release' },
+      { spec: { kind: 'drag', target: { kindOf: hudHitClaiming('pointer') }, mods: MODS_ANY }, actionId: 'hud.drag' },
+      { spec: { kind: 'doubleClick', target: { kindOf: hudHitClaiming('doubleClick') }, mods: MODS_ANY }, actionId: 'hud.doubleClick' },
+      { spec: { kind: 'contextMenu', target: { kindOf: hudHitClaiming('contextMenu') }, mods: MODS_ANY }, actionId: 'hud.contextMenu' },
+      { spec: { kind: 'longPress', target: { kindOf: hudHitClaiming('longPress') }, mods: MODS_ANY }, actionId: 'hud.longPress' },
+      { spec: { kind: 'wheel', target: { kindOf: hudHitClaiming('wheel') }, mods: MODS_ANY }, actionId: 'hud.wheel' },
     ],
   };
 }

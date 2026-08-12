@@ -1,4 +1,4 @@
-import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
+import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { textCommand } from '@weasel-js/core';
 
@@ -55,8 +55,8 @@ export function createText(opts: TextOptions): TextWidget {
       )];
     },
     hitTest() { return false; },
-    claimsPointer: false,
-    onPointer(_e: HudPointerEvent): PointerClaim { return 'pass'; },
+    claims: [],
+    onPointer(_evt: HudPointerEvent): void {},
     dispose() {
       if (disposed) return;
       disposed = true;

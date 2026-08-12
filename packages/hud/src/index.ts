@@ -6,8 +6,8 @@ export type {
   WidgetBounds,
   HudDrawCtx,
   HudPointerEvent,
-  PointerClaim,
 } from './widget';
+export { DEFAULT_WIDGET_CLAIMS, claimsOf } from './widget';
 export type { HudHost } from './host';
 export { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
 export type { RectOptions, RectWidget } from './widgets/rect';

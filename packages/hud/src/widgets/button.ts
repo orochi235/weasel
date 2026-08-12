@@ -1,4 +1,4 @@
-import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
+import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommand } from '@weasel-js/core';
 
@@ -94,30 +94,34 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
       if (hidden) return false;
       return isInside(x, y);
     },
-    onPointer(evt: HudPointerEvent): PointerClaim {
+    onPointer(evt: HudPointerEvent): void {
       switch (evt.type) {
         case 'down':
           pressed = true;
           opts.onChange?.();
-          return 'claim';
+          break;
         case 'move': {
           const next = isInside(evt.x, evt.y);
           if (next !== pressed) { pressed = next; opts.onChange?.(); }
-          return 'pass';
+          break;
         }
         case 'up':
           if (pressed && isInside(evt.x, evt.y)) emit('press');
           if (pressed) { pressed = false; opts.onChange?.(); }
-          return 'pass';
+          break;
         case 'cancel':
           if (pressed) { pressed = false; opts.onChange?.(); }
-          return 'pass';
+          break;
         case 'hovermove':
           if (!hovering) { hovering = true; emit('hover'); opts.onChange?.(); }
-          return 'pass';
+          break;
         case 'hoverleave':
           if (hovering) { hovering = false; emit('leave'); opts.onChange?.(); }
-          return 'pass';
+          break;
+        // A double-click already fired two presses; the rest are claimed so
+        // they don't reach the scene, not because a button reacts to them.
+        default:
+          break;
       }
     },
     dispose() {
