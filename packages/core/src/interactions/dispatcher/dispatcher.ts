@@ -932,17 +932,28 @@ export function createDispatcher(opts?: {
               deltaY: event.deltaY,
               clientX: event.clientX,
               clientY: event.clientY,
+              affordance: event.affordance,
               ...resolved,
             };
           } else if (event.kind === 'click' || event.kind === 'doubleclick') {
             params = {
               worldX: event.worldX,
               worldY: event.worldY,
+              affordance: event.affordance,
               // Press point as well as release point — an action that places
               // geometry at the click wants the former. See `ClickEvent`.
               ...(event.kind === 'click'
-                ? { pressX: event.pressX, pressY: event.pressY, affordance: event.affordance }
+                ? { pressX: event.pressX, pressY: event.pressY }
                 : {}),
+              mods: modifiersOf(event),
+              ...resolved,
+            };
+          } else if (event.kind === 'contextmenu' || event.kind === 'longpress') {
+            params = {
+              worldX: event.kind === 'contextmenu' ? event.worldX : event.x,
+              worldY: event.kind === 'contextmenu' ? event.worldY : event.y,
+              affordance: event.affordance,
+              bodyTarget: event.bodyTarget,
               mods: modifiersOf(event),
               ...resolved,
             };

@@ -946,3 +946,60 @@ describe('createDispatcher', () => {
     });
   });
 });
+
+describe('immediate params for affordance-carrying kinds', () => {
+  const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
+  const affordance = { kind: 'layer:weasel-hud' };
+
+  function paramsFor(spec: Action['defaultBinding'], event: InputEvent): Record<string, unknown> {
+    const run = vi.fn();
+    const action: Action = {
+      id: 'probe', label: 'probe', defaultBinding: spec,
+      invoker: { timing: 'immediate', run },
+    };
+    const dispatcher = createDispatcher();
+    dispatcher.handleInput(event, makeCtx({ actions: makeRegistry([action]) }));
+    expect(run).toHaveBeenCalledOnce();
+    return run.mock.calls[0][1] as Record<string, unknown>;
+  }
+
+  it('a contextmenu invoker sees world coords and the affordance', () => {
+    const params = paramsFor(
+      { kind: 'contextMenu' },
+      { kind: 'contextmenu', worldX: 3, worldY: 4, affordance, ...noMods } as unknown as InputEvent,
+    );
+    expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
+  });
+
+  it('a longpress invoker sees world coords and the affordance', () => {
+    const params = paramsFor(
+      { kind: 'longPress' },
+      { kind: 'longpress', x: 3, y: 4, affordance, ...noMods } as unknown as InputEvent,
+    );
+    expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
+  });
+
+  it('a wheel invoker sees the affordance alongside the deltas', () => {
+    const params = paramsFor(
+      { kind: 'wheel', direction: 'down' },
+      { kind: 'wheel', deltaX: 0, deltaY: 10, clientX: 1, clientY: 2, affordance, ...noMods } as unknown as InputEvent,
+    );
+    expect(params).toMatchObject({ deltaX: 0, deltaY: 10, clientX: 1, clientY: 2, affordance });
+  });
+
+  it('a doubleclick invoker sees the affordance', () => {
+    const params = paramsFor(
+      { kind: 'doubleClick' },
+      { kind: 'doubleclick', worldX: 3, worldY: 4, affordance, ...noMods } as unknown as InputEvent,
+    );
+    expect(params).toMatchObject({ worldX: 3, worldY: 4, affordance });
+  });
+
+  it('a click invoker keeps its press point', () => {
+    const params = paramsFor(
+      { kind: 'click' },
+      { kind: 'click', worldX: 3, worldY: 4, pressX: 1, pressY: 2, affordance, ...noMods } as unknown as InputEvent,
+    );
+    expect(params).toMatchObject({ worldX: 3, worldY: 4, pressX: 1, pressY: 2, affordance });
+  });
+});
