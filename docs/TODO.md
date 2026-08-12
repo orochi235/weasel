@@ -19,13 +19,14 @@ Priority tags:
 ### Next up
 
 - **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
-- **`targetConsultsAffordance` is syntactic** — the exclusive-claim filter is
-  defeated by the kit's own `predicates.ts` helpers → [Tools & gestures](#tools--gestures)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
-> contribution record with declared eligibility. What it left open is the P2
-> immediately above.
+> contribution record with declared eligibility. Its two open follow-ups —
+> `targetConsultsAffordance` guessing from shape, and chrome opacity — closed
+> on 2026-08-12 with the HUD gesture-dispatch work
+> (`docs/superpowers/specs/2026-08-12-hud-gesture-dispatch-design.md`); what
+> each left behind is now P3 under [Tools & gestures](#tools--gestures).
 
 ### P2 — broad reuse / friction-likely
 
@@ -107,13 +108,15 @@ Priority tags:
   holding will do something. Recorded 2026-08-02, alongside the `longPress`
   gesture kind landing.
 
-- **(P2) Gesture dispatch over HUD elements.** Only the three bindings in
-  `createHudContribution` reach widgets, so a HUD element can be pressed, dragged and
-  hovered and nothing else — no double-click, no wheel, no long-press, no
-  right-click, no keyboard focus. A widget wanting any of them has no way to
-  ask. The cursor half of this item shipped 2026-08-10: widgets answer
-  `cursorAt(x, y)` and the claim carries it to the hover pump. Recorded
-  2026-08-09.
+- **(P3) HUD widgets have no keyboard focus.** The pointer family shipped
+  2026-08-12 (spec
+  `docs/superpowers/specs/2026-08-12-hud-gesture-dispatch-design.md`): a widget
+  declares `claims` over `ClaimableGesture`, an exclusive claim bars only the
+  gestures it names, and double-click / right-click / long-press / wheel all
+  reach widgets — wheel opt-in so scroll-to-zoom over a panel is unchanged.
+  What is left is focus: a focused-widget model on `Hud`, tab order, a key arm
+  on the widget protocol, focus-ring painting, and a precedence rule against
+  the canvas's window-level key listeners.
 
 - **(P3) Only `window` implements `cursorAt`.** `button`, `label`, `image`,
   `rect` and `text` don't, so hovering a HUD button while a drawing tool is
@@ -122,42 +125,28 @@ Priority tags:
   `cursor: 'pointer'` on button is the obvious next opt-in. Recorded
   2026-08-10.
 
-- **(P3) `Widget.claimsPointer` is static.** A widget that is decoration in one
-  mode and interactive in another can't flip it without being swapped out.
-  Fine while `rect` / `text` / `image` are unconditionally decorative; revisit
-  when a stateful-claims widget appears. Recorded 2026-08-10.
+- **(P3) `Widget.claims` is static.** A widget that is decoration in one mode
+  and interactive in another can't change what it consumes without being
+  swapped out. `claimsPointer` folded into `claims` on 2026-08-12, so this is
+  one field rather than two, but it is still a declaration read at hit-test
+  time. Fine while `rect` / `text` / `image` are unconditionally decorative;
+  revisit when a stateful-claims widget appears.
 
-- **(P2) `targetConsultsAffordance` is syntactic, and the kit ships four
-  counterexamples.** The exclusive-claim filter treats "has a `kindOf`" as
-  "consults the affordance". But `interactions/dispatcher/predicates.ts`'s
-  `isBody` / `isSelectedBody` / `isUnselectedBody` / `isEmpty` — the kit's own
-  canonical body-class predicates, the shape it *recommends* — read only the
-  second argument and never look at the hit. A binding written the way the kit
-  teaches survives the filter and can win a claimed press. Unexploited today
-  (`isBody` is bound only to `doubleClick`, which carries no affordance), but
-  the rule is defeated by the kit's own helpers, which is the wrong direction
-  for a rule to fail in. Either the predicates declare what they read, or the
-  filter stops guessing from shape. Recorded 2026-08-10.
-
-- **(P3) An exclusive claim doesn't bar `contextmenu` or `doubleclick`.** Those
-  events carry no affordance, so the filter never sees them and a right-click
-  or double-click on HUD chrome acts on the scene underneath; long-press falls
-  back to `contextmenu` for the same reason. Distinct from the gesture-dispatch
-  entry above, which is about widgets *receiving* those gestures — this is
-  about the claim failing to *bar* them. Recorded 2026-08-10.
+- **(P3) `targetConsultsAffordance` still guesses from shape.** The kit's four
+  body predicates now carry `readsAffordance: false` and the filter honors it
+  (2026-08-12), so the counterexamples the kit itself ships are handled — which
+  they had to be, since `doubleclick` now carries an affordance and
+  `enterPathEdit`'s `kindOf: isBody` would otherwise have entered path-edit
+  mode on a double-click over HUD chrome. A *consumer* predicate that reads
+  only `bodyTarget` and declares nothing still survives a claim that should
+  bar it. The open question is whether the filter should infer at all: require
+  the declaration, or have `TargetSpec` carry the answer instead of the
+  predicate.
 
 - **(P3) `composeAffordanceLayer` still returns `AffordanceBinding`.** The kit's
   own layer-composition helper can't declare a cursor or a claim, while
   `attachHud` can. Structurally assignable so nothing breaks, and it has no
   consumer outside its tests. Recorded 2026-08-10.
-
-- **(P3) `PointerClaim` is dead, and now has a live twin.** `onPointer`'s
-  `'claim' | 'pass'` return is discarded at every call site, while
-  `Widget.claimsPointer` does the job for real — so `rect` / `text` / `image`
-  decline the pointer twice, once in a field that works and once in a return
-  value that doesn't. A consumer will reasonably expect `return 'pass'` to pass
-  the press through. Either make the return live or delete it. Recorded
-  2026-08-10.
 
 - **(P3) Three unlinked enumerations of `TargetSpec` forms.** `targetRank` and
   `targetConsultsAffordance` (`interactions/dispatcher/matcher.ts`) and

@@ -35,22 +35,19 @@ does nothing. A dev-only warning names the owner the first time that happens for
 each owner, because the failure is otherwise silent.
 
 **What a claim does not reach.** Only gestures that carry an affordance are
-filtered. Wheel and keyboard events don't, so scroll-to-zoom over a HUD window
-still zooms the canvas — and neither do `contextmenu` or `doubleclick`, so
-right-clicking or double-clicking HUD chrome still acts on the scene beneath it.
-Long-press falls back to `contextmenu` for the same reason. Conversely the
-filter outranks hotkey scope as well as active scope, so holding space to pan no
-longer pans while the pointer is over HUD chrome.
+filtered, and keyboard events never do. Which pointer-family gestures carry one
+is settled by the per-kind claim work later in this release — see "A widget
+declares which gestures it consumes." The filter outranks hotkey scope as well
+as active scope, so holding space to pan no longer pans while the pointer is
+over HUD chrome.
 
-`@weasel-js/hud` claims exclusively, and `Widget` gains two optional members.
-`cursorAt(x, y)` resolves a cursor per point rather than from hover state;
-`hud.window()` implements it, so hovering a resize band shows `nwse-resize`
-instead of the active tool's cursor. `claimsPointer` lets a widget stay
-transparent to input: `rect`, `text`, `label` and `image` are decoration and set
-it `false`, so a backdrop widget no longer eats presses meant for the canvas or
-for widgets beneath it. That occlusion predates this release — a `hud.button()`
-under a decorative `rect` never received its press — but an exclusive claim
-would have widened it from "HUD elements occlude each other" to "HUD elements
-kill every tool underneath."
+`@weasel-js/hud` claims exclusively, and `Widget` gains `cursorAt(x, y)`, which
+resolves a cursor per point rather than from hover state; `hud.window()`
+implements it, so hovering a resize band shows `nwse-resize` instead of the
+active tool's cursor. A widget can also stay transparent to input — `rect`,
+`text`, `label` and `image` are decoration — so a backdrop widget no longer
+eats presses meant for the canvas or for widgets beneath it. That occlusion
+predates this release, but an exclusive claim would have widened it from "HUD
+elements occlude each other" to "HUD elements kill every tool underneath."
 
 `WindowWidget.cursor` is removed. Nothing read it; `cursorAt` replaces it.
