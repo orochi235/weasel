@@ -191,4 +191,19 @@ export interface LayerHit<TScratch = unknown> extends AffordanceBinding<TScratch
    *  affordance. Omitted means `'shared'` — today's behavior. Same name and
    *  meaning as `AffordanceHit.strength`, which it becomes. */
   strength?: 'exclusive' | 'shared';
+  /** Which gestures an exclusive claim bars. Omitted bars all of them. */
+  claimedKinds?: readonly ClaimableGesture[];
 }
+
+/**
+ * Gesture kinds an affordance claim can bar, in the spec vocabulary bindings
+ * are written in. `'pointer'` is one token because `pointerDown` / `click` /
+ * `drag` are a single press protocol — at the event level the first two are
+ * the same `kind: 'pointerdown'`, told apart only by `stage`.
+ */
+export type ClaimableGesture =
+  | 'pointer'
+  | 'doubleClick'
+  | 'contextMenu'
+  | 'longPress'
+  | 'wheel';

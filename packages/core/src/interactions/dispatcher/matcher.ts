@@ -7,6 +7,7 @@
 import { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase } from '@weasel-js/gestures';
 import type { GestureSpec, InputEvent, ModSpec, PhaseContext } from '@weasel-js/gestures';
 import type { GestureBinding } from '../actions/binding';
+import type { ClaimableGesture } from '../../affordances/types';
 
 export { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase };
 export type { InputEvent, PhaseContext };
@@ -97,14 +98,38 @@ function specTargetOf(spec: GestureSpec): unknown {
   return 'target' in spec ? spec.target : undefined;
 }
 
-function claimOf(e: InputEvent): { owner?: string; strength?: 'exclusive' | 'shared' } | undefined {
-  return ('affordance' in e ? e.affordance : undefined) as
-    { owner?: string; strength?: 'exclusive' | 'shared' } | undefined;
+interface Claim {
+  owner?: string;
+  strength?: 'exclusive' | 'shared';
+  claimedKinds?: readonly ClaimableGesture[];
 }
 
-/** `'exclusive'` when the event carries a claim that bars unnamed bindings. */
+function claimOf(e: InputEvent): Claim | undefined {
+  return ('affordance' in e ? e.affordance : undefined) as Claim | undefined;
+}
+
+/** Event kind → the claim token that covers it. `null` for events a positional
+ *  claim has no opinion about — keys, drops, pastes, multitouch. */
+function claimGestureOf(e: InputEvent): ClaimableGesture | null {
+  switch (e.kind) {
+    case 'pointerdown':
+    case 'click': return 'pointer';
+    case 'doubleclick': return 'doubleClick';
+    case 'contextmenu': return 'contextMenu';
+    case 'longpress': return 'longPress';
+    case 'wheel': return 'wheel';
+    default: return null;
+  }
+}
+
+/** `'exclusive'` when the event carries a claim that bars unnamed bindings
+ *  for this event's gesture. */
 function isExclusiveClaim(e: InputEvent): boolean {
-  return claimOf(e)?.strength === 'exclusive';
+  const claim = claimOf(e);
+  if (claim?.strength !== 'exclusive') return false;
+  const gesture = claimGestureOf(e);
+  if (gesture === null) return false;
+  return claim.claimedKinds === undefined || claim.claimedKinds.includes(gesture);
 }
 
 const warnedDeadClaims = new Set<string>();

@@ -10,6 +10,7 @@
  */
 
 import type { ActionBehavior, ModifierState, ResizeAnchor } from '../gestures/types';
+import type { ClaimableGesture } from '../../affordances/types';
 
 export type { ModifierState } from '../gestures/types';
 
@@ -50,6 +51,8 @@ export interface AffordanceHit {
    *  consults the affordance. `'shared'` (the default) competes on scope and
    *  specificity as bindings always have. */
   strength?: 'exclusive' | 'shared';
+  /** Which gestures an exclusive claim bars. Omitted bars all of them. */
+  claimedKinds?: readonly ClaimableGesture[];
   /** World-space fixed/pivot point. For resize: opposite corner. For rotate: pivot. */
   fixedPoint?: { x: number; y: number };
   /** Which nodes this affordance belongs to. */

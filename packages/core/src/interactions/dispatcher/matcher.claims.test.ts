@@ -139,3 +139,41 @@ describe('an exclusive claim no binding can receive warns in dev', () => {
     expect(warn.mock.calls[0][0]).toContain('exclusive claim by "almost-taken"');
   });
 });
+
+describe('per-kind claims', () => {
+  const wheelOn = (affordance: unknown): InputEvent => ({
+    kind: 'wheel', deltaX: 0, deltaY: 10, clientX: 0, clientY: 0,
+    altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    affordance,
+  } as unknown as InputEvent);
+
+  const viewportZoom: ScopedBinding = {
+    binding: { spec: { kind: 'wheel' }, actionId: 'viewport.zoom' },
+    scope: 'ambient',
+    ownerToolId: null,
+  };
+
+  it('a claim that lists only pointer does not bar a wheel binding', () => {
+    const e = wheelOn({ kind: 'layer:weasel-hud', strength: 'exclusive', claimedKinds: ['pointer'] });
+    const out = matchSorted(e, [viewportZoom], false, undefined, () => {});
+    expect(out.map((m) => m.binding.actionId)).toEqual(['viewport.zoom']);
+  });
+
+  it('a claim that lists wheel bars a wheel binding that ignores the affordance', () => {
+    const e = wheelOn({
+      kind: 'layer:weasel-hud', strength: 'exclusive', claimedKinds: ['pointer', 'wheel'],
+    });
+    expect(matchSorted(e, [viewportZoom], false, undefined, () => {})).toEqual([]);
+  });
+
+  it('omitted claimedKinds bars every kind, as before', () => {
+    const e = wheelOn({ kind: 'layer:weasel-hud', strength: 'exclusive' });
+    expect(matchSorted(e, [viewportZoom], false, undefined, () => {})).toEqual([]);
+  });
+
+  it('a shared claim never bars, whatever it lists', () => {
+    const e = wheelOn({ kind: 'layer:weasel-hud', strength: 'shared', claimedKinds: ['wheel'] });
+    const out = matchSorted(e, [viewportZoom], false, undefined, () => {});
+    expect(out.map((m) => m.binding.actionId)).toEqual(['viewport.zoom']);
+  });
+});
