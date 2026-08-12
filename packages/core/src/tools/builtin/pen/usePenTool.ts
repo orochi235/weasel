@@ -6,7 +6,7 @@ import type { Action } from 'interactions/actions/registry';
 import { ActionDisabledReason } from 'interactions/actions/registry';
 import type { ActionDeps, InvocationCtx } from 'interactions/actions/invoker';
 import type { ViewApi } from 'interactions/actions/depSchema';
-import { meanScale } from 'core/viewport/meanScale';
+import { withinPxRadius } from 'core/viewport/pxExtent';
 import { PenIcon } from '../../../icons';
 import { PathBuilder } from 'features/paths/builder';
 import type { PolygonPath } from 'features/paths/types';
@@ -80,8 +80,8 @@ export interface UsePenToolOptions<TPose> {
    *  ⌘-click / double-click, producing a compound path. */
   autoCommitOnClose?: boolean;
   /** Screen-px hit radius for "click first anchor to close". Default `8`.
-   *  Note: implemented in world space here (divided by view.scale at the
-   *  call site); aligns with `useSelectTool.handleHitRadius`. */
+   *  Measured as a screen-space circle, so it stays round under non-uniform
+   *  zoom; aligns with `useSelectTool.handleHitRadius`. */
   closeHitRadius?: number;
   /** Optional point snapper applied to every world-space coordinate the
    *  pen records or previews — anchor positions (corner clicks, smooth-
@@ -178,11 +178,6 @@ function mirrorHandle(
   return { x: 2 * anchor.x - out.x, y: 2 * anchor.y - out.y };
 }
 
-function dist(ax: number, ay: number, bx: number, by: number): number {
-  const dx = ax - bx, dy = ay - by;
-  return Math.hypot(dx, dy);
-}
-
 /**
  * Active-slot Tool: click + drag to build a `PolygonPath` Illustrator-style.
  *
@@ -244,12 +239,16 @@ export function usePenTool<TPose>(
     return fn ? fn({ x, y }) : { x, y };
   }, []);
 
-  /** World-space close-hit radius at the current zoom. */
-  const closeRadius = useCallback((deps: ActionDeps): number => {
-    const view = (deps.view as ViewApi | undefined)?.get();
-    const scale = view?.scale ?? { x: 1, y: 1 };
-    return optsRef.current.closeHitRadius / meanScale(scale);
-  }, []);
+  /** Is a world point within the close-hit radius of `(ax, ay)`? Measured as a
+   *  screen-space circle, so the zone stays round under non-uniform zoom. */
+  const withinCloseRadius = useCallback(
+    (deps: ActionDeps, ax: number, ay: number, wx: number, wy: number): boolean => {
+      const view = (deps.view as ViewApi | undefined)?.get();
+      const scale = view?.scale ?? { x: 1, y: 1 };
+      return withinPxRadius(ax - wx, ay - wy, optsRef.current.closeHitRadius, scale);
+    },
+    [],
+  );
 
   /**
    * Actions the pen owns, registered by `useToolActions` from inside the
@@ -280,7 +279,6 @@ export function usePenTool<TPose>(
             // so the snapped value is what the geometry records.
             const { x: wx, y: wy } = snap(p.pressX, p.pressY);
             const scratch = s();
-            const radius = closeRadius(deps);
 
             // Close-on-first-anchor (>= 3 anchors). With `autoCommitOnClose`
             // on (default) this commits right away so the closed region
@@ -289,7 +287,7 @@ export function usePenTool<TPose>(
             // commits on Enter / tool switch.
             if (scratch.current && scratch.current.anchors.length >= 3) {
               const first = scratch.current.anchors[0];
-              if (dist(first.x, first.y, wx, wy) <= radius) {
+              if (withinCloseRadius(deps, first.x, first.y, wx, wy)) {
                 scratch.current.closed = true;
                 scratch.finishedSubpaths.push(scratch.current);
                 scratch.current = null;
@@ -434,7 +432,7 @@ export function usePenTool<TPose>(
         },
       },
     ];
-  }, [commit, snap, closeRadius]);
+  }, [commit, snap, withinCloseRadius]);
 
   return useMemo(() => {
     return defineTool<PenScratch>({

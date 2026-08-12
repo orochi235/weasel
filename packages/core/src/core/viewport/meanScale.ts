@@ -1,13 +1,17 @@
 /**
- * Geometric mean of a per-axis scale. Used as a scalar fallback for chrome
- * hit-test radii and hairline stroke widths under non-uniform zoom.
- * Degenerates to `s.x` (or `s.y`) when the two axes are equal; otherwise
- * sits between them.
+ * Geometric mean of a per-axis scale. Degenerates to `s.x` (or `s.y`) when the
+ * two axes are equal; otherwise sits between them.
  *
- * Under non-uniform zoom a circular screen-pixel hit region projects to
- * an ellipse in world space (and vice versa). The geometric-mean
- * approximation is intentionally a v1 fallback — proper axis-aware
- * elliptical hit shapes are a future follow-up.
+ * **Not for hit-testing.** A screen-pixel length is not one world distance
+ * under non-uniform zoom, and collapsing it to a scalar makes a pickable
+ * region too generous on one axis and too mean on the other. Use `pxExtent`
+ * for a per-axis world length, or `withinPxBox` / `withinPxRadius` to compare
+ * in screen space directly. Chrome hit-tests moved off this in 2026-08.
+ *
+ * What legitimately remains: hairline stroke widths (`1 / meanScale`), where
+ * a single width is all the renderer accepts and no per-axis answer exists,
+ * and painted chrome placement, whose per-axis form doesn't separate under a
+ * rotated target.
  */
 export function meanScale(s: { x: number; y: number }): number {
   return Math.sqrt(s.x * s.y);

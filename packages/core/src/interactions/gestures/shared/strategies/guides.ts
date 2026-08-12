@@ -1,7 +1,7 @@
 import type { SnapStrategy } from '../../types';
 import type { Guide } from 'features/guides/types';
 import type { View } from 'core/viewport/view';
-import { meanScale } from 'core/viewport/meanScale';
+import { pxExtent } from 'core/viewport/pxExtent';
 import type { OriginProjection } from './grid';
 import { RECT_ORIGIN_PROJECTION } from './grid';
 
@@ -65,11 +65,10 @@ export function guideSnapStrategy<TPose>(
       const guides = getGuides();
       if (guides.length === 0) return null;
 
-      // Convert tolerance to world units. With no view, treat tolerance as
-      // already-world. With a view, divide by scale (px / (px/world) = world).
-      const worldTolerance = getView
-        ? tolerance / Math.max(1e-9, meanScale(getView().scale))
-        : tolerance;
+      // Convert tolerance to world units, per axis: a guide on the x axis is
+      // matched by a horizontal distance, so it answers to `scale.x` alone.
+      // With no view, treat tolerance as already-world.
+      const tol = getView ? pxExtent(tolerance, getView().scale) : { x: tolerance, y: tolerance };
 
       const o = proj.getOrigin(pose);
 
@@ -82,14 +81,14 @@ export function guideSnapStrategy<TPose>(
         if (g.axis === 'x') {
           const d = g.offset - o.x;
           const ad = Math.abs(d);
-          if (ad <= worldTolerance && ad < bestAbsDx) {
+          if (ad <= tol.x && ad < bestAbsDx) {
             bestAbsDx = ad;
             bestDx = d;
           }
         } else {
           const d = g.offset - o.y;
           const ad = Math.abs(d);
-          if (ad <= worldTolerance && ad < bestAbsDy) {
+          if (ad <= tol.y && ad < bestAbsDy) {
             bestAbsDy = ad;
             bestDy = d;
           }

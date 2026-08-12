@@ -5,7 +5,7 @@ import type {
 } from '../../../gestures/types';
 import type { Guide } from 'features/guides/types';
 import type { View } from 'core/viewport/view';
-import { meanScale } from 'core/viewport/meanScale';
+import { pxExtent } from 'core/viewport/pxExtent';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../../gestures/shared/strategies/guides';
 
 type ModKey = keyof ModifierState;
@@ -45,9 +45,9 @@ export function snapToGuides<TPose extends ResizePose>(
       const guides = args.getGuides();
       if (guides.length === 0) return;
 
-      const worldTolerance = getView
-        ? tolerance / Math.max(1e-9, meanScale(getView().scale))
-        : tolerance;
+      // Per axis: a vertical guide is matched by a horizontal distance, so it
+      // answers to `scale.x` alone.
+      const tol = getView ? pxExtent(tolerance, getView().scale) : { x: tolerance, y: tolerance };
 
       let { x, y, width, height } = pose;
       let changed = false;
@@ -61,7 +61,7 @@ export function snapToGuides<TPose extends ResizePose>(
           if (g.axis !== 'x') continue;
           const d = g.offset - movingX;
           const ad = Math.abs(d);
-          if (ad <= worldTolerance && ad < bestAbs) {
+          if (ad <= tol.x && ad < bestAbs) {
             bestAbs = ad;
             bestD = d;
           }
@@ -88,7 +88,7 @@ export function snapToGuides<TPose extends ResizePose>(
           if (g.axis !== 'y') continue;
           const d = g.offset - movingY;
           const ad = Math.abs(d);
-          if (ad <= worldTolerance && ad < bestAbs) {
+          if (ad <= tol.y && ad < bestAbs) {
             bestAbs = ad;
             bestD = d;
           }

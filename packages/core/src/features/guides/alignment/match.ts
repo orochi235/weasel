@@ -61,14 +61,19 @@ function bestAxis(
  * lines. Returns the per-axis snap delta and the matched candidate line(s).
  * The two axes resolve independently; on each axis the closest in-tolerance
  * (feature, candidate) pair wins.
+ *
+ * `worldTolerance` is per axis because a screen-pixel tolerance is not one
+ * world distance under non-uniform zoom — and each axis here is matched by a
+ * distance along that axis alone, so there is an exact answer rather than an
+ * approximation. Pass the same number twice for a world-space tolerance.
  */
 export function matchAlignment(
   bounds: AlignBounds,
   candidates: readonly Guide[],
-  worldTolerance: number,
+  worldTolerance: { x: number; y: number },
   anchors: { x: readonly AlignAnchor[]; y: readonly AlignAnchor[] },
 ): AlignMatchResult {
-  const x = bestAxis(bounds, 'x', anchors.x, candidates, worldTolerance);
-  const y = bestAxis(bounds, 'y', anchors.y, candidates, worldTolerance);
+  const x = bestAxis(bounds, 'x', anchors.x, candidates, worldTolerance.x);
+  const y = bestAxis(bounds, 'y', anchors.y, candidates, worldTolerance.y);
   return { dx: x.delta, dy: y.delta, activeX: x.guide, activeY: y.guide };
 }

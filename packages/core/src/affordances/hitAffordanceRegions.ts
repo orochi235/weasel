@@ -16,7 +16,7 @@
  */
 
 import type { View } from 'core/viewport/view';
-import { meanScale } from 'core/viewport/meanScale';
+import { pxExtent, withinPxBox } from 'core/viewport/pxExtent';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import { poseRotationOf } from 'features/paths/poseRotation';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
@@ -180,10 +180,10 @@ export function annulusSemiAxes(
 ): { rx: number; ry: number } {
   const bandPx = shape.minBandPx ?? 0;
   if (bandPx === 0) return { rx: shape.rx, ry: shape.ry };
-  const band = bandPx / meanScale(view.scale);
+  const band = pxExtent(bandPx, view.scale);
   return {
-    rx: Math.max(shape.rx, shape.innerWidth / 2 + band),
-    ry: Math.max(shape.ry, shape.innerHeight / 2 + band),
+    rx: Math.max(shape.rx, shape.innerWidth / 2 + band.x),
+    ry: Math.max(shape.ry, shape.innerHeight / 2 + band.y),
   };
 }
 
@@ -202,9 +202,12 @@ export function hitRegion(
     // square, and the hit zone should match what the user sees. (The old
     // hand-written classifier used a circle here, which made the corners of
     // an 8px handle unclickable.)
-    const radiusWorld = region.shape.hitRadiusPx / meanScale(view.scale);
-    return Math.abs(local.x - region.shape.x) <= radiusWorld
-        && Math.abs(local.y - region.shape.y) <= radiusWorld;
+    //
+    // Compared in screen space, where that square is axis-aligned. Testing it
+    // in the target's local frame instead would tilt it under a rotated
+    // target and stretch it under non-uniform zoom.
+    const anchor = localToWorld(xf, region.shape.x, region.shape.y);
+    return withinPxBox(anchor.x - wx, anchor.y - wy, region.shape.hitRadiusPx, view.scale);
   }
   if (region.shape.kind === 'annulus') {
     const s = region.shape;

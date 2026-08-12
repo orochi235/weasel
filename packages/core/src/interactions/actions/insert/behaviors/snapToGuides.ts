@@ -5,7 +5,7 @@ import type {
 } from '../../../gestures/types';
 import type { Guide } from 'features/guides/types';
 import type { View } from 'core/viewport/view';
-import { meanScale } from 'core/viewport/meanScale';
+import { pxExtent } from 'core/viewport/pxExtent';
 import { DEFAULT_GUIDE_TOLERANCE_PX } from '../../../gestures/shared/strategies/guides';
 
 type ModKey = keyof ModifierState;
@@ -25,7 +25,7 @@ export interface SnapToGuidesInsertArgs {
 function snapPoint(
   p: InsertPoint,
   guides: readonly Guide[],
-  worldTolerance: number,
+  tol: { x: number; y: number },
 ): InsertPoint | null {
   let bestDx = 0;
   let bestAbsDx = Infinity;
@@ -35,14 +35,14 @@ function snapPoint(
     if (g.axis === 'x') {
       const d = g.offset - p.x;
       const ad = Math.abs(d);
-      if (ad <= worldTolerance && ad < bestAbsDx) {
+      if (ad <= tol.x && ad < bestAbsDx) {
         bestAbsDx = ad;
         bestDx = d;
       }
     } else {
       const d = g.offset - p.y;
       const ad = Math.abs(d);
-      if (ad <= worldTolerance && ad < bestAbsDy) {
+      if (ad <= tol.y && ad < bestAbsDy) {
         bestAbsDy = ad;
         bestDy = d;
       }
@@ -67,8 +67,10 @@ export function snapToGuides<TPose>(
   const getView = args.getView;
   const bypassKey = args.bypassKey;
 
-  const computeWorldTol = (): number =>
-    getView ? tolerance / Math.max(1e-9, meanScale(getView().scale)) : tolerance;
+  // Per axis: a vertical guide is matched by a horizontal distance, so it
+  // answers to `scale.x` alone.
+  const computeWorldTol = (): { x: number; y: number } =>
+    getView ? pxExtent(tolerance, getView().scale) : { x: tolerance, y: tolerance };
 
   return {
     onStart(ctx) {

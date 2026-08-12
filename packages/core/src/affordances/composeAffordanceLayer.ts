@@ -4,7 +4,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
-import { meanScale } from 'core/viewport/meanScale';
+import { pxExtent } from 'core/viewport/pxExtent';
 import type { DebugSink } from '../debug/types';
 import type { FillStyle, Stroke } from 'core/paint-types';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
@@ -119,19 +119,17 @@ function recordRegionHitbox(
 ): void {
   if (region.shape.kind === 'point') {
     const w = localToWorld(xf, region.shape.x, region.shape.y);
-    const r = region.shape.hitRadiusPx / meanScale(view.scale);
-    // Square hit (composeAffordanceLayer uses Manhattan-style abs<=r) but
-    // the kit's only HitShape primitive for a square hit centered on a
-    // point is rect, so emit a rotation-aware rect of side 2r centered on
-    // the world anchor. Keeps the visualization faithful to the actual
-    // hit-test region.
+    const e = pxExtent(region.shape.hitRadiusPx, view.scale);
+    // Square hit, but a square on *screen* — so the world-space rect is
+    // per-axis and carries no rotation, however the target is rotated. The
+    // kit's only HitShape primitive for a square hit centered on a point is
+    // rect; this keeps the visualization faithful to `hitRegion`.
     debug.recordHitbox(affordanceId, 'handle', {
       kind: 'rect',
-      x: w.x - r,
-      y: w.y - r,
-      width: r * 2,
-      height: r * 2,
-      ...(xf.identity ? {} : { rotation: Math.atan2(xf.sin, xf.cos) }),
+      x: w.x - e.x,
+      y: w.y - e.y,
+      width: e.x * 2,
+      height: e.y * 2,
     });
     return;
   }
@@ -212,7 +210,7 @@ function paintRegion(
     // Convert the screen-px inset to target-local units so it visually
     // matches at any zoom. `localToWorld` is rotation+translation (no
     // scale), so target-local units equal world units for ring math.
-    const insetLocal = (paint.insetPx ?? 0) / meanScale(view.scale);
+    const insetLocal = pxExtent(paint.insetPx ?? 0, view.scale);
     // Same `minBandPx` clamp the hit-test applies, so the ring you can see is
     // the ring you can grab.
     const cmd = annulusCommand(s, annulusSemiAxes(s, view), insetLocal, xf, viewT, paint.fill, paint.stroke);
@@ -241,20 +239,20 @@ function paintRegion(
 function annulusCommand(
   shape: Extract<AffordanceRegion['shape'], { kind: 'annulus' }>,
   semiAxes: { rx: number; ry: number },
-  insetLocal: number,
+  insetLocal: { x: number; y: number },
   xf: TargetTransform,
   viewT: ReturnType<typeof viewToTransform>,
   fill: FillStyle | undefined,
   stroke: Stroke | undefined,
 ): DrawCommand | null {
-  const rx = semiAxes.rx - insetLocal;
-  const ry = semiAxes.ry - insetLocal;
+  const rx = semiAxes.rx - insetLocal.x;
+  const ry = semiAxes.ry - insetLocal.y;
   if (rx <= 0 || ry <= 0) return null;
   const cx = shape.cx;
   const cy = shape.cy;
   // Expanded inner rect (still in target-local coords).
-  const rectHW = shape.innerWidth / 2 + insetLocal;
-  const rectHH = shape.innerHeight / 2 + insetLocal;
+  const rectHW = shape.innerWidth / 2 + insetLocal.x;
+  const rectHH = shape.innerHeight / 2 + insetLocal.y;
   // Each petal exists only when the corresponding rect edge actually
   // intersects the ellipse interior — otherwise the rect already
   // extends past the ellipse on that axis and there's no band to show.

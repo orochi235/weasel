@@ -5,7 +5,7 @@ import type {
   MoveBehavior,
   ResizePose,
 } from 'interactions/gestures/types';
-import { meanScale } from 'core/viewport/meanScale';
+import { pxExtent } from 'core/viewport/pxExtent';
 import { unionBounds } from 'features/groups/unionBounds';
 import type {
   AlignAnchor,
@@ -23,9 +23,9 @@ export interface AlignMoveArgs<TPose> extends AlignmentBehaviorBase {
 const activeList = (m: { activeX: Guide | null; activeY: Guide | null }): Guide[] =>
   [m.activeX, m.activeY].filter((g): g is Guide => g !== null);
 
-function worldTol(base: AlignmentBehaviorBase): number {
+function worldTol(base: AlignmentBehaviorBase): { x: number; y: number } {
   const t = base.tolerance ?? 6;
-  return base.getView ? t / Math.max(1e-9, meanScale(base.getView().scale)) : t;
+  return base.getView ? pxExtent(t, base.getView().scale) : { x: t, y: t };
 }
 
 /** Move behavior: snap the dragged selection's union box (edges + center) to
