@@ -88,9 +88,9 @@ describe('window widget', () => {
     expect(win.hitTest(99, 100)).toBe(false);
   });
 
-  it('claims every press so nothing falls through to the scene', () => {
+  it('takes the default claim set, so no press falls through to the scene', () => {
     const win = createWindow(opts);
-    expect(win.onPointer({ type: 'down', x: 200, y: 200, native: null })).toBe('claim');
+    expect(win.claims).toBeUndefined();
   });
 
   it('drags the titlebar to move, and reports via onMove', () => {

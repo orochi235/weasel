@@ -4,7 +4,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
 import { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
-import type { Widget, HudPointerEvent } from './widget';
+import { claimsOf, type Widget, type HudPointerEvent } from './widget';
 import type { HudHitPayload } from './tool';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
 
@@ -42,7 +42,7 @@ export function attachHud(
       // Decoration is skipped rather than downgraded: a hit at all would let
       // `hud.press` consume the press, and the walk has to keep descending to
       // whatever is beneath — another widget, or the scene.
-      if (w.claimsPointer === false) continue;
+      if (claimsOf(w).length === 0) continue;
       if (!w.hidden && w.hitTest(sx, sy)) return w;
     }
     return null;
@@ -99,6 +99,7 @@ export function attachHud(
       return {
         initialScratch: { widget: hit },
         strength: 'exclusive',
+        claimedKinds: claimsOf(hit),
         ...(hit.cursorAt ? { cursor: hit.cursorAt(sx, sy) } : {}),
       } satisfies LayerHit<HudHitPayload>;
     },

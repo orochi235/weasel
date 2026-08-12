@@ -70,6 +70,9 @@ export interface WheelEvent extends EventModifiers {
   deltaY: number;
   clientX: number;
   clientY: number;
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
 }
 
 /**
@@ -212,6 +215,8 @@ export interface DoubleClickEvent extends EventModifiers {
   target?: unknown;
   worldX?: number;
   worldY?: number;
+  /** Affordance the originating press landed on, replayed from it. */
+  affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
 }
@@ -220,6 +225,10 @@ export interface DoubleClickEvent extends EventModifiers {
 export interface ContextMenuEvent extends EventModifiers {
   kind: 'contextmenu';
   target?: unknown;
+  /** World-space position of the request. */
+  worldX?: number;
+  worldY?: number;
+  affordance?: unknown;
   bodyTarget?: BodyTarget;
   bodyKind?: BodyKind;
 }

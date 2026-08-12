@@ -3,8 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import React from 'react';
 import { SceneCanvas, useScene, useSelection } from '@weasel-js/core';
-import type { BuiltinToolId, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
+import type { BuiltinToolId, Contribution, SceneCanvasApi, SelectionApi } from '@weasel-js/core';
 import { useHud, useHudContribution } from './react';
+import type { ClaimableGesture } from '@weasel-js/core';
+import type { HudPointerEvent, Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
@@ -36,8 +38,11 @@ interface Empty { id: string }
  * `useHudContribution()` bindings gate on that.
  */
 function Harness(
-  { apiOut, initialActiveTool, items }:
-  { apiOut: HarnessApi; initialActiveTool?: BuiltinToolId; items?: readonly Empty[] },
+  { apiOut, initialActiveTool, items, extraAmbient }:
+  {
+    apiOut: HarnessApi; initialActiveTool?: BuiltinToolId; items?: readonly Empty[];
+    extraAmbient?: readonly Contribution[];
+  },
 ) {
   const ref = React.useRef<SceneCanvasApi>(null);
   const hud = useHud(ref);
@@ -56,7 +61,7 @@ function Harness(
       scene={scene}
       selection={selection}
       layers={{}}
-      ambient={[hudTool]}
+      ambient={[hudTool, ...(extraAmbient ?? [])]}
       {...(initialActiveTool
         ? { initialActiveTool, defaultTools: ['select', initialActiveTool] }
         : {})}
@@ -66,9 +71,19 @@ function Harness(
 
 async function mount(
   apiOut: HarnessApi,
-  opts: { initialActiveTool?: BuiltinToolId; items?: readonly Empty[] } = {},
+  opts: {
+    initialActiveTool?: BuiltinToolId; items?: readonly Empty[];
+    extraAmbient?: readonly Contribution[];
+  } = {},
 ) {
-  const r = render(<Harness apiOut={apiOut} initialActiveTool={opts.initialActiveTool} items={opts.items} />);
+  const r = render(
+    <Harness
+      apiOut={apiOut}
+      initialActiveTool={opts.initialActiveTool}
+      items={opts.items}
+      extraAmbient={opts.extraAmbient}
+    />,
+  );
   await act(async () => {});  // let useHud's attach effect run
   return r;
 }
@@ -292,5 +307,155 @@ describe('decorative widgets stay transparent to input', () => {
     });
 
     expect(apiOut.press).toHaveBeenCalledTimes(1);
+  });
+});
+
+/**
+ * The HUD's layer claims exclusively. These pin what that claim now means:
+ * the gestures a widget consumes stop at the chrome, and the ones it doesn't
+ * reach the scene as if the chrome weren't there.
+ */
+describe('chrome opacity is per gesture', () => {
+  /** Stands in for a scene-level ambient binding — `viewport.zoom`, a
+   *  right-click menu. Declares no target, so it does not consult the
+   *  affordance and an exclusive claim is entitled to bar it. */
+  function sceneContribution(
+    kind: 'contextMenu' | 'wheel' | 'doubleClick',
+    run: () => void,
+  ): Contribution {
+    return {
+      id: `scene-${kind}`,
+      eligibility: { always: true },
+      actions: [{
+        id: `scene.${kind}`,
+        label: `scene ${kind}`,
+        invoker: { timing: 'immediate' as const, run },
+      }],
+      bindings: [{ spec: { kind }, actionId: `scene.${kind}` }],
+    };
+  }
+
+  function widgetEvents() {
+    const seen: HudPointerEvent[] = [];
+    return { seen, sink: (evt: HudPointerEvent) => { seen.push(evt); } };
+  }
+
+  /** A bare widget over the top-left corner, so (30, 20) is inside it. */
+  function panel(claims: readonly ClaimableGesture[] | undefined, sink: (e: HudPointerEvent) => void): Widget {
+    return {
+      id: 'panel',
+      bounds: { x: 10, y: 10, w: 60, h: 24 },
+      hidden: false,
+      draw: () => [],
+      hitTest: (x, y) => x >= 10 && x < 70 && y >= 10 && y < 34,
+      ...(claims !== undefined ? { claims } : {}),
+      onPointer: sink,
+      dispose: () => {},
+    };
+  }
+
+  it('a right-click on chrome does not reach a scene binding', async () => {
+    const sceneRun = vi.fn();
+    const api: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { seen, sink } = widgetEvents();
+    const { container } = await mount(api, {
+      extraAmbient: [sceneContribution('contextMenu', sceneRun)],
+    });
+    act(() => { api.hudRef.current!.add(panel(undefined, sink)); });
+
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      canvas.dispatchEvent(Object.assign(
+        new Event('contextmenu', { bubbles: true, cancelable: true }),
+        { clientX: 30, clientY: 20 },
+      ));
+    });
+
+    expect(sceneRun).not.toHaveBeenCalled();
+    expect(seen.map((e) => e.type)).toContain('contextmenu');
+  });
+
+  it('a right-click off chrome still reaches the scene binding', async () => {
+    const sceneRun = vi.fn();
+    const api: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { seen, sink } = widgetEvents();
+    const { container } = await mount(api, {
+      extraAmbient: [sceneContribution('contextMenu', sceneRun)],
+    });
+    act(() => { api.hudRef.current!.add(panel(undefined, sink)); });
+
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      canvas.dispatchEvent(Object.assign(
+        new Event('contextmenu', { bubbles: true, cancelable: true }),
+        { clientX: 150, clientY: 150 },
+      ));
+    });
+
+    expect(sceneRun).toHaveBeenCalledTimes(1);
+    expect(seen).toEqual([]);
+  });
+
+  it('a wheel over a widget that does not claim it still reaches the scene', async () => {
+    const zoom = vi.fn();
+    const api: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { seen, sink } = widgetEvents();
+    const { container } = await mount(api, {
+      extraAmbient: [sceneContribution('wheel', zoom)],
+    });
+    act(() => { api.hudRef.current!.add(panel(undefined, sink)); });
+
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      canvas.dispatchEvent(Object.assign(
+        new Event('wheel', { bubbles: true, cancelable: true }),
+        { clientX: 30, clientY: 20, deltaX: 0, deltaY: 10 },
+      ));
+    });
+
+    expect(zoom).toHaveBeenCalledTimes(1);
+    expect(seen.map((e) => e.type)).not.toContain('wheel');
+  });
+
+  it('a wheel over a widget that claims it reaches the widget, not the scene', async () => {
+    const zoom = vi.fn();
+    const api: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { seen, sink } = widgetEvents();
+    const { container } = await mount(api, {
+      extraAmbient: [sceneContribution('wheel', zoom)],
+    });
+    act(() => { api.hudRef.current!.add(panel(['pointer', 'wheel'], sink)); });
+
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      canvas.dispatchEvent(Object.assign(
+        new Event('wheel', { bubbles: true, cancelable: true }),
+        { clientX: 30, clientY: 20, deltaX: 0, deltaY: 10 },
+      ));
+    });
+
+    expect(zoom).not.toHaveBeenCalled();
+    expect(seen.map((e) => e.type)).toEqual(['wheel']);
+  });
+
+  it('a double-click on chrome does not reach a scene binding', async () => {
+    const sceneRun = vi.fn();
+    const api: HarnessApi = { press: vi.fn(), hudRef: { current: null } };
+    const { seen, sink } = widgetEvents();
+    const { container } = await mount(api, {
+      extraAmbient: [sceneContribution('doubleClick', sceneRun)],
+    });
+    act(() => { api.hudRef.current!.add(panel(undefined, sink)); });
+
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      for (let i = 0; i < 2; i++) {
+        canvas.dispatchEvent(makePointerEvent('pointerdown', { clientX: 30, clientY: 20 }));
+        canvas.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 20 }));
+      }
+    });
+
+    expect(sceneRun).not.toHaveBeenCalled();
+    expect(seen.map((e) => e.type)).toContain('doubleclick');
   });
 });

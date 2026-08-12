@@ -13,12 +13,16 @@ describe('GESTURE_DESCRIPTORS', () => {
     expect(d.arg).toBeUndefined();
   });
 
-  it('wheel has no target and a direction arg with default "*"', () => {
+  it('wheel has a target and a direction arg with default "*"', () => {
     const d = getGestureDescriptor('wheel');
-    expect(d.hasTarget).toBe(false);
+    expect(d.hasTarget).toBe(true);
     expect(d.arg?.name).toBe('direction');
     expect(d.arg?.values).toEqual(['up', 'down', '*']);
     expect(d.arg?.default).toBe('*');
+  });
+
+  it('keyDown has no target', () => {
+    expect(getGestureDescriptor('keyDown').hasTarget).toBe(false);
   });
 
   it('keyDown has no target and a free-form key arg', () => {

@@ -25,8 +25,8 @@ describe('button widget', () => {
     const press = vi.fn();
     b.on('press', press);
 
-    expect(b.onPointer({ type: 'down', x: 5, y: 5, native: null })).toBe('claim');
-    expect(b.onPointer({ type: 'up', x: 5, y: 5, native: null })).toBe('pass');
+    b.onPointer({ type: 'down', x: 5, y: 5, native: null });
+    b.onPointer({ type: 'up', x: 5, y: 5, native: null });
     expect(press).toHaveBeenCalledTimes(1);
   });
 

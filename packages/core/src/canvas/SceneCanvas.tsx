@@ -2257,6 +2257,7 @@ function GestureDispatcherMounter({
           kind: `layer:${extra.layerId}`,
           owner: extra.layerId,
           strength: claim.strength ?? 'shared',
+          ...(claim.claimedKinds !== undefined ? { claimedKinds: claim.claimedKinds } : {}),
           ...(claim.cursor !== undefined ? { cursor: claim.cursor } : {}),
           ...(claim.initialScratch !== undefined ? { payload: claim.initialScratch } : {}),
         };

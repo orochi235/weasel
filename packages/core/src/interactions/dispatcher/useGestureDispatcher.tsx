@@ -428,6 +428,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ctrlKey: down.ctrlKey,
         metaKey: down.metaKey,
         shiftKey: down.shiftKey,
+        ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
         ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
         ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
       };
@@ -438,12 +439,16 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         y: down.worldY,
         clientX: down.clientX,
         clientY: down.clientY,
-        ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
         ...shared,
       } as InputEvent);
 
       if (result === 'unhandled') {
-        dispatch({ kind: 'contextmenu', ...shared } as InputEvent);
+        dispatch({
+          kind: 'contextmenu',
+          worldX: down.worldX,
+          worldY: down.worldY,
+          ...shared,
+        } as InputEvent);
       }
     };
 
@@ -540,6 +545,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const [localX, localY] = rect
         ? clientToCanvasRect(rect, e.clientX, e.clientY)
         : [e.clientX, e.clientY];
+      const screenPoint = { x: e.clientX, y: e.clientY };
+      const affordance = affordanceAtRef.current?.(screenPoint) ?? undefined;
+      const body = classifyTargetRef.current?.(screenPoint);
       const ev: InputEvent = {
         kind: 'wheel',
         altKey: e.altKey,
@@ -550,6 +558,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         deltaY: e.deltaY,
         clientX: localX,
         clientY: localY,
+        ...(affordance !== undefined ? { affordance } : {}),
+        ...(body?.body !== undefined ? { bodyTarget: body.body } : {}),
+        ...(body?.kind !== undefined ? { bodyKind: body.kind } : {}),
       };
       const result = dispatch(ev);
       // When a binding claims the wheel (viewport.zoom on Cmd+wheel, viewport.pan
@@ -1014,6 +1025,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
             shiftKey: e.shiftKey,
             worldX: wClick.x,
             worldY: wClick.y,
+            ...(down.affordance !== undefined ? { affordance: down.affordance } : {}),
             ...(down.bodyTarget !== undefined ? { bodyTarget: down.bodyTarget } : {}),
             ...(down.bodyKind !== undefined ? { bodyKind: down.bodyKind } : {}),
           };
@@ -1066,8 +1078,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const onContextMenu = (e: MouseEvent) => {
       // Suppress native menu so tools/actions own the right-click UX.
       e.preventDefault();
-      const worldPoint = { x: e.clientX, y: e.clientY };
-      const menuBody = classifyTargetRef.current?.(worldPoint);
+      const screenPoint = { x: e.clientX, y: e.clientY };
+      // A secondary button never reaches `onPointerDown`, so unlike click and
+      // long-press there is no press to replay the classification from.
+      const affordance = affordanceAtRef.current?.(screenPoint) ?? undefined;
+      const menuBody = classifyTargetRef.current?.(screenPoint);
+      const w = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
         kind: 'contextmenu',
         target: e.target,
@@ -1075,6 +1091,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ctrlKey: e.ctrlKey,
         metaKey: e.metaKey,
         shiftKey: e.shiftKey,
+        worldX: w.x,
+        worldY: w.y,
+        ...(affordance !== undefined ? { affordance } : {}),
         ...(menuBody?.body !== undefined ? { bodyTarget: menuBody.body } : {}),
         ...(menuBody?.kind !== undefined ? { bodyKind: menuBody.kind } : {}),
       };

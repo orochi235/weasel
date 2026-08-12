@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { attachHud } from './attach';
 import { createHud } from './hud';
-import type { CanvasExtensionApi } from '@weasel-js/core';
+import type { CanvasExtensionApi, ClaimableGesture, LayerHit } from '@weasel-js/core';
+import { DEFAULT_WIDGET_CLAIMS, type Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font';
 
 function makeApi(): CanvasExtensionApi & { _layer?: import('../../core/src/core/layers/render').RenderLayer<unknown> } {
@@ -155,5 +156,67 @@ describe('attachHud', () => {
     // second window's content paint over the first window's border.
     expect(kinds.slice(0, 2)).toEqual(['group', 'group']);
     expect(kinds.indexOf('path')).toBeGreaterThan(kinds.lastIndexOf('group'));
+  });
+});
+
+describe('attachHud claims', () => {
+  beforeEach(() => {
+    _resetFontRegistryForTests();
+    global.fetch = vi.fn(async () => new Response('{"common":{"lineHeight":1},"info":{"face":"x","size":1},"chars":[],"kernings":[]}')) as never;
+    global.createImageBitmap = vi.fn(async () => ({} as ImageBitmap));
+  });
+
+  const IDENTITY = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+  const DIMS = { width: 100, height: 100 };
+
+  function widgetAt(id: string, claims?: readonly ClaimableGesture[]): Widget {
+    return {
+      id,
+      bounds: { x: 0, y: 0, w: 50, h: 50 },
+      hidden: false,
+      draw: () => [],
+      hitTest: () => true,
+      ...(claims !== undefined ? { claims } : {}),
+      onPointer: () => {},
+      dispose: () => {},
+    };
+  }
+
+  function hitAt(api: ReturnType<typeof makeApi>) {
+    return api._layer!.hitTest!(10, 10, undefined, IDENTITY, DIMS) as
+      (LayerHit<{ widget: Widget }> & { claimedKinds?: readonly ClaimableGesture[] }) | null;
+  }
+
+  it('the hit walk descends past a widget that claims nothing', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('under'));
+    hud.add(widgetAt('decoration', []));
+    expect(hitAt(api)?.initialScratch?.widget.id).toBe('under');
+  });
+
+  it('the layer hit carries the widget claim set', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('scroller', ['pointer', 'wheel']));
+    expect(hitAt(api)?.claimedKinds).toEqual(['pointer', 'wheel']);
+  });
+
+  it('a widget declaring nothing carries the default claim set', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('plain'));
+    expect(hitAt(api)?.claimedKinds).toEqual(DEFAULT_WIDGET_CLAIMS);
+  });
+
+  it('a HUD of nothing but decoration produces no hit at all', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('decoration', []));
+    expect(hitAt(api)).toBeNull();
   });
 });

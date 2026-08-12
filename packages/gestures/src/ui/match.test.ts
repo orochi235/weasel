@@ -664,3 +664,56 @@ describe('mimeMatchesGlob / matchIngestTypes — edge cases', () => {
     expect(matchIngestTypes([], [])).toBe(true);
   });
 });
+
+describe('wheel target', () => {
+  const hudAffordance = { kind: 'layer:weasel-hud' };
+  const isHud = { kindOf: (t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud' };
+
+  it('matches a kindOf predicate against the wheel affordance', () => {
+    const e: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData, affordance: hudAffordance };
+    expect(matchSpec(e, { kind: 'wheel', target: isHud }, false)).toBe(true);
+  });
+
+  it('declines when the affordance does not match', () => {
+    const e: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData };
+    expect(matchSpec(e, { kind: 'wheel', target: isHud }, false)).toBe(false);
+  });
+
+  it('a targetless wheel spec still matches any wheel', () => {
+    const e: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData, affordance: hudAffordance };
+    expect(matchSpec(e, { kind: 'wheel' }, false)).toBe(true);
+  });
+
+  it('reads bodyTarget for string-form targets', () => {
+    const e: InputEvent = { kind: 'wheel', ...noMods, ...noWheelData, bodyTarget: 'empty' };
+    expect(matchSpec(e, { kind: 'wheel', target: 'empty' }, false)).toBe(true);
+    expect(matchSpec(e, { kind: 'wheel', target: 'selected-body' }, false)).toBe(false);
+  });
+});
+
+describe('doubleClick / contextMenu resolve kindOf against the affordance', () => {
+  const isHud = { kindOf: (t: unknown) => (t as { kind?: string })?.kind === 'layer:weasel-hud' };
+  const isBodyish = { kindOf: (_t: unknown, body?: string) => body === 'selected-body' };
+  const hudAffordance = { kind: 'layer:weasel-hud' };
+
+  it('doubleClick reads the affordance, not the DOM target', () => {
+    const e: InputEvent = {
+      kind: 'doubleclick', target: { dom: true }, affordance: hudAffordance, ...noMods,
+    };
+    expect(matchSpec(e, { kind: 'doubleClick', target: isHud }, false)).toBe(true);
+  });
+
+  it('contextMenu reads the affordance, not the DOM target', () => {
+    const e: InputEvent = {
+      kind: 'contextmenu', target: { dom: true }, affordance: hudAffordance, ...noMods,
+    };
+    expect(matchSpec(e, { kind: 'contextMenu', target: isHud }, false)).toBe(true);
+  });
+
+  it('a body-class predicate still reads bodyTarget on both kinds', () => {
+    const dbl: InputEvent = { kind: 'doubleclick', bodyTarget: 'selected-body', ...noMods };
+    const ctx: InputEvent = { kind: 'contextmenu', bodyTarget: 'selected-body', ...noMods };
+    expect(matchSpec(dbl, { kind: 'doubleClick', target: isBodyish }, false)).toBe(true);
+    expect(matchSpec(ctx, { kind: 'contextMenu', target: isBodyish }, false)).toBe(true);
+  });
+});

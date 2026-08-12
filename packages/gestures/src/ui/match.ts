@@ -344,7 +344,7 @@ export function matchSpec(
       const direction = spec.direction ?? '*';
       if (direction === 'up' && !(e.deltaY < 0)) return false;
       if (direction === 'down' && !(e.deltaY > 0)) return false;
-      return true;
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'click': {
@@ -361,13 +361,13 @@ export function matchSpec(
     case 'doubleClick': {
       if (e.kind !== 'doubleclick') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.target, spec.target, e.bodyTarget, e.bodyKind);
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'contextMenu': {
       if (e.kind !== 'contextmenu') return false;
       if (!matchModifiers(e, spec.mods, isMac)) return false;
-      return matchTarget(e.target, spec.target, e.bodyTarget, e.bodyKind);
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'longPress': {

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { Action, InvocationCtx, View } from '@weasel-js/core';
+import type { Action, ClaimableGesture, InvocationCtx, View } from '@weasel-js/core';
 import { createHudContribution, HUD_AFFORDANCE_KIND } from './tool';
 import { scopeBindings } from '@weasel-js/core';
-import type { HudPointerEvent, PointerClaim, Widget } from './widget';
+import type { HudPointerEvent, Widget } from './widget';
 
 function stubWidget(seen: HudPointerEvent[]): Widget {
   return {
@@ -11,7 +11,7 @@ function stubWidget(seen: HudPointerEvent[]): Widget {
     hidden: false,
     draw: () => [],
     hitTest: () => true,
-    onPointer: (evt): PointerClaim => { seen.push(evt); return 'claim'; },
+    onPointer: (evt): void => { seen.push(evt); },
     dispose: () => {},
   };
 }
@@ -76,9 +76,101 @@ describe('createHudContribution eligibility', () => {
       focusedId: 'rect',
       heldTriggers: new Set<string>(),
     });
-    expect(scoped).toHaveLength(3);
-    expect(scoped.map((s) => s.scope)).toEqual(['ambient', 'ambient', 'ambient']);
-    expect(scoped.map((s) => s.binding.actionId))
-      .toEqual(['hud.press', 'hud.release', 'hud.drag']);
+    expect(scoped).toHaveLength(7);
+    expect(new Set(scoped.map((s) => s.scope))).toEqual(new Set(['ambient']));
+    expect(scoped.map((s) => s.binding.actionId)).toEqual([
+      'hud.press', 'hud.release', 'hud.drag',
+      'hud.doubleClick', 'hud.contextMenu', 'hud.longPress', 'hud.wheel',
+    ]);
+  });
+});
+
+describe('the non-pointer gestures', () => {
+  const deps = { view: { get: () => VIEW } };
+  const affordanceFor = (widget: Widget) => ({ kind: HUD_AFFORDANCE_KIND, payload: { widget } });
+
+  /** World (0,0) under VIEW (x: -100, y: -50, scale 2) lands at screen (200, 100). */
+  const SCREEN_OF_ORIGIN = { x: 200, y: 100 };
+
+  function runImmediate(id: string, params: Record<string, unknown>): void {
+    const invoker = actionById(id).invoker as { run(d: unknown, p: unknown): void };
+    invoker.run(deps, params);
+  }
+
+  it.each([
+    ['hud.doubleClick', 'doubleclick'],
+    ['hud.contextMenu', 'contextmenu'],
+    ['hud.longPress', 'longpress'],
+  ])('%s delivers a %s at the converted screen point', (actionId, type) => {
+    const seen: HudPointerEvent[] = [];
+    const widget = stubWidget(seen);
+    runImmediate(actionId, { worldX: 0, worldY: 0, affordance: affordanceFor(widget) });
+    expect(seen).toEqual([{ type, ...SCREEN_OF_ORIGIN, native: null }]);
+  });
+
+  it('hud.wheel delivers canvas-local coords without a view conversion', () => {
+    const seen: HudPointerEvent[] = [];
+    const widget = stubWidget(seen);
+    runImmediate('hud.wheel', {
+      clientX: 12, clientY: 34, deltaX: 0, deltaY: 10, affordance: affordanceFor(widget),
+    });
+    expect(seen).toEqual([
+      { type: 'wheel', x: 12, y: 34, deltaX: 0, deltaY: 10, native: null },
+    ]);
+  });
+
+  it('every action ignores an affordance carrying no widget', () => {
+    for (const id of ['hud.doubleClick', 'hud.contextMenu', 'hud.longPress', 'hud.wheel']) {
+      expect(() => runImmediate(id, { worldX: 0, worldY: 0, clientX: 0, clientY: 0 })).not.toThrow();
+    }
+  });
+});
+
+describe('binding targets gate on the widget claim set', () => {
+  function kindOfFor(specKind: string): (hit: unknown) => boolean {
+    const binding = createHudContribution().bindings!.find((b) => b.spec.kind === specKind);
+    if (!binding) throw new Error(`no binding for ${specKind}`);
+    return (binding.spec as { target: { kindOf: (hit: unknown) => boolean } }).target.kindOf;
+  }
+
+  function hitFor(claims?: readonly ClaimableGesture[]): unknown {
+    const widget = { ...stubWidget([]), ...(claims !== undefined ? { claims } : {}) };
+    return { kind: HUD_AFFORDANCE_KIND, payload: { widget } };
+  }
+
+  it('binds all seven kinds', () => {
+    expect(createHudContribution().bindings!.map((b) => b.spec.kind)).toEqual([
+      'pointerDown', 'click', 'drag', 'doubleClick', 'contextMenu', 'longPress', 'wheel',
+    ]);
+  });
+
+  it('a widget declaring nothing fails the wheel target and passes the rest', () => {
+    expect(kindOfFor('wheel')(hitFor())).toBe(false);
+    expect(kindOfFor('doubleClick')(hitFor())).toBe(true);
+    expect(kindOfFor('contextMenu')(hitFor())).toBe(true);
+    expect(kindOfFor('longPress')(hitFor())).toBe(true);
+    expect(kindOfFor('drag')(hitFor())).toBe(true);
+  });
+
+  it('a widget that claims wheel passes it', () => {
+    expect(kindOfFor('wheel')(hitFor(['pointer', 'wheel']))).toBe(true);
+  });
+
+  it('a widget that claims only pointer fails every other target', () => {
+    expect(kindOfFor('pointerDown')(hitFor(['pointer']))).toBe(true);
+    expect(kindOfFor('doubleClick')(hitFor(['pointer']))).toBe(false);
+    expect(kindOfFor('contextMenu')(hitFor(['pointer']))).toBe(false);
+  });
+
+  it('declines a hit that is not the HUD layer', () => {
+    expect(kindOfFor('drag')({ kind: 'handle:top-left' })).toBe(false);
+    expect(kindOfFor('drag')(null)).toBe(false);
+  });
+
+  it('every target declares that it reads the affordance', () => {
+    for (const b of createHudContribution().bindings!) {
+      const kindOf = (b.spec as { target: { kindOf: { readsAffordance?: boolean } } }).target.kindOf;
+      expect(kindOf.readsAffordance).toBe(true);
+    }
   });
 });

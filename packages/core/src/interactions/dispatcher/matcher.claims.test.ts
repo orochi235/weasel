@@ -6,7 +6,8 @@
  * are candidates at all.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { matchSorted, type ScopedBinding } from './matcher';
+import { matchSorted, targetConsultsAffordance, type ScopedBinding } from './matcher';
+import { isBody, isEmpty, isResizeHandle, isSelectedBody, isUnselectedBody } from './predicates';
 import type { InputEvent } from '@weasel-js/gestures';
 
 const vagueActive: ScopedBinding = {
@@ -137,5 +138,82 @@ describe('an exclusive claim no binding can receive warns in dev', () => {
     matchSorted(dragOn(hit), [nearMiss], false, undefined, warn);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain('exclusive claim by "almost-taken"');
+  });
+});
+
+describe('per-kind claims', () => {
+  const wheelOn = (affordance: unknown): InputEvent => ({
+    kind: 'wheel', deltaX: 0, deltaY: 10, clientX: 0, clientY: 0,
+    altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    affordance,
+  } as unknown as InputEvent);
+
+  const viewportZoom: ScopedBinding = {
+    binding: { spec: { kind: 'wheel' }, actionId: 'viewport.zoom' },
+    scope: 'ambient',
+    ownerToolId: null,
+  };
+
+  it('a claim that lists only pointer does not bar a wheel binding', () => {
+    const e = wheelOn({ kind: 'layer:weasel-hud', strength: 'exclusive', claimedKinds: ['pointer'] });
+    const out = matchSorted(e, [viewportZoom], false, undefined, () => {});
+    expect(out.map((m) => m.binding.actionId)).toEqual(['viewport.zoom']);
+  });
+
+  it('a claim that lists wheel bars a wheel binding that ignores the affordance', () => {
+    const e = wheelOn({
+      kind: 'layer:weasel-hud', strength: 'exclusive', claimedKinds: ['pointer', 'wheel'],
+    });
+    expect(matchSorted(e, [viewportZoom], false, undefined, () => {})).toEqual([]);
+  });
+
+  it('omitted claimedKinds bars every kind, as before', () => {
+    const e = wheelOn({ kind: 'layer:weasel-hud', strength: 'exclusive' });
+    expect(matchSorted(e, [viewportZoom], false, undefined, () => {})).toEqual([]);
+  });
+
+  it('a shared claim never bars, whatever it lists', () => {
+    const e = wheelOn({ kind: 'layer:weasel-hud', strength: 'shared', claimedKinds: ['wheel'] });
+    const out = matchSorted(e, [viewportZoom], false, undefined, () => {});
+    expect(out.map((m) => m.binding.actionId)).toEqual(['viewport.zoom']);
+  });
+});
+
+describe('body predicates do not survive an exclusive claim', () => {
+  const dblOn = (affordance: unknown): InputEvent => ({
+    kind: 'doubleclick', worldX: 0, worldY: 0,
+    altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    bodyTarget: 'selected-body',
+    affordance,
+  } as unknown as InputEvent);
+
+  const enterPathEdit: ScopedBinding = {
+    binding: { spec: { kind: 'doubleClick', target: { kindOf: isBody } }, actionId: 'enterPathEdit' },
+    scope: 'ambient',
+    ownerToolId: null,
+  };
+
+  it('targetConsultsAffordance is false for the kit body predicates', () => {
+    expect(targetConsultsAffordance({ kindOf: isBody })).toBe(false);
+    expect(targetConsultsAffordance({ kindOf: isSelectedBody })).toBe(false);
+    expect(targetConsultsAffordance({ kindOf: isUnselectedBody })).toBe(false);
+    expect(targetConsultsAffordance({ kindOf: isEmpty })).toBe(false);
+  });
+
+  it('stays true for a predicate that reads the hit', () => {
+    expect(targetConsultsAffordance({ kindOf: isResizeHandle })).toBe(true);
+  });
+
+  it('an isBody doubleClick binding is barred by a chrome claim', () => {
+    const e = dblOn({
+      kind: 'layer:weasel-hud', strength: 'exclusive',
+      claimedKinds: ['pointer', 'doubleClick'],
+    });
+    expect(matchSorted(e, [enterPathEdit], false, undefined, () => {})).toEqual([]);
+  });
+
+  it('and still matches with no claim in play', () => {
+    const out = matchSorted(dblOn(undefined), [enterPathEdit], false, undefined, () => {});
+    expect(out.map((m) => m.binding.actionId)).toEqual(['enterPathEdit']);
   });
 });

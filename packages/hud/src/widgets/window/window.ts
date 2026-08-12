@@ -1,5 +1,5 @@
 import type {
-  Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent, PointerClaim,
+  Widget, WidgetBounds, HudDrawCtx, HudContentCtx, HudPointerEvent,
 } from '../../widget';
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommand, pathFromD } from '@weasel-js/core';
@@ -156,18 +156,16 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       return zoneAt(bounds, m, px, py) !== null;
     },
 
-    onPointer(evt: HudPointerEvent): PointerClaim {
+    onPointer(evt: HudPointerEvent): void {
       switch (evt.type) {
         case 'down': {
           dragZone = asDrag(zoneAt(bounds, m, evt.x, evt.y));
           dragStart = bounds;
           dragOrigin = { x: evt.x, y: evt.y };
-          // Claim unconditionally: an unclaimed press inside the window
-          // reaches the scene beneath it and acts on the wrong thing.
-          return 'claim';
+          break;
         }
         case 'move': {
-          if (!dragZone) return 'claim';
+          if (!dragZone) break;
           const next = applyWindowDrag(
             dragStart, dragZone, evt.x - dragOrigin.x, evt.y - dragOrigin.y, minW, minH,
           );
@@ -176,14 +174,14 @@ export function createWindow(opts: WindowOptions): WindowWidget {
             (dragZone === 'title' ? opts.onMove : opts.onResize)?.(bounds);
             opts.onChange?.();
           }
-          return 'claim';
+          break;
         }
         case 'up': {
           if (dragZone === 'close' && zoneAt(bounds, m, evt.x, evt.y) === 'close') {
             opts.onClose?.();
           }
           dragZone = null;
-          return 'claim';
+          break;
         }
         case 'cancel': {
           if (dragZone) {
@@ -191,13 +189,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
             dragZone = null;
             opts.onChange?.();
           }
-          return 'claim';
+          break;
         }
         // The cursor is resolved per point via `cursorAt`, so hover carries no
         // state and needs no redraw.
-        case 'hovermove':
-        case 'hoverleave':
-          return 'pass';
+        default:
+          break;
       }
     },
 

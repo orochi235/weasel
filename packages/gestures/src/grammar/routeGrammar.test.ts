@@ -99,7 +99,7 @@ describe('parseRoute v3', () => {
   it('omitted argSlot resolves to descriptor default for wheel', () => {
     expect(parseRoute('[initial] wheel')).toEqual({
       phases: [self('initial')], gesture: 'wheel', arg: '*',
-      target: undefined, modifiers: {},
+      target: '*', modifiers: {},
     });
   });
 
@@ -107,9 +107,9 @@ describe('parseRoute v3', () => {
     expect(parseRoute('[initial] wheel(*)')).toEqual(parseRoute('[initial] wheel'));
   });
 
-  it('targetless gesture (wheel) accepts modifiers without a target', () => {
-    expect(parseRoute('[initial] wheel(up) +mod')).toEqual({
-      phases: [self('initial')], gesture: 'wheel', arg: 'up',
+  it('targetless gesture (keyDown) accepts modifiers without a target', () => {
+    expect(parseRoute('[initial] keyDown(a) +mod')).toEqual({
+      phases: [self('initial')], gesture: 'keyDown', arg: 'a',
       target: undefined, modifiers: { mod: 'required' },
     });
   });
@@ -150,7 +150,7 @@ describe('parseRoute v3', () => {
   });
 
   it('rejects target slot on a no-target gesture', () => {
-    expect(() => parseRoute('[initial] wheel(up) => foo')).toThrow(/wheel.*no target/i);
+    expect(() => parseRoute('[initial] keyDown(a) => foo')).toThrow(/keyDown.*no target/i);
   });
 
   it('rejects arg slot on a no-arg gesture', () => {

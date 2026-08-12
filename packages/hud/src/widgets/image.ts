@@ -1,4 +1,4 @@
-import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent, PointerClaim } from '../widget';
+import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, ImageDrawCommand } from '@weasel-js/core/renderer';
 
 export interface ImageOptions {
@@ -55,8 +55,8 @@ export function createImage(opts: ImageOptions): ImageWidget {
       if (hidden) return false;
       return x >= bounds.x && x < bounds.x + bounds.w && y >= bounds.y && y < bounds.y + bounds.h;
     },
-    claimsPointer: false,
-    onPointer(_e: HudPointerEvent): PointerClaim { return 'pass'; },
+    claims: [],
+    onPointer(_evt: HudPointerEvent): void {},
     dispose() {
       if (disposed) return;
       disposed = true;
