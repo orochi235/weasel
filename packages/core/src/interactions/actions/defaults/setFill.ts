@@ -4,10 +4,19 @@ import { ActionDisabledReason } from '../registry';
 import type { Scene, NodeId } from 'core/scene/types';
 import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
+import type { FillStyle } from 'core/paint-types';
 import { createSetDataOp } from 'core/ops/setData';
 import { defaultCommitAdapter } from '../defaultCommitAdapter';
 import { mergeAlphaFromPrev } from '../../../util/color';
 import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR } from '../../../util/paint';
+
+/** What a node's `fill` may hold: a color string, or any `FillStyle` —
+ *  gradient, pattern or an explicit solid. */
+type NodeFill = string | FillStyle;
+
+interface SetFillData {
+  fill?: NodeFill;
+}
 
 // ---------------------------------------------------------------------------
 // Internal scratch
@@ -15,28 +24,57 @@ import { DEFAULT_FILL_COLOR, DEFAULT_STROKE_COLOR } from '../../../util/paint';
 
 interface SetFillScratch {
   ids: NodeId[];
-  scene: Scene<{ fill?: string }, string, unknown>;
+  scene: Scene<SetFillData, string, unknown>;
   /** Data snapshot at drag start, keyed by node id. */
-  startData: Map<NodeId, { fill?: string }>;
-  /** The most-recently-received color string (may be 6- or 8-char hex). */
+  startData: Map<NodeId, SetFillData>;
+  /** The most-recently-received color string (may be 6- or 8-char hex).
+   *  Ignored while `currentPaint` is set. */
   currentColor: string;
+  /** The most-recently-received non-solid paint, when the caller drives this
+   *  action with `paint` instead of `color`. */
+  currentPaint?: FillStyle;
   /** Preview data entries — merged fill per selected node.
    *  Populated on start and refreshed on every onMove. */
-  previews: Map<NodeId, { fill: string }>;
+  previews: Map<NodeId, SetFillData>;
   /** Optional consumer commit hook captured at gesture start. When present,
    *  the ops-based commit routes through it (consumer history) instead of
    *  `scene.applyBatch`. Undefined → fall back to `scene.applyBatch`. */
   applyOps?: (ops: Op[], label: string) => void;
 }
 
-/** Refresh the preview map from `scratch.currentColor` and `startData`. */
+/**
+ * The fill to write for one node.
+ *
+ * A `paint` replaces the fill outright — a gradient has no single alpha to
+ * inherit, and its stops already carry their own. A `color` keeps the
+ * historical alpha-merge, but only against a previous fill that was itself a
+ * color; there is no meaningful alpha to lift off a gradient or pattern.
+ */
+function resolveFill(scratch: SetFillScratch, prev: SetFillData | undefined): NodeFill {
+  if (scratch.currentPaint) return scratch.currentPaint;
+  const prevColor = typeof prev?.fill === 'string' ? prev.fill : DEFAULT_FILL_COLOR;
+  return mergeAlphaFromPrev(scratch.currentColor, prevColor);
+}
+
+/** Refresh the preview map from the scratch's current paint and `startData`. */
 function refreshPreviews(scratch: SetFillScratch): void {
   scratch.previews.clear();
   for (const id of scratch.ids) {
     const prev = scratch.startData.get(id);
-    const next = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? DEFAULT_FILL_COLOR);
-    scratch.previews.set(id, { ...(prev ?? {}), fill: next });
+    scratch.previews.set(id, { ...(prev ?? {}), fill: resolveFill(scratch, prev) });
   }
+}
+
+/** Pull whichever of `paint` / `color` a caller supplied out of an
+ *  invocation's params. */
+function readParams(params: Record<string, unknown> | undefined): {
+  color?: string;
+  paint?: FillStyle;
+} {
+  return {
+    color: params?.color as string | undefined,
+    paint: params?.paint as FillStyle | undefined,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -55,8 +93,12 @@ function refreshPreviews(scratch: SetFillScratch): void {
  * is one batch → one undo entry, preserving the old `scene.batch('Set fill', …)`
  * semantics exactly.
  *
+ * Takes either `color` (a hex string) or `paint` (a whole `FillStyle`, for
+ * gradients and patterns). `paint` wins when both are present.
+ *
  * Alpha semantics: a 6-char (no-alpha) color adopts the alpha from the node's
- * existing fill. An 8-char color keeps its own alpha.
+ * existing fill. An 8-char color keeps its own alpha. A `paint` is written
+ * verbatim.
  */
 export const setFillAction: Action & { requires: string[] } = {
   id: 'setFill',
@@ -67,7 +109,7 @@ export const setFillAction: Action & { requires: string[] } = {
     timing: 'ongoing',
     start(ctx: InvocationCtx, opts?: BindingOpts): OngoingHandle {
       const selection = ctx.deps.selection as SelectionApi | undefined;
-      const scene = ctx.deps.scene as Scene<{ fill?: string }, string, unknown> | undefined;
+      const scene = ctx.deps.scene as Scene<SetFillData, string, unknown> | undefined;
       const applyOps = ctx.deps.applyOps as ((ops: Op[], label: string) => void) | undefined;
 
       if (!selection || !scene) return {};
@@ -75,16 +117,17 @@ export const setFillAction: Action & { requires: string[] } = {
       const ids = selection.get() as NodeId[];
       if (ids.length === 0) return {};
 
-      // Resolve initial color: prefer ctx.params, fall back to opts.params.
-      const ctxColor = ctx.params?.color as string | undefined;
-      const optsColor = (opts?.params as { color?: string } | undefined)?.color;
-      const initialColor = ctxColor ?? optsColor ?? DEFAULT_STROKE_COLOR;
+      // Resolve initial paint: prefer ctx.params, fall back to opts.params.
+      const fromCtx = readParams(ctx.params);
+      const fromOpts = readParams(opts?.params as Record<string, unknown> | undefined);
+      const initialPaint = fromCtx.paint ?? fromOpts.paint;
+      const initialColor = fromCtx.color ?? fromOpts.color ?? DEFAULT_STROKE_COLOR;
 
       // Snapshot node data at drag start.
-      const startData = new Map<NodeId, { fill?: string }>();
+      const startData = new Map<NodeId, SetFillData>();
       for (const id of ids) {
         const node = scene.get(id);
-        if (node) startData.set(id, { ...(node.data as { fill?: string }) });
+        if (node) startData.set(id, { ...(node.data as SetFillData) });
       }
 
       const scratch: SetFillScratch = {
@@ -92,6 +135,7 @@ export const setFillAction: Action & { requires: string[] } = {
         scene,
         startData,
         currentColor: initialColor,
+        currentPaint: initialPaint,
         previews: new Map(),
         applyOps,
       };
@@ -99,9 +143,15 @@ export const setFillAction: Action & { requires: string[] } = {
 
       return {
         onMove(moveCtx: InvocationCtx): void {
-          const next = moveCtx.params?.color as string | undefined;
-          if (next === undefined) return;
-          scratch.currentColor = next;
+          const { color, paint } = readParams(moveCtx.params);
+          if (color === undefined && paint === undefined) return;
+          if (paint !== undefined) scratch.currentPaint = paint;
+          if (color !== undefined) {
+            scratch.currentColor = color;
+            // An explicit color supersedes a paint from an earlier tick;
+            // otherwise a picker drag after a gradient would do nothing.
+            if (paint === undefined) scratch.currentPaint = undefined;
+          }
           refreshPreviews(scratch);
         },
         onEnd(_endCtx: InvocationCtx, reason: 'commit' | 'cancel'): void {
@@ -115,14 +165,13 @@ export const setFillAction: Action & { requires: string[] } = {
           // `scene.update(id, { data: { …nodeNow.data, fill } })` wrote.
           const ops: Op[] = [];
           for (const id of scratch.ids) {
-            const prev = scratch.startData.get(id);
-            const merged = mergeAlphaFromPrev(scratch.currentColor, prev?.fill ?? DEFAULT_FILL_COLOR);
+            const merged = resolveFill(scratch, scratch.startData.get(id));
             // Re-read so concurrent edits to non-fill fields aren't clobbered on commit.
             const nodeNow = scratch.scene.get(id);
             if (!nodeNow) continue;
-            const from = { ...(nodeNow.data as object) } as { fill?: string };
+            const from = { ...(nodeNow.data as object) } as SetFillData;
             const to = { ...from, fill: merged };
-            ops.push(createSetDataOp<{ fill?: string }>({ id: id as string, from, to }));
+            ops.push(createSetDataOp<SetFillData>({ id: id as string, from, to }));
           }
           if (ops.length > 0) {
             // Route through the consumer hook when present (consumer history,

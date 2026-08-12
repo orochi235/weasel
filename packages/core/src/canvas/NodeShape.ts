@@ -44,6 +44,7 @@ import { pathContainsPoint } from 'features/paths/pathHitTest';
 import { strokeHitTest } from 'features/paths/hitTest';
 import { poseRotationOf, rotatePathAround } from 'features/paths/poseRotation';
 import { pathInPoseFrame } from 'features/paths/pathInWorld';
+import { fillInPoseFrame } from '../core/fillInPoseFrame';
 import { getImageBitmap, imageStatus } from 'features/images/imageCache';
 import { nodeMemo, bumpNodeMemoGeneration } from 'core/scene/nodeMemo';
 
@@ -501,7 +502,11 @@ const PATH_PAINTER: NodeShapeEntry = {
     // Treat 'none' as "skip fill". When neither fill nor color is set, fall
     // back to a default fill only if there's no stroke — otherwise the path
     // is stroke-only (e.g. pencil) and a default fill would be wrong.
-    const fill = resolveNodeFill(d.fill, d.color, hasStroke, hasStroke ? null : '#888');
+    const declared = resolveNodeFill(d.fill, d.color, hasStroke, hasStroke ? null : '#888');
+    // The pose is baked into `projected` rather than emitted as a transform,
+    // so a box-relative gradient has to be baked onto the same box here or
+    // it would arrive in the renderer referring to a frame that never exists.
+    const fill = declared && fillInPoseFrame(declared, pose as RectPose);
     const cmd: DrawCommand = {
       kind: 'path',
       path: projected,
@@ -551,7 +556,8 @@ const SHAPE_PAINTER: NodeShapeEntry = {
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as { shape: string; color?: string; fill?: NodeFill; stroke?: string; strokeWidth?: number; sides?: number; points?: number };
     const path = pathForShape(d, pose as RectPose);
-    const shapeFill = resolveNodeFill(d.fill, d.color, false, '#888');
+    const declaredFill = resolveNodeFill(d.fill, d.color, false, '#888');
+    const shapeFill = declaredFill && fillInPoseFrame(declaredFill, pose as RectPose);
     return [{
       kind: 'path',
       path,

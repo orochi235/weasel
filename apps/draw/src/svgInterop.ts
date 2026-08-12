@@ -12,13 +12,14 @@
  * path-then-rect detector fired, else `tool: 'imported'`.
  */
 
-import { boundsOfPath } from '@weasel-js/core';
-import type { PolygonPath, TextStyle } from '@weasel-js/core';
+import { boundsOfPath, fillToBoundsFrame } from '@weasel-js/core';
+import type { FillStyle, PolygonPath, TextStyle } from '@weasel-js/core';
 import type {
   ParseResult,
   SerializeOptions,
   SvgNode,
   SvgGroupNode,
+  SvgPaint,
   SvgPathNode,
   SvgTextNode,
 } from '@weasel-js/svg';
@@ -148,6 +149,19 @@ function decodePathToolAndParams(
   return { tool, params };
 }
 
+/**
+ * Lower an object's fill to an SVG paint. A plain string is a solid color;
+ * anything else is a whole `FillStyle`, which the serializer turns into a
+ * `<defs>` gradient and a `url(#…)` reference.
+ */
+function objPaintToSvg(fill: string | FillStyle): SvgPaint {
+  if (typeof fill === 'string') return { kind: 'solid', color: fill };
+  if (fill.fill === undefined || fill.fill === 'solid') {
+    return { kind: 'solid', color: fill.color };
+  }
+  return { kind: 'gradient', paint: fill };
+}
+
 /** Lower one WeaselDraw object to an SvgNode for serialization. */
 export function objToSvgNode(o: Obj): SvgNode {
   if (o.tool === 'text') {
@@ -180,7 +194,7 @@ export function objToSvgNode(o: Obj): SvgNode {
   const node: SvgPathNode = {
     kind: 'path',
     path: o.path,
-    fill: o.closed ? { kind: 'solid', color: o.fill } : { kind: 'none' },
+    fill: o.closed ? objPaintToSvg(o.fill) : { kind: 'none' },
   };
   if (o.strokeWidth > 0) {
     node.stroke = { paint: { kind: 'solid', color: o.stroke }, width: o.strokeWidth };
@@ -240,7 +254,6 @@ function svgLeafToObj(
     }
     return o;
   }
-  const fill = colorFromPaint(n.fill, '#000000');
   const stroke = n.stroke ? colorFromPaint(n.stroke.paint, '#000000') : '#000000';
   const strokeWidth = n.stroke?.width ?? 0;
   const { tool, params } = decodePathToolAndParams(n.meta?.wd?.attrs, n.path.kind);
@@ -254,6 +267,8 @@ function svgLeafToObj(
     bounds = { x: b.x, y: b.y, width: b.width, height: b.height };
     closed = isClosedPolygon(n.path);
   }
+  // After `bounds`: a gradient fill is normalized against them.
+  const fill = fillFromPaint(n.fill, bounds, '#000000');
   const o: PathObj = {
     id,
     tool,
@@ -382,9 +397,25 @@ function colorFromPaint(
 ): string {
   if (paint.kind === 'none') return fallback;
   if (paint.kind === 'solid') return paint.color;
-  // Gradients can't be represented as WeaselDraw's flat fill string yet —
-  // drop to fallback. Caller's UI shows a solid color; the gradient is lost.
+  // Strokes are the only caller left that cannot hold a gradient — the
+  // renderer requires a solid stroke paint. Fills go through `fillFromPaint`.
   return fallback;
+}
+
+/**
+ * Lift an imported SVG paint into a WeaselDraw fill. Gradients are kept and
+ * normalized against the node's own bounds, so an imported gradient tracks
+ * its object under move and resize exactly like one drawn in the app —
+ * `userSpaceOnUse` coordinates would otherwise stay pinned to the page.
+ */
+function fillFromPaint(
+  paint: SvgPathNode['fill'],
+  bounds: RectBounds,
+  fallback: string,
+): string | FillStyle {
+  if (paint.kind === 'none') return fallback;
+  if (paint.kind === 'solid') return paint.color;
+  return fillToBoundsFrame(paint.paint, bounds);
 }
 
 function isClosedPolygon(path: PolygonPath): boolean {

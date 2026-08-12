@@ -533,10 +533,21 @@ export { alignedStrokeRect } from './core/paint-types';
 export type {
   FillStyle,
   GradStop,
+  GradientFill,
+  GradientKind,
+  GradientUnits,
   Stroke,
   StrokeAlign,
   Region,
 } from './core/paint-types';
+export {
+  sampleGradientStops,
+  withGradientKind,
+  gradientGeometry,
+  gradientForBounds,
+} from './core/gradient';
+export { fillInPoseFrame, fillToBoundsFrame } from './core/fillInPoseFrame';
+export type { FillPoseBox } from './core/fillInPoseFrame';
 
 // ─── Op model: every scene mutation routes through here ─────────────────────
 export * from './core/ops';

@@ -45,6 +45,9 @@ import {
   transformPath,
   type ToolsApi,
   type Path,
+  type FillStyle,
+  type GradientFill,
+  type UiOngoingControl,
   type AlignEdge,
   type DistributeAxis,
   type SerializedScene,
@@ -64,6 +67,9 @@ import {
   inferredNodeProperties,
   inferredNodeRouting,
   resolveTextStyle,
+  sampleGradientStops,
+  fillInPoseFrame,
+  fillToBoundsFrame,
   type ToolPrefColor,
   useClipboardOps,
   useDepSource,
@@ -84,6 +90,7 @@ import {
 } from '@weasel-js/core';
 import { useHudContribution } from '@weasel-js/hud/react';
 import {
+  GradientHandles,
   ResizeHandle,
   Sidebar,
   SidebarPanel,
@@ -108,6 +115,7 @@ import {
   PropertyRow,
   PropertyTextInput,
   PropertyColorInput,
+  PropertyFillInput,
   PropertySwatchGrid,
   PropertySelect,
 } from './ui/PropertiesPanel';
@@ -178,7 +186,10 @@ interface WeaselDrawData {
    *  `runsToPlainText(runs) === text` — and preferred by the `kit:text`
    *  painter when present. */
   runs?: StyledRun[];
-  fill?: string;
+  /** A color string, or any `FillStyle` — gradient or pattern. Persisted
+   *  documents predate the object form and carry plain strings, which every
+   *  reader still accepts as an opaque solid. */
+  fill?: string | FillStyle;
   stroke?: string;
   strokeWidth?: number;
   label?: string;
@@ -356,6 +367,33 @@ const INITIAL_FILL_COLOR = '#7ab8d4ff';
  *  the built-in color renderer with the existing PropertyColorInput.
  *  Keyed by path (not `color` kind) so a future third color leaf can't
  *  silently fall through to the wrong pair of actions. */
+/** Fill gets the paint-kind switch on top of the color input, so a node can
+ *  carry a gradient. Stroke keeps the plain color renderer — the renderer
+ *  requires a solid stroke paint. */
+function wdFillRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
+  return (ctx) => {
+    const fallback = (ctx.pref as ToolPrefColor).default;
+    const raw = ctx.value;
+    const value: string | FillStyle =
+      typeof raw === 'string' || (raw !== null && typeof raw === 'object' && 'stops' in (raw as object))
+        ? (raw as string | FillStyle)
+        : fallback;
+    const input = (
+      <PropertyFillInput
+        value={value}
+        colorActionId={colorActionId}
+        opacityActionId={opacityActionId}
+      />
+    );
+    if (!ctx.mixed) return input;
+    return (
+      <span title="Mixed" className="wd-mixed">
+        {input}
+      </span>
+    );
+  };
+}
+
 function wdActionColorRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
   return (ctx) => {
     const fallback = (ctx.pref as ToolPrefColor).default;
@@ -378,7 +416,7 @@ function wdActionColorRenderer(colorActionId: string, opacityActionId: string): 
 const TEXT_CHROME_CLASS = 'wd-text-chrome';
 
 const WD_RENDERERS: Record<string, PropertyRenderer> = {
-  'data.fill': wdActionColorRenderer('setFill', 'setFillOpacity'),
+  'data.fill': wdFillRenderer('setFill', 'setFillOpacity'),
   'data.stroke': wdActionColorRenderer('setStroke', 'setStrokeOpacity'),
   // The schema's `font-family` leaf has no builtin renderer — the registry it
   // has to read is a runtime fact, not a static option list. Keyed by kind
@@ -414,9 +452,106 @@ const WD_RENDERERS: Record<string, PropertyRenderer> = {
  */
 function layerSwatch(data: WeaselDrawData): string | undefined {
   if (typeof data.fill === 'string') return data.fill;
+  if (data.fill !== undefined) return paintChipColor(data.fill);
   if (data.text === undefined) return undefined;
   const { fill } = resolveTextStyle(data.style);
   return 'color' in fill ? fill.color : undefined;
+}
+
+/** One representative color for a `FillStyle`, for a chip too small to draw
+ *  the real paint: a gradient shows its midpoint, which reads closer to the
+ *  whole ramp than either end does. Patterns have no such color. */
+function paintChipColor(fill: FillStyle): string | undefined {
+  const gradient = gradientOf(fill);
+  if (gradient) return sampleGradientStops(gradient.stops, 0.5);
+  if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
+  return undefined;
+}
+
+/**
+ * On-canvas geometry handles for the selected node's gradient, when there is
+ * exactly one and its fill is one.
+ *
+ * The node's stored gradient is in `bounds` units — `0..1` across its pose
+ * box — so the mapping to overlay pixels is the pose box composed with the
+ * view, and the drag math in `<GradientHandles>` inverts it. That keeps the
+ * stored paint resolution-independent: the same numbers survive pan, zoom
+ * and a resize of the node.
+ */
+function SelectedGradientHandles(props: {
+  scene: ReturnType<typeof useScene<WeaselDrawData, WeaselDrawLayer, WeaselDrawPose>>;
+  selection: ReturnType<typeof useSelection>;
+  view: View;
+  width: number;
+  height: number;
+}): ReactElement | null {
+  const { scene, selection, view, width, height } = props;
+  const actions = useActionsRegistry();
+  const ctrlRef = useRef<UiOngoingControl | null>(null);
+
+  const ids = selection.get();
+  const node = ids.length === 1 ? scene.get(ids[0]) : null;
+  const gradient = node?.kind === 'leaf' ? gradientOf(node.data.fill) : null;
+
+  if (!gradient || !node || node.kind !== 'leaf') return null;
+  if (width <= 0 || height <= 0) return null;
+
+  const pose = node.pose;
+  // `<GradientHandles>` needs an isotropic frame; the stored gradient is in
+  // `bounds`, whose two axes have different scales. Resolve into page space
+  // on the way in, re-normalize on the way out.
+  const resolved = fillInPoseFrame(gradient, pose) as GradientFill;
+  const t = viewToTransform(view);
+  const toScreen = (p: { x: number; y: number }): { x: number; y: number } => {
+    const [x, y] = worldToScreen(p.x, p.y, t);
+    return { x, y };
+  };
+  // Invert by projecting two known points: the view may be anisotropic, so
+  // the two axes need separate scales.
+  const origin = toScreen({ x: 0, y: 0 });
+  const unit = toScreen({ x: 1, y: 1 });
+  const toLocal = (p: { x: number; y: number }): { x: number; y: number } => ({
+    x: unit.x === origin.x ? 0 : (p.x - origin.x) / (unit.x - origin.x),
+    y: unit.y === origin.y ? 0 : (p.y - origin.y) / (unit.y - origin.y),
+  });
+
+  const dispatch = (next: GradientFill, phase: 'input' | 'commit'): void => {
+    const paint = fillToBoundsFrame(next, pose);
+    if (!ctrlRef.current) {
+      ctrlRef.current = actions?.begin('setFill', { paint }) ?? null;
+    } else {
+      ctrlRef.current.update({ paint });
+    }
+    if (phase === 'commit' && ctrlRef.current) {
+      ctrlRef.current.end('commit');
+      ctrlRef.current = null;
+    }
+  };
+
+  return (
+    <GradientHandles
+      value={resolved}
+      toScreen={toScreen}
+      toLocal={toLocal}
+      width={width}
+      height={height}
+      onInput={(next) => dispatch(next, 'input')}
+      onChange={(next) => dispatch(next, 'commit')}
+    />
+  );
+}
+
+/** The gradient in a node's fill, or null for anything else. */
+function gradientOf(fill: string | FillStyle | undefined): GradientFill | null {
+  if (fill === undefined || typeof fill === 'string') return null;
+  switch (fill.fill) {
+    case 'linear-gradient':
+    case 'radial-gradient':
+    case 'conic-gradient':
+      return fill;
+    default:
+      return null;
+  }
 }
 
 interface RightSidebarProps {
@@ -1811,6 +1946,13 @@ function EditorWithSharedScene({
             />
           </SceneCanvas>
           )}
+          <SelectedGradientHandles
+            scene={scene}
+            selection={selection}
+            view={view}
+            width={hostDims.width}
+            height={hostDims.height}
+          />
         </div>
         <ResizeHandle
           value={rightWidth}

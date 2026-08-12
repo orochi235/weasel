@@ -42,7 +42,7 @@ import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
 import { drawLayers, type Dims, type RenderLayer } from 'core/layers/render';
-import { WeaselRenderer, type DrawCommand, type ShaderProgramHandle } from '../renderer';
+import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
@@ -1454,7 +1454,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       effectiveView,
       { width, height },
     );
-    renderer.render(commands);
+    renderer.render(commands, viewToMat3(effectiveView));
   }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp]);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';

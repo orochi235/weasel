@@ -1,0 +1,19 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Each stop's opacity slider would otherwise stretch the row to a width no
+ * properties panel has; the chip stays legible, the slider yields. */
+.swatch {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+}

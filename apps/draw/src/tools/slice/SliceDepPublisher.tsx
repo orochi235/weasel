@@ -20,7 +20,7 @@ interface WDPose {
 interface WDData {
   path?: import('@weasel-js/core').Path;
   text?: string;
-  fill?: string;
+  fill?: string | import('@weasel-js/core').FillStyle;
   stroke?: string;
   strokeWidth?: number;
   label?: string;

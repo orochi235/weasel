@@ -1,6 +1,10 @@
 import { useRef, useState, type ReactNode, type ChangeEvent } from 'react';
-import { SidebarPanel, type SidebarPanelProps } from '@weasel-js/ui';
-import { toHex8, getAlpha01, withAlpha01, useActionsRegistry, type UiOngoingControl } from '@weasel-js/core';
+import { GradientEditor, SidebarPanel, ToggleBar, type SidebarPanelProps } from '@weasel-js/ui';
+import {
+  toHex8, getAlpha01, withAlpha01, gradientForBounds, withGradientKind,
+  useActionsRegistry,
+  type FillStyle, type GradientFill, type GradientKind, type UiOngoingControl,
+} from '@weasel-js/core';
 import s from './PropertiesPanel.module.css';
 
 /** Convenience composition: a `SidebarPanel` whose body is a
@@ -335,5 +339,124 @@ export function PropertyButton(props: {
     >
       {props.children}
     </button>
+  );
+}
+
+/** The paint kinds the fill switch offers. `none` stays out of it — the
+ *  active-swatch widget already owns that toggle, and it writes a different
+ *  shape than a `FillStyle`. */
+const FILL_KINDS: readonly { value: FillKind; label: string }[] = [
+  { value: 'solid', label: 'Solid' },
+  { value: 'linear-gradient', label: 'Linear' },
+  { value: 'radial-gradient', label: 'Radial' },
+  { value: 'conic-gradient', label: 'Conic' },
+];
+
+type FillKind = 'solid' | GradientKind;
+
+/** A gradient spanning the node's box left-to-right. `bounds` units mean
+ *  this needs no knowledge of the node's actual size. */
+function seedGradient(kind: GradientKind, from: string): GradientFill {
+  // White reads against any hue; against white itself, black does.
+  const to = toHex8(from).slice(0, 7).toLowerCase() === '#ffffff' ? '#000000ff' : '#ffffffff';
+  const stops = [{ offset: 0, color: toHex8(from) }, { offset: 1, color: to }];
+  return gradientForBounds(kind, { x: 0, y: 0, width: 1, height: 1 }, stops, 'bounds');
+}
+
+/** The color a gradient collapses to when the user switches back to solid:
+ *  its first stop, which is what the swatch was already showing. */
+function firstStopColor(fill: GradientFill): string {
+  return fill.stops.length > 0 ? fill.stops[0].color : '#000000ff';
+}
+
+/** The gradient in a fill, or null for a string, a solid or a pattern. */
+function asGradient(fill: string | FillStyle): GradientFill | null {
+  if (typeof fill === 'string') return null;
+  switch (fill.fill) {
+    case 'linear-gradient':
+    case 'radial-gradient':
+    case 'conic-gradient':
+      return fill;
+    default:
+      return null;
+  }
+}
+
+/** The color to show in the solid branch. A pattern has none, so the switch
+ *  presents it as black until the user picks something. */
+function solidColorOf(fill: string | FillStyle): string {
+  if (typeof fill === 'string') return fill;
+  if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
+  return '#000000ff';
+}
+
+/**
+ * Fill editor: a paint-kind switch over `PropertyColorInput` (solid) and
+ * `GradientEditor` (the three gradient kinds).
+ *
+ * Both branches commit through the same `setFill` action — the color input
+ * with a `color` param, the gradient editor with a whole `paint` — so a
+ * gradient edit is one undo entry, exactly like a color edit.
+ */
+export function PropertyFillInput(props: {
+  value: string | FillStyle;
+  colorActionId: string;
+  opacityActionId: string;
+}) {
+  const actions = useActionsRegistry();
+  const paintCtrlRef = useRef<UiOngoingControl | null>(null);
+
+  const value = props.value;
+  const gradient = asGradient(value);
+  const solidColor = gradient ? firstStopColor(gradient) : solidColorOf(value);
+
+  /** Drive `setFill` with a whole paint. `phase: 'commit'` with no preceding
+   *  input opens and closes the control in one go — a kind switch is a
+   *  complete gesture on its own. */
+  function dispatchPaint(paint: FillStyle, phase: 'input' | 'commit'): void {
+    if (!paintCtrlRef.current) {
+      paintCtrlRef.current = actions?.begin('setFill', { paint }) ?? null;
+    } else {
+      paintCtrlRef.current.update({ paint });
+    }
+    if (phase === 'commit' && paintCtrlRef.current) {
+      paintCtrlRef.current.end('commit');
+      paintCtrlRef.current = null;
+    }
+  }
+
+  function switchKind(kind: FillKind): void {
+    if (kind === 'solid') {
+      if (!gradient) return;
+      dispatchPaint({ fill: 'solid', color: firstStopColor(gradient) }, 'commit');
+      return;
+    }
+    dispatchPaint(gradient ? withGradientKind(gradient, kind) : seedGradient(kind, solidColor), 'commit');
+  }
+
+  return (
+    <div className={s.fillStack}>
+      <ToggleBar<FillKind>
+        items={FILL_KINDS}
+        value={gradient ? gradient.fill : 'solid'}
+        size="sm"
+        ariaLabel="Fill kind"
+        onChange={(kind) => kind && switchKind(kind)}
+      />
+      {gradient ? (
+        <GradientEditor
+          value={gradient}
+          kindSwitch={false}
+          onInput={(next) => dispatchPaint(next, 'input')}
+          onChange={(next) => dispatchPaint(next, 'commit')}
+        />
+      ) : (
+        <PropertyColorInput
+          value={solidColor}
+          colorActionId={props.colorActionId}
+          opacityActionId={props.opacityActionId}
+        />
+      )}
+    </div>
   );
 }

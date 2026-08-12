@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Fill-mode expansion: gradients + textures in the app** → [Rendering & paint](#rendering--paint)
+- **Fill-mode expansion: textures in the app** (gradients shipped 2026-08-12) → [Rendering & paint](#rendering--paint)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -351,35 +351,29 @@ Core five + Crop shipped. Remaining:
   genuinely translation-equivariant in `origin.x` first. Low priority: pan and
   zoom already hit, and those are the frames that repeat.
 
-- **Fill-mode expansion in WeaselDraw — gradients and textures.** The engine
-  already has the paint model: `FillStyle` (`packages/core/src/core/paint-types.ts`)
-  is a tagged union covering solid, pattern, and linear / radial / conic
-  gradients, with `GradientRampCache` + `gradFill.ts` behind them and
-  `createTilePattern` / the `patterns-builtin` catalog producing texture
-  handles.
+- **Fill-mode expansion in WeaselDraw — textures.** Gradients shipped
+  2026-08-12; what is left of this item is the texture half.
 
-  **Correction (2026-08-12): it was not entirely app-side.** The `kit:path` and
-  `kit:shape` painters typed `data.fill` as a color string, so no node could
-  carry a gradient without a consumer-registered painter. That is fixed —
-  `data.fill` is `string | FillStyle` and an object passes straight through.
-  What remains *is* now app-side: WeaselDraw's data shape carries
-  `fill` as a color string, its swatches set colors, and nothing can express a
-  paint that isn't solid. Needs, roughly in order: widen `WeaselDrawData.fill`
-  to a `FillStyle` (with a string treated as solid for back-compat, since
-  persisted docs carry strings); a fill-kind switch in the Properties panel; a
-  gradient editor (stop list + angle/center handles — `paintGradientTrack` and
-  `CurveEditor` in weasel-ui are the starting pieces); on-canvas gradient
-  handles; and a texture picker over the builtin patterns before any
-  image-upload story. SVG export needs matching `<linearGradient>` /
-  `<pattern>` emission. Requested 2026-07-31.
+  A texture picker over the builtin patterns (`createTilePattern` and the
+  `patterns-builtin` catalog: `hatch`, `crosshatch`, `dots`, `chunks`) before
+  any image-upload story. The plumbing gradients now use is all shared:
+  `WeaselDrawData.fill` is `string | FillStyle`, the Properties panel has a
+  paint-kind switch (`PropertyFillInput`), and `setFill` takes a whole `paint`.
+  A pattern needs a fifth entry on that switch and a grid to pick a tile from.
+
+  SVG export for patterns is the open piece — `@weasel-js/svg` emits
+  `<linearGradient>` / `<radialGradient>` but has no `<pattern>` path, and
+  `gradientXml` returns `''` for conic, which SVG cannot express at all.
+  Conic currently exports as nothing rather than as an approximation.
 
   Note on **text**: non-solid fills on text used to be a shader problem — the
   MSDF program takes a single colour uniform. Since the outline tier landed
   (2026-07-31) it is not: above the size threshold a glyph is a `PolygonPath`
   drawn through `drawPathFillByKind`, so gradient- and pattern-filled text
   already renders with nothing further to build. Below the threshold it still
-  falls back to solid. So this item is app-side for text too — widen the data
-  shape and the UI, and large text simply works.
+  falls back to solid. Text carries its paint in `data.style.fill`, which the
+  fill-kind switch does not yet reach — the switch edits `data.fill`, so a
+  gradient on text needs the panel to route to the text branch.
 
 - **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`). Defer until a real use case lands.
 
@@ -590,7 +584,6 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ### WeaselDraw app follow-ups (defer)
 
-- **(P3) Gradient fills.** Alpha/opacity shipped (`setFillOpacity`/`setStrokeOpacity` + opacity slider); gradient fill-style for objects remains. (Stroke-width control also shipped — now an editable `PropertyNumberInput`, not hardcoded.)
 - **(P3) Palette presets / recently-used colors.**
 - **(P3) Multi-page documents.**
 - **(P3) Richer text style controls** (font, size, weight pickers).

@@ -39,4 +39,27 @@ describe('mat3', () => {
     expect(x1).toBeCloseTo(1);
     expect(y1).toBeCloseTo(-1);
   });
+
+  it('invert: round-trips a translate+scale through apply', () => {
+    const m = mat3.scale(mat3.translate(mat3.identity(), 30, -12), 2, 4);
+    const inv = mat3.invert(m);
+    const [sx, sy] = mat3.apply(m, 7, 9);
+    const [x, y] = mat3.apply(inv, sx, sy);
+    expect(x).toBeCloseTo(7);
+    expect(y).toBeCloseTo(9);
+  });
+
+  it('invert: composing a matrix with its inverse yields identity', () => {
+    const m = mat3.scale(mat3.translate(mat3.identity(), 5, 6), 3, 3);
+    const composed = mat3.multiply(m, mat3.invert(m));
+    for (const [i, want] of [[0, 1], [1, 0], [3, 0], [4, 1], [6, 0], [7, 0]] as const) {
+      expect(composed[i]).toBeCloseTo(want);
+    }
+  });
+
+  it('invert: a singular matrix falls back to identity rather than NaN', () => {
+    const singular = mat3.scale(mat3.identity(), 0, 5);
+    const inv = mat3.invert(singular);
+    expect(Array.from(inv)).toEqual(Array.from(mat3.identity()));
+  });
 });

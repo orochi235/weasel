@@ -1,0 +1,36 @@
+/* The overlay covers the canvas but must not intercept tool input; only the
+ * handles opt back into hit-testing. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* These sit over artwork of unknown color, not over the app's own surface,
+ * so they are deliberately not themed: a themed handle disappears against
+ * whatever the user painted underneath. White-on-dark reads on anything,
+ * which is why every editor draws handles this way. */
+.guide {
+  fill: none;
+  stroke: #ffffff;
+  stroke-opacity: 0.7;
+  stroke-dasharray: 4 4;
+  paint-order: stroke;
+}
+
+.handle {
+  fill: #ffffff;
+  stroke: #222222;
+  stroke-width: 2;
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.handle:focus-visible {
+  outline: 2px solid var(--wzl-accent, #4a9eff);
+  outline-offset: 2px;
+}

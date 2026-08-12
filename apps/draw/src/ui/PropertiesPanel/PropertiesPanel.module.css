@@ -168,3 +168,11 @@
 .button.danger {
   color: var(--wzl-danger);
 }
+
+/* Fill editor: kind switch stacked over whichever paint control it selects. */
+.fillStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}

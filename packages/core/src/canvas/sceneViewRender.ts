@@ -184,5 +184,5 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
   }
 
   const commands = buildSceneViewCommands(scene, view, drawOne, extraCommands);
-  entry.renderer.render(commands);
+  entry.renderer.render(commands, viewToMat3(view));
 }

@@ -36,6 +36,7 @@ import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
 import { GradientRampCache } from './cache/GradientRampCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
+import type { Mat3 } from './math/mat3';
 import { dispatch, OUTLINE_MIN_SCREEN_PX, type DrawContext } from './draw';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
@@ -383,7 +384,15 @@ export class WeaselRenderer {
     if (this.rectVao) gl.deleteVertexArray(this.rectVao);
   }
 
-  render(commands: DrawCommand[]): void {
+  /**
+   * Draw one frame.
+   *
+   * `viewMatrix` is the frame's world→screen transform. It is only consulted
+   * by `units: 'world'` gradients, which fall back to screen space without
+   * it — every other command carries its own transform in the stream, so
+   * callers with no view concept can keep calling `render(commands)`.
+   */
+  render(commands: DrawCommand[], viewMatrix?: Mat3): void {
     if (this.contextLost || this.disposed) return;
     const gl = this.gl;
     // Free GL resources whose Mesh was GC'd since the last frame. Done here
@@ -420,6 +429,7 @@ export class WeaselRenderer {
       clipDepth: 0,
       flattenTolerance: this.flattenTolerance,
       textOutlineMinScreenSize: this.textOutlineMinScreenSize,
+      viewMatrix,
     };
     for (const cmd of commands) dispatch(ctx, cmd);
     // Free transient resources allocated during this frame (e.g. per-frame

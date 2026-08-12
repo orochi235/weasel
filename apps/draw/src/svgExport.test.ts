@@ -24,7 +24,7 @@ function fakeScene(nodes: Record<string, {
   kind: 'leaf' | 'container';
   pose: { x: number; y: number; width: number; height: number };
   data?: {
-    path?: unknown; fill?: string; text?: string; style?: unknown;
+    path?: unknown; fill?: unknown; text?: string; style?: unknown;
     stroke?: string; strokeWidth?: number;
   };
   children?: string[];
@@ -289,5 +289,75 @@ describe('clipboardSnapshotRootIds', () => {
       { id: 'b', parent: 'g2' },
     ];
     expect(clipboardSnapshotRootIds(items)).toEqual(['g1', 'g2']);
+  });
+});
+
+
+describe('gradient fills', () => {
+  const STOPS = [
+    { offset: 0, color: '#ff0000' },
+    { offset: 1, color: '#0000ff' },
+  ];
+
+  /** A node at (100,50) sized 200x100, filled left-to-right across its box. */
+  function gradientScene() {
+    return fakeScene({
+      a: {
+        kind: 'leaf',
+        pose: { x: 100, y: 50, width: 200, height: 100 },
+        data: {
+          path: { kind: 'rect', x: 100, y: 50, width: 200, height: 100 },
+          fill: {
+            fill: 'linear-gradient',
+            from: { x: 0, y: 0.5 },
+            to: { x: 1, y: 0.5 },
+            stops: STOPS,
+            units: 'bounds',
+          },
+        },
+      },
+    }, ['a']);
+  }
+
+  it('resolves box-relative coordinates against the pose, not into a corner', () => {
+    const svg = selectionToSvgString(gradientScene(), ['a']);
+    const parsed = parseSvg(svg);
+    const n = parsed.nodes[0];
+    if (n.kind !== 'path') throw new Error('expected path');
+    if (n.fill.kind !== 'gradient') throw new Error('expected a gradient fill');
+    const paint = n.fill.paint as { fill: string; from: { x: number; y: number }; to: { x: number; y: number } };
+    expect(paint.fill).toBe('linear-gradient');
+    // Spans the node's own box in page coordinates — a `0..1` emission
+    // would have been a 1px smear at the origin.
+    expect(paint.from).toEqual({ x: 100, y: 100 });
+    expect(paint.to).toEqual({ x: 300, y: 100 });
+  });
+
+  it('emits the stops in order', () => {
+    const svg = selectionToSvgString(gradientScene(), ['a']);
+    const parsed = parseSvg(svg);
+    const n = parsed.nodes[0];
+    if (n.kind !== 'path' || n.fill.kind !== 'gradient') throw new Error('expected a gradient fill');
+    const paint = n.fill.paint as { stops: { offset: number; color: string }[] };
+    expect(paint.stops.map((s) => s.offset)).toEqual([0, 1]);
+    expect(paint.stops.map((s) => s.color.slice(0, 7))).toEqual(['#ff0000', '#0000ff']);
+  });
+
+  it('re-imports as a box-relative gradient, so it still tracks its node', () => {
+    const svg = selectionToSvgString(gradientScene(), ['a']);
+    let n = 0;
+    const drafts = svgNodesToSceneDrafts(parseSvg(svg).nodes, () => `n${n++}`);
+    const leaf = drafts.find((d) => d.kind === 'leaf');
+    if (leaf?.kind !== 'leaf') throw new Error('expected a leaf draft');
+    if (leaf.obj.tool === 'text') throw new Error('expected a path draft');
+    const fill = leaf.obj.fill as {
+      fill: string; units: string; from: { x: number; y: number }; to: { x: number; y: number };
+    };
+    expect(fill.fill).toBe('linear-gradient');
+    expect(fill.units).toBe('bounds');
+    expect(fill.from.x).toBeCloseTo(0);
+    expect(fill.from.y).toBeCloseTo(0.5);
+    expect(fill.to.x).toBeCloseTo(1);
+    expect(fill.to.y).toBeCloseTo(0.5);
   });
 });
