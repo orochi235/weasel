@@ -356,7 +356,13 @@ Core five + Crop shipped. Remaining:
   is a tagged union covering solid, pattern, and linear / radial / conic
   gradients, with `GradientRampCache` + `gradFill.ts` behind them and
   `createTilePattern` / the `patterns-builtin` catalog producing texture
-  handles. What's missing is entirely app-side: WeaselDraw's data shape carries
+  handles.
+
+  **Correction (2026-08-12): it was not entirely app-side.** The `kit:path` and
+  `kit:shape` painters typed `data.fill` as a color string, so no node could
+  carry a gradient without a consumer-registered painter. That is fixed —
+  `data.fill` is `string | FillStyle` and an object passes straight through.
+  What remains *is* now app-side: WeaselDraw's data shape carries
   `fill` as a color string, its swatches set colors, and nothing can express a
   paint that isn't solid. Needs, roughly in order: widen `WeaselDrawData.fill`
   to a `FillStyle` (with a string treated as solid for back-compat, since
