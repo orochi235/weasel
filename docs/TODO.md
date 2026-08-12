@@ -36,7 +36,6 @@ Priority tags:
 
 **Scene, adapters & layout**
 - `arrayAdapter` as default Canvas adapter — full unification → [Scene, adapters & layout](#scene-adapters--layout)
-- Group resize with rotated children → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
@@ -495,7 +494,18 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) `arrayAdapter` as the default Canvas adapter — full unification.** Partial work shipped: Canvas synthesizes an adapter from `items`/`setItems`/`toPose`/`fromPose`/`createDefault`/`poseBounds`/`intersectsRect` when no explicit `adapter` is passed. It collapses the flat-list boilerplate but is array-shape specific. The deeper move — every scene is a tree rooted at one container — was taken by `useScene` (kit-owned tree with leaf/container) but the inline-props and explicit-adapter tiers still sit alongside rather than collapsed. Full unification (one adapter contract, one default wiring) remains an option for later.
 
-- **(P2) Group resize with rotated children.** Today: AABB-frame fallback (`expandIds` + `RECT_POSE_DESCRIPTOR.remapBounds` axis-aligned scale; no per-leaf local-frame handling). Needs proper per-leaf scale handling in the leaf's local frame, mirroring the existing single-rotated-leaf math.
+- **(P3) The group's union box ignores child rotation.** Per-leaf scaling
+  landed 2026-08-12 (`remapRotatedLeaf`): a rotated leaf in a group now scales
+  along its own axes. What is still unrotated is the *box*. `aabbOfPose`
+  returns a rect pose's own `x/y/width/height` rather than its rotated
+  footprint, so both the drawn multi-selection union (`ChromeState.unionBounds`
+  in `SceneCanvas`, which reads `boundsOf` and ignores the `rotation` it
+  carries) and the resize origin (`unionBounds` over `geometry.getBounds`)
+  exclude the corners a rotated child actually covers. The two agree with each
+  other, so nothing looks broken mid-drag — the group box is just smaller than
+  its contents. Fixing it changes what is painted, so it wants eyes on the
+  render, and both sites must move together or the visible box and the
+  grabbable one diverge.
 
 - **(P3) SceneCanvas → useSceneAdapter for adapter construction.** Surfaced 2026-05-21 during the node-kind registry landing. Today `SceneCanvas` constructs its synthesized adapter inside `useSceneSelectTool` (the select-tool hook), which means every new `SceneToAdapterOptions` field (`layouts`, `cascadeContainerPose`, `kindOf`, …) has to be drilled through the hook's surface. `useSceneAdapter` already exposes the full options shape; lifting adapter construction to `SceneCanvas` and handing the result down would stop the drill-through and shrink `useSceneSelectTool`'s API. Out of scope for the registry work; file when next refactoring the SceneCanvas internals.
 
