@@ -46,7 +46,7 @@ export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'pointerDown',   hasTarget: true  },
   { name: 'dblTap',        hasTarget: true  },
   { name: 'drag',          hasTarget: true  },
-  { name: 'wheel',         hasTarget: false, arg: { name: 'direction', values: ['up', 'down', '*'], default: '*' } },
+  { name: 'wheel',         hasTarget: true,  arg: { name: 'direction', values: ['up', 'down', '*'], default: '*' } },
   { name: 'keyDown',       hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'keyUp',         hasTarget: false, arg: { name: 'key',       values: 'free' } },
   { name: 'keyHeld',       hasTarget: false, arg: { name: 'key',       values: 'free' } },
