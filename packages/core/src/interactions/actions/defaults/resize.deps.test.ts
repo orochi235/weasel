@@ -346,3 +346,109 @@ function vi_fn() {
   f.called = false;
   return f;
 }
+
+// ---------------------------------------------------------------------------
+// 5. Group resize with a rotated child.
+// ---------------------------------------------------------------------------
+
+describe('resizeAction — a rotated leaf inside a group', () => {
+  /** The naive projection: what the group path used for every leaf. */
+  const naiveProjection = {
+    getBounds: (p: ResizePose) => p,
+    remapBounds: (pose: ResizePose, s: ResizePose, d: ResizePose) => {
+      const sx = s.width === 0 ? 1 : d.width / s.width;
+      const sy = s.height === 0 ? 1 : d.height / s.height;
+      return {
+        ...pose,
+        x: d.x + (pose.x - s.x) * sx,
+        y: d.y + (pose.y - s.y) * sy,
+        width: pose.width * sx,
+        height: pose.height * sy,
+      } as ResizePose;
+    },
+  } as PoseProjection<unknown>;
+
+  function dragGroup(leafPose: RotatedPose, to: { x: number; y: number }) {
+    const invoker = getOngoing(resizeAction);
+    const ctx = makeCtx({
+      selectionIds: ['g'],
+      sceneNodes: {
+        g: { pose: { x: 0, y: 0, width: 0, height: 0 } },
+        upright: { pose: { x: 0, y: 0, width: 100, height: 100 } },
+        turned: { pose: leafPose },
+      },
+      anchor: ANCHOR_BR,
+      start: { x: 100, y: 100 },
+      deps: {
+        resizePolicy: {
+          constraints: [],
+          pointSnap: [],
+          expandIds: (ids: string[]) => (ids[0] === 'g' ? ['upright', 'turned'] : ids),
+          projection: naiveProjection,
+        },
+      },
+    });
+    const handle = invoker.start(ctx, undefined);
+    handle.onMove!({
+      ...ctx,
+      drag: { start: { x: 100, y: 100 }, current: to, delta: { x: to.x - 100, y: to.y - 100 } },
+    });
+    return { handle, ctx };
+  }
+
+  it('scales a 90° leaf along its own axes, not the group\'s', () => {
+    // Union is 0,0..100,100; dragging BR to (200, 100) doubles width only.
+    // The leaf is 20×10 turned 90°, so its world-x extent is its height.
+    const { handle } = dragGroup(
+      { x: 40, y: 45, width: 20, height: 10, rotation: Math.PI / 2 },
+      { x: 200, y: 100 },
+    );
+    const turned = handle.previewPose!('turned') as RotatedPose;
+    expect(turned.height).toBeCloseTo(20);
+    expect(turned.width).toBeCloseTo(20);
+    expect(turned.rotation).toBeCloseTo(Math.PI / 2);
+  });
+
+  it('leaves the unrotated sibling on the plain affine', () => {
+    const { handle } = dragGroup(
+      { x: 40, y: 45, width: 20, height: 10, rotation: Math.PI / 2 },
+      { x: 200, y: 100 },
+    );
+    const upright = handle.previewPose!('upright') as RectPose;
+    expect(upright.width).toBeCloseTo(200);
+    expect(upright.height).toBeCloseTo(100);
+  });
+
+  it('moves the rotated leaf\'s centre by the group affine', () => {
+    const { handle } = dragGroup(
+      { x: 40, y: 45, width: 20, height: 10, rotation: 0.6 },
+      { x: 200, y: 100 },
+    );
+    const turned = handle.previewPose!('turned') as RotatedPose;
+    // Centre was (50, 50) in a 100×100 union stretched 2× on x only.
+    expect(turned.x + turned.width / 2).toBeCloseTo(100);
+    expect(turned.y + turned.height / 2).toBeCloseTo(50);
+  });
+
+  it('still takes the naive affine for an unrotated leaf', () => {
+    const { handle } = dragGroup(
+      { x: 40, y: 45, width: 20, height: 10, rotation: 0 },
+      { x: 200, y: 100 },
+    );
+    const turned = handle.previewPose!('turned') as RotatedPose;
+    expect(turned.width).toBeCloseTo(40);
+    expect(turned.height).toBeCloseTo(10);
+  });
+
+  it('commits the local-frame pose, not the naive one', () => {
+    const { handle, ctx } = dragGroup(
+      { x: 40, y: 45, width: 20, height: 10, rotation: Math.PI / 2 },
+      { x: 200, y: 100 },
+    );
+    handle.onEnd!(ctx, 'commit');
+    const scene = ctx.deps.scene as ReturnType<typeof makeStubScene>;
+    const turned = scene.poses.get('turned') as RotatedPose;
+    expect(turned.height).toBeCloseTo(20);
+    expect(turned.width).toBeCloseTo(20);
+  });
+});

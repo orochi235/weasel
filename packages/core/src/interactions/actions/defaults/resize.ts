@@ -48,10 +48,12 @@ import type {
   ResizeAnchor,
   BoundsConstraint,
   ResizePose,
+  RotatedPose,
 } from '../../gestures/types';
 import type { ResizePolicy } from '../depSchema';
 import { DEFAULT_RESIZE_BEHAVIORS } from '../resize/behaviors';
-import { type PoseProjection } from '../resize/geometry';
+import { remapRotatedLeaf, type PoseProjection } from '../resize/geometry';
+import { poseRotationOf } from 'features/paths/poseRotation';
 import { AUTO_POSE_DESCRIPTOR } from '../resize/autoPoseDescriptor';
 import { fixedCornerOf } from '../resize/cornerHandles';
 import { rotatePoint } from '../rotate/geometry';
@@ -425,9 +427,19 @@ export const resizeAction: Action & { requires: string[] } = {
 
           // Project bounds → pose. For the group path, each leaf is remapped
           // from its own startPose; for single, from the start pose directly.
+          //
+          // A rotated leaf in a group needs its own frame: `src`/`dst` are
+          // world-frame here, unlike the single path where the drag delta was
+          // already projected into the leaf's frame, so the naive affine
+          // scales the wrong pair of extents. See `remapRotatedLeaf`.
           const computePose = (id: NodeId): unknown => {
             const sp = scratch.startPoses.get(id);
             if (sp === undefined) return undefined;
+            if (isGroupPath && poseRotationOf(sp) !== null) {
+              return remapRotatedLeaf(
+                sp as RotatedPose, scratch.originBounds, proposedBounds,
+              );
+            }
             return scratch.geometry.remapBounds(sp, scratch.originBounds, proposedBounds);
           };
 

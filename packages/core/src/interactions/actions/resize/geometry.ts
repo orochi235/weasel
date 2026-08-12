@@ -87,3 +87,57 @@ export const ROTATED_POSE_DESCRIPTOR: PoseProjection<RotatedPose> = {
   lerp: RECT_POSE_DESCRIPTOR.lerp as PoseProjection<RotatedPose>['lerp'],
   getRotation: (p) => p.rotation,
 };
+
+/**
+ * Remap a **rotated** leaf inside a group resize.
+ *
+ * The naive `remapBounds` scales a leaf's axis-aligned `width`/`height` by the
+ * group's per-axis factors and carries `rotation` through untouched. That is
+ * right when `src`/`dst` are already expressed in the leaf's own frame — the
+ * single-leaf resize path, where the drag delta was projected into that frame
+ * before the anchor math ran. In a group resize they are world-frame, so the
+ * leaf's local axes do not line up with the axes being scaled: at 90° a
+ * horizontal stretch should grow the leaf's `height`, and the naive map grows
+ * its `width`.
+ *
+ * What this computes is the group affine applied to the leaf's local frame,
+ * with the shear dropped — the pose model is `{x, y, width, height, rotation}`
+ * and cannot represent the parallelogram a non-uniform scale of a rotated box
+ * actually produces. The centre moves exactly; each local axis takes the
+ * length of its own image; the rotation follows the image of the local x-axis.
+ *
+ * Degenerates to the naive map at `rotation === 0`, and to a plain uniform
+ * scale when `sx === sy`, both exactly.
+ */
+export function remapRotatedLeaf<TPose extends RotatedPose>(
+  pose: TPose,
+  src: ResizePose,
+  dst: ResizePose,
+): TPose {
+  const sx = src.width === 0 ? 1 : dst.width / src.width;
+  const sy = src.height === 0 ? 1 : dst.height / src.height;
+  const theta = pose.rotation ?? 0;
+  const cos = Math.cos(theta);
+  const sin = Math.sin(theta);
+
+  // Images of the leaf's local unit axes under the group's diagonal scale.
+  const ux = sx * cos, uy = sy * sin;
+  const vx = -sx * sin, vy = sy * cos;
+
+  const width = pose.width * Math.hypot(ux, uy);
+  const height = pose.height * Math.hypot(vx, vy);
+  const rotation = Math.atan2(uy, ux);
+
+  // The centre is a point, so it takes the group affine directly.
+  const cxNew = dst.x + (pose.x + pose.width / 2 - src.x) * sx;
+  const cyNew = dst.y + (pose.y + pose.height / 2 - src.y) * sy;
+
+  return {
+    ...pose,
+    x: cxNew - width / 2,
+    y: cyNew - height / 2,
+    width,
+    height,
+    rotation,
+  };
+}
