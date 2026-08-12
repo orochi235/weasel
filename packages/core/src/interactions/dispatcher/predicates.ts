@@ -12,21 +12,33 @@
 
 // ─── Body-class predicates (read the second arg) ───────────────────────
 
+/** A predicate that resolves from `bodyTarget` alone. The exclusive-claim
+ *  filter reads `readsAffordance`: without it a body predicate looks like it
+ *  consults the hit, and survives a claim that should have barred it. */
+export type BodyPredicate = ((target: unknown, bodyTarget?: string) => boolean)
+  & { readsAffordance: false };
+
+function bodyPredicate(
+  fn: (target: unknown, bodyTarget?: string) => boolean,
+): BodyPredicate {
+  return Object.assign(fn, { readsAffordance: false as const });
+}
+
 /** Matches any body hit — selected or unselected node body. */
-export const isBody = (_target: unknown, bodyTarget?: string): boolean =>
-  bodyTarget === 'selected-body' || bodyTarget === 'unselected-body';
+export const isBody: BodyPredicate = bodyPredicate((_target, bodyTarget) =>
+  bodyTarget === 'selected-body' || bodyTarget === 'unselected-body');
 
 /** Body hit specifically already in the selection. */
-export const isSelectedBody = (_target: unknown, bodyTarget?: string): boolean =>
-  bodyTarget === 'selected-body';
+export const isSelectedBody: BodyPredicate = bodyPredicate((_target, bodyTarget) =>
+  bodyTarget === 'selected-body');
 
 /** Body hit specifically NOT in the selection. */
-export const isUnselectedBody = (_target: unknown, bodyTarget?: string): boolean =>
-  bodyTarget === 'unselected-body';
+export const isUnselectedBody: BodyPredicate = bodyPredicate((_target, bodyTarget) =>
+  bodyTarget === 'unselected-body');
 
 /** Empty-canvas hit — no node beneath cursor. */
-export const isEmpty = (_target: unknown, bodyTarget?: string): boolean =>
-  bodyTarget === 'empty';
+export const isEmpty: BodyPredicate = bodyPredicate((_target, bodyTarget) =>
+  bodyTarget === 'empty');
 
 // ─── Affordance-kind predicates (read the first arg) ───────────────────
 

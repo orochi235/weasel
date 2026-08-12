@@ -87,10 +87,17 @@ function targetRank(target: unknown): number {
  * `'selected-body'`, `'unselected-body'`) and the `kind:` forms resolve from
  * `bodyTarget` / `bodyKind` and never see it — which is why chrome floating
  * over empty canvas used to read as empty canvas.
+ *
+ * A predicate carrying `readsAffordance: false` says the same about itself;
+ * the kit's own body predicates do. Shape stays the fallback for predicates
+ * that declare nothing.
  */
 export function targetConsultsAffordance(specTarget: unknown): boolean {
   if (specTarget === undefined) return false;
-  if (typeof specTarget === 'object' && specTarget !== null && 'kindOf' in specTarget) return true;
+  if (typeof specTarget === 'object' && specTarget !== null && 'kindOf' in specTarget) {
+    const kindOf = (specTarget as { kindOf?: { readsAffordance?: boolean } }).kindOf;
+    return kindOf?.readsAffordance !== false;
+  }
   return typeof specTarget === 'string' && specTarget.startsWith('affordance:');
 }
 
