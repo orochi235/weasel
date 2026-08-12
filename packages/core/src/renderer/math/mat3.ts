@@ -55,6 +55,25 @@ function scale(m: Mat3, sx: number, sy: number): Mat3 {
   return multiply(m, s);
 }
 
+/**
+ * Inverse of an affine matrix. Returns identity for a singular matrix
+ * (determinant 0) — a degenerate transform collapses every point onto a
+ * line, so there is no meaningful inverse and callers get an unmapped
+ * space rather than NaNs propagating into a shader uniform.
+ */
+function invert(m: Mat3): Mat3 {
+  const a = m[0], b = m[1];
+  const c = m[3], d = m[4];
+  const tx = m[6], ty = m[7];
+  const det = a * d - b * c;
+  if (det === 0 || !Number.isFinite(det)) return identity();
+  const ia = d / det;
+  const ib = -b / det;
+  const ic = -c / det;
+  const id = a / det;
+  return create(ia, ib, ic, id, -(ia * tx + ic * ty), -(ib * tx + id * ty));
+}
+
 function apply(m: Mat3, x: number, y: number): [number, number] {
   const a = m[0], b = m[1];
   const c = m[3], d = m[4];
@@ -83,6 +102,7 @@ export const mat3 = {
   multiply,
   translate,
   scale,
+  invert,
   apply,
   screenToClip,
 };

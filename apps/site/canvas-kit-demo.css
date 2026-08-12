@@ -269,6 +269,15 @@ a:hover { text-decoration: underline; }
   align-items: flex-start;
 }
 
+/* Positioning context for absolutely-placed canvas overlays (gradient
+ * handles, and anything else that draws on top of the canvas). Sized by
+ * the canvas it wraps. */
+.ckd-canvas-frame {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
 .ckd-canvas {
   background: #6a6a6a;
   border: 1px solid var(--ckd-border);

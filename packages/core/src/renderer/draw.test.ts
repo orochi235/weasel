@@ -1643,3 +1643,66 @@ describe('drawText — outline tier', () => {
     });
   });
 });
+
+describe('gradient units — which space u_worldInv maps fragments into', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  const STOPS = [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }];
+  const PATH: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
+
+  /** Uniform locations are resolved at link time, inside the constructor —
+   *  captured before `reset()` clears the log the assertions read. */
+  let worldInvLocs: unknown[];
+
+  /** The matrix uploaded to `u_worldInv` on the last gradient draw. */
+  function worldInv(): number[] {
+    const upload = recorder.calls
+      .filter((c) => c.name === 'uniformMatrix3fv' && worldInvLocs.includes(c.args[0]))
+      .pop();
+    expect(upload, 'expected a u_worldInv upload').toBeDefined();
+    return Array.from(upload!.args[2] as Float32Array);
+  }
+
+  beforeEach(() => {
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    worldInvLocs = recorder.calls
+      .filter((c) => c.name === 'getUniformLocation' && c.args[1] === 'u_worldInv')
+      .map((c) => c.result);
+    expect(worldInvLocs.length, 'gradient program should expose u_worldInv').toBeGreaterThan(0);
+    recorder.reset();
+  });
+
+  it('defaults to screen space, leaving the mapping identity', () => {
+    r.render([{ kind: 'path', path: PATH, fill: { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS } }]);
+    expect(worldInv()).toEqual(Array.from(mat3.identity()));
+  });
+
+  it("units: 'local' inverts the enclosing transform, so the paint rides the geometry", () => {
+    const transform = mat3.translate(mat3.identity(), 100, 40);
+    r.render([{
+      kind: 'group',
+      transform,
+      children: [{ kind: 'path', path: PATH, fill: { fill: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 10, y: 0 }, stops: STOPS, units: 'local' } }],
+    }]);
+    // A fragment at screen (100, 40) is the group's local origin.
+    expect(mat3.apply(new Float32Array(worldInv()), 100, 40)).toEqual([0, 0]);
+  });
+
+  it("units: 'world' inverts the frame's view matrix, pinning the paint to the scene", () => {
+    const view = mat3.translate(mat3.identity(), 25, 75);
+    r.render([{
+      kind: 'group',
+      transform: mat3.translate(mat3.identity(), 100, 40),
+      children: [{ kind: 'path', path: PATH, fill: { fill: 'radial-gradient', center: { x: 0, y: 0 }, radius: 5, stops: STOPS, units: 'world' } }],
+    }], view);
+    // Screen (25, 75) is world origin — independent of the group transform.
+    expect(mat3.apply(new Float32Array(worldInv()), 25, 75)).toEqual([0, 0]);
+  });
+
+  it("units: 'world' degrades to screen space when the caller passed no view", () => {
+    r.render([{ kind: 'path', path: PATH, fill: { fill: 'conic-gradient', center: { x: 0, y: 0 }, angle: 0, stops: STOPS, units: 'world' } }]);
+    expect(worldInv()).toEqual(Array.from(mat3.identity()));
+  });
+});

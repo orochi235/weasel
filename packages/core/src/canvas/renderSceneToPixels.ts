@@ -41,6 +41,7 @@
  *   pixels are sampled exactly once, directly to the output grid.
  */
 import { WeaselRenderer } from '../renderer/WeaselRenderer';
+import { viewToMat3 } from '../renderer/math/viewToMat3';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Node, Scene } from 'core/scene/types';
@@ -219,7 +220,7 @@ export function renderSceneToPixels<TData, TLayer extends string, TPose>(
     bakeBudget: Infinity,
   });
   try {
-    renderer.render(plan.commands);
+    renderer.render(plan.commands, viewToMat3(plan.view));
     if (typeof gl.isContextLost === 'function' && gl.isContextLost()) {
       throw new Error('renderSceneToPixels: WebGL2 context was lost during render');
     }

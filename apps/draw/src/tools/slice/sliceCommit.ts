@@ -4,6 +4,7 @@ import {
   createDeleteOp,
   createInsertOp,
   type Path,
+  type FillStyle,
   type Op,
   type LeafNode,
   type NodeId,
@@ -23,7 +24,7 @@ interface WDPose {
 interface WDData {
   path?: Path;
   text?: string;
-  fill?: string;
+  fill?: string | FillStyle;
   stroke?: string;
   strokeWidth?: number;
   label?: string;

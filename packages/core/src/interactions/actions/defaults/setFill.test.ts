@@ -193,3 +193,66 @@ describe('setFillAction', () => {
     expect((scene.updates[0].data as { fill: string }).fill).toBe('#ff0000ff');
   });
 });
+
+describe('setFillAction — non-solid paints', () => {
+  const GRADIENT = {
+    fill: 'linear-gradient' as const,
+    from: { x: 0, y: 0 },
+    to: { x: 10, y: 0 },
+    stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
+    units: 'local' as const,
+  };
+
+  it('writes a paint verbatim rather than merging alpha into it', () => {
+    const scene = makeScene({ a: { fill: '#ffffff80' } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ fill: GRADIENT });
+  });
+
+  it('previews a paint during the gesture without writing to the scene', () => {
+    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    expect(h.previewData!('a')).toMatchObject({ fill: GRADIENT });
+    expect(scene.update).not.toHaveBeenCalled();
+  });
+
+  it('follows a paint edited mid-gesture, so a stop drag previews live', () => {
+    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    const moved = { ...GRADIENT, to: { x: 99, y: 0 } };
+    h.onMove!({ ...ctx, params: { paint: moved } });
+    expect(h.previewData!('a')).toMatchObject({ fill: moved });
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ fill: moved });
+  });
+
+  it('commits one batch for a paint, as for a color', () => {
+    const scene = makeScene({ a: { fill: '#ffffffff' }, b: { fill: '#000000ff' } });
+    const ctx = makeCtx({ selectionIds: ['a', 'b'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    expect(scene.batches).toEqual(['Set fill']);
+  });
+
+  it('lets a later color supersede a paint, so the picker still works after a gradient', () => {
+    const scene = makeScene({ a: { fill: '#ffffffff' } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { paint: GRADIENT } });
+    const h = getInvoker().start(ctx);
+    h.onMove!({ ...ctx, params: { color: '#ff0000' } });
+    h.onEnd!(ctx, 'commit');
+    expect(scene.updates[0].data).toMatchObject({ fill: '#ff0000ff' });
+  });
+
+  it('does not try to lift alpha off a gradient when a color replaces one', () => {
+    const scene = makeScene({ a: { fill: GRADIENT as never } });
+    const ctx = makeCtx({ selectionIds: ['a'], scene, params: { color: '#ff0000' } });
+    const h = getInvoker().start(ctx);
+    h.onEnd!(ctx, 'commit');
+    // Alpha comes from the kit default, not from a nonexistent gradient alpha.
+    expect(scene.updates[0].data).toMatchObject({ fill: '#ff0000ff' });
+  });
+});

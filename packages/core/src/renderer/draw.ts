@@ -1,4 +1,4 @@
-import type { Stroke, FillStyle, Path } from '@weasel-js/core';
+import type { Stroke, FillStyle, GradientUnits, Path } from '@weasel-js/core';
 import { resolveTextStyle } from '@weasel-js/core';
 import type {
   DrawCommand,
@@ -16,7 +16,7 @@ import type { GLTextureCache } from './cache/GLTextureCache';
 import type { GLImageCache } from './cache/GLImageCache';
 import type { GradientRampCache } from './cache/GradientRampCache';
 import type { ShaderProgram } from './shaders/ShaderProgram';
-import { mat3 } from './math/mat3';
+import { mat3, type Mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import { tessellate } from 'features/paths/tessellate/tessellate';
 import { resolveColor } from './math/color';
@@ -72,6 +72,10 @@ export interface DrawContext {
   /** On-screen glyph size (CSS px) at which text switches to tessellated
    *  outlines. See `WeaselRendererOptions.textOutlineMinScreenSize`. */
   textOutlineMinScreenSize?: number;
+  /** World→screen transform for the frame, when the caller supplied one.
+   *  Only `units: 'world'` gradients read it; absent, they fall back to
+   *  screen space. See `WeaselRenderer.render`. */
+  viewMatrix?: Mat3;
 }
 
 /**
@@ -477,6 +481,21 @@ function drawPathFillPattern(
   gl.bindVertexArray(null);
 }
 
+/**
+ * Screen→gradient-space matrix for `u_worldInv`, which the vertex shader
+ * applies to each fragment's screen position to recover the coordinates the
+ * gradient's geometry is expressed in.
+ *
+ * `'world'` silently degrades to screen space when no view matrix reached
+ * the renderer — `render(commands)` without a view is a supported call, and
+ * a missing view is not worth a thrown frame.
+ */
+function gradientSpaceInverse(ctx: DrawContext, units: GradientUnits | undefined): Mat3 {
+  if (units === 'local') return mat3.invert(ctx.state.transform);
+  if (units === 'world' && ctx.viewMatrix) return mat3.invert(ctx.viewMatrix);
+  return mat3.identity();
+}
+
 function drawPathFillGradient(
   ctx: DrawContext,
   fill: Extract<FillStyle, { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }>,
@@ -489,10 +508,7 @@ function drawPathFillGradient(
   gl.bindVertexArray(handle.vao);
   setProjAndModel(ctx, ctx.gradFill);
 
-  // u_worldInv: identity for step 4 (gradients render in screen space).
-  // Step 7 wires the actual view inverse through layers.
-  const identity3 = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
-  gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, identity3);
+  gl.uniformMatrix3fv(ctx.gradFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
 
   ctx.gradRampCache.bind(key, 0);
   gl.uniform1i(ctx.gradFill.uniform('u_ramp')!, 0);

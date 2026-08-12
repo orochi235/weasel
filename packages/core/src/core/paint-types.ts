@@ -33,15 +33,49 @@ import type { TextureHandle } from '../renderer/textures/registerTexture';
 export type FillStyle =
   | { fill?: 'solid'; color: string; opacity?: number }
   | { fill: 'pattern'; pattern: TextureHandle; opacity?: number }
-  | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; opacity?: number }
-  | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; opacity?: number }
-  | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; opacity?: number };
+  | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: GradientUnits; opacity?: number }
+  | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: GradientUnits; opacity?: number }
+  | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: GradientUnits; opacity?: number };
+
+/**
+ * Which coordinate space a gradient's geometry (`from`/`to`, `center`,
+ * `radius`) is expressed in. SVG's `gradientUnits`, plus an option for
+ * paints that are themselves viewport furniture.
+ *
+ * - `'bounds'`: fractions of the painted node's bounding box, `0..1` on each
+ *   axis — SVG `objectBoundingBox`. Resolved by the node painter, before the
+ *   renderer sees it, so the paint follows the node through moves, resizes
+ *   and rotation. What a gradient on a scene node wants.
+ * - `'local'`: the coordinate space the geometry was handed to the renderer
+ *   in — the enclosing group's frame. For draw commands a consumer builds
+ *   itself, where "the coordinates I just wrote" is the useful frame.
+ * - `'world'`: scene coordinates. The paint stays put under pan and zoom
+ *   while the geometry moves through it. SVG `userSpaceOnUse`. Requires the
+ *   renderer to have been handed a view matrix; falls back to `'screen'`
+ *   when it has not.
+ * - `'screen'`: CSS pixels of the drawing surface. For overlays and
+ *   viewport-fixed washes that should not move with the content at all.
+ *
+ * Defaults to `'screen'`, which is the behavior every gradient had before
+ * this field existed.
+ */
+export type GradientUnits = 'bounds' | 'local' | 'world' | 'screen';
 
 /** A single color stop within a gradient. `offset` is in 0..1. */
 export interface GradStop {
   offset: number;
   color: string;
 }
+
+/** The gradient members of `FillStyle`, as one type. What a gradient editor
+ *  edits, and what the gradient-specific helpers accept. */
+export type GradientFill = Extract<
+  FillStyle,
+  { fill: 'linear-gradient' | 'radial-gradient' | 'conic-gradient' }
+>;
+
+/** `GradientFill['fill']` — the three gradient discriminants on their own. */
+export type GradientKind = GradientFill['fill'];
 
 /**
  * Where a stroke sits relative to the geometric edge it strokes.

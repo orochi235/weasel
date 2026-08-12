@@ -22,6 +22,7 @@ import {
   type Path,
   type TextStyle,
   embedWeaselMetadataInSvg,
+  fillInPoseFrame,
   pathInPoseFrame,
   rectPath,
   unionBounds,
@@ -38,6 +39,7 @@ import {
   type SceneSource,
   type WeaselDrawPaperSize,
 } from './svgInterop';
+import type { FillStyle } from '@weasel-js/core';
 import type { Obj, PathObj, TextObj } from './poseUpdate';
 
 interface WeaselDrawPose {
@@ -49,7 +51,7 @@ interface WeaselDrawData {
   text?: string;
   /** Node-level typography, the same field `kit:text` paints from. */
   style?: TextStyle;
-  fill?: string;
+  fill?: string | FillStyle;
   stroke?: string;
   strokeWidth?: number;
 }
@@ -102,7 +104,12 @@ function leafToObj(id: string, data: WeaselDrawData, pose: WeaselDrawPose): Obj 
     // signal — so derive `closed` from `data.fill` to preserve the prior
     // export's "fill when data.fill is set, else none" behavior.
     closed: data.fill != null,
-    fill: data.fill ?? '#000000',
+    // The path above is baked into page coordinates, and the serializer
+    // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
+    // to be resolved against the same pose, exactly as the painter does.
+    fill: data.fill == null ? '#000000'
+      : typeof data.fill === 'string' ? data.fill
+      : fillInPoseFrame(data.fill, pose),
     stroke: data.stroke ?? '#000000',
     strokeWidth: data.stroke && (data.strokeWidth ?? 0) > 0 ? (data.strokeWidth ?? 1) : 0,
   };
