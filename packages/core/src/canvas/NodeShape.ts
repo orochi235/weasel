@@ -36,6 +36,7 @@ import { textCommand, textCommandFromRuns } from 'features/text/textCommand';
 import type { TextStyle } from 'features/text/textStyle';
 import type { StyledRun } from 'features/text/runs';
 import { textLineBoxes } from 'features/text/lineBoxes';
+import type { FillStyle } from 'core/paint-types';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
 import { ellipsePath, regularPolygonPath, starPath, linePath } from 'features/paths/builder';
@@ -444,6 +445,40 @@ function rectsToPath(rects: readonly { x: number; y: number; width: number; heig
   return { kind: 'polygon', commands, coords, fillRule: 'nonzero' };
 }
 
+/**
+ * What a node's `data.fill` means to the built-in painters.
+ *
+ * A string is a color, `'none'` skips the fill, and an object is a
+ * {@link FillStyle} used as-is — which is how a gradient or a pattern reaches
+ * the renderer without a consumer registering a painter of its own. The
+ * renderer has taken every `FillStyle` variant since the paint model landed;
+ * only these two painters were narrower than it.
+ *
+ * `undefined` falls back to `data.color`, then to a default fill — but only
+ * when there is no stroke, since a stroke-only path (pencil) should not
+ * acquire one.
+ */
+export type NodeFill = string | FillStyle;
+
+function isFillStyle(v: NodeFill | undefined): v is FillStyle {
+  return typeof v === 'object' && v !== null;
+}
+
+/** The fill a built-in painter should emit, or `null` for "no fill". */
+function resolveNodeFill(
+  fill: NodeFill | undefined,
+  color: string | undefined,
+  hasStroke: boolean,
+  fallback: string | null,
+): FillStyle | null {
+  if (isFillStyle(fill)) return fill;
+  const c = fill ?? color;
+  if (c === 'none') return null;
+  if (c !== undefined) return { color: c };
+  if (hasStroke && fallback === null) return null;
+  return fallback === null ? null : { color: fallback };
+}
+
 const PATH_PAINTER: NodeShapeEntry = {
   id: 'kit:path',
   matches: (node) => {
@@ -456,22 +491,21 @@ const PATH_PAINTER: NodeShapeEntry = {
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
     const d = node.data as {
       path: Path;
-      fill?: string;
+      fill?: NodeFill;
       stroke?: string;
       strokeWidth?: number;
       color?: string;
     };
     const projected = pathInPoseFrame(d.path, pose as RectPose);
     const hasStroke = !!d.stroke && d.stroke !== 'none' && (d.strokeWidth ?? 0) > 0;
-    const fillColor = d.fill ?? d.color;
     // Treat 'none' as "skip fill". When neither fill nor color is set, fall
     // back to a default fill only if there's no stroke — otherwise the path
     // is stroke-only (e.g. pencil) and a default fill would be wrong.
-    const hasFill = fillColor !== 'none' && (fillColor !== undefined || !hasStroke);
+    const fill = resolveNodeFill(d.fill, d.color, hasStroke, hasStroke ? null : '#888');
     const cmd: DrawCommand = {
       kind: 'path',
       path: projected,
-      ...(hasFill ? { fill: { color: fillColor ?? '#888' } } : {}),
+      ...(fill ? { fill } : {}),
       ...(hasStroke
         ? { stroke: { paint: { color: d.stroke! }, width: d.strokeWidth ?? 1 } }
         : {}),
@@ -488,15 +522,14 @@ const PATH_PAINTER: NodeShapeEntry = {
   // `NodeShape.ink.test.ts`, which asserts the two agree.
   ink: (node) => {
     const d = node.data as {
-      fill?: string;
+      fill?: NodeFill;
       stroke?: string;
       strokeWidth?: number;
       color?: string;
     };
     const hasStroke = !!d.stroke && d.stroke !== 'none' && (d.strokeWidth ?? 0) > 0;
-    const fillColor = d.fill ?? d.color;
     return {
-      filled: fillColor !== 'none' && (fillColor !== undefined || !hasStroke),
+      filled: resolveNodeFill(d.fill, d.color, hasStroke, hasStroke ? null : '#888') !== null,
       strokeWidth: hasStroke ? (d.strokeWidth ?? 1) : 0,
     };
   },
@@ -516,12 +549,13 @@ const SHAPE_PAINTER: NodeShapeEntry = {
   // fresh `Uint8Array` + `Float32Array` for every ellipse, polygon and star.
   // See PAINT_SLOT.
   paint: (node, pose) => nodeMemo(node, PAINT_SLOT, pose, () => {
-    const d = node.data as { shape: string; color?: string; fill?: string; stroke?: string; strokeWidth?: number; sides?: number; points?: number };
+    const d = node.data as { shape: string; color?: string; fill?: NodeFill; stroke?: string; strokeWidth?: number; sides?: number; points?: number };
     const path = pathForShape(d, pose as RectPose);
+    const shapeFill = resolveNodeFill(d.fill, d.color, false, '#888');
     return [{
       kind: 'path',
       path,
-      fill: { color: d.fill ?? d.color ?? '#888' },
+      ...(shapeFill ? { fill: shapeFill } : {}),
       ...(d.stroke && (d.strokeWidth ?? 0) > 0
         ? { stroke: { paint: { color: d.stroke }, width: d.strokeWidth ?? 1 } }
         : {}),
