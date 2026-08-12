@@ -344,7 +344,7 @@ export function matchSpec(
       const direction = spec.direction ?? '*';
       if (direction === 'up' && !(e.deltaY < 0)) return false;
       if (direction === 'down' && !(e.deltaY > 0)) return false;
-      return true;
+      return matchTarget(e.affordance, spec.target, e.bodyTarget, e.bodyKind);
     }
 
     case 'click': {

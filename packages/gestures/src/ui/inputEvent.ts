@@ -70,6 +70,9 @@ export interface WheelEvent extends EventModifiers {
   deltaY: number;
   clientX: number;
   clientY: number;
+  affordance?: unknown;
+  bodyTarget?: BodyTarget;
+  bodyKind?: BodyKind;
 }
 
 /**

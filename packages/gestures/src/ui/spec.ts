@@ -97,6 +97,7 @@ export interface KeyHeldSpec {
 export interface WheelSpec {
   kind: 'wheel';
   direction?: 'up' | 'down' | '*';
+  target?: TargetSpec;
   mods?: ModSpec;
   phase?: PhaseSpec;
 }
