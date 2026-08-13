@@ -572,24 +572,30 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
-  /** Layer-major DFS-preorder iterator. Shared by renderOrder() and toJSON(). */
-  function* renderOrderInternal(): Iterable<NodeId> {
-    // For each layer in order, walk the entire tree DFS-preorder, yielding
-    // any node whose layer matches.
-    for (const layer of state.layers) {
-      const stack: NodeId[] = [...state.roots].reverse();
-      while (stack.length > 0) {
-        const id = stack.pop()!;
-        const node = state.nodes.get(id);
-        if (!node) continue;
-        if (node.layer === layer.id) yield id;
-        if (node.kind === 'container') {
-          for (let i = node.children.length - 1; i >= 0; i--) {
-            stack.push(node.children[i]);
-          }
+  /** Layer-major DFS-preorder node list. Shared by renderOrder() and toJSON(). */
+  function renderOrderInternal(): NodeId[] {
+    // One DFS of the tree, bucketed by layer: appending in preorder keeps each
+    // bucket in preorder, so concatenating them is the layer-major sequence.
+    const buckets: NodeId[][] = state.layers.map(() => []);
+    const stack: NodeId[] = [...state.roots].reverse();
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      const node = state.nodes.get(id);
+      if (!node) continue;
+      const bucket = buckets[state.layerIndex.get(node.layer) ?? -1];
+      if (bucket) bucket.push(id);
+      if (node.kind === 'container') {
+        for (let i = node.children.length - 1; i >= 0; i--) {
+          stack.push(node.children[i]);
         }
       }
     }
+    if (buckets.length === 1) return buckets[0];
+    const out: NodeId[] = [];
+    for (const bucket of buckets) {
+      for (const id of bucket) out.push(id);
+    }
+    return out;
   }
 
   const scene: Scene<TData, TLayer, TPose> = {

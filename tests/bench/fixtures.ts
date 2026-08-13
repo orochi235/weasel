@@ -184,6 +184,31 @@ export function deepScene(count: number, depth: number): BenchScene {
   return scene;
 }
 
+export type LayeredScene = Scene<{ n: number }, string, unknown>;
+
+/**
+ * `count` flat leaves dealt round-robin across `layers` layers, so every layer
+ * holds an equal share. Sweeping `layers` at a fixed `count` isolates
+ * `renderOrder()`'s layer axis from its node-count axis.
+ */
+export function layeredScene(count: number, layers: number): LayeredScene {
+  let i = 0;
+  const scene = createScene<{ n: number }, string, unknown>({
+    systemLayers: Array.from({ length: layers }, (_, l) => ({ id: `L${l}` })),
+    historyLimit: 4,
+    generateId: () => asNodeId(`b${(i++).toString(36)}`),
+  });
+  for (let n = 0; n < count; n++) {
+    scene.add({
+      kind: 'leaf',
+      layer: `L${n % layers}`,
+      pose: { x: n, y: n, width: 10, height: 10 },
+      data: { n },
+    });
+  }
+  return scene;
+}
+
 // ── Text runs ────────────────────────────────────────────────────────────
 
 const WORDS = [
