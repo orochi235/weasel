@@ -18,6 +18,7 @@ Priority tags:
 
 ### Next up
 
+- **Performance benchmarking** — no numbers on any hot path today → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Fill-mode expansion: textures in the app** (gradients shipped 2026-08-12) → [Rendering & paint](#rendering--paint)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
@@ -699,6 +700,37 @@ From the WebGL transition spec — all deferred:
   much later. Found during Plan C, where a rename left `store.getState().setTheme`
   in `Lab.tsx` and `typecheck` stayed green. Adding `packages/labkit/src` to the
   include needs the `@weasel-js/labkit` path mapping too.
+
+- **Performance benchmarking.** The kit has no measured baseline for anything.
+  `tests/perf/` holds exactly one spec, `animation-stress.spec.ts`, and it is a
+  crash/lag tripwire (mean cycle under 600ms) rather than a benchmark — it
+  cannot tell you whether a change made tessellation twice as slow, only
+  whether it made the demo unusable. Every performance claim in this repo is
+  currently an argument from shape.
+
+  What's missing is a benchmark suite with committed numbers, covering the
+  paths where a regression is both plausible and expensive:
+
+  - **Renderer draw loop** — commands/frame vs. frame time, at a few scene
+    sizes. Separate the per-command cost from the per-frame fixed cost;
+    program switches between fill kinds are the suspected cliff.
+  - **Path tessellation** — `flattenTolerancePx` against curve count. Cache
+    hit vs. miss is the interesting split, since the mesh cache hides most of
+    it in steady state and none of it on first paint.
+  - **Text layout** — `layoutRuns` per glyph and the `layoutCache` hit rate.
+    The origin-baking item under [Rendering & paint](#rendering--paint) is
+    predicated on a cost nobody has measured.
+  - **Scene ops** — insert/delete/setPose over tree depth, and `renderOrder()`
+    over node count.
+  - **Hit testing** — quadtree query vs. node count and query-rect size.
+
+  Open questions: which harness (vitest `bench` for the pure-JS layers,
+  Playwright for anything needing real GL); where results live so a delta is
+  reviewable in a PR rather than a number in someone's terminal; and whether
+  any of it gates CI. Start with the pure-JS layers — tessellation, layout,
+  scene ops — since those need no GPU and so produce stable numbers on a
+  shared runner. GL-dependent benchmarks want the nightly treatment described
+  in the `test:perf` item below.
 
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.
 

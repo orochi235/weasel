@@ -29,6 +29,7 @@ import { D3SortableDemo } from './demos/D3SortableDemo';
 import { PerceptualColorSlidersDemo } from './demos/PerceptualColorSlidersDemo';
 import { LayeredCurveDemo } from './demos/LayeredCurveDemo';
 import { GradientPlaygroundDemo } from './demos/GradientPlaygroundDemo';
+import { PatternPlaygroundDemo } from './demos/PatternPlaygroundDemo';
 import { VertexColorsDemo } from './demos/VertexColorsDemo';
 import { VertexWidthsDemo } from './demos/VertexWidthsDemo';
 import { ColorMatrixDemo } from './demos/ColorMatrixDemo';
@@ -71,6 +72,7 @@ import D3SortableDemoFull from './demos/D3SortableDemo.tsx?raw';
 import PerceptualColorSlidersDemoFull from './demos/PerceptualColorSlidersDemo.tsx?raw';
 import LayeredCurveDemoFull from './demos/LayeredCurveDemo.tsx?raw';
 import GradientPlaygroundDemoFull from './demos/GradientPlaygroundDemo.tsx?raw';
+import PatternPlaygroundDemoFull from './demos/PatternPlaygroundDemo.tsx?raw';
 import VertexColorsDemoFull from './demos/VertexColorsDemo.tsx?raw';
 import VertexWidthsDemoFull from './demos/VertexWidthsDemo.tsx?raw';
 import ColorMatrixDemoFull from './demos/ColorMatrixDemo.tsx?raw';
@@ -484,6 +486,16 @@ export const DEMOS: DemoEntry[] = [
     Component: GradientPlaygroundDemo,
     full: GradientPlaygroundDemoFull,
     path: 'apps/site/demos/GradientPlaygroundDemo.tsx',
+  },
+  {
+    id: 'pattern-playground',
+    title: 'Pattern playground',
+    category: 'Rendering & paint',
+    description: 'The four built-in tile patterns \u2014 hatch, crosshatch, dots, chunks \u2014 each filling a rect through the `pattern` FillStyle variant.',
+    hint: 'four swatches, one per built-in tile',
+    Component: PatternPlaygroundDemo,
+    full: PatternPlaygroundDemoFull,
+    path: 'apps/site/demos/PatternPlaygroundDemo.tsx',
   },
   {
     id: 'vertex-colors',
