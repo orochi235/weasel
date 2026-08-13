@@ -163,6 +163,17 @@ Priority tags:
   refresh, so the readback can settle several samples behind the final pointer
   position. Recorded 2026-08-09.
 
+- **(P3) Detached scene renders place nested children by local pose.**
+  `buildSceneViewCommands` calls `drawOne(node, node.pose, view)` for each id in
+  `scene.renderOrder()` (`canvas/sceneViewRender.ts`), with no container
+  composition — unlike `buildSceneLayer`, which walks `buildSceneTree`. So a
+  child of a translated container renders at its local offset, and
+  `SceneViewCanvas` / `MinimapCanvas` / `renderSceneToPixels` misplace every
+  nested scene. Found 2026-08-13 while giving those three surfaces rotation and
+  per-node opacity; that fix shares one wrap helper between the two walks, but
+  the walks still disagree about parent transforms. Flat scenes are unaffected,
+  which is why it has gone unnoticed.
+
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
   from npm — published Jul 26 20:03, i.e. 54 commits and one whole dispatch
