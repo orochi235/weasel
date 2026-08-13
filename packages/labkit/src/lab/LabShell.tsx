@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { ThemeProvider, useThemeOptional } from '@weasel-js/theme/react';
+import type { ReactNode } from 'react';
 import type { LabMode } from '../state/types';
 import { interstellarTheme } from '../theme/interstellar';
 import { useResolvedMode } from './useSystemMode';

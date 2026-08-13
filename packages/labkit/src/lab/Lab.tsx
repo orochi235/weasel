@@ -1,13 +1,12 @@
+import { ThemeProvider } from '@weasel-js/theme/react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
-import { ThemeProvider } from '@weasel-js/theme/react';
 import type { Instrument } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore, type LabStore } from '../state/store';
 import type { LabMode, StorageAdapter, WorkspaceRecord } from '../state/types';
 import { interstellarTheme } from '../theme/interstellar';
-import { useResolvedMode } from './useSystemMode';
 import { Workspace } from '../workspace/Workspace';
 import {
   addWorkspace as addWorkspaceOp,
@@ -17,6 +16,7 @@ import {
 } from '../workspace/workspaceOps';
 import { LabContext, type LabContextValue } from './LabContext';
 import { LabShell } from './LabShell';
+import { useResolvedMode } from './useSystemMode';
 import { WorkspaceGrid } from './WorkspaceGrid';
 
 export interface LabProps {

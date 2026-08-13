@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { resolveTheme } from '@weasel-js/theme';
+import { describe, expect, it } from 'vitest';
 import { interstellarTheme } from './interstellar';
 
 describe('interstellarTheme', () => {

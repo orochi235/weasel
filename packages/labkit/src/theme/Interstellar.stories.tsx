@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useTheme } from '@weasel-js/theme/react';
 import type { TokenName } from '@weasel-js/theme';
+import { useTheme } from '@weasel-js/theme/react';
 import {
   CheckboxRow,
   ColorRow,
