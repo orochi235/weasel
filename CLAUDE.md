@@ -6,6 +6,37 @@ Generic 2D scene-graph canvas library. Published as `@weasel-js/core`.
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.
 
+## Releases: always write `patch`
+
+**Every changeset you write is `patch`.** Not `minor`, not `major` — regardless
+of how significant the change is, whether it adds API, or what semver would
+say. `minor` and `major` are Mike's calls, made explicitly, in the message
+where he makes them.
+
+All thirteen packages are in one changesets `fixed` group, so **one bump
+anywhere moves every package**. weasel is 1.0.0 as of 2026-08-12 — reached by
+accident, from two `major` changesets that sat in `.changeset/` for days until
+an unrelated release consumed them.
+
+`npm run check:bumps` enforces this and runs in CI, in the release workflow,
+and in `prepublishOnly`. Overriding it requires a marker in the changeset body
+naming the level it approves:
+
+```
+<!-- bump-approved: minor: <who> — <why> -->
+<!-- bump-approved: major: <who> — <why> -->
+```
+
+The level is part of the marker on purpose: approving a `minor` must not
+authorize a later edit to `major`.
+
+**Writing that marker yourself defeats the entire mechanism.** Treat it like
+`git push` — it needs Mike's explicit OK in the conversation, every time.
+
+If a change is genuinely breaking or genuinely additive, say so in the
+changeset *prose*. The words are what a reader acts on; the number can always
+be raised deliberately later. Don't otherwise discuss the number.
+
 ## Package manager
 
 npm is canonical: `package-lock.json` is the committed lockfile and `workspaces` lives in `package.json`. `pnpm install` is fine locally for speed (`.npmrc` has `link-workspace-packages=true` so it resolves the `*` workspace deps), but **never commit `pnpm-lock.yaml`** — it's gitignored on purpose. Don't introduce `pnpm-workspace.yaml`, `preinstall` hooks blocking npm, or `workspace:*` deps without an explicit decision to migrate.

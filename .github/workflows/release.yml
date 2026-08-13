@@ -48,6 +48,10 @@ jobs:
       # Last gate before anything reaches npm: refuse to publish a package whose
       # `exports`/`types` map promises files the tarball does not contain.
       - run: npm run check:manifests
+      # And refuse to *version* on an unapproved bump above patch. CI already
+      # checks this on the PR, but the release path accepts
+      # `workflow_dispatch`, which bypasses that entirely.
+      - run: npm run check:bumps
       - name: Create Release Pull Request or Publish
         uses: changesets/action@v1
         with:

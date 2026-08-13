@@ -33,6 +33,10 @@ jobs:
           cache: npm
       - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
+      # Refuses any changeset bump above `patch` without a sign-off marker.
+      # All thirteen packages share one `fixed` group, so one bump moves every
+      # package — which is how 0.8.0 became 1.0.0 by accident on 2026-08-12.
+      - run: npm run check:bumps
       - run: npm run typecheck
       # Architectural boundaries only (eslint.config.js): the core/ ← features/
       # arrow and @weasel-js/font's leaf purity. Both are one-way dependency
