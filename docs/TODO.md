@@ -685,18 +685,7 @@ From the WebGL transition spec — all deferred:
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
 
-- **(P3) Tests reaching into another package's `src/` by relative path.** Four hud tests imported `../../core/src/features/text/atlas/registerFont` and broke when that file moved during the `@weasel-js/font` extraction. They were repointed at `@weasel-js/font`, but the pattern likely exists elsewhere — worth a sweep (`grep -rn "\.\./\.\./[a-z-]*/src/" packages/*/src`).
-
 - **(P3) Last 4 React `act()` warnings in CI vitest.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The remaining 4 all come from `packages/core/src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test — a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`). A real fix has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log. Low value; defer.
-
-- **(P2) `packages/labkit/src` is outside `npm run typecheck`.** The root
-  `tsconfig.json` `include` lists every workspace's `src` except labkit's, so
-  `tsc --noEmit` never sees it. It is not uncovered — labkit's own
-  `build:dts` typechecks it via `tsconfig.lib.json` — but that only runs under
-  `npm run build`, so a type error in labkit passes `typecheck` and surfaces
-  much later. Found during Plan C, where a rename left `store.getState().setTheme`
-  in `Lab.tsx` and `typecheck` stayed green. Adding `packages/labkit/src` to the
-  include needs the `@weasel-js/labkit` path mapping too.
 
 - **Performance benchmarking.** The kit has no measured baseline for anything.
   `tests/perf/` holds exactly one spec, `animation-stress.spec.ts`, and it is a
