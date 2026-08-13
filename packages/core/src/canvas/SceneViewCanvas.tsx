@@ -53,6 +53,10 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
    *  indicator; available to other consumers that want to overlay a
    *  world-space annotation. */
   extraCommands?: ReadonlyArray<DrawCommand>;
+  /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
+   *  `alphaFor`. Pass the same function the main canvas uses to keep a
+   *  scoping-dim treatment consistent across both. Defaults to `() => 1`. */
+  alphaFor?: (id: string) => number;
   /** Optional CSS class for sizing / positioning the `<canvas>`. The kit
    *  does not emit inline styles for layout — use a class. */
   className?: string;
@@ -64,7 +68,7 @@ export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
 function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
   props: SceneViewCanvasProps<TData, TLayer, TPose>,
 ) {
-  const { scene, view, width, height, drawOne, extraCommands, className, canvasRef } = props;
+  const { scene, view, width, height, drawOne, extraCommands, alphaFor, className, canvasRef } = props;
 
   // Subscribe to scene version. The snapshot value isn't used directly —
   // we only need React to re-render the component when the scene mutates.
@@ -99,6 +103,7 @@ function SceneViewCanvasInner<TData, TLayer extends string, TPose>(
       height,
       drawOne,
       extraCommands: extraCommands as DrawCommand[] | undefined,
+      alphaFor,
     });
   });
 

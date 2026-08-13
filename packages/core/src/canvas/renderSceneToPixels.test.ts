@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { planPixelRender, renderSceneToPixels } from './renderSceneToPixels';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
+import { rotateAroundAABBCenter } from './poseRotation';
+import type { DrawCommand } from '../renderer/DrawCommand';
 import type { Node, Scene } from 'core/scene/types';
 
-interface RectPose { x: number; y: number; width: number; height: number }
+interface RectPose { x: number; y: number; width: number; height: number; rotation?: number }
 
 function leaf(id: string, pose: RectPose, data: unknown): Node<unknown, 'default', RectPose> {
   return { id, kind: 'leaf', layer: 'default', parent: null, pose, data } as unknown as Node<unknown, 'default', RectPose>;
@@ -83,6 +85,26 @@ describe('planPixelRender', () => {
 
   it('rejects a non-finite sourceRect origin (negative/zero origins remain valid)', () => {
     expect(() => planPixelRender({ scene: fakeScene([]), sourceRect: { x: NaN, y: 0, width: 10, height: 10 }, scale: { x: 1, y: 1 } })).toThrow();
+  });
+
+  it('honors pose rotation — a rotated node plans differently from an upright one', () => {
+    const box = { x: 10, y: 20, width: 40, height: 20 };
+    const upright = planPixelRender({ scene: fakeScene([leaf('r', box, { color: '#000' })]), sourceRect: RECT, scale: { x: 1, y: 1 } });
+    const spun = planPixelRender({ scene: fakeScene([leaf('r', { ...box, rotation: Math.PI / 3 }, { color: '#000' })]), sourceRect: RECT, scale: { x: 1, y: 1 } });
+    const childOf = (p: typeof upright) => (p.commands[0] as unknown as { children: DrawCommand[] }).children[0];
+    expect(childOf(spun)).not.toEqual(childOf(upright));
+    const wrap = childOf(spun) as unknown as { kind: string; transform: Float32Array };
+    expect(wrap.kind).toBe('group');
+    expect(Array.from(wrap.transform)).toEqual(Array.from(rotateAroundAABBCenter(10, 20, 40, 20, Math.PI / 3)));
+  });
+
+  it('honors alphaFor — a dimmed node plans differently from an opaque one', () => {
+    const scene = fakeScene([leaf('r', { x: 10, y: 20, width: 40, height: 20 }, { color: '#000' })]);
+    const opaque = planPixelRender({ scene, sourceRect: RECT, scale: { x: 1, y: 1 } });
+    const dimmed = planPixelRender({ scene, sourceRect: RECT, scale: { x: 1, y: 1 }, alphaFor: () => 0.3 });
+    const childOf = (p: typeof opaque) => (p.commands[0] as unknown as { children: DrawCommand[] }).children[0];
+    expect(childOf(dimmed)).not.toEqual(childOf(opaque));
+    expect(childOf(dimmed)).toMatchObject({ kind: 'group', alpha: 0.3 });
   });
 });
 

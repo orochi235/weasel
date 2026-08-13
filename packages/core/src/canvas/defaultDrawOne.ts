@@ -51,10 +51,9 @@ export function defaultDrawOne<TData, TLayer extends string, TPose>(
     )];
   }
 
-  // Pose-rotation wrap moved to `wrapWithPoseRotation` in
-  // `./poseRotation`, applied inside `buildSceneLayer` and the preview-
-  // ghost layer so every per-node `drawOne` (consumer-supplied or
-  // default) gets rotation visualization. Keeping it here too would
-  // double-wrap.
+  // Rotation and per-node alpha are applied OUTSIDE this function, by
+  // `wrapNodeOutput` in the scene walks (`buildSceneLayer`,
+  // `buildSceneViewCommands`) and the preview-ghost layer, so that
+  // consumer-supplied painters get them too. Doing it here would double-wrap.
   return primary;
 }

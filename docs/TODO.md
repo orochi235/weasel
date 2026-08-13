@@ -150,17 +150,21 @@ Priority tags:
   prevent that. Wiring re-projection would let anchor placement happen *in* the
   magnified view, which is the point of a loupe for precision work.
 
-- **(P3) Detached scene renders drop rotation and per-node opacity.**
-  `wrapWithPoseRotation` and `alphaFor` live in `buildSceneLayer`, not in
-  `defaultDrawOne`, and aren't exported — so everything rendering a scene
-  outside the main canvas (`SceneViewCanvas`, `MinimapCanvas`,
-  `renderSceneToPixels`, and now the loupe) silently omits both. Moving them
-  into the shared draw path would fix all four at once. Recorded 2026-08-09.
-
 - **(P3) Loupe pixel mode drops samples during a fast drag.** `refreshPixels`
   skips while a `createImageBitmap` is in flight and schedules no trailing
   refresh, so the readback can settle several samples behind the final pointer
   position. Recorded 2026-08-09.
+
+- **(P3) Detached scene renders place nested children by local pose.**
+  `buildSceneViewCommands` calls `drawOne(node, node.pose, view)` for each id in
+  `scene.renderOrder()` (`canvas/sceneViewRender.ts`), with no container
+  composition — unlike `buildSceneLayer`, which walks `buildSceneTree`. So a
+  child of a translated container renders at its local offset, and
+  `SceneViewCanvas` / `MinimapCanvas` / `renderSceneToPixels` misplace every
+  nested scene. Found 2026-08-13 while giving those three surfaces rotation and
+  per-node opacity; that fix shares one wrap helper between the two walks, but
+  the walks still disagree about parent transforms. Flat scenes are unaffected,
+  which is why it has gone unnoticed.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`

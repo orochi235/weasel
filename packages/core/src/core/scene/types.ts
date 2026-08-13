@@ -6,7 +6,7 @@ import type { SerializedHistory } from '@weasel-js/history';
  * shape used by `composeRectPose` and the `unionBounds` helper. Rotation is
  * in radians, pivoted on the unrotated AABB center; absent === 0. Kit-side
  * code that consumes rotation already reads `pose.rotation ?? 0`
- * (`SceneCanvas.defaultDrawOne`, `rotate/handle.ts`, `pathInWorld.ts`), so
+ * (`wrapNodeOutput`, `rotate/handle.ts`, `pathInWorld.ts`), so
  * the slot exists on every default scene whether or not the consumer
  * populates it.
  */
