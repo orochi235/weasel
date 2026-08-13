@@ -47,6 +47,8 @@ export type { GradientTrackOpts } from './paintGradientTrack';
 export { oklchToHex, chromaAt } from './color/oklch';
 export type { ChromaCurve, ChromaCurvePoint } from './color/oklch';
 export { useReorderDragList } from './useReorderDragList';
+export { useRovingTabIndex } from './useRovingTabIndex';
+export type { RovingItem, RovingTabIndex, UseRovingTabIndexOptions } from './useRovingTabIndex';
 export { formatNumber, MINUS_SIGN } from './format/number';
 export type {
   LayerListItem,

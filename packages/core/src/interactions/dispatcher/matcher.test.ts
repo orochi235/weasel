@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { matchBest, matchSorted, specificity, type InputEvent, type ScopedBinding } from './matcher';
+import {
+  matchBest, matchSorted, matchTarget, specificity, targetConsultsAffordance,
+  type InputEvent, type ScopedBinding,
+} from './matcher';
 import type { GestureBinding } from '../actions/binding';
-import type { GestureSpec } from '@weasel-js/gestures';
+import type { GestureSpec, TargetSpec } from '@weasel-js/gestures';
 
 const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 // Default wheel event data fields (matcher only reads mods; these are pass-through).
@@ -134,7 +137,7 @@ describe('specificity (tuple shape)', () => {
   });
 
   describe('graduated target specificity', () => {
-    const targetRank = (target: unknown): number =>
+    const targetRank = (target: TargetSpec): number =>
       specificity({ kind: 'click', target } as GestureSpec)[0];
 
     it('a body class and a predicate rank the same as before', () => {
@@ -152,6 +155,21 @@ describe('specificity (tuple shape)', () => {
 
     it('an exact affordance outranks a bare body class', () => {
       expect(targetRank('affordance:rotate-handle')).toBeGreaterThan(targetRank('empty'));
+    });
+  });
+
+  describe('undeclared target forms', () => {
+    // The three sites that enumerate the forms take `TargetSpec`, not
+    // `unknown`, and switch on `parseTargetSpec`'s discriminated result. The
+    // `@ts-expect-error`s below fail typecheck if any of them ever widens
+    // back to a shape that swallows an unknown form silently.
+    it('are a type error at each of the three sites, and no-match at runtime', () => {
+      // @ts-expect-error 'layer:hud' is not a TargetSpec form.
+      expect(specificity({ kind: 'click', target: 'layer:hud' })).toEqual([1, 0, 0, 1]);
+      // @ts-expect-error same, at the exclusive-claim filter.
+      expect(targetConsultsAffordance('layer:hud')).toBe(false);
+      // @ts-expect-error same, at the matcher in @weasel-js/gestures.
+      expect(matchTarget({ kind: 'layer:hud' }, 'layer:hud', 'empty', 'text')).toBe(false);
     });
   });
 });

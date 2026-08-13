@@ -4,8 +4,8 @@
  * binding-scope / matchBest logic on top.
  */
 
-import { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase } from '@weasel-js/gestures';
-import type { GestureSpec, InputEvent, ModSpec, PhaseContext } from '@weasel-js/gestures';
+import { matchSpec, matchModifiers, matchKey, matchTarget, matchPhase, parseTargetSpec } from '@weasel-js/gestures';
+import type { GestureSpec, InputEvent, ModSpec, PhaseContext, TargetSpec } from '@weasel-js/gestures';
 import type { GestureBinding } from '../actions/binding';
 import type { ClaimableGesture } from '../../affordances/types';
 
@@ -72,12 +72,21 @@ function modsCount(mods: ModSpec | undefined): number {
  * what keeps this addition from reordering any binding that existed before
  * the `kind:`/`affordance:` forms resolved: every one of them ranks 0 or 1.
  */
-function targetRank(target: unknown): number {
+function targetRank(target: TargetSpec | undefined): number {
   if (target === undefined) return 0;
-  if (typeof target !== 'string') return 1;
-  if (target.startsWith('kind:')) return target.endsWith(':selected') ? 3 : 2;
-  if (target.startsWith('affordance:')) return 2;
-  return 1;
+  const form = parseTargetSpec(target);
+  if (form === null) return 1;
+  switch (form.form) {
+    case 'kind': return form.requireSelected ? 3 : 2;
+    case 'affordance': return 2;
+    case 'body': return 1;
+    case 'predicate': return 1;
+    default: {
+      const _exhaustive: never = form;
+      void _exhaustive;
+      return 1;
+    }
+  }
 }
 
 /**
@@ -92,16 +101,24 @@ function targetRank(target: unknown): number {
  * the kit's own body predicates do. Shape stays the fallback for predicates
  * that declare nothing.
  */
-export function targetConsultsAffordance(specTarget: unknown): boolean {
+export function targetConsultsAffordance(specTarget: TargetSpec | undefined): boolean {
   if (specTarget === undefined) return false;
-  if (typeof specTarget === 'object' && specTarget !== null && 'kindOf' in specTarget) {
-    const kindOf = (specTarget as { kindOf?: { readsAffordance?: boolean } }).kindOf;
-    return kindOf?.readsAffordance !== false;
+  const form = parseTargetSpec(specTarget);
+  if (form === null) return false;
+  switch (form.form) {
+    case 'predicate': return form.kindOf.readsAffordance !== false;
+    case 'affordance': return true;
+    case 'body': return false;
+    case 'kind': return false;
+    default: {
+      const _exhaustive: never = form;
+      void _exhaustive;
+      return false;
+    }
   }
-  return typeof specTarget === 'string' && specTarget.startsWith('affordance:');
 }
 
-function specTargetOf(spec: GestureSpec): unknown {
+function specTargetOf(spec: GestureSpec): TargetSpec | undefined {
   return 'target' in spec ? spec.target : undefined;
 }
 
@@ -169,7 +186,7 @@ function reportDeadClaim(owner: string | undefined, warn: (message: string) => v
 export function specificity(
   spec: GestureSpec,
 ): readonly [number, number, number, number] {
-  const t = targetRank('target' in spec ? spec.target : undefined);
+  const t = targetRank(specTargetOf(spec));
   const mods = ('mods' in spec ? spec.mods : undefined) as ModSpec | undefined;
   const m = modsCount(mods);
   const p = ('phase' in spec && spec.phase !== undefined) ? 1 : 0;

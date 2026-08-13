@@ -7,9 +7,11 @@ import {
   matchPhase,
   mimeMatchesGlob,
   matchIngestTypes,
+  parseTargetSpec,
   type PhaseContext,
 } from './match';
 import type { InputEvent } from './inputEvent';
+import type { TargetSpec } from './spec';
 
 const noMods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
 // Default wheel event data fields (matcher only reads mods; these are pass-through).
@@ -567,6 +569,44 @@ describe('matchTarget — kind: string form', () => {
     expect(matchTarget(null, 'kind:app:note', 'unselected-body', 'app:note')).toBe(true);
     expect(matchTarget(null, 'kind:app:note:selected', 'selected-body', 'app:note')).toBe(true);
     expect(matchTarget(null, 'kind:app:note:selected', 'unselected-body', 'app:note')).toBe(false);
+  });
+});
+
+describe('parseTargetSpec', () => {
+  it('resolves the three body-class strings', () => {
+    expect(parseTargetSpec('empty')).toEqual({ form: 'body', body: 'empty' });
+    expect(parseTargetSpec('selected-body')).toEqual({ form: 'body', body: 'selected-body' });
+    expect(parseTargetSpec('unselected-body')).toEqual({ form: 'body', body: 'unselected-body' });
+  });
+
+  it('splits the kind forms into kind + requireSelected', () => {
+    expect(parseTargetSpec('kind:text')).toEqual({ form: 'kind', kind: 'text', requireSelected: false });
+    expect(parseTargetSpec('kind:text:selected')).toEqual({ form: 'kind', kind: 'text', requireSelected: true });
+    expect(parseTargetSpec('kind:app:note')).toEqual({ form: 'kind', kind: 'app:note', requireSelected: false });
+    expect(parseTargetSpec('kind:app:note:selected')).toEqual({ form: 'kind', kind: 'app:note', requireSelected: true });
+  });
+
+  it('keeps the whole suffix of an affordance form, parameters included', () => {
+    expect(parseTargetSpec('affordance:rotate-handle')).toEqual({ form: 'affordance', kind: 'rotate-handle' });
+    expect(parseTargetSpec('affordance:anchor:3')).toEqual({ form: 'affordance', kind: 'anchor:3' });
+  });
+
+  it('carries the predicate through, readsAffordance and all', () => {
+    const kindOf = Object.assign(() => true, { readsAffordance: false as const });
+    expect(parseTargetSpec({ kindOf })).toEqual({ form: 'predicate', kindOf });
+  });
+
+  it('returns null for values that are no known form', () => {
+    expect(parseTargetSpec('nonsense' as TargetSpec)).toBeNull();
+    expect(parseTargetSpec(7 as unknown as TargetSpec)).toBeNull();
+    expect(parseTargetSpec(null as unknown as TargetSpec)).toBeNull();
+    expect(parseTargetSpec({} as unknown as TargetSpec)).toBeNull();
+  });
+
+  it('every form matchTarget accepts round-trips through the parser', () => {
+    // The link the three enumerations rely on: an unparsed spec is a no-match
+    // everywhere, so a form the parser doesn't know can never match.
+    expect(matchTarget(null, 'nonsense' as TargetSpec, 'empty', 'text')).toBe(false);
   });
 });
 

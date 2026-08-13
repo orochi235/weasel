@@ -35,10 +35,27 @@ export type ModSpec = Partial<{
   shift: boolean | 'optional';
 }>;
 
+/** The predicate form of {@link TargetSpec}. `hit` is the raw target
+ *  (affordance for drag, `e.target` otherwise); `bodyTarget` is the optional
+ *  body-class string ('empty' | 'selected-body' | 'unselected-body') when
+ *  `classifyTarget` is wired. Predicates that only need one of the two can
+ *  ignore the other. */
+export interface TargetPredicate {
+  (hit: unknown, bodyTarget?: string): boolean;
+  /** `false` declares that the predicate reads `bodyTarget` only. An
+   *  exclusive affordance claim bars bindings whose target doesn't consult
+   *  the hit; a body predicate that declares nothing looks like it does. */
+  readsAffordance?: boolean;
+}
+
 /** Target selector for click and drag gesture specs. String forms are sugar
  *  for the kit-owned object-kind registry (TODO.md Tier 1 follow-up); until
  *  that ships, consumers can pass `{ kindOf: predicate }` to classify hits
- *  themselves. */
+ *  themselves.
+ *
+ *  Adding a form here is a compile error in `parseTargetSpec` until
+ *  `TargetSpecForm` grows a matching variant — which is in turn a compile
+ *  error at every site that switches on one. */
 export type TargetSpec =
   | 'empty'
   | 'selected-body'
@@ -46,14 +63,7 @@ export type TargetSpec =
   | `kind:${string}`
   | `kind:${string}:selected`
   | `affordance:${string}`
-  | {
-      /** Predicate. `hit` is the raw target (affordance for drag,
-       *  `e.target` otherwise); `bodyTarget` is the optional body-class
-       *  string ('empty' | 'selected-body' | 'unselected-body') when
-       *  `classifyTarget` is wired. Predicates that only need one of the
-       *  two can ignore the other. */
-      kindOf: (hit: unknown, bodyTarget?: string) => boolean;
-    };
+  | { kindOf: TargetPredicate };
 
 /** Phase qualifier on a gesture spec. Restricts when the spec matches based
  *  on per-tool gesture-lifecycle state.
