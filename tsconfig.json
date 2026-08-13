@@ -65,6 +65,11 @@
       "debug/*": ["./packages/core/src/debug/*"]
     }
   },
-  "include": ["apps", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/history/src", "packages/modes/src"],
+  // `tests/bench` is in here and the rest of `tests/` is not: the benches
+  // import kit internals through the path mappings above, so a rename in
+  // core silently breaks them otherwise. The Playwright suites under
+  // tests/e2e, tests/perf and tests/visual drive the app over a wire and
+  // don't.
+  "include": ["apps", "tests/bench", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/history/src", "packages/modes/src"],
   "exclude": ["node_modules", "dist"]
 }

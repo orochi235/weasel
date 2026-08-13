@@ -53,6 +53,8 @@
     "test:e2e:draw": "playwright test --config=apps/draw/tests-e2e/playwright.config.ts",
     "test:e2e:demos": "playwright test --config=tests/e2e/playwright.config.ts",
     "test:perf": "playwright test --config=tests/perf/playwright.config.ts",
+    "bench": "vitest bench --run --config vitest.bench.config.ts --compare tests/bench/results/baseline.json",
+    "bench:baseline": "vitest bench --run --config vitest.bench.config.ts --outputJson tests/bench/results/baseline.json && node scripts/bench-report.mjs",
     "lint": "eslint packages",
     "changeset": "changeset",
     "release": "changeset publish",
