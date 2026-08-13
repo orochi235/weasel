@@ -45,7 +45,6 @@ await registerFont('inter', { weight: 700 }, '/fonts/inter.json', '/fonts/inter.
 const GLYPH_COUNTS = [50, 500, 5000];
 const NO_WRAP = { maxWidth: Infinity, lineHeight: 1.2, align: 'left' as const };
 const WRAP = { maxWidth: 400, lineHeight: 1.2, align: 'left' as const };
-const ORIGIN = { x: 0, y: 0 };
 
 const single = new Map(GLYPH_COUNTS.map((n) => [n, [plainRun(proseOf(n))]]));
 
@@ -53,7 +52,7 @@ const single = new Map(GLYPH_COUNTS.map((n) => [n, [plainRun(proseOf(n))]]));
 // register lays out no quads, and every number below would silently be a
 // measurement of `resolveGlyph`'s missing-glyph path instead of layout.
 {
-  const probe = layoutRuns([plainRun('Ag')], NO_WRAP, ORIGIN);
+  const probe = layoutRuns([plainRun('Ag')], NO_WRAP);
   const quads = probe.groups.reduce((n, g) => n + g.quads.length, 0);
   if (quads !== 2) throw new Error(`bench font fixture: expected 2 quads, got ${quads}`);
 }
@@ -62,7 +61,7 @@ describe('layoutRuns — glyph count, one run, no wrap', () => {
   for (const n of GLYPH_COUNTS) {
     const runs = single.get(n)!;
     bench(`${n} glyphs`, () => {
-      layoutRuns(runs, NO_WRAP, ORIGIN);
+      layoutRuns(runs, NO_WRAP);
     });
   }
 });
@@ -71,7 +70,7 @@ describe('layoutRuns — glyph count, one run, wrapped to 400px', () => {
   for (const n of GLYPH_COUNTS) {
     const runs = single.get(n)!;
     bench(`${n} glyphs`, () => {
-      layoutRuns(runs, WRAP, ORIGIN);
+      layoutRuns(runs, WRAP);
     });
   }
 });
@@ -82,27 +81,27 @@ describe('layoutRuns — run count at a fixed 1000 glyphs', () => {
   for (const runCount of [1, 10, 100]) {
     const runs = alternatingRuns(runCount, Math.floor(1000 / runCount));
     bench(`${runCount} ${runCount === 1 ? 'run' : 'runs'}`, () => {
-      layoutRuns(runs, WRAP, ORIGIN);
+      layoutRuns(runs, WRAP);
     });
   }
 });
 
 describe('layoutCache — hit vs miss (500 glyphs, wrapped)', () => {
   const runs = single.get(500)!;
-  cachedLayoutRuns(runs, WRAP, ORIGIN);
+  cachedLayoutRuns(runs, WRAP);
   bench('cachedLayoutRuns hit', () => {
-    cachedLayoutRuns(runs, WRAP, ORIGIN);
+    cachedLayoutRuns(runs, WRAP);
   });
   bench('cachedLayoutRuns miss', () => {
     _resetLayoutCacheForTests();
-    cachedLayoutRuns(runs, WRAP, ORIGIN);
+    cachedLayoutRuns(runs, WRAP);
   });
-  // A node dragged across the page moves its origin every frame, which is a
-  // key miss even though nothing about the text changed. This is the cost of
-  // the cache's origin-baking, and the number the "bake origins later" item
-  // in docs/TODO.md is arguing about.
-  let i = 0;
+  // Dragging a node was a full miss on every frame while the cache keyed on
+  // origin. Layout is origin-relative now and `drawText` translates at
+  // upload, so this is the same call as the hit above — kept as its own row
+  // because the committed baseline still holds the pre-change number, and the
+  // collapse from one to the other is the result worth being able to see.
   bench('cachedLayoutRuns moving origin', () => {
-    cachedLayoutRuns(runs, WRAP, { x: i++, y: 0 });
+    cachedLayoutRuns(runs, WRAP);
   });
 });

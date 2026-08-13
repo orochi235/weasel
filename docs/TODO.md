@@ -342,15 +342,6 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P3) Lay text out relative to its origin, not in absolute coordinates.**
-  `layoutRuns` bakes `origin` into every quad, so `layoutCache` has to carry it
-  in the key and a text node re-lays out on every frame of a drag. If layout
-  emitted origin-relative geometry and `drawText` translated at upload — it
-  already threads `dy` for `verticalAlign`, so `dx`/`dy` is the same shape —
-  the entry would survive moves too. Needs confirming that alignment is
-  genuinely translation-equivariant in `origin.x` first. Low priority: pan and
-  zoom already hit, and those are the frames that repeat.
-
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in

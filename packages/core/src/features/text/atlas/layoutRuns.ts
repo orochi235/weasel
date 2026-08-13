@@ -27,6 +27,16 @@
  * during the same per-line pen walk that emits quads, *not* reconstructed
  * from quad extents afterwards: quads exist only for glyphs with ink, so a
  * decorated span's spaces would punch holes in a rule derived from them.
+ *
+ * ### Coordinates are origin-relative
+ *
+ * Every coordinate out of here is measured from the text's own top-left, not
+ * from anywhere on the page: the caller translates. That is what lets a text
+ * node be dragged without re-laying out — `layoutCache` would otherwise need
+ * the position in its key and miss on every frame of the drag — and it costs
+ * the caller one addition per vertex, inside loops already walking every one.
+ * Alignment, wrapping, tracking and decoration placement all read widths and
+ * pen deltas, never an absolute coordinate, so the translation is exact.
  */
 
 import type { FillStyle, Stroke } from 'core/paint-types';
@@ -36,6 +46,7 @@ import {
 } from '@weasel-js/font';
 import type { ResolvedRun } from '../runs/resolveRuns';
 
+/** One textured glyph quad, origin-relative — see the header. */
 export interface LaidOutQuad {
   x0: number; y0: number; x1: number; y1: number;
   u0: number; v0: number; u1: number; v1: number;
@@ -177,11 +188,6 @@ export interface LayoutRunsOpts {
    * with the paint, and crossing the threshold cannot reflow text.
    */
   outlineMinSize?: number;
-}
-
-export interface LayoutRunsOrigin {
-  x: number;
-  y: number;
 }
 
 interface LayoutContext {
@@ -369,7 +375,6 @@ export function _resetMissingGlyphWarningsForTests(): void {
 export function layoutRuns(
   runs: readonly ResolvedRun[],
   opts: LayoutRunsOpts,
-  origin: LayoutRunsOrigin,
 ): LaidOutRuns {
   const ctx: LayoutContext = { groups: new Map() };
 
@@ -602,15 +607,15 @@ export function layoutRuns(
   }
 
   const lineBoxes: LaidOutLineBox[] = [];
-  let penY = origin.y;
+  let penY = 0;
   let maxLineWidth = 0;
   const finiteWidth = Number.isFinite(opts.maxWidth) ? opts.maxWidth : 0;
   for (const line of lines) {
     const alignShift = (() => {
       if (opts.align === 'left') return 0;
-      // With a finite box, distribute the slack within `maxWidth` (origin.x is
+      // With a finite box, distribute the slack within `maxWidth` (x = 0 is
       // the box's left edge). With no box (infinite maxWidth), anchor on the
-      // line's own width instead — origin.x is the text's midpoint ('center')
+      // line's own width instead — x = 0 is the text's midpoint ('center')
       // or right edge ('right'). This matches the canvas-2D `renderLabel`
       // anchor model so point-anchored labels center on x in both backends.
       if (!Number.isFinite(opts.maxWidth)) {
@@ -619,7 +624,7 @@ export function layoutRuns(
       const slack = finiteWidth - line.width;
       return opts.align === 'center' ? slack / 2 : slack;
     })();
-    const lineX0 = origin.x + alignShift;
+    const lineX0 = alignShift;
     // The line's baseline, recorded for the box below. Every entry on a line
     // shares `penY`, but not necessarily `font`/`fontSize` — a mixed-size line
     // has one baseline per run under this model, and the first entry's is the
@@ -742,6 +747,6 @@ export function layoutRuns(
     groups: [...ctx.groups.values()],
     decorations,
     lines: lineBoxes,
-    bounds: { width: maxLineWidth, height: penY - origin.y },
+    bounds: { width: maxLineWidth, height: penY },
   };
 }

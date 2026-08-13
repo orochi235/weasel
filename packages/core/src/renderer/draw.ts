@@ -881,24 +881,20 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
     ? minScreen / modelScale(ctx.state.transform)
     : undefined;
 
-  const laid = cachedLayoutRuns(
-    cmd.runs,
-    { maxWidth, lineHeight, align, outlineMinSize },
-    { x: cmd.x, y: cmd.y },
-  );
+  const laid = cachedLayoutRuns(cmd.runs, { maxWidth, lineHeight, align, outlineMinSize });
   // Decorations are checked too: text whose glyphs are all ink-free — every
   // one still awaiting a dynamic-atlas bake, say — produces no groups at all
   // while still carrying a rule that has to be drawn.
   if (laid.groups.length === 0 && laid.decorations.length === 0) return;
 
-  // Applied at upload time, not baked into `laid`. The layout is not ours to
-  // edit: it is expensive enough to be worth caching, and a shared layout that
-  // absorbed `dy` would gain another one every frame and slide off the page.
-  // Every consumer below adds it while packing vertices, which costs one
-  // addition inside loops that are already walking every vertex — and rules
-  // shift with the glyphs they belong to, or they detach from the text at
-  // every verticalAlign other than the default.
-  const dy = verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
+  // `laid` is origin-relative, so this is the command's position plus the
+  // verticalAlign shift. Applied at upload time, not baked in: the layout is
+  // shared and not ours to edit — a cached layout that absorbed either offset
+  // would gain another one every frame and slide off the page. Every consumer
+  // below adds them while packing vertices, which costs one addition inside
+  // loops that are already walking every vertex.
+  const dx = cmd.x;
+  const dy = cmd.y + verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
 
   const gl = ctx.gl;
   applyClipTest(ctx);
@@ -906,7 +902,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
   let currentProg: ShaderProgram | null = null;
   for (const group of laid.groups) {
     if (group.source === 'outline') {
-      drawTextOutlineGroup(ctx, group, dy);
+      drawTextOutlineGroup(ctx, group, dx, dy);
       // Outline groups go through the path-fill programs, which bind their
       // own. The next SDF group has to `useProgram` again; its uniforms
       // survive (they live on the program object), so `preparedPrograms`
@@ -928,10 +924,10 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
       // from fwidth() per fragment. A CPU-side constant cannot be right at
       // more than one scale — see the textSdf.ts header.
     }
-    drawTextGroup(ctx, group, prog, dy);
+    drawTextGroup(ctx, group, prog, dx, dy);
   }
 
-  drawTextDecorations(ctx, laid.decorations, dy);
+  drawTextDecorations(ctx, laid.decorations, dx, dy);
 }
 
 /**
@@ -958,15 +954,15 @@ const SYNTHETIC_ITALIC_RADIANS = 0.2094;
  * here is geometry like any other, and those programs shade in world space,
  * so they need nothing from the text pipeline.
  */
-function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dy: number): void {
-  const mesh = outlineGroupMesh(group, dy);
+function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number, dy: number): void {
+  const mesh = outlineGroupMesh(group, dx, dy);
   if (mesh) drawPathFillByKind(ctx, group.fill, ctx.meshCache.uploadTransient(mesh));
 
   // Stroke after fill — Canvas2D's fillText-then-strokeText convention, and
   // SVG's default paint-order. A second batched draw call over the same
   // group, not a call per glyph.
   if (!group.stroke) return;
-  const strokeMesh = outlineGroupStrokeMesh(group, dy);
+  const strokeMesh = outlineGroupStrokeMesh(group, dx, dy);
   if (strokeMesh) {
     drawPathFillByKind(ctx, group.stroke.paint, ctx.meshCache.uploadTransient(strokeMesh));
   }
@@ -982,8 +978,8 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dy: number)
  * per-contour fan that only resolves correctly through a stencil pass, and
  * merging one into a batch would fill its counters solid.
  */
-function outlineGroupMesh(group: LaidOutGroup, dy: number): Mesh | null {
-  return mergeGlyphMeshes(group, dy, (glyph) => outlineMesh(glyph.key, glyph.d));
+function outlineGroupMesh(group: LaidOutGroup, dx: number, dy: number): Mesh | null {
+  return mergeGlyphMeshes(group, dx, dy, (glyph) => outlineMesh(glyph.key, glyph.d));
 }
 
 /**
@@ -1001,12 +997,12 @@ function outlineGroupMesh(group: LaidOutGroup, dy: number): Mesh | null {
  * shearing the finished ribbon is what keeps the outline glued to the glyph
  * it outlines, which re-tessellating in sheared space would not.
  */
-function outlineGroupStrokeMesh(group: LaidOutGroup, dy: number): Mesh | null {
+function outlineGroupStrokeMesh(group: LaidOutGroup, dx: number, dy: number): Mesh | null {
   const stroke = group.stroke;
   if (!stroke) return null;
   const width = stroke.width ?? 1;
   if (!(width > 0)) return null;
-  return mergeGlyphMeshes(group, dy, (glyph) =>
+  return mergeGlyphMeshes(group, dx, dy, (glyph) =>
     glyph.scale > 0
       ? outlineStrokeMesh(glyph.key, glyph.d, quantizeEmWidth(width / glyph.scale), stroke)
       : null);
@@ -1020,6 +1016,7 @@ function outlineGroupStrokeMesh(group: LaidOutGroup, dy: number): Mesh | null {
  */
 function mergeGlyphMeshes(
   group: LaidOutGroup,
+  dx: number,
   dy: number,
   meshFor: (glyph: LaidOutOutlineGlyph) => Mesh | null,
 ): Mesh | null {
@@ -1050,7 +1047,7 @@ function mergeGlyphMeshes(
     for (let k = 0; k < mesh.vertices.length; k += 2) {
       const ex = mesh.vertices[k];
       const ey = mesh.vertices[k + 1];
-      vertices[vi++] = x + (ex - ey * shear) * scale;
+      vertices[vi++] = x + dx + (ex - ey * shear) * scale;
       vertices[vi++] = baselineY + dy + ey * scale;
     }
     for (let k = 0; k < mesh.indices.length; k++) indices[ii++] = base + mesh.indices[k];
@@ -1069,7 +1066,7 @@ function mergeGlyphMeshes(
  * Drawn after the glyphs, so a rule sits on top of glyph ink where they
  * overlap (the CSS spec allows either order).
  */
-function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDecoration[], dy: number): void {
+function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDecoration[], dx: number, dy: number): void {
   if (decorations.length === 0) return;
 
   // Colour resolution matches drawTextGroup exactly — including its ignoring
@@ -1100,11 +1097,12 @@ function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDeco
     const vertices = new Float32Array(rects.length * 4 * 2);
     let vi = 0;
     for (const d of rects) {
+      const dx0 = d.x0 + dx, dx1 = d.x1 + dx;
       const dy0 = d.y0 + dy, dy1 = d.y1 + dy;
-      vertices[vi++] = d.x0; vertices[vi++] = dy0;
-      vertices[vi++] = d.x1; vertices[vi++] = dy0;
-      vertices[vi++] = d.x0; vertices[vi++] = dy1;
-      vertices[vi++] = d.x1; vertices[vi++] = dy1;
+      vertices[vi++] = dx0; vertices[vi++] = dy0;
+      vertices[vi++] = dx1; vertices[vi++] = dy0;
+      vertices[vi++] = dx0; vertices[vi++] = dy1;
+      vertices[vi++] = dx1; vertices[vi++] = dy1;
     }
     const indices = new Uint32Array(rects.length * 6);
     let ii = 0;
@@ -1146,7 +1144,7 @@ function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDeco
   }
 }
 
-function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgram, dy: number): void {
+function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgram, dx: number, dy: number): void {
   if (group.source === 'canvas') {
     if (!syncDynamicPageTexture(ctx.textureCache, group.page)) return;
   } else {
@@ -1160,11 +1158,12 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
   const vertices = new Float32Array(group.quads.length * 4 * 5);
   let vi = 0;
   for (const q of group.quads) {
+    const x0 = q.x0 + dx, x1 = q.x1 + dx;
     const y0 = q.y0 + dy, y1 = q.y1 + dy, by = q.baselineY + dy;
-    vertices[vi++] = q.x0; vertices[vi++] = y0; vertices[vi++] = q.u0; vertices[vi++] = q.v0; vertices[vi++] = by;
-    vertices[vi++] = q.x1; vertices[vi++] = y0; vertices[vi++] = q.u1; vertices[vi++] = q.v0; vertices[vi++] = by;
-    vertices[vi++] = q.x0; vertices[vi++] = y1; vertices[vi++] = q.u0; vertices[vi++] = q.v1; vertices[vi++] = by;
-    vertices[vi++] = q.x1; vertices[vi++] = y1; vertices[vi++] = q.u1; vertices[vi++] = q.v1; vertices[vi++] = by;
+    vertices[vi++] = x0; vertices[vi++] = y0; vertices[vi++] = q.u0; vertices[vi++] = q.v0; vertices[vi++] = by;
+    vertices[vi++] = x1; vertices[vi++] = y0; vertices[vi++] = q.u1; vertices[vi++] = q.v0; vertices[vi++] = by;
+    vertices[vi++] = x0; vertices[vi++] = y1; vertices[vi++] = q.u0; vertices[vi++] = q.v1; vertices[vi++] = by;
+    vertices[vi++] = x1; vertices[vi++] = y1; vertices[vi++] = q.u1; vertices[vi++] = q.v1; vertices[vi++] = by;
   }
   const indices = new Uint32Array(group.quads.length * 6);
   let ii = 0;

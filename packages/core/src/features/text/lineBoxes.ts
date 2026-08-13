@@ -58,24 +58,23 @@ export function textLineBoxes(pose: TextPose, opts: TextLineBoxesOpts = {}): Rec
   // styling, so they fall back to the plain string rather than measure nothing.
   const source = pose.runs && pose.runs.length > 0 ? pose.runs : pose.text;
   const runs = resolveRuns(toRuns(source), style);
-  const laid = layoutRuns(
-    runs,
-    {
-      maxWidth: opts.maxWidth ?? pose.width,
-      lineHeight: style.lineHeight,
-      align: style.align,
-    },
-    { x: pose.x, y: pose.y },
-  );
-  // Same shift `drawText` applies to the quads, so the boxes stay on the text
-  // under every `verticalAlign` rather than only the default 'top'.
-  const dy = verticalAlignOffset(pose.verticalAlign, pose.height, laid.bounds.height);
+  const laid = layoutRuns(runs, {
+    maxWidth: opts.maxWidth ?? pose.width,
+    lineHeight: style.lineHeight,
+    align: style.align,
+  });
+  // The same translate `drawText` applies to the quads — `layoutRuns` is
+  // origin-relative, so the pose's position lands here — plus the
+  // `verticalAlign` shift, so the boxes stay on the text under every setting
+  // rather than only the default 'top'.
+  const dx = pose.x;
+  const dy = pose.y + verticalAlignOffset(pose.verticalAlign, pose.height, laid.bounds.height);
 
   const out: Rect[] = [];
   for (const line of laid.lines) {
     if (!opts.includeEmpty && line.x1 <= line.x0) continue;
     out.push({
-      x: line.x0 - padding,
+      x: line.x0 + dx - padding,
       y: line.y0 + dy - padding,
       width: line.x1 - line.x0 + padding * 2,
       height: line.y1 - line.y0 + padding * 2,
