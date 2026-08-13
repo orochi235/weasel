@@ -717,6 +717,12 @@ From the WebGL transition spec — all deferred:
     node's AABB is worth roughly 15x on path scenes before any index is
     considered — but it needs an invalidation story, since a stale AABB is a
     silent wrong hit.
+  - `renderOrder()` was O(layers × nodes) — it walked the whole tree once per
+    layer, yielding only that layer's nodes. Fixed: one DFS bucketed by layer.
+    10k nodes over 64 layers went 12.93 ms → 0.42 ms, and the flat single-layer
+    case 0.37 → 0.33. The original benchmarks used a one-layer fixture, so the
+    multiplicative term was invisible; `renderOrder — 10k nodes, by layer
+    count` now sweeps it.
   - Tree depth costs nothing measurable on `add` / `setPose`; scene ops are
     all sub-microsecond.
   - Both caches earn their keep by three to four orders of magnitude
@@ -730,6 +736,15 @@ From the WebGL transition spec — all deferred:
     program switches between fill kinds are the suspected cliff. Needs real
     GL, so it wants a Playwright job and the nightly treatment described in
     the `test:perf` item below, not vitest.
+  - **Memoize `renderOrder()`.** The order only changes on add / remove /
+    reparent / setLayer / layer-list edits, so a cache keyed on a generation
+    counter would make repeat calls free — `renderOrder()` runs per frame and
+    per hit-test query. Not done, because it cannot be made exhaustive today:
+    `scene.roots`, `scene.nodes` and `scene.childrenOf()` all hand out the live
+    arrays and map, so anything can restructure the tree without passing
+    through `notify()` and the cache would go stale. A stale render order is a
+    silent wrong answer — nodes painted in the wrong z-order, or unpickable.
+    Sealing those getters (copies, or a frozen view) is the prerequisite.
   - Whether any of this gates CI is still Mike's call.
 
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.

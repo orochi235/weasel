@@ -32,7 +32,7 @@ pull them into a correctness run.
 |---|---|
 | `tessellate.bench.ts` | `tessellate` over curve count and `flattenTolerance`; `getMesh` cache hit vs miss; `tessellateStroke` over curve count |
 | `text-layout.bench.ts` | `layoutRuns` over glyph count, wrapped and unwrapped, and over run count at fixed glyph count; `cachedLayoutRuns` hit vs miss vs moving origin |
-| `scene-ops.bench.ts` | `add` / `add`+`remove` / `setPose` over container-chain depth; `renderOrder()` over node count and over depth |
+| `scene-ops.bench.ts` | `add` / `add`+`remove` / `setPose` over container-chain depth; `renderOrder()` over node count, over depth, and over layer count at 10k nodes |
 | `hit-test.bench.ts` | `hitTestArea` over node count and query-rect size, for rect poses and for 24-gon silhouettes; `aabbOfPose`; `pointInPath` over vertex count |
 
 Fixtures are in `fixtures.ts`, all seeded through `mulberry32` — no bare

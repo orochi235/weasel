@@ -13,10 +13,11 @@
  */
 import { bench, describe } from 'vitest';
 import type { NodeId } from 'core/scene/types';
-import { containerChain, deepScene, emptyScene, type BenchScene } from './fixtures';
+import { containerChain, deepScene, emptyScene, layeredScene, type BenchScene } from './fixtures';
 
 const DEPTHS = [0, 4, 16];
 const NODE_COUNTS = [100, 1000, 10000];
+const LAYER_COUNTS = [1, 4, 16, 64];
 const POSE = { x: 1, y: 2, width: 3, height: 4 };
 
 /** Bounded run: N timed iterations, no wall-clock floor. These ops are
@@ -88,6 +89,19 @@ describe('renderOrder — flat scene, fully drained', () => {
       let c = 0;
       for (const _ of scene.renderOrder()) c++;
       if (c !== n) throw new Error(`renderOrder yielded ${c}, expected ${n}`);
+    });
+  }
+});
+
+describe('renderOrder — 10k nodes, by layer count', () => {
+  // The other renderOrder benchmarks use a one-layer fixture, which hides any
+  // per-layer term. Node count is fixed here so only the layer axis moves.
+  for (const layers of LAYER_COUNTS) {
+    const scene = layeredScene(10000, layers);
+    bench(`${layers} layers`, () => {
+      let c = 0;
+      for (const _ of scene.renderOrder()) c++;
+      if (c !== 10000) throw new Error(`renderOrder yielded ${c}, expected 10000`);
     });
   }
 });
