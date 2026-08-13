@@ -709,14 +709,17 @@ From the WebGL transition spec — all deferred:
     `renderOrder()`. The kit has no spatial index of any kind; the quadtree
     this list used to assume is eric's `quadtreeStrategy`, an occupancy tree
     for *placement* (`occupantId`, `findDropNode`), which answers a different
-    question and is already tracked under Container layout strategies.
-    Query-rect size barely moves the scan, because the per-node AABB "fast
-    reject" calls `boundsOfPath`, which walks the whole command stream and
-    allocates for every node whether or not it can intersect. 10k 24-gons
-    costs 12 ms per marquee query against 0.84 ms for 10k rects. Caching a
-    node's AABB is worth roughly 15x on path scenes before any index is
-    considered — but it needs an invalidation story, since a stale AABB is a
-    silent wrong hit.
+    question and is already tracked under Container layout strategies. The
+    per-node AABB "fast reject" used to call `boundsOfPath` for every node
+    whether or not it could intersect, which cost 12 ms per query on 10k
+    24-gons against 0.84 ms for 10k rects. That box is now memoized through
+    `nodeMemo` (keyed on the node's `pose` / `data` references, so any scene
+    op invalidates it): 10k 24-gons is 1.16 ms, 10x faster, and rect scenes
+    pay 5–17% for the per-node decision not to cache. What is left is the
+    scan itself — `renderOrder()` plus a `scene.get` per id is about 70% of
+    the remaining time, and no geometry dominates. At 1.2 ms per query on 10k
+    nodes an index is not yet the bottleneck; revisit if scenes get bigger or
+    marquee starts querying more than once a frame.
   - Tree depth costs nothing measurable on `add` / `setPose`; scene ops are
     all sub-microsecond.
   - Both caches earn their keep by three to four orders of magnitude

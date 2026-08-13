@@ -21,6 +21,7 @@
  * polygon entry a true lasso-polygon hit-test would route through.
  */
 import type { Scene, NodeId } from 'core/scene/types';
+import { nodeMemo } from 'core/scene/nodeMemo';
 import { aabbOfPose, isPathLike } from 'canvas/SceneCanvas/poseGeometry';
 import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
 import type { Path, PolygonPath } from 'features/paths/types';
@@ -66,9 +67,14 @@ export function hitTestAreaPolygon(
     const node = scene.get(id);
     if (!node || node.kind === 'container') continue;
     const pose = node.pose;
+    const silhouette = isPathLike(pose) && (pose as Path).kind !== 'rect';
 
-    // 1. AABB fast-reject.
-    const b = aabbOfPose(pose);
+    // 1. AABB fast-reject. Memo is silhouettes-only — `aabbOfPose` answers a
+    // rect pose by identity, so memoizing one costs more than it saves.
+    // `b` may be shared across queries; never mutate it.
+    const b = silhouette
+      ? nodeMemo(node, 'aabb', pose, () => aabbOfPose(pose))
+      : aabbOfPose(pose);
     // Match the historical hitTestAABB skip: a pose without finite numeric
     // bounds (neither path-like nor a plain x/y/w/h rect) is not hit-tested.
     if (
@@ -89,7 +95,7 @@ export function hitTestAreaPolygon(
     }
 
     // 2. RECT poses: silhouette IS the AABB → fast-reject pass == hit.
-    if (!isPathLike(pose) || (pose as Path).kind === 'rect') {
+    if (!silhouette) {
       hits.push(id);
       continue;
     }
