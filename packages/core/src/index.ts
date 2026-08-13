@@ -527,6 +527,11 @@ export * from './features/text';
 // ─── Tile / pattern fills ───────────────────────────────────────────────────
 export { createTilePattern } from './features/patterns';
 export type { TilePatternOpts } from './features/patterns';
+export {
+  resolvePatternSpec,
+  resolveFillPattern,
+  isPatternSpec,
+} from './features/patterns/resolveSpec';
 
 // ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
 export { alignedStrokeRect } from './core/paint-types';
@@ -536,6 +541,7 @@ export type {
   GradientFill,
   GradientKind,
   GradientUnits,
+  TilePatternSpec,
   Stroke,
   StrokeAlign,
   Region,

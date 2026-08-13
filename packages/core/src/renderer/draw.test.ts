@@ -21,6 +21,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     textSdfR8: r._textSdfR8(),
     imageFill: r._imageFill(),
     gradFill: r._gradFill(),
+    patternFill: r._patternFill(),
     meshCache: r._meshCache(),
     textureCache: r._textureCache(),
     imageCache: r._imageCache(),

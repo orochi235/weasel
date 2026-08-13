@@ -44,6 +44,7 @@ export interface DrawContext {
   textSdfR8: ShaderProgram;
   imageFill: ShaderProgram;
   gradFill: ShaderProgram;
+  patternFill: ShaderProgram;
   meshCache: GLMeshCache;
   textureCache: GLTextureCache;
   imageCache: GLImageCache;
@@ -461,24 +462,37 @@ function drawPathFillPattern(
     if (isDev) console.warn(`weasel: pattern TextureHandle "${tex.id}" not registered`);
     return;
   }
-  ctx.textureCache.upload(tex.id, entry.source);
+  ctx.textureCache.upload(tex.id, entry.source, 'repeat');
 
-  // Pattern is rendered with the image-fill shader, with the path's fill mesh.
-  // UV is derived from path-local coords; for v1 we use the path-local
-  // position directly as the UV (1:1). The pattern repeats every
-  // image-pixel-count units of path-local space, matching the prior behavior.
+  // A path fill mesh carries a_position only, so the tile coordinate is
+  // recovered per fragment from the screen position — the same route
+  // gradients take through `u_worldInv`, and the reason this can't reuse
+  // the image-fill shader (whose a_uv would be unbound here, and was).
   const gl = ctx.gl;
-  gl.useProgram(ctx.imageFill.handle);
+  gl.useProgram(ctx.patternFill.handle);
   gl.bindVertexArray(handle.vao);
-  setProjAndModel(ctx, ctx.imageFill);
-  setColorMatrixUniforms(ctx, ctx.imageFill);
+  setProjAndModel(ctx, ctx.patternFill);
+  setColorMatrixUniforms(ctx, ctx.patternFill);
+  gl.uniformMatrix3fv(ctx.patternFill.uniform('u_worldInv')!, false, gradientSpaceInverse(ctx, fill.units));
+  const [tw, th] = textureSize(entry.source);
+  const origin = fill.origin ?? { x: 0, y: 0 };
+  gl.uniform2f(ctx.patternFill.uniform('u_tileOrigin')!, origin.x, origin.y);
+  gl.uniform2f(ctx.patternFill.uniform('u_tileSize')!, tw, th);
   ctx.textureCache.bind(tex.id, 0);
-  gl.uniform1i(ctx.imageFill.uniform('u_sampler')!, 0);
-  gl.uniform1f(ctx.imageFill.uniform('u_opacity')!, fill.opacity ?? 1);
-  gl.uniform1f(ctx.imageFill.uniform('u_alpha')!, ctx.state.alpha);
+  gl.uniform1i(ctx.patternFill.uniform('u_sampler')!, 0);
+  gl.uniform1f(ctx.patternFill.uniform('u_opacity')!, fill.opacity ?? 1);
+  gl.uniform1f(ctx.patternFill.uniform('u_alpha')!, ctx.state.alpha);
   applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
+}
+
+/** Tile extent in paint-space units — one tile spans this many units of
+ *  whatever space `units` names. */
+function textureSize(source: HTMLImageElement | ImageBitmap): [number, number] {
+  const w = 'naturalWidth' in source ? source.naturalWidth : source.width;
+  const h = 'naturalHeight' in source ? source.naturalHeight : source.height;
+  return [w || 1, h || 1];
 }
 
 /**
