@@ -24,15 +24,22 @@ import type { TextureHandle } from '../renderer/textures/registerTexture';
  * equivalent to `{ fill: 'solid', color: '#abc' }`. Pattern paints must set
  * `fill: 'pattern'` explicitly.
  *
- * The `'pattern'` variant's payload is a `TextureHandle` (registered via
- * `registerTexture()`). The kit-level factory `createTilePattern` (and the
- * `patterns-builtin` catalog: `hatch`, `crosshatch`, `dots`, `chunks`)
- * produces these handles by rendering a tile to an `OffscreenCanvas` and
- * registering the resulting `ImageBitmap` as a GL texture.
+ * The `'pattern'` variant's payload is either a `TilePatternSpec` — plain
+ * data naming one of the built-in tiles, which survives serialization — or a
+ * `TextureHandle` for a tile the consumer built itself via
+ * `createTilePattern()`. A handle is a session-scoped registry key, so a
+ * paint carrying one cannot be persisted or exported; prefer the spec.
+ *
+ * `units` on a pattern names the space the tile's origin and scale live in,
+ * not the space of any geometry (a pattern has none). Under `'bounds'` the
+ * tile anchors to the painted node's box, so the pattern travels with the
+ * node and a resize reveals more tiles rather than stretching them;
+ * `fillInPoseFrame` resolves that to a `'local'` paint with an explicit
+ * `origin` before the renderer sees it.
  */
 export type FillStyle =
   | { fill?: 'solid'; color: string; opacity?: number }
-  | { fill: 'pattern'; pattern: TextureHandle; opacity?: number }
+  | { fill: 'pattern'; pattern: TextureHandle | TilePatternSpec; units?: GradientUnits; origin?: { x: number; y: number }; opacity?: number }
   | { fill: 'linear-gradient'; from: { x: number; y: number }; to: { x: number; y: number }; stops: GradStop[]; units?: GradientUnits; opacity?: number }
   | { fill: 'radial-gradient'; center: { x: number; y: number }; radius: number; stops: GradStop[]; units?: GradientUnits; opacity?: number }
   | { fill: 'conic-gradient'; center: { x: number; y: number }; angle: number; stops: GradStop[]; units?: GradientUnits; opacity?: number };
@@ -60,6 +67,31 @@ export type FillStyle =
  * this field existed.
  */
 export type GradientUnits = 'bounds' | 'local' | 'world' | 'screen';
+
+/**
+ * A built-in tile, described as plain data. The serializable half of the
+ * pattern paint: `resolvePatternSpec()` turns one into a `TextureHandle`
+ * at paint time, memoized so identical specs share a texture.
+ *
+ * `size` is the tile's edge length, and doubles as its extent in paint
+ * space — a bigger `size` rasterizes a bigger tile rather than magnifying
+ * a small one, which is why there is no separate scale field.
+ */
+export interface TilePatternSpec {
+  tile: 'hatch' | 'crosshatch' | 'dots' | 'chunks';
+  color: string;
+  /** `chunks` only — omit for a transparent tile background. */
+  bg?: string;
+  size?: number;
+  /** `hatch` / `crosshatch`. */
+  lineWidth?: number;
+  /** `dots`. */
+  radius?: number;
+  /** `chunks`. */
+  density?: number;
+  chunkSize?: number;
+  seed?: number;
+}
 
 /** A single color stop within a gradient. `offset` is in 0..1. */
 export interface GradStop {

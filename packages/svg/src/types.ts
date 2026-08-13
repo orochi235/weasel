@@ -202,6 +202,12 @@ export interface SerializeOptions {
    * a tight bounding box from the supplied nodes.
    */
   viewBox?: { x: number; y: number; width: number; height: number };
+  /**
+   * Called for paint that can't be expressed in SVG and is dropped — a
+   * conic gradient, or a pattern carrying a `TextureHandle` instead of a
+   * `TilePatternSpec`. Without this the loss is silent.
+   */
+  onWarn?: (message: string) => void;
   /** Emit `width="..."` on the root `<svg>`. */
   width?: number;
   /** Emit `height="..."` on the root `<svg>`. */

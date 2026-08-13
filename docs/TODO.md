@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Fill-mode expansion: textures in the app** (gradients shipped 2026-08-12) → [Rendering & paint](#rendering--paint)
+- **Performance benchmarking** — no numbers on any hot path today → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -351,29 +351,27 @@ Core five + Crop shipped. Remaining:
   genuinely translation-equivariant in `origin.x` first. Low priority: pan and
   zoom already hit, and those are the frames that repeat.
 
-- **Fill-mode expansion in WeaselDraw — textures.** Gradients shipped
-  2026-08-12; what is left of this item is the texture half.
+- **(P3) Pattern fills: what the tile picker left open.** The texture half of
+  fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
+  `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
+  WeaselDraw. Three things it deliberately did not do:
 
-  A texture picker over the builtin patterns (`createTilePattern` and the
-  `patterns-builtin` catalog: `hatch`, `crosshatch`, `dots`, `chunks`) before
-  any image-upload story. The plumbing gradients now use is all shared:
-  `WeaselDrawData.fill` is `string | FillStyle`, the Properties panel has a
-  paint-kind switch (`PropertyFillInput`), and `setFill` takes a whole `paint`.
-  A pattern needs a fifth entry on that switch and a grid to pick a tile from.
+  - **Image-upload patterns.** The picker covers the four built-in tiles only.
+    A user-supplied bitmap needs a payload variant that persists the image
+    itself (data URI, or a document-scoped asset table), which is a storage
+    question rather than a paint one.
+  - **Patterns on text.** `data.style.fill` takes a `FillStyle`, and above the
+    outline-tier threshold a glyph is a `PolygonPath` drawn through
+    `drawPathFillByKind`, so this already renders. What's missing is the panel
+    routing: the fill-kind switch edits `data.fill`, so reaching text means
+    the switch has to write the text branch instead.
+  - **Tile rotation / skew.** SVG has `patternTransform`; the paint has only an
+    origin. Rotating a hatch is the obvious first ask.
 
-  SVG export for patterns is the open piece — `@weasel-js/svg` emits
-  `<linearGradient>` / `<radialGradient>` but has no `<pattern>` path, and
-  `gradientXml` returns `''` for conic, which SVG cannot express at all.
-  Conic currently exports as nothing rather than as an approximation.
-
-  Note on **text**: non-solid fills on text used to be a shader problem — the
-  MSDF program takes a single colour uniform. Since the outline tier landed
-  (2026-07-31) it is not: above the size threshold a glyph is a `PolygonPath`
-  drawn through `drawPathFillByKind`, so gradient- and pattern-filled text
-  already renders with nothing further to build. Below the threshold it still
-  falls back to solid. Text carries its paint in `data.style.fill`, which the
-  fill-kind switch does not yet reach — the switch edits `data.fill`, so a
-  gradient on text needs the panel to route to the text branch.
+  Also unresolved from the gradient half: `gradientXml` returns `''` for conic,
+  which SVG cannot express at all. It now warns through
+  `SerializeOptions.onWarn` rather than vanishing silently, but still exports
+  as nothing rather than as an approximation.
 
 - **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`). Defer until a real use case lands.
 
@@ -699,6 +697,37 @@ From the WebGL transition spec — all deferred:
   much later. Found during Plan C, where a rename left `store.getState().setTheme`
   in `Lab.tsx` and `typecheck` stayed green. Adding `packages/labkit/src` to the
   include needs the `@weasel-js/labkit` path mapping too.
+
+- **Performance benchmarking.** The kit has no measured baseline for anything.
+  `tests/perf/` holds exactly one spec, `animation-stress.spec.ts`, and it is a
+  crash/lag tripwire (mean cycle under 600ms) rather than a benchmark — it
+  cannot tell you whether a change made tessellation twice as slow, only
+  whether it made the demo unusable. Every performance claim in this repo is
+  currently an argument from shape.
+
+  What's missing is a benchmark suite with committed numbers, covering the
+  paths where a regression is both plausible and expensive:
+
+  - **Renderer draw loop** — commands/frame vs. frame time, at a few scene
+    sizes. Separate the per-command cost from the per-frame fixed cost;
+    program switches between fill kinds are the suspected cliff.
+  - **Path tessellation** — `flattenTolerancePx` against curve count. Cache
+    hit vs. miss is the interesting split, since the mesh cache hides most of
+    it in steady state and none of it on first paint.
+  - **Text layout** — `layoutRuns` per glyph and the `layoutCache` hit rate.
+    The origin-baking item under [Rendering & paint](#rendering--paint) is
+    predicated on a cost nobody has measured.
+  - **Scene ops** — insert/delete/setPose over tree depth, and `renderOrder()`
+    over node count.
+  - **Hit testing** — quadtree query vs. node count and query-rect size.
+
+  Open questions: which harness (vitest `bench` for the pure-JS layers,
+  Playwright for anything needing real GL); where results live so a delta is
+  reviewable in a PR rather than a number in someone's terminal; and whether
+  any of it gates CI. Start with the pure-JS layers — tessellation, layout,
+  scene ops — since those need no GPU and so produce stable numbers on a
+  shared runner. GL-dependent benchmarks want the nightly treatment described
+  in the `test:perf` item below.
 
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.
 

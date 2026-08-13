@@ -30,6 +30,10 @@ export interface FillPoseBox {
  * radius proportionate instead.
  */
 export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): FillStyle {
+  if (isBoundsPattern(fill)) {
+    const o = fill.origin ?? { x: 0, y: 0 };
+    return { ...fill, origin: { x: box.x + o.x, y: box.y + o.y }, units: 'local' as const };
+  }
   if (!isBoundsGradient(fill)) return fill;
 
   const toBox = (p: { x: number; y: number }): { x: number; y: number } => ({
@@ -60,6 +64,10 @@ export function fillInPoseFrame(fill: FillStyle, box: FillPoseBox): FillStyle {
  * fill is returned untouched rather than divided by zero.
  */
 export function fillToBoundsFrame(fill: FillStyle, box: FillPoseBox): FillStyle {
+  if (fill.fill === 'pattern') {
+    const o = fill.origin ?? { x: 0, y: 0 };
+    return { ...fill, origin: { x: o.x - box.x, y: o.y - box.y }, units: 'bounds' as const };
+  }
   const isGradient = fill.fill === 'linear-gradient'
     || fill.fill === 'radial-gradient'
     || fill.fill === 'conic-gradient';
@@ -79,6 +87,15 @@ export function fillToBoundsFrame(fill: FillStyle, box: FillPoseBox): FillStyle 
     return { ...fill, center: fromBox(fill.center), radius: fill.radius / scale, units: 'bounds' as const };
   }
   return { ...fill, center: fromBox(fill.center), units: 'bounds' as const };
+}
+
+/** True when this fill is a pattern anchored to the painted node's box.
+ *  Rebasing it is a translation only — a resize must reveal more tiles, not
+ *  stretch them, which is the whole reason patterns get their own branch. */
+function isBoundsPattern(
+  fill: FillStyle,
+): fill is Extract<FillStyle, { fill: 'pattern' }> {
+  return fill.fill === 'pattern' && fill.units === 'bounds';
 }
 
 /** True when this fill is a gradient declaring box-relative geometry. */

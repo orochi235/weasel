@@ -12,6 +12,11 @@
 
 type TexSource = HTMLImageElement | ImageBitmap | ImageData | HTMLCanvasElement;
 
+/** How a texture samples outside `0..1`. Pattern tiles need `'repeat'`;
+ *  everything else clamps. WebGL2 allows `REPEAT` on NPOT textures, so a
+ *  tile of any size tiles correctly. */
+export type TextureWrap = 'clamp' | 'repeat';
+
 export class GLTextureCache {
   private readonly map = new Map<string, WebGLTexture>();
 
@@ -21,20 +26,24 @@ export class GLTextureCache {
     return this.map.has(id);
   }
 
-  upload(id: string, source: TexSource): string {
+  /** Uploads once per id; `wrap` therefore applies on first upload only.
+   *  An id is either a pattern tile or a shader texture, never both. */
+  upload(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
     if (this.map.has(id)) return id;
 
     const gl = this.gl;
     const tex = gl.createTexture();
     if (!tex) throw new Error(`GLTextureCache: createTexture failed for id="${id}"`);
 
+    const wrapMode = wrap === 'repeat' ? gl.REPEAT : gl.CLAMP_TO_EDGE;
+
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source as TexImageSource);
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapMode);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapMode);
 
     gl.bindTexture(gl.TEXTURE_2D, null);
 

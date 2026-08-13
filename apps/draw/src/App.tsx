@@ -370,14 +370,21 @@ const INITIAL_FILL_COLOR = '#7ab8d4ff';
 /** Fill gets the paint-kind switch on top of the color input, so a node can
  *  carry a gradient. Stroke keeps the plain color renderer — the renderer
  *  requires a solid stroke paint. */
+/** Every `FillStyle` variant, not just the gradients. Keyed on the union's
+ *  own discriminant, so a variant added later needs no change here — the
+ *  earlier `'stops' in raw` test silently downgraded patterns to the
+ *  fallback color. */
+function isFillStyleObject(raw: unknown): raw is FillStyle {
+  if (raw === null || typeof raw !== 'object') return false;
+  return 'fill' in raw || 'stops' in raw || 'color' in raw;
+}
+
 function wdFillRenderer(colorActionId: string, opacityActionId: string): PropertyRenderer {
   return (ctx) => {
     const fallback = (ctx.pref as ToolPrefColor).default;
     const raw = ctx.value;
     const value: string | FillStyle =
-      typeof raw === 'string' || (raw !== null && typeof raw === 'object' && 'stops' in (raw as object))
-        ? (raw as string | FillStyle)
-        : fallback;
+      typeof raw === 'string' || isFillStyleObject(raw) ? (raw as string | FillStyle) : fallback;
     const input = (
       <PropertyFillInput
         value={value}
@@ -460,11 +467,14 @@ function layerSwatch(data: WeaselDrawData): string | undefined {
 
 /** One representative color for a `FillStyle`, for a chip too small to draw
  *  the real paint: a gradient shows its midpoint, which reads closer to the
- *  whole ramp than either end does. Patterns have no such color. */
+ *  whole ramp than either end does, and a tile pattern shows the color it
+ *  draws with. A pattern built from a raw `TextureHandle` has no color to
+ *  report. */
 function paintChipColor(fill: FillStyle): string | undefined {
   const gradient = gradientOf(fill);
   if (gradient) return sampleGradientStops(gradient.stops, 0.5);
   if (fill.fill === undefined || fill.fill === 'solid') return fill.color;
+  if (fill.fill === 'pattern' && 'tile' in fill.pattern) return fill.pattern.color;
   return undefined;
 }
 

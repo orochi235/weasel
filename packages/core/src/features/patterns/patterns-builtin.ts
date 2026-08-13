@@ -9,10 +9,28 @@
  * All factories require an explicit `color` (and `bg` for `chunks`). No
  * defaults are baked in — the caller's design system is the source of truth
  * for palette decisions.
+ *
+ * Each is a thin wrapper over `tileGeometry`, which describes the tile as
+ * shapes so `@weasel-js/svg` can emit the same tile as a `<pattern>`.
+ * Prefer naming a tile in a `TilePatternSpec` over calling these directly —
+ * a spec serializes, a `TextureHandle` does not.
  */
 
+export { tileGeometry, tileSize, drawTileShapes } from './tileGeometry';
+export type { TileShape, TileGeometry } from './tileGeometry';
+
 import { createTilePattern } from '.';
+import { tileGeometry, drawTileShapes, tileSize } from './tileGeometry';
+import type { TilePatternSpec } from '../../core/paint-types';
 import type { TextureHandle } from '../../renderer/textures/registerTexture';
+
+function build(spec: TilePatternSpec): TextureHandle | null {
+  const geometry = tileGeometry(spec);
+  return createTilePattern({
+    size: tileSize(spec),
+    draw: (oc) => drawTileShapes(oc, geometry),
+  });
+}
 
 /** Diagonal hatch (forward slash). */
 export interface HatchParams {
@@ -22,22 +40,7 @@ export interface HatchParams {
 }
 
 export function hatch(params: HatchParams): TextureHandle | null {
-  const { color, size = 5, lineWidth = 1 } = params;
-  return createTilePattern({
-    size,
-    draw: (oc, s) => {
-      oc.strokeStyle = color;
-      oc.lineWidth = lineWidth;
-      oc.beginPath();
-      oc.moveTo(-1, s + 1);
-      oc.lineTo(s + 1, -1);
-      oc.moveTo(-1, 1);
-      oc.lineTo(1, -1);
-      oc.moveTo(s - 1, s + 1);
-      oc.lineTo(s + 1, s - 1);
-      oc.stroke();
-    },
-  });
+  return build({ tile: 'hatch', ...params });
 }
 
 /** Diagonal hatch in both directions. */
@@ -48,30 +51,7 @@ export interface CrosshatchParams {
 }
 
 export function crosshatch(params: CrosshatchParams): TextureHandle | null {
-  const { color, size = 6, lineWidth = 0.8 } = params;
-  return createTilePattern({
-    size,
-    draw: (oc, s) => {
-      oc.strokeStyle = color;
-      oc.lineWidth = lineWidth;
-      oc.beginPath();
-      // Forward diagonal (with seamless tiling).
-      oc.moveTo(-1, s + 1);
-      oc.lineTo(s + 1, -1);
-      oc.moveTo(-1, 1);
-      oc.lineTo(1, -1);
-      oc.moveTo(s - 1, s + 1);
-      oc.lineTo(s + 1, s - 1);
-      // Backward diagonal.
-      oc.moveTo(-1, -1);
-      oc.lineTo(s + 1, s + 1);
-      oc.moveTo(s - 1, -1);
-      oc.lineTo(s + 1, 1);
-      oc.moveTo(-1, s - 1);
-      oc.lineTo(1, s + 1);
-      oc.stroke();
-    },
-  });
+  return build({ tile: 'crosshatch', ...params });
 }
 
 /** Regular grid of filled dots. */
@@ -82,16 +62,7 @@ export interface DotsParams {
 }
 
 export function dots(params: DotsParams): TextureHandle | null {
-  const { color, size = 6, radius = 1 } = params;
-  return createTilePattern({
-    size,
-    draw: (oc, s) => {
-      oc.fillStyle = color;
-      oc.beginPath();
-      oc.arc(s / 2, s / 2, radius, 0, Math.PI * 2);
-      oc.fill();
-    },
-  });
+  return build({ tile: 'dots', ...params });
 }
 
 /**
@@ -111,43 +82,6 @@ export interface ChunksParams {
   seed?: number;
 }
 
-/** Simple seeded PRNG (mulberry32) for deterministic chunk placement. */
-function mulberry32(seed: number): () => number {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6D2B79F5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 export function chunks(params: ChunksParams): TextureHandle | null {
-  const { color, bg, size = 48, density = 0.35, chunkSize = 3, seed = 42 } = params;
-  return createTilePattern({
-    size,
-    draw: (oc, s) => {
-      if (bg !== undefined) {
-        oc.fillStyle = bg;
-        oc.fillRect(0, 0, s, s);
-      }
-      const rand = mulberry32(seed);
-      const count = Math.round((s * s * density) / (chunkSize * chunkSize));
-      oc.fillStyle = color;
-      for (let i = 0; i < count; i++) {
-        const cx = rand() * s;
-        const cy = rand() * s;
-        const w = chunkSize * (0.5 + rand());
-        const h = chunkSize * (0.5 + rand());
-        const angle = rand() * Math.PI;
-        oc.save();
-        oc.translate(cx, cy);
-        oc.rotate(angle);
-        oc.beginPath();
-        oc.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2);
-        oc.fill();
-        oc.restore();
-      }
-    },
-  });
+  return build({ tile: 'chunks', ...params });
 }

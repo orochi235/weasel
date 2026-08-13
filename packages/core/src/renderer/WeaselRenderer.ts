@@ -30,6 +30,12 @@ import {
   GRAD_FILL_UNIFORMS,
   GRAD_FILL_ATTRIBUTES,
 } from './shaders/gradFill';
+import {
+  PATTERN_VERT_SRC,
+  PATTERN_FRAG_SRC,
+  PATTERN_FILL_UNIFORMS,
+  PATTERN_FILL_ATTRIBUTES,
+} from './shaders/patternFill';
 import { GLMeshCache } from './cache/GLMeshCache';
 import { GLTextureCache } from './cache/GLTextureCache';
 import { GLImageCache, type ImageMinification } from './cache/GLImageCache';
@@ -104,6 +110,7 @@ export class WeaselRenderer {
   private textSdfR8: ShaderProgram;
   private imageFill: ShaderProgram;
   private gradFill: ShaderProgram;
+  private patternFill: ShaderProgram;
   private meshCache: GLMeshCache;
   private textureCache: GLTextureCache;
   private imageCache: GLImageCache;
@@ -189,6 +196,10 @@ export class WeaselRenderer {
     this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
     this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
     this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
+
+    this.patternFill = new ShaderProgram(this.gl, PATTERN_VERT_SRC, PATTERN_FRAG_SRC);
+    this.patternFill.lookupUniforms(PATTERN_FILL_UNIFORMS);
+    this.patternFill.lookupAttributes(PATTERN_FILL_ATTRIBUTES);
 
     const aPos = this.pathFill.attribute('a_position');
     if (aPos === undefined) throw new Error('WeaselRenderer: a_position not found in path-fill shader');
@@ -309,6 +320,10 @@ export class WeaselRenderer {
     this.gradFill = new ShaderProgram(this.gl, GRAD_VERT_SRC, GRAD_FRAG_SRC);
     this.gradFill.lookupUniforms(GRAD_FILL_UNIFORMS);
     this.gradFill.lookupAttributes(GRAD_FILL_ATTRIBUTES);
+
+    this.patternFill = new ShaderProgram(this.gl, PATTERN_VERT_SRC, PATTERN_FRAG_SRC);
+    this.patternFill.lookupUniforms(PATTERN_FILL_UNIFORMS);
+    this.patternFill.lookupAttributes(PATTERN_FILL_ATTRIBUTES);
     const aPos = this.pathFill.attribute('a_position');
     if (aPos === undefined) throw new Error('a_position missing after restore');
     this.meshCache = new GLMeshCache(this.gl, aPos);
@@ -414,6 +429,7 @@ export class WeaselRenderer {
       textSdfR8: this.textSdfR8,
       imageFill: this.imageFill,
       gradFill: this.gradFill,
+      patternFill: this.patternFill,
       meshCache: this.meshCache,
       textureCache: this.textureCache,
       imageCache: this.imageCache,
@@ -460,6 +476,7 @@ export class WeaselRenderer {
   /** @internal */ _textSdfR8(): ShaderProgram { return this.textSdfR8; }
   /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }
   /** @internal */ _gradFill(): ShaderProgram { return this.gradFill; }
+  /** @internal */ _patternFill(): ShaderProgram { return this.patternFill; }
   /** @internal */ _meshCache(): GLMeshCache { return this.meshCache; }
   /** @internal */ _textureCache(): GLTextureCache { return this.textureCache; }
   /** @internal */ _imageCache(): GLImageCache { return this.imageCache; }

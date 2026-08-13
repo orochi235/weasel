@@ -14,7 +14,7 @@ import type {
 import { runsToPlainText } from '@weasel-js/core';
 import { serializePathD } from './path-serializer';
 import { formatMatrix, trimNumber } from './transform';
-import { GradientRegistry } from './gradients';
+import { PaintServerRegistry } from './gradients';
 
 /**
  * Walk the tree and produce an SVG document string. The root `<svg>`'s
@@ -22,8 +22,8 @@ import { GradientRegistry } from './gradients';
  * as a tight bounding box around every leaf.
  */
 export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): string {
-  const registry = new GradientRegistry();
-  registerGradients(nodes, registry);
+  const registry = new PaintServerRegistry();
+  registerPaintServers(nodes, registry);
 
   const bounds = opts.viewBox ?? computeBounds(nodes);
   const vb = `${trimNumber(bounds.x)} ${trimNumber(bounds.y)} ${trimNumber(bounds.width)} ${trimNumber(bounds.height)}`;
@@ -59,7 +59,7 @@ export function serializeSvg(nodes: SvgNode[], opts: SerializeOptions = {}): str
     }
   }
 
-  const defsXml = registry.toDefsXml();
+  const defsXml = registry.toDefsXml(opts.onWarn);
   const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces)).join('');
 
   // `<title>` goes immediately inside `<svg>` per SVG-spec convention; it's
@@ -115,10 +115,10 @@ function metaElementsXml(meta: NamespaceMeta | undefined, namespaces: Record<str
   return out;
 }
 
-function registerGradients(nodes: SvgNode[], registry: GradientRegistry): void {
+function registerPaintServers(nodes: SvgNode[], registry: PaintServerRegistry): void {
   for (const n of nodes) {
     if (n.kind === 'group') {
-      registerGradients(n.children, registry);
+      registerPaintServers(n.children, registry);
     } else if (n.kind === 'path') {
       if (n.fill.kind === 'gradient') registry.register(n.fill.paint);
       if (n.stroke && n.stroke.paint.kind === 'gradient') registry.register(n.stroke.paint.paint);
@@ -138,21 +138,21 @@ function registerGradients(nodes: SvgNode[], registry: GradientRegistry): void {
   }
 }
 
-/** Register one text paint if it is a gradient/pattern rather than a colour. */
+/** Register one text paint if it is a paint server rather than a colour. */
 function registerTextPaint(
   paint: import('@weasel-js/core').FillStyle | undefined,
-  registry: GradientRegistry,
+  registry: PaintServerRegistry,
 ): void {
   if (paint && !('color' in paint)) registry.register(paint);
 }
 
-function nodeXml(node: SvgNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
+function nodeXml(node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
   if (node.kind === 'group') return groupXml(node, registry, namespaces);
   if (node.kind === 'text') return textXml(node, registry, namespaces);
   return pathXml(node, registry, namespaces);
 }
 
-function groupXml(node: SvgGroupNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
+function groupXml(node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
   const attrs: string[] = [];
   if (node.transform) {
     const m = formatMatrix(node.transform);
@@ -171,7 +171,7 @@ function groupXml(node: SvgGroupNode, registry: GradientRegistry, namespaces: Re
   return `${head}${body}${metaElementsXml(node.meta, namespaces)}</g>`;
 }
 
-function pathXml(node: SvgPathNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
+function pathXml(node: SvgPathNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
   const attrs: string[] = [`d="${serializePathD(node.path)}"`];
   const fillAttrs = paintAttrs(node.fill, 'fill', registry);
   for (const a of fillAttrs) attrs.push(a);
@@ -207,7 +207,7 @@ function pathXml(node: SvgPathNode, registry: GradientRegistry, namespaces: Reco
 function paintAttrs(
   paint: SvgPaint,
   name: 'fill' | 'stroke',
-  registry: GradientRegistry,
+  registry: PaintServerRegistry,
 ): string[] {
   if (paint.kind === 'none') return [`${name}="none"`];
   if (paint.kind === 'solid') {
@@ -231,7 +231,7 @@ function paintAttrs(
  * Absent, or zero-width, emits nothing at all: unstroked text should not
  * carry a `stroke` attribute, and SVG's own default (`none`) already says so.
  */
-function coreStrokeAttrs(stroke: Stroke | undefined, registry: GradientRegistry): string[] {
+function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry): string[] {
   if (!stroke) return [];
   const width = stroke.width ?? 1;
   if (!(width > 0)) return [];
@@ -254,7 +254,7 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: GradientRegistry)
   return attrs;
 }
 
-function strokeAttrsFor(stroke: SvgStroke, registry: GradientRegistry): string[] {
+function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry): string[] {
   const attrs = paintAttrs(stroke.paint, 'stroke', registry);
   attrs.push(`stroke-width="${trimNumber(stroke.width)}"`);
   if (stroke.opacity != null && stroke.opacity !== 1) {
@@ -303,7 +303,7 @@ function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: number;
  * width/height (which native SVG text doesn't model) in `data-weasel-*`
  * attributes so they round-trip through the parser losslessly.
  */
-function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Record<string, string>): string {
+function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
   const attrs: string[] = [
     `x="${trimNumber(node.x)}"`,
     `y="${trimNumber(node.y)}"`,
@@ -361,7 +361,7 @@ function textXml(node: SvgTextNode, registry: GradientRegistry, namespaces: Reco
   return `<text ${attrs.join(' ')}${metaAttrs}>${body}${metaEls}</text>`;
 }
 
-function runXml(run: import('@weasel-js/core').StyledRun, registry: GradientRegistry): string {
+function runXml(run: import('@weasel-js/core').StyledRun, registry: PaintServerRegistry): string {
   const attrs: string[] = [];
   if (run.bold) attrs.push(`font-weight="700"`);
   if (run.italic) attrs.push(`font-style="italic"`);
