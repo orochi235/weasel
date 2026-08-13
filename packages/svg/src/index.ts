@@ -21,6 +21,7 @@
 
 export { parseSvg } from './parse';
 export { serializeSvg } from './serialize';
+export { tilePreviewSvg, tilePreviewCssUrl } from './patterns';
 export {
   unpackSvgFiles,
   svgNodesToKitDrafts,

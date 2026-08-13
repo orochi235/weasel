@@ -176,3 +176,19 @@
   gap: 6px;
   min-inline-size: 0;
 }
+
+/* Pattern picker: tile grid over the size switch. */
+.patternStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+/* Tile swatches preview the real tile, so they must not inherit the solid
+   swatch's flat background — and the tile repeats at its own scale. */
+.patternSwatch {
+  background-color: var(--wzl-surface-sunken);
+  background-repeat: repeat;
+  background-size: 16px 16px;
+}

@@ -25,6 +25,7 @@ import { boundsOfPath } from '@weasel-js/core';
 import { IDENTITY_MATRIX } from './types';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';
+import { collectPatterns } from './patterns';
 import { deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext } from './cascade';
 
 /** Element tags we accept and lower; anything else triggers a warning. */
@@ -69,7 +70,10 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
 
   const documentMeta = collectDocumentMeta(root, uriToPrefix);
 
+  // Both paint-server kinds resolve through one `url(#id)` table, so a
+  // patterned fill needs no separate lookup path at every use site.
   const gradients = collectGradients(root, onWarn);
+  for (const [id, paint] of collectPatterns(root, onWarn)) gradients.set(id, paint);
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
   const nodes = parseChildren(root, IDENTITY_MATRIX, rootStyle, gradients, onWarn, uriToPrefix);
 

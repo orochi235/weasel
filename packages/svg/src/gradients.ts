@@ -9,6 +9,7 @@
 import type { FillStyle, GradStop } from '@weasel-js/core';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
+import { patternXml } from './patterns';
 
 /** Collected gradient definitions, keyed by element id. */
 export type GradientTable = Map<string, FillStyle>;
@@ -30,7 +31,8 @@ export function collectGradients(svg: Element, onWarn?: (m: string) => void): Gr
       } else if (tag === 'radialgradient') {
         const paint = readRadialGradient(child, onWarn);
         if (paint) out.set(id, paint);
-      } else if (tag !== 'lineargradient' && tag !== 'radialgradient') {
+      } else if (tag !== 'pattern') {
+        // `<pattern>` is collected separately by `collectPatterns`.
         onWarn?.(`unsupported <defs> child: <${child.tagName}>`);
       }
     }
@@ -97,12 +99,13 @@ function readRadialGradient(el: Element, onWarn?: (m: string) => void): FillStyl
 }
 
 /**
- * Pre-pass that assigns stable serialization ids to gradients used by
- * any leaf in the tree. We key on object identity so two leaves sharing
- * the exact same `FillStyle` reference reuse one `<defs>` entry; structurally
- * equal but distinct objects get separate ids.
+ * Pre-pass that assigns stable serialization ids to the paint servers —
+ * gradients and patterns — used by any leaf in the tree. We key on object
+ * identity so two leaves sharing the exact same `FillStyle` reference reuse
+ * one `<defs>` entry; structurally equal but distinct objects get separate
+ * ids.
  */
-export class GradientRegistry {
+export class PaintServerRegistry {
   private byPaint = new Map<FillStyle, string>();
   private order: FillStyle[] = [];
   private counter = 0;
@@ -110,19 +113,23 @@ export class GradientRegistry {
   register(paint: FillStyle): string {
     const existing = this.byPaint.get(paint);
     if (existing) return existing;
-    const id = `grad${this.counter++}`;
+    const id = paint.fill === 'pattern' ? `pat${this.counter++}` : `grad${this.counter++}`;
     this.byPaint.set(paint, id);
     this.order.push(paint);
     return id;
   }
 
-  /** Emit `<defs>...</defs>` XML for all registered gradients. */
-  toDefsXml(): string {
+  /** Emit `<defs>...</defs>` XML for every registered paint server. */
+  toDefsXml(onWarn?: (m: string) => void): string {
     if (this.order.length === 0) return '';
     const parts: string[] = ['<defs>'];
     for (const paint of this.order) {
       const id = this.byPaint.get(paint)!;
-      parts.push(gradientXml(id, paint));
+      parts.push(
+        paint.fill === 'pattern'
+          ? patternXml(id, paint, onWarn)
+          : gradientXml(id, paint),
+      );
     }
     parts.push('</defs>');
     return parts.join('');

@@ -116,3 +116,39 @@ describe('fillToBoundsFrame', () => {
     expect(fillToBoundsFrame(solid, { x: 0, y: 0, width: 10, height: 10 })).toBe(solid);
   });
 });
+
+describe('patterns', () => {
+  const BOX = { x: 100, y: 50, width: 200, height: 80 };
+  const SPEC = { tile: 'hatch', color: '#0fb5a8' } as const;
+
+  it('rebases a bounds pattern by translation, leaving the tile unscaled', () => {
+    const out = fillInPoseFrame(
+      { fill: 'pattern', pattern: SPEC, units: 'bounds' },
+      BOX,
+    ) as Extract<FillStyle, { fill: 'pattern' }>;
+    expect(out.units).toBe('local');
+    expect(out.origin).toEqual({ x: 100, y: 50 });
+    // A resize must reveal more tiles, not stretch them — so nothing about
+    // the tile itself may change here.
+    expect(out.pattern).toEqual(SPEC);
+  });
+
+  it('carries an existing origin as an offset from the box', () => {
+    const out = fillInPoseFrame(
+      { fill: 'pattern', pattern: SPEC, units: 'bounds', origin: { x: 4, y: -6 } },
+      BOX,
+    ) as Extract<FillStyle, { fill: 'pattern' }>;
+    expect(out.origin).toEqual({ x: 104, y: 44 });
+  });
+
+  it('leaves a pattern in any other space untouched', () => {
+    const world: FillStyle = { fill: 'pattern', pattern: SPEC, units: 'world' };
+    expect(fillInPoseFrame(world, BOX)).toBe(world);
+  });
+
+  it('round-trips through fillToBoundsFrame', () => {
+    const original: FillStyle = { fill: 'pattern', pattern: SPEC, units: 'bounds', origin: { x: 4, y: -6 } };
+    const resolved = fillInPoseFrame(original, BOX);
+    expect(fillToBoundsFrame(resolved, BOX)).toEqual(original);
+  });
+});

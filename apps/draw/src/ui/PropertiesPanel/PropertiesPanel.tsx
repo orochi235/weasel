@@ -3,8 +3,10 @@ import { GradientEditor, SidebarPanel, ToggleBar, type SidebarPanelProps } from 
 import {
   toHex8, getAlpha01, withAlpha01, gradientForBounds, withGradientKind,
   useActionsRegistry,
-  type FillStyle, type GradientFill, type GradientKind, type UiOngoingControl,
+  type FillStyle, type GradientFill, type GradientKind, type TilePatternSpec,
+  type UiOngoingControl,
 } from '@weasel-js/core';
+import { tilePreviewCssUrl } from '@weasel-js/svg';
 import s from './PropertiesPanel.module.css';
 
 /** Convenience composition: a `SidebarPanel` whose body is a
@@ -157,8 +159,13 @@ export function PropertyColorInput(props: {
   value: string;
   /** @deprecated Use `colorActionId` + `opacityActionId` instead. Legacy
    *  path retained only for local-React-state edits (e.g. background color)
-   *  where no scene action applies. */
+   *  where no scene action applies, and for paints whose color lives inside
+   *  a larger object the caller must rewrite as a whole (a pattern spec). */
   onChange: (v: string) => void;
+  /** Called at drag/picker end, once, when `onChange` has been driving
+   *  intermediate values. Callers writing to the scene need this to close
+   *  their action; purely-local callers can omit it. */
+  onCommit?: (v: string) => void;
   colorActionId?: never;
   opacityActionId?: never;
 }) {
@@ -185,6 +192,7 @@ export function PropertyColorInput(props: {
   function dispatchColor(v: string, phase: 'input' | 'commit'): void {
     if ('onChange' in props && props.onChange) {
       if (phase === 'input') props.onChange(withAlpha01(v, alpha01));
+      else props.onCommit?.(withAlpha01(v, alpha01));
       return;
     }
     if (phase === 'input') {
@@ -209,6 +217,7 @@ export function PropertyColorInput(props: {
   function dispatchOpacity(a: number, phase: 'input' | 'commit'): void {
     if ('onChange' in props && props.onChange) {
       if (phase === 'input') props.onChange(withAlpha01(hex8, a));
+      else props.onCommit?.(withAlpha01(hex8, a));
       return;
     }
     if (phase === 'input') {
@@ -350,9 +359,97 @@ const FILL_KINDS: readonly { value: FillKind; label: string }[] = [
   { value: 'linear-gradient', label: 'Linear' },
   { value: 'radial-gradient', label: 'Radial' },
   { value: 'conic-gradient', label: 'Conic' },
+  { value: 'pattern', label: 'Pattern' },
 ];
 
-type FillKind = 'solid' | GradientKind;
+type FillKind = 'solid' | GradientKind | 'pattern';
+
+const TILES: readonly TilePatternSpec['tile'][] = ['hatch', 'crosshatch', 'dots', 'chunks'];
+
+/** Tile sizes the picker offers, coarse enough that each reads as a
+ *  distinct texture rather than a nudge. */
+const TILE_SIZES: readonly { value: number; label: string }[] = [
+  { value: 4, label: 'S' },
+  { value: 8, label: 'M' },
+  { value: 16, label: 'L' },
+  { value: 32, label: 'XL' },
+];
+
+/** The pattern in a fill, or null for anything else. */
+function asPattern(fill: string | FillStyle): PatternFill | null {
+  if (typeof fill === 'string') return null;
+  return fill.fill === 'pattern' ? fill : null;
+}
+
+/** The spec a pattern paint carries, if it carries one. A consumer-built
+ *  `TextureHandle` has no spec, so the picker shows no tile selected and
+ *  replaces it wholesale on the next click. */
+function specOf(fill: PatternFill): TilePatternSpec | null {
+  return 'tile' in fill.pattern ? fill.pattern : null;
+}
+
+type PatternFill = Extract<FillStyle, { fill: 'pattern' }>;
+
+/** A pattern seeded from the color the swatch was already showing.
+ *  `units: 'bounds'` anchors the tile to the node's box, so the texture
+ *  travels with the shape. */
+function seedPattern(tile: TilePatternSpec['tile'], from: string, size = 8): PatternFill {
+  const spec: TilePatternSpec = { tile, color: toHex8(from), size };
+  // `chunks` is a scatter over a ground rather than a line texture; without a
+  // background it reads as loose specks on whatever sits beneath.
+  if (tile === 'chunks') spec.bg = '#00000000';
+  return { fill: 'pattern', pattern: spec, units: 'bounds' };
+}
+
+/** Grid of tile swatches, each previewing the real tile at the current color. */
+function PatternPicker(props: {
+  value: PatternFill;
+  color: string;
+  onChange: (next: PatternFill) => void;
+}) {
+  const spec = specOf(props.value);
+  const size = spec?.size ?? 8;
+
+  const pick = (tile: TilePatternSpec['tile']) => {
+    const next = seedPattern(tile, props.color, size);
+    props.onChange(next);
+  };
+
+  const resize = (nextSize: number) => {
+    if (!spec) return;
+    props.onChange({ ...props.value, pattern: { ...spec, size: nextSize } });
+  };
+
+  return (
+    <div className={s.patternStack}>
+      <div className={s.swatchGrid}>
+        {TILES.map((tile) => {
+          const preview: TilePatternSpec = { tile, color: props.color, size: 16 };
+          if (tile === 'chunks') preview.bg = '#00000000';
+          return (
+            <button
+              key={tile}
+              type="button"
+              className={`${s.swatch} ${s.patternSwatch}${spec?.tile === tile ? ` ${s.swatchActive}` : ''}`}
+              style={{ backgroundImage: tilePreviewCssUrl(preview) }}
+              title={tile}
+              aria-label={tile}
+              aria-pressed={spec?.tile === tile}
+              onClick={() => pick(tile)}
+            />
+          );
+        })}
+      </div>
+      <ToggleBar<number>
+        items={TILE_SIZES.map((o) => ({ value: o.value, label: o.label }))}
+        value={size}
+        size="sm"
+        ariaLabel="Tile size"
+        onChange={(v) => v != null && resize(v)}
+      />
+    </div>
+  );
+}
 
 /** A gradient spanning the node's box left-to-right. `bounds` units mean
  *  this needs no knowledge of the node's actual size. */
@@ -382,6 +479,13 @@ function asGradient(fill: string | FillStyle): GradientFill | null {
   }
 }
 
+/** The color a pattern paints with — its spec's, so switching to solid or
+ *  editing the color picks up where the tile left off. */
+function patternColor(fill: PatternFill): string {
+  const spec = specOf(fill);
+  return spec ? toHex8(spec.color) : '#000000ff';
+}
+
 /** The color to show in the solid branch. A pattern has none, so the switch
  *  presents it as black until the user picks something. */
 function solidColorOf(fill: string | FillStyle): string {
@@ -408,7 +512,11 @@ export function PropertyFillInput(props: {
 
   const value = props.value;
   const gradient = asGradient(value);
-  const solidColor = gradient ? firstStopColor(gradient) : solidColorOf(value);
+  const pattern = asPattern(value);
+  const solidColor = gradient ? firstStopColor(gradient)
+    : pattern ? patternColor(pattern)
+    : solidColorOf(value);
+  const activeKind: FillKind = gradient ? gradient.fill : pattern ? 'pattern' : 'solid';
 
   /** Drive `setFill` with a whole paint. `phase: 'commit'` with no preceding
    *  input opens and closes the control in one go — a kind switch is a
@@ -425,10 +533,23 @@ export function PropertyFillInput(props: {
     }
   }
 
+  /** A pattern's color lives inside its spec, so recoloring rewrites the
+   *  whole paint rather than dispatching the panel's color action — which
+   *  writes a bare color string and would discard the tile. */
+  function recolorPattern(fill: PatternFill, color: string, phase: 'input' | 'commit'): void {
+    const spec = specOf(fill);
+    if (!spec) return;
+    dispatchPaint({ ...fill, pattern: { ...spec, color } }, phase);
+  }
+
   function switchKind(kind: FillKind): void {
+    if (kind === activeKind) return;
     if (kind === 'solid') {
-      if (!gradient) return;
-      dispatchPaint({ fill: 'solid', color: firstStopColor(gradient) }, 'commit');
+      dispatchPaint({ fill: 'solid', color: solidColor }, 'commit');
+      return;
+    }
+    if (kind === 'pattern') {
+      dispatchPaint(seedPattern('hatch', solidColor), 'commit');
       return;
     }
     dispatchPaint(gradient ? withGradientKind(gradient, kind) : seedGradient(kind, solidColor), 'commit');
@@ -438,7 +559,7 @@ export function PropertyFillInput(props: {
     <div className={s.fillStack}>
       <ToggleBar<FillKind>
         items={FILL_KINDS}
-        value={gradient ? gradient.fill : 'solid'}
+        value={activeKind}
         size="sm"
         ariaLabel="Fill kind"
         onChange={(kind) => kind && switchKind(kind)}
@@ -450,6 +571,19 @@ export function PropertyFillInput(props: {
           onInput={(next) => dispatchPaint(next, 'input')}
           onChange={(next) => dispatchPaint(next, 'commit')}
         />
+      ) : pattern ? (
+        <>
+          <PatternPicker
+            value={pattern}
+            color={solidColor}
+            onChange={(next) => dispatchPaint(next, 'commit')}
+          />
+          <PropertyColorInput
+            value={solidColor}
+            onChange={(v) => recolorPattern(pattern, v, 'input')}
+            onCommit={(v) => recolorPattern(pattern, v, 'commit')}
+          />
+        </>
       ) : (
         <PropertyColorInput
           value={solidColor}
