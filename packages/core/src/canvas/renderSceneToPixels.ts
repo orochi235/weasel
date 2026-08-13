@@ -81,6 +81,10 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
    *  caches. `undefined` results paint the deterministic grey placeholder
    *  outline (see `NodePaintCtx.resolveImage`). */
   resolveImage?: (node: Node<TData, TLayer, TPose>) => ImageBitmap | undefined;
+  /** Per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
+   *  `alphaFor`. Pass the same function the on-screen canvas uses so an
+   *  export matches what the user is looking at. Defaults to `() => 1`. */
+  alphaFor?: (id: string) => number;
   /** Background fill (any CSS color accepted by the renderer). Default:
    *  fully transparent. Passing a color is always valid. */
   background?: string;
@@ -144,7 +148,7 @@ export function planPixelRender<TData, TLayer extends string, TPose>(
       fill: { fill: 'solid', color: args.background },
     });
   }
-  commands.push(...buildSceneViewCommands(args.scene, view, drawOne));
+  commands.push(...buildSceneViewCommands(args.scene, view, drawOne, undefined, args.alphaFor));
   return { width, height, view, commands };
 }
 

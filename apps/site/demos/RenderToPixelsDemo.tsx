@@ -5,7 +5,7 @@ import {
 } from '@weasel-js/core';
 import type { TextStyle, TextVerticalAlign, SceneViewDrawOne } from '@weasel-js/core';
 
-const W = 480, H = 240;
+const W = 480, H = 340;
 
 // Exercise the dynamic canvas-SDF tier end-to-end: Arial has no baked atlas
 // here, so it resolves through DynamicGlyphAtlas. (If Arial isn't installed,
@@ -30,7 +30,13 @@ interface NodeData {
   verticalAlign?: TextVerticalAlign;
 }
 type LayerId = 'default';
-interface Pose { x: number; y: number; width: number; height: number }
+interface Pose { x: number; y: number; width: number; height: number; rotation?: number }
+
+// Rotation and per-node dimming are applied by the scene walk, not by
+// `drawOne` — so the headless render and the on-screen canvas below it get
+// them from the same place. `dimmed` is deliberately near-black so the
+// multiplier is unmistakable against the white background.
+const ALPHA_FOR = (id: string): number => (id === 'dimmed' ? 0.25 : 1);
 
 const drawOne: SceneViewDrawOne<NodeData, LayerId, Pose> = (node, pose) => {
   const d = node.data;
@@ -60,6 +66,13 @@ export function RenderToPixelsDemo() {
       { id: 'e' as never, kind: 'leaf', layer: 'default',
         pose: { x: 10, y: 4, width: 460, height: 32 },
         data: { text: 'Dynamic SDF 123', style: { fontFamily: 'Arial', fontSize: 22 } } },
+      // Bottom band: rotation and per-node alpha, neither of which `drawOne`
+      // knows about.
+      { id: 'spun' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 40, y: 260, width: 60, height: 60, rotation: Math.PI / 4 },
+        data: { color: '#b04a7f' } },
+      { id: 'dimmed' as never, kind: 'leaf', layer: 'default',
+        pose: { x: 200, y: 260, width: 160, height: 60 }, data: { color: '#000000' } },
     ],
   });
   const outRef = useRef<HTMLCanvasElement>(null);
@@ -74,6 +87,7 @@ export function RenderToPixelsDemo() {
       scale: { x: 2, y: 1 },
       background: '#ffffff',
       drawOne,
+      alphaFor: ALPHA_FOR,
     } as const;
     const first = renderSceneToPixels(opts);
     const second = renderSceneToPixels(opts);
@@ -95,6 +109,7 @@ export function RenderToPixelsDemo() {
     <div>
       <SceneCanvas
         width={W} height={H} className="ckd-canvas" scene={scene} toolBundle="minimal"
+        alphaFor={ALPHA_FOR}
         layers={{ scene: { drawOne } }}
       />
       <p data-testid="rtp-readout">{readout}</p>

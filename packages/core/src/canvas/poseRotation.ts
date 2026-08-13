@@ -7,9 +7,10 @@
  * visualization even though selection chrome (which reads `pose.rotation`
  * directly) does rotate — the rect sits still while its chrome spins.
  *
- * `wrapWithPoseRotation` is applied inside `buildSceneLayer` (committed
- * paint) and `usePreviewGhostLayer.buildSubtree` (in-flight preview) so
- * both code paths produce rotated geometry uniformly.
+ * `wrapWithPoseRotation` is applied by `wrapNodeOutput` in both scene walks —
+ * `buildSceneLayer` (main canvas) and `buildSceneViewCommands` (detached
+ * renders) — and directly by `usePreviewGhostLayer.buildSubtree` (in-flight
+ * preview), so every code path produces rotated geometry uniformly.
  */
 import type { DrawCommand } from '../renderer';
 import { poseRotationOf } from 'features/paths/poseRotation';

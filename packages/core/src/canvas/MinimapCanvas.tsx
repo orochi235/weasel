@@ -62,6 +62,10 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
   /** Pose → AABB. Defaults to identity (`pose as Bounds`), matching
    *  `sceneAdapter` / `useSelectTool`. */
   poseBounds?: (pose: TPose) => Bounds;
+  /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
+   *  `alphaFor`. Pass the same function the main canvas uses so a
+   *  scoping-dim treatment shows up in the minimap too. */
+  alphaFor?: (id: string) => number;
   /** Visual tuning of the indicator stroke. */
   indicatorStyle?: IndicatorStyle;
   /** CSS class for sizing / positioning the canvas. */
@@ -83,6 +87,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
     width,
     height,
     drawOne,
+    alphaFor,
     fit = 'scene',
     poseBounds,
     indicatorStyle,
@@ -236,6 +241,7 @@ function MinimapCanvasInner<TData, TLayer extends string, TPose>(
       height={height}
       drawOne={drawOne}
       extraCommands={extraCommands}
+      alphaFor={alphaFor}
       className={className}
       canvasRef={setCanvasRef}
     />

@@ -91,7 +91,7 @@ type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPo
   ResizeAdapter<TNode, TPose> &
   RotateAdapter<TNode, TPose> &
   OptionalSceneHierarchy<TNode, TPose>;
-import { wrapWithPoseRotation } from './poseRotation';
+import { wrapNodeOutput } from './wrapNodeOutput';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
 import type { ViewportConfig } from './SceneCanvas/useViewportTools';
@@ -632,12 +632,7 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
             const oy = (pose as { y?: number }).y ?? (b ? b.y : 0);
             debugSink.recordOrigin(obj.id, { x: ox, y: oy });
           }
-          const rotated = wrapWithPoseRotation(cmds, pose);
-          const alpha = cfg.alphaFor ? cfg.alphaFor(obj.id) : 1;
-          if (alpha !== 1 && rotated.length > 0) {
-            return [{ kind: 'group', alpha, children: rotated }];
-          }
-          return rotated;
+          return wrapNodeOutput(cmds, pose, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
         };
         // Honor cfg.toPose on the hierarchical path by shimming getPose on the
         // adapter so buildSceneTree routes through it instead of the raw adapter.
@@ -669,13 +664,8 @@ export function buildSceneLayer<TNode extends { id: string }, TPose>(
         const pose: TPose = toPose(obj);
         if (drawOne) {
           const cmds = drawOne(obj, pose, view);
-          const rotated = wrapWithPoseRotation(cmds, pose);
-          const alpha = cfg.alphaFor ? cfg.alphaFor(obj.id) : 1;
-          if (alpha !== 1 && rotated.length > 0) {
-            children.push({ kind: 'group', alpha, children: rotated });
-          } else {
-            for (const cmd of rotated) children.push(cmd);
-          }
+          const wrapped = wrapNodeOutput(cmds, pose, cfg.alphaFor ? cfg.alphaFor(obj.id) : 1);
+          for (const cmd of wrapped) children.push(cmd);
         }
         if (debugSink) {
           const b = boundsOfFn ? boundsOfFn(obj.id) : null;

@@ -16,6 +16,7 @@ import {
   renderSceneToCanvas,
   __getCachedRendererForTest,
 } from './sceneViewRender';
+import { rotateAroundAABBCenter } from './poseRotation';
 
 // ---------------------------------------------------------------------------
 // Mock WeaselRenderer
@@ -47,7 +48,7 @@ vi.mock('../renderer/WeaselRenderer', () => {
 
 type D = { color: string };
 type L = 'main';
-type P = { x: number; y: number; width: number; height: number };
+type P = { x: number; y: number; width: number; height: number; rotation?: number };
 
 function makeScene(): Scene<D, L, P> {
   const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
@@ -148,6 +149,83 @@ describe('buildSceneViewCommands', () => {
     const commands = buildSceneViewCommands(scene, identityView, drawOne);
     const root = commands[0] as GroupDrawCommand;
     expect(root.children).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildSceneViewCommands — parity with the main canvas's per-node wraps
+// ---------------------------------------------------------------------------
+
+/** Single-node scene so a per-node wrap is the sole child of the view group. */
+function makeOneNodeScene(pose: P): Scene<D, L, P> {
+  const s = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+  s.batch('seed', () => {
+    s.add({ kind: 'leaf', data: { color: '#f00' }, layer: 'main', pose });
+  });
+  return s;
+}
+
+const UNROTATED: P = { x: 10, y: 20, width: 30, height: 40 };
+const ROTATED: P = { ...UNROTATED, rotation: Math.PI / 4 };
+
+describe('buildSceneViewCommands — rotation and per-node alpha', () => {
+  it('wraps a rotated node in a rotation group about its AABB center', () => {
+    const commands = buildSceneViewCommands(makeOneNodeScene(ROTATED), identityView, drawOne);
+    const child = (commands[0] as GroupDrawCommand).children[0] as GroupDrawCommand;
+    expect(child.kind).toBe('group');
+    expect(Array.from(child.transform!)).toEqual(
+      Array.from(rotateAroundAABBCenter(10, 20, 30, 40, Math.PI / 4)),
+    );
+    expect(child.children).toHaveLength(1);
+    expect(child.children[0].kind).toBe('path');
+  });
+
+  it('leaves an unrotated node unwrapped — rotated output differs from unrotated', () => {
+    const plain = buildSceneViewCommands(makeOneNodeScene(UNROTATED), identityView, drawOne);
+    const spun = buildSceneViewCommands(makeOneNodeScene(ROTATED), identityView, drawOne);
+    expect((plain[0] as GroupDrawCommand).children[0].kind).toBe('path');
+    expect((spun[0] as GroupDrawCommand).children[0]).not.toEqual(
+      (plain[0] as GroupDrawCommand).children[0],
+    );
+  });
+
+  it('wraps a dimmed node in an alpha group', () => {
+    const commands = buildSceneViewCommands(
+      makeOneNodeScene(UNROTATED), identityView, drawOne, undefined, () => 0.25,
+    );
+    const child = (commands[0] as GroupDrawCommand).children[0] as GroupDrawCommand;
+    expect(child.kind).toBe('group');
+    expect(child.alpha).toBe(0.25);
+    expect(child.children[0].kind).toBe('path');
+  });
+
+  it('emits no wrapper for alpha 1', () => {
+    const commands = buildSceneViewCommands(
+      makeOneNodeScene(UNROTATED), identityView, drawOne, undefined, () => 1,
+    );
+    expect((commands[0] as GroupDrawCommand).children[0].kind).toBe('path');
+  });
+
+  it('nests alpha outside rotation, matching the main canvas', () => {
+    const commands = buildSceneViewCommands(
+      makeOneNodeScene(ROTATED), identityView, drawOne, undefined, () => 0.5,
+    );
+    const outer = (commands[0] as GroupDrawCommand).children[0] as GroupDrawCommand;
+    expect(outer.alpha).toBe(0.5);
+    const inner = outer.children[0] as GroupDrawCommand;
+    expect(Array.from(inner.transform!)).toEqual(
+      Array.from(rotateAroundAABBCenter(10, 20, 30, 40, Math.PI / 4)),
+    );
+  });
+
+  it('passes each node id to alphaFor', () => {
+    const scene = makeScene();
+    const seen: string[] = [];
+    buildSceneViewCommands(scene, identityView, drawOne, undefined, (id) => {
+      seen.push(id);
+      return 1;
+    });
+    expect(seen).toEqual([...scene.renderOrder()]);
   });
 });
 

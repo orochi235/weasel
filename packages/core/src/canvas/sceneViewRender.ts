@@ -22,6 +22,7 @@ import { viewToMat3 } from '../renderer/math/viewToMat3';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Node, Scene } from '../core/scene/types';
+import { wrapNodeOutput } from './wrapNodeOutput';
 
 /**
  * Per-node draw function. Mirrors the scene-slot `drawOne` signature on
@@ -62,6 +63,10 @@ export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
    *  minimap's visible-window indicator. Wrapped in the same view transform
    *  as scene commands. */
   extraCommands?: DrawCommand[];
+  /** Optional per-id alpha multiplier, mirroring `<SceneCanvas>`'s scene-slot
+   *  `alphaFor`. Pass the same function the main canvas uses to keep a
+   *  scoping-dim treatment consistent across both. Defaults to `() => 1`. */
+  alphaFor?: (id: string) => number;
   /** Optional device-pixel ratio. Defaults to `window.devicePixelRatio || 1`
    *  when available, otherwise 1. Tests typically pin this to 1 or 2. */
   dpr?: number;
@@ -105,6 +110,12 @@ export function __getCachedRendererForTest(
  * combined list in a single `{ kind: 'group', transform: viewToMat3(view) }`
  * so the output is in screen space.
  *
+ * Each node's commands additionally go through `wrapNodeOutput` — pose
+ * rotation, then the `alphaFor` multiplier — exactly as the main canvas's
+ * `buildSceneLayer` does, so a `drawOne` shared between the two paints the
+ * same thing in both. A `drawOne` that rotates its own output will therefore
+ * rotate twice here; emit unrotated geometry and let the pose drive it.
+ *
  * Exported for tests and for callers that want to render into something
  * other than a real `<canvas>` (e.g. an offscreen renderer or a
  * snapshot fixture).
@@ -114,13 +125,15 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   view: View,
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>,
   extraCommands?: ReadonlyArray<DrawCommand>,
+  alphaFor?: (id: string) => number,
 ): DrawCommand[] {
   const children: DrawCommand[] = [];
   for (const id of scene.renderOrder()) {
     const node = scene.get(id);
     if (!node) continue;
     const cmds = drawOne(node, node.pose, view);
-    for (const cmd of cmds) children.push(cmd);
+    const wrapped = wrapNodeOutput(cmds, node.pose, alphaFor ? alphaFor(id) : 1);
+    for (const cmd of wrapped) children.push(cmd);
   }
   if (extraCommands && extraCommands.length > 0) {
     for (const cmd of extraCommands) children.push(cmd);
@@ -150,7 +163,7 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
 export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
   args: RenderSceneToCanvasArgs<TData, TLayer, TPose>,
 ): void {
-  const { canvas, scene, view, width, height, drawOne, extraCommands } = args;
+  const { canvas, scene, view, width, height, drawOne, extraCommands, alphaFor } = args;
   const dpr = args.dpr
     ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
 
@@ -183,6 +196,6 @@ export function renderSceneToCanvas<TData, TLayer extends string, TPose>(
     entry.dpr = dpr;
   }
 
-  const commands = buildSceneViewCommands(scene, view, drawOne, extraCommands);
+  const commands = buildSceneViewCommands(scene, view, drawOne, extraCommands, alphaFor);
   entry.renderer.render(commands, viewToMat3(view));
 }
