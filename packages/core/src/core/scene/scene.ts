@@ -572,24 +572,108 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     }
   }
 
-  /** Layer-major DFS-preorder iterator. Shared by renderOrder() and toJSON(). */
-  function* renderOrderInternal(): Iterable<NodeId> {
-    // For each layer in order, walk the entire tree DFS-preorder, yielding
-    // any node whose layer matches.
-    for (const layer of state.layers) {
-      const stack: NodeId[] = [...state.roots].reverse();
-      while (stack.length > 0) {
-        const id = stack.pop()!;
-        const node = state.nodes.get(id);
-        if (!node) continue;
-        if (node.layer === layer.id) yield id;
-        if (node.kind === 'container') {
-          for (let i = node.children.length - 1; i >= 0; i--) {
-            stack.push(node.children[i]);
-          }
+  /**
+   * Layer-major DFS-preorder ids, and the same sequence as nodes. Four walks
+   * for two sequences, which wants explaining, because collapsing them is the
+   * obvious cleanup and each collapse was measured to cost something:
+   *
+   * - ids vs nodes: projecting one from the other is a whole extra pass, worth
+   *   20% of `renderOrder()` on a multi-layer scene.
+   * - flat vs bucketed: a single layer needs no buckets and can compare the
+   *   layer id instead of indexing it, which is 1.4x. Behind a branch in one
+   *   function it also slows the bucketed path by 20% — the two shapes share
+   *   one optimized body, and whichever ran first wins it.
+   *
+   * All four emit the same order and `renderOrder.test.ts` holds them to it.
+   */
+  function renderOrderInternal(): NodeId[] {
+    return state.layers.length === 1 ? renderOrderFlat() : renderOrderBucketed();
+  }
+
+  function renderOrderNodesInternal(): Node<TData, TLayer, TPose>[] {
+    return state.layers.length === 1 ? renderOrderNodesFlat() : renderOrderNodesBucketed();
+  }
+
+  function renderOrderFlat(): NodeId[] {
+    const only = state.layers[0].id;
+    const out: NodeId[] = [];
+    const stack: NodeId[] = [...state.roots].reverse();
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      const node = state.nodes.get(id);
+      if (!node) continue;
+      if (node.layer === only) out.push(id);
+      if (node.kind === 'container') {
+        for (let i = node.children.length - 1; i >= 0; i--) {
+          stack.push(node.children[i]);
         }
       }
     }
+    return out;
+  }
+
+  function renderOrderNodesFlat(): Node<TData, TLayer, TPose>[] {
+    const only = state.layers[0].id;
+    const out: Node<TData, TLayer, TPose>[] = [];
+    const stack: NodeId[] = [...state.roots].reverse();
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      const node = state.nodes.get(id);
+      if (!node) continue;
+      if (node.layer === only) out.push(node);
+      if (node.kind === 'container') {
+        for (let i = node.children.length - 1; i >= 0; i--) {
+          stack.push(node.children[i]);
+        }
+      }
+    }
+    return out;
+  }
+
+  /** One DFS of the tree, bucketed by layer: appending in preorder keeps each
+   *  bucket in preorder, so concatenating them is the layer-major sequence. */
+  function renderOrderBucketed(): NodeId[] {
+    const buckets: NodeId[][] = state.layers.map(() => []);
+    const stack: NodeId[] = [...state.roots].reverse();
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      const node = state.nodes.get(id);
+      if (!node) continue;
+      const bucket = buckets[state.layerIndex.get(node.layer) ?? -1];
+      if (bucket) bucket.push(id);
+      if (node.kind === 'container') {
+        for (let i = node.children.length - 1; i >= 0; i--) {
+          stack.push(node.children[i]);
+        }
+      }
+    }
+    const out: NodeId[] = [];
+    for (const bucket of buckets) {
+      for (const id of bucket) out.push(id);
+    }
+    return out;
+  }
+
+  function renderOrderNodesBucketed(): Node<TData, TLayer, TPose>[] {
+    const buckets: Node<TData, TLayer, TPose>[][] = state.layers.map(() => []);
+    const stack: NodeId[] = [...state.roots].reverse();
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      const node = state.nodes.get(id);
+      if (!node) continue;
+      const bucket = buckets[state.layerIndex.get(node.layer) ?? -1];
+      if (bucket) bucket.push(node);
+      if (node.kind === 'container') {
+        for (let i = node.children.length - 1; i >= 0; i--) {
+          stack.push(node.children[i]);
+        }
+      }
+    }
+    const out: Node<TData, TLayer, TPose>[] = [];
+    for (const bucket of buckets) {
+      for (const node of bucket) out.push(node);
+    }
+    return out;
   }
 
   const scene: Scene<TData, TLayer, TPose> = {
@@ -616,6 +700,10 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     renderOrder() {
       return renderOrderInternal();
+    },
+
+    renderOrderNodes() {
+      return renderOrderNodesInternal();
     },
 
     add(spec) {
@@ -970,9 +1058,8 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
     toJSON(): SerializedScene<TData, TLayer, TPose> {
       const nodes: SerializedNode<TData, TLayer, TPose>[] = [];
-      for (const id of renderOrderInternal()) {
-        const n = state.nodes.get(id);
-        if (!n) continue;
+      for (const n of renderOrderNodesInternal()) {
+        const id = n.id;
         const out: SerializedNode<TData, TLayer, TPose> = {
           id,
           kind: n.kind,

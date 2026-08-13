@@ -19,9 +19,9 @@
  * that true for scene text nodes.
  *
  * Under that, one entry per distinct `(maxWidth, lineHeight, align, outline
- * threshold, origin)`. Origin is part of the key because `layoutRuns` bakes
- * absolute positions; that makes a *moving* text node re-lay out, but not a
- * panning or zooming view, which is the case that matters.
+ * threshold)`. Position is deliberately absent: `layoutRuns` emits
+ * origin-relative geometry and `drawText` translates at upload, so a text node
+ * dragged across the page keeps hitting the same entry.
  *
  * ### The outline threshold
  *
@@ -46,25 +46,21 @@
  *
  * ### Bound
  *
- * Variants per runs array are capped and evicted wholesale. A text node
- * dragged across the page produces a distinct origin per frame, which without
- * a cap is an unbounded map hanging off a live node. Wholesale rather than
- * LRU, matching `outlineMeshCache`: the refill cost is one layout, and the
- * bookkeeping would cost more than the misses it avoids.
+ * Variants per runs array are capped and evicted wholesale. Wholesale rather
+ * than LRU, matching `outlineMeshCache`: the refill cost is one layout, and
+ * the bookkeeping would cost more than the misses it avoids.
  */
 
 import {
   layoutRuns,
   type LaidOutRuns,
   type LayoutRunsOpts,
-  type LayoutRunsOrigin,
 } from 'features/text/atlas/layoutRuns';
 import type { ResolvedRun } from 'features/text/runs/resolveRuns';
 import { glyphGeneration } from '@weasel-js/font';
 
-/** Distinct option/origin combinations held for one runs array before the
- *  whole set is dropped. Sized for "a few views onto the same text", not for
- *  a drag's worth of origins. */
+/** Distinct option combinations held for one runs array before the whole set
+ *  is dropped. Sized for "a few views onto the same text". */
 export const LAYOUT_CACHE_VARIANT_LIMIT = 8;
 
 interface Entry {
@@ -92,12 +88,8 @@ function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): n
   return n;
 }
 
-function variantKey(
-  runs: readonly ResolvedRun[],
-  opts: LayoutRunsOpts,
-  origin: LayoutRunsOrigin,
-): string {
-  return `${opts.maxWidth}|${opts.lineHeight}|${opts.align}|${outlineBucket(runs, opts.outlineMinSize)}|${origin.x}|${origin.y}`;
+function variantKey(runs: readonly ResolvedRun[], opts: LayoutRunsOpts): string {
+  return `${opts.maxWidth}|${opts.lineHeight}|${opts.align}|${outlineBucket(runs, opts.outlineMinSize)}`;
 }
 
 /**
@@ -105,13 +97,13 @@ function variantKey(
  * changed. Drop-in for `layoutRuns` — same arguments, same return value.
  *
  * **The result is shared and must be treated as immutable.** `drawText`
- * applies `verticalAlign` while packing vertices rather than by shifting the
- * layout, precisely so it can be handed the same object every frame.
+ * applies position and `verticalAlign` while packing vertices rather than by
+ * shifting the layout, precisely so it can be handed the same object every
+ * frame.
  */
 export function cachedLayoutRuns(
   runs: readonly ResolvedRun[],
   opts: LayoutRunsOpts,
-  origin: LayoutRunsOrigin,
 ): LaidOutRuns {
   // Polled, not subscribed. A module-level `subscribeGlyphReady` would be a
   // load-time side effect reaching into another package — it made importing
@@ -127,11 +119,11 @@ export function cachedLayoutRuns(
     entry.byVariant.clear();
   }
 
-  const key = variantKey(runs, opts, origin);
+  const key = variantKey(runs, opts);
   const hit = entry.byVariant.get(key);
   if (hit !== undefined) return hit;
 
-  const laid = layoutRuns(runs, opts, origin);
+  const laid = layoutRuns(runs, opts);
   if (entry.byVariant.size >= LAYOUT_CACHE_VARIANT_LIMIT) entry.byVariant.clear();
   entry.byVariant.set(key, laid);
   return laid;

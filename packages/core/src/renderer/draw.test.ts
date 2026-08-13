@@ -953,7 +953,7 @@ describe('drawText verticalAlign', () => {
     const y0Centered = firstQuadY0(callsCentered);
 
     const resolved = resolveTextStyle(style);
-    const laid = layoutRuns(runs, { maxWidth: Infinity, lineHeight: resolved.lineHeight, align: 'left' }, { x: 0, y: 0 });
+    const laid = layoutRuns(runs, { maxWidth: Infinity, lineHeight: resolved.lineHeight, align: 'left' });
     const expectedDy = verticalAlignOffset('center', boxHeight, laid.bounds.height);
 
     expect(expectedDy).not.toBe(0);

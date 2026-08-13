@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Performance benchmarking** — no numbers on any hot path today → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Performance benchmarking** — pure-JS layers landed in `tests/bench/`; the GL draw loop is still unmeasured → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -337,15 +337,6 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Rendering & paint
-
-- **(P3) Lay text out relative to its origin, not in absolute coordinates.**
-  `layoutRuns` bakes `origin` into every quad, so `layoutCache` has to carry it
-  in the key and a text node re-lays out on every frame of a drag. If layout
-  emitted origin-relative geometry and `drawText` translated at upload — it
-  already threads `dy` for `verticalAlign`, so `dx`/`dy` is the same shape —
-  the entry would survive moves too. Needs confirming that alignment is
-  genuinely translation-equivariant in `origin.x` first. Low priority: pan and
-  zoom already hit, and those are the frames that repeat.
 
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
@@ -690,36 +681,66 @@ From the WebGL transition spec — all deferred:
 
 - **(P3) Last 4 React `act()` warnings in CI vitest.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The remaining 4 all come from `packages/core/src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test — a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`). A real fix has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log. Low value; defer.
 
-- **Performance benchmarking.** The kit has no measured baseline for anything.
-  `tests/perf/` holds exactly one spec, `animation-stress.spec.ts`, and it is a
-  crash/lag tripwire (mean cycle under 600ms) rather than a benchmark — it
-  cannot tell you whether a change made tessellation twice as slow, only
-  whether it made the demo unusable. Every performance claim in this repo is
-  currently an argument from shape.
+- **[x] Performance benchmarking — pure-JS layers.** `tests/bench/` holds 62
+  vitest benchmarks over tessellation, text layout, scene ops and hit-testing,
+  with a committed baseline (`tests/bench/results/`) and `npm run bench` /
+  `npm run bench:baseline`. Read `tests/bench/README.md` before trusting a
+  number. Nothing gates CI; the README says what a gate would have to look
+  like. What the first run found:
 
-  What's missing is a benchmark suite with committed numbers, covering the
-  paths where a regression is both plausible and expensive:
+  - Hit-testing is a linear scan — `hitTestArea` walks every node in
+    `renderOrder()`. The kit has no spatial index of any kind; the quadtree
+    this list used to assume is eric's `quadtreeStrategy`, an occupancy tree
+    for *placement* (`occupantId`, `findDropNode`), which answers a different
+    question and is already tracked under Container layout strategies. The
+    per-node AABB "fast reject" used to call `boundsOfPath` for every node
+    whether or not it could intersect, which cost 12 ms per query on 10k
+    24-gons against 0.84 ms for 10k rects. That box is now memoized through
+    `nodeMemo` (keyed on the node's `pose` / `data` references, so any scene
+    op invalidates it): 10k 24-gons is 1.16 ms, 10x faster. The per-node
+    decision not to cache initially cost rect scenes 5–17%; inlining it as a
+    `pose.kind` read gave that back. The scan machinery, not geometry, was
+    about 70% of what remained, so the scan now consumes `renderOrderNodes()`
+    and the `scene.get` per id is gone: 10k rects 0.94 → 0.53 ms, 10k 24-gons
+    1.21 → 0.78 ms. At well under a millisecond per query an index is not the
+    bottleneck; revisit if scenes get bigger or marquee starts querying more
+    than once a frame.
+  - `renderOrder()` was O(layers × nodes) — it walked the whole tree once per
+    layer, yielding only that layer's nodes. Fixed: one DFS bucketed by layer.
+    10k nodes over 64 layers went 12.93 ms → 0.35 ms, and the flat
+    single-layer case 0.37 → 0.19, the latter from a separate no-bucket walk
+    for the one-layer scene. The original benchmarks used a one-layer fixture,
+    so the multiplicative term was invisible; `renderOrder — 10k nodes, by
+    layer count` now sweeps it.
+  - Tree depth costs nothing measurable on `add` / `setPose`; scene ops are
+    all sub-microsecond.
+  - Both caches earn their keep by three to four orders of magnitude
+    (`getMesh` 4.2e-5 ms hit vs 0.17 ms miss; `cachedLayoutRuns` 1.7e-4 vs
+    0.11).
+
+  Still open:
 
   - **Renderer draw loop** — commands/frame vs. frame time, at a few scene
     sizes. Separate the per-command cost from the per-frame fixed cost;
-    program switches between fill kinds are the suspected cliff.
-  - **Path tessellation** — `flattenTolerancePx` against curve count. Cache
-    hit vs. miss is the interesting split, since the mesh cache hides most of
-    it in steady state and none of it on first paint.
-  - **Text layout** — `layoutRuns` per glyph and the `layoutCache` hit rate.
-    The origin-baking item under [Rendering & paint](#rendering--paint) is
-    predicated on a cost nobody has measured.
-  - **Scene ops** — insert/delete/setPose over tree depth, and `renderOrder()`
-    over node count.
-  - **Hit testing** — quadtree query vs. node count and query-rect size.
-
-  Open questions: which harness (vitest `bench` for the pure-JS layers,
-  Playwright for anything needing real GL); where results live so a delta is
-  reviewable in a PR rather than a number in someone's terminal; and whether
-  any of it gates CI. Start with the pure-JS layers — tessellation, layout,
-  scene ops — since those need no GPU and so produce stable numbers on a
-  shared runner. GL-dependent benchmarks want the nightly treatment described
-  in the `test:perf` item below.
+    program switches between fill kinds are the suspected cliff. Needs real
+    GL, so it wants a Playwright job and the nightly treatment described in
+    the `test:perf` item below, not vitest.
+  - **Move the remaining `renderOrder()` consumers to `renderOrderNodes()`.**
+    Seven call sites still walk the ids and immediately `scene.get` each one —
+    `sceneAdapter.listAll`, `renderSceneToCommands`, the two commit adapters,
+    the default `pickEvery`. That lookup measured 40% of the area hit-test's
+    per-node cost, and the render path pays it every frame. Each is a
+    mechanical swap; only `hitTestArea` has been converted so far.
+  - **Memoize `renderOrder()`.** The order only changes on add / remove /
+    reparent / setLayer / layer-list edits, so a cache keyed on a generation
+    counter would make repeat calls free — `renderOrder()` runs per frame and
+    per hit-test query. Not done, because it cannot be made exhaustive today:
+    `scene.roots`, `scene.nodes` and `scene.childrenOf()` all hand out the live
+    arrays and map, so anything can restructure the tree without passing
+    through `notify()` and the cache would go stale. A stale render order is a
+    silent wrong answer — nodes painted in the wrong z-order, or unpickable.
+    Sealing those getters (copies, or a frozen view) is the prerequisite.
+  - Whether any of this gates CI is still Mike's call.
 
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.
 

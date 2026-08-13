@@ -47,13 +47,12 @@ function run(text: string, fontSize = 16): ResolvedRun {
 }
 
 const OPTS = { maxWidth: 400, lineHeight: 1.2, align: 'left' as const };
-const ORIGIN = { x: 0, y: 0 };
 
 describe('cachedLayoutRuns', () => {
-  it('lays out once for the same runs, options and origin', () => {
+  it('lays out once for the same runs and options', () => {
     const runs = [run('hello world')];
-    const a = cachedLayoutRuns(runs, OPTS, ORIGIN);
-    const b = cachedLayoutRuns(runs, OPTS, ORIGIN);
+    const a = cachedLayoutRuns(runs, OPTS);
+    const b = cachedLayoutRuns(runs, OPTS);
     expect(b).toBe(a);
   });
 
@@ -61,25 +60,27 @@ describe('cachedLayoutRuns', () => {
     // Mirrors `WeakMap<Path, Mesh>` in cache.ts: identity is the contract, and
     // it is what makes the entry collectable with the node that owns it. The
     // painter memo (`kit:text`) is what makes that identity stable per frame.
-    const a = cachedLayoutRuns([run('hello world')], OPTS, ORIGIN);
-    const b = cachedLayoutRuns([run('hello world')], OPTS, ORIGIN);
+    const a = cachedLayoutRuns([run('hello world')], OPTS);
+    const b = cachedLayoutRuns([run('hello world')], OPTS);
     expect(b).not.toBe(a);
   });
 
-  it('re-lays out when the origin moves', () => {
+  it('does not key on position — the layout survives a drag', () => {
+    // The reason `layoutRuns` emits origin-relative geometry: with position in
+    // the key, every frame of a drag was a full miss (0.130 ms against a
+    // 1.7e-4 ms hit for 500 wrapped glyphs — the cost of having no cache).
+    // `drawText` translates at upload, so there is nothing here to key on.
     const runs = [run('hello world')];
-    const a = cachedLayoutRuns(runs, OPTS, ORIGIN);
-    const b = cachedLayoutRuns(runs, OPTS, { x: 40, y: 90 });
-    expect(b).not.toBe(a);
-    expect(a).toBe(cachedLayoutRuns(runs, OPTS, ORIGIN));
+    const a = cachedLayoutRuns(runs, OPTS);
+    for (let i = 0; i < 100; i++) expect(cachedLayoutRuns(runs, OPTS)).toBe(a);
   });
 
   it('re-lays out when wrapping, leading or alignment change', () => {
     const runs = [run('hello world this wraps')];
-    const base = cachedLayoutRuns(runs, OPTS, ORIGIN);
-    expect(cachedLayoutRuns(runs, { ...OPTS, maxWidth: 80 }, ORIGIN)).not.toBe(base);
-    expect(cachedLayoutRuns(runs, { ...OPTS, lineHeight: 2 }, ORIGIN)).not.toBe(base);
-    expect(cachedLayoutRuns(runs, { ...OPTS, align: 'center' }, ORIGIN)).not.toBe(base);
+    const base = cachedLayoutRuns(runs, OPTS);
+    expect(cachedLayoutRuns(runs, { ...OPTS, maxWidth: 80 })).not.toBe(base);
+    expect(cachedLayoutRuns(runs, { ...OPTS, lineHeight: 2 })).not.toBe(base);
+    expect(cachedLayoutRuns(runs, { ...OPTS, align: 'center' })).not.toBe(base);
   });
 
   describe('the outline threshold', () => {
@@ -90,15 +91,15 @@ describe('cachedLayoutRuns', () => {
     // every zoom that doesn't actually cross a glyph size.
     it('holds across a zoom change that crosses no run size', () => {
       const runs = [run('hello', 16)];
-      const a = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 40 }, ORIGIN);
-      const b = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 30 }, ORIGIN);
+      const a = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 40 });
+      const b = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 30 });
       expect(b).toBe(a);
     });
 
     it('re-lays out when the threshold crosses a run size', () => {
       const runs = [run('hello', 16)];
-      const above = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 }, ORIGIN);
-      const below = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 12 }, ORIGIN);
+      const above = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 });
+      const below = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 12 });
       expect(below).not.toBe(above);
     });
 
@@ -107,20 +108,20 @@ describe('cachedLayoutRuns', () => {
       // unset. That must not collide with a paint whose threshold happens to
       // exclude everything, even though today they lay out the same.
       const runs = [run('hello', 16)];
-      const unset = cachedLayoutRuns(runs, OPTS, ORIGIN);
-      const excluded = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 999 }, ORIGIN);
+      const unset = cachedLayoutRuns(runs, OPTS);
+      const excluded = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 999 });
       expect(excluded).not.toBe(unset);
     });
 
     it('tracks each distinct size in a mixed-size run list', () => {
       const runs = [run('small ', 10), run('big', 40)];
-      const none = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 50 }, ORIGIN);
-      const justBig = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 }, ORIGIN);
-      const both = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 5 }, ORIGIN);
+      const none = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 50 });
+      const justBig = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 });
+      const both = cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 5 });
       expect(justBig).not.toBe(none);
       expect(both).not.toBe(justBig);
       // And each stays reachable.
-      expect(cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 }, ORIGIN)).toBe(justBig);
+      expect(cachedLayoutRuns(runs, { ...OPTS, outlineMinSize: 20 })).toBe(justBig);
     });
   });
 
@@ -129,23 +130,22 @@ describe('cachedLayoutRuns', () => {
     // face must not keep that layout once the real face lands — it would be
     // measured with the wrong metrics forever.
     const runs = [run('hello world')];
-    const before = cachedLayoutRuns(runs, OPTS, ORIGIN);
-    expect(cachedLayoutRuns(runs, OPTS, ORIGIN)).toBe(before);
+    const before = cachedLayoutRuns(runs, OPTS);
+    expect(cachedLayoutRuns(runs, OPTS)).toBe(before);
 
     await registerFont('newly-arrived', {}, '/fonts/other.json', '/fonts/other.png');
 
-    expect(cachedLayoutRuns(runs, OPTS, ORIGIN)).not.toBe(before);
+    expect(cachedLayoutRuns(runs, OPTS)).not.toBe(before);
   });
 
   it('bounds the variants held for one runs array', () => {
-    // Dragging a text node walks its origin across every frame, and each is a
-    // distinct key. Without a cap that is an unbounded map hanging off a live
-    // node. Wholesale eviction, matching outlineMeshCache's policy.
+    // Wholesale eviction, matching outlineMeshCache's policy: without a cap
+    // the map hanging off a live node grows with every distinct option set.
     const runs = [run('hello world')];
-    const first = cachedLayoutRuns(runs, OPTS, ORIGIN);
+    const first = cachedLayoutRuns(runs, OPTS);
     for (let i = 1; i <= LAYOUT_CACHE_VARIANT_LIMIT; i++) {
-      cachedLayoutRuns(runs, OPTS, { x: i, y: 0 });
+      cachedLayoutRuns(runs, { ...OPTS, maxWidth: 400 + i });
     }
-    expect(cachedLayoutRuns(runs, OPTS, ORIGIN)).not.toBe(first);
+    expect(cachedLayoutRuns(runs, OPTS)).not.toBe(first);
   });
 });

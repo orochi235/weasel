@@ -9,8 +9,9 @@
  * the silhouette via the kernel, so it must NOT.
  */
 import { describe, it, expect } from 'vitest';
-import { PATH_M, PATH_L, PATH_Z } from 'features/paths/types';
+import { PATH_M, PATH_L, PATH_Z, type PolygonPath } from 'features/paths/types';
 import { hitTestArea } from './hitTestArea';
+import { createScene } from 'core/scene/scene';
 import type { Scene, NodeId } from 'core/scene/types';
 
 /** Right triangle: (0,0) -> (100,0) -> (0,100), closed. AABB = [0,0,100,100].
@@ -28,6 +29,7 @@ function triangleScene(): Scene<unknown, string, unknown> {
   return {
     layers: [{ id: 'default' }],
     renderOrder: () => ['t'] as NodeId[],
+    renderOrderNodes: () => [...nodes.values()],
     get: (id: NodeId) => nodes.get(id as string) as never,
   } as unknown as Scene<unknown, string, unknown>;
 }
@@ -54,8 +56,68 @@ describe('hitTestArea — silhouette awareness', () => {
     const scene = {
       layers: [{ id: 'default' }],
       renderOrder: () => ['m'] as NodeId[],
+      renderOrderNodes: () => [...nodes.values()],
       get: (id: NodeId) => nodes.get(id as string) as never,
     } as unknown as Scene<unknown, string, unknown>;
     expect(hitTestArea(scene, { x: 0, y: 0, width: 1000, height: 1000 })).toEqual([]);
+  });
+});
+
+/** Square silhouette [x, y] - [x+40, y+40]. */
+function square(x: number, y: number): PolygonPath {
+  return {
+    kind: 'polygon',
+    commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z),
+    coords: Float32Array.of(x, y, x + 40, y, x + 40, y + 40, x, y + 40),
+    fillRule: 'nonzero',
+  };
+}
+
+/**
+ * The per-node AABB is memoized on `(node, pose)`, so anything that moves a
+ * node without replacing its `pose` reference would serve a stale box — a
+ * silent wrong hit rather than a crash. These drive the scene's real ops.
+ */
+describe('hitTestArea — the memoized AABB tracks the scene', () => {
+  function movableScene() {
+    const scene = createScene<{ label: string }, 'main', PolygonPath>({
+      systemLayers: [{ id: 'main' }],
+    });
+    const id = scene.add({ kind: 'leaf', layer: 'main', pose: square(0, 0), data: { label: 'a' } });
+    return { scene: scene as unknown as Scene<unknown, string, unknown>, api: scene, id };
+  }
+
+  const NEAR = { x: 0, y: 0, width: 10, height: 10 };
+  const FAR = { x: 500, y: 500, width: 10, height: 10 };
+
+  it('follows a setPose', () => {
+    const { scene, api, id } = movableScene();
+    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+    expect(hitTestArea(scene, FAR)).toEqual([]);
+
+    api.setPose(id, square(500, 500));
+    expect(hitTestArea(scene, NEAR)).toEqual([]);
+    expect(hitTestArea(scene, FAR)).toEqual([id]);
+  });
+
+  it('follows an undo of that setPose', () => {
+    const { scene, api, id } = movableScene();
+    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+    api.setPose(id, square(500, 500));
+    // Must reach the moved box first, or the undo below proves nothing.
+    expect(hitTestArea(scene, FAR)).toEqual([id]);
+
+    api.undo();
+    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+    expect(hitTestArea(scene, FAR)).toEqual([]);
+  });
+
+  it('is unaffected by a data change that leaves the pose alone', () => {
+    const { scene, api, id } = movableScene();
+    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+
+    api.update(id, { data: { label: 'renamed' } });
+    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+    expect(hitTestArea(scene, FAR)).toEqual([]);
   });
 });
