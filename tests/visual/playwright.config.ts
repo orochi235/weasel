@@ -27,6 +27,12 @@ export default defineConfig({
     deviceScaleFactor: 1,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
+    // Chromium's 2D-canvas rasterizer antialiases hairline (≤1px) strokes only
+    // on the GPU path; the CI runner has no GPU and draws them hard-edged. Tile
+    // patterns build their textures with canvas2d strokes, so without this the
+    // same baseline cannot pass on both. Forcing the software path locally is a
+    // no-op on CI, which already takes it.
+    launchOptions: { args: ['--disable-accelerated-2d-canvas'] },
   },
   // Playwright's built-in snapshot dir is NOT used. diff.ts manages its own
   // baselines/ directory so we have full control over diff thresholds and

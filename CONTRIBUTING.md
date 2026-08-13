@@ -53,6 +53,14 @@ real signal, not environment drift.
 that sub-1% antialiasing delta, which is harmless today but erodes the headroom
 under the 2% threshold for no benefit.
 
+One difference is too large to tolerate and is pinned instead: Chromium
+antialiases hairline (≤1px) 2D-canvas strokes only on its GPU raster path, and
+the runner has no GPU. Tile patterns build their textures by stroking hairlines
+to an `OffscreenCanvas`, so a Mac renders the `hatch` and `crosshatch` swatches
+soft where CI renders them hard — an 18% diff, not a rounding error. The config
+launches Chromium with `--disable-accelerated-2d-canvas` so both take the
+software path. It changes nothing on CI, which was already taking it.
+
 ### Updating baselines
 
 When an intentional code change alters canvas output, or when bootstrapping
