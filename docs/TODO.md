@@ -463,15 +463,22 @@ Core five + Crop shipped. Remaining:
 - **(P3) `ToolOptionsBar` is not driven by tool prefs.** Its first tenant
   (draw's `CharacterOptions`) is hand-assembled. A tool declaring a
   `ToolPrefGroup` for its options and having the bar render it the way
-  `SelectionPanel` renders node properties is the obvious next step, and is
-  also where the roving-tabindex contract below would plug in.
+  `SelectionPanel` renders node properties is the obvious next step. Once its
+  children are bar-owned rather than arbitrary consumer controls, it can adopt
+  `useRovingTabIndex` — the opt-out documented on that hook is exactly this
+  case.
 
-- **(P3) One `useRovingTabIndex` for the three bars.** `ActionsBar`,
-  `ActionBar`, and `OptionsBar` each reimplement `firstEnabledIndex` /
-  `nextEnabledIndex` / `prevEnabledIndex` verbatim — three near-identical
-  copies. `ToolOptionsBar` deliberately has none (its children are arbitrary
-  compound controls that use arrow keys for their own values), so the shared
-  hook is also where that contract would get designed once.
+- **(P3) `ToolPalette` still rolls its own roving tabindex.** One handler on
+  the container walking `querySelectorAll('button')`, with **no disabled
+  skipping** — arrow keys land on a disabled tool. `useRovingTabIndex` (which
+  `ActionsBar` / `OptionsBar` / `ToggleBar` share as of 2026-08-13) is
+  per-item and takes the item array, so adopting it means either giving the
+  palette per-button handlers or teaching the hook a container-level form.
+
+- **(P3) `ActionsBar.module.css` and `OptionsBar.module.css` are
+  byte-identical.** 188 lines each. The two components differ only in what a
+  segment does, not in how it looks, so the styles want to be one shared
+  module (or one component with a `selected` affordance).
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/core/src/features/text/atlas/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Defer until a real consumer hits a non-Latin language requirement.
 

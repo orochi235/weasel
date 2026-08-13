@@ -109,6 +109,8 @@ export {
   type RangeSliderProps,
   type ReorderDragHandlers,
   type ReorderDragState,
+  type RovingItem,
+  type RovingTabIndex,
   Select,
   SelectItem,
   type SelectItemProps,
@@ -147,4 +149,6 @@ export {
   type TrackCtx,
   type UseReorderDragListOptions,
   useReorderDragList,
+  type UseRovingTabIndexOptions,
+  useRovingTabIndex,
 } from '@weasel-js/ui';

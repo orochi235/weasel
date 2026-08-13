@@ -1,5 +1,6 @@
-import { useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
+import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import s from './ToggleBar.module.css';
+import { useRovingTabIndex } from '../../useRovingTabIndex';
 
 export type ToggleBarItem<V extends string | number = string> = {
   value: V;
@@ -55,38 +56,9 @@ export type ToggleBarProps<V extends string | number = string> =
       onChange: (next: V[]) => void;
     });
 
-function firstEnabledIndex(items: readonly ToggleBarItem<string | number>[]): number {
-  for (let i = 0; i < items.length; i++) if (!items[i].disabled) return i;
-  return -1;
-}
-
-function lastEnabledIndex(items: readonly ToggleBarItem<string | number>[]): number {
-  for (let i = items.length - 1; i >= 0; i--) if (!items[i].disabled) return i;
-  return -1;
-}
-
-function nextEnabledIndex(items: readonly ToggleBarItem<string | number>[], from: number): number {
-  const n = items.length;
-  for (let k = 1; k <= n; k++) {
-    const i = (from + k + n) % n;
-    if (!items[i].disabled) return i;
-  }
-  return from;
-}
-
-function prevEnabledIndex(items: readonly ToggleBarItem<string | number>[], from: number): number {
-  const n = items.length;
-  for (let k = 1; k <= n; k++) {
-    const i = (from - k + n) % n;
-    if (!items[i].disabled) return i;
-  }
-  return from;
-}
-
 export function ToggleBar<V extends string | number = string>(props: ToggleBarProps<V>): ReactElement {
   const { items, ariaLabel, className, height, size, variant } = props;
   const mode = props.mode ?? 'single';
-  const rootRef = useRef<HTMLDivElement | null>(null);
 
   const isSelected = (value: V): boolean => {
     if (mode === 'multiple') return (props.value as readonly V[]).includes(value);
@@ -101,14 +73,6 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     const mixed = (props as { mixedValues?: readonly V[] }).mixedValues;
     return mixed !== undefined && mixed.includes(value) && !isSelected(value);
   };
-
-  let tabStopIndex = -1;
-  if (mode === 'single') {
-    const sel = items.findIndex(it => it.value === (props.value as V | null));
-    tabStopIndex = sel >= 0 && !items[sel].disabled ? sel : firstEnabledIndex(items);
-  } else {
-    tabStopIndex = firstEnabledIndex(items);
-  }
 
   const handleClick = (index: number) => () => {
     const item = items[index];
@@ -131,48 +95,22 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
     }
   };
 
-  const focusSegment = (index: number) => {
-    const root = rootRef.current;
-    if (!root) return;
-    const buttons = root.querySelectorAll<HTMLButtonElement>(`.${s.segment}`);
-    buttons[index]?.focus();
-  };
+  const selectedIndex = mode === 'single'
+    ? items.findIndex(it => it.value === (props.value as V | null))
+    : -1;
 
-  const handleKeyDown = (index: number) => (e: ReactKeyboardEvent<HTMLButtonElement>) => {
-    let nextIndex = -1;
-    switch (e.key) {
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        nextIndex = prevEnabledIndex(items, index);
-        break;
-      case 'ArrowRight':
-      case 'ArrowDown':
-        nextIndex = nextEnabledIndex(items, index);
-        break;
-      case 'Home':
-        nextIndex = firstEnabledIndex(items);
-        break;
-      case 'End':
-        nextIndex = lastEnabledIndex(items);
-        break;
-      case ' ':
-      case 'Enter':
-        if (mode === 'multiple') {
-          e.preventDefault();
-          handleClick(index)();
-        }
-        return;
-      default:
-        return;
-    }
-    if (nextIndex < 0 || nextIndex === index) return;
-    e.preventDefault();
-    if (mode === 'single') {
-      const item = items[nextIndex];
-      (props.onChange as (n: V | null) => void)(item.value);
-    }
-    focusSegment(nextIndex);
-  };
+  const roving = useRovingTabIndex({
+    items,
+    itemClassName: s.segment,
+    // Single mode is a radiogroup: the tab stop is the current value, and
+    // arrow keys move the selection with the focus. Multiple mode is a set of
+    // independent toggles — focus alone moves, and Space/Enter flips.
+    tabStopIndex: selectedIndex >= 0 && !items[selectedIndex].disabled ? selectedIndex : undefined,
+    onNavigate: mode === 'single'
+      ? (index) => (props.onChange as (n: V | null) => void)(items[index].value)
+      : undefined,
+    onActivate: mode === 'multiple' ? (index) => handleClick(index)() : undefined,
+  });
 
   const style: CSSProperties | undefined = height !== undefined
     ? ({ ['--wzl-tb-height' as string]: `${height}px` } as CSSProperties)
@@ -187,7 +125,7 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
 
   return (
     <div
-      ref={rootRef}
+      ref={roving.rootRef}
       className={rootCls}
       role={mode === 'multiple' ? 'group' : 'radiogroup'}
       aria-label={ariaLabel}
@@ -208,10 +146,10 @@ export function ToggleBar<V extends string | number = string>(props: ToggleBarPr
             aria-pressed={mode === 'multiple' ? (mixed ? 'mixed' : selected) : undefined}
             aria-label={item.ariaLabel}
             disabled={item.disabled}
-            tabIndex={i === tabStopIndex ? 0 : -1}
+            tabIndex={roving.tabIndexFor(i)}
             className={cls}
             onClick={handleClick(i)}
-            onKeyDown={handleKeyDown(i)}
+            onKeyDown={roving.onKeyDown(i)}
           >
             {item.label}
           </button>
