@@ -1,12 +1,13 @@
 /**
- * Differential test for `renderOrder()`.
+ * Differential test for `renderOrder()` and `renderOrderNodes()`.
  *
  * `legacyRenderOrder` below is a transcription of the original layer-major
  * implementation — one full DFS of the tree per layer, yielding only the nodes
  * whose layer matched that pass. The live implementation buckets in a single
- * pass instead. This file exists to hold the two to the same sequence forever,
- * because renderOrder drives painting and hit-testing: a divergence surfaces as
- * a z-order bug or a node that cannot be clicked, not as a crash.
+ * pass instead, and takes a separate branch when there is exactly one layer.
+ * This file exists to hold all of them to the same sequence forever, because
+ * render order drives painting and hit-testing: a divergence surfaces as a
+ * z-order bug or a node that cannot be clicked, not as a crash.
  */
 import { describe, expect, it } from 'vitest';
 import { createScene } from './scene';
@@ -56,6 +57,7 @@ function sceneWithLayers(count: number): AnyScene {
 function agree(scene: AnyScene, what: string): NodeId[] {
   const actual = [...scene.renderOrder()];
   expect(actual, what).toEqual(legacyRenderOrder(scene));
+  expect(scene.renderOrderNodes().map((n) => n.id), `${what} (nodes)`).toEqual(actual);
   return actual;
 }
 

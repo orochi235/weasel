@@ -705,18 +705,21 @@ From the WebGL transition spec — all deferred:
     whether or not it could intersect, which cost 12 ms per query on 10k
     24-gons against 0.84 ms for 10k rects. That box is now memoized through
     `nodeMemo` (keyed on the node's `pose` / `data` references, so any scene
-    op invalidates it): 10k 24-gons is 1.16 ms, 10x faster, and rect scenes
-    pay 5–17% for the per-node decision not to cache. What is left is the
-    scan itself — `renderOrder()` plus a `scene.get` per id is about 70% of
-    the remaining time, and no geometry dominates. At 1.2 ms per query on 10k
-    nodes an index is not yet the bottleneck; revisit if scenes get bigger or
-    marquee starts querying more than once a frame.
+    op invalidates it): 10k 24-gons is 1.16 ms, 10x faster. The per-node
+    decision not to cache initially cost rect scenes 5–17%; inlining it as a
+    `pose.kind` read gave that back. The scan machinery, not geometry, was
+    about 70% of what remained, so the scan now consumes `renderOrderNodes()`
+    and the `scene.get` per id is gone: 10k rects 0.94 → 0.53 ms, 10k 24-gons
+    1.21 → 0.78 ms. At well under a millisecond per query an index is not the
+    bottleneck; revisit if scenes get bigger or marquee starts querying more
+    than once a frame.
   - `renderOrder()` was O(layers × nodes) — it walked the whole tree once per
     layer, yielding only that layer's nodes. Fixed: one DFS bucketed by layer.
-    10k nodes over 64 layers went 12.93 ms → 0.42 ms, and the flat single-layer
-    case 0.37 → 0.33. The original benchmarks used a one-layer fixture, so the
-    multiplicative term was invisible; `renderOrder — 10k nodes, by layer
-    count` now sweeps it.
+    10k nodes over 64 layers went 12.93 ms → 0.35 ms, and the flat
+    single-layer case 0.37 → 0.19, the latter from a separate no-bucket walk
+    for the one-layer scene. The original benchmarks used a one-layer fixture,
+    so the multiplicative term was invisible; `renderOrder — 10k nodes, by
+    layer count` now sweeps it.
   - Tree depth costs nothing measurable on `add` / `setPose`; scene ops are
     all sub-microsecond.
   - Both caches earn their keep by three to four orders of magnitude
@@ -730,6 +733,12 @@ From the WebGL transition spec — all deferred:
     program switches between fill kinds are the suspected cliff. Needs real
     GL, so it wants a Playwright job and the nightly treatment described in
     the `test:perf` item below, not vitest.
+  - **Move the remaining `renderOrder()` consumers to `renderOrderNodes()`.**
+    Seven call sites still walk the ids and immediately `scene.get` each one —
+    `sceneAdapter.listAll`, `renderSceneToCommands`, the two commit adapters,
+    the default `pickEvery`. That lookup measured 40% of the area hit-test's
+    per-node cost, and the render path pays it every frame. Each is a
+    mechanical swap; only `hitTestArea` has been converted so far.
   - **Memoize `renderOrder()`.** The order only changes on add / remove /
     reparent / setLayer / layer-list edits, so a cache keyed on a generation
     counter would make repeat calls free — `renderOrder()` runs per frame and

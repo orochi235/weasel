@@ -16,6 +16,7 @@ function makeScene(): Scene<unknown, string, unknown> {
   return {
     layers: [{ id: 'default' }],
     renderOrder: () => ['a', 'b'] as NodeId[],
+    renderOrderNodes: () => [...nodes.values()],
     get: (id: NodeId) => nodes.get(id as string) as never,
   } as unknown as Scene<unknown, string, unknown>;
 }

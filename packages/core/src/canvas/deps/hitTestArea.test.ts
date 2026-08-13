@@ -29,6 +29,7 @@ function triangleScene(): Scene<unknown, string, unknown> {
   return {
     layers: [{ id: 'default' }],
     renderOrder: () => ['t'] as NodeId[],
+    renderOrderNodes: () => [...nodes.values()],
     get: (id: NodeId) => nodes.get(id as string) as never,
   } as unknown as Scene<unknown, string, unknown>;
 }
@@ -55,6 +56,7 @@ describe('hitTestArea — silhouette awareness', () => {
     const scene = {
       layers: [{ id: 'default' }],
       renderOrder: () => ['m'] as NodeId[],
+      renderOrderNodes: () => [...nodes.values()],
       get: (id: NodeId) => nodes.get(id as string) as never,
     } as unknown as Scene<unknown, string, unknown>;
     expect(hitTestArea(scene, { x: 0, y: 0, width: 1000, height: 1000 })).toEqual([]);

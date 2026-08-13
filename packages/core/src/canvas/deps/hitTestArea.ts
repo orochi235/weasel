@@ -22,7 +22,7 @@
  */
 import type { Scene, NodeId } from 'core/scene/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
-import { aabbOfPose, isPathLike } from 'canvas/SceneCanvas/poseGeometry';
+import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
 import type { Path, PolygonPath } from 'features/paths/types';
 
@@ -63,11 +63,15 @@ export function hitTestAreaPolygon(
   const ab = areaBounds ?? boundsOf(area);
   if (!ab) return [];
   const hits: NodeId[] = [];
-  for (const id of scene.renderOrder()) {
-    const node = scene.get(id);
-    if (!node || node.kind === 'container') continue;
+  const order = scene.renderOrderNodes();
+  for (let i = 0; i < order.length; i++) {
+    const node = order[i];
+    if (node.kind === 'container') continue;
     const pose = node.pose;
-    const silhouette = isPathLike(pose) && (pose as Path).kind !== 'rect';
+    // `isPathLike(pose) && pose.kind !== 'rect'` inlined: this runs per node and
+    // the predicate call cost 16% of the scan over a 10,000-rect scene.
+    const silhouette = pose !== null && typeof pose === 'object'
+      && (pose as Path).kind === 'polygon';
 
     // 1. AABB fast-reject. Memo is silhouettes-only — `aabbOfPose` answers a
     // rect pose by identity, so memoizing one costs more than it saves.
@@ -96,13 +100,13 @@ export function hitTestAreaPolygon(
 
     // 2. RECT poses: silhouette IS the AABB → fast-reject pass == hit.
     if (!silhouette) {
-      hits.push(id);
+      hits.push(node.id);
       continue;
     }
 
     // 3. SILHOUETTE poses: kernel polygon-overlap against the area polygon.
     if (silhouetteOverlapsArea((pose as PolygonPath).coords, area)) {
-      hits.push(id);
+      hits.push(node.id);
     }
   }
   return hits;

@@ -1,7 +1,7 @@
 /**
  * `useAreaSelectDepSource` — wires the `areaSelect` dep consumed by
  * `areaSelectAction`. The dep exposes:
- *   - `hitTestArea(bounds)` — silhouette-aware scan over `scene.renderOrder()`
+ *   - `hitTestArea(bounds)` — silhouette-aware scan over `scene.renderOrderNodes()`
  *     (rect poses by AABB; polygon poses by the kernel polygon-overlap test).
  *   - `getSelection` / `setSelection` — passthrough to the kit selection api.
  *
