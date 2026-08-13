@@ -1,5 +1,231 @@
 # @weasel-js/hud
 
+## 1.0.0
+
+### Major Changes
+
+- 43482ce: A registry entry declares what it contributes and when it is eligible.
+
+  `Contribution` is the entry type: `bindings`, `actions`, an `overlay`, a
+  `presentation`, each optional and independent. `Tool<TScratch>` is now the
+  **focus-declaring case** of one — it keeps only what a mode the user switches
+  into needs (`initScratch`, the lifecycle hooks, the preview hooks, a `cursor`
+  closing over its own scratch). An entry that only routes input declares only
+  bindings and actions, which is what `@weasel-js/hud` always was.
+
+  `Eligibility` is a set of conditions rather than one value, because one entry
+  holds several: the hand tool is palette-selectable _and_ space-held. `focus`,
+  `offhand: HotkeyTrigger`, `always`, `claimed`, plus `capabilities` as a modality
+  filter — `@weasel-js/modes` now reads its tags from there. The scope tier a
+  binding matches at is derived from whichever condition is live, ordered to match
+  the dispatcher's existing hotkey > active > ambient walk. Nothing about that
+  walk changed; what changed is that an entry lands in a tier because of what it
+  declares about itself rather than which argument a consumer passed it in.
+
+  `useContributions` is the assembly point, and `useTools` is a shim over it with
+  its shape unchanged.
+
+  **Breaking — `@weasel-js/hud`:** `createHudTool` / `useHudTool` are now
+  `createHudContribution` / `useHudContribution`, with no alias. The old names were
+  half of the same misstatement as the `as unknown as Tool<null>` cast they
+  required; keeping them would preserve exactly what this corrects.
+
+  **Breaking — `DispatcherContext.ambientToolIds` is removed.** A host driving the
+  dispatcher directly declares `eligibility: { always: true }` on always-on entries
+  instead. `useTools` consumers are unaffected; the shim sets it.
+
+  **Behavior — a declared held-key trigger now wires itself.** `ToolDef.hotkey` was
+  read by the inspector and wired nothing; the engagement lived in a host-side
+  registration keyed by tool id (`BUILTIN_OFFHAND_ACTIONS`, now gone). Assembly
+  registers the consolidated `tool.offhand` action from the declarations, so a tool
+  that wants space declares it — `useHandTool` does. A host that also registered
+  `tool.offhand` by hand should stop.
+
+  **Behavior — `useTools` returns shallow copies** for ambient entries and
+  `hotkey`-declaring tools, since it adds the declaration they were missing.
+  Registry tools from `defineTool` are returned unchanged.
+
+  **Behavior — route-conflict reporting now also sees action `defaultBinding`s.**
+  The dispatcher always matched against them; the reporter never saw them, so a
+  tool binding colliding with an action default went unreported. It no longer does.
+  Dispatch is unchanged.
+
+  Also added: `mergeContributions(...bundles)`, which concatenates and throws on a
+  duplicate id rather than silently dropping one — the recorded plugin/bundling v1,
+  whose deferral condition was "≥2 plugin-shaped features in flight."
+
+  **Not done, so the seam is stated rather than implied:**
+  `EligibilityState.heldTriggers` exists and `liveScope` honors it, but nothing
+  populates it. `tool.offhand`'s invoker still reports engagement by pushing a tool
+  _id_, which `engagedIds` reads, so the declaration registers the binding while
+  the id carries the tier. Retiring that means changing `tool.offhand`'s contract.
+
+### Minor Changes
+
+- 8853e73: Affordance hits are claims, and an exclusive claim outranks the scope tier.
+
+  `AffordanceHit` gains `strength`, and `owner` naming what produced the hit. Kit
+  chrome claims `'shared'`, which is what it always did: compete on scope and
+  specificity. Registered layers, whose hits previously flattened to a bare kind
+  string and a payload, now return a `LayerHit` that can also carry `cursor` and
+  `strength`, so a consumer's own chrome says the things kit chrome already said
+  through `AffordanceRegion`. `owner` is groundwork — nothing binds on it yet, and
+  today only diagnostics read it; target it with `kindOf` or `affordance:<kind>`.
+
+  **Behavior change.** When a press carries an exclusive claim, only bindings
+  whose `target` consults the affordance — a `kindOf` predicate, or the
+  `affordance:<kind>` string form — are candidates. Scope ordering applies within
+  that filtered set, unchanged. Body-class targets (`'empty'`, `'selected-body'`,
+  `'unselected-body'`) and `kind:` targets resolve from the body classification
+  and never see the affordance, so they no longer win presses on chrome floating
+  over the body they name.
+
+  This is the dispatcher rule the previous release's changeset said was the real
+  fix. `select`'s marquee no longer needs its hand-written predicate declining
+  chrome affordances, and it is deleted; `rect`, `ellipse`, `polygon`, `star`,
+  `hand`, `pen` and `lasso` keep their bare `{ kind: 'drag' }` bindings and stop
+  swallowing drags on HUD chrome anyway, which is the point — seven copies of a
+  predicate was the alternative. (`select`'s _click_ binding keeps a predicate of
+  its own, for an unrelated reason: resize and rotate bind only drag, so a click
+  exactly on a handle would otherwise clear the selection.)
+
+  The filter is hard: if an exclusive claim leaves nothing eligible, the press
+  does nothing. A dev-only warning names the owner the first time that happens for
+  each owner, because the failure is otherwise silent.
+
+  **What a claim does not reach.** Only gestures that carry an affordance are
+  filtered, and keyboard events never do. Which pointer-family gestures carry one
+  is settled by the per-kind claim work later in this release — see "A widget
+  declares which gestures it consumes." The filter outranks hotkey scope as well
+  as active scope, so holding space to pan no longer pans while the pointer is
+  over HUD chrome.
+
+  `@weasel-js/hud` claims exclusively, and `Widget` gains `cursorAt(x, y)`, which
+  resolves a cursor per point rather than from hover state; `hud.window()`
+  implements it, so hovering a resize band shows `nwse-resize` instead of the
+  active tool's cursor. A widget can also stay transparent to input — `rect`,
+  `text`, `label` and `image` are decoration — so a backdrop widget no longer
+  eats presses meant for the canvas or for widgets beneath it. That occlusion
+  predates this release, but an exclusive claim would have widened it from "HUD
+  elements occlude each other" to "HUD elements kill every tool underneath."
+
+  `WindowWidget.cursor` is removed. Nothing read it; `cursorAt` replaces it.
+
+- 40dd97d: A widget declares which gestures it consumes, and a claim bars only those.
+
+  A HUD widget could be pressed, dragged and hovered and nothing else. The gap
+  was in the dispatcher: `affordanceAt` ran on `pointerdown` and hover only, so
+  `doubleclick`, `contextmenu` and `wheel` carried no affordance and no binding
+  could gate on one. All four now do — `doubleclick` replays it from its press,
+  `contextmenu` classifies its own position (a secondary button never reaches
+  `onPointerDown`, so there is nothing to replay from) and gains world
+  coordinates it never carried, and `wheel` classifies the point under the
+  cursor. The immediate-invoker param bag, which forwarded position for `click`
+  and `pointerdown` only, now covers `contextmenu`, `longpress` and the
+  affordance on all four.
+
+  **Behavior change, and the reason for the rest of this entry.** An exclusive
+  claim previously meant _this pixel is mine_. Under that rule, giving `wheel` an
+  affordance would have killed scroll-to-zoom over every floating panel. It now
+  means _these gestures are mine_: `LayerHit` and `AffordanceHit` gain
+  `claimedKinds`, a set over the new `ClaimableGesture` union (`'pointer'` —
+  covering `pointerDown` / `click` / `drag`, one press protocol — plus
+  `'doubleClick'`, `'contextMenu'`, `'longPress'`, `'wheel'`). Omitting it bars
+  everything, which is what an exclusive claim did before.
+
+  `Widget.claims` is that set. Absent means every kind but `wheel`, so
+  right-clicking or double-clicking HUD chrome stops acting on the scene
+  underneath while scroll-to-zoom over a panel is unchanged; a widget that wants
+  the wheel asks for it. `claims: []` is decoration and replaces `claimsPointer`,
+  which is removed. `HudPointerEvent` gains `doubleclick`, `contextmenu`,
+  `longpress` and `wheel` arms.
+
+  `PointerClaim` and `onPointer`'s return type are removed. The return was
+  discarded at every call site, and it cannot be made live: the claim filter runs
+  at match time, before any widget is consulted, so there is no later moment at
+  which returning `'pass'` could restore a binding the filter already dropped.
+
+  **Two matcher fixes this depends on.** `doubleClick` and `contextMenu` passed
+  the DOM target to `matchTarget` where `click`, `drag` and `longPress` pass the
+  affordance; a `kindOf` predicate on either kind therefore received an element
+  no predicate in the kit expects. They now match the others. And the kit's body
+  predicates — `isBody`, `isSelectedBody`, `isUnselectedBody`, `isEmpty` — carry
+  `readsAffordance: false`, which `targetConsultsAffordance` honors. Each has a
+  `kindOf` but reads only `bodyTarget`, so the filter inferred that they consult
+  the hit and let them survive a claim; with `doubleclick` now carrying one,
+  `enterPathEdit`'s `kindOf: isBody` would otherwise have entered path-edit mode
+  on a double-click over chrome.
+
+  `WheelSpec` gains `target`, and `wheel` gains a route-grammar target slot —
+  a wheel binding could not gate on anything at all before.
+
+- 531150f: A loupe, and the window primitive it needed.
+
+  `hud.window()` is a draggable, resizable frame drawn in WebGL over the canvas —
+  titlebar, eight resize bands, close box. It paints no interior. Interiors come
+  from a new optional `content` painter on `Widget`, which `attachHud` draws
+  beneath every widget frame in the same layer, clipped to `contentRect`. That
+  painter receives `HudContentCtx`, carrying the scene data and view the hud layer
+  was already handed; `HudDrawCtx` stays data-free, so widgets remain renderable
+  headlessly. Painter commands are in absolute canvas coordinates — the group
+  carries a clip, not a transform.
+
+  `createLoupe()` is the first consumer: a window whose interior shows either the
+  scene re-rendered through a magnified inner view, or the actual framebuffer read
+  back and magnified 1:1. Both modes exist because neither answers both questions
+  honestly — a re-render is crisp at any magnification but its antialiased edge
+  colors are not the colors on screen, so the hex readout samples the framebuffer
+  in either mode. The frame stays parked and the pointer aims it; content freezes
+  while the pointer is over the window, which is what keeps the borders reachable.
+  Aiming uses its own `pointermove` listener rather than hud hover, because hud
+  hover comes from the layer's `onUncapturedMove` and stops during a captured drag
+  — exactly when a magnifier is most wanted.
+
+  Also fixed in the HUD: `hud.drag` pumped **world** coordinates into widgets
+  while `hud.press` sent screen coordinates, because the dispatcher builds
+  move/end contexts with an empty dep bag and the `view` lookup silently fell
+  through. Invisible at zoom 1, and a window that jumped and tracked backwards at
+  any other zoom. The drag action now captures its deps at gesture start.
+
+  `ImageDrawCommand` gains `sampling: 'linear' | 'nearest'`, applied per draw at
+  bind time rather than at upload, since `GLImageCache` keys textures by bitmap
+  identity. Without `nearest`, magnifying a framebuffer readback comes back
+  blurred, which defeats the readback.
+
+  **Behavior change in `@weasel-js/core`:** the select tool's area-select drag now
+  declines presses that a registered layer's hit-test claimed. It bound
+  `{ kind: 'drag', target: 'empty' }`, and the string form of `target` resolves
+  from the body only — chrome floating over empty canvas read as empty canvas, so
+  area-select swallowed drags on HUD widgets. The adjacent `clearSelection` click
+  binding already had the correct shape. Other tools that bind a bare
+  `{ kind: 'drag' }` still have this hole.
+
+- 6855465: Themes are values you can define, extend, and apply.
+
+  `defineTheme` / `resolveTheme` / `applyTheme` / `loadDTCG`, plus a React
+  binding at `@weasel-js/theme/react`. A theme extends the built-in one by
+  default, so a partial theme can't be incomplete; overriding a primitive
+  rebases every alias that references it. `applyTheme` stamps data attributes
+  and adopts a rule block rather than writing inline properties, so the cascade
+  still does the work and per-subtree overrides are just a different theme name.
+
+  The WebGL HUD no longer reads CSS custom properties through
+  `getComputedStyle`. It receives the same resolved record the stylesheet was
+  built from, which also makes headless rendering themeable for the first time.
+  `readTokens` and `ResolvedTokens` are gone from `@weasel-js/hud`; use
+  `ResolvedTheme` and pass a theme to `attach`.
+
+  The sixteen deprecated `--wzl-*` aliases are removed (264 call sites migrated).
+  Three were never aliases and became real semantics: `--wzl-fg-inverse`,
+  `--wzl-surface-hover`, `--wzl-surface-pressed`.
+
+### Patch Changes
+
+- Updated dependencies [5debfac]
+- Updated dependencies [6855465]
+  - @weasel-js/theme@1.0.0
+  - @weasel-js/font@1.0.0
+
 ## 0.8.0
 
 ### Patch Changes

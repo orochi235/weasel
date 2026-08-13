@@ -1,5 +1,418 @@
 # Changelog
 
+## 1.0.0
+
+### Minor Changes
+
+- ffd9713: Chrome hit-tests are axis-aware under non-uniform zoom.
+
+  Chrome declares its hit zones in screen pixels and paints in screen space, but
+  the hit-test converted those pixels to world units through `meanScale`, a
+  single geometric mean of the two axis scales. Under per-axis zoom that made the
+  pickable region larger than the painted one on the squashed axis and smaller on
+  the stretched one — an 8px handle at `scale: { x: 4, y: 1 }` was grabbable 16
+  screen px to the side and only 4 px above.
+
+  New primitives in `core/viewport/pxExtent`, all exported: `pxExtent(px, scale)`
+  for a per-axis world length, and `withinPxBox` / `withinPxRadius` to compare a
+  world-space delta in screen space directly, which can't drift from the paint at
+  all.
+
+  `AffordanceRegion`'s `point` hit is now that screen-space comparison, so a
+  handle's hit region is the square you see — which also fixes it under a rotated
+  target, where the old local-frame test was a tilted rectangle on screen. The
+  annulus band floor (`minBandPx`) and the annulus paint inset (`insetPx`) are
+  per-axis, keeping the ring you can see the ring you can grab. The pen's
+  close-hit radius is a screen-space circle. Snap-guide tolerances — the shared
+  guide strategy, insert, resize, and alignment — are per-axis, which is exact
+  rather than approximate there: a vertical guide is matched by a horizontal
+  distance, so it answers to `scale.x` alone.
+
+  `matchAlignment`'s `worldTolerance` parameter is now `{ x, y }` rather than a
+  number. Pass the same value twice for a world-space tolerance.
+
+  `meanScale` stays, for the two things that legitimately have no per-axis
+  answer: hairline stroke widths, where the renderer takes one width, and painted
+  chrome placement, whose per-axis form doesn't separate under a rotated target.
+  Its doc now says so.
+
+- 8853e73: Affordance hits are claims, and an exclusive claim outranks the scope tier.
+
+  `AffordanceHit` gains `strength`, and `owner` naming what produced the hit. Kit
+  chrome claims `'shared'`, which is what it always did: compete on scope and
+  specificity. Registered layers, whose hits previously flattened to a bare kind
+  string and a payload, now return a `LayerHit` that can also carry `cursor` and
+  `strength`, so a consumer's own chrome says the things kit chrome already said
+  through `AffordanceRegion`. `owner` is groundwork — nothing binds on it yet, and
+  today only diagnostics read it; target it with `kindOf` or `affordance:<kind>`.
+
+  **Behavior change.** When a press carries an exclusive claim, only bindings
+  whose `target` consults the affordance — a `kindOf` predicate, or the
+  `affordance:<kind>` string form — are candidates. Scope ordering applies within
+  that filtered set, unchanged. Body-class targets (`'empty'`, `'selected-body'`,
+  `'unselected-body'`) and `kind:` targets resolve from the body classification
+  and never see the affordance, so they no longer win presses on chrome floating
+  over the body they name.
+
+  This is the dispatcher rule the previous release's changeset said was the real
+  fix. `select`'s marquee no longer needs its hand-written predicate declining
+  chrome affordances, and it is deleted; `rect`, `ellipse`, `polygon`, `star`,
+  `hand`, `pen` and `lasso` keep their bare `{ kind: 'drag' }` bindings and stop
+  swallowing drags on HUD chrome anyway, which is the point — seven copies of a
+  predicate was the alternative. (`select`'s _click_ binding keeps a predicate of
+  its own, for an unrelated reason: resize and rotate bind only drag, so a click
+  exactly on a handle would otherwise clear the selection.)
+
+  The filter is hard: if an exclusive claim leaves nothing eligible, the press
+  does nothing. A dev-only warning names the owner the first time that happens for
+  each owner, because the failure is otherwise silent.
+
+  **What a claim does not reach.** Only gestures that carry an affordance are
+  filtered, and keyboard events never do. Which pointer-family gestures carry one
+  is settled by the per-kind claim work later in this release — see "A widget
+  declares which gestures it consumes." The filter outranks hotkey scope as well
+  as active scope, so holding space to pan no longer pans while the pointer is
+  over HUD chrome.
+
+  `@weasel-js/hud` claims exclusively, and `Widget` gains `cursorAt(x, y)`, which
+  resolves a cursor per point rather than from hover state; `hud.window()`
+  implements it, so hovering a resize band shows `nwse-resize` instead of the
+  active tool's cursor. A widget can also stay transparent to input — `rect`,
+  `text`, `label` and `image` are decoration — so a backdrop widget no longer
+  eats presses meant for the canvas or for widgets beneath it. That occlusion
+  predates this release, but an exclusive claim would have widened it from "HUD
+  elements occlude each other" to "HUD elements kill every tool underneath."
+
+  `WindowWidget.cursor` is removed. Nothing read it; `cursorAt` replaces it.
+
+- 43482ce: A registry entry declares what it contributes and when it is eligible.
+
+  `Contribution` is the entry type: `bindings`, `actions`, an `overlay`, a
+  `presentation`, each optional and independent. `Tool<TScratch>` is now the
+  **focus-declaring case** of one — it keeps only what a mode the user switches
+  into needs (`initScratch`, the lifecycle hooks, the preview hooks, a `cursor`
+  closing over its own scratch). An entry that only routes input declares only
+  bindings and actions, which is what `@weasel-js/hud` always was.
+
+  `Eligibility` is a set of conditions rather than one value, because one entry
+  holds several: the hand tool is palette-selectable _and_ space-held. `focus`,
+  `offhand: HotkeyTrigger`, `always`, `claimed`, plus `capabilities` as a modality
+  filter — `@weasel-js/modes` now reads its tags from there. The scope tier a
+  binding matches at is derived from whichever condition is live, ordered to match
+  the dispatcher's existing hotkey > active > ambient walk. Nothing about that
+  walk changed; what changed is that an entry lands in a tier because of what it
+  declares about itself rather than which argument a consumer passed it in.
+
+  `useContributions` is the assembly point, and `useTools` is a shim over it with
+  its shape unchanged.
+
+  **Breaking — `@weasel-js/hud`:** `createHudTool` / `useHudTool` are now
+  `createHudContribution` / `useHudContribution`, with no alias. The old names were
+  half of the same misstatement as the `as unknown as Tool<null>` cast they
+  required; keeping them would preserve exactly what this corrects.
+
+  **Breaking — `DispatcherContext.ambientToolIds` is removed.** A host driving the
+  dispatcher directly declares `eligibility: { always: true }` on always-on entries
+  instead. `useTools` consumers are unaffected; the shim sets it.
+
+  **Behavior — a declared held-key trigger now wires itself.** `ToolDef.hotkey` was
+  read by the inspector and wired nothing; the engagement lived in a host-side
+  registration keyed by tool id (`BUILTIN_OFFHAND_ACTIONS`, now gone). Assembly
+  registers the consolidated `tool.offhand` action from the declarations, so a tool
+  that wants space declares it — `useHandTool` does. A host that also registered
+  `tool.offhand` by hand should stop.
+
+  **Behavior — `useTools` returns shallow copies** for ambient entries and
+  `hotkey`-declaring tools, since it adds the declaration they were missing.
+  Registry tools from `defineTool` are returned unchanged.
+
+  **Behavior — route-conflict reporting now also sees action `defaultBinding`s.**
+  The dispatcher always matched against them; the reporter never saw them, so a
+  tool binding colliding with an action default went unreported. It no longer does.
+  Dispatch is unchanged.
+
+  Also added: `mergeContributions(...bundles)`, which concatenates and throws on a
+  duplicate id rather than silently dropping one — the recorded plugin/bundling v1,
+  whose deferral condition was "≥2 plugin-shaped features in flight."
+
+  **Not done, so the seam is stated rather than implied:**
+  `EligibilityState.heldTriggers` exists and `liveScope` honors it, but nothing
+  populates it. `tool.offhand`'s invoker still reports engagement by pushing a tool
+  _id_, which `engagedIds` reads, so the declaration registers the binding while
+  the id carries the tier. Retiring that means changing `tool.offhand`'s contract.
+
+- 9ed1139: Gradient fills that stay attached to their shape, and an editor for them.
+
+  Gradient geometry was interpreted in screen space: `draw.ts` set the shader's
+  `u_worldInv` to the identity matrix, with a comment saying a later step would
+  wire the real view inverse. Nothing did. Every gradient therefore slid across
+  its own geometry under pan and zoom, which is why the gradient demo shipped
+  with pan and zoom disabled. Fine for a viewport-fixed wash, useless for a
+  paint on a shape.
+
+  Gradient paints now carry `units`, mirroring SVG's `gradientUnits`:
+
+  - `'bounds'` — fractions of the painted node's box, `0..1` per axis (SVG
+    `objectBoundingBox`). Resolved by the node painter, so the paint follows the
+    node through moves, resizes and rotation.
+  - `'local'` — the frame the geometry was handed to the renderer in.
+  - `'world'` — scene coordinates; the paint holds still while geometry moves
+    through it (SVG `userSpaceOnUse`).
+  - `'screen'` — surface pixels, and the default, so every existing gradient
+    keeps the behavior it had. WeaselDraw's workspace tint wants exactly this.
+
+  `WeaselRenderer.render` takes an optional view matrix for `'world'`, and falls
+  back to screen space without one. `fillInPoseFrame` resolves `'bounds'` against
+  a box and `fillToBoundsFrame` inverts it; `mat3.invert` is new alongside them.
+  Supporting helpers: `sampleGradientStops`, `withGradientKind`,
+  `gradientGeometry`, `gradientForBounds`.
+
+  `setFill` takes a whole `paint` as well as a `color`, so a gradient edit is one
+  undo entry like any color edit. A `color` no longer tries to inherit alpha from
+  a fill that is a gradient.
+
+  New in `@weasel-js/ui`: `<GradientEditor>` (kind switch, stop strip, per-stop
+  color) and `<GradientHandles>` (on-canvas endpoint / center / radius / angle
+  handles, positioned through consumer-supplied `toScreen` / `toLocal` so it
+  needs no view or scene of its own). Both split live `onInput` from committed
+  `onChange`.
+
+  Converting between kinds is lossy in ways the data makes unavoidable: a radial
+  gradient stores no angle, so a round trip through one leaves the segment
+  horizontal, and a conic stores no radius, so a round trip through one resets
+  the segment's length.
+
+  `'bounds'` is not a frame you can do polar math in: `x` and `y` are fractions
+  of two different lengths, so a circle in it is an ellipse on screen.
+  `<GradientHandles>` therefore takes a gradient already resolved by
+  `fillInPoseFrame`, and consumers convert edits back with `fillToBoundsFrame`.
+
+- 6aaa469: Group resize scales a rotated child along its own axes.
+
+  Resizing a group applied the group's per-axis scale straight to each leaf's
+  axis-aligned `width` and `height` and carried `rotation` through untouched.
+  That is correct when `src`/`dst` are already in the leaf's own frame — the
+  single-leaf path, where the drag delta is projected into that frame before the
+  anchor math runs — but in a group they are world-frame, and a rotated leaf's
+  local axes are not the axes being scaled. At 90° a horizontal stretch grew the
+  leaf's `width`, when its world-horizontal extent is its `height`.
+
+  New `remapRotatedLeaf(pose, src, dst)` in `interactions/actions/resize/geometry`
+  applies the group affine to the leaf's local frame and drops the shear, which
+  the `{x, y, width, height, rotation}` pose model cannot represent. The centre
+  moves exactly; each local axis takes the length of its own image; the rotation
+  follows the image of the local x-axis. `resizeAction` uses it on the group path
+  for any leaf with a rotation, and nowhere else — the unrotated leaf and the
+  single-leaf path are byte-identical to before.
+
+  Rotation and `width` compose exactly under repeated application; only `height`
+  drifts, since the perpendicular of a mapped axis is not the image of the
+  perpendicular — that gap is exactly the dropped shear. It does not accumulate
+  during a drag: every move remaps from the gesture's start poses, not from the
+  previous preview.
+
+- 40dd97d: A widget declares which gestures it consumes, and a claim bars only those.
+
+  A HUD widget could be pressed, dragged and hovered and nothing else. The gap
+  was in the dispatcher: `affordanceAt` ran on `pointerdown` and hover only, so
+  `doubleclick`, `contextmenu` and `wheel` carried no affordance and no binding
+  could gate on one. All four now do — `doubleclick` replays it from its press,
+  `contextmenu` classifies its own position (a secondary button never reaches
+  `onPointerDown`, so there is nothing to replay from) and gains world
+  coordinates it never carried, and `wheel` classifies the point under the
+  cursor. The immediate-invoker param bag, which forwarded position for `click`
+  and `pointerdown` only, now covers `contextmenu`, `longpress` and the
+  affordance on all four.
+
+  **Behavior change, and the reason for the rest of this entry.** An exclusive
+  claim previously meant _this pixel is mine_. Under that rule, giving `wheel` an
+  affordance would have killed scroll-to-zoom over every floating panel. It now
+  means _these gestures are mine_: `LayerHit` and `AffordanceHit` gain
+  `claimedKinds`, a set over the new `ClaimableGesture` union (`'pointer'` —
+  covering `pointerDown` / `click` / `drag`, one press protocol — plus
+  `'doubleClick'`, `'contextMenu'`, `'longPress'`, `'wheel'`). Omitting it bars
+  everything, which is what an exclusive claim did before.
+
+  `Widget.claims` is that set. Absent means every kind but `wheel`, so
+  right-clicking or double-clicking HUD chrome stops acting on the scene
+  underneath while scroll-to-zoom over a panel is unchanged; a widget that wants
+  the wheel asks for it. `claims: []` is decoration and replaces `claimsPointer`,
+  which is removed. `HudPointerEvent` gains `doubleclick`, `contextmenu`,
+  `longpress` and `wheel` arms.
+
+  `PointerClaim` and `onPointer`'s return type are removed. The return was
+  discarded at every call site, and it cannot be made live: the claim filter runs
+  at match time, before any widget is consulted, so there is no later moment at
+  which returning `'pass'` could restore a binding the filter already dropped.
+
+  **Two matcher fixes this depends on.** `doubleClick` and `contextMenu` passed
+  the DOM target to `matchTarget` where `click`, `drag` and `longPress` pass the
+  affordance; a `kindOf` predicate on either kind therefore received an element
+  no predicate in the kit expects. They now match the others. And the kit's body
+  predicates — `isBody`, `isSelectedBody`, `isUnselectedBody`, `isEmpty` — carry
+  `readsAffordance: false`, which `targetConsultsAffordance` honors. Each has a
+  `kindOf` but reads only `bodyTarget`, so the filter inferred that they consult
+  the hit and let them survive a claim; with `doubleclick` now carrying one,
+  `enterPathEdit`'s `kindOf: isBody` would otherwise have entered path-edit mode
+  on a double-click over chrome.
+
+  `WheelSpec` gains `target`, and `wheel` gains a route-grammar target slot —
+  a wheel binding could not gate on anything at all before.
+
+- 531150f: A loupe, and the window primitive it needed.
+
+  `hud.window()` is a draggable, resizable frame drawn in WebGL over the canvas —
+  titlebar, eight resize bands, close box. It paints no interior. Interiors come
+  from a new optional `content` painter on `Widget`, which `attachHud` draws
+  beneath every widget frame in the same layer, clipped to `contentRect`. That
+  painter receives `HudContentCtx`, carrying the scene data and view the hud layer
+  was already handed; `HudDrawCtx` stays data-free, so widgets remain renderable
+  headlessly. Painter commands are in absolute canvas coordinates — the group
+  carries a clip, not a transform.
+
+  `createLoupe()` is the first consumer: a window whose interior shows either the
+  scene re-rendered through a magnified inner view, or the actual framebuffer read
+  back and magnified 1:1. Both modes exist because neither answers both questions
+  honestly — a re-render is crisp at any magnification but its antialiased edge
+  colors are not the colors on screen, so the hex readout samples the framebuffer
+  in either mode. The frame stays parked and the pointer aims it; content freezes
+  while the pointer is over the window, which is what keeps the borders reachable.
+  Aiming uses its own `pointermove` listener rather than hud hover, because hud
+  hover comes from the layer's `onUncapturedMove` and stops during a captured drag
+  — exactly when a magnifier is most wanted.
+
+  Also fixed in the HUD: `hud.drag` pumped **world** coordinates into widgets
+  while `hud.press` sent screen coordinates, because the dispatcher builds
+  move/end contexts with an empty dep bag and the `view` lookup silently fell
+  through. Invisible at zoom 1, and a window that jumped and tracked backwards at
+  any other zoom. The drag action now captures its deps at gesture start.
+
+  `ImageDrawCommand` gains `sampling: 'linear' | 'nearest'`, applied per draw at
+  bind time rather than at upload, since `GLImageCache` keys textures by bitmap
+  identity. Without `nearest`, magnifying a framebuffer readback comes back
+  blurred, which defeats the readback.
+
+  **Behavior change in `@weasel-js/core`:** the select tool's area-select drag now
+  declines presses that a registered layer's hit-test claimed. It bound
+  `{ kind: 'drag', target: 'empty' }`, and the string form of `target` resolves
+  from the body only — chrome floating over empty canvas read as empty canvas, so
+  area-select swallowed drags on HUD widgets. The adjacent `clearSelection` click
+  binding already had the correct shape. Other tools that bind a bare
+  `{ kind: 'drag' }` still have this hole.
+
+- 596253e: The built-in path and shape painters accept a `FillStyle` in `data.fill`.
+
+  `kit:path` and `kit:shape` typed `data.fill` as a color string and emitted
+  `{ color }`, so a node could not carry a gradient or a pattern without the
+  consumer registering a painter of its own — even though the renderer has taken
+  every `FillStyle` variant since the paint model landed. The two painters were
+  the narrow point, not the renderer.
+
+  `data.fill` is now `string | FillStyle` (exported as `NodeFill`). A string
+  still means a solid color, `'none'` still skips the fill, `undefined` still
+  falls back to `data.color` and then to the default — and only when there is no
+  stroke, so a stroke-only pencil path stays unfilled. An object is used as-is.
+  `ink()` agrees with `paint()` on all of it, which the existing agreement test
+  plus a new one both check.
+
+  One behavior change beyond the widening: `kit:shape` used to paint `'none'` as
+  a literal color, since only `kit:path` special-cased it. It now skips the fill,
+  matching `kit:path` and matching what the string obviously means.
+
+  This is the kit half of gradient and texture fills. The app half — widening
+  WeaselDraw's own data shape, a fill-kind switch in the properties panel, a
+  gradient editor with on-canvas handles, and matching SVG `<linearGradient>` /
+  `<pattern>` export — is untouched.
+
+- 22eafe6: Pattern fills tile, persist, and round-trip through SVG.
+
+  The `pattern` variant of `FillStyle` never tiled. `drawPathFillPattern`
+  borrowed the `imageFill` program while binding the path fill mesh VAO, which
+  enables `a_position` only — `a_uv` was never bound, so `v_uv` was the constant
+  `(0, 0)` and every fragment sampled texel (0, 0) of the tile. Textures also
+  uploaded with `CLAMP_TO_EDGE`, so correct UVs alone would have smeared rather
+  than repeated. The variant had no visual consumer, which is why it went
+  unnoticed.
+
+  `patternFill` is now its own program, taking `gradFill`'s vertex stage:
+  paint-space coordinates come from the screen position through `u_worldInv`
+  rather than a UV attribute, so the path mesh keeps its position-only layout.
+  `GLTextureCache.upload` takes a wrap argument and pattern textures bind
+  `REPEAT`.
+
+  Patterns pick up `units` alongside gradients. For a pattern it names the space
+  the tile's **origin and scale** live in — not geometry, which a pattern hasn't
+  got. `'bounds'` anchors the tile to the painted node's box, so dragging the
+  node carries the pattern and resizing reveals more tiles instead of stretching
+  them; `fillInPoseFrame` rebases it by translation only.
+
+  `TilePatternSpec` is the serializable payload — plain data naming a built-in
+  tile (`hatch`, `crosshatch`, `dots`, `chunks`) plus its parameters:
+
+  ```ts
+  { fill: 'pattern', pattern: { tile: 'hatch', color: '#0fb5a8', size: 8 }, units: 'bounds' }
+  ```
+
+  `resolvePatternSpec` turns one into a `TextureHandle` at paint time, memoized
+  on the spec's values so identical specs share a texture. The built-in painters
+  resolve it alongside `fillInPoseFrame`; a consumer emitting its own draw
+  commands resolves it at the same place it calls that one. A `TextureHandle`
+  payload still works untouched, but cannot be persisted or exported — prefer
+  the spec.
+
+  `@weasel-js/svg` serializes a tile spec as a `<pattern patternUnits=
+"userSpaceOnUse">` whose children come from the same tile description that
+  rasterizes the texture, so the vector and raster forms cannot drift. The spec
+  rides along on `data-weasel-tile` for lossless re-import; a hand-authored
+  `<pattern>` without it is dropped with a warning rather than guessed at.
+  `SerializeOptions.onWarn` is new, and reports paint that SVG cannot express —
+  a conic gradient, or a pattern carrying a `TextureHandle`.
+
+  `tilePreviewSvg` / `tilePreviewCssUrl` render a single tile as a standalone
+  `<svg>`, for pickers that need to show a tile outside a document.
+
+- cd23624: A text run can turn off a flag its node sets.
+
+  Run-level `bold` / `italic` / `underline` / `strikethrough` are additive over
+  the node's `TextStyle` — a run turns a flag on, never off. So "select a word
+  inside an underlined node and hit U" was unrepresentable, and the character bar
+  could only refuse.
+
+  New `setFlagOverRange(runs, style, start, end, key, value)` in
+  `features/text/runs/flagRange`, exported alongside `nodeHasFlag`. Turning a
+  flag on, or off in a node that doesn't set it, is the ordinary additive write
+  and returns the style untouched. Turning it off in a node that _does_ set it
+  clears the node flag and raises it on the runs outside the range: identical
+  rendered result, expressible edit, and `StyledRun` unchanged — so nothing a
+  document can already contain changes meaning.
+
+  That is the answer to the recorded question of tri-state versus
+  normalize-on-write, and it is not close. A tri-state run flag cannot cover
+  `bold` or `italic`: those are booleans on a run but `fontWeight` and
+  `fontStyle` on the node, so a run's `false` has no node-level boolean to
+  override. Tri-state fixes two of the four flags; this fixes all four, and
+  without widening the persisted shape.
+
+  One case is declined rather than approximated. `run.bold` resolves to exactly
+  700 everywhere, so a node at `fontWeight: 900` cannot have its weight pushed
+  onto its runs without lightening the text that was _not_ edited. That returns
+  `applied: false` and writes nothing; a control should disable rather than
+  silently downgrade.
+
+  `useTextEdit` takes an optional `setStyle(id, style)` for this — the hook could
+  read the node style but had nowhere to write one back. Omit it and the toggle
+  declines exactly as it does today.
+
+### Patch Changes
+
+- Updated dependencies [43482ce]
+- Updated dependencies [40dd97d]
+  - @weasel-js/modes@1.0.0
+  - @weasel-js/gestures@1.0.0
+  - @weasel-js/font@1.0.0
+  - @weasel-js/geom@1.0.0
+  - @weasel-js/history@1.0.0
+
 ## 0.8.0
 
 ### Minor Changes
