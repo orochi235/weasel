@@ -705,12 +705,18 @@ From the WebGL transition spec — all deferred:
   number. Nothing gates CI; the README says what a gate would have to look
   like. What the first run found:
 
-  - Hit-testing is a linear scan, not a quadtree — `hitTestArea` walks every
-    node in `renderOrder()`. Query-rect size barely moves it, because the
-    per-node AABB "fast reject" calls `boundsOfPath`, which walks the whole
-    command stream and allocates for every node whether or not it can
-    intersect. 10k 24-gons costs 12 ms per marquee query against 0.84 ms for
-    10k rects.
+  - Hit-testing is a linear scan — `hitTestArea` walks every node in
+    `renderOrder()`. The kit has no spatial index of any kind; the quadtree
+    this list used to assume is eric's `quadtreeStrategy`, an occupancy tree
+    for *placement* (`occupantId`, `findDropNode`), which answers a different
+    question and is already tracked under Container layout strategies.
+    Query-rect size barely moves the scan, because the per-node AABB "fast
+    reject" calls `boundsOfPath`, which walks the whole command stream and
+    allocates for every node whether or not it can intersect. 10k 24-gons
+    costs 12 ms per marquee query against 0.84 ms for 10k rects. Caching a
+    node's AABB is worth roughly 15x on path scenes before any index is
+    considered — but it needs an invalidation story, since a stale AABB is a
+    silent wrong hit.
   - Tree depth costs nothing measurable on `add` / `setPose`; scene ops are
     all sub-microsecond.
   - Both caches earn their keep by three to four orders of magnitude
