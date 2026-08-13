@@ -56,6 +56,12 @@
       "@weasel-js/history": ["./packages/history/src/index.ts"],
       "@weasel-js/modes": ["./packages/modes/src/index.ts"],
       "@weasel-js/modes/presets/default": ["./packages/modes/src/presets/default.ts"],
+      "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
+      // The two passthrough entries don't sit where their specifier says, so
+      // they need explicit mappings ahead of the wildcard.
+      "@weasel-js/labkit/weasel-ui": ["./packages/labkit/src/passthrough/weasel-ui.ts"],
+      "@weasel-js/labkit/weasel-canvas": ["./packages/labkit/src/passthrough/weasel-canvas.ts"],
+      "@weasel-js/labkit/*": ["./packages/labkit/src/*"],
       "core/*": ["./packages/core/src/core/*"],
       "features/*": ["./packages/core/src/features/*"],
       "affordances/*": ["./packages/core/src/affordances/*"],
@@ -65,6 +71,6 @@
       "debug/*": ["./packages/core/src/debug/*"]
     }
   },
-  "include": ["apps", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/history/src", "packages/modes/src"],
+  "include": ["apps", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/labkit/src"],
   "exclude": ["node_modules", "dist"]
 }

@@ -24,7 +24,6 @@ interface DemoArgs {
 
 const meta: Meta<DemoArgs> = {
   title: 'labkit/UI/Properties/PropertyPanel',
-  component: PropertyPanel,
   argTypes: {
     title: { control: 'text' },
     pack: {

@@ -2,11 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { attachHud } from './attach';
 import { createHud } from './hud';
-import type { CanvasExtensionApi, ClaimableGesture, LayerHit } from '@weasel-js/core';
+import type {
+  CanvasExtensionApi,
+  ClaimableGesture,
+  LayerHit,
+  RenderLayer,
+} from '@weasel-js/core';
 import { DEFAULT_WIDGET_CLAIMS, type Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font';
 
-function makeApi(): CanvasExtensionApi & { _layer?: import('../../core/src/core/layers/render').RenderLayer<unknown> } {
+function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
   const api = {
     element: null,
     requestRedraw: vi.fn(),
