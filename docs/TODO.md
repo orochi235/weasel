@@ -143,14 +143,6 @@ Priority tags:
   `attachHud` can. Structurally assignable so nothing breaks, and it has no
   consumer outside its tests. Recorded 2026-08-10.
 
-- **(P3) Three unlinked enumerations of `TargetSpec` forms.** `targetRank` and
-  `targetConsultsAffordance` (`interactions/dispatcher/matcher.ts`) and
-  `matchTarget` (`@weasel-js/gestures`, `ui/match.ts`) each enumerate the target
-  forms independently, across two packages, with nothing linking them — unlike
-  the `_exhaustive: never` guard `matchSpec` uses for gesture kinds. A new
-  target form needs three edits from memory and the compiler will not say so.
-  Recorded 2026-08-10.
-
 - **(P3) Interacting through a viewport.** `createViewportLayer` has no
   hit-test re-projection, so a press inside a loupe or minimap targets the outer
   view — it would act on whatever sits under the window on the real canvas, not

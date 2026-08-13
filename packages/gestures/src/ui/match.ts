@@ -28,7 +28,7 @@
  * evaluated should stay out of the way of one that can.
  */
 
-import type { GestureSpec, ModSpec, PhaseSpec } from './spec';
+import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec, TargetPredicate } from './spec';
 import type { InputEvent } from './inputEvent';
 import type { PhaseAtom } from '../grammar/routeGrammar';
 
@@ -131,6 +131,61 @@ function affordanceKindOf(target: unknown): string | undefined {
 }
 
 /**
+ * A {@link TargetSpec} resolved to its form, with the parts each form encodes
+ * in its string pulled out.
+ *
+ * This is the one enumeration of the target forms. Three sites act on it and
+ * each does something different — `matchTarget` below, and `targetRank` /
+ * `targetConsultsAffordance` in `@weasel-js/core`'s dispatcher matcher — so
+ * they switch on `form` exhaustively rather than re-deriving the prefixes.
+ */
+export type TargetSpecForm =
+  | { form: 'body'; body: 'empty' | 'selected-body' | 'unselected-body' }
+  | { form: 'kind'; kind: string; requireSelected: boolean }
+  | { form: 'affordance'; kind: string }
+  | { form: 'predicate'; kindOf: TargetPredicate };
+
+function hasPrefix<P extends string>(s: string, prefix: P): s is `${P}${string}` {
+  return s.startsWith(prefix);
+}
+
+/**
+ * Resolve a `TargetSpec` to its {@link TargetSpecForm}.
+ *
+ * `null` means the value is no form this build knows — junk from an untyped
+ * consumer, or a spec authored against a newer kit. Every caller treats it as
+ * no-match rather than a wildcard.
+ */
+export function parseTargetSpec(spec: TargetSpec): TargetSpecForm | null {
+  if (typeof spec === 'object') {
+    return spec !== null && typeof spec.kindOf === 'function'
+      ? { form: 'predicate', kindOf: spec.kindOf }
+      : null;
+  }
+  if (typeof spec !== 'string') return null;
+  if (spec === 'empty' || spec === 'selected-body' || spec === 'unselected-body') {
+    return { form: 'body', body: spec };
+  }
+  if (hasPrefix(spec, 'affordance:')) {
+    return { form: 'affordance', kind: spec.slice('affordance:'.length) };
+  }
+  // `:selected` is only a suffix when it is the LAST segment — `kind:app:note`
+  // names a kind that happens to contain a colon.
+  if (hasPrefix(spec, 'kind:')) {
+    const rest = spec.slice('kind:'.length);
+    const requireSelected = rest.endsWith(':selected');
+    return {
+      form: 'kind',
+      kind: requireSelected ? rest.slice(0, -':selected'.length) : rest,
+      requireSelected,
+    };
+  }
+  const _exhaustive: never = spec;
+  void _exhaustive;
+  return null;
+}
+
+/**
  * Match a target value + event against a TargetSpec.
  *
  * - `{ kindOf: predicate }` — calls the predicate with the raw target value
@@ -159,59 +214,39 @@ function affordanceKindOf(target: unknown): string | undefined {
  */
 export function matchTarget(
   target: unknown,
-  specTarget: unknown,
+  specTarget: TargetSpec | undefined,
   bodyTarget?: string,
   bodyKind?: string,
 ): boolean {
   if (specTarget === undefined) return true;
+  const form = parseTargetSpec(specTarget);
+  if (form === null) return false;
 
-  // kindOf predicate form — receives the raw target (affordance hit for
-  // drag, e.target otherwise) plus the bodyTarget classification.
-  if (
-    typeof specTarget === 'object' &&
-    specTarget !== null &&
-    'kindOf' in specTarget &&
-    typeof (specTarget as { kindOf: unknown }).kindOf === 'function'
-  ) {
-    return (specTarget as { kindOf: (t: unknown, bodyTarget?: string) => boolean }).kindOf(target, bodyTarget);
-  }
+  switch (form.form) {
+    // Receives the raw target (affordance hit for drag, e.target otherwise)
+    // plus the bodyTarget classification.
+    case 'predicate':
+      return form.kindOf(target, bodyTarget);
 
-  if (typeof specTarget !== 'string') return false;
+    // Resolved from the `classifyTarget` result packed into the event's
+    // `bodyTarget`. Unwired classifyTarget → absent → no match.
+    case 'body':
+      return bodyTarget !== undefined && bodyTarget === form.body;
 
-  // Body-class forms: 'empty', 'selected-body', 'unselected-body'.
-  // Resolved from the `classifyTarget` result packed into the event's `bodyTarget`.
-  if (
-    specTarget === 'empty' ||
-    specTarget === 'selected-body' ||
-    specTarget === 'unselected-body'
-  ) {
-    // When classifyTarget isn't wired, bodyTarget is absent → no match.
-    if (bodyTarget === undefined) return false;
-    return bodyTarget === specTarget;
-  }
+    case 'affordance':
+      return affordanceKindOf(target) === form.kind;
 
-  // Affordance form: exact match on the hit's own kind.
-  if (specTarget.startsWith('affordance:')) {
-    const wanted = specTarget.slice('affordance:'.length);
-    return affordanceKindOf(target) === wanted;
-  }
+    case 'kind':
+      if (bodyKind === undefined || bodyKind !== form.kind) return false;
+      return form.requireSelected ? bodyTarget === 'selected-body' : true;
 
-  // Node-kind forms. `:selected` is only a suffix when it is the LAST
-  // segment — `kind:app:note` names a kind that happens to contain a colon.
-  if (specTarget.startsWith('kind:')) {
-    if (bodyKind === undefined) return false;
-    let wanted = specTarget.slice('kind:'.length);
-    let requireSelected = false;
-    if (wanted.endsWith(':selected')) {
-      wanted = wanted.slice(0, -':selected'.length);
-      requireSelected = true;
+    default: {
+      // Exhaustiveness guard — new target forms are a compile error here.
+      const _exhaustive: never = form;
+      void _exhaustive;
+      return false;
     }
-    if (bodyKind !== wanted) return false;
-    return requireSelected ? bodyTarget === 'selected-body' : true;
   }
-
-  // Unrecognized string form.
-  return false;
 }
 
 // ---------------------------------------------------------------------------
