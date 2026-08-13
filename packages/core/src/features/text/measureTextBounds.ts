@@ -33,14 +33,10 @@ export function measureTextBounds(
 ): { width: number; height: number } {
   const resolved = resolveTextStyle(style);
   const runs = resolveRuns([{ text }], resolved);
-  const { bounds } = layoutRuns(
-    runs,
-    {
-      maxWidth: opts?.maxWidth ?? Infinity,
-      lineHeight: opts?.lineHeight ?? resolved.lineHeight,
-      align: resolved.align,
-    },
-    { x: 0, y: 0 },
-  );
+  const { bounds } = layoutRuns(runs, {
+    maxWidth: opts?.maxWidth ?? Infinity,
+    lineHeight: opts?.lineHeight ?? resolved.lineHeight,
+    align: resolved.align,
+  });
   return bounds;
 }
