@@ -105,7 +105,10 @@ export default defineConfig({
           environment: 'jsdom',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
-          include: ['apps/draw/**/*.test.{ts,tsx}'],
+          // `apps/shared/` holds modules both in-repo apps import (buildInfo).
+          // It rides with the draw project rather than getting one of its own —
+          // same jsdom environment, and no third config to keep in sync.
+          include: ['apps/draw/**/*.test.{ts,tsx}', 'apps/shared/**/*.test.{ts,tsx}'],
         },
       },
       // Runs every CSF story as a Vitest test. Requires Playwright

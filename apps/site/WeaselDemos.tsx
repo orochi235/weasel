@@ -30,6 +30,8 @@ import {
 // from --ckd-* tokens. Pulling tokens.css would clobber those with the
 // light-theme defaults.
 import logoUrl from '../../weasel-transparent@0.33x.png';
+import { VERSION } from '@weasel-js/core';
+import { buildTitle } from '../shared/buildInfo';
 
 function readHash(): string {
   const h = window.location.hash.replace(/^#/, '');
@@ -61,7 +63,10 @@ export function WeaselDemos() {
       <aside className="ckd-sidebar">
         <header className="ckd-sidebar-header">
           <img src={logoUrl} alt="weasel logo" className="ckd-sidebar-logo" />
-          <h1>w<span className="ckd-sidebar-rainbow">easel</span></h1>
+          <h1>
+            w<span className="ckd-sidebar-rainbow">easel</span>
+            <span className="ckd-sidebar-version" title={buildTitle()}>v{VERSION}</span>
+          </h1>
           <p>Domain-agnostic 2D scene-graph hooks for React + canvas.</p>
           <p><a href="./api/">API reference →</a></p>
           <p><a href="./api-gestures/">weasel-gestures API →</a></p>

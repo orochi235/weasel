@@ -120,7 +120,7 @@ import {
   PropertySelect,
 } from './ui/PropertiesPanel';
 import { HistoryList } from './ui/HistoryList';
-import { buildLabel, buildTitle } from './buildInfo';
+import { buildLabel, buildTitle } from '../../shared/buildInfo';
 import { PREFS, usePref } from './prefs';
 import { LoupeControls } from './LoupeControls';
 import { enableMachineFontOutlines, disableMachineFontOutlines } from './fonts';

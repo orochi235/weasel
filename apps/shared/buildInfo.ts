@@ -1,12 +1,17 @@
 /**
- * What this build of WeaselDraw is: the kit version it was compiled against
- * and when it was compiled. Surfaced in the status bar so a screenshot or a
- * bug report can be pinned to a release.
+ * What an in-repo app's build is: the kit version it was compiled against and
+ * when it was compiled. Surfaced in WeaselDraw's status bar and the demo
+ * site's sidebar, so a screenshot or a bug report can be pinned to a release.
  *
- * The app has no version of its own — `apps/draw` isn't a workspace and ships
- * no package.json — so the kit's lockstep version is the identity that
- * matters. `VERSION` comes from `@weasel-js/core`; the timestamp is this
- * app's, injected by `scripts/vite-build-info.ts`.
+ * Neither app has a version of its own — neither is a workspace, and neither
+ * ships a package.json — so the kit's lockstep version is the identity that
+ * matters. `VERSION` comes from `@weasel-js/core`; the timestamp is the
+ * importing app's, injected by `scripts/vite-build-info.ts`.
+ *
+ * Lives under `apps/shared/` rather than in a package because
+ * `__WEASEL_BUILD_DATE__` is whatever the *importing bundle's* config
+ * injected. Published from a package, it would report the package's own build
+ * date to every consumer, which is not the question anyone is asking.
  */
 
 import { VERSION } from '@weasel-js/core';
