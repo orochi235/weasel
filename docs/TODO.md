@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Draw-loop cost per command** — a flat ~68 us per draw command at every scene size, so 3,200 rects cost 220 ms a frame. Redundant uniform uploads are fixed; the rest is per-draw-call cost and is undiagnosed → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost per command** — a flat ~66 us per draw call at every scene size. Consecutive solid rects now batch into one draw (3,200 rects: 212 ms → 0.15 ms a frame); every other command still pays it → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -722,54 +722,26 @@ From the WebGL transition spec — all deferred:
 
   Still open:
 
-  - **[x] Renderer draw loop** — `tests/perf/draw-loop.spec.ts` sweeps commands
-    per frame under real GL. It runs under `npm run test:perf`, gates nothing,
-    and prints the unmasked GL renderer so a software backend is obvious.
+  - **Per-draw-call cost, for every command that is not a batched rect.**
+    `tests/perf/draw-loop.spec.ts` sweeps commands per frame under real GL
+    (`npm run test:perf`; gates nothing, prints the unmasked GL renderer so a
+    software backend is obvious). On an M2 Max via ANGLE at 800x600 the cost
+    is ~66 us per draw call, flat from 400 commands to 3,200, and it is not
+    program switches, fill rate, tessellation, or uniform uploads — each ruled
+    out by a variant in that spec or by fixing it and watching the wall clock
+    not move. What is left per draw is `useProgram`, `bindVertexArray` x2,
+    `bufferSubData`, `drawElements`, or ANGLE's per-draw translation.
 
-    On an M2 Max via ANGLE, 800x600, rect fills, the cost per command is
-    **flat at ~68 us from 100 commands to 3,200** — 3,200 rects cost 220 ms a
-    frame. There is no threshold or cliff. (An earlier version of this entry
-    claimed a 30x step between 250 and 500; that was an artifact of taking the
-    *min* of per-frame samples, which latches onto whichever frame the driver
-    short-circuited. Time a block of frames and divide.)
+    Batching consecutive solid-fill rects made this moot where it hurt most
+    rather than answering it: 3,200 rects went 212 ms -> 0.15 ms a frame.
+    Everything else still pays. A frame alternating solid and linear-gradient
+    rects is unchanged at ~34 us per command, which is now almost entirely the
+    gradient half — ~69 us per gradient draw. Batching another fill kind means
+    moving its per-command uniforms onto vertex attributes, as the rect batch
+    moved `u_color`; gradients would need the ramp texture shared too.
 
-    What it is not:
-      - **Not program switches**, the standing suspicion. Alternating solid and
-        gradient fills costs ~34 us per command against ~68 for solid alone,
-        i.e. only the solid half is expensive. Gradients are verified to
-        actually paint (the spec samples two points across a ramp).
-      - **Not fill rate.** Stacking every rect at one spot — same draw calls, a
-        fraction of the fragments — costs the same.
-      - **Not tessellation or mesh identity.** 3,200 commands sharing one path
-        object cost the same as 3,200 distinct ones.
-      - **Not the redundant uniform uploads**, which were real and are now
-        fixed (see below), but were not what the wall clock was waiting on.
-
-    A CPU profile of the frame put 82% in uniform uploads — `uniformMatrix4fv`
-    alone at 36% — which turned out to be a sampling artifact of where the
-    driver blocks, not where the time goes. Fixing them removed the calls
-    (1,000 -> 1 per frame, verified by counting real GL calls in-page) and did
-    not move the wall clock. What remains per draw is `useProgram`,
-    `bindVertexArray` x2, `bufferSubData`, `drawElements` — one of those, or
-    ANGLE's per-draw translation, is the real cost. Batching consecutive
-    same-program rect fills into one draw is the obvious next move, and would
-    make the question moot rather than answer it.
-
-    What batching has to respect, so it does not get re-derived:
-      - **Only consecutive commands merge.** Painter's order is the whole
-        contract; a batch may absorb a run and must flush the moment anything
-        it cannot express appears (a different program, a stroke, a clip
-        push/pop, a group transform, alpha, or color-matrix change).
-      - **Color moves to a vertex attribute.** Rects in a run have different
-        colors, and `u_color` is a uniform today, so a merged draw needs
-        per-vertex colors. `pathFillVColor` already exists for exactly this
-        shape — see `vertexColors` on `PathDrawCommand` and `expandAnchorColors`
-        in `draw.ts`.
-      - **The rect fast path is where it starts.** `drawRectFast` already
-        writes four corners into a shared VBO per command; batching turns that
-        into an append into a growable buffer plus one `drawElements` at flush.
-      - Verify with `npm run test:visual` (order and clipping regressions show
-        up as pixels) and re-run `tests/perf/draw-loop.spec.ts` for the number.
+    Verify any change here with `npm run test:visual` — order and clipping
+    regressions show up as pixels — and re-run the perf spec for the number.
   - **[x] Memoize `renderOrder()`.** Both walks now cache against a
     structural-generation counter. A repeat call on a 10k-node, 4-layer scene
     drains in 0.0033 ms against a 0.33 ms rebuild.

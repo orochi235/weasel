@@ -35,6 +35,7 @@ import { verticalAlignOffset } from 'features/text/verticalAlign';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
+import { RectBatch, MAX_RECTS_PER_BATCH } from './rectBatch';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -52,9 +53,9 @@ export interface DrawContext {
   programRegistry: Map<string, ShaderProgram>;
   quadVbo: WebGLBuffer | null;
   quadIbo: WebGLBuffer | null;
-  /** Shared rect-fill geometry (see WeaselRenderer.uploadRectGeometry). */
-  rectVao: WebGLVertexArrayObject | null;
-  rectVbo: WebGLBuffer | null;
+  /** Staging for the consecutive-rect batch. Draws are deferred into it, so a
+   *  caller driving `dispatch` itself must `flushRects` when the stream ends. */
+  rectBatch: RectBatch;
   state: GroupState;
   widthCss: number;
   heightCss: number;
@@ -194,9 +195,9 @@ export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
   switch (cmd.kind) {
     case 'group':  return drawGroup(ctx, cmd);
     case 'path':   return drawPath(ctx, cmd);
-    case 'text':   return drawText(ctx, cmd);
-    case 'image':  return drawImage(ctx, cmd);
-    case 'shader': return drawShader(ctx, cmd);
+    case 'text':   flushRects(ctx); return drawText(ctx, cmd);
+    case 'image':  flushRects(ctx); return drawImage(ctx, cmd);
+    case 'shader': flushRects(ctx); return drawShader(ctx, cmd);
   }
 }
 
@@ -340,6 +341,7 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
 }
 
 export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
+  flushRects(ctx);
   ctx.state.push({
     transform: cmd.transform,
     alpha: cmd.alpha,
@@ -359,6 +361,7 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
     ctx.clipDepth = newDepth;
   }
   for (const child of cmd.children) dispatch(ctx, child);
+  flushRects(ctx);
   if (cmd.clip) {
     popClip(ctx, cmd.clip, ctx.clipDepth - 1);
     ctx.clipDepth -= 1;
@@ -370,19 +373,17 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   if (!cmd.fill && !cmd.stroke) return;
 
   if (cmd.fill) {
-    // Fast path: solid-fill rect with no vertex colors → shared rect VAO,
-    // bufferSubData the 4 corners, no per-rect mesh cache entry. Avoids the
-    // GL-buffer-leak-per-frame in animated demos creating fresh Path objects
-    // every render.
-    const isSolidRectFast =
+    // Fast path: solid-fill rect with no vertex colors → append to the batch
+    // instead of tessellating. Also keeps animated demos that mint a fresh
+    // Path every frame from leaking a GL buffer per frame.
+    const isSolidRect =
       cmd.path.kind === 'rect'
       && (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')
-      && (!cmd.vertexColors || cmd.vertexColors.length === 0)
-      && ctx.rectVao !== null
-      && ctx.rectVbo !== null;
-    if (isSolidRectFast && cmd.path.kind === 'rect') {
-      drawRectFast(ctx, cmd.path, cmd.fill as { color: string; opacity?: number });
+      && (!cmd.vertexColors || cmd.vertexColors.length === 0);
+    if (isSolidRect && cmd.path.kind === 'rect') {
+      pushRect(ctx, cmd.path, cmd.fill as { color: string; opacity?: number });
     } else {
+      flushRects(ctx);
       const handle = fillMeshHandle(ctx, cmd.path);
       if (cmd.vertexColors && cmd.vertexColors.length > 0 &&
           (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')) {
@@ -396,33 +397,54 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   }
 
   if (cmd.stroke) {
+    flushRects(ctx);
     drawPathStroke(ctx, cmd);
   }
 }
 
 /**
- * Fast path for solid-fill rects: reuses one VAO/VBO/IBO across all rect
- * renders, just bufferSubData's the 4 corner coords. Saves the
- * createBuffer/createVertexArray/bufferData round trip per rect.
+ * Stage a solid-fill rect for the batch, flushing first if the run is full.
+ * Fill opacity folds into the vertex alpha, exactly as `u_color` carried it
+ * when each rect was its own draw.
  */
-function drawRectFast(
+function pushRect(
   ctx: DrawContext,
   rect: { x: number; y: number; width: number; height: number },
   fill: { color: string; opacity?: number },
 ): void {
+  if (ctx.rectBatch.length >= MAX_RECTS_PER_BATCH) flushRects(ctx);
+  const [r, g, b, a] = resolveColor(fill.color);
+  ctx.rectBatch.push(
+    rect.x, rect.y, rect.width, rect.height,
+    r, g, b, a * (fill.opacity ?? 1),
+  );
+}
+
+/**
+ * Draw the staged run as one `drawElements`, under whatever group state is
+ * live right now — so every caller that is about to change that state (a
+ * different program, a stroke, a clip push/pop, a group transform, alpha, or
+ * color matrix) must call this first.
+ *
+ * `u_color` stays white: the vertex-color program multiplies it by the
+ * per-vertex color, so white makes the result bit-identical to the flat
+ * program's `u_color`-only math.
+ */
+export function flushRects(ctx: DrawContext): void {
+  const batch = ctx.rectBatch;
+  if (batch.length === 0) return;
   const gl = ctx.gl;
-  const { x, y, width: w, height: h } = rect;
-  const corners = new Float32Array([x, y, x + w, y, x + w, y + h, x, y + h]);
-  gl.useProgram(ctx.pathFill.handle);
-  gl.bindVertexArray(ctx.rectVao);
-  gl.bindBuffer(gl.ARRAY_BUFFER, ctx.rectVbo);
-  gl.bufferSubData(gl.ARRAY_BUFFER, 0, corners);
-  setProjAndModel(ctx, ctx.pathFill);
-  setSolidPaintUniforms(ctx, ctx.pathFill, fill.color, fill.opacity);
-  setColorMatrixUniforms(ctx, ctx.pathFill);
+  const prog = ctx.pathFillVColor;
+  gl.useProgram(prog.handle);
+  const indexCount = batch.uploadAndBind();
+  setProjAndModel(ctx, prog);
+  gl.uniform4f(prog.uniform('u_color')!, 1, 1, 1, 1);
+  gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
+  setColorMatrixUniforms(ctx, prog);
   applyClipTest(ctx);
-  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
+  gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
+  batch.reset();
 }
 
 function expandAnchorColors(perAnchor: number[], handle: GLMeshHandle): Float32Array {

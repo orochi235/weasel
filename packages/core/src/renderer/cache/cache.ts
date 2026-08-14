@@ -9,8 +9,8 @@ let cache = new WeakMap<Path, Mesh>();
  * Cached by Path identity (WeakMap) — different Path objects with the same
  * coords are distinct cache entries.
  *
- * Note: solid-fill rect paths bypass this cache entirely via `drawRectFast`
- * in `draw.ts`. The cache only serves polygon paths (where tessellation is
+ * Note: solid-fill rect paths bypass this cache entirely — they go into the
+ * rect batch in `draw.ts`. The cache only serves polygon paths (where tessellation is
  * non-trivial and Path-object stability is the right contract).
  *
  * Also bypassed whenever `DrawContext.flattenTolerance` is set: `fillMeshHandle`

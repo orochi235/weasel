@@ -13,7 +13,7 @@ describe('mesh cache', () => {
 
   it('different Path object identities produce different cache entries', () => {
     // Note: in production, solid-fill rect paths bypass this cache entirely
-    // via drawRectFast in draw.ts. This test only documents the cache's own
+    // via the rect batch in draw.ts. This test only documents the cache's own
     // identity-keyed behavior.
     _resetCacheForTests();
     const a = getMesh({ kind: 'rect', x: 0, y: 0, width: 10, height: 10 });

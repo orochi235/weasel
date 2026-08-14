@@ -42,7 +42,7 @@ afterEach(() => {
 });
 
 /** A scene of non-rect shapes — rects are excluded because solid-fill rect
- *  paths bypass the mesh cache entirely via `drawRectFast`. */
+ *  paths bypass the mesh cache entirely, batching instead. */
 function buildScene(): Node<unknown, string, RectPose>[] {
   const kinds = ['ellipse', 'polygon', 'star'];
   return Array.from({ length: NODE_COUNT }, (_, i) => ({

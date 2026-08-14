@@ -163,7 +163,7 @@ describe('dispose', () => {
     // 5 built-in programs: pathFill, pathFillVColor, textSdf, imageFill, gradFill
     expect(names.filter((n) => n === 'deleteProgram').length).toBeGreaterThanOrEqual(5);
     expect(names).toContain('deleteBuffer');
-    // rectVao (shared rect-fill geometry) must also be freed.
+    // The rect batch's VAO must also be freed.
     expect(names).toContain('deleteVertexArray');
   });
 

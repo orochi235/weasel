@@ -43,7 +43,8 @@ import { GradientRampCache } from './cache/GradientRampCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { Mat3 } from './math/mat3';
-import { dispatch, OUTLINE_MIN_SCREEN_PX, type DrawContext } from './draw';
+import { dispatch, flushRects, OUTLINE_MIN_SCREEN_PX, type DrawContext } from './draw';
+import { RectBatch } from './rectBatch';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,
@@ -118,10 +119,7 @@ export class WeaselRenderer {
   private programRegistry = new Map<string, ShaderProgram>();
   private quadVbo: WebGLBuffer | null = null;
   private quadIbo: WebGLBuffer | null = null;
-  /** Shared rect-fill geometry: 4 verts × 2 floats (dynamic), 6-index static IBO. */
-  private rectVao: WebGLVertexArrayObject | null = null;
-  private rectVbo: WebGLBuffer | null = null;
-  private rectIbo: WebGLBuffer | null = null;
+  private rectBatch: RectBatch;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -208,33 +206,7 @@ export class WeaselRenderer {
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRampCache = new GradientRampCache(this.gl);
     this.uploadQuadGeometry();
-    this.uploadRectGeometry(aPos);
-  }
-
-  /** Allocate the shared rect VAO + dynamic VBO (4 verts × 2 floats) + static
-   *  IBO (6 indices). drawRectFast bufferSubData's the 4 corner coords each
-   *  draw, avoiding per-rect buffer allocation in animated demos. */
-  private uploadRectGeometry(aPositionLoc: number): void {
-    const gl = this.gl;
-    this.rectVao = gl.createVertexArray();
-    this.rectVbo = gl.createBuffer();
-    this.rectIbo = gl.createBuffer();
-    if (!this.rectVao || !this.rectVbo || !this.rectIbo) {
-      throw new Error('WeaselRenderer: failed to create rect-fast geometry');
-    }
-    gl.bindVertexArray(this.rectVao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.rectVbo);
-    // Pre-allocate 8 floats (4 verts × 2 coords) of dynamic storage.
-    gl.bufferData(gl.ARRAY_BUFFER, 8 * 4, gl.DYNAMIC_DRAW);
-    gl.enableVertexAttribArray(aPositionLoc);
-    gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.rectIbo);
-    gl.bufferData(
-      gl.ELEMENT_ARRAY_BUFFER,
-      new Uint32Array([0, 1, 2, 0, 2, 3]),
-      gl.STATIC_DRAW,
-    );
-    gl.bindVertexArray(null);
+    this.rectBatch = new RectBatch(this.gl, this.pathFillVColor);
   }
 
   private uploadQuadGeometry(): void {
@@ -333,7 +305,7 @@ export class WeaselRenderer {
     markAllFontsNotUploaded();
 
     this.uploadQuadGeometry();
-    this.uploadRectGeometry(aPos);
+    this.rectBatch = new RectBatch(this.gl, this.pathFillVColor);
     for (const id of this.programRegistry.keys()) {
       const src = getProgramSource(id);
       if (!src) continue;
@@ -394,9 +366,7 @@ export class WeaselRenderer {
     this.gradRampCache.free();
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
-    if (this.rectVbo) gl.deleteBuffer(this.rectVbo);
-    if (this.rectIbo) gl.deleteBuffer(this.rectIbo);
-    if (this.rectVao) gl.deleteVertexArray(this.rectVao);
+    this.rectBatch.dispose();
   }
 
   /**
@@ -437,8 +407,7 @@ export class WeaselRenderer {
       programRegistry: this.programRegistry,
       quadVbo: this.quadVbo,
       quadIbo: this.quadIbo,
-      rectVao: this.rectVao,
-      rectVbo: this.rectVbo,
+      rectBatch: this.rectBatch,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
@@ -448,6 +417,9 @@ export class WeaselRenderer {
       viewMatrix,
     };
     for (const cmd of commands) dispatch(ctx, cmd);
+    // The stream ended, so whatever rects are still staged have nothing left
+    // that could merge with them.
+    flushRects(ctx);
     // Free transient resources allocated during this frame (e.g. per-frame
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
@@ -472,6 +444,7 @@ export class WeaselRenderer {
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
+  /** @internal */ _rectBatch(): RectBatch { return this.rectBatch; }
   /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
   /** @internal */ _textSdfR8(): ShaderProgram { return this.textSdfR8; }
   /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }

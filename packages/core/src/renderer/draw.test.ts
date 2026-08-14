@@ -29,8 +29,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     programRegistry: new Map(),
     quadVbo: null,
     quadIbo: null,
-    rectVao: null,
-    rectVbo: null,
+    rectBatch: r._rectBatch(),
     state: r._groupState(),
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
@@ -1740,8 +1739,8 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
 
   it('uploads the color matrix once for a frame of many identical-state draws', () => {
     r.render([rect(0), rect(20), rect(40), rect(60), rect(80)]);
-    const draws = countOf('drawElements');
-    expect(draws).toBe(5);
+    // The five rects merge into one batched draw.
+    expect(countOf('drawElements')).toBe(1);
     expect(countOf('uniformMatrix4fv')).toBe(1);
   });
 
