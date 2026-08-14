@@ -243,8 +243,9 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   /** The same layer-major sequence as {@link Scene.renderOrder}, as the nodes
    *  themselves. Prefer this wherever the ids are only going to be resolved
    *  back to nodes: the traversal already holds them, and re-looking each one
-   *  up was ~40% of the area hit-test's per-node cost. Freshly built per call,
-   *  so it is a snapshot, not a live view. */
+   *  up was ~40% of the area hit-test's per-node cost. Cached until a
+   *  structural edit, so repeat calls hand back the same array — a snapshot,
+   *  not a live view, and not yours to mutate. */
   renderOrderNodes(): readonly Node<TData, TLayer, TPose>[];
 
   // Mutations (all auto-undoable)

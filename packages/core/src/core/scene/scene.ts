@@ -222,6 +222,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
   /** Repopulate `state.layerIndex` from the current `state.layers` order.
    *  Call after any op that inserts, removes, or reorders a layer record. */
   function rebuildLayerIndex(): void {
+    invalidateOrder();
     state.layerIndex.clear();
     for (let i = 0; i < state.layers.length; i++) {
       state.layerIndex.set(state.layers[i].id, i);
@@ -268,6 +269,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     const idx = sibs.indexOf(id);
     if (idx < 0) throw new Error(`Scene: node "${id}" not found in its parent's children`);
     sibs.splice(idx, 1);
+    invalidateOrder();
     return { parent: node.parent, index: idx };
   }
 
@@ -277,6 +279,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     sibs.splice(i, 0, id);
     const node = requireNode(id);
     (node as { parent: NodeId | null }).parent = parent;
+    invalidateOrder();
   }
 
   function descendants(id: NodeId, out: NodeId[]): void {
@@ -390,8 +393,12 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     apply: (p) => {
       requireLayerIndex(p.to);
       (requireNode(p.id) as { layer: TLayer }).layer = p.to;
+      invalidateOrder();
     },
-    revert: (p) => { (requireNode(p.id) as { layer: TLayer }).layer = p.from; },
+    revert: (p) => {
+      (requireNode(p.id) as { layer: TLayer }).layer = p.from;
+      invalidateOrder();
+    },
   });
 
   registerKitOp<{
@@ -594,6 +601,36 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     return state.layers.length === 1 ? renderOrderNodesFlat() : renderOrderNodesBucketed();
   }
 
+  /**
+   * Render order survives everything except a structural edit, so both walks
+   * are cached against a counter the structural writers bump: `attach` and
+   * `detach` (add / remove / reparent / reorder), `kit:setLayer` (which bucket
+   * a node lands in), `rebuildLayerIndex` (the layer list itself), and
+   * `loadState`. Pose and data edits leave order alone and must NOT invalidate
+   * — they fire per frame during a drag, which is exactly when the cache pays.
+   *
+   * A missed bump is a silent wrong answer: nodes painted in the wrong z-order,
+   * or unpickable. `renderOrder.test.ts` walks each structural op and asserts
+   * the order moved.
+   */
+  let structureGeneration = 0;
+  let orderCache: {
+    gen: number;
+    ids?: NodeId[];
+    nodes?: Node<TData, TLayer, TPose>[];
+  } = { gen: 0 };
+
+  function invalidateOrder(): void {
+    structureGeneration++;
+  }
+
+  function currentOrderCache(): typeof orderCache {
+    if (orderCache.gen !== structureGeneration) {
+      orderCache = { gen: structureGeneration };
+    }
+    return orderCache;
+  }
+
   function renderOrderFlat(): NodeId[] {
     const only = state.layers[0].id;
     const out: NodeId[] = [];
@@ -699,11 +736,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
 
     renderOrder() {
-      return renderOrderInternal();
+      const c = currentOrderCache();
+      return (c.ids ??= renderOrderInternal());
     },
 
     renderOrderNodes() {
-      return renderOrderNodesInternal();
+      const c = currentOrderCache();
+      return (c.nodes ??= renderOrderNodesInternal());
     },
 
     add(spec) {
@@ -1098,6 +1137,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       state.roots.length = 0;
       state.layers.length = 0;
       state.layerIndex.clear();
+      invalidateOrder();
       for (let i = 0; i < json.systemLayers.length; i++) {
         const spec = json.systemLayers[i];
         if (state.layerIndex.has(spec.id)) {

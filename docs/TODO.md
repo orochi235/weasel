@@ -727,15 +727,23 @@ From the WebGL transition spec — all deferred:
     program switches between fill kinds are the suspected cliff. Needs real
     GL, so it wants a Playwright job and the nightly treatment described in
     the `test:perf` item below, not vitest.
-  - **Memoize `renderOrder()`.** The order only changes on add / remove /
-    reparent / setLayer / layer-list edits, so a cache keyed on a generation
-    counter would make repeat calls free — `renderOrder()` runs per frame and
-    per hit-test query. Not done, because it cannot be made exhaustive today:
-    `scene.roots`, `scene.nodes` and `scene.childrenOf()` all hand out the live
-    arrays and map, so anything can restructure the tree without passing
-    through `notify()` and the cache would go stale. A stale render order is a
-    silent wrong answer — nodes painted in the wrong z-order, or unpickable.
-    Sealing those getters (copies, or a frozen view) is the prerequisite.
+  - **[x] Memoize `renderOrder()`.** Both walks now cache against a
+    structural-generation counter. A repeat call on a 10k-node, 4-layer scene
+    drains in 0.0033 ms against a 0.33 ms rebuild.
+
+    The recorded blocker — that `scene.roots` / `scene.nodes` /
+    `childrenOf()` hand out live structures, so the cache could go stale —
+    did not survive checking. Nothing outside `scene.ts` mutates them (the
+    types are `readonly`, and a repo-wide grep for mutators finds none), and
+    every internal structural write funnels through four places: `attach`,
+    `detach`, `kit:setLayer`, and `rebuildLayerIndex`, plus `loadState`. Those
+    bump the counter; pose and data edits deliberately do not, since they fire
+    per frame during a drag. Sealing the getters was never needed.
+
+    Each bump is covered by a test that fails when it is removed — verified by
+    removing each one in turn. Worth keeping that property: the first version
+    of the `setLayer` test passed with the bump deleted, because its fixture
+    reordered to the same sequence either way.
   - Whether any of this gates CI is still Mike's call.
 
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.

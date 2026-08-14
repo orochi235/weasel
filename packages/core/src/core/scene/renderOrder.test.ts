@@ -203,3 +203,115 @@ describe('renderOrder — single-pass bucketing matches the layer-major walk', (
     expect(s.layers.map((l) => l.id)).toContain('extra');
   });
 });
+
+/**
+ * Both walks are cached against a structural-generation counter. A structural
+ * edit that forgets to bump it serves a stale order — nodes painted in the
+ * wrong z-order, or unpickable — so every structural op gets checked against
+ * the live-tree walk, and the two non-structural ones are held to *not*
+ * invalidating, which is the whole point of the cache.
+ */
+describe('renderOrder — caching invalidates on exactly the structural edits', () => {
+  function twoLayerScene(): { s: AnyScene; a: NodeId; b: NodeId } {
+    const s = sceneWithLayers(2);
+    const a = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const b = s.add({ kind: 'leaf', layer: 'L1', pose: POSE, data: { n: 1 } });
+    return { s, a, b };
+  }
+
+  it('reuses the array while nothing structural changes', () => {
+    const { s } = twoLayerScene();
+    expect(s.renderOrderNodes()).toBe(s.renderOrderNodes());
+    expect(s.renderOrder()).toBe(s.renderOrder());
+  });
+
+  it('setPose and setData do not invalidate — they fire per frame during a drag', () => {
+    const { s, a } = twoLayerScene();
+    const before = s.renderOrderNodes();
+    s.setPose(a, { x: 99, y: 99, width: 1, height: 1 });
+    s.update(a, { data: { n: 42 } });
+    expect(s.renderOrderNodes()).toBe(before);
+    agree(s, 'after pose/data edits');
+  });
+
+  it('setLayer invalidates', () => {
+    // `a` is added first but sits on the upper layer, so layer-major order
+    // puts it last. Moving it down to L0 flips the pair — a fixture where both
+    // nodes share a layer would reorder to the same sequence and prove nothing.
+    const s = sceneWithLayers(2);
+    const a = s.add({ kind: 'leaf', layer: 'L1', pose: POSE, data: { n: 0 } });
+    const b = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 1 } });
+    expect([...s.renderOrder()]).toEqual([b, a]);
+
+    s.setLayer(a, 'L0');
+    expect([...s.renderOrder()]).toEqual([a, b]);
+    agree(s, 'after setLayer');
+
+    s.undo();
+    expect([...s.renderOrder()]).toEqual([b, a]);
+    agree(s, 'after undo of setLayer');
+  });
+
+  it('add and remove invalidate', () => {
+    const { s } = twoLayerScene();
+    agree(s, 'seeded');
+    const c = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 2 } });
+    agree(s, 'after add');
+    s.remove(c);
+    agree(s, 'after remove');
+    s.undo();
+    agree(s, 'after undo of remove');
+    s.redo();
+    agree(s, 'after redo of remove');
+  });
+
+  it('reparenting and reordering invalidate', () => {
+    const s = sceneWithLayers(1);
+    const box = s.add({ kind: 'container', layer: 'L0', pose: POSE, data: { n: 0 } });
+    const leaf = s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 1 } });
+    s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 2 } });
+    agree(s, 'seeded');
+    s.move(leaf, box);
+    agree(s, 'after reparent');
+    s.move(leaf, null);
+    agree(s, 'after unparent');
+    s.reorder(leaf, 0);
+    agree(s, 'after reorder');
+  });
+
+  it('renameLayer and setLayerVisible leave the order alone', () => {
+    const { s } = twoLayerScene();
+    s.addLayer({ id: 'extra', name: 'Extra' });
+    const before = s.renderOrderNodes();
+    s.renameLayer('extra', 'Renamed');
+    s.setLayerVisible('L0', false);
+    // renderOrder is visibility-blind by design; painters filter, not the walk.
+    expect(s.renderOrderNodes()).toBe(before);
+    agree(s, 'after rename/visibility');
+  });
+
+  it('loadState invalidates', () => {
+    const { s } = twoLayerScene();
+    const snapshot = s.toJSON();
+    s.add({ kind: 'leaf', layer: 'L0', pose: POSE, data: { n: 9 } });
+    expect([...s.renderOrder()]).toHaveLength(3);
+    s.loadState(snapshot);
+    expect([...s.renderOrder()]).toHaveLength(2);
+    agree(s, 'after loadState');
+  });
+
+  it('loading an empty snapshot invalidates', () => {
+    // Reloading a populated snapshot re-adds nodes, and each `add` bumps the
+    // counter on its own — so only an empty snapshot proves `loadState` clears
+    // the cache itself. Without that, the walk would keep serving deleted nodes.
+    const empty = sceneWithLayers(2).toJSON();
+    const { s } = twoLayerScene();
+    expect([...s.renderOrder()]).toHaveLength(2);
+
+    s.loadState(empty);
+
+    expect([...s.renderOrder()]).toEqual([]);
+    expect(s.renderOrderNodes()).toEqual([]);
+    agree(s, 'after loading an empty snapshot');
+  });
+});
