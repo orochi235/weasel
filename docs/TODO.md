@@ -155,16 +155,18 @@ Priority tags:
   refresh, so the readback can settle several samples behind the final pointer
   position. Recorded 2026-08-09.
 
-- **(P3) Detached scene renders place nested children by local pose.**
-  `buildSceneViewCommands` calls `drawOne(node, node.pose, view)` for each id in
-  `scene.renderOrder()` (`canvas/sceneViewRender.ts`), with no container
-  composition — unlike `buildSceneLayer`, which walks `buildSceneTree`. So a
-  child of a translated container renders at its local offset, and
-  `SceneViewCanvas` / `MinimapCanvas` / `renderSceneToPixels` misplace every
-  nested scene. Found 2026-08-13 while giving those three surfaces rotation and
-  per-node opacity; that fix shares one wrap helper between the two walks, but
-  the walks still disagree about parent transforms. Flat scenes are unaffected,
-  which is why it has gone unnoticed.
+- **(P2) No render path composes world poses.** Every painter — `buildSceneTree`
+  (so `<SceneCanvas>`) and `buildSceneViewCommands` (so the detached surfaces) —
+  draws each node at `getPose(id)`, which is documented as **local**, relative to
+  the parent. Nesting contributes the clip chain and nothing else;
+  `composeWorldPose` is called only by `move`, `duplicate` and `nestedHit`. That
+  is consistent under the default `IDENTITY_POSE_COMPOSITION`, where every node
+  already stores world coords — but a consumer who supplies a real
+  `poseComposition` (say `composeRectPose`) gets children painted at their local
+  offsets on **every** surface, main canvas included. Either rendering learns to
+  compose, or `PoseComposition` is documented as interaction-only and the render
+  path is pinned to absolute poses. Verified 2026-08-13 by diffing the two walks
+  against the same nested scene; both placed the child identically.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
