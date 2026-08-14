@@ -754,6 +754,22 @@ From the WebGL transition spec — all deferred:
     ANGLE's per-draw translation, is the real cost. Batching consecutive
     same-program rect fills into one draw is the obvious next move, and would
     make the question moot rather than answer it.
+
+    What batching has to respect, so it does not get re-derived:
+      - **Only consecutive commands merge.** Painter's order is the whole
+        contract; a batch may absorb a run and must flush the moment anything
+        it cannot express appears (a different program, a stroke, a clip
+        push/pop, a group transform, alpha, or color-matrix change).
+      - **Color moves to a vertex attribute.** Rects in a run have different
+        colors, and `u_color` is a uniform today, so a merged draw needs
+        per-vertex colors. `pathFillVColor` already exists for exactly this
+        shape — see `vertexColors` on `PathDrawCommand` and `expandAnchorColors`
+        in `draw.ts`.
+      - **The rect fast path is where it starts.** `drawRectFast` already
+        writes four corners into a shared VBO per command; batching turns that
+        into an append into a growable buffer plus one `drawElements` at flush.
+      - Verify with `npm run test:visual` (order and clipping regressions show
+        up as pixels) and re-run `tests/perf/draw-loop.spec.ts` for the number.
   - **[x] Memoize `renderOrder()`.** Both walks now cache against a
     structural-generation counter. A repeat call on a 10k-node, 4-layer scene
     drains in 0.0033 ms against a 0.33 ms rebuild.
