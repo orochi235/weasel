@@ -97,7 +97,9 @@ describe('<SceneViewCanvas>', () => {
     expect(renderMock).toHaveBeenCalledTimes(1);
     const root = renderMock.mock.calls[0][0][0] as GroupDrawCommand;
     expect(root.kind).toBe('group');
-    expect(root.children).toHaveLength(2);
+    // View group holds one group per scene layer; that layer holds the nodes.
+    expect(root.children).toHaveLength(1);
+    expect((root.children[0] as GroupDrawCommand).children).toHaveLength(2);
   });
 
   it('re-renders when the scene is mutated', () => {
@@ -129,7 +131,7 @@ describe('<SceneViewCanvas>', () => {
     expect(renderMock.mock.calls.length).toBeGreaterThan(initialCalls);
     const lastDispatch = renderMock.mock.calls[renderMock.mock.calls.length - 1][0];
     const root = lastDispatch[0] as GroupDrawCommand;
-    expect(root.children).toHaveLength(3);
+    expect((root.children[0] as GroupDrawCommand).children).toHaveLength(3);
   });
 
   it('re-renders when the view prop changes', () => {

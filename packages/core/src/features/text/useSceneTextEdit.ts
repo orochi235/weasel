@@ -185,10 +185,9 @@ export function useSceneTextEdit<
 
     // Top-most-first hit test: renderOrder() is back-to-front, so iterate
     // in reverse and break on the first hit.
-    const order = [...sceneRef.current.renderOrder()];
+    const order = sceneRef.current.renderOrderNodes();
     for (let i = order.length - 1; i >= 0; i--) {
-      const node = sceneRef.current.get(order[i]);
-      if (!node) continue;
+      const node = order[i];
       const text = readText(node.data);
       const pose = {
         x: node.pose.x,

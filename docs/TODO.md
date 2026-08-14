@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Performance benchmarking** — pure-JS layers landed in `tests/bench/`; the GL draw loop is still unmeasured → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost cliff** — per-command cost steps ~30x somewhere between 250 and 500 commands a frame, and it is CPU-side submission, not GPU or tessellation. Measured, not diagnosed → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -155,16 +155,18 @@ Priority tags:
   refresh, so the readback can settle several samples behind the final pointer
   position. Recorded 2026-08-09.
 
-- **(P3) Detached scene renders place nested children by local pose.**
-  `buildSceneViewCommands` calls `drawOne(node, node.pose, view)` for each id in
-  `scene.renderOrder()` (`canvas/sceneViewRender.ts`), with no container
-  composition — unlike `buildSceneLayer`, which walks `buildSceneTree`. So a
-  child of a translated container renders at its local offset, and
-  `SceneViewCanvas` / `MinimapCanvas` / `renderSceneToPixels` misplace every
-  nested scene. Found 2026-08-13 while giving those three surfaces rotation and
-  per-node opacity; that fix shares one wrap helper between the two walks, but
-  the walks still disagree about parent transforms. Flat scenes are unaffected,
-  which is why it has gone unnoticed.
+- **(P2) No render path composes world poses.** Every painter — `buildSceneTree`
+  (so `<SceneCanvas>`) and `buildSceneViewCommands` (so the detached surfaces) —
+  draws each node at `getPose(id)`, which is documented as **local**, relative to
+  the parent. Nesting contributes the clip chain and nothing else;
+  `composeWorldPose` is called only by `move`, `duplicate` and `nestedHit`. That
+  is consistent under the default `IDENTITY_POSE_COMPOSITION`, where every node
+  already stores world coords — but a consumer who supplies a real
+  `poseComposition` (say `composeRectPose`) gets children painted at their local
+  offsets on **every** surface, main canvas included. Either rendering learns to
+  compose, or `PoseComposition` is documented as interaction-only and the render
+  path is pinned to absolute poses. Verified 2026-08-13 by diffing the two walks
+  against the same nested scene; both placed the child identically.
 
 - **(P3) Unconfirmed: resize grabs the node under the handle, not the selected one.**
   Reported 2026-07-28 against **lbx-editor**, which consumes `@weasel-js/core@0.6.0`
@@ -720,26 +722,48 @@ From the WebGL transition spec — all deferred:
 
   Still open:
 
-  - **Renderer draw loop** — commands/frame vs. frame time, at a few scene
-    sizes. Separate the per-command cost from the per-frame fixed cost;
-    program switches between fill kinds are the suspected cliff. Needs real
-    GL, so it wants a Playwright job and the nightly treatment described in
-    the `test:perf` item below, not vitest.
-  - **Move the remaining `renderOrder()` consumers to `renderOrderNodes()`.**
-    Seven call sites still walk the ids and immediately `scene.get` each one —
-    `sceneAdapter.listAll`, `renderSceneToCommands`, the two commit adapters,
-    the default `pickEvery`. That lookup measured 40% of the area hit-test's
-    per-node cost, and the render path pays it every frame. Each is a
-    mechanical swap; only `hitTestArea` has been converted so far.
-  - **Memoize `renderOrder()`.** The order only changes on add / remove /
-    reparent / setLayer / layer-list edits, so a cache keyed on a generation
-    counter would make repeat calls free — `renderOrder()` runs per frame and
-    per hit-test query. Not done, because it cannot be made exhaustive today:
-    `scene.roots`, `scene.nodes` and `scene.childrenOf()` all hand out the live
-    arrays and map, so anything can restructure the tree without passing
-    through `notify()` and the cache would go stale. A stale render order is a
-    silent wrong answer — nodes painted in the wrong z-order, or unpickable.
-    Sealing those getters (copies, or a frozen view) is the prerequisite.
+  - **[x] Renderer draw loop** — `tests/perf/draw-loop.spec.ts` sweeps commands
+    per frame under real GL and reports marginal cost per step, submit and
+    `gl.finish` separately. It runs under `npm run test:perf`, gates nothing,
+    and prints the unmasked GL renderer so a software backend is obvious.
+
+    Program switches were **not** the cliff. Alternating solid and gradient
+    fills measures about half the per-command cost of a single fill kind,
+    because only the solid half is expensive. What the sweep did find, on an
+    M2 Max via ANGLE, 800x600, rect fills:
+
+    | commands | marginal us/command |
+    |---:|---:|
+    | 0 → 250 | 1–2 |
+    | 250 → 500 | 121 |
+    | 500 → 4000 | ~66 |
+
+    So the draw loop is roughly 1–2 us per command up to a few hundred, then
+    ~66 us per command from there on — a 30x step somewhere between 250 and
+    500. 4,000 rects cost 260 ms a frame. Ruled out already: it is not
+    tessellation or mesh identity (4,000 commands sharing **one** path object
+    cost the same as 4,000 distinct ones), and it is not GPU work (bare
+    `render()` and `render()` + `finish()` track each other, so the time is
+    CPU-side submission). Not yet diagnosed — a per-command GL resource or
+    state path that only engages past a threshold is the obvious suspect;
+    `GLMeshCache.transientThisFrame` is where to look first.
+  - **[x] Memoize `renderOrder()`.** Both walks now cache against a
+    structural-generation counter. A repeat call on a 10k-node, 4-layer scene
+    drains in 0.0033 ms against a 0.33 ms rebuild.
+
+    The recorded blocker — that `scene.roots` / `scene.nodes` /
+    `childrenOf()` hand out live structures, so the cache could go stale —
+    did not survive checking. Nothing outside `scene.ts` mutates them (the
+    types are `readonly`, and a repo-wide grep for mutators finds none), and
+    every internal structural write funnels through four places: `attach`,
+    `detach`, `kit:setLayer`, and `rebuildLayerIndex`, plus `loadState`. Those
+    bump the counter; pose and data edits deliberately do not, since they fire
+    per frame during a drag. Sealing the getters was never needed.
+
+    Each bump is covered by a test that fails when it is removed — verified by
+    removing each one in turn. Worth keeping that property: the first version
+    of the `setLayer` test passed with the bump deleted, because its fixture
+    reordered to the same sequence either way.
   - Whether any of this gates CI is still Mike's call.
 
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.

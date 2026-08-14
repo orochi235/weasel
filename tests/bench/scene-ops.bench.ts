@@ -117,3 +117,61 @@ describe('renderOrder — 1000 leaves under a container chain', () => {
     });
   }
 });
+
+/**
+ * Both walks are cached until something structural moves, so the three groups
+ * above now report a **cached** read — the array is built once and the timed
+ * body only drains it. This group is what separates the two costs: both benches
+ * iterate the same 10,000 ids, and only the second rebuilds first.
+ *
+ * The rebuild is forced by a layer reorder in an untimed `beforeEach`. On four
+ * layers that is a two-element splice, nothing next to a 10,000-node walk.
+ */
+describe('renderOrder — cached repeat vs cold rebuild (10k nodes, 4 layers)', () => {
+  const scene = layeredScene(10000, 4);
+  const drain = (): void => {
+    let c = 0;
+    for (const _ of scene.renderOrder()) c++;
+    if (c !== 10000) throw new Error(`renderOrder yielded ${c}, expected 10000`);
+  };
+  // One layer, bounced between the first two slots. Alternating *which* layer
+  // moves instead would ask the second call to put a layer where it already
+  // is, and `moveLayer` returns early on that — leaving the cache valid and
+  // the "cold" walk measuring a cache hit.
+  let slot = 0;
+  const reorderLayers = (): void => {
+    slot = slot === 0 ? 1 : 0;
+    scene.moveLayer('L0', slot);
+  };
+
+  // Vitest's bench `setup` hook does not run per iteration, so the
+  // invalidation has to sit inside the timed body. It is measured on its own
+  // so the walk can be recovered by subtraction:
+  //   cold walk = (reorder + drain) - reorder - drain
+  bench('drain only — cached', drain);
+  bench('layer reorder only — the invalidation', reorderLayers);
+  bench('layer reorder + drain — cold walk', () => {
+    reorderLayers();
+    drain();
+  });
+});
+
+// Resolving ids back to nodes is what `renderOrderNodes()` exists to avoid.
+// Every adapter's `getNodes` runs this on the render path, once a frame.
+describe('renderOrder → nodes vs renderOrderNodes', () => {
+  for (const n of NODE_COUNTS) {
+    const scene = deepScene(n, 0);
+    bench(`${n} nodes — via renderOrder + get`, () => {
+      const out: unknown[] = [];
+      for (const id of scene.renderOrder()) {
+        const node = scene.get(id);
+        if (node) out.push(node);
+      }
+      if (out.length !== n) throw new Error(`got ${out.length}, expected ${n}`);
+    });
+    bench(`${n} nodes — via renderOrderNodes`, () => {
+      const out = [...scene.renderOrderNodes()];
+      if (out.length !== n) throw new Error(`got ${out.length}, expected ${n}`);
+    });
+  }
+});

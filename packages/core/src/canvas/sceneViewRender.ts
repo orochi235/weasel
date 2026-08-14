@@ -21,8 +21,9 @@ import { WeaselRenderer } from '../renderer/WeaselRenderer';
 import { viewToMat3 } from '../renderer/math/viewToMat3';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
-import type { Node, Scene } from '../core/scene/types';
+import type { Node, NodeId, Scene } from '../core/scene/types';
 import { wrapNodeOutput } from './wrapNodeOutput';
+import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 
 /**
  * Per-node draw function. Mirrors the scene-slot `drawOne` signature on
@@ -103,18 +104,43 @@ export function __getCachedRendererForTest(
 }
 
 /**
+ * Present a `Scene` as the reading surface `buildSceneTree` walks. Built
+ * inline rather than via `sceneToAdapter` so this module stays free of React
+ * — `renderSceneToPixels` runs headless.
+ */
+function sceneAsHierarchy<TData, TLayer extends string, TPose>(
+  scene: Scene<TData, TLayer, TPose>,
+): HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose> {
+  return {
+    getLayers: () => scene.layers.map((l) => ({ id: l.id, visible: l.visible })),
+    getNode: (id) => scene.get(id as NodeId),
+    getChildren: (parentId) => {
+      if (parentId === null) return scene.roots as readonly string[];
+      const node = scene.get(parentId as NodeId);
+      return node && node.kind === 'container' ? (node.children as readonly string[]) : [];
+    },
+    getPose: (id) => scene.get(id as NodeId)!.pose,
+  } as HierarchicalAdapter<Node<TData, TLayer, TPose>, TPose>;
+}
+
+/**
  * Build the DrawCommand list that `renderSceneToCanvas` would dispatch.
  *
- * Pure — no GL, no DOM, no side effects. Iterates `scene.renderOrder()`,
- * calls `drawOne` per node, appends any `extraCommands`, and wraps the
- * combined list in a single `{ kind: 'group', transform: viewToMat3(view) }`
- * so the output is in screen space.
+ * Pure — no GL, no DOM, no side effects. Walks the scene through
+ * `buildSceneTree` — the same walk `<SceneCanvas>`'s `buildSceneLayer` uses —
+ * appends any `extraCommands`, and wraps the result in a single
+ * `{ kind: 'group', transform: viewToMat3(view) }` so the output is in screen
+ * space. Sharing the walk is what keeps hidden layers unpainted and container
+ * clips applied here; a hand-rolled `renderOrder()` loop silently dropped both.
  *
  * Each node's commands additionally go through `wrapNodeOutput` — pose
- * rotation, then the `alphaFor` multiplier — exactly as the main canvas's
- * `buildSceneLayer` does, so a `drawOne` shared between the two paints the
- * same thing in both. A `drawOne` that rotates its own output will therefore
- * rotate twice here; emit unrotated geometry and let the pose drive it.
+ * rotation, then the `alphaFor` multiplier — exactly as `buildSceneLayer`
+ * does, so a `drawOne` shared between the two paints the same thing in both.
+ * A `drawOne` that rotates its own output will therefore rotate twice here;
+ * emit unrotated geometry and let the pose drive it.
+ *
+ * Output shape follows `buildSceneTree`: one group per **visible** layer, in
+ * scene-layer order, each holding one group per node on that layer.
  *
  * Exported for tests and for callers that want to render into something
  * other than a real `<canvas>` (e.g. an offscreen renderer or a
@@ -127,14 +153,18 @@ export function buildSceneViewCommands<TData, TLayer extends string, TPose>(
   extraCommands?: ReadonlyArray<DrawCommand>,
   alphaFor?: (id: string) => number,
 ): DrawCommand[] {
-  const children: DrawCommand[] = [];
-  for (const id of scene.renderOrder()) {
-    const node = scene.get(id);
-    if (!node) continue;
-    const cmds = drawOne(node, node.pose, view);
-    const wrapped = wrapNodeOutput(cmds, node.pose, alphaFor ? alphaFor(id) : 1);
-    for (const cmd of wrapped) children.push(cmd);
-  }
+  const wrappedDrawOne = (
+    node: Node<TData, TLayer, TPose>,
+    pose: TPose,
+    v: View,
+  ): DrawCommand[] =>
+    wrapNodeOutput(drawOne(node, pose, v), pose, alphaFor ? alphaFor(node.id) : 1);
+
+  const children: DrawCommand[] = buildSceneTree(
+    sceneAsHierarchy(scene) as Parameters<typeof buildSceneTree>[0],
+    wrappedDrawOne as unknown as Parameters<typeof buildSceneTree>[1],
+    view,
+  );
   if (extraCommands && extraCommands.length > 0) {
     for (const cmd of extraCommands) children.push(cmd);
   }

@@ -108,8 +108,9 @@ describe('<MinimapCanvas>', () => {
     const lastCall = renderMock.mock.calls[renderMock.mock.calls.length - 1][0];
     const root = lastCall[0] as GroupDrawCommand;
     expect(root.kind).toBe('group');
-    // 2 scene leaves + 1 indicator command appended last.
-    expect(root.children.length).toBe(3);
+    // One scene-layer group holding 2 leaves, then the indicator appended last.
+    expect(root.children.length).toBe(2);
+    expect((root.children[0] as GroupDrawCommand).children).toHaveLength(2);
     const last = root.children[root.children.length - 1] as PathDrawCommand;
     expect(last.kind).toBe('path');
     expect(last.path.kind).toBe('rect');

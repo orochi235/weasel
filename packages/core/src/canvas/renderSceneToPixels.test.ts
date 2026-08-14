@@ -11,12 +11,38 @@ function leaf(id: string, pose: RectPose, data: unknown): Node<unknown, 'default
   return { id, kind: 'leaf', layer: 'default', parent: null, pose, data } as unknown as Node<unknown, 'default', RectPose>;
 }
 
+/** Flat single-layer stand-in: every node is a root, nothing nests. The render
+ *  path walks layers and parentage, so both have to be present. */
 function fakeScene(nodes: Node<unknown, 'default', RectPose>[]): Scene<unknown, 'default', RectPose> {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
+    layers: [{ id: 'default', visible: true, locked: false }],
+    roots: nodes.map((n) => n.id),
     renderOrder: () => nodes.map((n) => n.id),
+    renderOrderNodes: () => nodes,
     get: (id: string) => byId.get(id as unknown as (typeof nodes)[number]['id']),
   } as unknown as Scene<unknown, 'default', RectPose>;
+}
+
+/** What the scene walk emitted for the fixture's one node. `planPixelRender`
+ *  nests view group → layer group → per-node group. */
+function soleNodeOutput(commands: readonly DrawCommand[]): DrawCommand {
+  const layer = (commands[0] as unknown as { children: DrawCommand[] }).children[0];
+  const nodeGroup = (layer as unknown as { children: DrawCommand[] }).children[0];
+  return (nodeGroup as unknown as { children: DrawCommand[] }).children[0];
+}
+
+/** First command of `kind` anywhere in the tree. */
+function findByKind(commands: readonly DrawCommand[], kind: string): DrawCommand | undefined {
+  for (const c of commands) {
+    if (c.kind === kind) return c;
+    const kids = (c as unknown as { children?: DrawCommand[] }).children;
+    if (kids) {
+      const hit = findByKind(kids, kind);
+      if (hit) return hit;
+    }
+  }
+  return undefined;
 }
 
 const RECT = { x: 5, y: 10, width: 40, height: 20 };
@@ -61,8 +87,7 @@ describe('planPixelRender', () => {
     const bmp = { width: 500, height: 300, close() {} } as unknown as ImageBitmap;
     const scene = fakeScene([leaf('i', { x: 0, y: 0, width: 10, height: 10 }, { image: { src: 'big' } })]);
     const p = planPixelRender({ scene, sourceRect: RECT, scale: { x: 4, y: 4 }, resolveImage: () => bmp });
-    const group = p.commands[p.commands.length - 1] as { kind: 'group'; children: Array<{ kind: string; image?: ImageBitmap }> };
-    const img = group.children.find((c) => c.kind === 'image');
+    const img = findByKind([p.commands[p.commands.length - 1]], 'image') as { image?: ImageBitmap } | undefined;
     // The ORIGINAL bitmap rides the command — no intermediate raster.
     expect(img?.image).toBe(bmp);
   });
@@ -91,7 +116,7 @@ describe('planPixelRender', () => {
     const box = { x: 10, y: 20, width: 40, height: 20 };
     const upright = planPixelRender({ scene: fakeScene([leaf('r', box, { color: '#000' })]), sourceRect: RECT, scale: { x: 1, y: 1 } });
     const spun = planPixelRender({ scene: fakeScene([leaf('r', { ...box, rotation: Math.PI / 3 }, { color: '#000' })]), sourceRect: RECT, scale: { x: 1, y: 1 } });
-    const childOf = (p: typeof upright) => (p.commands[0] as unknown as { children: DrawCommand[] }).children[0];
+    const childOf = (p: typeof upright) => soleNodeOutput(p.commands);
     expect(childOf(spun)).not.toEqual(childOf(upright));
     const wrap = childOf(spun) as unknown as { kind: string; transform: Float32Array };
     expect(wrap.kind).toBe('group');
@@ -102,7 +127,7 @@ describe('planPixelRender', () => {
     const scene = fakeScene([leaf('r', { x: 10, y: 20, width: 40, height: 20 }, { color: '#000' })]);
     const opaque = planPixelRender({ scene, sourceRect: RECT, scale: { x: 1, y: 1 } });
     const dimmed = planPixelRender({ scene, sourceRect: RECT, scale: { x: 1, y: 1 }, alphaFor: () => 0.3 });
-    const childOf = (p: typeof opaque) => (p.commands[0] as unknown as { children: DrawCommand[] }).children[0];
+    const childOf = (p: typeof opaque) => soleNodeOutput(p.commands);
     expect(childOf(dimmed)).not.toEqual(childOf(opaque));
     expect(childOf(dimmed)).toMatchObject({ kind: 'group', alpha: 0.3 });
   });
