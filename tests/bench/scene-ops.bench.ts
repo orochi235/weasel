@@ -117,3 +117,23 @@ describe('renderOrder — 1000 leaves under a container chain', () => {
     });
   }
 });
+
+// Resolving ids back to nodes is what `renderOrderNodes()` exists to avoid.
+// Every adapter's `getNodes` runs this on the render path, once a frame.
+describe('renderOrder → nodes vs renderOrderNodes', () => {
+  for (const n of NODE_COUNTS) {
+    const scene = deepScene(n, 0);
+    bench(`${n} nodes — via renderOrder + get`, () => {
+      const out: unknown[] = [];
+      for (const id of scene.renderOrder()) {
+        const node = scene.get(id);
+        if (node) out.push(node);
+      }
+      if (out.length !== n) throw new Error(`got ${out.length}, expected ${n}`);
+    });
+    bench(`${n} nodes — via renderOrderNodes`, () => {
+      const out = [...scene.renderOrderNodes()];
+      if (out.length !== n) throw new Error(`got ${out.length}, expected ${n}`);
+    });
+  }
+});

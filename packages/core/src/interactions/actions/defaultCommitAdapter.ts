@@ -24,12 +24,7 @@ export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>
   return {
     getNode: (id: string) => scene.get(asNodeId(id)),
     getNodes: () => {
-      const out: (Node<unknown, string, TPose> | undefined)[] = [];
-      for (const id of scene.renderOrder()) {
-        const n = scene.get(id);
-        if (n) out.push(n);
-      }
-      return out;
+      return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];
     },
     getPose: (id: string) => scene.get(asNodeId(id))!.pose,
     getParent: (id: string) => (scene.get(asNodeId(id))?.parent ?? null) as string | null,

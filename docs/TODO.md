@@ -727,12 +727,6 @@ From the WebGL transition spec — all deferred:
     program switches between fill kinds are the suspected cliff. Needs real
     GL, so it wants a Playwright job and the nightly treatment described in
     the `test:perf` item below, not vitest.
-  - **Move the remaining `renderOrder()` consumers to `renderOrderNodes()`.**
-    Seven call sites still walk the ids and immediately `scene.get` each one —
-    `sceneAdapter.listAll`, `renderSceneToCommands`, the two commit adapters,
-    the default `pickEvery`. That lookup measured 40% of the area hit-test's
-    per-node cost, and the render path pays it every frame. Each is a
-    mechanical swap; only `hitTestArea` has been converted so far.
   - **Memoize `renderOrder()`.** The order only changes on add / remove /
     reparent / setLayer / layer-list edits, so a cache keyed on a generation
     counter would make repeat calls free — `renderOrder()` runs per frame and

@@ -28,12 +28,7 @@ export function moveGestureAdapter<TPose>(
   return {
     getNode: (id) => scene.get(asNodeId(id)),
     getNodes: () => {
-      const out: Node<unknown, string, TPose>[] = [];
-      for (const id of scene.renderOrder()) {
-        const n = scene.get(id);
-        if (n) out.push(n);
-      }
-      return out;
+      return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];
     },
     getPose: (id) => scene.get(asNodeId(id))!.pose,
     getParent: (id) => scene.get(asNodeId(id))?.parent ?? null,

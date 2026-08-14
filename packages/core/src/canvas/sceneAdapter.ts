@@ -302,9 +302,8 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
     getNodes() {
       const visible = visibleLayers();
       const out: Node<TData, TLayer, TPose>[] = [];
-      for (const id of scene.renderOrder()) {
-        const n = scene.get(id);
-        if (n && visible.has(n.layer)) out.push(n);
+      for (const n of scene.renderOrderNodes()) {
+        if (visible.has(n.layer)) out.push(n);
       }
       return out;
     },

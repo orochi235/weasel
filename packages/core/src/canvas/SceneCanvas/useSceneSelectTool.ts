@@ -177,9 +177,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       // path descriptor for a tighter test.
       hitTestArea: (rect: { x: number; y: number; width: number; height: number }): string[] => {
         const hits: string[] = [];
-        for (const nid of scene.renderOrder()) {
-          const n = scene.get(nid);
-          if (!n) continue;
+        for (const n of scene.renderOrderNodes()) {
           if (isPathLike(n.pose) && pathPoseDescriptor.intersectsRect) {
             if (pathPoseDescriptor.intersectsRect(n.pose, rect)) hits.push(n.id);
             continue;
@@ -231,13 +229,12 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       // stays the same apparent thickness at any zoom.
       const tolerance = pickTolerancePx / meanScale(getView?.()?.scale ?? { x: 1, y: 1 });
       const out: string[] = [];
-      for (const id of scene.renderOrder()) {
-        const n = scene.get(id);
+      for (const n of scene.renderOrderNodes()) {
         // The pose rect is the pre-filter — grown by the tolerance, because a
         // shape's outline (and the slop around it) reaches outside its own
         // bounds, and an un-grown pre-filter would reject those hits before
         // the refinement ever ran.
-        if (!n || !poseContainsRotated(n.pose, wx, wy, tolerance)) continue;
+        if (!poseContainsRotated(n.pose, wx, wy, tolerance)) continue;
         // `shapeCoversPoint` narrows the rect to the ink the painter actually
         // lays down (and answers `true` for painters that have no silhouette,
         // so nothing becomes unpickable).
