@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Performance benchmarking** — pure-JS layers landed in `tests/bench/`; the GL draw loop is still unmeasured → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost cliff** — per-command cost steps ~30x somewhere between 250 and 500 commands a frame, and it is CPU-side submission, not GPU or tessellation. Measured, not diagnosed → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -722,11 +722,31 @@ From the WebGL transition spec — all deferred:
 
   Still open:
 
-  - **Renderer draw loop** — commands/frame vs. frame time, at a few scene
-    sizes. Separate the per-command cost from the per-frame fixed cost;
-    program switches between fill kinds are the suspected cliff. Needs real
-    GL, so it wants a Playwright job and the nightly treatment described in
-    the `test:perf` item below, not vitest.
+  - **[x] Renderer draw loop** — `tests/perf/draw-loop.spec.ts` sweeps commands
+    per frame under real GL and reports marginal cost per step, submit and
+    `gl.finish` separately. It runs under `npm run test:perf`, gates nothing,
+    and prints the unmasked GL renderer so a software backend is obvious.
+
+    Program switches were **not** the cliff. Alternating solid and gradient
+    fills measures about half the per-command cost of a single fill kind,
+    because only the solid half is expensive. What the sweep did find, on an
+    M2 Max via ANGLE, 800x600, rect fills:
+
+    | commands | marginal us/command |
+    |---:|---:|
+    | 0 → 250 | 1–2 |
+    | 250 → 500 | 121 |
+    | 500 → 4000 | ~66 |
+
+    So the draw loop is roughly 1–2 us per command up to a few hundred, then
+    ~66 us per command from there on — a 30x step somewhere between 250 and
+    500. 4,000 rects cost 260 ms a frame. Ruled out already: it is not
+    tessellation or mesh identity (4,000 commands sharing **one** path object
+    cost the same as 4,000 distinct ones), and it is not GPU work (bare
+    `render()` and `render()` + `finish()` track each other, so the time is
+    CPU-side submission). Not yet diagnosed — a per-command GL resource or
+    state path that only engages past a threshold is the obvious suspect;
+    `GLMeshCache.transientThisFrame` is where to look first.
   - **[x] Memoize `renderOrder()`.** Both walks now cache against a
     structural-generation counter. A repeat call on a 10k-node, 4-layer scene
     drains in 0.0033 ms against a 0.33 ms rebuild.
