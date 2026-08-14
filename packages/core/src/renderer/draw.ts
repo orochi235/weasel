@@ -56,6 +56,9 @@ export interface DrawContext {
   /** Staging for the consecutive-rect batch. Draws are deferred into it, so a
    *  caller driving `dispatch` itself must `flushRects` when the stream ends. */
   rectBatch: RectBatch;
+  /** Group state the staged rects were built under; `undefined` while nothing
+   *  is staged. Written only by `pushRect` / `flushRects`. */
+  rectState?: StagedRectState;
   state: GroupState;
   widthCss: number;
   heightCss: number;
@@ -150,9 +153,11 @@ function projFor(ctx: DrawContext): Mat3 {
 /** Reused across draws: the transpose below rebuilt this every command. */
 const COLOR_MATRIX_SCRATCH = new Float32Array(16);
 
-function setColorMatrixUniforms(ctx: DrawContext, prog: ShaderProgram): void {
+function setColorMatrixUniforms(
+  ctx: DrawContext, prog: ShaderProgram,
+  cm: Float32Array = ctx.state.colorMatrix, // row-major 4×5
+): void {
   const gl = ctx.gl;
-  const cm = ctx.state.colorMatrix; // row-major 4×5
   const uploaded = uploadedFor(ctx, prog);
 
   const mLoc = prog.uniform('u_colorMatrix');
@@ -341,7 +346,6 @@ function drawShader(ctx: DrawContext, cmd: ShaderDrawCommand): void {
 }
 
 export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
-  flushRects(ctx);
   ctx.state.push({
     transform: cmd.transform,
     alpha: cmd.alpha,
@@ -357,12 +361,17 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
         'poses outside the scene graph.',
       );
     }
+    // Before, not after: `pushClip` rasterizes into the stencil, and a run
+    // staged outside the clip would then draw under a mask it never had.
+    flushRects(ctx);
     pushClip(ctx, cmd.clip, newDepth);
     ctx.clipDepth = newDepth;
   }
   for (const child of cmd.children) dispatch(ctx, child);
-  flushRects(ctx);
   if (cmd.clip) {
+    // Likewise: past `popClip` the mask is gone, and these pixels belonged
+    // inside it.
+    flushRects(ctx);
     popClip(ctx, cmd.clip, ctx.clipDepth - 1);
     ctx.clipDepth -= 1;
   }
@@ -403,7 +412,37 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
 }
 
 /**
- * Stage a solid-fill rect for the batch, flushing first if the run is full.
+ * The group state a staged run was built under.
+ *
+ * A run outlives the group it started in, so the state live when the flush
+ * happens is not the state the rects belong to — the flush draws with these
+ * values instead.
+ */
+interface StagedRectState {
+  transform: Mat3;
+  alpha: number;
+  colorMatrix: Float32Array;
+  clipDepth: number;
+}
+
+/**
+ * Whether the live group state would draw the staged run identically.
+ *
+ * By value, not by reference: a group carrying an identity transform still
+ * goes through `mat3.multiply`, which allocates a new array holding equal
+ * numbers. Nine float compares are nothing against the draw call they save.
+ */
+function stagedStateIsLive(ctx: DrawContext, staged: StagedRectState): boolean {
+  if (staged.clipDepth !== ctx.clipDepth || staged.alpha !== ctx.state.alpha) return false;
+  const transform = ctx.state.transform;
+  if (staged.transform !== transform && !sameValues(staged.transform, transform)) return false;
+  const colorMatrix = ctx.state.colorMatrix;
+  return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
+}
+
+/**
+ * Stage a solid-fill rect for the batch, flushing first if the run is full or
+ * if the live group state no longer matches what the run was staged under.
  * Fill opacity folds into the vertex alpha, exactly as `u_color` carried it
  * when each rect was its own draw.
  */
@@ -412,7 +451,16 @@ function pushRect(
   rect: { x: number; y: number; width: number; height: number },
   fill: { color: string; opacity?: number },
 ): void {
+  if (ctx.rectState !== undefined && !stagedStateIsLive(ctx, ctx.rectState)) flushRects(ctx);
   if (ctx.rectBatch.length >= MAX_RECTS_PER_BATCH) flushRects(ctx);
+  if (ctx.rectState === undefined) {
+    ctx.rectState = {
+      transform: ctx.state.transform,
+      alpha: ctx.state.alpha,
+      colorMatrix: ctx.state.colorMatrix,
+      clipDepth: ctx.clipDepth,
+    };
+  }
   const [r, g, b, a] = resolveColor(fill.color);
   ctx.rectBatch.push(
     rect.x, rect.y, rect.width, rect.height,
@@ -421,10 +469,15 @@ function pushRect(
 }
 
 /**
- * Draw the staged run as one `drawElements`, under whatever group state is
- * live right now — so every caller that is about to change that state (a
- * different program, a stroke, a clip push/pop, a group transform, alpha, or
- * color matrix) must call this first.
+ * Draw the staged run as one `drawElements`, under the state it was staged
+ * under. Callers that are about to bind a different program, or paint anything
+ * that must land on top of the run, call this first; a group that only changes
+ * transform, alpha, or color matrix does not, because `pushRect` notices and
+ * flushes then.
+ *
+ * Clips are the exception both ways: the stencil is real GL state that the
+ * staged values cannot reconstruct, so `drawGroup` flushes *before* mutating
+ * it rather than leaving it to the next push.
  *
  * `u_color` stays white: the vertex-color program multiplies it by the
  * per-vertex color, so white makes the result bit-identical to the flat
@@ -432,19 +485,21 @@ function pushRect(
  */
 export function flushRects(ctx: DrawContext): void {
   const batch = ctx.rectBatch;
-  if (batch.length === 0) return;
+  const staged = ctx.rectState;
+  if (batch.length === 0 || staged === undefined) return;
   const gl = ctx.gl;
   const prog = ctx.pathFillVColor;
   gl.useProgram(prog.handle);
   const indexCount = batch.uploadAndBind();
-  setProjAndModel(ctx, prog);
+  setProjAndModel(ctx, prog, staged.transform);
   gl.uniform4f(prog.uniform('u_color')!, 1, 1, 1, 1);
-  gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
-  setColorMatrixUniforms(ctx, prog);
-  applyClipTest(ctx);
+  gl.uniform1f(prog.uniform('u_alpha')!, staged.alpha);
+  setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
+  applyClipTest(ctx, staged.clipDepth);
   gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
   batch.reset();
+  ctx.rectState = undefined;
 }
 
 function expandAnchorColors(perAnchor: number[], handle: GLMeshHandle): Float32Array {
@@ -503,7 +558,10 @@ function drawPathFillVColor(
   gl.deleteBuffer(colorVbo);
 }
 
-function setProjAndModel(ctx: DrawContext, prog: ShaderProgram): void {
+function setProjAndModel(
+  ctx: DrawContext, prog: ShaderProgram,
+  model: Mat3 = ctx.state.transform,
+): void {
   const gl = ctx.gl;
   const uploaded = uploadedFor(ctx, prog);
 
@@ -513,7 +571,6 @@ function setProjAndModel(ctx: DrawContext, prog: ShaderProgram): void {
     uploaded.proj = Float32Array.from(proj);
   }
 
-  const model = ctx.state.transform;
   if (!sameValues(uploaded.model, model)) {
     gl.uniformMatrix3fv(prog.uniform('u_model')!, false, model);
     uploaded.model = Float32Array.from(model);
@@ -681,9 +738,8 @@ function drawPathFillGradient(
  * coexist with clip bits because they use bit 0 exclusively while clip levels
  * occupy bits 1-7.
  */
-function applyClipTest(ctx: DrawContext): void {
+function applyClipTest(ctx: DrawContext, depth: number = ctx.clipDepth): void {
   const gl = ctx.gl;
-  const depth = ctx.clipDepth;
   if (depth === 0) {
     gl.disable(gl.STENCIL_TEST);
     return;

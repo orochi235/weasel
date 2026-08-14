@@ -2,66 +2,61 @@
 
 **Date:** 2026-08-14
 **Branch:** `main`
-**Landed:** `batch consecutive rect fills into one draw call` (`2604ce24`)
+**Landed:** `batch consecutive rect fills into one draw call` (`2604ce24`),
+`break rect batches on state, not on structure`
 
 What this is: the plan for getting the renderer's draw loop from one GL draw
-call per command down to roughly one per frame, and the record of the first
-step, which landed and does not yet pay off where it matters. Read it before
-touching `renderer/draw.ts`, `renderer/rectBatch.ts`, or `canvas/buildSceneTree.ts`.
+call per command down to roughly one per frame, and the record of the two steps
+that have landed. Read it before touching `renderer/draw.ts`,
+`renderer/rectBatch.ts`, or `canvas/buildSceneTree.ts`.
 
 ---
 
 ## Status
 
-Step 0 landed. Consecutive solid-fill rects merge into one `drawElements`
-through the existing `pathFillVColor` program, with color on a vertex attribute
-and `u_color` held at white. On an M2 Max via ANGLE at 800x600, a **flat**
-stream of 3,200 rects went 211.78 ms → 0.15 ms a frame.
+Steps 0 and 1 landed, and the win now reaches the app. Consecutive solid-fill
+rects merge into one `drawElements` through the existing `pathFillVColor`
+program, with color on a vertex attribute and `u_color` held at white, and a run
+survives any group that does not actually change what a draw looks like. On an
+M2 Max via ANGLE at 800x600, 3,200 rects in the shape `buildSceneTree` emits
+went 208.72 ms → 0.36 ms a frame, which is what the same rects cost flat.
 
-**It does not reach `SceneCanvas`.** `buildSceneTree` wraps every node in its
-own `kind: 'group'` with no transform, alpha, colorMatrix, or clip
-(`buildSceneTree.ts:102` — deliberate, to keep the per-node tree shape stable),
-and `drawGroup` flushes the batch unconditionally at both ends. Both real render
-paths go through it (`Canvas.tsx:649`, `sceneViewRender.ts:163`). Measured with
-a recorder: 50 rects flat produce **1** draw call, the same 50 in the shape the
-scene emits produce **50**.
+What still costs one draw call each: every command that is not a solid-fill
+rect. A frame alternating solid and linear-gradient rects is unchanged at ~33 us
+per command, almost all of it the gradient half. Steps 2–4 are about those.
 
-Those wrapper groups are provably no-ops: `GroupState.push` with no fields
-returns the *same references* for transform, alpha, and colorMatrix
-(`GroupState.ts:63`). The flush happens for a state change that cannot occur.
+The barrier that remains for rects is the clip stencil, which is a real GL state
+change. Transform, alpha, and color matrix are still barriers too, but only
+because they are uniforms — step 2 moves them onto the vertices and they stop
+being barriers at all.
 
-## The defect this exposes
+## Step 1 — break on state, not on structure (landed)
 
-Dispatch uses **structural boundaries as a proxy for state changes**. A group is
-a barrier because it *might* move a uniform. One level down, `draw.ts` already
-answers that question correctly — `UploadedUniforms` + `sameValues` skip an
-upload when the value did not actually change. The batch should break on the
-same test.
+Dispatch used **structural boundaries as a proxy for state changes**: a group
+was a barrier because it *might* move a uniform. One level down, `draw.ts`
+already answered that question honestly — `UploadedUniforms` + `sameValues` skip
+an upload when the value did not change — and the batch now breaks on the same
+test. `DrawContext.rectState` holds the `(transform, alpha, colorMatrix,
+clipDepth)` a run was staged under; `pushRect` flushes when the live state
+differs, and `flushRects` draws with the staged values rather than whatever is
+live when it happens.
 
-Everything below follows from that: stop letting uniforms be barriers, by first
-comparing them honestly, then by moving them off uniforms entirely.
+That last part is what lets a run outlive the group it started in: the group is
+long since popped by the time the following rect breaks the run, and its
+transform has to come from the staging record or the pixels move.
 
-## Step 1 — break on state, not on structure
-
-Stage the batch alongside the `(transform, alpha, colorMatrix, clipDepth)` it
-was built under. A group that does not move them keeps the run alive.
-
-Traps:
+Invariants to keep:
 
 - **Compare by value, not by reference.** Reference equality catches the no-op
   group, but a group carrying an identity-valued transform goes through
-  `mat3.multiply`, which allocates a new array with equal values. Use the
-  existing `sameValues`. Nine float compares against a 66 us draw call is not a
-  trade worth thinking about.
-- **`clipDepth` is part of the staged state, and clip changes stay hard flush
-  points.** `pushClip` / `popClip` rasterize into the stencil buffer. A batch
-  that survived past `popClip` would draw with the *wrong* ancestor mask —
-  pixels that belonged inside the clip, painted after it was torn down. Flush
-  before mutating `clipDepth`, not after noticing it changed.
-- `dispatch` must keep flushing before text, image, and shader commands. Those
-  bind other programs and the state test says nothing about that.
-
-Verify: the scene-shaped case above should collapse to 1 draw.
+  `mat3.multiply`, which allocates a new array with equal values.
+- **Clip changes are hard flush points, in both directions.** `pushClip` /
+  `popClip` rasterize into the stencil buffer, which staged values cannot
+  reconstruct. `drawGroup` flushes *before* mutating `clipDepth`, not after
+  noticing it changed — a run that survived past `popClip` would paint pixels
+  that belonged inside the clip with the mask already torn down.
+- `dispatch` keeps flushing before text, image, and shader commands. Those bind
+  other programs and the state test says nothing about that.
 
 ## Step 2 — bake state into the vertices
 
@@ -136,12 +131,7 @@ Traps:
 join an earlier batch. It needs per-command bounds plus an overlap structure,
 and pays only when command kinds interleave. Steps 1–3 are larger and simpler.
 
-## Two things to fix along the way
-
-**The perf spec measures the wrong shape.** `tests/perf/draw-loop.spec.ts`
-builds a flat command array, which is what let step 0 report a 1,400x win that
-the app does not see. Add a scene-shaped variant — one wrapper group per
-command, as `buildSceneTree` emits — or the numbers keep lying.
+## One thing to fix along the way
 
 **Dispatch is half-deferred now.** `dispatch` walks the tree emitting GL inline,
 except for rects, which defer; that is why every mutator now has to remember to
@@ -155,9 +145,16 @@ split. Worth doing before step 3, not after.
 
 - `npm run test:visual` — 35 baselines. Order and clipping regressions show up
   as pixels; this is the gate that matters for every step here.
-- `packages/core/src/renderer/rectBatch.test.ts` — 12 tests pinning each flush
+- `packages/core/src/renderer/rectBatch.test.ts` — 14 tests pinning each flush
   boundary against a GL recorder. Extend it per step rather than trusting the
   visual gate to catch an ordering slip.
-- `npm run test:perf` — the draw-loop sweep, after the shape fix above.
+- `npm run test:perf` — the draw-loop sweep, whose `scene` variant is the shape
+  the app renders. Read a cell against its neighbours: one cell in the sweep
+  used to come back 30x slow from a collection landing inside the timed block,
+  which is why each cell now times two blocks and reports the second, collects
+  between blocks, and measures `alternating` last.
+- **Run one Playwright suite at a time.** Two concurrent runs share
+  `test-results/` and delete each other's artifacts mid-run; it surfaces as a
+  timeout plus `ENOENT ... .trace`, not as anything about the code.
 - Pre-existing, not yours: `tests/e2e/bezier-edit.spec.ts` has 3 failures on
   clean `main`.

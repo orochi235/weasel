@@ -18,6 +18,11 @@
  *   - **Overdraw.** A `stacked` variant puts every rect at the same spot: the
  *     same number of draw calls over a fraction of the fragments. It costs the
  *     same, so the loop is bound by per-draw work, not fill rate.
+ *   - **Tree shape.** A `scene` variant wraps each command in its own group,
+ *     which is what `buildSceneTree` emits and therefore what the app actually
+ *     renders. A flat array is the easier thing to build and the thing no
+ *     consumer sends; measuring only that reported a rect-batching win of
+ *     ~1,400x that `SceneCanvas` did not get any of.
  *
  * **Timing is the total across many frames, divided — never a single frame.**
  * `performance.now()` is clamped to ~100us without cross-origin isolation, and
@@ -45,7 +50,13 @@ const SWEEP = [
   { n: 3200, frames: 25 },
 ];
 
-const VARIANTS = ['solid', 'alternating', 'stacked'] as const;
+const VARIANTS = ['solid', 'alternating', 'stacked', 'scene'] as const;
+
+/** Measured in this order, reported in the order above. `alternating` outweighs
+ *  the rest of the sweep put together, and the cell measured right after it
+ *  paid for collecting its garbage — so it goes last, where what it leaves
+ *  behind lands on nothing. */
+const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'alternating'] as const;
 
 test.setTimeout(300_000);
 
@@ -58,7 +69,7 @@ test('draw loop: frame cost vs commands per frame', async ({ page }) => {
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
-  const { rows, glRenderer, gradientRamps } = await page.evaluate(
+  const { rows, glRenderer, gradientRamps, gcAvailable } = await page.evaluate(
     async ({ root, sweep, variants }) => {
       const base = `/weasel/@fs${root}/packages/core/src`;
       const { WeaselRenderer } = await import(/* @vite-ignore */ `${base}/renderer/WeaselRenderer.ts`);
@@ -91,26 +102,46 @@ test('draw loop: frame cost vs commands per frame', async ({ page }) => {
         const out: unknown[] = [];
         for (let i = 0; i < n; i++) {
           const spread = variant !== 'stacked';
-          out.push({
+          const cmd = {
             kind: 'path',
             path: spread
               ? { kind: 'rect', x: (i * 37) % (W - 40), y: (i * 53) % (H - 40), width: 36, height: 36 }
               : { kind: 'rect', x: 10, y: 10, width: 36, height: 36 },
             fill: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i),
-          });
+          };
+          out.push(variant === 'scene' ? { kind: 'group', children: [cmd] } : cmd);
         }
         return out;
       }
 
       /** Total across `frames`, divided. Never time one frame. */
-      function measure(n: number, frames: number, variant: string): number {
-        const cmds = build(n, variant);
-        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
-        gl.finish();
+      function timeBlock(cmds: unknown[], frames: number): number {
+        // Collect what the previous block left behind, so a major GC of the
+        // whole sweep's garbage does not land inside this one. Needs
+        // --js-flags=--expose-gc, which the perf config passes.
+        const collect = (globalThis as { gc?: (opts?: unknown) => void }).gc;
+        if (collect) {
+          collect({ type: 'major', execution: 'sync' });
+          collect({ type: 'major', execution: 'sync' });
+        }
         const t0 = performance.now();
         for (let f = 0; f < frames; f++) renderer.render(cmds, identity);
         gl.finish();
         return (performance.now() - t0) / frames;
+      }
+
+      /**
+       * Two blocks, second reported. Three warmup frames are not enough at the
+       * larger counts: the first block at 3200 measured 30x the second one of
+       * identical work, so whatever it pays for — collection, re-optimization
+       * — is one-off and belongs outside the number.
+       */
+      function measure(n: number, frames: number, variant: string): number {
+        const cmds = build(n, variant);
+        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
+        gl.finish();
+        timeBlock(cmds, frames);
+        return timeBlock(cmds, frames);
       }
 
       /** Two points at opposite ends of a gradient rect. Equal values would
@@ -142,15 +173,19 @@ test('draw loop: frame cost vs commands per frame', async ({ page }) => {
           });
         }
       }
-      return { rows, glRenderer, gradientRamps: ramps };
+      return {
+        rows, glRenderer, gradientRamps: ramps,
+        gcAvailable: typeof (globalThis as { gc?: () => void }).gc === 'function',
+      };
     },
-    { root: repoRoot, sweep: SWEEP, variants: [...VARIANTS] },
+    { root: repoRoot, sweep: SWEEP, variants: [...MEASURE_ORDER] },
   );
 
   const lines = [
     '',
     `Draw loop — 800x600, dpr 1, on ${glRenderer}`,
     `gradient fills actually ramp: ${gradientRamps}`,
+    `collected between measurements: ${gcAvailable}`,
     '',
     `| commands | ${VARIANTS.map((v) => `${v} (ms/frame · us/cmd)`).join(' | ')} |`,
     `|---:|${VARIANTS.map(() => '---:').join('|')}|`,

@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Draw-loop cost per command** — a flat ~66 us per draw call at every scene size. Consecutive solid rects now batch into one draw, but only in a flat command stream; the per-node groups `SceneCanvas` emits break every batch. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost per command** — a flat ~66 us per draw call at every scene size. Consecutive solid rects now batch into one draw, in the scene shape as well as flat; everything that is not a solid rect still pays per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -732,22 +732,18 @@ From the WebGL transition spec — all deferred:
     not move. What is left per draw is `useProgram`, `bindVertexArray` x2,
     `bufferSubData`, `drawElements`, or ANGLE's per-draw translation.
 
-    Batching consecutive solid-fill rects makes this moot for a **flat** command
-    stream: 3,200 rects went 212 ms -> 0.15 ms a frame. It does not reach
-    `SceneCanvas`, where `buildSceneTree` wraps every node in its own no-op
-    group and `drawGroup` flushes the batch at both ends — 50 rects flat are 1
-    draw call, the same 50 in scene shape are 50. Everything else still pays
-    too: a frame alternating solid and linear-gradient rects is unchanged at
-    ~34 us per command, now almost entirely the gradient half (~69 us per
-    gradient draw).
+    Batching consecutive solid-fill rects makes this moot for solid rects, in
+    the shape the app renders as well as flat: 3,200 rects wrapped one-per-group
+    the way `buildSceneTree` emits them went 209 ms -> 0.36 ms a frame. Runs now
+    break when the group state actually differs, so the no-op wrapper groups
+    stopped being barriers; the clip stencil still is, honestly. Everything that
+    is not a solid rect still pays per command: a frame alternating solid and
+    linear-gradient rects is unchanged at ~33 us per command, almost entirely
+    the gradient half (~66 us per gradient draw).
 
-    The plan for all of it — break batches on state rather than tree shape,
-    then move transform/alpha/color-matrix onto vertices, then let any
-    solid-fill mesh join, then one program plus atlases — is in
+    The rest of the plan — move transform/alpha/color-matrix onto vertices, let
+    any solid-fill mesh join, then one program plus atlases — is in
     `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps for each.
-    Note that the perf spec measures a flat stream, which is what let the first
-    step report a win the app does not see; fixing that shape is step one of
-    trusting any number here.
   - **[x] Memoize `renderOrder()`.** Both walks now cache against a
     structural-generation counter. A repeat call on a 10k-node, 4-layer scene
     drains in 0.0033 ms against a 0.33 ms rebuild.

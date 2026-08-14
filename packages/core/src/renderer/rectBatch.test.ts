@@ -63,6 +63,39 @@ describe('renderer — consecutive rect batching', () => {
     expect(drawPrograms()).toEqual([r._pathFillVColor().handle]);
   });
 
+  it('merges across the no-op wrapper groups the scene emits', () => {
+    // `buildSceneTree` gives every node its own group with no transform,
+    // alpha, colorMatrix or clip. Nothing about a draw can differ across one,
+    // so the run has to survive it — this is the shape the app renders.
+    r.render([0, 20, 40].map(
+      (x) => ({ kind: 'group', children: [rect(x)] }) as unknown as DrawCommand,
+    ));
+    expect(draws()).toEqual([18]);
+  });
+
+  it('flushes a run under the state it was staged in, not the live one', () => {
+    const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
+    r.render([
+      { kind: 'group', transform: shifted, children: [rect(0)] } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    // The group's run is still staged when the group pops. What breaks it is
+    // the rect that follows, by which point the group's transform is off the
+    // stack — the flush has to use it anyway or the rect moves.
+    const uModel = r._pathFillVColor().uniform('u_model');
+    const modelAtDraw: Array<number[] | null> = [];
+    let pending: number[] | null = null;
+    for (const c of recorder.calls) {
+      if (c.name === 'uniformMatrix3fv' && c.args[0] === uModel) {
+        pending = Array.from(c.args[2] as Float32Array);
+      }
+      if (c.name === 'drawElements') modelAtDraw.push(pending);
+    }
+    expect(draws()).toEqual([6, 6]);
+    expect(modelAtDraw[0]).toEqual(Array.from(shifted));
+    expect(modelAtDraw[1]).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  });
+
   it('puts each rect at its own corners in one interleaved upload', () => {
     r.render([rect(0), rect(20)]);
     const upload = recorder.calls.find(

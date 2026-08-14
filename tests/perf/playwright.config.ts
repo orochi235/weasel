@@ -16,6 +16,10 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5176',   // 5173 smoke / 5174 dev:draw / 5175 e2e / 5177 visual
     headless: true,
+    // `globalThis.gc()`, so a spec can collect the garbage it built between
+    // measurements instead of paying for it inside a timed block. Absent the
+    // flag `gc` is undefined and specs fall back to timing through it.
+    launchOptions: { args: ['--js-flags=--expose-gc'] },
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
     screenshot: 'only-on-failure',
