@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Draw-loop cost cliff** — per-command cost steps ~30x somewhere between 250 and 500 commands a frame, and it is CPU-side submission, not GPU or tessellation. Measured, not diagnosed → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost per command** — a flat ~68 us per draw command at every scene size, so 3,200 rects cost 220 ms a frame. Redundant uniform uploads are fixed; the rest is per-draw-call cost and is undiagnosed → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -723,30 +723,37 @@ From the WebGL transition spec — all deferred:
   Still open:
 
   - **[x] Renderer draw loop** — `tests/perf/draw-loop.spec.ts` sweeps commands
-    per frame under real GL and reports marginal cost per step, submit and
-    `gl.finish` separately. It runs under `npm run test:perf`, gates nothing,
+    per frame under real GL. It runs under `npm run test:perf`, gates nothing,
     and prints the unmasked GL renderer so a software backend is obvious.
 
-    Program switches were **not** the cliff. Alternating solid and gradient
-    fills measures about half the per-command cost of a single fill kind,
-    because only the solid half is expensive. What the sweep did find, on an
-    M2 Max via ANGLE, 800x600, rect fills:
+    On an M2 Max via ANGLE, 800x600, rect fills, the cost per command is
+    **flat at ~68 us from 100 commands to 3,200** — 3,200 rects cost 220 ms a
+    frame. There is no threshold or cliff. (An earlier version of this entry
+    claimed a 30x step between 250 and 500; that was an artifact of taking the
+    *min* of per-frame samples, which latches onto whichever frame the driver
+    short-circuited. Time a block of frames and divide.)
 
-    | commands | marginal us/command |
-    |---:|---:|
-    | 0 → 250 | 1–2 |
-    | 250 → 500 | 121 |
-    | 500 → 4000 | ~66 |
+    What it is not:
+      - **Not program switches**, the standing suspicion. Alternating solid and
+        gradient fills costs ~34 us per command against ~68 for solid alone,
+        i.e. only the solid half is expensive. Gradients are verified to
+        actually paint (the spec samples two points across a ramp).
+      - **Not fill rate.** Stacking every rect at one spot — same draw calls, a
+        fraction of the fragments — costs the same.
+      - **Not tessellation or mesh identity.** 3,200 commands sharing one path
+        object cost the same as 3,200 distinct ones.
+      - **Not the redundant uniform uploads**, which were real and are now
+        fixed (see below), but were not what the wall clock was waiting on.
 
-    So the draw loop is roughly 1–2 us per command up to a few hundred, then
-    ~66 us per command from there on — a 30x step somewhere between 250 and
-    500. 4,000 rects cost 260 ms a frame. Ruled out already: it is not
-    tessellation or mesh identity (4,000 commands sharing **one** path object
-    cost the same as 4,000 distinct ones), and it is not GPU work (bare
-    `render()` and `render()` + `finish()` track each other, so the time is
-    CPU-side submission). Not yet diagnosed — a per-command GL resource or
-    state path that only engages past a threshold is the obvious suspect;
-    `GLMeshCache.transientThisFrame` is where to look first.
+    A CPU profile of the frame put 82% in uniform uploads — `uniformMatrix4fv`
+    alone at 36% — which turned out to be a sampling artifact of where the
+    driver blocks, not where the time goes. Fixing them removed the calls
+    (1,000 -> 1 per frame, verified by counting real GL calls in-page) and did
+    not move the wall clock. What remains per draw is `useProgram`,
+    `bindVertexArray` x2, `bufferSubData`, `drawElements` — one of those, or
+    ANGLE's per-draw translation, is the real cost. Batching consecutive
+    same-program rect fills into one draw is the obvious next move, and would
+    make the question moot rather than answer it.
   - **[x] Memoize `renderOrder()`.** Both walks now cache against a
     structural-generation counter. A repeat call on a 10k-node, 4-layer scene
     drains in 0.0033 ms against a 0.33 ms rebuild.

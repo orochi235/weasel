@@ -1707,3 +1707,79 @@ describe('gradient units — which space u_worldInv maps fragments into', () => 
     expect(worldInv()).toEqual(Array.from(mat3.identity()));
   });
 });
+
+/**
+ * `u_proj`, `u_model`, `u_colorMatrix` and `u_colorBias` are re-sent for every
+ * draw command unless something remembers what the program already holds. GL
+ * keeps uniform state per program object, so those repeats are pure cost — and
+ * they were the majority of a frame at a few thousand commands.
+ *
+ * The cache lives on the per-frame `DrawContext`, so it cannot outlive a frame.
+ * These tests pin both halves: repeats are dropped, and a value that genuinely
+ * changes mid-frame is still uploaded. The second half is the one that matters
+ * — a skipped upload there paints with the previous group's color matrix.
+ */
+describe('WeaselRenderer.render — redundant uniform uploads', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  beforeEach(() => {
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+  });
+
+  const rect = (x: number): DrawCommand => ({
+    kind: 'path',
+    path: { kind: 'rect', x, y: 0, width: 10, height: 10 } as RectPath,
+    fill: { color: '#ff0000' },
+  });
+
+  const countOf = (name: string): number =>
+    recorder.calls.filter((c) => c.name === name).length;
+
+  it('uploads the color matrix once for a frame of many identical-state draws', () => {
+    r.render([rect(0), rect(20), rect(40), rect(60), rect(80)]);
+    const draws = countOf('drawElements');
+    expect(draws).toBe(5);
+    expect(countOf('uniformMatrix4fv')).toBe(1);
+  });
+
+  it('uploads the projection once no matter how many commands', () => {
+    r.render([rect(0), rect(20), rect(40), rect(60), rect(80)]);
+    // u_proj + u_model, once each — not once per command.
+    expect(countOf('uniformMatrix3fv')).toBeLessThanOrEqual(2);
+  });
+
+  it('re-uploads when a group changes the color matrix mid-frame', () => {
+    // Identity for the first rect, a real matrix for the second.
+    const tinted = new Array(20).fill(0);
+    tinted[0] = 0.5; tinted[6] = 0.5; tinted[12] = 0.5; tinted[18] = 1;
+    r.render([
+      rect(0),
+      { kind: 'group', colorMatrix: tinted, children: [rect(20)] } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    // Identity, then the tint, then back to identity on the way out.
+    expect(countOf('uniformMatrix4fv')).toBeGreaterThanOrEqual(3);
+  });
+
+  it('re-uploads the model matrix when a group transform changes mid-frame', () => {
+    const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
+    r.render([
+      rect(0),
+      { kind: 'group', transform: shifted, children: [rect(20)] } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    // proj once, then model for identity → shifted → identity.
+    expect(countOf('uniformMatrix3fv')).toBeGreaterThanOrEqual(4);
+  });
+
+  it('starts each frame with a cold cache', () => {
+    r.render([rect(0), rect(20)]);
+    const first = countOf('uniformMatrix4fv');
+    recorder.reset();
+    r.render([rect(0), rect(20)]);
+    expect(countOf('uniformMatrix4fv')).toBe(first);
+  });
+});

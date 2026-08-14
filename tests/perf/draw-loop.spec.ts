@@ -2,37 +2,33 @@
  * Renderer draw loop: frame cost against commands per frame, under real GL.
  *
  * The `tests/bench/` suite cannot reach this — the draw loop needs a WebGL2
- * context, so it runs in a browser, driven by Playwright. Confirm what you are
+ * context, so it runs in a browser, driven by Playwright. Check what you are
  * measuring on before reading anything into a number: the spec logs the
- * unmasked GL renderer, and a software backend (SwiftShader) reports numbers
- * that have nothing to do with a GPU.
+ * unmasked GL renderer, and a software backend (SwiftShader) produces numbers
+ * that say nothing about a GPU.
  *
  * What it separates:
- *   - **Per-command cost, across the sweep.** Reported as the marginal cost of
- *     each step rather than one slope, because the cost per command is not
- *     constant: it holds around 1–2 us to a few hundred commands and then
- *     jumps to roughly 66 us and stays there. A single line fitted through
- *     that averages the two regimes together and reports neither.
+ *   - **Cost per command, across scene sizes.** Reported per step so a change
+ *     in character is visible rather than averaged away.
  *   - **Program switches.** The same count runs twice — one fill kind
  *     throughout, then solid and linear-gradient alternating so consecutive
- *     commands need different programs. Switching was the suspected cliff, and
- *     it is not: alternating measures *cheaper* per command, because only the
- *     solid half pays. Whatever the threshold is, gradients do not trip it.
- *   - **Submit vs. complete.** `render()` returns once commands are issued.
- *     Each case is timed bare (what blocks the main thread) and again with a
- *     following `gl.finish()` (what the frame actually costs). They track each
- *     other closely, so the cost is CPU-side submission, not GPU work.
+ *     commands need different programs. Switching was the suspected cliff and
+ *     is not: alternating measures *cheaper* per command, because only the
+ *     solid half is expensive.
+ *   - **Overdraw.** A `stacked` variant puts every rect at the same spot: the
+ *     same number of draw calls over a fraction of the fragments. It costs the
+ *     same, so the loop is bound by per-draw work, not fill rate.
  *
- * **Sampling is min, not median.** Frame times here are strongly bimodal — a
- * fast cluster and a cluster near multiples of the display interval, because
- * the browser throttles and the GPU queue is shared. A median lands wherever
- * the throttling did and swings 20x run to run; the min is the clean frame and
- * is stable. Detaching the canvas from the DOM reduces the effect but does not
- * remove it.
+ * **Timing is the total across many frames, divided — never a single frame.**
+ * `performance.now()` is clamped to ~100us without cross-origin isolation, and
+ * browser throttling makes per-frame times bimodal. A median lands wherever the
+ * throttling did; a min latches onto whichever frame the driver short-circuited
+ * — that is what produced an earlier report of a 30x "cliff" between 250 and
+ * 500 commands, which does not exist. Timing K frames as one block and dividing
+ * is immune to both, and shows a flat per-command cost from 100 to 3200.
  *
- * This reports; it does not gate. The assertions cover crash-freedom and that
- * the sweep scales at all — a timing threshold on a shared runner would flake,
- * and `tests/bench/README.md` explains why this repo does not write those.
+ * This reports; it does not gate. `tests/bench/README.md` explains why this
+ * repo does not put timing thresholds on shared runners.
  */
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
@@ -40,28 +36,18 @@ import { dirname, resolve } from 'node:path';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-/** Commands per frame. Closely spaced through the low hundreds because that
- *  is where the per-command cost changes character. */
-const COUNTS = [0, 100, 250, 500, 750, 1000, 2000, 4000];
-const FRAMES = 25;
-const GROUPS = ['one fill kind', 'alternating fills'] as const;
+/** Commands per frame, and how many frames to time as one block at each.
+ *  Small counts need more frames to clear the clock's granularity. */
+const SWEEP = [
+  { n: 100, frames: 100 },
+  { n: 400, frames: 50 },
+  { n: 1600, frames: 25 },
+  { n: 3200, frames: 25 },
+];
 
-interface Row { label: string; count: number; submitMs: number; frameMs: number }
+const VARIANTS = ['solid', 'alternating', 'stacked'] as const;
 
-/**
- * Marginal cost of the commands added since the previous step, in us. A single
- * `fixed + perCmd x n` fit is NOT used on purpose: the cost per command is not
- * constant across the sweep, and fitting a line to it hides the one thing the
- * sweep is for by averaging the cheap region into the expensive one. (It also
- * returns a negative fixed cost, which is the giveaway.)
- */
-function marginalUsPerCmd(rows: Row[], i: number, pick: (r: Row) => number): number | null {
-  if (i === 0) return null;
-  const dN = rows[i].count - rows[i - 1].count;
-  return dN === 0 ? null : ((pick(rows[i]) - pick(rows[i - 1])) * 1000) / dN;
-}
-
-test.setTimeout(240_000);
+test.setTimeout(300_000);
 
 test('draw loop: frame cost vs commands per frame', async ({ page }) => {
   const errors: string[] = [];
@@ -72,135 +58,119 @@ test('draw loop: frame cost vs commands per frame', async ({ page }) => {
   await page.goto('/weasel/#animation');
   await page.waitForSelector('canvas');
 
-  const { rows, glRenderer, coverage } = await page.evaluate(
-    async ({ root, counts, frames }) => {
+  const { rows, glRenderer, gradientRamps } = await page.evaluate(
+    async ({ root, sweep, variants }) => {
       const base = `/weasel/@fs${root}/packages/core/src`;
       const { WeaselRenderer } = await import(/* @vite-ignore */ `${base}/renderer/WeaselRenderer.ts`);
 
       const W = 800;
       const H = 600;
-      // Deliberately NOT attached to the document: a composited canvas adds
-      // the compositor's schedule to every measurement.
+      // Not attached to the document: a composited canvas puts the
+      // compositor's schedule into every measurement.
       const canvas = document.createElement('canvas');
       canvas.width = W;
       canvas.height = H;
       const gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, stencil: true });
       if (!gl) throw new Error('no WebGL2 context');
       const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-      const glRenderer: string = dbg
-        ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL))
-        : String(gl.getParameter(gl.RENDERER));
+      const glRenderer = String(dbg
+        ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)
+        : gl.getParameter(gl.RENDERER));
 
       const renderer = new WeaselRenderer({ gl, canvas, width: W, height: H, dpr: 1 });
       const identity = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
-      const solid = (i: number) => ({ fill: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
-      const gradient = (i: number) => ({
+      const solidFill = (i: number) => ({ fill: 'solid' as const, color: i % 2 ? '#3366cc' : '#cc6633' });
+      const gradFill = {
         fill: 'linear-gradient' as const,
-        from: { x: 0, y: 0 },
-        to: { x: 40, y: 40 },
-        stops: [
-          { offset: 0, color: i % 2 ? '#3366cc' : '#cc6633' },
-          { offset: 1, color: '#ffffff' },
-        ],
-      });
+        from: { x: 100, y: 100 }, to: { x: 200, y: 200 },
+        stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
+      };
 
-      function build(n: number, alternate: boolean): unknown[] {
+      function build(n: number, variant: string): unknown[] {
         const out: unknown[] = [];
         for (let i = 0; i < n; i++) {
+          const spread = variant !== 'stacked';
           out.push({
             kind: 'path',
-            path: { kind: 'rect', x: (i * 37) % (W - 40), y: (i * 53) % (H - 40), width: 36, height: 36 },
-            fill: alternate && i % 2 === 1 ? gradient(i) : solid(i),
+            path: spread
+              ? { kind: 'rect', x: (i * 37) % (W - 40), y: (i * 53) % (H - 40), width: 36, height: 36 }
+              : { kind: 'rect', x: 10, y: 10, width: 36, height: 36 },
+            fill: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i),
           });
         }
         return out;
       }
 
-      function timeMin(commands: unknown[], sync: boolean): number {
-        for (let i = 0; i < 5; i++) renderer.render(commands, identity);
+      /** Total across `frames`, divided. Never time one frame. */
+      function measure(n: number, frames: number, variant: string): number {
+        const cmds = build(n, variant);
+        for (let i = 0; i < 3; i++) renderer.render(cmds, identity);
         gl.finish();
-        let best = Infinity;
-        for (let f = 0; f < frames; f++) {
-          const t0 = performance.now();
-          renderer.render(commands, identity);
-          if (sync) gl.finish();
-          const dt = performance.now() - t0;
-          if (dt < best) best = dt;
-        }
-        return best;
+        const t0 = performance.now();
+        for (let f = 0; f < frames; f++) renderer.render(cmds, identity);
+        gl.finish();
+        return (performance.now() - t0) / frames;
       }
 
-      /** Painted pixels, so a configuration that silently draws nothing is
-       *  not mistaken for a fast one. */
-      function painted(): number {
-        const buf = new Uint8Array(W * H * 4);
-        gl.readPixels(0, 0, W, H, gl.RGBA, gl.UNSIGNED_BYTE, buf);
-        let n = 0;
-        for (let i = 3; i < buf.length; i += 4) if (buf[i] > 0) n++;
-        return n;
+      /** Two points at opposite ends of a gradient rect. Equal values would
+       *  mean the gradient never painted, which would make it look free. */
+      function checkGradientRamps(): boolean {
+        renderer.render([{
+          kind: 'path',
+          path: { kind: 'rect', x: 100, y: 100, width: 100, height: 100 },
+          fill: gradFill,
+        }], identity);
+        gl.finish();
+        const a = new Uint8Array(4);
+        const b = new Uint8Array(4);
+        gl.readPixels(110, H - 110, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, a);
+        gl.readPixels(190, H - 190, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, b);
+        return Math.abs(a[0] - b[0]) > 20;
       }
 
-      const rows: Array<{ label: string; count: number; submitMs: number; frameMs: number }> = [];
-      const coverage: Record<string, number> = {};
-      for (const alternate of [false, true]) {
-        const label = alternate ? 'alternating fills' : 'one fill kind';
-        for (const count of counts) {
-          const commands = build(count, alternate);
+      const ramps = checkGradientRamps();
+      const rows: Array<{ variant: string; n: number; perFrameMs: number; usPerCmd: number }> = [];
+      for (const variant of variants) {
+        for (const { n, frames } of sweep) {
+          const perFrameMs = measure(n, frames, variant);
           rows.push({
-            label,
-            count,
-            submitMs: timeMin(commands, false),
-            frameMs: timeMin(commands, true),
+            variant,
+            n,
+            perFrameMs: +perFrameMs.toFixed(3),
+            usPerCmd: +((perFrameMs * 1000) / n).toFixed(2),
           });
-          if (count === counts[counts.length - 1]) coverage[label] = painted();
         }
       }
-      return { rows, glRenderer, coverage };
+      return { rows, glRenderer, gradientRamps: ramps };
     },
-    { root: repoRoot, counts: COUNTS, frames: FRAMES },
+    { root: repoRoot, sweep: SWEEP, variants: [...VARIANTS] },
   );
 
-  const lines: string[] = [
+  const lines = [
     '',
-    `Draw loop — min ms per frame (800x600, dpr 1) on ${glRenderer}`,
+    `Draw loop — 800x600, dpr 1, on ${glRenderer}`,
+    `gradient fills actually ramp: ${gradientRamps}`,
     '',
-    `| commands | ${GROUPS.map((g) => `${g}: submit / frame`).join(' | ')} |`,
-    `|---:|${GROUPS.map(() => '---:').join('|')}|`,
+    `| commands | ${VARIANTS.map((v) => `${v} (ms/frame · us/cmd)`).join(' | ')} |`,
+    `|---:|${VARIANTS.map(() => '---:').join('|')}|`,
   ];
-  for (const count of COUNTS) {
-    const cells = GROUPS.map((g) => {
-      const r = rows.find((x) => x.label === g && x.count === count)!;
-      return `${r.submitMs.toFixed(3)} / ${r.frameMs.toFixed(3)}`;
+  for (const { n } of SWEEP) {
+    const cells = VARIANTS.map((v) => {
+      const r = rows.find((x) => x.variant === v && x.n === n)!;
+      return `${r.perFrameMs.toFixed(2)} · ${r.usPerCmd.toFixed(1)}`;
     });
-    lines.push(`| ${count} | ${cells.join(' | ')} |`);
+    lines.push(`| ${n} | ${cells.join(' | ')} |`);
   }
-
-  lines.push('');
-  lines.push('Marginal cost of each added command, us (frame, i.e. including gl.finish):');
-  lines.push(`| commands | ${GROUPS.join(' | ')} |`);
-  lines.push(`|---:|${GROUPS.map(() => '---:').join('|')}|`);
-  const sorted = Object.fromEntries(
-    GROUPS.map((g) => [g, rows.filter((r) => r.label === g).sort((a, b) => a.count - b.count)]),
-  ) as Record<string, Row[]>;
-  for (let i = 1; i < COUNTS.length; i++) {
-    const cells = GROUPS.map((g) => {
-      const v = marginalUsPerCmd(sorted[g], i, (r) => r.frameMs);
-      return v === null ? '—' : v.toFixed(2);
-    });
-    lines.push(`| ${COUNTS[i - 1]}→${COUNTS[i]} | ${cells.join(' | ')} |`);
-  }
-  lines.push(`Painted pixels at ${COUNTS[COUNTS.length - 1]} commands: ${JSON.stringify(coverage)}`);
   console.log(lines.join('\n'));
 
   expect(errors).toEqual([]);
-  // Both configurations must actually paint, or a "fast" number is just a
-  // frame that drew nothing.
-  for (const g of GROUPS) expect(coverage[g], `${g} painted nothing`).toBeGreaterThan(0);
-  // And cost has to move with command count, or the fit is fitting noise.
-  for (const g of GROUPS) {
-    const gr = sorted[g];
-    expect(gr[gr.length - 1].frameMs, `${g}: 4000 commands should cost more than 0`)
-      .toBeGreaterThan(gr[0].frameMs);
+  // A gradient that silently draws nothing would read as a free fill kind and
+  // make the program-switch comparison meaningless.
+  expect(gradientRamps, 'gradient fill did not ramp').toBe(true);
+  for (const v of VARIANTS) {
+    const gr = rows.filter((r) => r.variant === v).sort((a, b) => a.n - b.n);
+    expect(gr[gr.length - 1].perFrameMs, `${v}: more commands should cost more`)
+      .toBeGreaterThan(gr[0].perFrameMs);
   }
 });

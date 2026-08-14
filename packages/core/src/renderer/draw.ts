@@ -86,19 +86,95 @@ export interface DrawContext {
  * that accepts the group color matrix: pathFill, pathFillVColor, textSdf,
  * imageFill.
  */
+/**
+ * Uniform values a program already holds this frame.
+ *
+ * GL keeps uniform state per program object, so re-sending a value the program
+ * already has buys nothing. `u_proj` is constant for the whole frame and
+ * `u_colorMatrix` is the identity in every scene that does not use one, yet
+ * both were re-sent for every command: at a few thousand commands the two were
+ * most of the frame.
+ *
+ * Keyed on the `DrawContext`, which `WeaselRenderer.render` builds fresh per
+ * frame, so the cache cannot outlive a frame and go stale against GL state
+ * that changed between them.
+ *
+ * **Only for uniforms this module is the sole writer of.** `u_color` and
+ * `u_alpha` are written from several places here and are still sent every
+ * draw; caching those would need every writer to go through this first.
+ */
+interface UploadedUniforms {
+  proj?: Float32Array;
+  model?: Float32Array;
+  colorMatrix?: Float32Array;
+  colorBias?: Float32Array;
+}
+
+const FRAME_UPLOADS = new WeakMap<DrawContext, WeakMap<ShaderProgram, UploadedUniforms>>();
+const FRAME_PROJ = new WeakMap<DrawContext, Mat3>();
+
+function uploadedFor(ctx: DrawContext, prog: ShaderProgram): UploadedUniforms {
+  let byProgram = FRAME_UPLOADS.get(ctx);
+  if (!byProgram) {
+    byProgram = new WeakMap();
+    FRAME_UPLOADS.set(ctx, byProgram);
+  }
+  let uploaded = byProgram.get(prog);
+  if (!uploaded) {
+    uploaded = {};
+    byProgram.set(prog, uploaded);
+  }
+  return uploaded;
+}
+
+/** Element-wise, so a caller that mutates a shared array in place is still
+ *  compared by value. A NaN anywhere compares unequal and re-uploads, which is
+ *  the safe direction. */
+function sameValues(prev: Float32Array | undefined, next: ArrayLike<number>): boolean {
+  if (prev === undefined || prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i++) if (prev[i] !== next[i]) return false;
+  return true;
+}
+
+/** The screen→clip matrix depends only on the frame's dimensions. */
+function projFor(ctx: DrawContext): Mat3 {
+  let proj = FRAME_PROJ.get(ctx);
+  if (!proj) {
+    proj = mat3.screenToClip(ctx.widthCss, ctx.heightCss);
+    FRAME_PROJ.set(ctx, proj);
+  }
+  return proj;
+}
+
+/** Reused across draws: the transpose below rebuilt this every command. */
+const COLOR_MATRIX_SCRATCH = new Float32Array(16);
+
 function setColorMatrixUniforms(ctx: DrawContext, prog: ShaderProgram): void {
   const gl = ctx.gl;
   const cm = ctx.state.colorMatrix; // row-major 4×5
-  const m4 = new Float32Array(16);
-  for (let row = 0; row < 4; row++) {
-    for (let col = 0; col < 4; col++) {
-      m4[col * 4 + row] = cm[row * 5 + col];
+  const uploaded = uploadedFor(ctx, prog);
+
+  const mLoc = prog.uniform('u_colorMatrix');
+  if (mLoc !== undefined) {
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 4; col++) {
+        COLOR_MATRIX_SCRATCH[col * 4 + row] = cm[row * 5 + col];
+      }
+    }
+    if (!sameValues(uploaded.colorMatrix, COLOR_MATRIX_SCRATCH)) {
+      gl.uniformMatrix4fv(mLoc, false, COLOR_MATRIX_SCRATCH);
+      uploaded.colorMatrix = Float32Array.from(COLOR_MATRIX_SCRATCH);
     }
   }
-  const mLoc = prog.uniform('u_colorMatrix');
+
   const bLoc = prog.uniform('u_colorBias');
-  if (mLoc !== undefined) gl.uniformMatrix4fv(mLoc, false, m4);
-  if (bLoc !== undefined) gl.uniform4f(bLoc, cm[4], cm[9], cm[14], cm[19]);
+  if (bLoc !== undefined) {
+    const bias = [cm[4], cm[9], cm[14], cm[19]];
+    if (!sameValues(uploaded.colorBias, bias)) {
+      gl.uniform4f(bLoc, bias[0], bias[1], bias[2], bias[3]);
+      uploaded.colorBias = Float32Array.from(bias);
+    }
+  }
 }
 
 /**
@@ -407,9 +483,19 @@ function drawPathFillVColor(
 
 function setProjAndModel(ctx: DrawContext, prog: ShaderProgram): void {
   const gl = ctx.gl;
-  const proj = mat3.screenToClip(ctx.widthCss, ctx.heightCss);
-  gl.uniformMatrix3fv(prog.uniform('u_proj')!, false, proj);
-  gl.uniformMatrix3fv(prog.uniform('u_model')!, false, ctx.state.transform);
+  const uploaded = uploadedFor(ctx, prog);
+
+  const proj = projFor(ctx);
+  if (!sameValues(uploaded.proj, proj)) {
+    gl.uniformMatrix3fv(prog.uniform('u_proj')!, false, proj);
+    uploaded.proj = Float32Array.from(proj);
+  }
+
+  const model = ctx.state.transform;
+  if (!sameValues(uploaded.model, model)) {
+    gl.uniformMatrix3fv(prog.uniform('u_model')!, false, model);
+    uploaded.model = Float32Array.from(model);
+  }
 }
 
 function setSolidPaintUniforms(
