@@ -10,7 +10,8 @@ buffer and go out as a single `drawElements` at flush. Fill color rides the
 vertices — the batch draws through the existing `pathFillVColor` program with
 `u_color` held at white, which is bit-identical to the flat program's math.
 
-Frame cost on an M2 Max via ANGLE at 800x600 (`npm run test:perf`):
+Frame cost for a **flat** command stream, M2 Max via ANGLE at 800x600
+(`npm run test:perf`):
 
 | rects | before | after |
 |---|---|---|
@@ -20,6 +21,12 @@ Frame cost on an M2 Max via ANGLE at 800x600 (`npm run test:perf`):
 
 Painter's order is unchanged. A run absorbs only consecutive commands and
 flushes before anything it cannot express: another fill kind, a stroke, a clip
-push or pop, or a group changing the transform, alpha, or color matrix. Nothing
-else in the loop got faster — a frame alternating solid and gradient rects still
-costs ~34 us per command, now almost entirely the gradient half.
+push or pop, or a group changing the transform, alpha, or color matrix.
+
+That last barrier means `SceneCanvas` does not benefit yet — it emits one
+wrapper group per node, which breaks every run. Consumers building flat command
+streams get the numbers above today. See
+`docs/handoffs/2026-08-14-batched-dispatch.md` for the plan to reach the scene
+path. Nothing else in the loop got faster either: a frame alternating solid and
+gradient rects still costs ~34 us per command, now almost entirely the gradient
+half.
