@@ -75,6 +75,38 @@ describe('GLMeshCache', () => {
       expect(cache._transientCount()).toBe(0);
     });
 
+    it('uploadRecurring is transient on first sight and persistent after', () => {
+      const mesh: Mesh = {
+        vertices: new Float32Array([0, 0, 1, 0, 1, 1]),
+        indices: new Uint32Array([0, 1, 2]),
+      };
+      const first = cache.uploadRecurring(mesh);
+      expect(cache._transientCount()).toBe(1);
+
+      const second = cache.uploadRecurring(mesh);
+      expect(second).not.toBe(first);
+      // The promotion is its own upload; the transient list did not grow.
+      expect(cache._transientCount()).toBe(1);
+
+      expect(cache.uploadRecurring(mesh)).toBe(second);
+      expect(cache._transientCount()).toBe(1);
+      expect(recorder.calls.filter((c) => c.name === 'createVertexArray').length).toBe(2);
+    });
+
+    it('a second GLMeshCache pays its own first sight of the same mesh', () => {
+      const mesh: Mesh = {
+        vertices: new Float32Array([0, 0, 1, 0, 1, 1]),
+        indices: new Uint32Array([0, 1, 2]),
+      };
+      cache.uploadRecurring(mesh);
+      cache.uploadRecurring(mesh);
+
+      const otherRecorder = makeGLRecorder();
+      const other = new GLMeshCache(otherRecorder.gl, 0);
+      other.uploadRecurring(mesh);
+      expect(other._transientCount()).toBe(1);
+    });
+
     it('freeTransient is a no-op when nothing was uploaded transient', () => {
       const before = recorder.calls.length;
       cache.freeTransient();

@@ -1,8 +1,8 @@
 /**
  * What the renderer does with a cached stroke ribbon. A ribbon large enough to
  * miss the solid batch takes its own draw, and that draw's VAO is the thing
- * under test: minted every frame for a path that keeps changing, minted once
- * for one that does not.
+ * under test. A VAO deleted before the frame ends was a transient upload; one
+ * that survives the frame is a persistent handle.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import type { PolygonPath } from '@weasel-js/core';
@@ -33,8 +33,15 @@ const stroked = (path: PolygonPath, width: number): DrawCommand => ({
   stroke: { width, paint: { color: '#222222' } },
 });
 
+type Recorder = ReturnType<typeof makeGLRecorder>;
+
+const counts = (rec: Recorder) => ({
+  created: rec.calls.filter((c) => c.name === 'createVertexArray').length,
+  deleted: rec.calls.filter((c) => c.name === 'deleteVertexArray').length,
+});
+
 describe('renderer — stroke ribbon caching', () => {
-  let recorder: ReturnType<typeof makeGLRecorder>;
+  let recorder: Recorder;
   let r: WeaselRenderer;
 
   beforeEach(() => {
@@ -43,41 +50,56 @@ describe('renderer — stroke ribbon caching', () => {
     r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
   });
 
-  const vaosCreated = (): number =>
-    recorder.calls.filter((c) => c.name === 'createVertexArray').length;
+  it('pays a transient upload on first sight, promotes on the second, reuses on the third', () => {
+    const path = bigPolyline();
 
-  it('mints no VAO on a repeat frame of the same path and stroke', () => {
-    // Frame 2's hit promotes the mesh via handleFor, which itself mints a
-    // VAO — steady state (zero new VAOs) only starts on frame 3.
+    recorder.reset();
+    r.render([stroked(path, 2)]);
+    expect(counts(recorder)).toEqual({ created: 1, deleted: 1 });
+
+    recorder.reset();
+    r.render([stroked(path, 2)]);
+    expect(counts(recorder)).toEqual({ created: 1, deleted: 0 });
+
+    recorder.reset();
+    r.render([stroked(path, 2)]);
+    expect(counts(recorder)).toEqual({ created: 0, deleted: 0 });
+  });
+
+  it('keeps every frame transient while the stroke width animates', () => {
+    const path = bigPolyline();
+    for (const width of [2, 2.5, 3]) {
+      recorder.reset();
+      r.render([stroked(path, width)]);
+      expect(counts(recorder)).toEqual({ created: 1, deleted: 1 });
+    }
+  });
+
+  it('keeps every frame transient while the path itself is rebuilt', () => {
+    for (let i = 0; i < 3; i++) {
+      recorder.reset();
+      r.render([stroked(bigPolyline(), 2)]);
+      expect(counts(recorder)).toEqual({ created: 1, deleted: 1 });
+    }
+  });
+
+  it('each renderer pays its own first sight of a mesh the other already promoted', () => {
+    // The ribbon cache is module-global, so renderer B is handed the very Mesh
+    // object A promoted. B's GL context has never uploaded it, so B must still
+    // take a transient upload and free it at end of frame.
     const path = bigPolyline();
     r.render([stroked(path, 2)]);
     r.render([stroked(path, 2)]);
-    recorder.reset();
-    r.render([stroked(path, 2)]);
-    expect(vaosCreated()).toBe(0);
-  });
 
-  it('mints a VAO every frame while the stroke width animates', () => {
-    const path = bigPolyline();
-    r.render([stroked(path, 2)]);
-    recorder.reset();
-    r.render([stroked(path, 2.5)]);
-    const first = vaosCreated();
-    recorder.reset();
-    r.render([stroked(path, 3)]);
-    expect(first).toBeGreaterThan(0);
-    expect(vaosCreated()).toBe(first);
-  });
+    const recorderB = makeGLRecorder();
+    const rB = new WeaselRenderer({ gl: recorderB.gl, width: 800, height: 600, dpr: 1 });
+    recorderB.reset();
+    rB.render([stroked(path, 2)]);
+    expect(counts(recorderB)).toEqual({ created: 1, deleted: 1 });
 
-  it('mints a VAO every frame while the path itself is rebuilt', () => {
-    r.render([stroked(bigPolyline(), 2)]);
-    recorder.reset();
-    r.render([stroked(bigPolyline(), 2)]);
-    const first = vaosCreated();
-    recorder.reset();
-    r.render([stroked(bigPolyline(), 2)]);
-    expect(first).toBeGreaterThan(0);
-    expect(vaosCreated()).toBe(first);
+    recorderB.reset();
+    rB.render([stroked(path, 2)]);
+    expect(counts(recorderB)).toEqual({ created: 1, deleted: 0 });
   });
 
   it('still draws the ribbon on the cached frame', () => {
