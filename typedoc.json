@@ -10,6 +10,20 @@
   "excludeExternals": true,
   "exclude": ["**/*.test.ts", "**/*.test.tsx"],
   "readme": "README.md",
+  "plugin": ["./typedoc/plugin.mjs"],
+  "categorizeByGroup": false,
+  "categoryOrder": [
+    "Scene",
+    "Rendering",
+    "Tools & gestures",
+    "Selection & actions",
+    "Paths & geometry",
+    "Viewport",
+    "Paint & fills",
+    "Text",
+    "History",
+    "Extension points"
+  ],
   "skipErrorChecking": true,
   // `InputEvent` and friends are re-exported from @weasel-js/gestures, which
   // builds its own doc site next door (see build:api:gestures). Point the links

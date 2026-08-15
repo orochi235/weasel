@@ -1,6 +1,6 @@
 import { OVERRIDES, RULES } from './categories.mjs';
 
-const ROOT = 'packages/core/src/';
+const ROOT = 'packages/';
 
 /**
  * @param {string} sourcePath absolute or repo-relative path to the declaration
@@ -13,7 +13,7 @@ export function categoryOf(sourcePath, symbolName) {
 
   const normalized = sourcePath.replaceAll('\\', '/');
   const at = normalized.lastIndexOf(ROOT);
-  const rel = at === -1 ? normalized : normalized.slice(at + ROOT.length);
+  const rel = at === -1 ? normalized : normalized.slice(at);
 
   for (const [prefix, category] of RULES) {
     if (rel === prefix || rel.startsWith(`${prefix}/`) || rel.startsWith(`${prefix}.`)) {

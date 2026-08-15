@@ -13,48 +13,56 @@ export const CATEGORY_ORDER = [
 ];
 
 /**
- * Path prefixes relative to `packages/core/src/`, in priority order — the first
- * match wins, so a specific path must precede the general one that contains it.
+ * Repo-relative path prefixes, in priority order — the first match wins, so a
+ * specific path must precede the general one that contains it. The barrel
+ * re-exports from sibling packages as well as core, so every rule names its
+ * package.
  * @type {ReadonlyArray<readonly [string, string]>}
  */
 export const RULES = [
-  ['core/ops/createHistory', 'History'],
-  ['interactions/actions/defaults/enterTextEdit', 'Text'],
+  ['packages/core/src/core/ops/createHistory', 'History'],
+  ['packages/core/src/interactions/actions/defaults/enterTextEdit', 'Text'],
 
-  ['features/paths', 'Paths & geometry'],
-  ['features/text', 'Text'],
-  ['features/patterns', 'Paint & fills'],
-  ['features/selection', 'Selection & actions'],
-  ['features/groups', 'Scene'],
-  ['features/ingestion', 'Extension points'],
+  ['packages/core/src/features/paths', 'Paths & geometry'],
+  ['packages/core/src/features/text', 'Text'],
+  ['packages/core/src/features/patterns', 'Paint & fills'],
+  ['packages/core/src/features/selection', 'Selection & actions'],
+  ['packages/core/src/features/groups', 'Scene'],
+  ['packages/core/src/features/ingestion', 'Extension points'],
 
-  ['core/scene', 'Scene'],
-  ['core/ops', 'Scene'],
-  ['core/adapters', 'Scene'],
-  ['core/selection', 'Selection & actions'],
-  ['core/viewport', 'Viewport'],
-  ['core/paint-types', 'Paint & fills'],
-  ['core/units', 'Extension points'],
-  ['core/stylus', 'Tools & gestures'],
+  ['packages/core/src/core/scene', 'Scene'],
+  ['packages/core/src/core/ops', 'Scene'],
+  ['packages/core/src/core/adapters', 'Scene'],
+  ['packages/core/src/core/selection', 'Selection & actions'],
+  ['packages/core/src/core/viewport', 'Viewport'],
+  ['packages/core/src/core/paint-types', 'Paint & fills'],
+  ['packages/core/src/core/units', 'Extension points'],
+  ['packages/core/src/core/stylus', 'Tools & gestures'],
 
-  ['renderer', 'Rendering'],
-  ['canvas', 'Rendering'],
+  ['packages/core/src/renderer', 'Rendering'],
+  ['packages/core/src/canvas', 'Rendering'],
 
-  ['tools', 'Tools & gestures'],
-  ['interactions/gestures', 'Tools & gestures'],
-  ['interactions/actions', 'Selection & actions'],
-  ['interactions', 'Tools & gestures'],
+  ['packages/core/src/tools', 'Tools & gestures'],
+  ['packages/core/src/interactions/gestures', 'Tools & gestures'],
+  ['packages/core/src/interactions/actions', 'Selection & actions'],
+  ['packages/core/src/interactions', 'Tools & gestures'],
 
-  ['util/paint', 'Paint & fills'],
-  ['contributions', 'Extension points'],
-  ['layout', 'Extension points'],
-  ['affordances', 'Selection & actions'],
-  ['animation', 'Rendering'],
-  ['debug', 'Extension points'],
-  ['icons', 'Extension points'],
-  ['features', 'Extension points'],
-  ['util', 'Extension points'],
-  ['core', 'Scene'],
+  ['packages/core/src/util/paint', 'Paint & fills'],
+  ['packages/core/src/contributions', 'Extension points'],
+  ['packages/core/src/layout', 'Extension points'],
+  ['packages/core/src/affordances', 'Selection & actions'],
+  ['packages/core/src/animation', 'Rendering'],
+  ['packages/core/src/debug', 'Extension points'],
+  ['packages/core/src/icons', 'Extension points'],
+  ['packages/core/src/features', 'Extension points'],
+  ['packages/core/src/util', 'Extension points'],
+  ['packages/core/src/WeaselProvider', 'Extension points'],
+  ['packages/core/src/core', 'Scene'],
+
+  // Sibling packages the barrel re-exports wholesale.
+  ['packages/font/src', 'Text'],
+  ['packages/gestures/src', 'Tools & gestures'],
+  ['packages/history/src', 'History'],
 ];
 
 /**
