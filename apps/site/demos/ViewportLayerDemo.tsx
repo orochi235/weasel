@@ -15,7 +15,7 @@ interface Pose { x: number; y: number; width: number; height: number }
 const W = 600, H = 400;
 
 const COLORS: NodeData['color'][] = ['#7fb069', '#a48bd4', '#f0e0a8', '#e07a7a', '#5fb0c2'];
-function makeRandomScene() {
+export function makeRandomScene() {
   const items = [];
   for (let i = 0; i < 12; i++) {
     items.push({
@@ -32,6 +32,21 @@ function makeRandomScene() {
     });
   }
   return items;
+}
+
+/** PiP geometry: a 240×160 screen rect at 1.6×, lensing a 150×100 world slice. */
+export const PIP = { w: 240, h: 160, scale: 1.6, margin: 8 };
+
+/** Inner view for the PiP, centered on the first node. Aiming it at a fixed
+ *  world rect instead leaves it empty on about half of this demo's randomly
+ *  placed scenes, which reads as a broken viewport rather than an empty one. */
+export function pipView(items: ReturnType<typeof makeRandomScene>): View {
+  const p = items[0]!.pose;
+  return {
+    x: p.x + p.width / 2 - PIP.w / PIP.scale / 2,
+    y: p.y + p.height / 2 - PIP.h / PIP.scale / 2,
+    scale: { x: PIP.scale, y: PIP.scale },
+  };
 }
 
 export function ViewportLayerDemo() {
@@ -116,19 +131,18 @@ export function ViewportLayerDemo() {
     [sceneSource, viewIndicator],
   );
 
-  // Picture-in-picture: bottom-left, zoomed-in slice of the world centered
-  // on (400, 300).
+  // Picture-in-picture: bottom-left, zoomed-in slice of the world.
   const pip = useMemo(
     () =>
       createViewportLayer<unknown>({
         id: 'pip',
         label: 'PiP',
         source: [sceneSource],
-        view: { x: 250, y: 200, scale: { x: 1.6, y: 1.6 } },
-        bounds: (_outer, dims) => ({ x: 8, y: dims.height - 160 - 8, w: 240, h: 160 }),
+        view: pipView(initial),
+        bounds: (_outer, dims) => ({ x: PIP.margin, y: dims.height - PIP.h - PIP.margin, w: PIP.w, h: PIP.h }),
         background: 'rgba(0,0,0,0.4)',
       }),
-    [sceneSource],
+    [sceneSource, initial],
   );
 
   return (
