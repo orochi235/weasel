@@ -50,13 +50,13 @@ const SWEEP = [
   { n: 3200, frames: 25 },
 ];
 
-const VARIANTS = ['solid', 'alternating', 'stacked', 'scene'] as const;
+const VARIANTS = ['solid', 'alternating', 'stacked', 'scene', 'rotated'] as const;
 
 /** Measured in this order, reported in the order above. `alternating` outweighs
  *  the rest of the sweep put together, and the cell measured right after it
  *  paid for collecting its garbage — so it goes last, where what it leaves
  *  behind lands on nothing. */
-const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'alternating'] as const;
+const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'rotated', 'alternating'] as const;
 
 test.setTimeout(300_000);
 
@@ -109,7 +109,20 @@ test('draw loop: frame cost vs commands per frame', async ({ page }) => {
               : { kind: 'rect', x: 10, y: 10, width: 36, height: 36 },
             fill: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i),
           };
-          out.push(variant === 'scene' ? { kind: 'group', children: [cmd] } : cmd);
+          if (variant === 'rotated') {
+            // What `wrapNodeOutput` emits for a rotated node: its own group
+            // carrying a transform, one per command.
+            const t = (i % 8) * (Math.PI / 16);
+            const cos = Math.cos(t);
+            const sin = Math.sin(t);
+            out.push({
+              kind: 'group',
+              transform: new Float32Array([cos, sin, 0, -sin, cos, 0, 0, 0, 1]),
+              children: [cmd],
+            });
+          } else {
+            out.push(variant === 'scene' ? { kind: 'group', children: [cmd] } : cmd);
+          }
         }
         return out;
       }

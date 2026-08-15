@@ -10,7 +10,7 @@ import type {
 } from './DrawCommand';
 import { getTexture, type TextureHandle } from './textures/registerTexture';
 import type { ShaderUniform } from './shaders/registerProgram';
-import type { GroupState } from './state/GroupState';
+import { IDENTITY_COLOR_MATRIX, type GroupState } from './state/GroupState';
 import type { GLMeshCache, GLMeshHandle } from './cache/GLMeshCache';
 import type { GLTextureCache } from './cache/GLTextureCache';
 import type { GLImageCache } from './cache/GLImageCache';
@@ -139,6 +139,9 @@ function sameValues(prev: Float32Array | undefined, next: ArrayLike<number>): bo
   for (let i = 0; i < prev.length; i++) if (prev[i] !== next[i]) return false;
   return true;
 }
+
+/** The rect batch transforms its own corners, so it draws at model identity. */
+const BATCH_MODEL = mat3.identity();
 
 /** The screen→clip matrix depends only on the frame's dimensions. */
 function projFor(ctx: DrawContext): Mat3 {
@@ -416,26 +419,33 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
  *
  * A run outlives the group it started in, so the state live when the flush
  * happens is not the state the rects belong to — the flush draws with these
- * values instead.
+ * values instead. Transform is absent because it rides the vertices; `alpha`
+ * is 1 whenever it rode them too.
  */
 interface StagedRectState {
-  transform: Mat3;
   alpha: number;
   colorMatrix: Float32Array;
   clipDepth: number;
+  /** Whether group alpha folded into the vertex colors. */
+  foldsAlpha: boolean;
+}
+
+/** Identity in row-major 4×5 leaves `src` untouched *and* leaves the shader's
+ *  clamp with nothing to do, which is what makes the alpha fold exact. */
+function isIdentityColorMatrix(cm: Float32Array): boolean {
+  return cm === IDENTITY_COLOR_MATRIX || sameValues(IDENTITY_COLOR_MATRIX, cm);
 }
 
 /**
  * Whether the live group state would draw the staged run identically.
  *
- * By value, not by reference: a group carrying an identity transform still
- * goes through `mat3.multiply`, which allocates a new array holding equal
- * numbers. Nine float compares are nothing against the draw call they save.
+ * By value, not by reference: a group carrying an identity color matrix still
+ * goes through `compose4x5`, which allocates a new array holding equal numbers.
+ * Twenty float compares are nothing against the draw call they save.
  */
 function stagedStateIsLive(ctx: DrawContext, staged: StagedRectState): boolean {
-  if (staged.clipDepth !== ctx.clipDepth || staged.alpha !== ctx.state.alpha) return false;
-  const transform = ctx.state.transform;
-  if (staged.transform !== transform && !sameValues(staged.transform, transform)) return false;
+  if (staged.clipDepth !== ctx.clipDepth) return false;
+  if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
   const colorMatrix = ctx.state.colorMatrix;
   return staged.colorMatrix === colorMatrix || sameValues(staged.colorMatrix, colorMatrix);
 }
@@ -445,6 +455,11 @@ function stagedStateIsLive(ctx: DrawContext, staged: StagedRectState): boolean {
  * if the live group state no longer matches what the run was staged under.
  * Fill opacity folds into the vertex alpha, exactly as `u_color` carried it
  * when each rect was its own draw.
+ *
+ * Group alpha folds in too, but only under an identity color matrix: the
+ * shader is `a = clamp(CM * src + bias).a * u_alpha`, so with a real matrix
+ * between them a pre-multiplied vertex alpha is a different number. There it
+ * stays a uniform, and a differing alpha breaks the run as before.
  */
 function pushRect(
   ctx: DrawContext,
@@ -454,17 +469,20 @@ function pushRect(
   if (ctx.rectState !== undefined && !stagedStateIsLive(ctx, ctx.rectState)) flushRects(ctx);
   if (ctx.rectBatch.length >= MAX_RECTS_PER_BATCH) flushRects(ctx);
   if (ctx.rectState === undefined) {
+    const colorMatrix = ctx.state.colorMatrix;
+    const foldsAlpha = isIdentityColorMatrix(colorMatrix);
     ctx.rectState = {
-      transform: ctx.state.transform,
-      alpha: ctx.state.alpha,
-      colorMatrix: ctx.state.colorMatrix,
+      alpha: foldsAlpha ? 1 : ctx.state.alpha,
+      colorMatrix,
       clipDepth: ctx.clipDepth,
+      foldsAlpha,
     };
   }
   const [r, g, b, a] = resolveColor(fill.color);
+  const alpha = a * (fill.opacity ?? 1) * (ctx.rectState.foldsAlpha ? ctx.state.alpha : 1);
   ctx.rectBatch.push(
-    rect.x, rect.y, rect.width, rect.height,
-    r, g, b, a * (fill.opacity ?? 1),
+    rect.x, rect.y, rect.width, rect.height, ctx.state.transform,
+    r, g, b, alpha,
   );
 }
 
@@ -472,8 +490,8 @@ function pushRect(
  * Draw the staged run as one `drawElements`, under the state it was staged
  * under. Callers that are about to bind a different program, or paint anything
  * that must land on top of the run, call this first; a group that only changes
- * transform, alpha, or color matrix does not, because `pushRect` notices and
- * flushes then.
+ * the color matrix does not, because `pushRect` notices and flushes then, and
+ * one that only changes transform or alpha does not break the run at all.
  *
  * Clips are the exception both ways: the stencil is real GL state that the
  * staged values cannot reconstruct, so `drawGroup` flushes *before* mutating
@@ -481,7 +499,8 @@ function pushRect(
  *
  * `u_color` stays white: the vertex-color program multiplies it by the
  * per-vertex color, so white makes the result bit-identical to the flat
- * program's `u_color`-only math.
+ * program's `u_color`-only math. `u_model` stays identity for the same reason —
+ * the corners arrive already transformed.
  */
 export function flushRects(ctx: DrawContext): void {
   const batch = ctx.rectBatch;
@@ -491,7 +510,7 @@ export function flushRects(ctx: DrawContext): void {
   const prog = ctx.pathFillVColor;
   gl.useProgram(prog.handle);
   const indexCount = batch.uploadAndBind();
-  setProjAndModel(ctx, prog, staged.transform);
+  setProjAndModel(ctx, prog, BATCH_MODEL);
   gl.uniform4f(prog.uniform('u_color')!, 1, 1, 1, 1);
   gl.uniform1f(prog.uniform('u_alpha')!, staged.alpha);
   setColorMatrixUniforms(ctx, prog, staged.colorMatrix);

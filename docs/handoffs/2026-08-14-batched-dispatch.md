@@ -3,32 +3,34 @@
 **Date:** 2026-08-14
 **Branch:** `main`
 **Landed:** `batch consecutive rect fills into one draw call` (`2604ce24`),
-`break rect batches on state, not on structure`
+`break rect batches on group state, not tree shape` (`c2ebfdfe`),
+`bake the rect batch's transform and alpha into its vertices`
 
 What this is: the plan for getting the renderer's draw loop from one GL draw
-call per command down to roughly one per frame, and the record of the two steps
-that have landed. Read it before touching `renderer/draw.ts`,
+call per command down to roughly one per frame, and the record of the steps that
+have landed. Read it before touching `renderer/draw.ts`,
 `renderer/rectBatch.ts`, or `canvas/buildSceneTree.ts`.
 
 ---
 
 ## Status
 
-Steps 0 and 1 landed, and the win now reaches the app. Consecutive solid-fill
-rects merge into one `drawElements` through the existing `pathFillVColor`
-program, with color on a vertex attribute and `u_color` held at white, and a run
-survives any group that does not actually change what a draw looks like. On an
-M2 Max via ANGLE at 800x600, 3,200 rects in the shape `buildSceneTree` emits
-went 208.72 ms → 0.36 ms a frame, which is what the same rects cost flat.
+Steps 0–2 landed, and the win reaches the app. Consecutive solid-fill rects
+merge into one `drawElements` through the existing `pathFillVColor` program,
+with color on a vertex attribute and `u_color` held at white; a run survives any
+group that does not actually change what a draw looks like; and transform and
+alpha ride the vertices, so a per-node transform or opacity no longer breaks a
+run at all. On an M2 Max via ANGLE at 800x600, 3,200 rects in the shape
+`buildSceneTree` emits went 208.72 ms → 0.36 ms a frame, and 3,200 *rotated*
+rects — a group with a transform per command, the shape `wrapNodeOutput` emits —
+went 216.90 ms → 0.52 ms.
 
 What still costs one draw call each: every command that is not a solid-fill
 rect. A frame alternating solid and linear-gradient rects is unchanged at ~33 us
-per command, almost all of it the gradient half. Steps 2–4 are about those.
+per command, almost all of it the gradient half. Steps 3–4 are about those.
 
-The barrier that remains for rects is the clip stencil, which is a real GL state
-change. Transform, alpha, and color matrix are still barriers too, but only
-because they are uniforms — step 2 moves them onto the vertices and they stop
-being barriers at all.
+Two barriers remain for rects. The clip stencil is a real GL state change. The
+color matrix is a uniform still, deliberately — see step 2.
 
 ## Step 1 — break on state, not on structure (landed)
 
@@ -58,33 +60,33 @@ Invariants to keep:
 - `dispatch` keeps flushing before text, image, and shader commands. Those bind
   other programs and the state test says nothing about that.
 
-## Step 2 — bake state into the vertices
+## Step 2 — bake state into the vertices (landed)
 
-The batch already writes corners CPU-side. Applying the model matrix there is
-~12 flops against 66 us for a draw call. An affine maps a rect to a
-parallelogram, so the two-triangle index pattern still holds. Alpha and the
-color matrix are per-vertex math in the shader today and fold the same way.
+`RectBatch.push` takes the model matrix and maps the four corners itself, so the
+flush draws at `u_model` identity and rects under different transforms share a
+draw. An affine maps a rect to a parallelogram, so the two-triangle index
+pattern still covers it. Group alpha multiplies into the vertex alpha the same
+way fill opacity already did. Neither is in `StagedRectState` any more, and
+neither breaks a run.
 
-That removes transform, alpha, and color matrix as barriers, leaving **clip as
-the only real one** for solid geometry — which is honest, because a clip change
-is a genuine stencil state change.
+**The color matrix stayed a uniform, and stays a barrier.** The shader is
+`mapped = clamp(CM * src + bias); a = mapped.a * u_alpha` — the matrix and the
+clamp apply to straight-alpha `src` *before* the alpha multiply, so a
+pre-multiplied vertex alpha is only the same number while `CM` is identity, and
+applying the matrix CPU-side means reproducing that clamp exactly or watching
+colors drift wherever a channel goes out of range. Since `CM` is identity in
+every scene that does not use one, a barrier on it costs nothing real. So
+`pushRect` folds alpha only under an identity matrix and leaves `u_alpha` a
+uniform otherwise; `rectBatch.test.ts` pins both halves.
 
-Traps:
+The `u_model` second-writer hazard did not materialize: the batch goes through
+`setProjAndModel` like every other writer, so the per-program cache still sees
+every value it holds. Bypassing it with a raw `uniformMatrix3fv` is what would
+break it.
 
-- **Fold alpha and the color matrix together or not at all.** The shader is
-  `mapped = clamp(CM * src + bias); a = mapped.a * u_alpha`. The matrix and the
-  clamp apply to straight-alpha `src` *before* the alpha multiply, so folding
-  `u_alpha` into the vertex alpha is exact only while `CM` is identity. If the
-  CPU applies the matrix per vertex, clamp exactly as the shader does or colors
-  drift wherever a matrix pushes a channel out of range.
-- **`u_model` gets a second writer.** The batch would upload identity while
-  `drawPathFillVColor` uploads the real model to the *same program*, and
-  `setProjAndModel`'s per-program cache assumes it is the sole writer — the
-  hazard its own comment names for `u_color` / `u_alpha`. Either route the batch
-  through its own program instance or teach the cache about both writers.
-- CPU transform is float64 where the GPU was float32. Expect equal-or-better,
-  but a subpixel baseline shift is plausible; look at the visual diffs rather
-  than assuming.
+CPU transform is float64 where the GPU was float32, which was expected to be
+equal-or-better and to be worth checking rather than assuming: all 35 visual
+baselines passed untouched.
 
 ## Step 3 — batch solid-fill meshes, not just rects
 
@@ -148,8 +150,10 @@ split. Worth doing before step 3, not after.
 - `packages/core/src/renderer/rectBatch.test.ts` — 14 tests pinning each flush
   boundary against a GL recorder. Extend it per step rather than trusting the
   visual gate to catch an ordering slip.
-- `npm run test:perf` — the draw-loop sweep, whose `scene` variant is the shape
-  the app renders. Read a cell against its neighbours: one cell in the sweep
+- `npm run test:perf` — the draw-loop sweep, whose `scene` and `rotated`
+  variants are the shapes the app renders (`buildSceneTree`'s wrapper group per
+  node, and `wrapNodeOutput`'s transform group for a rotated one). Read a cell
+  against its neighbours: one cell in the sweep
   used to come back 30x slow from a collection landing inside the timed block,
   which is why each cell now times two blocks and reports the second, collects
   between blocks, and measures `alternating` last.

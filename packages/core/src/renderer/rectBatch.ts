@@ -4,9 +4,12 @@
  * Geometry only: `draw.ts` owns when a run starts, what breaks it, and the
  * uniforms the flush draws under. Colors ride the vertices (the batch program
  * is `pathFillVColor` with `u_color` left at white) because rects in a run
- * differ in color and a merged draw has one set of uniforms.
+ * differ in color and a merged draw has one set of uniforms — and so does the
+ * model transform, applied here rather than uploaded, so that rects under
+ * different transforms still share a draw.
  */
 
+import type { Mat3 } from './math/mat3';
 import type { ShaderProgram } from './shaders/ShaderProgram';
 
 /** Rects per flush. Caps staging memory; a longer run flushes in chunks,
@@ -61,9 +64,13 @@ export class RectBatch {
     return this.rects;
   }
 
-  /** Append one rect's four corners, all carrying `rgba` (straight alpha). */
+  /**
+   * Append one rect's four corners through `m`, all carrying `rgba` (straight
+   * alpha). An affine maps a rect to a parallelogram, so the two-triangle
+   * index pattern still covers it and the batch draws at `u_model` identity.
+   */
   push(
-    x: number, y: number, w: number, h: number,
+    x: number, y: number, w: number, h: number, m: Mat3,
     r: number, g: number, b: number, a: number,
   ): void {
     if (this.rects * FLOATS_PER_RECT === this.verts.length) {
@@ -73,12 +80,17 @@ export class RectBatch {
     }
     const v = this.verts;
     let i = this.rects * FLOATS_PER_RECT;
+    const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
     const x1 = x + w;
     const y1 = y + h;
-    v[i++] = x;  v[i++] = y;  v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
-    v[i++] = x1; v[i++] = y;  v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
-    v[i++] = x1; v[i++] = y1; v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
-    v[i++] = x;  v[i++] = y1; v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
+    const ax = ma * x + mc * y + mtx,   ay = mb * x + md * y + mty;
+    const bx = ma * x1 + mc * y + mtx,  by = mb * x1 + md * y + mty;
+    const cx = ma * x1 + mc * y1 + mtx, cy = mb * x1 + md * y1 + mty;
+    const dx = ma * x + mc * y1 + mtx,  dy = mb * x + md * y1 + mty;
+    v[i++] = ax; v[i++] = ay; v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
+    v[i++] = bx; v[i++] = by; v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
+    v[i++] = cx; v[i++] = cy; v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
+    v[i++] = dx; v[i++] = dy; v[i++] = r; v[i++] = g; v[i++] = b; v[i++] = a;
     this.rects += 1;
   }
 

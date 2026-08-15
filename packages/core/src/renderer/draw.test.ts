@@ -1764,11 +1764,22 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
   });
 
   it('re-uploads the model matrix when a group transform changes mid-frame', () => {
+    // Triangles, not rects: the rect batch transforms its corners CPU-side and
+    // draws at model identity, so it would never re-upload one.
+    const tri = (x: number): DrawCommand => ({
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([M, L, L, Z]),
+        coords: new Float32Array([x, 0, x + 10, 0, x, 10]),
+      } as PolygonPath,
+      fill: { color: '#ff0000' },
+    });
     const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
     r.render([
-      rect(0),
-      { kind: 'group', transform: shifted, children: [rect(20)] } as unknown as DrawCommand,
-      rect(40),
+      tri(0),
+      { kind: 'group', transform: shifted, children: [tri(20)] } as unknown as DrawCommand,
+      tri(40),
     ]);
     // proj once, then model for identity → shifted → identity.
     expect(countOf('uniformMatrix3fv')).toBeGreaterThanOrEqual(4);

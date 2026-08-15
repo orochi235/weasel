@@ -42,6 +42,16 @@ describe('renderer — consecutive rect batching', () => {
     },
   } as DrawCommand);
 
+  /** Halves every channel and lifts red by a quarter. The bias is what these
+   *  tests read: `u_colorMatrix` is uploaded from a scratch array the recorder
+   *  captures by reference, so by assertion time it holds the last value sent. */
+  const tinted = ((): number[] => {
+    const cm = new Array(20).fill(0);
+    cm[0] = 0.5; cm[6] = 0.5; cm[12] = 0.5; cm[18] = 1;
+    cm[4] = 0.25;
+    return cm;
+  })();
+
   /** Index count of every drawElements, in issue order. */
   const draws = (): number[] =>
     recorder.calls.filter((c) => c.name === 'drawElements').map((c) => c.args[1] as number);
@@ -74,26 +84,22 @@ describe('renderer — consecutive rect batching', () => {
   });
 
   it('flushes a run under the state it was staged in, not the live one', () => {
-    const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
     r.render([
-      { kind: 'group', transform: shifted, children: [rect(0)] } as unknown as DrawCommand,
+      { kind: 'group', colorMatrix: tinted, children: [rect(0)] } as unknown as DrawCommand,
       rect(40),
     ]);
     // The group's run is still staged when the group pops. What breaks it is
-    // the rect that follows, by which point the group's transform is off the
-    // stack — the flush has to use it anyway or the rect moves.
-    const uModel = r._pathFillVColor().uniform('u_model');
-    const modelAtDraw: Array<number[] | null> = [];
-    let pending: number[] | null = null;
+    // the rect that follows, by which point the group's color matrix is off the
+    // stack — the flush has to use it anyway or the rect draws untinted.
+    const uBias = r._pathFillVColor().uniform('u_colorBias');
+    const biasAtDraw: number[] = [];
+    let pending = 0;
     for (const c of recorder.calls) {
-      if (c.name === 'uniformMatrix3fv' && c.args[0] === uModel) {
-        pending = Array.from(c.args[2] as Float32Array);
-      }
-      if (c.name === 'drawElements') modelAtDraw.push(pending);
+      if (c.name === 'uniform4f' && c.args[0] === uBias) pending = c.args[1] as number;
+      if (c.name === 'drawElements') biasAtDraw.push(pending);
     }
     expect(draws()).toEqual([6, 6]);
-    expect(modelAtDraw[0]).toEqual(Array.from(shifted));
-    expect(modelAtDraw[1]).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    expect(biasAtDraw).toEqual([0.25, 0]);
   });
 
   it('puts each rect at its own corners in one interleaved upload', () => {
@@ -168,28 +174,79 @@ describe('renderer — consecutive rect batching', () => {
     expect(draws().filter((n) => n === 6)).toHaveLength(2);
   });
 
-  it('does not merge across a group transform', () => {
+  it('merges across a group transform, placing corners itself', () => {
     const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
     r.render([
       rect(0),
       { kind: 'group', transform: shifted, children: [rect(20)] } as unknown as DrawCommand,
       rect(40),
     ]);
-    expect(draws()).toEqual([6, 6, 6]);
+    expect(draws()).toEqual([18]);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    // Middle rect: x 20 + tx 30, y 0 + ty 40.
+    expect(Array.from(verts.slice(24, 26))).toEqual([50, 40]);
+    // ...and its neighbours are untransformed in the same buffer.
+    expect(Array.from(verts.slice(0, 2))).toEqual([0, 0]);
+    expect(Array.from(verts.slice(48, 50))).toEqual([40, 0]);
   });
 
-  it('does not merge across a group alpha', () => {
+  it('rotates each corner rather than the batch', () => {
+    // Quarter turn: (x, y) → (-y, x). A rect maps to a parallelogram, which the
+    // two-triangle index pattern still covers.
+    const quarterTurn = new Float32Array([0, 1, 0, -1, 0, 0, 0, 0, 1]);
+    r.render([
+      { kind: 'group', transform: quarterTurn, children: [rect(0)] } as unknown as DrawCommand,
+    ]);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    const corners: number[] = [];
+    for (let v = 0; v < 4; v++) corners.push(verts[v * 6], verts[v * 6 + 1]);
+    expect(corners).toEqual([0, 0, 0, 10, -10, 10, -10, 0]);
+  });
+
+  it('merges across a group alpha, folding it into the vertex alpha', () => {
     r.render([
       rect(0),
       { kind: 'group', alpha: 0.5, children: [rect(20)] } as unknown as DrawCommand,
       rect(40),
     ]);
-    expect(draws()).toEqual([6, 6, 6]);
+    expect(draws()).toEqual([18]);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    expect(verts[5]).toBe(1);
+    expect(verts[29]).toBeCloseTo(0.5, 6);
+    expect(verts[53]).toBe(1);
+    // Folded means the uniform must not apply it a second time.
+    const uAlpha = r._pathFillVColor().uniform('u_alpha');
+    const sent = recorder.calls.filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].args[1]).toBe(1);
+  });
+
+  it('keeps alpha a uniform, and a barrier, under a color matrix', () => {
+    // `a = clamp(CM * src + bias).a * u_alpha` — with a real matrix between
+    // them, an alpha pre-multiplied onto the vertex is a different number.
+    r.render([{
+      kind: 'group',
+      colorMatrix: tinted,
+      children: [
+        rect(0),
+        { kind: 'group', alpha: 0.5, children: [rect(20)] } as unknown as DrawCommand,
+      ],
+    } as unknown as DrawCommand]);
+    expect(draws()).toEqual([6, 6]);
+    const uAlpha = r._pathFillVColor().uniform('u_alpha');
+    const sent = recorder.calls
+      .filter((c) => c.name === 'uniform1f' && c.args[0] === uAlpha)
+      .map((c) => c.args[1]);
+    expect(sent).toEqual([1, 0.5]);
   });
 
   it('does not merge across a group color matrix', () => {
-    const tinted = new Array(20).fill(0);
-    tinted[0] = 0.5; tinted[6] = 0.5; tinted[12] = 0.5; tinted[18] = 1;
     r.render([
       rect(0),
       { kind: 'group', colorMatrix: tinted, children: [rect(20)] } as unknown as DrawCommand,

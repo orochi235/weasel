@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Draw-loop cost per command** — a flat ~66 us per draw call at every scene size. Consecutive solid rects now batch into one draw, in the scene shape as well as flat; everything that is not a solid rect still pays per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost per command** — a flat ~66 us per draw call at every scene size. Consecutive solid rects now batch into one draw, across the scene's wrapper groups and across per-node transforms and opacity; everything that is not a solid rect still pays per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -734,16 +734,18 @@ From the WebGL transition spec — all deferred:
 
     Batching consecutive solid-fill rects makes this moot for solid rects, in
     the shape the app renders as well as flat: 3,200 rects wrapped one-per-group
-    the way `buildSceneTree` emits them went 209 ms -> 0.36 ms a frame. Runs now
-    break when the group state actually differs, so the no-op wrapper groups
-    stopped being barriers; the clip stencil still is, honestly. Everything that
-    is not a solid rect still pays per command: a frame alternating solid and
-    linear-gradient rects is unchanged at ~33 us per command, almost entirely
-    the gradient half (~66 us per gradient draw).
+    the way `buildSceneTree` emits them went 209 ms -> 0.36 ms a frame, and
+    3,200 rotated ones — a transform group per command, the way `wrapNodeOutput`
+    emits them — went 217 ms -> 0.52 ms. Runs break when the group state
+    actually differs, and transform and alpha ride the vertices so they are not
+    state any more; the clip stencil and the color matrix still break a run,
+    both honestly. Everything that is not a solid rect still pays per command: a
+    frame alternating solid and linear-gradient rects is unchanged at ~33 us per
+    command, almost entirely the gradient half (~66 us per gradient draw).
 
-    The rest of the plan — move transform/alpha/color-matrix onto vertices, let
-    any solid-fill mesh join, then one program plus atlases — is in
-    `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps for each.
+    The rest of the plan — let any solid-fill mesh join, then one program plus
+    atlases — is in `docs/handoffs/2026-08-14-batched-dispatch.md`, with the
+    traps for each, and a two-phase dispatch split to do before the mesh step.
   - **[x] Memoize `renderOrder()`.** Both walks now cache against a
     structural-generation counter. A repeat call on a 10k-node, 4-layer scene
     drains in 0.0033 ms against a 0.33 ms rebuild.
