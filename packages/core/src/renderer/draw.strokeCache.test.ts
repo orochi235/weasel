@@ -47,12 +47,8 @@ describe('renderer — stroke ribbon caching', () => {
     recorder.calls.filter((c) => c.name === 'createVertexArray').length;
 
   it('mints no VAO on a repeat frame of the same path and stroke', () => {
-    // Frame 1 misses the strokeMeshCache and takes uploadTransient, which
-    // never populates GLMeshCache's persistent WeakMap. Frame 2 is the first
-    // *hit*, so it's the frame that promotes the mesh via handleFor — and
-    // that promotion itself costs one VAO create, since the transient
-    // buffers frame 1 made were already freed. Steady state (zero new VAOs)
-    // only holds from frame 3 onward, so that's what this asserts.
+    // Frame 2's hit promotes the mesh via handleFor, which itself mints a
+    // VAO — steady state (zero new VAOs) only starts on frame 3.
     const path = bigPolyline();
     r.render([stroked(path, 2)]);
     r.render([stroked(path, 2)]);

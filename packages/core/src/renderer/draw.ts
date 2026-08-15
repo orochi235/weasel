@@ -974,9 +974,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
 
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
   if (!hasVColors && canBatchMesh(mesh)) {
-    // A ribbon is rebuilt every frame, so its own draw means a fresh VAO and
-    // two fresh buffers per stroke per frame — most of what a stroked command
-    // costs. Staged, it allocates nothing and joins the fill it sits on.
+    // Staged, a ribbon allocates nothing and joins the fill it sits on.
     pushMesh(ctx, mesh, solid);
     return;
   }
@@ -1213,9 +1211,9 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
   // SVG's default paint-order. A second batched draw call over the same
   // group, not a call per glyph.
   if (!group.stroke) return;
-  const strokeMesh = outlineGroupStrokeMesh(group, dx, dy);
-  if (strokeMesh) {
-    drawPathFillByKind(ctx, group.stroke.paint, ctx.meshCache.uploadTransient(strokeMesh));
+  const ribbon = outlineGroupStrokeMesh(group, dx, dy);
+  if (ribbon) {
+    drawPathFillByKind(ctx, group.stroke.paint, ctx.meshCache.uploadTransient(ribbon));
   }
 }
 

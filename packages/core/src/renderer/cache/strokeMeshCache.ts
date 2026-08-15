@@ -7,12 +7,14 @@
  *
  * ### Why a hit, not a store, earns a persistent GL upload
  *
- * `hit` tells the caller the mesh has already survived a frame, so it can take
- * `GLMeshCache.handleFor` and reuse one VAO from then on. A path whose geometry
- * animates mints a new `Path` every frame and so never hits — it keeps the
- * transient upload, freed deterministically at end of frame, rather than a
- * persistent one whose release waits on `FinalizationRegistry`. That gate is
- * the entire eviction story for animated paths.
+ * `hit` tells the caller the mesh has already survived a frame, so it's safe
+ * to take `GLMeshCache.handleFor`. That promotion still costs one upload:
+ * `uploadTransient` never populates `GLMeshCache`'s persistent `WeakMap`, so
+ * the mesh's first hit is also its first `handleFor` call, and steady-state
+ * reuse only begins on the third frame. Paying that is the point — a path
+ * whose geometry animates mints a new `Path` every frame and so never hits,
+ * never reaches the promotion frame, and so never strands a persistent VAO
+ * whose release would otherwise wait on `FinalizationRegistry`.
  */
 
 import type { Path, Stroke } from '@weasel-js/core';
