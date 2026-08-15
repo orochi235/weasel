@@ -1,14 +1,16 @@
 /**
- * `pinchZoomAction` — ongoing Action descriptor for two-finger pinch zoom.
+ * `pinchZoomAction` — ongoing Action descriptor for two-finger pinch zoom
+ * and pan. The id and label stay `pinchZoom` / `Pinch Zoom`.
  *
  * ## Status: REAL
  *
  * Implements pinch-zoom via the multi-touch pointer stream:
  *   - `start`: captures startSpread from `ctx.multiTouch.pinch.startSpread`
  *     (or falls back to `ctx.multiTouch.spread`). Records the initial centroid.
- *   - `onMove`: computes zoom factor = currentSpread / startSpread; applies
- *     `zoomAt(view, centroid, factor)` so the gesture midpoint stays fixed
- *     on screen.
+ *   - `onMove`: computes zoom factor = currentSpread / startSpread, anchors
+ *     `zoomAt` on the previous centroid, then translates by the centroid
+ *     delta. Together those pin the world point under the gesture midpoint
+ *     as the midpoint moves, so the same gesture zooms and pans.
  *   - `onEnd`: no-op — zoom is already applied each frame.
  *
  * ## Dispatcher extensions required
@@ -40,6 +42,7 @@ import { zoomAt } from 'core/viewport/zoomAt';
 interface PinchScratch {
   view: ViewApi;
   startSpread: number;
+  centroid: { x: number; y: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -74,7 +77,7 @@ export const pinchZoomAction: Action & { requires: string[] } = {
       // The pinch field may not be set yet on start (it's populated on moves).
       const startSpread = multiTouch.spread > 0 ? multiTouch.spread : 1;
 
-      const scratch: PinchScratch = { view, startSpread };
+      const scratch: PinchScratch = { view, startSpread, centroid: multiTouch.centroid };
 
       return {
         kind: 'pinch',
@@ -87,8 +90,19 @@ export const pinchZoomAction: Action & { requires: string[] } = {
           // Update startSpread each frame so the factor is incremental.
           // This avoids drift accumulation across many frames.
           scratch.startSpread = currentSpread;
+          const prev = scratch.centroid;
+          scratch.centroid = centroid;
           const current = scratch.view.get();
-          scratch.view.set(zoomAt(current, centroid, factor));
+          // Anchor the zoom on where the fingers *were*, then translate by how
+          // far they travelled — together those pin the world point under the
+          // centroid as it moves. Anchoring on the new centroid instead drops
+          // the translation half, so a two-finger drag zooms without panning.
+          const zoomed = zoomAt(current, prev, factor);
+          scratch.view.set({
+            scale: zoomed.scale,
+            x: zoomed.x - (centroid.x - prev.x) / zoomed.scale.x,
+            y: zoomed.y - (centroid.y - prev.y) / zoomed.scale.y,
+          });
         },
         // onEnd: nothing to do — zoom was applied each frame.
       };

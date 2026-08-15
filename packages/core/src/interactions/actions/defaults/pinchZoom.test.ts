@@ -130,6 +130,42 @@ describe('pinchZoomAction descriptor', () => {
     expect(viewApi.current.scale.y).toBeLessThan(1);
   });
 
+  it('onMove pans by the centroid delta when the spread holds steady', () => {
+    const invoker = getOngoingInvoker(pinchZoomAction);
+    const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    // Start centroid is (100, 100) — see makeCtx.
+    const handle = invoker.start(makeCtx(viewApi, 100), undefined);
+
+    // Both fingers travel together: centroid moves, spread does not.
+    handle.onMove!(makeMoveCtx({ x: 140, y: 125 }, 100, 100));
+
+    expect(viewApi.current.scale).toEqual({ x: 1, y: 1 });
+    // Content follows the fingers, so the camera moves the opposite way.
+    expect(viewApi.current.x).toBeCloseTo(-40);
+    expect(viewApi.current.y).toBeCloseTo(-25);
+  });
+
+  it('keeps the world point under the centroid pinned across a pinch-drag', () => {
+    const invoker = getOngoingInvoker(pinchZoomAction);
+    const start: View = { x: 10, y: 20, scale: { x: 2, y: 2 } };
+    const viewApi = makeViewApi(start);
+    const handle = invoker.start(makeCtx(viewApi, 100), undefined);
+
+    // The world point sitting under the start centroid (100, 100).
+    const world = {
+      x: 100 / start.scale.x + start.x,
+      y: 100 / start.scale.y + start.y,
+    };
+
+    // Spread doubles and the centroid slides at the same time.
+    handle.onMove!(makeMoveCtx({ x: 160, y: 130 }, 200, 100));
+
+    // That world point should now sit under the new centroid.
+    const v = viewApi.current;
+    expect((world.x - v.x) * v.scale.x).toBeCloseTo(160);
+    expect((world.y - v.y) * v.scale.y).toBeCloseTo(130);
+  });
+
   it('onMove is a no-op when pinch field is absent from multiTouch', () => {
     const invoker = getOngoingInvoker(pinchZoomAction);
     const viewApi = makeViewApi({ x: 0, y: 0, scale: { x: 1, y: 1 } });

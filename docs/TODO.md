@@ -310,12 +310,6 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   Grid hairline strokes (`1 / meanScale`) have no per-axis analog at all — the
   renderer takes one width.
 
-- **(P3) Two-finger pan.** `viewport.pinchZoom` zooms about the gesture
-  centroid but never translates by the centroid delta, so a two-finger drag
-  zooms without panning. `packages/core/src/interactions/actions/defaults/pinchZoom.ts`.
-  Noted 2026-08-02 while landing the device profile — deliberately out of its
-  scope, which was sizing and long-press.
-
 - **(P3) Typed discriminated union for multi-type insert.** Deferred from `docs/specs/2026-05-07-viewport-followups-design.md`. Current shape splits into `posefromBounds(bounds) → TPose` + `pointInsert(point) → TNode` (`packages/core/src/interactions/actions/insert/options.ts`); multi-type canvases (rect vs image vs ellipse from one `<SceneCanvas>`) wire their own `tools` array (one `useInsertTool` per type) rather than folding a variant switch into the insert options. Revisit if a real consumer wants the single-canvas multi-type ergonomic.
 
 ---
