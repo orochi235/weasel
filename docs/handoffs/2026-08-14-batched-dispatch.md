@@ -4,33 +4,41 @@
 **Branch:** `main`
 **Landed:** `batch consecutive rect fills into one draw call` (`2604ce24`),
 `break rect batches on group state, not tree shape` (`c2ebfdfe`),
-`bake the rect batch's transform and alpha into its vertices`
+`bake the rect batch's transform and alpha into its vertices` (`d62dc172`),
+`batch solid-fill meshes and stroke ribbons alongside rects`
 
 What this is: the plan for getting the renderer's draw loop from one GL draw
 call per command down to roughly one per frame, and the record of the steps that
 have landed. Read it before touching `renderer/draw.ts`,
-`renderer/rectBatch.ts`, or `canvas/buildSceneTree.ts`.
+`renderer/solidBatch.ts`, or `canvas/buildSceneTree.ts`.
 
 ---
 
 ## Status
 
-Steps 0–2 landed, and the win reaches the app. Consecutive solid-fill rects
-merge into one `drawElements` through the existing `pathFillVColor` program,
-with color on a vertex attribute and `u_color` held at white; a run survives any
-group that does not actually change what a draw looks like; and transform and
-alpha ride the vertices, so a per-node transform or opacity no longer breaks a
-run at all. On an M2 Max via ANGLE at 800x600, 3,200 rects in the shape
-`buildSceneTree` emits went 208.72 ms → 0.36 ms a frame, and 3,200 *rotated*
-rects — a group with a transform per command, the shape `wrapNodeOutput` emits —
-went 216.90 ms → 0.52 ms.
+Steps 0–3 landed. Consecutive solid-fill geometry — rects, tessellated fills,
+stroke ribbons — merges into one `drawElements` through the existing
+`pathFillVColor` program, with color on a vertex attribute and `u_color` held at
+white. A run survives any group that does not change what a draw looks like, and
+transform and alpha ride the vertices, so a per-node transform or opacity does
+not break one at all. Frame cost at 800x600 on an M2 Max via ANGLE, before this
+work and after:
 
-What still costs one draw call each: every command that is not a solid-fill
-rect. A frame alternating solid and linear-gradient rects is unchanged at ~33 us
-per command, almost all of it the gradient half. Steps 3–4 are about those.
+| 3,200 commands | before | after |
+|---|---|---|
+| scene-shaped rects (`buildSceneTree`'s wrapper group each) | 208.72 ms | 0.39 ms |
+| rotated rects (`wrapNodeOutput`'s transform group each) | 216.90 ms | 0.70 ms |
+| solid-fill octagons | 5.63 ms | 0.65 ms |
+| stroked rects (fill + ribbon) | 243.80 ms | 9.41 ms |
 
-Two barriers remain for rects. The clip stencil is a real GL state change. The
-color matrix is a uniform still, deliberately — see step 2.
+What still costs one draw each: gradients, patterns, images, text, shaders,
+per-vertex-color fills, stencil fills, and meshes past the batch's vertex cap. A
+frame alternating solid and linear-gradient rects is unchanged at ~33 us per
+command, almost all of it the gradient half. Step 4 is about those.
+
+Three barriers remain. The clip stencil is a real GL state change. The color
+matrix is deliberately still a uniform — see step 2. And the stroked figure
+above is now ~85% stroke tessellation, which batching does not touch.
 
 ## Step 1 — break on state, not on structure (landed)
 
@@ -88,28 +96,49 @@ CPU transform is float64 where the GPU was float32, which was expected to be
 equal-or-better and to be worth checking rather than assuming: all 35 visual
 baselines passed untouched.
 
-## Step 3 — batch solid-fill meshes, not just rects
+## Step 3 — batch solid-fill meshes, not just rects (landed)
 
-Polygons, ellipses, text decoration rules, and stroke ribbons are all triangle
-meshes with a solid paint. Append transformed vertices, per-vertex color, and
-offset indices and they join the same draw. Commands that already carry
-`vertexColors` are per-vertex and join as they are.
+`RectBatch` became `SolidBatch` with a `pushMesh` alongside `pushRect`: append
+transformed vertices, per-vertex color, and indices rebased by `+vertexBase`.
+Solid path fills and solid stroke ribbons both take that route, so a stroked
+shape's fill and stroke land in the same draw — GL rasterizes a draw's
+primitives in index order, which is what keeps the stroke on top.
 
-Measure before committing to it: at 66 us a draw against a memcpy of a few
-hundred floats it is very likely right, but it is the first step that gives
-something up.
+Excluded: stencil fills (`requiresStencil`, and the inner/outer-aligned stroke's
+two-pass dance), anything carrying `vertexColors`, and meshes past
+`MAX_BATCHED_MESH_VERTICES`. That last one is the thing this step gives up —
+batching re-copies and re-uploads a mesh every frame where a cached
+`GLMeshHandle` costs nothing per frame beyond the draw, so above break-even a
+big path is better off with its own draw. `getMesh` is untouched either way; it
+caches the tessellated `Mesh` by `Path` identity and only the GPU-side upload
+moves.
 
-Traps:
+### What the measurement actually said
 
-- **Tessellation caching is not what changes.** `getMesh` caches the tessellated
-  `Mesh` by `Path` identity and stays exactly as it is; only the GPU-side upload
-  moves. Do not delete the mesh cache on the theory that batching replaced it.
-- **Stencil fills cannot join.** `handle.requiresStencil` (evenodd) needs its own
-  two-pass dance. Hard exclusion, same as a clip.
-- The index buffer stops being the static rect pattern and becomes a per-flush
-  upload with `+vertexBase` offsets. That is a real cost the current
-  `RectBatch` avoids entirely — count it in the measurement.
-- `MAX_RECTS_PER_BATCH` becomes a vertex/index budget rather than a rect count.
+The recorded conclusion this plan was built on — a flat ~66 us per draw call —
+was wrong, and reading it as "draw calls are expensive" points at the wrong
+work. Per the sweep on an M2 Max via ANGLE:
+
+- A **warm** mesh draw (persistent VAO, nothing touched between draws) is
+  ~1.8 us, and that number includes this fixture's heavy overdraw.
+- A **stroked** command was ~76 us. Of 243.80 ms for 3,200 of them, tessellation
+  is 7.9 ms and creating and freeing the transient VAO plus two buffers is
+  ~16 ms. The remaining ~220 ms is issuing draws *against buffers minted that
+  frame* — the driver cannot pipeline over a buffer it has just been handed.
+
+So the cost is touching buffers between draws, not the draws. That is why
+batching pays: it moves every buffer write to once per frame. Post-batching,
+3,200 stroked commands are 9.41 ms, of which 7.9 ms is the tessellation that
+batching does not address.
+
+Rects paid a little for it: the index buffer stopped being a static pattern
+written once and became a per-flush upload, costing ~0.1 ms per frame at 3,200
+rects. Left alone deliberately — a static-index fast path for all-rect runs is
+complexity against a tenth of a millisecond.
+
+Still on the table, if stroke tessellation becomes the bottleneck: caching
+ribbon meshes by path identity plus stroke parameters. It was left out because
+it needs an eviction story for animated paths that the transient pool did not.
 
 ## Step 4 — one program and atlases
 
@@ -135,19 +164,23 @@ and pays only when command kinds interleave. Steps 1–3 are larger and simpler.
 
 ## One thing to fix along the way
 
-**Dispatch is half-deferred now.** `dispatch` walks the tree emitting GL inline,
-except for rects, which defer; that is why every mutator now has to remember to
-call `flushRects` first, and why "forgot a flush" is a silent wrong-order bug
-rather than a crash. The coherent shape is two phases: walk once into a flat
-list of draw items with resolved state, then group and emit. Steps 2–3 each add
-another flush call site to the current design and each get simpler under the
-split. Worth doing before step 3, not after.
+**Dispatch is half-deferred.** `dispatch` walks the tree emitting GL inline,
+except for solid geometry, which defers; that is why every mutator has to
+remember to call `flushSolids` first, and why "forgot a flush" is a silent
+wrong-order bug rather than a crash. The coherent shape is two phases: walk once
+into a flat list of draw items with resolved state, then group and emit.
+
+Steps 2 and 3 were expected to make this worse and did not — both *removed*
+flush sites (transform and alpha stopped being barriers; batched strokes stopped
+flushing). The remaining sites are text, image, shader, non-batchable fills,
+stencil strokes, and the clip pushes. So this is now a clarity argument rather
+than a pressure one, and step 4 is where it starts paying.
 
 ## Verification
 
 - `npm run test:visual` — 35 baselines. Order and clipping regressions show up
   as pixels; this is the gate that matters for every step here.
-- `packages/core/src/renderer/rectBatch.test.ts` — 14 tests pinning each flush
+- `packages/core/src/renderer/solidBatch.test.ts` — 18 tests pinning each flush
   boundary against a GL recorder. Extend it per step rather than trusting the
   visual gate to catch an ordering slip.
 - `npm run test:perf` — the draw-loop sweep, whose `scene` and `rotated`

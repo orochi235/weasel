@@ -1,5 +1,6 @@
 /**
- * Batching of consecutive solid-fill rects into one draw.
+ * Batching of consecutive solid-fill geometry — rects, meshes, stroke ribbons —
+ * into one draw.
  *
  * Painter's order is the whole contract, so most of this file is about what
  * *breaks* a run rather than what merges into one. A missing flush does not
@@ -10,12 +11,12 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder, type GLCall } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
-import { MAX_RECTS_PER_BATCH } from './rectBatch';
+import { MAX_VERTICES_PER_BATCH } from './solidBatch';
 
 const ARRAY_BUFFER = 0x8892;
 const STENCIL_TEST = 0x0B90;
 
-describe('renderer — consecutive rect batching', () => {
+describe('renderer — consecutive solid-fill batching', () => {
   let recorder: ReturnType<typeof makeGLRecorder>;
   let r: WeaselRenderer;
 
@@ -158,15 +159,49 @@ describe('renderer — consecutive rect batching', () => {
     expect(draws()).toEqual([6, 6, 6]);
   });
 
-  it('flushes the fill before the same command\'s stroke', () => {
+  it('stages a solid stroke into the run behind its own fill', () => {
     r.render([
       rect(0),
       rect(20, '#ff0000', { stroke: { width: 2, paint: { color: '#000' } } }),
       rect(40),
     ]);
-    // The stroked rect's fill still merges with the run ahead of it (12), then
-    // the run flushes so the stroke (48) lands on top of its own fill.
-    expect(draws()).toEqual([12, 48, 6]);
+    // Three fills (6 indices each) plus one stroke ribbon, all one draw. GL
+    // rasterizes a draw's primitives in index order, so staging the ribbon
+    // after its own fill is what puts it on top.
+    expect(draws()).toHaveLength(1);
+    expect(draws()[0]).toBeGreaterThan(18);
+    // Runs of like-colored vertices, in staging order: two red fills, the
+    // black ribbon, then the last fill.
+    const upload = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER,
+    )!;
+    const verts = upload.args[2] as Float32Array;
+    const runs: string[] = [];
+    for (let v = 0; v < (upload.args[4] as number) / 6; v++) {
+      const color = `${verts[v * 6 + 2]},${verts[v * 6 + 3]},${verts[v * 6 + 4]}`;
+      if (runs[runs.length - 1] !== color) runs.push(color);
+    }
+    expect(runs).toEqual(['1,0,0', '0,0,0', '1,0,0']);
+  });
+
+  it('gives a stroke its own draw when the run cannot carry it', () => {
+    // Inner-aligned on a polygon needs the stencil two-pass.
+    r.render([
+      rect(0),
+      {
+        kind: 'path',
+        path: {
+          kind: 'polygon',
+          commands: new Uint8Array([0, 1, 1, 4]),
+          coords: new Float32Array([20, 0, 30, 0, 20, 10]),
+        },
+        fill: { color: '#ff0000' },
+        stroke: { width: 2, align: 'inner', paint: { color: '#000' } },
+      } as unknown as DrawCommand,
+      rect(40),
+    ]);
+    // The run flushes ahead of the stencil dance, which then draws twice.
+    expect(draws()).toHaveLength(4);
   });
 
   it('flushes before text, so a rect behind a label stays behind it', () => {
@@ -283,8 +318,9 @@ describe('renderer — consecutive rect batching', () => {
   });
 
   it('chunks a run longer than the per-flush cap', () => {
-    const many = Array.from({ length: MAX_RECTS_PER_BATCH + 1 }, (_, i) => rect(i));
+    const rectsPerBatch = MAX_VERTICES_PER_BATCH / 4;
+    const many = Array.from({ length: rectsPerBatch + 1 }, (_, i) => rect(i));
     r.render(many);
-    expect(draws()).toEqual([MAX_RECTS_PER_BATCH * 6, 6]);
+    expect(draws()).toEqual([rectsPerBatch * 6, 6]);
   });
 });

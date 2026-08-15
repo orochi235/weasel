@@ -29,7 +29,7 @@ function createRecorderCtx(): { ctx: DrawContext; calls: ReturnType<typeof makeG
     programRegistry: new Map(),
     quadVbo: null,
     quadIbo: null,
-    rectBatch: r._rectBatch(),
+    solidBatch: r._solidBatch(),
     state: r._groupState(),
     widthCss: r._widthCss(),
     heightCss: r._heightCss(),
@@ -175,7 +175,14 @@ describe('WeaselRenderer.render — kind: path with stroke', () => {
     const path: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 };
     r.render([{ kind: 'path', path, fill: { color: '#f00' }, stroke: { paint: { color: '#000' }, width: 2 } }]);
     const draws = recorder.calls.filter((c) => c.name === 'drawElements');
-    expect(draws.length).toBe(2);
+    // Both are solid geometry, so they share one draw — and inside it the fill
+    // is staged first, which is what puts the stroke on top.
+    expect(draws.length).toBe(1);
+    const verts = recorder.calls.find(
+      (c) => c.name === 'bufferSubData' && c.args[0] === recorder.gl.ARRAY_BUFFER,
+    )!.args[2] as Float32Array;
+    expect(Array.from(verts.slice(2, 5))).toEqual([1, 0, 0]);   // fill red, first
+    expect(Array.from(verts.slice(26, 29))).toEqual([0, 0, 0]); // stroke black, after
   });
 
   it('skips when neither fill nor stroke is set', () => {
@@ -824,10 +831,36 @@ const POLYGON_CURVED: PolygonPath = {
 };
 
 describe('flattenTolerance option', () => {
-  it('routes fills through the transient pool when flattenTolerance is set', () => {
+  /** A gradient takes its own draw, so the mesh reaches GL as a buffer rather
+   *  than as staged vertices — which is where the pool choice is observable. */
+  const GRADIENT = {
+    fill: 'linear-gradient' as const,
+    from: { x: 0, y: 0 }, to: { x: 100, y: 100 },
+    stops: [{ offset: 0, color: '#000' }, { offset: 1, color: '#fff' }],
+  };
+
+  const stagedVertexFloats = (rec: ReturnType<typeof makeGLRecorder>): number =>
+    rec.calls.find((c) => c.name === 'bufferSubData' && c.args[0] === rec.gl.ARRAY_BUFFER)!
+      .args[4] as number;
+
+  it('tessellates fresh when flattenTolerance is set', () => {
+    const render = (flattenTolerance?: number): ReturnType<typeof makeGLRecorder> => {
+      const rec = makeGLRecorder();
+      const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, flattenTolerance });
+      r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { fill: 'solid', color: '#000' } }]);
+      return rec;
+    };
+    // A finer tolerance means more segments, so the staged run is longer. The
+    // persistent cache's key excludes tolerance, so serving from it would give
+    // both renders the same count.
+    expect(stagedVertexFloats(render(0.01)))
+      .toBeGreaterThan(stagedVertexFloats(render()));
+  });
+
+  it('routes a mesh that takes its own draw through the transient pool', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1, flattenTolerance: 0.01 });
-    r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { fill: 'solid', color: '#000' } }]);
+    r.render([{ kind: 'path', path: POLYGON_CURVED, fill: GRADIENT }]);
     // Transient meshes are freed at end of render(): deleteVertexArray proves
     // the fill did NOT come from the persistent cache.
     expect(rec.calls.map((c) => c.name)).toContain('deleteVertexArray');
@@ -836,7 +869,7 @@ describe('flattenTolerance option', () => {
   it('default path (no option) keeps the persistent cache route', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
-    r.render([{ kind: 'path', path: POLYGON_CURVED, fill: { fill: 'solid', color: '#000' } }]);
+    r.render([{ kind: 'path', path: POLYGON_CURVED, fill: GRADIENT }]);
     expect(rec.calls.map((c) => c.name)).not.toContain('deleteVertexArray');
   });
 });
@@ -1764,22 +1797,30 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
   });
 
   it('re-uploads the model matrix when a group transform changes mid-frame', () => {
-    // Triangles, not rects: the rect batch transforms its corners CPU-side and
-    // draws at model identity, so it would never re-upload one.
-    const tri = (x: number): DrawCommand => ({
-      kind: 'path',
-      path: {
-        kind: 'polygon',
-        commands: new Uint8Array([M, L, L, Z]),
-        coords: new Float32Array([x, 0, x + 10, 0, x, 10]),
-      } as PolygonPath,
-      fill: { color: '#ff0000' },
-    });
+    // A mesh past the batch's vertex cap, so it takes its own draw: staged
+    // geometry is transformed CPU-side and would never re-upload a model.
+    const ring = (x: number): DrawCommand => {
+      const n = 400;
+      const commands = new Uint8Array(n + 1);
+      const coords = new Float32Array(n * 2);
+      commands[0] = M;
+      for (let k = 1; k < n; k++) commands[k] = L;
+      commands[n] = Z;
+      for (let k = 0; k < n; k++) {
+        coords[k * 2] = x + 10 * Math.cos((k * 2 * Math.PI) / n);
+        coords[k * 2 + 1] = 10 * Math.sin((k * 2 * Math.PI) / n);
+      }
+      return {
+        kind: 'path',
+        path: { kind: 'polygon', commands, coords } as PolygonPath,
+        fill: { color: '#ff0000' },
+      };
+    };
     const shifted = new Float32Array([1, 0, 0, 0, 1, 0, 30, 40, 1]);
     r.render([
-      tri(0),
-      { kind: 'group', transform: shifted, children: [tri(20)] } as unknown as DrawCommand,
-      tri(40),
+      ring(0),
+      { kind: 'group', transform: shifted, children: [ring(20)] } as unknown as DrawCommand,
+      ring(40),
     ]);
     // proj once, then model for identity → shifted → identity.
     expect(countOf('uniformMatrix3fv')).toBeGreaterThanOrEqual(4);

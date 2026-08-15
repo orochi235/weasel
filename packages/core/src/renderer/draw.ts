@@ -35,7 +35,7 @@ import { verticalAlignOffset } from 'features/text/verticalAlign';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
-import { RectBatch, MAX_RECTS_PER_BATCH } from './rectBatch';
+import { SolidBatch } from './solidBatch';
 
 export interface DrawContext {
   gl: WebGL2RenderingContext;
@@ -54,11 +54,11 @@ export interface DrawContext {
   quadVbo: WebGLBuffer | null;
   quadIbo: WebGLBuffer | null;
   /** Staging for the consecutive-rect batch. Draws are deferred into it, so a
-   *  caller driving `dispatch` itself must `flushRects` when the stream ends. */
-  rectBatch: RectBatch;
+   *  caller driving `dispatch` itself must `flushSolids` when the stream ends. */
+  solidBatch: SolidBatch;
   /** Group state the staged rects were built under; `undefined` while nothing
-   *  is staged. Written only by `pushRect` / `flushRects`. */
-  rectState?: StagedRectState;
+   *  is staged. Written only by `pushRect` / `flushSolids`. */
+  solidState?: StagedSolidState;
   state: GroupState;
   widthCss: number;
   heightCss: number;
@@ -187,25 +187,35 @@ function setColorMatrixUniforms(
 }
 
 /**
- * Resolve a fill mesh handle honoring ctx.flattenTolerance: default route is
- * the persistent Path-identity cache; a custom tolerance tessellates fresh
- * and rides the transient pool (freed at end of frame), because the
- * persistent cache's key does not include tolerance.
+ * Tessellate a fill honoring ctx.flattenTolerance: default route is the
+ * persistent Path-identity cache; a custom tolerance tessellates fresh, because
+ * the persistent cache's key does not include tolerance.
  */
-function fillMeshHandle(ctx: DrawContext, path: Path): GLMeshHandle {
+function fillMesh(ctx: DrawContext, path: Path): Mesh {
   if (ctx.flattenTolerance !== undefined) {
-    return ctx.meshCache.uploadTransient(tessellate(path, { flattenTolerance: ctx.flattenTolerance }));
+    return tessellate(path, { flattenTolerance: ctx.flattenTolerance });
   }
-  return ctx.meshCache.handleFor(getMesh(path));
+  return getMesh(path);
+}
+
+/** Upload a mesh for its own draw. A freshly tessellated one rides the
+ *  transient pool, freed at end of frame. */
+function meshHandle(ctx: DrawContext, mesh: Mesh): GLMeshHandle {
+  if (ctx.flattenTolerance !== undefined) return ctx.meshCache.uploadTransient(mesh);
+  return ctx.meshCache.handleFor(mesh);
+}
+
+function fillMeshHandle(ctx: DrawContext, path: Path): GLMeshHandle {
+  return meshHandle(ctx, fillMesh(ctx, path));
 }
 
 export function dispatch(ctx: DrawContext, cmd: DrawCommand): void {
   switch (cmd.kind) {
     case 'group':  return drawGroup(ctx, cmd);
     case 'path':   return drawPath(ctx, cmd);
-    case 'text':   flushRects(ctx); return drawText(ctx, cmd);
-    case 'image':  flushRects(ctx); return drawImage(ctx, cmd);
-    case 'shader': flushRects(ctx); return drawShader(ctx, cmd);
+    case 'text':   flushSolids(ctx); return drawText(ctx, cmd);
+    case 'image':  flushSolids(ctx); return drawImage(ctx, cmd);
+    case 'shader': flushSolids(ctx); return drawShader(ctx, cmd);
   }
 }
 
@@ -366,7 +376,7 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
     }
     // Before, not after: `pushClip` rasterizes into the stencil, and a run
     // staged outside the clip would then draw under a mask it never had.
-    flushRects(ctx);
+    flushSolids(ctx);
     pushClip(ctx, cmd.clip, newDepth);
     ctx.clipDepth = newDepth;
   }
@@ -374,7 +384,7 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
   if (cmd.clip) {
     // Likewise: past `popClip` the mask is gone, and these pixels belonged
     // inside it.
-    flushRects(ctx);
+    flushSolids(ctx);
     popClip(ctx, cmd.clip, ctx.clipDepth - 1);
     ctx.clipDepth -= 1;
   }
@@ -385,33 +395,36 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
   if (!cmd.fill && !cmd.stroke) return;
 
   if (cmd.fill) {
-    // Fast path: solid-fill rect with no vertex colors → append to the batch
-    // instead of tessellating. Also keeps animated demos that mint a fresh
-    // Path every frame from leaking a GL buffer per frame.
-    const isSolidRect =
-      cmd.path.kind === 'rect'
-      && (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')
+    // Batchable: a solid paint with no per-vertex colors. A rect skips
+    // tessellation entirely; anything else stages its mesh. Both also keep
+    // animated demos that mint a fresh Path every frame from allocating a GL
+    // buffer per frame.
+    const batchablePaint =
+      (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')
       && (!cmd.vertexColors || cmd.vertexColors.length === 0);
-    if (isSolidRect && cmd.path.kind === 'rect') {
-      pushRect(ctx, cmd.path, cmd.fill as { color: string; opacity?: number });
+    const solid = cmd.fill as { color: string; opacity?: number };
+    if (batchablePaint && cmd.path.kind === 'rect') {
+      pushRect(ctx, cmd.path, solid);
     } else {
-      flushRects(ctx);
-      const handle = fillMeshHandle(ctx, cmd.path);
-      if (cmd.vertexColors && cmd.vertexColors.length > 0 &&
-          (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')) {
-        drawPathFillVColor(ctx, cmd, cmd.fill as { color: string; opacity?: number }, handle);
-      } else if (handle.requiresStencil) {
-        drawPathFillStencil(ctx, cmd.fill, handle);
+      const mesh = fillMesh(ctx, cmd.path);
+      if (batchablePaint && canBatchMesh(mesh)) {
+        pushMesh(ctx, mesh, solid);
       } else {
-        drawPathFillByKind(ctx, cmd.fill, handle);
+        flushSolids(ctx);
+        const handle = meshHandle(ctx, mesh);
+        if (cmd.vertexColors && cmd.vertexColors.length > 0 &&
+            (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')) {
+          drawPathFillVColor(ctx, cmd, solid, handle);
+        } else if (handle.requiresStencil) {
+          drawPathFillStencil(ctx, cmd.fill, handle);
+        } else {
+          drawPathFillByKind(ctx, cmd.fill, handle);
+        }
       }
     }
   }
 
-  if (cmd.stroke) {
-    flushRects(ctx);
-    drawPathStroke(ctx, cmd);
-  }
+  if (cmd.stroke) drawPathStroke(ctx, cmd);
 }
 
 /**
@@ -422,7 +435,7 @@ function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
  * values instead. Transform is absent because it rides the vertices; `alpha`
  * is 1 whenever it rode them too.
  */
-interface StagedRectState {
+interface StagedSolidState {
   alpha: number;
   colorMatrix: Float32Array;
   clipDepth: number;
@@ -443,7 +456,7 @@ function isIdentityColorMatrix(cm: Float32Array): boolean {
  * goes through `compose4x5`, which allocates a new array holding equal numbers.
  * Twenty float compares are nothing against the draw call they save.
  */
-function stagedStateIsLive(ctx: DrawContext, staged: StagedRectState): boolean {
+function stagedStateIsLive(ctx: DrawContext, staged: StagedSolidState): boolean {
   if (staged.clipDepth !== ctx.clipDepth) return false;
   if (!staged.foldsAlpha && staged.alpha !== ctx.state.alpha) return false;
   const colorMatrix = ctx.state.colorMatrix;
@@ -451,39 +464,82 @@ function stagedStateIsLive(ctx: DrawContext, staged: StagedRectState): boolean {
 }
 
 /**
- * Stage a solid-fill rect for the batch, flushing first if the run is full or
- * if the live group state no longer matches what the run was staged under.
- * Fill opacity folds into the vertex alpha, exactly as `u_color` carried it
- * when each rect was its own draw.
+ * Vertices above which a mesh keeps its own draw.
  *
- * Group alpha folds in too, but only under an identity color matrix: the
- * shader is `a = clamp(CM * src + bias).a * u_alpha`, so with a real matrix
- * between them a pre-multiplied vertex alpha is a different number. There it
- * stays a uniform, and a differing alpha breaks the run as before.
+ * Batching trades a draw call for copying and re-uploading the mesh every
+ * frame, where a mesh already in the persistent cache costs nothing per frame
+ * beyond the draw. On an M2 Max via ANGLE (`npm run test:perf`) staged geometry
+ * runs ~8.5 ns a vertex and a warm mesh draw ~1.8 us, putting break-even near
+ * 200 — and the 1.8 us is an upper bound, measured under heavy overdraw. So
+ * this sits about at break-even, where being wrong in either direction is a
+ * wash, rather than anywhere a big path pays a per-frame copy for a draw call
+ * it barely saves.
  */
-function pushRect(
-  ctx: DrawContext,
-  rect: { x: number; y: number; width: number; height: number },
-  fill: { color: string; opacity?: number },
-): void {
-  if (ctx.rectState !== undefined && !stagedStateIsLive(ctx, ctx.rectState)) flushRects(ctx);
-  if (ctx.rectBatch.length >= MAX_RECTS_PER_BATCH) flushRects(ctx);
-  if (ctx.rectState === undefined) {
+const MAX_BATCHED_MESH_VERTICES = 256;
+
+/** Whether a mesh can join a run. Stencil fills need their own two-pass dance,
+ *  and a mesh past the cap is cheaper as its own draw. */
+function canBatchMesh(mesh: Mesh): boolean {
+  return !mesh.requiresStencil && (mesh.vertices.length >> 1) <= MAX_BATCHED_MESH_VERTICES;
+}
+
+/**
+ * Open or continue a run for `vertices` more, flushing first if the run would
+ * overflow or if the live group state no longer matches what it was staged
+ * under. Returns the staged state, which the caller reads to resolve alpha.
+ *
+ * Fill opacity folds into the vertex alpha, exactly as `u_color` carried it
+ * when each shape was its own draw. Group alpha folds in too, but only under an
+ * identity color matrix: the shader is `a = clamp(CM * src + bias).a * u_alpha`,
+ * so with a real matrix between them a pre-multiplied vertex alpha is a
+ * different number. There it stays a uniform, and a differing alpha breaks the
+ * run as before.
+ */
+function stageSolid(ctx: DrawContext, vertices: number): StagedSolidState {
+  if (ctx.solidState !== undefined && !stagedStateIsLive(ctx, ctx.solidState)) flushSolids(ctx);
+  if (ctx.solidBatch.wouldOverflow(vertices)) flushSolids(ctx);
+  if (ctx.solidState === undefined) {
     const colorMatrix = ctx.state.colorMatrix;
     const foldsAlpha = isIdentityColorMatrix(colorMatrix);
-    ctx.rectState = {
+    ctx.solidState = {
       alpha: foldsAlpha ? 1 : ctx.state.alpha,
       colorMatrix,
       clipDepth: ctx.clipDepth,
       foldsAlpha,
     };
   }
-  const [r, g, b, a] = resolveColor(fill.color);
-  const alpha = a * (fill.opacity ?? 1) * (ctx.rectState.foldsAlpha ? ctx.state.alpha : 1);
-  ctx.rectBatch.push(
-    rect.x, rect.y, rect.width, rect.height, ctx.state.transform,
-    r, g, b, alpha,
+  return ctx.solidState;
+}
+
+/** Straight-alpha rgba for a solid paint under the staged state. */
+function stagedColor(
+  ctx: DrawContext, staged: StagedSolidState,
+  paint: { color: string; opacity?: number },
+): [number, number, number, number] {
+  const [r, g, b, a] = resolveColor(paint.color);
+  return [r, g, b, a * (paint.opacity ?? 1) * (staged.foldsAlpha ? ctx.state.alpha : 1)];
+}
+
+function pushRect(
+  ctx: DrawContext,
+  rect: { x: number; y: number; width: number; height: number },
+  fill: { color: string; opacity?: number },
+): void {
+  const staged = stageSolid(ctx, 4);
+  const [r, g, b, a] = stagedColor(ctx, staged, fill);
+  ctx.solidBatch.pushRect(
+    rect.x, rect.y, rect.width, rect.height, ctx.state.transform, r, g, b, a,
   );
+}
+
+function pushMesh(
+  ctx: DrawContext,
+  mesh: Mesh,
+  paint: { color: string; opacity?: number },
+): void {
+  const staged = stageSolid(ctx, mesh.vertices.length >> 1);
+  const [r, g, b, a] = stagedColor(ctx, staged, paint);
+  ctx.solidBatch.pushMesh(mesh, ctx.state.transform, r, g, b, a);
 }
 
 /**
@@ -502,9 +558,9 @@ function pushRect(
  * program's `u_color`-only math. `u_model` stays identity for the same reason —
  * the corners arrive already transformed.
  */
-export function flushRects(ctx: DrawContext): void {
-  const batch = ctx.rectBatch;
-  const staged = ctx.rectState;
+export function flushSolids(ctx: DrawContext): void {
+  const batch = ctx.solidBatch;
+  const staged = ctx.solidState;
   if (batch.length === 0 || staged === undefined) return;
   const gl = ctx.gl;
   const prog = ctx.pathFillVColor;
@@ -518,7 +574,7 @@ export function flushRects(ctx: DrawContext): void {
   gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
   batch.reset();
-  ctx.rectState = undefined;
+  ctx.solidState = undefined;
 }
 
 function expandAnchorColors(perAnchor: number[], handle: GLMeshHandle): Float32Array {
@@ -902,6 +958,7 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
 
   const align = stroke.align ?? 'center';
   if (cmd.path.kind === 'polygon' && align !== 'center') {
+    flushSolids(ctx);
     drawPathStrokeStenciled(ctx, cmd, align);
     return;
   }
@@ -914,6 +971,16 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const solid = stroke.paint as { color: string; opacity?: number };
   const mesh = tessellateStroke(cmd.path, stroke, { flattenTolerance: ctx.flattenTolerance });
   if (mesh.indices.length === 0) return;
+
+  const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
+  if (!hasVColors && canBatchMesh(mesh)) {
+    // A ribbon is rebuilt every frame, so its own draw means a fresh VAO and
+    // two fresh buffers per stroke per frame — most of what a stroked command
+    // costs. Staged, it allocates nothing and joins the fill it sits on.
+    pushMesh(ctx, mesh, solid);
+    return;
+  }
+  flushSolids(ctx);
   // tessellateStroke returns a freshly-built Mesh every frame; route through
   // the transient pool so the renderer frees these at end-of-frame.
   const handle = ctx.meshCache.uploadTransient(mesh);

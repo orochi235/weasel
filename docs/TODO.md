@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Draw-loop cost per command** — a flat ~66 us per draw call at every scene size. Consecutive solid rects now batch into one draw, across the scene's wrapper groups and across per-node transforms and opacity; everything that is not a solid rect still pays per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost per command** — the cost is writing a buffer between draws, not the draw call. Consecutive solid geometry (rects, fills, stroke ribbons) now batches into one draw across the scene's wrapper groups, per-node transforms and opacity; gradients, patterns, images, text and shaders still pay per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -722,30 +722,29 @@ From the WebGL transition spec — all deferred:
 
   Still open:
 
-  - **Per-draw-call cost, for every command that is not a batched rect.**
+  - **Per-command cost, for every command that is not batched solid geometry.**
     `tests/perf/draw-loop.spec.ts` sweeps commands per frame under real GL
     (`npm run test:perf`; gates nothing, prints the unmasked GL renderer so a
-    software backend is obvious). On an M2 Max via ANGLE at 800x600 the cost
-    is ~66 us per draw call, flat from 400 commands to 3,200, and it is not
-    program switches, fill rate, tessellation, or uniform uploads — each ruled
-    out by a variant in that spec or by fixing it and watching the wall clock
-    not move. What is left per draw is `useProgram`, `bindVertexArray` x2,
-    `bufferSubData`, `drawElements`, or ANGLE's per-draw translation.
+    software backend is obvious).
 
-    Batching consecutive solid-fill rects makes this moot for solid rects, in
-    the shape the app renders as well as flat: 3,200 rects wrapped one-per-group
-    the way `buildSceneTree` emits them went 209 ms -> 0.36 ms a frame, and
-    3,200 rotated ones — a transform group per command, the way `wrapNodeOutput`
-    emits them — went 217 ms -> 0.52 ms. Runs break when the group state
-    actually differs, and transform and alpha ride the vertices so they are not
-    state any more; the clip stencil and the color matrix still break a run,
-    both honestly. Everything that is not a solid rect still pays per command: a
-    frame alternating solid and linear-gradient rects is unchanged at ~33 us per
-    command, almost entirely the gradient half (~66 us per gradient draw).
+    The cost turned out not to be the draw call. A warm mesh draw is ~1.8 us;
+    what cost ~66 us was *writing a buffer between draws*, which the driver
+    cannot pipeline over. So batching pays by moving buffer writes to once a
+    frame, and consecutive solid-fill geometry — rects, tessellated fills,
+    stroke ribbons — now shares one `drawElements`. At 3,200 commands on an M2
+    Max via ANGLE: scene-shaped rects 209 -> 0.39 ms, rotated rects 217 ->
+    0.70 ms, solid octagons 5.6 -> 0.65 ms, stroked rects 244 -> 9.4 ms.
 
-    The rest of the plan — let any solid-fill mesh join, then one program plus
-    atlases — is in `docs/handoffs/2026-08-14-batched-dispatch.md`, with the
-    traps for each, and a two-phase dispatch split to do before the mesh step.
+    What still pays per command: gradients, patterns, images, text, shaders,
+    per-vertex-color and stencil fills, and meshes past the batch's vertex cap.
+    A frame alternating solid and linear-gradient rects is unchanged at ~33 us
+    per command, almost entirely the gradient half. The stroked figure is now
+    ~85% stroke tessellation, which batching does not touch — a ribbon-mesh
+    cache is the lever there, and it needs an eviction story for animated paths.
+
+    The rest of the plan — one program plus atlases — is in
+    `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a
+    two-phase dispatch split that would make it tractable.
   - **[x] Memoize `renderOrder()`.** Both walks now cache against a
     structural-generation counter. A repeat call on a 10k-node, 4-layer scene
     drains in 0.0033 ms against a 0.33 ms rebuild.

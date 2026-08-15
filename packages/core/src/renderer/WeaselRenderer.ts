@@ -43,8 +43,8 @@ import { GradientRampCache } from './cache/GradientRampCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { Mat3 } from './math/mat3';
-import { dispatch, flushRects, OUTLINE_MIN_SCREEN_PX, type DrawContext } from './draw';
-import { RectBatch } from './rectBatch';
+import { dispatch, flushSolids, OUTLINE_MIN_SCREEN_PX, type DrawContext } from './draw';
+import { SolidBatch } from './solidBatch';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
   QUAD_VERTICES, QUAD_INDICES,
@@ -119,7 +119,7 @@ export class WeaselRenderer {
   private programRegistry = new Map<string, ShaderProgram>();
   private quadVbo: WebGLBuffer | null = null;
   private quadIbo: WebGLBuffer | null = null;
-  private rectBatch: RectBatch;
+  private solidBatch: SolidBatch;
   private readonly groupState = new GroupState();
   private widthCss: number;
   private heightCss: number;
@@ -206,7 +206,7 @@ export class WeaselRenderer {
     this.imageCache = new GLImageCache(this.gl, this.imageMinification);
     this.gradRampCache = new GradientRampCache(this.gl);
     this.uploadQuadGeometry();
-    this.rectBatch = new RectBatch(this.gl, this.pathFillVColor);
+    this.solidBatch = new SolidBatch(this.gl, this.pathFillVColor);
   }
 
   private uploadQuadGeometry(): void {
@@ -305,7 +305,7 @@ export class WeaselRenderer {
     markAllFontsNotUploaded();
 
     this.uploadQuadGeometry();
-    this.rectBatch = new RectBatch(this.gl, this.pathFillVColor);
+    this.solidBatch = new SolidBatch(this.gl, this.pathFillVColor);
     for (const id of this.programRegistry.keys()) {
       const src = getProgramSource(id);
       if (!src) continue;
@@ -366,7 +366,7 @@ export class WeaselRenderer {
     this.gradRampCache.free();
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
-    this.rectBatch.dispose();
+    this.solidBatch.dispose();
   }
 
   /**
@@ -407,7 +407,7 @@ export class WeaselRenderer {
       programRegistry: this.programRegistry,
       quadVbo: this.quadVbo,
       quadIbo: this.quadIbo,
-      rectBatch: this.rectBatch,
+      solidBatch: this.solidBatch,
       state: this.groupState,
       widthCss: this.widthCss,
       heightCss: this.heightCss,
@@ -419,7 +419,7 @@ export class WeaselRenderer {
     for (const cmd of commands) dispatch(ctx, cmd);
     // The stream ended, so whatever rects are still staged have nothing left
     // that could merge with them.
-    flushRects(ctx);
+    flushSolids(ctx);
     // Free transient resources allocated during this frame (e.g. per-frame
     // stroke ribbons from tessellateStroke). Done after all draws complete
     // so we never delete a buffer that's still bound to a pending draw.
@@ -444,7 +444,7 @@ export class WeaselRenderer {
   /** @internal */ _gl(): WebGL2RenderingContext { return this.gl; }
   /** @internal */ _pathFill(): ShaderProgram { return this.pathFill; }
   /** @internal */ _pathFillVColor(): ShaderProgram { return this.pathFillVColor; }
-  /** @internal */ _rectBatch(): RectBatch { return this.rectBatch; }
+  /** @internal */ _solidBatch(): SolidBatch { return this.solidBatch; }
   /** @internal */ _textSdf(): ShaderProgram { return this.textSdf; }
   /** @internal */ _textSdfR8(): ShaderProgram { return this.textSdfR8; }
   /** @internal */ _imageFill(): ShaderProgram { return this.imageFill; }

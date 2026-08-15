@@ -50,13 +50,13 @@ const SWEEP = [
   { n: 3200, frames: 25 },
 ];
 
-const VARIANTS = ['solid', 'alternating', 'stacked', 'scene', 'rotated'] as const;
+const VARIANTS = ['solid', 'alternating', 'stacked', 'scene', 'rotated', 'meshes', 'stroked'] as const;
 
 /** Measured in this order, reported in the order above. `alternating` outweighs
  *  the rest of the sweep put together, and the cell measured right after it
  *  paid for collecting its garbage — so it goes last, where what it leaves
  *  behind lands on nothing. */
-const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'rotated', 'alternating'] as const;
+const MEASURE_ORDER = ['solid', 'stacked', 'scene', 'rotated', 'meshes', 'stroked', 'alternating'] as const;
 
 test.setTimeout(300_000);
 
@@ -98,17 +98,37 @@ test('draw loop: frame cost vs commands per frame', async ({ page }) => {
         stops: [{ offset: 0, color: '#000000' }, { offset: 1, color: '#ffffff' }],
       };
 
+      const M = 0, L = 1, Z = 4; // PathVerb
+      /** An octagon, so the command is a tessellated mesh rather than a rect.
+       *  One Path object per command, built once: `getMesh` is keyed on Path
+       *  identity, and rebuilding them per frame would measure tessellation. */
+      const octagon = (cx: number, cy: number, r: number): unknown => {
+        const coords = new Float32Array(16);
+        for (let k = 0; k < 8; k++) {
+          coords[k * 2] = cx + r * Math.cos((k * Math.PI) / 4);
+          coords[k * 2 + 1] = cy + r * Math.sin((k * Math.PI) / 4);
+        }
+        return {
+          kind: 'polygon',
+          commands: new Uint8Array([M, L, L, L, L, L, L, L, Z]),
+          coords,
+        };
+      };
+
       function build(n: number, variant: string): unknown[] {
         const out: unknown[] = [];
         for (let i = 0; i < n; i++) {
           const spread = variant !== 'stacked';
-          const cmd = {
+          const x = spread ? (i * 37) % (W - 40) : 10;
+          const y = spread ? (i * 53) % (H - 40) : 10;
+          const cmd: Record<string, unknown> = {
             kind: 'path',
-            path: spread
-              ? { kind: 'rect', x: (i * 37) % (W - 40), y: (i * 53) % (H - 40), width: 36, height: 36 }
-              : { kind: 'rect', x: 10, y: 10, width: 36, height: 36 },
+            path: variant === 'meshes'
+              ? octagon(x + 18, y + 18, 18)
+              : { kind: 'rect', x, y, width: 36, height: 36 },
             fill: variant === 'alternating' && i % 2 === 1 ? gradFill : solidFill(i),
           };
+          if (variant === 'stroked') cmd.stroke = { width: 2, paint: { color: '#222222' } };
           if (variant === 'rotated') {
             // What `wrapNodeOutput` emits for a rotated node: its own group
             // carrying a transform, one per command.
