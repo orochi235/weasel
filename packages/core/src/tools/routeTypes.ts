@@ -1,6 +1,6 @@
-import type { ToolCtx, ToolPresentation, HotkeyTrigger } from '../types';
-import type { RenderLayer } from '../../core/layers/render';
-import type { GestureBinding } from '../../interactions/actions/binding';
+import type { ToolCtx, ToolPresentation, HotkeyTrigger } from './types';
+import type { RenderLayer } from '../core/layers/render';
+import type { GestureBinding } from '../interactions/actions/binding';
 import type { CapabilityTag } from '@weasel-js/modes';
 
 /**

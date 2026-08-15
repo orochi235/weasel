@@ -1032,76 +1032,44 @@ Continuation parameters narrow the type to `PointerEvent` — `onMove` /
 - Phase 3b resize/rotate affordance integration through the factory —
   unchanged from the original Phase 3 scope.
 
-## Phase 6 follow-up: imperative `defineTool` removed; canonical location renamed (shipped 2026-05-12)
+## Phase 6 follow-up: authoring hoisted out of `routing/` (shipped 2026-08-15)
 
-Phase 6 retired the imperative `defineTool` identity helper and promoted
-the declarative factory to the canonical kit location.
+`routing/` now holds only the route *introspection* surface. Tool authoring
+moved to the top of `src/tools/`, alongside `useTools` and `useKeybindings`.
+
+The imperative `defineTool` identity helper this phase set out to retire was
+already gone by the time the phase ran, as were the factory's substrate
+modules (`result`, `lookup`, `modifiers`, `hitResult`) — the phase-table
+retirement took them. What was left was the hoist.
 
 ### What moved
 
 | Before | After |
 |---|---|
-| `src/tools/defineTool.ts` (imperative identity helper) | **deleted** |
-| `src/tools/defineTool.test.ts` (imperative tests) | **deleted** |
-| `src/tools/routing/defineTool.ts` (declarative factory) | `src/tools/defineTool.ts` |
-| `src/tools/routing/defineTool.test.ts` | `src/tools/defineTool.test.ts` |
-| `src/tools/routing/defineViewportTool.ts` | `src/tools/defineViewportTool.ts` |
-| `src/tools/routing/result.ts` | `src/tools/result.ts` |
-| `src/tools/routing/lookup.ts` | `src/tools/lookup.ts` |
-| `src/tools/routing/modifiers.ts` | `src/tools/modifiers.ts` |
-| `src/tools/routing/hitResult.ts` | `src/tools/hitResult.ts` |
-| `src/tools/routing/types.ts` | `src/tools/routeTypes.ts` (renamed to disambiguate from `src/tools/types.ts` — the `Tool`/`ToolCtx` module) |
-| `src/tools/routing/reflection/*` | unchanged |
+| `tools/routing/defineTool.{ts,test.ts}` | `tools/defineTool.{ts,test.ts}` |
+| `tools/routing/defineViewportTool.{ts,test.ts}` | `tools/defineViewportTool.{ts,test.ts}` |
+| `tools/routing/types.ts` | `tools/routeTypes.ts` — renamed to clear `tools/types.ts`, the `Tool`/`ToolCtx` module |
+| `tools/routing/keyRouteGrammar.ts` | **deleted** — an unreferenced re-export shim over `@weasel-js/gestures` |
+| `tools/routing/{routeGrammar,gestures}.ts`, `tools/routing/reflection/*` | unchanged |
 
 ### Public surface change
 
-Before Phase 6:
+Authoring symbols move from the subpath to the main barrel:
 
 ```ts
-import { defineTool, apply, mods, type ToolDef } from '@weasel-js/core/routing';
+import { defineTool, defineViewportTool, type ToolDef } from '@weasel-js/core';
 ```
 
-After Phase 6:
-
-```ts
-import { defineTool, apply, mods, type ToolDef } from '@weasel-js/core';
-```
-
-The `/routing` subpath is preserved, narrowed to reflection consumers:
-
-```ts
-import {
-  buildActionRegistry, findConflicts,
-  type RegistryEntry, type Conflict,
-  type RouteResolvedInfo, formatRouteResolved,
-  useToolDebugInfo, ToolDebugOverlay,
-} from '@weasel-js/core/routing';
-```
+`/routing` keeps the route grammar (`parseRoute`, `formatRoute`,
+`describeRoute`, the gesture descriptors) and the reflection consumers
+(`buildRouteRegistry`, `findConflicts`, and their types). Behavior and runtime
+contract are unchanged; only import paths move.
 
 ### Rationale
 
-1. **Imperative `defineTool` is dead weight at 0.3.0.** It was a
-   19-line identity helper exclusively used to give TypeScript a
-   hook for `TScratch` inference. With the declarative factory
-   covering every shape the kit's built-in tools need (and after
-   Phase 5b/5c, every built-in tool migrated), the imperative path
-   served only as a parallel authoring surface for external
-   consumers. No external consumer existed (Swillustrator, `weasel-*`
-   packages, demo apps all confirmed via grep). At pre-1.0,
-   soft-deprecation costs more than hard removal.
-2. **`routing/` is for introspection, not authoring.** The folder
-   name should match its contents. After the move, `routing/` houses
-   reflection consumers (registry, conflicts, debug overlay) and
-   nothing else. Authoring lives at the top of `src/tools/`
-   alongside `useTools`, `dispatcher`, `useKeybindings` — the rest
-   of the tool subsystem's surface.
-3. **The dispatcher's JSDoc still uses the phrase "declarative
-   routing".** That phrase describes a *behavior* (the factory
-   translates route tables to dispatcher channels at translation
-   time), not a folder. The phrase stays accurate after the file move.
-
-### Migration note for external consumers
-
-Anyone authoring tools via `@weasel-js/core/routing` before Phase 6
-changes their import line and otherwise their code is unaffected.
-Behavior, types, and runtime contract are identical.
+A folder name should match its contents. `routing/` housed the primary tool
+authoring surface next to the tools that introspect it, so the name misled in
+both directions. With authoring hoisted, the directory listing reads as the
+split it is: `defineTool.ts`, `useTools.ts`, `useKeybindings.ts` at the top —
+the surface you write tools against — and `routing/` underneath, the surface
+that reads them back.

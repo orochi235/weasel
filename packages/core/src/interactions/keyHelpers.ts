@@ -9,7 +9,7 @@
 
 /**
  * @internal — runtime shape consumed by `matchesKeyBinding`. Public tool authors
- * should use `ToolKeybinding` from `@weasel-js/core/routing` for declaring
+ * should use `ToolKeybinding` from `@weasel-js/core` for declaring
  * configurable activation keys.
  */
 export interface KeyBinding {

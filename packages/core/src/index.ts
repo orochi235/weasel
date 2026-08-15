@@ -115,7 +115,6 @@ export * from './core/viewport/useZoom';
 export * from './core/viewport/useAutoCenter';
 // ─── Keybindings: low-level key → action wiring ─────────────────────────────
 export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
-export type { ToolKeybinding } from './tools/routing/types';
 
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {
@@ -258,8 +257,9 @@ export { useViewAnimation } from './core/viewport/useViewAnimation';
 // ─── Tools: dispatcher, registry, declarative routing, built-ins ────────────
 export * from './tools';
 export { usePinchZoomTool, type PinchZoomToolOpts } from './tools/builtin/pinchZoom';
-// Tool authoring and route reflection are the `@weasel-js/core/routing`
-// subpath, not a namespace on this barrel.
+// Route *reflection* — the route grammar, registry, and conflict checker —
+// is the `@weasel-js/core/routing` subpath. Tool authoring (`defineTool`,
+// `ToolDef`) is on this barrel, via `./tools` above.
 
 // ─── SceneCanvas: the top-level renderer ─────────────────────────────────────
 // `Canvas` is intentionally NOT exported — it is `@internal` / `@deprecated`

@@ -7,7 +7,7 @@ import type { Node } from 'core/scene/types';
 import type { MoveAdapter } from 'core/adapters/types';
 import type { AreaSelectAdapter } from 'core/adapters/types';
 import type { NodeId } from 'core/scene/types';
-import { defineTool } from '../../routing';
+import { defineTool } from '../../defineTool';
 import type { UseMoveOptions } from '../../../interactions/actions/move/options';
 import type { BindingOpts } from '../../../interactions/actions/invoker';
 import type { Action } from '../../../interactions/actions/registry';

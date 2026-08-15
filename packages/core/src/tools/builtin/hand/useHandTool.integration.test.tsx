@@ -16,7 +16,7 @@ import {
   type ActiveToolContextValue,
 } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
-import { defineTool } from '../../routing';
+import { defineTool } from '../../defineTool';
 import { useTools } from '../../useTools';
 import { useHandTool } from './useHandTool';
 

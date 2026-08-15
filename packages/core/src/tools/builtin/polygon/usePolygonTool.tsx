@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { defineTool } from '../../routing';
+import { defineTool } from '../../defineTool';
 import { PolygonIcon } from '../../../icons';
 import type { Tool } from '../../types';
 import type { Action } from 'interactions/actions/registry';

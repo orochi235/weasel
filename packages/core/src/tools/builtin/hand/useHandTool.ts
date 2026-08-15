@@ -1,5 +1,5 @@
 import { useMemo, createElement } from 'react';
-import { defineViewportTool } from '../../routing';
+import { defineViewportTool } from '../../defineViewportTool';
 import type { Tool } from '../../types';
 import { HandIcon } from '../../../icons';
 import type { View } from 'core/viewport/view';

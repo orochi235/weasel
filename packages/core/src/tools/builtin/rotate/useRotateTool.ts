@@ -4,7 +4,7 @@ import {
   createRotationAffordance,
 } from 'affordances/rotationHandle';
 import type { RotateAdapter } from 'core/adapters/types';
-import { defineTool } from '../../routing';
+import { defineTool } from '../../defineTool';
 import type { Tool } from '../../types';
 import type { RenderLayer } from 'core/layers/render';
 import type { ChromeState } from 'core/selection/chromeState';

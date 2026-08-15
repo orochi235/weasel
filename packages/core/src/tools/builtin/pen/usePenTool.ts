@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useReducer, useRef, createElement } from 'react';
-import { defineTool } from '../../routing';
+import { defineTool } from '../../defineTool';
 import type { Tool } from '../../types';
 import type { ToolPrefGroup } from '../../prefs';
 import type { Action } from 'interactions/actions/registry';

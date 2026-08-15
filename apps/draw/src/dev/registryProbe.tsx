@@ -10,6 +10,7 @@ import {
   type NodePropertiesEntry,
   type NodeRoutingEntry,
   type TargetSpec,
+  type ToolDef,
   type ToolsApi,
 } from '@weasel-js/core';
 import type { PhaseSpec } from '@weasel-js/gestures';
@@ -18,7 +19,6 @@ import type {
   GestureName,
   ParsedModifiers,
   PhaseAtom,
-  ToolDef,
 } from '@weasel-js/core/routing';
 import { isValidElement, type ReactNode } from 'react';
 import type { DeclaredRoute, ToolSurface, ToolEntry, ActionEntry, CallbackRef, CallbackSource } from './registryData';

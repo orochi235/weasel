@@ -1,11 +1,11 @@
 import { useMemo, createElement } from 'react';
-import { defineTool } from '../../routing';
+import { defineTool } from '../../defineTool';
 import { LassoIcon } from '../../../icons';
 import type { Tool } from '../../types';
 import type { UseLassoSelectOptions } from 'interactions/actions/lasso-select/options';
 import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/selectFromLasso';
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
-import type { ToolKeybinding } from '../../routing/types';
+import type { ToolKeybinding } from '../../routeTypes';
 
 export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
   'behaviors' | 'transient' | 'label' | 'onGestureStart' | 'onGestureEnd' |

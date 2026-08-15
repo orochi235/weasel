@@ -32,6 +32,7 @@ import {
   type GestureSpec,
   type Tool,
   type ToolBundle,
+  type ToolDef,
   type ToolsApi,
 } from '@weasel-js/core';
 import {
@@ -40,7 +41,6 @@ import {
   findConflicts,
   type Conflict,
   type RegistryEntry,
-  type ToolDef,
 } from '@weasel-js/core/routing';
 import { formatShortcutParts, KeySequence } from '@weasel-js/ui';
 import { lookupShortcutByToolId } from './keybindingsView';

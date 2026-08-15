@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { defineTool } from '../../routing';
+import { defineTool } from '../../defineTool';
 import { LineIcon } from '../../../icons';
 import type { Tool } from '../../types';
 

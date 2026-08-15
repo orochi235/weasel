@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { defineTool } from '@weasel-js/core/routing';
+import { defineTool } from '@weasel-js/core';
 
 /** WeaselDraw "Slice" tool: drag a straight line; crossed paths split (Knife). */
 export function useSliceTool() {

@@ -1,8 +1,8 @@
-// src/tools/routing/defineTool.test.ts
+// src/tools/defineTool.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { defineTool } from './defineTool';
-import type { RenderLayer } from '../../core/layers/render';
-import type { ToolCtx } from '../types';
+import type { RenderLayer } from '../core/layers/render';
+import type { ToolCtx } from './types';
 
 const CTX = { scratch: null } as unknown as ToolCtx<null>;
 

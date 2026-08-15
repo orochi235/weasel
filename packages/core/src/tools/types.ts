@@ -3,7 +3,7 @@ import type { SelectionApi } from 'core/selection/useSelection';
 import type { Op } from 'core/ops/types';
 import type { View } from 'core/viewport/view';
 import type { DebugSink } from '../debug/types';
-import type { ToolKeybinding } from './routing/types';
+import type { ToolKeybinding } from './routeTypes';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { Contribution } from '../contributions/types';
 

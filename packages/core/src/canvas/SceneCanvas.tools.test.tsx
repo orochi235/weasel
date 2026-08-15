@@ -4,7 +4,7 @@ import { SceneCanvas } from './SceneCanvas';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId } from 'core/scene/types';
 import { useTools } from 'tools/useTools';
-import { defineTool } from 'tools/routing/defineTool';
+import { defineTool } from 'tools/defineTool';
 import { WeaselProvider } from '../WeaselProvider';
 
 // jsdom doesn't implement getContext or pointer capture; stub minimally.

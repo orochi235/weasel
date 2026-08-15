@@ -1,7 +1,7 @@
-// src/tools/routing/defineTool.ts
-import type { Tool, ToolCtx } from '../types';
-import type { ToolDef } from './types';
-import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from './routeGrammar';
+// src/tools/defineTool.ts
+import type { Tool, ToolCtx } from './types';
+import type { ToolDef } from './routeTypes';
+import { RESERVED_ID_NAMES, RESERVED_ID_PREFIXES } from '@weasel-js/gestures';
 
 /** Validate that `id` is usable as a tool / channel id in the route
  *  grammar. Rejects ids that start with a reserved sigil (would shadow

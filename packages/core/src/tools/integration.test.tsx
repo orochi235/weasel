@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
-import { defineTool } from './routing/defineTool';
+import { defineTool } from './defineTool';
 import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { ActionsProvider, useActionsRegistry } from '../interactions/actions/registry';
 import { DepRegistryProvider, useDepSource } from '../interactions/actions/depRegistry';

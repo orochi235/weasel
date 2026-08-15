@@ -1,3 +1,6 @@
+export { defineTool } from './defineTool';
+export { defineViewportTool } from './defineViewportTool';
+export type { ToolDef, ViewportToolDef, ToolKeybinding } from './routeTypes';
 export { useTools } from './useTools';
 export type { UseToolsOptions, ToolsApi } from './useTools';
 export { useKeybindings } from './useKeybindings';

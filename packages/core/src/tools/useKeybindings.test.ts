@@ -4,7 +4,7 @@ import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { useTools } from './useTools';
 import { useKeybindings } from './useKeybindings';
-import { defineTool } from './routing/defineTool';
+import { defineTool } from './defineTool';
 import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { ActionsProvider } from '../interactions/actions/registry';
 import { useActionsRegistry } from '../interactions/actions/registry';

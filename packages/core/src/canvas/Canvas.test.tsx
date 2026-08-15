@@ -209,7 +209,7 @@ describe('<Canvas>', () => {
   });
 });
 
-import { defineTool } from 'tools/routing/defineTool';
+import { defineTool } from 'tools/defineTool';
 import { ROTATED_POSE_DESCRIPTOR } from 'interactions/actions/resize/geometry';
 
 describe('Canvas tools mode', () => {

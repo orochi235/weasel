@@ -1,7 +1,7 @@
 import { useMemo, useRef, createElement } from 'react';
-import { defineTool } from '../../routing';
+import { defineTool } from '../../defineTool';
 import type { Tool, HotkeyTrigger } from '../../types';
-import type { ToolKeybinding } from '../../routing/types';
+import type { ToolKeybinding } from '../../routeTypes';
 import type { Action } from 'interactions/actions/registry';
 import type { NodeAtPointDep } from 'interactions/actions/depSchema';
 import { EyedropperIcon } from '../../../icons';

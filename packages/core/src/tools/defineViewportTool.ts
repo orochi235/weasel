@@ -1,5 +1,5 @@
-import type { Tool } from '../types';
-import type { ViewportToolDef } from './types';
+import type { Tool } from './types';
+import type { ViewportToolDef } from './routeTypes';
 import { defineTool } from './defineTool';
 
 /**

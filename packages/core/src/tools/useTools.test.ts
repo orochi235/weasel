@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import { useTools } from './useTools';
-import { defineTool } from './routing/defineTool';
+import { defineTool } from './defineTool';
 import type { RenderLayer } from 'core/layers/render';
 import { ActiveToolContextProvider, useActiveToolContext } from '../interactions/actions/activeToolContext';
 
