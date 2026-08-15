@@ -12,6 +12,10 @@
   "readme": "README.md",
   "plugin": ["./typedoc/plugin.mjs"],
   "categorizeByGroup": false,
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": false
+  },
   "categoryOrder": [
     "Scene",
     "Rendering",
