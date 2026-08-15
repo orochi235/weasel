@@ -30,7 +30,7 @@ work and after:
 | scene-shaped rects (`buildSceneTree`'s wrapper group each) | 208.72 ms | 0.39 ms |
 | rotated rects (`wrapNodeOutput`'s transform group each) | 216.90 ms | 0.70 ms |
 | solid-fill octagons | 5.63 ms | 0.65 ms |
-| stroked rects (fill + ribbon) | 243.80 ms | 1.70 ms |
+| stroked rects (fill + ribbon) | 243.80 ms | 1.7–2.0 ms |
 
 What still costs one draw each: gradients, patterns, images, text, shaders,
 per-vertex-color fills, stencil fills, and meshes past the batch's vertex cap. A
@@ -39,7 +39,9 @@ command, almost all of it the gradient half. Step 4 is about those.
 
 The stroked figure includes the ribbon cache added 2026-08-15: batching alone
 left it at 9.41 ms, ~85% of which was stroke tessellation, and caching that on
-`Path` identity took it to 1.70 ms.
+`Path` identity took it to 1.7–2.0 ms. Read the magnitude, not the digits —
+the two runs behind that range also moved the untouched `alternating` variant
+101 -> 152 ms, so this laptop's noise floor is wider than the spread.
 
 Two barriers remain. The clip stencil is a real GL state change, and the color
 matrix is deliberately still a uniform — see step 2.
@@ -144,12 +146,22 @@ complexity against a tenth of a millisecond.
 
 `cache/strokeMeshCache.ts` keys tessellated ribbons on `Path` identity crossed
 with the parameters that change the geometry, taking 3,200 stroked commands
-from 9.41 ms to 1.70 ms. The eviction story that held this back is a gate
+from 9.41 ms to 1.7–2.0 ms. The eviction story that held this back is a gate
 rather than a policy: a ribbon earns a persistent GL handle only on its *second*
-sight, so a path whose geometry animates mints a new `Path`, never hits, and
-keeps the transient upload that is freed at end of frame. Promotion costs one
-extra upload, because `uploadTransient` does not populate `GLMeshCache`'s
-`WeakMap` — steady state starts on the third frame. Design:
+sight, so a path whose geometry animates mints a new `Path` every frame, never
+reaches promotion, and keeps the transient upload that is freed at end of
+frame. Promotion costs one extra upload, because `uploadTransient` does not
+populate the persistent map — steady state starts on the third frame.
+
+**The gate belongs to `GLMeshCache`, not to the ribbon cache**, and putting it
+in the wrong place is a live bug rather than a style question. The ribbon cache
+is module-global while `GLMeshCache` is per-renderer, so a cache-wide "seen"
+flag tells a second renderer — a `SceneViewCanvas` minimap, a
+`renderSceneToPixels` export — that a mesh *its own context never uploaded* is
+safe to make persistent. `GLMeshCache.uploadRecurring` owns it against a
+per-context `WeakSet`. Vertex-colored strokes are excluded and stay transient:
+their per-draw color VBO and enabled `a_vertexColor` array are recorded into
+the VAO, and `vertexColors` is not in the cache key. Design:
 `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
 
 ## Step 4 — one program and atlases

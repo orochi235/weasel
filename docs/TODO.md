@@ -780,10 +780,13 @@ From the WebGL transition spec — all deferred:
     Max via ANGLE: scene-shaped rects 209 -> 0.39 ms, rotated rects 217 ->
     0.70 ms, solid octagons 5.6 -> 0.65 ms, stroked rects 244 -> 9.4 ms.
 
-    Stroked commands then went 9.4 -> 1.70 ms on 2026-08-15: batching had left
-    them ~85% stroke tessellation, and `cache/strokeMeshCache.ts` now keys that
-    on `Path` identity so a ribbon is built once per stroke configuration
-    rather than once per frame. Design:
+    Stroked commands then went 9.4 -> 1.7–2.0 ms on 2026-08-15: batching had
+    left them ~85% stroke tessellation, and `cache/strokeMeshCache.ts` now keys
+    that on `Path` identity so a ribbon is built once per stroke configuration
+    rather than once per frame. A ribbon also earns a persistent VAO on its
+    second sight *in a given GL context* — `GLMeshCache.uploadRecurring`, which
+    is where that gate has to live, since one scene can be drawn by several
+    renderers. Design:
     `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
 
     What still pays per command: gradients, patterns, images, text, shaders,

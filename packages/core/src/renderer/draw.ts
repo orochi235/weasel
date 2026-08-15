@@ -1081,12 +1081,14 @@ function drawPathStrokeStenciled(
   }
 
   gl.drawElements(gl.TRIANGLES, ribbonHandle.indexCount, gl.UNSIGNED_INT, 0);
-  if (colorVbo) gl.deleteBuffer(colorVbo);
 
   gl.stencilMask(0x01);
   gl.clear(gl.STENCIL_BUFFER_BIT);
   gl.disable(gl.STENCIL_TEST);
   gl.bindVertexArray(null);
+  // Delete after the unbind: deleting a bound buffer leaves its attribute
+  // enabled and pointing at nothing, recorded in whatever VAO is live.
+  if (colorVbo) gl.deleteBuffer(colorVbo);
 }
 
 /**
