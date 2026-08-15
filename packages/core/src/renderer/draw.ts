@@ -20,7 +20,6 @@ import { mat3, type Mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import { tessellate } from 'features/paths/tessellate/tessellate';
 import { resolveColor } from './math/color';
-import { tessellateStroke } from 'features/paths/tessellate/stroke';
 import {
   ensureFontTexture,
   textureCacheKey,
@@ -1032,10 +1031,11 @@ function drawPathStrokeStenciled(
   const widerStroke: Stroke = { ...stroke, width: (stroke.width ?? 1) * 2, align: 'center' };
 
   const fillHandle = fillMeshHandle(ctx, cmd.path);
-  const ribbonMesh = tessellateStroke(cmd.path, widerStroke, { flattenTolerance: ctx.flattenTolerance });
+  const { mesh: ribbonMesh, hit } = strokeMesh(cmd.path, widerStroke, ctx.flattenTolerance);
   if (ribbonMesh.indices.length === 0) return;
-  // The ribbon mesh is freshly tessellated each frame; transient.
-  const ribbonHandle = ctx.meshCache.uploadTransient(ribbonMesh);
+  const ribbonHandle = hit
+    ? ctx.meshCache.handleFor(ribbonMesh)
+    : ctx.meshCache.uploadTransient(ribbonMesh);
 
   const gl = ctx.gl;
   const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
