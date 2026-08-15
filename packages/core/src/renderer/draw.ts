@@ -979,7 +979,11 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
     return;
   }
   flushSolids(ctx);
-  const handle = ctx.meshCache.uploadRecurring(mesh);
+  // The VAO records the per-draw color attribute, so a vertex-colored draw
+  // cannot share a persistent one with a draw that has no vertex colors.
+  const handle = hasVColors
+    ? ctx.meshCache.uploadTransient(mesh)
+    : ctx.meshCache.uploadRecurring(mesh);
 
   const gl = ctx.gl;
   if (hasVColors) {
@@ -1031,7 +1035,11 @@ function drawPathStrokeStenciled(
   const fillHandle = fillMeshHandle(ctx, cmd.path);
   const ribbonMesh = strokeMesh(cmd.path, widerStroke, ctx.flattenTolerance);
   if (ribbonMesh.indices.length === 0) return;
-  const ribbonHandle = ctx.meshCache.uploadRecurring(ribbonMesh);
+  // The VAO records the per-draw color attribute, so a vertex-colored draw
+  // cannot share a persistent one with a draw that has no vertex colors.
+  const ribbonHandle = useVColor
+    ? ctx.meshCache.uploadTransient(ribbonMesh)
+    : ctx.meshCache.uploadRecurring(ribbonMesh);
 
   const gl = ctx.gl;
   const prog = useVColor ? ctx.pathFillVColor : ctx.pathFill;
