@@ -46,6 +46,7 @@ Priority tags:
 - `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
 
 **Documentation**
+- Surface a changelog on the site → [Documentation](#documentation)
 - README pitch sweep → [Documentation](#documentation)
 
 ---
@@ -823,5 +824,14 @@ From the WebGL transition spec — all deferred:
 ## Documentation
 
 - **(P2) README pitch sweep.** Initial draft landed; the `docs/` long-form sweep was completed (all hook names and import paths match the post-extraction surface). A re-pass before 0.1.0.
+
+- **(P2) Surface a changelog on the site.** `changeset publish` writes a
+  `CHANGELOG.md` per package on every release and nothing reads them — thirteen
+  files in the repo, none reachable from `apps/site`. A reader who wants to know
+  what moved between two versions has to read git log. Wants a decision on shape
+  before it is built: one merged view across the lockstep group (they all bump
+  together, so thirteen separate lists would repeat the same version numbers
+  thirteen times) versus per-package pages, and whether it is generated at build
+  time from the markdown or rendered by a route.
 
 - **(P3) JSDoc audit at definition sites.** A one-pass sweep at definition sites for any public export still lacking a JSDoc string. (Barrel section headers already landed in `packages/core/src/index.ts`; per-symbol JSDoc lives at original definitions.) File a follow-up if a specific export turns up undocumented.
