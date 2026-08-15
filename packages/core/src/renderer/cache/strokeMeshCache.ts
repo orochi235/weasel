@@ -5,16 +5,7 @@
  * ribbons in em space), and it inherits their contract: identity, not content.
  * A `Path` rebuilt with equal coords is a distinct entry.
  *
- * ### Why a hit, not a store, earns a persistent GL upload
- *
- * `hit` tells the caller the mesh has already survived a frame, so it's safe
- * to take `GLMeshCache.handleFor`. That promotion still costs one upload:
- * `uploadTransient` never populates `GLMeshCache`'s persistent `WeakMap`, so
- * the mesh's first hit is also its first `handleFor` call, and steady-state
- * reuse only begins on the third frame. Paying that is the point — a path
- * whose geometry animates mints a new `Path` every frame and so never hits,
- * never reaches the promotion frame, and so never strands a persistent VAO
- * whose release would otherwise wait on `FinalizationRegistry`.
+ * Design: `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
  */
 
 import type { Path, Stroke } from '@weasel-js/core';
@@ -54,16 +45,13 @@ function configKey(stroke: Stroke, flattenTolerance: number | undefined): string
   ].join('|');
 }
 
-/**
- * The tessellated ribbon for `path` under `stroke`. `hit` is true when the
- * returned mesh came from the cache, meaning it is stable across frames and
- * safe to hand to `GLMeshCache.handleFor`.
- */
+/** The tessellated ribbon for `path` under `stroke`. The same `Mesh` object
+ *  comes back for as long as the entry lives. */
 export function strokeMesh(
   path: Path,
   stroke: Stroke,
   flattenTolerance: number | undefined,
-): { mesh: Mesh; hit: boolean } {
+): Mesh {
   let byConfig = cache.get(path);
   if (byConfig === undefined) {
     byConfig = new Map<string, StrokeEntry>();
@@ -73,7 +61,7 @@ export function strokeMesh(
   const key = configKey(stroke, flattenTolerance);
   const entry = byConfig.get(key);
   if (entry !== undefined && entry.vertexWidths === stroke.vertexWidths) {
-    return { mesh: entry.mesh, hit: true };
+    return entry.mesh;
   }
 
   const mesh = tessellateStroke(path, stroke, { flattenTolerance });
@@ -81,7 +69,7 @@ export function strokeMesh(
   // `vertexWidths` must not evict the other configurations alongside it.
   if (entry === undefined && byConfig.size >= STROKE_CONFIGS_PER_PATH) byConfig.clear();
   byConfig.set(key, { mesh, vertexWidths: stroke.vertexWidths });
-  return { mesh, hit: false };
+  return mesh;
 }
 
 /** Test helper. Do not call from product code. */

@@ -969,7 +969,7 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const stroke = cmd.stroke!;
   const solid = stroke.paint as { color: string; opacity?: number };
-  const { mesh, hit } = strokeMesh(cmd.path, stroke, ctx.flattenTolerance);
+  const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance);
   if (mesh.indices.length === 0) return;
 
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
@@ -979,12 +979,10 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
     return;
   }
   flushSolids(ctx);
-  // A cached ribbon is stable across frames, so it earns a persistent VAO. A
-  // fresh one may never be seen again — transient, freed at end of frame.
-  const handle = hit ? ctx.meshCache.handleFor(mesh) : ctx.meshCache.uploadTransient(mesh);
+  const handle = ctx.meshCache.uploadRecurring(mesh);
 
   const gl = ctx.gl;
-  if (stroke.vertexColors && stroke.vertexColors.length > 0) {
+  if (hasVColors) {
     const prog = ctx.pathFillVColor;
     gl.useProgram(prog.handle);
     gl.bindVertexArray(handle.vao);
@@ -992,7 +990,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
     setSolidPaintUniforms(ctx, prog, solid.color, solid.opacity);
     setColorMatrixUniforms(ctx, prog);
 
-    const expanded = expandAnchorColors(stroke.vertexColors, handle);
+    const expanded = expandAnchorColors(stroke.vertexColors!, handle);
     const colorVbo = gl.createBuffer();
     if (!colorVbo) throw new Error('drawPathStrokeUnclipped: createBuffer (color VBO) returned null');
     gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
@@ -1028,15 +1026,14 @@ function drawPathStrokeStenciled(
   const solid = stroke.paint as { color: string; opacity?: number };
   const widerStroke: Stroke = { ...stroke, width: (stroke.width ?? 1) * 2, align: 'center' };
 
+  const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
+
   const fillHandle = fillMeshHandle(ctx, cmd.path);
-  const { mesh: ribbonMesh, hit } = strokeMesh(cmd.path, widerStroke, ctx.flattenTolerance);
+  const ribbonMesh = strokeMesh(cmd.path, widerStroke, ctx.flattenTolerance);
   if (ribbonMesh.indices.length === 0) return;
-  const ribbonHandle = hit
-    ? ctx.meshCache.handleFor(ribbonMesh)
-    : ctx.meshCache.uploadTransient(ribbonMesh);
+  const ribbonHandle = ctx.meshCache.uploadRecurring(ribbonMesh);
 
   const gl = ctx.gl;
-  const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
   const prog = useVColor ? ctx.pathFillVColor : ctx.pathFill;
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog);

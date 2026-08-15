@@ -46,6 +46,8 @@ interface MeshResources {
  */
 export class GLMeshCache {
   private readonly map = new WeakMap<Mesh, GLMeshHandle>();
+  /** Meshes this context has drawn at least once; see `uploadRecurring`. */
+  private readonly seen = new WeakSet<Mesh>();
   private readonly finalizer: FinalizationRegistry<MeshResources>;
   private readonly pendingDeletes: MeshResources[] = [];
   /** Transient resources allocated this frame; freed at end of render(). */
@@ -87,6 +89,20 @@ export class GLMeshCache {
     const { handle, vbo, ibo } = this.upload(mesh);
     this.transientThisFrame.push({ vao: handle.vao, vbo, ibo });
     return handle;
+  }
+
+  /**
+   * Upload a Mesh that may or may not recur across frames. Its first sight in
+   * *this* context takes `uploadTransient`; every later one takes the
+   * persistent handle. One transient upload to find out is cheaper than
+   * stranding a persistent VAO on a mesh that never returns, whose release
+   * would wait on GC. The transient upload does not populate the persistent
+   * map, so steady-state reuse begins on the third frame.
+   */
+  uploadRecurring(mesh: Mesh): GLMeshHandle {
+    if (this.seen.has(mesh)) return this.handleFor(mesh);
+    this.seen.add(mesh);
+    return this.uploadTransient(mesh);
   }
 
   /**
