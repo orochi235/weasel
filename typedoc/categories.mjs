@@ -1,17 +1,3 @@
-/** Sidebar order. Alphabetical would open on "Extension points". */
-export const CATEGORY_ORDER = [
-  'Scene',
-  'Rendering',
-  'Tools & gestures',
-  'Selection & actions',
-  'Paths & geometry',
-  'Viewport',
-  'Paint & fills',
-  'Text',
-  'History',
-  'Extension points',
-];
-
 /**
  * Repo-relative path prefixes, in priority order — the first match wins, so a
  * specific path must precede the general one that contains it. The barrel
