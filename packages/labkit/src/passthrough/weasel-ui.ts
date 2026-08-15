@@ -148,7 +148,7 @@ export {
   type ToolPaletteProps,
   type TrackCtx,
   type UseReorderDragListOptions,
-  useReorderDragList,
   type UseRovingTabIndexOptions,
+  useReorderDragList,
   useRovingTabIndex,
 } from '@weasel-js/ui';
