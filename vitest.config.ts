@@ -42,6 +42,7 @@ export default defineConfig({
             'packages/core/src/**/*.test.{ts,tsx}',
             'apps/site/**/*.test.{ts,tsx}',
             'tests/e2e/helpers/**/*.test.{ts,tsx}',
+            'typedoc/**/*.test.mjs',
           ],
           exclude: ['**/*.smoke.test.{ts,tsx}', '**/node_modules/**'],
         },
