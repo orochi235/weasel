@@ -1,5 +1,340 @@
 # Changelog
 
+## 1.0.1
+
+### Patch Changes
+
+- d6c2eff: Take the id→node lookup off the render and hit-test paths.
+
+  Six call sites walked `scene.renderOrder()` and immediately resolved each id
+  back through `scene.get` — a map lookup per node, per call, for nodes the
+  traversal had already held. They now read `scene.renderOrderNodes()` directly:
+  `sceneToAdapter.getNodes`, the move gesture adapter and the default commit
+  adapter, `useSceneSelectTool`'s `hitTestArea` and default `pickEvery`, and the
+  text-edit hit test. Adapter `getNodes` runs on the render path once a frame.
+
+  Building the node list is about twice as fast (`npm run bench`, `min`, Apple M2
+  Max / Node v26.1.0):
+
+  | nodes  | via `renderOrder` + `get` | via `renderOrderNodes` |
+  | ------ | ------------------------- | ---------------------- |
+  | 1,000  | 0.031 ms                  | 0.011 ms               |
+  | 10,000 | 0.40 ms                   | 0.19 ms                |
+
+  `tests/bench/scene-ops.bench.ts` gains that comparison, and the committed
+  baseline is re-recorded.
+
+- d62dc17: Bake the rect batch's transform and alpha into its vertices, so a rotated or
+  partly-transparent node no longer breaks a run.
+
+  `RectBatch.push` now maps the four corners through the model matrix itself and
+  the flush draws at `u_model` identity — ~12 flops against the ~66 us a draw call
+  costs. An affine maps a rect to a parallelogram, so the two-triangle index
+  pattern still covers it. Group alpha multiplies into the vertex alpha the same
+  way fill opacity already did. Neither is batch state any more.
+
+  Frame cost for rects each wrapped in their own transform group — what
+  `wrapNodeOutput` emits for a rotated node — M2 Max via ANGLE at 800x600
+  (`npm run test:perf`, new `rotated` variant):
+
+  | rects | before    | after   |
+  | ----- | --------- | ------- |
+  | 400   | 24.94 ms  | 0.08 ms |
+  | 1,600 | 102.78 ms | 0.42 ms |
+  | 3,200 | 216.90 ms | 0.52 ms |
+
+  The color matrix stays a uniform and stays a barrier. The shader applies it and
+  its clamp to the straight-alpha source _before_ multiplying by `u_alpha`, so a
+  pre-multiplied vertex alpha is the same number only under an identity matrix —
+  which is every scene that does not use one. Alpha therefore folds only there,
+  and rides `u_alpha` otherwise.
+
+- 2604ce2: Merge consecutive solid-fill rects into one draw call.
+
+  The draw loop cost a flat ~66 us per draw call at every scene size, so a frame
+  of 3,200 rects took 212 ms. Solid-fill rects now append into a growable vertex
+  buffer and go out as a single `drawElements` at flush. Fill color rides the
+  vertices — the batch draws through the existing `pathFillVColor` program with
+  `u_color` held at white, which is bit-identical to the flat program's math.
+
+  Frame cost for a **flat** command stream, M2 Max via ANGLE at 800x600
+  (`npm run test:perf`):
+
+  | rects | before    | after   |
+  | ----- | --------- | ------- |
+  | 400   | 25.62 ms  | 0.03 ms |
+  | 1,600 | 105.63 ms | 0.11 ms |
+  | 3,200 | 211.78 ms | 0.15 ms |
+
+  Painter's order is unchanged. A run absorbs only consecutive commands and
+  flushes before anything it cannot express: another fill kind, a stroke, a clip
+  push or pop, or a group changing the transform, alpha, or color matrix.
+
+  That last barrier means `SceneCanvas` does not benefit yet — it emits one
+  wrapper group per node, which breaks every run. Consumers building flat command
+  streams get the numbers above today. See
+  `docs/handoffs/2026-08-14-batched-dispatch.md` for the plan to reach the scene
+  path. Nothing else in the loop got faster either: a frame alternating solid and
+  gradient rects still costs ~34 us per command, now almost entirely the gradient
+  half.
+
+- 24ae9f4: Batch solid-fill meshes and stroke ribbons alongside rects, so a stroked shape
+  costs one draw instead of two plus a fresh VAO every frame.
+
+  `RectBatch` becomes `SolidBatch`, with a `pushMesh` alongside `pushRect` that
+  appends transformed vertices and rebases the mesh's indices onto the staged run.
+  Solid path fills and solid stroke ribbons both take it, and land in the same
+  draw as each other: GL rasterizes a draw's primitives in index order, so staging
+  the ribbon after its own fill is what keeps the stroke on top.
+
+  Frame cost at 3,200 commands, M2 Max via ANGLE at 800x600 (`npm run test:perf`,
+  new `meshes` and `stroked` variants):
+
+  | variant                       | before    | after   |
+  | ----------------------------- | --------- | ------- |
+  | solid-fill octagons           | 5.63 ms   | 0.65 ms |
+  | stroked rects (fill + ribbon) | 243.80 ms | 9.41 ms |
+
+  The stroke figure is the interesting one, and not for the reason the plan
+  assumed. A draw call is ~1.8 us when nothing is touched between draws; what
+  costs is issuing a draw against a buffer minted that same frame, which is
+  exactly what a per-frame stroke ribbon did. Of the 9.41 ms left, 7.9 ms is
+  stroke tessellation, which batching does not address.
+
+  Excluded from a run: stencil fills, inner/outer-aligned polygon strokes, and
+  anything carrying per-vertex colors, all as before — plus meshes past a vertex
+  cap, since batching re-copies a mesh every frame where the persistent mesh cache
+  would not. Rects pay ~0.1 ms per frame at 3,200 for the index buffer becoming a
+  per-flush upload rather than a static pattern.
+
+- c2ebfdf: Break rect batches on group state rather than on tree shape, so `SceneCanvas`
+  gets the batching.
+
+  A group was a batch barrier because it _might_ move a uniform. `buildSceneTree`
+  gives every node its own group with no transform, alpha, colorMatrix or clip, so
+  in the scene shape every run broke after one rect and the previous release's
+  batching reached nothing the app renders. A run now carries the state it was
+  staged under and breaks only when the live state differs by value — which a
+  no-op wrapper never does.
+
+  Scene-shaped frame cost, M2 Max via ANGLE at 800x600 (`npm run test:perf`, new
+  `scene` variant — one wrapper group per command):
+
+  | rects | before    | after   |
+  | ----- | --------- | ------- |
+  | 400   | 26.32 ms  | 0.03 ms |
+  | 1,600 | 105.18 ms | 0.11 ms |
+  | 3,200 | 208.72 ms | 0.36 ms |
+
+  Clips stay hard flush points in both directions: the stencil is GL state that a
+  staged run cannot reconstruct, so the flush happens before `pushClip` and before
+  `popClip` rather than at group boundaries. Text, images, shaders, strokes and
+  non-solid fills flush as before.
+
+- dce3306: Cache `renderOrder()` and `renderOrderNodes()` between structural edits.
+
+  Both walk the whole tree, and both run per frame and per hit-test query, on a
+  sequence that only changes when something structural moves. They now build once
+  and are served from a cache until it does. On a 10,000-node, four-layer scene a
+  repeat call drains in 0.0033 ms against a 0.33 ms rebuild (`npm run bench`,
+  `min`).
+
+  Invalidation hangs off the four writers that can reorder the scene — `attach`,
+  `detach`, `kit:setLayer`, `rebuildLayerIndex` — plus `loadState`. Pose and data
+  edits do **not** invalidate: they change no order and fire every frame during a
+  drag, which is exactly when the cache earns its keep.
+
+  Repeat calls now return the same array instance rather than a fresh one. It is
+  still a snapshot — a structural edit builds a new array, so a reference taken
+  earlier keeps the order it was taken with — but callers must not mutate what
+  they get back. Both return types have always been `readonly`.
+
+- 69395b0: Detached scene renders honor pose rotation and per-node alpha.
+
+  Rotation and the per-id alpha multiplier were applied by `buildSceneLayer`,
+  the main canvas's scene walk. Every other way of painting a scene —
+  `<SceneViewCanvas>`, `<MinimapCanvas>`, and `renderSceneToPixels` — goes
+  through `buildSceneViewCommands` instead, which applied neither. A rotated
+  node came out upright in a minimap, a thumbnail, or a print export, and a
+  scene dimmed on screen exported at full strength.
+
+  Both wraps now live in one helper that both scene walks call, so the detached
+  renders match the canvas. Rotation needs nothing from the caller — it comes
+  off the pose. Dimming does: `alphaFor` is a new optional prop on
+  `<SceneViewCanvas>` and `<MinimapCanvas>`, and a new argument to
+  `renderSceneToCanvas`, `renderSceneToPixels`, `planPixelRender`, and
+  `buildSceneViewCommands`. Pass the same function `<SceneCanvas>` gets.
+
+  If you supply a `drawOne` to one of these that rotates its own output, it will
+  now rotate twice — emit unrotated geometry and let the pose drive it, which is
+  what the main canvas has always required.
+
+- 3d93f2e: Detached scene renders now honor layer visibility and container clips.
+
+  `buildSceneViewCommands` walked `scene.renderOrder()` and painted every node it
+  found. That walk knew nothing about scene layers or parentage, so
+  `<SceneViewCanvas>`, `<MinimapCanvas>` and `renderSceneToPixels` all painted
+  nodes on hidden layers and let a container's children spill past the container.
+  The main canvas got both right, because `buildSceneLayer` goes through
+  `buildSceneTree`.
+
+  The detached path now goes through `buildSceneTree` too, which is the dedupe the
+  detached-minimap spec called for. One walk, so the two surfaces cannot disagree
+  again.
+
+  Output nesting follows `buildSceneTree`: the view group holds one group per
+  **visible** scene layer, each holding one group per node. Code that indexed the
+  view group's children as one-per-node — `commands[0].children[i]` — now finds a
+  layer group there and needs a further hop. `extraCommands` still come last,
+  beside the layer groups.
+
+  A hand-written `Scene` stand-in must now supply `layers`, `roots`, and
+  `children` on containers; scenes from `createScene` and `sceneFromJSON` already
+  do.
+
+- e367165: One enumeration of the `TargetSpec` forms. `@weasel-js/gestures` now exports
+  `parseTargetSpec`, which resolves a target spec to a discriminated
+  `TargetSpecForm` (`body` / `kind` / `affordance` / `predicate`), and the three
+  places that used to re-derive the string prefixes independently — `matchTarget`,
+  and `targetRank` / `targetConsultsAffordance` in core's dispatcher matcher —
+  switch on it exhaustively. Adding a form to `TargetSpec` is now a compile error
+  at every site that has to handle it.
+
+  For consumers: `matchTarget`'s `specTarget` parameter and core's
+  `targetConsultsAffordance` take `TargetSpec | undefined` instead of `unknown`,
+  so a target string that is no known form is a type error rather than a silent
+  no-match. The predicate form has a name, `TargetPredicate`, carrying the
+  `readsAffordance` flag the exclusive-claim filter reads. Runtime behavior is
+  unchanged.
+
+- 52e9c57: Walk the scene once in `renderOrder()` instead of once per layer.
+
+  The generator behind `renderOrder()` and `toJSON()` was layer-major in the
+  literal sense: it ran a full DFS of the tree for every layer and yielded only
+  the nodes belonging to that pass, so producing N ids cost L×N work. A single
+  DFS now buckets each node by its layer and concatenates the buckets, which is
+  O(N + L). The emitted sequence is unchanged — same layer-major order, same
+  DFS-preorder within each layer, same skip for dangling child ids — and a
+  differential test holds the new implementation to a transcription of the old
+  one across 200 generated scenes plus mutation, layer-edit and undo sequences.
+
+  Over 10k nodes the layer sweep goes from 0.37 ms / 1.03 ms / 3.54 ms / 12.93 ms
+  at 1 / 4 / 16 / 64 layers to 0.30 / 0.35 / 0.40 / 0.42. The flat single-layer
+  case improves too, 0.37 ms → 0.33 ms at 10k nodes and 2.1x at 100 nodes, since
+  one pass replaces the per-yield generator overhead.
+
+  `renderOrder()` now returns an array rather than a generator, so a caller that
+  stops early no longer avoids the rest of the walk. Every caller in the repo
+  drains it fully except four test helpers reading the first id from a handful of
+  nodes. Its declared type stays `Iterable<NodeId>`.
+
+- d68e734: Memoize the per-node AABB in the area hit-test, for silhouette poses.
+
+  `hitTestArea` — the marquee and lasso dep source — recomputed every node's
+  bounding box on every query. For a polygon pose that means walking the whole
+  command stream and allocating a rect, per node, before the fast-reject could
+  discard it. The box is now cached through `nodeMemo`, keyed on the node's
+  `pose` and `data` references, so a repeat query over an unedited scene reuses
+  it and an edit through any scene op invalidates it.
+
+  Measured on 24-gon scenes (`npm run bench`, `min` column, same machine
+  back-to-back): 10,000 nodes 11.85 ms → 1.16 ms per query, 1,000 nodes
+  1.14 ms → 0.15 ms. Query-rect size now moves the number (0.117 ms at 17 hits
+  against 0.141 ms at 1,000 hits on a 1,000-node scene, previously flat at
+  ~1.15 ms either way) because the silhouette kernel, not the bounds
+  computation, is what survives the reject.
+
+  Rect-pose scenes pay 5–17% for it: `aabbOfPose` returns a rect pose
+  unchanged, so there is nothing to cache, and deciding that per node costs
+  more than the call it skips. 10,000 rect nodes go 0.76 ms → 0.85 ms.
+
+- ca9673a: Stop re-sending unchanged uniforms on every draw command.
+
+  `u_proj` is constant for a whole frame and `u_colorMatrix` is the identity in
+  every scene that does not use a color matrix, yet both were uploaded for every
+  command — along with a fresh `Float32Array(16)` and a transpose per draw to
+  build the color matrix, and a fresh `screenToClip` matrix per draw to build the
+  projection. GL holds uniform state per program object, so all of that was
+  buying nothing.
+
+  `draw.ts` now remembers what it last sent each program and skips the upload
+  when the value has not changed. On a frame of 1,000 solid rects that takes
+  `uniformMatrix4fv` from 1,000 calls to 1 and `uniformMatrix3fv` from 2,000 to
+  2, and removes two per-draw allocations.
+
+  The cache hangs off the `DrawContext`, which is rebuilt per frame, so it cannot
+  outlive a frame or go stale against GL state changed between frames. It covers
+  only the four uniforms this module is the sole writer of — `u_color` and
+  `u_alpha` have several writers and are still sent every draw.
+
+  This does not measurably change frame time on an M2 Max: the draw loop is bound
+  by per-draw-call cost (~68 us per command), not by uniform uploads. It removes
+  the calls and the allocations; `docs/TODO.md` tracks what the remaining cost
+  actually is.
+
+- fa1ed05: Dragging a text node no longer re-lays it out.
+
+  `layoutRuns` baked the text's position into every quad, decoration rule and
+  line box, so `layoutCache` had to carry that position in its key. Panning and
+  zooming still hit the cache, but _moving_ a text node missed on every frame —
+  at 500 wrapped glyphs a move cost 0.130 ms against a 1.7e-4 ms hit, which is
+  the same 0.134 ms a full miss cost. Moving text paid as if there were no cache
+  at all.
+
+  Layout now emits geometry relative to the text's own top-left and `drawText`
+  translates while packing vertices, alongside the `verticalAlign` offset it
+  already applied there. Position is out of the cache key, so a move is a hit:
+  median 0.130 ms → 0.000125 ms, min 0.123 ms → 0.000041 ms. The cold path is
+  unchanged (min 0.123 ms → 0.110 ms for a full miss).
+
+  This is not a rendering change. Alignment, wrapping, tracking, kerning and
+  decoration placement read widths and pen deltas, never an absolute coordinate,
+  and nothing in the walk rounds or snaps — checked over 247,572 coordinates
+  spanning three alignments, four wrap widths, mixed sizes, positive and negative
+  tracking, and fractional positions. The only differences were float64 rounding
+  from folding the position into the accumulator early, none of them survived the
+  conversion to the float32 vertex buffers, and they favor the new code: at a
+  position of 1e6 the old path computed 28.800000000046566 where this one gives
+  28.8. The 37-test Playwright visual suite is unchanged.
+
+  `layoutRuns` and `cachedLayoutRuns` lose their `origin` parameter, and the
+  `LayoutRunsOrigin` type is gone. Neither is exported from the package. Callers
+  of the public `textLineBoxes` and `measureTextBounds` see no change.
+
+- 0a40c29: Add `scene.renderOrderNodes()`, and scan it in the area hit-test.
+
+  `renderOrder()` hands back ids, and almost every caller immediately resolves
+  each one back to a node — a map lookup per node, per query, for a node the
+  traversal had in hand and dropped. `renderOrderNodes()` is the same
+  layer-major sequence as the nodes themselves. It is a snapshot, freshly built
+  per call, exactly like `renderOrder()`.
+
+  `hitTestArea` (marquee and lasso) now scans it, and reads `pose.kind` inline
+  instead of through the `isPathLike` predicate. Together those recover the
+  5–17% the AABB memo cost rect scenes and take a good deal more besides
+  (`npm run bench`, `min` column, three alternating runs per build on one
+  machine; run-to-run scatter on these was under 3%):
+
+  | 10,000 nodes, 25% query rect | before  | after   |
+  | ---------------------------- | ------- | ------- |
+  | rect poses                   | 0.94 ms | 0.53 ms |
+  | 24-gon silhouettes           | 1.21 ms | 0.78 ms |
+
+  `renderOrder()` itself gets a separate walk for the single-layer case, which
+  needs no per-layer buckets and can compare the layer id rather than index it:
+  10,000 nodes over one layer 0.27 ms → 0.19 ms, with multi-layer scenes
+  unchanged. `toJSON()` rides the nodes walk and skips its lookups too.
+
+  `Scene` gains a method, so a hand-written stand-in for a scene needs to
+  implement it; scenes from `createScene` and `sceneFromJSON` already do.
+
+- Updated dependencies [e367165]
+  - @weasel-js/gestures@1.0.1
+  - @weasel-js/font@1.0.1
+  - @weasel-js/geom@1.0.1
+  - @weasel-js/history@1.0.1
+  - @weasel-js/modes@1.0.1
+
 ## 1.0.0
 
 ### Minor Changes
