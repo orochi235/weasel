@@ -35,6 +35,7 @@ import { verticalAlignOffset } from 'features/text/verticalAlign';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
+import { strokeMesh } from './cache/strokeMeshCache';
 import { SolidBatch } from './solidBatch';
 
 export interface DrawContext {
@@ -969,7 +970,7 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const stroke = cmd.stroke!;
   const solid = stroke.paint as { color: string; opacity?: number };
-  const mesh = tessellateStroke(cmd.path, stroke, { flattenTolerance: ctx.flattenTolerance });
+  const { mesh, hit } = strokeMesh(cmd.path, stroke, ctx.flattenTolerance);
   if (mesh.indices.length === 0) return;
 
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
@@ -981,9 +982,9 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
     return;
   }
   flushSolids(ctx);
-  // tessellateStroke returns a freshly-built Mesh every frame; route through
-  // the transient pool so the renderer frees these at end-of-frame.
-  const handle = ctx.meshCache.uploadTransient(mesh);
+  // A cached ribbon is stable across frames, so it earns a persistent VAO. A
+  // fresh one may never be seen again — transient, freed at end of frame.
+  const handle = hit ? ctx.meshCache.handleFor(mesh) : ctx.meshCache.uploadTransient(mesh);
 
   const gl = ctx.gl;
   if (stroke.vertexColors && stroke.vertexColors.length > 0) {
