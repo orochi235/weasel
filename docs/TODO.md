@@ -494,10 +494,23 @@ Core five + Crop shipped. Remaining:
   per-item and takes the item array, so adopting it means either giving the
   palette per-button handlers or teaching the hook a container-level form.
 
-- **(P3) `ActionsBar.module.css` and `OptionsBar.module.css` are
-  byte-identical.** 188 lines each. The two components differ only in what a
-  segment does, not in how it looks, so the styles want to be one shared
-  module (or one component with a `selected` affordance).
+- **(P3) `ToggleBar.module.css` is a near-copy of the segmented-control
+  styles.** The `ActionsBar` / `OptionsBar` duplication closed 2026-08-15 —
+  both now import `components/segmentedControl.module.css`. `ToggleBar` was the
+  third copy nobody had counted: 216 lines carrying all 188 shared ones plus a
+  `.segmentMixed` third state (`aria-pressed="mixed"`) and a `.variant_minimal`
+  that genuinely diverges — bordered box, square corners, inner dividers,
+  `gap: 0` — where the shared one uses rounded gapped segments.
+
+  Left alone deliberately: those divergences read as design, not drift, and
+  folding them in means the shared module becomes a base that `ToggleBar`
+  overrides through descendant selectors (`.variant_minimal .segment`), which
+  `composes` handles badly. Worth doing only alongside a decision about whether
+  the three bars are one component with different affordances.
+
+  Note the dedup was a source win, not a payload one: the merged stylesheet is
+  the same size either way (52933 → 52934 bytes), since identical content
+  already collapsed to one scoped hash.
 
 - **(P3) Complex-script text shaping (HarfBuzz).** `packages/core/src/features/text/atlas/layoutRuns.ts` walks codepoints linearly and applies BmFont kerning pairs — sufficient for Latin / Cyrillic / Greek / CJK ideographs, wrong for Arabic / Devanagari / Thai / any script needing contextual shaping or reordering. Real fix is wiring a HarfBuzz WASM build (harfbuzzjs ~1MB) behind a feature flag so consumers who only need Latin can stay slim. Touches the layout pipeline only; the renderer already takes pre-laid glyphs. Defer until a real consumer hits a non-Latin language requirement.
 

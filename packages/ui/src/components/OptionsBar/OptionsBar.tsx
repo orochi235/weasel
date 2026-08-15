@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
-import s from './OptionsBar.module.css';
+import s from '../segmentedControl.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 
 export type OptionsBarItem<V extends string | number = string> = {

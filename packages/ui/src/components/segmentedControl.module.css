@@ -1,4 +1,8 @@
-/* Aqua-glass segmented control. The track is a pill-shaped well; the
+/* Shared by ActionsBar and OptionsBar, which look identical and differ only
+   in what a segment does. Lives here rather than in either component so
+   neither owns the other's styling.
+
+   Aqua-glass segmented control. The track is a pill-shaped well; the
    selected segment becomes a tinted glass cylinder that reads as the same
    "lozenge" family as the standalone Button. Visual params come from the
    `--btn-*` custom properties (see Button.module.css) so the Button Lab
