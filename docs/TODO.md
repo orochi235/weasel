@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Draw-loop cost per command** — the cost is writing a buffer between draws, not the draw call. Consecutive solid geometry (rects, fills, stroke ribbons) now batches into one draw across the scene's wrapper groups, per-node transforms and opacity; gradients, patterns, images, text and shaders still pay per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost per command** — the cost is writing a buffer between draws, not the draw call. Consecutive solid geometry (rects, fills, stroke ribbons) now batches into one draw across the scene's wrapper groups, per-node transforms and opacity, and stroke ribbons are tessellated once per stroke configuration rather than once per frame; gradients, patterns, images, text and shaders still pay per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -770,12 +770,16 @@ From the WebGL transition spec — all deferred:
     Max via ANGLE: scene-shaped rects 209 -> 0.39 ms, rotated rects 217 ->
     0.70 ms, solid octagons 5.6 -> 0.65 ms, stroked rects 244 -> 9.4 ms.
 
+    Stroked commands then went 9.4 -> 1.70 ms on 2026-08-15: batching had left
+    them ~85% stroke tessellation, and `cache/strokeMeshCache.ts` now keys that
+    on `Path` identity so a ribbon is built once per stroke configuration
+    rather than once per frame. Design:
+    `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
+
     What still pays per command: gradients, patterns, images, text, shaders,
     per-vertex-color and stencil fills, and meshes past the batch's vertex cap.
     A frame alternating solid and linear-gradient rects is unchanged at ~33 us
-    per command, almost entirely the gradient half. The stroked figure is now
-    ~85% stroke tessellation, which batching does not touch — a ribbon-mesh
-    cache is the lever there, and it needs an eviction story for animated paths.
+    per command, almost entirely the gradient half.
 
     The rest of the plan — one program plus atlases — is in
     `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a
