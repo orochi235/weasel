@@ -683,19 +683,18 @@ a:hover { text-decoration: underline; }
   outline-offset: -2px;
 }
 
-/* Version badge. The 54px wordmark already fills the sidebar, so this sits
-   on its own line beneath it rather than riding the baseline — pulled up
-   tight so it reads as part of the logo lockup, not as body copy. */
+/* Version badge. The 54px wordmark already fills the sidebar, so this sits on
+   its own line beneath it rather than riding the baseline. */
 .ckd-sidebar-version {
   display: block;
   width: fit-content;
-  margin: -2px auto 0;
-  font-size: 11px;
-  font-weight: 600;
+  margin: -2px 0 0 auto;
+  transform: translate(-1px, -8px);
+  font-size: 13px;
+  font-weight: 400;
   letter-spacing: 0;
-  color: var(--ckd-muted);
-  background: var(--ckd-bg);
-  border: 1px solid var(--ckd-border);
+  color: #fff;
+  background: #0a44e6;
   border-radius: 999px;
   padding: 1px 8px;
   cursor: default;
