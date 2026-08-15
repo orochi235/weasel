@@ -217,6 +217,30 @@ describe('attachHud claims', () => {
     expect(hitAt(api)?.claimedKinds).toEqual(DEFAULT_WIDGET_CLAIMS);
   });
 
+  it('a widget that claims the pointer reports a pointer cursor by default', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('plain'));
+    expect(hitAt(api)?.cursor).toBe('pointer');
+  });
+
+  it('a widget that claims no pointer gesture reports no cursor', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('scroller', ['wheel']));
+    expect(hitAt(api)?.cursor).toBeUndefined();
+  });
+
+  it('a widget’s own cursorAt beats the default', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add({ ...widgetAt('resizer'), cursorAt: () => 'nwse-resize' });
+    expect(hitAt(api)?.cursor).toBe('nwse-resize');
+  });
+
   it('a HUD of nothing but decoration produces no hit at all', () => {
     const hud = createHud();
     const api = makeApi();

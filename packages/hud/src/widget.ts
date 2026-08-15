@@ -78,6 +78,15 @@ export function claimsOf(w: Widget): readonly ClaimableGesture[] {
   return w.claims ?? DEFAULT_WIDGET_CLAIMS;
 }
 
+/** Cursor for a point on `w`: what the widget says, else `'pointer'` if it
+ *  takes the press at all. Keyed on the claim a widget already declares, so a
+ *  consumer-authored widget answers without implementing anything; decoration
+ *  never reaches here, since the hit walk descends past it. */
+export function cursorOf(w: Widget, x: number, y: number): string | undefined {
+  return w.cursorAt?.(x, y)
+    ?? (claimsOf(w).includes('pointer') ? 'pointer' : undefined);
+}
+
 export interface Widget {
   readonly id: string;
   readonly bounds: WidgetBounds;

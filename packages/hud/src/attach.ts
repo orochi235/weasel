@@ -4,7 +4,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import { viewToTransform } from '@weasel-js/core';
 import { worldToScreen } from '@weasel-js/core';
 import { DEFAULT_FONT_FAMILY, registerDefaultFont } from './fonts/registerDefaultFont';
-import { claimsOf, type Widget, type HudPointerEvent } from './widget';
+import { claimsOf, cursorOf, type Widget, type HudPointerEvent } from './widget';
 import type { HudHitPayload } from './tool';
 import { resolveTheme, weaselTheme, type ResolvedTheme } from '@weasel-js/theme';
 
@@ -84,6 +84,7 @@ export function attachHud(
       const [sx, sy] = worldToScreen(worldX, worldY, t);
       const hit = findTopmostHit(sx, sy);
       if (!hit) return null;
+      const cursor = cursorOf(hit, sx, sy);
       // Report WHICH widget was hit and stop there. `<SceneCanvas>` folds this
       // into its `affordanceAt` thunk, so the hit reaches actions as an
       // `AffordanceHit` of kind `layer:weasel-hud` carrying this payload; the
@@ -100,7 +101,7 @@ export function attachHud(
         initialScratch: { widget: hit },
         strength: 'exclusive',
         claimedKinds: claimsOf(hit),
-        ...(hit.cursorAt ? { cursor: hit.cursorAt(sx, sy) } : {}),
+        ...(cursor !== undefined ? { cursor } : {}),
       } satisfies LayerHit<HudHitPayload>;
     },
     onUncapturedMove: (worldX, worldY, evt, view: View) => {

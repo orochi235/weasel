@@ -12,14 +12,17 @@ the width and stencilling half away, and the doubling reached `stroke.width`
 but not `vertexWidths`. The doubled array is memoized per source array, since
 the ribbon cache compares it by reference.
 
-An image insert now previews as its destination box while the drag is live,
-the way the other kit insert kinds do; it used to commit on release with no
-preview at all.
+An image insert previews the decoded bitmap inside the drag bounds instead of
+committing on release with no preview at all. It falls back to the bare
+outline until the image decodes, and `useImageTool({ preview: 'outline' })`
+opts out of the bitmap entirely.
 
-A HUD `button` answers `cursorAt` with `'pointer'`, overridable per button.
-Hovering one while a drawing tool was active kept showing that tool's cursor.
-The other widgets are decoration and the hit-test walk descends past them, so
-they stay silent.
+A HUD widget that claims the pointer reports a `'pointer'` cursor without
+implementing anything — hovering one while a drawing tool was active used to
+keep showing that tool's cursor. The rule is keyed on the `claims` every
+widget already declares, so it covers consumer-authored widgets too;
+decoration claims nothing and the hit walk descends past it. A widget's own
+`cursorAt` still wins, and `button` takes a `cursor` option that feeds it.
 
 `composeAffordanceLayer`'s `hitTest` returns a `LayerHit`, carrying the hit
 region's declared cursor and claim instead of dropping them. `AffordanceRegion`
