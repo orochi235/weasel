@@ -34,11 +34,15 @@ Viewport because of where it lives, not because someone remembered to tag it.
 
 ```
 typedoc/
-  categories.ts          # ordered [glob, category] rules + name overrides
-  categoryOf.ts          # pure (sourcePath, symbolName) => category | null
-  categoryOf.test.ts
+  categories.mjs         # ordered [path, category] rules + name overrides
+  categoryOf.mjs         # pure (sourcePath, symbolName) => category | null
+  categoryOf.test.mjs
   plugin.mjs             # converter hook; feeds reflections to categoryOf
 ```
+
+Plain ESM rather than TypeScript: TypeDoc `import`s a plugin at runtime and has
+no TS loader, and splitting the taxonomy into `.ts` files a `.mjs` plugin then
+imports buys types at the cost of a build step for four small files.
 
 The judgment lives in `categories.ts`; the pure resolution lives in
 `categoryOf.ts` and is unit-tested without running typedoc; `plugin.mjs` is the
