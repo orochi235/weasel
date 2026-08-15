@@ -374,17 +374,11 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
         'poses outside the scene graph.',
       );
     }
-    // Before, not after: `pushClip` rasterizes into the stencil, and a run
-    // staged outside the clip would then draw under a mask it never had.
-    flushSolids(ctx);
     pushClip(ctx, cmd.clip, newDepth);
     ctx.clipDepth = newDepth;
   }
   for (const child of cmd.children) dispatch(ctx, child);
   if (cmd.clip) {
-    // Likewise: past `popClip` the mask is gone, and these pixels belonged
-    // inside it.
-    flushSolids(ctx);
     popClip(ctx, cmd.clip, ctx.clipDepth - 1);
     ctx.clipDepth -= 1;
   }
@@ -392,39 +386,36 @@ export function drawGroup(ctx: DrawContext, cmd: GroupDrawCommand): void {
 }
 
 function drawPath(ctx: DrawContext, cmd: PathDrawCommand): void {
-  if (!cmd.fill && !cmd.stroke) return;
+  if (cmd.fill) drawPathFill(ctx, cmd);
+  if (cmd.stroke) drawPathStroke(ctx, cmd);
+}
 
-  if (cmd.fill) {
-    // Batchable: a solid paint with no per-vertex colors. A rect skips
-    // tessellation entirely; anything else stages its mesh. Both also keep
-    // animated demos that mint a fresh Path every frame from allocating a GL
-    // buffer per frame.
-    const batchablePaint =
-      (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')
-      && (!cmd.vertexColors || cmd.vertexColors.length === 0);
-    const solid = cmd.fill as { color: string; opacity?: number };
-    if (batchablePaint && cmd.path.kind === 'rect') {
-      pushRect(ctx, cmd.path, solid);
-    } else {
-      const mesh = fillMesh(ctx, cmd.path);
-      if (batchablePaint && canBatchMesh(mesh)) {
-        pushMesh(ctx, mesh, solid);
-      } else {
-        flushSolids(ctx);
-        const handle = meshHandle(ctx, mesh);
-        if (cmd.vertexColors && cmd.vertexColors.length > 0 &&
-            (cmd.fill.fill === undefined || cmd.fill.fill === 'solid')) {
-          drawPathFillVColor(ctx, cmd, solid, handle);
-        } else if (handle.requiresStencil) {
-          drawPathFillStencil(ctx, cmd.fill, handle);
-        } else {
-          drawPathFillByKind(ctx, cmd.fill, handle);
-        }
-      }
-    }
+function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand): void {
+  const fill = cmd.fill!;
+  // Batchable: a solid paint with no per-vertex colors. A rect skips
+  // tessellation entirely; anything else stages its mesh. Both also keep
+  // animated demos that mint a fresh Path every frame from allocating a GL
+  // buffer per frame.
+  const isSolid = fill.fill === undefined || fill.fill === 'solid';
+  const hasVColors = !!(cmd.vertexColors && cmd.vertexColors.length > 0);
+  const solid = fill as { color: string; opacity?: number };
+
+  if (isSolid && !hasVColors && cmd.path.kind === 'rect') {
+    pushRect(ctx, cmd.path, solid);
+    return;
   }
 
-  if (cmd.stroke) drawPathStroke(ctx, cmd);
+  const mesh = fillMesh(ctx, cmd.path);
+  if (tryStageSolid(ctx, mesh, isSolid && !hasVColors ? solid : undefined)) return;
+
+  const handle = meshHandle(ctx, mesh);
+  if (isSolid && hasVColors) {
+    drawPathFillVColor(ctx, cmd, solid, handle);
+  } else if (handle.requiresStencil) {
+    drawPathFillStencil(ctx, fill, handle);
+  } else {
+    drawPathFillByKind(ctx, fill, handle);
+  }
 }
 
 /**
@@ -543,6 +534,28 @@ function pushMesh(
 }
 
 /**
+ * Stage `mesh` into the run, or drain the run so the caller can draw it itself.
+ *
+ * `true` means the mesh is in the batch and the caller is done. `false` comes
+ * back only *after* a flush, so an emitter cannot earn permission to draw for
+ * itself without also draining the batch. `paint` is `undefined` when the paint
+ * is not a plain solid (gradient, pattern, per-vertex colors), which no run can
+ * express.
+ */
+export function tryStageSolid(
+  ctx: DrawContext,
+  mesh: Mesh,
+  paint: { color: string; opacity?: number } | undefined,
+): boolean {
+  if (paint !== undefined && canBatchMesh(mesh)) {
+    pushMesh(ctx, mesh, paint);
+    return true;
+  }
+  flushSolids(ctx);
+  return false;
+}
+
+/**
  * Draw the staged run as one `drawElements`, under the state it was staged
  * under. Callers that are about to bind a different program, or paint anything
  * that must land on top of the run, call this first; a group that only changes
@@ -550,8 +563,8 @@ function pushMesh(
  * one that only changes transform or alpha does not break the run at all.
  *
  * Clips are the exception both ways: the stencil is real GL state that the
- * staged values cannot reconstruct, so `drawGroup` flushes *before* mutating
- * it rather than leaving it to the next push.
+ * staged values cannot reconstruct, so `pushClip` and `popClip` flush *before*
+ * mutating it rather than leaving it to the next push.
  *
  * `u_color` stays white: the vertex-color program multiplies it by the
  * per-vertex color, so white makes the result bit-identical to the flat
@@ -860,6 +873,9 @@ function rasterizePathToStencil(ctx: DrawContext, path: Path): void {
  * can rely on an unnarrowed mask after clip ops complete.
  */
 export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
+  // First, not last: a run staged outside the clip would otherwise draw under
+  // a mask it never had.
+  flushSolids(ctx);
   const gl = ctx.gl;
   const ancestors = ancestorMask(newDepth - 1);
   const newBit = 1 << newDepth;
@@ -891,6 +907,9 @@ export function pushClip(ctx: DrawContext, path: Path, newDepth: number): void {
  * a narrowed mask.
  */
 export function popClip(ctx: DrawContext, path: Path, oldDepth: number): void {
+  // First, not last: past here the mask is gone, and these pixels belonged
+  // inside it.
+  flushSolids(ctx);
   const gl = ctx.gl;
   // Re-enable stencil: child draw functions (evenodd/stenciled-stroke) disable
   // it at their end; we must set it before writing the clear pass.
@@ -972,13 +991,10 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance);
   if (mesh.indices.length === 0) return;
 
+  // Staged, a ribbon allocates nothing and joins the fill it sits on.
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
-  if (!hasVColors && canBatchMesh(mesh)) {
-    // Staged, a ribbon allocates nothing and joins the fill it sits on.
-    pushMesh(ctx, mesh, solid);
-    return;
-  }
-  flushSolids(ctx);
+  if (tryStageSolid(ctx, mesh, hasVColors ? undefined : solid)) return;
+
   // The VAO records the per-draw color attribute, so a vertex-colored draw
   // cannot share a persistent one with a draw that has no vertex colors.
   const handle = hasVColors

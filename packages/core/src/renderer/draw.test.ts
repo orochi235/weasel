@@ -3,7 +3,7 @@ import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { mat3 } from './math/mat3';
 import type { DrawCommand } from './DrawCommand';
-import { pushClip, popClip, drawGroup, dispatch, type DrawContext } from './draw';
+import { pushClip, popClip, drawGroup, dispatch, tryStageSolid, type DrawContext } from './draw';
 
 /**
  * Build a DrawContext backed by a GL recorder. Mirrors what WeaselRenderer.render
@@ -477,6 +477,97 @@ describe('pushClip / popClip', () => {
     // stencilOp ZERO for the write
     const so = calls.find((c) => c.name === 'stencilOp');
     expect(so!.args).toEqual([gl.KEEP, gl.KEEP, gl.ZERO]);
+  });
+
+  /**
+   * Rasterizing into the stencil is what creates the obligation, so the flush
+   * belongs to these two rather than to whoever calls them. `flushSolids`
+   * touches no stencil state beyond enable/disable, so the first
+   * stencilMask/Func/Op call is the clip op's own.
+   */
+  describe('drain the staged run first', () => {
+    const stagedRect: DrawCommand = {
+      kind: 'path',
+      path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
+      fill: { color: '#ff0000' },
+    } as DrawCommand;
+    const path = { kind: 'rect' as const, x: 0, y: 0, width: 10, height: 10 };
+
+    const drainedBeforeStencil = (calls: ReturnType<typeof createRecorderCtx>['calls']): void => {
+      const flushIdx = calls.findIndex((c) => c.name === 'drawElements');
+      const stencilIdx = calls.findIndex(
+        (c) => c.name === 'stencilMask' || c.name === 'stencilFunc' || c.name === 'stencilOp',
+      );
+      expect(flushIdx).toBeGreaterThanOrEqual(0);
+      expect(stencilIdx).toBeGreaterThan(flushIdx);
+    };
+
+    it('pushClip', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, stagedRect);
+      pushClip(ctx, path, /* newDepth */ 1);
+      drainedBeforeStencil(calls);
+    });
+
+    it('popClip', () => {
+      const { ctx, calls } = createRecorderCtx();
+      dispatch(ctx, stagedRect);
+      popClip(ctx, path, /* oldDepth */ 0);
+      drainedBeforeStencil(calls);
+    });
+  });
+});
+
+import type { Mesh } from './cache/mesh';
+
+/**
+ * The chokepoint that makes a forgotten flush unexpressible: an emitter only
+ * gets to draw for itself when this said `false`, and `false` is only returned
+ * after the staged run has been drawn.
+ */
+describe('tryStageSolid', () => {
+  const stagedRect: DrawCommand = {
+    kind: 'path',
+    path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+    fill: { color: '#ff0000' },
+  } as DrawCommand;
+
+  const triangle = (vertexCount = 3, extra: Partial<Mesh> = {}): Mesh => ({
+    vertices: new Float32Array(vertexCount * 2),
+    indices: new Uint32Array([0, 1, 2]),
+    ...extra,
+  });
+
+  /** A run is staged and undrawn; anything the recorder draws came from a flush. */
+  function withStagedRun(): { ctx: DrawContext; drawCount: () => number } {
+    const { ctx, calls } = createRecorderCtx();
+    dispatch(ctx, stagedRect);
+    expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(0);
+    return { ctx, drawCount: () => calls.filter((c) => c.name === 'drawElements').length };
+  }
+
+  it('stages a batchable mesh, leaving the run undrawn', () => {
+    const { ctx, drawCount } = withStagedRun();
+    expect(tryStageSolid(ctx, triangle(), { color: '#0000ff' })).toBe(true);
+    expect(drawCount()).toBe(0);
+  });
+
+  it('flushes before answering false for a paint a run cannot carry', () => {
+    const { ctx, drawCount } = withStagedRun();
+    expect(tryStageSolid(ctx, triangle(), undefined)).toBe(false);
+    expect(drawCount()).toBe(1);
+  });
+
+  it('flushes before answering false for a mesh past the vertex cap', () => {
+    const { ctx, drawCount } = withStagedRun();
+    expect(tryStageSolid(ctx, triangle(1024), { color: '#0000ff' })).toBe(false);
+    expect(drawCount()).toBe(1);
+  });
+
+  it('flushes before answering false for a mesh needing its own stencil pass', () => {
+    const { ctx, drawCount } = withStagedRun();
+    expect(tryStageSolid(ctx, triangle(3, { requiresStencil: true }), { color: '#0000ff' })).toBe(false);
+    expect(drawCount()).toBe(1);
   });
 });
 

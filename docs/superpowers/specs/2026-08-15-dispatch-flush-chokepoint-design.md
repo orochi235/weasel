@@ -1,7 +1,7 @@
 # Making the solid-batch flush structural — design
 
 **Date:** 2026-08-15
-**Status:** approved, not implemented
+**Status:** implemented 2026-08-15
 
 What this is: how the renderer stops requiring every draw path to remember
 `flushSolids`. For anyone touching `renderer/draw.ts`'s dispatch or the solid
