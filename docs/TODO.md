@@ -46,7 +46,8 @@ Priority tags:
 - `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
 
 **Performance**
-- A budget benchmark: what a scene can safely hold → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- A clipped group costs about as much as 1,000 solid rects → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- A mixed document costs ~3.5x the sum of its parts → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 **Documentation**
 - Surface a changelog on the site → [Documentation](#documentation)
@@ -791,27 +792,30 @@ From the WebGL transition spec — all deferred:
     reordered to the same sequence either way.
   - Whether any of this gates CI is still Mike's call.
 
-- **(P2) A budget benchmark: what a scene can safely hold.** `tests/perf/draw-loop.spec.ts`
-  answers "how long do N commands take", which is the right question while
-  optimizing and the wrong one while designing a scene. Invert it: fix a frame
-  budget (16.7 ms at 60 Hz, 8.3 at 120) and report **how many commands of each
-  kind fit inside it** — solid rects, gradient rects, images, text runs, stroked
-  paths, shader panels — plus a mixed profile weighted like a real document.
-  Then "can this scene hit 60?" is a lookup rather than an experiment, and a
-  regression shows up as a smaller number in a unit anyone can act on.
+- **(P2) A clipped group costs about as much as 1,000 solid rects.**
+  `tests/perf/frame-budget.spec.ts` (added 2026-08-15) fits 244–268 clipped
+  groups in a 16.7 ms frame against 260,000–300,000 solid rects — ~65 us to
+  enter a clip. Nesting is not what costs: a 4-deep clip stack fits ~244, so
+  three extra levels are nearly free and the price is entry, paid once per
+  clipped group whatever its depth. Two candidates, neither investigated: the
+  stencil rasterization and clear per push/pop, and the batch break —
+  `stagedStateIsLive` compares `clipDepth`, so everything under a clip leaves
+  the solid batch. Worth knowing which before optimizing, since only one of
+  them is fixable.
 
-  Two things it has to get right or it will mislead. **Report the range, not a
-  digit** — the two runs behind the 2026-08-15 stroke figure also moved an
-  untouched variant 101 -> 152 ms, so this laptop's noise is wider than most
-  wins; a budget figure needs several runs and an honest band. And **it must
-  print per row as it goes** rather than accumulating a table at exit, since a
-  full sweep runs for minutes.
+  Same run: an image quad costs ~7 us and a text label ~6.5 us, ~100x a solid
+  rect. For images `drawImage` creates and deletes a VAO and two buffers on
+  every draw, which is the obvious first thing to look at.
 
-  Beyond that, the sweep has coverage gaps worth filling while in there:
-  nothing measures clip nesting (each level is a stencil rasterization and a
-  hard batch break), scene depth (`buildSceneTree`'s wrapper group per node is
-  only measured flat), or the overdraw a real document has. `tests/bench/`
-  covers the pure-JS layers separately and is not the gap.
+- **(P2) A mixed document costs ~3.5x the sum of its parts.** Same spec: the
+  weighted `mixed-doc` row fits ~2,700 elements in 16.7 ms, where pricing that
+  element mix from the single-kind rows above predicts ~4.5 ms for the same
+  2,700. Every other row draws one kind, so its commands batch and hold state;
+  a document interleaves them and each neighbor is a state change. Nothing here
+  says which transition is expensive — that is the follow-up, and
+  `draw-loop.spec.ts`'s `alternating` variant is the shape of the experiment.
+  Until then, size scenes from `mixed-doc` and treat the single-kind rows as
+  ceilings that no real document reaches.
 
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.
 
