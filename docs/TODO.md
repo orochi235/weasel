@@ -120,13 +120,6 @@ Priority tags:
   on the widget protocol, focus-ring painting, and a precedence rule against
   the canvas's window-level key listeners.
 
-- **(P3) Only `window` implements `cursorAt`.** `button`, `label`, `image`,
-  `rect` and `text` don't, so hovering a HUD button while a drawing tool is
-  active still shows that tool's cursor. Not a regression — it was the prior
-  behavior everywhere — but the asymmetry is visible now that windows answer.
-  `cursor: 'pointer'` on button is the obvious next opt-in. Recorded
-  2026-08-10.
-
 - **(P3) `Widget.claims` is static.** A widget that is decoration in one mode
   and interactive in another can't change what it consumes without being
   swapped out. `claimsPointer` folded into `claims` on 2026-08-12, so this is
@@ -144,11 +137,6 @@ Priority tags:
   bar it. The open question is whether the filter should infer at all: require
   the declaration, or have `TargetSpec` carry the answer instead of the
   predicate.
-
-- **(P3) `composeAffordanceLayer` still returns `AffordanceBinding`.** The kit's
-  own layer-composition helper can't declare a cursor or a claim, while
-  `attachHud` can. Structurally assignable so nothing breaks, and it has no
-  consumer outside its tests. Recorded 2026-08-10.
 
 - **(P3) Interacting through a viewport.** `createViewportLayer` has no
   hit-test re-projection, so a press inside a loupe or minimap targets the outer
@@ -259,7 +247,7 @@ Priority tags:
   keeps carrying the tier. Retiring `engagedIds` means changing
   `tool.offhand`'s contract. Recorded 2026-08-10.
 
-- **(P3) Embedded image support — follow-ups.** Shipped 2026-06-27: serializable `data.image.src` contract (URL / blob: / `data:` URI), kit-owned `imageCache` (`packages/core/src/features/images/`, sync read + lazy de-duped async load + `subscribeImageReady`→`requestRedraw`), the `kit:image` shape painter (`NodeShape.ts`, emits `ImageDrawCommand`, faint placeholder while loading), and the `useImageTool` drag-insert tool (`packages/core/src/tools/builtin/image/`, routes through `useInsertDepSource`'s `'image'` case). Demo: `apps/site/demos/ImageDemo.tsx`. Remaining: (a) **SVG `<image>` interop** — `packages/svg` parse/emit of `<image>` (href + embedded base64) is still unsupported (`<image>` elements are dropped on import); (b) **live drag-preview for image inserts** — `insertAction`'s ghost only previews `KIT_INSERT_KINDS` (rect/ellipse/line/polygon/star/pencil), so an image commits on release with no preview; extend that set to include `image`.
+- **(P3) Embedded image support — follow-ups.** Shipped 2026-06-27: serializable `data.image.src` contract (URL / blob: / `data:` URI), kit-owned `imageCache` (`packages/core/src/features/images/`, sync read + lazy de-duped async load + `subscribeImageReady`→`requestRedraw`), the `kit:image` shape painter (`NodeShape.ts`, emits `ImageDrawCommand`, faint placeholder while loading), and the `useImageTool` drag-insert tool (`packages/core/src/tools/builtin/image/`, routes through `useInsertDepSource`'s `'image'` case). Demo: `apps/site/demos/ImageDemo.tsx`. Remaining: **SVG `<image>` interop** — `packages/svg` parse/emit of `<image>` (href + embedded base64) is still unsupported (`<image>` elements are dropped on import).
 
 - **(P3) Other drag-insert tools.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. The consolidated `useDragRect` + `useInsert` + `defineDragInsertTool` stack makes a new drag-insert tool a thin Tool veneer. Polygon, star, ellipse, line, and image tools have landed (`packages/core/src/tools/builtin/{polygon,star,ellipse,line,image}/`); each further type is its own task.
 
@@ -388,16 +376,6 @@ Core five + Crop shipped. Remaining:
   `SerializeOptions.onWarn` rather than vanishing silently, but still exports
   as nothing rather than as an approximation.
 
-- **(P3) An inner/outer-aligned stroke ignores `vertexWidths` when doubling.**
-  `drawPathStrokeStenciled` renders alignment by tessellating at twice the
-  width and stencilling half of it away, but `widerStroke` doubles only
-  `stroke.width`. `populatePolylineWidths` reads each `vertexWidths[i]`
-  verbatim and falls back to the doubled `width` only for missing or
-  non-finite entries, so a tapered stroke with `align: 'inner'` or `'outer'`
-  on a polygon path paints at **half** its requested widths. Pre-dates the
-  2026-08-15 ribbon cache, which only moved the call. Found by review
-  2026-08-15; unverified against a render.
-
 - **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`). Defer until a real use case lands.
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three real consumers now exist (plasma / ripple / voronoi panels), enough to validate the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
@@ -500,13 +478,6 @@ Core five + Crop shipped. Remaining:
   children are bar-owned rather than arbitrary consumer controls, it can adopt
   `useRovingTabIndex` — the opt-out documented on that hook is exactly this
   case.
-
-- **(P3) `ToolPalette` still rolls its own roving tabindex.** One handler on
-  the container walking `querySelectorAll('button')`, with **no disabled
-  skipping** — arrow keys land on a disabled tool. `useRovingTabIndex` (which
-  `ActionsBar` / `OptionsBar` / `ToggleBar` share as of 2026-08-13) is
-  per-item and takes the item array, so adopting it means either giving the
-  palette per-button handlers or teaching the hook a container-level form.
 
 - **(P3) `ToggleBar.module.css` is a near-copy of the segmented-control
   styles.** The `ActionsBar` / `OptionsBar` duplication closed 2026-08-15 —

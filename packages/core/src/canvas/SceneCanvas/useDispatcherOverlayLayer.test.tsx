@@ -104,6 +104,24 @@ describe('useDispatcherOverlayLayer', () => {
     expect(collectPaths(cmds)).toHaveLength(0);
   });
 
+  it('emits a screen-space rect ghost for an image insert preview', () => {
+    const handle: OngoingHandle = {
+      overlay: (): OngoingOverlay => ({
+        kind: 'insertPreview',
+        shape: 'image',
+        bounds: { x: 10, y: 20, width: 100, height: 60 },
+        extras: { kind: 'image', src: 'photo.png' },
+      }),
+    };
+    const dispatcher = makeDispatcher([handle]);
+    const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+
+    const paths = collectPaths(result.current.draw(undefined, VIEW, DIMS));
+    expect(paths).toHaveLength(1);
+    expect(paths[0].path).toEqual({ kind: 'rect', x: 10, y: 20, width: 100, height: 60 });
+    expect(paths[0].stroke).toBeDefined();
+  });
+
   it('emits nothing when no handle exposes overlay()', () => {
     // Handle without overlay() — should not error, should not emit paths.
     const handle: OngoingHandle = { onMove: () => {} };

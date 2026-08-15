@@ -91,6 +91,38 @@ describe('composeAffordanceLayer', () => {
     expect(calls[0]).toBe('b');
   });
 
+  it('hitTest carries the hit region’s cursor', () => {
+    const a: Affordance = {
+      id: 'a',
+      regions: () => [pointRegion({ id: 'r-a', cursor: 'ew-resize' })],
+    };
+    const layer = composeAffordanceLayer('x', 'X', [a]);
+    expect(layer.hitTest(0, 0, makeState(), VIEW, DIMS)?.cursor).toBe('ew-resize');
+  });
+
+  it('hitTest omits cursor when the region declares none', () => {
+    const a: Affordance = { id: 'a', regions: () => [pointRegion({ id: 'r-a' })] };
+    const layer = composeAffordanceLayer('x', 'X', [a]);
+    const hit = layer.hitTest(0, 0, makeState(), VIEW, DIMS);
+    expect(hit).not.toBeNull();
+    expect(hit && 'cursor' in hit).toBe(false);
+  });
+
+  it('hitTest carries an exclusive claim and the kinds it bars', () => {
+    const a: Affordance = {
+      id: 'a',
+      regions: () => [pointRegion({
+        id: 'r-a',
+        strength: 'exclusive',
+        claimedKinds: ['pointer', 'wheel'],
+      })],
+    };
+    const layer = composeAffordanceLayer('x', 'X', [a]);
+    const hit = layer.hitTest(0, 0, makeState(), VIEW, DIMS);
+    expect(hit?.strength).toBe('exclusive');
+    expect(hit?.claimedKinds).toEqual(['pointer', 'wheel']);
+  });
+
   it('hitTest returns null when no region contains the point', () => {
     const a: Affordance = {
       id: 'a',

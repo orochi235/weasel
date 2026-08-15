@@ -136,7 +136,11 @@ export function useDispatcherOverlayLayer(args: {
 
             let pathCmd: PathDrawCommand['path'] | null = null;
             switch (ov.shape) {
-              case 'rect': {
+              case 'rect':
+              // An image previews as its destination box — the bitmap itself
+              // may not have decoded yet, and the other kinds ghost rather
+              // than paint their final appearance either.
+              case 'image': {
                 const [sx, sy] = worldToScreen(b.x, b.y, t);
                 pathCmd = rectPath(sx, sy, b.width * view.scale.x, b.height * view.scale.y);
                 break;

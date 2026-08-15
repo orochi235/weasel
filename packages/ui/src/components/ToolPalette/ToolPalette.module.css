@@ -12,6 +12,10 @@
   flex-direction: row;
 }
 
+/* Marker only — `useRovingTabIndex` finds the palette's buttons by this class.
+   Carries no styles; deleting it breaks keyboard navigation. */
+.paletteBtn {}
+
 /* Applied to ineligible tool buttons in the active mode. */
 .ineligibleBtn {
   opacity: 0.35;

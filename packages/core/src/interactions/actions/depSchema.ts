@@ -287,6 +287,7 @@ export type InsertExtras =
   | { kind: 'star'; points: number; innerRadiusRatio: number; rotation: number; center?: { x: number; y: number }; outerRadius?: number }
   | { kind: 'pencil'; samples: ReadonlyArray<DragSample> }
   | { kind: 'text'; text?: string }
+  | { kind: 'image'; src?: string; opacity?: number }
   | { kind: string; [extra: string]: unknown };
 
 /**

@@ -15,6 +15,8 @@ export interface ButtonOptions {
   textColor?: string;
   fontSize?: number;
   fontFamily?: string;
+  /** CSS cursor over the button's bounds. Defaults to `'pointer'`. */
+  cursor?: string;
   /** Injected by Hud factories to trigger redraw on mutation. */
   onChange?: () => void;
   /** Injected by Hud factories. Called from dispose() to remove this widget
@@ -93,6 +95,10 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     hitTest(x, y) {
       if (hidden) return false;
       return isInside(x, y);
+    },
+    cursorAt(x, y) {
+      if (hidden || !isInside(x, y)) return 'default';
+      return opts.cursor ?? 'pointer';
     },
     onPointer(evt: HudPointerEvent): void {
       switch (evt.type) {

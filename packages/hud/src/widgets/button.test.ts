@@ -20,6 +20,22 @@ describe('button widget', () => {
     expect(b.hitTest(0, 0)).toBe(false);
   });
 
+  it('answers a pointer cursor inside its bounds', () => {
+    const b = createButton({ id: 'b', x: 10, y: 10, w: 80, h: 24, label: 'x' });
+    expect(b.cursorAt!(20, 20)).toBe('pointer');
+  });
+
+  it('takes a cursor override', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x', cursor: 'help' });
+    expect(b.cursorAt!(5, 5)).toBe('help');
+  });
+
+  it('answers the default cursor while hidden', () => {
+    const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
+    b.setHidden(true);
+    expect(b.cursorAt!(5, 5)).toBe('default');
+  });
+
   it('press event fires on down then up inside bounds', () => {
     const b = createButton({ id: 'b', x: 0, y: 0, w: 80, h: 24, label: 'x' });
     const press = vi.fn();

@@ -255,7 +255,7 @@ export type OngoingOverlay =
        * renderer narrows on `shape` and casts the field shape it expects.
        */
       kind: 'insertPreview';
-      shape: 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil';
+      shape: 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil' | 'image';
       bounds: { x: number; y: number; width: number; height: number };
       extras: unknown;
       /** World-space point to paint a small "anchor" dot at. Sells the

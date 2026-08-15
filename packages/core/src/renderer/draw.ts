@@ -1037,6 +1037,19 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   gl.bindVertexArray(null);
 }
 
+/** The ribbon cache compares `vertexWidths` by reference, so the doubled copy
+ *  has to be the same array on every frame the source array is. */
+const DOUBLED_VERTEX_WIDTHS = new WeakMap<number[], number[]>();
+
+function doubledVertexWidths(widths: number[]): number[] {
+  let doubled = DOUBLED_VERTEX_WIDTHS.get(widths);
+  if (doubled === undefined) {
+    doubled = widths.map((w) => w * 2);
+    DOUBLED_VERTEX_WIDTHS.set(widths, doubled);
+  }
+  return doubled;
+}
+
 function drawPathStrokeStenciled(
   ctx: DrawContext,
   cmd: PathDrawCommand,
@@ -1044,7 +1057,12 @@ function drawPathStrokeStenciled(
 ): void {
   const stroke = cmd.stroke!;
   const solid = stroke.paint as { color: string; opacity?: number };
-  const widerStroke: Stroke = { ...stroke, width: (stroke.width ?? 1) * 2, align: 'center' };
+  const widerStroke: Stroke = {
+    ...stroke,
+    width: (stroke.width ?? 1) * 2,
+    ...(stroke.vertexWidths ? { vertexWidths: doubledVertexWidths(stroke.vertexWidths) } : {}),
+    align: 'center',
+  };
 
   const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
 

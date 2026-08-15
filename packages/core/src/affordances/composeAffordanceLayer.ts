@@ -17,9 +17,9 @@ import {
 } from './hitAffordanceRegions';
 import type {
   Affordance,
-  AffordanceBinding,
   AffordanceRegion,
   CustomPaintContext,
+  LayerHit,
 } from './types';
 
 /**
@@ -50,7 +50,7 @@ export function composeAffordanceLayer(
     view: View,
     dims: { width: number; height: number },
     isVisible?: (id: string) => boolean,
-  ): AffordanceBinding | null;
+  ): LayerHit | null;
 } {
   return {
     id,
@@ -77,10 +77,19 @@ export function composeAffordanceLayer(
     },
     // The walk itself lives in `hitAffordanceRegions` so this layer and
     // `buildAffordanceAt` share one implementation rather than two that can
-    // drift. This wrapper exists because `RenderLayer.hitTest` wants only the
-    // binding back.
-    hitTest: (wx, wy, state, view, _dims, isVisible): AffordanceBinding | null =>
-      hitAffordanceRegions(affordances, wx, wy, state, view, isVisible)?.binding ?? null,
+    // drift. This wrapper lifts the region's declared cursor and claim onto
+    // the binding, the way `buildAffordanceAt` lifts them onto `AffordanceHit`.
+    hitTest: (wx, wy, state, view, _dims, isVisible): LayerHit | null => {
+      const hit = hitAffordanceRegions(affordances, wx, wy, state, view, isVisible);
+      if (!hit) return null;
+      const { cursor, strength, claimedKinds } = hit.region;
+      return {
+        ...hit.binding,
+        ...(cursor !== undefined ? { cursor } : {}),
+        ...(strength !== undefined ? { strength } : {}),
+        ...(claimedKinds !== undefined ? { claimedKinds } : {}),
+      };
+    },
   };
 }
 

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { Focusable } from 'react-aria-components';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './ToolButton.module.css';
@@ -29,6 +29,9 @@ export interface ToolButtonProps {
   tabbable?: boolean;
   /** Click handler. */
   onClick(): void;
+  /** Key handler for the underlying button — a toolbar's roving-tabindex
+   *  navigation attaches here. */
+  onKeyDown?(e: KeyboardEvent<HTMLElement>): void;
   /**
    * Tooltip content. Defaults to `label` (plus `shortcut` if provided).
    */
@@ -43,7 +46,10 @@ export interface ToolButtonProps {
  * supplies flex direction via `ToolGroup`). Theme via `--wzl-*` tokens.
  */
 export function ToolButton(props: ToolButtonProps) {
-  const { icon, label, shortcut, active, disabled, ariaDisabled, tabbable, onClick, title, className } = props;
+  const {
+    icon, label, shortcut, active, disabled, ariaDisabled, tabbable,
+    onClick, onKeyDown, title, className,
+  } = props;
   const resolvedTitle = title ?? (shortcut ? `${label} (${shortcut})` : label);
   const cls = [s.button, active && s.active, className].filter(Boolean).join(' ');
   return (
@@ -57,6 +63,7 @@ export function ToolButton(props: ToolButtonProps) {
           aria-disabled={ariaDisabled ? 'true' : undefined}
           disabled={disabled}
           onClick={onClick}
+          onKeyDown={onKeyDown}
         >
           <span className={s.icon} aria-hidden="true">{icon}</span>
           <span className={s.label}>{label}</span>
