@@ -10,7 +10,7 @@ import {
   offhandKeyFor,
   type ToolOffhandBindingSpec,
 } from '../interactions/actions/defaults/toolOffhand';
-import { reportRouteConflicts } from '../tools/routing/reflection';
+import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
 import type { HotkeyTrigger, Tool } from '../tools/types';
 import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
