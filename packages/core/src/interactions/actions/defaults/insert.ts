@@ -68,10 +68,10 @@ import type { SelectionApi } from 'core/selection/useSelection';
  *  knows how to render. Consumer-defined kinds fall through to `null`
  *  (no live preview, but commit still works). */
 const KIT_INSERT_KINDS = new Set([
-  'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil',
+  'rect', 'ellipse', 'line', 'polygon', 'star', 'pencil', 'image',
 ]);
 
-type KitInsertShape = 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil';
+type KitInsertShape = 'rect' | 'ellipse' | 'line' | 'polygon' | 'star' | 'pencil' | 'image';
 
 // ---------------------------------------------------------------------------
 // Internal scratch

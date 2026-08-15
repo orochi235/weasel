@@ -112,6 +112,15 @@ export interface AffordanceRegion<TScratch = unknown> {
    *  `buildAffordanceAt` fills in from the region the walk landed on. */
   cursor?: string;
 
+  /** `'exclusive'` bars every binding whose target doesn't consult the
+   *  affordance. Read only when the affordance is composed into a
+   *  consumer-registered layer; kit chrome routes through
+   *  `buildAffordanceAt`, which reports `'shared'`. */
+  strength?: 'exclusive' | 'shared';
+
+  /** Which gestures an exclusive claim bars. Omitted bars all of them. */
+  claimedKinds?: readonly ClaimableGesture[];
+
   /** Drag binding produced when this region is hit. Lazily called so
    *  affordances don't pay binding-construction cost on every paint frame —
    *  state snapshots (e.g., capturing per-leaf poses at click time) belong

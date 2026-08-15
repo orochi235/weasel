@@ -1,9 +1,10 @@
-import { Fragment, useRef, type ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { UnknownIcon } from '@weasel-js/core';
 import type { AnyTool, ToolsApi } from '@weasel-js/core';
 import { eligibleContribution, type ModeRegistry } from '@weasel-js/modes';
 import { ToolButton } from '../ToolButton';
 import { ToolGroup } from '../ToolGroup';
+import { useRovingTabIndex } from '../../useRovingTabIndex';
 import s from './ToolPalette.module.css';
 import { formatShortcut, type ShortcutInput } from './formatShortcut';
 
@@ -85,51 +86,27 @@ export function ToolPalette(props: ToolPaletteProps) {
   const cls = [s.palette, orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');
 
-  const orderedIds = groupKeys.flatMap((k) => groups.get(k)!.map((t) => t.id));
-  const tabbableId = tools.active && orderedIds.includes(tools.active)
-    ? tools.active
-    : orderedIds[0];
-  const rootRef = useRef<HTMLDivElement | null>(null);
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    const target = e.target as HTMLElement;
-    if (target.tagName !== 'BUTTON') return;
-    const root = rootRef.current;
-    if (!root) return;
-    const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('button'));
-    const i = buttons.indexOf(target as HTMLButtonElement);
-    if (i < 0) return;
-
-    let next = -1;
-    switch (e.key) {
-      case 'ArrowDown':
-      case 'ArrowRight':
-        next = (i + 1) % buttons.length;
-        break;
-      case 'ArrowUp':
-      case 'ArrowLeft':
-        next = (i - 1 + buttons.length) % buttons.length;
-        break;
-      case 'Home':
-        next = 0;
-        break;
-      case 'End':
-        next = buttons.length - 1;
-        break;
-    }
-    if (next >= 0) {
-      e.preventDefault();
-      buttons[next].focus();
-    }
-  }
+  // Flat, in DOM order — the roving-tabindex hook indexes by this order.
+  const ordered = groupKeys.flatMap((k) => groups.get(k)!);
+  const eligibility = ordered.map(
+    (tool) => (modeRegistry ? eligibleContribution(modeRegistry, tool) : true),
+  );
+  const activeIndex = ordered.findIndex((t) => t.id === tools.active);
+  const roving = useRovingTabIndex({
+    items: eligibility.map((enabled) => ({ disabled: !enabled })),
+    itemClassName: s.paletteBtn,
+    // An ineligible active tool can't hold the tab stop; fall back to the
+    // hook's first-enabled default.
+    ...(activeIndex >= 0 && eligibility[activeIndex] ? { tabStopIndex: activeIndex } : {}),
+  });
+  let index = -1;
 
   return (
     <div
-      ref={rootRef}
+      ref={roving.rootRef}
       className={cls}
       role="toolbar"
       aria-label="Tools"
-      onKeyDown={onKeyDown}
     >
       {groupKeys.map((key, i) => (
         <Fragment key={key}>
@@ -142,10 +119,11 @@ export function ToolPalette(props: ToolPaletteProps) {
           )}
           <ToolGroup orientation={orientation} groupKey={key}>
             {groups.get(key)!.map((tool) => {
+              const i = ++index;
               const label = tool.presentation?.label ?? tool.id;
               const shortcut = tool.presentation?.shortcut
                 ?? formatShortcut(lookupShortcut ? lookupShortcut(tool.id) : tool.keybinding);
-              const enabled = modeRegistry ? eligibleContribution(modeRegistry, tool) : true;
+              const enabled = eligibility[i];
               const modeName = modeRegistry ? modeRegistry.current().id : undefined;
               const resolvedTitle = !enabled && modeName
                 ? `${label}${shortcut ? ` (${shortcut})` : ''} — disabled in ${modeName} mode`
@@ -157,11 +135,12 @@ export function ToolPalette(props: ToolPaletteProps) {
                   label={label}
                   shortcut={shortcut}
                   active={tools.active === tool.id}
-                  tabbable={tool.id === tabbableId}
+                  tabbable={roving.tabIndexFor(i) === 0}
                   ariaDisabled={!enabled}
-                  className={!enabled ? s.ineligibleBtn : undefined}
+                  className={[s.paletteBtn, !enabled && s.ineligibleBtn].filter(Boolean).join(' ')}
                   title={resolvedTitle}
                   onClick={enabled ? () => tools.setActive(tool.id) : () => {}}
+                  onKeyDown={roving.onKeyDown(i)}
                 />
               );
             })}

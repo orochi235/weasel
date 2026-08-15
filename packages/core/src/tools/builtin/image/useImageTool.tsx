@@ -9,6 +9,10 @@ export interface UseImageToolOptions {
    *  `data.image.src`. */
   src: string;
   label?: string;
+  /** What the live drag paints. `'bitmap'` (default) previews the decoded
+   *  image inside the drag bounds, falling back to the outline until it
+   *  decodes; `'outline'` never draws the image. */
+  preview?: 'bitmap' | 'outline';
 }
 
 /**
@@ -22,7 +26,7 @@ export interface UseImageToolOptions {
  * so the insert dep can stamp it onto the new node.
  */
 export function useImageTool(options: UseImageToolOptions): Tool<null> {
-  const { src, label = 'Image' } = options;
+  const { src, label = 'Image', preview = 'bitmap' } = options;
   return useMemo(
     () =>
       defineTool<null>({
@@ -42,10 +46,10 @@ export function useImageTool(options: UseImageToolOptions): Tool<null> {
           {
             spec: { kind: 'drag' },
             actionId: 'insert',
-            opts: { params: { kind: 'image', src } },
+            opts: { params: { kind: 'image', src, preview } },
           },
         ],
       }),
-    [src, label],
+    [src, label, preview],
   );
 }

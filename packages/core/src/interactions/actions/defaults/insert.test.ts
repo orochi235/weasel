@@ -289,6 +289,7 @@ describe('insertAction descriptor', () => {
         ['line'],
         ['polygon', { sides: 6, rotation: 0 }],
         ['star', { points: 5, innerRadiusRatio: 0.5, rotation: 0 }],
+        ['image', { src: 'a.png' }],
       ];
       for (const [kind, extraParams] of cases) {
         const dep = makeInsertDep();
@@ -310,6 +311,18 @@ describe('insertAction descriptor', () => {
       const ov = handle.overlay!();
       if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
       expect(ov.extras).toMatchObject({ kind: 'line', a: { x: 10, y: 50 }, b: { x: 100, y: 10 } });
+    });
+
+    it('image: extras carry the src the tool bound', () => {
+      const invoker = getOngoingInvoker(insertAction);
+      const dep = makeInsertDep();
+      const ctx = makeCtx({ world: { x: 0, y: 0 }, dep });
+      const handle = invoker.start(ctx, { params: { kind: 'image', src: 'photo.png' } });
+      handle.onMove!({ ...ctx, world: { x: 40, y: 30 } });
+      const ov = handle.overlay!();
+      if (ov?.kind !== 'insertPreview') throw new Error('expected insertPreview');
+      expect(ov.extras).toMatchObject({ kind: 'image', src: 'photo.png' });
+      expect(ov.bounds).toEqual({ x: 0, y: 0, width: 40, height: 30 });
     });
 
     it('pencil: extras.samples reflect the growing drag trail', () => {

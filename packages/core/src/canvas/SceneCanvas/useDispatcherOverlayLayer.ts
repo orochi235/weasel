@@ -29,6 +29,7 @@ import {
   regularPolygonPath,
   starPath,
 } from 'features/paths/builder';
+import { getImageBitmap } from 'features/images/imageCache';
 
 /** Style knobs for the dispatcher-overlay layer's marquee + lasso paints.
  *  Defaults match the legacy `useSelectTool` `areaSelectOverlayStyle`
@@ -46,6 +47,11 @@ const DEFAULT_STYLE: Required<DispatcherOverlayStyle> = {
   dash: [3, 3],
   lineWidth: 1,
 };
+
+/** Alpha for content previewed inside an in-flight gesture. Matches the
+ *  preview-ghost layer, so a dragged node and an uncommitted insert read as
+ *  equally provisional. */
+const PREVIEW_CONTENT_OPACITY = 0.85;
 
 export function useDispatcherOverlayLayer(args: {
   dispatcher: Dispatcher | null | undefined;
@@ -141,6 +147,28 @@ export function useDispatcherOverlayLayer(args: {
                 pathCmd = rectPath(sx, sy, b.width * view.scale.x, b.height * view.scale.y);
                 break;
               }
+              case 'image': {
+                const e = ov.extras as Partial<{ src: string; preview: string }>;
+                const [sx, sy] = worldToScreen(b.x, b.y, t);
+                const sw = b.width * view.scale.x;
+                const sh = b.height * view.scale.y;
+                // The bitmap when it has decoded, the bare outline until then
+                // (or when the tool opted out) — the outline is drawn either
+                // way, so the drag always has an edge to read.
+                const bmp = e.preview === 'outline' || !e.src
+                  ? undefined
+                  : getImageBitmap(e.src);
+                if (bmp) {
+                  out.push({
+                    kind: 'image',
+                    image: bmp,
+                    x: sx, y: sy, w: sw, h: sh,
+                    opacity: PREVIEW_CONTENT_OPACITY,
+                  });
+                }
+                pathCmd = rectPath(sx, sy, sw, sh);
+                break;
+              }
               case 'ellipse': {
                 const [sx, sy] = worldToScreen(b.x, b.y, t);
                 pathCmd = ellipsePath({
@@ -221,7 +249,7 @@ export function useDispatcherOverlayLayer(args: {
             const cmd: PathDrawCommand = {
               kind: 'path',
               path: pathCmd,
-              fill: ov.shape === 'line' || ov.shape === 'pencil'
+              fill: ov.shape === 'line' || ov.shape === 'pencil' || ov.shape === 'image'
                 ? undefined
                 : { color: cfg.fill },
               stroke: { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash },

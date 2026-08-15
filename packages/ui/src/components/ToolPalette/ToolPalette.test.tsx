@@ -305,6 +305,48 @@ describe('ToolPalette — mode eligibility', () => {
     expect(tools.setActive).not.toHaveBeenCalledWith('select');
   });
 
+  it('arrow keys skip ineligible tools', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    // DOM order follows group order: select ('select', ineligible here),
+    // anchor-edit ('draw'), hand ('view').
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    const anchorBtn = screen.getByRole('button', { name: /anchor/i });
+    const handBtn = screen.getByRole('button', { name: /hand/i });
+
+    anchorBtn.focus();
+    fireEvent.keyDown(anchorBtn, { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(handBtn);
+
+    fireEvent.keyDown(handBtn, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(anchorBtn);
+  });
+
+  it('Home / End land on eligible tools', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    const anchorBtn = screen.getByRole('button', { name: /anchor/i });
+    const handBtn = screen.getByRole('button', { name: /hand/i });
+
+    handBtn.focus();
+    fireEvent.keyDown(handBtn, { key: 'Home' });
+    expect(document.activeElement).toBe(anchorBtn);
+    fireEvent.keyDown(anchorBtn, { key: 'End' });
+    expect(document.activeElement).toBe(handBtn);
+  });
+
+  it('the tab stop moves off an ineligible active tool', () => {
+    const reg = createModeRegistry({ modes: DEFAULT_MODES, initial: 'path-edit' });
+    // `makeTools` makes the first tool active — here, the ineligible one.
+    const tools = makeTools(selectTool, anchorTool, handTool);
+    render(<ToolPalette tools={tools} modeRegistry={reg} />);
+    const selectBtn = screen.getByRole('button', { name: /select/i }) as HTMLButtonElement;
+    const anchorBtn = screen.getByRole('button', { name: /anchor/i }) as HTMLButtonElement;
+    expect(selectBtn.tabIndex).toBe(-1);
+    expect(anchorBtn.tabIndex).toBe(0);
+  });
+
   it('when modeRegistry is omitted, all tools are eligible (fallback behaviour)', () => {
     // PATH_EDIT would normally disable 'select', but no registry means all eligible.
     const tools = makeTools(selectTool, anchorTool, handTool);

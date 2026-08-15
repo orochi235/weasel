@@ -4,10 +4,15 @@
  * `overlay()` returning `{ kind: 'marquee', ... }` or `{ kind: 'lasso', ... }`,
  * the layer paints the matching shape. Removing the handle removes the paint.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { View } from 'core/viewport/view';
-import type { DrawCommand, PathDrawCommand } from '../../renderer';
+import type { DrawCommand, ImageDrawCommand, PathDrawCommand } from '../../renderer';
+import {
+  __setImageLoaderForTests,
+  _resetImageCacheForTests,
+  getImageBitmap,
+} from 'features/images/imageCache';
 import type { Dispatcher } from 'interactions/dispatcher/dispatcher';
 import type { OngoingHandle, OngoingOverlay } from 'interactions/actions/invoker';
 import { useDispatcherOverlayLayer } from './useDispatcherOverlayLayer';
@@ -148,6 +153,72 @@ describe('useDispatcherOverlayLayer', () => {
 
     const paths = collectPaths(result.current.draw(undefined, zoomedView, DIMS));
     expect(paths[0].path).toEqual({ kind: 'rect', x: 0, y: 0, width: 200, height: 200 });
+  });
+
+  describe('image insert preview', () => {
+    const fakeBitmap = (): ImageBitmap =>
+      ({ width: 2, height: 2, close() {} } as unknown as ImageBitmap);
+    const flush = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
+
+    const previewHandle = (extras: unknown): OngoingHandle => ({
+      overlay: (): OngoingOverlay => ({
+        kind: 'insertPreview',
+        shape: 'image',
+        bounds: { x: 10, y: 20, width: 100, height: 60 },
+        extras,
+      }),
+    });
+
+    const drawWith = (extras: unknown): DrawCommand[] => {
+      const dispatcher = makeDispatcher([previewHandle(extras)]);
+      const { result } = renderHook(() => useDispatcherOverlayLayer({ dispatcher }));
+      return result.current.draw(undefined, VIEW, DIMS);
+    };
+
+    beforeEach(() => _resetImageCacheForTests());
+
+    it('draws the decoded bitmap over the drag bounds', async () => {
+      const bmp = fakeBitmap();
+      __setImageLoaderForTests(async () => bmp);
+      getImageBitmap('photo.png');
+      await flush();
+
+      const cmds = drawWith({ kind: 'image', src: 'photo.png' });
+      const images = cmds.filter((c): c is ImageDrawCommand => c.kind === 'image');
+      expect(images).toHaveLength(1);
+      expect(images[0]).toMatchObject({ image: bmp, x: 10, y: 20, w: 100, h: 60 });
+      // Translucent — it is a preview, not the committed node.
+      expect(images[0].opacity).toBeLessThan(1);
+    });
+
+    it('outlines the bounds without filling over the bitmap', async () => {
+      __setImageLoaderForTests(async () => fakeBitmap());
+      getImageBitmap('photo.png');
+      await flush();
+
+      const paths = collectPaths(drawWith({ kind: 'image', src: 'photo.png' }));
+      expect(paths).toHaveLength(1);
+      expect(paths[0].path).toEqual({ kind: 'rect', x: 10, y: 20, width: 100, height: 60 });
+      expect(paths[0].stroke).toBeDefined();
+      expect(paths[0].fill).toBeUndefined();
+    });
+
+    it('falls back to the outline while the bitmap is still decoding', () => {
+      __setImageLoaderForTests(() => new Promise<ImageBitmap>(() => {}));
+      const cmds = drawWith({ kind: 'image', src: 'photo.png' });
+      expect(cmds.filter((c) => c.kind === 'image')).toHaveLength(0);
+      expect(collectPaths(cmds)).toHaveLength(1);
+    });
+
+    it('draws no bitmap when the tool asked for the outline preview', async () => {
+      __setImageLoaderForTests(async () => fakeBitmap());
+      getImageBitmap('photo.png');
+      await flush();
+
+      const cmds = drawWith({ kind: 'image', src: 'photo.png', preview: 'outline' });
+      expect(cmds.filter((c) => c.kind === 'image')).toHaveLength(0);
+      expect(collectPaths(cmds)).toHaveLength(1);
+    });
   });
 
   describe('chrome-caps visibility gate', () => {
