@@ -4,6 +4,7 @@ import {
   useScene,
   useSelection,
   createViewportLayer,
+  viewportsAt,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { View, RenderLayer } from '@weasel-js/core';
@@ -57,6 +58,7 @@ export function ViewportLayerDemo() {
   });
   const selection = useSelection();
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  const [probe, setProbe] = useState('—');
 
   // A trivial source layer that paints the same shapes the main scene
   // shows. The viewport renders this through its own `View`. In a richer
@@ -145,13 +147,26 @@ export function ViewportLayerDemo() {
     [sceneSource, initial],
   );
 
+  // Clicking inside a viewport reports where the pointer landed in that
+  // viewport's inner world. The kit re-projects on request; it does not route
+  // the event, so the tools below still see the outer view.
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const canvas = e.currentTarget.querySelector('canvas');
+    if (!canvas) return;
+    const r = canvas.getBoundingClientRect();
+    const screen = { x: e.clientX - r.left, y: e.clientY - r.top };
+    const hit = viewportsAt([minimap, pip], view, { width: W, height: H }, screen);
+    setProbe(hit ? `${hit.layer.label} → (${hit.point.x.toFixed(0)}, ${hit.point.y.toFixed(0)})` : 'outer canvas');
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
         <span style={{ fontFamily: 'monospace' }}>view: ({view.x.toFixed(0)}, {view.y.toFixed(0)}) ×{view.scale.x.toFixed(2)}</span>
         <button onClick={() => setView({ x: 0, y: 0, scale: { x: 1, y: 1 } })}>Reset</button>
-        <span style={{ color: '#888' }}>H = hand · top-right is a minimap; bottom-left is a PiP</span>
+        <span style={{ fontFamily: 'monospace', color: '#888' }}>click: {probe}</span>
       </div>
+      <div onPointerDown={onPointerDown}>
       <SceneCanvas
         width={W}
         height={H}
@@ -173,6 +188,7 @@ export function ViewportLayerDemo() {
           pip: { layer: pip, after: 'selectionOverlay' },
         }}
       />
+      </div>
     </div>
   );
 }

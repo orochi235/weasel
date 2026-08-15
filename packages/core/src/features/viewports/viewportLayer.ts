@@ -22,9 +22,12 @@ import { mat3, type Mat3 } from '../../renderer/math/mat3';
  * bounds.h)`. Caller chooses `innerView.{x,y,scale}` to control which slice
  * of source-world is shown.
  *
- * **Hit-testing is not wired up yet** — pointer events still target the
- * outer view. A follow-up task adds dispatcher-side re-projection so a
- * click inside a viewport translates to inner-world coords.
+ * **Input is re-projected on request, not automatically.** `reproject` maps a
+ * screen point into the inner view's world; a consumer that wants a click
+ * inside a viewport to mean something calls it from its own handler. The
+ * dispatcher is untouched, so tools still target the outer view — making
+ * tools work *inside* a viewport is a larger question (which view a pinch
+ * zooms, what a drag leaving the rect does) and wants its own design.
  *
  * **Screen-space source layers** (e.g., debug overlays, selection chrome)
  * still render to the outer canvas, not into the viewport. To include
@@ -50,14 +53,51 @@ export interface CreateViewportLayerOpts<TData> {
   background?: string;
 }
 
+/**
+ * @experimental
+ *
+ * A {@link RenderLayer} that also answers where a screen point lands inside
+ * its inner view. Returned by {@link createViewportLayer}.
+ */
+export interface ViewportLayer<TData> extends RenderLayer<TData> {
+  /**
+   * Map a screen point (CSS px, canvas top-left origin) to a point in the
+   * inner view's world space. Returns `null` when the point falls outside
+   * the viewport rect; the right and bottom edges are exclusive, so
+   * neighbouring viewports never both claim a pixel.
+   *
+   * Pass the same `outer` view and `dims` the frame was drawn with —
+   * `bounds` is a pure function of those, so this reproduces the exact rect
+   * that was painted rather than a remembered one.
+   *
+   * This does not touch the dispatcher: tools still receive outer-view
+   * coords, and a consumer that wants a click inside a viewport to mean
+   * something calls this from its own handler.
+   */
+  reproject(outer: View, dims: Dims, screen: { x: number; y: number }): { x: number; y: number } | null;
+}
+
 export function createViewportLayer<TData>(
   opts: CreateViewportLayerOpts<TData>,
-): RenderLayer<TData> {
+): ViewportLayer<TData> {
   const { id, label, source, view, bounds, background } = opts;
   return {
     id,
     label,
     space: 'screen',
+    reproject(outer, dims, screen) {
+      const b = bounds(outer, dims);
+      if (
+        screen.x < b.x || screen.x >= b.x + b.w ||
+        screen.y < b.y || screen.y >= b.y + b.h
+      ) return null;
+      // Inverse of what `draw` paints: the source applies the inner view, then
+      // the group translates by the rect origin.
+      return {
+        x: (screen.x - b.x) / view.scale.x + view.x,
+        y: (screen.y - b.y) / view.scale.y + view.y,
+      };
+    },
     draw: (data, outerView, dims): DrawCommand[] => {
       const b = bounds(outerView, dims);
       // Inner content drawn through `view`, then translated so the inner
@@ -85,4 +125,25 @@ export function createViewportLayer<TData>(
       return [group];
     },
   };
+}
+
+/**
+ * @experimental
+ *
+ * Find which of `layers` owns a screen point, and where that point lands in
+ * its inner world. Pass the layers in paint order; the last one containing
+ * the point wins, since that is the one drawn on top.
+ */
+export function viewportsAt<TData>(
+  layers: readonly ViewportLayer<TData>[],
+  outer: View,
+  dims: Dims,
+  screen: { x: number; y: number },
+): { layer: ViewportLayer<TData>; point: { x: number; y: number } } | null {
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const layer = layers[i]!;
+    const point = layer.reproject(outer, dims, screen);
+    if (point) return { layer, point };
+  }
+  return null;
 }

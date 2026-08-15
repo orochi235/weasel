@@ -38,6 +38,9 @@ Priority tags:
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
+**Viewport**
+- Viewports as a first-class canvas concept (input, not just render) → [Viewport](#viewport)
+
 **Plugins & packaging**
 - Barrel-hygiene: selection (pending design review) → [Plugins & packaging](#plugins--packaging)
 - `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
@@ -286,6 +289,31 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 ---
 
 ## Viewport
+
+- **(P2) Viewports as a first-class canvas concept.** `createViewportLayer`
+  re-projects on request (`layer.reproject(outer, dims, screen)`, `viewportsAt`
+  for the topmost of several, shipped 2026-08-15), but the dispatcher knows
+  nothing about viewport rects, so tools still target the outer view — you
+  cannot drag a node inside a PiP. Making that work wants a `viewports` prop on
+  `<SceneCanvas>` feeding both render and input.
+
+  The mechanical parts are small, and the input seam already exists:
+  `SceneCanvas.tsx:2220` wraps `affordanceAt` / `classifyTarget` to convert
+  client → world, which is exactly where "use the inner view when the point is
+  inside a viewport" belongs. The cost is the semantics, and they are open
+  questions rather than work items:
+
+  - Which view does a gesture inside a viewport act on? A two-finger pinch in a
+    PiP could zoom the inner view or the outer one; both are defensible.
+  - What does a drag that starts inside the rect and leaves it do?
+  - Which viewport wins when two overlap — paint order, or an explicit z?
+  - Does selection chrome render inside a viewport? Screen-space source layers
+    do not today (noted in `features/viewports/README.md`).
+
+  Answer these from a real consumer's needs rather than guessing; the
+  re-projection primitive above is the piece this would call once it knows
+  which viewport owns the point. `<MinimapCanvas>` / `<SceneViewCanvas>` remain
+  the supported answers for the two common cases.
 
 - **(P3) Two `meanScale` residuals under non-uniform zoom.** The hit-test half
   shipped 2026-08-12: `core/viewport/pxExtent` (`pxExtent` / `withinPxBox` /
