@@ -1,7 +1,7 @@
 # Stroke ribbon mesh cache — design
 
 **Date:** 2026-08-15
-**Status:** approved, not implemented
+**Status:** implemented, with one correction — see "Where promotion lives"
 
 What this is: a cache for tessellated stroke ribbons in the renderer, keyed on
 `Path` identity plus the stroke parameters that change the ribbon's geometry.
@@ -34,7 +34,7 @@ export function strokeMesh(
   path: Path,
   stroke: Stroke,
   flattenTolerance: number | undefined,
-): { mesh: Mesh; hit: boolean };
+): Mesh;
 ```
 
 **Store:** `WeakMap<Path, Map<string, StrokeEntry>>`.
@@ -51,10 +51,9 @@ so the entry stores the array reference and a hit requires `===` against it.
 `WeakMap<Path, Mesh>` has nowhere to put a second key dimension. There is an
 inner keyed map here anyway, so the tolerance rides along for free.
 
-**Persistence is gated on a hit.** A miss returns a freshly tessellated mesh and
-the caller uploads it transient, exactly as today. A hit returns a mesh that has
-already survived a frame, so the caller routes it through
-`meshCache.handleFor(mesh)` for a persistent VAO reused every frame after.
+**Persistence is gated on a second sight.** A mesh a GL context has not drawn
+before takes a transient upload, freed at end of frame. Any later sight takes
+the persistent handle, reused every frame after.
 
 That gate is the whole eviction story. A path whose geometry animates mints a
 new `Path` object per frame, so it never hits, never earns a persistent handle,
@@ -74,6 +73,22 @@ immediately and then degrades to exactly today's behavior.
 
 Both caches inherit the contract `getMesh` already documents: identity, not
 content. A `Path` rebuilt with equal coords is a distinct entry.
+
+## Where promotion lives
+
+The gate above belongs to a GL context, not to the ribbon cache. The ribbon
+cache is module-global while `GLMeshCache` is per-`WeaselRenderer`, and a scene
+can be drawn by several — the main canvas, a detached `SceneViewCanvas`
+minimap, a headless `renderSceneToPixels`. A cache-wide "this mesh has been
+seen" would tell the second renderer that a mesh *its own context has never
+uploaded* was safe to make persistent, stranding a VAO per frame on exactly the
+animated paths this design exists to protect.
+
+So `strokeMesh` only memoizes tessellation, and `GLMeshCache.uploadRecurring`
+owns the gate against a per-context `WeakSet`. A vertex-colored stroke is
+excluded and stays transient: its per-draw color VBO and enabled
+`a_vertexColor` array are recorded into the VAO, and `vertexColors` is not in
+the cache key, so a persistent VAO could be reused by a later colorless draw.
 
 ## Call sites
 

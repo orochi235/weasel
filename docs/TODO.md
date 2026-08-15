@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Draw-loop cost per command** — the cost is writing a buffer between draws, not the draw call. Consecutive solid geometry (rects, fills, stroke ribbons) now batches into one draw across the scene's wrapper groups, per-node transforms and opacity; gradients, patterns, images, text and shaders still pay per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Draw-loop cost per command** — the cost is writing a buffer between draws, not the draw call. Consecutive solid geometry (rects, fills, stroke ribbons) now batches into one draw across the scene's wrapper groups, per-node transforms and opacity, and stroke ribbons are tessellated once per stroke configuration rather than once per frame; gradients, patterns, images, text and shaders still pay per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 > The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
 > shipped in two plans, 2026-08-10: claims that outrank scope, then the
@@ -383,6 +383,16 @@ Core five + Crop shipped. Remaining:
   which SVG cannot express at all. It now warns through
   `SerializeOptions.onWarn` rather than vanishing silently, but still exports
   as nothing rather than as an approximation.
+
+- **(P3) An inner/outer-aligned stroke ignores `vertexWidths` when doubling.**
+  `drawPathStrokeStenciled` renders alignment by tessellating at twice the
+  width and stencilling half of it away, but `widerStroke` doubles only
+  `stroke.width`. `populatePolylineWidths` reads each `vertexWidths[i]`
+  verbatim and falls back to the doubled `width` only for missing or
+  non-finite entries, so a tapered stroke with `align: 'inner'` or `'outer'`
+  on a polygon path paints at **half** its requested widths. Pre-dates the
+  2026-08-15 ribbon cache, which only moved the call. Found by review
+  2026-08-15; unverified against a render.
 
 - **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`). Defer until a real use case lands.
 
@@ -770,12 +780,19 @@ From the WebGL transition spec — all deferred:
     Max via ANGLE: scene-shaped rects 209 -> 0.39 ms, rotated rects 217 ->
     0.70 ms, solid octagons 5.6 -> 0.65 ms, stroked rects 244 -> 9.4 ms.
 
+    Stroked commands then went 9.4 -> 1.7–2.0 ms on 2026-08-15: batching had
+    left them ~85% stroke tessellation, and `cache/strokeMeshCache.ts` now keys
+    that on `Path` identity so a ribbon is built once per stroke configuration
+    rather than once per frame. A ribbon also earns a persistent VAO on its
+    second sight *in a given GL context* — `GLMeshCache.uploadRecurring`, which
+    is where that gate has to live, since one scene can be drawn by several
+    renderers. Design:
+    `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
+
     What still pays per command: gradients, patterns, images, text, shaders,
     per-vertex-color and stencil fills, and meshes past the batch's vertex cap.
     A frame alternating solid and linear-gradient rects is unchanged at ~33 us
-    per command, almost entirely the gradient half. The stroked figure is now
-    ~85% stroke tessellation, which batching does not touch — a ribbon-mesh
-    cache is the lever there, and it needs an eviction story for animated paths.
+    per command, almost entirely the gradient half.
 
     The rest of the plan — one program plus atlases — is in
     `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a

@@ -20,7 +20,6 @@ import { mat3, type Mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import { tessellate } from 'features/paths/tessellate/tessellate';
 import { resolveColor } from './math/color';
-import { tessellateStroke } from 'features/paths/tessellate/stroke';
 import {
   ensureFontTexture,
   textureCacheKey,
@@ -35,6 +34,7 @@ import { verticalAlignOffset } from 'features/text/verticalAlign';
 import type { Mesh } from './cache/mesh';
 import { outlineMesh } from './cache/outlineMeshCache';
 import { outlineStrokeMesh, quantizeEmWidth } from './cache/outlineStrokeMeshCache';
+import { strokeMesh } from './cache/strokeMeshCache';
 import { SolidBatch } from './solidBatch';
 
 export interface DrawContext {
@@ -969,24 +969,24 @@ function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
 function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
   const stroke = cmd.stroke!;
   const solid = stroke.paint as { color: string; opacity?: number };
-  const mesh = tessellateStroke(cmd.path, stroke, { flattenTolerance: ctx.flattenTolerance });
+  const mesh = strokeMesh(cmd.path, stroke, ctx.flattenTolerance);
   if (mesh.indices.length === 0) return;
 
   const hasVColors = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
   if (!hasVColors && canBatchMesh(mesh)) {
-    // A ribbon is rebuilt every frame, so its own draw means a fresh VAO and
-    // two fresh buffers per stroke per frame — most of what a stroked command
-    // costs. Staged, it allocates nothing and joins the fill it sits on.
+    // Staged, a ribbon allocates nothing and joins the fill it sits on.
     pushMesh(ctx, mesh, solid);
     return;
   }
   flushSolids(ctx);
-  // tessellateStroke returns a freshly-built Mesh every frame; route through
-  // the transient pool so the renderer frees these at end-of-frame.
-  const handle = ctx.meshCache.uploadTransient(mesh);
+  // The VAO records the per-draw color attribute, so a vertex-colored draw
+  // cannot share a persistent one with a draw that has no vertex colors.
+  const handle = hasVColors
+    ? ctx.meshCache.uploadTransient(mesh)
+    : ctx.meshCache.uploadRecurring(mesh);
 
   const gl = ctx.gl;
-  if (stroke.vertexColors && stroke.vertexColors.length > 0) {
+  if (hasVColors) {
     const prog = ctx.pathFillVColor;
     gl.useProgram(prog.handle);
     gl.bindVertexArray(handle.vao);
@@ -994,7 +994,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
     setSolidPaintUniforms(ctx, prog, solid.color, solid.opacity);
     setColorMatrixUniforms(ctx, prog);
 
-    const expanded = expandAnchorColors(stroke.vertexColors, handle);
+    const expanded = expandAnchorColors(stroke.vertexColors!, handle);
     const colorVbo = gl.createBuffer();
     if (!colorVbo) throw new Error('drawPathStrokeUnclipped: createBuffer (color VBO) returned null');
     gl.bindBuffer(gl.ARRAY_BUFFER, colorVbo);
@@ -1030,14 +1030,18 @@ function drawPathStrokeStenciled(
   const solid = stroke.paint as { color: string; opacity?: number };
   const widerStroke: Stroke = { ...stroke, width: (stroke.width ?? 1) * 2, align: 'center' };
 
+  const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
+
   const fillHandle = fillMeshHandle(ctx, cmd.path);
-  const ribbonMesh = tessellateStroke(cmd.path, widerStroke, { flattenTolerance: ctx.flattenTolerance });
+  const ribbonMesh = strokeMesh(cmd.path, widerStroke, ctx.flattenTolerance);
   if (ribbonMesh.indices.length === 0) return;
-  // The ribbon mesh is freshly tessellated each frame; transient.
-  const ribbonHandle = ctx.meshCache.uploadTransient(ribbonMesh);
+  // The VAO records the per-draw color attribute, so a vertex-colored draw
+  // cannot share a persistent one with a draw that has no vertex colors.
+  const ribbonHandle = useVColor
+    ? ctx.meshCache.uploadTransient(ribbonMesh)
+    : ctx.meshCache.uploadRecurring(ribbonMesh);
 
   const gl = ctx.gl;
-  const useVColor = !!(stroke.vertexColors && stroke.vertexColors.length > 0);
   const prog = useVColor ? ctx.pathFillVColor : ctx.pathFill;
   gl.useProgram(prog.handle);
   setProjAndModel(ctx, prog);
@@ -1077,12 +1081,14 @@ function drawPathStrokeStenciled(
   }
 
   gl.drawElements(gl.TRIANGLES, ribbonHandle.indexCount, gl.UNSIGNED_INT, 0);
-  if (colorVbo) gl.deleteBuffer(colorVbo);
 
   gl.stencilMask(0x01);
   gl.clear(gl.STENCIL_BUFFER_BIT);
   gl.disable(gl.STENCIL_TEST);
   gl.bindVertexArray(null);
+  // Delete after the unbind: deleting a bound buffer leaves its attribute
+  // enabled and pointing at nothing, recorded in whatever VAO is live.
+  if (colorVbo) gl.deleteBuffer(colorVbo);
 }
 
 /**
@@ -1212,9 +1218,9 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
   // SVG's default paint-order. A second batched draw call over the same
   // group, not a call per glyph.
   if (!group.stroke) return;
-  const strokeMesh = outlineGroupStrokeMesh(group, dx, dy);
-  if (strokeMesh) {
-    drawPathFillByKind(ctx, group.stroke.paint, ctx.meshCache.uploadTransient(strokeMesh));
+  const ribbon = outlineGroupStrokeMesh(group, dx, dy);
+  if (ribbon) {
+    drawPathFillByKind(ctx, group.stroke.paint, ctx.meshCache.uploadTransient(ribbon));
   }
 }
 

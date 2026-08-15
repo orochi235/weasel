@@ -5,7 +5,8 @@
 **Landed:** `batch consecutive rect fills into one draw call` (`2604ce24`),
 `break rect batches on group state, not tree shape` (`c2ebfdfe`),
 `bake the rect batch's transform and alpha into its vertices` (`d62dc172`),
-`batch solid-fill meshes and stroke ribbons alongside rects`
+`batch solid-fill meshes and stroke ribbons alongside rects`,
+`cache tessellated stroke ribbons by path identity` (`1ad733a3`)
 
 What this is: the plan for getting the renderer's draw loop from one GL draw
 call per command down to roughly one per frame, and the record of the steps that
@@ -29,16 +30,21 @@ work and after:
 | scene-shaped rects (`buildSceneTree`'s wrapper group each) | 208.72 ms | 0.39 ms |
 | rotated rects (`wrapNodeOutput`'s transform group each) | 216.90 ms | 0.70 ms |
 | solid-fill octagons | 5.63 ms | 0.65 ms |
-| stroked rects (fill + ribbon) | 243.80 ms | 9.41 ms |
+| stroked rects (fill + ribbon) | 243.80 ms | 1.7–2.0 ms |
 
 What still costs one draw each: gradients, patterns, images, text, shaders,
 per-vertex-color fills, stencil fills, and meshes past the batch's vertex cap. A
 frame alternating solid and linear-gradient rects is unchanged at ~33 us per
 command, almost all of it the gradient half. Step 4 is about those.
 
-Three barriers remain. The clip stencil is a real GL state change. The color
-matrix is deliberately still a uniform — see step 2. And the stroked figure
-above is now ~85% stroke tessellation, which batching does not touch.
+The stroked figure includes the ribbon cache added 2026-08-15: batching alone
+left it at 9.41 ms, ~85% of which was stroke tessellation, and caching that on
+`Path` identity took it to 1.7–2.0 ms. Read the magnitude, not the digits —
+the two runs behind that range also moved the untouched `alternating` variant
+101 -> 152 ms, so this laptop's noise floor is wider than the spread.
+
+Two barriers remain. The clip stencil is a real GL state change, and the color
+matrix is deliberately still a uniform — see step 2.
 
 ## Step 1 — break on state, not on structure (landed)
 
@@ -129,16 +135,34 @@ work. Per the sweep on an M2 Max via ANGLE:
 So the cost is touching buffers between draws, not the draws. That is why
 batching pays: it moves every buffer write to once per frame. Post-batching,
 3,200 stroked commands are 9.41 ms, of which 7.9 ms is the tessellation that
-batching does not address.
+batching does not address — which is what the ribbon cache below went after.
 
 Rects paid a little for it: the index buffer stopped being a static pattern
 written once and became a per-flush upload, costing ~0.1 ms per frame at 3,200
 rects. Left alone deliberately — a static-index fast path for all-rect runs is
 complexity against a tenth of a millisecond.
 
-Still on the table, if stroke tessellation becomes the bottleneck: caching
-ribbon meshes by path identity plus stroke parameters. It was left out because
-it needs an eviction story for animated paths that the transient pool did not.
+### Step 3a — cache the ribbons (landed 2026-08-15)
+
+`cache/strokeMeshCache.ts` keys tessellated ribbons on `Path` identity crossed
+with the parameters that change the geometry, taking 3,200 stroked commands
+from 9.41 ms to 1.7–2.0 ms. The eviction story that held this back is a gate
+rather than a policy: a ribbon earns a persistent GL handle only on its *second*
+sight, so a path whose geometry animates mints a new `Path` every frame, never
+reaches promotion, and keeps the transient upload that is freed at end of
+frame. Promotion costs one extra upload, because `uploadTransient` does not
+populate the persistent map — steady state starts on the third frame.
+
+**The gate belongs to `GLMeshCache`, not to the ribbon cache**, and putting it
+in the wrong place is a live bug rather than a style question. The ribbon cache
+is module-global while `GLMeshCache` is per-renderer, so a cache-wide "seen"
+flag tells a second renderer — a `SceneViewCanvas` minimap, a
+`renderSceneToPixels` export — that a mesh *its own context never uploaded* is
+safe to make persistent. `GLMeshCache.uploadRecurring` owns it against a
+per-context `WeakSet`. Vertex-colored strokes are excluded and stay transient:
+their per-draw color VBO and enabled `a_vertexColor` array are recorded into
+the VAO, and `vertexColors` is not in the cache key. Design:
+`docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
 
 ## Step 4 — one program and atlases
 
