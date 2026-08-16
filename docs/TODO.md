@@ -817,6 +817,29 @@ From the WebGL transition spec — all deferred:
   Until then, size scenes from `mixed-doc` and treat the single-kind rows as
   ceilings that no real document reaches.
 
+- **(P3) opentype.js is typed a major version behind what it runs.**
+  `packages/font` depends on `opentype.js@2.0.0`, which ships no typings, so TS
+  walks past `packages/font/node_modules` and resolves the module to the root
+  `@types/opentype.js@1.3.10` — the DefinitelyTyped package for the 1.x API.
+  (Confirmed with `tsc --traceResolution`. The other `opentype.js` in the tree,
+  1.3.4, is unrelated: `dev: true`, pulled in by `msdf-bmfont-xml`, and that is
+  plausibly what the `@types` pin was added for.)
+
+  **Not broken, and deliberately left alone.** All six points
+  `outline/opentypeParser.ts` touches — `parse`, `unitsPerEm`,
+  `charToGlyphIndex`, `glyphs.get`, `getPath`, `toPathData` — exist in both
+  majors; the narrow surface that file keeps is what makes the mismatch
+  harmless.
+
+  What to watch for, since the failure would be silent: the 1.x typings declare
+  `load()` and `loadSync()` as working, and in 2.0.0 they are deprecation stubs
+  that `console.error` and return `undefined`. A call to either typechecks
+  clean and fails at runtime. In the other direction 2.0.0's additions
+  (`PaletteManager`, `font.palettes`, `font.metas`) are invisible, so reaching
+  for them fails to compile. DefinitelyTyped has no 2.x package; the fix, if
+  the surface ever widens, is a hand-written local `.d.ts` covering only what
+  the kit calls — which would make that surface explicit and enforced.
+
 - **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.
 
 ---
