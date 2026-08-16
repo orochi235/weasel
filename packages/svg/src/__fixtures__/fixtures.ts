@@ -130,3 +130,20 @@ export const IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="h
   <image href="https://example.com/photo.jpg" x="100" y="100" width="80" height="60" opacity="0.5" transform="rotate(30 140 130)"/>
   <image xlink:href="legacy.png" x="200" y="200" width="40" height="40"/>
 </svg>`;
+
+/** Both `gradientUnits` spellings. `objectBoundingBox` is SVG's default and
+ *  is left implicit on `g1` so the omitted-attribute path is covered too. */
+export const GRADIENT_UNITS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff0000"/>
+      <stop offset="1" stop-color="#0000ff"/>
+    </linearGradient>
+    <radialGradient id="g2" gradientUnits="userSpaceOnUse" cx="50" cy="50" r="40">
+      <stop offset="0" stop-color="#00ff00"/>
+      <stop offset="1" stop-color="#000000"/>
+    </radialGradient>
+  </defs>
+  <path d="M10 10 L90 10 L90 90 L10 90 Z" fill="url(#g1)" stroke="none"/>
+  <path d="M10 10 L90 10 L90 90 L10 90 Z" fill="url(#g2)" stroke="none"/>
+</svg>`;

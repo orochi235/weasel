@@ -170,6 +170,17 @@ describe('round-trip', () => {
     expect(b).toEqual(a);
   });
 
+  it('gradientUnits survives both directions', () => {
+    const { a, b, warnings } = roundTrip(F.GRADIENT_UNITS_SVG);
+    expect(warnings).toEqual([]);
+    expect(b).toEqual(a);
+    // The serializer used to hardcode `userSpaceOnUse`, so an
+    // objectBoundingBox gradient came back reading its 0..1 geometry as page
+    // coordinates — a gradient the size of a pixel.
+    const fills = a.map((n) => (n as { fill?: { paint?: { units?: string } } }).fill?.paint?.units);
+    expect(fills).toEqual(['bounds', 'world']);
+  });
+
   it('multi-contour path', () => {
     const { a, b } = roundTrip(F.MULTI_CONTOUR_SVG);
     expect(b).toEqual(a);

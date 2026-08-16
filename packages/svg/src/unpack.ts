@@ -33,8 +33,10 @@ import {
   boundsOfPath,
   createInsertOp,
   dwarn,
+  fillToBoundsFrame,
   resolveTextStyle,
   type IngestCtx,
+  type NodeFill,
   type Op,
   type TextStyle,
 } from '@weasel-js/core';
@@ -80,14 +82,32 @@ function freshSvgNodeId(): string {
   return `n${(svgIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-/** Flatten an `SvgPaint` to the `kit:path` painter's color-string contract.
- *  `'none'` is meaningful (painter skips the fill); gradients collapse to a
- *  fallback solid — the painter's data contract has no gradient slot yet. */
-function colorFromPaint(paint: SvgPaint | undefined, context: string): string | undefined {
+/** Lower an `SvgPaint` onto the `kit:path` painter's `NodeFill` — a color
+ *  string or a `FillStyle`. `'none'` is meaningful (painter skips the fill).
+ *
+ *  A gradient rides through as the `FillStyle` it already is, normalized to
+ *  the leaf's own box: `objectBoundingBox` gradients already are, and a
+ *  `userSpaceOnUse` one is rebased so it survives the fit-clamp and the
+ *  drop-point placement that move the geometry out from under it. */
+function fillFromPaint(
+  paint: SvgPaint | undefined,
+  box: SvgDraftBounds,
+): NodeFill | undefined {
   if (!paint) return undefined;
   if (paint.kind === 'none') return 'none';
   if (paint.kind === 'solid') return paint.color;
-  dwarn('ingest', `svg unpack: gradient ${context} flattened to ${GRADIENT_FALLBACK}`);
+  const g = paint.paint;
+  const units = 'units' in g ? g.units : undefined;
+  return units === 'world' ? fillToBoundsFrame(g, box) : g;
+}
+
+/** Flatten an `SvgPaint` to a color string. Strokes only: the `kit:path`
+ *  painter's `data.stroke` is a color, with no slot for a paint server. */
+function strokeColorFromPaint(paint: SvgPaint | undefined): string | undefined {
+  if (!paint) return undefined;
+  if (paint.kind === 'none') return 'none';
+  if (paint.kind === 'solid') return paint.color;
+  dwarn('ingest', `svg unpack: gradient stroke flattened to ${GRADIENT_FALLBACK}`);
   return GRADIENT_FALLBACK;
 }
 
@@ -167,8 +187,8 @@ export function svgNodesToKitDrafts(
       : boundsOfPath(n.path);
     const pose: DraftPose = { x: b.x, y: b.y, width: b.width, height: b.height };
     if (n.rotation) pose.rotation = n.rotation;
-    const fill = colorFromPaint(n.fill, 'fill');
-    const stroke = n.stroke ? colorFromPaint(n.stroke.paint, 'stroke') : undefined;
+    const fill = fillFromPaint(n.fill, b);
+    const stroke = n.stroke ? strokeColorFromPaint(n.stroke.paint) : undefined;
     drafts.push({
       kind: 'leaf',
       id: nextId(),

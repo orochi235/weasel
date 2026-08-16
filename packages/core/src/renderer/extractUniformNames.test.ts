@@ -35,4 +35,23 @@ describe('extractUniformNames', () => {
     expect(names).toContain('u_ripples[0]');
     expect(names).toContain('u_ripples[7]');
   });
+
+  // A precision qualifier is the common spelling in hand-written GLSL, and it
+  // used to match nothing — the uniform got no location and every write to it
+  // was dropped without a word.
+  it('skips precision and interpolation qualifiers', () => {
+    expect(extract('uniform highp float u_t;')).toEqual(['u_t']);
+    expect(extract('uniform mediump vec2 u_res;')).toEqual(['u_res']);
+    expect(extract('uniform lowp vec4 u_c[2];')).toEqual(['u_c[0]', 'u_c[1]']);
+  });
+
+  it('reads a comma-separated declarator list', () => {
+    expect(extract('uniform float a, b;')).toEqual(['a', 'b']);
+    expect(extract('uniform highp vec2 p, q[2];')).toEqual(['p', 'q[0]', 'q[1]']);
+  });
+
+  it('handles matrix arrays and layout qualifiers', () => {
+    expect(extract('uniform mat3 u_xforms[2];')).toEqual(['u_xforms[0]', 'u_xforms[1]']);
+    expect(extract('layout(location = 0) uniform float u_t;')).toEqual(['u_t']);
+  });
 });

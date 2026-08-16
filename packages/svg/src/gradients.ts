@@ -6,7 +6,7 @@
  * emit a fresh `<defs>` block with stable generated ids.
  */
 
-import type { FillStyle, GradStop } from '@weasel-js/core';
+import type { FillStyle, GradStop, GradientUnits } from '@weasel-js/core';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
 import { patternXml } from './patterns';
@@ -71,6 +71,13 @@ function applyAlpha(hex: string, alpha: number): string {
   return `${hex}${a.toString(16).padStart(2, '0')}`;
 }
 
+/** SVG `gradientUnits` → the kit's `GradientUnits`. SVG's default is
+ *  `objectBoundingBox`, which is what the attribute defaults above assume
+ *  (`x2="1"`, `r="0.5"`), so the two have to be read together. */
+function readGradientUnits(el: Element): 'bounds' | 'world' {
+  return el.getAttribute('gradientUnits') === 'userSpaceOnUse' ? 'world' : 'bounds';
+}
+
 function readLinearGradient(el: Element, onWarn?: (m: string) => void): FillStyle | null {
   const x1 = parseFloat(el.getAttribute('x1') ?? '0');
   const y1 = parseFloat(el.getAttribute('y1') ?? '0');
@@ -82,6 +89,7 @@ function readLinearGradient(el: Element, onWarn?: (m: string) => void): FillStyl
     from: { x: x1, y: y1 },
     to: { x: x2, y: y2 },
     stops,
+    units: readGradientUnits(el),
   };
 }
 
@@ -95,6 +103,7 @@ function readRadialGradient(el: Element, onWarn?: (m: string) => void): FillStyl
     center: { x: cx, y: cy },
     radius: r,
     stops,
+    units: readGradientUnits(el),
   };
 }
 
@@ -136,11 +145,18 @@ export class PaintServerRegistry {
   }
 }
 
+/** `GradientUnits` → SVG `gradientUnits`. `'screen'` (the kit's default, and
+ *  a viewport-fixed wash) has no SVG analog at all; it lowers to user space,
+ *  which at least puts the paint somewhere the geometry is. */
+function gradientUnitsAttr(units: GradientUnits | undefined): string {
+  return units === 'bounds' ? 'objectBoundingBox' : 'userSpaceOnUse';
+}
+
 function gradientXml(id: string, paint: FillStyle): string {
   if (paint.fill === 'linear-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     return (
-      `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" ` +
+      `<linearGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
       `x1="${trimNumber(paint.from.x)}" y1="${trimNumber(paint.from.y)}" ` +
       `x2="${trimNumber(paint.to.x)}" y2="${trimNumber(paint.to.y)}">${stops}</linearGradient>`
     );
@@ -148,7 +164,7 @@ function gradientXml(id: string, paint: FillStyle): string {
   if (paint.fill === 'radial-gradient') {
     const stops = paint.stops.map(stopXml).join('');
     return (
-      `<radialGradient id="${id}" gradientUnits="userSpaceOnUse" ` +
+      `<radialGradient id="${id}" gradientUnits="${gradientUnitsAttr(paint.units)}" ` +
       `cx="${trimNumber(paint.center.x)}" cy="${trimNumber(paint.center.y)}" ` +
       `r="${trimNumber(paint.radius)}">${stops}</radialGradient>`
     );

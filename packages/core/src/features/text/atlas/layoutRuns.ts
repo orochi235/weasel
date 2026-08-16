@@ -163,6 +163,10 @@ export interface LaidOutRuns {
  * all. A future HarfBuzz / OpenType path would read the real
  * `underlinePosition` and `underlineThickness` off the `post` table and
  * retire these three numbers.
+ *
+ * Pinned by `tests/visual/text-decoration.spec.ts`, which measures the gap
+ * between the two rules rather than a golden image — `text.spec.ts`'s 5%
+ * tolerance cannot see one of these move.
  */
 const UNDERLINE_OFFSET = 0.10;
 const STRIKETHROUGH_OFFSET = -0.30;
