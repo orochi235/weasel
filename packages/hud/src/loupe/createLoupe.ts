@@ -64,6 +64,8 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   let color: string | null = null;
   let pixels: ImageBitmap | null = null;
   let pixelsPending = false;
+  let pixelsStale = false;
+  let disposed = false;
 
   const b = opts.bounds ?? { x: 24, y: 24, w: 220, h: 200 };
 
@@ -99,7 +101,10 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   };
 
   const refreshPixels = () => {
-    if (mode !== 'pixel' || pixelsPending) return;
+    if (disposed || mode !== 'pixel') return;
+    // A readback requested mid-flight is remembered rather than dropped: the
+    // aim that arrives during a fast drag is the one the user ends on.
+    if (pixelsPending) { pixelsStale = true; return; }
     const gl = element.getContext('webgl2');
     if (!gl) return;
     const cssRect = element.getBoundingClientRect();
@@ -112,14 +117,20 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       gl, { width: element.width, height: element.height }, aim, dpr, rw, rh,
     );
     pixelsPending = true;
+    pixelsStale = false;
     createImageBitmap(data)
       .then((bmp) => {
+        if (disposed) { bmp.close(); return; }
         pixels?.close();
         pixels = bmp;
         pixelsPending = false;
         requestRedraw();
+        if (pixelsStale) refreshPixels();
       })
-      .catch(() => { pixelsPending = false; });
+      .catch(() => {
+        pixelsPending = false;
+        if (pixelsStale) refreshPixels();
+      });
   };
 
   const sampleColor = () => {
@@ -184,6 +195,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     },
     aimAt: handleAim,
     dispose() {
+      disposed = true;
       element.removeEventListener('pointermove', onPointerMove);
       pixels?.close();
       pixels = null;

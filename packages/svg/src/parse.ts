@@ -22,7 +22,7 @@ import type {
 import type { StyledRun, TextStyle, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rotationComponent, isIdentity } from './transform';
 import { boundsOfPath } from '@weasel-js/core';
-import { IDENTITY_MATRIX } from './types';
+import { IDENTITY_MATRIX, UNBOUNDED_TEXT_WIDTH } from './types';
 import { parsePaintAttr } from './color';
 import { collectGradients, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
@@ -692,7 +692,7 @@ function parseTextElement(
   // Estimate dimensions: data-weasel-* attrs win, else heuristic.
   const dataW = num(el.getAttribute('data-weasel-width'), NaN);
   const dataH = num(el.getAttribute('data-weasel-height'), NaN);
-  const width = Number.isFinite(dataW) ? dataW : 99999;
+  const width = Number.isFinite(dataW) ? dataW : UNBOUNDED_TEXT_WIDTH;
   // Newlines in the text drive line count for height estimation.
   const lines = (plain.match(/\n/g)?.length ?? 0) + 1;
   const height = Number.isFinite(dataH) ? dataH : fontSize * lineHeight * lines;

@@ -15,23 +15,28 @@
  * Placement mirrors the image handler: the file's union AABB is fit-clamped
  * to 90% of the visible viewport and centered on the drop point (or the
  * viewport center), with multi-file batches cascading by a fixed offset.
+ * Text takes the clamp on both axes — an estimated box width in place of
+ * the parser's wrap sentinel, and a scaled `fontSize`, since neither is
+ * derived from the pose the way path geometry is.
  * Multi-root files are wrapped in one synthesized container so a dropped
  * file arrives as a single selectable unit; a single-root file inserts
  * as-is. Each file commits as one `applyOps` batch, so the whole import is
  * a single undo step.
  *
  * Known flattenings (dwarn'd, not fatal): gradient paints collapse to a
- * fallback solid color (the `kit:path` painter takes color strings only),
- * and text `fontSize` does not participate in the fit-clamp scale.
+ * fallback solid color (the `kit:path` painter takes color strings only).
  */
 import { parseSvg } from './parse';
 import type { SvgNode, SvgPaint } from './types';
+import { UNBOUNDED_TEXT_WIDTH } from './types';
 import {
   boundsOfPath,
   createInsertOp,
   dwarn,
+  resolveTextStyle,
   type IngestCtx,
   type Op,
+  type TextStyle,
 } from '@weasel-js/core';
 
 const CASCADE_OFFSET_PX = 24;
@@ -123,7 +128,9 @@ export function svgNodesToKitDrafts(
     }
 
     if (n.kind === 'text') {
-      const pose: DraftPose = { x: n.x, y: n.y, width: n.width, height: n.height };
+      const pose: DraftPose = {
+        x: n.x, y: n.y, width: textBoxWidth(n), height: n.height,
+      };
       if (n.rotation) pose.rotation = n.rotation;
       drafts.push({
         kind: 'leaf',
@@ -162,6 +169,47 @@ export function svgNodesToKitDrafts(
 
   for (const n of nodes) visit(n, null);
   return drafts;
+}
+
+/** Average glyph advance as a fraction of the em, for the width estimate
+ *  below. Sans-serif Latin runs 0.5–0.6; erring wide is the safer miss,
+ *  since a too-narrow box is the one that clips. */
+const ESTIMATED_GLYPH_ADVANCE_EM = 0.6;
+
+/**
+ * A finite box width for a text node. External SVG text carries
+ * `UNBOUNDED_TEXT_WIDTH` — a wrap sentinel rather than a measurement — and
+ * unpack has no text-measure context to replace it with a real one, so it
+ * estimates from the longest line. Left alone, the sentinel would swamp the
+ * file's union AABB and fit-clamp everything else to a speck.
+ */
+function textBoxWidth(n: Extract<SvgNode, { kind: 'text' }>): number {
+  if (n.width !== UNBOUNDED_TEXT_WIDTH) return n.width;
+  const fontSize = resolveTextStyle(n.style).fontSize;
+  const longest = n.text.split('\n')
+    .reduce((max, line) => Math.max(max, line.length), 0);
+  return longest * fontSize * ESTIMATED_GLYPH_ADVANCE_EM;
+}
+
+/**
+ * Apply the fit-clamp scale to a text leaf's `fontSize`, which lives in data
+ * rather than in the pose and so is untouched by `place`. Glyph size is not
+ * derived from the pose box the way a path's geometry is (`pathInPoseFrame`
+ * rebases that), so a shrunk file would otherwise arrive with its text at
+ * source size, overflowing every box around it.
+ *
+ * Non-text data passes through, as does an unscaled import.
+ */
+function scaleTextData(
+  data: Record<string, unknown>,
+  scale: number,
+): Record<string, unknown> {
+  if (scale === 1 || typeof data.text !== 'string') return data;
+  const style = (data.style ?? {}) as TextStyle;
+  return {
+    ...data,
+    style: { ...style, fontSize: resolveTextStyle(style).fontSize * scale },
+  };
 }
 
 function unionRect(a: SvgDraftBounds, b: SvgDraftBounds): SvgDraftBounds {
@@ -238,7 +286,7 @@ export async function unpackSvgFiles(files: File[], ctx: IngestCtx): Promise<voi
             kind: d.kind,
             layer,
             pose: place(d.pose),
-            data: d.kind === 'leaf' ? d.data : {},
+            data: d.kind === 'leaf' ? scaleTextData(d.data, scale) : {},
             parent: d.parentId,
           } as unknown as { id: string },
           label: 'Insert SVG',

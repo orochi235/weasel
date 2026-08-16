@@ -64,19 +64,6 @@ Priority tags:
      all — is in docs/handoffs/2026-07-28-arbitration-followups.md. Reviewed
      2026-07-28, re-verified against main 2026-07-31. -->
 
-- **(P3) The `phase` dimension of the specificity tuple is binary.**
-  `specificity()` scores dimension `[2]` as `phase !== undefined ? 1 : 0`, so
-  `{ channel: '*', phase: 'initial' }` — which narrows almost nothing, and is
-  what the kit's own ambient actions use (`escape`, `delete`, `anchorEditing`,
-  `cancelGesture`) — ties with a precise `&:engaged`. This is CSS's `:where()`
-  problem in miniature. Grade it the way `targetRank` already grades targets:
-  2 for a named channel or `&` with a concrete phase, 1 for one wildcard axis,
-  **0 for `*:*`** (which is exactly equivalent to declaring no phase, and
-  scoring it 1 is the bug in its purest form). Pre-emptive, not a live bug —
-  dimension `[0]` dominates and phase-bearing specs are rare. Any change owes
-  the same compat argument `targetRank`'s doc comment makes: enumerate the
-  existing phase-bearing specs and show the ordering is unchanged.
-
 - **(P3) A second finger still fires `pointerDown`-spec bindings.** Found while
   giving each pointer its own gesture channel (2026-08-01).
   `onPointerDown` dispatches the eager `stage: 'press'` copy
@@ -146,11 +133,6 @@ Priority tags:
   prevent that. Wiring re-projection would let anchor placement happen *in* the
   magnified view, which is the point of a loupe for precision work.
 
-- **(P3) Loupe pixel mode drops samples during a fast drag.** `refreshPixels`
-  skips while a `createImageBitmap` is in flight and schedules no trailing
-  refresh, so the readback can settle several samples behind the final pointer
-  position. Recorded 2026-08-09.
-
 - **(P2) No render path composes world poses.** Every painter — `buildSceneTree`
   (so `<SceneCanvas>`) and `buildSceneViewCommands` (so the detached surfaces) —
   draws each node at `getPose(id)`, which is documented as **local**, relative to
@@ -197,8 +179,11 @@ Priority tags:
   natural size; re-rasterize at view scale (or draw from the live `Image`
   element) if crispness matters; (b) **gradient paints flatten** to a solid
   fallback in unpack (the `kit:path` painter data contract has no gradient
-  slot); (c) **text `fontSize` doesn't participate** in the unpack
-  fit-clamp scale; (d) weaseldraw's file-menu import still uses its own
+  slot); (c) **text box width is estimated** on the unpack path — external
+  `<text>` carries `UNBOUNDED_TEXT_WIDTH` rather than a measurement, and
+  unpack has no text-measure context, so it guesses from the longest line at
+  0.6 em per glyph (closed 2026-08-16, along with `fontSize` joining the
+  fit-clamp); a real measure would want the atlas; (d) weaseldraw's file-menu import still uses its own
   app-local `svgInterop` mapping (richer: `wd:` tool metadata, paper size)
   — fold the shared walk if they drift. Cross-ref: embedded-image residual
   (a) below (`<image>` elements dropped on parse) bites only the unpack
@@ -387,21 +372,16 @@ Core five + Crop shipped. Remaining:
 
 ## Text
 
-- **(P3) `.dfont` machine faces decline the outline tier silently.** Datafork
-  TrueType is not parsed, so such a face degrades to the SDF tier — the right
-  failure, but a soundless one. Unreachable on current macOS (204 `.ttf` /
-  128 `.ttc` / 38 `.otf`, no `.dfont`), so it is recorded rather than fixed;
-  `packages/font/src/outline/sfnt.ts`'s header says where it would go.
-  Design record for the whole tier: `docs/concepts.md` ("Font outlines") and
-  `docs/handoffs/2026-07-31-dynamic-font-tier.md`.
-
-  Settled, so it does not get relitigated: the `.ttc` unpacking stays in
-  `sfnt.ts` rather than becoming an opentype.js PR or a switch to fontkit. The
-  upstream fix is ~10 lines but that library was dormant 2021–2026, so we would
-  carry this file until a release anyway; fontkit handles collections natively
-  but is ~5.6 MB across nine dependencies, which is a shaping engine to buy a
-  glyph outline. Ours runs before any parse, so it also survives swapping the
-  parser.
+- **(P3) `.dfont` machine faces still can't reach the outline tier.** The
+  *silence* closed 2026-08-16 — `isDataForkFont` recognizes a Macintosh
+  resource fork by its header offsets and `sfntFromCollection` throws by name,
+  so the face degrades to the SDF tier saying why. Actually reading the `sfnt`
+  resources out of the map is unwritten and unreachable on current macOS (204
+  `.ttf` / 128 `.ttc` / 38 `.otf`, no `.dfont`). Design record for the whole
+  tier: `docs/concepts.md` ("Font outlines") and
+  `docs/handoffs/2026-07-31-dynamic-font-tier.md`; the settled argument for
+  keeping container unpacking in `sfnt.ts` rather than upstreaming it or
+  adopting fontkit is in that file's own header.
 
 - **(P3) The two tiers still read different ascender tables.** Untouched by
   the outline work and unchanged in urgency. Chrome reports Inter at 0.896 em
@@ -592,7 +572,6 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ### Debug overlay follow-ups
 
-- **(P3) Per-feature *style* configuration.** Per-feature *color* config already shipped (`DebugConfig.theme` → flat `DebugTheme` color map, `packages/core/src/debug/types.ts`). Remaining: per-feature line-width / dash style.
 - **(P3) Debug overlay for hand/zoom tools.**
 - **(P3) Printable snapshot mode** — rasterize debug + scene to a single image for bug reports. Should compose with `renderSceneToPixels` (`packages/core/src/canvas/renderSceneToPixels.ts`) as the underlying primitive.
 - **(P3) FPS panel extensions** — ms-per-frame readout alongside FPS, draw-call count per frame, per-layer draw-cost breakdown (needs renderer-side instrumentation seams).
@@ -840,7 +819,13 @@ From the WebGL transition spec — all deferred:
   the surface ever widens, is a hand-written local `.d.ts` covering only what
   the kit calls — which would make that surface explicit and enforced.
 
-- **(P3) Wire `test:perf` into a CI gate.** `animation-stress.spec.ts` was moved out of the visual suite into `tests/perf/` (own Playwright config + `npm run test:perf`) so its timing-sensitive mean-cycle assertion stops red-lighting `visual.yml`. It now runs in **no** CI workflow — it's a manual diagnostic. If we want regression coverage for renderer lag/crash-freedom, add a manual `workflow_dispatch` (or nightly) job that runs `test:perf`; keep it off the per-push path since the perf threshold flakes on shared runners.
+- **(P3) `apps/draw`'s recorder throttle test is wall-clock flaky.**
+  `recorder.test.ts`'s *"throttles pointermove at the default ~60Hz rate"*
+  dispatches a 10-move burst and asserts the whole burst falls inside one 16ms
+  window. Under full-suite load the burst can straddle the boundary and an
+  extra move lands; seen failing once across three full runs, and passing in
+  isolation every time. Fix is to drive the throttle off an injected clock
+  rather than `setTimeout` and real time. Recorded 2026-08-16.
 
 ---
 

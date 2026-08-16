@@ -121,19 +121,53 @@ describe('specificity (tuple shape)', () => {
     } as GestureSpec)).toEqual([0, 2, 0, 1]);
   });
 
-  it('phase present → [0, 0, 1, 1]', () => {
+  it('bare-keyword phase desugars to a concrete `&` atom → [0, 0, 2, 1]', () => {
     expect(specificity({ kind: 'drag', phase: 'engaged' } as GestureSpec))
-      .toEqual([0, 0, 1, 1]);
+      .toEqual([0, 0, 2, 1]);
   });
 
-  it('all dimensions stack → [1, 2, 1, 1]', () => {
+  it('all dimensions stack → [1, 2, 2, 1]', () => {
     const spec: GestureSpec = {
       kind: 'drag',
       target: { kindOf: () => true },
       mods: { mod: true, shift: true },
       phase: 'engaged',
     };
-    expect(specificity(spec)).toEqual([1, 2, 1, 1]);
+    expect(specificity(spec)).toEqual([1, 2, 2, 1]);
+  });
+
+  describe('graduated phase specificity', () => {
+    const phaseRank = (phase: GestureSpec['phase']): number =>
+      specificity({ kind: 'drag', phase } as GestureSpec)[2];
+
+    it('both axes concrete outranks a wildcarded channel', () => {
+      expect(phaseRank([{ channel: 'pen', phase: 'engaged' }])).toBe(2);
+      expect(phaseRank([{ channel: '*', phase: 'engaged' }])).toBe(1);
+    });
+
+    it('a wildcarded phase costs the same axis as a wildcarded channel', () => {
+      expect(phaseRank([{ channel: '&', phase: '*' }])).toBe(1);
+    });
+
+    it('`*:*` ranks the same as declaring no phase at all', () => {
+      expect(phaseRank([{ channel: '*', phase: '*' }])).toBe(0);
+      expect(phaseRank(undefined)).toBe(0);
+    });
+
+    it('an atom list is as broad as its broadest atom', () => {
+      expect(phaseRank([
+        { channel: '&', phase: 'engaged' },
+        { channel: '*', phase: 'initial' },
+      ])).toBe(1);
+    });
+
+    it("the kit's own ambient actions keep the score they had", () => {
+      // escape / delete / anchorEditing / cancelGesture — the compat claim in
+      // `phaseRank`'s doc comment. Scoring them 2 would have let a spec that
+      // narrows almost nothing tie a precise `&:engaged`.
+      expect(phaseRank([{ channel: '*', phase: 'initial' }])).toBe(1);
+      expect(phaseRank([{ channel: '*', phase: 'engaged' }])).toBe(1);
+    });
   });
 
   describe('graduated target specificity', () => {

@@ -1,4 +1,4 @@
-import type { DebugTheme } from './types';
+import type { DebugStrokes, DebugTheme } from './types';
 
 /**
  * Default colors per the spec's Visual Style section. High contrast against
@@ -17,4 +17,17 @@ export const DEFAULT_DEBUG_THEME: DebugTheme = {
   idText: '#ffeb3b',
   fpsText: '#e0e0e0',
   fpsTextBg: 'rgba(0, 0, 0, 0.6)',
+};
+
+/**
+ * Default line widths and dashes. Hairline everywhere so the overlay never
+ * hides the geometry it is describing; the dash on hitboxes is what
+ * distinguishes them from the solid bounds box at the same rect.
+ * Override by passing `strokes: { ... }` on `DebugConfig`.
+ */
+export const DEFAULT_DEBUG_STROKES: DebugStrokes = {
+  hitbox: { width: 1, dash: [2, 2] },
+  bounds: { width: 1 },
+  handle: { width: 1 },
+  snap: { width: 1 },
 };

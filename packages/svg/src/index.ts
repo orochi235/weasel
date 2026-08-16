@@ -42,4 +42,4 @@ export type {
   SvgStroke,
   Matrix,
 } from './types';
-export { IDENTITY_MATRIX } from './types';
+export { IDENTITY_MATRIX, UNBOUNDED_TEXT_WIDTH } from './types';

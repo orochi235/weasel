@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { isFontCollection, sfntFromCollection } from './sfnt';
+import { isDataForkFont, isFontCollection, sfntFromCollection } from './sfnt';
 
 // packages/font/src/outline -> repo root
 const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
@@ -68,7 +68,50 @@ function synthesizeCollection(single: ArrayBuffer): ArrayBuffer {
   return out;
 }
 
+/** A minimal Macintosh resource fork: the 16-byte header's four offsets,
+ *  with a data segment and a map segment that tile the file exactly. That
+ *  consistency is the whole signal — a `.dfont` opens with no magic. */
+function synthesizeDataFork(dataLength = 64, mapLength = 32): ArrayBuffer {
+  const dataOffset = 256;
+  const total = dataOffset + dataLength + mapLength;
+  const out = new ArrayBuffer(total);
+  const view = new DataView(out);
+  view.setUint32(0, dataOffset);
+  view.setUint32(4, dataOffset + dataLength);   // map follows the data
+  view.setUint32(8, dataLength);
+  view.setUint32(12, mapLength);
+  return out;
+}
+
+describe('dfont detection', () => {
+  it('recognizes a resource-fork header', () => {
+    expect(isDataForkFont(synthesizeDataFork())).toBe(true);
+  });
+
+  it('declines by name rather than reaching the parser', () => {
+    expect(() => sfntFromCollection(synthesizeDataFork()))
+      .toThrow(/\.dfont/);
+  });
+
+  it('does not claim bytes too short to hold the header', () => {
+    expect(isDataForkFont(new ArrayBuffer(8))).toBe(false);
+  });
+
+  it('a signature wins over the offset heuristic', () => {
+    // Byte-consistent by construction, but it says `ttcf` — the signature
+    // check has to run first or a real collection could be misread.
+    const fork = synthesizeDataFork();
+    const view = new DataView(fork);
+    for (const [i, ch] of [...'ttcf'].entries()) view.setUint8(i, ch.charCodeAt(0));
+    expect(isDataForkFont(fork)).toBe(false);
+  });
+});
+
 describe.skipIf(!existsSync(INTER_TTF))('sfnt collection unpacking', () => {
+  it('a real font is not mistaken for a resource fork', () => {
+    expect(isDataForkFont(interBytes())).toBe(false);
+  });
+
   it('passes a single font through untouched', () => {
     const bytes = interBytes();
     expect(isFontCollection(bytes)).toBe(false);

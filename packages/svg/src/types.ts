@@ -124,6 +124,17 @@ export interface SvgGroupNode {
 }
 
 /**
+ * Width given to an external `<text>` that carries no `data-weasel-width`:
+ * large enough that line wrapping never fires, since SVG text flows from a
+ * baseline and the source says nothing about a box.
+ *
+ * It is a wrap sentinel, not a measurement. Anything that treats a text
+ * node's width as geometry — a union AABB, a fit-clamp — has to recognize it
+ * and substitute an estimate, or one text node swamps the whole file.
+ */
+export const UNBOUNDED_TEXT_WIDTH = 99999;
+
+/**
  * Text leaf node. Mirrors the kit's `TextPose` shape — a bounding box plus
  * text content, optional rich-text `runs` (per-range styling), and an
  * optional `TextStyle` for the node-wide defaults.
@@ -134,7 +145,7 @@ export interface SvgGroupNode {
  * box, plus `data-weasel-width` / `data-weasel-height` so weasel's
  * explicit box dimensions round-trip losslessly. External SVG text
  * (lacking the data-* attrs) imports with estimated dimensions —
- * `width = 99999` (effectively unbounded so wrap doesn't fire) and
+ * {@link UNBOUNDED_TEXT_WIDTH} and
  * `height = fontSize * lineHeight * (lineCount || 1)`.
  */
 export interface SvgTextNode {

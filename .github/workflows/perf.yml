@@ -1,0 +1,51 @@
+name: Performance
+
+# Manual and nightly only, never on push. The specs under tests/perf/ assert on
+# wall-clock timing under a real GL renderer, and a shared runner's variance is
+# larger than the regressions worth catching — gating a PR on them would block
+# merges on runner weather. Read the run as a trend against previous runs, not
+# as a pass/fail on the change.
+#
+# GitHub runners have no GPU, so Chromium falls back to SwiftShader. The specs
+# print the unmasked GL renderer for exactly this reason: absolute numbers here
+# are not comparable to a local machine's, only to other runs of this workflow.
+on:
+  workflow_dispatch:
+  schedule:
+    # 07:00 UTC daily — off the working day for either coast.
+    - cron: '0 7 * * *'
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  perf:
+    runs-on: ubuntu-22.04
+    env:
+      NPM_CONFIG_LOGLEVEL: error
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run performance specs
+        run: npm run test:perf
+
+      # The per-command and frame-budget tables are printed, not asserted, so
+      # the log is the artifact that matters even on a pass.
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: perf-results
+          path: test-results/
+          retention-days: 14
