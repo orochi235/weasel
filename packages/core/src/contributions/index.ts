@@ -1,4 +1,4 @@
-export type { Contribution, Eligibility } from './types';
+export type { Contribution, Eligibility, OverlayPosition } from './types';
 export { liveScope } from './eligibility';
 export type { EligibilityState } from './eligibility';
 export { scopeBindings } from './assemble';

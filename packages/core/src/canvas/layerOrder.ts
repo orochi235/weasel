@@ -1,6 +1,7 @@
 import type { RenderLayer } from '../core/layers/render';
 import type { LayerSlotValue } from './Canvas';
 import { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
+import type { OverlayPosition } from '../contributions/types';
 
 const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
 
@@ -125,4 +126,30 @@ export function composeOrderedLayers(
   }
 
   return out;
+}
+
+/**
+ * Splice a tool's positioned overlays into an already-composed layer list.
+ *
+ * `'top'` appends; the other two anchor on the selection-chrome layer's index
+ * in `ordered`. With no selection chrome present the anchored overlays fall
+ * back to the tail, keeping their relative order. Mutates and returns
+ * `ordered`.
+ */
+export function placeToolOverlays(
+  ordered: RenderLayer<unknown>[],
+  selectionOverlay: RenderLayer<unknown> | undefined,
+  overlays: (position: OverlayPosition) => RenderLayer<unknown>[],
+): RenderLayer<unknown>[] {
+  const before = overlays('before-selection');
+  const after = overlays('after-selection');
+  const at = selectionOverlay ? ordered.indexOf(selectionOverlay) : -1;
+  if (at >= 0) {
+    ordered.splice(at + 1, 0, ...after);
+    ordered.splice(at, 0, ...before);
+  } else {
+    ordered.push(...before, ...after);
+  }
+  ordered.push(...overlays('top'));
+  return ordered;
 }

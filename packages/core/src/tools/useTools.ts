@@ -5,7 +5,7 @@ import type { AnyTool, HotkeyTrigger } from './types';
 import type { RenderLayer } from 'core/layers/render';
 import { useActiveToolContext } from '../interactions/actions/activeToolContext';
 import { useContributions } from '../contributions/useContributions';
-import type { Contribution, Eligibility } from '../contributions/types';
+import type { Contribution, Eligibility, OverlayPosition } from '../contributions/types';
 
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
@@ -38,10 +38,10 @@ export interface ToolsApi {
   /** Returns true if a tool with the given id is in the registry or ambient list. */
   has(id: string): boolean;
   /** All overlay layers from currently-engaged tools (active slot, hotkey
-   *  slot if engaged, all ambient slot tools). Filters out tools with no
-   *  `overlay` field. Order: active, then hotkey (if engaged), then
-   *  ambient (registration order). */
-  getActiveOverlays(): RenderLayer<unknown>[];
+   *  slot if engaged, all ambient slot tools) that declare `position`.
+   *  Filters out tools with no `overlay` field. Order: active, then hotkey
+   *  (if engaged), then ambient (registration order). */
+  getActiveOverlays(position?: OverlayPosition): RenderLayer<unknown>[];
 }
 
 /** The slot a caller passed a tool in, restated as declared eligibility.

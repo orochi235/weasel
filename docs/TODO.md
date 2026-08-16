@@ -191,10 +191,13 @@ Priority tags:
   a **box size** — either measure the string (needs a text-measure context) or
   default to a fixed box and let edit reflow it. Whether we even want
   drop/paste-text-to-canvas is an open question (see the discussion that
-  spawned this — it's a marginal convenience with no consumer asking);
-  (d) route-grammar names for drop/paste (registry probe shows them
-  as `undefined`); (e) paste could mirror wheel's dispatch-then-preventDefault
-  instead of preventDefaulting on content.
+  spawned this — it's a marginal convenience with no consumer asking).
+  Closed 2026-08-16: (d) `drop` and `paste` are route-grammar gesture names,
+  targetless, carrying the MIME-glob filter as their arg (`drop(image/*)`);
+  (e) paste now dispatches first and `preventDefault`s only on `'handled'`,
+  wheel's shape — clipboard items materialize synchronously, so unlike drop the
+  result is known while the default can still be suppressed, and a paste no
+  binding wanted stays the page's.
 
 - **(P3) Reshape `selectionOverlay` into a thin override hook.** The chrome-affordances spec shipped (2026-06-13): the multi-resize union now has a single owner — `ChromeState.unionBounds` — which both the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`) and the overlay layer read at draw time. The inline `poseById` re-derivations in `Canvas`/`SceneCanvas` are deleted, `createSelectionOverlayLayer` resolves the synthetic union from the draw-time chromeState envelope, and `MULTI_RESIZE_TARGET_ID` moved to `core/selection/` (fixing the backwards `affordances→tools` import). Residual: the synthetic-id plumbing (`getSelection` → `[MULTI_RESIZE_TARGET_ID]`, `getOutlineIds` → real members) still lives in the Canvas/SceneCanvas wiring rather than inside `createSelectionOverlayLayer`. Fold it into the layer so the slot is purely a consumer override hook.
 
@@ -235,8 +238,6 @@ From `docs/specs/2026-05-03-pen-tool-design.md`:
 
 From `docs/specs/2026-05-03-tool-overlay-channel-design.md`:
 
-- **(P3) Per-overlay z-positioning.** v1 always renders tool overlays on top. Add `overlayPosition?: 'top' | 'before-selection' | 'after-selection'` field to the Tool record when a real consumer wants overlay chrome below selection handles (e.g. a snap-target highlight that should sit behind handles).
-- **(P3) Multiple overlays per Tool.** Today `Tool.overlay` is a single `RenderLayer`. If composing multiple visually distinct layers into one `draw` becomes painful, promote to `overlay?: RenderLayer | RenderLayer[]`.
 - **(P3) Subscription / push model.** Today the channel is pull (Canvas asks each frame, scratch is read via React closure). If a tool needs to push state changes outside the React render cycle, add an imperative `tools.publishOverlay(toolId, layer)` channel.
 
 ### Slice tool follow-ups
@@ -501,7 +502,6 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Drop rejection signal.** v1 layout commits a free-space `setPose` when no container accepted a drag. Needs a cleaner semantic — candidates: a dedicated cancel op, a snap-back-to-source-pose path, or having the source layout's `commitDrop` re-place the child at its origin slot.
 - **(P2) Multi-select drag into a layout container.** Currently falls through to the per-id transform batch (no `commitDrop` invocation, no sibling reflow). Layout-aware reflow + commit only fire when `scratch.ids.length === 1` in `moveAction`. Decide multi-select-into-layout semantics (sequential commitDrops? grouped layout API?) before lifting the guard.
-- **(P3) Full-opacity live reflow.** Reflowing siblings currently render at the preview-ghost layer's blanket `0.85` alpha (same as dragged ghosts), so mid-drag they look semi-transparent at their destination slots. A polished sortable-list feel wants them fully opaque; needs the ghost layer to treat reflow ids differently from dragged ids.
 - **(P3) Z-order walk doesn't cross non-container ancestors.** Open question: when a deep layout container is BELOW (in z) a shallow layout container that shares the dragged point, today the deepest wins — debate whether real z-order across the whole tree (flat painter's order) should win instead. Decide once a consumer hits the case.
 - **(P3) Tile-grid overflow policy.** Children beyond `cols * rows` are skipped from `childPoses`. Real apps may want scroll, grow-grid, or rejection — pick once a consumer asks.
 - **(P3) Strategy-aware drop regions.** A layout could expose `dropRegion(container) → Bounds` extending beyond visible bounds for forgiveness (e.g. row layouts catching pointers slightly past the row's end).
@@ -510,7 +510,6 @@ Core five + Crop shipped. Remaining:
 - **(P3) Quadtree / packing layouts.** Niche enough not to belong in the generic kit; stays in eric or a future plugin.
 - **(P3) Slot-based layout strategy** (rows / grid / ring arrangements à la eric's `@/model/arrangement`). Worth lifting once the v1 three settle.
 - **(P3) Configurable layout hit-test order.** v1 uses top-most container under the dragged center. Innermost-regardless-of-z and explicit-drop-region modes are escape hatches if a real consumer needs them.
-- **(P3) Per-strategy `acceptsDrop(dragged) → boolean`.** Today rejection is implicit (snap returns null). Add when type-aware containers appear.
 
 ### Tiling
 
@@ -538,15 +537,12 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ## Selection, actions & UI panels
 
-- **(P3) Silhouette area-select for geometry-in-`data` shapes.** The 2026-06-20 geometry-migration #3 made marquee/lasso area-select silhouette-aware (`packages/core/src/canvas/deps/hitTestArea.ts`, kernel `pointInPolygon`/`segmentsCross`), but it reads geometry from the **pose** only (`(pose as PolygonPath).coords`). So it fires for polygon-pose consumers and `geometryProjection`-synced nodes, but is inert for the kit's own inserted shapes (rect/ellipse/polygon/star/line/pencil), which store geometry in `node.data.path`/`data.shape` behind a plain `{x,y,w,h}` pose → these take the AABB fast-path. This is **not a regression** (the old rect-only `hitTestAABB` was equally AABB-only for them), but the silhouette benefit isn't realized for default kit geometry. Follow-up: route `hitTestArea`'s silhouette branch through `findShapeSilhouette`/`node.data` (world-frame; mind the coordinate frame) so kit-produced shapes also drop AABB false-positives. Either that or make `geometryProjection` the default so the pose always carries the silhouette.
-
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
 ### Align/distribute/flip follow-ups
 
-- **(P3) Flip pivot policy on the actions registry adapter.** `useFlip`'s `pivot` flows through; bare `defaultFlipActions` deps could surface it.
 - **(P3) Cursor-relative align** (e.g. align to mouse position rather than union).
 - **(P3) Selection-handles-locked alignment** (align relative to the dragged corner during a resize gesture).
 

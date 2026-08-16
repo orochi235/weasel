@@ -136,6 +136,39 @@ describe('moveAction layout reflow', () => {
     expect(bPose.x).toBe(0); // b swapped to cell 0
   });
 
+  it('skips a container whose acceptsDrop rejects the dragged node', () => {
+    const scene = makeScene(
+      {
+        C: { x: 0, y: 0, width: 100, height: 100 },
+        a: { x: 0, y: 0, width: 50, height: 100 },
+        b: { x: 50, y: 0, width: 50, height: 100 },
+      },
+      { C: null, a: 'C', b: 'C' },
+      { C: ['a', 'b'] },
+      ['C'],
+    );
+    const seen: string[] = [];
+    const picky = {
+      ...tileGrid<P>({ cols: 2, rows: 1 }),
+      acceptsDrop: (container: { id: string }, dragged: { id: string }) => {
+        seen.push(`${container.id}:${dragged.id}`);
+        return false;
+      },
+    };
+    const invoker = moveAction.invoker;
+    if (!invoker || invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(makeCtx(scene, ['a'], undefined, { C: picky }));
+    handle.onMove!(makeCtx(scene, ['a'], {
+      start: { x: 25, y: 50 },
+      current: { x: 75, y: 50 },
+      delta: { x: 50, y: 0 },
+    }, { C: picky }) as InvocationCtx);
+
+    expect(seen).toEqual(['C:a']);
+    // No reflow: only the dragged node is in the preview channel.
+    expect([...(handle.previewIds!() as Iterable<string>)]).toEqual(['a']);
+  });
+
   it('finds a container whose pose is non-rect (PolygonPath) via its AABB', () => {
     // Container C carries a PolygonPath pose (no direct x/y/width/height).
     // Absolute-pose model (no poseComposition) so composeWorldPose leaves the

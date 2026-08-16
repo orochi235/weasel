@@ -177,3 +177,56 @@ describe('usePreviewGhostLayer — dispatcher in-flight handles', () => {
     expect(rects[0]).toEqual({ x: TOOL_POSE.x, y: TOOL_POSE.y });
   });
 });
+
+describe('usePreviewGhostLayer — previewOpaqueIds', () => {
+  it('splits opaque ids out of the ghost alpha group', () => {
+    const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+    const dragged = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'd' } });
+    const reflowed = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'r' } });
+
+    const handle: OngoingHandle = {
+      previewIds: () => [dragged, reflowed],
+      previewPose: (id) => (id === dragged ? PREVIEW_POSE : { ...PREVIEW_POSE, x: 99 }),
+      previewOpaqueIds: () => [reflowed],
+    };
+
+    const { result } = renderHook(() =>
+      usePreviewGhostLayer<Data, 'main', Pose>({
+        scene,
+        tools: makeToolsApi(),
+        sceneSlot: { drawOne },
+        dispatcher: makeDispatcher([handle]),
+      }),
+    );
+
+    const cmds = result.current.draw(undefined, VIEW, DIMS) as GroupDrawCommand[];
+    const byAlpha = cmds.map((c) => [c.alpha, collectRects(c.children).map((r) => r.x)]);
+    expect(byAlpha).toEqual([
+      [undefined, [99]],
+      [0.85, [PREVIEW_POSE.x]],
+    ]);
+  });
+
+  it('emits only the ghost group when nothing is opaque', () => {
+    const scene = createScene<Data, 'main', Pose>({ systemLayers: [{ id: 'main' }] });
+    const a = scene.add({ kind: 'leaf', layer: 'main', pose: COMMITTED_POSE, data: { label: 'a' } });
+
+    const handle: OngoingHandle = {
+      previewIds: () => [a],
+      previewPose: () => PREVIEW_POSE,
+      previewOpaqueIds: () => null,
+    };
+
+    const { result } = renderHook(() =>
+      usePreviewGhostLayer<Data, 'main', Pose>({
+        scene,
+        tools: makeToolsApi(),
+        sceneSlot: { drawOne },
+        dispatcher: makeDispatcher([handle]),
+      }),
+    );
+
+    const cmds = result.current.draw(undefined, VIEW, DIMS) as GroupDrawCommand[];
+    expect(cmds.map((c) => c.alpha)).toEqual([0.85]);
+  });
+});

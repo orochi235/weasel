@@ -22,7 +22,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import type { FillStyle } from 'core/paint-types';
-import { composeOrderedLayers } from './layerOrder';
+import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
 import {
   STANDARD_SLOTS,
   isCustomEntry,
@@ -1370,7 +1370,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // Decoration layer: above scene, below tool overlay (per slot ordering doc).
     if (decorationLayer) out.push(decorationLayer);
     if (tools) {
-      out.push(...tools.getActiveOverlays());
+      placeToolOverlays(out, standardLayers.selectionOverlay, tools.getActiveOverlays);
     }
     return out;
   }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer, decorationLayer]);

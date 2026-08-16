@@ -173,6 +173,33 @@ describe('flipAction (axis param)', () => {
     expect(ops[1].args.id).toBe('b');
   });
 
+  it('pivot "union" swaps sides about the selection envelope', () => {
+    const scene = makeStubScene({
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 90, y: 0, width: 10, height: 10 },
+    });
+    const selection = makeSelection(['a', 'b']);
+
+    runFlip({ selection, scene }, { axis: 'x', pivot: 'union' });
+
+    // Union spans x 0..100, centerline at 50: the two swap places.
+    expect(scene.poses.get('a')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
+    expect(scene.poses.get('b')).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+  });
+
+  it('pivot defaults to "each" — poses stay put', () => {
+    const scene = makeStubScene({
+      a: { x: 0, y: 0, width: 10, height: 10 },
+      b: { x: 90, y: 0, width: 10, height: 10 },
+    });
+    const selection = makeSelection(['a', 'b']);
+
+    runFlip({ selection, scene }, { axis: 'x' });
+
+    expect(scene.poses.get('a')).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+    expect(scene.poses.get('b')).toEqual({ x: 90, y: 0, width: 10, height: 10 });
+  });
+
   it('defaults to axis "x" when no params are supplied', () => {
     const scene = makeStubScene({ a: { x: 0, y: 0, width: 10, height: 10 } });
     const selection = makeSelection(['a']);
