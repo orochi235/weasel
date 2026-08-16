@@ -125,14 +125,48 @@ describe('svgNodesToKitDrafts', () => {
     expect(drafts.indexOf(g)).toBeLessThan(drafts.indexOf(a));
   });
 
-  it('flattens gradient paints to a fallback solid color', () => {
+  it('carries a bounds-relative gradient fill through as a FillStyle', () => {
+    const paint = {
+      fill: 'linear-gradient', units: 'bounds',
+      from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
+    };
     const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
-      fill: { kind: 'gradient', paint: {} },
+      fill: { kind: 'gradient', paint },
     })], seq());
     const d = drafts[0];
     if (d.kind !== 'leaf') throw new Error('expected leaf');
-    expect(typeof d.data.fill).toBe('string');
-    expect(d.data.fill).not.toBe('none');
+    expect(d.data.fill).toEqual(paint);
+  });
+
+  it('normalizes a userSpaceOnUse gradient against the leaf box', () => {
+    // Page-space geometry doesn't survive the fit-clamp and drop-point
+    // placement that move the node out from under it.
+    const drafts = svgNodesToKitDrafts([rectNode(20, 40, 10, 20, {
+      fill: {
+        kind: 'gradient',
+        paint: {
+          fill: 'linear-gradient', units: 'world',
+          from: { x: 20, y: 40 }, to: { x: 30, y: 40 },
+          stops: [{ offset: 0, color: '#ff0000' }, { offset: 1, color: '#0000ff' }],
+        },
+      },
+    })], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.fill).toMatchObject({
+      units: 'bounds', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+    });
+  });
+
+  it('flattens a gradient STROKE — the painter has a color slot, not a paint one', () => {
+    const drafts = svgNodesToKitDrafts([rectNode(0, 0, 10, 10, {
+      stroke: { paint: { kind: 'gradient', paint: {} }, width: 2 },
+    })], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(typeof d.data.stroke).toBe('string');
+    expect(d.data.stroke).not.toBe('none');
   });
 });
 

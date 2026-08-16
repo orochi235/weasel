@@ -51,16 +51,43 @@ import {
 } from './shaders/customPrelude';
 import { getProgramSource, type ShaderProgramHandle } from './shaders/registerProgram';
 
+/** Qualifiers GLSL allows between `uniform` and the type name. Skipping them
+ *  is not cosmetic: `uniform highp float u_t;` used to match nothing at all,
+ *  so the uniform got no location and every write to it was dropped in
+ *  silence. */
+const UNIFORM_QUALIFIER = /^(?:lowp|mediump|highp|precise|invariant|centroid|flat|smooth|noperspective)$/;
+
+/**
+ * Uniform names a custom program declares, expanded per array slot
+ * (`u_ripples[0]`, `u_ripples[1]`, …) since that is how a caller binds them.
+ *
+ * A regex scan, not a parser: it reads a declarator list (`float a, b;`) and
+ * skips precision / interpolation qualifiers, but knows nothing of
+ * preprocessor branches, struct uniforms, or interface blocks.
+ */
 function extractUniformNames(glsl: string): string[] {
-  const reScalar = /\buniform\s+\S+\s+(\w+)\s*;/g;
-  const reArray  = /\buniform\s+\S+\s+(\w+)\s*\[\s*(\d+)\s*\]\s*;/g;
+  const re = /\buniform\s+([^;{]+);/g;
   const names: string[] = [];
   let m: RegExpExecArray | null;
-  while ((m = reScalar.exec(glsl)) !== null) names.push(m[1]);
-  while ((m = reArray.exec(glsl)) !== null) {
-    const name = m[1];
-    const size = parseInt(m[2], 10);
-    for (let i = 0; i < size; i++) names.push(`${name}[${i}]`);
+  while ((m = re.exec(glsl)) !== null) {
+    const words = m[1].trim().split(/\s+/);
+    // Drop qualifiers, then the type, leaving the declarator list. The list
+    // can still carry whitespace around its commas, so rejoin before split.
+    let i = 0;
+    while (i < words.length && UNIFORM_QUALIFIER.test(words[i])) i++;
+    i++; // the type
+    const declarators = words.slice(i).join(' ');
+    if (!declarators) continue;
+    for (const raw of declarators.split(',')) {
+      const d = raw.trim();
+      const arr = /^(\w+)\s*\[\s*(\d+)\s*\]$/.exec(d);
+      if (arr) {
+        const size = parseInt(arr[2], 10);
+        for (let k = 0; k < size; k++) names.push(`${arr[1]}[${k}]`);
+      } else if (/^\w+$/.test(d)) {
+        names.push(d);
+      }
+    }
   }
   return names;
 }

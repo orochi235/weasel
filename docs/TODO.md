@@ -158,9 +158,12 @@ Priority tags:
   batch per file). weaseldraw runs with `unpack` on. Remaining:
   (a) **embedded SVG blurs under zoom** — `imageCache` rasterizes once at
   natural size; re-rasterize at view scale (or draw from the live `Image`
-  element) if crispness matters; (b) **gradient paints flatten** to a solid
-  fallback in unpack (the `kit:path` painter data contract has no gradient
-  slot); (c) **text box width is estimated** on the unpack path — external
+  element) if crispness matters; (b) **a gradient *stroke* still flattens** to
+  a solid fallback in unpack. Fills stopped flattening 2026-08-16 — the
+  recorded blocker ("the `kit:path` painter data contract has no gradient
+  slot") had not been true for some time; `NodeFill` is `string | FillStyle`.
+  `data.stroke` genuinely is a color string, and giving it a paint slot means
+  changing the painter, not the importer; (c) **text box width is estimated** on the unpack path — external
   `<text>` carries `UNBOUNDED_TEXT_WIDTH` rather than a measurement, and
   unpack has no text-measure context, so it guesses from the longest line at
   0.6 em per glyph (closed 2026-08-16, along with `fontSize` joining the
@@ -344,7 +347,20 @@ Core five + Crop shipped. Remaining:
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three real consumers now exist (plasma / ripple / voronoi panels), enough to validate the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 
-- **(P3) `extractUniformNames` regex coverage.** Currently handles scalar uniforms and `T name[N];` arrays. Doesn't handle: matrix arrays (`mat3 u_xforms[4];`), GLSL preprocessor branches, nested struct uniforms, or layout qualifiers on the LHS. Bite-the-bullet rewrite probably wants a small GLSL-prelude parser. Defer until a consumer hits a gap.
+- **(P3) `extractUniformNames` regex coverage.** Two of the three gaps this
+  entry used to claim were never real: matrix arrays (`mat3 u_xforms[4];`) and
+  layout qualifiers both already worked — `\S+` takes any type name, and
+  `\buniform` skips whatever precedes it. What *was* broken and is now fixed
+  (2026-08-16): a precision or interpolation qualifier (`uniform highp float
+  u_t;` — the common spelling in hand-written GLSL) matched nothing at all, so
+  the uniform got no location and every write to it was dropped silently.
+  Comma-separated declarator lists (`uniform float a, b;`) read too.
+
+  Still a regex scan, not a parser, and still blind to GLSL preprocessor
+  branches, struct uniforms and interface blocks. Those want the bite-the-bullet
+  GLSL-prelude parser; defer until a consumer hits one. **Check the claim before
+  planning around it** — this entry was wrong for months because nobody ran the
+  regex against the case it described.
 
 ---
 
@@ -415,23 +431,6 @@ Core five + Crop shipped. Remaining:
   / `0.05` em constants in `layoutRuns`. Real fonts ship
   `underlinePosition` / `underlineThickness`; the BmFont atlas format does
   not carry them, so honoring them means extending the atlas metrics.
-
-- **(P3) The visual suite can't pin decoration geometry.** `text.spec.ts`
-  runs at a 5% diff tolerance (MSDF AA differs from Canvas 2D AA), and the
-  whole decorated `t6` node is well under 5% of a 600×360 canvas — it was
-  added and the spec passed against the *old* baseline without noticing. So
-  the committed baseline documents the current rendering but would not catch
-  a rule drifting a pixel or two. Pinning it wants a structural assertion in
-  the `render-to-pixels.spec.ts` style (a decoration rule is a gap-free
-  horizontal run; glyph rows never are) rather than a tighter tolerance,
-  which the AA difference won't survive.
-
-  The same blind spot let a real defect through: the text shaders' AA band was
-  a constant, so glyph edges were hard-quantized at 16px, and `text.spec.ts`
-  passed anyway. Fixed 2026-07-29. `tests/visual/text-aa.spec.ts` is now the
-  worked example of the structural assertion this entry asks for — it samples
-  one known-color node and asserts a coverage-histogram property, no golden
-  image — so pinning the decoration rules is a matter of copying its shape.
 
 - **(P3) `ToolOptionsBar` is not driven by tool prefs.** Its first tenant
   (draw's `CharacterOptions`) is hand-assembled. A tool declaring a
