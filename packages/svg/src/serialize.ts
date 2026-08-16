@@ -9,7 +9,7 @@ import type { Path, Stroke } from '@weasel-js/core';
 import { boundsOfPath } from '@weasel-js/core';
 import type {
   NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode, SvgNode,
-  SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
+  SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
 } from './types';
 import { runsToPlainText } from '@weasel-js/core';
 import { serializePathD } from './path-serializer';
@@ -149,7 +149,37 @@ function registerTextPaint(
 function nodeXml(node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
   if (node.kind === 'group') return groupXml(node, registry, namespaces);
   if (node.kind === 'text') return textXml(node, registry, namespaces);
+  if (node.kind === 'image') return imageXml(node, namespaces);
   return pathXml(node, registry, namespaces);
+}
+
+/**
+ * Emit an `<image>`. `preserveAspectRatio="none"` is unconditional: the node
+ * carries a literal box and nothing else, so letting a viewer letterbox it
+ * would place the pixels somewhere the model never said.
+ */
+function imageXml(node: SvgImageNode, namespaces: Record<string, string>): string {
+  const attrs: string[] = [
+    `href="${escapeAttr(node.href)}"`,
+    `x="${trimNumber(node.x)}"`,
+    `y="${trimNumber(node.y)}"`,
+    `width="${trimNumber(node.width)}"`,
+    `height="${trimNumber(node.height)}"`,
+    `preserveAspectRatio="none"`,
+  ];
+  if (node.opacity != null && node.opacity !== 1) {
+    attrs.push(`opacity="${trimNumber(node.opacity)}"`);
+  }
+  if (node.rotation != null && node.rotation !== 0) {
+    const cx = node.x + node.width / 2;
+    const cy = node.y + node.height / 2;
+    const deg = (node.rotation * 180) / Math.PI;
+    attrs.push(`transform="rotate(${trimNumber(deg)} ${trimNumber(cx)} ${trimNumber(cy)})"`);
+  }
+  const metaAttrs = metaAttrsXml(node.meta, namespaces);
+  const metaEls = metaElementsXml(node.meta, namespaces);
+  if (metaEls) return `<image ${attrs.join(' ')}${metaAttrs}>${metaEls}</image>`;
+  return `<image ${attrs.join(' ')}${metaAttrs}/>`;
 }
 
 function groupXml(node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>): string {
@@ -282,7 +312,7 @@ function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: number;
       n.children.forEach(visit);
       return;
     }
-    const b = n.kind === 'text'
+    const b = n.kind === 'text' || n.kind === 'image'
       ? { minX: n.x, minY: n.y, maxX: n.x + n.width, maxY: n.y + n.height }
       : pathBounds(n.path);
     if (b.minX < minX) minX = b.minX;

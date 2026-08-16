@@ -7,6 +7,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useScene } from '../../core/scene/useScene';
+import { asNodeId } from '../../core/scene/types';
 import type { View } from '../../core/viewport/view';
 import { useSceneTextEdit } from './useSceneTextEdit';
 
@@ -17,7 +18,7 @@ interface TextItem {
   width: number;
   height: number;
   text: string;
-  style?: { fontSize?: number };
+  style?: { fontSize?: number; fontWeight?: number };
 }
 
 const NODE: TextItem = {
@@ -77,5 +78,55 @@ describe('useSceneTextEdit — view projection', () => {
     expect(el.style.minHeight).toBe('40px');
     expect(el.style.fontSize).toBe('16px');
     expect(el.style.transform).toBe('scale(2)');
+  });
+});
+
+/**
+ * Clearing a flag the *node* sets is the one edit the additive run algebra
+ * can't express, so `useTextEdit` declines it unless a `setStyle` writer
+ * exists. The wrapper supplies one; without it every scene-wired consumer
+ * silently refused the toggle.
+ */
+describe('useSceneTextEdit — setStyle', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('un-bolding part of a bold node lowers the node flag and raises it on the rest', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const hook = renderHook(() => {
+      const scene = useScene({
+        items: [{
+          id: 'a', x: 0, y: 0, width: 200, height: 40,
+          text: 'abcd', style: { fontWeight: 700 }, runs: [{ text: 'abcd', bold: true }],
+        }],
+      });
+      return { scene, edit: useSceneTextEdit(scene, container) };
+    });
+
+    act(() => hook.result.current.edit.startEdit('a'));
+    const overlay = overlayOf(container);
+    await act(async () => {
+      const range = document.createRange();
+      const text = document.createTreeWalker(overlay, NodeFilter.SHOW_TEXT).nextNode() as Text;
+      range.setStart(text, 0);
+      range.setEnd(text, 2);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    await act(async () => {
+      overlay.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'b', metaKey: true, bubbles: true, cancelable: true,
+      }));
+    });
+
+    const style = hook.result.current.scene.get(asNodeId('a'))?.data.style;
+    expect(style?.fontWeight).toBe(400);
+    act(() => hook.result.current.edit.commit());
+    const runs = hook.result.current.scene.get(asNodeId('a'))?.data.runs;
+    expect(runs).toEqual([{ text: 'ab' }, { text: 'cd', bold: true }]);
   });
 });

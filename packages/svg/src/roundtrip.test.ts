@@ -48,7 +48,18 @@ interface NormalizedText {
   opacity?: number;
 }
 
-type NormalizedNode = NormalizedPath | NormalizedGroup | NormalizedText;
+interface NormalizedImage {
+  kind: 'image';
+  href: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  opacity?: number;
+  rotation?: number;
+}
+
+type NormalizedNode = NormalizedPath | NormalizedGroup | NormalizedText | NormalizedImage;
 
 function round(n: number): number {
   return Math.round(n * 1000) / 1000;
@@ -76,6 +87,19 @@ function normalize(node: SvgNode): NormalizedNode {
     if (node.runs) out.runs = node.runs;
     if (node.style) out.style = node.style;
     if (node.opacity != null) out.opacity = round(node.opacity);
+    return out;
+  }
+  if (node.kind === 'image') {
+    const out: NormalizedImage = {
+      kind: 'image',
+      href: node.href,
+      x: round(node.x),
+      y: round(node.y),
+      width: round(node.width),
+      height: round(node.height),
+    };
+    if (node.opacity != null) out.opacity = round(node.opacity);
+    if (node.rotation != null) out.rotation = round(node.rotation);
     return out;
   }
   const path = node.path;
@@ -176,6 +200,27 @@ describe('round-trip', () => {
     const { a, b, warnings } = roundTrip(F.TEXT_PLAIN_SVG);
     expect(warnings).toEqual([]);
     expect(b).toEqual(a);
+  });
+
+  it('<image> (data URI, external URL, xlink:href)', () => {
+    const { a, b, warnings } = roundTrip(F.IMAGE_SVG);
+    expect(warnings).toEqual([]);
+    expect(b).toEqual(a);
+    expect(a).toEqual([
+      // Group transform collapses onto the box: translate(10 20) scale(2).
+      {
+        kind: 'group',
+        children: [
+          { kind: 'image', href: 'data:image/png;base64,iVBORw0KGgo=', x: 20, y: 30, width: 60, height: 40 },
+        ],
+      },
+      {
+        kind: 'image', href: 'https://example.com/photo.jpg',
+        x: 100, y: 100, width: 80, height: 60,
+        opacity: 0.5, rotation: round(Math.PI / 6),
+      },
+      { kind: 'image', href: 'legacy.png', x: 200, y: 200, width: 40, height: 40 },
+    ]);
   });
 
   it('text with styled runs (tspan)', () => {

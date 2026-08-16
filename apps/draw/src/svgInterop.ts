@@ -320,6 +320,9 @@ export function svgNodesToSceneDrafts(
       if (acc) draft.pose = acc;
       return acc;
     }
+    // This app's `Obj` union is path/text only, so a parsed `<image>` has
+    // nowhere to land. The kit's own `unpackSvgFiles` keeps them.
+    if (n.kind === 'image') return null;
     const obj = svgLeafToObj(n, nextId());
     drafts.push({ kind: 'leaf', id: obj.id, parentId, obj });
     return { x: obj.x, y: obj.y, width: obj.width, height: obj.height };

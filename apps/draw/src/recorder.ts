@@ -161,7 +161,13 @@ export interface Recorder {
 const POINTER_TYPES = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'] as const;
 const KEY_TYPES = ['keydown', 'keyup'] as const;
 
-export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null }): Recorder {
+export function createRecorder(opts: {
+  canvas: () => HTMLCanvasElement | null;
+  /** Monotonic millisecond clock; defaults to `performance.now`. Injecting one
+   *  lets tests drive the pointermove throttle without racing wall time. */
+  clock?: () => number;
+}): Recorder {
+  const clock = opts.clock ?? (() => performance.now());
   let active = false;
   let startTime = 0;
   let events: RecordedEvent[] = [];
@@ -191,7 +197,7 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
     return 'other';
   };
 
-  const now = (): number => performance.now() - startTime;
+  const now = (): number => clock() - startTime;
 
   /** Build the modifier subset of a `RecordedEvent` as a single bitmask.
    *  Returns `{ m }` when any modifier is held, an empty object otherwise so
@@ -286,7 +292,7 @@ export function createRecorder(opts: { canvas: () => HTMLCanvasElement | null })
     start(startOpts) {
       if (active) return;
       active = true;
-      startTime = performance.now();
+      startTime = clock();
       events = [];
       activeDowns.clear();
       lastMoveT = -Infinity;

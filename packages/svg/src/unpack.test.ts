@@ -87,6 +87,17 @@ describe('svgNodesToKitDrafts', () => {
     expect(d.pose).toEqual({ x: 5, y: 6, width: 100, height: 20 });
   });
 
+  it("maps an image node to the kit:image painter's {image:{src}} data", () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'image', href: 'data:image/png;base64,AA==',
+      x: 5, y: 6, width: 40, height: 30, opacity: 0.5, rotation: Math.PI / 2,
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    expect(d.data.image).toEqual({ src: 'data:image/png;base64,AA==', opacity: 0.5 });
+    expect(d.pose).toEqual({ x: 5, y: 6, width: 40, height: 30, rotation: Math.PI / 2 });
+  });
+
   it("estimates a box for external text's unbounded-width sentinel", () => {
     const drafts = svgNodesToKitDrafts([{
       kind: 'text', x: 0, y: 0, width: UNBOUNDED_TEXT_WIDTH, height: 20,

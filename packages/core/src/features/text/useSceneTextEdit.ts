@@ -2,7 +2,7 @@
  * `useSceneTextEdit` — scene-aware wrapper around `useTextEdit`.
  *
  * Every consumer that wires `useTextEdit` against a `useScene`-managed
- * scene writes the same six callbacks: scene lookups for text / style /
+ * scene writes the same callbacks: scene lookups for text / style /
  * runs / screen-pose, and `scene.update(id, { data })` for commits. This
  * helper bakes that wiring in. Consumers pass `scene` + `container` and
  * get back the same `UseTextEditReturn` shape (`startEdit`, `isEditing`,
@@ -12,7 +12,7 @@
  * directly — matches the `useScene({ items })` trivial form where
  * `data === item` for text-shaped items, and matches `TextPose`-shaped
  * data. For custom data shapes, override any of the optional projections
- * (`getText` / `getStyle` / `getRuns` / `setText` / `setRuns`).
+ * (`getText` / `getStyle` / `getRuns` / `setText` / `setRuns` / `setStyle`).
  *
  * Pose component: the helper reads `(x, y, width, height)` straight off
  * the node's pose (typed `RectPose`). Pass `view` and it projects that box
@@ -53,6 +53,14 @@ export interface UseSceneTextEditOptions<TData> {
   setText?: (data: TData, text: string) => TData;
   /** Produce updated data with new runs. Default: `{ ...data, runs }`. */
   setRuns?: (data: TData, runs: StyledRun[]) => TData;
+  /**
+   * Produce updated data with a new node-wide style. Default:
+   * `{ ...data, style }`. Written only when a range toggle has to *clear* a
+   * flag the node itself sets — the run algebra is additive, so that edit
+   * lowers the node flag and raises it on the runs outside the range. See
+   * `useTextEdit`'s `setStyle`.
+   */
+  setStyle?: (data: TData, style: TextStyle) => TData;
   /** Fallback fontSize when `style.fontSize` is unset. Default `16`. */
   defaultFontSize?: number;
   /**
@@ -161,6 +169,14 @@ export function useSceneTextEdit<
       if (!node) return;
       const setter = optsRef.current.setRuns;
       const data = setter ? setter(node.data, runs) : { ...node.data, runs };
+      sceneRef.current.update(nid, { data });
+    },
+    setStyle: (id, style) => {
+      const nid = asNodeId(id);
+      const node = sceneRef.current.get(nid);
+      if (!node) return;
+      const setter = optsRef.current.setStyle;
+      const data = setter ? setter(node.data, style) : { ...node.data, style };
       sceneRef.current.update(nid, { data });
     },
   });

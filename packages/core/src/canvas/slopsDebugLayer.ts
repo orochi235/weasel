@@ -17,7 +17,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { Path, PolygonPath } from 'features/paths/types';
 import { circlePath } from 'features/paths/markers';
 import { enumerateAnchors } from 'interactions/actions/edit-anchors/geometry';
-import { HANDLE_HIT_RADIUS } from './affordanceAt';
+import { HANDLE_HIT_RADIUS, ANCHOR_HIT_RADIUS } from './affordanceAt';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
 import { meanScale } from 'core/viewport/meanScale';
 
@@ -40,13 +40,6 @@ function w2s(wx: number, wy: number, view: View): [number, number] {
   return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
 }
 
-/** Convert a world-unit radius to screen-pixel radius using the view's
- *  mean scale — affordance hit-tests are in world coords, but the screen-
- *  space layer needs pixel-radii. */
-function r2s(radiusWorld: number, view: View): number {
-  return radiusWorld * meanScale(view.scale);
-}
-
 const SLOP_FILL = 'rgba(255, 80, 140, 0.18)';
 const SLOP_STROKE = 'rgba(255, 80, 140, 0.55)';
 
@@ -61,11 +54,11 @@ export function createSlopsDebugLayer(
       const out: DrawCommand[] = [];
       const sel = opts.selectionRef.current?.current ?? [];
 
-      // All affordance hit-tests use world-unit radii (see
-      // `buildAffordanceAt` in src/canvas/affordanceAt.ts). Convert to
-      // screen pixels via meanScale so the visible halo matches the
-      // actual hit zone at any zoom.
-      const r = r2s(HANDLE_HIT_RADIUS, view);
+      // Affordance regions declare their hit radii in screen pixels and
+      // `hitAffordanceRegions` converts, so this screen-space layer draws
+      // them as-is. Scaling here would inflate the halo past the real hit
+      // zone at zoom > 1 — the debug overlay's one job is not to lie.
+      const r = HANDLE_HIT_RADIUS;
 
       // Corner resize handles + rotation handle, per selected id.
       // Affordance pipeline only fires rotation when selection.length === 1;
@@ -112,6 +105,7 @@ export function createSlopsDebugLayer(
       // Anchor / control-handle slops, when an editing target is active.
       const editingId = opts.getEditingId();
       if (editingId) {
+        const anchorR = ANCHOR_HIT_RADIUS;
         const pose = opts.getPose(editingId);
         if (pose && pose.kind === 'polygon') {
           const anchors = enumerateAnchors(pose as PolygonPath);
@@ -119,7 +113,7 @@ export function createSlopsDebugLayer(
             const [sx, sy] = w2s(a.x, a.y, view);
             out.push({
               kind: 'path',
-              path: circlePath(sx, sy, r),
+              path: circlePath(sx, sy, anchorR),
               fill: { fill: 'solid', color: SLOP_FILL },
               stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
             });
@@ -127,7 +121,7 @@ export function createSlopsDebugLayer(
               const [csx, csy] = w2s(a.controlIn.x, a.controlIn.y, view);
               out.push({
                 kind: 'path',
-                path: circlePath(csx, csy, r),
+                path: circlePath(csx, csy, anchorR),
                 fill: { fill: 'solid', color: SLOP_FILL },
                 stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
               });
@@ -136,7 +130,7 @@ export function createSlopsDebugLayer(
               const [csx, csy] = w2s(a.controlOut.x, a.controlOut.y, view);
               out.push({
                 kind: 'path',
-                path: circlePath(csx, csy, r),
+                path: circlePath(csx, csy, anchorR),
                 fill: { fill: 'solid', color: SLOP_FILL },
                 stroke: { paint: { fill: 'solid', color: SLOP_STROKE }, width: 1 },
               });

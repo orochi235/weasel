@@ -170,8 +170,33 @@ export interface SvgTextNode {
   meta?: NamespaceMeta;
 }
 
+/**
+ * Raster-image leaf — an SVG `<image>`. `href` is the element's `href` (or
+ * legacy `xlink:href`) verbatim: an external URL or a `data:` URI. The
+ * package neither fetches nor decodes it, so an external URL round-trips as
+ * a reference and only resolves when something downstream loads it.
+ *
+ * SVG's `preserveAspectRatio` is not modeled; the box is taken literally.
+ */
+export interface SvgImageNode {
+  kind: 'image';
+  href: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Element-level opacity (`opacity="..."`), 0..1. */
+  opacity?: number;
+  /** Element-level rotation in **radians**, pivoting around the unrotated
+   *  AABB center `(x + width/2, y + height/2)`. Emitted as SVG
+   *  `transform="rotate(angleDegrees cx cy)"`. */
+  rotation?: number;
+  /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
+  meta?: NamespaceMeta;
+}
+
 /** Discriminated-union node — the leaf of the public tree. */
-export type SvgNode = SvgPathNode | SvgGroupNode | SvgTextNode;
+export type SvgNode = SvgPathNode | SvgGroupNode | SvgTextNode | SvgImageNode;
 
 /** Options for {@link parseSvg}. */
 export interface ParseOptions {
