@@ -42,12 +42,13 @@
  * This version has an advantage over both: it runs *before* anything parses,
  * so it is parser-agnostic and survives swapping opentype.js out.
  *
- * **Known gap: `.dfont`** (Datafork TrueType) is not handled — the signature
- * check rejects it and the face degrades to the SDF tier, which is the right
- * failure but a silent one. Not currently reachable on macOS, whose system
- * font directories are 204 `.ttf` / 128 `.ttc` / 38 `.otf` and no `.dfont`;
- * it is a real format on older systems, so it is the first thing to suspect
- * if a machine face inexplicably refuses to sharpen.
+ * **Known gap: `.dfont`** (Datafork TrueType) is not unpacked — its sfnt
+ * tables live inside a Macintosh resource map, which is a second container
+ * format on top of the one above. `isDataForkFont` recognizes it and
+ * `sfntFromCollection` throws by name, so the face degrades to the SDF tier
+ * saying why; the registry's `warnOnce` carries the message. Not currently
+ * reachable on macOS, whose system font directories are 204 `.ttf` / 128
+ * `.ttc` / 38 `.otf` and no `.dfont`; it is a real format on older systems.
  */
 
 const SFNT_HEADER_BYTES = 12;
@@ -64,6 +65,41 @@ function tagAt(view: DataView, offset: number): string {
 export function isFontCollection(bytes: ArrayBuffer): boolean {
   if (bytes.byteLength < 4) return false;
   return tagAt(new DataView(bytes), 0) === 'ttcf';
+}
+
+/** Every signature that opens a font file this tier can hand to a parser. */
+const FONT_SIGNATURES: ReadonlySet<string> = new Set([
+  '\x00\x01\x00\x00', 'true', 'typ1', 'OTTO', 'ttcf', 'wOFF', 'wOF2',
+]);
+
+const RESOURCE_HEADER_BYTES = 16;
+
+/**
+ * Is `bytes` a Datafork TrueType file (`.dfont`)?
+ *
+ * A `.dfont` is a bare Macintosh resource fork written to the data fork, so
+ * unlike every other font format it opens with no signature — just the
+ * resource header's four big-endian offsets. It is recognized by those
+ * adding up, which is why the signature check has to run first: an sfnt's
+ * header bytes are numbers too, and nothing stops them from coincidentally
+ * being consistent.
+ *
+ * Detection only. Reading the `sfnt` resources out of the map is the rest of
+ * the job and is not implemented — the point is that the face declines the
+ * outline tier by name instead of dying on an unrecognized-signature message
+ * that never mentions the format.
+ */
+export function isDataForkFont(bytes: ArrayBuffer): boolean {
+  if (bytes.byteLength < RESOURCE_HEADER_BYTES) return false;
+  const view = new DataView(bytes);
+  if (FONT_SIGNATURES.has(tagAt(view, 0))) return false;
+  const dataOffset = view.getUint32(0);
+  const mapOffset = view.getUint32(4);
+  const dataLength = view.getUint32(8);
+  const mapLength = view.getUint32(12);
+  return dataOffset >= RESOURCE_HEADER_BYTES
+    && dataOffset + dataLength === mapOffset
+    && mapOffset + mapLength <= bytes.byteLength;
 }
 
 interface TableRecord { tag: string; offset: number; length: number; checksum: number }
@@ -171,6 +207,12 @@ export function sfntFromCollection(
   bytes: ArrayBuffer,
   postScriptName?: string,
 ): { bytes: ArrayBuffer; matched: boolean } {
+  if (isDataForkFont(bytes)) {
+    throw new Error(
+      'Datafork TrueType (.dfont) is not supported — the outline tier reads sfnt '
+      + 'tables and a .dfont holds them inside a Macintosh resource map.',
+    );
+  }
   if (!isFontCollection(bytes)) return { bytes, matched: true };
 
   const view = new DataView(bytes);

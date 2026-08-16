@@ -37,6 +37,21 @@ describe('createDebugOverlayLayer', () => {
     expect(r.x).toBeGreaterThan(800);
   });
 
+  it('applies per-feature stroke overrides, defaulting the rest', () => {
+    const sink = createDebugSink({ hitboxes: true, bounds: true });
+    sink.recordHitbox('a', 'body', { kind: 'rect', x: 0, y: 0, width: 10, height: 10 });
+    sink.recordBounds('a', { x: 0, y: 0, width: 10, height: 10 });
+    const layer = createDebugOverlayLayer({
+      sink,
+      config: { hitboxes: true, bounds: true, strokes: { hitbox: { width: 3 } } },
+    });
+    const [hitbox, bounds] = layer.draw(null, VIEW, DIMS) as PathDrawCommand[];
+    expect(hitbox.stroke?.width).toBe(3);
+    // An override with no `dash` is a solid line, not the default's dash.
+    expect(hitbox.stroke?.dash).toBeUndefined();
+    expect(bounds.stroke?.width).toBe(1);
+  });
+
   it('skips a feature when its config flag is off', () => {
     const sink = createDebugSink({ bounds: true, origins: true });
     sink.recordBounds('a', { x: 0, y: 0, width: 10, height: 10 });

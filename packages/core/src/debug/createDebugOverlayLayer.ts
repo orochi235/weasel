@@ -10,9 +10,11 @@ import type {
   DebugConfig,
   DebugSink,
   DebugSnapshot,
+  DebugStroke,
+  DebugStrokes,
   DebugTheme,
 } from './types';
-import { DEFAULT_DEBUG_THEME } from './defaultTheme';
+import { DEFAULT_DEBUG_STROKES, DEFAULT_DEBUG_THEME } from './defaultTheme';
 
 /** @internal */
 interface CreateDebugOverlayLayerOpts {
@@ -31,6 +33,7 @@ export function createDebugOverlayLayer({
   config,
 }: CreateDebugOverlayLayerOpts): RenderLayer<unknown> {
   const theme: DebugTheme = { ...DEFAULT_DEBUG_THEME, ...(config.theme ?? {}) };
+  const strokes: DebugStrokes = { ...DEFAULT_DEBUG_STROKES, ...(config.strokes ?? {}) };
   // Rolling timestamps for FPS — ring buffer of the last N draw-callback fires.
   // Closure-state survives across draws within one Canvas mount.
   const fpsHistory: number[] = [];
@@ -45,11 +48,11 @@ export function createDebugOverlayLayer({
       const t = viewToTransform(view);
       const out: DrawCommand[] = [];
 
-      if (config.hitboxes) emitHitboxes(out, s, view, t, theme);
-      if (config.bounds) emitBounds(out, s, view, t, theme);
-      if (config.handles) emitHandles(out, s, t, theme);
+      if (config.hitboxes) emitHitboxes(out, s, view, t, theme, strokes);
+      if (config.bounds) emitBounds(out, s, view, t, theme, strokes);
+      if (config.handles) emitHandles(out, s, t, theme, strokes);
       if (config.origins) emitOrigins(out, s, t, theme);
-      if (config.snap) emitSnap(out, s, t, theme);
+      if (config.snap) emitSnap(out, s, t, theme, strokes);
       if (config.ids) emitIds(out, s, t, theme);
       if (config.layers) emitLayersPanel(out, s, dims, theme);
       if (config.fps) {
@@ -91,15 +94,26 @@ function rectPath(x: number, y: number, w: number, h: number): { kind: 'rect'; x
   return { kind: 'rect', x, y, width: w, height: h };
 }
 
+/** A `DebugStroke` + color as the renderer's stroke shape. `dash` is dropped
+ *  when empty rather than passed through, so a solid line stays solid. */
+function strokeOf(s: DebugStroke, color: string) {
+  return {
+    paint: { fill: 'solid' as const, color },
+    width: s.width,
+    ...(s.dash && s.dash.length > 0 ? { dash: [...s.dash] } : {}),
+  };
+}
+
 function emitHitboxes(
   out: DrawCommand[],
   s: DebugSnapshot,
   view: View,
   t: ReturnType<typeof viewToTransform>,
   theme: DebugTheme,
+  strokes: DebugStrokes,
 ): void {
   const fill = { fill: 'solid' as const, color: theme.hitboxFill };
-  const stroke = { paint: { fill: 'solid' as const, color: theme.hitboxStroke }, width: 1, dash: [2, 2] };
+  const stroke = strokeOf(strokes.hitbox, theme.hitboxStroke);
   for (const h of s.hitboxes) {
     if (h.shape.kind === 'rect') {
       const [sx, sy] = worldToScreen(h.shape.x, h.shape.y, t);
@@ -121,8 +135,9 @@ function emitBounds(
   view: View,
   t: ReturnType<typeof viewToTransform>,
   theme: DebugTheme,
+  strokes: DebugStrokes,
 ): void {
-  const stroke = { paint: { fill: 'solid' as const, color: theme.bounds }, width: 1 };
+  const stroke = strokeOf(strokes.bounds, theme.bounds);
   for (const b of s.bounds) {
     const [sx, sy] = worldToScreen(b.bounds.x, b.bounds.y, t);
     const sw = b.bounds.width * view.scale.x;
@@ -136,8 +151,9 @@ function emitHandles(
   s: DebugSnapshot,
   t: ReturnType<typeof viewToTransform>,
   theme: DebugTheme,
+  strokes: DebugStrokes,
 ): void {
-  const stroke = { paint: { fill: 'solid' as const, color: theme.handle }, width: 1 };
+  const stroke = strokeOf(strokes.handle, theme.handle);
   for (const h of s.handles) {
     const [cx, cy] = worldToScreen(h.position.x, h.position.y, t);
     const horiz: PolygonPath = {
@@ -175,6 +191,7 @@ function emitSnap(
   s: DebugSnapshot,
   t: ReturnType<typeof viewToTransform>,
   theme: DebugTheme,
+  strokes: DebugStrokes,
 ): void {
   const color = theme.snap;
   for (const c of s.snap) {
@@ -184,7 +201,7 @@ function emitSnap(
       path: approxCircleScreen(cx, cy, 4),
       ...(c.accepted
         ? { fill: { fill: 'solid' as const, color } }
-        : { stroke: { paint: { fill: 'solid' as const, color }, width: 1 } }),
+        : { stroke: strokeOf(strokes.snap, color) }),
     };
     out.push(cmd);
   }

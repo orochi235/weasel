@@ -16,6 +16,9 @@ export interface DebugConfig {
   fps?: boolean;
   /** Optional per-feature color overrides; falls back to the default theme. */
   theme?: Partial<DebugTheme>;
+  /** Optional per-feature line-width / dash overrides; falls back to
+   *  {@link DEFAULT_DEBUG_STROKES}. */
+  strokes?: Partial<DebugStrokes>;
 }
 
 export type DebugFeature = 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers' | 'ids' | 'fps';
@@ -34,6 +37,24 @@ export interface DebugTheme {
   /** Foreground / background for the FPS panel. */
   fpsText: string;
   fpsTextBg: string;
+}
+
+/** Line width and dash pattern for one stroked debug feature. An empty (or
+ *  omitted) `dash` is a solid line. */
+export interface DebugStroke {
+  width: number;
+  dash?: readonly number[];
+}
+
+/** The stroked half of the debug overlay's appearance, split from
+ *  {@link DebugTheme} because only some features draw a line at all — text
+ *  panels and filled origin dots take color and nothing else. */
+export interface DebugStrokes {
+  hitbox: DebugStroke;
+  bounds: DebugStroke;
+  handle: DebugStroke;
+  /** Rejected snap candidates only; accepted ones paint as a filled dot. */
+  snap: DebugStroke;
 }
 
 export type HandleKind = 'corner' | 'rotation' | 'anchor';

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SvgNode } from './types';
+import { UNBOUNDED_TEXT_WIDTH } from './types';
 import { svgNodesToKitDrafts, unpackSvgFiles } from './unpack';
 import type { IngestCtx, Op } from '@weasel-js/core';
 
@@ -84,6 +85,18 @@ describe('svgNodesToKitDrafts', () => {
     expect(d.data.text).toBe('hello');
     expect(d.data.style).toEqual({ fontSize: 14 });
     expect(d.pose).toEqual({ x: 5, y: 6, width: 100, height: 20 });
+  });
+
+  it("estimates a box for external text's unbounded-width sentinel", () => {
+    const drafts = svgNodesToKitDrafts([{
+      kind: 'text', x: 0, y: 0, width: UNBOUNDED_TEXT_WIDTH, height: 20,
+      text: 'hello', style: { fontSize: 10 },
+    } as SvgNode], seq());
+    const d = drafts[0];
+    if (d.kind !== 'leaf') throw new Error('expected leaf');
+    // 5 glyphs at 10px, 0.6 em average advance. The sentinel itself would
+    // swamp the union AABB every fit-clamp is measured against.
+    expect(d.pose.width).toBeCloseTo(30);
   });
 
   it('groups become container drafts (parent-before-child, union-AABB pose)', () => {
@@ -174,6 +187,28 @@ describe('unpackSvgFiles', () => {
     // Centered on the viewport when point is null.
     expect(leaf.pose.x + leaf.pose.width / 2).toBeCloseTo(400);
     expect(leaf.pose.y + leaf.pose.height / 2).toBeCloseTo(300);
+  });
+
+  it('fit-clamp scales text fontSize alongside the poses', async () => {
+    const big = `<svg xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="800" font-size="40" fill="#000">hello</text>
+      <rect x="0" y="0" width="4000" height="1000" fill="#000"/>
+    </svg>`;
+    const { c, batches } = ctx();
+    await unpackSvgFiles([asFile(big)], c);
+    const text = batches[0].ops.find((n) => typeof n.data.text === 'string')!;
+    // 4000-wide union clamps to 720 (800 * 0.9), i.e. scale 0.18.
+    expect((text.data.style as { fontSize: number }).fontSize).toBeCloseTo(40 * 0.18);
+  });
+
+  it('unscaled imports leave text data untouched', async () => {
+    const small = `<svg xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="20" font-size="40" fill="#000">hello</text>
+    </svg>`;
+    const { c, batches } = ctx();
+    await unpackSvgFiles([asFile(small)], c);
+    const text = batches[0].ops[0];
+    expect((text.data.style as { fontSize: number }).fontSize).toBeCloseTo(40);
   });
 
   it('an unparseable file warns and produces no ops; others proceed', async () => {

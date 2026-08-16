@@ -94,6 +94,47 @@ describe('createLoupe', () => {
     expect(onColorChange).toHaveBeenCalledWith('#0a7bd5');
   });
 
+  it('pixel mode re-reads after an in-flight readback settles', async () => {
+    const hud = createHud();
+    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    const el = makeElement();
+    const reads: number[] = [];
+    vi.spyOn(el, 'getContext').mockReturnValue({
+      RGBA: 0x1908, UNSIGNED_BYTE: 0x1401,
+      readPixels: (_x: number, y: number) => { reads.push(y); },
+    } as unknown as WebGL2RenderingContext);
+
+    const settles: (() => void)[] = [];
+    const createImageBitmap = vi.fn(
+      () => new Promise<ImageBitmap>((resolve) => {
+        settles.push(() => resolve({ close: () => {} } as ImageBitmap));
+      }),
+    );
+    vi.stubGlobal('createImageBitmap', createImageBitmap);
+
+    const loupe = createLoupe({ hud, element: el, source, requestRedraw: () => {}, mode: 'pixel' });
+    loupe.aimAt({ x: 400, y: 100 });
+    expect(createImageBitmap).toHaveBeenCalledTimes(1);
+
+    // Two more aims land while the first bitmap is still in flight.
+    loupe.aimAt({ x: 400, y: 200 });
+    loupe.aimAt({ x: 400, y: 300 });
+    expect(createImageBitmap).toHaveBeenCalledTimes(1);
+
+    settles[0]();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // The trailing refresh runs once, against the final aim rather than the
+    // one that was current when the readback started.
+    expect(createImageBitmap).toHaveBeenCalledTimes(2);
+    const region = reads[reads.length - 1];
+    expect(region).not.toBe(reads[0]);
+
+    loupe.dispose();
+    vi.unstubAllGlobals();
+  });
+
   it('dispose removes the window and detaches the pointer listener', () => {
     const hud = createHud();
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
