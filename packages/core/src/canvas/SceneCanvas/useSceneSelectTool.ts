@@ -14,7 +14,7 @@
 import { useMemo } from 'react';
 import { sceneToAdapter, type SceneToAdapterOptions } from '../sceneAdapter';
 import { useSelectTool, type Bounds } from 'tools/builtin/select';
-import { pickTopMostHit } from 'tools/builtin/pickTopMostHit';
+import { pickTopMostHit, type PickTopMostHitAdapter } from 'tools/builtin/pickTopMostHit';
 import { useRotateTool } from 'tools/builtin/rotate';
 import type { Node, Scene, NodeId } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
@@ -282,7 +282,7 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
   const wiredPickBest = useMemo(() => {
     return (wx: number, wy: number): string | null => {
       const ids = wiredHitBody(wx, wy);
-      return pickTopMostHit(ids, adapter as unknown as { getParent?: (id: string) => string | null });
+      return pickTopMostHit(ids, adapter as unknown as PickTopMostHitAdapter);
     };
   }, [wiredHitBody, adapter]);
 

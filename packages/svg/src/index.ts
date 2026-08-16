@@ -38,6 +38,7 @@ export type {
   SvgGroupNode,
   SvgPathNode,
   SvgTextNode,
+  SvgImageNode,
   SvgPaint,
   SvgStroke,
   Matrix,

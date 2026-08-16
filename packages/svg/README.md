@@ -40,6 +40,18 @@ answer, and the alternative is unrepresentable anyway (see above). It only
 shows up on foreign SVG that sets decoration on a group and cancels it on a
 child.
 
+## Raster images
+
+`<image>` parses to an `SvgImageNode` holding the `href` verbatim — an
+external URL or a `data:` URI — plus a box. The package never fetches or
+decodes it, so an external URL round-trips as a reference and resolves only
+when something downstream loads it. `unpackSvgFiles` maps the node onto the
+kit's `kit:image` painter (`data.image.src`), which does load it.
+
+`preserveAspectRatio` is not modeled. The box is taken literally on the way
+in (a non-`none` value warns) and written back as `none`, so a source file
+that relied on letterboxing imports stretched.
+
 ## License
 
 MIT

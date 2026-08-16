@@ -63,4 +63,40 @@ describe('pickTopMostHit', () => {
     // falls back to the original ids' last entry.
     expect(got).toBe('b');
   });
+
+  it('getZIndex beats array order for siblings', () => {
+    const z: Record<string, number> = { a: 5, b: 1, c: 3 };
+    expect(pickTopMostHit(['a', 'b', 'c'], { getZIndex: (id) => z[id] })).toBe('a');
+  });
+
+  it('getZIndex ties resolve the same way as no z at all — last wins', () => {
+    expect(pickTopMostHit(['a', 'b'], { getZIndex: () => 2 })).toBe('b');
+  });
+
+  it('ids the adapter has no z for sort below every id it does', () => {
+    const z: Record<string, number | undefined> = { b: -100 };
+    expect(pickTopMostHit(['a', 'b'], { getZIndex: (id) => z[id] })).toBe('b');
+    // …and when nothing is known, the array order still decides.
+    expect(pickTopMostHit(['a', 'c'], { getZIndex: (id) => z[id] })).toBe('c');
+  });
+
+  it('z ranks only the survivors of the parent/child collapse', () => {
+    // The container paints under its child but covers the point too. Even
+    // with the higher z, the ancestor must not win.
+    const parents: Record<string, string | null> = { P: null, c: 'P' };
+    const z: Record<string, number> = { P: 99, c: 0 };
+    const got = pickTopMostHit(['P', 'c'], {
+      getParent: (id) => parents[id] ?? null,
+      getZIndex: (id) => z[id],
+    });
+    expect(got).toBe('c');
+  });
+
+  it('compareZ takes precedence over getZIndex', () => {
+    const got = pickTopMostHit(['a', 'b'], {
+      getZIndex: (id) => (id === 'b' ? 10 : 0),
+      compareZ: (x, y) => (x === 'a' ? 1 : y === 'a' ? -1 : 0),
+    });
+    expect(got).toBe('a');
+  });
 });

@@ -171,19 +171,20 @@ describe('createRecorder', () => {
     expect(Object.prototype.hasOwnProperty.call(e, 'm')).toBe(false);
   });
 
-  it('throttles pointermove at the default ~60Hz rate', async () => {
-    const rec = createRecorder({ canvas: () => canvas });
+  it('throttles pointermove at the default ~60Hz rate', () => {
+    let t = 1000;
+    const rec = createRecorder({ canvas: () => canvas, clock: () => t });
     rec.start({ profile: 'full' });  // 'full' so idle moves aren't dropped for a different reason
     // First move always lands (post-pointerdown bypass and otherwise).
     canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1 }));
     canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 1, clientY: 1 }));
-    // A burst of moves with no real-time delay — only the first lands;
-    // the rest are within the 16ms window.
+    // A burst spread across 15ms — inside the 16ms window, so none land.
     for (let i = 0; i < 10; i++) {
+      t += 1.5;
       canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 2 + i, clientY: 2 }));
     }
-    // Wait past the throttle window; the next move should land again.
-    await new Promise((r) => setTimeout(r, 25));
+    // Past the throttle window; the next move lands again.
+    t += 10;
     canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 99, clientY: 99 }));
     const out = rec.stop();
     const moves = out.events.filter((e) => e.type === 'pointermove');

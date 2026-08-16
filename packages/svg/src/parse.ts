@@ -17,7 +17,7 @@ import {
 import { transformPath } from './shapes';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, ParseOptions, ParseResult,
-  SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode,
+  SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
 } from './types';
 import type { StyledRun, TextStyle, FillStyle, Stroke } from '@weasel-js/core';
 import { multiply, parseTransform, decomposeRotation, rotationComponent, isIdentity } from './transform';
@@ -273,6 +273,14 @@ function parseElement(
       if (meta) textNode.meta = meta;
     }
     return textNode;
+  }
+  if (tag === 'image') {
+    const imageNode = parseImageElement(el, ctm, onWarn);
+    if (imageNode) {
+      const meta = collectElementMeta(el, uriToPrefix);
+      if (meta) imageNode.meta = meta;
+    }
+    return imageNode;
   }
   if (!SUPPORTED_LEAF_TAGS.has(tag)) {
     onWarn(`unsupported element: <${el.tagName}>`);
@@ -624,6 +632,67 @@ function parseTextDecoration(raw: string | null): { underline?: boolean; striket
  * `StyledRun`s on the node. Plain text without `<tspan>` produces no
  * `runs` and the node's `text` is the raw text content.
  */
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
+function parseImageElement(
+  el: Element,
+  ctm: Matrix,
+  onWarn: (m: string) => void,
+): SvgImageNode | null {
+  const href = el.getAttribute('href')
+    ?? el.getAttributeNS(XLINK_NS, 'href')
+    ?? el.getAttribute('xlink:href');
+  if (!href) {
+    onWarn('<image> without href; dropped');
+    return null;
+  }
+  const num = (raw: string | null, fallback: number): number => {
+    if (raw == null) return fallback;
+    const n = parseFloat(raw);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  const rawX = num(el.getAttribute('x'), 0);
+  const rawY = num(el.getAttribute('y'), 0);
+  const rawW = num(el.getAttribute('width'), 0);
+  const rawH = num(el.getAttribute('height'), 0);
+  // Map both corners through the inherited CTM and take their AABB, so
+  // translate / scale / flip land on the box. A rotation in the *inherited*
+  // transform inflates it; the element's own transform is decomposed below.
+  const px = (x: number, y: number): [number, number] =>
+    [ctm[0] * x + ctm[2] * y + ctm[4], ctm[1] * x + ctm[3] * y + ctm[5]];
+  const [x0, y0] = px(rawX, rawY);
+  const [x1, y1] = px(rawX + rawW, rawY + rawH);
+  const node: SvgImageNode = {
+    kind: 'image',
+    href,
+    x: Math.min(x0, x1),
+    y: Math.min(y0, y1),
+    width: Math.abs(x1 - x0),
+    height: Math.abs(y1 - y0),
+  };
+  const opacity = readOpacityAttr(el, 'opacity');
+  if (opacity != null) node.opacity = opacity;
+  const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
+  if (!isIdentity(localTransform)) {
+    const cx = node.x + node.width / 2;
+    const cy = node.y + node.height / 2;
+    const angle = decomposeRotation(localTransform, cx, cy);
+    if (angle != null) {
+      node.rotation = angle;
+    } else {
+      const rotComp = rotationComponent(localTransform);
+      if (Math.abs(rotComp) > 1e-4) {
+        onWarn('<image> transform has a rotational component that can\'t be cleanly stored as rotation; dropped (may not round-trip identically)');
+      }
+    }
+  }
+  if (el.hasAttribute('preserveAspectRatio')
+    && el.getAttribute('preserveAspectRatio') !== 'none') {
+    onWarn('<image> preserveAspectRatio is not modeled; the box is taken literally');
+  }
+  return node;
+}
+
 function parseTextElement(
   el: Element,
   ctm: Matrix,

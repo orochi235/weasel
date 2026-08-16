@@ -72,6 +72,12 @@ export interface MoveAdapter<TNode extends { id: string }, TPose> {
    *  targeting (`getLayout` present), nested-hit collapse
    *  (`pickTopMostHit`), and group-pose composition. Flat scenes may omit. */
   getParent?(id: string): string | null;
+  /** Optional paint depth, read by `pickTopMostHit` to resolve two *siblings*
+   *  whose bodies both cover the pointer. Without it the hit list's own order
+   *  decides, which is right for a back-to-front walk and wrong for anything
+   *  else. See `PickTopMostHitAdapter` for the `compareZ` alternative. */
+  getZIndex?(id: string): number | null | undefined;
+  compareZ?(a: string, b: string): number;
   setPose(id: string, pose: TPose): void;
   /** Optional. Used only by reparent ops (e.g. drag-into-container drops via
    *  layout strategies). Flat scenes that never reparent may omit. */

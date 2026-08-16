@@ -142,6 +142,24 @@ export function svgNodesToKitDrafts(
       return pose;
     }
 
+    if (n.kind === 'image') {
+      const pose: DraftPose = { x: n.x, y: n.y, width: n.width, height: n.height };
+      if (n.rotation) pose.rotation = n.rotation;
+      drafts.push({
+        kind: 'leaf',
+        id: nextId(),
+        parentId,
+        pose,
+        data: {
+          image: {
+            src: n.href,
+            ...(n.opacity != null ? { opacity: n.opacity } : {}),
+          },
+        },
+      });
+      return pose;
+    }
+
     // Path leaf. Bounds come from the geometry; `pathInPoseFrame` rebases
     // the stored path onto whatever pose box placement settles on.
     const b = n.path.kind === 'rect'

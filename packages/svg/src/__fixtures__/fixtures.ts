@@ -119,3 +119,14 @@ export const WEASELDRAW_GROUPS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xm
     <path d="M 130 100 L 180 100 L 180 150 L 130 150 Z" fill="#00ffff" stroke="none"/>
   </g>
 </svg>`;
+
+/** `<image>`: a data-URI raster inside a scaling group, an external URL
+ *  positioned by an element-local rotation, and the legacy `xlink:href`
+ *  spelling that pre-SVG2 exporters still emit. */
+export const IMAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 400 400">
+  <g transform="translate(10 20) scale(2)">
+    <image href="data:image/png;base64,iVBORw0KGgo=" x="5" y="5" width="30" height="20"/>
+  </g>
+  <image href="https://example.com/photo.jpg" x="100" y="100" width="80" height="60" opacity="0.5" transform="rotate(30 140 130)"/>
+  <image xlink:href="legacy.png" x="200" y="200" width="40" height="40"/>
+</svg>`;

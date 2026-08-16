@@ -74,25 +74,6 @@ Priority tags:
   pinch shouldn't be acting on its own. Fix is probably to defer the press
   dispatch by a frame, or to re-dispatch a cancel for claimed pointers.
 
-- **(P3) Sibling z-order is unresolved in hit-picking.** `pickTopMostHit.ts`
-  collapses parent/child (the valuable half, and done) then falls back to "last
-  in the array wins" — a convention the adapter contract doesn't enforce, as
-  its own doc admits by telling z-sorted callers to pre-resolve. Give the
-  adapter an optional `getZIndex(id)` / `compareZ(a, b)`, same shape as the
-  existing optional `getParent`, so it composes with the collapse rather than
-  replacing it. Worth doing for the principle as much as the correctness:
-  **score the target, order the rules** — z-order, distance to pointer and
-  target size are *physical* weights, unlike the hand-assigned ones in
-  `specificity()`, and anything the hit-test can decide shouldn't be pushed
-  into binding precedence.
-
-- **(P3) World-unit hit radii are only correct at scale 1.**
-  `canvas/affordanceAt.ts` documents this on `HANDLE_HIT_RADIUS`; callers who
-  know the view scale must pass a thunk. The device `targetScale` composes
-  with that correction but does not supply it. Folding view-scale correction
-  into the constants themselves would remove a class of caller mistake.
-  Recorded 2026-08-02.
-
 - **(P3) Long-press has no feedback.** No haptic, no visual "press is
   registering" affordance during the 500ms hold. Users get no signal that
   holding will do something. Recorded 2026-08-02, alongside the `longPress`
@@ -185,9 +166,8 @@ Priority tags:
   0.6 em per glyph (closed 2026-08-16, along with `fontSize` joining the
   fit-clamp); a real measure would want the atlas; (d) weaseldraw's file-menu import still uses its own
   app-local `svgInterop` mapping (richer: `wd:` tool metadata, paper size)
-  — fold the shared walk if they drift. Cross-ref: embedded-image residual
-  (a) below (`<image>` elements dropped on parse) bites only the unpack
-  path — the single-node embed keeps them.
+  — fold the shared walk if they drift, and note it now *drops* `<image>`
+  nodes, since the app's `Obj` union is path/text only.
 
 - **(P3) External-content ingestion — follow-ups.** Shipped 2026-07-03 (spec
   `docs/superpowers/specs/2026-07-03-content-ingestion-design.md`, plan
@@ -232,8 +212,6 @@ Priority tags:
   `engagedIds` reads. So the declaration registers the binding while the id
   keeps carrying the tier. Retiring `engagedIds` means changing
   `tool.offhand`'s contract. Recorded 2026-08-10.
-
-- **(P3) Embedded image support — follow-ups.** Shipped 2026-06-27: serializable `data.image.src` contract (URL / blob: / `data:` URI), kit-owned `imageCache` (`packages/core/src/features/images/`, sync read + lazy de-duped async load + `subscribeImageReady`→`requestRedraw`), the `kit:image` shape painter (`NodeShape.ts`, emits `ImageDrawCommand`, faint placeholder while loading), and the `useImageTool` drag-insert tool (`packages/core/src/tools/builtin/image/`, routes through `useInsertDepSource`'s `'image'` case). Demo: `apps/site/demos/ImageDemo.tsx`. Remaining: **SVG `<image>` interop** — `packages/svg` parse/emit of `<image>` (href + embedded base64) is still unsupported (`<image>` elements are dropped on import).
 
 - **(P3) Other drag-insert tools.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. The consolidated `useDragRect` + `useInsert` + `defineDragInsertTool` stack makes a new drag-insert tool a thin Tool veneer. Polygon, star, ellipse, line, and image tools have landed (`packages/core/src/tools/builtin/{polygon,star,ellipse,line,image}/`); each further type is its own task.
 
@@ -398,19 +376,22 @@ Core five + Crop shipped. Remaining:
 
 - **(P2) Cross-browser overlay alignment.** `placeOverlay` uses an empirical `(+1, -1)` CSS-px nudge to compensate for canvas/CSS rasterization disagreement. Works on the dev setup; not universally correct across browsers/fonts/DPRs. A self-correcting probe was attempted and rejected.
 
-- **(P3) The character bar has no `setStyle` wired.** The model question
-  closed 2026-08-12: `setFlagOverRange` normalizes on write — clear the node
-  flag, raise it on the runs outside the range — rather than going tri-state,
-  because `bold` and `italic` are `fontWeight` / `fontStyle` at node level and
-  a tri-state run boolean has nothing there to override. All four flags work;
-  the persisted shape is unchanged. `useTextEdit` takes an optional
-  `setStyle(id, style)` and declines the toggle without it, which is where
-  things stand: **apps/draw does not pass one**, so the bar still refuses in
-  the app even though the kit no longer has to. Wiring it needs the app's
-  text-node commit path to accept a `TextStyle` write alongside the runs
-  write. A node at `fontWeight: 900` stays declined on purpose (`applied:
-  false`) — `run.bold` is exactly 700, so pushing the weight onto the runs
-  would lighten the text that was not edited.
+- **(P3) `rangeStyle` and the un-set toggle disagree about the node's flags.**
+  Surfaced 2026-08-16 while wiring `setStyle` through `useSceneTextEdit` (the
+  scene wrapper now supplies it by default, so a scene-wired consumer no longer
+  has to, and `apps/draw`'s bar works). `styleAtRange` reads the *runs* alone,
+  so over a plain run inside a `fontWeight: 700` node it reports `bold: false`
+  — and `useTextEdit`'s Cmd+B reads the same value, so the keystroke *adds*
+  bold rather than clearing the node flag. The `setStyle` path is reachable
+  only when the runs are themselves bold. Consumers paper over the display half
+  by merging the node style in (draw's `effectiveRangeStyle`), which means the
+  bar shows bold while the toggle believes otherwise. Decide whether
+  `rangeStyle` should fold in the node style — and if so, `current` in the
+  toggle has to fold it too, or the two drift the other way.
+
+  Unchanged and deliberate: a node at `fontWeight: 900` stays declined
+  (`applied: false`) — `run.bold` is exactly 700, so pushing the weight onto
+  the runs would lighten the text that was not edited.
 
 - **(P3) Per-character tracking in the DOM overlay is CSS-approximate.**
   `letterSpacing` is applied per code point rather than per grapheme cluster,
@@ -818,14 +799,6 @@ From the WebGL transition spec — all deferred:
   for them fails to compile. DefinitelyTyped has no 2.x package; the fix, if
   the surface ever widens, is a hand-written local `.d.ts` covering only what
   the kit calls — which would make that surface explicit and enforced.
-
-- **(P3) `apps/draw`'s recorder throttle test is wall-clock flaky.**
-  `recorder.test.ts`'s *"throttles pointermove at the default ~60Hz rate"*
-  dispatches a 10-move burst and asserts the whole burst falls inside one 16ms
-  window. Under full-suite load the burst can straddle the boundary and an
-  extra move lands; seen failing once across three full runs, and passing in
-  isolation every time. Fix is to drive the throttle off an injected clock
-  rather than `setTimeout` and real time. Recorded 2026-08-16.
 
 ---
 
