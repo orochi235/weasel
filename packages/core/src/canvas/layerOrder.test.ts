@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { composeOrderedLayers } from './layerOrder';
+import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
 import type { RenderLayer } from '../core/layers/render';
 import type { LayerSlotValue } from './Canvas';
+import type { OverlayPosition } from '../contributions/types';
 
 function L(id: string): RenderLayer<unknown> {
   return { id, label: id, space: 'screen', draw: () => [] };
@@ -181,5 +182,35 @@ describe('composeOrderedLayers', () => {
       { scene: L('scene') },
     );
     expect(out.map(l => l.id)).toEqual(['scene', 'real']);
+  });
+});
+
+describe('placeToolOverlays', () => {
+  const sel = L('sel');
+  const overlaysOf = (m: Record<string, string[]>) => (p: OverlayPosition) =>
+    (m[p] ?? []).map(L);
+
+  it('anchors before/after on the selection layer and appends top', () => {
+    const ordered = [L('scene'), sel, L('decoration')];
+    const out = placeToolOverlays(ordered, sel, overlaysOf({
+      'before-selection': ['b'],
+      'after-selection': ['a'],
+      top: ['t'],
+    }));
+    expect(out.map((l) => l.id)).toEqual(['scene', 'b', 'sel', 'a', 'decoration', 't']);
+  });
+
+  it('falls back to the tail when no selection layer is in the stack', () => {
+    const out = placeToolOverlays([L('scene')], undefined, overlaysOf({
+      'before-selection': ['b'],
+      'after-selection': ['a'],
+      top: ['t'],
+    }));
+    expect(out.map((l) => l.id)).toEqual(['scene', 'b', 'a', 't']);
+  });
+
+  it('falls back to the tail when the selection layer is not in the stack', () => {
+    const out = placeToolOverlays([L('scene')], sel, overlaysOf({ 'before-selection': ['b'] }));
+    expect(out.map((l) => l.id)).toEqual(['scene', 'b']);
   });
 });

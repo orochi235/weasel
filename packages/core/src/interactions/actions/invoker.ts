@@ -316,6 +316,15 @@ export interface OngoingHandle {
   previewPose?(id: string): unknown | null;
 
   /**
+   * Subset of `previewIds()` the ghost layer paints at full opacity. The
+   * ghost alpha says "this is in flight under the pointer"; a node the
+   * gesture merely displaces — a layout sibling reflowing into its
+   * destination slot — is not, and reads better settled. Honored at
+   * subtree-root granularity.
+   */
+  previewOpaqueIds?(): Iterable<string> | null;
+
+  /**
    * When `false`, the preview-ghost layer paints the ghost AND the
    * source node stays visible at its committed pose. Defaults to
    * `true` (move/resize/rotate semantics: ghost replaces the source

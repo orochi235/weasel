@@ -14,7 +14,7 @@ import { reportRouteConflicts } from '../tools/routing/reflection/conflicts';
 import type { HotkeyTrigger, Tool } from '../tools/types';
 import { scopeBindings } from './assemble';
 import { liveScope } from './eligibility';
-import type { Contribution } from './types';
+import type { Contribution, OverlayPosition } from './types';
 
 const NO_TRIGGERS: ReadonlySet<string> = new Set<string>();
 
@@ -36,8 +36,9 @@ export interface ContributionsApi {
   setFocused: (id: string) => void;
   /** Every live binding, tiered by the declaring entry's eligibility. */
   scopedBindings(): ScopedBinding[];
-  /** Overlays of every live entry, ordered active, then hotkey, then ambient. */
-  overlays(): RenderLayer<unknown>[];
+  /** Overlays of every live entry declaring `position`, ordered active, then
+   *  hotkey, then ambient. */
+  overlays(position?: OverlayPosition): RenderLayer<unknown>[];
 }
 
 /**
@@ -111,17 +112,19 @@ export function useContributions(opts: UseContributionsOptions): ContributionsAp
     return scopeBindings(ordered, state);
   }, [snapshot]);
 
-  const overlays = useCallback((): RenderLayer<unknown>[] => {
+  const overlays = useCallback((position: OverlayPosition = 'top'): RenderLayer<unknown>[] => {
     const { ordered, state } = snapshot();
     const active: RenderLayer<unknown>[] = [];
     const hotkey: RenderLayer<unknown>[] = [];
     const ambient: RenderLayer<unknown>[] = [];
     for (const entry of ordered) {
       if (!entry.overlay) continue;
+      if ((entry.overlayPosition ?? 'top') !== position) continue;
+      const layers = Array.isArray(entry.overlay) ? entry.overlay : [entry.overlay];
       const scope = liveScope(entry.id, entry.eligibility ?? {}, state);
-      if (scope === 'active') active.push(entry.overlay);
-      else if (scope === 'hotkey') hotkey.push(entry.overlay);
-      else if (scope === 'ambient') ambient.push(entry.overlay);
+      if (scope === 'active') active.push(...layers);
+      else if (scope === 'hotkey') hotkey.push(...layers);
+      else if (scope === 'ambient') ambient.push(...layers);
     }
     return [...active, ...hotkey, ...ambient];
   }, [snapshot]);

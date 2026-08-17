@@ -63,6 +63,64 @@ describe('hitTestArea — silhouette awareness', () => {
   });
 });
 
+/**
+ * The kit's own inserted shapes (rect / ellipse / polygon / star / line /
+ * pencil) keep their geometry on `node.data.path` behind a plain
+ * `{x,y,width,height}` pose, so the pose carries no silhouette to test. The
+ * painter does.
+ */
+describe('hitTestArea — geometry held on node.data', () => {
+  /** Same right triangle as above, but as `data.path` under a rect pose.
+   *  `pathInPoseFrame` maps the path's own [0,0,100,100] box onto the pose. */
+  function dataTriangleScene(): Scene<unknown, string, unknown> {
+    const nodes = new Map<string, { id: string; kind: 'leaf'; pose: unknown; data: unknown }>();
+    nodes.set('t', {
+      id: 't',
+      kind: 'leaf',
+      pose: { x: 0, y: 0, width: 100, height: 100 },
+      data: {
+        path: {
+          kind: 'polygon' as const,
+          commands: Uint8Array.of(PATH_M, PATH_L, PATH_L, PATH_Z),
+          coords: Float32Array.of(0, 0, 100, 0, 0, 100),
+          fillRule: 'nonzero' as const,
+        },
+      },
+    });
+    return {
+      layers: [{ id: 'default' }],
+      renderOrder: () => ['t'] as NodeId[],
+      renderOrderNodes: () => [...nodes.values()],
+      get: (id: NodeId) => nodes.get(id as string) as never,
+    } as unknown as Scene<unknown, string, unknown>;
+  }
+
+  it('drops the AABB false positive on the empty corner', () => {
+    expect(hitTestArea(dataTriangleScene(), { x: 90, y: 90, width: 8, height: 8 })).toEqual([]);
+  });
+
+  it('still selects when the marquee touches the drawn silhouette', () => {
+    expect(hitTestArea(dataTriangleScene(), { x: 0, y: 0, width: 8, height: 8 })).toEqual(['t']);
+  });
+
+  it('keeps AABB-overlap-is-a-hit for a node no painter matches', () => {
+    const nodes = new Map<string, { id: string; kind: 'leaf'; pose: unknown; data: unknown }>();
+    nodes.set('p', {
+      id: 'p',
+      kind: 'leaf',
+      pose: { x: 0, y: 0, width: 100, height: 100 },
+      data: { unpaintable: true },
+    });
+    const scene = {
+      layers: [{ id: 'default' }],
+      renderOrder: () => ['p'] as NodeId[],
+      renderOrderNodes: () => [...nodes.values()],
+      get: (id: NodeId) => nodes.get(id as string) as never,
+    } as unknown as Scene<unknown, string, unknown>;
+    expect(hitTestArea(scene, { x: 90, y: 90, width: 8, height: 8 })).toEqual(['p']);
+  });
+});
+
 /** Square silhouette [x, y] - [x+40, y+40]. */
 function square(x: number, y: number): PolygonPath {
   return {

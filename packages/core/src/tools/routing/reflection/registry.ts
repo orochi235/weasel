@@ -53,8 +53,8 @@ export interface RegistryEntry {
 export const PREDICATE_TARGET = 'predicate';
 
 /** `GestureSpec.kind` → route-grammar gesture name. `multiTouch` has no
- *  route-grammar gesture (only its tap synthesis does), and `drop` / `paste`
- *  shipped without grammar names, so specs of those kinds are skipped. */
+ *  route-grammar gesture (only its tap synthesis does), so specs of that kind
+ *  are skipped. */
 const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined> = {
   key: 'keyDown',
   'key-held': 'keyHeld',
@@ -67,8 +67,8 @@ const SPEC_KIND_TO_GESTURE: Record<GestureSpec['kind'], GestureName | undefined>
   pointerDown: 'pointerDown',
   multiTouch: undefined,
   multiTouchTap: 'multiTouchTap',
-  drop: undefined,
-  paste: undefined,
+  drop: 'drop',
+  paste: 'paste',
 };
 
 /**
@@ -155,6 +155,7 @@ function argOf(spec: GestureSpec, fallback: string | undefined): string | undefi
   }
   if ('fingers' in spec) return String(spec.fingers);
   if ('direction' in spec) return spec.direction ?? fallback;
+  if ('types' in spec) return spec.types?.length ? spec.types.join('|') : fallback;
   return fallback;
 }
 

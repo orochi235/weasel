@@ -83,4 +83,14 @@ export interface LayoutStrategy<TPose> {
    *  rectangular (circles, irregular zones) implement this to override the
    *  AABB default. */
   contains?(containerPose: TPose, point: { x: number; y: number }): boolean;
+
+  /** Optional: reject a drag before any drop-target work happens. A type-aware
+   *  container (a palette that only takes swatches, say) returns `false` and
+   *  the drag falls through to whatever container is under it next. When
+   *  absent, every drag is considered — rejection is still possible later, by
+   *  `snap.pickTarget` returning null. */
+  acceptsDrop?(
+    container: LayoutContainer,
+    dragged: LayoutDragged<TPose>,
+  ): boolean;
 }

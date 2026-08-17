@@ -208,4 +208,21 @@ describe('useGestureDispatcher — ingest channels', () => {
     expect(empty.defaultPrevented).toBe(false);
     await flushMicrotasks();
   });
+
+  it('leaves an unhandled paste to the page', async () => {
+    const spy = vi.fn();
+    // Bound to `image/*` only, so a text paste carries items but matches
+    // nothing — the page keeps its default.
+    const action = makeProbeAction([{ kind: 'paste', types: ['image/*'] }], spy);
+    render(<Harness><Probe actionDef={action} /></Harness>);
+
+    const ev = new Event('paste', { cancelable: true });
+    Object.assign(ev, {
+      clipboardData: { files: [], getData: (t: string) => (t === 'text/plain' ? 'hi' : '') },
+    });
+    act(() => { window.dispatchEvent(ev); });
+    expect(spy).not.toHaveBeenCalled();
+    expect(ev.defaultPrevented).toBe(false);
+    await flushMicrotasks();
+  });
 });

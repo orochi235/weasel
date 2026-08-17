@@ -45,12 +45,21 @@ describe('buildRouteRegistry', () => {
 
   it('skips kinds the route grammar has no name for', () => {
     const r = buildRouteRegistry([tool('t', [
-      { spec: { kind: 'drop' }, actionId: 'ingest' },
-      { spec: { kind: 'paste' }, actionId: 'ingest' },
       { spec: { kind: 'multiTouch', fingers: 2 }, actionId: 'pinch' },
       { spec: { kind: 'click' }, actionId: 'keep' },
     ])]);
     expect(r.map((e) => e.actionId)).toEqual(['keep']);
+  });
+
+  it('names drop and paste, carrying the MIME filter as the arg', () => {
+    const r = buildRouteRegistry([tool('t', [
+      { spec: { kind: 'drop', types: ['image/*', 'image/svg+xml'] }, actionId: 'ingest' },
+      { spec: { kind: 'paste' }, actionId: 'ingest' },
+    ])]);
+    expect(r.map((e) => [e.gesture, e.arg, e.target])).toEqual([
+      ['drop', 'image/*|image/svg+xml', undefined],
+      ['paste', undefined, undefined],
+    ]);
   });
 
   it('carries the gesture arg for arg-bearing kinds', () => {

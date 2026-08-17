@@ -69,5 +69,6 @@ export function defineTool<TScratch = void>(
     cursor: resolveCursor,
     bindings: def.bindings,
     overlay: def.overlay,
+    overlayPosition: def.overlayPosition,
   };
 }

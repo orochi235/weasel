@@ -135,6 +135,12 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     return draggedCenter.x >= aabb.x && draggedCenter.x < aabb.x + aabb.width
       && draggedCenter.y >= aabb.y && draggedCenter.y < aabb.y + aabb.height;
   };
+  const draggedArg = {
+    id: draggedId as string,
+    originPose: startWorld,
+    pose: draggedWorld,
+    sourceContainerId,
+  };
   const consider = (id: NodeId, zPath: number[]): void => {
     if (id === draggedId) return;
     const layout = layoutDep.getLayout(id as string);
@@ -144,6 +150,8 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
     const worldPose = composeWorldPose(poseAdapter, id as string, pc.compose);
     const worldAABB = boundsOf(worldPose) as AABB;
     if (!testInside(worldPose, worldAABB, layout)) return;
+    if (layout.acceptsDrop
+      && !layout.acceptsDrop({ id: id as string, bounds: worldAABB }, draggedArg)) return;
     candidates.push({
       id,
       bounds: worldAABB,
@@ -185,12 +193,6 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
       id: cid as string,
       pose: composeWorldPose(poseAdapter, cid as string, pc.compose),
     }));
-  const draggedArg = {
-    id: draggedId as string,
-    originPose: startWorld,
-    pose: draggedWorld,
-    sourceContainerId,
-  };
   const targets = layout.getDropTargets(container, children, draggedArg);
   const target = layout.snap.pickTarget(targets, { x: moveCtx.drag.current.x, y: moveCtx.drag.current.y });
   if (!target) return; // not accepted
@@ -198,11 +200,13 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
   // Destination reflow → fold into previews (skip the dragged id itself).
   // `reflowPoses` returns world; previews are local, so rebase to the child's
   // current parent frame first.
+  const reflowIds = new Set<NodeId>();
   for (const [cid, pose] of layout.reflowPoses(container, children, draggedArg, target)) {
     if (asNodeId(cid) === draggedId) continue;
     const parent = scene.get(asNodeId(cid))?.parent ?? null;
     const local = rebaseLocalPose(poseAdapter, pose as RectPose, parent, pc.compose, pc.decompose);
     scratch.previews.set(asNodeId(cid), local);
+    reflowIds.add(asNodeId(cid));
   }
 
   // Source reflow (cross-container) → fold changed leftovers into previews.
@@ -230,11 +234,12 @@ function runLayoutPass(scratch: MoveScratch, moveCtx: InvocationCtx): void {
         sourceReflow.set(cid, pose); // WORLD — rebased at each consumption point
         const parent = scene.get(asNodeId(cid))?.parent ?? null;
         scratch.previews.set(asNodeId(cid), rebaseLocalPose(poseAdapter, pose as RectPose, parent, pc.compose, pc.decompose));
+        reflowIds.add(asNodeId(cid));
       }
     }
   }
 
-  scratch.layoutPass = { layout, container, children, target, sourceReflow };
+  scratch.layoutPass = { layout, container, children, target, sourceReflow, reflowIds };
 }
 
 /** Allowed values for the `reparentOnDrop` binding param. `'off'` (the
@@ -270,6 +275,10 @@ interface LayoutPass {
   target: LayoutDropTarget<unknown>;
   /** Source-container leftovers that actually moved (id → new pose). */
   sourceReflow: Map<string, unknown>;
+  /** Siblings reflowing into their destination slots, from both containers.
+   *  Surfaced as `previewOpaqueIds` so they paint settled rather than as
+   *  ghosts under the pointer. */
+  reflowIds: Set<NodeId>;
 }
 
 interface MoveScratch {
@@ -784,6 +793,7 @@ export const moveAction: Action & { requires: string[] } = {
         },
         previewIds: () => scratch.previews.keys(),
         previewPose: (id: string) => scratch.previews.get(id as NodeId) ?? null,
+        previewOpaqueIds: () => scratch.layoutPass?.reflowIds ?? null,
       };
     },
   },

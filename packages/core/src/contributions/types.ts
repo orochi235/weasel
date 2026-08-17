@@ -22,6 +22,15 @@ export interface Eligibility {
 }
 
 /**
+ * Where an entry's overlay sits in the layer stack, relative to the
+ * selection chrome. `'top'` is the default and renders above everything;
+ * the other two exist for chrome that belongs under the selection handles
+ * (a snap-target highlight, say). With no selection overlay in the stack,
+ * all three collapse to `'top'`.
+ */
+export type OverlayPosition = 'top' | 'before-selection' | 'after-selection';
+
+/**
  * A registry entry: what it contributes, and when it is eligible. Every role
  * is optional and independent — an entry that only routes input declares only
  * `bindings` and `actions`.
@@ -31,7 +40,10 @@ export interface Contribution {
   eligibility: Eligibility;
   bindings?: GestureBinding[];
   actions?: Action[];
-  overlay?: RenderLayer<unknown>;
+  /** One layer, or several composed in the given order. */
+  overlay?: RenderLayer<unknown> | RenderLayer<unknown>[];
+  /** Defaults to `'top'`. Applies to every layer in `overlay`. */
+  overlayPosition?: OverlayPosition;
   presentation?: ToolPresentation;
   /** Reflection escape hatch — the authored form, when there was one. */
   def?: unknown;

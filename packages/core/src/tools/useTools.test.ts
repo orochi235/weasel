@@ -123,6 +123,30 @@ describe('ToolsApi.getActiveOverlays', () => {
       { wrapper: makeWrapper('a') });
     expect(result.current.getActiveOverlays().map((l) => l.id)).toEqual(['a-ov']);
   });
+
+  it('flattens an array-valued overlay in declaration order', () => {
+    const a = defineTool({ id: 'a', overlay: [mkLayer('a-1'), mkLayer('a-2')] });
+    const { result } = renderHook(() => useTools({ active: 'a', registry: { a } }),
+      { wrapper: makeWrapper('a') });
+    expect(result.current.getActiveOverlays().map((l) => l.id)).toEqual(['a-1', 'a-2']);
+  });
+
+  it('partitions by overlayPosition, defaulting to top', () => {
+    const a = defineTool({ id: 'a', overlay: mkLayer('a-ov') });
+    const b = defineTool({
+      id: 'b',
+      overlay: mkLayer('b-ov'),
+      overlayPosition: 'before-selection',
+    });
+    const { result } = renderHook(() =>
+      useTools({ active: 'a', registry: { a }, ambient: [b] }),
+      { wrapper: makeWrapper('a') },
+    );
+    expect(result.current.getActiveOverlays().map((l) => l.id)).toEqual(['a-ov']);
+    expect(result.current.getActiveOverlays('before-selection').map((l) => l.id))
+      .toEqual(['b-ov']);
+    expect(result.current.getActiveOverlays('after-selection')).toEqual([]);
+  });
 });
 
 describe('useTools (context-backed)', () => {

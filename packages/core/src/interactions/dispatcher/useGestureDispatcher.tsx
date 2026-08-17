@@ -1156,12 +1156,16 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       if (!cd) return;
       const items = itemsFromClipboardData(cd);
       if (items.length === 0) return;
-      e.preventDefault();
-      dispatch({
+      // Wheel's shape: dispatch first, suppress the default only when a
+      // binding claimed it. Clipboard items materialize synchronously, so
+      // unlike `onDrop` the result is known while `preventDefault` is still
+      // honored — and a paste no binding wanted stays the page's to handle.
+      const result = dispatch({
         kind: 'paste', items,
         // ClipboardEvent carries no modifier state.
         altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
       });
+      if (result === 'handled') e.preventDefault();
     };
 
     // -----------------------------------------------------------------------

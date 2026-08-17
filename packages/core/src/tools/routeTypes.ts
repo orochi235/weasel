@@ -2,6 +2,7 @@ import type { ToolCtx, ToolPresentation, HotkeyTrigger } from './types';
 import type { RenderLayer } from '../core/layers/render';
 import type { GestureBinding } from '../interactions/actions/binding';
 import type { CapabilityTag } from '@weasel-js/modes';
+import type { OverlayPosition } from '../contributions/types';
 
 /**
  * Configurable activation-key descriptor for tools that expose their
@@ -89,8 +90,13 @@ export interface ToolDef<TScratch = void> {
    *  The layer's `draw` closure should read dynamic state through refs or
    *  closures captured in the enclosing render scope, and gate on it there —
    *  `if (!scratch.something) return []` — rather than expecting the kit to
-   *  swap layers as the gesture progresses. */
-  overlay?: RenderLayer<unknown>;
+   *  swap layers as the gesture progresses.
+   *
+   *  Pass an array to contribute several layers; they render in order. */
+  overlay?: RenderLayer<unknown> | RenderLayer<unknown>[];
+  /** Where `overlay` sits relative to the selection chrome. Defaults to
+   *  `'top'`, above everything. */
+  overlayPosition?: OverlayPosition;
 }
 
 /** Viewport-tool spec. Once phase tables went away this stopped differing

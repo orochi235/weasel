@@ -19,7 +19,9 @@ export type GestureName =
   | 'keyHeld'
   | 'contextMenu'
   | 'longPress'
-  | 'multiTouchTap';
+  | 'multiTouchTap'
+  | 'drop'
+  | 'paste';
 
 export interface GestureArgSpec {
   /** Display name for the arg in inspector chips (`direction`, `key`, `fingers`). */
@@ -53,6 +55,11 @@ export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'contextMenu',   hasTarget: true  },
   { name: 'longPress',     hasTarget: true  },
   { name: 'multiTouchTap', hasTarget: false, arg: { name: 'fingers',   values: ['2', '3', '4'] } },
+  // The arg is the MIME-glob filter. No default: a spec with no `types`
+  // matches any payload, which is what an omitted arg slot means for a
+  // `'free'` arg.
+  { name: 'drop',          hasTarget: false, arg: { name: 'types',     values: 'free' } },
+  { name: 'paste',         hasTarget: false, arg: { name: 'types',     values: 'free' } },
 ];
 
 const BY_NAME = new Map<string, GestureDescriptor>(

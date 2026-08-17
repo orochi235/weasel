@@ -5,15 +5,20 @@
  * For each scene leaf:
  *   1. AABB fast-reject — if the pose's bounding box doesn't intersect the
  *      area's bounds, skip (cheap; keeps the polygon kernel off the hot path).
- *   2. RECT poses (plain `{x,y,w,h}` poses and `RectPath` — the silhouette IS
- *      the bounding box) → AABB-vs-area overlap counts as a hit. This is the
- *      historical `hitTestAABB` behavior, preserved byte-for-byte for rects.
+ *   2. Containment (rect marquee only) — a node whose AABB is swallowed whole
+ *      is a hit no silhouette can overturn, so neither the kernel nor the
+ *      painter runs.
  *   3. SILHOUETTE poses (`PolygonPath`) → test the silhouette against the area
  *      polygon via the kernel: a hit when ANY silhouette vertex is inside the
  *      area, OR ANY area vertex is inside the silhouette, OR ANY silhouette
  *      edge crosses ANY area edge. This drops AABB false-positives (marquee
  *      grazes an empty corner of the AABB) and rescues silhouettes the old
  *      AABB test would have selected only by luck.
+ *   4. Every other pose → ask the painter for the drawn silhouette
+ *      (`findShapeSilhouette`, world frame, memoized per node) and run the same
+ *      kernel test on it. This is what reaches the kit's own inserted shapes,
+ *      which keep their geometry on `node.data` behind a bare `{x,y,w,h}` pose.
+ *      A rect silhouette or no painter falls back to AABB-overlap-is-a-hit.
  *
  * The "area" is a closed polygon. Marquee passes a rect (converted to its four
  * corners here). Lasso currently passes its bounding rect through `hitTestArea`
@@ -24,6 +29,7 @@ import type { Scene, NodeId } from 'core/scene/types';
 import { nodeMemo } from 'core/scene/nodeMemo';
 import { aabbOfPose } from 'canvas/SceneCanvas/poseGeometry';
 import { pointInPolygon, segmentsCross } from '@weasel-js/geom';
+import { findShapeSilhouette } from 'canvas/NodeShape';
 import type { Path, PolygonPath } from 'features/paths/types';
 
 export interface AABBBounds {
@@ -47,7 +53,7 @@ export function hitTestArea(
 ): NodeId[] {
   const { x, y, width: w, height: h } = bounds;
   const area = [x, y, x + w, y, x + w, y + h, x, y + h];
-  return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h });
+  return hitTestAreaPolygon(scene, area, { x, y, width: w, height: h }, true);
 }
 
 /**
@@ -59,6 +65,11 @@ export function hitTestAreaPolygon(
   scene: Scene<unknown, string, unknown>,
   area: AreaCoords,
   areaBounds?: AABBBounds,
+  /** True when `area` IS its own bounding rect, so `areaBounds` containment
+   *  implies containment in the area proper. Lets a node swallowed whole by
+   *  the marquee answer without any silhouette work. Never pass this for a
+   *  lasso polygon — a node inside the hull's box can miss the hull. */
+  areaIsRect = false,
 ): NodeId[] {
   const ab = areaBounds ?? boundsOf(area);
   if (!ab) return [];
@@ -98,16 +109,38 @@ export function hitTestAreaPolygon(
       continue;
     }
 
-    // 2. RECT poses: silhouette IS the AABB → fast-reject pass == hit.
-    if (!silhouette) {
+    // 2. Swallowed whole by a rect marquee — no silhouette can change the
+    // answer, so skip the kernel and the painter lookup both.
+    if (
+      areaIsRect &&
+      b.x >= ab.x && b.y >= ab.y &&
+      b.x + b.width <= ab.x + ab.width &&
+      b.y + b.height <= ab.y + ab.height
+    ) {
       hits.push(node.id);
       continue;
     }
 
     // 3. SILHOUETTE poses: kernel polygon-overlap against the area polygon.
-    if (silhouetteOverlapsArea((pose as PolygonPath).coords, area)) {
-      hits.push(node.id);
+    if (silhouette) {
+      if (silhouetteOverlapsArea((pose as PolygonPath).coords, area)) {
+        hits.push(node.id);
+      }
+      continue;
     }
+
+    // 4. Everything else — the kit's own inserted shapes among them, which
+    // carry a bare `{x,y,w,h}` pose and keep their geometry on `data`. Ask the
+    // painter for the world-frame silhouette; a polygon gets the same kernel
+    // test as a polygon pose. A rect silhouette (or no painter) falls back to
+    // the historical AABB-overlap-is-a-hit behavior, which the fast-reject
+    // above has already established.
+    const drawn = findShapeSilhouette(node, pose);
+    if (drawn?.kind === 'polygon') {
+      if (silhouetteOverlapsArea(drawn.coords, area)) hits.push(node.id);
+      continue;
+    }
+    hits.push(node.id);
   }
   return hits;
 }

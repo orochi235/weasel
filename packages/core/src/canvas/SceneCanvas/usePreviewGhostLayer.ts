@@ -30,7 +30,14 @@ interface PreviewSource {
    *  data (e.g. anchor-edit on `data.path` nodes). Falls back to
    *  committed `node.data` when null/absent. */
   previewData?: (id: string) => unknown;
+  /** Subset of `previewIds` to paint at full opacity instead of as ghosts.
+   *  A ghost reads as "in flight under the pointer"; a layout sibling
+   *  reflowing to its destination slot is not in flight and should look
+   *  settled. Honored at subtree-root granularity. */
+  previewOpaqueIds?: () => Iterable<string> | null;
 }
+
+const GHOST_ALPHA = 0.85;
 
 export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
@@ -168,19 +175,30 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         return [group];
       };
 
+      const opaqueSet = new Set<string>();
+      for (const source of sources) {
+        const ids = source.previewOpaqueIds?.();
+        if (!ids) continue;
+        for (const id of ids) opaqueSet.add(id);
+      }
+
       // Roots: previewing nodes whose parent isn't previewing — buildSubtree
       // recurses down from each.
       const children: DrawCommand[] = [];
+      const opaque: DrawCommand[] = [];
       for (const id of idSet) {
         const node = sc.get(asNodeId(id));
         const parent = node?.parent;
         if (parent != null && idSet.has(parent)) continue;
-        for (const cmd of buildSubtree(id)) children.push(cmd);
+        const sink = opaqueSet.has(id) ? opaque : children;
+        for (const cmd of buildSubtree(id)) sink.push(cmd);
       }
-      if (children.length === 0) return [];
+      if (children.length === 0 && opaque.length === 0) return [];
       // World-space commands; drawLayers wraps in viewToMat3 automatically.
-      // Keep the alpha group so the 0.85 still applies to the ghosts.
-      return [{ kind: 'group', alpha: 0.85, children }];
+      const out: DrawCommand[] = [];
+      if (opaque.length > 0) out.push({ kind: 'group', children: opaque });
+      if (children.length > 0) out.push({ kind: 'group', alpha: GHOST_ALPHA, children });
+      return out;
     },
   }), []);
 }
