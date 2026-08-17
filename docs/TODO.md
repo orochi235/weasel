@@ -18,15 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Draw-loop cost per command** — the cost is writing a buffer between draws, not the draw call. Consecutive solid geometry (rects, fills, stroke ribbons) now batches into one draw across the scene's wrapper groups, per-node transforms and opacity, and stroke ribbons are tessellated once per stroke configuration rather than once per frame; gradients, patterns, images, text and shaders still pay per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
-
-> The contributions spec (`docs/superpowers/specs/2026-08-10-contributor-registry-design.md`)
-> shipped in two plans, 2026-08-10: claims that outrank scope, then the
-> contribution record with declared eligibility. Its two open follow-ups —
-> `targetConsultsAffordance` guessing from shape, and chrome opacity — closed
-> on 2026-08-12 with the HUD gesture-dispatch work
-> (`docs/superpowers/specs/2026-08-12-hud-gesture-dispatch-design.md`); what
-> each left behind is now P3 under [Tools & gestures](#tools--gestures).
+- **Per-command draw cost** — solid geometry batches; gradients, patterns, images, text and shaders still pay per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 ### P2 — broad reuse / friction-likely
 
@@ -232,8 +224,6 @@ From `docs/specs/2026-05-03-pen-tool-design.md`:
 - **(P3) Snap-to-existing-anchors** (cross-path anchor snapping). Clicking near an existing path's anchor would coalesce. Useful for stitching paths. (Only a generic grid `snapPoint` exists today, not anchor magnetism.)
 - **(P3) Continue an existing path's open endpoint.** Click an existing open path's first/last anchor to pick it up and append. No extend-from-endpoint path exists today.
 
-> Shipped since this list was written (verified 2026-06-19): mid-creation editing of placed anchors (`penEdit/actions.ts` dragAnchor/addAnchorOnSegment/deleteAnchors), click/dblclick/shift-click-to-edit during creation (`usePenTool.ts`), and compound-path subpaths with open/closed mixing (`finishedSubpaths`/`PenSubpath`, `scissorsAtAnchor`).
-
 ### Tool overlay channel deferrals
 
 From `docs/specs/2026-05-03-tool-overlay-channel-design.md`:
@@ -415,18 +405,6 @@ Core five + Crop shipped. Remaining:
   matching CSS rather than the GL path's cluster walk. Visible only on text
   with combining marks or emoji sequences.
 
-- **(RESOLVED 2026-07-29) The dynamic tier's bake size is right where it is.**
-  Recorded because the 48px single-channel bake looks like something to
-  improve and isn't. Measured against a direct `fillText` at each display
-  size, registration searched out: coverage error bottoms out *at* the bake
-  size (.024) and rises both ways — .049 at 128px, .096 at 12px. So raising
-  `BAKE_SIZE` moves the sweet spot away from the 12–32px range UI text lives
-  in. The 12–16px end is also not undersampling: 3×3 supersampling halves the
-  error at 24–48px and recovers almost nothing at 12–16px, because what
-  remains is a hinted rasterizer putting stems on the pixel grid, which no
-  size-independent field encodes. Numbers live in `glyphRasterizer.ts`.
-  Mipmaps stay out regardless — mip levels blend across packed glyph rects.
-
 - **(P3) Decoration thickness is derived, not read from font metrics.** The
   underline / strikethrough offsets and weight are the fixed `0.10` / `-0.30`
   / `0.05` em constants in `layoutRuns`. Real fonts ship
@@ -495,11 +473,7 @@ Core five + Crop shipped. Remaining:
 
 ### Container layout strategies (deferred from `docs/specs/2026-05-03-container-layout-strategies-design.md`)
 
-> **Status note (2026-06-15): layout reflow is reconnected to the live action path.** `moveAction` consults the `layout` dep during single-node drags (`runLayoutPass`), folds destination + source reflow poses into the preview-ghost channel, and on commit emits the strategy's `commitDrop` ops + a cross-container reparent + source-reflow ops. The `LayoutStrategy` methods were renamed `childPoses` / `reflowPoses`, and the orphaned `MoveOverlay` type was deleted. See `docs/superpowers/specs/2026-06-15-revive-container-layout-reflow-design.md`. The bullets below are the genuinely-deferred remainder.
->
-> One follow-up remains from the revival:
-> - **Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
-
+- **(P3) Reparent-on-layout-drop lives in `moveAction`, not the strategies' `commitDrop`** (which are pose-only). If a strategy ever needs container-specific reparent semantics, revisit whether `commitDrop` should own it.
 - **(P2) Drop rejection signal.** v1 layout commits a free-space `setPose` when no container accepted a drag. Needs a cleaner semantic — candidates: a dedicated cancel op, a snap-back-to-source-pose path, or having the source layout's `commitDrop` re-place the child at its origin slot.
 - **(P2) Multi-select drag into a layout container.** Currently falls through to the per-id transform batch (no `commitDrop` invocation, no sibling reflow). Layout-aware reflow + commit only fire when `scratch.ids.length === 1` in `moveAction`. Decide multi-select-into-layout semantics (sequential commitDrops? grouped layout API?) before lifting the guard.
 - **(P3) Z-order walk doesn't cross non-container ancestors.** Open question: when a deep layout container is BELOW (in z) a shallow layout container that shares the dragged point, today the deepest wins — debate whether real z-order across the whole tree (flat painter's order) should win instead. Decide once a consumer hits the case.
@@ -631,10 +605,6 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 - **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
 
-### Canvas / SceneCanvas seam
-
-Seam refactor landed 2026-05-24 (plan: `docs/superpowers/plans/2026-05-24-canvas-scenecanvas-seam.md`). After the refactor, `<Canvas>` is a coherent scene-agnostic primitive — WebGL surface + viewport (pinch zoom) + pointer routing + slot composition. Selection, picking, kind registry, scene-aware overlays all live in `<SceneCanvas>`. `<Canvas>` is `@internal` / `@deprecated` and no longer exported from the public barrel (2026-06-19) — it's now private. Internal consumers import it directly from `packages/core/src/canvas/Canvas`.
-
 ---
 
 ## Backends (WebGL future)
@@ -659,93 +629,42 @@ From the WebGL transition spec — all deferred:
 
 - **(P3) Last 4 React `act()` warnings in CI vitest.** The June 2026 sweep took the `ci.yml` "not wrapped in act(...)" count 200 → 4 (and killed the ~91 jsdom `getContext` stack dumps); see `vitest.setup.ts` (global `getContext` stub) and the test-side `act()` wrapping. The remaining 4 all come from `packages/core/src/canvas/SceneCanvas.tools.test.tsx`'s *"omitted defaultTools: resize is registered"* test — a SceneCanvas-internal deferred update from the resize-gesture commit that resists every test-side `act()` strategy tried (async microtask flush, `setTimeout(0)` macrotask flush, dispatching the whole down→move→up gesture inside one `act()`). A real fix has to live in SceneCanvas's update scheduling, not the test. Note: these warnings only reproduce under CI (ubuntu/worker timing), not locally — verify via the `ci.yml` log. Low value; defer.
 
-- **[x] Performance benchmarking — pure-JS layers.** `tests/bench/` holds 62
-  vitest benchmarks over tessellation, text layout, scene ops and hit-testing,
-  with a committed baseline (`tests/bench/results/`) and `npm run bench` /
-  `npm run bench:baseline`. Read `tests/bench/README.md` before trusting a
-  number. Nothing gates CI; the README says what a gate would have to look
-  like. What the first run found:
+- **(P2) Per-command draw cost, for everything that is not batched solid
+  geometry.** `tests/perf/draw-loop.spec.ts` sweeps commands per frame under
+  real GL (`npm run test:perf`; gates nothing, prints the unmasked GL renderer
+  so a software backend is obvious).
 
-  - Hit-testing is a linear scan — `hitTestArea` walks every node in
-    `renderOrder()`. The kit has no spatial index of any kind; the quadtree
-    this list used to assume is eric's `quadtreeStrategy`, an occupancy tree
-    for *placement* (`occupantId`, `findDropNode`), which answers a different
-    question and is already tracked under Container layout strategies. The
-    per-node AABB "fast reject" used to call `boundsOfPath` for every node
-    whether or not it could intersect, which cost 12 ms per query on 10k
-    24-gons against 0.84 ms for 10k rects. That box is now memoized through
-    `nodeMemo` (keyed on the node's `pose` / `data` references, so any scene
-    op invalidates it): 10k 24-gons is 1.16 ms, 10x faster. The per-node
-    decision not to cache initially cost rect scenes 5–17%; inlining it as a
-    `pose.kind` read gave that back. The scan machinery, not geometry, was
-    about 70% of what remained, so the scan now consumes `renderOrderNodes()`
-    and the `scene.get` per id is gone: 10k rects 0.94 → 0.53 ms, 10k 24-gons
-    1.21 → 0.78 ms. At well under a millisecond per query an index is not the
-    bottleneck; revisit if scenes get bigger or marquee starts querying more
-    than once a frame.
-  - `renderOrder()` was O(layers × nodes) — it walked the whole tree once per
-    layer, yielding only that layer's nodes. Fixed: one DFS bucketed by layer.
-    10k nodes over 64 layers went 12.93 ms → 0.35 ms, and the flat
-    single-layer case 0.37 → 0.19, the latter from a separate no-bucket walk
-    for the one-layer scene. The original benchmarks used a one-layer fixture,
-    so the multiplicative term was invisible; `renderOrder — 10k nodes, by
-    layer count` now sweeps it.
-  - Tree depth costs nothing measurable on `add` / `setPose`; scene ops are
-    all sub-microsecond.
-  - Both caches earn their keep by three to four orders of magnitude
-    (`getMesh` 4.2e-5 ms hit vs 0.17 ms miss; `cachedLayoutRuns` 1.7e-4 vs
-    0.11).
+  The cost turned out not to be the draw call. A warm mesh draw is ~1.8 us;
+  what cost ~66 us was *writing a buffer between draws*, which the driver
+  cannot pipeline over. So batching pays by moving buffer writes to once a
+  frame, and consecutive solid-fill geometry — rects, tessellated fills, stroke
+  ribbons — now shares one `drawElements`. At 3,200 commands on an M2 Max via
+  ANGLE: scene-shaped rects 209 -> 0.39 ms, rotated rects 217 -> 0.70 ms, solid
+  octagons 5.6 -> 0.65 ms, stroked rects 244 -> 9.4 ms.
 
-  Still open:
+  Stroked commands then went 9.4 -> 1.7–2.0 ms on 2026-08-15: batching had left
+  them ~85% stroke tessellation, and `cache/strokeMeshCache.ts` now keys that on
+  `Path` identity so a ribbon is built once per stroke configuration rather than
+  once per frame. A ribbon also earns a persistent VAO on its second sight *in a
+  given GL context* — `GLMeshCache.uploadRecurring`, which is where that gate
+  has to live, since one scene can be drawn by several renderers. Design:
+  `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
 
-  - **Per-command cost, for every command that is not batched solid geometry.**
-    `tests/perf/draw-loop.spec.ts` sweeps commands per frame under real GL
-    (`npm run test:perf`; gates nothing, prints the unmasked GL renderer so a
-    software backend is obvious).
+  What still pays per command: gradients, patterns, images, text, shaders,
+  per-vertex-color and stencil fills, and meshes past the batch's vertex cap. A
+  frame alternating solid and linear-gradient rects is unchanged at ~33 us per
+  command, almost entirely the gradient half.
 
-    The cost turned out not to be the draw call. A warm mesh draw is ~1.8 us;
-    what cost ~66 us was *writing a buffer between draws*, which the driver
-    cannot pipeline over. So batching pays by moving buffer writes to once a
-    frame, and consecutive solid-fill geometry — rects, tessellated fills,
-    stroke ribbons — now shares one `drawElements`. At 3,200 commands on an M2
-    Max via ANGLE: scene-shaped rects 209 -> 0.39 ms, rotated rects 217 ->
-    0.70 ms, solid octagons 5.6 -> 0.65 ms, stroked rects 244 -> 9.4 ms.
+  The rest of the plan — one program plus atlases — is in
+  `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a
+  two-phase dispatch split that would make it tractable.
 
-    Stroked commands then went 9.4 -> 1.7–2.0 ms on 2026-08-15: batching had
-    left them ~85% stroke tessellation, and `cache/strokeMeshCache.ts` now keys
-    that on `Path` identity so a ribbon is built once per stroke configuration
-    rather than once per frame. A ribbon also earns a persistent VAO on its
-    second sight *in a given GL context* — `GLMeshCache.uploadRecurring`, which
-    is where that gate has to live, since one scene can be drawn by several
-    renderers. Design:
-    `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
-
-    What still pays per command: gradients, patterns, images, text, shaders,
-    per-vertex-color and stencil fills, and meshes past the batch's vertex cap.
-    A frame alternating solid and linear-gradient rects is unchanged at ~33 us
-    per command, almost entirely the gradient half.
-
-    The rest of the plan — one program plus atlases — is in
-    `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a
-    two-phase dispatch split that would make it tractable.
-  - **[x] Memoize `renderOrder()`.** Both walks now cache against a
-    structural-generation counter. A repeat call on a 10k-node, 4-layer scene
-    drains in 0.0033 ms against a 0.33 ms rebuild.
-
-    The recorded blocker — that `scene.roots` / `scene.nodes` /
-    `childrenOf()` hand out live structures, so the cache could go stale —
-    did not survive checking. Nothing outside `scene.ts` mutates them (the
-    types are `readonly`, and a repo-wide grep for mutators finds none), and
-    every internal structural write funnels through four places: `attach`,
-    `detach`, `kit:setLayer`, and `rebuildLayerIndex`, plus `loadState`. Those
-    bump the counter; pose and data edits deliberately do not, since they fire
-    per frame during a drag. Sealing the getters was never needed.
-
-    Each bump is covered by a test that fails when it is removed — verified by
-    removing each one in turn. Worth keeping that property: the first version
-    of the `setLayer` test passed with the bump deleted, because its fixture
-    reordered to the same sequence either way.
-  - Whether any of this gates CI is still Mike's call.
+- **(P3) Whether the benchmarks gate CI.** `tests/bench/` holds 62 vitest
+  benchmarks with a committed baseline (`tests/bench/results/`); nothing gates
+  anything. `tests/bench/README.md` argues a hard threshold on shared runners
+  would have to be loose enough to miss real regressions, and sketches the
+  shape it thinks a gate should take instead — a PR job that posts the
+  `--compare` delta as a comment and does not fail the build. Mike's call.
 
 - **(P2) A clipped group costs about as much as 1,000 solid rects.**
   `tests/perf/frame-budget.spec.ts` (added 2026-08-15) fits 244–268 clipped
