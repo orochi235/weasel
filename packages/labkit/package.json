@@ -76,7 +76,7 @@
     "build": "tsup && npm run build:dts && npm run build:css && npm run build:fonts",
     "build:dts": "tsx scripts/build-dts.mts",
     "prepublishOnly": "npm run build",
-    "build:css": "lessc src/styles.less dist/styles.css",
+    "build:css": "node scripts/build-css.mjs",
     "build:fonts": "mkdir -p dist/fonts && cp ../theme/fonts/*.woff2 dist/fonts/",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -25,6 +25,13 @@
 //      import/export/require/import() targeting `@weasel-js`. This is the
 //      automation of the manual "grep for leaked imports" done during absorption.
 //
+//   3. Every scoped class name the bundle paints with is defined in the shipped
+//      stylesheet. Self-contained JS is not self-contained UI: the passed-through
+//      weasel-ui components are styled by CSS modules, whose scoped names come
+//      out of THAT package's build. Ship the bundle without its stylesheet — or
+//      against a stale one — and the consumer gets a component whose class names
+//      match nothing, with no error anywhere. That shipped in 0.1.0.
+//
 // Genuine third-party deps/peers are marked external (a real consumer installs
 // them); we only care that no path-alias / bare-workspace specifier leaks.
 
@@ -191,6 +198,35 @@ try {
   process.exit(1);
 }
 
+// --- Check 3: every CSS module the bundle paints with shipped its stylesheet ---
+// CSS-module output, as `_local_hash_line` — the shape both esbuild and Vite emit.
+// The hash identifies the source file, so it is what gets asserted: an empty rule
+// (`.paletteBtn {}`) is dropped by the minifier and a `@keyframes` name is never
+// a selector, but either way its file's OTHER names are in the stylesheet. What
+// this catches is a whole module's CSS going missing, which is the failure that
+// shipped: a component styled by names that match nothing anywhere.
+const SCOPED_CLASS_RE = /"(_[A-Za-z][\w-]*_([a-z0-9]{4,})_\d+)"/g;
+const stylesheet = await readFile(join(distDir, 'styles.css'), 'utf8');
+const missing = new Map();
+for (const file of await walk(distDir)) {
+  if (!file.endsWith('.js')) continue;
+  const text = await readFile(file, 'utf8');
+  for (const [, cls, moduleHash] of text.matchAll(SCOPED_CLASS_RE)) {
+    if (!stylesheet.includes(`_${moduleHash}_`)) missing.set(moduleHash, cls);
+  }
+}
+if (missing.size) {
+  console.error(
+    `[smoke] dist/styles.css carries no rule from ${missing.size} CSS module(s) the bundle paints with:\n`,
+  );
+  console.error([...missing.values()].slice(0, 10).join('\n'));
+  console.error(
+    "\n[smoke] Either `build:css` (package.json) stopped concatenating that package's\n" +
+      'stylesheet, or labkit was built against a stale dist of it — build it first.',
+  );
+  process.exit(1);
+}
+
 console.log(
-  `[smoke] OK — ${jsEntries.length} labkit entries bundle self-contained; no @weasel-js specifiers in dist (js+dts).`,
+  `[smoke] OK — ${jsEntries.length} labkit entries bundle self-contained; no @weasel-js specifiers in dist (js+dts); every CSS module's stylesheet shipped.`,
 );

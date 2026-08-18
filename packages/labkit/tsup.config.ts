@@ -37,9 +37,9 @@ export default defineConfig({
   external: ['react', 'react-dom', 'react-aria-components', 'earcut', 'polygon-clipping'],
   // Bundle the weasel core + private sub-packages into labkit's dist — none are
   // published to npm. The sub-packages (@weasel-js/ui, /modes, and their own
-  // deps) resolve from their workspace src (node_modules symlinks); the core
-  // resolves to its built, self-contained dist via the esbuild alias below
-  // (avoids re-bundling weasel's bare core/ imports).
+  // deps) resolve through their workspace symlinks; the core resolves to its
+  // built, self-contained dist via the esbuild alias below (avoids re-bundling
+  // weasel's bare core/ imports).
   noExternal: [/^@weasel-js\//],
   esbuildOptions(options) {
     options.alias = {
