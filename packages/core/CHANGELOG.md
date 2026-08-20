@@ -1,5 +1,274 @@
 # Changelog
 
+## 1.0.2
+
+### Patch Changes
+
+- 28710f2: The renderer's solid batch is drained at the sites that decide routing or
+  change stencil state, instead of at each emitter that happened to remember.
+  Geometry that cannot join a run now goes through `tryStageSolid`, which returns
+  `false` only after flushing — so the only way an emitter earns permission to
+  draw for itself is to have called the function that drained the batch. `pushClip`
+  and `popClip` flush as their first statement, since rasterizing into the stencil
+  is what creates the obligation.
+
+  Nothing about the drawn result changes; this removes a way for a future draw
+  path to paint under geometry staged before it.
+
+- 2e3fea2: The `routing` namespace is gone from the main barrel, and the reflection
+  surface exports only what a consumer can use.
+
+  `export * as routing` made tool authoring reachable two ways — `core.routing.defineTool`
+  and the `@weasel-js/core/routing` subpath — and no consumer ever used the first.
+  It survived as the unfinished half of the 2026-05-12 declarative-routing work,
+  whose Phase 6 was to move `defineTool` out of `routing/` entirely. **Removing
+  it is a breaking change for anyone importing the namespace form**; the subpath
+  is unchanged and is what every known consumer already uses.
+
+  `tools/routing/reflection` now exports `buildRouteRegistry`, `findConflicts`,
+  `RegistryEntry` and `Conflict` — the four an external inspector needs.
+  `PREDICATE_TARGET`, `findScopedConflicts`, `formatConflict`,
+  `reportRouteConflicts` and `ToolScopes` are still there and still used; they
+  are just no longer public, since their only caller is inside the kit.
+
+- 75ba7b1: Three fixes found by re-checking backlog entries against the code.
+
+  SVG gradients survive a round trip. The parser now reads `gradientUnits`
+  (`objectBoundingBox` → `units: 'bounds'`, `userSpaceOnUse` → `'world'`) and the
+  serializer writes back whichever the paint declares, instead of hardcoding
+  `userSpaceOnUse` on the way out — which had been reading a box-relative
+  gradient's `0..1` geometry as page coordinates, i.e. a gradient the size of a
+  pixel.
+
+  `unpackSvgFiles` keeps gradient fills instead of flattening them to a solid.
+  The reason recorded for the flattening — that the `kit:path` painter has no
+  gradient slot — had not been true for some time; `NodeFill` is
+  `string | FillStyle`, now exported. A `userSpaceOnUse` gradient is normalized
+  against the leaf's own box on the way in, so it survives the fit-clamp and
+  drop-point placement that move the geometry out from under it. Gradient
+  _strokes_ still flatten: `data.stroke` genuinely is a color string.
+
+  `extractUniformNames` skips precision and interpolation qualifiers. `uniform
+highp float u_t;` — the common spelling in hand-written GLSL — matched nothing
+  at all, so the uniform got no location and every write to it was dropped in
+  silence. Comma-separated declarator lists (`uniform float a, b;`) read too.
+
+  Also adds `tests/visual/text-decoration.spec.ts`, a baseline-free assertion
+  that underline and strikethrough sit `0.40 em` apart and span only their own
+  runs. It measures the gap between two gap-free horizontal ink runs, which is
+  something `text.spec.ts`'s 5% diff tolerance cannot see move.
+
+- e4a6ec4: Tool authoring moved out of `routing/` and onto the main barrel. `defineTool`,
+  `defineViewportTool`, `ToolDef`, `ViewportToolDef` and `ToolKeybinding` now come
+  from `@weasel-js/core`:
+
+  ```ts
+  import { defineTool, type ToolDef } from "@weasel-js/core";
+  ```
+
+  **This is a breaking change for anyone importing them from
+  `@weasel-js/core/routing`.** That subpath keeps the route grammar (`parseRoute`,
+  `formatRoute`, `describeRoute`, the gesture descriptors) and the reflection
+  consumers (`buildRouteRegistry`, `findConflicts`) — it is now only the surface
+  that _reads_ routes back, matching its name.
+
+  Finishes Phase 6 of the 2026-05-12 declarative-routing work. Source layout
+  follows: the factory and its `ToolDef` types sit at the top of `src/tools/`
+  alongside `useTools` and `useKeybindings`, with `routing/types.ts` renamed
+  `routeTypes.ts` to clear the existing `tools/types.ts`. Behavior and runtime
+  contract are unchanged.
+
+- d2a9049: Six backlog entries, all in the input and hit-test layers.
+
+  Tool overlays can say where they sit. `Contribution.overlay` takes a
+  `RenderLayer` or an array of them, and a new `overlayPosition` (`'top'` — the
+  default — / `'before-selection'` / `'after-selection'`) anchors them against
+  the selection chrome instead of always landing on top; with no selection layer
+  in the stack the anchored positions fall back to the tail.
+  `getActiveOverlays(position?)` partitions, and `placeToolOverlays` in
+  `canvas/layerOrder.ts` does the splice, so the ordering is testable without a
+  GL context.
+
+  `drop` and `paste` are route-grammar gesture names. They shipped without them,
+  so the inspector reported `undefined` for every ingestion binding. Both are
+  targetless and carry the spec's MIME-glob filter as their arg — `drop(image/*)`.
+
+  An unhandled paste stays the page's. `onPaste` now dispatches first and calls
+  `preventDefault` only on `'handled'`, the shape `onWheel` already used.
+  Clipboard items materialize synchronously, so unlike `onDrop` the result is
+  known while the default can still be suppressed.
+
+  Marquee and lasso see the shape a node actually draws. `hitTestArea` asked the
+  _pose_ for a silhouette, which meant the kit's own inserted shapes — geometry
+  on `node.data.path` behind a plain `{x,y,w,h}` pose — took the AABB path and
+  kept every false positive the silhouette test exists to drop. It now asks
+  `findShapeSilhouette` for the drawn world-frame boundary. Paying for that is a
+  containment short-circuit: a node the rect marquee swallows whole is a hit no
+  silhouette can overturn, so neither the kernel nor the painter runs. Net
+  against the committed bench baseline, polygon-pose scenes gain (1.25x at 1000
+  nodes / 100% area) and plain-rect scenes lose ~8% on the two rows that scan
+  everything. The short-circuit is marquee-only, behind `hitTestAreaPolygon`'s
+  `areaIsRect` flag, because a node inside a lasso hull's bounding box can still
+  miss the hull.
+
+  Layout siblings reflowing mid-drag render opaque. `OngoingHandle.previewOpaqueIds()`
+  names the subset of `previewIds()` that skips the ghost alpha; `moveAction`
+  fills it from the destination and source reflow ids. A ghost means "in flight
+  under the pointer", which a sibling settling into its destination slot is not.
+
+  `LayoutStrategy.acceptsDrop(container, dragged)` rejects a drag before any
+  drop-target work, so a type-aware container falls through to whatever sits
+  under it rather than swallowing everything in its bounds.
+
+  `flipAction` reads `params.pivot`. `'each'` (the default, unchanged) mirrors
+  every pose about its own AABB; `'union'` mirrors about the selection envelope
+  so items swap sides, and the `geometryProjection` data op follows the same
+  pivot.
+
+- 5f05431: `viewport.pinchZoom` now pans as well as zooms. It anchored `zoomAt` on the
+  current gesture centroid and never translated by the centroid delta, so two
+  fingers travelling together — spread unchanged, zoom factor 1 — moved the view
+  not at all.
+
+  Each frame now anchors the zoom on the previous centroid and then translates by
+  how far the centroid travelled. Together those pin the world point under the
+  gesture midpoint as the midpoint moves, which is what makes a pinch feel
+  attached to the fingers.
+
+  The action's id and label are unchanged (`viewport.pinchZoom` / `Pinch Zoom`).
+  Consumers who bound it get panning with no wiring change.
+
+- 5fea43d: Five unrelated small fixes.
+
+  A tapered stroke with `align: 'inner'` or `'outer'` on a polygon path painted
+  at half its requested widths. That alignment renders by tessellating at twice
+  the width and stencilling half away, and the doubling reached `stroke.width`
+  but not `vertexWidths`. The doubled array is memoized per source array, since
+  the ribbon cache compares it by reference.
+
+  An image insert previews the decoded bitmap inside the drag bounds instead of
+  committing on release with no preview at all. It falls back to the bare
+  outline until the image decodes, and `useImageTool({ preview: 'outline' })`
+  opts out of the bitmap entirely.
+
+  A HUD widget that claims the pointer reports a `'pointer'` cursor without
+  implementing anything — hovering one while a drawing tool was active used to
+  keep showing that tool's cursor. The rule is keyed on the `claims` every
+  widget already declares, so it covers consumer-authored widgets too;
+  decoration claims nothing and the hit walk descends past it. A widget's own
+  `cursorAt` still wins, and `button` takes a `cursor` option that feeds it.
+
+  `composeAffordanceLayer`'s `hitTest` returns a `LayerHit`, carrying the hit
+  region's declared cursor and claim instead of dropping them. `AffordanceRegion`
+  gains optional `strength` / `claimedKinds` to declare that claim.
+
+  `ToolPalette` uses the shared `useRovingTabIndex` rather than its own container
+  handler, so arrow keys skip tools that are ineligible in the current mode and
+  the tab stop no longer sits on one. `ToolButton` takes an `onKeyDown`.
+
+- 443d74e: Stroke ribbons are tessellated once per stroke configuration instead of once
+  per frame. The renderer rebuilt every stroked path's ribbon geometry on every
+  frame and discarded it; it now caches the result on `Path` identity, keyed by
+  the parameters that change the ribbon — width, cap, join, miter limit,
+  alignment, dash, and flatten tolerance. Paint and vertex colors are not in the
+  key, since both are applied over the same triangles at draw time.
+
+  A ribbon that survives a frame also stops paying for a fresh VAO and two
+  buffers on every subsequent frame. One whose path or stroke parameters change
+  each frame keeps the transient upload it had before, freed at end of frame —
+  so an animated or freshly drawn path never accumulates GL resources waiting on
+  garbage collection.
+
+  Nothing about the drawn result changes. The cache is keyed on object identity,
+  matching the fill cache: a `Path` rebuilt with equal coordinates is a distinct
+  entry and re-tessellates.
+
+- 7decec1: Four more backlog fixes.
+
+  `@weasel-js/svg` reads and writes `<image>`. A new `SvgImageNode` holds the
+  `href` verbatim — an external URL or a `data:` URI, with `xlink:href` accepted
+  on the way in — plus a box that inherited transforms collapse onto and an
+  element-local rotation. `unpackSvgFiles` maps it onto the `kit:image` painter's
+  `data.image.src`, so a dropped SVG carrying raster content now keeps it instead
+  of dropping the element on parse. `preserveAspectRatio` is not modeled: the box
+  is taken literally and written back as `none`, and a non-`none` source warns.
+
+  `pickTopMostHit` resolves sibling z-order. An adapter can supply `getZIndex(id)`
+  or `compareZ(a, b)`; both compose with the existing parent/child collapse rather
+  than replacing it, so a child still beats its own ancestor whatever z the two
+  report. Without either, the hit list's own order decides, as before.
+
+  `useSceneTextEdit` supplies `setStyle`. Clearing a style flag that the _node_
+  sets is the one edit the additive run algebra can't express, and `useTextEdit`
+  declines it without a writer — so every scene-wired consumer silently refused
+  that toggle. Override the projection with `setStyle(data, style)` for a
+  non-default data shape.
+
+  The slops debug overlay draws handle halos at the real hit radius. Affordance
+  regions moved to screen-pixel radii, but this layer still scaled its circles by
+  the view, so at 4x zoom it drew a 32px halo over an 8px target — the one thing
+  a hit-test overlay must not do. Anchor slops now read the anchor radius rather
+  than the handle radius.
+
+- 24daa08: Five unrelated backlog fixes.
+
+  The specificity tuple's `phase` dimension is graded rather than binary: an
+  atom scores 2 when both its channel and its lifecycle state are concrete, 1
+  when one axis is wildcarded, and 0 for `*:*`, which matches everything an
+  undeclared phase would have matched. An atom list takes the minimum, since
+  `matchPhase` is a union. No existing binding reorders — the four ambient
+  actions hold at 1, and the polygon and star tools' `phase: 'engaged'` wheel
+  bindings rise to 2, widening a gap they already won.
+
+  The loupe's pixel mode no longer drops the end of a fast drag: a readback
+  requested while `createImageBitmap` is in flight is remembered and re-run when
+  that one settles, instead of being discarded.
+
+  SVG unpack applies the fit-clamp to text on both axes. `fontSize` now scales
+  with the file, and a text node's box width is estimated from its longest line
+  instead of inheriting the parser's unbounded-width wrap sentinel — which,
+  folded into the union AABB, had been clamping any external SVG containing
+  text down to a speck. That sentinel is now the exported `UNBOUNDED_TEXT_WIDTH`
+  rather than a bare `99999`, so a consumer reading `SvgTextNode.width` can tell
+  a measurement from a placeholder.
+
+  The debug overlay takes per-feature line widths and dashes through
+  `DebugConfig.strokes`, alongside the colors `DebugConfig.theme` already
+  carried. Defaults are unchanged.
+
+  A `.dfont` face declines the outline tier by name. Datafork TrueType holds its
+  sfnt tables inside a Macintosh resource map, which is still not unpacked, but
+  it is now recognized before parsing and reported as itself rather than dying
+  on an unrecognized-signature message that never says which format it saw.
+
+- f79e4b2: Viewport layers can now answer where a screen point lands inside them.
+  `createViewportLayer` returns a `ViewportLayer`, adding:
+
+  ```ts
+  layer.reproject(outer, dims, screen); // → inner-world point, or null if outside
+  viewportsAt(layers, outer, dims, screen); // → topmost viewport containing it
+  ```
+
+  `bounds` is already a pure function of `(outer, dims)`, so re-projection
+  recomputes the exact rect the frame painted rather than a remembered one — no
+  stored state and nothing to go stale. Right and bottom edges are exclusive, so
+  adjacent viewports never both claim a pixel.
+
+  This deliberately does **not** touch the dispatcher, which the previous
+  docstring promised it would. Tools still target the outer view; a consumer that
+  wants a click inside a viewport to mean something calls `reproject` from its own
+  handler. Making tools work _inside_ a viewport raises questions this primitive
+  does not answer — which view a pinch zooms, what a drag leaving the rect does —
+  and is tracked as its own item.
+
+- Updated dependencies [d2a9049]
+- Updated dependencies [24daa08]
+  - @weasel-js/gestures@1.0.2
+  - @weasel-js/font@1.0.2
+  - @weasel-js/geom@1.0.2
+  - @weasel-js/history@1.0.2
+  - @weasel-js/modes@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes

@@ -1,5 +1,53 @@
 # @weasel-js/ui
 
+## 1.0.2
+
+### Patch Changes
+
+- 9639d92: `ActionsBar` and `OptionsBar` now share one stylesheet,
+  `components/segmentedControl.module.css`, instead of keeping byte-identical
+  188-line copies each. The two look the same and differ only in what a segment
+  does, so the styles had two places to stay in sync and no mechanism keeping
+  them there.
+
+  No visual or API change: same rules, same class names, same generated output.
+  The merged stylesheet is the same size either way — identical content already
+  collapsed to a single scoped hash — so this buys maintainability, not payload.
+
+  `ToggleBar` keeps its own copy. It carries the same base plus a `segmentMixed`
+  third state and a deliberately different `variant_minimal`, and folding those
+  together needs a decision about whether the three bars are one component.
+
+- 5fea43d: Five unrelated small fixes.
+
+  A tapered stroke with `align: 'inner'` or `'outer'` on a polygon path painted
+  at half its requested widths. That alignment renders by tessellating at twice
+  the width and stencilling half away, and the doubling reached `stroke.width`
+  but not `vertexWidths`. The doubled array is memoized per source array, since
+  the ribbon cache compares it by reference.
+
+  An image insert previews the decoded bitmap inside the drag bounds instead of
+  committing on release with no preview at all. It falls back to the bare
+  outline until the image decodes, and `useImageTool({ preview: 'outline' })`
+  opts out of the bitmap entirely.
+
+  A HUD widget that claims the pointer reports a `'pointer'` cursor without
+  implementing anything — hovering one while a drawing tool was active used to
+  keep showing that tool's cursor. The rule is keyed on the `claims` every
+  widget already declares, so it covers consumer-authored widgets too;
+  decoration claims nothing and the hit walk descends past it. A widget's own
+  `cursorAt` still wins, and `button` takes a `cursor` option that feeds it.
+
+  `composeAffordanceLayer`'s `hitTest` returns a `LayerHit`, carrying the hit
+  region's declared cursor and claim instead of dropping them. `AffordanceRegion`
+  gains optional `strength` / `claimedKinds` to declare that claim.
+
+  `ToolPalette` uses the shared `useRovingTabIndex` rather than its own container
+  handler, so arrow keys skip tools that are ineligible in the current mode and
+  the tab stop no longer sits on one. `ToolButton` takes an `onKeyDown`.
+
+  - @weasel-js/modes@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes
