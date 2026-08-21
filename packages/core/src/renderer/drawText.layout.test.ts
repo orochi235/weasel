@@ -12,7 +12,8 @@
  * precondition first, and it is correct on its own terms either way.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { _resetFontRegistryForTests, registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';

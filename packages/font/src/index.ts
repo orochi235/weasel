@@ -15,7 +15,6 @@ export {
   resolveFontVariant,
   resolveGlyphFallback,
   listFonts,
-  _resetFontRegistryForTests,
 } from './registerFont';
 export type { FontEntry, FontVariant, ResolveResult, RegisteredFont } from './registerFont';
 
@@ -24,12 +23,6 @@ export {
   getFontFallbackPolicy,
   setDefaultFontFamily,
   getDefaultFontFamily,
-  // Narrow by default, but the reset seams are the exception the other
-  // modules already make: the policy is global module state that changes
-  // rendering, so a downstream package's test that sets one must be able to
-  // put it back. `_clearFallbackWarnings` stays internal — it is an
-  // implementation detail of these two resets.
-  _resetFallbackForTests,
 } from './fallback';
 export type { FontFallbackPolicy } from './fallback';
 
@@ -44,9 +37,6 @@ export {
   dynamicPageTextureId,
   resetBakeBudget,
   DEFAULT_BAKE_BUDGET,
-  _getPagesForTests,
-  _resetDynamicFontsForTests,
-  __setGlyphRasterizerForTests,
 } from './dynamic/dynamicAtlas';
 
 export type { CanvasFontEntry } from './dynamic/dynamicAtlas';
@@ -58,7 +48,6 @@ export {
   outlineStatus,
   listFontOutlines,
   glyphOutline,
-  _resetFontOutlinesForTests,
 } from './outline/outlineRegistry';
 export type {
   OutlineSource,

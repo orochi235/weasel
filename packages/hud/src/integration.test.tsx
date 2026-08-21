@@ -7,7 +7,7 @@ import type { BuiltinToolId, Contribution, SceneCanvasApi, SelectionApi } from '
 import { useHud, useHudContribution } from './react';
 import type { ClaimableGesture } from '@weasel-js/core';
 import type { HudPointerEvent, Widget } from './widget';
-import { _resetFontRegistryForTests } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 
 const defaultResolved = resolveTheme(weaselTheme, 'dark');

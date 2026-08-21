@@ -163,8 +163,10 @@ const bySite = new Map();
 for (const r of records) {
   const key = `${r.symbol}@${r.file}:${r.line}`;
   const existing = bySite.get(key);
-  if (existing) existing.barrels.push(r.pkg);
-  else bySite.set(key, { ...r, barrels: [r.pkg] });
+  if (existing) {
+    existing.barrels.push(r.pkg);
+    if (!existing.entries.includes(r.entry)) existing.entries.push(r.entry);
+  } else bySite.set(key, { ...r, barrels: [r.pkg], entries: [r.entry] });
 }
 let sites = [...bySite.values()];
 for (const ex of exclude) sites = sites.filter((s) => !s.barrels.every((b) => b === ex) && s.definedIn !== ex);
@@ -201,9 +203,16 @@ console.log(`\n${sites.length} public exports (unique definition sites), ${undoc
 if (!quiet) {
   console.log('\nEntry points scanned:');
   for (const p of perPackage) console.log(`  ${pad(p.pkg, 12)} ${p.entries} entry point(s)${p.note ? ` — ${p.note}` : ''}`);
-  const leaked = sites.filter((r) => r.internal);
+  // A `test-seams` entry is where a package parks reset hooks that another
+  // workspace's tests need. Reaching one is a deliberate import of a test
+  // surface, so an @internal symbol there is placed, not leaked.
+  const isSeamEntry = (e) => /(^|\/)test-seams\.ts$/.test(e);
+  const internal = sites.filter((r) => r.internal);
+  const leaked = internal.filter((r) => !r.entries.every(isSeamEntry));
+  const parked = internal.length - leaked.length;
   if (leaked.length) {
     console.log(`\n${leaked.length} export(s) whose own JSDoc marks them @internal:`);
     for (const r of leaked) console.log(`  ${r.symbol}\t${r.file}:${r.line}\tvia ${r.barrels.join(', ')}`);
   }
+  if (parked) console.log(`\n${parked} @internal export(s) reachable only through a test-seams entry.`);
 }

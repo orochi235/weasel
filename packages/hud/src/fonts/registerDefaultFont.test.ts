@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerDefaultFont, DEFAULT_FONT_FAMILY } from './registerDefaultFont';
-import { _resetFontRegistryForTests, getFont } from '@weasel-js/font';
+import { getFont } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 
 describe('registerDefaultFont', () => {
   beforeEach(() => { _resetFontRegistryForTests(); });

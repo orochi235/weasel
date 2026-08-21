@@ -8,7 +8,8 @@ import {
   _resetShapePaintersForTests,
   type NodeShapeEntry,
 } from './NodeShape';
-import { _resetFontRegistryForTests, registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { pathContainsPoint } from 'features/paths/pathHitTest';
 import type { Node } from 'core/scene/types';
 import type { DrawCommand } from '../renderer';

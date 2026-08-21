@@ -289,7 +289,8 @@ describe('WeaselRenderer.render — stencil bit discipline', () => {
   });
 });
 
-import { registerFont, _resetFontRegistryForTests, FIXTURE_FONT } from '@weasel-js/font';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { vi } from 'vitest';
 import { resolveTextStyle } from '@weasel-js/core';
 import { layoutRuns } from 'features/text/atlas/layoutRuns';
@@ -1104,9 +1105,8 @@ describe('drawText verticalAlign', () => {
   });
 });
 
-import {
-  registerCanvasFont, _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
-} from '@weasel-js/font';
+import { registerCanvasFont } from '@weasel-js/font';
+import { _resetDynamicFontsForTests, __setGlyphRasterizerForTests } from '@weasel-js/font/test-seams';
 
 describe('drawText — canvas-dynamic routing', () => {
   beforeEach(() => {
@@ -1551,9 +1551,8 @@ describe('drawText — decoration reaches the GPU', () => {
   });
 });
 
-import {
-  registerFontOutlines, glyphOutline, _resetFontOutlinesForTests,
-} from '@weasel-js/font';
+import { registerFontOutlines, glyphOutline } from '@weasel-js/font';
+import { _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { _resetOutlineMeshCacheForTests } from './cache/outlineMeshCache';
 
 /**

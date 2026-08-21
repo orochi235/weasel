@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { useHud } from './useHud';
 import type { CanvasExtensionApi } from '@weasel-js/core';
-import { _resetFontRegistryForTests } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 
 function makeApi(): CanvasExtensionApi {
   return {
