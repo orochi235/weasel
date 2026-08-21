@@ -731,14 +731,12 @@ From the WebGL transition spec — all deferred:
   thirteen times) versus per-package pages, and whether it is generated at build
   time from the markdown or rendered by a route.
 
-- **(P3) JSDoc audit at definition sites — done; three follow-ups open.** Every
-  public export of every package except `@weasel-js/ui` now has a JSDoc string
-  at its definition site. `npm run audit:jsdoc` re-derives the claim: it walks
-  each package's published entry points, resolves every reachable export to
-  where it is declared, and reports what is missing. Run it before adding an
-  export, not as a periodic sweep. `@weasel-js/ui` was skipped (concurrent work)
-  and still has ~168 undocumented exports — `node scripts/audit-jsdoc.mjs --pkg
-  ui --undocumented` is the work list.
+- **(P3) JSDoc audit at definition sites — done; four follow-ups open.** Every
+  public export of every package, `@weasel-js/ui` included, now has a JSDoc
+  string at its definition site. `npm run audit:jsdoc` re-derives the claim: it
+  walks each package's published entry points, resolves every reachable export
+  to where it is declared, and reports what is missing. Run it before adding an
+  export, not as a periodic sweep.
 
   What the sweep turned up, none of which it changed:
 
@@ -761,3 +759,12 @@ From the WebGL transition spec — all deferred:
     `intentionallyNotExported` list. These are barrel decisions, not docs bugs.
     Note that typedoc does not warn about missing JSDoc, so its warning count
     was never a coverage measure.
+  - **`@weasel-js/ui` spells the live/committed callback pair four ways, and
+    two of them disagree about `onChange`.** `Slider` is `onChange`/`onCommit`,
+    `ResizeHandle` is `onChange`/`onChangeEnd`, `CurveEditor` and
+    `PointPlotter` are `onChange`/`onChangeCommit` — in all four `onChange` is
+    the live one. `ColorField`, `GradientEditor` and `GradientHandles` are
+    `onInput`/`onChange`, where `onChange` is the committed one. The docstrings
+    now name which sense each component uses, but a reader who learns one
+    component still guesses the next one wrong. Pick one pair and rename toward
+    it.
