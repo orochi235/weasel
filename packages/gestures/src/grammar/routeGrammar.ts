@@ -84,6 +84,8 @@ export const RESERVED_SIGILS: ReadonlySet<string> = new Set(['!', '@', '#', '$',
 /** Active (parseable) sigils today: `+` required, `?` optional. */
 export const ACTIVE_SIGILS: ReadonlySet<string> = new Set(['+', '?']);
 
+/** Runtime membership test for {@link ModifierKey}, for validating a modifier
+ *  name that arrives as a plain string. */
 const MOD_NAME_SET: ReadonlySet<string> = new Set(VALID_MOD_NAMES);
 export { MOD_NAME_SET };
 
@@ -106,6 +108,11 @@ export interface ParsedRoute {
   modifiers: ParsedModifiers;
 }
 
+/** Parse a route string into its slots, filling in the shorthand defaults the
+ *  grammar defines (bare phases mean channel `&`; an omitted arg or target
+ *  slot takes the gesture descriptor's default). Throws with the offending
+ *  input on anything the grammar does not accept, including sigils reserved
+ *  for later versions. */
 export function parseRoute(input: string): ParsedRoute {
   // 1) Extract bracketed phaseSlot from the head.
   const trimmed = input.trim();
@@ -320,6 +327,9 @@ function withoutShift(m: ParsedModifiers): ParsedModifiers {
 
 const MOD_ORDER: readonly ModifierKey[] = ['mod', 'shift', 'alt', 'ctrl', 'meta'];
 
+/** Render a parsed route back to a canonical route string: shorthand where
+ *  the grammar has it, defaulted slots elided, modifiers in canonical order.
+ *  `parseRoute(formatRoute(r))` yields `r` again. */
 export function formatRoute(r: ParsedRoute): string {
   const desc = getGestureDescriptor(r.gesture);
 

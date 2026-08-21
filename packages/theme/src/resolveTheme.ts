@@ -3,6 +3,8 @@ import type { FlatTokens } from './dtcg/types';
 import type { Theme } from './theme';
 import type { TokenName } from './generated/themes';
 
+/** The output of `resolveTheme`: every token of a theme, for one mode, keyed
+ *  by CSS custom-property name and flattened to a final CSS value. */
 export type ResolvedTheme = Readonly<Record<TokenName, string>>;
 
 /** Root-first so the leaf theme's overrides land last. */

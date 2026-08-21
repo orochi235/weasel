@@ -3,6 +3,8 @@ import { applyTheme } from './applyTheme';
 import { resolveTheme, type ResolvedTheme } from './resolveTheme';
 import { weaselTheme, type Theme } from './theme';
 
+/** What `<ThemeProvider>` publishes: the theme, the mode in force, and the
+ *  fully resolved token record for that pair. */
 export interface ThemeContextValue {
   readonly theme: Theme;
   readonly mode: string;
@@ -11,6 +13,7 @@ export interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+/** Props for `<ThemeProvider>`. */
 export interface ThemeProviderProps {
   readonly theme?: Theme;
   readonly mode?: string;
@@ -64,6 +67,8 @@ export function ThemeProvider({
   );
 }
 
+/** The theme in force. Throws outside a `<ThemeProvider>`; use
+ *  `useThemeOptional` where the provider is not guaranteed. */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used inside a <ThemeProvider>');

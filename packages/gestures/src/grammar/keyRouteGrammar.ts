@@ -16,11 +16,15 @@ import { VALID_MOD_NAMES, type ModifierKey } from './routeGrammar';
 export type OptionalMod = ModifierKey;
 const OPTIONAL_SET = new Set<string>(VALID_MOD_NAMES);
 
+/** A key route split into the key itself and the modifiers whose state does
+ *  not affect the match. */
 export interface ParsedKeyRoute {
   key: string;
   optionalMods: readonly OptionalMod[];
 }
 
+/** Parse the `arg` slot of a `keyDown` / `keyUp` route. Throws on an empty
+ *  key, an unrecognized optional modifier, or a repeated one. */
 export function parseKeyRoute(input: string): ParsedKeyRoute {
   const [key, ...mods] = input.split('?');
   if (!key) throw new Error(`invalid key route (empty key): ${input}`);
@@ -33,6 +37,8 @@ export function parseKeyRoute(input: string): ParsedKeyRoute {
   return { key, optionalMods: mods as OptionalMod[] };
 }
 
+/** Render a parsed key route back to its canonical source form. Round-trips
+ *  with `parseKeyRoute`. */
 export function formatKeyRoute(r: ParsedKeyRoute): string {
   return r.optionalMods.length === 0 ? r.key : `${r.key}?${r.optionalMods.join('?')}`;
 }

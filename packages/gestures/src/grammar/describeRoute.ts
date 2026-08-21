@@ -24,8 +24,10 @@ export const ROUTE_FIELD_DEFINITIONS = {
   modifiers: 'Modifier keys the user must hold (`+key`) or may optionally hold (`?key`) for this route to match. Unlisted modifiers must not be held.',
 } as const;
 
+/** The slots of a parsed route that `ROUTE_FIELD_DEFINITIONS` explains. */
 export type RouteFieldName = keyof typeof ROUTE_FIELD_DEFINITIONS;
 
+/** The route-vocabulary terms `ROUTE_TERMS` defines. */
 export type RouteTermLabel = keyof typeof ROUTE_TERMS;
 
 /** A part of a structured route description. `string` parts are plain prose;
@@ -126,6 +128,8 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
   }
 }
 
+/** Sentence-shaping options for `describeRoute` and `describeRouteParts` —
+ *  set both false to embed the description inside a larger sentence. */
 export interface DescribeRouteOptions {
   /** Capitalize the first letter of the result. Default true. */
   capitalize?: boolean;

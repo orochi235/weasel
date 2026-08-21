@@ -3,6 +3,10 @@ export const ALPHA_EXT = 'com.weasel.alpha';
 
 export type TokenValue = string | number | readonly (string | number)[];
 
+/**
+ * A single design token as authored, before aliases are resolved: a DTCG-shaped
+ * `{ type, value }` pair where `value` may still be a `{ref}` to another token.
+ */
 export interface RawToken {
   readonly type: string;
   readonly value: TokenValue;
@@ -11,6 +15,8 @@ export interface RawToken {
   readonly description?: string | undefined;
 }
 
+/** A token graph flattened to one level, keyed by token name (no `--wzl-`
+ *  prefix). Still unresolved — see `ResolvedTokenMap` for the output side. */
 export type FlatTokens = Record<string, RawToken>;
 
 /** A resolved theme: every token name mapped to its final CSS-ready string.
