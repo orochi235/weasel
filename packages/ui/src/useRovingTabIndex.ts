@@ -4,6 +4,7 @@ import { useRef, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from
  *  skipped by arrow navigation. */
 export type RovingItem = { disabled?: boolean };
 
+/** Options for {@link useRovingTabIndex}. */
 export type UseRovingTabIndexOptions = {
   /** In the same order as the elements carrying `itemClassName`. */
   items: readonly RovingItem[];
@@ -22,6 +23,10 @@ export type UseRovingTabIndexOptions = {
   onActivate?: (index: number) => void;
 };
 
+/**
+ * What {@link useRovingTabIndex} returns: a container ref plus the per-item
+ * `tabIndex` and `onKeyDown` values to spread onto each item.
+ */
 export type RovingTabIndex<T extends HTMLElement = HTMLDivElement> = {
   /** Attach to the container element that holds the items. */
   rootRef: RefObject<T | null>;

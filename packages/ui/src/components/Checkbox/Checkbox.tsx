@@ -5,6 +5,10 @@ import {
 } from 'react-aria-components';
 import s from './Checkbox.module.css';
 
+/**
+ * Props for {@link Checkbox}, on top of React Aria's `Checkbox` props. The
+ * label is passed as children.
+ */
 export type CheckboxProps = Omit<RACCheckboxProps, 'children' | 'className'> & {
   children?: ReactNode;
   className?: string;

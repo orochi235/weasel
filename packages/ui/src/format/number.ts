@@ -10,6 +10,10 @@
  */
 export const MINUS_SIGN = '−';
 
+/**
+ * Formats a number for display, substituting {@link MINUS_SIGN} for the ASCII
+ * hyphen `toLocaleString` emits. Non-finite values stringify as-is.
+ */
 export function formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
   const formatted = Number.isFinite(value)
     ? value.toLocaleString(undefined, options)

@@ -12,6 +12,7 @@ import s from './ActionBar.module.css';
 const EMPTY_LIST: readonly Action[] = Object.freeze([]);
 const noopSubscribe = (): (() => void) => () => {};
 
+/** Props for {@link ActionBar}. */
 export interface ActionBarProps {
   /** Group key — only actions with `action.group === group` are rendered. */
   group: string;

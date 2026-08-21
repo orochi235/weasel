@@ -11,6 +11,7 @@ import {
 import { fieldClasses } from '../Field/Field';
 import s from './Input.module.css';
 
+/** Props for {@link Input}, on top of React Aria's `TextField` props. */
 export type InputProps = Omit<RACTextFieldProps, 'children' | 'className'> & {
   label?: ReactNode;
   description?: ReactNode;
