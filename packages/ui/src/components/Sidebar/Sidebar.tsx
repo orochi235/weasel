@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import s from './Sidebar.module.css';
 
+/** Props for {@link Sidebar}. */
 export interface SidebarProps {
   /**
    * Edge the sidebar docks to. Adds a class hook (`s.left` / `s.right`)

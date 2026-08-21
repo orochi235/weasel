@@ -24,17 +24,29 @@ export type { Mixed };
 
 export type AnyNode = SceneNode<unknown, string, unknown>;
 
+/**
+ * One editable property in a {@link SelectionPanel}, paired with the dotted
+ * node path it reads and writes.
+ */
 export interface PanelLeaf {
   /** Dotted node path — the leaf's key in the schema. */
   path: string;
   leaf: ToolPrefLeaf;
 }
 
+/**
+ * One labeled row of a panel section. Holds several leaves when the schema
+ * paired them.
+ */
 export interface PanelRow {
   label: string;
   leaves: PanelLeaf[];
 }
 
+/**
+ * A titled block of rows, derived from one top-level group of a properties
+ * schema. `key` is that group's schema key.
+ */
 export interface PanelSection {
   key: string;
   name: string;

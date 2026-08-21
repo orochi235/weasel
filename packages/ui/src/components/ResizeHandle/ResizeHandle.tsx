@@ -1,6 +1,10 @@
 import { useCallback, useRef, type KeyboardEvent, type PointerEvent } from 'react';
 import s from './ResizeHandle.module.css';
 
+/**
+ * Props for {@link ResizeHandle}. Note the callback sense: `onChange` fires
+ * throughout the drag and `onChangeEnd` once at the end.
+ */
 export interface ResizeHandleProps {
   /**
    * Which way the handle *runs*, matching `aria-orientation` on the
