@@ -203,20 +203,17 @@ export interface ActionEnabledResult {
   reason?: ActionDisabledReason;
 }
 
+const enabledSlowWarned = new Set<string>();
+const enabledThrewWarned = new Set<string>();
+const ENABLED_BUDGET_MS = 4;
 /**
- * @internal
+ * @experimental
  * Safely evaluate an action's `enabled` predicate. Returns `{enabled: true}`
  * when no predicate is supplied. Catches throws and treats them as disabled
  * with reason `'(predicate threw)'`. In dev mode, warns once per action id
  * when a single call exceeds 4ms (single frame at 240fps — generous; real
  * predicates should be sub-millisecond).
  */
-const enabledSlowWarned = new Set<string>();
-const enabledThrewWarned = new Set<string>();
-const ENABLED_BUDGET_MS = 4;
-/** Run an action's `enabled` predicate and normalize the answer. An action
- *  with no predicate is enabled; a predicate that throws is reported disabled
- *  rather than propagating. */
 export function evaluateEnabled(
   action: Action,
   deps?: ActionDeps,
