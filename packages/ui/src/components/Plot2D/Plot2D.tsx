@@ -12,6 +12,7 @@ import {
 import s from './Plot2D.module.css';
 import { dlog } from '../../dlog';
 
+/** Background grid configuration for a {@link Plot2D}. */
 export interface GridSettings {
   /** Number of evenly-spaced internal grid lines per axis (excluding
    *  the edges). Applied to both x and y. Default 3. */
@@ -20,16 +21,19 @@ export interface GridSettings {
   color?: string;
 }
 
+/** Axis-line configuration for a {@link Plot2D}. */
 export interface AxesSettings {
   /** Stroke color override. When omitted, uses `var(--plot-axis)`. */
   color?: string;
 }
 
+/** A pointer position given in both of the plot's coordinate systems. */
 export interface Plot2DCoords {
   plot: Point;
   model: Point;
 }
 
+/** Props for {@link Plot2D}. */
 export interface Plot2DProps {
   width: number;
   height: number;
@@ -54,6 +58,11 @@ export interface Plot2DProps {
   children?: ReactNode;
 }
 
+/**
+ * Imperative handle on a {@link Plot2D}: the SVG element, its size, and the
+ * coordinate conversions, including ones that start from a raw DOM event so a
+ * drag tracked on `window` can still map back into the plot.
+ */
 export interface Plot2DHandle {
   readonly svg: SVGSVGElement | null;
   plotToModel(pt: Point): Point;
@@ -67,6 +76,11 @@ export interface Plot2DHandle {
   readonly height: number;
 }
 
+/**
+ * An SVG plotting surface with an optional grid and axes. It draws the frame
+ * and owns the model-space to plot-space mapping; the plotted content is
+ * whatever children are passed, positioned in plot space.
+ */
 export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(props, ref) {
   const {
     width, height,

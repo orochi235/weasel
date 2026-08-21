@@ -34,6 +34,10 @@ export type {
   CurveSettings, FillSettings, AnchorRenderProps,
 };
 
+/**
+ * Props for {@link CurveEditor}. `onChange` fires throughout a gesture and
+ * `onChangeCommit` once at its end, with the pre-gesture points as `prev`.
+ */
 export interface CurveEditorProps {
   value: readonly ControlPoint[];
   onChange: (next: ControlPoint[]) => void;
@@ -62,6 +66,14 @@ export interface CurveEditorProps {
   style?: CSSProperties;
 }
 
+/**
+ * Editable curve through a list of control points: drag anchors, click to
+ * insert, right-click to delete, with optional built-in undo.
+ *
+ * This is the single-curve API, implemented as one `createFunctionLayer` on
+ * a `LayeredCurveEditor`. Reach for those directly to stack several curves
+ * on one plot.
+ */
 export function CurveEditor(props: CurveEditorProps) {
   const {
     value, onChange, onChangeCommit,
