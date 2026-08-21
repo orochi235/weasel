@@ -29,7 +29,7 @@ function Interactive(props: InteractiveProps) {
   return (
     <CurveEditor
       value={value}
-      onChange={setValue}
+      onInput={setValue}
       domain={props.domain}
       interpolation={props.interpolation}
       endpoints={props.endpoints}

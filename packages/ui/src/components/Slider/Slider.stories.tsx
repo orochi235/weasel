@@ -33,8 +33,8 @@ const meta: Meta<typeof Slider> = {
     allowShiftAll: { control: 'boolean' },
     ariaLabel: { control: 'text' },
     thumbs: { table: { disable: true } },
+    onInput: { table: { disable: true } },
     onChange: { table: { disable: true } },
-    onCommit: { table: { disable: true } },
     onAddThumb: { table: { disable: true } },
     onRemoveThumb: { table: { disable: true } },
     renderTrack: { table: { disable: true } },
@@ -51,9 +51,9 @@ const meta: Meta<typeof Slider> = {
 export default meta;
 type Story = StoryObj<typeof Slider>;
 
-function Wrapper({ initial, ...rest }: { initial: Thumb[] } & Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onChange'>) {
+function Wrapper({ initial, ...rest }: { initial: Thumb[] } & Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onInput'>) {
   const [thumbs, setThumbs] = useState<Thumb[]>(initial);
-  return <Slider {...rest} thumbs={thumbs} onChange={setThumbs} />;
+  return <Slider {...rest} thumbs={thumbs} onInput={setThumbs} />;
 }
 
 export const Single: Story = {
@@ -92,7 +92,7 @@ export const HueGradientTrack: Story = {
   ),
 };
 
-function ActiveRangeHatchStory({ args }: { args: Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onChange' | 'renderTrack'> }) {
+function ActiveRangeHatchStory({ args }: { args: Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onInput' | 'renderTrack'> }) {
   const [thumbs, setThumbs] = useState<Thumb[]>([
     { value: 0.3, shape: 'notched' },
     { value: 0.75, shape: 'notched' },
@@ -102,7 +102,7 @@ function ActiveRangeHatchStory({ args }: { args: Omit<Parameters<typeof Slider>[
     <Slider
       {...args}
       thumbs={thumbs}
-      onChange={setThumbs}
+      onInput={setThumbs}
       renderTrack={paintGradientTrack({
         gradient: (t) => oklchToHex(0.7, 0.18, t * 360),
         samples: 24,
@@ -138,7 +138,7 @@ function PlaygroundView({
 }: {
   thumbCount: number;
   setCount: (n: number) => void;
-} & Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onChange'>) {
+} & Omit<Parameters<typeof Slider>[0], 'thumbs' | 'onInput'>) {
   const [thumbs, setThumbs] = useState<Thumb[]>(() =>
     evenlySpacedThumbs(thumbCount, sliderArgs.min, sliderArgs.max),
   );
@@ -168,7 +168,7 @@ function PlaygroundView({
   };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <Slider {...sliderArgs} thumbs={thumbs} onChange={setThumbs} />
+      <Slider {...sliderArgs} thumbs={thumbs} onInput={setThumbs} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--wzl-fg-muted)' }}>
         <button type="button" style={btnStyle} disabled={thumbCount <= 1} onClick={() => setCount(thumbCount - 1)}>− Remove</button>
         <button type="button" style={btnStyle} disabled={thumbCount >= 8} onClick={() => setCount(thumbCount + 1)}>+ Add</button>
@@ -184,7 +184,7 @@ export const Playground: Story = {
     const [, updateArgs] = useArgs();
     const { thumbCount, ...sliderArgs } = args as unknown as { thumbCount: number } & Omit<
       Parameters<typeof Slider>[0],
-      'thumbs' | 'onChange'
+      'thumbs' | 'onInput'
     >;
     return (
       <PlaygroundView

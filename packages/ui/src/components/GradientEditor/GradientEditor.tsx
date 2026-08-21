@@ -22,9 +22,8 @@ const KINDS: readonly ToggleBarItem<GradientKind>[] = [
 const MIN_STOPS = 2;
 
 /**
- * Props for {@link GradientEditor}. Note the callback sense, which is the
- * reverse of `Slider`'s: `onInput` fires throughout a gesture and `onChange`
- * once at its end.
+ * Props for {@link GradientEditor}. `onInput` fires throughout a gesture and
+ * `onChange` once at its end.
  */
 export interface GradientEditorProps {
   /** The gradient being edited. */
@@ -102,8 +101,8 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         thumbs={thumbs}
         ariaLabel="Gradient stops"
         readoutPlacement="none"
-        onChange={(next) => onInput?.(withStops(applyThumbs(next)))}
-        onCommit={(next) => onChange(withStops(applyThumbs(next)))}
+        onInput={(next) => onInput?.(withStops(applyThumbs(next)))}
+        onChange={(next) => onChange(withStops(applyThumbs(next)))}
         onAddThumb={(at) => ({ value: at, color: sampleGradientStops(stops, at) })}
         onRemoveThumb={() => stops.length > MIN_STOPS}
         renderTrack={paintGradientTrack({

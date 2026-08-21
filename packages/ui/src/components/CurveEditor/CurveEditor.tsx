@@ -35,13 +35,13 @@ export type {
 };
 
 /**
- * Props for {@link CurveEditor}. `onChange` fires throughout a gesture and
- * `onChangeCommit` once at its end, with the pre-gesture points as `prev`.
+ * Props for {@link CurveEditor}. `onInput` fires throughout a gesture and
+ * `onChange` once at its end, with the pre-gesture points as `prev`.
  */
 export interface CurveEditorProps {
   value: readonly ControlPoint[];
-  onChange: (next: ControlPoint[]) => void;
-  onChangeCommit?: (next: ControlPoint[], prev: readonly ControlPoint[]) => void;
+  onInput: (next: ControlPoint[]) => void;
+  onChange?: (next: ControlPoint[], prev: readonly ControlPoint[]) => void;
   domain?: CurveDomain;
   interpolation?: InterpolationMode;
   endpoints?: EndpointMode;
@@ -76,7 +76,7 @@ export interface CurveEditorProps {
  */
 export function CurveEditor(props: CurveEditorProps) {
   const {
-    value, onChange, onChangeCommit,
+    value, onInput, onChange,
     domain, endpoints, interpolation, constrain, addPointMode,
     minPoints, maxPoints, curve, fill, hideNonInteractive, renderAnchor,
     width, height, xRange, yRange, grid, axes, history,
@@ -120,18 +120,18 @@ export function CurveEditor(props: CurveEditorProps) {
     const prevPoints = layerStateRef.current.points;
     setLayerState(next);
     if (next.points !== prevPoints) {
-      onChange(next.points as ControlPoint[]);
+      onInput(next.points as ControlPoint[]);
     }
-  }, [onChange]);
+  }, [onInput]);
 
   const handleLayerCommit = useCallback((_id: string, nextUnknown: unknown, prevUnknown: unknown) => {
-    if (!onChangeCommit) return;
+    if (!onChange) return;
     const next = nextUnknown as FunctionLayerState;
     const prev = prevUnknown as FunctionLayerState;
     if (next.points !== prev.points) {
-      onChangeCommit(next.points as ControlPoint[], prev.points);
+      onChange?.(next.points as ControlPoint[], prev.points);
     }
-  }, [onChangeCommit]);
+  }, [onChange]);
 
   // Right-click on an anchor → delete (preserves original CurveEditor
   // behavior). LayeredCurveEditor doesn't model contextmenu as a
@@ -153,9 +153,9 @@ export function CurveEditor(props: CurveEditorProps) {
     if (minPoints !== undefined && points.length <= minPoints) return;
     const next = points.filter((_, i) => i !== idx);
     setLayerState({ points: next, activeIndex: null });
-    onChange(next as ControlPoint[]);
-    onChangeCommit?.(next as ControlPoint[], points);
-  }, [endpoints, minPoints, onChange, onChangeCommit]);
+    onInput(next as ControlPoint[]);
+    onChange?.(next as ControlPoint[], points);
+  }, [endpoints, minPoints, onInput, onChange]);
 
   const layers = useMemo(() => [{ layer, state: layerState }], [layer, layerState]);
 

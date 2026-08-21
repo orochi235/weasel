@@ -11,9 +11,8 @@ interface Point {
 }
 
 /**
- * Props for {@link GradientHandles}. Note the callback sense, which is the
- * reverse of `Slider`'s: `onInput` fires throughout a drag and `onChange`
- * once at its end.
+ * Props for {@link GradientHandles}. `onInput` fires throughout a drag and
+ * `onChange` once at its end.
  */
 export interface GradientHandlesProps {
   /**

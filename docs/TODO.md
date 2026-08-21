@@ -768,12 +768,21 @@ From the WebGL transition spec — all deferred:
     `intentionallyNotExported` list. These are barrel decisions, not docs bugs.
     Note that typedoc does not warn about missing JSDoc, so its warning count
     was never a coverage measure.
-  - **`@weasel-js/ui` spells the live/committed callback pair four ways, and
-    two of them disagree about `onChange`.** `Slider` is `onChange`/`onCommit`,
-    `ResizeHandle` is `onChange`/`onChangeEnd`, `CurveEditor` and
-    `PointPlotter` are `onChange`/`onChangeCommit` — in all four `onChange` is
-    the live one. `ColorField`, `GradientEditor` and `GradientHandles` are
-    `onInput`/`onChange`, where `onChange` is the committed one. The docstrings
-    now name which sense each component uses, but a reader who learns one
-    component still guesses the next one wrong. Pick one pair and rename toward
-    it.
+  - **`@weasel-js/ui`'s live/committed callback pair is now spelled one way:
+    `onInput` live, `onChange` committed.** It used to be four ways, two of
+    which disagreed about what `onChange` meant. `Slider`, `ResizeHandle`,
+    `CurveEditor` and `PointPlotter` renamed toward the sense `ColorField`,
+    `GradientEditor` and `GradientHandles` already used, which is also the
+    DOM's — `input` fires continuously, `change` on commit.
+
+    Which of the two is *required* still differs, and that is deliberate:
+    `Slider`, `ResizeHandle`, `CurveEditor` and `PointPlotter` are fully
+    controlled, so without `onInput` the control freezes mid-drag and it is the
+    required one. `ColorField` and `GradientEditor` buffer internally, so
+    `onChange` is theirs. Required-ness follows the control's state model, not
+    the naming.
+
+    Untouched on purpose, all different concepts that merely share a word:
+    `CurveEditor`'s layer-gesture `onCommit(state, ctx)` in `layerTypes.ts`,
+    core's `thresholdDrag` `onCommit(e)`, and `SelectionPanel`'s
+    commit-on-blur text edit, which has no live counterpart to pair with.

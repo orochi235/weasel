@@ -54,9 +54,8 @@ export type TrackCtx = {
 /**
  * Props for {@link Slider}.
  *
- * Note the callback sense here, which is the opposite of `GradientHandles`
- * and `BandEditor`: `onChange` fires continuously through a drag, and
- * `onCommit` fires once when it ends.
+ * `onInput` fires continuously through a drag; `onChange` fires once when it
+ * ends and is the one to write to history.
  *
  * `constraint: 'ordered'` keeps thumbs from crossing each other. Supplying
  * `onAddThumb` makes a click on empty track create a thumb, and supplying
@@ -66,8 +65,8 @@ export type TrackCtx = {
  */
 export type SliderProps<T extends Thumb = Thumb> = {
   thumbs: readonly T[];
-  onChange: (next: T[]) => void;
-  onCommit?: (next: T[]) => void;
+  onInput: (next: T[]) => void;
+  onChange?: (next: T[]) => void;
   min: number;
   max: number;
   step?: number;
@@ -112,11 +111,11 @@ function defaultReadout(thumb: Thumb): string {
  * every change, live or committed, arrives as a whole new array.
  *
  * Thumbs are draggable, and arrow/Home/End move the focused thumb — those
- * keystrokes fire `onChange` and `onCommit` together, since there is no
+ * keystrokes fire `onInput` and `onChange` together, since there is no
  * in-flight state to buffer.
  */
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
-  const { thumbs, onChange, onCommit, min, max, step, constraint, trackHeight, ariaLabel, className } = props;
+  const { thumbs, onInput, onChange, min, max, step, constraint, trackHeight, ariaLabel, className } = props;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   // In-flight thumb buffer during a drag; null when not dragging.
@@ -169,7 +168,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         }
 
         buffer[index] = { ...buffer[index], value: v };
-        onChange(buffer.map(t => ({ ...t })));
+        onInput(buffer.map(t => ({ ...t })));
       };
 
       const onUp = () => {
@@ -183,19 +182,19 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
           const accepted = props.onRemoveThumb(index);
           if (accepted) {
             const next = buffer.filter((_, i) => i !== index).map(t => ({ ...t })) as T[];
-            onChange(next);
-            onCommit?.(next);
+            onInput(next);
+            onChange?.(next);
             return;
           }
         }
 
-        if (onCommit) onCommit(buffer.map(t => ({ ...t })));
+        onChange?.(buffer.map(t => ({ ...t })));
       };
 
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
     },
-    [thumbs, onChange, onCommit, fractionToValue, min, max, step, constraint, props],
+    [thumbs, onInput, onChange, fractionToValue, min, max, step, constraint, props],
   );
 
   const beginShiftAllDrag = useCallback(
@@ -226,7 +225,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         for (let i = 0; i < buffer.length; i++) {
           buffer[i] = { ...buffer[i], value: clamp(startValues[i] + dValue, min, max) };
         }
-        onChange(buffer.map(t => ({ ...t })));
+        onInput(buffer.map(t => ({ ...t })));
       };
 
       const onUp = () => {
@@ -234,13 +233,13 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         document.removeEventListener('pointerup', onUp);
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
-        if (buffer && onCommit) onCommit(buffer.map(t => ({ ...t })));
+        if (buffer) onChange?.(buffer.map(t => ({ ...t })));
       };
 
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
     },
-    [thumbs, onChange, onCommit, min, max, step],
+    [thumbs, onInput, onChange, min, max, step],
   );
 
   const onThumbPointerDown = (index: number) => (e: ReactPointerEvent) => {
@@ -262,8 +261,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     const accepted = props.onRemoveThumb(index);
     if (!accepted) return;
     const next = thumbs.filter((_, i) => i !== index).map(t => ({ ...t })) as T[];
-    onChange(next);
-    onCommit?.(next);
+    onInput(next);
+    onChange?.(next);
   };
 
   const onTrackPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -282,8 +281,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     const created = props.onAddThumb(v);
     if (!created) return;
     const next = [...thumbs.map(t => ({ ...t })), created] as T[];
-    onChange(next);
-    onCommit?.(next);
+    onInput(next);
+    onChange?.(next);
   };
 
   const onThumbKeyDown = (index: number) => (e: ReactKeyboardEvent) => {
@@ -328,8 +327,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     v = snap(v, step, min);
     v = clamp(v, lo, hi);
     next[index] = { ...next[index], value: v };
-    onChange(next);
-    onCommit?.(next);
+    onInput(next);
+    onChange?.(next);
   };
 
   const placement = props.readoutPlacement ?? 'none';

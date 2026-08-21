@@ -12,10 +12,10 @@ export interface PointPlotterProps {
   /** Plotted points; caller-owned. */
   value: readonly ControlPoint[];
   /** Fires every frame during drag with the live in-flight value. */
-  onChange: (next: ControlPoint[]) => void;
+  onInput: (next: ControlPoint[]) => void;
   /** Fires once per discrete user action (drag-end, add, delete) with
    *  the new value and the value at gesture start. Wire history here. */
-  onChangeCommit?: (next: ControlPoint[], prev: readonly ControlPoint[]) => void;
+  onChange?: (next: ControlPoint[], prev: readonly ControlPoint[]) => void;
   /** Model-space x range. Default [0, 1]. */
   xRange?: readonly [number, number];
   /** Model-space y range. Default [0, 1]. */

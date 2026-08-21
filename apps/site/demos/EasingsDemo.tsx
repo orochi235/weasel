@@ -156,7 +156,7 @@ export function EasingsDemo() {
             <Slider
               min={300} max={4000} step={100}
               thumbs={[{ value: duration }]}
-              onChange={ts => setDuration(ts[0].value)}
+              onInput={ts => setDuration(ts[0].value)}
               ariaLabel="Duration"
               readoutPlacement="none"
             />

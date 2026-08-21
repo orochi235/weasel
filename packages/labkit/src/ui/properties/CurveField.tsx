@@ -94,7 +94,7 @@ export function CurveField({
       <div className="lk-curve-field__plot">
         <CurveEditor
           value={points}
-          onChange={handleChange}
+          onInput={handleChange}
           domain="1d"
           constrain="function"
           xRange={[0, 1]}

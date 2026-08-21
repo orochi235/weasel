@@ -2,8 +2,8 @@ import { useCallback, useRef, type KeyboardEvent, type PointerEvent } from 'reac
 import s from './ResizeHandle.module.css';
 
 /**
- * Props for {@link ResizeHandle}. Note the callback sense: `onChange` fires
- * throughout the drag and `onChangeEnd` once at the end.
+ * Props for {@link ResizeHandle}. `onInput` fires throughout the drag and
+ * `onChange` once at the end.
  */
 export interface ResizeHandleProps {
   /**
@@ -27,13 +27,13 @@ export interface ResizeHandleProps {
    * Fires continuously while dragging and on each keyboard step, always
    * clamped to [min, max]. Drive the live size from this.
    */
-  onChange(next: number): void;
+  onInput(next: number): void;
   /**
    * Fires once when a drag ends or a keyboard step settles, with the final
-   * size. Persist here rather than in `onChange` — one write per gesture
+   * size. Persist here rather than in `onInput` — one write per gesture
    * instead of one per pointer sample.
    */
-  onChangeEnd?(next: number): void;
+  onChange?(next: number): void;
   /**
    * The granularity of `value`. Arrow keys move by one step (Shift by
    * eight), and pointer drags snap to the same grid — a pointer reports
@@ -72,7 +72,7 @@ function settle(n: number, min: number, max: number, step: number): number {
  */
 export function ResizeHandle(props: ResizeHandleProps) {
   const {
-    orientation = 'vertical', value, min, max, invert, onChange, onChangeEnd,
+    orientation = 'vertical', value, min, max, invert, onInput, onChange,
     step = 1, ariaLabel, className,
   } = props;
 
@@ -98,8 +98,8 @@ export function ResizeHandle(props: ResizeHandleProps) {
     const d = drag.current;
     if (!d) return;
     const delta = axisOf(e) - d.origin;
-    onChange(settle(d.startValue + (invert ? -delta : delta), min, max, step));
-  }, [axisOf, invert, max, min, onChange, step]);
+    onInput(settle(d.startValue + (invert ? -delta : delta), min, max, step));
+  }, [axisOf, invert, max, min, onInput, step]);
 
   const endDrag = useCallback((e: PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
@@ -107,8 +107,8 @@ export function ResizeHandle(props: ResizeHandleProps) {
     drag.current = null;
     e.currentTarget.releasePointerCapture?.(e.pointerId);
     const delta = axisOf(e) - d.origin;
-    onChangeEnd?.(settle(d.startValue + (invert ? -delta : delta), min, max, step));
-  }, [axisOf, invert, max, min, onChangeEnd, step]);
+    onChange?.(settle(d.startValue + (invert ? -delta : delta), min, max, step));
+  }, [axisOf, invert, max, min, onChange, step]);
 
   const onKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
     const grow = orientation === 'vertical' ? 'ArrowRight' : 'ArrowDown';
@@ -122,9 +122,9 @@ export function ResizeHandle(props: ResizeHandleProps) {
     if (next === undefined) return;
     e.preventDefault();
     const settled = settle(next, min, max, step);
-    onChange(settled);
-    onChangeEnd?.(settled);
-  }, [invert, max, min, onChange, onChangeEnd, orientation, step, value]);
+    onInput(settled);
+    onChange?.(settled);
+  }, [invert, max, min, onInput, onChange, orientation, step, value]);
 
   const cls = [s.handle, orientation === 'horizontal' && s.horizontal, className]
     .filter(Boolean).join(' ');

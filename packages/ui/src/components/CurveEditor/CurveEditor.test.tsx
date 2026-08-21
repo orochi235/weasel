@@ -7,7 +7,7 @@ describe('CurveEditor — rendering', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         width={200}
         height={100}
       />,
@@ -23,7 +23,7 @@ describe('CurveEditor — rendering', () => {
       { x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 },
     ];
     const { container } = render(
-      <CurveEditor value={value} onChange={() => {}} width={200} height={100} />,
+      <CurveEditor value={value} onInput={() => {}} width={200} height={100} />,
     );
     const circles = container.querySelectorAll('[data-anchor-index]');
     expect(circles.length).toBe(3);
@@ -33,7 +33,7 @@ describe('CurveEditor — rendering', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         width={200}
         height={100}
       />,
@@ -47,7 +47,7 @@ describe('CurveEditor — rendering', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0.5, y: 0.5 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         width={200}
         height={100}
       />,
@@ -58,12 +58,12 @@ describe('CurveEditor — rendering', () => {
 });
 
 describe('CurveEditor — drag', () => {
-  it('fires onChange when an anchor is dragged', () => {
-    const onChange = vi.fn();
+  it('fires onInput when an anchor is dragged', () => {
+    const onInput = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
-        onChange={onChange}
+        onInput={onInput}
         width={200}
         height={100}
       />,
@@ -74,21 +74,21 @@ describe('CurveEditor — drag', () => {
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 120, clientY: 30, pointerId: 1 });
 
-    expect(onChange).toHaveBeenCalled();
-    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(onInput).toHaveBeenCalled();
+    const lastCall = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(lastCall).toHaveLength(3);
     expect(lastCall[1].x).not.toBe(0.5);
   });
 
-  it('fires onChangeCommit once with (next, prev) on pointerup', () => {
+  it('fires onChange once with (next, prev) on pointerup', () => {
+    const onInput = vi.fn();
     const onChange = vi.fn();
-    const onChangeCommit = vi.fn();
     const initial = [{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }];
     const { container } = render(
       <CurveEditor
         value={initial}
+        onInput={onInput}
         onChange={onChange}
-        onChangeCommit={onChangeCommit}
         width={200}
         height={100}
       />,
@@ -99,18 +99,18 @@ describe('CurveEditor — drag', () => {
     fireEvent.pointerMove(window, { clientX: 120, clientY: 30, pointerId: 1 });
     fireEvent.pointerUp(window, { clientX: 120, clientY: 30, pointerId: 1 });
 
-    expect(onChangeCommit).toHaveBeenCalledTimes(1);
-    const [next, prev] = onChangeCommit.mock.calls[0];
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const [next, prev] = onChange.mock.calls[0];
     expect(prev).toEqual(initial);
     expect(next[1].x).not.toBe(0.5);
   });
 
   it('clamps x between neighbors in 1D mode', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
-        onChange={onChange}
+        onInput={onInput}
         domain="1d"
         width={200}
         height={100}
@@ -120,20 +120,20 @@ describe('CurveEditor — drag', () => {
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 500, clientY: 50, pointerId: 1 });
 
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[1].x).toBeLessThanOrEqual(1.0);
     expect(last[1].x).toBeGreaterThanOrEqual(0);
   });
 
   it('does NOT clamp x to neighbors in 2D mode (still clamps to canvas)', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     // Use a configuration where the right neighbor is at 0.8 — well
     // inside the [0, 1] canvas range — so we can distinguish
     // neighbor-clamping (1D) from canvas-clamping (always).
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 0.4, y: 0.4 }, { x: 0.8, y: 0.8 }]}
-        onChange={onChange}
+        onInput={onInput}
         domain="2d"
         width={200}
         height={100}
@@ -143,7 +143,7 @@ describe('CurveEditor — drag', () => {
     fireEvent.pointerDown(middle, { clientX: 80, clientY: 60, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 500, clientY: 50, pointerId: 1 });
 
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     // In 2D, the middle anchor can exceed the right neighbor's x (0.8)…
     expect(last[1].x).toBeGreaterThan(0.8);
     // …but is still clamped to the canvas's xMax (1.0).
@@ -154,11 +154,11 @@ describe('CurveEditor — drag', () => {
   // SVG-style coords), the final clamp `Math.max(yMin, Math.min(yMax, ny))`
   // collapses every drag to the same value. Same for inverted xRange.
   it('clamps dragged anchors to the visible plot with inverted yRange', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 50 }, { x: 1, y: 50 }]}
-        onChange={onChange}
+        onInput={onInput}
         xRange={[0, 1]}
         yRange={[100, 0]}
         width={200}
@@ -171,7 +171,7 @@ describe('CurveEditor — drag', () => {
     fireEvent.pointerDown(first, { clientX: 0, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 0, clientY: 30, pointerId: 1 });
 
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].y).toBeGreaterThanOrEqual(0);
     expect(last[0].y).toBeLessThanOrEqual(100);
     // The pre-fix bug snapped y to 100 (yMax under the old non-normalised
@@ -181,11 +181,11 @@ describe('CurveEditor — drag', () => {
   });
 
   it('clamps dragged anchors to the visible plot with inverted xRange', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0.5, y: 0 }, { x: 0.5, y: 1 }]}
-        onChange={onChange}
+        onInput={onInput}
         xRange={[1, 0]}
         yRange={[0, 1]}
         width={200}
@@ -197,7 +197,7 @@ describe('CurveEditor — drag', () => {
     fireEvent.pointerDown(first, { clientX: 100, clientY: 100, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 60, clientY: 100, pointerId: 1 });
 
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].x).toBeGreaterThanOrEqual(0);
     expect(last[0].x).toBeLessThanOrEqual(1);
     // The pre-fix bug snapped x to 1 (xMin under the old non-normalised
@@ -207,11 +207,11 @@ describe('CurveEditor — drag', () => {
   });
 
   it('drags past the plot clamp to the correct edge under inverted yRange', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 50 }, { x: 1, y: 50 }]}
-        onChange={onChange}
+        onInput={onInput}
         xRange={[0, 1]}
         yRange={[100, 0]}
         width={200}
@@ -222,13 +222,13 @@ describe('CurveEditor — drag', () => {
     // Drag way above the plot — clamp should hit yHi=100 (not collapse).
     fireEvent.pointerDown(first, { clientX: 0, clientY: 50, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 0, clientY: -500, pointerId: 1 });
-    let last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    let last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].y).toBeLessThanOrEqual(100);
     expect(last[0].y).toBeGreaterThanOrEqual(0);
 
     // Drag way below — clamp should hit yLo=0.
     fireEvent.pointerMove(window, { clientX: 0, clientY: 600, pointerId: 1 });
-    last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].y).toBeLessThanOrEqual(100);
     expect(last[0].y).toBeGreaterThanOrEqual(0);
   });
@@ -236,13 +236,13 @@ describe('CurveEditor — drag', () => {
 
 describe('CurveEditor — add and delete', () => {
   it('adds an anchor on empty-plot click when addPointMode="click-empty"', () => {
+    const onInput = vi.fn();
     const onChange = vi.fn();
-    const onChangeCommit = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onInput={onInput}
         onChange={onChange}
-        onChangeCommit={onChangeCommit}
         addPointMode="click-empty"
         width={200}
         height={100}
@@ -251,19 +251,19 @@ describe('CurveEditor — add and delete', () => {
     const svg = container.querySelector('svg')!;
     fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 2 });
 
-    expect(onChangeCommit).toHaveBeenCalledTimes(1);
-    const [next] = onChangeCommit.mock.calls[0];
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const [next] = onChange.mock.calls[0];
     expect(next).toHaveLength(3);
   });
 
   it('adds an anchor on curve click when addPointMode="click-curve"', () => {
+    const onInput = vi.fn();
     const onChange = vi.fn();
-    const onChangeCommit = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
+        onInput={onInput}
         onChange={onChange}
-        onChangeCommit={onChangeCommit}
         addPointMode="click-curve"
         width={200}
         height={100}
@@ -273,23 +273,23 @@ describe('CurveEditor — add and delete', () => {
     // two-anchor [(0,0),(1,1)] curve, so model (0.5, 0.5) is plot (100, 50)).
     const svg = container.querySelector('svg')!;
     fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 3 });
-    // After pointerDown alone, onChange has fired (insertion + drag-in-progress)
+    // After pointerDown alone, onInput has fired (insertion + drag-in-progress)
     // but commit waits for pointerUp.
-    expect(onChange).toHaveBeenCalled();
-    expect(onChangeCommit).not.toHaveBeenCalled();
+    expect(onInput).toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
     fireEvent.pointerUp(window, { clientX: 100, clientY: 50, pointerId: 3 });
-    expect(onChangeCommit).toHaveBeenCalledTimes(1);
-    const [next] = onChangeCommit.mock.calls[0];
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const [next] = onChange.mock.calls[0];
     expect(next).toHaveLength(3);
   });
 
   it('does not add on click when addPointMode="never"', () => {
-    const onChangeCommit = vi.fn();
+    const onChange = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
-        onChangeCommit={onChangeCommit}
+        onInput={() => {}}
+        onChange={onChange}
         addPointMode="never"
         width={200}
         height={100}
@@ -298,16 +298,16 @@ describe('CurveEditor — add and delete', () => {
     const svg = container.querySelector('svg')!;
     fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 4 });
 
-    expect(onChangeCommit).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('inserts at x-sorted index in 1D mode (click-empty)', () => {
-    const onChangeCommit = vi.fn();
+    const onChange = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
-        onChangeCommit={onChangeCommit}
+        onInput={() => {}}
+        onChange={onChange}
         domain="1d"
         addPointMode="click-empty"
         width={200}
@@ -318,18 +318,18 @@ describe('CurveEditor — add and delete', () => {
     const svg = container.querySelector('svg')!;
     fireEvent.pointerDown(svg, { clientX: 50, clientY: 50, pointerId: 5 });
 
-    const [next] = onChangeCommit.mock.calls[0];
+    const [next] = onChange.mock.calls[0];
     expect(next[1].x).toBeCloseTo(0.25, 2);
     expect(next).toHaveLength(3);
   });
 
   it('refuses to delete when at minPoints floor', () => {
-    const onChangeCommit = vi.fn();
+    const onChange = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
-        onChangeCommit={onChangeCommit}
+        onInput={() => {}}
+        onChange={onChange}
         minPoints={3}
         width={200}
         height={100}
@@ -337,16 +337,16 @@ describe('CurveEditor — add and delete', () => {
     );
     const middle = container.querySelectorAll('[data-anchor-index]')[1] as Element;
     fireEvent.pointerDown(middle, { clientX: 100, clientY: 50, pointerId: 50, shiftKey: true });
-    expect(onChangeCommit).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('refuses to add when at maxPoints ceiling', () => {
-    const onChangeCommit = vi.fn();
+    const onChange = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
-        onChangeCommit={onChangeCommit}
+        onInput={() => {}}
+        onChange={onChange}
         addPointMode="click-empty"
         maxPoints={2}
         width={200}
@@ -355,16 +355,16 @@ describe('CurveEditor — add and delete', () => {
     );
     const svg = container.querySelector('svg')!;
     fireEvent.pointerDown(svg, { clientX: 100, clientY: 50, pointerId: 51 });
-    expect(onChangeCommit).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('deletes an anchor on shift+click', () => {
-    const onChangeCommit = vi.fn();
+    const onChange = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
-        onChangeCommit={onChangeCommit}
+        onInput={() => {}}
+        onChange={onChange}
         width={200}
         height={100}
       />,
@@ -374,8 +374,8 @@ describe('CurveEditor — add and delete', () => {
       clientX: 100, clientY: 50, pointerId: 6, shiftKey: true,
     });
 
-    expect(onChangeCommit).toHaveBeenCalledTimes(1);
-    const [next] = onChangeCommit.mock.calls[0];
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const [next] = onChange.mock.calls[0];
     expect(next).toHaveLength(2);
     expect(next).toEqual([{ x: 0, y: 0 }, { x: 1, y: 1 }]);
   });
@@ -383,11 +383,11 @@ describe('CurveEditor — add and delete', () => {
 
 describe('CurveEditor — endpoint constraints', () => {
   it('pinned-x: first anchor x locked to xRange[0]', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={onChange}
+        onInput={onInput}
         endpoints="pinned-x"
         width={200}
         height={100}
@@ -397,17 +397,17 @@ describe('CurveEditor — endpoint constraints', () => {
     fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 7 });
     fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 7 });
 
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].x).toBe(0);   // x clamped to xRange[0]
     expect(last[0].y).not.toBe(0); // y is editable
   });
 
   it('pinned-both: first anchor stays at the corner', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={onChange}
+        onInput={onInput}
         endpoints="pinned-both"
         width={200}
         height={100}
@@ -417,19 +417,19 @@ describe('CurveEditor — endpoint constraints', () => {
     fireEvent.pointerDown(first, { clientX: 0, clientY: 100, pointerId: 8 });
     fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 8 });
 
-    expect(onChange).toHaveBeenCalled();
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(onInput).toHaveBeenCalled();
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].x).toBe(0);
     expect(last[0].y).toBe(0);
   });
 
   it('pinned endpoints cannot be deleted via shift+click', () => {
-    const onChangeCommit = vi.fn();
+    const onChange = vi.fn();
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
-        onChangeCommit={onChangeCommit}
+        onInput={() => {}}
+        onChange={onChange}
         endpoints="pinned-x"
         width={200}
         height={100}
@@ -439,14 +439,14 @@ describe('CurveEditor — endpoint constraints', () => {
     fireEvent.pointerDown(first, {
       clientX: 0, clientY: 100, pointerId: 9, shiftKey: true,
     });
-    expect(onChangeCommit).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('renders pinned endpoints with the pinned visual class', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         endpoints="pinned-both"
         width={200}
         height={100}
@@ -464,7 +464,7 @@ describe('CurveEditor — visual chrome', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         grid={{}}
         width={200}
         height={100}
@@ -479,7 +479,7 @@ describe('CurveEditor — visual chrome', () => {
       const { container } = render(
         <CurveEditor
           value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-          onChange={() => {}}
+          onInput={() => {}}
           grid={grid}
           width={200}
           height={100}
@@ -493,7 +493,7 @@ describe('CurveEditor — visual chrome', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         grid={{ divisions: 5 }}
         width={200}
         height={100}
@@ -508,7 +508,7 @@ describe('CurveEditor — visual chrome', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         width={200}
         height={100}
       />,
@@ -522,7 +522,7 @@ describe('CurveEditor — visual chrome', () => {
       const { container } = render(
         <CurveEditor
           value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-          onChange={() => {}}
+          onInput={() => {}}
           axes={axes}
           width={200}
           height={100}
@@ -536,7 +536,7 @@ describe('CurveEditor — visual chrome', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         domain="1d"
         fill={{ side: 'below' }}
         width={200}
@@ -554,7 +554,7 @@ describe('CurveEditor — visual chrome', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         domain="2d"
         fill={{ side: 'below' }}
         width={200}
@@ -570,7 +570,7 @@ describe('CurveEditor — visual chrome', () => {
       const { container } = render(
         <CurveEditor
           value={[{ x: 0, y: 0 }, { x: 1, y: 1 }]}
-          onChange={() => {}}
+          onInput={() => {}}
           domain="1d"
           fill={fill}
           width={200}
@@ -585,7 +585,7 @@ describe('CurveEditor — visual chrome', () => {
     const { container } = render(
       <CurveEditor
         value={[{ x: 0, y: 0 }, { x: 0.5, y: 0.5 }, { x: 1, y: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         width={200}
         height={100}
       />,

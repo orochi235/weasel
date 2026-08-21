@@ -1969,8 +1969,8 @@ function EditorWithSharedScene({
           min={RIGHT_SIDEBAR_MIN}
           max={RIGHT_SIDEBAR_MAX}
           invert
-          onChange={setDragWidth}
-          onChangeEnd={commitRightWidth}
+          onInput={setDragWidth}
+          onChange={commitRightWidth}
           ariaLabel="Resize properties sidebar"
         />
         <Sidebar
