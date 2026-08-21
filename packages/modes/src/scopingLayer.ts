@@ -1,5 +1,6 @@
 import type { ModeRegistry } from './registry';
 
+/** Options for `createScopingDim`. */
 export interface CreateScopingDimOptions {
   registry: ModeRegistry;
   /** Returns the set of node ids that are *in* scope for the current mode.
@@ -10,6 +11,9 @@ export interface CreateScopingDimOptions {
   dimAlpha?: number;
 }
 
+/** Answers, per node, how a scoping mode should treat it: dimmed or not,
+ *  hit-testable or not. Consult it from the renderer and the hit-tester —
+ *  it computes nothing itself and holds no state. */
 export interface ScopingDim {
   /** Multiplier in [0, 1] to apply to a node's render alpha. */
   alphaFor(id: string): number;
@@ -17,6 +21,9 @@ export interface ScopingDim {
   isPointerInteractive(id: string): boolean;
 }
 
+/** Build the scoping lookup for a mode registry. In a mode with
+ *  `scoping: false` every node is full-alpha and interactive, so this is safe
+ *  to consult unconditionally. */
 export function createScopingDim(opts: CreateScopingDimOptions): ScopingDim {
   const dim = opts.dimAlpha ?? 0.3;
   return {
