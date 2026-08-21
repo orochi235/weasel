@@ -7,6 +7,10 @@ import type {
   ResizePose,
 } from '../../../gestures/types';
 
+/** Resize behavior that snaps one reference point of the resize — the dragged
+ *  corner, the fixed corner, or the center, per `frame` — to a grid, moving
+ *  the whole pose by the same delta. Unlike the bounds-level `snapToGrid`,
+ *  this preserves the node's dimensions. */
 export function pointSnapToGrid<TPose extends ResizePose>(args: {
   spacing: number;
   frame?: PointSnapFrame;

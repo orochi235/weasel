@@ -15,6 +15,7 @@ const SVG_BASE = {
   'aria-hidden': true,
 };
 
+/** Icon for the union operation: two overlapping circles merged into one filled shape. */
 export function UnionIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -26,6 +27,7 @@ export function UnionIcon() {
   );
 }
 
+/** Icon for the intersect operation: only the overlap of two circles filled. */
 export function IntersectIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -40,6 +42,7 @@ export function IntersectIcon() {
   );
 }
 
+/** Icon for the subtract operation: the front circle removed from the back one. */
 export function SubtractIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -54,6 +57,7 @@ export function SubtractIcon() {
   );
 }
 
+/** Icon for the exclude operation: both circles filled except their overlap. */
 export function ExcludeIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -69,6 +73,7 @@ export function ExcludeIcon() {
   );
 }
 
+/** Icon for the divide operation: two circles split into their separate regions. */
 export function DivideIcon() {
   return (
     <svg {...SVG_BASE}>
@@ -79,6 +84,7 @@ export function DivideIcon() {
   );
 }
 
+/** Icon for the crop operation: the back shape clipped to the front one. */
 export function CropIcon() {
   // Back circle clipped to a topmost rect mask — only the portion of the
   // circle inside the rect is filled; the rect is outlined on top.

@@ -6,6 +6,9 @@ import type {
 
 type ModKey = keyof ModifierState;
 
+/** Insert behavior that rounds the insertion point to a grid, so a shape
+ *  drawn freehand lands on grid intersections. Hold `bypassKey` to place
+ *  freely. */
 export function snapToGrid<TPose>(args: {
   spacing: number;
   bypassKey?: ModKey;

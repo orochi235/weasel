@@ -8,12 +8,15 @@
 import type { RotateBehavior, RotatedPose } from '../../gestures/types';
 import type { DebugSink } from '../../../debug/types';
 
+/** Projects a pose to and from a rotated bounding box, so the rotate action
+ *  can work on pose shapes that carry rotation differently. */
 export interface RotateGeometry<TPose> {
   getRotatedBounds(pose: TPose): RotatedPose;
   /** Write a new rotation back into the pose; bounds stay the same. */
   withRotation(pose: TPose, rotation: number): TPose;
 }
 
+/** Options for the `rotate` action. */
 export interface UseRotateOptions<TPose> {
   /** Behaviors are typed against the pose shape; the kit ships none yet
    *  (rotation snap behaviors are deferred). For non-rect TPose, behaviors

@@ -8,6 +8,8 @@
 import type { Op } from 'core/ops/types';
 import type { InsertBehavior, ResizePose } from '../../gestures/types';
 
+/** Options for the `insert` action: what the drag bounds become, what a click
+ *  with no drag does, and the behaviors that shape the pose along the way. */
 export interface UseInsertOptions<TPose, TNode extends { id: string } = { id: string }> {
   behaviors?: InsertBehavior<TPose>[];
   insertLabel?: string;

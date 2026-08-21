@@ -1,5 +1,8 @@
 import { dwarn } from 'debug/flag';
 
+/** MIME type the kit writes its full-fidelity clipboard payload under, so a
+ *  copy/paste between two weasel canvases round-trips scene nodes rather than
+ *  the SVG or text flavors other apps read. */
 export const WEASEL_CLIPBOARD_MIME = 'application/x-weasel-clipboard+json';
 /** Chromium's async-clipboard spelling for custom formats. */
 export const WEASEL_CLIPBOARD_MIME_WEB = `web ${WEASEL_CLIPBOARD_MIME}`;

@@ -24,6 +24,8 @@ export interface DragGestureCtx<TScratch = unknown> {
   phase: 'pending' | 'active';
 }
 
+/** The context handed to `onEnd`, adding whether the gesture ever passed its
+ *  activation threshold. */
 export interface DragGestureEndCtx<TScratch = unknown>
   extends DragGestureCtx<TScratch> {
   /** True if phase never reached 'active'. Wrappers without thresholdReached
@@ -31,6 +33,8 @@ export interface DragGestureEndCtx<TScratch = unknown>
   wasSubThreshold: boolean;
 }
 
+/** Options for `useDragGesture`: when the gesture becomes active, and what to
+ *  do at each point in its lifecycle. */
 export interface UseDragGestureOptions<TScratch = unknown> {
   initScratch?: () => TScratch;
   /** Predicate consulted on each move while phase === 'pending'. Return true
@@ -46,6 +50,8 @@ export interface UseDragGestureOptions<TScratch = unknown> {
   onGestureEnd?: (committed: boolean) => void;
 }
 
+/** Drives a drag gesture. The owner feeds it pointer positions; it decides
+ *  when the drag has really begun and calls back accordingly. */
 export interface DragGestureController {
   start(point: DragGesturePoint, modifiers: ModifierState): void;
   move(point: DragGesturePoint, modifiers: ModifierState): boolean;
@@ -63,6 +69,15 @@ interface InternalState<TScratch> {
   scratch: TScratch;
 }
 
+/**
+ * The base drag primitive: tracks a pointer from press to release, with an
+ * optional threshold below which the gesture stays pending and commits
+ * nothing.
+ *
+ * It is a gesture and only a gesture — it says where the pointer went, never
+ * what that should do. `useDragRect` and `useDragRadial` build on it, and
+ * actions decide what to make of the result.
+ */
 export function useDragGesture<TScratch = unknown>(
   options: UseDragGestureOptions<TScratch> = {},
 ): DragGestureController {

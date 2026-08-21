@@ -29,9 +29,12 @@ export interface SnapToGuidesMoveArgs<TPose> {
 export function snapToGuides<TPose extends { x: number; y: number }>(
   args: Omit<SnapToGuidesMoveArgs<TPose>, 'origin'>,
 ): MoveBehavior<TPose>;
+/** As above, for a `TPose` that is not a rect: `origin` tells the behavior how
+ *  to read and write the pose's origin. */
 export function snapToGuides<TPose>(
   args: SnapToGuidesMoveArgs<TPose> & { origin: OriginProjection<TPose> },
 ): MoveBehavior<TPose>;
+/** Snap the dragged pose's origin to the nearest guide line, per axis. */
 export function snapToGuides<TPose>(
   args: SnapToGuidesMoveArgs<TPose>,
 ): MoveBehavior<TPose> {

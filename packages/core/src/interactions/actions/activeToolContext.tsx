@@ -20,6 +20,9 @@ import {
   type ReactNode,
 } from 'react';
 
+/** Which tool is active, plus the stack of tools temporarily held active by a
+ *  hotkey (space-for-hand and the like). The dispatcher reads this to decide
+ *  whose bindings are in scope. */
 export interface ActiveToolContextValue {
   active: string;
   hotkeyStack: string[];
@@ -30,11 +33,13 @@ export interface ActiveToolContextValue {
 
 const ActiveToolContext = createContext<ActiveToolContextValue | null>(null);
 
+/** Props for `<ActiveToolContextProvider>`. */
 export interface ActiveToolContextProviderProps {
   children: ReactNode;
   initialActive?: string;
 }
 
+/** Provides active-tool state for a canvas. `<SceneCanvas>` mounts one. */
 export function ActiveToolContextProvider({
   children,
   initialActive = 'select',
@@ -62,6 +67,8 @@ export function ActiveToolContextProvider({
   );
 }
 
+/** The active-tool state in scope. Throws outside a provider; use
+ *  `useActiveToolContextOptional` where one is not guaranteed. */
 export function useActiveToolContext(): ActiveToolContextValue {
   const value = useContext(ActiveToolContext);
   if (value === null) {

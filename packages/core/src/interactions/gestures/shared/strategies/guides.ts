@@ -47,10 +47,13 @@ export function guideSnapStrategy<TPose extends { x: number; y: number }>(
   getGuides: () => readonly Guide[],
   options?: Omit<GuideSnapOptions<TPose>, 'origin'>,
 ): SnapStrategy<TPose>;
+/** As above, for a `TPose` that is not a rect: `origin` tells the strategy how
+ *  to read and write the pose's origin. */
 export function guideSnapStrategy<TPose>(
   getGuides: () => readonly Guide[],
   options: GuideSnapOptions<TPose> & { origin: OriginProjection<TPose> },
 ): SnapStrategy<TPose>;
+/** Snap a pose's origin to the nearest guide line within tolerance, per axis. */
 export function guideSnapStrategy<TPose>(
   getGuides: () => readonly Guide[],
   options: GuideSnapOptions<TPose> = {},

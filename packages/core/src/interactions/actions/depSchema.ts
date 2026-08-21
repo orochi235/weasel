@@ -88,6 +88,8 @@ export type NodeAtPointDep = (
   exclude?: Iterable<NodeId>,
 ) => NodeId | null;
 
+/** What an area-selecting action needs: a way to ask what a region covers,
+ *  and a way to read and replace the selection. */
 export interface AreaSelectDep {
   /** Return ids of all scene nodes whose AABB overlaps `bounds`. */
   hitTestArea(bounds: { x: number; y: number; width: number; height: number }): NodeId[];
@@ -372,6 +374,14 @@ export interface LayoutDep {
   getLayout(containerId: string): import('../../layout/types').LayoutStrategy<unknown> | null;
 }
 
+/**
+ * The names an action may declare in `requires`, and what each resolves to.
+ *
+ * This is the whole vocabulary of things an action can reach — selection,
+ * scene, view, history, and the rest. Consumers add their own entries by
+ * augmenting the interface (`declare module '@weasel-js/core'`), which is what
+ * makes a custom dep name type-check in `requires` and in the deps bag.
+ */
 export interface DepSchema {
   /** Kit selection state — ids of currently selected nodes. */
   selection: SelectionApi;

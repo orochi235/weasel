@@ -66,6 +66,9 @@ const IS_MAC =
 // API
 // ---------------------------------------------------------------------------
 
+/** Options for `useGestureDispatcher`: the element to listen on, the actions
+ *  and tools in play, and the hooks that turn raw DOM events into the world
+ *  coordinates and hit targets bindings match against. */
 export interface UseGestureDispatcherOptions {
   /** Ref to the canvas element. Pointer/wheel/multitouch listeners attach here. */
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -220,6 +223,15 @@ function computeMultiTouchGeometry(
 // Hook
 // ---------------------------------------------------------------------------
 
+/**
+ * Attach the input pipeline to a canvas: DOM pointer, wheel, keyboard and
+ * multitouch listeners in, normalized input events out, routed through the
+ * dispatcher to whichever action a binding names.
+ *
+ * Everything it needs beyond its options — the active tool, the dep registry —
+ * comes from context, so it must be mounted inside `<SceneCanvas>`'s
+ * providers.
+ */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
   const onDoubleClickRef = useRef(onDoubleClick);

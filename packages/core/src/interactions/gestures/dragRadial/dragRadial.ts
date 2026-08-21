@@ -3,24 +3,31 @@ import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
 import { dlog } from '../../../debug/flag';
 
+/** A point in world coordinates. */
 export interface DragRadialPoint { x: number; y: number }
 
+/** A radial drag expressed as its center and the polar coordinates of the
+ *  cursor relative to it. */
 export interface DragRadialState {
   center: DragRadialPoint;
   radius: number;
   rotation: number;
 }
 
+/** Live state of a radial drag, handed to each lifecycle callback. */
 export interface DragRadialCtx<TScratch = unknown> extends DragRadialState {
   modifiers: ModifierState;
   scratch: TScratch;
 }
 
+/** The context handed to `onEnd`, adding whether the final radius is too
+ *  small to be meaningful. */
 export interface DragRadialEndCtx<TScratch = unknown> extends DragRadialCtx<TScratch> {
   /** True at end time if the radius is at or below `minRadius`. */
   isSubThreshold: boolean;
 }
 
+/** Options for `useDragRadial`. */
 export interface UseDragRadialOptions<TScratch = unknown> {
   minRadius?: number;
   initScratch?: () => TScratch;
@@ -38,6 +45,8 @@ export interface UseDragRadialOptions<TScratch = unknown> {
   snapPoint?: (p: DragRadialPoint) => DragRadialPoint;
 }
 
+/** Drives a radial drag and publishes the live center/radius/rotation for
+ *  overlay drawing. */
 export interface DragRadialController {
   start(worldX: number, worldY: number, modifiers: ModifierState): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;

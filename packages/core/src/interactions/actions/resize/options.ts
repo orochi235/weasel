@@ -13,6 +13,8 @@ import type {
 import type { PoseProjection } from './geometry';
 import type { DebugSink } from '../../../debug/types';
 
+/** Options for the `resize` action: how the pose projects to and from a
+ *  bounding box, and the constraints applied to that box during the drag. */
 export interface UseResizeOptions<TPose> {
   /** Behaviors are rect-typed: they read/write `{x,y,width,height}`. When
    *  `TPose` is non-rect, pass `geometry` to project pose↔bounds; behaviors

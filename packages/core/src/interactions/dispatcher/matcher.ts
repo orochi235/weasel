@@ -18,8 +18,12 @@ export type { InputEvent, PhaseContext };
 // BindingScope / ScopedBinding / MatchResult
 // ---------------------------------------------------------------------------
 
+/** Where a binding came from, which is also its priority: a held hotkey beats
+ *  the active tool, which beats bindings that are always in scope. */
 export type BindingScope = 'ambient' | 'active' | 'hotkey';
 
+/** A binding paired with where it came from, ready to be matched against an
+ *  event. */
 export interface ScopedBinding {
   binding: GestureBinding;
   scope: BindingScope;
@@ -29,6 +33,7 @@ export interface ScopedBinding {
   ownerToolId: string | null;
 }
 
+/** The binding that won a match. */
 export interface MatchResult {
   binding: GestureBinding;
   scope: BindingScope;
