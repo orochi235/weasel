@@ -6,4 +6,6 @@
  * `isMixed` check, regardless of what's being aggregated.
  */
 export const MIXED: unique symbol = Symbol('weasel:mixed');
+/** The type of {@link MIXED}. Property panels use it to say "the selection
+ *  does not agree on this value" without colliding with any real value. */
 export type Mixed = typeof MIXED;

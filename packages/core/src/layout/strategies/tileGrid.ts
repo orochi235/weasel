@@ -17,6 +17,7 @@ interface TileMeta {
   cellRect: { x: number; y: number; width: number; height: number };
 }
 
+/** Options for `tileGrid`. */
 export interface TileGridOptions<TPose> {
   cols: number;
   rows: number;
@@ -57,6 +58,9 @@ function sortedChildIds<TPose>(children: ReadonlyArray<LayoutChild<TPose>>): str
   return children.map((c) => c.id).sort();
 }
 
+/** Layout strategy that arranges children into a fixed grid of cells, one
+ *  child per cell. A drag reflows the others to make room, and the container
+ *  holds at most `cols × rows` children. */
 export function tileGrid<TPose>(
   opts: TileGridOptions<TPose>,
 ): LayoutStrategy<TPose> {

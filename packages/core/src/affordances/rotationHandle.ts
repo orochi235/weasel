@@ -3,6 +3,8 @@ import type { ChromeState, Bounds } from 'core/selection/chromeState';
 import type { FillStyle, Stroke } from 'core/paint-types';
 import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 
+/** Options for `createRotationAffordance` — how thick the rotate band is
+ *  outside the selection, and how (or whether) it is painted. */
 export interface RotationAffordanceOptions {
   /** Minimum screen-space thickness of the rotate-zone band outside the
    *  selection AABB. The outer ellipse semi-axes are clamped to
@@ -23,6 +25,8 @@ export interface RotationAffordanceOptions {
   cursor?: string;
 }
 
+/** What a rotation-handle hit hands to the rotate action: what is being
+ *  rotated, and the world-space pivot it turns around. */
 export interface RotationScratch extends CommonAffordanceScratch {
   /** Id of the rotation target — single selection id, or
    *  `MULTI_RESIZE_TARGET_ID` for multi-selection. */

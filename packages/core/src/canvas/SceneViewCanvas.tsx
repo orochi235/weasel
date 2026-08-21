@@ -32,6 +32,7 @@ import type { DrawCommand } from '../renderer/DrawCommand';
 import type { View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 
+/** Props for `<SceneViewCanvas>`. */
 export interface SceneViewCanvasProps<TData, TLayer extends string, TPose> {
   /** Scene to render. Must be the same `Scene` instance passed to whoever
    *  is mutating it; the component subscribes to its version stream and

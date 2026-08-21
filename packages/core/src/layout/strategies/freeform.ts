@@ -2,6 +2,7 @@ import { createTransformOp } from 'core/ops/transform';
 import type { LayoutSnap, LayoutStrategy } from '../types';
 import { none } from '../snaps';
 
+/** Options for `freeform`. */
 export interface FreeformOptions<TPose> {
   snap?: LayoutSnap<TPose>;
 }

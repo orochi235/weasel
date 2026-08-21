@@ -123,6 +123,9 @@ for (const name of packageDirs) {
         const file = decl.getSourceFile().getFilePath();
         // Declarations outside the repo (react, node types) are not ours to document.
         if (file.includes('/node_modules/') || !file.startsWith(ROOT)) continue;
+        // Expando assignments (`Toolbar.Group = …`, `usePenTool.prefs = …`) resolve
+        // to a bare identifier, not to a declaration site of the export itself.
+        if (Node.isIdentifier(decl)) continue;
         const line = decl.getStartLineNumber();
         const key = `${symbol}@${file}:${line}`;
         if (seen.has(key)) continue;

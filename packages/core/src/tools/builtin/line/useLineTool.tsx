@@ -3,6 +3,7 @@ import { defineTool } from '../../defineTool';
 import { LineIcon } from '../../../icons';
 import type { Tool } from '../../types';
 
+/** An endpoint of a line, in world coordinates. */
 export interface LinePoint { x: number; y: number }
 
 /**

@@ -29,6 +29,8 @@ import { MULTI_RESIZE_TARGET_ID, type Bounds } from '../shared/selectionTarget';
 export type { Bounds };
 export { MULTI_RESIZE_TARGET_ID };
 
+/** Options for `useSelectTool`: how a point resolves to nodes, how a click
+ *  chooses among them, and the appearance of the marquee. */
 export interface UseSelectToolOptions<TPose> {
   /** Return ids of all objects whose painted body covers (worldX, worldY).
    *  Order doesn't matter — the tool collapses parent/child overlap via

@@ -1,5 +1,6 @@
 import type { View } from './view';
 
+/** The world rect a view is not allowed to show outside of. */
 export interface ClampBounds {
   x: number;
   y: number;
@@ -7,6 +8,8 @@ export interface ClampBounds {
   height: number;
 }
 
+/** Canvas dimensions in CSS pixels — needed to know how much world a view
+ *  actually shows. */
 export interface CanvasSize {
   width: number;
   height: number;

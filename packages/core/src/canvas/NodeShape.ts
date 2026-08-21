@@ -62,6 +62,9 @@ export interface NodePaintCtx {
   resolveImage?: (node: Node<unknown, string, unknown>) => ImageBitmap | undefined;
 }
 
+/** A painter for one kind of node: which nodes it claims, and the draw
+ *  commands it emits for them. Registering one is how a consumer teaches the
+ *  default renderer to draw its own node kinds. */
 export interface NodeShapeEntry<TData = unknown, TPose = unknown> {
   /** Stable identifier — used for unregistration and debugging. Pick
    *  something descriptive: `'kit:text'`, `'app:image'`, etc. */
@@ -111,6 +114,7 @@ export interface NodeInk {
 /** What a painter that declares no `ink` is assumed to do. */
 const DEFAULT_INK: NodeInk = { filled: true, strokeWidth: 0 };
 
+/** Options for `registerNodeShape`. */
 export interface RegisterNodeShapeOptions {
   /** `'high'` puts the painter ahead of all normally-registered ones (so
    *  it can win over a kit built-in). `'normal'` appends at the end. */

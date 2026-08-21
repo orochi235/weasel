@@ -19,6 +19,9 @@ import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { AnyTool } from 'tools/types';
 import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 
+/** Which viewport interactions `<SceneCanvas>` wires up — pan inertia, pinch
+ *  zoom, wheel pan, wheel and keyboard zoom. Each may be switched off with
+ *  `false` or tuned with an options object. */
 export interface ViewportConfig {
   inertia?:
     | boolean

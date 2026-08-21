@@ -23,14 +23,20 @@ function nearestOf<TPose>(
   return best;
 }
 
+/** Snap policy that never picks a target — every drop is rejected, which is
+ *  what a free-form container wants. */
 export function none<TPose>(): LayoutSnap<TPose> {
   return { pickTarget: () => null };
 }
 
+/** Snap policy that always picks the target closest to the pointer, however
+ *  far away it is. */
 export function nearest<TPose>(): LayoutSnap<TPose> {
   return { pickTarget: (targets, pointer) => nearestOf(targets, pointer) };
 }
 
+/** Snap policy that picks the closest target, but only within `tolerance`
+ *  world units — beyond that the drop is rejected. */
 export function nearestWithin<TPose>(opts: { tolerance: number }): LayoutSnap<TPose> {
   const tol2 = opts.tolerance * opts.tolerance;
   return {

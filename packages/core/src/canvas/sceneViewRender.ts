@@ -41,6 +41,8 @@ export type SceneViewDrawOne<TData, TLayer extends string, TPose> = (
   view: View,
 ) => DrawCommand[];
 
+/** What to draw into an existing canvas: the scene, the view, and the same
+ *  painting hooks `<SceneCanvas>` takes. */
 export interface RenderSceneToCanvasArgs<TData, TLayer extends string, TPose> {
   /** The DOM canvas to paint into. The helper owns its WebGL2 context: the
    *  first call on a given canvas creates a renderer and stashes it; subsequent

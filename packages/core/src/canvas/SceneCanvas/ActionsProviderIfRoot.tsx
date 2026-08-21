@@ -9,6 +9,8 @@ import {
   useActionsRegistry,
 } from 'interactions/actions/registry';
 
+/** Mount an `<ActionsProvider>` only when none is already in scope, so
+ *  nesting canvases share one action registry instead of shadowing it. */
 export function ActionsProviderIfRoot({ children }: { children: ReactNode }) {
   const parent = useActionsRegistry();
   if (parent) return <>{children}</>;

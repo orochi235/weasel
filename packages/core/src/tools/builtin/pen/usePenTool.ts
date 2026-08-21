@@ -28,6 +28,8 @@ export interface PenAnchor {
   altBroken?: boolean;
 }
 
+/** One in-progress subpath of the pen tool: its anchors so far, and whether
+ *  the user has closed it. */
 export interface PenSubpath {
   anchors: PenAnchor[]; // LOCAL PenAnchor — in-progress
   closed: boolean;
@@ -63,6 +65,8 @@ export interface PenScratch {
   closeHintActive: boolean;
 }
 
+/** Options for `usePenTool`: how a finished path becomes a pose, where it is
+ *  inserted, and when a closed subpath commits. */
 export interface UsePenToolOptions<TPose> {
   /** Wrap a finished PolygonPath in the consumer's pose type. */
   wrapPath: (path: PolygonPath, opts: { closed: boolean }) => TPose;

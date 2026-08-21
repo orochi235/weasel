@@ -6,6 +6,8 @@ import type { View } from 'core/viewport/view';
 import { useVelocityTracker } from 'core/viewport/useVelocityTracker';
 import { useDecayLoop, type PanBounds } from 'core/viewport/useDecayLoop';
 
+/** Momentum settings for the hand tool: how quickly a flung view slows, when
+ *  it stops, and what happens at the pan limits. */
 export interface InertiaConfig {
   friction?: number;
   minSpeed?: number;
@@ -15,6 +17,7 @@ export interface InertiaConfig {
   bounds?: PanBounds;
 }
 
+/** Options for `useHandTool`. */
 export interface UseHandToolOptions {
   inertia?: false | InertiaConfig;
   /**

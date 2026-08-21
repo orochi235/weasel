@@ -35,6 +35,7 @@ import type { View } from '../core/viewport/view';
 import type { Scene } from '../core/scene/types';
 import type { Bounds } from '../core/viewport/fitViewToBounds';
 
+/** Props for `<MinimapCanvas>`. */
 export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
   /** Same scene the main canvas is rendering. */
   scene: Scene<TData, TLayer, TPose>;

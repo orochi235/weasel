@@ -11,6 +11,8 @@
 
 import type { FillStyle, GradientFill } from './paint-types';
 
+/** The box a `'bounds'` gradient's normalized geometry is mapped onto —
+ *  usually a node's bounds. */
 export interface FillPoseBox {
   x: number;
   y: number;

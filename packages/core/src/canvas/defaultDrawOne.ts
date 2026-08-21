@@ -28,6 +28,9 @@ import type { DrawCommand } from '../renderer';
 import { textCommand } from 'features/text/textCommand';
 import { findNodeShape, type NodePaintCtx } from './NodeShape';
 
+/** Paint one node the way the kit does by default: dispatch to the first
+ *  registered node-shape painter that matches, then draw its `data.label` on
+ *  top when it has one. Consumers replace or wrap this via `drawOne`. */
 export function defaultDrawOne<TData, TLayer extends string, TPose>(
   node: Node<TData, TLayer, TPose>,
   pose: TPose,

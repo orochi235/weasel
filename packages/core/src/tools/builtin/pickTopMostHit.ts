@@ -36,6 +36,9 @@ export interface PickTopMostHitAdapter {
   compareZ?: (a: string, b: string) => number;
 }
 
+/** Reduce a set of hit ids to the single one a click should act on: drop any
+ *  id that is an ancestor of another in the set, then take the topmost of what
+ *  remains. */
 export function pickTopMostHit(
   ids: readonly string[],
   adapter: PickTopMostHitAdapter | undefined | null,
