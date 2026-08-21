@@ -430,6 +430,47 @@ describe('WeaselRenderer.render — color matrix on text + image', () => {
       .map((c) => c.args[2]);
     expect(magFilters).toEqual([recorder.gl.NEAREST, recorder.gl.LINEAR]);
   });
+
+  // The quad geometry is a persistent ring rather than a per-draw VAO and two
+  // buffers, which cost 5.4 us a draw. See tests/perf/image-quad.spec.ts.
+  it('mints no GL objects for an image draw once the quad ring exists', () => {
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
+    r.render([img]);
+    recorder.reset();
+
+    r.render([img, img, img]);
+    const named = (name: string) => recorder.calls.filter((c) => c.name === name);
+    expect(named('createVertexArray')).toHaveLength(0);
+    expect(named('createBuffer')).toHaveLength(0);
+    expect(named('deleteVertexArray')).toHaveLength(0);
+    expect(named('deleteBuffer')).toHaveLength(0);
+  });
+
+  it('draws neighbouring images from different ring slots', () => {
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    const img = { kind: 'image' as const, image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 };
+    r.render([img]);
+    recorder.reset();
+
+    r.render([img, img]);
+    const bound = recorder.calls
+      .filter((c) => c.name === 'bindVertexArray' && c.args[0] !== null)
+      .map((c) => c.args[0]);
+    expect(bound).toHaveLength(2);
+    // Same slot twice in a row is the stall this ring exists to avoid.
+    expect(bound[0]).not.toBe(bound[1]);
+  });
+
+  it('frees the quad ring on dispose', () => {
+    const fakeBitmap = { width: 16, height: 16, close: () => {} } as unknown as ImageBitmap;
+    r.render([{ kind: 'image', image: fakeBitmap, x: 0, y: 0, w: 16, h: 16 }]);
+    recorder.reset();
+
+    r.dispose();
+    const deletedVaos = recorder.calls.filter((c) => c.name === 'deleteVertexArray');
+    expect(deletedVaos.length).toBeGreaterThan(1);
+  });
 });
 
 describe('pushClip / popClip', () => {

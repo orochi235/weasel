@@ -1528,51 +1528,117 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
   gl.deleteBuffer(ibo);
 }
 
+/**
+ * Quad geometry for image draws: a ring of VAOs and vertex buffers, kept for
+ * the life of the program that owns them.
+ *
+ * **A ring rather than one**, because the driver tracks a write hazard per
+ * buffer object: writing the same quad buffer before every draw makes each
+ * write wait on the draw still reading it. Measured per quad on an M2 Max via
+ * ANGLE (`tests/perf/image-quad.spec.ts`), against 0.03 us for a buffer that
+ * nothing writes: 40–80 us rewriting one buffer, 5.4 us minting a fresh VAO and
+ * two buffers per draw, 0.3 us for this ring. Sixty-four slots puts that many
+ * draws between a buffer's write and its next one.
+ *
+ * Keyed on the image program, so the ring belongs to the GL context that linked
+ * it. Keying it on anything shared across renderers would hand a second context
+ * VAO names it never created.
+ */
+const IMAGE_QUAD_RING_SIZE = 64;
+
+interface ImageQuadRing {
+  vaos: WebGLVertexArrayObject[];
+  vbos: WebGLBuffer[];
+  ibo: WebGLBuffer;
+  next: number;
+}
+
+const IMAGE_QUAD_RINGS = new WeakMap<ShaderProgram, ImageQuadRing>();
+
+/** Two triangles over the four corners. Uploaded once and never rewritten, so
+ *  every slot's VAO can point at the same buffer. */
+const IMAGE_QUAD_INDICES = new Uint32Array([0, 1, 2, 1, 3, 2]);
+
+/** vec2 a_position + vec2 a_uv. */
+const IMAGE_QUAD_STRIDE = 16;
+
+function imageQuadRing(gl: WebGL2RenderingContext, prog: ShaderProgram): ImageQuadRing {
+  const existing = IMAGE_QUAD_RINGS.get(prog);
+  if (existing) return existing;
+
+  const aPosLoc = prog.attribute('a_position');
+  const aUvLoc = prog.attribute('a_uv');
+  const ibo = gl.createBuffer();
+  if (!ibo) throw new Error('drawImage: createBuffer (IBO) returned null');
+
+  const vaos: WebGLVertexArrayObject[] = [];
+  const vbos: WebGLBuffer[] = [];
+  for (let slot = 0; slot < IMAGE_QUAD_RING_SIZE; slot++) {
+    const vao = gl.createVertexArray();
+    const vbo = gl.createBuffer();
+    if (!vao) throw new Error('drawImage: createVertexArray returned null');
+    if (!vbo) throw new Error('drawImage: createBuffer returned null');
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, 4 * IMAGE_QUAD_STRIDE, gl.DYNAMIC_DRAW);
+    if (aPosLoc !== undefined) {
+      gl.enableVertexAttribArray(aPosLoc);
+      gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, IMAGE_QUAD_STRIDE, 0);
+    }
+    if (aUvLoc !== undefined) {
+      gl.enableVertexAttribArray(aUvLoc);
+      gl.vertexAttribPointer(aUvLoc, 2, gl.FLOAT, false, IMAGE_QUAD_STRIDE, 8);
+    }
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+    if (slot === 0) gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, IMAGE_QUAD_INDICES, gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    vaos.push(vao);
+    vbos.push(vbo);
+  }
+
+  const ring: ImageQuadRing = { vaos, vbos, ibo, next: 0 };
+  IMAGE_QUAD_RINGS.set(prog, ring);
+  return ring;
+}
+
+/** Release the image-quad ring `prog` owns. Called by `WeaselRenderer.dispose`. */
+export function disposeImageQuads(gl: WebGL2RenderingContext, prog: ShaderProgram): void {
+  const ring = IMAGE_QUAD_RINGS.get(prog);
+  if (!ring) return;
+  for (const vao of ring.vaos) gl.deleteVertexArray(vao);
+  for (const vbo of ring.vbos) gl.deleteBuffer(vbo);
+  gl.deleteBuffer(ring.ibo);
+  IMAGE_QUAD_RINGS.delete(prog);
+}
+
+/** Reused per draw: the corners go straight into the ring slot's buffer. */
+const IMAGE_QUAD_VERTICES = new Float32Array(16);
+
 function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   ctx.imageCache.upload(cmd.image, cmd.image);
 
   const gl = ctx.gl;
-  gl.useProgram(ctx.imageFill.handle);
+  const prog = ctx.imageFill;
+  gl.useProgram(prog.handle);
 
-  // Build a quad covering (x, y, w, h) with UV [0..1].
+  // A quad covering (x, y, w, h) with UV [0..1].
   const x0 = cmd.x, y0 = cmd.y;
   const x1 = cmd.x + cmd.w, y1 = cmd.y + cmd.h;
-  const vertices = new Float32Array([
-    x0, y0, 0, 0,
-    x1, y0, 1, 0,
-    x0, y1, 0, 1,
-    x1, y1, 1, 1,
-  ]);
-  const indices = new Uint32Array([0, 1, 2, 1, 3, 2]);
+  const v = IMAGE_QUAD_VERTICES;
+  v[0]  = x0; v[1]  = y0; v[2]  = 0; v[3]  = 0;
+  v[4]  = x1; v[5]  = y0; v[6]  = 1; v[7]  = 0;
+  v[8]  = x0; v[9]  = y1; v[10] = 0; v[11] = 1;
+  v[12] = x1; v[13] = y1; v[14] = 1; v[15] = 1;
 
-  const vao = gl.createVertexArray();
-  if (!vao) throw new Error('drawImage: createVertexArray returned null');
-  gl.bindVertexArray(vao);
+  const ring = imageQuadRing(gl, prog);
+  const slot = ring.next;
+  ring.next = (slot + 1) % IMAGE_QUAD_RING_SIZE;
+  gl.bindVertexArray(ring.vaos[slot]);
+  gl.bindBuffer(gl.ARRAY_BUFFER, ring.vbos[slot]);
+  gl.bufferSubData(gl.ARRAY_BUFFER, 0, v);
 
-  const vbo = gl.createBuffer();
-  if (!vbo) throw new Error('drawImage: createBuffer returned null');
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.DYNAMIC_DRAW);
-
-  const stride = 16;
-  const aPosLoc = ctx.imageFill.attribute('a_position');
-  const aUvLoc  = ctx.imageFill.attribute('a_uv');
-  if (aPosLoc !== undefined) {
-    gl.enableVertexAttribArray(aPosLoc);
-    gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, stride, 0);
-  }
-  if (aUvLoc !== undefined) {
-    gl.enableVertexAttribArray(aUvLoc);
-    gl.vertexAttribPointer(aUvLoc, 2, gl.FLOAT, false, stride, 8);
-  }
-
-  const ibo = gl.createBuffer();
-  if (!ibo) throw new Error('drawImage: createBuffer (IBO) returned null');
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
-
-  setProjAndModel(ctx, ctx.imageFill);
-  setColorMatrixUniforms(ctx, ctx.imageFill);
+  setProjAndModel(ctx, prog);
+  setColorMatrixUniforms(ctx, prog);
   ctx.imageCache.bind(cmd.image, 0);
   // Set per-draw, not at upload: GLImageCache keys textures by bitmap
   // identity, so the same bitmap can be drawn at both filters in one frame.
@@ -1581,18 +1647,13 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
     gl.TEXTURE_MAG_FILTER,
     cmd.sampling === 'nearest' ? gl.NEAREST : gl.LINEAR,
   );
-  gl.uniform1i(ctx.imageFill.uniform('u_sampler')!, 0);
-  gl.uniform1f(ctx.imageFill.uniform('u_opacity')!, cmd.opacity ?? 1);
-  gl.uniform1f(ctx.imageFill.uniform('u_alpha')!, ctx.state.alpha);
+  gl.uniform1i(prog.uniform('u_sampler')!, 0);
+  gl.uniform1f(prog.uniform('u_opacity')!, cmd.opacity ?? 1);
+  gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
 
   applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
-  // Same deal as drawText: free the per-draw VAO/VBO/IBO immediately to
-  // avoid leaking one set per image render.
-  gl.deleteVertexArray(vao);
-  gl.deleteBuffer(vbo);
-  gl.deleteBuffer(ibo);
 }
 
 export { mat3, getMesh };
