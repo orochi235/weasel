@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import s from './ToolOptionsBar.module.css';
 
+/** Props for {@link ToolOptionsBar}. */
 export interface ToolOptionsBarProps {
   /**
    * Context label for the row — e.g. the active tool's name. Rendered

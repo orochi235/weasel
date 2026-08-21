@@ -1,7 +1,9 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'react';
 import s from './Button.module.css';
 
+/** Visual weight of a button. Defaults to `secondary`. */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+/** Button height and type scale. */
 export type ButtonSize = 'sm' | 'md';
 
 type ButtonBase = {
@@ -29,6 +31,10 @@ type ButtonIconOnly = ButtonBase & {
   ariaLabel: string;
 };
 
+/**
+ * Props for {@link Button}. Setting `iconOnly` makes `ariaLabel` required,
+ * since an icon-only button has no text for a screen reader to announce.
+ */
 export type ButtonProps = ButtonRegular | ButtonIconOnly;
 
 function Spinner(): ReactNode {
@@ -56,6 +62,13 @@ function Spinner(): ReactNode {
   );
 }
 
+/**
+ * Standard button. `loading` swaps the leading icon for a spinner, marks the
+ * button `aria-busy`, and leaves the label in place; it does not disable the
+ * button, so pass `disabled` too if the click should be blocked.
+ *
+ * `ref` forwards to the underlying `<button>`.
+ */
 export const Button = forwardRef(function Button(
   props: ButtonProps,
   ref: Ref<HTMLButtonElement>,

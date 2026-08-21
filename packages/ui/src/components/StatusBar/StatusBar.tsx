@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import s from './StatusBar.module.css';
 
+/** Props for {@link StatusBar}. */
 export interface StatusBarProps {
   /**
    * Accessible label for the bar. Deliberately not a live region — a status
@@ -31,6 +32,7 @@ export function StatusBar(props: StatusBarProps) {
   );
 }
 
+/** Props for {@link StatusBarItem}. */
 export interface StatusBarItemProps {
   /**
    * Hover text. Items that carry one also get a `help` cursor, so the

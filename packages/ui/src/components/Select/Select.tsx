@@ -16,6 +16,7 @@ import {
 import { fieldClasses } from '../Field/Field';
 import s from './Select.module.css';
 
+/** One option in a {@link Select}'s `options` list. */
 export type SelectOption = {
   value: string;
   label: ReactNode;
@@ -31,6 +32,10 @@ export type SelectOption = {
 
 type Key = string | number;
 
+/**
+ * Props for {@link Select}, on top of React Aria's `Select` props, with the
+ * selection key narrowed to the option value type.
+ */
 export type SelectProps<T extends Key = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
   label?: ReactNode;
   description?: ReactNode;
@@ -119,6 +124,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
   );
 }
 
+/** Props for {@link SelectItem}, on top of React Aria's `ListBoxItem` props. */
 export type SelectItemProps = Omit<RACListBoxItemProps, 'className' | 'children'> & {
   children?: ReactNode;
   className?: string;
@@ -138,6 +144,11 @@ function textValueOf(children: ReactNode, explicit: string | undefined): string 
     : undefined;
 }
 
+/**
+ * One row in a {@link Select}'s list, with a leading check mark when
+ * selected. A string child supplies its own `textValue`; anything richer must
+ * pass one so type-to-select and screen readers have something to read.
+ */
 export function SelectItem({ children, className, textValue, ...rest }: SelectItemProps) {
   return (
     <RACListBoxItem

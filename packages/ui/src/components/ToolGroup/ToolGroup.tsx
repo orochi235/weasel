@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import s from './ToolGroup.module.css';
 
+/** Props for {@link ToolGroup}. */
 export interface ToolGroupProps {
   children: ReactNode;
   /**

@@ -2,6 +2,10 @@ import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 
+/**
+ * One button in an {@link ActionsBar}. `value` is only a React key; the item
+ * carries no selected state.
+ */
 export type ActionsBarItem<V extends string | number = string> = {
   value: V;
   label?: ReactNode;
@@ -10,9 +14,12 @@ export type ActionsBarItem<V extends string | number = string> = {
   onAction: () => void;
 };
 
+/** Segment height and type scale for an {@link ActionsBar}. */
 export type ActionsBarSize = 'sm' | 'md';
+/** Visual treatment of an {@link ActionsBar}. */
 export type ActionsBarVariant = 'default' | 'minimal';
 
+/** Props for {@link ActionsBar}. */
 export type ActionsBarProps<V extends string | number = string> = {
   items: readonly ActionsBarItem<V>[];
   ariaLabel?: string;
@@ -22,6 +29,14 @@ export type ActionsBarProps<V extends string | number = string> = {
   variant?: ActionsBarVariant;
 };
 
+/**
+ * Segmented strip of momentary buttons — each press fires and nothing stays
+ * selected. Shares the look and the arrow-key navigation of `ToggleBar` and
+ * `OptionsBar`.
+ *
+ * This is a plain callback bar. For buttons driven by the kit's actions
+ * registry, use `ActionBar` instead.
+ */
 export function ActionsBar<V extends string | number = string>(props: ActionsBarProps<V>): ReactElement {
   const { items, ariaLabel, className, height, size, variant } = props;
 

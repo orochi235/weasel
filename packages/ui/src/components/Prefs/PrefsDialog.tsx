@@ -3,6 +3,10 @@ import { Dialog } from '../Dialog';
 import { PrefsForm, type PrefsFormProps } from './PrefsForm';
 import s from './Prefs.module.css';
 
+/**
+ * Props for {@link PrefsDialog} — everything {@link PrefsForm} takes, plus
+ * the dialog's own open state and chrome.
+ */
 export interface PrefsDialogProps extends PrefsFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;

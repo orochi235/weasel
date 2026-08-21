@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import s from './Keycaps.module.css';
 import { KeyCap, inferKeycapKind, type KeyCapVariant } from './Keycap';
 
+/** One key in a shortcut. */
 export interface KeySpec {
   /** Glyph rendered in the chip (modifier or key). */
   label: string;
@@ -10,6 +11,7 @@ export interface KeySpec {
   optional?: boolean;
 }
 
+/** Props for {@link KeySequence}. */
 export interface KeySequenceProps {
   /** Keys to render. `undefined` or empty renders a muted em-dash.
    *  Modifiers are always rendered first regardless of input order; relative

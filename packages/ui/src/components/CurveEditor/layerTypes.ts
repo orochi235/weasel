@@ -16,6 +16,7 @@ import type { Point as PlotPoint, ModelRange } from '../Plot2D/geometry';
 export type ModelPoint = PlotPoint;
 export type { PlotPoint };
 
+/** Modifier keys held at the moment a layer callback fires. */
 export interface LayerModifiers {
   shift: boolean;
   alt: boolean;
@@ -33,6 +34,10 @@ export interface LayerCtx {
   readonly modifiers: LayerModifiers;
 }
 
+/**
+ * The {@link LayerCtx} a layer's `render` gets, plus whether this layer owns
+ * the gesture currently in flight.
+ */
 export interface LayerRenderCtx extends LayerCtx {
   /** True when this layer owns the currently-active gesture. Useful for
    *  surfacing "active anchor" visuals without threading the index. */

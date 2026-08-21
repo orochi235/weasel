@@ -14,6 +14,10 @@ import type { ReactNode } from 'react';
 import { useReorderDragList } from '../../useReorderDragList';
 import s from './DataGrid.module.css';
 
+/**
+ * One column of a {@link DataGrid}. `id` doubles as the default property name
+ * read off each row when no `accessor` is given.
+ */
 export interface DataGridColumn<Row> {
   id: string;
   header: ReactNode;
@@ -27,6 +31,7 @@ export interface DataGridColumn<Row> {
   className?: string;
 }
 
+/** Props for {@link DataGrid}. */
 export interface DataGridProps<Row extends { id: string }> {
   rows: readonly Row[];
   columns: readonly DataGridColumn<Row>[];
@@ -42,6 +47,13 @@ export interface DataGridProps<Row extends { id: string }> {
 
 type SortState = { columnId: string; direction: 'asc' | 'desc' } | null;
 
+/**
+ * Sortable table for inspector-style data. Rows are keyed by `id`. Clicking a
+ * sortable header cycles ascending, descending, unsorted; nullish values sort
+ * last regardless of direction. Passing `onReorder` adds a leading drag-handle
+ * column — note that the drag indices it reports are into the *sorted* row
+ * order, not the input order.
+ */
 export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) {
   const { rows, columns, defaultSort, onReorder, empty = '—', className } = props;
   const [sort, setSort] = useState<SortState>(defaultSort ?? null);

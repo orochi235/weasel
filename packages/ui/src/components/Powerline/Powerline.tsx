@@ -4,6 +4,10 @@ import type { BadgeSize, BadgeTone, BadgeVariant } from '../Badge/types';
 import type { EdgeCap } from '../Badge/bases/edgeProfiles';
 import s from './Powerline.module.css';
 
+/**
+ * One segment of a {@link Powerline}. Giving it `onClick` or `href` makes it
+ * interactive, the same way it does on a `Badge`.
+ */
 export interface PowerlineSegment {
   text: ReactNode;
   /** Cap on this segment's right edge. Next segment's left edge adopts the same profile. */
@@ -16,6 +20,7 @@ export interface PowerlineSegment {
   'aria-label'?: string;
 }
 
+/** Props for {@link Powerline}. */
 export interface PowerlineProps {
   segments: PowerlineSegment[];
   /** Left edge of the first segment. Defaults to 'flat'. */
@@ -33,6 +38,14 @@ export interface PowerlineProps {
   'aria-label'?: string;
 }
 
+/**
+ * A row of chevron-linked badge segments, in the style of a shell powerline
+ * prompt. Each segment's `endCap` shapes both its own right edge and the next
+ * segment's left edge, so the run reads as one continuous chain.
+ *
+ * Built for showing a path through a sequence of steps — the inspector uses
+ * it to display how input routes from tool to gesture to action to target.
+ */
 export function Powerline({
   segments,
   startCap = 'flat',

@@ -21,6 +21,7 @@ export type Platform = 'macos' | 'windows' | 'linux';
  *  - `'text'` always spells the label out (Cmd / Option / Esc / Enter). */
 export type LegendStyle = 'auto' | 'symbol' | 'text';
 
+/** A modifier to render, named platform-independently. */
 export interface LogicalModSpec {
   name: LogicalMod;
   /** Marks this modifier as optional (may be held but isn't required).
@@ -28,6 +29,7 @@ export interface LogicalModSpec {
   optional?: boolean;
 }
 
+/** Options for {@link keySpecsFromMods}. */
 export interface KeySpecsFromModsOptions {
   /** Override OS detection. Defaults to the detected platform, or
    *  `'macos'` when detection is unavailable (e.g. in tests, or when

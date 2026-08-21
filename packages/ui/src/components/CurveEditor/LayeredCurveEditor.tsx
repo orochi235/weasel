@@ -21,11 +21,16 @@ import type {
   CurveLayer, LayerCtx, LayerGesture, LayerModifiers, ModelPoint, PlotPoint,
 } from './layerTypes';
 
+/**
+ * A layer paired with the state the consumer holds for it. The editor never
+ * stores layer state itself.
+ */
 export interface LayerBinding<S = unknown> {
   layer: CurveLayer<S>;
   state: S;
 }
 
+/** Props for {@link LayeredCurveEditor}. */
 export interface LayeredCurveEditorProps {
   /** Bottom-to-top render order: `layers[0]` paints first, `layers[N-1]`
    *  paints on top. Hit-testing runs in reverse (topmost claim wins). */
@@ -81,6 +86,16 @@ function readModifiers(e: PointerEvent | ReactPointerEvent<any> | KeyboardEvent 
   };
 }
 
+/**
+ * A `Plot2D` that hosts a stack of composable curve layers. It owns the
+ * pointer gestures and the coordinate mapping; each layer supplies its own
+ * drawing, hit testing and gesture behavior.
+ *
+ * Layer state stays with the consumer: the editor reports changes through
+ * `onLayerChange` during a gesture and `onLayerCommit` at its end, and reads
+ * the state back from props each frame. That is what lets one layer's drag
+ * update another layer's state mid-gesture.
+ */
 export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
   const {
     layers, onLayerChange, onLayerCommit,

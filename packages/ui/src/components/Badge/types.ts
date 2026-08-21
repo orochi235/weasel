@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react';
 
+/**
+ * Built-in badge silhouettes. `pill`, `plain` and `square` are drawn in CSS;
+ * the rest are SVG outlines, several of which route through the compose
+ * pipeline (a base shape plus perimeter effects).
+ */
 export type BadgeShape =
   | 'pill' | 'plain' | 'square' | 'notched' | 'perforated'
   | 'hexagon'
@@ -7,10 +12,16 @@ export type BadgeShape =
   | 'sparkler' | 'postage' | 'cloud' | 'house' | 'plaque'
   | 'crest' | 'urn' | 'coffin' | 'receipt' | 'wood' | 'quatrefoil';
 
+/**
+ * Semantic color of a badge. `custom` paints from the `--badge-edge` custom
+ * property instead of a theme token, so a call site can supply its own color.
+ */
 export type BadgeTone =
   | 'accent' | 'info' | 'warn' | 'danger' | 'muted' | 'neutral' | 'custom';
 
+/** How a badge's tone is applied: outline only, filled, or a soft tinted fill. */
 export type BadgeVariant = 'outline' | 'solid' | 'subtle';
+/** Badge type scale and padding step. */
 export type BadgeSize = 'sm' | 'md';
 
 export interface ShapeRenderProps<P = Record<string, never>> {

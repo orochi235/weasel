@@ -7,6 +7,7 @@ import {
 } from '../CurveEditor';
 import type { GridSettings, AxesSettings } from '../Plot2D';
 
+/** Props for {@link PointPlotter}. */
 export interface PointPlotterProps {
   /** Plotted points; caller-owned. */
   value: readonly ControlPoint[];

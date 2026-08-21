@@ -2,6 +2,7 @@ import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import s from './ToggleBar.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 
+/** One segment of a {@link ToggleBar}, identified by its `value`. */
 export type ToggleBarItem<V extends string | number = string> = {
   value: V;
   label?: ReactNode;
@@ -9,7 +10,9 @@ export type ToggleBarItem<V extends string | number = string> = {
   disabled?: boolean;
 };
 
+/** Segment height and type scale for a {@link ToggleBar}. */
 export type ToggleBarSize = 'sm' | 'md';
+/** Visual treatment of a {@link ToggleBar}. */
 export type ToggleBarVariant = 'default' | 'minimal';
 
 type CommonProps = {
@@ -24,6 +27,11 @@ type CommonProps = {
   variant?: ToggleBarVariant;
 };
 
+/**
+ * Props for {@link ToggleBar}, discriminated on `mode`. Single mode is
+ * controlled by one value or `null`; multiple mode by an array, and only it
+ * accepts `mixedValues`.
+ */
 export type ToggleBarProps<V extends string | number = string> =
   | (CommonProps & {
       mode?: 'single';
@@ -56,6 +64,14 @@ export type ToggleBarProps<V extends string | number = string> =
       onChange: (next: V[]) => void;
     });
 
+/**
+ * Segmented control for choosing among a fixed set of values — one of them
+ * (`mode: 'single'`, the default) or any number (`mode: 'multiple'`).
+ *
+ * Single mode ignores a click on the already-selected segment unless
+ * `allowDeselect` is set. Arrow keys move focus without changing the value;
+ * Space and Enter commit.
+ */
 export function ToggleBar<V extends string | number = string>(props: ToggleBarProps<V>): ReactElement {
   const { items, ariaLabel, className, height, size, variant } = props;
   const mode = props.mode ?? 'single';
