@@ -731,4 +731,33 @@ From the WebGL transition spec — all deferred:
   thirteen times) versus per-package pages, and whether it is generated at build
   time from the markdown or rendered by a route.
 
-- **(P3) JSDoc audit at definition sites.** A one-pass sweep at definition sites for any public export still lacking a JSDoc string. (Barrel section headers already landed in `packages/core/src/index.ts`; per-symbol JSDoc lives at original definitions.) File a follow-up if a specific export turns up undocumented.
+- **(P3) JSDoc audit at definition sites — done; three follow-ups open.** Every
+  public export of every package except `@weasel-js/ui` now has a JSDoc string
+  at its definition site. `npm run audit:jsdoc` re-derives the claim: it walks
+  each package's published entry points, resolves every reachable export to
+  where it is declared, and reports what is missing. Run it before adding an
+  export, not as a periodic sweep. `@weasel-js/ui` was skipped (concurrent work)
+  and still has ~168 undocumented exports — `node scripts/audit-jsdoc.mjs --pkg
+  ui --undocumented` is the work list.
+
+  What the sweep turned up, none of which it changed:
+
+  - **`@weasel-js/font` exports four test-only helpers.**
+    `_getPagesForTests`, `_resetDynamicFontsForTests`,
+    `__setGlyphRasterizerForTests` and `_resetFontOutlinesForTests` are marked
+    `@internal` in their own JSDoc yet reach consumers through the package
+    barrel. Either they should leave the barrel or the tests should reach them
+    another way. The audit script reports them on every run.
+  - **`evaluateEnabled`'s `@internal` marker is detached.** In
+    `interactions/actions/registry.tsx` the comment block intended for it sits
+    above three `const` declarations that follow it, so the function is exported
+    and documented as public API. Decide whether it is public; if not, move the
+    marker.
+  - **Six typedoc warnings, all the same shape and all pre-existing** (the count
+    did not move across the sweep). Each is a type referenced by an exported
+    symbol but not itself exported — `Scale2`, `DEFAULT_INK`,
+    `useContributions` in core; `LongPressSpec` and `LongPressEvent` in
+    gestures — plus eleven stale entries in `typedoc.json`'s
+    `intentionallyNotExported` list. These are barrel decisions, not docs bugs.
+    Note that typedoc does not warn about missing JSDoc, so its warning count
+    was never a coverage measure.

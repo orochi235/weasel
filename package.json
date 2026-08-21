@@ -43,6 +43,7 @@
     "test:smoke:consumer": "node scripts/smoke-consumer-bundle.mjs",
     "check:manifests": "node scripts/check-publish-manifests.mjs",
     "check:bumps": "node scripts/check-changeset-bumps.mjs",
+    "audit:jsdoc": "node scripts/audit-jsdoc.mjs",
     "gen:font": "node packages/font/scripts/gen-font.ts",
     "test:stories": "vitest run --project=storybook",
     "test:watch": "vitest",

@@ -8,6 +8,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const PACKAGES = join(ROOT, 'packages');
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h')) {
@@ -121,8 +122,11 @@ for (const name of packageDirs) {
     for (const [symbol, decls] of sf.getExportedDeclarations()) {
       for (const decl of decls) {
         const file = decl.getSourceFile().getFilePath();
-        // Declarations outside the repo (react, node types) are not ours to document.
-        if (file.includes('/node_modules/') || !file.startsWith(ROOT)) continue;
+        // Only workspace source counts. This drops node_modules, and also drops
+        // consumer-side interface augmentations (apps/draw merges into core's
+        // `DepSchema`), which are reachable through the barrel but are not
+        // definition sites of anything the package publishes.
+        if (!file.startsWith(PACKAGES) || file.includes('/node_modules/')) continue;
         // Expando assignments (`Toolbar.Group = …`, `usePenTool.prefs = …`) resolve
         // to a bare identifier, not to a declaration site of the export itself.
         if (Node.isIdentifier(decl)) continue;
