@@ -158,12 +158,18 @@ describe('dispose', () => {
   it('deletes owned GL programs and shared geometry, removes canvas listeners', () => {
     const rec = makeGLRecorder();
     const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
+    // The solid batch takes its buffers on the first flush, not at construction.
+    r.render([{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { color: '#f00' },
+    }] as never);
     r.dispose();
     const names = rec.calls.map((c) => c.name);
     // 5 built-in programs: pathFill, pathFillVColor, textSdf, imageFill, gradFill
     expect(names.filter((n) => n === 'deleteProgram').length).toBeGreaterThanOrEqual(5);
     expect(names).toContain('deleteBuffer');
-    // The rect batch's VAO must also be freed.
+    // The solid batch's VAO must also be freed.
     expect(names).toContain('deleteVertexArray');
   });
 
