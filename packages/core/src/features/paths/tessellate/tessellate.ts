@@ -14,11 +14,16 @@ import {
 } from '@weasel-js/core';
 import type { Mesh } from '../../../renderer/cache/mesh';
 
+/** Options for `tessellate`. A smaller tolerance means more triangles and
+ *  smoother curves; it is in path-local units, so callers rendering at a
+ *  larger scale should tighten it. */
 export interface TessellateOptions {
   /** Flatness tolerance for bezier subdivision in path-local units. */
   flattenTolerance?: number;
 }
 
+/** Turn a path into a triangle mesh the renderer can draw: curves flattened to
+ *  line segments, then the resulting polygon triangulated. */
 export function tessellate(path: Path, opts: TessellateOptions = {}): Mesh {
   if (path.kind === 'rect') return tessellateRect(path);
   return tessellatePolygon(path, opts);

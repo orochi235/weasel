@@ -31,6 +31,8 @@ export type DrawCommand =
   | ImageDrawCommand
   | ShaderDrawCommand;
 
+/** Draw a path, filled and/or stroked. The workhorse command: every shape the
+ *  kit draws that is not text, an image, or a custom shader is one of these. */
 export interface PathDrawCommand {
   kind: 'path';
   path: Path;
@@ -54,6 +56,9 @@ export interface PathDrawCommand {
   vertexColors?: number[];
 }
 
+/** Draw a list of commands under a shared transform, opacity, color matrix
+ *  and clip. Groups nest, and their effects accumulate down the stack — this
+ *  is how a container node's transform reaches its descendants. */
 export interface GroupDrawCommand {
   kind: 'group';
   transform?: Mat3;

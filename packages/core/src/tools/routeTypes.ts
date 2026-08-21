@@ -26,6 +26,15 @@ export interface ToolKeybinding {
   shift?: boolean | 'optional';
 }
 
+/**
+ * What a tool declares.
+ *
+ * A tool is a declarative shell, not an event handler: it names the gestures
+ * it responds to and, for each, the action to invoke. The dispatcher owns the
+ * gesture, and the action owns the preview and the commit — so a tool
+ * definition is mostly `bindings`, plus presentation and any actions the tool
+ * itself introduces.
+ */
 export interface ToolDef<TScratch = void> {
   id: string;
   /** Capability tags for modality eligibility. Forwarded onto `Tool.capabilities`. */
