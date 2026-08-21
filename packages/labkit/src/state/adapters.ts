@@ -1,6 +1,8 @@
 import { decodeUrlHash, encodeUrlHash } from './helpers';
 import type { StorageAdapter } from './types';
 
+/** Persist to `localStorage` — state survives a reload and a new tab. Falls
+ *  back to no-ops when storage is unavailable. */
 export const localStorageAdapter: StorageAdapter = {
   read: (key) => {
     try {
@@ -25,6 +27,7 @@ export const localStorageAdapter: StorageAdapter = {
   },
 };
 
+/** Persist to `sessionStorage` — state survives a reload but not a new tab. */
 export const sessionStorageAdapter: StorageAdapter = {
   read: (key) => {
     try {
@@ -68,6 +71,8 @@ function writeHashMap(map: Record<string, string>): void {
   window.history.replaceState(null, '', `#${encoded}`);
 }
 
+/** Persist into the URL fragment, so the page's link carries its state and
+ *  can be shared or bookmarked. */
 export const urlHashAdapter: StorageAdapter = {
   read: (key) => readHashMap()[key] ?? null,
   write: (key, value) => {
@@ -82,6 +87,8 @@ export const urlHashAdapter: StorageAdapter = {
   },
 };
 
+/** An in-memory store, discarded on reload. For tests, and for labs that
+ *  should start fresh every time. */
 export function createMemoryAdapter(): StorageAdapter {
   const store = new Map<string, string>();
   return {
@@ -95,6 +102,7 @@ export function createMemoryAdapter(): StorageAdapter {
   };
 }
 
+/** Persists nothing and reads back nothing. */
 export const noneAdapter: StorageAdapter = {
   read: () => null,
   write: () => {},

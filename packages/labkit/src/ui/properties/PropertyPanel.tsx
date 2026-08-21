@@ -2,12 +2,15 @@ import { type ReactNode, useState } from 'react';
 import { dlog } from '../../passthrough/weasel-ui';
 import { formatNumber, parseSignedNumber } from '../format';
 
+/** Props for `<PropertyPanel>`. */
 export interface PropertyPanelProps {
   title?: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
+/** A titled panel holding property rows — the sidebar container the rest of
+ *  this module's components fill. */
 export function PropertyPanel({ title, children, className }: PropertyPanelProps) {
   const cls = className ? `lk-property-panel ${className}` : 'lk-property-panel';
   return (
@@ -18,8 +21,10 @@ export function PropertyPanel({ title, children, className }: PropertyPanelProps
   );
 }
 
+/** How a property list packs its rows into two columns. */
 export type PropertyListPack = 'auto-color' | 'pairs';
 
+/** Props for `<PropertyList>`. */
 export interface PropertyListProps {
   children: ReactNode;
   className?: string;
@@ -44,9 +49,12 @@ export function PropertyList({ children, className, pack = 'auto-color' }: Prope
   return <div className={cls}>{children}</div>;
 }
 
+/** Which control shape a row holds, which decides its intrinsic layout. */
 export type PropertyRowVariant = 'default' | 'color' | 'checkbox';
+/** Whether a row's label sits above its control or beside it. */
 export type PropertyRowLayout = 'block' | 'inline';
 
+/** Props for `<PropertyRow>`. */
 export interface PropertyRowProps {
   label: ReactNode;
   /** Right-aligned readout shown next to the label (e.g. current value). */
@@ -63,6 +71,8 @@ export interface PropertyRowProps {
   className?: string;
 }
 
+/** The label-plus-control frame every typed row below is built from. Use it
+ *  directly for a control this module does not cover. */
 export function PropertyRow({
   label,
   readout,
@@ -91,6 +101,7 @@ export function PropertyRow({
 
 // ── Row implementations ──────────────────────────────────────────────
 
+/** Props for `<SliderRow>`. */
 export interface SliderRowProps {
   label: ReactNode;
   value: number;
@@ -109,6 +120,8 @@ export interface SliderRowProps {
   layout?: PropertyRowLayout;
 }
 
+/** A bounded number edited by dragging, with a live readout whose precision
+ *  follows `step`. */
 export function SliderRow({
   label,
   value,
@@ -237,6 +250,7 @@ function EditableReadout({ value, min, max, format, unit, onCommit }: EditableRe
   );
 }
 
+/** Props for `<ColorRow>`. */
 export interface ColorRowProps {
   label: ReactNode;
   value: string;
@@ -251,6 +265,7 @@ export interface ColorRowProps {
   alphaDisabled?: boolean;
 }
 
+/** A color swatch, optionally with an alpha slider beneath it. */
 export function ColorRow({
   label,
   value,
@@ -280,12 +295,14 @@ export function ColorRow({
   );
 }
 
+/** Props for `<CheckboxRow>`. */
 export interface CheckboxRowProps {
   label: ReactNode;
   value: boolean;
   onChange: (next: boolean) => void;
 }
 
+/** A boolean checkbox. */
 export function CheckboxRow({ label, value, onChange }: CheckboxRowProps) {
   return (
     <PropertyRow label={label} variant="checkbox">
@@ -294,6 +311,7 @@ export function CheckboxRow({ label, value, onChange }: CheckboxRowProps) {
   );
 }
 
+/** Props for `<TextRow>`. */
 export interface TextRowProps {
   label: ReactNode;
   value: string;
@@ -303,6 +321,7 @@ export interface TextRowProps {
   layout?: PropertyRowLayout;
 }
 
+/** A single-line text input. */
 export function TextRow({ label, value, onChange, placeholder, maxLength, layout }: TextRowProps) {
   return (
     <PropertyRow label={label} layout={layout}>
@@ -317,6 +336,7 @@ export function TextRow({ label, value, onChange, placeholder, maxLength, layout
   );
 }
 
+/** Props for `<NumberRow>`. */
 export interface NumberRowProps {
   label: ReactNode;
   value: number;
@@ -328,6 +348,8 @@ export interface NumberRowProps {
   layout?: PropertyRowLayout;
 }
 
+/** A number typed directly. Reach for `<SliderRow>` when the range matters
+ *  more than the exact value. */
 export function NumberRow({
   label,
   value,
@@ -363,6 +385,7 @@ export interface SelectOption<T extends string> {
   label: ReactNode;
 }
 
+/** Props for `<SelectRow>`. */
 export interface SelectRowProps<T extends string> {
   label: ReactNode;
   value: T;
@@ -371,6 +394,8 @@ export interface SelectRowProps<T extends string> {
   layout?: PropertyRowLayout;
 }
 
+/** A dropdown over a fixed set of choices. Prefer `<ToggleRow>` when there
+ *  are only two or three and they should all stay visible. */
 export function SelectRow<T extends string>({
   label,
   value,
@@ -399,6 +424,7 @@ export function SelectRow<T extends string>({
   );
 }
 
+/** Props for `<ToggleRow>`. */
 export interface ToggleRowProps<T extends string> {
   label: ReactNode;
   value: T;
@@ -407,6 +433,8 @@ export interface ToggleRowProps<T extends string> {
   layout?: PropertyRowLayout;
 }
 
+/** A segmented control: the same choice as a select, with every option
+ *  visible at once. */
 export function ToggleRow<T extends string>({
   label,
   value,

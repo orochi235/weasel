@@ -2,6 +2,9 @@ import { createContext, useContext } from 'react';
 import type { Instrument } from '../instrument/types';
 import type { LabMode, SavedSnapshot, WorkspaceRecord } from '../state/types';
 
+/** Lab-wide state and commands: the available instruments, the open
+ *  workspaces and the operations over them, saved snapshots, and the color
+ *  mode. */
 export interface LabContextValue {
   instruments: Instrument[];
   workspaces: WorkspaceRecord[];
@@ -17,8 +20,10 @@ export interface LabContextValue {
   setMode: (m: LabMode) => void;
 }
 
+/** Context carrying the surrounding lab. Prefer `useLabContext`. */
 export const LabContext = createContext<LabContextValue | null>(null);
 
+/** The surrounding lab. Throws outside a `<Lab>`. */
 export function useLabContext(): LabContextValue {
   const ctx = useContext(LabContext);
   if (ctx === null) {

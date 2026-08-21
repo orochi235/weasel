@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+/** Props for `<Sidebar>`. */
 export interface SidebarProps {
   children: ReactNode;
   title?: string;
@@ -7,6 +8,8 @@ export interface SidebarProps {
   onToggle?: () => void;
 }
 
+/** A collapsible side panel with an optional title. Collapse state is the
+ *  caller's to hold. */
 export function Sidebar({ children, title, collapsed = false, onToggle }: SidebarProps) {
   const className = `lk-sidebar${collapsed ? ' lk-sidebar--collapsed' : ''}`;
   return (

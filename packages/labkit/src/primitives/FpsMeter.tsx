@@ -3,6 +3,7 @@ import { rollingAverage } from './fpsAverage';
 
 const SAMPLE_WINDOW = 30;
 
+/** A live frame-rate readout, averaged over the last 30 frames. */
 export function FpsMeter() {
   const [fps, setFps] = useState(0);
   const samplesRef = useRef<number[]>([]);

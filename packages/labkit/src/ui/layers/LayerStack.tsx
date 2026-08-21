@@ -1,6 +1,8 @@
 import { type CSSProperties, type ReactNode, type RefCallback, useEffect, useState } from 'react';
 import { dlog, useReorderDragList } from '../../passthrough/weasel-ui';
 
+/** One card in a layer stack: its identity, the label shown when collapsed,
+ *  and the optional select hoisted into its header. */
 export interface LayerStackItem {
   /** Stable id used for keys, onRemove, onReorder. Numeric to match
    *  common id-from-nextId conventions; string ids also work. */
@@ -22,6 +24,7 @@ export interface LayerStackItem {
   defaultExpanded?: boolean;
 }
 
+/** Props for `<LayerStack>`. */
 export interface LayerStackProps {
   title: string;
   items: LayerStackItem[];
@@ -38,6 +41,8 @@ export interface LayerStackProps {
   hideHead?: boolean;
 }
 
+/** A drag-reorderable stack of expandable cards, with a palette in the header
+ *  for adding more. The body of each card is the caller's to render. */
 export function LayerStack({
   title,
   items,

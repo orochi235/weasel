@@ -19,6 +19,7 @@ import { LabShell } from './LabShell';
 import { useResolvedMode } from './useSystemMode';
 import { WorkspaceGrid } from './WorkspaceGrid';
 
+/** Props for `<Lab>`. */
 export interface LabProps {
   instruments: Instrument[];
   defaultInstrument: string;
@@ -76,6 +77,8 @@ function buildNebula(colors: readonly string[]): string {
   return blobs.join(', ');
 }
 
+/** The lab runtime: creates the store, provides it, and renders one workspace
+ *  per record in a grid. Each workspace runs one of `instruments`. */
 export function Lab({
   instruments,
   defaultInstrument,

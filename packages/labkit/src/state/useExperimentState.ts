@@ -3,6 +3,9 @@ import { useStore } from 'zustand/react';
 import { LabStoreContext, WorkspaceIdContext } from './context';
 import type { ExperimentStateHandle } from './types';
 
+/** An instrument's own state and config, plus setters. Reads the surrounding
+ *  workspace id, so an instrument never has to know which workspace it is
+ *  running in. Throws outside a lab store and workspace. */
 export function useExperimentState<TS = unknown, TC = unknown>(): ExperimentStateHandle<TS, TC> {
   const ctx = useContext(LabStoreContext);
   if (!ctx) throw new Error('[labkit] useExperimentState must be used inside <LabStoreProvider>');

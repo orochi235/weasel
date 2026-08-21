@@ -1,5 +1,6 @@
 import type { Point, ViewTransform } from '../instrument/types';
 
+/** Project a world point into screen coordinates under a view. */
 export function worldToScreen(world: Point, view: ViewTransform): Point {
   return {
     x: world.x * view.zoom + view.pan.x,
@@ -7,6 +8,7 @@ export function worldToScreen(world: Point, view: ViewTransform): Point {
   };
 }
 
+/** Unproject a screen point back to world coordinates under a view. */
 export function screenToWorld(screen: Point, view: ViewTransform): Point {
   return {
     x: (screen.x - view.pan.x) / view.zoom,

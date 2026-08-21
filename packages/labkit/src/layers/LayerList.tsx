@@ -1,6 +1,7 @@
 import { type PointerEvent, useRef, useState } from 'react';
 import type { LayerDescriptor } from '../instrument/types';
 
+/** Props for `<LayerList>`. */
 export interface LayerListProps {
   layers: LayerDescriptor[];
   visibility: Record<string, boolean>;
@@ -15,6 +16,8 @@ interface DragState {
   startY: number;
 }
 
+/** A reorderable list of layers with per-layer visibility toggles. Layers
+ *  marked `alwaysOn` are pinned and cannot be reordered or hidden. */
 export function LayerList({ layers, visibility, onReorder, onToggle, className }: LayerListProps) {
   const reorderable = layers.filter((l) => !l.alwaysOn);
   const pinned = layers.filter((l) => l.alwaysOn);

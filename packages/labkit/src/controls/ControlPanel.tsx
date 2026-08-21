@@ -16,6 +16,8 @@ export interface ControlPanelProps<TC extends Record<string, unknown>> {
   className?: string;
 }
 
+/** Render an instrument's config schema as a stack of controls, each writing
+ *  back through `setConfig`. */
 export function ControlPanel<TC extends Record<string, unknown>>({
   fields,
   config,

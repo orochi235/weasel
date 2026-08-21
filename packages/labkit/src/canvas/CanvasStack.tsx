@@ -5,6 +5,7 @@ import { screenToWorld } from './canvasCoords';
 import { type CanvasLayerDescriptor, useLayerScheduler } from './useLayerScheduler';
 import { usePanZoom } from './usePanZoom';
 
+/** Props for `<CanvasStack>`. */
 export interface CanvasStackProps {
   layers: CanvasLayerDescriptor[];
   view: ViewTransform;
@@ -16,6 +17,9 @@ export interface CanvasStackProps {
   children?: ReactNode;
 }
 
+/** Stacks one `<canvas>` per layer and drives them from a shared view, so a
+ *  layer that changes rarely is not redrawn with one that changes every frame.
+ *  Handles sizing, device pixel ratio, and pan/zoom. */
 export function CanvasStack({
   layers,
   view,
