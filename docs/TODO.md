@@ -731,7 +731,7 @@ From the WebGL transition spec — all deferred:
   thirteen times) versus per-package pages, and whether it is generated at build
   time from the markdown or rendered by a route.
 
-- **(P3) JSDoc audit at definition sites — done; three follow-ups open.** Every
+- **(P3) JSDoc audit at definition sites — done; one follow-up open.** Every
   public export of every package except `@weasel-js/ui` now has a JSDoc string
   at its definition site. `npm run audit:jsdoc` re-derives the claim: it walks
   each package's published entry points, resolves every reachable export to
@@ -740,19 +740,26 @@ From the WebGL transition spec — all deferred:
   and still has ~168 undocumented exports — `node scripts/audit-jsdoc.mjs --pkg
   ui --undocumented` is the work list.
 
-  What the sweep turned up, none of which it changed:
+  What the sweep turned up:
 
-  - **`@weasel-js/font` exports four test-only helpers.**
-    `_getPagesForTests`, `_resetDynamicFontsForTests`,
-    `__setGlyphRasterizerForTests` and `_resetFontOutlinesForTests` are marked
-    `@internal` in their own JSDoc yet reach consumers through the package
-    barrel. Either they should leave the barrel or the tests should reach them
-    another way. The audit script reports them on every run.
-  - **`evaluateEnabled`'s `@internal` marker is detached.** In
-    `interactions/actions/registry.tsx` the comment block intended for it sits
-    above three `const` declarations that follow it, so the function is exported
-    and documented as public API. Decide whether it is public; if not, move the
-    marker.
+  - **`@weasel-js/font`'s reset seams moved off the package barrel** to a
+    `@weasel-js/font/test-seams` entry point. Six of them, not the four the
+    audit first reported — `_resetFontRegistryForTests` and
+    `_resetFallbackForTests` are the same kind of thing without the `@internal`
+    marker that made the others visible to the script. They exist because font
+    registration, the fallback policy, the dynamic atlas and the outline
+    registry are global module state, so a test in another workspace that sets
+    one has to put it back; that need is unchanged, and the seams are still
+    published — an application importing the barrel just no longer sees them.
+    `packages/font/src/barrel.test.ts` pins both halves. `@weasel-js/core` is
+    not affected: its barrel never exported a test helper, and its own tests
+    reach them relatively.
+  - **`evaluateEnabled` is public, and its detached `@internal` marker was the
+    stale part.** `@weasel-js/ui`'s `ActionBar` and weaseldraw's command palette
+    both call it through core's barrel, so marking it internal would have
+    described two existing consumers out of existence. It is now `@experimental`
+    at its own definition, matching `ActionEnabledResult` and the rest of the
+    `enabled` predicate surface.
   - **Six typedoc warnings, all the same shape and all pre-existing** (the count
     did not move across the sweep). Each is a type referenced by an exported
     symbol but not itself exported — `Scale2`, `DEFAULT_INK`,
