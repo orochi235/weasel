@@ -14,6 +14,14 @@ export interface AttachHudOptions {
   readonly theme?: ResolvedTheme;
 }
 
+/**
+ * Bind a HUD to a canvas: register its render layer, route pointer input to
+ * the widget under the cursor, and kick off default-font registration. Returns
+ * the detach function.
+ *
+ * Throws if the HUD is already attached — a HUD belongs to one canvas at a
+ * time.
+ */
 export function attachHud(
   api: CanvasExtensionApi,
   hud: Hud,

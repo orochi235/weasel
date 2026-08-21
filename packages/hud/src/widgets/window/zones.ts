@@ -1,9 +1,13 @@
 import type { WidgetBounds } from '../../widget';
 
+/** What part of a window a point falls in — which decides what a drag
+ *  starting there does and which cursor to show. */
 export type WindowZone =
   | 'title' | 'close' | 'content'
   | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 
+/** The window frame's fixed dimensions. Override per window to make the grab
+ *  zones larger, or the chrome smaller. */
 export interface WindowMetrics {
   /** Titlebar height in CSS px. */
   titleH: number;
@@ -13,6 +17,7 @@ export interface WindowMetrics {
   closeSize: number;
 }
 
+/** Frame dimensions a window uses unless its options override them. */
 export const DEFAULT_WINDOW_METRICS: WindowMetrics = { titleH: 24, edge: 6, closeSize: 14 };
 
 /** The eight resize zones a drag can start in, plus title/close/content. */

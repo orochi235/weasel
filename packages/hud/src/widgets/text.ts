@@ -2,6 +2,8 @@ import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widge
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { textCommand } from '@weasel-js/core';
 
+/** Options for a text widget. `x`/`y` place the text; its bounds follow from
+ *  the string and font size. */
 export interface TextOptions {
   id: string;
   x: number; y: number;
@@ -17,6 +19,7 @@ export interface TextOptions {
   removeFromHud?: () => void;
 }
 
+/** A single run of text drawn at a point. */
 export interface TextWidget extends Widget {
   setText(text: string): void;
   setHidden(hidden: boolean): void;

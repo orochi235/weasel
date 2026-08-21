@@ -2,6 +2,7 @@ import type { Widget, HudDrawCtx, HudPointerEvent, WidgetBounds } from '../widge
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import type { RectPath } from '@weasel-js/core';
 
+/** Options for a filled rectangle widget. */
 export interface RectOptions {
   id: string;
   x: number;
@@ -18,6 +19,8 @@ export interface RectOptions {
   removeFromHud?: () => void;
 }
 
+/** A solid filled rectangle — backdrops, dividers, and the base other
+ *  widgets are composed on. */
 export interface RectWidget extends Widget {
   setBounds(b: WidgetBounds): void;
   setHidden(hidden: boolean): void;

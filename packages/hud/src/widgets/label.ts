@@ -1,5 +1,7 @@
 import { createText, type TextWidget } from './text';
 
+/** Options for a label. Same as a text widget minus the font family, which a
+ *  label always leaves to the HUD default. */
 export interface LabelOptions {
   id: string;
   x: number; y: number;
@@ -13,6 +15,7 @@ export interface LabelOptions {
   removeFromHud?: () => void;
 }
 
+/** A label is a text widget; the factory only differs in its defaults. */
 export type LabelWidget = TextWidget;
 
 export function createLabel(opts: LabelOptions): LabelWidget {

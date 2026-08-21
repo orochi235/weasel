@@ -9,8 +9,12 @@ import type { HudContentCtx, WidgetBounds } from '../widget';
 import { loupeInnerView } from './innerView';
 import { readbackRegion } from './readback';
 
+/** How a loupe magnifies. `'vector'` re-renders the source layers through a
+ *  zoomed-in view, so content stays sharp at any factor; `'pixel'` reads the
+ *  framebuffer back and blows up the actual pixels. */
 export type LoupeMode = 'vector' | 'pixel';
 
+/** Options for `createLoupe`. */
 export interface LoupeOptions {
   hud: Hud;
   /** The live canvas. Supplies the GL context for pixel mode and the pointer
@@ -39,6 +43,8 @@ export interface LoupeOptions {
   background?: string;
 }
 
+/** Control surface for a live loupe: where it is aimed, how it magnifies,
+ *  what color it is over, and the window it lives in. */
 export interface LoupeHandle {
   readonly window: WindowWidget;
   readonly mode: LoupeMode;
@@ -56,6 +62,11 @@ export interface LoupeHandle {
   dispose(): void;
 }
 
+/**
+ * Build a magnifier: a HUD window whose interior shows the canvas around an
+ * aim point, enlarged. Adds the window to the HUD and starts following the
+ * pointer; `dispose` removes it again.
+ */
 export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const { hud, element, source, requestRedraw } = opts;
   let mode: LoupeMode = opts.mode ?? 'vector';
