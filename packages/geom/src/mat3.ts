@@ -15,18 +15,24 @@
  */
 export type Mat3 = number[];
 
+/** The transform that leaves a point where it is. */
 export function identity(): Mat3 {
   return [1, 0, 0, 1, 0, 0];
 }
 
+/** A pure translation by `(tx, ty)`. */
 export function translate(tx: number, ty: number): Mat3 {
   return [1, 0, 0, 1, tx, ty];
 }
 
+/** A pure scale about the origin. Scale about another point by composing
+ *  translate → scale → inverse translate with `multiply`. */
 export function scale(sx: number, sy: number): Mat3 {
   return [sx, 0, 0, sy, 0, 0];
 }
 
+/** A pure rotation about the origin, in radians, clockwise in canvas
+ *  coordinates (y down). */
 export function rotate(rad: number): Mat3 {
   const c = Math.cos(rad);
   const s = Math.sin(rad);

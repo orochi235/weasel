@@ -4,10 +4,15 @@
  * features/paths/types.ts; Spec 2 re-points that file to re-export these.
  */
 export const PATH_M = 0; // moveTo
-export const PATH_L = 1; // lineTo
-export const PATH_C = 2; // cubic bezier
-export const PATH_Q = 3; // quadratic bezier
-export const PATH_Z = 4; // close subpath
+/** Straight segment from the pen to the next coord pair. */
+export const PATH_L = 1;
+/** Cubic bezier: two control points then the endpoint. */
+export const PATH_C = 2;
+/** Quadratic bezier: one control point then the endpoint. */
+export const PATH_Q = 3;
+/** Close the current subpath back to its start. Consumes no coords and leaves
+ *  the pen where it is. */
+export const PATH_Z = 4;
 
 /** Float coords consumed by each command, indexed by command code. */
 export const PATH_CMD_LENGTHS: readonly number[] = [2, 2, 6, 4, 0];
