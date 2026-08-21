@@ -18,7 +18,7 @@ Priority tags:
 
 ### Next up
 
-- **Per-command draw cost** — solid geometry batches; gradients, patterns, images, text and shaders still pay per command. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 ### P2 — broad reuse / friction-likely
 
@@ -38,8 +38,8 @@ Priority tags:
 - `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
 
 **Performance**
-- A clipped group costs about as much as 1,000 solid rects → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- A mixed document costs ~3.5x the sum of its parts → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- A clipped group costs ~64 us to enter, 92% of it the batch break → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- A mixed document's surcharge is the solid batch breaking, nothing else → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 **Documentation**
 - Surface a changelog on the site → [Documentation](#documentation)
@@ -652,10 +652,19 @@ From the WebGL transition spec — all deferred:
   has to live, since one scene can be drawn by several renderers. Design:
   `docs/superpowers/specs/2026-08-15-stroke-ribbon-cache-design.md`.
 
-  What still pays per command: gradients, patterns, images, text, shaders,
-  per-vertex-color and stencil fills, and meshes past the batch's vertex cap. A
-  frame alternating solid and linear-gradient rects is unchanged at ~33 us per
-  command, almost entirely the gradient half.
+  What still pays per command, at 512 a frame on the same machine
+  (`tests/perf/transition-matrix.spec.ts`): solid 0.14 us, shader 1.22,
+  pattern 1.60, gradient 1.78, stencil fill 3.22, per-vertex-color 3.87,
+  image 3.6 (7.0 before the quad ring landed), text 6.7–7.1. None of those is
+  the barrier any more — a *neighbour of a different kind* costs 27 us where
+  the command itself costs one or two, and all of that 27 is the solid batch
+  flushing. See the mixed-document entry below.
+
+  **Text still mints a vertex array and two buffers per draw**, in
+  `drawTextGroup` and `drawTextDecorations` — the thing `drawImage` stopped
+  doing, and worth ~5 us a draw there. The same ring would fit, with one extra
+  problem: a text group's geometry is variable-length, so the ring's buffers
+  have to grow rather than being fixed at four vertices.
 
   The rest of the plan — one program plus atlases — is in
   `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a
@@ -668,30 +677,57 @@ From the WebGL transition spec — all deferred:
   shape it thinks a gate should take instead — a PR job that posts the
   `--compare` delta as a comment and does not fail the build. Mike's call.
 
-- **(P2) A clipped group costs about as much as 1,000 solid rects.**
-  `tests/perf/frame-budget.spec.ts` (added 2026-08-15) fits 244–268 clipped
-  groups in a 16.7 ms frame against 260,000–300,000 solid rects — ~65 us to
-  enter a clip. Nesting is not what costs: a 4-deep clip stack fits ~244, so
-  three extra levels are nearly free and the price is entry, paid once per
-  clipped group whatever its depth. Two candidates, neither investigated: the
-  stencil rasterization and clear per push/pop, and the batch break —
-  `stagedStateIsLive` compares `clipDepth`, so everything under a clip leaves
-  the solid batch. Worth knowing which before optimizing, since only one of
-  them is fixable.
+- **(P2) A clipped group costs about as much as 1,000 solid rects — and 92% of
+  that is the batch break, not the stencil.** `tests/perf/clip-cost.spec.ts`
+  separates them by clipping contents that would not have batched anyway: a
+  gradient rect never joins the solid batch, so wrapping one in a clip adds the
+  stencil and nothing else. Per clip entry on an M2 Max via ANGLE — stencil push
+  and pop 4.97 us, whole entry around a solid rect 64.10 us, so the break is
+  59.12. A second route agrees: a group carrying a color matrix breaks the run
+  through the same test without touching the stencil, and prices one flush at
+  54.99 us.
 
-  Same run: an image quad costs ~7 us and a text label ~6.5 us, ~100x a solid
-  rect. For images `drawImage` creates and deletes a VAO and two buffers on
-  every draw, which is the obvious first thing to look at.
+  So the fixable half is the expensive half. Nesting stays free (the stencil is
+  the only part depth adds), and putting eight leaves under one clip instead of
+  one takes the per-leaf figure from 64 us to 19.
 
-- **(P2) A mixed document costs ~3.5x the sum of its parts.** Same spec: the
-  weighted `mixed-doc` row fits ~2,700 elements in 16.7 ms, where pricing that
-  element mix from the single-kind rows above predicts ~4.5 ms for the same
-  2,700. Every other row draws one kind, so its commands batch and hold state;
-  a document interleaves them and each neighbor is a state change. Nothing here
-  says which transition is expensive — that is the follow-up, and
-  `draw-loop.spec.ts`'s `alternating` variant is the shape of the experiment.
-  Until then, size scenes from `mixed-doc` and treat the single-kind rows as
-  ceilings that no real document reaches.
+  **What a flush actually costs is a stalled buffer write.** `SolidBatch`
+  rewrites its vertex and index buffers from offset 0 on every flush, and the
+  driver tracks a write hazard per buffer object, so each write waits on the
+  draw still reading it. `tests/perf/image-quad.spec.ts` prices the shapes
+  directly, per draw: 40–80 us rewriting one buffer, 0.03 us for a buffer
+  nothing writes, 0.34 us for a ring of 64 separate buffers written in turn.
+  Writing *disjoint ranges* of one buffer does not help (39 us) — the hazard is
+  per object, not per range. A ring, or a per-frame arena of separate buffer
+  objects, is therefore the shape to try on the flush; expect it to move both
+  this entry and the mixed-document one below, since they are the same cost.
+
+  Landed from the same run: `drawImage` no longer mints and frees a vertex array
+  and two buffers per draw. That allocation cost 5.4 us a draw; an image command
+  is now ~3.9 us where it was ~7.0, and the remaining gap to a pattern-filled
+  rect (~2.3 us) is texture state rather than geometry.
+
+- **(P2) A mixed document costs ~3.5x the sum of its parts, and every bit of it
+  is the solid batch breaking.** `tests/perf/transition-matrix.spec.ts` prices
+  each ordered pair of command kinds: a frame alternating A and B, minus half of
+  each kind's own frame, over the boundaries between them. Fitting the resulting
+  matrix to `S(A,B) = f(A) + f(B)` leaves residuals inside the noise floor, so a
+  boundary is not a property of the pair — each kind carries its own cost and
+  pays it against any neighbour that is not itself. Those costs, in us per
+  boundary: solid 27.45, clip 1.24, gradient 0.85, stencil 0.47, pattern 0.37,
+  image 0.21, text 0.20, shader 0.19, per-vertex-color 0.14. Repeat-measurement
+  noise on the same cells is 0.00–1.49.
+
+  Every boundary that matters is a boundary with the solid batch, and it is one
+  flush: 26.68 us per boundary over 511 boundaries is 53 us per flush across the
+  256 flushes an alternating frame does — the same constant the clip entry
+  above measures at 55. Nothing else is worth naming. A program switch between
+  two unbatched kinds, which this was expected to find, costs under a
+  microsecond.
+
+  Until the flush stops stalling (see above), size scenes from `mixed-doc` and
+  treat the single-kind rows in `frame-budget.spec.ts` as ceilings no real
+  document reaches.
 
 - **(P3) opentype.js is typed a major version behind what it runs.**
   `packages/font` depends on `opentype.js@2.0.0`, which ships no typings, so TS

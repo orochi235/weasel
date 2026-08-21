@@ -43,7 +43,9 @@ import { GradientRampCache } from './cache/GradientRampCache';
 import { GroupState } from './state/GroupState';
 import type { DrawCommand } from './DrawCommand';
 import type { Mat3 } from './math/mat3';
-import { dispatch, flushSolids, OUTLINE_MIN_SCREEN_PX, type DrawContext } from './draw';
+import {
+  dispatch, flushSolids, disposeImageQuads, OUTLINE_MIN_SCREEN_PX, type DrawContext,
+} from './draw';
 import { SolidBatch } from './solidBatch';
 import {
   CUSTOM_VERT_SRC, CUSTOM_ATTRIBUTES, CUSTOM_KIT_UNIFORMS,
@@ -393,6 +395,7 @@ export class WeaselRenderer {
     this.gradRampCache.free();
     if (this.quadVbo) gl.deleteBuffer(this.quadVbo);
     if (this.quadIbo) gl.deleteBuffer(this.quadIbo);
+    disposeImageQuads(gl, this.imageFill);
     this.solidBatch.dispose();
   }
 
