@@ -7,6 +7,7 @@
 // boolean, string, enum, plus rendering hints — so it's a clean
 // structural subset of whatever a host app already has.
 
+/** The value types a built-in pref leaf can hold. */
 export type ToolPrefKind = 'number' | 'boolean' | 'string' | 'enum' | 'color' | 'paint';
 
 interface ToolPrefBase<K extends string, Value> {
@@ -30,9 +31,13 @@ interface ToolPrefBase<K extends string, Value> {
   pair?: string;
 }
 
+/** How a schema-driven UI should present a number pref. */
 export type ToolPrefNumberControl = 'input' | 'slider';
+/** How a schema-driven UI should present a boolean pref. */
 export type ToolPrefBooleanControl = 'checkbox' | 'switch';
+/** How a schema-driven UI should present a string pref. */
 export type ToolPrefStringControl = 'input' | 'textarea';
+/** How a schema-driven UI should present an enum pref. */
 export type ToolPrefEnumControl = 'select' | 'radio';
 
 /** Display-unit conversion for number leaves whose stored value uses a
@@ -45,6 +50,8 @@ export interface ToolPrefNumberUnit {
   suffix?: string;
 }
 
+/** A numeric pref, optionally bounded and stepped, and optionally stored in a
+ *  different unit from the one shown. */
 export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
   min?: number;
   max?: number;
@@ -52,18 +59,23 @@ export interface ToolPrefNumber extends ToolPrefBase<'number', number> {
   control?: ToolPrefNumberControl;
   unit?: ToolPrefNumberUnit;
 }
+/** An on/off pref. */
 export interface ToolPrefBoolean extends ToolPrefBase<'boolean', boolean> {
   control?: ToolPrefBooleanControl;
 }
+/** A free-text pref. */
 export interface ToolPrefString extends ToolPrefBase<'string', string> {
   control?: ToolPrefStringControl;
 }
+/** A pref with a fixed set of labeled choices. */
 export interface ToolPrefEnum<T extends string = string>
   extends ToolPrefBase<'enum', T> {
   options: readonly { value: T; label: string }[];
   control?: ToolPrefEnumControl;
 }
 
+/** A single color, stored as a hex string. For a value that may also be a
+ *  gradient or a pattern, use {@link ToolPrefPaint} instead. */
 export interface ToolPrefColor extends ToolPrefBase<'color', string> {
   /** Value is `#rrggbb`, or `#rrggbbaa` when `alpha` is set (UIs then
    *  offer an opacity control). */
@@ -94,6 +106,8 @@ export interface ToolPrefPaint extends ToolPrefBase<'paint', unknown> {
   alpha?: boolean;
 }
 
+/** One built-in pref leaf. `ToolPrefLeaf` widens this to include
+ *  app-defined kinds. */
 export type ToolPref =
   | ToolPrefNumber
   | ToolPrefBoolean
