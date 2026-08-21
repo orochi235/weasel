@@ -27,6 +27,8 @@ import { applyStyleToRange } from './rangeStyle';
 /** The additive run flags. */
 export type FlagKey = 'bold' | 'italic' | 'underline' | 'strikethrough';
 
+/** The result of toggling a style flag over a text range: the rewritten runs
+ *  and node style, and whether the change could be made at all. */
 export interface SetFlagResult {
   runs: StyledRun[];
   style: TextStyle;

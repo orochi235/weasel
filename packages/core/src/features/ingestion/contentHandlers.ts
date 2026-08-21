@@ -63,6 +63,9 @@ export interface IngestCtx {
   deps: ActionDeps;
 }
 
+/** A handler for content arriving by paste, drop or file picker. Handlers are
+ *  matched by MIME glob or predicate and run highest-priority first; the kit's
+ *  own register at a low priority so a consumer's handler wins by default. */
 export interface ContentHandlerEntry {
   /** Stable identifier — used for unregistration and debugging
    *  (`'kit:image'`, `'app:csv'`). */

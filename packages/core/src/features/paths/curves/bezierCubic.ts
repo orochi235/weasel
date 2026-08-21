@@ -105,6 +105,7 @@ function cubicDeriv2(
   };
 }
 
+/** Cubic bezier: each segment takes two control handles. The familiar pen-tool curve, and what SVG path data stores natively. */
 export const bezierCubic: CurveRepresentation = {
   kind: 'bezierCubic',
   label: 'Cubic Bezier',

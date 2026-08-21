@@ -26,6 +26,8 @@ export interface SimulationForce<TNode extends SimulationNode = SimulationNode> 
   initialize?(nodes: TNode[], random?: () => number): void;
 }
 
+/** Options for `useSimulation`: the nodes to move, the forces acting on them,
+ *  and the cooling schedule that decides when the simulation settles. */
 export interface UseSimulationOptions<TNode extends SimulationNode> {
   /** Mutable array of nodes. Kit + forces mutate vx/vy/x/y in place. */
   nodes: TNode[];
@@ -54,6 +56,16 @@ export interface UseSimulationOptions<TNode extends SimulationNode> {
   cancelFrame?: (handle: number) => void;
 }
 
+/**
+ * A running force simulation over a set of nodes.
+ *
+ * Each tick applies every force and then integrates velocities, scaled by
+ * `alpha` — a temperature that decays toward `alphaTarget` so the layout
+ * settles instead of jittering forever. Raise `alphaTarget` to reheat it,
+ * which is what a drag does.
+ *
+ * Nodes are mutated in place; the simulation holds the array, not a copy.
+ */
 export interface Simulation<TNode extends SimulationNode> {
   readonly nodes: TNode[];
 
@@ -86,5 +98,8 @@ export interface Simulation<TNode extends SimulationNode> {
 
 /** Default alpha decay: such that alpha drops from 1 to alphaMin (0.001) in 300 ticks. */
 export const DEFAULT_ALPHA_DECAY = 1 - Math.pow(0.001, 1 / 300);
+/** Alpha below which a cooling simulation is considered settled. */
 export const DEFAULT_ALPHA_MIN = 0.001;
+/** Fraction of velocity shed each tick — friction. Higher settles sooner and
+ *  overshoots less. */
 export const DEFAULT_VELOCITY_DECAY = 0.4;

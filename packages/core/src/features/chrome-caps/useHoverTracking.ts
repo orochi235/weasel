@@ -16,6 +16,7 @@
 import { useEffect, useRef, type RefObject } from 'react';
 import type { NodeId } from '../../core/scene/types';
 
+/** Options for `useHoverTracking`. */
 export interface UseHoverTrackingArgs {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   /** Client → world conversion. Same shape as the dispatcher's. */
@@ -25,6 +26,9 @@ export interface UseHoverTrackingArgs {
   enabled?: boolean;
 }
 
+/** Track which node the pointer is over. Returns a getter rather than state,
+ *  so per-frame code can read the current value without the hover re-rendering
+ *  the component on every pointer move. */
 export function useHoverTracking(args: UseHoverTrackingArgs): () => NodeId | null {
   const { canvasRef, clientToWorld, getNodeAtPoint, enabled = true } = args;
   const hoverRef = useRef<NodeId | null>(null);

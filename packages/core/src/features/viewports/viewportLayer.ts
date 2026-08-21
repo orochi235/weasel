@@ -77,6 +77,10 @@ export interface ViewportLayer<TData> extends RenderLayer<TData> {
   reproject(outer: View, dims: Dims, screen: { x: number; y: number }): { x: number; y: number } | null;
 }
 
+/** Build a layer that renders other layers through a second view, inside a
+ *  sub-region of the canvas — a minimap, an inset, a magnifier. Its
+ *  `reproject` maps screen points back through the inner view so the region
+ *  can be interacted with. */
 export function createViewportLayer<TData>(
   opts: CreateViewportLayerOpts<TData>,
 ): ViewportLayer<TData> {

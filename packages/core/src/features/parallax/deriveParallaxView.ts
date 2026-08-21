@@ -1,7 +1,12 @@
 import type { View } from '../../core/viewport/view';
 
+/** One value for both axes, or a separate value per axis. */
 export type ScalarOrXY = number | { x: number; y: number };
 
+/** How a parallax plane tracks the camera: `pan` is the fraction of the
+ *  camera's translation it follows (1 = locked to the scene, 0 = fixed to the
+ *  screen), `zoom` the same for scale, and `anchor` the world point both are
+ *  measured from. */
 export interface ParallaxOpts {
   pan: ScalarOrXY;
   zoom?: ScalarOrXY;

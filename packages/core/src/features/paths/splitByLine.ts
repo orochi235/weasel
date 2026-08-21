@@ -7,6 +7,7 @@ import { pathIntersect } from './booleans';
 import { polygonFromPoints } from './builder';
 
 export type { Point };
+/** Options for `splitByLine`. */
 export interface SplitByLineOptions {
   /** Polyline flattening tolerance for the boundary-crossing gate. */
   flattenTolerance?: number;

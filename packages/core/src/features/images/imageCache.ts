@@ -21,6 +21,8 @@ export interface ImageNodeData {
   image: { src: string; opacity?: number };
 }
 
+/** Where an image is in its load: never requested, in flight, decoded, or
+ *  failed. Renderers paint a placeholder for anything but `'ready'`. */
 export type ImageStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 interface Entry {

@@ -37,6 +37,9 @@ export function textCommandFromRuns(
   };
 }
 
+/** Build a draw command for a single unstyled string. Text is laid out with
+ *  the registered font's metrics, wrapped at `maxWidth` and aligned within
+ *  `height` when both are given. */
 export function textCommand(
   x: number,
   y: number,

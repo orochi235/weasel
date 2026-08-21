@@ -96,6 +96,8 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
   onDoubleClick: (e: MouseEvent<HTMLElement>) => void;
 }
 
+/** Wire double-click-to-edit text on a scene: mounts a DOM editing overlay
+ *  over the node being edited and writes the result back as an undoable op. */
 export function useSceneTextEdit<
   TData extends DefaultTextData,
   TLayer extends string,

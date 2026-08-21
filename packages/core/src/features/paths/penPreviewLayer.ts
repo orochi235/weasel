@@ -17,6 +17,7 @@ import type { PenScratch, PenAnchor, PenSubpath } from 'tools/builtin/pen';
 import { PATH_C, PATH_L, PATH_M, PATH_Z, type PolygonPath } from './types';
 import { circlePath } from './markers';
 
+/** Appearance of the pen tool's in-progress path. */
 export interface PenPreviewStyle {
   anchorFill?: string;
   anchorStroke?: string;
@@ -26,6 +27,7 @@ export interface PenPreviewStyle {
   finishedSubpathStroke?: string;
 }
 
+/** Options for `createPenPreviewLayer`. */
 export interface CreatePenPreviewLayerOptions {
   /** The Tool returned by usePenTool. The layer reads its scratch via
    *  `tool.initScratch()` (the hook is contracted to return a stable ref). */
@@ -119,6 +121,9 @@ function subpathToPath(
   };
 }
 
+/** Render layer that draws the pen tool's path as it is being placed —
+ *  committed anchors, the rubber band to the cursor, and the close hint. Draws
+ *  nothing when the pen is idle. */
 export function createPenPreviewLayer(
   opts: CreatePenPreviewLayerOptions,
 ): RenderLayer<unknown> {

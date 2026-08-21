@@ -92,6 +92,7 @@ function cubicEval(
   };
 }
 
+/** Spiro (κ-curves): curvature-continuous through each anchor, so joins stay visually smooth without hand-tuned handles. Approximated as cubics when converted to a path. */
 export const spiro: CurveRepresentation = {
   kind: 'spiro',
   label: 'Spiro (κ-curves v1)',

@@ -9,6 +9,7 @@
 
 import type { TilePatternSpec } from '../../core/paint-types';
 
+/** One primitive within a pattern tile, in tile-local coordinates. */
 export type TileShape =
   | { kind: 'line'; x1: number; y1: number; x2: number; y2: number; width: number; color: string }
   | { kind: 'circle'; cx: number; cy: number; r: number; color: string }
@@ -45,6 +46,9 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+/** Resolve a pattern spec to the shapes that make up one tile. Consumers that
+ *  want to draw a pattern swatch themselves — a picker, an SVG export — read
+ *  this rather than rasterizing a texture. */
 export function tileGeometry(spec: TilePatternSpec): TileGeometry {
   const s = tileSize(spec);
   const { color } = spec;

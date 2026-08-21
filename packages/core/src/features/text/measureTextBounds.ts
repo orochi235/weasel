@@ -3,6 +3,7 @@ import { resolveTextStyle } from './textStyle';
 import { resolveRuns } from './runs/resolveRuns';
 import { layoutRuns } from './atlas/layoutRuns';
 
+/** Options for `measureTextBounds`. */
 export interface MeasureTextBoundsOpts {
   /** Wrap width; words exceeding it start a new line. Default `Infinity` (no wrap). */
   maxWidth?: number;

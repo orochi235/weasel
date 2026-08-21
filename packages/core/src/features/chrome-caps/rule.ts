@@ -52,6 +52,7 @@ export type Rule =
 
 /** Constant rules. Kept here so they have a single source. */
 export const ALWAYS: Rule = { all: [] };
+/** A rule that never passes. `any` of nothing is false. */
 export const NEVER: Rule = { any: [] };
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -199,6 +200,8 @@ export function describeRule(rule: Rule): string {
   return describeAt(rule, 0);
 }
 
+/** Evaluate a rule against a context. Pure, and cheap enough to run per
+ *  frame for every piece of chrome. */
 export function evaluate(rule: Rule, ctx: RuleCtx): boolean {
   if (isAllRule(rule)) return rule.all.every((r) => evaluate(r, ctx));
   if (isAnyRule(rule)) return rule.any.some((r) => evaluate(r, ctx));

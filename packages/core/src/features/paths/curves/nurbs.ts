@@ -83,6 +83,7 @@ function evalNurbs(anchors: SharedAnchor[], u: number): { x: number; y: number }
   return { x: wx / wTotal, y: wy / wTotal };
 }
 
+/** NURBS: anchors act as weighted control points the curve is pulled toward rather than passing through. Flattened to line segments when converted to a path. */
 export const nurbs: CurveRepresentation = {
   kind: 'nurbs',
   label: 'NURBS',

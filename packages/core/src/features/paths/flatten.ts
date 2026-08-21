@@ -135,6 +135,10 @@ function flattenCubicArcRec(
   return accum;
 }
 
+/** Flatten a quadratic bezier into line segments within `tolerance`, appending
+ *  points to `out` and their cumulative arc lengths to `arcOut`. The arc
+ *  lengths are what lets per-anchor color and dash phase be interpolated
+ *  evenly along the curve rather than per segment. */
 export function flattenQuadraticWithArcLen(
   x0: number, y0: number,
   x1: number, y1: number,

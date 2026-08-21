@@ -51,6 +51,8 @@ export interface RuleCtx {
   readonly device?: DeviceProfile;
 }
 
+/** The live state a `RuleCtx` is assembled from — the chrome context plus
+ *  what the active mode allows. */
 export interface BuildRuleCtxArgs {
   focused: boolean;
   selection: readonly NodeId[];
@@ -85,6 +87,8 @@ export const DEFAULT_ALLOWED_CAPABILITIES: ReadonlySet<CapabilityTag> = new Set<
   ...IMPLICIT_TAGS,
 ]);
 
+/** Gather the current canvas and mode state into the context that action
+ *  eligibility and chrome-visibility rules are evaluated against. */
 export function buildRuleCtx(args: BuildRuleCtxArgs): RuleCtx {
   return {
     focused: args.focused,
