@@ -38,8 +38,8 @@ Priority tags:
 - `weasel-js` unscoped alias is unpublishable under that name → [Plugins & packaging](#plugins--packaging)
 
 **Performance**
-- A clipped group costs ~64 us to enter, 92% of it the batch break → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- A mixed document's surcharge is the solid batch breaking, nothing else → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- A clipped group costs ~10 us to enter, half of it the stencil → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- A solid boundary costs 2.5 us where every other kind costs under one → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 **Documentation**
 - Surface a changelog on the site → [Documentation](#documentation)
@@ -658,9 +658,10 @@ From the WebGL transition spec — all deferred:
   (`tests/perf/transition-matrix.spec.ts`): solid 0.14 us, shader 1.22,
   pattern 1.60, gradient 1.78, stencil fill 3.22, per-vertex-color 3.87,
   image 3.6 (7.0 before the quad ring landed), text 6.7–7.1. None of those is
-  the barrier any more — a *neighbour of a different kind* costs 27 us where
-  the command itself costs one or two, and all of that 27 is the solid batch
-  flushing. See the mixed-document entry below.
+  the barrier any more, and neither is a *neighbour of a different kind*: that
+  boundary cost 27 us — all of it the solid batch's stalled flush — until the
+  batch started cycling its buffers, and is now 2.5 us for solid and under one
+  for every other kind. See the boundary entry below.
 
   **Text still mints a vertex array and two buffers per draw**, in
   `drawTextGroup` and `drawTextDecorations` — the thing `drawImage` stopped
@@ -679,57 +680,46 @@ From the WebGL transition spec — all deferred:
   shape it thinks a gate should take instead — a PR job that posts the
   `--compare` delta as a comment and does not fail the build. Mike's call.
 
-- **(P2) A clipped group costs about as much as 1,000 solid rects — and 92% of
-  that is the batch break, not the stencil.** `tests/perf/clip-cost.spec.ts`
-  separates them by clipping contents that would not have batched anyway: a
-  gradient rect never joins the solid batch, so wrapping one in a clip adds the
-  stencil and nothing else. Per clip entry on an M2 Max via ANGLE — stencil push
-  and pop 4.97 us, whole entry around a solid rect 64.10 us, so the break is
-  59.12. A second route agrees: a group carrying a color matrix breaks the run
-  through the same test without touching the stencil, and prices one flush at
-  54.99 us.
+- **(P2) A clipped group costs ~10 us to enter, and the stencil is now the
+  larger half.** `tests/perf/clip-cost.spec.ts` separates entry's two costs by
+  clipping contents that would not have batched anyway: a gradient rect never
+  joins the solid batch, so wrapping one in a clip adds the stencil and nothing
+  else. Per clip entry on an M2 Max via ANGLE — stencil push and pop 5.25 us,
+  whole entry around a solid rect 10.16, so the break is 4.90. A second route
+  agrees: a group carrying a color matrix breaks the run through the same test
+  without touching the stencil, and prices one flush at 4.35 us. Nesting is
+  still free, and eight leaves under one clip instead of one takes the per-leaf
+  figure from 10.2 us to 0.65.
 
-  So the fixable half is the expensive half. Nesting stays free (the stencil is
-  the only part depth adds), and putting eight leaves under one clip instead of
-  one takes the per-leaf figure from 64 us to 19.
+  Those were 64.89 and 54.38 before `SolidBatch` stopped rewriting one pair of
+  buffers on every flush. The driver tracks a write hazard per buffer object,
+  so each write waited on the draw still reading what it was about to
+  overwrite. The batch now cycles a ring of 64 slot-sized buffer sets, plus a
+  4-deep ring of growable ones for flushes past a slot, so a write lands that
+  many draws behind the read that hazards it.
 
-  **What a flush actually costs is a stalled buffer write.** `SolidBatch`
-  rewrites its vertex and index buffers from offset 0 on every flush, and the
-  driver tracks a write hazard per buffer object, so each write waits on the
-  draw still reading it. `tests/perf/image-quad.spec.ts` prices the shapes
-  directly, per draw: 40–80 us rewriting one buffer, 0.03 us for a buffer
-  nothing writes, 0.34 us for a ring of 64 separate buffers written in turn.
-  Writing *disjoint ranges* of one buffer does not help (39 us) — the hazard is
-  per object, not per range. A ring, or a per-frame arena of separate buffer
-  objects, is therefore the shape to try on the flush; expect it to move both
-  this entry and the mixed-document one below, since they are the same cost.
+  What is left is unattributed: ~4.4 us for a flush that issues one
+  `drawElements` and a handful of uniforms, against ~1.8 us for a warm mesh
+  draw. Worth one more pass with the same method before anyone reads it as the
+  floor.
 
-  Landed from the same run: `drawImage` no longer mints and frees a vertex array
-  and two buffers per draw. That allocation cost 5.4 us a draw; an image command
-  is now ~3.9 us where it was ~7.0, and the remaining gap to a pattern-filled
-  rect (~2.3 us) is texture state rather than geometry.
-
-- **(P2) A mixed document costs ~3.5x the sum of its parts, and every bit of it
-  is the solid batch breaking.** `tests/perf/transition-matrix.spec.ts` prices
-  each ordered pair of command kinds: a frame alternating A and B, minus half of
-  each kind's own frame, over the boundaries between them. Fitting the resulting
-  matrix to `S(A,B) = f(A) + f(B)` leaves residuals inside the noise floor, so a
+- **(P2) A boundary between two command kinds costs 0.3–2.5 us, and solid is
+  the expensive one.** `tests/perf/transition-matrix.spec.ts` prices each
+  ordered pair of command kinds: a frame alternating A and B, minus half of
+  each kind's own frame, over the boundaries between them. Fitting the matrix
+  to `S(A,B) = f(A) + f(B)` leaves residuals inside the noise floor, so a
   boundary is not a property of the pair — each kind carries its own cost and
   pays it against any neighbour that is not itself. Those costs, in us per
-  boundary: solid 27.45, clip 1.24, gradient 0.85, stencil 0.47, pattern 0.37,
-  image 0.21, text 0.20, shader 0.19, per-vertex-color 0.14. Repeat-measurement
-  noise on the same cells is 0.00–1.49.
+  boundary: solid 2.48, clip 0.68, text 0.57, gradient 0.54, stencil 0.54,
+  pattern 0.51, image 0.38, per-vertex-color 0.35, shader 0.28.
+  Repeat-measurement noise on the same cells is 0.02–0.32.
 
-  Every boundary that matters is a boundary with the solid batch, and it is one
-  flush: 26.68 us per boundary over 511 boundaries is 53 us per flush across the
-  256 flushes an alternating frame does — the same constant the clip entry
-  above measures at 55. Nothing else is worth naming. A program switch between
-  two unbatched kinds, which this was expected to find, costs under a
-  microsecond.
-
-  Until the flush stops stalling (see above), size scenes from `mixed-doc` and
-  treat the single-kind rows in `frame-budget.spec.ts` as ceilings no real
-  document reaches.
+  Solid was 28.37 until the flush stopped stalling (see above), which is what
+  made a mixed document cost several times the sum of its parts. It is still
+  the highest of the nine, and still one flush: 512 rects each broken out of
+  the run are 2.5 ms a frame against 0.06 for 512 unbroken ones, where the same
+  frame was 28.3 ms. The `mixed-doc` row in `frame-budget.spec.ts` has not been
+  re-measured since; expect it to have moved with this.
 
 - **(P3) opentype.js is typed a major version behind what it runs.**
   `packages/font` depends on `opentype.js@2.0.0`, which ships no typings, so TS
