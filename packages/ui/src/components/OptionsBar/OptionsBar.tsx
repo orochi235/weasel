@@ -2,6 +2,10 @@ import { type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import s from '../segmentedControl.module.css';
 import { useRovingTabIndex } from '../../useRovingTabIndex';
 
+/**
+ * One segment of an {@link OptionsBar}. Unlike `ToggleBar`, each item carries
+ * its own selected state and its own `onChange`.
+ */
 export type OptionsBarItem<V extends string | number = string> = {
   value: V;
   label?: ReactNode;
@@ -11,9 +15,12 @@ export type OptionsBarItem<V extends string | number = string> = {
   onChange: (next: boolean) => void;
 };
 
+/** Segment height and type scale for an {@link OptionsBar}. */
 export type OptionsBarSize = 'sm' | 'md';
+/** Visual treatment of an {@link OptionsBar}. */
 export type OptionsBarVariant = 'default' | 'minimal';
 
+/** Props for {@link OptionsBar}. */
 export type OptionsBarProps<V extends string | number = string> = {
   items: readonly OptionsBarItem<V>[];
   ariaLabel?: string;
@@ -27,6 +34,11 @@ export type OptionsBarProps<V extends string | number = string> = {
   variant?: OptionsBarVariant;
 };
 
+/**
+ * Segmented strip of independent on/off options, each owning its own state.
+ * Use it when the segments are unrelated booleans; use `ToggleBar` when they
+ * are values of one setting.
+ */
 export function OptionsBar<V extends string | number = string>(props: OptionsBarProps<V>): ReactElement {
   const { items, ariaLabel, className, height, size, variant } = props;
 

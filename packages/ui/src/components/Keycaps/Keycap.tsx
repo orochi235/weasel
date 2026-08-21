@@ -4,8 +4,16 @@ import s from './Keycaps.module.css';
 const MODIFIER_GLYPHS = new Set(['⌘', '⇪', '⌥', '⌃', '⇧']);
 const WIDE_GLYPHS = new Set(['⇥', '↵', '␣']);
 
+/**
+ * Width class of a keycap: a modifier glyph, a multi-character legend that
+ * needs a wider chip, or a single character in a square one.
+ */
 export type KeycapKind = 'modifier' | 'wide' | 'square';
 
+/**
+ * Picks the chip width for a legend — modifier glyphs and anything longer
+ * than one character get the wider forms.
+ */
 export function inferKeycapKind(label: string): KeycapKind {
   if (MODIFIER_GLYPHS.has(label)) return 'modifier';
   if (WIDE_GLYPHS.has(label)) return 'wide';
@@ -13,8 +21,10 @@ export function inferKeycapKind(label: string): KeycapKind {
   return 'square';
 }
 
+/** Visual style of a keycap chip. */
 export type KeyCapVariant = 'default' | 'minimal';
 
+/** Props for {@link KeyCap}. */
 export interface KeyCapProps {
   /** Glyph rendered in the chip (modifier or key). */
   label: string;
