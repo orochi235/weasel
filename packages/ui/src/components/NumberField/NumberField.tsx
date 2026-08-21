@@ -13,6 +13,7 @@ import {
 import { fieldClasses } from '../Field/Field';
 import s from './NumberField.module.css';
 
+/** Props for {@link NumberField}, on top of React Aria's `NumberField` props. */
 export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className'> & {
   label?: ReactNode;
   description?: ReactNode;
@@ -25,6 +26,14 @@ export type NumberFieldProps = Omit<RACNumberFieldProps, 'children' | 'className
   className?: string;
 };
 
+/**
+ * Numeric input with stepper buttons, wrapping React Aria's NumberField and
+ * supplying the same label / description / errorMessage slots as `Input`.
+ * Arrow keys and scroll step the value; parsing and formatting are React
+ * Aria's.
+ *
+ * `ref` forwards to the underlying `<input>`.
+ */
 export const NumberField = forwardRef(function NumberField(
   props: NumberFieldProps,
   ref: Ref<HTMLInputElement>,

@@ -8,6 +8,10 @@ import {
 } from 'react-aria-components';
 import s from './Tooltip.module.css';
 
+/**
+ * Props for {@link TooltipTrigger} — React Aria's `TooltipTrigger` props
+ * unchanged.
+ */
 export type TooltipTriggerProps = TooltipTriggerComponentProps;
 
 /**
@@ -25,6 +29,7 @@ export function TooltipTrigger(props: TooltipTriggerProps) {
   return <RACTooltipTrigger delay={delay} closeDelay={closeDelay} {...rest} />;
 }
 
+/** Props for {@link Tooltip}, on top of React Aria's `Tooltip` props. */
 export type TooltipProps = Omit<RACTooltipProps, 'children' | 'className'> & {
   children?: ReactNode;
   className?: string;

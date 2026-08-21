@@ -9,6 +9,7 @@ import {
 } from 'react-aria-components';
 import s from './Dialog.module.css';
 
+/** Props for {@link Dialog}, on top of React Aria's `ModalOverlay` props. */
 export type DialogProps = Omit<ModalOverlayProps, 'children' | 'className'> & {
   /** Heading rendered in the dialog's default header. Omit when supplying
    *  a custom `header` slot via children. */

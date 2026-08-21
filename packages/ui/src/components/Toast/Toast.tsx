@@ -9,8 +9,10 @@ import { defaultToastQueue, racQueueOf, type ToastQueue, type ToastTone } from '
 import s from './Toast.module.css';
 import './toastViewTransitions.css';
 
+/** Screen corner a toast stack anchors to. */
 export type ToastPlacement = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 
+/** Props for {@link ToastRegion}. */
 export interface ToastRegionProps {
   /** Queue to render. Defaults to the module-level `defaultToastQueue`. */
   queue?: ToastQueue;
