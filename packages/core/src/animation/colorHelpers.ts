@@ -22,6 +22,7 @@ export type ColorInterpolate = (
   t: number,
 ) => number[];
 
+/** Options for `tweenVertexColors`. */
 export interface TweenVertexColorsOptions {
   id: string;
   channel: VertexColorChannel;
@@ -63,6 +64,15 @@ function resolveInterpolator(
 const cancelKeyFor = (id: string, channel: VertexColorChannel): string =>
   `colors:${id}:${channel}`;
 
+/**
+ * Animate one node's per-anchor colors from `from` to `to` over `ms`.
+ *
+ * The colors are published to the animator's `colorOverrides` registry rather
+ * than written into the scene, so nothing is recorded in history and the
+ * node's own data is untouched; the override is dropped when the animation
+ * finishes. Starting another color animation on the same node and channel
+ * cancels this one.
+ */
 export function tweenVertexColors(
   animator: Animator,
   opts: TweenVertexColorsOptions,
@@ -87,6 +97,7 @@ export function tweenVertexColors(
   });
 }
 
+/** Options for `springVertexColors`. */
 export interface SpringVertexColorsOptions {
   id: string;
   channel: VertexColorChannel;
@@ -103,6 +114,8 @@ export interface SpringVertexColorsOptions {
   onDone?: () => void;
 }
 
+/** `tweenVertexColors` driven by a spring instead of a duration. Same override
+ *  semantics. */
 export function springVertexColors(
   animator: Animator,
   opts: SpringVertexColorsOptions,
@@ -130,6 +143,7 @@ export function springVertexColors(
   });
 }
 
+/** Options for `cycleVertexColors`. */
 export interface CycleVertexColorsOptions {
   id: string;
   channel: VertexColorChannel;
@@ -142,6 +156,9 @@ export interface CycleVertexColorsOptions {
   interpolate?: ColorInterpolate;
 }
 
+/** Removes an installed color cycle. Unlike the other color helpers this is
+ *  not an `AnimationHandle`, because a cycle has no progress to pause or
+ *  scale — it only ends. */
 export interface CycleHandle {
   cancel(): void;
 }
@@ -209,6 +226,9 @@ export function cycleVertexColors(
   };
 }
 
+/** Options for `staggerVertexColors`. `origin` picks which anchor the wave
+ *  starts from and `perAnchorDelay` how far behind each successive anchor
+ *  runs. */
 export interface StaggerVertexColorsOptions {
   id: string;
   channel: VertexColorChannel;
@@ -225,6 +245,9 @@ export interface StaggerVertexColorsOptions {
   onDone?: () => void;
 }
 
+/** Run the same color change across a node's anchors as a wave, each anchor
+ *  starting later than the one before it. Same override semantics as
+ *  `tweenVertexColors`. */
 export function staggerVertexColors(
   animator: Animator,
   opts: StaggerVertexColorsOptions,

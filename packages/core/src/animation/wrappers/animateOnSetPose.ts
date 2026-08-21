@@ -3,6 +3,7 @@ import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import type { SceneAdapter } from 'core/adapters/types';
 import type { Animator, EasingFn, SpringPresetName } from '../types';
 
+/** Options for `animateOnSetPose`. */
 export interface AnimateOnSetPoseOptions<TPose> {
   /** Default: 200ms tween with easeOut. */
   ms?: number;
@@ -31,6 +32,16 @@ export interface AnimateOnSetPoseOptions<TPose> {
   opLabel?: string;
 }
 
+/**
+ * Wrap an adapter so every `setPose` animates to the new pose instead of
+ * jumping to it. Anything that moves a node — a layout strategy, an action, a
+ * consumer's own code — is animated without knowing it, since the adapter is
+ * the single write path.
+ *
+ * Poses written from inside another animation's tick, and (optionally) poses
+ * written for a node currently under a gesture, are passed straight through:
+ * animating those would fight whatever is already driving the node.
+ */
 export function animateOnSetPose<TNode extends { id: string }, TPose>(
   adapter: SceneAdapter<TNode, TPose>,
   animator: Animator,

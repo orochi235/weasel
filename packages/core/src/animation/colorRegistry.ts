@@ -1,3 +1,4 @@
+/** Which of a node's two per-anchor color arrays an override applies to. */
 export type VertexColorChannel = 'fill' | 'stroke';
 
 /** Function-form override: receives the consumer-supplied base color
