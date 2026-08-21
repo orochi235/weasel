@@ -21,10 +21,13 @@ import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoSt
 import type { UndoBindings } from './WorkspaceChrome';
 import { WorkspaceChrome } from './WorkspaceChrome';
 
+/** Props for `<Workspace>`. */
 export interface WorkspaceProps {
   id: string;
 }
 
+/** Renders one workspace from the lab store: looks up its record and
+ *  instrument, and mounts the instrument inside the workspace chrome. */
 export function Workspace({ id }: WorkspaceProps) {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);

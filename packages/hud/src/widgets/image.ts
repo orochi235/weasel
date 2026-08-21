@@ -1,6 +1,7 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, ImageDrawCommand } from '@weasel-js/core/renderer';
 
+/** Options for an image widget. */
 export interface ImageOptions {
   id: string;
   x: number; y: number; w: number; h: number;
@@ -15,6 +16,7 @@ export interface ImageOptions {
   removeFromHud?: () => void;
 }
 
+/** Draws an `ImageBitmap` into its bounds, stretched to fit. */
 export interface ImageWidget extends Widget {
   setImage(image: ImageBitmap): void;
   setBounds(b: WidgetBounds): void;

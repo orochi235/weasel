@@ -45,6 +45,8 @@ const CASCADE_OFFSET_PX = 24;
 const VIEWPORT_FIT = 0.9;
 const GRADIENT_FALLBACK = '#888888';
 
+/** Axis-aligned box, in the coordinate space of the SVG being unpacked. Used
+ *  for the bounds a draft occupies before it becomes a scene node. */
 export interface SvgDraftBounds {
   x: number;
   y: number;

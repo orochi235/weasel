@@ -8,6 +8,7 @@ import {
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
 } from './zones';
 
+/** Options for a window widget. */
 export interface WindowOptions {
   id: string;
   x: number; y: number; w: number; h: number;
@@ -32,6 +33,11 @@ export interface WindowOptions {
   removeFromHud?: () => void;
 }
 
+/**
+ * A draggable, edge-resizable frame with an optional titlebar and close box.
+ * The frame is all it draws; an interior comes from the `content` painter,
+ * clipped to `contentRect`. `createLoupe` is the worked example.
+ */
 export interface WindowWidget extends Widget {
   readonly contentRect: WidgetBounds;
   setBounds(b: WidgetBounds): void;

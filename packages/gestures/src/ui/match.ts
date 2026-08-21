@@ -36,6 +36,8 @@ import type { PhaseAtom } from '../grammar/routeGrammar';
 // matchModifiers
 // ---------------------------------------------------------------------------
 
+/** The modifier-state fields `matchModifiers` reads. Structural, so a DOM
+ *  `KeyboardEvent` or `PointerEvent` satisfies it directly. */
 export type ModifiersEvent = { altKey: boolean; ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
 
 /** Per-physical-key requirement resolved from a `ModSpec`:

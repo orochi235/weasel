@@ -2,6 +2,8 @@
 
 import type { RawToken } from '../dtcg/types';
 
+/** Every design token the built-in themes declare, spelled as the CSS
+ *  custom property it becomes. */
 export type TokenName =
   | '--wzl-accent'
   | '--wzl-accent-base'
@@ -87,12 +89,16 @@ export type TokenName =
   | '--wzl-z-overlay'
   | '--wzl-z-toolbar';
 
+/** A built-in theme with its aliases already collapsed: every mode maps
+ *  every token name to a final CSS value. */
 export interface GeneratedTheme {
   readonly name: string;
   readonly defaultMode: string;
   readonly modes: Readonly<Record<string, Readonly<Record<TokenName, string>>>>;
 }
 
+/** The built-in themes, resolved, keyed by theme name. Read this to list
+ *  or preview themes without resolving a token graph yourself. */
 export const THEMES = {
   "weasel": {
     name: "weasel",
@@ -279,6 +285,8 @@ export interface ThemeSource {
   readonly modes: Readonly<Record<string, Readonly<Record<string, RawToken>>>>;
 }
 
+/** The same built-in themes as `THEMES`, unresolved. This is what
+ *  `defineTheme` layers onto. */
 export const THEME_SOURCES: Readonly<Record<string, ThemeSource>> = {
   "weasel": {
     "primitives": {

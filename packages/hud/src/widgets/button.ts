@@ -2,9 +2,13 @@ import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widge
 import type { DrawCommand, PathDrawCommand } from '@weasel-js/core/renderer';
 import { textCommand } from '@weasel-js/core';
 
+/** The events a button reports through `on` / `off`. */
 export type ButtonEvent = 'press' | 'hover' | 'leave';
+/** A button event listener. */
 export type ButtonHandler = () => void;
 
+/** Options for a button widget. The three fill colors cover its rest, hover
+ *  and pressed states. */
 export interface ButtonOptions {
   id: string;
   x: number; y: number; w: number; h: number;
@@ -24,6 +28,8 @@ export interface ButtonOptions {
   removeFromHud?: () => void;
 }
 
+/** A clickable labeled box that tracks hover and press state itself and
+ *  reports them to listeners. */
 export interface ButtonWidget extends Widget {
   setLabel(label: string): void;
   setBounds(b: WidgetBounds): void;

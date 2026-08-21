@@ -1,5 +1,6 @@
 import type { Op } from 'core/ops/types';
 
+/** A layout container's extent in world units. */
 export type ContainerBounds = {
   x: number;
   y: number;
@@ -7,11 +8,15 @@ export type ContainerBounds = {
   height: number;
 };
 
+/** A child a layout strategy is arranging. */
 export interface LayoutChild<TPose> {
   id: string;
   pose: TPose;
 }
 
+/** One place a dragged child could land. A strategy offers these as the drag
+ *  moves, a `LayoutSnap` picks between them, and the chosen one decides both
+ *  the preview and the committed poses. */
 export interface DropTarget<TPose> {
   /** Where the dragged child lands if this target is picked. */
   pose: TPose;
@@ -28,6 +33,9 @@ export interface DropTarget<TPose> {
   meta?: unknown;
 }
 
+/** Chooses which of a strategy's drop targets the pointer means, or `null`
+ *  to reject the drop. Separate from the strategy so the same arrangement can
+ *  be paired with different snapping rules. */
 export interface LayoutSnap<TPose> {
   pickTarget(
     targets: DropTarget<TPose>[],
@@ -35,11 +43,14 @@ export interface LayoutSnap<TPose> {
   ): DropTarget<TPose> | null;
 }
 
+/** The container a layout strategy is arranging children within. */
 export interface LayoutContainer {
   id: string;
   bounds: ContainerBounds;
 }
 
+/** The child currently being dragged: where it started, where the pointer
+ *  currently proposes it goes, and which container it came from. */
 export interface LayoutDragged<TPose> {
   id: string;
   /** The pose the dragged child currently has (pre-drop). */
@@ -49,6 +60,15 @@ export interface LayoutDragged<TPose> {
   sourceContainerId: string | null;
 }
 
+/**
+ * How a container arranges its children, and what happens when one is dragged
+ * into or around it.
+ *
+ * The four required methods cover the whole cycle: `childPoses` is the resting
+ * arrangement, `getDropTargets` enumerates where a drag could land,
+ * `reflowPoses` is the live preview once a target is picked, and `commitDrop`
+ * turns the result into ops so the drop is undoable.
+ */
 export interface LayoutStrategy<TPose> {
   childPoses(
     container: LayoutContainer,

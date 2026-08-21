@@ -23,6 +23,14 @@ import { ActiveToolContextProviderIfRoot } from './interactions/actions/activeTo
 import { SelectionContextProviderIfRoot } from './features/selection/SelectionContext';
 import { PointerProviderIfRoot } from './canvas/SceneCanvas/PointerProviderIfRoot';
 
+/**
+ * Mounts every kit-wide provider at once — deps, actions, active tool,
+ * selection and pointer — each only if one is not already in scope.
+ *
+ * `<SceneCanvas>` does this for itself, so this is for the case where kit
+ * state has to be shared by things outside a canvas: a toolbar, a property
+ * panel, or two canvases that should agree on the selection.
+ */
 export function WeaselProvider({ children }: { children: ReactNode }) {
   return (
     <DepRegistryProviderIfRoot>

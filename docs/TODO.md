@@ -767,4 +767,58 @@ From the WebGL transition spec — all deferred:
   thirteen times) versus per-package pages, and whether it is generated at build
   time from the markdown or rendered by a route.
 
-- **(P3) JSDoc audit at definition sites.** A one-pass sweep at definition sites for any public export still lacking a JSDoc string. (Barrel section headers already landed in `packages/core/src/index.ts`; per-symbol JSDoc lives at original definitions.) File a follow-up if a specific export turns up undocumented.
+- **(P3) JSDoc audit at definition sites — done; two follow-ups open.** Every
+  public export of every package, `@weasel-js/ui` included, now has a JSDoc
+  string at its definition site. `npm run audit:jsdoc` re-derives the claim: it
+  walks each package's published entry points, resolves every reachable export
+  to where it is declared, and reports what is missing. It also reports any
+  export whose own JSDoc says `@internal` yet reaches a consumer entry point;
+  that count is currently zero. Run it before adding an export, not as a
+  periodic sweep.
+
+  What the sweep turned up. The first two are resolved; the last two are open:
+
+  - **`@weasel-js/font`'s reset seams moved off the package barrel** to a
+    `@weasel-js/font/test-seams` entry point. Six of them, not the four the
+    audit first reported — `_resetFontRegistryForTests` and
+    `_resetFallbackForTests` are the same kind of thing without the `@internal`
+    marker that made the others visible to the script. They exist because font
+    registration, the fallback policy, the dynamic atlas and the outline
+    registry are global module state, so a test in another workspace that sets
+    one has to put it back; that need is unchanged, and the seams are still
+    published — an application importing the barrel just no longer sees them.
+    `packages/font/src/barrel.test.ts` pins both halves. `@weasel-js/core` is
+    not affected: its barrel never exported a test helper, and its own tests
+    reach them relatively.
+  - **`evaluateEnabled` is public, and its detached `@internal` marker was the
+    stale part.** `@weasel-js/ui`'s `ActionBar` and weaseldraw's command palette
+    both call it through core's barrel, so marking it internal would have
+    described two existing consumers out of existence. It is now `@experimental`
+    at its own definition, matching `ActionEnabledResult` and the rest of the
+    `enabled` predicate surface.
+  - **Six typedoc warnings, all the same shape and all pre-existing** (the count
+    did not move across the sweep). Each is a type referenced by an exported
+    symbol but not itself exported — `Scale2`, `DEFAULT_INK`,
+    `useContributions` in core; `LongPressSpec` and `LongPressEvent` in
+    gestures — plus eleven stale entries in `typedoc.json`'s
+    `intentionallyNotExported` list. These are barrel decisions, not docs bugs.
+    Note that typedoc does not warn about missing JSDoc, so its warning count
+    was never a coverage measure.
+  - **`@weasel-js/ui`'s live/committed callback pair is now spelled one way:
+    `onInput` live, `onChange` committed.** It used to be four ways, two of
+    which disagreed about what `onChange` meant. `Slider`, `ResizeHandle`,
+    `CurveEditor` and `PointPlotter` renamed toward the sense `ColorField`,
+    `GradientEditor` and `GradientHandles` already used, which is also the
+    DOM's — `input` fires continuously, `change` on commit.
+
+    Which of the two is *required* still differs, and that is deliberate:
+    `Slider`, `ResizeHandle`, `CurveEditor` and `PointPlotter` are fully
+    controlled, so without `onInput` the control freezes mid-drag and it is the
+    required one. `ColorField` and `GradientEditor` buffer internally, so
+    `onChange` is theirs. Required-ness follows the control's state model, not
+    the naming.
+
+    Untouched on purpose, all different concepts that merely share a word:
+    `CurveEditor`'s layer-gesture `onCommit(state, ctx)` in `layerTypes.ts`,
+    core's `thresholdDrag` `onCommit(e)`, and `SelectionPanel`'s
+    commit-on-blur text edit, which has no live counterpart to pair with.

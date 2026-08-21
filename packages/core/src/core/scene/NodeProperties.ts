@@ -43,6 +43,9 @@ export interface NodeProperties {
   list(): readonly NodePropertiesEntry[];
 }
 
+/** Build a registry of per-node-kind property descriptors, which schema-driven
+ *  property panels read to know what a node exposes. Registering a duplicate
+ *  kind name throws. */
 export function createNodeProperties(): NodeProperties {
   const entries: NodePropertiesEntry[] = [];
   const byName = new Map<string, NodePropertiesEntry>();

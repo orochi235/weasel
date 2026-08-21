@@ -20,6 +20,10 @@
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { asNodeId } from 'core/scene/types';
 
+/** Build the adapter the default actions commit through when the consumer
+ *  supplies no `applyOps` hook of its own — it applies ops straight to the
+ *  scene. Selection, path and text ops are not covered; those surfaces belong
+ *  to their own owners. */
 export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>) {
   return {
     getNode: (id: string) => scene.get(asNodeId(id)),

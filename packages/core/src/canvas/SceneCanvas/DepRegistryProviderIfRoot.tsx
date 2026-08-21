@@ -14,6 +14,8 @@ import {
   useOptionalDepRegistry,
 } from 'interactions/actions/depRegistry';
 
+/** Mount a `<DepRegistryProvider>` only when none is already in scope, so a
+ *  consumer's dep sources are not shadowed by a nested canvas. */
 export function DepRegistryProviderIfRoot({ children }: { children: ReactNode }) {
   const parent = useOptionalDepRegistry();
   if (parent) return <>{children}</>;

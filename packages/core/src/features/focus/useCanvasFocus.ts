@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+/** Options for `useCanvasFocus`. */
 export interface UseCanvasFocusOptions {
   /** Initial focus state. Default `false` — handles hidden until first click. */
   initial?: boolean;
@@ -17,6 +18,8 @@ export interface UseCanvasFocusOptions {
   tabIndex?: number;
 }
 
+/** What `useCanvasFocus` hands back: the focus state, the props that
+ *  maintain it, and a getter for reading it from per-frame code. */
 export interface CanvasFocusReturn {
   /** Live boolean — true when the element has DOM focus. Triggers re-renders
    *  when the focus state changes (set via React state). */
@@ -37,6 +40,8 @@ export interface CanvasFocusReturn {
   setFocused: (next: boolean) => void;
 }
 
+/** Track DOM focus on the canvas, so chrome that should only show while the
+ *  canvas is focused can be gated on it. */
 export function useCanvasFocus(options: UseCanvasFocusOptions = {}): CanvasFocusReturn {
   const { initial = false, tabIndex = 0 } = options;
   const [focused, setFocusedState] = useState<boolean>(initial);

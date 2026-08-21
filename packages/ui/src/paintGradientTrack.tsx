@@ -1,6 +1,14 @@
 import type { ReactNode, CSSProperties } from 'react';
 import type { TrackCtx } from './components/Slider';
 
+/**
+ * Options for {@link paintGradientTrack}.
+ *
+ * `gradient` maps a normalized position along the track (0 to 1) to a CSS
+ * color; `samples` is how many stops the resulting linear-gradient uses.
+ * `activeRange`, given in the slider's own value units, keeps that span at
+ * full strength and dims + hatches the rest.
+ */
 export type GradientTrackOpts = {
   gradient: (t: number) => string;
   samples?: number;
@@ -15,6 +23,11 @@ export type GradientTrackOpts = {
 
 const DEFAULT_HATCH = { angleDeg: 135, stripe: 2, gap: 4, dim: 75 };
 
+/**
+ * Builds a `Slider` `renderTrack` function that paints the track as a
+ * sampled color gradient, optionally dimming and hatching the portions
+ * outside an active range.
+ */
 export function paintGradientTrack(opts: GradientTrackOpts): (ctx: TrackCtx) => ReactNode {
   const { gradient, samples = 16, activeRange, hatch } = opts;
 

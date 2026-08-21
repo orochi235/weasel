@@ -2,6 +2,9 @@ import type { ModeRegistry } from './registry';
 import type { CapabilityTag } from './capabilities';
 import { eligibleForMode } from './modeDefinition';
 
+/** The part of a tool this package needs in order to judge eligibility: its
+ *  id and the capabilities it claims. Structural, so a real `ToolDef`
+ *  satisfies it without this package depending on the kit. */
 export interface ToolLike {
   id: string;
   capabilities?: readonly CapabilityTag[];

@@ -8,7 +8,8 @@
  * more than the hit rate.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { _resetFontRegistryForTests, registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { cachedLayoutRuns, _resetLayoutCacheForTests, LAYOUT_CACHE_VARIANT_LIMIT } from './layoutCache';
 import type { ResolvedRun } from 'features/text/runs/resolveRuns';
 

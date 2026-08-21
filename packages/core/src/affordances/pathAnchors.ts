@@ -29,6 +29,7 @@ export interface AnchorState {
   getPose(id: string): unknown;
 }
 
+/** Options for the path-anchor affordances. */
 export interface PathAnchorAffordanceOptions {
   /** Hit radius (screen-px) for anchor and control points. Default 8. */
   hitRadius?: number;
@@ -36,6 +37,9 @@ export interface PathAnchorAffordanceOptions {
   cursor?: string;
 }
 
+/** What an anchor hit hands to the action that follows: which path, which
+ *  anchor, and whether the grab was on the anchor itself or one of its two
+ *  control points. */
 export interface AnchorScratch extends CommonAffordanceScratch {
   /** Node id of the path the anchor belongs to. */
   targetId: string;

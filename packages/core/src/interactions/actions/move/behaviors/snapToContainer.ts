@@ -34,6 +34,14 @@ function clearTimer<TPose>(s: SnapState<TPose>) {
   s.pendingTargetId = null;
 }
 
+/**
+ * Move behavior that drops the dragged node into a container it hovers over
+ * for `dwellMs`, reparenting it and taking the pose the container's layout
+ * assigns.
+ *
+ * The dwell is what keeps a drag that merely passes over a container from
+ * being captured by it.
+ */
 export function snapToContainer<TPose>(args: {
   dwellMs: number;
   findTarget: (

@@ -1,6 +1,8 @@
 import { type RefObject, useEffect, useRef } from 'react';
 import type { ViewTransform } from '../instrument/types';
 
+/** One layer of a canvas stack: its id, whether it is currently shown, and how
+ *  it paints itself. */
 export interface CanvasLayerDescriptor {
   id: string;
   visible: boolean;

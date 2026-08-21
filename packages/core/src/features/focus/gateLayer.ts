@@ -10,6 +10,7 @@
  */
 import type { RenderLayer } from 'core/layers/render';
 
+/** Options for `gateLayer`. */
 export interface GateLayerOptions<TData> {
   /** The wrapped layer. Its `id`, `label`, `defaultVisible`, `alwaysOn`,
    *  `space` flow through unchanged. */
@@ -18,6 +19,9 @@ export interface GateLayerOptions<TData> {
   visible: () => boolean;
 }
 
+/** Wrap a render layer so it only draws while `visible()` is true. The
+ *  predicate is consulted per frame, which is how chrome follows canvas focus
+ *  without the layer knowing anything about focus. */
 export function gateLayer<TData>(opts: GateLayerOptions<TData>): RenderLayer<TData> {
   const { layer, visible } = opts;
   const wrapped: RenderLayer<TData> = {

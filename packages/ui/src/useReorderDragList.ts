@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { ReactNode, PointerEvent as ReactPointerEvent, RefCallback } from 'react';
 
+/** One row in a reorderable list. */
 export interface LayerListItem {
   id: string;
   label: ReactNode;
@@ -11,6 +12,10 @@ export interface LayerListItem {
   swatch?: string;
 }
 
+/**
+ * Options for {@link useReorderDragList}. `onReorder` receives the dragged ids
+ * and the index they were dropped at, measured against the pre-drag `items`.
+ */
 export interface UseReorderDragListOptions {
   items: LayerListItem[];
   selectedIds: string[];
@@ -19,11 +24,19 @@ export interface UseReorderDragListOptions {
   threshold?: number;
 }
 
+/**
+ * Live drag state for rendering feedback: which ids are being dragged and the
+ * insertion index the drop would use. Both `null` when no drag is engaged.
+ */
 export interface ReorderDragState {
   draggedIds: string[] | null;
   targetIndex: number | null;
 }
 
+/**
+ * Props to spread onto the list container and each row, plus the live
+ * {@link ReorderDragState}.
+ */
 export interface ReorderDragHandlers {
   rowProps(id: string, index: number): { onPointerDown(e: ReactPointerEvent): void };
   containerProps: {
@@ -48,6 +61,16 @@ interface ActiveState extends PendingState {
   targetIndex: number;
 }
 
+/**
+ * Drag-to-reorder for a vertical list of rows. Dragging a row that is part of
+ * the current selection drags the whole selection; dragging any other row
+ * drags just that row. Locked rows can neither be dragged nor crossed by a
+ * drop. A drop that would leave a contiguous block where it already is does
+ * not call `onReorder`.
+ *
+ * The pointer is captured on the row, so a drag that leaves the list still
+ * tracks and still releases cleanly.
+ */
 export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDragHandlers {
   const { threshold = 4 } = opts;
   const optsRef = useRef(opts);

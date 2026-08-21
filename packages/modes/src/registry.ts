@@ -1,10 +1,16 @@
 import type { ModeDefinition } from './modeDefinition';
 
+/** Options for `createModeRegistry`: the modes to register and which one is
+ *  active at startup. */
 export interface CreateModeRegistryOptions {
   modes: readonly ModeDefinition[];
   initial: string;
 }
 
+/** Holds the set of available modes and which one is active, and notifies
+ *  subscribers when that changes. `getVersion` is a monotonic counter for
+ *  render-cache invalidation. Unknown mode ids throw rather than being
+ *  ignored. */
 export interface ModeRegistry {
   current(): ModeDefinition;
   setMode(id: string): void;
@@ -13,6 +19,7 @@ export interface ModeRegistry {
   subscribe(listener: () => void): () => void;
 }
 
+/** Build a mode registry. Throws if `initial` does not name one of `modes`. */
 export function createModeRegistry(opts: CreateModeRegistryOptions): ModeRegistry {
   const byIdMap = new Map(opts.modes.map((m) => [m.id, m]));
   const initial = byIdMap.get(opts.initial);

@@ -12,6 +12,9 @@
 import type { FillStyle, Stroke } from 'core/paint-types';
 import type { TextStyle } from './textStyle';
 
+/** A span of text with its own styling, as authored. Fields left absent
+ *  inherit from the node's text style — this is the difference between a run
+ *  and a fully resolved one. */
 export interface StyledRun {
   text: string;
   bold?: boolean;
@@ -28,6 +31,8 @@ export interface StyledRun {
   strikethrough?: boolean;
 }
 
+/** Normalize the two accepted spellings of text content — a plain string or
+ *  an array of runs — to runs. Throws on a run with no string `text`. */
 export function toRuns(input: string | StyledRun[]): StyledRun[] {
   if (typeof input === 'string') {
     return input.length === 0 ? [] : [{ text: input }];
@@ -41,6 +46,7 @@ export function toRuns(input: string | StyledRun[]): StyledRun[] {
   return input;
 }
 
+/** Concatenate runs, dropping all styling. */
 export function runsToPlainText(runs: readonly StyledRun[]): string {
   let out = '';
   for (const r of runs) out += r.text;
@@ -51,6 +57,8 @@ function escapeMarkdown(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/\*/g, '\\*');
 }
 
+/** Render runs as Markdown, preserving bold and italic. The flavor written to
+ *  the clipboard alongside the plain-text one. */
 export function runsToMarkdown(runs: readonly StyledRun[]): string {
   let out = '';
   for (const r of runs) {

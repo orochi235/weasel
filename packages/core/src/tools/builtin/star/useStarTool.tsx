@@ -4,8 +4,10 @@ import { StarIcon } from '../../../icons';
 import type { Tool } from '../../types';
 import type { Action } from 'interactions/actions/registry';
 
+/** A point in world coordinates. */
 export interface StarPoint { x: number; y: number }
 
+/** Options for `useStarTool`. */
 export interface UseStarToolOptions {
   label?: string;
   /** Initial point count. Persists across gestures (Illustrator

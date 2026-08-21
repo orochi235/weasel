@@ -10,6 +10,10 @@ interface Point {
   y: number;
 }
 
+/**
+ * Props for {@link GradientHandles}. `onInput` fires throughout a drag and
+ * `onChange` once at its end.
+ */
 export interface GradientHandlesProps {
   /**
    * The gradient whose geometry these handles move, in a **resolved,

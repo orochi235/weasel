@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 
+/** Per-axis limits on a view's position. Any side may be left open. */
 export interface PanBounds {
   minX?: number;
   maxX?: number;
@@ -7,6 +8,8 @@ export interface PanBounds {
   maxY?: number;
 }
 
+/** How a decay should run: its starting velocity, how fast it slows, and what
+ *  happens if it reaches the pan limits. */
 export interface DecayLoopConfig {
   velocity: { vx: number; vy: number };
   friction?: number;
@@ -35,6 +38,8 @@ export interface DecayLoopConfig {
  */
 const SPRING_DAMPING = 0.5;
 
+/** A rAF loop that coasts a value to a stop under friction, reporting the
+ *  per-frame delta. What turns a released pan drag into momentum scrolling. */
 export function useDecayLoop() {
   const rafRef = useRef<number | null>(null);
   const stateRef = useRef<{

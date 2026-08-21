@@ -6,7 +6,7 @@ import {
   registerCanvasFont, unregisterCanvasFont, _resetDynamicFontsForTests,
 } from './dynamic/dynamicAtlas';
 import { registerTestFont } from './testing/registerTestFont';
-import { _resetFallbackForTests as resetFallbackFromBarrel } from './index';
+import { _resetFallbackForTests as resetFallbackFromSeams } from './test-seams';
 
 const ALL_POLICIES: readonly FontFallbackPolicy[] = ['substitute', 'canvas', 'none'];
 
@@ -398,10 +398,12 @@ describe('reset seams', () => {
     warn.mockRestore();
   });
 
-  it('is reachable from the package barrel like every other reset seam', () => {
+  it('is reachable from the test-seam entry like every other reset seam', () => {
     // Policy is global module state that changes rendering: a downstream
-    // package's test that sets one has to be able to unset it.
-    expect(resetFallbackFromBarrel).toBe(_resetFallbackForTests);
+    // package's test that sets one has to be able to unset it. It reaches
+    // them through `@weasel-js/font/test-seams` rather than the package
+    // barrel, so an application importing the barrel never sees them.
+    expect(resetFallbackFromSeams).toBe(_resetFallbackForTests);
   });
 });
 

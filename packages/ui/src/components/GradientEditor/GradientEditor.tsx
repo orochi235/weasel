@@ -21,6 +21,10 @@ const KINDS: readonly ToggleBarItem<GradientKind>[] = [
 /** Fewer than two stops is not a gradient any renderer can ramp between. */
 const MIN_STOPS = 2;
 
+/**
+ * Props for {@link GradientEditor}. `onInput` fires throughout a gesture and
+ * `onChange` once at its end.
+ */
 export interface GradientEditorProps {
   /** The gradient being edited. */
   value: GradientFill;
@@ -97,8 +101,8 @@ export function GradientEditor(props: GradientEditorProps): ReactElement {
         thumbs={thumbs}
         ariaLabel="Gradient stops"
         readoutPlacement="none"
-        onChange={(next) => onInput?.(withStops(applyThumbs(next)))}
-        onCommit={(next) => onChange(withStops(applyThumbs(next)))}
+        onInput={(next) => onInput?.(withStops(applyThumbs(next)))}
+        onChange={(next) => onChange(withStops(applyThumbs(next)))}
         onAddThumb={(at) => ({ value: at, color: sampleGradientStops(stops, at) })}
         onRemoveThumb={() => stops.length > MIN_STOPS}
         renderTrack={paintGradientTrack({

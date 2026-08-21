@@ -12,6 +12,8 @@
 /** Anything WebGL can upload as a texture. */
 export type TexSource = HTMLImageElement | ImageBitmap | ImageData | HTMLCanvasElement;
 
+/** The texture-upload surface the glyph tier needs. Core's `GLTextureCache`
+ *  satisfies it structurally, so nothing registers or adapts. */
 export interface GlyphTextureSink {
   has(id: string): boolean;
   upload(id: string, source: TexSource): string;

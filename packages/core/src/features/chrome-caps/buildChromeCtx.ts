@@ -17,6 +17,7 @@ import type { ModifierState } from '../../interactions/gestures/types';
 import type { View } from '../../core/viewport/view';
 import type { ChromeCtx } from './types';
 
+/** The pieces of live canvas state a `ChromeCtx` is assembled from. */
 export interface BuildChromeCtxArgs {
   focused: boolean;
   selection: readonly NodeId[];
@@ -27,6 +28,8 @@ export interface BuildChromeCtxArgs {
   view: View;
 }
 
+/** Gather the current canvas state into the context that chrome-visibility
+ *  rules are evaluated against. Rebuilt per frame. */
 export function buildChromeCtx(args: BuildChromeCtxArgs): ChromeCtx {
   return {
     focused: args.focused,

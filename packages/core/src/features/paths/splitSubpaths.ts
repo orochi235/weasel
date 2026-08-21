@@ -14,6 +14,8 @@
 
 import { PATH_M, PATH_CMD_LENGTHS, type PolygonPath } from './types';
 
+/** Split a path into one path per subpath, cutting at each `M`. A path with a
+ *  single subpath comes back as a one-element array. */
 export function splitSubpaths(path: PolygonPath): PolygonPath[] {
   const { commands, coords, fillRule } = path;
   const out: PolygonPath[] = [];

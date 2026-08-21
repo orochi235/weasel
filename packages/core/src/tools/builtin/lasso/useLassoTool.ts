@@ -7,6 +7,8 @@ import { selectFromLasso } from 'interactions/actions/lasso-select/behaviors/sel
 import type { LassoHitMode, LassoSelectAdapter } from 'core/adapters/types';
 import type { ToolKeybinding } from '../../routeTypes';
 
+/** Options for `useLassoTool` — the lasso-select action's options plus the
+ *  tool's own hit mode and activation key. */
 export interface UseLassoToolOptions extends Pick<UseLassoSelectOptions,
   'behaviors' | 'transient' | 'label' | 'onGestureStart' | 'onGestureEnd' |
   'minVertexSpacing' | 'debug'> {

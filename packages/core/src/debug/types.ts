@@ -21,8 +21,11 @@ export interface DebugConfig {
   strokes?: Partial<DebugStrokes>;
 }
 
+/** The name of one debug-overlay feature — the keys of {@link DebugConfig}
+ *  that toggle a visualization. */
 export type DebugFeature = 'hitboxes' | 'handles' | 'bounds' | 'origins' | 'snap' | 'layers' | 'ids' | 'fps';
 
+/** Colors the debug overlay draws with, one entry per feature. */
 export interface DebugTheme {
   hitboxFill: string;
   hitboxStroke: string;
@@ -57,40 +60,51 @@ export interface DebugStrokes {
   snap: DebugStroke;
 }
 
+/** Which kind of handle a recorded handle marker represents. */
 export type HandleKind = 'corner' | 'rotation' | 'anchor';
 
+/** The geometry a hit region actually tests against, as reported to the debug
+ *  sink so the overlay can draw the real shape rather than its bounding box. */
 export type HitShape =
   | { kind: 'rect'; x: number; y: number; width: number; height: number; rotation?: number }
   | { kind: 'circle'; cx: number; cy: number; r: number }
   | { kind: 'path'; d: Path2D };
 
+/** A hit region tested during the current frame. */
 export interface RecordedHitbox {
   id: string;
   kind: 'body' | 'handle' | 'rotation' | 'anchor';
   shape: HitShape;
 }
 
+/** A handle drawn during the current frame, and where. */
 export interface RecordedHandle {
   id: string;
   position: { x: number; y: number };
   kind: HandleKind;
 }
 
+/** A node's bounds as computed during the current frame. */
 export interface RecordedBounds {
   id: string;
   bounds: { x: number; y: number; width: number; height: number };
 }
 
+/** A node's transform origin as used during the current frame. */
 export interface RecordedOrigin {
   id: string;
   point: { x: number; y: number };
 }
 
+/** A snap candidate considered during the current gesture, and whether it
+ *  won. Unlike the other records these survive across frames, until the
+ *  gesture ends. */
 export interface RecordedSnap {
   point: { x: number; y: number };
   accepted: boolean;
 }
 
+/** A render layer that drew during the current frame. */
 export interface RecordedLayer {
   id: string;
   label: string;
@@ -98,6 +112,7 @@ export interface RecordedLayer {
   index: number;
 }
 
+/** Everything the sink collected, ready for the overlay to draw. */
 export interface DebugSnapshot {
   hitboxes: RecordedHitbox[];
   handles: RecordedHandle[];
@@ -107,6 +122,14 @@ export interface DebugSnapshot {
   layers: RecordedLayer[];
 }
 
+/**
+ * Where the kit reports what it is doing so the debug overlay can draw it.
+ *
+ * Recording is push-based and cheap: hit-testers, handle painters and snap
+ * strategies call these as they run, whether or not any overlay is watching.
+ * Nothing here affects behavior — a sink that discards everything is a valid
+ * sink.
+ */
 export interface DebugSink {
   recordHitbox(id: string, kind: 'body' | 'handle' | 'rotation' | 'anchor', shape: HitShape): void;
   recordHandle(id: string, position: { x: number; y: number }, kind: HandleKind): void;

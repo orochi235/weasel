@@ -17,6 +17,8 @@ function initialView(instrument: Instrument): WorkspaceRecord['view'] {
     : { ...DEFAULT_VIEW, pan: { ...DEFAULT_VIEW.pan } };
 }
 
+/** Append a new workspace running `instrumentName`, at that instrument's
+ *  default config and initial state. */
 export function addWorkspace(
   workspaces: WorkspaceRecord[],
   instruments: Instrument[],
@@ -36,6 +38,8 @@ export function addWorkspace(
   return [...workspaces, record];
 }
 
+/** Insert a deep copy of a workspace directly after it. The copy starts with
+ *  an empty undo history — the original's is not shared. */
 export function cloneWorkspace(workspaces: WorkspaceRecord[], id: string): WorkspaceRecord[] {
   const sourceIdx = workspaces.findIndex((w) => w.id === id);
   const source = workspaces[sourceIdx];
@@ -51,12 +55,16 @@ export function cloneWorkspace(workspaces: WorkspaceRecord[], id: string): Works
   return [...workspaces.slice(0, sourceIdx + 1), clone, ...workspaces.slice(sourceIdx + 1)];
 }
 
+/** Remove a workspace, unless it is the last one — a lab always has at least
+ *  one. */
 export function closeWorkspace(workspaces: WorkspaceRecord[], id: string): WorkspaceRecord[] {
   if (workspaces.length <= 1) return workspaces;
   const next = workspaces.filter((w) => w.id !== id);
   return next.length === workspaces.length ? workspaces : next;
 }
 
+/** Return a workspace to its instrument's defaults, keeping its id and its
+ *  place in the list. */
 export function resetWorkspace(
   workspaces: WorkspaceRecord[],
   id: string,

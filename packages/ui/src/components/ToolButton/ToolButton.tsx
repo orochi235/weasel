@@ -3,6 +3,7 @@ import { Focusable } from 'react-aria-components';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './ToolButton.module.css';
 
+/** Props for {@link ToolButton}. */
 export interface ToolButtonProps {
   /** Icon node (typically an SVG component). */
   icon: ReactNode;

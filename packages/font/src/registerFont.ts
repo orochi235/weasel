@@ -19,11 +19,13 @@ import {
   claimFallbackWarning, _clearFallbackWarnings,
 } from './fallback';
 
+/** A registered face: its parsed metrics and the atlas image to sample. */
 export interface FontEntry {
   font: BmFont;
   bitmap: ImageBitmap;
 }
 
+/** Which face within a family. Defaults to weight 400, style `'normal'`. */
 export interface FontVariant {
   weight?: number;
   style?: 'normal' | 'italic';
@@ -59,6 +61,8 @@ export function getFont(
   return registry.get(family)?.get(variantKey(weight, style)) ?? null;
 }
 
+/** One family in the registry and the variants registered for it — what a
+ *  font picker can honestly offer. */
 export interface RegisteredFont {
   family: string;
   variants: readonly { weight: number; style: FontStyle }[];
@@ -83,6 +87,11 @@ export function listFonts(): readonly RegisteredFont[] {
   return out;
 }
 
+/**
+ * Fetch a baked MSDF atlas and its metrics, and register them as one variant
+ * of `family`. Resolves once the face is usable; re-registering a variant that
+ * is already present is a no-op.
+ */
 export async function registerFont(
   family: string,
   variant: FontVariant,
@@ -164,6 +173,9 @@ export function textureCacheKey(family: string, weight: number, style: FontStyle
 /** Kept as a no-op for context-restore call sites; per-cache dedup handles it now. */
 export function markAllFontsNotUploaded(): void {}
 
+/** What `resolveFontVariant` found: the atlas to draw with, the face it
+ *  actually landed on after walking the fallback chain, and what has to be
+ *  synthesized to cover the difference. */
 export interface ResolveResult {
   entry: FontEntry | null;
   /**

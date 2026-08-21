@@ -1,5 +1,9 @@
 import type { Animator, NodeId, PoseProjection } from '@weasel-js/core';
 
+/**
+ * Configuration for a `d3Bind` binding: how data keys map to scene nodes, and
+ * what the binding needs in order to place and animate them.
+ */
 export interface BindOptions<TData, TPose> {
   /** Stable id derivation per datum — the binding diffs old vs new state by this key. */
   key: (d: TData, i: number) => string;

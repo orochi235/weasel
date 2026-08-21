@@ -17,6 +17,7 @@ import type {
 
 // ── Public types ─────────────────────────────────────────────────────
 
+/** One anchor of a curve, in model space. */
 export interface ControlPoint {
   x: number;
   y: number;
@@ -25,10 +26,28 @@ export interface ControlPoint {
   locked?: boolean;
 }
 
+/**
+ * Whether a curve's points keep their x order. In `'1d'` an anchor cannot be
+ * dragged past its neighbors and a new point is inserted at its x position;
+ * in `'2d'` points are free to move anywhere and keep their list order.
+ */
 export type CurveDomain = '1d' | '2d';
+/**
+ * How much of a curve's first and last anchor the user may move: everything,
+ * only their y, or nothing.
+ */
 export type EndpointMode = 'free' | 'pinned-x' | 'pinned-both';
+/**
+ * Where a click adds a new anchor — on the curve itself, anywhere in the
+ * plot, or nowhere.
+ */
 export type AddPointMode = 'click-curve' | 'click-empty' | 'never';
 
+/**
+ * What a `renderAnchor` function is given for one anchor: the point, its
+ * index, its position in plot space (`cx`/`cy`), and the states that change
+ * how it should look.
+ */
 export interface AnchorRenderProps {
   point: ControlPoint;
   index: number;
@@ -40,15 +59,21 @@ export interface AnchorRenderProps {
   isEndpoint: boolean;
 }
 
+/**
+ * Per-instance curve-rendering overrides. Currently empty — passing `{}`
+ * means "draw the curve", and `false`/`null` means don't.
+ */
 export interface CurveSettings {
   // reserved for future per-instance overrides
 }
 
+/** Shades the region between the curve and one edge of the plot. */
 export interface FillSettings {
   side: 'below' | 'above';
   color?: string;
 }
 
+/** Configuration for {@link createFunctionLayer}. */
 export interface FunctionLayerConfig {
   /** Layer id; default `'function'`. Two instances on the same editor
    *  must have distinct ids. */
@@ -75,6 +100,11 @@ export interface FunctionLayerConfig {
   xClamp?: readonly [number, number];
 }
 
+/**
+ * The state a function layer owns. Treat it as opaque and round-trip it
+ * through `LayeredCurveEditor`'s `onLayerChange`; `points` is the part worth
+ * reading.
+ */
 export interface FunctionLayerState {
   points: readonly ControlPoint[];
   /** Layer-internal: the index of the anchor currently being dragged.
@@ -135,6 +165,15 @@ function resolveInterpolation(cfg: FunctionLayerConfig): InterpolationMode {
 
 // ── Factory ───────────────────────────────────────────────────────────
 
+/**
+ * Builds the built-in curve layer for `LayeredCurveEditor`: it draws the
+ * interpolated curve and its anchors, and handles dragging, inserting and
+ * deleting them.
+ *
+ * Several can coexist on one editor as long as their ids differ — plotting a
+ * derived read-only curve beside an editable one is the case it is shaped
+ * for, via `interactive: false`.
+ */
 export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<FunctionLayerState> {
   const id = cfg.id ?? 'function';
   const domain = cfg.domain ?? '2d';

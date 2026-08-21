@@ -10,8 +10,11 @@
 /** Control-presentation hints per kind — visually-equivalent renderings
  *  of the same value type. The persisted value is unchanged either way. */
 export type PrefNumberControl = 'input' | 'slider';
+/** Which control renders a {@link PrefBoolean}. */
 export type PrefBooleanControl = 'checkbox' | 'switch';
+/** Which control renders a {@link PrefString}. */
 export type PrefStringControl = 'input' | 'textarea';
+/** Which control renders a {@link PrefEnum}. */
 export type PrefEnumControl = 'select' | 'radio';
 
 interface PrefBase<K extends string, Value> {
@@ -43,6 +46,10 @@ export interface PrefNumberUnit {
   suffix?: string;
 }
 
+/**
+ * A numeric preference. `unit` lets the stored value stay in a canonical unit
+ * while the user edits a converted one.
+ */
 export interface PrefNumber extends PrefBase<'number', number> {
   min?: number;
   max?: number;
@@ -50,22 +57,27 @@ export interface PrefNumber extends PrefBase<'number', number> {
   control?: PrefNumberControl;
   unit?: PrefNumberUnit;
 }
+/** A boolean preference. */
 export interface PrefBoolean extends PrefBase<'boolean', boolean> {
   control?: PrefBooleanControl;
 }
+/** A free-text preference. */
 export interface PrefString extends PrefBase<'string', string> {
   control?: PrefStringControl;
 }
+/** A preference chosen from a fixed set of options. */
 export interface PrefEnum<T extends string = string> extends PrefBase<'enum', T> {
   options: readonly { value: T; label: string }[];
   control?: PrefEnumControl;
 }
 
+/** A color preference, stored as a hex string. */
 export interface PrefColor extends PrefBase<'color', string> {
   /** Value is `#rrggbb`, or `#rrggbbaa` when `alpha` is set. */
   alpha?: boolean;
 }
 
+/** The leaf kinds `PrefsForm` renders without a custom renderer. */
 export type BuiltinPref = PrefNumber | PrefBoolean | PrefString | PrefEnum | PrefColor;
 
 /**
@@ -77,6 +89,10 @@ export type BuiltinPref = PrefNumber | PrefBoolean | PrefString | PrefEnum | Pre
  */
 export interface PrefCustom extends PrefBase<string, unknown> {}
 
+/**
+ * Any leaf in a preference schema — a built-in kind, or an app-defined one
+ * rendered through `PrefsFormProps.renderers`.
+ */
 export type PrefLeaf = BuiltinPref | PrefCustom;
 
 /** Nestable group: branch nodes in the schema tree. */
@@ -86,6 +102,7 @@ export interface PrefGroup {
   children: Record<string, PrefLeaf | PrefGroup>;
 }
 
+/** Distinguishes a leaf from a group while walking a schema tree. */
 export function isPrefLeaf(node: PrefLeaf | PrefGroup): node is PrefLeaf {
   return 'kind' in node;
 }

@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import type { View } from 'core/viewport/view';
 import { clientToWorld } from 'core/viewport/clientToWorld';
 
+/** Props for `<CursorCoordsHud>`. */
 export interface CursorCoordsHudProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   viewRef: React.RefObject<View>;
@@ -29,6 +30,8 @@ interface HudState {
   anchor: { top: number; right: number } | null;
 }
 
+/** Debug overlay showing the pointer's client and world coordinates and the
+ *  current frame rate, pinned to the canvas's top-right corner. */
 export function CursorCoordsHud({ canvasRef, viewRef, offset }: CursorCoordsHudProps) {
   const [state, setState] = useState<HudState>({
     client: { x: 0, y: 0 }, world: null, inCanvas: false, anchor: null,

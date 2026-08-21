@@ -130,6 +130,7 @@ export function useDeviceProfile(overrides?: Partial<DeviceProfile>): DeviceProf
   );
 }
 
+/** Props for `<DeviceProfileProvider>`. */
 export interface DeviceProfileProviderProps {
   /** Partial override folded over detected facts. */
   value?: Partial<DeviceProfile>;

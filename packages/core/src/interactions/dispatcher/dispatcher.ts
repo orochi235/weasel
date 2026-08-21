@@ -159,6 +159,11 @@ export function recordModeSwitch(
 // Public API
 // ---------------------------------------------------------------------------
 
+/** Everything the dispatcher must consult to route one input event: the
+ *  registered actions and their deps, which tool is active, which hotkeys are
+ *  held, and — optionally — the chrome state that action eligibility rules are
+ *  evaluated against. Rebuilt per event rather than held, so the dispatcher
+ *  itself stays stateless apart from in-flight gestures. */
 export interface DispatcherContext {
   /** All registered actions; the dispatcher walks `.defaultBinding` for ambient bindings. */
   actions: ActionsRegistry;
@@ -304,6 +309,15 @@ export interface ResolveAllOptions {
   evaluateShadowed?: boolean;
 }
 
+/**
+ * Routes input events to actions.
+ *
+ * For each event it assembles the bindings in scope (hotkey, then active tool,
+ * then ambient), matches them in specificity order, filters by eligibility and
+ * each action's `enabled` gate, and invokes the first survivor. Ongoing
+ * actions — anything that runs across a drag — are kept in flight here and
+ * pumped with subsequent moves until the gesture ends.
+ */
 export interface Dispatcher {
   /**
    * Route an input event through the binding pipeline. Returns `'handled'`
@@ -482,6 +496,8 @@ function modifiersOf(e: {
   return { alt: e.altKey, ctrl: e.ctrlKey, meta: e.metaKey, shift: e.shiftKey };
 }
 
+/** Build a dispatcher. `getAction` overrides how action ids are resolved;
+ *  by default the `DispatcherContext`'s registry is used. */
 export function createDispatcher(opts?: {
   getAction?: (id: string) => Action | undefined;
 }): Dispatcher {

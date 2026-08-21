@@ -50,10 +50,13 @@ export function gridSnapStrategy<TPose>(
   spacing: UnitValue,
   unitSystem?: UnitSystem,
 ): SnapStrategy<TPose>;
+/** As above, additionally reporting each candidate to a debug sink. */
 export function gridSnapStrategy<TPose>(
   spacing: UnitValue,
   opts: { unitSystem?: UnitSystem; debug?: DebugSink },
 ): SnapStrategy<TPose>;
+/** As above, for a `TPose` that is not a rect: `origin` tells the strategy how
+ *  to read and write the pose's origin. */
 export function gridSnapStrategy<TPose>(
   spacing: UnitValue,
   opts: { unitSystem?: UnitSystem; origin: OriginProjection<TPose>; debug?: DebugSink },

@@ -13,6 +13,8 @@ import { resolveColor } from '../math/color';
 
 const RAMP_SIZE = 256;
 
+/** Bake gradient stops into a 256-entry RGBA lookup strip, which the shader
+ *  samples instead of evaluating stops per fragment. */
 export function buildGradientRamp(stops: GradStop[]): Uint8ClampedArray {
   const data = new Uint8ClampedArray(RAMP_SIZE * 4);
   if (stops.length === 0) return data;

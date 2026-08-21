@@ -10,17 +10,28 @@ import { scratchKey, getScratch, setScratch } from '../../../scratchKey';
 const SNAPSHOTS = scratchKey<Map<string, { id: string }>>('snapBackOrDelete.snapshots');
 const INDEXES = scratchKey<Map<string, number>>('snapBackOrDelete.indexes');
 
+/**
+ * Move behavior for a drag that is only meaningful near where it started:
+ * release inside `radius` and the node returns to its original pose; release
+ * outside it and the node either springs back anyway or is deleted, per
+ * `onFreeRelease`. A deletion is recorded as an undoable op with paint order
+ * preserved.
+ */
 export function snapBackOrDelete<TPose extends { x: number; y: number }>(args: {
   radius: number;
   onFreeRelease: 'snap-back' | 'delete';
   deleteLabel?: string;
 }): MoveBehavior<TPose>;
+/** As above, for a `TPose` that is not a rect: `origin` tells the behavior how
+ *  to read and write the pose's origin. */
 export function snapBackOrDelete<TPose>(args: {
   radius: number;
   onFreeRelease: 'snap-back' | 'delete';
   deleteLabel?: string;
   origin: OriginProjection<TPose>;
 }): MoveBehavior<TPose>;
+/** Snap back to the origin pose, or delete, depending on where the drag is
+ *  released. */
 export function snapBackOrDelete<TPose>(args: {
   radius: number;
   onFreeRelease: 'snap-back' | 'delete';

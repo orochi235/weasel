@@ -12,6 +12,9 @@
 import { PATH_C, PATH_L, PATH_M, PATH_Q, PATH_Z, type Path, type PolygonPath } from './types';
 import { PathBuilder } from './builder';
 
+/** One anchor of an editable path: its on-curve point plus the two control
+ *  handles that shape the segments either side of it. Handles are in the same
+ *  space as the point, and absent when the adjoining segment is straight. */
 export interface PenAnchor {
   x: number;
   y: number;
@@ -156,6 +159,8 @@ export function isAnchorSmooth(a: PenAnchor): boolean {
   return Math.abs(cross) < SMOOTH_THRESHOLD;
 }
 
+/** How many anchors a path has. Matches the per-anchor arrays the renderer
+ *  expects for `vertexColors`. */
 export function countPathAnchors(path: Path): number {
   if (path.kind === 'rect') return 4;
   const cmds = path.commands;

@@ -20,6 +20,8 @@ import type { FillStyle, Stroke } from 'core/paint-types';
 import type { StyledRun } from '../runs';
 import type { ResolvedTextStyle } from '../textStyle';
 
+/** A run with every style resolved against the node's text style — no
+ *  optional inheritance left. This is what layout and painting consume. */
 export interface ResolvedRun {
   text: string;
   fontFamily: string;
@@ -46,6 +48,8 @@ function numericWeight(w: number | string): number {
   return Number.isFinite(parsed) ? parsed : 400;
 }
 
+/** Resolve each run's styling against the node's text style, filling in
+ *  everything the run left inherited. */
 export function resolveRuns(
   runs: readonly StyledRun[],
   style: ResolvedTextStyle,

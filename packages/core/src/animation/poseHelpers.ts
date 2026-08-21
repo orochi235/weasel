@@ -3,6 +3,7 @@ import { RECT_POSE_DESCRIPTOR, type PoseProjection } from 'interactions/actions/
 import type { SceneAdapter } from 'core/adapters/types';
 import type { AnimationHandle, Animator, EasingFn, SpringPresetName } from './types';
 
+/** Options for `tweenPose`. */
 export interface TweenPoseOptions<TPose> {
   id: string;
   to: TPose;
@@ -19,6 +20,7 @@ export interface TweenPoseOptions<TPose> {
   onDone?: () => void;
 }
 
+/** Options for `springPose`. */
 export interface SpringPoseOptions<TPose> {
   id: string;
   to: TPose;
@@ -46,6 +48,15 @@ function recordTransformOp<TPose>(
   adapter.applyOps([op], label);
 }
 
+/**
+ * Animate one node's pose to `to` over `ms`, writing each frame through the
+ * adapter.
+ *
+ * Unlike the color helpers this really does move the node. Undo therefore has
+ * to be considered: by default a single transform op covering the whole
+ * animation is recorded up front, so one undo returns the node to where it
+ * started rather than replaying frames.
+ */
 export function tweenPose<TNode extends { id: string }, TPose>(
   animator: Animator,
   adapter: SceneAdapter<TNode, TPose>,
@@ -72,6 +83,8 @@ export function tweenPose<TNode extends { id: string }, TPose>(
   });
 }
 
+/** `tweenPose` driven by a spring instead of a duration. Same op-recording
+ *  behavior. */
 export function springPose<TNode extends { id: string }, TPose>(
   animator: Animator,
   adapter: SceneAdapter<TNode, TPose>,

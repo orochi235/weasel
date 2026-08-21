@@ -13,6 +13,8 @@ import { useRef } from 'react';
 import { useDepSource } from 'interactions/actions/depRegistry';
 import type { SliceDep } from 'interactions/actions/defaults/slice';
 
+/** Publish how a slice (knife cut) is performed, so the `slice` action can
+ *  run against the consumer's geometry. */
 export function useSliceDep(dep: SliceDep): void {
   const depRef = useRef(dep);
   depRef.current = dep;

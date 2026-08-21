@@ -87,6 +87,7 @@ export function parseFontStyle(style: string): { weight: number; style: OutlineF
   return { weight, style: italic ? 'italic' : 'normal' };
 }
 
+/** Options for `registerLocalFontOutlines`. */
 export interface LocalFontOutlinesOptions {
   /**
    * Restrict registration to these families. Defaults to every installed
@@ -97,6 +98,7 @@ export interface LocalFontOutlinesOptions {
   families?: readonly string[];
 }
 
+/** What `registerLocalFontOutlines` registered. */
 export interface LocalFontOutlinesResult {
   /** Families that now have at least one outline face, in menu order. */
   families: readonly string[];

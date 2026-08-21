@@ -1,11 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  _resetFontRegistryForTests, registerFont, FIXTURE_FONT,
-  registerCanvasFont, resetBakeBudget, setFontFallbackPolicy,
-  _resetFallbackForTests,
-  _resetDynamicFontsForTests, __setGlyphRasterizerForTests,
-  registerFontOutlines, glyphOutline, _resetFontOutlinesForTests,
+  registerFont,
+  FIXTURE_FONT,
+  registerCanvasFont,
+  resetBakeBudget,
+  setFontFallbackPolicy,
+  registerFontOutlines,
+  glyphOutline,
 } from '@weasel-js/font';
+import {
+  _resetFontRegistryForTests,
+  _resetFallbackForTests,
+  _resetDynamicFontsForTests,
+  __setGlyphRasterizerForTests,
+  _resetFontOutlinesForTests,
+} from '@weasel-js/font/test-seams';
 import { layoutRuns, _resetMissingGlyphWarningsForTests } from './layoutRuns';
 import { resolveRuns, type ResolvedRun } from '../runs/resolveRuns';
 import { resolveTextStyle } from '../textStyle';

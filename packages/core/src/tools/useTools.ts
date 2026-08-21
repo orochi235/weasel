@@ -7,6 +7,8 @@ import { useActiveToolContext } from '../interactions/actions/activeToolContext'
 import { useContributions } from '../contributions/useContributions';
 import type { Contribution, Eligibility, OverlayPosition } from '../contributions/types';
 
+/** Options for `useTools`: which tools exist, which one starts active, and
+ *  which run continuously regardless of the active one. */
 export interface UseToolsOptions {
   /** Initial active-slot tool id. Must exist in `registry`. */
   active: string;
@@ -18,6 +20,8 @@ export interface UseToolsOptions {
   ambient?: AnyTool[];
 }
 
+/** The tool registry's runtime surface: which tool is active, which is
+ *  temporarily held by a hotkey, and how to change either. */
 export interface ToolsApi {
   /** Current active-slot tool id. */
   active: string;

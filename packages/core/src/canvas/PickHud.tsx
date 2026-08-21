@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import type { View } from 'core/viewport/view';
 import s from './PickHud.module.css';
 
+/** Props for `<PickHud>`. */
 export interface PickHudProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   viewRef: React.RefObject<View>;
@@ -30,6 +31,8 @@ interface HudState {
   anchor: { top: number; right: number } | null;
 }
 
+/** Debug overlay listing every node under the pointer, with the one a click
+ *  would actually select shown in bold. */
 export function PickHud({ canvasRef, viewRef, pickEvery, pickBest, offset }: PickHudProps) {
   const [state, setState] = useState<HudState>({
     ids: [], best: null, inCanvas: false, anchor: null,

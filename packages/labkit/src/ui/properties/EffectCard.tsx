@@ -5,12 +5,15 @@ import { type CSSProperties, type ReactNode, useState } from 'react';
 // label flanked by a horizontal rule — no background, padding, or border;
 // purely a typographic divider. Ported from speech-balloons styles.css:277-313.
 
+/** Props for `<Subpanel>`. */
 export interface SubpanelProps {
   title: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
+/** A typographic divider inside a property list: a small title flanked by a
+ *  rule. Purely a heading — use `<PropertyGroup>` for a bordered section. */
 export function Subpanel({ title, children, className }: SubpanelProps) {
   const cls = className ? `lk-subpanel ${className}` : 'lk-subpanel';
   return (
@@ -29,6 +32,7 @@ export function Subpanel({ title, children, className }: SubpanelProps) {
 // per-instance recolors the title bar, border-left, and (via re-binding --wzl-accent
 // inside the card) every descendant control that reads from the accent token.
 
+/** Props for `<EffectCard>`. */
 export interface EffectCardProps {
   /** Card title rendered in the title bar (e.g. effect kind label or a select). */
   title: ReactNode;
@@ -59,6 +63,9 @@ export interface EffectCardProps {
   className?: string;
 }
 
+/** An accented, collapsible card for one item in a list of like things —
+ *  effects, layers, tails. The accent color rebinds the theme accent token
+ *  within the card, so its controls pick it up too. */
 export function EffectCard({
   title,
   primary,
@@ -182,10 +189,12 @@ function DragHandleIcon() {
 // onReorder fires with (sourceId, targetId, position) on drop. Mirrors the
 // LayerStack pattern from speech-balloons Lab.tsx:630-707.
 
+/** The minimum an item must carry to appear in an `<EffectCardList>`. */
 export interface EffectCardListItem {
   id: string | number;
 }
 
+/** Props for `<EffectCardList>`. */
 export interface EffectCardListProps<T extends EffectCardListItem> {
   items: ReadonlyArray<T>;
   renderItem: (
@@ -217,6 +226,9 @@ export interface EffectCardListProps<T extends EffectCardListItem> {
   defaultExpandedIds?: ReadonlyArray<T['id']>;
 }
 
+/** A drag-reorderable list of `<EffectCard>`s. Owns the expanded and dragging
+ *  state and hands it back to `renderItem`, so the caller only supplies each
+ *  card's contents. */
 export function EffectCardList<T extends EffectCardListItem>({
   items,
   renderItem,

@@ -4,6 +4,7 @@ import type { LabMode } from '../state/types';
 import { interstellarTheme } from '../theme/interstellar';
 import { useResolvedMode } from './useSystemMode';
 
+/** Props for `<LabShell>`. */
 export interface LabShellProps {
   title: string;
   children: ReactNode;
@@ -15,6 +16,9 @@ export interface LabShellProps {
   mode?: LabMode;
 }
 
+/** Page frame for a lab: a titled header, a body, and an optional footer,
+ *  themed for the resolved color mode. Presentational only — use `<Lab>` when
+ *  the workspace runtime is wanted too. */
 export function LabShell({ title, children, header, footer, mode = 'auto' }: LabShellProps) {
   const resolved = useResolvedMode(mode);
   const outer = useThemeOptional();

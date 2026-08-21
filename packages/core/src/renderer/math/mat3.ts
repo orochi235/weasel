@@ -97,6 +97,10 @@ function screenToClip(width: number, height: number): Mat3 {
   );
 }
 
+/** The renderer's 3x3 matrix operations, as one namespace. These work on the
+ *  9-element `Float32Array` form the GL uniform upload wants — distinct from
+ *  `@weasel-js/geom`'s 6-element affine `Mat3`, though the logical element
+ *  order is the same. */
 export const mat3 = {
   identity,
   multiply,

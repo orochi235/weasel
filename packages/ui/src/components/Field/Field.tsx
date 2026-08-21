@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react';
 import s from './Field.module.css';
 
+/**
+ * Whether a {@link Field} stacks its label above the control or sits them
+ * side by side.
+ */
 export type FieldOrientation = 'stacked' | 'row';
 
+/** Props for {@link Field}. */
 export type FieldProps = {
   orientation?: FieldOrientation;
   className?: string;
@@ -23,6 +28,10 @@ export function Field({ orientation = 'stacked', className, children }: FieldPro
   return <div className={cls}>{children}</div>;
 }
 
+/**
+ * The class names {@link Field} paints its slots with, so a control composing
+ * its own layout can match the same form-row rhythm.
+ */
 export const fieldClasses = {
   root: s.field,
   row: s.row,

@@ -14,6 +14,8 @@ import type {
   WorkspaceRecord,
 } from './types';
 
+/** Every mutation a lab store supports: managing workspaces, saving and
+ *  restoring snapshots, and setting the color mode. */
 export interface LabStoreActions {
   addWorkspace: (record: Omit<WorkspaceRecord, 'undoStack'>) => void;
   removeWorkspace: (id: string) => void;
@@ -34,10 +36,14 @@ export interface LabStoreActions {
   setMode: (mode: LabMode) => void;
 }
 
+/** A lab's store: its state and actions, plus the hook instruments use to
+ *  register how their state is serialized. */
 export type LabStore = StoreApi<LabStoreState & LabStoreActions> & {
   registerSerializers: (s: InstrumentSerializers) => void;
 };
 
+/** Build a lab store, hydrating from storage if anything was saved under the
+ *  same key. Writes back are debounced. */
 export function createLabStore(options: CreateLabStoreOptions): LabStore {
   let serializers: InstrumentSerializers = {};
   let flushTimer: ReturnType<typeof setTimeout> | null = null;

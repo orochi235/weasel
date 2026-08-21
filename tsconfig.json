@@ -49,6 +49,7 @@
       "@weasel-js/geom/booleans": ["./packages/geom/src/booleans/index.ts"],
       "@weasel-js/geom/*": ["./packages/geom/src/*"],
       "@weasel-js/font": ["./packages/font/src/index.ts"],
+      "@weasel-js/font/test-seams": ["./packages/font/src/test-seams.ts"],
       "@weasel-js/theme": ["./packages/theme/src/index.ts"],
       "@weasel-js/theme/react": ["./packages/theme/src/react.tsx"],
       "@weasel-js/theme/tokens.css": ["./packages/theme/src/generated/tokens.css"],

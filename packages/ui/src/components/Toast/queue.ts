@@ -1,6 +1,7 @@
 import { UNSTABLE_ToastQueue } from 'react-aria-components';
 import { flushSync } from 'react-dom';
 
+/** Severity of a toast, driving its accent color and icon. */
 export type ToastTone = 'info' | 'success' | 'warning' | 'error';
 
 /** Kit-owned payload rendered inside each toast. */
@@ -10,6 +11,7 @@ export interface ToastContent {
   tone: ToastTone;
 }
 
+/** Options for a single toast. */
 export interface ToastOptions {
   description?: string;
   /**
@@ -121,6 +123,11 @@ export class ToastQueue {
   }
 }
 
+/**
+ * Creates an independent toast queue. Most apps use the module-level
+ * `defaultToastQueue` that `toast()` writes to; make your own when a surface
+ * needs its own stack, and pass it to `ToastRegion`.
+ */
 export function createToastQueue(): ToastQueue {
   return new ToastQueue();
 }

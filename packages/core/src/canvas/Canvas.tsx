@@ -163,11 +163,17 @@ export type StandardSlotConfig<TNode extends { id: string }, TPose> =
   | SceneSlotConfig<TNode, TPose>
   | SelectionOverlaySlotConfig<TPose>;
 
+/** What may fill one of the canvas's named layer slots: a config the canvas
+ *  builds the layer from, a pre-built layer, or `null` to leave the slot
+ *  empty. */
 export type LayerSlotValue<TNode extends { id: string }, TPose> =
   | StandardSlotConfig<TNode, TPose>
   | CustomLayerEntry
   | null;
 
+/** The canvas's render stack, as named slots. The standard slots (grid,
+ *  scene, selection overlay, cell highlight) can be configured, replaced with
+ *  a layer of your own, or switched off; further keys add custom layers. */
 export type LayersMap<TNode extends { id: string }, TPose> = {
   grid?: GridSlotConfig | null;
   scene?: SceneSlotConfig<TNode, TPose> | null;

@@ -99,6 +99,9 @@ export function _extractUniformNamesForTests(glsl: string): string[] {
   return extractUniformNames(glsl);
 }
 
+/** How to construct a `WeaselRenderer`: the GL context or canvas to draw
+ *  into, the output size, and the quality knobs that separate screen
+ *  rendering from print. */
 export interface WeaselRendererOptions {
   gl?: WebGL2RenderingContext;
   canvas?: HTMLCanvasElement;
@@ -132,6 +135,14 @@ export interface WeaselRendererOptions {
   textOutlineMinScreenSize?: number;
 }
 
+/**
+ * The WebGL2 renderer: takes a list of draw commands and paints them.
+ *
+ * It knows nothing about the scene — commands are the whole interface, which
+ * is what lets layers, HUD widgets and overlays all draw through the same
+ * pipeline. GPU resources (meshes, textures, gradient ramps) are cached across
+ * frames and keyed by identity, so re-issuing the same command is cheap.
+ */
 export class WeaselRenderer {
   private readonly gl: WebGL2RenderingContext;
   private pathFill: ShaderProgram;

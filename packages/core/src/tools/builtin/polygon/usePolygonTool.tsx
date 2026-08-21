@@ -4,8 +4,10 @@ import { PolygonIcon } from '../../../icons';
 import type { Tool } from '../../types';
 import type { Action } from 'interactions/actions/registry';
 
+/** A point in world coordinates. */
 export interface PolygonPoint { x: number; y: number }
 
+/** Options for `usePolygonTool`. */
 export interface UsePolygonToolOptions {
   label?: string;
   /** Initial side count. Side count persists across gestures

@@ -28,6 +28,7 @@ import {
 } from './model';
 import s from './SelectionPanel.module.css';
 
+/** What a {@link PropertyRenderer} is given for the property it is rendering. */
 export interface PropertyRenderContext {
   /** Dotted node path of the leaf (`pose.x`, `data.fill`). */
   path: string;
@@ -41,8 +42,13 @@ export interface PropertyRenderContext {
   setValue: (value: unknown) => void;
 }
 
+/**
+ * Renders the control for one property across the whole selection.
+ * Returning `null` collapses the leaf.
+ */
 export type PropertyRenderer = (ctx: PropertyRenderContext) => ReactNode;
 
+/** Props for {@link SelectionPanel}. */
 export interface SelectionPanelProps<TData, TLayer extends string, TPose> {
   /** The scene handle (`useScene`). The panel subscribes itself, so it
    *  re-renders on scene mutations regardless of parent renders. */

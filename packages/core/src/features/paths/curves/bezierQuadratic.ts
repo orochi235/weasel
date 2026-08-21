@@ -97,6 +97,7 @@ function quadDeriv2(
   };
 }
 
+/** Quadratic bezier: one control point per segment. Cheaper than cubic and what TrueType glyph outlines use, at the cost of expressiveness. */
 export const bezierQuadratic: CurveRepresentation = {
   kind: 'bezierQuadratic',
   label: 'Quadratic Bezier',

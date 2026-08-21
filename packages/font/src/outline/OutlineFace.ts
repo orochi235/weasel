@@ -26,6 +26,8 @@
 /** Weight/style pair identifying one face within a family. */
 export type OutlineFontStyle = 'normal' | 'italic';
 
+/** A parsed font face, viewed only as a source of glyph outlines. See the
+ *  module comment for the em-space contract `glyphD` returns. */
 export interface OutlineFace {
   /** Font design units per em. Reported for diagnostics; `glyphD` has already
    *  divided by it, so callers never need to. */

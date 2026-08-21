@@ -22,6 +22,9 @@ import type { DepSchema, DepName } from './depSchema';
 
 export type { DepSchema, DepName };
 
+/** Holds the live sources an action's declared dependencies resolve to.
+ *  Sources are thunks, read at invocation time, so an action never captures
+ *  stale state. */
 export interface DepRegistry {
   register<K extends DepName>(name: K, source: () => DepSchema[K]): () => void;
   get<K extends DepName>(name: K): DepSchema[K] | undefined;
@@ -29,6 +32,8 @@ export interface DepRegistry {
 
 const DepRegistryContext = createContext<DepRegistry | null>(null);
 
+/** Provides the dep registry for a canvas. `<SceneCanvas>` mounts one; a
+ *  consumer registering its own dep sources must be inside it. */
 export function DepRegistryProvider({ children }: { children: ReactNode }) {
   const sourcesRef = useRef(new Map<DepName, () => unknown>() as Map<string, () => unknown>);
 
@@ -44,6 +49,7 @@ export function DepRegistryProvider({ children }: { children: ReactNode }) {
   return <DepRegistryContext.Provider value={registry}>{children}</DepRegistryContext.Provider>;
 }
 
+/** The dep registry in scope. Throws outside a `<DepRegistryProvider>`. */
 export function useDepRegistry(): DepRegistry {
   const r = useContext(DepRegistryContext);
   if (r === null) {

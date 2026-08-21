@@ -24,6 +24,7 @@ const IDLE: PointerStylusState = {
   hovering: false,
 };
 
+/** Options for `usePointerStylus`. */
 export interface UsePointerStylusOptions {
   /** Throttle re-renders to ≈this many state updates per second. The latest
    *  sample is always kept; intermediates are dropped. Default 60. Set to

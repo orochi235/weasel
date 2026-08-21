@@ -11,6 +11,7 @@ import { useEffect, type MutableRefObject, type ReactNode } from 'react';
 import { PointerContextProvider, usePointerContext } from 'features/pointer/PointerContext';
 import type { View } from 'core/viewport/view';
 
+/** Mount a `<PointerContextProvider>` only when none is already in scope. */
 export function PointerProviderIfRoot({ children }: { children: ReactNode }) {
   const parent = usePointerContext();
   if (parent) return <>{children}</>;

@@ -9,7 +9,7 @@ import type {
   RenderLayer,
 } from '@weasel-js/core';
 import { DEFAULT_WIDGET_CLAIMS, type Widget } from './widget';
-import { _resetFontRegistryForTests } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 
 function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
   const api = {

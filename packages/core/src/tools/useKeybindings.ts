@@ -9,6 +9,7 @@ import {
 import { makeToolResetToDefaultAction } from 'interactions/actions/defaults/toolResetToDefault';
 import type { ToolsApi } from './useTools';
 
+/** Options for `useKeybindings`. */
 export interface UseKeybindingsOptions {
   /** Skip all wiring. Useful for touch apps or test isolation. */
   disable?: boolean;
@@ -42,6 +43,9 @@ const BUILTIN_SELECT_KEYS: Record<string, { key: string }> = {
   pen: { key: 'P' },
 };
 
+/** Wire the single-key tool-activation shortcuts (V, P, T, …) and Escape to
+ *  return to the default tool. Activation is gated on what the active mode
+ *  allows, so a key cannot reach a tool the palette greys out. */
 export function useKeybindings(
   tools: ToolsApi,
   options: UseKeybindingsOptions = {},

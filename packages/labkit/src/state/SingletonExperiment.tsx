@@ -5,6 +5,7 @@ import type { StorageAdapter } from './types';
 
 const SINGLETON_INSTRUMENT = '__singleton__';
 
+/** Props for `<SingletonExperimentProvider>`. */
 export interface SingletonExperimentProviderProps<TS, TC> {
   /** Stable id for the synthetic workspace; also doubles as the
    *  WorkspaceIdContext value. */

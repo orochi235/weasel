@@ -1,7 +1,12 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
 
+/** An easing curve: maps normalized progress `t ∈ [0, 1]` to eased progress.
+ *  Curves may leave the 0–1 range in the middle (back, elastic) but should
+ *  pass through 0 at 0 and 1 at 1. */
 export type EasingFn = (t: number) => number;
 
+/** Blends two `T` values at eased progress `t`. Called once per frame; see
+ *  {@link InterpolatorFactory} when the blend has setup worth hoisting. */
 export type Interpolate<T> = (from: T, to: T, t: number) => T;
 
 /** Factory interpolator: built ONCE at tween start with (from, to), the returned
@@ -11,14 +16,19 @@ export type Interpolate<T> = (from: T, to: T, t: number) => T;
  *  fine; this is the escape hatch when setup-per-tick is wasteful. */
 export type InterpolatorFactory<T> = (from: T, to: T) => (t: number) => T;
 
+/** A spring's physical parameters. Higher stiffness settles faster, higher
+ *  damping overshoots less, higher mass makes both sluggish. */
 export interface SpringPreset {
   stiffness: number;
   damping: number;
   mass: number;
 }
 
+/** One of the tunings in `SPRING_PRESETS`. */
 export type SpringPresetName = 'gentle' | 'wobbly' | 'stiff' | 'slow';
 
+/** A running animation. Cancel it, or bend its time — pausing and time-scaling
+ *  act on this animation's own virtual clock, independent of the animator's. */
 export interface AnimationHandle {
   /** Monotonic id assigned by the animator. */
   id: number;
@@ -34,6 +44,9 @@ export interface AnimationHandle {
   isPaused(): boolean;
 }
 
+/** A duration-based animation from `from` to `to` over `ms`, shaped by an
+ *  easing curve. Reach for a spring instead when the motion should respond to
+ *  where the value already is rather than restart from a fixed duration. */
 export interface TweenOptions<T> {
   from: T;
   to: T;
@@ -53,6 +66,9 @@ export interface TweenOptions<T> {
   cancelKey?: string;
 }
 
+/** A spring animation: runs until the value settles on `to` rather than for a
+ *  set duration, so it absorbs an initial velocity naturally. Non-numeric `T`
+ *  needs the four vector helpers. */
 export interface SpringOptions<T> {
   from: T;
   to: T;
@@ -75,6 +91,9 @@ export interface SpringOptions<T> {
   cancelKey?: string;
 }
 
+/** Spring and decay as one animation. With a `to`, a spring pulls toward it;
+ *  with `to: null`, the value coasts on its velocity. Either can become the
+ *  other mid-flight through the handle. */
 export interface PhysicsOptions<T> {
   from: T;
   /** Target. `null` ⇒ no spring force (decay-mode). */
@@ -96,6 +115,8 @@ export interface PhysicsOptions<T> {
   cancelKey?: string;
 }
 
+/** An `AnimationHandle` that can also be steered while it runs — the point of
+ *  the physics primitive. */
 export interface PhysicsHandle<T = unknown> extends AnimationHandle {
   /** Retarget mid-flight. `null` ⇒ switch to decay-mode (no spring force). */
   setTarget(to: T | null): void;
@@ -103,6 +124,8 @@ export interface PhysicsHandle<T = unknown> extends AnimationHandle {
   setVelocity(v: T): void;
 }
 
+/** Momentum: coast from `from` at `velocity`, slowing by `friction` each
+ *  second until below `threshold`. What a flick-to-pan leaves behind. */
 export interface DecayOptions<T> {
   from: T;
   velocity: T;
@@ -118,6 +141,8 @@ export interface DecayOptions<T> {
   cancelKey?: string;
 }
 
+/** Options for `useAnimator`. Everything here is an injection seam for tests;
+ *  the defaults are the real clock, rAF, and `setTimeout`. */
 export interface UseAnimatorOptions {
   /** Optional clock injection for tests. Returns ms since some epoch. */
   now?: () => number;
@@ -131,6 +156,15 @@ export interface UseAnimatorOptions {
   clearTimer?: (handle: unknown) => void;
 }
 
+/**
+ * Owns every running animation on a canvas and drives them from one rAF loop.
+ * Beyond the primitives (`tween`, `spring`, `decay`, `physics`) it offers
+ * composition — `loop`, `stagger` — and bulk control by handle, by cancel-key,
+ * or over everything at once.
+ *
+ * An animator does not know about the scene: animations report values through
+ * `onTick` and the caller decides what to do with them.
+ */
 export interface Animator {
   tween<T>(opts: TweenOptions<T>): AnimationHandle;
   spring<T>(opts: SpringOptions<T>): AnimationHandle;
@@ -240,6 +274,7 @@ export interface Animator {
   keepAlive(): () => void;
 }
 
+/** Options for `Animator.loop`. */
 export interface LoopOptions {
   /** Maximum number of iterations. Default Infinity. */
   count?: number;
@@ -258,12 +293,15 @@ export interface StaggerOptions {
   cancelKey?: string;
 }
 
+/** Produces one iteration of a loop. Must arrange for `next` to be called when
+ *  the animation it returns finishes, or the loop stalls after one pass. */
 export type LoopFactory = (iteration: number, next: () => void) => AnimationHandle;
 
 /** Per-index delay schedule. Number ⇒ `index * delay` ms. Function ⇒ caller
  *  decides the absolute delay for each index (e.g. `i => i * i * 30`). */
 export type StaggerDelay = number | ((index: number) => number);
 
+/** Produces the animation for one staggered item. */
 export type StaggerFactory<TItem> = (item: TItem, index: number) => AnimationHandle;
 
 /** A `T` value or a function that derives one from the per-item context. Used
@@ -271,6 +309,8 @@ export type StaggerFactory<TItem> = (item: TItem, index: number) => AnimationHan
  *  vary an option (e.g. `to: (_item, i) => (i + 1) * 10`). */
 export type StaggerPerItem<T, TItem> = T | ((item: TItem, index: number) => T);
 
+/** Options for the stagger builder's `.tween`: a tween per item, where
+ *  `from`, `to` and `ms` may each vary by item. */
 export interface StaggerTweenOptions<T, TItem> {
   from: StaggerPerItem<T, TItem>;
   to: StaggerPerItem<T, TItem>;
@@ -281,6 +321,8 @@ export interface StaggerTweenOptions<T, TItem> {
   onDone?: (item: TItem, index: number) => void;
 }
 
+/** Options for the stagger builder's `.springPose`: the spring tuning, and
+ *  whether each item's settle is recorded as an undoable op. */
 export interface StaggerSpringPoseOptions<TPose> {
   preset?: SpringPresetName;
   stiffness?: number;
@@ -291,6 +333,8 @@ export interface StaggerSpringPoseOptions<TPose> {
   opLabel?: string;
 }
 
+/** Fluent form of `Animator.stagger`: pick what to run per item after the
+ *  items and the delay schedule are already fixed. */
 export interface StaggerBuilder<TItem> {
   /** Run an arbitrary per-item factory. */
   each(factory: StaggerFactory<TItem>): AnimationHandle;
@@ -308,6 +352,8 @@ export interface StaggerBuilder<TItem> {
   ): AnimationHandle;
 }
 
+/** Options for `Animator.tweenLoop` — a tween's options plus how each
+ *  iteration relates to the last. */
 export interface TweenLoopOptions<T> {
   from: T;
   to: T;

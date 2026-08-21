@@ -32,7 +32,7 @@ describe('Slider rendering', () => {
         min={0}
         max={1}
         thumbs={[{ value: 0 }, { value: 0.5 }, { value: 1 }]}
-        onChange={() => {}}
+        onInput={() => {}}
       />,
     );
     const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
@@ -44,17 +44,17 @@ describe('Slider rendering', () => {
 });
 
 describe('Slider single-thumb drag', () => {
-  it('drags a thumb and emits onChange continuously and onCommit on pointerup', () => {
+  it('drags a thumb and emits onInput continuously and onChange on pointerup', () => {
+    const onInput = vi.fn();
     const onChange = vi.fn();
-    const onCommit = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         step={0.01}
         thumbs={[{ value: 0.5 }]}
+        onInput={onInput}
         onChange={onChange}
-        onCommit={onCommit}
       />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
@@ -63,59 +63,59 @@ describe('Slider single-thumb drag', () => {
 
     fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 150, clientY: 12, pointerId: 1 });
-    expect(onChange).toHaveBeenCalled();
-    const lastCallArgs = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(onInput).toHaveBeenCalled();
+    const lastCallArgs = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(lastCallArgs[0].value).toBeCloseTo(0.75, 2);
-    expect(onCommit).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
 
     fireEvent.pointerUp(document, { clientX: 150, clientY: 12, pointerId: 1 });
-    expect(onCommit).toHaveBeenCalledTimes(1);
-    expect(onCommit.mock.calls[0][0][0].value).toBeCloseTo(0.75, 2);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0][0].value).toBeCloseTo(0.75, 2);
   });
 
   it('clamps drag to min/max', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
-      <Slider min={0} max={1} step={0.01} thumbs={[{ value: 0.5 }]} onChange={onChange} />,
+      <Slider min={0} max={1} step={0.01} thumbs={[{ value: 0.5 }]} onInput={onInput} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     stubRect(thumb.parentElement!, { left: 0, width: 200 });
 
     fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: -50, clientY: 12, pointerId: 1 });
-    expect(onChange.mock.calls[onChange.mock.calls.length - 1][0][0].value).toBe(0);
+    expect(onInput.mock.calls[onInput.mock.calls.length - 1][0][0].value).toBe(0);
 
     fireEvent.pointerMove(document, { clientX: 9999, clientY: 12, pointerId: 1 });
-    expect(onChange.mock.calls[onChange.mock.calls.length - 1][0][0].value).toBe(1);
+    expect(onInput.mock.calls[onInput.mock.calls.length - 1][0][0].value).toBe(1);
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
 
   it('snaps drag to step', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
-      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} />,
+      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onInput={onInput} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     stubRect(thumb.parentElement!, { left: 0, width: 200 });
 
     fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 137, clientY: 12, pointerId: 1 }); // ~6.85 → snap to 7
-    expect(onChange.mock.calls[onChange.mock.calls.length - 1][0][0].value).toBe(7);
+    expect(onInput.mock.calls[onInput.mock.calls.length - 1][0][0].value).toBe(7);
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
 });
 
 describe('Slider keyboard', () => {
-  it('arrow right increments by step and fires onChange + onCommit', () => {
+  it('arrow right increments by step and fires onInput + onChange', () => {
+    const onInput = vi.fn();
     const onChange = vi.fn();
-    const onCommit = vi.fn();
     const { container } = render(
-      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} onCommit={onCommit} />,
+      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onInput={onInput} onChange={onChange} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     fireEvent.keyDown(thumb, { key: 'ArrowRight' });
+    expect(onInput.mock.calls[0][0][0].value).toBe(6);
     expect(onChange.mock.calls[0][0][0].value).toBe(6);
-    expect(onCommit.mock.calls[0][0][0].value).toBe(6);
   });
 
   it('shift+arrow moves by 10 steps; PageUp/Down do the same', () => {
@@ -128,7 +128,7 @@ describe('Slider keyboard', () => {
           max={100}
           step={1}
           thumbs={[{ value: v }]}
-          onChange={ts => setV(ts[0].value)}
+          onInput={ts => setV(ts[0].value)}
         />
       );
     }
@@ -143,20 +143,20 @@ describe('Slider keyboard', () => {
   });
 
   it('Home snaps to min, End snaps to max', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
-      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onChange={onChange} />,
+      <Slider min={0} max={10} step={1} thumbs={[{ value: 5 }]} onInput={onInput} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     fireEvent.keyDown(thumb, { key: 'Home' });
-    expect(onChange.mock.calls[0][0][0].value).toBe(0);
+    expect(onInput.mock.calls[0][0][0].value).toBe(0);
     fireEvent.keyDown(thumb, { key: 'End' });
-    expect(onChange.mock.calls[1][0][0].value).toBe(10);
+    expect(onInput.mock.calls[1][0][0].value).toBe(10);
   });
 
   it('exposes ARIA attributes on each thumb', () => {
     const { container } = render(
-      <Slider min={0} max={1} thumbs={[{ value: 0.25 }]} ariaLabel="Hue" onChange={() => {}} />,
+      <Slider min={0} max={1} thumbs={[{ value: 0.25 }]} ariaLabel="Hue" onInput={() => {}} />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     expect(thumb.getAttribute('aria-orientation')).toBe('horizontal');
@@ -168,15 +168,15 @@ describe('Slider keyboard', () => {
 });
 
 describe('Slider free constraint', () => {
-  it('thumbs may pass each other; onChange preserves index order', () => {
-    const onChange = vi.fn();
+  it('thumbs may pass each other; onInput preserves index order', () => {
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         step={0.01}
         thumbs={[{ value: 0.3 }, { value: 0.7 }]}
-        onChange={onChange}
+        onInput={onInput}
       />,
     );
     const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
@@ -185,7 +185,7 @@ describe('Slider free constraint', () => {
     // Drag thumb 0 (start at 0.3 → x=60) past thumb 1 (at 0.7 → x=140) to x=180 (~0.9).
     fireEvent.pointerDown(thumbs[0], { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1 });
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].value).toBeCloseTo(0.9, 2);
     expect(last[1].value).toBeCloseTo(0.7, 2);
     fireEvent.pointerUp(document, { pointerId: 1 });
@@ -194,7 +194,7 @@ describe('Slider free constraint', () => {
 
 describe("Slider 'ordered' constraint", () => {
   it('clamps lower thumb to (lower-neighbor, upper-neighbor − step)', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
@@ -202,21 +202,21 @@ describe("Slider 'ordered' constraint", () => {
         step={0.01}
         constraint="ordered"
         thumbs={[{ value: 0.3 }, { value: 0.7 }]}
-        onChange={onChange}
+        onInput={onInput}
       />,
     );
     const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
     stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
     fireEvent.pointerDown(thumbs[0], { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1 });
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].value).toBeLessThanOrEqual(0.69);
     expect(last[1].value).toBeCloseTo(0.7, 2);
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
 
   it('clamps upper thumb to (lower-neighbor + step, max)', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
@@ -224,14 +224,14 @@ describe("Slider 'ordered' constraint", () => {
         step={0.01}
         constraint="ordered"
         thumbs={[{ value: 0.3 }, { value: 0.7 }]}
-        onChange={onChange}
+        onInput={onInput}
       />,
     );
     const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
     stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
     fireEvent.pointerDown(thumbs[1], { clientX: 140, clientY: 12, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 0, clientY: 12, pointerId: 1 });
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[1].value).toBeGreaterThanOrEqual(0.31);
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
@@ -239,48 +239,48 @@ describe("Slider 'ordered' constraint", () => {
 
 describe('Slider per-thumb bounds (tuple form)', () => {
   it('clamps drag to bounds', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         step={0.01}
         thumbs={[{ value: 0.3, bounds: [0.1, 0.5] }]}
-        onChange={onChange}
+        onInput={onInput}
       />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     stubRect(thumb.parentElement!, { left: 0, width: 200 });
     fireEvent.pointerDown(thumb, { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 0, clientY: 12, pointerId: 1 });
-    expect(onChange.mock.calls[onChange.mock.calls.length - 1][0][0].value).toBe(0.1);
+    expect(onInput.mock.calls[onInput.mock.calls.length - 1][0][0].value).toBe(0.1);
     fireEvent.pointerMove(document, { clientX: 200, clientY: 12, pointerId: 1 });
-    expect(onChange.mock.calls[onChange.mock.calls.length - 1][0][0].value).toBe(0.5);
+    expect(onInput.mock.calls[onInput.mock.calls.length - 1][0][0].value).toBe(0.5);
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
 
   it('Home snaps to bounds[0]; End snaps to bounds[1]', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         step={0.01}
         thumbs={[{ value: 0.3, bounds: [0.1, 0.5] }]}
-        onChange={onChange}
+        onInput={onInput}
       />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     fireEvent.keyDown(thumb, { key: 'Home' });
-    expect(onChange.mock.calls[0][0][0].value).toBe(0.1);
+    expect(onInput.mock.calls[0][0][0].value).toBe(0.1);
     fireEvent.keyDown(thumb, { key: 'End' });
-    expect(onChange.mock.calls[1][0][0].value).toBe(0.5);
+    expect(onInput.mock.calls[1][0][0].value).toBe(0.5);
   });
 });
 
 describe('Slider per-thumb bounds (callback form)', () => {
   it('callback receives the in-flight thumb buffer and clamps using neighbor values', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     // Two thumbs; thumb 0 cannot exceed thumb 1's value − 0.05.
     const thumbsProp = [
       {
@@ -291,13 +291,13 @@ describe('Slider per-thumb bounds (callback form)', () => {
       { value: 0.7 },
     ];
     const { container } = render(
-      <Slider min={0} max={1} step={0.01} thumbs={thumbsProp} onChange={onChange} />,
+      <Slider min={0} max={1} step={0.01} thumbs={thumbsProp} onInput={onInput} />,
     );
     const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
     stubRect(thumbs[0].parentElement!, { left: 0, width: 200 });
     fireEvent.pointerDown(thumbs[0], { clientX: 60, clientY: 12, pointerId: 1, button: 0 });
     fireEvent.pointerMove(document, { clientX: 200, clientY: 12, pointerId: 1 });
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last[0].value).toBeCloseTo(0.65, 2); // 0.7 − 0.05
     fireEvent.pointerUp(document, { pointerId: 1 });
   });
@@ -305,8 +305,8 @@ describe('Slider per-thumb bounds (callback form)', () => {
 
 describe('Slider click-on-track to add', () => {
   it('appends thumb returned by onAddThumb on track click', () => {
+    const onInput = vi.fn();
     const onChange = vi.fn();
-    const onCommit = vi.fn();
     const onAddThumb = vi.fn((at: number) => ({ value: Math.round(at * 100) / 100 }));
     const { container } = render(
       <Slider
@@ -314,8 +314,8 @@ describe('Slider click-on-track to add', () => {
         max={1}
         step={0.01}
         thumbs={[{ value: 0.5 }]}
+        onInput={onInput}
         onChange={onChange}
-        onCommit={onCommit}
         onAddThumb={onAddThumb}
       />,
     );
@@ -323,38 +323,38 @@ describe('Slider click-on-track to add', () => {
     stubRect(track, { left: 0, width: 200 });
     fireEvent.pointerDown(track, { clientX: 50, clientY: 12, pointerId: 1, button: 0 });
     expect(onAddThumb).toHaveBeenCalledWith(0.25);
+    expect(onInput.mock.calls[0][0]).toEqual([{ value: 0.5 }, { value: 0.25 }]);
     expect(onChange.mock.calls[0][0]).toEqual([{ value: 0.5 }, { value: 0.25 }]);
-    expect(onCommit.mock.calls[0][0]).toEqual([{ value: 0.5 }, { value: 0.25 }]);
   });
 
   it('null return is a no-op', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.5 }]}
-        onChange={onChange}
+        onInput={onInput}
         onAddThumb={() => null}
       />,
     );
     const track = container.querySelector('[role="slider"]')!.parentElement!;
     stubRect(track, { left: 0, width: 200 });
     fireEvent.pointerDown(track, { clientX: 50, clientY: 12, pointerId: 1, button: 0 });
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput).not.toHaveBeenCalled();
   });
 });
 
 describe('Slider remove (drag-off and right-click)', () => {
   it('drag-off-vertical removes thumb on pointerup if onRemoveThumb returns true', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const onRemoveThumb = vi.fn(() => true);
     const { container } = render(
       <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.3 }, { value: 0.7 }]}
-        onChange={onChange}
+        onInput={onInput}
         onRemoveThumb={onRemoveThumb}
       />,
     );
@@ -366,53 +366,53 @@ describe('Slider remove (drag-off and right-click)', () => {
     fireEvent.pointerMove(document, { clientX: 60, clientY: 100, pointerId: 1 });
     fireEvent.pointerUp(document, { clientX: 60, clientY: 100, pointerId: 1 });
     expect(onRemoveThumb).toHaveBeenCalledWith(0);
-    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(last).toEqual([{ value: 0.7 }]);
   });
 
   it('right-click on thumb removes via onRemoveThumb', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.3 }, { value: 0.7 }]}
-        onChange={onChange}
+        onInput={onInput}
         onRemoveThumb={() => true}
       />,
     );
     const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
     fireEvent.contextMenu(thumbs[1]);
-    expect(onChange.mock.calls[0][0]).toEqual([{ value: 0.3 }]);
+    expect(onInput.mock.calls[0][0]).toEqual([{ value: 0.3 }]);
   });
 
   it('onRemoveThumb returning false leaves thumbs intact', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         thumbs={[{ value: 0.5 }]}
-        onChange={onChange}
+        onInput={onInput}
         onRemoveThumb={() => false}
       />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
     fireEvent.contextMenu(thumb);
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput).not.toHaveBeenCalled();
   });
 });
 
 describe('Slider allowShiftAll', () => {
   it('shift-drag moves all thumbs by the same delta clamped to [min, max]', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         step={0.01}
         thumbs={[{ value: 0.2 }, { value: 0.5 }, { value: 0.8 }]}
-        onChange={onChange}
+        onInput={onInput}
         allowShiftAll
       />,
     );
@@ -422,7 +422,7 @@ describe('Slider allowShiftAll', () => {
     // Pointer starts at thumb[1]'s center (x=100, value=0.5). Drag right by +30 px → +0.15 delta.
     fireEvent.pointerDown(thumbs[1], { clientX: 100, clientY: 12, pointerId: 1, button: 0, shiftKey: true });
     fireEvent.pointerMove(document, { clientX: 130, clientY: 12, pointerId: 1, shiftKey: true });
-    const after = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const after = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(after[0].value).toBeCloseTo(0.35, 2);
     expect(after[1].value).toBeCloseTo(0.65, 2);
     expect(after[2].value).toBeCloseTo(0.95, 2);
@@ -430,14 +430,14 @@ describe('Slider allowShiftAll', () => {
   });
 
   it('clamps the shift-drag delta so no thumb crosses max', () => {
-    const onChange = vi.fn();
+    const onInput = vi.fn();
     const { container } = render(
       <Slider
         min={0}
         max={1}
         step={0.01}
         thumbs={[{ value: 0.2 }, { value: 0.5 }, { value: 0.9 }]}
-        onChange={onChange}
+        onInput={onInput}
         allowShiftAll
       />,
     );
@@ -446,7 +446,7 @@ describe('Slider allowShiftAll', () => {
     fireEvent.pointerDown(thumbs[2], { clientX: 180, clientY: 12, pointerId: 1, button: 0, shiftKey: true });
     fireEvent.pointerMove(document, { clientX: 240, clientY: 12, pointerId: 1, shiftKey: true });
     // Requested delta = +0.30 px-fraction, but max delta = 1 − 0.9 = 0.1.
-    const after = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    const after = onInput.mock.calls[onInput.mock.calls.length - 1][0];
     expect(after[0].value).toBeCloseTo(0.3, 2);
     expect(after[1].value).toBeCloseTo(0.6, 2);
     expect(after[2].value).toBeCloseTo(1.0, 2);
@@ -462,7 +462,7 @@ describe('Slider renderTrack', () => {
         min={0}
         max={1}
         thumbs={[{ value: 0.5 }]}
-        onChange={() => {}}
+        onInput={() => {}}
         renderTrack={renderTrack}
       />,
     );
@@ -481,7 +481,7 @@ describe('Slider thumb shape variants', () => {
         min={0}
         max={1}
         thumbs={[{ value: 0.5, shape: 'notched' }]}
-        onChange={() => {}}
+        onInput={() => {}}
       />,
     );
     const thumb = container.querySelector('[role="slider"]') as HTMLElement;
@@ -494,7 +494,7 @@ describe('Slider thumb shape variants', () => {
         min={0}
         max={1}
         thumbs={[{ value: 0.5, shape: { render: () => <span data-testid="x">X</span> } }]}
-        onChange={() => {}}
+        onInput={() => {}}
       />,
     );
     expect(container.querySelector('[data-testid="x"]')).toBeTruthy();
@@ -509,7 +509,7 @@ describe('Slider readouts', () => {
         max={1}
         thumbs={[{ value: 0.123 }, { value: 0.456 }]}
         readoutPlacement="inline-after"
-        onChange={() => {}}
+        onInput={() => {}}
       />,
     );
     const inline = container.querySelector('[data-readout="inline"]')!;
@@ -524,7 +524,7 @@ describe('Slider readouts', () => {
         max={1}
         thumbs={[{ value: 0.25 }, { value: 0.75 }]}
         readoutPlacement="below-thumb"
-        onChange={() => {}}
+        onInput={() => {}}
       />,
     );
     const readouts = container.querySelectorAll<HTMLElement>('[data-readout="below"]');
@@ -541,7 +541,7 @@ describe('Slider readouts', () => {
         thumbs={[{ value: 0.5 }]}
         readoutPlacement="inline-after"
         renderReadout={(t) => `[${t.value}]`}
-        onChange={() => {}}
+        onInput={() => {}}
       />,
     );
     expect(container.querySelector('[data-readout="inline"]')!.textContent).toContain('[0.5]');

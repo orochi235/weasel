@@ -16,6 +16,7 @@ function linearToSrgbByte(c: number): number {
   return Math.round(v * 255);
 }
 
+/** Convert an 8-bit sRGB triple to OKLab. */
 export function srgbU8ToOklab(r: number, g: number, b: number): [number, number, number] {
   const rl = SRGB_TO_LINEAR[r & 0xff];
   const gl = SRGB_TO_LINEAR[g & 0xff];
@@ -72,11 +73,15 @@ function clipToGamut(L: number, A: number, B: number): [number, number, number] 
   return [rl, gl, bl];
 }
 
+/** Convert OKLab back to an 8-bit sRGB triple, clamped into gamut. */
 export function oklabToSrgbU8(L: number, A: number, B: number): [number, number, number] {
   const [rl, gl, bl] = clipToGamut(L, A, B);
   return [linearToSrgbByte(rl), linearToSrgbByte(gl), linearToSrgbByte(bl)];
 }
 
+/** Blend two 8-bit sRGB colors through OKLab. Perceptually even, and it does
+ *  not pass through the muddy midpoints an sRGB blend produces between
+ *  complementary hues. */
 export function lerpOklab(
   from: readonly [number, number, number],
   to: readonly [number, number, number],
@@ -129,6 +134,9 @@ export function lerpOklch(
   ];
 }
 
+/** Which space a color blend is computed in. `'rgb'` is cheapest; `'oklab'`
+ *  is perceptually even; `'oklch'` additionally travels around the hue wheel
+ *  rather than through it. */
 export type ColorSpace = 'rgb' | 'oklab' | 'oklch';
 
 const f2u = (v: number): number => Math.max(0, Math.min(255, Math.round(v * 255)));

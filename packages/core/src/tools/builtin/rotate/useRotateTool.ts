@@ -20,6 +20,8 @@ function toChromeState(data: unknown): ChromeState {
   return data as ChromeState;
 }
 
+/** Options for `useRotateTool` — mostly the placement and hit size of the
+ *  rotation handle. */
 export interface UseRotateToolOptions<TNode extends { id: string }, _TPose> {
   /** Legacy `useRotate` options surface. Ignored now —
    *  rotation flows through `rotateAction`, whose option surface is

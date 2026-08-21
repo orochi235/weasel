@@ -91,6 +91,15 @@ function isEmpty(p: PolygonPath): boolean {
   return p.commands.length === 0;
 }
 
+/**
+ * Run one Boolean operation over the selected paths and commit the result as a
+ * single undoable batch.
+ *
+ * Operands are ordered back-to-front, which is what makes `subtract` mean
+ * "everything in front removed from the backmost shape". Returns without
+ * mutating anything when the selection holds no paths, or too few for the
+ * requested operation.
+ */
 export function applyBooleanOp(
   adapter: BooleansAdapter,
   op: BooleanOp,

@@ -2,8 +2,10 @@ import { createTransformOp } from 'core/ops/transform';
 import type { LayoutSnap, LayoutStrategy } from '../types';
 import { nearestWithin } from '../snaps';
 
+/** Which points within a container a child can snap to. */
 export type SnapPattern = 'corners' | 'edges' | 'center' | 'grid';
 
+/** Options for `snapPoint`. */
 export interface SnapPointOptions<TPose> {
   pattern: SnapPattern;
   /** Spacing for the 'grid' pattern, in world units. Default 50. */
@@ -13,6 +15,7 @@ export interface SnapPointOptions<TPose> {
   snap?: LayoutSnap<TPose>;
 }
 
+/** A point in world coordinates. */
 export type Pt = { x: number; y: number };
 
 function buildPoints(
@@ -51,6 +54,9 @@ function buildPoints(
   }
 }
 
+/** Layout strategy that leaves children where they are but offers a fixed set
+ *  of points — corners, edge midpoints, center, or a grid — for a dragged
+ *  child to land on. */
 export function snapPoint<TPose extends Pt>(
   opts: SnapPointOptions<TPose>,
 ): LayoutStrategy<TPose> {

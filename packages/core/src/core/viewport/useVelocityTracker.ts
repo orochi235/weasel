@@ -2,6 +2,8 @@ import { useMemo, useRef } from 'react';
 
 interface Sample { dx: number; dy: number; t: number }
 
+/** Records recent pointer deltas and reports the current velocity, averaged
+ *  over the last 100ms — the throw speed a momentum decay starts from. */
 export function useVelocityTracker() {
   const samplesRef = useRef<Sample[]>([]);
   return useMemo(() => ({

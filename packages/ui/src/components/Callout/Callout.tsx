@@ -10,6 +10,7 @@ import {
 } from 'react-aria-components';
 import s from './Callout.module.css';
 
+/** Accent color of a {@link Callout}'s border and arrow. */
 export type CalloutTone = 'info' | 'warning' | 'danger';
 
 /**
@@ -22,6 +23,7 @@ export type CalloutTone = 'info' | 'warning' | 'danger';
  */
 export { DialogTrigger as CalloutTrigger };
 
+/** Props for {@link Callout}, on top of React Aria's `Popover` props. */
 export type CalloutProps = Omit<
   RACPopoverProps,
   'children' | 'className' | 'isNonModal' | 'triggerRef'

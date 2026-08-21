@@ -23,6 +23,7 @@ export interface UndoBindings {
   redo: () => void;
 }
 
+/** Props for `<WorkspaceChrome>`. */
 export interface WorkspaceChromeProps {
   workspaceId: string;
   record: WorkspaceRecord;
@@ -36,6 +37,9 @@ export interface WorkspaceChromeProps {
   children: ReactNode;
 }
 
+/** The frame around a running instrument — toolbar, sidebar, status bar —
+ *  each replaceable by a slot. Assembles the slot contexts and wires the undo
+ *  keyboard shortcuts. */
 export function WorkspaceChrome({
   workspaceId,
   record,

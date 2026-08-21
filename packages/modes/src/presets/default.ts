@@ -1,5 +1,7 @@
 import type { ModeDefinition } from '../modeDefinition';
 
+/** The default mode: everything except anchor and text editing, no scoping,
+ *  no workspace tint. */
 export const NORMAL: ModeDefinition = {
   id: 'normal',
   kind: 'soft',
@@ -16,6 +18,8 @@ export const NORMAL: ModeDefinition = {
   scoping: false,
 };
 
+/** Editing the anchors of a path. Scoped to the target, entered by
+ *  double-clicking it, left with Escape. */
 export const PATH_EDIT: ModeDefinition = {
   id: 'path-edit',
   kind: 'soft',
@@ -26,6 +30,8 @@ export const PATH_EDIT: ModeDefinition = {
   exit: { shortcut: 'Escape' },
 };
 
+/** Working inside one subtree with everything outside it dimmed and inert.
+ *  Allows the same authoring tools as `NORMAL`, minus page edits. */
 export const ISOLATION: ModeDefinition = {
   id: 'isolation',
   kind: 'soft',
@@ -44,6 +50,8 @@ export const ISOLATION: ModeDefinition = {
   exit: { shortcut: 'Escape' },
 };
 
+/** A transaction that transforms the selection: the whole session is one undo
+ *  step, committed with Enter or discarded with Escape. */
 export const FREE_TRANSFORM: ModeDefinition = {
   id: 'free-transform',
   kind: 'strict',
@@ -55,6 +63,8 @@ export const FREE_TRANSFORM: ModeDefinition = {
   cancel: { shortcut: 'Escape' },
 };
 
+/** Editing the text of one node. Entered by double-clicking it, left with
+ *  Escape. */
 export const TEXT_EDIT: ModeDefinition = {
   id: 'text-edit',
   kind: 'soft',
@@ -65,6 +75,8 @@ export const TEXT_EDIT: ModeDefinition = {
   exit: { shortcut: 'Escape' },
 };
 
+/** A transaction that changes the page extents, committed with Enter or
+ *  discarded with Escape. */
 export const CROP: ModeDefinition = {
   id: 'crop',
   kind: 'strict',
@@ -76,6 +88,7 @@ export const CROP: ModeDefinition = {
   cancel: { shortcut: 'Escape' },
 };
 
+/** The six modes this package ships, ready to hand to `createModeRegistry`. */
 export const DEFAULT_MODES: readonly ModeDefinition[] = [
   NORMAL,
   PATH_EDIT,
@@ -85,6 +98,8 @@ export const DEFAULT_MODES: readonly ModeDefinition[] = [
   CROP,
 ];
 
+/** Look up one of the `DEFAULT_MODES` by id. Throws on an unknown id. For an
+ *  app's own mode set, use the registry's `byId` instead. */
 export function byId(id: string): ModeDefinition {
   const m = DEFAULT_MODES.find((m) => m.id === id);
   if (!m) throw new Error(`Unknown mode id: ${id}`);

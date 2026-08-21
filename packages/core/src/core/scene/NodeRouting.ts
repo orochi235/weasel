@@ -46,6 +46,9 @@ export interface NodeRouting {
   list(): readonly NodeRoutingEntry[];
 }
 
+/** Build a registry of per-node-kind routing entries, which decide how a node
+ *  kind is drawn, hit-tested and serialized. Registering a duplicate kind name
+ *  throws. */
 export function createNodeRouting(): NodeRouting {
   const entries: NodeRoutingEntry[] = [];
   const byName = new Map<string, NodeRoutingEntry>();

@@ -18,6 +18,7 @@ export interface SharedAnchor {
   spiroType?: 'corner' | 'g2-smooth' | 'g4-smooth';
 }
 
+/** Which curve representation an anchor set is interpreted through. */
 export type CurveRepKind = 'bezierCubic' | 'bezierQuadratic' | 'nurbs' | 'spiro';
 
 /** A user-facing control surfaced by a representation. Rendered uniformly

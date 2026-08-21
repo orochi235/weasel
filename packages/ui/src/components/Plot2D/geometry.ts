@@ -11,6 +11,10 @@ export interface Point {
   y: number;
 }
 
+/**
+ * The caller-defined extent of model space, the coordinate system a plot's
+ * data lives in.
+ */
 export interface ModelRange {
   xMin: number;
   xMax: number;
@@ -18,11 +22,16 @@ export interface ModelRange {
   yMax: number;
 }
 
+/** The plot's drawing area in CSS pixels. */
 export interface PlotSize {
   width: number;
   height: number;
 }
 
+/**
+ * Maps a model-space point into plot space, flipping the y axis so model y
+ * grows upward while SVG y grows downward.
+ */
 export function modelToPlot(p: Point, m: ModelRange, plot: PlotSize): Point {
   const xFrac = (p.x - m.xMin) / (m.xMax - m.xMin);
   const yFrac = (p.y - m.yMin) / (m.yMax - m.yMin);
@@ -33,6 +42,7 @@ export function modelToPlot(p: Point, m: ModelRange, plot: PlotSize): Point {
   };
 }
 
+/** The inverse of {@link modelToPlot}. */
 export function plotToModel(p: Point, m: ModelRange, plot: PlotSize): Point {
   const xFrac = p.x / plot.width;
   const yFrac = 1 - p.y / plot.height;

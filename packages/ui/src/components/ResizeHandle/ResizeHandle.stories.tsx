@@ -29,7 +29,7 @@ function RightSidebarDemo() {
         min={200}
         max={600}
         invert
-        onChange={setWidth}
+        onInput={setWidth}
         ariaLabel="Resize sidebar"
       />
       <Sidebar side="right" ariaLabel="Demo sidebar" style={{ width }}>
@@ -60,7 +60,7 @@ function BottomDrawerDemo() {
         min={40}
         max={200}
         invert
-        onChange={setHeight}
+        onInput={setHeight}
         ariaLabel="Resize drawer"
       />
       <div style={{

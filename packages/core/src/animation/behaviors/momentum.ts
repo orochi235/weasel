@@ -4,6 +4,7 @@ import type { MoveBehavior, GestureContext } from 'interactions/gestures/types';
 import { scratchKey, getScratch, setScratch } from 'interactions/scratchKey';
 import type { Animator } from '../types';
 
+/** Options for the `momentum` move behavior. */
 export interface MomentumOptions {
   /** Required: the per-Canvas animator that will own the decay. */
   animator: Animator;
@@ -46,6 +47,15 @@ interface RectLike { x: number; y: number }
 
 const SAMPLES = scratchKey<PointerSample[]>('momentum.samples');
 
+/**
+ * Move behavior that keeps a dragged node coasting after the pointer is
+ * released, at the velocity it was travelling, until friction brings it below
+ * `threshold`.
+ *
+ * Plugs into the move action rather than replacing it, so the drag itself is
+ * unchanged — this only decides what happens after the release. The whole
+ * flick, coast included, records as one undoable transform.
+ */
 export function momentum<TPose>(opts: MomentumOptions): MoveBehavior<TPose> {
   const friction = opts.friction ?? 0.92;
   const threshold = opts.threshold ?? 200;

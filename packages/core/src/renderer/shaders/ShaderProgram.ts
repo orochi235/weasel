@@ -9,6 +9,8 @@
 
 export type Stage = 'vertex' | 'fragment' | 'link';
 
+/** Thrown when a shader fails to compile or link, carrying which stage failed
+ *  and the driver's log. */
 export class ShaderCompileError extends Error {
   constructor(public readonly stage: Stage, public readonly log: string) {
     super(`shader ${stage} failure: ${log}`);

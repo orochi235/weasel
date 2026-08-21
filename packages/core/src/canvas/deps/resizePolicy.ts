@@ -33,6 +33,8 @@ import { type PoseProjection } from 'interactions/actions/resize/geometry';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import { DEFAULT_RESIZE_BEHAVIORS } from 'interactions/actions/resize/behaviors';
 
+/** Options for `useResizePolicy`. Each omitted field falls back to the kit
+ *  default. */
 export interface UseResizePolicyOptions<TPose> {
   constraints?: TPose extends ResizePose ? BoundsConstraint<TPose>[] : never[];
   pointSnap?: TPose extends ResizePose ? PointSnapBehavior<TPose>[] : never[];
@@ -43,6 +45,8 @@ export interface UseResizePolicyOptions<TPose> {
 const IDENTITY_EXPAND = (ids: string[]) => ids;
 const EMPTY: readonly unknown[] = Object.freeze([]);
 
+/** Publish how resizing should behave — constraints, point snapping, group
+ *  expansion, pose projection — for the resize action to consult. */
 export function useResizePolicy<TPose>(
   options: UseResizePolicyOptions<TPose>,
 ): void {

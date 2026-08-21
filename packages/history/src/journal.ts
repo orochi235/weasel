@@ -10,11 +10,31 @@ export function _resumeJournalInternal(j: Journal): void {
   r();
 }
 
+/** Options for `history.beginJournal()`. */
 export interface BeginJournalOptions {
+  /** Label for the single parent-history entry the journal flushes on commit. */
   label: string;
+  /** Caller-supplied tag naming what this journal is scoped to — typically the
+   *  id of the node being edited. The history layer only carries it; callers
+   *  read it back off the journal to decide whether a suspended journal
+   *  matches what they are about to edit. */
   targetId?: string;
 }
 
+/**
+ * A scoped sub-history forked from a `History`, opened by
+ * `history.beginJournal()`. Applies, undoes and redoes against the same
+ * adapter as its parent, but keeps its entries to itself: `commit` flushes the
+ * journal's net forward ops to the parent as one entry, `cancel` rewinds them
+ * and contributes nothing. Use it when a self-contained editing session (a
+ * text edit, a modal drag) should collapse to a single step in the parent's
+ * undo stack while still offering undo *within* the session.
+ *
+ * A journal is active, suspended or closed. `commit` and `cancel` are
+ * terminal; `suspend` lets the parent be used again and can be reversed with
+ * `history.resumeJournal()`. Every mutating method throws when the journal is
+ * not active.
+ */
 export interface Journal {
   readonly targetId: string | undefined;
   readonly forkedAtEntryId: number;

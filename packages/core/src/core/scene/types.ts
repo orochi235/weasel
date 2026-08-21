@@ -82,11 +82,15 @@ interface NodeBase<TData, TLayer extends string, TPose> {
   parent: NodeId | null;
 }
 
+/** A node with no children — a shape, a label, an image. */
 export interface LeafNode<TData, TLayer extends string, TPose = RectPose>
   extends NodeBase<TData, TLayer, TPose> {
   kind: 'leaf';
 }
 
+/** A node with an ordered list of children. This is the real group: what
+ *  Cmd+G creates, what SVG `<g>` round-trips to. A container has its own pose,
+ *  which its children's poses are relative to, and may optionally clip them. */
 export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
   extends NodeBase<TData, TLayer, TPose> {
   kind: 'container';
@@ -99,6 +103,8 @@ export interface ContainerNode<TData, TLayer extends string, TPose = RectPose>
   clipFromPose?: (pose: TPose) => Path | null;
 }
 
+/** A node in the scene tree: either a leaf or a container. Re-exported
+ *  publicly as `SceneNode`, to avoid colliding with the DOM's `Node`. */
 export type Node<TData, TLayer extends string, TPose = RectPose> =
   | LeafNode<TData, TLayer, TPose>
   | ContainerNode<TData, TLayer, TPose>;
@@ -109,21 +115,29 @@ interface LayerRecordBase<TLayer extends string> {
   locked: boolean;
 }
 
+/** A layer declared when the scene was created. Fixed set, no display name —
+ *  these are the kit's own render bands, not something a user manages. */
 export interface SystemLayerRecord<TLayer extends string>
   extends LayerRecordBase<TLayer> {
   kind: 'system';
 }
 
+/** A layer the user created and can rename, reorder or delete. */
 export interface UserLayerRecord<TLayer extends string>
   extends LayerRecordBase<TLayer> {
   kind: 'user';
   name: string;
 }
 
+/** Per-layer metadata held by the scene: whether it is visible and locked,
+ *  and where it sits in the render stack. Distinct from a node's `layer` tag,
+ *  which merely names one of these. */
 export type LayerRecord<TLayer extends string> =
   | SystemLayerRecord<TLayer>
   | UserLayerRecord<TLayer>;
 
+/** What `Scene.add` needs to mint a node. Everything except the id is
+ *  required; the id is generated unless one is supplied. */
 export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   kind: 'leaf' | 'container';
   layer: TLayer;
@@ -138,11 +152,14 @@ export interface AddNodeSpec<TData, TLayer extends string, TPose = RectPose> {
   clipFromPose?: (pose: TPose) => Path | null;
 }
 
+/** A custom scene mutation registered with `Scene.registerOp`: how to apply
+ *  it and how to undo it. The pair is what makes it participate in history. */
 export interface RegisteredOp<P> {
   apply: (payload: P) => void;
   revert: (payload: P) => void;
 }
 
+/** One of the layers a scene is created with. */
 export interface SystemLayerSpec<TLayer extends string> {
   id: TLayer;
   visible?: boolean;
@@ -197,6 +214,8 @@ export interface SceneRegistry<TPose> {
   // Reserved for future function fields.
 }
 
+/** Options for `useScene` — the layers the scene has, what it starts out
+ *  holding, and how its history behaves. */
 export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose> {
   systemLayers: readonly SystemLayerSpec<TLayer>[];
   initial?: readonly AddNodeSpec<TData, TLayer, TPose>[];
@@ -231,6 +250,18 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
   getActiveJournal?: () => import('@weasel-js/history').Journal | null;
 }
 
+/**
+ * The kit-owned scene tree: nodes, layers, and the undo history over both.
+ *
+ * A scene is logical, not visual — it says what exists and where, and nothing
+ * about how it is painted. Every mutating method is undoable, and reads are
+ * snapshots rather than live views. Nodes are addressed by `NodeId`; hold ids
+ * across mutations, not node objects.
+ *
+ * Three type parameters keep it domain-agnostic: `TData` is the app's payload,
+ * which the kit never inspects; `TPose` is the transform shape, `RectPose` by
+ * default; `TLayer` is the union of layer names.
+ */
 export interface Scene<TData, TLayer extends string, TPose = RectPose> {
   // Reads
   readonly nodes: ReadonlyMap<NodeId, Node<TData, TLayer, TPose>>;

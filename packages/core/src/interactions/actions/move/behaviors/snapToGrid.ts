@@ -4,6 +4,8 @@ import { gridSnapStrategy } from '../../../gestures/shared/strategies/grid';
 
 type ModKey = keyof ModifierState;
 
+/** Move behavior that snaps the dragged pose's origin to a grid. Hold
+ *  `bypassKey` to drag freely. */
 export function snapToGrid<TPose extends { x: number; y: number }>(args: {
   spacing: number;
   bypassKey?: ModKey;

@@ -14,6 +14,9 @@ export interface AlignBounds {
  *  'min' = left/top edge, 'center' = centerline, 'max' = right/bottom edge. */
 export type AlignAnchor = 'min' | 'center' | 'max';
 
+/** The correction an alignment match asks for: the translation that lands the
+ *  dragged bounds on the matched guides, and the guides themselves so they can
+ *  be drawn. */
 export interface AlignMatchResult {
   dx: number;
   dy: number;
@@ -29,6 +32,8 @@ export interface AlignBoundsProjection<TPose> {
   translate(pose: TPose, dx: number, dy: number): TPose;
 }
 
+/** Which candidate lines to derive from a set of bounds — edges, centers, or
+ *  both, and whether the page box contributes its own. */
 export interface DeriveAlignmentGuidesOptions {
   /** Include the document/page box's edges + center as candidates. */
   page?: AlignBounds;

@@ -190,6 +190,7 @@ export const ActionDisabledReason = {
   /** Sentinel: the predicate threw. Surfaced by `evaluateEnabled`'s catch. */
   PredicateThrew: 'predicate-threw',
 } as const;
+/** Why an action is unavailable right now. */
 export type ActionDisabledReason =
   (typeof ActionDisabledReason)[keyof typeof ActionDisabledReason];
 
@@ -202,17 +203,17 @@ export interface ActionEnabledResult {
   reason?: ActionDisabledReason;
 }
 
+const enabledSlowWarned = new Set<string>();
+const enabledThrewWarned = new Set<string>();
+const ENABLED_BUDGET_MS = 4;
 /**
- * @internal
+ * @experimental
  * Safely evaluate an action's `enabled` predicate. Returns `{enabled: true}`
  * when no predicate is supplied. Catches throws and treats them as disabled
  * with reason `'(predicate threw)'`. In dev mode, warns once per action id
  * when a single call exceeds 4ms (single frame at 240fps — generous; real
  * predicates should be sub-millisecond).
  */
-const enabledSlowWarned = new Set<string>();
-const enabledThrewWarned = new Set<string>();
-const ENABLED_BUDGET_MS = 4;
 export function evaluateEnabled(
   action: Action,
   deps?: ActionDeps,

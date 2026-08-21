@@ -16,6 +16,8 @@
 import { useCallback, useRef } from 'react';
 import { applyBooleanOp, type BooleansAdapter, type BooleanOp } from './booleans';
 
+/** The six Boolean path operations, each acting on the current selection and
+ *  committing as one undo step. */
 export interface UseBooleansReturn {
   union(): void;
   intersect(): void;
@@ -25,6 +27,7 @@ export interface UseBooleansReturn {
   crop(): void;
 }
 
+/** Options for `useBooleans`. */
 export interface UseBooleansOptions {
   /** No-op. Retained for source-compatibility; auto-registration is now
    *  handled by `useStandardActions` via the Pathfinder descriptors. */
@@ -34,6 +37,8 @@ export interface UseBooleansOptions {
 const isDev = typeof import.meta !== 'undefined'
   && (import.meta as { env?: { DEV?: boolean } }).env?.DEV;
 
+/** Bind the Boolean path operations to an adapter that knows how to read the
+ *  selection, fetch world-space paths and mint result nodes. */
 export function useBooleans(
   adapter: BooleansAdapter,
   _options: UseBooleansOptions = {},

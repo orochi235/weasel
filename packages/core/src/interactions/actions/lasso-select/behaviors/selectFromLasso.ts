@@ -15,6 +15,7 @@ export const LASSO_VERTICES = scratchKey<ReadonlyArray<{ x: number; y: number }>
 
 const MIN_AREA = 4;
 
+/** Options for `selectFromLasso`. */
 export interface SelectFromLassoOptions {
   /** Hit mode for `hitTestLasso`. Default 'intersect'. */
   mode?: LassoHitMode;

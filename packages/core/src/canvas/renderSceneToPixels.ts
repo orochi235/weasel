@@ -65,6 +65,7 @@ export interface HeadlessCanvasLike {
   getContext(contextId: 'webgl2', options?: WebGLContextAttributes): unknown;
 }
 
+/** What to render, at what resolution, and with which quality settings. */
 export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
   scene: Scene<TData, TLayer, TPose>;
   /** Scene-space rect to render (origin + size in scene units). Output pixel
@@ -101,6 +102,8 @@ export interface RenderSceneToPixelsArgs<TData, TLayer extends string, TPose> {
   flattenTolerancePx?: number;
 }
 
+/** The result of planning a headless render: how big the output is, the view
+ *  that maps the source rect onto it, and the commands to draw. */
 export interface PixelRenderPlan {
   width: number;
   height: number;
@@ -187,6 +190,15 @@ function unpremultiply(data: Uint8ClampedArray): void {
   }
 }
 
+/**
+ * Render part of a scene to raw pixels, with no canvas mounted and no React
+ * involved — for export, thumbnails, print, and pixel-diff tests.
+ *
+ * Output size follows from the source rect and the requested scale, so
+ * rendering the same region at a higher scale is a real resolution increase
+ * rather than an upscale: curves are re-flattened and glyphs re-rasterized for
+ * the output resolution.
+ */
 export function renderSceneToPixels<TData, TLayer extends string, TPose>(
   args: RenderSceneToPixelsArgs<TData, TLayer, TPose>,
 ): RasterImage {

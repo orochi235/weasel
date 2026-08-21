@@ -1,11 +1,15 @@
+/** A subscriber to a named event. */
 export type EventListener = () => void;
 
+/** Named-event pub/sub, the channel an instrument's `emit` writes to and undo
+ *  snapshotting listens on. */
 export interface EventBus {
   on(event: string, listener: EventListener): () => void;
   emit(event: string): void;
   clear(): void;
 }
 
+/** Build an empty event bus. */
 export function createEventBus(): EventBus {
   const listeners = new Map<string, Set<EventListener>>();
   return {

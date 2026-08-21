@@ -7,6 +7,15 @@ import { createLabel, type LabelOptions, type LabelWidget } from './widgets/labe
 import { createButton, type ButtonOptions, type ButtonWidget } from './widgets/button';
 import { createWindow, type WindowOptions, type WindowWidget } from './widgets/window/window';
 
+/**
+ * A HUD: an ordered set of widgets drawn in screen space over the canvas, and
+ * the factories that create them. The factory methods (`rect`, `text`, …) also
+ * add the widget and wire its mutations to a redraw; the bare `createRect`-style
+ * factories do neither, leaving redraw scheduling to the caller.
+ *
+ * A HUD holds no GL state of its own. It becomes visible by binding to a host
+ * — normally through `attachHud`.
+ */
 export interface Hud {
   add(widget: Widget): void;
   remove(widget: Widget): void;
@@ -30,6 +39,7 @@ export interface Hud {
   window(opts: WindowOptions): WindowWidget;
 }
 
+/** Create an empty, unbound HUD. */
 export function createHud(): Hud {
   const list: Widget[] = [];
   let host: HudHost | null = null;

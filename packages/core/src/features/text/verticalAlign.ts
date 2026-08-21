@@ -6,6 +6,9 @@
  */
 export type TextVerticalAlign = 'top' | 'center' | 'bottom';
 
+/** How far to shift laid-out text down inside a box of `boxHeight` to satisfy
+ *  a vertical alignment. Zero when the box height is unknown or alignment is
+ *  top. */
 export function verticalAlignOffset(
   align: TextVerticalAlign | undefined,
   boxHeight: number | undefined,

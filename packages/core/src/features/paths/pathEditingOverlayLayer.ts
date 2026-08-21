@@ -28,6 +28,8 @@ import { circlePath, linePath, rectMarkerPath, squarePath } from './markers';
 
 interface View { x: number; y: number; scale: { x: number; y: number } }
 
+/** Options for `createPathEditingOverlayLayer`. Everything is read per frame,
+ *  so the layer follows a changing edit target without being rebuilt. */
 export interface CreatePathEditingOverlayLayerOptions {
   /** Returns the id of the polygon currently in anchor-edit mode, or null
    *  when no node is being edited. Read each frame so live selection /
@@ -54,6 +56,7 @@ export interface CreatePathEditingOverlayLayerOptions {
   style?: PathEditingOverlayStyle;
 }
 
+/** Appearance of the anchor and handle markers. */
 export interface PathEditingOverlayStyle {
   anchorSizePx?: number;
   handleDotRadiusPx?: number;
@@ -96,6 +99,9 @@ function w2s(wx: number, wy: number, view: View): [number, number] {
   return [(wx - view.x) * view.scale.x, (wy - view.y) * view.scale.y];
 }
 
+/** Render layer that draws the anchors and control handles of the path
+ *  currently being anchor-edited. Draws nothing when no path is being
+ *  edited. */
 export function createPathEditingOverlayLayer(
   opts: CreatePathEditingOverlayLayerOptions,
 ): RenderLayer<unknown> {

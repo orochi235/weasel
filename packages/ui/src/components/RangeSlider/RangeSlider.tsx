@@ -9,6 +9,7 @@ import {
 } from 'react-aria-components';
 import s from './RangeSlider.module.css';
 
+/** Props for {@link RangeSlider}, on top of React Aria's `Slider` props. */
 export type RangeSliderProps = Omit<RACSliderProps, 'children' | 'className'> & {
   label?: ReactNode;
   /** Show the current value next to the label. Defaults to true when a

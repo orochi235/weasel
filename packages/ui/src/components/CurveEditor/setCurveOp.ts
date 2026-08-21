@@ -11,6 +11,10 @@ export interface SetCurveAdapter {
   setValue(id: string, next: readonly ControlPoint[]): void;
 }
 
+/**
+ * Arguments for {@link createSetCurveOp}. `coalesceKey` merges consecutive
+ * edits sharing it into one history entry.
+ */
 export interface CreateSetCurveOpArgs {
   /** Stable id the consumer uses for this curve. Used so a single
    *  adapter can handle multiple curves; the op's apply routes by id. */

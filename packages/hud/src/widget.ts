@@ -2,6 +2,7 @@ import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { ClaimableGesture, View } from '@weasel-js/core';
 import type { ResolvedTheme } from '@weasel-js/theme';
 
+/** A widget's rectangle, in screen-space CSS pixels relative to the canvas. */
 export interface WidgetBounds {
   x: number;
   y: number;
@@ -9,6 +10,9 @@ export interface WidgetBounds {
   h: number;
 }
 
+/** Everything a widget is given to draw itself. Deliberately carries no scene
+ *  data, which is what lets a HUD render identically headlessly — a window's
+ *  `content` painter is the one opt-in exception (see {@link HudContentCtx}). */
 export interface HudDrawCtx {
   /** Canvas size in CSS pixels. */
   dims: { width: number; height: number };
@@ -74,6 +78,8 @@ export type HudPointerEvent =
 export const DEFAULT_WIDGET_CLAIMS: readonly ClaimableGesture[] =
   ['pointer', 'doubleClick', 'contextMenu', 'longPress'];
 
+/** The gestures `w` consumes, applying {@link DEFAULT_WIDGET_CLAIMS} when the
+ *  widget declares none. */
 export function claimsOf(w: Widget): readonly ClaimableGesture[] {
   return w.claims ?? DEFAULT_WIDGET_CLAIMS;
 }
@@ -87,6 +93,11 @@ export function cursorOf(w: Widget, x: number, y: number): string | undefined {
     ?? (claimsOf(w).includes('pointer') ? 'pointer' : undefined);
 }
 
+/**
+ * The contract every HUD widget implements: a rectangle, a painter, a
+ * hit-test, and a pointer handler. Widgets are plain objects — consumers can
+ * write their own without any registration step.
+ */
 export interface Widget {
   readonly id: string;
   readonly bounds: WidgetBounds;

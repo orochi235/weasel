@@ -3,9 +3,15 @@ import { useDragGesture } from '../dragGesture';
 import type { ModifierState } from '../types';
 import { dlog } from '../../../debug/flag';
 
+/** A point in world coordinates. */
 export interface DragRectPoint { x: number; y: number }
+/** The axis-aligned box between the drag's two corners, always with
+ *  non-negative extents regardless of drag direction. */
 export interface DragRectBounds { x: number; y: number; width: number; height: number }
 
+/** Live state of a rectangle drag, handed to each lifecycle callback. Either
+ *  corner can be moved mid-gesture, which is how a tool re-anchors a drag
+ *  without restarting it. */
 export interface DragRectCtx<TScratch = unknown> {
   start: DragRectPoint;
   current: DragRectPoint;
@@ -19,6 +25,8 @@ export interface DragRectCtx<TScratch = unknown> {
   setCurrent(p: DragRectPoint): void;
 }
 
+/** The context handed to `onEnd`, adding whether the final box is too small
+ *  to be meaningful. */
 export interface DragRectEndCtx<TScratch = unknown> extends DragRectCtx<TScratch> {
   /** True if the end-time bounds are at or below `minBounds` on either axis.
    *  Present-tense state check — distinct from the base's retrospective
@@ -26,6 +34,7 @@ export interface DragRectEndCtx<TScratch = unknown> extends DragRectCtx<TScratch
   isSubThreshold: boolean;
 }
 
+/** Options for `useDragRect`. */
 export interface UseDragRectOptions<TScratch = unknown> {
   minBounds?: { width: number; height: number };
   initScratch?: () => TScratch;
@@ -43,6 +52,7 @@ export interface UseDragRectOptions<TScratch = unknown> {
   snapPoint?: (p: DragRectPoint) => DragRectPoint;
 }
 
+/** Drives a rectangle drag and publishes the live box for overlay drawing. */
 export interface DragRectController {
   start(worldX: number, worldY: number, modifiers: ModifierState): void;
   move(worldX: number, worldY: number, modifiers: ModifierState): boolean;
@@ -68,6 +78,14 @@ interface DragRectScratch<TConsumer> {
   consumer: TConsumer;
 }
 
+/**
+ * The gesture "the user drew a rectangle": press, drag, release, with the
+ * resulting box reported live and at commit.
+ *
+ * It is a spatial input primitive, not an insert mechanism — what the box
+ * means is entirely up to whoever consumes it. Marquee selection, cropping and
+ * shape insertion all sit on top of the same gesture.
+ */
 export function useDragRect<TScratch = unknown>(
   options: UseDragRectOptions<TScratch> = {},
 ): DragRectController {

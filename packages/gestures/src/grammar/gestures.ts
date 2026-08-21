@@ -23,6 +23,8 @@ export type GestureName =
   | 'drop'
   | 'paste';
 
+/** Declares the argument a gesture carries: what it is called, which values
+ *  are legal, and what an omitted arg slot means. */
 export interface GestureArgSpec {
   /** Display name for the arg in inspector chips (`direction`, `key`, `fingers`). */
   name: string;
@@ -34,6 +36,8 @@ export interface GestureArgSpec {
   default?: string;
 }
 
+/** What the grammar knows about one gesture — the form of input itself, not
+ *  any action bound to it. */
 export interface GestureDescriptor {
   name: GestureName;
   /** Does the route's `.target` slot apply? Targetless gestures (`wheel`,
@@ -43,6 +47,9 @@ export interface GestureDescriptor {
   arg?: GestureArgSpec;
 }
 
+/** The gesture taxonomy: one descriptor per gesture the grammar recognizes.
+ *  Adding a gesture here is what makes it parseable, matchable and
+ *  inspectable. */
 export const GESTURE_DESCRIPTORS: readonly GestureDescriptor[] = [
   { name: 'click',         hasTarget: true  },
   { name: 'pointerDown',   hasTarget: true  },
@@ -66,12 +73,15 @@ const BY_NAME = new Map<string, GestureDescriptor>(
   GESTURE_DESCRIPTORS.map((d) => [d.name, d]),
 );
 
+/** Look up a gesture's descriptor. Throws on an unknown name — callers
+ *  holding an unvalidated string should gate on `isKnownGestureName` first. */
 export function getGestureDescriptor(name: GestureName): GestureDescriptor {
   const d = BY_NAME.get(name);
   if (!d) throw new Error(`unknown gesture: ${name}`);
   return d;
 }
 
+/** Whether a string names a gesture the grammar recognizes. */
 export function isKnownGestureName(name: string): name is GestureName {
   return BY_NAME.has(name);
 }

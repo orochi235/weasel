@@ -6,6 +6,7 @@ import type { Action } from 'interactions/actions/registry';
 import type { NodeAtPointDep } from 'interactions/actions/depSchema';
 import { EyedropperIcon } from '../../../icons';
 
+/** Options for `useEyedropperTool`. */
 export interface UseEyedropperToolOptions {
   /** Called when the user picks a color. `null` means "no node was hit
    *  with a color" — currently only reachable when `colorOf` returns null

@@ -284,6 +284,9 @@ export interface SceneCanvasHit {
   kind: string;
 }
 
+/** Props for `<SceneCanvas>`. Most are optional: a scene is the only thing it
+ *  truly needs, and everything else — tools, layers, selection handling,
+ *  layouts, animation — layers onto sensible defaults. */
 export type SceneCanvasProps<TData, TLayer extends string, TPose> =
   Omit<
     CanvasProps<Node<TData, TLayer, TPose>, TPose>,
@@ -2550,6 +2553,19 @@ function SceneCanvasWrapper<TData, TLayer extends string, TPose>(
   );
 }
 
+/**
+ * The canvas component: renders a `Scene` and wires the interaction stack
+ * around it.
+ *
+ * Mounting one gives you the whole default kit — an adapter synthesized from
+ * the scene, the built-in tools and actions, selection, undo, and the gesture
+ * dispatcher — with each piece replaceable through props. This is the intended
+ * entry point; the lower-level primitives it composes are not part of the
+ * public surface.
+ *
+ * Its ref exposes a `SceneCanvasApi` for the imperative operations that do not
+ * fit a prop (view control, hit queries, redraw requests).
+ */
 export const SceneCanvas = forwardRef(SceneCanvasWrapper) as <
   TData, TLayer extends string, TPose,
 >(

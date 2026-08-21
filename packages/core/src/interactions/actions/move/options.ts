@@ -7,6 +7,8 @@
 
 import type { MoveBehavior } from '../../gestures/types';
 
+/** Options for the `move` action: how a translation is applied to the pose,
+ *  and the behaviors (snapping, momentum) layered over the raw drag. */
 export interface UseMoveOptions<TPose> {
   /** How to apply a `(dx, dy)` translation to a pose. Defaults to
    *  `translateRectPose`, which assumes the pose carries top-level

@@ -288,7 +288,7 @@ export function PerceptualColorSlidersDemo() {
           <Slider
             min={0} max={360} step={1}
             thumbs={[{ value: hue }]}
-            onChange={ts => setHue(ts[0].value)}
+            onInput={ts => setHue(ts[0].value)}
             ariaLabel="Hue"
             readoutPlacement="inline-after"
             renderReadout={t => `${t.value}°`}
@@ -305,7 +305,7 @@ export function PerceptualColorSlidersDemo() {
               { value: lRange[0], label: '↓', shape: 'notched', bounds: lBounds.dark  },
               { value: lRange[1], label: '↑', shape: 'notched', bounds: lBounds.light },
             ]}
-            onChange={ts => setLRange([ts[0].value, ts[1].value])}
+            onInput={ts => setLRange([ts[0].value, ts[1].value])}
             readoutPlacement="below-thumb"
             renderTrack={paintGradientTrack({
               gradient: t => oklchToHex(t, 0, 0),
@@ -325,7 +325,7 @@ export function PerceptualColorSlidersDemo() {
               { value: chroma.cPeak, label: 'P', key: 'cPeak', bounds: chromaBounds.cPeak },
               { value: chroma.cBot,  label: 'B', key: 'cBot',  bounds: chromaBounds.cBot  },
             ]}
-            onChange={ts => {
+            onInput={ts => {
               const next = { ...chroma };
               for (const t of ts) next[t.key] = t.value;
               setChroma(next);
@@ -342,7 +342,7 @@ export function PerceptualColorSlidersDemo() {
           <Slider
             min={0} max={1000} step={1}
             thumbs={indices.map(value => ({ value }))}
-            onChange={ts => setIndices(ts.map(t => Math.round(t.value)).sort((a, b) => a - b))}
+            onInput={ts => setIndices(ts.map(t => Math.round(t.value)).sort((a, b) => a - b))}
             onAddThumb={at => ({ value: Math.round(at) })}
             onRemoveThumb={() => true}
             allowShiftAll

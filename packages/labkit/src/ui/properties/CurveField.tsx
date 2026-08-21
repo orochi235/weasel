@@ -1,10 +1,13 @@
 import { useCallback, useMemo } from 'react';
 import { type ControlPoint, CurveEditor, dlog } from '../../passthrough/weasel-ui';
 
+/** An annotation drawn over a curve plot: a shaded band across a range of x,
+ *  or a vertical line at one x. */
 export type CurveMark =
   | { kind: 'band'; x: [number, number]; color?: string }
   | { kind: 'line'; x: number; color?: string };
 
+/** Props for `<CurveField>`. */
 export interface CurveFieldProps {
   /** Flat [x0, y0, x1, y1, …] — matches how curve-as-array configs
    *  serialize in JSON snapshots. */
@@ -91,7 +94,7 @@ export function CurveField({
       <div className="lk-curve-field__plot">
         <CurveEditor
           value={points}
-          onChange={handleChange}
+          onInput={handleChange}
           domain="1d"
           constrain="function"
           xRange={[0, 1]}

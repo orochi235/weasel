@@ -66,11 +66,14 @@ export type OutlineSource =
   | Blob
   | (() => ArrayBuffer | Blob | Promise<ArrayBuffer | Blob>);
 
+/** Which face within a family to register outlines for. Defaults to weight
+ *  400, style `'normal'`. */
 export interface OutlineVariant {
   weight?: number;
   style?: OutlineFontStyle;
 }
 
+/** Options for registering an outline font. */
 export interface OutlineFontOptions {
   /** Override the default opentype.js parser. Mostly a test seam; also the
    *  hook for a consumer who already has a font parser in their bundle. */
@@ -217,6 +220,15 @@ function closeOne(contour: string): string {
   return last === 'Z' || last === 'z' ? trimmed : `${trimmed}Z`;
 }
 
+/**
+ * Em-space SVG path data for one glyph of a registered outline face, or `null`
+ * when there is nothing to draw.
+ *
+ * Synchronous and non-throwing by design: a face that has not been parsed yet
+ * starts loading and answers `null` for now, so a renderer can call this every
+ * frame and simply fall through to another text tier until the outline
+ * arrives. Results are cached per codepoint.
+ */
 export function glyphOutline(
   family: string,
   weight: number,

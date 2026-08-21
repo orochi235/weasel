@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 import { CanvasStackContext } from '../canvas/CanvasStackContext';
 
+/** Props for `<ScaleIndicator>`. */
 export interface ScaleIndicatorProps {
   /** Current view zoom factor. If omitted, reads from CanvasStackContext. Defaults to 1. */
   zoom?: number;
@@ -25,6 +26,9 @@ function niceNumber(n: number): number {
   return nice * 10 ** exp;
 }
 
+/** A scale bar: a labeled rule showing how far a round number of world units
+ *  is at the current zoom. Reads the zoom from the surrounding canvas stack
+ *  unless one is passed. */
 export function ScaleIndicator({
   zoom,
   pixelsPerUnit = 1,

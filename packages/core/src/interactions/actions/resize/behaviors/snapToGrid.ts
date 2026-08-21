@@ -6,6 +6,10 @@ import type {
 
 type ModKey = keyof ModifierState;
 
+/** Resize constraint that snaps the moving edges to a grid, leaving the
+ *  anchored ones where they are. By default a node already smaller than one
+ *  grid cell on an axis is left unsnapped on that axis, so it stays resizable
+ *  at sub-grid sizes. */
 export function snapToGrid<TPose extends ResizePose>(args: {
   spacing: number;
   bypassKey?: ModKey;

@@ -45,6 +45,10 @@ type BadgePropsByShape = {
   [S in BadgeShape]: BadgeBaseProps & { shape?: S; shapeParams?: BadgeShapeParams[S] };
 }[BadgeShape];
 
+/**
+ * Props for {@link Badge}. Discriminated on `shape` so `shapeParams` is typed
+ * to the chosen shape's own parameters.
+ */
 export type BadgeProps = BadgePropsByShape;
 
 function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
@@ -54,6 +58,16 @@ function chooseElement(props: BadgeProps): 'span' | 'button' | 'a' {
   return 'span';
 }
 
+/**
+ * A small labelled chip. Renders as a `<span>`, or as a `<button>`/`<a>` when
+ * given `onClick`/`href` — override with `as`.
+ *
+ * Beyond the built-in {@link BadgeShape} silhouettes, a badge can be composed:
+ * `base` picks the underlying outline and `effects` layer perimeter treatments
+ * over it, which stack additively. `bloat` pushes the whole silhouette outward
+ * along its normals before effects run, and `crawl` animates perimeter
+ * patterns.
+ */
 export function Badge(props: BadgeProps) {
   const {
     shape = 'pill',

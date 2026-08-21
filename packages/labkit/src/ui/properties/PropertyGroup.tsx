@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+/** Props for `<PropertyGroup>`. */
 export interface PropertyGroupProps {
   /** Title rendered between two rules at the top of the group. */
   title: ReactNode;

@@ -3,6 +3,7 @@ import { alignedStrokeRect } from '@weasel-js/core';
 import type { Mesh } from '../../../renderer/cache/mesh';
 import { extractPolylines, type Polyline } from './polyline';
 
+/** Options for stroke tessellation. */
 export interface StrokeOptions {
   flattenTolerance?: number;
 }

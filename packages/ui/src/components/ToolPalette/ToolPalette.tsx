@@ -52,6 +52,7 @@ function resolveIcon(tool: AnyTool): ReactNode {
   return rawIcon;
 }
 
+/** Props for {@link ToolPalette}. */
 export interface ToolPaletteProps {
   tools: ToolsApi;
   orientation?: 'vertical' | 'horizontal';
@@ -75,6 +76,14 @@ export interface ToolPaletteProps {
   groupOrder?: readonly string[];
 }
 
+/**
+ * Toolbar of the registered tools, split into separator-divided groups by
+ * each tool's presentation group and navigable by arrow keys. Clicking a
+ * button makes that tool active.
+ *
+ * Given a `modeRegistry`, tools whose capabilities the current mode does not
+ * allow render greyed out and inert rather than disappearing.
+ */
 export function ToolPalette(props: ToolPaletteProps) {
   const {
     tools, orientation = 'vertical', className, lookupShortcut, modeRegistry,

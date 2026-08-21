@@ -1,5 +1,8 @@
 import type { BoundsConstraint, ResizePose } from '../../../gestures/types';
 
+/** Resize constraint that stops a node shrinking past a minimum. The anchored
+ *  edge stays put, so clamping pushes the dragged edge back rather than moving
+ *  the node. */
 export function clampMinSize<TPose extends ResizePose>(args: {
   minWidth: number;
   minHeight: number;

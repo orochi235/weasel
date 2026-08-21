@@ -9,6 +9,7 @@ export interface BmFontInfo {
   size: number;
 }
 
+/** Font-wide vertical metrics and the atlas page dimensions, in pixels. */
 export interface BmFontCommon {
   lineHeight: number;
   base: number;
@@ -16,6 +17,9 @@ export interface BmFontCommon {
   scaleH: number;
 }
 
+/** One glyph: where it sits in the atlas page (`x`/`y`/`width`/`height`),
+ *  where to draw it relative to the pen (`xoffset`/`yoffset`), and how far the
+ *  pen then advances. */
 export interface BmFontChar {
   id: number;
   x: number;
@@ -28,12 +32,16 @@ export interface BmFontChar {
   page: number;
 }
 
+/** A kerning pair: `amount` px to add to the advance when `second` follows
+ *  `first`. Codepoints, not glyph indices. */
 export interface BmFontKerning {
   first: number;
   second: number;
   amount: number;
 }
 
+/** A parsed MSDF atlas: the BmFont record plus the `charMap` / `kerningMap`
+ *  accelerators layout reads per glyph. */
 export interface BmFont {
   info: BmFontInfo;
   common: BmFontCommon;
@@ -56,6 +64,8 @@ export const FIXTURE_FONT = {
   ],
 };
 
+/** Validate a BmFont JSON document and build its lookup maps. Throws with the
+ *  missing or malformed field named. */
 export function parseBmFont(raw: unknown): BmFont {
   if (typeof raw !== 'object' || raw === null) throw new Error('parseBmFont: expected object');
   const r = raw as Record<string, unknown>;

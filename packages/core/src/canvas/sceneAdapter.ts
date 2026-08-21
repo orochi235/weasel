@@ -60,6 +60,10 @@ interface ReorderAdapter {
   setChildOrder(parentId: string | null, ids: string[]): void;
 }
 
+/** Everything the interaction layer can ask of a scene, as one type: the
+ *  move, resize, rotate, selection, layer and reorder contracts combined.
+ *  `<SceneCanvas>` synthesizes one of these, which is why most consumers never
+ *  touch an adapter directly. */
 export type SceneCanvasAdapter<TData, TLayer extends string, TPose> =
   & MoveAdapter<Node<TData, TLayer, TPose>, TPose>
   & ResizeAdapter<Node<TData, TLayer, TPose>, TPose>
@@ -249,6 +253,9 @@ function copyField<T>(value: T): T {
   return value;
 }
 
+/** Derive the adapter for a scene. Reads go straight to the scene; writes are
+ *  ops applied through its history, so anything done through the adapter is
+ *  undoable. */
 export function sceneToAdapter<TData, TLayer extends string, TPose>(
   scene: Scene<TData, TLayer, TPose>,
   options: SceneToAdapterOptions<TData, TLayer, TPose> = {},

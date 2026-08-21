@@ -3,6 +3,7 @@ import { Focusable } from 'react-aria-components';
 import { Tooltip, TooltipTrigger } from '../Tooltip';
 import s from './SidebarPanel.module.css';
 
+/** Props for {@link SidebarPanel}. */
 export interface SidebarPanelProps {
   /** Title rendered in the panel's header row. */
   title?: ReactNode;

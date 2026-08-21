@@ -15,6 +15,8 @@ function lerpView(from: View, to: View, t: number): View {
   };
 }
 
+/** Animate the view from where it is to a target view — zoom-to-fit,
+ *  zoom-to-selection, and anything else that should glide rather than jump. */
 export function useViewTween(setView: (v: View) => void) {
   const setViewRef = useRef(setView);
   setViewRef.current = setView;

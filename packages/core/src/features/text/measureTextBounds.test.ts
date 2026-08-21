@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { _resetFontRegistryForTests, registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { registerFont, FIXTURE_FONT } from '@weasel-js/font';
+import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 import { measureTextBounds } from './measureTextBounds';
 
 function stubFetch() {

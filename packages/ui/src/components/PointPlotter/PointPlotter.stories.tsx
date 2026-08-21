@@ -23,7 +23,7 @@ function Interactive(props: InteractiveProps) {
   return (
     <PointPlotter
       value={value}
-      onChange={setValue}
+      onInput={setValue}
       xRange={[props.xMin, props.xMax]}
       yRange={[props.yMin, props.yMax]}
       grid={props.showGrid ? { divisions: props.gridDivisions } : false}

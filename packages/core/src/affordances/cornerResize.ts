@@ -6,6 +6,8 @@ import { MULTI_RESIZE_TARGET_ID } from 'core/selection/selectionTarget';
 import { localToWorld, transformOf } from './hitAffordanceRegions';
 import { HANDLE_BASE_PX } from 'core/device/targets';
 
+/** Options for `createCornerResizeAffordance` — the size and appearance of
+ *  the corner handles. */
 export interface CornerResizeAffordanceOptions {
   /** Hit radius (screen-px) for the corner handles. Default 8. */
   handleHitRadius?: number;
@@ -15,6 +17,8 @@ export interface CornerResizeAffordanceOptions {
   stroke?: string;
 }
 
+/** What a corner-resize hit hands to the resize action: which corner stays
+ *  put, what is being resized, and the world-space pivot to scale from. */
 export interface CornerResizeScratch extends CommonAffordanceScratch {
   /** Resize anchor identifying the OPPOSITE corner (the one that stays
    *  fixed). Matches the kit's existing ResizeAnchor convention. */

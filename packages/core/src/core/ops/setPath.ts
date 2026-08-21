@@ -1,6 +1,9 @@
 import type { Op } from './types';
 import { registerOpFactory } from './registry';
 
+/** The geometry fields a `setPath` op replaces together — the path itself,
+ *  whether it is closed, and the parameters it was generated from. They move
+ *  as one so a parametric shape and its baked path never disagree. */
 export interface SetPathFields {
   path: unknown;     // Path | RectPath; left unknown so kit doesn't depend on features/paths/types here
   closed: boolean;

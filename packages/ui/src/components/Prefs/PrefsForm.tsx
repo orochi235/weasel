@@ -23,6 +23,7 @@ import {
 } from './schema';
 import s from './Prefs.module.css';
 
+/** What a {@link PrefRenderer} is given for the leaf it is rendering. */
 export interface PrefRenderContext {
   /** Dotted path of the leaf within the schema root. */
   path: string;
@@ -33,8 +34,13 @@ export interface PrefRenderContext {
   setValue: (value: unknown) => void;
 }
 
+/**
+ * Renders the control cell for one preference leaf. Returning `null`
+ * collapses the row.
+ */
 export type PrefRenderer = (ctx: PrefRenderContext) => ReactNode;
 
+/** Props for {@link PrefsForm}. */
 export interface PrefsFormProps {
   /** Root of the schema tree. Core `ToolPrefGroup`s assign structurally. */
   schema: PrefGroup;

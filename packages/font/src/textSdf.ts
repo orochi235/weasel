@@ -61,6 +61,8 @@ void main() {
 }
 `;
 
+/** Fragment shader for the MSDF text program. Samples the atlas, applies the
+ *  color transform, and emits premultiplied alpha. */
 export const TEXT_FRAG_SRC = /* glsl */ `#version 300 es
 precision highp float;
 in vec2 v_uv;
@@ -126,9 +128,13 @@ void main() {
 }
 `;
 
+/** Uniform names the text program declares, for the caller that looks up and
+ *  caches their locations. */
 export const TEXT_SDF_UNIFORMS = [
   'u_proj', 'u_model', 'u_atlas', 'u_color', 'u_alpha',
   'u_synthBold', 'u_synthItalic', 'u_colorMatrix', 'u_colorBias',
 ] as const;
 
+/** Vertex attribute names the text program declares, in the order the
+ *  interleaved buffer packs them. */
 export const TEXT_SDF_ATTRIBUTES = ['a_position', 'a_uv', 'a_baselineY'] as const;

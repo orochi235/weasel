@@ -17,6 +17,8 @@ export interface OpenFilePickerOptions {
   multiple?: boolean;
 }
 
+/** Show the browser's file picker and resolve with what the user chose —
+ *  empty when they cancel. Must be called from a user gesture. */
 export function openFilePicker(opts: OpenFilePickerOptions = {}): Promise<File[]> {
   return new Promise((resolve) => {
     const input = document.createElement('input');

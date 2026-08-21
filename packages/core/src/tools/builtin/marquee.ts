@@ -3,6 +3,7 @@ import { viewToTransform } from 'core/viewport/view';
 import { worldToScreen } from 'core/viewport/viewTransform';
 import type { DrawCommand } from '../../renderer';
 
+/** Appearance of the dashed box drawn during a marquee or insert drag. */
 export interface InsertOverlayStyle {
   fill?: string;
   stroke?: string;

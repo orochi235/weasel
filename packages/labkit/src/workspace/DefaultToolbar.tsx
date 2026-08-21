@@ -1,10 +1,13 @@
 import { Toolbar } from '../primitives/Toolbar';
 import type { WorkspaceToolbarContext } from './slotTypes';
 
+/** Props for `<DefaultToolbar>`. */
 export interface DefaultToolbarProps {
   ctx: WorkspaceToolbarContext;
 }
 
+/** The toolbar a workspace renders when no `toolbar` slot is supplied. Only
+ *  shows the controls the instrument's declared capabilities support. */
 export function DefaultToolbar({ ctx }: DefaultToolbarProps) {
   return (
     <Toolbar>

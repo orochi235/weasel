@@ -10,6 +10,7 @@ import { nurbs } from './nurbs';
 import { spiro } from './spiro';
 import type { CurveRepresentation, CurveRepKind } from './types';
 
+/** Every curve representation the kit ships, keyed by kind. */
 export const CURVE_REPS: Readonly<Record<CurveRepKind, CurveRepresentation>> = {
   bezierCubic,
   bezierQuadratic,

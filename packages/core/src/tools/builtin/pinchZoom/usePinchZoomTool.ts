@@ -4,6 +4,8 @@ import { zoomAt } from 'core/viewport/zoomAt';
 import { clientToCanvas } from 'core/viewport/clientToCanvas';
 import type { View } from 'core/viewport/view';
 
+/** Options for `usePinchZoomTool`: the zoom limits, and whether it is wired
+ *  at all. */
 export interface PinchZoomToolOpts {
   min?: number;
   max?: number;

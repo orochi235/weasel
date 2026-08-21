@@ -39,6 +39,8 @@ function resolveSpringConstants(o: { preset?: string; stiffness?: number; dampin
   };
 }
 
+/** Create the animator for a canvas. One rAF loop drives every animation it
+ *  owns, and everything still running is cancelled on unmount. */
 export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   const optsRef = useRef(opts);
   optsRef.current = opts;

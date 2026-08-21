@@ -3,6 +3,7 @@ import { defineTool } from '../../defineTool';
 import { ImageIcon } from '../../../icons';
 import type { Tool } from '../../types';
 
+/** Options for `useImageTool`. */
 export interface UseImageToolOptions {
   /** Image source for inserted nodes — a URL, a `blob:` URL, or a
    *  `data:image/…;base64,…` URI. Stored verbatim on each new node's

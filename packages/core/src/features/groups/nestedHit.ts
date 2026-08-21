@@ -9,6 +9,7 @@ interface HitAdapter<TNode extends { id: string }, TPose> {
   getParent: (id: string) => string | null;
 }
 
+/** Options for `nestedHitTester`. */
 export interface NestedHitOpts<TNode extends { id: string }, TPose> {
   /** Compose a child's local pose into world coords given its parent's world
    *  pose. Same shape as `composeRectPose` (the default expectation). */
@@ -24,6 +25,8 @@ export interface NestedHitOpts<TNode extends { id: string }, TPose> {
   isGroup?: (id: string, obj: TNode | undefined) => boolean;
 }
 
+/** Hit-test entry points for a nested scene: one that always picks the
+ *  outermost ancestor, and one that steps deeper on alt-click. */
 export interface NestedHitTester {
   /** Outermost-ancestor pick. Suitable as the chrome-level `pickEvery`: a
    *  casual click selects the whole top-level ancestor. Returns `null` on
@@ -48,6 +51,9 @@ const defaultPoseBounds = <TPose>(pose: TPose): RectBounds => {
   return { x: p.x, y: p.y, width: p.width, height: p.height };
 };
 
+/** Build hit-testers that respect containers: a plain click selects the
+ *  top-level ancestor, and alt-clicking descends one level at a time toward
+ *  the leaf actually under the pointer. */
 export function nestedHitTester<TNode extends { id: string }, TPose>(
   adapter: HitAdapter<TNode, TPose>,
   opts: NestedHitOpts<TNode, TPose>,

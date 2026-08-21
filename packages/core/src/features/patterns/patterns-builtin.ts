@@ -39,6 +39,7 @@ export interface HatchParams {
   lineWidth?: number;
 }
 
+/** Build a diagonal-hatch pattern texture. */
 export function hatch(params: HatchParams): TextureHandle | null {
   return build({ tile: 'hatch', ...params });
 }
@@ -50,6 +51,7 @@ export interface CrosshatchParams {
   lineWidth?: number;
 }
 
+/** Build a crosshatch pattern texture. */
 export function crosshatch(params: CrosshatchParams): TextureHandle | null {
   return build({ tile: 'crosshatch', ...params });
 }
@@ -61,6 +63,7 @@ export interface DotsParams {
   radius?: number;
 }
 
+/** Build a dot-grid pattern texture. */
 export function dots(params: DotsParams): TextureHandle | null {
   return build({ tile: 'dots', ...params });
 }
@@ -82,6 +85,7 @@ export interface ChunksParams {
   seed?: number;
 }
 
+/** Build a seeded random-scatter pattern texture. */
 export function chunks(params: ChunksParams): TextureHandle | null {
   return build({ tile: 'chunks', ...params });
 }

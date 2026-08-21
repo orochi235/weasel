@@ -1,6 +1,7 @@
 import type { RenderLayer } from '../../core/layers/render';
 import { deriveParallaxView, type ParallaxOpts } from './deriveParallaxView';
 
+/** Options for `createParallaxLayer`. */
 export interface CreateParallaxLayerOpts<TData> extends ParallaxOpts {
   id: string;
   label: string;

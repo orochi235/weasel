@@ -16,6 +16,11 @@ import {
 import { fieldClasses } from '../Field/Field';
 import s from './ComboBox.module.css';
 
+/**
+ * One option in a {@link ComboBox}'s `options` list. `textValue` is the
+ * plain-text form used for filtering and screen readers, needed only when
+ * `label` isn't a bare string.
+ */
 export type ComboBoxOption = {
   value: string;
   label: ReactNode;
@@ -25,6 +30,10 @@ export type ComboBoxOption = {
 
 type Key = string | number;
 
+/**
+ * Props for {@link ComboBox}, on top of React Aria's `ComboBox` props, with
+ * the selection key narrowed to the option value type.
+ */
 export type ComboBoxProps<T extends Key = string> = Omit<RACComboBoxProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange'> & {
   label?: ReactNode;
   description?: ReactNode;
@@ -98,10 +107,12 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
   );
 }
 
+/** Props for {@link ComboBoxItem}, on top of React Aria's `ListBoxItem` props. */
 export type ComboBoxItemProps = Omit<RACListBoxItemProps, 'className'> & {
   className?: string;
 };
 
+/** One row in a {@link ComboBox}'s filtered list. */
 export function ComboBoxItem({ className, ...rest }: ComboBoxItemProps) {
   return <RACListBoxItem {...rest} className={[s.option, className].filter(Boolean).join(' ')} />;
 }

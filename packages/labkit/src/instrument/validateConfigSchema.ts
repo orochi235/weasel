@@ -1,5 +1,7 @@
 import type { ConfigField, ConfigFieldType } from '../controls/types';
 
+/** Whether a config schema is usable, and every problem found rather than
+ *  just the first. */
 export interface ValidationResult {
   valid: boolean;
   errors: string[];
@@ -7,6 +9,9 @@ export interface ValidationResult {
 
 const KNOWN_TYPES: ConfigFieldType[] = ['slider', 'checkbox', 'select', 'number', 'text', 'color'];
 
+/** Check a config schema for the mistakes that would otherwise surface as a
+ *  silently broken control: empty or duplicate keys, unknown field types, and
+ *  fields whose own constraints do not hold. */
 export function validateConfigSchema(fields: ConfigField[]): ValidationResult {
   const errors: string[] = [];
   const seenKeys = new Set<string>();

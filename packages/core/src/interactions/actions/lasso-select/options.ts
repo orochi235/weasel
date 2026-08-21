@@ -8,6 +8,7 @@
 import type { LassoSelectBehavior } from '../../gestures/types';
 import type { DebugSink } from '../../../debug/types';
 
+/** Options for the `lasso-select` action. */
 export interface UseLassoSelectOptions {
   behaviors?: LassoSelectBehavior[];
   /** When set, overrides any behavior's `defaultTransient`. */

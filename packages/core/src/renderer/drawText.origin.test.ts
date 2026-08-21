@@ -19,10 +19,8 @@
  * carries a rounding error the renderer never incurs.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  _resetFontRegistryForTests, registerFont, FIXTURE_FONT,
-  registerFontOutlines, _resetFontOutlinesForTests, glyphOutline,
-} from '@weasel-js/font';
+import { registerFont, FIXTURE_FONT, registerFontOutlines, glyphOutline } from '@weasel-js/font';
+import { _resetFontRegistryForTests, _resetFontOutlinesForTests } from '@weasel-js/font/test-seams';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { _resetLayoutCacheForTests } from './cache/layoutCache';
