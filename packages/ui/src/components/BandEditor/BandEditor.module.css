@@ -1,0 +1,140 @@
+.root {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font: var(--wzl-font-weight-medium, 500) var(--wzl-font-size-sm, 0.75rem) / 1.4 var(--wzl-font-ui, ui-sans-serif, system-ui, sans-serif);
+  color: var(--wzl-fg-muted);
+}
+
+/* The ruler carries the ticks and is the split affordance: a click anywhere
+ * on it divides the band underneath. The band strip below owns selection and
+ * body drags, so neither gesture has to guess which the pointer meant. */
+.ruler {
+  position: relative;
+  height: var(--be-ruler-height, 20px);
+  cursor: crosshair;
+}
+
+.tick {
+  position: absolute;
+  left: var(--be-at);
+  bottom: 0;
+  width: 1px;
+  height: 6px;
+  background: var(--wzl-fg-subtle);
+  pointer-events: none;
+}
+
+.tickLabel {
+  position: absolute;
+  bottom: 7px;
+  left: 0;
+  transform: translateX(-50%);
+  font: var(--wzl-font-weight-medium, 500) 0.65rem / 1 var(--wzl-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  color: var(--wzl-fg-muted);
+  white-space: nowrap;
+}
+
+.bands {
+  position: relative;
+  height: var(--be-band-height, 34px);
+}
+
+.band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--be-from);
+  width: calc(var(--be-to) - var(--be-from));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 4px;
+  margin: 0;
+  background: var(--wzl-surface-raised);
+  border: 1px solid var(--wzl-border);
+  border-radius: var(--wzl-radius-sm, 3px);
+  color: var(--wzl-fg);
+  font: var(--wzl-font-weight-medium, 500) 0.7rem / 1 var(--wzl-font-ui, ui-sans-serif, system-ui, sans-serif);
+  cursor: grab;
+}
+
+.band:hover {
+  background: var(--wzl-surface-hover);
+}
+
+.band:active {
+  cursor: grabbing;
+}
+
+.band:focus-visible {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: -2px;
+}
+
+/* First and last bands are pinned to `min` / `max`, so their bodies do not
+ * translate — the cursor should not promise otherwise. */
+.band:first-of-type,
+.band:last-of-type {
+  cursor: default;
+}
+
+/* Accent mixed toward transparent rather than a flat token, so the tint
+   reads over whatever surface the consumer's theme puts behind it. */
+.selected {
+  background: color-mix(in srgb, var(--wzl-accent) 22%, transparent);
+  border-color: var(--wzl-accent);
+  box-shadow: inset 0 0 0 1px var(--wzl-accent);
+  color: var(--wzl-fg);
+}
+
+.bandContent {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Wider than the line it draws: a 1px seam is unhittable. */
+.seam {
+  position: absolute;
+  left: var(--be-at);
+  top: -3px;
+  bottom: -3px;
+  width: 11px;
+  margin-left: -5px;
+  z-index: 1;
+  cursor: ew-resize;
+  background: none;
+  border: none;
+}
+
+.seam::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 1px;
+  background: var(--wzl-border-strong);
+}
+
+.seam:hover::before,
+.seam:focus-visible::before {
+  background: var(--wzl-accent);
+  width: 2px;
+}
+
+.seam:focus-visible {
+  outline: 2px solid var(--wzl-accent);
+  outline-offset: 0;
+  border-radius: 2px;
+}
