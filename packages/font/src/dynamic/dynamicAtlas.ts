@@ -30,6 +30,10 @@ export const PAGE_SIZE = 1024;
 export const MAX_PAGES = 4;
 export const SDF_RADIUS = 8;
 export const SDF_CUTOFF = 0.5;
+/** How many glyphs the dynamic atlas will rasterize synchronously before
+ *  deferring the rest to a later flush. Caps the frame cost of text that
+ *  suddenly needs many new glyphs; the leftovers arrive a tick later and
+ *  notify through `onGlyphReady`. */
 export const DEFAULT_BAKE_BUDGET = 16;
 
 export interface DynamicFace {

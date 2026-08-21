@@ -20,10 +20,13 @@ export type FontFallbackPolicy = 'substitute' | 'canvas' | 'none';
 let policy: FontFallbackPolicy = 'substitute';
 let defaultFamily: string | null = null;
 
+/** Set what happens when text asks for a family that was never registered.
+ *  Process-wide; defaults to `'substitute'`. */
 export function setFontFallbackPolicy(next: FontFallbackPolicy): void {
   policy = next;
 }
 
+/** The cross-family fallback policy currently in force. */
 export function getFontFallbackPolicy(): FontFallbackPolicy {
   return policy;
 }
@@ -35,6 +38,8 @@ export function setDefaultFontFamily(family: string): void {
   defaultFamily = family;
 }
 
+/** The family `setDefaultFontFamily` named, or `null` if none was set — in
+ *  which case `'substitute'` falls back to the first registered family. */
 export function getDefaultFontFamily(): string | null {
   return defaultFamily;
 }
