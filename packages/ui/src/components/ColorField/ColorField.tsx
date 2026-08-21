@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { toHex8, getAlpha01, withAlpha01 } from '@weasel-js/core';
 import s from './ColorField.module.css';
 
+/**
+ * Props for {@link ColorField}. Note the callback sense, which matches
+ * `GradientEditor` and is the reverse of `Slider`'s: `onInput` fires
+ * throughout a gesture and `onChange` once at its end.
+ */
 export interface ColorFieldProps {
   /** Current color, `#rrggbb` or `#rrggbbaa`. Omit when `mixed`. */
   value?: string;

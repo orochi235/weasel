@@ -21,6 +21,11 @@ const KINDS: readonly ToggleBarItem<GradientKind>[] = [
 /** Fewer than two stops is not a gradient any renderer can ramp between. */
 const MIN_STOPS = 2;
 
+/**
+ * Props for {@link GradientEditor}. Note the callback sense, which is the
+ * reverse of `Slider`'s: `onInput` fires throughout a gesture and `onChange`
+ * once at its end.
+ */
 export interface GradientEditorProps {
   /** The gradient being edited. */
   value: GradientFill;
