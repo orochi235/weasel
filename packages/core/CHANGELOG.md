@@ -1,5 +1,66 @@
 # Changelog
 
+## 1.0.3
+
+### Patch Changes
+
+- 5d25a40: `@weasel-js/font`'s six reset seams — `_resetFontRegistryForTests`,
+  `_resetFallbackForTests`, `_getPagesForTests`, `_resetDynamicFontsForTests`,
+  `__setGlyphRasterizerForTests` and `_resetFontOutlinesForTests` — are no longer
+  exported from the package barrel. They now live at a new
+  `@weasel-js/font/test-seams` entry point.
+
+  Nothing loses the ability to reach them. They exist because font registration,
+  the fallback policy, the dynamic atlas and the outline registry are global
+  module state that changes what renders, so a test in another package that sets
+  one has to be able to put it back — which is why they were on the barrel in the
+  first place. A named test-seam entry serves that need without an application
+  finding a `_resetFontOutlinesForTests` by autocompleting the barrel. Both
+  entries share one chunk, so the registries remain single instances.
+
+  This is a breaking change for anything importing those six names from
+  `@weasel-js/font`; the import specifier is the only edit.
+
+  `evaluateEnabled` in `@weasel-js/core` is now marked `@experimental` at its
+  definition. An `@internal` block intended for it had come detached and sat above
+  three unrelated constants, so the function read as undocumented public API while
+  a stale marker said otherwise. It is genuinely public — `@weasel-js/ui`'s
+  `ActionBar` calls it — and `@experimental` matches the rest of the `enabled`
+  predicate surface.
+
+- f7077f6: An image quad no longer mints and frees a vertex array and two buffers on every
+  draw. The renderer keeps a ring of quad geometry per image program instead, and
+  a draw writes its four corners into the next slot. On an M2 Max via ANGLE this
+  takes an image command from ~7.0 us to ~3.9 us, measured by
+  `tests/perf/image-quad.spec.ts`; nothing about the API or the pixels changes.
+
+  A ring rather than one buffer, because one is the worst of the three shapes. The
+  driver tracks a write hazard per buffer object, so rewriting a single quad
+  buffer before each draw waits on the draw still reading it — 40–80 us per quad
+  against 5.4 for the per-draw allocation this replaced and 0.3 for the ring.
+  Sixty-four slots put that many draws between one write of a buffer and the next.
+
+  The remaining gap to a pattern-filled rect of the same size (~2.3 us) is texture
+  state, not geometry: an image binds a different texture and sets its filter per
+  draw.
+
+- 514c34a: Document every public export at its definition site
+
+  A JSDoc string now sits on each symbol reachable through a package's published
+  entry points, in every package except `@weasel-js/ui`. Documentation only — no
+  export was added, removed, renamed or reordered, and no behavior changed.
+
+  `npm run audit:jsdoc` enumerates the public exports and reports which lack a
+  docstring, so the claim can be re-derived rather than trusted.
+
+- Updated dependencies [5d25a40]
+- Updated dependencies [514c34a]
+  - @weasel-js/font@1.0.3
+  - @weasel-js/geom@1.0.3
+  - @weasel-js/gestures@1.0.3
+  - @weasel-js/history@1.0.3
+  - @weasel-js/modes@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes
