@@ -41,6 +41,31 @@ describe('GLTextureCache', () => {
     expect(countAfterFirst).toBe(countAfterSecond);
   });
 
+  it('re-applies the wrap mode when an already-uploaded id is claimed with a different one', () => {
+    const { gl, calls, reset } = makeGLRecorder();
+    const cache = new GLTextureCache(gl);
+    // A registered image used first as a clamped shader texture, then as a
+    // repeating pattern tile: the tile must not inherit CLAMP_TO_EDGE.
+    cache.upload('tex_1', fakeImage);
+    reset();
+    cache.upload('tex_1', fakeImage, 'repeat');
+    const wraps = calls.filter(
+      (c) => c.name === 'texParameteri'
+        && (c.args[1] === gl.TEXTURE_WRAP_S || c.args[1] === gl.TEXTURE_WRAP_T),
+    );
+    expect(wraps.map((c) => c.args[2])).toEqual([gl.REPEAT, gl.REPEAT]);
+    expect(calls.filter((c) => c.name === 'createTexture').length).toBe(0);
+  });
+
+  it('does not touch texture parameters when the wrap mode is unchanged', () => {
+    const { gl, calls, reset } = makeGLRecorder();
+    const cache = new GLTextureCache(gl);
+    cache.upload('tile', fakeImage, 'repeat');
+    reset();
+    cache.upload('tile', fakeImage, 'repeat');
+    expect(calls.filter((c) => c.name === 'texParameteri').length).toBe(0);
+  });
+
   it('has() returns true after upload, false otherwise', () => {
     const { gl } = makeGLRecorder();
     const cache = new GLTextureCache(gl);
