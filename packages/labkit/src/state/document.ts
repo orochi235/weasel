@@ -1,4 +1,5 @@
-import type { LabDocument, LabMode, Migration } from './types';
+import { labStorageKey } from './helpers';
+import type { LabDocument, LabMode, Migration, StorageAdapter } from './types';
 
 /** Bumped whenever the persisted shape changes; every bump needs a migration. */
 export const CURRENT_DOCUMENT_VERSION = 1;
@@ -54,3 +55,60 @@ export function runMigrations(
   }
   return { ok: true, doc, migrated: true };
 }
+
+const LEGACY_BUCKETS = ['workspaces', 'saves', 'layout', 'theme'] as const;
+
+function parseOr<T>(raw: string | null, fallback: T): T {
+  if (raw === null) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    console.warn('[labkit] unparseable legacy bucket, dropping it');
+    return fallback;
+  }
+}
+
+/** Assemble a version-0 document out of the four pre-document keys, or null
+ *  if none of them is present. */
+export function readLegacyDocument(
+  storage: StorageAdapter,
+  storageKey: string,
+): Record<string, unknown> | null {
+  const present = LEGACY_BUCKETS.some((b) => storage.read(labStorageKey(storageKey, b)) !== null);
+  if (!present) return null;
+
+  return {
+    version: 0,
+    workspaces: parseOr(storage.read(labStorageKey(storageKey, 'workspaces')), []),
+    saves: parseOr(storage.read(labStorageKey(storageKey, 'saves')), []),
+    layout: parseOr(storage.read(labStorageKey(storageKey, 'layout')), {}),
+    // `theme` held a bare string, never JSON.
+    mode: storage.read(labStorageKey(storageKey, 'theme')) ?? 'auto',
+  };
+}
+
+/** Delete the four pre-document keys. Called once the migrated document has
+ *  been written, never before. */
+export function deleteLegacyKeys(storage: StorageAdapter, storageKey: string): void {
+  for (const bucket of LEGACY_BUCKETS) {
+    storage.delete?.(labStorageKey(storageKey, bucket));
+  }
+}
+
+/** Version 0 (four loose keys) to version 1 (one document). Normalizes the
+ *  mode, including `interstellar` — the dark mode's name back when it was a
+ *  theme. */
+export function migrateV0toV1(doc: Record<string, unknown>): Record<string, unknown> {
+  const raw = doc.mode === 'interstellar' ? 'dark' : doc.mode;
+  const mode = raw === 'light' || raw === 'dark' || raw === 'auto' ? raw : 'auto';
+  return {
+    version: 1,
+    workspaces: Array.isArray(doc.workspaces) ? doc.workspaces : [],
+    saves: Array.isArray(doc.saves) ? doc.saves : [],
+    layout: doc.layout && typeof doc.layout === 'object' ? doc.layout : {},
+    mode,
+  };
+}
+
+/** Index `i` migrates a version-`i` document to version `i + 1`. */
+export const MIGRATIONS: Migration[] = [migrateV0toV1];
