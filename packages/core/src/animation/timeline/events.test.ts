@@ -125,4 +125,17 @@ describe('event tracks', () => {
     h.advance(200);
     expect(fired).toEqual([]);
   });
+
+  it('does not replay a whole pass per lap skipped inside one frame', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      loop: true,
+      tracks: [{ kind: 'event', events: [{ t: 50, fire: () => fired.push('x') }] }],
+    });
+    h.advance(60);
+    h.advance(1060);
+    expect(fired).toEqual(['x', 'x']);
+  });
 });

@@ -24,7 +24,7 @@ function floorKeyIndex<T>(keys: SampledTrack<T>['keys'], t: number): number {
  *
  * `segmentCache` memoizes `interpolator` factories by the index of the segment's
  * later key. Callers that mutate keys must drop the cache; `createTimeline`
- * keys it on the timeline version.
+ * drops it wholesale on `edit`.
  */
 export function sampleTrack<T>(
   track: SampledTrack<T>,

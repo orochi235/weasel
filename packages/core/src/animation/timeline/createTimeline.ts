@@ -63,8 +63,6 @@ export function createTimeline(
   let loopsLeft = loopOpt === true ? Infinity : loopOpt === false ? 0 : loopOpt;
 
   // Per-sampled-track interpolator-factory caches, dropped wholesale by `edit`.
-  // Without this an edited keyframe keeps interpolating toward its old value
-  // with no visible error.
   let caches = new WeakMap<object, Map<number, (u: number) => unknown>>();
   const cacheFor = (track: object): Map<number, (u: number) => unknown> => {
     let c = caches.get(track);
@@ -76,7 +74,7 @@ export function createTimeline(
     for (const track of tracks) {
       if (track.kind === 'sampled') {
         const st = track as SampledTrack<unknown>;
-        const v = sampleTrack(st, t, cacheFor(st) as Map<number, (u: number) => unknown>);
+        const v = sampleTrack(st, t, cacheFor(st));
         if (v !== undefined) st.onTick(v);
       } else if (track.kind === 'timeline') {
         applySampled(track.timeline.tracks, t - track.at);
@@ -109,13 +107,22 @@ export function createTimeline(
       lastVirtual = virtualNow;
       playhead = virtualNow + offset;
 
-      // A single advance can span several loops when frames are long or the
-      // duration is short, so wrap in a loop rather than subtracting once.
-      while (playhead >= duration && duration > 0 && loopsLeft > 0) {
-        loopsLeft -= 1;
-        offset -= duration;
-        playhead -= duration;
-        onWrap();
+      // A far seek can skip a billion laps of a short duration, so an endless
+      // loop takes them in one modulo rather than one iteration each.
+      if (duration > 0 && playhead >= duration) {
+        if (loopsLeft === Infinity) {
+          const laps = Math.floor(playhead / duration);
+          offset -= laps * duration;
+          playhead -= laps * duration;
+          onWrap();
+        } else {
+          while (playhead >= duration && loopsLeft > 0) {
+            loopsLeft -= 1;
+            offset -= duration;
+            playhead -= duration;
+            onWrap();
+          }
+        }
       }
 
       const finished = playhead >= duration;
