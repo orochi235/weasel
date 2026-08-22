@@ -144,6 +144,30 @@ describe('createAudioEngine', () => {
     expect(music.isPlaying()).toBe(true);
   });
 
+  it('does not resurrect a stolen voice when its scheduled start comes due', async () => {
+    const { ctx, engine, tick } = engineHarness({ voiceLimit: 1 });
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    const victim = engine.play(sound, { when: 5000, loop: true });
+    engine.play(sound, { loop: true });   // steals the only slot
+    tick();
+    ctx._advance(5000);
+    tick();
+    expect(victim.isPlaying()).toBe(false);
+    expect(ctx._sources).toHaveLength(1);
+  });
+
+  it('drops a queued voice stopped through its handle, with no cancel key', async () => {
+    const { ctx, engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    const voice = engine.play(sound, { when: 10_000 });
+    voice.stop();
+    ctx._advance(10_000);
+    tick();
+    expect(ctx._sources).toHaveLength(0);
+  });
+
   it('stops everything on stopAll', async () => {
     const { engine, tick } = engineHarness();
     await engine.unlock();

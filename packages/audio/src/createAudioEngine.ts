@@ -98,6 +98,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   }
 
   const teardown = (voice: LiveVoice): void => {
+    // First, and never at a call site: teardown is what makes a voice dead, and
+    // a queued callback that outlives it must find it cancelled. The steal path
+    // has no other place to set this.
+    voice.cancelled = true;
     if (!voice.playing && voice.source === null) return;
     voice.playing = false;
     try { voice.source?.stop(); } catch { /* already stopped */ }
@@ -179,7 +183,6 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       return {
         id,
         stop(fadeMs) {
-          voice.cancelled = true;
           if (fadeMs && fadeMs > 0) {
             gainNode.gain.linearRampToValueAtTime?.(0, ctx.currentTime + fadeMs / 1000);
           }
@@ -209,11 +212,11 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     stopKey(key) {
       scheduler.cancelKey(key);
       for (const voice of [...live.values()]) {
-        if (voice.key === key) { voice.cancelled = true; teardown(voice); }
+        if (voice.key === key) teardown(voice);
       }
     },
     stopAll() {
-      for (const voice of [...live.values()]) { voice.cancelled = true; teardown(voice); }
+      for (const voice of [...live.values()]) teardown(voice);
     },
     bus: graph.bus,
     analyser: (busName, tapOpts) =>
