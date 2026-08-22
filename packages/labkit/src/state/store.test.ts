@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from './adapters';
+import { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './document';
 import { labStorageKey } from './helpers';
 import { createLabStore } from './store';
 
@@ -245,8 +246,144 @@ describe('persistence — debounced writes', () => {
     vi.advanceTimersByTime(400);
     const writesAfter = writeSpy.mock.calls.length;
 
-    // One flush, one write per storage key: workspaces, saves, theme, layout.
-    expect(writesAfter - writesBefore).toBe(4);
+    // One flush, one document.
+    expect(writesAfter - writesBefore).toBe(1);
     vi.useRealTimers();
+  });
+});
+
+describe('createLabStore — hydrating', () => {
+  it('reads a current-version document', () => {
+    const storage = createMemoryAdapter();
+    storage.write(
+      labDocumentKey('test'),
+      JSON.stringify({
+        version: CURRENT_DOCUMENT_VERSION,
+        workspaces: [
+          {
+            id: 'w1',
+            instrumentName: 'Test',
+            config: {},
+            state: {},
+            view: { zoom: 2, pan: { x: 0, y: 0 } },
+          },
+        ],
+        saves: [],
+        layout: { w1: { h: 3 } },
+        mode: 'dark',
+      }),
+    );
+
+    const s = makeStore({ storage }).getState();
+    expect(s.workspaces).toHaveLength(1);
+    expect(s.workspaces[0].undoStack).toEqual({ past: [], future: [] });
+    expect(s.layout).toEqual({ w1: { h: 3 } });
+    expect(s.mode).toBe('dark');
+  });
+
+  it('folds the four legacy keys into state', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('test', 'workspaces'), JSON.stringify([]));
+    storage.write(labStorageKey('test', 'theme'), 'interstellar');
+
+    const s = makeStore({ storage }).getState();
+    expect(s.mode).toBe('dark');
+  });
+
+  it('honors initialMode when a folded legacy lab never set a theme', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('test', 'workspaces'), JSON.stringify([]));
+
+    const s = makeStore({ storage, initialMode: 'dark' }).getState();
+    expect(s.mode).toBe('dark');
+  });
+
+  it('starts empty and preserves a document from a future version', () => {
+    const storage = createMemoryAdapter();
+    const future = JSON.stringify({ version: 999, workspaces: [{ id: 'w1' }] });
+    storage.write(labDocumentKey('test'), future);
+
+    const store = makeStore({ storage });
+    expect(store.getState().workspaces).toEqual([]);
+    expect(storage.read(labDocumentKey('test'))).toBe(future);
+  });
+
+  it('quarantines a document that fails to parse', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labDocumentKey('test'), '{{{not json');
+
+    const s = makeStore({ storage }).getState();
+    expect(s.workspaces).toEqual([]);
+    expect(storage.read(quarantineKey('test'))).toBe('{{{not json');
+  });
+});
+
+describe('createLabStore — flushing', () => {
+  it('writes one document and no legacy keys', () => {
+    vi.useFakeTimers();
+    const storage = createMemoryAdapter();
+    const s = makeStore({ storage });
+    s.getState().setMode('light');
+    vi.advanceTimersByTime(400);
+    vi.useRealTimers();
+
+    const doc = JSON.parse(storage.read(labDocumentKey('test')) as string);
+    expect(doc.version).toBe(CURRENT_DOCUMENT_VERSION);
+    expect(doc.mode).toBe('light');
+  });
+
+  it('deletes the legacy keys once the folded document is written', () => {
+    vi.useFakeTimers();
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('test', 'workspaces'), JSON.stringify([]));
+    storage.write(labStorageKey('test', 'theme'), 'interstellar');
+
+    const s = makeStore({ storage });
+    s.getState().setMode('dark');
+    vi.advanceTimersByTime(400);
+    vi.useRealTimers();
+
+    expect(storage.read(labDocumentKey('test'))).not.toBeNull();
+    expect(storage.read(labStorageKey('test', 'workspaces'))).toBeNull();
+    expect(storage.read(labStorageKey('test', 'theme'))).toBeNull();
+  });
+
+  it('does not write when the stored document is from the future', () => {
+    vi.useFakeTimers();
+    const storage = createMemoryAdapter();
+    const future = JSON.stringify({ version: 999 });
+    storage.write(labDocumentKey('test'), future);
+
+    const s = makeStore({ storage });
+    s.getState().setMode('light');
+    vi.advanceTimersByTime(400);
+    vi.useRealTimers();
+
+    expect(storage.read(labDocumentKey('test'))).toBe(future);
+  });
+
+  it('keeps the legacy keys when the document write silently fails', () => {
+    vi.useFakeTimers();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const storage = createMemoryAdapter();
+    const write = storage.write.bind(storage);
+    // A quota failure as localStorageAdapter reports one: swallowed, void.
+    storage.write = (key, value) => {
+      if (key === labDocumentKey('test')) return;
+      write(key, value);
+    };
+    storage.write(labStorageKey('test', 'workspaces'), JSON.stringify([]));
+    storage.write(labStorageKey('test', 'theme'), 'interstellar');
+
+    const s = makeStore({ storage });
+    s.getState().setMode('dark');
+    vi.advanceTimersByTime(400);
+    vi.useRealTimers();
+
+    expect(storage.read(labDocumentKey('test'))).toBeNull();
+    expect(storage.read(labStorageKey('test', 'workspaces'))).toBe('[]');
+    expect(storage.read(labStorageKey('test', 'theme'))).toBe('interstellar');
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

@@ -1,13 +1,19 @@
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import {
-  deserializeWorkspaces,
-  emptyUndoStack,
-  labStorageKey,
-  serializeWorkspaces,
-} from './helpers';
+  CURRENT_DOCUMENT_VERSION,
+  deleteLegacyKeys,
+  emptyDocument,
+  labDocumentKey,
+  MIGRATIONS,
+  quarantineKey,
+  readLegacyDocument,
+  runMigrations,
+} from './document';
+import { deserializeWorkspaces, emptyUndoStack, serializeWorkspaces } from './helpers';
 import type {
   CreateLabStoreOptions,
   InstrumentSerializers,
+  LabDocument,
   LabMode,
   LabStoreState,
   SavedSnapshot,
@@ -49,43 +55,16 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
   let serializers: InstrumentSerializers = {};
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
-  const workspacesRaw = options.storage.read(labStorageKey(options.storageKey, 'workspaces'));
-  let hydratedWorkspaces: WorkspaceRecord[] = [];
-  if (workspacesRaw) {
-    hydratedWorkspaces = deserializeWorkspaces(workspacesRaw, serializers);
-  }
+  const hydration = hydrateDocument(options);
+  const hydrated = hydration.document;
+  const persistDisabled = hydration.persistDisabled;
+  // Cleared once the legacy keys are actually gone; see the flush.
+  let foldedFromLegacy = hydration.foldedFromLegacy;
 
-  const savesRaw = options.storage.read(labStorageKey(options.storageKey, 'saves'));
-  let hydratedSnapshots: SavedSnapshot[] = [];
-  if (savesRaw) {
-    try {
-      hydratedSnapshots = JSON.parse(savesRaw) as SavedSnapshot[];
-    } catch {
-      console.warn('[labkit] failed to parse saved snapshots, starting empty');
-      hydratedSnapshots = [];
-    }
-  }
-
-  const layoutRaw = options.storage.read(labStorageKey(options.storageKey, 'layout'));
-  let hydratedLayout: Record<string, unknown> = {};
-  if (layoutRaw) {
-    try {
-      hydratedLayout = JSON.parse(layoutRaw) as Record<string, unknown>;
-    } catch {
-      console.warn('[labkit] failed to parse saved layout, starting empty');
-      hydratedLayout = {};
-    }
-  }
-
-  const modeRaw = options.storage.read(labStorageKey(options.storageKey, 'theme'));
-  // `interstellar` was the dark mode's name back when it was a theme.
-  const stored = modeRaw === 'interstellar' ? 'dark' : modeRaw;
-  let hydratedMode: LabMode;
-  if (stored === 'light' || stored === 'dark' || stored === 'auto') {
-    hydratedMode = stored;
-  } else {
-    hydratedMode = options.initialMode ?? 'auto';
-  }
+  const hydratedWorkspaces = deserializeWorkspaces(hydrated.workspaces, serializers);
+  const hydratedSnapshots = hydrated.saves;
+  const hydratedLayout = hydrated.layout;
+  const hydratedMode = hydrated.mode;
 
   const store = createStore<LabStoreState & LabStoreActions>()((set, get) => ({
     workspaces: hydratedWorkspaces,
@@ -228,19 +207,22 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
   }));
 
   function scheduleFlush(): void {
+    if (persistDisabled) return;
     if (flushTimer) clearTimeout(flushTimer);
     flushTimer = setTimeout(() => {
       const s = store.getState();
-      options.storage.write(
-        labStorageKey(options.storageKey, 'workspaces'),
-        serializeWorkspaces(s.workspaces, serializers),
-      );
-      options.storage.write(
-        labStorageKey(options.storageKey, 'saves'),
-        JSON.stringify(s.savedSnapshots),
-      );
-      options.storage.write(labStorageKey(options.storageKey, 'theme'), s.mode);
-      options.storage.write(labStorageKey(options.storageKey, 'layout'), JSON.stringify(s.layout));
+      const document: LabDocument = {
+        version: CURRENT_DOCUMENT_VERSION,
+        workspaces: serializeWorkspaces(s.workspaces, serializers),
+        saves: s.savedSnapshots,
+        layout: s.layout,
+        mode: s.mode,
+      };
+      const serialized = JSON.stringify(document);
+      options.storage.write(labDocumentKey(options.storageKey), serialized);
+      if (foldedFromLegacy && deleteLegacyKeys(options.storage, options.storageKey, serialized)) {
+        foldedFromLegacy = false;
+      }
       flushTimer = null;
     }, 300);
   }
@@ -250,4 +232,55 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       serializers = s;
     },
   });
+}
+
+interface HydrateResult {
+  document: LabDocument;
+  /** True when the stored document is newer than this code understands.
+   *  Flushing would clobber it, so the store stops persisting. */
+  persistDisabled: boolean;
+  foldedFromLegacy: boolean;
+}
+
+function hydrateDocument(options: CreateLabStoreOptions): HydrateResult {
+  const fallback = emptyDocument(options.initialMode ?? 'auto');
+  const raw = options.storage.read(labDocumentKey(options.storageKey));
+
+  let parsed: Record<string, unknown> | null = null;
+  if (raw !== null) {
+    try {
+      parsed = JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      console.warn('[labkit] lab document is unparseable; quarantining it');
+      options.storage.write(quarantineKey(options.storageKey), raw);
+      return { document: fallback, persistDisabled: false, foldedFromLegacy: false };
+    }
+  } else {
+    parsed = readLegacyDocument(options.storage, options.storageKey, options.initialMode ?? 'auto');
+  }
+
+  if (parsed === null) {
+    return { document: fallback, persistDisabled: false, foldedFromLegacy: false };
+  }
+
+  const foldedFromLegacy = raw === null;
+  const outcome = runMigrations(parsed, MIGRATIONS, CURRENT_DOCUMENT_VERSION);
+
+  if (!outcome.ok) {
+    if (outcome.reason === 'future') {
+      console.warn(
+        '[labkit] lab document is from a newer version of labkit; starting empty and leaving it alone',
+      );
+      return { document: fallback, persistDisabled: true, foldedFromLegacy: false };
+    }
+    console.warn('[labkit] lab document failed to migrate; quarantining it', outcome.error);
+    options.storage.write(quarantineKey(options.storageKey), JSON.stringify(parsed));
+    return { document: fallback, persistDisabled: false, foldedFromLegacy: false };
+  }
+
+  return {
+    document: outcome.doc as unknown as LabDocument,
+    persistDisabled: false,
+    foldedFromLegacy,
+  };
 }
