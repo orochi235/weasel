@@ -163,6 +163,12 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
   // setStates from inside `onToolsCreated`.
   const active = contributions.focused;
   const getActiveOverlays = contributions.overlays;
+  // Which tools exist, not which object holds them: callers commonly rebuild
+  // `opts.registry` as a literal every render, and keying the memo on
+  // `slotted` itself would hand them a new `ToolsApi` per render.
+  const registryKey =
+    Object.keys(slotted.registry).sort().join('|')
+    + '#' + slotted.ambient.map((t) => t.id).join('|');
   return useMemo(
     () => ({
       active,
@@ -175,6 +181,6 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       has,
       getActiveOverlays,
     }),
-    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays],
+    [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, registryKey],
   );
 }

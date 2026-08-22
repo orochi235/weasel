@@ -46,6 +46,35 @@ describe('useTools', () => {
     expect(result.current.hotkeyEngaged).toBe(null);
   });
 
+  it('picks up a tool added to the registry after mount', () => {
+    const select = defineTool({ id: 'select' });
+    const rect = defineTool({ id: 'rect' });
+    const { result, rerender } = renderHook(
+      ({ withRect }: { withRect: boolean }) =>
+        useTools({
+          active: 'select',
+          registry: withRect ? { select, rect } : { select },
+        }),
+      { wrapper: makeWrapper('select'), initialProps: { withRect: false } },
+    );
+
+    expect(Object.keys(result.current.registry)).toEqual(['select']);
+    rerender({ withRect: true });
+    expect(Object.keys(result.current.registry).sort()).toEqual(['rect', 'select']);
+  });
+
+  it('keeps one ToolsApi identity across renders that rebuild an equivalent registry', () => {
+    const select = defineTool({ id: 'select' });
+    const { result, rerender } = renderHook(
+      () => useTools({ active: 'select', registry: { select } }),
+      { wrapper: makeWrapper('select') },
+    );
+
+    const first = result.current;
+    rerender();
+    expect(result.current).toBe(first);
+  });
+
   it('throws when active id is not in registry', () => {
     expect(() =>
       renderHook(() =>
