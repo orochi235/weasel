@@ -3,7 +3,7 @@ import type { SoundHandle } from './soundCache';
 import type { StealPolicy } from './voicePool';
 
 export interface PlayOptions {
-  /** Default 'sfx'. */
+  /** Default: the first configured bus. */
   bus?: string;
   /** 0..1, default 1. Multiplied by any spatialized gain. */
   gain?: number;
@@ -25,9 +25,14 @@ export interface PlayOptions {
 
 export interface VoiceHandle {
   id: number;
+  /** `fadeMs` ramps the voice out and stops it at the end of the ramp. */
   stop(fadeMs?: number): void;
   setGain(value: number, rampMs?: number): void;
+  /** Playback rate. Applies to a voice booked for a future `when` too. */
   setRate(value: number): void;
+  /** Detune in cents. Applies to a voice booked for a future `when` too. */
+  setDetune(cents: number): void;
+  /** Explicit stereo pan. Stops the voice tracking a `position`. */
   setPan(value: number): void;
   setPosition(p: Vec2): void;
   isPlaying(): boolean;
