@@ -1,5 +1,21 @@
 # @weasel-js/labkit
 
+## 1.0.3
+
+### Patch Changes
+
+- 514c34a: Document every public export at its definition site
+
+  A JSDoc string now sits on each symbol reachable through a package's published
+  entry points, in every package except `@weasel-js/ui`. Documentation only — no
+  export was added, removed, renamed or reordered, and no behavior changed.
+
+  `npm run audit:jsdoc` enumerates the public exports and reports which lack a
+  docstring, so the claim can be re-derived rather than trusted.
+
+- Updated dependencies [514c34a]
+  - @weasel-js/theme@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes

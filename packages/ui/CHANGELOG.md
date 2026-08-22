@@ -1,5 +1,84 @@
 # @weasel-js/ui
 
+## 1.0.3
+
+### Patch Changes
+
+- 3641641: New component: `BandEditor` divides a numeric axis into contiguous bands and
+  lets you drag the seams between them. Each band carries a payload the consumer
+  supplies and renders through `renderBand`, so the control never learns what a
+  band means.
+
+  The axis is always fully covered — N bands, N−1 interior seams, no gaps and no
+  overlaps — which makes editing a partition the same thing as editing a sorted
+  seam list. Seams clamp at their neighbours instead of crossing, so no drag can
+  destroy a band: removal is only ever the explicit merge (`x` / `Delete`, into
+  the left neighbour, whose payload survives). The first band's left edge is
+  `min` and does not move, and it has no left neighbour to merge into, so a
+  partition always keeps at least one part.
+
+  `scale` takes `'linear'`, `'log'` or a `BandScale` of your own, and defaults to
+  `'log'` because the interesting part of a width axis is usually its narrow end.
+  A log scale needs `min > 0`; given anything else the component falls back to
+  linear and warns once in development rather than positioning every seam at
+  `NaN`.
+
+  `onInput` fires live during a drag and `onChange` once per committed gesture,
+  following `GradientHandles`. `Slider` uses the opposite sense (`onChange` live,
+  `onCommit` committed) — a known inconsistency in this package that this change
+  deliberately leaves alone.
+
+  Nothing existing changed. The added exports are `BandEditor`, `BandEditorProps`,
+  `Band`, `BandScale`, `linearScale` and `logScale`.
+
+- 51aae33: Document every public export of `@weasel-js/ui` with a JSDoc string at its
+  definition site, so editor hover and the generated API reference say what each
+  component, prop bag and helper is for.
+
+  No behavior, names or exports changed. Where a component's live-versus-committed
+  callback pair is spelled differently from its neighbors' — `Slider`'s
+  `onChange`/`onCommit` against `GradientEditor`'s `onInput`/`onChange` — the
+  docstring records which sense that component uses rather than smoothing it over.
+
+- 917359a: `@weasel-js/ui` now spells the live/committed callback pair one way, on every
+  control that has both: **`onInput` fires continuously through a gesture, and
+  `onChange` fires once when it commits.**
+
+  Four components move to it. `ColorField`, `GradientEditor` and
+  `GradientHandles` already used this sense and are unchanged.
+
+  | Component      | was (live / committed)        | now                    |
+  | -------------- | ----------------------------- | ---------------------- |
+  | `Slider`       | `onChange` / `onCommit`       | `onInput` / `onChange` |
+  | `ResizeHandle` | `onChange` / `onChangeEnd`    | `onInput` / `onChange` |
+  | `CurveEditor`  | `onChange` / `onChangeCommit` | `onInput` / `onChange` |
+  | `PointPlotter` | `onChange` / `onChangeCommit` | `onInput` / `onChange` |
+
+  Four spellings had grown up, and two of them disagreed about what `onChange`
+  meant — so a reader who learned `Slider` guessed `ColorField` backwards. The
+  surviving pair is the DOM's own: `input` fires while you type or drag, `change`
+  when the edit is done. It also means a single-callback control like `ToggleBar`
+  keeps `onChange` with commit semantics intact.
+
+  **Migrating is a rename, but `onChange` still compiles while meaning something
+  new, so read this before running a codemod.** On the four components above,
+  `onChange` used to be the live callback and is now the committed one. Passing a
+  live handler to `onChange` type-checks and then only fires on release. The
+  committed names (`onCommit`, `onChangeEnd`, `onChangeCommit`) are gone, so those
+  fail loudly; the live rename is the one to do by hand.
+
+  Behavior is unchanged, including which callback is required: these four are
+  fully controlled, so `onInput` is required (without it the control freezes
+  mid-drag) and `onChange` is optional. `ColorField` and `GradientEditor` buffer
+  internally and keep the opposite. Required-ness follows the control's state
+  model, not the naming.
+
+  `CurveEditor`'s layer-gesture `onCommit(state, ctx)` is a different protocol and
+  is untouched.
+
+- Updated dependencies [514c34a]
+  - @weasel-js/modes@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes
