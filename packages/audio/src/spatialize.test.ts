@@ -20,6 +20,30 @@ describe('spatialize', () => {
     expect(far).toBeGreaterThan(0);
   });
 
+  it('follows the inverse-distance curve past refDistance', () => {
+    expect(spatialize({ x: 0, y: 30 }, L, { refDistance: 10 }).gain)
+      .toBeCloseTo(10 / (10 + 20), 12);
+  });
+
+  it('measures the inverse curve from a refDistance of 1 by default', () => {
+    expect(spatialize({ x: 0, y: 3 }, L).gain).toBeCloseTo(1 / (1 + 2), 12);
+  });
+
+  it('falls off faster under a larger rolloffFactor', () => {
+    const slow = spatialize({ x: 0, y: 30 }, L, { refDistance: 10, rolloffFactor: 1 }).gain;
+    const fast = spatialize({ x: 0, y: 30 }, L, { refDistance: 10, rolloffFactor: 2 }).gain;
+    expect(slow).toBeCloseTo(10 / (10 + 20), 12);
+    expect(fast).toBeCloseTo(10 / (10 + 2 * 20), 12);
+    expect(fast).toBeLessThan(slow);
+  });
+
+  it('scales linear rolloff by rolloffFactor too', () => {
+    const opts = { rolloff: 'linear' as const, refDistance: 10, maxDistance: 110 };
+    expect(spatialize({ x: 0, y: 35 }, L, opts).gain).toBeCloseTo(1 - 25 / 100, 12);
+    expect(spatialize({ x: 0, y: 35 }, L, { ...opts, rolloffFactor: 2 }).gain)
+      .toBeCloseTo(1 - 2 * (25 / 100), 12);
+  });
+
   it('pans right for a source to the right', () => {
     expect(spatialize({ x: 50, y: 0 }, L, { panWidth: 100 }).pan).toBeCloseTo(0.5, 6);
   });
