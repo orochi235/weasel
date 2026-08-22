@@ -16,10 +16,38 @@ describe('createAnalyserTap', () => {
     expect(tap.frequencies()).toHaveLength(1024);
   });
 
-  it('returns waveform data', () => {
+  it('returns a whole time-domain window, not half of it', () => {
     const ctx = createFakeAudioContext();
     const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
-    expect(tap.waveform()).toHaveLength(1024);
+    // Time-domain data is sized by fftSize; frequencyBinCount is half that.
+    expect(tap.waveform()).toHaveLength(2048);
+  });
+
+  it('reads the whole window for level, not half of it', () => {
+    const ctx = createFakeAudioContext();
+    // Silent first half, full deflection second half.
+    ctx._analyserBytes = (i) => (i < 1024 ? 128 : 255);
+    const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
+    expect(tap.level()).toBeCloseTo(Math.sqrt(0.5 * (127 / 128) ** 2), 3);
+  });
+
+  it('resizes its scratch when fftSize changes under it', () => {
+    const ctx = createFakeAudioContext();
+    const tap = createAnalyserTap(ctx as never, ctx.createGain() as never, { fftSize: 512 });
+    expect(tap.waveform()).toHaveLength(512);
+    expect(tap.frequencies()).toHaveLength(256);
+    tap.node.fftSize = 64;
+    expect(tap.waveform()).toHaveLength(64);
+    expect(tap.bands(4)).toHaveLength(4);
+  });
+
+  it('averages the bins each band covers', () => {
+    const ctx = createFakeAudioContext();
+    ctx._analyserBytes = (i, length) => (i < length / 2 ? 0 : 255);
+    const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
+    const bands = tap.bands(2);
+    expect(bands[0]).toBeCloseTo(0, 6);
+    expect(bands[1]).toBeCloseTo(1, 6);
   });
 
   it('reuses a caller-supplied array instead of allocating', () => {
@@ -50,11 +78,22 @@ describe('createAnalyserTap', () => {
     expect(tap.level()).toBeCloseTo(0, 3);
   });
 
-  it('disconnects on dispose', () => {
+  it('detaches from the tapped source on dispose', () => {
     const ctx = createFakeAudioContext();
-    const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
+    const source = ctx.createGain();
+    const tap = createAnalyserTap(ctx as never, source as never);
     tap.dispose();
-    expect((tap.node as never as { disconnected: boolean }).disconnected).toBe(true);
+    expect(source.connectedTo).not.toContain(tap.node as never);
+  });
+
+  it('leaves other taps on the same source alone, and survives a second dispose', () => {
+    const ctx = createFakeAudioContext();
+    const source = ctx.createGain();
+    const a = createAnalyserTap(ctx as never, source as never);
+    const b = createAnalyserTap(ctx as never, source as never);
+    a.dispose();
+    a.dispose();
+    expect(source.connectedTo).toContain(b.node as never);
   });
 
   it('throws for a band count below 1', () => {

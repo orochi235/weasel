@@ -6,13 +6,17 @@ export interface AnalyserTapOptions {
 export interface AnalyserTap {
   /** The underlying node, exposed for disposal assertions and advanced wiring. */
   node: AnalyserNode;
+  /** Frequency data, sized `node.frequencyBinCount` when no array is given. */
   frequencies(out?: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer>;
+  /** Time-domain data, sized `node.fftSize` when no array is given — twice the
+   *  frequency bin count, which is the whole window rather than half of it. */
   waveform(out?: Uint8Array<ArrayBuffer>): Uint8Array<ArrayBuffer>;
-  /** RMS amplitude, 0..1. */
+  /** RMS amplitude over the whole time-domain window, 0..1. */
   level(): number;
   /** `n` averaged frequency bands normalized to 0..1 — the ergonomic form for
    *  driving a shader uniform, a vertex color, or a pose. */
   bands(n: number): Float32Array;
+  /** Detach from the tapped node. Idempotent. */
   dispose(): void;
 }
 
@@ -24,9 +28,22 @@ export function createAnalyserTap(
   const node = ctx.createAnalyser();
   node.fftSize = opts.fftSize ?? 2048;
   source.connect(node);
+  let attached = true;
 
-  const freqScratch = new Uint8Array(node.frequencyBinCount);
-  const timeScratch = new Uint8Array(node.frequencyBinCount);
+  // `node` is public surface, so `fftSize` can change under the tap. Time-domain
+  // data is sized by `fftSize`; frequency data by half of it.
+  let freqScratch = new Uint8Array(node.frequencyBinCount);
+  let timeScratch = new Uint8Array(node.fftSize);
+  const freqBuf = (): Uint8Array<ArrayBuffer> => {
+    if (freqScratch.length !== node.frequencyBinCount) {
+      freqScratch = new Uint8Array(node.frequencyBinCount);
+    }
+    return freqScratch;
+  };
+  const timeBuf = (): Uint8Array<ArrayBuffer> => {
+    if (timeScratch.length !== node.fftSize) timeScratch = new Uint8Array(node.fftSize);
+    return timeScratch;
+  };
 
   return {
     node,
@@ -36,36 +53,44 @@ export function createAnalyserTap(
       return target;
     },
     waveform(out) {
-      const target = out ?? new Uint8Array(node.frequencyBinCount);
+      const target = out ?? new Uint8Array(node.fftSize);
       node.getByteTimeDomainData(target);
       return target;
     },
     level() {
-      node.getByteTimeDomainData(timeScratch);
+      const buf = timeBuf();
+      node.getByteTimeDomainData(buf);
       let sum = 0;
-      for (let i = 0; i < timeScratch.length; i += 1) {
+      for (let i = 0; i < buf.length; i += 1) {
         // Time-domain bytes center on 128; subtract to get a signed sample.
-        const v = (timeScratch[i] - 128) / 128;
+        const v = (buf[i] - 128) / 128;
         sum += v * v;
       }
-      return Math.sqrt(sum / timeScratch.length);
+      return Math.sqrt(sum / buf.length);
     },
     bands(n) {
       if (!Number.isInteger(n) || n < 1) {
         throw new Error('@weasel-js/audio: bands(n) requires a positive integer');
       }
-      node.getByteFrequencyData(freqScratch);
+      const buf = freqBuf();
+      node.getByteFrequencyData(buf);
       const out = new Float32Array(n);
-      const per = freqScratch.length / n;
+      const per = buf.length / n;
       for (let b = 0; b < n; b += 1) {
         const lo = Math.floor(b * per);
         const hi = Math.max(lo + 1, Math.floor((b + 1) * per));
         let sum = 0;
-        for (let i = lo; i < hi; i += 1) sum += freqScratch[i];
+        for (let i = lo; i < hi; i += 1) sum += buf[i];
         out[b] = sum / (hi - lo) / 255;
       }
       return out;
     },
-    dispose() { node.disconnect(); },
+    // `node.disconnect()` would cut the analyser's outgoing edges, and it has
+    // none: the edge that keeps it alive is the source's.
+    dispose() {
+      if (!attached) return;
+      attached = false;
+      source.disconnect(node);
+    },
   };
 }
