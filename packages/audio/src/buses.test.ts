@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createBusGraph } from './buses';
-import { createFakeAudioContext } from './testing/fakeAudioContext';
+import { createFakeAudioContext, type FakeParam } from './testing/fakeAudioContext';
 
 describe('createBusGraph', () => {
   it('routes every named bus to master and master to the destination', () => {
@@ -55,6 +55,44 @@ describe('createBusGraph', () => {
     graph.bus('sfx').mute(true);
     graph.bus('sfx').solo(true);
     expect(gain()).toBe(0);
+  });
+
+  it('ramps a bus gain instead of jumping to it', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx']);
+    const gain = (graph.node('sfx') as never as { gain: FakeParam }).gain;
+    ctx._advance(1000);
+    graph.bus('sfx').setGain(0.25, 200);
+    expect(gain.ramps).toEqual([{ value: 0.25, at: 1.2 }]);
+    // The recomputation that follows must not write the target underneath it.
+    expect(gain.value).toBe(1);
+  });
+
+  it('anchors every ramp at the current value and time', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx']);
+    const gain = (graph.node('sfx') as never as { gain: FakeParam }).gain;
+    graph.bus('sfx').setGain(0.25, 200);
+    ctx._advance(500);
+    graph.bus('sfx').setGain(1, 200);
+    expect(gain.cancels).toEqual([0, 0.5]);
+    expect(gain.holds.map((h) => h.at)).toEqual([0, 0.5]);
+  });
+
+  it('ramps only the bus that was set, not the ones a solo recomputes', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx', 'music']);
+    const music = (graph.node('music') as never as { gain: FakeParam }).gain;
+    graph.bus('sfx').setGain(0.5, 200);
+    expect(music.ramps).toEqual([]);
+  });
+
+  it('writes mute through the scheduled path, not behind it', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx']);
+    const gain = (graph.node('sfx') as never as { gain: FakeParam }).gain;
+    graph.bus('sfx').mute(true);
+    expect(gain.holds).toEqual([{ value: 0, at: 0 }]);
   });
 
   it('throws for an unknown bus name', () => {
