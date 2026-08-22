@@ -18,6 +18,9 @@ Priority tags:
 
 ### Next up
 
+- **Animation timelines + hierarchical rig** — spec'd, phase 1 next → [Animation](#animation)
+- **`@weasel-js/audio`** — spec'd, phase 1 next → [Audio](#audio)
+- **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 ### P2 — broad reuse / friction-likely
@@ -577,7 +580,48 @@ Core five + Crop shipped. Remaining:
 
 ## Animation
 
-All from `docs/specs/2026-05-04-animation-primitive-design.md`:
+### Timelines and rigging (active)
+
+Design: `docs/superpowers/specs/2026-08-22-animation-timeline-rig-design.md`.
+Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decomposition.md`.
+
+- **(P1) Timeline primitive** — `animator.timeline(opts)`, registered in the
+  animator's table so its playhead is the entry's `virtualNow` and pause /
+  time-scale / `cancelKey` apply unchanged. Three track kinds: sampled (pure
+  function of `t`, reuses the tween interpolation contract), event (edge
+  crossings, silent under seek), and nested timelines. A public frame tick falls
+  out of the same mechanism.
+- **(P1) Hierarchical rig** — skeleton of named joints with their own TRS, poses
+  as local deltas, `blendPoses`, `resolveSkeleton`. Binding to scene nodes is a
+  dep following the `insert` pattern. Animating a rig is a `SampledTrack<Pose>`
+  whose `interpolate` is `blendPoses` — no rig-specific timeline integration.
+- **(P2) `<Timeline>` editor** — transport, lanes, draggable keyframes,
+  per-segment easing. Goes in `@weasel-js/ui` next to `BandEditor`, `Slider` and
+  `CurveEditor`; `labkit` has none of those and doesn't depend on `ui`.
+- **(P3) Inverse kinematics** — a solver that writes poses. Composes with the rig
+  above and needs nothing here changed.
+- **(P3) Skinning** — per-vertex bone weights deforming path geometry. The
+  renderer flattens paths to meshes, so weights must reach the vertex shader or
+  be applied on the CPU per frame. Needs the hierarchical rig first.
+- **(P3) Serializable clips** — follows from tracks being typed callbacks rather
+  than data. Revisit with the editor's experience in hand.
+
+### Side-scroller demo
+
+Runs after the timeline and audio arcs land, as a load test on both — a
+platformer drives them harder and more continuously than any editor interaction
+does. Demo-local: frame loop, collision, tile map. Kit changes it is expected to
+surface: a source rect and flip on `ImageDrawCommand` (sprite sheets currently
+need a custom shader via `ShaderDrawCommand`), and a key-state poll over the
+public `key-held` edges.
+
+A platformer in `apps/site/demos/` is a deliberate exception to the terse,
+single-purpose demo convention — an exception, not a precedent.
+
+### Earlier deferrals
+
+All from `docs/specs/2026-05-04-animation-primitive-design.md`. The first two are
+absorbed by the timeline arc above:
 
 - **(P3) Animation events / observability** — global subscribe API for debug overlays / analytics.
 - **(P3) Animation-aware undo** — "rewind the animation" instead of cancel + jump.
@@ -587,13 +631,38 @@ All from `docs/specs/2026-05-04-animation-primitive-design.md`:
 
 ---
 
+## Audio
+
+Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
+
+- **(P1) `@weasel-js/audio`** — a leaf package with no weasel dependencies.
+  Lookahead scheduling on its own `setInterval` (the audio clock cannot be paused
+  or time-scaled by the animator, and rAF throttles when backgrounded), voices
+  with handles and `cancelKey`, buses with gain/mute/solo, 2D spatialization as a
+  pure `spatialize()` function, and analyser taps with `bands(n)` for
+  audio-reactive rendering. Registration: `build:leaves` and the `fixed` group in
+  `.changeset/config.json`.
+- **(P2) Timeline audio bridge** — an `EventTrack` firing `engine.play()` with
+  `when: engine.now() + (event.t - playhead)`, so the sound lands at its true
+  sub-frame time instead of inheriting frame jitter. Neither package imports the
+  other; they meet at a number.
+- **(P3) AudioWorklet scheduling** — immune to main-thread jank; costs a worklet
+  module, cross-thread messaging and a bundling story. Revisit if jank proves
+  audible.
+- **(P3) Insert effects** — per-bus effect slot (convolution reverb, filters).
+  Nothing in the v1 graph forecloses it.
+- **(P3) Streaming sources** — `MediaElementAudioSourceNode` for long music.
+  Everything in v1 decodes fully into an `AudioBuffer`.
+
+---
+
 ## Selection, actions & UI panels
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
 - **(P3) Reconcile `BandEditor` with `Slider`.** `BandEditor` (bands: a contiguous tiling of an axis, seams draggable, each band carrying a payload) ships alongside `Slider` (a thumb list on an axis, `constraint: 'ordered'`, `onAddThumb`/`onRemoveThumb`, `renderTrack`). Under a contiguous tiling the two are the same control — N seams determine N+1 bands, so seams *are* an ordered thumb list — and they were kept separate deliberately: bridging them means teaching `Slider` about the region *between* thumbs (payload, hit-testing, selection), which is the wider change the reconciliation actually requires. The other trigger is `Slider` needing a non-linear axis. A third option arrived with `windease` 1.0 (2026-08-20): its `LayoutStrategy` is public API — `layout()` returns placements plus affordances, `reduce()` folds a gutter drag into strategy state — so a band control is a strategy you write rather than a control you build, and it brings widened gutter grab targets, `affects` for lock suppression, and — as of 1.2.0 — keyboard-operable gutters with it (`role="separator"` with the value triple, arrows plus Home/End, each keypress synthesized into the same drag event the pointer sends so the strategy clamps once). It ships no band strategy of its own: the two built-ins are `gridStrategy` and `stripStrategy`, and strip is `LayoutStrategy<void>` whose gutters are single-child `resize-x` affordances writing pixel `placement.size`. Mapping domain values onto seams is still the consumer's. Note `Slider` is the former `RangePicker` (renamed in `9e934725`); `docs/specs/2026-05-09-range-picker-design.md` still uses the old name, and `RangeSlider`'s doc comment calling `Slider` "canvas-scrub" is stale from the same rename.
 
-- **(P3) windease as a layout dependency — re-evaluate; 1.2.0 closed almost every blocker.** Two cases were checked on 2026-08-21 against `windease` (`~/src/windease`, `orochi235/windease` — a browser window manager: nodes with capabilities, pure `LayoutStrategy` functions, DnD, JSON snapshots): a labkit sidebar of resizable tool palettes, and labkit's `Workspace` tiling. The evaluation found nine gaps and windease 1.2.0, published the same night, shipped eight — content-driven sizing (`hints.sizing` plus a measured `LayoutItem.natural`), keyboard-operable gutters (`role="separator"`, arrows and Home/End), `resizeMode: 'neighbor'` for splitter-style pairing, an explicit size allowed to sink below `minSize` so a pane can collapse to its header, controlled order (`<Container onChildOrderChange>`) and its uncontrolled twin (`preserveStoreOrder`), `serialize(store, { root })` for a host whose saved states are per-item, and `gridStrategy` `resizable: true` emitting seams that write `placement.span`, so auto-balance and draggable gutters compose instead of being an either/or. **Still open:** the overflow *policy* — a squeeze-vs-scroll choice, where the signal ships and the policy is parked — and a per-zone in-flow render mode, which is the one that decides whether adopting windease means giving up `WorkspaceGrid`'s CSS grid for absolutely-positioned rects. Two findings survive unchanged: `gridStrategy` already auto-balances to `ceil(sqrt(n))`, so `packages/labkit/src/lab/gridDims.ts` and `WorkspaceGrid` would be deletions rather than ports; and nothing in weasel depends on windease today, so this is a fresh integration whenever it happens. Both gap lists, with the shipped items marked, are in `~/src/windease/TODO.md` under "Wishlist: docked tool palettes" and "Wishlist: hosting an app that already has a workspace store".
+- **(P3) windease as a layout dependency — every blocker is closed; this is now an integration decision, not an evaluation.** Two cases were checked on 2026-08-21 against `windease` (`~/src/windease`, `orochi235/windease` — a browser window manager: nodes with capabilities, pure `LayoutStrategy` functions, DnD, JSON snapshots): a labkit sidebar of resizable tool palettes, and labkit's `Workspace` tiling. Nine gaps were found; 1.2.0 closed seven that night and 1.2.1 (2026-08-22) closed the last two — `overflowMode` (`squeeze` / `scroll` / `unplace`) on both `stripStrategy` and `gridStrategy`, turning the overflow signal into a policy, and `hints.render: 'flow'`, a per-container mode that skips the strategy pass and lets the host's CSS arrange the children. Flow answers the question that decided the whole adoption: a host keeps its working CSS grid and takes the gestures, and a mixed tree is the expected shape, so auto-balance stays available on the containers that want it. What flow gives up is everything downstream of the strategy — placements, affordances, `unplaced`, `overflowMode`, `hints.sizing`, the settle animation — and it has one live bug: a pane that reflows without resizing fires no observer, so keyboard navigation reads a stale rect until the child set changes. Two findings survive unchanged: `gridStrategy` already auto-balances to `ceil(sqrt(n))`, so `packages/labkit/src/lab/gridDims.ts` and `WorkspaceGrid` would be deletions rather than ports; and nothing in weasel depends on windease today, so this is a fresh integration whenever it happens. Both gap lists, with everything marked shipped, are in `~/src/windease/TODO.md` under "Wishlist: docked tool palettes" and "Wishlist: hosting an app that already has a workspace store".
 
 - **(P3) `<ToggleBar>` polish.** Shipped to `@weasel-js/ui` (spec/plan dated 2026-05-17). Visual still needs polish — literally, polish this.
 
