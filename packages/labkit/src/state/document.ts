@@ -58,41 +58,65 @@ export function runMigrations(
 
 const LEGACY_BUCKETS = ['workspaces', 'saves', 'layout', 'theme'] as const;
 
-function parseOr<T>(raw: string | null, fallback: T): T {
+function parseOr<T>(raw: string | null, fallback: T, bucket: string): T {
   if (raw === null) return fallback;
   try {
     return JSON.parse(raw) as T;
   } catch {
-    console.warn('[labkit] unparseable legacy bucket, dropping it');
+    console.warn(`[labkit] unparseable legacy bucket "${bucket}", dropping it`);
     return fallback;
   }
 }
 
 /** Assemble a version-0 document out of the four pre-document keys, or null
- *  if none of them is present. */
+ *  if none of them is present. `fallbackMode` is used when the theme key is
+ *  absent or holds something unrecognized; `interstellar` passes through
+ *  untouched for `migrateV0toV1` to coerce. */
 export function readLegacyDocument(
   storage: StorageAdapter,
   storageKey: string,
+  fallbackMode: LabMode,
 ): Record<string, unknown> | null {
   const present = LEGACY_BUCKETS.some((b) => storage.read(labStorageKey(storageKey, b)) !== null);
   if (!present) return null;
 
+  const rawMode = storage.read(labStorageKey(storageKey, 'theme'));
+  const mode =
+    rawMode === 'light' || rawMode === 'dark' || rawMode === 'auto' || rawMode === 'interstellar'
+      ? rawMode
+      : fallbackMode;
+
   return {
     version: 0,
-    workspaces: parseOr(storage.read(labStorageKey(storageKey, 'workspaces')), []),
-    saves: parseOr(storage.read(labStorageKey(storageKey, 'saves')), []),
-    layout: parseOr(storage.read(labStorageKey(storageKey, 'layout')), {}),
-    // `theme` held a bare string, never JSON.
-    mode: storage.read(labStorageKey(storageKey, 'theme')) ?? 'auto',
+    workspaces: parseOr(storage.read(labStorageKey(storageKey, 'workspaces')), [], 'workspaces'),
+    saves: parseOr(storage.read(labStorageKey(storageKey, 'saves')), [], 'saves'),
+    layout: parseOr(storage.read(labStorageKey(storageKey, 'layout')), {}, 'layout'),
+    mode,
   };
 }
 
-/** Delete the four pre-document keys. Called once the migrated document has
- *  been written, never before. */
-export function deleteLegacyKeys(storage: StorageAdapter, storageKey: string): void {
+/** Delete the four pre-document keys, but only once `expectedDocument` is
+ *  confirmed to be exactly what is stored under the document key — a
+ *  read-back, not a trust of the write that produced it. On any mismatch
+ *  (write failed, landed partially, or never happened) it deletes nothing,
+ *  warns, and returns `false` so the legacy buckets stay as a recoverable
+ *  copy. Returns `true` only once all four are gone. */
+export function deleteLegacyKeys(
+  storage: StorageAdapter,
+  storageKey: string,
+  expectedDocument: string,
+): boolean {
+  const actual = storage.read(labDocumentKey(storageKey));
+  if (actual !== expectedDocument) {
+    console.warn(
+      `[labkit] keeping legacy keys for "${storageKey}": could not confirm the migrated document was written`,
+    );
+    return false;
+  }
   for (const bucket of LEGACY_BUCKETS) {
     storage.delete?.(labStorageKey(storageKey, bucket));
   }
+  return true;
 }
 
 /** Version 0 (four loose keys) to version 1 (one document). Normalizes the

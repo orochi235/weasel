@@ -70,7 +70,7 @@ describe('runMigrations', () => {
 
 describe('readLegacyDocument', () => {
   it('returns null when no legacy key is present', () => {
-    expect(readLegacyDocument(createMemoryAdapter(), 'lab')).toBeNull();
+    expect(readLegacyDocument(createMemoryAdapter(), 'lab', 'auto')).toBeNull();
   });
 
   it('assembles a version-0 document from the four buckets', () => {
@@ -80,7 +80,7 @@ describe('readLegacyDocument', () => {
     storage.write(labStorageKey('lab', 'layout'), JSON.stringify({ w1: { h: 4 } }));
     storage.write(labStorageKey('lab', 'theme'), 'dark');
 
-    expect(readLegacyDocument(storage, 'lab')).toEqual({
+    expect(readLegacyDocument(storage, 'lab', 'auto')).toEqual({
       version: 0,
       workspaces: [{ id: 'w1' }],
       saves: [{ id: 's1' }],
@@ -94,26 +94,82 @@ describe('readLegacyDocument', () => {
     storage.write(labStorageKey('lab', 'workspaces'), '{{{not json');
     storage.write(labStorageKey('lab', 'saves'), JSON.stringify([{ id: 's1' }]));
 
-    const doc = readLegacyDocument(storage, 'lab');
+    const doc = readLegacyDocument(storage, 'lab', 'auto');
     expect(doc?.workspaces).toEqual([]);
     expect(doc?.saves).toEqual([{ id: 's1' }]);
+  });
+
+  it('falls back to fallbackMode when the theme key is absent', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([]));
+
+    expect(readLegacyDocument(storage, 'lab', 'dark')?.mode).toBe('dark');
+  });
+
+  it('falls back to fallbackMode when the theme value is unrecognized', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('lab', 'theme'), 'chartreuse');
+
+    expect(readLegacyDocument(storage, 'lab', 'dark')?.mode).toBe('dark');
+  });
+
+  it('a valid theme value beats the fallback', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('lab', 'theme'), 'light');
+
+    expect(readLegacyDocument(storage, 'lab', 'dark')?.mode).toBe('light');
+  });
+
+  it('passes interstellar through untouched for migrateV0toV1 to coerce', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('lab', 'theme'), 'interstellar');
+
+    expect(readLegacyDocument(storage, 'lab', 'dark')?.mode).toBe('interstellar');
   });
 });
 
 describe('deleteLegacyKeys', () => {
-  it('deletes all four legacy buckets', () => {
+  it('deletes all four legacy buckets when the document matches', () => {
     const storage = createMemoryAdapter();
     storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
     storage.write(labStorageKey('lab', 'saves'), JSON.stringify([{ id: 's1' }]));
     storage.write(labStorageKey('lab', 'layout'), JSON.stringify({ w1: { h: 4 } }));
     storage.write(labStorageKey('lab', 'theme'), 'dark');
+    storage.write(labDocumentKey('lab'), 'the-document');
 
-    deleteLegacyKeys(storage, 'lab');
+    expect(deleteLegacyKeys(storage, 'lab', 'the-document')).toBe(true);
 
     expect(storage.read(labStorageKey('lab', 'workspaces'))).toBeNull();
     expect(storage.read(labStorageKey('lab', 'saves'))).toBeNull();
     expect(storage.read(labStorageKey('lab', 'layout'))).toBeNull();
     expect(storage.read(labStorageKey('lab', 'theme'))).toBeNull();
+  });
+
+  it('the document key itself survives deletion', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
+    storage.write(labDocumentKey('lab'), 'the-document');
+
+    deleteLegacyKeys(storage, 'lab', 'the-document');
+
+    expect(storage.read(labDocumentKey('lab'))).toBe('the-document');
+  });
+
+  it('deletes nothing and returns false when the document key is absent', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
+
+    expect(deleteLegacyKeys(storage, 'lab', 'the-document')).toBe(false);
+    expect(storage.read(labStorageKey('lab', 'workspaces'))).not.toBeNull();
+  });
+
+  it('deletes nothing and returns false when the document key holds different content', () => {
+    const storage = createMemoryAdapter();
+    storage.write(labStorageKey('lab', 'workspaces'), JSON.stringify([{ id: 'w1' }]));
+    storage.write(labDocumentKey('lab'), 'something-else');
+
+    expect(deleteLegacyKeys(storage, 'lab', 'the-document')).toBe(false);
+    expect(storage.read(labStorageKey('lab', 'workspaces'))).not.toBeNull();
   });
 });
 
@@ -130,6 +186,10 @@ describe('migrateV0toV1', () => {
     expect(migrateV0toV1({ version: 0, mode: 'chartreuse' }).mode).toBe('auto');
   });
 
+  it.each(['light', 'dark', 'auto'] as const)('passes mode %s through unchanged', (mode) => {
+    expect(migrateV0toV1({ version: 0, mode }).mode).toBe(mode);
+  });
+
   it('fills in every missing section', () => {
     expect(migrateV0toV1({ version: 0 })).toEqual({
       version: 1,
@@ -139,10 +199,36 @@ describe('migrateV0toV1', () => {
       mode: 'auto',
     });
   });
+
+  it('preserves a populated workspaces array', () => {
+    const workspaces = [{ id: 'w1', instrumentName: 'osc' }];
+    expect(migrateV0toV1({ version: 0, workspaces }).workspaces).toEqual(workspaces);
+  });
+
+  it('preserves a populated saves array', () => {
+    const saves = [{ id: 's1', name: 'my save' }];
+    expect(migrateV0toV1({ version: 0, saves }).saves).toEqual(saves);
+  });
+
+  it('preserves a populated layout object', () => {
+    const layout = { w1: { h: 4 } };
+    expect(migrateV0toV1({ version: 0, layout }).layout).toEqual(layout);
+  });
+
+  it('falls back layout to {} and workspaces/saves to [] without swapping them', () => {
+    const out = migrateV0toV1({ version: 0, workspaces: 'nope', saves: 'nope', layout: 'nope' });
+    expect(out.workspaces).toEqual([]);
+    expect(out.saves).toEqual([]);
+    expect(out.layout).toEqual({});
+  });
 });
 
 describe('MIGRATIONS', () => {
   it('has one entry per version below the current one', () => {
     expect(MIGRATIONS).toHaveLength(CURRENT_DOCUMENT_VERSION);
+  });
+
+  it('indexes migrateV0toV1 at position 0', () => {
+    expect(MIGRATIONS[0]).toBe(migrateV0toV1);
   });
 });
