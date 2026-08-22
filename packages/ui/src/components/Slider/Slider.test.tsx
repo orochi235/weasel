@@ -237,6 +237,89 @@ describe("Slider 'ordered' constraint", () => {
   });
 });
 
+describe("Slider 'ordered' constraint — keyboard", () => {
+  it('End stops at the upper neighbor rather than jumping to max', () => {
+    const onInput = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={1} step={0.01} constraint="ordered"
+        thumbs={[{ value: 0.3 }, { value: 0.7 }]} onInput={onInput} />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    fireEvent.keyDown(thumbs[0], { key: 'End' });
+    expect(onInput.mock.calls[0][0][0].value).toBeCloseTo(0.69, 5);
+  });
+
+  it('Home stops at the lower neighbor rather than jumping to min', () => {
+    const onInput = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={1} step={0.01} constraint="ordered"
+        thumbs={[{ value: 0.3 }, { value: 0.7 }]} onInput={onInput} />,
+    );
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    fireEvent.keyDown(thumbs[1], { key: 'Home' });
+    expect(onInput.mock.calls[0][0][1].value).toBeCloseTo(0.31, 5);
+  });
+
+  it('a repeated arrow step cannot push a thumb past its neighbor', () => {
+    function Harness() {
+      const [thumbs, setThumbs] = useState([{ value: 0.5 }, { value: 0.55 }]);
+      return (
+        <Slider min={0} max={1} step={0.01} constraint="ordered"
+          thumbs={thumbs} onInput={setThumbs} />
+      );
+    }
+    const { container } = render(<Harness />);
+    const thumbs = container.querySelectorAll<HTMLElement>('[role="slider"]');
+    for (let i = 0; i < 20; i++) fireEvent.keyDown(thumbs[0], { key: 'ArrowRight' });
+    const values = Array.from(container.querySelectorAll<HTMLElement>('[role="slider"]'))
+      .map((el) => Number(el.getAttribute('aria-valuenow')));
+    expect(values[0]).toBeLessThan(values[1]);
+  });
+});
+
+describe('Slider drag teardown', () => {
+  it('pointercancel ends the drag — later moves do not keep dragging the thumb', () => {
+    const onInput = vi.fn();
+    const { container } = render(
+      <Slider min={0} max={1} thumbs={[{ value: 0.5 }]} onInput={onInput} />,
+    );
+    const thumb = container.querySelector<HTMLElement>('[role="slider"]')!;
+    stubRect(thumb.parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 12, pointerId: 1 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    fireEvent.pointerCancel(document, { pointerId: 1 });
+    fireEvent.pointerMove(document, { clientX: 180, clientY: 12, pointerId: 1 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+  });
+
+  it('unmounting mid-drag detaches the document listeners', () => {
+    const { container, unmount } = render(
+      <Slider min={0} max={1} thumbs={[{ value: 0.5 }]} onInput={() => {}} />,
+    );
+    const thumb = container.querySelector<HTMLElement>('[role="slider"]')!;
+    stubRect(thumb.parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
+    const remove = vi.spyOn(document, 'removeEventListener');
+    unmount();
+    const removed = remove.mock.calls.map((c) => c[0]);
+    expect(removed).toContain('pointermove');
+    expect(removed).toContain('pointerup');
+    remove.mockRestore();
+  });
+
+  it('a press focuses the thumb so the arrow keys reach it', () => {
+    const { container } = render(
+      <Slider min={0} max={1} thumbs={[{ value: 0.5 }]} onInput={() => {}} />,
+    );
+    const thumb = container.querySelector<HTMLElement>('[role="slider"]')!;
+    stubRect(thumb.parentElement!, { left: 0, width: 200 });
+    fireEvent.pointerDown(thumb, { clientX: 100, clientY: 12, pointerId: 1, button: 0 });
+    expect(document.activeElement).toBe(thumb);
+    fireEvent.pointerUp(document, { pointerId: 1 });
+  });
+});
+
 describe('Slider per-thumb bounds (tuple form)', () => {
   it('clamps drag to bounds', () => {
     const onInput = vi.fn();
