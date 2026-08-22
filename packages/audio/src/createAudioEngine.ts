@@ -60,6 +60,9 @@ interface LiveVoice {
 
 export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const ctx = opts.context ?? new AudioContext();
+  // A context the engine made is a context the engine closes; a consumer's is
+  // theirs to keep.
+  const ownsContext = opts.context === undefined;
   const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
   if (busNames.length === 0) {
     throw new Error('@weasel-js/audio: an engine needs at least one bus');
@@ -97,7 +100,13 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   let listener: Vec2 = { x: 0, y: 0 };
   let spatialOpts: SpatialOptions = {};
   let nextVoiceId = 1;
+  let disposed = false;
+  let suspendedSince = false;
+  /** Engine time before which a queued entry is stale — set on resume, so a
+   *  suspension does not end in one pass that fires its whole backlog. */
+  let staleFloor = -Infinity;
   const live = new Map<number, LiveVoice>();
+  const taps = new Set<AnalyserTap>();
 
   let warnedLocked = false;
   const warnLocked = (): void => {
@@ -108,6 +117,13 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       'Browsers require a user gesture; call engine.unlock() from one, or wait for the ' +
       'automatic gesture listener.',
     );
+  };
+
+  let warnedDisposed = false;
+  const warnDisposed = (): void => {
+    if (warnedDisposed) return;
+    warnedDisposed = true;
+    console.warn('@weasel-js/audio: play() after dispose() — the voice was dropped.');
   };
 
   let warnedUnknownSound = false;
@@ -123,9 +139,32 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   // Resume on the first user gesture, then stop listening.
   const gestures = ['pointerdown', 'keydown', 'touchstart'] as const;
   const onGesture = (): void => { void engine.unlock(); };
-  if (typeof window !== 'undefined') {
+  const armGestures = (): void => {
+    if (typeof window === 'undefined') return;
     for (const g of gestures) window.addEventListener(g, onGesture, { once: true, passive: true });
-  }
+  };
+  const disarmGestures = (): void => {
+    if (typeof window === 'undefined') return;
+    for (const g of gestures) window.removeEventListener(g, onGesture);
+  };
+  armGestures();
+
+  // A browser suspends the context when the tab goes away, and the one-shot
+  // gesture listeners are long consumed by then. Without this the engine is
+  // permanently silent afterwards, with no diagnostic — the drop warning is a
+  // once-per-engine latch.
+  const onStateChange = (): void => {
+    if (disposed) return;
+    if (ctx.state === 'running') {
+      if (suspendedSince) staleFloor = now();
+      suspendedSince = false;
+      return;
+    }
+    suspendedSince = true;
+    warnedLocked = false;
+    armGestures();
+  };
+  ctx.addEventListener('statechange', onStateChange);
 
   const poolGain = (voice: LiveVoice): void => {
     if (voice.slot === null) return;
@@ -174,6 +213,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const engine: AudioEngine = {
     state: () => ctx.state,
     async unlock() {
+      if (disposed) return;
       if (ctx.state !== 'running') await ctx.resume();
     },
     now,
@@ -184,6 +224,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     play(sound, playOpts = {}) {
       const id = nextVoiceId++;
 
+      if (disposed) {
+        warnDisposed();
+        return dropped(id);
+      }
       if (ctx.state !== 'running') {
         warnLocked();
         return dropped(id);
@@ -217,6 +261,12 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
 
       scheduler.schedule(when, (scheduledWhen) => {
         if (voice.cancelled) return;
+        // Came due while the context was suspended: starting it now would play
+        // a backlog at once, which is what dropping a locked play avoids.
+        if (scheduledWhen < staleFloor) {
+          teardown(voice);
+          return;
+        }
         const buffer = sounds.buffer(sound);
         if (!buffer) {
           warnUnknownSound(sound.id);
@@ -310,20 +360,37 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       for (const s of slotsByBus.values()) total += s.pool.active();
       return total;
     },
-    analyser: (busName, tapOpts) =>
-      createAnalyserTap(ctx, busName ? graph.node(busName) : graph.master, tapOpts),
+    analyser(busName, tapOpts) {
+      // Every tap is one more live FFT on the graph. They are tracked so
+      // `dispose()` detaches them; a consumer calling this per frame still
+      // wants to keep one tap rather than mint one.
+      const tap = createAnalyserTap(ctx, busName ? graph.node(busName) : graph.master, tapOpts);
+      taps.add(tap);
+      return {
+        ...tap,
+        dispose() {
+          taps.delete(tap);
+          tap.dispose();
+        },
+      };
+    },
     setListener(p, o) {
       listener = p;
       if (o) spatialOpts = o;
       for (const voice of live.values()) applySpatial(voice);
     },
     dispose() {
+      if (disposed) return;
+      disposed = true;
       engine.stopAll();
       scheduler.stop();
       scheduler.clear();
-      if (typeof window !== 'undefined') {
-        for (const g of gestures) window.removeEventListener(g, onGesture);
-      }
+      for (const tap of [...taps]) tap.dispose();
+      taps.clear();
+      disarmGestures();
+      ctx.removeEventListener('statechange', onStateChange);
+      graph.master.disconnect();
+      if (ownsContext) void ctx.close().catch(() => undefined);
     },
   };
 
