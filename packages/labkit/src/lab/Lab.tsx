@@ -187,7 +187,7 @@ export function Lab({
           style={backdropStyle}
         >
           <LabShell title={title ?? 'Labkit'} mode={modeValue} header={children}>
-            <WorkspaceGrid>
+            <WorkspaceGrid ids={workspaces.map((w) => w.id)} resizable>
               {workspaces.map((w) => (
                 <Workspace key={w.id} id={w.id} />
               ))}

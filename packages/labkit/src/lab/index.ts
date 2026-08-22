@@ -1,5 +1,3 @@
-export type { GridDims } from './gridDims';
-export { gridDims } from './gridDims';
 export type { LabProps } from './Lab';
 export { Lab } from './Lab';
 export type { LabContextValue } from './LabContext';
