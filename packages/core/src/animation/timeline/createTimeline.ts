@@ -61,10 +61,13 @@ export function createTimeline(
 
   const applySampled = (tracks: Track[], t: number): void => {
     for (const track of tracks) {
-      if (track.kind !== 'sampled') continue;
-      const st = track as SampledTrack<unknown>;
-      const v = sampleTrack(st, t, cacheFor(st) as Map<number, (u: number) => unknown>);
-      if (v !== undefined) st.onTick(v);
+      if (track.kind === 'sampled') {
+        const st = track as SampledTrack<unknown>;
+        const v = sampleTrack(st, t, cacheFor(st) as Map<number, (u: number) => unknown>);
+        if (v !== undefined) st.onTick(v);
+      } else if (track.kind === 'timeline') {
+        applySampled(track.timeline.tracks, t - track.at);
+      }
     }
   };
 
@@ -74,23 +77,29 @@ export function createTimeline(
 
   const fireEvents = (tracks: Track[], from: number, to: number): void => {
     for (const track of tracks) {
-      if (track.kind !== 'event') continue;
-      let i = cursorOf(track);
-      while (i < track.events.length && track.events[i].t <= to) {
-        if (track.events[i].t > from) track.events[i].fire();
-        i += 1;
+      if (track.kind === 'event') {
+        let i = cursorOf(track);
+        while (i < track.events.length && track.events[i].t <= to) {
+          if (track.events[i].t > from) track.events[i].fire();
+          i += 1;
+        }
+        cursors.set(track, i);
+      } else if (track.kind === 'timeline') {
+        fireEvents(track.timeline.tracks, from - track.at, to - track.at);
       }
-      cursors.set(track, i);
     }
   };
 
   /** Move cursors to `t` WITHOUT firing. Used by seek and by loop wrap. */
   const recursor = (tracks: Track[], t: number): void => {
     for (const track of tracks) {
-      if (track.kind !== 'event') continue;
-      let i = 0;
-      while (i < track.events.length && track.events[i].t <= t) i += 1;
-      cursors.set(track, i);
+      if (track.kind === 'event') {
+        let i = 0;
+        while (i < track.events.length && track.events[i].t <= t) i += 1;
+        cursors.set(track, i);
+      } else if (track.kind === 'timeline') {
+        recursor(track.timeline.tracks, t - track.at);
+      }
     }
   };
 
