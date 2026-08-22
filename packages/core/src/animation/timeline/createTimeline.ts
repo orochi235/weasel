@@ -43,6 +43,7 @@ export function createTimeline(
   let offset = 0;
   let lastVirtual = 0;
   let playhead = 0;
+  let prevPlayhead = -Infinity;
   let done = false;
 
   const loopOpt = opts.loop ?? false;
@@ -67,7 +68,39 @@ export function createTimeline(
     }
   };
 
-  const onWrap = (): void => {};
+  /** Per-event-track index of the next event to fire. */
+  const cursors = new WeakMap<object, number>();
+  const cursorOf = (track: object): number => cursors.get(track) ?? 0;
+
+  const fireEvents = (tracks: Track[], from: number, to: number): void => {
+    for (const track of tracks) {
+      if (track.kind !== 'event') continue;
+      let i = cursorOf(track);
+      while (i < track.events.length && track.events[i].t <= to) {
+        if (track.events[i].t > from) track.events[i].fire();
+        i += 1;
+      }
+      cursors.set(track, i);
+    }
+  };
+
+  /** Move cursors to `t` WITHOUT firing. Used by seek and by loop wrap. */
+  const recursor = (tracks: Track[], t: number): void => {
+    for (const track of tracks) {
+      if (track.kind !== 'event') continue;
+      let i = 0;
+      while (i < track.events.length && track.events[i].t <= t) i += 1;
+      cursors.set(track, i);
+    }
+  };
+
+  // Flush the outgoing pass's tail before re-arming, or an event between the
+  // last tick and `duration` is dropped whenever a frame straddles the seam.
+  const onWrap = (): void => {
+    fireEvents(opts.tracks, prevPlayhead, duration);
+    recursor(opts.tracks, -Infinity);
+    prevPlayhead = -Infinity;
+  };
 
   const base = register({
     id,
@@ -84,6 +117,9 @@ export function createTimeline(
         playhead -= duration;
         onWrap();
       }
+
+      fireEvents(opts.tracks, prevPlayhead, Math.min(playhead, duration));
+      prevPlayhead = Math.min(playhead, duration);
 
       if (playhead >= duration) {
         playhead = duration;
@@ -105,6 +141,8 @@ export function createTimeline(
     seek(t) {
       offset = t - lastVirtual;
       playhead = t;
+      prevPlayhead = t;
+      recursor(opts.tracks, t);
     },
     time: () => playhead,
     duration: () => duration,
