@@ -141,6 +141,31 @@ describe('SceneCanvas actions integration', () => {
     expect(customRun).toHaveBeenCalledOnce();
   });
 
+  it('a partial override survives a re-render that rebuilds the actions object', () => {
+    const scene = makeScene();
+    let captured: Action | undefined;
+    function Capture() {
+      const reg = useActionsRegistry();
+      useEffect(() => { captured = reg?.list().find(a => a.id === 'duplicate'); });
+      return null;
+    }
+    const tree = (label: string) => (
+      <SceneCanvas scene={scene} layers={{}} width={64} height={64}
+        actionDefaults={{ cloneNode: (id) => ({ id: asNodeId(id + "'") }) }}
+        actions={{ duplicate: { label } }}>
+        <Capture />
+      </SceneCanvas>
+    );
+    const { rerender } = render(tree('Clone'));
+    expect(captured?.label).toBe('Clone');
+
+    // New `actions` identity → the resolver effect tears down and re-runs.
+    rerender(tree('Clone again'));
+    expect(captured).toBeDefined();
+    expect(captured!.label).toBe('Clone again');
+    expect(captured!.invoker).toBeDefined();
+  });
+
   it('full new id is added alongside defaults', () => {
     const scene = makeScene();
     const copyRun = vi.fn();
