@@ -14,6 +14,7 @@
  * RectPath short-circuits to AABB-perimeter math: O(1).
  */
 
+import { pointSegmentDist2 } from '@weasel-js/geom';
 import {
   PATH_C,
   PATH_L,
@@ -27,25 +28,6 @@ import {
 /** Samples per bezier segment. 16 is the sweet spot — sub-pixel accuracy at
  *  typical zoom levels and cheap enough for tens of paths per pick. */
 const BEZIER_SAMPLES = 16;
-
-/** Squared distance from (px, py) to segment (ax, ay)-(bx, by). */
-function pointSegDist2(
-  px: number, py: number,
-  ax: number, ay: number,
-  bx: number, by: number,
-): number {
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) {
-    const ex = px - ax, ey = py - ay;
-    return ex * ex + ey * ey;
-  }
-  let t = ((px - ax) * dx + (py - ay) * dy) / len2;
-  if (t < 0) t = 0; else if (t > 1) t = 1;
-  const cx = ax + dx * t, cy = ay + dy * t;
-  const ex = px - cx, ey = py - cy;
-  return ex * ex + ey * ey;
-}
 
 /** Closest squared distance from (px, py) to a cubic bezier
  *  (x0,y0)-(x1,y1)-(x2,y2)-(x3,y3). Polyline-approximation; accurate to
@@ -62,7 +44,7 @@ function pointCubicDist2(
     const u = 1 - t;
     const sx = u*u*u*x0 + 3*u*u*t*x1 + 3*u*t*t*x2 + t*t*t*x3;
     const sy = u*u*u*y0 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y3;
-    const d2 = pointSegDist2(px, py, prevX, prevY, sx, sy);
+    const d2 = pointSegmentDist2(px, py, prevX, prevY, sx, sy);
     if (d2 < best) best = d2;
     prevX = sx; prevY = sy;
   }
@@ -113,7 +95,7 @@ function polygonPathDistance(path: PolygonPath, px: number, py: number): number 
       ci += 2;
     } else if (cmd === PATH_L) {
       const x = coords[ci], y = coords[ci + 1];
-      const d2 = pointSegDist2(px, py, curX, curY, x, y);
+      const d2 = pointSegmentDist2(px, py, curX, curY, x, y);
       if (d2 < best) best = d2;
       curX = x; curY = y;
       ci += 2;
@@ -139,7 +121,7 @@ function polygonPathDistance(path: PolygonPath, px: number, py: number): number 
       ci += 4;
     } else if (cmd === PATH_Z) {
       // Closing line back to subpath start.
-      const d2 = pointSegDist2(px, py, curX, curY, startX, startY);
+      const d2 = pointSegmentDist2(px, py, curX, curY, startX, startY);
       if (d2 < best) best = d2;
       curX = startX; curY = startY;
     }

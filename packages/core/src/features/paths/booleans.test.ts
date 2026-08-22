@@ -221,3 +221,46 @@ describe('boolean ops — edge cases', () => {
     expect(pointInPath(u, 5, 5)).toBe(true);
   });
 });
+
+// --- holes survive boolean ops ---
+
+const donut = (fillRule: 'nonzero' | 'evenodd', innerReversed: boolean): PolygonPath => ({
+  kind: 'polygon',
+  commands: new Uint8Array([
+    PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
+    PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z,
+  ]),
+  coords: new Float32Array(
+    innerReversed
+      ? [0, 0, 100, 0, 100, 100, 0, 100, 25, 25, 25, 75, 75, 75, 75, 25]
+      : [0, 0, 100, 0, 100, 100, 0, 100, 25, 25, 75, 25, 75, 75, 25, 75],
+  ),
+  fillRule,
+});
+
+describe('holes', () => {
+  it('pathSubtract of a far-away rect leaves a nonzero donut hole intact', () => {
+    const s = pathSubtract(donut('nonzero', true), r(1000, 1000, 10, 10));
+    expect(pointInPath(s, 10, 10)).toBe(true);
+    expect(pointInPath(s, 50, 50)).toBe(false);
+  });
+
+  it('pathSubtract of a far-away rect leaves an evenodd donut hole intact', () => {
+    const s = pathSubtract(donut('evenodd', false), r(1000, 1000, 10, 10));
+    expect(pointInPath(s, 10, 10)).toBe(true);
+    expect(pointInPath(s, 50, 50)).toBe(false);
+  });
+
+  it('pathUnion with a disjoint rect leaves the donut hole intact', () => {
+    const u = pathUnion(donut('nonzero', true), r(1000, 1000, 10, 10));
+    expect(pointInPath(u, 10, 10)).toBe(true);
+    expect(pointInPath(u, 50, 50)).toBe(false);
+    expect(pointInPath(u, 1005, 1005)).toBe(true);
+  });
+
+  it('pathIntersect against a rect covering the donut keeps the hole', () => {
+    const i = pathIntersect(donut('nonzero', true), r(-10, -10, 200, 200));
+    expect(pointInPath(i, 10, 10)).toBe(true);
+    expect(pointInPath(i, 50, 50)).toBe(false);
+  });
+});
