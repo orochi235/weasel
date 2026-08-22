@@ -98,7 +98,14 @@ function makeAlignAction(edge: AlignEdge): Action {
         alignSelection(selection, scene, edge);
       },
     } satisfies ImmediateInvoker,
-    enabled: () => ActionDisabledReason.SelectionRequired,
+    // Deps-aware, matching `alignSelection`'s own `ids.length < 2` guard: a
+    // constant disabled reason greys the entry out forever (see
+    // `requiresSelection`).
+    enabled: (deps) => {
+      const selection = deps?.selection as SelectionApi | undefined;
+      const count = selection?.get().length ?? 0;
+      return count >= 2 ? true : ActionDisabledReason.SelectionRequired;
+    },
   };
 }
 
