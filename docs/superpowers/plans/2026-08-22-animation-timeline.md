@@ -683,6 +683,127 @@ git commit -m "wrap a looping timeline across arbitrarily long advances"
 
 ---
 
+### Task 5a: Honor `autoplay`, and drop the phantom "version"
+
+`TimelineOptions.autoplay` is declared and documented in Task 1 but nothing
+reads it. Shipping a public option that silently does nothing is a bug this repo
+already has four instances of — see `docs/TODO.md` on `useHandTool`'s `inertia`
+and `axis`, `useLassoTool`'s `mode`, and `Tool.onActivate`. Do not add a fifth.
+
+Separately, Task 1's `edit` docstring promises a "version" that no task creates;
+invalidation actually drops the whole cache. Fix the words to match the code.
+
+**Files:**
+- Modify: `packages/core/src/animation/timeline/createTimeline.ts`
+- Modify: `packages/core/src/animation/timeline/types.ts`
+- Modify: `packages/core/src/animation/timeline/createTimeline.test.ts` (harness + append)
+
+- [ ] **Step 1: Teach the test harness to record pause state**
+
+In `createTimeline.test.ts`, the `harness()` helper currently has `pause: () => {}`.
+Pausing is the animator's job — it stops advancing `virtualNow` — so at this
+level the only thing to assert is that `createTimeline` asked. Replace the
+handle stub inside `harness()`'s `register` with:
+
+```ts
+  let paused = false;
+```
+
+added beside `let cancelled = false;`, and change the returned handle's `pause`
+and `isPaused`:
+
+```ts
+      pause: () => { paused = true; },
+      resume: () => { paused = false; },
+      isPaused: () => paused,
+```
+
+then expose it from `harness()`'s return object alongside `isCancelled`:
+
+```ts
+    isPaused: () => paused,
+```
+
+- [ ] **Step 2: Write the failing test**
+
+Append inside `describe('createTimeline', ...)`:
+
+```ts
+  it('plays on its own by default', () => {
+    const h = harness();
+    createTimeline(h.register, 1, { tracks: [numberTrack(() => {})] });
+    expect(h.isPaused()).toBe(false);
+  });
+
+  it('registers paused when autoplay is false', () => {
+    const h = harness();
+    createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], autoplay: false });
+    expect(h.isPaused()).toBe(true);
+  });
+
+  it('is resumable through the returned handle', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], autoplay: false });
+    tl.resume();
+    expect(h.isPaused()).toBe(false);
+  });
+```
+
+- [ ] **Step 3: Run test to verify it fails**
+
+Run: `npx vitest run --project=kit packages/core/src/animation/timeline/createTimeline.test.ts`
+Expected: FAIL on "registers paused when autoplay is false" — `expected false to be true`.
+The other two should already pass.
+
+- [ ] **Step 4: Implement**
+
+In `createTimeline.ts`, immediately after the `const base = register({ ... });`
+call and before the `return {` statement, add:
+
+```ts
+  // A paused entry's scale is zero, so `virtualNow` never advances and the
+  // playhead holds at 0 until the consumer resumes.
+  if (opts.autoplay === false) base.pause();
+```
+
+- [ ] **Step 5: Run test to verify it passes**
+
+Run: `npx vitest run --project=kit packages/core/src/animation/timeline/createTimeline.test.ts`
+Expected: PASS, 16 tests.
+
+- [ ] **Step 6: Fix the stale docstring**
+
+In `types.ts`, replace the `edit` doc comment:
+
+```ts
+  /** Run `fn`, then bump the version, recompute duration, and notify. Every
+   *  mutation must go through this — cached interpolators key on the version. */
+  edit(fn: () => void): void;
+```
+
+with:
+
+```ts
+  /** Run `fn`, then recompute duration, drop cached interpolators, and notify.
+   *  Every mutation must go through this — an edited keyframe otherwise keeps
+   *  interpolating toward its old value with no visible error. */
+  edit(fn: () => void): void;
+```
+
+- [ ] **Step 7: Verify**
+
+Run: `npx tsc --noEmit && npx vitest run --project=kit packages/core/src/animation/timeline/`
+Expected: exit 0, 25 tests passing.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add packages/core/src/animation/timeline/
+git commit -m "honor autoplay instead of declaring it and ignoring it"
+```
+
+---
+
 ### Task 6: Event tracks
 
 **Files:**
@@ -871,7 +992,7 @@ Expected: PASS, 8 tests.
 - [ ] **Step 5: Run the whole timeline suite for regressions**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/`
-Expected: PASS, 30 tests.
+Expected: PASS, 33 tests.
 
 - [ ] **Step 6: Commit**
 
@@ -1041,7 +1162,7 @@ Expected: PASS, 5 tests.
 - [ ] **Step 5: Run the whole timeline suite**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/`
-Expected: PASS, 35 tests.
+Expected: PASS, 38 tests.
 
 - [ ] **Step 6: Commit**
 

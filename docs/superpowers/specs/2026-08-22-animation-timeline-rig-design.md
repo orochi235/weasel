@@ -130,9 +130,9 @@ Tracks are mutable; that is what makes the editor possible. All edits go through
 `timeline.edit(fn)`, which runs `fn`, bumps a version, recomputes `duration`, and
 notifies subscribers.
 
-**Trap:** `InterpolatorFactory` is built once per segment and cached. The cache
-key must include the version, or an edited keyframe keeps interpolating toward
-its old value with no visible error.
+**Trap:** `InterpolatorFactory` is built once per segment and cached. `edit` must
+drop that cache, or an edited keyframe keeps interpolating toward its old value
+with no visible error.
 
 ## Rig
 
