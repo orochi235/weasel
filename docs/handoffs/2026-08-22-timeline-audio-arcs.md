@@ -6,13 +6,25 @@ they cannot — where the work sits, and the decisions made in conversation.
 
 ## Where the work is
 
+**Both arcs are merged to `main`** (`8e215888` timeline+rig, `1c270ec2` audio).
+Merged tree: 670 files, 6989 tests, `tsc` clean, manifests and changeset-bump
+checks green. **Nothing is pushed** — `main` carries 50+ unpushed commits,
+including two other sessions' work.
+
 | Branch | Worktree | State |
 | --- | --- | --- |
-| `animation-timeline` | `../weasel-timeline` | Plan tasks 1–9 done. A fix agent is rewriting event dispatch (see below). Rig tasks 10–13 not started. |
-| `audio-engine` | `../weasel-audio` | Package complete: 97 tests, all gates green. Final review in flight. |
+| `animation-timeline` | `../weasel-timeline` | Merged. Worktree can be removed. |
+| `audio-engine` | `../weasel-audio` | Merged. Worktree can be removed. |
+| `timeline-audio-demos` | `../weasel-demos` | Active — the demos plan. |
 
-Neither is pushed. `main` also carries a third session's work — check
-`git worktree list` before assuming anything about the checkout.
+Other sessions hold `../weasel-stops` and `../weasel-vocab`. Check
+`git worktree list` before assuming anything about the checkout; the tree can
+change under a test run, and it did once during this work (five labkit test
+files appeared as failures and then did not exist).
+
+**`packages/audio/dist` is gitignored**, so `check-publish-manifests.mjs` fails
+on a fresh checkout until `npm run build -w @weasel-js/audio` has run. That is
+expected, not a defect.
 
 ## The documents
 
@@ -67,8 +79,6 @@ plan on each branch is ahead of the copy on `main`; take the branch's.
 
 ## Next
 
-1. Land the timeline fix, then review it.
-2. Rig: plan tasks 10–13 on `animation-timeline`.
-3. Merge both branches; regenerate the lockfile once on `main`.
-4. Demos plan.
-5. Then the side-scroller, as the load test.
+1. Demos — `docs/superpowers/plans/2026-08-22-timeline-audio-demos.md`.
+2. Then the side-scroller, as the load test on both foundations.
+3. Open question for Mike: pushing. Nothing has been pushed all session.
