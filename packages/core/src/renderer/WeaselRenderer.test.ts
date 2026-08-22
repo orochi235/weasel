@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGLRecorder } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
+import { mat3 } from './math/mat3';
+import type { DrawCommand } from './DrawCommand';
 
 const MINIMAL_FRAG = `#version 300 es
 precision highp float;
@@ -152,6 +154,55 @@ describe('WeaselRenderer context loss', () => {
   });
 });
 
+describe('WeaselRenderer.render — frame isolation', () => {
+  /** Nested clipped groups past the depth limit: `drawGroup` throws out of
+   *  `render`, leaving every enclosing group's frame on the state stack. */
+  function tooDeep(): DrawCommand {
+    let cmd: DrawCommand = { kind: 'group', children: [] };
+    for (let i = 0; i < 8; i++) {
+      cmd = {
+        kind: 'group',
+        transform: mat3.translate(mat3.identity(), 10, 0),
+        clip: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+        children: [cmd],
+      };
+    }
+    return cmd;
+  }
+
+  it('a frame that throws mid-tree does not shift the next frame', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 100, height: 100, dpr: 1 });
+    expect(() => r.render([tooDeep()])).toThrow(/clip nesting depth exceeded/);
+
+    rec.reset();
+    // Per-anchor colors keep the ribbon out of the solid batch, so the draw
+    // uploads `u_model` from the group state instead of folding it into
+    // vertices.
+    r.render([{
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1]),
+        coords: new Float32Array([0, 0, 10, 0, 20, 0]),
+        fillRule: 'nonzero',
+      },
+      stroke: {
+        width: 2,
+        paint: { color: '#f00' },
+        vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
+      },
+    }] as unknown as DrawCommand[]);
+
+    // The seven groups that never popped composed to a 70px x-translation.
+    const models = rec.calls
+      .filter((c) => c.name === 'uniformMatrix3fv')
+      .map((c) => c.args[2] as Float32Array);
+    expect(models.length).toBeGreaterThan(0);
+    expect(models.some((m) => m[6] === 70)).toBe(false);
+  });
+});
+
 describe('dispose', () => {
   beforeEach(() => _resetProgramRegistryForTests());
 
@@ -166,8 +217,9 @@ describe('dispose', () => {
     }] as never);
     r.dispose();
     const names = rec.calls.map((c) => c.name);
-    // 5 built-in programs: pathFill, pathFillVColor, textSdf, imageFill, gradFill
-    expect(names.filter((n) => n === 'deleteProgram').length).toBeGreaterThanOrEqual(5);
+    // Every built-in: pathFill, pathFillVColor, textSdf, textSdfR8, imageFill,
+    // gradFill, patternFill. Exact, so dropping one from the list is caught.
+    expect(names.filter((n) => n === 'deleteProgram').length).toBe(7);
     expect(names).toContain('deleteBuffer');
     // The solid batch's VAO must also be freed.
     expect(names).toContain('deleteVertexArray');
@@ -181,8 +233,18 @@ describe('dispose', () => {
     rec.reset();
     r.dispose();
     const names = rec.calls.map((c) => c.name);
-    // 5 built-ins + 1 registered.
-    expect(names.filter((n) => n === 'deleteProgram').length).toBeGreaterThanOrEqual(6);
+    // 7 built-ins + 1 registered.
+    expect(names.filter((n) => n === 'deleteProgram').length).toBe(8);
+  });
+
+  it('deletes the program it replaces when a handle is re-registered', () => {
+    const rec = makeGLRecorder();
+    const r = new WeaselRenderer({ gl: rec.gl, width: 10, height: 10, dpr: 1 });
+    const handle = registerProgram('reregister-test-prog', '', MINIMAL_FRAG);
+    r.registerProgram(handle);
+    rec.reset();
+    r.registerProgram(handle);
+    expect(rec.calls.filter((c) => c.name === 'deleteProgram').length).toBe(1);
   });
 
   it('ignores registerProgram() after dispose (does not compile into the cleared registry)', () => {

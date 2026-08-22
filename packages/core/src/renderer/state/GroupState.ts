@@ -77,6 +77,14 @@ export class GroupState {
     this.colorMatrixStack.push(nextCM);
   }
 
+  /** Drop every pushed frame, leaving the root. A frame that throws part-way
+   *  down the tree never pops, and the next frame would draw under leftovers. */
+  reset(): void {
+    this.transformStack.length = 1;
+    this.alphaStack.length = 1;
+    this.colorMatrixStack.length = 1;
+  }
+
   pop(): void {
     if (this.transformStack.length <= 1) {
       throw new Error('GroupState.pop: cannot pop root frame');

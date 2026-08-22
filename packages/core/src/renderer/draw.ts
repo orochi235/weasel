@@ -1061,6 +1061,7 @@ function drawPathStrokeUnclipped(ctx: DrawContext, cmd: PathDrawCommand): void {
       gl.enableVertexAttribArray(aVColorLoc);
       gl.vertexAttribPointer(aVColorLoc, 4, gl.FLOAT, false, 0, 0);
     }
+    applyClipTest(ctx);
     gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
     // Per-draw color VBO; free after VAO unbind to avoid leak per stroke vColor draw.
