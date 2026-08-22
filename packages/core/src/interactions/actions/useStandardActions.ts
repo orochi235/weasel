@@ -103,15 +103,6 @@ export interface UseStandardActionsOptions {
  * The ordered list of all kit-standard action descriptors. Each descriptor
  * carries an `invoker` that reads from the dep registry at dispatch time.
  *
- * Count: 3 (escape/cancelGesture/selectAll) + 1 (delete) + 1 (duplicate) + 1 (group) +
- *        1 (ungroup) + 2 (undo/redo) + 1 (flip) + 4 (nudge) + 2 (reorder) +
- *        6 (align) + 2 (distribute) + 6 (pathfinder) + 1 (move) +
- *        6 (resize/rotate/areaSelect/insert/insertRotate/clone) +
- *        6 (editAnchors/enterPathEdit/exitPathEdit/insertPathAnchor/lassoSelect/pinchZoom) +
- *        1 (viewport.dragPan) + 1 (clearSelection) + 1 (enterTextEdit) +
- *        4 (setFill/setStroke/setFillOpacity/setStrokeOpacity) + 1 (ingest) +
- *        2 (clipboard.copy/clipboard.cut) = 53
- *
  * `viewport.pan` and `viewport.zoom` are NOT in this list — they're registered
  * conditionally by SceneCanvas's `useViewportActions` based on the
  * `viewport.pan` / `viewport.zoom` flags. See `src/canvas/SceneCanvas/useViewportActions.ts`.

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
 export interface DragPayload {
@@ -98,9 +98,17 @@ function beginPointerDrag(
   function onUp(e: PointerEvent) {
     if (!activeDrag) return;
     const zone = findZone(e.clientX, e.clientY, payload.kind);
+    const dropped = activeDrag.payload;
     activeDrag.lastZone?.onOver?.(false);
-    if (zone) zone.onDrop(activeDrag.payload, e.clientX, e.clientY);
-    cleanup();
+    // `activeDrag` is module state and gates every future drag, so a throwing
+    // consumer `onDrop` must not be able to strand it.
+    try {
+      if (zone) zone.onDrop(dropped, e.clientX, e.clientY);
+    } catch (err) {
+      console.error('weasel pointerDrag: drop zone onDrop threw', err);
+    } finally {
+      cleanup();
+    }
   }
   function onCancel() {
     activeDrag?.lastZone?.onOver?.(false);
@@ -132,6 +140,10 @@ export function useDragHandle(
 ) {
   const optsRef = useRef(options);
   optsRef.current = options;
+  // A press whose release never arrives — the row unmounts under the pointer —
+  // would otherwise leave three document listeners closed over a detached node.
+  const pendingTeardownRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => { pendingTeardownRef.current?.(); }, []);
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     const target = e.currentTarget as HTMLElement;
@@ -163,10 +175,12 @@ export function useDragHandle(
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onEnd);
       document.removeEventListener('pointercancel', onEnd);
+      pendingTeardownRef.current = null;
     }
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onEnd);
     document.addEventListener('pointercancel', onEnd);
+    pendingTeardownRef.current = cleanup;
   }, [getPayload]);
 
   return { onPointerDown, style: { touchAction: 'none' as const } };

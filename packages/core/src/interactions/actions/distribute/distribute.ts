@@ -29,9 +29,6 @@ export interface UseDistributeOptions<TPose> {
   defaultMode?: DistributeMode;
   /** Label passed to applyOps. Default 'Distribute'. */
   label?: string;
-  /** Auto-register the two default distribute actions into a surrounding
-   *  `<ActionsProvider>`. Default `true`. Pass `false` to skip registration. */
-  enableKeyboard?: boolean;
 }
 
 /** Return shape of `useDistribute`. */

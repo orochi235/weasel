@@ -8,7 +8,7 @@
  * handed.
  */
 import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useScene } from 'core/scene/useScene';
 import type { UseSceneOptions } from 'core/scene/types';
 import { useSelection } from 'core/selection/useSelection';
@@ -53,6 +53,29 @@ function harness(picking?: 'pose' | 'shape') {
   });
   return (x: number, y: number) => result.current.pickEvery(x, y);
 }
+
+describe('useSceneSelectTool — hidden layers', () => {
+  it('stops picking nodes on a layer the scene has hidden', () => {
+    const { result } = renderHook(() => {
+      const scene = useScene<Item, 'default' | 'bg', Pose>({
+        systemLayers: [{ id: 'default' }, { id: 'bg' }],
+        initial: [{
+          id: asNodeId('hidden-node'),
+          kind: 'leaf',
+          layer: 'bg',
+          pose: { x: 0, y: 0, width: 50, height: 50 },
+          data: { color: '#abc' },
+        }],
+      });
+      const selection = useSelection({ mode: 'single' });
+      return { scene, tool: useSceneSelectTool({ scene, selection }) };
+    });
+
+    expect(result.current.tool.pickEvery(10, 10)).toEqual(['hidden-node']);
+    act(() => { result.current.scene.setLayerVisible('bg', false); });
+    expect(result.current.tool.pickEvery(10, 10)).toEqual([]);
+  });
+});
 
 describe('useSceneSelectTool — geometry.picking', () => {
   it('defaults to the painted shape: the ellipse does not claim its corner', () => {

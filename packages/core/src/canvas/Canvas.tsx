@@ -94,7 +94,7 @@ type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPo
 import { wrapNodeOutput } from './wrapNodeOutput';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
-import type { ViewportConfig } from './SceneCanvas/useViewportTools';
+import type { ViewportConfig } from './SceneCanvas/viewportConfig';
 import { CursorCoordsHud } from './CursorCoordsHud';
 import { PickHud } from './PickHud';
 import { ModalityHud } from './ModalityHud';
@@ -386,14 +386,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * drags. Returns `null` / `undefined` when no preview is in flight.
    */
   previewPoseExtra?: (id: string) => unknown;
-
-  /**
-   * Extra preview-bounds lookup checked after `previewBoundsExtra`'s `previewPose`
-   * fallback. Same shape as `previewPoseExtra` but returns AABB directly,
-   * preferred when the in-flight handle can produce bounds without going
-   * through geometry.getBounds(pose).
-   */
-  previewBoundsExtra?: (id: string) => Bounds | null;
 
   /**
    * In-flight gesture state `<Canvas>` can't see for itself. Backs the
@@ -774,7 +766,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     shaders,
     previewIdsExtra,
     previewPoseExtra,
-    previewBoundsExtra,
     gestureSource,
     viewport,
     backgroundFill,
@@ -809,6 +800,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Read by `hitTestExtras`, which is built once and must see live values.
+  const helpersForLayersRef = useRef<CanvasHelpers<TPose> | null>(null);
   const dimsRef = useRef({ width, height });
   dimsRef.current = { width, height };
   const getIsVisibleRef = useRef(getIsVisible);
@@ -840,7 +832,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
-      const hit = layer.hitTest(worldX, worldY, undefined, view, dims, isVisible);
+      const hit = layer.hitTest(worldX, worldY, helpersForLayersRef.current, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
@@ -1048,8 +1040,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // Hold the latest dispatcher-side preview extras in a ref so chromeState's
   // closure reads live values without forcing the memo to rebuild every render.
-  const previewExtraRef = useRef({ previewPoseExtra, previewBoundsExtra });
-  previewExtraRef.current = { previewPoseExtra, previewBoundsExtra };
+  const previewExtraRef = useRef({ previewPoseExtra });
+  previewExtraRef.current = { previewPoseExtra };
 
   // boundsOf: pass-through for real ids. The synthetic multi-selection id is
   // resolved by the active tool's `previewBounds` (see `useSelectTool`'s
@@ -1076,10 +1068,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           if (p != null) return geometry.getBounds(p as TPose);
         }
         const extras = previewExtraRef.current;
-        if (extras.previewBoundsExtra) {
-          const b = extras.previewBoundsExtra(id);
-          if (b) return b;
-        }
         if (extras.previewPoseExtra) {
           const p = extras.previewPoseExtra(id);
           if (p != null) return geometry.getBounds(p as TPose);
@@ -1133,10 +1121,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       const p = firstPreviewPose(tools, id);
       if (p != null) return geometry.getBounds(p as TPose);
     }
-    if (previewBoundsExtra) {
-      const b = previewBoundsExtra(id);
-      if (b) return b;
-    }
     if (previewPoseExtra) {
       const p = previewPoseExtra(id);
       if (p != null) return geometry.getBounds(p as TPose);
@@ -1181,6 +1165,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     getDebug: () => debugSink,
     getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
   };
+  helpersForLayersRef.current = helpersForLayers;
   if (helpersRef) helpersRef.current = helpersForLayers;
 
   // Pointer-pressed flag. The only thing `<Canvas>` still needs to know about
@@ -1452,6 +1437,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     );
     renderer.render(commands, viewToMat3(effectiveView));
   }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp]);
+
+  // The GL context and everything it owns (programs, texture caches, VBOs)
+  // outlive React state, so unmount has to free them explicitly or a
+  // remounting host walks into the browser's live-context cap.
+  useEffect(() => () => {
+    glRendererRef.current?.dispose();
+    glRendererRef.current = null;
+    lastResizeRef.current = null;
+  }, []);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
   useEffect(() => {

@@ -322,6 +322,33 @@ describe('buildAffordanceAt — anchor hits on selected polygon paths', () => {
     expect(hit).toBeNull();
   });
 
+  it('a second selected path yields no anchor hits while another path is edited', () => {
+    const other = makeTriangle();
+    const twoSelected = {
+      ...makeChromeState(),
+      selection: ['path-1', 'path-2'] as string[],
+    };
+    const editingPath1: AnchorState = {
+      editingId: 'path-1',
+      // 'path-2' is the same triangle shifted 100 to the right.
+      getPose: (id) => {
+        if (id === 'path-1') return triangle;
+        if (id !== 'path-2') return undefined;
+        return { ...other, coords: new Float32Array([100, 0, 110, 0, 105, 10]) };
+      },
+    };
+    const afAt = buildAffordanceAt({
+      getChromeState: () => twoSelected as any,
+      getView: () => UNIT_VIEW,
+      getAnchorState: () => editingPath1,
+    });
+
+    expect(afAt({ x: 0, y: 0 })?.kind).toBe('anchor:0');
+    // Right on path-2's first anchor: nothing, because dragging it would have
+    // edited path-1's anchor 0.
+    expect(afAt({ x: 100, y: 0 })).toBeNull();
+  });
+
   it('control handles NOT hittable when not in edit mode', () => {
     const bezier = makeBezierPath();
     const noEditAnchorState: AnchorState = {

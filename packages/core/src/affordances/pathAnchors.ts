@@ -106,8 +106,14 @@ export function createPathAnchorAffordances(
   const anchors: Affordance = {
     id: PATH_ANCHOR_CHROME_ID,
     regions(state) {
+      const editingId = getAnchorState()?.editingId ?? null;
       const out: AffordanceRegion[] = [];
       for (const { id, path } of editablePaths(state)) {
+        // `editAnchorsAction` edits whatever path the dep says is in edit
+        // mode, ignoring which one was hit — so once a path IS being edited,
+        // only its own anchors may claim the press. The overlay paints only
+        // that path's anchors too.
+        if (editingId !== null && id !== editingId) continue;
         for (const a of enumerateAnchors(path)) {
           out.push(point(
             `${id}:anchor:${a.anchorIndex}`,

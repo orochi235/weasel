@@ -495,17 +495,25 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
         const disp = dispatcherRef.current;
         if (!disp) return null;
         const r = wiredDepRegRef.current ?? depRegRef.current;
-        const deps = r
-          ? {
-              selection: r.get('selection' as DepName),
-              scene: r.get('scene' as DepName),
-              history: r.get('history' as DepName),
-              view: r.get('view' as DepName),
-              pointer: r.get('pointer' as DepName),
-              activeTool: r.get('activeTool' as DepName),
-              booleansAdapter: r.get('booleansAdapter' as DepName),
-            }
-          : {};
+        const a = actionsRef.current.get(id);
+        // Same resolution order as `trigger`: the action's declared `requires`
+        // when it has one, the legacy fixed bag otherwise. The fixed bag has no
+        // `applyOps`, so the paint actions — which declare it and are the only
+        // callers of `begin` — used to fall back to the scene's own history
+        // instead of the consumer's.
+        const deps = !r
+          ? {}
+          : a?.requires
+            ? buildDepsFromRequires(a, r)
+            : {
+                selection: r.get('selection' as DepName),
+                scene: r.get('scene' as DepName),
+                history: r.get('history' as DepName),
+                view: r.get('view' as DepName),
+                pointer: r.get('pointer' as DepName),
+                activeTool: r.get('activeTool' as DepName),
+                booleansAdapter: r.get('booleansAdapter' as DepName),
+              };
         return disp.beginUiOngoing(id, deps as never, params);
       },
     };

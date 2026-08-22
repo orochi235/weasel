@@ -42,6 +42,18 @@ export interface AABBBounds {
 /** Closed area polygon as interleaved [x0,y0,x1,y1,…]; closing edge implicit. */
 type AreaCoords = ArrayLike<number>;
 
+/** Layer ids the scene reports as hidden. Only an explicit `false` hides a
+ *  layer: a partial scene stand-in that omits the flag stays pickable. */
+export function hiddenLayerIds(
+  layers: readonly { id: string; visible?: boolean }[] | undefined,
+): Set<string> {
+  const out = new Set<string>();
+  for (const layer of layers ?? []) {
+    if (layer.visible === false) out.add(layer.id);
+  }
+  return out;
+}
+
 /**
  * Marquee entry point: rect bounds. Converts the rect to its four corners and
  * delegates to the polygon hit-test so marquee and lasso share one silhouette
@@ -74,10 +86,12 @@ export function hitTestAreaPolygon(
   const ab = areaBounds ?? boundsOf(area);
   if (!ab) return [];
   const hits: NodeId[] = [];
+  const hidden = hiddenLayerIds(scene.layers);
   const order = scene.renderOrderNodes();
   for (let i = 0; i < order.length; i++) {
     const node = order[i];
     if (node.kind === 'container') continue;
+    if (hidden.size > 0 && hidden.has(node.layer)) continue;
     const pose = node.pose;
     // `isPathLike(pose) && pose.kind !== 'rect'` inlined: this runs per node and
     // the predicate call cost 16% of the scan over a 10,000-rect scene.

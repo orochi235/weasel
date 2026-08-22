@@ -78,7 +78,10 @@ export function snapBackOrDelete<TPose>(args: {
         const ops: Op[] = [createDeleteOp({ node: obj, label: deleteLabel, index })];
         return ops;
       }
-      return;
+      // `'snap-back'` — abort, same as a release inside the radius. Returning
+      // `undefined` would defer to the default translate and leave the node
+      // where it was dropped, which is the one thing this policy rules out.
+      return null;
     },
   };
 }

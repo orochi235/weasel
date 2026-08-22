@@ -647,6 +647,24 @@ describe('Canvas baseBoundsOf synthesis', () => {
     expect(beginFrameSpy).toHaveBeenCalled();
   });
 
+  it('hitTestExtras hands a registered layer the same live data draw gets', async () => {
+    let seen: unknown = 'not-called';
+    const probe: RenderLayer<unknown> = {
+      id: 'probe', label: 'probe', space: 'screen',
+      draw: () => [],
+      hitTest: (_x, _y, data) => { seen = data; return null; },
+    };
+    const ref = React.createRef<CanvasExtensionApi>();
+    render(<Canvas ref={ref} width={100} height={100} layers={{}} />);
+    await waitForFrame();
+    act(() => { ref.current?.registerLayer(probe); });
+    act(() => { ref.current?.hitTestExtras(0, 0); });
+
+    // `composeAffordanceLayer.hitTest` reads chrome state out of this envelope;
+    // handing it `undefined` used to throw inside the pointerdown handler.
+    expect(typeof (seen as { getChromeState?: unknown })?.getChromeState).toBe('function');
+  });
+
   it('registerLayer adds a layer to the active stack and detach removes it', async () => {
     // Under jsdom the GL path bails before layer.draw runs, so we observe
     // draw-pass participation indirectly via debugSink.beginFrame (same proxy

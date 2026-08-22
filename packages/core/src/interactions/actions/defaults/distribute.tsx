@@ -90,6 +90,7 @@ function makeDistributeAction(axis: DistributeAxis): Action {
     icon: ICON_FOR[axis],
     group: 'distribute',
     eligible: { capability: 'transforms-selection' },
+    requires: ['selection', 'scene'],
     // No default keybindings. Wire bindings explicitly via the actions registry.
     invoker: {
       timing: 'immediate',
@@ -100,7 +101,14 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         distributeSelection(selection, scene, axis);
       },
     } satisfies ImmediateInvoker,
-    enabled: () => ActionDisabledReason.SelectionRequired,
+    // Deps-aware, matching `distributeSelection`'s own `ids.length < 3` guard:
+    // a constant disabled reason greys the entry out forever (see
+    // `requiresSelection`).
+    enabled: (deps) => {
+      const selection = deps?.selection as SelectionApi | undefined;
+      const count = selection?.get().length ?? 0;
+      return count >= 3 ? true : ActionDisabledReason.SelectionRequired;
+    },
   };
 }
 

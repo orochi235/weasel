@@ -41,10 +41,10 @@ describe('snapBackOrDelete', () => {
     expect((ops as any[])[0].label).toMatch(/delete/i);
   });
 
-  it('returns undefined when outside radius and policy is snap-back', () => {
+  it('aborts when outside radius and policy is snap-back', () => {
     const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'snap-back' });
     const c = ctx({ x: 5, y: 5 }, { x: 50, y: 50 });
-    expect(b.onEnd!(c)).toBeUndefined();
+    expect(b.onEnd!(c)).toBeNull();
   });
 
   it('defers (returns undefined) when a snap is active', () => {
