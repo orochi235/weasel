@@ -29,6 +29,7 @@ import { pathPoseDescriptor } from 'features/paths/poseDescriptor';
 import { translateRectPose, type RectPose } from 'features/groups/composePose';
 import { aabbOfPose, isPathLike, poseContainsRotated } from './poseGeometry';
 import { shapeCoversPoint } from 'canvas/NodeShape';
+import { hiddenLayerIds } from 'canvas/deps/hitTestArea';
 import { meanScale } from 'core/viewport/meanScale';
 
 /**
@@ -229,7 +230,11 @@ export function useSceneSelectTool<TData, TLayer extends string, TPose>(
       // stays the same apparent thickness at any zoom.
       const tolerance = pickTolerancePx / meanScale(getView?.()?.scale ?? { x: 1, y: 1 });
       const out: string[] = [];
+      const hidden = hiddenLayerIds(scene.layers);
       for (const n of scene.renderOrderNodes()) {
+        // A hidden layer isn't painted (`buildSceneTree` skips its bucket), so
+        // picking must not answer for it either.
+        if (hidden.size > 0 && hidden.has(n.layer)) continue;
         // The pose rect is the pre-filter — grown by the tolerance, because a
         // shape's outline (and the slop around it) reaches outside its own
         // bounds, and an un-grown pre-filter would reject those hits before
