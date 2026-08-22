@@ -6,9 +6,10 @@ describe('createBusGraph', () => {
   it('routes every named bus to master and master to the destination', () => {
     const ctx = createFakeAudioContext();
     const graph = createBusGraph(ctx as never, ['sfx', 'music']);
-    expect(graph.node('sfx').connectedTo).toContain(graph.master);
-    expect(graph.node('music').connectedTo).toContain(graph.master);
-    expect(graph.master.connectedTo).toContain(ctx.destination);
+    const wiredTo = (n: AudioNode) => (n as never as { connectedTo: unknown[] }).connectedTo;
+    expect(wiredTo(graph.node('sfx'))).toContain(graph.master);
+    expect(wiredTo(graph.node('music'))).toContain(graph.master);
+    expect(wiredTo(graph.master)).toContain(ctx.destination);
   });
 
   it('sets a bus gain', () => {

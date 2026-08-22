@@ -17,15 +17,15 @@ export interface FakeNode {
   disconnect(): void;
 }
 
-function node(kind: string, extra: Record<string, unknown> = {}): FakeNode & Record<string, unknown> {
+function node<E extends Record<string, unknown>>(kind: string, extra?: E): FakeNode & E {
   const n = {
     kind,
     connectedTo: [] as FakeNode[],
     disconnected: false,
     connect(target: FakeNode) { n.connectedTo.push(target); return target; },
     disconnect() { n.disconnected = true; },
-    ...extra,
-  } as FakeNode & Record<string, unknown>;
+    ...(extra ?? ({} as E)),
+  } as FakeNode & E;
   return n;
 }
 
@@ -59,28 +59,30 @@ export function createFakeAudioContext(): FakeAudioContext {
     currentTime: 0,
     destination: node('destination'),
     async resume() { ctx.state = 'running'; },
-    createGain: () => node('gain', { gain: param(1) }) as FakeNode & { gain: FakeParam },
-    createStereoPanner: () => node('panner', { pan: param(0) }) as FakeNode & { pan: FakeParam },
+    createGain: () => node('gain', { gain: param(1) }),
+    createStereoPanner: () => node('panner', { pan: param(0) }),
     createAnalyser: () => node('analyser', {
       fftSize: 2048,
       frequencyBinCount: 1024,
       getByteFrequencyData(a: Uint8Array) { a.fill(ctx._analyserBytes); },
       getByteTimeDomainData(a: Uint8Array) { a.fill(ctx._analyserBytes); },
-    }) as never,
+    }),
     createBufferSource() {
+      const started: number[] = [];
+      const stopped: number[] = [];
       const s = node('source', {
-        buffer: null,
+        buffer: null as unknown,
         loop: false,
         playbackRate: param(1),
         detune: param(0),
-        started: [] as number[],
-        stopped: [] as number[],
-        onended: null,
-        start(when = 0) { (s as never as { started: number[] }).started.push(when); },
-        stop(when = 0) { (s as never as { stopped: number[] }).stopped.push(when); },
-      }) as never as FakeNode & { started: number[] };
+        started,
+        stopped,
+        onended: null as (() => void) | null,
+        start(when = 0) { started.push(when); },
+        stop(when = 0) { stopped.push(when); },
+      });
       sources.push(s);
-      return s as never;
+      return s;
     },
     async decodeAudioData() { return { duration: 1 }; },
     _advance(ms) { ctx.currentTime += ms / 1000; },
