@@ -4,7 +4,7 @@
 
 Persist a lab as one versioned document rather than four loose keys.
 
-`lk:<storageKey>` now holds `{version, workspaces, saves, layout, mode}` and
+`lk:<storageKey>:doc` now holds `{version, workspaces, saves, layout, mode}` and
 hydration runs a migration chain over it. A lab saved under the previous four
 keys is folded into the document on first load; the old keys are removed only
 after the new document is read back and confirmed, so a storage write that

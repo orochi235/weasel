@@ -5,7 +5,8 @@ import {
   emptyDocument,
   labDocumentKey,
   MIGRATIONS,
-  quarantineKey,
+  normalizeDocument,
+  quarantineDocument,
   readLegacyDocument,
   runMigrations,
 } from './document';
@@ -227,6 +228,10 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
     }, 300);
   }
 
+  // A lab opened and closed without a single mutation still completes its
+  // fold; the flush is what removes the legacy keys.
+  if (foldedFromLegacy) scheduleFlush();
+
   return Object.assign(store, {
     registerSerializers(s: InstrumentSerializers) {
       serializers = s;
@@ -236,10 +241,29 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
 
 interface HydrateResult {
   document: LabDocument;
-  /** True when the stored document is newer than this code understands.
-   *  Flushing would clobber it, so the store stops persisting. */
+  /** True when flushing would destroy the only copy of something: a document
+   *  newer than this code understands, or an unusable one whose quarantine
+   *  copy did not land. */
   persistDisabled: boolean;
   foldedFromLegacy: boolean;
+}
+
+/** Copy an unusable document aside, and report whether the store may go on
+ *  persisting. A failed quarantine write means the copy in storage is the only
+ *  one there is, so the store must not overwrite it. */
+function setAside(
+  options: CreateLabStoreOptions,
+  raw: string,
+  why: string,
+  error?: unknown,
+): boolean {
+  const quarantined = quarantineDocument(options.storage, options.storageKey, raw);
+  const message = quarantined
+    ? `[labkit] ${why}; quarantined it and starting empty`
+    : `[labkit] ${why} and could not be quarantined; leaving it in place and not persisting`;
+  if (error === undefined) console.warn(message);
+  else console.warn(message, error);
+  return quarantined;
 }
 
 function hydrateDocument(options: CreateLabStoreOptions): HydrateResult {
@@ -251,9 +275,8 @@ function hydrateDocument(options: CreateLabStoreOptions): HydrateResult {
     try {
       parsed = JSON.parse(raw) as Record<string, unknown>;
     } catch {
-      console.warn('[labkit] lab document is unparseable; quarantining it');
-      options.storage.write(quarantineKey(options.storageKey), raw);
-      return { document: fallback, persistDisabled: false, foldedFromLegacy: false };
+      const persistDisabled = !setAside(options, raw, 'lab document is unparseable');
+      return { document: fallback, persistDisabled, foldedFromLegacy: false };
     }
   } else {
     parsed = readLegacyDocument(options.storage, options.storageKey, options.initialMode ?? 'auto');
@@ -273,13 +296,18 @@ function hydrateDocument(options: CreateLabStoreOptions): HydrateResult {
       );
       return { document: fallback, persistDisabled: true, foldedFromLegacy: false };
     }
-    console.warn('[labkit] lab document failed to migrate; quarantining it', outcome.error);
-    options.storage.write(quarantineKey(options.storageKey), JSON.stringify(parsed));
-    return { document: fallback, persistDisabled: false, foldedFromLegacy: false };
+    const stored = JSON.stringify(parsed);
+    const persistDisabled = !setAside(
+      options,
+      stored,
+      'lab document failed to migrate',
+      outcome.error,
+    );
+    return { document: fallback, persistDisabled, foldedFromLegacy: false };
   }
 
   return {
-    document: outcome.doc as unknown as LabDocument,
+    document: normalizeDocument(outcome.doc, options.initialMode ?? 'auto'),
     persistDisabled: false,
     foldedFromLegacy,
   };

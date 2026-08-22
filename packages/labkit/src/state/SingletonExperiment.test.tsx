@@ -70,7 +70,7 @@ describe('SingletonExperimentProvider', () => {
 
   it('rehydrates from storage on mount', () => {
     const storage = createMemoryAdapter();
-    // createLabStore uses labStorageKey which prefixes with "lk:"
+    // A pre-document lab, which createLabStore folds forward on hydration.
     storage.write(
       'lk:test:workspaces',
       JSON.stringify([
