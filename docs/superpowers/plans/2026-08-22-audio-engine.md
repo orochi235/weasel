@@ -184,26 +184,57 @@ hardware, ticks independently of `requestAnimationFrame`, and cannot be paused
 or time-scaled. Triggering a sound *on* a frame inherits frame jitter, which is
 audible.
 
-```ts
-const engine = createAudioEngine();
-const jump = await engine.load('/sfx/jump.wav');
-engine.play(jump, { bus: 'sfx', position: { x: 40, y: 0 } });
+The public surface is still landing: the barrel currently exports a package-name
+marker and nothing else. Usage lands with it.
 ```
 
-Browsers start an `AudioContext` suspended until a user gesture. The engine
-resumes on the first gesture automatically; `play()` before that drops the voice
-with a dev warning rather than queueing it.
+Nothing here may describe API the package does not export yet. Every package in
+the repo is in one changesets `fixed` group, so the next bump anywhere publishes
+this README in a tarball — Task 10 fills in the usage once the engine exists.
+
+- [ ] **Step 7: Guard the zero-dependency claim with lint**
+
+`packages/audio/tsconfig.json` extends the root, so every `@weasel-js` alias and
+every one of core's internal aliases resolves from it: an accidental import
+would typecheck clean and the README's "no weasel dependencies" would quietly
+stop being true. Add a block to `eslint.config.js`, after the `@weasel-js/font`
+one it mirrors:
+
+```js
+  {
+    files: ['packages/audio/src/**/*.{ts,tsx}'],
+    languageOptions,
+    plugins,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              // Its own name is how the workspace-resolution test imports it.
+              group: ['@weasel-js/*', '!@weasel-js/audio', ...CORE_ALIASES],
+              message:
+                '@weasel-js/audio must not depend on any weasel package.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ```
 
-- [ ] **Step 7: Verify the build and manifest check**
+Run: `npx eslint packages`
+Expected: exit 0.
+
+- [ ] **Step 8: Verify the build and manifest check**
 
 Run: `npm run build -w @weasel-js/audio && node scripts/check-publish-manifests.mjs`
 Expected: both exit 0.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add packages/audio package.json tsconfig.json .changeset/config.json package-lock.json
+git add packages/audio package.json tsconfig.json .changeset/config.json eslint.config.js package-lock.json
 git commit -m "scaffold the @weasel-js/audio package"
 ```
 
@@ -240,6 +271,30 @@ describe('spatialize', () => {
     expect(far).toBeGreaterThan(0);
   });
 
+  it('follows the inverse-distance curve past refDistance', () => {
+    expect(spatialize({ x: 0, y: 30 }, L, { refDistance: 10 }).gain)
+      .toBeCloseTo(10 / (10 + 20), 12);
+  });
+
+  it('measures the inverse curve from a refDistance of 1 by default', () => {
+    expect(spatialize({ x: 0, y: 3 }, L).gain).toBeCloseTo(1 / (1 + 2), 12);
+  });
+
+  it('falls off faster under a larger rolloffFactor', () => {
+    const slow = spatialize({ x: 0, y: 30 }, L, { refDistance: 10, rolloffFactor: 1 }).gain;
+    const fast = spatialize({ x: 0, y: 30 }, L, { refDistance: 10, rolloffFactor: 2 }).gain;
+    expect(slow).toBeCloseTo(10 / (10 + 20), 12);
+    expect(fast).toBeCloseTo(10 / (10 + 2 * 20), 12);
+    expect(fast).toBeLessThan(slow);
+  });
+
+  it('scales linear rolloff by rolloffFactor too', () => {
+    const opts = { rolloff: 'linear' as const, refDistance: 10, maxDistance: 110 };
+    expect(spatialize({ x: 0, y: 35 }, L, opts).gain).toBeCloseTo(1 - 25 / 100, 12);
+    expect(spatialize({ x: 0, y: 35 }, L, { ...opts, rolloffFactor: 2 }).gain)
+      .toBeCloseTo(1 - 2 * (25 / 100), 12);
+  });
+
   it('pans right for a source to the right', () => {
     expect(spatialize({ x: 50, y: 0 }, L, { panWidth: 100 }).pan).toBeCloseTo(0.5, 6);
   });
@@ -272,6 +327,17 @@ describe('spatialize', () => {
     expect(out.gain).toBe(0);
   });
 
+  it('cliffs from full gain to silence when the inverse model gets refDistance 0', () => {
+    expect(spatialize({ x: 0, y: 0 }, L, { refDistance: 0 }).gain).toBe(1);
+    expect(spatialize({ x: 0, y: 0.001 }, L, { refDistance: 0 }).gain).toBe(0);
+  });
+
+  it('cliffs the same way when linear rolloff gets maxDistance at refDistance', () => {
+    const opts = { rolloff: 'linear' as const, refDistance: 10, maxDistance: 10 };
+    expect(spatialize({ x: 0, y: 10 }, L, opts).gain).toBe(1);
+    expect(spatialize({ x: 0, y: 10.001 }, L, opts).gain).toBe(0);
+  });
+
   it('ignores vertical offset for pan', () => {
     expect(spatialize({ x: 0, y: 500 }, L, { panWidth: 100 }).pan).toBe(0);
   });
@@ -289,9 +355,11 @@ Expected: FAIL — cannot resolve `./spatialize`.
 export interface Vec2 { x: number; y: number }
 
 export interface SpatialOptions {
-  /** Distance within which gain stays at 1. Default 1. */
+  /** Distance within which gain stays at 1. Default 1. The inverse model needs
+   *  this above 0: at 0 it cliffs gain from 1 to 0 at any nonzero distance. */
   refDistance?: number;
-  /** Distance at which linear rolloff reaches 0. Ignored by inverse. Default 10000. */
+  /** Distance at which linear rolloff reaches 0. Ignored by inverse. Default
+   *  10000. At or below `refDistance` it gives the same 1-to-0 cliff, there. */
   maxDistance?: number;
   /** Default 'inverse' — the natural-sounding one. */
   rolloff?: 'inverse' | 'linear';
@@ -304,9 +372,7 @@ export interface SpatialOptions {
 /**
  * Map a source position to a gain and a stereo pan, relative to the listener.
  *
- * Pure — no Web Audio, no state. This is the whole spatial model, which is why
- * it lives on its own: the node wiring that consumes it has nothing left worth
- * testing.
+ * Pure — no Web Audio, no state. This is the whole spatial model.
  */
 export function spatialize(
   source: Vec2,
@@ -315,6 +381,7 @@ export function spatialize(
 ): { gain: number; pan: number } {
   const refDistance = opts.refDistance ?? 1;
   const maxDistance = opts.maxDistance ?? 10000;
+  const rolloff = opts.rolloff ?? 'inverse';
   const rolloffFactor = opts.rolloffFactor ?? 1;
   const panWidth = opts.panWidth ?? 500;
 
@@ -325,7 +392,7 @@ export function spatialize(
   let gain: number;
   if (distance <= refDistance) {
     gain = 1;
-  } else if ((opts.rolloff ?? 'inverse') === 'linear') {
+  } else if (rolloff === 'linear') {
     const span = maxDistance - refDistance;
     gain = span <= 0 ? 0 : 1 - rolloffFactor * ((distance - refDistance) / span);
   } else {
@@ -342,7 +409,7 @@ export function spatialize(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/audio/src/spatialize.test.ts`
-Expected: PASS, 10 tests.
+Expected: PASS, 16 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -365,22 +432,35 @@ git commit -m "map a 2D position to gain and pan as a pure function"
 import { describe, expect, it, vi } from 'vitest';
 import { createScheduler } from './scheduler';
 
-/** Deterministic clock + timer pair. `tick()` runs one scheduler pass. */
+/**
+ * Deterministic clock + timer pair. Every `setTimer` call is recorded, so a
+ * test can tell a re-arm from a pass that ran off the previous arm.
+ */
 function harness(startMs = 0) {
   let nowMs = startMs;
-  let pass: (() => void) | null = null;
+  let nextHandle = 1;
+  const arms: { cb: () => void; ms: number; handle: number }[] = [];
+  const cleared: unknown[] = [];
   const scheduler = createScheduler({
     now: () => nowMs,
-    setTimer: (cb) => { pass = cb; return 1; },
-    clearTimer: () => { pass = null; },
+    setTimer: (cb, ms) => {
+      const handle = nextHandle++;
+      arms.push({ cb, ms, handle });
+      return handle;
+    },
+    clearTimer: (handle) => { cleared.push(handle); },
     lookahead: 100,
     interval: 25,
   });
+  const latest = () => arms[arms.length - 1];
   return {
     scheduler,
     advanceTo: (t: number) => { nowMs = t; },
-    tick: () => pass?.(),
-    isStopped: () => pass === null,
+    /** Run the most recently armed pass, as its timer would. */
+    tick: () => { latest()?.cb(); },
+    armCount: () => arms.length,
+    armIntervals: () => arms.map((a) => a.ms),
+    isStopped: () => cleared.includes(latest()?.handle),
   };
 }
 
@@ -446,6 +526,15 @@ describe('createScheduler', () => {
     expect(order).toEqual([10, 30, 50]);
   });
 
+  it('leaves events beyond the horizon queued', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.schedule(10, vi.fn());
+    h.scheduler.schedule(500, vi.fn());
+    h.tick();
+    expect(h.scheduler.pending()).toBe(1);
+  });
+
   it('cancels pending events by key without touching others', () => {
     const h = harness();
     const kept = vi.fn();
@@ -459,11 +548,105 @@ describe('createScheduler', () => {
     expect(dropped).not.toHaveBeenCalled();
   });
 
+  it('arms the timer once on start(), at the configured interval', () => {
+    const h = harness();
+    h.scheduler.start();
+    expect(h.armIntervals()).toEqual([25]);
+  });
+
+  it('ignores a second start()', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.start();
+    expect(h.armCount()).toBe(1);
+  });
+
+  it('re-arms itself after every pass, at the configured interval', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.tick();
+    h.tick();
+    expect(h.armIntervals()).toEqual([25, 25, 25]);
+  });
+
+  it('re-arms even when the pass fired nothing', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.tick();
+    expect(h.armCount()).toBe(2);
+  });
+
   it('stops the timer on stop()', () => {
     const h = harness();
     h.scheduler.start();
     h.scheduler.stop();
     expect(h.isStopped()).toBe(true);
+  });
+
+  it('does not re-arm when a pass already in flight runs after stop()', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.stop();
+    h.tick();
+    expect(h.armCount()).toBe(1);
+  });
+
+  it('arms again on a start() after a stop()', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.stop();
+    h.scheduler.start();
+    expect(h.armCount()).toBe(2);
+  });
+
+  it('counts queued events as pending', () => {
+    const h = harness();
+    h.scheduler.start();
+    expect(h.scheduler.pending()).toBe(0);
+    h.scheduler.schedule(500, vi.fn());
+    h.scheduler.schedule(600, vi.fn());
+    expect(h.scheduler.pending()).toBe(2);
+  });
+
+  it('drops fired events from the pending count', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.schedule(10, vi.fn());
+    h.tick();
+    expect(h.scheduler.pending()).toBe(0);
+  });
+
+  it('drops cancelled events from the pending count', () => {
+    const h = harness();
+    h.scheduler.schedule(500, vi.fn(), 'k');
+    h.scheduler.cancelKey('k');
+    expect(h.scheduler.pending()).toBe(0);
+  });
+
+  it('empties the queue on clear() without stopping the timer', () => {
+    const h = harness();
+    const fire = vi.fn();
+    h.scheduler.start();
+    h.scheduler.schedule(500, fire);
+    h.scheduler.clear();
+    expect(h.scheduler.pending()).toBe(0);
+    h.advanceTo(500);
+    h.tick();
+    expect(fire).not.toHaveBeenCalled();
+    expect(h.armCount()).toBe(2);
+  });
+
+  it('does not replay events missed while stopped, once cleared', () => {
+    const h = harness();
+    const fire = vi.fn();
+    h.scheduler.start();
+    h.scheduler.schedule(100, fire);
+    h.scheduler.stop();
+    h.advanceTo(5000);
+    h.scheduler.clear();
+    h.scheduler.start();
+    h.tick();
+    expect(fire).not.toHaveBeenCalled();
   });
 
   it('keeps running when one callback throws', () => {
@@ -475,6 +658,15 @@ describe('createScheduler', () => {
     h.scheduler.schedule(20, after);
     h.tick();
     expect(after).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-arms even when a callback throws', () => {
+    const h = harness();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    h.scheduler.start();
+    h.scheduler.schedule(10, () => { throw new Error('boom'); });
+    h.tick();
+    expect(h.armCount()).toBe(2);
   });
 });
 ```
@@ -506,12 +698,19 @@ interface Entry {
 
 export interface Scheduler {
   start(): void;
+  /** Stop the timer. The queue survives; `clear()` empties it. */
   stop(): void;
   /** Book `fire` for engine time `when`. It runs on the first pass whose
    *  lookahead window reaches it, receiving `when` so it can hand the true
    *  time to `source.start()` rather than "now". */
   schedule(when: number, fire: (when: number) => void, key?: string): void;
+  /** Drop queued events with this key. A pass takes its whole batch out of the
+   *  queue before firing any of it, so a callback cannot cancel a sibling that
+   *  came due alongside it. */
   cancelKey(key: string): void;
+  /** Drop every queued event. Without this, a stop/start cycle fires
+   *  everything that came due meanwhile in one burst on the first pass. */
+  clear(): void;
   pending(): number;
 }
 
@@ -519,23 +718,23 @@ export interface Scheduler {
  * Lookahead scheduler. Each pass fires everything due within `lookahead` ms,
  * in time order, handing each callback its own scheduled time.
  *
- * It runs on its own timer rather than on an animation frame: rAF throttles to
- * roughly 1 Hz in a backgrounded tab and stops when nothing is animating, both
- * of which stall audio exactly when nothing is on screen.
+ * It runs on its own timer rather than on an animation frame, which stalls
+ * audio in a backgrounded tab — see the README.
  */
 export function createScheduler(opts: SchedulerOptions): Scheduler {
   const lookahead = opts.lookahead ?? 100;
   const interval = opts.interval ?? 25;
   let queue: Entry[] = [];
+  let running = false;
   let handle: unknown = null;
 
   const pass = (): void => {
     const horizon = opts.now() + lookahead;
-    const due = queue.filter((e) => e.when <= horizon).sort((a, b) => a.when - b.when);
-    if (due.length > 0) {
-      const dueSet = new Set(due);
-      queue = queue.filter((e) => !dueSet.has(e));
-    }
+    const due: Entry[] = [];
+    const rest: Entry[] = [];
+    for (const entry of queue) (entry.when <= horizon ? due : rest).push(entry);
+    queue = rest;
+    due.sort((a, b) => a.when - b.when);
     for (const entry of due) {
       try {
         entry.fire(entry.when);
@@ -543,18 +742,18 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
         console.error('@weasel-js/audio scheduler: callback threw', err);
       }
     }
-    if (handle !== null) handle = opts.setTimer(pass, interval);
+    if (running) handle = opts.setTimer(pass, interval);
   };
 
   return {
     start() {
-      if (handle !== null) return;
-      // Non-null before the first setTimer so `pass` knows it is running.
-      handle = true;
+      if (running) return;
+      running = true;
       handle = opts.setTimer(pass, interval);
     },
     stop() {
-      if (handle === null) return;
+      if (!running) return;
+      running = false;
       opts.clearTimer(handle);
       handle = null;
     },
@@ -564,6 +763,9 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
     cancelKey(key) {
       queue = queue.filter((e) => e.key !== key);
     },
+    clear() {
+      queue = [];
+    },
     pending: () => queue.length,
   };
 }
@@ -572,7 +774,7 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/audio/src/scheduler.test.ts`
-Expected: PASS, 9 tests.
+Expected: PASS, 22 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -599,6 +801,11 @@ import { describe, expect, it } from 'vitest';
 import { createVoicePool } from './voicePool';
 
 describe('createVoicePool', () => {
+  it('rejects a limit below one', () => {
+    expect(() => createVoicePool({ limit: 0 })).toThrow(RangeError);
+    expect(() => createVoicePool({ limit: -1 })).toThrow(RangeError);
+  });
+
   it('allocates distinct slots while under the limit', () => {
     const pool = createVoicePool({ limit: 3 });
     const a = pool.acquire({ startedAt: 0, gain: 1 });
@@ -608,21 +815,36 @@ describe('createVoicePool', () => {
     expect(b.stolen).toBe(null);
   });
 
+  it('gives every acquisition its own token', () => {
+    const pool = createVoicePool({ limit: 2 });
+    const a = pool.acquire({ startedAt: 0, gain: 1 });
+    const b = pool.acquire({ startedAt: 1, gain: 1 });
+    expect(a.token).not.toBe(b.token);
+  });
+
   it('reuses a released slot instead of growing', () => {
     const pool = createVoicePool({ limit: 2 });
     const a = pool.acquire({ startedAt: 0, gain: 1 });
-    pool.release(a.slot);
+    pool.release(a.slot, a.token);
     const b = pool.acquire({ startedAt: 1, gain: 1 });
     expect(b.slot).toBe(a.slot);
     expect(b.stolen).toBe(null);
   });
 
-  it('steals the oldest voice when full', () => {
+  it('mints a fresh token when a slot is reissued', () => {
+    const pool = createVoicePool({ limit: 2 });
+    const a = pool.acquire({ startedAt: 0, gain: 1 });
+    pool.release(a.slot, a.token);
+    const b = pool.acquire({ startedAt: 1, gain: 1 });
+    expect(b.token).not.toBe(a.token);
+  });
+
+  it('steals the oldest voice when full, reporting its token', () => {
     const pool = createVoicePool({ limit: 2, steal: 'oldest' });
     const a = pool.acquire({ startedAt: 10, gain: 1 });
     pool.acquire({ startedAt: 20, gain: 1 });
     const c = pool.acquire({ startedAt: 30, gain: 1 });
-    expect(c.stolen).toBe(a.slot);
+    expect(c.stolen).toBe(a.token);
     expect(c.slot).toBe(a.slot);
   });
 
@@ -631,7 +853,19 @@ describe('createVoicePool', () => {
     pool.acquire({ startedAt: 10, gain: 0.9 });
     const b = pool.acquire({ startedAt: 20, gain: 0.1 });
     const c = pool.acquire({ startedAt: 30, gain: 1 });
-    expect(c.stolen).toBe(b.slot);
+    expect(c.stolen).toBe(b.token);
+    expect(c.slot).toBe(b.slot);
+  });
+
+  it('rotates through tied voices rather than stealing one slot repeatedly', () => {
+    const pool = createVoicePool({ limit: 2, steal: 'oldest' });
+    const a = pool.acquire({ startedAt: 10, gain: 1 });
+    const b = pool.acquire({ startedAt: 10, gain: 1 });
+    const c = pool.acquire({ startedAt: 10, gain: 1 });
+    const d = pool.acquire({ startedAt: 10, gain: 1 });
+    expect(c.stolen).toBe(a.token);
+    expect(d.stolen).toBe(b.token);
+    expect(d.slot).toBe(b.slot);
   });
 
   it('reports how many voices are live', () => {
@@ -644,13 +878,24 @@ describe('createVoicePool', () => {
   it('drops the count when a voice is released', () => {
     const pool = createVoicePool({ limit: 4 });
     const a = pool.acquire({ startedAt: 0, gain: 1 });
-    pool.release(a.slot);
+    pool.release(a.slot, a.token);
     expect(pool.active()).toBe(0);
   });
 
   it('ignores a release for a slot that is not live', () => {
     const pool = createVoicePool({ limit: 2 });
-    expect(() => pool.release(99)).not.toThrow();
+    expect(() => pool.release(99, 1)).not.toThrow();
+    expect(pool.active()).toBe(0);
+  });
+
+  it('ignores a release from an acquisition whose slot was stolen', () => {
+    const pool = createVoicePool({ limit: 1 });
+    const a = pool.acquire({ startedAt: 0, gain: 1 });
+    const b = pool.acquire({ startedAt: 1, gain: 1 });
+    expect(b.slot).toBe(a.slot);
+    pool.release(a.slot, a.token);
+    expect(pool.active()).toBe(1);
+    pool.release(b.slot, b.token);
     expect(pool.active()).toBe(0);
   });
 
@@ -658,9 +903,20 @@ describe('createVoicePool', () => {
     const pool = createVoicePool({ limit: 2, steal: 'quietest' });
     const a = pool.acquire({ startedAt: 10, gain: 1 });
     pool.acquire({ startedAt: 20, gain: 0.5 });
-    pool.setGain(a.slot, 0.01);
+    pool.setGain(a.slot, a.token, 0.01);
     const c = pool.acquire({ startedAt: 30, gain: 1 });
-    expect(c.stolen).toBe(a.slot);
+    expect(c.stolen).toBe(a.token);
+  });
+
+  it('ignores a gain change from an acquisition whose slot was stolen', () => {
+    const pool = createVoicePool({ limit: 2, steal: 'quietest' });
+    const a = pool.acquire({ startedAt: 0, gain: 0.4 });
+    const b = pool.acquire({ startedAt: 1, gain: 0.5 });
+    const c = pool.acquire({ startedAt: 2, gain: 0.9 });   // steals a's slot
+    pool.setGain(a.slot, a.token, 0.01);
+    const d = pool.acquire({ startedAt: 3, gain: 1 });
+    expect(c.slot).toBe(a.slot);
+    expect(d.stolen).toBe(b.token);
   });
 });
 ```
@@ -676,7 +932,7 @@ Expected: FAIL — cannot resolve `./voicePool`.
 export type StealPolicy = 'oldest' | 'quietest';
 
 export interface VoicePoolOptions {
-  /** Maximum concurrent voices. Beyond this, `acquire` steals. */
+  /** Maximum concurrent voices, at least 1. Beyond this, `acquire` steals. */
   limit: number;
   /** Default 'oldest'. */
   steal?: StealPolicy;
@@ -691,15 +947,18 @@ export interface VoiceRecord {
 
 export interface Acquisition {
   slot: number;
-  /** Slot whose voice was evicted to make room, or null. The caller is
+  /** Identifies this voice, not its slot: a stolen slot is reissued at once,
+   *  so `release` and `setGain` take the token and ignore a stale one. */
+  token: number;
+  /** Token of the voice evicted to make room, or null. The caller is
    *  responsible for actually stopping that voice's nodes. */
   stolen: number | null;
 }
 
 export interface VoicePool {
   acquire(record: VoiceRecord): Acquisition;
-  release(slot: number): void;
-  setGain(slot: number, gain: number): void;
+  release(slot: number, token: number): void;
+  setGain(slot: number, token: number, gain: number): void;
   active(): number;
 }
 
@@ -713,10 +972,14 @@ export interface VoicePool {
  * specification and cannot be restarted once stopped.
  */
 export function createVoicePool(opts: VoicePoolOptions): VoicePool {
+  if (!(opts.limit >= 1)) {
+    throw new RangeError(`@weasel-js/audio: voice pool limit must be at least 1, got ${opts.limit}`);
+  }
   const steal = opts.steal ?? 'oldest';
-  const live = new Map<number, VoiceRecord>();
+  const live = new Map<number, VoiceRecord & { token: number }>();
   const free: number[] = [];
   let nextSlot = 0;
+  let nextToken = 1;
 
   const victim = (): number => {
     let worst = -1;
@@ -730,22 +993,28 @@ export function createVoicePool(opts: VoicePoolOptions): VoicePool {
 
   return {
     acquire(record) {
+      const token = nextToken++;
       if (live.size < opts.limit) {
         const slot = free.length > 0 ? free.pop()! : nextSlot++;
-        live.set(slot, { ...record });
-        return { slot, stolen: null };
+        live.set(slot, { ...record, token });
+        return { slot, token, stolen: null };
       }
       const slot = victim();
-      live.set(slot, { ...record });
-      return { slot, stolen: slot };
+      const stolen = live.get(slot)!.token;
+      // Re-inserting moves the slot to the back of the iteration order, so
+      // voices tied on score take turns being the victim.
+      live.delete(slot);
+      live.set(slot, { ...record, token });
+      return { slot, token, stolen };
     },
-    release(slot) {
-      if (!live.delete(slot)) return;
+    release(slot, token) {
+      if (live.get(slot)?.token !== token) return;
+      live.delete(slot);
       free.push(slot);
     },
-    setGain(slot, gain) {
+    setGain(slot, token, gain) {
       const rec = live.get(slot);
-      if (rec) rec.gain = gain;
+      if (rec?.token === token) rec.gain = gain;
     },
     active: () => live.size,
   };
@@ -755,7 +1024,7 @@ export function createVoicePool(opts: VoicePoolOptions): VoicePool {
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/audio/src/voicePool.test.ts`
-Expected: PASS, 8 tests.
+Expected: PASS, 14 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -1706,6 +1975,9 @@ export interface AudioEngine {
 interface LiveVoice {
   id: number;
   slot: number;
+  /** The pool's identity for this voice. A stolen slot is reissued at once, so
+   *  releasing or re-gaining by slot alone would hit whoever holds it now. */
+  token: number;
   /** Slots are per-bus, so a voice must remember which pool owns its slot. */
   bus: string;
   key?: string;
@@ -1748,10 +2020,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   let spatialOpts: SpatialOptions = {};
   let nextVoiceId = 1;
   const live = new Map<number, LiveVoice>();
-  // Keyed `bus:slot` — slot numbers restart at 0 in every pool, so a bare slot
-  // number collides across buses and tears down the wrong voice.
-  const bySlot = new Map<string, LiveVoice>();
-  const slotKey = (bus: string, slot: number): string => `${bus}:${slot}`;
+  // Keyed `bus:token` — tokens restart at 1 in every pool, so a bare token
+  // collides across buses and tears down the wrong voice.
+  const byToken = new Map<string, LiveVoice>();
+  const voiceKey = (bus: string, token: number): string => `${bus}:${token}`;
 
   let warnedLocked = false;
   const warnLocked = (): void => {
@@ -1771,22 +2043,16 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     for (const g of gestures) window.addEventListener(g, onGesture, { once: true, passive: true });
   }
 
-  /**
-   * Stop a voice and drop its bookkeeping.
-   *
-   * `releaseSlot` is false on the steal path: `pool.acquire` has ALREADY handed
-   * that slot to the incoming voice, so releasing it here would free the new
-   * voice's own slot and hand it out twice on the next play.
-   */
-  const teardown = (voice: LiveVoice, releaseSlot = true): void => {
+  const teardown = (voice: LiveVoice): void => {
     if (!voice.playing && voice.source === null) return;
     voice.playing = false;
     try { voice.source?.stop(); } catch { /* already stopped */ }
     voice.source = null;
     live.delete(voice.id);
-    const key = slotKey(voice.bus, voice.slot);
-    if (bySlot.get(key) === voice) bySlot.delete(key);
-    if (releaseSlot) poolFor(voice.bus).release(voice.slot);
+    byToken.delete(voiceKey(voice.bus, voice.token));
+    // Safe on the steal path too: the pool has already reissued this slot
+    // under a new token, and it ignores a release carrying the old one.
+    poolFor(voice.bus).release(voice.slot, voice.token);
   };
 
   const engine: AudioEngine = {
@@ -1822,8 +2088,8 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       const pool = poolFor(busName);
       const acquired = pool.acquire({ startedAt: when, gain: explicitGain * spatial.gain });
       if (acquired.stolen !== null) {
-        const victim = bySlot.get(slotKey(busName, acquired.stolen));
-        if (victim) teardown(victim, false);
+        const victim = byToken.get(voiceKey(busName, acquired.stolen));
+        if (victim) teardown(victim);
       }
 
       const gainNode = ctx.createGain();
@@ -1834,12 +2100,12 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       gainNode.connect(graph.node(busName));
 
       const voice: LiveVoice = {
-        id, slot: acquired.slot, bus: busName, key: playOpts.cancelKey,
-        source: null, gainNode, panNode,
+        id, slot: acquired.slot, token: acquired.token, bus: busName,
+        key: playOpts.cancelKey, source: null, gainNode, panNode,
         baseGain: explicitGain, playing: true, cancelled: false,
       };
       live.set(id, voice);
-      bySlot.set(slotKey(busName, voice.slot), voice);
+      byToken.set(voiceKey(busName, voice.token), voice);
 
       scheduler.schedule(when, (scheduledWhen) => {
         if (voice.cancelled) return;
@@ -1872,7 +2138,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
           } else {
             gainNode.gain.value = value;
           }
-          poolFor(voice.bus).setGain(voice.slot, value);
+          poolFor(voice.bus).setGain(voice.slot, voice.token, value);
         },
         setRate(value) { if (voice.source) voice.source.playbackRate.value = value; },
         setPan(value) { panNode.pan.value = value; },
@@ -1880,7 +2146,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
           const s = spatialize(p, listener, spatialOpts);
           panNode.pan.value = s.pan;
           gainNode.gain.value = voice.baseGain * s.gain;
-          poolFor(voice.bus).setGain(voice.slot, voice.baseGain * s.gain);
+          poolFor(voice.bus).setGain(voice.slot, voice.token, voice.baseGain * s.gain);
         },
         isPlaying: () => voice.playing,
       };
@@ -1905,6 +2171,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     dispose() {
       engine.stopAll();
       scheduler.stop();
+      scheduler.clear();
       if (typeof window !== 'undefined') {
         for (const g of gestures) window.removeEventListener(g, onGesture);
       }
@@ -1978,7 +2245,23 @@ describe('@weasel-js/audio public surface', () => {
 
 Delete the `AUDIO_PACKAGE` export added in Task 1.
 
-- [ ] **Step 3: Write the changeset**
+- [ ] **Step 3: Fill in the README's usage, now that it is true**
+
+Replace the "still landing" note from Task 1 with:
+
+````markdown
+```ts
+const engine = createAudioEngine();
+const jump = await engine.load('/sfx/jump.wav');
+engine.play(jump, { bus: 'sfx', position: { x: 40, y: 0 } });
+```
+
+Browsers start an `AudioContext` suspended until a user gesture. The engine
+resumes on the first gesture automatically; `play()` before that drops the voice
+with a dev warning rather than queueing it.
+````
+
+- [ ] **Step 4: Write the changeset**
 
 ```markdown
 ---
@@ -1998,7 +2281,7 @@ cannot be paused, and `requestAnimationFrame` throttles when backgrounded.
 This is new API surface. The bump level is deliberate; see CLAUDE.md.
 ```
 
-- [ ] **Step 4: Full gate**
+- [ ] **Step 5: Full gate**
 
 Run:
 ```bash
@@ -2011,7 +2294,7 @@ npx vitest run --project=weasel-ui packages/audio/ \
 ```
 Expected: every command exits 0.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add packages/audio .changeset/audio-engine.md
