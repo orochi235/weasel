@@ -28,7 +28,14 @@
 | `packages/core/src/animation/useAnimator.ts` | Modify: bind `timeline` |
 | `packages/core/src/animation/index.ts` | Modify: re-export timeline + rig public surface |
 
-Run tests with `npx vitest run --project=kit <path>`. Core's suite lives in the `kit` project (`packages/core/src/**/*.test.ts`).
+Run tests with `npx vitest run --project=kit <path>`. Core's suite lives in the
+`kit` project (`packages/core/src/**/*.test.ts`). Typecheck from the repo root
+with `npx tsc --noEmit` — never the per-package config, which fails on a clean
+tree (see Task 1).
+
+`packages/core/src/animation/` is outside the eslint config's `files` scope, so
+lint rules there are inert. The `eslint-disable` comment in Task 1's types and
+the empty `onWrap` in Task 5 are harmless either way; leave them.
 
 ---
 
@@ -115,8 +122,13 @@ export interface TimelineHandle extends AnimationHandle {
 
 - [ ] **Step 2: Verify it typechecks**
 
-Run: `npx tsc --noEmit -p packages/core/tsconfig.json`
-Expected: exit 0, no output.
+Run: `npx tsc --noEmit` (from the repo root)
+Expected: exit 0.
+
+**Do not use `tsc --noEmit -p packages/core/tsconfig.json`.** It exits 1 with 31
+pre-existing `TS6059` errors on a clean tree — that config sets `rootDir` to
+`packages/core` while the program pulls in `packages/modes`. The root invocation
+is the repo's canonical typecheck and the one `prepublishOnly` gates on.
 
 - [ ] **Step 3: Commit**
 
@@ -1325,7 +1337,7 @@ export type {
 
 - [ ] **Step 8: Typecheck and run the full core suite**
 
-Run: `npx tsc --noEmit -p packages/core/tsconfig.json && npx vitest run --project=kit`
+Run: `npx tsc --noEmit && npx vitest run --project=kit`
 Expected: exit 0, and the whole kit suite green.
 
 - [ ] **Step 9: Commit**
@@ -1831,7 +1843,7 @@ Expected: PASS, 3 tests.
 
 - [ ] **Step 5: Full gate**
 
-Run: `npx tsc --noEmit -p packages/core/tsconfig.json && npx vitest run --project=kit && npx eslint packages/core/src/animation`
+Run: `npx tsc --noEmit && npx vitest run --project=kit && npx eslint packages`
 Expected: all three exit 0.
 
 - [ ] **Step 6: Write a changeset**
