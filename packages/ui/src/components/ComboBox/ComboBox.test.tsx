@@ -26,6 +26,15 @@ describe('ComboBox', () => {
     expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('Green');
   });
 
+  it('clears the input when a controlled selectedKey goes null', () => {
+    const { rerender } = render(
+      <ComboBox label="Color" options={OPTIONS} selectedKey="g" onSelectionChange={() => {}} />,
+    );
+    expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('Green');
+    rerender(<ComboBox label="Color" options={OPTIONS} selectedKey={null} onSelectionChange={() => {}} />);
+    expect((screen.getByRole('combobox') as HTMLInputElement).value).toBe('');
+  });
+
   it('supports the children form with explicit items', () => {
     render(
       <ComboBox label="Color">

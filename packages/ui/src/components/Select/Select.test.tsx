@@ -46,6 +46,26 @@ describe('Select', () => {
     expect(screen.getByRole('button', { name: /Pick one/ })).toBeTruthy();
   });
 
+  it('clears the trigger when a controlled selectedKey goes null', () => {
+    const { rerender } = render(
+      <Select label="Color" options={OPTIONS} selectedKey="b" placeholder="Mixed" onSelectionChange={() => {}} />,
+    );
+    expect(screen.getByRole('button', { name: /Blue/ })).toBeTruthy();
+    rerender(
+      <Select label="Color" options={OPTIONS} selectedKey={null} placeholder="Mixed" onSelectionChange={() => {}} />,
+    );
+    expect(screen.getByRole('button', { name: /Mixed/ })).toBeTruthy();
+  });
+
+  it('stays controlled with selectedKey null — a click does not move the trigger on its own', () => {
+    const onChange = vi.fn();
+    render(<Select label="Color" options={OPTIONS} selectedKey={null} placeholder="Mixed" onSelectionChange={onChange} />);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /Color/ })); });
+    fireEvent.click(screen.getByRole('option', { name: 'Green' }));
+    expect(onChange).toHaveBeenCalledWith('g');
+    expect(screen.getByRole('button', { name: /Mixed/ })).toBeTruthy();
+  });
+
   describe('textValue', () => {
     /** React Aria warns per row when it can't read a string off the
      *  children. Each row draws a check mark beside its label, so it never
