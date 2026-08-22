@@ -48,6 +48,28 @@ describe('blendPoses', () => {
     expect(blendPoses([a, b], [0.5, 0.5]).hip!.rotation).toBeCloseTo(0, 6);
   });
 
+  it('returns an empty pose when the weights sum to zero', () => {
+    expect(blendPoses([{ hip: { x: 10 } }], [0])).toEqual({});
+  });
+
+  it('wraps a rotation delta of more than a full turn', () => {
+    const a: Pose = { hip: { rotation: 0 } };
+    const b: Pose = { hip: { rotation: Math.PI * 6 + 0.2 } };
+    expect(blendPoses([a, b], [0.5, 0.5]).hip!.rotation).toBeCloseTo(0.1, 6);
+  });
+
+  it('blends the short way from the larger angle, leaving the result unnormalized', () => {
+    const a: Pose = { hip: { rotation: Math.PI * 2 - 0.1 } };
+    const b: Pose = { hip: { rotation: 0.1 } };
+    expect(blendPoses([a, b], [0.5, 0.5]).hip!.rotation).toBeCloseTo(Math.PI * 2, 6);
+  });
+
+  it('rotates a joint absent from the first pose toward the pose that has it', () => {
+    const a: Pose = { hip: { x: 1 } };
+    const b: Pose = { knee: { rotation: 1 } };
+    expect(blendPoses([a, b], [0.5, 0.5]).knee!.rotation).toBe(0.5);
+  });
+
   it('throws when the weight count does not match the pose count', () => {
     expect(() => blendPoses([{}, {}], [1])).toThrow(/weights/);
   });

@@ -42,6 +42,25 @@ describe('resolveSkeleton', () => {
     expect(apply(out.get('knee')!, 0, 0)[0]).toBeCloseTo(20, 5);
   });
 
+  it('applies a pose y delta on top of bind', () => {
+    const skel: Skeleton = { joints: [j('hip', null, 0, 10)] };
+    const out = resolveSkeleton(skel, { hip: { y: 5 } });
+    expect(apply(out.get('hip')!, 0, 0)).toEqual([0, 15]);
+  });
+
+  it('multiplies a parent scaleY into a child offset', () => {
+    const skel: Skeleton = { joints: [j('hip', null, 0, 0), j('knee', 'hip', 0, 10)] };
+    const out = resolveSkeleton(skel, { hip: { scaleY: 3 } });
+    expect(apply(out.get('knee')!, 0, 0)[1]).toBeCloseTo(30, 5);
+  });
+
+  it('lays a joint out in the renderer\'s column-major order', () => {
+    const skel: Skeleton = { joints: [j('hip', null, 3, 4)] };
+    const m = resolveSkeleton(skel, { hip: { rotation: Math.PI / 2, scaleX: 2, scaleY: 5 } }).get('hip')!;
+    const expected = [0, 2, 0, -5, 0, 0, 3, 4, 1];
+    expected.forEach((v, i) => expect(m[i]).toBeCloseTo(v, 5));
+  });
+
   it('resolves every joint in the skeleton', () => {
     const skel: Skeleton = { joints: [j('a', null), j('b', 'a'), j('c', 'b')] };
     expect([...resolveSkeleton(skel, {}).keys()]).toEqual(['a', 'b', 'c']);

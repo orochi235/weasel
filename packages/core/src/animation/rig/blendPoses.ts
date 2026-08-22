@@ -29,8 +29,6 @@ export function blendPoses(poses: Pose[], weights: number[]): Pose {
   if (poses.length !== weights.length) {
     throw new Error('blendPoses: poses and weights must have the same length');
   }
-  if (poses.length === 0) return {};
-
   const total = weights.reduce((s, w) => s + w, 0);
   if (total === 0) return {};
   const norm = weights.map((w) => w / total);
