@@ -40,7 +40,6 @@ Priority tags:
 **Performance**
 - A clipped group costs ~10 us to enter, half of it the stencil → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - A solid boundary costs 2.5 us where every other kind costs under one → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- A flush spends 3.5 us outside the draw; ~1.6 of it could go → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 **Documentation**
 - Surface a changelog on the site → [Documentation](#documentation)
@@ -738,27 +737,24 @@ From the WebGL transition spec — all deferred:
   more of the mixed row than everything else together, which is the same
   per-draw allocation the transition entry above names.
 
-- **(P2) A flush spends 3.5 us on calls that are not the draw, and ~1.6 of that
-  could go.** From `flush-anatomy.spec.ts`, against a 0.34 us bind-and-draw
-  floor. Two candidates, neither free:
+- **(P2) [x] A flush's redundant uploads are gone; what remains is the vertex
+  upload.** `flush-anatomy.spec.ts` priced a flush's calls against a 0.34 us
+  bind-and-draw floor and found two re-sending bytes the GPU already had. Both
+  landed. Measured as one A/B, the two halves back to back: a flush 5.39 ->
+  3.22 us, entering a clip 12.47 -> 9.53 (`clip-cost.spec.ts`). Read the
+  difference and not the absolutes — the same spec measured a 4.35 us flush an
+  hour earlier on a cooler machine, which is the drift these specs' headers
+  warn about.
 
-  - **The index upload, 0.89 us.** `pushRect` writes a deterministic pattern,
-    so a run of rects re-uploads bytes the slot already holds. `pushMesh`
-    rebases arbitrary mesh indices, so a static index buffer only serves the
-    rect-only case and the batch would have to track which case it is in.
-  - **`u_color` and `u_alpha`, 0.75 us.** `flushSolids` holds `u_color` at
-    white forever and re-sends it every flush. It cannot simply be hoisted:
-    `pathFillVColor` has three other callers that set both through
-    `setSolidPaintUniforms`, which is the multi-writer case that keeps them out
-    of `UploadedUniforms` today. Caching them means routing every writer
-    through it.
+  A ring slot now remembers the rect count whose index pattern it holds, and a
+  flush matching it skips the upload. The win needs slots to come round, so a
+  frame with fewer flushes than the ring is wide sees none of it. `u_color` and
+  `u_alpha` joined `UploadedUniforms`, which required routing all eleven writes
+  through `setColorUniform` / `setAlphaUniform`; that is what makes the cache
+  right per program instead of dependent on knowing which caller uses which.
 
-  `bindVertexArray(null)` at 0.19 us is not worth the risk it carries:
-  `drawShader` is the one draw path that binds no VAO of its own and
-  configures attributes on whatever is current, so a flush that left a ring
-  slot bound would corrupt that slot for every later flush cycling back to it.
-
-  Worth doing only alongside the text allocation above, which is larger.
+  What is left is the vertex upload, 1.84 us and the one thing a flush exists
+  to do. Text is the larger target now — see the boundary entry above.
 
 - **(P3) opentype.js is typed a major version behind what it runs.**
   `packages/font` depends on `opentype.js@2.0.0`, which ships no typings, so TS
