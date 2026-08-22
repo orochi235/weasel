@@ -1,22 +1,35 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createScheduler } from './scheduler';
 
-/** Deterministic clock + timer pair. `tick()` runs one scheduler pass. */
+/**
+ * Deterministic clock + timer pair. Every `setTimer` call is recorded, so a
+ * test can tell a re-arm from a pass that ran off the previous arm.
+ */
 function harness(startMs = 0) {
   let nowMs = startMs;
-  let pass: (() => void) | null = null;
+  let nextHandle = 1;
+  const arms: { cb: () => void; ms: number; handle: number }[] = [];
+  const cleared: unknown[] = [];
   const scheduler = createScheduler({
     now: () => nowMs,
-    setTimer: (cb) => { pass = cb; return 1; },
-    clearTimer: () => { pass = null; },
+    setTimer: (cb, ms) => {
+      const handle = nextHandle++;
+      arms.push({ cb, ms, handle });
+      return handle;
+    },
+    clearTimer: (handle) => { cleared.push(handle); },
     lookahead: 100,
     interval: 25,
   });
+  const latest = () => arms[arms.length - 1];
   return {
     scheduler,
     advanceTo: (t: number) => { nowMs = t; },
-    tick: () => pass?.(),
-    isStopped: () => pass === null,
+    /** Run the most recently armed pass, as its timer would. */
+    tick: () => { latest()?.cb(); },
+    armCount: () => arms.length,
+    armIntervals: () => arms.map((a) => a.ms),
+    isStopped: () => cleared.includes(latest()?.handle),
   };
 }
 
@@ -82,6 +95,15 @@ describe('createScheduler', () => {
     expect(order).toEqual([10, 30, 50]);
   });
 
+  it('leaves events beyond the horizon queued', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.schedule(10, vi.fn());
+    h.scheduler.schedule(500, vi.fn());
+    h.tick();
+    expect(h.scheduler.pending()).toBe(1);
+  });
+
   it('cancels pending events by key without touching others', () => {
     const h = harness();
     const kept = vi.fn();
@@ -95,11 +117,79 @@ describe('createScheduler', () => {
     expect(dropped).not.toHaveBeenCalled();
   });
 
+  it('arms the timer once on start(), at the configured interval', () => {
+    const h = harness();
+    h.scheduler.start();
+    expect(h.armIntervals()).toEqual([25]);
+  });
+
+  it('ignores a second start()', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.start();
+    expect(h.armCount()).toBe(1);
+  });
+
+  it('re-arms itself after every pass, at the configured interval', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.tick();
+    h.tick();
+    expect(h.armIntervals()).toEqual([25, 25, 25]);
+  });
+
+  it('re-arms even when the pass fired nothing', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.tick();
+    expect(h.armCount()).toBe(2);
+  });
+
   it('stops the timer on stop()', () => {
     const h = harness();
     h.scheduler.start();
     h.scheduler.stop();
     expect(h.isStopped()).toBe(true);
+  });
+
+  it('does not re-arm when a pass already in flight runs after stop()', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.stop();
+    h.tick();
+    expect(h.armCount()).toBe(1);
+  });
+
+  it('arms again on a start() after a stop()', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.stop();
+    h.scheduler.start();
+    expect(h.armCount()).toBe(2);
+  });
+
+  it('counts queued events as pending', () => {
+    const h = harness();
+    h.scheduler.start();
+    expect(h.scheduler.pending()).toBe(0);
+    h.scheduler.schedule(500, vi.fn());
+    h.scheduler.schedule(600, vi.fn());
+    expect(h.scheduler.pending()).toBe(2);
+  });
+
+  it('drops fired events from the pending count', () => {
+    const h = harness();
+    h.scheduler.start();
+    h.scheduler.schedule(10, vi.fn());
+    h.tick();
+    expect(h.scheduler.pending()).toBe(0);
+  });
+
+  it('drops cancelled events from the pending count', () => {
+    const h = harness();
+    h.scheduler.schedule(500, vi.fn(), 'k');
+    h.scheduler.cancelKey('k');
+    expect(h.scheduler.pending()).toBe(0);
   });
 
   it('keeps running when one callback throws', () => {
@@ -111,5 +201,14 @@ describe('createScheduler', () => {
     h.scheduler.schedule(20, after);
     h.tick();
     expect(after).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-arms even when a callback throws', () => {
+    const h = harness();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    h.scheduler.start();
+    h.scheduler.schedule(10, () => { throw new Error('boom'); });
+    h.tick();
+    expect(h.armCount()).toBe(2);
   });
 });
