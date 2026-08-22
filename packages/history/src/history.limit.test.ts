@@ -91,7 +91,7 @@ describe('onEvict', () => {
     expect(labels).toEqual(['three', 'two']);
   });
 
-  it('fires on the coalesce path when the merge clears the redo stack', () => {
+  it('fires when an edit after an undo branches instead of coalescing', () => {
     const cell: Cell = { x: 0 };
     let t = 1000;
     const onEvict = vi.fn();
@@ -100,8 +100,10 @@ describe('onEvict', () => {
     history.applyOps([setX(cell, 1, 2)], 'other'); // no key — discrete
     history.undo();                                // redo: ['other']
     t += 100;
-    history.applyOps([setX(cell, 1, 3, 'x')], 'drag'); // coalesces into 'drag'
-    expect(history.entries().undo.map((e) => e.label)).toEqual(['drag']);
+    // Matching coalesceKey and inside the window, but the undo cleared the
+    // coalesce anchor — so this branches off 'drag' rather than rewriting it.
+    history.applyOps([setX(cell, 1, 3, 'x')], 'drag');
+    expect(history.entries().undo.map((e) => e.label)).toEqual(['drag', 'drag']);
     expect(onEvict).toHaveBeenCalledTimes(1);
     expect(onEvict.mock.calls[0][0].label).toBe('other');
   });
