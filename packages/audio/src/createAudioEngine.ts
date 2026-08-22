@@ -60,8 +60,11 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const now = (): number => ctx.currentTime * 1000;
   const scheduler = createScheduler({
     now,
-    setTimer: opts.setTimer ?? ((cb, ms) => setInterval(cb, ms)),
-    clearTimer: opts.clearTimer ?? ((h) => clearInterval(h as ReturnType<typeof setInterval>)),
+    // One-shot, not repeating: the scheduler re-arms at the end of every pass,
+    // so an interval would leave the previous one running and double the live
+    // timer count per tick.
+    setTimer: opts.setTimer ?? ((cb, ms) => setTimeout(cb, ms)),
+    clearTimer: opts.clearTimer ?? ((h) => clearTimeout(h as ReturnType<typeof setTimeout>)),
     lookahead: opts.lookahead,
     interval: opts.tickInterval,
   });
