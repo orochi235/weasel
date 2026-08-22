@@ -38,16 +38,21 @@ export interface TimelineTrack {
   kind: 'timeline';
   label?: string;
   at: number;
-  timeline: TimelineOptions;
+  timeline: NestedTimeline;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Track = SampledTrack<any> | EventTrack | TimelineTrack;
 
-export interface TimelineOptions {
+/** What a child timeline may declare. The parent owns playback, so `loop`,
+ *  `autoplay`, `onDone` and `cancelKey` have no meaning below the root. */
+export interface NestedTimeline {
   tracks: Track[];
   /** Defaults to the largest end time across `tracks`. */
   duration?: number;
+}
+
+export interface TimelineOptions extends NestedTimeline {
   /** `true` loops forever, `n` loops n additional times. Default false. */
   loop?: boolean | number;
   /** Default true. When false the timeline registers but holds at t=0 until resumed. */

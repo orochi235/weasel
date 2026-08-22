@@ -44,6 +44,7 @@ export { sampleTrack } from './timeline';
 export type {
   EventTrack,
   Keyframe,
+  NestedTimeline,
   SampledTrack,
   TimelineHandle,
   TimelineOptions,

@@ -87,4 +87,14 @@ describe('nested timelines', () => {
     tl.seek(300);
     expect(fired).toEqual([]);
   });
+
+  it('rejects parent-only options on a nested child', () => {
+    const child: TimelineTrack = {
+      kind: 'timeline',
+      at: 0,
+      // @ts-expect-error a child is a NestedTimeline: tracks and duration only.
+      timeline: { tracks: [], loop: true },
+    };
+    expect(child.at).toBe(0);
+  });
 });

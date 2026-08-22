@@ -3,6 +3,7 @@ export { sampleTrack } from './sampleTrack';
 export type {
   EventTrack,
   Keyframe,
+  NestedTimeline,
   SampledTrack,
   TimelineHandle,
   TimelineOptions,
