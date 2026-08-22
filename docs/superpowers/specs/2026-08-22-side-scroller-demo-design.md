@@ -34,11 +34,9 @@ Everything is drawn by custom `RenderLayer`s with the scene graph suppressed
 (`scene: { drawOne: () => [] }`), the shape `ParallaxDemo` and `RigDemo` already
 use. Entity state lives in refs; layers read `ref.current` inside `draw`.
 
-The rejected alternative is worth one sentence because it looks attractive:
-putting rig joints in a `useScene` tree and writing `setPose` ops per frame would
+Putting rig joints in a `useScene` tree and writing `setPose` ops per frame would
 exercise the container hierarchy and force the missing rig↔scene binding dep into
 the open, but ops at 60 Hz fight history coalescing and React reconciliation.
-Record that as a finding rather than spending the demo on it.
 
 ### Frame loop
 
