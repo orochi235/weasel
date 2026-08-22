@@ -20,8 +20,13 @@ export function pointInPolygon(coords: ArrayLike<number>, px: number, py: number
   return inside;
 }
 
-/** True if segment (ax,ay)-(bx,by) properly crosses (cx,cy)-(dx,dy). Flat
- *  rewrite of polygonHitTestRect.ts segmentsCross. */
+/**
+ * True if segments (ax,ay)-(bx,by) and (cx,cy)-(dx,dy) intersect at a single
+ * point. An endpoint landing on the other segment counts (a T-junction and a
+ * shared endpoint both answer true) — hit-testing wants a grazing edge to
+ * register. Collinear overlap answers false: there is no single crossing
+ * point, so the sign test both segments rely on is zero on all four sides.
+ */
 export function segmentsCross(
   ax: number, ay: number, bx: number, by: number,
   cx: number, cy: number, dx: number, dy: number,

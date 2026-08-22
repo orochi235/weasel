@@ -42,8 +42,11 @@ export function sign(n: number): -1 | 0 | 1 {
  * never an f64-tight literal.
  */
 export function approxEq(a: number, b: number, eps: number = EPS): boolean {
+  if (a === b) return true;   // also the only way two infinities compare equal
   const diff = Math.abs(a - b);
-  if (diff === 0) return true;
+  // Infinity/Infinity is 1, so an unguarded relative test calls every finite
+  // number equal to an infinity.
+  if (!Number.isFinite(diff)) return false;
   const scale = Math.max(1, Math.abs(a), Math.abs(b));
   return diff <= eps * scale;
 }

@@ -401,3 +401,26 @@ describe('parseRoute / formatRoute round-trip', () => {
     expect(formatRoute(parseRoute(route))).toBe(route);
   });
 });
+
+describe('formatRoute idempotence', () => {
+  const CANONICAL = [
+    '[initial] click => empty +shift',
+    '[engaged] wheel',
+    '[initial] wheel(up) +mod',
+    '[initial] keyDown(Delete)',
+    '[initial] keyDown',
+    '[*:*] drop',
+    '[*:*] paste',
+    '[initial] multiTouchTap',
+    '[initial] multiTouchTap(3)',
+    '[initial] drag => kind:app:note',
+    '[initial,engaged] contextMenu',
+  ];
+  it.each(CANONICAL)('round-trips %s unchanged', (route) => {
+    expect(formatRoute(parseRoute(route))).toBe(route);
+  });
+  it('elides an explicit wildcard arg', () => {
+    expect(formatRoute(parseRoute('[*:*] drop(*)'))).toBe('[*:*] drop');
+    expect(formatRoute(parseRoute('[engaged] wheel(*)'))).toBe('[engaged] wheel');
+  });
+});

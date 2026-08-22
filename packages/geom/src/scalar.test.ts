@@ -37,3 +37,16 @@ describe('epsilon policy', () => {
     expect(EPS).toBeLessThan(1e-4);
   });
 });
+
+describe('approxEq edge cases', () => {
+  it('holds for identical infinities', () => {
+    expect(approxEq(Infinity, Infinity)).toBe(true);
+    expect(approxEq(-Infinity, -Infinity)).toBe(true);
+  });
+  it('rejects opposite infinities and NaN', () => {
+    expect(approxEq(Infinity, -Infinity)).toBe(false);
+    expect(approxEq(NaN, NaN)).toBe(false);
+    expect(approxEq(NaN, 0)).toBe(false);
+    expect(approxEq(Infinity, 1e300)).toBe(false);
+  });
+});

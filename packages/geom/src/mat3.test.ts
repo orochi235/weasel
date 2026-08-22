@@ -44,3 +44,19 @@ describe('mat3', () => {
     closePt(applyToPoint(rotateAboutPoint(4, 4, 1.1), 4, 4), [4, 4]);
   });
 });
+
+describe('invert singularity test', () => {
+  it('inverts a uniformly small scale', () => {
+    const m = invert([1e-7, 0, 0, 1e-7, 0, 0]);
+    expect(m).not.toBeNull();
+    expect(m![0]).toBeCloseTo(1e7, -1);
+  });
+  it('rejects a genuinely singular matrix at any magnitude', () => {
+    expect(invert([1, 2, 2, 4, 0, 0])).toBeNull();
+    expect(invert([1e6, 2e6, 2e6, 4e6, 0, 0])).toBeNull();
+    expect(invert([0, 0, 0, 0, 5, 5])).toBeNull();
+  });
+  it('rejects a non-finite matrix rather than returning NaNs', () => {
+    expect(invert([NaN, 0, 0, 1, 0, 0])).toBeNull();
+  });
+});
