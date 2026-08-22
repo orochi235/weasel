@@ -1,5 +1,109 @@
 # Changelog
 
+## 1.1.0
+
+### Minor Changes
+
+- 27dd91b: <!-- bump-approved: minor: Mike — new public API across two arcs (timeline + rig, and the @weasel-js/audio package); called explicitly in conversation on 2026-08-22: "the next version we push will be 1.1.0" -->
+
+  Add a keyframe timeline primitive and a hierarchical rig.
+
+  This adds public API surface.
+
+  `animator.timeline(opts)` registers like any other animation, so its playhead
+  responds to `pause`, `setTimeScale` and `cancelKey`. Sampled tracks are a pure
+  function of the playhead and reuse the tween interpolation contract; event
+  tracks fire only on forward playback and stay silent under `seek`; timeline
+  tracks nest, evaluated at the parent's playhead minus their offset.
+
+  The rig ships as `blendPoses` and `resolveSkeleton` over a `Skeleton` of joints
+  carrying their own TRS — not the scene's consumer-defined `TPose`, which may be
+  a bare AABB with no rotation term a joint chain can compose through. A pose is
+  local deltas from bind, so an absent joint or field means "no change".
+  Animating a rig is a `SampledTrack<Pose>` whose `interpolate` is `blendPoses` —
+  no rig-specific timeline machinery.
+
+### Patch Changes
+
+- 0763205: Export the `mat3` namespace from the package entry
+
+  `resolveSkeleton` returns `Map<string, Mat3>` and `Mat3` was exported as a
+  type, but the operations that read one were not. Placing a bone tip meant
+  indexing the `Float32Array` by hand — `[m[0] * length + m[6], m[1] * length +
+m[7]]` — which is the matrix layout leaking into consumer code.
+
+  `mat3` is now importable from `@weasel-js/core`, so that line is
+  `mat3.apply(m, length, 0)`. Alongside `apply` the namespace carries
+  `identity`, `multiply`, `translate`, `scale`, `invert` and `screenToClip`.
+
+  This is the renderer's 9-element column-major form, matching what
+  `uniformMatrix3fv` uploads. `@weasel-js/geom` exports its own `Mat3` — a
+  6-element affine — with the same logical element order but a different array
+  shape; the two are not interchangeable.
+
+- b65aadd: Undo restores z-order, and reorder ops survive a reload
+
+  Two defects in the op layer, found reviewing `core/ops` and `core/adapters`.
+
+  `createDeleteOp` captures the node's z-index and forwards it through
+  `invert()` so undo puts the node back where it was — but `SceneAdapter`
+  declared `insertNode(node)` with no index parameter, so the only
+  implementation that honored it was the one that had gone off-contract to
+  accept it. `arrayAdapter` appended unconditionally and `animateLifecycle`
+  dropped the argument while wrapping. Deleting a node and undoing therefore
+  moved it to the top of the paint order, and undoing a multi-delete reversed
+  the stack. The parameter is now part of the interface and both
+  implementations honor it.
+
+  `createReorderOp` — bring forward, send backward, bring to front, send to
+  back — built an op with no `name` and registered no factory, though `Op`'s
+  contract says kit-emitted ops always carry one. `History.serialize()` drops
+  any entry holding a nameless op, so all four silently vanished from the
+  persisted undo stack on reload while `moveToIndex`, which does register,
+  survived. They now serialize, with the per-parent before-order carried in
+  the op's args so a rebuilt op can still invert.
+
+- 0c13967: An empty container no longer draws selection chrome at its own stored pose
+
+  `composeSelectionPose` and the overlay's container-aware bounds resolver both
+  document that a container with no leaves resolves to `null`. Neither could
+  return it: the leaf walk pushed any childless node, so an empty container
+  pushed _itself_, and the `leaves.length === 0` guard was unreachable. The
+  container's own stored pose then became the overlay bounds — the one value
+  this resolver exists to avoid, and at its most stale when nothing is left
+  inside to have moved it.
+
+  A childless node now counts as a leaf only when it is not itself a container.
+
+- 83ba8b0: A finished timeline can be scrubbed back instead of going inert
+
+  A non-looping timeline that reached `duration` returned `finished` from its
+  tick and left the animator's table, but its handle kept answering `time()` and
+  `duration()` as though it were live. `seek()` moved a playhead nothing ticked —
+  no error, no state change. The only recovery was to build a new timeline.
+
+  `seek`, and an `edit` that extends the duration past the playhead, now
+  re-register the timeline and it plays on. It still finishes: an entry that
+  never retires would hold a slot, and the frame loop, open for every timeline
+  ever created.
+
+  - `onDone` fires once per arrival at the end, and again for a replay. A handler
+    that seeks back from inside `onDone` keeps the entry live rather than
+    stranding the replay it just started.
+  - Reviving re-registers under the same `cancelKey` without cancelling whoever
+    claimed that key meanwhile, and the revived timeline is still cancellable by
+    it.
+  - `cancel()` is final, including on a timeline that had already finished. No
+    seek or edit revives a cancelled one.
+  - A `pause()` or `setTimeScale()` taken while the timeline was off the table
+    applies when it comes back, so scrubbing a paused transport does not silently
+    start playback.
+  - @weasel-js/font@1.1.0
+  - @weasel-js/geom@1.1.0
+  - @weasel-js/gestures@1.1.0
+  - @weasel-js/history@1.1.0
+  - @weasel-js/modes@1.1.0
+
 ## 1.0.4
 
 ### Patch Changes

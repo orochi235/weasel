@@ -1,5 +1,117 @@
 # @weasel-js/labkit
 
+## 1.1.0
+
+### Patch Changes
+
+- e2a2013: A drawing instrument can show a readout, and its layers can follow the camera
+
+  Three gaps that together made a canvas instrument hard to build.
+
+  **`render` is an overlay, not an alternative.** `Workspace` rendered the canvas
+  _or_ the instrument's DOM, so anything that drew lost the ability to put numbers
+  beside its drawing — for a measuring instrument, most of the point. The
+  workaround was painting the readout onto a layer as text, giving up selection,
+  theming, wrapping and layout. `instrument.render(ctx)` is now passed to
+  `CanvasStack` as children and lands in `.lk-canvas-stack__overlay`. An
+  instrument returning `null` behaves exactly as before.
+
+  **Layers now draw in world coordinates.** The instrument-level adapter passed
+  `zoom` but dropped `pan`, so panning was inert for every instrument-declared
+  layer: the gesture moved the view, the layer redrew, and nothing moved. A layer
+  could not implement panning itself either, because the value never arrived.
+  `Workspace` now applies the camera to the context before calling `draw`, so a
+  layer places world geometry directly. `zoom` is still in the args for what must
+  not scale — `ctx.lineWidth = 1 / zoom`. **A layer that already mapped
+  coordinates by hand will now double-apply and must drop its own mapping.** The
+  lower-level `CanvasLayerDescriptor.render(ctx, view)` is unchanged and still
+  gets an untransformed context, which is what screen-space chrome wants.
+
+  **Typed instruments no longer need a cast.** `defineInstrument<TS, TC>` returns
+  `Instrument<TS, TC>`, which parameter contravariance kept out of
+  `LabProps.instruments`, so every consumer wrote `as unknown as Instrument` at
+  the point the types were supposed to pay off. The prop is now `InstrumentList`
+  (`readonly Instrument<any, any>[]`), newly exported; the `any` is contained to
+  that alias.
+
+- 3cfb1b4: `<Lab>` sizes itself correctly on a page that has not been reset for it
+
+  `.lk-lab` is `height: 100%`, which resolves against its containing block, so
+  the component only filled the window when the host had already given every
+  ancestor a height and zeroed the body margin. Every example in this repo
+  hand-writes `html, body, #root { margin: 0; height: 100% }` to make that true,
+  and a consumer who supplies the height but not the margin reset got a page
+  taller than the viewport — one wheel notch of scroll, which reads as a stuck
+  canvas rather than as overflow. Supplying neither collapsed the lab to zero
+  height and rendered a blank page.
+
+  `styles.css` now carries the reset the component's own sizing assumes, scoped
+  with `:has` so a page that mounts no lab is untouched. It reaches the lab's
+  own parent and stops there, so a lab embedded in a sized box still fills that
+  box and cannot resize its host's layout.
+
+- 11efb43: Rename a lab's tile from workspace to trial, and the area they sit in to workspace.
+
+  `Workspace` named two different things: one tile, and the grid the tiles were
+  laid out in. A tile is now a **trial** — `<Trial>`, `TrialRecord`,
+  `TrialChrome`, `TrialIdProvider` / `useTrialId`, `addTrial` /
+  `updateTrialState` / … — and the grid takes the freed word, so `WorkspaceGrid`
+  is now `<Workspace>`. `useExperimentState` is `useTrialState`: it was always
+  per-tile, which is the conflation this removes. `Experiment` keeps its meaning
+  as one `storageKey`'s worth of state — what the lab document holds — so
+  `<SingletonExperimentProvider>` is unchanged.
+
+  This is a breaking rename of most of the lab runtime's public surface. Every
+  `Workspace*` symbol that meant a tile is gone; there are no aliases.
+
+  CSS classes move with it: `.lk-workspace` (the tile chrome) is `.lk-trial`,
+  `.lk-workspace-tile` is `.lk-trial-tile`, and `.lk-workspace-grid` is
+  `.lk-workspace`.
+
+  A saved lab opens unchanged. The document format goes to version 2 and its
+  migration renames `workspaces` to `trials`; a version-1 document, and a
+  pre-document lab still on the four legacy keys, both fold forward on load.
+
+- 77f3d9b: Zoom past 2x reads as a multiplier
+
+  The workspace toolbar and status bar showed zoom as a percentage at every
+  scale, so a lab zoomed deep into its geometry read `1600%`. Above 2x they now
+  show `16x` instead; at 2x and below the percentage is unchanged.
+
+  Both surfaces went through the same `Math.round(zoom * 100)` expression
+  written twice. They now share `formatZoom`, alongside the other display
+  helpers in `ui/format`.
+
+- 9a7d4ba: Zoom readout stays legible past 100x
+
+  `formatZoom` switched from a percentage to a multiplier above 2x but kept one
+  decimal place at every magnitude, so a trial zoomed to 1009.74 read
+  `1009.7x` — a tenth of a multiple is below anything a reader can act on, and
+  the digits crowd out the toolbar and status bar. Past 100x the decimal is
+  dropped and thousands are grouped, so the same view reads `1,010x`.
+
+  Note that the toolbar's `+` / `−` buttons still bypass the 0.1–32 clamp that
+  `usePanZoom` applies to wheel zoom (`TrialChrome` multiplies the current
+  zoom and calls `setZoom` directly), which is how a trial reaches four
+  digits at all. That inconsistency is unchanged here.
+
+- 23ceef3: Persist a lab as one versioned document rather than four loose keys.
+
+  `lk:<storageKey>:doc` now holds `{version, trials, saves, layout, mode}` and
+  hydration runs a migration chain over it. A lab saved under the previous four
+  keys is folded into the document on first load; the old keys are removed only
+  after the new document is read back and confirmed, so a storage write that
+  fails silently leaves the original data intact. A document written by a newer
+  labkit than the one reading it is left alone and that store stops persisting,
+  rather than being overwritten. A document that fails to parse or migrate is set
+  aside under `lk:<storageKey>:quarantine`.
+
+  `serializeTrials` and `deserializeTrials` now take and return records
+  rather than a JSON string. Both are internal to the state runtime.
+
+- Updated dependencies [2d30a32]
+  - @weasel-js/theme@1.1.0
+
 ## 1.0.4
 
 ### Patch Changes
