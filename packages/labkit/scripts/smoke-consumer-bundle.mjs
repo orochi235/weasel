@@ -137,7 +137,7 @@ if (leaks.length) {
 const jsEntries = Object.entries(pkg.exports)
   .map(([subpath, target]) => {
     const file = typeof target === 'string' ? target : target.import;
-    return file && file.endsWith('.js') ? subpath : null;
+    return file?.endsWith('.js') ? subpath : null;
   })
   .filter(Boolean);
 
