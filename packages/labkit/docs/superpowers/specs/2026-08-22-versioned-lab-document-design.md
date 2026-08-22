@@ -52,18 +52,23 @@ chains to keep in step.
 ## Migrations
 
 ```ts
-type Migration = (doc: unknown) => unknown;
+type Migration = (doc: Record<string, unknown>) => Record<string, unknown>;
 
-interface CreateLabStoreOptions {
-  // ...existing
-  migrations?: Migration[];   // index i migrates version i → i+1
-}
+const MIGRATIONS: Migration[] = [/* index i migrates version i → i+1 */];
 ```
+
+The chain is labkit's, not a consumer option. The version numbers belong to
+labkit's document format — the vocabulary refresh already claims 1 → 2 — so
+a consumer array indexed by the same integers collides on the next bump. A
+consumer migrating its own *instrument state* has `Instrument.deserialize`
+for it, which runs per record inside the document.
 
 Hydrate reads `version`, runs every migration from it to the current
 version, and writes the result back. A document from the future — version
 higher than the code knows — is left alone and the store starts empty,
-rather than being parsed under a shape it may not have.
+rather than being parsed under a shape it may not have. Persistence is then
+disabled for that store: starting empty and flushing would clobber the
+document the refusal exists to protect.
 
 Two migrations ship with this work:
 
