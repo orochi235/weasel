@@ -32,6 +32,7 @@ const meta: Meta<typeof Slider> = {
     },
     allowShiftAll: { control: 'boolean' },
     ariaLabel: { control: 'text' },
+    stops: { table: { disable: true } },
     thumbs: { table: { disable: true } },
     onInput: { table: { disable: true } },
     onChange: { table: { disable: true } },
@@ -76,6 +77,13 @@ export const ThreeStops: Story = {
       ]}
     />
   ),
+};
+
+/** Stops are attractors: a drag within a few pixels of one lands on it, and
+ *  the arrow keys move stop to stop. `step` still quantizes in between. */
+export const SnapsToStops: Story = {
+  args: { step: 0.01, stops: [0, 0.25, 0.5, 0.75, 1], readoutPlacement: 'below-thumb' },
+  render: (args) => <Wrapper {...args} initial={[{ value: 0.32 }]} />,
 };
 
 export const HueGradientTrack: Story = {

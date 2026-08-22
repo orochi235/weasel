@@ -630,3 +630,118 @@ describe('Slider readouts', () => {
     expect(container.querySelector('[data-readout="inline"]')!.textContent).toContain('[0.5]');
   });
 });
+
+describe('Slider stops', () => {
+  const renderWithStops = (props: Partial<Parameters<typeof Slider>[0]> = {}) => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const { container } = render(
+      <Slider
+        min={0}
+        max={100}
+        stops={[0, 25, 50, 75, 100]}
+        thumbs={[{ value: 10 }]}
+        onInput={onInput}
+        onChange={onChange}
+        {...props}
+      />,
+    );
+    const thumb = container.querySelector('[role="slider"]') as HTMLElement;
+    stubRect(thumb.parentElement as HTMLElement, { left: 0, width: 200 });
+    return { thumb, onInput, onChange };
+  };
+
+  const lastValue = (fn: ReturnType<typeof vi.fn>) =>
+    fn.mock.calls[fn.mock.calls.length - 1][0][0].value;
+
+  it('lands a drag on a stop it passes near', () => {
+    const { thumb, onInput } = renderWithStops();
+    fireEvent.pointerDown(thumb, { clientX: 20, clientY: 12, button: 0 });
+    // 98px of a 200px track over [0, 100] is 49 — within the snap radius of 50.
+    fireEvent.pointerMove(document, { clientX: 98, clientY: 12 });
+    expect(lastValue(onInput)).toBe(50);
+  });
+
+  it('leaves a drag far from every stop alone', () => {
+    const { thumb, onInput } = renderWithStops();
+    fireEvent.pointerDown(thumb, { clientX: 20, clientY: 12, button: 0 });
+    // 75px is 37.5 — a full 12.5 from either neighbouring stop.
+    fireEvent.pointerMove(document, { clientX: 75, clientY: 12 });
+    expect(lastValue(onInput)).toBeCloseTo(37.5, 5);
+  });
+
+  it('ignores a stop outside the range', () => {
+    const { thumb, onInput } = renderWithStops({ stops: [-40, 48, 140] });
+    fireEvent.pointerDown(thumb, { clientX: 20, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 98, clientY: 12 });
+    expect(lastValue(onInput)).toBe(48);
+
+    fireEvent.pointerMove(document, { clientX: 280, clientY: 12 });
+    expect(lastValue(onInput)).toBe(100);
+  });
+
+  it('snaps a thumb added by clicking the track', () => {
+    const onAddThumb = vi.fn((v: number) => ({ value: v }));
+    const { thumb, onInput } = renderWithStops({ onAddThumb });
+    fireEvent.pointerDown(thumb.parentElement as HTMLElement, { clientX: 98, clientY: 12, button: 0 });
+    expect(onAddThumb).toHaveBeenCalledWith(50);
+    const added = onInput.mock.calls[onInput.mock.calls.length - 1][0];
+    expect(added[added.length - 1].value).toBe(50);
+  });
+
+  it('still quantizes to step between stops', () => {
+    const { thumb, onInput } = renderWithStops({ step: 10 });
+    fireEvent.pointerDown(thumb, { clientX: 20, clientY: 12, button: 0 });
+    // 75px is 37.5, which step 10 quantizes to 40 — not near enough to a stop to move again.
+    fireEvent.pointerMove(document, { clientX: 75, clientY: 12 });
+    expect(lastValue(onInput)).toBe(40);
+  });
+
+  it('keeps a stop inside a thumb bound', () => {
+    const { thumb, onInput } = renderWithStops({ thumbs: [{ value: 10, bounds: [0, 40] }] });
+    fireEvent.pointerDown(thumb, { clientX: 20, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 98, clientY: 12 });
+    expect(lastValue(onInput)).toBe(40);
+  });
+
+  it('steps an arrow key from stop to stop', () => {
+    const { thumb, onInput } = renderWithStops({ thumbs: [{ value: 50 }] });
+    fireEvent.keyDown(thumb, { key: 'ArrowRight' });
+    expect(lastValue(onInput)).toBe(75);
+    fireEvent.keyDown(thumb, { key: 'ArrowLeft' });
+    expect(lastValue(onInput)).toBe(25);
+  });
+
+  it('moves an arrow key off an in-between value onto the neighbouring stop', () => {
+    const { thumb, onInput } = renderWithStops({ thumbs: [{ value: 30 }] });
+    fireEvent.keyDown(thumb, { key: 'ArrowRight' });
+    expect(lastValue(onInput)).toBe(50);
+  });
+
+  it('holds the last stop at the end of the list', () => {
+    const { thumb, onInput } = renderWithStops({ thumbs: [{ value: 100 }] });
+    fireEvent.keyDown(thumb, { key: 'ArrowRight' });
+    expect(lastValue(onInput)).toBe(100);
+  });
+
+  it('jumps a coarse keystroke ten stops', () => {
+    const { thumb, onInput } = renderWithStops({ thumbs: [{ value: 0 }] });
+    fireEvent.keyDown(thumb, { key: 'PageUp' });
+    expect(lastValue(onInput)).toBe(100);
+  });
+
+  it('leaves Home and End on the bounds', () => {
+    const { thumb, onInput } = renderWithStops({ thumbs: [{ value: 50 }] });
+    fireEvent.keyDown(thumb, { key: 'Home' });
+    expect(lastValue(onInput)).toBe(0);
+    fireEvent.keyDown(thumb, { key: 'End' });
+    expect(lastValue(onInput)).toBe(100);
+  });
+
+  it('does not snap when no stops are given', () => {
+    const { thumb, onInput } = renderWithStops({ stops: undefined });
+    fireEvent.pointerDown(thumb, { clientX: 20, clientY: 12, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 98, clientY: 12 });
+    expect(lastValue(onInput)).toBeCloseTo(49, 5);
+  });
+});

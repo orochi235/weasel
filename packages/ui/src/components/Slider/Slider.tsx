@@ -57,6 +57,10 @@ export type TrackCtx = {
  * `onInput` fires continuously through a drag; `onChange` fires once when it
  * ends and is the one to write to history.
  *
+ * `stops` are attractors: a drag that passes within a few pixels of one lands
+ * on it, and the arrow keys move stop to stop. `step` still quantizes the
+ * values between them.
+ *
  * `constraint: 'ordered'` keeps thumbs from crossing each other. Supplying
  * `onAddThumb` makes a click on empty track create a thumb, and supplying
  * `onRemoveThumb` lets a right-click or a drag off the track remove one —
@@ -70,6 +74,7 @@ export type SliderProps<T extends Thumb = Thumb> = {
   min: number;
   max: number;
   step?: number;
+  stops?: number[];
   constraint?: 'free' | 'ordered';
   onAddThumb?: (atValue: number) => T | null;
   onRemoveThumb?: (index: number) => boolean;
@@ -89,6 +94,47 @@ function snap(v: number, step: number | undefined, min: number): number {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
+}
+
+/** How close a drag has to come to a stop, in track pixels, to land on it. */
+const STOP_SNAP_PX = 8;
+
+/** The stops that are actually reachable: inside the range, deduped, ascending. */
+function usableStops(stops: number[] | undefined, min: number, max: number): number[] {
+  if (!stops || stops.length === 0) return [];
+  return [...new Set(stops.filter(v => v >= min && v <= max))].sort((a, b) => a - b);
+}
+
+/** Pull `v` onto the nearest stop within `tolerance`, or leave it where it is. */
+function attract(v: number, stops: number[], tolerance: number): number {
+  let best = v;
+  let bestGap = tolerance;
+  for (const stop of stops) {
+    const gap = Math.abs(stop - v);
+    if (gap <= bestGap) {
+      best = stop;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
+/** The stop `count` places past `v` in `direction`, saturating at either end. */
+function stepStops(stops: number[], v: number, direction: 1 | -1, count: number): number {
+  if (direction > 0) {
+    const first = stops.findIndex(stop => stop > v);
+    if (first === -1) return stops[stops.length - 1];
+    return stops[Math.min(stops.length - 1, first + count - 1)];
+  }
+  let first = -1;
+  for (let i = stops.length - 1; i >= 0; i--) {
+    if (stops[i] < v) {
+      first = i;
+      break;
+    }
+  }
+  if (first === -1) return stops[0];
+  return stops[Math.max(0, first - (count - 1))];
 }
 
 function defaultStep(step: number | undefined, min: number, max: number): number {
@@ -132,6 +178,8 @@ function defaultReadout(thumb: Thumb): string {
 export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactElement {
   const { thumbs, onInput, onChange, min, max, step, constraint, trackHeight, ariaLabel, className } = props;
 
+  const stops = usableStops(props.stops, min, max);
+
   const trackRef = useRef<HTMLDivElement | null>(null);
   // In-flight thumb buffer during a drag; null when not dragging.
   const dragBufferRef = useRef<T[] | null>(null);
@@ -166,6 +214,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         let v = fractionToValue(f);
         v = snap(v, step, min);
         v = clamp(v, min, max);
+        if (stops.length > 0) v = attract(v, stops, (STOP_SNAP_PX / rect.width) * (max - min));
 
         const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
         v = clamp(v, bLo, bHi);
@@ -224,7 +273,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
       document.addEventListener('pointercancel', onCancel);
       endDragRef.current = onCancel;
     },
-    [thumbs, onInput, onChange, fractionToValue, min, max, step, constraint, props],
+    [thumbs, onInput, onChange, fractionToValue, min, max, step, stops, constraint, props],
   );
 
   const beginShiftAllDrag = useCallback(
@@ -324,6 +373,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     let v = fractionToValue(f);
     v = snap(v, step, min);
     v = clamp(v, min, max);
+    if (stops.length > 0) v = attract(v, stops, (STOP_SNAP_PX / rect.width) * (max - min));
     const created = props.onAddThumb(v);
     if (!created) return;
     const next = [...thumbs.map(t => ({ ...t })), created] as T[];
@@ -334,22 +384,28 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   const onThumbKeyDown = (index: number) => (e: ReactKeyboardEvent) => {
     const stepSize = defaultStep(step, min, max);
     let delta = 0;
+    // With stops, a keystroke moves by whole stops rather than by value.
+    let stopDelta = 0;
     let snapTo: 'home' | 'end' | null = null;
 
     switch (e.key) {
       case 'ArrowRight':
       case 'ArrowUp':
         delta = e.shiftKey ? stepSize * 10 : stepSize;
+        stopDelta = e.shiftKey ? 10 : 1;
         break;
       case 'ArrowLeft':
       case 'ArrowDown':
         delta = e.shiftKey ? -stepSize * 10 : -stepSize;
+        stopDelta = e.shiftKey ? -10 : -1;
         break;
       case 'PageUp':
         delta = stepSize * 10;
+        stopDelta = 10;
         break;
       case 'PageDown':
         delta = -stepSize * 10;
+        stopDelta = -10;
         break;
       case 'Home':
         snapTo = 'home';
@@ -369,8 +425,11 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     let v: number;
     if (snapTo === 'home') v = lo;
     else if (snapTo === 'end') v = hi;
-    else v = next[index].value + delta;
-    v = snap(v, step, min);
+    else if (stops.length > 0) {
+      v = stepStops(stops, next[index].value, stopDelta > 0 ? 1 : -1, Math.abs(stopDelta));
+    } else {
+      v = snap(next[index].value + delta, step, min);
+    }
     v = clamp(v, lo, hi);
     if (constraint === 'ordered') v = clampOrdered(v, next, index, lo, hi, step);
     next[index] = { ...next[index], value: v };
