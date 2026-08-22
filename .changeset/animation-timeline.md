@@ -1,6 +1,8 @@
 ---
-'@weasel-js/core': patch
+'@weasel-js/core': minor
 ---
+
+<!-- bump-approved: minor: Mike — new public API across two arcs (timeline + rig, and the @weasel-js/audio package); called explicitly in conversation on 2026-08-22: "the next version we push will be 1.1.0" -->
 
 Add a keyframe timeline primitive and a hierarchical rig.
 
