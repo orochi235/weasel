@@ -112,4 +112,27 @@ describe('createTimeline', () => {
     h.advance(95);
     expect(tl.time()).toBe(15);
   });
+
+  it('wraps the playhead instead of finishing when looping', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], loop: true });
+    expect(h.advance(150)).toBe(false);
+    expect(tl.time()).toBe(50);
+  });
+
+  it('stops after n additional loops', () => {
+    const h = harness();
+    const onDone = vi.fn();
+    createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], loop: 1, onDone });
+    expect(h.advance(150)).toBe(false);   // first wrap consumes the one loop
+    expect(h.advance(260)).toBe(true);    // second pass ends
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('wraps repeatedly across a long jump', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], loop: true });
+    h.advance(1020);
+    expect(tl.time()).toBe(20);
+  });
 });

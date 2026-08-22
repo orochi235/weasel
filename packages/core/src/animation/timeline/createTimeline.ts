@@ -45,6 +45,9 @@ export function createTimeline(
   let playhead = 0;
   let done = false;
 
+  const loopOpt = opts.loop ?? false;
+  let loopsLeft = loopOpt === true ? Infinity : loopOpt === false ? 0 : loopOpt;
+
   // Per-sampled-track interpolator-factory caches, dropped whenever `edit`
   // bumps the version. Without this an edited keyframe keeps interpolating
   // toward its old value with no visible error.
@@ -64,12 +67,24 @@ export function createTimeline(
     }
   };
 
+  const onWrap = (): void => {};
+
   const base = register({
     id,
     cancelKey: opts.cancelKey,
     tick(virtualNow) {
       lastVirtual = virtualNow;
       playhead = virtualNow + offset;
+
+      // A single advance can span several loops when frames are long or the
+      // duration is short, so wrap in a loop rather than subtracting once.
+      while (playhead >= duration && duration > 0 && loopsLeft > 0) {
+        loopsLeft -= 1;
+        offset -= duration;
+        playhead -= duration;
+        onWrap();
+      }
+
       if (playhead >= duration) {
         playhead = duration;
         applySampled(opts.tracks, playhead);
