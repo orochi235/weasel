@@ -87,6 +87,9 @@ describe('event tracks', () => {
     h.advance(95);
     fired.length = 0;
     tl.seek(0);
+    // `advance` takes ABSOLUTE virtual time. `seek(0)` rebased offset to -95,
+    // so 190 puts the playhead at 95 — advancing to 115 would leave it at 20
+    // and only 'a' could ever fire.
     h.advance(190);
     expect(fired).toEqual(['a', 'b', 'c']);
   });

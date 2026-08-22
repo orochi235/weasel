@@ -87,16 +87,21 @@ export interface TimelineTrack {
   kind: 'timeline';
   label?: string;
   at: number;
-  timeline: TimelineOptions;
+  timeline: NestedTimeline;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Track = SampledTrack<any> | EventTrack | TimelineTrack;
 
-export interface TimelineOptions {
+/** What a child timeline may declare. The parent owns playback, so `loop`,
+ *  `autoplay`, `onDone` and `cancelKey` have no meaning below the root. */
+export interface NestedTimeline {
   tracks: Track[];
   /** Defaults to the largest end time across `tracks`. */
   duration?: number;
+}
+
+export interface TimelineOptions extends NestedTimeline {
   /** `true` loops forever, `n` loops n additional times. Default false. */
   loop?: boolean | number;
   /** Default true. When false the timeline registers but holds at t=0 until resumed. */
@@ -106,7 +111,7 @@ export interface TimelineOptions {
 }
 
 export interface TimelineHandle extends AnimationHandle {
-  /** Move the playhead. Event cursors advance without firing, recursively. */
+  /** Move the playhead. Never fires event tracks, at any depth. */
   seek(t: number): void;
   /** Current playhead in ms. */
   time(): number;
@@ -258,7 +263,7 @@ function floorKeyIndex<T>(keys: SampledTrack<T>['keys'], t: number): number {
  *
  * `segmentCache` memoizes `interpolator` factories by the index of the segment's
  * later key. Callers that mutate keys must drop the cache; `createTimeline`
- * keys it on the timeline version.
+ * drops it wholesale on `edit`.
  */
 export function sampleTrack<T>(
   track: SampledTrack<T>,
@@ -394,6 +399,15 @@ describe('createTimeline', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
+  it('fires onDone once across repeated ticks past duration', () => {
+    const h = harness();
+    const onDone = vi.fn();
+    createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], onDone });
+    h.advance(100);
+    h.advance(140);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
   it('clamps the final sample to duration rather than overshooting', () => {
     const h = harness();
     const seen: number[] = [];
@@ -466,9 +480,7 @@ export function createTimeline(
   let playhead = 0;
   let done = false;
 
-  // Per-sampled-track interpolator-factory caches, dropped whenever `edit`
-  // bumps the version. Without this an edited keyframe keeps interpolating
-  // toward its old value with no visible error.
+  // Per-sampled-track interpolator-factory caches, dropped wholesale by `edit`.
   let caches = new WeakMap<object, Map<number, (u: number) => unknown>>();
   const cacheFor = (track: object): Map<number, (u: number) => unknown> => {
     let c = caches.get(track);
@@ -480,7 +492,7 @@ export function createTimeline(
     for (const track of tracks) {
       if (track.kind !== 'sampled') continue;
       const st = track as SampledTrack<unknown>;
-      const v = sampleTrack(st, t, cacheFor(st) as Map<number, (u: number) => unknown>);
+      const v = sampleTrack(st, t, cacheFor(st));
       if (v !== undefined) st.onTick(v);
     }
   };
@@ -491,14 +503,12 @@ export function createTimeline(
     tick(virtualNow) {
       lastVirtual = virtualNow;
       playhead = virtualNow + offset;
-      if (playhead >= duration) {
-        playhead = duration;
-        applySampled(opts.tracks, playhead);
-        if (!done) { done = true; opts.onDone?.(); }
-        return true;
-      }
+
+      const finished = playhead >= duration;
+      playhead = Math.min(playhead, duration);
       applySampled(opts.tracks, playhead);
-      return false;
+      if (finished && !done) { done = true; opts.onDone?.(); }
+      return finished;
     },
   });
 
@@ -524,7 +534,7 @@ export function createTimeline(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/createTimeline.test.ts`
-Expected: PASS, 7 tests.
+Expected: PASS, 8 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -578,7 +588,7 @@ Append inside the existing `describe('createTimeline', ...)`:
 - [ ] **Step 2: Run to verify all three pass already**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/createTimeline.test.ts`
-Expected: PASS, 10 tests. If "keeps the seeked position" fails, `offset` is being recomputed against the wrong baseline — `seek` must use the last `virtualNow` the tick saw, not the playhead.
+Expected: PASS, 11 tests. If "keeps the seeked position" fails, `offset` is being recomputed against the wrong baseline — `seek` must use the last `virtualNow` the tick saw, not the playhead.
 
 - [ ] **Step 3: Commit**
 
@@ -620,6 +630,14 @@ git commit -m "cover seek against the offset-derived playhead"
     h.advance(1020);
     expect(tl.time()).toBe(20);
   });
+
+  it('terminates a zero-duration looping timeline instead of spinning', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [], loop: true });
+    expect(h.advance(0)).toBe(true);
+    expect(h.advance(100)).toBe(true);
+    expect(tl.time()).toBe(0);
+  });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -643,25 +661,38 @@ Replace the `tick` body's overflow branch with:
       lastVirtual = virtualNow;
       playhead = virtualNow + offset;
 
-      // A single advance can span several loops when frames are long or the
-      // duration is short, so wrap in a loop rather than subtracting once.
-      while (playhead >= duration && duration > 0 && loopsLeft > 0) {
-        loopsLeft -= 1;
-        offset -= duration;
-        playhead -= duration;
-        onWrap();
+      // A far seek can skip a billion laps of a short duration, so an endless
+      // loop takes them in one modulo rather than one iteration each.
+      if (duration > 0 && playhead >= duration) {
+        if (loopsLeft === Infinity) {
+          const laps = Math.floor(playhead / duration);
+          offset -= laps * duration;
+          playhead -= laps * duration;
+          onWrap();
+        } else {
+          while (playhead >= duration && loopsLeft > 0) {
+            loopsLeft -= 1;
+            offset -= duration;
+            playhead -= duration;
+            onWrap();
+          }
+        }
       }
 
-      if (playhead >= duration) {
-        playhead = duration;
-        applySampled(opts.tracks, playhead);
-        if (!done) { done = true; opts.onDone?.(); }
-        return true;
-      }
+      const finished = playhead >= duration;
+      playhead = Math.min(playhead, duration);
+
       applySampled(opts.tracks, playhead);
-      return false;
+
+      if (finished && !done) { done = true; opts.onDone?.(); }
+      return finished;
     },
 ```
+
+`duration > 0` is what stops a zero-duration `loop: true` timeline from wedging
+the tab: `loopsLeft` is `Infinity`, so without the guard the modulo is `0 / 0`.
+Keep the per-lap `while` only where the lap count is finite and so bounded. The
+modulo branch collapses every skipped lap into one `onWrap`, which Task 6 pins.
 
 Add the wrap hook above `base` — it does nothing yet and gains a body in Task 6:
 
@@ -672,7 +703,7 @@ Add the wrap hook above `base` — it does nothing yet and gains a body in Task 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/createTimeline.test.ts`
-Expected: PASS, 13 tests.
+Expected: PASS, 15 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -769,7 +800,7 @@ call and before the `return {` statement, add:
 - [ ] **Step 5: Run test to verify it passes**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/createTimeline.test.ts`
-Expected: PASS, 16 tests.
+Expected: PASS, 18 tests.
 
 - [ ] **Step 6: Fix the stale docstring**
 
@@ -793,7 +824,7 @@ with:
 - [ ] **Step 7: Verify**
 
 Run: `npx tsc --noEmit && npx vitest run --project=kit packages/core/src/animation/timeline/`
-Expected: exit 0, 25 tests passing.
+Expected: exit 0, 27 tests passing.
 
 - [ ] **Step 8: Commit**
 
@@ -913,11 +944,13 @@ describe('event tracks', () => {
     const h = harness();
     const fired: string[] = [];
     createTimeline(h.register, 1, {
-      tracks: [eventTrack((l) => fired.push(l))], duration: 100, loop: true,
+      duration: 100,
+      loop: true,
+      tracks: [{ kind: 'event', events: [{ t: 98, fire: () => fired.push('late') }] }],
     });
-    h.advance(50);    // fires a, b
-    h.advance(120);   // crosses c at 90, then wraps past 100
-    expect(fired).toEqual(['a', 'b', 'c', 'a']);
+    h.advance(95);
+    h.advance(150);
+    expect(fired).toEqual(['late']);
   });
 
   it('re-arms events on a loop wrap', () => {
@@ -930,7 +963,52 @@ describe('event tracks', () => {
     h.advance(195);
     expect(fired).toEqual(['a', 'b', 'c', 'a', 'b', 'c']);
   });
+
+  it('never fires an event past the declared duration', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      tracks: [{ kind: 'event', events: [{ t: 150, fire: () => fired.push('past') }] }],
+    });
+    h.advance(200);
+    expect(fired).toEqual([]);
+  });
+
+  it('does not replay a whole pass per lap skipped inside one frame', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      loop: true,
+      tracks: [{ kind: 'event', events: [{ t: 50, fire: () => fired.push('x') }] }],
+    });
+    h.advance(60);
+    h.advance(1060);
+    expect(fired).toEqual(['x', 'x']);
+  });
 });
+```
+
+Append one more to `describe('createTimeline', ...)` in `createTimeline.test.ts`
+— tick order is only observable once both track kinds exist:
+
+```ts
+  it('samples before firing, so a handler reads the current frame', () => {
+    const h = harness();
+    let current = -1;
+    const seen: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      tracks: [
+        numberTrack((v) => { current = v; }),
+        { kind: 'event', events: [{ t: 50, fire: () => seen.push(current) }] },
+      ],
+    });
+    h.advance(0);
+    h.advance(50);
+    expect(seen).toEqual([50]);
+  });
 ```
 
 - [ ] **Step 2: Run test to verify it fails**
@@ -940,32 +1018,39 @@ Expected: FAIL — nothing fires; event tracks are ignored by the tick.
 
 - [ ] **Step 3: Update the implementation**
 
-Add cursor state and the firing pass. A cursor is the index of the next event not yet fired.
+**One fire-once mechanism, not two.** Events fire on the half-open window
+`(from, to]` and nothing else — no per-track cursor. A cursor is a second copy
+of "where have we fired up to" that has to be re-synchronized at every site
+that moves the playhead or edits a track, and the site that gets missed is
+`edit`: deleting an event ahead of a cursor strands it past the end of a
+now-shorter array and every later event silently stops firing. The window is
+stateless per track, so it is correct under `edit` with no invalidation step at
+all.
+
+Add the bound search beside `trackEnd` at module level, and import `EventTrack`
+from `./types`:
 
 ```ts
-  /** Per-event-track index of the next event to fire. */
-  const cursors = new WeakMap<object, number>();
-  const cursorOf = (track: object): number => cursors.get(track) ?? 0;
+/** Index of the first event after `t`. Binary search: tracks may be long. */
+function firstAfter(events: EventTrack['events'], t: number): number {
+  let lo = 0;
+  let hi = events.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (events[mid].t > t) hi = mid; else lo = mid + 1;
+  }
+  return lo;
+}
+```
 
+Then the firing pass, inside `createTimeline`:
+
+```ts
   const fireEvents = (tracks: Track[], from: number, to: number): void => {
     for (const track of tracks) {
       if (track.kind !== 'event') continue;
-      let i = cursorOf(track);
-      while (i < track.events.length && track.events[i].t <= to) {
-        if (track.events[i].t > from) track.events[i].fire();
-        i += 1;
-      }
-      cursors.set(track, i);
-    }
-  };
-
-  /** Move cursors to `t` WITHOUT firing. Used by seek and by loop wrap. */
-  const recursor = (tracks: Track[], t: number): void => {
-    for (const track of tracks) {
-      if (track.kind !== 'event') continue;
-      let i = 0;
-      while (i < track.events.length && track.events[i].t <= t) i += 1;
-      cursors.set(track, i);
+      const end = firstAfter(track.events, to);
+      for (let i = firstAfter(track.events, from); i < end; i += 1) track.events[i].fire();
     }
   };
 ```
@@ -974,48 +1059,53 @@ Give the wrap hook a body. It must flush the outgoing pass's tail BEFORE
 re-arming, and reset `prevPlayhead` after:
 
 ```ts
+  // Flush the outgoing pass's tail before re-arming, or an event between the
+  // last tick and `duration` is dropped whenever a frame straddles the seam.
   const onWrap = (): void => {
-    // Flush the tail first: a frame straddling the seam would otherwise drop
-    // every event between the last tick and `duration`. Then re-arm, and rebase
-    // `prevPlayhead` — leaving it at its pre-wrap value makes the crossing test
-    // `event.t > from` swallow the entire next pass.
     fireEvents(opts.tracks, prevPlayhead, duration);
-    recursor(opts.tracks, -Infinity);
     prevPlayhead = -Infinity;
   };
 ```
 
 Track the previous playhead and fire in the tick. Add
 `let prevPlayhead = -Infinity;` beside the other state — seeding it to `0`
-instead would silently swallow an event keyed at `t: 0`, since the crossing test
-is `event.t > from`. Then in `tick`, immediately after the wrap `while` loop and
-before the two `applySampled` calls:
+instead would silently swallow an event keyed at `t: 0`, since the window is
+half-open at `from`. Then replace the tick's single `applySampled` line with:
 
 ```ts
-      fireEvents(opts.tracks, prevPlayhead, Math.min(playhead, duration));
-      prevPlayhead = Math.min(playhead, duration);
+      // Sampled before fired, so a handler reads the current frame's values.
+      applySampled(opts.tracks, playhead);
+      fireEvents(opts.tracks, prevPlayhead, playhead);
+      prevPlayhead = playhead;
 ```
 
-And in `seek`, re-cursor rather than fire:
+`playhead` was clamped by `Math.min(playhead, duration)` on the line above, so
+that clamp is what keeps an event past an explicit `duration` from firing and
+what keeps `prevPlayhead` from running a frame ahead of the declared end.
+
+And in `seek`, move the mark without firing:
 
 ```ts
     seek(t) {
       offset = t - lastVirtual;
       playhead = t;
       prevPlayhead = t;
-      recursor(opts.tracks, t);
     },
 ```
+
+There is nothing to invalidate below the root either: a child's window is the
+parent's rebased by `- at` in Task 7, so `seek` stays silent at any depth
+without recursing.
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/events.test.ts`
-Expected: PASS, 9 tests.
+Expected: PASS, 11 tests.
 
 - [ ] **Step 5: Run the whole timeline suite for regressions**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/`
-Expected: PASS, 34 tests.
+Expected: PASS, 39 tests.
 
 - [ ] **Step 6: Commit**
 
@@ -1124,6 +1214,50 @@ describe('nested timelines', () => {
     tl.seek(300);
     expect(fired).toEqual([]);
   });
+
+  it('rebases a child event onto the parent clock', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 400,
+      tracks: [{
+        kind: 'timeline',
+        at: 100,
+        timeline: { tracks: [{ kind: 'event', events: [{ t: 50, fire: () => fired.push('x') }] }] },
+      }],
+    });
+    h.advance(60);
+    expect(fired).toEqual([]);
+    h.advance(160);
+    expect(fired).toEqual(['x']);
+  });
+
+  it('rebases a seek onto the child clock', () => {
+    const h = harness();
+    const fired: string[] = [];
+    const tl = createTimeline(h.register, 1, {
+      duration: 400,
+      tracks: [{
+        kind: 'timeline',
+        at: 100,
+        timeline: { tracks: [{ kind: 'event', events: [{ t: 250, fire: () => fired.push('x') }] }] },
+      }],
+    });
+    tl.seek(300);
+    expect(fired).toEqual([]);
+    h.advance(50);
+    expect(fired).toEqual(['x']);
+  });
+
+  it('rejects parent-only options on a nested child', () => {
+    const child: TimelineTrack = {
+      kind: 'timeline',
+      at: 0,
+      // @ts-expect-error a child is a NestedTimeline: tracks and duration only.
+      timeline: { tracks: [], loop: true },
+    };
+    expect(child.at).toBe(0);
+  });
 });
 ```
 
@@ -1134,14 +1268,14 @@ Expected: FAIL — timeline tracks are skipped; `seen` is empty.
 
 - [ ] **Step 3: Update the implementation**
 
-Make the three walkers recurse. Replace `applySampled`, `fireEvents`, and `recursor` with:
+Make both walkers recurse. Replace `applySampled` and `fireEvents` with:
 
 ```ts
   const applySampled = (tracks: Track[], t: number): void => {
     for (const track of tracks) {
       if (track.kind === 'sampled') {
         const st = track as SampledTrack<unknown>;
-        const v = sampleTrack(st, t, cacheFor(st) as Map<number, (u: number) => unknown>);
+        const v = sampleTrack(st, t, cacheFor(st));
         if (v !== undefined) st.onTick(v);
       } else if (track.kind === 'timeline') {
         applySampled(track.timeline.tracks, t - track.at);
@@ -1152,40 +1286,33 @@ Make the three walkers recurse. Replace `applySampled`, `fireEvents`, and `recur
   const fireEvents = (tracks: Track[], from: number, to: number): void => {
     for (const track of tracks) {
       if (track.kind === 'event') {
-        let i = cursorOf(track);
-        while (i < track.events.length && track.events[i].t <= to) {
-          if (track.events[i].t > from) track.events[i].fire();
-          i += 1;
-        }
-        cursors.set(track, i);
+        const end = firstAfter(track.events, to);
+        for (let i = firstAfter(track.events, from); i < end; i += 1) track.events[i].fire();
       } else if (track.kind === 'timeline') {
         fireEvents(track.timeline.tracks, from - track.at, to - track.at);
       }
     }
   };
-
-  const recursor = (tracks: Track[], t: number): void => {
-    for (const track of tracks) {
-      if (track.kind === 'event') {
-        let i = 0;
-        while (i < track.events.length && track.events[i].t <= t) i += 1;
-        cursors.set(track, i);
-      } else if (track.kind === 'timeline') {
-        recursor(track.timeline.tracks, t - track.at);
-      }
-    }
-  };
 ```
+
+The `- track.at` rebase is the whole of nesting, and it is the only place a
+child's clock is derived — sampling in one walker, events in the other. Both
+directions of the event rebase are pinned below: an event must not fire early
+at the child's own `t`, and a `seek` must land the child on `t - at` so a later
+child event is not swallowed on the next forward tick.
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/nesting.test.ts`
-Expected: PASS, 5 tests.
+Expected: PASS, 8 tests. The `@ts-expect-error` case is a typecheck assertion —
+run `npx tsc --noEmit` too, and if it reports an unused directive then
+`TimelineTrack.timeline` is still typed `TimelineOptions` and a child is
+silently accepting four options the evaluator never reads.
 
 - [ ] **Step 5: Run the whole timeline suite**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/`
-Expected: PASS, 39 tests.
+Expected: PASS, 47 tests.
 
 - [ ] **Step 6: Commit**
 
@@ -1207,7 +1334,7 @@ git commit -m "evaluate nested timeline tracks at an offset playhead"
 ```ts
 import { describe, expect, it, vi } from 'vitest';
 import { createTimeline, type TimelineRegister } from './createTimeline';
-import type { SampledTrack } from './types';
+import type { EventTrack, SampledTrack } from './types';
 
 function harness() {
   let tick: ((virtualNow: number) => boolean) | null = null;
@@ -1271,8 +1398,49 @@ describe('timeline editing', () => {
     expect(seen.at(-1)).toBe(500);
     expect(build).toHaveBeenCalledTimes(2);
   });
+
+  it('keeps firing later events after an edit deletes an earlier one', () => {
+    const h = harness();
+    const fired: string[] = [];
+    const track: EventTrack = {
+      kind: 'event',
+      events: [
+        { t: 10, fire: () => fired.push('a') },
+        { t: 50, fire: () => fired.push('b') },
+        { t: 90, fire: () => fired.push('c') },
+      ],
+    };
+    const tl = createTimeline(h.register, 1, { tracks: [track], duration: 200 });
+    h.advance(60);
+    tl.edit(() => { track.events.shift(); });
+    h.advance(150);
+    expect(fired).toEqual(['a', 'b', 'c']);
+  });
+
+  it('clamps the fired-through mark to duration so an extension still fires', () => {
+    const h = harness();
+    const fired: string[] = [];
+    const track: EventTrack = {
+      kind: 'event',
+      events: [
+        { t: 10, fire: () => fired.push('a') },
+        { t: 50, fire: () => fired.push('b') },
+      ],
+    };
+    const tl = createTimeline(h.register, 1, { tracks: [track] });
+    h.advance(60);
+    expect(fired).toEqual(['a', 'b']);
+    tl.edit(() => { track.events.push({ t: 55, fire: () => fired.push('c') }); });
+    h.advance(70);
+    expect(fired).toEqual(['a', 'b', 'c']);
+  });
 });
 ```
+
+The two event cases pass with no extra work in `edit` — that is the point of
+firing on a searched window rather than a cursor. If either fails, event state
+has crept back into the tracks and `edit` has become a fourth site that has to
+know about it.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -1307,7 +1475,7 @@ Replace `edit` and `subscribe` on the returned handle:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/edit.test.ts`
-Expected: PASS, 4 tests.
+Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Commit**
 
@@ -1336,6 +1504,7 @@ export { sampleTrack } from './sampleTrack';
 export type {
   EventTrack,
   Keyframe,
+  NestedTimeline,
   SampledTrack,
   TimelineHandle,
   TimelineOptions,
@@ -1469,6 +1638,7 @@ export { sampleTrack } from './timeline';
 export type {
   EventTrack,
   Keyframe,
+  NestedTimeline,
   SampledTrack,
   TimelineHandle,
   TimelineOptions,

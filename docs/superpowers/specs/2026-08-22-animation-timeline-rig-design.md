@@ -41,7 +41,7 @@ would otherwise have to work around.
 
 ```ts
 interface TimelineHandle extends AnimationHandle {
-  seek(t: number): void;            // ms; event tracks re-cursor without firing
+  seek(t: number): void;            // ms; never fires event tracks
   time(): number;
   duration(): number;
   tracks(): readonly Track[];
@@ -91,7 +91,7 @@ interface TimelineTrack {
   kind: 'timeline';
   label?: string;
   at: number;                       // offset into the parent, ms
-  timeline: TimelineOptions;
+  timeline: NestedTimeline;         // tracks + duration; the parent owns playback
 }
 ```
 
@@ -105,9 +105,11 @@ last.
 different `at`, parallel is two at the same one. The tick needs no special case
 for either.
 
-A child takes `TimelineOptions`, not a `TimelineHandle`: children are evaluated
-by the parent at `playhead - at` and are **not** separately registered in the
-animator's table. One timeline tree is one entry, so pausing or time-scaling the
+A child takes `NestedTimeline` — `tracks` and `duration` — not a
+`TimelineHandle` and not the root's `TimelineOptions`: children are evaluated by
+the parent at `playhead - at` and are **not** separately registered in the
+animator's table, so `loop`, `autoplay`, `onDone` and `cancelKey` mean nothing
+below the root and do not typecheck there. One timeline tree is one entry, so pausing or time-scaling the
 root governs the whole tree and there is no way for a child to drift from its
 parent.
 
@@ -118,11 +120,12 @@ incoherent.
 
 ### Seek semantics
 
-`seek(t)` sets the playhead and advances every event track's cursor to `t`
-**without firing** — recursively, so a child timeline's event tracks re-cursor
-too. Looping resets cursors at the wrap. So events fire only when
-the playhead advances forward under playback — dragging a scrubber is silent,
-which is the only behavior under which a scrubber and a sound engine can coexist.
+`seek(t)` sets the playhead and fires nothing. Events fire on the half-open
+window `(from, to]` between consecutive ticks and on no other state, so a seek
+is silent at every depth simply by moving `from`, and a loop wrap re-arms by
+resetting it. Events therefore fire only when the playhead advances forward
+under playback — dragging a scrubber is silent, which is the only behavior under
+which a scrubber and a sound engine can coexist.
 
 ### Mutation
 
@@ -186,7 +189,7 @@ is where it will show up first.
 
 1. **Timeline core** — sampled tracks, sampling, `seek`, loop, nesting, the
    version/cache invalidation. The bulk of the tests live here.
-2. **Event tracks** — crossing detection, cursors, seek suppression, loop reset.
+2. **Event tracks** — crossing detection, seek suppression, loop reset.
 3. **Rig** — skeleton, pose, `blendPoses`, `resolveSkeleton`, the `useRig` dep.
    Includes the `SampledTrack<Pose>` identity as a test, not just a claim.
 4. **Editor** — the `<Timeline>` control in `@weasel-js/ui`.
