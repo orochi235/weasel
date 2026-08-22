@@ -1,6 +1,7 @@
 import { act, render, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from './adapters';
+import { labDocumentKey } from './document';
 import { SingletonExperimentProvider } from './SingletonExperiment';
 import { useExperimentState } from './useExperimentState';
 
@@ -62,15 +63,14 @@ describe('SingletonExperimentProvider', () => {
     act(() => {
       vi.advanceTimersByTime(400);
     });
-    // createLabStore uses labStorageKey which prefixes with "lk:"
-    const raw = storage.read('lk:test:workspaces');
+    const raw = storage.read(labDocumentKey('test'));
     expect(raw).toBeTruthy();
     expect(raw).toContain('"width":200');
   });
 
   it('rehydrates from storage on mount', () => {
     const storage = createMemoryAdapter();
-    // createLabStore uses labStorageKey which prefixes with "lk:"
+    // A pre-document lab, which createLabStore folds forward on hydration.
     storage.write(
       'lk:test:workspaces',
       JSON.stringify([

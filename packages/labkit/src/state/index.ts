@@ -14,6 +14,11 @@ export {
   WorkspaceIdProvider,
 } from './context';
 export {
+  CURRENT_DOCUMENT_VERSION,
+  labDocumentKey,
+  quarantineKey,
+} from './document';
+export {
   decodeUrlHash,
   deserializeWorkspaces,
   emptyUndoStack,
@@ -31,8 +36,11 @@ export type {
   CreateLabStoreOptions,
   ExperimentStateHandle,
   InstrumentSerializers,
+  LabDocument,
   LabStoreState,
+  Migration,
   SavedSnapshot,
+  SerializedTrial,
   StorageAdapter,
   UndoStack,
   WorkspaceRecord,

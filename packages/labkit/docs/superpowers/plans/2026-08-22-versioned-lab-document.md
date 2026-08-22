@@ -590,7 +590,7 @@ export const MIGRATIONS: Migration[] = [migrateV0toV1];
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run src/state/document.test.ts`
-Expected: PASS, 17 tests.
+Expected: PASS — the 8 existing tests plus the ones you added.
 
 - [ ] **Step 5: Commit**
 
@@ -683,11 +683,11 @@ Expected: FAIL — the store still reads `lk:test:workspaces`, so the document t
 In `src/state/store.ts`, replace everything from `const workspacesRaw =` down to the closing of the `hydratedMode` block (lines 51–86) with:
 
 ```ts
-  const {
-    document: hydrated,
-    persistDisabled,
-    foldedFromLegacy,
-  } = hydrateDocument(options);
+  const hydration = hydrateDocument(options);
+  const hydrated = hydration.document;
+  const persistDisabled = hydration.persistDisabled;
+  // Cleared once the legacy keys are actually gone; see Task 6.
+  let foldedFromLegacy = hydration.foldedFromLegacy;
 
   const hydratedWorkspaces = deserializeWorkspaces(hydrated.workspaces, serializers);
   const hydratedSnapshots = hydrated.saves;
@@ -721,7 +721,7 @@ function hydrateDocument(options: CreateLabStoreOptions): HydrateResult {
       return { document: fallback, persistDisabled: false, foldedFromLegacy: false };
     }
   } else {
-    parsed = readLegacyDocument(options.storage, options.storageKey);
+    parsed = readLegacyDocument(options.storage, options.storageKey, options.initialMode ?? 'auto');
   }
 
   if (parsed === null) {
@@ -865,15 +865,25 @@ Replace `scheduleFlush` in `src/state/store.ts`:
         layout: s.layout,
         mode: s.mode,
       };
-      options.storage.write(labDocumentKey(options.storageKey), JSON.stringify(document));
-      if (foldedFromLegacy) deleteLegacyKeys(options.storage, options.storageKey);
+      const serialized = JSON.stringify(document);
+      options.storage.write(labDocumentKey(options.storageKey), serialized);
+      if (foldedFromLegacy && deleteLegacyKeys(options.storage, options.storageKey, serialized)) {
+        foldedFromLegacy = false;
+      }
       flushTimer = null;
     }, 300);
   }
 ```
 
-The legacy keys are deleted only after the document is written, so an
-interrupted fold loses nothing.
+`deleteLegacyKeys` reads the document back and compares it to what was just
+written, deleting only on an exact match — `StorageAdapter.write` returns
+`void` and `localStorageAdapter` swallows a quota failure, so an unverified
+delete is a silent-data-loss path at exactly the moment storage is most
+pressured (both copies coexist during the fold). It returns whether it
+deleted; `foldedFromLegacy` is cleared only then, so a failed cleanup is
+retried on the next flush instead of being forgotten.
+
+This means `foldedFromLegacy` must be declared with `let`, not `const`.
 
 - [ ] **Step 4: Run the whole state suite**
 
@@ -927,8 +937,11 @@ version bump.
 
 - [ ] **Step 2: Typecheck**
 
-Run: `npx tsc --noEmit -p tsconfig.json`
+Run: `npx tsc --noEmit -p tsconfig.lib.json`
 Expected: no errors.
+
+Not `-p tsconfig.json` — that is a solution file (`"files": []` plus a
+reference), so it exits 0 having checked nothing and gates on nothing.
 
 - [ ] **Step 3: Lint**
 

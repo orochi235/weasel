@@ -7,7 +7,6 @@ import {
   labStorageKey,
   serializeWorkspaces,
 } from './helpers';
-import type { WorkspaceRecord } from './types';
 
 describe('labStorageKey', () => {
   it('produces namespaced keys', () => {
@@ -35,55 +34,84 @@ describe('emptyUndoStack', () => {
   });
 });
 
-describe('serializeWorkspaces / deserializeWorkspaces', () => {
-  const ws: WorkspaceRecord = {
-    id: 'w1',
-    instrumentName: 'Test',
-    config: { x: 1 },
-    state: { items: [] },
-    view: { zoom: 1, pan: { x: 0, y: 0 } },
-    undoStack: { past: [1, 2], future: [] },
-  };
-
-  it('round-trips workspace records', () => {
-    const serialized = serializeWorkspaces([ws], {});
-    const [result] = deserializeWorkspaces(serialized, {});
-    expect(result?.id).toBe('w1');
-    expect(result?.state).toEqual({ items: [] });
-  });
-
-  it('strips undoStack on serialization', () => {
-    const serialized = serializeWorkspaces([ws], {});
-    const parsed = JSON.parse(serialized) as unknown[];
-    expect((parsed[0] as Record<string, unknown>).undoStack).toBeUndefined();
-  });
-
-  it('restores emptyUndoStack after deserialization', () => {
-    const serialized = serializeWorkspaces([ws], {});
-    const [result] = deserializeWorkspaces(serialized, {});
-    expect(result?.undoStack).toEqual({ past: [], future: [] });
-  });
-
-  it('uses instrument.serialize / deserialize when provided', () => {
-    const serializers = {
-      Test: {
-        serialize: (s: unknown) => ({ compressed: true, data: s }),
-        deserialize: (d: unknown) => (d as { data: unknown }).data,
+describe('serializeWorkspaces', () => {
+  it('returns records with the undo stack dropped', () => {
+    const records = serializeWorkspaces(
+      [
+        {
+          id: 'w1',
+          instrumentName: 'Test',
+          config: { a: 1 },
+          state: { b: 2 },
+          view: { zoom: 1, pan: { x: 0, y: 0 } },
+          undoStack: { past: [{ b: 1 }], future: [] },
+        },
+      ],
+      {},
+    );
+    expect(records).toEqual([
+      {
+        id: 'w1',
+        instrumentName: 'Test',
+        config: { a: 1 },
+        state: { b: 2 },
+        view: { zoom: 1, pan: { x: 0, y: 0 } },
       },
-    };
-    const serialized = serializeWorkspaces([ws], serializers);
-    const [result] = deserializeWorkspaces(serialized, serializers);
-    expect(result?.state).toEqual({ items: [] });
+    ]);
   });
 
-  it('falls back to identity when instrumentName not in registry', () => {
-    const serialized = serializeWorkspaces([ws], {});
-    const [result] = deserializeWorkspaces(serialized, {});
-    expect(result?.state).toEqual({ items: [] });
+  it('runs the instrument serializer over the state', () => {
+    const records = serializeWorkspaces(
+      [
+        {
+          id: 'w1',
+          instrumentName: 'Test',
+          config: {},
+          state: { n: 2 },
+          view: { zoom: 1, pan: { x: 0, y: 0 } },
+          undoStack: { past: [], future: [] },
+        },
+      ],
+      { Test: { serialize: (s) => ({ doubled: (s as { n: number }).n * 2 }) } },
+    );
+    expect(records[0].state).toEqual({ doubled: 4 });
+  });
+});
+
+describe('deserializeWorkspaces', () => {
+  it('rebuilds records with an empty undo stack', () => {
+    const out = deserializeWorkspaces(
+      [
+        {
+          id: 'w1',
+          instrumentName: 'Test',
+          config: {},
+          state: { n: 1 },
+          view: { zoom: 1, pan: { x: 0, y: 0 } },
+        },
+      ],
+      {},
+    );
+    expect(out[0].undoStack).toEqual({ past: [], future: [] });
   });
 
-  it('returns empty array for malformed JSON', () => {
-    const result = deserializeWorkspaces('NOT JSON', {});
-    expect(result).toEqual([]);
+  it('runs the instrument deserializer over the state', () => {
+    const out = deserializeWorkspaces(
+      [
+        {
+          id: 'w1',
+          instrumentName: 'Test',
+          config: {},
+          state: { doubled: 4 },
+          view: { zoom: 1, pan: { x: 0, y: 0 } },
+        },
+      ],
+      { Test: { deserialize: (d) => ({ n: (d as { doubled: number }).doubled / 2 }) } },
+    );
+    expect(out[0].state).toEqual({ n: 2 });
+  });
+
+  it('returns an empty list when given something that is not an array', () => {
+    expect(deserializeWorkspaces(undefined as never, {})).toEqual([]);
   });
 });
