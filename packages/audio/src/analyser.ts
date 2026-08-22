@@ -32,8 +32,8 @@ export function createAnalyserTap(
 
   // `node` is public surface, so `fftSize` can change under the tap. Time-domain
   // data is sized by `fftSize`; frequency data by half of it.
-  let freqScratch = new Uint8Array(node.frequencyBinCount);
-  let timeScratch = new Uint8Array(node.fftSize);
+  let freqScratch = new Uint8Array(0);
+  let timeScratch = new Uint8Array(0);
   const freqBuf = (): Uint8Array<ArrayBuffer> => {
     if (freqScratch.length !== node.frequencyBinCount) {
       freqScratch = new Uint8Array(node.frequencyBinCount);

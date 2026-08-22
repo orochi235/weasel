@@ -54,6 +54,11 @@ function node<E extends Record<string, unknown>>(kind: string, extra?: E): FakeN
     },
     disconnect(target?: FakeNode) {
       n.disconnected = true;
+      if (target && !n.connectedTo.includes(target)) {
+        // The bare form is a no-op when there is nothing to cut; the targeted
+        // form is not, and a real implementation throws.
+        throw new Error('InvalidAccessError: the given node is not connected');
+      }
       for (const t of target ? [target] : [...n.connectedTo]) {
         const out = n.connectedTo.indexOf(t);
         if (out >= 0) n.connectedTo.splice(out, 1);
@@ -117,15 +122,20 @@ export interface FakeAudioContext {
   _sources: FakeSource[];
   /** Test hook: canned analyser output. */
   _analyserBytes: FakeAnalyserBytes;
+  /** Test hook: live `statechange` subscriptions. */
+  _listenerCount(): number;
 }
 
 export function createFakeAudioContext(): FakeAudioContext {
   const sources: FakeSource[] = [];
   const listeners = new Set<() => void>();
 
-  const fill = (out: Uint8Array, spec: FakeAnalyserBytes): void => {
-    for (let i = 0; i < out.length; i += 1) {
-      out[i] = typeof spec === 'function' ? spec(i, out.length) : spec;
+  // Writes at most `bins` elements, as the specification requires: an oversized
+  // array keeps whatever was in the tail, it does not get more data.
+  const fill = (out: Uint8Array, bins: number, spec: FakeAnalyserBytes): void => {
+    const n = Math.min(out.length, bins);
+    for (let i = 0; i < n; i += 1) {
+      out[i] = typeof spec === 'function' ? spec(i, n) : spec;
     }
   };
 
@@ -154,8 +164,8 @@ export function createFakeAudioContext(): FakeAudioContext {
     createAnalyser() {
       const a = node('analyser', {
         fftSize: 2048,
-        getByteFrequencyData(out: Uint8Array) { fill(out, ctx._analyserBytes); },
-        getByteTimeDomainData(out: Uint8Array) { fill(out, ctx._analyserBytes); },
+        getByteFrequencyData(out: Uint8Array) { fill(out, a.fftSize / 2, ctx._analyserBytes); },
+        getByteTimeDomainData(out: Uint8Array) { fill(out, a.fftSize, ctx._analyserBytes); },
       });
       Object.defineProperty(a, 'frequencyBinCount', {
         get: () => a.fftSize / 2,
@@ -205,6 +215,7 @@ export function createFakeAudioContext(): FakeAudioContext {
       for (const fn of [...listeners]) fn();
     },
     _sources: sources,
+    _listenerCount: () => listeners.size,
     _analyserBytes: (i, length) => Math.round((255 * i) / length),
   };
   return ctx;

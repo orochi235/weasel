@@ -70,6 +70,16 @@ describe('createSoundCache', () => {
     expect(calls).toBe(2);
   });
 
+  it('maps every name to its own url\'s handle', async () => {
+    const ctx = createFakeAudioContext();
+    const cache = createSoundCache(ctx as never, okFetch());
+    const handles = await cache.loadAll({ jump: '/jump.wav', land: '/land.wav' });
+    const direct = await cache.load('/land.wav');
+    expect(Object.keys(handles)).toEqual(['jump', 'land']);
+    expect(handles.land.id).toBe(direct.id);
+    expect(handles.jump.id).not.toBe(handles.land.id);
+  });
+
   it('decodes raw bytes without a url', async () => {
     const ctx = createFakeAudioContext();
     const cache = createSoundCache(ctx as never, okFetch());

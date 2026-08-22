@@ -34,6 +34,34 @@ describe('createAudioEngine disposal', () => {
     warn.mockRestore();
   });
 
+  it('stops the voices that are still playing', async () => {
+    const { ctx, engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    const voice = engine.play(sound, { loop: true });
+    tick();
+    engine.dispose();
+    expect(voice.isPlaying()).toBe(false);
+    expect(ctx._sources[0].stopped).toHaveLength(1);
+    expect(engine.activeVoices()).toBe(0);
+  });
+
+  it('removes its gesture listeners', () => {
+    const remove = vi.spyOn(window, 'removeEventListener');
+    const { engine } = engineHarness();
+    engine.dispose();
+    expect(remove.mock.calls.map((c) => c[0]))
+      .toEqual(expect.arrayContaining(['pointerdown', 'keydown', 'touchstart']));
+    remove.mockRestore();
+  });
+
+  it('unsubscribes from a context it does not own', () => {
+    const { ctx, engine } = engineHarness();
+    expect(ctx._listenerCount()).toBe(1);
+    engine.dispose();
+    expect(ctx._listenerCount()).toBe(0);
+  });
+
   it('does not resume a disposed engine', async () => {
     const { ctx, engine } = engineHarness();
     engine.dispose();

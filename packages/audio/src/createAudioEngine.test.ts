@@ -360,6 +360,45 @@ describe('createAudioEngine', () => {
     expect(engine.activeVoices()).toBe(0);
   });
 
+  it('sets an explicit pan, and stops the voice tracking its position', async () => {
+    const { ctx, engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    const voice = engine.play(sound, { position: { x: 250, y: 0 }, loop: true });
+    tick();
+    const { panner } = chainOf(ctx._sources[0]);
+    voice.setPan(-1);
+    expect(panner.pan.value).toBe(-1);
+    engine.setListener({ x: 9000, y: 0 });
+    expect(panner.pan.value).toBe(-1);
+  });
+
+  it('spatializes a playing voice given a position', async () => {
+    const { ctx, engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    const voice = engine.play(sound, { loop: true });
+    tick();
+    const { panner, gain } = chainOf(ctx._sources[0]);
+    voice.setPosition({ x: 250, y: 0 });
+    expect(panner.pan.value).toBeCloseTo(0.5, 6);
+    expect(gain.gain.value).toBeCloseTo(1 / 250, 6);
+  });
+
+  it('steals the quietest voice, tracking a gain set after it started', async () => {
+    const { engine, tick } = engineHarness({ voiceLimit: 2, steal: 'quietest' });
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    const a = engine.play(sound, { loop: true });
+    const b = engine.play(sound, { loop: true });
+    tick();
+    b.setGain(0.1);
+    engine.play(sound, { loop: true });
+    tick();
+    expect(b.isPlaying()).toBe(false);
+    expect(a.isPlaying()).toBe(true);
+  });
+
   it('reports its bus names, first one first', () => {
     const { engine } = engineHarness({ buses: ['master-ish', 'music'] });
     expect(engine.busNames()).toEqual(['master-ish', 'music']);

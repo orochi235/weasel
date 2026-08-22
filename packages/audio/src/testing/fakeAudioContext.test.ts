@@ -159,6 +159,17 @@ describe('createFakeAudioContext', () => {
     expect([...big]).toEqual([0, 32, 64, 96, 128, 159, 191, 223]);
   });
 
+  it('never writes past the bin count into an oversized array', () => {
+    const ctx = createFakeAudioContext();
+    ctx._analyserBytes = 200;
+    const a = ctx.createAnalyser();
+    a.fftSize = 32;
+    const out = new Uint8Array(32).fill(7);
+    a.getByteFrequencyData(out);
+    // 16 bins written, the tail left as it was.
+    expect([...out.slice(14, 18)]).toEqual([200, 200, 7, 7]);
+  });
+
   it('fills a constant when told a number', () => {
     const ctx = createFakeAudioContext();
     ctx._analyserBytes = 200;
