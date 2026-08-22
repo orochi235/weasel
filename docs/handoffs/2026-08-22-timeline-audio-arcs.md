@@ -11,16 +11,13 @@ Merged tree: 670 files, 6989 tests, `tsc` clean, manifests and changeset-bump
 checks green. **Nothing is pushed** — `main` carries 50+ unpushed commits,
 including two other sessions' work.
 
-| Branch | Worktree | State |
-| --- | --- | --- |
-| `animation-timeline` | `../weasel-timeline` | Merged. Worktree can be removed. |
-| `audio-engine` | `../weasel-audio` | Merged. Worktree can be removed. |
-| `timeline-audio-demos` | `../weasel-demos` | Active — the demos plan. |
+All three branches are merged and their worktrees removed. Branches kept:
+`animation-timeline`, `audio-engine`, `timeline-audio-demos`.
 
-Other sessions hold `../weasel-stops` and `../weasel-vocab`. Check
-`git worktree list` before assuming anything about the checkout; the tree can
-change under a test run, and it did once during this work (five labkit test
-files appeared as failures and then did not exist).
+Check `git worktree list` before assuming anything about the checkout — other
+sessions come and go, and the tree can change under a test run. It did once
+during this work: five labkit test files appeared as failures and then did not
+exist.
 
 **`packages/audio/dist` is gitignored**, so `check-publish-manifests.mjs` fails
 on a fresh checkout until `npm run build -w @weasel-js/audio` has run. That is
@@ -77,8 +74,38 @@ plan on each branch is ahead of the copy on `main`; take the branch's.
 - **Never commit a worktree's `package-lock.json`** except for that new-workspace
   case, and then only after checking the diff.
 
+## What the demos exposed
+
+Writing the three demos was the point, not a formality — it found two defects
+that the whole test suite did not.
+
+- **A finished timeline is unrecoverable.** When a non-looping playhead reaches
+  `duration` the tick reports finished and the animator drops the entry, after
+  which every `seek()` is silently inert while `time()` and `duration()` keep
+  answering. No error, no state change, a control that just stops working. It
+  forced `TimelineDemo`'s loop toggle to rebuild the timeline rather than set a
+  flag — the largest piece of non-pertinent machinery in any of the three.
+- **`engine.register(buffer)` is unusable as designed.** It was added so the
+  audio demo could ship without binary assets, but the only way to make an
+  `AudioBuffer` is `ctx.createBuffer`, and `AudioEngine` never exposes its
+  context. The demo has to build its own and own its lifetime.
+
+Three more gaps, all filed: `mat3` helpers unexported (the rig demo hand-decodes
+a `Float32Array`), `BusHandle` write-only with no getters, and `bands()`
+returning a widened `Float32Array` where the sibling tap methods return narrowed
+ones. Plus three pieces of boilerplate — `keepAlive` for per-frame repaint, a
+hand-rolled `onTick` bridge to read the playhead, and a hand-written
+`RenderLayer` to draw a skeleton.
+
+**Open question:** `AnimationDemo.tsx` and `EasingsDemo.tsx` are full of inline
+styles, which `CLAUDE.md` forbids. Either they are in violation or the rule has
+an unwritten exception. The new demos use CSS classes.
+
 ## Next
 
-1. Demos — `docs/superpowers/plans/2026-08-22-timeline-audio-demos.md`.
-2. Then the side-scroller, as the load test on both foundations.
-3. Open question for Mike: pushing. Nothing has been pushed all session.
+1. Fix the two defects above — the finished-timeline seek especially.
+2. The side-scroller, as the load test on both foundations. Decomposition doc
+   has its scope; `ImageDrawCommand` still has no source rect or flip.
+3. **(P1) No baseline lint** — see `docs/TODO.md`. Two rules in the whole repo,
+   and 55 disable directives naming rules that never run.
+4. Open question for Mike: pushing. Nothing has been pushed all session.
