@@ -52,6 +52,15 @@ interface BufferSet {
   /** What the GPU buffers are currently sized for. */
   vertexCapacity: number;
   indexCapacity: number;
+  /**
+   * Rect count whose index pattern this slot's element buffer already holds,
+   * or -1 for contents that cannot be named that way (a mesh's rebased
+   * indices, or a buffer just respecified). A run of rects has indices that
+   * are a pure function of the count, so a flush matching this re-sends bytes
+   * the buffer already has — 0.89 us of the 3.87 a flush costs
+   * (`tests/perf/flush-anatomy.spec.ts`).
+   */
+  indexRects: number;
 }
 
 function doubledTo(from: number, need: number): number {
@@ -78,6 +87,9 @@ export class SolidBatch {
   private idx = new Uint32Array(INITIAL_INDICES);
   private nVerts = 0;
   private nIdx = 0;
+  /** Whether the staged run is rects alone, so its indices are the canonical
+   *  quad pattern and a slot already holding that pattern needs no upload. */
+  private pureRects = true;
 
   constructor(gl: WebGL2RenderingContext, prog: ShaderProgram) {
     const aPos = prog.attribute('a_position');
@@ -143,6 +155,7 @@ export class SolidBatch {
     const srcIdx = mesh.indices;
     const n = src.length >> 1;
     this.reserve(n, srcIdx.length);
+    this.pureRects = false;
     const v = this.verts;
     let i = this.nVerts * FLOATS_PER_VERTEX;
     const ma = m[0], mb = m[1], mc = m[3], md = m[4], mtx = m[6], mty = m[7];
@@ -171,13 +184,18 @@ export class SolidBatch {
     gl.bindVertexArray(set.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, set.vbo);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.verts, 0, this.nVerts * FLOATS_PER_VERTEX);
-    gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, this.idx, 0, this.nIdx);
+    const rects = this.pureRects ? this.nVerts >> 2 : -1;
+    if (rects < 0 || rects !== set.indexRects) {
+      gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, this.idx, 0, this.nIdx);
+      set.indexRects = rects;
+    }
     return this.nIdx;
   }
 
   reset(): void {
     this.nVerts = 0;
     this.nIdx = 0;
+    this.pureRects = true;
   }
 
   dispose(): void {
@@ -238,6 +256,8 @@ export class SolidBatch {
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, set.ibo);
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, set.indexCapacity * 4, gl.DYNAMIC_DRAW);
       gl.bindVertexArray(null);
+      // Respecified, so whatever pattern it held is gone.
+      set.indexRects = -1;
     }
     return set;
   }
@@ -259,7 +279,7 @@ export class SolidBatch {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices * 4, gl.DYNAMIC_DRAW);
     gl.bindVertexArray(null);
-    return { vao, vbo, ibo, vertexCapacity: vertices, indexCapacity: indices };
+    return { vao, vbo, ibo, vertexCapacity: vertices, indexCapacity: indices, indexRects: -1 };
   }
 
   private deleteSet(set: BufferSet): void {

@@ -104,14 +104,21 @@ export interface DrawContext {
  * that changed between them.
  *
  * **Only for uniforms this module is the sole writer of.** `u_color` and
- * `u_alpha` are written from several places here and are still sent every
- * draw; caching those would need every writer to go through this first.
+ * `u_alpha` qualify because every write of them goes through `setColorUniform`
+ * / `setAlphaUniform` — keep it that way. A `gl.uniform4f(… 'u_color' …)` added
+ * anywhere else leaves the cache believing a value the program no longer has,
+ * and the wrong color is drawn until something else moves it.
  */
 interface UploadedUniforms {
   proj?: Float32Array;
   model?: Float32Array;
   colorMatrix?: Float32Array;
   colorBias?: Float32Array;
+  /** Held as plain numbers, not a `Float32Array`: the caller's values are
+   *  doubles, and round-tripping them through float32 would compare unequal
+   *  every time and never skip an upload. */
+  color?: [number, number, number, number];
+  alpha?: number;
 }
 
 const FRAME_UPLOADS = new WeakMap<DrawContext, WeakMap<ShaderProgram, UploadedUniforms>>();
@@ -138,6 +145,39 @@ function sameValues(prev: Float32Array | undefined, next: ArrayLike<number>): bo
   if (prev === undefined || prev.length !== next.length) return false;
   for (let i = 0; i < prev.length; i++) if (prev[i] !== next[i]) return false;
   return true;
+}
+
+/**
+ * `u_color`, skipped when the program already holds it.
+ *
+ * Every writer of `u_color` goes through here — see `UploadedUniforms`. The
+ * solid batch is what makes it worth caching: it holds the uniform at white
+ * forever and flushed once per state change, so a mixed document re-sent the
+ * same white a few hundred times a frame.
+ */
+function setColorUniform(
+  ctx: DrawContext, prog: ShaderProgram,
+  r: number, g: number, b: number, a: number,
+): void {
+  const loc = prog.uniform('u_color');
+  if (loc === undefined) return;
+  const uploaded = uploadedFor(ctx, prog);
+  const prev = uploaded.color;
+  if (prev !== undefined && prev[0] === r && prev[1] === g && prev[2] === b && prev[3] === a) {
+    return;
+  }
+  ctx.gl.uniform4f(loc, r, g, b, a);
+  uploaded.color = [r, g, b, a];
+}
+
+/** `u_alpha`, on the same terms as `setColorUniform`. */
+function setAlphaUniform(ctx: DrawContext, prog: ShaderProgram, alpha: number): void {
+  const loc = prog.uniform('u_alpha');
+  if (loc === undefined) return;
+  const uploaded = uploadedFor(ctx, prog);
+  if (uploaded.alpha === alpha) return;
+  ctx.gl.uniform1f(loc, alpha);
+  uploaded.alpha = alpha;
 }
 
 /** The rect batch transforms its own corners, so it draws at model identity. */
@@ -580,11 +620,13 @@ export function flushSolids(ctx: DrawContext): void {
   gl.useProgram(prog.handle);
   const indexCount = batch.uploadAndBind();
   setProjAndModel(ctx, prog, BATCH_MODEL);
-  gl.uniform4f(prog.uniform('u_color')!, 1, 1, 1, 1);
-  gl.uniform1f(prog.uniform('u_alpha')!, staged.alpha);
+  setColorUniform(ctx, prog, 1, 1, 1, 1);
+  setAlphaUniform(ctx, prog, staged.alpha);
   setColorMatrixUniforms(ctx, prog, staged.colorMatrix);
   applyClipTest(ctx, staged.clipDepth);
   gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
+  // Not redundant: `drawShader` binds no VAO and points attributes at whatever
+  // is current, so a slot left bound here comes back corrupted a ring later.
   gl.bindVertexArray(null);
   batch.reset();
   ctx.solidState = undefined;
@@ -669,10 +711,9 @@ function setSolidPaintUniforms(
   ctx: DrawContext, prog: ShaderProgram,
   color: string, opacity: number | undefined,
 ): void {
-  const gl = ctx.gl;
   const [r, g, b, a] = resolveColor(color);
-  gl.uniform4f(prog.uniform('u_color')!, r, g, b, a * (opacity ?? 1));
-  gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
+  setColorUniform(ctx, prog, r, g, b, a * (opacity ?? 1));
+  setAlphaUniform(ctx, prog, ctx.state.alpha);
 }
 
 function drawPathFillByKind(ctx: DrawContext, fill: FillStyle, handle: GLMeshHandle): void {
@@ -734,7 +775,7 @@ function drawPathFillPattern(
   ctx.textureCache.bind(tex.id, 0);
   gl.uniform1i(ctx.patternFill.uniform('u_sampler')!, 0);
   gl.uniform1f(ctx.patternFill.uniform('u_opacity')!, fill.opacity ?? 1);
-  gl.uniform1f(ctx.patternFill.uniform('u_alpha')!, ctx.state.alpha);
+  setAlphaUniform(ctx, ctx.patternFill, ctx.state.alpha);
   applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, handle.indexCount, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
@@ -779,7 +820,7 @@ function drawPathFillGradient(
 
   ctx.gradRampCache.bind(key, 0);
   gl.uniform1i(ctx.gradFill.uniform('u_ramp')!, 0);
-  gl.uniform1f(ctx.gradFill.uniform('u_alpha')!, ctx.state.alpha);
+  setAlphaUniform(ctx, ctx.gradFill, ctx.state.alpha);
   gl.uniform1f(ctx.gradFill.uniform('u_opacity')!, fill.opacity ?? 1);
 
   if (fill.fill === 'linear-gradient') {
@@ -1209,7 +1250,7 @@ function drawText(ctx: DrawContext, cmd: TextDrawCommand): void {
       preparedPrograms.add(prog);
       setProjAndModel(ctx, prog);
       setColorMatrixUniforms(ctx, prog);
-      gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
+      setAlphaUniform(ctx, prog, ctx.state.alpha);
       // No AA-width uniform: the text shaders derive their smoothstep band
       // from fwidth() per fragment. A CPU-side constant cannot be right at
       // more than one scale — see the textSdf.ts header.
@@ -1422,8 +1463,8 @@ function drawTextDecorations(ctx: DrawContext, decorations: readonly LaidOutDeco
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.DYNAMIC_DRAW);
 
-    gl.uniform4f(prog.uniform('u_color')!, rgba[0], rgba[1], rgba[2], rgba[3]);
-    gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
+    setColorUniform(ctx, prog, rgba[0], rgba[1], rgba[2], rgba[3]);
+    setAlphaUniform(ctx, prog, ctx.state.alpha);
 
     gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
@@ -1499,7 +1540,7 @@ function drawTextGroup(ctx: DrawContext, group: LaidOutGroup, prog: ShaderProgra
   if ('color' in group.fill) {
     [r, g, b, a] = resolveColor(group.fill.color);
   }
-  gl.uniform4f(prog.uniform('u_color')!, r, g, b, a);
+  setColorUniform(ctx, prog, r, g, b, a);
 
   // u_synthBold: SDF threshold shift when the resolver fell back from a
   // missing bold variant to the regular atlas. 0.08 was tuned empirically
@@ -1649,7 +1690,7 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   );
   gl.uniform1i(prog.uniform('u_sampler')!, 0);
   gl.uniform1f(prog.uniform('u_opacity')!, cmd.opacity ?? 1);
-  gl.uniform1f(prog.uniform('u_alpha')!, ctx.state.alpha);
+  setAlphaUniform(ctx, prog, ctx.state.alpha);
 
   applyClipTest(ctx);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, 0);
