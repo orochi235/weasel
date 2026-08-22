@@ -99,3 +99,64 @@ describe('computed viewBox', () => {
     expect(viewBoxOf(serializeSvg(nodes))).toEqual([200, 0, 10, 10]);
   });
 });
+
+describe('transform composition', () => {
+  it('keeps a leaf rotation through a translated group', () => {
+    const nodes: SvgNode[] = [{
+      kind: 'group',
+      transform: [1, 0, 0, 1, 500, -300],
+      children: [{
+        kind: 'path',
+        path: { kind: 'rect', x: 10, y: 20, width: 40, height: 30 },
+        fill: { kind: 'solid', color: '#000000' },
+        rotation: 0.7,
+      }],
+    }];
+    const r = parseSvg(serializeSvg(nodes));
+    expect(r.warnings).toEqual([]);
+    const group = r.nodes[0] as { kind: string; children: SvgNode[] };
+    expect(group.kind).toBe('group');
+    const leaf = group.children[0] as { rotation?: number; path: { x: number; y: number } };
+    expect(leaf.rotation).toBeCloseTo(0.7, 5);
+    expect(leaf.path.x).toBeCloseTo(510);
+    expect(leaf.path.y).toBeCloseTo(-280);
+  });
+
+  it('keeps a text rotation through a translated group', () => {
+    const nodes: SvgNode[] = [{
+      kind: 'group',
+      transform: [1, 0, 0, 1, 500, -300],
+      children: [{
+        kind: 'text', x: 0, y: 0, width: 100, height: 20, text: 'hi', rotation: 1.1,
+      }],
+    }];
+    const r = parseSvg(serializeSvg(nodes));
+    expect(r.warnings).toEqual([]);
+    const group = r.nodes[0] as { children: SvgNode[] };
+    expect((group.children[0] as SvgTextNode).rotation).toBeCloseTo(1.1, 5);
+  });
+});
+
+describe('stroke serialization', () => {
+  it('writes stroke-opacity once when the paint carries one too', () => {
+    const nodes: SvgNode[] = [{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
+      fill: { kind: 'none' },
+      stroke: { paint: { kind: 'solid', color: '#3366cc', opacity: 0.5 }, width: 2, opacity: 0.5 },
+    }];
+    const svg = serializeSvg(nodes);
+    expect(svg.match(/stroke-opacity=/g)).toHaveLength(1);
+    expect(parseSvg(svg).warnings).toEqual([]);
+  });
+
+  it('round-trips a parsed stroke-opacity without emitting invalid XML', () => {
+    const once = parseSvg(
+      `<svg xmlns="${SVG}"><path d="M0 0L10 0" fill="none" `
+      + `stroke="#3366cc" stroke-width="2" stroke-opacity="0.4"/></svg>`,
+    );
+    const svg = serializeSvg(once.nodes);
+    expect(parseSvg(svg).warnings).toEqual([]);
+    expect(svg).toContain('stroke-opacity="0.4"');
+  });
+});

@@ -238,11 +238,12 @@ function paintAttrs(
   paint: SvgPaint,
   name: 'fill' | 'stroke',
   registry: PaintServerRegistry,
+  includeOpacity = true,
 ): string[] {
   if (paint.kind === 'none') return [`${name}="none"`];
   if (paint.kind === 'solid') {
     const out = [`${name}="${paint.color}"`];
-    if (paint.opacity != null && paint.opacity !== 1) {
+    if (includeOpacity && paint.opacity != null && paint.opacity !== 1) {
       out.push(`${name}-opacity="${trimNumber(paint.opacity)}"`);
     }
     return out;
@@ -285,10 +286,15 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
 }
 
 function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry): string[] {
-  const attrs = paintAttrs(stroke.paint, 'stroke', registry);
+  // `SvgStroke.opacity` and the paint's own `opacity` are two models of one
+  // SVG attribute, and parse fills in both. Emitting each would write
+  // `stroke-opacity` twice, which is not well-formed XML at all.
+  const attrs = paintAttrs(stroke.paint, 'stroke', registry, false);
   attrs.push(`stroke-width="${trimNumber(stroke.width)}"`);
-  if (stroke.opacity != null && stroke.opacity !== 1) {
-    attrs.push(`stroke-opacity="${trimNumber(stroke.opacity)}"`);
+  const opacity = stroke.opacity
+    ?? (stroke.paint.kind === 'solid' ? stroke.paint.opacity : undefined);
+  if (opacity != null && opacity !== 1) {
+    attrs.push(`stroke-opacity="${trimNumber(opacity)}"`);
   }
   if (stroke.cap) {
     attrs.push(`stroke-linecap="${stroke.cap}"`);

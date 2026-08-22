@@ -20,7 +20,7 @@ import type {
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
 } from './types';
 import type { StyledRun, TextStyle, FillStyle, Stroke } from '@weasel-js/core';
-import { multiply, parseTransform, decomposeRotation, rotationComponent, isIdentity } from './transform';
+import { multiply, parseTransform, decomposeRotation, rebaseTransform, rotationComponent, isIdentity } from './transform';
 import { boundsOfPath } from '@weasel-js/core';
 import { IDENTITY_MATRIX, UNBOUNDED_TEXT_WIDTH } from './types';
 import { parsePaintAttr } from './color';
@@ -318,16 +318,19 @@ function parseElement(
   if (!path) return null;
   let rotation: number | undefined;
   if (!isIdentity(localTransform)) {
+    // `path` is already through `ctm`, so the element's own transform has to
+    // be too before it is compared against these bounds.
+    const worldLocal = rebaseTransform(ctm, localTransform);
     const bounds = pathAabb(path);
     const cx = bounds.x + bounds.width / 2;
     const cy = bounds.y + bounds.height / 2;
-    const angle = decomposeRotation(localTransform, cx, cy);
+    const angle = decomposeRotation(worldLocal, cx, cy);
     if (angle != null) {
       rotation = angle;
     } else {
       // Bake the matrix in — match legacy behavior.
-      path = transformPath(path, localTransform);
-      const rotComp = rotationComponent(localTransform);
+      path = transformPath(path, worldLocal);
+      const rotComp = rotationComponent(worldLocal);
       if (Math.abs(rotComp) > 1e-4) {
         onWarn(`leaf transform has a rotational component that can't be cleanly stored as rotation; baked into geometry (may not round-trip identically)`);
       }
@@ -690,13 +693,14 @@ function parseImageElement(
   if (opacity != null) node.opacity = opacity;
   const localTransform = parseTransform(el.getAttribute('transform'), onWarn);
   if (!isIdentity(localTransform)) {
+    const worldLocal = rebaseTransform(ctm, localTransform);
     const cx = node.x + node.width / 2;
     const cy = node.y + node.height / 2;
-    const angle = decomposeRotation(localTransform, cx, cy);
+    const angle = decomposeRotation(worldLocal, cx, cy);
     if (angle != null) {
       node.rotation = angle;
     } else {
-      const rotComp = rotationComponent(localTransform);
+      const rotComp = rotationComponent(worldLocal);
       if (Math.abs(rotComp) > 1e-4) {
         onWarn('<image> transform has a rotational component that can\'t be cleanly stored as rotation; dropped (may not round-trip identically)');
       }
@@ -865,13 +869,14 @@ function parseTextElement(
   // a rotational component, warn — the legacy code path baked the matrix
   // into the anchor; here we drop it so the warning is mandatory.
   if (!isIdentity(localTransform)) {
+    const worldLocal = rebaseTransform(ctm, localTransform);
     const cx = node.x + node.width / 2;
     const cy = node.y + node.height / 2;
-    const angle = decomposeRotation(localTransform, cx, cy);
+    const angle = decomposeRotation(worldLocal, cx, cy);
     if (angle != null) {
       node.rotation = angle;
     } else {
-      const rotComp = rotationComponent(localTransform);
+      const rotComp = rotationComponent(worldLocal);
       if (Math.abs(rotComp) > 1e-4) {
         onWarn(`<text> transform has a rotational component that can't be cleanly stored as rotation; dropped (may not round-trip identically)`);
       }
