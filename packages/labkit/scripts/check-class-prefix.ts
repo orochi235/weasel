@@ -31,8 +31,20 @@ const LESS_CLASS_RE = /\.([a-zA-Z][\w-]*)/g;
 // `.lk-effect-card.is-expanded`), so they can't collide globally and are exempt
 // from the `lk-` prefix rule.
 const STATE_CLASS_RE = /^(?:is|has)-/;
+
+// Classes a dependency's own stylesheet defines and matches on. labkit applies
+// them verbatim — `.windease-zone` (windease/styles.css) supplies the
+// containing block a tiled workspace needs — so renaming one to `lk-` would
+// just stop it matching. The rule is about labkit's own classes not colliding
+// globally; a vendor's class is not labkit's to rename.
+const VENDOR_PREFIXES = ['windease-'];
+
 function isAllowed(cls: string): boolean {
-  return cls.startsWith('lk-') || STATE_CLASS_RE.test(cls);
+  return (
+    cls.startsWith('lk-') ||
+    STATE_CLASS_RE.test(cls) ||
+    VENDOR_PREFIXES.some((p) => cls.startsWith(p))
+  );
 }
 
 function checkTsxFile(file: string): void {

@@ -290,9 +290,9 @@ export const RightSidebarTails: Story = {
   render: () => {
     function TailsList() {
       const [tails, setTails] = useState<TailItem[]>([
-        { id: 1, shape: 'classic', accent: TAIL_PALETTE[0]! },
-        { id: 2, shape: 'bubbles', accent: TAIL_PALETTE[1]! },
-        { id: 3, shape: 'wavy', accent: TAIL_PALETTE[2]! },
+        { id: 1, shape: 'classic', accent: TAIL_PALETTE[0] },
+        { id: 2, shape: 'bubbles', accent: TAIL_PALETTE[1] },
+        { id: 3, shape: 'wavy', accent: TAIL_PALETTE[2] },
       ]);
       const reorder = (sourceId: number, targetId: number, position: 'before' | 'after') => {
         setTails((prev) => {
