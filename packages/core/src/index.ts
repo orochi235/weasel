@@ -1083,7 +1083,7 @@ export { BUNDLE_TOOLS, rotateAroundAABBCenter } from './canvas/SceneCanvas';
 export { KIT_SHAPE_KINDS } from './canvas/SceneCanvas/shapeKinds';
 export type { BuiltinShapeToolId } from './canvas/SceneCanvas/shapeKinds';
 export type { BuiltinToolOptions } from './canvas/SceneCanvas/useBuiltinShapeTools';
-export type { ViewportConfig } from './canvas/SceneCanvas/useViewportTools';
+export type { ViewportConfig } from './canvas/SceneCanvas/viewportConfig';
 export type { InsertNodeFactory } from './canvas/deps';
 export type {
   SceneToAdapterOptions,

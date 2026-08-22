@@ -1,4 +1,4 @@
-import { useCallback, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react';
 import s from './Slider.module.css';
 import { formatNumber } from '../../format/number';
 
@@ -96,6 +96,21 @@ function defaultStep(step: number | undefined, min: number, max: number): number
   return (max - min) / 100;
 }
 
+/** Keep a thumb inside its neighbors when `constraint` is `'ordered'`. */
+function clampOrdered(
+  v: number,
+  thumbs: readonly Thumb[],
+  index: number,
+  min: number,
+  max: number,
+  step: number | undefined,
+): number {
+  const gap = step !== undefined && step > 0 ? step : (max - min) / 1000;
+  const lower = index > 0 ? thumbs[index - 1].value + gap : min;
+  const upper = index < thumbs.length - 1 ? thumbs[index + 1].value - gap : max;
+  return clamp(v, lower, upper);
+}
+
 function resolveBounds(thumb: Thumb, ctx: BoundsCtx, fallbackMin: number, fallbackMax: number): [number, number] {
   if (!thumb.bounds) return [fallbackMin, fallbackMax];
   const tuple = typeof thumb.bounds === 'function' ? thumb.bounds(ctx) : thumb.bounds;
@@ -120,6 +135,11 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
   const trackRef = useRef<HTMLDivElement | null>(null);
   // In-flight thumb buffer during a drag; null when not dragging.
   const dragBufferRef = useRef<T[] | null>(null);
+  // Teardown for the in-flight drag's document listeners, so unmounting
+  // mid-drag doesn't leave them running against a gone track.
+  const endDragRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => () => { endDragRef.current?.(); }, []);
 
   const valueToFraction = useCallback(
     (v: number): number => (max === min ? 0 : clamp((v - min) / (max - min), 0, 1)),
@@ -150,12 +170,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         const [bLo, bHi] = resolveBounds(buffer[index], { thumbs: buffer, index }, min, max);
         v = clamp(v, bLo, bHi);
 
-        if (constraint === 'ordered') {
-          const gap = step !== undefined && step > 0 ? step : (max - min) / 1000;
-          const lower = index > 0 ? buffer[index - 1].value + gap : min;
-          const upper = index < buffer.length - 1 ? buffer[index + 1].value - gap : max;
-          v = clamp(v, lower, upper);
-        }
+        if (constraint === 'ordered') v = clampOrdered(v, buffer, index, min, max, step);
 
         // Drop-off detection: pointer exits the track vertically by more than trackHeight.
         const bandHeight = rect.height;
@@ -171,9 +186,22 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         onInput(buffer.map(t => ({ ...t })));
       };
 
-      const onUp = () => {
+      const unlisten = () => {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onCancel);
+        endDragRef.current = null;
+      };
+
+      // A canceled pointer never fires `pointerup`; without this the drag
+      // stays live and the thumb tracks a released pointer.
+      const onCancel = () => {
+        unlisten();
+        dragBufferRef.current = null;
+      };
+
+      const onUp = () => {
+        unlisten();
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
         if (!buffer) return;
@@ -193,6 +221,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onCancel);
+      endDragRef.current = onCancel;
     },
     [thumbs, onInput, onChange, fractionToValue, min, max, step, constraint, props],
   );
@@ -228,9 +258,20 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
         onInput(buffer.map(t => ({ ...t })));
       };
 
-      const onUp = () => {
+      const unlisten = () => {
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onCancel);
+        endDragRef.current = null;
+      };
+
+      const onCancel = () => {
+        unlisten();
+        dragBufferRef.current = null;
+      };
+
+      const onUp = () => {
+        unlisten();
         const buffer = dragBufferRef.current;
         dragBufferRef.current = null;
         if (buffer) onChange?.(buffer.map(t => ({ ...t })));
@@ -238,6 +279,8 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
 
       document.addEventListener('pointermove', onMove);
       document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onCancel);
+      endDragRef.current = onCancel;
     },
     [thumbs, onInput, onChange, min, max, step],
   );
@@ -246,6 +289,9 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     // Only bail on explicit non-primary buttons (button > 0). jsdom's PointerEvent
     // leaves `button` undefined; treat that as primary so tests can drive drags.
     if (typeof e.button === 'number' && e.button > 0) return;
+    // preventDefault below suppresses the focus the press would otherwise
+    // give the thumb, and the arrow keys are on the thumb.
+    (e.currentTarget as HTMLElement).focus?.();
     e.preventDefault();
     e.stopPropagation();
     if (e.shiftKey && props.allowShiftAll) {
@@ -326,6 +372,7 @@ export function Slider<T extends Thumb = Thumb>(props: SliderProps<T>): ReactEle
     else v = next[index].value + delta;
     v = snap(v, step, min);
     v = clamp(v, lo, hi);
+    if (constraint === 'ordered') v = clampOrdered(v, next, index, lo, hi, step);
     next[index] = { ...next[index], value: v };
     onInput(next);
     onChange?.(next);

@@ -52,7 +52,7 @@ export function Dialog(props: DialogProps) {
   const showClose = showCloseButton ?? Boolean(onOpenChange);
 
   return (
-    <ModalOverlay {...rest} isOpen={isOpen} onOpenChange={onOpenChange} className={s.overlay}>
+    <ModalOverlay {...rest} isOpen={isOpen} onOpenChange={onOpenChange} className={s.overlay} data-weasel-overlay="">
       <RACModal className={[s.modal, className].filter(Boolean).join(' ')}>
         <RACDialog role={role} className={s.dialog}>
           {({ close }) => (

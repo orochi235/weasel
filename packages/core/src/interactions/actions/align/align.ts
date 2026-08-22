@@ -25,10 +25,6 @@ export interface UseAlignOptions<TPose> {
   geometry?: PoseProjection<TPose>;
   /** Label passed to applyOps. Default 'Align'. */
   label?: string;
-  /** Auto-register the six default align actions into a surrounding
-   *  `<ActionsProvider>`. Default `true`. Pass `false` to skip registration
-   *  (e.g. you're calling `align()` imperatively from your own UI). */
-  enableKeyboard?: boolean;
 }
 
 /** Return shape of `useAlign`. */

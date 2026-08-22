@@ -76,7 +76,7 @@ export function Select<T extends Key = string>(props: SelectProps<T>) {
   return (
     <RACSelect
       {...rest}
-      selectedKey={selectedKey ?? undefined}
+      selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T) : undefined}
       className={[s.field, fieldClasses.root, className].filter(Boolean).join(' ')}

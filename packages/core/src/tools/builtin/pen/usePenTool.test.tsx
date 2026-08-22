@@ -190,11 +190,11 @@ describe('usePenTool', () => {
     expect(out.x).toBeGreaterThan(0);
   });
 
-  it('a cancelled drag leaves the anchor but drops the in-flight handle state', () => {
+  it('a cancelled drag takes back the anchor it placed', () => {
     const p = setup();
     const invoker = p.actionOf('pen.dragHandle').invoker;
     if (invoker?.timing !== 'ongoing') throw new Error('expected ongoing');
-    act(() => {
+    const cancelledDrag = () => act(() => {
       const handle = invoker.start({
         world: { x: 0, y: 0 }, screen: { x: 0, y: 0 },
         modifiers: NO_MODS, deps: {} as ActionDeps,
@@ -205,7 +205,17 @@ describe('usePenTool', () => {
         modifiers: NO_MODS, deps: {} as ActionDeps,
       }, 'cancel');
     });
+
+    cancelledDrag();
     expect(p.scratch.draggingHandleAt).toBeNull();
+    // Nothing was placed, so there is no subpath in progress either.
+    expect(p.scratch.current).toBeNull();
+
+    // With a path already under way, only the cancelled anchor goes.
+    p.click(50, 50);
+    p.click(80, 50);
+    cancelledDrag();
+    expect(p.scratch.current!.anchors).toHaveLength(2);
   });
 
   it('clicking first anchor (≥3 anchors) closes the subpath and auto-commits (default)', () => {

@@ -170,6 +170,16 @@ describe('hitTestArea — the memoized AABB tracks the scene', () => {
     expect(hitTestArea(scene, FAR)).toEqual([]);
   });
 
+  it('skips a node whose layer the scene has hidden', () => {
+    const { scene, api, id } = movableScene();
+    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+
+    api.setLayerVisible('main', false);
+    expect(hitTestArea(scene, NEAR)).toEqual([]);
+    api.setLayerVisible('main', true);
+    expect(hitTestArea(scene, NEAR)).toEqual([id]);
+  });
+
   it('is unaffected by a data change that leaves the pose alone', () => {
     const { scene, api, id } = movableScene();
     expect(hitTestArea(scene, NEAR)).toEqual([id]);

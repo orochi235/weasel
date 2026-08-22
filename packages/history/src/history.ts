@@ -142,7 +142,9 @@ export interface History {
    *  2026-05-24-modality-design.md for the full lifecycle. */
   beginJournal(opts: BeginJournalOptions): Journal;
   /** Re-activate a suspended journal. Throws if the journal was committed or
-   *  cancelled (those are terminal). Staleness checking is the caller's
+   *  cancelled (those are terminal), or if a different journal is currently
+   *  active — at most one journal writes to the adapter at a time, on resume
+   *  as well as on open. Staleness checking is the caller's
    *  responsibility — consult `journal.forkedAtEntryId` against
    *  `currentEntryId()` and your own op-semantic rules to decide whether
    *  to resume or discard before calling this. */
@@ -155,7 +157,9 @@ export interface CreateHistoryOptions {
    *  via matching `Op.coalesceKey`. Defaults to `0` (no coalescing — every
    *  `applyOps` pushes a discrete entry). Recommended: ~500ms for typical
    *  rapid-input UX (nudge, per-keystroke text edits). The window resets on
-   *  each successful coalesce, so a sustained burst keeps merging. */
+   *  each successful coalesce, so a sustained burst keeps merging, and closes
+   *  on any other history operation — only the entry the last push created is
+   *  ever a merge target. */
   coalesceWindowMs?: number;
   /** Clock injection point for tests. Defaults to `Date.now`. */
   now?: () => number;
@@ -165,8 +169,8 @@ export interface CreateHistoryOptions {
    *  synchronously (negative values are clamped to `0`). Default: unbounded. */
   historyLimit?: number;
   /** Fired once per entry that permanently leaves the reachable stacks:
-   *  redo entries dropped by a branch edit (a new push / coalesce /
-   *  `recordEntry` after undo) and undo entries evicted by `historyLimit`.
+   *  redo entries dropped by a branch edit (a new push or `recordEntry`
+   *  after undo) and undo entries evicted by `historyLimit`.
    *  NOT fired by `clear()` or `restore()` — those wholesale-replace the
    *  history and the caller already knows. Note `restore()` does not enforce
    *  `historyLimit` either: a restored snapshot may exceed the cap, which
@@ -215,6 +219,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const logger = options.debug ?? SILENT;
   let nextEntryId = 1;
   let version = 0;
+  /** `version` as of the last push or coalesce. A batch may only merge into
+   *  the top entry while this still matches: every other operation bumps
+   *  `version`, so undo, redo, goto, clear, restore and `recordEntry` all
+   *  expire the merge window without having to remember to. Without that, an
+   *  edit made after stepping back rewrites whatever entry the step left on
+   *  top, and one undo then jumps past it. */
+  let coalesceAnchorVersion = -1;
   const listeners = new Set<() => void>();
   function bump(): void {
     version++;
@@ -277,6 +288,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
    *  any order between batches without breaking the merge. */
   function canCoalesce(top: Entry, incoming: Op[]): boolean {
     if (coalesceWindowMs <= 0) return false;
+    if (version !== coalesceAnchorVersion) return false;
     if (now() - top.timestamp > coalesceWindowMs) return false;
     if (top.forwardOps.length === 0 || incoming.length === 0) return false;
     if (top.forwardOps.length !== incoming.length) return false;
@@ -324,10 +336,12 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       }
       // baseOps + label + id intentionally preserved — undo returns to the
       // pre-edit state, the original label sticks, and the entry id stays
-      // stable so React lists keyed on id don't flicker.
-      dropRedo();
+      // stable so React lists keyed on id don't flicker. No dropRedo() here:
+      // the anchor only survives until the stack is stepped, and every step
+      // clears it, so a live anchor implies an empty redo stack.
       logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
       bump();
+      coalesceAnchorVersion = version;
       return;
     }
     logger.log(`push '${label}' (${ops.length} ops)`);
@@ -335,6 +349,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     dropRedo();
     enforceLimit();
     bump();
+    coalesceAnchorVersion = version;
   }
 
   return {
@@ -446,7 +461,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return j;
     },
     resumeJournal(journal: Journal): void {
+      if (activeJournal !== null && activeJournal !== journal && activeJournal.isActive()) {
+        throw new Error('A journal is already active — commit, cancel, or suspend it first');
+      }
       _resumeJournalInternal(journal);
+      activeJournal = journal;
     },
     restore(snapshot: SerializedHistory): void {
       undoStack.length = 0;
@@ -562,9 +581,8 @@ function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undef
     label: se.label,
     forwardOps,
     baseOps,
-    // Restored entries inherit a "now" timestamp — coalesce eligibility is
-    // a within-session concept and a restored entry shouldn't merge with a
-    // freshly-typed one regardless of when it was originally pushed.
+    // Coalescing is a within-session concept; a restored entry is never a
+    // coalesce anchor, so its timestamp only has to be non-null.
     timestamp: 0,
     // Re-derive touchedIds from the rebuilt ops rather than trying to
     // round-trip the Set through the serialized form (Sets aren't JSON-safe).

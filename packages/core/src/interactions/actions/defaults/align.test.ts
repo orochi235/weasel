@@ -106,8 +106,15 @@ describe('alignLeftAction descriptor', () => {
     }).not.toThrow();
   });
 
-  it('enabled returns SelectionRequired', () => {
+  it('enabled returns SelectionRequired without deps', () => {
     expect(alignLeftAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  });
+
+  it('enabled is true once two nodes are selected', () => {
+    const one = { selection: makeSelection(['a']) };
+    const two = { selection: makeSelection(['a', 'b']) };
+    expect(alignLeftAction.enabled!(one as never)).toBe(ActionDisabledReason.SelectionRequired);
+    expect(alignLeftAction.enabled!(two as never)).toBe(true);
   });
 });
 

@@ -118,10 +118,13 @@ export function attachHud(
       const hit = findTopmostHit(sx, sy);
       if (hit !== lastHovered) {
         if (lastHovered) lastHovered.onPointer({ type: 'hoverleave', native: evt } satisfies HudPointerEvent);
-        if (hit) hit.onPointer({ type: 'hovermove', x: sx, y: sy, native: evt } satisfies HudPointerEvent);
         lastHovered = hit;
         api.requestRedraw();
       }
+      // Every move inside the widget, not only the one that entered it: the
+      // event carries `x`/`y`, and a widget tracking hover position reads a
+      // frozen point otherwise.
+      if (hit) hit.onPointer({ type: 'hovermove', x: sx, y: sy, native: evt } satisfies HudPointerEvent);
     },
     onUncapturedLeave: () => {
       if (lastHovered) {
@@ -143,6 +146,13 @@ export function attachHud(
   });
 
   return () => {
+    // Widgets outlive the attachment. Leaving one believing the pointer is
+    // still over it strands it painted as hovered, and a re-attach starts
+    // with an empty `lastHovered` so it never sees the leave.
+    if (lastHovered) {
+      lastHovered.onPointer({ type: 'hoverleave', native: null } satisfies HudPointerEvent);
+      lastHovered = null;
+    }
     detachLayer();
     hud.unbind();
   };

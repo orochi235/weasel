@@ -54,6 +54,41 @@ describe('ActionsRegistry.begin', () => {
     expect(ctrl).toBeNull();
   });
 
+  it('builds the deps bag from the action\'s declared requires', () => {
+    const seen: Array<Record<string, unknown>> = [];
+    const applyOps = vi.fn();
+    const action: Action & { requires: string[] } = {
+      id: 'paint',
+      label: 'paint',
+      requires: ['selection', 'applyOps'],
+      invoker: {
+        timing: 'ongoing',
+        start: (ctx) => {
+          seen.push({ ...(ctx.deps as Record<string, unknown>) });
+          return { onMove: vi.fn(), onEnd: vi.fn() };
+        },
+      },
+    };
+    const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
+    const reg = result.current!;
+    act(() => { reg.register(action); });
+    const d = createDispatcher({ getAction: (id) => reg.list().find((a) => a.id === id) });
+    act(() => { reg.setDispatcher(d); });
+    act(() => {
+      reg.setDepRegistry({
+        get: (name: string) => (name === 'applyOps' ? applyOps : name === 'selection' ? 'sel' : undefined),
+      } as never);
+    });
+
+    let ctrl: UiOngoingControl | null = null;
+    act(() => { ctrl = reg.begin('paint', {}); });
+    expect(ctrl).not.toBeNull();
+    // The legacy fixed bag has no `applyOps` at all.
+    expect(seen[0].applyOps).toBe(applyOps);
+    expect(seen[0].selection).toBe('sel');
+    act(() => { ctrl!.end('commit'); });
+  });
+
   it('returns a working control for an ongoing action', () => {
     const { result } = renderHook(() => useActionsRegistry(), { wrapper: wrap });
     const reg = result.current!;

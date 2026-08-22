@@ -132,7 +132,7 @@ export const reorderBackwardAction: Action & { requires: string[] } = {
     },
   ],
   eligible: { capability: 'edits-page' },
-  requires: ['selection', 'scene'],
+  requires: ['selection', 'scene', 'applyOps'],
   invoker: {
     timing: 'immediate',
     run: (deps, params) => {

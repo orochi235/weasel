@@ -84,8 +84,15 @@ function targetClause(target: string | undefined, hasTarget: boolean): string {
   return ` on a ${target}`;
 }
 
+/** The gesture's arg, or undefined when it is the `'*'` wildcard — which
+ *  `parseRoute` fills in for every omitted slot, so prose must not print it. */
+function concreteArg(parsed: ParsedRoute): string | undefined {
+  return parsed.arg === '*' ? undefined : parsed.arg;
+}
+
 function actionClause(parsed: ParsedRoute, required: readonly string[]): string {
   const desc = getGestureDescriptor(parsed.gesture as GestureName);
+  const arg = concreteArg(parsed);
   const modPrefix = required.length > 0 ? `${joinAnd(required)}-` : '';
   const target = targetClause(parsed.target, desc.hasTarget);
 
@@ -96,19 +103,19 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
       const verb = parsed.gesture === 'keyDown' ? 'presses'
         : parsed.gesture === 'keyUp' ? 'releases'
         : 'holds';
-      const key = parsed.arg ?? 'any key';
+      const key = arg ?? 'any key';
       return required.length > 0
         ? `the user holds ${joinAnd(required)} and ${verb} ${key}`
         : `the user ${verb} ${key}`;
     }
     case 'wheel': {
-      const direction = parsed.arg === 'up' ? ' up'
-        : parsed.arg === 'down' ? ' down'
+      const direction = arg === 'up' ? ' up'
+        : arg === 'down' ? ' down'
         : '';
       return `the user ${modPrefix}scrolls${direction}`;
     }
     case 'multiTouchTap':
-      return `the user taps with ${parsed.arg ?? 'multiple'} fingers`;
+      return `the user taps with ${arg ?? 'multiple'} fingers`;
     case 'contextMenu':
       return `the user ${modPrefix}opens the context menu${target}`;
     case 'longPress':
@@ -122,9 +129,9 @@ function actionClause(parsed: ParsedRoute, required: readonly string[]): string 
     case 'drag':
       return `the user ${modPrefix}drags${target}`;
     case 'drop':
-      return `the user drops ${parsed.arg ?? 'any'} content onto the canvas`;
+      return `the user drops ${arg ?? 'any'} content onto the canvas`;
     case 'paste':
-      return `the user pastes ${parsed.arg ?? 'any'} content`;
+      return `the user pastes ${arg ?? 'any'} content`;
   }
 }
 

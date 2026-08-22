@@ -1,5 +1,14 @@
 # weasel-js
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies [5d25a40]
+- Updated dependencies [f7077f6]
+- Updated dependencies [514c34a]
+  - @weasel-js/core@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes

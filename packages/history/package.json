@@ -1,6 +1,6 @@
 {
   "name": "@weasel-js/history",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Undo/redo history with scoped sub-history (Journal) primitive. No React, no DOM.",
   "license": "MIT",
   "type": "module",

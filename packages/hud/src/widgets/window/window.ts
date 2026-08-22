@@ -88,6 +88,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     id: opts.id,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
+    get disposed() { return disposed; },
     get contentRect() { return windowContentRect(bounds, m); },
     cursorAt(x, y) { const z = asDrag(zoneAt(bounds, m, x, y)); return z ? cursorForZone(z) : 'default'; },
     content: opts.content,

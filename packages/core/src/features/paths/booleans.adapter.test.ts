@@ -50,7 +50,7 @@ describe('pathToMultiPolygon', () => {
     expect(mp[0][0][mp[0][0].length - 1]).toEqual([0, 0]);
   });
 
-  it('produces two polygons for a two-contour PolygonPath', () => {
+  it('collapses a nested same-winding contour under nonzero into one polygon', () => {
     const two: PolygonPath = {
       kind: 'polygon',
       commands: new Uint8Array([
@@ -64,7 +64,8 @@ describe('pathToMultiPolygon', () => {
       fillRule: 'nonzero',
     };
     const mp = pathToMultiPolygon(two);
-    expect(mp).toHaveLength(2);
+    expect(mp).toHaveLength(1);
+    expect(mp[0]).toHaveLength(1);
   });
 });
 
@@ -115,5 +116,61 @@ describe('round-trip', () => {
     const round = multiPolygonToPath(pathToMultiPolygon(rect));
     expect(pointInPath(round, 5, 5)).toBe(true);
     expect(pointInPath(round, 15, 5)).toBe(false);
+  });
+});
+
+// --- ring grouping (outer + holes) ---
+
+const poly = (rings: number[][], fillRule: 'nonzero' | 'evenodd'): PolygonPath => {
+  const commands: number[] = [];
+  const coords: number[] = [];
+  for (const ring of rings) {
+    commands.push(PATH_M);
+    coords.push(ring[0], ring[1]);
+    for (let i = 2; i < ring.length; i += 2) {
+      commands.push(PATH_L);
+      coords.push(ring[i], ring[i + 1]);
+    }
+    commands.push(PATH_Z);
+  }
+  return {
+    kind: 'polygon',
+    commands: new Uint8Array(commands),
+    coords: new Float32Array(coords),
+    fillRule,
+  };
+};
+
+const OUTER = [0, 0, 100, 0, 100, 100, 0, 100];
+const INNER_SAME = [25, 25, 75, 25, 75, 75, 25, 75];
+const INNER_REVERSED = [25, 25, 25, 75, 75, 75, 75, 25];
+
+describe('pathToMultiPolygon ring grouping', () => {
+  it('groups a nonzero donut as one polygon with a hole ring', () => {
+    const mp = pathToMultiPolygon(poly([OUTER, INNER_REVERSED], 'nonzero'));
+    expect(mp).toHaveLength(1);
+    expect(mp[0]).toHaveLength(2);
+    expect(mp[0][0][0]).toEqual([0, 0]);
+  });
+
+  it('groups an evenodd donut as one polygon with a hole ring', () => {
+    const mp = pathToMultiPolygon(poly([OUTER, INNER_SAME], 'evenodd'));
+    expect(mp).toHaveLength(1);
+    expect(mp[0]).toHaveLength(2);
+  });
+
+  it('emits disjoint rings as separate polygons', () => {
+    const mp = pathToMultiPolygon(poly([OUTER, [200, 200, 250, 200, 250, 250, 200, 250]], 'nonzero'));
+    expect(mp).toHaveLength(2);
+    expect(mp[0]).toHaveLength(1);
+    expect(mp[1]).toHaveLength(1);
+  });
+
+  it('emits an island inside a hole as its own polygon', () => {
+    const island = [40, 40, 60, 40, 60, 60, 40, 60];
+    const mp = pathToMultiPolygon(poly([OUTER, INNER_REVERSED, island], 'nonzero'));
+    expect(mp).toHaveLength(2);
+    expect(mp[0]).toHaveLength(2);
+    expect(mp[1]).toHaveLength(1);
   });
 });

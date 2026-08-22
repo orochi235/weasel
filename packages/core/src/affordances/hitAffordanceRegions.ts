@@ -122,7 +122,7 @@ export interface TargetTransform {
   identity: boolean;
 }
 
-export const IDENTITY_XF: TargetTransform = { cx: 0, cy: 0, cos: 1, sin: 0, identity: true };
+const IDENTITY_XF: TargetTransform = { cx: 0, cy: 0, cos: 1, sin: 0, identity: true };
 
 export function transformOf(state: ChromeState, targetId: string | null): TargetTransform {
   if (targetId === null) return IDENTITY_XF;
@@ -152,7 +152,7 @@ export function localToWorld(xf: TargetTransform, lx: number, ly: number): { x: 
 }
 
 /** world point → local point. */
-export function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number; y: number } {
+function worldToLocal(xf: TargetTransform, wx: number, wy: number): { x: number; y: number } {
   if (xf.identity) return { x: wx, y: wy };
   const dx = wx - xf.cx;
   const dy = wy - xf.cy;
@@ -189,7 +189,7 @@ export function annulusSemiAxes(
 
 // ─── Per-shape hit-test ─────────────────────────────────────────────────────
 
-export function hitRegion(
+function hitRegion(
   region: AffordanceRegion,
   wx: number,
   wy: number,

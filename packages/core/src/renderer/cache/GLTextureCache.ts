@@ -2,7 +2,8 @@
  * GL texture upload + cache for MSDF font atlases (and future images).
  *
  * Textures are keyed by a string id (the font family name or image id).
- * Upload happens once; subsequent uploads for the same id are no-ops.
+ * Pixels are uploaded once per id; a later upload of the same id reuses the
+ * texture and only re-applies its wrap mode when that changed.
  * The cache is GL-context-bound; discard and create a new one on context loss.
  *
  * Atlas format: RGBA UNSIGNED_BYTE, linear filtering, no mipmaps.
@@ -19,6 +20,7 @@ export type TextureWrap = 'clamp' | 'repeat';
 
 export class GLTextureCache {
   private readonly map = new Map<string, WebGLTexture>();
+  private readonly wraps = new Map<string, TextureWrap>();
 
   constructor(private readonly gl: WebGL2RenderingContext) {}
 
@@ -26,10 +28,16 @@ export class GLTextureCache {
     return this.map.has(id);
   }
 
-  /** Uploads once per id; `wrap` therefore applies on first upload only.
-   *  An id is either a pattern tile or a shader texture, never both. */
+  /** Uploads the pixels once per id. `wrap` is re-applied whenever it differs
+   *  from what the id was last uploaded under: the same registered image can
+   *  be a clamped shader texture in one draw and a repeating pattern tile in
+   *  the next, and first-upload-wins gave the second one the first one's mode. */
   upload(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
-    if (this.map.has(id)) return id;
+    const cached = this.map.get(id);
+    if (cached) {
+      if (this.wraps.get(id) !== wrap) this.applyWrap(id, cached, wrap);
+      return id;
+    }
 
     const gl = this.gl;
     const tex = gl.createTexture();
@@ -48,7 +56,18 @@ export class GLTextureCache {
     gl.bindTexture(gl.TEXTURE_2D, null);
 
     this.map.set(id, tex);
+    this.wraps.set(id, wrap);
     return id;
+  }
+
+  private applyWrap(id: string, tex: WebGLTexture, wrap: TextureWrap): void {
+    const gl = this.gl;
+    const mode = wrap === 'repeat' ? gl.REPEAT : gl.CLAMP_TO_EDGE;
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, mode);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, mode);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    this.wraps.set(id, wrap);
   }
 
   /** Create a single-channel R8 texture from raw bytes (full upload).
@@ -69,6 +88,7 @@ export class GLTextureCache {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.bindTexture(gl.TEXTURE_2D, null);
     this.map.set(id, tex);
+    this.wraps.set(id, 'clamp');
   }
 
   /** Patch a rect of an existing R8 texture with tightly-packed w×h bytes. */
@@ -103,5 +123,6 @@ export class GLTextureCache {
       gl.deleteTexture(tex);
     }
     this.map.clear();
+    this.wraps.clear();
   }
 }

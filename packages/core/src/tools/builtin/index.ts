@@ -10,7 +10,6 @@ export { useSelectTool, type UseSelectToolOptions } from './select';
 // `useResizePolicy(...)` instead of constructing an ambient tool.
 export { useRotateTool, type UseRotateToolOptions } from './rotate';
 export { pickTopMostHit, type PickTopMostHitAdapter } from './pickTopMostHit';
-export { applyHitExistingGate } from './hitExistingGate';
 export { useHandTool } from './hand';
 export { useTextTool } from './text';
 // useWheelZoomTool, useWheelPanTool, useKeyboardZoomTool are dissolved.

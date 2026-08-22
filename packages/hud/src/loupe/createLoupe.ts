@@ -177,12 +177,24 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   };
 
   const handleAim = (p: { x: number; y: number }) => {
+    if (disposed) return;
+    // The window can be removed through the HUD, which disposes it without
+    // going through `LoupeHandle.dispose`. Follow it down rather than keep
+    // reading pixels back for a loupe nobody can see.
+    if (win.disposed) { teardown(); return; }
     if (win.hidden) return;
     if (win.hitTest(p.x, p.y)) return;   // freeze rule
     aim = p;
     sampleColor();
     if (mode === 'pixel') refreshPixels();
     requestRedraw();
+  };
+
+  const teardown = () => {
+    disposed = true;
+    element.removeEventListener('pointermove', onPointerMove);
+    pixels?.close();
+    pixels = null;
   };
 
   element.addEventListener('pointermove', onPointerMove);
@@ -206,10 +218,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     },
     aimAt: handleAim,
     dispose() {
-      disposed = true;
-      element.removeEventListener('pointermove', onPointerMove);
-      pixels?.close();
-      pixels = null;
+      teardown();
       win.dispose();
     },
   };

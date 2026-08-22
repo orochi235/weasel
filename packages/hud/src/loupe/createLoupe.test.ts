@@ -30,6 +30,30 @@ describe('createLoupe', () => {
     expect(hud.widgets()).toContain(loupe.window);
   });
 
+  it('stops listening once the window is removed through the HUD', () => {
+    const hud = createHud();
+    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    const el = makeElement();
+    const remove = vi.spyOn(el, 'removeEventListener');
+    const loupe = createLoupe({ hud, element: el, source, requestRedraw: () => {} });
+    hud.remove(loupe.window);
+    // The next pointer sample is the one that notices and tears down.
+    el.dispatchEvent(new MouseEvent('pointermove', { clientX: 400, clientY: 300 }));
+    expect(remove).toHaveBeenCalledWith('pointermove', expect.any(Function));
+    remove.mockRestore();
+  });
+
+  it('aimAt after dispose does nothing', () => {
+    const hud = createHud();
+    hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });
+    const redraw = vi.fn();
+    const loupe = createLoupe({ hud, element: makeElement(), source, requestRedraw: redraw });
+    loupe.dispose();
+    redraw.mockClear();
+    loupe.aimAt({ x: 400, y: 300 });
+    expect(redraw).not.toHaveBeenCalled();
+  });
+
   it('vector mode paints the source through a magnified inner view', () => {
     const hud = createHud();
     hud.bind({ requestRedraw: () => {}, registerLayer: () => () => {} });

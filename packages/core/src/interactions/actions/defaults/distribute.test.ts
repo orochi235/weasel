@@ -107,8 +107,15 @@ describe('distributeHorizontalAction descriptor', () => {
     }).not.toThrow();
   });
 
-  it('enabled returns SelectionRequired', () => {
+  it('enabled returns SelectionRequired without deps', () => {
     expect(distributeHorizontalAction.enabled!()).toBe(ActionDisabledReason.SelectionRequired);
+  });
+
+  it('enabled is true once three nodes are selected', () => {
+    const two = { selection: makeSelection(['a', 'b']) };
+    const three = { selection: makeSelection(['a', 'b', 'c']) };
+    expect(distributeHorizontalAction.enabled!(two as never)).toBe(ActionDisabledReason.SelectionRequired);
+    expect(distributeHorizontalAction.enabled!(three as never)).toBe(true);
   });
 });
 

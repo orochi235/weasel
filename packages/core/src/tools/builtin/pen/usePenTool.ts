@@ -382,6 +382,13 @@ export function usePenTool<TPose>(
               onEnd: (endCtx: InvocationCtx, reason: 'commit' | 'cancel') => {
                 const se = s();
                 if (reason === 'cancel') {
+                  // `start` appended the anchor; a cancel (pointercancel is
+                  // the reachable one — Escape and a tool switch both reset
+                  // the whole scratch first) has to take it back out.
+                  if (se.current && se.draggingHandleAt === se.current.anchors.length - 1) {
+                    se.current.anchors.pop();
+                    if (se.current.anchors.length === 0) se.current = null;
+                  }
                   se.draggingHandleAt = null;
                   forceRenderRef.current();
                   return;

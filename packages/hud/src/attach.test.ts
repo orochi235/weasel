@@ -78,6 +78,38 @@ describe('attachHud', () => {
     expect(hoverFn).toHaveBeenCalledTimes(1);
   });
 
+  it('fires hovermove for every move inside a widget, not only on entry', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    const seen: { x: number; y: number }[] = [];
+    hud.add({
+      id: 'w', bounds: { x: 0, y: 0, w: 100, h: 100 }, hidden: false,
+      draw: () => [], hitTest: () => true, dispose: () => {},
+      onPointer: (e) => { if (e.type === 'hovermove') seen.push({ x: e.x, y: e.y }); },
+    });
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    api._layer!.onUncapturedMove!(10, 10, {} as PointerEvent, view, { width: 100, height: 100 });
+    api._layer!.onUncapturedMove!(40, 60, {} as PointerEvent, view, { width: 100, height: 100 });
+    expect(seen).toEqual([{ x: 10, y: 10 }, { x: 40, y: 60 }]);
+  });
+
+  it('detach sends hoverleave so a widget is not stranded hovered', () => {
+    const hud = createHud();
+    const api = makeApi();
+    const detach = attachHud(api, hud);
+    const types: string[] = [];
+    hud.add({
+      id: 'w', bounds: { x: 0, y: 0, w: 100, h: 100 }, hidden: false,
+      draw: () => [], hitTest: () => true, dispose: () => {},
+      onPointer: (e) => { types.push(e.type); },
+    });
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    api._layer!.onUncapturedMove!(10, 10, {} as PointerEvent, view, { width: 100, height: 100 });
+    detach();
+    expect(types).toEqual(['hovermove', 'hoverleave']);
+  });
+
   it('layer.draw draws with the theme passed to attachHud', () => {
     const hud = createHud();
     const canvas = document.createElement('canvas');

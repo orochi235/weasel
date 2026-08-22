@@ -339,12 +339,10 @@ export function formatRoute(r: ParsedRoute): string {
 
   let out = `${phaseStr} ${r.gesture}`;
 
-  // Arg slot — elide default.
-  if (desc.arg) {
-    const isDefault =
-      r.arg === undefined ||
-      (desc.arg.default !== undefined && r.arg === desc.arg.default);
-    if (!isDefault) out += `(${r.arg})`;
+  // Arg slot — elide the value an omitted slot would parse back to. A
+  // descriptor with no declared default takes '*', same as the target slot.
+  if (desc.arg && r.arg !== undefined && r.arg !== (desc.arg.default ?? '*')) {
+    out += `(${r.arg})`;
   }
 
   // Target slot — elide "*" (wildcard default for hasTarget gestures).

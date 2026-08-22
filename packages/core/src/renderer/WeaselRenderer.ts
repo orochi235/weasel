@@ -290,6 +290,8 @@ export class WeaselRenderer {
     const program = new ShaderProgram(this.gl, vertSrc, fragSrc);
     program.lookupUniforms([...CUSTOM_KIT_UNIFORMS, ...extractUniformNames(fragSrc)]);
     program.lookupAttributes(CUSTOM_ATTRIBUTES);
+    const previous = this.programRegistry.get(handle.id);
+    if (previous) this.gl.deleteProgram(previous.handle);
     this.programRegistry.set(handle.id, program);
   }
 
@@ -395,7 +397,7 @@ export class WeaselRenderer {
     }
     this.meshCache.freeTransient();
     this.meshCache.drainPendingDeletes();
-    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.textSdfR8, this.imageFill, this.gradFill]) {
+    for (const prog of [this.pathFill, this.pathFillVColor, this.textSdf, this.textSdfR8, this.imageFill, this.gradFill, this.patternFill]) {
       gl.deleteProgram(prog.handle);
     }
     for (const prog of this.programRegistry.values()) {
@@ -428,6 +430,7 @@ export class WeaselRenderer {
     this.meshCache.drainPendingDeletes();
     // New frame: refill the dynamic-glyph synchronous bake budget.
     resetBakeBudget(this.bakeBudget);
+    this.groupState.reset();
     // Ensure all stencil bits are cleared regardless of any mask left over
     // from the previous frame's clip ops.
     gl.stencilMask(0xFF);

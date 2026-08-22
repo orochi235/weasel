@@ -8,12 +8,12 @@
 import type { Path, Stroke } from '@weasel-js/core';
 import { boundsOfPath } from '@weasel-js/core';
 import type {
-  NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode, SvgNode,
-  SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
+  Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
+  SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
 } from './types';
-import { runsToPlainText } from '@weasel-js/core';
+import { IDENTITY_MATRIX } from './types';
 import { serializePathD } from './path-serializer';
-import { formatMatrix, trimNumber } from './transform';
+import { formatMatrix, multiply, trimNumber } from './transform';
 import { PaintServerRegistry } from './gradients';
 
 /**
@@ -238,11 +238,12 @@ function paintAttrs(
   paint: SvgPaint,
   name: 'fill' | 'stroke',
   registry: PaintServerRegistry,
+  includeOpacity = true,
 ): string[] {
   if (paint.kind === 'none') return [`${name}="none"`];
   if (paint.kind === 'solid') {
     const out = [`${name}="${paint.color}"`];
-    if (paint.opacity != null && paint.opacity !== 1) {
+    if (includeOpacity && paint.opacity != null && paint.opacity !== 1) {
       out.push(`${name}-opacity="${trimNumber(paint.opacity)}"`);
     }
     return out;
@@ -285,10 +286,15 @@ function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegist
 }
 
 function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry): string[] {
-  const attrs = paintAttrs(stroke.paint, 'stroke', registry);
+  // `SvgStroke.opacity` and the paint's own `opacity` are two models of one
+  // SVG attribute, and parse fills in both. Emitting each would write
+  // `stroke-opacity` twice, which is not well-formed XML at all.
+  const attrs = paintAttrs(stroke.paint, 'stroke', registry, false);
   attrs.push(`stroke-width="${trimNumber(stroke.width)}"`);
-  if (stroke.opacity != null && stroke.opacity !== 1) {
-    attrs.push(`stroke-opacity="${trimNumber(stroke.opacity)}"`);
+  const opacity = stroke.opacity
+    ?? (stroke.paint.kind === 'solid' ? stroke.paint.opacity : undefined);
+  if (opacity != null && opacity !== 1) {
+    attrs.push(`stroke-opacity="${trimNumber(opacity)}"`);
   }
   if (stroke.cap) {
     attrs.push(`stroke-linecap="${stroke.cap}"`);
@@ -305,26 +311,55 @@ function strokeAttrsFor(stroke: SvgStroke, registry: PaintServerRegistry): strin
   return attrs;
 }
 
+/**
+ * Tight bounding box around everything the tree draws, in the root's
+ * coordinates — the fallback `viewBox` when the caller supplies none. A
+ * node's `rotation` and a group's `transform` both move ink, so both are
+ * applied here; a box taken from unrotated geometry crops the document.
+ */
 function computeBounds(nodes: SvgNode[]): { x: number; y: number; width: number; height: number } {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  const visit = (n: SvgNode): void => {
+  const visit = (n: SvgNode, ctm: Matrix): void => {
     if (n.kind === 'group') {
-      n.children.forEach(visit);
+      const childCtm = n.transform ? multiply(ctm, n.transform) : ctm;
+      n.children.forEach((c) => visit(c, childCtm));
       return;
     }
     const b = n.kind === 'text' || n.kind === 'image'
       ? { minX: n.x, minY: n.y, maxX: n.x + n.width, maxY: n.y + n.height }
       : pathBounds(n.path);
-    if (b.minX < minX) minX = b.minX;
-    if (b.minY < minY) minY = b.minY;
-    if (b.maxX > maxX) maxX = b.maxX;
-    if (b.maxY > maxY) maxY = b.maxY;
+    const local = n.rotation ? rotateAboutCenter(ctm, b, n.rotation) : ctm;
+    for (const [x, y] of corners(b)) {
+      const px = local[0] * x + local[2] * y + local[4];
+      const py = local[1] * x + local[3] * y + local[5];
+      if (px < minX) minX = px;
+      if (py < minY) minY = py;
+      if (px > maxX) maxX = px;
+      if (py > maxY) maxY = py;
+    }
   };
-  nodes.forEach(visit);
+  nodes.forEach((n) => visit(n, IDENTITY_MATRIX));
   if (!Number.isFinite(minX)) {
     return { x: 0, y: 0, width: 0, height: 0 };
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+}
+
+function corners(b: { minX: number; minY: number; maxX: number; maxY: number }): [number, number][] {
+  return [[b.minX, b.minY], [b.maxX, b.minY], [b.maxX, b.maxY], [b.minX, b.maxY]];
+}
+
+/** `ctm` composed with the same `rotate(angle cx cy)` the element emits. */
+function rotateAboutCenter(
+  ctm: Matrix,
+  b: { minX: number; minY: number; maxX: number; maxY: number },
+  angle: number,
+): Matrix {
+  const cx = (b.minX + b.maxX) / 2;
+  const cy = (b.minY + b.maxY) / 2;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return multiply(ctm, [c, s, -s, c, cx - cx * c + cy * s, cy - cx * s - cy * c]);
 }
 
 /**
@@ -338,6 +373,9 @@ function textXml(node: SvgTextNode, registry: PaintServerRegistry, namespaces: R
     `x="${trimNumber(node.x)}"`,
     `y="${trimNumber(node.y)}"`,
     `dominant-baseline="text-before-edge"`,
+    // The runs model stores real line breaks; SVG's default whitespace
+    // handling would collapse them (and any indentation) away on re-import.
+    `xml:space="preserve"`,
     `data-weasel-width="${trimNumber(node.width)}"`,
     `data-weasel-height="${trimNumber(node.height)}"`,
   ];
@@ -437,9 +475,6 @@ function escapeAttr(s: string): string {
 function escapeText(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-
-// Silence unused-import warnings when the runs export gets tree-shaken.
-void runsToPlainText;
 
 function pathBounds(path: Path): { minX: number; minY: number; maxX: number; maxY: number } {
   if (path.kind === 'rect') {

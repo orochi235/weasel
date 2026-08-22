@@ -30,9 +30,9 @@ export interface GestureArgSpec {
   name: string;
   /** Acceptable values. `'free'` means any string (e.g. key names). */
   values: readonly string[] | 'free';
-  /** Default value when a route omits the arg slot. Must be in `values`
-   *  unless `values === 'free'`. Optional: no default means routes that
-   *  omit the arg slot match every value (only legal for `'free'` args). */
+  /** Value an omitted arg slot takes. Must be in `values` unless
+   *  `values === 'free'`. Omit it to make an omitted slot mean the `'*'`
+   *  wildcard — match every value. */
   default?: string;
 }
 

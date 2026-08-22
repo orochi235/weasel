@@ -9,7 +9,7 @@
  * Not: virtual scrolling, column resizing, multi-column sort, filtering,
  * inline editing. Reach for a real grid library when you need those.
  */
-import { Fragment, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useReorderDragList } from '../../useReorderDragList';
 import s from './DataGrid.module.css';
@@ -99,7 +99,6 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
   return (
     <div
       className={cls}
-      ref={dragEnabled ? (drag.containerProps.ref as React.RefCallback<HTMLDivElement>) : undefined}
       onPointerMove={dragEnabled ? drag.containerProps.onPointerMove : undefined}
       onPointerUp={dragEnabled ? drag.containerProps.onPointerUp : undefined}
       onPointerCancel={dragEnabled ? drag.containerProps.onPointerCancel : undefined}
@@ -115,17 +114,22 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
               return (
                 <th
                   key={col.id}
-                  className={[col.className, sortable ? s.sortable : '', active ? s.sortActive : '']
-                    .filter(Boolean).join(' ')}
-                  onClick={sortable ? () => cycleSort(col.id) : undefined}
+                  className={[col.className, active ? s.sortActive : ''].filter(Boolean).join(' ')}
+                  aria-sort={sortable ? (active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
                 >
-                  {col.header}{indicator}
+                  {sortable ? (
+                    <button type="button" className={s.sortButton} onClick={() => cycleSort(col.id)}>
+                      {col.header}{indicator}
+                    </button>
+                  ) : (
+                    <>{col.header}{indicator}</>
+                  )}
                 </th>
               );
             })}
           </tr>
         </thead>
-        <tbody>
+        <tbody ref={dragEnabled ? (drag.containerProps.ref as React.RefCallback<HTMLTableSectionElement>) : undefined}>
           {sortedRows.length === 0 && (
             <tr>
               <td colSpan={columns.length + (dragEnabled ? 1 : 0)} className={s.empty}>
@@ -135,38 +139,36 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
           )}
           {sortedRows.map((row, i) => {
             const isDragging = drag.state.draggedIds?.includes(row.id) ?? false;
+            const target = drag.state.targetIndex;
+            const rowCls = [
+              isDragging && s.dragging,
+              target === i && s.dropBefore,
+              target === sortedRows.length && i === sortedRows.length - 1 && s.dropAfter,
+            ].filter(Boolean).join(' ');
             return (
-              <Fragment key={row.id}>
-                <tr className={isDragging ? s.dragging : undefined}>
-                  {dragEnabled && (
-                    <td
-                      className={s.handleCell}
-                      onPointerDown={(e) => drag.rowProps(row.id, i).onPointerDown(e)}
-                    >
-                      <span aria-hidden="true">⋮⋮</span>
+              <tr key={row.id} className={rowCls || undefined}>
+                {dragEnabled && (
+                  <td
+                    className={s.handleCell}
+                    onPointerDown={(e) => drag.rowProps(row.id, i).onPointerDown(e)}
+                  >
+                    <span aria-hidden="true">⋮⋮</span>
+                  </td>
+                )}
+                {columns.map((col) => {
+                  const get = col.accessor ?? ((r: Row) => (r as unknown as Record<string, unknown>)[col.id] as string | number | null | undefined);
+                  const content = col.render ? col.render(row) : String(get(row) ?? '');
+                  return (
+                    <td key={col.id} className={col.className}>
+                      {content}
                     </td>
-                  )}
-                  {columns.map((col) => {
-                    const get = col.accessor ?? ((r: Row) => (r as unknown as Record<string, unknown>)[col.id] as string | number | null | undefined);
-                    const content = col.render ? col.render(row) : String(get(row) ?? '');
-                    return (
-                      <td key={col.id} className={col.className}>
-                        {content}
-                      </td>
-                    );
-                  })}
-                </tr>
-              </Fragment>
+                  );
+                })}
+              </tr>
             );
           })}
         </tbody>
       </table>
-      {dragEnabled && drag.state.targetIndex !== null && (
-        <div
-          className={s.dropIndicator}
-          style={{ top: `${drag.state.targetIndex * 28}px` }}
-        />
-      )}
     </div>
   );
 }
