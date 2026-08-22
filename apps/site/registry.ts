@@ -20,6 +20,9 @@ import { AnimationDemo } from './demos/AnimationDemo';
 import { LayoutDemo } from './demos/LayoutDemo';
 import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
 import { EasingsDemo } from './demos/EasingsDemo';
+import { TimelineDemo } from './demos/TimelineDemo';
+import { RigDemo } from './demos/RigDemo';
+import { AudioDemo } from './demos/AudioDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
 import { ViewportLayerDemo } from './demos/ViewportLayerDemo';
 import { MinimapDemo } from './demos/MinimapDemo';
@@ -63,6 +66,9 @@ import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
 import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
+import TimelineDemoFull from './demos/TimelineDemo.tsx?raw';
+import RigDemoFull from './demos/RigDemo.tsx?raw';
+import AudioDemoFull from './demos/AudioDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
 import ViewportLayerDemoFull from './demos/ViewportLayerDemo.tsx?raw';
 import MinimapDemoFull from './demos/MinimapDemo.tsx?raw';
@@ -93,8 +99,6 @@ import ImageDemoFull from './demos/ImageDemo.tsx?raw';
 import { IngestionDemo } from './demos/IngestionDemo';
 import IngestionDemoFull from './demos/IngestionDemo.tsx?raw';
 import { ToolReflectionDemo } from './demos/ToolReflectionDemo';
-import { TimelineDemo } from './demos/TimelineDemo';
-import { RigDemo } from './demos/RigDemo';
 import ToolReflectionDemoFull from './demos/ToolReflectionDemo.tsx?raw';
 import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 
@@ -102,8 +106,6 @@ import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 // the TSX in the source pane so consumers can see the format.
 import SceneSceneJson from './demos/data/scene.scene.json?raw';
 import LayoutSceneJson from './demos/data/layout.scene.json?raw';
-import TimelineDemoFull from './demos/TimelineDemo.tsx?raw';
-import RigDemoFull from './demos/RigDemo.tsx?raw';
 
 /** Extra source pane entry: typically a companion file (scene JSON, fixture)
  *  that the demo loads alongside its TSX. Surfaced as a tab in the code panel. */
@@ -416,6 +418,16 @@ export const DEMOS: DemoEntry[] = [
     Component: RigDemo,
     full: RigDemoFull,
     path: 'apps/site/demos/RigDemo.tsx',
+  },
+  {
+    id: 'audio',
+    title: 'Audio',
+    category: 'Animation',
+    description: "@weasel-js/audio schedules playback with a lookahead window against the AudioContext's hardware clock, not per animation frame — a frame can be late by tens of milliseconds and nobody sees it, but a late note is audible, so `play({ when })` books a start time the audio thread honours exactly. Every sound here is synthesized into an `AudioBuffer` by hand and handed to `engine.register()`, so the demo ships no binary assets. The context starts suspended, which is shown rather than hidden: nothing sounds until \"enable audio\" resumes it from a user gesture, with `engine.state()` live beside the button. Dragging the source dot calls `setPosition` on a looping voice; the gain and pan readouts are `spatialize()`, the same pure function the engine applies. The bars are `analyser().bands(16)` on master. Firing fifty one-shots against a per-bus limit of eight makes voice stealing observable in the active count.",
+    hint: 'Click "enable audio" first · drag the orange dot · gain/mute/solo per bus · fire 50 one-shots and watch activeVoices hold at the limit.',
+    Component: AudioDemo,
+    full: AudioDemoFull,
+    path: 'apps/site/demos/AudioDemo.tsx',
   },
 
   // ─── Viewport ─────────────────────────────────────────────────────────────
