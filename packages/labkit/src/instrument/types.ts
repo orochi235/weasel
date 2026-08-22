@@ -16,7 +16,11 @@ export interface RenderContext<TS = unknown, TC = unknown> {
   emit: (event: string) => void;
 }
 
-/** One 2D canvas layer of an instrument, drawn in declaration order. */
+/** One 2D canvas layer of an instrument, drawn in declaration order.
+ *
+ *  `draw` is called with the camera already applied, so it works in world
+ *  coordinates. `zoom` is passed for the things that must not scale with it —
+ *  set `ctx.lineWidth = 1 / zoom` to keep a hairline hairline. */
 export interface CanvasLayer<TS = unknown, TC = unknown> {
   id: string;
   draw: (ctx: CanvasRenderingContext2D, args: { state: TS; config: TC; zoom: number }) => void;
@@ -83,6 +87,8 @@ export interface Instrument<TS = unknown, TC = unknown> {
   defaultConfig: () => TC;
   initialState: (config: TC) => TS;
   configSchema?: () => ConfigField[];
+  /** The instrument's DOM. With `canvas`, this renders as an overlay above the
+   *  layers rather than instead of them; return `null` for canvas only. */
   render: (ctx: RenderContext<TS, TC>) => ReactNode;
   onConfigChange?: (config: TC, prev: TC, state: TS) => TS;
   serialize?: (state: TS) => unknown;
@@ -92,3 +98,9 @@ export interface Instrument<TS = unknown, TC = unknown> {
   dragDrop?: DragDropCapability<TS, TC>;
   undo?: UndoCapability;
 }
+
+/** Instruments as a lab receives them. `any` rather than `unknown` because
+ *  parameter contravariance keeps a `defineInstrument<TS, TC>` result out of
+ *  an `Instrument<unknown, unknown>[]`; it is contained to this alias. */
+// biome-ignore lint/suspicious/noExplicitAny: see above
+export type InstrumentList = readonly Instrument<any, any>[];

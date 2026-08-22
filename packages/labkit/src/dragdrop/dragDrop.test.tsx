@@ -41,12 +41,9 @@ function StateProbe({ onState }: { onState: (state: DropState) => void }) {
   return null;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: cross-generic instrument array
-const instruments: any[] = [testInstrument];
-
 function renderLab(probe?: (state: DropState) => void) {
   return render(
-    <Lab instruments={instruments} defaultInstrument="TestDrop">
+    <Lab instruments={[testInstrument]} defaultInstrument="TestDrop">
       {probe ? <StateProbe onState={probe} /> : null}
     </Lab>,
   );

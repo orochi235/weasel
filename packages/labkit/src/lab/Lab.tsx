@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
-import type { Instrument } from '../instrument/types';
+import type { InstrumentList } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore, type LabStore } from '../state/store';
@@ -22,7 +22,7 @@ import { WorkspaceGrid, type WorkspaceLayout } from './WorkspaceGrid';
 
 /** Props for `<Lab>`. */
 export interface LabProps {
-  instruments: Instrument[];
+  instruments: InstrumentList;
   defaultInstrument: string;
   storage?: StorageAdapter | null;
   storageKey?: string;
@@ -39,7 +39,7 @@ export interface LabProps {
 }
 
 function buildStore(
-  instruments: Instrument[],
+  instruments: InstrumentList,
   defaultInstrument: string,
   storage: StorageAdapter,
   storageKey: string,

@@ -23,6 +23,7 @@ export type {
   DragFeedback,
   HitResult,
   Instrument,
+  InstrumentList,
   LayerCapability,
   LayerDescriptor,
   PaletteItem,

@@ -32,7 +32,7 @@ interface CanvasStackProps {
 
 1. The container measures itself with `ResizeObserver` and reports `{width, height, dpr}`.
 2. `useLayerScheduler` watches `layers`, `view`, and `size`, and on any change schedules a single `requestAnimationFrame` redraw.
-3. Each layer's `render(ctx, view)` is called with a fresh transform: the canvas is sized to `width * dpr × height * dpr` so coordinates are in CSS pixels.
+3. Each layer's `render(ctx, view)` is called with a fresh transform: the canvas is sized to `width * dpr × height * dpr` so coordinates are in CSS pixels. A `CanvasLayerDescriptor` gets the whole `view` and places its own geometry; an instrument's `CanvasLayer.draw` is called with the camera already applied — see below.
 4. Layers with `visible: false` are skipped and their canvas is `display: none` (DOM is preserved to avoid remounts).
 
 ## Adding a new layer type
@@ -49,6 +49,10 @@ canvas: {
   ],
 }
 ```
+
+`draw` receives the context with the camera already applied, so its coordinates are world coordinates — `Workspace.tsx` translates by `view.pan` and scales by `view.zoom` before calling it. `zoom` is still passed so a layer can keep line widths and handle sizes from growing: divide by it (`ctx.lineWidth = 1 / zoom`).
+
+That is the difference between the two layer types. The lower-level `CanvasLayerDescriptor.render(ctx, view)` gets the raw view and an untransformed context, which is what screen-space chrome wants.
 
 Layer order in the array = paint order (first drawn = bottom).
 

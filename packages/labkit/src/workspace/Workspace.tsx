@@ -144,8 +144,13 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
     return ordered.map((layer) => ({
       id: layer.id,
       visible: layerVisibility[layer.id] !== false,
-      render: (ctx, view) =>
-        layer.draw(ctx, { state: record.state, config: record.config, zoom: view.zoom }),
+      render: (ctx, view) => {
+        // Camera applied here, so a layer draws in world coordinates. `zoom`
+        // stays in the args for line widths, which must not scale with it.
+        ctx.translate(view.pan.x, view.pan.y);
+        ctx.scale(view.zoom, view.zoom);
+        layer.draw(ctx, { state: record.state, config: record.config, zoom: view.zoom });
+      },
     }));
   }, [instrument.canvas, record.state, record.config, layerVisibility, layerOrder]);
 
@@ -209,7 +214,9 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
         className="lk-workspace__canvas-host"
         style={{ width: '100%', height: '100%', position: 'relative' }}
       >
-        <CanvasStack layers={layersWithFeedback} view={record.view} onViewChange={setView} />
+        <CanvasStack layers={layersWithFeedback} view={record.view} onViewChange={setView}>
+          {instrument.render(renderCtx)}
+        </CanvasStack>
         <DragOverlay drag={dragDropResult.drag} />
       </div>
     );

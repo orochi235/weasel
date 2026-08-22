@@ -1,9 +1,9 @@
-import type { Instrument } from '../instrument/types';
+import type { Instrument, InstrumentList } from '../instrument/types';
 import type { WorkspaceRecord } from '../state/types';
 
 const DEFAULT_VIEW = { zoom: 1, pan: { x: 0, y: 0 } } as const;
 
-function findInstrument(instruments: Instrument[], name: string): Instrument {
+function findInstrument(instruments: InstrumentList, name: string): Instrument {
   const found = instruments.find((i) => i.name === name);
   if (!found) {
     throw new Error(`[labkit] Unknown instrument: "${name}"`);
@@ -21,7 +21,7 @@ function initialView(instrument: Instrument): WorkspaceRecord['view'] {
  *  default config and initial state. */
 export function addWorkspace(
   workspaces: WorkspaceRecord[],
-  instruments: Instrument[],
+  instruments: InstrumentList,
   instrumentName: string,
 ): WorkspaceRecord[] {
   const instrument = findInstrument(instruments, instrumentName);
@@ -68,7 +68,7 @@ export function closeWorkspace(workspaces: WorkspaceRecord[], id: string): Works
 export function resetWorkspace(
   workspaces: WorkspaceRecord[],
   id: string,
-  instruments: Instrument[],
+  instruments: InstrumentList,
 ): WorkspaceRecord[] {
   const idx = workspaces.findIndex((w) => w.id === id);
   const current = workspaces[idx];

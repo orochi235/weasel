@@ -1,12 +1,12 @@
 import { createContext, useContext } from 'react';
-import type { Instrument } from '../instrument/types';
+import type { InstrumentList } from '../instrument/types';
 import type { LabMode, SavedSnapshot, WorkspaceRecord } from '../state/types';
 
 /** Lab-wide state and commands: the available instruments, the open
  *  workspaces and the operations over them, saved snapshots, and the color
  *  mode. */
 export interface LabContextValue {
-  instruments: Instrument[];
+  instruments: InstrumentList;
   workspaces: WorkspaceRecord[];
   addWorkspace: (instrumentName: string) => void;
   cloneWorkspace: (id: string) => void;
