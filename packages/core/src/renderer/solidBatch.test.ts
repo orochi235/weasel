@@ -458,4 +458,130 @@ describe('renderer — consecutive solid-fill batching', () => {
       for (const v of vaos) expect(deletedVaos.has(v)).toBe(true);
     });
   });
+
+  /**
+   * A run of rects has indices that are a pure function of the rect count, so a
+   * slot already holding that pattern needs no upload. Skipping one it did
+   * *not* hold draws the previous occupant's triangles out of the current
+   * vertices — pixels in the wrong place, never an error.
+   */
+  describe('which flushes re-upload their indices', () => {
+    const alternating = (flushes: number): DrawCommand[] =>
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), gradientRect(i * 20 + 10)]).flat();
+
+    /** Solid-batch index uploads. Nothing else here writes indices this way:
+     *  the text and image paths respecify with `bufferData` instead. */
+    const indexUploads = (): GLCall[] =>
+      recorder.calls.filter(
+        (c) => c.name === 'bufferSubData' && c.args[0] === ELEMENT_ARRAY_BUFFER,
+      );
+
+    /** A solid-filled triangle, which stages through `pushMesh` rather than
+     *  `pushRect` and so carries indices no rect count describes. */
+    const triangle = (x: number): DrawCommand => ({
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1, 4]),
+        coords: new Float32Array([x, 0, x + 10, 0, x, 10]),
+      },
+      fill: { color: '#00ff00' },
+    } as unknown as DrawCommand);
+
+    it('uploads once per slot while the ring is still filling', () => {
+      r.render(alternating(4));
+      expect(indexUploads()).toHaveLength(4);
+    });
+
+    it('skips the upload when a slot comes round holding that pattern already', () => {
+      // Flushes 65 and 66 land back on slots 0 and 1, both of which already
+      // hold the one-rect pattern.
+      r.render(alternating(SOLID_RING_SIZE + 2));
+      expect(indexUploads()).toHaveLength(SOLID_RING_SIZE);
+    });
+
+    it('uploads again when the slot comes round holding a different count', () => {
+      // A full turn of one-rect flushes, then slot 0 again with two rects.
+      r.render([
+        ...alternating(SOLID_RING_SIZE),
+        rect(0), rect(20), gradientRect(40),
+      ]);
+      const uploads = indexUploads();
+      expect(uploads).toHaveLength(SOLID_RING_SIZE + 1);
+      // Twelve indices, where the slot held the six of a single rect.
+      expect(uploads[uploads.length - 1].args[4]).toBe(12);
+    });
+
+    it('uploads for a flush carrying a mesh, whose indices no count describes', () => {
+      r.render([triangle(0), gradientRect(20), triangle(40)]);
+      expect(indexUploads()).toHaveLength(2);
+    });
+
+    it('re-uploads into a slot a mesh flush left, rather than trusting the count', () => {
+      // A mesh poisons the slot it lands in: its indices are rebased onto the
+      // staged vertices, so a later rect run whose count happens to match is
+      // still a different pattern. One full turn puts a one-rect flush back on
+      // the mesh's slot.
+      r.render([
+        triangle(0), gradientRect(10),
+        ...alternating(SOLID_RING_SIZE - 1),
+        rect(0), gradientRect(30),
+      ]);
+      // Every one of the 65 flushes writes: 64 filling the ring, and the last
+      // because the slot it lands on held a mesh.
+      expect(indexUploads()).toHaveLength(SOLID_RING_SIZE + 1);
+    });
+  });
+
+  /**
+   * `u_color` and `u_alpha` are cached per program for the frame, so the batch
+   * stops re-sending the white it holds forever. A stale entry paints a later
+   * shape in an earlier one's color, which nothing here throws over.
+   */
+  describe('which uniform writes reach GL', () => {
+    const colorWrites = (prog: { uniform(n: string): unknown }): number[][] => {
+      const loc = prog.uniform('u_color');
+      return recorder.calls
+        .filter((c) => c.name === 'uniform4f' && c.args[0] === loc)
+        .map((c) => c.args.slice(1) as number[]);
+    };
+
+    it('sends the batch its white once a frame, not once a flush', () => {
+      const alternating = (flushes: number): DrawCommand[] =>
+        Array.from({ length: flushes }, (_, i) => [rect(i * 20), gradientRect(i * 20 + 10)]).flat();
+      r.render(alternating(4));
+      expect(colorWrites(r._pathFillVColor())).toEqual([[1, 1, 1, 1]]);
+    });
+
+    it('sends the batch its white back after another draw moves the uniform', () => {
+      // A per-anchor-colored stroke is the other writer of u_color on this
+      // program. The batch runs either side of it, so a cache that skipped on
+      // "written once" would paint the second run in the stroke's blue.
+      const vcolorStroke = {
+        kind: 'path',
+        path: { kind: 'rect', x: 20, y: 0, width: 10, height: 10 },
+        fill: { color: '#ff0000' },
+        stroke: {
+          width: 2,
+          paint: { color: '#0000ff' },
+          vertexColors: [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
+        },
+      } as unknown as DrawCommand;
+      r.render([rect(0), vcolorStroke, rect(40)]);
+      const writes = colorWrites(r._pathFillVColor());
+      expect(writes[0]).toEqual([1, 1, 1, 1]);
+      expect(writes[writes.length - 1]).toEqual([1, 1, 1, 1]);
+      // Something in between moved it, or this test is not exercising the seam.
+      expect(writes.length).toBeGreaterThan(2);
+    });
+
+    it('does not carry a cached color into the next frame', () => {
+      r.render([rect(0)]);
+      recorder.reset();
+      r.render([rect(0)]);
+      // GL state survives the frame, but the cache is keyed on a DrawContext
+      // built fresh per render, so it re-sends rather than assume.
+      expect(colorWrites(r._pathFillVColor())).toEqual([[1, 1, 1, 1]]);
+    });
+  });
 });
