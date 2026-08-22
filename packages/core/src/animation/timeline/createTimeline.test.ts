@@ -85,4 +85,31 @@ describe('createTimeline', () => {
     const tl = createTimeline(h.register, 1, { tracks: [track] });
     expect(tl.tracks()).toEqual([track]);
   });
+
+  it('moves the playhead without waiting for a tick', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack(() => {})] });
+    h.advance(10);
+    tl.seek(80);
+    expect(tl.time()).toBe(80);
+  });
+
+  it('keeps the seeked position as virtual time keeps advancing', () => {
+    const h = harness();
+    const seen: number[] = [];
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack((v) => seen.push(v))] });
+    h.advance(10);
+    tl.seek(80);
+    h.advance(20);          // 10ms of real virtual time after the seek
+    expect(seen.at(-1)).toBe(90);
+  });
+
+  it('seeks backward', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack(() => {})] });
+    h.advance(90);
+    tl.seek(10);
+    h.advance(95);
+    expect(tl.time()).toBe(15);
+  });
 });
