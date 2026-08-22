@@ -30,6 +30,9 @@ Priority tags:
 - Layout strategies: drop rejection signal → [Scene, adapters & layout](#scene-adapters--layout)
 - Layout strategies: multi-select drag into a layout container → [Scene, adapters & layout](#scene-adapters--layout)
 
+**Tools & gestures**
+- `ToolCtx` hard-codes 2D, blocking tool reuse by another kernel → [Tools & gestures](#tools--gestures)
+
 **Viewport**
 - Viewports as a first-class canvas concept (input, not just render) → [Viewport](#viewport)
 
@@ -237,6 +240,29 @@ Priority tags:
 - **(P3) Promote `hitExistingGate` to gate select-tool's move/resize paths.** Deferred from `docs/specs/2026-05-05-drag-insert-primitive-design.md`. Different responsibility (gating mutation gestures rather than insertion), different gesture surface — punt until a real consumer wants it.
 
 - **(P3) Evaluate `useResize`/`useRotate` against `useDragGesture`.** Deferred from `docs/specs/2026-05-05-drag-gesture-base-design.md`. After the dragRect/move migration landed, evaluate whether resize and rotate fit cleanly on the new base. Their state shapes (per-id pose map keyed by handle/center, multi-target union AABB) are different from move's flat pose map and may not benefit. Revisit only if/when their scaffolding diverges from the base in a way that costs maintenance.
+
+- **(P2) `ToolCtx` hard-codes 2D, so tool authoring can't be reused by another
+  kernel.** `worldX: number` / `worldY: number` are flat scalars rather than a
+  point type, and `view: View` / `setView` are the 2D affine camera — so there
+  is no seam to swap. Everything else on the interface is already
+  dimension-neutral: `adapter: unknown` is opaque by design, `applyOps` takes
+  `Op` from `@weasel-js/history`, `selection` is id-based, and `canvasRect` /
+  `screenPoint` are screen space, which stays 2D in any kernel. Making
+  `ToolCtx` generic over its point and view types would make the tool
+  authoring model portable — a tool declares bindings and an action, and the
+  spatial types come from the kernel it is mounted in. `Scene<TData, TLayer,
+  TPose>` is already generic over pose, so the precedent exists. This is a
+  type-level change with no runtime behavior change for 2D; the payoff is
+  contingent on a second kernel existing, which is why it is P2 and not P1.
+  Scope is wider than `ToolCtx` alone: `pickBest`/`pickEvery` repeat the same
+  flat-scalar shape, and `Bounds` (`{x, y, width, height, rotation?}`, in 92
+  non-test files) is the type every injected pose function must return — it is
+  the widest of the three and decides whether the rest is worth doing. 23 hard
+  casts to `RectPose` across `interactions/actions/defaults/move.ts`,
+  `defaults/group.ts`, `canvas/NodeShape.ts`, `canvas/deps/editAnchors.ts` and
+  `canvas/SceneCanvas/useSceneSelectTool.ts` bypass the generic seam and would
+  retire with it. Audit findings and phasing in
+  `docs/superpowers/specs/2026-08-22-3d-kernel-design.md`.
 
 ### Pen tool follow-ups
 
