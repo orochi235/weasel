@@ -17,18 +17,18 @@ import {
   StrategyRegistryProvider,
 } from 'windease/react';
 
-const ZONE_ID = asNodeId('lk-workspaces');
+const ZONE_ID = asNodeId('lk-workspace');
 const STRATEGIES = { grid: gridStrategy as never };
-const KIND = 'workspace';
+const KIND = 'trial';
 
 /** A tile's persisted extent, keyed by the id its caller gave it. Grid resizes
  *  write `span`; `size` is here because a strategy swap would write that. */
-export type WorkspaceLayout = Record<
+export type TrialLayout = Record<
   string,
   { size?: { w?: number; h?: number }; span?: { cols?: number; rows?: number } }
 >;
 
-export interface WorkspaceGridProps {
+export interface WorkspaceProps {
   children: ReactNode;
   /**
    * Stable id per child, positionally matched. Supply these whenever a tile
@@ -48,10 +48,10 @@ export interface WorkspaceGridProps {
   /** The full id list a drop would produce, in its new order. */
   onReorder?: (ids: string[]) => void;
   /** Extents from a previous session, applied to tiles as they register. */
-  layout?: WorkspaceLayout;
+  layout?: TrialLayout;
   /** Fires when a tile's extent changes. Persist it and hand it back as
    *  `layout` to make a resize survive a reload. */
-  onLayoutChange?: (layout: WorkspaceLayout) => void;
+  onLayoutChange?: (layout: TrialLayout) => void;
   gap?: number;
   padding?: number;
   /**
@@ -62,23 +62,23 @@ export interface WorkspaceGridProps {
   viewport?: { w: number; h: number };
 }
 
-function extentOf(store: Store, id: NodeId): WorkspaceLayout[string] | null {
-  const p = store.getNode(id)?.membership?.placement as WorkspaceLayout[string] | undefined;
+function extentOf(store: Store, id: NodeId): TrialLayout[string] | null {
+  const p = store.getNode(id)?.membership?.placement as TrialLayout[string] | undefined;
   if (!p) return null;
-  const out: WorkspaceLayout[string] = {};
+  const out: TrialLayout[string] = {};
   if (p.size) out.size = p.size;
   if (p.span) out.span = p.span;
   return Object.keys(out).length > 0 ? out : null;
 }
 
 /**
- * Auto-balanced tiling of workspaces, `ceil(sqrt(n))` columns wide.
+ * Auto-balanced tiling of trials, `ceil(sqrt(n))` columns wide.
  *
  * Tiles are absolutely positioned at the rects `gridStrategy` computes, not
  * laid out by CSS — `windease/styles.css` (folded into
  * `@weasel-js/labkit/styles.css`) carries the rules that positioning depends on.
  */
-export function WorkspaceGrid({
+export function Workspace({
   children,
   ids,
   resizable = false,
@@ -89,7 +89,7 @@ export function WorkspaceGrid({
   gap = 12,
   padding = 0,
   viewport,
-}: WorkspaceGridProps) {
+}: WorkspaceProps) {
   const items = Children.toArray(children);
   const idKey = ids ? ids.join(',') : `#${items.length}`;
   // biome-ignore lint/correctness/useExhaustiveDependencies: idKey is the stable projection of items/ids; depending on those directly rebuilds every render and re-runs the sync effect forever
@@ -142,7 +142,7 @@ export function WorkspaceGrid({
   useEffect(() => {
     if (!onLayoutChange) return;
     return store.events.on('node.placementChanged', () => {
-      const next: WorkspaceLayout = {};
+      const next: TrialLayout = {};
       for (const child of store.getChildren(ZONE_ID)) {
         const extent = extentOf(store, child.id);
         if (extent) next[child.id] = extent;
@@ -164,11 +164,11 @@ export function WorkspaceGrid({
         if (!reorderable) return content;
         // A tile is full of controls, so the whole thing can't be the handle.
         return (
-          <div className="lk-workspace-tile">
-            <DragHandle nodeId={node.id} className="lk-workspace-tile__grip">
-              <span className="lk-workspace-tile__grip-dots" aria-hidden="true" />
+          <div className="lk-trial-tile">
+            <DragHandle nodeId={node.id} className="lk-trial-tile__grip">
+              <span className="lk-trial-tile__grip-dots" aria-hidden="true" />
             </DragHandle>
-            <div className="lk-workspace-tile__body">{content}</div>
+            <div className="lk-trial-tile__body">{content}</div>
           </div>
         );
       },
@@ -179,7 +179,7 @@ export function WorkspaceGrid({
     <Container
       parentId={ZONE_ID}
       chrome={chrome}
-      className="lk-workspace-grid windease-zone"
+      className="lk-workspace windease-zone"
       affordances={resizable}
       viewport={viewport}
       onChildOrderChange={reorderable ? commitOrder : undefined}

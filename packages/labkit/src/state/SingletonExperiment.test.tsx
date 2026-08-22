@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createMemoryAdapter } from './adapters';
 import { labDocumentKey } from './document';
 import { SingletonExperimentProvider } from './SingletonExperiment';
-import { useExperimentState } from './useExperimentState';
+import { useTrialState } from './useTrialState';
 
 interface Config {
   width: number;
@@ -18,7 +18,7 @@ describe('SingletonExperimentProvider', () => {
     vi.useRealTimers();
   });
 
-  it('exposes config and state via useExperimentState', () => {
+  it('exposes config and state via useTrialState', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <SingletonExperimentProvider<State, Config>
         id="test"
@@ -30,7 +30,7 @@ describe('SingletonExperimentProvider', () => {
         {children}
       </SingletonExperimentProvider>
     );
-    const { result } = renderHook(() => useExperimentState<State, Config>(), { wrapper });
+    const { result } = renderHook(() => useTrialState<State, Config>(), { wrapper });
     expect(result.current.config).toEqual({ width: 100, bg: '#000' });
     expect(result.current.state).toEqual({ zoom: 1 });
   });
@@ -39,7 +39,7 @@ describe('SingletonExperimentProvider', () => {
     vi.useFakeTimers();
     const storage = createMemoryAdapter();
     const Probe = () => {
-      const h = useExperimentState<State, Config>();
+      const h = useTrialState<State, Config>();
       return (
         <button type="button" onClick={() => h.setConfig('width', 200)}>
           go
@@ -94,7 +94,7 @@ describe('SingletonExperimentProvider', () => {
         {children}
       </SingletonExperimentProvider>
     );
-    const { result } = renderHook(() => useExperimentState<State, Config>(), { wrapper });
+    const { result } = renderHook(() => useTrialState<State, Config>(), { wrapper });
     expect(result.current.config).toEqual({ width: 999, bg: '#fff' });
     expect(result.current.state).toEqual({ zoom: 2 });
   });

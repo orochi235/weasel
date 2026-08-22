@@ -1,13 +1,13 @@
-/** A workspace's undo history, as snapshots of its state either side of the
+/** A trial's undo history, as snapshots of its state either side of the
  *  present. */
 export interface UndoStack {
   past: unknown[];
   future: unknown[];
 }
 
-/** One workspace as the store holds it: which instrument it runs, that
+/** One trial as the store holds it: which instrument it runs, that
  *  instrument's config and state, the camera, and the undo history. */
-export interface WorkspaceRecord<TS = unknown, TC = unknown> {
+export interface TrialRecord<TS = unknown, TC = unknown> {
   id: string;
   instrumentName: string;
   config: TC;
@@ -16,12 +16,12 @@ export interface WorkspaceRecord<TS = unknown, TC = unknown> {
   undoStack: UndoStack;
 }
 
-/** A named, saved copy of a workspace's config and state, restorable into any
- *  workspace running the same instrument. */
+/** A named, saved copy of a trial's config and state, restorable into any
+ *  trial running the same instrument. */
 export interface SavedSnapshot {
   id: string;
   name: string;
-  workspaceId: string;
+  trialId: string;
   instrumentName: string;
   config: unknown;
   state: unknown;
@@ -31,14 +31,14 @@ export interface SavedSnapshot {
 /** `auto` follows the OS; the other two are an explicit choice. */
 export type LabMode = 'auto' | 'light' | 'dark';
 
-/** Everything a lab persists: its workspaces, its saved snapshots, and the
+/** Everything a lab persists: its trials, its saved snapshots, and the
  *  chosen color mode. */
 export interface LabStoreState {
-  workspaces: WorkspaceRecord[];
+  trials: TrialRecord[];
   savedSnapshots: SavedSnapshot[];
   mode: LabMode;
-  /** Per-workspace tile extents, keyed by workspace id. Opaque here — the
-   *  shape belongs to whatever lays the workspaces out. */
+  /** Per-trial tile extents, keyed by trial id. Opaque here — the
+   *  shape belongs to whatever lays the trials out. */
   layout: Record<string, unknown>;
 }
 
@@ -51,9 +51,9 @@ export interface StorageAdapter {
   delete?(key: string): void;
 }
 
-/** What `useExperimentState` hands an instrument: its state and config, with
+/** What `useTrialState` hands an instrument: its state and config, with
  *  a setter for each. */
-export interface ExperimentStateHandle<TS, TC> {
+export interface TrialStateHandle<TS, TC> {
   state: TS;
   setState: (next: TS | ((prev: TS) => TS)) => void;
   config: TC;
@@ -75,14 +75,14 @@ export type InstrumentSerializers = Record<
   { serialize?: (state: unknown) => unknown; deserialize?: (data: unknown) => unknown } | undefined
 >;
 
-/** A workspace as it is persisted: everything but the undo history, which is
+/** A trial as it is persisted: everything but the undo history, which is
  *  session-only. */
-export type SerializedTrial = Omit<WorkspaceRecord, 'undoStack'>;
+export type SerializedTrial = Omit<TrialRecord, 'undoStack'>;
 
 /** Everything a lab persists, under one key, at a known version. */
 export interface LabDocument {
   version: number;
-  workspaces: SerializedTrial[];
+  trials: SerializedTrial[];
   saves: SavedSnapshot[];
   layout: Record<string, unknown>;
   mode: LabMode;

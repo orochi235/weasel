@@ -85,7 +85,7 @@ describe('SineWave instrument smoke test', () => {
       config: SineWaveInstrument.defaultConfig(),
       setState: vi.fn(),
       setConfig: vi.fn(),
-      workspace: { id: 'w', zoom: 1, setZoom: vi.fn() },
+      trial: { id: 'w', zoom: 1, setZoom: vi.fn() },
       emit: vi.fn(),
     };
     const { container } = render(SineWaveInstrument.render(ctx) as ReactElement);

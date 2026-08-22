@@ -27,25 +27,25 @@ export function useLabStore(): LabStoreState & ReturnType<LabStore['getState']> 
   return useStore(ctx.store);
 }
 
-/** Context carrying which workspace the subtree belongs to. */
-export const WorkspaceIdContext = createContext<string | null>(null);
+/** Context carrying which trial the subtree belongs to. */
+export const TrialIdContext = createContext<string | null>(null);
 
-/** Names the workspace its subtree belongs to, so an instrument's hooks can
+/** Names the trial its subtree belongs to, so an instrument's hooks can
  *  find their own record in the store without being passed an id. */
-export function WorkspaceIdProvider({
-  workspaceId,
+export function TrialIdProvider({
+  trialId,
   children,
 }: {
-  workspaceId: string;
+  trialId: string;
   children: ReactNode;
 }): ReactElement {
-  return <WorkspaceIdContext.Provider value={workspaceId}>{children}</WorkspaceIdContext.Provider>;
+  return <TrialIdContext.Provider value={trialId}>{children}</TrialIdContext.Provider>;
 }
 
-/** The id of the workspace this component is inside. Throws outside a
- *  `<WorkspaceIdProvider>`. */
-export function useWorkspaceId(): string {
-  const id = useContext(WorkspaceIdContext);
-  if (!id) throw new Error('[labkit] useWorkspaceId must be used inside <WorkspaceIdProvider>');
+/** The id of the trial this component is inside. Throws outside a
+ *  `<TrialIdProvider>`. */
+export function useTrialId(): string {
+  const id = useContext(TrialIdContext);
+  if (!id) throw new Error('[labkit] useTrialId must be used inside <TrialIdProvider>');
   return id;
 }

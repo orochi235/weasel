@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import type { ConfigField } from '../controls/types';
 import type { SavedSnapshot } from '../state/types';
 
-/** What a workspace hands its toolbar: which instrument is running, the undo
+/** What a trial hands its toolbar: which instrument is running, the undo
  *  state and commands, the zoom controls, and the snapshot commands. */
-export interface WorkspaceToolbarContext {
-  workspaceId: string;
+export interface TrialToolbarContext {
+  trialId: string;
   instrumentName: string;
   hasUndo: boolean;
   canUndo: boolean;
@@ -24,30 +24,30 @@ export interface WorkspaceToolbarContext {
   clone: () => void;
   reset: () => void;
   close: () => void;
-  isLastWorkspace: boolean;
+  isLastTrial: boolean;
 }
 
-/** What a workspace hands its sidebar: the instrument's config schema, its
+/** What a trial hands its sidebar: the instrument's config schema, its
  *  current values, and the setter. */
-export interface WorkspaceSidebarContext {
-  workspaceId: string;
+export interface TrialSidebarContext {
+  trialId: string;
   instrumentName: string;
   configFields: ConfigField[];
   config: unknown;
   setConfig: (key: string, value: unknown) => void;
 }
 
-/** What a workspace hands its status bar. */
-export interface WorkspaceStatusBarContext {
-  workspaceId: string;
+/** What a trial hands its status bar. */
+export interface TrialStatusBarContext {
+  trialId: string;
   instrumentName: string;
   zoom: number;
 }
 
-/** Replaces a workspace's toolbar. Receives everything the default one uses,
+/** Replaces a trial's toolbar. Receives everything the default one uses,
  *  so a custom toolbar need not reach into the store. */
-export type ToolbarSlot = (ctx: WorkspaceToolbarContext) => ReactNode;
-/** Replaces a workspace's sidebar. */
-export type SidebarSlot = (ctx: WorkspaceSidebarContext) => ReactNode;
-/** Replaces a workspace's status bar. */
-export type StatusBarSlot = (ctx: WorkspaceStatusBarContext) => ReactNode;
+export type ToolbarSlot = (ctx: TrialToolbarContext) => ReactNode;
+/** Replaces a trial's sidebar. */
+export type SidebarSlot = (ctx: TrialSidebarContext) => ReactNode;
+/** Replaces a trial's status bar. */
+export type StatusBarSlot = (ctx: TrialStatusBarContext) => ReactNode;

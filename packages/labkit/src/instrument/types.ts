@@ -2,13 +2,13 @@ import type { ReactNode } from 'react';
 import type { ConfigField } from '../controls/types';
 
 /** What an instrument's `render` is handed: its state and config, the setters
- *  for both, the workspace it is mounted in, and a way to emit named events. */
+ *  for both, the trial it is mounted in, and a way to emit named events. */
 export interface RenderContext<TS = unknown, TC = unknown> {
   state: TS;
   config: TC;
   setState: (next: TS | ((prev: TS) => TS)) => void;
   setConfig: (key: keyof TC, value: unknown) => void;
-  workspace: {
+  trial: {
     id: string;
     zoom: number;
     setZoom: (z: number) => void;
@@ -33,7 +33,7 @@ export interface CanvasCapability<TS = unknown, TC = unknown> {
   initialView?: { zoom: number; pan: { x: number; y: number } };
 }
 
-/** Declares which of an instrument's layers the workspace should offer
+/** Declares which of an instrument's layers the trial should offer
  *  show/hide controls for. */
 export interface LayerCapability {
   ids: string[];
@@ -63,7 +63,7 @@ export type SystemEvent = string;
 export type Point = { x: number; y: number };
 /** What a hit-test found, and where. */
 export type HitResult = { hit: boolean; layerId?: string; pointId?: string };
-/** A workspace's camera. */
+/** A trial's camera. */
 export type ViewTransform = { zoom: number; pan: Point };
 /** A layer as the layer list shows it. `alwaysOn` layers cannot be hidden. */
 export type LayerDescriptor = { id: string; label: string; alwaysOn?: boolean };
@@ -80,7 +80,7 @@ export type DragFeedback = { ok: boolean; reason?: string };
  * and `state`, what the experiment is currently doing — and renders from both.
  * The optional capability fields declare what else it wants from the runtime:
  * a canvas, a layer list, palette drag-and-drop, undo. Declaring a capability
- * is what makes the workspace provide the corresponding chrome.
+ * is what makes the trial provide the corresponding chrome.
  */
 export interface Instrument<TS = unknown, TC = unknown> {
   name: string;

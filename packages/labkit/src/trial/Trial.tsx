@@ -15,58 +15,56 @@ import { useLabContext } from '../lab/LabContext';
 import { LayerList } from '../layers/LayerList';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
-import type { WorkspaceRecord } from '../state/types';
+import type { TrialRecord } from '../state/types';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
-import type { UndoBindings } from './WorkspaceChrome';
-import { WorkspaceChrome } from './WorkspaceChrome';
+import type { UndoBindings } from './TrialChrome';
+import { TrialChrome } from './TrialChrome';
 
-/** Props for `<Workspace>`. */
-export interface WorkspaceProps {
+/** Props for `<Trial>`. */
+export interface TrialProps {
   id: string;
 }
 
-/** Renders one workspace from the lab store: looks up its record and
- *  instrument, and mounts the instrument inside the workspace chrome. */
-export function Workspace({ id }: WorkspaceProps) {
+/** Renders one trial from the lab store: looks up its record and
+ *  instrument, and mounts the instrument inside the trial chrome. */
+export function Trial({ id }: TrialProps) {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);
-  if (!storeCtx) throw new Error('[labkit] <Workspace> requires <LabStoreProvider>');
-  const record = useStore(storeCtx.store, (s) => s.workspaces.find((w) => w.id === id));
+  if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
+  const record = useStore(storeCtx.store, (s) => s.trials.find((w) => w.id === id));
   if (!record) {
-    return <div className="lk-workspace lk-workspace--unknown">Workspace not found: {id}</div>;
+    return <div className="lk-trial lk-trial--unknown">Trial not found: {id}</div>;
   }
   const instrument = lab.instruments.find((i) => i.name === record.instrumentName);
   if (!instrument) {
     return (
-      <div className="lk-workspace lk-workspace--unknown">
-        Unknown instrument: {record.instrumentName}
-      </div>
+      <div className="lk-trial lk-trial--unknown">Unknown instrument: {record.instrumentName}</div>
     );
   }
   return (
-    <WorkspaceRuntime
+    <TrialRuntime
       record={record}
       instrument={instrument}
       store={storeCtx.store}
-      isLast={lab.workspaces.length <= 1}
+      isLast={lab.trials.length <= 1}
     />
   );
 }
 
-interface WorkspaceRuntimeProps {
-  record: WorkspaceRecord;
+interface TrialRuntimeProps {
+  record: TrialRecord;
   instrument: Instrument;
   store: LabStore;
   isLast: boolean;
 }
 
-function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntimeProps) {
+function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) {
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
-  const updateWorkspaceState = useStore(store, (s) => s.updateWorkspaceState);
-  const updateWorkspaceConfig = useStore(store, (s) => s.updateWorkspaceConfig);
-  const updateWorkspaceView = useStore(store, (s) => s.updateWorkspaceView);
-  const updateWorkspaceUndoStack = useStore(store, (s) => s.updateWorkspaceUndoStack);
+  const updateTrialState = useStore(store, (s) => s.updateTrialState);
+  const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
+  const updateTrialView = useStore(store, (s) => s.updateTrialView);
+  const updateTrialUndoStack = useStore(store, (s) => s.updateTrialUndoStack);
 
   const busRef = useRef<EventBus | null>(null);
   if (busRef.current === null) busRef.current = createEventBus();
@@ -81,34 +79,34 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
 
   const snapshotIfNeeded = (event: string): void => {
     if (!undoCap || !undoEvents.has(event)) return;
-    const current = store.getState().workspaces.find((w) => w.id === record.id);
+    const current = store.getState().trials.find((w) => w.id === record.id);
     if (!current) return;
     const snap = structuredClone(current.state);
-    updateWorkspaceUndoStack(record.id, (prev) => pushSnapshot(prev, snap, maxDepth));
+    updateTrialUndoStack(record.id, (prev) => pushSnapshot(prev, snap, maxDepth));
   };
 
-  const setView = (v: ViewTransform): void => updateWorkspaceView(record.id, v);
+  const setView = (v: ViewTransform): void => updateTrialView(record.id, v);
 
   const renderCtx: RenderContext<unknown, unknown> = {
     state: record.state,
     config: record.config,
     setState: (next) => {
       snapshotIfNeeded('state.change');
-      updateWorkspaceState(record.id, next);
+      updateTrialState(record.id, next);
       bus.emit('state.change');
     },
     setConfig: (key, value) => {
       const evt = `config.change:${String(key)}`;
       snapshotIfNeeded('config.change');
       snapshotIfNeeded(evt);
-      updateWorkspaceConfig(record.id, key as never, value as never);
+      updateTrialConfig(record.id, key as never, value as never);
       bus.emit('config.change');
       bus.emit(evt);
     },
-    workspace: {
+    trial: {
       id: record.id,
       zoom: record.view.zoom,
-      setZoom: (z) => updateWorkspaceView(record.id, { ...record.view, zoom: z }),
+      setZoom: (z) => updateTrialView(record.id, { ...record.view, zoom: z }),
     },
     emit: (event) => {
       snapshotIfNeeded(event);
@@ -123,14 +121,14 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
         undo: () => {
           const result = undoUndo(record.undoStack, structuredClone(record.state));
           if (!result) return;
-          updateWorkspaceState(record.id, result.snapshot as never);
-          updateWorkspaceUndoStack(record.id, result.stack);
+          updateTrialState(record.id, result.snapshot as never);
+          updateTrialUndoStack(record.id, result.stack);
         },
         redo: () => {
           const result = undoRedo(record.undoStack, structuredClone(record.state));
           if (!result) return;
-          updateWorkspaceState(record.id, result.snapshot as never);
-          updateWorkspaceUndoStack(record.id, result.stack);
+          updateTrialState(record.id, result.snapshot as never);
+          updateTrialUndoStack(record.id, result.stack);
         },
       }
     : undefined;
@@ -167,7 +165,7 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
     config: record.config,
     setState: (next) => {
       snapshotIfNeeded('canvas.itemAdded');
-      updateWorkspaceState(record.id, next as never);
+      updateTrialState(record.id, next as never);
     },
     emit: (evt) => {
       snapshotIfNeeded(evt);
@@ -211,7 +209,7 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
     body = (
       <div
         ref={canvasContainerRef}
-        className="lk-workspace__canvas-host"
+        className="lk-trial__canvas-host"
         style={{ width: '100%', height: '100%', position: 'relative' }}
       >
         <CanvasStack layers={layersWithFeedback} view={record.view} onViewChange={setView}>
@@ -246,11 +244,11 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
     ) : null;
 
   return (
-    <WorkspaceChrome
-      workspaceId={record.id}
+    <TrialChrome
+      trialId={record.id}
       record={record}
       instrument={instrument}
-      isLastWorkspace={isLast}
+      isLastTrial={isLast}
       undoBindings={undoBindings}
       sidebarExtras={
         <>
@@ -260,6 +258,6 @@ function WorkspaceRuntime({ record, instrument, store, isLast }: WorkspaceRuntim
       }
     >
       {body}
-    </WorkspaceChrome>
+    </TrialChrome>
   );
 }

@@ -7,6 +7,7 @@ import {
   labDocumentKey,
   MIGRATIONS,
   migrateV0toV1,
+  migrateV1toV2,
   normalizeDocument,
   quarantineDocument,
   quarantineKey,
@@ -41,7 +42,7 @@ describe('emptyDocument', () => {
     const doc = emptyDocument('light');
     expect(doc.version).toBe(CURRENT_DOCUMENT_VERSION);
     expect(doc.mode).toBe('light');
-    expect(doc.workspaces).toEqual([]);
+    expect(doc.trials).toEqual([]);
     expect(doc.saves).toEqual([]);
     expect(doc.layout).toEqual({});
   });
@@ -246,6 +247,36 @@ describe('migrateV0toV1', () => {
   });
 });
 
+describe('migrateV1toV2', () => {
+  it('stamps version 2', () => {
+    expect(migrateV1toV2({ version: 1, workspaces: [] }).version).toBe(2);
+  });
+
+  it('renames workspaces to trials, record for record', () => {
+    const records = [{ id: 'w1', instrumentName: 'osc', state: { n: 1 } }];
+    const out = migrateV1toV2({ version: 1, workspaces: records });
+    expect(out.trials).toEqual(records);
+    expect(out).not.toHaveProperty('workspaces');
+  });
+
+  it('leaves the other sections alone', () => {
+    const out = migrateV1toV2({
+      version: 1,
+      workspaces: [],
+      saves: [{ id: 's1' }],
+      layout: { w1: { h: 4 } },
+      mode: 'dark',
+    });
+    expect(out.saves).toEqual([{ id: 's1' }]);
+    expect(out.layout).toEqual({ w1: { h: 4 } });
+    expect(out.mode).toBe('dark');
+  });
+
+  it('falls back to an empty trials list when workspaces is the wrong shape', () => {
+    expect(migrateV1toV2({ version: 1, workspaces: 'nope' }).trials).toEqual([]);
+  });
+});
+
 describe('MIGRATIONS', () => {
   it('has one entry per version below the current one', () => {
     expect(MIGRATIONS).toHaveLength(CURRENT_DOCUMENT_VERSION);
@@ -253,6 +284,20 @@ describe('MIGRATIONS', () => {
 
   it('indexes migrateV0toV1 at position 0', () => {
     expect(MIGRATIONS[0]).toBe(migrateV0toV1);
+  });
+
+  it('indexes migrateV1toV2 at position 1', () => {
+    expect(MIGRATIONS[1]).toBe(migrateV1toV2);
+  });
+
+  it('walks a version-0 document all the way to trials', () => {
+    const outcome = runMigrations(
+      { version: 0, workspaces: [{ id: 'w1' }] },
+      MIGRATIONS,
+      CURRENT_DOCUMENT_VERSION,
+    );
+    expect(outcome).toMatchObject({ ok: true, migrated: true });
+    expect(outcome.ok && outcome.doc.trials).toEqual([{ id: 'w1' }]);
   });
 });
 
@@ -274,9 +319,9 @@ describe('quarantineDocument', () => {
 
 describe('normalizeDocument', () => {
   it('fills in every missing section', () => {
-    expect(normalizeDocument({ version: 1 }, 'auto')).toEqual({
+    expect(normalizeDocument({ version: CURRENT_DOCUMENT_VERSION }, 'auto')).toEqual({
       version: CURRENT_DOCUMENT_VERSION,
-      workspaces: [],
+      trials: [],
       saves: [],
       layout: {},
       mode: 'auto',
@@ -284,33 +329,40 @@ describe('normalizeDocument', () => {
   });
 
   it('uses the fallback mode when the document has none', () => {
-    expect(normalizeDocument({ version: 1 }, 'light').mode).toBe('light');
+    expect(normalizeDocument({ version: CURRENT_DOCUMENT_VERSION }, 'light').mode).toBe('light');
   });
 
   it('uses the fallback mode when the stored mode is unrecognized', () => {
-    expect(normalizeDocument({ version: 1, mode: 'chartreuse' }, 'light').mode).toBe('light');
+    expect(
+      normalizeDocument({ version: CURRENT_DOCUMENT_VERSION, mode: 'chartreuse' }, 'light').mode,
+    ).toBe('light');
   });
 
   it('keeps a stored mode over the fallback', () => {
-    expect(normalizeDocument({ version: 1, mode: 'dark' }, 'light').mode).toBe('dark');
+    expect(
+      normalizeDocument({ version: CURRENT_DOCUMENT_VERSION, mode: 'dark' }, 'light').mode,
+    ).toBe('dark');
   });
 
   it('preserves populated sections', () => {
-    const workspaces = [{ id: 'w1' }];
+    const trials = [{ id: 'w1' }];
     const saves = [{ id: 's1' }];
     const layout = { w1: { h: 4 } };
-    const out = normalizeDocument({ version: 1, workspaces, saves, layout }, 'auto');
-    expect(out.workspaces).toEqual(workspaces);
+    const out = normalizeDocument(
+      { version: CURRENT_DOCUMENT_VERSION, trials, saves, layout },
+      'auto',
+    );
+    expect(out.trials).toEqual(trials);
     expect(out.saves).toEqual(saves);
     expect(out.layout).toEqual(layout);
   });
 
   it('replaces wrong-shaped sections without swapping them', () => {
     const out = normalizeDocument(
-      { version: 1, workspaces: 'nope', saves: 'nope', layout: 'nope' },
+      { version: CURRENT_DOCUMENT_VERSION, trials: 'nope', saves: 'nope', layout: 'nope' },
       'auto',
     );
-    expect(out.workspaces).toEqual([]);
+    expect(out.trials).toEqual([]);
     expect(out.saves).toEqual([]);
     expect(out.layout).toEqual({});
   });

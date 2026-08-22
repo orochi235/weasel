@@ -1,6 +1,6 @@
 import type { Instrument } from './types';
 
-/** Which optional capabilities an instrument declared — what the workspace
+/** Which optional capabilities an instrument declared — what the trial
  *  consults to decide which chrome to show. */
 export interface CapabilityFlags {
   hasCanvas: boolean;

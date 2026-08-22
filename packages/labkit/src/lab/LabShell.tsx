@@ -18,7 +18,7 @@ export interface LabShellProps {
 
 /** Page frame for a lab: a titled header, a body, and an optional footer,
  *  themed for the resolved color mode. Presentational only — use `<Lab>` when
- *  the workspace runtime is wanted too. */
+ *  the trial runtime is wanted too. */
 export function LabShell({ title, children, header, footer, mode = 'auto' }: LabShellProps) {
   const resolved = useResolvedMode(mode);
   const outer = useThemeOptional();

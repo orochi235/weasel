@@ -1,13 +1,13 @@
 import { ControlPanel } from '../controls/ControlPanel';
 import { Sidebar } from '../primitives/Sidebar';
-import type { WorkspaceSidebarContext } from './slotTypes';
+import type { TrialSidebarContext } from './slotTypes';
 
 /** Props for `<DefaultSidebar>`. */
 export interface DefaultSidebarProps {
-  ctx: WorkspaceSidebarContext;
+  ctx: TrialSidebarContext;
 }
 
-/** The sidebar a workspace renders when no `sidebar` slot is supplied: a
+/** The sidebar a trial renders when no `sidebar` slot is supplied: a
  *  control panel over the instrument's config schema. */
 export function DefaultSidebar({ ctx }: DefaultSidebarProps) {
   if (ctx.configFields.length === 0) {

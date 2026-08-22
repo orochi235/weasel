@@ -37,7 +37,7 @@ interface CanvasStackProps {
 
 ## Adding a new layer type
 
-A layer is defined by the instrument's `canvas.layers[]` (type `CanvasLayer`), then translated to a `CanvasLayerDescriptor` inside `Workspace.tsx` before being passed to `<CanvasStack>`. To add a layer, push it into `instrument.canvas.layers`:
+A layer is defined by the instrument's `canvas.layers[]` (type `CanvasLayer`), then translated to a `CanvasLayerDescriptor` inside `Trial.tsx` before being passed to `<CanvasStack>`. To add a layer, push it into `instrument.canvas.layers`:
 
 ```ts
 canvas: {
@@ -50,7 +50,7 @@ canvas: {
 }
 ```
 
-`draw` receives the context with the camera already applied, so its coordinates are world coordinates — `Workspace.tsx` translates by `view.pan` and scales by `view.zoom` before calling it. `zoom` is still passed so a layer can keep line widths and handle sizes from growing: divide by it (`ctx.lineWidth = 1 / zoom`).
+`draw` receives the context with the camera already applied, so its coordinates are world coordinates — `Trial.tsx` translates by `view.pan` and scales by `view.zoom` before calling it. `zoom` is still passed so a layer can keep line widths and handle sizes from growing: divide by it (`ctx.lineWidth = 1 / zoom`).
 
 That is the difference between the two layer types. The lower-level `CanvasLayerDescriptor.render(ctx, view)` gets the raw view and an untransformed context, which is what screen-space chrome wants.
 

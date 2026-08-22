@@ -31,21 +31,21 @@ export const Default: Story = {
   },
 };
 
-function AddSecondWorkspace() {
+function AddSecondTrial() {
   const ctx = useLabContext();
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
-    if (ctx.workspaces.length < 2) ctx.addWorkspace('Stub');
+    if (ctx.trials.length < 2) ctx.addTrial('Stub');
   }, []);
   return null;
 }
 
-export const TwoWorkspaces: Story = {
+export const TwoTrials: Story = {
   args: {
     instruments: [StubInstrument],
     defaultInstrument: 'Stub',
-    title: 'Two Workspaces',
+    title: 'Two Trials',
     storage: null,
-    children: <AddSecondWorkspace />,
+    children: <AddSecondTrial />,
   },
 };

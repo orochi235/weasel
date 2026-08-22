@@ -3,7 +3,7 @@ import { useStore } from 'zustand/react';
 import type { Instrument } from '../instrument/types';
 import { useLabContext } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
-import type { WorkspaceRecord } from '../state/types';
+import type { TrialRecord } from '../state/types';
 import { DefaultSidebar } from './DefaultSidebar';
 import { DefaultStatusBar } from './DefaultStatusBar';
 import { DefaultToolbar } from './DefaultToolbar';
@@ -11,9 +11,9 @@ import type {
   SidebarSlot,
   StatusBarSlot,
   ToolbarSlot,
-  WorkspaceSidebarContext,
-  WorkspaceStatusBarContext,
-  WorkspaceToolbarContext,
+  TrialSidebarContext,
+  TrialStatusBarContext,
+  TrialToolbarContext,
 } from './slotTypes';
 
 export interface UndoBindings {
@@ -23,12 +23,12 @@ export interface UndoBindings {
   redo: () => void;
 }
 
-/** Props for `<WorkspaceChrome>`. */
-export interface WorkspaceChromeProps {
-  workspaceId: string;
-  record: WorkspaceRecord;
+/** Props for `<TrialChrome>`. */
+export interface TrialChromeProps {
+  trialId: string;
+  record: TrialRecord;
   instrument: Instrument;
-  isLastWorkspace: boolean;
+  isLastTrial: boolean;
   toolbar?: ToolbarSlot;
   sidebar?: SidebarSlot;
   statusBar?: StatusBarSlot;
@@ -40,31 +40,31 @@ export interface WorkspaceChromeProps {
 /** The frame around a running instrument — toolbar, sidebar, status bar —
  *  each replaceable by a slot. Assembles the slot contexts and wires the undo
  *  keyboard shortcuts. */
-export function WorkspaceChrome({
-  workspaceId,
+export function TrialChrome({
+  trialId,
   record,
   instrument,
-  isLastWorkspace,
+  isLastTrial,
   toolbar,
   sidebar,
   statusBar,
   undoBindings,
   sidebarExtras,
   children,
-}: WorkspaceChromeProps) {
+}: TrialChromeProps) {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);
-  if (!storeCtx) throw new Error('[labkit] WorkspaceChrome requires <LabStoreProvider>');
-  const updateWorkspaceView = useStore(storeCtx.store, (s) => s.updateWorkspaceView);
-  const updateWorkspaceConfig = useStore(storeCtx.store, (s) => s.updateWorkspaceConfig);
-  const updateWorkspaceState = useStore(storeCtx.store, (s) => s.updateWorkspaceState);
+  if (!storeCtx) throw new Error('[labkit] TrialChrome requires <LabStoreProvider>');
+  const updateTrialView = useStore(storeCtx.store, (s) => s.updateTrialView);
+  const updateTrialConfig = useStore(storeCtx.store, (s) => s.updateTrialConfig);
+  const updateTrialState = useStore(storeCtx.store, (s) => s.updateTrialState);
 
-  const toolbarCtx = useMemo<WorkspaceToolbarContext>(() => {
+  const toolbarCtx = useMemo<TrialToolbarContext>(() => {
     const setZoom = (z: number): void => {
-      updateWorkspaceView(workspaceId, { ...record.view, zoom: z });
+      updateTrialView(trialId, { ...record.view, zoom: z });
     };
     return {
-      workspaceId,
+      trialId,
       instrumentName: record.instrumentName,
       hasUndo: instrument.undo != null,
       canUndo: undoBindings?.canUndo ?? false,
@@ -77,19 +77,19 @@ export function WorkspaceChrome({
       zoomOut: () => setZoom(record.view.zoom * 0.8),
       resetZoom: () => setZoom(1),
       hasCanvas: instrument.canvas != null,
-      savedSnapshots: lab.savedSnapshots.filter((s) => s.workspaceId === workspaceId),
-      saveSnapshot: (name) => lab.saveSnapshot(workspaceId, name),
-      loadSnapshot: (snapshotId) => lab.loadSnapshot(workspaceId, snapshotId),
-      clone: () => lab.cloneWorkspace(workspaceId),
-      reset: () => lab.resetWorkspace(workspaceId),
-      close: () => lab.closeWorkspace(workspaceId),
-      isLastWorkspace,
+      savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
+      saveSnapshot: (name) => lab.saveSnapshot(trialId, name),
+      loadSnapshot: (snapshotId) => lab.loadSnapshot(trialId, snapshotId),
+      clone: () => lab.cloneTrial(trialId),
+      reset: () => lab.resetTrial(trialId),
+      close: () => lab.closeTrial(trialId),
+      isLastTrial,
     };
-  }, [workspaceId, record, instrument, lab, isLastWorkspace, updateWorkspaceView, undoBindings]);
+  }, [trialId, record, instrument, lab, isLastTrial, updateTrialView, undoBindings]);
 
-  const sidebarCtx = useMemo<WorkspaceSidebarContext>(
+  const sidebarCtx = useMemo<TrialSidebarContext>(
     () => ({
-      workspaceId,
+      trialId,
       instrumentName: record.instrumentName,
       configFields: instrument.configSchema?.() ?? [],
       config: record.config,
@@ -100,19 +100,19 @@ export function WorkspaceChrome({
             `[labkit] setConfig: unknown key "${key}" for instrument "${record.instrumentName}"`,
           );
         }
-        updateWorkspaceConfig(workspaceId, key as never, value as never);
+        updateTrialConfig(trialId, key as never, value as never);
         if (instrument.onConfigChange) {
           const nextConfig = { ...prevConfig, [key]: value };
           const nextState = instrument.onConfigChange(nextConfig, prevConfig, record.state);
-          updateWorkspaceState(workspaceId, nextState as never);
+          updateTrialState(trialId, nextState as never);
         }
       },
     }),
-    [workspaceId, record, instrument, updateWorkspaceConfig, updateWorkspaceState],
+    [trialId, record, instrument, updateTrialConfig, updateTrialState],
   );
 
-  const statusCtx: WorkspaceStatusBarContext = {
-    workspaceId,
+  const statusCtx: TrialStatusBarContext = {
+    trialId,
     instrumentName: record.instrumentName,
     zoom: record.view.zoom,
   };
@@ -132,21 +132,21 @@ export function WorkspaceChrome({
 
   return (
     <section
-      className="lk-workspace"
-      aria-label={`Workspace ${record.instrumentName}`}
+      className="lk-trial"
+      aria-label={`Trial ${record.instrumentName}`}
       onKeyDown={handleKeyDown}
     >
-      <div className="lk-workspace__toolbar">
+      <div className="lk-trial__toolbar">
         {toolbar ? toolbar(toolbarCtx) : <DefaultToolbar ctx={toolbarCtx} />}
       </div>
-      <div className="lk-workspace__body">
-        <div className="lk-workspace__sidebar">
+      <div className="lk-trial__body">
+        <div className="lk-trial__sidebar">
           {sidebar ? sidebar(sidebarCtx) : <DefaultSidebar ctx={sidebarCtx} />}
           {sidebarExtras}
         </div>
-        <div className="lk-workspace__content">{children}</div>
+        <div className="lk-trial__content">{children}</div>
       </div>
-      <div className="lk-workspace__status">
+      <div className="lk-trial__status">
         {statusBar ? statusBar(statusCtx) : <DefaultStatusBar ctx={statusCtx} />}
       </div>
     </section>

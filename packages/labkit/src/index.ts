@@ -49,28 +49,28 @@ export {
 export {
   LabStoreContext,
   LabStoreProvider,
+  TrialIdContext,
+  TrialIdProvider,
   useLabStore,
-  useWorkspaceId,
-  WorkspaceIdContext,
-  WorkspaceIdProvider,
+  useTrialId,
 } from './state/context';
 export { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './state/document';
 export type {
   CreateLabStoreOptions,
-  ExperimentStateHandle,
   LabDocument,
   LabMode,
   LabStoreState,
   SavedSnapshot,
   SerializedTrial,
   StorageAdapter,
+  TrialRecord,
+  TrialStateHandle,
   UndoStack,
-  WorkspaceRecord,
 } from './state/types';
-export { useExperimentState } from './state/useExperimentState';
+export { useTrialState } from './state/useTrialState';
 export { interstellarTheme } from './theme/interstellar';
+export * from './trial';
 export * from './ui/layers';
 export * from './ui/properties';
 export type { EventBus, EventListener } from './undo';
 export { clearUndo, createEventBus, emptyStack, pushSnapshot, redo, undo } from './undo';
-export * from './workspace';

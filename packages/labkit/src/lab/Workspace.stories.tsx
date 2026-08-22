@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { WorkspaceGrid } from './WorkspaceGrid';
+import { Workspace } from './Workspace';
 
-const meta: Meta<typeof WorkspaceGrid> = {
-  title: 'labkit/Lab/WorkspaceGrid',
-  component: WorkspaceGrid,
+const meta: Meta<typeof Workspace> = {
+  title: 'labkit/Lab/Workspace',
+  component: Workspace,
 };
 export default meta;
 
-type Story = StoryObj<typeof WorkspaceGrid>;
+type Story = StoryObj<typeof Workspace>;
 
 const Tile = ({ children }: { children: React.ReactNode }) => (
   <div
@@ -28,9 +28,9 @@ const Tile = ({ children }: { children: React.ReactNode }) => (
 export const OneTile: Story = {
   render: () => (
     <div style={{ height: 400 }}>
-      <WorkspaceGrid>
+      <Workspace>
         <Tile>1</Tile>
-      </WorkspaceGrid>
+      </Workspace>
     </div>
   ),
 };
@@ -38,11 +38,11 @@ export const OneTile: Story = {
 export const ThreeTiles: Story = {
   render: () => (
     <div style={{ height: 400 }}>
-      <WorkspaceGrid>
+      <Workspace>
         <Tile>1</Tile>
         <Tile>2</Tile>
         <Tile>3</Tile>
-      </WorkspaceGrid>
+      </Workspace>
     </div>
   ),
 };
@@ -50,12 +50,12 @@ export const ThreeTiles: Story = {
 export const SevenTiles: Story = {
   render: () => (
     <div style={{ height: 600 }}>
-      <WorkspaceGrid>
+      <Workspace>
         {Array.from({ length: 7 }).map((_, i) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: static demo list
           <Tile key={i}>{i + 1}</Tile>
         ))}
-      </WorkspaceGrid>
+      </Workspace>
     </div>
   ),
 };
@@ -65,13 +65,13 @@ export const SevenTiles: Story = {
 export const Resizable: Story = {
   render: () => (
     <div style={{ height: 500 }}>
-      <WorkspaceGrid ids={['a', 'b', 'c', 'd', 'e']} resizable>
+      <Workspace ids={['a', 'b', 'c', 'd', 'e']} resizable>
         <Tile>1</Tile>
         <Tile>2</Tile>
         <Tile>3</Tile>
         <Tile>4</Tile>
         <Tile>5</Tile>
-      </WorkspaceGrid>
+      </Workspace>
     </div>
   ),
 };

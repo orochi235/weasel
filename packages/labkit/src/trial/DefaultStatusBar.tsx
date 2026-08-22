@@ -1,13 +1,13 @@
 import { StatusBar } from '../primitives/StatusBar';
 import { formatZoom } from '../ui/format';
-import type { WorkspaceStatusBarContext } from './slotTypes';
+import type { TrialStatusBarContext } from './slotTypes';
 
 /** Props for `<DefaultStatusBar>`. */
 export interface DefaultStatusBarProps {
-  ctx: WorkspaceStatusBarContext;
+  ctx: TrialStatusBarContext;
 }
 
-/** The status bar a workspace renders when no `statusBar` slot is supplied:
+/** The status bar a trial renders when no `statusBar` slot is supplied:
  *  the instrument's name and the current zoom. */
 export function DefaultStatusBar({ ctx }: DefaultStatusBarProps) {
   return (
