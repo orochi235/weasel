@@ -21,6 +21,20 @@ function makeWidget(id: string): Widget {
 }
 
 describe('Hud', () => {
+  it('the factories refuse on a detached HUD, the same as add()', () => {
+    const hud = createHud();
+    hud.bind(makeHost());
+    hud.unbind();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    hud.rect({ id: 'r', x: 0, y: 0, w: 1, h: 1, fill: '#000' });
+    hud.label({ id: 'l', x: 0, y: 0, text: 'x' });
+    hud.button({ id: 'b', x: 0, y: 0, w: 1, h: 1, label: 'x' });
+    hud.add(makeWidget('w'));
+    expect(hud.widgets()).toEqual([]);
+    expect(warn).toHaveBeenCalledTimes(4);
+    warn.mockRestore();
+  });
+
   it('add() inserts widget and requests redraw when bound', () => {
     const hud = createHud();
     const host = makeHost();

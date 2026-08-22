@@ -41,6 +41,7 @@ export function createText(opts: TextOptions): TextWidget {
     id: opts.id,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
+    get disposed() { return disposed; },
     setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setText(t) { assertNotDisposed(); text = t; opts.onChange?.(); },

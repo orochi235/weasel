@@ -45,6 +45,7 @@ export function createRect(opts: RectOptions): RectWidget {
     id: opts.id,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
+    get disposed() { return disposed; },
     setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setFill(c) { assertNotDisposed(); fill = c; opts.onChange?.(); },

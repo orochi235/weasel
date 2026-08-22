@@ -69,6 +69,7 @@ export function createButton(opts: ButtonOptions): ButtonWidget {
     id: opts.id,
     get bounds() { return bounds; },
     get hidden() { return hidden; },
+    get disposed() { return disposed; },
     setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setLabel(l) { assertNotDisposed(); label = l; opts.onChange?.(); },
