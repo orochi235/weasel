@@ -97,7 +97,7 @@
     "earcut": "2.2.4",
     "polygon-clipping": "^0.15.7",
     "react-aria-components": "^1.5.0",
-    "windease": "^1.2.0",
+    "windease": "^1.2.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
