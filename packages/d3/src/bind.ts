@@ -1,6 +1,6 @@
 import { asNodeId, RECT_POSE_DESCRIPTOR } from '@weasel-js/core';
 import type { Animator, NodeId, PoseProjection, Scene } from '@weasel-js/core';
-import { createTransition } from './transition';
+import { createTransition, takeCustomKeys } from './transition';
 import type {
   BindOptions,
   D3Binding,
@@ -181,9 +181,12 @@ function createSelection<TData, TPose>(
     interrupt(name?: string) {
       if (!animator) return sel;
       const transitionName = name ?? '';
-      // Cancel all pose tweens registered for this transition name.
+      // `animator.cancelKey` matches exactly, so the custom tweens — whose
+      // keys carry a `:<tweenName>` suffix — need naming individually.
       for (const id of ids) {
-        animator.cancelKey(`d3-transition:${transitionName}:${id}`);
+        const ns = `d3-transition:${transitionName}:${id}`;
+        for (const key of takeCustomKeys(ns)) animator.cancelKey(key);
+        animator.cancelKey(ns);
       }
       return sel;
     },

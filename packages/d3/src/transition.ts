@@ -39,10 +39,45 @@ interface CustomTween<TData> {
  *
  * `interrupt()` cancels via the kit's `animator.cancelKey`. The cancelKey
  * format is `d3-transition:<name>:<nodeId>` for pose tweens and
- * `d3-transition:<name>:<nodeId>:<tweenName>` for custom tweens, so
- * `.interrupt(name)` on the selection cancels every tween in this
- * transition by namespace.
+ * `d3-transition:<name>:<nodeId>:<tweenName>` for custom tweens.
+ * `animator.cancelKey` matches a key exactly, so a selection-level
+ * `.interrupt(name)` cannot reach the custom keys by prefix — live custom
+ * keys are tracked in `LIVE_CUSTOM_KEYS` and read back by `customKeysFor`.
  */
+
+/** Live custom-tween cancelKeys, grouped by their pose-tween namespace
+ *  (`d3-transition:<name>:<nodeId>`). Populated on spawn and drained on
+ *  completion or cancel, so a selection-level interrupt can find the keys a
+ *  prefix match would otherwise have given it. */
+const LIVE_CUSTOM_KEYS = new Map<string, Set<string>>();
+
+function trackCustomKey(ns: string, key: string): void {
+  const set = LIVE_CUSTOM_KEYS.get(ns) ?? new Set<string>();
+  set.add(key);
+  LIVE_CUSTOM_KEYS.set(ns, set);
+}
+
+function untrackCustomKey(ns: string, key: string): void {
+  const set = LIVE_CUSTOM_KEYS.get(ns);
+  if (!set) return;
+  set.delete(key);
+  if (set.size === 0) LIVE_CUSTOM_KEYS.delete(ns);
+}
+
+/**
+ * @internal Take the live custom-tween cancelKeys under `ns`, clearing them.
+ *
+ * Draining is what keeps the table bounded: the caller's next move is
+ * `animator.cancelKey`, and a cancelled tween never runs its `onDone`, so
+ * leaving the keys behind would strand one entry per interrupted tween.
+ */
+export function takeCustomKeys(ns: string): string[] {
+  const set = LIVE_CUSTOM_KEYS.get(ns);
+  if (!set) return [];
+  LIVE_CUSTOM_KEYS.delete(ns);
+  return [...set];
+}
+
 export function createTransition<TData, TPose>(
   ctx: TransitionCtx<TData, TPose>,
 ): D3Transition<TData> {
@@ -58,6 +93,10 @@ export function createTransition<TData, TPose>(
   let pendingCount = 0;
   let cancelled = false;
   let endResolved = false;
+  /** (namespace, key) pairs this transition put in `LIVE_CUSTOM_KEYS`.
+   *  `handle.cancel()` does not run a tween's `onDone`, so `interrupt()`
+   *  drains these itself or the keys outlive their tweens. */
+  const spawnedCustom: Array<[string, string]> = [];
   let resolveEnd: (() => void) | null = null;
   const endPromise = new Promise<void>((resolve) => {
     resolveEnd = resolve;
@@ -152,15 +191,19 @@ export function createTransition<TData, TPose>(
       for (const ct of customTweens) {
         const fromVal = ct.from(d, i);
         const toVal = ct.to(d, i);
+        const ns = `d3-transition:${name}:${id}`;
+        const customKey = `${ns}:${ct.name}`;
         const spawnCustom = (): void => {
           if (cancelled) return;
           anySpawned = true;
+          trackCustomKey(ns, customKey);
+          spawnedCustom.push([ns, customKey]);
           const handle = ctx.animator.tween({
             from: fromVal,
             to: toVal,
             ms: duration,
             easing,
-            cancelKey: `d3-transition:${name}:${id}:${ct.name}`,
+            cancelKey: customKey,
             interpolator: ct.interpolate,
             interpolate: ct.interpolate
               ? undefined
@@ -175,6 +218,7 @@ export function createTransition<TData, TPose>(
                 }),
             onTick: (value) => ct.apply(d, id, value),
             onDone: () => {
+              untrackCustomKey(ns, customKey);
               pendingCount--;
               settleIfDone();
             },
@@ -241,6 +285,8 @@ export function createTransition<TData, TPose>(
       pendingDelays.clear();
       for (const h of handles) h.cancel();
       handles.length = 0;
+      for (const [ns, key] of spawnedCustom) untrackCustomKey(ns, key);
+      spawnedCustom.length = 0;
       onInterrupt.forEach((fn) => fn());
       // Drain pendingCount so resolveEnd fires; any in-flight onDone callbacks
       // will see endResolved=true and short-circuit.

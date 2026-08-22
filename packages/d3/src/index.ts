@@ -1,6 +1,7 @@
 // ─── @weasel-js/d3 ──────────────────────────────────────────────────
-// d3 bridge for weasel. Currently ships Phase 1: data-join + chainable
-// selection. Phase 2 (transition chain) lands separately.
+// d3 bridge for weasel: data-join, chainable selection, and the transition
+// chain — `d3Bind(...).join().transition()`, which needs `animator` in
+// `BindOptions`.
 //
 // d3-force already integrates via the kit's `useSimulation` — its force
 // protocol is contract-compatible, so `import { forceManyBody } from
