@@ -156,7 +156,10 @@ export function arrayAdapter<TNode extends { id: string }, TPose>(
     getParent,
     setParent,
 
-    insertNode: (obj) => setItems((items) => [...items, obj]),
+    insertNode: (obj, index) => setItems((items) => {
+      if (index === undefined || index < 0 || index >= items.length) return [...items, obj];
+      return [...items.slice(0, index), obj, ...items.slice(index)];
+    }),
     removeNode: (id) => setItems((items) => items.filter((o) => o.id !== id)),
 
     getSelection,
