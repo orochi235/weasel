@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry } from './registry';
 import { WhatsNew } from './WhatsNew';
+import { Releases } from './Releases';
 
 const WHATS_NEW_ID = '__whats_new';
+const RELEASES_ID = '__releases';
 
 /** Format a git-ISO date as "3d ago" / "2w ago" / "Apr 2024" — close
  *  in time gets a relative phrasing; older falls back to a static
@@ -35,7 +37,7 @@ import { buildTitle } from '../shared/buildInfo';
 
 function readHash(): string {
   const h = window.location.hash.replace(/^#/, '');
-  if (h === WHATS_NEW_ID) return WHATS_NEW_ID;
+  if (h === WHATS_NEW_ID || h === RELEASES_ID) return h;
   return DEMOS_BY_ID.has(h) ? h : DEMOS[0].id;
 }
 
@@ -56,7 +58,7 @@ export function WeaselDemos() {
     }
   }, [activeId]);
 
-  const active = activeId === WHATS_NEW_ID ? null : DEMOS_BY_ID.get(activeId)!;
+  const active = DEMOS_BY_ID.get(activeId) ?? null;
 
   return (
     <div className="ckd-app">
@@ -87,6 +89,13 @@ export function WeaselDemos() {
                   onClick={(e) => { e.preventDefault(); setActiveId(WHATS_NEW_ID); }}
                 >✨ What's new</a>
               </li>
+              <li>
+                <a
+                  href={`#${RELEASES_ID}`}
+                  className={activeId === RELEASES_ID ? 'active' : ''}
+                  onClick={(e) => { e.preventDefault(); setActiveId(RELEASES_ID); }}
+                >🏷️ Releases</a>
+              </li>
             </ul>
           </section>
           {CATEGORIES.map((cat) => (
@@ -109,9 +118,9 @@ export function WeaselDemos() {
       </aside>
 
       <main className="ckd-main">
-        {active
-          ? <DemoView entry={active} key={active.id} />
-          : <WhatsNew onSelect={setActiveId} />}
+        {active ? <DemoView entry={active} key={active.id} /> : null}
+        {!active && activeId === RELEASES_ID ? <Releases /> : null}
+        {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={setActiveId} /> : null}
       </main>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

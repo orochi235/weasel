@@ -3,9 +3,9 @@ name: Deploy demo to GitHub Pages
 on:
   push:
     branches: [main]
-    # Only redeploy when something user-visible changed. Doc-only commits and
-    # repo plumbing (CHANGELOG, .changeset/, etc.) don't need to spin up the
-    # demo + Storybook builds.
+    # Only redeploy when something user-visible changed. `packages/**` already
+    # covers the CHANGELOG files the Releases view reads, so a release commit
+    # redeploys; repo plumbing that touches neither does not.
     paths:
       - 'apps/**'
       - 'packages/**'

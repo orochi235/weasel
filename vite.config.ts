@@ -5,6 +5,7 @@ import { extname, join, resolve } from 'node:path';
 import { weaselAliases } from './scripts/vite-aliases';
 import { weaselDefines } from './scripts/vite-build-info';
 import { demoTimestamps } from './scripts/vite-demo-timestamps';
+import { changelogs } from './scripts/vite-changelogs';
 
 /**
  * Dev-only middleware: serve `dist-demo/api/*` at `/api/*`. The deployed
@@ -76,7 +77,12 @@ export default defineConfig({
       },
     ]),
   },
-  plugins: [react(), serveApiDocsInDev(), demoTimestamps({ root: __dirname })],
+  plugins: [
+    react(),
+    serveApiDocsInDev(),
+    demoTimestamps({ root: __dirname }),
+    changelogs({ root: __dirname }),
+  ],
   define: weaselDefines(__dirname),
   // Pre-bundle demo-only deps at server start so they don't trigger lazy
   // re-optimization on first import — that race produces 504 "Outdated

@@ -11,3 +11,10 @@ declare module 'virtual:demo-timestamps' {
   const timestamps: Record<string, { created: string; lastModified: string }>;
   export default timestamps;
 }
+
+/** Provided by the `changelogs` vite plugin (`scripts/vite-changelogs.ts`).
+ *  Every published release, newest first. */
+declare module 'virtual:changelogs' {
+  const releases: import('../shared/releases').Release[];
+  export default releases;
+}
