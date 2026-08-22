@@ -54,7 +54,7 @@ const CAP = 500_000;
  * unlike `draw-loop.spec.ts` there is no measurement to protect from its
  * predecessor's garbage.
  */
-const KINDS = [
+const ALL_KINDS = [
   { id: 'solid-rect',    unit: 'solid rect' },
   { id: 'stroked-path',  unit: 'stroked rect (2px)' },
   { id: 'scene-tree',    unit: 'leaf in a fanout-4 tree' },
@@ -66,6 +66,16 @@ const KINDS = [
   { id: 'gradient-rect', unit: 'linear-gradient rect' },
   { id: 'mixed-doc',     unit: 'document element (weighted mix)' },
 ];
+
+/** `PERF_KINDS=mixed-doc,solid-rect` narrows the sweep. A full one runs for
+ *  many minutes, and re-measuring one row after a renderer change should not
+ *  have to pay for the other nine. */
+const only = process.env.PERF_KINDS?.split(',').map((s) => s.trim()).filter(Boolean);
+const KINDS = only?.length ? ALL_KINDS.filter((k) => only.includes(k.id)) : ALL_KINDS;
+if (only?.length) {
+  const unknown = only.filter((id) => !ALL_KINDS.some((k) => k.id === id));
+  if (unknown.length) throw new Error(`PERF_KINDS: no such kind: ${unknown.join(', ')}`);
+}
 
 interface RowResult {
   kind: string;

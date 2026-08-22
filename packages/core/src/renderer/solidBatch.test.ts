@@ -11,9 +11,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { makeGLRecorder, type GLCall } from './test-utils/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
 import type { DrawCommand } from './DrawCommand';
-import { MAX_VERTICES_PER_BATCH } from './solidBatch';
+import {
+  MAX_VERTICES_PER_BATCH, SOLID_LARGE_RING_SIZE, SOLID_RING_SIZE,
+  SOLID_RING_SLOT_VERTICES,
+} from './solidBatch';
 
 const ARRAY_BUFFER = 0x8892;
+const ELEMENT_ARRAY_BUFFER = 0x8893;
 const STENCIL_TEST = 0x0B90;
 
 describe('renderer — consecutive solid-fill batching', () => {
@@ -322,5 +326,136 @@ describe('renderer — consecutive solid-fill batching', () => {
     const many = Array.from({ length: rectsPerBatch + 1 }, (_, i) => rect(i));
     r.render(many);
     expect(draws()).toEqual([rectsPerBatch * 6, 6]);
+  });
+
+  describe('which buffers a flush writes', () => {
+    /** One flush each: a gradient never joins the run, so it drains what is
+     *  staged before drawing itself. */
+    const alternating = (flushes: number): DrawCommand[] =>
+      Array.from({ length: flushes }, (_, i) => [rect(i * 20), gradientRect(i * 20 + 10)]).flat();
+
+    /** The buffer bound at each solid-flush vertex upload, in issue order.
+     *  `drawImage` is the only other `bufferSubData(ARRAY_BUFFER)` writer and
+     *  no test here draws an image. */
+    const flushVbos = (): unknown[] => {
+      const out: unknown[] = [];
+      let bound: unknown = null;
+      for (const c of recorder.calls) {
+        if (c.name === 'bindBuffer' && c.args[0] === ARRAY_BUFFER) bound = c.args[1];
+        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) out.push(bound);
+      }
+      return out;
+    };
+
+    /** The vertex array bound at each solid-flush vertex upload. */
+    const flushVaos = (): unknown[] => {
+      const out: unknown[] = [];
+      let bound: unknown = null;
+      for (const c of recorder.calls) {
+        if (c.name === 'bindVertexArray') bound = c.args[0];
+        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) out.push(bound);
+      }
+      return out;
+    };
+
+    it('writes each flush to a buffer the one before it did not', () => {
+      r.render(alternating(4));
+      const vbos = flushVbos();
+      expect(vbos).toHaveLength(4);
+      expect(new Set(vbos).size).toBe(4);
+    });
+
+    it('reuses a buffer only after a full turn of the ring', () => {
+      r.render(alternating(SOLID_RING_SIZE + 2));
+      const vbos = flushVbos();
+      expect(vbos).toHaveLength(SOLID_RING_SIZE + 2);
+      expect(new Set(vbos).size).toBe(SOLID_RING_SIZE);
+      expect(vbos[SOLID_RING_SIZE]).toBe(vbos[0]);
+      expect(vbos[SOLID_RING_SIZE + 1]).toBe(vbos[1]);
+    });
+
+    it('keeps cycling across frames rather than restarting at slot 0', () => {
+      r.render(alternating(2));
+      const first = flushVbos();
+      recorder.reset();
+      r.render(alternating(2));
+      expect(flushVbos().some((b) => first.includes(b))).toBe(false);
+    });
+
+    it('draws from the vertex array that flush wrote', () => {
+      // Each slot's VAO names its own two buffers, so binding one and writing
+      // another paints the previous flush's geometry.
+      r.render(alternating(3));
+      const vaos = flushVaos();
+      expect(new Set(vaos).size).toBe(3);
+      const boundAtBatchDraw: unknown[] = [];
+      let vao: unknown = null;
+      let prog: unknown = null;
+      for (const c of recorder.calls) {
+        if (c.name === 'bindVertexArray') vao = c.args[0];
+        if (c.name === 'useProgram') prog = c.args[0];
+        if (c.name === 'drawElements' && prog === r._pathFillVColor().handle) {
+          boundAtBatchDraw.push(vao);
+        }
+      }
+      expect(boundAtBatchDraw).toEqual(vaos);
+    });
+
+    it('writes the indices into the same set as the vertices', () => {
+      r.render(alternating(2));
+      // The element binding rides the VAO, so an index upload that lands in the
+      // wrong set draws the previous flush's triangles.
+      const perFlush: Array<[unknown, unknown]> = [];
+      let vao: unknown = null;
+      let pendingVao: unknown = null;
+      for (const c of recorder.calls) {
+        if (c.name === 'bindVertexArray') vao = c.args[0];
+        if (c.name === 'bufferSubData' && c.args[0] === ARRAY_BUFFER) pendingVao = vao;
+        if (c.name === 'bufferSubData' && c.args[0] === ELEMENT_ARRAY_BUFFER) {
+          perFlush.push([pendingVao, vao]);
+        }
+      }
+      expect(perFlush).toHaveLength(2);
+      for (const [atVerts, atIdx] of perFlush) expect(atIdx).toBe(atVerts);
+    });
+
+    it('cycles flushes past a slot\'s capacity through buffers of their own', () => {
+      const perSlot = SOLID_RING_SLOT_VERTICES / 4;
+      const big = (n: number): DrawCommand[] => [
+        ...Array.from({ length: perSlot + 1 }, (_, i) => rect(n * 10000 + i)),
+        gradientRect(0),
+      ];
+      const bigFlushes = SOLID_LARGE_RING_SIZE + 1;
+      r.render([
+        ...Array.from({ length: bigFlushes }, (_, n) => big(n)).flat(),
+        ...alternating(2),
+      ]);
+      const vbos = flushVbos();
+      expect(vbos).toHaveLength(bigFlushes + 2);
+      const large = vbos.slice(0, bigFlushes);
+      const small = vbos.slice(bigFlushes);
+      // Oversized flushes cycle a ring of their own, and share nothing with the
+      // slot-sized ones — a slot cannot hold what they carry.
+      expect(large[1]).not.toBe(large[0]);
+      expect(new Set(large).size).toBe(SOLID_LARGE_RING_SIZE);
+      expect(large[SOLID_LARGE_RING_SIZE]).toBe(large[0]);
+      for (const b of small) expect(large).not.toContain(b);
+    });
+
+    it('frees every buffer and vertex array it took', () => {
+      r.render(alternating(3));
+      r.render(Array.from({ length: SOLID_RING_SLOT_VERTICES / 4 + 1 }, (_, i) => rect(i)));
+      const used = new Set(flushVbos());
+      const vaos = new Set(flushVaos());
+      r.dispose();
+      const deleted = new Set(
+        recorder.calls.filter((c) => c.name === 'deleteBuffer').map((c) => c.args[0]),
+      );
+      const deletedVaos = new Set(
+        recorder.calls.filter((c) => c.name === 'deleteVertexArray').map((c) => c.args[0]),
+      );
+      for (const b of used) expect(deleted.has(b)).toBe(true);
+      for (const v of vaos) expect(deletedVaos.has(v)).toBe(true);
+    });
   });
 });

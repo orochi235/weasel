@@ -204,8 +204,8 @@ than a pressure one, and step 4 is where it starts paying.
 
 - `npm run test:visual` — 35 baselines. Order and clipping regressions show up
   as pixels; this is the gate that matters for every step here.
-- `packages/core/src/renderer/solidBatch.test.ts` — 18 tests pinning each flush
-  boundary against a GL recorder. Extend it per step rather than trusting the
+- `packages/core/src/renderer/solidBatch.test.ts` — 24 tests pinning each flush
+  boundary, and the buffers a flush writes, against a GL recorder. Extend it per step rather than trusting the
   visual gate to catch an ordering slip.
 - `npm run test:perf` — the draw-loop sweep, whose `scene` and `rotated`
   variants are the shapes the app renders (`buildSceneTree`'s wrapper group per
