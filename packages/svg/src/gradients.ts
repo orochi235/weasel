@@ -1,7 +1,7 @@
 /**
  * Map between SVG `<linearGradient>` / `<radialGradient>` elements and
- * weasel's `FillStyle` gradient variants. We collect gradients from
- * `<defs>` during parse and look them up by id when a `fill` /
+ * weasel's `FillStyle` gradient variants. Definitions are indexed by id
+ * wherever in the document they appear, and looked up when a `fill` /
  * `stroke` attribute references one as `url(#id)`. On serialize, we
  * emit a fresh `<defs>` block with stable generated ids.
  */
@@ -10,34 +10,89 @@ import type { FillStyle, GradStop, GradientUnits } from '@weasel-js/core';
 import { parsePaintAttr } from './color';
 import { trimNumber } from './transform';
 import { patternXml } from './patterns';
+import { collectElementsByTag, type ElementTable } from './elements';
 
 /** Collected gradient definitions, keyed by element id. */
 export type GradientTable = Map<string, FillStyle>;
 
-/** Read the children of `<defs>` and extract supported gradient nodes. */
+const GRADIENT_TAGS = new Set(['lineargradient', 'radialgradient']);
+
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
+/** Read every gradient definition in the document, keyed by element id. */
 export function collectGradients(svg: Element, onWarn?: (m: string) => void): GradientTable {
   const out: GradientTable = new Map();
+  const elements = collectElementsByTag(svg, GRADIENT_TAGS);
+  for (const [id, el] of elements) {
+    const paint = el.tagName.toLowerCase() === 'lineargradient'
+      ? readLinearGradient(el, elements, onWarn)
+      : readRadialGradient(el, elements, onWarn);
+    if (paint) out.set(id, paint);
+  }
+  warnUnsupportedDefsChildren(svg, onWarn);
+  return out;
+}
+
+/** Paint servers aside, a `<defs>` child is something this package does not
+ *  model (`<clipPath>`, `<marker>`, a `<use>` template). Say so once here. */
+function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void): void {
+  if (!onWarn) return;
   const defs = svg.getElementsByTagName('defs');
   for (let d = 0; d < defs.length; d++) {
     const root = defs[d];
     for (let i = 0; i < root.children.length; i++) {
       const child = root.children[i];
       const tag = child.tagName.toLowerCase();
-      const id = child.getAttribute('id');
-      if (!id) continue;
-      if (tag === 'lineargradient') {
-        const paint = readLinearGradient(child, onWarn);
-        if (paint) out.set(id, paint);
-      } else if (tag === 'radialgradient') {
-        const paint = readRadialGradient(child, onWarn);
-        if (paint) out.set(id, paint);
-      } else if (tag !== 'pattern') {
-        // `<pattern>` is collected separately by `collectPatterns`.
-        onWarn?.(`unsupported <defs> child: <${child.tagName}>`);
-      }
+      if (GRADIENT_TAGS.has(tag) || tag === 'pattern') continue;
+      onWarn(`unsupported <defs> child: <${child.tagName}>`);
     }
   }
-  return out;
+}
+
+/**
+ * The gradient a `href` / `xlink:href` attribute points at, or null. SVG lets
+ * one gradient inherit another's stops and attributes this way, and authoring
+ * tools lean on it heavily — a chain that isn't followed resolves to a
+ * gradient with no stops, which paints nothing.
+ */
+function hrefTarget(el: Element, elements: ElementTable): Element | null {
+  const raw = el.getAttribute('href')
+    ?? el.getAttributeNS(XLINK_NS, 'href')
+    ?? el.getAttribute('xlink:href');
+  if (!raw || !raw.startsWith('#')) return null;
+  return elements.get(raw.slice(1)) ?? null;
+}
+
+/** An attribute's value on `el` or, when absent, on the gradient it inherits
+ *  from. `seen` breaks a reference cycle. */
+function inheritedAttr(
+  el: Element, elements: ElementTable, name: string, seen: Set<Element> = new Set(),
+): string | null {
+  if (el.hasAttribute(name)) return el.getAttribute(name);
+  seen.add(el);
+  const ref = hrefTarget(el, elements);
+  if (!ref || seen.has(ref)) return null;
+  return inheritedAttr(ref, elements, name, seen);
+}
+
+/** `el`'s own stops or, when it declares none, the stops it inherits. */
+function inheritedStops(
+  el: Element, elements: ElementTable, onWarn?: (m: string) => void,
+  seen: Set<Element> = new Set(),
+): GradStop[] {
+  const own = readStops(el, onWarn);
+  if (own.length > 0) return own;
+  seen.add(el);
+  const ref = hrefTarget(el, elements);
+  if (!ref || seen.has(ref)) return own;
+  return inheritedStops(ref, elements, onWarn, seen);
+}
+
+/** Parse a `stop-opacity` / offset value that may carry a `%` suffix. */
+function parseRatio(raw: string): number {
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return NaN;
+  return raw.trimEnd().endsWith('%') ? n / 100 : n;
 }
 
 function readStops(el: Element, onWarn?: (m: string) => void): GradStop[] {
@@ -45,15 +100,14 @@ function readStops(el: Element, onWarn?: (m: string) => void): GradStop[] {
   for (let i = 0; i < el.children.length; i++) {
     const c = el.children[i];
     if (c.tagName.toLowerCase() !== 'stop') continue;
-    const offsetRaw = c.getAttribute('offset') ?? '0';
-    const offset = offsetRaw.endsWith('%')
-      ? parseFloat(offsetRaw) / 100
-      : parseFloat(offsetRaw);
+    const offsetRaw = parseRatio(c.getAttribute('offset') ?? '0');
+    const offset = Number.isFinite(offsetRaw) ? offsetRaw : 0;
     const colorAttr = c.getAttribute('stop-color') ?? '#000000';
     const parsed = parsePaintAttr(colorAttr);
     if (parsed && parsed.kind === 'solid') {
       const opacityAttr = c.getAttribute('stop-opacity');
-      const alpha = opacityAttr != null ? parseFloat(opacityAttr) : parsed.alpha;
+      const own = opacityAttr != null ? parseRatio(opacityAttr) : NaN;
+      const alpha = Number.isFinite(own) ? own : parsed.alpha;
       stops.push({ offset, color: alpha < 1 ? applyAlpha(parsed.color, alpha) : parsed.color });
     } else {
       onWarn?.(`gradient stop has unrecognized stop-color: ${colorAttr}`);
@@ -74,36 +128,59 @@ function applyAlpha(hex: string, alpha: number): string {
 /** SVG `gradientUnits` → the kit's `GradientUnits`. SVG's default is
  *  `objectBoundingBox`, which is what the attribute defaults above assume
  *  (`x2="1"`, `r="0.5"`), so the two have to be read together. */
-function readGradientUnits(el: Element): 'bounds' | 'world' {
-  return el.getAttribute('gradientUnits') === 'userSpaceOnUse' ? 'world' : 'bounds';
+function readGradientUnits(el: Element, elements: ElementTable): 'bounds' | 'world' {
+  return inheritedAttr(el, elements, 'gradientUnits') === 'userSpaceOnUse' ? 'world' : 'bounds';
 }
 
-function readLinearGradient(el: Element, onWarn?: (m: string) => void): FillStyle | null {
-  const x1 = parseFloat(el.getAttribute('x1') ?? '0');
-  const y1 = parseFloat(el.getAttribute('y1') ?? '0');
-  const x2 = parseFloat(el.getAttribute('x2') ?? '1');
-  const y2 = parseFloat(el.getAttribute('y2') ?? '0');
-  const stops = readStops(el, onWarn);
+/** `gradientTransform` has no slot in the kit's gradient model, so a gradient
+ *  carrying one paints in the wrong place rather than not at all. */
+function warnGradientTransform(
+  el: Element, elements: ElementTable, onWarn?: (m: string) => void,
+): void {
+  const t = inheritedAttr(el, elements, 'gradientTransform');
+  if (t != null && t.trim() !== '') {
+    onWarn?.(`gradientTransform="${t}" is not modeled; the gradient paints untransformed`);
+  }
+}
+
+function num(raw: string | null, fallback: number): number {
+  if (raw == null) return fallback;
+  const n = parseRatio(raw);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function readLinearGradient(
+  el: Element, elements: ElementTable, onWarn?: (m: string) => void,
+): FillStyle | null {
+  warnGradientTransform(el, elements, onWarn);
   return {
     fill: 'linear-gradient',
-    from: { x: x1, y: y1 },
-    to: { x: x2, y: y2 },
-    stops,
-    units: readGradientUnits(el),
+    from: {
+      x: num(inheritedAttr(el, elements, 'x1'), 0),
+      y: num(inheritedAttr(el, elements, 'y1'), 0),
+    },
+    to: {
+      x: num(inheritedAttr(el, elements, 'x2'), 1),
+      y: num(inheritedAttr(el, elements, 'y2'), 0),
+    },
+    stops: inheritedStops(el, elements, onWarn),
+    units: readGradientUnits(el, elements),
   };
 }
 
-function readRadialGradient(el: Element, onWarn?: (m: string) => void): FillStyle | null {
-  const cx = parseFloat(el.getAttribute('cx') ?? '0.5');
-  const cy = parseFloat(el.getAttribute('cy') ?? '0.5');
-  const r = parseFloat(el.getAttribute('r') ?? '0.5');
-  const stops = readStops(el, onWarn);
+function readRadialGradient(
+  el: Element, elements: ElementTable, onWarn?: (m: string) => void,
+): FillStyle | null {
+  warnGradientTransform(el, elements, onWarn);
   return {
     fill: 'radial-gradient',
-    center: { x: cx, y: cy },
-    radius: r,
-    stops,
-    units: readGradientUnits(el),
+    center: {
+      x: num(inheritedAttr(el, elements, 'cx'), 0.5),
+      y: num(inheritedAttr(el, elements, 'cy'), 0.5),
+    },
+    radius: num(inheritedAttr(el, elements, 'r'), 0.5),
+    stops: inheritedStops(el, elements, onWarn),
+    units: readGradientUnits(el, elements),
   };
 }
 

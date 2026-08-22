@@ -28,6 +28,7 @@ import { collectGradients, type GradientTable } from './gradients';
 import { collectPatterns } from './patterns';
 import { deriveStyle, EMPTY_STYLE, ownProp, resolveCurrentColor, type StyleContext } from './cascade';
 
+// Every tag set here is compared against a lowercased `tagName`.
 /** Element tags we accept and lower; anything else triggers a warning. */
 const SUPPORTED_LEAF_TAGS = new Set([
   'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path',
@@ -35,7 +36,10 @@ const SUPPORTED_LEAF_TAGS = new Set([
 
 const SUPPORTED_GROUP_TAGS = new Set(['g', 'svg']);
 
-const IGNORED_TAGS = new Set(['defs', 'linearGradient', 'radialGradient', 'title', 'desc', 'metadata']);
+const IGNORED_TAGS = new Set([
+  'defs', 'lineargradient', 'radialgradient', 'pattern',
+  'title', 'desc', 'metadata',
+]);
 
 /**
  * Public entry point: parse an SVG document string. Errors during DOM

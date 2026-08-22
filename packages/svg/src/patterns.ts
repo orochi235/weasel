@@ -17,6 +17,7 @@
 
 import { tileGeometry, type TileShape } from '@weasel-js/core/patterns-builtin';
 import type { FillStyle, TilePatternSpec } from '@weasel-js/core';
+import { collectElementsByTag } from './elements';
 import { trimNumber } from './transform';
 
 type PatternFill = Extract<FillStyle, { fill: 'pattern' }>;
@@ -99,23 +100,17 @@ function shapeXml(shape: TileShape): string {
   }
 }
 
-/** Read `<pattern>` children of `<defs>` back into pattern paints. */
+/** Read every `<pattern>` in the document back into pattern paints. */
 export function collectPatterns(svg: Element, onWarn?: (m: string) => void): PatternTable {
   const out: PatternTable = new Map();
-  const defs = svg.getElementsByTagName('defs');
-  for (let d = 0; d < defs.length; d++) {
-    const root = defs[d];
-    for (let i = 0; i < root.children.length; i++) {
-      const child = root.children[i];
-      if (child.tagName.toLowerCase() !== 'pattern') continue;
-      const id = child.getAttribute('id');
-      if (!id) continue;
-      const paint = readPattern(child, onWarn);
-      if (paint) out.set(id, paint);
-    }
+  for (const [id, el] of collectElementsByTag(svg, PATTERN_TAGS)) {
+    const paint = readPattern(el, onWarn);
+    if (paint) out.set(id, paint);
   }
   return out;
 }
+
+const PATTERN_TAGS = new Set(['pattern']);
 
 function readPattern(el: Element, onWarn?: (m: string) => void): FillStyle | null {
   const raw = el.getAttribute('data-weasel-tile');
