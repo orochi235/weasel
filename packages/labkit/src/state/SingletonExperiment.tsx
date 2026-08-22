@@ -1,5 +1,5 @@
 import { type ReactNode, useRef } from 'react';
-import { LabStoreProvider, WorkspaceIdProvider } from './context';
+import { LabStoreProvider, TrialIdProvider } from './context';
 import { createLabStore, type LabStore } from './store';
 import type { StorageAdapter } from './types';
 
@@ -7,8 +7,8 @@ const SINGLETON_INSTRUMENT = '__singleton__';
 
 /** Props for `<SingletonExperimentProvider>`. */
 export interface SingletonExperimentProviderProps<TS, TC> {
-  /** Stable id for the synthetic workspace; also doubles as the
-   *  WorkspaceIdContext value. */
+  /** Stable id for the synthetic trial; also doubles as the
+   *  TrialIdContext value. */
   id: string;
   initialConfig: TC;
   initialState: TS;
@@ -18,9 +18,9 @@ export interface SingletonExperimentProviderProps<TS, TC> {
 }
 
 /**
- * One-workspace `<Lab>` substitute for single-screen experiments. Mounts
- * a `LabStoreProvider` + `WorkspaceIdProvider` with one synthetic
- * workspace, so `useExperimentState` works without going through the
+ * One-trial `<Lab>` substitute for single-screen experiments. Mounts
+ * a `LabStoreProvider` + `TrialIdProvider` with one synthetic
+ * trial, so `useTrialState` works without going through the
  * full `<Lab instruments={...}>` runtime.
  */
 export function SingletonExperimentProvider<TS, TC>({
@@ -34,8 +34,8 @@ export function SingletonExperimentProvider<TS, TC>({
   const storeRef = useRef<LabStore | null>(null);
   if (storeRef.current === null) {
     const store = createLabStore({ storageKey, storage });
-    if (!store.getState().workspaces.some((w) => w.id === id)) {
-      store.getState().addWorkspace({
+    if (!store.getState().trials.some((w) => w.id === id)) {
+      store.getState().addTrial({
         id,
         instrumentName: SINGLETON_INSTRUMENT,
         config: initialConfig,
@@ -47,7 +47,7 @@ export function SingletonExperimentProvider<TS, TC>({
   }
   return (
     <LabStoreProvider store={storeRef.current}>
-      <WorkspaceIdProvider workspaceId={id}>{children}</WorkspaceIdProvider>
+      <TrialIdProvider trialId={id}>{children}</TrialIdProvider>
     </LabStoreProvider>
   );
 }

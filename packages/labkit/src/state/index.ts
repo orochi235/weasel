@@ -8,10 +8,10 @@ export {
 export {
   LabStoreContext,
   LabStoreProvider,
+  TrialIdContext,
+  TrialIdProvider,
   useLabStore,
-  useWorkspaceId,
-  WorkspaceIdContext,
-  WorkspaceIdProvider,
+  useTrialId,
 } from './context';
 export {
   CURRENT_DOCUMENT_VERSION,
@@ -20,11 +20,11 @@ export {
 } from './document';
 export {
   decodeUrlHash,
-  deserializeWorkspaces,
+  deserializeTrials,
   emptyUndoStack,
   encodeUrlHash,
   labStorageKey,
-  serializeWorkspaces,
+  serializeTrials,
 } from './helpers';
 export {
   SingletonExperimentProvider,
@@ -34,7 +34,6 @@ export type { LabStore, LabStoreActions } from './store';
 export { createLabStore } from './store';
 export type {
   CreateLabStoreOptions,
-  ExperimentStateHandle,
   InstrumentSerializers,
   LabDocument,
   LabStoreState,
@@ -42,7 +41,8 @@ export type {
   SavedSnapshot,
   SerializedTrial,
   StorageAdapter,
+  TrialRecord,
+  TrialStateHandle,
   UndoStack,
-  WorkspaceRecord,
 } from './types';
-export { useExperimentState } from './useExperimentState';
+export { useTrialState } from './useTrialState';

@@ -10,7 +10,7 @@
 //      from its `dist` — the same build tsup bundles the JS out of. Take it from
 //      anywhere else and the names stop matching.
 //   3. windease: the structural rules its absolutely-positioned tiles depend
-//      on. WorkspaceGrid renders a windease zone, and without `.windease-window`
+//      on. Workspace renders a windease zone, and without `.windease-window`
 //      every tile stacks at the origin at zero size.
 //   4. labkit's own `.lk-*` chrome, last, so it overrides what it wraps.
 //

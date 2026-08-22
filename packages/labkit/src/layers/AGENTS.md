@@ -31,9 +31,9 @@ The instrument declares layer ids:
 layers: { ids: ['grid', 'plants'] }
 ```
 
-`Workspace.tsx` converts each id into a `LayerDescriptor` (with `label === id` by default) and tracks `visibility` and a derived `layerOrder` in local state. The order produced by `onReorder` is then applied to `instrument.canvas.layers` before they're passed to `<CanvasStack>`.
+`Trial.tsx` converts each id into a `LayerDescriptor` (with `label === id` by default) and tracks `visibility` and a derived `layerOrder` in local state. The order produced by `onReorder` is then applied to `instrument.canvas.layers` before they're passed to `<CanvasStack>`.
 
-There is no transitive coupling between `layers.ids` and `canvas.layers[].id` — the workspace assumes the ids match. If you declare a layer in `canvas` that isn't in `layers.ids`, it stays in default order and is always visible.
+There is no transitive coupling between `layers.ids` and `canvas.layers[].id` — the trial assumes the ids match. If you declare a layer in `canvas` that isn't in `layers.ids`, it stays in default order and is always visible.
 
 ## `alwaysOn` semantics
 
@@ -52,7 +52,7 @@ Pointer capture is acquired on `pointerdown` and released on `pointerup`, so dra
 
 ## Empty state
 
-If `layers.length === 0`, renders `.lk-layer-list__empty` with the text "No layers". Workspace already guards this case (`layerDescriptors.length > 0`) so the empty state is rare in practice.
+If `layers.length === 0`, renders `.lk-layer-list__empty` with the text "No layers". Trial already guards this case (`layerDescriptors.length > 0`) so the empty state is rare in practice.
 
 ## When to fork
 

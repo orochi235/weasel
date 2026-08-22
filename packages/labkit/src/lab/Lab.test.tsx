@@ -41,50 +41,50 @@ function mountLab(props: Partial<Parameters<typeof Lab>[0]> = {}) {
 }
 
 describe('<Lab>', () => {
-  it('renders one workspace by default', () => {
+  it('renders one trial by default', () => {
     mountLab();
-    expect(screen.getAllByRole('region', { name: /workspace/i })).toHaveLength(1);
+    expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(1);
   });
 
-  it('addWorkspace adds a second workspace', () => {
+  it('addTrial adds a second trial', () => {
     mountLab();
-    act(() => labRef?.addWorkspace('Stub'));
-    expect(screen.getAllByRole('region', { name: /workspace/i })).toHaveLength(2);
+    act(() => labRef?.addTrial('Stub'));
+    expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(2);
   });
 
-  it('closeWorkspace removes one when more than one exists', () => {
+  it('closeTrial removes one when more than one exists', () => {
     mountLab();
-    act(() => labRef?.addWorkspace('Stub'));
-    const first = labRef?.workspaces[0];
-    act(() => labRef?.closeWorkspace(first?.id ?? ''));
-    expect(screen.getAllByRole('region', { name: /workspace/i })).toHaveLength(1);
+    act(() => labRef?.addTrial('Stub'));
+    const first = labRef?.trials[0];
+    act(() => labRef?.closeTrial(first?.id ?? ''));
+    expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(1);
   });
 
-  it('closeWorkspace is a no-op on the last workspace', () => {
+  it('closeTrial is a no-op on the last trial', () => {
     mountLab();
-    const only = labRef?.workspaces[0];
-    act(() => labRef?.closeWorkspace(only?.id ?? ''));
-    expect(screen.getAllByRole('region', { name: /workspace/i })).toHaveLength(1);
+    const only = labRef?.trials[0];
+    act(() => labRef?.closeTrial(only?.id ?? ''));
+    expect(screen.getAllByRole('region', { name: /trial/i })).toHaveLength(1);
   });
 
-  it('cloneWorkspace inserts immediately after source', () => {
+  it('cloneTrial inserts immediately after source', () => {
     mountLab();
-    act(() => labRef?.addWorkspace('StubB'));
-    const ws0 = labRef?.workspaces[0];
-    const ws1 = labRef?.workspaces[1];
-    act(() => labRef?.cloneWorkspace(ws0?.id ?? ''));
-    const ids = labRef?.workspaces.map((w) => w.id) ?? [];
+    act(() => labRef?.addTrial('StubB'));
+    const ws0 = labRef?.trials[0];
+    const ws1 = labRef?.trials[1];
+    act(() => labRef?.cloneTrial(ws0?.id ?? ''));
+    const ids = labRef?.trials.map((w) => w.id) ?? [];
     expect(ids).toHaveLength(3);
     expect(ids[0]).toBe(ws0?.id);
     expect(ids[2]).toBe(ws1?.id);
   });
 
-  it('resetWorkspace restores defaults', () => {
+  it('resetTrial restores defaults', () => {
     mountLab();
-    const ws = labRef?.workspaces[0];
-    if (!ws) throw new Error('no workspace');
-    act(() => labRef?.resetWorkspace(ws.id));
-    const reset = labRef?.workspaces[0];
+    const ws = labRef?.trials[0];
+    if (!ws) throw new Error('no trial');
+    act(() => labRef?.resetTrial(ws.id));
+    const reset = labRef?.trials[0];
     expect(reset?.config).toEqual({ count: 0 });
     expect(reset?.state).toEqual({ value: 0 });
   });

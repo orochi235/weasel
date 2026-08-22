@@ -4,8 +4,8 @@ import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
-import type { WorkspaceRecord } from '../state/types';
-import { WorkspaceChrome } from './WorkspaceChrome';
+import type { TrialRecord } from '../state/types';
+import { TrialChrome } from './TrialChrome';
 
 const noop = () => {};
 
@@ -16,7 +16,7 @@ const stub: Instrument = {
   render: () => <div className="lk-stub-display">stub experiment area</div>,
 };
 
-const record: WorkspaceRecord = {
+const record: TrialRecord = {
   id: 'ws-demo',
   instrumentName: 'Stub',
   config: {},
@@ -29,12 +29,12 @@ function Harness() {
   const store = createLabStore({ storageKey: 'sb', storage: noneAdapter });
   const lab: LabContextValue = {
     instruments: [stub],
-    workspaces: [record],
-    addWorkspace: noop,
-    cloneWorkspace: noop,
-    closeWorkspace: noop,
-    resetWorkspace: noop,
-    reorderWorkspaces: noop,
+    trials: [record],
+    addTrial: noop,
+    cloneTrial: noop,
+    closeTrial: noop,
+    resetTrial: noop,
+    reorderTrials: noop,
     savedSnapshots: [],
     saveSnapshot: noop,
     loadSnapshot: noop,
@@ -46,21 +46,16 @@ function Harness() {
     <LabStoreContext.Provider value={{ store }}>
       <LabContext.Provider value={lab}>
         <div style={{ height: '500px' }}>
-          <WorkspaceChrome
-            workspaceId="ws-demo"
-            record={record}
-            instrument={stub}
-            isLastWorkspace={true}
-          >
+          <TrialChrome trialId="ws-demo" record={record} instrument={stub} isLastTrial={true}>
             {stub.render({
               state: {},
               config: {},
               setState: () => {},
               setConfig: () => {},
-              workspace: { id: 'ws-demo', zoom: 1, setZoom: () => {} },
+              trial: { id: 'ws-demo', zoom: 1, setZoom: () => {} },
               emit: () => {},
             })}
-          </WorkspaceChrome>
+          </TrialChrome>
         </div>
       </LabContext.Provider>
     </LabStoreContext.Provider>
@@ -68,7 +63,7 @@ function Harness() {
 }
 
 const meta: Meta<typeof Harness> = {
-  title: 'labkit/Workspace/Workspace',
+  title: 'labkit/Trial/Trial',
   component: Harness,
   parameters: { layout: 'fullscreen' },
 };

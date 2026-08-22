@@ -1,21 +1,21 @@
 import { createContext, useContext } from 'react';
 import type { InstrumentList } from '../instrument/types';
-import type { LabMode, SavedSnapshot, WorkspaceRecord } from '../state/types';
+import type { LabMode, SavedSnapshot, TrialRecord } from '../state/types';
 
 /** Lab-wide state and commands: the available instruments, the open
- *  workspaces and the operations over them, saved snapshots, and the color
+ *  trials and the operations over them, saved snapshots, and the color
  *  mode. */
 export interface LabContextValue {
   instruments: InstrumentList;
-  workspaces: WorkspaceRecord[];
-  addWorkspace: (instrumentName: string) => void;
-  cloneWorkspace: (id: string) => void;
-  closeWorkspace: (id: string) => void;
-  resetWorkspace: (id: string) => void;
-  reorderWorkspaces: (ids: readonly string[]) => void;
+  trials: TrialRecord[];
+  addTrial: (instrumentName: string) => void;
+  cloneTrial: (id: string) => void;
+  closeTrial: (id: string) => void;
+  resetTrial: (id: string) => void;
+  reorderTrials: (ids: readonly string[]) => void;
   savedSnapshots: SavedSnapshot[];
-  saveSnapshot: (workspaceId: string, name?: string) => void;
-  loadSnapshot: (workspaceId: string, snapshotId: string) => void;
+  saveSnapshot: (trialId: string, name?: string) => void;
+  loadSnapshot: (trialId: string, snapshotId: string) => void;
   deleteSnapshot: (snapshotId: string) => void;
   mode: LabMode;
   setMode: (m: LabMode) => void;

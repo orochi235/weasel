@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
-import type { WorkspaceRecord } from '../state/types';
-import {
-  addWorkspace,
-  cloneWorkspace,
-  closeWorkspace,
-  reorderWorkspaces,
-  resetWorkspace,
-} from './workspaceOps';
+import type { TrialRecord } from '../state/types';
+import { addTrial, cloneTrial, closeTrial, reorderTrials, resetTrial } from './trialOps';
 
 interface CounterState {
   count: number;
@@ -40,9 +34,9 @@ function head<T>(arr: T[]): T {
   return first;
 }
 
-describe('addWorkspace', () => {
+describe('addTrial', () => {
   it('appends a new record using defaultConfig and initialState', () => {
-    const out = addWorkspace([], instruments, 'Counter');
+    const out = addTrial([], instruments, 'Counter');
     expect(out).toHaveLength(1);
     expect(out[0]?.instrumentName).toBe('Counter');
     expect(out[0]?.config).toEqual({ step: 1 });
@@ -50,38 +44,38 @@ describe('addWorkspace', () => {
   });
 
   it('assigns a unique id', () => {
-    const a = addWorkspace([], instruments, 'Counter');
-    const b = addWorkspace(a, instruments, 'Counter');
+    const a = addTrial([], instruments, 'Counter');
+    const b = addTrial(a, instruments, 'Counter');
     expect(b).toHaveLength(2);
     expect(b[0]?.id).not.toBe(b[1]?.id);
   });
 
   it('uses canvas.initialView when present', () => {
-    const out = addWorkspace([], instruments, 'CounterCanvas');
+    const out = addTrial([], instruments, 'CounterCanvas');
     expect(out[0]?.view).toEqual({ zoom: 2, pan: { x: 5, y: 7 } });
   });
 
   it('defaults view when canvas absent', () => {
-    const out = addWorkspace([], instruments, 'Counter');
+    const out = addTrial([], instruments, 'Counter');
     expect(out[0]?.view).toEqual({ zoom: 1, pan: { x: 0, y: 0 } });
   });
 
   it('throws when instrumentName is unknown', () => {
-    expect(() => addWorkspace([], instruments, 'Missing')).toThrow();
+    expect(() => addTrial([], instruments, 'Missing')).toThrow();
   });
 
   it('does not mutate input array', () => {
-    const arr: WorkspaceRecord[] = [];
-    addWorkspace(arr, instruments, 'Counter');
+    const arr: TrialRecord[] = [];
+    addTrial(arr, instruments, 'Counter');
     expect(arr).toHaveLength(0);
   });
 });
 
-describe('cloneWorkspace', () => {
+describe('cloneTrial', () => {
   it('inserts clone immediately after source with new id', () => {
-    const a = addWorkspace([], instruments, 'Counter');
+    const a = addTrial([], instruments, 'Counter');
     const sourceId = head(a).id;
-    const cloned = cloneWorkspace(a, sourceId);
+    const cloned = cloneTrial(a, sourceId);
     expect(cloned).toHaveLength(2);
     expect(cloned[0]?.id).toBe(sourceId);
     expect(cloned[1]?.id).not.toBe(sourceId);
@@ -89,65 +83,65 @@ describe('cloneWorkspace', () => {
   });
 
   it('deep-copies config/state/view', () => {
-    const a = addWorkspace([], instruments, 'Counter');
-    const cloned = cloneWorkspace(a, head(a).id);
+    const a = addTrial([], instruments, 'Counter');
+    const cloned = cloneTrial(a, head(a).id);
     expect(cloned[1]?.config).not.toBe(cloned[0]?.config);
     expect(cloned[1]?.state).not.toBe(cloned[0]?.state);
     expect(cloned[1]?.view).not.toBe(cloned[0]?.view);
   });
 
   it('does not mutate input', () => {
-    const a = addWorkspace([], instruments, 'Counter');
+    const a = addTrial([], instruments, 'Counter');
     const before = a.length;
-    cloneWorkspace(a, head(a).id);
+    cloneTrial(a, head(a).id);
     expect(a).toHaveLength(before);
   });
 });
 
-describe('closeWorkspace', () => {
-  it('removes the workspace with the given id', () => {
-    let arr = addWorkspace([], instruments, 'Counter');
-    arr = addWorkspace(arr, instruments, 'Counter');
-    const closed = closeWorkspace(arr, head(arr).id);
+describe('closeTrial', () => {
+  it('removes the trial with the given id', () => {
+    let arr = addTrial([], instruments, 'Counter');
+    arr = addTrial(arr, instruments, 'Counter');
+    const closed = closeTrial(arr, head(arr).id);
     expect(closed).toHaveLength(1);
     expect(closed[0]?.id).toBe(arr[1]?.id);
   });
 
-  it('is a no-op when only one workspace remains', () => {
-    const arr = addWorkspace([], instruments, 'Counter');
-    const closed = closeWorkspace(arr, head(arr).id);
+  it('is a no-op when only one trial remains', () => {
+    const arr = addTrial([], instruments, 'Counter');
+    const closed = closeTrial(arr, head(arr).id);
     expect(closed).toEqual(arr);
   });
 });
 
-describe('resetWorkspace', () => {
+describe('resetTrial', () => {
   it('resets config and state to defaults; preserves instrumentName', () => {
-    const arr = addWorkspace([], instruments, 'Counter');
+    const arr = addTrial([], instruments, 'Counter');
     const id = head(arr).id;
     head(arr).config = { step: 99 } as CounterConfig;
     head(arr).state = { count: 42 } as CounterState;
-    const reset = resetWorkspace(arr, id, instruments);
+    const reset = resetTrial(arr, id, instruments);
     expect(reset[0]?.config).toEqual({ step: 1 });
     expect(reset[0]?.state).toEqual({ count: 0 });
     expect(reset[0]?.instrumentName).toBe('Counter');
   });
 
   it('resets view to canvas.initialView when present', () => {
-    const arr = addWorkspace([], instruments, 'CounterCanvas');
+    const arr = addTrial([], instruments, 'CounterCanvas');
     head(arr).view = { zoom: 9, pan: { x: 9, y: 9 } };
-    const reset = resetWorkspace(arr, head(arr).id, instruments);
+    const reset = resetTrial(arr, head(arr).id, instruments);
     expect(reset[0]?.view).toEqual({ zoom: 2, pan: { x: 5, y: 7 } });
   });
 
   it('does not mutate input', () => {
-    const arr = addWorkspace([], instruments, 'Counter');
+    const arr = addTrial([], instruments, 'Counter');
     head(arr).config = { step: 99 } as CounterConfig;
-    resetWorkspace(arr, head(arr).id, instruments);
+    resetTrial(arr, head(arr).id, instruments);
     expect((arr[0]?.config as CounterConfig).step).toBe(99);
   });
 });
 
-describe('reorderWorkspaces', () => {
+describe('reorderTrials', () => {
   const ws = (id: string) =>
     ({
       id,
@@ -159,17 +153,17 @@ describe('reorderWorkspaces', () => {
     }) as never;
 
   it('reorders to match the given ids', () => {
-    const next = reorderWorkspaces([ws('a'), ws('b'), ws('c')], ['c', 'a', 'b']);
+    const next = reorderTrials([ws('a'), ws('b'), ws('c')], ['c', 'a', 'b']);
     expect(next.map((w) => w.id)).toEqual(['c', 'a', 'b']);
   });
 
   it('drops ids that no longer exist rather than resurrecting them', () => {
-    const next = reorderWorkspaces([ws('a'), ws('b')], ['gone', 'b', 'a']);
+    const next = reorderTrials([ws('a'), ws('b')], ['gone', 'b', 'a']);
     expect(next.map((w) => w.id)).toEqual(['b', 'a']);
   });
 
-  it('keeps unmentioned workspaces, after the named ones', () => {
-    const next = reorderWorkspaces([ws('a'), ws('b'), ws('c')], ['c']);
+  it('keeps unmentioned trials, after the named ones', () => {
+    const next = reorderTrials([ws('a'), ws('b'), ws('c')], ['c']);
     expect(next.map((w) => w.id)).toEqual(['c', 'a', 'b']);
   });
 });

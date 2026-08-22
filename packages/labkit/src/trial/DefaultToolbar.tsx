@@ -1,13 +1,13 @@
 import { Toolbar } from '../primitives/Toolbar';
 import { formatZoom } from '../ui/format';
-import type { WorkspaceToolbarContext } from './slotTypes';
+import type { TrialToolbarContext } from './slotTypes';
 
 /** Props for `<DefaultToolbar>`. */
 export interface DefaultToolbarProps {
-  ctx: WorkspaceToolbarContext;
+  ctx: TrialToolbarContext;
 }
 
-/** The toolbar a workspace renders when no `toolbar` slot is supplied. Only
+/** The toolbar a trial renders when no `toolbar` slot is supplied. Only
  *  shows the controls the instrument's declared capabilities support. */
 export function DefaultToolbar({ ctx }: DefaultToolbarProps) {
   return (
@@ -74,16 +74,16 @@ export function DefaultToolbar({ ctx }: DefaultToolbarProps) {
 
       <Toolbar.Spacer />
 
-      <Toolbar.Button onClick={ctx.clone} title="Clone workspace">
+      <Toolbar.Button onClick={ctx.clone} title="Clone trial">
         Clone
       </Toolbar.Button>
-      <Toolbar.Button onClick={ctx.reset} title="Reset workspace">
+      <Toolbar.Button onClick={ctx.reset} title="Reset trial">
         Reset
       </Toolbar.Button>
       <Toolbar.Button
         onClick={ctx.close}
-        disabled={ctx.isLastWorkspace}
-        title={ctx.isLastWorkspace ? 'Cannot close the last workspace' : 'Close workspace'}
+        disabled={ctx.isLastTrial}
+        title={ctx.isLastTrial ? 'Cannot close the last trial' : 'Close trial'}
       >
         Close
       </Toolbar.Button>

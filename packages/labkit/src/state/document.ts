@@ -9,7 +9,7 @@ import type {
 } from './types';
 
 /** Bumped whenever the persisted shape changes; every bump needs a migration. */
-export const CURRENT_DOCUMENT_VERSION = 1;
+export const CURRENT_DOCUMENT_VERSION = 2;
 
 /** The one key a lab persists under. The `:doc` suffix keeps it out of the
  *  legacy bucket namespace, where a lab named `a:saves` would otherwise write
@@ -28,7 +28,7 @@ export function quarantineKey(storageKey: string): string {
 export function emptyDocument(mode: LabMode): LabDocument {
   return {
     version: CURRENT_DOCUMENT_VERSION,
-    workspaces: [],
+    trials: [],
     saves: [],
     layout: {},
     mode,
@@ -157,7 +157,7 @@ export function normalizeDocument(
     doc.mode === 'light' || doc.mode === 'dark' || doc.mode === 'auto' ? doc.mode : fallbackMode;
   return {
     version: CURRENT_DOCUMENT_VERSION,
-    workspaces: Array.isArray(doc.workspaces) ? (doc.workspaces as SerializedTrial[]) : [],
+    trials: Array.isArray(doc.trials) ? (doc.trials as SerializedTrial[]) : [],
     saves: Array.isArray(doc.saves) ? (doc.saves as SavedSnapshot[]) : [],
     layout:
       doc.layout && typeof doc.layout === 'object' ? (doc.layout as Record<string, unknown>) : {},
@@ -167,11 +167,28 @@ export function normalizeDocument(
 
 /** Version 0 (four loose keys) to version 1 (one document). Normalizes the
  *  mode, including `interstellar` — the dark mode's name back when it was a
- *  theme. */
+ *  theme. Coerces against version 1's own field names rather than reusing
+ *  `normalizeDocument`, which produces the current shape and would drop
+ *  `workspaces` from a document it labels version 1. */
 export function migrateV0toV1(doc: Record<string, unknown>): Record<string, unknown> {
-  const mode = doc.mode === 'interstellar' ? 'dark' : doc.mode;
-  return { ...normalizeDocument({ ...doc, mode }, 'auto'), version: 1 };
+  const raw = doc.mode === 'interstellar' ? 'dark' : doc.mode;
+  const mode = raw === 'light' || raw === 'dark' || raw === 'auto' ? raw : 'auto';
+  return {
+    version: 1,
+    workspaces: Array.isArray(doc.workspaces) ? doc.workspaces : [],
+    saves: Array.isArray(doc.saves) ? doc.saves : [],
+    layout: doc.layout && typeof doc.layout === 'object' ? doc.layout : {},
+    mode,
+  };
+}
+
+/** Version 1 to version 2: the vocabulary refresh renamed a tile from
+ *  workspace to trial. Only the records field moves; a record's own fields are
+ *  unchanged. */
+export function migrateV1toV2(doc: Record<string, unknown>): Record<string, unknown> {
+  const { workspaces, ...rest } = doc;
+  return { ...rest, trials: Array.isArray(workspaces) ? workspaces : [], version: 2 };
 }
 
 /** Index `i` migrates a version-`i` document to version `i + 1`. */
-export const MIGRATIONS: Migration[] = [migrateV0toV1];
+export const MIGRATIONS: Migration[] = [migrateV0toV1, migrateV1toV2];

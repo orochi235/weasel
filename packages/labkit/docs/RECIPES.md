@@ -7,17 +7,17 @@ Composition patterns for common lab shapes. This file grows as plans land.
 ### A minimal lab shell with a tiled grid
 
 ```tsx
-import { LabShell, WorkspaceGrid } from '@weasel-js/labkit';
+import { LabShell, Workspace } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 
 export function MyLab() {
   return (
     <LabShell title="My Lab">
-      <WorkspaceGrid>
-        <div>Workspace 1</div>
-        <div>Workspace 2</div>
-        <div>Workspace 3</div>
-      </WorkspaceGrid>
+      <Workspace>
+        <div>Trial 1</div>
+        <div>Trial 2</div>
+        <div>Trial 3</div>
+      </Workspace>
     </LabShell>
   );
 }
@@ -29,7 +29,7 @@ export function MyLab() {
 import { Toolbar } from '@weasel-js/labkit';
 
 <Toolbar>
-  <Toolbar.Title>My Workspace</Toolbar.Title>
+  <Toolbar.Title>My Trial</Toolbar.Title>
   <Toolbar.Button onClick={onUndo} disabled={!canUndo}>Undo</Toolbar.Button>
   <Toolbar.Button onClick={onRedo} disabled={!canRedo}>Redo</Toolbar.Button>
   <Toolbar.Spacer />
@@ -97,7 +97,7 @@ export function GardenLab() {
 }
 ```
 
-The Workspace automatically:
+The Trial automatically:
 - Renders the `<Palette>` in the sidebar above any layer list
 - Places `<LayerList>` in the sidebar (because `instrument.layers` is set)
 - Wires Undo/Redo toolbar buttons (because `instrument.undo` is set)
@@ -130,11 +130,11 @@ const Viz = defineInstrument<{ data: number[] }, { binCount: number }>({
 
 Users can hide individual layers via the sidebar's `<LayerList>` and reorder them by dragging the handle. The canvas redraws only the dirty layers on each frame.
 
-To pin a layer (always visible, not reorderable), the wiring currently reads `LayerDescriptor.alwaysOn` — set it on the descriptor passed to `<LayerList>`. (For now, layers are derived from `instrument.layers.ids`; fork the workspace if you need per-id `alwaysOn` configuration.)
+To pin a layer (always visible, not reorderable), the wiring currently reads `LayerDescriptor.alwaysOn` — set it on the descriptor passed to `<LayerList>`. (For now, layers are derived from `instrument.layers.ids`; fork the trial if you need per-id `alwaysOn` configuration.)
 
 ### Add a custom undoable action via `ctx.emit(...)`
 
-By default, the workspace snapshots state on `'state.change'`. To make a non-state operation undoable, emit a custom event from the instrument and list it in `undo.snapshotOn`:
+By default, the trial snapshots state on `'state.change'`. To make a non-state operation undoable, emit a custom event from the instrument and list it in `undo.snapshotOn`:
 
 ```tsx
 const Editor = defineInstrument<{ items: Item[] }, {}>({

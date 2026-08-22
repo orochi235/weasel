@@ -6,14 +6,14 @@ import { Lab } from '../lab/Lab';
 import { LabContext, type LabContextValue } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
-import type { WorkspaceRecord } from '../state/types';
+import type { TrialRecord } from '../state/types';
 import { DefaultToolbar } from './DefaultToolbar';
-import type { WorkspaceToolbarContext } from './slotTypes';
-import { WorkspaceChrome } from './WorkspaceChrome';
+import type { TrialToolbarContext } from './slotTypes';
+import { TrialChrome } from './TrialChrome';
 
-function makeCtx(overrides: Partial<WorkspaceToolbarContext> = {}): WorkspaceToolbarContext {
+function makeCtx(overrides: Partial<TrialToolbarContext> = {}): TrialToolbarContext {
   return {
-    workspaceId: 'ws-1',
+    trialId: 'ws-1',
     instrumentName: 'Stub',
     hasUndo: false,
     canUndo: false,
@@ -32,7 +32,7 @@ function makeCtx(overrides: Partial<WorkspaceToolbarContext> = {}): WorkspaceToo
     clone: vi.fn(),
     reset: vi.fn(),
     close: vi.fn(),
-    isLastWorkspace: false,
+    isLastTrial: false,
     ...overrides,
   };
 }
@@ -43,8 +43,8 @@ describe('<DefaultToolbar>', () => {
     expect(screen.getByRole('button', { name: /close/i })).toBeInTheDocument();
   });
 
-  it('disables close when isLastWorkspace is true', () => {
-    render(<DefaultToolbar ctx={makeCtx({ isLastWorkspace: true })} />);
+  it('disables close when isLastTrial is true', () => {
+    render(<DefaultToolbar ctx={makeCtx({ isLastTrial: true })} />);
     expect(screen.getByRole('button', { name: /close/i })).toBeDisabled();
   });
 
@@ -79,7 +79,7 @@ describe('<DefaultToolbar>', () => {
         {
           id: 's1',
           name: 'First',
-          workspaceId: 'ws-1',
+          trialId: 'ws-1',
           instrumentName: 'Stub',
           config: {},
           state: {},
@@ -99,7 +99,7 @@ const stubInstrument: Instrument = {
   render: () => null,
 };
 
-const stubRecord: WorkspaceRecord = {
+const stubRecord: TrialRecord = {
   id: 'ws-1',
   instrumentName: 'Stub',
   config: {},
@@ -108,7 +108,7 @@ const stubRecord: WorkspaceRecord = {
   undoStack: { past: [], future: [] },
 };
 
-type ChromeProps = Parameters<typeof WorkspaceChrome>[0];
+type ChromeProps = Parameters<typeof TrialChrome>[0];
 
 function ChromeHarness({
   children,
@@ -121,12 +121,12 @@ function ChromeHarness({
   });
   const labCtx: LabContextValue = {
     instruments: [stubInstrument],
-    workspaces: [stubRecord],
-    addWorkspace: vi.fn(),
-    cloneWorkspace: vi.fn(),
-    closeWorkspace: vi.fn(),
-    resetWorkspace: vi.fn(),
-    reorderWorkspaces: vi.fn(),
+    trials: [stubRecord],
+    addTrial: vi.fn(),
+    cloneTrial: vi.fn(),
+    closeTrial: vi.fn(),
+    resetTrial: vi.fn(),
+    reorderTrials: vi.fn(),
     savedSnapshots: [],
     saveSnapshot: vi.fn(),
     loadSnapshot: vi.fn(),
@@ -138,21 +138,21 @@ function ChromeHarness({
   return (
     <LabStoreContext.Provider value={{ store }}>
       <LabContext.Provider value={labCtx}>
-        <WorkspaceChrome
-          workspaceId="ws-1"
+        <TrialChrome
+          trialId="ws-1"
           record={stubRecord}
           instrument={stubInstrument}
-          isLastWorkspace={false}
+          isLastTrial={false}
           {...props}
         >
           {children ?? <div data-testid="content">content</div>}
-        </WorkspaceChrome>
+        </TrialChrome>
       </LabContext.Provider>
     </LabStoreContext.Provider>
   );
 }
 
-describe('<WorkspaceChrome>', () => {
+describe('<TrialChrome>', () => {
   it('renders children in the content area', () => {
     render(<ChromeHarness />);
     expect(screen.getByTestId('content')).toBeInTheDocument();
@@ -172,16 +172,16 @@ describe('<WorkspaceChrome>', () => {
   it('Cmd+S triggers saveSnapshot', () => {
     const saveSnapshot = vi.fn();
     render(<ChromeHarness labOverrides={{ saveSnapshot }} />);
-    const region = screen.getByRole('region', { name: /workspace/i });
+    const region = screen.getByRole('region', { name: /trial/i });
     fireEvent.keyDown(region, { key: 's', metaKey: true });
     expect(saveSnapshot).toHaveBeenCalledWith('ws-1', undefined);
   });
 });
 
-describe('<Lab> + WorkspaceChrome integration', () => {
-  it('Lab provides context for nested WorkspaceChrome', () => {
+describe('<Lab> + TrialChrome integration', () => {
+  it('Lab provides context for nested TrialChrome', () => {
     render(<Lab instruments={[stubInstrument]} defaultInstrument="Stub" />);
-    // Lab seeds a workspace; no chrome rendered without children — sanity check Lab mounts.
+    // Lab seeds a trial; no chrome rendered without children — sanity check Lab mounts.
     expect(document.querySelector('.lk-lab')).toBeTruthy();
   });
 });

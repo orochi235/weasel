@@ -2,7 +2,7 @@
 
 React widgets for building self-contained interactive **lab** pages — pages with sliders, controls, and canvas-based experimentation.
 
-This is the v0.x of the library. The Lab/Workspace/Instrument runtime arrives in later plans; v0.0.1 ships presentational primitives.
+This is the v0.x of the library. The Lab/Trial/Instrument runtime arrives in later plans; v0.0.1 ships presentational primitives.
 
 ## Installation
 
@@ -28,16 +28,16 @@ Then point your app at the local clone:
 ## Usage
 
 ```tsx
-import { LabShell, Toolbar, WorkspaceGrid, FpsMeter } from '@weasel-js/labkit';
+import { LabShell, Toolbar, Workspace, FpsMeter } from '@weasel-js/labkit';
 import '@weasel-js/labkit/styles.css';
 
 function MyLab() {
   return (
     <LabShell title="My Lab" header={<button>+ Add</button>}>
-      <WorkspaceGrid>
-        <div>Workspace 1</div>
-        <div>Workspace 2</div>
-      </WorkspaceGrid>
+      <Workspace>
+        <div>Trial 1</div>
+        <div>Trial 2</div>
+      </Workspace>
     </LabShell>
   );
 }

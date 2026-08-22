@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   decodeUrlHash,
-  deserializeWorkspaces,
+  deserializeTrials,
   emptyUndoStack,
   encodeUrlHash,
   labStorageKey,
-  serializeWorkspaces,
+  serializeTrials,
 } from './helpers';
 
 describe('labStorageKey', () => {
@@ -18,7 +18,7 @@ describe('labStorageKey', () => {
 
 describe('encodeUrlHash / decodeUrlHash', () => {
   it('round-trips a string', () => {
-    const original = JSON.stringify({ workspaces: '[]', saves: '[]' });
+    const original = JSON.stringify({ trials: '[]', saves: '[]' });
     expect(decodeUrlHash(encodeUrlHash(original))).toBe(original);
   });
 
@@ -34,9 +34,9 @@ describe('emptyUndoStack', () => {
   });
 });
 
-describe('serializeWorkspaces', () => {
+describe('serializeTrials', () => {
   it('returns records with the undo stack dropped', () => {
-    const records = serializeWorkspaces(
+    const records = serializeTrials(
       [
         {
           id: 'w1',
@@ -61,7 +61,7 @@ describe('serializeWorkspaces', () => {
   });
 
   it('runs the instrument serializer over the state', () => {
-    const records = serializeWorkspaces(
+    const records = serializeTrials(
       [
         {
           id: 'w1',
@@ -78,9 +78,9 @@ describe('serializeWorkspaces', () => {
   });
 });
 
-describe('deserializeWorkspaces', () => {
+describe('deserializeTrials', () => {
   it('rebuilds records with an empty undo stack', () => {
-    const out = deserializeWorkspaces(
+    const out = deserializeTrials(
       [
         {
           id: 'w1',
@@ -96,7 +96,7 @@ describe('deserializeWorkspaces', () => {
   });
 
   it('runs the instrument deserializer over the state', () => {
-    const out = deserializeWorkspaces(
+    const out = deserializeTrials(
       [
         {
           id: 'w1',
@@ -112,6 +112,6 @@ describe('deserializeWorkspaces', () => {
   });
 
   it('returns an empty list when given something that is not an array', () => {
-    expect(deserializeWorkspaces(undefined as never, {})).toEqual([]);
+    expect(deserializeTrials(undefined as never, {})).toEqual([]);
   });
 });

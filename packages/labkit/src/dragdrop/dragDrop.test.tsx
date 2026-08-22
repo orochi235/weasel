@@ -34,8 +34,8 @@ const originalGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRec
 function StateProbe({ onState }: { onState: (state: DropState) => void }) {
   const ctx = useContext(LabStoreContext);
   const ws = useStore(
-    ctx?.store ?? ({ getState: () => ({ workspaces: [] }) } as never),
-    (s) => (s as { workspaces: { state: unknown }[] }).workspaces[0],
+    ctx?.store ?? ({ getState: () => ({ trials: [] }) } as never),
+    (s) => (s as { trials: { state: unknown }[] }).trials[0],
   );
   if (ws) onState(ws.state as DropState);
   return null;
@@ -51,7 +51,7 @@ function renderLab(probe?: (state: DropState) => void) {
 
 beforeEach(() => {
   HTMLElement.prototype.getBoundingClientRect = function () {
-    if (this.classList.contains('lk-workspace__canvas-host')) {
+    if (this.classList.contains('lk-trial__canvas-host')) {
       return {
         x: 100,
         y: 100,

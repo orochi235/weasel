@@ -13,9 +13,9 @@ function makeStore(overrides?: Partial<Parameters<typeof createLabStore>[0]>) {
 }
 
 describe('createLabStore — initial state', () => {
-  it('starts with empty workspaces and saves', () => {
+  it('starts with empty trials and saves', () => {
     const s = makeStore();
-    expect(s.getState().workspaces).toEqual([]);
+    expect(s.getState().trials).toEqual([]);
     expect(s.getState().savedSnapshots).toEqual([]);
   });
 
@@ -30,79 +30,79 @@ describe('createLabStore — initial state', () => {
   });
 });
 
-describe('addWorkspace', () => {
-  it('adds a workspace with an empty undoStack', () => {
+describe('addTrial', () => {
+  it('adds a trial with an empty undoStack', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'Test',
       config: {},
       state: {},
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
-    expect(s.getState().workspaces).toHaveLength(1);
-    expect(s.getState().workspaces[0]?.undoStack).toEqual({ past: [], future: [] });
+    expect(s.getState().trials).toHaveLength(1);
+    expect(s.getState().trials[0]?.undoStack).toEqual({ past: [], future: [] });
   });
 });
 
-describe('removeWorkspace', () => {
+describe('removeTrial', () => {
   it('removes by id', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: {},
       state: {},
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
-    s.getState().removeWorkspace('w1');
-    expect(s.getState().workspaces).toHaveLength(0);
+    s.getState().removeTrial('w1');
+    expect(s.getState().trials).toHaveLength(0);
   });
 });
 
-describe('updateWorkspaceState', () => {
+describe('updateTrialState', () => {
   it('updates state with a plain value', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: {},
       state: { n: 0 },
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
-    s.getState().updateWorkspaceState('w1', { n: 42 });
-    expect(s.getState().workspaces[0]?.state).toEqual({ n: 42 });
+    s.getState().updateTrialState('w1', { n: 42 });
+    expect(s.getState().trials[0]?.state).toEqual({ n: 42 });
   });
 
   it('updates state with an updater function', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: {},
       state: { n: 1 },
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
-    s.getState().updateWorkspaceState('w1', (prev: unknown) => ({
+    s.getState().updateTrialState('w1', (prev: unknown) => ({
       n: (prev as { n: number }).n + 1,
     }));
-    expect((s.getState().workspaces[0]?.state as { n: number }).n).toBe(2);
+    expect((s.getState().trials[0]?.state as { n: number }).n).toBe(2);
   });
 });
 
-describe('updateWorkspaceConfig', () => {
+describe('updateTrialConfig', () => {
   it('updates a single config key', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: { x: 1, y: 2 },
       state: {},
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
-    s.getState().updateWorkspaceConfig('w1', 'x' as never, 99 as never);
-    expect((s.getState().workspaces[0]?.config as { x: number }).x).toBe(99);
-    expect((s.getState().workspaces[0]?.config as { y: number }).y).toBe(2);
+    s.getState().updateTrialConfig('w1', 'x' as never, 99 as never);
+    expect((s.getState().trials[0]?.config as { x: number }).x).toBe(99);
+    expect((s.getState().trials[0]?.config as { y: number }).y).toBe(2);
   });
 });
 
@@ -124,7 +124,7 @@ describe('setMode', () => {
 describe('save/load/delete snapshots', () => {
   it('saveSnapshot creates a snapshot', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: { x: 1 },
@@ -140,7 +140,7 @@ describe('save/load/delete snapshots', () => {
 
   it('loadSnapshot restores state and config', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: { x: 1 },
@@ -148,15 +148,15 @@ describe('save/load/delete snapshots', () => {
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
     s.getState().saveSnapshot('w1', 'snap1');
-    s.getState().updateWorkspaceState('w1', { n: 99 });
+    s.getState().updateTrialState('w1', { n: 99 });
     const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     s.getState().loadSnapshot(snapId, 'w1');
-    expect((s.getState().workspaces[0]?.state as { n: number }).n).toBe(5);
+    expect((s.getState().trials[0]?.state as { n: number }).n).toBe(5);
   });
 
   it('loadSnapshot blocks cross-instrument load', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'A',
       config: {},
@@ -164,7 +164,7 @@ describe('save/load/delete snapshots', () => {
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
     s.getState().saveSnapshot('w1', 'snap-a');
-    s.getState().setWorkspaceInstrument('w1', 'B');
+    s.getState().setTrialInstrument('w1', 'B');
     const snapId = s.getState().savedSnapshots[0]?.id ?? '';
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     s.getState().loadSnapshot(snapId, 'w1');
@@ -174,7 +174,7 @@ describe('save/load/delete snapshots', () => {
 
   it('deleteSnapshot removes the snapshot', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: {},
@@ -189,7 +189,7 @@ describe('save/load/delete snapshots', () => {
 
   it('listSnapshots returns newest first', () => {
     const s = makeStore();
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: {},
@@ -204,11 +204,11 @@ describe('save/load/delete snapshots', () => {
 });
 
 describe('persistence — hydration', () => {
-  it('hydrates workspaces from storage on construction', () => {
+  it('hydrates trials from storage on construction', () => {
     vi.useFakeTimers();
     const mem = createMemoryAdapter();
     const seedStore = createLabStore({ storageKey: 'test', storage: mem });
-    seedStore.getState().addWorkspace({
+    seedStore.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: {},
@@ -219,8 +219,8 @@ describe('persistence — hydration', () => {
     vi.useRealTimers();
 
     const hydrated = createLabStore({ storageKey: 'test', storage: mem });
-    expect(hydrated.getState().workspaces).toHaveLength(1);
-    expect((hydrated.getState().workspaces[0]?.state as { n: number }).n).toBe(7);
+    expect(hydrated.getState().trials).toHaveLength(1);
+    expect((hydrated.getState().trials[0]?.state as { n: number }).n).toBe(7);
   });
 });
 
@@ -231,16 +231,16 @@ describe('persistence — debounced writes', () => {
     const writeSpy = vi.spyOn(mem, 'write');
     const s = createLabStore({ storageKey: 'test', storage: mem });
 
-    s.getState().addWorkspace({
+    s.getState().addTrial({
       id: 'w1',
       instrumentName: 'T',
       config: {},
       state: {},
       view: { zoom: 1, pan: { x: 0, y: 0 } },
     });
-    s.getState().updateWorkspaceState('w1', { n: 1 });
-    s.getState().updateWorkspaceState('w1', { n: 2 });
-    s.getState().updateWorkspaceState('w1', { n: 3 });
+    s.getState().updateTrialState('w1', { n: 1 });
+    s.getState().updateTrialState('w1', { n: 2 });
+    s.getState().updateTrialState('w1', { n: 3 });
 
     const writesBefore = writeSpy.mock.calls.length;
     vi.advanceTimersByTime(400);
@@ -259,7 +259,7 @@ describe('createLabStore — hydrating', () => {
       labDocumentKey('test'),
       JSON.stringify({
         version: CURRENT_DOCUMENT_VERSION,
-        workspaces: [
+        trials: [
           {
             id: 'w1',
             instrumentName: 'Test',
@@ -275,8 +275,37 @@ describe('createLabStore — hydrating', () => {
     );
 
     const s = makeStore({ storage }).getState();
-    expect(s.workspaces).toHaveLength(1);
-    expect(s.workspaces[0].undoStack).toEqual({ past: [], future: [] });
+    expect(s.trials).toHaveLength(1);
+    expect(s.trials[0].undoStack).toEqual({ past: [], future: [] });
+    expect(s.layout).toEqual({ w1: { h: 3 } });
+    expect(s.mode).toBe('dark');
+  });
+
+  it('opens a version-1 document, whose tiles were still called workspaces', () => {
+    const storage = createMemoryAdapter();
+    storage.write(
+      labDocumentKey('test'),
+      JSON.stringify({
+        version: 1,
+        workspaces: [
+          {
+            id: 'w1',
+            instrumentName: 'Test',
+            config: { gain: 3 },
+            state: { n: 7 },
+            view: { zoom: 2, pan: { x: 0, y: 0 } },
+          },
+        ],
+        saves: [{ id: 's1', name: 'a save', trialId: 'w1' }],
+        layout: { w1: { h: 3 } },
+        mode: 'dark',
+      }),
+    );
+
+    const s = makeStore({ storage }).getState();
+    expect(s.trials).toHaveLength(1);
+    expect(s.trials[0]).toMatchObject({ id: 'w1', config: { gain: 3 }, state: { n: 7 } });
+    expect(s.savedSnapshots).toHaveLength(1);
     expect(s.layout).toEqual({ w1: { h: 3 } });
     expect(s.mode).toBe('dark');
   });
@@ -300,11 +329,11 @@ describe('createLabStore — hydrating', () => {
 
   it('starts empty and preserves a document from a future version', () => {
     const storage = createMemoryAdapter();
-    const future = JSON.stringify({ version: 999, workspaces: [{ id: 'w1' }] });
+    const future = JSON.stringify({ version: 999, trials: [{ id: 'w1' }] });
     storage.write(labDocumentKey('test'), future);
 
     const store = makeStore({ storage });
-    expect(store.getState().workspaces).toEqual([]);
+    expect(store.getState().trials).toEqual([]);
     expect(storage.read(labDocumentKey('test'))).toBe(future);
   });
 
@@ -313,7 +342,7 @@ describe('createLabStore — hydrating', () => {
     storage.write(labDocumentKey('test'), '{{{not json');
 
     const s = makeStore({ storage }).getState();
-    expect(s.workspaces).toEqual([]);
+    expect(s.trials).toEqual([]);
     expect(storage.read(quarantineKey('test'))).toBe('{{{not json');
   });
 });
@@ -393,7 +422,7 @@ const VIEW = { zoom: 1, pan: { x: 0, y: 0 } };
 const SNAPSHOT = {
   id: 's1',
   name: 'saved',
-  workspaceId: 'w1',
+  trialId: 'w1',
   instrumentName: 'T',
   config: { x: 1 },
   state: { n: 5 },
@@ -418,7 +447,7 @@ describe('createLabStore — labs whose keys once aliased', () => {
 
     // Lab "a:saves" writes where lab "a"'s legacy saves bucket used to live.
     const sibling = createLabStore({ storageKey: 'a:saves', storage });
-    sibling.getState().addWorkspace({
+    sibling.getState().addTrial({
       id: 'sw',
       instrumentName: 'T',
       config: {},
@@ -435,7 +464,7 @@ describe('createLabStore — labs whose keys once aliased', () => {
     const lab = createLabStore({ storageKey: 'a', storage });
     // Lab "a" does not read the sibling's document as its own saves bucket.
     expect(lab.getState().savedSnapshots).toEqual([]);
-    expect(lab.getState().workspaces).toEqual([]);
+    expect(lab.getState().trials).toEqual([]);
 
     lab.getState().setMode('light');
     vi.advanceTimersByTime(400);
@@ -445,14 +474,14 @@ describe('createLabStore — labs whose keys once aliased', () => {
     expect(storage.read(labStorageKey('a', 'workspaces'))).toBeNull();
     expect(storage.read(labDocumentKey('a:saves'))).toBe(siblingDocument);
     const rehydrated = createLabStore({ storageKey: 'a:saves', storage });
-    expect(rehydrated.getState().workspaces).toHaveLength(1);
+    expect(rehydrated.getState().trials).toHaveLength(1);
   });
 });
 
 describe('createLabStore — hydrating an incomplete current-version document', () => {
   it('hydrates a document with no saves as an empty snapshot list', () => {
     const storage = createMemoryAdapter();
-    writeDocument(storage, { workspaces: [], layout: {}, mode: 'dark' });
+    writeDocument(storage, { trials: [], layout: {}, mode: 'dark' });
 
     const s = makeStore({ storage }).getState();
     expect(s.savedSnapshots).toEqual([]);
@@ -461,14 +490,14 @@ describe('createLabStore — hydrating an incomplete current-version document', 
 
   it('hydrates a document with no layout as an empty layout', () => {
     const storage = createMemoryAdapter();
-    writeDocument(storage, { workspaces: [], saves: [], mode: 'dark' });
+    writeDocument(storage, { trials: [], saves: [], mode: 'dark' });
 
     expect(makeStore({ storage }).getState().layout).toEqual({});
   });
 
   it('falls back to initialMode when the document has no mode', () => {
     const storage = createMemoryAdapter();
-    writeDocument(storage, { workspaces: [], saves: [], layout: {} });
+    writeDocument(storage, { trials: [], saves: [], layout: {} });
 
     expect(makeStore({ storage, initialMode: 'light' }).getState().mode).toBe('light');
   });
@@ -478,7 +507,7 @@ describe('createLabStore — hydrating an incomplete current-version document', 
     writeDocument(storage, {});
 
     const s = makeStore({ storage }).getState();
-    expect(s.workspaces).toEqual([]);
+    expect(s.trials).toEqual([]);
     expect(s.savedSnapshots).toEqual([]);
     expect(s.layout).toEqual({});
     expect(s.mode).toBe('auto');
@@ -490,7 +519,7 @@ describe('createLabStore — hydrating an incomplete current-version document', 
     writeDocument(storage, {});
 
     const s = makeStore({ storage });
-    s.getState().addWorkspace({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    s.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
     s.getState().saveSnapshot('w1', 'first');
     expect(s.getState().listSnapshots('w1')).toHaveLength(1);
   });
@@ -499,7 +528,7 @@ describe('createLabStore — hydrating an incomplete current-version document', 
 describe('persistence — saves and layout round-trip', () => {
   it('hydrates a populated saves array into the store', () => {
     const storage = createMemoryAdapter();
-    writeDocument(storage, { workspaces: [], saves: [SNAPSHOT], layout: {}, mode: 'auto' });
+    writeDocument(storage, { trials: [], saves: [SNAPSHOT], layout: {}, mode: 'auto' });
 
     const s = makeStore({ storage }).getState();
     expect(s.savedSnapshots).toEqual([SNAPSHOT]);
@@ -509,7 +538,7 @@ describe('persistence — saves and layout round-trip', () => {
   it('writes the hydrated saves back out on the next flush', () => {
     vi.useFakeTimers();
     const storage = createMemoryAdapter();
-    writeDocument(storage, { workspaces: [], saves: [SNAPSHOT], layout: {}, mode: 'auto' });
+    writeDocument(storage, { trials: [], saves: [SNAPSHOT], layout: {}, mode: 'auto' });
 
     const s = makeStore({ storage });
     s.getState().setMode('light');
@@ -524,7 +553,7 @@ describe('persistence — saves and layout round-trip', () => {
     vi.useFakeTimers();
     const storage = createMemoryAdapter();
     const s = makeStore({ storage });
-    s.getState().addWorkspace({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    s.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
     s.getState().saveSnapshot('w1', 'first');
     vi.advanceTimersByTime(400);
     vi.useRealTimers();

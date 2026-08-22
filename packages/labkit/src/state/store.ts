@@ -10,7 +10,7 @@ import {
   readLegacyDocument,
   runMigrations,
 } from './document';
-import { deserializeWorkspaces, emptyUndoStack, serializeWorkspaces } from './helpers';
+import { deserializeTrials, emptyUndoStack, serializeTrials } from './helpers';
 import type {
   CreateLabStoreOptions,
   InstrumentSerializers,
@@ -18,28 +18,26 @@ import type {
   LabMode,
   LabStoreState,
   SavedSnapshot,
-  WorkspaceRecord,
+  TrialRecord,
 } from './types';
 
-/** Every mutation a lab store supports: managing workspaces, saving and
+/** Every mutation a lab store supports: managing trials, saving and
  *  restoring snapshots, and setting the color mode. */
 export interface LabStoreActions {
-  addWorkspace: (record: Omit<WorkspaceRecord, 'undoStack'>) => void;
-  removeWorkspace: (id: string) => void;
-  updateWorkspaceState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
-  updateWorkspaceConfig: <TC>(id: string, key: keyof TC, value: TC[keyof TC]) => void;
-  updateWorkspaceView: (id: string, view: WorkspaceRecord['view']) => void;
-  updateWorkspaceUndoStack: (
+  addTrial: (record: Omit<TrialRecord, 'undoStack'>) => void;
+  removeTrial: (id: string) => void;
+  updateTrialState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
+  updateTrialConfig: <TC>(id: string, key: keyof TC, value: TC[keyof TC]) => void;
+  updateTrialView: (id: string, view: TrialRecord['view']) => void;
+  updateTrialUndoStack: (
     id: string,
-    next:
-      | WorkspaceRecord['undoStack']
-      | ((prev: WorkspaceRecord['undoStack']) => WorkspaceRecord['undoStack']),
+    next: TrialRecord['undoStack'] | ((prev: TrialRecord['undoStack']) => TrialRecord['undoStack']),
   ) => void;
-  setWorkspaceInstrument: (id: string, instrumentName: string) => void;
-  saveSnapshot: (workspaceId: string, name: string) => void;
-  loadSnapshot: (snapshotId: string, workspaceId: string) => void;
+  setTrialInstrument: (id: string, instrumentName: string) => void;
+  saveSnapshot: (trialId: string, name: string) => void;
+  loadSnapshot: (snapshotId: string, trialId: string) => void;
   deleteSnapshot: (snapshotId: string) => void;
-  listSnapshots: (workspaceId?: string) => SavedSnapshot[];
+  listSnapshots: (trialId?: string) => SavedSnapshot[];
   setMode: (mode: LabMode) => void;
   setLayout: (layout: Record<string, unknown>) => void;
 }
@@ -62,32 +60,32 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
   // Cleared once the legacy keys are actually gone; see the flush.
   let foldedFromLegacy = hydration.foldedFromLegacy;
 
-  const hydratedWorkspaces = deserializeWorkspaces(hydrated.workspaces, serializers);
+  const hydratedTrials = deserializeTrials(hydrated.trials, serializers);
   const hydratedSnapshots = hydrated.saves;
   const hydratedLayout = hydrated.layout;
   const hydratedMode = hydrated.mode;
 
   const store = createStore<LabStoreState & LabStoreActions>()((set, get) => ({
-    workspaces: hydratedWorkspaces,
+    trials: hydratedTrials,
     savedSnapshots: hydratedSnapshots,
     mode: hydratedMode,
     layout: hydratedLayout,
 
-    addWorkspace: (record) => {
+    addTrial: (record) => {
       set((s) => ({
-        workspaces: [...s.workspaces, { ...record, undoStack: emptyUndoStack() }],
+        trials: [...s.trials, { ...record, undoStack: emptyUndoStack() }],
       }));
       scheduleFlush();
     },
 
-    removeWorkspace: (id) => {
-      set((s) => ({ workspaces: s.workspaces.filter((w) => w.id !== id) }));
+    removeTrial: (id) => {
+      set((s) => ({ trials: s.trials.filter((w) => w.id !== id) }));
       scheduleFlush();
     },
 
-    updateWorkspaceState: (id, next) => {
+    updateTrialState: (id, next) => {
       set((s) => ({
-        workspaces: s.workspaces.map((w) => {
+        trials: s.trials.map((w) => {
           if (w.id !== id) return w;
           const nextState =
             typeof next === 'function' ? (next as (prev: unknown) => unknown)(w.state) : next;
@@ -97,9 +95,9 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       scheduleFlush();
     },
 
-    updateWorkspaceConfig: (id, key, value) => {
+    updateTrialConfig: (id, key, value) => {
       set((s) => ({
-        workspaces: s.workspaces.map((w) => {
+        trials: s.trials.map((w) => {
           if (w.id !== id) return w;
           return {
             ...w,
@@ -110,50 +108,48 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       scheduleFlush();
     },
 
-    updateWorkspaceView: (id, view) => {
+    updateTrialView: (id, view) => {
       set((s) => ({
-        workspaces: s.workspaces.map((w) => (w.id === id ? { ...w, view } : w)),
+        trials: s.trials.map((w) => (w.id === id ? { ...w, view } : w)),
       }));
       scheduleFlush();
     },
 
-    updateWorkspaceUndoStack: (id, next) => {
+    updateTrialUndoStack: (id, next) => {
       set((s) => ({
-        workspaces: s.workspaces.map((w) => {
+        trials: s.trials.map((w) => {
           if (w.id !== id) return w;
           const undoStack =
             typeof next === 'function'
-              ? (next as (prev: WorkspaceRecord['undoStack']) => WorkspaceRecord['undoStack'])(
-                  w.undoStack,
-                )
+              ? (next as (prev: TrialRecord['undoStack']) => TrialRecord['undoStack'])(w.undoStack)
               : next;
           return { ...w, undoStack };
         }),
       }));
     },
 
-    setWorkspaceInstrument: (id, instrumentName) => {
+    setTrialInstrument: (id, instrumentName) => {
       set((s) => ({
-        workspaces: s.workspaces.map((w) => (w.id === id ? { ...w, instrumentName } : w)),
+        trials: s.trials.map((w) => (w.id === id ? { ...w, instrumentName } : w)),
       }));
       scheduleFlush();
     },
 
-    saveSnapshot: (workspaceId, name) => {
-      const workspace = get().workspaces.find((w) => w.id === workspaceId);
-      if (!workspace) return;
-      const reg = serializers[workspace.instrumentName];
+    saveSnapshot: (trialId, name) => {
+      const trial = get().trials.find((w) => w.id === trialId);
+      if (!trial) return;
+      const reg = serializers[trial.instrumentName];
       const serializedState = reg?.serialize
-        ? reg.serialize(workspace.state)
-        : structuredClone(workspace.state);
-      const clonedConfig = structuredClone(workspace.config);
+        ? reg.serialize(trial.state)
+        : structuredClone(trial.state);
+      const clonedConfig = structuredClone(trial.config);
       const lastAt = get().savedSnapshots.reduce((m, sn) => (sn.savedAt > m ? sn.savedAt : m), 0);
       const savedAt = Math.max(Date.now(), lastAt + 1);
       const snapshot: SavedSnapshot = {
         id: crypto.randomUUID(),
         name,
-        workspaceId,
-        instrumentName: workspace.instrumentName,
+        trialId,
+        instrumentName: trial.instrumentName,
         config: clonedConfig,
         state: serializedState,
         savedAt,
@@ -162,22 +158,22 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       scheduleFlush();
     },
 
-    loadSnapshot: (snapshotId, workspaceId) => {
+    loadSnapshot: (snapshotId, trialId) => {
       const snapshot = get().savedSnapshots.find((sn) => sn.id === snapshotId);
       if (!snapshot) return;
-      const workspace = get().workspaces.find((w) => w.id === workspaceId);
-      if (!workspace) return;
-      if (snapshot.instrumentName !== workspace.instrumentName) {
+      const trial = get().trials.find((w) => w.id === trialId);
+      if (!trial) return;
+      if (snapshot.instrumentName !== trial.instrumentName) {
         console.warn(
-          `[labkit] loadSnapshot: instrument mismatch (snapshot=${snapshot.instrumentName}, workspace=${workspace.instrumentName}); refusing to load`,
+          `[labkit] loadSnapshot: instrument mismatch (snapshot=${snapshot.instrumentName}, trial=${trial.instrumentName}); refusing to load`,
         );
         return;
       }
       const reg = serializers[snapshot.instrumentName];
       const restoredState = reg?.deserialize ? reg.deserialize(snapshot.state) : snapshot.state;
       set((s) => ({
-        workspaces: s.workspaces.map((w) =>
-          w.id === workspaceId ? { ...w, state: restoredState, config: snapshot.config } : w,
+        trials: s.trials.map((w) =>
+          w.id === trialId ? { ...w, state: restoredState, config: snapshot.config } : w,
         ),
       }));
       scheduleFlush();
@@ -190,9 +186,9 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       scheduleFlush();
     },
 
-    listSnapshots: (workspaceId) => {
+    listSnapshots: (trialId) => {
       const all = get().savedSnapshots;
-      const filtered = workspaceId ? all.filter((sn) => sn.workspaceId === workspaceId) : all;
+      const filtered = trialId ? all.filter((sn) => sn.trialId === trialId) : all;
       return [...filtered].sort((a, b) => b.savedAt - a.savedAt);
     },
 
@@ -214,7 +210,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       const s = store.getState();
       const document: LabDocument = {
         version: CURRENT_DOCUMENT_VERSION,
-        workspaces: serializeWorkspaces(s.workspaces, serializers),
+        trials: serializeTrials(s.trials, serializers),
         saves: s.savedSnapshots,
         layout: s.layout,
         mode: s.mode,

@@ -8,18 +8,18 @@ export type {
   SidebarSlot,
   StatusBarSlot,
   ToolbarSlot,
-  WorkspaceSidebarContext,
-  WorkspaceStatusBarContext,
-  WorkspaceToolbarContext,
+  TrialSidebarContext,
+  TrialStatusBarContext,
+  TrialToolbarContext,
 } from './slotTypes';
-export type { WorkspaceProps } from './Workspace';
-export { Workspace } from './Workspace';
-export type { WorkspaceChromeProps } from './WorkspaceChrome';
-export { WorkspaceChrome } from './WorkspaceChrome';
+export type { TrialProps } from './Trial';
+export { Trial } from './Trial';
+export type { TrialChromeProps } from './TrialChrome';
+export { TrialChrome } from './TrialChrome';
 export {
-  addWorkspace,
-  cloneWorkspace,
-  closeWorkspace,
-  reorderWorkspaces,
-  resetWorkspace,
-} from './workspaceOps';
+  addTrial,
+  cloneTrial,
+  closeTrial,
+  reorderTrials,
+  resetTrial,
+} from './trialOps';

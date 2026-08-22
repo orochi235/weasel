@@ -1,17 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, test, vi } from 'vitest';
-import { WorkspaceGrid } from './WorkspaceGrid';
+import { Workspace } from './Workspace';
 
 const VIEWPORT = { w: 800, h: 600 };
 
-describe('WorkspaceGrid', () => {
+describe('Workspace', () => {
   test('renders all children', () => {
     render(
-      <WorkspaceGrid viewport={VIEWPORT}>
+      <Workspace viewport={VIEWPORT}>
         <div>one</div>
         <div>two</div>
         <div>three</div>
-      </WorkspaceGrid>,
+      </Workspace>,
     );
     expect(screen.getByText('one')).toBeInTheDocument();
     expect(screen.getByText('two')).toBeInTheDocument();
@@ -21,54 +21,54 @@ describe('WorkspaceGrid', () => {
   test('keeps a child with the tile its id names when an earlier one closes', () => {
     const ids = ['a', 'b', 'c'];
     const { rerender, container } = render(
-      <WorkspaceGrid ids={ids} viewport={VIEWPORT}>
+      <Workspace ids={ids} viewport={VIEWPORT}>
         <div>a</div>
         <div>b</div>
         <div>c</div>
-      </WorkspaceGrid>,
+      </Workspace>,
     );
     expect(container.querySelector('[data-node="c"]')).toHaveTextContent('c');
 
     rerender(
-      <WorkspaceGrid ids={['b', 'c']} viewport={VIEWPORT}>
+      <Workspace ids={['b', 'c']} viewport={VIEWPORT}>
         <div>b</div>
         <div>c</div>
-      </WorkspaceGrid>,
+      </Workspace>,
     );
     expect(container.querySelector('[data-node="c"]')).toHaveTextContent('c');
     expect(container.querySelector('[data-node="a"]')).toBeNull();
   });
 
-  test('uses lk-workspace-grid class', () => {
+  test('uses lk-workspace class', () => {
     const { container } = render(
-      <WorkspaceGrid viewport={VIEWPORT}>
+      <Workspace viewport={VIEWPORT}>
         <div />
-      </WorkspaceGrid>,
+      </Workspace>,
     );
-    expect((container.firstChild as HTMLElement).className).toContain('lk-workspace-grid');
+    expect((container.firstChild as HTMLElement).className).toContain('lk-workspace');
   });
 
   test('renders resize affordances only when resizable', () => {
     const { container, rerender } = render(
-      <WorkspaceGrid ids={['a', 'b']} viewport={VIEWPORT}>
+      <Workspace ids={['a', 'b']} viewport={VIEWPORT}>
         <div>a</div>
         <div>b</div>
-      </WorkspaceGrid>,
+      </Workspace>,
     );
     expect(container.querySelectorAll('[role="separator"]')).toHaveLength(0);
 
     rerender(
-      <WorkspaceGrid ids={['a', 'b']} resizable viewport={VIEWPORT}>
+      <Workspace ids={['a', 'b']} resizable viewport={VIEWPORT}>
         <div>a</div>
         <div>b</div>
-      </WorkspaceGrid>,
+      </Workspace>,
     );
     expect(container.querySelectorAll('[role="separator"]').length).toBeGreaterThan(0);
   });
 
   test('applies a saved extent to a tile as it registers', () => {
     const { container } = render(
-      <WorkspaceGrid
+      <Workspace
         ids={['a', 'b']}
         resizable
         viewport={VIEWPORT}
@@ -76,7 +76,7 @@ describe('WorkspaceGrid', () => {
       >
         <div>a</div>
         <div>b</div>
-      </WorkspaceGrid>,
+      </Workspace>,
     );
     const a = container.querySelector('[data-node="a"]') as HTMLElement;
     const b = container.querySelector('[data-node="b"]') as HTMLElement;
@@ -87,14 +87,14 @@ describe('WorkspaceGrid', () => {
   test('reports the order a drop would produce instead of applying it', () => {
     const onReorder = vi.fn();
     const { container } = render(
-      <WorkspaceGrid ids={['a', 'b']} reorderable onReorder={onReorder} viewport={VIEWPORT}>
+      <Workspace ids={['a', 'b']} reorderable onReorder={onReorder} viewport={VIEWPORT}>
         <div>a</div>
         <div>b</div>
-      </WorkspaceGrid>,
+      </Workspace>,
     );
     // The grid is controlled: it renders a handle per tile and commits nothing
     // itself. Order still comes from `ids`.
-    expect(container.querySelectorAll('.lk-workspace-tile__grip')).toHaveLength(2);
+    expect(container.querySelectorAll('.lk-trial-tile__grip')).toHaveLength(2);
     expect(onReorder).not.toHaveBeenCalled();
     const nodes = [...container.querySelectorAll('[data-node]')].map((el) =>
       el.getAttribute('data-node'),
@@ -104,11 +104,11 @@ describe('WorkspaceGrid', () => {
 
   test('renders no drag handles unless reorderable', () => {
     const { container } = render(
-      <WorkspaceGrid ids={['a', 'b']} viewport={VIEWPORT}>
+      <Workspace ids={['a', 'b']} viewport={VIEWPORT}>
         <div>a</div>
         <div>b</div>
-      </WorkspaceGrid>,
+      </Workspace>,
     );
-    expect(container.querySelectorAll('.lk-workspace-tile__grip')).toHaveLength(0);
+    expect(container.querySelectorAll('.lk-trial-tile__grip')).toHaveLength(0);
   });
 });

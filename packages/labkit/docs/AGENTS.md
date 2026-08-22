@@ -9,7 +9,7 @@ A map of the library so agents can find what they need quickly.
 | Concept | Source |
 |---|---|
 | `<LabShell>` | `src/lab/LabShell.tsx` |
-| `<WorkspaceGrid>` | `src/lab/WorkspaceGrid.tsx` |
+| `<Workspace>` | `src/lab/Workspace.tsx` |
 | `gridDims()` | `src/lab/gridDims.ts` |
 | `<Toolbar>` + subcomponents | `src/primitives/Toolbar.tsx` |
 | `<Sidebar>` | `src/primitives/Sidebar.tsx` |
@@ -26,7 +26,7 @@ A map of the library so agents can find what they need quickly.
 |---|---|
 | Zustand store factory | `src/state/store.ts` |
 | Storage adapters (none/local) | `src/state/adapters.ts` |
-| State / workspace types | `src/state/types.ts` |
+| State / trial types | `src/state/types.ts` |
 | Store React context | `src/state/context.ts` |
 
 ### Plan 3 — Instruments
@@ -40,16 +40,16 @@ A map of the library so agents can find what they need quickly.
 | Config field types (`ConfigField`, ...) | `src/controls/types.ts` |
 | `<ControlPanel>` (renders `configSchema`) | `src/controls/ControlPanel.tsx` |
 
-### Plan 4 — Lab/Workspace runtime
+### Plan 4 — Lab/Trial runtime
 
 | Concept | Source |
 |---|---|
 | `<Lab>` (top-level entry) | `src/lab/Lab.tsx` |
-| `LabContext` (instrument/workspace ops) | `src/lab/LabContext.ts` |
-| `<Workspace>` | `src/workspace/Workspace.tsx` |
-| `<WorkspaceChrome>` (toolbar + sidebar + statusbar slots) | `src/workspace/WorkspaceChrome.tsx` |
-| Default chrome slots | `src/workspace/DefaultToolbar.tsx`, `DefaultSidebar.tsx`, `DefaultStatusBar.tsx` |
-| Workspace ops (add/clone/close/reset) | `src/workspace/workspaceOps.ts` |
+| `LabContext` (instrument/trial ops) | `src/lab/LabContext.ts` |
+| `<Trial>` | `src/trial/Trial.tsx` |
+| `<TrialChrome>` (toolbar + sidebar + statusbar slots) | `src/trial/TrialChrome.tsx` |
+| Default chrome slots | `src/trial/DefaultToolbar.tsx`, `DefaultSidebar.tsx`, `DefaultStatusBar.tsx` |
+| Trial ops (add/clone/close/reset) | `src/trial/trialOps.ts` |
 
 ### Plan 5 — Capabilities
 
@@ -70,14 +70,14 @@ A map of the library so agents can find what they need quickly.
 
 An instrument may declare any of these on its `defineInstrument({...})` spec:
 
-| Capability | Adds | Workspace effect |
+| Capability | Adds | Trial effect |
 |---|---|---|
 | `canvas` | Layered `<canvas>` stack with pan/zoom | Replaces `render(ctx)` body |
 | `layers` | Layer toggle/reorder UI | Adds `<LayerList>` to sidebar |
 | `dragDrop` | Palette + drop pipeline | Adds `<Palette>` to sidebar; pointer drag emits `canvas.itemAdded` |
 | `undo` | Undo/redo bindings | Wires toolbar buttons; snapshots `state` on `snapshotOn` events |
 
-Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all three behaviors automatically. See `src/workspace/Workspace.tsx` for the wiring.
+Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all three behaviors automatically. See `src/trial/Trial.tsx` for the wiring.
 
 ## When to use what
 
@@ -93,7 +93,7 @@ Capabilities compose: an instrument with `canvas` + `dragDrop` + `undo` gets all
 | `<PropertyGroup>` (subpanel grouping with `hidden`) | `src/ui/properties/PropertyGroup.tsx` |
 | `<CurveField>` (1D y=f(x) curve editor) | `src/ui/properties/CurveField.tsx` |
 | `<LayerStack>` (expandable layer cards w/ drop-hint reorder) | `src/ui/layers/LayerStack.tsx` |
-| `<SingletonExperimentProvider>` (one-workspace state runtime) | `src/state/SingletonExperiment.tsx` |
+| `<SingletonExperimentProvider>` (one-trial state runtime) | `src/state/SingletonExperiment.tsx` |
 | Weasel-ui passthroughs (`CurveEditor`, `useReorderDragList`, `formatNumber`, …) | `src/passthrough/weasel-ui.ts` (exported as `@weasel-js/labkit/weasel-ui`) |
 
 ## Conventions

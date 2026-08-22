@@ -5,20 +5,20 @@ import type { InstrumentList } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore, type LabStore } from '../state/store';
-import type { LabMode, StorageAdapter, WorkspaceRecord } from '../state/types';
+import type { LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { interstellarTheme } from '../theme/interstellar';
-import { Workspace } from '../workspace/Workspace';
+import { Trial } from '../trial/Trial';
 import {
-  addWorkspace as addWorkspaceOp,
-  cloneWorkspace as cloneWorkspaceOp,
-  closeWorkspace as closeWorkspaceOp,
-  reorderWorkspaces as reorderWorkspacesOp,
-  resetWorkspace as resetWorkspaceOp,
-} from '../workspace/workspaceOps';
+  addTrial as addTrialOp,
+  cloneTrial as cloneTrialOp,
+  closeTrial as closeTrialOp,
+  reorderTrials as reorderTrialsOp,
+  resetTrial as resetTrialOp,
+} from '../trial/trialOps';
 import { LabContext, type LabContextValue } from './LabContext';
 import { LabShell } from './LabShell';
 import { useResolvedMode } from './useSystemMode';
-import { WorkspaceGrid, type WorkspaceLayout } from './WorkspaceGrid';
+import { type TrialLayout, Workspace } from './Workspace';
 
 /** Props for `<Lab>`. */
 export interface LabProps {
@@ -46,12 +46,12 @@ function buildStore(
   initialMode: LabMode,
 ): LabStore {
   const store = createLabStore({ storageKey, storage, initialMode });
-  if (store.getState().workspaces.length === 0) {
-    const seeded = addWorkspaceOp([], instruments, defaultInstrument);
+  if (store.getState().trials.length === 0) {
+    const seeded = addTrialOp([], instruments, defaultInstrument);
     const record = seeded[0];
     if (record) {
       const { undoStack: _undoStack, ...rest } = record;
-      store.getState().addWorkspace(rest);
+      store.getState().addTrial(rest);
     }
   }
   return store;
@@ -78,8 +78,8 @@ function buildNebula(colors: readonly string[]): string {
   return blobs.join(', ');
 }
 
-/** The lab runtime: creates the store, provides it, and renders one workspace
- *  per record in a grid. Each workspace runs one of `instruments`. */
+/** The lab runtime: creates the store, provides it, and renders one trial
+ *  per record in a grid. Each trial runs one of `instruments`. */
 export function Lab({
   instruments,
   defaultInstrument,
@@ -106,7 +106,7 @@ export function Lab({
   }
   const store = storeRef.current;
 
-  const workspaces = useStore(store, (s) => s.workspaces);
+  const trials = useStore(store, (s) => s.trials);
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
   const layout = useStore(store, (s) => s.layout);
@@ -119,51 +119,51 @@ export function Lab({
   }, [mode, store]);
 
   const contextValue = useMemo<LabContextValue>(() => {
-    const replaceWorkspaces = (next: WorkspaceRecord[]): void => {
-      const currentById = new Map(store.getState().workspaces.map((w) => [w.id, w]));
+    const replaceTrials = (next: TrialRecord[]): void => {
+      const currentById = new Map(store.getState().trials.map((w) => [w.id, w]));
       const merged = next.map((w) => currentById.get(w.id) ?? w);
-      store.setState({ workspaces: merged });
+      store.setState({ trials: merged });
       // Trigger persistence flush via a tracked action.
       store.getState().setMode(store.getState().mode);
     };
 
     return {
       instruments,
-      workspaces,
-      addWorkspace: (instrumentName) => {
-        const next = addWorkspaceOp(store.getState().workspaces, instruments, instrumentName);
-        replaceWorkspaces(next);
+      trials,
+      addTrial: (instrumentName) => {
+        const next = addTrialOp(store.getState().trials, instruments, instrumentName);
+        replaceTrials(next);
       },
-      cloneWorkspace: (id) => {
-        const next = cloneWorkspaceOp(store.getState().workspaces, id);
-        replaceWorkspaces(next);
+      cloneTrial: (id) => {
+        const next = cloneTrialOp(store.getState().trials, id);
+        replaceTrials(next);
       },
-      closeWorkspace: (id) => {
-        const next = closeWorkspaceOp(store.getState().workspaces, id);
-        replaceWorkspaces(next);
+      closeTrial: (id) => {
+        const next = closeTrialOp(store.getState().trials, id);
+        replaceTrials(next);
       },
-      reorderWorkspaces: (ids) => {
-        replaceWorkspaces(reorderWorkspacesOp(store.getState().workspaces, ids));
+      reorderTrials: (ids) => {
+        replaceTrials(reorderTrialsOp(store.getState().trials, ids));
       },
-      resetWorkspace: (id) => {
-        const next = resetWorkspaceOp(store.getState().workspaces, id, instruments);
+      resetTrial: (id) => {
+        const next = resetTrialOp(store.getState().trials, id, instruments);
         const record = next.find((w) => w.id === id);
         if (!record) return;
         store.setState((s) => ({
-          workspaces: s.workspaces.map((w) =>
+          trials: s.trials.map((w) =>
             w.id === id
               ? { ...w, config: record.config, state: record.state, view: record.view }
               : w,
           ),
         }));
-        store.getState().updateWorkspaceView(id, record.view);
+        store.getState().updateTrialView(id, record.view);
       },
       savedSnapshots,
-      saveSnapshot: (workspaceId, name) => {
-        store.getState().saveSnapshot(workspaceId, name ?? `Save ${new Date().toLocaleString()}`);
+      saveSnapshot: (trialId, name) => {
+        store.getState().saveSnapshot(trialId, name ?? `Save ${new Date().toLocaleString()}`);
       },
-      loadSnapshot: (workspaceId, snapshotId) => {
-        store.getState().loadSnapshot(snapshotId, workspaceId);
+      loadSnapshot: (trialId, snapshotId) => {
+        store.getState().loadSnapshot(snapshotId, trialId);
       },
       deleteSnapshot: (snapshotId) => {
         store.getState().deleteSnapshot(snapshotId);
@@ -173,7 +173,7 @@ export function Lab({
         store.getState().setMode(m);
       },
     };
-  }, [instruments, workspaces, savedSnapshots, modeValue, store]);
+  }, [instruments, trials, savedSnapshots, modeValue, store]);
 
   // Only override the backdrop in dark, where there is one to override.
   // Setting a CSS custom property is the sanctioned use of inline style.
@@ -192,18 +192,18 @@ export function Lab({
           style={backdropStyle}
         >
           <LabShell title={title ?? 'Labkit'} mode={modeValue} header={children}>
-            <WorkspaceGrid
-              ids={workspaces.map((w) => w.id)}
+            <Workspace
+              ids={trials.map((w) => w.id)}
               resizable
               reorderable
-              onReorder={(ids) => contextValue.reorderWorkspaces(ids)}
-              layout={layout as WorkspaceLayout}
+              onReorder={(ids) => contextValue.reorderTrials(ids)}
+              layout={layout as TrialLayout}
               onLayoutChange={(next) => store.getState().setLayout(next)}
             >
-              {workspaces.map((w) => (
-                <Workspace key={w.id} id={w.id} />
+              {trials.map((w) => (
+                <Trial key={w.id} id={w.id} />
               ))}
-            </WorkspaceGrid>
+            </Workspace>
           </LabShell>
         </ThemeProvider>
       </LabContext.Provider>

@@ -12,7 +12,7 @@ type Story = StoryObj<typeof Toolbar>;
 export const Default: Story = {
   render: () => (
     <Toolbar>
-      <Toolbar.Title>My Workspace</Toolbar.Title>
+      <Toolbar.Title>My Trial</Toolbar.Title>
       <Toolbar.Button onClick={() => {}}>Undo</Toolbar.Button>
       <Toolbar.Button onClick={() => {}}>Redo</Toolbar.Button>
       <Toolbar.Spacer />
@@ -24,7 +24,7 @@ export const Default: Story = {
 export const WithDisabled: Story = {
   render: () => (
     <Toolbar>
-      <Toolbar.Title>Empty workspace</Toolbar.Title>
+      <Toolbar.Title>Empty trial</Toolbar.Title>
       <Toolbar.Button onClick={() => {}} disabled>
         Undo
       </Toolbar.Button>
