@@ -85,16 +85,10 @@ export function parseSvg(svg: string, opts: ParseOptions = {}): ParseResult {
   if (documentMeta) result.documentMeta = documentMeta;
   const viewBox = parseViewBoxAttr(root.getAttribute('viewBox'));
   if (viewBox) result.viewBox = viewBox;
-  const widthAttr = root.getAttribute('width');
-  if (widthAttr != null) {
-    const n = parseFloat(widthAttr);
-    if (Number.isFinite(n)) result.width = n;
-  }
-  const heightAttr = root.getAttribute('height');
-  if (heightAttr != null) {
-    const n = parseFloat(heightAttr);
-    if (Number.isFinite(n)) result.height = n;
-  }
+  const width = parseRootLength(root.getAttribute('width'), 'width', onWarn);
+  if (width != null) result.width = width;
+  const height = parseRootLength(root.getAttribute('height'), 'height', onWarn);
+  if (height != null) result.height = height;
   // First direct-child <title> wins. Per SVG spec only one is meaningful.
   for (let i = 0; i < root.children.length; i++) {
     const c = root.children[i];
@@ -120,6 +114,22 @@ function parseViewBoxAttr(
   const nums = parts.map(parseFloat);
   if (nums.some((n) => !Number.isFinite(n))) return undefined;
   return { x: nums[0], y: nums[1], width: nums[2], height: nums[3] };
+}
+
+/**
+ * Root `width` / `height` as a bare user-unit number. A CSS unit or a
+ * percentage is not converted — there is no viewport to resolve it against —
+ * so the number is taken as-is and the discarded unit is reported.
+ */
+function parseRootLength(
+  raw: string | null, name: string, onWarn: (m: string) => void,
+): number | undefined {
+  if (raw == null) return undefined;
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n)) return undefined;
+  const unit = /^\s*[-+]?[\d.eE+-]+\s*([a-z%]+)\s*$/i.exec(raw)?.[1];
+  if (unit) onWarn(`<svg ${name}="${raw}"> unit "${unit}" is not converted; read as ${n}`);
+  return n;
 }
 
 function collectDocumentMeta(
@@ -266,9 +276,16 @@ function parseElement(
     return group;
   }
   if (SUPPORTED_GROUP_TAGS.has(tag)) {
-    // Nested <svg> — transparent group; inheritance flows through it.
+    // Nested <svg> — a transparent group that establishes a viewport at
+    // (x, y). Inheritance flows through it; clipping does not exist here.
     const childStyle = deriveStyle(style, el);
-    return parseChildren(el, ctm, childStyle, gradients, onWarn, uriToPrefix);
+    const x = parseFloat(el.getAttribute('x') ?? '0');
+    const y = parseFloat(el.getAttribute('y') ?? '0');
+    const offset: Matrix = [1, 0, 0, 1, Number.isFinite(x) ? x : 0, Number.isFinite(y) ? y : 0];
+    if (el.hasAttribute('viewBox')) {
+      onWarn('nested <svg> viewBox is not modeled; its children are not rescaled');
+    }
+    return parseChildren(el, multiply(ctm, offset), childStyle, gradients, onWarn, uriToPrefix);
   }
   if (tag === 'text') {
     const textNode = parseTextElement(el, ctm, style, gradients, onWarn);
@@ -334,11 +351,6 @@ function parseElement(
   // line nor an ancestor group specifies a fill.
   if (tag === 'line' && (leafStyle['fill'] ?? null) == null) {
     node.fill = { kind: 'none' };
-  }
-  if (tag === 'polyline' && !el.hasAttribute('fill')) {
-    // <polyline> defaults to fill=black per spec but the common-case
-    // intent is stroke-only. Match the spec default to preserve
-    // round-trip honesty; callers can override.
   }
   const meta = collectElementMeta(el, uriToPrefix);
   if (meta) node.meta = meta;
@@ -579,7 +591,7 @@ function parseDashArray(s: string): number[] | null {
 }
 
 function readOpacityAttr(el: Element, name: string): number | undefined {
-  const raw = el.getAttribute(name);
+  const raw = ownProp(el, name);
   if (raw == null) return undefined;
   const n = parseFloat(raw);
   return Number.isFinite(n) ? clamp01(n) : undefined;
@@ -697,6 +709,61 @@ function parseImageElement(
   return node;
 }
 
+const XML_NS = 'http://www.w3.org/XML/1998/namespace';
+
+/**
+ * Does `xml:space="preserve"` apply to this element? The attribute inherits,
+ * so an ancestor can set it.
+ *
+ * weasel's own `<text>` output carries it, because the runs model stores real
+ * line breaks and SVG's default whitespace handling would collapse them away.
+ */
+function preservesSpace(el: Element): boolean {
+  for (let e: Element | null = el; e; e = e.parentElement) {
+    const v = e.getAttributeNS(XML_NS, 'space') ?? e.getAttribute('xml:space');
+    if (v === 'preserve') return true;
+    if (v === 'default') return false;
+  }
+  return false;
+}
+
+/**
+ * Apply SVG's default whitespace handling to a `<text>` element's runs, in
+ * place: newlines dropped, tabs folded to spaces, runs of spaces collapsed to
+ * one, and leading / trailing space stripped across the element as a whole.
+ *
+ * Without this, importing any pretty-printed SVG drags the source file's
+ * indentation into the document text — and, because the height estimate
+ * counts newlines, reports a one-line label as four lines tall.
+ */
+function collapseRunWhitespace(runs: StyledRun[]): void {
+  let atStart = true;
+  let lastWasSpace = false;
+  for (const run of runs) {
+    let out = '';
+    for (const ch of run.text.replace(/\n/g, '').replace(/[\t\r]/g, ' ')) {
+      if (ch === ' ') {
+        if (atStart || lastWasSpace) continue;
+        out += ' ';
+        lastWasSpace = true;
+        continue;
+      }
+      out += ch;
+      lastWasSpace = false;
+      atStart = false;
+    }
+    run.text = out;
+  }
+  for (let i = runs.length - 1; i >= 0; i--) {
+    if (runs[i].text === '') continue;
+    if (runs[i].text.endsWith(' ')) runs[i].text = runs[i].text.slice(0, -1);
+    break;
+  }
+  for (let i = runs.length - 1; i >= 0; i--) {
+    if (runs[i].text === '') runs.splice(i, 1);
+  }
+}
+
 function parseTextElement(
   el: Element,
   ctm: Matrix,
@@ -740,27 +807,26 @@ function parseTextElement(
   // Walk children: text nodes become plain run text; <tspan> elements
   // become StyledRuns with their attribute overrides applied.
   const runs: StyledRun[] = [];
-  let plain = '';
   for (let i = 0; i < el.childNodes.length; i++) {
     const child = el.childNodes[i];
     if (child.nodeType === 3 /* TEXT_NODE */) {
       const t = child.textContent ?? '';
       if (!t) continue;
       runs.push({ text: t });
-      plain += t;
     } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
       const sp = child as Element;
       if (sp.tagName.toLowerCase() !== 'tspan') {
         onWarn(`<text> child <${sp.tagName}> not supported; flattening text content`);
         const t = sp.textContent ?? '';
-        if (t) { runs.push({ text: t }); plain += t; }
+        if (t) runs.push({ text: t });
         continue;
       }
       const run = readTspanRun(sp, gradients, leafStyle, onWarn);
       runs.push(run);
-      plain += run.text;
     }
   }
+  if (!preservesSpace(el)) collapseRunWhitespace(runs);
+  const plain = runs.map((r) => r.text).join('');
 
   // Estimate dimensions: data-weasel-* attrs win, else heuristic.
   const dataW = num(el.getAttribute('data-weasel-width'), NaN);
@@ -773,7 +839,7 @@ function parseTextElement(
   const opacity = readOpacityAttr(el, 'opacity');
   const node: SvgTextNode = {
     kind: 'text',
-    x: topY === ay ? ax : ax,  // x is unchanged by the baseline shift
+    x: ax,
     y: topY,
     width,
     height,
