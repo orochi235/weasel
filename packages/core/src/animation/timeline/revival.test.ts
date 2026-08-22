@@ -282,6 +282,25 @@ describe('timeline revival and playback intent', () => {
     expect(tl.isPaused()).toBe(true);
   });
 
+  it('revives playing after a pause the consumer already undid', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack()] });
+    tl.pause();
+    tl.resume();
+    h.frame(120);
+    tl.seek(0);
+    h.frame(20);
+    expect(tl.time()).toBe(20);
+  });
+
+  it('reports the intent after the animator cancelled it', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack()], cancelKey: 'intro' });
+    tl.pause();
+    h.cancelKey('intro');
+    expect(tl.isPaused()).toBe(true);
+  });
+
   it('carries the time scale across a revival', () => {
     const h = harness();
     const tl = createTimeline(h.register, 1, { tracks: [numberTrack()] });
@@ -291,6 +310,20 @@ describe('timeline revival and playback intent', () => {
     tl.seek(0);
     h.frame(10);
     expect(tl.time()).toBe(20);
+  });
+});
+
+describe('a revived timeline', () => {
+  it('re-registers once across a drag of many seeks', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack()] });
+    h.frame(120);
+    tl.seek(40);
+    tl.seek(60);
+    tl.seek(40);
+    expect(h.registrations()).toBe(2);
+    h.frame(10);
+    expect(tl.time()).toBe(50);
   });
 });
 
