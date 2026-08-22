@@ -1,9 +1,11 @@
 export interface Vec2 { x: number; y: number }
 
 export interface SpatialOptions {
-  /** Distance within which gain stays at 1. Default 1. */
+  /** Distance within which gain stays at 1. Default 1. The inverse model needs
+   *  this above 0: at 0 it cliffs gain from 1 to 0 at any nonzero distance. */
   refDistance?: number;
-  /** Distance at which linear rolloff reaches 0. Ignored by inverse. Default 10000. */
+  /** Distance at which linear rolloff reaches 0. Ignored by inverse. Default
+   *  10000. At or below `refDistance` it gives the same 1-to-0 cliff, there. */
   maxDistance?: number;
   /** Default 'inverse' — the natural-sounding one. */
   rolloff?: 'inverse' | 'linear';
@@ -16,9 +18,7 @@ export interface SpatialOptions {
 /**
  * Map a source position to a gain and a stereo pan, relative to the listener.
  *
- * Pure — no Web Audio, no state. This is the whole spatial model, which is why
- * it lives on its own: the node wiring that consumes it has nothing left worth
- * testing.
+ * Pure — no Web Audio, no state. This is the whole spatial model.
  */
 export function spatialize(
   source: Vec2,
@@ -27,6 +27,7 @@ export function spatialize(
 ): { gain: number; pan: number } {
   const refDistance = opts.refDistance ?? 1;
   const maxDistance = opts.maxDistance ?? 10000;
+  const rolloff = opts.rolloff ?? 'inverse';
   const rolloffFactor = opts.rolloffFactor ?? 1;
   const panWidth = opts.panWidth ?? 500;
 
@@ -37,7 +38,7 @@ export function spatialize(
   let gain: number;
   if (distance <= refDistance) {
     gain = 1;
-  } else if ((opts.rolloff ?? 'inverse') === 'linear') {
+  } else if (rolloff === 'linear') {
     const span = maxDistance - refDistance;
     gain = span <= 0 ? 0 : 1 - rolloffFactor * ((distance - refDistance) / span);
   } else {

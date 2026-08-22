@@ -76,6 +76,17 @@ describe('spatialize', () => {
     expect(out.gain).toBe(0);
   });
 
+  it('cliffs from full gain to silence when the inverse model gets refDistance 0', () => {
+    expect(spatialize({ x: 0, y: 0 }, L, { refDistance: 0 }).gain).toBe(1);
+    expect(spatialize({ x: 0, y: 0.001 }, L, { refDistance: 0 }).gain).toBe(0);
+  });
+
+  it('cliffs the same way when linear rolloff gets maxDistance at refDistance', () => {
+    const opts = { rolloff: 'linear' as const, refDistance: 10, maxDistance: 10 };
+    expect(spatialize({ x: 0, y: 10 }, L, opts).gain).toBe(1);
+    expect(spatialize({ x: 0, y: 10.001 }, L, opts).gain).toBe(0);
+  });
+
   it('ignores vertical offset for pan', () => {
     expect(spatialize({ x: 0, y: 500 }, L, { panWidth: 100 }).pan).toBe(0);
   });
