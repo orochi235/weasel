@@ -62,6 +62,23 @@ interface ActiveState extends PendingState {
 }
 
 /**
+ * The half-open run of indices a row at `sourceIndex` may be dropped into:
+ * bounded by the nearest locked row above and below it, so a locked row is a
+ * wall in both directions rather than a global ceiling.
+ */
+function unlockedSegment(items: readonly LayerListItem[], sourceIndex: number): [number, number] {
+  let lo = 0;
+  for (let i = sourceIndex - 1; i >= 0; i--) {
+    if (items[i]?.locked) { lo = i + 1; break; }
+  }
+  let hi = items.length;
+  for (let i = sourceIndex + 1; i < items.length; i++) {
+    if (items[i]?.locked) { hi = i; break; }
+  }
+  return [lo, hi];
+}
+
+/**
  * Drag-to-reorder for a vertical list of rows. Dragging a row that is part of
  * the current selection drags the whole selection; dragging any other row
  * drags just that row. Locked rows can neither be dragged nor crossed by a
@@ -80,14 +97,10 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   const activeRef = useRef<ActiveState | null>(null);
   const [state, setState] = useState<ReorderDragState>({ draggedIds: null, targetIndex: null });
 
-  const computeTargetIndex = useCallback((clientY: number): number => {
-    const items = optsRef.current.items;
-    // Locked rows act as walls — drops cannot cross them. Cap at the
-    // first locked row's index (or items.length if none are locked).
-    const firstLocked = items.findIndex((it) => it.locked);
-    const cap = firstLocked === -1 ? items.length : firstLocked;
+  const computeTargetIndex = useCallback((clientY: number, sourceIndex: number): number => {
+    const [lo, hi] = unlockedSegment(optsRef.current.items, sourceIndex);
     const c = containerRef.current;
-    if (!c) return 0;
+    if (!c) return lo;
     const rows = Array.from(c.children) as HTMLElement[];
     let raw = rows.length;
     for (let i = 0; i < rows.length; i++) {
@@ -96,7 +109,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       const r = row.getBoundingClientRect();
       if (clientY < r.bottom) { raw = i; break; }
     }
-    return Math.min(raw, cap);
+    return Math.max(lo, Math.min(raw, hi));
   }, []);
 
   const refCb = useCallback<RefCallback<HTMLElement>>((el) => {
@@ -133,7 +146,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
   const onPointerMove = useCallback((e: ReactPointerEvent) => {
     const active = activeRef.current;
     if (active) {
-      const targetIndex = computeTargetIndex(e.clientY);
+      const targetIndex = computeTargetIndex(e.clientY, active.sourceIndex);
       if (targetIndex !== active.targetIndex) {
         active.targetIndex = targetIndex;
         setState({ draggedIds: active.draggedIds, targetIndex });
@@ -148,8 +161,12 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
     // Engage.
     const selected = optsRef.current.selectedIds;
     const inSelection = selected.includes(pending.id);
-    const draggedIds = inSelection ? [...selected] : [pending.id];
-    const targetIndex = computeTargetIndex(e.clientY);
+    const [lo, hi] = unlockedSegment(optsRef.current.items, pending.sourceIndex);
+    const draggedIds = (inSelection ? [...selected] : [pending.id]).filter((id) => {
+      const i = optsRef.current.items.findIndex((it) => it.id === id);
+      return i >= lo && i < hi;
+    });
+    const targetIndex = computeTargetIndex(e.clientY, pending.sourceIndex);
     activeRef.current = { ...pending, draggedIds, targetIndex };
     setState({ draggedIds, targetIndex });
   }, [computeTargetIndex, threshold]);
@@ -160,7 +177,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       reset();
       return;
     }
-    const targetIndex = computeTargetIndex(e.clientY);
+    const targetIndex = computeTargetIndex(e.clientY, active.sourceIndex);
     // Skip no-op: target lands inside the dragged-ids contiguous block.
     const items = optsRef.current.items;
     const indices = active.draggedIds
