@@ -51,6 +51,8 @@ export type {
   TimelineTrack,
   Track,
 } from './timeline';
+export { blendPoses, resolveSkeleton, IDENTITY_JOINT } from './rig';
+export type { Joint, JointTransform, Pose, Skeleton } from './rig';
 
 // `createLoop` / `createTweenLoop` / `createStagger` / `createTimeline` are
 // intentionally NOT re-exported. They take internal seams (supervisor factory,
