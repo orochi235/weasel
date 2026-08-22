@@ -57,7 +57,7 @@ export interface TimelineOptions {
 }
 
 export interface TimelineHandle extends AnimationHandle {
-  /** Move the playhead. Event cursors advance without firing, recursively. */
+  /** Move the playhead. Never fires event tracks, at any depth. */
   seek(t: number): void;
   /** Current playhead in ms. */
   time(): number;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createTimeline, type TimelineRegister } from './createTimeline';
-import type { SampledTrack } from './types';
+import type { EventTrack, SampledTrack } from './types';
 
 function harness() {
   let tick: ((virtualNow: number) => boolean) | null = null;
@@ -63,5 +63,23 @@ describe('timeline editing', () => {
     h.advance(50);
     expect(seen.at(-1)).toBe(500);
     expect(build).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps firing later events after an edit deletes an earlier one', () => {
+    const h = harness();
+    const fired: string[] = [];
+    const track: EventTrack = {
+      kind: 'event',
+      events: [
+        { t: 10, fire: () => fired.push('a') },
+        { t: 50, fire: () => fired.push('b') },
+        { t: 90, fire: () => fired.push('c') },
+      ],
+    };
+    const tl = createTimeline(h.register, 1, { tracks: [track], duration: 200 });
+    h.advance(60);
+    tl.edit(() => { track.events.shift(); });
+    h.advance(150);
+    expect(fired).toEqual(['a', 'b', 'c']);
   });
 });

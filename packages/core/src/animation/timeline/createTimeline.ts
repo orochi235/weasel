@@ -1,6 +1,6 @@
 import type { AnimationHandle } from '../types';
 import { sampleTrack } from './sampleTrack';
-import type { SampledTrack, TimelineHandle, TimelineOptions, Track } from './types';
+import type { EventTrack, SampledTrack, TimelineHandle, TimelineOptions, Track } from './types';
 
 /** The animator's internal `register`, narrowed to what a timeline needs. */
 export type TimelineRegister = (seed: {
@@ -9,6 +9,17 @@ export type TimelineRegister = (seed: {
   tick: (virtualNow: number) => boolean;
   onCancel?: () => void;
 }) => AnimationHandle;
+
+/** Index of the first event after `t`. Binary search: tracks may be long. */
+function firstAfter(events: EventTrack['events'], t: number): number {
+  let lo = 0;
+  let hi = events.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (events[mid].t > t) hi = mid; else lo = mid + 1;
+  }
+  return lo;
+}
 
 /** End time of a track: its last key/event, or a nested timeline's own end. */
 function trackEnd(track: Track): number {
@@ -73,34 +84,13 @@ export function createTimeline(
     }
   };
 
-  /** Per-event-track index of the next event to fire. */
-  const cursors = new WeakMap<object, number>();
-  const cursorOf = (track: object): number => cursors.get(track) ?? 0;
-
   const fireEvents = (tracks: Track[], from: number, to: number): void => {
     for (const track of tracks) {
       if (track.kind === 'event') {
-        let i = cursorOf(track);
-        while (i < track.events.length && track.events[i].t <= to) {
-          if (track.events[i].t > from) track.events[i].fire();
-          i += 1;
-        }
-        cursors.set(track, i);
+        const end = firstAfter(track.events, to);
+        for (let i = firstAfter(track.events, from); i < end; i += 1) track.events[i].fire();
       } else if (track.kind === 'timeline') {
         fireEvents(track.timeline.tracks, from - track.at, to - track.at);
-      }
-    }
-  };
-
-  /** Move cursors to `t` WITHOUT firing. Used by seek and by loop wrap. */
-  const recursor = (tracks: Track[], t: number): void => {
-    for (const track of tracks) {
-      if (track.kind === 'event') {
-        let i = 0;
-        while (i < track.events.length && track.events[i].t <= t) i += 1;
-        cursors.set(track, i);
-      } else if (track.kind === 'timeline') {
-        recursor(track.timeline.tracks, t - track.at);
       }
     }
   };
@@ -109,7 +99,6 @@ export function createTimeline(
   // last tick and `duration` is dropped whenever a frame straddles the seam.
   const onWrap = (): void => {
     fireEvents(opts.tracks, prevPlayhead, duration);
-    recursor(opts.tracks, -Infinity);
     prevPlayhead = -Infinity;
   };
 
@@ -153,7 +142,6 @@ export function createTimeline(
       offset = t - lastVirtual;
       playhead = t;
       prevPlayhead = t;
-      recursor(opts.tracks, t);
     },
     time: () => playhead,
     duration: () => duration,
