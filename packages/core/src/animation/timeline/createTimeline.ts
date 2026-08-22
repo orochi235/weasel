@@ -46,6 +46,8 @@ export function createTimeline(
   let prevPlayhead = -Infinity;
   let done = false;
 
+  const subscribers = new Set<() => void>();
+
   const loopOpt = opts.loop ?? false;
   let loopsLeft = loopOpt === true ? Infinity : loopOpt === false ? 0 : loopOpt;
 
@@ -160,7 +162,13 @@ export function createTimeline(
       fn();
       caches = new WeakMap();
       duration = tracksEnd(opts.tracks, opts.duration);
+      for (const cb of subscribers) {
+        try { cb(); } catch (err) { console.error('timeline: subscriber threw', err); }
+      }
     },
-    subscribe: () => () => {},
+    subscribe(cb) {
+      subscribers.add(cb);
+      return () => { subscribers.delete(cb); };
+    },
   };
 }
