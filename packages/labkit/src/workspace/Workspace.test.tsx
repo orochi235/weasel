@@ -126,6 +126,7 @@ function ChromeHarness({
     cloneWorkspace: vi.fn(),
     closeWorkspace: vi.fn(),
     resetWorkspace: vi.fn(),
+    reorderWorkspaces: vi.fn(),
     savedSnapshots: [],
     saveSnapshot: vi.fn(),
     loadSnapshot: vi.fn(),

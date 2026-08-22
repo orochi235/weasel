@@ -34,6 +34,7 @@ function Harness() {
     cloneWorkspace: noop,
     closeWorkspace: noop,
     resetWorkspace: noop,
+    reorderWorkspaces: noop,
     savedSnapshots: [],
     saveSnapshot: noop,
     loadSnapshot: noop,
