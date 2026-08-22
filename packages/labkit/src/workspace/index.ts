@@ -20,5 +20,6 @@ export {
   addWorkspace,
   cloneWorkspace,
   closeWorkspace,
+  reorderWorkspaces,
   resetWorkspace,
 } from './workspaceOps';

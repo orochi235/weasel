@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Instrument } from '../instrument/types';
 import type { WorkspaceRecord } from '../state/types';
-import { addWorkspace, cloneWorkspace, closeWorkspace, resetWorkspace } from './workspaceOps';
+import {
+  addWorkspace,
+  cloneWorkspace,
+  closeWorkspace,
+  reorderWorkspaces,
+  resetWorkspace,
+} from './workspaceOps';
 
 interface CounterState {
   count: number;
@@ -138,5 +144,32 @@ describe('resetWorkspace', () => {
     head(arr).config = { step: 99 } as CounterConfig;
     resetWorkspace(arr, head(arr).id, instruments);
     expect((arr[0]?.config as CounterConfig).step).toBe(99);
+  });
+});
+
+describe('reorderWorkspaces', () => {
+  const ws = (id: string) =>
+    ({
+      id,
+      instrumentName: 'T',
+      config: {},
+      state: {},
+      view: { zoom: 1, pan: { x: 0, y: 0 } },
+      undoStack: { past: [], future: [] },
+    }) as never;
+
+  it('reorders to match the given ids', () => {
+    const next = reorderWorkspaces([ws('a'), ws('b'), ws('c')], ['c', 'a', 'b']);
+    expect(next.map((w) => w.id)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('drops ids that no longer exist rather than resurrecting them', () => {
+    const next = reorderWorkspaces([ws('a'), ws('b')], ['gone', 'b', 'a']);
+    expect(next.map((w) => w.id)).toEqual(['b', 'a']);
+  });
+
+  it('keeps unmentioned workspaces, after the named ones', () => {
+    const next = reorderWorkspaces([ws('a'), ws('b'), ws('c')], ['c']);
+    expect(next.map((w) => w.id)).toEqual(['c', 'a', 'b']);
   });
 });

@@ -12,6 +12,7 @@ export interface LabContextValue {
   cloneWorkspace: (id: string) => void;
   closeWorkspace: (id: string) => void;
   resetWorkspace: (id: string) => void;
+  reorderWorkspaces: (ids: readonly string[]) => void;
   savedSnapshots: SavedSnapshot[];
   saveSnapshot: (workspaceId: string, name?: string) => void;
   loadSnapshot: (workspaceId: string, snapshotId: string) => void;

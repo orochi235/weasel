@@ -84,3 +84,19 @@ export function resetWorkspace(
   };
   return [...workspaces.slice(0, idx), reset, ...workspaces.slice(idx + 1)];
 }
+
+/**
+ * Reorder to match `ids`. Ids the list doesn't mention keep their relative
+ * order at the end, and ids it names that no longer exist are dropped — a
+ * reorder that raced a close should not resurrect the closed workspace.
+ */
+export function reorderWorkspaces(
+  workspaces: WorkspaceRecord[],
+  ids: readonly string[],
+): WorkspaceRecord[] {
+  const byId = new Map(workspaces.map((w) => [w.id, w]));
+  const named = ids.map((id) => byId.get(id)).filter((w): w is WorkspaceRecord => w !== undefined);
+  const seen = new Set(named.map((w) => w.id));
+  const rest = workspaces.filter((w) => !seen.has(w.id));
+  return [...named, ...rest];
+}

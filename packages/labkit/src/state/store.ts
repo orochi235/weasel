@@ -34,6 +34,7 @@ export interface LabStoreActions {
   deleteSnapshot: (snapshotId: string) => void;
   listSnapshots: (workspaceId?: string) => SavedSnapshot[];
   setMode: (mode: LabMode) => void;
+  setLayout: (layout: Record<string, unknown>) => void;
 }
 
 /** A lab's store: its state and actions, plus the hook instruments use to
@@ -65,6 +66,17 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
     }
   }
 
+  const layoutRaw = options.storage.read(labStorageKey(options.storageKey, 'layout'));
+  let hydratedLayout: Record<string, unknown> = {};
+  if (layoutRaw) {
+    try {
+      hydratedLayout = JSON.parse(layoutRaw) as Record<string, unknown>;
+    } catch {
+      console.warn('[labkit] failed to parse saved layout, starting empty');
+      hydratedLayout = {};
+    }
+  }
+
   const modeRaw = options.storage.read(labStorageKey(options.storageKey, 'theme'));
   // `interstellar` was the dark mode's name back when it was a theme.
   const stored = modeRaw === 'interstellar' ? 'dark' : modeRaw;
@@ -79,6 +91,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
     workspaces: hydratedWorkspaces,
     savedSnapshots: hydratedSnapshots,
     mode: hydratedMode,
+    layout: hydratedLayout,
 
     addWorkspace: (record) => {
       set((s) => ({
@@ -207,6 +220,11 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       set({ mode });
       scheduleFlush();
     },
+
+    setLayout: (layout) => {
+      set({ layout });
+      scheduleFlush();
+    },
   }));
 
   function scheduleFlush(): void {
@@ -222,6 +240,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
         JSON.stringify(s.savedSnapshots),
       );
       options.storage.write(labStorageKey(options.storageKey, 'theme'), s.mode);
+      options.storage.write(labStorageKey(options.storageKey, 'layout'), JSON.stringify(s.layout));
       flushTimer = null;
     }, 300);
   }
