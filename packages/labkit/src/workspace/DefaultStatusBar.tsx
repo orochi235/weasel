@@ -1,4 +1,5 @@
 import { StatusBar } from '../primitives/StatusBar';
+import { formatZoom } from '../ui/format';
 import type { WorkspaceStatusBarContext } from './slotTypes';
 
 /** Props for `<DefaultStatusBar>`. */
@@ -12,7 +13,7 @@ export function DefaultStatusBar({ ctx }: DefaultStatusBarProps) {
   return (
     <StatusBar>
       <StatusBar.Section>{ctx.instrumentName}</StatusBar.Section>
-      <StatusBar.Section>{Math.round(ctx.zoom * 100)}%</StatusBar.Section>
+      <StatusBar.Section>{formatZoom(ctx.zoom)}</StatusBar.Section>
     </StatusBar>
   );
 }

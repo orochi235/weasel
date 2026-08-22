@@ -17,3 +17,12 @@ export function formatNumber(n: number, fractionDigits?: number): string {
 export function parseSignedNumber(s: string): number {
   return Number(s.replace(MINUS, '-'));
 }
+
+/** Zoom for display. Below 2x a percentage reads naturally; past it the
+ *  numbers get long and a multiplier is what people say out loud, so 250%
+ *  shows as `2.5x`. */
+export function formatZoom(zoom: number): string {
+  if (!Number.isFinite(zoom)) return String(zoom);
+  if (zoom <= 2) return `${formatNumber(Math.round(zoom * 100))}%`;
+  return `${formatNumber(Math.round(zoom * 10) / 10)}x`;
+}

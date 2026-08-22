@@ -1,4 +1,5 @@
 import { Toolbar } from '../primitives/Toolbar';
+import { formatZoom } from '../ui/format';
 import type { WorkspaceToolbarContext } from './slotTypes';
 
 /** Props for `<DefaultToolbar>`. */
@@ -32,7 +33,7 @@ export function DefaultToolbar({ ctx }: DefaultToolbarProps) {
           <Toolbar.Button onClick={ctx.zoomOut} title="Zoom out">
             −
           </Toolbar.Button>
-          <span className="lk-toolbar__zoom-label">{Math.round(ctx.zoom * 100)}%</span>
+          <span className="lk-toolbar__zoom-label">{formatZoom(ctx.zoom)}</span>
           <Toolbar.Button onClick={ctx.zoomIn} title="Zoom in">
             +
           </Toolbar.Button>
