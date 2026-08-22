@@ -66,16 +66,20 @@ export function createHud(): Hud {
     }
   };
 
+  /** Every path that puts a widget in the list, so the detached guard is one
+   *  rule rather than one per factory. */
+  const push = (widget: Widget, from: string): void => {
+    if (detached) {
+      console.warn(`weasel-hud: ${from} called on a detached HUD; ignored.`);
+      return;
+    }
+    list.push(widget);
+    requestRedraw();
+  };
+
   return {
     get attached() { return host !== null; },
-    add(widget) {
-      if (detached) {
-        console.warn('weasel-hud: add() called on a detached HUD; ignored.');
-        return;
-      }
-      list.push(widget);
-      requestRedraw();
-    },
+    add(widget) { push(widget, 'add()'); },
     remove(widget) {
       const i = list.indexOf(widget);
       if (i === -1) return;
@@ -101,48 +105,42 @@ export function createHud(): Hud {
       let w: RectWidget | null = null;
       const removeFromHud = makeRemoveFromHud(() => w);
       w = createRect({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      list.push(w);
-      requestRedraw();
+      push(w, 'rect()');
       return w;
     },
     text(opts) {
       let w: TextWidget | null = null;
       const removeFromHud = makeRemoveFromHud(() => w);
       w = createText({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      list.push(w);
-      requestRedraw();
+      push(w, 'text()');
       return w;
     },
     image(opts) {
       let w: ImageWidget | null = null;
       const removeFromHud = makeRemoveFromHud(() => w);
       w = createImage({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      list.push(w);
-      requestRedraw();
+      push(w, 'image()');
       return w;
     },
     label(opts) {
       let w: LabelWidget | null = null;
       const removeFromHud = makeRemoveFromHud(() => w);
       w = createLabel({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      list.push(w);
-      requestRedraw();
+      push(w, 'label()');
       return w;
     },
     button(opts) {
       let w: ButtonWidget | null = null;
       const removeFromHud = makeRemoveFromHud(() => w);
       w = createButton({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      list.push(w);
-      requestRedraw();
+      push(w, 'button()');
       return w;
     },
     window(opts) {
       let w: WindowWidget | null = null;
       const removeFromHud = makeRemoveFromHud(() => w);
       w = createWindow({ ...opts, onChange: () => requestRedraw(), removeFromHud });
-      list.push(w);
-      requestRedraw();
+      push(w, 'window()');
       return w;
     },
   };

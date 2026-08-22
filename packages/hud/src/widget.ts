@@ -121,4 +121,8 @@ export interface Widget {
   onPointer(evt: HudPointerEvent): void;
   /** Called by Hud.remove or widget.dispose. Detach event listeners, etc. */
   dispose(): void;
+  /** True once disposed. A consumer holding a widget after `hud.remove`
+   *  otherwise has no way to ask whether it is still live. Optional so a
+   *  hand-written widget stays a plain object; every kit widget reports it. */
+  readonly disposed?: boolean;
 }

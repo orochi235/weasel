@@ -1,4 +1,4 @@
-import { useRef, type ReactElement, type ReactNode } from 'react';
+import { useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import { useHandleDrag, gradientGeometry, type GradientFill } from '@weasel-js/core';
 import s from './GradientHandles.module.css';
 
@@ -173,28 +173,61 @@ function DragPoint({
   onDrag: (p: Point, phase: 'input' | 'commit') => void;
 }): ReactElement {
   // `useHandleDrag` reports the pointer on move but not on end, so the last
-  // position is held here to commit with — otherwise releasing the pointer
-  // would write whatever the gradient held before the drag began.
-  const last = useRef<Point>(at);
+  // position is held here to commit with. It stays null until the pointer
+  // actually moves: a press that never moves must not write anything.
+  const last = useRef<Point | null>(null);
+  const start = useRef<Point>(at);
   const drag = useHandleDrag<SVGCircleElement>({
+    onStart: () => {
+      start.current = at;
+      last.current = null;
+    },
     onMove: (p) => {
       last.current = p;
       onDrag(p, 'input');
     },
-    onEnd: () => onDrag(last.current, 'commit'),
+    onEnd: (e) => {
+      const moved = last.current;
+      last.current = null;
+      if (moved === null) return;
+      // A canceled pointer is not an edit — put the live preview back where
+      // the gesture started rather than committing where it was abandoned.
+      if (e.type === 'pointercancel') onDrag(start.current, 'input');
+      else onDrag(moved, 'commit');
+    },
   });
+  const onKeyDown = (e: ReactKeyboardEvent<SVGCircleElement>): void => {
+    const amount = e.shiftKey ? KEY_STEP * 10 : KEY_STEP;
+    let dx = 0;
+    let dy = 0;
+    if (e.key === 'ArrowLeft') dx = -amount;
+    else if (e.key === 'ArrowRight') dx = amount;
+    else if (e.key === 'ArrowUp') dy = -amount;
+    else if (e.key === 'ArrowDown') dy = amount;
+    else return;
+    e.preventDefault();
+    const next = { x: at.x + dx, y: at.y + dy };
+    onDrag(next, 'input');
+    onDrag(next, 'commit');
+  };
   return (
     <circle
       className={s.handle}
       cx={at.x}
       cy={at.y}
       r={HANDLE_RADIUS}
-      role="slider"
+      // Not `slider`: the handle carries a 2-D position, not one value, so
+      // it has no `aria-valuenow` to honor the role's contract with.
+      role="button"
       aria-label={label}
       tabIndex={0}
+      onKeyDown={onKeyDown}
       {...drag}
     />
   );
 }
 
 const HANDLE_RADIUS = 7;
+
+/** One arrow-key step, in overlay pixels. */
+const KEY_STEP = 1;

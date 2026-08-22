@@ -58,6 +58,41 @@ describe('GradientHandles', () => {
     });
   });
 
+  it('writes nothing when a handle is pressed and released without moving', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={onChange} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerUp(handle, { clientX: 10, clientY: 20, pointerId: 1 });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onInput).not.toHaveBeenCalled();
+  });
+
+  it('restores the preview instead of committing when the pointer is canceled', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onInput={onInput} onChange={onChange} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    fireEvent.pointerDown(handle, { clientX: 10, clientY: 20, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    fireEvent.pointerCancel(handle, { clientX: 90, clientY: 120, pointerId: 1 });
+    expect(onChange).not.toHaveBeenCalled();
+    // Last live value puts the endpoint back at its pre-drag position.
+    expect(onInput.mock.calls.at(-1)![0]).toMatchObject({ from: { x: 0, y: 0 } });
+  });
+
+  it('moves a focused handle with the arrow keys', () => {
+    const onChange = vi.fn();
+    render(<GradientHandles value={linear} toScreen={toScreen} toLocal={toLocal} onChange={onChange} width={400} height={300} />);
+    const handle = screen.getByLabelText('Gradient start');
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    // One overlay pixel right, mapped back through the 2× transform.
+    expect(onChange.mock.calls[0][0]).toMatchObject({ from: { x: 0.5, y: 0 } });
+    fireEvent.keyDown(handle, { key: 'ArrowDown', shiftKey: true });
+    expect(onChange.mock.calls[1][0]).toMatchObject({ from: { x: 0, y: 5 } });
+  });
+
   it('previews during the drag and commits once at the end', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();

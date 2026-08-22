@@ -72,7 +72,7 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
   return (
     <RACComboBox
       {...rest}
-      selectedKey={selectedKey ?? undefined}
+      selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={onSelectionChange ? (k) => onSelectionChange(k as T | null) : undefined}
       className={[s.field, fieldClasses.root, className].filter(Boolean).join(' ')}
@@ -92,7 +92,7 @@ export function ComboBox<T extends Key = string>(props: ComboBoxProps<T>) {
         </Text>
       )}
       <FieldError className={fieldClasses.error}>{errorMessage}</FieldError>
-      <RACPopover className={s.popover}>
+      <RACPopover className={s.popover} data-weasel-overlay="">
         <RACListBox className={s.listbox} renderEmptyState={() => <div className={s.empty}>{emptyLabel}</div>}>
           {options !== undefined
             ? options.map((o) => (

@@ -47,6 +47,7 @@ export function Tooltip(props: TooltipProps) {
       placement={placement}
       offset={offset}
       className={[s.tooltip, className].filter(Boolean).join(' ')}
+      data-weasel-overlay=""
     >
       <OverlayArrow className={s.arrow}>
         <svg width={8} height={8} viewBox="0 0 8 8" aria-hidden="true">

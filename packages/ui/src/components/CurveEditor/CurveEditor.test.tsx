@@ -402,6 +402,26 @@ describe('CurveEditor — endpoint constraints', () => {
     expect(last[0].y).not.toBe(0); // y is editable
   });
 
+  it('pinned-both: an endpoint away from the corner holds its own position', () => {
+    const onInput = vi.fn();
+    const { container } = render(
+      <CurveEditor
+        value={[{ x: 0, y: 0.3 }, { x: 1, y: 0.8 }]}
+        onInput={onInput}
+        endpoints="pinned-both"
+        width={200}
+        height={100}
+      />,
+    );
+    const first = container.querySelectorAll('[data-anchor-index]')[0] as Element;
+    fireEvent.pointerDown(first, { clientX: 0, clientY: 70, pointerId: 9 });
+    fireEvent.pointerMove(window, { clientX: 60, clientY: 30, pointerId: 9 });
+
+    const last = onInput.mock.calls[onInput.mock.calls.length - 1][0];
+    expect(last[0].x).toBeCloseTo(0, 6);
+    expect(last[0].y).toBeCloseTo(0.3, 6);
+  });
+
   it('pinned-both: first anchor stays at the corner', () => {
     const onInput = vi.fn();
     const { container } = render(

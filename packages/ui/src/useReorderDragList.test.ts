@@ -137,6 +137,68 @@ describe('useReorderDragList', () => {
     expect(onReorder).not.toHaveBeenCalled();
   });
 
+  it('a drop below a locked row cannot cross it', () => {
+    const onReorder = vi.fn();
+    const items = [
+      { id: 'a', label: 'A' },
+      { id: 'b', label: 'B' },
+      { id: 'wall', label: 'Wall', locked: true },
+      { id: 'd', label: 'D' },
+      { id: 'e', label: 'E' },
+    ];
+    const { result } = renderHook(() =>
+      useReorderDragList({ items, selectedIds: [], onReorder })
+    );
+    const container = makeContainer(items.length);
+    act(() => result.current.containerProps.ref(container));
+    // Grab 'e' (index 4, y 128..160) and drag it to the very top.
+    act(() => result.current.rowProps('e', 4).onPointerDown(makePointerEvent('pointerdown', 100, 144)));
+    act(() => result.current.containerProps.onPointerMove(makePointerEvent('pointermove', 100, 4)));
+    act(() => result.current.containerProps.onPointerUp(makePointerEvent('pointerup', 100, 4)));
+    // Clamped to the first index below the wall, not to the top of the list.
+    expect(onReorder).toHaveBeenCalledWith(['e'], 3);
+  });
+
+  it('a drop above a locked row cannot cross it', () => {
+    const onReorder = vi.fn();
+    const items = [
+      { id: 'a', label: 'A' },
+      { id: 'b', label: 'B' },
+      { id: 'wall', label: 'Wall', locked: true },
+      { id: 'd', label: 'D' },
+    ];
+    const { result } = renderHook(() =>
+      useReorderDragList({ items, selectedIds: [], onReorder })
+    );
+    const container = makeContainer(items.length);
+    act(() => result.current.containerProps.ref(container));
+    // Grab 'a' (index 0) and drag it below every row.
+    act(() => result.current.rowProps('a', 0).onPointerDown(makePointerEvent('pointerdown', 100, 16)));
+    act(() => result.current.containerProps.onPointerMove(makePointerEvent('pointermove', 100, 999)));
+    act(() => result.current.containerProps.onPointerUp(makePointerEvent('pointerup', 100, 999)));
+    expect(onReorder).toHaveBeenCalledWith(['a'], 2);
+  });
+
+  it('drops selection members that sit on the far side of a wall', () => {
+    const onReorder = vi.fn();
+    const items = [
+      { id: 'a', label: 'A' },
+      { id: 'b', label: 'B' },
+      { id: 'wall', label: 'Wall', locked: true },
+      { id: 'd', label: 'D' },
+    ];
+    const { result } = renderHook(() =>
+      useReorderDragList({ items, selectedIds: ['a', 'd'], onReorder })
+    );
+    const container = makeContainer(items.length);
+    act(() => result.current.containerProps.ref(container));
+    act(() => result.current.rowProps('a', 0).onPointerDown(makePointerEvent('pointerdown', 100, 16)));
+    act(() => result.current.containerProps.onPointerMove(makePointerEvent('pointermove', 100, 999)));
+    act(() => result.current.containerProps.onPointerUp(makePointerEvent('pointerup', 100, 999)));
+    // 'd' sits past the wall and is dropped from the drag; 'a' stops at it.
+    expect(onReorder).toHaveBeenCalledWith(['a'], 2);
+  });
+
   it('state.draggedIds is null when idle, populated when actively dragging', () => {
     const onReorder = vi.fn();
     const { result } = renderHook(() =>
