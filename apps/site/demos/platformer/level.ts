@@ -27,36 +27,42 @@ export interface Level {
 }
 
 const GEOMETRY: Record<string, number> = { '#': SOLID, '=': ONEWAY, '^': SPIKE };
+const ENTITIES = new Set(['S', 'G', 'o', 'e']);
 
 /**
  * `#` solid, `=` one-way platform, `^` spike, `o` coin, `e` enemy, `S` spawn,
  * `G` goal, `.` air. Entity glyphs leave air behind in the tile grid.
  */
-export function parseLevel(rows: string[]): Level {
-  const cols = rows[0]?.length ?? 0;
-  if (rows.some((r) => r.length !== cols)) {
+export function parseLevel(lines: string[]): Level {
+  const cols = lines[0]?.length ?? 0;
+  if (lines.some((r) => r.length !== cols)) {
     throw new Error('parseLevel: ragged rows — every row must be the same length');
   }
   const level: Level = {
     cols,
-    rows: rows.length,
-    tiles: new Uint8Array(cols * rows.length),
+    rows: lines.length,
+    tiles: new Uint8Array(cols * lines.length),
     spawn: { x: 0, y: 0 },
     goal: { x: 0, y: 0 },
     coins: [],
     enemies: [],
     widthPx: cols * TILE,
-    heightPx: rows.length * TILE,
+    heightPx: lines.length * TILE,
   };
   const center = (cx: number, cy: number): Vec2 => ({ x: (cx + 0.5) * TILE, y: (cy + 0.5) * TILE });
 
-  rows.forEach((row, cy) => {
+  lines.forEach((row, cy) => {
     for (let cx = 0; cx < cols; cx++) {
       const ch = row[cx];
       const geom = GEOMETRY[ch];
       if (geom !== undefined) {
         level.tiles[cy * cols + cx] = geom;
         continue;
+      }
+      // A mistyped glyph would otherwise become air, and an 80-wide hand-authored
+      // level makes that typo invisible until something falls through the floor.
+      if (ch !== '.' && !ENTITIES.has(ch)) {
+        throw new Error(`parseLevel: unknown glyph "${ch}" at column ${cx}, row ${cy}`);
       }
       if (ch === 'S') level.spawn = center(cx, cy);
       else if (ch === 'G') level.goal = center(cx, cy);
@@ -68,9 +74,10 @@ export function parseLevel(rows: string[]): Level {
 }
 
 /**
- * Off the left or right edge reads SOLID so a body can never walk out of the
- * level; off the top or bottom reads EMPTY so falling past the map or jumping
- * near the ceiling never hits an invisible floor.
+ * The left and right edges read SOLID so a body can never walk out of the level.
+ * Above and below read EMPTY: a jump near the ceiling is free, and falling off
+ * the bottom must actually fall — a solid lower edge would catch the player on
+ * an invisible floor and the out-of-bounds death could never fire.
  */
 export function tileAt(level: Level, cx: number, cy: number): number {
   if (cy < 0 || cy >= level.rows) return EMPTY;

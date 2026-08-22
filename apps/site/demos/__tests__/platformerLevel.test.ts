@@ -39,7 +39,7 @@ describe('parseLevel', () => {
     expect(level.enemies).toEqual([{ x: 3.5 * TILE, y: 1.5 * TILE }]);
   });
 
-  it('reads out of bounds as solid above the floor and empty above the ceiling', () => {
+  it('walls the sides and leaves the top and bottom open', () => {
     const level = parseLevel(ROWS);
     expect(tileAt(level, -1, 0)).toBe(SOLID);
     expect(tileAt(level, 5, 0)).toBe(SOLID);
@@ -49,5 +49,9 @@ describe('parseLevel', () => {
 
   it('rejects ragged rows', () => {
     expect(() => parseLevel(['##', '#'])).toThrow(/ragged/i);
+  });
+
+  it('rejects an unknown glyph instead of silently reading it as air', () => {
+    expect(() => parseLevel(['..', '.x'])).toThrow(/unknown glyph "x".*column 1.*row 1/i);
   });
 });
