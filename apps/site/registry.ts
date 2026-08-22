@@ -93,6 +93,7 @@ import ImageDemoFull from './demos/ImageDemo.tsx?raw';
 import { IngestionDemo } from './demos/IngestionDemo';
 import IngestionDemoFull from './demos/IngestionDemo.tsx?raw';
 import { ToolReflectionDemo } from './demos/ToolReflectionDemo';
+import { TimelineDemo } from './demos/TimelineDemo';
 import ToolReflectionDemoFull from './demos/ToolReflectionDemo.tsx?raw';
 import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 
@@ -100,6 +101,7 @@ import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 // the TSX in the source pane so consumers can see the format.
 import SceneSceneJson from './demos/data/scene.scene.json?raw';
 import LayoutSceneJson from './demos/data/layout.scene.json?raw';
+import TimelineDemoFull from './demos/TimelineDemo.tsx?raw';
 
 /** Extra source pane entry: typically a companion file (scene JSON, fixture)
  *  that the demo loads alongside its TSX. Surfaced as a tab in the code panel. */
@@ -392,6 +394,16 @@ export const DEMOS: DemoEntry[] = [
     Component: EasingsDemo,
     full: EasingsDemoFull,
     path: 'apps/site/demos/EasingsDemo.tsx',
+  },
+  {
+    id: 'timeline',
+    title: 'Timeline',
+    category: 'Animation',
+    description: "A keyframe timeline is a tween with a playhead you can move. Three sampled tracks drive the scene — x, y, and a colour track whose `interpolate` is `lerpOklab`, so the square crossfades through OKLab rather than through sRGB's muddy midpoints. An event track fires labelled markers into the log on the right, and a nested `TimelineTrack` offset 500 ms runs a child timeline with its own duration. The transport is the point: `seek()` is a pure function of the playhead, so dragging the scrub slider repositions every sampled track and fires nothing — event tracks only cross edges under forward playback, at any nesting depth. \"add x keyframe\" pushes a key past the current end inside `timeline.edit()`, which recomputes the duration and drops the cached interpolators; the readout and the scrub range grow on the next frame.",
+    hint: 'play/pause · drag scrub (it pauses first) and watch the event log stay still · toggle loop · time-scale · add x keyframe.',
+    Component: TimelineDemo,
+    full: TimelineDemoFull,
+    path: 'apps/site/demos/TimelineDemo.tsx',
   },
 
   // ─── Viewport ─────────────────────────────────────────────────────────────

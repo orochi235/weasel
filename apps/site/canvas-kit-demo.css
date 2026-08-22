@@ -840,3 +840,82 @@ a:hover { text-decoration: underline; }
 
 .ckd-release.is-unreleased .ckd-release-version { color: var(--ckd-muted); }
 .ckd-release.is-unreleased .ckd-release-date { font-style: italic; }
+
+/* ---------- Timeline / Rig / Audio demo controls ---------- */
+.ckd-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  background: var(--ckd-surface);
+  color: var(--ckd-text);
+  border: 1px solid var(--ckd-border);
+  border-radius: 3px;
+}
+.ckd-btn:hover:not(:disabled) { border-color: var(--ckd-accent-dim); }
+.ckd-btn:disabled { opacity: 0.45; cursor: default; }
+
+.ckd-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ckd-muted);
+}
+
+.ckd-range { width: 130px; }
+
+.ckd-panel-title {
+  padding: 6px 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ckd-faint);
+  border-bottom: 1px solid var(--ckd-border);
+}
+
+.ckd-panel-note {
+  margin: 0;
+  padding: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--ckd-muted);
+}
+
+.ckd-log {
+  margin: 0;
+  padding: 0 8px 8px;
+  list-style: none;
+  max-height: 190px;
+  overflow-y: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--ckd-text);
+}
+.ckd-log li { padding: 1px 0; }
+
+.ckd-meters {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin: 0;
+  padding: 8px;
+  font-size: 12px;
+  color: var(--ckd-muted);
+}
+.ckd-meters dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: var(--ckd-text);
+}
+
+.ckd-bus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px solid var(--ckd-border-2);
+}
+.ckd-bus .ckd-range { width: 100px; }
+
+.ckd-panel-wide { width: 300px; }
