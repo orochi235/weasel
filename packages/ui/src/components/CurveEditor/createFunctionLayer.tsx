@@ -312,8 +312,8 @@ export function createFunctionLayer(cfg: FunctionLayerConfig = {}): CurveLayer<F
         const isEndpoint = index === 0 || index === points.length - 1;
 
         if (endpoints === 'pinned-both' && isEndpoint) {
-          nx = index === 0 ? xMin : xMax;
-          ny = index === 0 ? mr.yMin : mr.yMax;
+          nx = points[index].x;
+          ny = points[index].y;
         } else if (endpoints === 'pinned-x' && isEndpoint) {
           nx = index === 0 ? xMin : xMax;
         } else if (constrain === 'function' || domain === '1d') {
