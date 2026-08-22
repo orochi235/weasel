@@ -46,7 +46,7 @@ export function composeAffordanceLayer(
   hitTest(
     wx: number,
     wy: number,
-    state: ChromeState,
+    state: unknown,
     view: View,
     dims: { width: number; height: number },
     isVisible?: (id: string) => boolean,
@@ -79,8 +79,12 @@ export function composeAffordanceLayer(
     // `buildAffordanceAt` share one implementation rather than two that can
     // drift. This wrapper lifts the region's declared cursor and claim onto
     // the binding, the way `buildAffordanceAt` lifts them onto `AffordanceHit`.
-    hitTest: (wx, wy, state, view, _dims, isVisible): LayerHit | null => {
-      const hit = hitAffordanceRegions(affordances, wx, wy, state, view, isVisible);
+    hitTest: (wx, wy, data, view, _dims, isVisible): LayerHit | null => {
+      const state = asChromeState(data);
+      if (!state) return null;
+      const hit = hitAffordanceRegions(
+        affordances, wx, wy, state, view, isVisible ?? asIsVisible(data) ?? undefined,
+      );
       if (!hit) return null;
       const { cursor, strength, claimedKinds } = hit.region;
       return {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { composeAffordanceLayer } from './composeAffordanceLayer';
 import type { Affordance, AffordanceBinding, AffordanceRegion } from './types';
 import type { ChromeState, Bounds } from 'core/selection/chromeState';
+import { asNodeId } from 'core/scene/types';
 
 const NO_MOD = { alt: false, shift: false, meta: false, ctrl: false };
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
@@ -89,6 +90,32 @@ describe('composeAffordanceLayer', () => {
     expect(result?.initialScratch).toEqual({ which: 'b' });
     // 'b' is later in the array → walked first.
     expect(calls[0]).toBe('b');
+  });
+
+  it('hitTest unwraps the CanvasHelpers envelope Canvas hands its layers', () => {
+    const a: Affordance = {
+      id: 'a',
+      regions: (state) => (state.selection.length === 1 ? [pointRegion({
+        id: 'r-a',
+        bind: () => ({ initialScratch: { which: 'a' } }),
+      })] : []),
+    };
+    const layer = composeAffordanceLayer('x', 'X', [a]);
+    const state = { ...makeState(), selection: [asNodeId('n1')] };
+
+    const viaEnvelope = layer.hitTest(0, 0, { getChromeState: () => state }, VIEW, DIMS);
+    expect(viaEnvelope?.initialScratch).toEqual({ which: 'a' });
+    // Bare state (the shape every unit-test call site passes) still works.
+    expect(layer.hitTest(0, 0, state, VIEW, DIMS)?.initialScratch).toEqual({ which: 'a' });
+  });
+
+  it('hitTest returns null rather than throwing when no state is supplied', () => {
+    const a: Affordance = {
+      id: 'a',
+      regions: (state) => [pointRegion({ id: `r-${state.selection.length}` })],
+    };
+    const layer = composeAffordanceLayer('x', 'X', [a]);
+    expect(layer.hitTest(0, 0, undefined, VIEW, DIMS)).toBeNull();
   });
 
   it('hitTest carries the hit region’s cursor', () => {

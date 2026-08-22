@@ -809,6 +809,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Read by `hitTestExtras`, which is built once and must see live values.
+  const helpersForLayersRef = useRef<CanvasHelpers<TPose> | null>(null);
   const dimsRef = useRef({ width, height });
   dimsRef.current = { width, height };
   const getIsVisibleRef = useRef(getIsVisible);
@@ -840,7 +841,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
-      const hit = layer.hitTest(worldX, worldY, undefined, view, dims, isVisible);
+      const hit = layer.hitTest(worldX, worldY, helpersForLayersRef.current, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
@@ -1181,6 +1182,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     getDebug: () => debugSink,
     getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
   };
+  helpersForLayersRef.current = helpersForLayers;
   if (helpersRef) helpersRef.current = helpersForLayers;
 
   // Pointer-pressed flag. The only thing `<Canvas>` still needs to know about
@@ -1452,6 +1454,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     );
     renderer.render(commands, viewToMat3(effectiveView));
   }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp]);
+
+  // The GL context and everything it owns (programs, texture caches, VBOs)
+  // outlive React state, so unmount has to free them explicitly or a
+  // remounting host walks into the browser's live-context cap.
+  useEffect(() => () => {
+    glRendererRef.current?.dispose();
+    glRendererRef.current = null;
+    lastResizeRef.current = null;
+  }, []);
 
   const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
   useEffect(() => {
