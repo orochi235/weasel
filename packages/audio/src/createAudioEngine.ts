@@ -15,6 +15,9 @@ export interface AudioEngine {
   load(url: string): Promise<SoundHandle>;
   loadAll(urls: Record<string, string>): Promise<Record<string, SoundHandle>>;
   decode(bytes: ArrayBuffer): Promise<SoundHandle>;
+  /** Play a buffer the consumer already holds — a synth, an offline render, a
+   *  recording. `load` and `decode` both assume encoded bytes. */
+  register(buffer: AudioBuffer): SoundHandle;
   play(sound: SoundHandle, opts?: PlayOptions): VoiceHandle;
   stopKey(key: string): void;
   stopAll(): void;
@@ -220,6 +223,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     load: sounds.load,
     loadAll: sounds.loadAll,
     decode: sounds.decode,
+    register: sounds.register,
 
     play(sound, playOpts = {}) {
       const id = nextVoiceId++;

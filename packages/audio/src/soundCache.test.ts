@@ -87,3 +87,21 @@ describe('createSoundCache', () => {
     expect(cache.buffer(h)).toEqual({ duration: 1 });
   });
 });
+
+describe('createSoundCache.register', () => {
+  it('registers a buffer the caller already holds', () => {
+    const ctx = createFakeAudioContext();
+    const cache = createSoundCache(ctx as never, okFetch());
+    const buffer = { duration: 2.5 } as never;
+    const h = cache.register(buffer);
+    expect(cache.buffer(h)).toBe(buffer);
+  });
+
+  it('gives each registered buffer its own handle', () => {
+    const ctx = createFakeAudioContext();
+    const cache = createSoundCache(ctx as never, okFetch());
+    const a = cache.register({ duration: 1 } as never);
+    const b = cache.register({ duration: 1 } as never);
+    expect(a.id).not.toBe(b.id);
+  });
+});

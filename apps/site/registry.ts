@@ -20,6 +20,9 @@ import { AnimationDemo } from './demos/AnimationDemo';
 import { LayoutDemo } from './demos/LayoutDemo';
 import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
 import { EasingsDemo } from './demos/EasingsDemo';
+import { TimelineDemo } from './demos/TimelineDemo';
+import { RigDemo } from './demos/RigDemo';
+import { AudioDemo } from './demos/AudioDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
 import { ViewportLayerDemo } from './demos/ViewportLayerDemo';
 import { MinimapDemo } from './demos/MinimapDemo';
@@ -63,6 +66,9 @@ import AnimationDemoFull from './demos/AnimationDemo.tsx?raw';
 import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
+import TimelineDemoFull from './demos/TimelineDemo.tsx?raw';
+import RigDemoFull from './demos/RigDemo.tsx?raw';
+import AudioDemoFull from './demos/AudioDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
 import ViewportLayerDemoFull from './demos/ViewportLayerDemo.tsx?raw';
 import MinimapDemoFull from './demos/MinimapDemo.tsx?raw';
@@ -392,6 +398,36 @@ export const DEMOS: DemoEntry[] = [
     Component: EasingsDemo,
     full: EasingsDemoFull,
     path: 'apps/site/demos/EasingsDemo.tsx',
+  },
+  {
+    id: 'timeline',
+    title: 'Timeline',
+    category: 'Animation',
+    description: "A keyframe timeline is a tween with a playhead you can move. Three sampled tracks drive the scene — x, y, and a colour track whose `interpolate` is `lerpOklab`, so the square crossfades through OKLab rather than through sRGB's muddy midpoints. An event track fires labelled markers into the log on the right, and a nested `TimelineTrack` offset 500 ms runs a child timeline with its own duration. The transport is the point: `seek()` is a pure function of the playhead, so dragging the scrub slider repositions every sampled track and fires nothing — event tracks only cross edges under forward playback, at any nesting depth. \"add x keyframe\" pushes a key past the current end inside `timeline.edit()`, which recomputes the duration and drops the cached interpolators; the readout and the scrub range grow on the next frame.",
+    hint: 'play/pause · drag scrub (it pauses first) and watch the event log stay still · toggle loop · time-scale · add x keyframe.',
+    Component: TimelineDemo,
+    full: TimelineDemoFull,
+    path: 'apps/site/demos/TimelineDemo.tsx',
+  },
+  {
+    id: 'rig',
+    title: 'Rig',
+    category: 'Animation',
+    description: "A rig is a transform hierarchy and nothing more: six joints in topological order, each composed onto its already-resolved parent by `resolveSkeleton`. Both stick figures are the same skeleton. The green one is posed by `blendPoses([A, B], [1 - t, t])` called straight from the slider; the orange one is posed by a `SampledTrack<Pose>` whose `interpolate` is that identical call, looping on a timeline. Interpolating between two poses and blending two poses are the same operation, which is why the rig ships no timeline integration of its own — set the slider to the track's reported `u` while it plays and the two silhouettes coincide.",
+    hint: 'Drag the blend slider · play track to loop the same blend from a SampledTrack<Pose> · toggle joint labels.',
+    Component: RigDemo,
+    full: RigDemoFull,
+    path: 'apps/site/demos/RigDemo.tsx',
+  },
+  {
+    id: 'audio',
+    title: 'Audio',
+    category: 'Animation',
+    description: "@weasel-js/audio schedules playback with a lookahead window against the AudioContext's hardware clock, not per animation frame — a frame can be late by tens of milliseconds and nobody sees it, but a late note is audible, so `play({ when })` books a start time the audio thread honours exactly. Every sound here is synthesized into an `AudioBuffer` by hand and handed to `engine.register()`, so the demo ships no binary assets. The context starts suspended, which is shown rather than hidden: nothing sounds until \"enable audio\" resumes it from a user gesture, with `engine.state()` live beside the button. Dragging the source dot calls `setPosition` on a looping voice; the gain and pan readouts are `spatialize()`, the same pure function the engine applies. The bars are `analyser().bands(16)` on master. Firing fifty one-shots against a per-bus limit of eight makes voice stealing observable in the active count.",
+    hint: 'Click "enable audio" first · drag the orange dot · gain/mute/solo per bus · fire 50 one-shots and watch activeVoices hold at the limit.',
+    Component: AudioDemo,
+    full: AudioDemoFull,
+    path: 'apps/site/demos/AudioDemo.tsx',
   },
 
   // ─── Viewport ─────────────────────────────────────────────────────────────
