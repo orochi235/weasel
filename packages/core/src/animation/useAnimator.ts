@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { easeOut, SPRING_PRESETS } from './easings';
 import { createLoop, createTweenLoop } from './loop';
 import { createStagger, type StaggerTimers } from './stagger';
+import { createTimeline } from './timeline/createTimeline';
 import { ColorOverrideRegistry } from './colorRegistry';
 import type { Supervisor, WatchCompletion } from './supervisor';
 import type {
@@ -14,6 +15,7 @@ import type {
   PhysicsHandle,
   UseAnimatorOptions,
 } from './types';
+import type { TimelineOptions } from './timeline/types';
 
 interface ActiveAnimation {
   id: number;
@@ -467,6 +469,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
           factory as never,
           staggerOpts,
         )) as Animator['stagger'],
+      timeline: (o: TimelineOptions) => createTimeline(register, nextId.current++, o),
       colorOverrides: colorOverrides.current,
       onTick: (cb) => {
         tickSubscribers.current.add(cb);

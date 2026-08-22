@@ -1,4 +1,5 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
+import type { TimelineHandle, TimelineOptions } from './timeline/types';
 
 /** An easing curve: maps normalized progress `t ∈ [0, 1]` to eased progress.
  *  Curves may leave the 0–1 range in the middle (back, elastic) but should
@@ -244,6 +245,12 @@ export interface Animator {
     factory: StaggerFactory<TItem>,
     opts?: StaggerOptions,
   ): AnimationHandle;
+  /**
+   * Keyframe timeline. Registered like any other animation, so its playhead
+   * responds to `pause`, `setTimeScale` and `cancelKey`. Sampled tracks are a
+   * pure function of the playhead; event tracks fire only on forward playback.
+   */
+  timeline(opts: TimelineOptions): TimelineHandle;
   /** Per-node, per-channel color override registry consulted by the renderer's
    *  path layer before reading consumer accessors. Used by `tweenVertexColors`,
    *  `springVertexColors`, `cycleVertexColors`, `staggerVertexColors`. Cleared
