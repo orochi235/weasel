@@ -115,16 +115,18 @@ frame-driven, and that shapes the bridge to arc 2 more than anything else does.
 
 ---
 
-## Order: 1, then 2 and 3 in parallel, bridge last
+## Order: 2 and 3 in parallel, then 1 as the stress test
 
-The three are technically independent. None blocks another, and 2 and 3 can run
-concurrently.
+The three are technically independent. None blocks another, and the timeline and
+audio arcs run concurrently.
 
-The ordering is about information rather than dependency. The game demo is the only
-one of the three that *generates requirements* for the others: run it first and the
-timeline arc opens with a real animation it has to express, and the audio arc with a
-real one-shot workload it has to serve. Run it last and both are designed against
-guesses about what a consumer wants.
+The game demo goes last, and its job there is different from the one it would have
+had going first: it is the load test. A platformer drives the timeline and the audio
+engine harder and more continuously than any editor interaction does — dozens of
+simultaneous one-shots, animation state changing every few frames, a clock that
+never idles — so it is the thing most likely to expose where the two foundations are
+thin, wrongly factored, or too slow. Build the foundations on their own terms first;
+find out what is weak by putting real load on them.
 
 The bridge — firing a sample from a timeline track — comes after both arcs land.
 Design each side to meet at "a track emits an event at `t`" and neither package
