@@ -40,8 +40,19 @@ export {
   type CycleVertexColorsOptions, type StaggerVertexColorsOptions,
   type CycleHandle, type ColorInterpolate,
 } from './colorHelpers';
-// `createLoop` / `createTweenLoop` / `createStagger` are intentionally NOT
-// re-exported. They take internal seams (supervisor factory, completion
-// watcher, timer pair) that only `useAnimator` can supply. Consumers access
-// these primitives via `animator.loop` / `animator.tweenLoop` /
-// `animator.stagger`.
+export { sampleTrack } from './timeline';
+export type {
+  EventTrack,
+  Keyframe,
+  SampledTrack,
+  TimelineHandle,
+  TimelineOptions,
+  TimelineTrack,
+  Track,
+} from './timeline';
+
+// `createLoop` / `createTweenLoop` / `createStagger` / `createTimeline` are
+// intentionally NOT re-exported. They take internal seams (supervisor factory,
+// completion watcher, timer pair, register) that only `useAnimator` can supply.
+// Consumers access these primitives via `animator.loop` / `animator.tweenLoop` /
+// `animator.stagger` / `animator.timeline`.
