@@ -1299,17 +1299,22 @@ export function createDispatcher(opts?: {
     notify();
 
     let ended = false;
+    // The dispatcher can end this handle without the control knowing —
+    // `cancelAll` on tool switch, Escape, or unmount. Absence from
+    // `inFlightHandles` is that signal; without it a later `end()` would
+    // run `onEnd` a second time and commit over an already-cancelled gesture.
+    const live = (): boolean => !ended && inFlightHandles.get(gestureId) === handle;
     return {
       gestureId,
       update(nextParams) {
-        if (ended) return;
+        if (!live()) return;
         if (!handle.onMove) return;
         try { handle.onMove(buildUiInvocationCtx(deps, nextParams)); }
         catch (e) { console.error(`weasel dispatcher: action "${actionId}" threw on onMove`, e); }
         notify();
       },
       end(reason) {
-        if (ended) return;
+        if (!live()) { ended = true; return; }
         ended = true;
         if (handle.onEnd) {
           try { handle.onEnd(buildUiInvocationCtx(deps), reason); }

@@ -144,6 +144,47 @@ describe('Dispatcher.beginUiOngoing', () => {
     expect(onEnd).toHaveBeenCalledTimes(2);
   });
 
+  it('a control whose handle cancelAll already ended does not fire onEnd again', () => {
+    const onEnd = vi.fn();
+    const action = makeOngoingAction('test', { onMove: vi.fn(), onEnd });
+    const d = createDispatcher({ getAction: () => action });
+
+    const ctrl = d.beginUiOngoing('test', {}, { v: 1 })!;
+    d.cancelAll('cancel');
+    ctrl.end('commit');
+
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(onEnd.mock.calls[0][1]).toBe('cancel');
+  });
+
+  it('update is a no-op after cancelAll ended the handle', () => {
+    const onMove = vi.fn();
+    const action = makeOngoingAction('test', { onMove, onEnd: vi.fn() });
+    const d = createDispatcher({ getAction: () => action });
+
+    const ctrl = d.beginUiOngoing('test', {}, { v: 1 })!;
+    d.cancelAll('cancel');
+    ctrl.update({ v: 2 });
+
+    expect(onMove).not.toHaveBeenCalled();
+    expect([...d.getInFlightHandles()].length).toBe(0);
+  });
+
+  it('a control auto-committed by a later begin does not fire onEnd again', () => {
+    const onEnd = vi.fn();
+    const action = makeOngoingAction('test', { onMove: vi.fn(), onEnd });
+    const d = createDispatcher({ getAction: () => action });
+
+    const a = d.beginUiOngoing('test', {}, { v: 1 })!;
+    const b = d.beginUiOngoing('test', {}, { v: 2 })!;
+    a.end('cancel');
+
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(onEnd.mock.calls[0][1]).toBe('commit');
+    b.end('commit');
+    expect(onEnd).toHaveBeenCalledTimes(2);
+  });
+
   it('subscribers are notified on begin / update / end', () => {
     const action = makeOngoingAction('test', { onMove: vi.fn(), onEnd: vi.fn() });
     const d = createDispatcher({ getAction: () => action });
