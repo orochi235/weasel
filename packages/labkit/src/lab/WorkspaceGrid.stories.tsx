@@ -59,3 +59,19 @@ export const SevenTiles: Story = {
     </div>
   ),
 };
+
+/** Draggable seams. Drag a tile edge, or Tab to a seam and press an arrow —
+ *  a grid moves extents a whole cell at a time. */
+export const Resizable: Story = {
+  render: () => (
+    <div style={{ height: 500 }}>
+      <WorkspaceGrid ids={['a', 'b', 'c', 'd', 'e']} resizable>
+        <Tile>1</Tile>
+        <Tile>2</Tile>
+        <Tile>3</Tile>
+        <Tile>4</Tile>
+        <Tile>5</Tile>
+      </WorkspaceGrid>
+    </div>
+  ),
+};
