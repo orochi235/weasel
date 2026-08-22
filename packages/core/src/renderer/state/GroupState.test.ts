@@ -87,6 +87,17 @@ describe('GroupState — colorMatrix', () => {
     expect(s.colorMatrix[4]).toBeCloseTo(0.2, 5);
   });
 
+  it('reset() drops every pushed frame', () => {
+    const s = new GroupState();
+    s.push({ transform: mat3.translate(mat3.identity(), 10, 20), alpha: 0.5 });
+    s.push({ alpha: 0.5, colorMatrix: new Float32Array([-1,0,0,0,1, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0]) });
+    s.reset();
+    expect(Array.from(s.transform)).toEqual(Array.from(mat3.identity()));
+    expect(s.alpha).toBe(1);
+    expect(Array.from(s.colorMatrix)).toEqual(Array.from(IDENTITY_COLOR_MATRIX));
+    expect(() => s.pop()).toThrow();
+  });
+
   it('compose4x5: nested matrices compose in correct order (inner first)', () => {
     // Swap R and G
     const swapRG = new Float32Array([0,1,0,0,0, 1,0,0,0,0, 0,0,1,0,0, 0,0,0,1,0]);
