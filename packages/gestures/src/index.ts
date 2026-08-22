@@ -80,6 +80,7 @@ export type {
   ClickEvent,
   DoubleClickEvent,
   ContextMenuEvent,
+  LongPressEvent,
   MultitouchEvent,
   MultitouchTapEvent,
   DropEvent,
@@ -90,7 +91,7 @@ export type {
 export type {
   GestureSpec,
   KeySpec, KeyHeldSpec, WheelSpec, ClickSpec, DoubleClickSpec, DragSpec,
-  PointerDownSpec,
+  PointerDownSpec, LongPressSpec,
   MultiTouchSpec, ContextMenuSpec, MultiTouchTapSpec,
   DropSpec, PasteSpec,
   ModSpec, TargetSpec, TargetPredicate, PhaseSpec,
