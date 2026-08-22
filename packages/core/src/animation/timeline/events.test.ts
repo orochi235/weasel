@@ -114,4 +114,15 @@ describe('event tracks', () => {
     h.advance(195);
     expect(fired).toEqual(['a', 'b', 'c', 'a', 'b', 'c']);
   });
+
+  it('never fires an event past the declared duration', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      tracks: [{ kind: 'event', events: [{ t: 150, fire: () => fired.push('past') }] }],
+    });
+    h.advance(200);
+    expect(fired).toEqual([]);
+  });
 });

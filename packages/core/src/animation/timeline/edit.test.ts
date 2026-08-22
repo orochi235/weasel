@@ -82,4 +82,22 @@ describe('timeline editing', () => {
     h.advance(150);
     expect(fired).toEqual(['a', 'b', 'c']);
   });
+
+  it('clamps the fired-through mark to duration so an extension still fires', () => {
+    const h = harness();
+    const fired: string[] = [];
+    const track: EventTrack = {
+      kind: 'event',
+      events: [
+        { t: 10, fire: () => fired.push('a') },
+        { t: 50, fire: () => fired.push('b') },
+      ],
+    };
+    const tl = createTimeline(h.register, 1, { tracks: [track] });
+    h.advance(60);
+    expect(fired).toEqual(['a', 'b']);
+    tl.edit(() => { track.events.push({ t: 55, fire: () => fired.push('c') }); });
+    h.advance(70);
+    expect(fired).toEqual(['a', 'b', 'c']);
+  });
 });

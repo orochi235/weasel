@@ -97,4 +97,38 @@ describe('nested timelines', () => {
     };
     expect(child.at).toBe(0);
   });
+
+  it('rebases a child event onto the parent clock', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      duration: 400,
+      tracks: [{
+        kind: 'timeline',
+        at: 100,
+        timeline: { tracks: [{ kind: 'event', events: [{ t: 50, fire: () => fired.push('x') }] }] },
+      }],
+    });
+    h.advance(60);
+    expect(fired).toEqual([]);
+    h.advance(160);
+    expect(fired).toEqual(['x']);
+  });
+
+  it('rebases a seek onto the child clock', () => {
+    const h = harness();
+    const fired: string[] = [];
+    const tl = createTimeline(h.register, 1, {
+      duration: 400,
+      tracks: [{
+        kind: 'timeline',
+        at: 100,
+        timeline: { tracks: [{ kind: 'event', events: [{ t: 250, fire: () => fired.push('x') }] }] },
+      }],
+    });
+    tl.seek(300);
+    expect(fired).toEqual([]);
+    h.advance(50);
+    expect(fired).toEqual(['x']);
+  });
 });

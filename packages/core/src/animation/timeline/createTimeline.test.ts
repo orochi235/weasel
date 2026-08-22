@@ -156,4 +156,21 @@ describe('createTimeline', () => {
     tl.resume();
     expect(h.isPaused()).toBe(false);
   });
+
+  it('terminates a zero-duration looping timeline instead of spinning', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [], loop: true });
+    expect(h.advance(0)).toBe(true);
+    expect(h.advance(100)).toBe(true);
+    expect(tl.time()).toBe(0);
+  });
+
+  it('fires onDone once across repeated ticks past duration', () => {
+    const h = harness();
+    const onDone = vi.fn();
+    createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], onDone });
+    h.advance(100);
+    h.advance(140);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
 });
