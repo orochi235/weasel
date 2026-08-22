@@ -94,18 +94,27 @@ function resolveY(b: Body, level: Level, prevBottom: number): 'floor' | 'ceiling
   const c0 = toCol(left(b));
   const c1 = toCol(right(b) - 0.001);
   let hit: 'floor' | 'ceiling' | null = null;
-  for (let cx = c0; cx <= c1; cx++) {
-    if (b.vy > 0) {
-      const cy = toRow(bottom(b) - 0.001);
+  if (b.vy > 0) {
+    // Landing requires the whole footprint to be supported, not just one
+    // corner — otherwise a body straddling a ledge never leaves the ground,
+    // and coyote time (which exists for exactly that moment) never fires.
+    const cy = toRow(bottom(b) - 0.001);
+    let supported = true;
+    for (let cx = c0; cx <= c1; cx++) {
       const t = tileAt(level, cx, cy);
-      const blocks = t === SOLID || (t === ONEWAY && prevBottom <= cy * TILE + 0.001);
-      if (blocks) {
-        b.y = cy * TILE - b.h / 2;
-        b.vy = 0;
-        hit = 'floor';
+      if (!(t === SOLID || (t === ONEWAY && prevBottom <= cy * TILE + 0.001))) {
+        supported = false;
+        break;
       }
-    } else if (b.vy < 0) {
-      const cy = toRow(top(b));
+    }
+    if (supported) {
+      b.y = cy * TILE - b.h / 2;
+      b.vy = 0;
+      hit = 'floor';
+    }
+  } else if (b.vy < 0) {
+    const cy = toRow(top(b));
+    for (let cx = c0; cx <= c1; cx++) {
       if (tileAt(level, cx, cy) === SOLID) {
         b.y = (cy + 1) * TILE + b.h / 2;
         b.vy = 0;

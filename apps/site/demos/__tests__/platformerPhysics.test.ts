@@ -1,7 +1,7 @@
 // apps/site/demos/__tests__/platformerPhysics.test.ts
 import { describe, it, expect } from 'vitest';
 import { parseLevel, TILE } from '../platformer/level';
-import { STEP, createBodyState, stepBody, type Input } from '../platformer/physics';
+import { STEP, createBodyState, spikeOverlap, stepBody, type Input } from '../platformer/physics';
 
 const FLAT = parseLevel([
   '.....',
@@ -49,5 +49,143 @@ describe('stepBody gravity and floor', () => {
     let s = createBodyState({ x: 2 * TILE, y: -400 * TILE });
     for (let i = 0; i < 600; i++) s = stepBody(s, FLAT, IDLE, STEP);
     expect(s.body.vy).toBeLessThanOrEqual(900);
+  });
+});
+
+const WALLS = parseLevel([
+  '.......',
+  '.......',
+  '..###..',
+  '.......',
+  '.#...#.',
+  '.#...#.',
+  '#######',
+]);
+
+const RIGHT: Input = { left: false, right: true, jumpHeld: false, jumpPressed: false };
+const JUMP: Input = { left: false, right: false, jumpHeld: true, jumpPressed: true };
+
+function settle(level = WALLS, at = { x: 3 * TILE, y: 3 * TILE }) {
+  let s = createBodyState(at);
+  for (let i = 0; i < 240; i++) s = stepBody(s, level, IDLE, STEP);
+  return s;
+}
+
+describe('stepBody walls', () => {
+  it('stops at a wall instead of passing through it', () => {
+    let s = settle();
+    for (let i = 0; i < 240; i++) s = stepBody(s, WALLS, RIGHT, STEP);
+    // The wall column is 5, so its left face is at 5 * TILE.
+    expect(s.body.x + s.body.w / 2).toBeCloseTo(5 * TILE, 3);
+  });
+
+  it('stops rising at a ceiling', () => {
+    let s = createBodyState({ x: 3 * TILE, y: 5 * TILE });
+    for (let i = 0; i < 240; i++) s = stepBody(s, WALLS, IDLE, STEP);
+    for (let i = 0; i < 120; i++) s = stepBody(s, WALLS, JUMP, STEP);
+    expect(s.body.y - s.body.h / 2).toBeGreaterThanOrEqual(3 * TILE - 0.01);
+  });
+});
+
+describe('one-way platforms', () => {
+  const ONEWAY_LEVEL = parseLevel([
+    '.....',
+    '.....',
+    '.....',
+    '.===.',
+    '.....',
+    '#####',
+  ]);
+
+  it('catches a body falling onto it', () => {
+    let s = createBodyState({ x: 2 * TILE, y: 0 });
+    for (let i = 0; i < 240; i++) s = stepBody(s, ONEWAY_LEVEL, IDLE, STEP);
+    expect(s.body.onGround).toBe(true);
+    expect(s.body.y + s.body.h / 2).toBeCloseTo(3 * TILE, 3);
+  });
+
+  it('lets a body jump up through it', () => {
+    // Start resting on the floor below the platform.
+    let s = createBodyState({ x: 2 * TILE, y: 4.5 * TILE });
+    for (let i = 0; i < 120; i++) s = stepBody(s, ONEWAY_LEVEL, IDLE, STEP);
+    expect(s.body.y + s.body.h / 2).toBeCloseTo(5 * TILE, 3);
+    let minTop = Infinity;
+    s = stepBody(s, ONEWAY_LEVEL, JUMP, STEP);
+    for (let i = 0; i < 60; i++) {
+      s = stepBody(s, ONEWAY_LEVEL, { ...JUMP, jumpPressed: false }, STEP);
+      minTop = Math.min(minTop, s.body.y - s.body.h / 2);
+    }
+    // It got above the platform's top rather than being stopped under it.
+    expect(minTop).toBeLessThan(3 * TILE);
+  });
+});
+
+describe('jump feel', () => {
+  it('allows a jump shortly after walking off a ledge', () => {
+    const LEDGE = parseLevel(['.....', '.....', '.....', '##...', '.....']);
+    let s = createBodyState({ x: 1.5 * TILE, y: 2 * TILE });
+    for (let i = 0; i < 120; i++) s = stepBody(s, LEDGE, IDLE, STEP);
+    expect(s.body.onGround).toBe(true);
+    // Walk off the edge; stay airborne but inside the coyote window.
+    for (let i = 0; i < 6; i++) s = stepBody(s, LEDGE, RIGHT, STEP);
+    expect(s.body.onGround).toBe(false);
+    expect(s.coyote).toBeGreaterThan(0);
+    s = stepBody(s, LEDGE, { ...RIGHT, jumpHeld: true, jumpPressed: true }, STEP);
+    expect(s.jumped).toBe(true);
+    expect(s.body.vy).toBeLessThan(0);
+  });
+
+  it('buffers a jump pressed just before landing', () => {
+    // Column 0 clears WALLS' overhang (cols 2-4 at row 2) and pillars (cols 1
+    // and 5 at rows 4-5), so this falls straight to the row-6 floor.
+    let s = createBodyState({ x: 0.5 * TILE, y: 0 });
+    // Fall until one step above the floor, pressing jump early.
+    let pressed = false;
+    let jumpedAfterLanding = false;
+    for (let i = 0; i < 240; i++) {
+      const airborneAndClose = !s.body.onGround && s.body.vy > 0 && s.body.y > 4.5 * TILE;
+      const input: Input =
+        airborneAndClose && !pressed
+          ? (pressed = true, { left: false, right: false, jumpHeld: true, jumpPressed: true })
+          : { left: false, right: false, jumpHeld: pressed, jumpPressed: false };
+      s = stepBody(s, WALLS, input, STEP);
+      if (s.jumped && pressed) jumpedAfterLanding = true;
+    }
+    expect(pressed).toBe(true);
+    expect(jumpedAfterLanding).toBe(true);
+  });
+
+  it('cuts the jump short when the button is released', () => {
+    let tall = createBodyState({ x: 3 * TILE, y: 5 * TILE });
+    for (let i = 0; i < 120; i++) tall = stepBody(tall, WALLS, IDLE, STEP);
+    const held = (() => {
+      let s = stepBody(tall, WALLS, JUMP, STEP);
+      let min = Infinity;
+      for (let i = 0; i < 90; i++) {
+        s = stepBody(s, WALLS, { ...JUMP, jumpPressed: false }, STEP);
+        min = Math.min(min, s.body.y);
+      }
+      return min;
+    })();
+    const tapped = (() => {
+      let s = stepBody(tall, WALLS, JUMP, STEP);
+      let min = Infinity;
+      for (let i = 0; i < 90; i++) {
+        s = stepBody(s, WALLS, IDLE, STEP);
+        min = Math.min(min, s.body.y);
+      }
+      return min;
+    })();
+    expect(tapped).toBeGreaterThan(held);
+  });
+});
+
+describe('spikeOverlap', () => {
+  it('detects a body standing in spikes', () => {
+    const SPIKY = parseLevel(['.....', '..^..', '#####']);
+    const on = createBodyState({ x: 2.5 * TILE, y: 1.5 * TILE });
+    const off = createBodyState({ x: 0.5 * TILE, y: 1.5 * TILE });
+    expect(spikeOverlap(on.body, SPIKY)).toBe(true);
+    expect(spikeOverlap(off.body, SPIKY)).toBe(false);
   });
 });
