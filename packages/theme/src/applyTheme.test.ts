@@ -46,4 +46,34 @@ describe('applyTheme', () => {
     expect(text).toMatch(/data-wzl-theme="?'?acme/);
     expect(text).toContain('--wzl-accent: #ff0000');
   });
+
+  it('re-emits when a theme is redefined under the same name', () => {
+    // `defineTheme` takes a caller-supplied name and enforces no uniqueness,
+    // so an edit-and-reload (HMR, a theme editor) produces a new Theme with
+    // the same name. Caching on the name alone would pin the first tokens.
+    const el = document.createElement('div');
+    const first = defineTheme({
+      name: 'app',
+      modes: { light: { 'color-accent': '#111111' } },
+    });
+    applyTheme(el, first, 'light');
+    expect(readSheetText()).toContain('#111111');
+
+    const second = defineTheme({
+      name: 'app',
+      modes: { light: { 'color-accent': '#222222' } },
+    });
+    applyTheme(el, second, 'light');
+    expect(readSheetText()).toContain('#222222');
+  });
+
+  it('emits once for a theme applied repeatedly', () => {
+    const el = document.createElement('div');
+    const theme = defineTheme({ name: 'stable', modes: { light: { 'color-accent': '#333333' } } });
+    applyTheme(el, theme, 'light');
+    applyTheme(el, theme, 'light');
+    applyTheme(el, theme, 'light');
+    const hits = readSheetText().split('#333333').length - 1;
+    expect(hits).toBe(1);
+  });
 });
