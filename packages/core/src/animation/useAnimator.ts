@@ -205,9 +205,16 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
       }
     };
 
-    type AnimationSeed = Omit<ActiveAnimation, 'paused' | 'timeScale' | 'virtualNow' | 'lastRealNow'>;
+    type AnimationSeed =
+      Omit<ActiveAnimation, 'paused' | 'timeScale' | 'virtualNow' | 'lastRealNow'>
+      & {
+        /** Registers under an existing `cancelKey` without cancelling whoever
+         *  holds it. For an animation re-registering itself — a revived
+         *  timeline — which is not a new claim on the key. */
+        keepExisting?: boolean;
+      };
     const register = (seed: AnimationSeed): AnimationHandle => {
-      if (seed.cancelKey != null) cancelByKey(seed.cancelKey);
+      if (seed.cancelKey != null && !seed.keepExisting) cancelByKey(seed.cancelKey);
       const anim = seed as ActiveAnimation;
       anim.paused = false;
       anim.timeScale = 1;

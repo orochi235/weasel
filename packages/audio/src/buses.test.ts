@@ -95,6 +95,41 @@ describe('createBusGraph', () => {
     expect(gain.holds).toEqual([{ value: 0, at: 0 }]);
   });
 
+  it('reports gain, mute and solo back', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx']);
+    const sfx = graph.bus('sfx');
+    expect([sfx.gain(), sfx.muted(), sfx.soloed(), sfx.audible()]).toEqual([1, false, false, true]);
+    sfx.setGain(0.25);
+    sfx.mute(true);
+    sfx.solo(true);
+    expect([sfx.gain(), sfx.muted(), sfx.soloed(), sfx.audible()]).toEqual([
+      0.25,
+      true,
+      true,
+      false,
+    ]);
+  });
+
+  it('reads live state through a handle held across a change', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx']);
+    const held = graph.bus('sfx');
+    graph.bus('sfx').setGain(0.5);
+    expect(held.gain()).toBe(0.5);
+  });
+
+  it("goes inaudible under another bus's solo and audible again when it clears", () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx', 'music']);
+    const sfx = graph.bus('sfx');
+    graph.bus('music').solo(true);
+    expect(sfx.audible()).toBe(false);
+    expect([sfx.muted(), sfx.soloed()]).toEqual([false, false]);
+    graph.bus('music').solo(false);
+    expect(sfx.audible()).toBe(true);
+  });
+
   it('throws for an unknown bus name', () => {
     const ctx = createFakeAudioContext();
     const graph = createBusGraph(ctx as never, ['sfx']);

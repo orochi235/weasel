@@ -1033,6 +1033,11 @@ export type {
 // into the renderer subpath.
 export { viewToMat3 } from './renderer';
 
+// The renderer's 3x3 matrix namespace — the 9-element column-major form
+// `resolveSkeleton` hands back, distinct from `@weasel-js/geom`'s 6-element
+// affine `Mat3`.
+export { mat3 } from './renderer';
+
 // MSDF font registration — consumers register (family, variant, metrics
 // JSON URL, atlas PNG URL) at startup so TextDrawCommand can resolve glyphs.
 export { registerFont, type FontVariant } from '@weasel-js/font';

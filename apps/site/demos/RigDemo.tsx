@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   blendPoses,
   easeInOutSine,
+  mat3,
   PATH_L,
   PATH_M,
   resolveSkeleton,
@@ -62,34 +63,31 @@ const POSE_B: Pose = {
   shin: { rotation: 0.6 },
 };
 
-/** A bone runs from its joint's origin along the joint's local +x. */
-function tip(m: Mat3, length: number): [number, number] {
-  return [m[0] * length + m[6], m[1] * length + m[7]];
-}
-
 function drawFigure(skeleton: Skeleton, pose: Pose, color: string, labels: boolean): DrawCommand[] {
   const world = resolveSkeleton(skeleton, pose);
   const cmds: DrawCommand[] = [];
   for (const bone of BONES) {
     const m = world.get(bone.name) as Mat3;
-    const [tx, ty] = tip(m, bone.length);
+    // A bone runs from its joint's origin along the joint's local +x.
+    const [ox, oy] = mat3.apply(m, 0, 0);
+    const [tx, ty] = mat3.apply(m, bone.length, 0);
     cmds.push({
       kind: 'path',
       path: {
         kind: 'polygon',
         commands: new Uint8Array([PATH_M, PATH_L]),
-        coords: new Float32Array([m[6], m[7], tx, ty]),
+        coords: new Float32Array([ox, oy, tx, ty]),
         fillRule: 'nonzero',
       },
       stroke: { paint: { color }, width: 5 },
     });
     cmds.push({
       kind: 'path',
-      path: { kind: 'rect', x: m[6] - 4, y: m[7] - 4, width: 8, height: 8 },
+      path: { kind: 'rect', x: ox - 4, y: oy - 4, width: 8, height: 8 },
       fill: { color: '#f0e4cc' },
     });
     if (labels) {
-      cmds.push(textCommand(m[6] + 8, m[7] - 6, bone.name, {
+      cmds.push(textCommand(ox + 8, oy - 6, bone.name, {
         fontFamily: 'sans-serif',
         fontSize: 10,
         fill: { fill: 'solid', color: '#a89878' },

@@ -96,6 +96,31 @@ describe('createAnalyserTap', () => {
     expect(source.connectedTo).toContain(b.node as never);
   });
 
+  it('writes bands into a caller-supplied array instead of allocating', () => {
+    const ctx = createFakeAudioContext();
+    ctx._analyserBytes = 255;
+    const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
+    const out = new Float32Array(4);
+    expect(tap.bands(4, out)).toBe(out);
+    for (const b of out) expect(b).toBeCloseTo(1, 6);
+    // The no-arg form still allocates.
+    expect(tap.bands(4)).not.toBe(out);
+  });
+
+  it('throws when the supplied bands array is not n long', () => {
+    const ctx = createFakeAudioContext();
+    const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
+    expect(() => tap.bands(4, new Float32Array(3))).toThrow(/length 4, got 3/);
+    expect(() => tap.bands(4, new Float32Array(5))).toThrow(/@weasel-js\/audio/);
+  });
+
+  it('returns bands narrowed to Float32Array<ArrayBuffer>', () => {
+    const ctx = createFakeAudioContext();
+    const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
+    const narrowed: Float32Array<ArrayBuffer> = tap.bands(4);
+    expect(narrowed).toHaveLength(4);
+  });
+
   it('throws for a band count below 1', () => {
     const ctx = createFakeAudioContext();
     const tap = createAnalyserTap(ctx as never, ctx.createGain() as never);
