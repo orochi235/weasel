@@ -2,6 +2,30 @@
 
 Generic 2D scene-graph canvas library. Published as `@weasel-js/core`.
 
+## Scope: weasel is an engine
+
+weasel is not a utility library, and it is not a depository for features
+surgically cut out of an app and cloned in. It is an engine. Features get added
+because the engine should have them.
+
+**Do not gate a feature on finding a consumer for it.** "Who is the second
+consumer?", "wait until a real app asks", "this doesn't earn a package yet",
+"defer until a concrete use case appears" — none of these are arguments here,
+and none of them should appear in a spec, a TODO entry, or a recommendation.
+Consumer pressure is not the input. Mike decides when a feature goes in.
+
+Nor is release overhead an argument: version churn, package count, bump
+blast radius, and maintenance surface are not reasons to scope something down.
+weasel has no SLAs.
+
+What *is* fair to argue: that a design is wrong, that a foundation is missing
+underneath it, that two things should be one thing, or that the work is bigger
+than it looks and should be split into arcs. Argue the engineering, never the
+demand.
+
+When a feature does go in, design it as engine surface — general and composable
+on its own terms — not as the minimum some demo happened to need.
+
 ## Todo list
 
 Active todos live in `docs/TODO.md`. Consult it when planning new work or picking up a task.

@@ -63,14 +63,13 @@ The demo owns its own frame loop, its own held-key set derived from `key-held`
 edges, its own collision, and its own tile map. None of that is a kit concern and
 none of it should migrate.
 
-Nothing blocks it. The kit changes it *justifies* — and which it should be run to
-decide, not designed around in advance:
+Nothing blocks it. The kit changes it will surface, which are worth seeing in
+practice before their shape is fixed:
 
 - a source rect and flip on `ImageDrawCommand`, so sprite sheets stop needing a
   custom shader;
-- a public frame tick, if the demo's hand-rolled `requestAnimationFrame` turns out
-  to be something every animated consumer rewrites;
-- a key-state hook, if deriving a held-set from `key-held` edges proves to repeat.
+- a public frame tick, which the timeline in arc 2 needs regardless;
+- a key-state poll over the `key-held` edges.
 
 **Decision:** a platformer in `apps/site/demos/` is a deliberate exception to the
 "terse and single-purpose" rule in `CLAUDE.md`. It is an exception, not a
@@ -103,12 +102,16 @@ animation-aware undo.
 A new package joining the lockstep `fixed` group, which means one bump here moves
 all fourteen.
 
-**Its spec answers one question before designing any surface: who is the second
-consumer?** Game one-shots alone do not justify a kit package — the demo can wire
-its own `AudioContext` in under a hundred lines. A second consumer would: UI
-feedback sounds in WeaselDraw, or audio-reactive rendering. If the honest answer
-is that there isn't one, the correct outcome of this arc is a demo-local
-implementation and a deferred package.
+Audio is a foundation the engine doesn't have, so the arc builds one: loading and
+decoding, one-shot playback with voice pooling, looping beds, a mix graph, and a
+clock the timeline can share. Design it as engine surface — general, composable,
+and good on its own terms — not as the minimum the game demo happens to need.
+
+The one real design constraint is the clock. Web Audio runs on its own hardware
+timeline (`AudioContext.currentTime`), which does not tick with
+`requestAnimationFrame` and cannot be paused by an animator's virtual clock.
+Scheduling has to be lookahead-based against the audio clock rather than
+frame-driven, and that shapes the bridge to arc 2 more than anything else does.
 
 ---
 
