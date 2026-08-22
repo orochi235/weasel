@@ -57,6 +57,7 @@
       "@weasel-js/history": ["./packages/history/src/index.ts"],
       "@weasel-js/modes": ["./packages/modes/src/index.ts"],
       "@weasel-js/modes/presets/default": ["./packages/modes/src/presets/default.ts"],
+      "@weasel-js/audio": ["./packages/audio/src/index.ts"],
       "@weasel-js/labkit": ["./packages/labkit/src/index.ts"],
       // The two passthrough entries don't sit where their specifier says, so
       // they need explicit mappings ahead of the wildcard.
@@ -77,6 +78,6 @@
   // core silently breaks them otherwise. The Playwright suites under
   // tests/e2e, tests/perf and tests/visual drive the app over a wire and
   // don't.
-  "include": ["apps", "tests/bench", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/labkit/src"],
+  "include": ["apps", "tests/bench", "packages/core/src", "packages/weasel-js/src", "packages/ui/src", "packages/hud/src", "packages/theme/src", "packages/svg/src", "packages/geom/src", "packages/font/src", "packages/history/src", "packages/modes/src", "packages/gestures/src", "packages/d3/src", "packages/labkit/src", "packages/audio/src"],
   "exclude": ["node_modules", "dist"]
 }

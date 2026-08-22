@@ -117,4 +117,31 @@ export default [
       ],
     },
   },
+  {
+    /**
+     * `@weasel-js/audio` depends on no weasel package at all: positional audio
+     * takes plain `{ x, y }`, which is what lets a consumer use it without the
+     * canvas. Its tsconfig extends the root, so every alias above resolves
+     * from it and an accidental import would typecheck clean — nothing but
+     * this rule catches one.
+     */
+    files: ['packages/audio/src/**/*.{ts,tsx}'],
+    languageOptions,
+    plugins,
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              // Its own name is how the workspace-resolution test imports it.
+              group: ['@weasel-js/*', '!@weasel-js/audio', ...CORE_ALIASES],
+              message:
+                '@weasel-js/audio must not depend on any weasel package.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

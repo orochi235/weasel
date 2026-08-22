@@ -16,6 +16,7 @@
       "@weasel-js/ui",
       "@weasel-js/hud",
       "@weasel-js/labkit",
+      "@weasel-js/audio",
       "weasel-js"
     ]
   ],
