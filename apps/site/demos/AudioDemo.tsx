@@ -67,18 +67,15 @@ export function AudioDemo() {
   const sourceVoice = useRef<VoiceHandle | null>(null);
 
   useEffect(() => {
-    // The demo owns the context because `register` needs one to build a buffer
-    // with, and the engine does not expose the context it made.
-    const ctx = new AudioContext();
-    const engine = createAudioEngine({ context: ctx, buses: [...BUSES], voiceLimit: 8 });
+    const engine = createAudioEngine({ buses: [...BUSES], voiceLimit: 8 });
     engine.setListener(LISTENER, SPATIAL);
     const sounds = Object.fromEntries(
       Object.entries(TONES).map(
-        ([name, spec]) => [name, engine.register(makeTone(ctx, spec))] as const,
+        ([name, spec]) => [name, engine.register(makeTone(engine.context, spec))] as const,
       ),
     );
     setKit({ engine, sounds, tap: engine.analyser() });
-    return () => { engine.dispose(); void ctx.close().catch(() => undefined); };
+    return () => { engine.dispose(); };
   }, []);
 
   useEffect(() => animator.keepAlive(), [animator]);

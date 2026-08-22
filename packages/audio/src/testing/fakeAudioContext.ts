@@ -98,9 +98,20 @@ export interface FakeSource extends FakeNode {
  *  window length so index and window-size math is observable. */
 export type FakeAnalyserBytes = number | ((index: number, length: number) => number);
 
+/** Enough of an `AudioBuffer` for the engine's source nodes and for a consumer
+ *  filling one through `engine.context`. */
+export interface FakeBuffer {
+  duration: number;
+  length: number;
+  numberOfChannels: number;
+  sampleRate: number;
+  getChannelData(channel: number): Float32Array;
+}
+
 export interface FakeAudioContext {
   state: 'suspended' | 'running' | 'closed';
   currentTime: number;
+  sampleRate: number;
   destination: FakeNode;
   resume(): Promise<void>;
   suspend(): Promise<void>;
@@ -111,6 +122,7 @@ export interface FakeAudioContext {
   createStereoPanner(): FakePanner;
   createAnalyser(): FakeAnalyser;
   createBufferSource(): FakeSource;
+  createBuffer(channels: number, length: number, sampleRate: number): FakeBuffer;
   decodeAudioData(bytes: ArrayBuffer): Promise<unknown>;
   /** Test hook: advance the audio clock, ending any source that comes due. */
   _advance(ms: number): void;
@@ -153,6 +165,7 @@ export function createFakeAudioContext(): FakeAudioContext {
   const ctx: FakeAudioContext = {
     state: 'suspended',
     currentTime: 0,
+    sampleRate: 48000,
     destination: node('destination'),
     async resume() { ctx._setState('running'); },
     async suspend() { ctx._setState('suspended'); },
@@ -198,6 +211,19 @@ export function createFakeAudioContext(): FakeAudioContext {
       });
       sources.push(s);
       return s;
+    },
+    createBuffer(channels, length, sampleRate) {
+      if (channels < 1 || length < 1) {
+        throw new Error('NotSupportedError: createBuffer needs a channel and a frame');
+      }
+      const data = Array.from({ length: channels }, () => new Float32Array(length));
+      return {
+        duration: length / sampleRate,
+        length,
+        numberOfChannels: channels,
+        sampleRate,
+        getChannelData: (channel) => data[channel],
+      };
     },
     async decodeAudioData() { return { duration: 1 }; },
     _advance(ms) {

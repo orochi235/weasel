@@ -8,6 +8,15 @@ import type { AudioEngineOptions, PlayOptions, VoiceHandle } from './types';
 import { createVoicePool, type VoicePool } from './voicePool';
 
 export interface AudioEngine {
+  /** The engine's `AudioContext` — the one passed as `options.context`, or the
+   *  one the engine created. Use it for `createBuffer`, for analysis, or for a
+   *  node graph of your own alongside the engine's.
+   *
+   *  `dispose()` closes a context the engine created, and every call on a
+   *  closed context throws; a context you passed in is left open, because it is
+   *  yours to close. The reference stays valid either way — read `state()`
+   *  rather than assuming. */
+  readonly context: AudioContext;
   state(): AudioContextState;
   unlock(): Promise<void>;
   /** Engine time in ms. */
@@ -214,6 +223,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   });
 
   const engine: AudioEngine = {
+    context: ctx,
     state: () => ctx.state,
     async unlock() {
       if (disposed) return;

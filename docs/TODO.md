@@ -599,11 +599,13 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   as local deltas, `blendPoses`, `resolveSkeleton`. Binding to scene nodes is a
   dep following the `insert` pattern. Animating a rig is a `SampledTrack<Pose>`
   whose `interpolate` is `blendPoses` — no rig-specific timeline integration.
-- **(P2) A finished timeline cannot be scrubbed back.** A non-looping timeline
-  whose playhead reaches `duration` returns `finished` from its tick, the
-  animator drops the entry, and every later `seek()` is inert with no error —
-  the handle still answers `time()` and `duration()`. Any transport UI has to
-  rebuild the timeline to recover. Surfaced writing `apps/site/demos/TimelineDemo.tsx`.
+- **(P2) `loop` cannot be changed after a timeline is created.** `loopsLeft` is
+  seeded from `opts.loop` and `TimelineHandle` has no setter, so a transport
+  with a loop toggle has to cancel and rebuild the timeline — and hold its track
+  array outside the rebuild so `edit()`-added keys survive it. That rebuild is
+  the bulk of `apps/site/demos/TimelineDemo.tsx`. A `setLoop` needs one decision
+  first: whether enabling looping on a timeline sitting at `duration` restarts
+  it, or takes effect on the next pass.
 - **(P2) `mat3` helpers are not public.** `resolveSkeleton` returns
   `Map<string, Mat3>` and `Mat3` is exported as a type, but the `mat3` value
   namespace (`multiply`, and any point transform) is not — so placing a bone tip
@@ -656,12 +658,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   spatialization as a pure `spatialize()` function, and analyser taps with
   `bands(n)` for audio-reactive rendering. Registration: `build:leaves` and the
   `fixed` group in `.changeset/config.json`.
-- **(P2) `register(buffer)` has no context to build a buffer with.** `AudioEngine`
-  never exposes the `AudioContext` it owns, so the only way to reach
-  `ctx.createBuffer` is to construct the context yourself and pass it as
-  `createAudioEngine({ context })` — which also transfers responsibility for
-  closing it. Either expose the context (read-only) or add a
-  `createBuffer(channels, frames, rate)` passthrough.
 - **(P3) `BusHandle` is write-only.** No `gain()` / `muted()` / `soloed()`
   getters, so every consumer mirrors bus state in its own store to render its
   own controls.
