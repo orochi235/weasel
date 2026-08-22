@@ -8,6 +8,9 @@ Loading and decoding with a url cache, voices with handles and `cancelKey`,
 buses with gain/mute/solo, 2D spatialization, and analyser taps including
 `bands(n)` for audio-reactive rendering. This is all new API surface.
 
-Playback is lookahead-scheduled on the engine's own timer rather than triggered
-from an animation frame, because `AudioContext.currentTime` is hardware-driven,
-cannot be paused, and `requestAnimationFrame` throttles when backgrounded.
+Playback is lookahead-scheduled on the engine's own one-shot timer rather than
+triggered from an animation frame, because `AudioContext.currentTime` is
+hardware-driven, cannot be paused, and `requestAnimationFrame` stops when
+nothing is animating. A hidden tab clamps that timer to a second or more, which
+a 100 ms lookahead cannot cover; the engine drops what came due meanwhile
+instead of firing the backlog on return.

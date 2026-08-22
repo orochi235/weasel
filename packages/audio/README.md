@@ -9,6 +9,12 @@ hardware, ticks independently of `requestAnimationFrame`, and cannot be paused
 or time-scaled. Triggering a sound *on* a frame inherits frame jitter, which is
 audible.
 
+A hidden tab is the limit of that. Browsers clamp `setTimeout` to at least a
+second there, so the pass runs far too late for a 100 ms lookahead and anything
+booked while the tab is away arrives late. The clock keeps running, so ordering
+survives; on return the engine drops what came due meanwhile rather than firing
+it all at once. Moving the tick to a Worker would fix it and is not built.
+
 ```ts
 const engine = createAudioEngine();
 const jump = await engine.load('/sfx/jump.wav');

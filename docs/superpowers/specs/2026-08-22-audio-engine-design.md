@@ -26,10 +26,20 @@ books every event due within the next window directly on the audio clock via
 which is audible; scheduling it *from* a frame, for a time slightly in the
 future, is not.
 
-The scheduler runs on its own `setInterval` (~25 ms, 100 ms lookahead) rather
-than on the animator's tick. `requestAnimationFrame` throttles to roughly 1 Hz
-in a backgrounded tab and stops entirely when nothing is animating — either
-would stall music and long cues exactly when nothing is on screen.
+The scheduler runs on its own timer (~25 ms passes, 100 ms lookahead) rather
+than on the animator's tick: `requestAnimationFrame` stops entirely when nothing
+is animating, which would stall music and long cues. The timer is one-shot and
+re-armed at the end of every pass, so a pass can never overlap itself.
+
+**A hidden tab is not covered by this.** Browsers clamp `setTimeout` and
+`setInterval` to at least 1000 ms once a tab is hidden — Chrome harder still for
+timers it judges intensive — so a 100 ms lookahead books nothing on time there
+and everything scheduled during it arrives late. What does survive is the clock:
+`currentTime` keeps running, so the queue is still ordered correctly when the tab
+comes back, and the engine drops entries that came due meanwhile rather than
+firing the backlog in one pass. Driving the pass from a `MessageChannel` or a
+dedicated Worker, which are not clamped the same way, is the fix — TODO, not
+built.
 
 ## Package
 
@@ -101,11 +111,22 @@ engine.stopAll(): void
 `ctx.currentTime * 1000`). It exists from v1 specifically so the timeline bridge
 can schedule accurately — see below.
 
-**Pooling pools the node chain, not the source.** `AudioBufferSourceNode` is
-single-use by specification: once stopped it cannot restart. The pool holds
-`GainNode` + `StereoPannerNode` pairs per voice slot and mints a fresh source per
-play, which is cheap. Pooling the source instead produces a voice pool that
-silently stops making sound after its first pass through the ring.
+**The pool is slot accounting; the nodes are per play.** `createVoicePool` owns
+no audio nodes at all — it hands out numbered slots, tracks `startedAt` and gain
+for the steal policy, and returns the token of whoever it evicted. The engine
+builds a `GainNode` + `StereoPannerNode` chain per `play()` and disconnects it in
+teardown. Holding that chain per slot instead is a real optimization and is not
+implemented: TODO.
+
+What must not be pooled is the source. `AudioBufferSourceNode` is single-use by
+specification: once stopped it cannot restart, so a pooled source produces a
+voice pool that silently stops making sound after its first pass through the
+ring. Every play mints a fresh one.
+
+A slot is taken when the voice actually starts, not when `play()` returns.
+Otherwise a voice booked a bar ahead holds one for the whole wait, and — its
+`startedAt` being in the future — is the last thing an 'oldest' policy evicts,
+so booking a bar of events evicts everything currently audible.
 
 **Voice limiting** is per-bus, with a steal policy (oldest, or quietest).
 Unlimited concurrency clips into distortion and saturates the audio thread long

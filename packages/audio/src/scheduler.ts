@@ -1,6 +1,8 @@
 export interface SchedulerOptions {
   /** Engine time in ms. Backed by `AudioContext.currentTime * 1000` in production. */
   now: () => number;
+  /** One-shot: it fires once and the pass re-arms it. `setInterval` here would
+   *  leave every previous timer running. */
   setTimer: (cb: () => void, ms: number) => unknown;
   clearTimer: (handle: unknown) => void;
   /** How far ahead to book events, in ms. Default 100. */
@@ -37,8 +39,10 @@ export interface Scheduler {
  * Lookahead scheduler. Each pass fires everything due within `lookahead` ms,
  * in time order, handing each callback its own scheduled time.
  *
- * It runs on its own timer rather than on an animation frame, which stalls
- * audio in a backgrounded tab — see the README.
+ * It runs on its own timer rather than on an animation frame, which stops
+ * entirely when nothing is animating. The timer is one-shot: the pass re-arms
+ * it at the end, so passes cannot overlap. A hidden tab clamps it to at least a
+ * second, which the lookahead cannot cover — see the README.
  */
 export function createScheduler(opts: SchedulerOptions): Scheduler {
   const lookahead = opts.lookahead ?? 100;
