@@ -140,6 +140,30 @@ describe('seam drag', () => {
   });
 });
 
+describe('seam drag teardown', () => {
+  it('pointercancel ends the drag — later moves no longer track the seam', () => {
+    const { seams, onInput, onChange } = setup();
+    fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 120, clientY: 20 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    fireEvent.pointerCancel(document, {});
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 20 });
+    expect(onInput).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('unmounting mid-drag detaches the document listeners', () => {
+    const { seams, unmount } = setup();
+    fireEvent.pointerDown(seams()[0], { clientX: 80, clientY: 20, button: 0 });
+    const remove = vi.spyOn(document, 'removeEventListener');
+    unmount();
+    const removed = remove.mock.calls.map((c) => c[0]);
+    expect(removed).toContain('pointermove');
+    expect(removed).toContain('pointerup');
+    remove.mockRestore();
+  });
+});
+
 describe('band body drag', () => {
   it('moves both seams, preserving the band span', () => {
     const { bodies, onChange } = setup();
@@ -251,6 +275,31 @@ describe('keyboard', () => {
       expect(next.map((b: Band<string>) => b.data)).toEqual(['a', 'b']);
       expect(onSelect).toHaveBeenCalledWith(1);
     }
+  });
+
+  it('leaves the merge key alone when it belongs to a control inside a band', () => {
+    const { container, onChange } = setup({
+      selectedIndex: 2,
+      renderBand: (band: Band<string>) => <input readOnly defaultValue={band.data} />,
+    });
+    const input = container.querySelector('input')!;
+    fireEvent.keyDown(input, { key: 'x' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('leaves Cmd/Ctrl+X alone so cut still reaches the platform', () => {
+    const { bodies, onChange } = setup({ selectedIndex: 2 });
+    fireEvent.keyDown(bodies()[2], { key: 'x', metaKey: true });
+    fireEvent.keyDown(bodies()[2], { key: 'x', ctrlKey: true });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('Home and End send a focused seam to its bounds', () => {
+    const { seams, onChange } = setup();
+    fireEvent.keyDown(seams()[0], { key: 'End' });
+    expect(froms(onChange.mock.calls[0][0])).toEqual([0, 60, 60]);
+    fireEvent.keyDown(seams()[1], { key: 'Home' });
+    expect(froms(onChange.mock.calls[1][0])).toEqual([0, 20, 20]);
   });
 
   it('refuses to merge the first band away', () => {

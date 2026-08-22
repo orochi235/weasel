@@ -1,5 +1,7 @@
 import {
   Fragment,
+  useEffect,
+  useId,
   useRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -62,6 +64,13 @@ function keepData<T>(_at: number, from: T): T {
   return from;
 }
 
+function isTextEntry(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
 /**
  * Divides a numeric axis into contiguous bands and lets you drag the seams
  * between them. Each band carries a payload the consumer supplies and
@@ -106,6 +115,9 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
   const splitBand = props.splitBand ?? keepData;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const endDragRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => { endDragRef.current?.(); }, []);
+  const labelId = useId();
   const bands = normalizeBands(value, min);
   const sc = resolveScale(scale, min);
   const toUnit = (v: number): number => clamp01(sc.toUnit(v, min, max));
@@ -138,13 +150,23 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
 
   const drag = (onMove: (ev: PointerEvent) => void, onEnd: () => void): void => {
     const move = (ev: PointerEvent): void => onMove(ev);
-    const up = (): void => {
+    const unlisten = (): void => {
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
+      document.removeEventListener('pointercancel', cancel);
+      endDragRef.current = null;
+    };
+    // A canceled pointer never fires `pointerup`; without this the seam keeps
+    // tracking a released pointer and the gesture never commits.
+    const cancel = (): void => unlisten();
+    const up = (): void => {
+      unlisten();
       onEnd();
     };
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
+    document.addEventListener('pointercancel', cancel);
+    endDragRef.current = cancel;
   };
 
   const onSeamPointerDown = (index: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
@@ -166,12 +188,18 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
   };
 
   const onSeamKeyDown = (index: number) => (e: ReactKeyboardEvent<HTMLDivElement>): void => {
-    let delta = 0;
-    if (e.key === 'ArrowRight') delta = e.shiftKey ? KEY_STEP * 10 : KEY_STEP;
-    else if (e.key === 'ArrowLeft') delta = e.shiftKey ? -KEY_STEP * 10 : -KEY_STEP;
-    else return;
+    const [lo, hi] = seamBounds(bands, index, min, max);
+    let target: number;
+    if (e.key === 'Home') target = lo;
+    else if (e.key === 'End') target = hi;
+    else {
+      let delta = 0;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') delta = e.shiftKey ? KEY_STEP * 10 : KEY_STEP;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') delta = e.shiftKey ? -KEY_STEP * 10 : -KEY_STEP;
+      else return;
+      target = fromUnit(toUnit(bands[index + 1].from) + delta);
+    }
     e.preventDefault();
-    const target = fromUnit(toUnit(bands[index + 1].from) + delta);
     const next = setSeam(bands, index, clampSeamTo(bands, index, target, min, max));
     if (next !== bands) onChange(next);
   };
@@ -216,6 +244,10 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (e.key !== 'x' && e.key !== 'Delete') return;
+    // `x` is a bare letter and Cmd/Ctrl+X is cut: neither may be swallowed
+    // when the keystroke belongs to something a consumer put in a band.
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (isTextEntry(e.target)) return;
     if (selectedIndex === null || selectedIndex === undefined) return;
     const next = mergeBand(bands, selectedIndex);
     if (next === bands) return;
@@ -229,9 +261,10 @@ export function BandEditor<T>(props: BandEditorProps<T>): ReactElement {
       className={[s.root, className].filter(Boolean).join(' ')}
       role="group"
       aria-label={typeof label === 'string' ? label : undefined}
+      aria-labelledby={label !== undefined && typeof label !== 'string' ? labelId : undefined}
       onKeyDown={onRootKeyDown}
     >
-      {label !== undefined && <div className={s.label}>{label}</div>}
+      {label !== undefined && <div id={labelId} className={s.label}>{label}</div>}
       <div className={s.ruler} ref={trackRef} data-band-ruler="" onPointerDown={onTrackPointerDown}>
         {ticks?.map((tick, i) => (
           <span
