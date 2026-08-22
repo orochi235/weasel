@@ -10,6 +10,7 @@
  * polyline and returns true within a configurable threshold.
  */
 
+import { pointSegmentDist2 } from '@weasel-js/geom';
 import { flattenCubic, flattenQuadratic, DEFAULT_FLATTEN_TOLERANCE } from './flatten';
 import {
   PATH_C,
@@ -259,25 +260,4 @@ function polylineWithinThreshold(
   }
   if (subOpen && checkSegments(false)) return true;
   return false;
-}
-
-/** Squared distance from (px, py) to the closest point on segment (ax,ay)→(bx,by). */
-function pointSegmentDist2(
-  px: number, py: number,
-  ax: number, ay: number,
-  bx: number, by: number,
-): number {
-  const dx = bx - ax;
-  const dy = by - ay;
-  const len2 = dx * dx + dy * dy;
-  if (len2 === 0) {
-    const ex = px - ax, ey = py - ay;
-    return ex * ex + ey * ey;
-  }
-  let t = ((px - ax) * dx + (py - ay) * dy) / len2;
-  if (t < 0) t = 0; else if (t > 1) t = 1;
-  const cx = ax + t * dx;
-  const cy = ay + t * dy;
-  const ex = px - cx, ey = py - cy;
-  return ex * ex + ey * ey;
 }
