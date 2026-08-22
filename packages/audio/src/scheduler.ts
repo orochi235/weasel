@@ -17,12 +17,19 @@ interface Entry {
 
 export interface Scheduler {
   start(): void;
+  /** Stop the timer. The queue survives; `clear()` empties it. */
   stop(): void;
   /** Book `fire` for engine time `when`. It runs on the first pass whose
    *  lookahead window reaches it, receiving `when` so it can hand the true
    *  time to `source.start()` rather than "now". */
   schedule(when: number, fire: (when: number) => void, key?: string): void;
+  /** Drop queued events with this key. A pass takes its whole batch out of the
+   *  queue before firing any of it, so a callback cannot cancel a sibling that
+   *  came due alongside it. */
   cancelKey(key: string): void;
+  /** Drop every queued event. Without this, a stop/start cycle fires
+   *  everything that came due meanwhile in one burst on the first pass. */
+  clear(): void;
   pending(): number;
 }
 
@@ -30,23 +37,23 @@ export interface Scheduler {
  * Lookahead scheduler. Each pass fires everything due within `lookahead` ms,
  * in time order, handing each callback its own scheduled time.
  *
- * It runs on its own timer rather than on an animation frame: rAF throttles to
- * roughly 1 Hz in a backgrounded tab and stops when nothing is animating, both
- * of which stall audio exactly when nothing is on screen.
+ * It runs on its own timer rather than on an animation frame, which stalls
+ * audio in a backgrounded tab — see the README.
  */
 export function createScheduler(opts: SchedulerOptions): Scheduler {
   const lookahead = opts.lookahead ?? 100;
   const interval = opts.interval ?? 25;
   let queue: Entry[] = [];
+  let running = false;
   let handle: unknown = null;
 
   const pass = (): void => {
     const horizon = opts.now() + lookahead;
-    const due = queue.filter((e) => e.when <= horizon).sort((a, b) => a.when - b.when);
-    if (due.length > 0) {
-      const dueSet = new Set(due);
-      queue = queue.filter((e) => !dueSet.has(e));
-    }
+    const due: Entry[] = [];
+    const rest: Entry[] = [];
+    for (const entry of queue) (entry.when <= horizon ? due : rest).push(entry);
+    queue = rest;
+    due.sort((a, b) => a.when - b.when);
     for (const entry of due) {
       try {
         entry.fire(entry.when);
@@ -54,18 +61,18 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
         console.error('@weasel-js/audio scheduler: callback threw', err);
       }
     }
-    if (handle !== null) handle = opts.setTimer(pass, interval);
+    if (running) handle = opts.setTimer(pass, interval);
   };
 
   return {
     start() {
-      if (handle !== null) return;
-      // Non-null before the first setTimer so `pass` knows it is running.
-      handle = true;
+      if (running) return;
+      running = true;
       handle = opts.setTimer(pass, interval);
     },
     stop() {
-      if (handle === null) return;
+      if (!running) return;
+      running = false;
       opts.clearTimer(handle);
       handle = null;
     },
@@ -74,6 +81,9 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
     },
     cancelKey(key) {
       queue = queue.filter((e) => e.key !== key);
+    },
+    clear() {
+      queue = [];
     },
     pending: () => queue.length,
   };

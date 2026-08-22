@@ -192,6 +192,32 @@ describe('createScheduler', () => {
     expect(h.scheduler.pending()).toBe(0);
   });
 
+  it('empties the queue on clear() without stopping the timer', () => {
+    const h = harness();
+    const fire = vi.fn();
+    h.scheduler.start();
+    h.scheduler.schedule(500, fire);
+    h.scheduler.clear();
+    expect(h.scheduler.pending()).toBe(0);
+    h.advanceTo(500);
+    h.tick();
+    expect(fire).not.toHaveBeenCalled();
+    expect(h.armCount()).toBe(2);
+  });
+
+  it('does not replay events missed while stopped, once cleared', () => {
+    const h = harness();
+    const fire = vi.fn();
+    h.scheduler.start();
+    h.scheduler.schedule(100, fire);
+    h.scheduler.stop();
+    h.advanceTo(5000);
+    h.scheduler.clear();
+    h.scheduler.start();
+    h.tick();
+    expect(fire).not.toHaveBeenCalled();
+  });
+
   it('keeps running when one callback throws', () => {
     const h = harness();
     const after = vi.fn();
