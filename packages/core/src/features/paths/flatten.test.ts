@@ -140,3 +140,68 @@ describe('flattenQuadraticWithArcLen', () => {
     }
   });
 });
+
+// --- degenerate inputs must terminate ---
+
+describe('flatten guards', () => {
+  const CTRL = [0, 0, 0, 100, 100, 100, 100, 0] as const;
+
+  it('flattenCubic terminates on a non-finite control point', () => {
+    const out: number[] = [];
+    expect(() => flattenCubic(0, 0, NaN, 100, 100, 100, 100, 0, DEFAULT_FLATTEN_TOLERANCE, out)).not.toThrow();
+    expect(out).toEqual([100, 0]);
+  });
+
+  it('flattenCubic terminates on an infinite control point', () => {
+    const out: number[] = [];
+    expect(() => flattenCubic(0, 0, Infinity, 100, 100, 100, 100, 0, DEFAULT_FLATTEN_TOLERANCE, out)).not.toThrow();
+    expect(out).toEqual([100, 0]);
+  });
+
+  it('flattenQuadratic terminates on a non-finite control point', () => {
+    const out: number[] = [];
+    expect(() => flattenQuadratic(0, 0, NaN, 100, 100, 0, DEFAULT_FLATTEN_TOLERANCE, out)).not.toThrow();
+    expect(out).toEqual([100, 0]);
+  });
+
+  it('flattenCubicWithArcLen terminates on a non-finite control point', () => {
+    const out: number[] = [];
+    const arc: number[] = [];
+    expect(() => flattenCubicWithArcLen(0, 0, NaN, 100, 100, 100, 100, 0, DEFAULT_FLATTEN_TOLERANCE, out, arc)).not.toThrow();
+    expect(out).toEqual([100, 0]);
+    expect(arc).toHaveLength(1);
+  });
+
+  it('flattenQuadraticWithArcLen terminates on a non-finite control point', () => {
+    const out: number[] = [];
+    const arc: number[] = [];
+    expect(() => flattenQuadraticWithArcLen(0, 0, NaN, 100, 100, 0, DEFAULT_FLATTEN_TOLERANCE, out, arc)).not.toThrow();
+    expect(out).toEqual([100, 0]);
+    expect(arc).toHaveLength(1);
+  });
+
+  it('flattenCubic terminates on a negative tolerance without exploding', () => {
+    const out: number[] = [];
+    expect(() => flattenCubic(...CTRL, -1, out)).not.toThrow();
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.length).toBeLessThan(100000);
+  });
+
+  it('flattenCubic terminates on a zero tolerance without exploding', () => {
+    const out: number[] = [];
+    expect(() => flattenCubic(...CTRL, 0, out)).not.toThrow();
+    expect(out.length).toBeLessThan(100000);
+  });
+
+  it('flattenCubic terminates on a NaN tolerance', () => {
+    const out: number[] = [];
+    expect(() => flattenCubic(...CTRL, NaN, out)).not.toThrow();
+    expect(out.length).toBeLessThan(100000);
+  });
+
+  it('flattenQuadratic terminates on a negative tolerance without exploding', () => {
+    const out: number[] = [];
+    expect(() => flattenQuadratic(0, 0, 50, 100, 100, 0, -1, out)).not.toThrow();
+    expect(out.length).toBeLessThan(100000);
+  });
+});

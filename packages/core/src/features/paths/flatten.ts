@@ -15,6 +15,26 @@
 
 export const DEFAULT_FLATTEN_TOLERANCE = 0.5;
 
+/** Floor for a non-positive or NaN tolerance. Without it the flatness test can
+ *  never be satisfied and the subdivision recurses until the stack blows. */
+const MIN_FLATTEN_TOLERANCE = 1e-6;
+
+function usableTolerance(tolerance: number): number {
+  return tolerance > 0 ? tolerance : MIN_FLATTEN_TOLERANCE;
+}
+
+function finite6(a: number, b: number, c: number, d: number, e: number, f: number): boolean {
+  return Number.isFinite(a) && Number.isFinite(b) && Number.isFinite(c)
+    && Number.isFinite(d) && Number.isFinite(e) && Number.isFinite(f);
+}
+
+function finite8(
+  a: number, b: number, c: number, d: number,
+  e: number, f: number, g: number, h: number,
+): boolean {
+  return finite6(a, b, c, d, e, f) && Number.isFinite(g) && Number.isFinite(h);
+}
+
 /** Distance from point P to line AB (perpendicular). */
 function distPointToLine(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
   const dx = bx - ax;
@@ -42,6 +62,21 @@ export function flattenCubic(
   tolerance: number,
   out: number[],
 ): void {
+  if (!finite8(x0, y0, x1, y1, x2, y2, x3, y3)) {
+    out.push(x3, y3);
+    return;
+  }
+  flattenCubicRec(x0, y0, x1, y1, x2, y2, x3, y3, usableTolerance(tolerance), out);
+}
+
+function flattenCubicRec(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  x3: number, y3: number,
+  tolerance: number,
+  out: number[],
+): void {
   const d1 = distPointToLine(x1, y1, x0, y0, x3, y3);
   const d2 = distPointToLine(x2, y2, x0, y0, x3, y3);
   if (Math.max(d1, d2) <= tolerance) {
@@ -55,12 +90,26 @@ export function flattenCubic(
   const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
   const x123 = (x12 + x23) * 0.5, y123 = (y12 + y23) * 0.5;
   const x0123 = (x012 + x123) * 0.5, y0123 = (y012 + y123) * 0.5;
-  flattenCubic(x0, y0, x01, y01, x012, y012, x0123, y0123, tolerance, out);
-  flattenCubic(x0123, y0123, x123, y123, x23, y23, x3, y3, tolerance, out);
+  flattenCubicRec(x0, y0, x01, y01, x012, y012, x0123, y0123, tolerance, out);
+  flattenCubicRec(x0123, y0123, x123, y123, x23, y23, x3, y3, tolerance, out);
 }
 
 /** Recursively subdivide a quadratic bezier (P0, P1, P2). */
 export function flattenQuadratic(
+  x0: number, y0: number,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  tolerance: number,
+  out: number[],
+): void {
+  if (!finite6(x0, y0, x1, y1, x2, y2)) {
+    out.push(x2, y2);
+    return;
+  }
+  flattenQuadraticRec(x0, y0, x1, y1, x2, y2, usableTolerance(tolerance), out);
+}
+
+function flattenQuadraticRec(
   x0: number, y0: number,
   x1: number, y1: number,
   x2: number, y2: number,
@@ -75,8 +124,8 @@ export function flattenQuadratic(
   const x01 = (x0 + x1) * 0.5, y01 = (y0 + y1) * 0.5;
   const x12 = (x1 + x2) * 0.5, y12 = (y1 + y2) * 0.5;
   const x012 = (x01 + x12) * 0.5, y012 = (y01 + y12) * 0.5;
-  flattenQuadratic(x0, y0, x01, y01, x012, y012, tolerance, out);
-  flattenQuadratic(x012, y012, x12, y12, x2, y2, tolerance, out);
+  flattenQuadraticRec(x0, y0, x01, y01, x012, y012, tolerance, out);
+  flattenQuadraticRec(x012, y012, x12, y12, x2, y2, tolerance, out);
 }
 
 /**
@@ -100,7 +149,12 @@ export function flattenCubicWithArcLen(
   out: number[],
   arcOut: number[],
 ): number {
-  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, tolerance, out, arcOut, 0);
+  if (!finite8(x0, y0, x1, y1, x2, y2, x3, y3)) {
+    out.push(x3, y3);
+    arcOut.push(0);
+    return 0;
+  }
+  return flattenCubicArcRec(x0, y0, x1, y1, x2, y2, x3, y3, usableTolerance(tolerance), out, arcOut, 0);
 }
 
 function flattenCubicArcRec(
@@ -147,7 +201,12 @@ export function flattenQuadraticWithArcLen(
   out: number[],
   arcOut: number[],
 ): number {
-  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, tolerance, out, arcOut, 0);
+  if (!finite6(x0, y0, x1, y1, x2, y2)) {
+    out.push(x2, y2);
+    arcOut.push(0);
+    return 0;
+  }
+  return flattenQuadraticArcRec(x0, y0, x1, y1, x2, y2, usableTolerance(tolerance), out, arcOut, 0);
 }
 
 function flattenQuadraticArcRec(
