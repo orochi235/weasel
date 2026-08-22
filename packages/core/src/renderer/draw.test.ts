@@ -1965,3 +1965,51 @@ describe('WeaselRenderer.render — redundant uniform uploads', () => {
     expect(countOf('uniformMatrix4fv')).toBe(first);
   });
 });
+
+describe('vertex-colored stroke under a clip', () => {
+  /** A stroke command whose per-anchor colors force the vertex-color program
+   *  (and so the branch that draws the ribbon with its own color buffer). */
+  function vColorStroke(): DrawCommand {
+    return {
+      kind: 'path',
+      path: {
+        kind: 'polygon',
+        commands: new Uint8Array([0, 1, 1]),
+        coords: new Float32Array([0, 0, 50, 0, 100, 0]),
+        fillRule: 'nonzero',
+      },
+      stroke: {
+        width: 4,
+        paint: { color: '#ffffff' },
+        vertexColors: [1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
+      },
+    } as unknown as DrawCommand;
+  }
+
+  it('applies the clip test before its draw', () => {
+    const { ctx, calls, gl } = createRecorderCtx();
+    ctx.clipDepth = 1;
+    dispatch(ctx, vColorStroke());
+
+    const testIdx = calls.findIndex(
+      (c) => c.name === 'stencilFunc'
+        && c.args[0] === gl.EQUAL && c.args[1] === 0x02 && c.args[2] === 0x02,
+    );
+    const drawIdx = calls.findIndex((c) => c.name === 'drawElements');
+    expect(testIdx).toBeGreaterThanOrEqual(0);
+    expect(drawIdx).toBeGreaterThan(testIdx);
+  });
+
+  it('turns the stencil test off when nothing clips it', () => {
+    // Without this the ribbon inherits whatever a previous clip left behind —
+    // a popClip's EQUAL against a now-cleared bit discards the whole draw.
+    const { ctx, calls, gl } = createRecorderCtx();
+    dispatch(ctx, vColorStroke());
+    const disableIdx = calls.findIndex(
+      (c) => c.name === 'disable' && c.args[0] === gl.STENCIL_TEST,
+    );
+    const drawIdx = calls.findIndex((c) => c.name === 'drawElements');
+    expect(disableIdx).toBeGreaterThanOrEqual(0);
+    expect(drawIdx).toBeGreaterThan(disableIdx);
+  });
+});
