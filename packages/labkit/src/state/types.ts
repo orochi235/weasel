@@ -74,3 +74,20 @@ export type InstrumentSerializers = Record<
   string,
   { serialize?: (state: unknown) => unknown; deserialize?: (data: unknown) => unknown } | undefined
 >;
+
+/** A workspace as it is persisted: everything but the undo history, which is
+ *  session-only. */
+export type SerializedTrial = Omit<WorkspaceRecord, 'undoStack'>;
+
+/** Everything a lab persists, under one key, at a known version. */
+export interface LabDocument {
+  version: number;
+  workspaces: SerializedTrial[];
+  saves: SavedSnapshot[];
+  layout: Record<string, unknown>;
+  mode: LabMode;
+}
+
+/** Migrates a document one version forward. Index `i` in the chain takes a
+ *  version-`i` document to version `i + 1`. */
+export type Migration = (doc: Record<string, unknown>) => Record<string, unknown>;
