@@ -18,6 +18,7 @@ Priority tags:
 
 ### Next up
 
+- **No baseline lint** — two rules in the whole repo, and 55 disable directives naming rules that never run → [Lint](#lint)
 - **Animation timelines + hierarchical rig** — spec'd, phase 1 next → [Animation](#animation)
 - **`@weasel-js/audio`** — spec'd, phase 1 next → [Audio](#audio)
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
@@ -771,6 +772,47 @@ From the WebGL transition spec — all deferred:
 - **(P3) Gradient ramp resolution at print scale** — 1×256 LINEAR ramps verified adequate for 8-bit output (interpolation error < 1/255 per channel); revisit only if >8-bit output lands.
 
 (WebGL1 fallback explicitly rejected — WebGL2 only.)
+
+---
+
+## Lint
+
+- **(P1) There is no baseline lint. `eslint.config.js` declares exactly two
+  rules, both `no-restricted-imports`.** One guards `packages/core/src/core/**`
+  against reaching into `features/` or `interactions/`; the other keeps
+  `packages/font/src/**` from importing back into core. A third, added
+  2026-08-22, guards `packages/audio/src/**` against importing any
+  `@weasel-js/*`. Nothing else in the repo has a single rule applied to it —
+  no recommended ruleset is extended, and there is no unscoped block with a
+  `rules` key. `npx eslint packages` exits 0 because there is almost nothing
+  to violate, not because the tree is clean.
+
+  **The evidence that this costs something:** the tree carries 55
+  `eslint-disable` directives naming rules that never run — 24
+  `react-hooks/exhaustive-deps`, 14 `@typescript-eslint/no-explicit-any`, 13
+  `no-console`, plus `no-unused-vars` and `prefer-const`. The config sets
+  `reportUnusedDisableDirectives: 'off'` specifically so those don't all
+  report, and says so in a comment. Every one of them is a place someone
+  silenced a warning nobody was ever going to see. `exhaustive-deps` is the
+  one that matters: it catches real staleness bugs, and there are 24
+  suppressions of it and zero enforcement.
+
+  This also means a `// eslint-disable-next-line` written today is inert, so
+  new code can carry lint debt that looks handled. Two such directives were
+  written into `packages/core/src/animation/timeline/` on 2026-08-22 before
+  anyone noticed they do nothing.
+
+  Turning a baseline on is not a one-line change — 24 `exhaustive-deps`
+  suppressions imply real findings underneath, and `no-explicit-any` has 14.
+  Sequence it: pick the ruleset, run it to get a count, then decide per rule
+  whether to fix, downgrade to `warn`, or scope it out with a reason. The
+  `no-restricted-imports` blocks are the model for how this repo writes a
+  scoped rule with its rationale attached.
+
+  Related: the boundary guards cover 3 of 14 packages. Whether the other
+  eleven want the same treatment is a separate question from the baseline,
+  and probably answered per-package by whether it has a layering rule worth
+  enforcing.
 
 ---
 
