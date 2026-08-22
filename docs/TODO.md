@@ -303,6 +303,37 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Paths & booleans
 
+- **(P2) `pathHitTest`'s rect/polygon kernel throws on curves and treats a
+  donut as solid.** `extractVertices` walks only `M`/`L` and `throw`s on any
+  bezier command, and it stops at the first `Z`, so only the first subpath is
+  ever considered. `pathContainsRect` / `pathIntersectsRect` /
+  `pathContainsPolygon` / `pathIntersectsPolygon` all inherit both. The throw
+  is reachable in ordinary use: `sceneAdapter`'s `nodeBoundsPassClips` calls
+  `pathIntersectsRect` on every ancestor clip, so a container with a curved
+  `clipFromPose` crashes the hit-test walk. Separately,
+  `polygonHitTestRect.ts` always answers even-odd while documenting that it
+  matches `pointInPath`, so `pathContainsPoint` and `pathContainsRect`
+  disagree on the same `nonzero` path. Fixing this wants a decision about the
+  kernel's contract — flatten curves and honor `fillRule`, or narrow the
+  functions to polygons and make callers promote — not a patch. Found by the
+  2026-08-22 review; see `docs/reviews/2026-08-22-core-geom-dupes.md`.
+
+- **(P2) `packages/core` re-implements much of `@weasel-js/geom`, and the
+  copies have drifted.** Roughly two thirds of geom's public surface has no
+  importer in core. `forEachSegment` is written about a dozen times, two
+  copies wrong: `tessellate.ts` treats `PATH_Z` as a no-op instead of
+  returning the pen to the subpath start, and `pathDistance.ts` dispatches
+  through an `if`/`else if` chain with no `else`, so an unrecognized command
+  leaves `ci` unadvanced and every later coordinate read is misaligned.
+  `PATH_CMD_LENGTHS` has three further private copies whose `undefined`
+  lookup makes `ci += undefined` a `NaN` index — every later typed-array
+  write is then a silent no-op. Six independent `cubicEvalAt`s.
+  `poseDescriptor.ts`'s hand-rolled `boxToBox` disagrees with geom's on the
+  degenerate axis. The unification should carry `pathCrop`,
+  `flattenQuadratic` and the arc-length flatteners into geom rather than
+  leaving core a rump copy. Full inventory in
+  `docs/reviews/2026-08-22-core-geom-dupes.md`.
+
 - **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`, plan `docs/superpowers/plans/2026-07-25-svg-cascade-context.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Add when a real consumer imports an SVG that styles via `<style>`/classes; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
 ### Pathfinder follow-ups (post-v1)
@@ -637,6 +668,16 @@ From the WebGL transition spec — all deferred:
 ---
 
 ## Release-gate & build hygiene
+
+- **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
+  The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,
+  `font`, `geom`, `history`, `gestures`, `modes`, `ui` and `hud` all run under
+  the `weasel-ui` project, and `labkit` under its own. Default `npm test` does
+  reach every package, so this is a naming trap rather than a coverage hole —
+  but two separate agents in the 2026-08-22 review pass read a green
+  `test:kit` as "the kit passes", and one nearly wrote tests that would never
+  have run. Rename the project, or add a check that every package directory is
+  reachable by some project's include glob.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
 
