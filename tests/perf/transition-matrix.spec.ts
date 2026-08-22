@@ -2,10 +2,15 @@
  * What a neighbour of a different kind costs: the pairwise transition matrix.
  *
  * `frame-budget.spec.ts` prices each command kind on its own, where a frame of
- * one kind batches and holds state. Its `mixed-doc` row costs ~3.5x what
- * pricing the same element mix from those rows predicts, and the difference has
- * to be the boundaries — a document interleaves kinds and every neighbour is a
- * state change. This measures a boundary directly.
+ * one kind batches and holds state. Its `mixed-doc` row costs more than pricing
+ * the same element mix from those rows predicts, and the difference has to be
+ * the boundaries — a document interleaves kinds and every neighbour is a state
+ * change. This measures a boundary directly.
+ *
+ * That gap was 3.5x when this spec was written, and is 1.37x now that the solid
+ * batch cycles its buffers. The spec earns its keep either way: what it found
+ * was that one kind carried nearly all of it, which is what made the fix
+ * findable.
  *
  * For an ordered pair the frame alternates A and B, so it holds N/2 of each and
  * N-1 boundaries. Subtracting half of each kind's homogeneous frame leaves the

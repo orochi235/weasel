@@ -40,6 +40,7 @@ Priority tags:
 **Performance**
 - A clipped group costs ~10 us to enter, half of it the stencil → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - A solid boundary costs 2.5 us where every other kind costs under one → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- A flush spends 3.5 us outside the draw; ~1.6 of it could go → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 **Documentation**
 - Surface a changelog on the site → [Documentation](#documentation)
@@ -698,10 +699,15 @@ From the WebGL transition spec — all deferred:
   4-deep ring of growable ones for flushes past a slot, so a write lands that
   many draws behind the read that hazards it.
 
-  What is left is unattributed: ~4.4 us for a flush that issues one
-  `drawElements` and a handful of uniforms, against ~1.8 us for a warm mesh
-  draw. Worth one more pass with the same method before anyone reads it as the
-  floor.
+  What is left is not the draw. `tests/perf/flush-anatomy.spec.ts` reproduces
+  the flush's call sequence over the same ring and removes one GL call per row,
+  so adjacent rows differ by that call's cost: 3.87 us for the whole sequence
+  against 0.34 for bind-and-draw alone. Per flush — vertex `bufferSubData` 1.84
+  us, index `bufferSubData` 0.89, `u_color` + `u_alpha` 0.75,
+  `bindVertexArray(null)` 0.19, `useProgram` 0.03, the stencil disable below
+  resolution. So about 1.6 us of the 3.87 is removable in principle, and the
+  vertex upload — the one thing a flush exists to do — is the largest single
+  item. See the flush-slimming entry below for what it would take.
 
 - **(P2) A boundary between two command kinds costs 0.3–2.5 us, and solid is
   the expensive one.** `tests/perf/transition-matrix.spec.ts` prices each
@@ -718,8 +724,41 @@ From the WebGL transition spec — all deferred:
   made a mixed document cost several times the sum of its parts. It is still
   the highest of the nine, and still one flush: 512 rects each broken out of
   the run are 2.5 ms a frame against 0.06 for 512 unbroken ones, where the same
-  frame was 28.3 ms. The `mixed-doc` row in `frame-budget.spec.ts` has not been
-  re-measured since; expect it to have moved with this.
+  frame was 28.3 ms.
+
+  `frame-budget.spec.ts`'s `mixed-doc` row moved with it, measured by running
+  that spec twice over the same tree with only `solidBatch.ts` swapped: 3,232
+  document elements in a 16.7 ms frame before, 8,320 after. Against the cost
+  its element mix predicts from the single-kind rows, the row was 3.41x and is
+  now 1.37x — so a document interleaving kinds is no longer several times the
+  sum of its parts. Every single-kind row is unchanged within noise; the two
+  that moved besides this one are the clipped groups, 6.4x and 3.5x.
+
+  **Text is what is left.** At 15% of the mix and 6.5 us a label it contributes
+  more of the mixed row than everything else together, which is the same
+  per-draw allocation the transition entry above names.
+
+- **(P2) A flush spends 3.5 us on calls that are not the draw, and ~1.6 of that
+  could go.** From `flush-anatomy.spec.ts`, against a 0.34 us bind-and-draw
+  floor. Two candidates, neither free:
+
+  - **The index upload, 0.89 us.** `pushRect` writes a deterministic pattern,
+    so a run of rects re-uploads bytes the slot already holds. `pushMesh`
+    rebases arbitrary mesh indices, so a static index buffer only serves the
+    rect-only case and the batch would have to track which case it is in.
+  - **`u_color` and `u_alpha`, 0.75 us.** `flushSolids` holds `u_color` at
+    white forever and re-sends it every flush. It cannot simply be hoisted:
+    `pathFillVColor` has three other callers that set both through
+    `setSolidPaintUniforms`, which is the multi-writer case that keeps them out
+    of `UploadedUniforms` today. Caching them means routing every writer
+    through it.
+
+  `bindVertexArray(null)` at 0.19 us is not worth the risk it carries:
+  `drawShader` is the one draw path that binds no VAO of its own and
+  configures attributes on whatever is current, so a flush that left a ring
+  slot bound would corrupt that slot for every later flush cycling back to it.
+
+  Worth doing only alongside the text allocation above, which is larger.
 
 - **(P3) opentype.js is typed a major version behind what it runs.**
   `packages/font` depends on `opentype.js@2.0.0`, which ships no typings, so TS
