@@ -102,12 +102,19 @@ is drawn, dragged the edited path's anchor of the same index.
 `useViewportTools` (SceneCanvas derives it all inline; only the `ViewportConfig`
 type survived, in its own module), `Canvas.previewBoundsExtra` (no call site
 exists or can exist), `marqueeDrawCommands` and `applyHitExistingGate` (their
-consumers were the deleted insert tools) along with the public
-`InsertOverlayStyle` type nothing accepts any more, and the `enableKeyboard`
-options on `useAlign` / `useDistribute` (documented, never read).
+consumers were the deleted insert tools), and the `enableKeyboard` options on
+`useAlign` / `useDistribute`.
 
-`InsertOverlayStyle` is the only removal visible on the public barrel; put it
-back if an external consumer still names it.
+Nothing on the public barrel was removed. `InsertOverlayStyle`, which
+`marqueeDrawCommands` carried, is still exported: having no in-tree consumer is
+not a reason to withdraw a published type.
+
+The `enableKeyboard` removals are the one judgement call here. Each documented
+"auto-register the default align / distribute actions, pass `false` to skip" —
+but neither hook registers anything. `useStandardActions` does, from a fixed
+descriptor list, and it cannot see these options. So the option was a promise
+made in a module structurally unable to keep it. An opt-out belongs on
+`UseStandardActionsOptions`; there is a TODO entry for it.
 
 ## Found and deliberately not fixed
 

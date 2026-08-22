@@ -24,6 +24,7 @@ affordances on a second selected path routed their drag into the path actually
 being edited.
 
 Removed as unreachable: `useViewportTools`, `Canvas.previewBoundsExtra`,
-`marqueeDrawCommands` (with the public `InsertOverlayStyle` type it carried),
-`applyHitExistingGate`, and the `enableKeyboard` options on `useAlign` /
-`useDistribute`.
+`marqueeDrawCommands`, `applyHitExistingGate`, and the `enableKeyboard` options
+on `useAlign` / `useDistribute`, which documented a registration those hooks do
+not perform — `useStandardActions` owns it. The public `InsertOverlayStyle`
+type `marqueeDrawCommands` carried is unchanged and still exported.

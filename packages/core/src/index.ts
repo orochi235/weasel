@@ -1094,6 +1094,7 @@ export type {
 } from './tools/types';
 export type { Contribution, Eligibility, EligibilityState, OverlayPosition } from './contributions';
 export { liveScope, mergeContributions, scopeBindings } from './contributions';
+export type { InsertOverlayStyle } from './tools/builtin/marquee';
 export type { InsertPoint } from './interactions/gestures/types';
 export type { AnimateToBoundsOptions } from './core/viewport/useViewAnimation';
 export type {

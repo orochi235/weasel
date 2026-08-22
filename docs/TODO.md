@@ -56,6 +56,15 @@ Priority tags:
      all — is in docs/handoffs/2026-07-28-arbitration-followups.md. Reviewed
      2026-07-28, re-verified against main 2026-07-31. -->
 
+- **(P2) No opt-out for individual standard actions.** `useStandardActions`
+  registers a fixed descriptor list, so a consumer wanting its own align or
+  distribute keybindings cannot suppress the kit's. `useAlign` /
+  `useDistribute` each carried an `enableKeyboard` option documenting exactly
+  that opt-out, but neither hook registers anything, so the option never did
+  anything; both were removed 2026-08-22. The capability is still wanted — it
+  belongs on `UseStandardActionsOptions`, which is the only place that can
+  honor it.
+
 - **(P3) A second finger still fires `pointerDown`-spec bindings.** Found while
   giving each pointer its own gesture channel (2026-08-01).
   `onPointerDown` dispatches the eager `stage: 'press'` copy
