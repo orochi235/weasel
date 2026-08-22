@@ -12,6 +12,14 @@ describe('@weasel-js/audio public surface', () => {
     expect(typeof audio.createScheduler).toBe('function');
   });
 
+  it('names the option and record types a pool consumer has to write down', () => {
+    // Types erase, so this is a compile-time assertion: the names must resolve.
+    const opts: audio.VoicePoolOptions = { limit: 2, steal: 'quietest' };
+    const record: audio.VoiceRecord = { startedAt: 0, gain: 1 };
+    const got: audio.Acquisition = audio.createVoicePool(opts).acquire(record);
+    expect(got.slot).toBe(0);
+  });
+
   it('does not export the test double', () => {
     expect('createFakeAudioContext' in audio).toBe(false);
   });

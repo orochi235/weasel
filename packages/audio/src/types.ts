@@ -1,5 +1,4 @@
 import type { Vec2 } from './spatialize';
-import type { SoundHandle } from './soundCache';
 import type { StealPolicy } from './voicePool';
 
 export interface PlayOptions {
@@ -55,5 +54,3 @@ export interface AudioEngineOptions {
   setTimer?: (cb: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
 }
-
-export type { SoundHandle, Vec2, StealPolicy };
