@@ -173,4 +173,20 @@ describe('createTimeline', () => {
     h.advance(140);
     expect(onDone).toHaveBeenCalledTimes(1);
   });
+
+  it('samples before firing, so a handler reads the current frame', () => {
+    const h = harness();
+    let current = -1;
+    const seen: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      tracks: [
+        numberTrack((v) => { current = v; }),
+        { kind: 'event', events: [{ t: 50, fire: () => seen.push(current) }] },
+      ],
+    });
+    h.advance(0);
+    h.advance(50);
+    expect(seen).toEqual([50]);
+  });
 });

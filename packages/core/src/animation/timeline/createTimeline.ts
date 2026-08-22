@@ -118,17 +118,16 @@ export function createTimeline(
         onWrap();
       }
 
-      fireEvents(opts.tracks, prevPlayhead, Math.min(playhead, duration));
-      prevPlayhead = Math.min(playhead, duration);
+      const finished = playhead >= duration;
+      playhead = Math.min(playhead, duration);
 
-      if (playhead >= duration) {
-        playhead = duration;
-        applySampled(opts.tracks, playhead);
-        if (!done) { done = true; opts.onDone?.(); }
-        return true;
-      }
+      // Sampled before fired, so a handler reads the current frame's values.
       applySampled(opts.tracks, playhead);
-      return false;
+      fireEvents(opts.tracks, prevPlayhead, playhead);
+      prevPlayhead = playhead;
+
+      if (finished && !done) { done = true; opts.onDone?.(); }
+      return finished;
     },
   });
 
