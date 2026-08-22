@@ -105,4 +105,25 @@ describe('SVG path commands', () => {
     expect(r.commands).toEqual([PATH_M, PATH_L, PATH_L]);
     expect(r.coords).toEqual([0, 0, 10, 10, 20, 0]);
   });
+
+  it('exponent notation in coordinates', () => {
+    const r = pathFromSvg('M1e2 1E2L2e2 1.5e-1');
+    expect(r.commands).toEqual([PATH_M, PATH_L]);
+    expect(r.coords.slice(0, 3)).toEqual([100, 100, 200]);
+    expect(r.coords[3]).toBeCloseTo(0.15);
+  });
+
+  it('arc flags written without separators', () => {
+    const packed = pathFromSvg('M0 0A5 5 0 0110 0');
+    const spaced = pathFromSvg('M0 0A5 5 0 0 1 10 0');
+    expect(packed.commands).toEqual(spaced.commands);
+    expect(packed.coords).toEqual(spaced.coords);
+    expect(packed.commands.length).toBeGreaterThan(1);
+  });
+
+  it('arc flags run together with the following coordinate', () => {
+    const packed = pathFromSvg('M0 0a25 25 -30 0130 -10');
+    const spaced = pathFromSvg('M0 0a25 25 -30 0 1 30 -10');
+    expect(packed.coords).toEqual(spaced.coords);
+  });
 });
