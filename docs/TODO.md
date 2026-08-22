@@ -606,11 +606,6 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
   the bulk of `apps/site/demos/TimelineDemo.tsx`. A `setLoop` needs one decision
   first: whether enabling looping on a timeline sitting at `duration` restarts
   it, or takes effect on the next pass.
-- **(P2) `mat3` helpers are not public.** `resolveSkeleton` returns
-  `Map<string, Mat3>` and `Mat3` is exported as a type, but the `mat3` value
-  namespace (`multiply`, and any point transform) is not — so placing a bone tip
-  means indexing the `Float32Array` by hand. Either export `mat3`, or give the
-  rig a `jointPoint(world, joint, local)` helper.
 - **(P2) `<Timeline>` editor** — transport, lanes, draggable keyframes,
   per-segment easing. Goes in `@weasel-js/ui` next to `BandEditor`, `Slider` and
   `CurveEditor`; `labkit` has none of those and doesn't depend on `ui`.
@@ -658,13 +653,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   spatialization as a pure `spatialize()` function, and analyser taps with
   `bands(n)` for audio-reactive rendering. Registration: `build:leaves` and the
   `fixed` group in `.changeset/config.json`.
-- **(P3) `BusHandle` is write-only.** No `gain()` / `muted()` / `soloed()`
-  getters, so every consumer mirrors bus state in its own store to render its
-  own controls.
-- **(P3) `AnalyserTap.bands(n)` returns a widened `Float32Array`** while
-  `frequencies` / `waveform` return the narrowed `Uint8Array<ArrayBuffer>`.
-  Assigning `bands()` into a ref initialized from `new Float32Array(n)` is a
-  type error under the narrowed inference.
 - **(P2) Move the scheduler tick off the main thread.** Browsers clamp
   `setTimeout` to at least 1000 ms in a hidden tab — Chrome harder still for
   timers it judges intensive — so with a 100 ms lookahead a backgrounded tab

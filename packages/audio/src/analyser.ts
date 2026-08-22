@@ -14,8 +14,9 @@ export interface AnalyserTap {
   /** RMS amplitude over the whole time-domain window, 0..1. */
   level(): number;
   /** `n` averaged frequency bands normalized to 0..1 — the ergonomic form for
-   *  driving a shader uniform, a vertex color, or a pose. */
-  bands(n: number): Float32Array;
+   *  driving a shader uniform, a vertex color, or a pose. `out`, when given,
+   *  must be exactly `n` long. */
+  bands(n: number, out?: Float32Array<ArrayBuffer>): Float32Array<ArrayBuffer>;
   /** Detach from the tapped node. Idempotent. */
   dispose(): void;
 }
@@ -68,22 +69,29 @@ export function createAnalyserTap(
       }
       return Math.sqrt(sum / buf.length);
     },
-    bands(n) {
+    bands(n, out) {
       if (!Number.isInteger(n) || n < 1) {
         throw new Error('@weasel-js/audio: bands(n) requires a positive integer');
       }
+      // Unlike the byte readers, a short `out` here would return fewer bands
+      // than asked for with nothing to distinguish it from a correct result.
+      if (out && out.length !== n) {
+        throw new Error(
+          `@weasel-js/audio: bands(${n}, out) requires an out array of length ${n}, got ${out.length}`,
+        );
+      }
       const buf = freqBuf();
       node.getByteFrequencyData(buf);
-      const out = new Float32Array(n);
+      const target = out ?? new Float32Array(n);
       const per = buf.length / n;
       for (let b = 0; b < n; b += 1) {
         const lo = Math.floor(b * per);
         const hi = Math.max(lo + 1, Math.floor((b + 1) * per));
         let sum = 0;
         for (let i = lo; i < hi; i += 1) sum += buf[i];
-        out[b] = sum / (hi - lo) / 255;
+        target[b] = sum / (hi - lo) / 255;
       }
-      return out;
+      return target;
     },
     // `node.disconnect()` would cut the analyser's outgoing edges, and it has
     // none: the edge that keeps it alive is the source's.
