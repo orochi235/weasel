@@ -902,8 +902,22 @@ describe('event tracks', () => {
     h.advance(95);
     fired.length = 0;
     tl.seek(0);
-    h.advance(115);
+    // `advance` takes ABSOLUTE virtual time. `seek(0)` rebased offset to -95,
+    // so 190 puts the playhead at 95 — advancing to 115 would leave it at 20
+    // and only 'a' could ever fire.
+    h.advance(190);
     expect(fired).toEqual(['a', 'b', 'c']);
+  });
+
+  it('fires an event in the tail of a pass straddling the loop seam', () => {
+    const h = harness();
+    const fired: string[] = [];
+    createTimeline(h.register, 1, {
+      tracks: [eventTrack((l) => fired.push(l))], duration: 100, loop: true,
+    });
+    h.advance(50);    // fires a, b
+    h.advance(120);   // crosses c at 90, then wraps past 100
+    expect(fired).toEqual(['a', 'b', 'c', 'a']);
   });
 
   it('re-arms events on a loop wrap', () => {
@@ -956,10 +970,19 @@ Add cursor state and the firing pass. A cursor is the index of the next event no
   };
 ```
 
-Give the wrap hook a body:
+Give the wrap hook a body. It must flush the outgoing pass's tail BEFORE
+re-arming, and reset `prevPlayhead` after:
 
 ```ts
-  const onWrap = (): void => { recursor(opts.tracks, -Infinity); };
+  const onWrap = (): void => {
+    // Flush the tail first: a frame straddling the seam would otherwise drop
+    // every event between the last tick and `duration`. Then re-arm, and rebase
+    // `prevPlayhead` — leaving it at its pre-wrap value makes the crossing test
+    // `event.t > from` swallow the entire next pass.
+    fireEvents(opts.tracks, prevPlayhead, duration);
+    recursor(opts.tracks, -Infinity);
+    prevPlayhead = -Infinity;
+  };
 ```
 
 Track the previous playhead and fire in the tick. Add
@@ -987,12 +1010,12 @@ And in `seek`, re-cursor rather than fire:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/events.test.ts`
-Expected: PASS, 8 tests.
+Expected: PASS, 9 tests.
 
 - [ ] **Step 5: Run the whole timeline suite for regressions**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/`
-Expected: PASS, 33 tests.
+Expected: PASS, 34 tests.
 
 - [ ] **Step 6: Commit**
 
@@ -1162,7 +1185,7 @@ Expected: PASS, 5 tests.
 - [ ] **Step 5: Run the whole timeline suite**
 
 Run: `npx vitest run --project=kit packages/core/src/animation/timeline/`
-Expected: PASS, 38 tests.
+Expected: PASS, 39 tests.
 
 - [ ] **Step 6: Commit**
 
