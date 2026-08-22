@@ -87,6 +87,17 @@ export function parseFontStyle(style: string): { weight: number; style: OutlineF
   return { weight, style: italic ? 'italic' : 'normal' };
 }
 
+/**
+ * How many words of a `FontData.style` string are *not* weight or slant —
+ * "Condensed", "Display", "Poster". A face with none of them is the plain
+ * member of its slot, and the one to keep when two faces collide.
+ */
+function styleQualifierCount(style: string): number {
+  const words = style.toLowerCase().split(/[\s_-]+/).filter(Boolean);
+  return words.filter((w) => w !== 'italic' && w !== 'oblique'
+    && !WEIGHT_WORDS.some(([word]) => word === w)).length;
+}
+
 /** Options for `registerLocalFontOutlines`. */
 export interface LocalFontOutlinesOptions {
   /**
@@ -129,18 +140,33 @@ export async function enableLocalFontOutlines(
   const wanted = opts.families ? new Set(opts.families) : null;
   const data = await query.call(globalThis);
 
-  const families = new Set<string>();
-  let faces = 0;
+  // Several installed faces can land on one (family, weight, style) slot —
+  // "Helvetica Neue Condensed Bold" reduces to 700/normal exactly like
+  // "Helvetica Neue Bold". Registering both left whichever `queryLocalFonts`
+  // happened to return last, so a condensed face could paint at the upright
+  // face's advances. Pick the least-qualified name for each slot instead.
+  const chosen = new Map<string, { font: LocalFontData; qualifiers: number }>();
   for (const font of data) {
     if (wanted && !wanted.has(font.family)) continue;
-    const variant = parseFontStyle(font.style);
-    registerFontOutlines(font.family, variant, () => font.blob(), {
+    const { weight, style } = parseFontStyle(font.style);
+    const key = `${font.family}|${weight}|${style}`;
+    const qualifiers = styleQualifierCount(font.style);
+    const prev = chosen.get(key);
+    if (prev && prev.qualifiers <= qualifiers) continue;
+    chosen.set(key, { font, qualifiers });
+  }
+
+  const families = new Set<string>();
+  for (const { font } of chosen.values()) {
+    registerFontOutlines(font.family, parseFontStyle(font.style), () => font.blob(), {
       // The PostScript name is how a member is picked out of a `.ttc`
       // collection, which is what most macOS system families ship as.
       parser: createOpenTypeParser(font.postscriptName),
     });
     families.add(font.family);
-    faces++;
   }
-  return { families: [...families].sort((a, b) => a.localeCompare(b)), faces };
+  return {
+    families: [...families].sort((a, b) => a.localeCompare(b)),
+    faces: chosen.size,
+  };
 }

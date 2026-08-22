@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { canQueryLocalFonts, enableLocalFontOutlines, parseFontStyle } from './localFonts';
-import { listFontOutlines, _resetFontOutlinesForTests } from './outlineRegistry';
+import { glyphOutline, listFontOutlines, _resetFontOutlinesForTests } from './outlineRegistry';
 
 function fontData(family: string, style: string) {
   return {
@@ -93,6 +93,32 @@ describe('enableLocalFontOutlines', () => {
     expect(result.families).toEqual(['Impact']);
     expect(listFontOutlines().map((f) => f.family)).toEqual(['Impact']);
   });
+
+  // "Helvetica Neue Condensed Bold" reduces to the same 700/normal slot as
+  // "Helvetica Neue Bold", and only one of them can hold it. The plain face
+  // has to win from either query order, or a condensed face paints at the
+  // upright face's advances on whichever machine reports it last.
+  it.each([['qualified first', true], ['plain first', false]])(
+    'keeps the plain face when a qualified one lands on the same slot (%s)',
+    async (_label, qualifiedFirst) => {
+      const plain = fontData('Helvetica Neue', 'Bold');
+      const condensed = fontData('Helvetica Neue', 'Condensed Bold');
+      const plainBlob = vi.spyOn(plain, 'blob');
+      const condensedBlob = vi.spyOn(condensed, 'blob');
+      vi.stubGlobal('queryLocalFonts', vi.fn(async () =>
+        (qualifiedFirst ? [condensed, plain] : [plain, condensed])));
+
+      const result = await enableLocalFontOutlines();
+
+      expect(result.faces).toBe(1);
+      expect(listFontOutlines()).toEqual([
+        { family: 'Helvetica Neue', weight: 700, style: 'normal', status: 'idle' },
+      ]);
+      glyphOutline('Helvetica Neue', 700, 'normal', 65);
+      await vi.waitFor(() => expect(plainBlob).toHaveBeenCalled());
+      expect(condensedBlob).not.toHaveBeenCalled();
+    },
+  );
 
   it('propagates a denied permission and registers nothing', async () => {
     vi.stubGlobal('queryLocalFonts', vi.fn(async () => {
