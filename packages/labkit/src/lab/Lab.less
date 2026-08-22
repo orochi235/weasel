@@ -1,3 +1,19 @@
+// `height: 100%` resolves against the containing block, so the lab needs an
+// unbroken chain of sized ancestors — and a host that supplies the height but
+// not the margin reset gets a page 16px taller than the viewport, which reads
+// as a stuck canvas rather than as overflow. Scoped with `:has` so a page that
+// mounts no lab is untouched, and stopping at the lab's own parent so an
+// embedded lab cannot resize its host's layout.
+html:has(.lk-lab),
+body:has(.lk-lab) {
+  margin: 0;
+  height: 100%;
+}
+
+body:has(.lk-lab) > :has(> .lk-lab) {
+  height: 100%;
+}
+
 .lk-lab {
   height: 100%;
 }
