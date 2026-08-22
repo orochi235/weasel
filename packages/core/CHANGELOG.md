@@ -1,5 +1,152 @@
 # Changelog
 
+## 1.0.4
+
+### Patch Changes
+
+- da7c150: The solid batch stops re-sending index data a ring slot already holds, and
+  `u_color` / `u_alpha` join the per-frame uniform cache.
+
+  A run of rects has indices that are a pure function of the rect count, so a
+  slot coming round to the same count already holds the right bytes. A mesh's
+  indices are rebased onto the staged vertices and a respecified buffer keeps
+  nothing, so both mark the slot as holding no pattern and the next flush writes.
+
+  `u_color` and `u_alpha` were excluded from `UploadedUniforms` because several
+  places wrote them directly. All of those now go through `setColorUniform` /
+  `setAlphaUniform`, which makes the cache correct per program rather than
+  dependent on knowing which caller uses which — the batch holds `u_color` at
+  white forever and was re-sending it once per flush.
+
+  Measured together on an M2 Max via ANGLE (`tests/perf/clip-cost.spec.ts`): a
+  flush 5.39 -> 3.22 us, entering a clip 12.47 -> 9.53. Read the difference, not
+  the absolutes — the same spec measured a 4.35 us flush earlier on a cooler
+  machine, and only the two halves of one A/B are comparable.
+
+- f7df982: Path booleans keep holes, and Bezier flattening terminates on degenerate input
+
+  `pathToMultiPolygon` emitted every contour of a path as its own polygon.
+  `polygon-clipping` unions the polygons of a MultiPolygon, so a donut lost its
+  hole the moment it entered any boolean op — `pathUnion`, `pathIntersect`,
+  `pathSubtract`, `pathExclude`, `pathDivide` and `pathCrop` all returned a
+  filled disc. The path's `fillRule` was never read. Contours are now resolved
+  into outer + hole rings by nesting depth, honoring both `nonzero` and
+  `evenodd`, before the clipper sees them.
+
+  Results of a boolean op on a path with holes change shape, so this can move
+  pixels.
+
+  `flattenCubic`, `flattenQuadratic` and their arc-length variants recursed
+  forever on a non-finite control point and on a tolerance of `0`, `NaN`, or a
+  negative number — the flatness test can never be satisfied, so a stroke or a
+  hit-test on a path carrying a `NaN` coordinate blew the stack. Non-finite
+  input now emits the segment endpoint and stops; a non-positive tolerance is
+  floored at `1e-6`.
+
+- 85be764: Fix four renderer bugs found in a review of `packages/core/src/renderer`.
+
+  - A stroke carrying per-anchor `vertexColors` never set the stencil test
+    before its draw. Inside a clipped group it ignored the clip and wrote clip
+    bits of its own; drawn after a clipped group it was tested against a bit
+    that had just been cleared and disappeared entirely.
+  - `GroupState` was never reset between frames, so a frame that threw part-way
+    down the tree (the max-7 clip nesting error, for one) left every enclosing
+    group's transform, alpha and color matrix on the stack and shifted every
+    later frame.
+  - `dispose()` never deleted the pattern-fill program.
+  - `GLTextureCache` applied a texture's wrap mode on first upload only, so a
+    registered image used as both a clamped shader texture and a repeating
+    pattern tile got whichever mode reached it first.
+
+  Also: re-registering a custom shader program on a renderer now deletes the
+  program it replaces instead of orphaning it.
+
+- a3db906: Correctness pass over the tools, canvas, interactions and affordances layers.
+
+  Fixed, each with a test: a UI-driven ongoing action (color/opacity pickers)
+  committed a second time when `cancelAll` had already ended its handle; the
+  `align.*` and `distribute.*` descriptors reported themselves permanently
+  disabled, greying out every `<ActionBar>` entry; `reorder.backward`,
+  `align.*`, `distribute.*` and `pathfinder.*` read deps they never declared in
+  `requires`, which throws in dev builds and silently bypasses a consumer's
+  history in production; `ActionsRegistry.begin` ignored `requires` and so never
+  passed the paint actions their `applyOps`; `Canvas.hitTestExtras` handed
+  registered layers `undefined` where `draw` gets live data, making
+  `composeAffordanceLayer`'s hit-test throw; `<Canvas>` never disposed its GL
+  renderer on unmount; `useTools` returned a stale registry when a tool was
+  added after mount; an `actions` prop override deleted the default action it
+  merged onto when the prop object was rebuilt; picking and marquee selected
+  nodes on hidden layers; a throwing drop-zone `onDrop` stranded every later
+  pointer drag; `snapBackOrDelete`'s `'snap-back'` policy left the node where it
+  was dropped; a cancelled pen handle-drag left the anchor it placed; and anchor
+  affordances on a second selected path routed their drag into the path actually
+  being edited.
+
+  Removed as unreachable: `useViewportTools`, `Canvas.previewBoundsExtra`,
+  `marqueeDrawCommands`, `applyHitExistingGate`, and the `enableKeyboard` options
+  on `useAlign` / `useDistribute`, which documented a registration those hooks do
+  not perform — `useStandardActions` owns it. The public `InsertOverlayStyle`
+  type `marqueeDrawCommands` carried is unchanged and still exported.
+
+- 12303bc: The solid batch no longer rewrites one pair of GL buffers on every flush. It
+  cycles a ring of buffer sets instead — 64 slot-sized ones, plus 4 growable ones
+  for a flush too big for a slot — so a write lands that many draws behind the
+  draw that read the same buffer. On an M2 Max via ANGLE a flush goes from ~54 us
+  to ~4.4, which is the cost anything that breaks a run of solid geometry was
+  paying: entering a clip is 64.9 us -> 10.2, and a boundary between solid and any
+  other command kind is 28.4 us -> 2.5. Measured by `tests/perf/clip-cost.spec.ts`
+  and `tests/perf/transition-matrix.spec.ts`.
+
+  The driver tracks a write hazard per buffer object, so a flush that overwrote
+  its buffers from offset 0 waited on the draw still reading them. Writing
+  disjoint ranges of one buffer does not escape that — the hazard is per object,
+  not per range.
+
+  Nothing about the API or the pixels changes. Buffers are taken on first use
+  rather than at construction, so a renderer that never draws solid geometry
+  allocates none, and every set is freed in `WeaselRenderer.dispose`.
+
+- d36953e: SVG import and export lose less on the way through, and installed fonts pick
+  one face per variant slot.
+
+  Paint servers are now found wherever they are declared, not just as direct
+  children of `<defs>`, and a gradient that inherits another's stops or geometry
+  through `href` / `xlink:href` resolves instead of coming back empty.
+  Percentages are read as ratios, so `x2="100%"` no longer means 100 bounds
+  units, and `gradientTransform` warns rather than silently painting elsewhere.
+
+  Three fidelity bugs in the round trip itself. A leaf's own `transform` was
+  decomposed against bounds that had already been through the inherited matrix,
+  so a rotation inside a translated `<g>` lost its rotation and moved. Any
+  stroke carrying `stroke-opacity` re-serialized with the attribute written
+  twice, which is not well-formed XML. And the computed `viewBox` was taken from
+  unrotated, untransformed geometry, cropping rotated content out of the export.
+
+  `<text>` now follows SVG's whitespace rules, so importing a pretty-printed
+  file no longer drags the source indentation into the document text; weasel's
+  own `<text>` carries `xml:space="preserve"` to keep real line breaks. A nested
+  `<svg x= y=>` places its children at that origin.
+
+  In the shared `d=` grammar, exponent coordinates (`M1e2 1e2`) no longer read
+  the `e` as a command, and arc flags written without separators
+  (`A5 5 0 0110 0`) no longer drop the arc.
+
+  `enableLocalFontOutlines` picks the least-qualified face when several installed
+  faces reduce to one (weight, style) slot, so "Helvetica Neue Condensed Bold"
+  stops displacing "Helvetica Neue Bold" depending on query order.
+
+  **Exported SVG bytes change**: `<text>` gains `xml:space="preserve"`, a stroke
+  writes `stroke-opacity` once, and a document containing rotated or
+  group-transformed content gets a larger computed `viewBox`.
+
+- Updated dependencies [bd42540]
+- Updated dependencies [d36953e]
+  - @weasel-js/geom@1.0.4
+  - @weasel-js/history@1.0.4
+  - @weasel-js/gestures@1.0.4
+  - @weasel-js/font@1.0.4
+  - @weasel-js/modes@1.0.4
+
 ## 1.0.3
 
 ### Patch Changes

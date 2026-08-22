@@ -1,5 +1,47 @@
 # @weasel-js/labkit
 
+## 1.0.4
+
+### Patch Changes
+
+- 7bd1817: Tile workspaces with windease instead of CSS grid
+
+  `WorkspaceGrid` now renders a `windease` grid zone. The arrangement is
+  unchanged — windease's `gridStrategy` auto-balances to `ceil(sqrt(n))`
+  columns, which is what labkit's own `gridDims` computed, verified identical
+  for 1–16 tiles — but tiles are absolutely positioned at strategy-computed
+  rects rather than laid out by CSS, and `resizable` gives them draggable,
+  keyboard-operable seams.
+
+  Two breaking bits for anyone importing them: `gridDims` and its `GridDims`
+  type are gone, and `.lk-workspace-grid` no longer sets the
+  `--lk-grid-cols` / `--lk-grid-rows` custom properties.
+
+  New `WorkspaceGrid` props: `ids` (stable identity per tile — supply it
+  whenever a tile can be closed from the middle, or panes inherit each other's
+  dragged extents), `resizable`, `gap`, `padding`, and `viewport` for
+  environments where nothing measures.
+
+  `dist/styles.css` gains windease's baseline stylesheet as a layer. Consumers
+  import nothing new; the tiles depend on those rules to position at all.
+
+- a542198: Reorderable workspaces, and tile extents that survive a reload
+
+  `WorkspaceGrid` gains four props. `reorderable` (off by default) renders a
+  drag handle per tile and reports the order a drop would produce through
+  `onReorder` — the grid never reorders `children` itself, so the caller stays
+  the owner of the list. `layout` / `onLayoutChange` carry per-tile extents:
+  hand the last value back as `layout` and a dragged seam survives a reload.
+  Both key off `ids`, and neither does anything without it.
+
+  `<Lab>` wires all four. Workspace order and tile extents now persist
+  alongside workspaces, snapshots, and theme, under a new `layout` storage key.
+
+  Also new: `reorderWorkspaces(workspaces, ids)` in the workspace ops, and
+  `reorderWorkspaces` on the lab context.
+
+  - @weasel-js/theme@1.0.4
+
 ## 1.0.3
 
 ### Patch Changes
