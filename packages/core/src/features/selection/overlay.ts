@@ -110,7 +110,11 @@ export function composeSelectionPose<TPose>(
     const out: string[] = [];
     const visit = (nid: string) => {
       const kids = getChildren(nid);
-      if (kids.length === 0) { out.push(nid); return; }
+      // A childless node is a leaf only if it is not itself a container. An
+      // empty container contributes no bounds: this resolver exists to avoid
+      // a container's own stored pose, and that pose is at its most stale
+      // when there are no children left to have moved it.
+      if (kids.length === 0) { if (!isContainer(nid)) out.push(nid); return; }
       for (const k of kids) visit(k);
     };
     visit(id);
@@ -174,7 +178,8 @@ function makeContainerAwareBoundsResolver<TPose>(
     const out: string[] = [];
     const visit = (nid: string) => {
       const kids = getChildren(nid);
-      if (kids.length === 0) { out.push(nid); return; }
+      // See `composeSelectionPose.leavesOf` — an empty container is not a leaf.
+      if (kids.length === 0) { if (!isContainer(nid)) out.push(nid); return; }
       for (const k of kids) visit(k);
     };
     visit(id);
