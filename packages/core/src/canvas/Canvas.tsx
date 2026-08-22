@@ -94,7 +94,7 @@ type CanvasAdapter<TNode extends { id: string }, TPose> = MoveAdapter<TNode, TPo
 import { wrapNodeOutput } from './wrapNodeOutput';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { usePinchZoomTool } from 'tools/builtin/pinchZoom';
-import type { ViewportConfig } from './SceneCanvas/useViewportTools';
+import type { ViewportConfig } from './SceneCanvas/viewportConfig';
 import { CursorCoordsHud } from './CursorCoordsHud';
 import { PickHud } from './PickHud';
 import { ModalityHud } from './ModalityHud';
@@ -386,14 +386,6 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * drags. Returns `null` / `undefined` when no preview is in flight.
    */
   previewPoseExtra?: (id: string) => unknown;
-
-  /**
-   * Extra preview-bounds lookup checked after `previewBoundsExtra`'s `previewPose`
-   * fallback. Same shape as `previewPoseExtra` but returns AABB directly,
-   * preferred when the in-flight handle can produce bounds without going
-   * through geometry.getBounds(pose).
-   */
-  previewBoundsExtra?: (id: string) => Bounds | null;
 
   /**
    * In-flight gesture state `<Canvas>` can't see for itself. Backs the
@@ -774,7 +766,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     shaders,
     previewIdsExtra,
     previewPoseExtra,
-    previewBoundsExtra,
     gestureSource,
     viewport,
     backgroundFill,
@@ -1049,8 +1040,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // Hold the latest dispatcher-side preview extras in a ref so chromeState's
   // closure reads live values without forcing the memo to rebuild every render.
-  const previewExtraRef = useRef({ previewPoseExtra, previewBoundsExtra });
-  previewExtraRef.current = { previewPoseExtra, previewBoundsExtra };
+  const previewExtraRef = useRef({ previewPoseExtra });
+  previewExtraRef.current = { previewPoseExtra };
 
   // boundsOf: pass-through for real ids. The synthetic multi-selection id is
   // resolved by the active tool's `previewBounds` (see `useSelectTool`'s
@@ -1077,10 +1068,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
           if (p != null) return geometry.getBounds(p as TPose);
         }
         const extras = previewExtraRef.current;
-        if (extras.previewBoundsExtra) {
-          const b = extras.previewBoundsExtra(id);
-          if (b) return b;
-        }
         if (extras.previewPoseExtra) {
           const p = extras.previewPoseExtra(id);
           if (p != null) return geometry.getBounds(p as TPose);
@@ -1133,10 +1120,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (b) return b;
       const p = firstPreviewPose(tools, id);
       if (p != null) return geometry.getBounds(p as TPose);
-    }
-    if (previewBoundsExtra) {
-      const b = previewBoundsExtra(id);
-      if (b) return b;
     }
     if (previewPoseExtra) {
       const p = previewPoseExtra(id);
