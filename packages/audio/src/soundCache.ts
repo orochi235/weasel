@@ -5,6 +5,9 @@ export interface SoundCache {
   load(url: string): Promise<SoundHandle>;
   loadAll(urls: Record<string, string>): Promise<Record<string, SoundHandle>>;
   decode(bytes: ArrayBuffer): Promise<SoundHandle>;
+  /** Take ownership of a buffer the caller already has — a procedural synth,
+   *  an OfflineAudioContext render, a recording. Synchronous; nothing to decode. */
+  register(buffer: AudioBuffer): SoundHandle;
   buffer(handle: SoundHandle): AudioBuffer | null;
 }
 
@@ -58,6 +61,7 @@ export function createSoundCache(
     async decode(bytes) {
       return store(await ctx.decodeAudioData(bytes));
     },
+    register: (buffer) => store(buffer),
     buffer: (handle) => buffers.get(handle.id) ?? null,
   };
   return cache;
