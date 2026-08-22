@@ -1497,7 +1497,7 @@ export interface AudioEngineOptions {
   tickInterval?: number;
   /** Default ['sfx', 'music', 'ui']. */
   buses?: string[];
-  /** Max concurrent voices before stealing. Default 32. */
+  /** Max concurrent voices PER BUS before stealing. Default 32. */
   voiceLimit?: number;
   /** Default 'oldest'. */
   steal?: StealPolicy;
@@ -1646,6 +1646,18 @@ describe('createAudioEngine', () => {
     expect(d.isPlaying()).toBe(true);
   });
 
+  it('limits per bus, so one bus cannot starve another', async () => {
+    const { engine, tick } = engineHarness({ voiceLimit: 1 });
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    const music = engine.play(sound, { bus: 'music', loop: true });
+    tick();
+    engine.play(sound, { bus: 'sfx', loop: true });
+    engine.play(sound, { bus: 'sfx', loop: true });   // steals within sfx only
+    tick();
+    expect(music.isPlaying()).toBe(true);
+  });
+
   it('stops everything on stopAll', async () => {
     const { engine, tick } = engineHarness();
     await engine.unlock();
@@ -1694,6 +1706,8 @@ export interface AudioEngine {
 interface LiveVoice {
   id: number;
   slot: number;
+  /** Slots are per-bus, so a voice must remember which pool owns its slot. */
+  bus: string;
   key?: string;
   source: AudioBufferSourceNode | null;
   gainNode: GainNode;
@@ -1708,7 +1722,17 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
   const graph = createBusGraph(ctx, busNames);
   const sounds = createSoundCache(ctx, opts.fetchFn);
-  const pool = createVoicePool({ limit: opts.voiceLimit ?? 32, steal: opts.steal });
+  // One pool PER BUS, not one global pool: the spec's limit is per-bus, and a
+  // shared pool lets a burst of one-shots on `sfx` steal the music bed.
+  const pools = new Map<string, VoicePool>();
+  for (const name of busNames) {
+    pools.set(name, createVoicePool({ limit: opts.voiceLimit ?? 32, steal: opts.steal }));
+  }
+  const poolFor = (bus: string): VoicePool => {
+    const p = pools.get(bus);
+    if (!p) throw new Error(`@weasel-js/audio: unknown bus "${bus}"`);
+    return p;
+  };
 
   const now = (): number => ctx.currentTime * 1000;
   const scheduler = createScheduler({
@@ -1724,7 +1748,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   let spatialOpts: SpatialOptions = {};
   let nextVoiceId = 1;
   const live = new Map<number, LiveVoice>();
-  const bySlot = new Map<number, LiveVoice>();
+  // Keyed `bus:slot` — slot numbers restart at 0 in every pool, so a bare slot
+  // number collides across buses and tears down the wrong voice.
+  const bySlot = new Map<string, LiveVoice>();
+  const slotKey = (bus: string, slot: number): string => `${bus}:${slot}`;
 
   let warnedLocked = false;
   const warnLocked = (): void => {
@@ -1757,8 +1784,9 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     try { voice.source?.stop(); } catch { /* already stopped */ }
     voice.source = null;
     live.delete(voice.id);
-    if (bySlot.get(voice.slot) === voice) bySlot.delete(voice.slot);
-    if (releaseSlot) pool.release(voice.slot);
+    const key = slotKey(voice.bus, voice.slot);
+    if (bySlot.get(key) === voice) bySlot.delete(key);
+    if (releaseSlot) poolFor(voice.bus).release(voice.slot);
   };
 
   const engine: AudioEngine = {
@@ -1791,9 +1819,10 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
         ? spatialize(playOpts.position, listener, spatialOpts)
         : { gain: 1, pan: playOpts.pan ?? 0 };
 
+      const pool = poolFor(busName);
       const acquired = pool.acquire({ startedAt: when, gain: explicitGain * spatial.gain });
       if (acquired.stolen !== null) {
-        const victim = bySlot.get(acquired.stolen);
+        const victim = bySlot.get(slotKey(busName, acquired.stolen));
         if (victim) teardown(victim, false);
       }
 
@@ -1805,12 +1834,12 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       gainNode.connect(graph.node(busName));
 
       const voice: LiveVoice = {
-        id, slot: acquired.slot, key: playOpts.cancelKey,
+        id, slot: acquired.slot, bus: busName, key: playOpts.cancelKey,
         source: null, gainNode, panNode,
         baseGain: explicitGain, playing: true, cancelled: false,
       };
       live.set(id, voice);
-      bySlot.set(voice.slot, voice);
+      bySlot.set(slotKey(busName, voice.slot), voice);
 
       scheduler.schedule(when, (scheduledWhen) => {
         if (voice.cancelled) return;
@@ -1843,7 +1872,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
           } else {
             gainNode.gain.value = value;
           }
-          pool.setGain(voice.slot, value);
+          poolFor(voice.bus).setGain(voice.slot, value);
         },
         setRate(value) { if (voice.source) voice.source.playbackRate.value = value; },
         setPan(value) { panNode.pan.value = value; },
@@ -1851,7 +1880,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
           const s = spatialize(p, listener, spatialOpts);
           panNode.pan.value = s.pan;
           gainNode.gain.value = voice.baseGain * s.gain;
-          pool.setGain(voice.slot, voice.baseGain * s.gain);
+          poolFor(voice.bus).setGain(voice.slot, voice.baseGain * s.gain);
         },
         isPlaying: () => voice.playing,
       };
@@ -1889,7 +1918,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
 - [ ] **Step 5: Run test to verify it passes**
 
 Run: `npx vitest run --project=weasel-ui packages/audio/src/createAudioEngine.test.ts`
-Expected: PASS, 13 tests.
+Expected: PASS, 14 tests.
 
 - [ ] **Step 6: Commit**
 
