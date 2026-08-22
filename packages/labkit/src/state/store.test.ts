@@ -245,7 +245,8 @@ describe('persistence — debounced writes', () => {
     vi.advanceTimersByTime(400);
     const writesAfter = writeSpy.mock.calls.length;
 
-    expect(writesAfter - writesBefore).toBe(3);
+    // One flush, one write per storage key: workspaces, saves, theme, layout.
+    expect(writesAfter - writesBefore).toBe(4);
     vi.useRealTimers();
   });
 });

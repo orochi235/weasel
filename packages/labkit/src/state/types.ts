@@ -37,6 +37,9 @@ export interface LabStoreState {
   workspaces: WorkspaceRecord[];
   savedSnapshots: SavedSnapshot[];
   mode: LabMode;
+  /** Per-workspace tile extents, keyed by workspace id. Opaque here — the
+   *  shape belongs to whatever lays the workspaces out. */
+  layout: Record<string, unknown>;
 }
 
 /** Where a lab persists itself. Implementations are keyed string storage and

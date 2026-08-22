@@ -1,10 +1,10 @@
 import type { InstrumentSerializers, UndoStack, WorkspaceRecord } from './types';
 
-/** The storage key a lab writes one of its three buckets under. Namespaced by
+/** The storage key a lab writes one of its buckets under. Namespaced by
  *  `storageKey` so two labs sharing an origin do not collide. */
 export function labStorageKey(
   storageKey: string,
-  bucket: 'workspaces' | 'saves' | 'theme',
+  bucket: 'workspaces' | 'saves' | 'theme' | 'layout',
 ): string {
   return `lk:${storageKey}:${bucket}`;
 }

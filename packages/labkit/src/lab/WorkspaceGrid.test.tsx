@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { WorkspaceGrid } from './WorkspaceGrid';
 
 const VIEWPORT = { w: 800, h: 600 };
@@ -64,5 +64,51 @@ describe('WorkspaceGrid', () => {
       </WorkspaceGrid>,
     );
     expect(container.querySelectorAll('[role="separator"]').length).toBeGreaterThan(0);
+  });
+
+  test('applies a saved extent to a tile as it registers', () => {
+    const { container } = render(
+      <WorkspaceGrid
+        ids={['a', 'b']}
+        resizable
+        viewport={VIEWPORT}
+        layout={{ a: { span: { cols: 2 } } }}
+      >
+        <div>a</div>
+        <div>b</div>
+      </WorkspaceGrid>,
+    );
+    const a = container.querySelector('[data-node="a"]') as HTMLElement;
+    const b = container.querySelector('[data-node="b"]') as HTMLElement;
+    // `a` holds two columns, so it is wider than the single-column `b`.
+    expect(Number.parseFloat(a.style.width)).toBeGreaterThan(Number.parseFloat(b.style.width));
+  });
+
+  test('reports the order a drop would produce instead of applying it', () => {
+    const onReorder = vi.fn();
+    const { container } = render(
+      <WorkspaceGrid ids={['a', 'b']} reorderable onReorder={onReorder} viewport={VIEWPORT}>
+        <div>a</div>
+        <div>b</div>
+      </WorkspaceGrid>,
+    );
+    // The grid is controlled: it renders a handle per tile and commits nothing
+    // itself. Order still comes from `ids`.
+    expect(container.querySelectorAll('.lk-workspace-tile__grip')).toHaveLength(2);
+    expect(onReorder).not.toHaveBeenCalled();
+    const nodes = [...container.querySelectorAll('[data-node]')].map((el) =>
+      el.getAttribute('data-node'),
+    );
+    expect(nodes).toEqual(['a', 'b']);
+  });
+
+  test('renders no drag handles unless reorderable', () => {
+    const { container } = render(
+      <WorkspaceGrid ids={['a', 'b']} viewport={VIEWPORT}>
+        <div>a</div>
+        <div>b</div>
+      </WorkspaceGrid>,
+    );
+    expect(container.querySelectorAll('.lk-workspace-tile__grip')).toHaveLength(0);
   });
 });

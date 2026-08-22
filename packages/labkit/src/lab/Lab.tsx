@@ -12,12 +12,13 @@ import {
   addWorkspace as addWorkspaceOp,
   cloneWorkspace as cloneWorkspaceOp,
   closeWorkspace as closeWorkspaceOp,
+  reorderWorkspaces as reorderWorkspacesOp,
   resetWorkspace as resetWorkspaceOp,
 } from '../workspace/workspaceOps';
 import { LabContext, type LabContextValue } from './LabContext';
 import { LabShell } from './LabShell';
 import { useResolvedMode } from './useSystemMode';
-import { WorkspaceGrid } from './WorkspaceGrid';
+import { WorkspaceGrid, type WorkspaceLayout } from './WorkspaceGrid';
 
 /** Props for `<Lab>`. */
 export interface LabProps {
@@ -108,6 +109,7 @@ export function Lab({
   const workspaces = useStore(store, (s) => s.workspaces);
   const savedSnapshots = useStore(store, (s) => s.savedSnapshots);
   const modeValue = useStore(store, (s) => s.mode);
+  const layout = useStore(store, (s) => s.layout);
   const resolvedMode = useResolvedMode(modeValue);
 
   useEffect(() => {
@@ -139,6 +141,9 @@ export function Lab({
       closeWorkspace: (id) => {
         const next = closeWorkspaceOp(store.getState().workspaces, id);
         replaceWorkspaces(next);
+      },
+      reorderWorkspaces: (ids) => {
+        replaceWorkspaces(reorderWorkspacesOp(store.getState().workspaces, ids));
       },
       resetWorkspace: (id) => {
         const next = resetWorkspaceOp(store.getState().workspaces, id, instruments);
@@ -187,7 +192,14 @@ export function Lab({
           style={backdropStyle}
         >
           <LabShell title={title ?? 'Labkit'} mode={modeValue} header={children}>
-            <WorkspaceGrid ids={workspaces.map((w) => w.id)} resizable>
+            <WorkspaceGrid
+              ids={workspaces.map((w) => w.id)}
+              resizable
+              reorderable
+              onReorder={(ids) => contextValue.reorderWorkspaces(ids)}
+              layout={layout as WorkspaceLayout}
+              onLayoutChange={(next) => store.getState().setLayout(next)}
+            >
               {workspaces.map((w) => (
                 <Workspace key={w.id} id={w.id} />
               ))}
