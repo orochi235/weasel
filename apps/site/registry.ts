@@ -94,6 +94,7 @@ import { IngestionDemo } from './demos/IngestionDemo';
 import IngestionDemoFull from './demos/IngestionDemo.tsx?raw';
 import { ToolReflectionDemo } from './demos/ToolReflectionDemo';
 import { TimelineDemo } from './demos/TimelineDemo';
+import { RigDemo } from './demos/RigDemo';
 import ToolReflectionDemoFull from './demos/ToolReflectionDemo.tsx?raw';
 import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 
@@ -102,6 +103,7 @@ import ToolReflectionDemoCss from './demos/ToolReflectionDemo.module.css?raw';
 import SceneSceneJson from './demos/data/scene.scene.json?raw';
 import LayoutSceneJson from './demos/data/layout.scene.json?raw';
 import TimelineDemoFull from './demos/TimelineDemo.tsx?raw';
+import RigDemoFull from './demos/RigDemo.tsx?raw';
 
 /** Extra source pane entry: typically a companion file (scene JSON, fixture)
  *  that the demo loads alongside its TSX. Surfaced as a tab in the code panel. */
@@ -404,6 +406,16 @@ export const DEMOS: DemoEntry[] = [
     Component: TimelineDemo,
     full: TimelineDemoFull,
     path: 'apps/site/demos/TimelineDemo.tsx',
+  },
+  {
+    id: 'rig',
+    title: 'Rig',
+    category: 'Animation',
+    description: "A rig is a transform hierarchy and nothing more: six joints in topological order, each composed onto its already-resolved parent by `resolveSkeleton`. Both stick figures are the same skeleton. The green one is posed by `blendPoses([A, B], [1 - t, t])` called straight from the slider; the orange one is posed by a `SampledTrack<Pose>` whose `interpolate` is that identical call, looping on a timeline. Interpolating between two poses and blending two poses are the same operation, which is why the rig ships no timeline integration of its own — set the slider to the track's reported `u` while it plays and the two silhouettes coincide.",
+    hint: 'Drag the blend slider · play track to loop the same blend from a SampledTrack<Pose> · toggle joint labels.',
+    Component: RigDemo,
+    full: RigDemoFull,
+    path: 'apps/site/demos/RigDemo.tsx',
   },
 
   // ─── Viewport ─────────────────────────────────────────────────────────────
