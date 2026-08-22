@@ -1,12 +1,21 @@
 import { labStorageKey } from './helpers';
-import type { LabDocument, LabMode, Migration, StorageAdapter } from './types';
+import type {
+  LabDocument,
+  LabMode,
+  Migration,
+  SavedSnapshot,
+  SerializedTrial,
+  StorageAdapter,
+} from './types';
 
 /** Bumped whenever the persisted shape changes; every bump needs a migration. */
 export const CURRENT_DOCUMENT_VERSION = 1;
 
-/** The one key a lab persists under. */
+/** The one key a lab persists under. The `:doc` suffix keeps it out of the
+ *  legacy bucket namespace, where a lab named `a:saves` would otherwise write
+ *  its document over lab `a`'s saves bucket. */
 export function labDocumentKey(storageKey: string): string {
-  return `lk:${storageKey}`;
+  return `lk:${storageKey}:doc`;
 }
 
 /** Where a document that failed to migrate is set aside, so a bad migration
@@ -100,7 +109,9 @@ export function readLegacyDocument(
  *  read-back, not a trust of the write that produced it. On any mismatch
  *  (write failed, landed partially, or never happened) it deletes nothing,
  *  warns, and returns `false` so the legacy buckets stay as a recoverable
- *  copy. Returns `true` only once all four are gone. */
+ *  copy. Deletion itself is read back too — `StorageAdapter.delete` is
+ *  optional, so an adapter without it leaves the keys in place — and `true`
+ *  is returned only once all four are actually gone. */
 export function deleteLegacyKeys(
   storage: StorageAdapter,
   storageKey: string,
@@ -113,25 +124,53 @@ export function deleteLegacyKeys(
     );
     return false;
   }
+  let allGone = true;
   for (const bucket of LEGACY_BUCKETS) {
-    storage.delete?.(labStorageKey(storageKey, bucket));
+    const key = labStorageKey(storageKey, bucket);
+    storage.delete?.(key);
+    if (storage.read(key) !== null) allGone = false;
   }
-  return true;
+  return allGone;
+}
+
+/** Set `raw` aside under the quarantine key, reading it back to confirm it
+ *  landed. Returns `false` when it did not — a full disk is exactly when a
+ *  document goes unreadable — so the caller can leave the original alone
+ *  rather than overwrite the only copy of it. */
+export function quarantineDocument(
+  storage: StorageAdapter,
+  storageKey: string,
+  raw: string,
+): boolean {
+  storage.write(quarantineKey(storageKey), raw);
+  return storage.read(quarantineKey(storageKey)) === raw;
+}
+
+/** Fill in whatever a document is missing or holds the wrong shape of, so a
+ *  hydrated store never sees `undefined` where a section should be. Applied to
+ *  every document, migrated or already current. */
+export function normalizeDocument(
+  doc: Record<string, unknown>,
+  fallbackMode: LabMode,
+): LabDocument {
+  const mode =
+    doc.mode === 'light' || doc.mode === 'dark' || doc.mode === 'auto' ? doc.mode : fallbackMode;
+  return {
+    version: CURRENT_DOCUMENT_VERSION,
+    workspaces: Array.isArray(doc.workspaces) ? (doc.workspaces as SerializedTrial[]) : [],
+    saves: Array.isArray(doc.saves) ? (doc.saves as SavedSnapshot[]) : [],
+    layout:
+      doc.layout && typeof doc.layout === 'object' ? (doc.layout as Record<string, unknown>) : {},
+    mode,
+  };
 }
 
 /** Version 0 (four loose keys) to version 1 (one document). Normalizes the
  *  mode, including `interstellar` — the dark mode's name back when it was a
  *  theme. */
 export function migrateV0toV1(doc: Record<string, unknown>): Record<string, unknown> {
-  const raw = doc.mode === 'interstellar' ? 'dark' : doc.mode;
-  const mode = raw === 'light' || raw === 'dark' || raw === 'auto' ? raw : 'auto';
-  return {
-    version: 1,
-    workspaces: Array.isArray(doc.workspaces) ? doc.workspaces : [],
-    saves: Array.isArray(doc.saves) ? doc.saves : [],
-    layout: doc.layout && typeof doc.layout === 'object' ? doc.layout : {},
-    mode,
-  };
+  const mode = doc.mode === 'interstellar' ? 'dark' : doc.mode;
+  return { ...normalizeDocument({ ...doc, mode }, 'auto'), version: 1 };
 }
 
 /** Index `i` migrates a version-`i` document to version `i + 1`. */
