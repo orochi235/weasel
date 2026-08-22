@@ -54,6 +54,7 @@ export {
   WorkspaceIdContext,
   WorkspaceIdProvider,
 } from './state/context';
+export { CURRENT_DOCUMENT_VERSION, labDocumentKey, quarantineKey } from './state/document';
 export type {
   CreateLabStoreOptions,
   ExperimentStateHandle,
