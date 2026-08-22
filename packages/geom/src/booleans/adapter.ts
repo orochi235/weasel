@@ -128,10 +128,78 @@ export function pathToMultiPolygon(
   finalizeCurrent();
 
   if (rings.length === 0) return [];
-  // v1: emit every ring as its own polygon. `polygon-clipping`'s engine
-  // re-classifies winding internally during the op, so we don't need to
-  // pre-sort outer/hole rings.
-  return rings.map((r) => [r]);
+  return nestRings(rings, path.fillRule ?? 'nonzero');
+}
+
+/** Twice the signed area of a closed ring. Positive and negative encode the
+ *  two winding directions; the factor of two is irrelevant to both uses
+ *  (sign, and comparison against zero). */
+function doubleSignedArea(ring: Ring): number {
+  let a = 0;
+  for (let i = 0, n = ring.length - 1; i < n; i++) {
+    a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+  }
+  return a;
+}
+
+/** Even-odd ray cast of `(px, py)` against a closed ring. */
+function pointInRing(ring: Ring, px: number, py: number): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 2, n = ring.length - 1; i < n; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/**
+ * Group a path's rings into `polygon-clipping` polygons — one filled outer
+ * ring followed by the hole rings immediately inside it.
+ *
+ * Without this a path's own holes are lost: separate polygons in a
+ * MultiPolygon are unioned, so a donut arrives at the clipper as a solid disc.
+ *
+ * Containment is probed from the midpoint of each ring's first edge rather
+ * than from a vertex — a shared vertex between a hole and its container is
+ * common, and a probe point sitting exactly on the tested boundary answers
+ * arbitrarily.
+ */
+function nestRings(rings: Ring[], fillRule: 'nonzero' | 'evenodd'): MultiPolygon {
+  const n = rings.length;
+  if (n === 1) return [[rings[0]]];
+
+  const areas = rings.map(doubleSignedArea);
+  const probes = rings.map((r): Pair => [(r[0][0] + r[1][0]) / 2, (r[0][1] + r[1][1]) / 2]);
+
+  // containers[i] — indices of the rings that enclose ring i.
+  const containers: number[][] = rings.map(() => []);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i !== j && pointInRing(rings[j], probes[i][0], probes[i][1])) containers[i].push(j);
+    }
+  }
+
+  const filled = rings.map((_, i) => {
+    if (fillRule === 'evenodd') return containers[i].length % 2 === 0;
+    let winding = Math.sign(areas[i]);
+    for (const j of containers[i]) winding += Math.sign(areas[j]);
+    return winding !== 0;
+  });
+
+  const out: MultiPolygon = [];
+  for (let i = 0; i < n; i++) {
+    if (!filled[i]) continue;
+    const poly: Polygon = [rings[i]];
+    for (let k = 0; k < n; k++) {
+      if (filled[k] || containers[k].length !== containers[i].length + 1) continue;
+      if (containers[k].includes(i)) poly.push(rings[k]);
+    }
+    out.push(poly);
+  }
+  return out;
 }
 
 /** Convert a `MultiPolygon` to a polygon path with `fillRule: 'nonzero'`. */

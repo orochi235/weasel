@@ -46,3 +46,26 @@ describe('cubicBounds', () => {
     expect(approxEq(b[3], 7.5)).toBe(true); // maxY (curve apex < control hull)
   });
 });
+
+describe('flattenCubic termination', () => {
+  it('terminates on a non-finite control point', () => {
+    const out: number[] = [];
+    expect(() => flattenCubic(0, 0, NaN, 0, 1, 1, 1, 1, 0.5, out)).not.toThrow();
+    // Stops at the first level rather than subdividing to the depth cap.
+    expect(out).toEqual([1, 1]);
+  });
+
+  it('terminates on a zero or negative tolerance', () => {
+    for (const tol of [0, -1]) {
+      const out: number[] = [];
+      expect(() => flattenCubic(0, 0, 0, 100, 100, 100, 100, 0, tol, out)).not.toThrow();
+      expect(out.length).toBeLessThanOrEqual(2 * (1 << 16));
+    }
+  });
+
+  it('is unchanged for ordinary curves at the usual tolerance', () => {
+    const out: number[] = [];
+    flattenCubic(0, 0, 0, 10, 10, 10, 10, 0, 0.5, out);
+    expect(out.length).toBe(16);
+  });
+});
