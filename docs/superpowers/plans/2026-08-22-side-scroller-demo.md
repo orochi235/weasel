@@ -92,7 +92,7 @@ describe('parseLevel', () => {
     expect(level.enemies).toEqual([{ x: 3.5 * TILE, y: 1.5 * TILE }]);
   });
 
-  it('reads out of bounds as solid above the floor and empty above the ceiling', () => {
+  it('walls the sides and leaves the top and bottom open', () => {
     const level = parseLevel(ROWS);
     expect(tileAt(level, -1, 0)).toBe(SOLID);
     expect(tileAt(level, 5, 0)).toBe(SOLID);
@@ -184,12 +184,14 @@ export function parseLevel(rows: string[]): Level {
 }
 
 /**
- * Off the left, right or bottom edge reads SOLID so a body can never walk out
- * of the level; above the top reads EMPTY so a jump near the ceiling is free.
+ * The left and right edges read SOLID so a body can never walk out of the level.
+ * Above and below read EMPTY: a jump near the ceiling is free, and falling off
+ * the bottom must actually fall — a solid lower edge would catch the player on
+ * an invisible floor and the out-of-bounds death could never fire.
  */
 export function tileAt(level: Level, cx: number, cy: number): number {
-  if (cy < 0) return EMPTY;
-  if (cx < 0 || cx >= level.cols || cy >= level.rows) return SOLID;
+  if (cy < 0 || cy >= level.rows) return EMPTY;
+  if (cx < 0 || cx >= level.cols) return SOLID;
   return level.tiles[cy * level.cols + cx];
 }
 
