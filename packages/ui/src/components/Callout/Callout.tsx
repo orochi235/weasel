@@ -170,6 +170,7 @@ export function Callout(props: CalloutProps) {
         aria-label={popoverAriaLabel}
         aria-labelledby={popoverAriaLabelledby}
         className={[s.popover, toneClass[tone], className].filter(Boolean).join(' ')}
+        data-weasel-overlay=""
       >
         <OverlayArrow className={s.arrow}>
           <svg width={12} height={12} viewBox="0 0 12 12" aria-hidden="true">
