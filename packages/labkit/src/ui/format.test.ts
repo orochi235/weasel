@@ -20,6 +20,12 @@ describe('formatZoom', () => {
     expect(formatZoom(3.06)).toBe('3.1x');
   });
 
+  it('drops the decimal and groups thousands past 100x', () => {
+    expect(formatZoom(100)).toBe('100x');
+    expect(formatZoom(1009.74)).toBe('1,010x');
+    expect(formatZoom(99.9)).toBe('99.9x');
+  });
+
   it('passes non-finite zoom through rather than printing NaN%', () => {
     expect(formatZoom(Number.NaN)).toBe('NaN');
     expect(formatZoom(Number.POSITIVE_INFINITY)).toBe('Infinity');

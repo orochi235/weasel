@@ -20,9 +20,11 @@ export function parseSignedNumber(s: string): number {
 
 /** Zoom for display. Below 2x a percentage reads naturally; past it the
  *  numbers get long and a multiplier is what people say out loud, so 250%
- *  shows as `2.5x`. */
+ *  shows as `2.5x`. Past 100x a tenth is noise, so the decimal is dropped
+ *  and thousands are grouped: `1009.74` reads as `1,010x`. */
 export function formatZoom(zoom: number): string {
   if (!Number.isFinite(zoom)) return String(zoom);
   if (zoom <= 2) return `${formatNumber(Math.round(zoom * 100))}%`;
+  if (zoom >= 100) return `${Math.round(zoom).toLocaleString('en-US')}x`;
   return `${formatNumber(Math.round(zoom * 10) / 10)}x`;
 }
