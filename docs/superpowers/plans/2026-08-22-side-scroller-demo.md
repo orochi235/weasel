@@ -103,6 +103,10 @@ describe('parseLevel', () => {
   it('rejects ragged rows', () => {
     expect(() => parseLevel(['##', '#'])).toThrow(/ragged/i);
   });
+
+  it('rejects an unknown glyph instead of silently reading it as air', () => {
+    expect(() => parseLevel(['..', '.x'])).toThrow(/unknown glyph "x".*column 1.*row 1/i);
+  });
 });
 ```
 
@@ -143,36 +147,42 @@ export interface Level {
 }
 
 const GEOMETRY: Record<string, number> = { '#': SOLID, '=': ONEWAY, '^': SPIKE };
+const ENTITIES = new Set(['S', 'G', 'o', 'e']);
 
 /**
  * `#` solid, `=` one-way platform, `^` spike, `o` coin, `e` enemy, `S` spawn,
  * `G` goal, `.` air. Entity glyphs leave air behind in the tile grid.
  */
-export function parseLevel(rows: string[]): Level {
-  const cols = rows[0]?.length ?? 0;
-  if (rows.some((r) => r.length !== cols)) {
+export function parseLevel(lines: string[]): Level {
+  const cols = lines[0]?.length ?? 0;
+  if (lines.some((r) => r.length !== cols)) {
     throw new Error('parseLevel: ragged rows — every row must be the same length');
   }
   const level: Level = {
     cols,
-    rows: rows.length,
-    tiles: new Uint8Array(cols * rows.length),
+    rows: lines.length,
+    tiles: new Uint8Array(cols * lines.length),
     spawn: { x: 0, y: 0 },
     goal: { x: 0, y: 0 },
     coins: [],
     enemies: [],
     widthPx: cols * TILE,
-    heightPx: rows.length * TILE,
+    heightPx: lines.length * TILE,
   };
   const center = (cx: number, cy: number): Vec2 => ({ x: (cx + 0.5) * TILE, y: (cy + 0.5) * TILE });
 
-  rows.forEach((row, cy) => {
+  lines.forEach((row, cy) => {
     for (let cx = 0; cx < cols; cx++) {
       const ch = row[cx];
       const geom = GEOMETRY[ch];
       if (geom !== undefined) {
         level.tiles[cy * cols + cx] = geom;
         continue;
+      }
+      // A mistyped glyph would otherwise become air, and an 80-wide hand-authored
+      // level makes that typo invisible until something falls through the floor.
+      if (ch !== '.' && !ENTITIES.has(ch)) {
+        throw new Error(`parseLevel: unknown glyph "${ch}" at column ${cx}, row ${cy}`);
       }
       if (ch === 'S') level.spawn = center(cx, cy);
       else if (ch === 'G') level.goal = center(cx, cy);
@@ -203,7 +213,7 @@ export const toRow = (y: number): number => Math.floor(y / TILE);
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npm run test:kit -- platformerLevel`
-Expected: PASS, 5 tests.
+Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Commit**
 
