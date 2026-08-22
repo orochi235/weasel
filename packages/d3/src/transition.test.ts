@@ -241,6 +241,41 @@ describe('d3Bind transition — chain semantics', () => {
   });
 });
 
+describe('d3Bind transition — selection.interrupt() namespace', () => {
+  it('cancels custom tweens too, not just the pose tween', () => {
+    const { scene, animator, clock } = setupSceneAndAnimator();
+    act(() => {
+      d3Bind(scene.current, [{ id: 'a', x: 0 }] as Datum[], {
+        key: (d) => d.id,
+        animator: animator.current as Animator,
+      })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .data(() => ({ color: '#000' }))
+        .join();
+    });
+    const apply = vi.fn();
+    act(() => {
+      const sel = d3Bind(scene.current, [{ id: 'a', x: 100 }] as Datum[], {
+        key: (d) => d.id,
+        animator: animator.current as Animator,
+      })
+        .pose((d) => ({ x: d.x, y: 0, width: 10, height: 10 }))
+        .data(() => ({ color: '#fff' }))
+        .join();
+      sel.transition('move')
+        .duration(1000)
+        .ease(linear)
+        .tween({ name: 'fade', from: () => 0, to: () => 1, apply })
+        .end();
+      act(() => clock.advance(100));
+      sel.interrupt('move');
+    });
+    const callsAtInterrupt = apply.mock.calls.length;
+    act(() => clock.advance(1000));
+    expect(apply.mock.calls.length).toBe(callsAtInterrupt);
+  });
+});
+
 describe('d3Bind transition — custom .tween()', () => {
   it('runs a custom factory interpolator and routes value to apply', async () => {
     const { scene, animator, clock } = setupSceneAndAnimator();

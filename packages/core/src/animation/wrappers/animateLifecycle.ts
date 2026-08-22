@@ -28,8 +28,8 @@ export function animateLifecycle<TNode extends { id: string; pose?: TPose }, TPo
 
   return {
     ...adapter,
-    insertNode(object: TNode): void {
-      adapter.insertNode(object);
+    insertNode(object: TNode, index?: number): void {
+      adapter.insertNode(object, index);
       if (!opts.enterFrom) return;
       const final = adapter.getPose(object.id);
       const start = opts.enterFrom(final);

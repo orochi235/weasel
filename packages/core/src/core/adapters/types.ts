@@ -48,7 +48,12 @@ export interface SceneAdapter<TNode extends { id: string }, TPose> {
   // Mutators (called by op apply methods)
   setPose(id: string, pose: TPose): void;
   setParent(id: string, parentId: string | null): void;
-  insertNode(node: TNode): void;
+  /** `index` is the node's z-position among its siblings. `createDeleteOp`
+   *  captures it and `invert()` forwards it, so an implementation that drops
+   *  it makes undo of a delete restore the node at the top instead of where
+   *  it was. Treat it as required-if-you-have-order; omit only for an
+   *  unordered store. */
+  insertNode(node: TNode, index?: number): void;
   removeNode(id: string): void;
   setSelection(ids: string[]): void;
 
@@ -221,8 +226,10 @@ export interface InsertAdapter<TNode extends { id: string }> {
    *  ghost capture, ignored by other consumers. */
   snapshotSelection?(ids: string[]): ClipboardSnapshot;
   getPasteOffset?(clipboard: ClipboardSnapshot): { dx: number; dy: number };
-  /** Mutator wired by `insertNode`-using ops (kit-side InsertOp). */
-  insertNode(node: TNode): void;
+  /** Mutator wired by `insertNode`-using ops (kit-side InsertOp). `index`
+   *  carries the z-position a delete captured, so undo restores paint order;
+   *  see `SceneAdapter.insertNode`. */
+  insertNode(node: TNode, index?: number): void;
   /** Mutator wired by `setSelection` ops batched alongside paste. */
   setSelection(ids: string[]): void;
   /** Optional: see SceneAdapter.applyOps. */

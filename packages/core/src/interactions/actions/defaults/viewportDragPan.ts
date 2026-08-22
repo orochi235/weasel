@@ -26,9 +26,10 @@
  * variants can be registered as separate descriptors by consumers.
  *
  * ## Inertia
- * Not implemented — the descriptor ends cleanly at `onEnd`. The `useHandTool`
- * hook wires inertia via `useDecayLoop`; that remains available for consumers
- * who need it.
+ * Not implemented anywhere on the drag-pan path. `useHandTool` accepts an
+ * `inertia` option and calls `useVelocityTracker` / `useDecayLoop`, but its
+ * memo body ignores all three, so the option is inert — see docs/TODO.md.
+ * `useDecayLoop` itself works and is exported for consumers who wire it up.
  *
  * @see useHandTool — the React hook this descriptor parallels.
  */

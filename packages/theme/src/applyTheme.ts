@@ -2,7 +2,11 @@ import { resolveTheme } from './resolveTheme';
 import type { Theme } from './theme';
 
 const STYLE_ID = 'wzl-themes';
-const emitted = new Set<string>();
+/** `theme.name::mode` → the rule text currently published for it. Keyed by
+ *  name because that is what the rule's selector matches on, and holding the
+ *  text is what lets a redefinition under the same name replace its rule
+ *  rather than be swallowed as a cache hit. */
+const emitted = new Map<string, string>();
 let sheet: CSSStyleSheet | null = null;
 let styleEl: HTMLStyleElement | null = null;
 
@@ -21,13 +25,17 @@ function canAdopt(): boolean {
   );
 }
 
-function appendRule(css: string): void {
+/** Republish every rule from `emitted`. Rewriting the whole sheet rather than
+ *  appending keeps it the size of the theme set: a theme redefined under a
+ *  name it already used replaces its rule instead of stacking another one. */
+function flushRules(): void {
+  const css = [...emitted.values()].join('\n');
   if (canAdopt()) {
     if (!sheet) {
       sheet = new CSSStyleSheet();
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
     }
-    sheet.insertRule(css, sheet.cssRules.length);
+    sheet.replaceSync(css);
     return;
   }
   if (!styleEl) {
@@ -35,7 +43,7 @@ function appendRule(css: string): void {
     styleEl.id = STYLE_ID;
     document.head.appendChild(styleEl);
   }
-  styleEl.textContent += `${css}\n`;
+  styleEl.textContent = css;
 }
 
 /**
@@ -50,13 +58,14 @@ export function applyTheme(el: HTMLElement, theme: Theme, mode: string): void {
   if (typeof document === 'undefined') return;
 
   const key = `${theme.name}::${mode}`;
-  if (!emitted.has(key)) {
-    const resolved = resolveTheme(theme, mode);
-    const body = Object.entries(resolved)
-      .map(([name, value]) => `${name}: ${value};`)
-      .join(' ');
-    appendRule(`[data-wzl-theme='${theme.name}'][data-wzl-mode='${mode}'] { ${body} }`);
-    emitted.add(key);
+  const resolved = resolveTheme(theme, mode);
+  const body = Object.entries(resolved)
+    .map(([name, value]) => `${name}: ${value};`)
+    .join(' ');
+  const rule = `[data-wzl-theme='${theme.name}'][data-wzl-mode='${mode}'] { ${body} }`;
+  if (emitted.get(key) !== rule) {
+    emitted.set(key, rule);
+    flushRules();
   }
 
   el.setAttribute('data-wzl-theme', theme.name);

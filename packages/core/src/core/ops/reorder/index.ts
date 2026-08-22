@@ -29,21 +29,47 @@ interface RestoreEntry {
   before: string[];
 }
 
+/** @internal */
+interface ReorderArgs {
+  ids: string[];
+  direction: ReorderDirection;
+  label?: string;
+  /** Pre-mutation child order per touched parent. Filled in on first apply;
+   *  arrives populated when the op is rebuilt from a snapshot. */
+  prevOrders?: RestoreEntry[];
+}
+
 /**
  * Build an op that, on apply, partitions `ids` by their current parent,
  * runs `fn(currentChildren, idsForParent)` per parent, and writes the
  * result back via setChildOrder. Records before-state per parent so invert
  * is exact.
+ *
+ * `prevOrders` is that before-state, mirrored into the op's serialized args
+ * on first apply. A deserialized op has never run its own `apply`, so its
+ * invert has nothing to capture — reading it back from the args is what lets
+ * a reorder survive a reload, the same trick `createMoveToIndexOp` uses.
  */
 function createPartitionedReorderOp(args: {
   ids: string[];
+  direction: ReorderDirection;
   fn: ReorderFn;
   label?: string;
+  prevOrders?: RestoreEntry[];
 }): Op {
-  const { ids, fn, label } = args;
-  let restore: RestoreEntry[] | null = null;
+  const { ids, direction, fn, label, prevOrders } = args;
+  const argsForSerial: ReorderArgs = {
+    ids,
+    direction,
+    label,
+    prevOrders: prevOrders ? prevOrders.map((e) => ({ ...e, before: e.before.slice() })) : undefined,
+  };
+  let restore: RestoreEntry[] | null =
+    prevOrders ? prevOrders.map((e) => ({ ...e, before: e.before.slice() })) : null;
 
   return {
+    name: 'reorder',
+    args: argsForSerial,
     label,
     apply(adapter) {
       const a = adapter as ReorderAdapter;
@@ -67,6 +93,7 @@ function createPartitionedReorderOp(args: {
         mutated = true;
       }
       restore = snapshots;
+      argsForSerial.prevOrders = snapshots.map((e) => ({ ...e, before: e.before.slice() }));
       return mutated;
     },
     invert() {
@@ -109,15 +136,15 @@ const REORDER_DIRECTIONS: Record<ReorderDirection, { fn: ReorderFn; defaultLabel
  *   - `'front'`    — move to the top, preserving relative order
  *   - `'back'`     — move to the bottom, preserving relative order
  */
-export function createReorderOp(args: {
-  ids: string[];
-  direction: ReorderDirection;
-  label?: string;
-}): Op {
-  const { ids, direction, label } = args;
+export function createReorderOp(args: ReorderArgs): Op {
+  const { ids, direction, label, prevOrders } = args;
   const { fn, defaultLabel } = REORDER_DIRECTIONS[direction];
-  return createPartitionedReorderOp({ ids, fn, label: label ?? defaultLabel });
+  return createPartitionedReorderOp({
+    ids, direction, fn, label: label ?? defaultLabel, prevOrders,
+  });
 }
+
+registerOpFactory<ReorderArgs>('reorder', (args) => createReorderOp(args));
 
 /** @internal */
 interface MoveToIndexArgs {
