@@ -6,6 +6,7 @@ import type { SampledTrack } from './types';
 function harness() {
   let tick: ((virtualNow: number) => boolean) | null = null;
   let cancelled = false;
+  let paused = false;
   let onCancel: (() => void) | undefined;
   const register: TimelineRegister = (seed) => {
     tick = seed.tick;
@@ -13,10 +14,10 @@ function harness() {
     return {
       id: seed.id,
       cancel: () => { cancelled = true; onCancel?.(); },
-      pause: () => {},
-      resume: () => {},
+      pause: () => { paused = true; },
+      resume: () => { paused = false; },
       setTimeScale: () => {},
-      isPaused: () => false,
+      isPaused: () => paused,
     };
   };
   return {
@@ -24,6 +25,7 @@ function harness() {
     /** Advance virtual time to `t`; returns true when the timeline finished. */
     advance: (t: number) => tick!(t),
     isCancelled: () => cancelled,
+    isPaused: () => paused,
   };
 }
 
@@ -134,5 +136,24 @@ describe('createTimeline', () => {
     const tl = createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], loop: true });
     h.advance(1020);
     expect(tl.time()).toBe(20);
+  });
+
+  it('plays on its own by default', () => {
+    const h = harness();
+    createTimeline(h.register, 1, { tracks: [numberTrack(() => {})] });
+    expect(h.isPaused()).toBe(false);
+  });
+
+  it('registers paused when autoplay is false', () => {
+    const h = harness();
+    createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], autoplay: false });
+    expect(h.isPaused()).toBe(true);
+  });
+
+  it('is resumable through the returned handle', () => {
+    const h = harness();
+    const tl = createTimeline(h.register, 1, { tracks: [numberTrack(() => {})], autoplay: false });
+    tl.resume();
+    expect(h.isPaused()).toBe(false);
   });
 });

@@ -48,9 +48,9 @@ export function createTimeline(
   const loopOpt = opts.loop ?? false;
   let loopsLeft = loopOpt === true ? Infinity : loopOpt === false ? 0 : loopOpt;
 
-  // Per-sampled-track interpolator-factory caches, dropped whenever `edit`
-  // bumps the version. Without this an edited keyframe keeps interpolating
-  // toward its old value with no visible error.
+  // Per-sampled-track interpolator-factory caches, dropped wholesale by `edit`.
+  // Without this an edited keyframe keeps interpolating toward its old value
+  // with no visible error.
   let caches = new WeakMap<object, Map<number, (u: number) => unknown>>();
   const cacheFor = (track: object): Map<number, (u: number) => unknown> => {
     let c = caches.get(track);
@@ -95,6 +95,10 @@ export function createTimeline(
       return false;
     },
   });
+
+  // A paused entry's scale is zero, so `virtualNow` never advances and the
+  // playhead holds at 0 until the consumer resumes.
+  if (opts.autoplay === false) base.pause();
 
   return {
     ...base,
