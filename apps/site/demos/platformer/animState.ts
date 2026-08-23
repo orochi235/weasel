@@ -8,14 +8,12 @@ export const FADE_MS = 120;
 
 export interface AnimState {
   current: ClipName;
-  /** The clip being faded out, or null once the fade completes. */
-  previous: ClipName | null;
-  /** 0 → all previous, 1 → all current. */
+  /** The pose on screen at the moment of the last switch, frozen while it fades out. */
+  outgoing: Pose | null;
+  /** 0 → all outgoing, 1 → all current. */
   fade: number;
   /** Playhead into `current`, in milliseconds. */
   phase: number;
-  /** Playhead into `previous`, frozen at the moment of the switch. */
-  previousPhase: number;
 }
 
 export interface AnimCtx {
@@ -27,10 +25,9 @@ export interface AnimCtx {
 
 export const createAnimState = (): AnimState => ({
   current: 'idle',
-  previous: null,
+  outgoing: null,
   fade: 1,
   phase: 0,
-  previousPhase: 0,
 });
 
 function pick(ctx: AnimCtx): ClipName {
@@ -60,31 +57,35 @@ function advance(name: ClipName, prevPhase: number, ctx: AnimCtx, dt: number): n
   return name === 'run' || name === 'idle' ? next % clip.duration : Math.min(next, clip.duration);
 }
 
+/**
+ * A switch snapshots `resolvePose(s)` — the mixture actually on screen, however
+ * many prior clips contributed to it — rather than remembering a second clip
+ * identity. That is what keeps a second switch mid-fade from popping: the
+ * frozen snapshot already carries whatever the eye was seeing.
+ */
 export function nextAnimState(s: AnimState, ctx: AnimCtx, dt: number): AnimState {
   const want = pick(ctx);
   const switching = want !== s.current;
 
   const current = want;
-  const previous = switching ? s.current : s.fade < 1 ? s.previous : null;
-  const previousPhase = switching ? s.phase : s.previousPhase;
+  const outgoing = switching ? resolvePose(s) : s.fade < 1 ? s.outgoing : null;
   const phase = advance(current, switching ? 0 : s.phase, ctx, dt);
 
-  const fade = previous === null
+  const fade = outgoing === null
     ? 1
     : Math.min((switching ? 0 : s.fade) + (dt * 1000) / FADE_MS, 1);
 
   return {
     current,
-    previous: fade >= 1 ? null : previous,
+    outgoing: fade >= 1 ? null : outgoing,
     fade,
     phase,
-    previousPhase,
   };
 }
 
-/** The pose the rig is drawn at: the outgoing clip blended into the incoming one. */
+/** The pose the rig is drawn at: the outgoing snapshot blended into the current clip. */
 export function resolvePose(s: AnimState): Pose {
   const now = samplePose(CLIPS[s.current], s.phase);
-  if (s.previous === null || s.fade >= 1) return now;
-  return poseInterpolate(samplePose(CLIPS[s.previous], s.previousPhase), now, s.fade);
+  if (s.outgoing === null || s.fade >= 1) return now;
+  return poseInterpolate(s.outgoing, now, s.fade);
 }
