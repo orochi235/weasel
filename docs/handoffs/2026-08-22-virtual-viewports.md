@@ -20,15 +20,17 @@ done, plus the first step of Arc 3. Each code commit carries a `patch` changeset
 - the `CanvasHelpers` type split
 - one shared bounds cascade for chrome and helpers
 - `layerVisibility` / `layerOrder` props
+- a thunked viewport camera and per-viewport `data`
+- the `useViewHelpers` extraction
 
-**Arc 3, where to pick up.** The spec's Arc 3 section says what has landed. The wall it stopped at
-is hook identity, not tangled data: the per-view helpers are built in the component body from
-memoized inputs (`previewToolPose`, `boundsWithPreview`, `chromeState`), and N of those cannot be a
-loop in a hook body. So the next move is a structural one — the per-view half becomes its own
-component with the surface hoisted above it — and it wants a plan, not a cut. Everything cheaper
-than that is done.
+**Arc 3, where to pick up.** The spec's Arc 3 section says what has landed. The next move is the
+per-view component: something that owns a camera, calls `useViewHelpers` once, and registers a
+viewport node with the surface. Both halves it needs now exist — the hook, and a viewport node that
+accepts a live camera and its own `data`.
 
-After that: N dispatchers and N tool registries, then per-view selection and chrome.
+Then the harder half of the arc: a dispatcher and tool registry per view. That is where the
+listener-set and provider problems in the spec's "entangled parts" actually bite, and it has not
+been started.
 
 ## Blocked
 

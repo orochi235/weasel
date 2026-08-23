@@ -153,16 +153,22 @@ every point resolves to the root view — wiring it is Arc 3's first payoff, not
 **Arc 3 — per-view interaction.** Split `helpersForLayers`, then N dispatchers and N tool
 registries, then per-view selection and chrome.
 
-Started. The helpers type is split into `CanvasViewHelpers` + `CanvasSurfaceHelpers` and
-`<Canvas>` builds the halves separately. Chrome bounds and helper bounds now share one
-`boundsWithPreview`, which cuts `chromeState`'s direct dependencies to `selection`, `multiActive`,
-that one callback, `geometry` and `adapter`. Layer visibility and order are real props rather than
-hardcoded `{}` / `undefined`.
+Started, and further than expected.
 
-What remains before the per-view half can be built N times: it is still constructed in the
-component body, and its memoized inputs (`previewToolPose`, `boundsWithPreview`, `chromeState`) are
-hooks, so N of them cannot be a loop. That is the "hook identity" problem below — the per-view half
-becomes a component, or the memoization moves somewhere callable N times.
+`helpersForLayers` is split. The type is `CanvasViewHelpers` + `CanvasSurfaceHelpers`, and the
+per-view half — chrome state, bounds fallbacks, committed-pose lookup, the tool preview cascade —
+now lives in a `useViewHelpers` hook taking explicit dependencies. `<Canvas>` calls it for its own
+view. Chrome bounds and helper bounds share one `boundsWithPreview` rather than two copies of the
+same cascade. Layer visibility and order are real props.
+
+On the viewport side, a node can now host a real view: its camera accepts a thunk (read fresh in
+`draw`, `reproject` and `resolvable`) and a `data` thunk gives its source layers their own helpers
+instead of the hosting canvas's.
+
+**Hook identity is not the obstacle it looks like.** N views cannot be a loop in one component, but
+N components can each call `useViewHelpers` once. What remains is the surrounding structure: a
+per-view component that owns a camera, calls the hook, and registers a viewport node with the
+surface — plus the dispatcher and tool registry it needs, which is the rest of this arc.
 
 Each arc ends somewhere shippable. Arc 1 alone is worth having.
 
