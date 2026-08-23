@@ -381,6 +381,15 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
   leaving core a rump copy. Full inventory in
   `docs/reviews/2026-08-22-core-geom-dupes.md`.
 
+- **(P3) Closed subpaths get a dash seam at the start point.** `splitForDash`
+  (`packages/core/src/features/paths/tessellate/stroke.ts:329`) walks a
+  closed subpath's closing segment but flushes the final run as its own open
+  sub-polyline rather than merging it with the first. When the dash pattern
+  doesn't divide evenly into the perimeter, the last dash and the first dash
+  end up as two butt-capped runs meeting at the start vertex instead of one
+  continuous dash wrapping around. Visible on a round-cap dashed rectangle
+  outline.
+
 - **(P3) `<style>`-element and class-selector support for `@weasel-js/svg`.** The presentation-attribute cascade now threads a resolved `StyleContext` through the recursive parse (`packages/svg/src/cascade.ts`, shipped 2026-07-25; spec `docs/superpowers/specs/2026-07-25-svg-cascade-context-design.md`, plan `docs/superpowers/plans/2026-07-25-svg-cascade-context.md`). Inheritance, the `inherit` keyword, `style=""`, text/`<tspan>` cascade, and `currentColor` all resolve without per-attribute DOM walks (`readInheritedAttr` deleted). Still unsupported: `<style>` elements and class/selector matching — the cascade handles inheritance, not selector specificity. `style=""` remains a regex scan, not a full CSS parser (`!important` unsupported). Selector matching is the missing piece; the threaded-context fast path could compute the per-element cascade from `getComputedStyle` against a hidden DOM node in the browser.
 
 ### Pathfinder follow-ups (post-v1)
@@ -899,6 +908,31 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   The rest of the plan — one program plus atlases — is in
   `docs/handoffs/2026-08-14-batched-dispatch.md`, with the traps, and a
   two-phase dispatch split that would make it tractable.
+
+- **(P3) Per-layer GPU dispatch skipping.** `RenderLayer.deps` (shipped
+  2026-08-22, `packages/core/src/core/layers/render.ts`) skips rebuilding a
+  layer's command tree, not submitting it — every layer is still dispatched
+  to the renderer every frame regardless of caching. Skipping submission too
+  would need render-to-texture per layer plus compositing, which the
+  renderer has no concept of today. Nobody has measured whether dispatch
+  alone costs enough to justify that. Measure before building.
+
+- **(P3) A `{px}` stroke width thrashes the stroke mesh cache during a
+  zoom.** `strokeMeshCache.ts` clears a path's entire config map once it
+  exceeds `STROKE_CONFIGS_PER_PATH` (8) distinct configurations
+  (`byConfig.clear()`, around line 70) — the degradation this section
+  already documents for a dragged width slider. A `{ px }` width is resolved
+  to a world-unit number against the accumulated transform scale before it
+  reaches the cache key (`withResolvedStrokeWidth` in
+  `packages/core/src/renderer/draw.ts`), so a continuous zoom gesture produces
+  a distinct number on nearly every frame: every lookup misses, and every 8
+  frames evicts that path's sibling configurations too. Quantizing the
+  resolved width before it hits the cache key — `quantizeEmWidth` is the
+  existing precedent, used for glyph outline widths in
+  `outlineStrokeMeshCache.ts` — would likely fix it. Separately,
+  `packages/svg/src/serialize.ts` has no accumulated scale available at
+  serialize time, so it emits a `{ px }` width's raw number as `stroke-width`
+  rather than resolving it.
 
 - **(P3) Whether the benchmarks gate CI.** `tests/bench/` holds 62 vitest
   benchmarks with a committed baseline (`tests/bench/results/`); nothing gates
