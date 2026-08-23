@@ -49,7 +49,6 @@ function makeAction(opts: {
       timing: 'immediate',
       run: () => {
         // Console-only side effect — the story shows visual state, not behavior.
-        // eslint-disable-next-line no-console
         console.log(`[ActionBar story] ${opts.id}`);
       },
     },

@@ -77,6 +77,5 @@ export function dlog(namespace: string, ...args: unknown[]): void {
  *  (e.g. no-op op batches suppressed). */
 export function dwarn(namespace: string, ...args: unknown[]): void {
   if (!isDebugEnabled(namespace)) return;
-  // eslint-disable-next-line no-console
   console.warn(`[${namespace}]`, ...args);
 }

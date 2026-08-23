@@ -69,12 +69,10 @@ const minimalAdapter = {
   getSelection: () => [],
   setSelection: vi.fn(),
   applyOps: vi.fn(),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
 function mount(options: Record<string, unknown> = {}) {
   const { result } = renderHook(() =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useSelectTool(minimalAdapter, { pickEvery: () => [], ...options } as any),
   );
   return result.current;
@@ -90,7 +88,6 @@ describe('useSelectTool', () => {
 
   it('declares its whole input surface as bindings', () => {
     const tool = mount();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((tool.def as any)?.initial).toBeUndefined();
     expect(tool.bindings?.length).toBeGreaterThan(0);
   });
@@ -108,10 +105,8 @@ describe('useSelectTool', () => {
     // order). Naively taking ids[0] selects the container; with the
     // parent/child collapse the deepest descendant — f1 — wins.
     const parents: Record<string, string | null> = { F: null, f1: 'F' };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const adapter = { ...minimalAdapter, getParent: (id: string) => parents[id] ?? null } as any;
     const { result } = renderHook(() =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       useSelectTool(adapter, { pickEvery: () => ['F', 'f1'] } as any),
     );
     const sel = selectionStub(['f1']);

@@ -18,7 +18,7 @@ function makeLayer(): RenderLayer<undefined> {
 describe('gateLayer', () => {
   it('emits the wrapped layer\'s commands when `visible()` returns true', () => {
     const inner = makeLayer();
-    let visible = true;
+    const visible = true;
     const gated = gateLayer({ layer: inner, visible: () => visible });
     const out = gated.draw(undefined, stubView, stubDims);
     expect(out.length).toBe(1);

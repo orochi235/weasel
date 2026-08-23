@@ -238,7 +238,7 @@ describe('integration: SceneCanvas + useSelectTool drag routes', () => {
             label: 'Area Select',
             defaultBinding: { kind: 'drag' },
             // Always enabled so the dispatcher doesn't gate it.
-            enabled: () => true as true,
+            enabled: () => true as const,
             // Return a non-empty handle so the dispatcher records the
             // engagement instead of falling through to a sibling binding —
             // the test asserts the spy fires once, not that the binding

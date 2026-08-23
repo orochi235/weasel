@@ -78,12 +78,10 @@ export function fitViewToBounds(
   const { padding = 16, maxScale = SYSTEM_MAX_SCALE, minScale = SYSTEM_MIN_SCALE } = opts;
 
   if (bounds.width <= 0 || bounds.height <= 0) {
-    // eslint-disable-next-line no-console
     console.warn('[weasel] fitViewToBounds: bounds has zero or negative area; returning currentView unchanged.', bounds);
     return currentView;
   }
   if (viewportDims.width <= 0 || viewportDims.height <= 0) {
-    // eslint-disable-next-line no-console
     console.warn('[weasel] fitViewToBounds: viewport has zero or negative area; returning currentView unchanged.', viewportDims);
     return currentView;
   }

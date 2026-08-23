@@ -49,7 +49,6 @@ export function useBooleans(
   const run = useCallback((op: BooleanOp) => {
     const result = applyBooleanOp(adapterRef.current, op);
     if (isDev && result.kind === 'noop' && result.reason === 'too-few-for-subtract') {
-      // eslint-disable-next-line no-console
       console.warn('[useBooleans] subtract requires at least 2 selected paths');
     }
   }, []);

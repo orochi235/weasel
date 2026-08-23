@@ -143,7 +143,7 @@ describe('usePublishSelection', () => {
   });
 
   it('does not refire the publish effect when the ids array changes identity but not content', () => {
-    let publishCalls = 0;
+    const publishCalls = 0;
     function CountingProvider({ children }: { children: ReactNode }) {
       const [state, setState] = useState<{
         selection: readonly NodeId[];
