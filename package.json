@@ -56,7 +56,7 @@
     "test:perf": "playwright test --config=tests/perf/playwright.config.ts",
     "bench": "vitest bench --run --config vitest.bench.config.ts --compare tests/bench/results/baseline.json",
     "bench:baseline": "vitest bench --run --config vitest.bench.config.ts --outputJson tests/bench/results/baseline.json && node scripts/bench-report.mjs",
-    "lint": "eslint packages",
+    "lint": "eslint packages apps",
     "changeset": "changeset",
     "release": "changeset publish",
     "prepublishOnly": "npm run check:bumps && npm run typecheck && npm run lint && npm run test && npm run test:stories && npm run build && npm run check:manifests && npm run test:smoke:consumer",
