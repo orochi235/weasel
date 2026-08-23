@@ -115,6 +115,8 @@ export const Plot2D = forwardRef<Plot2DHandle, Plot2DProps>(function Plot2D(prop
   useEffect(() => {
     dlog('plot2d', 'mount', { width, height });
     return () => dlog('plot2d', 'unmount');
+    // Mount/unmount trace: re-running on a resize would log a spurious mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useImperativeHandle(ref, () => ({
     get svg() { return svgRef.current; },

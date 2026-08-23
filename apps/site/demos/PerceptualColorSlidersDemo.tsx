@@ -144,11 +144,11 @@ const yAt = (C: number) => DIAGRAM_PAD.t + (1 - C / MAX_C) * PLOT_H;
  *  and control-point markers are an SVG overlay above the canvas. */
 function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: ChromaBounds }) {
   const [lo, hi] = params.lRange;
-  const points = [
+  const points = useMemo(() => [
     { L: lo,         C: params.chroma.cBot,  label: 'B', color: oklchToHex(lo,         params.chroma.cBot,  params.hue), bounds: bounds.cBot },
     { L: params.midL, C: params.chroma.cPeak, label: 'P', color: oklchToHex(params.midL, params.chroma.cPeak, params.hue), bounds: bounds.cPeak },
     { L: hi,         C: params.chroma.cTop,  label: 'T', color: oklchToHex(hi,         params.chroma.cTop,  params.hue), bounds: bounds.cTop },
-  ];
+  ], [lo, hi, params.midL, params.hue, params.chroma.cBot, params.chroma.cPeak, params.chroma.cTop, bounds.cBot, bounds.cPeak, bounds.cTop]);
 
   // Custom render layer: a single 3-vertex polygon with per-vertex colors,
   // interpolated by the kit's `pathFillVColor` shader. The polygon is in
@@ -172,7 +172,7 @@ function ChromaCurveDiagram({ params, bounds }: { params: RampParams; bounds: Ch
       return [{ kind: 'group', transform: viewToMat3(view), children: [cmd] }];
     },
     // Re-evaluate whenever the curve points move.
-  }), [points[0].L, points[0].C, points[0].color, points[1].L, points[1].C, points[1].color, points[2].L, points[2].C, points[2].color]);
+  }), [points]);
 
   const scene = useScene<never, 'default'>({
     systemLayers: [{ id: 'default' }],

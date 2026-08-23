@@ -1040,8 +1040,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // Hold the latest dispatcher-side preview extras in a ref so chromeState's
   // closure reads live values without forcing the memo to rebuild every render.
-  const previewExtraRef = useRef({ previewPoseExtra });
-  previewExtraRef.current = { previewPoseExtra };
+  const previewExtraRef = useRef({ previewPoseExtra, previewIdsExtra });
+  previewExtraRef.current = { previewPoseExtra, previewIdsExtra };
 
   // boundsOf: pass-through for real ids. The synthetic multi-selection id is
   // resolved by the active tool's `previewBounds` (see `useSelectTool`'s
@@ -1103,30 +1103,32 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // mirrors the same value for back-compat. The active Tool's `previewPose`/
   // `previewBounds` is the only overlay source post-cleanup; falls through to
   // the committed adapter pose / bounds when no tool is mid-gesture.
-  const previewToolPose = (id: string): TPose | null => {
+  const previewToolPose = useCallback((id: string): TPose | null => {
     if (tools) {
       const p = firstPreviewPose(tools, id);
       if (p != null) return p as TPose;
     }
-    if (previewPoseExtra) {
-      const p = previewPoseExtra(id);
+    const extra = previewExtraRef.current.previewPoseExtra;
+    if (extra) {
+      const p = extra(id);
       if (p != null) return p as TPose;
     }
     return null;
-  };
-  const previewToolBounds = (id: string): Bounds | null => {
+  }, [tools]);
+  const previewToolBounds = useCallback((id: string): Bounds | null => {
     if (tools) {
       const b = firstPreviewBounds(tools, id);
       if (b) return b;
       const p = firstPreviewPose(tools, id);
       if (p != null) return geometry.getBounds(p as TPose);
     }
-    if (previewPoseExtra) {
-      const p = previewPoseExtra(id);
+    const extra = previewExtraRef.current.previewPoseExtra;
+    if (extra) {
+      const p = extra(id);
       if (p != null) return geometry.getBounds(p as TPose);
     }
     return null;
-  };
+  }, [tools, geometry]);
 
   const helpersForLayers: CanvasHelpers<TPose> = {
     getEffectivePose: (id: string): TPose | null => {
@@ -1273,7 +1275,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         effectiveBoundsOf,
         () => {
           const ids = aggregatePreviewIds(tools);
-          const extra = previewIdsExtra?.();
+          const extra = previewExtraRef.current.previewIdsExtra?.();
           if (extra) {
             for (const id of extra) ids.add(id);
           }
@@ -1364,7 +1366,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       placeToolOverlays(out, standardLayers.selectionOverlay, tools.getActiveOverlays);
     }
     return out;
-  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer, decorationLayer]);
+  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer,
+      decorationLayer, geometry, previewToolBounds, previewToolPose]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
@@ -1429,7 +1432,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
     const commands = drawLayers(
       layersWithDebug,
-      helpersForLayers,
+      helpersForLayersRef.current,
       {},
       undefined,
       effectiveView,

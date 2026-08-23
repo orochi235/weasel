@@ -168,6 +168,7 @@ function AnimationDemoInner() {
   useEffect(() => {
     if (!breathingFocus) return;
     const id = breathingFocus;
+    const effectsMap = effects.current;
     getEffect(id); // ensure entry exists
     const handle = animator.tweenLoop<number>({
       from: 1.0,
@@ -185,7 +186,7 @@ function AnimationDemoInner() {
     });
     return () => {
       handle.cancel();
-      const e = effects.current.get(id);
+      const e = effectsMap.get(id);
       if (e) { e.scale = 1; e.alpha = 1; }
       tick();
     };

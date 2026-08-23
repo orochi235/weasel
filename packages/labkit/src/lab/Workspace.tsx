@@ -93,6 +93,8 @@ export function Workspace({
   const items = Children.toArray(children);
   const idKey = ids ? ids.join(',') : `#${items.length}`;
   // biome-ignore lint/correctness/useExhaustiveDependencies: idKey is the stable projection of items/ids; depending on those directly rebuilds every render and re-runs the sync effect forever
+  // `items`/`ids` are fresh arrays every render; `idKey` is their stable projection.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const nodeIds = useMemo(() => items.map((_, i) => asNodeId(ids?.[i] ?? `lk-ws-${i}`)), [idKey]);
 
   // Held in refs rather than depended on: a fresh object each render would

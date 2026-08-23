@@ -82,6 +82,5 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
       for (const u of unregisters) u();
       for (const r of restores) r();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reg, actions]);
 }

@@ -33,10 +33,9 @@ export const Default: Story = {
 
 function AddSecondTrial() {
   const ctx = useLabContext();
-  // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
     if (ctx.trials.length < 2) ctx.addTrial('Stub');
-  }, []);
+  }, [ctx]);
   return null;
 }
 

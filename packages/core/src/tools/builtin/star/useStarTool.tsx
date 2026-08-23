@@ -127,6 +127,6 @@ export function useStarTool<TNode extends { id: string } = { id: string }>(
           },
         ],
       }),
-    [bumpPoints, adjustPointsAction],
+    [adjustPointsAction],
   );
 }

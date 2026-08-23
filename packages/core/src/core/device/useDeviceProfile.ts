@@ -126,7 +126,7 @@ export function useDeviceProfile(overrides?: Partial<DeviceProfile>): DeviceProf
         ...(dpr !== undefined ? { dpr } : {}),
         ...(targetScale !== undefined ? { targetScale } : {}),
       }),
-    [base.coarsePointer, base.canHover, base.dpr, coarsePointer, canHover, dpr, targetScale],
+    [base, coarsePointer, canHover, dpr, targetScale],
   );
 }
 
