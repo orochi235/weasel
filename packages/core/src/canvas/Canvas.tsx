@@ -486,8 +486,12 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
   getIsVisible?: () => (id: string) => boolean;
 }
 
-/** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
-export interface CanvasHelpers<TPose> {
+/**
+ * The half of {@link CanvasHelpers} that belongs to one view — everything
+ * answered by a camera's own tools, gestures and selection. A canvas hosting
+ * several viewports needs one of these per view; the surface half is shared.
+ */
+export interface CanvasViewHelpers<TPose> {
   /** Pose currently displayed for `id` — drag/resize/rotate overlay if active,
    *  otherwise the committed pose from the adapter. Returns `null` if the id
    *  isn't known. */
@@ -555,6 +559,14 @@ export interface CanvasHelpers<TPose> {
    *  custom layers that need overlay-aware selection state (selection ids,
    *  bounds, multi-union AABB, modifier flags) read from this. */
   getChromeState(): ChromeState;
+}
+
+/**
+ * The half of {@link CanvasHelpers} that belongs to the surface — one GL
+ * context, one debug sink, one chrome-caps resolver, however many views are
+ * drawn on it.
+ */
+export interface CanvasSurfaceHelpers {
   /** Active debug sink, when `<Canvas debug=...>` is enabled. Layers that
    *  want to participate in `hitboxes`/`bounds`/etc. visualization can
    *  call into this from their `draw` callback. Returns `null` when
@@ -566,6 +578,12 @@ export interface CanvasHelpers<TPose> {
    *  a resolver, this returns the universal `() => true`. */
   getIsVisible(): (id: string) => boolean;
 }
+
+/** Live overlay-aware lookups exposed to custom layers via `helpersRef`.
+ *  What a layer receives as its `data` argument, unchanged: the two halves
+ *  are split so a per-view set can be built independently of the surface's,
+ *  not to make layers ask for one. */
+export interface CanvasHelpers<TPose> extends CanvasViewHelpers<TPose>, CanvasSurfaceHelpers {}
 
 // Walks every registered + ambient tool: resize/rotate will register as
 function registerShadersOnRenderer(
@@ -1142,7 +1160,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     return null;
   }, [tools, geometry]);
 
-  const helpersForLayers: CanvasHelpers<TPose> = {
+  const viewHelpers: CanvasViewHelpers<TPose> = {
     getEffectivePose: (id: string): TPose | null => {
       const tp = previewToolPose(id);
       if (tp != null) return tp;
@@ -1176,9 +1194,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       gestureSource?.subscribe(fn) ?? noOpUnsubscribe,
     getGestureVersion: (): number => gestureSource?.getVersion() ?? 0,
     getChromeState: () => chromeState,
+  };
+  const surfaceHelpers: CanvasSurfaceHelpers = {
     getDebug: () => debugSink,
     getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
   };
+  const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, ...surfaceHelpers };
   helpersForLayersRef.current = helpersForLayers;
   if (helpersRef) helpersRef.current = helpersForLayers;
 

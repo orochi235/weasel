@@ -314,6 +314,8 @@ export {
 export type {
   CanvasProps,
   CanvasHelpers,
+  CanvasViewHelpers,
+  CanvasSurfaceHelpers,
   CanvasSelectionMode,
   StandardSlotName,
   CustomLayerEntry,
