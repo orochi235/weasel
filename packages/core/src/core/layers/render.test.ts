@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { type RenderLayer, drawLayers } from './render';
+import { type LayerCommandCache, type RenderLayer, drawLayers } from './render';
 import type { DrawCommand } from '../../renderer';
 
 describe('drawLayers', () => {
@@ -115,5 +115,93 @@ describe('drawLayers', () => {
     const a: RenderLayer<unknown> = { id: 'a', label: 'A', draw };
     drawLayers([a], null, {}, undefined, undefined, { width: 1, height: 1 });
     expect(draw).toHaveBeenCalledWith(null, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 1, height: 1 });
+  });
+});
+
+function countingLayer(id: string, calls: { n: number }): RenderLayer<{ v: number }> {
+  return {
+    id,
+    label: id,
+    deps: (data) => [data.v],
+    draw: (data) => {
+      calls.n += 1;
+      return [
+        {
+          kind: 'path',
+          path: { kind: 'rect', x: data.v, y: 0, width: 1, height: 1 },
+          fill: { fill: 'solid', color: '#fff' },
+        },
+      ];
+    },
+  };
+}
+
+const DIMS = { width: 100, height: 100 };
+
+describe('drawLayers command caching', () => {
+  it('reuses the tree when deps are unchanged', () => {
+    const calls = { n: 0 };
+    const layers = [countingLayer('a', calls)];
+    const cache: LayerCommandCache = new Map();
+    drawLayers(layers, { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    drawLayers(layers, { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    expect(calls.n).toBe(1);
+  });
+
+  it('rebuilds when deps change', () => {
+    const calls = { n: 0 };
+    const layers = [countingLayer('a', calls)];
+    const cache: LayerCommandCache = new Map();
+    drawLayers(layers, { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    drawLayers(layers, { v: 2 }, {}, undefined, undefined, DIMS, cache);
+    expect(calls.n).toBe(2);
+  });
+
+  it('rebuilds every call for a layer with no deps', () => {
+    const calls = { n: 0 };
+    const layer = { ...countingLayer('a', calls) };
+    delete (layer as { deps?: unknown }).deps;
+    const cache: LayerCommandCache = new Map();
+    drawLayers([layer], { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    drawLayers([layer], { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    expect(calls.n).toBe(2);
+  });
+
+  it('rebuilds every call when no cache is supplied', () => {
+    const calls = { n: 0 };
+    const layers = [countingLayer('a', calls)];
+    drawLayers(layers, { v: 1 }, {}, undefined, undefined, DIMS);
+    drawLayers(layers, { v: 1 }, {}, undefined, undefined, DIMS);
+    expect(calls.n).toBe(2);
+  });
+
+  it('returns the same array identity on a cache hit', () => {
+    const calls = { n: 0 };
+    const layers = [countingLayer('a', calls)];
+    const cache: LayerCommandCache = new Map();
+    const first = drawLayers(layers, { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    const second = drawLayers(layers, { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    const firstChildren = (first[0] as { children: unknown[] }).children;
+    const secondChildren = (second[0] as { children: unknown[] }).children;
+    expect(secondChildren).toBe(firstChildren);
+  });
+
+  it('drops entries for layers that are no longer present', () => {
+    const calls = { n: 0 };
+    const cache: LayerCommandCache = new Map();
+    drawLayers([countingLayer('a', calls)], { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    expect(cache.has('a')).toBe(true);
+    drawLayers([countingLayer('b', calls)], { v: 1 }, {}, undefined, undefined, DIMS, cache);
+    expect(cache.has('a')).toBe(false);
+  });
+
+  it('does not serve a hidden layer from cache to a visible one', () => {
+    const calls = { n: 0 };
+    const layers = [countingLayer('a', calls)];
+    const cache: LayerCommandCache = new Map();
+    drawLayers(layers, { v: 1 }, { a: false }, undefined, undefined, DIMS, cache);
+    expect(calls.n).toBe(0);
+    drawLayers(layers, { v: 1 }, { a: true }, undefined, undefined, DIMS, cache);
+    expect(calls.n).toBe(1);
   });
 });
