@@ -6,10 +6,8 @@ they cannot — where the work sits, and the decisions made in conversation.
 
 ## Where the work is
 
-**Both arcs are merged to `main`** (`8e215888` timeline+rig, `1c270ec2` audio).
-Merged tree: 670 files, 6989 tests, `tsc` clean, manifests and changeset-bump
-checks green. **Nothing is pushed** — `main` carries 50+ unpushed commits,
-including two other sessions' work.
+**Both arcs are merged to `main`** (`8e215888` timeline+rig, `1c270ec2` audio)
+and pushed as of 2026-08-22 (`5500ea9f`).
 
 All three branches are merged and their worktrees removed. Branches kept:
 `animation-timeline`, `audio-engine`, `timeline-audio-demos`.
@@ -103,9 +101,16 @@ an unwritten exception. The new demos use CSS classes.
 
 ## Next
 
-1. Fix the two defects above — the finished-timeline seek especially.
-2. The side-scroller, as the load test on both foundations. Decomposition doc
-   has its scope; `ImageDrawCommand` still has no source rect or flip.
-3. **(P1) No baseline lint** — see `docs/TODO.md`. Two rules in the whole repo,
-   and 55 disable directives naming rules that never run.
-4. Open question for Mike: pushing. Nothing has been pushed all session.
+1. ~~Fix the two defects above~~ — done and pushed (`775af743`, `ce472661`).
+2. ~~The three filed gaps~~ — `mat3` helpers, `BusHandle` getters and `bands()`'s
+   return type all landed in `07632053`. Verify before planning around this
+   file; it has been wrong twice.
+3. The side-scroller, as the load test on both foundations. **In progress on
+   `side-scroller-demo`** — do not start work there without checking who owns
+   it; two sessions collided on it once already. `ImageDrawCommand` still has
+   no source rect or flip.
+4. ~~(P1) No baseline lint~~ — done 2026-08-22, merged as `4edb5c5e`. Eleven
+   rules now run over `packages` and `apps`. What stayed off, and why, is in
+   `eslint.config.js` and `docs/TODO.md`.
+
+**Still open:** the inline-styles question below, and whether to push.
