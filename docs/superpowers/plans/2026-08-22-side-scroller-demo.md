@@ -2435,7 +2435,9 @@ describe('SideScrollerDemo', () => {
   it('mounts without throwing', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     render(<SideScrollerDemo />);
-    expect(screen.getByRole('button', { name: /enable audio|restart/i })).toBeTruthy();
+    // Both buttons exist once audio lands, so `getByRole` would throw on the
+    // multiple match — this only ever meant "some toolbar control rendered".
+    expect(screen.getAllByRole('button', { name: /enable audio|restart/i }).length).toBeGreaterThan(0);
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });
@@ -2854,13 +2856,8 @@ import { registerSounds, type SoundName } from './platformer/sfx';
     a.engine.play(a.sounds[name], { bus: 'sfx', gain });
   };
 
-  /** Anything that happens at a place in the world plays from that place. The
-   *  listener is the player, moved once per frame rather than per step. */
-  const fireAt = (name: SoundName, at: { x: number; y: number }, gain = 0.8) => {
-    const a = audio.current;
-    if (!a || a.engine.state() !== 'running') return;
-    a.engine.play(a.sounds[name], { bus: 'sfx', gain, position: at });
-  };
+  // `fireAt` for positioned sounds belongs with its first caller in Task 15 —
+  // `noUnusedLocals` rejects it here, where only unpositioned sounds exist.
 
   /** A hit drops the music under the hurt sound and brings it back. */
   const duckMusic = () => {
@@ -3083,6 +3080,12 @@ git commit -m "fire the platformer's footsteps from a looping timeline event tra
 
 **Files:**
 - Modify: `apps/site/demos/SideScrollerDemo.tsx`
+
+**Fix the first-paint framing while you are in this file.** The camera update
+sits inside the `if (!running) return;` guard, so a demo that boots paused never
+clamps its camera and opens showing empty space beside the level. Framing is not
+simulation — move the `followCamera` call (and the listener update) above that
+guard so the view is correct on the first frame and stays correct while paused.
 
 - [ ] **Step 1: Extend `GameRefs`**
 
