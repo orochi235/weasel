@@ -28,7 +28,7 @@ export interface LabStoreActions {
   removeTrial: (id: string) => void;
   updateTrialState: <TS>(id: string, next: TS | ((prev: TS) => TS)) => void;
   updateTrialConfig: <TC>(id: string, key: keyof TC, value: TC[keyof TC]) => void;
-  updateTrialView: (id: string, view: TrialRecord['view']) => void;
+  updateTrialView: (id: string, view: unknown) => void;
   updateTrialUndoStack: (
     id: string,
     next: TrialRecord['undoStack'] | ((prev: TrialRecord['undoStack']) => TrialRecord['undoStack']),

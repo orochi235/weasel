@@ -145,11 +145,12 @@ export function Workspace({
     store.setChildOrder(ZONE_ID, [...nodeIds]);
   }, [store, nodeIds]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: nodeIds is the signal that the tile set changed — a re-tile moves tiles without resizing any — not a value this reads
   useEffect(() => {
     if (!surface) return;
     surface.invalidateRects();
     return store.events.on('node.placementChanged', () => surface.invalidateRects());
-  }, [store, surface, nodeIds]);
+  }, [store, surface, nodeIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!onLayoutChange) return;

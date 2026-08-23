@@ -10,6 +10,12 @@ export interface RenderContext<TS = unknown, TC = unknown> {
   setConfig: (key: keyof TC, value: unknown) => void;
   trial: {
     id: string;
+    /** The trial's view, in whatever shape this instrument chose. labkit persists
+     *  it and restores it on Reset without ever reading into it. */
+    view: unknown;
+    setView: (next: unknown) => void;
+    /** 2D convenience over `view`. Reads 1 and writes nothing when the trial holds
+     *  a view that is not the 2D one. */
     zoom: number;
     setZoom: (z: number) => void;
   };

@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SurfaceContext } from './SurfaceContext';
-import type { SurfaceHandle } from './useTiledSurface';
 import { useSurface, useSurfaceOptional, useSurfaceTile } from './useSurfaceTile';
+import type { SurfaceHandle } from './useTiledSurface';
 
 function fakeHandle(): SurfaceHandle {
   return {

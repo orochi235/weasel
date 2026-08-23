@@ -4,6 +4,7 @@ import type { Instrument } from '../instrument/types';
 import { useLabContext } from '../lab/LabContext';
 import { LabStoreContext } from '../state/context';
 import type { TrialRecord } from '../state/types';
+import { as2DView } from '../state/view';
 import { DefaultSidebar } from './DefaultSidebar';
 import { DefaultStatusBar } from './DefaultStatusBar';
 import { DefaultToolbar } from './DefaultToolbar';
@@ -59,9 +60,14 @@ export function TrialChrome({
   const updateTrialConfig = useStore(storeCtx.store, (s) => s.updateTrialConfig);
   const updateTrialState = useStore(storeCtx.store, (s) => s.updateTrialState);
 
+  // The trial view is opaque to labkit, so the zoom chrome asks for the 2D shape
+  // and goes inert when the trial holds something else — an orbit, say.
+  const view2d = as2DView(record.view);
+
   const toolbarCtx = useMemo<TrialToolbarContext>(() => {
     const setZoom = (z: number): void => {
-      updateTrialView(trialId, { ...record.view, zoom: z });
+      if (!view2d) return;
+      updateTrialView(trialId, { ...view2d, zoom: z });
     };
     return {
       trialId,
@@ -71,10 +77,10 @@ export function TrialChrome({
       canRedo: undoBindings?.canRedo ?? false,
       undo: undoBindings?.undo ?? (() => {}),
       redo: undoBindings?.redo ?? (() => {}),
-      zoom: record.view.zoom,
+      zoom: view2d?.zoom ?? 1,
       setZoom,
-      zoomIn: () => setZoom(record.view.zoom * 1.25),
-      zoomOut: () => setZoom(record.view.zoom * 0.8),
+      zoomIn: () => setZoom((view2d?.zoom ?? 1) * 1.25),
+      zoomOut: () => setZoom((view2d?.zoom ?? 1) * 0.8),
       resetZoom: () => setZoom(1),
       hasCanvas: instrument.canvas != null,
       savedSnapshots: lab.savedSnapshots.filter((s) => s.trialId === trialId),
@@ -85,7 +91,7 @@ export function TrialChrome({
       close: () => lab.closeTrial(trialId),
       isLastTrial,
     };
-  }, [trialId, record, instrument, lab, isLastTrial, updateTrialView, undoBindings]);
+  }, [trialId, record, instrument, lab, isLastTrial, updateTrialView, undoBindings, view2d]);
 
   const sidebarCtx = useMemo<TrialSidebarContext>(
     () => ({
@@ -114,7 +120,7 @@ export function TrialChrome({
   const statusCtx: TrialStatusBarContext = {
     trialId,
     instrumentName: record.instrumentName,
-    zoom: record.view.zoom,
+    zoom: view2d ? view2d.zoom : null,
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {

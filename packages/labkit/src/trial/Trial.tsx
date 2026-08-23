@@ -16,6 +16,7 @@ import { LayerList } from '../layers/LayerList';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
+import { as2DView, DEFAULT_VIEW } from '../state/view';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
 import type { UndoBindings } from './TrialChrome';
@@ -85,7 +86,11 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
     updateTrialUndoStack(record.id, (prev) => pushSnapshot(prev, snap, maxDepth));
   };
 
-  const setView = (v: ViewTransform): void => updateTrialView(record.id, v);
+  const setView = (v: unknown): void => updateTrialView(record.id, v);
+
+  // `CanvasStack` and the zoom controls are 2D; a trial holding another view shape
+  // gets the default here and simply never renders them.
+  const view2d = as2DView(record.view);
 
   const renderCtx: RenderContext<unknown, unknown> = {
     state: record.state,
@@ -105,8 +110,13 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
     },
     trial: {
       id: record.id,
-      zoom: record.view.zoom,
-      setZoom: (z) => updateTrialView(record.id, { ...record.view, zoom: z }),
+      view: record.view,
+      setView,
+      zoom: view2d?.zoom ?? 1,
+      setZoom: (z) => {
+        if (!view2d) return;
+        updateTrialView(record.id, { ...view2d, zoom: z });
+      },
     },
     emit: (event) => {
       snapshotIfNeeded(event);
@@ -160,7 +170,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
   const dragDropResult = useDragDrop({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
     canvasContainerRef,
-    view: record.view,
+    view: view2d ?? DEFAULT_VIEW,
     state: record.state,
     config: record.config,
     setState: (next) => {
@@ -212,7 +222,11 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
         className="lk-trial__canvas-host"
         style={{ width: '100%', height: '100%', position: 'relative' }}
       >
-        <CanvasStack layers={layersWithFeedback} view={record.view} onViewChange={setView}>
+        <CanvasStack
+          layers={layersWithFeedback}
+          view={view2d ?? DEFAULT_VIEW}
+          onViewChange={setView}
+        >
           {instrument.render(renderCtx)}
         </CanvasStack>
         <DragOverlay drag={dragDropResult.drag} />

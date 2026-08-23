@@ -41,7 +41,8 @@ export interface TrialSidebarContext {
 export interface TrialStatusBarContext {
   trialId: string;
   instrumentName: string;
-  zoom: number;
+  /** Null when the trial holds a view that is not the 2D one. */
+  zoom: number | null;
 }
 
 /** Replaces a trial's toolbar. Receives everything the default one uses,

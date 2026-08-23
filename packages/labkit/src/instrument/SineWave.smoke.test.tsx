@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { DEFAULT_VIEW } from '../state/view';
 import { defineInstrument } from './defineInstrument';
 import type { RenderContext } from './types';
 import { validateConfigSchema } from './validateConfigSchema';
@@ -85,7 +86,7 @@ describe('SineWave instrument smoke test', () => {
       config: SineWaveInstrument.defaultConfig(),
       setState: vi.fn(),
       setConfig: vi.fn(),
-      trial: { id: 'w', zoom: 1, setZoom: vi.fn() },
+      trial: { id: 'w', view: DEFAULT_VIEW, setView: vi.fn(), zoom: 1, setZoom: vi.fn() },
       emit: vi.fn(),
     };
     const { container } = render(SineWaveInstrument.render(ctx) as ReactElement);
