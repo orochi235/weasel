@@ -20,6 +20,29 @@ the rename settles the vocabulary the rest are written in.
 - **labkit's canvas on SceneCanvas** —
   `superpowers/specs/2026-08-22-canvas-on-scenecanvas-design.md`
 
+## Hosting a renderer labkit does not own
+
+Designed outside this repo, in `precioussss`:
+`docs/superpowers/specs/2026-08-22-gem-bench-lab-design.md`. A three.js gem lab is the second
+consumer of the surface-scheduler path, after klieg's tube lab, and asks for five things here:
+
+- **`useTiledSurface`** — the surface scheduler, with three corrections its own spec needs. The
+  registry's unit is a *rect*, not a trial: one trial can hold a GL pane beside a raster one.
+  "Moved without resizing" should be closed off `node.placementChanged` rather than polled, since
+  only labkit knows a tile moved. And the name should cover measurement as well as scheduling.
+- **`toDeviceRect(rect, dpr)`** — top-origin CSS rect to bottom-origin integer device rect. Both
+  labs derived it; getting the snapping wrong strands a hairline column between tiles.
+- **An opaque trial view.** `{ zoom, pan }` is the only camera state labkit persists and resets, so
+  a 3D lab keeps a parallel view and forfeits both. Make it a type parameter with 2D as the
+  default — no 3D knowledge, just no assertion of 2D.
+- **`useOrbit`** — the 3D peer of `usePanZoom`. Trigonometry, no renderer import. Both labs
+  hand-wrote it.
+- **A `job` capability** — long-running work with `n/total` progress, partial results and per-item
+  failure. Nothing in the package expresses async at all.
+
+Conflicts textually with `2026-08-22-canvas-on-scenecanvas-design.md`, which also rewrites where
+the trial view lives; the intents compose, so whichever lands second is written against the first.
+
 ## Permanent and temporary controls
 
 Labs should support two layers of controls in the sidebar:
