@@ -7,7 +7,7 @@ describe('SideScrollerDemo', () => {
   it('mounts without throwing', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     render(<SideScrollerDemo />);
-    expect(screen.getByRole('button', { name: /enable audio|restart/i })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: /enable audio|restart/i }).length).toBeGreaterThan(0);
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });
@@ -21,6 +21,15 @@ describe('SideScrollerDemo', () => {
         await new Promise((r) => requestAnimationFrame(() => r(null)));
       });
     }
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('mounts in an environment with no Web Audio', () => {
+    expect(typeof AudioContext).toBe('undefined');
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<SideScrollerDemo />);
+    expect(screen.getByRole('button', { name: /enable audio/i })).toBeTruthy();
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });

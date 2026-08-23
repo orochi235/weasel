@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SceneCanvas, WeaselProvider, deriveParallaxView, resolveSkeleton, useAnimator, useScene } from '@weasel-js/core';
 import type { Dims, DrawCommand, RenderLayer, View } from '@weasel-js/core';
+import { createAudioEngine } from '@weasel-js/audio';
+import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { CAM_SCALE, cameraView, createCamera, followCamera, type Camera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { drawBackdrop, drawPlayer, drawTiles } from './platformer/skin';
@@ -9,6 +11,7 @@ import { createAnimState, nextAnimState, resolvePose, type AnimState } from './p
 import { INVULN } from './platformer/entities';
 import { PLAYER_SKELETON } from './platformer/skeleton';
 import { consumeJumpPress, usePlatformerInput } from './platformer/useInput';
+import { registerSounds, type SoundName } from './platformer/sfx';
 
 const W = 720;
 const H = 405;
@@ -41,6 +44,45 @@ export function SideScrollerDemo() {
   const input = usePlatformerInput();
   const game = useRef<GameRefs>(freshGame());
   const [running, setRunning] = useState(false);
+
+  const audio = useRef<{ engine: AudioEngine; sounds: Record<SoundName, SoundHandle>; bed: VoiceHandle | null } | null>(null);
+  const [audioState, setAudioState] = useState<'off' | 'suspended' | 'running'>('off');
+
+  // Built on the unlock gesture, not at mount: jsdom has no AudioContext, and a
+  // context created before a gesture starts suspended anyway.
+  const enableAudio = () => {
+    if (typeof AudioContext === 'undefined') return;
+    if (!audio.current) {
+      const engine = createAudioEngine({ buses: ['sfx', 'music'], voiceLimit: 24 });
+      audio.current = { engine, sounds: registerSounds(engine), bed: null };
+    }
+    const { engine } = audio.current;
+    void engine.unlock().then(() => {
+      setAudioState(engine.state() === 'running' ? 'running' : 'suspended');
+      if (!audio.current!.bed) {
+        audio.current!.bed = engine.play(audio.current!.sounds.bed, { bus: 'music', loop: true, gain: 0.5 });
+      }
+    });
+  };
+
+  useEffect(() => () => {
+    audio.current?.engine.dispose();
+    audio.current = null;
+  }, []);
+
+  const fire = (name: SoundName, gain = 0.8) => {
+    const a = audio.current;
+    if (!a || a.engine.state() !== 'running') return;
+    a.engine.play(a.sounds[name], { bus: 'sfx', gain });
+  };
+
+  /** A hit drops the music under the hurt sound and brings it back. */
+  const duckMusic = () => {
+    const a = audio.current;
+    if (!a) return;
+    a.engine.bus('music').setGain(0.15, 60);
+    window.setTimeout(() => a.engine.bus('music').setGain(0.5, 400), 260);
+  };
 
   const layers = useMemo(() => {
     const view = () => cameraView(game.current.camera, DIMS);
@@ -109,10 +151,14 @@ export function SideScrollerDemo() {
           jumpPressed: consumeJumpPress(input),
         };
         g.player = stepBody(g.player, WORLD, step, STEP);
+        if (g.player.jumped) fire('jump', 0.6);
+        if (g.player.landed) fire('land', 0.5);
         g.invuln = Math.max(0, g.invuln - STEP);
         if (spikeOverlap(g.player.body, WORLD) && g.invuln <= 0) {
           g.invuln = INVULN;
           g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
+          fire('hurt');
+          duckMusic();
         }
         g.anim = nextAnimState(
           g.anim,
@@ -126,6 +172,7 @@ export function SideScrollerDemo() {
         );
       }
       g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
+      audio.current?.engine.setListener({ x: g.player.body.x, y: g.player.body.y });
     });
   }, [animator, running, input]);
 
@@ -135,6 +182,9 @@ export function SideScrollerDemo() {
         <div className="ckd-toolbar">
           <button className="ckd-btn" onClick={() => setRunning((r) => !r)}>
             {running ? 'pause' : 'restart'}
+          </button>
+          <button className="ckd-btn" onClick={enableAudio} disabled={audioState === 'running'}>
+            {audioState === 'running' ? 'audio on' : 'enable audio'}
           </button>
           <span className="ckd-readout">zoom {CAM_SCALE}x</span>
         </div>
