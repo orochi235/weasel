@@ -103,7 +103,8 @@ export function useJob<TS, TC, TItem>({
   const started = useRef(false);
   const auto = capability.auto === true;
   const key = capability.key ? capability.key(config, state) : null;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: key is compared element-wise below — depending on the array identity would restart the job every render
+  // `key` is compared element-wise inside; depending on the array identity here
+  // would restart the job on every render.
   useEffect(() => {
     if (!auto) return;
     if (started.current && sameKey(lastKey.current, key)) return;

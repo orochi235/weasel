@@ -49,65 +49,62 @@ function Harness({ capability: cap, config, onHandle }: HarnessProps) {
 
 describe('useJob', () => {
   it('folds each item into state and counts progress', async () => {
-    let handle: JobHandle | null = null;
-    let state: State = { items: [] };
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     render(
       <Harness
         capability={capability()}
         config={{ n: 3 }}
         onHandle={(h, s) => {
-          handle = h;
-          state = s;
+          seen.handle = h;
+          seen.state = s;
         }}
       />,
     );
-    act(() => handle?.start());
-    await waitFor(() => expect(handle?.status).toBe('done'));
-    expect(state.items).toEqual([0, 1, 2]);
-    expect(handle?.done).toBe(3);
-    expect(handle?.total).toBe(3);
+    act(() => seen.handle?.start());
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    expect(seen.state.items).toEqual([0, 1, 2]);
+    expect(seen.handle?.done).toBe(3);
+    expect(seen.handle?.total).toBe(3);
   });
 
   it('counts a failed item without ending the run', async () => {
-    let handle: JobHandle | null = null;
-    let state: State = { items: [] };
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     render(
       <Harness
         capability={capability(1)}
         config={{ n: 3 }}
         onHandle={(h, s) => {
-          handle = h;
-          state = s;
+          seen.handle = h;
+          seen.state = s;
         }}
       />,
     );
-    act(() => handle?.start());
-    await waitFor(() => expect(handle?.status).toBe('done'));
-    expect(state.items).toEqual([0, 2]);
-    expect(handle?.failures).toEqual([{ index: 1, error: 'frame died' }]);
-    expect(handle?.done).toBe(2);
+    act(() => seen.handle?.start());
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    expect(seen.state.items).toEqual([0, 2]);
+    expect(seen.handle?.failures).toEqual([{ index: 1, error: 'frame died' }]);
+    expect(seen.handle?.done).toBe(2);
   });
 
   it('stops folding results once cancelled', async () => {
-    let handle: JobHandle | null = null;
-    let state: State = { items: [] };
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     render(
       <Harness
         capability={capability()}
         config={{ n: 50 }}
         onHandle={(h, s) => {
-          handle = h;
-          state = s;
+          seen.handle = h;
+          seen.state = s;
         }}
       />,
     );
-    act(() => handle?.start());
-    await waitFor(() => expect(handle?.status).toBe('running'));
-    act(() => handle?.cancel());
-    const atCancel = state.items.length;
+    act(() => seen.handle?.start());
+    await waitFor(() => expect(seen.handle?.status).toBe('running'));
+    act(() => seen.handle?.cancel());
+    const atCancel = seen.state.items.length;
     await new Promise((r) => setTimeout(r, 30));
-    expect(state.items.length).toBe(atCancel);
-    expect(handle?.status).toBe('idle');
+    expect(seen.state.items.length).toBe(atCancel);
+    expect(seen.handle?.status).toBe('idle');
   });
 
   it('discards results from a run its key superseded', async () => {
@@ -116,34 +113,33 @@ describe('useJob', () => {
       key: (config) => [config.n],
       auto: true,
     };
-    let handle: JobHandle | null = null;
-    let state: State = { items: [] };
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     const { rerender } = render(
       <Harness
         capability={withKey}
         config={{ n: 40 }}
         onHandle={(h, s) => {
-          handle = h;
-          state = s;
+          seen.handle = h;
+          seen.state = s;
         }}
       />,
     );
-    await waitFor(() => expect(handle?.status).toBe('running'));
+    await waitFor(() => expect(seen.handle?.status).toBe('running'));
 
     rerender(
       <Harness
         capability={withKey}
         config={{ n: 2 }}
         onHandle={(h, s) => {
-          handle = h;
-          state = s;
+          seen.handle = h;
+          seen.state = s;
         }}
       />,
     );
-    await waitFor(() => expect(handle?.status).toBe('done'));
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
 
     // The superseded 40-item run cannot have contributed: the winner yields two.
-    expect(state.items).toEqual([0, 1]);
+    expect(seen.state.items).toEqual([0, 1]);
   });
 
   it('aborts on unmount', async () => {
@@ -155,18 +151,18 @@ describe('useJob', () => {
       },
       onItem: (item, state) => ({ items: [...state.items, item] }),
     };
-    let handle: JobHandle | null = null;
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     const { unmount } = render(
       <Harness
         capability={watching}
         config={{ n: 50 }}
         onHandle={(h) => {
-          handle = h;
+          seen.handle = h;
         }}
       />,
     );
-    act(() => handle?.start());
-    await waitFor(() => expect(handle?.status).toBe('running'));
+    act(() => seen.handle?.start());
+    await waitFor(() => expect(seen.handle?.status).toBe('running'));
     unmount();
     expect(aborted).toHaveBeenCalled();
   });
@@ -180,36 +176,35 @@ describe('useJob', () => {
       },
       onItem: (item, state) => ({ items: [...state.items, item] }),
     };
-    let handle: JobHandle | null = null;
-    let state: State = { items: [] };
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     render(
       <Harness
         capability={throwing}
         config={{ n: 1 }}
         onHandle={(h, s) => {
-          handle = h;
-          state = s;
+          seen.handle = h;
+          seen.state = s;
         }}
       />,
     );
-    act(() => handle?.start());
-    await waitFor(() => expect(handle?.status).toBe('error'));
-    expect(handle?.error).toMatch(/the baker died/);
-    expect(state.items).toEqual([7]);
+    act(() => seen.handle?.start());
+    await waitFor(() => expect(seen.handle?.status).toBe('error'));
+    expect(seen.handle?.error).toMatch(/the baker died/);
+    expect(seen.state.items).toEqual([7]);
   });
 
   it('does not start on its own without auto', async () => {
-    let handle: JobHandle | null = null;
+    const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     render(
       <Harness
         capability={{ ...capability(), key: (c) => [c.n] }}
         config={{ n: 3 }}
         onHandle={(h) => {
-          handle = h;
+          seen.handle = h;
         }}
       />,
     );
     await new Promise((r) => setTimeout(r, 20));
-    expect(handle?.status).toBe('idle');
+    expect(seen.handle?.status).toBe('idle');
   });
 });

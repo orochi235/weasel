@@ -11,6 +11,7 @@ import type {
   RenderContext,
   ViewTransform,
 } from '../instrument/types';
+import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
 import { LayerList } from '../layers/LayerList';
 import { LabStoreContext } from '../state/context';
@@ -92,6 +93,16 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
   // gets the default here and simply never renders them.
   const view2d = as2DView(record.view);
 
+  const jobCap = instrument.job;
+  // Hooks cannot be conditional, so a trial without the capability still calls
+  // this — with a runner that yields nothing and is never started.
+  const job = useJob({
+    capability: jobCap ?? { run: async function* () {}, onItem: (_i, st) => st },
+    config: record.config,
+    state: record.state,
+    setState: (next) => updateTrialState(record.id, next as never),
+  });
+
   const renderCtx: RenderContext<unknown, unknown> = {
     state: record.state,
     config: record.config,
@@ -122,6 +133,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
       snapshotIfNeeded(event);
       bus.emit(event);
     },
+    job: jobCap ? job : undefined,
   };
 
   const undoBindings: UndoBindings | undefined = undoCap
@@ -259,6 +271,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
 
   return (
     <TrialChrome
+      job={jobCap ? job : undefined}
       trialId={record.id}
       record={record}
       instrument={instrument}
