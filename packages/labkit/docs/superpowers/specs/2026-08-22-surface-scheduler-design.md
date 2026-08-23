@@ -108,6 +108,22 @@ never sees a pointer.
 surface, which sits behind the grid. The surface owns pixels and nothing
 else.
 
+## Two notes filed 2026-08-22
+
+**The name covers half the job.** Dirty marking and rAF coalescing are scheduling; publishing
+tile rects is layout measurement. They are bundled because a scissored draw needs both in the
+same instant — `onFrame` hands over `dirty` and `rects` together so the consumer can loop the
+dirty tiles and know where each one goes. A reader who has not been told that asks what rects
+have to do with scheduling. `useTiledSurface` names both jobs; `useSurfaceScheduler` names one
+and hides the other.
+
+**`useLayerScheduler` is being deleted**, by
+`2026-08-22-canvas-on-scenecanvas-design.md` — the 2D layer stack it drives goes with it. That
+removes the second consumer this spec's `useDirtyFrames` extraction was written to serve, and
+voids the last testing bullet below. Extracting a shared core is still right if a second
+scheduler appears; if none does, keep the dirty-and-rAF logic here and drop the extraction
+rather than building a seam with one user.
+
 ## Testing
 
 Headless, with a fake `onFrame` — no WebGL in the suite.
