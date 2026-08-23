@@ -21,7 +21,7 @@ Read before starting:
 
 - `packages/core/src/core/layers/render.ts` — the whole file, ~160 lines.
 - `packages/core/src/core/paint-types.ts:130` — the `Stroke` interface.
-- `packages/core/CLAUDE.md` at the repo root — **every changeset you write is `patch`**, and you
+- `CLAUDE.md` at the repo root — **every changeset you write is `patch`**, and you
   must never write a `bump-approved` marker.
 
 Run the suite with `npx vitest run --project=kit`. A single file is
@@ -183,7 +183,7 @@ export type LayerCommandCache = Map<
 
 - [ ] **Step 3: Verify it compiles**
 
-Run: `npx tsc -p packages/core/tsconfig.lib.json --noEmit`
+Run: `npx tsc --noEmit`
 Expected: no errors.
 
 - [ ] **Step 4: Commit**
@@ -399,7 +399,7 @@ In `packages/core/src/index.ts`, find the line exporting from `core/layers/rende
 `LayerCommandCache` to its type exports. If the module is star-exported, no change is needed —
 verify with:
 
-Run: `npx tsc -p packages/core/tsconfig.lib.json --noEmit`
+Run: `npx tsc --noEmit`
 Expected: no errors.
 
 - [ ] **Step 6: Commit**
@@ -777,7 +777,7 @@ the zoom changes, and a stale mesh would freeze at the old thickness.
 
 - [ ] **Step 7: Fix the type fallout**
 
-Run: `npx tsc -p packages/core/tsconfig.lib.json --noEmit`
+Run: `npx tsc --noEmit`
 Expected: errors wherever `stroke.width` was assumed to be a number. Fix each by calling
 `resolveStrokeWidth`. Do **not** cast.
 
