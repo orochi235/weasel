@@ -51,3 +51,18 @@ permanent one, so this sits on the tuning-rail spec rather than beside it.
 
 A structured set of trials produced from a parameter range or a recipe.
 Named here so the word stays reserved; nothing designed yet.
+
+## `initialView.pan` is in screen pixels an instrument cannot know
+
+With 1.1 applying the camera before `draw`, a layer draws in world coordinates — which is the right
+contract, and immediately raises the question of where world origin should sit. `pan` is a screen
+offset, so `{ x: 0, y: 0 }` puts world origin at the top-left corner of the trial. Anything that
+wants its subject centred has to know the viewport size, and an instrument is written long before
+that exists. `RenderContext.workspace` exposes `zoom` and `setZoom` but no pan, so it cannot correct
+this after mount either.
+
+The klieg corner lab works around it by translating each layer by half the canvas divided by zoom,
+which is the camera's job leaking back into the instrument, and which quietly fights zoom-about-
+cursor. What is missing is a way to say "centre on this" — either an `initialView` that accepts
+`{ center: Point }` as an alternative to `pan`, or a `fitTo(bounds)` on the render context so an
+instrument whose subject changes (a different corner, a different letter) can recentre as it goes.
