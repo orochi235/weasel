@@ -151,10 +151,18 @@ thunked on `getView`. The resolver is not wired into the pointer path, because w
 every point resolves to the root view — wiring it is Arc 3's first payoff, not Arc 2's.
 
 **Arc 3 — per-view interaction.** Split `helpersForLayers`, then N dispatchers and N tool
-registries, then per-view selection and chrome. Started: the type is split into
-`CanvasViewHelpers` + `CanvasSurfaceHelpers` and `<Canvas>` builds the halves separately. The
-per-view half still closes over `chromeState`, so hoisting it into an N-callable factory means
-dealing with that first.
+registries, then per-view selection and chrome.
+
+Started. The helpers type is split into `CanvasViewHelpers` + `CanvasSurfaceHelpers` and
+`<Canvas>` builds the halves separately. Chrome bounds and helper bounds now share one
+`boundsWithPreview`, which cuts `chromeState`'s direct dependencies to `selection`, `multiActive`,
+that one callback, `geometry` and `adapter`. Layer visibility and order are real props rather than
+hardcoded `{}` / `undefined`.
+
+What remains before the per-view half can be built N times: it is still constructed in the
+component body, and its memoized inputs (`previewToolPose`, `boundsWithPreview`, `chromeState`) are
+hooks, so N of them cannot be a loop. That is the "hook identity" problem below — the per-view half
+becomes a component, or the memoization moves somewhere callable N times.
 
 Each arc ends somewhere shippable. Arc 1 alone is worth having.
 

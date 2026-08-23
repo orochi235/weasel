@@ -18,13 +18,15 @@ done, plus the first step of Arc 3. Each code commit carries a `patch` changeset
 - `createViewResolver`
 - the `hitTestExtras` frame argument
 - the `CanvasHelpers` type split
+- one shared bounds cascade for chrome and helpers
+- `layerVisibility` / `layerOrder` props
 
-**Arc 3, where to pick up.** `CanvasHelpers` is now `CanvasViewHelpers` + `CanvasSurfaceHelpers`,
-built separately in `<Canvas>`. The next step is extracting the per-view half into a factory that
-can be called N times — and that is where it stopped, because the per-view lookups close over
-`chromeState`, which is itself built from selection, tools, geometry and the adapter
-(`Canvas.tsx:1075-1103`). Hoisting the helpers means hoisting or parameterizing that too. Plan it
-before cutting; a half-done extraction here is worse than none.
+**Arc 3, where to pick up.** The spec's Arc 3 section says what has landed. The wall it stopped at
+is hook identity, not tangled data: the per-view helpers are built in the component body from
+memoized inputs (`previewToolPose`, `boundsWithPreview`, `chromeState`), and N of those cannot be a
+loop in a hook body. So the next move is a structural one — the per-view half becomes its own
+component with the surface hoisted above it — and it wants a plan, not a cut. Everything cheaper
+than that is done.
 
 After that: N dispatchers and N tool registries, then per-view selection and chrome.
 
