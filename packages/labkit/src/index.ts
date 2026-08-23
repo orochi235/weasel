@@ -1,5 +1,14 @@
 export type { CanvasLayerDescriptor, CanvasStackContextValue, CanvasStackProps } from './canvas';
 export { CanvasStack, CanvasStackContext, screenToWorld, worldToScreen } from './canvas';
+export type { OrbitHandlers, OrbitView, UseOrbitOptions, Vec3 } from './canvas/useOrbit';
+export {
+  clampPitch,
+  orbitAfterDrag,
+  orbitAfterWheel,
+  PITCH_LIMIT,
+  useOrbit,
+  wrapYaw,
+} from './canvas/useOrbit';
 export { ControlPanel } from './controls/ControlPanel';
 export type {
   CheckboxField,
@@ -35,6 +44,7 @@ export type {
 } from './instrument/types';
 export type { ValidationResult } from './instrument/validateConfigSchema';
 export { validateConfigSchema } from './instrument/validateConfigSchema';
+export * from './job';
 export * from './lab';
 export type { LayerListProps } from './layers';
 export { LayerList } from './layers';
@@ -68,6 +78,9 @@ export type {
   UndoStack,
 } from './state/types';
 export { useTrialState } from './state/useTrialState';
+export type { ViewTransform2D } from './state/view';
+export { as2DView, DEFAULT_VIEW } from './state/view';
+export * from './surface';
 export { interstellarTheme } from './theme/interstellar';
 export * from './trial';
 export * from './ui/layers';
