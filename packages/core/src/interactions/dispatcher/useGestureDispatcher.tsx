@@ -4,8 +4,8 @@
  * Composes the four input channels (window keydown/keyup, canvas wheel, canvas
  * pointer events, multi-touch synthesized from PointerEvents) and routes each
  * event to the dispatcher for the view it landed in — one view unless `views`
- * says otherwise. Reads ActiveToolContext + DepRegistry
- * internally; consumer passes the canvas ref, actions registry, and tools map.
+ * says otherwise. Reads ActiveToolContext + DepRegistry internally; consumer
+ * passes the canvas ref, actions registry, and tools map.
  *
  * Side-effect only (returns void).
  *
@@ -15,7 +15,8 @@ import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { isEditableTarget } from '../keyHelpers';
 import { useActiveToolContext } from '../actions/activeToolContext';
-import { useDepRegistry } from '../actions/depRegistry';
+import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
+import type { DepSchema, ViewApi } from '../actions/depSchema';
 import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool, ToolCtx } from '../../tools/types';
@@ -83,6 +84,33 @@ export interface DispatcherViewTarget {
   affordanceAt: UseGestureDispatcherOptions['affordanceAt'];
   classifyTarget: UseGestureDispatcherOptions['classifyTarget'];
   clientToWorld: UseGestureDispatcherOptions['clientToWorld'];
+  /**
+   * This view's camera. Events routed here resolve the `view` dep to it, so
+   * `viewport.dragPan` and the rest of the viewport actions move this view
+   * rather than the canvas. Without it a gesture inside a panel pans the whole
+   * canvas — correct coordinates alone do not make routing correct.
+   *
+   * Every other dep still comes from the canvas registry.
+   */
+  view?: ViewApi;
+}
+
+/**
+ * `base` with its `view` dep replaced. `view` is read through a thunk so the
+ * result is stable for the life of a listener set while still seeing whichever
+ * view the current event routed to.
+ */
+function withViewDep(base: () => DepRegistry, view: () => ViewApi | undefined): DepRegistry {
+  return {
+    register: (name, source) => base().register(name, source),
+    get: (name) => {
+      if (name === 'view') {
+        const v = view();
+        if (v) return v as DepSchema[typeof name];
+      }
+      return base().get(name);
+    },
+  };
 }
 
 /**
@@ -412,6 +440,9 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // Resolved per event, not bound once: the dispatcher an event runs on is
     // a property of the view it landed in.
     const dispatcherNow = (): Dispatcher => target().dispatcher;
+
+    const routedDeps = withViewDep(() => ctxRef.current.depRegistry, () => target().view);
+    const ctxNow = (): DispatcherContext => ({ ...ctxRef.current, depRegistry: routedDeps });
     const canvas = canvasRef.current;
 
     // Convert a client-space pointer position to world-space. When no
@@ -438,7 +469,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const dispatch = (ev: InputEvent, on?: Dispatcher): 'handled' | 'unhandled' => {
       const d = on ?? dispatcherNow();
       const before = d.inFlight().size;
-      const result = d.handleInput(ev, ctxRef.current);
+      const result = d.handleInput(ev, ctxNow());
       const after = d.inFlight().size;
       if (before > 0 || after > 0) requestRedrawRef.current?.();
       return result;
@@ -977,7 +1008,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           ...(bodyTarget !== undefined ? { bodyTarget } : {}),
           ...(bodyKind !== undefined ? { bodyKind } : {}),
         },
-        ctxRef.current,
+        ctxNow(),
       );
       applyHoverCursor(predicted?.action.cursor ?? null);
     }

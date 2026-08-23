@@ -9,8 +9,8 @@ current: Arc 1 and Arc 2 are marked done there, with the reasons.
 ## State
 
 Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
-`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 676 files, 7087 passing. Arcs 1 and 2 are
-done, plus steps 1 and 2 of Arc 3. Each code commit carries a `patch` changeset:
+`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 676 files, 7088 passing. Arcs 1 and 2 are
+done, plus steps 1-3 of Arc 3. Each code commit carries a `patch` changeset:
 
 - the viewport inner-view transform fix
 - the spec retractions
@@ -22,17 +22,15 @@ done, plus steps 1 and 2 of Arc 3. Each code commit carries a `patch` changeset:
 - `layerVisibility` / `layerOrder` props
 - a thunked viewport camera and per-viewport `data`
 - the `useViewHelpers` extraction
-- the per-view dispatch record, then per-event view routing
+- the per-view dispatch record, then per-event view routing, then the per-view camera
 
 **Arc 3, where to pick up.** The spec's Arc 3 section carries a numbered list of the remaining
-steps, in order, with the reason each one precedes the next. Steps 1 and 2 are done; start at
-step 3.
+steps, in order, with the reason each one precedes the next. Steps 1 through 3 are done; start at
+step 4 — the per-view component, which is the first thing that will actually pass `views`.
 
-**Do not route input to a second view before step 3 lands.** `useGestureDispatcher` will now send a
-gesture inside a panel to that panel's dispatcher with that panel's coordinates, but `ToolCtx.view`
-and `setView` are still the outer camera's — so the gesture pans the whole canvas. Correct
-coordinates are not enough on their own. Nothing passes `views` yet, which is why this is safe to
-sit on.
+The input path is now complete and unused: `useGestureDispatcher` will route a gesture inside a
+panel to that panel's dispatcher, with that panel's coordinates, panning that panel's camera.
+Nothing constructs a second view yet.
 
 ## Blocked
 

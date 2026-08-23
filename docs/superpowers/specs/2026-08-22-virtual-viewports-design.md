@@ -179,22 +179,26 @@ instead of the hosting canvas's.
 **Hook identity is not the obstacle it looks like.** N views cannot be a loop in one component, but
 N components can each call `useViewHelpers` once.
 
-Steps 1 and 2 are done. `useGestureDispatcher` holds one dispatch record per view — dispatcher plus
-the three lookups that resolve a point against that view's camera — and its optional `views` option
-takes the non-root records and a resolver. `createViewResolver` satisfies the resolver shape
-structurally, so the dispatcher never imports the viewport module. Pointerdown pins, pointerup
-releases; keys and paste run on the view the last event with coordinates resolved to. With `views`
-omitted, every event runs on the record the flat options describe, exactly as before. The hook still
-mounts once, so there is still one listener set.
+Steps 1 through 3 are done. `useGestureDispatcher` holds one dispatch record per view — dispatcher,
+the three lookups that resolve a point against that view's camera, and that view's `ViewApi` — and
+its optional `views` option takes the non-root records and a resolver. `createViewResolver`
+satisfies the resolver shape structurally, so the dispatcher never imports the viewport module.
+Pointerdown pins, pointerup releases; keys and paste run on the view the last event with coordinates
+resolved to. With `views` omitted, every event runs on the record the flat options describe, exactly
+as before. The hook still mounts once, so there is still one listener set.
+
+Per-view `setView` did not need a second channel. Every viewport action reads its camera from the
+`view` dep, so an event routed to a record with a `ViewApi` dispatches against the canvas dep
+registry with `view` — and only `view` — replaced by that record's. Routing is now correct, not
+merely wired: a drag inside a panel pans the panel.
 
 The remaining work, in order:
 
-3. **Per-view `view` / `setView`.** Until a resolved record carries its own camera and setter, a
-   gesture inside a panel still pans the outer canvas — this is the step that makes routing
-   correct rather than merely wired, and nothing should be routed before it lands.
 4. **The per-view component.** Owns a camera, calls `useViewHelpers`, contributes a viewport node
    and a dispatcher record. `usePinchZoomTool` and `useHoverTracking` stay on the surface and get
-   the same list treatment as the dispatcher.
+   the same list treatment as the dispatcher. `Canvas`'s `ToolCtx` is still built from the outer
+   camera; its one remaining consumer is the function form of `Tool.cursor`, so a per-view cursor
+   belongs to this step too.
 5. **Per-view selection and chrome**, and the provider question — the first view's dep and actions
    registries must not silently become every view's.
 

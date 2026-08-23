@@ -6,12 +6,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry } from '../actions/registry';
-import { DepRegistryProvider } from '../actions/depRegistry';
+import { DepRegistryProvider, useDepSource } from '../actions/depRegistry';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { useGestureDispatcher, type DispatcherViewTarget } from './useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from './dispatcher';
 import { createViewResolver } from 'features/viewports/viewResolver';
 import type { View } from 'core/viewport/view';
+import type { ViewApi } from '../actions/depSchema';
+import { viewportDragPanAction } from '../actions/defaults/viewportDragPan';
 import type { InputEvent } from './matcher';
 
 /** The panel occupies x ∈ [100, 200) of a canvas whose origin is (0, 0). */
@@ -124,6 +126,62 @@ describe('useGestureDispatcher view routing', () => {
     act(() => { fire(canvas, 'pointerdown', { clientX: 50, clientY: 10, pointerId: 1 }); });
     expect(kinds(root.seen)).toContain('pointerdown');
     expect(panel.seen).toHaveLength(0);
+  });
+
+  it('pans the view a drag began in, not the canvas', () => {
+    const rootView = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const panelView = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const api = (hold: { current: View }): ViewApi => ({
+      get: () => hold.current,
+      set: (v) => { hold.current = v; },
+    });
+    const rootHold = { current: rootView };
+    const panelHold = { current: panelView };
+
+    function Panner() {
+      const registry = useActionsRegistry();
+      const canvasRef = useRef<HTMLCanvasElement | null>(null);
+      registry?.register(viewportDragPanAction);
+      useDepSource('view', () => api(rootHold));
+      useGestureDispatcher({
+        canvasRef,
+        actions: registry!,
+        toolsById: new Map(),
+        clientToWorld: (x, y) => ({ x, y }),
+        views: {
+          targets: () => [{
+            id: 'panel',
+            dispatcher: panelDispatcher,
+            affordanceAt: undefined,
+            classifyTarget: undefined,
+            clientToWorld: (x, y) => ({ x: x - PANEL_RECT.x, y }),
+            view: api(panelHold),
+          }],
+          resolver: createViewResolver({
+            views: () => [{ id: 'panel', view: FLAT, rect: PANEL_RECT }],
+            root: () => FLAT,
+            canvasOrigin: () => ({ left: 0, top: 0 }),
+          }),
+        },
+      });
+      return <canvas ref={canvasRef} />;
+    }
+    const panelDispatcher = createDispatcher();
+    const { container } = render(
+      <DepRegistryProvider>
+        <ActiveToolContextProvider>
+          <ActionsProvider><Panner /></ActionsProvider>
+        </ActiveToolContextProvider>
+      </DepRegistryProvider>,
+    );
+    const canvas = container.querySelector('canvas')!;
+    act(() => {
+      fire(canvas, 'pointerdown', { clientX: 150, clientY: 10, pointerId: 1 });
+      fire(canvas, 'pointermove', { clientX: 130, clientY: 10, pointerId: 1 });
+      fire(canvas, 'pointerup', { clientX: 130, clientY: 10, pointerId: 1 });
+    });
+    expect(panelHold.current.x).toBe(20);
+    expect(rootHold.current).toBe(rootView);
   });
 
   it('falls back to the root when the routed view is gone', () => {
