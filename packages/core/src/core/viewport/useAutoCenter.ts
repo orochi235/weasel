@@ -6,7 +6,7 @@ import { fitZoom } from './fitToBounds';
  * inside `viewportW x viewportH` (in pixels). `padRatio` is the fraction of
  * each axis to fill (default 0.85 — leaves a uniform 15% margin).
  */
-export function computeFitView(
+export function computeFitViewport(
   viewportW: number,
   viewportH: number,
   contentW: number,
@@ -20,7 +20,7 @@ export function computeFitView(
 }
 
 /**
- * Run `computeFitView` once when the viewport first has non-zero size, and
+ * Run `computeFitViewport` once when the viewport first has non-zero size, and
  * apply the result via the supplied setters. Subsequent size changes are
  * ignored — this hook centers exactly once.
  */
@@ -37,7 +37,7 @@ export function useAutoCenter(
   useEffect(() => {
     if (width > 0 && height > 0 && !hasCentered.current) {
       hasCentered.current = true;
-      const fit = computeFitView(width, height, contentW, contentH);
+      const fit = computeFitViewport(width, height, contentW, contentH);
       setZoom(fit.zoom);
       setPan(fit.panX, fit.panY);
     }
