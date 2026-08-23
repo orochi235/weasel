@@ -35,9 +35,9 @@ const SAMPLES = 240;
 
 const Bevel: EffectModule<BevelEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
+    const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
-    const clipId = useId();
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const cls = bevelClasses(cfg.lightFrom);

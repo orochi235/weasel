@@ -21,10 +21,10 @@ const FACE_COORDS: Record<Corner, { x1: string; y1: string; x2: string; y2: stri
 
 const Sheen: EffectModule<SheenEffectParams> = {
   Component: ({ sampler, variant, params }) => {
-    if (variant !== 'solid' && variant !== 'subtle') return null;
-    const cfg = { ...DEFAULTS, ...params };
     const gradId = useId();
     const clipId = useId();
+    if (variant !== 'solid' && variant !== 'subtle') return null;
+    const cfg = { ...DEFAULTS, ...params };
     const peak = Math.max(0, Math.min(cfg.intensity, 1));
     return (
       <>

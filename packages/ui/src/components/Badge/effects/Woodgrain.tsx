@@ -19,9 +19,9 @@ function osc(seed: number) {
 
 const Woodgrain: EffectModule<WoodgrainEffectParams> = {
   Component: ({ sampler, variant, params }) => {
+    const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
-    const clipId = useId();
     const lines: string[] = [];
     for (let i = 0; i < cfg.lines; i++) {
       const y = ((i + 1) / (cfg.lines + 1)) * 100;

@@ -32,9 +32,9 @@ function lightDirFor(angleDeg: number): { lx: number; ly: number } {
 
 const Bevel2: EffectModule<Bevel2EffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
+    const clipId = useId();
     if (variant !== 'solid' && variant !== 'subtle') return null;
     const cfg = { ...DEFAULTS, ...params };
-    const clipId = useId();
     const sx = 100 / boxW;
     const sy = 100 / boxH;
     const total = sampler.totalCss;
