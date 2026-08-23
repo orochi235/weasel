@@ -35,8 +35,9 @@ export const createEnemies = (at: Vec2[]): Enemy[] =>
 export const createCoins = (at: Vec2[]): Coin[] => at.map((p) => ({ x: p.x, y: p.y, taken: false }));
 
 /**
- * Walkers reverse at a wall and at a ledge. The ledge probe looks at the tile
- * *below and ahead*: no floor there means the next step walks off, so turn now.
+ * Walkers reverse at a wall or a ledge (no floor tile ahead). The floor probe
+ * is a fixed `toRow(e.y) + 1`, not `ENEMY_H`-derived — a height-based offset
+ * lands back in the enemy's own row and it reverses in place every frame.
  */
 export function stepEnemy(e: Enemy, level: Level, dt: number): Enemy {
   const nextX = e.x + e.vx * dt;
@@ -52,11 +53,7 @@ export function stepEnemy(e: Enemy, level: Level, dt: number): Enemy {
 const overlaps = (ax: number, ay: number, aw: number, ah: number, bx: number, by: number, bw: number, bh: number) =>
   Math.abs(ax - bx) < (aw + bw) / 2 && Math.abs(ay - by) < (ah + bh) / 2;
 
-/**
- * A descending player whose feet are in the enemy's upper band stomps it;
- * anything else is a hurt, which invulnerability suppresses. Coins are taken
- * regardless.
- */
+/** Invulnerability suppresses a hurt contact but never blocks a coin. */
 export function resolveContacts(body: Body, enemies: Enemy[], coins: Coin[], invuln: number): Contact[] {
   const out: Contact[] = [];
   enemies.forEach((e, index) => {
