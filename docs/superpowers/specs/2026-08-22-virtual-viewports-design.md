@@ -118,16 +118,27 @@ bundles per-view state (selection, chrome state, tools, gesture source) with per
 (debug sink, `getIsVisible`). Splitting it is the centre of this work.
 
 **One `Dispatcher` and one `ToolsApi` per `SceneCanvas`** (`SceneCanvas.tsx:1417-1423`, `:1300`).
-Two views with different active tools needs either N dispatchers — then `getInFlightHandles()`
-consumers at `:1641`, `:1699`, `:1869`, `:1884` and `createGestureSource` at `:1428` all take a view
-— or one view-tagged handle set.
+Two views with different active tools needs N of each, and `getInFlightHandles()` consumers at
+`:1641`, `:1699`, `:1869`, `:1884` and `createGestureSource` at `:1428` then have to say which view
+they mean.
+
+N dispatchers does **not** mean N `useGestureDispatcher` instances. The hook is one mounter that
+normalizes DOM events and then dispatches, and everything downstream of the normalize step is
+already injectable per call site: `dispatcher`, `affordanceAt`, `classifyTarget` and
+`clientToWorld` are four separate opts it reads through refs
+(`useGestureDispatcher.tsx:118`, `:136`, `:144`, `:162`). Bundle those four into one per-view record,
+give the hook a list of them, and resolve which one an event belongs to with `createViewResolver` —
+one listener set, N dispatchers, stickiness already handled. A list of one is today's path exactly.
 
 **Hook identity.** `SceneCanvas` runs an order-sensitive hook sequence including hooks deliberately
 called-but-disabled to keep counts stable (`SceneCanvas.tsx:1185-1187`, `:2034-2041`). N views
-cannot be a loop in a hook body. If N views become N component instances, the surface must be
-hoisted above them, and `usePinchZoomTool`, `useGestureDispatcher` and `useHoverTracking` each
-attach listeners to the same element — N instances means N listener sets all firing for every event.
-That is why the view resolver sits **above** the per-view components, not inside each.
+cannot be a loop in a hook body — but they can be N components each calling a hook once, which is
+what `useViewHelpers` is for.
+
+The constraint that remains is listeners, not hooks. `usePinchZoomTool`, `useGestureDispatcher` and
+`useHoverTracking` each attach to the same element, so N instances means N listener sets all firing
+for every event. Those three stay one instance on the surface and resolve a view per event; only
+state that attaches nothing goes in the per-view component.
 
 **Providers are "if root"** (`SceneCanvas.tsx:1937-1997`). With N views under one surface, the first
 view's dep and actions registries could silently become shared by all views — and those registries
@@ -166,9 +177,24 @@ On the viewport side, a node can now host a real view: its camera accepts a thun
 instead of the hosting canvas's.
 
 **Hook identity is not the obstacle it looks like.** N views cannot be a loop in one component, but
-N components can each call `useViewHelpers` once. What remains is the surrounding structure: a
-per-view component that owns a camera, calls the hook, and registers a viewport node with the
-surface — plus the dispatcher and tool registry it needs, which is the rest of this arc.
+N components can each call `useViewHelpers` once.
+
+The remaining work, in order:
+
+1. **Bundle the dispatcher's per-view opts.** `dispatcher`, `affordanceAt`, `classifyTarget` and
+   `clientToWorld` become one record on `useGestureDispatcher` instead of four sibling opts. Pure
+   refactor, no behavior change, and it is what the next two steps stand on.
+2. **Take a list of those records, resolve one per event.** `createViewResolver` picks the record,
+   sticky for the gesture. A list of one behaves exactly as today. After this the hook still
+   mounts once, so there is still one listener set.
+3. **Per-view `view` / `setView`.** Until a resolved record carries its own camera and setter, a
+   gesture inside a panel still pans the outer canvas — this is the step that makes routing
+   correct rather than merely wired, and nothing should be routed before it lands.
+4. **The per-view component.** Owns a camera, calls `useViewHelpers`, contributes a viewport node
+   and a dispatcher record. `usePinchZoomTool` and `useHoverTracking` stay on the surface and get
+   the same list treatment as step 2.
+5. **Per-view selection and chrome**, and the provider question — the first view's dep and actions
+   registries must not silently become every view's.
 
 Each arc ends somewhere shippable. Arc 1 alone is worth having.
 

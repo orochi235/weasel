@@ -23,14 +23,19 @@ done, plus the first step of Arc 3. Each code commit carries a `patch` changeset
 - a thunked viewport camera and per-viewport `data`
 - the `useViewHelpers` extraction
 
-**Arc 3, where to pick up.** The spec's Arc 3 section says what has landed. The next move is the
-per-view component: something that owns a camera, calls `useViewHelpers` once, and registers a
-viewport node with the surface. Both halves it needs now exist — the hook, and a viewport node that
-accepts a live camera and its own `data`.
+**Arc 3, where to pick up.** The spec's Arc 3 section carries a numbered list of the remaining
+steps, in order, with the reason each one precedes the next. Start at step 1 — it is a pure
+refactor.
 
-Then the harder half of the arc: a dispatcher and tool registry per view. That is where the
-listener-set and provider problems in the spec's "entangled parts" actually bite, and it has not
-been started.
+The thing to know before reading it: **N dispatchers does not mean N `useGestureDispatcher`
+instances.** The hook normalizes DOM events and then dispatches, and all four of the per-view inputs
+downstream of the normalize step are already separate opts it reads through refs. So one mounter
+with one listener set can drive N dispatchers, with `createViewResolver` choosing between them. The
+spec previously implied the choice was N mounters or a view-tagged handle set; it is neither.
+
+**Do not route input to a second view before step 3.** `ToolCtx.view` and `setView` are still the
+outer camera's, so a gesture inside a panel would pan the whole canvas. Correct coordinates are not
+enough on their own.
 
 ## Blocked
 
