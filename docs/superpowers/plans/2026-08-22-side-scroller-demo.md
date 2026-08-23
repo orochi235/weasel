@@ -2492,7 +2492,7 @@ Expected: `16 [ 80 ]`
 ```tsx
 // apps/site/demos/SideScrollerDemo.tsx
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, WeaselProvider, createParallaxLayer, useAnimator, useScene } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, deriveParallaxView, useAnimator, useScene } from '@weasel-js/core';
 import type { Dims, DrawCommand, RenderLayer, View } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, createCamera, followCamera, type Camera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
@@ -2513,32 +2513,30 @@ export function SideScrollerDemo() {
   const animator = useAnimator();
   const scene = useScene({ items: [] });
   const game = useRef<GameRefs>({ camera: createCamera(WORLD.spawn) });
-  const [running, setRunning] = useState(true);
+  // Starts paused: nothing should move before the player interacts, and audio
+  // needs a gesture to unlock anyway.
+  const [running, setRunning] = useState(false);
 
   const layers = useMemo(() => {
     const view = () => cameraView(game.current.camera, DIMS);
 
     // Three bands at three rates. `pan: 1` would be no parallax at all, so the
     // far hills at 0.2 crawl and the near ones at 0.7 nearly keep up.
+    // `deriveParallaxView` is called against the live camera, NOT wrapped in
+    // `createParallaxLayer`: that helper derives from the canvas's own view,
+    // which this demo pins to identity forever, and deriving from identity
+    // returns identity for every `pan` — a backdrop that silently never moves.
     const bands = ([
       ['far', 0.2],
       ['mid', 0.45],
       ['near', 0.7],
-    ] as const).map(([band, pan]) =>
-      createParallaxLayer({
-        id: `backdrop-${band}`,
-        label: `Backdrop ${band}`,
-        pan: { x: pan, y: pan * 0.6 },
-        source: [
-          {
-            id: `backdrop-${band}-source`,
-            label: `Backdrop ${band}`,
-            space: 'screen',
-            draw: (_d: unknown, inner: View, dims: Dims) => drawBackdrop(inner, dims, band),
-          } as RenderLayer<unknown>,
-        ],
-      }),
-    );
+    ] as const).map(([band, pan]): RenderLayer<unknown> => ({
+      id: `backdrop-${band}`,
+      label: `Backdrop ${band}`,
+      space: 'screen',
+      draw: (_d, _v, dims) =>
+        drawBackdrop(deriveParallaxView(view(), { pan: { x: pan, y: pan * 0.6 } }), dims, band),
+    }));
 
     const tiles: RenderLayer<unknown> = {
       id: 'tiles',

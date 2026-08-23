@@ -144,6 +144,11 @@ against `docs/TODO.md` when the demo actually hits it.
 - **Blur mid-hold.** Key-up never arrives if the window loses focus during a
   held key, so a held direction sticks. The demo guards it; the dispatcher
   probably should.
+- **`createParallaxLayer` cannot see a ref-driven camera.** It derives its inner
+  view from the canvas's `view` prop, so a demo that pins that to identity and
+  pans through refs gets identity back for every `pan` — no parallax at all,
+  silently. `deriveParallaxView` works fine called directly; the layer helper
+  needs a way to take its outer view from the caller.
 - **No tiled-content layer primitive.** Already a P3. The parallax backgrounds
   want one.
 
