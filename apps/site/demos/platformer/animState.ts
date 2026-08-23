@@ -1,7 +1,7 @@
 // apps/site/demos/platformer/animState.ts
 import { CLIPS, poseInterpolate, samplePose, type ClipName } from './clips';
 import type { Pose } from '@weasel-js/core';
-import { MAX_FALL, MOVE_SPEED } from './physics';
+import { JUMP_SPEED, MAX_FALL, MOVE_SPEED } from './physics';
 
 /** Cross-fade duration between clips, in milliseconds. */
 export const FADE_MS = 120;
@@ -48,7 +48,7 @@ function pick(ctx: AnimCtx): ClipName {
 function advance(name: ClipName, prevPhase: number, ctx: AnimCtx, dt: number): number {
   const clip = CLIPS[name];
   if (name === 'jump') {
-    const u = 1 - Math.min(Math.abs(ctx.vy) / 470, 1);
+    const u = 1 - Math.min(Math.abs(ctx.vy) / JUMP_SPEED, 1);
     return u * clip.duration;
   }
   if (name === 'fall') {
