@@ -124,11 +124,11 @@ they mean.
 
 N dispatchers does **not** mean N `useGestureDispatcher` instances. The hook is one mounter that
 normalizes DOM events and then dispatches, and everything downstream of the normalize step is
-already injectable per call site: `dispatcher`, `affordanceAt`, `classifyTarget` and
-`clientToWorld` are four separate opts it reads through refs
-(`useGestureDispatcher.tsx:118`, `:136`, `:144`, `:162`). Bundle those four into one per-view record,
-give the hook a list of them, and resolve which one an event belongs to with `createViewResolver` —
-one listener set, N dispatchers, stickiness already handled. A list of one is today's path exactly.
+already injectable per call site. `dispatcher`, `affordanceAt`, `classifyTarget` and `clientToWorld`
+— the four things about handling an event that depend on which view it landed in — are now one
+`DispatcherViewTarget` record, and the hook's `views` option takes a list of them plus a resolver to
+pick one per event. One listener set, N dispatchers, stickiness handled by `createViewResolver`. No
+list is today's path exactly.
 
 **Hook identity.** `SceneCanvas` runs an order-sensitive hook sequence including hooks deliberately
 called-but-disabled to keep counts stable (`SceneCanvas.tsx:1185-1187`, `:2034-2041`). N views
@@ -179,20 +179,22 @@ instead of the hosting canvas's.
 **Hook identity is not the obstacle it looks like.** N views cannot be a loop in one component, but
 N components can each call `useViewHelpers` once.
 
+Steps 1 and 2 are done. `useGestureDispatcher` holds one dispatch record per view — dispatcher plus
+the three lookups that resolve a point against that view's camera — and its optional `views` option
+takes the non-root records and a resolver. `createViewResolver` satisfies the resolver shape
+structurally, so the dispatcher never imports the viewport module. Pointerdown pins, pointerup
+releases; keys and paste run on the view the last event with coordinates resolved to. With `views`
+omitted, every event runs on the record the flat options describe, exactly as before. The hook still
+mounts once, so there is still one listener set.
+
 The remaining work, in order:
 
-1. **Bundle the dispatcher's per-view opts.** `dispatcher`, `affordanceAt`, `classifyTarget` and
-   `clientToWorld` become one record on `useGestureDispatcher` instead of four sibling opts. Pure
-   refactor, no behavior change, and it is what the next two steps stand on.
-2. **Take a list of those records, resolve one per event.** `createViewResolver` picks the record,
-   sticky for the gesture. A list of one behaves exactly as today. After this the hook still
-   mounts once, so there is still one listener set.
 3. **Per-view `view` / `setView`.** Until a resolved record carries its own camera and setter, a
    gesture inside a panel still pans the outer canvas — this is the step that makes routing
    correct rather than merely wired, and nothing should be routed before it lands.
 4. **The per-view component.** Owns a camera, calls `useViewHelpers`, contributes a viewport node
    and a dispatcher record. `usePinchZoomTool` and `useHoverTracking` stay on the surface and get
-   the same list treatment as step 2.
+   the same list treatment as the dispatcher.
 5. **Per-view selection and chrome**, and the provider question — the first view's dep and actions
    registries must not silently become every view's.
 

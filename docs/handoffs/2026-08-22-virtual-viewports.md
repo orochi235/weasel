@@ -9,8 +9,8 @@ current: Arc 1 and Arc 2 are marked done there, with the reasons.
 ## State
 
 Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
-`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 675 files, 7075 passing. Arcs 1 and 2 are
-done, plus the first step of Arc 3. Each code commit carries a `patch` changeset:
+`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 676 files, 7087 passing. Arcs 1 and 2 are
+done, plus steps 1 and 2 of Arc 3. Each code commit carries a `patch` changeset:
 
 - the viewport inner-view transform fix
 - the spec retractions
@@ -22,20 +22,17 @@ done, plus the first step of Arc 3. Each code commit carries a `patch` changeset
 - `layerVisibility` / `layerOrder` props
 - a thunked viewport camera and per-viewport `data`
 - the `useViewHelpers` extraction
+- the per-view dispatch record, then per-event view routing
 
 **Arc 3, where to pick up.** The spec's Arc 3 section carries a numbered list of the remaining
-steps, in order, with the reason each one precedes the next. Start at step 1 — it is a pure
-refactor.
+steps, in order, with the reason each one precedes the next. Steps 1 and 2 are done; start at
+step 3.
 
-The thing to know before reading it: **N dispatchers does not mean N `useGestureDispatcher`
-instances.** The hook normalizes DOM events and then dispatches, and all four of the per-view inputs
-downstream of the normalize step are already separate opts it reads through refs. So one mounter
-with one listener set can drive N dispatchers, with `createViewResolver` choosing between them. The
-spec previously implied the choice was N mounters or a view-tagged handle set; it is neither.
-
-**Do not route input to a second view before step 3.** `ToolCtx.view` and `setView` are still the
-outer camera's, so a gesture inside a panel would pan the whole canvas. Correct coordinates are not
-enough on their own.
+**Do not route input to a second view before step 3 lands.** `useGestureDispatcher` will now send a
+gesture inside a panel to that panel's dispatcher with that panel's coordinates, but `ToolCtx.view`
+and `setView` are still the outer camera's — so the gesture pans the whole canvas. Correct
+coordinates are not enough on their own. Nothing passes `views` yet, which is why this is safe to
+sit on.
 
 ## Blocked
 

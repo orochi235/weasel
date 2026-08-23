@@ -2,8 +2,9 @@
  * useGestureDispatcher — React seam mounting the gesture dispatcher.
  *
  * Composes the four input channels (window keydown/keyup, canvas wheel, canvas
- * pointer events, multi-touch synthesized from PointerEvents) and routes them
- * to a single Dispatcher instance. Reads ActiveToolContext + DepRegistry
+ * pointer events, multi-touch synthesized from PointerEvents) and routes each
+ * event to the dispatcher for the view it landed in — one view unless `views`
+ * says otherwise. Reads ActiveToolContext + DepRegistry
  * internally; consumer passes the canvas ref, actions registry, and tools map.
  *
  * Side-effect only (returns void).
@@ -71,16 +72,30 @@ const IS_MAC =
  * landed in: the dispatcher that runs it, and the three lookups that resolve
  * a client point against that view's camera.
  *
- * @internal One per view. `useGestureDispatcher` builds a single one of these
- *   from its flat options today; a canvas hosting several views will hold one
- *   per view and choose between them per event, so that the hook — and its
- *   listener set — still mounts exactly once.
+ * @internal One per view. The hook builds the `id: null` one from its flat
+ *   options; `views` supplies the rest, and the hook chooses between them per
+ *   event, so that it — and its listener set — still mounts exactly once.
  */
-interface DispatcherViewTarget {
+export interface DispatcherViewTarget {
+  /** `null` is the root view — the whole canvas. Matches `ViewTarget.id`. */
+  id: string | null;
   dispatcher: Dispatcher;
   affordanceAt: UseGestureDispatcherOptions['affordanceAt'];
   classifyTarget: UseGestureDispatcherOptions['classifyTarget'];
   clientToWorld: UseGestureDispatcherOptions['clientToWorld'];
+}
+
+/**
+ * The part of `features/viewports`' `ViewResolver` the dispatcher needs: which
+ * view a client point belongs to, pinned to the view a gesture began in.
+ *
+ * @internal Structural on purpose — a `ViewResolver` satisfies it, and the
+ *   dispatcher stays free of the viewport module.
+ */
+export interface ViewIdResolver {
+  begin(pointerId: number, clientX: number, clientY: number): { id: string | null };
+  at(pointerId: number | null, clientX: number, clientY: number): { id: string | null };
+  end(pointerId: number): void;
 }
 
 /** Options for `useGestureDispatcher`: the element to listen on, the actions
@@ -203,6 +218,25 @@ export interface UseGestureDispatcherOptions {
    * wires this; tests / harnesses without chrome-caps state can omit it.
    */
   getRuleCtx?: () => import('../../features/chrome-caps').RuleCtx;
+
+  /**
+   * Routing for a canvas hosting more than one view: the non-root dispatch
+   * records to choose between, read fresh per event, and the resolver that
+   * chooses. Omit for a single view — then every event runs on the record the
+   * flat options above describe, which is what they are: view zero.
+   *
+   * A resolved id with no live record falls back to the root, so a view that
+   * unmounts mid-gesture degrades instead of dropping the event.
+   *
+   * Keyboard and paste have no coordinates to resolve; they run on the view
+   * the last coordinate-bearing event resolved to.
+   *
+   * @internal
+   */
+  views?: {
+    targets: () => readonly DispatcherViewTarget[];
+    resolver: ViewIdResolver;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -250,7 +284,7 @@ function computeMultiTouchGeometry(
  * providers.
  */
 export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
-  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick } = opts;
+  const { canvasRef, actions, toolsById, enabled = true, keyboard = true, affordanceAt, classifyTarget, dispatcher: dispatcherOpt, clientToWorld, requestRedraw, getRuleCtx, onDoubleClick, views } = opts;
   const onDoubleClickRef = useRef(onDoubleClick);
   onDoubleClickRef.current = onDoubleClick;
   const activeTool = useActiveToolContext();
@@ -285,12 +319,20 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
   };
 
   // The flat options are view zero.
-  const viewTargetRef = useRef<DispatcherViewTarget>({
-    dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
+  const rootTargetRef = useRef<DispatcherViewTarget>({
+    id: null, dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
   });
-  viewTargetRef.current = {
-    dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
+  rootTargetRef.current = {
+    id: null, dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
   };
+  const viewsRef = useRef(views);
+  viewsRef.current = views;
+
+  /** Every live dispatcher — what a cancel-everything has to reach. */
+  const allDispatchers = (): Dispatcher[] => [
+    rootTargetRef.current.dispatcher,
+    ...(viewsRef.current?.targets() ?? []).map((t) => t.dispatcher),
+  ];
   const requestRedrawRef = useRef(requestRedraw);
   requestRedrawRef.current = requestRedraw;
 
@@ -332,7 +374,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           );
         }
       }
-      dispatcherRef.current?.cancelAll('cancel');
+      for (const d of allDispatchers()) d.cancelAll('cancel');
     }
     prevActiveRef.current = activeTool.active;
   });
@@ -342,9 +384,34 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
 
     let disposed = false;
 
+    // The view the current event belongs to, as an id rather than a record:
+    // the record is rebuilt every render, so holding one across events would
+    // dispatch through last render's lookups.
+    let routedId: string | null = null;
+
+    /** The dispatch record for the routed view. */
+    const target = (): DispatcherViewTarget => {
+      if (routedId === null) return rootTargetRef.current;
+      return viewsRef.current?.targets().find((t) => t.id === routedId)
+        ?? rootTargetRef.current;
+    };
+
+    /** Route an event with coordinates. `pointerId` is `null` for input with
+     *  nothing to capture — wheel, hover, contextmenu, drop. */
+    const routeAt = (pointerId: number | null, clientX: number, clientY: number): void => {
+      routedId = viewsRef.current?.resolver.at(pointerId, clientX, clientY).id ?? null;
+    };
+    /** Route a pointerdown, pinning the pointer to the view it landed in. */
+    const routeDown = (pointerId: number, clientX: number, clientY: number): void => {
+      routedId = viewsRef.current?.resolver.begin(pointerId, clientX, clientY).id ?? null;
+    };
+    const routeRelease = (pointerId: number): void => {
+      viewsRef.current?.resolver.end(pointerId);
+    };
+
     // Resolved per event, not bound once: the dispatcher an event runs on is
     // a property of the view it landed in.
-    const dispatcherNow = (): Dispatcher => viewTargetRef.current.dispatcher;
+    const dispatcherNow = (): Dispatcher => target().dispatcher;
     const canvas = canvasRef.current;
 
     // Convert a client-space pointer position to world-space. When no
@@ -354,7 +421,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // its canvas rect + current view, so `ctx.world` becomes real world coords
     // for areaSelect / lassoSelect / world-space affordance consumers.
     const toWorld = (cx: number, cy: number): { x: number; y: number } => {
-      const fn = viewTargetRef.current.clientToWorld;
+      const fn = target().clientToWorld;
       return fn ? fn(cx, cy) : { x: cx, y: cy };
     };
 
@@ -364,10 +431,15 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // `before` captures the pre-event state so we redraw on the pump that
     // CLOSES a gesture (e.g. pointerup-with-no-remaining-handles still needs
     // to clear the overlay).
-    const dispatch = (ev: InputEvent): 'handled' | 'unhandled' => {
-      const before = dispatcherNow().inFlight().size;
-      const result = dispatcherNow().handleInput(ev, ctxRef.current);
-      const after = dispatcherNow().inFlight().size;
+    //
+    // `on` is for the one path that dispatches after its event has left the
+    // stack (drop, whose items materialize async) — by then the routed view
+    // is whatever moved under the cursor since.
+    const dispatch = (ev: InputEvent, on?: Dispatcher): 'handled' | 'unhandled' => {
+      const d = on ?? dispatcherNow();
+      const before = d.inFlight().size;
+      const result = d.handleInput(ev, ctxRef.current);
+      const after = d.inFlight().size;
       if (before > 0 || after > 0) requestRedrawRef.current?.();
       return result;
     };
@@ -568,6 +640,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // -----------------------------------------------------------------------
 
     const onWheel = (e: WheelEvent) => {
+      routeAt(null, e.clientX, e.clientY);
       // Convert client-space cursor to canvas-local: zoomAt() (and any other
       // wheel consumer of clientX/Y) anchors in canvas-top-left coords, not
       // viewport coords. Without this, anchored-wheel zoom drifts by the
@@ -577,8 +650,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         ? clientToCanvasRect(rect, e.clientX, e.clientY)
         : [e.clientX, e.clientY];
       const screenPoint = { x: e.clientX, y: e.clientY };
-      const affordance = viewTargetRef.current.affordanceAt?.(screenPoint) ?? undefined;
-      const body = viewTargetRef.current.classifyTarget?.(screenPoint);
+      const affordance = target().affordanceAt?.(screenPoint) ?? undefined;
+      const body = target().classifyTarget?.(screenPoint);
       const ev: InputEvent = {
         kind: 'wheel',
         altKey: e.altKey,
@@ -618,6 +691,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // instead of letting an ambient pan tool claim it. An absent `button`
       // (synthetic / programmatic events) counts as primary.
       if ((e.button ?? 0) !== 0) return;
+      routeDown(e.pointerId, e.clientX, e.clientY);
       activePointers.add(e.pointerId);
       pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -638,8 +712,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       // Both thunks receive world-space coords; SceneCanvas supplies the
       // client→world conversion internally via its canvas ref + view.
       const worldPoint = { x: e.clientX, y: e.clientY };
-      const affordance = viewTargetRef.current.affordanceAt?.(worldPoint) ?? undefined;
-      const body = viewTargetRef.current.classifyTarget?.(worldPoint);
+      const affordance = target().affordanceAt?.(worldPoint) ?? undefined;
+      const body = target().classifyTarget?.(worldPoint);
       const bodyTarget = body?.body;
       const bodyKind = body?.kind;
 
@@ -750,6 +824,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const onPointerMove = (e: PointerEvent) => {
+      routeAt(e.pointerId, e.clientX, e.clientY);
       // Update this pointer's tracked position.
       if (activePointers.has(e.pointerId)) {
         pointerPositions.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -874,13 +949,16 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         return;
       }
       const h = lastHover;
+      // Idle: re-resolve. Mid-gesture the branch above already returned, so a
+      // pinned pointer is never unpinned by a hover refresh.
+      routeAt(null, h.clientX, h.clientY);
       const screenPoint = { x: h.clientX, y: h.clientY };
-      const affordance = viewTargetRef.current.affordanceAt?.(screenPoint) ?? undefined;
+      const affordance = target().affordanceAt?.(screenPoint) ?? undefined;
       if (affordance?.cursor) {
         applyHoverCursor(affordance.cursor);
         return;
       }
-      const hoverBody = viewTargetRef.current.classifyTarget?.(screenPoint);
+      const hoverBody = target().classifyTarget?.(screenPoint);
       const bodyTarget = hoverBody?.body;
       const bodyKind = hoverBody?.kind;
       const w = toWorld(h.clientX, h.clientY);
@@ -922,6 +1000,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const onPointerUp = (e: PointerEvent) => {
+      routeAt(e.pointerId, e.clientX, e.clientY);
       cancelLongPress(e.pointerId);
       const prevSize = activePointers.size;
       activePointers.delete(e.pointerId);
@@ -1070,6 +1149,10 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         }
       }
 
+      // Every synthesized event this release produces has been dispatched, so
+      // the pointer's view can be unpinned.
+      routeRelease(e.pointerId);
+
       // Re-resolve the hover cursor at the release point — deferred a tick
       // so any state the up/click actions changed (selection, active tool)
       // has committed before prediction reruns.
@@ -1083,6 +1166,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     };
 
     const onPointerCancel = (e: PointerEvent) => {
+      routeAt(e.pointerId, e.clientX, e.clientY);
       cancelLongPress(e.pointerId);
       activePointers.delete(e.pointerId);
       pointerPositions.delete(e.pointerId);
@@ -1100,6 +1184,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
         shiftKey: e.shiftKey,
       };
       dispatch(ev);
+      routeRelease(e.pointerId);
     };
 
     // -----------------------------------------------------------------------
@@ -1109,11 +1194,12 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     const onContextMenu = (e: MouseEvent) => {
       // Suppress native menu so tools/actions own the right-click UX.
       e.preventDefault();
+      routeAt(null, e.clientX, e.clientY);
       const screenPoint = { x: e.clientX, y: e.clientY };
       // A secondary button never reaches `onPointerDown`, so unlike click and
       // long-press there is no press to replay the classification from.
-      const affordance = viewTargetRef.current.affordanceAt?.(screenPoint) ?? undefined;
-      const menuBody = viewTargetRef.current.classifyTarget?.(screenPoint);
+      const affordance = target().affordanceAt?.(screenPoint) ?? undefined;
+      const menuBody = target().classifyTarget?.(screenPoint);
       const w = toWorld(e.clientX, e.clientY);
       const ev: InputEvent = {
         kind: 'contextmenu',
@@ -1161,6 +1247,8 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       const dt = e.dataTransfer;
       if (!dt) return;
       e.preventDefault();
+      routeAt(null, e.clientX, e.clientY);
+      const dropOn = target().dispatcher;
       const w = toWorld(e.clientX, e.clientY);
       // Real modifiers forwarded (Option-drag is a copy-drag on macOS); the
       // kit ingest binding declares all modifiers optional, so they can't
@@ -1175,7 +1263,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
           kind: 'drop', items,
           x: w.x, y: w.y, clientX: e.clientX, clientY: e.clientY,
           ...base,
-        });
+        }, dropOn);
       });
     };
 
@@ -1252,7 +1340,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
       clearHoverCursor();
       cancelAllLongPress();
       disposed = true;
-      dispatcherNow().cancelAll('cancel');
+      for (const d of allDispatchers()) d.cancelAll('cancel');
     };
   }, [enabled, keyboard, canvasRef]);
 }
