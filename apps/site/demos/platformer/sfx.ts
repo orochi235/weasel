@@ -139,7 +139,7 @@ export function registerSounds(engine: AudioEngine): Record<SoundName, SoundHand
   for (const name of SOUND_NAMES) {
     const pcm = renderSound(name, rate);
     const buffer = engine.context.createBuffer(1, pcm.length, rate);
-    buffer.copyToChannel(pcm, 0);
+    buffer.getChannelData(0).set(pcm);
     out[name] = engine.register(buffer);
   }
   return out;
