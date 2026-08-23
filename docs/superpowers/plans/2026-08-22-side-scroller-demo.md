@@ -671,7 +671,7 @@ git commit -m "cover walls, one-way platforms and jump feel in the platformer bo
 // apps/site/demos/__tests__/platformerCamera.test.ts
 import { describe, it, expect } from 'vitest';
 import { parseLevel, TILE } from '../platformer/level';
-import { CAM_SCALE, cameraView, createCamera, followCamera } from '../platformer/camera';
+import { CAM_SCALE, DEAD_ZONE_X, cameraView, createCamera, followCamera } from '../platformer/camera';
 
 const DIMS = { width: 640, height: 360 };
 // 40 x 20 tiles — wider and taller than the viewport in world units.
@@ -689,7 +689,7 @@ describe('followCamera', () => {
     const target = { x: 30 * TILE, y: 10 * TILE };
     for (let i = 0; i < 300; i++) cam = followCamera(cam, target, DIMS, BIG, 1 / 60);
     expect(cam.x).toBeGreaterThan(20 * TILE);
-    expect(Math.abs(cam.x - target.x)).toBeLessThan(TILE);
+    expect(target.x - cam.x).toBeCloseTo(DEAD_ZONE_X, 6);
   });
 
   it('clamps so the view never leaves the level', () => {
@@ -738,10 +738,8 @@ import type { Level, Vec2 } from './level';
 
 /** World units are small (24px tiles), so the camera magnifies. */
 export const CAM_SCALE = 2;
-/** Half-width / half-height of the box the target moves in freely, in world
- *  units. A stationary target settles at exactly this distance from center, so
- *  both must stay under the `TILE` the settle test allows. */
-export const DEAD_ZONE_X = 20;
+/** Half-width / half-height of the box the target moves in freely, in world units. */
+export const DEAD_ZONE_X = 28;
 export const DEAD_ZONE_Y = 20;
 /** Exponential follow rate; higher is snappier. */
 export const CAM_LAMBDA = 6;
@@ -1082,7 +1080,7 @@ export function samplePose(c: Clip, t: number): Pose {
 - [ ] **Step 5: Run test to verify it passes**
 
 Run: `npm run test:kit -- platformerClips`
-Expected: PASS, 8 tests. If the seamless-cycle assertion fails, the first and
+Expected: PASS, 9 tests. If the seamless-cycle assertion fails, the first and
 last `RUN` keys have drifted apart — make them the same `stride` call.
 
 - [ ] **Step 6: Commit**
