@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SceneCanvas, WeaselProvider, deriveParallaxView, resolveSkeleton, useAnimator, useScene } from '@weasel-js/core';
-import type { Dims, DrawCommand, RenderLayer, View } from '@weasel-js/core';
+import type { Dims, DrawCommand, RenderLayer, TimelineHandle, View } from '@weasel-js/core';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { CAM_SCALE, cameraView, createCamera, followCamera, type Camera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { drawBackdrop, drawPlayer, drawTiles } from './platformer/skin';
-import { createBodyState, spikeOverlap, stepBody, STEP, type BodyState, type Input } from './platformer/physics';
+import { createBodyState, spikeOverlap, stepBody, STEP, MOVE_SPEED, type BodyState, type Input } from './platformer/physics';
 import { createAnimState, nextAnimState, resolvePose, type AnimState } from './platformer/animState';
 import { INVULN } from './platformer/entities';
 import { PLAYER_SKELETON } from './platformer/skeleton';
 import { consumeJumpPress, usePlatformerInput } from './platformer/useInput';
 import { registerSounds, type SoundName } from './platformer/sfx';
+import { CLIPS } from './platformer/clips';
+import { footstepTrack } from './platformer/footsteps';
 
 const W = 720;
 const H = 405;
@@ -38,7 +40,22 @@ const freshGame = (): GameRefs => ({
   accumulator: 0,
 });
 
+/**
+ * `usePlatformerInput` registers its action via `useAction`, which no-ops
+ * without an `ActionsProvider` above it in the tree — and `<SceneCanvas>`'s
+ * own provider is a descendant of this component, not an ancestor. So the
+ * hook (and everything that reads its result) has to live inside
+ * `<WeaselProvider>`, not alongside it.
+ */
 export function SideScrollerDemo() {
+  return (
+    <WeaselProvider>
+      <SideScrollerDemoInner />
+    </WeaselProvider>
+  );
+}
+
+function SideScrollerDemoInner() {
   const animator = useAnimator();
   const scene = useScene({ items: [] });
   const input = usePlatformerInput();
@@ -47,6 +64,13 @@ export function SideScrollerDemo() {
 
   const audio = useRef<{ engine: AudioEngine; sounds: Record<SoundName, SoundHandle>; bed: VoiceHandle | null } | null>(null);
   const [audioState, setAudioState] = useState<'off' | 'suspended' | 'running'>('off');
+
+  // The run cycle's own timeline — its playhead is what fires footsteps, not
+  // the fixed-step loop. `runScale` is what the loop writes and the footstep
+  // handler reads back to know the interval a given tick implies.
+  const runCycle = useRef<TimelineHandle | null>(null);
+  const runScale = useRef(1);
+  const stepStats = useRef({ count: 0, lastAt: 0, spread: 0 });
 
   // Built on the unlock gesture, not at mount: jsdom has no AudioContext, and a
   // context created before a gesture starts suspended anyway.
@@ -69,6 +93,38 @@ export function SideScrollerDemo() {
     audio.current?.engine.dispose();
     audio.current = null;
   }, []);
+
+  useEffect(() => {
+    const handle = animator.timeline({
+      loop: true,
+      autoplay: true,
+      tracks: [
+        footstepTrack(() => {
+          const a = audio.current;
+          const now = performance.now();
+          const s = stepStats.current;
+          if (s.lastAt) {
+            const gap = now - s.lastAt;
+            const expected = (CLIPS.run.duration / 2) / Math.max(runScale.current, 0.01);
+            s.spread = Math.max(s.spread, Math.abs(gap - expected));
+          }
+          s.lastAt = now;
+          s.count++;
+          if (!a || a.engine.state() !== 'running') return;
+          // `fire()` gave us no crossing time, so "now" is the best available —
+          // at frame resolution, not the sample resolution the engine wants.
+          a.engine.play(a.sounds.step, { bus: 'sfx', gain: 0.35, when: a.engine.now() });
+        }),
+      ],
+      duration: CLIPS.run.duration,
+    });
+    runCycle.current = handle;
+    handle.pause();
+    return () => {
+      handle.cancel();
+      runCycle.current = null;
+    };
+  }, [animator]);
 
   const fire = (name: SoundName, gain = 0.8) => {
     const a = audio.current;
@@ -138,7 +194,13 @@ export function SideScrollerDemo() {
       // accumulator from running hundreds of catch-up steps in one frame.
       const frame = Math.min((now - last) / 1000, 0.1);
       last = now;
-      if (!running) return;
+      if (!running) {
+        // A game pause freezes physics but not the animator, so the run
+        // cycle's own registration would otherwise keep advancing on its own.
+        const cycle = runCycle.current;
+        if (cycle && !cycle.isPaused()) cycle.pause();
+        return;
+      }
 
       const g = game.current;
       g.accumulator += frame;
@@ -171,46 +233,58 @@ export function SideScrollerDemo() {
           STEP,
         );
       }
+
+      const grounded = g.player.body.onGround;
+      const speed = Math.abs(g.player.body.vx);
+      const cycle = runCycle.current;
+      if (cycle) {
+        if (grounded && speed > 1) {
+          runScale.current = Math.max(speed / MOVE_SPEED, 0.2);
+          cycle.setTimeScale(runScale.current);
+          if (cycle.isPaused()) cycle.resume();
+        } else if (!cycle.isPaused()) {
+          cycle.pause();
+        }
+      }
+
       g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
       audio.current?.engine.setListener({ x: g.player.body.x, y: g.player.body.y });
     });
   }, [animator, running, input]);
 
   return (
-    <WeaselProvider>
-      <div className="ckd-demo">
-        <div className="ckd-toolbar">
-          <button className="ckd-btn" onClick={() => setRunning((r) => !r)}>
-            {running ? 'pause' : 'restart'}
-          </button>
-          <button className="ckd-btn" onClick={enableAudio} disabled={audioState === 'running'}>
-            {audioState === 'running' ? 'audio on' : 'enable audio'}
-          </button>
-          <span className="ckd-readout">zoom {CAM_SCALE}x</span>
-        </div>
-        <SceneCanvas
-          width={W}
-          height={H}
-          className="ckd-canvas"
-          scene={scene}
-          selectionMode="none"
-          animator={animator}
-          view={IDENTITY_VIEW}
-          layers={{
-            backdropFar: { layer: layers.bands[0], before: 'scene' },
-            backdropMid: { layer: layers.bands[1], after: 'backdropFar' },
-            backdropNear: { layer: layers.bands[2], after: 'backdropMid' },
-            tiles: { layer: layers.tiles, after: 'backdropNear' },
-            player: { layer: layers.player, after: 'tiles' },
-            scene: { drawOne: () => [] },
-            selectionOverlay: null,
-          }}
-        />
-        <div className="ckd-hint">
-          A platformer built as a load test for the animation timeline and the audio
-          engine. Everything is drawn by custom render layers; the scene graph is off.
-        </div>
+    <div className="ckd-demo">
+      <div className="ckd-toolbar">
+        <button className="ckd-btn" onClick={() => setRunning((r) => !r)}>
+          {running ? 'pause' : 'restart'}
+        </button>
+        <button className="ckd-btn" onClick={enableAudio} disabled={audioState === 'running'}>
+          {audioState === 'running' ? 'audio on' : 'enable audio'}
+        </button>
+        <span className="ckd-readout">zoom {CAM_SCALE}x</span>
       </div>
-    </WeaselProvider>
+      <SceneCanvas
+        width={W}
+        height={H}
+        className="ckd-canvas"
+        scene={scene}
+        selectionMode="none"
+        animator={animator}
+        view={IDENTITY_VIEW}
+        layers={{
+          backdropFar: { layer: layers.bands[0], before: 'scene' },
+          backdropMid: { layer: layers.bands[1], after: 'backdropFar' },
+          backdropNear: { layer: layers.bands[2], after: 'backdropMid' },
+          tiles: { layer: layers.tiles, after: 'backdropNear' },
+          player: { layer: layers.player, after: 'tiles' },
+          scene: { drawOne: () => [] },
+          selectionOverlay: null,
+        }}
+      />
+      <div className="ckd-hint">
+        A platformer built as a load test for the animation timeline and the audio
+        engine. Everything is drawn by custom render layers; the scene graph is off.
+      </div>
+    </div>
   );
 }
