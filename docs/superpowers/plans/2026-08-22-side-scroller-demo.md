@@ -1217,14 +1217,14 @@ export const FADE_MS = 120;
 
 export interface AnimState {
   current: ClipName;
-  /** The clip being faded out, or null once the fade completes. */
-  previous: ClipName | null;
-  /** 0 → all previous, 1 → all current. */
+  /** The pose that was on screen when the current clip took over, frozen.
+   *  A clip name cannot stand in for this: switching again mid-fade would
+   *  discard whatever the earlier blend contributed and the pose would pop. */
+  outgoing: Pose | null;
+  /** 0 → all outgoing, 1 → all current. */
   fade: number;
   /** Playhead into `current`, in milliseconds. */
   phase: number;
-  /** Playhead into `previous`, frozen at the moment of the switch. */
-  previousPhase: number;
 }
 
 export interface AnimCtx {
@@ -1236,10 +1236,9 @@ export interface AnimCtx {
 
 export const createAnimState = (): AnimState => ({
   current: 'idle',
-  previous: null,
+  outgoing: null,
   fade: 1,
   phase: 0,
-  previousPhase: 0,
 });
 
 function pick(ctx: AnimCtx): ClipName {
@@ -1273,36 +1272,32 @@ export function nextAnimState(s: AnimState, ctx: AnimCtx, dt: number): AnimState
   const want = pick(ctx);
   const switching = want !== s.current;
 
-  const current = want;
-  const previous = switching ? s.current : s.fade < 1 ? s.previous : null;
-  const previousPhase = switching ? s.phase : s.previousPhase;
-  const phase = advance(current, switching ? 0 : s.phase, ctx, dt);
-
-  const fade = previous === null
+  // Snapshot what is actually on screen, whatever mixture produced it.
+  const outgoing = switching ? resolvePose(s) : s.outgoing;
+  const phase = advance(want, switching ? 0 : s.phase, ctx, dt);
+  const fade = outgoing === null
     ? 1
     : Math.min((switching ? 0 : s.fade) + (dt * 1000) / FADE_MS, 1);
 
-  return {
-    current,
-    previous: fade >= 1 ? null : previous,
-    fade,
-    phase,
-    previousPhase,
-  };
+  return { current: want, outgoing: fade >= 1 ? null : outgoing, fade, phase };
 }
 
-/** The pose the rig is drawn at: the outgoing clip blended into the incoming one. */
+/** The pose the rig is drawn at: the frozen outgoing pose blended into the
+ *  clip now playing. */
 export function resolvePose(s: AnimState): Pose {
   const now = samplePose(CLIPS[s.current], s.phase);
-  if (s.previous === null || s.fade >= 1) return now;
-  return poseInterpolate(samplePose(CLIPS[s.previous], s.previousPhase), now, s.fade);
+  if (s.outgoing === null || s.fade >= 1) return now;
+  return poseInterpolate(s.outgoing, now, s.fade);
 }
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npm run test:kit -- platformerAnimState`
-Expected: PASS, 10 tests.
+Expected: PASS, 11 tests — including one asserting the visible pose does not jump
+when a second clip switch lands during an unfinished fade. Verify that one by
+reverting to a clip-name `previous` and watching it fail; a fade bug is invisible
+to every other assertion.
 
 - [ ] **Step 5: Commit**
 
