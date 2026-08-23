@@ -629,6 +629,14 @@ public `key-held` edges.
 A platformer in `apps/site/demos/` is a deliberate exception to the terse,
 single-purpose demo convention — an exception, not a precedent.
 
+- **Tune the camera dead zone in the browser.** `DEAD_ZONE_X` in
+  `apps/site/demos/platformer/camera.ts` is a placeholder at 28 (vs
+  `DEAD_ZONE_Y` at 20); pick the real value on feel once the demo is playable,
+  at the plan's Task 12. A dead-zone camera settles at exactly `DEAD_ZONE_X`
+  from a stationary target, so `platformerCamera.test.ts` asserts that
+  invariant rather than a fixed distance — changing the constant does not
+  break the test.
+
 ### Earlier deferrals
 
 All from `docs/specs/2026-05-04-animation-primitive-design.md`. The first two are
