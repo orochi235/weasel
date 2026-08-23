@@ -4,10 +4,8 @@ import type { Level, Vec2 } from './level';
 
 /** World units are small (24px tiles), so the camera magnifies. */
 export const CAM_SCALE = 2;
-/** Half-width / half-height of the box the target moves in freely, in world units.
- *  Must stay under TILE: a stationary target converges to exactly this distance
- *  from center, and a dead zone wider than a tile would leave it un-recentered. */
-export const DEAD_ZONE_X = 20;
+/** Half-width / half-height of the box the target moves in freely, in world units. */
+export const DEAD_ZONE_X = 28;
 export const DEAD_ZONE_Y = 20;
 /** Exponential follow rate; higher is snappier. */
 export const CAM_LAMBDA = 6;
