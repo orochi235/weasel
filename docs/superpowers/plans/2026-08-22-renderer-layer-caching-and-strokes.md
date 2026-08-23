@@ -24,8 +24,8 @@ Read before starting:
 - `packages/core/CLAUDE.md` at the repo root — **every changeset you write is `patch`**, and you
   must never write a `bump-approved` marker.
 
-Run the suite with `npm test -w @weasel-js/core`. A single file is
-`npx vitest run packages/core/src/core/layers/render.test.ts` from the repo root.
+Run the suite with `npx vitest run --project=kit`. A single file is
+`npx vitest run --project=kit packages/core/src/core/layers/render.test.ts` from the repo root.
 
 ---
 
@@ -76,7 +76,7 @@ describe('computeFitViewport is reachable from the public entry', () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `npx vitest run packages/core/src/core/viewport/useAutoCenter.test.ts -t "reachable"`
+Run: `npx vitest run --project=kit packages/core/src/core/viewport/useAutoCenter.test.ts -t "reachable"`
 Expected: FAIL — `computeFitViewport` is not exported.
 
 - [ ] **Step 3: Rename the viewport function**
@@ -104,12 +104,12 @@ Inside `useAutoCenter`, change `const fit = computeFitView(...)` to
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `npx vitest run packages/core/src/core/viewport/useAutoCenter.test.ts -t "reachable"`
+Run: `npx vitest run --project=kit packages/core/src/core/viewport/useAutoCenter.test.ts -t "reachable"`
 Expected: PASS.
 
 - [ ] **Step 5: Run the full core suite for fallout**
 
-Run: `npm test -w @weasel-js/core`
+Run: `npx vitest run --project=kit`
 Expected: PASS. The minimap `computeFitView` is untouched, so
 `packages/labkit/src/passthrough/weasel-canvas.ts` still resolves — it was re-exporting the minimap
 one all along. Leave that passthrough alone; renaming the *other* function is what makes its name
@@ -307,7 +307,7 @@ describe('drawLayers command caching', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npx vitest run packages/core/src/core/layers/render.test.ts -t "command caching"`
+Run: `npx vitest run --project=kit packages/core/src/core/layers/render.test.ts -t "command caching"`
 Expected: FAIL — `drawLayers` takes six parameters, so the seventh is rejected by the compiler and
 the counting assertions are wrong.
 
@@ -390,7 +390,7 @@ Add `LayerCommandCache` to the file's own exports if it is not already exported 
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npx vitest run packages/core/src/core/layers/render.test.ts`
+Run: `npx vitest run --project=kit packages/core/src/core/layers/render.test.ts`
 Expected: PASS, including the file's pre-existing tests.
 
 - [ ] **Step 5: Export the cache type from the package entry**
@@ -446,7 +446,7 @@ describe('Canvas layer command cache', () => {
 
 - [ ] **Step 2: Run it to see the current state**
 
-Run: `npx vitest run packages/core/src/canvas/Canvas.layerCache.test.tsx`
+Run: `npx vitest run --project=kit packages/core/src/canvas/Canvas.layerCache.test.tsx`
 Expected: FAIL or error — `Canvas`'s required props differ from the stub above. Read
 `packages/core/src/canvas/Canvas.tsx`'s `CanvasProps` and the existing
 `packages/core/src/canvas/Canvas.dpr.test.tsx` for the minimal mounting shape this repo already
@@ -491,7 +491,7 @@ add:
 
 - [ ] **Step 5: Run the canvas suite**
 
-Run: `npx vitest run packages/core/src/canvas/`
+Run: `npx vitest run --project=kit packages/core/src/canvas/`
 Expected: PASS. `Canvas.test.tsx` and `Canvas.dispose.test.tsx` must be unaffected — no layer in
 the kit declares `deps` yet, so every layer still rebuilds each frame.
 
@@ -558,7 +558,7 @@ describe('dashPolyline', () => {
 
 - [ ] **Step 3: Run tests to verify they fail**
 
-Run: `npx vitest run packages/core/src/features/paths/tessellate/stroke.dash.test.ts`
+Run: `npx vitest run --project=kit packages/core/src/features/paths/tessellate/stroke.dash.test.ts`
 Expected: FAIL — `dashPolyline` is not exported.
 
 - [ ] **Step 4: Implement `dashPolyline`**
@@ -620,7 +620,7 @@ export function dashPolyline(
 
 - [ ] **Step 5: Run tests to verify they pass**
 
-Run: `npx vitest run packages/core/src/features/paths/tessellate/stroke.dash.test.ts`
+Run: `npx vitest run --project=kit packages/core/src/features/paths/tessellate/stroke.dash.test.ts`
 Expected: PASS.
 
 - [ ] **Step 6: Add `dash` to `Stroke`**
@@ -659,7 +659,7 @@ Define `LINE_PATH` using the same `Path` construction the file's neighbors use �
 
 - [ ] **Step 9: Run and commit**
 
-Run: `npm test -w @weasel-js/core`
+Run: `npx vitest run --project=kit`
 Expected: PASS.
 
 ```bash
@@ -730,7 +730,7 @@ describe('resolveStrokeWidth', () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `npx vitest run packages/core/src/features/paths/tessellate/stroke.screenWidth.test.ts`
+Run: `npx vitest run --project=kit packages/core/src/features/paths/tessellate/stroke.screenWidth.test.ts`
 Expected: FAIL — `resolveStrokeWidth` is not exported.
 
 - [ ] **Step 3: Implement it**
@@ -750,7 +750,7 @@ export function resolveStrokeWidth(width: number | { px: number }, scale: number
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `npx vitest run packages/core/src/features/paths/tessellate/stroke.screenWidth.test.ts`
+Run: `npx vitest run --project=kit packages/core/src/features/paths/tessellate/stroke.screenWidth.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Widen the `Stroke.width` type**
@@ -783,7 +783,7 @@ Expected: errors wherever `stroke.width` was assumed to be a number. Fix each by
 
 - [ ] **Step 8: Run the full suite**
 
-Run: `npm test -w @weasel-js/core`
+Run: `npx vitest run --project=kit`
 Expected: PASS.
 
 - [ ] **Step 9: Commit and write a changeset**
