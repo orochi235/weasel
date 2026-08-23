@@ -18,17 +18,20 @@ export interface ViewLike {
  *
  * @param clientX  - `event.clientX`
  * @param clientY  - `event.clientY`
- * @param rect     - bounding rect of the canvas element (at minimum `left`/`top`)
+ * @param origin   - client-space origin of the surface `view` is a camera on.
+ *   For a whole canvas that is its bounding rect. For a viewport node it is
+ *   the canvas rect offset by the viewport's own rect, so the same call maps
+ *   into that viewport's inner world.
  * @param view     - current viewport transform
  */
 export function clientToWorld(
   clientX: number,
   clientY: number,
-  rect: { left: number; top: number },
+  origin: { left: number; top: number },
   view: ViewLike,
 ): [number, number] {
   return [
-    (clientX - rect.left) / view.scale.x + view.x,
-    (clientY - rect.top) / view.scale.y + view.y,
+    (clientX - origin.left) / view.scale.x + view.x,
+    (clientY - origin.top) / view.scale.y + view.y,
   ];
 }

@@ -41,6 +41,7 @@ import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
+import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
 import { drawLayers, type Dims, type RenderLayer } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
@@ -736,6 +737,20 @@ function resolveToolsCursor(
   }
 }
 
+/** Client coords to world, through the `clientToWorld` prop when one is
+ *  supplied and the canvas rect otherwise. Every pointer path in this file
+ *  goes through here so the two cannot drift. */
+function toWorld(
+  canvas: HTMLCanvasElement,
+  clientX: number,
+  clientY: number,
+  view: View,
+  override: CanvasProps<never, never>['clientToWorld'],
+): [number, number] {
+  if (override) return override(canvas, clientX, clientY);
+  return clientToWorldHelper(clientX, clientY, canvas.getBoundingClientRect(), view);
+}
+
 function CanvasInner<TNode extends { id: string }, TPose>(
   props: CanvasProps<TNode, TPose>,
   ref: React.ForwardedRef<CanvasExtensionApi>,
@@ -946,14 +961,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (overrides && (overrides.clientX !== undefined || overrides.clientY !== undefined) && c) {
         const cx = overrides.clientX ?? 0;
         const cy = overrides.clientY ?? 0;
-        const cw = clientToWorldRef.current;
-        if (cw) {
-          [worldX, worldY] = cw(c, cx, cy);
-        } else {
-          const rect = c.getBoundingClientRect();
-          worldX = (cx - rect.left) / view.scale.x + view.x;
-          worldY = (cy - rect.top) / view.scale.y + view.y;
-        }
+        [worldX, worldY] = toWorld(c, cx, cy, view, clientToWorldRef.current);
       }
       const rect = c ? c.getBoundingClientRect() : (typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect));
       const m = overrides?.modifiers;
@@ -1188,16 +1196,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (pointerDownRef.current) return;
       const c = e.currentTarget;
       const view = viewRef.current;
-      const cw = clientToWorldRef.current;
-      let worldX: number;
-      let worldY: number;
-      if (cw) {
-        [worldX, worldY] = cw(c, e.clientX, e.clientY);
-      } else {
-        const rect = c.getBoundingClientRect();
-        worldX = (e.clientX - rect.left) / view.scale.x + view.x;
-        worldY = (e.clientY - rect.top) / view.scale.y + view.y;
-      }
+      const [worldX, worldY] = toWorld(c, e.clientX, e.clientY, view, clientToWorldRef.current);
       for (const layer of layersWithDebug) {
         layer.onUncapturedMove?.(worldX, worldY, e.nativeEvent, view, { width, height });
       }
