@@ -85,17 +85,27 @@ render-to-texture per layer and compositing, which the renderer has no concept o
 dispatch alone is expensive enough to want that is a measurement nobody has taken; take it
 before building it.
 
-## Renderer gaps to close
+## Renderer gaps: there are none
 
-Two things a 2D layer can express and `DrawCommand` cannot. Both are features the target is
-missing, and both block layers that would otherwise port mechanically:
+An earlier draft of this spec named two, dashed strokes and hairlines. **Both claims were wrong**,
+found by grepping `DrawCommand.ts` and `draw.ts` and concluding from their silence.
 
-- **Dashed strokes.** Nothing in `DrawCommand.ts` or `draw.ts` carries a dash pattern. Add
-  `dash?: number[]` to `Stroke`, dashing at flatten time so a dash length stays in world units
-  under zoom.
-- **Hairlines.** 2D layers set `lineWidth = 1 / zoom` to hold a stroke at one pixel. Under a
-  view-applied group transform the layer no longer knows the zoom at draw time. Add a
-  screen-space stroke width — `width: { px: 1 }` against the existing world-unit number.
+- **Dashed strokes already ship.** `Stroke.dash` is at `core/paint-types.ts:134`, the flatten-time
+  split is `splitForDash` at `features/paths/tessellate/stroke.ts:329`, and the pattern is already
+  in the stroke mesh cache key. It carries anchor parameters across dash boundaries and handles
+  closed subpaths — strictly more than the draft proposed building.
+- **Hairlines are already expressible.** `RenderLayer.draw` receives `(data, view, dims)`, so a
+  layer computes `1 / meanScale(view.scale)` itself. `features/grid/layer.ts:78` does exactly this,
+  and `core/viewport/meanScale.ts:11` documents hairline widths as the idiom's legitimate use.
+
+Nothing here blocks the port. A declarative `Stroke.width: { px }` would be sugar over a working
+idiom — it would move the division to one place and let the mesh cache key see it — but that is an
+engine-surface proposal on its own merits, not a gap this spec depends on. It is not in scope.
+
+**Known defect, unrelated to this spec.** `splitForDash` flushes a closed subpath's final run as
+its own open sub-polyline, so when the pattern does not divide evenly into the perimeter, the last
+and first dashes meet as two butt-capped runs at the start vertex instead of one dash wrapping
+around. Visible on a round-cap dashed rectangle.
 
 ## Where the view lives
 
