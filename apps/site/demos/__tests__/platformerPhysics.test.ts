@@ -1,7 +1,7 @@
 // apps/site/demos/__tests__/platformerPhysics.test.ts
 import { describe, it, expect } from 'vitest';
 import { parseLevel, TILE } from '../platformer/level';
-import { STEP, createBodyState, spikeOverlap, stepBody, type Input } from '../platformer/physics';
+import { COYOTE, JUMP_BUFFER, STEP, createBodyState, spikeOverlap, stepBody, type BodyState, type Input } from '../platformer/physics';
 
 const FLAT = parseLevel([
   '.....',
@@ -13,7 +13,7 @@ const FLAT = parseLevel([
 const IDLE: Input = { left: false, right: false, jumpHeld: false, jumpPressed: false };
 
 /** Run `n` fixed steps and return the final state. */
-function run(state = createBodyState(FLAT.spawn ?? { x: 2 * TILE, y: 0 }), input = IDLE, n = 120) {
+function run(state: BodyState, input = IDLE, n = 120) {
   let s = state;
   for (let i = 0; i < n; i++) s = stepBody(s, FLAT, input, STEP);
   return s;
@@ -144,6 +144,39 @@ describe('jump feel', () => {
     let s = createBodyState({ x: 3 * TILE - 2, y: 2 * TILE });
     for (let i = 0; i < 200; i++) s = stepBody(s, LEDGE, IDLE, STEP);
     expect(s.body.onGround).toBe(true);
+  });
+
+  it('refuses a jump once coyote time has fully decayed', () => {
+    const LEDGE = parseLevel(['.....', '.....', '.....', '##...', '.....']);
+    let s = createBodyState({ x: 1.5 * TILE, y: 2 * TILE });
+    for (let i = 0; i < 120; i++) s = stepBody(s, LEDGE, IDLE, STEP);
+    let steps = 0;
+    while (s.body.onGround && steps < 60) {
+      s = stepBody(s, LEDGE, RIGHT, STEP);
+      steps++;
+    }
+    expect(s.body.onGround).toBe(false);
+    for (let i = 0; i < Math.ceil(COYOTE / STEP) + 2; i++) s = stepBody(s, LEDGE, IDLE, STEP);
+    expect(s.coyote).toBe(0);
+    s = stepBody(s, LEDGE, { left: false, right: false, jumpHeld: true, jumpPressed: true }, STEP);
+    expect(s.jumped).toBe(false);
+    expect(s.body.vy).toBeGreaterThanOrEqual(0);
+  });
+
+  it('drops a buffered jump once the buffer window has fully elapsed', () => {
+    let s = createBodyState({ x: 2 * TILE, y: -30 * TILE });
+    s = stepBody(s, FLAT, { left: false, right: false, jumpHeld: false, jumpPressed: true }, STEP);
+    for (let i = 0; i < Math.ceil(JUMP_BUFFER / STEP) + 2; i++) s = stepBody(s, FLAT, IDLE, STEP);
+    expect(s.jumpBuffer).toBe(0);
+    let landedWithJump = false;
+    let steps = 0;
+    while (!s.body.onGround && steps < 1000) {
+      s = stepBody(s, FLAT, IDLE, STEP);
+      if (s.landed && s.jumped) landedWithJump = true;
+      steps++;
+    }
+    expect(s.body.onGround).toBe(true);
+    expect(landedWithJump).toBe(false);
   });
 
   it('buffers a jump pressed just before landing', () => {

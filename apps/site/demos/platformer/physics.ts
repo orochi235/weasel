@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/physics.ts
-import { EMPTY, ONEWAY, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
+import { ONEWAY, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
 
 /** Fixed simulation step, in seconds. The render loop accumulates into it. */
 export const STEP = 1 / 120;
@@ -74,22 +74,21 @@ function resolveX(b: Body, level: Level): void {
       if (tileAt(level, cx, cy) === SOLID) {
         b.x = cx * TILE - b.w / 2;
         b.vx = 0;
+        break;
       }
     } else if (b.vx < 0) {
       const cx = toCol(left(b));
       if (tileAt(level, cx, cy) === SOLID) {
         b.x = (cx + 1) * TILE + b.w / 2;
         b.vx = 0;
+        break;
       }
     }
   }
 }
 
-/**
- * Push the body out along y and report what it hit. `prevBottom` is the body's
- * bottom edge before the move — a one-way platform only blocks a body that was
- * entirely above it, which is what lets a jump pass up through one.
- */
+/** `prevBottom` is the body's bottom edge before the move — a one-way platform
+ *  only blocks a body that was entirely above it. */
 function resolveY(b: Body, level: Level, prevBottom: number): 'floor' | 'ceiling' | null {
   const c0 = toCol(left(b));
   const c1 = toCol(right(b) - 0.001);
@@ -103,6 +102,7 @@ function resolveY(b: Body, level: Level, prevBottom: number): 'floor' | 'ceiling
         b.y = cy * TILE - b.h / 2;
         b.vy = 0;
         hit = 'floor';
+        break;
       }
     } else if (b.vy < 0) {
       const cy = toRow(top(b));
@@ -110,6 +110,7 @@ function resolveY(b: Body, level: Level, prevBottom: number): 'floor' | 'ceiling
         b.y = (cy + 1) * TILE + b.h / 2;
         b.vy = 0;
         hit = 'ceiling';
+        break;
       }
     }
   }
@@ -149,7 +150,6 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround };
 }
 
-/** True when any tile the body overlaps is a spike. */
 export function spikeOverlap(b: Body, level: Level): boolean {
   for (let cy = toRow(top(b)); cy <= toRow(bottom(b) - 0.001); cy++) {
     for (let cx = toCol(left(b)); cx <= toCol(right(b) - 0.001); cx++) {
@@ -159,5 +159,3 @@ export function spikeOverlap(b: Body, level: Level): boolean {
   return false;
 }
 
-/** Re-exported so consumers need only one import for the geometry vocabulary. */
-export { EMPTY, SOLID, ONEWAY, SPIKE };
