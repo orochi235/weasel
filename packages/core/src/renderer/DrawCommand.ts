@@ -118,6 +118,16 @@ export interface ImageDrawCommand {
    *  device pixels as hard squares — required by anything magnifying a
    *  framebuffer readback, where blur destroys the point of the readback. */
   sampling?: 'linear' | 'nearest';
+  /** Sub-rectangle of `image` to draw, in bitmap pixels from the top-left.
+   *  Omitted draws the whole bitmap. Not range-checked: a rect past the edge
+   *  samples outside [0..1], which CLAMP_TO_EDGE smears. With
+   *  `sampling: 'linear'` the filter reaches half a texel beyond `source`, so
+   *  atlas frames need a gutter (see `SpriteSheet.spacing`) or `'nearest'`. */
+  source?: { x: number; y: number; w: number; h: number };
+  /** Mirror the sampled region within the destination rect. The quad does not
+   *  move — a flipped draw covers exactly the pixels an unflipped one does. */
+  flipX?: boolean;
+  flipY?: boolean;
 }
 
 /**

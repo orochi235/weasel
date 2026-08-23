@@ -1,7 +1,7 @@
 # Image source rect and flip — design
 
 **Date:** 2026-08-22
-**Status:** designed
+**Status:** implemented
 
 What this is: a sub-rectangle and a mirror on `ImageDrawCommand`, so one
 decoded bitmap can be drawn as many frames. For anyone touching the image path

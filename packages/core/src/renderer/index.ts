@@ -16,6 +16,7 @@ export type {
   ShaderDrawCommand,
   SolidPaint,
 } from './DrawCommand';
+export { frameRect, type SpriteSheet } from './spriteSheet';
 export { mat3, type Mat3 } from './math/mat3';
 export { viewToMat3, type View as ViewLike } from './math/viewToMat3';
 export { tessellate, type TessellateOptions } from 'features/paths/tessellate/tessellate';

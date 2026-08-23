@@ -623,10 +623,11 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 
 Runs after the timeline and audio arcs land, as a load test on both — a
 platformer drives them harder and more continuously than any editor interaction
-does. Demo-local: frame loop, collision, tile map. Kit changes it is expected to
-surface: a source rect and flip on `ImageDrawCommand` (sprite sheets currently
-need a custom shader via `ShaderDrawCommand`), and a key-state poll over the
-public `key-held` edges.
+does. Demo-local: frame loop, collision, tile map. The kit change it is still
+expected to surface is a key-state poll over the public `key-held` edges; the
+sprite-sheet half landed ahead of it — `ImageDrawCommand.source` / `flipX` /
+`flipY` and `frameRect`, see
+`docs/superpowers/specs/2026-08-22-image-source-rect-flip-design.md`.
 
 A platformer in `apps/site/demos/` is a deliberate exception to the terse,
 single-purpose demo convention — an exception, not a precedent.

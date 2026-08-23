@@ -1663,14 +1663,23 @@ function drawImage(ctx: DrawContext, cmd: ImageDrawCommand): void {
   const prog = ctx.imageFill;
   gl.useProgram(prog.handle);
 
-  // A quad covering (x, y, w, h) with UV [0..1].
+  // A quad covering (x, y, w, h), sampling `source` (whole bitmap by default).
   const x0 = cmd.x, y0 = cmd.y;
   const x1 = cmd.x + cmd.w, y1 = cmd.y + cmd.h;
+  const src = cmd.source;
+  let u0 = 0, v0 = 0, u1 = 1, v1 = 1;
+  if (src) {
+    const tw = cmd.image.width, th = cmd.image.height;
+    u0 = src.x / tw; u1 = (src.x + src.w) / tw;
+    v0 = src.y / th; v1 = (src.y + src.h) / th;
+  }
+  if (cmd.flipX) { const t = u0; u0 = u1; u1 = t; }
+  if (cmd.flipY) { const t = v0; v0 = v1; v1 = t; }
   const v = IMAGE_QUAD_VERTICES;
-  v[0]  = x0; v[1]  = y0; v[2]  = 0; v[3]  = 0;
-  v[4]  = x1; v[5]  = y0; v[6]  = 1; v[7]  = 0;
-  v[8]  = x0; v[9]  = y1; v[10] = 0; v[11] = 1;
-  v[12] = x1; v[13] = y1; v[14] = 1; v[15] = 1;
+  v[0]  = x0; v[1]  = y0; v[2]  = u0; v[3]  = v0;
+  v[4]  = x1; v[5]  = y0; v[6]  = u1; v[7]  = v0;
+  v[8]  = x0; v[9]  = y1; v[10] = u0; v[11] = v1;
+  v[12] = x1; v[13] = y1; v[14] = u1; v[15] = v1;
 
   const ring = imageQuadRing(gl, prog);
   const slot = ring.next;
