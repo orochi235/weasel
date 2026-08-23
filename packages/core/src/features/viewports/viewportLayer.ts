@@ -33,16 +33,30 @@ import type { ResolvableView } from './viewResolver';
  * draw in the viewport's own CSS-pixel space: their coords are relative to
  * the rect's top-left, and they clip to it, rather than to the outer canvas.
  */
-export interface CreateViewportLayerOpts<TData> {
+export interface CreateViewportLayerOpts<TData, TSource = TData> {
   id: string;
   label: string;
   /** Layers re-rendered through `view`. Each receives `(data, view, dims)`
    *  exactly as the outer Canvas would call it. */
-  source: RenderLayer<TData>[];
-  /** The inner view. Static for now — a future revision will accept
-   *  `View | (outer: View, dims: Dims) => View` so derivations like
-   *  parallax and node-anchored scroll can compose. */
-  view: View;
+  source: RenderLayer<TSource>[];
+  /**
+   * The `data` the source layers receive, derived from what the outer canvas
+   * passed down. Omit and they get the outer canvas's own.
+   *
+   * A viewport showing the same scene through a second camera wants its own
+   * per-view helpers here — selection, chrome state and gesture previews that
+   * belong to *this* view rather than the one hosting it.
+   */
+  data?: (outer: TData) => TSource;
+  /**
+   * The inner view. Pass a thunk for a camera that moves — it is read fresh
+   * on every `draw`, `reproject` and `resolvable`, so those three cannot
+   * disagree about where the viewport is looking mid-gesture.
+   *
+   * The thunk receives the outer view and dims, so a derived camera
+   * (parallax, node-anchored scroll) is a function of the one hosting it.
+   */
+  view: View | ((outer: View, dims: Dims) => View);
   /** Where on the outer canvas this viewport is painted, in screen-space
    *  CSS pixels. Recomputed every frame so the rect can track an outer
    *  pose, follow a corner, etc. */
@@ -89,17 +103,17 @@ export interface ViewportLayer<TData> extends RenderLayer<TData> {
  *  sub-region of the canvas — a minimap, an inset, a magnifier. Its
  *  `reproject` maps screen points back through the inner view so the region
  *  can be interacted with. */
-export function createViewportLayer<TData>(
-  opts: CreateViewportLayerOpts<TData>,
+export function createViewportLayer<TData, TSource = TData>(
+  opts: CreateViewportLayerOpts<TData, TSource>,
 ): ViewportLayer<TData> {
-  const { id, label, source, view, bounds, background } = opts;
+  const { id, label, source, view, bounds, background, data: sourceData } = opts;
+  const viewAt = typeof view === 'function' ? view : () => view;
   return {
     id,
     label,
     space: 'screen',
     resolvable(outer, dims) {
-      const b = bounds(outer, dims);
-      return { id, view, rect: b };
+      return { id, view: viewAt(outer, dims), rect: bounds(outer, dims) };
     },
     reproject(outer, dims, screen) {
       const b = bounds(outer, dims);
@@ -109,9 +123,10 @@ export function createViewportLayer<TData>(
       ) return null;
       // Inverse of what `draw` paints: the source applies the inner view, then
       // the group translates by the rect origin.
+      const v = viewAt(outer, dims);
       return {
-        x: (screen.x - b.x) / view.scale.x + view.x,
-        y: (screen.y - b.y) / view.scale.y + view.y,
+        x: (screen.x - b.x) / v.scale.x + v.x,
+        y: (screen.y - b.y) / v.scale.y + v.y,
       };
     },
     draw: (data, outerView, dims): DrawCommand[] => {
@@ -127,8 +142,12 @@ export function createViewportLayer<TData>(
         });
       }
       const innerDims = { width: b.w, height: b.h };
+      // The cast holds up because `TSource` defaults to `TData`: without a
+      // thunk the two are the same type by construction.
+      const innerData = sourceData ? sourceData(data) : (data as unknown as TSource);
+      const v = viewAt(outerView, dims);
       for (const layer of source) {
-        for (const c of drawOneLayer(layer, data, view, innerDims)) children.push(c);
+        for (const c of drawOneLayer(layer, innerData, v, innerDims)) children.push(c);
       }
       const transform: Mat3 = mat3.translate(mat3.identity(), b.x, b.y);
       const group: GroupDrawCommand = {

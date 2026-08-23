@@ -31,6 +31,13 @@ inner views **without duplicating the data**. A viewport doesn't own content;
 it owns a view onto content that lives elsewhere. Adding a second viewport onto
 the same layers costs another draw pass, not another copy of the scene.
 
+## Per-view data
+
+Source layers get the outer canvas's `data` by default. A `data` thunk on the
+opts derives what they see instead — which is how a viewport showing the same
+scene through a second camera gives its layers their own selection, chrome state
+and gesture previews rather than the hosting view's.
+
 ## Inner view semantics
 
 Source layers draw as if the inner view were the camera — they can't tell
