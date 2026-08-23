@@ -90,8 +90,8 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
   } = opts;
   const warned = new Set<string>();
   const isDev = typeof import.meta !== 'undefined'
-    && (import.meta as any).env
-    && (import.meta as any).env.DEV;
+    && (import.meta as unknown as { env?: { DEV?: boolean } }).env
+    && (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV;
 
   return {
     id,
@@ -130,7 +130,6 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
             const key = `${id}:${nodeKey}:fill`;
             if (!warned.has(key)) {
               warned.add(key);
-              // eslint-disable-next-line no-console
               console.warn(
                 `[createPathLayer ${id}] node ${nodeKey}: fill vertexColors length ${vColors.length}, expected ${expectedLen}; dropping`,
               );
@@ -146,7 +145,6 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
             const key = `${id}:${nodeKey}:stroke`;
             if (!warned.has(key)) {
               warned.add(key);
-              // eslint-disable-next-line no-console
               console.warn(
                 `[createPathLayer ${id}] node ${nodeKey}: stroke vertexColors length ${strokeVColors.length}, expected ${expectedLen}; dropping`,
               );
@@ -169,7 +167,6 @@ export function createPathLayer<T>(opts: CreatePathLayerOpts<T>): RenderLayer<un
             const key = `${id}:${nodeKey}:strokeWidths`;
             if (!warned.has(key)) {
               warned.add(key);
-              // eslint-disable-next-line no-console
               console.warn(
                 `[createPathLayer ${id}] node ${nodeKey}: stroke vertexWidths length ${strokeVWidths.length}, expected ${anchorCount}; dropping`,
               );
