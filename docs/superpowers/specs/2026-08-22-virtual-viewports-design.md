@@ -145,9 +145,10 @@ singular*). What remains is keying the layer command cache per view, which waits
 caching arc — `LayerCommandCache` is not on `main` yet. Delivers N panels that render, with input
 still single-view: most of the comparison use case.
 
-**Arc 2 — input.** Collapse the four `clientToWorld` copies onto one view-aware helper, add the
-sticky view resolver above the listener sets, thread a view through `hitTestExtras` and
-`affordanceAt`.
+**Arc 2 — input.** Done. The copies are collapsed, `createViewResolver` exists, and
+`hitTestExtras` takes an optional view frame; `buildAffordanceAt` needed nothing, being already
+thunked on `getView`. The resolver is not wired into the pointer path, because with one dispatcher
+every point resolves to the root view — wiring it is Arc 3's first payoff, not Arc 2's.
 
 **Arc 3 — per-view interaction.** Split `helpersForLayers`, then N dispatchers and N tool
 registries, then per-view selection and chrome.

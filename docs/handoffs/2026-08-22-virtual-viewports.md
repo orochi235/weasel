@@ -1,68 +1,64 @@
 # Virtual viewports — handoff
 
-**For:** the next session picking this up. **Answers:** where to start, what is already decided, and
-what a survey found that the spec compresses.
+**For:** the next session picking this up. **Answers:** where the work stands, and what the design
+spec does not carry.
+
+The design is `docs/superpowers/specs/2026-08-22-virtual-viewports-design.md` — read it first. It is
+current: Arc 1 and Arc 2 are marked done there, with the reasons.
 
 ## State
 
-Nothing implemented. The design is
-`docs/superpowers/specs/2026-08-22-virtual-viewports-design.md` — read it first; this file only
-carries what it does not.
+Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
+`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 675 files, 7075 passing. Four commits, each
+with a `patch` changeset:
 
-Worktree `.claude/worktrees/renderer-layer-caching`, branch `worktree-renderer-layer-caching`,
-off local `main` at `e28996aa`. Not pushed, no PR. The branch also carries a finished renderer
-layer-caching arc — see `docs/handoffs/2026-08-22-renderer-layer-caching.md`. Suite green: 677
-files, 7079 passing.
+- the viewport inner-view transform fix
+- the spec retractions
+- the `clientToWorld` collapse
+- `createViewResolver`
+- the `hitTestExtras` frame argument
 
-**Decide before starting:** whether virtual viewports belong on this branch or a fresh one off
-`main`. The layer-caching arc is complete and independently mergeable; stacking a large
-decomposition on top makes it harder to land.
+**Arc 3 is next and untouched:** split `helpersForLayers`, then N dispatchers and N tool registries,
+then per-view selection and chrome.
 
-## Decided in conversation
+## Blocked
 
-**Decompose, do not build a parallel component.** A second multi-view surface alongside
-`SceneCanvas` would avoid regression risk but buy permanent duplication and drift. The repo's own
-scope rule names "two things should be one thing" as a fair argument, and it applies here.
+**The per-view layer command cache waits on the layer caching arc.** `LayerCommandCache` does not
+exist on `main`; it lives on branch `worktree-renderer-layer-caching` (worktree
+`.claude/worktrees/renderer-layer-caching`), finished and unpushed. That arc is independently
+mergeable and should land first.
 
-**The flat-props façade is a design constraint, not a later wrapper.** A single-view consumer must
-never see a `views[]` array. Retrofitting the façade at the end yields a lossy translation over a
-multi-view core, and single-view is the path every existing consumer is on.
+**It will conflict here, in one spot.** That branch has a private `drawOneLayer(layer, data, view,
+dims, cache)` in `core/layers/render.ts` that resolves a layer's commands from cache; this branch
+has an exported `drawOneLayer(layer, data, view, dims)` that puts them in the space the layer
+declares. Same name, same file, different jobs. The merge is one function doing both — cache lookup
+around the `layer.draw` call, space wrap around the result — not a rename.
 
-**Consumers pay nothing; the codebase pays.** N=1 is the degenerate case — no branch a
-single-view consumer takes that it does not take today. The costs are a permanent maintenance tax
-(every future selection/tool change must be correct for N) and one-time regression risk landing on
-people who never asked for the feature. Accepted knowingly. Worth measuring rather than assuming:
-whether the decomposition adds indirection to hot draw and hit-test paths that are direct field
-reads today.
+## What is not obvious from the diff
 
-## What the survey found that changes the approach
+**The resolver is deliberately unwired.** With one dispatcher and one tool registry, every point
+resolves to the root view, so routing it through would be dead code that still has to be kept
+correct. It is built, tested and exported so Arc 3 can wire it the day there is a second view to
+route to.
 
-**There is no `gl.scissor` in the renderer.** Clipping is stencil-based. An earlier framing of this
-work assumed scissor rects; that was wrong. Do not add a GL scissor path.
-
-**`features/viewports/viewportLayer.ts` already draws nested views** — clip groups with an inner
-`View`, plus `reproject` and `viewportsAt` for inverse mapping. It is `@experimental` and does not
-route input. **The draw half is largely built.** This is why Arc 1 in the spec is small and Arc 2/3
-are not.
-
-**An unresolved discrepancy blocks Arc 1.** `viewportLayer` calls `layer.draw(data, view, …)`
-without the `viewToMat3(view)` wrap that `drawLayers` applies (`core/layers/render.ts:182-186`).
-They cannot both be right. Settle this first — it determines whether existing viewport-layer
-consumers are drawing correctly today.
+**`buildAffordanceAt` needed no change.** It reads the view through a `getView()` thunk already, so
+per-view retargeting is one construction per view. The spec's Arc 2 listed it; there was nothing
+to do.
 
 ## Traps
 
 **Never `git stash` in this worktree.** The stack is shared across worktrees and concurrent
-sessions; an agent used it during the previous arc and swallowed another agent's uncommitted work.
+sessions; an agent used it during an earlier arc and swallowed another agent's uncommitted work.
 Same for `git reset --hard`, `git checkout -- .`, `git clean`. If you run parallel agents, give them
 disjoint files *and* forbid these commands explicitly — naming the files is not enough.
 
 **Every changeset is `patch`.** Never write a `bump-approved` marker without an explicit OK.
 
-**Verify a capability claim by reading the module, not by grepping two files.** The layer-caching
-spec asserted two "renderer gaps" that both already shipped, found by grepping `DrawCommand.ts` and
-`draw.ts` and reading their silence as absence. One of those false claims drove a design decision
-for several rounds before it was caught.
+**Verify a capability claim by reading the module, not by grepping two files.** Both the layer
+caching spec and this one asserted renderer gaps that did not exist — four false claims between
+them, each found by reading a file's silence as absence. Two of this spec's were retracted this
+session after reading `draw.ts`: `pushClip`/`popClip` already flush the solid batch, and N views in
+one command tree are already one `render()`.
 
 **Tests:** `npx vitest run --project=kit` for core, `npm test` for all. No `test` script in the
 `core` workspace. Typecheck is `npx tsc --noEmit` from the root; there is no
