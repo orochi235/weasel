@@ -204,4 +204,17 @@ describe('drawLayers command caching', () => {
     drawLayers(layers, { v: 1 }, { a: true }, undefined, undefined, DIMS, cache);
     expect(calls.n).toBe(1);
   });
+
+  it('keeps a hidden layer entry in cache and reuses it once shown again', () => {
+    const calls = { n: 0 };
+    const layers = [countingLayer('a', calls)];
+    const cache: LayerCommandCache = new Map();
+    drawLayers(layers, { v: 1 }, { a: true }, undefined, undefined, DIMS, cache);
+    expect(calls.n).toBe(1);
+    drawLayers(layers, { v: 1 }, { a: false }, undefined, undefined, DIMS, cache);
+    expect(calls.n).toBe(1);
+    expect(cache.has('a')).toBe(true);
+    drawLayers(layers, { v: 1 }, { a: true }, undefined, undefined, DIMS, cache);
+    expect(calls.n).toBe(1);
+  });
 });

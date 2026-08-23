@@ -26,7 +26,9 @@ export type LayerCommandCache = Map<
  * @template TData - The data object passed to each draw call.
  */
 export interface RenderLayer<TData> {
-  /** Unique identifier used in visibility maps and ordering arrays. */
+  /** Unique identifier used in visibility maps and ordering arrays. When a
+   *  cache is in use, an id must identify the same logical layer across
+   *  frames — reusing it for a different layer can serve cross-layer commands. */
   id: string;
   /** Human-readable name for UI toggles. */
   label: string;
@@ -53,6 +55,10 @@ export interface RenderLayer<TData> {
    * **The returned commands must be treated as immutable.** A cached tree is
    * handed to the renderer again on later frames, so mutating a tree you
    * previously returned corrupts the cache silently rather than erroring.
+   *
+   * **Screen-space layers are not protected against a stale `view`/`dims`
+   * the way world-space layers are** (see `space` below) — include them in
+   * `deps` if `draw` reads them.
    */
   deps?: (data: TData, view: View, dims: Dims) => readonly unknown[];
   /**
