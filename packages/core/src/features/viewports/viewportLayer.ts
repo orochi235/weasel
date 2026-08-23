@@ -2,6 +2,7 @@ import type { DrawCommand, GroupDrawCommand } from '../../renderer';
 import { drawOneLayer, type Dims, type RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import { mat3, type Mat3 } from '../../renderer/math/mat3';
+import type { ResolvableView } from './viewResolver';
 
 /**
  * @experimental
@@ -24,10 +25,9 @@ import { mat3, type Mat3 } from '../../renderer/math/mat3';
  *
  * **Input is re-projected on request, not automatically.** `reproject` maps a
  * screen point into the inner view's world; a consumer that wants a click
- * inside a viewport to mean something calls it from its own handler. The
- * dispatcher is untouched, so tools still target the outer view — making
- * tools work *inside* a viewport is a larger question (which view a pinch
- * zooms, what a drag leaving the rect does) and wants its own design.
+ * inside a viewport to mean something calls it from its own handler, or feeds
+ * `resolvable` to `createViewResolver` to route a whole pointer stream. The
+ * dispatcher is untouched either way, so tools still target the outer view.
  *
  * **Screen-space source layers** (e.g., debug overlays, selection chrome)
  * draw in the viewport's own CSS-pixel space: their coords are relative to
@@ -75,6 +75,14 @@ export interface ViewportLayer<TData> extends RenderLayer<TData> {
    * something calls this from its own handler.
    */
   reproject(outer: View, dims: Dims, screen: { x: number; y: number }): { x: number; y: number } | null;
+  /**
+   * This viewport as a routing candidate for {@link createViewResolver} —
+   * its inner view and the rect it paints into for the given outer frame.
+   *
+   * Pass the `outer` view and `dims` the frame was drawn with, for the same
+   * reason `reproject` wants them: `bounds` is recomputed, not remembered.
+   */
+  resolvable(outer: View, dims: Dims): ResolvableView;
 }
 
 /** Build a layer that renders other layers through a second view, inside a
@@ -89,6 +97,10 @@ export function createViewportLayer<TData>(
     id,
     label,
     space: 'screen',
+    resolvable(outer, dims) {
+      const b = bounds(outer, dims);
+      return { id, view, rect: b };
+    },
     reproject(outer, dims, screen) {
       const b = bounds(outer, dims);
       if (
