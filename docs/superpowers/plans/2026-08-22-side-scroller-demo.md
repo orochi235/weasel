@@ -564,8 +564,13 @@ describe('jump feel', () => {
     let s = createBodyState({ x: 1.5 * TILE, y: 2 * TILE });
     for (let i = 0; i < 120; i++) s = stepBody(s, LEDGE, IDLE, STEP);
     expect(s.body.onGround).toBe(true);
-    // Walk off the edge; stay airborne but inside the coyote window.
-    for (let i = 0; i < 6; i++) s = stepBody(s, LEDGE, RIGHT, STEP);
+    // A body is supported while ANY part of it is over solid ground, so walk
+    // until it has fully cleared the edge rather than assuming a step count.
+    let steps = 0;
+    while (s.body.onGround && steps < 60) {
+      s = stepBody(s, LEDGE, RIGHT, STEP);
+      steps++;
+    }
     expect(s.body.onGround).toBe(false);
     expect(s.coyote).toBeGreaterThan(0);
     s = stepBody(s, LEDGE, { ...RIGHT, jumpHeld: true, jumpPressed: true }, STEP);
@@ -573,8 +578,19 @@ describe('jump feel', () => {
     expect(s.body.vy).toBeLessThan(0);
   });
 
+  it('stands on a ledge edge instead of sliding off it', () => {
+    const LEDGE = parseLevel(['.....', '.....', '.....', '###..']);
+    // Overhangs the edge by 5 of its 14px width — normal play on 24px tiles.
+    // Requiring the whole footprint to be supported drops the body through here.
+    let s = createBodyState({ x: 3 * TILE - 2, y: 2 * TILE });
+    for (let i = 0; i < 200; i++) s = stepBody(s, LEDGE, IDLE, STEP);
+    expect(s.body.onGround).toBe(true);
+  });
+
   it('buffers a jump pressed just before landing', () => {
-    let s = createBodyState({ x: 3 * TILE, y: 0 });
+    // Column 0 is clear all the way down; column 3 has the ceiling block the
+    // rising tests use, which would catch a body dropped from above.
+    let s = createBodyState({ x: 0.5 * TILE, y: 0 });
     // Fall until one step above the floor, pressing jump early.
     let pressed = false;
     let jumpedAfterLanding = false;
@@ -630,7 +646,9 @@ describe('spikeOverlap', () => {
 - [ ] **Step 2: Run the tests**
 
 Run: `npm run test:kit -- platformerPhysics`
-Expected: PASS. If any fail, the defect is in `physics.ts` — fix it there.
+Expected: PASS, 13 tests. If any fail, the defect is in `physics.ts` — fix it
+there, unless the fixture itself is wrong (a level reused from another test whose
+geometry does not suit the new case).
 
 - [ ] **Step 3: Commit**
 
