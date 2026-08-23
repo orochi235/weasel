@@ -58,12 +58,12 @@ const BEZEL_SAMPLES = 240;
 
 const Metal: EffectModule<MetalEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
-    if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
-    const cfg = { ...DEFAULTS, ...params };
-    const spec = Math.max(0, Math.min(cfg.specularity, 1));
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
+    if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
+    const cfg = { ...DEFAULTS, ...params };
+    const spec = Math.max(0, Math.min(cfg.specularity, 1));
 
     // --- Bezel sample walk (same as Aqua: runs where ny < 0). ---
     const total = sampler.totalCss;

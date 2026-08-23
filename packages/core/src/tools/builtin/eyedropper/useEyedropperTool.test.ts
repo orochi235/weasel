@@ -32,7 +32,6 @@ describe('useEyedropperTool', () => {
     expect(result.current.keybinding).toEqual({ key: 'I' });
     // hotkey lives on the ToolDef (reflection escape hatch) rather than on
     // the runtime Tool interface since Tool.hotkey was removed.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result.current.def as any)?.hotkey).toBe('alt');
     // `defineTool` wraps a string cursor in a resolver.
     const cursor = typeof result.current.cursor === 'function'
@@ -51,7 +50,6 @@ describe('useEyedropperTool', () => {
     // The `pointerDown` claim gate is gone: it existed only to beat the other
     // dispatch pipeline's select tool to the press.
     expect(result.current.bindings?.some((b) => b.spec.kind === 'pointerDown')).toBe(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result.current.def as any)?.initial).toBeUndefined();
   });
 
@@ -116,7 +114,6 @@ describe('useEyedropperTool', () => {
     const { result } = renderHook(() =>
       useEyedropperTool({ onPick: () => {}, colorOf: () => null, hotkey: null }),
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((result.current.def as any)?.hotkey).toBeUndefined();
   });
 

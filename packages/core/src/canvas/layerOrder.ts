@@ -22,8 +22,8 @@ const STANDARD_SLOT_SET = new Set<string>(STANDARD_SLOTS);
  *
  * Pure function — no side effects beyond `console.warn` on malformed input.
  */
-export function composeOrderedLayers(
-  layersMap: Record<string, LayerSlotValue<any, any> | null | undefined>,
+export function composeOrderedLayers<TNode extends { id: string }, TPose>(
+  layersMap: Record<string, LayerSlotValue<TNode, TPose> | null | undefined>,
   standardLayers: Partial<Record<(typeof STANDARD_SLOTS)[number], RenderLayer<unknown>>>,
   /** When the `scene` slot is split into per-scene-layer canvas layers (keyed
    *  `scene:<layerId>`), pass them here in render order. Each key becomes an

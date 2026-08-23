@@ -1389,9 +1389,10 @@ function EditorWithSharedScene({
   // Doc-target selection is mutually exclusive with scene-node selection.
   // Whenever the kit selection becomes non-empty, drop the doc-target flag
   // so the Properties panel reverts to node properties.
+  const selectionCount = selection.current.length;
   useEffect(() => {
-    if (selection.current.length > 0 && docSelected) setDocSelected(false);
-  }, [selection.current.length, docSelected]);
+    if (selectionCount > 0 && docSelected) setDocSelected(false);
+  }, [selectionCount, docSelected]);
 
   // Persist filename + bg color with the same 300ms debounce as the scene.
   useEffect(() => {
@@ -1430,8 +1431,11 @@ function EditorWithSharedScene({
       window.removeEventListener('blur',    onBlur);
     };
   }, [modeId]);
+  // Re-read on every render; `modeId` changing is what re-renders us, and the
+  // resolved id is a tighter memo key than the mode it came from.
+  const activeTargetId = modality.machine.getActiveTargetId();
   const targetLabel = useMemo(() => {
-    const tid = modality.machine.getActiveTargetId();
+    const tid = activeTargetId;
     if (!tid) return null;
     // Look up the node's display label from scene data; fall back to the id.
     const node = scene.get(asNodeId(tid));
@@ -1440,7 +1444,7 @@ function EditorWithSharedScene({
       return data.label ?? data.text ?? tid;
     }
     return tid;
-  }, [modality.machine, modeId, scene]);
+  }, [activeTargetId, scene]);
 
   // ── Modality keyboard handler ─────────────────────────────────────────────
   // Runs at capture phase so it intercepts Escape before the kit's

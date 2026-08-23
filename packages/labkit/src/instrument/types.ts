@@ -103,4 +103,4 @@ export interface Instrument<TS = unknown, TC = unknown> {
  *  parameter contravariance keeps a `defineInstrument<TS, TC>` result out of
  *  an `Instrument<unknown, unknown>[]`; it is contained to this alias. */
 // biome-ignore lint/suspicious/noExplicitAny: see above
-export type InstrumentList = readonly Instrument<any, any>[];
+export type InstrumentList = readonly Instrument<any, any>[]; // eslint-disable-line @typescript-eslint/no-explicit-any -- contravariant TC; see above

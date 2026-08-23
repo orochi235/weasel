@@ -149,6 +149,6 @@ export function usePolygonTool<TNode extends { id: string } = { id: string }>(
           },
         ],
       }),
-    [bumpSides, adjustSidesAction],
+    [adjustSidesAction],
   );
 }

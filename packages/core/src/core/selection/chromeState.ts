@@ -48,7 +48,7 @@ export interface BuildChromeStateArgs {
 
 export function buildChromeState(args: BuildChromeStateArgs): ChromeState {
   const { selection, multiActive, effectiveBoundsOf, modifiers, canRotate } = args;
-  let cached: { value: Bounds | null; computed: boolean } = { value: null, computed: false };
+  const cached: { value: Bounds | null; computed: boolean } = { value: null, computed: false };
   return {
     selection,
     multiActive,

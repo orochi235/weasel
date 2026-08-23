@@ -89,7 +89,7 @@ export interface WeaselDrawPrefRegistryEnum
   filter?: RegistryEnumFilter;
 }
 /** Catch-all for non-primitive shapes (panels map, future color records). */
-export interface WeaselDrawPrefObject<T = unknown> extends WeaselDrawPrefBase<'object', T> {}
+export type WeaselDrawPrefObject<T = unknown> = WeaselDrawPrefBase<'object', T>;
 
 export type WeaselDrawPref =
   | WeaselDrawPrefNumber

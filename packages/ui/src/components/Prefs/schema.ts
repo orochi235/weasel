@@ -87,7 +87,7 @@ export type BuiltinPref = PrefNumber | PrefBoolean | PrefString | PrefEnum | Pre
  * and narrow it themselves. Deliberately NOT index-signatured so concrete
  * app interfaces stay assignable.
  */
-export interface PrefCustom extends PrefBase<string, unknown> {}
+export type PrefCustom = PrefBase<string, unknown>;
 
 /**
  * Any leaf in a preference schema — a built-in kind, or an app-defined one

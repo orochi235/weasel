@@ -38,6 +38,7 @@ export interface BadgeEffectParams {
   metal: MetalEffectParams;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- EffectModule's P is contravariant (offsetAt/Component take it), and Badge.tsx indexes this registry by a runtime effect name, so a per-key map type collapses to an unsatisfiable intersection.
 export const EFFECTS: Record<BadgeEffect, EffectModule<any>> = {
   spikes: Spikes,
   puffs: Puffs,

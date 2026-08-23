@@ -34,7 +34,7 @@ export interface LayerBinding<S = unknown> {
 export interface LayeredCurveEditorProps {
   /** Bottom-to-top render order: `layers[0]` paints first, `layers[N-1]`
    *  paints on top. Hit-testing runs in reverse (topmost claim wins). */
-  layers: ReadonlyArray<LayerBinding<any>>;
+  layers: ReadonlyArray<LayerBinding<unknown>>;
 
   /** Fires every frame during a gesture with the live in-flight state
    *  for the layer that owns the gesture. */
@@ -72,12 +72,12 @@ export interface LayeredCurveEditorProps {
 interface ActiveGesture {
   layerId: string;
   pointerId: number;
-  gesture: LayerGesture<any>;
+  gesture: LayerGesture<unknown>;
   startStates: Map<string, unknown>;
   startSelfState: unknown;
 }
 
-function readModifiers(e: PointerEvent | ReactPointerEvent<any> | KeyboardEvent | ReactKeyboardEvent<any>): LayerModifiers {
+function readModifiers(e: PointerEvent | ReactPointerEvent | KeyboardEvent | ReactKeyboardEvent): LayerModifiers {
   return {
     shift: e.shiftKey,
     alt: e.altKey,
@@ -246,7 +246,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     cleanupGesture();
   };
 
-  const installGesture = useCallback((layerId: string, pointerId: number, gesture: LayerGesture<any>) => {
+  const installGesture = useCallback((layerId: string, pointerId: number, gesture: LayerGesture<unknown>) => {
     const startStates = snapshot();
     const startSelfState = startStates.get(layerId);
     activeRef.current = {

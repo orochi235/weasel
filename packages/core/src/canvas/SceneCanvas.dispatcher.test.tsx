@@ -271,7 +271,7 @@ describe('insertDep wired in SceneCanvas', () => {
     useEffect(() => {
       if (notified.current) return;
       notified.current = true;
-      const dep = registry.get('insert' as 'insert') as InsertDep | undefined;
+      const dep = registry.get('insert' as const) as InsertDep | undefined;
       if (dep) {
         onDepReady(dep.commit.bind(dep));
       }

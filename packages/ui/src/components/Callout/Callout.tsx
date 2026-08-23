@@ -127,10 +127,11 @@ export function Callout(props: CalloutProps) {
   // pan. (Zoom happens to work, since scaling also changes the anchor's size.)
   // Nudging RAC's own resize listener is the supported way to make it
   // recompute; there's no public updatePosition on Popover.
+  const hasAnchorRect = anchorRect !== undefined;
   useEffect(() => {
-    if (anchorRect === undefined || typeof window === 'undefined') return;
+    if (!hasAnchorRect || typeof window === 'undefined') return;
     window.dispatchEvent(new Event('resize'));
-  }, [anchorRect?.x, anchorRect?.y, anchorRect?.width, anchorRect?.height]);
+  }, [hasAnchorRect, anchorRect?.x, anchorRect?.y, anchorRect?.width, anchorRect?.height]);
   // RAC's popover role-heuristic misses alertdialog; label the outer role
   // it stamps. Upstream: react-spectrum Popover.mjs querySelector('[role=dialog]').
   const popoverAriaLabelledby =

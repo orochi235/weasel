@@ -80,11 +80,12 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
   // bug is loud rather than just visually-doubled animation.
   const mountedRef = useRef(true);
   useEffect(() => {
+    const overrides = colorOverrides.current;
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       cleanupRef.current?.();
-      colorOverrides.current.clearAll();
+      overrides.clearAll();
     };
   }, []);
   const trippedRef = useRef(false);

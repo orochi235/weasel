@@ -88,7 +88,7 @@ export interface ToolPrefColor extends ToolPrefBase<'color', string> {
  * app-supplied renderer. Deliberately NOT index-signatured so concrete
  * app interfaces stay assignable. Mirrors weasel-ui's `PrefCustom`.
  */
-export interface ToolPrefCustom extends ToolPrefBase<string, unknown> {}
+export type ToolPrefCustom = ToolPrefBase<string, unknown>;
 
 /**
  * A whole `FillStyle`, not a color inside one. Use it wherever the value is

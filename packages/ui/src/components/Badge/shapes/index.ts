@@ -47,6 +47,7 @@ export interface BadgeShapeParams {
   quatrefoil: QuatrefoilParams;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- ShapeModule's P is contravariant (Component/compose/insets take it), and Badge.tsx indexes this registry by a runtime BadgeShape, so a per-key map type collapses to an unsatisfiable intersection.
 export const SHAPES: Record<BadgeShape, ShapeModule<any>> = {
   pill: Pill,
   plain: Plain,

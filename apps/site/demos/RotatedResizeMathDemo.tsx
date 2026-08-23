@@ -30,7 +30,7 @@
  * The math runs in this file because the demo's pedagogy is precisely that
  * math — substituting a broken descriptor for each panel is the whole point.
  */
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_HANDLE_SIZE,
   SceneCanvas,
@@ -458,9 +458,9 @@ export function RotatedResizeMathDemo() {
   const purpleScene = useScene<Rect>({ items: [INITIAL_PURPLE] });
   const tealScene = useScene<Rect>({ items: [INITIAL_TEAL] });
 
-  const scenes: Record<PanelId, ReturnType<typeof useScene<Rect>>> = {
+  const scenes: Record<PanelId, ReturnType<typeof useScene<Rect>>> = useMemo(() => ({
     green: greenScene, orange: orangeScene, purple: purpleScene, teal: tealScene,
-  };
+  }), [greenScene, orangeScene, purpleScene, tealScene]);
 
   // Active drag state — refs to keep handler identity stable across renders.
   const dragRef = useRef<DragState | null>(null);

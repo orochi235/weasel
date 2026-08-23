@@ -86,7 +86,6 @@ export function useModality(
         },
       }),
     // machine.registry is stable; machine is stable (memoized from history).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [machine],
   );
 

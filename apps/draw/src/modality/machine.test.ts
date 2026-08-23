@@ -3,7 +3,7 @@ import { createModeMachine } from './machine';
 import { DEFAULT_MODES } from '@weasel-js/modes';
 
 function fakeHistory() {
-  let nextEntryId = 1;
+  const nextEntryId = 1;
   const journals: Array<{ committed: boolean; cancelled: boolean; suspended: boolean }> = [];
   return {
     beginJournal: vi.fn((_opts) => {

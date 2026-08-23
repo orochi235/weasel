@@ -150,7 +150,7 @@ function makeRealCtx(
   worldX = 5,
   worldY = 5,
 ): InvocationCtx {
-  let currentPose: PolygonPath = pose;
+  const currentPose: PolygonPath = pose;
   const dep: EditAnchorsDep = makeEditAnchorsDep({
       getStorageKind: () => 'pose',
       getNodeShape: () => null,

@@ -32,6 +32,7 @@ export interface BadgeBaseParams {
   'powerline': PowerlineParams;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- BaseModule's P is contravariant (build/insets take it), and Badge.tsx indexes this registry by a runtime BadgeBase, so a per-key map type collapses to an unsatisfiable intersection.
 export const BASES: Record<BadgeBase, BaseModule<any>> = {
   'chamfered-rect': ChamferedRect,
   'rounded-rect': RoundedRect,

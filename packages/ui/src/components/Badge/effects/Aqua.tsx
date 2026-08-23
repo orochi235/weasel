@@ -68,11 +68,11 @@ const BEZEL_SAMPLES = 240;
 
 const Aqua: EffectModule<AquaEffectParams> = {
   Component: ({ sampler, boxW, boxH, variant, params }) => {
-    if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
-    const cfg = { ...DEFAULTS, ...params };
     const bodyGradId = useId();
     const glossGradId = useId();
     const glossClipId = useId();
+    if (variant !== 'solid' && variant !== 'subtle' && variant !== 'outline') return null;
+    const cfg = { ...DEFAULTS, ...params };
 
     // Walk the perimeter and collect contiguous runs where the outward normal
     // points up (ny < 0) — those segments will get the bezel highlight.

@@ -140,7 +140,6 @@ describe('usePenTool', () => {
 
   it('declares its whole input surface as bindings', () => {
     const { tool } = setup();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((tool.def as any)?.initial).toBeUndefined();
     expect(tool.bindings).toHaveLength(6);
   });

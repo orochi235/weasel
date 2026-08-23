@@ -55,7 +55,6 @@ function ProbeAction({ id, onAction }: { id: string; onAction: (a: Action | unde
 function ProbeDepSelection({ onValue }: { onValue: (v: unknown) => void }) {
   const depReg = useDepRegistry();
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onValue((depReg as any).get('selection'));
   });
   return null;
@@ -150,7 +149,6 @@ describe('useStandardActions', () => {
     let depValue: unknown = 'not-set';
     render(
       <Providers>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Host opts={{ selection: fakeSelection as any }} />
         <ProbeDepSelection onValue={(v) => { depValue = v; }} />
       </Providers>,
@@ -168,7 +166,6 @@ describe('useStandardActions', () => {
     function CaptureReg() { reg = useActionsRegistry(); return null; }
     render(
       <Providers>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Host opts={{ selection: fakeSelection as any }} />
         <CaptureReg />
       </Providers>,
@@ -188,7 +185,6 @@ describe('useStandardActions', () => {
     function CaptureReg() { reg = useActionsRegistry(); return null; }
     render(
       <Providers>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         <Host opts={{ selection: fakeSelection as any }} />
         <CaptureReg />
       </Providers>,

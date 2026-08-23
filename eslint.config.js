@@ -17,16 +17,21 @@ const CORE_ALIASES = (() => {
 })();
 
 /**
- * Minimal ESLint flat config — architectural boundaries only.
+ * ESLint flat config: architectural boundaries, then a correctness baseline.
  *
- * No style rules, no type-aware rules: `tsc --noEmit` covers types and nothing
- * here should have an opinion about formatting. What's left is the dependency
- * arrows the type system can't express.
+ * No formatting rules and no type-aware rules — `tsc --noEmit` covers types,
+ * and nothing here should have an opinion about layout. The scoped blocks
+ * below carry the dependency arrows the type system can't express; the
+ * baseline block near the bottom carries rules that catch bugs.
  *
- * `@typescript-eslint` and `react-hooks` are registered but have every rule
- * off. They're here so the `eslint-disable` comments already scattered through
- * the tree naming their rules resolve instead of erroring — turning either
- * plugin on is a separate decision with its own backlog.
+ * Deliberately off, and why:
+ *   - eslint-plugin-react-hooks v7's compiler rules (`refs`, `immutability`,
+ *     `set-state-in-effect`, `use-memo`, `globals`, `static-components`).
+ *     `refs` alone reports 387 times across 103 files, because reading a ref
+ *     during render is how a canvas library gets at mutable frame state. Worth
+ *     revisiting per rule; not worth adopting as a block.
+ *   - `eqeqeq` (285) and `@typescript-eslint/no-unused-vars` (129). Both are
+ *     real, both are large mechanical sweeps, and neither blocks the arc.
  */
 
 const languageOptions = {
@@ -49,9 +54,10 @@ export default [
     ],
   },
   {
-    // Most `eslint-disable` comments in the tree name rules we don't run, so
-    // every one of them would report as unused. The directives are load-bearing
-    // for editors and for whoever turns those plugins on.
+    // Still off, but no longer because nothing runs: directives naming
+    // `no-unused-vars`, or sitting on an `any` in a test or a `console.warn`,
+    // name a rule that is off *here* and would report as unused. Flip this on
+    // when the two deferred rules above land.
     linterOptions: { reportUnusedDisableDirectives: 'off' },
   },
   {
@@ -143,5 +149,65 @@ export default [
         },
       ],
     },
+  },
+  {
+    /**
+     * The baseline. Rules are enumerated rather than spread from a plugin's
+     * `recommended`, because a preset changes what this repo enforces whenever
+     * a dependency is upgraded, and the two react-hooks presets in particular
+     * now carry the compiler rules deliberately left off below.
+     */
+    files: ['**/*.{ts,tsx}'],
+    languageOptions,
+    plugins,
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
+
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-function-type': 'error',
+      '@typescript-eslint/no-empty-object-type': 'error',
+      '@typescript-eslint/no-unused-expressions': 'error',
+      '@typescript-eslint/prefer-as-const': 'error',
+
+      // A library warning its own consumer is a feature — 80 `console.warn`
+      // and 21 `console.error` calls are that. `log` and `debug` are residue.
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      // `ignoreReadBeforeAssign` spares the case where a closure built before
+      // the assignment reads the binding — `const` there is a TDZ crash, not a
+      // tidy-up. `Toast/queue.ts` needs the key inside an `onClose` it must
+      // pass to the very call that returns that key.
+      'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
+      'no-var': 'error',
+    },
+  },
+  {
+    /**
+     * `any` in a test is usually the point: reaching past a type to build a
+     * malformed input, or asserting on a private field. The rule earns its
+     * keep on shipped surface, where an `any` is a hole in the contract.
+     */
+    files: ['**/*.{test,spec}.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/testing/**/*.{ts,tsx}'],
+    rules: { '@typescript-eslint/no-explicit-any': 'off' },
+  },
+  {
+    /**
+     * A CSF story's `render` is not a component, so every hook it calls reads
+     * as a violation. The 27 reports here were all that shape.
+     *
+     * Stories aren't shipped, and a handler that logs is how you see a story
+     * fire — `no-console` has nothing to protect here either.
+     */
+    files: ['**/*.stories.{ts,tsx}'],
+    rules: { 'react-hooks/rules-of-hooks': 'off', 'no-console': 'off' },
+  },
+  {
+    /**
+     * Build-time CLIs, where stdout is the interface: what got baked, how many
+     * themes were emitted, whether the prefix check passed. A tool that runs
+     * for minutes in silence is indistinguishable from a hung one.
+     */
+    files: ['**/scripts/**/*.{ts,tsx,js,mjs}'],
+    rules: { 'no-console': 'off' },
   },
 ];

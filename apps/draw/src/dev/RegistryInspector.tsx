@@ -13,7 +13,6 @@ import {
   collectModifierSets,
   collectRoutingTrait,
   collectPropertiesTrait,
-  collectOpFactories,
   collectOpKinds,
   collectPhaseOutputs,
   collectRoutes,
@@ -74,7 +73,6 @@ export function RegistryInspector() {
 
   const bundles = useMemo(() => collectBundles(), []);
   const icons = useMemo(() => collectIcons(), []);
-  const opFactories = useMemo(() => collectOpFactories(), []);
   const shapeKinds = useMemo(() => collectShapeTrait(runtime.tools), [runtime.tools]);
   const routingEntries = useMemo(() => collectRoutingTrait(runtime.routing), [runtime.routing]);
   const propertiesEntries = useMemo(() => collectPropertiesTrait(runtime.properties), [runtime.properties]);
@@ -141,7 +139,7 @@ export function RegistryInspector() {
         if (top !== 0) return top;
         return a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
       });
-  }, [runtime, activeBundle, bundles, icons, opFactories, shapeKinds, routingEntries, propertiesEntries, gestures, phaseOutputs, opKinds, slots, routes, routeTargets, modifierSets, groups, meta]);
+  }, [runtime, activeBundle, bundles, icons, shapeKinds, routingEntries, propertiesEntries, gestures, phaseOutputs, opKinds, slots, routes, routeTargets, modifierSets, groups, meta]);
 
   // Clear selection when the active filters narrow past the selected entry.
   const lower = textFilter.trim().toLowerCase();

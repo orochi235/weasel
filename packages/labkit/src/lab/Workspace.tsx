@@ -93,7 +93,7 @@ export function Workspace({
   const items = Children.toArray(children);
   const idKey = ids ? ids.join(',') : `#${items.length}`;
   // biome-ignore lint/correctness/useExhaustiveDependencies: idKey is the stable projection of items/ids; depending on those directly rebuilds every render and re-runs the sync effect forever
-  const nodeIds = useMemo(() => items.map((_, i) => asNodeId(ids?.[i] ?? `lk-ws-${i}`)), [idKey]);
+  const nodeIds = useMemo(() => items.map((_, i) => asNodeId(ids?.[i] ?? `lk-ws-${i}`)), [idKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Held in refs rather than depended on: a fresh object each render would
   // re-run the sync effect, and only a newly registered tile reads `layout`.

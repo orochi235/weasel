@@ -40,7 +40,6 @@ export function buildDepsFromRequires(action: Action, depRegistry: DepRegistry):
           // Warn first so the console trail survives even when the throw is
           // swallowed by a caller, then throw so the gesture fails visibly
           // instead of silently running without the dep.
-          // eslint-disable-next-line no-console
           console.warn(message);
           throw new Error(message);
         }

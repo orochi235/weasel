@@ -991,10 +991,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Publish the current selection (with optional per-id kind labels) into any
   // surrounding `<SelectionContextProvider>` so non-canvas UI can read it.
   // No-op when no provider is in scope.
+  const currentSelection = selection.current;
   const selectionKinds = useMemo<readonly (string | undefined)[] | undefined>(() => {
-    if (selection.current.length === 0) return undefined;
+    if (currentSelection.length === 0) return undefined;
     const out: (string | undefined)[] = [];
-    for (const id of selection.current) {
+    for (const id of currentSelection) {
       const node = scene.get(id);
       if (!node) { out.push(undefined); continue; }
       if (describeKind) { out.push(describeKind(node)); continue; }
@@ -1009,8 +1010,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       out.push(undefined);
     }
     return out;
-  }, [selection.current, scene, describeKind]);
-  usePublishSelection(selection.current, selectionKinds);
+  }, [currentSelection, scene, describeKind]);
+  usePublishSelection(currentSelection, selectionKinds);
 
   // Path-editing edit-mode state. Owned here so it's reachable from both:
   //   - the `pathEditingOverlay` chrome layer wired below
@@ -1068,7 +1069,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       anchorMarqueeRef.current = rect;
       canvasApiRef.current?.requestRedraw?.();
     },
-  }), []);
+  }), [effectivePathEditingId]);
 
   // Adapter + select tool — folded into a single hook that synthesizes both.
   // Apply the handle-size fallback here so useSceneSelectTool always receives
@@ -1087,7 +1088,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     // pipeline (audit 3.4). The classifier is now `select.pick`, which
     // declares that capability itself — one rule, evaluated in one place.
     ...selectToolOpts,
-  }), [selectToolOpts, deviceProfile.targetScale]);
+  }), [selectToolOpts, deviceProfile.targetScale, effectivePathEditingId]);
 
   // Stable ref to the live selection; updated every render so the affordanceAt
   // and classifyTarget thunks (which live in an effect closure) always read
@@ -1218,7 +1219,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       if (value !== true) continue;
       if (!KNOWN_BUILTIN_IDS.has(id as BuiltinToolId)) {
         if (IS_DEV) {
-          // eslint-disable-next-line no-console
           console.warn(`[SceneCanvas] tools.${id}=true is not a known built-in id; ignoring`);
         }
         continue;
@@ -1287,7 +1287,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         continue;
       } else {
         if (IS_DEV && id in internalRegistry) {
-          // eslint-disable-next-line no-console
           console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
         }
         internalRegistry[id] = value;
@@ -1547,7 +1546,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       editingAnchors: effectivePathEditingId() !== '',
       device: deviceProfileRef.current,
     };
-  }, [dispatcher, getHover]);
+  }, [dispatcher, getHover, effectivePathEditingId]);
 
   // Anchor editing survives only as long as the active mode permits it.
   // Deliberately undefined when no mode registry is wired: "no modality"
@@ -1675,7 +1674,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   const getSuppressedSelectionIds = useCallback((): ReadonlySet<string> => {
     const id = effectivePathEditingId();
     return id ? new Set([id]) : EMPTY_ID_SET;
-  }, []);
+  }, [effectivePathEditingId]);
 
   // Selection overlay — constructed here (scene-aware) per main's seam refactor.
   // Layered on top: path-edit suppression from HEAD's branch.
@@ -1752,7 +1751,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
           return AUTO_POSE_DESCRIPTOR.getBounds(p) as Bounds;
         }),
     });
-  }, [mergedLayers.selectionOverlay, selectedIds, multiActive, internalBoundsOf, tools, adapter, getSuppressedSelectionIds]);
+  }, [mergedLayers.selectionOverlay, selectedIds, multiActive, internalBoundsOf, tools, adapter,
+      getSuppressedSelectionIds, dispatcher]);
 
   // When alphaFor is supplied, patch it into the scene slot config so
   // buildSceneLayer (called inside Canvas) wraps per-node commands with the
@@ -1931,7 +1931,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       });
       testHookRef.current?._markReady();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -2191,7 +2190,6 @@ function GestureDispatcherMounter({
       // bounding box instead of moving the anchor.
       ...(getIsVisibleForCanvas ? { getIsVisible: () => getIsVisibleForCanvas() } : {}),
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas]);
 
   // Build the `classifyTarget` thunk. Converts client coords → world coords
@@ -2217,7 +2215,6 @@ function GestureDispatcherMounter({
       // every `kind:` target unmatchable.
       (id: string) => kindOfNodeRef.current?.(id),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionRef, pickEvery, viewRef]);
 
   // Wrap `affordanceAt` and `classifyTarget` to convert client → world coords

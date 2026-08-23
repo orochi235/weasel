@@ -181,6 +181,9 @@ export function useTools(opts: UseToolsOptions): ToolsApi {
       has,
       getActiveOverlays,
     }),
+    // `registryKey` isn't read in the body on purpose: the body reads
+    // `slottedRef.current`, and the key is what tells us that ref's contents moved.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [active, setActive, hotkeyEngaged, engageHotkey, disengageHotkey, has, getActiveOverlays, registryKey],
   );
 }

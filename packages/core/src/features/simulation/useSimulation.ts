@@ -143,7 +143,6 @@ export function useSimulation<TNode extends SimulationNode>(
       mountedRef.current = false;
       stopRaf();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Stable handle. All methods read from refs, so a fixed identity is safe.

@@ -38,11 +38,13 @@ jobs:
       # package — which is how 0.8.0 became 1.0.0 by accident on 2026-08-12.
       - run: npm run check:bumps
       - run: npm run typecheck
-      # Architectural boundaries only (eslint.config.js): the core/ ← features/
-      # arrow and @weasel-js/font's leaf purity. Both are one-way dependency
-      # arrows whose violation is a bundler-duplicated module — a silent
-      # failure tsc can't see. The config existed unrun until 2026-08-08 and
-      # four real violations had accumulated behind it.
+      # Two things (eslint.config.js). The scoped no-restricted-imports blocks
+      # guard one-way dependency arrows — core/ ← features/, and the leaf purity
+      # of @weasel-js/font and @weasel-js/audio — whose violation is a
+      # bundler-duplicated module, a silent failure tsc can't see. The baseline
+      # block catches bugs: stale hook dependencies, conditional hooks, `any` on
+      # shipped surface. The config existed unrun until 2026-08-08 and four real
+      # violations had accumulated behind it.
       - run: npm run lint
       # labkit carries its own biome config + class-prefix check (its tests run
       # in the `labkit` vitest project below).
