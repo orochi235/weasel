@@ -61,14 +61,24 @@ Caching moves to the command tree, keyed on what the layer says it depends on:
 deps: (state) => [state.contour, state.centre]
 ```
 
-`drawLayers` keeps the previous `DrawCommand[]` per layer id and reuses it when `deps` is
-shallow-equal to the last call. The renderer still dispatches every layer every frame; what is
-skipped is rebuilding the tree — walking state, allocating arrays, flattening paths. A layer
-that omits `deps` rebuilds every frame, so this is opt-in and nothing changes for a layer that
-doesn't ask.
+`deps` belongs on `RenderLayer`, not on labkit's wrapper — the caching is in core and serves
+every `SceneCanvas` consumer, so labkit's `CanvasLayer.deps` is passed straight through rather
+than interpreted.
 
-This lands in `core/layers/render.ts` and serves every `SceneCanvas` consumer, not only
-labkit.
+`drawLayers` is a pure function and cannot hold the cache itself. The cache is owned by the
+canvas instance and threaded in as a parameter — `drawLayers(..., cache)` where `cache` is a
+`Map<string, { deps: readonly unknown[]; cmds: DrawCommand[] }>` held in a ref beside
+`glRendererRef`. Entries are dropped when a layer unregisters, so a registered-then-detached
+layer cannot leak its tree. A caller that passes no cache gets today's behavior exactly.
+
+A hit reuses the previous `DrawCommand[]` when `deps` is shallow-equal to the last call. The
+renderer still dispatches every layer every frame; what is skipped is rebuilding the tree —
+walking state, allocating arrays, flattening paths. A layer that omits `deps` rebuilds every
+frame, so this is opt-in and nothing changes for a layer that doesn't ask.
+
+**The trees must be treated as immutable.** A cached command tree is handed to the renderer
+again on the next frame, so a layer that mutates what it previously returned corrupts the
+cache silently rather than erroring. Document it on `RenderLayer.deps`.
 
 **What this does not do** is skip GPU dispatch for a clean layer. That would need
 render-to-texture per layer and compositing, which the renderer has no concept of. Whether
@@ -145,5 +155,7 @@ The capability is the default. The scheduler is the escape hatch. A lab picks on
 - Hiding a layer through the sidebar removes its commands; an `alwaysOn` layer ignores it.
 - A drop reports world coordinates under a non-identity view.
 - Dashed strokes hold their world-unit pattern across a zoom change.
+- A layer that mutates a returned tree is not silently rewarded: the cache returns the same
+  array identity, so the test asserts identity rather than deep equality.
 
 No WebGL in the suite — assert on the command trees `drawLayers` returns.
