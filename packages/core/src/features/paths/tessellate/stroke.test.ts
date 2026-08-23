@@ -195,6 +195,39 @@ describe('tessellateStroke dash patterns', () => {
     const meshEmptyDash = tessellateStroke(path, { paint: { color: '#000' }, width: 4, dash: [] });
     expect(meshEmptyDash.indices.length).toBe(meshNoDash.indices.length);
   });
+
+  it('carries the dash phase across a corner instead of restarting it', () => {
+    // (0,0) → (3,0) → (3,3) with dash [2, 2]. The first "on" run ends 2 units
+    // along; the gap consumes the last unit of the first leg plus one unit up
+    // the second, so the next run starts at (3, 1).
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L]),
+      coords: new Float32Array([0, 0, 3, 0, 3, 3]),
+      fillRule: 'nonzero',
+    };
+    const mesh = tessellateStroke(path, {
+      paint: { color: '#000' }, width: 2, dash: [2, 2], cap: 'butt', join: 'bevel',
+    });
+    // Vertices 4 and 5 are the L0/R0 pair of the second run's first quad;
+    // their midpoint is that run's start point.
+    const v = mesh.vertices;
+    expect([(v[8] + v[10]) / 2, (v[9] + v[11]) / 2]).toEqual([3, 1]);
+  });
+
+  it('treats an odd-length dash pattern as the pattern repeated twice', () => {
+    const path: PolygonPath = {
+      kind: 'polygon',
+      commands: new Uint8Array([PATH_M, PATH_L]),
+      coords: new Float32Array([0, 0, 12, 0]),
+      fillRule: 'nonzero',
+    };
+    const base = { paint: { color: '#000' }, width: 2, cap: 'butt' as const, join: 'bevel' as const };
+    const odd = tessellateStroke(path, { ...base, dash: [3] });
+    const even = tessellateStroke(path, { ...base, dash: [3, 3] });
+    expect(Array.from(odd.vertices)).toEqual(Array.from(even.vertices));
+    expect(odd.indices.length).toBe(even.indices.length);
+  });
 });
 
 describe('tessellateStroke — anchor params: joins', () => {
