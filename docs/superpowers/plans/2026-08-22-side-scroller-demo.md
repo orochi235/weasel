@@ -2762,6 +2762,15 @@ Task 17 registers the demo, so until then check it with a temporary route or jus
 proceed — the mount test covers the wiring. If running the dev server:
 `npm run dev:kit`, then the demo's hash route.
 
+**Camera dead zone is unresolved and deliberately so.** `DEAD_ZONE_X = 28` and
+`DEAD_ZONE_Y = 20` are placeholders: two independent attempts picked different
+values from arithmetic alone, which is the tell that the question is a feel
+question, not a math one. Decide it here or at Task 17's play-through, whichever
+first gives a playable frame. A tight vertical zone tracks every jump and can
+read as pumping; a wide horizontal one lets the player drift before the camera
+commits. The settle test pins `DEAD_ZONE_X` as an invariant rather than a
+threshold, so changing either constant does not invalidate it.
+
 - [ ] **Step 6: Commit**
 
 ```bash
@@ -3466,9 +3475,9 @@ Open the printed URL at `#side-scroller`. Confirm, in order:
 4. Coins, stomps, spikes and the goal all make their sounds; a hit ducks the music.
 5. "swarm +40" raises the voice readout and shows stealing at the 24-voice limit.
 6. The frame readout stays under 16 ms with the swarm on screen.
-7. Camera feel. `DEAD_ZONE_Y` is 20 world units, which tracks jumps closely and
-   may read as bouncy — raise it if the view pumps on every hop. This is the one
-   constant that cannot be settled without watching it.
+7. Camera feel — settle the dead zone. `DEAD_ZONE_X = 28` / `DEAD_ZONE_Y = 20`
+   are placeholders carried from Task 4; raise Y if the view pumps on every hop,
+   lower X if the camera feels slack. Neither can be settled without watching it.
 
 Write down the step-jitter readout while running at full speed — it is the
 number Step 5 records.
