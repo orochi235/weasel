@@ -9,17 +9,24 @@ current: Arc 1 and Arc 2 are marked done there, with the reasons.
 ## State
 
 Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
-`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 675 files, 7075 passing. Four commits, each
-with a `patch` changeset:
+`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 675 files, 7075 passing. Arcs 1 and 2 are
+done, plus the first step of Arc 3. Each code commit carries a `patch` changeset:
 
 - the viewport inner-view transform fix
 - the spec retractions
 - the `clientToWorld` collapse
 - `createViewResolver`
 - the `hitTestExtras` frame argument
+- the `CanvasHelpers` type split
 
-**Arc 3 is next and untouched:** split `helpersForLayers`, then N dispatchers and N tool registries,
-then per-view selection and chrome.
+**Arc 3, where to pick up.** `CanvasHelpers` is now `CanvasViewHelpers` + `CanvasSurfaceHelpers`,
+built separately in `<Canvas>`. The next step is extracting the per-view half into a factory that
+can be called N times — and that is where it stopped, because the per-view lookups close over
+`chromeState`, which is itself built from selection, tools, geometry and the adapter
+(`Canvas.tsx:1075-1103`). Hoisting the helpers means hoisting or parameterizing that too. Plan it
+before cutting; a half-done extraction here is worse than none.
+
+After that: N dispatchers and N tool registries, then per-view selection and chrome.
 
 ## Blocked
 

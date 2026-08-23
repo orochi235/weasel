@@ -151,7 +151,10 @@ thunked on `getView`. The resolver is not wired into the pointer path, because w
 every point resolves to the root view — wiring it is Arc 3's first payoff, not Arc 2's.
 
 **Arc 3 — per-view interaction.** Split `helpersForLayers`, then N dispatchers and N tool
-registries, then per-view selection and chrome.
+registries, then per-view selection and chrome. Started: the type is split into
+`CanvasViewHelpers` + `CanvasSurfaceHelpers` and `<Canvas>` builds the halves separately. The
+per-view half still closes over `chromeState`, so hoisting it into an N-callable factory means
+dealing with that first.
 
 Each arc ends somewhere shippable. Arc 1 alone is worth having.
 
