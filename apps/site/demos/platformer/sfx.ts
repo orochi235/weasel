@@ -42,23 +42,42 @@ function tone(n: number, rate: number, from: number, to: number, gain: number, h
   return out;
 }
 
-/** One bar of a simple bass-and-bell loop, built so its last sample lands back
- *  near zero and the loop point is inaudible. */
+/** A plucked note: fast attack, exponential decay, sine plus two falling harmonics. */
+function pluck(n: number, rate: number, freq: number, gain: number, decay: number): Float32Array {
+  const out = new Float32Array(n);
+  const attack = Math.max(1, Math.floor(rate * 0.005));
+  for (let i = 0; i < n; i++) {
+    const t = i / rate;
+    const a = i < attack ? i / attack : 1;
+    const wave = Math.sin(2 * Math.PI * freq * t) + 0.35 * Math.sin(4 * Math.PI * freq * t) + 0.15 * Math.sin(6 * Math.PI * freq * t);
+    out[i] = wave * gain * a * Math.exp(-t / decay);
+  }
+  return out;
+}
+
+/** A 120bpm pentatonic riff over a four-chord bass, built so its last sample
+ *  lands back near zero and the loop point is inaudible. */
 function bed(rate: number): Float32Array {
   const n = Math.floor(rate * 4);
   const out = new Float32Array(n);
-  const bassNotes = [110, 110, 146.83, 98];
-  const bellNotes = [440, 587.33, 523.25, 392];
-  const beat = Math.floor(n / 4);
-  for (let b = 0; b < 4; b++) {
-    const start = b * beat;
-    for (let i = 0; i < beat; i++) {
-      const t = i / rate;
-      const e = env(i, beat, 0.02, 0.6);
-      out[start + i] += Math.sin(2 * Math.PI * bassNotes[b] * t) * 0.18 * e;
-      out[start + i] += Math.sin(2 * Math.PI * bellNotes[b] * t) * 0.06 * env(i, beat, 0.01, 0.85);
-    }
+  const melody = [523.25, 392.0, 329.63, 392.0]; // C5 G4 E4 G4, C major pentatonic
+  const bass = [65.41, 98.0, 110.0, 87.31]; // C2 G2 A2 F2
+
+  const steps = 16;
+  const stepLen = Math.floor(n / steps);
+  for (let s = 0; s < steps; s++) {
+    const start = s * stepLen;
+    const note = pluck(stepLen, rate, melody[s % melody.length], 0.16, stepLen / rate / 4);
+    for (let i = 0; i < note.length; i++) out[start + i] += note[i];
   }
+
+  const quarterLen = stepLen * 2;
+  for (let q = 0; q < steps / 2; q++) {
+    const start = q * quarterLen;
+    const note = pluck(quarterLen, rate, bass[q % bass.length], 0.24, quarterLen / rate / 4);
+    for (let i = 0; i < note.length; i++) out[start + i] += note[i];
+  }
+
   // Taper the very ends into each other so the wrap is silent.
   const edge = Math.floor(rate * 0.01);
   for (let i = 0; i < edge; i++) {
