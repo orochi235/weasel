@@ -9,7 +9,7 @@
  */
 
 import type { Path, Stroke } from '@weasel-js/core';
-import { tessellateStroke } from 'features/paths/tessellate/stroke';
+import { tessellateStroke, resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import type { Mesh } from './mesh';
 
 /**
@@ -34,7 +34,7 @@ let cache = new WeakMap<Path, Map<string, StrokeEntry>>();
  *  triangles at draw time. */
 function configKey(stroke: Stroke, flattenTolerance: number | undefined): string {
   return [
-    stroke.width ?? 1,
+    resolveStrokeWidth(stroke.width ?? 1, 1),
     stroke.cap ?? 'butt',
     stroke.join ?? 'miter',
     stroke.miterLimit ?? '',

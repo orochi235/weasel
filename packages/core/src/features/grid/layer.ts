@@ -11,6 +11,7 @@
 import { type DrawCommand } from '../../renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { type Stroke } from 'core/paint-types';
+import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { resolveUnit, type UnitSystem, type UnitValue } from 'core/units';
 import { meanScale } from 'core/viewport/meanScale';
 import { PATH_L, PATH_M, type PolygonPath } from '../paths/types';
@@ -89,7 +90,7 @@ export function createGridLayer(opts: GridLayerOpts): RenderLayer<unknown> {
         children.push({
           kind: 'path',
           path,
-          stroke: { ...s, width: (s.width ?? 1) * px },
+          stroke: { ...s, width: resolveStrokeWidth(s.width ?? 1, 1) * px },
         });
       };
 

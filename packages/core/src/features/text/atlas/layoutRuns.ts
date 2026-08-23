@@ -230,8 +230,12 @@ function sameFill(a: FillStyle, b: FillStyle): boolean {
  */
 function strokeKey(s: Stroke | undefined): string {
   if (!s) return '-';
+  const width = s.width ?? 1;
   return [
-    fillKey(s.paint), s.width ?? 1, s.join ?? 'miter', s.cap ?? 'butt',
+    // A screen-pixel width keys apart from the equal world-unit number: the two
+    // resolve to different ribbons, so they must not share a draw call.
+    fillKey(s.paint), typeof width === 'number' ? width : `px${width.px}`,
+    s.join ?? 'miter', s.cap ?? 'butt',
     s.miterLimit ?? '', s.align ?? 'center', (s.dash ?? []).join(','),
   ].join(':');
 }
