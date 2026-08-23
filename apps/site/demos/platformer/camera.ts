@@ -52,3 +52,9 @@ export function cameraView(cam: Camera, dims: Dims): View {
     scale: { x: CAM_SCALE, y: CAM_SCALE },
   };
 }
+
+/** World point → screen pixels, the inverse of the documented
+ *  `worldX = screenX / view.scale.x + view.x`. */
+export function worldToScreen(view: View, wx: number, wy: number): { x: number; y: number } {
+  return { x: (wx - view.x) * view.scale.x, y: (wy - view.y) * view.scale.y };
+}

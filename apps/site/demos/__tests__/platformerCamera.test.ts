@@ -1,7 +1,7 @@
 // apps/site/demos/__tests__/platformerCamera.test.ts
 import { describe, it, expect } from 'vitest';
 import { parseLevel, TILE } from '../platformer/level';
-import { CAM_SCALE, DEAD_ZONE_X, cameraView, createCamera, followCamera } from '../platformer/camera';
+import { CAM_SCALE, DEAD_ZONE_X, cameraView, createCamera, followCamera, worldToScreen } from '../platformer/camera';
 
 const DIMS = { width: 640, height: 360 };
 // 40 x 20 tiles — wider and taller than the viewport in world units.
@@ -50,5 +50,29 @@ describe('followCamera', () => {
     expect(view.scale).toEqual({ x: CAM_SCALE, y: CAM_SCALE });
     expect(view.x).toBeCloseTo(100 - DIMS.width / CAM_SCALE / 2, 6);
     expect(view.y).toBeCloseTo(50 - DIMS.height / CAM_SCALE / 2, 6);
+  });
+});
+
+describe('worldToScreen', () => {
+  it('puts the view origin at the screen origin', () => {
+    const view = cameraView(createCamera({ x: 200, y: 100 }), DIMS);
+    const p = worldToScreen(view, view.x, view.y);
+    expect(p.x).toBeCloseTo(0, 6);
+    expect(p.y).toBeCloseTo(0, 6);
+  });
+
+  it('scales world distance by the camera zoom', () => {
+    const view = cameraView(createCamera({ x: 200, y: 100 }), DIMS);
+    const a = worldToScreen(view, view.x, view.y);
+    const b = worldToScreen(view, view.x + 10, view.y + 10);
+    expect(b.x - a.x).toBeCloseTo(10 * CAM_SCALE, 6);
+    expect(b.y - a.y).toBeCloseTo(10 * CAM_SCALE, 6);
+  });
+
+  it('inverts the documented screen→world mapping', () => {
+    const view = cameraView(createCamera({ x: 512, y: 256 }), DIMS);
+    const screen = worldToScreen(view, 700, 300);
+    expect(screen.x / view.scale.x + view.x).toBeCloseTo(700, 4);
+    expect(screen.y / view.scale.y + view.y).toBeCloseTo(300, 4);
   });
 });
