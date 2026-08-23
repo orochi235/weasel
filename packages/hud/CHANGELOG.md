@@ -1,5 +1,13 @@
 # @weasel-js/hud
 
+## 1.1.0
+
+### Patch Changes
+
+- Updated dependencies [2d30a32]
+  - @weasel-js/theme@1.1.0
+  - @weasel-js/font@1.1.0
+
 ## 1.0.4
 
 ### Patch Changes
