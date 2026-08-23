@@ -1462,7 +1462,10 @@ export function stepEnemy(e: Enemy, level: Level, dt: number): Enemy {
   const nextX = e.x + e.vx * dt;
   const ahead = e.vx > 0 ? nextX + ENEMY_W / 2 : nextX - ENEMY_W / 2;
   const wall = tileAt(level, toCol(ahead), toRow(e.y)) === SOLID;
-  const floorAhead = tileAt(level, toCol(ahead), toRow(e.y + ENEMY_H / 2 + 2)) === SOLID;
+  // Sample the row directly below, not an offset derived from ENEMY_H: enemies
+  // sit row-centered with a gap under them, so a height-derived probe lands back
+  // in the enemy's own empty row and it reverses every frame without moving.
+  const floorAhead = tileAt(level, toCol(ahead), toRow(e.y) + 1) === SOLID;
   if (wall || !floorAhead) {
     return { ...e, vx: -e.vx, phase: e.phase + dt };
   }
@@ -1503,7 +1506,7 @@ export const atGoal = (body: Body, goal: Vec2): boolean =>
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npm run test:kit -- platformerEntities`
-Expected: PASS, 10 tests.
+Expected: PASS, 9 tests.
 
 - [ ] **Step 5: Commit**
 
