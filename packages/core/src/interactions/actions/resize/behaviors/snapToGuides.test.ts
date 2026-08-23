@@ -9,7 +9,7 @@ import type {
   ResizeProposed,
 } from '../../../gestures/types';
 
-interface P extends ResizePose {}
+type P = ResizePose;
 
 function ctx(origin: P, mods: Partial<ModifierState> = {}): GestureContext<P> {
   return {

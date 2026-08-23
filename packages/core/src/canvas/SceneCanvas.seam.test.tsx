@@ -107,18 +107,22 @@ describe('Behavior 2: selectionMode=multi accumulates selection', () => {
       add(id: NodeId) { if (!selState.includes(id)) selState = [...selState, id]; },
       remove(id: NodeId) { selState = selState.filter(i => i !== id); },
       toggle(id: NodeId) {
-        selState.includes(id)
-          ? (selState = selState.filter(i => i !== id))
-          : selState.push(id);
+        if (selState.includes(id)) {
+          selState = selState.filter(i => i !== id);
+        } else {
+          selState.push(id);
+        }
       },
       clear() { selState = []; },
       contains(id: NodeId) { return selState.includes(id); },
       applyClick(id: NodeId, mods: { shift: boolean; meta: boolean; ctrl: boolean }) {
         if (mods.shift) {
           // multi mode: toggle
-          selState.includes(id)
-            ? (selState = selState.filter(i => i !== id))
-            : selState.push(id);
+          if (selState.includes(id)) {
+            selState = selState.filter(i => i !== id);
+          } else {
+            selState.push(id);
+          }
         } else {
           selState = [id];
         }
@@ -180,7 +184,11 @@ describe('Behavior 3: pickEvery receives view-adjusted worldXY', () => {
       add(nid: NodeId) { if (!selState.includes(nid)) selState = [...selState, nid]; },
       remove(nid: NodeId) { selState = selState.filter(i => i !== nid); },
       toggle(nid: NodeId) {
-        selState.includes(nid) ? (selState = selState.filter(i => i !== nid)) : selState.push(nid);
+        if (selState.includes(nid)) {
+          selState = selState.filter(i => i !== nid);
+        } else {
+          selState.push(nid);
+        }
       },
       clear() { selState = []; },
       contains(nid: NodeId) { return selState.includes(nid); },
@@ -444,7 +452,11 @@ function makeSelectionStub(initial: NodeId[] = []) {
     add(id: NodeId) { if (!selState.includes(id)) selState = [...selState, id]; },
     remove(id: NodeId) { selState = selState.filter(i => i !== id); },
     toggle(id: NodeId) {
-      selState.includes(id) ? (selState = selState.filter(i => i !== id)) : (selState = [...selState, id]);
+      if (selState.includes(id)) {
+        selState = selState.filter(i => i !== id);
+      } else {
+        selState = [...selState, id];
+      }
     },
     clear() { selState = []; },
     contains(id: NodeId) { return selState.includes(id); },

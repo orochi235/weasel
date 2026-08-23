@@ -137,7 +137,9 @@ describe('SceneCanvas actions integration', () => {
     expect(captured!.id).toBe('duplicate');
     expect(captured!.label).toBe('Duplicate');
     expect(captured!.defaultBinding).toEqual({ kind: 'key', key: 'd', mods: { mod: true } });
-    captured!.invoker!.timing === 'immediate' && (captured!.invoker as { run: (d: unknown) => void }).run({});
+    if (captured!.invoker!.timing === 'immediate') {
+      (captured!.invoker as { run: (d: unknown) => void }).run({});
+    }
     expect(customRun).toHaveBeenCalledOnce();
   });
 

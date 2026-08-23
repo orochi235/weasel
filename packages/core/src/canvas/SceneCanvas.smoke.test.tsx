@@ -196,7 +196,7 @@ describe('useSelectTool smoke', () => {
             id: 'areaSelect',
             label: 'Area Select',
             defaultBinding: { kind: 'drag' },
-            enabled: () => true as true,
+            enabled: () => true as const,
             invoker: {
               timing: 'ongoing',
               start: () => { areaSelectSpy(); return {}; },
@@ -227,7 +227,13 @@ describe('useSelectTool smoke', () => {
       set: (ids: NodeId[]) => { selectionState = ids; },
       add: (nid: NodeId) => { if (!selectionState.includes(nid)) selectionState = [...selectionState, nid]; },
       remove: (nid: NodeId) => { selectionState = selectionState.filter(i => i !== nid); },
-      toggle: (nid: NodeId) => { selectionState.includes(nid) ? (selectionState = selectionState.filter(i => i !== nid)) : selectionState.push(nid); },
+      toggle: (nid: NodeId) => {
+        if (selectionState.includes(nid)) {
+          selectionState = selectionState.filter(i => i !== nid);
+        } else {
+          selectionState.push(nid);
+        }
+      },
       clear: () => { selectionState = []; },
       contains: (nid: NodeId) => selectionState.includes(nid),
       applyClick: (_id: NodeId, _mods: unknown) => {},
@@ -268,7 +274,13 @@ describe('useSelectTool smoke', () => {
       set: (ids: NodeId[]) => { selectionState = ids; },
       add: (nid: NodeId) => { if (!selectionState.includes(nid)) selectionState = [...selectionState, nid]; },
       remove: (nid: NodeId) => { selectionState = selectionState.filter(i => i !== nid); },
-      toggle: (nid: NodeId) => { selectionState.includes(nid) ? (selectionState = selectionState.filter(i => i !== nid)) : selectionState.push(nid); },
+      toggle: (nid: NodeId) => {
+        if (selectionState.includes(nid)) {
+          selectionState = selectionState.filter(i => i !== nid);
+        } else {
+          selectionState.push(nid);
+        }
+      },
       clear: () => { selectionState = []; },
       contains: (nid: NodeId) => selectionState.includes(nid),
       applyClick: (_id: NodeId, _mods: unknown) => {},
@@ -327,7 +339,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
         actions={{
           // clone requires 'selection' + 'scene' deps — both wired in SceneCanvas.
           // Force-enable so the dispatcher doesn't gate on the static placeholder.
-          clone: { enabled: () => true as true },
+          clone: { enabled: () => true as const },
         }}
       />,
     );
@@ -363,7 +375,7 @@ describe('clone smoke (alt-drag via select tool)', () => {
         toolBundle="exhaustive"
         // No initial selection — the alt-drag must select-and-clone in one go.
         actions={{
-          clone: { enabled: () => true as true },
+          clone: { enabled: () => true as const },
         }}
       />,
     );
@@ -414,7 +426,7 @@ describe('useHandTool smoke', () => {
         defaultTools={['select', 'hand']}
         onViewChange={viewSpy}
         actions={{
-          'viewport.dragPan': { enabled: () => true as true },
+          'viewport.dragPan': { enabled: () => true as const },
         }}
       />,
     );
@@ -783,7 +795,13 @@ describe('useLassoTool smoke', () => {
       set: (ids: NodeId[]) => { selectionState = ids; },
       add: (nid: NodeId) => { if (!selectionState.includes(nid)) selectionState = [...selectionState, nid]; },
       remove: (nid: NodeId) => { selectionState = selectionState.filter(i => i !== nid); },
-      toggle: (nid: NodeId) => { selectionState.includes(nid) ? (selectionState = selectionState.filter(i => i !== nid)) : selectionState.push(nid); },
+      toggle: (nid: NodeId) => {
+        if (selectionState.includes(nid)) {
+          selectionState = selectionState.filter(i => i !== nid);
+        } else {
+          selectionState.push(nid);
+        }
+      },
       clear: () => { selectionState = []; },
       contains: (nid: NodeId) => selectionState.includes(nid),
       applyClick: (_nid: NodeId, _mods: unknown) => {},

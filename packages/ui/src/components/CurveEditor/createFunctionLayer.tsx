@@ -63,9 +63,7 @@ export interface AnchorRenderProps {
  * Per-instance curve-rendering overrides. Currently empty — passing `{}`
  * means "draw the curve", and `false`/`null` means don't.
  */
-export interface CurveSettings {
-  // reserved for future per-instance overrides
-}
+export type CurveSettings = object;
 
 /** Shades the region between the curve and one edge of the plot. */
 export interface FillSettings {

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import Powerline from './Powerline';
+import Powerline, { type PowerlineParams } from './Powerline';
 import { BASES, type BadgeBase } from './index';
+import type { ShapeInsets } from '../types';
+
+const insetsOf = Powerline.insets as (params: PowerlineParams) => ShapeInsets;
 
 describe('Powerline base', () => {
   const W = 120;
@@ -51,7 +54,7 @@ describe('Powerline base', () => {
   });
 
   it('insets are symmetric for flat-flat edges', () => {
-    const insets = (Powerline.insets as Function)({ leftEdge: 'flat', rightEdge: 'flat', depth: 8 });
+    const insets = insetsOf({ leftEdge: 'flat', rightEdge: 'flat', depth: 8 });
     expect(insets.left).toBe(8);
     expect(insets.right).toBe(8);
     expect(insets.top).toBe(0);
@@ -62,7 +65,7 @@ describe('Powerline base', () => {
     // flat-left + chevron-right: chevron averages depth/2 outward, so visual
     // centroid sits right of the bounding box center. To re-center text in
     // the silhouette, padLeft must exceed padRight by avgLeft + avgRight = depth/2.
-    const insets = (Powerline.insets as Function)({ leftEdge: 'flat', rightEdge: 'chevron', depth: 8 });
+    const insets = insetsOf({ leftEdge: 'flat', rightEdge: 'chevron', depth: 8 });
     expect(insets.left - insets.right).toBeCloseTo(4, 1);
     expect(insets.top).toBe(0);
     expect(insets.bottom).toBe(0);
@@ -72,7 +75,7 @@ describe('Powerline base', () => {
     // The previous segment's chevron endCap means this segment's left edge
     // dips into the body by up to `depth` at t=0.5. Padding must keep text
     // clear of that notch.
-    const insets = (Powerline.insets as Function)({ leftEdge: 'chevron', rightEdge: 'flat', depth: 8 });
+    const insets = insetsOf({ leftEdge: 'chevron', rightEdge: 'flat', depth: 8 });
     expect(insets.left).toBeGreaterThanOrEqual(8);
   });
 

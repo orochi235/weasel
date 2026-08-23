@@ -109,7 +109,7 @@ function makeSelection(initial: string[]): SelectionApi {
     set(next) { ids = next; },
     add(id) { if (!ids.includes(id)) ids = [...ids, id]; },
     remove(id) { ids = ids.filter((i) => i !== id); },
-    toggle(id) { ids.includes(id) ? this.remove(id) : this.add(id); },
+    toggle(id) { if (ids.includes(id)) { this.remove(id); } else { this.add(id); } },
     clear() { ids = []; },
     contains(id) { return ids.includes(id); },
     applyClick(id, mods) {

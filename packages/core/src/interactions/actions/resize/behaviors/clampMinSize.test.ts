@@ -7,7 +7,7 @@ import type {
   ResizeProposed,
 } from '../../../gestures/types';
 
-interface P extends ResizePose {}
+type P = ResizePose;
 
 function ctx(): GestureContext<P> {
   return {

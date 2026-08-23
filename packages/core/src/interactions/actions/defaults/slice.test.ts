@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { sliceAction } from './slice';
 import type { SliceDep } from './slice';
-import type { InvocationCtx } from '../invoker';
+import type { InvocationCtx, OngoingInvoker } from '../invoker';
 import { ActionDisabledReason } from '../registry';
 
 const ctxAt = (x: number, y: number, start = { x: 0, y: 0 }): InvocationCtx => ({
@@ -28,7 +28,7 @@ describe('sliceAction', () => {
   });
 
   it('no-ops (empty handle) when no slice dep is present', () => {
-    const handle = (sliceAction.invoker as { start: Function }).start(ctxAt(0, 0));
+    const handle = (sliceAction.invoker as OngoingInvoker).start(ctxAt(0, 0));
     expect(handle).toBeTruthy();
     expect(() => handle.onEnd?.(ctxAt(10, 10), 'commit')).not.toThrow();
   });
@@ -38,7 +38,7 @@ describe('sliceAction', () => {
     const dep: SliceDep = { commit };
     const start = { x: 1, y: 2 };
     const startCtx: InvocationCtx = { ...ctxAt(1, 2, start), deps: { slice: dep } as never };
-    const handle = (sliceAction.invoker as { start: Function }).start(startCtx);
+    const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
     handle.onMove?.({ ...ctxAt(40, 60, start), deps: { slice: dep } as never });
     handle.onEnd?.({ ...ctxAt(40, 60, start), deps: { slice: dep } as never }, 'commit');
     expect(commit).toHaveBeenCalledWith({ x: 1, y: 2 }, { x: 40, y: 60 });
@@ -48,7 +48,7 @@ describe('sliceAction', () => {
     const commit = vi.fn();
     const dep: SliceDep = { commit };
     const startCtx: InvocationCtx = { ...ctxAt(0, 0), deps: { slice: dep } as never };
-    const handle = (sliceAction.invoker as { start: Function }).start(startCtx);
+    const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
     handle.onEnd?.({ ...ctxAt(5, 5), deps: { slice: dep } as never }, 'cancel');
     expect(commit).not.toHaveBeenCalled();
   });
@@ -56,12 +56,13 @@ describe('sliceAction', () => {
   it('overlay returns a world-space line command while dragging', () => {
     const dep: SliceDep = { commit: vi.fn() };
     const startCtx: InvocationCtx = { ...ctxAt(0, 0), deps: { slice: dep } as never };
-    const handle = (sliceAction.invoker as { start: Function }).start(startCtx);
+    const handle = (sliceAction.invoker as OngoingInvoker).start(startCtx);
     handle.onMove?.({ ...ctxAt(30, 0), deps: { slice: dep } as never });
     const ov = handle.overlay?.();
     expect(ov?.kind).toBe('commands');
-    expect(ov?.space).toBe('world');
-    const cmds = ov?.kind === 'commands' ? ov.commands : [];
+    const commandsOv = ov?.kind === 'commands' ? ov : undefined;
+    expect(commandsOv?.space).toBe('world');
+    const cmds = commandsOv?.commands ?? [];
     expect(cmds).toHaveLength(1);
     const cmd = cmds[0];
     expect(cmd?.kind).toBe('path');
