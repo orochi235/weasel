@@ -20,9 +20,10 @@ supplies via `resolvable(outer, dims)`.
 Its `ViewTarget.origin` is the client-space origin of the resolved view, so
 `clientToWorld(x, y, target.origin, target.view)` lands in that view's world.
 
-Nothing wires it into the canvas yet — the dispatcher still targets the outer
-view, so a consumer that wants a click inside a viewport to mean something calls
-the resolver from its own handler.
+`<CanvasView>` wires all of this: it contributes a viewport node and a dispatch
+record, and `<SceneCanvas>` routes events between them. Reach for the module
+directly when you want a viewport the canvas does not route input to — a
+minimap, a magnifier — or when you are building your own routing.
 
 ## Viewports are lenses, not copies
 

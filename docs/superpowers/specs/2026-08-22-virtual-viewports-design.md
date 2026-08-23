@@ -192,15 +192,32 @@ Per-view `setView` did not need a second channel. Every viewport action reads it
 registry with `view` — and only `view` — replaced by that record's. Routing is now correct, not
 merely wired: a drag inside a panel pans the panel.
 
+Step 4 landed as `<CanvasView>`. It owns a camera, contributes a viewport node and a dispatch
+record, and registers both with the surface through a `ViewRegistryProvider` that `<SceneCanvas>`
+mounts. A `views` prop on `<SceneCanvas>` renders one per descriptor and is the ordinary way to
+declare one; mounting the component as a child is the same declaration, and children land after
+every prop entry. `createViewportLayer.source` now accepts a thunk, which is what lets a view paint
+a stack the surface assembles rather than one closed over at construction.
+
+It does **not** call `useViewHelpers`, against what this list said. That hook builds one view's
+overlay-aware state out of selection, tools and a gesture source — all still surface-wide, so a
+second call would produce a second copy of the same answers. It belongs with the state it reads,
+which is step 5.
+
 The remaining work, in order:
 
-4. **The per-view component.** Owns a camera, calls `useViewHelpers`, contributes a viewport node
-   and a dispatcher record. `usePinchZoomTool` and `useHoverTracking` stay on the surface and get
-   the same list treatment as the dispatcher. `Canvas`'s `ToolCtx` is still built from the outer
-   camera; its one remaining consumer is the function form of `Tool.cursor`, so a per-view cursor
-   belongs to this step too.
-5. **Per-view selection and chrome**, and the provider question — the first view's dep and actions
-   registries must not silently become every view's.
+5. **Per-view selection and chrome.** Then `<CanvasView>` calls `useViewHelpers` and passes the
+   result through `createViewportLayer`'s `data` thunk, which is what that thunk is for. The
+   provider question is here too: the first view's dep and actions registries must not silently
+   become every view's.
+6. **The rest of the surface's per-event lookups.** `usePinchZoomTool` and `useHoverTracking` still
+   attach to the canvas and target the outer camera, so a pinch inside a panel zooms the canvas.
+   Both need the list treatment the dispatcher got. `Canvas`'s `ToolCtx` is in the same position;
+   its one remaining consumer is the function form of `Tool.cursor`.
+7. **Affordances and hit-testing per view.** A `<CanvasView>` registers no `affordanceAt` or
+   `classifyTarget`, so nothing inside one is selectable or resizable — its gestures reach only the
+   ambient viewport actions. `buildAffordanceAt` is already thunked on `getView`, so this is
+   construction per view rather than new mechanism.
 
 Each arc ends somewhere shippable. Arc 1 alone is worth having.
 

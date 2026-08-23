@@ -19,7 +19,7 @@
  *   `docs/TODO.md`.
  */
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { FillStyle } from 'core/paint-types';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
@@ -35,6 +35,7 @@ import type { ToolsApi } from 'tools/useTools';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
+import { useOptionalViewRegistry } from './viewRegistry';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from 'tools/types';
@@ -1197,17 +1198,53 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer,
       decorationLayer, geometry, previewToolBounds, previewToolPose, previewExtraRef]);
 
+  // Views registered on this surface — declared as `views` descriptors or
+  // mounted as `<CanvasView>` children. Null outside a surface that mounts a
+  // registry, which is the single-view case.
+  const viewRegistry = useOptionalViewRegistry();
+  const viewRegistryVersion = useSyncExternalStore(
+    useCallback((cb: () => void) => viewRegistry?.subscribe(cb) ?? (() => {}), [viewRegistry]),
+    () => viewRegistry?.getVersion() ?? 0,
+    () => 0,
+  );
+
+  // The stack a view paints through its own camera is this canvas's, before
+  // the views themselves are folded in — otherwise a view would contain
+  // itself. Published by reference and read at draw time.
+  const surfaceLayersRef = useRef<readonly RenderLayer<unknown>[]>(layers);
+  surfaceLayersRef.current = layers;
+  useEffect(() => {
+    viewRegistry?.attachSurface({
+      origin: () => {
+        const c = canvasRef.current;
+        if (!c) return { left: 0, top: 0 };
+        const r = c.getBoundingClientRect();
+        return { left: r.left, top: r.top };
+      },
+      view: () => viewRef.current,
+      dims: () => dimsRef.current,
+      layers: () => surfaceLayersRef.current,
+      requestRedraw,
+    });
+  }, [viewRegistry, canvasRef, requestRedraw]);
+
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
   // screen space.
   const layersWithDebug = useMemo(() => {
-    const base = debugSink && resolvedDebugConfig
-      ? [...layers, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
+    // Views paint through the surface's own stack, so they sit above it and
+    // below both the debug overlay and externally-registered layers.
+    const withViews = viewRegistry
+      ? [...layers, ...viewRegistry.list().map((r) => r.layer as RenderLayer<unknown>)]
       : layers;
+    const base = debugSink && resolvedDebugConfig
+      ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
+      : withViews;
     return [...base, ...extrasRef.current];
-    // redrawNonce drives re-reads of extrasRef when layers are registered/detached.
+    // redrawNonce drives re-reads of extrasRef when layers are registered/detached;
+    // viewRegistryVersion does the same for registered views.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, debugSink, resolvedDebugConfig, redrawNonce]);
+  }, [layers, debugSink, resolvedDebugConfig, redrawNonce, viewRegistry, viewRegistryVersion]);
 
   useEffect(() => {
     const c = canvasRef.current;

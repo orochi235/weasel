@@ -26,8 +26,9 @@ import type { ResolvableView } from './viewResolver';
  * **Input is re-projected on request, not automatically.** `reproject` maps a
  * screen point into the inner view's world; a consumer that wants a click
  * inside a viewport to mean something calls it from its own handler, or feeds
- * `resolvable` to `createViewResolver` to route a whole pointer stream. The
- * dispatcher is untouched either way, so tools still target the outer view.
+ * `resolvable` to `createViewResolver` to route a whole pointer stream.
+ * `<CanvasView>` is that wiring done for you; build on this directly for a
+ * viewport that takes no input, or to route it yourself.
  *
  * **Screen-space source layers** (e.g., debug overlays, selection chrome)
  * draw in the viewport's own CSS-pixel space: their coords are relative to
@@ -37,8 +38,11 @@ export interface CreateViewportLayerOpts<TData, TSource = TData> {
   id: string;
   label: string;
   /** Layers re-rendered through `view`. Each receives `(data, view, dims)`
-   *  exactly as the outer Canvas would call it. */
-  source: RenderLayer<TSource>[];
+   *  exactly as the outer Canvas would call it.
+   *
+   *  Pass a thunk for a stack that is assembled elsewhere — it is read fresh
+   *  on every `draw`, the same way a thunked `view` is. */
+  source: readonly RenderLayer<TSource>[] | (() => readonly RenderLayer<TSource>[]);
   /**
    * The `data` the source layers receive, derived from what the outer canvas
    * passed down. Omit and they get the outer canvas's own.
@@ -84,9 +88,9 @@ export interface ViewportLayer<TData> extends RenderLayer<TData> {
    * `bounds` is a pure function of those, so this reproduces the exact rect
    * that was painted rather than a remembered one.
    *
-   * This does not touch the dispatcher: tools still receive outer-view
-   * coords, and a consumer that wants a click inside a viewport to mean
-   * something calls this from its own handler.
+   * This does not touch the dispatcher: a consumer that wants a click inside
+   * a viewport to mean something calls this from its own handler, or declares
+   * the viewport as a `<CanvasView>` and lets the canvas route to it.
    */
   reproject(outer: View, dims: Dims, screen: { x: number; y: number }): { x: number; y: number } | null;
   /**
@@ -108,6 +112,7 @@ export function createViewportLayer<TData, TSource = TData>(
 ): ViewportLayer<TData> {
   const { id, label, source, view, bounds, background, data: sourceData } = opts;
   const viewAt = typeof view === 'function' ? view : () => view;
+  const sourceAt = typeof source === 'function' ? source : () => source;
   return {
     id,
     label,
@@ -146,7 +151,7 @@ export function createViewportLayer<TData, TSource = TData>(
       // thunk the two are the same type by construction.
       const innerData = sourceData ? sourceData(data) : (data as unknown as TSource);
       const v = viewAt(outerView, dims);
-      for (const layer of source) {
+      for (const layer of sourceAt()) {
         for (const c of drawOneLayer(layer, innerData, v, innerDims)) children.push(c);
       }
       const transform: Mat3 = mat3.translate(mat3.identity(), b.x, b.y);

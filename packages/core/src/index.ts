@@ -343,6 +343,13 @@ export type {
   OpenFilePickerOptions,
 } from './features/ingestion';
 
+// ─── Second view on an existing canvas ──────────────────────────────────────
+// `<CanvasView>` is a camera over a rect of a `<SceneCanvas>`'s surface, with
+// input routed to it — one GL context, N views. Contrast the detached
+// canvases below, which each own their own context.
+export { CanvasView } from './canvas/CanvasView';
+export type { CanvasViewProps, ViewRect } from './canvas/CanvasView';
+
 // ─── Detached scene-view + minimap: read-only canvases with their own GL ─────
 // `<SceneViewCanvas>` is a pointer-inert read-only render of a scene at a
 // given view; `<MinimapCanvas>` is the opinionated minimap built on top.

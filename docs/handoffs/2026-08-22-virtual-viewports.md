@@ -9,8 +9,8 @@ current: Arc 1 and Arc 2 are marked done there, with the reasons.
 ## State
 
 Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
-`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 676 files, 7088 passing. Arcs 1 and 2 are
-done, plus steps 1-3 of Arc 3. Each code commit carries a `patch` changeset:
+`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 677 files, 7095 passing. Arcs 1 and 2 are
+done, plus steps 1-4 of Arc 3. Each code commit carries a `patch` changeset:
 
 - the viewport inner-view transform fix
 - the spec retractions
@@ -23,14 +23,21 @@ done, plus steps 1-3 of Arc 3. Each code commit carries a `patch` changeset:
 - a thunked viewport camera and per-viewport `data`
 - the `useViewHelpers` extraction
 - the per-view dispatch record, then per-event view routing, then the per-view camera
+- `<CanvasView>` and the view registry
 
 **Arc 3, where to pick up.** The spec's Arc 3 section carries a numbered list of the remaining
-steps, in order, with the reason each one precedes the next. Steps 1 through 3 are done; start at
-step 4 — the per-view component, which is the first thing that will actually pass `views`.
+steps, in order, with the reason each one precedes the next. Steps 1 through 4 are done; start at
+step 5.
 
-The input path is now complete and unused: `useGestureDispatcher` will route a gesture inside a
-panel to that panel's dispatcher, with that panel's coordinates, panning that panel's camera.
-Nothing constructs a second view yet.
+Two views now really exist: `<SceneCanvas views={[{ id, bounds }]}>` paints a second camera and
+routes wheel and drag inside its rect to it. What a view cannot yet do is select, resize or edit
+anything — it registers no `affordanceAt` or `classifyTarget`, and its selection and chrome are
+still the surface's. That is steps 5 and 7.
+
+**The decision behind the shape.** A view is declared as a prop *and* mountable as a child, at
+Mike's call. They are one implementation: the prop is a `.map` rendering the component, so there is
+one registration path, not two surfaces. Prop entries take their array index as `order` and children
+take `Infinity`, so paint order never depends on React's mount ordering.
 
 ## Blocked
 

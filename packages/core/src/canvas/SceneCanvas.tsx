@@ -52,6 +52,9 @@ import type { UseRotateOptions } from 'interactions/actions/rotate/options';
 import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
+import { ViewRegistryProvider, useOptionalViewRegistry, IDENTITY_VIEW, UNMEASURED_DIMS } from './viewRegistry';
+import { CanvasView, type CanvasViewProps } from './CanvasView';
+import { createViewResolver } from 'features/viewports/viewResolver';
 import type { DeviceProfile } from '../core/device/types';
 import { HANDLE_BASE_PX } from '../core/device/targets';
 import { ActionsProviderIfRoot } from './SceneCanvas/ActionsProviderIfRoot';
@@ -665,6 +668,18 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     animator?: Animator;
 
     /**
+     * Extra views on this canvas: each is a camera over a rect of the same
+     * surface, drawn through one GL context, with input routed to it. The flat
+     * `view` / `onViewChange` props above stay the canvas's own camera — view
+     * zero — and are unaffected by anything declared here.
+     *
+     * Order is paint and hit order, low to high. Each entry is a
+     * `<CanvasView>`; mounting one as a child is the same declaration, and
+     * children land after every entry here.
+     */
+    views?: readonly CanvasViewProps[];
+
+    /**
      * Children rendered alongside the canvas. Useful for siblings that need
      * the same `<ActionsProvider>` scope (e.g. shortcuts overlays, probes).
      */
@@ -840,6 +855,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     actionDefaults,
     describeKind,
     animator,
+    views: viewDescriptors,
     children,
     shaders,
     backgroundFill,
@@ -1935,65 +1951,70 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
   return (
     <DeviceProfileProvider value={device}>
-      <DepRegistryProviderIfRoot>
-        <PointerProviderIfRoot>
-          <ActionsProviderIfRoot>
-            {canvas}
-            <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
-            <StandardActionsRegistrar
-              selection={selection}
-              scene={scene as Scene<unknown, string, unknown>}
-              adapter={adapter as unknown as BridgeAdapter}
-              actionDefaults={actionDefaults}
-              actions={resolvedActions}
-              currentViewRef={currentViewRef}
-              onViewChange={handleViewChange}
-              resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-              geometryProjection={geometryProjection}
-              dispatcher={dispatcher}
-              getActionRef={getActionRef}
-              pickEvery={internalPickEvery}
-              viewportPanEnabled={viewport?.pan !== false}
-              viewportZoom={viewport?.zoom ?? true}
-              viewportRecenter={viewport?.recenter}
-              editAnchorsExternalState={editAnchorsExternalState}
-              anchorEditingAllowed={anchorEditingAllowed}
-              layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
-              insertNodeFactories={insertNodeFactories}
-              snapPoint={toolOptions?.snapPoint}
-              canvasRef={internalCanvasRef}
-              ingestionResolveSrc={ingestion?.resolveSrc}
-              ingestionSvg={ingestion?.svg}
-              ingestionClipboard={ingestionClipboard}
-              actionsRegistryRef={actionsRegistryRef}
-            />
-            <GestureDispatcherMounter
-              canvasRef={internalCanvasRef}
-              canvasApiRef={canvasApiRef}
-              tools={tools}
-              enabled={enableGestureDispatcher}
-              keyboard={enableKeybindings}
-              selectionRef={selectionRef}
-              boundsOf={internalBoundsOf}
-              pickEvery={internalPickEvery}
-              pickBest={internalPickBest}
-              kindOfNode={kindOfNode}
-              viewRef={currentViewRef}
-              dispatcher={dispatcher}
-              getIsVisibleForCanvas={getIsVisibleForCanvas}
-              getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
-              onDoubleClick={onDoubleClickObserver}
-            />
-            <ToolKeybindingsMounter
-              internalTools={internalTools}
-              toolsTakeover={toolsTakeover ?? undefined}
-              enableKeybindings={enableKeybindings}
-              isToolEligible={isToolEligible}
-            />
-            {children}
-          </ActionsProviderIfRoot>
-        </PointerProviderIfRoot>
-      </DepRegistryProviderIfRoot>
+      <ViewRegistryProvider>
+        <DepRegistryProviderIfRoot>
+          <PointerProviderIfRoot>
+            <ActionsProviderIfRoot>
+              {canvas}
+              <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+              <StandardActionsRegistrar
+                selection={selection}
+                scene={scene as Scene<unknown, string, unknown>}
+                adapter={adapter as unknown as BridgeAdapter}
+                actionDefaults={actionDefaults}
+                actions={resolvedActions}
+                currentViewRef={currentViewRef}
+                onViewChange={handleViewChange}
+                resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+                geometryProjection={geometryProjection}
+                dispatcher={dispatcher}
+                getActionRef={getActionRef}
+                pickEvery={internalPickEvery}
+                viewportPanEnabled={viewport?.pan !== false}
+                viewportZoom={viewport?.zoom ?? true}
+                viewportRecenter={viewport?.recenter}
+                editAnchorsExternalState={editAnchorsExternalState}
+                anchorEditingAllowed={anchorEditingAllowed}
+                layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+                insertNodeFactories={insertNodeFactories}
+                snapPoint={toolOptions?.snapPoint}
+                canvasRef={internalCanvasRef}
+                ingestionResolveSrc={ingestion?.resolveSrc}
+                ingestionSvg={ingestion?.svg}
+                ingestionClipboard={ingestionClipboard}
+                actionsRegistryRef={actionsRegistryRef}
+              />
+              <GestureDispatcherMounter
+                canvasRef={internalCanvasRef}
+                canvasApiRef={canvasApiRef}
+                tools={tools}
+                enabled={enableGestureDispatcher}
+                keyboard={enableKeybindings}
+                selectionRef={selectionRef}
+                boundsOf={internalBoundsOf}
+                pickEvery={internalPickEvery}
+                pickBest={internalPickBest}
+                kindOfNode={kindOfNode}
+                viewRef={currentViewRef}
+                dispatcher={dispatcher}
+                getIsVisibleForCanvas={getIsVisibleForCanvas}
+                getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
+                onDoubleClick={onDoubleClickObserver}
+              />
+              <ToolKeybindingsMounter
+                internalTools={internalTools}
+                toolsTakeover={toolsTakeover ?? undefined}
+                enableKeybindings={enableKeybindings}
+                isToolEligible={isToolEligible}
+              />
+              {viewDescriptors?.map((v, i) => (
+                <CanvasView key={v.id} {...v} order={v.order ?? i} />
+              ))}
+              {children}
+            </ActionsProviderIfRoot>
+          </PointerProviderIfRoot>
+        </DepRegistryProviderIfRoot>
+      </ViewRegistryProvider>
     </DeviceProfileProvider>
   );
 }
@@ -2280,6 +2301,32 @@ function GestureDispatcherMounter({
     canvasApiRef?.current?.requestRedraw?.();
   }, [canvasApiRef]);
 
+  // Input routing to registered views. Rebuilt per event from the registry, so
+  // a view that mounts or moves mid-session is routable on the next event; with
+  // nothing registered every point resolves to the canvas, as before.
+  const viewRegistry = useOptionalViewRegistry();
+  const views = useMemo(() => {
+    if (!viewRegistry) return undefined;
+    const frame = () => {
+      const surface = viewRegistry.surface();
+      return {
+        view: surface?.view() ?? viewRef?.current ?? IDENTITY_VIEW,
+        dims: surface?.dims() ?? UNMEASURED_DIMS,
+      };
+    };
+    return {
+      targets: () => viewRegistry.list().map((r) => ({ id: r.id, ...r.target })),
+      resolver: createViewResolver({
+        views: () => {
+          const f = frame();
+          return viewRegistry.list().map((r) => r.layer.resolvable(f.view, f.dims));
+        },
+        root: () => frame().view,
+        canvasOrigin: () => viewRegistry.surface()?.origin() ?? { left: 0, top: 0 },
+      }),
+    };
+  }, [viewRegistry, viewRef]);
+
   // Hover cursors live in `useGestureDispatcher`'s hover-cursor pump:
   // affordance hits carry `AffordanceHit.cursor` (set by `buildAffordanceAt`),
   // and everything else is predicted via `Dispatcher.resolveOnly` +
@@ -2297,6 +2344,7 @@ function GestureDispatcherMounter({
     requestRedraw,
     getRuleCtx,
     onDoubleClick,
+    ...(views ? { views } : {}),
   });
   return null;
 }
