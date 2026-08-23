@@ -29,11 +29,12 @@ mapping. It is `@experimental` and explicitly does not route input (`:25-30`).
 is stencil-based (`renderer/draw.ts:862-972`). Do not introduce a GL scissor path — extend the
 mechanism already in the tree.
 
-Two consequences to design around. Clip depth is capped around 7 levels and shares eight stencil
-bits with even-odd fill (`renderer/draw.ts:992-1009`, `:1137-1174`), so a view's own clip spends one
-of a small budget that its content also draws from. And `viewportLayer` calls `layer.draw(data,
-view, …)` *without* the `viewToMat3(view)` wrap that `drawLayers` applies (`core/layers/render.ts:
-182-186`) — resolve which is correct before building on it; they cannot both be.
+One consequence to design around: clip depth is capped around 7 levels and shares eight stencil bits
+with even-odd fill (`renderer/draw.ts:992-1009`, `:1137-1174`), so a view's own clip spends one of a
+small budget that its content also draws from.
+
+The other, that `viewportLayer` drew source layers without the `viewToMat3(view)` wrap `drawLayers`
+applies, was a real bug and is fixed — both go through `drawOneLayer` now.
 
 ## What stays singular
 
@@ -41,13 +42,14 @@ The renderer and everything it owns: GL context, shader programs, mesh/texture/i
 caches, the quad buffers, `SolidBatch`, `GroupState`. The `<canvas>` element, its size and DPR. The
 document- and element-level listener sets.
 
-Two of those need care rather than just staying put:
+Both stay put as they are, as long as views remain clip groups inside one command tree. `SolidBatch`
+merges rects across the whole command stream (`WeaselRenderer.ts:466`), and merging across a view
+boundary would be a correctness bug — but `pushClip` and `popClip` each call `flushSolids` before
+touching the stencil (`renderer/draw.ts:920`, `:954`), so a view's clip already drains the run.
+Likewise the full-surface `gl.clear` and the `GroupState` reset happen once per `render()`
+(`:433-437`), and N views in one command tree are still one `render()`.
 
-- **`SolidBatch` merges rects across the whole command stream** (`WeaselRenderer.ts:466`). Batching
-  across a view boundary is a correctness bug, not a perf detail. A view boundary must flush.
-- **`GroupState` is one stack reset once per `render()`** (`:163`, `:433`), and `render()` does a
-  full-surface `gl.clear` of color and stencil (`:436-437`). One `render()` per view would wipe the
-  previous view; the clear has to move out of the per-view body.
+Both only become problems under one `render()` per view. Don't go there.
 
 ## What becomes per-view
 
@@ -57,10 +59,11 @@ in-flight handles, chrome visibility and hover, path/anchor editing state, and l
 visibility/order — which is new state, not a relocation: `Canvas.tsx:1437-1438` hardcodes `{}` and
 `undefined` today.
 
-**The layer command cache must become per-view.** It is keyed on `layer.id` alone
-(`core/layers/render.ts:203-207`) and evicts ids absent from the current list (`:166-170`), so two
-views sharing an id thrash a single entry every frame, and two views with different layer sets evict
-each other. Prefix the key with a view id, or hold one cache per view.
+**The layer command cache must become per-view.** It is keyed on `layer.id` alone and evicts ids
+absent from the current list, so two views sharing an id thrash a single entry every frame, and two
+views with different layer sets evict each other. Prefix the key with a view id, or hold one cache
+per view. This waits on the layer caching arc: `LayerCommandCache` lives on branch
+`worktree-renderer-layer-caching` and is not on `main`.
 
 ## The façade
 
@@ -136,10 +139,11 @@ the `window` test hook (`:1916-1934`), `adapterFallbackIdCounter` and `pasteIdCo
 
 ## Staging
 
-**Arc 1 — draw.** Promote `viewportLayer` from experimental: settle the `viewToMat3` discrepancy,
-make the command cache per-view, flush `SolidBatch` at view boundaries, move the clear out of the
-per-view body. Delivers N panels that render, with input still single-view. This is most of the
-comparison use case and it is nearly built.
+**Arc 1 — draw.** Promote `viewportLayer` from experimental. The `viewToMat3` discrepancy is
+settled; the `SolidBatch` and `gl.clear` items turned out to be non-problems (see *What stays
+singular*). What remains is keying the layer command cache per view, which waits on the layer
+caching arc — `LayerCommandCache` is not on `main` yet. Delivers N panels that render, with input
+still single-view: most of the comparison use case.
 
 **Arc 2 — input.** Collapse the four `clientToWorld` copies onto one view-aware helper, add the
 sticky view resolver above the listener sets, thread a view through `hitTestExtras` and
@@ -160,4 +164,4 @@ Headless against command trees, as the existing layer tests do — no WebGL in t
 - A click in view B does not disturb view A's selection.
 - Flat props with no views declared behave identically to today — the N=1 façade, asserted against
   the existing `SceneCanvas` tests unchanged.
-- Solid rects in adjacent views are not merged into one batch.
+- A world-space source layer's commands carry the inner view's transform, not the outer's.
