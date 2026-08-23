@@ -36,6 +36,10 @@ Wiring: `apps/site/demos/SideScrollerDemo.tsx`, registered in `apps/site/registr
 Tests live in `apps/site/demos/__tests__/` and run under the `kit` vitest project
 (`apps/site/**/*.test.{ts,tsx}`). Run them with `npm run test:kit`.
 
+**Run `npx tsc --noEmit` before every commit, not just the tests.** vitest does
+not typecheck code it never executes, and `sfx.ts` shipped a type error behind a
+green 7/7 run because its one Web Audio function is deliberately untested.
+
 `autoExtras()` in `registry.ts` walks relative imports in the demo's raw source,
 so every `platformer/*.ts` module the demo imports becomes a source tab with no
 manual wiring — the same way `CurveLabDemo` picks up `./curveLab/presets`.
@@ -1739,7 +1743,9 @@ export function registerSounds(engine: AudioEngine): Record<SoundName, SoundHand
   for (const name of SOUND_NAMES) {
     const pcm = renderSound(name, rate);
     const buffer = engine.context.createBuffer(1, pcm.length, rate);
-    buffer.copyToChannel(pcm, 0);
+    // Not copyToChannel: its parameter is Float32Array<ArrayBuffer>, and an
+    // unparameterized return type widens to ArrayBufferLike and is rejected.
+    buffer.getChannelData(0).set(pcm);
     out[name] = engine.register(buffer);
   }
   return out;
@@ -1858,8 +1864,9 @@ function flatten(cmds: DrawCommand[]): DrawCommand[] {
 describe('skin', () => {
   it('draws one command per visible solid tile and nothing for air', () => {
     const cmds = flatten(drawTiles(LEVEL, VIEW, DIMS));
-    // 5 floor tiles minus the spike, plus the spike, plus the one-way: 6 shapes.
-    expect(cmds.filter((c) => c.kind === 'path').length).toBe(6);
+    // 4 solid tiles, each with a cap accent because the row above is air, plus
+    // one spike and one one-way.
+    expect(cmds.filter((c) => c.kind === 'path').length).toBe(10);
   });
 
   it('culls tiles outside the view', () => {
@@ -1902,8 +1909,10 @@ describe('skin', () => {
 
   it('spins a coin over its cycle', () => {
     const coins = createCoins([{ x: 1.5 * TILE, y: 1.5 * TILE }]);
+    // Sample a quarter turn, not a half: the width is |cos|, so 0 and 0.5 are
+    // the same edge-on width and would compare equal.
     expect(JSON.stringify(drawCoins(coins, VIEW, 0))).not.toEqual(
-      JSON.stringify(drawCoins(coins, VIEW, 0.5)),
+      JSON.stringify(drawCoins(coins, VIEW, 0.25)),
     );
   });
 
@@ -1911,9 +1920,10 @@ describe('skin', () => {
     for (const band of ['far', 'mid', 'near'] as const) {
       expect(drawBackdrop(VIEW, DIMS, band).length, band).toBeGreaterThan(0);
     }
-    // The far band is bottom-most, so it is the one that fills the sky.
+    // Far paints the sky, but mid packs more hills into the same width from its
+    // shorter period, so the counts can tie.
     expect(drawBackdrop(VIEW, DIMS, 'far').length)
-      .toBeGreaterThan(drawBackdrop(VIEW, DIMS, 'mid').length);
+      .toBeGreaterThanOrEqual(drawBackdrop(VIEW, DIMS, 'mid').length);
   });
 
   it('repeats hills across the whole viewport so panning never runs out', () => {
