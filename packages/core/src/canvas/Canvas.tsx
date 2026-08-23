@@ -840,10 +840,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   //
   // `<SceneCanvas>` folds this into its `affordanceAt` thunk. Canvas can't do
   // that itself: it has the layers but not the dispatcher.
-  const hitTestExtras = useCallback((worldX: number, worldY: number) => {
+  const hitTestExtras = useCallback((
+    worldX: number,
+    worldY: number,
+    frame?: { view: View; dims: Dims },
+  ) => {
     const layers = [...extrasRef.current].reverse();
-    const view = viewRef.current;
-    const dims = dimsRef.current;
+    const view = frame?.view ?? viewRef.current;
+    const dims = frame?.dims ?? dimsRef.current;
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
