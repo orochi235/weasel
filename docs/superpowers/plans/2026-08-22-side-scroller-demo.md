@@ -2173,6 +2173,12 @@ git commit -m "add the platformer art seam and world-to-screen projection"
 - Create: `apps/site/demos/platformer/useInput.ts`
 - Test: `apps/site/demos/__tests__/platformerInput.test.tsx`
 
+`resolveParams` had to be exported from `@weasel-js/core` for this task — the
+barrel published `BindingOpts`, whose `params` may be a thunk, and the field's
+own doc comment named `resolveParams` as the way to read it, but never exported
+the function. Importing it resolved to `undefined` at runtime rather than
+failing the build. That export plus a `patch` changeset are part of this task.
+
 Background: `key-held` gives **edges**, not state — the dispatcher's held set is
 private and only tracks keys a binding claimed. So the demo keeps its own set,
 opened by the action's `start` and closed by the `OngoingHandle`'s `onEnd`. A key
@@ -2199,10 +2205,19 @@ function Harness({ onReady }: { onReady: (ref: { current: HeldInput }) => void }
   return <div data-testid="harness" />;
 }
 
+// `WeaselProvider` registers the action but mounts no dispatcher — only
+// `SceneCanvas` does that — so without this the key events route nowhere and the
+// flags never flip however correct the hook is.
+function MountDispatcher() {
+  useGestureDispatcher();
+  return null;
+}
+
 function mount() {
   let ref!: { current: HeldInput };
   render(
     <WeaselProvider>
+      <MountDispatcher />
       <Harness onReady={(r) => { ref = r; }} />
     </WeaselProvider>,
   );
@@ -2352,10 +2367,10 @@ Run: `npm run test:kit -- platformerInput`
 Expected: PASS, 5 tests.
 
 If the held flags never flip, the action is not reaching the dispatcher. Check
-in this order: the component is under a provider that supplies the action
-registry; `scope: 'hotkey'` is set; the invoker is `timing: 'ongoing'`. A hook
-that calls `useAction` above the provider registers into nothing and fails
-silently.
+in this order: a dispatcher is actually mounted (a provider alone does not mount
+one); the component is under a provider that supplies the action registry;
+`scope: 'hotkey'` is set; the invoker is `timing: 'ongoing'`. Every one of these
+fails silently rather than erroring.
 
 - [ ] **Step 5: Commit**
 
