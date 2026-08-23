@@ -738,8 +738,10 @@ import type { Level, Vec2 } from './level';
 
 /** World units are small (24px tiles), so the camera magnifies. */
 export const CAM_SCALE = 2;
-/** Half-width / half-height of the box the target moves in freely, in world units. */
-export const DEAD_ZONE_X = 28;
+/** Half-width / half-height of the box the target moves in freely, in world
+ *  units. A stationary target settles at exactly this distance from center, so
+ *  both must stay under the `TILE` the settle test allows. */
+export const DEAD_ZONE_X = 20;
 export const DEAD_ZONE_Y = 20;
 /** Exponential follow rate; higher is snappier. */
 export const CAM_LAMBDA = 6;
@@ -3442,6 +3444,9 @@ Open the printed URL at `#side-scroller`. Confirm, in order:
 4. Coins, stomps, spikes and the goal all make their sounds; a hit ducks the music.
 5. "swarm +40" raises the voice readout and shows stealing at the 24-voice limit.
 6. The frame readout stays under 16 ms with the swarm on screen.
+7. Camera feel. `DEAD_ZONE_Y` is 20 world units, which tracks jumps closely and
+   may read as bouncy — raise it if the view pumps on every hop. This is the one
+   constant that cannot be settled without watching it.
 
 Write down the step-jitter readout while running at full speed — it is the
 number Step 5 records.
