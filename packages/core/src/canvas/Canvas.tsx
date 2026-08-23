@@ -1083,56 +1083,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     return boundsOf ?? baseBoundsOf;
   }, [boundsOf, baseBoundsOf]);
 
-  const chromeState: ChromeState = useMemo(
-    () => buildChromeState({
-      selection: selectedIdsForWiring,
-      multiActive,
-      // Prefer the active tool's previewBounds (live during a drag) so
-      // resize/rotation handles track the dragged object. Falls back to
-      // committed bounds when no gesture is in flight.
-      effectiveBoundsOf: (id) => {
-        if (tools) {
-          const b = firstPreviewBounds(tools, id);
-          if (b) return b;
-          const p = firstPreviewPose(tools, id);
-          if (p != null) return geometry.getBounds(p as TPose);
-        }
-        const extras = previewExtraRef.current;
-        if (extras.previewPoseExtra) {
-          const p = extras.previewPoseExtra(id);
-          if (p != null) return geometry.getBounds(p as TPose);
-        }
-        return effectiveBoundsOf ? effectiveBoundsOf(id) : null;
-      },
-      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-      // Rotation-capability predicate. Reads the committed pose (gestures
-      // don't change descriptor capability) and asks the geometry. Absent
-      // adapter / unknown ids fall back to `true` so the affordance stays
-      // visible — preserves pre-existing behavior for consumers that wire
-      // bounds without an adapter.
-      canRotate: (id) => {
-        if (!geometry.supportsRotation) return true;
-        const pose = committedPoseOf(id);
-        if (pose == null) return true;
-        return geometry.supportsRotation(pose);
-      },
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedIdsForWiring, multiActive, effectiveBoundsOf, tools, geometry, adapter],
-  );
-
-  // The affordance-layer hit-test used to be wired into the tool-routing
-  // dispatcher from here, so its pointerdown could walk tool overlays
-  // top-down. `<SceneCanvas>` now composes the equivalent walk into the
-  // `affordanceAt` thunk it hands `useGestureDispatcher` — over registered
-  // layers via `hitTestExtras` above, and over selection chrome itself.
-
-  // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
-  // call (as the `data` arg) so custom layers can read live overlay state
-  // directly from their draw closure. The legacy `helpersRef` prop still
-  // mirrors the same value for back-compat. The active Tool's `previewPose`/
-  // `previewBounds` is the only overlay source post-cleanup; falls through to
-  // the committed adapter pose / bounds when no tool is mid-gesture.
+  // The live overlay a gesture proposes for `id`: the active tool's published
+  // preview first, then the dispatcher's preview extras. `null` when nothing
+  // is mid-gesture — callers fall through to committed state.
   const previewToolPose = useCallback((id: string): TPose | null => {
     if (tools) {
       const p = firstPreviewPose(tools, id);
@@ -1160,19 +1113,58 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     return null;
   }, [tools, geometry]);
 
+  /**
+   * Bounds for `id` with any in-flight gesture folded in — what the user can
+   * see, not what is committed. Both the chrome state and the layer helpers
+   * answer bounds questions with this, so resize handles cannot end up a frame
+   * away from the shape they belong to.
+   */
+  const boundsWithPreview = useCallback((id: string): Bounds | null => {
+    const previewed = previewToolBounds(id);
+    if (previewed) return previewed;
+    return effectiveBoundsOf ? effectiveBoundsOf(id) : null;
+  }, [previewToolBounds, effectiveBoundsOf]);
+
+  const chromeState: ChromeState = useMemo(
+    () => buildChromeState({
+      selection: selectedIdsForWiring,
+      multiActive,
+      effectiveBoundsOf: boundsWithPreview,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      // Rotation-capability predicate. Reads the committed pose (gestures
+      // don't change descriptor capability) and asks the geometry. Absent
+      // adapter / unknown ids fall back to `true` so the affordance stays
+      // visible — preserves pre-existing behavior for consumers that wire
+      // bounds without an adapter.
+      canRotate: (id) => {
+        if (!geometry.supportsRotation) return true;
+        const pose = committedPoseOf(id);
+        if (pose == null) return true;
+        return geometry.supportsRotation(pose);
+      },
+    }),
+    // `committedPoseOf` is rebuilt every render; `adapter` is what it reads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedIdsForWiring, multiActive, boundsWithPreview, geometry, adapter],
+  );
+
+  // The affordance-layer hit-test used to be wired into the tool-routing
+  // dispatcher from here, so its pointerdown could walk tool overlays
+  // top-down. `<SceneCanvas>` now composes the equivalent walk into the
+  // `affordanceAt` thunk it hands `useGestureDispatcher` — over registered
+  // layers via `hitTestExtras` above, and over selection chrome itself.
+
+  // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
+  // call (as the `data` arg) so custom layers can read live overlay state
+  // directly from their draw closure. The legacy `helpersRef` prop still
+  // mirrors the same value for back-compat.
   const viewHelpers: CanvasViewHelpers<TPose> = {
     getEffectivePose: (id: string): TPose | null => {
       const tp = previewToolPose(id);
       if (tp != null) return tp;
       return committedPoseOf(id);
     },
-    getEffectiveBounds: (id: string): Bounds | null => {
-      const tb = previewToolBounds(id);
-      if (tb != null) return tb;
-      if (effectiveBoundsOf) return effectiveBoundsOf(id);
-      const p = committedPoseOf(id);
-      return p == null ? null : geometry.getBounds(p);
-    },
+    getEffectiveBounds: boundsWithPreview,
     getGestureBounds: (): Bounds | null => {
       // In-flight ids come from both preview sources the ghost layer walks:
       // tool-published `previewIds()` and the dispatcher's in-flight handles
