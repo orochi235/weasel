@@ -57,7 +57,8 @@ plan on each branch is ahead of the copy on `main`; take the branch's.
   gives them all the same engine time — every steal evicted the same slot.
 - **`packages/audio` is lint-guarded** against importing any `@weasel-js/*`,
   mirroring the existing `@weasel-js/font` block. `packages/core/src/animation`
-  is still outside eslint's `files` scope entirely.
+  was outside eslint's `files` scope entirely; the 2026-08-22 baseline covers
+  it, along with the rest of `packages` and `apps`.
 
 ## Traps
 
@@ -113,4 +114,4 @@ an unwritten exception. The new demos use CSS classes.
    rules now run over `packages` and `apps`. What stayed off, and why, is in
    `eslint.config.js` and `docs/TODO.md`.
 
-**Still open:** the inline-styles question below, and whether to push.
+**Still open:** the inline-styles question above, and whether to push.
