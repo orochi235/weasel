@@ -59,3 +59,8 @@ export const BONE_WIDTH: Record<string, number> = {
   thighR: 5,
   shinR: 4,
 };
+
+const thighL = PLAYER_SKELETON.joints.find((joint) => joint.name === 'thighL')!;
+
+/** Rig root is `hip`, not the feet: the feet hang this far below it (thigh bind y + thigh + shin length). */
+export const ROOT_TO_FOOT = thighL.bind.y + BONE_LENGTH.thighL + BONE_LENGTH.shinL;

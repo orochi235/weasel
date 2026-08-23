@@ -4,7 +4,7 @@ import type { Dims, DrawCommand, Mat3, View } from '@weasel-js/core';
 import { worldToScreen } from './camera';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
 import { ONEWAY, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
-import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON } from './skeleton';
+import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from './skeleton';
 
 const COLORS = {
   sky: '#1b2536',
@@ -121,7 +121,7 @@ export function drawPlayer(
   facing: 1 | -1,
   flash: boolean,
 ): DrawCommand[] {
-  const p = worldToScreen(view, at.x, at.y);
+  const p = worldToScreen(view, at.x, at.y - ROOT_TO_FOOT);
   const k = view.scale.x * facing;
   const placement = new Float32Array(9) as Mat3;
   placement[0] = k; placement[1] = 0; placement[2] = 0;

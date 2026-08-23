@@ -2,9 +2,9 @@
 import { describe, it, expect } from 'vitest';
 import { resolveSkeleton } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core';
-import { cameraView, createCamera } from '../platformer/camera';
+import { cameraView, createCamera, worldToScreen } from '../platformer/camera';
 import { parseLevel, TILE } from '../platformer/level';
-import { PLAYER_SKELETON } from '../platformer/skeleton';
+import { PLAYER_SKELETON, ROOT_TO_FOOT } from '../platformer/skeleton';
 import { createCoins, createEnemies } from '../platformer/entities';
 import { drawBackdrop, drawCoins, drawEnemies, drawGoal, drawPlayer, drawTiles } from '../platformer/skin';
 
@@ -41,6 +41,15 @@ describe('skin', () => {
     const joints = resolveSkeleton(PLAYER_SKELETON, {});
     const cmds = drawPlayer(joints, VIEW, { x: 100, y: 100 }, 1, false);
     expect(flatten(cmds).filter((c) => c.kind === 'group').length).toBeGreaterThanOrEqual(11);
+  });
+
+  it('places the rig so the feet, not the hip, land at the requested position', () => {
+    const joints = resolveSkeleton(PLAYER_SKELETON, {});
+    const at = { x: 100, y: 100 };
+    const [outer] = drawPlayer(joints, VIEW, at, 1, false);
+    expect(outer.kind).toBe('group');
+    const expectedY = worldToScreen(VIEW, at.x, at.y - ROOT_TO_FOOT).y;
+    expect((outer as { transform: Float32Array }).transform[7]).toBeCloseTo(expectedY, 5);
   });
 
   it('mirrors the player when facing left', () => {
