@@ -1,5 +1,5 @@
 import type { DrawCommand, GroupDrawCommand } from '../../renderer';
-import type { Dims, RenderLayer } from 'core/layers/render';
+import { drawOneLayer, type Dims, type RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import { mat3, type Mat3 } from '../../renderer/math/mat3';
 
@@ -16,11 +16,11 @@ import { mat3, type Mat3 } from '../../renderer/math/mat3';
  * lenses on the source.
  *
  * **Inner view semantics.** The source layers draw as if the inner view
- * filled the screen at world-origin (their own `viewToMat3(innerView)` runs
- * normally). The viewport then translates the result so that the inner
- * view's origin lands at `bounds.x, bounds.y` and clips to `(bounds.w,
- * bounds.h)`. Caller chooses `innerView.{x,y,scale}` to control which slice
- * of source-world is shown.
+ * filled the screen at world-origin — each is wrapped in `viewToMat3(view)`
+ * by the same `drawOneLayer` the outer canvas uses. The viewport then
+ * translates the result so that the inner view's origin lands at `bounds.x,
+ * bounds.y` and clips to `(bounds.w, bounds.h)`. Caller chooses
+ * `innerView.{x,y,scale}` to control which slice of source-world is shown.
  *
  * **Input is re-projected on request, not automatically.** `reproject` maps a
  * screen point into the inner view's world; a consumer that wants a click
@@ -30,8 +30,8 @@ import { mat3, type Mat3 } from '../../renderer/math/mat3';
  * zooms, what a drag leaving the rect does) and wants its own design.
  *
  * **Screen-space source layers** (e.g., debug overlays, selection chrome)
- * still render to the outer canvas, not into the viewport. To include
- * them, wrap them as world-space layers first.
+ * draw in the viewport's own CSS-pixel space: their coords are relative to
+ * the rect's top-left, and they clip to it, rather than to the outer canvas.
  */
 export interface CreateViewportLayerOpts<TData> {
   id: string;
@@ -114,10 +114,9 @@ export function createViewportLayer<TData>(
           fill: { fill: 'solid', color: background },
         });
       }
+      const innerDims = { width: b.w, height: b.h };
       for (const layer of source) {
-        for (const c of layer.draw(data, view, { width: b.w, height: b.h })) {
-          children.push(c);
-        }
+        for (const c of drawOneLayer(layer, data, view, innerDims)) children.push(c);
       }
       const transform: Mat3 = mat3.translate(mat3.identity(), b.x, b.y);
       const group: GroupDrawCommand = {

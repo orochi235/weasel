@@ -144,16 +144,30 @@ export function drawLayers<TData>(
       (layer.id in visibility ? visibility[layer.id] : (layer.defaultVisible ?? true));
     if (!visible) continue;
 
-    const cmds = layer.draw(data, v, dims);
-    if (cmds.length === 0) continue;
-
-    const space = layer.space ?? 'world';
-    if (space === 'world') {
-      out.push({ kind: 'group', transform: viewToMat3(v), children: cmds });
-    } else {
-      for (const c of cmds) out.push(c);
-    }
+    for (const c of drawOneLayer(layer, data, v, dims)) out.push(c);
   }
 
   return out;
+}
+
+/**
+ * Draw one layer and put its commands in the space its `space` declares:
+ * world-space output wrapped in a `viewToMat3(view)` group, screen-space
+ * output passed through.
+ *
+ * Anything rendering layers through a view — the canvas itself, a viewport
+ * node's inner pass — goes through here. A second copy of this rule that
+ * forgets the wrap draws world content at raw world coords, which looks
+ * plausible at the identity view and wrong everywhere else.
+ */
+export function drawOneLayer<TData>(
+  layer: RenderLayer<TData>,
+  data: TData,
+  view: View,
+  dims: Dims,
+): DrawCommand[] {
+  const cmds = layer.draw(data, view, dims);
+  if (cmds.length === 0) return [];
+  if ((layer.space ?? 'world') === 'screen') return cmds;
+  return [{ kind: 'group', transform: viewToMat3(view), children: cmds }];
 }
