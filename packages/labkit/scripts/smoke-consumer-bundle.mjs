@@ -141,6 +141,20 @@ const jsEntries = Object.entries(pkg.exports)
   })
   .filter(Boolean);
 
+/**
+ * A real consumer installs labkit's own deps and peers, so they are external
+ * here — every `@weasel-js/*` is not, since a self-contained `dist` is the
+ * thing under test. Read off package.json rather than listed: this array was
+ * hand-maintained until `windease` was added as a dependency without being
+ * added here, and the check failed on a bundle that was correct.
+ */
+const thirdPartyExternals = Object.keys({
+  ...pkg.dependencies,
+  ...pkg.peerDependencies,
+})
+  .filter((dep) => !dep.startsWith('@weasel-js/') && dep !== 'weasel-js')
+  .flatMap((dep) => [dep, `${dep}/*`]);
+
 const workDir = await mkdtemp(join(tmpdir(), 'labkit-smoke-'));
 const installedDir = join(workDir, 'node_modules', '@weasel-js', 'labkit');
 await mkdir(installedDir, { recursive: true });
@@ -175,18 +189,7 @@ try {
     platform: 'browser',
     absWorkingDir: workDir,
     logLevel: 'silent',
-    // A real consumer installs labkit's deps/peers; they are irrelevant here.
-    external: [
-      'react',
-      'react/*',
-      'react-dom',
-      'react-dom/*',
-      'react-aria-components',
-      'earcut',
-      'polygon-clipping',
-      'zustand',
-      'zustand/*',
-    ],
+    external: thirdPartyExternals,
   });
 } catch (err) {
   console.error('[smoke] consumer bundle FAILED — dist emits unresolved specifiers:\n');
