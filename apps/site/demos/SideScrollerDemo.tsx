@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, WeaselProvider, deriveParallaxView, useAnimator, useScene } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, deriveParallaxView, resolveSkeleton, useAnimator, useScene } from '@weasel-js/core';
 import type { Dims, DrawCommand, RenderLayer, View } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, createCamera, followCamera, type Camera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
-import { drawBackdrop, drawTiles } from './platformer/skin';
+import { drawBackdrop, drawPlayer, drawTiles } from './platformer/skin';
+import { createBodyState, spikeOverlap, stepBody, STEP, type BodyState, type Input } from './platformer/physics';
+import { createAnimState, nextAnimState, resolvePose, type AnimState } from './platformer/animState';
+import { INVULN } from './platformer/entities';
+import { PLAYER_SKELETON } from './platformer/skeleton';
+import { consumeJumpPress, usePlatformerInput } from './platformer/useInput';
 
 const W = 720;
 const H = 405;
@@ -14,12 +19,27 @@ const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 interface GameRefs {
   camera: Camera;
+  player: BodyState;
+  anim: AnimState;
+  /** Seconds of remaining invulnerability. */
+  invuln: number;
+  /** Accumulated real time not yet consumed by a fixed step. */
+  accumulator: number;
 }
+
+const freshGame = (): GameRefs => ({
+  camera: createCamera(WORLD.spawn),
+  player: createBodyState(WORLD.spawn),
+  anim: createAnimState(),
+  invuln: 0,
+  accumulator: 0,
+});
 
 export function SideScrollerDemo() {
   const animator = useAnimator();
   const scene = useScene({ items: [] });
-  const game = useRef<GameRefs>({ camera: createCamera(WORLD.spawn) });
+  const input = usePlatformerInput();
+  const game = useRef<GameRefs>(freshGame());
   const [running, setRunning] = useState(false);
 
   const layers = useMemo(() => {
@@ -48,7 +68,20 @@ export function SideScrollerDemo() {
       draw: (_d, _v, dims): DrawCommand[] => drawTiles(WORLD, view(), dims),
     };
 
-    return { bands, tiles };
+    const player: RenderLayer<unknown> = {
+      id: 'player',
+      label: 'Player',
+      space: 'screen',
+      draw: (): DrawCommand[] => {
+        const g = game.current;
+        const joints = resolveSkeleton(PLAYER_SKELETON, resolvePose(g.anim));
+        // The rig's root sits at the body's feet, not its center.
+        const at = { x: g.player.body.x, y: g.player.body.y + g.player.body.h / 2 };
+        return drawPlayer(joints, view(), at, g.player.body.facing, g.invuln > 0 && Math.floor(g.invuln * 12) % 2 === 0);
+      },
+    };
+
+    return { bands, tiles, player };
   }, []);
 
   // A camera with nothing to follow still has to run, or the first frame after
@@ -59,12 +92,42 @@ export function SideScrollerDemo() {
     let last = performance.now();
     return animator.onTick(() => {
       const now = performance.now();
-      const dt = Math.min((now - last) / 1000, 0.1);
+      // A backgrounded tab hands back a huge delta; clamping stops the
+      // accumulator from running hundreds of catch-up steps in one frame.
+      const frame = Math.min((now - last) / 1000, 0.1);
       last = now;
       if (!running) return;
-      game.current.camera = followCamera(game.current.camera, WORLD.spawn, DIMS, WORLD, dt);
+
+      const g = game.current;
+      g.accumulator += frame;
+      while (g.accumulator >= STEP) {
+        g.accumulator -= STEP;
+        const step: Input = {
+          left: input.current.left,
+          right: input.current.right,
+          jumpHeld: input.current.jumpHeld,
+          jumpPressed: consumeJumpPress(input),
+        };
+        g.player = stepBody(g.player, WORLD, step, STEP);
+        g.invuln = Math.max(0, g.invuln - STEP);
+        if (spikeOverlap(g.player.body, WORLD) && g.invuln <= 0) {
+          g.invuln = INVULN;
+          g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
+        }
+        g.anim = nextAnimState(
+          g.anim,
+          {
+            onGround: g.player.body.onGround,
+            vx: g.player.body.vx,
+            vy: g.player.body.vy,
+            hurt: g.invuln > INVULN - 0.2,
+          },
+          STEP,
+        );
+      }
+      g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
     });
-  }, [animator, running]);
+  }, [animator, running, input]);
 
   return (
     <WeaselProvider>
@@ -88,6 +151,7 @@ export function SideScrollerDemo() {
             backdropMid: { layer: layers.bands[1], after: 'backdropFar' },
             backdropNear: { layer: layers.bands[2], after: 'backdropMid' },
             tiles: { layer: layers.tiles, after: 'backdropNear' },
+            player: { layer: layers.player, after: 'tiles' },
             scene: { drawOne: () => [] },
             selectionOverlay: null,
           }}

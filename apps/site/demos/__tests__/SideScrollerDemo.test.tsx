@@ -1,6 +1,6 @@
 // apps/site/demos/__tests__/SideScrollerDemo.test.tsx
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { SideScrollerDemo } from '../SideScrollerDemo';
 
 describe('SideScrollerDemo', () => {
@@ -8,6 +8,19 @@ describe('SideScrollerDemo', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     render(<SideScrollerDemo />);
     expect(screen.getByRole('button', { name: /enable audio|restart/i })).toBeTruthy();
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('runs simulation steps without throwing', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<SideScrollerDemo />);
+    // Let a few animation frames drive the loop.
+    for (let i = 0; i < 5; i++) {
+      await act(async () => {
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+      });
+    }
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });
