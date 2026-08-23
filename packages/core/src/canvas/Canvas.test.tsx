@@ -665,6 +665,38 @@ describe('Canvas baseBoundsOf synthesis', () => {
     expect(typeof (seen as { getChromeState?: unknown })?.getChromeState).toBe('function');
   });
 
+  it('hitTestExtras skips a layer hidden by layerVisibility', async () => {
+    const hitTest = vi.fn(() => ({ id: 'probe' } as never));
+    const probe: RenderLayer<unknown> = {
+      id: 'probe', label: 'probe', space: 'screen', draw: () => [], hitTest,
+    };
+    const ref = React.createRef<CanvasExtensionApi>();
+    const { rerender } = render(
+      <Canvas ref={ref} width={100} height={100} layers={{}} layerVisibility={{ probe: false }} />,
+    );
+    await waitForFrame();
+    act(() => { ref.current?.registerLayer(probe); });
+
+    expect(ref.current?.hitTestExtras(0, 0)).toBeNull();
+    expect(hitTest).not.toHaveBeenCalled();
+
+    rerender(<Canvas ref={ref} width={100} height={100} layers={{}} layerVisibility={{ probe: true }} />);
+    await waitForFrame();
+    expect(ref.current?.hitTestExtras(0, 0)?.layerId).toBe('probe');
+  });
+
+  it('hitTestExtras still consults an alwaysOn layer hidden by the map', async () => {
+    const probe: RenderLayer<unknown> = {
+      id: 'probe', label: 'probe', space: 'screen', alwaysOn: true,
+      draw: () => [], hitTest: () => ({ id: 'probe' } as never),
+    };
+    const ref = React.createRef<CanvasExtensionApi>();
+    render(<Canvas ref={ref} width={100} height={100} layers={{}} layerVisibility={{ probe: false }} />);
+    await waitForFrame();
+    act(() => { ref.current?.registerLayer(probe); });
+    expect(ref.current?.hitTestExtras(0, 0)?.layerId).toBe('probe');
+  });
+
   it('hitTestExtras tests under a supplied frame instead of the canvas view', async () => {
     const seen: { view?: unknown; dims?: unknown }[] = [];
     const probe: RenderLayer<unknown> = {

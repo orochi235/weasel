@@ -139,15 +139,28 @@ export function drawLayers<TData>(
   const out: DrawCommand[] = [];
 
   for (const layer of sequence) {
-    const visible =
-      layer.alwaysOn ||
-      (layer.id in visibility ? visibility[layer.id] : (layer.defaultVisible ?? true));
-    if (!visible) continue;
+    if (!isLayerVisible(layer, visibility)) continue;
 
     for (const c of drawOneLayer(layer, data, v, dims)) out.push(c);
   }
 
   return out;
+}
+
+/**
+ * Resolve one layer's visibility: `alwaysOn` wins, then an explicit entry in
+ * `visibility`, then `defaultVisible`, defaulting to shown.
+ *
+ * Hit-testing asks this too. A layer that is hidden but still claims pointer
+ * events is a pointer landing on nothing the user can see.
+ */
+export function isLayerVisible<TData>(
+  layer: RenderLayer<TData>,
+  visibility: Record<string, boolean>,
+): boolean {
+  if (layer.alwaysOn) return true;
+  if (layer.id in visibility) return visibility[layer.id]!;
+  return layer.defaultVisible ?? true;
 }
 
 /**

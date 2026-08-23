@@ -42,7 +42,7 @@ import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
-import { drawLayers, type Dims, type RenderLayer } from 'core/layers/render';
+import { drawLayers, isLayerVisible, type Dims, type RenderLayer } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   type SelectionApi,
@@ -484,6 +484,28 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * every chrome element visible (pre-chrome-caps behavior).
    */
   getIsVisible?: () => (id: string) => boolean;
+
+  /**
+   * Show or hide whole render layers by id. An id absent from the map falls
+   * back to the layer's own `defaultVisible`, and a layer marked `alwaysOn`
+   * ignores the map entirely.
+   *
+   * Hiding a layer also stops it claiming pointer events through
+   * `hitTestExtras` — a layer nobody can see must not swallow a click.
+   *
+   * This is `getIsVisible`'s coarser sibling: that one gates individual
+   * chrome elements *within* a layer, this one gates the layer.
+   */
+  layerVisibility?: Record<string, boolean>;
+
+  /**
+   * Draw order, by layer id, bottom first. Omit for the order the layers
+   * arrive in.
+   *
+   * **A listed order is the whole list:** any layer whose id is missing from
+   * it is not drawn. Reordering two layers means naming all of them.
+   */
+  layerOrder?: string[];
 }
 
 /**
@@ -755,6 +777,10 @@ function resolveToolsCursor(
   }
 }
 
+/** Stable empty map, so an omitted `layerVisibility` doesn't remake the paint
+ *  effect's deps every render. */
+const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
+
 /** Client coords to world, through the `clientToWorld` prop when one is
  *  supplied and the canvas rect otherwise. Every pointer path in this file
  *  goes through here so the two cannot drift. */
@@ -808,6 +834,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     pickBest,
     decorationLayer,
     getIsVisible,
+    layerVisibility,
+    layerOrder,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -838,6 +866,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   dimsRef.current = { width, height };
   const getIsVisibleRef = useRef(getIsVisible);
   getIsVisibleRef.current = getIsVisible;
+  const layerVisibilityRef = useRef(layerVisibility);
+  layerVisibilityRef.current = layerVisibility;
 
   const [redrawNonce, setRedrawNonce] = useState(0);
   const requestRedraw = useCallback(() => setRedrawNonce(n => n + 1), []);
@@ -867,8 +897,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const view = frame?.view ?? viewRef.current;
     const dims = frame?.dims ?? dimsRef.current;
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
+    const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
+      if (!isLayerVisible(layer, visibility)) continue;
       const hit = layer.hitTest(worldX, worldY, helpersForLayersRef.current, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
     }
@@ -1449,13 +1481,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const commands = drawLayers(
       layersWithDebug,
       helpersForLayersRef.current,
-      {},
-      undefined,
+      layerVisibility ?? NO_LAYER_VISIBILITY,
+      layerOrder,
       effectiveView,
       { width, height },
     );
     renderer.render(commands, viewToMat3(effectiveView));
-  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp]);
+  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp,
+      layerVisibility, layerOrder]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a
