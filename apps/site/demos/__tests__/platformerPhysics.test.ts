@@ -126,13 +126,24 @@ describe('jump feel', () => {
     let s = createBodyState({ x: 1.5 * TILE, y: 2 * TILE });
     for (let i = 0; i < 120; i++) s = stepBody(s, LEDGE, IDLE, STEP);
     expect(s.body.onGround).toBe(true);
-    // Walk off the edge; stay airborne but inside the coyote window.
-    for (let i = 0; i < 6; i++) s = stepBody(s, LEDGE, RIGHT, STEP);
+    let steps = 0;
+    while (s.body.onGround && steps < 60) {
+      s = stepBody(s, LEDGE, RIGHT, STEP);
+      steps++;
+    }
     expect(s.body.onGround).toBe(false);
     expect(s.coyote).toBeGreaterThan(0);
     s = stepBody(s, LEDGE, { ...RIGHT, jumpHeld: true, jumpPressed: true }, STEP);
     expect(s.jumped).toBe(true);
     expect(s.body.vy).toBeLessThan(0);
+  });
+
+  it('stands on a ledge edge instead of sliding off it', () => {
+    const LEDGE = parseLevel(['.....', '.....', '.....', '###..']);
+    // Overhangs the edge by 5 of its 14px width — normal play on 24px tiles.
+    let s = createBodyState({ x: 3 * TILE - 2, y: 2 * TILE });
+    for (let i = 0; i < 200; i++) s = stepBody(s, LEDGE, IDLE, STEP);
+    expect(s.body.onGround).toBe(true);
   });
 
   it('buffers a jump pressed just before landing', () => {
