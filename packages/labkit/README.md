@@ -59,6 +59,33 @@ import { ThemeProvider } from '@weasel-js/theme/react';
 `"light"` or `"dark"`. Only `styles.css` needs importing — the token values
 arrive through the provider.
 
+## Driving your own renderer
+
+`CanvasStack` is 2D. For three.js or raw WebGL, take rects and dirtiness from
+labkit and keep the GL yourself:
+
+```tsx
+import { toDeviceRect, useSurfaceTile, useTiledSurface } from '@weasel-js/labkit/surface';
+```
+
+A trial's `view` is opaque to labkit — it is persisted, restored on Reset and
+handed to the instrument without being read into — so a 3D lab stores an orbit
+there and gets all three. `useOrbit` is the 3D peer of `usePanZoom`.
+
+See `src/surface/AGENTS.md` for the contract and the traps.
+
+## Long-running work
+
+An instrument with work too slow for a render declares a `job`. labkit starts it,
+aborts it on unmount and on a key change, discards results from a superseded run,
+and renders progress and a cancel control into the trial chrome. Per-item failure
+is an event rather than a thrown error, so a run with two failed items is a
+partial success.
+
+```tsx
+import type { JobCapability } from '@weasel-js/labkit/job';
+```
+
 ## Development
 
 ```bash
