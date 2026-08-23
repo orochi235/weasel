@@ -102,6 +102,5 @@ export interface Instrument<TS = unknown, TC = unknown> {
 /** Instruments as a lab receives them. `any` rather than `unknown` because
  *  parameter contravariance keeps a `defineInstrument<TS, TC>` result out of
  *  an `Instrument<unknown, unknown>[]`; it is contained to this alias. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TC is contravariant (RenderContext.setConfig), so Instrument<unknown, unknown> can't hold specific instruments; any is the standard heterogeneous-list escape.
 // biome-ignore lint/suspicious/noExplicitAny: see above
-export type InstrumentList = readonly Instrument<any, any>[];
+export type InstrumentList = readonly Instrument<any, any>[]; // eslint-disable-line @typescript-eslint/no-explicit-any -- contravariant TC; see above
