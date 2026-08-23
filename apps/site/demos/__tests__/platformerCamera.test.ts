@@ -1,7 +1,7 @@
 // apps/site/demos/__tests__/platformerCamera.test.ts
 import { describe, it, expect } from 'vitest';
 import { parseLevel, TILE } from '../platformer/level';
-import { CAM_SCALE, cameraView, createCamera, followCamera } from '../platformer/camera';
+import { CAM_SCALE, DEAD_ZONE_X, cameraView, createCamera, followCamera } from '../platformer/camera';
 
 const DIMS = { width: 640, height: 360 };
 // 40 x 20 tiles — wider and taller than the viewport in world units.
@@ -19,7 +19,7 @@ describe('followCamera', () => {
     const target = { x: 30 * TILE, y: 10 * TILE };
     for (let i = 0; i < 300; i++) cam = followCamera(cam, target, DIMS, BIG, 1 / 60);
     expect(cam.x).toBeGreaterThan(20 * TILE);
-    expect(Math.abs(cam.x - target.x)).toBeLessThan(TILE);
+    expect(target.x - cam.x).toBeCloseTo(DEAD_ZONE_X, 6);
   });
 
   it('clamps so the view never leaves the level', () => {
