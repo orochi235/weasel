@@ -73,3 +73,55 @@ describe('a trial view labkit does not interpret', () => {
     expect(hydrated.getState().trials[0]?.view as OrbitView).toEqual(orbit);
   });
 });
+
+describe('an unchanged write costs no new record', () => {
+  it('returns the same trial object when setState returns its input', () => {
+    const store = createLabStore({ storageKey: 'identity-a', storage: createMemoryAdapter() });
+    store.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'gem',
+      config: {},
+      state: { n: 1 },
+      view: DEFAULT_VIEW,
+    });
+    const before = store.getState().trials[0];
+
+    store.getState().updateTrialState('w1', (prev: unknown) => prev);
+
+    // A trial re-renders on record identity, so allocating here would turn the
+    // standard React bail-out into a render loop.
+    expect(store.getState().trials[0]).toBe(before);
+  });
+
+  it('still replaces the record when the state actually changes', () => {
+    const store = createLabStore({ storageKey: 'identity-b', storage: createMemoryAdapter() });
+    store.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'gem',
+      config: {},
+      state: { n: 1 },
+      view: DEFAULT_VIEW,
+    });
+    const before = store.getState().trials[0];
+
+    store.getState().updateTrialState('w1', { n: 2 });
+
+    expect(store.getState().trials[0]).not.toBe(before);
+  });
+
+  it('returns the same trial object when the view is written unchanged', () => {
+    const store = createLabStore({ storageKey: 'identity-c', storage: createMemoryAdapter() });
+    store.getState().addTrial({
+      id: 'w1',
+      instrumentName: 'gem',
+      config: {},
+      state: {},
+      view: orbit,
+    });
+    const before = store.getState().trials[0];
+
+    store.getState().updateTrialView('w1', orbit);
+
+    expect(store.getState().trials[0]).toBe(before);
+  });
+});

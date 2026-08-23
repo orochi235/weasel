@@ -89,6 +89,10 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
           if (w.id !== id) return w;
           const nextState =
             typeof next === 'function' ? (next as (prev: unknown) => unknown)(w.state) : next;
+          // An updater that returns its input means "nothing changed", and must not
+          // cost a new record: the trial re-renders on record identity, so
+          // allocating here turns the standard React bail-out into a render loop.
+          if (Object.is(nextState, w.state)) return w;
           return { ...w, state: nextState };
         }),
       }));
@@ -110,7 +114,9 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
 
     updateTrialView: (id, view) => {
       set((s) => ({
-        trials: s.trials.map((w) => (w.id === id ? { ...w, view } : w)),
+        trials: s.trials.map((w) =>
+          w.id === id && !Object.is(view, w.view) ? { ...w, view } : w,
+        ),
       }));
       scheduleFlush();
     },
