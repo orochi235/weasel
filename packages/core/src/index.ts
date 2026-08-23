@@ -1026,7 +1026,10 @@ export type {
   ShaderUniform,
   Mat3,
   ImageMinification,
+  SpriteSheet,
 } from './renderer';
+// Uniform-grid sprite sheet layout: frame index → `ImageDrawCommand.source`.
+export { frameRect } from './renderer';
 // World-space RenderLayer draw functions wrap their commands in a
 // `kind: 'group'` whose transform is `viewToMat3(view)`. Exported here so
 // custom layers in consumer code can construct that wrapper without reaching

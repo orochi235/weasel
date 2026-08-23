@@ -2013,3 +2013,102 @@ describe('vertex-colored stroke under a clip', () => {
     expect(drawIdx).toBeGreaterThan(disableIdx);
   });
 });
+
+describe('WeaselRenderer.render — kind: image, source rect and flip', () => {
+  let recorder: ReturnType<typeof makeGLRecorder>;
+  let r: WeaselRenderer;
+
+  beforeEach(() => {
+    recorder = makeGLRecorder();
+    r = new WeaselRenderer({ gl: recorder.gl, width: 800, height: 600, dpr: 1 });
+    recorder.reset();
+  });
+
+  const bitmap = (width: number, height: number) =>
+    ({ width, height, close: () => {} }) as unknown as ImageBitmap;
+
+  /** The image quad's 16 interleaved floats, copied out of the recorder.
+   *  `IMAGE_QUAD_VERTICES` is one reused array, so the recorded reference
+   *  reads as the *last* image draw — copy per call, one draw per render. */
+  function imageQuad(): Float32Array {
+    const call = recorder.calls.find(
+      (c) => c.name === 'bufferSubData'
+        && c.args[2] instanceof Float32Array
+        && (c.args[2] as Float32Array).length === 16,
+    );
+    if (!call) throw new Error('no image quad upload recorded');
+    return Float32Array.from(call.args[2] as Float32Array);
+  }
+
+  /** [u0, v0, u1, v1] — the UVs of the top-left and bottom-right corners. */
+  function uvs(): [number, number, number, number] {
+    const v = imageQuad();
+    return [v[2], v[3], v[14], v[15]];
+  }
+
+  it('samples the whole bitmap when no source rect is given', () => {
+    r.render([{ kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 64, h: 32 }]);
+    expect(uvs()).toEqual([0, 0, 1, 1]);
+  });
+
+  it('normalizes a source rect by the bitmap dimensions', () => {
+    r.render([{
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 16, h: 16,
+      source: { x: 16, y: 8, w: 16, h: 16 },
+    }]);
+    expect(uvs()).toEqual([16 / 64, 8 / 32, 32 / 64, 24 / 32]);
+  });
+
+  it('swaps the horizontal UVs for flipX', () => {
+    r.render([{
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 64, h: 32, flipX: true,
+    }]);
+    expect(uvs()).toEqual([1, 0, 0, 1]);
+  });
+
+  it('swaps the vertical UVs for flipY', () => {
+    r.render([{
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 64, h: 32, flipY: true,
+    }]);
+    expect(uvs()).toEqual([0, 1, 1, 0]);
+  });
+
+  it('swaps both axes for flipX + flipY', () => {
+    r.render([{
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 64, h: 32,
+      flipX: true, flipY: true,
+    }]);
+    expect(uvs()).toEqual([1, 1, 0, 0]);
+  });
+
+  it('mirrors within the source rect, not the whole bitmap', () => {
+    r.render([{
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 16, h: 16,
+      source: { x: 16, y: 8, w: 16, h: 16 }, flipX: true,
+    }]);
+    expect(uvs()).toEqual([32 / 64, 8 / 32, 16 / 64, 24 / 32]);
+  });
+
+  it('leaves the destination quad alone when flipping', () => {
+    r.render([{ kind: 'image', image: bitmap(64, 32), x: 10, y: 20, w: 64, h: 32 }]);
+    const plain = imageQuad();
+    recorder.reset();
+    r.render([{
+      kind: 'image', image: bitmap(64, 32), x: 10, y: 20, w: 64, h: 32,
+      flipX: true, flipY: true,
+    }]);
+    const flipped = imageQuad();
+    // Positions are interleaved at 0,1 / 4,5 / 8,9 / 12,13.
+    for (const i of [0, 1, 4, 5, 8, 9, 12, 13]) {
+      expect(flipped[i]).toBe(plain[i]);
+    }
+  });
+
+  it('passes a source rect past the bitmap edge through unclamped', () => {
+    r.render([{
+      kind: 'image', image: bitmap(64, 32), x: 0, y: 0, w: 16, h: 16,
+      source: { x: 56, y: 24, w: 16, h: 16 },
+    }]);
+    expect(uvs()).toEqual([56 / 64, 24 / 32, 72 / 64, 40 / 32]);
+  });
+});

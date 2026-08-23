@@ -31,4 +31,63 @@ describe('image widget', () => {
     const cmd = w.draw(ctx)[0];
     expect(cmd).toMatchObject({ kind: 'image', sampling: 'nearest' });
   });
+
+  it('forwards the source rect and flips to the image draw command', () => {
+    const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
+    const w = createImage({
+      id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp,
+      source: { x: 16, y: 0, w: 16, h: 16 }, flipX: true,
+    });
+    expect(w.draw(ctx)[0]).toMatchObject({
+      kind: 'image', source: { x: 16, y: 0, w: 16, h: 16 }, flipX: true,
+    });
+  });
+
+  it('setSource changes the sampled frame and notifies', () => {
+    const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
+    let changes = 0;
+    const w = createImage({
+      id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp,
+      source: { x: 0, y: 0, w: 16, h: 16 }, onChange: () => { changes++; },
+    });
+    w.setSource({ x: 32, y: 0, w: 16, h: 16 });
+    expect(w.draw(ctx)[0]).toMatchObject({ source: { x: 32, y: 0, w: 16, h: 16 } });
+    expect(changes).toBe(1);
+  });
+
+  it('setSource(undefined) goes back to the whole bitmap', () => {
+    const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
+    const w = createImage({
+      id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp, source: { x: 16, y: 0, w: 16, h: 16 },
+    });
+    w.setSource(undefined);
+    expect((w.draw(ctx)[0] as { source?: unknown }).source).toBeUndefined();
+  });
+
+  it('setFlip leaves an omitted axis alone', () => {
+    const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
+    const w = createImage({ id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp, flipY: true });
+    w.setFlip({ x: true });
+    expect(w.draw(ctx)[0]).toMatchObject({ flipX: true, flipY: true });
+    w.setFlip({ y: false });
+    expect(w.draw(ctx)[0]).toMatchObject({ flipX: true, flipY: false });
+  });
+
+  it('setFlip notifies', () => {
+    const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
+    let changes = 0;
+    const w = createImage({
+      id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp, onChange: () => { changes++; },
+    });
+    w.setFlip({ x: true });
+    expect(changes).toBe(1);
+  });
+
+  it('throws when mutating source or flip after dispose', () => {
+    const bmp = { width: 64, height: 32, close: () => {} } as unknown as ImageBitmap;
+    const w = createImage({ id: 'i', x: 0, y: 0, w: 16, h: 16, image: bmp });
+    w.dispose();
+    expect(() => w.setSource({ x: 0, y: 0, w: 1, h: 1 })).toThrow(/disposed/);
+    expect(() => w.setFlip({ x: true })).toThrow(/disposed/);
+  });
 });

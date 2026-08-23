@@ -1,6 +1,9 @@
 import type { Widget, WidgetBounds, HudDrawCtx, HudPointerEvent } from '../widget';
 import type { DrawCommand, ImageDrawCommand } from '@weasel-js/core/renderer';
 
+/** Sub-rectangle of a bitmap, in its own pixels. */
+export interface SourceRect { x: number; y: number; w: number; h: number }
+
 /** Options for an image widget. */
 export interface ImageOptions {
   id: string;
@@ -9,6 +12,12 @@ export interface ImageOptions {
   opacity?: number;
   /** Magnification filter for the drawn bitmap. See `ImageDrawCommand.sampling`. */
   sampling?: 'linear' | 'nearest';
+  /** Sub-rectangle of `image` to draw, in bitmap pixels. See
+   *  `ImageDrawCommand.source`. */
+  source?: SourceRect;
+  /** Mirror the sampled region within the widget's bounds. */
+  flipX?: boolean;
+  flipY?: boolean;
   /** Injected by Hud factories to trigger redraw on mutation. */
   onChange?: () => void;
   /** Injected by Hud factories. Called from dispose() to remove this widget
@@ -21,6 +30,12 @@ export interface ImageWidget extends Widget {
   setImage(image: ImageBitmap): void;
   setBounds(b: WidgetBounds): void;
   setHidden(hidden: boolean): void;
+  /** Sample a sub-rectangle of the bitmap; `undefined` restores the whole
+   *  bitmap. Together with `setFlip`, this is how a sprite animation advances
+   *  without rebuilding the widget. */
+  setSource(source: SourceRect | undefined): void;
+  /** Merge a mirror state — an omitted axis keeps its current value. */
+  setFlip(flip: { x?: boolean; y?: boolean }): void;
   dispose(): void;
 }
 
@@ -32,6 +47,9 @@ export function createImage(opts: ImageOptions): ImageWidget {
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, w: opts.w, h: opts.h };
   let image = opts.image;
   let hidden = false;
+  let source = opts.source;
+  let flipX = opts.flipX;
+  let flipY = opts.flipY;
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
@@ -45,12 +63,22 @@ export function createImage(opts: ImageOptions): ImageWidget {
     setBounds(b) { assertNotDisposed(); bounds = { ...b }; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setImage(img) { assertNotDisposed(); image = img; opts.onChange?.(); },
+    setSource(s) { assertNotDisposed(); source = s ? { ...s } : undefined; opts.onChange?.(); },
+    setFlip(flip) {
+      assertNotDisposed();
+      if (flip.x !== undefined) flipX = flip.x;
+      if (flip.y !== undefined) flipY = flip.y;
+      opts.onChange?.();
+    },
     draw(_ctx: HudDrawCtx): DrawCommand[] {
       const cmd: ImageDrawCommand = {
         kind: 'image', image,
         x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h,
         opacity: opts.opacity,
         sampling: opts.sampling,
+        source,
+        flipX,
+        flipY,
       };
       return [cmd];
     },
