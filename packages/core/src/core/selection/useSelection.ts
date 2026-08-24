@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { NodeId } from 'core/scene/types';
 import { dlog } from 'debug/flag';
 
@@ -43,6 +43,14 @@ export interface SelectionApi {
   };
 }
 
+/** Somewhere selection can live outside this hook. `Scene` satisfies it;
+ *  so does any store with the same three methods. */
+export interface SelectionStore {
+  getSelection(): readonly NodeId[];
+  setSelection(ids: readonly NodeId[]): void;
+  subscribe(listener: () => void): () => void;
+}
+
 /** Options for {@link useSelection}. */
 export interface UseSelectionOptions {
   /** Default `'single'`. */
@@ -51,6 +59,11 @@ export interface UseSelectionOptions {
   extend?: SelectionExtendKey;
   /** Default `[]`. */
   initial?: readonly NodeId[];
+  /** Keep the selection on this store rather than in the hook, so every
+   *  consumer of the same scene shares one selection and undo / redo can
+   *  restore it. `initial` then only seeds a store that has none yet.
+   *  Omit it and the hook owns a selection nobody else sees. */
+  scene?: SelectionStore;
   /** When `true`, every mutator (`set`/`add`/`remove`/`toggle`/`clear`/
    *  `applyClick`) is a no-op — selection stays at whatever `initial`
    *  pinned it to. Useful for demos that exist to showcase a single
@@ -58,6 +71,10 @@ export interface UseSelectionOptions {
    *  stray click to deselect. */
   lock?: boolean;
 }
+
+const EMPTY: readonly NodeId[] = [];
+const EMPTY_SNAPSHOT = (): readonly NodeId[] => EMPTY;
+const NEVER_CHANGES = (): (() => void) => () => {};
 
 /**
  * Default implementation of the `getSelection` / `setSelection` adapter
@@ -73,8 +90,30 @@ export interface UseSelectionOptions {
  * ```
  */
 export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
-  const { mode = 'single', extend = 'shift', initial = [], lock = false } = opts;
-  const [current, setCurrent] = useState<NodeId[]>(() => [...initial]);
+  const { mode = 'single', extend = 'shift', initial = [], lock = false, scene } = opts;
+  const [local, setLocal] = useState<NodeId[]>(() => [...initial]);
+  const storeRef = useRef<SelectionStore | undefined>(scene);
+  storeRef.current = scene;
+  const initialRef = useRef(initial);
+
+  const fromStore = useSyncExternalStore(
+    scene ? scene.subscribe : NEVER_CHANGES,
+    scene ? () => scene.getSelection() : EMPTY_SNAPSHOT,
+  );
+
+  const current = (scene ? fromStore : local) as NodeId[];
+
+  // A store that already holds a selection wins: the hook is joining it, not
+  // resetting it. In an effect, not during render — the store has other
+  // subscribers.
+  const seeded = useRef(false);
+  useLayoutEffect(() => {
+    if (!scene || seeded.current) return;
+    seeded.current = true;
+    if (initialRef.current.length > 0 && scene.getSelection().length === 0) {
+      scene.setSelection([...initialRef.current]);
+    }
+  }, [scene]);
   const ref = useRef<NodeId[]>(current);
   ref.current = current;
   // Keep the lock flag in a ref so the memoized mutators below don't have to
@@ -82,13 +121,18 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
   const lockRef = useRef(lock);
   lockRef.current = lock;
 
-  const get = useCallback(() => ref.current, []);
+  const get = useCallback(
+    () => (storeRef.current ? (storeRef.current.getSelection() as NodeId[]) : ref.current),
+    [],
+  );
 
   const set = useCallback((ids: NodeId[]) => {
     if (lockRef.current) return;
     dlog('selection', 'set', { from: ref.current.length, to: ids.length, ids });
     ref.current = ids;
-    setCurrent(ids);
+    const store = storeRef.current;
+    if (store) store.setSelection(ids);
+    else setLocal(ids);
   }, []);
 
   const add = useCallback(
@@ -97,36 +141,36 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
         set([id]);
         return;
       }
-      if (ref.current.includes(id)) return;
-      set([...ref.current, id]);
+      if (get().includes(id)) return;
+      set([...get(), id]);
     },
-    [mode, set],
+    [get, mode, set],
   );
 
   const remove = useCallback(
     (id: NodeId) => {
-      if (!ref.current.includes(id)) return;
-      set(ref.current.filter((x) => x !== id));
+      if (!get().includes(id)) return;
+      set(get().filter((x) => x !== id));
     },
-    [set],
+    [get, set],
   );
 
   const toggle = useCallback(
     (id: NodeId) => {
-      if (ref.current.includes(id)) {
-        set(ref.current.filter((x) => x !== id));
+      if (get().includes(id)) {
+        set(get().filter((x) => x !== id));
       } else {
-        set(mode === 'single' ? [id] : [...ref.current, id]);
+        set(mode === 'single' ? [id] : [...get(), id]);
       }
     },
-    [mode, set],
+    [get, mode, set],
   );
 
   const clear = useCallback(() => {
     set([]);
   }, [set]);
 
-  const contains = useCallback((id: NodeId) => ref.current.includes(id), []);
+  const contains = useCallback((id: NodeId) => get().includes(id), [get]);
 
   const applyClick = useCallback(
     (id: NodeId, modifiers: { shift: boolean; meta: boolean; ctrl: boolean }) => {
@@ -136,24 +180,24 @@ export function useSelection(opts: UseSelectionOptions = {}): SelectionApi {
       }
       const extending = modifiers[extend];
       if (extending) {
-        if (ref.current.includes(id)) {
-          set(ref.current.filter((x) => x !== id));
+        if (get().includes(id)) {
+          set(get().filter((x) => x !== id));
         } else {
-          set([...ref.current, id]);
+          set([...get(), id]);
         }
       } else {
         set([id]);
       }
     },
-    [mode, extend, set],
+    [get, mode, extend, set],
   );
 
   const adapterMethods = useMemo(
     () => ({
-      getSelection: () => ref.current,
+      getSelection: () => get(),
       setSelection: (ids: NodeId[]) => set(ids),
     }),
-    [set],
+    [get, set],
   );
 
   return {

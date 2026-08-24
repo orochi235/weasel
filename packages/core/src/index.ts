@@ -119,12 +119,14 @@ export { isEditableTarget, matchesKeyBinding } from './interactions/keyHelpers';
 // --- @experimental Actions Registry (2026-05-09) ----------------------------
 export {
   ActionsProvider, useActionsRegistry, useAction, evaluateEnabled,
-  ActionDisabledReason,
+  ActionDisabledReason, actionBindings,
 } from './interactions/actions/registry';
 export type {
   Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
   UiOngoingControl, BoundGesture,
 } from './interactions/actions/registry';
+export { actionShortcuts, keySpecShortcut } from './interactions/actions/actionShortcuts';
+export type { ActionShortcut } from './interactions/actions/actionShortcuts';
 export { moveAction } from './interactions/actions/defaults/move';
 export { resizeAction } from './interactions/actions/defaults/resize';
 export { rotateAction } from './interactions/actions/defaults/rotate';
@@ -709,7 +711,7 @@ export { useArrayAdapter } from './core/adapters/useArrayAdapter';
 export type { UseArrayAdapterOptions } from './core/adapters/useArrayAdapter';
 
 // ─── Scene primitive (kit-owned tree of leaves and containers) ──────────────
-export { createScene, sceneFromJSON, useScene, asNodeId } from './core/scene';
+export { createScene, sceneFromJSON, sceneSelectionStore, useScene, asNodeId } from './core/scene';
 export type {
   AddLayerSpec,
   AddNodeSpec,

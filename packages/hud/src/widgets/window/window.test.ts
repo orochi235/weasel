@@ -132,6 +132,44 @@ describe('window widget', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('a press and release in the interior fires onContentClick', () => {
+    const onContentClick = vi.fn();
+    const win = createWindow({ ...opts, onContentClick });
+    win.onPointer({ type: 'down', x: 200, y: 175, native: null });
+    win.onPointer({ type: 'up', x: 200, y: 175, native: null });
+    expect(onContentClick).toHaveBeenCalledWith({ x: 200, y: 175 });
+  });
+
+  it('a press that became a drag does not fire onContentClick', () => {
+    const onContentClick = vi.fn();
+    const win = createWindow({ ...opts, titlebar: false as const, onContentClick });
+    win.onPointer({ type: 'down', x: 200, y: 175, native: null });
+    win.onPointer({ type: 'move', x: 240, y: 175, native: null });
+    win.onPointer({ type: 'up', x: 240, y: 175, native: null });
+    expect(onContentClick).not.toHaveBeenCalled();
+    expect(win.bounds).toMatchObject({ x: 140 });
+  });
+
+  it('a press that only jittered still fires onContentClick', () => {
+    const onContentClick = vi.fn();
+    const win = createWindow({ ...opts, titlebar: false as const, onContentClick });
+    win.onPointer({ type: 'down', x: 200, y: 175, native: null });
+    win.onPointer({ type: 'move', x: 201, y: 176, native: null });
+    win.onPointer({ type: 'up', x: 201, y: 176, native: null });
+    expect(onContentClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('presses outside the interior do not fire onContentClick', () => {
+    const onContentClick = vi.fn();
+    const win = createWindow({ ...opts, onContentClick });
+    const bar = { x: 150, y: 100 + M.titleH / 2 };
+    win.onPointer({ type: 'down', ...bar, native: null });
+    win.onPointer({ type: 'up', ...bar, native: null });
+    win.onPointer({ type: 'down', x: 299, y: 175, native: null });
+    win.onPointer({ type: 'up', x: 299, y: 175, native: null });
+    expect(onContentClick).not.toHaveBeenCalled();
+  });
+
   it('contentRect tracks a resize', () => {
     const win = createWindow(opts);
     win.onPointer({ type: 'down', x: 299, y: 175, native: null });

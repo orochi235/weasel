@@ -20,12 +20,14 @@ import {
 } from 'react';
 import {
   useActionsRegistry,
+  actionShortcuts,
   evaluateEnabled,
   ActionDisabledReason,
   useSelectionContext,
   type Action,
   type ActionEnabledResult,
 } from '@weasel-js/core';
+import { formatShortcutParts } from '@weasel-js/ui';
 import styles from './CommandPalette.module.css';
 
 /** Display strings for the closed `ActionDisabledReason` enum. Defined here
@@ -38,10 +40,24 @@ const DEFAULT_REASON_LABELS: Record<string, string> = {
   [ActionDisabledReason.PredicateThrew]: '(predicate threw)',
 };
 
-// Phase 14e Task 7: KEY_GLYPHS / formatKey / formatBinding consumed the
-// legacy `Action.defaultBinding: KeyBinding` shape, which is now removed.
-// A defaultBinding-aware shortcut formatter is not yet implemented; the
-// palette's binding chip is temporarily suppressed.
+/** Every shortcut an action answers to, as chip groups. An action can be
+ *  bound more than once — `reorder.forward` has three — so each binding gets
+ *  its own group rather than one being picked as canonical. */
+function ShortcutChips({ action }: { action: Action }) {
+  const groups = actionShortcuts(action)
+    .map((s) => formatShortcutParts(s))
+    .filter((parts): parts is readonly string[] => parts !== undefined);
+  if (groups.length === 0) return null;
+  return (
+    <span className={styles.shortcuts}>
+      {groups.map((parts) => (
+        <span className={styles.shortcutGroup} key={parts.join('')}>
+          {parts.map((part) => <kbd className={styles.kbd} key={part}>{part}</kbd>)}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -212,10 +228,7 @@ export function CommandPalette({ open, onClose, reasonLabels }: CommandPalettePr
                   {!enabled && reason && (
                     <span className={styles.reason}>{reason}</span>
                   )}
-                  {/* Phase 14e Task 7: Action.defaultBinding removed; bindings
-                      now live on defaultBinding. A defaultBinding-aware shortcut
-                      formatter is not yet implemented — the binding chip is
-                      temporarily suppressed. */}
+                  <ShortcutChips action={action} />
                 </li>
               );
             })}

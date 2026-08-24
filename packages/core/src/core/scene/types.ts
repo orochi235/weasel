@@ -355,6 +355,17 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  adapter. */
   applyBatch(ops: import('core/ops/types').Op[], label: string, adapter: unknown): void;
 
+  // Selection
+
+  /** The transient set of active ids — "operate on these N as a unit".
+   *  Shared by every view over this scene unless a view supplies its own
+   *  (see `CanvasView.selection`). Not document content: it never appears
+   *  in `toJSON`. It does ride on history entries, so undo and redo put
+   *  back the selection an edit was made under; changing it is never an
+   *  undo step of its own. */
+  getSelection(): readonly NodeId[];
+  setSelection(ids: readonly NodeId[]): void;
+
   // History
   undo(): boolean;
   redo(): boolean;

@@ -7,10 +7,9 @@
  * this adapter. It carries the scene-backed op-apply methods (`setPose` /
  * `setParent` / `setData` / `setLayer` / `removeNode` / `insertNode` /
  * `setChildOrder`) plus the read-side queries (`getNode` / `getNodes` /
- * `getPose` / `getParent` / `getChildren`). Known exclusions from the op
- * factory roster — surfaces the scene doesn't own: `setSelection` (spread
- * `SelectionApi.adapterMethods` over this adapter when selection-carrying
- * ops must replay), `setPath`, and `setText`.
+ * `getPose` / `getParent` / `getChildren` / `getSelection`) and
+ * `setSelection`. Known exclusions from the op factory roster — surfaces the
+ * scene doesn't own: `setPath` and `setText`.
  *
  * Lives in `interactions/actions/` (not `canvas/sceneAdapter.ts`) so default
  * actions never import from `canvas/` — that back-edge would create an
@@ -22,8 +21,8 @@ import { asNodeId } from 'core/scene/types';
 
 /** Build the adapter the default actions commit through when the consumer
  *  supplies no `applyOps` hook of its own — it applies ops straight to the
- *  scene. Selection, path and text ops are not covered; those surfaces belong
- *  to their own owners. */
+ *  scene. Path and text ops are not covered; those surfaces belong to their
+ *  own owners. */
 export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>) {
   return {
     getNode: (id: string) => scene.get(asNodeId(id)),
@@ -31,6 +30,8 @@ export function defaultCommitAdapter<TPose>(scene: Scene<unknown, string, TPose>
       return [...scene.renderOrderNodes()] as Node<unknown, string, TPose>[];
     },
     getPose: (id: string) => scene.get(asNodeId(id))!.pose,
+    getSelection: (): string[] => [...scene.getSelection()],
+    setSelection: (ids: string[]) => scene.setSelection(ids.map(asNodeId)),
     getParent: (id: string) => (scene.get(asNodeId(id))?.parent ?? null) as string | null,
     getChildren: (parentId: string | null): string[] =>
       (parentId === null

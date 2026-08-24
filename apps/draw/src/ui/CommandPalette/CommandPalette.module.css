@@ -97,6 +97,20 @@
   flex-shrink: 0;
 }
 
+.shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Chips within one shortcut sit tight; separate shortcuts get the gap above. */
+.shortcutGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .kbd,
 .footer kbd {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

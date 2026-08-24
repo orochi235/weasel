@@ -328,13 +328,16 @@ a:hover { text-decoration: underline; }
 
 .ckd-code-header {
   display: flex;
-  align-items: center;
-  padding: 6px 8px;
+  align-items: flex-end;
+  /* No bottom padding: the tabs meet the border below them. The single-file
+     meta line carries its own instead. */
+  padding: 6px 8px 0;
   border-bottom: 1px solid var(--ckd-border-2);
   background: rgba(0, 0, 0, 0.18);
 }
 
 .ckd-code-meta {
+  padding-bottom: 6px;
   font-size: 11px;
   color: var(--ckd-faint);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -343,10 +346,20 @@ a:hover { text-decoration: underline; }
 .ckd-code-tabs {
   display: flex;
   gap: 4px;
+  /* A demo with many source files overruns the strip; scroll it rather than
+     letting the row push the panel wide. `min-width: 0` is what lets this
+     flex child shrink below its content. */
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
 }
 
 .ckd-code-tab {
   appearance: none;
+  flex: 0 0 auto;
+  white-space: nowrap;
   background: transparent;
   border: 1px solid transparent;
   border-bottom: none;
@@ -804,6 +817,7 @@ a:hover { text-decoration: underline; }
   font-size: 13px;
   color: var(--ckd-text);
 }
+.ckd-desc code,
 .ckd-release-body code {
   padding: 1px 4px;
   border-radius: 3px;

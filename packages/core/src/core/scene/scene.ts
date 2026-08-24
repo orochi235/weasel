@@ -1,4 +1,4 @@
-import { createHistory, type Journal, type SerializedHistory } from '@weasel-js/history';
+import { createHistory, type HistorySelection, type Journal, type SerializedHistory } from '@weasel-js/history';
 import type { Op } from 'core/ops/types';
 import { rebuildOp as rebuildGlobalOp } from 'core/ops/registry';
 import { dwarn } from 'debug/flag';
@@ -137,9 +137,18 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   // The scene's undo/redo engine. Recorded ops are `makeOp` wrappers over
   // `registered` handlers, so the engine's adapter argument is unused (the
+  /** The transient set of active ids. Deliberately not part of `state`:
+   *  selection is not document content and never reaches `toJSON`. It is
+   *  handed to the history engine so entries can restore it. */
+  let selection: readonly NodeId[] = [];
+
   // wrappers close over their payloads). Eviction (branch-edit redo-clears
   // + historyLimit overflow) drives pendingClipPatches pruning via onEvict.
   const history = createHistory(undefined, {
+    selection: {
+      get: () => selection,
+      set: (ids) => { selection = ids as readonly NodeId[]; notify(); },
+    },
     ...(options.coalesceWindowMs !== undefined ? { coalesceWindowMs: options.coalesceWindowMs } : {}),
     ...(options.historyLimit !== undefined ? { historyLimit: options.historyLimit } : {}),
     onEvict: (entry) => {
@@ -164,7 +173,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
 
   let version = 0;
   let batchDepth = 0;
-  let currentBatch: { label: string; ops: Op[] } | null = null;
+  let currentBatch: { label: string; ops: Op[]; selectionBefore: readonly NodeId[] } | null = null;
   /** True while the history engine drives mutations (undo/redo/goto, journal
    *  routing) — suppresses scene-side history recording so engine-applied
    *  ops that re-enter scene mutation methods don't record twice. */
@@ -1011,6 +1020,13 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
       }
     },
 
+    getSelection: () => selection,
+
+    setSelection(ids) {
+      selection = [...ids];
+      notify();
+    },
+
     undo() {
       if (!history.canUndo()) return false;
       withRecordingSuppressed(() => history.undo());
@@ -1071,7 +1087,9 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
     },
 
     batch(label, fn) {
-      if (batchDepth === 0) currentBatch = { label, ops: [] };
+      // Captured at open, not at recordEntry: by the time the batch closes
+      // the selection has already moved to wherever the batch put it.
+      if (batchDepth === 0) currentBatch = { label, ops: [], selectionBefore: selection };
       batchDepth++;
       try {
         return fn();
@@ -1084,7 +1102,7 @@ export function createScene<TData, TLayer extends string, TPose = import('../../
             // Ops were applied live as they were issued (state stays
             // readable mid-batch); recordEntry pushes without re-applying.
             if (finished.ops.length > 0) {
-              history.recordEntry(finished.ops, finished.label);
+              history.recordEntry(finished.ops, finished.label, { selectionBefore: finished.selectionBefore });
             }
           }
           // Fire one coalesced notify if any op inside the batch dirtied
@@ -1251,6 +1269,20 @@ function specsFromSerialized<TData, TLayer extends string, TPose>(
     }
     return spec;
   });
+}
+
+/** The scene's selection in the shape `createHistory` wants, for a consumer
+ *  building a second History over the same scene (a modality machine, a
+ *  journal owner) that should restore selection the way the scene's own
+ *  history does. */
+export function sceneSelectionStore(scene: {
+  getSelection(): readonly NodeId[];
+  setSelection(ids: readonly NodeId[]): void;
+}): HistorySelection {
+  return {
+    get: () => scene.getSelection(),
+    set: (ids) => scene.setSelection(ids as readonly NodeId[]),
+  };
 }
 
 /** Reconstruct a Scene from a JSON snapshot produced by `scene.toJSON()`.

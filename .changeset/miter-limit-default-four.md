@@ -17,4 +17,5 @@ where this shows first because a type designer's sharpest vertices were never
 drawn to be stroked.
 
 Strokes that set `miterLimit` explicitly are unaffected. Anything relying on
-the old default can set `miterLimit: 10`.
+the old default can set `miterLimit: 10`. No visual baseline moved: nothing in
+the demo set strokes a corner sharp enough to have been spiking.

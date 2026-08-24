@@ -1,5 +1,5 @@
 ---
-'@weasel-js/labkit': patch
+'@weasel-js/labkit': minor
 ---
 
 A lab can drive a renderer labkit does not own
@@ -52,3 +52,5 @@ error, because a run with two failed items is a partial success and its other
 items are worth showing.
 
 Two new subpaths: `@weasel-js/labkit/surface` and `@weasel-js/labkit/job`.
+
+<!-- bump-approved: minor: Mike — new public API in labkit (useTiledSurface, useOrbit, the job capability, and the surface/ and job/ subpaths), plus a nullable TrialStatusBarContext.zoom; called explicitly in conversation on 2026-08-23: "next version will be 1.2" -->

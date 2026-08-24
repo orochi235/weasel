@@ -19,8 +19,10 @@ import {
   type ReactNode,
 } from 'react';
 import {
+  actionBindings,
   asNodeId,
   createDispatcher,
+  keySpecShortcut,
   SceneCanvas,
   specificity,
   useActionsRegistry,
@@ -306,7 +308,7 @@ function ActionsWidget({ actions }: { actions: readonly Action[] }): ReactElemen
                     <td className={s.iconCell}>{renderIcon(a.icon)}</td>
                     <td><code>{a.id}</code></td>
                     <td>{a.group ?? <span className={s.empty}>—</span>}</td>
-                    <td>{renderBinding(a.defaultBinding)}</td>
+                    <td>{renderBinding(a)}</td>
                     <td>{requires && requires.length > 0
                       ? <code>{requires.join(', ')}</code>
                       : <span className={s.empty}>—</span>}</td>
@@ -829,12 +831,11 @@ function TraceRow({
 // Helpers — binding render, icon render, enabled snapshot.
 // ─────────────────────────────────────────────────────────────────────────
 
-function renderBinding(b: Action['defaultBinding']): ReactNode {
-  if (!b) return <span className={s.empty}>—</span>;
-  const specs = bindingToSpecs(b);
+function renderBinding(action: Action): ReactNode {
+  if (!action.defaultBinding) return <span className={s.empty}>—</span>;
   return (
     <span className={s.bindingList}>
-      {specs.map((spec, i) => (
+      {actionBindings(action).map(({ spec }, i) => (
         <span key={i} className={s.bindingItem}>
           {i > 0 && <span className={s.bindingSep}>or</span>}
           {renderSpec(spec)}
@@ -844,32 +845,18 @@ function renderBinding(b: Action['defaultBinding']): ReactNode {
   );
 }
 
-// BoundGesture isn't re-exported from the kit barrel — inline the structural
-// shape (bare spec | { spec, opts }) for the array form of defaultBinding.
-type BoundGestureLike = GestureSpec | { spec: GestureSpec; opts?: unknown };
-
-function bindingToSpecs(b: NonNullable<Action['defaultBinding']>): readonly GestureSpec[] {
-  if (!Array.isArray(b)) return [b];
-  return (b as readonly BoundGestureLike[]).map((entry) =>
-    'kind' in entry ? entry : entry.spec);
-}
-
 function renderSpec(spec: GestureSpec): ReactNode {
-  if (spec.kind === 'key' || spec.kind === 'key-held') {
-    const key = Array.isArray(spec.key) ? spec.key[0]! : spec.key;
-    const parts = formatShortcutParts({
-      key,
-      mod: !!spec.mods?.mod,
-      alt: !!spec.mods?.alt,
-      shift: spec.mods?.shift === true ? true : undefined,
-    });
+  const shortcut = keySpecShortcut(spec);
+  if (shortcut) {
+    const parts = formatShortcutParts(shortcut);
     return <KeySequence keys={parts?.map((label) => ({ label }))} />;
   }
+  // `'optional'` matches held or unheld, so it is not something to press.
   const modGlyphs: string[] = [];
   if ('mods' in spec && spec.mods) {
-    if (spec.mods.mod) modGlyphs.push('⌘');
-    if (spec.mods.shift) modGlyphs.push('⇧');
-    if (spec.mods.alt) modGlyphs.push('⌥');
+    if (spec.mods.mod === true) modGlyphs.push('⌘');
+    if (spec.mods.shift === true) modGlyphs.push('⇧');
+    if (spec.mods.alt === true) modGlyphs.push('⌥');
   }
   let label: string = spec.kind;
   if (spec.kind === 'click' || spec.kind === 'drag') {
