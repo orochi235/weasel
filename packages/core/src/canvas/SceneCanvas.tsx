@@ -1835,7 +1835,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
     boundsOf: internalBoundsOf,
     tools,
-  }), [adapter, internalBoundsOf, tools]);
+    pickEvery: internalPickEvery,
+    pickBest: internalPickBest,
+    kindOfNode,
+    getIsVisible: getIsVisibleForCanvas,
+  }), [adapter, internalBoundsOf, tools, internalPickEvery, internalPickBest, kindOfNode,
+       getIsVisibleForCanvas]);
 
   const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>

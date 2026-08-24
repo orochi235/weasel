@@ -18,6 +18,8 @@ import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
+import { anchorStateFrom, buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
+import { useOptionalDepRegistry } from 'interactions/actions/depRegistry';
 import {
   createGestureSource,
   createDispatcherPreviewSources,
@@ -79,6 +81,8 @@ const NO_INPUTS: SurfaceViewInputs = {
   tools: undefined,
 };
 
+const ALWAYS_VISIBLE = (): boolean => true;
+
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
 /**
@@ -99,6 +103,9 @@ export function CanvasView(props: CanvasViewProps): null {
   } = props;
 
   const registry = useOptionalViewRegistry();
+  const depRegistry = useOptionalDepRegistry();
+  const depRegistryRef = useRef(depRegistry);
+  depRegistryRef.current = depRegistry;
 
   const ownSelection = useSelection(selectionOptions);
   const selection = selectionProp ?? ownSelection;
@@ -163,6 +170,73 @@ export function CanvasView(props: CanvasViewProps): null {
   const helpersRef = useRef(helpers);
   helpersRef.current = helpers;
 
+  const inputsRef = useRef(inputs);
+  inputsRef.current = inputs;
+
+  /** A client point in this view's world. The rect moves with the outer
+   *  camera, so it is read per call rather than closed over. */
+  const clientToWorldHere = useCallback((cx: number, cy: number): { x: number; y: number } => {
+    const canvas = registry?.surface()?.origin() ?? { left: 0, top: 0 };
+    const rect = rectNow();
+    const [x, y] = clientToWorld(
+      cx, cy,
+      { left: canvas.left + rect.x, top: canvas.top + rect.y },
+      live.current.view,
+    );
+    return { x, y };
+  }, [registry, rectNow]);
+
+  const getAnchorState = useMemo(() => anchorStateFrom(() => depRegistryRef.current), []);
+
+  // Selection chrome hit-testing for this view: same construction the surface
+  // does for its own, against this view's chrome and camera.
+  const affordanceAt = useMemo(() => {
+    const inner = buildAffordanceAt({
+      getChromeState: () => helpersRef.current.getChromeState(),
+      getView: () => live.current.view,
+      getAnchorState,
+      getIsVisible: () => inputsRef.current?.getIsVisible?.() ?? ALWAYS_VISIBLE,
+    });
+    return (screenPoint: { x: number; y: number }) => {
+      const world = clientToWorldHere(screenPoint.x, screenPoint.y);
+      // Registered layers draw over the kit's chrome, so they get first
+      // refusal — hit-tested against this view's frame and envelope, not the
+      // canvas's.
+      const rect = rectNow();
+      const extra = registry?.surface()?.hitTestExtras(
+        world.x, world.y, live.current.view, { width: rect.w, height: rect.h },
+        helpersRef.current,
+      );
+      if (extra) {
+        const claim = extra.hit;
+        return {
+          kind: `layer:${extra.layerId}`,
+          owner: extra.layerId,
+          strength: claim.strength ?? 'shared',
+          ...(claim.claimedKinds !== undefined ? { claimedKinds: claim.claimedKinds } : {}),
+          ...(claim.cursor !== undefined ? { cursor: claim.cursor } : {}),
+          ...(claim.initialScratch !== undefined ? { payload: claim.initialScratch } : {}),
+        };
+      }
+      return inner(world);
+    };
+  }, [getAnchorState, clientToWorldHere, rectNow, registry]);
+
+  const classifyTarget = useMemo(() => {
+    const inner = buildClassifyTarget(
+      () => live.current.selection.get(),
+      (wx, wy) => {
+        const i = inputsRef.current;
+        if (i?.pickBest) return i.pickBest(wx, wy);
+        const ids = i?.pickEvery?.(wx, wy) ?? [];
+        return ids.length > 0 ? ids[ids.length - 1]! : null;
+      },
+      (id) => inputsRef.current?.kindOfNode?.(id),
+    );
+    return (screenPoint: { x: number; y: number }) =>
+      inner(clientToWorldHere(screenPoint.x, screenPoint.y));
+  }, [clientToWorldHere]);
+
   const registration = useMemo<ViewRegistration>(() => ({
     id,
     order,
@@ -180,21 +254,13 @@ export function CanvasView(props: CanvasViewProps): null {
     }),
     target: {
       dispatcher: dispatcherRef.current!,
-      affordanceAt: undefined,
-      classifyTarget: undefined,
-      clientToWorld: (cx, cy) => {
-        const canvas = registry?.surface()?.origin() ?? { left: 0, top: 0 };
-        const rect = rectNow();
-        const [x, y] = clientToWorld(
-          cx, cy,
-          { left: canvas.left + rect.x, top: canvas.top + rect.y },
-          live.current.view,
-        );
-        return { x, y };
-      },
+      affordanceAt,
+      classifyTarget,
+      clientToWorld: clientToWorldHere,
       deps: () => ({ view: viewApi, selection: live.current.selection }),
     },
-  }), [id, order, label, background, registry, rectAt, rectNow, viewApi]);
+  }), [id, order, label, background, registry, rectAt, viewApi,
+       affordanceAt, classifyTarget, clientToWorldHere]);
 
   useEffect(() => {
     if (!registry) return;

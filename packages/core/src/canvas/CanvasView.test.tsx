@@ -15,6 +15,8 @@ import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createSelectionOverlayLayer } from 'features/selection/overlay';
+import { ViewInputsProvider } from './viewInputs';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -300,6 +302,58 @@ describe('<CanvasView> chrome', () => {
 
     expect((surfaceCmds[0] as { path: { x: number } }).path.x).toBeCloseTo(POSES.a!.x, 5);
     expect((inner[0] as { path: { x: number } }).path.x).toBeCloseTo(POSES.b!.x, 5);
+  });
+});
+
+describe('<CanvasView> hit-testing', () => {
+  /** `b` sits at world x ∈ [40, 50), which the panel paints at client
+   *  x ∈ [140, 150) — its camera is the identity and its rect starts at 100. */
+  const POSES: Record<string, Bounds> = {
+    a: { x: 0, y: 0, width: 10, height: 10 },
+    b: { x: 40, y: 0, width: 10, height: 10 },
+  };
+  const INPUTS = {
+    adapter: undefined,
+    geometry: AUTO_POSE_DESCRIPTOR,
+    boundsOf: (id: string) => POSES[id] ?? null,
+    tools: undefined,
+    pickBest: (wx: number, wy: number) => {
+      for (const [id, b] of Object.entries(POSES)) {
+        if (wx >= b.x && wx < b.x + b.width && wy >= b.y && wy < b.y + b.height) return id;
+      }
+      return null;
+    },
+  };
+
+  function panelTarget(selected: readonly string[]) {
+    let registry!: ViewRegistry;
+    function Panel() {
+      const selection = useSelection({ initial: selected as readonly NodeId[] });
+      return <CanvasView id="panel" bounds={PANEL} selection={selection} />;
+    }
+    render(
+      <ViewRegistryProvider>
+        <ViewInputsProvider value={INPUTS}>
+          <Harness layers={[]} onReady={(r) => { registry = r; }} />
+          <Panel />
+        </ViewInputsProvider>
+      </ViewRegistryProvider>,
+    );
+    return registry.list()[0]!.target;
+  }
+
+  it('answers a resize handle for what this view has selected', () => {
+    const hit = panelTarget(['b']).affordanceAt!({ x: 140, y: 0 });
+    expect(hit?.kind).toBe('handle:top-left');
+  });
+
+  it('answers nothing where the surface selected but this view did not', () => {
+    expect(panelTarget(['a']).affordanceAt!({ x: 140, y: 0 })).toBeNull();
+  });
+
+  it('classifies a body under the point in this view\'s coordinates', () => {
+    expect(panelTarget(['b']).classifyTarget!({ x: 145, y: 5 }))
+      .toMatchObject({ body: 'selected-body' });
   });
 });
 

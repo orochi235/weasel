@@ -14,8 +14,19 @@ import type { UseViewHelpersOpts } from './useViewHelpers';
  * The scene-shaped half only. What a gesture is doing right now is read from
  * the asking view's own dispatcher, not from here.
  */
-export type SurfaceViewInputs =
-  Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry' | 'boundsOf' | 'tools'>;
+export interface SurfaceViewInputs
+  extends Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry' | 'boundsOf' | 'tools'> {
+  /** Every id under a world point, bottom-first. */
+  pickEvery?: (worldX: number, worldY: number) => string[];
+  /** The one id a click resolves to, collapsing parent/child the way the
+   *  select tool does. Falls back to `pickEvery`'s last when absent. */
+  pickBest?: (worldX: number, worldY: number) => string | null;
+  /** A hit node's routing-trait kind, so `target: 'kind:text'` bindings match. */
+  kindOfNode?: (id: string) => string | undefined;
+  /** Chrome-caps predicate, so a view's hit-test gates on the same chrome ids
+   *  the renderer paints. */
+  getIsVisible?: () => (id: string) => boolean;
+}
 
 const ViewInputsContext = createContext<SurfaceViewInputs | null>(null);
 
