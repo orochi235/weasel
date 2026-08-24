@@ -11,11 +11,13 @@ import type {
   RenderContext,
   ViewTransform,
 } from '../instrument/types';
+import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
 import { LayerList } from '../layers/LayerList';
 import { LabStoreContext } from '../state/context';
 import type { LabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
+import { as2DView, DEFAULT_VIEW } from '../state/view';
 import { createEventBus, type EventBus } from '../undo/eventBus';
 import { pushSnapshot, redo as undoRedo, undo as undoUndo } from '../undo/undoStack';
 import type { UndoBindings } from './TrialChrome';
@@ -85,7 +87,21 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
     updateTrialUndoStack(record.id, (prev) => pushSnapshot(prev, snap, maxDepth));
   };
 
-  const setView = (v: ViewTransform): void => updateTrialView(record.id, v);
+  const setView = (v: unknown): void => updateTrialView(record.id, v);
+
+  // `CanvasStack` and the zoom controls are 2D; a trial holding another view shape
+  // gets the default here and simply never renders them.
+  const view2d = as2DView(record.view);
+
+  const jobCap = instrument.job;
+  // Hooks cannot be conditional, so a trial without the capability still calls
+  // this — with a runner that yields nothing and is never started.
+  const job = useJob({
+    capability: jobCap ?? { run: async function* () {}, onItem: (_i, st) => st },
+    config: record.config,
+    state: record.state,
+    setState: (next) => updateTrialState(record.id, next as never),
+  });
 
   const renderCtx: RenderContext<unknown, unknown> = {
     state: record.state,
@@ -105,13 +121,19 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
     },
     trial: {
       id: record.id,
-      zoom: record.view.zoom,
-      setZoom: (z) => updateTrialView(record.id, { ...record.view, zoom: z }),
+      view: record.view,
+      setView,
+      zoom: view2d?.zoom ?? 1,
+      setZoom: (z) => {
+        if (!view2d) return;
+        updateTrialView(record.id, { ...view2d, zoom: z });
+      },
     },
     emit: (event) => {
       snapshotIfNeeded(event);
       bus.emit(event);
     },
+    job: jobCap ? job : undefined,
   };
 
   const undoBindings: UndoBindings | undefined = undoCap
@@ -160,7 +182,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
   const dragDropResult = useDragDrop({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
     canvasContainerRef,
-    view: record.view,
+    view: view2d ?? DEFAULT_VIEW,
     state: record.state,
     config: record.config,
     setState: (next) => {
@@ -212,7 +234,11 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
         className="lk-trial__canvas-host"
         style={{ width: '100%', height: '100%', position: 'relative' }}
       >
-        <CanvasStack layers={layersWithFeedback} view={record.view} onViewChange={setView}>
+        <CanvasStack
+          layers={layersWithFeedback}
+          view={view2d ?? DEFAULT_VIEW}
+          onViewChange={setView}
+        >
           {instrument.render(renderCtx)}
         </CanvasStack>
         <DragOverlay drag={dragDropResult.drag} />
@@ -245,6 +271,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
 
   return (
     <TrialChrome
+      job={jobCap ? job : undefined}
       trialId={record.id}
       record={record}
       instrument={instrument}

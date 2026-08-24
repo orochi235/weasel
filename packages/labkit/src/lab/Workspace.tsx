@@ -17,6 +17,8 @@ import {
   StrategyRegistryProvider,
 } from 'windease/react';
 
+import { useSurfaceOptional } from '../surface/useSurfaceTile';
+
 const ZONE_ID = asNodeId('lk-workspace');
 const STRATEGIES = { grid: gridStrategy as never };
 const KIND = 'trial';
@@ -119,6 +121,10 @@ export function Workspace({
   }
   const store = storeRef.current;
 
+  // A tile that only moves reports nothing to a ResizeObserver, and only this
+  // component knows the grid moved one. Optional: a lab may own no surface.
+  const surface = useSurfaceOptional();
+
   useLayoutEffect(() => {
     store.updateContainerConfig(ZONE_ID, { resizable, gap, padding });
   }, [store, resizable, gap, padding]);
@@ -138,6 +144,13 @@ export function Workspace({
     }
     store.setChildOrder(ZONE_ID, [...nodeIds]);
   }, [store, nodeIds]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: nodeIds is the signal that the tile set changed — a re-tile moves tiles without resizing any — not a value this reads
+  useEffect(() => {
+    if (!surface) return;
+    surface.invalidateRects();
+    return store.events.on('node.placementChanged', () => surface.invalidateRects());
+  }, [store, surface, nodeIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!onLayoutChange) return;

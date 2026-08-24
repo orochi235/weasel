@@ -41,6 +41,8 @@ const entries: Record<string, string> = {
   'dragdrop/index': 'src/dragdrop/index.ts',
   'passthrough/weasel-ui': 'src/passthrough/weasel-ui.ts',
   'passthrough/weasel-canvas': 'src/passthrough/weasel-canvas.ts',
+  'surface/index': 'src/surface/index.ts',
+  'job/index': 'src/job/index.ts',
   'ui/layers/index': 'src/ui/layers/index.ts',
 };
 

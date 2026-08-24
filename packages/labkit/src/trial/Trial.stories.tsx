@@ -5,6 +5,7 @@ import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
 import { createLabStore } from '../state/store';
 import type { TrialRecord } from '../state/types';
+import { DEFAULT_VIEW } from '../state/view';
 import { TrialChrome } from './TrialChrome';
 
 const noop = () => {};
@@ -52,7 +53,13 @@ function Harness() {
               config: {},
               setState: () => {},
               setConfig: () => {},
-              trial: { id: 'ws-demo', zoom: 1, setZoom: () => {} },
+              trial: {
+                id: 'ws-demo',
+                view: DEFAULT_VIEW,
+                setView: () => {},
+                zoom: 1,
+                setZoom: () => {},
+              },
               emit: () => {},
             })}
           </TrialChrome>

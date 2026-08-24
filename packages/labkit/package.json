@@ -55,6 +55,14 @@
       "types": "./dist/state/index.d.ts",
       "import": "./dist/state/index.js"
     },
+    "./surface": {
+      "types": "./dist/surface/index.d.ts",
+      "import": "./dist/surface/index.js"
+    },
+    "./job": {
+      "types": "./dist/job/index.d.ts",
+      "import": "./dist/job/index.js"
+    },
     "./weasel-ui": {
       "types": "./dist/passthrough/weasel-ui.d.ts",
       "import": "./dist/passthrough/weasel-ui.js"

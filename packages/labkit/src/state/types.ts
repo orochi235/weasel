@@ -7,12 +7,14 @@ export interface UndoStack {
 
 /** One trial as the store holds it: which instrument it runs, that
  *  instrument's config and state, the camera, and the undo history. */
-export interface TrialRecord<TS = unknown, TC = unknown> {
+export interface TrialRecord<TS = unknown, TC = unknown, TV = unknown> {
   id: string;
   instrumentName: string;
   config: TC;
   state: TS;
-  view: { zoom: number; pan: { x: number; y: number } };
+  /** Opaque to labkit: persisted, restored on Reset and handed to the instrument,
+   *  but never read into. A 3D lab puts an orbit here and keeps all three. */
+  view: TV;
   undoStack: UndoStack;
 }
 

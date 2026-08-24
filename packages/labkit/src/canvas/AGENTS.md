@@ -2,6 +2,14 @@
 
 The `src/canvas/` directory implements the layered canvas primitive used by the `canvas` instrument capability.
 
+For a renderer labkit does not own — three.js, raw WebGL, anything with its own
+render loop — see `src/surface/AGENTS.md` instead. `CanvasStack` is 2D and
+schedules its own layers; a foreign renderer wants rects and dirtiness only.
+
+`useOrbit` also lives here, as the 3D peer of `usePanZoom`. It produces a trial
+view (`{ yaw, pitch, distance, target }`) rather than a matrix — turning that
+into a camera is the host's job.
+
 ## Files
 
 | File | Role |

@@ -50,3 +50,21 @@ describe('public export surface', () => {
     expect(labkit).toHaveProperty('useTrialId');
   });
 });
+
+describe('surface, job and orbit entry points', () => {
+  it('are reachable from the package root', async () => {
+    const kit = await import('./index');
+    expect(typeof kit.useTiledSurface).toBe('function');
+    expect(typeof kit.useSurfaceTile).toBe('function');
+    expect(typeof kit.useSurface).toBe('function');
+    expect(typeof kit.useSurfaceOptional).toBe('function');
+    expect(typeof kit.toDeviceRect).toBe('function');
+    expect(typeof kit.composeRects).toBe('function');
+    expect(typeof kit.useOrbit).toBe('function');
+    expect(typeof kit.orbitAfterDrag).toBe('function');
+    expect(typeof kit.useJob).toBe('function');
+    expect(typeof kit.as2DView).toBe('function');
+    expect(kit.SurfaceContext).toBeDefined();
+    expect(kit.DEFAULT_VIEW).toEqual({ zoom: 1, pan: { x: 0, y: 0 } });
+  });
+});
