@@ -1,5 +1,5 @@
 // apps/site/demos/platformer/physics.ts
-import { ONEWAY, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
+import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
 
 /** Fixed simulation step, in seconds. The render loop accumulates into it. */
 export const STEP = 1 / 120;
@@ -47,6 +47,8 @@ export interface BodyState {
   jumped: boolean;
   /** True only on the step the body touched down. */
   landed: boolean;
+  /** Set only on the step a ceiling hit lands on a `?` block. */
+  bonk: { cx: number; cy: number } | null;
 }
 
 export function createBodyState(at: Vec2): BodyState {
@@ -56,6 +58,7 @@ export function createBodyState(at: Vec2): BodyState {
     jumpBuffer: 0,
     jumped: false,
     landed: false,
+    bonk: null,
   };
 }
 
@@ -64,6 +67,8 @@ const right = (b: Body) => b.x + b.w / 2;
 const top = (b: Body) => b.y - b.h / 2;
 const bottom = (b: Body) => b.y + b.h / 2;
 
+const blocksMotion = (t: number): boolean => t === SOLID || t === QUESTION;
+
 /** Push the body out of solid tiles along x. Mutates. */
 function resolveX(b: Body, level: Level): void {
   const r0 = toRow(top(b));
@@ -71,14 +76,14 @@ function resolveX(b: Body, level: Level): void {
   for (let cy = r0; cy <= r1; cy++) {
     if (b.vx > 0) {
       const cx = toCol(right(b) - 0.001);
-      if (tileAt(level, cx, cy) === SOLID) {
+      if (blocksMotion(tileAt(level, cx, cy))) {
         b.x = cx * TILE - b.w / 2;
         b.vx = 0;
         break;
       }
     } else if (b.vx < 0) {
       const cx = toCol(left(b));
-      if (tileAt(level, cx, cy) === SOLID) {
+      if (blocksMotion(tileAt(level, cx, cy))) {
         b.x = (cx + 1) * TILE + b.w / 2;
         b.vx = 0;
         break;
@@ -87,34 +92,39 @@ function resolveX(b: Body, level: Level): void {
   }
 }
 
+interface YHit {
+  kind: 'floor' | 'ceiling';
+  cx: number;
+  cy: number;
+  tile: number;
+}
+
 /** `prevBottom` is the body's bottom edge before the move — a one-way platform
  *  only blocks a body that was entirely above it. */
-function resolveY(b: Body, level: Level, prevBottom: number): 'floor' | 'ceiling' | null {
+function resolveY(b: Body, level: Level, prevBottom: number): YHit | null {
   const c0 = toCol(left(b));
   const c1 = toCol(right(b) - 0.001);
-  let hit: 'floor' | 'ceiling' | null = null;
   for (let cx = c0; cx <= c1; cx++) {
     if (b.vy > 0) {
       const cy = toRow(bottom(b) - 0.001);
       const t = tileAt(level, cx, cy);
-      const blocks = t === SOLID || (t === ONEWAY && prevBottom <= cy * TILE + 0.001);
+      const blocks = blocksMotion(t) || (t === ONEWAY && prevBottom <= cy * TILE + 0.001);
       if (blocks) {
         b.y = cy * TILE - b.h / 2;
         b.vy = 0;
-        hit = 'floor';
-        break;
+        return { kind: 'floor', cx, cy, tile: t };
       }
     } else if (b.vy < 0) {
       const cy = toRow(top(b));
-      if (tileAt(level, cx, cy) === SOLID) {
+      const t = tileAt(level, cx, cy);
+      if (blocksMotion(t)) {
         b.y = (cy + 1) * TILE + b.h / 2;
         b.vy = 0;
-        hit = 'ceiling';
-        break;
+        return { kind: 'ceiling', cx, cy, tile: t };
       }
     }
   }
-  return hit;
+  return null;
 }
 
 export function stepBody(s: BodyState, level: Level, input: Input, dt: number): BodyState {
@@ -145,9 +155,10 @@ export function stepBody(s: BodyState, level: Level, input: Input, dt: number): 
   const hit = resolveY(b, level, prevBottom);
 
   const wasOnGround = s.body.onGround;
-  b.onGround = hit === 'floor';
+  b.onGround = hit?.kind === 'floor';
+  const bonk = hit?.kind === 'ceiling' && hit.tile === QUESTION ? { cx: hit.cx, cy: hit.cy } : null;
 
-  return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround };
+  return { body: b, coyote, jumpBuffer, jumped, landed: b.onGround && !wasOnGround, bonk };
 }
 
 export function spikeOverlap(b: Body, level: Level): boolean {

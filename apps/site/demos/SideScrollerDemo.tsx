@@ -13,8 +13,10 @@ import type { Dims, DrawCommand, RenderLayer, TimelineHandle, View } from '@weas
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { CAM_SCALE, cameraView, createCamera, followCamera, worldToScreen, type Camera } from './platformer/camera';
+import { pushCallout, stepCallouts, type Callout } from './platformer/callouts';
+import { TILE } from './platformer/level';
 import { WORLD } from './platformer/worldLevel';
-import { COLORS, drawBackdrop, drawCoins, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
+import { COLORS, drawBackdrop, drawCallouts, drawCoins, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
 import {
   createBodyState,
   spikeOverlap,
@@ -55,6 +57,16 @@ const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
  *  steady — the gap would measure speed change, not scheduling jitter. */
 const JITTER_SCALE_TOLERANCE = 0.02;
 
+/** Third bonk ends the run. */
+const MAX_BONKS = 3;
+const BONK_CALLOUT_TTL = 0.9;
+const COINS_PER_LIFE = 5;
+const HEALTHCARE_CALLOUT_TTL = 1.6;
+/** Seconds of screen shake after a first or second bonk. */
+const SHAKE_DURATION = 0.25;
+/** World units of camera jitter at the shake's peak. */
+const SHAKE_MAGNITUDE = 3;
+
 interface GameRefs {
   camera: Camera;
   player: BodyState;
@@ -68,7 +80,12 @@ interface GameRefs {
   lives: number;
   score: number;
   elapsed: number;
-  outcome: 'playing' | 'won' | 'lost';
+  outcome: 'playing' | 'won' | 'lost' | 'concussion';
+  /** Ceiling hits on a `?` block; the third ends the run. */
+  bonks: number;
+  /** Seconds of screen shake remaining. */
+  shake: number;
+  callouts: Callout[];
 }
 
 const freshGame = (): GameRefs => ({
@@ -83,6 +100,9 @@ const freshGame = (): GameRefs => ({
   score: 0,
   elapsed: 0,
   outcome: 'playing',
+  bonks: 0,
+  shake: 0,
+  callouts: [],
 });
 
 /**
@@ -107,9 +127,14 @@ function SideScrollerDemoInner() {
   const game = useRef<GameRefs>(freshGame());
   const [running, setRunning] = useState(false);
   const [, setNonce] = useState(0);
+  // The canvas HUD is what draws `won`/`lost`, but a concussion blurs the
+  // canvas — its message has to live in the DOM instead, which needs this
+  // mirrored into React state rather than read straight off `game.current`.
+  const [concussed, setConcussed] = useState(false);
 
   const restart = () => {
     game.current = freshGame();
+    setConcussed(false);
     setNonce((n) => n + 1);
   };
 
@@ -123,6 +148,19 @@ function SideScrollerDemoInner() {
   useEffect(() => {
     showBoxesRef.current = showBoxes;
   }, [showBoxes]);
+
+  // Two discrete blur classes rather than a computed filter value, escalating
+  // on a short timer so the concussion reads as a hit landing, not a snap cut.
+  const [blurStage, setBlurStage] = useState<0 | 1 | 2>(0);
+  useEffect(() => {
+    if (!concussed) {
+      setBlurStage(0);
+      return;
+    }
+    setBlurStage(1);
+    const id = window.setTimeout(() => setBlurStage(2), 180);
+    return () => window.clearTimeout(id);
+  }, [concussed]);
 
   // The run cycle's own timeline — its playhead is what fires footsteps, not
   // the fixed-step loop. `runScale` is what the loop writes and the footstep
@@ -230,7 +268,17 @@ function SideScrollerDemoInner() {
   };
 
   const layers = useMemo(() => {
-    const view = () => cameraView(game.current.camera, DIMS);
+    // A bonk's shake jitters every screen-space layer identically by nudging
+    // the shared view, not the camera itself — the camera's own follow state
+    // stays clean, so the jitter can't accumulate into the actual framing.
+    const view = () => {
+      const v = cameraView(game.current.camera, DIMS);
+      const shake = game.current.shake;
+      if (shake <= 0) return v;
+      const mag = SHAKE_MAGNITUDE * (shake / SHAKE_DURATION);
+      const t = game.current.elapsed;
+      return { ...v, x: v.x + Math.sin(t * 53) * mag, y: v.y + Math.cos(t * 47) * mag };
+    };
 
     // Three bands at three rates: far hills at 0.2 crawl, near ones at 0.7
     // nearly keep up. `createParallaxLayer` derives pan from the canvas's own
@@ -295,7 +343,9 @@ function SideScrollerDemoInner() {
           textCommand(72, 22, `◆ ${g.score} / ${g.coins.length}`, style),
           textCommand(190, 22, `${g.elapsed.toFixed(1)}s`, style),
         ];
-        if (g.outcome !== 'playing') {
+        // Concussion's message lives in the DOM instead — the canvas is what
+        // gets blurred, so text drawn on it would be unreadable.
+        if (g.outcome === 'won' || g.outcome === 'lost') {
           out.push(
             textCommand(W / 2 - 60, H / 2, g.outcome === 'won' ? 'you made it' : 'out of lives', {
               ...style,
@@ -331,7 +381,17 @@ function SideScrollerDemoInner() {
       },
     };
 
-    return { bands, tiles, entities, player, debug, hud };
+    const callouts: RenderLayer<unknown> = {
+      id: 'callouts',
+      label: 'Callouts',
+      space: 'screen',
+      draw: (): DrawCommand[] => {
+        const g = game.current;
+        return drawCallouts(g.callouts, view(), DIMS, g.elapsed);
+      },
+    };
+
+    return { bands, tiles, entities, player, debug, hud, callouts };
   }, []);
 
   // A camera with nothing to follow still has to run, or the first frame after
@@ -385,6 +445,29 @@ function SideScrollerDemoInner() {
         }
 
         g.elapsed += STEP;
+        g.shake = Math.max(0, g.shake - STEP);
+        g.callouts = stepCallouts(g.callouts, g.elapsed);
+
+        // A bonk requires the ceiling branch of resolveY to have actually fired
+        // this step — walking under a `?` block never sets it.
+        if (g.player.bonk && g.outcome === 'playing') {
+          g.bonks++;
+          const at = { x: (g.player.bonk.cx + 0.5) * TILE, y: (g.player.bonk.cy + 0.5) * TILE };
+          g.callouts = pushCallout(g.callouts, {
+            text: 'ow',
+            anchor: { kind: 'world', at },
+            bornAt: g.elapsed,
+            ttl: BONK_CALLOUT_TTL,
+          });
+          fireAt('hurt', at, 0.7);
+          if (g.bonks >= MAX_BONKS) {
+            g.outcome = 'concussion';
+            setConcussed(true);
+          } else {
+            g.shake = SHAKE_DURATION;
+          }
+        }
+
         g.enemies = g.enemies.map((e) => stepEnemy(e, WORLD, STEP));
 
         for (const hit of resolveContacts(g.player.body, g.enemies, g.coins, g.invuln)) {
@@ -392,6 +475,15 @@ function SideScrollerDemoInner() {
             g.coins[hit.index].taken = true;
             g.score++;
             fire('coin', 0.5);
+            if (g.score % COINS_PER_LIFE === 0) {
+              g.lives++;
+              g.callouts = pushCallout(g.callouts, {
+                text: 'FREE HEALTHCARE',
+                anchor: { kind: 'screen' },
+                bornAt: g.elapsed,
+                ttl: HEALTHCARE_CALLOUT_TTL,
+              });
+            }
           } else if (hit.kind === 'stomp') {
             const victim = g.enemies[hit.index];
             g.enemies[hit.index].alive = false;
@@ -474,6 +566,9 @@ function SideScrollerDemoInner() {
     }
   };
 
+  const canvasClassName =
+    blurStage === 0 ? 'ckd-canvas' : blurStage === 1 ? 'ckd-canvas ckd-canvas--blur-1' : 'ckd-canvas ckd-canvas--blur-2';
+
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
@@ -489,7 +584,7 @@ function SideScrollerDemoInner() {
       <SceneCanvas
         width={W}
         height={H}
-        className="ckd-canvas"
+        className={canvasClassName}
         scene={scene}
         selectionMode="none"
         animator={animator}
@@ -503,6 +598,7 @@ function SideScrollerDemoInner() {
           player: { layer: layers.player, after: 'entities' },
           debug: { layer: layers.debug, after: 'player' },
           hud: { layer: layers.hud, after: 'debug' },
+          callouts: { layer: layers.callouts, after: 'hud' },
           scene: { drawOne: () => [] },
           selectionOverlay: null,
         }}
@@ -523,8 +619,10 @@ function SideScrollerDemoInner() {
         <button className="ckd-btn" onClick={swarm}>swarm +40</button>
       </div>
       <div className="ckd-hint">
-        A platformer built as a load test for the animation timeline and the audio
-        engine. Everything is drawn by custom render layers; the scene graph is off.
+        {concussed
+          ? 'concussion — three ? blocks to the head ends the run. restart to try again.'
+          : 'A platformer built as a load test for the animation timeline and the audio ' +
+            'engine. Everything is drawn by custom render layers; the scene graph is off.'}
       </div>
     </div>
   );
