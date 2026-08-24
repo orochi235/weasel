@@ -136,10 +136,10 @@ export interface Stroke {
   join?: 'miter' | 'round' | 'bevel';
   /**
    * Miter join fallback threshold. When the miter length exceeds
-   * `miterLimit * width / 2`, the join falls back to a bevel. Default 10
-   * (matching Canvas2D). SVG's default is 4; consumers that want SVG
-   * fidelity should set this explicitly when constructing strokes from
-   * SVG sources where the attribute was omitted.
+   * `miterLimit * width / 2`, the join falls back to a bevel. Default 4,
+   * matching SVG — which is also what the kit's own serializer implies when
+   * it omits the attribute for an unset field. Canvas2D's 10 lets an acute
+   * corner throw a spike four times the half-width.
    */
   miterLimit?: number;
   /** Where the stroke sits relative to the geometric edge. Default `'center'`. */
