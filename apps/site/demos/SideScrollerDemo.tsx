@@ -582,8 +582,8 @@ function SideScrollerDemoInner() {
       }}
     >
       <div className="ckd-toolbar">
-        <button className="ckd-btn" onClick={() => setRunning((r) => !r)}>
-          {running ? 'pause' : 'start'}
+        <button className="ckd-btn ckd-btn--text" onClick={() => setRunning((r) => !r)}>
+          {running ? 'click to pause' : 'click to start'}
         </button>
         <button className="ckd-btn" onClick={enableAudio} disabled={audioState === 'running'}>
           {audioState === 'running' ? 'audio on' : 'enable audio'}

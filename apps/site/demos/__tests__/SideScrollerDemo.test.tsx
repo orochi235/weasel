@@ -45,15 +45,15 @@ describe('SideScrollerDemo', () => {
 
 it('starts the run when the canvas takes focus, but not the toolbar', () => {
   const { container } = render(<SideScrollerDemo />);
-  const toggle = () => screen.getByRole('button', { name: /^(start|pause)$/i });
-  expect(toggle().textContent).toBe('start');
+  const toggle = () => screen.getByRole('button', { name: /^click to (start|pause)$/i });
+  expect(toggle().textContent).toBe('click to start');
 
   // Focusing a toolbar button must not start it.
   fireEvent.focus(toggle());
-  expect(toggle().textContent).toBe('start');
+  expect(toggle().textContent).toBe('click to start');
 
   const canvas = container.querySelector('canvas');
   expect(canvas).toBeTruthy();
   fireEvent.focus(canvas!);
-  expect(toggle().textContent).toBe('pause');
+  expect(toggle().textContent).toBe('click to pause');
 });
