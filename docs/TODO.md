@@ -961,10 +961,19 @@ not an estimate. Both apps share one root cause, so fix it once in each.
   `main.tsx` statically imports the inspector that uses it. Making it lazy and
   excluding tests measures at **−754,772 raw / −201,930 gzipped**.
 
-  `apps/site/registry.ts` has the same shape for the same reason: 105 eager
-  imports, 55 of them `?raw`, no lazy loading anywhere, so opening one demo
-  loads all fifty and their full source. Diagnosis and fix design in
-  `docs/handoffs/2026-08-23-site-load-cost.md`.
+  `apps/site` is worse, and for a reason that is easy to miss: the eager demo
+  imports are only 9% of it. `apps/site/registry.ts:696` runs
+  `import.meta.glob(['../../packages/**/src/**/*.{tsx,ts,css}', '../draw/src/**'], { query: '?raw', eager: true })`,
+  inlining **all 1,656 files under `packages/*/src/` — 642 of them tests, 3.71
+  MB — plus 123 files of `apps/draw/src`, a different application** — as string
+  literals. **8.98 MB of a 10.95 MB bundle, 82%.** Removing it and lazying the
+  demos takes first-load transfer from 3,122,975 to 592,951 bytes and FCP at
+  5 Mbps from **5,333 ms to 1,278 ms**; the dev server drops from 2,762 requests
+  / 25.7 MB to 554 / 9.1 MB. `React.lazy` alone, glob left in, buys only 9% —
+  the glob has to go first. Full ablation ladder and the smaller wins
+  (`prism-react-renderer` 96 KB eager, `virtual:changelogs` 204 KB eager, a
+  paint-blocking `await registerFont(...)`, a 181 KB logo PNG for a 449×496
+  image) are in `docs/handoffs/2026-08-23-site-load-cost.md`.
 
 - **(P1) `apps/draw/src/main.tsx` gates first paint on a font fetch.** Line 26
   is a module-scope `await registerFont(...)`, so `createRoot().render()` cannot
@@ -997,7 +1006,12 @@ not an estimate. Both apps share one root cause, so fix it once in each.
   env flag. Dev-only: production cold load is 8 requests / 939,885 bytes /
   FCP 216 ms, against dev's 974 requests / 15,684,571 bytes / FCP 6,852 ms.
 
-Hypotheses tested and **false**, recorded so nobody re-tests them: no font is
+**Tree-shaking is exonerated for both apps** — a single-symbol build of
+`@weasel-js/core` is 1.04 kB, and barrel versus deep-path imports of
+`SceneCanvas` agree within 0.04%. Its ~596 kB is genuinely the renderer,
+dispatcher and tools. Nobody should spend time there.
+
+Other hypotheses tested and **false**, recorded so nobody re-tests them: no font is
 base64-embedded and there are no `@font-face` rules; startup does no meaningful
 work beyond bundle parse and first render (shader compile 0.3 ms, `linkProgram`
 0.0 ms, `JSON.parse` 0.1 ms over 508 bytes, localStorage 1.1 ms, no schema
