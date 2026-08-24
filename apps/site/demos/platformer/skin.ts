@@ -99,12 +99,22 @@ export function drawTiles(level: Level, view: View, dims: Dims): DrawCommand[] {
       } else if (t === QUESTION) {
         out.push(rect(p.x, p.y, s, s, COLORS.question));
         out.push(
-          textCommand(p.x + s / 2, p.y + s * 0.74, '?', {
-            fontFamily: 'sans-serif',
-            fontSize: s * 0.6,
-            align: 'center',
-            fill: solid(COLORS.questionMark),
-          }),
+          // `y` is the top of the text box, not a baseline — centring means
+          // handing it the box height and letting verticalAlign do the work.
+          textCommand(
+            p.x + s / 2,
+            p.y,
+            '?',
+            {
+              fontFamily: 'sans-serif',
+              fontSize: s * 0.6,
+              align: 'center',
+              fill: solid(COLORS.questionMark),
+            },
+            undefined,
+            s,
+            'center',
+          ),
         );
       } else if (t === SPIKE) {
         out.push({
