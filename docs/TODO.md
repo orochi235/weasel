@@ -961,6 +961,16 @@ not an estimate. Both apps share one root cause, so fix it once in each.
   `main.tsx` statically imports the inspector that uses it. Making it lazy and
   excluding tests measures at **−754,772 raw / −201,930 gzipped**.
 
+  The site's equivalent was fixed on 2026-08-23 by resolving sources at build
+  time instead of globbing them: a plugin parses each demo's relative imports and
+  serves each referenced file as its own virtual module, so chunks exist only for
+  files something actually imports. A lazy glob was rejected because
+  `eager: false` emits one chunk per matched file — 1,880 of them for 11 useful
+  tabs. If you lift that per-file source module for draw, **keep the `.js` suffix
+  on the virtual id**: an id ending in a real extension gets claimed by vite's
+  css/json transforms and postcss will try to parse a JS module as CSS. That cost
+  a build failure on a `.module.css` file.
+
   `apps/site` is worse, and for a reason that is easy to miss: the eager demo
   imports are only 9% of it. `apps/site/registry.ts:696` runs
   `import.meta.glob(['../../packages/**/src/**/*.{tsx,ts,css}', '../draw/src/**'], { query: '?raw', eager: true })`,
