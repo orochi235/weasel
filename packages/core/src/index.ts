@@ -125,6 +125,8 @@ export type {
   Action, ActionEntry, ActionsProp, ActionsRegistry, ActionEnabledResult,
   UiOngoingControl, BoundGesture,
 } from './interactions/actions/registry';
+export { actionShortcuts } from './interactions/actions/actionShortcuts';
+export type { ActionShortcut } from './interactions/actions/actionShortcuts';
 export { moveAction } from './interactions/actions/defaults/move';
 export { resizeAction } from './interactions/actions/defaults/resize';
 export { rotateAction } from './interactions/actions/defaults/rotate';
