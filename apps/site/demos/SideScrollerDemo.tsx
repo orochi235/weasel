@@ -135,6 +135,7 @@ function SideScrollerDemoInner() {
 
   const audio = useRef<{ engine: AudioEngine; sounds: Record<SoundName, SoundHandle>; bed: VoiceHandle | null } | null>(null);
   const [audioState, setAudioState] = useState<'off' | 'suspended' | 'running'>('off');
+  const [musicOn, setMusicOn] = useState(true);
 
   // The debug layer's `draw` runs outside React, so the checkbox mirrors its
   // state into a ref rather than closing over `showBoxes` directly.
@@ -191,9 +192,18 @@ function SideScrollerDemoInner() {
     void engine.unlock().then(() => {
       setAudioState(engine.state() === 'running' ? 'running' : 'suspended');
       if (!audio.current!.bed) {
+        engine.bus('music').mute(!musicOn);
         audio.current!.bed = engine.play(audio.current!.sounds.bed, { bus: 'music', loop: true, gain: 0.5 });
       }
     });
+  };
+
+  /** The bed is the only sound that runs on its own — everything else is a
+   *  one-shot that stops when you do — so it gets a switch of its own. */
+  const toggleMusic = () => {
+    const next = !musicOn;
+    audio.current?.engine.bus('music').mute(!next);
+    setMusicOn(next);
   };
 
   useEffect(() => () => {
@@ -577,6 +587,9 @@ function SideScrollerDemoInner() {
         </button>
         <button className="ckd-btn" onClick={enableAudio} disabled={audioState === 'running'}>
           {audioState === 'running' ? 'audio on' : 'enable audio'}
+        </button>
+        <button className="ckd-btn" onClick={toggleMusic} aria-pressed={musicOn}>
+          {musicOn ? 'music off' : 'music on'}
         </button>
         <button className="ckd-btn" onClick={restart}>restart</button>
         <span className="ckd-readout">zoom {CAM_SCALE}x</span>
