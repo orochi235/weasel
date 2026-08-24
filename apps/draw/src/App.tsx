@@ -1226,10 +1226,11 @@ function BooleansAdapterPublisher({
         });
       },
       removeNode: (id) => { scene.remove(asNodeId(id)); },
+      // Hand the batch to the scene rather than re-applying it here: the
+      // entry then holds the real ops, so undo replays the reorder and the
+      // selection change instead of only the inserts and deletes.
       applyOps: (ops, label) => {
-        scene.batch(label ?? 'Booleans', () => {
-          for (const op of ops) op.apply(a);
-        });
+        scene.applyBatch(ops, label ?? 'Booleans', { ...defaultCommitAdapter(scene), ...a });
       },
     };
     return a;
@@ -1243,7 +1244,7 @@ export function App(): ReactElement {
     systemLayers: [{ id: 'default' }],
     initial: useMemo(loadInitial, []),
   });
-  const selection = useSelection({ mode: 'multi' });
+  const selection = useSelection({ mode: 'multi', scene });
 
   // Bootstrap the mode machine, decorations, and scoping dim. useModality
   // wires the journal accessor on the scene via
@@ -1258,16 +1259,13 @@ export function App(): ReactElement {
   // same scene-backed adapter the default actions bind at live commit time —
   // it carries the scene-owned op-apply surface, where the canvas adapter
   // lacks `setData` and `setLayer` (a restored nudge's geometry-projection
-  // setData op would fail against it). Spreading `selection.adapterMethods`
-  // adds the `setSelection` the scene doesn't own, so boolean-op entries
-  // (which record selection changes) replay against the same selection store
-  // Pathfinder's live BooleansAdapter uses. Lazy accessor: wiring order vs
-  // the boot-time restoreHistory doesn't matter.
+  // setData op would fail against it). Lazy accessor: wiring order vs the
+  // boot-time restoreHistory doesn't matter.
   useEffect(() => {
-    const a = { ...defaultCommitAdapter(scene), ...selection.adapterMethods };
+    const a = defaultCommitAdapter(scene);
     scene.setHistoryAdapter(() => a);
     return () => scene.setHistoryAdapter(null);
-  }, [scene, selection.adapterMethods]);
+  }, [scene]);
 
   // Restore the persisted undo stacks once on mount (modality history, then
   // the scene's own history). Scene state is already in place — it's restored

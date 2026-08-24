@@ -347,6 +347,17 @@ describe('<CanvasView> hit-testing', () => {
     a: { x: 0, y: 0, width: 10, height: 10 },
     b: { x: 40, y: 0, width: 10, height: 10 },
   };
+  /** Stands in for the surface's selection, which a view shares by default. */
+  const SURFACE_SELECTION = {
+    current: [] as readonly NodeId[],
+    get: () => [] as NodeId[],
+    set: () => {},
+    add: () => {}, remove: () => {}, toggle: () => {}, clear: () => {},
+    contains: () => false,
+    applyClick: () => {},
+    adapterMethods: { getSelection: () => [] as NodeId[], setSelection: () => {} },
+  };
+
   const INPUTS = {
     adapter: undefined,
     geometry: AUTO_POSE_DESCRIPTOR,
@@ -358,6 +369,7 @@ describe('<CanvasView> hit-testing', () => {
       }
       return null;
     },
+    selectionApi: SURFACE_SELECTION,
   };
 
   function panelTarget(selected: readonly string[]) {
@@ -405,8 +417,16 @@ describe('<CanvasView> selection', () => {
     return registry.list()[0]!;
   }
 
-  it('overlays a selection of its own onto the dep registry', () => {
+  it('shares the surface selection unless asked for its own', () => {
     const reg = registrationFor(<CanvasView id="panel" bounds={PANEL} />);
+
+    expect(reg.target.deps!().selection).toBeUndefined();
+  });
+
+  it('overlays a selection of its own when selectionOptions asks for one', () => {
+    const reg = registrationFor(
+      <CanvasView id="panel" bounds={PANEL} selectionOptions={{ mode: 'multi' }} />,
+    );
     const own = reg.target.deps!().selection!;
 
     expect(own.get()).toEqual([]);

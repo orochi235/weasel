@@ -71,11 +71,9 @@ export interface ComputeSliceResult {
    * pieces of any source that was selected), or `null` when no `selection` was
    * supplied or nothing was sliced.
    *
-   * Returned separately rather than baked into `ops` as a `setSelection` op:
-   * in the real app `scene.applyBatch` routes the batch through the modality
-   * journal, which applies each op via `op.apply(scene)` — and `Scene` has no
-   * `setSelection`. The caller applies this to the live selection after the
-   * geometry batch commits (see `SliceDepPublisher`).
+   * Applied by the caller after the geometry batch commits (see
+   * `SliceDepPublisher`). Undo puts the pre-slice selection back either way —
+   * the scene records it on the history entry.
    */
   nextSelection: string[] | null;
 }

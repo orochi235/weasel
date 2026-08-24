@@ -18,6 +18,14 @@ interface Entry {
   timestamp: number;
   /** Node ids touched by ops in this entry. See `HistoryEntry.touchedIds`. */
   touchedIds: ReadonlySet<string>;
+  /** Selection as of just before this entry's ops ran; restored by undo.
+   *  Undefined when nothing supplied one (no `selection` option, or a
+   *  `recordEntry` call that captured none). */
+  selectionBefore?: readonly string[];
+  /** Selection as of just before this entry was last undone; restored by
+   *  redo. Written on the way past, so it reflects where the user actually
+   *  was rather than where the entry's ops left them. */
+  selectionAfter?: readonly string[];
 }
 
 /** Wire form of a single op inside a serialized history. The pair
@@ -35,6 +43,8 @@ export interface SerializedHistoryEntry {
   label: string;
   forwardOps: SerializedOp[];
   baseOps: SerializedOp[];
+  selectionBefore?: readonly string[];
+  selectionAfter?: readonly string[];
 }
 
 /** Snapshot of an entire `History` instance. Designed to live alongside the
@@ -78,6 +88,10 @@ export interface HistoryEntry {
    *  contribute nothing. May be `undefined` for deserialized entries
    *  restored from an older snapshot that predates this field. */
   touchedIds?: ReadonlySet<string>;
+  /** Selection restored when this entry is undone. */
+  selectionBefore?: readonly string[];
+  /** Selection restored when this entry is redone. */
+  selectionAfter?: readonly string[];
 }
 
 /** Op-batched undo/redo controller returned by `createHistory`. */
@@ -127,7 +141,7 @@ export interface History {
    *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
    *  to flush a session's net forward ops to the parent as one entry without
    *  re-mutating the scene. */
-  recordEntry(ops: Op[], label: string): void;
+  recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   /** Concatenated forwardOps of every undo-stack entry, in order. Snapshot
    *  of "what changes are currently applied via this history" — useful for
    *  Journal.commit to flush to a parent, and for any caller that wants to
@@ -151,6 +165,24 @@ export interface History {
   resumeJournal(journal: Journal): void;
 }
 
+/** Read/write access to whatever holds the caller's selection. The engine
+ *  stores the ids it is handed and hands them back on the way past; it
+ *  attaches no meaning to them and never records a selection change as an
+ *  entry of its own. */
+export interface HistorySelection {
+  get(): readonly string[];
+  set(ids: readonly string[]): void;
+}
+
+/** Options for `recordEntry`. */
+export interface RecordEntryOptions {
+  /** Selection as of before the already-applied ops ran. `recordEntry` is
+   *  called after the fact, so the live selection has moved on by then and
+   *  the engine cannot sample it — a caller that wants undo to restore the
+   *  selection captures it when the batch opens and passes it here. */
+  selectionBefore?: readonly string[];
+}
+
 /** Options for `createHistory`. */
 export interface CreateHistoryOptions {
   /** Window (ms) within which a new entry may merge into the previous one
@@ -163,6 +195,10 @@ export interface CreateHistoryOptions {
   coalesceWindowMs?: number;
   /** Clock injection point for tests. Defaults to `Date.now`. */
   now?: () => number;
+  /** Where the caller's selection lives. Supplied, each entry records the
+   *  selection around it and undo / redo / goto restore it; omitted, the
+   *  engine never reads or writes selection at all. */
+  selection?: HistorySelection;
   /** Maximum undo-stack depth. When a push overflows the cap the oldest
    *  entry is evicted (reported via `onEvict`) and can no longer be undone.
    *  `0` disables the undo stack entirely — every push is evicted
@@ -216,6 +252,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
   const onEvict = options.onEvict;
   const customRebuild = options.rebuildOp;
+  const selection = options.selection;
   const logger = options.debug ?? SILENT;
   let nextEntryId = 1;
   let version = 0;
@@ -282,6 +319,29 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     return [...entry.baseOps].reverse().map((op) => op.invert());
   }
 
+  /** Copy on read: the caller's array is theirs to mutate. */
+  function readSelection(): readonly string[] | undefined {
+    return selection ? [...selection.get()] : undefined;
+  }
+
+  /** Walk one entry backwards. The selection is restored *after* the
+   *  inverted ops apply, so an entry that also carries a `setSelection`-style
+   *  op can't overwrite the snapshot. */
+  function stepBack(entry: Entry): void {
+    const leaving = readSelection();
+    if (leaving) entry.selectionAfter = leaving;
+    applyOps(invertEntry(entry));
+    if (selection && entry.selectionBefore) selection.set(entry.selectionBefore);
+  }
+
+  /** Walk one entry forwards. Mirror of `stepBack`. */
+  function stepForward(entry: Entry): void {
+    const leaving = readSelection();
+    if (leaving) entry.selectionBefore = leaving;
+    applyOps(entry.forwardOps);
+    if (selection && entry.selectionAfter) selection.set(entry.selectionAfter);
+  }
+
   /** Coalesce eligibility: every op on both sides has a `coalesceKey`, and
    *  the multisets of keys match (order-independent). Match by multiset
    *  rather than positional index so a multi-id selection can re-emit ops in
@@ -310,6 +370,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
 
   function pushOrCoalesce(ops: Op[], label: string): void {
     if (ops.length === 0) return;
+    const selectionBefore = readSelection();
     const anyMutated = applyOpsAndDetectMutation(ops);
     if (!anyMutated) {
       // Every op reported `false`/`'noop'`. Skip the push so undo stays
@@ -345,7 +406,10 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       return;
     }
     logger.log(`push '${label}' (${ops.length} ops)`);
-    undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: incoming });
+    undoStack.push({
+      id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: incoming,
+      ...(selectionBefore ? { selectionBefore } : {}),
+    });
     dropRedo();
     enforceLimit();
     bump();
@@ -362,14 +426,14 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     undo() {
       const entry = undoStack.pop();
       if (!entry) return;
-      applyOps(invertEntry(entry));
+      stepBack(entry);
       redoStack.push(entry);
       bump();
     },
     redo() {
       const entry = redoStack.pop();
       if (!entry) return;
-      applyOps(entry.forwardOps);
+      stepForward(entry);
       undoStack.push(entry);
       bump();
     },
@@ -384,7 +448,11 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (had) bump();
     },
     entries() {
-      const toView = (e: Entry): HistoryEntry => ({ id: e.id, label: e.label, timestamp: e.timestamp, touchedIds: e.touchedIds });
+      const toView = (e: Entry): HistoryEntry => ({
+        id: e.id, label: e.label, timestamp: e.timestamp, touchedIds: e.touchedIds,
+        ...(e.selectionBefore ? { selectionBefore: e.selectionBefore } : {}),
+        ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
+      });
       // redoStack is internally stored newest-on-top (so `pop()` redoes the
       // next-most-recent undo). Reverse on the way out so callers see the
       // entries in chronological order — the user's next redo is the first
@@ -401,13 +469,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       if (n < 0 || n > total) return;
       while (undoStack.length > n) {
         const entry = undoStack.pop()!;
-        applyOps(invertEntry(entry));
+        stepBack(entry);
         redoStack.push(entry);
       }
       while (undoStack.length < n) {
         const entry = redoStack.pop();
         if (!entry) break; // defensive — shouldn't fire given the bounds check above
-        applyOps(entry.forwardOps);
+        stepForward(entry);
         undoStack.push(entry);
       }
       bump();
@@ -432,9 +500,13 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         droppedEntries: dropped,
       };
     },
-    recordEntry(ops: Op[], label: string): void {
+    recordEntry(ops: Op[], label: string, options: RecordEntryOptions = {}): void {
       if (ops.length === 0) return;
-      undoStack.push({ id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), touchedIds: touchedIdsFromOps(ops) });
+      undoStack.push({
+        id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(),
+        touchedIds: touchedIdsFromOps(ops),
+        ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
+      });
       dropRedo();
       enforceLimit();
       bump();
@@ -456,7 +528,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       // `adapter` is the closure-captured adapter passed to createHistory.
       // The returned History object's `this` doesn't carry it, so we pass
       // it through to the factory directly.
-      const j = createJournalInternal(this, adapter, opts, () => { activeJournal = null; });
+      const j = createJournalInternal(this, adapter, opts, () => { activeJournal = null; }, selection);
       activeJournal = j;
       return j;
     },
@@ -536,7 +608,11 @@ function entryToSerial(e: Entry, logger: HistoryLogger): SerializedHistoryEntry 
     }
     baseOps.push(s);
   }
-  return { id: e.id, label: e.label, forwardOps, baseOps };
+  return {
+    id: e.id, label: e.label, forwardOps, baseOps,
+    ...(e.selectionBefore ? { selectionBefore: e.selectionBefore } : {}),
+    ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
+  };
 }
 
 /** Placeholder op used when the registry lacks the requested name. Stable
@@ -587,5 +663,7 @@ function serialToEntry(se: SerializedHistoryEntry, custom: CustomRebuild | undef
     // Re-derive touchedIds from the rebuilt ops rather than trying to
     // round-trip the Set through the serialized form (Sets aren't JSON-safe).
     touchedIds: touchedIdsFromOps(forwardOps),
+    ...(se.selectionBefore ? { selectionBefore: [...se.selectionBefore] } : {}),
+    ...(se.selectionAfter ? { selectionAfter: [...se.selectionAfter] } : {}),
   };
 }

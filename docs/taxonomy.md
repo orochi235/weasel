@@ -343,7 +343,17 @@ Exposes `current: string[]`, `get()`, `set()`, `add()`, `remove()`, `toggle()`,
 `clear()`, `contains()`, and `applyClick()`. `applyClick` applies the configured
 click policy (`'single'` replaces; `'multi'` toggles with extend key). The
 `adapterMethods` sub-object (`{ getSelection, setSelection }`) is designed to be
-spread directly into adapters. Selection participates in the `@experimental`
+spread directly into adapters.
+
+Where the ids live is a separate question from this API. `useSelection({ scene })`
+keeps them on the scene (`scene.getSelection()` / `setSelection()`), which is what
+`<SceneCanvas>` does: one selection shared by every view over that scene, recorded
+on each history entry so undo and redo restore it. Without a `scene` the hook owns
+the ids itself and nothing else sees them — what a `<CanvasView>` opts into via its
+`selection` / `selectionOptions` props. Either way the selection is not document
+content: it is not a node, and `scene.toJSON()` does not carry it.
+
+Selection participates in the `@experimental`
 [`SelectionContext`](#selectioncontext) for non-canvas UI. See
 `packages/core/src/core/selection/useSelection.ts`. The kit-level `ChromeState` (the
 affordance-facing read-only view) is built from the `SelectionApi` via
@@ -559,7 +569,8 @@ them separate.
   descendants (the move action cascades `childrenOf`).
 - **Selection** = the transient, immutable set of currently-active ids (the
   [`SelectionApi`](#selection): `get()` / `set()`). "Operate on these N as a unit"
-  with no persistence and no id — it is *not* a scene entity.
+  with no persistence and no id — it is *not* a scene entity. The scene holds the
+  current one so undo can restore it, but it is never part of the document.
 
 There is no persistent membership-list concept. A consumer that wants named,
 saved selections holds its own `Record<string, string[]>` and calls

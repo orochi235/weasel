@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useSelection } from './useSelection';
 import { asNodeId } from 'core/scene/types';
+import { createScene } from 'core/scene/scene';
 
 const NO_MODS = { shift: false, meta: false, ctrl: false };
 const a = asNodeId('a');
@@ -112,5 +113,80 @@ describe('useSelection', () => {
       // mid-effect: ref should already reflect the new value
       expect(result.current.get()).toEqual([a]);
     });
+  });
+});
+
+describe('useSelection — bound to a scene', () => {
+  function makeScene() {
+    return createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
+  }
+
+  it('reads and writes the scene selection', () => {
+    const scene = makeScene();
+    const { result } = renderHook(() => useSelection({ mode: 'multi', scene }));
+
+    act(() => { result.current.set([a, b]); });
+
+    expect(scene.getSelection()).toEqual([a, b]);
+    expect(result.current.current).toEqual([a, b]);
+    expect(result.current.get()).toEqual([a, b]);
+  });
+
+  it('re-renders when the scene selection changes elsewhere', () => {
+    const scene = makeScene();
+    const { result } = renderHook(() => useSelection({ scene }));
+
+    act(() => { scene.setSelection([c]); });
+
+    expect(result.current.current).toEqual([c]);
+  });
+
+  it('two hooks on one scene share a selection', () => {
+    const scene = makeScene();
+    const first = renderHook(() => useSelection({ mode: 'multi', scene }));
+    const second = renderHook(() => useSelection({ mode: 'multi', scene }));
+
+    act(() => { first.result.current.set([a]); });
+
+    expect(second.result.current.current).toEqual([a]);
+  });
+
+  it('an unbound hook keeps its own selection', () => {
+    const scene = makeScene();
+    const bound = renderHook(() => useSelection({ scene }));
+    const own = renderHook(() => useSelection());
+
+    act(() => { own.result.current.set([a]); });
+
+    expect(own.result.current.current).toEqual([a]);
+    expect(bound.result.current.current).toEqual([]);
+    expect(scene.getSelection()).toEqual([]);
+  });
+
+  it('seeds the scene from `initial` only when the scene has no selection', () => {
+    const scene = makeScene();
+    scene.setSelection([c]);
+    const { result } = renderHook(() => useSelection({ scene, initial: [a] }));
+
+    expect(result.current.current).toEqual([c]);
+  });
+
+  it('honors lock', () => {
+    const scene = makeScene();
+    const { result } = renderHook(() => useSelection({ scene, lock: true }));
+
+    act(() => { result.current.set([a]); });
+
+    expect(scene.getSelection()).toEqual([]);
+  });
+});
+
+describe('useSelection — seeding a scene', () => {
+  it('seeds an empty scene from `initial`', () => {
+    const scene = createScene<{ label: string }, 'default'>({ systemLayers: [{ id: 'default' }] });
+    const { result } = renderHook(() => useSelection({ scene, initial: [a] }));
+
+    expect(scene.getSelection()).toEqual([a]);
+    expect(result.current.current).toEqual([a]);
   });
 });

@@ -8,6 +8,7 @@
  */
 import { useEffect, useMemo } from 'react';
 import {
+  sceneSelectionStore,
   type RenderLayer,
   type DrawCommand,
   type Scene,
@@ -56,7 +57,10 @@ export function useModality(
   // setPose/update/move etc.). This History is what the mode machine calls
   // beginJournal() on; the resulting Journal's applyBatch is what
   // scene.applyBatch delegates to when getActiveJournal() is non-null.
-  const history = useMemo<History>(() => createHistory(scene), [scene]);
+  const history = useMemo<History>(
+    () => createHistory(scene, { selection: sceneSelectionStore(scene) }),
+    [scene],
+  );
 
   const machine = useMemo<ModeMachine>(
     () => createModeMachine({ modes: DEFAULT_MODES, history }),

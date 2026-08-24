@@ -978,11 +978,13 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // When selectionMode === 'multi', forward that into the options so the
   // internal selection hook uses multi-select semantics.
   const derivedSelectionOptions = useMemo<UseSelectionOptions>(() => {
-    const base = selectionOptions ?? {};
+    // Bound to the scene, so the selection an edit was made under rides on
+    // the scene's history entries and undo can put it back.
+    const base = { scene, ...(selectionOptions ?? {}) };
     if (base.mode !== undefined) return base;
     if (selectionMode === 'multi') return { ...base, mode: 'multi' };
     return base;
-  }, [selectionOptions, selectionMode]);
+  }, [scene, selectionOptions, selectionMode]);
   const internalSelection = useSelection(derivedSelectionOptions);
   const baseSelection = selectionProp ?? internalSelection;
 
@@ -1843,8 +1845,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     pickBest: internalPickBest,
     kindOfNode,
     getIsVisible: getIsVisibleForCanvas,
+    selectionApi: selection,
   }), [adapter, internalBoundsOf, tools, internalPickEvery, internalPickBest, kindOfNode,
-       getIsVisibleForCanvas]);
+       getIsVisibleForCanvas, selection]);
 
   const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>

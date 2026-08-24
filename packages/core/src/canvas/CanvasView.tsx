@@ -62,19 +62,21 @@ export interface CanvasViewProps {
   order?: number;
   /** Label for debug overlays. Defaults to the id. */
   label?: string;
-  /** This view's selection. Supply one to share or control it; otherwise the
-   *  view owns a selection of its own, seeded from `selectionOptions`. Either
-   *  way it is what actions dispatched inside this view read and write — the
-   *  surface's selection is untouched. */
+  /** A selection of this view's own, which actions dispatched inside it read
+   *  and write instead of the surface's. Omit both this and
+   *  `selectionOptions` and the view shares the surface's selection — the
+   *  default, so undo restores one selection rather than N. */
   selection?: SelectionApi;
-  /** Options for the selection this view owns. Ignored when `selection` is
-   *  supplied. */
+  /** Opts this view into owning a selection, configured thus. Ignored when
+   *  `selection` is supplied. */
   selectionOptions?: UseSelectionOptions;
 }
 
 /** What a view builds its helpers from outside a surface: nothing but the
  *  default geometry, which answers `null` for every lookup. */
-const NO_INPUTS: SurfaceViewInputs = {
+// A view outside a surface has no inputs to inherit — including a selection,
+// so it falls back to owning one.
+const NO_INPUTS: Omit<SurfaceViewInputs, 'selectionApi'> = {
   adapter: undefined,
   geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
   boundsOf: undefined,
@@ -107,8 +109,10 @@ export function CanvasView(props: CanvasViewProps): null {
   const depRegistryRef = useRef(depRegistry);
   depRegistryRef.current = depRegistry;
 
+  // Hooks run unconditionally; the owned selection goes unused unless this
+  // view asked for one.
   const ownSelection = useSelection(selectionOptions);
-  const selection = selectionProp ?? ownSelection;
+  const viewSelection = selectionProp ?? (selectionOptions ? ownSelection : undefined);
 
   const [internalView, setInternalView] = useState<View>(defaultView ?? IDENTITY_VIEW);
   const effectiveView = viewProp ?? internalView;
@@ -116,8 +120,17 @@ export function CanvasView(props: CanvasViewProps): null {
   // Everything the registration reads is behind a ref: the registration object
   // is registered once and must not churn, but what it answers with has to be
   // this render's.
-  const live = useRef({ view: effectiveView, bounds, layers, onViewChange, viewBounds, viewProp, selection });
-  live.current = { view: effectiveView, bounds, layers, onViewChange, viewBounds, viewProp, selection };
+  const live = useRef({
+    view: effectiveView, bounds, layers, onViewChange, viewBounds, viewProp,
+    viewSelection,
+    // The selection this view acts on: its own when it has one, the
+    // surface's otherwise. Filled in below, once the surface's is in hand.
+    selection: viewSelection ?? ownSelection,
+  });
+  live.current = {
+    ...live.current,
+    view: effectiveView, bounds, layers, onViewChange, viewBounds, viewProp, viewSelection,
+  };
 
   const rectAt = useCallback((outer: View, dims: Dims): ViewRect => {
     const b = live.current.bounds;
@@ -162,6 +175,8 @@ export function CanvasView(props: CanvasViewProps): null {
     gestureSource: createGestureSource(() => dispatcherRef.current),
     ...createDispatcherPreviewSources(() => dispatcherRef.current),
   }), []);
+  const selection = viewSelection ?? inputs?.selectionApi ?? ownSelection;
+  live.current.selection = selection;
   const { helpers } = useViewHelpers<unknown>({
     ...(inputs ?? NO_INPUTS),
     ...own,
@@ -257,7 +272,11 @@ export function CanvasView(props: CanvasViewProps): null {
       affordanceAt,
       classifyTarget,
       clientToWorld: clientToWorldHere,
-      deps: () => ({ view: viewApi, selection: live.current.selection }),
+      // Only a view with its own selection overlays the dep; otherwise the
+      // surface's answer stands, wrappers (`selectionMode`) included.
+      deps: () => (live.current.viewSelection
+        ? { view: viewApi, selection: live.current.viewSelection }
+        : { view: viewApi }),
     },
   }), [id, order, label, background, registry, rectAt, viewApi,
        affordanceAt, classifyTarget, clientToWorldHere]);

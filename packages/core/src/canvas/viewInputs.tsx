@@ -7,6 +7,7 @@
  */
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOpts } from './useViewHelpers';
+import type { SelectionApi } from 'core/selection/useSelection';
 
 /**
  * @internal Provided by the surface, consumed by `<CanvasView>`.
@@ -26,6 +27,9 @@ export interface SurfaceViewInputs
   /** Chrome-caps predicate, so a view's hit-test gates on the same chrome ids
    *  the renderer paints. */
   getIsVisible?: () => (id: string) => boolean;
+  /** The surface's selection, which a view shares unless it was given one of
+   *  its own. */
+  selectionApi: SelectionApi;
 }
 
 const ViewInputsContext = createContext<SurfaceViewInputs | null>(null);

@@ -22,7 +22,6 @@ Priority tags:
 - **`@weasel-js/audio`** — spec'd, phase 1 next → [Audio](#audio)
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
-- **Undoing a boolean op leaves the wrong selection** — history carries no selection snapshot → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
@@ -736,10 +735,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
-
-- **(P1) Undoing a boolean op leaves the wrong selection.** In WeaselDraw, running a boolean op on a multi-selection and then undoing it restores the operand nodes but not the selection that produced them. History tracks scene ops only — selection is deliberately outside it, and nothing restores what was selected when an entry was recorded.
-
-  The fix is probably to snapshot the selection *onto* history entries without letting selection changes create them: an entry records the selection before and after its ops, undo/redo restores the matching one, and a bare selection change stays invisible to history. Selection is transient state (`docs/taxonomy.md`), so it must not become an undoable step of its own — a user pressing Cmd-Z after clicking around expects the last *edit* back, not the last click.
 
 - **(P1) Audit the engine for cascades that were duplicated and then drifted.** Selection chrome resolved a node's bounds through two independent cascades — the overlay layer's `getPose` chain and `useViewHelpers`' `boundsWithPreview` — that were supposed to give the same answer and did not: they consulted the same two preview sources in opposite priority, and only one of them carried rotation. Nothing caught it, because with one camera and one selection the two rarely disagreed on a value anyone could see. Virtual viewports collapsed that pair (the layer now reads bounds off the draw envelope, one cascade, the one the chrome state was built with).
 

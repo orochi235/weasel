@@ -1,5 +1,5 @@
 import type { Op } from './op';
-import { createHistory, type History, type HistoryEntry } from './history';
+import { createHistory, type History, type HistoryEntry, type HistorySelection } from './history';
 
 const RESUMERS = new WeakMap<Journal, () => void>();
 
@@ -62,9 +62,14 @@ export function createJournalInternal(
   adapter: unknown,
   opts: BeginJournalOptions,
   onClose?: () => void,
+  selection?: HistorySelection,
 ): Journal {
-  const inner = createHistory(adapter);
+  const inner = createHistory(adapter, selection ? { selection } : {});
   const forkedAtEntryId = parent.currentEntryId();
+  // The whole session collapses to one parent entry, so the selection that
+  // entry restores is the one the session opened under — not whatever the
+  // last keystroke left.
+  const selectionBefore = selection ? [...selection.get()] : undefined;
   type State = 'active' | 'suspended' | 'closed';
   let state: State = 'active';
   const targetId = opts.targetId;
@@ -98,7 +103,7 @@ export function createJournalInternal(
       if (state !== 'active') throw new Error('Journal is not active');
       const netOps = inner.allForwardOps();
       if (netOps.length > 0) {
-        parent.recordEntry(netOps, label);
+        parent.recordEntry(netOps, label, selectionBefore ? { selectionBefore } : undefined);
       }
       state = 'closed';
       RESUMERS.delete(journal);
