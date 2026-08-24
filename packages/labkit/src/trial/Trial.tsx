@@ -9,7 +9,6 @@ import type {
   LayerDescriptor,
   PaletteItem,
   RenderContext,
-  ViewTransform,
 } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
