@@ -1,10 +1,8 @@
 import type { CSSProperties, ReactElement } from 'react';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
-import { useActionsRegistry } from '@weasel-js/core';
 import { useHud } from '@weasel-js/hud/react';
 import type { LoupeMode } from '@weasel-js/hud';
 import { Button, NumberField, Radio, RadioGroup, Switch } from '@weasel-js/ui';
-import { useColorContext } from './tools/colorContext';
 import { useLoupe } from './useLoupe';
 
 /** Dynamic color reaches the stylesheet as a custom property, matching
@@ -21,25 +19,12 @@ export interface LoupeControlsProps {
 
 /**
  * Loupe toggle plus its mode / magnification / color readout, for the
- * tool-options strip. A click inside the lens picks the color there into the
- * focused swatch. Mounted only once the canvas ref is populated: both
+ * tool-options strip. Mounted only once the canvas ref is populated: both
  * `useHud` and `createLoupe` read it in a mount effect and neither retries.
  */
 export function LoupeControls({ canvasRef, source }: LoupeControlsProps): ReactElement {
   const hud = useHud(canvasRef);
-  const colors = useColorContext();
-  const actions = useActionsRegistry();
-
-  // A pick is the swatch edit arriving from a different control: it sets the
-  // focused paint and, through the same action the swatch dispatches, paints
-  // the selection with it.
-  const onPick = (hex: string): void => {
-    colors.setFocusedColor(hex);
-    const ctrl = actions?.begin(colors.focused === 'fill' ? 'setFill' : 'setStroke', { color: hex });
-    ctrl?.end('commit');
-  };
-
-  const loupe = useLoupe(canvasRef, hud, source, { onPick });
+  const loupe = useLoupe(canvasRef, hud, source);
 
   return (
     <div className="wd-loupe-controls">

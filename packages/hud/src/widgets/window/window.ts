@@ -8,10 +8,6 @@ import {
   DEFAULT_WINDOW_METRICS, type WindowMetrics, type WindowZone,
 } from './zones';
 
-/** How far a press may travel and still count as a click on the interior.
- *  Above this the press is a drag — which, on a bare window, moves it. */
-const CLICK_SLOP = 3;
-
 /** Options for a window widget. */
 export interface WindowOptions {
   id: string;
@@ -31,10 +27,6 @@ export interface WindowOptions {
   onMove?: (b: WidgetBounds) => void;
   onResize?: (b: WidgetBounds) => void;
   onClose?: () => void;
-  /** A press and release inside the interior that never became a drag,
-   *  reported at the release point in screen-space CSS px. Fires whether or
-   *  not the interior doubles as the move handle. */
-  onContentClick?: (p: { x: number; y: number }) => void;
   /** Injected by Hud factories to trigger redraw on mutation. */
   onChange?: () => void;
   /** Injected by Hud factories. Called from dispose(). */
@@ -74,8 +66,6 @@ export function createWindow(opts: WindowOptions): WindowWidget {
   let dragZone: WindowZone | null = null;
   let dragStart: WidgetBounds = bounds;
   let dragOrigin = { x: 0, y: 0 };
-  let pressZone: WindowZone | null = null;
-  let pressMoved = false;
 
   const assertNotDisposed = () => {
     if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.');
@@ -105,7 +95,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
 
     // Ends any drag in flight: `dragStart` would otherwise still hold the
     // pre-call bounds, so the next move would rebase from stale origin.
-    setBounds(b) { assertNotDisposed(); bounds = clamp(b); dragZone = null; pressZone = null; opts.onChange?.(); },
+    setBounds(b) { assertNotDisposed(); bounds = clamp(b); dragZone = null; opts.onChange?.(); },
     setHidden(h) { assertNotDisposed(); hidden = h; opts.onChange?.(); },
     setTitle(t) { assertNotDisposed(); title = t; opts.onChange?.(); },
 
@@ -176,18 +166,13 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     onPointer(evt: HudPointerEvent): void {
       switch (evt.type) {
         case 'down': {
-          pressZone = zoneAt(bounds, m, evt.x, evt.y);
-          pressMoved = false;
-          dragZone = asDrag(pressZone);
+          dragZone = asDrag(zoneAt(bounds, m, evt.x, evt.y));
           dragStart = bounds;
           dragOrigin = { x: evt.x, y: evt.y };
           break;
         }
         case 'move': {
           if (!dragZone) break;
-          if (Math.hypot(evt.x - dragOrigin.x, evt.y - dragOrigin.y) > CLICK_SLOP) {
-            pressMoved = true;
-          }
           const next = applyWindowDrag(
             dragStart, dragZone, evt.x - dragOrigin.x, evt.y - dragOrigin.y, minW, minH,
           );
@@ -201,11 +186,8 @@ export function createWindow(opts: WindowOptions): WindowWidget {
         case 'up': {
           if (dragZone === 'close' && zoneAt(bounds, m, evt.x, evt.y) === 'close') {
             opts.onClose?.();
-          } else if (pressZone === 'content' && !pressMoved) {
-            opts.onContentClick?.({ x: evt.x, y: evt.y });
           }
           dragZone = null;
-          pressZone = null;
           break;
         }
         case 'cancel': {
@@ -214,7 +196,6 @@ export function createWindow(opts: WindowOptions): WindowWidget {
             dragZone = null;
             opts.onChange?.();
           }
-          pressZone = null;
           break;
         }
         // The cursor is resolved per point via `cursorAt`, so hover carries no

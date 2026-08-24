@@ -37,15 +37,11 @@ the drawn glyph. That is a forgiving hit target, not a mismatch.
 
 ## Interior presses
 
-The widget claims every press, including in the interior. An unclaimed press
-would reach the scene underneath and act on whatever sits there — which, for a
-magnifier, is not what the user is looking at. Interacting *through* a window
-needs hit-test re-projection that `createViewportLayer` does not yet have.
-
-A press and release in the interior that never travelled more than a few pixels
-is reported as `onContentClick`, so the interior can be a surface as well as
-the move handle a bare window makes of it — the loupe picks the color under the
-click that way. Anything past that threshold is the drag, and fires nothing.
+The widget claims every press, including in the interior, and does nothing with
+the ones it doesn't use. An unclaimed press would reach the scene underneath and
+act on whatever sits there — which, for a magnifier, is not what the user is
+looking at. Interacting *through* a window needs hit-test re-projection that
+`createViewportLayer` does not yet have.
 
 ## Related
 

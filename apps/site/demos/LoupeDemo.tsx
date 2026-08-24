@@ -83,7 +83,6 @@ export function LoupeDemo() {
   const [mode, setMode] = useState<LoupeMode>('vector');
   const [factor, setFactor] = useState(8);
   const [color, setColor] = useState<string | null>(null);
-  const [picked, setPicked] = useState<string | null>(null);
 
   // Empty — the content is `detailLayer`, not scene nodes.
   const scene = useScene<Empty>({ items: [] });
@@ -103,7 +102,6 @@ export function LoupeDemo() {
       titlebar: false,
       background: PAPER,
       onColorChange: setColor,
-      onPick: setPicked,
     });
     loupeRef.current = loupe;
     api.requestRedraw();
@@ -133,7 +131,6 @@ export function LoupeDemo() {
           {factor}×
         </label>
         <span className="ckd-hint">under the aim point: {color ?? '—'}</span>
-        <span className="ckd-hint">clicked: {picked ?? '—'}</span>
       </div>
       <SceneCanvas
         ref={ref}
