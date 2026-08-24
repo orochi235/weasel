@@ -1,12 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, WeaselProvider, deriveParallaxView, resolveSkeleton, useAnimator, useScene } from '@weasel-js/core';
+import {
+  SceneCanvas,
+  WeaselProvider,
+  deriveParallaxView,
+  rectPath,
+  resolveSkeleton,
+  textCommand,
+  useAnimator,
+  useScene,
+} from '@weasel-js/core';
 import type { Dims, DrawCommand, RenderLayer, TimelineHandle, View } from '@weasel-js/core';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
-import { CAM_SCALE, cameraView, createCamera, followCamera, type Camera } from './platformer/camera';
+import { CAM_SCALE, cameraView, createCamera, followCamera, worldToScreen, type Camera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
-import { drawBackdrop, drawCoins, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
-import { createBodyState, spikeOverlap, stepBody, STEP, MOVE_SPEED, type BodyState, type Input } from './platformer/physics';
+import { COLORS, drawBackdrop, drawCoins, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
+import {
+  createBodyState,
+  spikeOverlap,
+  stepBody,
+  BODY_H,
+  BODY_W,
+  STEP,
+  MOVE_SPEED,
+  type BodyState,
+  type Input,
+} from './platformer/physics';
 import { createAnimState, nextAnimState, resolvePose, type AnimState } from './platformer/animState';
 import {
   atGoal,
@@ -14,6 +33,8 @@ import {
   createEnemies,
   resolveContacts,
   stepEnemy,
+  ENEMY_H,
+  ENEMY_W,
   INVULN,
   type Coin,
   type Enemy,
@@ -30,6 +51,9 @@ const DIMS: Dims = { width: W, height: H };
 /** The canvas view never moves — every layer projects through the camera ref
  *  itself, which keeps the whole game loop out of React state. */
 const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+/** A footfall pair spanning a time-scale change is still accelerating, not
+ *  steady — the gap would measure speed change, not scheduling jitter. */
+const JITTER_SCALE_TOLERANCE = 0.02;
 
 interface GameRefs {
   camera: Camera;
@@ -92,12 +116,37 @@ function SideScrollerDemoInner() {
   const audio = useRef<{ engine: AudioEngine; sounds: Record<SoundName, SoundHandle>; bed: VoiceHandle | null } | null>(null);
   const [audioState, setAudioState] = useState<'off' | 'suspended' | 'running'>('off');
 
+  // The debug layer's `draw` runs outside React, so the checkbox mirrors its
+  // state into a ref rather than closing over `showBoxes` directly.
+  const [showBoxes, setShowBoxes] = useState(false);
+  const showBoxesRef = useRef(false);
+  useEffect(() => {
+    showBoxesRef.current = showBoxes;
+  }, [showBoxes]);
+
   // The run cycle's own timeline — its playhead is what fires footsteps, not
   // the fixed-step loop. `runScale` is what the loop writes and the footstep
   // handler reads back to know the interval a given tick implies.
   const runCycle = useRef<TimelineHandle | null>(null);
   const runScale = useRef(1);
-  const stepStats = useRef({ count: 0, lastAt: 0, spread: 0 });
+  const stepStats = useRef({ count: 0, lastAt: 0, lastScale: 1, spread: 0 });
+
+  // Readouts refresh at 5 Hz, not per frame — polling here keeps the panel
+  // itself from becoming part of the load it's measuring.
+  const [stats, setStats] = useState({ frame: 0, voices: 0, steps: 0, spread: 0 });
+  const frameMs = useRef(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setStats({
+        frame: frameMs.current,
+        voices: audio.current?.engine.activeVoices() ?? 0,
+        steps: stepStats.current.count,
+        spread: stepStats.current.spread,
+      });
+    }, 200);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Built on the unlock gesture, not at mount: jsdom has no AudioContext, and a
   // context created before a gesture starts suspended anyway.
@@ -130,12 +179,17 @@ function SideScrollerDemoInner() {
           const a = audio.current;
           const now = performance.now();
           const s = stepStats.current;
-          if (s.lastAt) {
+          const scale = runScale.current;
+          // While the player is still accelerating, the scale at this footfall
+          // differs from the one recorded at the last — skip those pairs so the
+          // spread reflects steady-state scheduling, not a changing run speed.
+          if (s.lastAt && Math.abs(scale - s.lastScale) <= JITTER_SCALE_TOLERANCE) {
             const gap = now - s.lastAt;
-            const expected = (CLIPS.run.duration / 2) / Math.max(runScale.current, 0.01);
+            const expected = (CLIPS.run.duration / 2) / Math.max(scale, 0.01);
             s.spread = Math.max(s.spread, Math.abs(gap - expected));
           }
           s.lastAt = now;
+          s.lastScale = scale;
           s.count++;
           if (!a || a.engine.state() !== 'running') return;
           // `fire()` gave us no crossing time, so "now" is the best available —
@@ -229,7 +283,55 @@ function SideScrollerDemoInner() {
       },
     };
 
-    return { bands, tiles, entities, player };
+    const hud: RenderLayer<unknown> = {
+      id: 'hud',
+      label: 'HUD',
+      space: 'screen',
+      draw: (): DrawCommand[] => {
+        const g = game.current;
+        const style = { fontFamily: 'sans-serif', fontSize: 14, fill: { fill: 'solid' as const, color: COLORS.hud } };
+        const out: DrawCommand[] = [
+          textCommand(12, 22, `♥ ${Math.max(g.lives, 0)}`, style),
+          textCommand(72, 22, `◆ ${g.score} / ${g.coins.length}`, style),
+          textCommand(190, 22, `${g.elapsed.toFixed(1)}s`, style),
+        ];
+        if (g.outcome !== 'playing') {
+          out.push(
+            textCommand(W / 2 - 60, H / 2, g.outcome === 'won' ? 'you made it' : 'out of lives', {
+              ...style,
+              fontSize: 26,
+            }),
+          );
+        }
+        return out;
+      },
+    };
+
+    const debug: RenderLayer<unknown> = {
+      id: 'debug',
+      label: 'Collision boxes',
+      space: 'screen',
+      defaultVisible: false,
+      draw: (): DrawCommand[] => {
+        if (!showBoxesRef.current) return [];
+        const g = game.current;
+        const v = view();
+        const box = (x: number, y: number, w: number, h: number, color: string): DrawCommand => {
+          const p = worldToScreen(v, x - w / 2, y - h / 2);
+          return {
+            kind: 'path',
+            path: rectPath(p.x, p.y, w * v.scale.x, h * v.scale.y),
+            stroke: { width: 1, paint: { fill: 'solid', color } },
+          };
+        };
+        return [
+          box(g.player.body.x, g.player.body.y, BODY_W, BODY_H, COLORS.debugPlayer),
+          ...g.enemies.filter((e) => e.alive).map((e) => box(e.x, e.y, ENEMY_W, ENEMY_H, COLORS.debugEnemy)),
+        ];
+      },
+    };
+
+    return { bands, tiles, entities, player, debug, hud };
   }, []);
 
   // A camera with nothing to follow still has to run, or the first frame after
@@ -244,6 +346,7 @@ function SideScrollerDemoInner() {
       // accumulator from running hundreds of catch-up steps in one frame.
       const frame = Math.min((now - last) / 1000, 0.1);
       last = now;
+      frameMs.current = frame * 1000;
 
       // Framing is not simulation: the camera and listener update every frame,
       // including the first one and while paused, so the view is never left
@@ -349,6 +452,28 @@ function SideScrollerDemoInner() {
     });
   }, [animator, running, input]);
 
+  /** Drop forty enemies around the player and fire a one-shot for each, so voice
+   *  stealing and the per-frame cost of a crowd both become visible. */
+  const swarm = () => {
+    const g = game.current;
+    const extra = Array.from({ length: 40 }, (_, i) => ({
+      x: g.player.body.x + (i % 20) * 18 - 180,
+      y: g.player.body.y - 40,
+    }));
+    g.enemies = [...g.enemies, ...createEnemies(extra)];
+    const a = audio.current;
+    if (a && a.engine.state() === 'running') {
+      extra.forEach((p, i) =>
+        a.engine.play(a.sounds.stomp, {
+          bus: 'sfx',
+          gain: 0.2,
+          position: p,
+          when: a.engine.now() + i * 15,
+        }),
+      );
+    }
+  };
+
   return (
     <div className="ckd-demo">
       <div className="ckd-toolbar">
@@ -376,10 +501,27 @@ function SideScrollerDemoInner() {
           tiles: { layer: layers.tiles, after: 'backdropNear' },
           entities: { layer: layers.entities, after: 'tiles' },
           player: { layer: layers.player, after: 'entities' },
+          debug: { layer: layers.debug, after: 'player' },
+          hud: { layer: layers.hud, after: 'debug' },
           scene: { drawOne: () => [] },
           selectionOverlay: null,
         }}
       />
+      <div className="ckd-toolbar">
+        <span className="ckd-readout">frame {stats.frame.toFixed(1)} ms</span>
+        <span className="ckd-readout">voices {stats.voices}</span>
+        <span className="ckd-readout">footsteps {stats.steps}</span>
+        <span className="ckd-readout">steady-state jitter {stats.spread.toFixed(1)} ms</span>
+        <label className="ckd-field">
+          <input
+            type="checkbox"
+            checked={showBoxes}
+            onChange={(e) => setShowBoxes(e.target.checked)}
+          />
+          collision boxes
+        </label>
+        <button className="ckd-btn" onClick={swarm}>swarm +40</button>
+      </div>
       <div className="ckd-hint">
         A platformer built as a load test for the animation timeline and the audio
         engine. Everything is drawn by custom render layers; the scene graph is off.

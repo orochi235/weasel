@@ -22,6 +22,9 @@ const COLORS = {
   limb: '#e0d3c2',
   torso: '#5fa8d3',
   head: '#e8c9a8',
+  hud: '#f0e6d8',
+  debugPlayer: '#7ee787',
+  debugEnemy: '#ff7b72',
 } as const;
 
 const solid = (color: string) => ({ fill: 'solid' as const, color });

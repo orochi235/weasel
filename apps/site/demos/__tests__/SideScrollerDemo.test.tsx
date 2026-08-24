@@ -33,4 +33,12 @@ describe('SideScrollerDemo', () => {
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
   });
+
+  it('shows the load-test readouts and the swarm control', () => {
+    render(<SideScrollerDemo />);
+    expect(screen.getByText(/frame/i)).toBeTruthy();
+    expect(screen.getByText(/voices/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /swarm/i })).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: /collision boxes/i })).toBeTruthy();
+  });
 });
