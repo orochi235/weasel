@@ -11,6 +11,7 @@ import { createScene } from 'core/scene/scene';
 import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -216,5 +217,40 @@ describe('SceneCanvas views prop', () => {
     );
 
     expect(registry.list().map((r) => r.id)).toEqual(['under', 'over', 'child']);
+  });
+});
+
+describe('<CanvasView> selection', () => {
+  /** The registration a view contributed, driven without a real surface. */
+  function registrationFor(node: React.ReactNode) {
+    let registry!: ViewRegistry;
+    render(
+      <ViewRegistryProvider>
+        <Harness layers={[]} onReady={(r) => { registry = r; }} />
+        {node}
+      </ViewRegistryProvider>,
+    );
+    return registry.list()[0]!;
+  }
+
+  it('overlays a selection of its own onto the dep registry', () => {
+    const reg = registrationFor(<CanvasView id="panel" bounds={PANEL} />);
+    const own = reg.target.deps!().selection!;
+
+    expect(own.get()).toEqual([]);
+    act(() => { own.set(['a']); });
+    expect(reg.target.deps!().selection!.get()).toEqual(['a']);
+  });
+
+  it('overlays a supplied selection instead of owning one', () => {
+    let api!: SelectionApi;
+    function Supplied() {
+      api = useSelection({ initial: ['seed'] });
+      return <CanvasView id="panel" bounds={PANEL} selection={api} />;
+    }
+    const reg = registrationFor(<Supplied />);
+
+    expect(reg.target.deps!().selection).toBe(api);
+    expect(reg.target.deps!().selection!.get()).toEqual(['seed']);
   });
 });

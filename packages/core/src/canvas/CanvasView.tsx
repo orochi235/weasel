@@ -14,6 +14,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { createViewportLayer } from 'features/viewports/viewportLayer';
 import { createDispatcher } from 'interactions/dispatcher/dispatcher';
 import type { ViewApi } from 'interactions/actions/depSchema';
+import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import {
   useOptionalViewRegistry,
   IDENTITY_VIEW,
@@ -51,6 +52,14 @@ export interface CanvasViewProps {
   order?: number;
   /** Label for debug overlays. Defaults to the id. */
   label?: string;
+  /** This view's selection. Supply one to share or control it; otherwise the
+   *  view owns a selection of its own, seeded from `selectionOptions`. Either
+   *  way it is what actions dispatched inside this view read and write — the
+   *  surface's selection is untouched. */
+  selection?: SelectionApi;
+  /** Options for the selection this view owns. Ignored when `selection` is
+   *  supplied. */
+  selectionOptions?: UseSelectionOptions;
 }
 
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
@@ -69,9 +78,13 @@ export function CanvasView(props: CanvasViewProps): null {
   const {
     id, bounds, view: viewProp, defaultView, onViewChange, viewBounds,
     layers = ALL_LAYERS, background, order = Infinity, label,
+    selection: selectionProp, selectionOptions,
   } = props;
 
   const registry = useOptionalViewRegistry();
+
+  const ownSelection = useSelection(selectionOptions);
+  const selection = selectionProp ?? ownSelection;
 
   const [internalView, setInternalView] = useState<View>(defaultView ?? IDENTITY_VIEW);
   const effectiveView = viewProp ?? internalView;
@@ -79,8 +92,8 @@ export function CanvasView(props: CanvasViewProps): null {
   // Everything the registration reads is behind a ref: the registration object
   // is registered once and must not churn, but what it answers with has to be
   // this render's.
-  const live = useRef({ view: effectiveView, bounds, layers, onViewChange, viewBounds, viewProp });
-  live.current = { view: effectiveView, bounds, layers, onViewChange, viewBounds, viewProp };
+  const live = useRef({ view: effectiveView, bounds, layers, onViewChange, viewBounds, viewProp, selection });
+  live.current = { view: effectiveView, bounds, layers, onViewChange, viewBounds, viewProp, selection };
 
   const rectAt = useCallback((outer: View, dims: Dims): ViewRect => {
     const b = live.current.bounds;
@@ -142,7 +155,7 @@ export function CanvasView(props: CanvasViewProps): null {
         );
         return { x, y };
       },
-      deps: () => ({ view: viewApi }),
+      deps: () => ({ view: viewApi, selection: live.current.selection }),
     },
   }), [id, order, label, background, registry, rectAt, rectNow, viewApi]);
 
