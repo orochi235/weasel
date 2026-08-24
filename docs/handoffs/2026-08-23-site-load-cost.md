@@ -13,24 +13,67 @@ demo work still in flight.
 
 ## The finding
 
-`apps/site/registry.ts` holds **105 eager static imports** and no lazy loading
-anywhere in the site — no `React.lazy`, no dynamic `import()`.
+Measured 2026-08-23 by ablation builds — each number below is a real build, not
+an estimate.
 
-Of those, **55 are `?raw` imports**, which inline each demo file's *entire source
-text* into the bundle as a string. They exist so a demo can display its own
-source in a panel, which is a feature worth keeping.
+**The dominant cost is one line: `apps/site/registry.ts:696`.** It runs
 
-The consequence is that opening any one demo downloads, parses and evaluates
-every demo in the site plus the full source text of all of them. First paint
-waits on roughly fifty demos' worth of code to see one.
+```ts
+import.meta.glob([... '../../packages/**/src/**/*.{tsx,ts,css}',
+                  '../draw/src/**/*.{tsx,ts,css}'], { query: '?raw', eager: true })
+```
 
-Exact byte and request measurements are being produced separately and will be
-appended here. The structure above is confirmed by reading the file and does not
-depend on those numbers.
+which inlines the verbatim source of **all 1,656 files under `packages/*/src/`**
+— including **642 test files, 3.71 MB** — plus **123 files of `apps/draw/src`,
+a different application** — into the entry chunk as string literals. That is
+**8.98 MB of the 10.95 MB bundle (82%)**, and 1,779 of the 2,762 module requests
+the dev server serves. The bundle is not mostly code; it is mostly a copy of the
+repo. Lines 10,000–239,999 of the minified output are unminified TypeScript,
+JSDoc and `describe(...)` blocks intact.
+
+It exists to auto-derive "extras" source tabs from a demo's relative imports.
+
+The eager component and `?raw` demo imports are real but secondary:
+
+| removed | entry raw | Δ |
+|---|---|---|
+| baseline | 10,964,114 | — |
+| the `packages/**` + `apps/draw/**` glob | 1,981,401 | **−8,982,713** |
+| the `./demos/**` glob | 1,862,873 | −118,528 |
+| 54 explicit `?raw` demo imports | 1,539,787 | −323,086 |
+| `virtual:changelogs` | ~1,335,000 | −204,440 |
+| + `React.lazy` on 51 demos | **338,244** | −993,000 |
+
+`React.lazy` **alone**, glob left in place, buys only −9.1% raw / −11.3% gzip,
+because top-level registry code consumes the source strings and keeps them eager.
+**Do the glob first or the rest is capped.**
+
+Load timing, gzip-served, 40 ms RTT:
+
+| | baseline | fully fixed |
+|---|---|---|
+| transfer / requests | 3,122,975 B / 6 | 592,951 B / 13 |
+| FCP localhost | 1,034 ms | 223 ms |
+| FCP 5 Mbps | **5,333 ms** | **1,278 ms** |
+| DCL localhost | 840 ms | 67 ms |
+
+Dev server: 2,762 responses / 25.74 MB baseline → 554 / 9.10 MB fixed. 68% of
+baseline requests exist only to ship source text to a syntax-highlighted panel.
+
+**Tree-shaking is exonerated.** A single-symbol build
+(`import { createInsertOp }`) is 1.04 kB; barrel and deep-path imports of
+`SceneCanvas` agree within 0.04%. `SceneCanvas` genuinely costs ~596 kB because
+it pulls the renderer, dispatcher and tools. Do not spend time there.
 
 ## The fix
 
-Split the registry in two along the line of what the navigation actually needs.
+**First, scope the glob at `registry.ts:696`.** Drop `'../draw/src/**'` and
+`'../../packages/**'` outright and fetch extras source over HTTP when the panel
+opens; at minimum exclude `**/*.{test,spec}.*` and make it non-eager, since
+`eager: false` yields per-file `import()` thunks and moves the whole payload out
+of the entry chunk. This alone is ~2.17 MB gzipped and ~3.2 s of warm dev FCP.
+
+Then split the registry along the line of what the navigation actually needs.
 
 The nav needs only **metadata** — `id`, `title`, `category`, `description`,
 `hint`, `path`, `links`. That is small, and it must stay eager: `CATEGORIES` and
@@ -48,6 +91,19 @@ Both should load on demand for the selected demo only:
   never open it.
 
 Keep both keyed off the same demo id so a single entry declares its own loaders.
+
+## Also worth taking, measured
+
+- **`prism-react-renderer`** (`apps/site/WeaselDemos.tsx:2`) — 96 KB raw / ~34 KB
+  gz in the entry chunk for a source panel not visible at first paint. Lazy it.
+- **`virtual:changelogs`** (`scripts/vite-changelogs.ts`, used by `Releases.tsx`)
+  — 204 KB raw / 68 KB gz, eager, for a view nobody lands on.
+- **The font blocks paint.** `apps/site/main.tsx` does a module-level
+  `await registerFont(...)`; `inter.png` starts at t=839 ms when DCL is 840 ms
+  (t=4,872 ms at 5 Mbps). Preload in `index.html` or start the fetch before the
+  await. Worth 110–300 ms.
+- **The logo is 181,607 B for a 449×496 PNG**, fetched on first paint. Recompress
+  for ~150 KB.
 
 ## Traps
 
