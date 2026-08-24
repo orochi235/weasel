@@ -7,7 +7,7 @@ export const STEP = 1 / 120;
 export const GRAVITY = 1800;
 export const MAX_FALL = 900;
 export const MOVE_SPEED = 170;
-export const JUMP_SPEED = 470;
+export const JUMP_SPEED = 580;
 /** Releasing jump mid-rise clips upward velocity to this, giving variable height. */
 export const JUMP_CUT = 140;
 /** Seconds after walking off a ledge during which a jump still works. */
