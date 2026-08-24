@@ -871,6 +871,11 @@ Both apps shipped their own source as string literals so a panel could display
 it. Read bundle size against module count: the site produced 10.9 MB from 4,047
 modules, and that ratio — not dependency bloat — is what points at data-as-code.
 
+Measuring before/after in one tree means `dist-demo/` holds whichever build ran
+last, which is not always the one you think. Check the entry chunk's hash
+against the build you mean to inspect before believing a grep over it — the
+failure is silent and reads as a clean result.
+
 - [x] **Demo site — fixed 2026-08-23.** `apps/site/registry.ts` held 105 eager
   static imports (55 of them `?raw`) and, at the bottom, an eager
   `import.meta.glob` over `apps/site/demos`, `apps/draw/src` and
