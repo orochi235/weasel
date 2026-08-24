@@ -1,7 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { SceneCanvas, asNodeId, useScene, useSelection } from '@weasel-js/core';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  ANCHOR_HIT_BASE_PX,
+  SceneCanvas,
+  asNodeId,
+  composeAffordanceLayer,
+  useScene,
+  useSelection,
+} from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import type { CurveRepresentation, SharedAnchor } from '@weasel-js/core';
+import type {
+  Action,
+  ActionsProp,
+  Affordance,
+  AffordanceRegion,
+  CurveRepresentation,
+  InvocationCtx,
+  OngoingHandle,
+  RenderLayer,
+  SceneCanvasApi,
+  SharedAnchor,
+} from '@weasel-js/core';
 import {
   createAnchorsLayer,
   createCurvatureCombLayer,
@@ -24,7 +42,14 @@ export interface RepresentationPanelProps {
   height: number;
 }
 
-const HIT_SLOP = 10;
+interface AnchorScratch {
+  anchorIndex: number;
+}
+
+function anchorIndexOf(hit: { payload?: unknown } | undefined): number | null {
+  const scratch = hit?.payload as AnchorScratch | undefined;
+  return typeof scratch?.anchorIndex === 'number' ? scratch.anchorIndex : null;
+}
 
 export function RepresentationPanel({
   rep,
@@ -55,10 +80,11 @@ export function RepresentationPanel({
 
   const selection = useSelection({ initial: [nodeId], lock: true });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const anchorsRef = useMemo(() => ({ current: anchors }), []);
+  const anchorsRef = useRef(anchors);
   anchorsRef.current = anchors;
-  const getAnchors = useMemo(() => () => anchorsRef.current, [anchorsRef]);
+  const onAnchorsChangeRef = useRef(onAnchorsChange);
+  onAnchorsChangeRef.current = onAnchorsChange;
+  const getAnchors = useCallback(() => anchorsRef.current, []);
 
   const anchorsLayer = useMemo(() => createAnchorsLayer(rep, getAnchors), [rep, getAnchors]);
   const combLayer = useMemo(() => createCurvatureCombLayer(rep, getAnchors), [rep, getAnchors]);
@@ -78,67 +104,86 @@ export function RepresentationPanel({
     ...(overlays.inflections ? { inflectionsOverlay: { layer: inflectionsLayer, after: 'scene' as const } } : {}),
   };
 
-  // Anchor drag: identity view, so world coords == element-relative pixels.
-  const [dragging, setDragging] = useState(false);
-  const dragRef = useRef<{ idx: number; sx: number; sy: number; ax: number; ay: number } | null>(null);
+  // The shared anchors are not the derived path's anchors — NURBS flattens to
+  // a polyline, so the kit's path-edit chrome would grab the wrong points.
+  // Declaring them as affordance regions instead keeps the hit-test, the
+  // exclusive claim and the drag pump on the kit's side of the line.
+  const layerId = `curve-lab-anchor-handles-${rep.kind}`;
+  const actionId = `curveLab.dragAnchor.${rep.kind}`;
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    let best = -1;
-    let bestD = Infinity;
-    for (let i = 0; i < anchors.length; i++) {
-      const d = Math.hypot(anchors[i].x - sx, anchors[i].y - sy);
-      if (d < HIT_SLOP && d < bestD) { bestD = d; best = i; }
-    }
-    if (best >= 0) {
-      e.stopPropagation();
-      e.currentTarget.setPointerCapture(e.pointerId);
-      dragRef.current = { idx: best, sx, sy, ax: anchors[best].x, ay: anchors[best].y };
-      setDragging(true);
-    }
-  };
+  const anchorHandles = useMemo<Affordance>(() => ({
+    id: layerId,
+    regions: (): AffordanceRegion[] => anchorsRef.current.map((a, i) => ({
+      id: `anchor-${i}`,
+      targetId: null,
+      shape: { kind: 'point', x: a.x, y: a.y, hitRadiusPx: ANCHOR_HIT_BASE_PX },
+      cursor: 'grab',
+      strength: 'exclusive',
+      claimedKinds: ['pointer'],
+      bind: () => ({ initialScratch: { anchorIndex: i } satisfies AnchorScratch }),
+    })),
+  }), [layerId]);
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const dx = (e.clientX - rect.left) - drag.sx;
-    const dy = (e.clientY - rect.top) - drag.sy;
-    onAnchorsChange(anchors.map((a, i) =>
-      i === drag.idx ? { ...a, x: drag.ax + dx, y: drag.ay + dy } : a,
-    ));
-  };
+  // `composeAffordanceLayer` types its data slot as `ChromeState`; the layer
+  // registry takes `RenderLayer<unknown>`. Both receive the same live
+  // `CanvasHelpers` envelope at runtime.
+  const anchorLayer = useMemo(
+    () => composeAffordanceLayer(layerId, 'Curve anchor handles', [anchorHandles]) as unknown as RenderLayer<unknown>,
+    [layerId, anchorHandles],
+  );
 
-  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragRef.current) return;
-    e.currentTarget.releasePointerCapture(e.pointerId);
-    dragRef.current = null;
-    setDragging(false);
-  };
+  const canvasRef = useRef<SceneCanvasApi | null>(null);
+  useEffect(() => canvasRef.current?.registerLayer(anchorLayer), [anchorLayer]);
+
+  const dragAnchor = useMemo<Action>(() => ({
+    id: actionId,
+    label: 'Drag curve anchor',
+    defaultBinding: { kind: 'drag', target: `affordance:layer:${layerId}` },
+    activeCursor: 'grabbing',
+    invoker: {
+      timing: 'ongoing',
+      start(ctx: InvocationCtx): OngoingHandle {
+        const index = anchorIndexOf(ctx.drag?.affordance);
+        const origin = index === null ? undefined : anchorsRef.current[index];
+        if (index === null || !origin) return {};
+        const from = ctx.drag!.start;
+        const to = (at: InvocationCtx) => {
+          onAnchorsChangeRef.current(anchorsRef.current.map((a, i) => (
+            i === index
+              ? { ...a, x: origin.x + (at.world.x - from.x), y: origin.y + (at.world.y - from.y) }
+              : a
+          )));
+        };
+        return {
+          kind: 'move-curve-anchor',
+          onMove: to,
+          onEnd: (at, reason) => { if (reason === 'commit') to(at); },
+        };
+      },
+    },
+  }), [actionId, layerId]);
+
+  const actions = useMemo<ActionsProp>(() => ({
+    enterPathEdit: null,
+    exitPathEdit: null,
+    insertPathAnchor: null,
+    [actionId]: dragAnchor,
+  }), [actionId, dragAnchor]);
 
   return (
     <div className="curve-lab-panel">
       <div className="curve-lab-panel-title">{rep.label}</div>
-      <div
-        className={`curve-lab-canvas-wrap${dragging ? ' is-dragging' : ''}`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-      >
-        <SceneCanvas
-          width={width}
-          height={height}
-          className="ckd-canvas"
-          scene={scene}
-          selection={selection}
-          defaultTools={['select']}
-          actions={{ enterPathEdit: null, exitPathEdit: null, insertPathAnchor: null }}
-          layers={layers as never}
-        />
-      </div>
+      <SceneCanvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="ckd-canvas"
+        scene={scene}
+        selection={selection}
+        defaultTools={['select']}
+        actions={actions}
+        layers={layers as never}
+      />
       <ReadoutHud rep={rep} anchors={anchors} />
     </div>
   );

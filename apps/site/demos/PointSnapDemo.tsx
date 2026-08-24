@@ -34,28 +34,6 @@ function PointSnapDemoInner() {
 
   const adapter = useSceneAdapter(scene, { selection });
 
-  const pickEvery = (worldX: number, worldY: number): string[] => {
-    const hits: string[] = [];
-    for (const id of scene.renderOrder()) {
-      const n = scene.get(id);
-      if (!n) continue;
-      const p = n.pose as Rect;
-      // Rotate the test point into the rect's local frame.
-      const cx = p.x + p.width / 2;
-      const cy = p.y + p.height / 2;
-      const cos = Math.cos(-p.rotation);
-      const sin = Math.sin(-p.rotation);
-      const dx = worldX - cx;
-      const dy = worldY - cy;
-      const lx = cos * dx - sin * dy + cx;
-      const ly = sin * dx + cos * dy + cy;
-      if (lx >= p.x && lx <= p.x + p.width && ly >= p.y && ly <= p.y + p.height) {
-        hits.push(id);
-      }
-    }
-    return hits;
-  };
-
   const boundsOf = (id: string) => {
     const n = scene.get(asNodeId(id));
     if (!n) return null;
@@ -63,7 +41,7 @@ function PointSnapDemoInner() {
     return { x: p.x, y: p.y, width: p.width, height: p.height, rotation: p.rotation };
   };
 
-  const select = useSelectTool(adapter, { pickEvery });
+  const select = useSelectTool(adapter, { leafPicking: 'silhouette' });
   // Resize is dispatcher-driven via the `resizePolicy` dep — see
   // `ResizePolicyBridge` below, mounted as a child of `<SceneCanvas>` so
   // `<DepRegistryProvider>` is in scope.

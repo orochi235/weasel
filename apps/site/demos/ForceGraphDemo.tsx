@@ -1,7 +1,8 @@
-import React, { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { forceManyBody, forceLink, forceCollide, forceCenter } from 'd3-force';
 import {
   SceneCanvas,
+  defineTool,
   useScene,
   useSelection,
   useSimulation,
@@ -9,7 +10,17 @@ import {
   linePath,
   meanScale,
 } from '@weasel-js/core';
-import type { SimulationNode, View, RenderLayer } from '@weasel-js/core';
+import type {
+  Action,
+  AnyTool,
+  InvocationCtx,
+  NodeAtPointDep,
+  OngoingHandle,
+  RenderLayer,
+  Simulation,
+  SimulationNode,
+  View,
+} from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 const W = 600, H = 400;
@@ -87,15 +98,81 @@ function paintEdges(
   };
 }
 
+/**
+ * Drag-to-pin tool. A tool is a declarative shell: this one binds a body-drag
+ * to `forceGraph.pin` and does nothing else — the dispatcher owns the gesture,
+ * the action owns the effect.
+ *
+ * The hit comes from the `nodeAtPoint` dep, which `<SceneCanvas>` sources from
+ * the same picker the select tool uses. Pinning writes `fx`/`fy` on the sim
+ * node rather than the scene pose, because the sim owns positions here — the
+ * tick loop is what syncs them back into the scene.
+ */
+function usePinTool(
+  nodesRef: { current: GraphNode[] },
+  sim: Simulation<GraphNode>,
+  onPin: () => void,
+): AnyTool {
+  const pinAction = useMemo<Action>(() => ({
+    id: 'forceGraph.pin',
+    label: 'Pin graph node',
+    requires: ['nodeAtPoint'],
+    cursor: 'grab',
+    activeCursor: 'grabbing',
+    invoker: {
+      timing: 'ongoing' as const,
+      start(ctx: InvocationCtx): OngoingHandle {
+        const nodeAtPoint = ctx.deps.nodeAtPoint as NodeAtPointDep | undefined;
+        const id = nodeAtPoint?.(ctx.world) ?? null;
+        const node = id === null ? undefined : nodesRef.current.find((n) => n.id === id);
+        if (!node) return {};
+        node.fx = node.x;
+        node.fy = node.y;
+        onPin();
+        sim.alphaTarget(0.3).restart();
+        return {
+          kind: 'pin',
+          onMove(move: InvocationCtx): void {
+            node.fx = move.world.x;
+            node.fy = move.world.y;
+          },
+          onEnd(): void {
+            node.fx = null;
+            node.fy = null;
+            sim.alphaTarget(0);
+          },
+        };
+      },
+    },
+  }), [nodesRef, sim, onPin]);
+
+  return useMemo(() => defineTool<null>({
+    id: 'pin',
+    hookName: 'usePinTool',
+    cursor: 'grab',
+    presentation: { label: 'Pin', group: 'select' },
+    actions: [pinAction],
+    // Body target rather than a catch-all drag, so a drag on empty canvas
+    // falls through to the ambient viewport pan instead of being swallowed.
+    bindings: [{
+      spec: {
+        kind: 'drag',
+        target: {
+          kindOf: (_hit: unknown, body?: string) =>
+            body === 'selected-body' || body === 'unselected-body',
+        },
+      },
+      actionId: 'forceGraph.pin',
+    }],
+  }), [pinAction]);
+}
+
 export function ForceGraphDemo() {
   const initial = useMemo(makeInitial, []);
   const nodesRef = useRef<GraphNode[]>(initial.nodes);
   const linksRef = useRef<GraphLink[]>(initial.links);
-  const draggingRef = useRef<string | null>(null);
   const [settled, setSettled] = useState(false);
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
-  const viewRef = useRef(view);
-  viewRef.current = view;
 
   // Scene mirrors the sim's nodes: one leaf per graph node, pose = AABB around
   // the node center. Sim writes positions via scene.setPose each tick;
@@ -149,65 +226,9 @@ export function ForceGraphDemo() {
     },
   });
 
-  // Pointer handling on the stable wrapper for drag-to-pin.
-  const containerRef = useRef<HTMLDivElement>(null);
-  const screenToWorld = (cx: number, cy: number) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return { x: cx, y: cy };
-    const v = viewRef.current;
-    return {
-      x: (cx - rect.left) / v.scale.x + v.x,
-      y: (cy - rect.top) / v.scale.y + v.y,
-    };
-  };
-  const pickNode = (px: number, py: number): GraphNode | null => {
-    const { x, y } = screenToWorld(px, py);
-    let best: GraphNode | null = null;
-    let bestDistSq = (NODE_R + 4) * (NODE_R + 4);
-    for (const n of nodesRef.current) {
-      const dx = n.x - x;
-      const dy = n.y - y;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < bestDistSq) {
-        bestDistSq = d2;
-        best = n;
-      }
-    }
-    return best;
-  };
-
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    const n = pickNode(e.clientX, e.clientY);
-    if (!n) return;
-    e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    draggingRef.current = n.id;
-    n.fx = n.x;
-    n.fy = n.y;
-    setSettled(false);
-    sim.alphaTarget(0.3).restart();
-  };
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const id = draggingRef.current;
-    if (!id) return;
-    const n = nodesRef.current.find((m) => m.id === id);
-    if (!n) return;
-    const w = screenToWorld(e.clientX, e.clientY);
-    n.fx = w.x;
-    n.fy = w.y;
-  };
-  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    const id = draggingRef.current;
-    if (!id) return;
-    draggingRef.current = null;
-    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* not captured */ }
-    const n = nodesRef.current.find((m) => m.id === id);
-    if (n) {
-      n.fx = null;
-      n.fy = null;
-    }
-    sim.alphaTarget(0);
-  };
+  const unsettle = useCallback(() => setSettled(false), []);
+  const pinTool = usePinTool(nodesRef, sim, unsettle);
+  const tools = useMemo(() => ({ pin: pinTool }), [pinTool]);
 
   const edgesLayer = useMemo(
     () => paintEdges(linksRef),
@@ -262,14 +283,7 @@ export function ForceGraphDemo() {
           drag node to pin · ctrl/⌘+wheel zoom · wheel pan · H drag to pan · ⌘+0 reset
         </span>
       </div>
-      <div
-        ref={containerRef}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        style={{ display: 'inline-block' }}
-      >
+      <div style={{ display: 'inline-block' }}>
         <SceneCanvas
           width={W}
           height={H}
@@ -277,6 +291,12 @@ export function ForceGraphDemo() {
           scene={scene}
           selection={selection}
           selectionMode="none"
+          // Only hand + pin: the default select/rotate affordances draw
+          // cubic-Bezier handles, which overflow the flattener when poses
+          // change every frame (see D3SortableDemo).
+          defaultTools={['hand']}
+          tools={tools}
+          initialActiveTool="pin"
           view={view}
           onViewChange={setView}
           viewport={{}}

@@ -255,8 +255,8 @@ const DEMO_META: DemoMeta[] = [
     id: 'animation',
     title: 'Animation',
     category: 'Animation',
-    description: 'useAnimator + animateOnSetPose + animateLifecycle + momentum behavior. Programmatic setPose tweens (click "Tween A"/"Tween B"); inserts scale up from zero (click "Add card"); flicking a card releases with momentum decay.',
-    hint: 'Click a Tween button, click Add card, or drag-and-flick a card.',
+    description: 'useAnimator + animateOnSetPose + animateLifecycle + momentum behavior. Programmatic setPose tweens (click "Tween A"/"Tween B"); inserts scale up from zero (click "Add card"); flicking a card releases with momentum decay. The grid panel below runs a second scene whose move behavior hands the release velocity to `animator.physics` in decay mode, then calls `setTarget` mid-flight so the same animation springs into the nearest cell.',
+    hint: 'Click a Tween button, click Add card, drag-and-flick a card, or flick the block on the grid.',
     load: () => import('./demos/AnimationDemo').then((m) => m.AnimationDemo),
     path: 'apps/site/demos/AnimationDemo.tsx',
   },
@@ -296,6 +296,16 @@ const DEMO_META: DemoMeta[] = [
     hint: 'Arrow keys or WASD to move, space to jump. Enable audio first — Web Audio needs a gesture.',
     load: () => import('./demos/SideScrollerDemo').then((m) => m.SideScrollerDemo),
     path: 'apps/site/demos/SideScrollerDemo.tsx',
+  },
+  {
+    id: 'scene-scroller',
+    title: 'Side-scroller (scene graph)',
+    category: 'Animation',
+    description:
+      "The side-scroller load test rebuilt on the scene graph, as the twin that shows the engine rather than routing around it. Every tile, coin, enemy, goal and bone is a leaf node drawn by the kit's built-in painters, and the camera *is* the canvas `view` — so the parallax bands are `createParallaxLayer` doing its own job rather than `deriveParallaxView` called by hand, and scene nodes project through the same transform for free. The static half of the world is where retained mode pays: 122 tile nodes are inserted once and never touched, and `nodeMemo` keeps a frame that leaves them alone from costing anything, where the immediate-mode twin rebuilds every visible tile's draw commands every frame. The moving half is where it charges: ~27 poses are rewritten per frame inside one `scene.batch`, which is one history entry and one notify — but still one React render, because `view` is React state and the paint is an effect keyed on it. The player rig is the honest gap: a skeleton is a transform hierarchy and the scene tree stores absolute world coordinates with grouping-only parents, so `resolveSkeleton` is flattened onto eleven independent bone nodes every frame instead of being expressed as parenting.",
+    hint: 'Arrow keys or WASD to move, space to jump. Compare the frame readout with the load-test side-scroller — and hit swarm +40 to insert forty nodes mid-run.',
+    load: () => import('./demos/SceneScrollerDemo').then((m) => m.SceneScrollerDemo),
+    path: 'apps/site/demos/SceneScrollerDemo.tsx',
   },
   {
     id: 'audio',
@@ -383,13 +393,13 @@ const DEMO_META: DemoMeta[] = [
 
   // ─── Rendering & paint ────────────────────────────────────────────────────
   {
-    id: 'gradient-playground',
-    title: 'Gradient playground',
+    id: 'gradients',
+    title: 'Gradients',
     category: 'Rendering & paint',
     description: 'Interactive editor for the three gradient paint variants — linear, radial, conic. Drag the on-canvas handles to set the gradient geometry (linear endpoints, radial center+radius, conic center+angle). Below the canvas, click the strip to add a stop, drag stops to reposition, click a swatch to recolor, right-click to delete. Showcases the `linear-gradient` / `radial-gradient` / `conic-gradient` FillStyle variants shipped with the WebGL backend.',
     hint: 'drag handles · click strip to add stops · drag stop to move · click swatch to recolor',
-    load: () => import('./demos/GradientPlaygroundDemo').then((m) => m.GradientPlaygroundDemo),
-    path: 'apps/site/demos/GradientPlaygroundDemo.tsx',
+    load: () => import('./demos/GradientsDemo').then((m) => m.GradientsDemo),
+    path: 'apps/site/demos/GradientsDemo.tsx',
   },
   {
     id: 'pattern-playground',
@@ -413,7 +423,7 @@ const DEMO_META: DemoMeta[] = [
     id: 'vertex-widths',
     title: 'Per-vertex stroke widths',
     category: 'Rendering & paint',
-    description: 'Two panels. Top: a five-anchor polyline whose center anchor\'s stroke width is driven by a slider — the tessellator emits trapezoidal segments and force-bevels the miters once the taper ratio exceeds `varyingWidthJoinThreshold` (default 1.5×). Bottom: a `usePencilTool` with `pressureToWidth` configured — Apple Pencil / Wacom strokes get real pressure-modulated tapering, mouse strokes get a flat 0.5-pressure width (per the Pointer Events spec). Demonstrates `Stroke.vertexWidths`, `createPathLayer({ getStrokeVertexWidths })`, and `pressureToWidth(p, opts)`.',
+    description: 'Two panels. Top: a five-anchor polyline whose center anchor\'s stroke width is driven by a slider — the tessellator emits trapezoidal segments and force-bevels the miters once the taper ratio exceeds `varyingWidthJoinThreshold` (default 1.5×). Bottom: a `usePencilTool` with `pressureToWidth` configured — Apple Pencil / Wacom strokes get real pressure-modulated tapering, mouse strokes get a flat 0.5-pressure width (per the Pointer Events spec). Both panels are ordinary scene nodes whose `drawOne` emits `Stroke.vertexWidths`; the bottom one also demonstrates `pressureToWidth(p, opts)`.',
     hint: 'top: drag slider · bottom: draw strokes (Apple Pencil for real pressure)',
     load: () => import('./demos/VertexWidthsDemo').then((m) => m.VertexWidthsDemo),
     path: 'apps/site/demos/VertexWidthsDemo.tsx',

@@ -12,35 +12,20 @@ import {
 import type { Dims, DrawCommand, RenderLayer, TimelineHandle, View } from '@weasel-js/core';
 import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
-import { CAM_SCALE, cameraView, createCamera, followCamera, worldToScreen, type Camera } from './platformer/camera';
-import { pushCallout, stepCallouts, type Callout } from './platformer/callouts';
-import { TILE } from './platformer/level';
+import { CAM_SCALE, cameraView, followCamera, worldToScreen } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { COLORS, drawBackdrop, drawCallouts, drawCoins, drawEnding, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
+import { BODY_H, BODY_W, MOVE_SPEED } from './platformer/physics';
+import { resolvePose } from './platformer/animState';
+import { createEnemies, ENEMY_H, ENEMY_W } from './platformer/entities';
 import {
-  createBodyState,
-  spikeOverlap,
-  stepBody,
-  BODY_H,
-  BODY_W,
-  STEP,
-  MOVE_SPEED,
-  type BodyState,
-  type Input,
-} from './platformer/physics';
-import { createAnimState, nextAnimState, resolvePose, type AnimState } from './platformer/animState';
-import {
-  atGoal,
-  createCoins,
-  createEnemies,
-  resolveContacts,
-  stepEnemy,
-  ENEMY_H,
-  ENEMY_W,
-  INVULN,
-  type Coin,
-  type Enemy,
-} from './platformer/entities';
+  advanceWorld,
+  freshGame,
+  SHAKE_DURATION,
+  SHAKE_MAGNITUDE,
+  type GameRefs,
+  type WorldHooks,
+} from './platformer/world';
 import { PLAYER_SKELETON } from './platformer/skeleton';
 import { consumeJumpPress, usePlatformerInput } from './platformer/useInput';
 import { registerSounds, type SoundName } from './platformer/sfx';
@@ -59,52 +44,6 @@ const JITTER_SCALE_TOLERANCE = 0.02;
 
 /** How long the blur holds after a head knock before fading back out. */
 const BONK_BLUR_MS = 260;
-const BONK_CALLOUT_TTL = 0.9;
-const COINS_PER_LIFE = 5;
-const HEALTHCARE_CALLOUT_TTL = 1.6;
-/** Seconds of screen shake after a first or second bonk. */
-const SHAKE_DURATION = 0.25;
-/** World units of camera jitter at the shake's peak. */
-const SHAKE_MAGNITUDE = 3;
-
-interface GameRefs {
-  camera: Camera;
-  player: BodyState;
-  anim: AnimState;
-  /** Seconds of remaining invulnerability. */
-  invuln: number;
-  /** Accumulated real time not yet consumed by a fixed step. */
-  accumulator: number;
-  enemies: Enemy[];
-  coins: Coin[];
-  lives: number;
-  score: number;
-  elapsed: number;
-  outcome: 'playing' | 'won' | 'lost';
-  /** Seconds of screen shake remaining. */
-  shake: number;
-  /** Seconds since the run was decided. Its own clock: `elapsed` stops with the
-   *  simulation, and the ending needs to keep fading after that. */
-  ended: number;
-  callouts: Callout[];
-}
-
-const freshGame = (): GameRefs => ({
-  camera: createCamera(WORLD.spawn),
-  player: createBodyState(WORLD.spawn),
-  anim: createAnimState(),
-  invuln: 0,
-  accumulator: 0,
-  enemies: createEnemies(WORLD.enemies),
-  coins: createCoins(WORLD.coins),
-  lives: 3,
-  score: 0,
-  elapsed: 0,
-  outcome: 'playing',
-  shake: 0,
-  ended: 0,
-  callouts: [],
-});
 
 /**
  * `usePlatformerInput` registers its action via `useAction`, which no-ops
@@ -270,6 +209,16 @@ function SideScrollerDemoInner() {
     window.setTimeout(() => a.engine.bus('music').setGain(0.5, 400), 260);
   };
 
+  // Rebuilt every render so the callbacks it forwards are never stale; the
+  // loop reads it through the ref, which `advanceWorld` calls per fixed step.
+  const hooks = useRef<WorldHooks>(null!);
+  hooks.current = {
+    sound: fire,
+    soundAt: (name, at, gain) => fireAt(name, at, gain),
+    duck: duckMusic,
+    bonk: pulseBlur,
+  };
+
   const layers = useMemo(() => {
     // A bonk's shake jitters every screen-space layer identically by nudging
     // the shared view, not the camera itself — the camera's own follow state
@@ -429,108 +378,17 @@ function SideScrollerDemoInner() {
         return;
       }
 
-      g.accumulator += frame;
-      while (g.accumulator >= STEP) {
-        g.accumulator -= STEP;
-        const step: Input = {
+      advanceWorld(
+        g,
+        frame,
+        () => ({
           left: input.current.left,
           right: input.current.right,
           jumpHeld: input.current.jumpHeld,
           jumpPressed: consumeJumpPress(input),
-        };
-        g.player = stepBody(g.player, WORLD, step, STEP);
-        if (g.player.jumped) fire('jump', 0.6);
-        if (g.player.landed) fire('land', 0.5);
-        g.invuln = Math.max(0, g.invuln - STEP);
-        if (spikeOverlap(g.player.body, WORLD) && g.invuln <= 0) {
-          g.invuln = INVULN;
-          g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
-          fire('hurt');
-          duckMusic();
-        }
-
-        g.elapsed += STEP;
-        g.shake = Math.max(0, g.shake - STEP);
-        g.callouts = stepCallouts(g.callouts, g.elapsed);
-
-        // A bonk requires the ceiling branch of resolveY to have actually fired
-        // this step — walking under a `?` block never sets it.
-        if (g.player.bonk && g.outcome === 'playing') {
-          const at = { x: (g.player.bonk.cx + 0.5) * TILE, y: (g.player.bonk.cy + 0.5) * TILE };
-          g.callouts = pushCallout(g.callouts, {
-            text: 'ow',
-            anchor: { kind: 'world', at },
-            bornAt: g.elapsed,
-            ttl: BONK_CALLOUT_TTL,
-          });
-          fireAt('hurt', at, 0.7);
-          g.shake = SHAKE_DURATION;
-          g.lives--;
-          g.invuln = INVULN;
-          duckMusic();
-          pulseBlur();
-        }
-
-        g.enemies = g.enemies.map((e) => stepEnemy(e, WORLD, STEP));
-
-        for (const hit of resolveContacts(g.player.body, g.enemies, g.coins, g.invuln)) {
-          if (hit.kind === 'coin') {
-            g.coins[hit.index].taken = true;
-            g.score++;
-            fire('coin', 0.5);
-            if (g.score % COINS_PER_LIFE === 0) {
-              g.lives++;
-              g.callouts = pushCallout(g.callouts, {
-                text: 'FREE HEALTHCARE',
-                anchor: { kind: 'screen' },
-                bornAt: g.elapsed,
-                ttl: HEALTHCARE_CALLOUT_TTL,
-              });
-            }
-          } else if (hit.kind === 'stomp') {
-            const victim = g.enemies[hit.index];
-            g.enemies[hit.index].alive = false;
-            g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
-            fireAt('stomp', { x: victim.x, y: victim.y }, 0.7);
-          } else {
-            g.invuln = INVULN;
-            g.lives--;
-            g.player = {
-              ...g.player,
-              body: { ...g.player.body, vy: -280, vx: g.player.body.facing * -120 },
-            };
-            fire('hurt');
-            duckMusic();
-          }
-        }
-
-        // Falling out of the level costs a life and returns to the spawn.
-        if (g.player.body.y > WORLD.heightPx + 100) {
-          g.lives--;
-          g.player = createBodyState(WORLD.spawn);
-          g.camera = createCamera(WORLD.spawn);
-          g.invuln = INVULN;
-          fire('hurt');
-        }
-
-        if (g.lives <= 0 && g.outcome === 'playing') {
-          g.outcome = 'lost';
-        } else if (atGoal(g.player.body, WORLD.goal) && g.outcome === 'playing') {
-          g.outcome = 'won';
-          fire('goal', 0.9);
-        }
-
-        g.anim = nextAnimState(
-          g.anim,
-          {
-            onGround: g.player.body.onGround,
-            vx: g.player.body.vx,
-            vy: g.player.body.vy,
-            hurt: g.invuln > INVULN - 0.2,
-          },
-          STEP,
-        );
-      }
+        }),
+        hooks.current,
+      );
 
       const grounded = g.player.body.onGround;
       const speed = Math.abs(g.player.body.vx);

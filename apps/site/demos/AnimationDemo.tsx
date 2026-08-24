@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActionsProvider,
   animateLifecycle,
   animateOnSetPose,
   asNodeId,
+  createTransformOp,
   easeInOutSine,
   momentum,
   SceneCanvas,
+  SelectionContextProvider,
   WeaselProvider,
   sceneToAdapter,
   useAnimator,
@@ -13,7 +16,9 @@ import {
   useSelection,
   useSelectTool,
   useTools,
+  useVelocityTracker,
 } from '@weasel-js/core';
+import type { Animator, MoveBehavior, PhysicsHandle } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface Card { id: string; x: number; y: number; width: number; height: number; color: string }
@@ -28,18 +33,18 @@ const INITIAL: Card[] = [
   { id: 'c', x: 340, y: 100, width: 80, height: 60, color: ACCENT_FILLS[2] },
 ];
 
-// Flick-snap panel: a separate 2D-point physics demo (decay → snap) parked
-// below the card canvas. Snap grid spacing in panel units.
+// Flick-snap panel: a second canvas below the cards, showing decay → snap.
 const FLICK_W = 600, FLICK_H = 160;
 const FLICK_GRID = 60;
 const FLICK_BLOCK = 40;
+const FLICK_COAST_MS = 180;
 
 interface Vec2 { x: number; y: number }
 const v2 = {
   add: (a: Vec2, b: Vec2): Vec2 => ({ x: a.x + b.x, y: a.y + b.y }),
-  sub: (a: Vec2, b: Vec2): Vec2 => ({ x: a.x - b.x, y: a.y - b.y }),
+  subtract: (a: Vec2, b: Vec2): Vec2 => ({ x: a.x - b.x, y: a.y - b.y }),
   scale: (v: Vec2, k: number): Vec2 => ({ x: v.x * k, y: v.y * k }),
-  mag: (v: Vec2): number => Math.hypot(v.x, v.y),
+  magnitude: (v: Vec2): number => Math.hypot(v.x, v.y),
 };
 
 function nearestGridCell(p: Vec2): Vec2 {
@@ -50,10 +55,9 @@ function nearestGridCell(p: Vec2): Vec2 {
   };
 }
 
-function AnimationDemoInner() {
+function AnimationDemoInner({ animator }: { animator: Animator }) {
   const scene = useScene<Card>({ items: INITIAL });
   const selection = useSelection({ mode: 'multi' });
-  const animator = useAnimator();
   const nextId = useRef(1);
 
   // Per-card visual effects (multiplicative scale + alpha). Read by drawOne,
@@ -97,18 +101,6 @@ function AnimationDemoInner() {
       },
       removeNode: (id: string) => {
         scene.remove(asNodeId(id));
-      },
-      hitTest: (worldX: number, worldY: number): string | null => {
-        const order = [...scene.renderOrder()];
-        for (let i = order.length - 1; i >= 0; i--) {
-          const n = scene.get(order[i]);
-          if (!n) continue;
-          const p = n.pose as Pose;
-          if (worldX >= p.x && worldX <= p.x + p.width && worldY >= p.y && worldY <= p.y + p.height) {
-            return order[i];
-          }
-        }
-        return null;
       },
       snapshotSelection: () => ({ items: [] }),
     };
@@ -221,81 +213,6 @@ function AnimationDemoInner() {
     });
   };
 
-  // --- Flick-snap panel: drag a block, on release decay with velocity,
-  //     then mid-flight retarget to the nearest grid cell. ---
-  const [flickPos, setFlickPos] = useState<Vec2>({ x: 60, y: 60 });
-  const flickPosRef = useRef(flickPos);
-  flickPosRef.current = flickPos;
-  const flickHandleRef = useRef<{ cancel: () => void } | null>(null);
-  const dragStateRef = useRef<{
-    pointerId: number;
-    offset: Vec2;
-    lastPos: Vec2;
-    lastT: number;
-    velocity: Vec2;
-  } | null>(null);
-
-  const onFlickPointerDown = (ev: React.PointerEvent<HTMLDivElement>) => {
-    flickHandleRef.current?.cancel();
-    flickHandleRef.current = null;
-    (ev.currentTarget as HTMLElement).setPointerCapture(ev.pointerId);
-    const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
-    const local = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
-    dragStateRef.current = {
-      pointerId: ev.pointerId,
-      offset: { x: local.x - flickPosRef.current.x, y: local.y - flickPosRef.current.y },
-      lastPos: local,
-      lastT: performance.now(),
-      velocity: { x: 0, y: 0 },
-    };
-  };
-
-  const onFlickPointerMove = (ev: React.PointerEvent<HTMLDivElement>) => {
-    const st = dragStateRef.current;
-    if (!st || st.pointerId !== ev.pointerId) return;
-    const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
-    const local = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
-    const now = performance.now();
-    const dt = Math.max(1, now - st.lastT);
-    // px/sec
-    st.velocity = {
-      x: ((local.x - st.lastPos.x) / dt) * 1000,
-      y: ((local.y - st.lastPos.y) / dt) * 1000,
-    };
-    st.lastPos = local;
-    st.lastT = now;
-    setFlickPos({ x: local.x - st.offset.x, y: local.y - st.offset.y });
-  };
-
-  const onFlickPointerUp = (ev: React.PointerEvent<HTMLDivElement>) => {
-    const st = dragStateRef.current;
-    if (!st || st.pointerId !== ev.pointerId) return;
-    dragStateRef.current = null;
-    const start = flickPosRef.current;
-    const velocity = st.velocity;
-    const handle = animator.physics<Vec2>({
-      from: start,
-      to: null, // start in decay mode
-      velocity,
-      damping: 5,
-      stiffness: 80,
-      add: v2.add,
-      subtract: v2.sub,
-      scale: v2.scale,
-      magnitude: v2.mag,
-      onTick: (p) => setFlickPos(p),
-    });
-    flickHandleRef.current = handle;
-    // After a brief decay, retarget to the nearest grid cell of the
-    // current (in-flight) position.
-    setTimeout(() => {
-      const snap = nearestGridCell(flickPosRef.current);
-      handle.setTarget(snap);
-    }, 180);
-  };
-
-  useEffect(() => () => { flickHandleRef.current?.cancel(); }, []);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -346,48 +263,141 @@ function AnimationDemoInner() {
           selectionOverlay: { handles: false },
         }}
       />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{ opacity: 0.7 }}>
-          Flick-snap: drag the block, release with velocity. Decay first, then snaps to nearest 60-px grid cell.
-        </span>
-        <div
-          onPointerDown={onFlickPointerDown}
-          onPointerMove={onFlickPointerMove}
-          onPointerUp={onFlickPointerUp}
-          onPointerCancel={onFlickPointerUp}
-          style={{
-            position: 'relative',
-            width: FLICK_W,
-            height: FLICK_H,
-            background: '#14100b',
-            border: '1px solid #4a3c2e',
-            backgroundImage:
-              'linear-gradient(to right, #2a2018 1px, transparent 1px),' +
-              'linear-gradient(to bottom, #2a2018 1px, transparent 1px)',
-            backgroundSize: `${FLICK_GRID}px ${FLICK_GRID}px`,
-            touchAction: 'none',
-            userSelect: 'none',
-            cursor: 'grab',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              left: flickPos.x,
-              top: flickPos.y,
-              width: FLICK_BLOCK,
-              height: FLICK_BLOCK,
-              background: '#7fb069',
-              borderRadius: 4,
-              pointerEvents: 'none',
-            }}
-          />
-        </div>
-      </div>
     </div>
   );
 }
 
+/**
+ * Move behavior: on release, coast on the flick velocity, then retarget the
+ * same in-flight physics to the nearest grid cell. One animation throughout —
+ * `PhysicsHandle.setTarget` turns the decay into a spring without restarting.
+ */
+function flickToGrid(args: {
+  animator: Animator;
+  tracker: ReturnType<typeof useVelocityTracker>;
+  flight: React.MutableRefObject<PhysicsHandle<Vec2> | null>;
+}): MoveBehavior<Pose> {
+  const { animator, tracker, flight } = args;
+  const PREV = 'flickToGrid.prev';
+  const pointer = (ctx: { pointer: { worldX: number; worldY: number } }): Vec2 =>
+    ({ x: ctx.pointer.worldX, y: ctx.pointer.worldY });
+
+  return {
+    onStart(ctx) {
+      flight.current?.cancel();
+      flight.current = null;
+      tracker.reset();
+      ctx.scratch[PREV] = pointer(ctx);
+    },
+    onMove(ctx) {
+      const prev = ctx.scratch[PREV] as Vec2;
+      const now = pointer(ctx);
+      tracker.record(now.x - prev.x, now.y - prev.y, performance.now());
+      ctx.scratch[PREV] = now;
+    },
+    onEnd(ctx) {
+      const id = ctx.draggedIds[0];
+      const start = id ? ctx.current.get(id) : undefined;
+      if (!id || !start) return undefined;
+
+      let live: Vec2 = { x: start.x, y: start.y };
+      const write = (p: Vec2) => {
+        live = p;
+        ctx.adapter.setPose(id, { ...start, x: p.x, y: p.y });
+      };
+      // A flick below the rest threshold finishes without ever ticking, so the
+      // release pose has to be written before the physics starts.
+      write(live);
+
+      const { vx, vy } = tracker.getVelocity();
+      const handle = animator.physics<Vec2>({
+        from: live,
+        to: null, // start in decay mode
+        // useVelocityTracker reports px/ms; physics velocity is units/sec.
+        velocity: { x: vx * 1000, y: vy * 1000 },
+        damping: 5,
+        stiffness: 80,
+        ...v2,
+        onTick: write,
+        onDone: () => {
+          flight.current = null;
+          ctx.adapter.applyOps?.(
+            [createTransformOp<Pose>({ id, from: start, to: { ...start, x: live.x, y: live.y } })],
+            'flick',
+          );
+        },
+      });
+      flight.current = handle;
+      setTimeout(() => handle.setTarget(nearestGridCell(live)), FLICK_COAST_MS);
+      return null;
+    },
+  };
+}
+
+function FlickSnapPanel({ animator }: { animator: Animator }) {
+  const scene = useScene<{ color: string }, 'default', Pose>({
+    systemLayers: [{ id: 'default' }],
+    initial: [{
+      id: asNodeId('block'),
+      kind: 'leaf',
+      layer: 'default',
+      pose: { x: 60, y: 60, width: FLICK_BLOCK, height: FLICK_BLOCK },
+      data: { color: '#7fb069' },
+    }],
+  });
+  const selection = useSelection();
+  const tracker = useVelocityTracker();
+  const flight = useRef<PhysicsHandle<Vec2> | null>(null);
+  useEffect(() => () => { flight.current?.cancel(); }, []);
+
+  const behaviors = useMemo(
+    () => [flickToGrid({ animator, tracker, flight })],
+    [animator, tracker],
+  );
+
+  // Own actions + selection providers. The demo site mounts one of each at its
+  // root; sharing them with the card canvas kills input on both canvases.
+  return (
+    <ActionsProvider>
+      <SelectionContextProvider>
+        <SceneCanvas
+          width={FLICK_W}
+          height={FLICK_H}
+          className="ckd-canvas"
+          scene={scene}
+          selection={selection}
+          selectTool={{ move: { behaviors } }}
+          layers={{
+            grid: {
+              spacing: FLICK_GRID,
+              bounds: () => ({ x: 0, y: 0, width: FLICK_W, height: FLICK_H }),
+            },
+            scene: {
+              drawOne: (n, p): DrawCommand[] => [{
+                kind: 'path',
+                path: { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height },
+                fill: { color: n.data.color },
+              }],
+            },
+            selectionOverlay: { handles: false },
+          }}
+        />
+      </SelectionContextProvider>
+    </ActionsProvider>
+  );
+}
+
 export function AnimationDemo() {
-  return <WeaselProvider><AnimationDemoInner /></WeaselProvider>;
+  const animator = useAnimator();
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <WeaselProvider><AnimationDemoInner animator={animator} /></WeaselProvider>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ opacity: 0.7 }}>
+          Flick-snap: drag the block, release with velocity. Decay first, then snaps to nearest 60-px grid cell.
+        </span>
+        <FlickSnapPanel animator={animator} />
+      </div>
+    </div>
+  );
 }

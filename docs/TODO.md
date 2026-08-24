@@ -737,6 +737,18 @@ What it surfaced:
   registry and nothing ever moved. Nothing warned. A dev-mode warning when
   `useAction` finds no registry would have turned an afternoon into a minute.
 
+- **(P1) Two interactive `SceneCanvas` instances under one provider root kill
+  each other's input.** `apps/site/main.tsx:48` mounts one `ActionsProvider` and
+  one `SelectionContextProvider` for the whole site, and `WeaselProvider`'s
+  `IfRoot` semantics defer to those rather than isolating — so a second canvas
+  fights the first over one actions registry and one selection publisher. It
+  fails as "Maximum update depth exceeded" with a canvas that no longer responds,
+  naming nothing. `BooleanOpsDemo.tsx:195` already carries a hand-rolled
+  workaround for the same class of bug, and AnimationDemo now carries another.
+  Either `WeaselProvider` grows an explicit isolation mode or `SceneCanvas`
+  scopes its action registration per canvas. Surfaced 2026-08-24 rebuilding
+  AnimationDemo's flick panel as a real canvas.
+
 - **(P2) No key-state poll.** `key-held` gives edges; the dispatcher's held set
   tracks claims rather than physical keys and is not exported. Every character
   controller will rewrite `platformer/useInput.ts`'s reconstruction.
@@ -762,6 +774,86 @@ What it surfaced:
   at exactly `DEAD_ZONE_X` from a stationary target, so
   `platformerCamera.test.ts` asserts that invariant rather than a fixed distance
   — changing the constant does not break the test.
+
+### Side-scroller (scene graph) — landed
+
+`apps/site/demos/SceneScrollerDemo.tsx` plus `platformer/sceneWorld.ts`. The same
+platformer built on the retained tree: 254 leaf nodes drawn by the built-in
+painters, the camera as the canvas `view`, and the shared fixed-step loop
+extracted to `platformer/world.ts` so both demos run the identical simulation.
+The bypass twin keeps its bypass; this one shows the engine.
+
+Measured against it (Chrome, 120 Hz display, DevTools tracing on — the absolute
+milliseconds are inflated by the tracing, the ratios are the signal):
+
+| | immediate | scene graph |
+|---|---|---|
+| frames committed / s | 109 | 76 |
+| main-thread busy / s | 1.00× | **1.27×** |
+| main-thread busy / committed frame | 6.31 ms | **11.57 ms** |
+| major GC over the window | 57 ms | **549 ms** |
+
+Unloaded, both peg the 120 Hz display and neither drops a frame. The costs only
+separate under load — which is the honest read: the retained tree is affordable
+here, and it is not free.
+
+What it surfaced:
+
+- **(P1) A per-frame camera costs a React render per frame.** `view` is a prop
+  or `SceneCanvas`'s own `useState` (`SceneCanvas.tsx:961`), the paint is a
+  `useEffect` keyed on it (`Canvas.tsx:1284`), and `requestRedraw` is
+  `setRedrawNonce(n => n + 1)` (`Canvas.tsx:780`) — so every repaint is a React
+  render by construction. This is the seam that made the load-test twin pin
+  `view` to identity and hand-project every layer, which in turn is what forced
+  the scene graph off entirely. Decoupling the paint loop from the React render
+  cycle is the fix: `requestRedraw` marks a dirty ref, a rAF loop paints, and
+  `view` becomes a ref with a subscription for whatever DOM chrome renders it.
+  Note `useSyncExternalStore` already de-opts scene mutations from concurrent
+  rendering, so this spends concurrency rather than buying it; what decoupling
+  actually trades away is single-commit consistency between React-rendered DOM
+  and canvas pixels (one frame of skew, unbounded only for scene-derived DOM
+  inside a `startTransition`).
+
+- **(P1) `setPose` demands a fresh pose object per node per frame, and the GC
+  bill is visible.** `nodeMemo` keys painter output on pose *reference*
+  (`nodeMemo.ts:1-28`), so mutating `node.pose.x` in place silently serves a
+  stale cached draw. Correct code therefore allocates one object per moving node
+  per frame — ~27 × 120/s here — and major GC went from 57 ms to 549 ms over a
+  ten-second window, nearly 10×. A pose-write path that can take scalars, or an
+  explicit generation bump that lets a caller mutate in place, would remove the
+  churn without giving up the memo.
+
+- **(P2) A 60 Hz loop has no non-recording way to write.** Every mutation is an
+  undo entry; `scene.batch` reduces a frame to one entry, which is still 120 per
+  second. The only real escape is `getActiveJournal` plus periodic `cancel()`,
+  and that journal's inner history is itself unbounded. The demo caps
+  `historyLimit` at 60 and calls that a workaround, not an answer.
+
+- **(P2) The scene tree is not a transform hierarchy, so a rig cannot be one.**
+  Default composition is `IDENTITY_POSE_COMPOSITION` — "parents are
+  grouping-only (no transform)" (`composePose.ts:45`) — and `buildSceneTree.ts:42`
+  uses nesting only for the clip chain. The opt-in `composeRectPose` adds
+  translation and nothing else. So `resolveSkeleton` is resolved to world
+  matrices and flattened onto eleven independent bone nodes every frame. Rotation-
+  aware pose composition would let the rig be expressed as parenting, which is
+  what it already is everywhere except the scene.
+
+- **(P2) `after:` never resolves off a `before:`-emitted custom layer.**
+  `emitBefore` recurses only into `beforeByParent` (`layerOrder.ts:76-86`), so
+  `{a: {before: 'scene'}, b: {after: 'a'}}` orphans `b` to the tail with a
+  "dangling reference" warning — silently painting it over everything. Cost an
+  afternoon of "why is the backdrop on top". Either resolve after-chains off
+  before-emitted parents or reject the combination outright.
+
+- **(P3) `kit:text` nodes cannot opt into `verticalAlign`.** The painter
+  forwards the pose height but not the alignment (`NodeShape.ts:386`), so
+  centring a glyph in its box means nudging `pose.y` by hand — see the `?` block
+  in `sceneWorld.ts`.
+
+- **(P3) No view-bounds culling.** All 254 nodes paint every frame regardless of
+  the viewport; the immediate twin windows tiles to visible rows and columns.
+  `renderOrder()` plus the view bounds is enough to close this, and it is the
+  one place the immediate version is structurally ahead.
 
 Two predictions the demo **disproved**, recorded so they are not re-raised: the
 sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /

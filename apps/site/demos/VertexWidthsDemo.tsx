@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   PathBuilder,
+  asNodeId,
   polygonFromPoints,
   pressureToWidth,
   usePencilTool,
@@ -14,8 +15,6 @@ import type {
   DragSample,
   Path,
   PolygonPath,
-  Stroke,
-  RenderLayer,
   DrawCommand,
 } from '@weasel-js/core';
 
@@ -28,43 +27,62 @@ const SLIDER_MAX = 40;
 // the center anchors' stroke width. Demonstrates the bare tessellator
 // surface — the slider value flows into `Stroke.vertexWidths` and the
 // miter join force-bevels once the taper ratio crosses the threshold.
-function StaticTaperPanel() {
-  const [centerWidth, setCenterWidth] = useState(20);
+const TAPER_ID = asNodeId('static-taper');
+const TAPER_POINTS = [
+  { x: 40, y: 160 },
+  { x: 160, y: 70 },
+  { x: 300, y: 160 },
+  { x: 440, y: 70 },
+  { x: 560, y: 160 },
+];
+const TAPER_PATH: Path = TAPER_POINTS.reduce(
+  (b, p, i) => (i === 0 ? b.moveTo(p.x, p.y) : b.lineTo(p.x, p.y)),
+  new PathBuilder(),
+).build();
+const XS = TAPER_POINTS.map((p) => p.x);
+const YS = TAPER_POINTS.map((p) => p.y);
+const TAPER_POSE = {
+  x: Math.min(...XS),
+  y: Math.min(...YS),
+  width: Math.max(...XS) - Math.min(...XS),
+  height: Math.max(...YS) - Math.min(...YS),
+};
 
-  const points = useMemo(() => [
-    { x: 40, y: 160 },
-    { x: 160, y: 70 },
-    { x: 300, y: 160 },
-    { x: 440, y: 70 },
-    { x: 560, y: 160 },
-  ], []);
-  const path: Path = useMemo(() => {
-    const b = new PathBuilder();
-    b.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i++) b.lineTo(points[i].x, points[i].y);
-    return b.build();
-  }, [points]);
+interface TaperNode {
+  path: Path;
+  widths: number[];
+}
 
-  const stroke: Stroke = useMemo(() => ({
+const taperWidths = (centerWidth: number) => [4, centerWidth, centerWidth, centerWidth, 4];
+
+const drawTaper = (node: { data: TaperNode }): DrawCommand[] => [{
+  kind: 'path',
+  path: node.data.path,
+  stroke: {
     paint: { color: '#7fb069' },
     width: 4,
-    vertexWidths: [4, centerWidth, centerWidth, centerWidth, 4],
+    vertexWidths: node.data.widths,
     cap: 'round',
     join: 'miter',
-  }), [centerWidth]);
+  },
+}];
 
-  const layer = useMemo<RenderLayer<unknown>>(() => ({
-    id: 'static-taper',
-    label: 'Static taper',
-    space: 'world',
-    draw: () => [{ kind: 'path', path, stroke }],
-  }), [path, stroke]);
-
-  // Empty scene — only the custom layer renders.
-  const scene = useScene<never, 'default'>({
+function StaticTaperPanel() {
+  const scene = useScene<TaperNode, 'default'>({
     systemLayers: [{ id: 'default' }],
-    initial: [],
+    initial: [{
+      kind: 'leaf',
+      layer: 'default',
+      pose: TAPER_POSE,
+      data: { path: TAPER_PATH, widths: taperWidths(20) },
+      id: TAPER_ID,
+    }],
+    coalesceWindowMs: 300,
   });
+
+  const centerWidth = scene.get(TAPER_ID)?.data.widths[1] ?? 20;
+  const setCenterWidth = (next: number) =>
+    scene.update(TAPER_ID, { data: { path: TAPER_PATH, widths: taperWidths(next) } });
 
   return (
     <div className="ckd-stack" style={{ marginBottom: 16 }}>
@@ -87,9 +105,9 @@ function StaticTaperPanel() {
         height={H}
         className="ckd-canvas"
         scene={scene}
+        selectionMode="none"
         layers={{
-          scene: { drawOne: () => [] },
-          taper: { layer, after: 'scene' },
+          scene: { drawOne: drawTaper },
         }}
       />
     </div>

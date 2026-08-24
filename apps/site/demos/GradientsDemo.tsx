@@ -1,16 +1,18 @@
-import { useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  SceneCanvas, fillInPoseFrame, fillToBoundsFrame, useScene, viewToTransform, worldToScreen,
+  SceneCanvas, asNodeId, fillInPoseFrame, fillToBoundsFrame, useScene, viewToTransform,
+  worldToScreen,
 } from '@weasel-js/core';
-import type { GradientFill, RenderLayer, View } from '@weasel-js/core';
-import { viewToMat3, type DrawCommand } from '@weasel-js/core/renderer';
+import type { GradientFill, View } from '@weasel-js/core';
 import { GradientEditor, GradientHandles } from '@weasel-js/ui';
 
 const W = 600;
 const H = 400;
+const ID = asNodeId('gradient-rect');
 
-/** The box the gradient is expressed against. `units: 'bounds'` means the
- *  paint is stored as fractions of it, so it survives pan and zoom. */
+/** The box the gradient is expressed against — the node's pose. `units:
+ *  'bounds'` means the paint is stored as fractions of it, so it survives pan
+ *  and zoom. The built-in `kit:shape` painter resolves it against the pose. */
 const SHAPE_RECT = { x: 80, y: 60, width: W - 160, height: H - 120 };
 
 const INITIAL: GradientFill = {
@@ -25,36 +27,31 @@ const INITIAL: GradientFill = {
   units: 'bounds',
 };
 
-export function GradientPlaygroundDemo() {
-  const [paint, setPaint] = useState<GradientFill>(INITIAL);
+interface GradientRect {
+  shape: 'rect';
+  fill: GradientFill;
+}
+
+export function GradientsDemo() {
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
-  // paintRef lets the layer's draw() read the current paint without
-  // recreating the layer object — and so the memo below can stay empty-dep.
-  const paintRef = useRef(paint);
-  paintRef.current = paint;
-
-  const layer: RenderLayer<unknown> = useMemo(() => ({
-    id: 'gradient-rect',
-    label: 'Gradient rect',
-    draw: (_data, v): DrawCommand[] => [{
-      kind: 'group',
-      transform: viewToMat3(v),
-      children: [{
-        kind: 'path',
-        path: { kind: 'rect', ...SHAPE_RECT },
-        // Resolve `bounds` against the box, exactly as a node painter does
-        // for a scene node — this layer draws the rect itself, so it owns
-        // that step.
-        fill: fillInPoseFrame(paintRef.current, SHAPE_RECT),
-      }],
-    }],
-  }), []);
-
-  const scene = useScene<never, 'default'>({
+  const scene = useScene<GradientRect, 'default'>({
     systemLayers: [{ id: 'default' }],
-    initial: [],
+    initial: [{
+      kind: 'leaf',
+      layer: 'default',
+      pose: SHAPE_RECT,
+      data: { shape: 'rect', fill: INITIAL },
+      id: ID,
+    }],
+    // A gradient drag fires per pointermove; without a window each frame
+    // would be its own undo entry.
+    coalesceWindowMs: 300,
   });
+
+  const paint = scene.get(ID)?.data.fill ?? INITIAL;
+  const setPaint = (next: GradientFill) =>
+    scene.update(ID, { data: { shape: 'rect', fill: next } });
 
   // The handles work in the resolved frame — page coordinates, where the
   // box's two axes have the same scale — so `bounds` is resolved on the way
@@ -84,10 +81,7 @@ export function GradientPlaygroundDemo() {
           scene={scene}
           view={view}
           onViewChange={setView}
-          layers={{
-            scene: { drawOne: () => [] },
-            gradient: { layer, after: 'scene' },
-          }}
+          selectionMode="none"
         />
         <GradientHandles
           value={resolved}
