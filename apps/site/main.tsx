@@ -17,7 +17,11 @@ if (!container) throw new Error('Missing #root element');
 // produces a silent 404 → atlas never loads → text DrawCommands drop
 // every glyph and the canvas stays blank until edit mode (which uses a
 // contenteditable overlay, not the GL pipeline).
-await registerFont(
+// Deliberately not awaited: awaiting here gates first paint on the atlas
+// round-trip. `<SceneCanvas>` subscribes to `subscribeGlyphReady`, which
+// `registerFont` fires on success, so text that painted nothing repaints once
+// the atlas lands.
+void registerFont(
   'sans-serif',
   { weight: 400, style: 'normal' },
   `${import.meta.env.BASE_URL}inter/inter.json`,

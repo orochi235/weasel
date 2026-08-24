@@ -1,8 +1,12 @@
-import { Suspense, useEffect, useRef, useState, type RefObject } from 'react';
-import { Highlight, themes } from 'prism-react-renderer';
+import { Suspense, lazy, useEffect, useRef, useState, type RefObject } from 'react';
 import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry, type DemoSourceTab } from './registry';
-import { WhatsNew } from './WhatsNew';
-import { Releases } from './Releases';
+
+// All three are lazy so the entry bundle carries only the nav: `Releases`
+// pulls in `virtual:changelogs` (every published changelog entry), and
+// `SourceView` pulls in `prism-react-renderer`. None is needed to show a demo.
+const SourceView = lazy(() => import('./SourceView'));
+const WhatsNew = lazy(() => import('./WhatsNew').then((m) => ({ default: m.WhatsNew })));
+const Releases = lazy(() => import('./Releases').then((m) => ({ default: m.Releases })));
 
 const WHATS_NEW_ID = '__whats_new';
 const RELEASES_ID = '__releases';
@@ -119,8 +123,10 @@ export function WeaselDemos() {
 
       <main className="ckd-main">
         {active ? <DemoView entry={active} key={active.id} /> : null}
-        {!active && activeId === RELEASES_ID ? <Releases /> : null}
-        {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={setActiveId} /> : null}
+        <Suspense fallback={null}>
+          {!active && activeId === RELEASES_ID ? <Releases /> : null}
+          {!active && activeId === WHATS_NEW_ID ? <WhatsNew onSelect={setActiveId} /> : null}
+        </Suspense>
       </main>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
@@ -225,31 +231,9 @@ function DemoView({ entry }: { entry: DemoEntry }) {
         </div>
         <div className="ckd-source">
           {code == null ? <div className="ckd-source-loading" /> : (
-          <Highlight code={code} language={current.language} theme={themes.vsDark}>
-            {({ className, style, tokens, getLineProps, getTokenProps }) => (
-              <pre className={className} style={{ ...style, background: 'transparent', margin: 0 }}>
-                {(() => {
-                  const lineNoWidth = String(tokens.length).length;
-                  return tokens.map((line, i) => {
-                    const { key: _lk, ...lineProps } = getLineProps({ line });
-                    return (
-                      <div key={i} {...lineProps} className={`${lineProps.className ?? ''} ckd-line`.trim()}>
-                        <span className="ckd-line-no" style={{ minWidth: `${lineNoWidth}ch` }} aria-hidden>
-                          {i + 1}
-                        </span>
-                        <span className="ckd-line-content">
-                          {line.map((token, j) => {
-                            const { key: _tk, ...tokenProps } = getTokenProps({ token });
-                            return <span key={j} {...tokenProps} />;
-                          })}
-                        </span>
-                      </div>
-                    );
-                  });
-                })()}
-              </pre>
-            )}
-          </Highlight>
+            <Suspense fallback={<div className="ckd-source-loading" />}>
+              <SourceView code={code} language={current.language} />
+            </Suspense>
           )}
         </div>
       </div>

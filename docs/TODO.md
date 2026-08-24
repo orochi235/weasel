@@ -894,7 +894,10 @@ failure is silent and reads as a clean result.
   | | JS bytes | JS requests | DOMContentLoaded |
   |---|---|---|---|
   | before | 10,962,344 | 2 | 386 ms |
-  | after | 1,014,631 | 10 | 175 ms |
+  | after the registry split | 1,014,631 | 10 | 175 ms |
+  | after the four below | 798,308 | 9 | 63 ms |
+
+  The entry chunk went 10,961 kB → 559 kB → 291 kB (2,795 → 178 → 91 kB gzip).
 
   The registry literal now carries metadata and a `load()` per demo;
   `React.lazy` fetches the component, and the code panel fetches a tab's text
@@ -909,17 +912,20 @@ failure is silent and reads as a clean result.
   with the glob left in, buys only ~9% — top-level registry code consumes those
   strings and keeps them eager.
 
-- **(P2) The site's remaining 559 kB entry chunk.** Measured, untouched, and
-  fully apportioned — it trips vite's 500 kB warning and is accounted for by:
-  `virtual:changelogs` eager at ~204 kB though only the Releases view reads it;
-  `prism-react-renderer` eager at ~96 kB for a code panel that now loads its own
-  text lazily anyway; the 181 kB sidebar logo PNG for a 449×496 image; and
-  `WeaselRenderer` at 416 kB, already its own chunk and genuine — tree-shaking
-  was verified healthy (a single-symbol build is 1.04 kB, and barrel vs
-  deep-path imports agree within 0.04%). Separately, a module-level
-  `await registerFont(...)` in `main.tsx` gates first paint on the font-atlas
-  round-trip; that is latency, not bytes, so it does not appear in the table
-  above.
+  Four smaller wins landed on top of that split, all measured the same way:
+  `Releases` is lazy so `virtual:changelogs` leaves the entry bundle (214 kB
+  chunk), `prism-react-renderer` moved into a lazy `SourceView` (86 kB chunk),
+  the sidebar logo became a 40 kB webp (was a 181,607-byte PNG for a 449×496
+  image), and `main.tsx` no longer `await`s `registerFont` before rendering —
+  `<SceneCanvas>` subscribes to `subscribeGlyphReady`, which `registerFont`
+  fires, so text repaints when the atlas lands instead of first paint waiting
+  on it. That last one is latency rather than bytes; it is most of the
+  175 ms → 63 ms.
+
+  What is left in the 291 kB entry chunk is `WeaselRenderer` and the kit
+  surface the nav itself pulls in. Tree-shaking was verified healthy — a
+  single-symbol build is 1.04 kB, and barrel versus deep-path imports of
+  `SceneCanvas` agree within 0.04% — so that weight is genuine.
 
 - **(P2) WeaselDraw has the same defect.** `apps/draw/src/dev/sourceLookup.ts`
   embeds 772,103 bytes of its own source — including 40 test and story files —
