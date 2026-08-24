@@ -3,6 +3,11 @@ import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { Hud } from '@weasel-js/hud';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '@weasel-js/hud';
 
+export interface UseLoupeOptions {
+  /** Called with the hex a click inside the lens picked. */
+  onPick?: (hex: string) => void;
+}
+
 export interface LoupeController {
   visible: boolean;
   mode: LoupeMode;
@@ -19,6 +24,7 @@ export function useLoupe(
   ref: { current: SceneCanvasApi | null },
   hud: Hud,
   source: RenderLayer<unknown>[],
+  opts: UseLoupeOptions = {},
 ): LoupeController {
   const handle = useRef<LoupeHandle | null>(null);
   const [visible, setVisible] = useState(false);
@@ -31,6 +37,11 @@ export function useLoupe(
   // visibility — whenever the app re-memoizes a layer.
   const sourceRef = useRef(source);
   sourceRef.current = source;
+
+  // Same reason as `source`: a fresh handler each render must not rebuild the
+  // loupe and lose its position, size and visibility.
+  const onPickRef = useRef(opts.onPick);
+  onPickRef.current = opts.onPick;
   const stableSource = useRef<RenderLayer<unknown>[]>([{
     id: 'loupe-source',
     label: 'Loupe source',
@@ -47,6 +58,7 @@ export function useLoupe(
       source: stableSource,
       requestRedraw: () => api.requestRedraw(),
       onColorChange: setColor,
+      onPick: (hex) => onPickRef.current?.(hex),
       onClose: () => { handle.current?.window.setHidden(true); setVisible(false); },
     });
     loupe.window.setHidden(true);
