@@ -9,7 +9,7 @@ current: Arcs 1 and 2 and Arc 3 through step 5 are marked done there, with the r
 ## State
 
 Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
-`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: `--project=kit` is 432 files, 4573 passing.
+`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 677 files, 7099 passing.
 Arcs 1 and 2 are done, and Arc 3 through step 5. Each code commit carries a `patch` changeset:
 
 - the viewport inner-view transform fix
