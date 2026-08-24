@@ -1,6 +1,6 @@
 {
   "name": "weasel-js",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Alias for @weasel-js/core — the batteries-included entry point of the weasel 2D scene-graph canvas kit for React.",
   "license": "MIT",
@@ -73,7 +73,7 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@weasel-js/core": "1.1.0"
+    "@weasel-js/core": "1.2.0"
   },
   "publishConfig": {
     "access": "public",
