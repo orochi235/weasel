@@ -1,9 +1,10 @@
 // apps/site/demos/platformer/skin.ts
-import { ellipsePath, polygonFromPoints, rectPath } from '@weasel-js/core';
+import { ellipsePath, polygonFromPoints, rectPath, textCommand } from '@weasel-js/core';
 import type { Dims, DrawCommand, Mat3, View } from '@weasel-js/core';
+import { calloutAge, calloutScreenPos, type Callout } from './callouts';
 import { worldToScreen } from './camera';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
-import { ONEWAY, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
+import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
 import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from './skeleton';
 
 const COLORS = {
@@ -15,6 +16,9 @@ const COLORS = {
   solidTop: '#6d8aa4',
   oneway: '#8a7159',
   spike: '#c8556c',
+  question: '#c9973f',
+  questionMark: '#2a1c0d',
+  callout: '#f2e6c8',
   coin: '#f2c14e',
   enemy: '#b1594f',
   enemyEye: '#f4e6d2',
@@ -22,6 +26,12 @@ const COLORS = {
   limb: '#e0d3c2',
   torso: '#5fa8d3',
   head: '#e8c9a8',
+  hud: '#f0e6d8',
+  endingGround: '#000000',
+  endingLost: '#8b1113',
+  endingWon: '#d8c48a',
+  debugPlayer: '#7ee787',
+  debugEnemy: '#ff7b72',
 } as const;
 
 const solid = (color: string) => ({ fill: 'solid' as const, color });
@@ -89,6 +99,26 @@ export function drawTiles(level: Level, view: View, dims: Dims): DrawCommand[] {
         if (capped) out.push(rect(p.x, p.y, s, s * 0.16, COLORS.solidTop));
       } else if (t === ONEWAY) {
         out.push(rect(p.x, p.y, s, s * 0.22, COLORS.oneway));
+      } else if (t === QUESTION) {
+        out.push(rect(p.x, p.y, s, s, COLORS.question));
+        out.push(
+          // `y` is the top of the text box, not a baseline — centring means
+          // handing it the box height and letting verticalAlign do the work.
+          textCommand(
+            p.x + s / 2,
+            p.y,
+            '?',
+            {
+              fontFamily: 'sans-serif',
+              fontSize: s * 0.6,
+              align: 'center',
+              fill: solid(COLORS.questionMark),
+            },
+            undefined,
+            s,
+            'center',
+          ),
+        );
       } else if (t === SPIKE) {
         out.push({
           kind: 'path',
@@ -204,6 +234,75 @@ export function drawGoal(goal: Vec2, view: View, pulse: number): DrawCommand[] {
         { x: p.x - s / 2, y: p.y },
       ]),
       fill: solid(COLORS.goal),
+    },
+  ];
+}
+
+/** World units a callout floats upward over its lifetime. */
+const CALLOUT_RISE = 18;
+
+/** `now` is on the same clock as each callout's `bornAt`/`ttl` — the demo's
+ *  own elapsed-seconds counter, not wall-clock time. */
+export function drawCallouts(callouts: Callout[], view: View, dims: Dims, now: number): DrawCommand[] {
+  return callouts.map((c) => {
+    const u = calloutAge(c, now);
+    const pos = calloutScreenPos(c, view, dims);
+    const screen = c.anchor.kind === 'screen';
+    const style = {
+      fontFamily: 'sans-serif',
+      fontSize: screen ? 22 : 12,
+      align: 'center' as const,
+      fill: solid(COLORS.callout),
+    };
+    return {
+      kind: 'group' as const,
+      alpha: 1 - u,
+      children: [textCommand(pos.x, pos.y - u * CALLOUT_RISE, c.text, style)],
+    };
+  });
+}
+
+/**
+ * The ending card. Two ramps rather than one: the ground darkens first and the
+ * lettering arrives behind it, which is what makes the beat land instead of
+ * reading as a single cross-fade.
+ */
+export function drawEnding(
+  outcome: 'won' | 'lost',
+  since: number,
+  dims: Dims,
+): DrawCommand[] {
+  const ramp = (start: number, over: number) =>
+    Math.max(0, Math.min((since - start) / over, 1));
+  const won = outcome === 'won';
+  const text = won ? 'GOAL REACHED' : 'YOU DIED';
+  const size = won ? 46 : 60;
+  return [
+    {
+      kind: 'group',
+      alpha: ramp(0, 0.55) * 0.78,
+      children: [rect(0, 0, dims.width, dims.height, COLORS.endingGround)],
+    },
+    {
+      kind: 'group',
+      alpha: ramp(0.25, 0.9),
+      children: [
+        textCommand(
+          dims.width / 2,
+          0,
+          text,
+          {
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: size,
+            align: 'center',
+            letterSpacing: size * 0.14,
+            fill: solid(won ? COLORS.endingWon : COLORS.endingLost),
+          },
+          undefined,
+          dims.height,
+          'center',
+        ),
+      ],
     },
   ];
 }

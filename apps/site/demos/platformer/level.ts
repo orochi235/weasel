@@ -7,6 +7,10 @@ export const EMPTY = 0;
 export const SOLID = 1;
 export const ONEWAY = 2;
 export const SPIKE = 3;
+/** A `?` block: solid on all sides, like `SOLID`, but physics reports which
+ *  cell a ceiling hit landed on so the demo can tell a bonk from ordinary
+ *  ceiling. */
+export const QUESTION = 4;
 
 export interface Vec2 {
   x: number;
@@ -26,12 +30,13 @@ export interface Level {
   heightPx: number;
 }
 
-const GEOMETRY: Record<string, number> = { '#': SOLID, '=': ONEWAY, '^': SPIKE };
+const GEOMETRY: Record<string, number> = { '#': SOLID, '=': ONEWAY, '^': SPIKE, '?': QUESTION };
 const ENTITIES = new Set(['S', 'G', 'o', 'e']);
 
 /**
- * `#` solid, `=` one-way platform, `^` spike, `o` coin, `e` enemy, `S` spawn,
- * `G` goal, `.` air. Entity glyphs leave air behind in the tile grid.
+ * `#` solid, `=` one-way platform, `^` spike, `?` question block (solid, but
+ * bonkable from below), `o` coin, `e` enemy, `S` spawn, `G` goal, `.` air.
+ * Entity glyphs leave air behind in the tile grid.
  */
 export function parseLevel(lines: string[]): Level {
   const cols = lines[0]?.length ?? 0;

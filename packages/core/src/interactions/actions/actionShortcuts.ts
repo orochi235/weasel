@@ -4,6 +4,7 @@
  * `@weasel-js/ui`). Palette and menu surfaces show what an action answers
  * to; the dispatcher reads the specs themselves.
  */
+import type { GestureSpec } from '../gestures/spec';
 import type { Action } from './registry';
 import { actionBindings } from './registry';
 
@@ -18,7 +19,8 @@ export interface ActionShortcut {
 }
 
 /**
- * Every keyboard shortcut an action answers to, in declaration order.
+ * The chip form of a single gesture spec, or `undefined` when the spec has
+ * none.
  *
  * Two kinds of collapsing, both because a binding list is written for a
  * matcher rather than for a reader:
@@ -26,28 +28,36 @@ export interface ActionShortcut {
  * - A spec's `key` may list spellings of one keycap (`['[', '{']` — the
  *   shifted bracket reports as `'{'`). The first is the shortcut's name.
  * - A modifier declared `'optional'` matches held or unheld, so it isn't
- *   part of what the user has to press. Bindings left identical by that are
- *   emitted once.
+ *   part of what the user has to press.
  *
- * Non-keyboard bindings (drag, wheel, click) have no chip form and are
- * skipped; an action bound only to those returns empty. A *required* `ctrl`
- * or `meta` has no chip form either — nothing in the kit declares one, and
- * the display shape carries only `mod`.
+ * Non-keyboard specs (drag, wheel, click) have no chip form. Neither does a
+ * *required* `ctrl` or `meta` — nothing in the kit declares one, and the
+ * display shape carries only `mod`.
+ */
+export function keySpecShortcut(spec: GestureSpec): ActionShortcut | undefined {
+  if (spec.kind !== 'key' && spec.kind !== 'key-held') return undefined;
+  const key = Array.isArray(spec.key) ? spec.key[0] : spec.key;
+  if (typeof key !== 'string' || key.length === 0) return undefined;
+  const mods = 'mods' in spec ? spec.mods : undefined;
+  return {
+    key,
+    mod: mods?.mod === true,
+    alt: mods?.alt === true,
+    shift: mods?.shift === true,
+  };
+}
+
+/**
+ * Every keyboard shortcut an action answers to, in declaration order.
+ * Specs `keySpecShortcut` has no chip for are skipped, and bindings it leaves
+ * identical are emitted once; an action bound only to those returns empty.
  */
 export function actionShortcuts(action: Action): readonly ActionShortcut[] {
   const out: ActionShortcut[] = [];
   const seen = new Set<string>();
   for (const { spec } of actionBindings(action)) {
-    if (spec.kind !== 'key' && spec.kind !== 'key-held') continue;
-    const key = Array.isArray(spec.key) ? spec.key[0] : spec.key;
-    if (typeof key !== 'string' || key.length === 0) continue;
-    const mods = 'mods' in spec ? spec.mods : undefined;
-    const shortcut: ActionShortcut = {
-      key,
-      mod: mods?.mod === true,
-      alt: mods?.alt === true,
-      shift: mods?.shift === true,
-    };
+    const shortcut = keySpecShortcut(spec);
+    if (!shortcut) continue;
     const token = `${shortcut.key}|${shortcut.mod}|${shortcut.alt}|${shortcut.shift}`;
     if (seen.has(token)) continue;
     seen.add(token);

@@ -288,6 +288,16 @@ const DEMO_META: DemoMeta[] = [
     path: 'apps/site/demos/RigDemo.tsx',
   },
   {
+    id: 'side-scroller',
+    title: 'Side-scroller',
+    category: 'Animation',
+    description:
+      "A platformer, built as a load test rather than a showcase: it changes animation state every few frames, fires overlapping one-shots continuously, and never lets the clock idle. The player is an eleven-joint rig posed by cross-faded `SampledTrack<Pose>` clips — the run cycle plays on a real `animator.timeline` whose time scale tracks ground speed, while jump and fall are seeked by vertical velocity rather than played, so a short hop and a long drop both read correctly. Footsteps fire from an `EventTrack` on that looping timeline, which is the timeline-to-audio bridge under the heaviest load it will ever see. Every sound is synthesized into an `AudioBuffer` at load, so the demo ships no assets. The scene graph is off entirely; every visual is a custom render layer projecting through a camera held in a ref, which keeps a 60 Hz loop out of React state.",
+    hint: 'Arrow keys or WASD to move, space to jump. Enable audio first — Web Audio needs a gesture.',
+    load: () => import('./demos/SideScrollerDemo').then((m) => m.SideScrollerDemo),
+    path: 'apps/site/demos/SideScrollerDemo.tsx',
+  },
+  {
     id: 'audio',
     title: 'Audio',
     category: 'Animation',
@@ -512,8 +522,8 @@ const DEMO_META: DemoMeta[] = [
     id: 'loupe',
     title: 'Loupe (hud window)',
     category: 'weasel-hud',
-    description: 'A hud window — drag the titlebar to move it, drag any edge or corner to resize. Vector mode re-renders the scene through a magnified inner view (crisp at any zoom, but the colors along antialiased edges are not the colors on screen). Pixel mode reads the framebuffer back at 1:1 device pixels with NEAREST magnification, which is the honest source for color. The content freezes while the pointer is over the window so the borders stay reachable.',
-    hint: 'Move the pointer over the canvas to aim; drag the titlebar to move the window, an edge or corner to resize. Switch to pixel mode to see device pixels.',
+    description: 'A hud window — this one bare, so dragging the lens itself moves it; drag any edge or corner to resize. Vector mode re-renders the scene through a magnified inner view (crisp at any zoom, but the colors along antialiased edges are not the colors on screen). Pixel mode reads the framebuffer back at 1:1 device pixels with NEAREST magnification, which is the honest source for color. The content freezes while the pointer is over the window so the borders stay reachable, and a click inside the lens picks the color it is showing at that point.',
+    hint: 'Move the pointer over the canvas to aim; drag the interior to move the window, an edge or corner to resize; click inside the lens to pick the color there. Switch to pixel mode to see device pixels.',
     load: () => import('./demos/LoupeDemo').then((m) => m.LoupeDemo),
     path: 'apps/site/demos/LoupeDemo.tsx',
   },

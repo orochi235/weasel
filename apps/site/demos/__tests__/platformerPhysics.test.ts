@@ -233,3 +233,58 @@ describe('spikeOverlap', () => {
     expect(spikeOverlap(off.body, SPIKY)).toBe(false);
   });
 });
+
+describe('? blocks and bonks', () => {
+  // Row 0: a `?` at col 2. Rows 1-3: open air. Row 4: floor.
+  const BONK_LEVEL = parseLevel([
+    '..?..',
+    '.....',
+    '.....',
+    '.....',
+    '#####',
+  ]);
+  const JUMP: Input = { left: false, right: false, jumpHeld: true, jumpPressed: true };
+  const JUMP_HELD: Input = { left: false, right: false, jumpHeld: true, jumpPressed: false };
+
+  it('blocks horizontal motion, same as SOLID', () => {
+    // A `?` wall two tiles tall — tall enough that a grounded body's own
+    // height (which pokes up into the row above the floor) still meets it.
+    const WALL = parseLevel(['.......', '.......', '.......', '.......', '..?....', '..?....', '#######']);
+    let s = createBodyState({ x: 0.5 * TILE, y: 3 * TILE });
+    const RIGHT: Input = { left: false, right: true, jumpHeld: false, jumpPressed: false };
+    for (let i = 0; i < 240; i++) s = stepBody(s, WALL, RIGHT, STEP);
+    // The `?` column is 2, so its left face is at 2 * TILE.
+    expect(s.body.x + s.body.w / 2).toBeCloseTo(2 * TILE, 3);
+  });
+
+  it('reports a bonk with the struck cell on a real upward hit', () => {
+    let s = createBodyState({ x: 2.5 * TILE, y: 4 * TILE });
+    for (let i = 0; i < 60; i++) s = stepBody(s, BONK_LEVEL, { left: false, right: false, jumpHeld: false, jumpPressed: false }, STEP);
+    expect(s.body.onGround).toBe(true);
+    s = stepBody(s, BONK_LEVEL, JUMP, STEP);
+    let bonked: BodyState['bonk'] = null;
+    for (let i = 0; i < 120 && !bonked; i++) {
+      s = stepBody(s, BONK_LEVEL, JUMP_HELD, STEP);
+      if (s.bonk) bonked = s.bonk;
+    }
+    expect(bonked).toEqual({ cx: 2, cy: 0 });
+  });
+
+  it('never bonks while merely walking under the block', () => {
+    let s = createBodyState({ x: 0.5 * TILE, y: 3.5 * TILE });
+    const RIGHT: Input = { left: false, right: true, jumpHeld: false, jumpPressed: false };
+    let sawBonk = false;
+    for (let i = 0; i < 300; i++) {
+      s = stepBody(s, BONK_LEVEL, RIGHT, STEP);
+      if (s.bonk) sawBonk = true;
+    }
+    expect(sawBonk).toBe(false);
+  });
+
+  it('clears bonk on every step it did not just happen', () => {
+    let s = createBodyState({ x: 2.5 * TILE, y: 4 * TILE });
+    for (let i = 0; i < 60; i++) s = stepBody(s, BONK_LEVEL, { left: false, right: false, jumpHeld: false, jumpPressed: false }, STEP);
+    s = stepBody(s, BONK_LEVEL, JUMP, STEP);
+    expect(s.bonk).toBeNull();
+  });
+});

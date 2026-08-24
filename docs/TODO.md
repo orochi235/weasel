@@ -23,6 +23,7 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
 
@@ -36,7 +37,6 @@ Priority tags:
 
 **Selection, actions & UI panels**
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- A key spec becomes shortcut chips in two places → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
 - `eqeqeq` (285) and `no-unused-vars` (129) deferred from the 2026-08-22 baseline → [Lint](#lint)
@@ -412,6 +412,77 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P2) `before` and `after` layer chains do not compose.** In
+  `packages/core/src/canvas/layerOrder.ts`, `emitBefore` recurses only into a
+  layer's `before` children and `emitAfter` only into its `after` children. So a
+  custom layer anchored with `before` never has its own `after` children
+  emitted — they fall through to the orphan pass, warn "dangling reference", and
+  land at the tail in map order. Anchoring a chain's root with
+  `before: 'scene'` and chaining the rest with `after` is the natural way to
+  write a painter's-order stack, and it silently produces accidental order that
+  happens to look right. The side-scroller demo hit exactly this with nine
+  layers. Fix: a layer's `before` children belong immediately before it and its
+  `after` children immediately after, whichever direction anchored the layer
+  itself — so each emit path should recurse into both, with the cycle guard
+  extended to match.
+
+- **(P2) Forward focus events from the canvas.** `Canvas` already defaults
+  `tabIndex` to 0, so the kit has decided the canvas is focusable — but
+  `CanvasProps` is a hand-enumerated interface with no `onFocus`/`onBlur`, so a
+  consumer can make it take focus and cannot react to it. Anything wanting a
+  focus ring, a "click to start" affordance, or to announce state to a screen
+  reader has to catch the bubbled event on an ancestor and filter by
+  `tagName === 'CANVAS'`, which the side-scroller demo now does. Add
+  `onFocus`/`onBlur` (and their capture forms) as real props. Deliberately not a
+  blanket DOM-props spread: the dispatcher owns pointer and key handlers, and a
+  consumer overriding those would break input in ways nothing warns about.
+  Focus and blur are safe precisely because the kit does not use them.
+
+
+- **(P1) A full-screen effects pass.** The renderer can draw over the frame but
+  never *transform* it: there is no render-to-texture anywhere in
+  `packages/core/src/renderer/` (`createFramebuffer` appears only in the test GL
+  recorder), so no pass can sample what has already been drawn. That closes off
+  a whole class of effect by construction. `ShaderDrawCommand`'s texture uniform
+  only ever comes from `registerTexture(image)`, so a fragment shader can shade
+  a rectangle but cannot read the scene under it; `GroupDrawCommand.colorMatrix`
+  is a per-pixel colour transform, which covers grading, tinting and desaturation
+  but can never express anything needing neighbouring pixels. A consumer wanting
+  to blur, bloom, or distort the whole scene has exactly one option today: a CSS
+  `filter` on the `<canvas>` element, which is the browser compositing on the
+  kit's behalf and is not something a canvas library should be recommending.
+
+  What is missing is a post-processing stage: render the scene into a texture,
+  then run one or more fullscreen shader passes over it before presenting. The
+  shape worth designing toward is a declarative `effects` list on the canvas —
+  each entry a registered program plus uniforms, composed in order, with
+  ping-pong buffers handled by the renderer — so a consumer writes
+  `effects={[blur({ radius }), vignette({ amount })]}` and never touches GL.
+
+  It unlocks blur, bloom, vignette, chromatic aberration, colour grading, screen
+  transitions and damage/state feedback, none of which are reachable now. It also
+  wants a decision on cost: the pass is per-frame and the buffers are
+  device-resolution, so it should be inert when the list is empty.
+
+  Absorbs the former P3 "Layer effects framework", which described the same
+  feature from the layer's side: effects modify pixels rather than choosing a
+  colour, and under WebGL each is its own pass — drop-shadow needs a blurred
+  render-to-texture beneath, blur a separable kernel, blend modes framebuffer
+  compositing. Its open question stands and is the real design decision here:
+  per-layer `effects?: Effect[]` versus a wrapper (`withEffects(layer, effects)`)
+  versus one list on the canvas. Effects are consumed by the renderer, not the
+  layer, so each knows how to set up its own GL state.
+
+  Do not mistake `SceneSlotConfig.postProcess` for this. It is
+  `(cmds, view, dims) => DrawCommand[]` — a draw-command-tree transformer that
+  never touches a pixel.
+
+  Surfaced 2026-08-23 by the side-scroller demo, which blurs the canvas on a
+  head knock and took the CSS-filter route instead. That filter blurs the whole
+  canvas including the HUD drawn on it, which a real pass would not. The CSS is
+  tagged with a comment pointing here and should be replaced when this lands.
+
+
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
@@ -433,8 +504,6 @@ Core five + Crop shipped. Remaining:
   which SVG cannot express at all. It now warns through
   `SerializeOptions.onWarn` rather than vanishing silently, but still exports
   as nothing rather than as an approximation.
-
-- **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`).
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three uses now exercise it (plasma / ripple / voronoi panels), which is enough to have validated the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 
@@ -632,26 +701,74 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
 
-### Side-scroller demo
+### Side-scroller demo — landed
 
-Runs after the timeline and audio arcs land, as a load test on both — a
-platformer drives them harder and more continuously than any editor interaction
-does. Demo-local: frame loop, collision, tile map. The kit change it is still
-expected to surface is a key-state poll over the public `key-held` edges; the
-sprite-sheet half landed ahead of it — `ImageDrawCommand.source` / `flipX` /
-`flipY` and `frameRect`, see
-`docs/superpowers/specs/2026-08-22-image-source-rect-flip-design.md`.
+`apps/site/demos/SideScrollerDemo.tsx`, with its game logic in
+`apps/site/demos/platformer/`. Built as a load test on the timeline and audio
+arcs, not a showcase: it changes animation state every few frames, fires
+overlapping one-shots continuously, and never lets the clock idle. Its HUD
+carries the instrument readouts — frame time, active voices, footstep count,
+steady-state jitter — plus a collision-box overlay and a swarm button that pushes
+the voice pool past its limit.
 
 A platformer in `apps/site/demos/` is a deliberate exception to the terse,
 single-purpose demo convention — an exception, not a precedent.
 
+What it surfaced:
+
+- **(P1) `EventTrack` events cannot see their own crossing time.** An event is
+  `{ t, fire: () => void }` and `fire` takes no arguments, so a handler
+  scheduling audio can only ask the engine for "now" — frame resolution against a
+  scheduler built for sample resolution, discarding the precision the audio clock
+  exists to provide. Footsteps on the looping run cycle measured a peak spread of
+  **33–47 ms**, with steady-state deviations from a few ms to low double digits.
+  The fix is a time argument: `fire(crossedAt: number)`. Everything else here is
+  ergonomics; this one is a correctness ceiling.
+
+  Note the metric needed correcting to measure this honestly. Computing the
+  expected gap from the time scale *at the moment of firing* conflates
+  acceleration with scheduling jitter, so the HUD now folds in a sample only when
+  the scale is unchanged between consecutive footfalls.
+
+- **(P2) `useAction` silently no-ops without an `ActionsProvider` ancestor.**
+  This cost the demo *all* keyboard input, undetected through thirteen tasks and
+  a green test suite: `usePlatformerInput()` ran in the component that *renders*
+  `<WeaselProvider>` rather than under it, so the action registered into a null
+  registry and nothing ever moved. Nothing warned. A dev-mode warning when
+  `useAction` finds no registry would have turned an afternoon into a minute.
+
+- **(P2) No key-state poll.** `key-held` gives edges; the dispatcher's held set
+  tracks claims rather than physical keys and is not exported. Every character
+  controller will rewrite `platformer/useInput.ts`'s reconstruction.
+
+- **(P2) Held keys stick when the window loses focus.** No `keyup` arrives, so
+  the binding stays open and the player keeps running. `useInput.ts` guards it
+  with a `blur` listener; the dispatcher should.
+
+- **(P2) `createParallaxLayer` cannot see a ref-driven camera.** It derives its
+  inner view from the canvas's `view` prop. A consumer that pins that to identity
+  and pans through refs — to keep a 60 Hz loop out of React state, which this
+  demo must — gets identity back for every `pan` value and a backdrop that
+  silently never moves. `deriveParallaxView` works correctly called directly. The
+  layer helper needs a way to take its outer view from the caller.
+
+- **`TimelineHandle` has no `setLoop`** (the P2 above) and **no tiled-content
+  layer primitive exists** (the P3 under Tiling) — the run cycle and the parallax
+  bands are second sites wanting each.
+
 - **Tune the camera dead zone in the browser.** `DEAD_ZONE_X` in
   `apps/site/demos/platformer/camera.ts` is a placeholder at 28 (vs
-  `DEAD_ZONE_Y` at 20); pick the real value on feel once the demo is playable,
-  at the plan's Task 12. A dead-zone camera settles at exactly `DEAD_ZONE_X`
-  from a stationary target, so `platformerCamera.test.ts` asserts that
-  invariant rather than a fixed distance — changing the constant does not
-  break the test.
+  `DEAD_ZONE_Y` at 20); pick the real value on feel. A dead-zone camera settles
+  at exactly `DEAD_ZONE_X` from a stationary target, so
+  `platformerCamera.test.ts` asserts that invariant rather than a fixed distance
+  — changing the constant does not break the test.
+
+Two predictions the demo **disproved**, recorded so they are not re-raised: the
+sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /
+`flipY` / `frameRect`, see
+`docs/superpowers/specs/2026-08-22-image-source-rect-flip-design.md`), and the
+"public frame tick" the arc expected to need was already shipped as
+`Animator.onTick` plus `keepAlive`.
 
 ### Earlier deferrals
 
@@ -739,31 +856,11 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) A key spec becomes shortcut chips in two places.** `actionShortcuts`
-  (`packages/core/src/interactions/actions/actionShortcuts.ts`) turns an
-  action's key bindings into display shortcuts, and `renderSpec` /
-  `bindingToSpecs` in `apps/draw/src/dev/ToolkitBuilder.tsx` do the same thing
-  inline. Both take `spec.key[0]` for a key list and read `mods.mod` / `.alt` /
-  `.shift`; only one of them treats an `'optional'` modifier as unpressed, and
-  nothing holds them to the same answer.
-
-  Not pure duplication, which is why it wasn't collapsed when `actionShortcuts`
-  landed: ToolkitBuilder also renders drag, click and wheel specs, which have
-  no chip form and so are out of `actionShortcuts`' scope. The collapse is to
-  have ToolkitBuilder call `actionShortcuts` for the keyboard kinds and keep
-  its own rendering for the rest. An instance of the P1 below.
-
 - **(P1) Audit the engine for cascades that were duplicated and then drifted.** Selection chrome resolved a node's bounds through two independent cascades — the overlay layer's `getPose` chain and `useViewHelpers`' `boundsWithPreview` — that were supposed to give the same answer and did not: they consulted the same two preview sources in opposite priority, and only one of them carried rotation. Nothing caught it, because with one camera and one selection the two rarely disagreed on a value anyone could see. Virtual viewports collapsed that pair (the layer now reads bounds off the draw envelope, one cascade, the one the chrome state was built with).
 
   The pattern is what to go looking for: a lookup implemented once for the renderer and once for the hit-tester, or once in `<Canvas>` and once in `<SceneCanvas>`, agreeing by coincidence rather than by construction. Two more of the same kind turned up in the same arc and were collapsed with it: the affordance hit-tester built its own `ChromeState` beside the painted one (so mid-drag, handles painted at the ghost and hit-tested at the committed pose), and a view read gesture previews from the surface's dispatcher while owning one of its own.
 
   Known suspects still standing — there are two pinch-zoom implementations, `usePinchZoomTool`'s direct `usePinchGesture` listener on the canvas and `pinchZoomAction` through the dispatcher's multitouch synthesis, reached by two different `viewport` sub-flags (`pinchZoom` and `zoom`), so a consumer enabling both zooms twice; and `previewIdsExtra` / `previewPoseExtra` walk in-flight handles in a shape `usePreviewGhostLayer` also walks. The output is a list of pairs with a verdict each: collapse, or state why two are correct.
-
-- **(P2) Loupe: sample on click, and show something when empty.** Two gaps in `packages/hud/src/loupe/`, both about the lens being a live surface rather than a readout. The window already samples the framebuffer under its aim point and publishes it (`LoupeHandle.color`, `onColorChange`), and WeaselDraw already renders a vector/pixel toggle, a 2–16× magnification field and a hex readout with Copy (`apps/draw/src/LoupeControls.tsx`) — so neither of these is a control problem.
-
-  (a) **Clicking the loupe interior should pick the color under the point**, the way an eyedropper does, rather than doing nothing while a Copy button in a side panel holds the only way to take the value. The interior currently doubles as the window's move handle when `titlebar: false`, so a click and a drag have to be told apart before this can land. Where the picked color *goes* is the consumer's — the kit surfaces the pick, draw binds it to the active fill or stroke.
-
-  (b) **An empty loupe should read as empty, not as a hole.** `background` paints an opaque backdrop behind vector content so the outer canvas does not show through; with none set, a lens over blank canvas is indistinguishable from a broken one. Default to a semitransparent fill so the window always reads as a window.
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 
@@ -774,6 +871,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   What is left is the one live bug the adoption knowingly took on, in `hints.render: 'flow'` — a pane that reflows without resizing fires no observer, so keyboard navigation reads a stale rect until the child set changes. Flow is the mode where a host keeps its own CSS grid and takes only the gestures; what it gives up is everything downstream of the strategy (placements, affordances, `unplaced`, `overflowMode`, `hints.sizing`, the settle animation).
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
+
+- **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
+
+  The ask is to hand labkit a schema or a TypeScript type definition and get the panel. Most of `ConfigField` is inferrable from a type: `boolean` is a checkbox, a string union is a select, `number` is a number field. What a type cannot say is the rest of it — a bounded number wants a slider and its min/max, a string may be a color or a path, every field wants a human label — so the design question is where those annotations live and how a consumer overrides one generated field without hand-writing the whole schema.
+
+  The input is the other open question, and the two are not exclusive: a runtime schema value (Standard Schema, Zod, JSON Schema) carries its own validator and needs no build step, while reading `TC` itself is the version with nothing to keep in sync at all and costs a TS-program pass. A runtime schema as the base with a type-level path over it is the shape to design against.
 
 - **(P2) labkit: `registerSerializers` has no callers, so instrument serializers never run.** `LabStore.registerSerializers` exists and nothing in the repo calls it, leaving `serializers` permanently `{}` — `Instrument.serialize` / `deserialize` are dead at flush, at hydrate and around snapshots, and an instrument whose state is not JSON-safe silently loses it. Not a one-liner: `createLabStore` runs before any React provider mounts, so a late registration cannot reach hydration. The fix is probably to take serializers as a `CreateLabStoreOptions` field instead, which also gives the hook a place to be typed. Document migrations are unaffected — they operate on already-serialized JSON.
 
@@ -923,9 +1026,7 @@ failure is silent and reads as a clean result.
   175 ms → 63 ms.
 
   What is left in the 291 kB entry chunk is `WeaselRenderer` and the kit
-  surface the nav itself pulls in. Tree-shaking was verified healthy — a
-  single-symbol build is 1.04 kB, and barrel versus deep-path imports of
-  `SceneCanvas` agree within 0.04% — so that weight is genuine.
+  surface the nav itself pulls in. That weight is genuine; see the tree-shaking note below.
 
 - [x] **WeaselDraw — fixed 2026-08-24.** `apps/draw/src/dev/sourceLookup.ts`
   embedded this app's own source as string literals, eager because `main.tsx`
@@ -957,9 +1058,44 @@ failure is silent and reads as a clean result.
   will try to parse the JS module as CSS.
 
   Still open for draw: it fetches the Inter atlas (`inter.json` + `inter.png`,
-  212 kB together) on every load. A previous note said it downloaded twice
-  byte-identically; in the production build each is fetched exactly once, so
-  that specific claim does not reproduce.
+  212 kB together) on every load, and now on the critical path for text rather
+  than for first paint. On the duplicate-atlas item below — draw's production
+  first load fetches each of those two files exactly once, so whatever pulls
+  the `@weasel-js/hud` copy is not on that path; scope it before fixing it.
+
+---
+
+Still open, measured 2026-08-23 and not addressed by the two fixes above:
+
+- **(P2) The Inter atlas is downloaded twice, byte-identically.**
+  `inter/inter.{png,json}` from the app's publicDir and
+  `packages/hud/src/fonts/inter.{png,json}?url` via `registerDefaultFont()` are
+  the same files (matching md5s): **211,472 raw, 152,162 wasted transfer bytes,
+  2 wasted requests, 1 wasted `createImageBitmap`**. `@weasel-js/hud` should
+  accept an atlas URL or reuse an already-registered family rather than shipping
+  its own copy.
+
+- **(P3) Two inspector-only Vite plugins dominate cold dev startup.**
+  `weasel:trait-schemas` runs ts-morph over the kit source — **6,305 ms** called
+  directly — and `callbackSourcePlugin` AST-rewrites every module under
+  `packages/core/src/tools`, `interactions/actions` and `apps/draw/src`. Removing
+  both took cold dev FCP from **6,852 ms to 3,556 ms (−48%)**. Put them behind an
+  env flag. Dev-only: production cold load is 8 requests / 939,885 bytes /
+  FCP 216 ms, against dev's 974 requests / 15,684,571 bytes / FCP 6,852 ms.
+
+**Tree-shaking is exonerated for both apps** — a single-symbol build of
+`@weasel-js/core` is 1.04 kB, and barrel versus deep-path imports of
+`SceneCanvas` agree within 0.04%. Its ~596 kB is genuinely the renderer,
+dispatcher and tools. Nobody should spend time there.
+
+Other hypotheses tested and **false**, recorded so nobody re-tests them: no font is
+base64-embedded and there are no `@font-face` rules; startup does no meaningful
+work beyond bundle parse and first render (shader compile 0.3 ms, `linkProgram`
+0.0 ms, `JSON.parse` 0.1 ms over 508 bytes, localStorage 1.1 ms, no schema
+validation, no migrations); barrel over-inclusion is real but trivial — features
+WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
+702,393 minified bytes are features the app genuinely uses.
+
 
 ---
 

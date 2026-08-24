@@ -27,6 +27,7 @@ function formatRelativeOrIso(iso: string): string {
 // CommandPalette / useCommandPaletteShortcut live in
 // apps/draw/src/ui/ after the kit/app split. The demo harness uses
 // them for its own command-palette chrome via this relative import.
+import { InlineMarkdown } from './InlineMarkdown';
 import {
   CommandPalette,
   useCommandPaletteShortcut,
@@ -191,7 +192,7 @@ function DemoView({ entry }: { entry: DemoEntry }) {
           )}
         </div>
         <h2>{entry.title}</h2>
-        <p className="ckd-desc">{entry.description}</p>
+        <p className="ckd-desc"><InlineMarkdown text={entry.description} /></p>
         {entry.links && (
           <p className="ckd-links">
             {entry.links.map((l) => (

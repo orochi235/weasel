@@ -1,6 +1,6 @@
 // apps/site/demos/__tests__/platformerLevel.test.ts
 import { describe, it, expect } from 'vitest';
-import { parseLevel, tileAt, SOLID, ONEWAY, SPIKE, EMPTY, TILE } from '../platformer/level';
+import { parseLevel, tileAt, SOLID, ONEWAY, SPIKE, QUESTION, EMPTY, TILE } from '../platformer/level';
 
 const ROWS = [
   '....G',
@@ -53,5 +53,11 @@ describe('parseLevel', () => {
 
   it('rejects an unknown glyph instead of silently reading it as air', () => {
     expect(() => parseLevel(['..', '.x'])).toThrow(/unknown glyph "x".*column 1.*row 1/i);
+  });
+
+  it('parses a `?` block as solid, distinct question geometry', () => {
+    const level = parseLevel(['.?.', '###']);
+    expect(tileAt(level, 1, 0)).toBe(QUESTION);
+    expect(tileAt(level, 1, 0)).not.toBe(SOLID);
   });
 });
