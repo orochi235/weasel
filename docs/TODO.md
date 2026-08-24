@@ -410,6 +410,36 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P1) A full-screen effects pass.** The renderer can draw over the frame but
+  never *transform* it: there is no render-to-texture anywhere in
+  `packages/core/src/renderer/` (`createFramebuffer` appears only in the test GL
+  recorder), so no pass can sample what has already been drawn. That closes off
+  a whole class of effect by construction. `ShaderDrawCommand`'s texture uniform
+  only ever comes from `registerTexture(image)`, so a fragment shader can shade
+  a rectangle but cannot read the scene under it; `GroupDrawCommand.colorMatrix`
+  is a per-pixel colour transform, which covers grading, tinting and desaturation
+  but can never express anything needing neighbouring pixels. A consumer wanting
+  to blur, bloom, or distort the whole scene has exactly one option today: a CSS
+  `filter` on the `<canvas>` element, which is the browser compositing on the
+  kit's behalf and is not something a canvas library should be recommending.
+
+  What is missing is a post-processing stage: render the scene into a texture,
+  then run one or more fullscreen shader passes over it before presenting. The
+  shape worth designing toward is a declarative `effects` list on the canvas —
+  each entry a registered program plus uniforms, composed in order, with
+  ping-pong buffers handled by the renderer — so a consumer writes
+  `effects={[blur({ radius }), vignette({ amount })]}` and never touches GL.
+
+  It unlocks blur, bloom, vignette, chromatic aberration, colour grading, screen
+  transitions and damage/state feedback, none of which are reachable now. It also
+  wants a decision on cost: the pass is per-frame and the buffers are
+  device-resolution, so it should be inert when the list is empty.
+
+  Surfaced 2026-08-23 by the side-scroller demo's concussion effect, which
+  needed a full-screen blur and took the CSS-filter route instead. That code is
+  tagged with a TODO pointing here and should be replaced when this lands.
+
+
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of
   fill-mode expansion shipped 2026-08-12 — patterns tile, carry a serializable
   `TilePatternSpec`, round-trip through SVG `<pattern>`, and have a picker in
