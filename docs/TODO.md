@@ -53,6 +53,8 @@ Priority tags:
 **Performance**
 - A clipped group costs ~10 us to enter, half of it the stencil → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - A solid boundary costs 2.5 us where every other kind costs under one → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- Benchmark HUD text against a transparent DOM overlay → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- Decide where benchmarks live and how their results are kept → [Release-gate & build hygiene](#release-gate--build-hygiene)
 
 **Documentation**
 - Surface a changelog on the site → [Documentation](#documentation)
@@ -914,6 +916,24 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   `test:kit` as "the kit passes", and one nearly wrote tests that would never
   have run. Rename the project, or add a check that every package directory is
   reachable by some project's include glob.
+
+- **(P2) Benchmark HUD text against a transparent DOM overlay.** Two ways to
+  put text over the canvas: `@weasel-js/hud` draws it as canvas commands, or a
+  transparent `@weasel-js/ui` layer sits above the canvas and lets the browser
+  lay it out. Nobody has measured which is cheaper, or where the crossover is —
+  candidate axes are glyph count, update rate (a per-frame readout versus a
+  static label), and whether the text moves with the camera. The answer decides
+  what the kit recommends for HUDs, inspectors and labels, so it wants numbers
+  rather than an argument.
+
+- **(P2) Decide where benchmarks live and how their results are kept.** There
+  are benchmarks in the tree (`tests/perf`, the draw-cost work in
+  `docs/handoffs/2026-08-14-batched-dispatch.md`) with no shared convention:
+  no agreed home, no format for a recorded result, no way to say whether a
+  number moved since last time, and nothing that says which ones are expected
+  to run in CI. Settle the layout — one directory or per-package, what a run
+  emits, where a baseline is stored and how it is compared — before the next
+  benchmark adds a fourth shape.
 
 - **(P3) Bundle Inspector — public-exports inventory.** Curated list of public exports if/when one is desired. Today's barrel test asserts ops/shape-kinds/bundles parity; public exports remain uncovered.
 
