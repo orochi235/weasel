@@ -65,11 +65,26 @@ function readJsdocAbove(lines: string[], exportLineIndex: number): string | null
 
 type RawSourceMap = Record<string, string>;
 
+// Tests and stories are excluded: they export no symbol the inspector can
+// resolve, and they were a third of what this embedded.
+//
+// Both arguments must be inline literals. `import.meta.glob` is resolved by
+// static analysis, so hoisting the patterns or the options into a `const`
+// leaves vite unable to read them — it silently drops `eager`, and every
+// matched file becomes its own dynamic chunk (87 preloads instead of 1).
 let rawSources: RawSourceMap = {};
 if (typeof (import.meta as { glob?: unknown }).glob === 'function') {
   rawSources = {
-    ...(import.meta.glob('/src/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as RawSourceMap),
-    ...(import.meta.glob('/apps/draw/src/**/*.{ts,tsx}', { query: '?raw', import: 'default', eager: true }) as RawSourceMap),
+    ...(import.meta.glob([
+      '/src/**/*.{ts,tsx}',
+      '!**/*.{test,spec,stories}.{ts,tsx}',
+      '!**/__tests__/**',
+    ], { query: '?raw', import: 'default', eager: true }) as RawSourceMap),
+    ...(import.meta.glob([
+      '/apps/draw/src/**/*.{ts,tsx}',
+      '!**/*.{test,spec,stories}.{ts,tsx}',
+      '!**/__tests__/**',
+    ], { query: '?raw', import: 'default', eager: true }) as RawSourceMap),
   };
 }
 

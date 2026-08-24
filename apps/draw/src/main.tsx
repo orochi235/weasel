@@ -1,5 +1,5 @@
 import '@weasel-js/theme/tokens.css';
-import { StrictMode, useEffect, useState } from 'react';
+import { StrictMode, Suspense, lazy, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerFont, registerFontOutlines } from '@weasel-js/core/renderer';
 import {
@@ -12,8 +12,15 @@ import { App } from './App';
 import { drawTheme } from './theme';
 import { ColorModeProvider } from './colorMode';
 import { registerAvailableFonts } from './fonts';
-import { ToolkitBuilder } from './dev/ToolkitBuilder';
-import { RegistryInspector } from './dev/RegistryInspector';
+
+// Both dev surfaces are only reachable at `#/dev/*`, and `RegistryInspector`
+// reaches `dev/sourceLookup`, which embeds this app's own source as strings.
+// Importing them statically put all of that in the entry bundle for every
+// visitor who never opens them.
+const ToolkitBuilder = lazy(() =>
+  import('./dev/ToolkitBuilder').then((m) => ({ default: m.ToolkitBuilder })));
+const RegistryInspector = lazy(() =>
+  import('./dev/RegistryInspector').then((m) => ({ default: m.RegistryInspector })));
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
@@ -24,7 +31,10 @@ if (!container) throw new Error('Missing #root element');
 // `assets/fonts/` via vite's `publicDir` (see vite.config.ts).
 // `import.meta.env.BASE_URL` injects the vite `base` setting so atlas
 // URLs survive the base prefix (e.g. `/weasel/draw/`).
-await registerFont(
+// Deliberately not awaited: awaiting here gates first paint on the atlas
+// round-trip. `<SceneCanvas>` subscribes to `subscribeGlyphReady`, which
+// `registerFont` fires, so text repaints once the atlas lands.
+void registerFont(
   'sans-serif',
   { weight: 400, style: 'normal' },
   `${import.meta.env.BASE_URL}inter/inter.json`,
@@ -71,7 +81,7 @@ function Root() {
     <ColorModeProvider>
       {(mode) => (
         <ThemeProvider theme={drawTheme} mode={mode}>
-          {surface}
+          <Suspense fallback={null}>{surface}</Suspense>
         </ThemeProvider>
       )}
     </ColorModeProvider>

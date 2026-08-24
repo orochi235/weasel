@@ -927,16 +927,39 @@ failure is silent and reads as a clean result.
   single-symbol build is 1.04 kB, and barrel versus deep-path imports of
   `SceneCanvas` agree within 0.04% — so that weight is genuine.
 
-- **(P2) WeaselDraw has the same defect.** `apps/draw/src/dev/sourceLookup.ts`
-  embeds 772,103 bytes of its own source — including 40 test and story files —
-  as string literals, 36.5% of a 2,114,170-byte entry chunk. Eager because
-  `main.tsx` statically imports the inspector that reads it. Draw also blocks
-  first paint on `await registerFont(...)` and downloads the Inter atlas twice
-  byte-identically. The reusable piece from the site fix is the per-file source
-  module, not the demo-tab plugin wrapped around it. **If you lift it, keep the
-  `.js` suffix on the virtual id** (`virtual:demo-source:<path>.js`): a virtual
-  id ending in a real extension gets claimed by vite's css/json/jsx transforms,
-  and postcss will try to parse the JS module as CSS.
+- [x] **WeaselDraw — fixed 2026-08-24.** `apps/draw/src/dev/sourceLookup.ts`
+  embedded this app's own source as string literals, eager because `main.tsx`
+  statically imported the two `#/dev/*` surfaces that read it. Both are now
+  `React.lazy`, tests and stories are excluded from the glob, and `main.tsx`
+  no longer `await`s `registerFont` (same reasoning as the site).
+
+  Entry chunk **2,116.31 kB → 1,212.36 kB** (623.86 → 382.80 kB gzip), one
+  modulepreload, 6 chunks.
+
+  **The trap, if you touch that glob: `import.meta.glob` is resolved by static
+  analysis, so both arguments must be inline literals.** Hoisting the patterns
+  or the options object into a `const` leaves vite unable to read them — it
+  silently drops `eager` and every matched file becomes its own dynamic chunk.
+  That turned one modulepreload into 87 and, measured cold on Slow 4G, looked
+  exactly like "lazy-loading the dev surfaces caused a 6× FCP regression".
+  It did not; the glob did. Bisect before believing a chunk-count regression.
+
+  Measuring this needs care beyond the usual: `python3 -m http.server` handles
+  one request at a time, which serializes a many-chunk build and invents a
+  regression no real host would show — use a threaded server. Emulated FCP also
+  varies enough between runs that only the build-output numbers above are worth
+  quoting; treat the timings as directional.
+
+  The reusable piece from the site fix is the per-file source module, not the
+  demo-tab plugin wrapped around it. **If you lift it, keep the `.js` suffix on
+  the virtual id** (`virtual:demo-source:<path>.js`): a virtual id ending in a
+  real extension gets claimed by vite's css/json/jsx transforms, and postcss
+  will try to parse the JS module as CSS.
+
+  Still open for draw: it fetches the Inter atlas (`inter.json` + `inter.png`,
+  212 kB together) on every load. A previous note said it downloaded twice
+  byte-identically; in the production build each is fetched exactly once, so
+  that specific claim does not reproduce.
 
 ---
 
