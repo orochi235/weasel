@@ -42,7 +42,6 @@ import { sceneFromJSON } from 'core/scene/scene';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
 import { usePublishSelection } from 'features/selection/SelectionContext';
 import type { Bounds } from 'tools/builtin/select';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 import { useTools, type ToolsApi } from 'tools/useTools';
 import { useKeybindings } from 'tools/useKeybindings';
 import type { AnyTool } from 'tools/types';
@@ -1768,13 +1767,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         }
       });
 
-    const getSelection = multiActive
-      ? (): readonly NodeId[] => [MULTI_RESIZE_TARGET_ID as NodeId]
-      : (): readonly NodeId[] => selectedIds as readonly NodeId[];
-    const getOutlineIds = multiActive
-      ? (): readonly NodeId[] => selectedIds as readonly NodeId[]
-      : undefined;
-
     const callerSuppress = cfg.getSuppressedIds;
     const getSuppressedIds = (): ReadonlySet<string> => {
       const own = getSuppressedSelectionIds();
@@ -1788,8 +1780,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
     return createSelectionOverlayLayer<TPose>({
       ...cfg,
-      getSelection,
-      ...(getOutlineIds ? { getOutlineIds } : {}),
       getPose: poseById,
       getSuppressedIds,
       getBounds:

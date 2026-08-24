@@ -13,6 +13,8 @@ import type { RenderLayer } from 'core/layers/render';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
 import type { NodeId } from 'core/scene/types';
+import type { Bounds } from 'core/viewport/fitViewToBounds';
+import { createSelectionOverlayLayer } from 'features/selection/overlay';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -249,6 +251,50 @@ describe('SceneCanvas views prop', () => {
     );
 
     expect(registry.list().map((r) => r.id)).toEqual(['under', 'over', 'child']);
+  });
+});
+
+describe('<CanvasView> chrome', () => {
+  const POSES: Record<string, Bounds> = {
+    a: { x: 0, y: 0, width: 10, height: 10 },
+    b: { x: 40, y: 0, width: 10, height: 10 },
+  };
+
+  /** The `ChromeState` a surface puts on the draw envelope. */
+  const surfaceEnvelope = (selection: readonly string[]) => ({
+    getChromeState: () => ({
+      selection: selection as readonly NodeId[],
+      multiActive: false,
+      boundsOf: (id: string) => POSES[id] ?? null,
+      unionBounds: null,
+      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+    }),
+  });
+
+  it('outlines the view\'s selection where the surface outlines its own', () => {
+    const overlay = createSelectionOverlayLayer<Bounds>({
+      getPose: (id) => POSES[id] ?? null,
+      handles: false,
+      outline: { paint: { fill: 'solid', color: '#fff' }, width: 1, pad: 0 },
+    });
+    let registry!: ViewRegistry;
+    function Panel() {
+      const selection = useSelection({ initial: ['b' as NodeId] });
+      return <CanvasView id="panel" bounds={PANEL} selection={selection} />;
+    }
+    render(
+      <ViewRegistryProvider>
+        <Harness layers={[overlay]} onReady={(r) => { registry = r; }} />
+        <Panel />
+      </ViewRegistryProvider>,
+    );
+
+    const surfaceCmds = overlay.draw(surfaceEnvelope(['a']), OUTER, DIMS);
+    const viewCmds = registry.list()[0]!.layer.draw(surfaceEnvelope(['a']), OUTER, DIMS);
+    const inner = (viewCmds[0] as { children: unknown[] }).children;
+
+    expect((surfaceCmds[0] as { path: { x: number } }).path.x).toBeCloseTo(POSES.a!.x, 5);
+    expect((inner[0] as { path: { x: number } }).path.x).toBeCloseTo(POSES.b!.x, 5);
   });
 });
 

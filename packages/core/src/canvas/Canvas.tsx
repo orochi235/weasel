@@ -41,7 +41,6 @@ import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
-import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
@@ -70,7 +69,6 @@ import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 
 const alwaysVisible = (_id: string): boolean => true;
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
@@ -1158,20 +1156,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
             return null;
           }
         });
-      const getSelection = multiActive
-        ? (): readonly NodeId[] => [MULTI_RESIZE_TARGET_ID as NodeId]
-        : (): readonly NodeId[] => selectedIds as readonly NodeId[];
-      // Per-item outline pass: in multi mode, the handle pass works against
-      // the synthetic union id, but the outline pass still wants the real
-      // member ids so each selected object reads as "this is selected." In
-      // single mode the two coincide.
-      const getOutlineIds = multiActive
-        ? (): readonly NodeId[] => selectedIds as readonly NodeId[]
-        : undefined;
       standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
         ...cfg,
-        getSelection,
-        ...(getOutlineIds ? { getOutlineIds } : {}),
         getPose: poseById,
         getBounds:
           cfg.getBounds ??

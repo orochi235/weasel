@@ -254,7 +254,17 @@ export interface SelectionHandlesLayerOpts<TPose> extends SelectionLayerCommon<T
 }
 
 /** Options for `createSelectionOverlayLayer`. */
-export interface SelectionOverlayLayerOpts<TPose> extends SelectionLayerCommon<TPose> {
+export interface SelectionOverlayLayerOpts<TPose>
+  extends Omit<SelectionLayerCommon<TPose>, 'getSelection'> {
+  /**
+   * Which ids to draw chrome for. Omit to take them from the `ChromeState` on
+   * the draw envelope, which is what makes one canvas's several views each
+   * outline their own selection — the layer is shared, the envelope is not.
+   *
+   * A multi-selection resolves to the synthetic union id, with the real
+   * members going to the outline pass, exactly as the explicit form does.
+   */
+  getSelection?: () => readonly NodeId[];
   outline?: Stroke & { pad?: number };
   /** Pass `false` to render outlines only. */
   handles?:
@@ -673,7 +683,17 @@ export function createSelectionOverlayLayer<TPose>(
     label: 'Selection',
     space: 'screen',
     draw: (data, view) => {
-      const allIds = opts.getSelection();
+      // The synthetic multi-resize id resolves to `ChromeState.unionBounds`,
+      // the single owner of the multi-selection union AABB — the same value
+      // the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`)
+      // reads, so painted chrome and its hit region stay in agreement. When
+      // no chromeState rides the draw envelope (bare/test callers), fall
+      // through to the supplied resolver so they can synthesize it via
+      // `getPose`.
+      const chromeState = asChromeState(data);
+      const allIds = opts.getSelection
+        ? opts.getSelection()
+        : chromeSelectionIds(chromeState);
       if (allIds.length === 0) return [];
       const suppressed = opts.getSuppressedIds?.();
       const ids = suppressed && suppressed.size > 0
@@ -689,14 +709,6 @@ export function createSelectionOverlayLayer<TPose>(
       const showHandles = isVisible ? isVisible('selection.resize-handles') : true;
       const showRotation = isVisible ? isVisible('selection.rotation-handle') : true;
 
-      // The synthetic multi-resize id resolves to `ChromeState.unionBounds`,
-      // the single owner of the multi-selection union AABB — the same value
-      // the affordance hit-tester (`affordanceAt` / `composeAffordanceLayer`)
-      // reads, so painted chrome and its hit region stay in agreement. When
-      // no chromeState rides the draw envelope (bare/test callers), fall
-      // through to the supplied resolver so they can synthesize it via
-      // `getPose`.
-      const chromeState = asChromeState(data);
       const resolveTargetBounds = (id: string): Bounds | null => {
         if (id === MULTI_RESIZE_TARGET_ID && chromeState?.unionBounds != null) {
           return chromeState.unionBounds;
@@ -706,7 +718,9 @@ export function createSelectionOverlayLayer<TPose>(
 
       const out: DrawCommand[] = [];
       if (showOutline) {
-        const outlineIdsRaw = opts.getOutlineIds ? opts.getOutlineIds() : ids;
+        const outlineIdsRaw = opts.getOutlineIds
+          ? opts.getOutlineIds()
+          : (opts.getSelection ? ids : (chromeState?.selection ?? ids));
         const outlineIds = suppressed && suppressed.size > 0
           ? outlineIdsRaw.filter((id) => !suppressed.has(id as unknown as string))
           : outlineIdsRaw;
@@ -738,6 +752,15 @@ function asIsVisible(data: unknown): ((id: string) => boolean) | null {
   const maybe = data as { getIsVisible?: () => (id: string) => boolean };
   if (typeof maybe?.getIsVisible === 'function') return maybe.getIsVisible();
   return null;
+}
+
+/** The ids the handle pass works against when the layer takes its selection
+ *  from the envelope: the synthetic union id for a multi-selection, the
+ *  selection itself otherwise. */
+function chromeSelectionIds(state: ChromeState | null): readonly NodeId[] {
+  if (!state) return [];
+  if (state.multiActive) return [MULTI_RESIZE_TARGET_ID as NodeId];
+  return state.selection;
 }
 
 /** Pull live `ChromeState` off the draw `data` envelope (the same channel
