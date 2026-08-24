@@ -671,26 +671,74 @@ Arc context: `docs/superpowers/specs/2026-08-22-game-audio-animation-decompositi
 - **(P3) Serializable clips** — follows from tracks being typed callbacks rather
   than data. Revisit with the editor's experience in hand.
 
-### Side-scroller demo
+### Side-scroller demo — landed
 
-Runs after the timeline and audio arcs land, as a load test on both — a
-platformer drives them harder and more continuously than any editor interaction
-does. Demo-local: frame loop, collision, tile map. The kit change it is still
-expected to surface is a key-state poll over the public `key-held` edges; the
-sprite-sheet half landed ahead of it — `ImageDrawCommand.source` / `flipX` /
-`flipY` and `frameRect`, see
-`docs/superpowers/specs/2026-08-22-image-source-rect-flip-design.md`.
+`apps/site/demos/SideScrollerDemo.tsx`, with its game logic in
+`apps/site/demos/platformer/`. Built as a load test on the timeline and audio
+arcs, not a showcase: it changes animation state every few frames, fires
+overlapping one-shots continuously, and never lets the clock idle. Its HUD
+carries the instrument readouts — frame time, active voices, footstep count,
+steady-state jitter — plus a collision-box overlay and a swarm button that pushes
+the voice pool past its limit.
 
 A platformer in `apps/site/demos/` is a deliberate exception to the terse,
 single-purpose demo convention — an exception, not a precedent.
 
+What it surfaced:
+
+- **(P1) `EventTrack` events cannot see their own crossing time.** An event is
+  `{ t, fire: () => void }` and `fire` takes no arguments, so a handler
+  scheduling audio can only ask the engine for "now" — frame resolution against a
+  scheduler built for sample resolution, discarding the precision the audio clock
+  exists to provide. Footsteps on the looping run cycle measured a peak spread of
+  **33–47 ms**, with steady-state deviations from a few ms to low double digits.
+  The fix is a time argument: `fire(crossedAt: number)`. Everything else here is
+  ergonomics; this one is a correctness ceiling.
+
+  Note the metric needed correcting to measure this honestly. Computing the
+  expected gap from the time scale *at the moment of firing* conflates
+  acceleration with scheduling jitter, so the HUD now folds in a sample only when
+  the scale is unchanged between consecutive footfalls.
+
+- **(P2) `useAction` silently no-ops without an `ActionsProvider` ancestor.**
+  This cost the demo *all* keyboard input, undetected through thirteen tasks and
+  a green test suite: `usePlatformerInput()` ran in the component that *renders*
+  `<WeaselProvider>` rather than under it, so the action registered into a null
+  registry and nothing ever moved. Nothing warned. A dev-mode warning when
+  `useAction` finds no registry would have turned an afternoon into a minute.
+
+- **(P2) No key-state poll.** `key-held` gives edges; the dispatcher's held set
+  tracks claims rather than physical keys and is not exported. Every character
+  controller will rewrite `platformer/useInput.ts`'s reconstruction.
+
+- **(P2) Held keys stick when the window loses focus.** No `keyup` arrives, so
+  the binding stays open and the player keeps running. `useInput.ts` guards it
+  with a `blur` listener; the dispatcher should.
+
+- **(P2) `createParallaxLayer` cannot see a ref-driven camera.** It derives its
+  inner view from the canvas's `view` prop. A consumer that pins that to identity
+  and pans through refs — to keep a 60 Hz loop out of React state, which this
+  demo must — gets identity back for every `pan` value and a backdrop that
+  silently never moves. `deriveParallaxView` works correctly called directly. The
+  layer helper needs a way to take its outer view from the caller.
+
+- **`TimelineHandle` has no `setLoop`** (the P2 above) and **no tiled-content
+  layer primitive exists** (the P3 under Tiling) — the run cycle and the parallax
+  bands are second sites wanting each.
+
 - **Tune the camera dead zone in the browser.** `DEAD_ZONE_X` in
   `apps/site/demos/platformer/camera.ts` is a placeholder at 28 (vs
-  `DEAD_ZONE_Y` at 20); pick the real value on feel once the demo is playable,
-  at the plan's Task 12. A dead-zone camera settles at exactly `DEAD_ZONE_X`
-  from a stationary target, so `platformerCamera.test.ts` asserts that
-  invariant rather than a fixed distance — changing the constant does not
-  break the test.
+  `DEAD_ZONE_Y` at 20); pick the real value on feel. A dead-zone camera settles
+  at exactly `DEAD_ZONE_X` from a stationary target, so
+  `platformerCamera.test.ts` asserts that invariant rather than a fixed distance
+  — changing the constant does not break the test.
+
+Two predictions the demo **disproved**, recorded so they are not re-raised: the
+sprite-sheet gap closed independently (`ImageDrawCommand.source` / `flipX` /
+`flipY` / `frameRect`, see
+`docs/superpowers/specs/2026-08-22-image-source-rect-flip-design.md`), and the
+"public frame tick" the arc expected to need was already shipped as
+`Animator.onTick` plus `keepAlive`.
 
 ### Earlier deferrals
 
