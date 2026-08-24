@@ -123,6 +123,10 @@ function Harness({ layers, onReady }: {
       layers: () => layers,
       requestRedraw: () => {},
       hitTestExtras: () => null,
+      chromeState: () => ({
+        selection: [], multiActive: false, boundsOf: () => null, unionBounds: null,
+        modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+      }),
     });
     onReady(registry);
   }, [registry, layers, onReady]);

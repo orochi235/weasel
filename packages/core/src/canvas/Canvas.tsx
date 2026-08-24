@@ -1184,6 +1184,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       dims: () => dimsRef.current,
       layers: () => surfaceLayersRef.current,
       requestRedraw,
+      chromeState: () => helpersForLayersRef.current!.getChromeState(),
       hitTestExtras: hitTestExtrasIn,
     });
   }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn]);

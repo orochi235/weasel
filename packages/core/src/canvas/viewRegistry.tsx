@@ -10,6 +10,7 @@
 import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
 import type { LayerHit } from 'affordances/types';
+import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { ViewportLayer } from 'features/viewports/viewportLayer';
 import type { DispatcherViewTarget } from 'interactions/dispatcher/useGestureDispatcher';
@@ -29,6 +30,9 @@ export interface SurfaceHandle {
   /** The stack a view paints through its own camera, unless it narrows it. */
   layers(): readonly RenderLayer<unknown>[];
   requestRedraw(): void;
+  /** The canvas's own view chrome — its selection, its overlay-aware bounds.
+   *  What a `<CanvasView>` answers for itself, answered for view zero. */
+  chromeState(): ChromeState;
   /** Hit-test the externally registered layers at a world point, against the
    *  frame and draw envelope of whichever view is asking. The public
    *  `hitTestExtras` is this with the canvas's own frame and envelope. */

@@ -109,9 +109,9 @@ import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeTool
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
 import { useActionsRegistry, type ActionsRegistry } from 'interactions/actions/registry';
-import { buildAffordanceAt, buildClassifyTarget } from './affordanceAt';
+import { buildAffordanceAt, buildClassifyTarget, anchorStateFrom } from './affordanceAt';
+import { EMPTY_CHROME_STATE } from 'core/selection/chromeState';
 import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
-import type { AnchorState } from './affordanceAt';
 import type { Op } from 'core/ops/types';
 import { useDepRegistry } from 'interactions/actions/depRegistry';
 import { createNodeRouting, type NodeRoutingEntry } from '../core/scene/NodeRouting';
@@ -2076,6 +2076,7 @@ function GestureDispatcherMounter({
 }) {
   const registry = useActionsRegistry();
   const depRegistry = useDepRegistry();
+  const viewRegistry = useOptionalViewRegistry();
   const toolsById = useMemo<ReadonlyMap<string, AnyTool>>(() => {
     const m = new Map<string, AnyTool>();
     for (const [id, tool] of Object.entries(tools.registry)) {
@@ -2099,56 +2100,20 @@ function GestureDispatcherMounter({
   const kindOfNodeRef = useRef(kindOfNode);
   kindOfNodeRef.current = kindOfNode;
 
-  // `getAnchorState` thunk for `buildAffordanceAt`.
-  //
-  // Reads the live `editAnchors` dep from the registry at call time (O(1)
-  // thunk call). When the dep is absent (no polygon selected / anchor-edit
-  // tool inactive), returns `null` so affordanceAt skips anchor hit-testing.
+  // `getAnchorState` thunk for `buildAffordanceAt` — reads the live
+  // `editAnchors` dep from the registry at call time.
   const depRegistryRef = useRef(depRegistry);
   depRegistryRef.current = depRegistry;
-  const getAnchorState = useCallback((): AnchorState | null => {
-    const dep = depRegistryRef.current.get('editAnchors');
-    if (!dep) return null;
-    return {
-      editingId: dep.editingId ?? null,
-      // Affordance hit-test reads world-coord anchor positions; route to
-      // the dep's getEditablePath so both pose-as-polygon and data.path
-      // consumers hit-test correctly.
-      getPose: (id) => dep.getEditablePath(id),
-    };
-  }, []);
+  const getAnchorState = useMemo(() => anchorStateFrom(() => depRegistryRef.current), []);
 
   // Build the `affordanceAt` thunk. Converts client coords → world coords
   // internally, then delegates to `buildAffordanceAt` for handle hit-testing.
   const affordanceAt = useMemo(() => {
     if (!selectionRef || !boundsOf || !viewRef) return undefined;
     return buildAffordanceAt({
-      getChromeState: () => {
-        const sel = selectionRef.current;
-        const selection = sel?.current ?? [];
-        const multiActive = selection.length >= 2;
-        return {
-          selection: selection as import('core/scene/types').NodeId[],
-          multiActive,
-          boundsOf: (id: string) => boundsOfRef.current?.(id) ?? null,
-          modifiers: { alt: false, ctrl: false, meta: false, shift: false },
-          get unionBounds() {
-            if (!multiActive) return null;
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            let any = false;
-            for (const id of selection) {
-              const b = boundsOfRef.current?.(id);
-              if (!b) continue;
-              any = true;
-              if (b.x < minX) minX = b.x;
-              if (b.y < minY) minY = b.y;
-              if (b.x + b.width > maxX) maxX = b.x + b.width;
-              if (b.y + b.height > maxY) maxY = b.y + b.height;
-            }
-            return any ? { x: minX, y: minY, width: maxX - minX, height: maxY - minY } : null;
-          },
-        };
-      },
+      // The canvas's own view chrome, built once by its helpers — not a
+      // second construction here that has to agree with the painted one.
+      getChromeState: () => viewRegistry?.surface()?.chromeState() ?? EMPTY_CHROME_STATE,
       // Radii are declared in screen pixels and converted against this view.
       // The caller used to do that division itself (`8 / meanScale(scale)`),
       // in two places, with a comment explaining what breaks if you forget.
@@ -2161,7 +2126,7 @@ function GestureDispatcherMounter({
       // bounding box instead of moving the anchor.
       ...(getIsVisibleForCanvas ? { getIsVisible: () => getIsVisibleForCanvas() } : {}),
     });
-  }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas]);
+  }, [selectionRef, boundsOf, viewRef, getAnchorState, getIsVisibleForCanvas, viewRegistry]);
 
   // Build the `classifyTarget` thunk. Converts client coords → world coords
   // internally using the canvas rect + view, then delegates to `buildClassifyTarget`.
@@ -2254,7 +2219,6 @@ function GestureDispatcherMounter({
   // Input routing to registered views. Rebuilt per event from the registry, so
   // a view that mounts or moves mid-session is routable on the next event; with
   // nothing registered every point resolves to the canvas, as before.
-  const viewRegistry = useOptionalViewRegistry();
   const views = useMemo(() => {
     if (!viewRegistry) return undefined;
     const frame = () => {
