@@ -16,7 +16,7 @@ import type { RefObject } from 'react';
 import { isEditableTarget } from '../keyHelpers';
 import { useActiveToolContext } from '../actions/activeToolContext';
 import { useDepRegistry, type DepRegistry } from '../actions/depRegistry';
-import type { DepSchema, ViewApi } from '../actions/depSchema';
+import type { DepName, DepSchema } from '../actions/depSchema';
 import type { ActionsRegistry } from '../actions/registry';
 import type { AffordanceHit } from '../actions/invoker';
 import type { Tool, ToolCtx } from '../../tools/types';
@@ -85,29 +85,37 @@ export interface DispatcherViewTarget {
   classifyTarget: UseGestureDispatcherOptions['classifyTarget'];
   clientToWorld: UseGestureDispatcherOptions['clientToWorld'];
   /**
-   * This view's camera. Events routed here resolve the `view` dep to it, so
-   * `viewport.dragPan` and the rest of the viewport actions move this view
-   * rather than the canvas. Without it a gesture inside a panel pans the whole
-   * canvas — correct coordinates alone do not make routing correct.
+   * The deps this view answers for itself — its camera, its selection, and
+   * whatever else is per-view rather than per-canvas. Read per event; every
+   * name it does not carry still resolves through the canvas registry.
    *
-   * Every other dep still comes from the canvas registry.
+   * This is why a view does not get a `DepRegistryProvider` of its own. The
+   * registry is where a consumer registers *sources*, and one per view would
+   * fragment that: a consumer overriding `insert` would have to know how many
+   * views exist and override each. An overlay keeps one place to register and
+   * one authority per dep, with the view claiming only what is genuinely its.
+   *
+   * Without this a gesture inside a panel pans the whole canvas and selects
+   * into the canvas's selection — correct coordinates alone do not make
+   * routing correct.
    */
-  view?: ViewApi;
+  deps?: () => Partial<DepSchema>;
 }
 
 /**
- * `base` with its `view` dep replaced. `view` is read through a thunk so the
- * result is stable for the life of a listener set while still seeing whichever
- * view the current event routed to.
+ * `base` with the routed view's own deps in front of it. Both sides are read
+ * through thunks, so the result is stable for the life of a listener set while
+ * still answering for whichever view the current event landed in.
  */
-function withViewDep(base: () => DepRegistry, view: () => ViewApi | undefined): DepRegistry {
+function withViewDeps(
+  base: () => DepRegistry,
+  overlay: () => Partial<DepSchema> | undefined,
+): DepRegistry {
   return {
     register: (name, source) => base().register(name, source),
-    get: (name) => {
-      if (name === 'view') {
-        const v = view();
-        if (v) return v as DepSchema[typeof name];
-      }
+    get: <K extends DepName>(name: K): DepSchema[K] | undefined => {
+      const own = overlay()?.[name];
+      if (own !== undefined) return own as DepSchema[K];
       return base().get(name);
     },
   };
@@ -441,7 +449,7 @@ export function useGestureDispatcher(opts: UseGestureDispatcherOptions): void {
     // a property of the view it landed in.
     const dispatcherNow = (): Dispatcher => target().dispatcher;
 
-    const routedDeps = withViewDep(() => ctxRef.current.depRegistry, () => target().view);
+    const routedDeps = withViewDeps(() => ctxRef.current.depRegistry, () => target().deps?.());
     const ctxNow = (): DispatcherContext => ({ ...ctxRef.current, depRegistry: routedDeps });
     const canvas = canvasRef.current;
 

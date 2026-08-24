@@ -142,7 +142,7 @@ export function CanvasView(props: CanvasViewProps): null {
         );
         return { x, y };
       },
-      view: viewApi,
+      deps: () => ({ view: viewApi }),
     },
   }), [id, order, label, background, registry, rectAt, rectNow, viewApi]);
 

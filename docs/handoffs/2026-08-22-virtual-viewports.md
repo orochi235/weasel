@@ -24,10 +24,19 @@ done, plus steps 1-4 of Arc 3. Each code commit carries a `patch` changeset:
 - the `useViewHelpers` extraction
 - the per-view dispatch record, then per-event view routing, then the per-view camera
 - `<CanvasView>` and the view registry
+- the per-view dep overlay
 
 **Arc 3, where to pick up.** The spec's Arc 3 section carries a numbered list of the remaining
-steps, in order, with the reason each one precedes the next. Steps 1 through 4 are done; start at
-step 5.
+steps, in order, with the reason each one precedes the next. Steps 1 through 4 are done, and step
+5's provider question is settled — a view overlays deps onto the canvas registry rather than
+getting a registry of its own. What is left of step 5 is a `selection` on `<CanvasView>` to put in
+that overlay, and the drawing half.
+
+**The one thing that blocks the drawing half.** `useViewHelpers` needs the surface's adapter,
+geometry, bounds resolver, tools and gesture source. All five are in `SceneCanvasInner`'s render
+scope and none are reachable from a child — the `SurfaceHandle` is attached in an effect, so a
+render-time read is empty on first render. A context provider around `{children}`, rendered by
+`SceneCanvasInner`, is the way in; do that before trying to call the hook from `<CanvasView>`.
 
 Two views now really exist: `<SceneCanvas views={[{ id, bounds }]}>` paints a second camera and
 routes wheel and drag inside its rect to it. What a view cannot yet do is select, resize or edit
@@ -53,11 +62,6 @@ declares. Same name, same file, different jobs. The merge is one function doing 
 around the `layer.draw` call, space wrap around the result — not a rename.
 
 ## What is not obvious from the diff
-
-**The resolver is deliberately unwired.** With one dispatcher and one tool registry, every point
-resolves to the root view, so routing it through would be dead code that still has to be kept
-correct. It is built, tested and exported so Arc 3 can wire it the day there is a second view to
-route to.
 
 **`buildAffordanceAt` needed no change.** It reads the view through a `getView()` thunk already, so
 per-view retargeting is one construction per view. The spec's Arc 2 listed it; there was nothing

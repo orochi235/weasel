@@ -155,7 +155,7 @@ describe('useGestureDispatcher view routing', () => {
             affordanceAt: undefined,
             classifyTarget: undefined,
             clientToWorld: (x, y) => ({ x: x - PANEL_RECT.x, y }),
-            view: api(panelHold),
+            deps: () => ({ view: api(panelHold) }),
           }],
           resolver: createViewResolver({
             views: () => [{ id: 'panel', view: FLAT, rect: PANEL_RECT }],

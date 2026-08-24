@@ -22,6 +22,7 @@ Priority tags:
 - **`@weasel-js/audio`** — spec'd, phase 1 next → [Audio](#audio)
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Undoing a boolean op leaves the wrong selection** — history carries no selection snapshot → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
 
@@ -692,6 +693,10 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P1) Undoing a boolean op leaves the wrong selection.** In WeaselDraw, running a boolean op on a multi-selection and then undoing it restores the operand nodes but not the selection that produced them. History tracks scene ops only — selection is deliberately outside it, and nothing restores what was selected when an entry was recorded.
+
+  The fix is probably to snapshot the selection *onto* history entries without letting selection changes create them: an entry records the selection before and after its ops, undo/redo restores the matching one, and a bare selection change stays invisible to history. Selection is transient state (`docs/taxonomy.md`), so it must not become an undoable step of its own — a user pressing Cmd-Z after clicking around expects the last *edit* back, not the last click.
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 

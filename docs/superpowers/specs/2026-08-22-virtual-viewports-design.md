@@ -206,10 +206,15 @@ which is step 5.
 
 The remaining work, in order:
 
-5. **Per-view selection and chrome.** Then `<CanvasView>` calls `useViewHelpers` and passes the
-   result through `createViewportLayer`'s `data` thunk, which is what that thunk is for. The
-   provider question is here too: the first view's dep and actions registries must not silently
-   become every view's.
+5. **Per-view selection and chrome.** The provider question is settled: a view does not get a
+   `DepRegistryProvider` of its own, it overlays the deps that are genuinely its own onto the
+   canvas registry — one place to register a source, one authority per dep. A dispatch record now
+   carries a thunked `Partial<DepSchema>` for exactly that, with `view` as its first entry.
+   What remains is a `selection` on `<CanvasView>` to put in the overlay, and the drawing half:
+   the view calls `useViewHelpers` and passes the result through `createViewportLayer`'s `data`
+   thunk, so its layers paint its chrome rather than the surface's. That hook's inputs — adapter,
+   geometry, bounds resolver, tools, gesture source — all live in `SceneCanvasInner`'s render
+   scope and are not reachable from a child today; a context around `{children}` is the way in.
 6. **The rest of the surface's per-event lookups.** `usePinchZoomTool` and `useHoverTracking` still
    attach to the canvas and target the outer camera, so a pinch inside a panel zooms the canvas.
    Both need the list treatment the dispatcher got. `Canvas`'s `ToolCtx` is in the same position;
