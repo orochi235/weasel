@@ -122,6 +122,7 @@ function Harness({ layers, onReady }: {
       dims: () => ({ width: 300, height: 200 }),
       layers: () => layers,
       requestRedraw: () => {},
+      hitTestExtras: () => null,
     });
     onReady(registry);
   }, [registry, layers, onReady]);

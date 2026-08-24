@@ -9,6 +9,7 @@
  */
 import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react';
 import type { Dims, RenderLayer } from 'core/layers/render';
+import type { LayerHit } from 'affordances/types';
 import type { View } from 'core/viewport/view';
 import type { ViewportLayer } from 'features/viewports/viewportLayer';
 import type { DispatcherViewTarget } from 'interactions/dispatcher/useGestureDispatcher';
@@ -28,6 +29,16 @@ export interface SurfaceHandle {
   /** The stack a view paints through its own camera, unless it narrows it. */
   layers(): readonly RenderLayer<unknown>[];
   requestRedraw(): void;
+  /** Hit-test the externally registered layers at a world point, against the
+   *  frame and draw envelope of whichever view is asking. The public
+   *  `hitTestExtras` is this with the canvas's own frame and envelope. */
+  hitTestExtras(
+    worldX: number,
+    worldY: number,
+    view: View,
+    dims: Dims,
+    data: unknown,
+  ): { layerId: string; hit: LayerHit } | null;
 }
 
 /**

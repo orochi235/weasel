@@ -255,7 +255,7 @@ export interface SelectionHandlesLayerOpts<TPose> extends SelectionLayerCommon<T
 
 /** Options for `createSelectionOverlayLayer`. */
 export interface SelectionOverlayLayerOpts<TPose>
-  extends Omit<SelectionLayerCommon<TPose>, 'getSelection'> {
+  extends Omit<SelectionLayerCommon<TPose>, 'getSelection' | 'getPose'> {
   /**
    * Which ids to draw chrome for. Omit to take them from the `ChromeState` on
    * the draw envelope, which is what makes one canvas's several views each
@@ -265,6 +265,13 @@ export interface SelectionOverlayLayerOpts<TPose>
    * members going to the outline pass, exactly as the explicit form does.
    */
   getSelection?: () => readonly NodeId[];
+  /**
+   * Resolve an id to the pose to draw chrome around. Omit to take bounds from
+   * the same envelope `getSelection` omitted takes ids from — one cascade,
+   * the one the chrome state was built with, rather than a second one here
+   * that has to agree with it.
+   */
+  getPose?: (id: string) => TPose | null;
   outline?: Stroke & { pad?: number };
   /** Pass `false` to render outlines only. */
   handles?:
@@ -675,7 +682,10 @@ export function createSelectionOverlayLayer<TPose>(
   const handles = handlesEnabled ? resolveHandles(opts.handles || undefined) : null;
   const handlesOf = opts.handlesOf ?? defaultHandlesOf;
   const getBounds = opts.getBounds ?? ((pose: TPose) => pose as unknown as Bounds);
-  const resolveBounds = makeContainerAwareBoundsResolver(opts.getPose, getBounds, opts.getChildren, opts.isContainer);
+  const getPose = opts.getPose;
+  const poseBounds = getPose
+    ? makeContainerAwareBoundsResolver(getPose, getBounds, opts.getChildren, opts.isContainer)
+    : null;
   const rotationHandleDistance = resolveRotationHandleDistance(opts.rotationHandle);
 
   return {
@@ -709,6 +719,7 @@ export function createSelectionOverlayLayer<TPose>(
       const showHandles = isVisible ? isVisible('selection.resize-handles') : true;
       const showRotation = isVisible ? isVisible('selection.rotation-handle') : true;
 
+      const resolveBounds = poseBounds ?? ((id: string) => chromeState?.boundsOf(id) ?? null);
       const resolveTargetBounds = (id: string): Bounds | null => {
         if (id === MULTI_RESIZE_TARGET_ID && chromeState?.unionBounds != null) {
           return chromeState.unionBounds;

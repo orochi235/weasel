@@ -121,7 +121,6 @@ import type { WeaselTestHook } from '../test-hook/types';
 import {
   createSelectionOverlayLayer,
 } from 'features/selection/overlay';
-import { firstPreviewPose, firstPreviewBounds } from './toolPreview';
 import { makeGetNodeAtPoint } from './getNodeAtPoint';
 import {
   buildChromeCtx,
@@ -1726,7 +1725,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // Selection overlay — constructed here (scene-aware) per main's seam refactor.
   // Layered on top: path-edit suppression from HEAD's branch.
   const selectedIds = selection.current;
-  const multiActive = selectedIds.length > 1;
 
   // Keep chrome-caps live selection source in sync; updates each relevant render.
   selectionForCapsRef.current = selectedIds as readonly NodeId[];
@@ -1737,35 +1735,6 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       | undefined;
     if (selCfg === null) return null;
     const cfg = (selCfg ?? {}) as SelectionOverlaySlotConfig<TPose>;
-
-    const poseById =
-      cfg.poseById ??
-      ((id: string): TPose | null => {
-        const tp = firstPreviewPose(tools, id) as TPose | null;
-        if (tp != null) return tp;
-        for (const handle of dispatcher.getInFlightHandles()) {
-          const dp = handle.previewPose?.(id);
-          if (dp != null) return dp as TPose;
-        }
-        const tb = firstPreviewBounds(tools, id);
-        if (tb != null) return tb as unknown as TPose;
-        // The synthetic multi-resize union is resolved by the overlay layer
-        // from `ChromeState.unionBounds` at draw time (the single owner of
-        // the union AABB, shared with the affordance hit-tester) — no inline
-        // re-derivation here.
-        if (!adapter) {
-          if (internalBoundsOf) {
-            const b = internalBoundsOf(id);
-            return (b as unknown as TPose) ?? null;
-          }
-          return null;
-        }
-        try {
-          return adapter.getPose(id);
-        } catch {
-          return null;
-        }
-      });
 
     const callerSuppress = cfg.getSuppressedIds;
     const getSuppressedIds = (): ReadonlySet<string> => {
@@ -1780,17 +1749,15 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
 
     return createSelectionOverlayLayer<TPose>({
       ...cfg,
-      getPose: poseById,
       getSuppressedIds,
-      getBounds:
-        cfg.getBounds ??
-        ((p: TPose): Bounds => {
-          if (multiActive) return p as unknown as Bounds;
-          return AUTO_POSE_DESCRIPTOR.getBounds(p) as Bounds;
-        }),
+      ...(cfg.poseById
+        ? {
+            getPose: cfg.poseById,
+            getBounds: cfg.getBounds ?? ((p: TPose) => AUTO_POSE_DESCRIPTOR.getBounds(p) as Bounds),
+          }
+        : {}),
     });
-  }, [mergedLayers.selectionOverlay, selectedIds, multiActive, internalBoundsOf, tools, adapter,
-      getSuppressedSelectionIds, dispatcher]);
+  }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds]);
 
   // When alphaFor is supplied, patch it into the scene slot config so
   // buildSceneLayer (called inside Canvas) wraps per-node commands with the

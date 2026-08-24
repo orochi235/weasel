@@ -792,24 +792,36 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   //
   // `<SceneCanvas>` folds this into its `affordanceAt` thunk. Canvas can't do
   // that itself: it has the layers but not the dispatcher.
-  const hitTestExtras = useCallback((
+  const hitTestExtrasIn = useCallback((
     worldX: number,
     worldY: number,
-    frame?: { view: View; dims: Dims },
+    view: View,
+    dims: Dims,
+    data: unknown,
   ) => {
     const layers = [...extrasRef.current].reverse();
-    const view = frame?.view ?? viewRef.current;
-    const dims = frame?.dims ?? dimsRef.current;
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
     const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
       if (!isLayerVisible(layer, visibility)) continue;
-      const hit = layer.hitTest(worldX, worldY, helpersForLayersRef.current, view, dims, isVisible);
+      const hit = layer.hitTest(worldX, worldY, data, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
   }, []);
+
+  const hitTestExtras = useCallback((
+    worldX: number,
+    worldY: number,
+    frame?: { view: View; dims: Dims },
+  ) => hitTestExtrasIn(
+    worldX,
+    worldY,
+    frame?.view ?? viewRef.current,
+    frame?.dims ?? dimsRef.current,
+    helpersForLayersRef.current,
+  ), [hitTestExtrasIn]);
 
   useImperativeHandle(ref, () => ({
     element: canvasRef.current,
@@ -1121,53 +1133,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       standardLayers.selectionOverlay = selSlot.layer;
     } else if (selSlot !== null) {
       const cfg = (selSlot ?? {}) as SelectionOverlaySlotConfig<TPose>;
-      // Resolver returns either a real TPose (use geometry.getBounds) or a
-      // pre-projected Bounds (multi-union and the bounds-from-overlay path).
-      // We tag the latter so the overlay's getBounds short-circuits.
-      const poseById =
-        cfg.poseById ??
-        ((id: string): TPose | null => {
-          // Active tool's overlay (move/resize/rotate ghost) wins so the
-          // selection chrome tracks the in-flight pose during a drag.
-          const tp = previewToolPose(id);
-          if (tp != null) return tp;
-          // Tool-supplied bounds (e.g. `useSelectTool`'s multi-union for
-          // `MULTI_RESIZE_TARGET_ID`) are pre-projected Bounds; the overlay's
-          // `getBounds` (below) short-circuits the rect-as-TPose case via
-          // the `multiActive` flag.
-          const tb = previewToolBounds(id);
-          if (tb != null) return tb as unknown as TPose;
-          // The synthetic multi-resize union is resolved by the overlay layer
-          // from `ChromeState.unionBounds` at draw time — the single owner of
-          // the union AABB, shared with the affordance hit-tester so painted
-          // chrome and its hit region agree. Multi selections committed by
-          // sibling tools (lasso, custom area-select) get their union chrome
-          // through that same path, with no inline re-derivation here.
-          if (!adapter) {
-            if (effectiveBoundsOf) {
-              const b = effectiveBoundsOf(id);
-              return (b as unknown as TPose) ?? null;
-            }
-            return null;
-          }
-          try {
-            return adapter.getPose(id);
-          } catch {
-            return null;
-          }
-        });
       standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
         ...cfg,
-        getPose: poseById,
-        getBounds:
-          cfg.getBounds ??
-          ((p: TPose): Bounds => {
-            // Multi-union path returns a pre-projected Bounds masquerading as
-            // TPose; treat that case as identity. For real TPose, defer to
-            // the configured geometry.
-            if (multiActive) return p as unknown as Bounds;
-            return geometry.getBounds(p);
-          }),
+        // A consumer-supplied pose lookup still needs the configured geometry
+        // to project with; without one the layer reads bounds off the chrome
+        // state and never calls either.
+        ...(cfg.poseById
+          ? { getPose: cfg.poseById, getBounds: cfg.getBounds ?? ((p: TPose) => geometry.getBounds(p)) }
+          : {}),
       });
     }
 
@@ -1211,8 +1184,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       dims: () => dimsRef.current,
       layers: () => surfaceLayersRef.current,
       requestRedraw,
+      hitTestExtras: hitTestExtrasIn,
     });
-  }, [viewRegistry, canvasRef, requestRedraw]);
+  }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
