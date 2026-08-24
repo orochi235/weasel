@@ -1,5 +1,5 @@
 ---
-'@weasel-js/labkit': minor
+'@weasel-js/labkit': patch
 ---
 
 A lab can drive a renderer labkit does not own
