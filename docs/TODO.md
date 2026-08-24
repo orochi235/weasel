@@ -819,6 +819,8 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 ## Demos & visual regression
 
+- **(P2) Re-baseline the visual suite for the miter-limit default.** `DEFAULT_MITER_LIMIT` went from Canvas2D's 10 to SVG's 4 on 2026-08-23, because the kit's own SVG serializer omits the attribute for an unset field — so a kit stroke exported and reopened anywhere else already rendered at 4, and the kit was the odd one out. Every unset-`miterLimit` stroke with a corner sharper than about 29° now bevels where it used to spike. The headless suite is green; the Playwright baselines under `tests/visual/baselines/` have not been checked, and any demo with acute stroked corners can legitimately shift. Confirm the diffs are the spikes going away before accepting them, and remember a local pass does not imply a CI pass here (Chromium antialiases hairline 2D strokes only on GPU).
+
 - **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)
 
 ---

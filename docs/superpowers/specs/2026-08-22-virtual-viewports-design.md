@@ -1,7 +1,7 @@
 # Virtual viewports — design spec
 
 **Date:** 2026-08-22
-**Status:** Arcs 1–3 implemented; Arc 1's per-view command cache waits on the layer caching arc
+**Status:** Implemented and merged to `main` (`f19a8f84`, 2026-08-23). All three arcs done.
 **For:** whoever implements the decomposition.
 **Answers:** how one canvas hosts N independent views, what stays singular, and how today's flat
 props survive as the N=1 case.

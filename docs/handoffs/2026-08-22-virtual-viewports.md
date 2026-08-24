@@ -8,34 +8,21 @@ current: Arcs 1, 2 and 3 are marked done there, with the reasons.
 
 ## State
 
-Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
-`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 677 files, 7103 passing.
-Arcs 1, 2 and 3 are done, over the 33 commits `git log main..HEAD` lists; each code commit
-carries a `patch` changeset.
+**Landed on `main`** at `f19a8f84`, after the renderer layer-caching arc at `99783cf2`. Not pushed.
+Suite green at the merge: 682 files, 7152 passing. Arcs 1, 2 and 3 are all done — a view carries
+its own camera, dispatcher, selection, chrome, affordances and hit-testing, and the per-view layer
+command cache that Arc 1 was waiting on went in with the caching arc.
 
-**Where to pick up.** Arc 3 is finished; what is left of the design is Arc 1's per-view layer
-command cache, which is blocked below. `<SceneCanvas views={[{ id, bounds }]}>` — or a
-`<CanvasView>` child — is now a panel that pans, zooms, draws the surface's layers through its own
-camera, and selects, resizes and rotates against its own selection without touching the canvas's.
+**The two branches conflicted in one function, as predicted, and the merge is one function doing
+both jobs.** `drawOneLayer` now wraps a private `layerCommands` — cache lookup inside, space wrap
+around the result. What the cache holds is the layer's *raw* output: the wrap is a function of
+`view`, and a layer whose content does not depend on the camera may legitimately leave `view` out
+of its deps, so caching the wrapped group would serve a stale transform the moment the camera
+moved.
 
-**The trap, which is the whole lesson of the arc.** Handing a view its own state does nothing for a
-lookup that closed over the surface's at construction. Three did. Each collapse is described in the
-spec, and `docs/TODO.md` carries a P1 to sweep the engine for the rest of the pattern — the pinch
-path is a named suspect, since two independent implementations of it are live behind two different
-`viewport` flags.
-
-## Blocked
-
-**The per-view layer command cache waits on the layer caching arc.** `LayerCommandCache` does not
-exist on `main`; it lives on branch `worktree-renderer-layer-caching` (worktree
-`.claude/worktrees/renderer-layer-caching`), finished and unpushed. That arc is independently
-mergeable and should land first.
-
-**It will conflict here, in one spot.** That branch has a private `drawOneLayer(layer, data, view,
-dims, cache)` in `core/layers/render.ts` that resolves a layer's commands from cache; this branch
-has an exported `drawOneLayer(layer, data, view, dims)` that puts them in the space the layer
-declares. Same name, same file, different jobs. The merge is one function doing both — cache lookup
-around the `layer.draw` call, space wrap around the result — not a rename.
+One semantic conflict git merged silently and the typechecker caught: the caching arc widened
+`Stroke.width` to `number | { px: number }`, and the stroked-text tier predicate written against
+the old type stopped compiling.
 
 ## What is not obvious from the diff
 
