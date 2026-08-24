@@ -99,8 +99,10 @@ export interface LaidOutGroup {
   page: number;
   fill: FillStyle;
   /** Outline painted over the glyphs, or absent for none. Only ever set on
-   *  an `'outline'` group: the SDF tiers have no geometry to stroke, so a
-   *  stroked run that stays on the atlas carries the request no further. */
+   *  an `'outline'` group — the SDF tiers have no geometry to stroke, which
+   *  is why a stroke pulls its run onto the outline tier at any size. A run
+   *  the tier cannot serve at all (no registered outlines, synthetic bold)
+   *  stays on the atlas and carries the request no further. */
   stroke?: Stroke;
   /** Textured glyph quads. Always empty for an `'outline'` group. */
   quads: LaidOutQuad[];
@@ -219,6 +221,12 @@ function sameFill(a: FillStyle, b: FillStyle): boolean {
     return a.color === b.color && (a.opacity ?? 1) === (b.opacity ?? 1);
   }
   return false;
+}
+
+/** Whether a stroke puts ink down — an omitted or zero-width one does not,
+ *  and must not pull a run onto the outline tier for nothing. */
+function strokePaints(s: Stroke | undefined): boolean {
+  return s !== undefined && (s.width ?? 1) > 0;
 }
 
 /**
@@ -564,7 +572,13 @@ export function layoutRuns(
    */
   function outlineFor(e: Entry): string | null {
     const min = opts.outlineMinSize;
-    if (min === undefined || e.fontSize < min) return null;
+    if (min === undefined) return null;
+    // A stroked run ignores the size gate. The gate is there because the SDF
+    // tiers reconstruct small text better than tessellated geometry does —
+    // but they have no geometry to stroke, so leaving a stroked run below the
+    // threshold drops the outline the consumer asked for rather than trading
+    // one correct rendering for another.
+    if (e.fontSize < min && !strokePaints(e.run.stroke)) return null;
     // Synthetic bold is an SDF threshold shift, and a path has no threshold.
     // Emboldening geometry properly means offsetting the outline — the same
     // problem as stroke-to-fill, which the kit does not solve yet — and
