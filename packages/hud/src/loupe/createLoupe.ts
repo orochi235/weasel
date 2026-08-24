@@ -7,6 +7,7 @@ import type { Hud } from '../hud';
 import type { WindowWidget } from '../widgets/window/window';
 import type { HudContentCtx, WidgetBounds } from '../widget';
 import { loupeInnerView } from './innerView';
+import { loupeSourcePoint } from './pick';
 import { readbackRegion } from './readback';
 
 /** How a loupe magnifies. `'vector'` re-renders the source layers through a
@@ -35,11 +36,16 @@ export interface LoupeOptions {
    *  re-render whose edge colors differ from the screen's, so reading the
    *  color off it would report something the user cannot see. */
   onColorChange?: (hex: string) => void;
+  /** Fired when a click inside the lens picks a color — an eyedropper on the
+   *  magnified surface. Where the color goes is the consumer's: the loupe
+   *  reports the pick and nothing else. */
+  onPick?: (hex: string) => void;
   /** Fired by the window's close box. The window does not hide itself —
    *  whoever owns the loupe's visibility decides what closing means. */
   onClose?: () => void;
-  /** Opaque backdrop behind vector content, so the outer canvas does not
-   *  show through where the inner view is empty. */
+  /** Backdrop painted behind the magnified content in both modes, so the
+   *  outer canvas does not show through where the lens is empty. Defaults to
+   *  the theme's surface color. */
   background?: string;
 }
 
@@ -59,6 +65,11 @@ export interface LoupeHandle {
   /** Aim at a screen point. Ignored while the point is over the window —
    *  that is the freeze rule that makes the borders reachable. */
   aimAt(p: { x: number; y: number }): void;
+  /** Sample the color the lens is showing at `p` — a screen point inside the
+   *  lens — and report it to `onPick`. Omit `p` to pick at the aim point.
+   *  Returns the hex, or `null` when the framebuffer cannot answer for that
+   *  point. Leaves the aim, and `color`, alone. */
+  pick(p?: { x: number; y: number }): string | null;
   dispose(): void;
 }
 
@@ -83,6 +94,9 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const content = (ctx: HudContentCtx): DrawCommand[] =>
     mode === 'vector' ? drawVector(ctx) : drawPixels(ctx);
 
+  const backdropColor = (ctx: HudContentCtx): string =>
+    opts.background ?? ctx.tokens['--wzl-surface'];
+
   const drawVector = (ctx: HudContentCtx): DrawCommand[] => {
     const world = screenToWorld(aim.x, aim.y, viewToTransform(ctx.view));
     const inner: View = loupeInnerView(
@@ -96,19 +110,30 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       source,
       view: inner,
       bounds: () => ctx.rect,
-      background: opts.background ?? ctx.tokens['--wzl-surface'],
+      background: backdropColor(ctx),
     });
     return lens.draw(ctx.data, ctx.view, ctx.dims);
   };
 
   const drawPixels = (ctx: HudContentCtx): DrawCommand[] => {
-    if (!pixels) return [];
-    return [{
-      kind: 'image',
-      image: pixels,
-      x: ctx.rect.x, y: ctx.rect.y, w: ctx.rect.w, h: ctx.rect.h,
-      sampling: 'nearest',
+    // The backdrop paints even with a bitmap in hand: a readback of a
+    // transparent framebuffer is transparent, and before the first one
+    // settles there is nothing at all, either of which leaves the lens a
+    // hole onto the unmagnified canvas.
+    const out: DrawCommand[] = [{
+      kind: 'path',
+      path: { kind: 'rect', x: ctx.rect.x, y: ctx.rect.y, width: ctx.rect.w, height: ctx.rect.h },
+      fill: { fill: 'solid', color: backdropColor(ctx) },
     }];
+    if (pixels) {
+      out.push({
+        kind: 'image',
+        image: pixels,
+        x: ctx.rect.x, y: ctx.rect.y, w: ctx.rect.w, h: ctx.rect.h,
+        sampling: 'nearest',
+      });
+    }
+    return out;
   };
 
   const refreshPixels = () => {
@@ -144,21 +169,24 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       });
   };
 
-  const sampleColor = () => {
+  const readHex = (at: { x: number; y: number }): string | null => {
     const gl = element.getContext('webgl2');
-    if (!gl) return;
+    if (!gl) return null;
     const cssRect = element.getBoundingClientRect();
-    if (cssRect.width === 0) return;
+    if (cssRect.width === 0) return null;
     const dpr = element.width / cssRect.width;
     const px = readbackRegion(
-      gl, { width: element.width, height: element.height }, aim, dpr, 1, 1,
+      gl, { width: element.width, height: element.height }, at, dpr, 1, 1,
     );
-    const hex = '#' + [px.data[0], px.data[1], px.data[2]]
+    return '#' + [px.data[0], px.data[1], px.data[2]]
       .map((c) => c.toString(16).padStart(2, '0')).join('');
-    if (hex !== color) {
-      color = hex;
-      opts.onColorChange?.(hex);
-    }
+  };
+
+  const sampleColor = () => {
+    const hex = readHex(aim);
+    if (hex === null || hex === color) return;
+    color = hex;
+    opts.onColorChange?.(hex);
   };
 
   const win = hud.window({
@@ -168,8 +196,20 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     titlebar: opts.titlebar,
     content,
     onResize: () => { refreshPixels(); },
+    onContentClick: (p) => { pick(p); },
     ...(opts.onClose ? { onClose: opts.onClose } : {}),
   });
+
+  const pick = (p?: { x: number; y: number }): string | null => {
+    if (disposed) return null;
+    const src = p ? loupeSourcePoint(p, win.contentRect, aim, factor) : aim;
+    // The window is in the framebuffer too. A lens point near enough to the
+    // frame maps back under it, and reading there reports chrome as artwork.
+    if (p && win.hitTest(src.x, src.y)) return null;
+    const hex = readHex(src);
+    if (hex !== null) opts.onPick?.(hex);
+    return hex;
+  };
 
   const onPointerMove = (evt: PointerEvent) => {
     const r = element.getBoundingClientRect();
@@ -217,6 +257,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
       requestRedraw();
     },
     aimAt: handleAim,
+    pick,
     dispose() {
       teardown();
       win.dispose();
