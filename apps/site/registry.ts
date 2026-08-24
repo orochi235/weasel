@@ -21,6 +21,7 @@ import { LayoutDemo } from './demos/LayoutDemo';
 import { DebugOverlayDemo } from './demos/DebugOverlayDemo';
 import { EasingsDemo } from './demos/EasingsDemo';
 import { TimelineDemo } from './demos/TimelineDemo';
+import { SideScrollerDemo } from './demos/SideScrollerDemo';
 import { RigDemo } from './demos/RigDemo';
 import { AudioDemo } from './demos/AudioDemo';
 import { ViewportDemo } from './demos/ViewportDemo';
@@ -67,6 +68,7 @@ import LayoutDemoFull from './demos/LayoutDemo.tsx?raw';
 import DebugOverlayDemoFull from './demos/DebugOverlayDemo.tsx?raw';
 import EasingsDemoFull from './demos/EasingsDemo.tsx?raw';
 import TimelineDemoFull from './demos/TimelineDemo.tsx?raw';
+import SideScrollerDemoFull from './demos/SideScrollerDemo.tsx?raw';
 import RigDemoFull from './demos/RigDemo.tsx?raw';
 import AudioDemoFull from './demos/AudioDemo.tsx?raw';
 import ViewportDemoFull from './demos/ViewportDemo.tsx?raw';
@@ -418,6 +420,17 @@ export const DEMOS: DemoEntry[] = [
     Component: RigDemo,
     full: RigDemoFull,
     path: 'apps/site/demos/RigDemo.tsx',
+  },
+  {
+    id: 'side-scroller',
+    title: 'Side-scroller',
+    category: 'Animation',
+    description:
+      "A platformer, built as a load test rather than a showcase: it changes animation state every few frames, fires overlapping one-shots continuously, and never lets the clock idle. The player is an eleven-joint rig posed by cross-faded `SampledTrack<Pose>` clips — the run cycle plays on a real `animator.timeline` whose time scale tracks ground speed, while jump and fall are seeked by vertical velocity rather than played, so a short hop and a long drop both read correctly. Footsteps fire from an `EventTrack` on that looping timeline, which is the timeline-to-audio bridge under the heaviest load it will ever see. Every sound is synthesized into an `AudioBuffer` at load, so the demo ships no assets. The scene graph is off entirely; every visual is a custom render layer projecting through a camera held in a ref, which keeps a 60 Hz loop out of React state.",
+    hint: 'Arrow keys or WASD to move, space to jump. Enable audio first — Web Audio needs a gesture.',
+    Component: SideScrollerDemo,
+    full: SideScrollerDemoFull,
+    path: 'apps/site/demos/SideScrollerDemo.tsx',
   },
   {
     id: 'audio',
