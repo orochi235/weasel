@@ -947,6 +947,64 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   tests, because directives naming those would all report as unused. Flip it
   with the two P2 rules above.
 
+## Load cost
+
+Measured 2026-08-23. Every number below came from a build or a browser trace,
+not an estimate. Both apps share one root cause, so fix it once in each.
+
+- **(P1) Apps ship their own source to display a source panel.** WeaselDraw's
+  `apps/draw/src/dev/sourceLookup.ts` runs
+  `import.meta.glob('/apps/draw/src/**/*.{ts,tsx}', { query: '?raw', eager: true })`,
+  which embeds **772,103 bytes** of the app's TypeScript — 40 test and story
+  files among them, 215,201 bytes of that — as string literals in the entry
+  chunk. It is **36.5% of a 2,114,170-byte bundle**, and it is eager because
+  `main.tsx` statically imports the inspector that uses it. Making it lazy and
+  excluding tests measures at **−754,772 raw / −201,930 gzipped**.
+
+  `apps/site/registry.ts` has the same shape for the same reason: 105 eager
+  imports, 55 of them `?raw`, no lazy loading anywhere, so opening one demo
+  loads all fifty and their full source. Diagnosis and fix design in
+  `docs/handoffs/2026-08-23-site-load-cost.md`.
+
+- **(P1) `apps/draw/src/main.tsx` gates first paint on a font fetch.** Line 26
+  is a module-scope `await registerFont(...)`, so `createRoot().render()` cannot
+  run until the Inter atlas round-trip resolves. Injecting a 1,500 ms delay on
+  `inter/inter.json` moved first React DOM from 75 ms to 1,684 ms — a 1:1
+  pass-through. On Slow 4G the chain is strictly serial and the font costs
+  **673 ms of a 2,008 ms FCP**. Render first; register the atlas in an effect and
+  repaint when it lands. Independent of every byte fix and the highest-leverage
+  change for perceived load.
+
+- **(P2) Dev-only surfaces are on the eager path.** `main.tsx` statically imports
+  `ToolkitBuilder` and `RegistryInspector`, which serve `#/dev/*` routes a normal
+  session never visits. Lazying both (with the `?raw` fix above) measures at
+  **−901,837 raw / −236,725 gzipped** of JS and **−22,166** of CSS, and takes
+  `virtual:weasel-trait-schemas` off the eager path too.
+
+- **(P2) The Inter atlas is downloaded twice, byte-identically.**
+  `inter/inter.{png,json}` from the app's publicDir and
+  `packages/hud/src/fonts/inter.{png,json}?url` via `registerDefaultFont()` are
+  the same files (matching md5s): **211,472 raw, 152,162 wasted transfer bytes,
+  2 wasted requests, 1 wasted `createImageBitmap`**. `@weasel-js/hud` should
+  accept an atlas URL or reuse an already-registered family rather than shipping
+  its own copy.
+
+- **(P3) Two inspector-only Vite plugins dominate cold dev startup.**
+  `weasel:trait-schemas` runs ts-morph over the kit source — **6,305 ms** called
+  directly — and `callbackSourcePlugin` AST-rewrites every module under
+  `packages/core/src/tools`, `interactions/actions` and `apps/draw/src`. Removing
+  both took cold dev FCP from **6,852 ms to 3,556 ms (−48%)**. Put them behind an
+  env flag. Dev-only: production cold load is 8 requests / 939,885 bytes /
+  FCP 216 ms, against dev's 974 requests / 15,684,571 bytes / FCP 6,852 ms.
+
+Hypotheses tested and **false**, recorded so nobody re-tests them: no font is
+base64-embedded and there are no `@font-face` rules; startup does no meaningful
+work beyond bundle parse and first render (shader compile 0.3 ms, `linkProgram`
+0.0 ms, `JSON.parse` 0.1 ms over 508 bytes, localStorage 1.1 ms, no schema
+validation, no migrations); barrel over-inclusion is real but trivial — features
+WeaselDraw never calls total ~17 KB unminified, about 2 KB gzipped. The kit's
+702,393 minified bytes are features the app genuinely uses.
+
 ## Release-gate & build hygiene
 
 - **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
