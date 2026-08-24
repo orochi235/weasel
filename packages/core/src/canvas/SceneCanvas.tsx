@@ -64,7 +64,7 @@ import { useSceneSelectTool } from './SceneCanvas/useSceneSelectTool';
 import { useHandTool } from 'tools/builtin/hand';
 import { usePreviewGhostLayer } from './SceneCanvas/usePreviewGhostLayer';
 import { useDispatcherOverlayLayer } from './SceneCanvas/useDispatcherOverlayLayer';
-import { createGestureSource } from './SceneCanvas/dispatcherGestureBounds';
+import { createGestureSource, createDispatcherPreviewSources } from './SceneCanvas/dispatcherGestureBounds';
 import { createPenPreviewLayer } from 'features/paths/penPreviewLayer';
 import { createPathEditingOverlayLayer } from 'features/paths/pathEditingOverlayLayer';
 import { createSlopsDebugLayer } from './slopsDebugLayer';
@@ -1443,35 +1443,12 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // stable object keeps pointing at the live dispatcher.
   const gestureSource = useMemo(() => createGestureSource(() => dispatcherRef.current), []);
 
-  // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
-  // OngoingHandles and merge each handle's previewIds() so source ids being
-  // ghosted by dispatcher-path actions (move, resize, rotate, etc.) get their
-  // committed paint hidden under the ghost. Without this the originals would
-  // bleed through during a drag.
-  //
-  // Handles that set `previewHidesSource: false` (clone, etc.) opt OUT — their
-  // ghost still paints via the preview-ghost layer, but the source stays
-  // visible at its committed home.
-  const previewIdsExtra = useCallback((): string[] => {
-    const out: string[] = [];
-    for (const handle of dispatcher.getInFlightHandles()) {
-      if (handle.previewHidesSource === false) continue;
-      const ids = handle.previewIds?.();
-      if (!ids) continue;
-      for (const id of ids) out.push(id);
-    }
-    return out;
-  }, [dispatcher]);
-
-  // The same for poses, so selection chrome (resize / rotation handles, AABB
-  // outline) tracks the ghost during dispatcher-driven drags.
-  const previewPoseExtra = useCallback((id: string): unknown => {
-    for (const handle of dispatcher.getInFlightHandles()) {
-      const p = handle.previewPose?.(id);
-      if (p != null) return p;
-    }
-    return null;
-  }, [dispatcher]);
+  // The dispatcher's half of this view's overlay-aware lookups: whose
+  // committed paint a ghost hides, and the pose a handle proposes for an id.
+  const { previewIdsExtra, previewPoseExtra } = useMemo(
+    () => createDispatcherPreviewSources(() => dispatcherRef.current),
+    [],
+  );
 
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`. Walks both the
@@ -1858,10 +1835,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
     boundsOf: internalBoundsOf,
     tools,
-    gestureSource,
-    previewPoseExtra,
-    previewIdsExtra,
-  }), [adapter, internalBoundsOf, tools, gestureSource, previewPoseExtra, previewIdsExtra]);
+  }), [adapter, internalBoundsOf, tools]);
 
   const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>

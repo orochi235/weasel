@@ -1,18 +1,21 @@
 /**
- * The surface-wide half of what {@link useViewHelpers} needs, published to the
- * views mounted inside a surface.
+ * What {@link useViewHelpers} needs that belongs to the surface rather than to
+ * one view: the adapter, the geometry, the bounds resolver and the tools.
  *
- * A view builds its own overlay-aware state, but out of the surface's adapter,
- * geometry, tools and gestures — the same objects `<Canvas>` builds its own
- * from. Only the selection differs per view. These are read during a view's
- * render, so they travel as context rather than on the `SurfaceHandle`, which
- * is not attached until an effect runs.
+ * These are read during a view's render, so they travel as context rather than
+ * on the `SurfaceHandle`, which is not attached until an effect runs.
  */
 import { createContext, useContext, type ReactNode } from 'react';
 import type { UseViewHelpersOpts } from './useViewHelpers';
 
-/** @internal Provided by the surface, consumed by `<CanvasView>`. */
-export type SurfaceViewInputs = Omit<UseViewHelpersOpts<unknown>, 'selection'>;
+/**
+ * @internal Provided by the surface, consumed by `<CanvasView>`.
+ *
+ * The scene-shaped half only. What a gesture is doing right now is read from
+ * the asking view's own dispatcher, not from here.
+ */
+export type SurfaceViewInputs =
+  Pick<UseViewHelpersOpts<unknown>, 'adapter' | 'geometry' | 'boundsOf' | 'tools'>;
 
 const ViewInputsContext = createContext<SurfaceViewInputs | null>(null);
 

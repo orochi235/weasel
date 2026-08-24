@@ -18,6 +18,10 @@ import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
 import type { PoseProjection } from 'interactions/actions/resize/geometry';
 import { useViewHelpers } from './useViewHelpers';
+import {
+  createGestureSource,
+  createDispatcherPreviewSources,
+} from './SceneCanvas/dispatcherGestureBounds';
 import { useOptionalViewInputs, type SurfaceViewInputs } from './viewInputs';
 import {
   useOptionalViewRegistry,
@@ -73,9 +77,6 @@ const NO_INPUTS: SurfaceViewInputs = {
   geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
   boundsOf: undefined,
   tools: undefined,
-  gestureSource: undefined,
-  previewPoseExtra: undefined,
-  previewIdsExtra: undefined,
 };
 
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
@@ -141,21 +142,26 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [rectNow, setView]);
 
-  // This view's overlay-aware state, built from the surface's adapter, tools
-  // and gestures but its own selection. Read at draw time through a ref, so a
-  // mid-gesture change reaches the layers without re-registering.
-  const inputs = useOptionalViewInputs();
-  const { helpers } = useViewHelpers<unknown>({
-    ...(inputs ?? NO_INPUTS),
-    selection: selection.current,
-  });
-  const helpersRef = useRef(helpers);
-  helpersRef.current = helpers;
-
   // One dispatcher per view: in-flight handles are per-view state, and two
   // views must not be able to see each other's.
   const dispatcherRef = useRef<ReturnType<typeof createDispatcher> | null>(null);
   if (!dispatcherRef.current) dispatcherRef.current = createDispatcher();
+
+  // This view's overlay-aware state. The scene half comes from the surface —
+  // same adapter, same tools — but everything gesture-shaped is read off this
+  // view's own dispatcher, which is where a gesture inside this view lands.
+  const inputs = useOptionalViewInputs();
+  const own = useMemo(() => ({
+    gestureSource: createGestureSource(() => dispatcherRef.current),
+    ...createDispatcherPreviewSources(() => dispatcherRef.current),
+  }), []);
+  const { helpers } = useViewHelpers<unknown>({
+    ...(inputs ?? NO_INPUTS),
+    ...own,
+    selection: selection.current,
+  });
+  const helpersRef = useRef(helpers);
+  helpersRef.current = helpers;
 
   const registration = useMemo<ViewRegistration>(() => ({
     id,

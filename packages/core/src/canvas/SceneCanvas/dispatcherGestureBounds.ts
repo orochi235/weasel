@@ -87,3 +87,39 @@ export function createGestureSource(
     getVersion: () => getDispatcher()?.getVersion() ?? 0,
   };
 }
+
+/**
+ * The dispatcher's contribution to a view's overlay-aware lookups: which ids
+ * an in-flight handle hides behind a ghost, and the pose it proposes for one.
+ *
+ * Separate from {@link createGestureSource} only because `<Canvas>` takes
+ * these as two loose props rather than a bundle.
+ */
+export function createDispatcherPreviewSources(
+  getDispatcher: () => Dispatcher | null | undefined,
+): {
+  previewIdsExtra: () => string[];
+  previewPoseExtra: (id: string) => unknown;
+} {
+  return {
+    // Handles that set `previewHidesSource: false` (clone, etc.) opt out —
+    // their ghost still paints, but the source stays at its committed home.
+    previewIdsExtra: () => {
+      const out: string[] = [];
+      for (const handle of getDispatcher()?.getInFlightHandles() ?? []) {
+        if (handle.previewHidesSource === false) continue;
+        const ids = handle.previewIds?.();
+        if (!ids) continue;
+        for (const id of ids) out.push(id);
+      }
+      return out;
+    },
+    previewPoseExtra: (id: string) => {
+      for (const handle of getDispatcher()?.getInFlightHandles() ?? []) {
+        const p = handle.previewPose?.(id);
+        if (p != null) return p;
+      }
+      return null;
+    },
+  };
+}
