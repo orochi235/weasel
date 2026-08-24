@@ -448,9 +448,10 @@ Core five + Crop shipped. Remaining:
   `(cmds, view, dims) => DrawCommand[]` — a draw-command-tree transformer that
   never touches a pixel.
 
-  Surfaced 2026-08-23 by the side-scroller demo's concussion effect, which
-  needed a full-screen blur and took the CSS-filter route instead. That code is
-  tagged with a TODO pointing here and should be replaced when this lands.
+  Surfaced 2026-08-23 by the side-scroller demo, which blurs the canvas on a
+  head knock and took the CSS-filter route instead. That filter blurs the whole
+  canvas including the HUD drawn on it, which a real pass would not. The CSS is
+  tagged with a comment pointing here and should be replaced when this lands.
 
 
 - **(P3) Pattern fills: what the tile picker left open.** The texture half of

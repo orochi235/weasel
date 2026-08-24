@@ -291,8 +291,8 @@ a:hover { text-decoration: underline; }
  * render-to-texture for a shader to sample yet. See docs/TODO.md's
  * "(P1) A full-screen effects pass". Two discrete steps, not a computed
  * value, so the concussion escalates without an inline style. */
-.ckd-canvas--blur-1 { filter: blur(2px); transition: filter 220ms ease-out; }
-.ckd-canvas--blur-2 { filter: blur(6px); transition: filter 220ms ease-out; }
+.ckd-canvas { transition: filter 180ms ease-out; }
+.ckd-canvas--knocked { filter: blur(5px); }
 
 .ckd-hint {
   font-size: 11px;

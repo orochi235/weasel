@@ -16,7 +16,7 @@ import { CAM_SCALE, cameraView, createCamera, followCamera, worldToScreen, type 
 import { pushCallout, stepCallouts, type Callout } from './platformer/callouts';
 import { TILE } from './platformer/level';
 import { WORLD } from './platformer/worldLevel';
-import { COLORS, drawBackdrop, drawCallouts, drawCoins, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
+import { COLORS, drawBackdrop, drawCallouts, drawCoins, drawEnding, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
 import {
   createBodyState,
   spikeOverlap,
@@ -57,8 +57,8 @@ const IDENTITY_VIEW: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
  *  steady — the gap would measure speed change, not scheduling jitter. */
 const JITTER_SCALE_TOLERANCE = 0.02;
 
-/** Third bonk ends the run. */
-const MAX_BONKS = 3;
+/** How long the blur holds after a head knock before fading back out. */
+const BONK_BLUR_MS = 260;
 const BONK_CALLOUT_TTL = 0.9;
 const COINS_PER_LIFE = 5;
 const HEALTHCARE_CALLOUT_TTL = 1.6;
@@ -80,11 +80,12 @@ interface GameRefs {
   lives: number;
   score: number;
   elapsed: number;
-  outcome: 'playing' | 'won' | 'lost' | 'concussion';
-  /** Ceiling hits on a `?` block; the third ends the run. */
-  bonks: number;
+  outcome: 'playing' | 'won' | 'lost';
   /** Seconds of screen shake remaining. */
   shake: number;
+  /** Seconds since the run was decided. Its own clock: `elapsed` stops with the
+   *  simulation, and the ending needs to keep fading after that. */
+  ended: number;
   callouts: Callout[];
 }
 
@@ -100,8 +101,8 @@ const freshGame = (): GameRefs => ({
   score: 0,
   elapsed: 0,
   outcome: 'playing',
-  bonks: 0,
   shake: 0,
+  ended: 0,
   callouts: [],
 });
 
@@ -127,14 +128,8 @@ function SideScrollerDemoInner() {
   const game = useRef<GameRefs>(freshGame());
   const [running, setRunning] = useState(false);
   const [, setNonce] = useState(0);
-  // The canvas HUD is what draws `won`/`lost`, but a concussion blurs the
-  // canvas — its message has to live in the DOM instead, which needs this
-  // mirrored into React state rather than read straight off `game.current`.
-  const [concussed, setConcussed] = useState(false);
-
   const restart = () => {
     game.current = freshGame();
-    setConcussed(false);
     setNonce((n) => n + 1);
   };
 
@@ -149,18 +144,16 @@ function SideScrollerDemoInner() {
     showBoxesRef.current = showBoxes;
   }, [showBoxes]);
 
-  // Two discrete blur classes rather than a computed filter value, escalating
-  // on a short timer so the concussion reads as a hit landing, not a snap cut.
-  const [blurStage, setBlurStage] = useState<0 | 1 | 2>(0);
-  useEffect(() => {
-    if (!concussed) {
-      setBlurStage(0);
-      return;
-    }
-    setBlurStage(1);
-    const id = window.setTimeout(() => setBlurStage(2), 180);
-    return () => window.clearTimeout(id);
-  }, [concussed]);
+  // A class toggle rather than a computed filter value; the CSS transition does
+  // the fade in both directions, so this only has to say when to let go.
+  const [blurred, setBlurred] = useState(false);
+  const blurTimer = useRef(0);
+  const pulseBlur = () => {
+    setBlurred(true);
+    window.clearTimeout(blurTimer.current);
+    blurTimer.current = window.setTimeout(() => setBlurred(false), BONK_BLUR_MS);
+  };
+  useEffect(() => () => window.clearTimeout(blurTimer.current), []);
 
   // The run cycle's own timeline — its playhead is what fires footsteps, not
   // the fixed-step loop. `runScale` is what the loop writes and the footstep
@@ -343,16 +336,6 @@ function SideScrollerDemoInner() {
           textCommand(72, 22, `◆ ${g.score} / ${g.coins.length}`, style),
           textCommand(190, 22, `${g.elapsed.toFixed(1)}s`, style),
         ];
-        // Concussion's message lives in the DOM instead — the canvas is what
-        // gets blurred, so text drawn on it would be unreadable.
-        if (g.outcome === 'won' || g.outcome === 'lost') {
-          out.push(
-            textCommand(W / 2 - 60, H / 2, g.outcome === 'won' ? 'you made it' : 'out of lives', {
-              ...style,
-              fontSize: 26,
-            }),
-          );
-        }
         return out;
       },
     };
@@ -391,7 +374,17 @@ function SideScrollerDemoInner() {
       },
     };
 
-    return { bands, tiles, entities, player, debug, hud, callouts };
+    const ending: RenderLayer<unknown> = {
+      id: 'ending',
+      label: 'Ending',
+      space: 'screen',
+      draw: (): DrawCommand[] => {
+        const g = game.current;
+        return g.outcome === 'playing' ? [] : drawEnding(g.outcome, g.ended, DIMS);
+      },
+    };
+
+    return { bands, tiles, entities, player, debug, hud, callouts, ending };
   }, []);
 
   // A camera with nothing to follow still has to run, or the first frame after
@@ -418,6 +411,8 @@ function SideScrollerDemoInner() {
       // Simulation halts on pause and once the run is decided; the run cycle's
       // own registration is paused here too, or it keeps firing footsteps
       // after death since the animator ticks it independently of this loop.
+      if (g.outcome !== 'playing') g.ended += frame;
+
       if (!running || g.outcome !== 'playing') {
         const cycle = runCycle.current;
         if (cycle && !cycle.isPaused()) cycle.pause();
@@ -451,7 +446,6 @@ function SideScrollerDemoInner() {
         // A bonk requires the ceiling branch of resolveY to have actually fired
         // this step — walking under a `?` block never sets it.
         if (g.player.bonk && g.outcome === 'playing') {
-          g.bonks++;
           const at = { x: (g.player.bonk.cx + 0.5) * TILE, y: (g.player.bonk.cy + 0.5) * TILE };
           g.callouts = pushCallout(g.callouts, {
             text: 'ow',
@@ -460,12 +454,11 @@ function SideScrollerDemoInner() {
             ttl: BONK_CALLOUT_TTL,
           });
           fireAt('hurt', at, 0.7);
-          if (g.bonks >= MAX_BONKS) {
-            g.outcome = 'concussion';
-            setConcussed(true);
-          } else {
-            g.shake = SHAKE_DURATION;
-          }
+          g.shake = SHAKE_DURATION;
+          g.lives--;
+          g.invuln = INVULN;
+          duckMusic();
+          pulseBlur();
         }
 
         g.enemies = g.enemies.map((e) => stepEnemy(e, WORLD, STEP));
@@ -566,8 +559,7 @@ function SideScrollerDemoInner() {
     }
   };
 
-  const canvasClassName =
-    blurStage === 0 ? 'ckd-canvas' : blurStage === 1 ? 'ckd-canvas ckd-canvas--blur-1' : 'ckd-canvas ckd-canvas--blur-2';
+  const canvasClassName = blurred ? 'ckd-canvas ckd-canvas--knocked' : 'ckd-canvas';
 
   return (
     <div className="ckd-demo">
@@ -598,6 +590,7 @@ function SideScrollerDemoInner() {
           player: { layer: layers.player, after: 'entities' },
           debug: { layer: layers.debug, after: 'player' },
           hud: { layer: layers.hud, after: 'debug' },
+          ending: { layer: layers.ending, after: 'hud' },
           callouts: { layer: layers.callouts, after: 'hud' },
           scene: { drawOne: () => [] },
           selectionOverlay: null,
@@ -619,10 +612,8 @@ function SideScrollerDemoInner() {
         <button className="ckd-btn" onClick={swarm}>swarm +40</button>
       </div>
       <div className="ckd-hint">
-        {concussed
-          ? 'concussion — three ? blocks to the head ends the run. restart to try again.'
-          : 'A platformer built as a load test for the animation timeline and the audio ' +
-            'engine. Everything is drawn by custom render layers; the scene graph is off.'}
+        A platformer built as a load test for the animation timeline and the audio
+        engine. Everything is drawn by custom render layers; the scene graph is off.
       </div>
     </div>
   );

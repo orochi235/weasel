@@ -6,7 +6,7 @@ import { cameraView, createCamera, worldToScreen } from '../platformer/camera';
 import { parseLevel, TILE } from '../platformer/level';
 import { PLAYER_SKELETON, ROOT_TO_FOOT } from '../platformer/skeleton';
 import { createCoins, createEnemies } from '../platformer/entities';
-import { drawBackdrop, drawCoins, drawEnemies, drawGoal, drawPlayer, drawTiles } from '../platformer/skin';
+import { drawBackdrop, drawCoins, drawEnemies, drawEnding, drawGoal, drawPlayer, drawTiles } from '../platformer/skin';
 
 const DIMS = { width: 640, height: 360 };
 const VIEW = cameraView(createCamera({ x: 5 * TILE, y: 3 * TILE }), DIMS);
@@ -104,5 +104,41 @@ describe('skin', () => {
 
   it('draws a goal without throwing', () => {
     expect(drawGoal(LEVEL.goal, VIEW, 0).length).toBeGreaterThan(0);
+  });
+});
+
+describe('drawEnding', () => {
+  it('ramps the ground in before the lettering', () => {
+    const early = drawEnding('lost', 0.15, DIMS) as never[];
+    const [ground, text] = early as unknown as { alpha: number }[];
+    expect(ground.alpha).toBeGreaterThan(0);
+    // The text ramp starts later, so at 0.15s it is still fully transparent.
+    expect(text.alpha).toBe(0);
+  });
+
+  it('settles both ramps and stays settled', () => {
+    const [ground, text] = drawEnding('lost', 5, DIMS) as unknown as { alpha: number }[];
+    expect(ground.alpha).toBeCloseTo(0.78, 5);
+    expect(text.alpha).toBe(1);
+  });
+
+  it('says YOU DIED on a loss and something else on a win', () => {
+    const read = (o: 'won' | 'lost') => {
+      const [, group] = drawEnding(o, 5, DIMS) as unknown as { children: { runs: { text: string }[] }[] }[];
+      return group.children[0].runs[0].text;
+    };
+    expect(read('lost')).toBe('YOU DIED');
+    expect(read('won')).not.toBe('YOU DIED');
+  });
+
+  it('centres the lettering in the viewport with tracking', () => {
+    const [, group] = drawEnding('lost', 5, DIMS) as unknown as {
+      children: { x: number; height: number; verticalAlign: string; style: { letterSpacing?: number } }[];
+    }[];
+    const cmd = group.children[0];
+    expect(cmd.x).toBe(DIMS.width / 2);
+    expect(cmd.height).toBe(DIMS.height);
+    expect(cmd.verticalAlign).toBe('center');
+    expect(cmd.style.letterSpacing).toBeGreaterThan(0);
   });
 });

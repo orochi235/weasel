@@ -27,6 +27,9 @@ const COLORS = {
   torso: '#5fa8d3',
   head: '#e8c9a8',
   hud: '#f0e6d8',
+  endingGround: '#000000',
+  endingLost: '#8b1113',
+  endingWon: '#d8c48a',
   debugPlayer: '#7ee787',
   debugEnemy: '#ff7b72',
 } as const;
@@ -257,6 +260,51 @@ export function drawCallouts(callouts: Callout[], view: View, dims: Dims, now: n
       children: [textCommand(pos.x, pos.y - u * CALLOUT_RISE, c.text, style)],
     };
   });
+}
+
+/**
+ * The ending card. Two ramps rather than one: the ground darkens first and the
+ * lettering arrives behind it, which is what makes the beat land instead of
+ * reading as a single cross-fade.
+ */
+export function drawEnding(
+  outcome: 'won' | 'lost',
+  since: number,
+  dims: Dims,
+): DrawCommand[] {
+  const ramp = (start: number, over: number) =>
+    Math.max(0, Math.min((since - start) / over, 1));
+  const won = outcome === 'won';
+  const text = won ? 'GOAL REACHED' : 'YOU DIED';
+  const size = won ? 46 : 60;
+  return [
+    {
+      kind: 'group',
+      alpha: ramp(0, 0.55) * 0.78,
+      children: [rect(0, 0, dims.width, dims.height, COLORS.endingGround)],
+    },
+    {
+      kind: 'group',
+      alpha: ramp(0.25, 0.9),
+      children: [
+        textCommand(
+          dims.width / 2,
+          0,
+          text,
+          {
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: size,
+            align: 'center',
+            letterSpacing: size * 0.14,
+            fill: solid(won ? COLORS.endingWon : COLORS.endingLost),
+          },
+          undefined,
+          dims.height,
+          'center',
+        ),
+      ],
+    },
+  ];
 }
 
 export { COLORS };
