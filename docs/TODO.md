@@ -23,6 +23,7 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
 
@@ -36,7 +37,6 @@ Priority tags:
 
 **Selection, actions & UI panels**
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- A key spec becomes shortcut chips in two places → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
 - `eqeqeq` (285) and `no-unused-vars` (129) deferred from the 2026-08-22 baseline → [Lint](#lint)
@@ -739,20 +739,6 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
 ## Selection, actions & UI panels
 
-- **(P2) A key spec becomes shortcut chips in two places.** `actionShortcuts`
-  (`packages/core/src/interactions/actions/actionShortcuts.ts`) turns an
-  action's key bindings into display shortcuts, and `renderSpec` /
-  `bindingToSpecs` in `apps/draw/src/dev/ToolkitBuilder.tsx` do the same thing
-  inline. Both take `spec.key[0]` for a key list and read `mods.mod` / `.alt` /
-  `.shift`; only one of them treats an `'optional'` modifier as unpressed, and
-  nothing holds them to the same answer.
-
-  Not pure duplication, which is why it wasn't collapsed when `actionShortcuts`
-  landed: ToolkitBuilder also renders drag, click and wheel specs, which have
-  no chip form and so are out of `actionShortcuts`' scope. The collapse is to
-  have ToolkitBuilder call `actionShortcuts` for the keyboard kinds and keep
-  its own rendering for the rest. An instance of the P1 below.
-
 - **(P1) Audit the engine for cascades that were duplicated and then drifted.** Selection chrome resolved a node's bounds through two independent cascades — the overlay layer's `getPose` chain and `useViewHelpers`' `boundsWithPreview` — that were supposed to give the same answer and did not: they consulted the same two preview sources in opposite priority, and only one of them carried rotation. Nothing caught it, because with one camera and one selection the two rarely disagreed on a value anyone could see. Virtual viewports collapsed that pair (the layer now reads bounds off the draw envelope, one cascade, the one the chrome state was built with).
 
   The pattern is what to go looking for: a lookup implemented once for the renderer and once for the hit-tester, or once in `<Canvas>` and once in `<SceneCanvas>`, agreeing by coincidence rather than by construction. Two more of the same kind turned up in the same arc and were collapsed with it: the affordance hit-tester built its own `ChromeState` beside the painted one (so mid-drag, handles painted at the ghost and hit-tested at the committed pose), and a view read gesture previews from the surface's dispatcher while owning one of its own.
@@ -774,6 +760,12 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   What is left is the one live bug the adoption knowingly took on, in `hints.render: 'flow'` — a pane that reflows without resizing fires no observer, so keyboard navigation reads a stale rect until the child set changes. Flow is the mode where a host keeps its own CSS grid and takes only the gestures; what it gives up is everything downstream of the strategy (placements, affordances, `unplaced`, `overflowMode`, `hints.sizing`, the settle animation).
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
+
+- **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
+
+  The ask is to hand labkit a schema or a TypeScript type definition and get the panel. Most of `ConfigField` is inferrable from a type: `boolean` is a checkbox, a string union is a select, `number` is a number field. What a type cannot say is the rest of it — a bounded number wants a slider and its min/max, a string may be a color or a path, every field wants a human label — so the design question is where those annotations live and how a consumer overrides one generated field without hand-writing the whole schema.
+
+  The input is the other open question, and the two are not exclusive: a runtime schema value (Standard Schema, Zod, JSON Schema) carries its own validator and needs no build step, while reading `TC` itself is the version with nothing to keep in sync at all and costs a TS-program pass. A runtime schema as the base with a type-level path over it is the shape to design against.
 
 - **(P2) labkit: `registerSerializers` has no callers, so instrument serializers never run.** `LabStore.registerSerializers` exists and nothing in the repo calls it, leaving `serializers` permanently `{}` — `Instrument.serialize` / `deserialize` are dead at flush, at hydrate and around snapshots, and an instrument whose state is not JSON-safe silently loses it. Not a one-liner: `createLabStore` runs before any React provider mounts, so a late registration cannot reach hydration. The fix is probably to take serializers as a `CreateLabStoreOptions` field instead, which also gives the hook a place to be typed. Document migrations are unaffected — they operate on already-serialized JSON.
 
