@@ -12,6 +12,7 @@ import type { View } from 'core/viewport/view';
 import type { RenderLayer } from 'core/layers/render';
 import { ViewRegistryProvider, useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import { useSelection, type SelectionApi } from 'core/selection/useSelection';
+import type { NodeId } from 'core/scene/types';
 
 type D = { kind: 'rect' };
 type L = 'main';
@@ -171,6 +172,37 @@ describe('<CanvasView> draw contribution', () => {
     registry.list()[0]!.layer.draw({}, OUTER, DIMS);
     expect(seen).toEqual(['b']);
   });
+
+  it('hands its source layers its own chrome and the surface half unchanged', () => {
+    let seen: Record<string, unknown> | undefined;
+    const probe: RenderLayer<unknown> = {
+      id: 'probe',
+      label: 'probe',
+      draw: (data) => { seen = data as Record<string, unknown>; return []; },
+    };
+    let registry!: ViewRegistry;
+    let panel!: SelectionApi;
+    function Panel() {
+      panel = useSelection({ initial: ['mine' as NodeId] });
+      return <CanvasView id="panel" bounds={PANEL} selection={panel} />;
+    }
+    render(
+      <ViewRegistryProvider>
+        <Harness layers={[probe]} onReady={(r) => { registry = r; }} />
+        <Panel />
+      </ViewRegistryProvider>,
+    );
+
+    const surfaceEnvelope = {
+      getIsVisible: () => () => false,
+      getChromeState: () => ({ selection: ['theirs'] }),
+    };
+    registry.list()[0]!.layer.draw(surfaceEnvelope, OUTER, DIMS);
+
+    const chrome = (seen as { getChromeState(): { selection: readonly NodeId[] } }).getChromeState();
+    expect(chrome.selection).toEqual(['mine']);
+    expect((seen as { getIsVisible(): (id: string) => boolean }).getIsVisible()('x')).toBe(false);
+  });
 });
 
 describe('SceneCanvas views prop', () => {
@@ -238,14 +270,14 @@ describe('<CanvasView> selection', () => {
     const own = reg.target.deps!().selection!;
 
     expect(own.get()).toEqual([]);
-    act(() => { own.set(['a']); });
+    act(() => { own.set(['a' as NodeId]); });
     expect(reg.target.deps!().selection!.get()).toEqual(['a']);
   });
 
   it('overlays a supplied selection instead of owning one', () => {
     let api!: SelectionApi;
     function Supplied() {
-      api = useSelection({ initial: ['seed'] });
+      api = useSelection({ initial: ['seed' as NodeId] });
       return <CanvasView id="panel" bounds={PANEL} selection={api} />;
     }
     const reg = registrationFor(<Supplied />);

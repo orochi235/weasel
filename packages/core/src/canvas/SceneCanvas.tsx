@@ -53,6 +53,7 @@ import type { SnapStrategy } from 'interactions/gestures/types';
 import { dlog } from '../debug/flag';
 import { DeviceProfileProvider, useDeviceProfile } from '../core/device/useDeviceProfile';
 import { ViewRegistryProvider, useOptionalViewRegistry, IDENTITY_VIEW, UNMEASURED_DIMS } from './viewRegistry';
+import { ViewInputsProvider, type SurfaceViewInputs } from './viewInputs';
 import { CanvasView, type CanvasViewProps } from './CanvasView';
 import { createViewResolver } from 'features/viewports/viewResolver';
 import type { DeviceProfile } from '../core/device/types';
@@ -132,6 +133,7 @@ import {
 } from 'features/chrome-caps';
 import type { RuleCtx } from 'features/chrome-caps';
 import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import type { PoseProjection } from 'interactions/actions/resize/geometry';
 export { rotateAroundAABBCenter } from './poseRotation';
 
 /**
@@ -1443,6 +1445,36 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // stable object keeps pointing at the live dispatcher.
   const gestureSource = useMemo(() => createGestureSource(() => dispatcherRef.current), []);
 
+  // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
+  // OngoingHandles and merge each handle's previewIds() so source ids being
+  // ghosted by dispatcher-path actions (move, resize, rotate, etc.) get their
+  // committed paint hidden under the ghost. Without this the originals would
+  // bleed through during a drag.
+  //
+  // Handles that set `previewHidesSource: false` (clone, etc.) opt OUT — their
+  // ghost still paints via the preview-ghost layer, but the source stays
+  // visible at its committed home.
+  const previewIdsExtra = useCallback((): string[] => {
+    const out: string[] = [];
+    for (const handle of dispatcher.getInFlightHandles()) {
+      if (handle.previewHidesSource === false) continue;
+      const ids = handle.previewIds?.();
+      if (!ids) continue;
+      for (const id of ids) out.push(id);
+    }
+    return out;
+  }, [dispatcher]);
+
+  // The same for poses, so selection chrome (resize / rotation handles, AABB
+  // outline) tracks the ghost during dispatcher-driven drags.
+  const previewPoseExtra = useCallback((id: string): unknown => {
+    for (const handle of dispatcher.getInFlightHandles()) {
+      const p = handle.previewPose?.(id);
+      if (p != null) return p;
+    }
+    return null;
+  }, [dispatcher]);
+
   // Preview-ghost layer: renders in-flight gesture poses on top of the
   // committed scene using the scene slot's `drawOne`. Walks both the
   // tools registry and the dispatcher's in-flight handles.
@@ -1861,6 +1893,19 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     [ref, ingestImpl],
   );
 
+  // What a view needs to build its own overlay-aware state. `geometry` is the
+  // same default `<Canvas>` resolves to — `SceneCanvasProps` strips the prop,
+  // so the two cannot diverge.
+  const viewInputs = useMemo<SurfaceViewInputs>(() => ({
+    adapter: adapter as unknown as { getPose(id: string): unknown },
+    geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
+    boundsOf: internalBoundsOf,
+    tools,
+    gestureSource,
+    previewPoseExtra,
+    previewIdsExtra,
+  }), [adapter, internalBoundsOf, tools, gestureSource, previewPoseExtra, previewIdsExtra]);
+
   const canvas = (
     <Canvas<Node<TData, TLayer, TPose>, TPose>
       ref={mergedRef}
@@ -1870,39 +1915,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       layers={wiredLayers}
       pickEvery={internalPickEvery}
       getIsVisible={getIsVisibleForCanvas}
-      previewIdsExtra={() => {
-        // Mirror usePreviewGhostLayer: walk the dispatcher's in-flight
-        // OngoingHandles and merge each handle's previewIds() so source
-        // ids being ghosted by dispatcher-path actions (move, resize,
-        // rotate, etc.) get their committed paint hidden under the
-        // ghost. Without this, post-Phase-14e-Task-3 the originals
-        // would bleed through during drag.
-        //
-        // Handles that set `previewHidesSource: false` (clone, etc.)
-        // opt OUT — their ghost still paints via the preview-ghost
-        // layer, but the source stays visible at its committed home.
-        const out: string[] = [];
-        for (const handle of dispatcher.getInFlightHandles()) {
-          if (handle.previewHidesSource === false) continue;
-          const ids = handle.previewIds?.();
-          if (!ids) continue;
-          for (const id of ids) out.push(id);
-        }
-        return out;
-      }}
+      previewIdsExtra={previewIdsExtra}
       // The gesture surface behind `helpersRef.getGestureBounds()` /
       // `subscribeGestures()` — Canvas has no dispatcher of its own.
       gestureSource={gestureSource}
-      previewPoseExtra={(id) => {
-        // Mirror previewIdsExtra: surface dispatcher in-flight handles'
-        // `previewPose(id)` so selection chrome (resize / rotation handles,
-        // AABB outline) tracks the ghost during dispatcher-driven drags.
-        for (const handle of dispatcher.getInFlightHandles()) {
-          const p = handle.previewPose?.(id);
-          if (p != null) return p;
-        }
-        return null;
-      }}
+      previewPoseExtra={previewPoseExtra}
       viewport={viewport}
       backgroundFill={backgroundFill}
       cursorCoordsHud={cursorCoordsHud}
@@ -1952,68 +1969,70 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   return (
     <DeviceProfileProvider value={device}>
       <ViewRegistryProvider>
-        <DepRegistryProviderIfRoot>
-          <PointerProviderIfRoot>
-            <ActionsProviderIfRoot>
-              {canvas}
-              <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
-              <StandardActionsRegistrar
-                selection={selection}
-                scene={scene as Scene<unknown, string, unknown>}
-                adapter={adapter as unknown as BridgeAdapter}
-                actionDefaults={actionDefaults}
-                actions={resolvedActions}
-                currentViewRef={currentViewRef}
-                onViewChange={handleViewChange}
-                resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
-                geometryProjection={geometryProjection}
-                dispatcher={dispatcher}
-                getActionRef={getActionRef}
-                pickEvery={internalPickEvery}
-                viewportPanEnabled={viewport?.pan !== false}
-                viewportZoom={viewport?.zoom ?? true}
-                viewportRecenter={viewport?.recenter}
-                editAnchorsExternalState={editAnchorsExternalState}
-                anchorEditingAllowed={anchorEditingAllowed}
-                layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
-                insertNodeFactories={insertNodeFactories}
-                snapPoint={toolOptions?.snapPoint}
-                canvasRef={internalCanvasRef}
-                ingestionResolveSrc={ingestion?.resolveSrc}
-                ingestionSvg={ingestion?.svg}
-                ingestionClipboard={ingestionClipboard}
-                actionsRegistryRef={actionsRegistryRef}
-              />
-              <GestureDispatcherMounter
-                canvasRef={internalCanvasRef}
-                canvasApiRef={canvasApiRef}
-                tools={tools}
-                enabled={enableGestureDispatcher}
-                keyboard={enableKeybindings}
-                selectionRef={selectionRef}
-                boundsOf={internalBoundsOf}
-                pickEvery={internalPickEvery}
-                pickBest={internalPickBest}
-                kindOfNode={kindOfNode}
-                viewRef={currentViewRef}
-                dispatcher={dispatcher}
-                getIsVisibleForCanvas={getIsVisibleForCanvas}
-                getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
-                onDoubleClick={onDoubleClickObserver}
-              />
-              <ToolKeybindingsMounter
-                internalTools={internalTools}
-                toolsTakeover={toolsTakeover ?? undefined}
-                enableKeybindings={enableKeybindings}
-                isToolEligible={isToolEligible}
-              />
-              {viewDescriptors?.map((v, i) => (
-                <CanvasView key={v.id} {...v} order={v.order ?? i} />
-              ))}
-              {children}
-            </ActionsProviderIfRoot>
-          </PointerProviderIfRoot>
-        </DepRegistryProviderIfRoot>
+        <ViewInputsProvider value={viewInputs}>
+          <DepRegistryProviderIfRoot>
+            <PointerProviderIfRoot>
+              <ActionsProviderIfRoot>
+                {canvas}
+                <PointerPublisher canvasRef={internalCanvasRef} viewRef={currentViewRef} />
+                <StandardActionsRegistrar
+                  selection={selection}
+                  scene={scene as Scene<unknown, string, unknown>}
+                  adapter={adapter as unknown as BridgeAdapter}
+                  actionDefaults={actionDefaults}
+                  actions={resolvedActions}
+                  currentViewRef={currentViewRef}
+                  onViewChange={handleViewChange}
+                  resizeOptions={selectToolOpts?.resize as UseResizeOptions<unknown> | undefined}
+                  geometryProjection={geometryProjection}
+                  dispatcher={dispatcher}
+                  getActionRef={getActionRef}
+                  pickEvery={internalPickEvery}
+                  viewportPanEnabled={viewport?.pan !== false}
+                  viewportZoom={viewport?.zoom ?? true}
+                  viewportRecenter={viewport?.recenter}
+                  editAnchorsExternalState={editAnchorsExternalState}
+                  anchorEditingAllowed={anchorEditingAllowed}
+                  layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
+                  insertNodeFactories={insertNodeFactories}
+                  snapPoint={toolOptions?.snapPoint}
+                  canvasRef={internalCanvasRef}
+                  ingestionResolveSrc={ingestion?.resolveSrc}
+                  ingestionSvg={ingestion?.svg}
+                  ingestionClipboard={ingestionClipboard}
+                  actionsRegistryRef={actionsRegistryRef}
+                />
+                <GestureDispatcherMounter
+                  canvasRef={internalCanvasRef}
+                  canvasApiRef={canvasApiRef}
+                  tools={tools}
+                  enabled={enableGestureDispatcher}
+                  keyboard={enableKeybindings}
+                  selectionRef={selectionRef}
+                  boundsOf={internalBoundsOf}
+                  pickEvery={internalPickEvery}
+                  pickBest={internalPickBest}
+                  kindOfNode={kindOfNode}
+                  viewRef={currentViewRef}
+                  dispatcher={dispatcher}
+                  getIsVisibleForCanvas={getIsVisibleForCanvas}
+                  getRuleCtx={getActiveMode ? buildCurrentRuleCtx : undefined}
+                  onDoubleClick={onDoubleClickObserver}
+                />
+                <ToolKeybindingsMounter
+                  internalTools={internalTools}
+                  toolsTakeover={toolsTakeover ?? undefined}
+                  enableKeybindings={enableKeybindings}
+                  isToolEligible={isToolEligible}
+                />
+                {viewDescriptors?.map((v, i) => (
+                  <CanvasView key={v.id} {...v} order={v.order ?? i} />
+                ))}
+                {children}
+              </ActionsProviderIfRoot>
+            </PointerProviderIfRoot>
+          </DepRegistryProviderIfRoot>
+        </ViewInputsProvider>
       </ViewRegistryProvider>
     </DeviceProfileProvider>
   );

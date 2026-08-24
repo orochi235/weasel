@@ -15,6 +15,10 @@ import { createViewportLayer } from 'features/viewports/viewportLayer';
 import { createDispatcher } from 'interactions/dispatcher/dispatcher';
 import type { ViewApi } from 'interactions/actions/depSchema';
 import { useSelection, type SelectionApi, type UseSelectionOptions } from 'core/selection/useSelection';
+import { AUTO_POSE_DESCRIPTOR } from 'interactions/actions/resize/autoPoseDescriptor';
+import type { PoseProjection } from 'interactions/actions/resize/geometry';
+import { useViewHelpers } from './useViewHelpers';
+import { useOptionalViewInputs, type SurfaceViewInputs } from './viewInputs';
 import {
   useOptionalViewRegistry,
   IDENTITY_VIEW,
@@ -61,6 +65,18 @@ export interface CanvasViewProps {
    *  supplied. */
   selectionOptions?: UseSelectionOptions;
 }
+
+/** What a view builds its helpers from outside a surface: nothing but the
+ *  default geometry, which answers `null` for every lookup. */
+const NO_INPUTS: SurfaceViewInputs = {
+  adapter: undefined,
+  geometry: AUTO_POSE_DESCRIPTOR as unknown as PoseProjection<unknown>,
+  boundsOf: undefined,
+  tools: undefined,
+  gestureSource: undefined,
+  previewPoseExtra: undefined,
+  previewIdsExtra: undefined,
+};
 
 const ALL_LAYERS = (s: readonly RenderLayer<unknown>[]): readonly RenderLayer<unknown>[] => s;
 
@@ -125,6 +141,17 @@ export function CanvasView(props: CanvasViewProps): null {
     },
   }), [rectNow, setView]);
 
+  // This view's overlay-aware state, built from the surface's adapter, tools
+  // and gestures but its own selection. Read at draw time through a ref, so a
+  // mid-gesture change reaches the layers without re-registering.
+  const inputs = useOptionalViewInputs();
+  const { helpers } = useViewHelpers<unknown>({
+    ...(inputs ?? NO_INPUTS),
+    selection: selection.current,
+  });
+  const helpersRef = useRef(helpers);
+  helpersRef.current = helpers;
+
   // One dispatcher per view: in-flight handles are per-view state, and two
   // views must not be able to see each other's.
   const dispatcherRef = useRef<ReturnType<typeof createDispatcher> | null>(null);
@@ -139,6 +166,10 @@ export function CanvasView(props: CanvasViewProps): null {
       source: () => live.current.layers(registry?.surface()?.layers() ?? []),
       view: () => live.current.view,
       bounds: (outer, dims) => rectAt(outer, dims),
+      // The surface half of the envelope passes through; the view half is
+      // this view's, so its layers paint its chrome rather than the
+      // surface's.
+      data: (outer) => ({ ...(outer as object), ...helpersRef.current }),
       ...(background !== undefined ? { background } : {}),
     }),
     target: {
