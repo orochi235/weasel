@@ -4,13 +4,13 @@
 spec does not carry.
 
 The design is `docs/superpowers/specs/2026-08-22-virtual-viewports-design.md` — read it first. It is
-current: Arc 1 and Arc 2 are marked done there, with the reasons.
+current: Arcs 1 and 2 and Arc 3 through step 5 are marked done there, with the reasons.
 
 ## State
 
 Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
-`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 677 files, 7095 passing. Arcs 1 and 2 are
-done, plus steps 1-4 of Arc 3. Each code commit carries a `patch` changeset:
+`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: `--project=kit` is 432 files, 4573 passing.
+Arcs 1 and 2 are done, and Arc 3 through step 5. Each code commit carries a `patch` changeset:
 
 - the viewport inner-view transform fix
 - the spec retractions
@@ -25,28 +25,17 @@ done, plus steps 1-4 of Arc 3. Each code commit carries a `patch` changeset:
 - the per-view dispatch record, then per-event view routing, then the per-view camera
 - `<CanvasView>` and the view registry
 - the per-view dep overlay
+- a view's own selection, its own helpers, and chrome drawn from the draw envelope
 
 **Arc 3, where to pick up.** The spec's Arc 3 section carries a numbered list of the remaining
-steps, in order, with the reason each one precedes the next. Steps 1 through 4 are done, and step
-5's provider question is settled — a view overlays deps onto the canvas registry rather than
-getting a registry of its own. What is left of step 5 is a `selection` on `<CanvasView>` to put in
-that overlay, and the drawing half.
+steps, in order, with the reason each one precedes the next. Steps 6 and 7 are what is left:
+per-view pinch and hover, then per-view affordances and hit-testing. Step 7 is the one that makes
+a view feel like a canvas — until it lands, a gesture inside a panel reaches only the ambient
+viewport actions, because a view registers no `affordanceAt` or `classifyTarget`.
 
-**The one thing that blocks the drawing half.** `useViewHelpers` needs the surface's adapter,
-geometry, bounds resolver, tools and gesture source. All five are in `SceneCanvasInner`'s render
-scope and none are reachable from a child — the `SurfaceHandle` is attached in an effect, so a
-render-time read is empty on first render. A context provider around `{children}`, rendered by
-`SceneCanvasInner`, is the way in; do that before trying to call the hook from `<CanvasView>`.
-
-Two views now really exist: `<SceneCanvas views={[{ id, bounds }]}>` paints a second camera and
-routes wheel and drag inside its rect to it. What a view cannot yet do is select, resize or edit
-anything — it registers no `affordanceAt` or `classifyTarget`, and its selection and chrome are
-still the surface's. That is steps 5 and 7.
-
-**The decision behind the shape.** A view is declared as a prop *and* mountable as a child, at
-Mike's call. They are one implementation: the prop is a `.map` rendering the component, so there is
-one registration path, not two surfaces. Prop entries take their array index as `order` and children
-take `Infinity`, so paint order never depends on React's mount ordering.
+**What a view has now.** Its own camera, dispatcher, selection and chrome. `<SceneCanvas views>`
+or a `<CanvasView>` child gets a panel that pans, that draws the surface's layers through its own
+camera, and that outlines its own selection rather than the canvas's.
 
 ## Blocked
 
@@ -75,6 +64,10 @@ Same for `git reset --hard`, `git checkout -- .`, `git clean`. If you run parall
 disjoint files *and* forbid these commands explicitly — naming the files is not enough.
 
 **Every changeset is `patch`.** Never write a `bump-approved` marker without an explicit OK.
+
+**A layer given per-view `data` may still be closed over the surface's.** Step 5 hit this in
+`createSelectionOverlayLayer`; step 7's hit-testers are the next candidates. Check where a layer
+reads from before assuming the envelope reaches it.
 
 **Verify a capability claim by reading the module, not by grepping two files.** Both the layer
 caching spec and this one asserted renderer gaps that did not exist — four false claims between
