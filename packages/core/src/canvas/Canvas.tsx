@@ -1010,12 +1010,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // One view's overlay-aware state. A hook, so N views are N components each
   // calling it once — not a loop in this body.
-  const multiActive = selectedIdsForWiring.length > 1;
   const {
     helpers: viewHelpers,
     effectiveBoundsOf,
-    previewToolPose,
-    previewToolBounds,
     previewExtraRef,
   } = useViewHelpers<TPose>({
     adapter,
@@ -1073,8 +1070,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     pointerDownRef.current = false;
   };
   const handlePointerCancel = undefined;
-
-  const selectedIds = effectiveSelection.current;
 
   // Background-fill layer: screen-space, emits a single full-canvas rect with
   // the configured FillStyle. Slotted before 'scene' so the scene draws on top.
@@ -1178,8 +1173,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       placeToolOverlays(out, standardLayers.selectionOverlay, tools.getActiveOverlays);
     }
     return out;
-  }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer,
-      decorationLayer, geometry, previewToolBounds, previewToolPose, previewExtraRef]);
+  }, [layersMap, adapter, effectiveBoundsOf, debugSink, tools, backgroundLayer,
+      decorationLayer, geometry, previewExtraRef]);
 
   const viewRegistryVersion = useSyncExternalStore(
     useCallback((cb: () => void) => viewRegistry?.subscribe(cb) ?? (() => {}), [viewRegistry]),

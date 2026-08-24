@@ -33,7 +33,7 @@ describe('nextAnimState', () => {
   });
 
   it('lets hurt override everything', () => {
-    let s = nextAnimState(createAnimState(), { ...RUNNING, hurt: true }, 1 / 60);
+    const s = nextAnimState(createAnimState(), { ...RUNNING, hurt: true }, 1 / 60);
     expect(s.current).toBe('hurt');
   });
 
