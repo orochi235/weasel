@@ -69,6 +69,13 @@ function wheelAt(el: Element, clientX: number) {
   });
 }
 
+/** One pointer event on the canvas, at `clientX` on the y = 10 line. */
+function pointer(el: Element, type: string, pointerId: number, clientX: number) {
+  el.dispatchEvent(new PointerEvent(type, {
+    bubbles: true, cancelable: true, pointerId, clientX, clientY: 10,
+  }));
+}
+
 describe('<CanvasView>', () => {
   it('pans its own camera for input inside its rect', () => {
     const outer = vi.fn();
@@ -90,6 +97,34 @@ describe('<CanvasView>', () => {
 
     expect(outer.mock.calls.at(-1)?.[0]).toMatchObject({ y: 20 });
     expect(panel).not.toHaveBeenCalled();
+  });
+
+  it('zooms its own camera for a pinch inside its rect', () => {
+    const outer = vi.fn();
+    const panel = vi.fn();
+    const scene = createScene<D, L, P>({ systemLayers: [{ id: 'main' }] });
+    const { container } = render(
+      <SceneCanvas
+        scene={scene}
+        layers={{}}
+        width={300}
+        height={200}
+        viewport={{ pinchZoom: true }}
+        onViewChange={outer}
+        views={[{ id: 'panel', bounds: PANEL, onViewChange: panel }]}
+      />,
+    );
+    const canvas = container.querySelector('canvas')!;
+
+    // Two fingers straddling client x = 150, then spread from 20px to 30px.
+    act(() => {
+      pointer(canvas, 'pointerdown', 1, 140);
+      pointer(canvas, 'pointerdown', 2, 160);
+      pointer(canvas, 'pointermove', 2, 170);
+    });
+
+    expect(panel.mock.calls.at(-1)?.[0]).toMatchObject({ scale: { x: 1.5, y: 1.5 } });
+    expect(outer).not.toHaveBeenCalled();
   });
 
   it('stops routing to a view that unmounts', () => {

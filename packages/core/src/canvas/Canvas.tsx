@@ -35,7 +35,7 @@ import type { ToolsApi } from 'tools/useTools';
 import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
-import { useOptionalViewRegistry } from './viewRegistry';
+import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from 'tools/types';
@@ -861,11 +861,31 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // register into the tool registry / gesture dispatcher that lives there).
   const pinchConfig: { min?: number; max?: number } | null =
     viewport?.pinchZoom === true ? {} : (viewport?.pinchZoom || null);
+  // Views registered on this surface — declared as `views` descriptors or
+  // mounted as `<CanvasView>` children. Null outside a surface that mounts a
+  // registry, which is the single-view case.
+  const viewRegistry = useOptionalViewRegistry();
+
+  // A pinch inside a view zooms that view. The registry is the same authority
+  // the dispatcher routes against, so pinch and drag cannot disagree about
+  // which panel the fingers are on.
+  const viewRegistryRef = useRef<ViewRegistry | null>(viewRegistry);
+  viewRegistryRef.current = viewRegistry;
+  const resolvePinchTarget = useCallback((clientX: number, clientY: number) => {
+    const reg = viewRegistryRef.current;
+    if (!reg) return null;
+    const target = reg.resolver.at(null, clientX, clientY);
+    if (target.id === null) return null;
+    const api = reg.list().find((r) => r.id === target.id)?.target.deps?.().view;
+    if (!api) return null;
+    return { view: api.get(), setView: api.set, origin: target.origin };
+  }, []);
+
   usePinchZoomTool(
     canvasRef,
     effectiveView,
     setView,
-    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null },
+    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null, resolveTarget: resolvePinchTarget },
   );
 
   // Internal hooks always run (rules of hooks). They consult a noop adapter
@@ -1157,10 +1177,6 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer,
       decorationLayer, geometry, previewToolBounds, previewToolPose, previewExtraRef]);
 
-  // Views registered on this surface — declared as `views` descriptors or
-  // mounted as `<CanvasView>` children. Null outside a surface that mounts a
-  // registry, which is the single-view case.
-  const viewRegistry = useOptionalViewRegistry();
   const viewRegistryVersion = useSyncExternalStore(
     useCallback((cb: () => void) => viewRegistry?.subscribe(cb) ?? (() => {}), [viewRegistry]),
     () => viewRegistry?.getVersion() ?? 0,

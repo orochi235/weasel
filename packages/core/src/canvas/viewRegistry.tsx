@@ -14,6 +14,7 @@ import type { ChromeState } from 'core/selection/chromeState';
 import type { View } from 'core/viewport/view';
 import type { ViewportLayer } from 'features/viewports/viewportLayer';
 import type { DispatcherViewTarget } from 'interactions/dispatcher/useGestureDispatcher';
+import { createViewResolver, type ViewResolver } from 'features/viewports/viewResolver';
 
 /**
  * What a view needs from the surface hosting it.
@@ -76,6 +77,10 @@ export interface ViewRegistry {
    *  for `useSyncExternalStore`. */
   getVersion(): number;
   subscribe(fn: () => void): () => void;
+  /** Which view a client point belongs to, sticky for a captured pointer.
+   *  One per surface: every caller that routes input — the dispatcher, pinch,
+   *  hover — must agree about where a point landed. */
+  readonly resolver: ViewResolver;
   /** The hosting surface, or `null` before one attaches. */
   surface(): SurfaceHandle | null;
   attachSurface(handle: SurfaceHandle): void;
@@ -97,15 +102,27 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
       versionRef.current++;
       for (const fn of listenersRef.current) fn();
     };
+    const ordered = (): ViewRegistration[] => [...entriesRef.current.keys()].sort((a, b) => (
+      a.order - b.order || entriesRef.current.get(a)! - entriesRef.current.get(b)!
+    ));
+    const resolver = createViewResolver({
+      views: () => {
+        const surface = surfaceRef.current;
+        const view = surface?.view() ?? IDENTITY_VIEW;
+        const dims = surface?.dims() ?? UNMEASURED_DIMS;
+        return ordered().map((r) => r.layer.resolvable(view, dims));
+      },
+      root: () => surfaceRef.current?.view() ?? IDENTITY_VIEW,
+      canvasOrigin: () => surfaceRef.current?.origin() ?? { left: 0, top: 0 },
+    });
     return {
+      resolver,
       register: (reg) => {
         entriesRef.current.set(reg, seqRef.current++);
         changed();
         return () => { entriesRef.current.delete(reg); changed(); };
       },
-      list: () => [...entriesRef.current.keys()].sort((a, b) => (
-        a.order - b.order || entriesRef.current.get(a)! - entriesRef.current.get(b)!
-      )),
+      list: ordered,
       getVersion: () => versionRef.current,
       subscribe: (fn) => {
         listenersRef.current.add(fn);
