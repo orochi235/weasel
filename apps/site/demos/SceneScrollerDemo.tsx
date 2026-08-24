@@ -18,6 +18,7 @@ import { consumeJumpPress, usePlatformerInput } from './platformer/useInput';
 import {
   boneNodes,
   entityNodes,
+  flagpoleNodes,
   syncScene,
   tileNodes,
   type WorldData,
@@ -27,8 +28,10 @@ import {
   advanceWorld,
   freshGame,
   NO_HOOKS,
+  POLE,
   SHAKE_DURATION,
   SHAKE_MAGNITUDE,
+  stepEnding,
   type GameRefs,
 } from './platformer/world';
 
@@ -56,7 +59,8 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     initial: useMemo(
       () => [
         ...tileNodes(WORLD),
-        ...entityNodes(game.current.coins, game.current.enemies, WORLD.goal),
+        ...entityNodes(game.current.coins, game.current.enemies),
+        ...flagpoleNodes(POLE),
         ...boneNodes(),
       ],
       [],
@@ -98,7 +102,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
 
       const g = game.current;
       g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
-      if (g.outcome !== 'playing') g.ended += frame;
+      if (g.outcome !== 'playing') stepEnding(g, frame, NO_HOOKS);
 
       if (running && g.outcome === 'playing') {
         advanceWorld(
@@ -196,7 +200,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     );
     g.enemies = [...g.enemies, ...extra];
     scene.batch('swarm', () => {
-      entityNodes([], extra, WORLD.goal)
+      entityNodes([], extra)
         .filter((n) => String(n.id).startsWith('enemy:'))
         .forEach((n, i) => {
           scene.add({ ...n, id: `enemy:${base + i}` as typeof n.id });

@@ -15,12 +15,15 @@ import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { CAM_SCALE, cameraView, followCamera, worldToScreen } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { COLORS, drawBackdrop, drawCallouts, drawCoins, drawEnding, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
+import { flagY } from './platformer/flagpole';
 import { BODY_H, BODY_W, MOVE_SPEED } from './platformer/physics';
 import { resolvePose } from './platformer/animState';
 import { createEnemies, ENEMY_H, ENEMY_W } from './platformer/entities';
 import {
   advanceWorld,
   freshGame,
+  POLE,
+  stepEnding,
   SHAKE_DURATION,
   SHAKE_MAGNITUDE,
   type GameRefs,
@@ -98,6 +101,8 @@ function SideScrollerDemoInner() {
   // The run cycle's own timeline — its playhead is what fires footsteps, not
   // the fixed-step loop. `runScale` is what the loop writes and the footstep
   // handler reads back to know the interval a given tick implies.
+  /** Frames left before the music stops; -1 once it has. */
+  const cutMusicIn = useRef(-1);
   const runCycle = useRef<TimelineHandle | null>(null);
   const runScale = useRef(1);
   const stepStats = useRef({ count: 0, lastAt: 0, lastScale: 1, spread: 0 });
@@ -217,6 +222,12 @@ function SideScrollerDemoInner() {
     soundAt: (name, at, gain) => fireAt(name, at, gain),
     duck: duckMusic,
     bonk: pulseBlur,
+    flagImpact: () => {
+      fire('hurt', 0.9);
+      pulseBlur();
+      // Cut the bed a couple of frames later, so the thwack lands into silence.
+      cutMusicIn.current = 2;
+    },
   };
 
   const layers = useMemo(() => {
@@ -276,7 +287,7 @@ function SideScrollerDemoInner() {
         const g = game.current;
         const v = view();
         return [
-          ...drawGoal(WORLD.goal, v, (g.elapsed % 1.6) / 1.6),
+          ...drawGoal(POLE, flagY(POLE, g.slide?.y ?? null), v),
           ...drawCoins(g.coins, v, (g.elapsed % 1.2) / 1.2),
           ...drawEnemies(g.enemies, v),
         ];
@@ -370,7 +381,11 @@ function SideScrollerDemoInner() {
       // Simulation halts on pause and once the run is decided; the run cycle's
       // own registration is paused here too, or it keeps firing footsteps
       // after death since the animator ticks it independently of this loop.
-      if (g.outcome !== 'playing') g.ended += frame;
+      if (g.outcome !== 'playing') stepEnding(g, frame, hooks.current);
+
+      if (cutMusicIn.current >= 0 && cutMusicIn.current-- === 0) {
+        audio.current?.bed?.stop(40);
+      }
 
       if (!running || g.outcome !== 'playing') {
         const cycle = runCycle.current;

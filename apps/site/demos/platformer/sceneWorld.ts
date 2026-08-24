@@ -3,11 +3,11 @@ import { asNodeId, mat3, resolveSkeleton } from '@weasel-js/core';
 import type { Mat3, NodeId, RectPose, Scene } from '@weasel-js/core';
 import { resolvePose } from './animState';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
+import { BALL_R, flagY, POLE_WIDTH, type Flagpole } from './flagpole';
 import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, type Level, type Vec2 } from './level';
 import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from './skeleton';
 import { COLORS } from './skin';
-import type { GameRefs } from './world';
-import { WORLD } from './worldLevel';
+import { POLE, type GameRefs } from './world';
 
 /** The node payloads this demo uses, all of them shapes the kit's built-in
  *  painters already know how to draw. */
@@ -41,7 +41,9 @@ export const enemyEyeId = (i: number) => asNodeId(`enemy:${i}:eye`);
 /** Eye diameter, in world units — the immediate-mode skin's `2.5 * scale`. */
 const EYE = 2.5;
 export const boneId = (name: string) => asNodeId(`bone:${name}`);
-export const GOAL_ID = asNodeId('goal');
+export const POLE_ID = asNodeId('pole');
+export const POLE_BALL_ID = asNodeId('pole:ball');
+export const FLAG_ID = asNodeId('flag');
 
 /** Question-block glyph: `kit:text` anchors on the top of the first line box
  *  and does not forward `verticalAlign`, so the box is nudged instead. */
@@ -86,7 +88,23 @@ export function tileNodes(level: Level): WorldNodeSpec[] {
   return out;
 }
 
-export function entityNodes(coins: Coin[], enemies: Enemy[], goal: Vec2): WorldNodeSpec[] {
+/** Post, ball and flag. The flag's pose is rewritten as the player slides. */
+export function flagpoleNodes(pole: Flagpole): WorldNodeSpec[] {
+  const top = flagY(pole, null);
+  return [
+    leaf('pole', 'entities',
+      { x: pole.x - POLE_WIDTH / 2, y: pole.topY, width: POLE_WIDTH, height: pole.baseY - pole.topY },
+      { shape: 'rect', color: COLORS.pole }),
+    leaf('pole:ball', 'entities',
+      { x: pole.x - BALL_R, y: pole.topY - BALL_R * 1.4, width: BALL_R * 2, height: BALL_R * 2 },
+      { shape: 'ellipse', color: COLORS.poleBall }),
+    leaf('flag', 'entities',
+      { x: pole.x - TILE * 0.9, y: top, width: TILE * 0.9, height: TILE * 0.62 },
+      { shape: 'polygon', color: COLORS.goal, sides: 3 }),
+  ];
+}
+
+export function entityNodes(coins: Coin[], enemies: Enemy[]): WorldNodeSpec[] {
   return [
     ...coins.map((c, i) => leaf(`coin:${i}`, 'entities',
       { x: c.x - COIN_R, y: c.y - COIN_R, width: COIN_R * 2, height: COIN_R * 2 },
@@ -99,9 +117,6 @@ export function entityNodes(coins: Coin[], enemies: Enemy[], goal: Vec2): WorldN
         { x: e.x, y: e.y, width: EYE, height: EYE },
         { shape: 'ellipse', color: COLORS.enemyEye }),
     ]),
-    leaf('goal', 'entities',
-      { x: goal.x - TILE / 2, y: goal.y - TILE / 2, width: TILE, height: TILE },
-      { shape: 'polygon', color: COLORS.goal, sides: 4 }),
   ];
 }
 
@@ -167,9 +182,9 @@ export function syncScene(scene: Scene<WorldData, WorldLayer, RectPose>, g: Game
       : OFFSCREEN);
   });
 
-  if (scene.get(GOAL_ID)) {
-    const s = TILE * (0.7 + 0.1 * Math.sin(((g.elapsed % 1.6) / 1.6) * Math.PI * 2));
-    scene.setPose(GOAL_ID, { x: WORLD.goal.x - s / 2, y: WORLD.goal.y - s / 2, width: s, height: s });
+  if (scene.get(FLAG_ID)) {
+    const y = flagY(POLE, g.slide?.y ?? null);
+    scene.setPose(FLAG_ID, { x: POLE.x - TILE * 0.9, y, width: TILE * 0.9, height: TILE * 0.62 });
   }
 
   const joints = resolveSkeleton(PLAYER_SKELETON, resolvePose(g.anim));

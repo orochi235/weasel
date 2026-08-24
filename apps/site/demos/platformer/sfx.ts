@@ -42,44 +42,181 @@ function tone(n: number, rate: number, from: number, to: number, gain: number, h
   return out;
 }
 
-/** A plucked note: fast attack, exponential decay, sine plus two falling harmonics. */
-function pluck(n: number, rate: number, freq: number, gain: number, decay: number): Float32Array {
+/** Sum of the first few harmonics at 1/k — a rough saw, which is what makes a
+ *  power chord read as a guitar rather than a sine. */
+function saw(freq: number, t: number, partials = 6): number {
+  let v = 0;
+  for (let k = 1; k <= partials; k++) v += Math.sin(2 * Math.PI * freq * k * t) / k;
+  return v * 0.5;
+}
+
+/** A palm-muted power chord: root, fifth, octave, fast attack, short decay. */
+function chug(n: number, rate: number, root: number, gain: number, decay: number): Float32Array {
   const out = new Float32Array(n);
-  const attack = Math.max(1, Math.floor(rate * 0.005));
+  const attack = Math.max(1, Math.floor(rate * 0.003));
   for (let i = 0; i < n; i++) {
     const t = i / rate;
     const a = i < attack ? i / attack : 1;
-    const wave = Math.sin(2 * Math.PI * freq * t) + 0.35 * Math.sin(4 * Math.PI * freq * t) + 0.15 * Math.sin(6 * Math.PI * freq * t);
-    out[i] = wave * gain * a * Math.exp(-t / decay);
+    const v = saw(root, t) + 0.8 * saw(root * 1.5, t) + 0.45 * saw(root * 2, t);
+    out[i] = v * gain * a * Math.exp(-t / decay);
+  }
+  lowpass(out, 0.4);
+  return out;
+}
+
+function bassNote(n: number, rate: number, freq: number, gain: number): Float32Array {
+  const out = new Float32Array(n);
+  const attack = Math.max(1, Math.floor(rate * 0.004));
+  for (let i = 0; i < n; i++) {
+    const t = i / rate;
+    const a = i < attack ? i / attack : 1;
+    out[i] = (Math.sin(2 * Math.PI * freq * t) + 0.3 * saw(freq, t, 3)) * gain * a * Math.exp(-t / 0.19);
   }
   return out;
 }
 
-/** A 120bpm pentatonic riff over a four-chord bass, built so its last sample
- *  lands back near zero and the loop point is inaudible. */
-function bed(rate: number): Float32Array {
-  const n = Math.floor(rate * 4);
+/** Partial ratios well off the harmonic series. This is the whole trick behind
+ *  "metal": a bell or a string lands near integers, struck junk does not. */
+const CLANK_RATIOS = [1, 1.71, 2.43, 3.19, 4.61, 5.87];
+
+function clank(n: number, rate: number, freq: number, gain: number, decay: number, seed: number): Float32Array {
   const out = new Float32Array(n);
-  const melody = [523.25, 392.0, 329.63, 392.0]; // C5 G4 E4 G4, C major pentatonic
-  const bass = [65.41, 98.0, 110.0, 87.31]; // C2 G2 A2 F2
+  const rnd = noise(seed);
+  const strike = Math.min(n, Math.floor(rate * 0.004));
+  for (let i = 0; i < strike; i++) out[i] += rnd() * gain * 1.1;
+  for (let p = 0; p < CLANK_RATIOS.length; p++) {
+    const f = freq * CLANK_RATIOS[p] * (1 + rnd() * 0.012);
+    const a = gain / (1 + p * 0.9);
+    const d = decay / (1 + p * 0.35);
+    for (let i = 0; i < n; i++) {
+      const t = i / rate;
+      out[i] += Math.sin(2 * Math.PI * f * t) * a * Math.exp(-t / d);
+    }
+  }
+  lowpass(out, 0.6);
+  return out;
+}
 
-  const steps = 16;
-  const stepLen = Math.floor(n / steps);
-  for (let s = 0; s < steps; s++) {
-    const start = s * stepLen;
-    const note = pluck(stepLen, rate, melody[s % melody.length], 0.16, stepLen / rate / 4);
-    for (let i = 0; i < note.length; i++) out[start + i] += note[i];
+/** An empty oil drum: boxy pitch-drop with a metallic ring sitting on top. */
+function drum(n: number, rate: number, freq: number, gain: number, seed: number): Float32Array {
+  const out = new Float32Array(n);
+  let phase = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / rate;
+    phase += (2 * Math.PI * (freq * (1 + 1.4 * Math.exp(-t / 0.012)))) / rate;
+    out[i] = Math.sin(phase) * gain * Math.exp(-t / 0.15);
+  }
+  const ring = clank(n, rate, freq * 4.3, gain * 0.18, 0.1, seed);
+  for (let i = 0; i < n; i++) out[i] += ring[i];
+  return out;
+}
+
+/** Chain rattle standing in for a hi-hat: a few tiny tings scattered across
+ *  the slot rather than one clean tick. */
+function rattle(n: number, rate: number, gain: number, seed: number): Float32Array {
+  const out = new Float32Array(n);
+  const rnd = noise(seed);
+  for (let k = 0; k < 4; k++) {
+    const at = Math.floor(Math.abs(rnd()) * n * 0.6);
+    const len = Math.min(n - at, Math.floor(rate * 0.045));
+    if (len <= 0) continue;
+    const ting = clank(len, rate, 2200 + Math.abs(rnd()) * 2000, gain, 0.018, seed + k * 17);
+    for (let i = 0; i < ting.length; i++) out[at + i] += ting[i];
+  }
+  return out;
+}
+
+const BPM = 146;
+/** I–V–vi–IV, one bar each — the roots the old bed used. */
+const BED_ROOTS = [65.41, 98.0, 110.0, 87.31]; // C2 G2 A2 F2
+/** C major, one degree per digit, starting at C5. Index 0 is unused. */
+const SCALE = [0, 523.25, 587.33, 659.25, 698.46, 783.99, 880.0, 987.77, 1046.5];
+
+/**
+ * One row per bar, sixteen sixteenth-note slots each, `x` for a hit. Four
+ * different bars rather than one repeated four times — a loop this short reads
+ * as a loop the moment two bars match.
+ */
+const PATTERN = {
+  drum:  ['x.....x...x.....', 'x.....x...x...x.', 'x..x..x...x.....', 'x.....x...x.x.x.'],
+  lid:   ['....x.......x...', '....x.....x.x...', '....x.......x..x', '....x.......x.x.'],
+  chain: ['x.x.x.x.x.x.x.x.', 'x.x.x.xxx.x.x.x.', 'x.x.x.x.x.x.xxx.', 'xxxxx.x.xxxxxxxx'],
+  /** Off-beat upstrokes. The skank is most of the bounce. */
+  skank: ['..x...x...x...x.', '..x...x...x.x.x.', '..x.x.x...x...x.', '..x...x.x.x.....'],
+  /** Downstroke power chords, pushed off the beat everywhere but the downbeat. */
+  chug:  ['x..x......x.....', 'x..x..x.........', 'x.....x..x......', 'x..x......x.x...'],
+  /** Scale degrees for the lead; two bars carry it, two leave air. */
+  lead:  ['................', '5.6.5.3.....1...', '................', '..3.5.6.8.6.5.3.'],
+} as const;
+
+/** How late a hit can land, as a fraction of a sixteenth. Every hit drags a
+ *  little and none of them drags the same amount — this is the drunk. */
+const DRAG = 0.22;
+/** Pitch wander depth. One full cycle per loop, so the wrap stays in tune. */
+const WOBBLE = 0.008;
+
+/**
+ * Four bars at 146 bpm played on junk: oil drums, a trash-can lid, chain for a
+ * hi-hat, and pipes for the fill, under root-note bass and off-beat power
+ * chords. Every hit is nudged late by its own amount and the whole thing drifts
+ * a few cents sharp and back across the loop. Peak-normalized and tapered at
+ * both ends so the wrap is inaudible.
+ */
+function bed(rate: number): Float32Array {
+  const sixteenth = Math.floor((rate * (60 / BPM)) / 4);
+  const bars = BED_ROOTS.length;
+  const n = sixteenth * 16 * bars;
+  const out = new Float32Array(n);
+
+  const mix = (src: Float32Array, at: number) => {
+    const start = Math.max(0, Math.min(at, n - 1));
+    const end = Math.min(src.length, n - start);
+    for (let i = 0; i < end; i++) out[start + i] += src[i];
+  };
+  /** Same slot, same drag, every render — but no two slots alike. */
+  const drag = (bar: number, k: number) =>
+    Math.floor(((Math.sin(bar * 12.9898 + k * 78.233) * 43758.5453) % 1 + 1) % 1 * DRAG * sixteenth);
+  const wobble = (at: number) => 1 + WOBBLE * Math.sin((2 * Math.PI * at) / n);
+
+  for (let bar = 0; bar < bars; bar++) {
+    const root = BED_ROOTS[bar];
+    for (let k = 0; k < 16; k++) {
+      const slot = (bar * 16 + k) * sixteenth;
+      const at = slot + drag(bar, k);
+      const tune = wobble(at);
+      const seed = 0x51a2 + bar * 131 + k * 7;
+
+      if (PATTERN.drum[bar][k] === 'x') mix(drum(sixteenth * 5, rate, 52 * tune, 0.42, seed), at);
+      if (PATTERN.lid[bar][k] === 'x') mix(clank(sixteenth * 6, rate, 310 * tune, 0.16, 0.11, seed), at);
+      if (PATTERN.chain[bar][k] === 'x') mix(rattle(sixteenth * 2, rate, k % 4 === 0 ? 0.05 : 0.032, seed), at);
+      if (PATTERN.skank[bar][k] === 'x') mix(chug(sixteenth * 3, rate, root * 2 * tune, 0.07, 0.09), at);
+      if (PATTERN.chug[bar][k] === 'x') mix(chug(sixteenth * 5, rate, root * tune, 0.11, 0.2), at);
+
+      // The lead is struck metal too, and tuned slightly flat against the chords.
+      const deg = PATTERN.lead[bar][k];
+      if (deg !== '.') mix(clank(sixteenth * 5, rate, SCALE[Number(deg)] * 0.997 * tune, 0.05, 0.13, seed), at);
+
+      if (k % 2 === 0) {
+        const octave = k % 4 === 2 ? 2 : 1;
+        const walk = bar === 3 && k >= 12 ? 1.5 : 1;
+        mix(bassNote(sixteenth * 3, rate, root * octave * walk * tune, 0.3), at);
+      }
+    }
   }
 
-  const quarterLen = stepLen * 2;
-  for (let q = 0; q < steps / 2; q++) {
-    const start = q * quarterLen;
-    const note = pluck(quarterLen, rate, bass[q % bass.length], 0.24, quarterLen / rate / 4);
-    for (let i = 0; i < note.length; i++) out[start + i] += note[i];
-  }
+  // Four pipes of falling pitch over the last beat, handing the loop back to
+  // bar one instead of just stopping.
+  [430, 360, 305, 255].forEach((f, i) => {
+    const k = 12 + i;
+    mix(clank(sixteenth * 4, rate, f, 0.13, 0.14, 0x9111 + i), ((bars - 1) * 16 + k) * sixteenth + drag(bars - 1, k));
+  });
 
-  // Taper the very ends into each other so the wrap is silent.
-  const edge = Math.floor(rate * 0.01);
+  let peak = 0;
+  for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(out[i]));
+  const norm = peak > 0 ? 0.88 / peak : 1;
+  for (let i = 0; i < n; i++) out[i] *= norm;
+
+  const edge = Math.floor(rate * 0.006);
   for (let i = 0; i < edge; i++) {
     const g = i / edge;
     out[i] *= g;

@@ -2,7 +2,6 @@
 import { pushCallout, stepCallouts, type Callout } from './callouts';
 import { createCamera, type Camera } from './camera';
 import {
-  atGoal,
   createCoins,
   createEnemies,
   resolveContacts,
@@ -11,8 +10,9 @@ import {
   type Coin,
   type Enemy,
 } from './entities';
+import { flagpoleAt, grabsPole, SLIDE_SPEED, type Flagpole } from './flagpole';
 import { TILE, type Vec2 } from './level';
-import { createBodyState, spikeOverlap, stepBody, STEP, type BodyState, type Input } from './physics';
+import { createBodyState, spikeOverlap, stepBody, BODY_H, STEP, type BodyState, type Input } from './physics';
 import { createAnimState, nextAnimState, type AnimState } from './animState';
 import type { SoundName } from './sfx';
 import { WORLD } from './worldLevel';
@@ -42,6 +42,8 @@ export interface GameRefs {
   outcome: 'playing' | 'won' | 'lost';
   /** Seconds of screen shake remaining. */
   shake: number;
+  /** Non-null once the pole is caught: the descent, in world units. */
+  slide: { y: number; done: boolean } | null;
   /** Seconds since the run was decided. Its own clock: `elapsed` stops with the
    *  simulation, and the ending needs to keep fading after that. */
   ended: number;
@@ -61,6 +63,8 @@ export interface WorldHooks {
   duck(): void;
   /** A head knock landed. */
   bonk(): void;
+  /** The pole was caught, the hard way. */
+  flagImpact(): void;
 }
 
 export const NO_HOOKS: WorldHooks = {
@@ -68,6 +72,7 @@ export const NO_HOOKS: WorldHooks = {
   soundAt: () => {},
   duck: () => {},
   bonk: () => {},
+  flagImpact: () => {},
 };
 
 export const freshGame = (): GameRefs => ({
@@ -83,6 +88,7 @@ export const freshGame = (): GameRefs => ({
   elapsed: 0,
   outcome: 'playing',
   shake: 0,
+  slide: null,
   ended: 0,
   callouts: [],
 });
@@ -166,9 +172,16 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
 
   if (g.lives <= 0 && g.outcome === 'playing') {
     g.outcome = 'lost';
-  } else if (atGoal(g.player.body, WORLD.goal) && g.outcome === 'playing') {
+  } else if (grabsPole(g.player.body, POLE) && g.outcome === 'playing') {
     g.outcome = 'won';
-    hooks.sound('goal', 0.9);
+    // Centred on the pole, which is the joke: it goes between the legs.
+    g.player = {
+      ...g.player,
+      body: { ...g.player.body, x: POLE.x, vx: 0, vy: 0 },
+    };
+    g.slide = { y: g.player.body.y, done: false };
+    g.shake = SHAKE_DURATION;
+    hooks.flagImpact();
   }
 
   g.anim = nextAnimState(
@@ -178,9 +191,37 @@ export function stepWorld(g: GameRefs, step: Input, hooks: WorldHooks): void {
       vx: g.player.body.vx,
       vy: g.player.body.vy,
       hurt: g.invuln > INVULN - 0.2,
+      onPole: g.slide !== null,
     },
     STEP,
   );
+}
+
+export const POLE: Flagpole = flagpoleAt(WORLD.goal);
+
+/**
+ * The run is over; only the flagpole slide still moves. Kept apart from
+ * `stepWorld` because it must keep running after the simulation stops.
+ */
+export function stepEnding(g: GameRefs, dt: number, hooks: WorldHooks): void {
+  g.shake = Math.max(0, g.shake - dt);
+  if (!g.slide || g.slide.done) {
+    // `ended` drives the ending card's fade, so it starts at the landing rather
+    // than at the impact — the slide is the beat, and a card over it hides it.
+    g.ended += dt;
+    return;
+  }
+
+  const floor = POLE.baseY - BODY_H / 2;
+  const y = Math.min(g.slide.y + SLIDE_SPEED * dt, floor);
+  g.slide = { y, done: y >= floor };
+  g.player = { ...g.player, body: { ...g.player.body, y, x: POLE.x } };
+  g.anim = nextAnimState(
+    g.anim,
+    { onGround: false, vx: 0, vy: 0, hurt: false, onPole: true },
+    dt,
+  );
+  if (g.slide.done) hooks.sound('goal', 0.9);
 }
 
 /**

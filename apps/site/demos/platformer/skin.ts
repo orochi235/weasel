@@ -4,6 +4,7 @@ import type { Dims, DrawCommand, Mat3, View } from '@weasel-js/core';
 import { calloutAge, calloutScreenPos, type Callout } from './callouts';
 import { worldToScreen } from './camera';
 import { COIN_R, ENEMY_H, ENEMY_W, type Coin, type Enemy } from './entities';
+import { BALL_R, POLE_WIDTH, type Flagpole } from './flagpole';
 import { ONEWAY, QUESTION, SOLID, SPIKE, TILE, tileAt, toCol, toRow, type Level, type Vec2 } from './level';
 import { BONE_LENGTH, BONE_WIDTH, PLAYER_SKELETON, ROOT_TO_FOOT } from './skeleton';
 
@@ -23,6 +24,8 @@ const COLORS = {
   enemy: '#b1594f',
   enemyEye: '#f4e6d2',
   goal: '#6fd08c',
+  pole: '#9aa7a0',
+  poleBall: '#d8c48a',
   limb: '#e0d3c2',
   torso: '#5fa8d3',
   head: '#e8c9a8',
@@ -221,17 +224,28 @@ export function drawCoins(coins: Coin[], view: View, spin: number): DrawCommand[
   return out;
 }
 
-export function drawGoal(goal: Vec2, view: View, pulse: number): DrawCommand[] {
-  const p = worldToScreen(view, goal.x, goal.y);
-  const s = TILE * view.scale.x * (0.7 + 0.1 * Math.sin(pulse * Math.PI * 2));
+export function drawGoal(pole: Flagpole, flagAtY: number, view: View): DrawCommand[] {
+  const top = worldToScreen(view, pole.x, pole.topY);
+  const base = worldToScreen(view, pole.x, pole.baseY);
+  const w = POLE_WIDTH * view.scale.x;
+  const r = BALL_R * view.scale.x;
+  const flag = worldToScreen(view, pole.x, flagAtY);
+  const fw = TILE * 0.9 * view.scale.x;
+  const fh = TILE * 0.62 * view.scale.y;
   return [
+    rect(top.x - w / 2, top.y, w, base.y - top.y, COLORS.pole),
     {
       kind: 'path',
+      path: ellipsePath({ x: top.x - r, y: top.y - r * 1.4, width: r * 2, height: r * 2 }),
+      fill: solid(COLORS.poleBall),
+    },
+    {
+      // Hangs to the left of the pole: the player runs in from that side.
+      kind: 'path',
       path: polygonFromPoints([
-        { x: p.x, y: p.y - s / 2 },
-        { x: p.x + s / 2, y: p.y },
-        { x: p.x, y: p.y + s / 2 },
-        { x: p.x - s / 2, y: p.y },
+        { x: flag.x, y: flag.y },
+        { x: flag.x - fw, y: flag.y + fh / 2 },
+        { x: flag.x, y: flag.y + fh },
       ]),
       fill: solid(COLORS.goal),
     },

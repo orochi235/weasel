@@ -21,6 +21,8 @@ export interface AnimCtx {
   vx: number;
   vy: number;
   hurt: boolean;
+  /** Riding the flagpole — outranks every other state. */
+  onPole?: boolean;
 }
 
 export const createAnimState = (): AnimState => ({
@@ -31,6 +33,7 @@ export const createAnimState = (): AnimState => ({
 });
 
 function pick(ctx: AnimCtx): ClipName {
+  if (ctx.onPole) return 'pole';
   if (ctx.hurt) return 'hurt';
   if (!ctx.onGround) return ctx.vy < 0 ? 'jump' : 'fall';
   return Math.abs(ctx.vx) > 1 ? 'run' : 'idle';

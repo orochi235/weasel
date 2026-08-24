@@ -6,6 +6,7 @@ import { cameraView, createCamera, worldToScreen } from '../platformer/camera';
 import { parseLevel, TILE } from '../platformer/level';
 import { PLAYER_SKELETON, ROOT_TO_FOOT } from '../platformer/skeleton';
 import { createCoins, createEnemies } from '../platformer/entities';
+import { flagpoleAt, flagY } from '../platformer/flagpole';
 import { drawBackdrop, drawCoins, drawEnemies, drawEnding, drawGoal, drawPlayer, drawTiles } from '../platformer/skin';
 
 const DIMS = { width: 640, height: 360 };
@@ -102,8 +103,15 @@ describe('skin', () => {
     expect(far.length).toBeGreaterThan(2);
   });
 
-  it('draws a goal without throwing', () => {
-    expect(drawGoal(LEVEL.goal, VIEW, 0).length).toBeGreaterThan(0);
+  it('draws the flagpole: post, ball and flag', () => {
+    const pole = flagpoleAt(LEVEL.goal);
+    expect(drawGoal(pole, flagY(pole, null), VIEW)).toHaveLength(3);
+  });
+
+  it('rides the flag down with the player and never past the base', () => {
+    const pole = flagpoleAt(LEVEL.goal);
+    expect(flagY(pole, pole.topY - 500)).toBeGreaterThan(pole.topY);
+    expect(flagY(pole, pole.baseY + 500)).toBeLessThan(pole.baseY);
   });
 });
 

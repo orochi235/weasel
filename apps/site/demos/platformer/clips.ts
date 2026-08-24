@@ -82,7 +82,63 @@ export const HURT = clip(400, [
   { t: 400, value: NEUTRAL, easing: easeInOutSine },
 ]);
 
-export const CLIPS = { idle: IDLE, run: RUN, jump: JUMP, fall: FALL, hurt: HURT } as const;
+/**
+ * Catching the pole between the legs. The first key is the impact: knees
+ * clamped, torso folded, arms flung overhead onto the pole. It settles into a
+ * hunched grip that holds for the whole slide, since the clip is clamped at its
+ * end rather than looped.
+ */
+export const POLE = clip(700, [
+  {
+    t: 0,
+    value: {
+      hip: { y: 3 },
+      torso: { rotation: 0.62 },
+      armL: { rotation: -2.5 },
+      foreL: { rotation: -0.5 },
+      armR: { rotation: 2.5 },
+      foreR: { rotation: 0.5 },
+      thighL: { rotation: 0.95 },
+      shinL: { rotation: -1.5 },
+      thighR: { rotation: -0.95 },
+      shinR: { rotation: 1.5 },
+    },
+  },
+  {
+    t: 260,
+    value: {
+      hip: { y: 1 },
+      torso: { rotation: 0.34 },
+      armL: { rotation: -2.8 },
+      foreL: { rotation: -0.2 },
+      armR: { rotation: 2.8 },
+      foreR: { rotation: 0.2 },
+      thighL: { rotation: 0.55 },
+      shinL: { rotation: -1.1 },
+      thighR: { rotation: -0.55 },
+      shinR: { rotation: 1.1 },
+    },
+    easing: easeInOutSine,
+  },
+  {
+    t: 700,
+    value: {
+      hip: { y: 0 },
+      torso: { rotation: 0.22 },
+      armL: { rotation: -2.9 },
+      foreL: { rotation: -0.1 },
+      armR: { rotation: 2.9 },
+      foreR: { rotation: 0.1 },
+      thighL: { rotation: 0.35 },
+      shinL: { rotation: -0.8 },
+      thighR: { rotation: -0.35 },
+      shinR: { rotation: 0.8 },
+    },
+    easing: easeInOutSine,
+  },
+]);
+
+export const CLIPS = { idle: IDLE, run: RUN, jump: JUMP, fall: FALL, hurt: HURT, pole: POLE } as const;
 export type ClipName = keyof typeof CLIPS;
 
 /** `sampleTrack` wants a whole track, and rebuilding one per call would throw
