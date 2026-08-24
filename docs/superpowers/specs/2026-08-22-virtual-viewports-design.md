@@ -1,7 +1,7 @@
 # Virtual viewports — design spec
 
 **Date:** 2026-08-22
-**Status:** Draft
+**Status:** Arcs 1–3 implemented; Arc 1's per-view command cache waits on the layer caching arc
 **For:** whoever implements the decomposition.
 **Answers:** how one canvas hosts N independent views, what stays singular, and how today's flat
 props survive as the N=1 case.
@@ -156,78 +156,61 @@ singular*). What remains is keying the layer command cache per view, which waits
 caching arc — `LayerCommandCache` is not on `main` yet. Delivers N panels that render, with input
 still single-view: most of the comparison use case.
 
-**Arc 2 — input.** Done. The copies are collapsed, `createViewResolver` exists, and
-`hitTestExtras` takes an optional view frame; `buildAffordanceAt` needed nothing, being already
-thunked on `getView`. The resolver is not wired into the pointer path, because with one dispatcher
-every point resolves to the root view — wiring it is Arc 3's first payoff, not Arc 2's.
+**Arc 2 — input.** Done. The `clientToWorld` copies are collapsed, `createViewResolver` exists,
+and `hitTestExtras` takes an optional view frame. `buildAffordanceAt` needed nothing, being already
+thunked on `getView`.
 
-**Arc 3 — per-view interaction.** Split `helpersForLayers`, then N dispatchers and N tool
-registries, then per-view selection and chrome.
+**Arc 3 — per-view interaction.** Done. A view carries its own camera, dispatcher, selection,
+chrome, affordances and hit-testing.
 
-Started, and further than expected.
+`helpersForLayers` split into `CanvasViewHelpers` + `CanvasSurfaceHelpers`, and the per-view half
+is a `useViewHelpers` hook over explicit dependencies. N views cannot be a loop inside one
+component, but N components can each call it once — which is what `<CanvasView>` is. It owns a
+camera, contributes the viewport node that paints it and the record that gestures inside its rect
+dispatch to, and registers both with the surface through a `ViewRegistryProvider`. A `views` prop
+on `<SceneCanvas>` renders one per descriptor; mounting the component as a child is the same
+declaration, and children land after every prop entry, so paint order never depends on React's
+mount ordering.
 
-`helpersForLayers` is split. The type is `CanvasViewHelpers` + `CanvasSurfaceHelpers`, and the
-per-view half — chrome state, bounds fallbacks, committed-pose lookup, the tool preview cascade —
-now lives in a `useViewHelpers` hook taking explicit dependencies. `<Canvas>` calls it for its own
-view. Chrome bounds and helper bounds share one `boundsWithPreview` rather than two copies of the
-same cascade. Layer visibility and order are real props.
+**N dispatchers is not N `useGestureDispatcher` instances.** The hook is one mounter that
+normalizes DOM events and then dispatches, and everything downstream of the normalize step is
+injectable per call site. It holds one record per view — dispatcher, the three lookups that resolve
+a point against that view's camera, and the deps that view answers for itself — and routes each
+event to the record the resolver names. Pointerdown pins, pointerup releases; keys and paste run on
+the view the last event with coordinates resolved to. One listener set, still.
 
-On the viewport side, a node can now host a real view: its camera accepts a thunk (read fresh in
-`draw`, `reproject` and `resolvable`) and a `data` thunk gives its source layers their own helpers
-instead of the hosting canvas's.
+**A view does not get a `DepRegistryProvider` of its own.** It overlays the deps that are genuinely
+its own — `view`, `selection` — onto the canvas registry. The registry is where a consumer
+registers *sources*, and one per view would fragment that: overriding `insert` would mean knowing
+how many views exist and overriding each. So per-view `setView` needed no second channel — every
+viewport action reads its camera from the `view` dep, and an event routed to a view resolves that
+name from the view and everything else from the canvas.
 
-**Hook identity is not the obstacle it looks like.** N views cannot be a loop in one component, but
-N components can each call `useViewHelpers` once.
+**One resolver per surface.** The dispatcher, pinch and hover all ask the view registry which view
+a client point belongs to. Three copies of that answer is three chances to disagree about which
+panel the pointer is on. `usePinchZoomTool` takes a `resolveTarget` naming the camera an anchor
+belongs to; omitted, it is the canvas's own.
 
-Steps 1 through 3 are done. `useGestureDispatcher` holds one dispatch record per view — dispatcher,
-the three lookups that resolve a point against that view's camera, and that view's `ViewApi` — and
-its optional `views` option takes the non-root records and a resolver. `createViewResolver`
-satisfies the resolver shape structurally, so the dispatcher never imports the viewport module.
-Pointerdown pins, pointerup releases; keys and paste run on the view the last event with coordinates
-resolved to. With `views` omitted, every event runs on the record the flat options describe, exactly
-as before. The hook still mounts once, so there is still one listener set.
+`Canvas`'s `ToolCtx` needed nothing. Its one consumer is the function form of `Tool.cursor`, which
+resolves at render time with no pointer position and sets the CSS cursor on the one canvas element
+— surface-wide by construction. The cursor that does depend on where the pointer is comes from the
+dispatcher's hover pump, which reads the routed view's `affordanceAt` and `classifyTarget`.
 
-Per-view `setView` did not need a second channel. Every viewport action reads its camera from the
-`view` dep, so an event routed to a record with a `ViewApi` dispatches against the canvas dep
-registry with `view` — and only `view` — replaced by that record's. Routing is now correct, not
-merely wired: a drag inside a panel pans the panel.
+**Per-view state does not arrive by handing a view its own copy of the inputs.** Any lookup that
+closed over the surface's state at construction keeps answering for the surface however the
+envelope reads. Three did, and each had been quietly wrong for the single-view case too:
 
-Step 4 landed as `<CanvasView>`. It owns a camera, contributes a viewport node and a dispatch
-record, and registers both with the surface through a `ViewRegistryProvider` that `<SceneCanvas>`
-mounts. A `views` prop on `<SceneCanvas>` renders one per descriptor and is the ordinary way to
-declare one; mounting the component as a child is the same declaration, and children land after
-every prop entry. `createViewportLayer.source` now accepts a thunk, which is what lets a view paint
-a stack the surface assembles rather than one closed over at construction.
+- `createSelectionOverlayLayer` took its ids and its bounds from closures `<Canvas>` and
+  `<SceneCanvas>` each built. Both are gone; `getSelection` and `getPose` are optional now and the
+  layer reads `ChromeState` off the draw envelope. The two bounds chains consulted the same preview
+  sources in opposite priority, and only one carried rotation.
+- The dispatcher's `affordanceAt` built a second `ChromeState` beside the painted one, without the
+  in-flight overlay — mid-drag, handles painted at the ghost and hit-tested at the committed pose.
+  A surface publishes its chrome on the registry handle now.
+- `<CanvasView>` read gesture previews from the surface's dispatcher while owning one of its own,
+  so a gesture inside a panel left its in-flight handles where the panel never looked.
 
-Step 5 is done. A view overlays the deps that are genuinely its own onto the canvas registry
-rather than getting a `DepRegistryProvider` of its own — one place to register a source, one
-authority per dep — and `selection` joined `view` in that overlay. `<CanvasView>` calls
-`useViewHelpers` and hands the result to its layers through `createViewportLayer`'s `data` thunk;
-the surface publishes that hook's inputs as context, since a view reads them during its own render
-and the `SurfaceHandle` is not attached until an effect runs.
-
-**The chrome layer had to stop closing over the surface's selection.** Passing per-view helpers
-through `data` was not enough on its own: `createSelectionOverlayLayer` took its ids from a
-closure `<Canvas>` and `<SceneCanvas>` built, so every view drew the surface's selection however
-its envelope read. `getSelection` is now optional, and omitted the layer reads `ChromeState` off
-the envelope — the channel it already took the multi-selection union AABB from. Both callers
-stopped passing one.
-
-Bounds still come from the layer's own `getPose` cascade rather than the envelope's `boundsOf`.
-Those two cascades disagree in their preference order (pose-before-bounds versus
-bounds-before-pose) and in whether rotation survives, so collapsing them is its own change. It
-costs nothing yet: every view resolves poses through the same adapter, so only the id set differs.
-
-The remaining work, in order:
-
-6. **The rest of the surface's per-event lookups.** `usePinchZoomTool` and `useHoverTracking` still
-   attach to the canvas and target the outer camera, so a pinch inside a panel zooms the canvas.
-   Both need the list treatment the dispatcher got. `Canvas`'s `ToolCtx` is in the same position;
-   its one remaining consumer is the function form of `Tool.cursor`.
-7. **Affordances and hit-testing per view.** A `<CanvasView>` registers no `affordanceAt` or
-   `classifyTarget`, so nothing inside one is selectable or resizable — its gestures reach only the
-   ambient viewport actions. `buildAffordanceAt` is already thunked on `getView`, so this is
-   construction per view rather than new mechanism.
+`docs/TODO.md` carries a P1 to sweep the engine for the rest of the pattern.
 
 Each arc ends somewhere shippable. Arc 1 alone is worth having.
 

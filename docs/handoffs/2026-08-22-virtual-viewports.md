@@ -4,38 +4,25 @@
 spec does not carry.
 
 The design is `docs/superpowers/specs/2026-08-22-virtual-viewports-design.md` — read it first. It is
-current: Arcs 1 and 2 and Arc 3 through step 5 are marked done there, with the reasons.
+current: Arcs 1, 2 and 3 are marked done there, with the reasons.
 
 ## State
 
 Worktree `.claude/worktrees/virtual-viewports`, branch `worktree-virtual-viewports`, off local
-`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 677 files, 7099 passing.
-Arcs 1 and 2 are done, and Arc 3 through step 5. Each code commit carries a `patch` changeset:
+`main` at `e6c7ebc2`. Not pushed, no PR. Suite green: 677 files, 7103 passing.
+Arcs 1, 2 and 3 are done, over the 33 commits `git log main..HEAD` lists; each code commit
+carries a `patch` changeset.
 
-- the viewport inner-view transform fix
-- the spec retractions
-- the `clientToWorld` collapse
-- `createViewResolver`
-- the `hitTestExtras` frame argument
-- the `CanvasHelpers` type split
-- one shared bounds cascade for chrome and helpers
-- `layerVisibility` / `layerOrder` props
-- a thunked viewport camera and per-viewport `data`
-- the `useViewHelpers` extraction
-- the per-view dispatch record, then per-event view routing, then the per-view camera
-- `<CanvasView>` and the view registry
-- the per-view dep overlay
-- a view's own selection, its own helpers, and chrome drawn from the draw envelope
+**Where to pick up.** Arc 3 is finished; what is left of the design is Arc 1's per-view layer
+command cache, which is blocked below. `<SceneCanvas views={[{ id, bounds }]}>` — or a
+`<CanvasView>` child — is now a panel that pans, zooms, draws the surface's layers through its own
+camera, and selects, resizes and rotates against its own selection without touching the canvas's.
 
-**Arc 3, where to pick up.** The spec's Arc 3 section carries a numbered list of the remaining
-steps, in order, with the reason each one precedes the next. Steps 6 and 7 are what is left:
-per-view pinch and hover, then per-view affordances and hit-testing. Step 7 is the one that makes
-a view feel like a canvas — until it lands, a gesture inside a panel reaches only the ambient
-viewport actions, because a view registers no `affordanceAt` or `classifyTarget`.
-
-**What a view has now.** Its own camera, dispatcher, selection and chrome. `<SceneCanvas views>`
-or a `<CanvasView>` child gets a panel that pans, that draws the surface's layers through its own
-camera, and that outlines its own selection rather than the canvas's.
+**The trap, which is the whole lesson of the arc.** Handing a view its own state does nothing for a
+lookup that closed over the surface's at construction. Three did. Each collapse is described in the
+spec, and `docs/TODO.md` carries a P1 to sweep the engine for the rest of the pattern — the pinch
+path is a named suspect, since two independent implementations of it are live behind two different
+`viewport` flags.
 
 ## Blocked
 
@@ -64,10 +51,6 @@ Same for `git reset --hard`, `git checkout -- .`, `git clean`. If you run parall
 disjoint files *and* forbid these commands explicitly — naming the files is not enough.
 
 **Every changeset is `patch`.** Never write a `bump-approved` marker without an explicit OK.
-
-**A layer given per-view `data` may still be closed over the surface's.** Step 5 hit this in
-`createSelectionOverlayLayer`; step 7's hit-testers are the next candidates. Check where a layer
-reads from before assuming the envelope reaches it.
 
 **Verify a capability claim by reading the module, not by grepping two files.** Both the layer
 caching spec and this one asserted renderer gaps that did not exist — four false claims between
