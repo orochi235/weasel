@@ -36,6 +36,7 @@ Priority tags:
 
 **Selection, actions & UI panels**
 - labkit `registerSerializers` has no callers; instrument serializers never run → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- A key spec becomes shortcut chips in two places → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 **Lint**
 - `eqeqeq` (285) and `no-unused-vars` (129) deferred from the 2026-08-22 baseline → [Lint](#lint)
@@ -737,6 +738,20 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P2) A key spec becomes shortcut chips in two places.** `actionShortcuts`
+  (`packages/core/src/interactions/actions/actionShortcuts.ts`) turns an
+  action's key bindings into display shortcuts, and `renderSpec` /
+  `bindingToSpecs` in `apps/draw/src/dev/ToolkitBuilder.tsx` do the same thing
+  inline. Both take `spec.key[0]` for a key list and read `mods.mod` / `.alt` /
+  `.shift`; only one of them treats an `'optional'` modifier as unpressed, and
+  nothing holds them to the same answer.
+
+  Not pure duplication, which is why it wasn't collapsed when `actionShortcuts`
+  landed: ToolkitBuilder also renders drag, click and wheel specs, which have
+  no chip form and so are out of `actionShortcuts`' scope. The collapse is to
+  have ToolkitBuilder call `actionShortcuts` for the keyboard kinds and keep
+  its own rendering for the rest. An instance of the P1 below.
 
 - **(P1) Audit the engine for cascades that were duplicated and then drifted.** Selection chrome resolved a node's bounds through two independent cascades — the overlay layer's `getPose` chain and `useViewHelpers`' `boundsWithPreview` — that were supposed to give the same answer and did not: they consulted the same two preview sources in opposite priority, and only one of them carried rotation. Nothing caught it, because with one camera and one selection the two rarely disagreed on a value anyone could see. Virtual viewports collapsed that pair (the layer now reads bounds off the draw envelope, one cascade, the one the chrome state was built with).
 
