@@ -204,17 +204,27 @@ overlay-aware state out of selection, tools and a gesture source — all still s
 second call would produce a second copy of the same answers. It belongs with the state it reads,
 which is step 5.
 
+Step 5 is done. A view overlays the deps that are genuinely its own onto the canvas registry
+rather than getting a `DepRegistryProvider` of its own — one place to register a source, one
+authority per dep — and `selection` joined `view` in that overlay. `<CanvasView>` calls
+`useViewHelpers` and hands the result to its layers through `createViewportLayer`'s `data` thunk;
+the surface publishes that hook's inputs as context, since a view reads them during its own render
+and the `SurfaceHandle` is not attached until an effect runs.
+
+**The chrome layer had to stop closing over the surface's selection.** Passing per-view helpers
+through `data` was not enough on its own: `createSelectionOverlayLayer` took its ids from a
+closure `<Canvas>` and `<SceneCanvas>` built, so every view drew the surface's selection however
+its envelope read. `getSelection` is now optional, and omitted the layer reads `ChromeState` off
+the envelope — the channel it already took the multi-selection union AABB from. Both callers
+stopped passing one.
+
+Bounds still come from the layer's own `getPose` cascade rather than the envelope's `boundsOf`.
+Those two cascades disagree in their preference order (pose-before-bounds versus
+bounds-before-pose) and in whether rotation survives, so collapsing them is its own change. It
+costs nothing yet: every view resolves poses through the same adapter, so only the id set differs.
+
 The remaining work, in order:
 
-5. **Per-view selection and chrome.** The provider question is settled: a view does not get a
-   `DepRegistryProvider` of its own, it overlays the deps that are genuinely its own onto the
-   canvas registry — one place to register a source, one authority per dep. A dispatch record now
-   carries a thunked `Partial<DepSchema>` for exactly that, with `view` as its first entry.
-   What remains is a `selection` on `<CanvasView>` to put in the overlay, and the drawing half:
-   the view calls `useViewHelpers` and passes the result through `createViewportLayer`'s `data`
-   thunk, so its layers paint its chrome rather than the surface's. That hook's inputs — adapter,
-   geometry, bounds resolver, tools, gesture source — all live in `SceneCanvasInner`'s render
-   scope and are not reachable from a child today; a context around `{children}` is the way in.
 6. **The rest of the surface's per-event lookups.** `usePinchZoomTool` and `useHoverTracking` still
    attach to the canvas and target the outer camera, so a pinch inside a panel zooms the canvas.
    Both need the list treatment the dispatcher got. `Canvas`'s `ToolCtx` is in the same position;
