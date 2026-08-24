@@ -435,6 +435,19 @@ Core five + Crop shipped. Remaining:
   wants a decision on cost: the pass is per-frame and the buffers are
   device-resolution, so it should be inert when the list is empty.
 
+  Absorbs the former P3 "Layer effects framework", which described the same
+  feature from the layer's side: effects modify pixels rather than choosing a
+  colour, and under WebGL each is its own pass — drop-shadow needs a blurred
+  render-to-texture beneath, blur a separable kernel, blend modes framebuffer
+  compositing. Its open question stands and is the real design decision here:
+  per-layer `effects?: Effect[]` versus a wrapper (`withEffects(layer, effects)`)
+  versus one list on the canvas. Effects are consumed by the renderer, not the
+  layer, so each knows how to set up its own GL state.
+
+  Do not mistake `SceneSlotConfig.postProcess` for this. It is
+  `(cmds, view, dims) => DrawCommand[]` — a draw-command-tree transformer that
+  never touches a pixel.
+
   Surfaced 2026-08-23 by the side-scroller demo's concussion effect, which
   needed a full-screen blur and took the CSS-filter route instead. That code is
   tagged with a TODO pointing here and should be replaced when this lands.
@@ -461,8 +474,6 @@ Core five + Crop shipped. Remaining:
   which SVG cannot express at all. It now warns through
   `SerializeOptions.onWarn` rather than vanishing silently, but still exports
   as nothing rather than as an approximation.
-
-- **(P3) Layer effects framework.** Distinct from `FillStyle` — effects modify pixels rather than choosing color. Under WebGL each effect is its own pass: drop-shadow needs a blurred render-to-texture beneath, blur needs a separable kernel, blend modes need framebuffer compositing, clipping needs stencil. Likely shape: `type Effect = { kind: 'shadow' | 'blur' | 'composite' | 'clip' | 'transform'; ... }` consumed by the renderer (not the layer) so each effect knows how to set up its own GL state. Open question on composition model: per-layer `effects?: Effect[]` option vs a wrapper layer (`withEffects(layer, effects)`).
 
 - **(P3) Promote `ShaderDrawCommand` past `@experimental`.** Three uses now exercise it (plasma / ripple / voronoi panels), which is enough to have validated the surface. Open questions before stabilization: (a) array uniform binding shape — currently consumers must pass per-slot keys (`u_ripples[0]`, `u_ripples[1]`, …); should the kit accept a flat `Float32Array` and split it? (b) hot-reload story for `registerProgram` re-registration; (c) how to expose the renderer's program registry without leaking internals (`shaders` prop is the seam, but consumers writing custom RenderLayers may want more).
 
