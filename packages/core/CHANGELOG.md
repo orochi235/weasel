@@ -1,5 +1,485 @@
 # Changelog
 
+## 1.2.0
+
+### Patch Changes
+
+- 53016f7: Add `actionShortcuts(action)` — an action's keyboard bindings, flattened into
+  the shape `formatShortcut` / `formatShortcutParts` render.
+
+  Binding lists are written for a matcher, not a reader, so two things collapse:
+  a spec's `key` may list spellings of one keycap (`['[', '{']` — the shifted
+  bracket reports as `'{'`), and a modifier declared `'optional'` matches held or
+  unheld, so it isn't part of what anyone presses. Non-keyboard bindings have no
+  chip form and are skipped.
+
+  Every keyboard binding is returned, in declaration order — an action can answer
+  to several (`reorder.forward` has three) and nothing marks one canonical.
+
+  WeaselDraw's command palette shows its shortcut chip again. It had been
+  suppressed since `Action.defaultBinding: KeyBinding` was removed, pending a
+  formatter for the replacement shape.
+
+- e25e77b: `<Canvas>` accepts `layerVisibility` and `layerOrder`.
+
+  `drawLayers` has resolved layer visibility and draw order since it was written,
+  but `<Canvas>` passed it `{}` and `undefined`, so the only way to control either
+  was a layer's own `defaultVisible`. Both are now props: `layerVisibility` maps
+  layer id to shown, falling back to `defaultVisible` for ids it omits and ignored
+  entirely by `alwaysOn` layers; `layerOrder` lists ids bottom-first, and any
+  layer it omits is not drawn.
+
+  Hiding a layer also stops it claiming pointer events through `hitTestExtras`,
+  which previously walked every registered layer regardless. Draw and hit-test
+  resolve visibility through one exported `isLayerVisible`, so a layer nobody can
+  see cannot swallow a click.
+
+- 8e00c13: Give `<CanvasView>` a selection of its own.
+
+  `selection` and `selectionOptions` on a view mirror the props of the same name
+  on `<SceneCanvas>`: supply a `SelectionApi` to control one, or pass
+  `selectionOptions` to have the view build its own. Either goes into the view's
+  dep overlay, so an action dispatched inside that view reads and writes the
+  view's selection and leaves the surface's alone. Pass neither and the view
+  shares the surface's selection.
+
+  Nothing paints it yet — a view's chrome is still drawn from the surface's
+  selection.
+
+- c91e186: Add `<CanvasView>`: a second camera over a rect of an existing canvas, drawn
+  through the same GL context, with input routed to it.
+
+  Declare one through `<SceneCanvas views={[...]}>`, or mount the component as a
+  child — the same declaration either way, with children landing after every prop
+  entry in paint and hit order. A view paints the surface's own layer stack
+  through its camera, or a narrowed slice of it via `layers`, and owns its camera
+  in the same hybrid controlled/uncontrolled mode `<Canvas>` uses. Wheel and drag
+  inside its rect move that camera rather than the canvas's, and a gesture that
+  wanders out of the rect stays with the camera it began under.
+
+  Two supporting changes: `createViewportLayer`'s `source` accepts a thunk, so a
+  viewport can paint a stack assembled elsewhere rather than one closed over at
+  construction; and `<SceneCanvas>` mounts a view registry, which is how a view
+  and its surface find each other.
+
+  A canvas with no views declared is unchanged — no registry entries, so every
+  point resolves to the canvas as before.
+
+  Not yet per-view: selection and chrome, affordance hit-testing, and pinch-zoom.
+  A gesture inside a view reaches the ambient viewport actions and nothing else.
+
+- cada4da: Answer chrome bounds and layer-helper bounds with one function.
+
+  `buildChromeState`'s `effectiveBoundsOf` and `CanvasHelpers.getEffectiveBounds`
+  each spelled out the same cascade — the active tool's published preview, then
+  the dispatcher's preview extras, then committed bounds — in two places that had
+  to agree for a resize handle to sit on the shape it belongs to. They now share
+  `boundsWithPreview`.
+
+  The helpers copy carried an extra committed-pose fallback for when no bounds
+  resolver is wired. That branch was unreachable: a missing resolver means no
+  `boundsOf` prop and no adapter, and without an adapter the pose lookup returns
+  `null` too. Behavior is unchanged.
+
+- 889b1d0: Give each of `useGestureDispatcher`'s view records its own camera.
+
+  A record may now carry a `ViewApi`. An event routed to it dispatches against
+  the canvas dep registry with the `view` dep — and only that dep — replaced by
+  the record's, so `viewport.dragPan` and the rest of the viewport actions move
+  the view the gesture began in rather than the whole canvas. No second `setView`
+  channel was needed: every viewport action already reads its camera from that
+  dep.
+
+  This is what makes routing correct rather than merely wired. Records without a
+  `ViewApi`, which is every record today, resolve `view` exactly as before.
+
+- 9e6927a: Route each input event to the view it landed in, inside `useGestureDispatcher`.
+
+  The hook takes an optional `views` — a thunk returning the non-root dispatch
+  records and a resolver that names one for a client point. `createViewResolver`
+  satisfies the resolver shape, so a canvas holding several viewports can hand
+  the two straight over. Pointerdown pins its pointer to the view it began in and
+  pointerup releases it, so a drag that leaves a panel keeps reporting
+  coordinates in the camera it started under. Keyboard and paste carry no
+  coordinates and run on the view the last coordinate-bearing event resolved to.
+  A resolved id with no live record falls back to the root, so a view that
+  unmounts mid-gesture degrades rather than dropping the event.
+
+  No public change, and no change at all with `views` omitted: every event then
+  runs on the record the flat options describe. Cancelling in-flight gestures —
+  on unmount and on tool change — now reaches every view's dispatcher rather than
+  only the root's.
+
+- eafe4be: Resolve the dispatcher and its coordinate lookups per event inside
+  `useGestureDispatcher`.
+
+  The hook took `dispatcher`, `affordanceAt`, `classifyTarget` and `clientToWorld`
+  as four sibling options and read each through its own ref, and it bound the
+  dispatcher once when the listener effect ran. Those four are one thing —
+  everything about handling an event that depends on which view it landed in — so
+  they are now one internal record, read fresh on each event.
+
+  No public change: the four options stay exactly as they are and become that
+  record. They are the single-view façade, the same way `SceneCanvasProps` is.
+
+  This is groundwork for routing input to one of several views. Doing it this way
+  means the hook keeps mounting once: a canvas with N views gets N dispatchers
+  behind one listener set, rather than N copies of the hook all firing on every
+  event.
+
+- ae84ca1: Move one view's overlay-aware state into a `useViewHelpers` hook.
+
+  `<Canvas>` built its chrome state and its layer helpers inline: the bounds
+  fallbacks, the committed-pose lookup, the tool preview cascade, `buildChromeState`
+  and the `CanvasViewHelpers` object were about 120 lines of the component body
+  closing over its props. They are now one hook taking explicit dependencies —
+  adapter, geometry, bounds resolver, selection, tools, gesture source and the
+  dispatcher's preview extras — and `<Canvas>` calls it for its own view.
+
+  Being a hook is the point. A canvas hosting several viewports cannot loop this
+  work inside one component, but N components can each call it once, which is what
+  per-view selection and chrome will be built from.
+
+  `CanvasHelpers`, `CanvasViewHelpers` and `CanvasSurfaceHelpers` moved to the new
+  module and are still re-exported from `./canvas/Canvas` and the package root, so
+  imports are unchanged. The hook takes only the `getPose` slice of the adapter
+  rather than the full contract.
+
+- 0514a37: `hitTestExtras` takes an optional `frame` naming the camera to test under.
+
+  The method read the canvas's own `view` and `dims` off refs, which is right for
+  every existing caller and wrong for a point routed to a viewport node: there the
+  world point is in the node's inner view and a layer resolving a screen-pixel
+  tolerance needs that view and the node's rect size. `hitTestExtras(x, y, { view,
+dims })` supplies both; omitting `frame` keeps the previous behavior, so no
+  existing call site changes.
+
+- daa5ce6: Add a source rect and flip to `ImageDrawCommand`, so one bitmap can be drawn as
+  many frames.
+
+  `source` is a sub-rectangle in bitmap pixels; `flipX` / `flipY` mirror the
+  sampled region within the destination rect without moving the quad. Both are
+  additive and optional — a command that sets neither draws exactly as before.
+  Until now a sprite sheet needed a custom `ShaderDrawCommand` to do what is
+  arithmetic on the quad's four UV pairs.
+
+  `source` is not range-checked: a rect past the bitmap edge samples outside
+  `[0..1]`, which `CLAMP_TO_EDGE` smears. With `sampling: 'linear'` the filter
+  also reaches half a texel beyond `source`, so an atlas whose frames touch will
+  bleed at the seams — pad frames with a gutter or use `'nearest'`. The renderer
+  deliberately does not inset for this, which would make an exact 1:1 blit soft.
+
+  New `frameRect(sheet, index)` and the `SpriteSheet` type turn a uniform grid
+  (`frameWidth`, `frameHeight`, `columns`, optional `margin` and `spacing`,
+  following the Tiled / Aseprite convention) into that source rect. It is
+  row-major from 0 and does not wrap past the last cell — wrapping belongs to the
+  animation, since a sheet does not know how many of its cells are filled.
+
+  `@weasel-js/hud`'s image widget takes `source`, `flipX` and `flipY` as options
+  and gains `setSource` and `setFlip` to change them in place. `setFlip` merges,
+  leaving an omitted axis alone. Without the setters a sprite animation would
+  have to dispose and rebuild the widget every frame.
+
+- 144e70a: Export `keySpecShortcut(spec)` — the chip form of one gesture spec, or
+  `undefined` where a spec has none — and `actionBindings(action)`, the flat
+  binding list `actionShortcuts` already reads.
+
+  `actionShortcuts` is now a dedupe over `keySpecShortcut`, so the spec-to-chip
+  mapping has one implementation. It had two: ToolkitBuilder's binding table
+  projected key specs inline, and rendered a `'optional'` modifier as a keycap
+  the reader has to press. Surfaces that render drag, click and wheel specs
+  alongside keyboard ones can now share the keyboard half without taking
+  `actionShortcuts`' action-at-a-time shape.
+
+- 2627cde: Fix a hook-order defect in the Badge effects and several stale-closure bugs,
+  found by turning on a correctness lint baseline.
+
+  Six Badge effects (`Aqua`, `Bevel`, `Bevel2`, `Metal`, `Sheen`, `Woodgrain`)
+  called `useId` after an early return keyed on `variant`. Changing a `<Badge>`'s
+  variant to one those effects don't render, and back, remounted the component
+  and issued fresh ids — so the `<clipPath>` and gradient ids their `url(#…)`
+  references point at changed identity mid-life.
+
+  Also fixed: `Canvas.tsx`'s paint effect read a stale `helpersForLayers` through
+  its closure rather than the ref the file maintains, and `useDeviceProfile`
+  ignored a `targetScale` supplied by a provider.
+
+  `composeOrderedLayers` is now generic over the `LayersMap` it receives instead
+  of taking `any`; inference at existing call sites is unchanged.
+
+- 8b583b4: Default an unset miter limit to 4, not 10.
+
+  A stroke that sets no `miterLimit` used Canvas2D's 10. The SVG serializer omits
+  the attribute for an unset field, so the same stroke exported and opened
+  anywhere else renders at SVG's default of 4 — the kit disagreed with its own
+  export format, and re-importing the file did not reconcile them.
+
+  10 also lets an acute corner throw a miter spike four times the half-width. A
+  stroked capital W put one in the middle of the letter, from the apex of a V
+  most of the way down: measured at 7.99 units out on a half-width of 2, and
+  inside the letterform where a bounding box never sees it. Glyph outlines are
+  where this shows first because a type designer's sharpest vertices were never
+  drawn to be stroked.
+
+  Strokes that set `miterLimit` explicitly are unaffected. Anything relying on
+  the old default can set `miterLimit: 10`. No visual baseline moved: nothing in
+  the demo set strokes a corner sharp enough to have been spiking.
+
+- e61d3e3: Resolve selection chrome's bounds through one cascade, not two.
+
+  `createSelectionOverlayLayer`'s `getPose` is now optional alongside
+  `getSelection`. Omitted, the layer takes bounds from the `ChromeState` on the
+  draw envelope — the cascade its selection was already built with. `<Canvas>`
+  and `<SceneCanvas>` each carried a `poseById` chain of their own for this;
+  both are gone, and a consumer's `poseById` override still wins where it is set.
+
+  The two chains were supposed to agree and did not: they consulted the same
+  preview sources in opposite priority, and only one of them carried rotation
+  through. With one camera the disagreement was hard to see; per-view chrome
+  would have made it visible.
+
+- f0cc29c: Hit-test affordances against the chrome state that was painted.
+
+  The gesture dispatcher's `affordanceAt` built a `ChromeState` of its own —
+  selection off a ref, bounds straight from the resolver, its own union AABB —
+  next to the one the canvas helpers had already built. The two differed by the
+  in-flight overlay: mid-drag, resize handles painted at the ghost while their
+  hit regions stayed at the committed pose.
+
+  A surface now publishes its view chrome on the handle it attaches to the view
+  registry, and the dispatcher reads it from there. `ChromeState` gains an
+  `EMPTY_CHROME_STATE` for the before-attach case, and `anchorStateFrom` is the
+  dep-registry read the mounter used to inline.
+
+- 438970b: Draw selection chrome for the view that asked, not for the canvas.
+
+  `createSelectionOverlayLayer`'s `getSelection` is now optional. Omitted, the
+  layer takes its ids from the `ChromeState` on the draw envelope — the same
+  channel it already read the multi-selection union AABB from. `<Canvas>` and
+  `<SceneCanvas>` stop passing one, so the single overlay layer a surface builds
+  outlines whichever view is drawing it.
+
+  The multi-selection split is unchanged: the handle pass works against the
+  synthetic union id, the outline pass against the real members.
+
+- f2ba2ab: Let a view answer any dep for itself, not just `view`.
+
+  A dispatcher view record carried a `ViewApi`; it now carries a thunked
+  `Partial<DepSchema>`, and an event routed to that view resolves every name in
+  it from the view, everything else from the canvas registry. `view` becomes one
+  entry rather than a special case, which is what per-view selection needs next.
+
+  This is also the answer to whether a view should get a `DepRegistryProvider` of
+  its own: it should not. The registry is where a consumer registers _sources_,
+  and one per view would fragment that — overriding `insert` would mean knowing
+  how many views exist and overriding each. An overlay keeps one place to
+  register and one authority per dep, with a view claiming only what is genuinely
+  its own.
+
+- 4ac9273: Route pinch and hover to the view under the pointer.
+
+  Both attached to the canvas and targeted the outer camera, so a pinch inside a
+  panel zoomed the canvas beneath it and hover resolved the wrong node. The view
+  registry now owns one `ViewResolver` for the surface, and the dispatcher, pinch
+  and hover all ask it — one authority, so they cannot disagree about where a
+  point landed.
+
+  `usePinchZoomTool` takes a `resolveTarget` option naming the camera an anchor
+  belongs to, and measures the anchor from that camera's origin. Omitted, it is
+  the canvas's own, as before.
+
+- 8570a23: Export `resolveParams` from the package entry
+
+  `BindingOpts.params` may be a thunk, and its own doc comment tells callers to
+  read it "via `resolveParams(opts?.params)`" — but that helper was defined and
+  used internally, never re-exported. Every consumer writing a parametric
+  `key-held` (or other) binding was stuck reimplementing the thunk check by
+  hand. `resolveParams` is now importable from `@weasel-js/core`.
+
+- 7c202d2: Put the selection on the scene, and restore it on undo.
+
+  `scene.getSelection()` / `scene.setSelection()` own the transient set of active
+  ids. It is not document content — `toJSON` never carries it — but every history
+  entry now records the selection its edit was made under, so undo and redo put
+  back what was selected. Changing the selection is still never an undo step of
+  its own.
+
+  Undoing a boolean op used to leave the selection pointing at the result node
+  undo had just deleted; deleting a multi-selection and undoing left it empty.
+
+  `useSelection({ scene })` keeps the selection on the scene rather than in the
+  hook. `<SceneCanvas>` does that by default, so every view over one scene shares
+  a selection; a `<CanvasView>` opts out with `selection` / `selectionOptions`.
+
+  `@weasel-js/history` gains `CreateHistoryOptions.selection`, a get/set pair the
+  engine reads and writes on the way past — supply it and entries carry
+  `selectionBefore` / `selectionAfter`, omit it and the engine touches selection
+  never. `recordEntry` takes the pre-batch selection as an option, because by the
+  time it runs the live selection has already moved on.
+
+  `defaultCommitAdapter` carries `getSelection` / `setSelection` now, so
+  selection-carrying ops replay without splicing `SelectionApi.adapterMethods`
+  over it.
+
+- c7b4705: Add a side-scroller demo that load-tests the animation timeline and the audio
+  engine. The player is an eleven-joint rig posed by cross-faded
+  `SampledTrack<Pose>` clips — the run cycle plays on a real `animator.timeline`
+  whose time scale tracks ground speed, while jump and fall are seeked by vertical
+  velocity rather than played. Footsteps fire from an `EventTrack` on that looping
+  timeline, which is the timeline-to-audio bridge under the heaviest load it will
+  see. Every sound is synthesized into an `AudioBuffer` at load, so the demo ships
+  no assets.
+
+  Its HUD is the point: frame time, active voice count, footstep timing spread and
+  a swarm control that pushes the voice pool past its limit, so the demo measures
+  the two arcs rather than merely exercising them.
+
+  Findings are recorded in `docs/TODO.md` under Animation. The load-bearing one:
+  `EventTrack` events are `{ t, fire: () => void }`, and `fire` receives no
+  arguments, so an audio handler cannot learn the playhead's crossing time and is
+  quantized to the animation frame instead of the audio clock.
+
+- 6a5c047: Split `CanvasHelpers` into its per-view and per-surface halves.
+
+  `CanvasViewHelpers` is what one camera's own tools, gestures and selection
+  answer — `getEffectivePose`, `getEffectiveBounds`, `getGestureBounds`,
+  `subscribeGestures`, `getGestureVersion`, `getChromeState`.
+  `CanvasSurfaceHelpers` is what a GL context has one of — `getDebug`,
+  `getIsVisible`. `CanvasHelpers` extends both and is unchanged for layers, which
+  still receive the whole object as their `data`.
+
+  The two are now built separately inside `<Canvas>`, so which side a lookup
+  belongs on is a compile-time fact instead of a claim in a design doc. That is
+  the boundary a canvas hosting several viewports has to build N of one side and
+  one of the other across.
+
+- 49e450c: Add `createViewResolver` — which view owns a client point, held steady for a
+  gesture.
+
+  A canvas with viewport nodes on it has more than one camera, and a pointer event
+  belongs to exactly one of them. The resolver hit-tests a list of
+  `ResolvableView`s (a camera plus the rect it paints into) in reverse paint
+  order, right and bottom edges exclusive, and falls back to the root view.
+
+  It pins a pointer on `begin` and releases it on `end`, so a drag that leaves its
+  view's rect — over a neighbour, or off the canvas — keeps reporting coordinates
+  in the space it started in. Without that, a marquee crossing a panel edge
+  silently starts measuring against the wrong camera. A pointer that began on the
+  root canvas is pinned to the root for the same reason. The pinned view is looked
+  up fresh each call, so a rect that moves mid-gesture is honored.
+
+  `ViewTarget.origin` is the resolved view's client-space origin, ready to pass
+  straight to `clientToWorld`. `ViewportLayer.resolvable(outer, dims)` supplies a
+  viewport node as a candidate.
+
+  Nothing is wired into the dispatcher yet: tools still target the outer view.
+
+- 6031085: Stroke text at any size, not only above the outline threshold.
+
+  A glyph escalates from its SDF tier to tessellated outlines once it covers
+  `OUTLINE_MIN_SCREEN_PX` (48) on screen, and only the outline tier has geometry
+  to stroke. Text below that silently dropped its stroke: the control was live,
+  the paint never arrived, and the same text stroked correctly inside a magnifier
+  that happened to lift it over the threshold.
+
+  A run carrying a stroke now escalates at any size. The threshold still governs
+  unstroked text, where it is a choice between two correct renderings rather than
+  between a stroke and nothing. A zero-width stroke does not escalate, and an
+  explicit opt-out of the tier still wins — as does a run the tier cannot serve
+  (no registered outlines, or synthetic bold, whose emboldening is an SDF
+  threshold shift with no geometric equivalent).
+
+- ccaaecd: `Stroke.width` accepts `{ px }` for a width in screen pixels, resolved against the accumulated transform scale at draw time. Callers previously divided by `meanScale(view.scale)` at each site; this moves that into the renderer and lets the stroke mesh cache key see the resolved width.
+- ec0eb08: Rename the viewport `computeFitView` to `computeFitViewport`. It was unreachable from the package entry: an identically-named export from the minimap module shadowed it. This is a breaking rename of a symbol nobody could import.
+- 726f85e: Make what a view paints hittable inside that view.
+
+  `<CanvasView>` registers an `affordanceAt` and a `classifyTarget` of its own,
+  built the same way the surface builds its pair but against this view's chrome
+  state and camera. A press inside a panel now lands on that panel's resize
+  handles, rotation band and path anchors, and a body under the point classifies
+  against the panel's selection — until now a gesture inside a panel reached only
+  the ambient viewport actions.
+
+  Externally registered layers keep first refusal on the point, hit-tested
+  against the view's frame and draw envelope rather than the canvas's.
+
+  The surface's context to its views widens to carry the hit-test half it is the
+  authority on: the pickers, the node-kind resolver and the chrome-caps
+  predicate.
+
+- 601aa6b: Let a view build its own helpers and hand them to its layers.
+
+  `<CanvasView>` now calls `useViewHelpers` and passes the result through the
+  viewport node's `data` thunk: its source layers draw against this view's chrome
+  state, effective poses and gesture bounds, with the surface half of the
+  envelope — debug sink, chrome-caps predicate — passing through untouched.
+
+  The inputs that hook needs are surface-wide (adapter, geometry, bounds
+  resolver, tools, gesture source) and are read during a view's render, so
+  `<SceneCanvas>` publishes them as context rather than on the `SurfaceHandle`,
+  which is not attached until an effect runs.
+
+  Layers that read chrome off the draw envelope — affordance layers, the
+  selection overlay's multi-union — follow the view. The selection overlay's
+  per-id outline and handles still come from closures over the surface's
+  selection.
+
+- 9607185: Read a view's gesture previews from the view's own dispatcher.
+
+  `<CanvasView>` builds its helpers with a `GestureSource` and preview extras
+  over the dispatcher it owns, rather than inheriting the surface's. A view has
+  had its own dispatcher since routing landed, so a gesture inside a panel put
+  its in-flight handles somewhere the panel's own chrome was not looking: no
+  ghost, no tracking resize handles, no gesture bounds.
+
+  The dispatcher's contribution to those lookups is now one factory
+  (`createDispatcherPreviewSources`) next to `createGestureSource`, instead of
+  two closures inlined in `<SceneCanvas>`. The context a surface publishes to its
+  views narrows to the scene-shaped half — adapter, geometry, bounds resolver,
+  tools.
+
+- 58f43e7: Apply the inner view transform to a viewport node's source layers.
+
+  A world-space `RenderLayer` emits world coords and relies on its caller to wrap
+  them in `viewToMat3(view)`. `drawLayers` did that; `createViewportLayer` did
+  not — it concatenated `layer.draw(...)` output under a bare translate to the
+  rect origin. So a viewport's inner `view.x/y/scale` never reached the pixels,
+  while its `reproject` inverse assumed they had. Content drew at raw world
+  coords and hit-testing disagreed with what was on screen; at the identity inner
+  view the two happened to coincide, which is why it looked right in the demo.
+
+  Both paths now go through one exported helper, `drawOneLayer`, which puts a
+  layer's commands in the space its `space` field declares.
+
+  A screen-space source layer keeps drawing untransformed, but that means the
+  viewport's own CSS-pixel space — coords relative to the rect's top-left,
+  clipped to the rect. The previous doc comment claimed such layers rendered to
+  the outer canvas instead; they never did.
+
+- 2e22d99: A viewport node can host a live camera and its own per-view data.
+
+  `view` now accepts a thunk as well as a `View`. It is read fresh on every
+  `draw`, `reproject` and `resolvable`, so those three cannot disagree about where
+  the viewport is looking part-way through a gesture. The thunk receives the outer
+  view and dims, so a derived camera — parallax, node-anchored scroll — is a
+  function of the one hosting it.
+
+  A `data` thunk derives what the source layers receive from what the outer canvas
+  passed down. Without it they get the outer canvas's `data`, as before. This is
+  what lets a viewport showing the same scene through a second camera give its
+  layers their own selection, chrome state and gesture previews instead of the
+  hosting view's.
+
+  Both are additive: `CreateViewportLayerOpts` gained a second type parameter that
+  defaults to the first, so existing call sites infer exactly as they did.
+
+- Updated dependencies [7c202d2]
+  - @weasel-js/history@1.2.0
+  - @weasel-js/font@1.2.0
+  - @weasel-js/geom@1.2.0
+  - @weasel-js/gestures@1.2.0
+  - @weasel-js/modes@1.2.0
+
 ## 1.1.0
 
 ### Minor Changes
