@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Action } from './registry';
-import { actionShortcuts } from './actionShortcuts';
+import type { GestureSpec } from '../gestures/spec';
+import { actionShortcuts, keySpecShortcut } from './actionShortcuts';
 
 const base = { id: 'a', label: 'A' } as const;
 const of = (defaultBinding: unknown) => actionShortcuts({ ...base, defaultBinding } as Action);
@@ -54,5 +55,13 @@ describe('actionShortcuts', () => {
   it('is empty for an action with no keyboard binding', () => {
     expect(of([{ spec: { kind: 'drag' }, opts: {} }])).toEqual([]);
     expect(actionShortcuts({ ...base } as Action)).toEqual([]);
+  });
+});
+
+describe('keySpecShortcut', () => {
+  it('has no chip for a spec a reader cannot press', () => {
+    // The seam ToolkitBuilder falls through on to render its own tag.
+    expect(keySpecShortcut({ kind: 'drag', mods: { alt: true } } as GestureSpec)).toBeUndefined();
+    expect(keySpecShortcut({ kind: 'key', key: '' } as GestureSpec)).toBeUndefined();
   });
 });
