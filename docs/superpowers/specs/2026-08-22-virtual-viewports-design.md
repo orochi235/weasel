@@ -199,11 +199,6 @@ declare one; mounting the component as a child is the same declaration, and chil
 every prop entry. `createViewportLayer.source` now accepts a thunk, which is what lets a view paint
 a stack the surface assembles rather than one closed over at construction.
 
-It does **not** call `useViewHelpers`, against what this list said. That hook builds one view's
-overlay-aware state out of selection, tools and a gesture source — all still surface-wide, so a
-second call would produce a second copy of the same answers. It belongs with the state it reads,
-which is step 5.
-
 Step 5 is done. A view overlays the deps that are genuinely its own onto the canvas registry
 rather than getting a `DepRegistryProvider` of its own — one place to register a source, one
 authority per dep — and `selection` joined `view` in that overlay. `<CanvasView>` calls
