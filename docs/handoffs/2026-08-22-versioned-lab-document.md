@@ -2,7 +2,7 @@
 
 **Branch:** `feat/versioned-lab-document`, in the worktree
 `/Users/mike/src/weasel-lab-document`. 12 commits ahead of `main`.
-**Committed, not pushed, not merged.** 315 tests green,
+**Merged to `main`** (2026-08-23); the branch is gone and nothing is pushed. 315 tests green,
 `tsc -p tsconfig.lib.json` clean apart from two pre-existing unrelated
 errors (`scripts/build-dts.mts`, `src/theme/Interstellar.stories.tsx`).
 

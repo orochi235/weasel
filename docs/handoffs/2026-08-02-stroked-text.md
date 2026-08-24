@@ -1,7 +1,7 @@
 # Handoff — stroked text on the outline tier
 
 **Date:** 2026-08-02
-**Branch:** `text-stroke` (10 commits, off `main` @ `70205932`), local only
+**Branch:** `text-stroke` (10 commits, off `main` @ `70205932`) — merged; nothing pushed
 **Backlog entry:** `docs/TODO.md` § Text — "Stroked text"
 
 ---

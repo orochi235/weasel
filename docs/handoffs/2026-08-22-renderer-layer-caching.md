@@ -5,8 +5,10 @@ decided in conversation that the code does not record.
 
 ## Where the work is
 
-Worktree `.claude/worktrees/renderer-layer-caching`, branch `worktree-renderer-layer-caching`,
-branched from local `main` at `e28996aa`. **Not pushed, no PR, not merged.** Nine commits.
+**Merged to `main`** at `99783cf2` (2026-08-23); the branch and its worktree are gone. Nothing
+pushed. The per-view keying this arc left open landed with virtual viewports, which merged on top
+at `f19a8f84` — `drawOneLayer` resolves a layer's commands from cache and then puts them in the
+space the layer declares, in that order.
 
 `main` was 19 commits ahead of `origin/main` when this branched — the worktree was created from
 `origin/main` by default and had to be reset onto local `main`. `worktree.baseRef: head` is now set
