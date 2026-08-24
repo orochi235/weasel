@@ -5,10 +5,19 @@ import { createAudioEngine } from '@weasel-js/audio';
 import type { AudioEngine, SoundHandle, VoiceHandle } from '@weasel-js/audio';
 import { CAM_SCALE, cameraView, createCamera, followCamera, type Camera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
-import { drawBackdrop, drawPlayer, drawTiles } from './platformer/skin';
+import { drawBackdrop, drawCoins, drawEnemies, drawGoal, drawPlayer, drawTiles } from './platformer/skin';
 import { createBodyState, spikeOverlap, stepBody, STEP, MOVE_SPEED, type BodyState, type Input } from './platformer/physics';
 import { createAnimState, nextAnimState, resolvePose, type AnimState } from './platformer/animState';
-import { INVULN } from './platformer/entities';
+import {
+  atGoal,
+  createCoins,
+  createEnemies,
+  resolveContacts,
+  stepEnemy,
+  INVULN,
+  type Coin,
+  type Enemy,
+} from './platformer/entities';
 import { PLAYER_SKELETON } from './platformer/skeleton';
 import { consumeJumpPress, usePlatformerInput } from './platformer/useInput';
 import { registerSounds, type SoundName } from './platformer/sfx';
@@ -30,6 +39,12 @@ interface GameRefs {
   invuln: number;
   /** Accumulated real time not yet consumed by a fixed step. */
   accumulator: number;
+  enemies: Enemy[];
+  coins: Coin[];
+  lives: number;
+  score: number;
+  elapsed: number;
+  outcome: 'playing' | 'won' | 'lost';
 }
 
 const freshGame = (): GameRefs => ({
@@ -38,6 +53,12 @@ const freshGame = (): GameRefs => ({
   anim: createAnimState(),
   invuln: 0,
   accumulator: 0,
+  enemies: createEnemies(WORLD.enemies),
+  coins: createCoins(WORLD.coins),
+  lives: 3,
+  score: 0,
+  elapsed: 0,
+  outcome: 'playing',
 });
 
 /**
@@ -61,6 +82,12 @@ function SideScrollerDemoInner() {
   const input = usePlatformerInput();
   const game = useRef<GameRefs>(freshGame());
   const [running, setRunning] = useState(false);
+  const [, setNonce] = useState(0);
+
+  const restart = () => {
+    game.current = freshGame();
+    setNonce((n) => n + 1);
+  };
 
   const audio = useRef<{ engine: AudioEngine; sounds: Record<SoundName, SoundHandle>; bed: VoiceHandle | null } | null>(null);
   const [audioState, setAudioState] = useState<'off' | 'suspended' | 'running'>('off');
@@ -132,6 +159,14 @@ function SideScrollerDemoInner() {
     a.engine.play(a.sounds[name], { bus: 'sfx', gain });
   };
 
+  /** For sounds with a place in the world — the engine spatializes against the
+   *  listener set from the player each frame. */
+  const fireAt = (name: SoundName, position: { x: number; y: number }, gain = 0.8) => {
+    const a = audio.current;
+    if (!a || a.engine.state() !== 'running') return;
+    a.engine.play(a.sounds[name], { bus: 'sfx', gain, position });
+  };
+
   /** A hit drops the music under the hurt sound and brings it back. */
   const duckMusic = () => {
     const a = audio.current;
@@ -179,7 +214,22 @@ function SideScrollerDemoInner() {
       },
     };
 
-    return { bands, tiles, player };
+    const entities: RenderLayer<unknown> = {
+      id: 'entities',
+      label: 'Entities',
+      space: 'screen',
+      draw: (): DrawCommand[] => {
+        const g = game.current;
+        const v = view();
+        return [
+          ...drawGoal(WORLD.goal, v, (g.elapsed % 1.6) / 1.6),
+          ...drawCoins(g.coins, v, (g.elapsed % 1.2) / 1.2),
+          ...drawEnemies(g.enemies, v),
+        ];
+      },
+    };
+
+    return { bands, tiles, entities, player };
   }, []);
 
   // A camera with nothing to follow still has to run, or the first frame after
@@ -194,15 +244,23 @@ function SideScrollerDemoInner() {
       // accumulator from running hundreds of catch-up steps in one frame.
       const frame = Math.min((now - last) / 1000, 0.1);
       last = now;
-      if (!running) {
-        // A game pause freezes physics but not the animator, so the run
-        // cycle's own registration would otherwise keep advancing on its own.
+
+      // Framing is not simulation: the camera and listener update every frame,
+      // including the first one and while paused, so the view is never left
+      // clamped to the spawn point with the level scrolled off to one side.
+      const g = game.current;
+      g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
+      audio.current?.engine.setListener({ x: g.player.body.x, y: g.player.body.y });
+
+      // Simulation halts on pause and once the run is decided; the run cycle's
+      // own registration is paused here too, or it keeps firing footsteps
+      // after death since the animator ticks it independently of this loop.
+      if (!running || g.outcome !== 'playing') {
         const cycle = runCycle.current;
         if (cycle && !cycle.isPaused()) cycle.pause();
         return;
       }
 
-      const g = game.current;
       g.accumulator += frame;
       while (g.accumulator >= STEP) {
         g.accumulator -= STEP;
@@ -222,6 +280,48 @@ function SideScrollerDemoInner() {
           fire('hurt');
           duckMusic();
         }
+
+        g.elapsed += STEP;
+        g.enemies = g.enemies.map((e) => stepEnemy(e, WORLD, STEP));
+
+        for (const hit of resolveContacts(g.player.body, g.enemies, g.coins, g.invuln)) {
+          if (hit.kind === 'coin') {
+            g.coins[hit.index].taken = true;
+            g.score++;
+            fire('coin', 0.5);
+          } else if (hit.kind === 'stomp') {
+            const victim = g.enemies[hit.index];
+            g.enemies[hit.index].alive = false;
+            g.player = { ...g.player, body: { ...g.player.body, vy: -300 } };
+            fireAt('stomp', { x: victim.x, y: victim.y }, 0.7);
+          } else {
+            g.invuln = INVULN;
+            g.lives--;
+            g.player = {
+              ...g.player,
+              body: { ...g.player.body, vy: -280, vx: g.player.body.facing * -120 },
+            };
+            fire('hurt');
+            duckMusic();
+          }
+        }
+
+        // Falling out of the level costs a life and returns to the spawn.
+        if (g.player.body.y > WORLD.heightPx + 100) {
+          g.lives--;
+          g.player = createBodyState(WORLD.spawn);
+          g.camera = createCamera(WORLD.spawn);
+          g.invuln = INVULN;
+          fire('hurt');
+        }
+
+        if (g.lives <= 0 && g.outcome === 'playing') {
+          g.outcome = 'lost';
+        } else if (atGoal(g.player.body, WORLD.goal) && g.outcome === 'playing') {
+          g.outcome = 'won';
+          fire('goal', 0.9);
+        }
+
         g.anim = nextAnimState(
           g.anim,
           {
@@ -246,9 +346,6 @@ function SideScrollerDemoInner() {
           cycle.pause();
         }
       }
-
-      g.camera = followCamera(g.camera, g.player.body, DIMS, WORLD, frame);
-      audio.current?.engine.setListener({ x: g.player.body.x, y: g.player.body.y });
     });
   }, [animator, running, input]);
 
@@ -256,11 +353,12 @@ function SideScrollerDemoInner() {
     <div className="ckd-demo">
       <div className="ckd-toolbar">
         <button className="ckd-btn" onClick={() => setRunning((r) => !r)}>
-          {running ? 'pause' : 'restart'}
+          {running ? 'pause' : 'start'}
         </button>
         <button className="ckd-btn" onClick={enableAudio} disabled={audioState === 'running'}>
           {audioState === 'running' ? 'audio on' : 'enable audio'}
         </button>
+        <button className="ckd-btn" onClick={restart}>restart</button>
         <span className="ckd-readout">zoom {CAM_SCALE}x</span>
       </div>
       <SceneCanvas
@@ -276,7 +374,8 @@ function SideScrollerDemoInner() {
           backdropMid: { layer: layers.bands[1], after: 'backdropFar' },
           backdropNear: { layer: layers.bands[2], after: 'backdropMid' },
           tiles: { layer: layers.tiles, after: 'backdropNear' },
-          player: { layer: layers.player, after: 'tiles' },
+          entities: { layer: layers.entities, after: 'tiles' },
+          player: { layer: layers.player, after: 'entities' },
           scene: { drawOne: () => [] },
           selectionOverlay: null,
         }}
