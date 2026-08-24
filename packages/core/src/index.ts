@@ -159,6 +159,7 @@ export type { UseStandardActionsOptions } from './interactions/actions/useStanda
 export { defaultCommitAdapter } from './interactions/actions/defaultCommitAdapter';
 
 // ─── Invoker / GestureBinding / ActiveToolContext ───
+export { resolveParams } from './interactions/actions/invoker';
 export type {
   Point2,
   DragSample,

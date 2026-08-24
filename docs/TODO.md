@@ -675,6 +675,38 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   spatialization as a pure `spatialize()` function, and analyser taps with
   `bands(n)` for audio-reactive rendering. Registration: `build:leaves` and the
   `fixed` group in `.changeset/config.json`.
+- **(P2) Synth voices and a pattern player.** Today the engine plays
+  `AudioBuffer`s: everything must be recorded or pre-rendered, so the
+  side-scroller hand-writes PCM into a buffer for every sound it makes. The
+  missing layer is a *note* — pitch, duration, envelope, a cheap waveform with
+  harmonics — plus a pattern player that books notes through the existing
+  lookahead scheduler instead of the caller booking each `play()`. The
+  scheduling, buses, voice pooling and stealing all already exist and are the
+  hard part; this sits on top of them. Wanted independently by anything that
+  needs music it did not ship as an asset.
+
+- **(P3) Trope-aware generative scoring.** Builds on the synth voices above.
+  Screen scoring for factual content — news packages, documentaries — runs on a
+  small, highly codified set of devices, and each one is reachable from a few
+  nearly-orthogonal parameters: mode, tempo, subdivision density, articulation
+  (sustained vs plucked), register spread, harmonic rhythm, and the consonance
+  of added intervals. Dread is sustained low tones a minor second or tritone
+  apart with no pulse; investigation is a minor ostinato that adds layers;
+  wonder is Lydian with open voicings and a soft attack; urgency is driving
+  sixteenths on stacked fourths and fifths. Because the parameters are few and
+  mostly independent, a consumer-facing surface could be two or three axes —
+  valence, tension, urgency — mapped onto them, with the score generated
+  continuously rather than selected from clips.
+
+  The mapping is tight enough to hit by accident: this demo's first music bed
+  was four pure sine tones with slow envelopes, written only to loop without
+  clicking, and it landed squarely on the dread cue — reported unprompted as
+  "creepy" (2026-08-22). That is the evidence the vocabulary is learnable.
+
+  Worth naming what it is: these devices work by bypassing the viewer's
+  argument, which is precisely their function in the genre. Anything built here
+  should let a consumer see which cue is being applied, not just hear it.
+
 - **(P2) Move the scheduler tick off the main thread.** Browsers clamp
   `setTimeout` to at least 1000 ms in a hidden tab — Chrome harder still for
   timers it judges intensive — so with a 100 ms lookahead a backgrounded tab
