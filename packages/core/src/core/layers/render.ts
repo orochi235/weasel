@@ -170,27 +170,62 @@ export function drawLayers<TData>(
   }
 
   for (const layer of sequence) {
-    const visible =
-      layer.alwaysOn ||
-      (layer.id in visibility ? visibility[layer.id] : (layer.defaultVisible ?? true));
-    if (!visible) continue;
+    if (!isLayerVisible(layer, visibility)) continue;
 
-    const cmds = drawOneLayer(layer, data, v, dims, cache);
-    if (cmds.length === 0) continue;
-
-    const space = layer.space ?? 'world';
-    if (space === 'world') {
-      out.push({ kind: 'group', transform: viewToMat3(v), children: cmds });
-    } else {
-      for (const c of cmds) out.push(c);
-    }
+    for (const c of drawOneLayer(layer, data, v, dims, cache)) out.push(c);
   }
 
   return out;
 }
 
-/** Resolve one layer's commands, from cache when its deps are unchanged. */
-function drawOneLayer<TData>(
+/**
+ * Resolve one layer's visibility: `alwaysOn` wins, then an explicit entry in
+ * `visibility`, then `defaultVisible`, defaulting to shown.
+ *
+ * Hit-testing asks this too. A layer that is hidden but still claims pointer
+ * events is a pointer landing on nothing the user can see.
+ */
+export function isLayerVisible<TData>(
+  layer: RenderLayer<TData>,
+  visibility: Record<string, boolean>,
+): boolean {
+  if (layer.alwaysOn) return true;
+  if (layer.id in visibility) return visibility[layer.id]!;
+  return layer.defaultVisible ?? true;
+}
+
+/**
+ * Draw one layer and put its commands in the space its `space` declares:
+ * world-space output wrapped in a `viewToMat3(view)` group, screen-space
+ * output passed through.
+ *
+ * Anything rendering layers through a view — the canvas itself, a viewport
+ * node's inner pass — goes through here. A second copy of this rule that
+ * forgets the wrap draws world content at raw world coords, which looks
+ * plausible at the identity view and wrong everywhere else.
+ */
+export function drawOneLayer<TData>(
+  layer: RenderLayer<TData>,
+  data: TData,
+  view: View,
+  dims: Dims,
+  cache?: LayerCommandCache,
+): DrawCommand[] {
+  const cmds = layerCommands(layer, data, view, dims, cache);
+  if (cmds.length === 0) return [];
+  if ((layer.space ?? 'world') === 'screen') return cmds;
+  return [{ kind: 'group', transform: viewToMat3(view), children: cmds }];
+}
+
+/**
+ * One layer's own commands, from cache when its deps are unchanged.
+ *
+ * What is cached is the layer's raw output, before the space wrap above. The
+ * wrap is a function of `view`, and a layer whose content does not depend on
+ * the camera is entitled to leave `view` out of its deps — caching the wrapped
+ * group would then serve a stale transform the moment the camera moved.
+ */
+function layerCommands<TData>(
   layer: RenderLayer<TData>,
   data: TData,
   view: View,

@@ -1796,14 +1796,15 @@ describe('drawText — outline tier', () => {
       expect(calls.filter((c) => c.name === 'drawElements')).toHaveLength(1);
     });
 
-    it('leaves small text unstroked rather than faking it on the SDF', () => {
+    it('escalates small text to outlines rather than dropping its stroke', () => {
       const { ctx, calls } = createRecorderCtx();
       dispatch(ctx, textCmd('A', { fontSize: 12, stroke: STROKE }));
       const used = calls.filter((c) => c.name === 'useProgram').map((c) => c.args[0]);
-      // Below the threshold a glyph is a sampled distance field with no
-      // geometry to stroke. Nothing is drawn rather than something wrong.
-      expect(used).toContain(ctx.textSdf.handle);
-      expect(used).not.toContain(ctx.pathFill.handle);
+      // The size threshold picks between two correct renderings of unstroked
+      // text. For a stroked run it would pick between a stroke and none, so
+      // the run escalates at any size and the SDF tier never sees it.
+      expect(used).toContain(ctx.pathFill.handle);
+      expect(used).not.toContain(ctx.textSdf.handle);
     });
   });
 });

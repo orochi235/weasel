@@ -665,6 +665,59 @@ describe('Canvas baseBoundsOf synthesis', () => {
     expect(typeof (seen as { getChromeState?: unknown })?.getChromeState).toBe('function');
   });
 
+  it('hitTestExtras skips a layer hidden by layerVisibility', async () => {
+    const hitTest = vi.fn(() => ({ id: 'probe' } as never));
+    const probe: RenderLayer<unknown> = {
+      id: 'probe', label: 'probe', space: 'screen', draw: () => [], hitTest,
+    };
+    const ref = React.createRef<CanvasExtensionApi>();
+    const { rerender } = render(
+      <Canvas ref={ref} width={100} height={100} layers={{}} layerVisibility={{ probe: false }} />,
+    );
+    await waitForFrame();
+    act(() => { ref.current?.registerLayer(probe); });
+
+    expect(ref.current?.hitTestExtras(0, 0)).toBeNull();
+    expect(hitTest).not.toHaveBeenCalled();
+
+    rerender(<Canvas ref={ref} width={100} height={100} layers={{}} layerVisibility={{ probe: true }} />);
+    await waitForFrame();
+    expect(ref.current?.hitTestExtras(0, 0)?.layerId).toBe('probe');
+  });
+
+  it('hitTestExtras still consults an alwaysOn layer hidden by the map', async () => {
+    const probe: RenderLayer<unknown> = {
+      id: 'probe', label: 'probe', space: 'screen', alwaysOn: true,
+      draw: () => [], hitTest: () => ({ id: 'probe' } as never),
+    };
+    const ref = React.createRef<CanvasExtensionApi>();
+    render(<Canvas ref={ref} width={100} height={100} layers={{}} layerVisibility={{ probe: false }} />);
+    await waitForFrame();
+    act(() => { ref.current?.registerLayer(probe); });
+    expect(ref.current?.hitTestExtras(0, 0)?.layerId).toBe('probe');
+  });
+
+  it('hitTestExtras tests under a supplied frame instead of the canvas view', async () => {
+    const seen: { view?: unknown; dims?: unknown }[] = [];
+    const probe: RenderLayer<unknown> = {
+      id: 'probe', label: 'probe', space: 'screen',
+      draw: () => [],
+      hitTest: (_x, _y, _data, view, dims) => { seen.push({ view, dims }); return null; },
+    };
+    const ref = React.createRef<CanvasExtensionApi>();
+    render(<Canvas ref={ref} width={100} height={100} layers={{}} />);
+    await waitForFrame();
+    act(() => { ref.current?.registerLayer(probe); });
+
+    const inner = { x: 250, y: 200, scale: { x: 1.6, y: 1.6 } };
+    act(() => { ref.current?.hitTestExtras(0, 0); });
+    act(() => { ref.current?.hitTestExtras(0, 0, { view: inner, dims: { width: 240, height: 160 } }); });
+
+    expect(seen[0]!.dims).toEqual({ width: 100, height: 100 });
+    expect(seen[1]!.view).toBe(inner);
+    expect(seen[1]!.dims).toEqual({ width: 240, height: 160 });
+  });
+
   it('registerLayer adds a layer to the active stack and detach removes it', async () => {
     // Under jsdom the GL path bails before layer.draw runs, so we observe
     // draw-pass participation indirectly via debugSink.beginFrame (same proxy

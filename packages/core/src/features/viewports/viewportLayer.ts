@@ -1,7 +1,8 @@
 import type { DrawCommand, GroupDrawCommand } from '../../renderer';
-import type { Dims, RenderLayer } from 'core/layers/render';
+import { drawOneLayer, type Dims, type RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
 import { mat3, type Mat3 } from '../../renderer/math/mat3';
+import type { ResolvableView } from './viewResolver';
 
 /**
  * @experimental
@@ -16,33 +17,50 @@ import { mat3, type Mat3 } from '../../renderer/math/mat3';
  * lenses on the source.
  *
  * **Inner view semantics.** The source layers draw as if the inner view
- * filled the screen at world-origin (their own `viewToMat3(innerView)` runs
- * normally). The viewport then translates the result so that the inner
- * view's origin lands at `bounds.x, bounds.y` and clips to `(bounds.w,
- * bounds.h)`. Caller chooses `innerView.{x,y,scale}` to control which slice
- * of source-world is shown.
+ * filled the screen at world-origin — each is wrapped in `viewToMat3(view)`
+ * by the same `drawOneLayer` the outer canvas uses. The viewport then
+ * translates the result so that the inner view's origin lands at `bounds.x,
+ * bounds.y` and clips to `(bounds.w, bounds.h)`. Caller chooses
+ * `innerView.{x,y,scale}` to control which slice of source-world is shown.
  *
  * **Input is re-projected on request, not automatically.** `reproject` maps a
  * screen point into the inner view's world; a consumer that wants a click
- * inside a viewport to mean something calls it from its own handler. The
- * dispatcher is untouched, so tools still target the outer view — making
- * tools work *inside* a viewport is a larger question (which view a pinch
- * zooms, what a drag leaving the rect does) and wants its own design.
+ * inside a viewport to mean something calls it from its own handler, or feeds
+ * `resolvable` to `createViewResolver` to route a whole pointer stream.
+ * `<CanvasView>` is that wiring done for you; build on this directly for a
+ * viewport that takes no input, or to route it yourself.
  *
  * **Screen-space source layers** (e.g., debug overlays, selection chrome)
- * still render to the outer canvas, not into the viewport. To include
- * them, wrap them as world-space layers first.
+ * draw in the viewport's own CSS-pixel space: their coords are relative to
+ * the rect's top-left, and they clip to it, rather than to the outer canvas.
  */
-export interface CreateViewportLayerOpts<TData> {
+export interface CreateViewportLayerOpts<TData, TSource = TData> {
   id: string;
   label: string;
   /** Layers re-rendered through `view`. Each receives `(data, view, dims)`
-   *  exactly as the outer Canvas would call it. */
-  source: RenderLayer<TData>[];
-  /** The inner view. Static for now — a future revision will accept
-   *  `View | (outer: View, dims: Dims) => View` so derivations like
-   *  parallax and node-anchored scroll can compose. */
-  view: View;
+   *  exactly as the outer Canvas would call it.
+   *
+   *  Pass a thunk for a stack that is assembled elsewhere — it is read fresh
+   *  on every `draw`, the same way a thunked `view` is. */
+  source: readonly RenderLayer<TSource>[] | (() => readonly RenderLayer<TSource>[]);
+  /**
+   * The `data` the source layers receive, derived from what the outer canvas
+   * passed down. Omit and they get the outer canvas's own.
+   *
+   * A viewport showing the same scene through a second camera wants its own
+   * per-view helpers here — selection, chrome state and gesture previews that
+   * belong to *this* view rather than the one hosting it.
+   */
+  data?: (outer: TData) => TSource;
+  /**
+   * The inner view. Pass a thunk for a camera that moves — it is read fresh
+   * on every `draw`, `reproject` and `resolvable`, so those three cannot
+   * disagree about where the viewport is looking mid-gesture.
+   *
+   * The thunk receives the outer view and dims, so a derived camera
+   * (parallax, node-anchored scroll) is a function of the one hosting it.
+   */
+  view: View | ((outer: View, dims: Dims) => View);
   /** Where on the outer canvas this viewport is painted, in screen-space
    *  CSS pixels. Recomputed every frame so the rect can track an outer
    *  pose, follow a corner, etc. */
@@ -70,25 +88,38 @@ export interface ViewportLayer<TData> extends RenderLayer<TData> {
    * `bounds` is a pure function of those, so this reproduces the exact rect
    * that was painted rather than a remembered one.
    *
-   * This does not touch the dispatcher: tools still receive outer-view
-   * coords, and a consumer that wants a click inside a viewport to mean
-   * something calls this from its own handler.
+   * This does not touch the dispatcher: a consumer that wants a click inside
+   * a viewport to mean something calls this from its own handler, or declares
+   * the viewport as a `<CanvasView>` and lets the canvas route to it.
    */
   reproject(outer: View, dims: Dims, screen: { x: number; y: number }): { x: number; y: number } | null;
+  /**
+   * This viewport as a routing candidate for {@link createViewResolver} —
+   * its inner view and the rect it paints into for the given outer frame.
+   *
+   * Pass the `outer` view and `dims` the frame was drawn with, for the same
+   * reason `reproject` wants them: `bounds` is recomputed, not remembered.
+   */
+  resolvable(outer: View, dims: Dims): ResolvableView;
 }
 
 /** Build a layer that renders other layers through a second view, inside a
  *  sub-region of the canvas — a minimap, an inset, a magnifier. Its
  *  `reproject` maps screen points back through the inner view so the region
  *  can be interacted with. */
-export function createViewportLayer<TData>(
-  opts: CreateViewportLayerOpts<TData>,
+export function createViewportLayer<TData, TSource = TData>(
+  opts: CreateViewportLayerOpts<TData, TSource>,
 ): ViewportLayer<TData> {
-  const { id, label, source, view, bounds, background } = opts;
+  const { id, label, source, view, bounds, background, data: sourceData } = opts;
+  const viewAt = typeof view === 'function' ? view : () => view;
+  const sourceAt = typeof source === 'function' ? source : () => source;
   return {
     id,
     label,
     space: 'screen',
+    resolvable(outer, dims) {
+      return { id, view: viewAt(outer, dims), rect: bounds(outer, dims) };
+    },
     reproject(outer, dims, screen) {
       const b = bounds(outer, dims);
       if (
@@ -97,9 +128,10 @@ export function createViewportLayer<TData>(
       ) return null;
       // Inverse of what `draw` paints: the source applies the inner view, then
       // the group translates by the rect origin.
+      const v = viewAt(outer, dims);
       return {
-        x: (screen.x - b.x) / view.scale.x + view.x,
-        y: (screen.y - b.y) / view.scale.y + view.y,
+        x: (screen.x - b.x) / v.scale.x + v.x,
+        y: (screen.y - b.y) / v.scale.y + v.y,
       };
     },
     draw: (data, outerView, dims): DrawCommand[] => {
@@ -114,10 +146,13 @@ export function createViewportLayer<TData>(
           fill: { fill: 'solid', color: background },
         });
       }
-      for (const layer of source) {
-        for (const c of layer.draw(data, view, { width: b.w, height: b.h })) {
-          children.push(c);
-        }
+      const innerDims = { width: b.w, height: b.h };
+      // The cast holds up because `TSource` defaults to `TData`: without a
+      // thunk the two are the same type by construction.
+      const innerData = sourceData ? sourceData(data) : (data as unknown as TSource);
+      const v = viewAt(outerView, dims);
+      for (const layer of sourceAt()) {
+        for (const c of drawOneLayer(layer, innerData, v, innerDims)) children.push(c);
       }
       const transform: Mat3 = mat3.translate(mat3.identity(), b.x, b.y);
       const group: GroupDrawCommand = {

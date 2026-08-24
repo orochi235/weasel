@@ -22,6 +22,8 @@ Priority tags:
 - **`@weasel-js/audio`** — spec'd, phase 1 next → [Audio](#audio)
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
+- **Undoing a boolean op leaves the wrong selection** — history carries no selection snapshot → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
 
@@ -702,6 +704,22 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 ---
 
 ## Selection, actions & UI panels
+
+- **(P1) Undoing a boolean op leaves the wrong selection.** In WeaselDraw, running a boolean op on a multi-selection and then undoing it restores the operand nodes but not the selection that produced them. History tracks scene ops only — selection is deliberately outside it, and nothing restores what was selected when an entry was recorded.
+
+  The fix is probably to snapshot the selection *onto* history entries without letting selection changes create them: an entry records the selection before and after its ops, undo/redo restores the matching one, and a bare selection change stays invisible to history. Selection is transient state (`docs/taxonomy.md`), so it must not become an undoable step of its own — a user pressing Cmd-Z after clicking around expects the last *edit* back, not the last click.
+
+- **(P1) Audit the engine for cascades that were duplicated and then drifted.** Selection chrome resolved a node's bounds through two independent cascades — the overlay layer's `getPose` chain and `useViewHelpers`' `boundsWithPreview` — that were supposed to give the same answer and did not: they consulted the same two preview sources in opposite priority, and only one of them carried rotation. Nothing caught it, because with one camera and one selection the two rarely disagreed on a value anyone could see. Virtual viewports collapsed that pair (the layer now reads bounds off the draw envelope, one cascade, the one the chrome state was built with).
+
+  The pattern is what to go looking for: a lookup implemented once for the renderer and once for the hit-tester, or once in `<Canvas>` and once in `<SceneCanvas>`, agreeing by coincidence rather than by construction. Two more of the same kind turned up in the same arc and were collapsed with it: the affordance hit-tester built its own `ChromeState` beside the painted one (so mid-drag, handles painted at the ghost and hit-tested at the committed pose), and a view read gesture previews from the surface's dispatcher while owning one of its own.
+
+  Known suspects still standing — there are two pinch-zoom implementations, `usePinchZoomTool`'s direct `usePinchGesture` listener on the canvas and `pinchZoomAction` through the dispatcher's multitouch synthesis, reached by two different `viewport` sub-flags (`pinchZoom` and `zoom`), so a consumer enabling both zooms twice; and `previewIdsExtra` / `previewPoseExtra` walk in-flight handles in a shape `usePreviewGhostLayer` also walks. The output is a list of pairs with a verdict each: collapse, or state why two are correct.
+
+- **(P2) Loupe: sample on click, and show something when empty.** Two gaps in `packages/hud/src/loupe/`, both about the lens being a live surface rather than a readout. The window already samples the framebuffer under its aim point and publishes it (`LoupeHandle.color`, `onColorChange`), and WeaselDraw already renders a vector/pixel toggle, a 2–16× magnification field and a hex readout with Copy (`apps/draw/src/LoupeControls.tsx`) — so neither of these is a control problem.
+
+  (a) **Clicking the loupe interior should pick the color under the point**, the way an eyedropper does, rather than doing nothing while a Copy button in a side panel holds the only way to take the value. The interior currently doubles as the window's move handle when `titlebar: false`, so a click and a drag have to be told apart before this can land. Where the picked color *goes* is the consumer's — the kit surfaces the pick, draw binds it to the active fill or stroke.
+
+  (b) **An empty loupe should read as empty, not as a hole.** `background` paints an opaque backdrop behind vector content so the outer canvas does not show through; with none set, a lens over blank canvas is indistinguishable from a broken one. Default to a semitransparent fill so the window always reads as a window.
 
 - **(P3) Alignment guides — v1 follow-ups.** Auto-derived alignment guides shipped 2026-06-19 (`packages/core/src/features/guides/alignment/`: `deriveAlignmentGuides` + `matchAlignment` + `alignMoveBehavior`/`alignInsertBehavior`/`alignResizeBehavior`, rendered via `createGuidesLayer`; demo `apps/site/demos/AlignmentGuidesDemo.tsx`). Spec: `docs/superpowers/specs/2026-06-19-alignment-guides-design.md`. Multi-select drag alignment shipped 2026-06-19 (`alignMoveBehavior` matches the selection's union AABB via `unionBounds`). Remaining deferred: (a) **Figma-style segment rendering** — line spanning only between the aligned objects with end ticks / offset labels, instead of full-canvas lines (needs a span-aware layer, not just axis+offset); (b) **equal-spacing / distribution guides** ("equal gaps" across 3+ objects); (c) **rotated-object alignment** — derivation/matching use AABBs, so a rotated object aligns by its bounding box.
 

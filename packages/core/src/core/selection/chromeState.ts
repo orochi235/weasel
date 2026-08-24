@@ -9,6 +9,16 @@ export type { Bounds };
  * call. Built once per Canvas render via `buildChromeState`; affordances
  * must not cache it across calls.
  */
+/** Nothing selected, nothing resolvable — what a caller reads before a
+ *  surface has attached, or where chrome state has no owner. */
+export const EMPTY_CHROME_STATE: ChromeState = {
+  selection: [],
+  multiActive: false,
+  boundsOf: () => null,
+  unionBounds: null,
+  modifiers: { alt: false, shift: false, meta: false, ctrl: false },
+};
+
 export interface ChromeState {
   /** Currently selected ids. Live; reflects useSelection's React state. */
   readonly selection: readonly NodeId[];

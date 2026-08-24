@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { createViewportLayer, viewportsAt } from './viewportLayer';
 import type { RenderLayer } from 'core/layers/render';
 import type { View } from 'core/viewport/view';
+import type { GroupDrawCommand } from '../../renderer';
+import { viewToMat3 } from '../../renderer';
+import { mat3, type Mat3 } from '../../renderer/math/mat3';
 
 const OUTER: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 const DIMS = { width: 600, height: 400 };
@@ -93,5 +96,106 @@ describe('viewportsAt', () => {
 
   it('returns null when no viewport contains the point', () => {
     expect(viewportsAt([a, b], OUTER, DIMS, { x: 300, y: 300 })).toBeNull();
+  });
+});
+
+describe('viewport draw', () => {
+  const INNER: View = { x: 250, y: 200, scale: { x: 1.6, y: 1.6 } };
+  const BOUNDS = { x: 8, y: 232, w: 240, h: 160 };
+
+  /** Emits one world-space unit rect at the world origin. */
+  const MARKER: RenderLayer<unknown> = {
+    id: 'marker', label: 'marker', space: 'world',
+    draw: () => [{
+      kind: 'path',
+      path: { kind: 'rect', x: 0, y: 0, width: 1, height: 1 },
+      fill: { fill: 'solid', color: '#000' },
+    }],
+  };
+
+  function viewportOf(source: RenderLayer<unknown>[]) {
+    return createViewportLayer<unknown>({
+      id: 'v', label: 'v', source, view: INNER, bounds: () => BOUNDS,
+    });
+  }
+
+  function outerGroup(source: RenderLayer<unknown>[]): GroupDrawCommand {
+    const [group] = viewportOf(source).draw(undefined, OUTER, DIMS);
+    return group as GroupDrawCommand;
+  }
+
+  it('applies the inner view to world-space source layers', () => {
+    const inner = outerGroup([MARKER]).children[0] as GroupDrawCommand;
+    expect(inner.kind).toBe('group');
+    expect(Array.from(inner.transform!)).toEqual(Array.from(viewToMat3(INNER)));
+  });
+
+  it('passes screen-space source layers through untransformed', () => {
+    const hud: RenderLayer<unknown> = { ...MARKER, id: 'hud', space: 'screen' };
+    expect(outerGroup([hud]).children.map((c) => c.kind)).toEqual(['path']);
+  });
+
+  it('hands source layers the data its own `data` thunk returns', () => {
+    const seen: unknown[] = [];
+    const probe: RenderLayer<{ who: string }> = {
+      id: 'probe', label: 'probe', space: 'screen',
+      draw: (data) => { seen.push(data); return []; },
+    };
+    const layer = createViewportLayer<{ who: string }, { who: string }>({
+      id: 'v', label: 'v', source: [probe], view: INNER, bounds: () => BOUNDS,
+      data: (outer) => ({ who: `inner of ${outer.who}` }),
+    });
+    layer.draw({ who: 'outer' }, OUTER, DIMS);
+    expect(seen).toEqual([{ who: 'inner of outer' }]);
+  });
+
+  it('re-reads a thunked inner view every draw', () => {
+    let camera: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const layer = createViewportLayer<unknown>({
+      id: 'v', label: 'v', source: [MARKER], view: () => camera, bounds: () => BOUNDS,
+    });
+    const transformOf = () => {
+      const [group] = layer.draw(undefined, OUTER, DIMS);
+      const inner = (group as GroupDrawCommand).children[0] as GroupDrawCommand;
+      return Array.from(inner.transform!);
+    };
+    expect(transformOf()).toEqual(Array.from(viewToMat3(camera)));
+    camera = INNER;
+    expect(transformOf()).toEqual(Array.from(viewToMat3(INNER)));
+  });
+
+  it('reprojects against the thunked view the frame was drawn with', () => {
+    let camera: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const layer = createViewportLayer<unknown>({
+      id: 'v', label: 'v', source: [MARKER], view: () => camera, bounds: () => BOUNDS,
+    });
+    expect(layer.reproject(OUTER, DIMS, { x: BOUNDS.x, y: BOUNDS.y })).toEqual({ x: 0, y: 0 });
+    camera = INNER;
+    expect(layer.reproject(OUTER, DIMS, { x: BOUNDS.x, y: BOUNDS.y })).toEqual({ x: 250, y: 200 });
+    expect(layer.resolvable(OUTER, DIMS).view).toBe(INNER);
+  });
+
+  it('passes the outer data through when no thunk is given', () => {
+    const seen: unknown[] = [];
+    const probe: RenderLayer<{ who: string }> = {
+      id: 'probe', label: 'probe', space: 'screen',
+      draw: (data) => { seen.push(data); return []; },
+    };
+    const layer = createViewportLayer<{ who: string }>({
+      id: 'v', label: 'v', source: [probe], view: INNER, bounds: () => BOUNDS,
+    });
+    layer.draw({ who: 'outer' }, OUTER, DIMS);
+    expect(seen).toEqual([{ who: 'outer' }]);
+  });
+
+  it('draws a world point where reproject says it lands', () => {
+    const group = outerGroup([MARKER]);
+    const inner = group.children[0] as GroupDrawCommand;
+    const composed = mat3.multiply(new Float32Array(group.transform!) as Mat3, inner.transform!);
+    const world = { x: 300, y: 250 };
+    const [sx, sy] = mat3.apply(composed, world.x, world.y);
+    const back = viewportOf([MARKER]).reproject(OUTER, DIMS, { x: sx, y: sy })!;
+    expect(back.x).toBeCloseTo(world.x);
+    expect(back.y).toBeCloseTo(world.y);
   });
 });

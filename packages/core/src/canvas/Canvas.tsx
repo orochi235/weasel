@@ -19,7 +19,7 @@
  *   `docs/TODO.md`.
  */
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { FillStyle } from 'core/paint-types';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
@@ -32,21 +32,26 @@ export { STANDARD_SLOTS, isCustomEntry } from './layerSlots';
 export type { StandardSlotName, CustomLayerEntry } from './layerSlots';
 import type { CanvasExtensionApi } from './canvasExtension';
 import type { ToolsApi } from 'tools/useTools';
-import { firstPreviewPose, firstPreviewBounds, aggregatePreviewIds } from './toolPreview';
-import { unionGestureBounds, type GestureSource } from './gestureBounds';
+import { aggregatePreviewIds } from './toolPreview';
+import type { GestureSource } from './gestureBounds';
+import { useViewHelpers } from './useViewHelpers';
+import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from 'tools/types';
 import type { Op } from 'core/ops/types';
 import { dispatchApplyBatch } from 'core/applyOps';
-import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
-import { drawLayers, type Dims, type LayerCommandCache, type RenderLayer } from 'core/layers/render';
+import { clientToWorld as clientToWorldHelper } from 'core/viewport/clientToWorld';
+import {
+  drawLayers, isLayerVisible,
+  type Dims, type LayerCommandCache, type RenderLayer,
+} from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   type SelectionApi,
 } from 'core/selection/useSelection';
-import { buildChromeState, type ChromeState } from 'core/selection/chromeState';
 import type {
   MoveAdapter,
   ResizeAdapter,
@@ -67,12 +72,8 @@ import type { DebugConfig, DebugSink, DebugSnapshot } from '../debug/types';
 import { parseDebugFlags } from '../debug/parseDebugFlags';
 import { createDebugSink } from '../debug/createDebugSink';
 import { createDebugOverlayLayer } from '../debug/createDebugOverlayLayer';
-import { MULTI_RESIZE_TARGET_ID } from 'tools/builtin/select';
 
 const alwaysVisible = (_id: string): boolean => true;
-/** Returned by `helpersForLayers.subscribeGestures` when no gesture source is
- *  wired — the subscription is real, it just can never fire. */
-const noOpUnsubscribe = (): void => {};
 import { buildSceneTree, type HierarchicalAdapter } from './buildSceneTree';
 
 /**
@@ -483,88 +484,35 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    * every chrome element visible (pre-chrome-caps behavior).
    */
   getIsVisible?: () => (id: string) => boolean;
+
+  /**
+   * Show or hide whole render layers by id. An id absent from the map falls
+   * back to the layer's own `defaultVisible`, and a layer marked `alwaysOn`
+   * ignores the map entirely.
+   *
+   * Hiding a layer also stops it claiming pointer events through
+   * `hitTestExtras` — a layer nobody can see must not swallow a click.
+   *
+   * This is `getIsVisible`'s coarser sibling: that one gates individual
+   * chrome elements *within* a layer, this one gates the layer.
+   */
+  layerVisibility?: Record<string, boolean>;
+
+  /**
+   * Draw order, by layer id, bottom first. Omit for the order the layers
+   * arrive in.
+   *
+   * **A listed order is the whole list:** any layer whose id is missing from
+   * it is not drawn. Reordering two layers means naming all of them.
+   */
+  layerOrder?: string[];
 }
 
-/** Live overlay-aware lookups exposed to custom layers via `helpersRef`. */
-export interface CanvasHelpers<TPose> {
-  /** Pose currently displayed for `id` — drag/resize/rotate overlay if active,
-   *  otherwise the committed pose from the adapter. Returns `null` if the id
-   *  isn't known. */
-  getEffectivePose(id: string): TPose | null;
-  /** Overlay-aware bounds for `id`. */
-  getEffectiveBounds(id: string): Bounds | null;
-  /**
-   * World-space AABB of everything the in-flight gesture proposes — the
-   * displaced poses of nodes being moved / resized / rotated / cloned, plus
-   * any nascent insert that has no scene node yet. `null` when no gesture is
-   * in flight.
-   *
-   * This reports the *gesture*, not the document: committed content the
-   * gesture isn't touching is excluded, so a consumer that wants the union
-   * with the rest of the scene still walks its own ids through
-   * `getEffectiveBounds`. It exists because every other lookup here is keyed
-   * by node id, which can't answer "where is the shape the user is drawing
-   * right now" — a drag-to-insert has no id until pointer-up.
-   *
-   * Select-only gestures are deliberately excluded: a marquee or lasso has
-   * geometry but proposes no content, and a consumer sizing itself to the
-   * gesture must not grow because the user swept a selection rectangle.
-   *
-   * The result is a plain AABB — never rotated. Rotated parts are folded in
-   * by their rotated extent (a union of several oriented boxes has no single
-   * orientation to report).
-   */
-  getGestureBounds(): Bounds | null;
-  /**
-   * Subscribe to the gesture layer's change signal — the other half of the
-   * `useSyncExternalStore` contract for everything on this object that moves
-   * during a drag (`getEffectivePose`, `getEffectiveBounds`,
-   * `getGestureBounds`). Returns an unsubscribe.
-   *
-   * Fires once per dispatcher pump: gesture start, every pointermove that
-   * reaches an in-flight handle, end, and cancel — plus UI-driven ongoing
-   * actions (a slider bound to an ongoing action pumps the same way). It
-   * fires on the pump, not on a diff: a pump that changed nothing observable
-   * still notifies, so don't hang expensive work directly off the callback.
-   *
-   * It does **not** cover committed scene edits (subscribe to the scene for
-   * those) or previews a consumer's own tool publishes from React state
-   * (that tool re-renders on its own).
-   *
-   * Without a gesture source wired — a bare `<Canvas>` — this is a no-op
-   * subscription that never fires.
-   */
-  subscribeGestures(fn: () => void): () => void;
-  /**
-   * Monotonic counter bumped on exactly the events `subscribeGestures` fires
-   * on. Pair the two for `useSyncExternalStore`:
-   *
-   * ```ts
-   * const gestureVersion = useSyncExternalStore(
-   *   useCallback((cb) => helpersRef.current?.subscribeGestures(cb) ?? (() => {}), []),
-   *   () => helpersRef.current?.getGestureVersion() ?? 0,
-   * );
-   * ```
-   *
-   * Starts at 0 and only increases. `0` is also what a bare `<Canvas>` with
-   * no gesture source reports, forever.
-   */
-  getGestureVersion(): number;
-  /** Returns the live ChromeState built once per render. Affordances and
-   *  custom layers that need overlay-aware selection state (selection ids,
-   *  bounds, multi-union AABB, modifier flags) read from this. */
-  getChromeState(): ChromeState;
-  /** Active debug sink, when `<Canvas debug=...>` is enabled. Layers that
-   *  want to participate in `hitboxes`/`bounds`/etc. visualization can
-   *  call into this from their `draw` callback. Returns `null` when
-   *  debug is off — no-op for production renders. */
-  getDebug(): DebugSink | null;
-  /** Chrome-caps visibility predicate, keyed by chrome id. Returns a
-   *  function that affordance/overlay layers can call per-element to
-   *  decide whether to draw / hit-test. When the parent didn't supply
-   *  a resolver, this returns the universal `() => true`. */
-  getIsVisible(): (id: string) => boolean;
-}
+export type {
+  CanvasViewHelpers,
+  CanvasSurfaceHelpers,
+  CanvasHelpers,
+} from './useViewHelpers';
 
 // Walks every registered + ambient tool: resize/rotate will register as
 function registerShadersOnRenderer(
@@ -736,6 +684,24 @@ function resolveToolsCursor(
   }
 }
 
+/** Stable empty map, so an omitted `layerVisibility` doesn't remake the paint
+ *  effect's deps every render. */
+const NO_LAYER_VISIBILITY: Record<string, boolean> = {};
+
+/** Client coords to world, through the `clientToWorld` prop when one is
+ *  supplied and the canvas rect otherwise. Every pointer path in this file
+ *  goes through here so the two cannot drift. */
+function toWorld(
+  canvas: HTMLCanvasElement,
+  clientX: number,
+  clientY: number,
+  view: View,
+  override: CanvasProps<never, never>['clientToWorld'],
+): [number, number] {
+  if (override) return override(canvas, clientX, clientY);
+  return clientToWorldHelper(clientX, clientY, canvas.getBoundingClientRect(), view);
+}
+
 function CanvasInner<TNode extends { id: string }, TPose>(
   props: CanvasProps<TNode, TPose>,
   ref: React.ForwardedRef<CanvasExtensionApi>,
@@ -775,6 +741,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     pickBest,
     decorationLayer,
     getIsVisible,
+    layerVisibility,
+    layerOrder,
   } = props;
 
   // Resolve debug config: explicit prop wins; `undefined` falls back to URL;
@@ -805,6 +773,8 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   dimsRef.current = { width, height };
   const getIsVisibleRef = useRef(getIsVisible);
   getIsVisibleRef.current = getIsVisible;
+  const layerVisibilityRef = useRef(layerVisibility);
+  layerVisibilityRef.current = layerVisibility;
 
   const [redrawNonce, setRedrawNonce] = useState(0);
   const requestRedraw = useCallback(() => setRedrawNonce(n => n + 1), []);
@@ -825,18 +795,36 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   //
   // `<SceneCanvas>` folds this into its `affordanceAt` thunk. Canvas can't do
   // that itself: it has the layers but not the dispatcher.
-  const hitTestExtras = useCallback((worldX: number, worldY: number) => {
+  const hitTestExtrasIn = useCallback((
+    worldX: number,
+    worldY: number,
+    view: View,
+    dims: Dims,
+    data: unknown,
+  ) => {
     const layers = [...extrasRef.current].reverse();
-    const view = viewRef.current;
-    const dims = dimsRef.current;
     const isVisible = getIsVisibleRef.current?.() ?? alwaysVisible;
+    const visibility = layerVisibilityRef.current ?? NO_LAYER_VISIBILITY;
     for (const layer of layers) {
       if (!layer.hitTest) continue;
-      const hit = layer.hitTest(worldX, worldY, helpersForLayersRef.current, view, dims, isVisible);
+      if (!isLayerVisible(layer, visibility)) continue;
+      const hit = layer.hitTest(worldX, worldY, data, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
   }, []);
+
+  const hitTestExtras = useCallback((
+    worldX: number,
+    worldY: number,
+    frame?: { view: View; dims: Dims },
+  ) => hitTestExtrasIn(
+    worldX,
+    worldY,
+    frame?.view ?? viewRef.current,
+    frame?.dims ?? dimsRef.current,
+    helpersForLayersRef.current,
+  ), [hitTestExtrasIn]);
 
   useImperativeHandle(ref, () => ({
     element: canvasRef.current,
@@ -877,11 +865,31 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // register into the tool registry / gesture dispatcher that lives there).
   const pinchConfig: { min?: number; max?: number } | null =
     viewport?.pinchZoom === true ? {} : (viewport?.pinchZoom || null);
+  // Views registered on this surface — declared as `views` descriptors or
+  // mounted as `<CanvasView>` children. Null outside a surface that mounts a
+  // registry, which is the single-view case.
+  const viewRegistry = useOptionalViewRegistry();
+
+  // A pinch inside a view zooms that view. The registry is the same authority
+  // the dispatcher routes against, so pinch and drag cannot disagree about
+  // which panel the fingers are on.
+  const viewRegistryRef = useRef<ViewRegistry | null>(viewRegistry);
+  viewRegistryRef.current = viewRegistry;
+  const resolvePinchTarget = useCallback((clientX: number, clientY: number) => {
+    const reg = viewRegistryRef.current;
+    if (!reg) return null;
+    const target = reg.resolver.at(null, clientX, clientY);
+    if (target.id === null) return null;
+    const api = reg.list().find((r) => r.id === target.id)?.target.deps?.().view;
+    if (!api) return null;
+    return { view: api.get(), setView: api.set, origin: target.origin };
+  }, []);
+
   usePinchZoomTool(
     canvasRef,
     effectiveView,
     setView,
-    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null },
+    { ...(pinchConfig ?? {}), enabled: pinchConfig !== null, resolveTarget: resolvePinchTarget },
   );
 
   // Internal hooks always run (rules of hooks). They consult a noop adapter
@@ -947,14 +955,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (overrides && (overrides.clientX !== undefined || overrides.clientY !== undefined) && c) {
         const cx = overrides.clientX ?? 0;
         const cy = overrides.clientY ?? 0;
-        const cw = clientToWorldRef.current;
-        if (cw) {
-          [worldX, worldY] = cw(c, cx, cy);
-        } else {
-          const rect = c.getBoundingClientRect();
-          worldX = (cx - rect.left) / view.scale.x + view.x;
-          worldY = (cy - rect.top) / view.scale.y + view.y;
-        }
+        [worldX, worldY] = toWorld(c, cx, cy, view, clientToWorldRef.current);
       }
       const rect = c ? c.getBoundingClientRect() : (typeof DOMRect !== 'undefined' ? new DOMRect() : ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 } as DOMRect));
       const m = overrides?.modifiers;
@@ -1005,92 +1006,27 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // Registry / dispatcher path; consumers register them via the kit's
   // standard descriptors (see `useStandardActions`).
 
-  // Committed pose/bounds lookups. Live overlay state during a drag now
-  // arrives via the active Tool's `previewPose`/`previewBounds`; helpersForLayers
-  // composes that on top of these committed lookups below.
-  const baseBoundsOf = useMemo(() => {
-    if (boundsOf) return boundsOf;
-    if (!adapter) return undefined;
-    return (id: string): Bounds | null => {
-      try {
-        const pose = adapter.getPose(id);
-        const b = geometry.getBounds(pose);
-        const rot = geometry.getRotation?.(pose);
-        return rot ? { ...b, rotation: rot } : b;
-      } catch {
-        return null;
-      }
-    };
-  }, [boundsOf, adapter, geometry]);
-
-  const committedPoseOf = (id: string): TPose | null => {
-    if (!adapter) return null;
-    try {
-      return adapter.getPose(id);
-    } catch {
-      return null;
-    }
-  };
-
   const selectedIdsForWiring = effectiveSelection.current;
-  // Canvas no longer owns selectionMode. Multi-selection is inferred from the
-  // selection state itself: when more than one id is selected, activate the
-  // union-AABB chrome path. SceneCanvas configures its tools for multi-mode
-  // via selectionOptions; Canvas simply reflects what arrived in the prop.
+
+  // One view's overlay-aware state. A hook, so N views are N components each
+  // calling it once — not a loop in this body.
   const multiActive = selectedIdsForWiring.length > 1;
-
-  // Hold the latest dispatcher-side preview extras in a ref so chromeState's
-  // closure reads live values without forcing the memo to rebuild every render.
-  const previewExtraRef = useRef({ previewPoseExtra, previewIdsExtra });
-  previewExtraRef.current = { previewPoseExtra, previewIdsExtra };
-
-  // boundsOf: pass-through for real ids. The synthetic multi-selection id is
-  // resolved by the active tool's `previewBounds` (see `useSelectTool`'s
-  // `MULTI_RESIZE_TARGET_ID` branch) — Canvas no longer special-cases it
-  // inline. For overlays that read bounds outside a tool gesture, the
-  // selection-overlay path below routes through `previewToolBounds` which surfaces
-  // the tool's union synthesis.
-  const effectiveBoundsOf = useMemo(() => {
-    return boundsOf ?? baseBoundsOf;
-  }, [boundsOf, baseBoundsOf]);
-
-  const chromeState: ChromeState = useMemo(
-    () => buildChromeState({
-      selection: selectedIdsForWiring,
-      multiActive,
-      // Prefer the active tool's previewBounds (live during a drag) so
-      // resize/rotation handles track the dragged object. Falls back to
-      // committed bounds when no gesture is in flight.
-      effectiveBoundsOf: (id) => {
-        if (tools) {
-          const b = firstPreviewBounds(tools, id);
-          if (b) return b;
-          const p = firstPreviewPose(tools, id);
-          if (p != null) return geometry.getBounds(p as TPose);
-        }
-        const extras = previewExtraRef.current;
-        if (extras.previewPoseExtra) {
-          const p = extras.previewPoseExtra(id);
-          if (p != null) return geometry.getBounds(p as TPose);
-        }
-        return effectiveBoundsOf ? effectiveBoundsOf(id) : null;
-      },
-      modifiers: { alt: false, shift: false, meta: false, ctrl: false },
-      // Rotation-capability predicate. Reads the committed pose (gestures
-      // don't change descriptor capability) and asks the geometry. Absent
-      // adapter / unknown ids fall back to `true` so the affordance stays
-      // visible — preserves pre-existing behavior for consumers that wire
-      // bounds without an adapter.
-      canRotate: (id) => {
-        if (!geometry.supportsRotation) return true;
-        const pose = committedPoseOf(id);
-        if (pose == null) return true;
-        return geometry.supportsRotation(pose);
-      },
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedIdsForWiring, multiActive, effectiveBoundsOf, tools, geometry, adapter],
-  );
+  const {
+    helpers: viewHelpers,
+    effectiveBoundsOf,
+    previewToolPose,
+    previewToolBounds,
+    previewExtraRef,
+  } = useViewHelpers<TPose>({
+    adapter,
+    geometry,
+    boundsOf,
+    selection: selectedIdsForWiring,
+    tools,
+    gestureSource,
+    previewPoseExtra,
+    previewIdsExtra,
+  });
 
   // The affordance-layer hit-test used to be wired into the tool-routing
   // dispatcher from here, so its pointerdown could walk tool overlays
@@ -1098,76 +1034,11 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // `affordanceAt` thunk it hands `useGestureDispatcher` — over registered
   // layers via `hitTestExtras` above, and over selection chrome itself.
 
-  // helpersForLayers: overlay-aware lookups passed to every RenderLayer.draw
-  // call (as the `data` arg) so custom layers can read live overlay state
-  // directly from their draw closure. The legacy `helpersRef` prop still
-  // mirrors the same value for back-compat. The active Tool's `previewPose`/
-  // `previewBounds` is the only overlay source post-cleanup; falls through to
-  // the committed adapter pose / bounds when no tool is mid-gesture.
-  const previewToolPose = useCallback((id: string): TPose | null => {
-    if (tools) {
-      const p = firstPreviewPose(tools, id);
-      if (p != null) return p as TPose;
-    }
-    const extra = previewExtraRef.current.previewPoseExtra;
-    if (extra) {
-      const p = extra(id);
-      if (p != null) return p as TPose;
-    }
-    return null;
-  }, [tools]);
-  const previewToolBounds = useCallback((id: string): Bounds | null => {
-    if (tools) {
-      const b = firstPreviewBounds(tools, id);
-      if (b) return b;
-      const p = firstPreviewPose(tools, id);
-      if (p != null) return geometry.getBounds(p as TPose);
-    }
-    const extra = previewExtraRef.current.previewPoseExtra;
-    if (extra) {
-      const p = extra(id);
-      if (p != null) return geometry.getBounds(p as TPose);
-    }
-    return null;
-  }, [tools, geometry]);
-
-  const helpersForLayers: CanvasHelpers<TPose> = {
-    getEffectivePose: (id: string): TPose | null => {
-      const tp = previewToolPose(id);
-      if (tp != null) return tp;
-      return committedPoseOf(id);
-    },
-    getEffectiveBounds: (id: string): Bounds | null => {
-      const tb = previewToolBounds(id);
-      if (tb != null) return tb;
-      if (effectiveBoundsOf) return effectiveBoundsOf(id);
-      const p = committedPoseOf(id);
-      return p == null ? null : geometry.getBounds(p);
-    },
-    getGestureBounds: (): Bounds | null => {
-      // In-flight ids come from both preview sources the ghost layer walks:
-      // tool-published `previewIds()` and the dispatcher's in-flight handles
-      // (via `gestureSource.ids()`). Using the same sets keeps this from
-      // disagreeing with what the user sees ghosted.
-      const ids = aggregatePreviewIds(tools);
-      const extraIds = gestureSource?.ids();
-      if (extraIds) for (const id of extraIds) ids.add(id);
-
-      const parts: (Bounds | null)[] = [];
-      for (const id of ids) parts.push(previewToolBounds(id));
-      // Nascent inserts have no id to look up — they arrive as ready-made
-      // world AABBs.
-      const extraBounds = gestureSource?.bounds();
-      if (extraBounds) for (const b of extraBounds) parts.push(b);
-      return unionGestureBounds(parts);
-    },
-    subscribeGestures: (fn: () => void): (() => void) =>
-      gestureSource?.subscribe(fn) ?? noOpUnsubscribe,
-    getGestureVersion: (): number => gestureSource?.getVersion() ?? 0,
-    getChromeState: () => chromeState,
+  const surfaceHelpers: CanvasSurfaceHelpers = {
     getDebug: () => debugSink,
     getIsVisible: () => getIsVisibleRef.current?.() ?? alwaysVisible,
   };
+  const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, ...surfaceHelpers };
   helpersForLayersRef.current = helpersForLayers;
   if (helpersRef) helpersRef.current = helpersForLayers;
 
@@ -1189,16 +1060,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (pointerDownRef.current) return;
       const c = e.currentTarget;
       const view = viewRef.current;
-      const cw = clientToWorldRef.current;
-      let worldX: number;
-      let worldY: number;
-      if (cw) {
-        [worldX, worldY] = cw(c, e.clientX, e.clientY);
-      } else {
-        const rect = c.getBoundingClientRect();
-        worldX = (e.clientX - rect.left) / view.scale.x + view.x;
-        worldY = (e.clientY - rect.top) / view.scale.y + view.y;
-      }
+      const [worldX, worldY] = toWorld(c, e.clientX, e.clientY, view, clientToWorldRef.current);
       for (const layer of layersWithDebug) {
         layer.onUncapturedMove?.(worldX, worldY, e.nativeEvent, view, { width, height });
       }
@@ -1295,65 +1157,14 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       standardLayers.selectionOverlay = selSlot.layer;
     } else if (selSlot !== null) {
       const cfg = (selSlot ?? {}) as SelectionOverlaySlotConfig<TPose>;
-      // Resolver returns either a real TPose (use geometry.getBounds) or a
-      // pre-projected Bounds (multi-union and the bounds-from-overlay path).
-      // We tag the latter so the overlay's getBounds short-circuits.
-      const poseById =
-        cfg.poseById ??
-        ((id: string): TPose | null => {
-          // Active tool's overlay (move/resize/rotate ghost) wins so the
-          // selection chrome tracks the in-flight pose during a drag.
-          const tp = previewToolPose(id);
-          if (tp != null) return tp;
-          // Tool-supplied bounds (e.g. `useSelectTool`'s multi-union for
-          // `MULTI_RESIZE_TARGET_ID`) are pre-projected Bounds; the overlay's
-          // `getBounds` (below) short-circuits the rect-as-TPose case via
-          // the `multiActive` flag.
-          const tb = previewToolBounds(id);
-          if (tb != null) return tb as unknown as TPose;
-          // The synthetic multi-resize union is resolved by the overlay layer
-          // from `ChromeState.unionBounds` at draw time — the single owner of
-          // the union AABB, shared with the affordance hit-tester so painted
-          // chrome and its hit region agree. Multi selections committed by
-          // sibling tools (lasso, custom area-select) get their union chrome
-          // through that same path, with no inline re-derivation here.
-          if (!adapter) {
-            if (effectiveBoundsOf) {
-              const b = effectiveBoundsOf(id);
-              return (b as unknown as TPose) ?? null;
-            }
-            return null;
-          }
-          try {
-            return adapter.getPose(id);
-          } catch {
-            return null;
-          }
-        });
-      const getSelection = multiActive
-        ? (): readonly NodeId[] => [MULTI_RESIZE_TARGET_ID as NodeId]
-        : (): readonly NodeId[] => selectedIds as readonly NodeId[];
-      // Per-item outline pass: in multi mode, the handle pass works against
-      // the synthetic union id, but the outline pass still wants the real
-      // member ids so each selected object reads as "this is selected." In
-      // single mode the two coincide.
-      const getOutlineIds = multiActive
-        ? (): readonly NodeId[] => selectedIds as readonly NodeId[]
-        : undefined;
       standardLayers.selectionOverlay = createSelectionOverlayLayer<TPose>({
         ...cfg,
-        getSelection,
-        ...(getOutlineIds ? { getOutlineIds } : {}),
-        getPose: poseById,
-        getBounds:
-          cfg.getBounds ??
-          ((p: TPose): Bounds => {
-            // Multi-union path returns a pre-projected Bounds masquerading as
-            // TPose; treat that case as identity. For real TPose, defer to
-            // the configured geometry.
-            if (multiActive) return p as unknown as Bounds;
-            return geometry.getBounds(p);
-          }),
+        // A consumer-supplied pose lookup still needs the configured geometry
+        // to project with; without one the layer reads bounds off the chrome
+        // state and never calls either.
+        ...(cfg.poseById
+          ? { getPose: cfg.poseById, getBounds: cfg.getBounds ?? ((p: TPose) => geometry.getBounds(p)) }
+          : {}),
       });
     }
 
@@ -1368,19 +1179,53 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     }
     return out;
   }, [layersMap, adapter, selectedIds, effectiveBoundsOf, multiActive, debugSink, tools, backgroundLayer,
-      decorationLayer, geometry, previewToolBounds, previewToolPose]);
+      decorationLayer, geometry, previewToolBounds, previewToolPose, previewExtraRef]);
+
+  const viewRegistryVersion = useSyncExternalStore(
+    useCallback((cb: () => void) => viewRegistry?.subscribe(cb) ?? (() => {}), [viewRegistry]),
+    () => viewRegistry?.getVersion() ?? 0,
+    () => 0,
+  );
+
+  // The stack a view paints through its own camera is this canvas's, before
+  // the views themselves are folded in — otherwise a view would contain
+  // itself. Published by reference and read at draw time.
+  const surfaceLayersRef = useRef<readonly RenderLayer<unknown>[]>(layers);
+  surfaceLayersRef.current = layers;
+  useEffect(() => {
+    viewRegistry?.attachSurface({
+      origin: () => {
+        const c = canvasRef.current;
+        if (!c) return { left: 0, top: 0 };
+        const r = c.getBoundingClientRect();
+        return { left: r.left, top: r.top };
+      },
+      view: () => viewRef.current,
+      dims: () => dimsRef.current,
+      layers: () => surfaceLayersRef.current,
+      requestRedraw,
+      chromeState: () => helpersForLayersRef.current!.getChromeState(),
+      hitTestExtras: hitTestExtrasIn,
+    });
+  }, [viewRegistry, canvasRef, requestRedraw, hitTestExtrasIn]);
 
   // Append the debug overlay layer at the very top of the stack when debug
   // is enabled. The layer reads from `debugSink.snapshot()` and paints in
   // screen space.
   const layersWithDebug = useMemo(() => {
-    const base = debugSink && resolvedDebugConfig
-      ? [...layers, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
+    // Views paint through the surface's own stack, so they sit above it and
+    // below both the debug overlay and externally-registered layers.
+    const withViews = viewRegistry
+      ? [...layers, ...viewRegistry.list().map((r) => r.layer as RenderLayer<unknown>)]
       : layers;
+    const base = debugSink && resolvedDebugConfig
+      ? [...withViews, createDebugOverlayLayer({ sink: debugSink, config: resolvedDebugConfig })]
+      : withViews;
     return [...base, ...extrasRef.current];
-    // redrawNonce drives re-reads of extrasRef when layers are registered/detached.
+    // redrawNonce drives re-reads of extrasRef when layers are registered/detached;
+    // viewRegistryVersion does the same for registered views.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, debugSink, resolvedDebugConfig, redrawNonce]);
+  }, [layers, debugSink, resolvedDebugConfig, redrawNonce, viewRegistry, viewRegistryVersion]);
 
   useEffect(() => {
     const c = canvasRef.current;
@@ -1434,14 +1279,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     const commands = drawLayers(
       layersWithDebug,
       helpersForLayersRef.current,
-      {},
-      undefined,
+      layerVisibility ?? NO_LAYER_VISIBILITY,
+      layerOrder,
       effectiveView,
       { width, height },
       layerCacheRef.current,
     );
     renderer.render(commands, viewToMat3(effectiveView));
-  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp]);
+  }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp,
+      layerVisibility, layerOrder]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a

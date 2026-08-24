@@ -1,7 +1,7 @@
 # Virtual viewports — design spec
 
 **Date:** 2026-08-22
-**Status:** Draft
+**Status:** Arcs 1–3 implemented; Arc 1's per-view command cache waits on the layer caching arc
 **For:** whoever implements the decomposition.
 **Answers:** how one canvas hosts N independent views, what stays singular, and how today's flat
 props survive as the N=1 case.
@@ -29,11 +29,12 @@ mapping. It is `@experimental` and explicitly does not route input (`:25-30`).
 is stencil-based (`renderer/draw.ts:862-972`). Do not introduce a GL scissor path — extend the
 mechanism already in the tree.
 
-Two consequences to design around. Clip depth is capped around 7 levels and shares eight stencil
-bits with even-odd fill (`renderer/draw.ts:992-1009`, `:1137-1174`), so a view's own clip spends one
-of a small budget that its content also draws from. And `viewportLayer` calls `layer.draw(data,
-view, …)` *without* the `viewToMat3(view)` wrap that `drawLayers` applies (`core/layers/render.ts:
-182-186`) — resolve which is correct before building on it; they cannot both be.
+One consequence to design around: clip depth is capped around 7 levels and shares eight stencil bits
+with even-odd fill (`renderer/draw.ts:992-1009`, `:1137-1174`), so a view's own clip spends one of a
+small budget that its content also draws from.
+
+The other, that `viewportLayer` drew source layers without the `viewToMat3(view)` wrap `drawLayers`
+applies, was a real bug and is fixed — both go through `drawOneLayer` now.
 
 ## What stays singular
 
@@ -41,13 +42,14 @@ The renderer and everything it owns: GL context, shader programs, mesh/texture/i
 caches, the quad buffers, `SolidBatch`, `GroupState`. The `<canvas>` element, its size and DPR. The
 document- and element-level listener sets.
 
-Two of those need care rather than just staying put:
+Both stay put as they are, as long as views remain clip groups inside one command tree. `SolidBatch`
+merges rects across the whole command stream (`WeaselRenderer.ts:466`), and merging across a view
+boundary would be a correctness bug — but `pushClip` and `popClip` each call `flushSolids` before
+touching the stencil (`renderer/draw.ts:920`, `:954`), so a view's clip already drains the run.
+Likewise the full-surface `gl.clear` and the `GroupState` reset happen once per `render()`
+(`:433-437`), and N views in one command tree are still one `render()`.
 
-- **`SolidBatch` merges rects across the whole command stream** (`WeaselRenderer.ts:466`). Batching
-  across a view boundary is a correctness bug, not a perf detail. A view boundary must flush.
-- **`GroupState` is one stack reset once per `render()`** (`:163`, `:433`), and `render()` does a
-  full-surface `gl.clear` of color and stencil (`:436-437`). One `render()` per view would wipe the
-  previous view; the clear has to move out of the per-view body.
+Both only become problems under one `render()` per view. Don't go there.
 
 ## What becomes per-view
 
@@ -57,10 +59,11 @@ in-flight handles, chrome visibility and hover, path/anchor editing state, and l
 visibility/order — which is new state, not a relocation: `Canvas.tsx:1437-1438` hardcodes `{}` and
 `undefined` today.
 
-**The layer command cache must become per-view.** It is keyed on `layer.id` alone
-(`core/layers/render.ts:203-207`) and evicts ids absent from the current list (`:166-170`), so two
-views sharing an id thrash a single entry every frame, and two views with different layer sets evict
-each other. Prefix the key with a view id, or hold one cache per view.
+**The layer command cache must become per-view.** It is keyed on `layer.id` alone and evicts ids
+absent from the current list, so two views sharing an id thrash a single entry every frame, and two
+views with different layer sets evict each other. Prefix the key with a view id, or hold one cache
+per view. This waits on the layer caching arc: `LayerCommandCache` lives on branch
+`worktree-renderer-layer-caching` and is not on `main`.
 
 ## The façade
 
@@ -115,16 +118,27 @@ bundles per-view state (selection, chrome state, tools, gesture source) with per
 (debug sink, `getIsVisible`). Splitting it is the centre of this work.
 
 **One `Dispatcher` and one `ToolsApi` per `SceneCanvas`** (`SceneCanvas.tsx:1417-1423`, `:1300`).
-Two views with different active tools needs either N dispatchers — then `getInFlightHandles()`
-consumers at `:1641`, `:1699`, `:1869`, `:1884` and `createGestureSource` at `:1428` all take a view
-— or one view-tagged handle set.
+Two views with different active tools needs N of each, and `getInFlightHandles()` consumers at
+`:1641`, `:1699`, `:1869`, `:1884` and `createGestureSource` at `:1428` then have to say which view
+they mean.
+
+N dispatchers does **not** mean N `useGestureDispatcher` instances. The hook is one mounter that
+normalizes DOM events and then dispatches, and everything downstream of the normalize step is
+already injectable per call site. `dispatcher`, `affordanceAt`, `classifyTarget` and `clientToWorld`
+— the four things about handling an event that depend on which view it landed in — are now one
+`DispatcherViewTarget` record, and the hook's `views` option takes a list of them plus a resolver to
+pick one per event. One listener set, N dispatchers, stickiness handled by `createViewResolver`. No
+list is today's path exactly.
 
 **Hook identity.** `SceneCanvas` runs an order-sensitive hook sequence including hooks deliberately
 called-but-disabled to keep counts stable (`SceneCanvas.tsx:1185-1187`, `:2034-2041`). N views
-cannot be a loop in a hook body. If N views become N component instances, the surface must be
-hoisted above them, and `usePinchZoomTool`, `useGestureDispatcher` and `useHoverTracking` each
-attach listeners to the same element — N instances means N listener sets all firing for every event.
-That is why the view resolver sits **above** the per-view components, not inside each.
+cannot be a loop in a hook body — but they can be N components each calling a hook once, which is
+what `useViewHelpers` is for.
+
+The constraint that remains is listeners, not hooks. `usePinchZoomTool`, `useGestureDispatcher` and
+`useHoverTracking` each attach to the same element, so N instances means N listener sets all firing
+for every event. Those three stay one instance on the surface and resolve a view per event; only
+state that attaches nothing goes in the per-view component.
 
 **Providers are "if root"** (`SceneCanvas.tsx:1937-1997`). With N views under one surface, the first
 view's dep and actions registries could silently become shared by all views — and those registries
@@ -136,17 +150,67 @@ the `window` test hook (`:1916-1934`), `adapterFallbackIdCounter` and `pasteIdCo
 
 ## Staging
 
-**Arc 1 — draw.** Promote `viewportLayer` from experimental: settle the `viewToMat3` discrepancy,
-make the command cache per-view, flush `SolidBatch` at view boundaries, move the clear out of the
-per-view body. Delivers N panels that render, with input still single-view. This is most of the
-comparison use case and it is nearly built.
+**Arc 1 — draw.** Promote `viewportLayer` from experimental. The `viewToMat3` discrepancy is
+settled; the `SolidBatch` and `gl.clear` items turned out to be non-problems (see *What stays
+singular*). What remains is keying the layer command cache per view, which waits on the layer
+caching arc — `LayerCommandCache` is not on `main` yet. Delivers N panels that render, with input
+still single-view: most of the comparison use case.
 
-**Arc 2 — input.** Collapse the four `clientToWorld` copies onto one view-aware helper, add the
-sticky view resolver above the listener sets, thread a view through `hitTestExtras` and
-`affordanceAt`.
+**Arc 2 — input.** Done. The `clientToWorld` copies are collapsed, `createViewResolver` exists,
+and `hitTestExtras` takes an optional view frame. `buildAffordanceAt` needed nothing, being already
+thunked on `getView`.
 
-**Arc 3 — per-view interaction.** Split `helpersForLayers`, then N dispatchers and N tool
-registries, then per-view selection and chrome.
+**Arc 3 — per-view interaction.** Done. A view carries its own camera, dispatcher, selection,
+chrome, affordances and hit-testing.
+
+`helpersForLayers` split into `CanvasViewHelpers` + `CanvasSurfaceHelpers`, and the per-view half
+is a `useViewHelpers` hook over explicit dependencies. N views cannot be a loop inside one
+component, but N components can each call it once — which is what `<CanvasView>` is. It owns a
+camera, contributes the viewport node that paints it and the record that gestures inside its rect
+dispatch to, and registers both with the surface through a `ViewRegistryProvider`. A `views` prop
+on `<SceneCanvas>` renders one per descriptor; mounting the component as a child is the same
+declaration, and children land after every prop entry, so paint order never depends on React's
+mount ordering.
+
+**N dispatchers is not N `useGestureDispatcher` instances.** The hook is one mounter that
+normalizes DOM events and then dispatches, and everything downstream of the normalize step is
+injectable per call site. It holds one record per view — dispatcher, the three lookups that resolve
+a point against that view's camera, and the deps that view answers for itself — and routes each
+event to the record the resolver names. Pointerdown pins, pointerup releases; keys and paste run on
+the view the last event with coordinates resolved to. One listener set, still.
+
+**A view does not get a `DepRegistryProvider` of its own.** It overlays the deps that are genuinely
+its own — `view`, `selection` — onto the canvas registry. The registry is where a consumer
+registers *sources*, and one per view would fragment that: overriding `insert` would mean knowing
+how many views exist and overriding each. So per-view `setView` needed no second channel — every
+viewport action reads its camera from the `view` dep, and an event routed to a view resolves that
+name from the view and everything else from the canvas.
+
+**One resolver per surface.** The dispatcher, pinch and hover all ask the view registry which view
+a client point belongs to. Three copies of that answer is three chances to disagree about which
+panel the pointer is on. `usePinchZoomTool` takes a `resolveTarget` naming the camera an anchor
+belongs to; omitted, it is the canvas's own.
+
+`Canvas`'s `ToolCtx` needed nothing. Its one consumer is the function form of `Tool.cursor`, which
+resolves at render time with no pointer position and sets the CSS cursor on the one canvas element
+— surface-wide by construction. The cursor that does depend on where the pointer is comes from the
+dispatcher's hover pump, which reads the routed view's `affordanceAt` and `classifyTarget`.
+
+**Per-view state does not arrive by handing a view its own copy of the inputs.** Any lookup that
+closed over the surface's state at construction keeps answering for the surface however the
+envelope reads. Three did, and each had been quietly wrong for the single-view case too:
+
+- `createSelectionOverlayLayer` took its ids and its bounds from closures `<Canvas>` and
+  `<SceneCanvas>` each built. Both are gone; `getSelection` and `getPose` are optional now and the
+  layer reads `ChromeState` off the draw envelope. The two bounds chains consulted the same preview
+  sources in opposite priority, and only one carried rotation.
+- The dispatcher's `affordanceAt` built a second `ChromeState` beside the painted one, without the
+  in-flight overlay — mid-drag, handles painted at the ghost and hit-tested at the committed pose.
+  A surface publishes its chrome on the registry handle now.
+- `<CanvasView>` read gesture previews from the surface's dispatcher while owning one of its own,
+  so a gesture inside a panel left its in-flight handles where the panel never looked.
+
+`docs/TODO.md` carries a P1 to sweep the engine for the rest of the pattern.
 
 Each arc ends somewhere shippable. Arc 1 alone is worth having.
 
@@ -160,4 +224,4 @@ Headless against command trees, as the existing layer tests do — no WebGL in t
 - A click in view B does not disturb view A's selection.
 - Flat props with no views declared behave identically to today — the N=1 façade, asserted against
   the existing `SceneCanvas` tests unchanged.
-- Solid rects in adjacent views are not merged into one batch.
+- A world-space source layer's commands carry the inner view's transform, not the outer's.

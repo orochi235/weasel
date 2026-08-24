@@ -22,6 +22,7 @@
 
 import type { BodyClassification } from '@weasel-js/gestures';
 import type { ChromeState } from 'core/selection/chromeState';
+import type { EditAnchorsDep } from 'interactions/actions/depSchema';
 import type { View } from 'core/viewport/view';
 import type { AffordanceHit } from 'interactions/actions/invoker';
 import { DEFAULT_ROTATION_HANDLE_DISTANCE } from 'interactions/actions/rotate/handle';
@@ -77,6 +78,28 @@ export interface BuildAffordanceAtOptions {
    *  `'selection.resize-handles'`, rotation by `'selection.rotation-handle'`,
    *  anchors by `'path-edit.anchors'`). Omitting defaults to always-visible. */
   getIsVisible?: () => (id: string) => boolean;
+}
+
+/**
+ * Read anchor-editing state off a dep registry, for
+ * {@link BuildAffordanceAtOpts.getAnchorState}. Returns `null` while no
+ * `editAnchors` dep is registered — nothing is in anchor-edit mode, so
+ * anchors are not hit-tested.
+ */
+export function anchorStateFrom(
+  getRegistry: () => { get(name: 'editAnchors'): EditAnchorsDep | undefined } | null,
+): () => AnchorState | null {
+  return () => {
+    const dep = getRegistry()?.get('editAnchors');
+    if (!dep) return null;
+    return {
+      editingId: dep.editingId ?? null,
+      // The hit-test reads world-coord anchor positions, so route through
+      // `getEditablePath`: both pose-as-polygon and `data.path` consumers
+      // resolve correctly.
+      getPose: (id) => dep.getEditablePath(id),
+    };
+  };
 }
 
 /**

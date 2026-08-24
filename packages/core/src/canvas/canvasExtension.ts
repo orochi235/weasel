@@ -1,5 +1,6 @@
 import type { LayerHit } from '../affordances/types';
-import type { RenderLayer } from '../core/layers/render';
+import type { Dims, RenderLayer } from '../core/layers/render';
+import type { View } from '../core/viewport/view';
 import type { IngestItem } from '../features/ingestion/ingestItems';
 
 /**
@@ -42,8 +43,18 @@ export interface CanvasExtensionApi {
    * `strength` carry through from the hit when the layer sets them.
    * A layer's owner binds a `kindOf` predicate on that kind to claim the
    * gesture; see `@weasel-js/hud` for the worked example.
+   *
+   * `frame` names the camera and surface size the point is expressed against.
+   * Omit it for the canvas's own view — the only case until a caller routes
+   * input to a viewport node, where the point is in that node's inner world
+   * and a layer resolving screen-pixel tolerances needs its view and rect
+   * size rather than the canvas's.
    */
-  hitTestExtras(worldX: number, worldY: number): { layerId: string; hit: LayerHit } | null;
+  hitTestExtras(
+    worldX: number,
+    worldY: number,
+    frame?: { view: View; dims: Dims },
+  ): { layerId: string; hit: LayerHit } | null;
   /** Feed external content into the ingestion pipeline imperatively — the
    *  same content-handler registry that OS drop and clipboard paste hit.
    *  `input` may be raw `File[]` (e.g. from `openFilePicker`) or

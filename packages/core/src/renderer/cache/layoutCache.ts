@@ -73,11 +73,15 @@ let cache = new WeakMap<readonly ResolvedRun[], Entry>();
 
 
 /**
- * How many of the distinct font sizes present in `runs` reach `min` — the
- * exact thing `layoutRuns` derives from `outlineMinSize`. Returns `-1` for an
- * absent threshold, which must stay distinct from "a threshold no run
- * reaches": measurement callers leave it unset, and conflating the two would
- * let a measurement answer a paint.
+ * How many of the distinct font sizes present in `runs` reach `min`. Equal
+ * counts mean the same set of runs cleared the threshold, since the count is
+ * monotonic in `min` over a fixed `runs` — which is what makes this a key.
+ * Stroked runs need no term of their own: a stroke pulls its run onto the
+ * outline tier at every `min`, so it cannot distinguish two of them.
+ *
+ * Returns `-1` for an absent threshold, which must stay distinct from "a
+ * threshold no run reaches": measurement callers leave it unset, and
+ * conflating the two would let a measurement answer a paint.
  */
 function outlineBucket(runs: readonly ResolvedRun[], min: number | undefined): number {
   if (min === undefined) return -1;

@@ -455,8 +455,15 @@ function makeSeg(ax: number, ay: number, bx: number, by: number, halfA: number, 
   };
 }
 
-/** Canvas2D's default miter limit; used when `Stroke.miterLimit` is unset. */
-const DEFAULT_MITER_LIMIT = 10;
+/**
+ * Miter limit for a stroke that does not set one. SVG's default, not
+ * Canvas2D's 10, because the serializer omits the attribute when the field is
+ * unset — so a kit stroke exported to SVG is read back by every other renderer
+ * as 4, and a kit that used 10 would disagree with its own export. 10 also
+ * lets an acute corner throw a spike four times the half-width, which is what
+ * a glyph outline's sharpest vertices do.
+ */
+const DEFAULT_MITER_LIMIT = 4;
 /** Default `Stroke.varyingWidthJoinThreshold`. */
 const DEFAULT_VARYING_WIDTH_JOIN_THRESHOLD = 1.5;
 

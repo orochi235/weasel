@@ -834,6 +834,46 @@ describe('layoutRuns — outline tier', () => {
     expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
   });
 
+  it('escalates a stroked run below the threshold, since the SDF tiers cannot stroke', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const stroked: ResolvedRun = {
+      ...RUN_PLAIN('AB'),
+      stroke: { paint: { fill: 'solid', color: '#f00' }, width: 2 },
+    };
+    const out = layoutRuns([stroked], { ...OPTS_OUT, outlineMinSize: 48 });
+
+    expect(out.groups.map((g) => g.source)).toEqual(['outline']);
+    expect(out.groups[0].stroke).toMatchObject({ width: 2 });
+  });
+
+  it('leaves a zero-width stroke below the threshold on the SDF tier', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const hairless: ResolvedRun = {
+      ...RUN_PLAIN('AB'),
+      stroke: { paint: { fill: 'solid', color: '#f00' }, width: 0 },
+    };
+    const out = layoutRuns([hairless], { ...OPTS_OUT, outlineMinSize: 48 });
+
+    expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
+  });
+
+  it('does not escalate a stroked run when the caller opted out of outlines', async () => {
+    await registerFixture('inter', [{}]);
+    await registerOutlines('inter');
+
+    const stroked: ResolvedRun = {
+      ...RUN_PLAIN('AB'),
+      stroke: { paint: { fill: 'solid', color: '#f00' }, width: 2 },
+    };
+    const out = layoutRuns([stroked], { maxWidth: Infinity, lineHeight: 1.2, align: 'left' });
+
+    expect(out.groups.map((g) => g.source)).toEqual(['atlas']);
+  });
+
   it('places outline glyphs at the pen and the baseline, not the quad corner', async () => {
     await registerFixture('inter', [{}]);
     await registerOutlines('inter');
