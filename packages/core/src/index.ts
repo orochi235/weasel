@@ -535,6 +535,7 @@ export {
 
 // ─── Paint types: FillStyle, Stroke, gradients ──────────────────────────────
 export { alignedStrokeRect } from './core/paint-types';
+export { resolveStrokeWidth } from './features/paths/tessellate/stroke';
 export type {
   FillStyle,
   GradStop,

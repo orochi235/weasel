@@ -31,6 +31,15 @@ interface Seg {
   len: number;
 }
 
+/** Resolve a stroke width to world units. A number is already world units;
+ *  `{ px }` is screen pixels divided by the accumulated scale, so it holds its
+ *  on-screen thickness as the view zooms. */
+export function resolveStrokeWidth(width: number | { px: number }, scale: number): number {
+  if (typeof width === 'number') return width;
+  if (!Number.isFinite(scale) || scale === 0) return width.px;
+  return width.px / scale;
+}
+
 /**
  * Build a triangle-mesh ribbon from a stroked Path.
  *
@@ -47,7 +56,10 @@ export function tessellateStroke(
   stroke: Stroke,
   opts: StrokeOptions = {},
 ): Mesh {
-  const width = stroke.width ?? 1;
+  // The renderer resolves `{ px }` against the accumulated transform before it
+  // gets here; a stroke that reaches the tessellator unresolved is read at
+  // scale 1, matching what the ribbon cache keys it under.
+  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
   if (width <= 0) return EMPTY_MESH;
   const join: Join = stroke.join ?? 'miter';
   const cap: Cap = stroke.cap ?? 'butt';

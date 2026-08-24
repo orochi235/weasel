@@ -29,6 +29,7 @@ import type { NodeId } from 'core/scene/types';
 import type { RenderLayer } from 'core/layers/render';
 import { unionBounds } from '../groups/unionBounds';
 import { alignedStrokeRect, type FillStyle, type Stroke } from 'core/paint-types';
+import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import {
   rotationHandle,
   DEFAULT_ROTATION_HANDLE_DISTANCE,
@@ -375,7 +376,7 @@ function outlineCommandsFor(
 ): DrawCommand[] {
   const out: DrawCommand[] = [];
   const align = stroke.align ?? 'center';
-  const width = stroke.width ?? 1;
+  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
   for (const id of ids) {
     const worldB = resolveBounds(id);
     if (!worldB) continue;
@@ -421,7 +422,7 @@ function handleCommandsFor(
   const out: DrawCommand[] = [];
   const half = handles.size / 2;
   const handleAlign = handles.outline.align ?? 'center';
-  const handleWidth = handles.outline.width ?? 1;
+  const handleWidth = resolveStrokeWidth(handles.outline.width ?? 1, 1);
   for (const id of ids) {
     const worldB = resolveBounds(id);
     if (!worldB) continue;
@@ -488,7 +489,7 @@ function rotationHandleCommands(
   // *toward the rect* (downward, since the handle sits above the AABB).
   const ARC_HALF_ANGLE = (Math.PI * 240) / 360 / 2; // 120°
   const N_SEGS = 18;
-  const arcWidth = (handles.outline.width ?? 1) * 1.5;
+  const arcWidth = resolveStrokeWidth(handles.outline.width ?? 1, 1) * 1.5;
   const stroke: Stroke = {
     paint: handles.fill,
     width: arcWidth,

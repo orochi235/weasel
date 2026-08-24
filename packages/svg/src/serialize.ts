@@ -6,7 +6,7 @@
  */
 
 import type { Path, Stroke } from '@weasel-js/core';
-import { boundsOfPath } from '@weasel-js/core';
+import { boundsOfPath, resolveStrokeWidth } from '@weasel-js/core';
 import type {
   Matrix, NamespaceMeta, NamespacedElement, SerializeOptions, SvgGroupNode,
   SvgNode, SvgPaint, SvgPathNode, SvgStroke, SvgTextNode, SvgImageNode,
@@ -264,7 +264,9 @@ function paintAttrs(
  */
 function coreStrokeAttrs(stroke: Stroke | undefined, registry: PaintServerRegistry): string[] {
   if (!stroke) return [];
-  const width = stroke.width ?? 1;
+  // SVG has no accumulated-transform scale to resolve a `{ px }` width
+  // against; its number is emitted as-is.
+  const width = resolveStrokeWidth(stroke.width ?? 1, 1);
   if (!(width > 0)) return [];
   const attrs: string[] = [];
   if ('color' in stroke.paint) {

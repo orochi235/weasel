@@ -39,10 +39,12 @@ custom entries can share an anchor; insertion order within an anchor is
 the iteration order of the `layers` map.
 
 A `RenderLayer<TData>` is just `{ id, draw(ctx, data?, vis?), label?,
-defaultVisible?, alwaysOn? }`. Build them with the helpers the kit
+defaultVisible?, alwaysOn?, deps? }`. Build them with the helpers the kit
 exports: `createGridLayer`, `createCellHighlightLayer`, `createTextLayer`,
 `createPathLayer`, `createChildrenLayer`, `createSelectionOverlayLayer`,
 `createTilePattern`. Or write your own — it's a function.
+
+`deps` opts a layer into command caching — see [concepts.md](./concepts.md#layer).
 
 ## Custom affordances
 

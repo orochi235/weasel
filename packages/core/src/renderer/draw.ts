@@ -19,6 +19,7 @@ import type { ShaderProgram } from './shaders/ShaderProgram';
 import { mat3, type Mat3 } from './math/mat3';
 import { getMesh } from './cache/cache';
 import { tessellate } from 'features/paths/tessellate/tessellate';
+import { resolveStrokeWidth } from 'features/paths/tessellate/stroke';
 import { resolveColor } from './math/color';
 import {
   ensureFontTexture,
@@ -1009,7 +1010,18 @@ function drawPathFillStencil(ctx: DrawContext, fill: FillStyle, handle: GLMeshHa
   gl.bindVertexArray(null);
 }
 
-function drawPathStroke(ctx: DrawContext, cmd: PathDrawCommand): void {
+/** `cmd` with a `{ px }` stroke width resolved against the accumulated
+ *  transform, so everything downstream — the ribbon cache key included — sees
+ *  a world-unit number. */
+function withResolvedStrokeWidth(ctx: DrawContext, cmd: PathDrawCommand): PathDrawCommand {
+  const stroke = cmd.stroke!;
+  if (typeof stroke.width !== 'object') return cmd;
+  const width = resolveStrokeWidth(stroke.width, mat3.meanScaleOf(ctx.state.transform));
+  return { ...cmd, stroke: { ...stroke, width } };
+}
+
+function drawPathStroke(ctx: DrawContext, rawCmd: PathDrawCommand): void {
+  const cmd = withResolvedStrokeWidth(ctx, rawCmd);
   const stroke = cmd.stroke!;
   const paint = stroke.paint;
   if (paint.fill !== undefined && paint.fill !== 'solid') {
@@ -1101,7 +1113,7 @@ function drawPathStrokeStenciled(
   const solid = stroke.paint as { color: string; opacity?: number };
   const widerStroke: Stroke = {
     ...stroke,
-    width: (stroke.width ?? 1) * 2,
+    width: resolveStrokeWidth(stroke.width ?? 1, 1) * 2,
     ...(stroke.vertexWidths ? { vertexWidths: doubledVertexWidths(stroke.vertexWidths) } : {}),
     align: 'center',
   };
@@ -1294,7 +1306,7 @@ function drawTextOutlineGroup(ctx: DrawContext, group: LaidOutGroup, dx: number,
   // SVG's default paint-order. A second batched draw call over the same
   // group, not a call per glyph.
   if (!group.stroke) return;
-  const ribbon = outlineGroupStrokeMesh(group, dx, dy);
+  const ribbon = outlineGroupStrokeMesh(group, dx, dy, mat3.meanScaleOf(ctx.state.transform));
   if (ribbon) {
     drawPathFillByKind(ctx, group.stroke.paint, ctx.meshCache.uploadTransient(ribbon));
   }
@@ -1329,10 +1341,15 @@ function outlineGroupMesh(group: LaidOutGroup, dx: number, dy: number): Mesh | n
  * shearing the finished ribbon is what keeps the outline glued to the glyph
  * it outlines, which re-tessellating in sheared space would not.
  */
-function outlineGroupStrokeMesh(group: LaidOutGroup, dx: number, dy: number): Mesh | null {
+function outlineGroupStrokeMesh(
+  group: LaidOutGroup,
+  dx: number,
+  dy: number,
+  scale: number,
+): Mesh | null {
   const stroke = group.stroke;
   if (!stroke) return null;
-  const width = stroke.width ?? 1;
+  const width = resolveStrokeWidth(stroke.width ?? 1, scale);
   if (!(width > 0)) return null;
   return mergeGlyphMeshes(group, dx, dy, (glyph) =>
     glyph.scale > 0

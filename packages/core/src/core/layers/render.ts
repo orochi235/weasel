@@ -13,13 +13,22 @@ export interface Dims {
   height: number;
 }
 
+/** One layer's memoized output, keyed by layer id. Owned by the canvas that
+ *  calls `drawLayers`, not by `drawLayers` itself — the function is pure. */
+export type LayerCommandCache = Map<
+  string,
+  { deps: readonly unknown[]; cmds: DrawCommand[] }
+>;
+
 /**
  * A single named render sub-layer within a canvas renderer.
  *
  * @template TData - The data object passed to each draw call.
  */
 export interface RenderLayer<TData> {
-  /** Unique identifier used in visibility maps and ordering arrays. */
+  /** Unique identifier used in visibility maps and ordering arrays. When a
+   *  cache is in use, an id must identify the same logical layer across
+   *  frames — reusing it for a different layer can serve cross-layer commands. */
   id: string;
   /** Human-readable name for UI toggles. */
   label: string;
@@ -37,6 +46,21 @@ export interface RenderLayer<TData> {
    * subset manually with `viewToMat3(view)`.
    */
   draw: (data: TData, view: View, dims: Dims) => DrawCommand[];
+  /**
+   * Optional cache key. When present and a `LayerCommandCache` is supplied to
+   * `drawLayers`, the layer's previous `DrawCommand[]` is reused as long as
+   * every entry is `Object.is`-equal to the previous call's. A layer with no
+   * `deps` rebuilds on every frame.
+   *
+   * **The returned commands must be treated as immutable.** A cached tree is
+   * handed to the renderer again on later frames, so mutating a tree you
+   * previously returned corrupts the cache silently rather than erroring.
+   *
+   * **Screen-space layers are not protected against a stale `view`/`dims`
+   * the way world-space layers are** (see `space` below) — include them in
+   * `deps` if `draw` reads them.
+   */
+  deps?: (data: TData, view: View, dims: Dims) => readonly unknown[];
   /**
    * Whether the layer is shown when no explicit visibility entry exists.
    * Defaults to `true` when absent.
@@ -130,6 +154,7 @@ export function drawLayers<TData>(
   order: string[] | undefined,
   view: View | undefined,
   dims: Dims,
+  cache?: LayerCommandCache,
 ): DrawCommand[] {
   const layerById = new Map(layers.map((l) => [l.id, l]));
   const sequence = order
@@ -138,13 +163,19 @@ export function drawLayers<TData>(
   const v = view ?? IDENTITY_VIEW;
   const out: DrawCommand[] = [];
 
+  if (cache) {
+    for (const id of [...cache.keys()]) {
+      if (!layerById.has(id)) cache.delete(id);
+    }
+  }
+
   for (const layer of sequence) {
     const visible =
       layer.alwaysOn ||
       (layer.id in visibility ? visibility[layer.id] : (layer.defaultVisible ?? true));
     if (!visible) continue;
 
-    const cmds = layer.draw(data, v, dims);
+    const cmds = drawOneLayer(layer, data, v, dims, cache);
     if (cmds.length === 0) continue;
 
     const space = layer.space ?? 'world';
@@ -156,4 +187,31 @@ export function drawLayers<TData>(
   }
 
   return out;
+}
+
+/** Resolve one layer's commands, from cache when its deps are unchanged. */
+function drawOneLayer<TData>(
+  layer: RenderLayer<TData>,
+  data: TData,
+  view: View,
+  dims: Dims,
+  cache: LayerCommandCache | undefined,
+): DrawCommand[] {
+  if (!cache || !layer.deps) return layer.draw(data, view, dims);
+
+  const deps = layer.deps(data, view, dims);
+  const entry = cache.get(layer.id);
+  if (entry && sameDeps(entry.deps, deps)) return entry.cmds;
+
+  const cmds = layer.draw(data, view, dims);
+  cache.set(layer.id, { deps, cmds });
+  return cmds;
+}
+
+function sameDeps(a: readonly unknown[], b: readonly unknown[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (!Object.is(a[i], b[i])) return false;
+  }
+  return true;
 }

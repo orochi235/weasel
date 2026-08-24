@@ -41,7 +41,7 @@ import { dispatchApplyBatch } from 'core/applyOps';
 import type { NodeId } from 'core/scene/types';
 import type { View } from 'core/viewport/view';
 import { clampView } from 'core/viewport/clampView';
-import { drawLayers, type Dims, type RenderLayer } from 'core/layers/render';
+import { drawLayers, type Dims, type LayerCommandCache, type RenderLayer } from 'core/layers/render';
 import { WeaselRenderer, viewToMat3, type DrawCommand, type ShaderProgramHandle } from '../renderer';
 import {
   type SelectionApi,
@@ -847,6 +847,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
+  const layerCacheRef = useRef<LayerCommandCache>(new Map());
   const lastResizeRef = useRef<{ w: number; h: number; dpr: number } | null>(null);
 
   // Viewport state: hybrid uncontrolled/controlled. When `viewProp` is
@@ -1437,6 +1438,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       undefined,
       effectiveView,
       { width, height },
+      layerCacheRef.current,
     );
     renderer.render(commands, viewToMat3(effectiveView));
   }, [layersWithDebug, width, height, effectiveView, debugSink, redrawNonce, dprProp]);
@@ -1447,6 +1449,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   useEffect(() => () => {
     glRendererRef.current?.dispose();
     glRendererRef.current = null;
+    layerCacheRef.current.clear();
     lastResizeRef.current = null;
   }, []);
 

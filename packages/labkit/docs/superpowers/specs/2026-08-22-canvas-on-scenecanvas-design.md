@@ -85,17 +85,26 @@ render-to-texture per layer and compositing, which the renderer has no concept o
 dispatch alone is expensive enough to want that is a measurement nobody has taken; take it
 before building it.
 
-## Renderer gaps to close
+## What the renderer already gives a ported layer
 
-Two things a 2D layer can express and `DrawCommand` cannot. Both are features the target is
-missing, and both block layers that would otherwise port mechanically:
+Both things a 2D layer needs and an earlier draft of this spec claimed were missing already exist;
+do not build them again.
 
-- **Dashed strokes.** Nothing in `DrawCommand.ts` or `draw.ts` carries a dash pattern. Add
-  `dash?: number[]` to `Stroke`, dashing at flatten time so a dash length stays in world units
-  under zoom.
-- **Hairlines.** 2D layers set `lineWidth = 1 / zoom` to hold a stroke at one pixel. Under a
-  view-applied group transform the layer no longer knows the zoom at draw time. Add a
-  screen-space stroke width — `width: { px: 1 }` against the existing world-unit number.
+- **Dashed strokes.** `Stroke.dash` (`core/paint-types.ts:134`) split at flatten time by
+  `splitForDash` (`features/paths/tessellate/stroke.ts:329`), with the pattern in the stroke mesh
+  cache key. It carries anchor parameters across dash boundaries and handles closed subpaths.
+- **Hairlines.** `RenderLayer.draw` receives `(data, view, dims)`, so a layer computes
+  `1 / meanScale(view.scale)` itself — `features/grid/layer.ts:78` does.
+
+`Stroke.width: { px }` was added on top of these as sugar: it moves that division into the renderer
+and lets the mesh cache key see the resolved width. It resolves against the **accumulated**
+transform scale during traversal, not the view — groups nest and compose, so a path two groups deep
+is scaled by the product. Under a non-uniform transform one scalar is a known lie, the same one
+`core/viewport/pxExtent.ts` documents.
+
+**Known defect.** `splitForDash` flushes a closed subpath's final run as its own open sub-polyline,
+so when the pattern does not divide evenly into the perimeter the last and first dashes meet as two
+butt-capped runs at the start vertex instead of one dash wrapping around.
 
 ## Where the view lives
 

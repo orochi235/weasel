@@ -129,7 +129,10 @@ export type StrokeAlign = 'center' | 'inner' | 'outer';
 /** Stroke style: a FillStyle plus structural line parameters. */
 export interface Stroke {
   paint: FillStyle;
-  width?: number;
+  /** World units, or `{ px }` for screen pixels — resolved against the
+   *  accumulated transform scale at draw time, so it holds its on-screen
+   *  thickness as the view zooms. */
+  width?: number | { px: number };
   /** Per `CanvasRenderingContext2D.setLineDash` — empty/omitted = solid. */
   dash?: number[];
   cap?: 'butt' | 'round' | 'square';

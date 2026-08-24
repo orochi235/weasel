@@ -97,6 +97,16 @@ function screenToClip(width: number, height: number): Mat3 {
   );
 }
 
+/**
+ * Uniform-equivalent scale factor: the square root of the absolute
+ * determinant of the linear part, i.e. the geometric mean of the two axis
+ * scales. Rotation-invariant. Under non-uniform scale it is between the two
+ * axes and exact on neither — the same compromise `meanScale` documents.
+ */
+function meanScaleOf(m: Mat3): number {
+  return Math.sqrt(Math.abs(m[0] * m[4] - m[1] * m[3]));
+}
+
 /** The renderer's 3x3 matrix operations, as one namespace. These work on the
  *  9-element `Float32Array` form the GL uniform upload wants — distinct from
  *  `@weasel-js/geom`'s 6-element affine `Mat3`, though the logical element
@@ -109,4 +119,5 @@ export const mat3 = {
   invert,
   apply,
   screenToClip,
+  meanScaleOf,
 };
