@@ -410,6 +410,33 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
+- **(P2) `before` and `after` layer chains do not compose.** In
+  `packages/core/src/canvas/layerOrder.ts`, `emitBefore` recurses only into a
+  layer's `before` children and `emitAfter` only into its `after` children. So a
+  custom layer anchored with `before` never has its own `after` children
+  emitted — they fall through to the orphan pass, warn "dangling reference", and
+  land at the tail in map order. Anchoring a chain's root with
+  `before: 'scene'` and chaining the rest with `after` is the natural way to
+  write a painter's-order stack, and it silently produces accidental order that
+  happens to look right. The side-scroller demo hit exactly this with nine
+  layers. Fix: a layer's `before` children belong immediately before it and its
+  `after` children immediately after, whichever direction anchored the layer
+  itself — so each emit path should recurse into both, with the cycle guard
+  extended to match.
+
+- **(P2) Forward focus events from the canvas.** `Canvas` already defaults
+  `tabIndex` to 0, so the kit has decided the canvas is focusable — but
+  `CanvasProps` is a hand-enumerated interface with no `onFocus`/`onBlur`, so a
+  consumer can make it take focus and cannot react to it. Anything wanting a
+  focus ring, a "click to start" affordance, or to announce state to a screen
+  reader has to catch the bubbled event on an ancestor and filter by
+  `tagName === 'CANVAS'`, which the side-scroller demo now does. Add
+  `onFocus`/`onBlur` (and their capture forms) as real props. Deliberately not a
+  blanket DOM-props spread: the dispatcher owns pointer and key handlers, and a
+  consumer overriding those would break input in ways nothing warns about.
+  Focus and blur are safe precisely because the kit does not use them.
+
+
 - **(P1) A full-screen effects pass.** The renderer can draw over the frame but
   never *transform* it: there is no render-to-texture anywhere in
   `packages/core/src/renderer/` (`createFramebuffer` appears only in the test GL

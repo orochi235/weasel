@@ -1,6 +1,6 @@
 // apps/site/demos/__tests__/SideScrollerDemo.test.tsx
 import { describe, it, expect, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { SideScrollerDemo } from '../SideScrollerDemo';
 
 describe('SideScrollerDemo', () => {
@@ -41,4 +41,19 @@ describe('SideScrollerDemo', () => {
     expect(screen.getByRole('button', { name: /swarm/i })).toBeTruthy();
     expect(screen.getByRole('checkbox', { name: /collision boxes/i })).toBeTruthy();
   });
+});
+
+it('starts the run when the canvas takes focus, but not the toolbar', () => {
+  const { container } = render(<SideScrollerDemo />);
+  const toggle = () => screen.getByRole('button', { name: /^(start|pause)$/i });
+  expect(toggle().textContent).toBe('start');
+
+  // Focusing a toolbar button must not start it.
+  fireEvent.focus(toggle());
+  expect(toggle().textContent).toBe('start');
+
+  const canvas = container.querySelector('canvas');
+  expect(canvas).toBeTruthy();
+  fireEvent.focus(canvas!);
+  expect(toggle().textContent).toBe('pause');
 });

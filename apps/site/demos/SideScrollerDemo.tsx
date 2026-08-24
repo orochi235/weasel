@@ -562,7 +562,15 @@ function SideScrollerDemoInner() {
   const canvasClassName = blurred ? 'ckd-canvas ckd-canvas--knocked' : 'ckd-canvas';
 
   return (
-    <div className="ckd-demo">
+    // `SceneCanvas` forwards no `onFocus`, but focus events bubble — so catch it
+    // here and filter to the canvas, or tabbing to a toolbar button would start
+    // the game too.
+    <div
+      className="ckd-demo"
+      onFocus={(e) => {
+        if ((e.target as HTMLElement).tagName === 'CANVAS') setRunning(true);
+      }}
+    >
       <div className="ckd-toolbar">
         <button className="ckd-btn" onClick={() => setRunning((r) => !r)}>
           {running ? 'pause' : 'start'}
@@ -582,7 +590,7 @@ function SideScrollerDemoInner() {
         animator={animator}
         view={IDENTITY_VIEW}
         layers={{
-          backdropFar: { layer: layers.bands[0], before: 'scene' },
+          backdropFar: { layer: layers.bands[0], after: 'grid' },
           backdropMid: { layer: layers.bands[1], after: 'backdropFar' },
           backdropNear: { layer: layers.bands[2], after: 'backdropMid' },
           tiles: { layer: layers.tiles, after: 'backdropNear' },
