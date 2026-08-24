@@ -5,6 +5,11 @@ declare module '*.png' {
   export default src;
 }
 
+declare module '*.webp' {
+  const src: string;
+  export default src;
+}
+
 /** Provided by the `demo-timestamps` vite plugin (`scripts/vite-demo-timestamps.ts`).
  *  Keyed by demo source path relative to repo root. */
 declare module 'virtual:demo-timestamps' {

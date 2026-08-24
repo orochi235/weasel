@@ -31,7 +31,7 @@ import {
 // demo's own canvas-kit-demo.css supplies dark-theme --wui-* values mapped
 // from --ckd-* tokens. Pulling tokens.css would clobber those with the
 // light-theme defaults.
-import logoUrl from '../../weasel-transparent@0.33x.png';
+import logoUrl from './assets/weasel-logo.webp';
 import { VERSION } from '@weasel-js/core';
 import { buildTitle } from '../shared/buildInfo';
 
