@@ -865,6 +865,70 @@ Simulation primitive itself open follow-ups: drag-to-pin helper hook, sugar wrap
 
 ---
 
+## Load cost
+
+Both apps shipped their own source as string literals so a panel could display
+it. Read bundle size against module count: the site produced 10.9 MB from 4,047
+modules, and that ratio — not dependency bloat — is what points at data-as-code.
+
+- [x] **Demo site — fixed 2026-08-23.** `apps/site/registry.ts` held 105 eager
+  static imports (55 of them `?raw`) and, at the bottom, an eager
+  `import.meta.glob` over `apps/site/demos`, `apps/draw/src` and
+  `packages/*/src`. That glob alone inlined **1,880 files — about 9.3 MB, 82%
+  of the bundle — to produce 11 companion source tabs**, and 642 of them were
+  kit test files. Opening one demo downloaded all fifty plus everyone's source.
+
+  **Total emitted JS fell 11.20 MB → 2.20 MB across 148 chunks.** That is the
+  number to read first: the 9 MB was not deferred to a later fetch, it was
+  deleted, because nothing ever needed it. Deferring it — a non-eager glob —
+  would instead have emitted 1,880 one-file chunks to serve 11, which is why
+  the resolution moved to build time rather than to a lazy glob.
+
+  Production build, first paint on `#scene`, cold cache over loopback:
+
+  | | JS bytes | JS requests | DOMContentLoaded |
+  |---|---|---|---|
+  | before | 10,962,344 | 2 | 386 ms |
+  | after | 1,014,631 | 10 | 175 ms |
+
+  The registry literal now carries metadata and a `load()` per demo;
+  `React.lazy` fetches the component, and the code panel fetches a tab's text
+  when it scrolls into view. `scripts/vite-demo-sources.ts` resolves companion
+  tabs at build time and serves each file as its own chunk. Test files are
+  excluded by construction, not by a filter: the plugin emits a chunk only for
+  a file some demo's relative import actually names, so there is no
+  all-files-minus-tests rule that can drift. Switching demos fetches two chunks
+  (component + its source); clicking a companion tab fetches one.
+
+  Ordering matters if any of this is revisited: `React.lazy` on the demos alone,
+  with the glob left in, buys only ~9% — top-level registry code consumes those
+  strings and keeps them eager.
+
+- **(P2) The site's remaining 559 kB entry chunk.** Measured, untouched, and
+  fully apportioned — it trips vite's 500 kB warning and is accounted for by:
+  `virtual:changelogs` eager at ~204 kB though only the Releases view reads it;
+  `prism-react-renderer` eager at ~96 kB for a code panel that now loads its own
+  text lazily anyway; the 181 kB sidebar logo PNG for a 449×496 image; and
+  `WeaselRenderer` at 416 kB, already its own chunk and genuine — tree-shaking
+  was verified healthy (a single-symbol build is 1.04 kB, and barrel vs
+  deep-path imports agree within 0.04%). Separately, a module-level
+  `await registerFont(...)` in `main.tsx` gates first paint on the font-atlas
+  round-trip; that is latency, not bytes, so it does not appear in the table
+  above.
+
+- **(P2) WeaselDraw has the same defect.** `apps/draw/src/dev/sourceLookup.ts`
+  embeds 772,103 bytes of its own source — including 40 test and story files —
+  as string literals, 36.5% of a 2,114,170-byte entry chunk. Eager because
+  `main.tsx` statically imports the inspector that reads it. Draw also blocks
+  first paint on `await registerFont(...)` and downloads the Inter atlas twice
+  byte-identically. The reusable piece from the site fix is the per-file source
+  module, not the demo-tab plugin wrapped around it. **If you lift it, keep the
+  `.js` suffix on the virtual id** (`virtual:demo-source:<path>.js`): a virtual
+  id ending in a real extension gets claimed by vite's css/json/jsx transforms,
+  and postcss will try to parse the JS module as CSS.
+
+---
+
 ## Demos & visual regression
 
 - **(P3) Demo coverage gap: HUD widget gallery.** `@weasel-js/hud` ships five widgets (`button`, `rect`, `text`, `image`, `label`) but only `button` is demo'd (`apps/site/demos/HudDemo.tsx`) — a single "HUD widget gallery" demo card would cover the other four. Brainstorm scope before writing it. (The former `@weasel-js/ui` `CommandPalette`/`PropertiesPanel` half of this item was dropped — those are app-local components in `apps/draw/src/ui/`, not `@weasel-js/ui` exports, so there's no kit-export demo gap.)

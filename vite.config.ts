@@ -5,6 +5,7 @@ import { extname, join, resolve } from 'node:path';
 import { weaselAliases } from './scripts/vite-aliases';
 import { weaselDefines } from './scripts/vite-build-info';
 import { demoTimestamps } from './scripts/vite-demo-timestamps';
+import { demoSources } from './scripts/vite-demo-sources';
 import { changelogs } from './scripts/vite-changelogs';
 
 /**
@@ -81,6 +82,7 @@ export default defineConfig({
     react(),
     serveApiDocsInDev(),
     demoTimestamps({ root: __dirname }),
+    demoSources({ root: __dirname }),
     changelogs({ root: __dirname }),
   ],
   define: weaselDefines(__dirname),

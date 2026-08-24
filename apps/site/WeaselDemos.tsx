@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useRef, useState, type RefObject } from 'react';
 import { Highlight, themes } from 'prism-react-renderer';
-import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry } from './registry';
+import { CATEGORIES, DEMOS, DEMOS_BY_ID, type DemoEntry, type DemoSourceTab } from './registry';
 import { WhatsNew } from './WhatsNew';
 import { Releases } from './Releases';
 
@@ -128,21 +128,47 @@ export function WeaselDemos() {
   );
 }
 
+/** True once `ref`'s element has come near the viewport, and true forever
+ *  after — the source it gates stays wanted once it has been asked for. */
+function useHasBeenNearViewport(ref: RefObject<Element | null>): boolean {
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || near) return;
+    const io = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setNear(true); },
+      { rootMargin: '300px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, near]);
+  return near;
+}
+
+function useSourceText(tab: DemoSourceTab | undefined, enabled: boolean): string | null {
+  const [text, setText] = useState<string | null>(null);
+  useEffect(() => {
+    setText(null);
+    if (!tab || !enabled) return;
+    let live = true;
+    void tab.load().then((t) => { if (live) setText(t.trim()); });
+    return () => { live = false; };
+  }, [tab, enabled]);
+  return text;
+}
+
 function DemoView({ entry }: { entry: DemoEntry }) {
   const Component = entry.Component;
-  // Tabs: the demo's primary TSX is always first; extras (e.g. scene JSON) follow.
-  const tabs = useMemo(
-    () => [
-      { path: entry.path, code: entry.full.trim(), language: 'tsx' as const },
-      ...(entry.extras ?? []),
-    ],
-    [entry],
-  );
+  // Tabs: the demo's primary TSX is always first; companions follow. Paths and
+  // languages are known up front; only the visible tab's text is fetched.
+  const tabs = entry.sources;
   const [activeTab, setActiveTab] = useState(0);
   // Reset to the TSX tab when switching demos so we don't try to keep an
   // out-of-range index from the previous entry.
   useEffect(() => { setActiveTab(0); }, [entry]);
   const current = tabs[activeTab];
+  const panelRef = useRef<HTMLDivElement>(null);
+  const code = useSourceText(current, useHasBeenNearViewport(panelRef));
 
   return (
     <article className="ckd-demo">
@@ -170,11 +196,13 @@ function DemoView({ entry }: { entry: DemoEntry }) {
       </header>
 
       <div className="ckd-canvas-wrap">
-        <Component />
+        <Suspense fallback={<div className="ckd-demo-loading" />}>
+          <Component />
+        </Suspense>
         {entry.hint && <span className="ckd-hint">{entry.hint}</span>}
       </div>
 
-      <div className="ckd-code-panel">
+      <div className="ckd-code-panel" ref={panelRef}>
         <div className="ckd-code-header">
           {tabs.length > 1 ? (
             <div className="ckd-code-tabs" role="tablist">
@@ -196,7 +224,8 @@ function DemoView({ entry }: { entry: DemoEntry }) {
           )}
         </div>
         <div className="ckd-source">
-          <Highlight code={current.code} language={current.language} theme={themes.vsDark}>
+          {code == null ? <div className="ckd-source-loading" /> : (
+          <Highlight code={code} language={current.language} theme={themes.vsDark}>
             {({ className, style, tokens, getLineProps, getTokenProps }) => (
               <pre className={className} style={{ ...style, background: 'transparent', margin: 0 }}>
                 {(() => {
@@ -221,6 +250,7 @@ function DemoView({ entry }: { entry: DemoEntry }) {
               </pre>
             )}
           </Highlight>
+          )}
         </div>
       </div>
     </article>

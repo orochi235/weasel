@@ -309,6 +309,17 @@ a:hover { text-decoration: underline; }
   border-radius: 4px;
 }
 
+/* Reserved space while a demo's chunk is in flight. Demos size their own
+ * canvases, so this is a plausible average rather than an exact match. */
+.ckd-demo-loading {
+  width: 100%;
+  min-width: 480px;
+  height: 420px;
+  border: 1px solid var(--ckd-border-2);
+  border-radius: 4px;
+  background: var(--ckd-surface-2);
+}
+
 /* ---------- Code panel ---------- */
 .ckd-code-panel {
   border: 1px solid var(--ckd-border-2);
@@ -366,6 +377,10 @@ a:hover { text-decoration: underline; }
   padding: 12px 14px;
   overflow: auto;
   max-height: 60vh;
+}
+
+.ckd-source-loading {
+  height: 240px;
 }
 
 .ckd-source pre,
