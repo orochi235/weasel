@@ -110,11 +110,10 @@ export function makeViewportZoomAction(
       ? { kind: 'wheel' as const }
       : { kind: 'wheel' as const, mods: { mod: true } };
 
-  const rawAnimate = opts.animate === true ? {} : (opts.animate || null);
-  const tweenOpts: ViewAnimationOptions | null = rawAnimate
-    ? { ms: rawAnimate.ms, easing: rawAnimate.easing, interpolator: rawAnimate.interpolator }
-    : null;
-  const resetMs = rawAnimate?.resetMs;
+  const rawAnimate: ViewportZoomAnimateOptions | null =
+    opts.animate === true ? {} : (opts.animate || null);
+  const { resetMs, ...animateRest } = rawAnimate ?? {};
+  const tweenOpts: ViewAnimationOptions | null = rawAnimate ? animateRest : null;
 
   return {
     id: 'viewport.zoom',

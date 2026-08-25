@@ -32,7 +32,7 @@ import type { FillStyle } from 'core/paint-types';
 import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
-import type { Animator, EasingFn } from '../animation/types';
+import type { Animator } from '../animation/types';
 import { useAnimator } from '../animation/useAnimator';
 import { useViewAnimation } from 'core/viewport/useViewAnimation';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
@@ -106,7 +106,7 @@ import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { useViewportActions } from './SceneCanvas/useViewportActions';
-import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
+import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
 import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
 import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
@@ -588,8 +588,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Viewport feature wiring.
      *
-     *  - `inertia` is opt-in: pass `true` for defaults or an object to tune.
-     *    Omitted means off. (`animatedZoom` is declared but unimplemented.)
+     *  - `inertia` and `animatedZoom` are opt-in: pass `true` for defaults or
+     *    an object to tune. Omitted means off.
      *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0) and `pinchZoom`
      *    (two-finger pinch) are opt-OUT: on by default; pass `false` to
      *    disable. All three are wired by registering the kit's `viewport.*`
@@ -607,9 +607,10 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
        *  clamp; `false` disables. An object sets the scale clamp. */
       pinchZoom?: boolean | PinchZoomOptions;
       /** Glide Cmd+=/-/0 instead of jumping. `true` uses the kit defaults
-       *  (250 ms, ease-out-cubic); an object tunes them. Wheel and pinch are
-       *  unaffected — their input already samples every frame. */
-      animatedZoom?: boolean | { ms?: number; resetMs?: number; easing?: EasingFn };
+       *  (250 ms, ease-out-cubic); a {@link ViewportZoomAnimateOptions} tunes
+       *  duration, easing, interpolator and the reset-branch duration. Wheel
+       *  and pinch are unaffected — their input already samples every frame. */
+      animatedZoom?: boolean | ViewportZoomAnimateOptions;
       pan?: boolean;
       /** Wheel/keyboard zoom. `true`/omitted = default Cmd+wheel zoom with the
        *  kit's 0.1–8 clamp; `false` disables. Pass a {@link ViewportZoomOptions}
