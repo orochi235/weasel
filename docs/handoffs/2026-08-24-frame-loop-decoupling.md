@@ -13,9 +13,11 @@ The plans carry the detail; this file only says where things stand.
 
 ## Status
 
-Tasks 1-4 are committed and reviewed (rAF paint loop, imperative view, pinch getter, SceneCanvas
-uncontrolled). Task 5 in progress; running autonomously overnight 2026-08-24/25.
-Tasks 6-11 not started. Baseline at branch point was 7372 tests; currently 7401, tsc and lint clean.
+Tasks 1-6 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
+painted-version stamping, syncPaint). Tasks 1-4 were independently reviewed; 5-6 were implemented
+with per-test mutation checks but have not had a separate review pass — do one over 5-11 together.
+Task 7 in progress; running autonomously overnight 2026-08-24/25.
+Tasks 8-11 not started. Baseline at branch point was 7372 tests; currently 7413, tsc and lint clean.
 
 **Task 3 must land before Task 4.** `usePinchZoomTool` mirrors its `view` argument into a ref per
 render, and `usePinchGesture`'s `scaleFactor` is a per-frame delta, not cumulative — so once
