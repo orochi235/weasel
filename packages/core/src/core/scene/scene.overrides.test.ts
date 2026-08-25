@@ -89,3 +89,39 @@ describe('Scene.overrides — lifecycle', () => {
     expect(scene.overrides.has(id)).toBe(false);
   });
 });
+
+describe('Scene.overrides — baking', () => {
+  it('promotes a frame to document state as exactly one history entry', () => {
+    const { scene, id } = makeScene();
+    const before = scene.historyEntries().length;
+
+    const buffer = { x: 0, y: 0, width: 10, height: 10 };
+    scene.overrides.set(id, { pose: buffer });
+    for (let frame = 0; frame < 30; frame++) {
+      buffer.x = frame;
+      scene.overrides.commit();
+    }
+
+    scene.batch('bake', () => {
+      scene.setPose(id, { ...buffer });
+    });
+    scene.overrides.clearAll();
+
+    expect(scene.historyEntries()).toHaveLength(before + 1);
+    expect(scene.get(id)!.pose).toEqual({ x: 29, y: 0, width: 10, height: 10 });
+    expect(scene.overrides.ids()).toEqual([]);
+  });
+
+  it('undo of a bake returns the document pose, not the override', () => {
+    const { scene, id } = makeScene();
+    scene.overrides.set(id, { pose: { x: 29, y: 0, width: 10, height: 10 } });
+    scene.batch('bake', () => {
+      scene.setPose(id, { x: 29, y: 0, width: 10, height: 10 });
+    });
+    scene.overrides.clearAll();
+
+    scene.undo();
+
+    expect(scene.get(id)!.pose).toEqual(POSE);
+  });
+});
