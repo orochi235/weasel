@@ -1322,6 +1322,11 @@ it and nothing forces it to catch up.
 EOF
 ```
 
+Name the two public signature changes in the prose: `usePinchZoomTool`'s third parameter is now
+`getView: () => View` rather than a `View` (it is exported from `packages/core/src/index.ts`; nothing
+in-tree but `Canvas` calls it), and `CanvasExtensionApi` gained four required members, so any external
+code hand-constructing that interface stops typechecking.
+
 The level is `patch`. Every changeset in this repo is `patch` regardless of what the change does (`CLAUDE.md`, "Releases: always write `patch`"), and a `bump-approved` marker is never written by an implementer.
 
 - [ ] **Step 4: Verify the whole gate**
