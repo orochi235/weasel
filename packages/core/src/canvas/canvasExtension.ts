@@ -32,7 +32,7 @@ export interface CanvasExtensionApi {
    * must observe landed pixels (a loupe readback, a frame counter). Returns
    * an unsubscribe.
    */
-  subscribeFrame?(fn: () => void): () => void;
+  subscribeFrame(fn: () => void): () => void;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;

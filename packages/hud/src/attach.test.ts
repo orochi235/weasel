@@ -15,6 +15,7 @@ function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
   const api = {
     element: null,
     requestRedraw: vi.fn(),
+    subscribeFrame: vi.fn(() => () => {}),
     hitTestExtras: vi.fn(() => null),
   registerLayer: vi.fn((layer) => {
       (api as { _layer?: unknown })._layer = layer;
@@ -121,6 +122,7 @@ describe('attachHud', () => {
       const api: CanvasExtensionApi = {
         element: canvas,
         requestRedraw: vi.fn(),
+    subscribeFrame: vi.fn(() => () => {}),
         hitTestExtras: vi.fn(() => null),
         registerLayer: vi.fn(() => () => {}),
       };

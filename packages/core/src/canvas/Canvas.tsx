@@ -36,6 +36,7 @@ import { aggregatePreviewIds } from './toolPreview';
 import type { GestureSource } from './gestureBounds';
 import { useViewHelpers } from './useViewHelpers';
 import { useOptionalViewRegistry, type ViewRegistry } from './viewRegistry';
+import { useFrameLoop } from './useFrameLoop';
 import type { CanvasHelpers, CanvasSurfaceHelpers } from './useViewHelpers';
 
 import type { ToolCtx } from 'tools/types';
@@ -776,38 +777,15 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const layerVisibilityRef = useRef(layerVisibility);
   layerVisibilityRef.current = layerVisibility;
 
-  // The paint is driven by a frame loop, not by React. `requestRedraw` marks
-  // the surface dirty; the loop paints once per frame at most, whatever asked.
-  const dirtyRef = useRef(true);
-  const rafRef = useRef(0);
-  const paintRef = useRef<() => void>(() => {});
-  const frameSubsRef = useRef<Set<() => void>>(new Set());
+  // React does not drive the paint; the frame loop does. The thunk defers to
+  // `paint` below, which needs inputs this render has not computed yet.
+  const paintRef = useRef<() => boolean>(() => false);
+  const { requestRedraw, subscribeFrame } = useFrameLoop(
+    useCallback(() => paintRef.current(), []),
+  );
 
-  const scheduleFrame = useCallback(() => {
-    if (rafRef.current !== 0) return;
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = 0;
-      if (!dirtyRef.current) return;
-      dirtyRef.current = false;
-      paintRef.current();
-      for (const fn of frameSubsRef.current) fn();
-    });
-  }, []);
-
-  const requestRedraw = useCallback(() => {
-    dirtyRef.current = true;
-    scheduleFrame();
-  }, [scheduleFrame]);
-
-  const subscribeFrame = useCallback((fn: () => void) => {
-    frameSubsRef.current.add(fn);
-    return () => { frameSubsRef.current.delete(fn); };
-  }, []);
-
-  // Registration of an external layer is rare (a HUD attaching, a loupe
-  // mounting) and must re-run the `layersWithDebug` memo, which reads
-  // `extrasRef.current`. That one keeps a React state bump; the per-frame
-  // path no longer does.
+  // The `layersWithDebug` memo reads `extrasRef.current`, so registration has
+  // to bump state to re-run it. Rare (a HUD attaching, a loupe mounting).
   const [extrasVersion, setExtrasVersion] = useState(0);
   const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
   const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
@@ -1253,8 +1231,10 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layers, debugSink, resolvedDebugConfig, extrasVersion, viewRegistry, viewRegistryVersion]);
 
+  const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
+
   // Everything the paint reads that a React render owns. Written during
-  // render; the loop reads whatever the last commit left behind.
+  // render, not commit: an abandoned render still leaves its inputs here.
   const paintInputsRef = useRef({
     layers: layersWithDebug, width, height, debugSink,
     dpr: dprProp, layerVisibility, layerOrder, shaders,
@@ -1264,9 +1244,9 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     dpr: dprProp, layerVisibility, layerOrder, shaders,
   };
 
-  const paint = useCallback(() => {
+  const paint = useCallback((): boolean => {
     const c = canvasRef.current;
-    if (!c) return;
+    if (!c) return false;
     const {
       layers: paintLayers, width: w, height: h, debugSink: sink,
       dpr: dprIn, layerVisibility: vis, layerOrder: order,
@@ -1290,7 +1270,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       if (!gl || typeof (gl as Partial<WebGL2RenderingContext>).enable !== 'function') {
         // jsdom or unsupported environment — bail silently (test envs hit
         // this; jsdom returns a non-null stub but lacks WebGL2 methods).
-        return;
+        return false;
       }
       try {
         renderer = new WeaselRenderer({
@@ -1302,12 +1282,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
         });
       } catch {
         // Test env or context creation failure — bail silently.
-        return;
+        return false;
       }
       glRendererRef.current = renderer;
       lastResizeRef.current = { w, h, dpr };
       // The renderer is born on a frame, after every effect on the mounting
-      // commit, so the shaderIdKey effect below found nothing to register on.
+      // commit, so only this branch can register the shaders it mounted with.
       registerShadersOnRenderer(renderer, paintShaders);
     } else {
       const dpr = dprIn ?? (window.devicePixelRatio || 1);
@@ -1329,29 +1309,27 @@ function CanvasInner<TNode extends { id: string }, TPose>(
       layerCacheRef.current,
     );
     renderer.render(commands, viewToMat3(view));
+    return true;
   }, []);
   paintRef.current = paint;
 
-  // React-owned inputs changed — the mirror above already holds them, so the
-  // commit only has to mark the surface dirty.
+  // A tripwire, not a list of values this effect uses: every input the paint
+  // reads must appear here, or changing it paints stale.
   useEffect(() => {
     requestRedraw();
   }, [layersWithDebug, width, height, effectiveView, debugSink, dprProp,
-      layerVisibility, layerOrder, requestRedraw]);
+      layerVisibility, layerOrder, shaderIdKey, requestRedraw]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a
   // remounting host walks into the browser's live-context cap.
   useEffect(() => () => {
-    if (rafRef.current !== 0) cancelAnimationFrame(rafRef.current);
-    rafRef.current = 0;
     glRendererRef.current?.dispose();
     glRendererRef.current = null;
     layerCacheRef.current.clear();
     lastResizeRef.current = null;
   }, []);
 
-  const shaderIdKey = shaders?.map((h) => h.id).join('|') ?? '';
   useEffect(() => {
     const renderer = glRendererRef.current;
     if (!renderer) return;
