@@ -13,9 +13,9 @@ The plans carry the detail; this file only says where things stand.
 
 ## Status
 
-Tasks 1-10 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
+Tasks 1-11 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
 painted-version stamping, syncPaint, hidden-document deferral, non-subscribing useScene, live view thunk for
-the text overlay). Tasks 1-4 were independently reviewed; 5-9 were implemented
+the text overlay, the demo camera on the handle, docs and the changeset). Tasks 1-4 were independently reviewed; 5-9 were implemented
 with per-test mutation checks but have not had a separate review pass — do one over 5-11 together.
 Running autonomously overnight 2026-08-24/25.
 
@@ -39,7 +39,7 @@ rather than "before the browser paints the DOM", and passive arming makes the St
 paint nothing. (b) `document.hidden` suppresses the *sync* paint too, so a background tab does no GPU
 work per commit; the cost is that a synchronous readback taken from a hidden tab sees the pre-hide
 frame until it becomes visible.
-Task 11 (docs/TODO/changeset) in progress. Baseline at branch point was 7372 tests; currently 7425, tsc and lint clean.
+The plan's tasks are all committed. Baseline at branch point was 7372 tests; currently 7425, tsc and lint clean.
 
 **Task 3 must land before Task 4.** `usePinchZoomTool` mirrors its `view` argument into a ref per
 render, and `usePinchGesture`'s `scaleFactor` is a per-frame delta, not cumulative — so once
@@ -86,14 +86,8 @@ all five are worth knowing:
 
 ## Next
 
-Task 3 (pinch zoom reads a view getter). Two things to fold in when it or Task 4 is dispatched:
-
-- `usePinchZoomTool` currently reads `viewRef.current` at render scope, so in uncontrolled mode a
-  pinch after an imperative `setView` zooms from a stale camera. Task 3 closes it.
-- The controlled-mode `setView` warning fires per pinch-move and says "ignored" when `onViewChange`
-  still honors the write. Task 4 removes the controlled path for `SceneCanvas`, but a bare
-  controlled `<Canvas>` with pinch keeps it. Warn once per mount, or reword.
-
+Nothing in the plan is outstanding. What remains before the branch merges is the "Before merging"
+list below: a review pass over Tasks 5-11, and driving the demos by hand.
 
 ## Two adjacent arcs this work spawned
 
@@ -166,8 +160,8 @@ test could not assert anything real over a broken path. No test in the repo caug
   uncontrolled one. Only `#viewport` and `#pan-zoom` have been driven by hand. The suite does not
   cover this: it has been green through a blank canvas, uncompiled shaders, and a doubled zoom
   factor.
-- **Run the visual baselines** (`npm run test:visual`). They have not run since the paint moved a
-  frame later. `tests/visual/diff.ts:81-86` already waits two rAFs plus 150 ms, so this should hold —
-  but a local pass does not imply CI passes for hairline strokes in this repo.
+- **The visual baselines pass locally** after the paint moved a frame later (36 passed, 3 skipped,
+  2026-08-25) — `tests/visual/diff.ts:81-86` waits two rAFs plus 150 ms, which the loop satisfies. A
+  local pass does not imply CI passes for hairline strokes in this repo; check the CI run.
 - **Run `npm run prepublishOnly`-equivalent gates** (`tsc --noEmit && vitest run && tsup build`)
   before any push; `vitest` alone does not typecheck production code.

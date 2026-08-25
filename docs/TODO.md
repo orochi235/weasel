@@ -849,30 +849,30 @@ left in `useState`, the frame loop alone measured 3.86 ms/frame against main's
 3.94. Decoupling paint from render buys a consumer nothing while that consumer
 still calls `setState` every frame.
 
-The scene twin still commits once per frame, and it is no longer the camera:
-`SceneCanvas` tracks the scene with `useSyncExternalStore`, so every
-`scene.batch` commits. `useScene({ subscribe: false })` stops the demo component
-re-rendering but not the canvas.
-
 Major GC did not move, as expected — per-frame pose allocation belongs to the
 ephemeral-pose-overrides arc.
 
 What it surfaced:
 
-- **(P1) A per-frame camera costs a React render per frame.** `view` is a prop
-  or `SceneCanvas`'s own `useState` (`SceneCanvas.tsx:961`), the paint is a
-  `useEffect` keyed on it (`Canvas.tsx:1284`), and `requestRedraw` is
-  `setRedrawNonce(n => n + 1)` (`Canvas.tsx:780`) — so every repaint is a React
-  render by construction. This is the seam that made the load-test twin pin
-  `view` to identity and hand-project every layer, which in turn is what forced
-  the scene graph off entirely. Decoupling the paint loop from the React render
-  cycle is the fix: `requestRedraw` marks a dirty ref, a rAF loop paints, and
-  `view` becomes a ref with a subscription for whatever DOM chrome renders it.
-  Note `useSyncExternalStore` already de-opts scene mutations from concurrent
-  rendering, so this spends concurrency rather than buying it; what decoupling
-  actually trades away is single-commit consistency between React-rendered DOM
-  and canvas pixels (one frame of skew, unbounded only for scene-derived DOM
-  inside a `startTransition`).
+- **(P1) A per-frame camera costs a React render per frame — landed
+  2026-08-25.** The canvas paints from its own animation frame
+  (`packages/core/src/canvas/useFrameLoop.ts`) and the view lives in a ref with
+  `getView` / `setView` / `subscribeView` / `subscribeFrame` on the canvas
+  handle, so a camera driven through `setView` costs no render. The second table
+  above is what it bought. Design:
+  `docs/superpowers/specs/2026-08-24-frame-loop-decoupling-design.md`, Part 1.
+
+- **(P1) `SceneCanvas` commits on every scene mutation, even when the host opted
+  out.** It tracks the scene through its own `useSyncExternalStore`
+  (`SceneCanvas.tsx:894`), so every `scene.batch` re-renders the canvas whether
+  or not the host passed `useScene(..., { subscribe: false })` — those are the
+  ~100–110 commits/s the scene twin still pays above. The
+  ephemeral-pose-overrides arc
+  (`docs/superpowers/plans/2026-08-24-ephemeral-pose-overrides.md`) is what
+  closes it: an override never bumps the scene version, so it never notifies.
+  Until then, measuring anything else per-frame means stopping the scene writes
+  first — `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` freezes
+  `syncScene` to isolate the camera at all.
 
 - **(P1) `setPose` demands a fresh pose object per node per frame, and the GC
   bill is visible.** `nodeMemo` keys painter output on pose *reference*

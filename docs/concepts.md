@@ -32,6 +32,28 @@ passing behaviors through a binding's `opts`, or by registering your own
 descriptor under the same id. See [hooks.md](./hooks.md),
 [extending.md](./extending.md), and `packages/core/src/canvas/Canvas.tsx`.
 
+### Paint and render are separate
+
+The canvas paints from its own animation frame, not from a React render.
+`requestRedraw()` marks it dirty and the next frame paints, so many redraws in
+one tick cost one paint. A view written through `setView()` on the
+`<SceneCanvas>` ref costs no React render at all — `getView()` reads it back
+mid-frame, `subscribeView()` reports changes.
+
+Canvas pixels can therefore be one frame ahead of DOM built from the same data.
+For readouts and panels that is invisible. Position DOM pinned to world
+coordinates from `subscribeView`, so it moves on the frame the pixels move.
+Chrome that must be in lockstep compares `getPaintedVersion()` — the content
+version the pixels were painted from — against the version it is about to
+render, and defers a frame when they differ. Reading the drawing buffer back
+outside a paint can likewise see the previous frame; `subscribeFrame()` runs on
+the frame that painted. `syncPaint` restores painting at commit time.
+
+**Do not render scene-derived DOM inside `startTransition`.** React defers a
+transition deliberately and nothing forces it to catch up, so that DOM can
+diverge from the canvas without bound. Nothing warns you — React exposes no way
+to ask whether the current render is a transition.
+
 ## `<SceneViewCanvas>` and `<MinimapCanvas>` (detached views)
 
 Three primitives can render a second view of a scene. Pick by where the
