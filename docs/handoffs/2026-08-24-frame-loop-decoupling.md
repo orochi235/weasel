@@ -13,11 +13,19 @@ The plans carry the detail; this file only says where things stand.
 
 ## Status
 
-Tasks 1-6 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
-painted-version stamping, syncPaint). Tasks 1-4 were independently reviewed; 5-6 were implemented
+Tasks 1-7 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
+painted-version stamping, syncPaint, hidden-document deferral). Tasks 1-4 were independently
+reviewed; 5-7 were implemented
 with per-test mutation checks but have not had a separate review pass — do one over 5-11 together.
-Task 7 in progress; running autonomously overnight 2026-08-24/25.
-Tasks 8-11 not started. Baseline at branch point was 7372 tests; currently 7413, tsc and lint clean.
+Task 8 in progress; running autonomously overnight 2026-08-24/25.
+
+**Two decisions from Tasks 6-7 worth a second look.** (a) The redraw tripwire and the loop's
+alive-arming are `useLayoutEffect`, not passive — `syncPaint` otherwise means "before the next frame"
+rather than "before the browser paints the DOM", and passive arming makes the StrictMode remount
+paint nothing. (b) `document.hidden` suppresses the *sync* paint too, so a background tab does no GPU
+work per commit; the cost is that a synchronous readback taken from a hidden tab sees the pre-hide
+frame until it becomes visible.
+Tasks 9-11 not started. Baseline at branch point was 7372 tests; currently 7418, tsc and lint clean.
 
 **Task 3 must land before Task 4.** `usePinchZoomTool` mirrors its `view` argument into a ref per
 render, and `usePinchGesture`'s `scaleFactor` is a per-frame delta, not cumulative — so once
