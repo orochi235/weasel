@@ -1193,6 +1193,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   chrome relative to what they carry. `FpsMeter` and `ScaleIndicator` are
   view-scoped readouts that arc 3 gives a home to but does not contribute.
 
+  **The toolbar claims no role, and cannot yet earn one.** `<Toolbar>` renders a
+  bare `<div>`, so `Toolbar.Group`'s `role="group"` sits inside nothing — biome's
+  `useSemanticElements` flags it and is suppressed there, because `<fieldset>`
+  means form controls, needs a `<legend>` to be named, and carries a UA
+  `min-width` that breaks flex children. Adding `role="toolbar"` is the real fix
+  and is not a one-liner: the APG pattern obliges roving tabindex and arrow-key
+  navigation, and claiming the role without them tells a screen-reader user to
+  press keys that do nothing.
+
 - **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
 
   The ask is to hand labkit a schema or a TypeScript type definition and get the panel. Most of `ConfigField` is inferrable from a type: `boolean` is a checkbox, a string union is a select, `number` is a number field. What a type cannot say is the rest of it — a bounded number wants a slider and its min/max, a string may be a color or a path, every field wants a human label — so the design question is where those annotations live and how a consumer overrides one generated field without hand-writing the whole schema.
@@ -1476,6 +1485,23 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   with the two P2 rules above.
 
 ## Release-gate & build hygiene
+
+- **(P2) View-animation tests flake under a loaded parallel run.** Two full
+  `npm test` runs on 2026-08-25 failed with *different* sets — first
+  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` (1 test), then
+  `packages/core/src/canvas/SceneCanvas.animatedZoom.test.tsx` (9 of its 14).
+  Each file passes on its own; only the 733-file parallel run trips them.
+
+  The cause is real timers over a real animation. `animatedZoom` starts a 40ms
+  rAF glide and then `await waitFor(() => expect(isViewAnimating()).toBe(false))`,
+  which polls on `checkRealTimersCallback` with `waitFor`'s default 1s budget.
+  Under full load rAF is starved, the glide has not settled inside that budget,
+  and the assertion reports `expected true to be false` — a timeout wearing an
+  equality message. The file took 10.4s in the failing run.
+
+  The fix is to stop racing wall-clock: drive the glide with fake timers and a
+  controllable rAF so completion is deterministic. Raising the `waitFor` timeout
+  only widens the window the machine has to beat.
 
 - **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
   The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,
