@@ -17,7 +17,10 @@ runner behind them:
 - The `view` dep gains optional `animate` / `stopAnimation` / `animationTarget`,
   so any action can glide the camera.
 - `SceneCanvasApi` gains `animateView` / `stopViewAnimation` /
-  `isViewAnimating` for fit-to-selection, recenter, or a scripted tour.
+  `isViewAnimating` for fit-to-selection, recenter, or a scripted tour. All
+  three are **required** members: anyone hand-implementing `SceneCanvasApi`
+  (a test double, a wrapper) has to add them, the way `CanvasExtensionApi`
+  grew `getPaintedVersion`.
 
 Scale interpolates geometrically and translation is derived from the screen
 point the two views agree on, so a zoom stays anchored instead of drifting and
@@ -31,7 +34,10 @@ changes signature — it takes a `{ get, set }` view channel plus an optional
 `Animator`, and `animateTo(from, to, { duration, easing })` becomes
 `animate(to, { ms, easing })`. The `from` argument is gone because the runner
 reads the live view, which is what lets an interrupted camera resume from where
-it actually is instead of snapping back to a captured start.
+it actually is instead of snapping back to a captured start. `cancel()` is now
+`stop()`, and `animateToBounds(bounds, currentView, dims, { duration })` is now
+`animateToBounds(bounds, dims, { ms })` — the `currentView` argument goes for
+the same reason `from` does.
 
 **Breaking:** `viewport.recenter` and `ViewApi.recenter` widen to
 `() => View | void`. Returning the target view lets Cmd+0 animate there;
