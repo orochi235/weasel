@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
-import { viewToMat3, type DrawCommand } from '@weasel-js/core/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 
 const W = 720;
 const H = 360;
@@ -61,30 +61,26 @@ export function ColorMatrixDemo() {
     return {
       id: 'color-matrix-stack',
       label: 'Color matrix stack',
-      draw: (_data, view) => {
+      draw: () => {
         const outer = groups[0], middle = groups[1], inner = groups[2];
         return [{
           kind: 'group',
-          transform: viewToMat3(view),
-          children: [{
-            kind: 'group',
-            colorMatrix: PRESETS[outer.preset],
-            children: [
-              ...drawPalette(outer.offsetX),
-              {
-                kind: 'group',
-                colorMatrix: PRESETS[middle.preset],
-                children: [
-                  ...drawPalette(middle.offsetX),
-                  {
-                    kind: 'group',
-                    colorMatrix: PRESETS[inner.preset],
-                    children: drawPalette(inner.offsetX),
-                  },
-                ],
-              },
-            ],
-          }],
+          colorMatrix: PRESETS[outer.preset],
+          children: [
+            ...drawPalette(outer.offsetX),
+            {
+              kind: 'group',
+              colorMatrix: PRESETS[middle.preset],
+              children: [
+                ...drawPalette(middle.offsetX),
+                {
+                  kind: 'group',
+                  colorMatrix: PRESETS[inner.preset],
+                  children: drawPalette(inner.offsetX),
+                },
+              ],
+            },
+          ],
         }];
       },
     };
