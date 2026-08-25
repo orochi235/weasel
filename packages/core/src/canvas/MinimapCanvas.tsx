@@ -58,7 +58,12 @@ export interface MinimapCanvasProps<TData, TLayer extends string, TPose> {
    *  can reuse it (typically simplified — just colored AABBs). */
   drawOne: SceneViewDrawOne<TData, TLayer, TPose>;
   /** Fit policy. Defaults to `"scene"` (AABB union of leaf poses). See
-   *  `MinimapFit` for the full shape. */
+   *  `MinimapFit` for the full shape.
+   *
+   *  Framing is derived from **document** poses, not `scene.overrides` — a
+   *  node moved by an override paints where the override puts it, outside the
+   *  frame if it goes there, rather than making the whole minimap rescale on
+   *  every frame of a drag or a settle. */
   fit?: MinimapFit<TData, TLayer, TPose>;
   /** Pose → AABB. Defaults to identity (`pose as Bounds`), matching
    *  `sceneAdapter` / `useSelectTool`. */

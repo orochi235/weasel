@@ -1233,17 +1233,11 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     };
   }, [adapter, internalPickEvery, isPointerInteractive, kindClassifier]);
 
-  // Viewport tools: Canvas now owns the full `useViewportTools` call (including
-  // pinch zoom via its own canvasRef). SceneCanvas only needs the hand tool for
-  // registry assembly and the `viewportRegistered` flag for the built-in tool
-  // list. Both are derived directly here without going through useViewportTools.
-  //
-  // `viewportRegistered` — same logic as useViewportTools: truthy when the
-  // viewport prop is non-undefined. SceneCanvas's default is pan+zoom enabled
-  // even when the consumer omits the viewport prop (undefined !== false).
+  // Canvas owns pan and pinch itself, gated on its own `viewport` members.
+  // This flag is only "did the consumer pass a viewport prop", and all it
+  // gates here is whether the hand tool gets a registry entry.
   const viewportRegistered = !!viewport;
 
-  // Extract inertia config for useHandTool — mirrors useViewportTools logic.
   const inertiaEnabled = !!viewport?.inertia;
   const inertiaObj = typeof viewport?.inertia === 'object' ? viewport.inertia : undefined;
   const handToolInertia = inertiaEnabled && inertiaObj

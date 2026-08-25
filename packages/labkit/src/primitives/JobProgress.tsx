@@ -30,7 +30,10 @@ export function JobProgress({ job, className }: JobProgressProps) {
       >
         {/* Scaling a full-width bar keeps the fill off the layout path, so
             progress updates never reflow the status bar. */}
-        <div className="lk-job__fill" style={{ transform: `scaleX(${determinate ? fraction : 1})` }} />
+        <div
+          className="lk-job__fill"
+          style={{ transform: `scaleX(${determinate ? fraction : 1})` }}
+        />
       </div>
 
       <span className="lk-job__count">

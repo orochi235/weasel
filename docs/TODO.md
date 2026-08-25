@@ -23,7 +23,7 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- **labkit presentation pass** — arcs 1–3 done (arc 3 on `feat/labkit-arc3`); arc 4 (density) is what remains → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **labkit presentation pass** — arcs 1–3 merged; arc 4 (density) is what remains → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
@@ -433,15 +433,13 @@ Core five + Crop shipped. Remaining:
 
 ## Rendering & paint
 
-- **(P2) Detached views never repaint on a pose override.** `<SceneViewCanvas>`
-  and `<MinimapCanvas>` re-render off `scene.getVersion()`, and an override
-  deliberately does not bump it, so they keep painting document poses while the
-  main canvas shows the overridden ones — a minimap that disagrees with the
-  scene beside it, with nothing logged. `<SceneCanvas>` avoids this by
-  subscribing to `scene.overrides` directly
-  (`packages/core/src/canvas/SceneCanvas.tsx`); the same subscription here would
-  cost these views a React render per frame, which is the cost the arc exists to
-  remove. Wants the frame-loop treatment first, or an opt-in prop.
+- **(P3) A minimap's framing ignores pose overrides.** `<SceneViewCanvas>` and
+  `<MinimapCanvas>` paint override poses as of 2026-08-25, but `computeFitView`
+  still derives framing from document poses, so a node overridden outside the
+  document bounds paints outside the fitted frame. Deliberate — recomputing the
+  fit per frame would rescale the whole minimap through a drag or a settle, and
+  costs an O(nodes) bounds sweep every frame. Revisit only if a consumer wants
+  framing that tracks a simulation.
 
 - **(P2) `createParallaxLayer` bypasses `drawOneLayer`, so a source layer's
   `space` is silently ignored.** `packages/core/src/features/parallax/createParallaxLayer.ts:36`
@@ -452,13 +450,6 @@ Core five + Crop shipped. Remaining:
   into a double-applied view transform (the bug fixed in `6eec0d88`).
   `apps/draw/src/useLoupe.ts:49` has the same shape. Fix the bypass and the
   demos together, or neither.
-
-- **(P3) A comment in `SceneCanvas` contradicts the line beneath it.**
-  `packages/core/src/canvas/SceneCanvas.tsx:1199-1200` says "SceneCanvas's default
-  is pan+zoom enabled even when the consumer omits the viewport prop (undefined
-  !== false)" directly above `const viewportRegistered = !!viewport;` — and
-  `!!undefined` is `false`. Browser behavior agrees with the code, not the
-  comment. Either the default is wrong or the comment is; decide which.
 
 - **(P1) `curve-lab` renders in an infinite loop.** 62 x `Maximum update depth
   exceeded` at load. `usePublishSelection`'s effect
@@ -1154,8 +1145,7 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
 
-- [x] **labkit presentation pass — arc 3, chrome regions — done 2026-08-25.**
-  On `feat/labkit-arc3` (worktree `/Users/mike/src/weasel-arc3`), unmerged.
+- [x] **labkit presentation pass — arc 3, chrome regions — merged 2026-08-25.**
   Design: `docs/superpowers/specs/2026-08-25-labkit-chrome-regions-design.md`.
 
   A trial's chrome is now assembled from contributions — `{ id, region, item }`
@@ -1187,6 +1177,15 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   view-scoped readouts that arc 3 gives a home to but does not contribute, and
   `ZoomControl` — arc 2's editable zoom field — left the default chrome with the
   toolbar's zoom group and has no region of its own yet.
+
+  **The toolbar claims no role, and cannot yet earn one.** `<Toolbar>` renders a
+  bare `<div>`, so `Toolbar.Group`'s `role="group"` sits inside nothing — biome's
+  `useSemanticElements` flags it and is suppressed there, because `<fieldset>`
+  means form controls, needs a `<legend>` to be named, and carries a UA
+  `min-width` that breaks flex children. Adding `role="toolbar"` is the real fix
+  and is not a one-liner: the APG pattern obliges roving tabindex and arrow-key
+  navigation, and claiming the role without them tells a screen-reader user to
+  press keys that do nothing.
 
 - **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
 
@@ -1471,6 +1470,26 @@ Deferred, with the rationale in `eslint.config.js` next to each:
   with the two P2 rules above.
 
 ## Release-gate & build hygiene
+
+- **(P2) View-animation tests flake under a loaded parallel run.** Two full
+  `npm test` runs on 2026-08-25 failed with *different* sets — first
+  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` (1 test), then
+  `packages/core/src/canvas/SceneCanvas.animatedZoom.test.tsx` (9 of its 14).
+  Each file passes on its own; only the 733-file parallel run trips them.
+
+  The cause is real timers over a real animation. `animatedZoom` starts a 40ms
+  rAF glide and then `await waitFor(() => expect(isViewAnimating()).toBe(false))`,
+  which polls on `checkRealTimersCallback` with `waitFor`'s default 1s budget.
+  Under full load rAF is starved, the glide has not settled inside that budget,
+  and the assertion reports `expected true to be false` — a timeout wearing an
+  equality message. The file took 10.4s in the failing run.
+
+  The fix is to stop racing wall-clock: drive the glide with fake timers and a
+  controllable rAF so completion is deterministic. Raising the `waitFor` timeout
+  only widens the window the machine has to beat.
+
+  A third run, on an unrelated branch, hit the same 9 and then passed clean on
+  re-run — so it is the harness, not any one change.
 
 - **(P2) `test:kit` covers `packages/core` only, and its name says otherwise.**
   The `kit` vitest project globs `packages/core` plus `apps/site`; `svg`,

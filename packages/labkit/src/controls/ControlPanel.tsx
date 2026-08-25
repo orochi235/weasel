@@ -121,7 +121,12 @@ function DebouncedTextRow<TC extends Record<string, unknown>>({
     }
   }, [external]);
 
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   return (
     <TextRow

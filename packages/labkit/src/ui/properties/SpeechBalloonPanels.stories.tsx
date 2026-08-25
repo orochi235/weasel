@@ -299,7 +299,8 @@ export const RightSidebarTails: Story = {
           const next = prev.filter((t) => t.id !== sourceId);
           const idx = next.findIndex((t) => t.id === targetId);
           const insertAt = position === 'before' ? idx : idx + 1;
-          const src = prev.find((t) => t.id === sourceId)!;
+          const src = prev.find((t) => t.id === sourceId);
+          if (!src) return prev;
           next.splice(insertAt, 0, src);
           return next;
         });
@@ -348,7 +349,8 @@ export const LayerStack: Story = {
           const next = prev.filter((t) => t.id !== sourceId);
           const idx = next.findIndex((t) => t.id === targetId);
           const insertAt = position === 'before' ? idx : idx + 1;
-          const src = prev.find((t) => t.id === sourceId)!;
+          const src = prev.find((t) => t.id === sourceId);
+          if (!src) return prev;
           next.splice(insertAt, 0, src);
           return next;
         });

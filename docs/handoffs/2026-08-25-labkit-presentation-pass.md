@@ -1,23 +1,20 @@
 # labkit presentation pass — handoff
 
-Arcs 1–3 are done. Arcs 1 and 2 are merged to main (`f77b877b`); arc 3 is on
-`feat/labkit-arc3` (worktree `/Users/mike/src/weasel-arc3`), committed and
-unmerged. Arc 4 — the density, spacing and type-scale pass — is what remains.
+Arcs 1–3 are merged to main, unpushed. Arc 4 — the density, spacing and
+type-scale pass — is what remains.
 
 | Arc | What | Where |
 |---|---|---|
 | 1 — icon set | done | main |
 | 2 — default chrome | done | main |
-| 3 — chrome regions | done | `feat/labkit-arc3`, unmerged |
+| 3 — chrome regions | done | main |
 | 4 — visual language | not started | — |
 
 Read `docs/superpowers/specs/2026-08-24-labkit-presentation-design.md` for the
 four arcs, and the arc-4 entry in `docs/TODO.md` for the inventory already taken.
 This file carries only what those can't.
 
-To see any of it, run a storybook from the worktree on its own port — `npx
-storybook dev -p 6012 --no-open` — so it does not collide with the main
-checkout's on :6010. `labkit/Chrome/Regions` renders all five trial regions.
+`labkit/Chrome/Regions` in storybook renders all five trial regions.
 
 ## Traps
 
@@ -68,8 +65,3 @@ Three things arc 3 touched but did not settle, all arc 4's:
   viewport region) but no contribution.
 - Whether the title bar (24px for one word) and status bar (25px for "100%")
   keep their height now that the regions carry more.
-
-`npm run lint -w @weasel-js/labkit` is red on main, not just here: four
-pre-existing biome errors, in `ControlPanel.tsx` and `JobProgress.tsx`
-(formatting), `Toolbar.tsx` (`useSemanticElements`) and `TrialTitleBar.tsx`
-(`noChildrenProp`).
