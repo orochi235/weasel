@@ -23,7 +23,7 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- **labkit presentation pass** — arc 1 done, arc 2 in flight on `feat/labkit-presentation-pass`; tool palette, sidebar and viewport-control regions still undefined → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **labkit presentation pass** — arcs 1+2 done on `feat/labkit-arc2`; arc 3 and the tool-palette / sidebar / viewport-control regions remain → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
@@ -970,17 +970,19 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   Design: `docs/superpowers/specs/2026-08-24-labkit-presentation-design.md`.
   Handoff, with the traps: `docs/handoffs/2026-08-25-labkit-presentation-pass.md`.
 
-  Arc 1 shipped: a 43-glyph icon set in `@weasel-js/ui`, generated from
-  `packages/ui/scripts/icons/` via `npm run gen:icons`. Arc 2 shipped the content
-  well, sidebar, compact toolbar, `ZoomControl`, title-bar drag, and the audit's
-  defect list.
+  **Arcs 1 and 2 are done**, across two branches — `feat/labkit-presentation-pass`
+  and `feat/labkit-arc2` (worktree `/Users/mike/src/weasel-arc2`), the second
+  branched from the first. Arc 1 is a 43-glyph icon set in `@weasel-js/ui`,
+  generated from `packages/ui/scripts/icons/` via `npm run gen:icons`. Arc 2 is
+  the content well, sidebar, compact toolbar, `ZoomControl`, title-bar drag,
+  `ControlPanel` rebuilt on the property rows, a default lab header, `JobProgress`,
+  a raised trial surface, and the audit's defect list.
 
-  What is left in arc 2: `<Lab>` with no slots still cannot grow or change mode —
-  `addTrial` and `setMode` sit on `LabContext` with no UI, so every consumer
-  rebuilds the same two controls. Job status is ad-hoc markup in `TrialChrome`
-  with a bare count and no progress element. The trial border is near-invisible
-  against the workspace, and the title bar and status bar are the heaviest chrome
-  relative to what they carry.
+  Arc 3 is what remains, plus the areas below. `PropertyPanel.less` still holds
+  about a dozen hardcoded `rgba()` values authored against a dark panel; two of
+  them rendered as a gray slab on the light theme and are fixed, the rest sit in
+  `EffectCard` and the toggle rows. The title bar and status bar are the heaviest
+  chrome relative to what they carry.
 
   **Viewport controls need their own region.** Zoom currently sits as a group in
   the trial toolbar, which is where it landed rather than where it belongs — the
