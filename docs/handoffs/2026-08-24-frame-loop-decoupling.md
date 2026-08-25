@@ -13,8 +13,13 @@ The plans carry the detail; this file only says where things stand.
 
 ## Status
 
-Task 1 (rAF paint loop) and Task 2 (imperative view) are committed. Task 2's review is outstanding.
-Tasks 3–11 not started. Baseline at branch point was 7372 tests; currently 7389, tsc and lint clean.
+Tasks 1 (rAF paint loop) and 2 (imperative view) are committed and reviewed. Task 3 in progress.
+Tasks 4–11 not started. Baseline at branch point was 7372 tests; currently 7393, tsc and lint clean.
+
+**Task 3 must land before Task 4.** `usePinchZoomTool` mirrors its `view` argument into a ref per
+render, and `usePinchGesture`'s `scaleFactor` is a per-frame delta, not cumulative — so once
+`SceneCanvas` goes uncontrolled (Task 4) with no getter in place, every pinch move zooms from the
+same frozen base and snaps back. A dead pinch, not a slow one. Not reachable before Task 4.
 
 Task 1 grew one thing the plan didn't call for: the loop was extracted to
 `packages/core/src/canvas/useFrameLoop.ts` (`@internal`), because Task 2 was about to add a second
@@ -38,6 +43,10 @@ ref-plus-subscriber-set to an already-1400-line `Canvas.tsx`.
 Five green signals so far have meant nothing. The plan's "How to test" section states the first two;
 all five are worth knowing:
 
+0. **Object literals in JSX defeat identity-based tests.** An inline `layers={{…}}` is fresh every
+   render and fires a repaint by itself. Dropping `viewProp` from the canvas repaint tripwire left
+   all 643 canvas tests green for exactly this reason — the one test guarding it passed for an
+   unrelated cause.
 1. A test counting renders of an **outer wrapper** proves nothing — a `setState` inside `Canvas`
    never re-renders its parent. Count commits with `<Profiler>` around the component under test.
 2. A canvas test only paints if `getContext('webgl2')` answers like WebGL2. `vitest.setup.ts` stubs
