@@ -8,9 +8,9 @@
  * painting passes vacuously.
  */
 
-import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach, onTestFinished, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
-import { Profiler, StrictMode } from 'react';
+import { Profiler, StrictMode, useLayoutEffect, useMemo } from 'react';
 import type React from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
@@ -176,6 +176,9 @@ describe('Canvas frame loop', () => {
       getContext: (...args: unknown[]) => unknown;
     };
     const working = proto.getContext;
+    // Restored even when an assertion below throws: leaving a null-returning
+    // getContext installed silently blanks every test that follows.
+    onTestFinished(() => { proto.getContext = working; });
     proto.getContext = vi.fn(() => null);
 
     render(<Host apiRef={apiRef} layer={probeLayer(draw)} />);
@@ -196,5 +199,166 @@ describe('Canvas frame loop', () => {
 
     expect(draw).toHaveBeenCalledTimes(1);
     expect(painted).toHaveBeenCalledTimes(1);
+  });
+});
+
+// `layers` is memoized here on purpose: an object literal in JSX is a fresh
+// identity every render, which requests a redraw by itself and would make a
+// paint-timing assertion pass without reading the flag under test.
+function SyncHost({ apiRef, layer, width = 100, syncPaint }: {
+  apiRef: React.RefObject<CanvasExtensionApi | null>;
+  layer: RenderLayer<unknown>;
+  width?: number;
+  syncPaint?: boolean;
+}) {
+  const layers = useMemo(() => ({ probe: { layer } }), [layer]);
+  return (
+    <Canvas ref={apiRef} width={width} height={80} layers={layers} syncPaint={syncPaint} />
+  );
+}
+
+describe('Canvas syncPaint', () => {
+  it('paints inside the commit, with no frame awaited', () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const layer = probeLayer(draw);
+    const { rerender } = render(<SyncHost apiRef={apiRef} layer={layer} syncPaint />);
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    act(() => { rerender(<SyncHost apiRef={apiRef} layer={layer} width={140} syncPaint />); });
+    expect(draw).toHaveBeenCalledTimes(2);
+
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(3);
+  });
+
+  it('lands pixels before the surrounding layout effects read the DOM', () => {
+    const order: string[] = [];
+    const layer = probeLayer(() => { order.push('paint'); });
+    function Wrapper() {
+      const layers = useMemo(() => ({ probe: { layer } }), []);
+      // A child's layout effects run before its parent's, so this is what
+      // chrome pinned to canvas content sees when it measures.
+      useLayoutEffect(() => { order.push('measure'); });
+      return <Canvas width={100} height={80} layers={layers} syncPaint />;
+    }
+    render(<Wrapper />);
+
+    expect(order).toEqual(['paint', 'measure']);
+  });
+
+  it('leaves the default painting on the frame, not the commit', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const layer = probeLayer(draw);
+    render(<SyncHost apiRef={apiRef} layer={layer} />);
+    expect(draw).not.toHaveBeenCalled();
+
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+  });
+
+  it('switches modes when syncPaint is toggled at runtime', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const layer = probeLayer(draw);
+    const { rerender } = render(<SyncHost apiRef={apiRef} layer={layer} />);
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    // Off to on: the commit that turns it on paints in that commit.
+    act(() => { rerender(<SyncHost apiRef={apiRef} layer={layer} syncPaint />); });
+    expect(draw).toHaveBeenCalledTimes(2);
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(3);
+
+    // On to off: back on the frame loop.
+    act(() => { rerender(<SyncHost apiRef={apiRef} layer={layer} />); });
+    expect(draw).toHaveBeenCalledTimes(3);
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(4);
+
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(4);
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(5);
+  });
+
+  it('notifies nobody for a sync paint that could not paint, and repaints later', () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const layer = probeLayer(draw);
+    const proto = HTMLCanvasElement.prototype as unknown as {
+      getContext: (...args: unknown[]) => unknown;
+    };
+    const working = proto.getContext;
+    onTestFinished(() => { proto.getContext = working; });
+    proto.getContext = vi.fn(() => null);
+
+    render(<SyncHost apiRef={apiRef} layer={layer} syncPaint />);
+    const painted = vi.fn();
+    apiRef.current!.subscribeFrame(painted);
+    act(() => { apiRef.current!.requestRedraw(); });
+
+    expect(draw).not.toHaveBeenCalled();
+    expect(painted).not.toHaveBeenCalled();
+
+    proto.getContext = working;
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(1);
+    expect(painted).toHaveBeenCalledTimes(1);
+  });
+
+  it('defers a redraw requested from inside a draw to the next frame', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn(() => {
+      // A synchronous flush from inside the paint would recurse forever.
+      if (draw.mock.calls.length === 2) apiRef.current!.requestRedraw();
+    });
+    const layer = probeLayer(draw);
+    render(<SyncHost apiRef={apiRef} layer={layer} syncPaint />);
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(2);
+
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(3);
+
+    await frame();
+    await frame();
+    expect(draw).toHaveBeenCalledTimes(3);
+  });
+
+  it('paints on every commit under StrictMode, remount simulation included', () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const layer = probeLayer(draw);
+    render(
+      <StrictMode>
+        <SyncHost apiRef={apiRef} layer={layer} syncPaint />
+      </StrictMode>,
+    );
+    // Once per commit, and StrictMode's simulated remount is a second one:
+    // the loop has to be re-armed by then or that commit paints nothing.
+    expect(draw).toHaveBeenCalledTimes(2);
+
+    act(() => { apiRef.current!.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(3);
+  });
+
+  it('paints no more once unmounted', () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const draw = vi.fn();
+    const { unmount } = render(<SyncHost apiRef={apiRef} layer={probeLayer(draw)} syncPaint />);
+    expect(draw).toHaveBeenCalledTimes(1);
+
+    const api = apiRef.current!;
+    unmount();
+    act(() => { api.requestRedraw(); });
+    expect(draw).toHaveBeenCalledTimes(1);
   });
 });

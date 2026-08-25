@@ -19,7 +19,7 @@
  *   `docs/TODO.md`.
  */
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type React from 'react';
 import type { FillStyle } from 'core/paint-types';
 import { composeOrderedLayers, placeToolOverlays } from './layerOrder';
@@ -230,6 +230,15 @@ export interface CanvasProps<TNode extends { id: string } = { id: string }, TPos
    *  `<SceneCanvas>` wires this to `scene.getVersion`. Chrome that must not
    *  show DOM ahead of pixels compares the two and defers a frame. */
   contentVersion?: () => number;
+
+  /** Paint inside the React commit rather than on the next animation frame.
+   *  Costs a synchronous paint per commit and per redraw request; buys
+   *  single-commit consistency between React-rendered DOM and canvas pixels.
+   *  For consumers with DOM chrome pinned to canvas content that cannot
+   *  tolerate a frame of skew. Live: toggling it switches modes from the next
+   *  redraw on. A redraw requested from inside a layer's `draw` still waits
+   *  for a frame — painting it in place would recurse. */
+  syncPaint?: boolean;
 
   /**
    * Combined adapter for scene-slot rendering, bounds computation, and
@@ -718,6 +727,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     height,
     dpr: dprProp,
     contentVersion,
+    syncPaint = false,
     adapter: adapterProp,
     layers: layersMap,
     selection,
@@ -789,6 +799,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   const paintRef = useRef<() => boolean>(() => false);
   const { requestRedraw, subscribeFrame } = useFrameLoop(
     useCallback(() => paintRef.current(), []),
+    { syncPaint },
   );
 
   const contentVersionRef = useRef(contentVersion);
@@ -1356,11 +1367,12 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   paintRef.current = paint;
 
   // A tripwire, not a list of values this effect uses: every input the paint
-  // reads must appear here, or changing it paints stale.
-  useEffect(() => {
+  // reads must appear here, or changing it paints stale. Layout, not passive,
+  // so a `syncPaint` surface lands its pixels in the same commit as the DOM.
+  useLayoutEffect(() => {
     requestRedraw();
   }, [layersWithDebug, width, height, viewProp, debugSink, dprProp,
-      layerVisibility, layerOrder, shaderIdKey, requestRedraw]);
+      layerVisibility, layerOrder, shaderIdKey, syncPaint, requestRedraw]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)
   // outlive React state, so unmount has to free them explicitly or a
