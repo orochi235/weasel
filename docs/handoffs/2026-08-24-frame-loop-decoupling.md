@@ -97,11 +97,10 @@ list below: a review pass over Tasks 5-11, and driving the demos by hand.
 ## Two adjacent arcs this work spawned
 
 **`mac-pinch-zoom` branch** (worktree `.claude/worktrees/mac-pinch-zoom`, off `main` at `7b0f20b8`)
-— created and branched, **no work done in it yet**. Every agent spawned from a worktree-pinned
-session inherits that pin, so nothing can write there until a session switches into it
-(`EnterWorktree` with its path). Needs `npm install` first. Three pre-existing bugs, unrelated to the
-frame loop, found because the user reported the viewport demo's pinch not working — all three
-confirmed read-only against `main`:
+— **all three bugs fixed** (`aef53be3`, `ec60e03f`, `0dd35a19`), 7383 passing, `patch` changeset,
+nothing pushed. Its own handoff is `docs/handoffs/2026-08-25-mac-pinch-zoom.md` on that branch.
+Note for anyone dispatching work: agents inherit the spawning session's worktree pin, so a session
+must `EnterWorktree` into a tree before any agent can write there. The three bugs were:
 
 1. A Mac trackpad pinch (`wheel { ctrlKey: true }`) matches no binding. `matchModifiers`
    (`packages/gestures/src/ui/match.ts:71-101`) treats `mods: { mod: true }` as platform-*exclusive* —
