@@ -119,8 +119,20 @@ no indeterminate state, no dismiss on error. It becomes a primitive.
 
 ## Arc 3 — visual language
 
-A density, spacing and type-scale pass over `Toolbar`, `Sidebar`, `StatusBar`, `FpsMeter`,
-`ScaleIndicator` and `PropertyPanel` so they read as one system. The status bar currently sets
+Two areas labkit does not define at all, plus a density pass.
+
+**A tool palette.** A lab that wants one has nothing to reach for: `Palette` is the
+drag-drop source list, not a tool strip, and `@weasel-js/ui`'s `ToolPalette` /
+`ToolGroup` / `ToolButton` are neither wrapped by labkit nor routed through a trial's
+tool state.
+
+**The sidebar.** Today it is a bare collapsible column holding one `ControlPanel`;
+anything else is hand-assembled, with no sections, no ordering, and no link between an
+instrument's declared capabilities and the panels that should appear. Both should be
+engine surface — a trial declares what it has, the chrome lays it out.
+
+Then a density, spacing and type-scale pass over `Toolbar`, `Sidebar`, `StatusBar`,
+`FpsMeter`, `ScaleIndicator` and `PropertyPanel` so they read as one system. The status bar currently sets
 monospace against the display font used everywhere else; the trial border and radius are
 nearly invisible against the workspace. Scope this arc from what arcs 1 and 2 expose.
 

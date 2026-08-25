@@ -23,6 +23,7 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **labkit presentation pass** — arc 1 done, arc 2 in flight on `feat/labkit-presentation-pass`; tool palette and sidebar still undefined → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
@@ -963,6 +964,33 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
   What is left is the one live bug the adoption knowingly took on, in `hints.render: 'flow'` — a pane that reflows without resizing fires no observer, so keyboard navigation reads a stale rect until the child set changes. Flow is the mode where a host keeps its own CSS grid and takes only the gestures; what it gives up is everything downstream of the strategy (placements, affordances, `unplaced`, `overflowMode`, `hints.sizing`, the settle animation).
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
+
+- **(P1) labkit presentation pass — finish arc 2, then define a tool palette and
+  a sidebar.** In flight on `feat/labkit-presentation-pass` (committed, unpushed).
+  Design: `docs/superpowers/specs/2026-08-24-labkit-presentation-design.md`.
+  Handoff, with the traps: `docs/handoffs/2026-08-25-labkit-presentation-pass.md`.
+
+  Arc 1 shipped: a 43-glyph icon set in `@weasel-js/ui`, generated from
+  `packages/ui/scripts/icons/` via `npm run gen:icons`. Arc 2 shipped the content
+  well, sidebar, compact toolbar, `ZoomControl`, title-bar drag, and the audit's
+  defect list.
+
+  What is left in arc 2: `<Lab>` with no slots still cannot grow or change mode —
+  `addTrial` and `setMode` sit on `LabContext` with no UI, so every consumer
+  rebuilds the same two controls. Job status is ad-hoc markup in `TrialChrome`
+  with a bare count and no progress element. The trial border is near-invisible
+  against the workspace, and the title bar and status bar are the heaviest chrome
+  relative to what they carry.
+
+  **The two undefined areas are the bigger gap.** A lab that wants a *tool
+  palette* has nothing to reach for — `Palette` is the drag-drop source list, not
+  a tool strip, and `@weasel-js/ui` ships `ToolPalette` / `ToolGroup` /
+  `ToolButton` that labkit neither wraps nor routes through the trial's tool
+  state. The *sidebar* is a bare collapsible column: `DefaultSidebar` puts one
+  `ControlPanel` in it and anything else a lab needs is hand-assembled, with no
+  notion of sections, ordering, or which panels an instrument's capabilities
+  imply. Both should be engine surface — a trial declares what it has and the
+  chrome lays it out — not something each lab rebuilds.
 
 - **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
 
