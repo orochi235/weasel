@@ -8,6 +8,7 @@ import { LabStoreContext } from '../state/context';
 import { createLabStore, type LabStore } from '../state/store';
 import type { LabMode, StorageAdapter, TrialRecord } from '../state/types';
 import { interstellarTheme } from '../theme/interstellar';
+import type { TrialTool } from '../tools/types';
 import { Trial } from '../trial/Trial';
 import {
   addTrial as addTrialOp,
@@ -18,6 +19,7 @@ import {
 } from '../trial/trialOps';
 import { LabContext, type LabContextValue } from './LabContext';
 import { LabHeader } from './LabHeader';
+import { LabPalette } from './LabPalette';
 import { LabShell } from './LabShell';
 import { useResolvedMode } from './useSystemMode';
 import { type TrialLayout, Workspace } from './Workspace';
@@ -41,6 +43,9 @@ export interface LabProps {
   chrome?: readonly TrialContribution[];
   /** Built-in contribution ids to drop. Throws on an id that is not there. */
   suppress?: readonly string[];
+  /** Tools offered lab-wide. A trial whose instrument declares none of its own
+   *  reflects and writes this slot. */
+  tools?: readonly TrialTool[];
   children?: ReactNode;
 }
 
@@ -96,6 +101,7 @@ export function Lab({
   title,
   chrome,
   suppress,
+  tools,
   children,
 }: LabProps) {
   if (process.env.NODE_ENV !== 'production' && instruments.length === 0) {
@@ -210,18 +216,21 @@ export function Lab({
               </>
             }
           >
-            <Workspace
-              ids={trials.map((w) => w.id)}
-              resizable
-              reorderable
-              onReorder={(ids) => contextValue.reorderTrials(ids)}
-              layout={layout as TrialLayout}
-              onLayoutChange={(next) => store.getState().setLayout(next)}
-            >
-              {trials.map((w) => (
-                <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
-              ))}
-            </Workspace>
+            <div className="lk-lab__body">
+              {tools ? <LabPalette tools={tools} /> : null}
+              <Workspace
+                ids={trials.map((w) => w.id)}
+                resizable
+                reorderable
+                onReorder={(ids) => contextValue.reorderTrials(ids)}
+                layout={layout as TrialLayout}
+                onLayoutChange={(next) => store.getState().setLayout(next)}
+              >
+                {trials.map((w) => (
+                  <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
+                ))}
+              </Workspace>
+            </div>
           </LabShell>
         </ThemeProvider>
       </LabContext.Provider>
