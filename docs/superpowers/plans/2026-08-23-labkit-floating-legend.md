@@ -1,14 +1,21 @@
 # labkit FloatingPanel + Legend Implementation Plan
 
-> **Surface verified 2026-08-25 against windease `main`.** Every export Task 2 predicts exists with
-> the predicted name and value: `DEFAULT_ANCHOR` is `'bottom-left'`, `DEFAULT_INSET` is `12`, and
-> `reduce` reads `payload.dx`/`payload.dy` off a `LayoutEvent {affordanceId, kind: 'drag', payload}`
-> with context `{container, options, items}`. One drift, benign here: `FloatingPlacement` is now
-> `{x, y, anchor: Corner | null, anchorTo?: string}`. `anchorTo` is written only when `snapToPanes`
-> is set *and* an inner strategy exists, and `FloatingPanel` passes neither.
+> **✅ COMPLETE — shipped to `main` 2026-08-25.** `Legend` and `FloatingPanel` are both exported
+> from `@weasel-js/labkit`, with stories, docs and a patch changeset. labkit's `windease` floor is
+> `^1.3.0`.
 >
-> **Task 1 (`Legend`) is done** — landed with stories, export and stylesheet registration. Tasks 3–6
-> wait on `windease@1.3.0` publishing; the source is committed, only the release is outstanding.
+> Three things the plan did not anticipate, all fixed in the shipped code:
+>
+> - **jsdom ships no `PointerEvent`**, so `fireEvent.pointerDown` built a bare `Event` with no
+>   `clientX`. A drag handler read `undefined`, computed `NaN` deltas, and the DOM *silently*
+>   rejected `"NaNpx"` — leaving the old position and no error. The plan never hit this because its
+>   drag tests only asserted `data-dragging`. `src/test-setup.ts` now polyfills `PointerEvent` (and
+>   pointer capture) so any labkit pointer test gets real coordinates.
+> - **`entry.contentRect` is the content box.** Measuring the panel with it under-reports its
+>   footprint by padding + border, so a panel snapped to a corner overflows by exactly that much.
+>   `borderBoxOf` prefers `entry.borderBoxSize`. Found by rendering it, not by a test.
+> - **`floatingStrategy` withholds an unmeasured item** rather than placing it at 0,0, so the
+>   panel is hidden until `data-placed` is set.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -238,7 +245,7 @@ git commit -m "add a legend that draws each swatch the way its ink is drawn"
 
 ---
 
-### Task 2: Confirm the windease surface
+### Task 2: Confirm the windease surface — ✅ DONE
 
 **⚠ This task is the gate. Do it before Task 3, and do not skip it — everything below predicts an API that does not exist yet.**
 
@@ -287,7 +294,7 @@ git commit -m "raise labkit's windease floor to the floating strategy release"
 
 ---
 
-### Task 3: FloatingPanel placement
+### Task 3: FloatingPanel placement — ✅ DONE
 
 **Files:**
 - Create: `src/primitives/FloatingPanel.tsx`, `src/primitives/FloatingPanel.less`
@@ -495,7 +502,7 @@ git commit -m "float a panel over its offset parent at the strategy's placement"
 
 ---
 
-### Task 4: Dragging
+### Task 4: Dragging — ✅ DONE
 
 **Files:**
 - Modify: `src/primitives/FloatingPanel.tsx`
@@ -654,7 +661,7 @@ git commit -m "drag a floating panel from anywhere that is not a control"
 
 ---
 
-### Task 5: Remembering where it was left
+### Task 5: Remembering where it was left — ✅ DONE
 
 **Files:**
 - Modify: `src/primitives/FloatingPanel.tsx`
@@ -735,7 +742,7 @@ git commit -m "remember a floating panel's placement under its storage key"
 
 ---
 
-### Task 5b: Story
+### Task 5b: Story — ✅ DONE
 
 Every other labkit primitive has one — `Toolbar`, `Sidebar`, `FpsMeter`, `ScaleIndicator`,
 `StatusBar`. Add `src/primitives/FloatingPanel.stories.tsx` on the Storybook (**not** Ladle) pattern
@@ -745,7 +752,7 @@ real size or it has nothing to float in.
 
 ---
 
-### Task 6: Publish the surface
+### Task 6: Publish the surface — ✅ DONE
 
 **Files:**
 - Modify: `src/primitives/index.ts`, `src/styles.less`
@@ -807,7 +814,7 @@ git commit -m "export FloatingPanel and Legend from labkit"
 
 ---
 
-### Task 7: Release
+### Task 7: Release — ✅ DONE
 
 - [ ] **Step 1: Document both in `docs/`**
 
