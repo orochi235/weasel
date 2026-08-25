@@ -4,6 +4,7 @@ import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
 import { rotateAroundAABBCenter } from './poseRotation';
 import type { DrawCommand } from '../renderer/DrawCommand';
 import type { Node, Scene } from 'core/scene/types';
+import { createPoseOverrides } from 'core/scene/poseOverrides';
 
 interface RectPose { x: number; y: number; width: number; height: number; rotation?: number }
 
@@ -12,7 +13,8 @@ function leaf(id: string, pose: RectPose, data: unknown): Node<unknown, 'default
 }
 
 /** Flat single-layer stand-in: every node is a root, nothing nests. The render
- *  path walks layers and parentage, so both have to be present. */
+ *  path walks layers and parentage and reads through pose overrides, so all
+ *  three have to be present. */
 function fakeScene(nodes: Node<unknown, 'default', RectPose>[]): Scene<unknown, 'default', RectPose> {
   const byId = new Map(nodes.map((n) => [n.id, n]));
   return {
@@ -21,6 +23,7 @@ function fakeScene(nodes: Node<unknown, 'default', RectPose>[]): Scene<unknown, 
     renderOrder: () => nodes.map((n) => n.id),
     renderOrderNodes: () => nodes,
     get: (id: string) => byId.get(id as unknown as (typeof nodes)[number]['id']),
+    overrides: createPoseOverrides<RectPose>((id) => byId.get(id as unknown as (typeof nodes)[number]['id'])),
   } as unknown as Scene<unknown, 'default', RectPose>;
 }
 

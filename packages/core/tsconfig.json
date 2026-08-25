@@ -28,6 +28,7 @@
       "interactions/*": ["./src/interactions/*"],
       "tools/*": ["./src/tools/*"],
       "canvas/*": ["./src/canvas/*"],
+      "renderer/*": ["./src/renderer/*"],
       "debug/*": ["./src/debug/*"]
     }
   },

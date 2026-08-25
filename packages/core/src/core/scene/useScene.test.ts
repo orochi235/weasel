@@ -99,3 +99,70 @@ describe('useScene — full overload still works', () => {
     expect(result.current.roots).toHaveLength(1);
   });
 });
+
+describe('useScene — subscribe option', () => {
+  it('re-renders the host on every mutation by default', () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders++;
+      return useScene<Rect>({ items: [A] });
+    });
+    const before = renders;
+
+    act(() => { result.current.setPose(asNodeId('a'), { ...A, x: 5 }); });
+
+    expect(renders).toBe(before + 1);
+    expect(result.current.get(asNodeId('a'))?.pose).toMatchObject({ x: 5 });
+  });
+
+  it('does not re-render the host when subscribe is false', () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders++;
+      return useScene<{ fill: string }, 'default', Rect>({
+        systemLayers: [{ id: 'default' }],
+        initial: [{ kind: 'leaf', layer: 'default', pose: A, data: { fill: '#f00' }, id: asNodeId('a') }],
+        subscribe: false,
+      });
+    });
+    const before = renders;
+
+    act(() => { result.current.setPose(asNodeId('a'), { ...A, x: 5 }); });
+
+    expect(renders).toBe(before);
+    expect(result.current.get(asNodeId('a'))?.pose).toMatchObject({ x: 5 });
+  });
+
+  it('does not re-render the host when the trivial form opts out', () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders++;
+      return useScene<Rect>({ items: [A], subscribe: false });
+    });
+    const before = renders;
+
+    act(() => { result.current.setPose(asNodeId('a'), { ...A, x: 7 }); });
+
+    expect(renders).toBe(before);
+    expect(result.current.get(asNodeId('a'))?.pose).toMatchObject({ x: 7 });
+  });
+
+  it('keeps the scene itself fully live when subscribe is false', () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders++;
+      return useScene<Rect>({ items: [A], subscribe: false });
+    });
+    const scene = result.current;
+    const v0 = scene.getVersion();
+
+    act(() => { scene.setPose(asNodeId('a'), { ...A, x: 5 }); });
+    const v1 = scene.getVersion();
+    expect(v1).not.toBe(v0);
+
+    act(() => { scene.undo(); });
+    expect(scene.get(asNodeId('a'))?.pose).toBe(A);
+    expect(scene.getVersion()).not.toBe(v1);
+    expect(renders).toBe(1);
+  });
+});

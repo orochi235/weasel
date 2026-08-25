@@ -144,3 +144,30 @@ describe('registry-unification exports (DepRegistry + dispatcher)', () => {
     expect(Barrel.defaultCommitAdapter).toBeDefined();
   });
 });
+
+describe('ephemeral pose override exports', () => {
+  it('PoseOverrides is expressible with barrel types only', () => {
+    // Type-level check (enforced by `tsc --noEmit`): a consumer can annotate a
+    // frame-loop helper against the public barrel without internal imports.
+    type Pose = { x: number; y: number; width: number; height: number };
+    const bump = (
+      overrides: Barrel.PoseOverrides<Pose>,
+      id: Barrel.NodeId,
+      entry: Barrel.PoseOverride<Pose>,
+    ) => {
+      overrides.set(id, entry);
+      overrides.commit();
+    };
+    expect(typeof bump).toBe('function');
+  });
+});
+
+describe('camera animation barrel surface', () => {
+  it('exports the camera runner and its interpolator, and no longer exports useViewTween', () => {
+    const b = Barrel as Record<string, unknown>;
+    expect(typeof b.useViewAnimation).toBe('function');
+    expect(typeof b.interpolateView).toBe('function');
+    expect(b.VIEW_ANIMATION_KEY).toBe('view');
+    expect('useViewTween' in b).toBe(false);
+  });
+});

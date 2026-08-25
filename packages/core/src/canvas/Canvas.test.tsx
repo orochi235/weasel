@@ -466,7 +466,7 @@ describe('Canvas debug overlay', () => {
     expect(ids.has('a') && ids.has('b') && ids.has('c')).toBe(true);
   });
 
-  it('records layer metadata once per non-overlay layer when layers flag is on', () => {
+  it('records layer metadata once per non-overlay layer when layers flag is on', async () => {
     const sinkRef: { current: (DebugSink & { snapshot(): DebugSnapshot }) | null } = { current: null };
     render(
       <Canvas
@@ -476,6 +476,7 @@ describe('Canvas debug overlay', () => {
         debugSinkRef={sinkRef}
       />,
     );
+    await waitForFrame();
     const snap = sinkRef.current?.snapshot();
     expect(snap?.layers.length).toBeGreaterThanOrEqual(1);
     // Overlay layer itself must not be recorded.
@@ -515,9 +516,10 @@ describe('GL renderer', () => {
     expect(container.querySelector('canvas')).toBeTruthy();
   });
 
-  it('calls getContext("webgl2") with preserveDrawingBuffer + stencil', () => {
+  it('calls getContext("webgl2") with preserveDrawingBuffer + stencil', async () => {
     const getCtxSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
     render(<Canvas width={100} height={100} layers={{}} />);
+    await waitForFrame();
     const webgl2Calls = getCtxSpy.mock.calls.filter((c) => c[0] === 'webgl2');
     expect(webgl2Calls.length).toBeGreaterThan(0);
     expect(webgl2Calls[0][1]).toMatchObject({ preserveDrawingBuffer: true, stencil: true });

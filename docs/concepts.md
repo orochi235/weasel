@@ -32,6 +32,48 @@ passing behaviors through a binding's `opts`, or by registering your own
 descriptor under the same id. See [hooks.md](./hooks.md),
 [extending.md](./extending.md), and `packages/core/src/canvas/Canvas.tsx`.
 
+### Paint and render are separate
+
+The canvas paints from its own animation frame, not from a React render.
+`requestRedraw()` marks it dirty and the next frame paints, so many redraws in
+one tick cost one paint. A view written through `setView()` on the
+`<SceneCanvas>` ref costs no React render at all — `getView()` reads it back
+mid-frame, `subscribeView()` reports changes. A canvas holding a `view` prop is
+controlled instead: `setView()` refuses the local write, warns once, and
+forwards the value to `onViewChange`, so the owner's render is still paid.
+
+Pixels and DOM can therefore be a frame apart. Which one leads depends on what
+moved:
+
+- **A view change leads with pixels.** `setView()` writes a ref and paints on
+  the frame without rendering at all, so DOM built from the view stays stale
+  until something else re-renders it. Position DOM pinned to world coordinates
+  from `subscribeView`, and it moves on the frame the pixels move.
+- **A scene change leads with DOM.** `<SceneCanvas>` subscribes to the scene, so
+  a `scene.batch` commits immediately while the pixels land on the next frame.
+  Chrome that must be in lockstep compares `getPaintedVersion()` — the content
+  version the pixels were painted from — against the version it is about to
+  render, and defers a frame when they differ. It reads `0` until the first
+  paint lands, which is not a version any scene has; treat it as "nothing
+  painted yet" rather than comparing it.
+
+For readouts and panels either skew is invisible. Reading the drawing buffer
+back outside a paint can likewise see the previous frame; `subscribeFrame()`
+runs on the frame that painted. `syncPaint` restores painting at commit time.
+
+Nothing paints while `document.hidden` is true, `syncPaint` included — a
+background tab still commits React updates, and a sync paint is the one path
+the browser's own frame throttling does not stop. A buffer read back from a
+hidden tab therefore returns the frame from before the tab was hidden. The
+dirty flag holds until `visibilitychange` brings the surface back.
+
+**Do not render scene-derived DOM inside `startTransition`.** React defers a
+transition deliberately and nothing forces it to catch up, so that DOM can
+diverge from the canvas without bound, and nothing warns — React exposes no way
+to ask whether the current render is a transition. Render that DOM outside the
+transition, gated on `getPaintedVersion()` when it must be in lockstep, or set
+`syncPaint` for the old whole-cloth guarantee.
+
 ## `<SceneViewCanvas>` and `<MinimapCanvas>` (detached views)
 
 Three primitives can render a second view of a scene. Pick by where the
@@ -61,21 +103,23 @@ import type { View } from '@weasel-js/core';
 function App() {
   const scene = useScene<Data, Layer, Pose>({ systemLayers: [{ id: 'default' }] });
   const selection = useSelection();
-  const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+  // Named apart from the ref's `setView()`: a `view` prop makes both canvases
+  // controlled, so every camera move here is a React render.
+  const [view, setMainView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   return (
     <>
       <SceneCanvas
         width={600} height={400}
         scene={scene} selection={selection}
-        view={view} onViewChange={setView}
+        view={view} onViewChange={setMainView}
         layers={{ scene: { drawOne: (n, p) => [/* … */] } }}
       />
       <MinimapCanvas
         scene={scene}
         mainView={view}
         mainViewDims={{ width: 600, height: 400 }}
-        onMainViewChange={setView}
+        onMainViewChange={setMainView}
         width={200} height={140}
         drawOne={(n, p) => [/* stripped-down minimap variant */]}
         fit="scene"
@@ -119,6 +163,32 @@ rect-flavored math (resize, area-select, snap origin) still works.
 `getPose` / `setPose` are **local-coordinate** — relative to the object's
 parent. Rendering and hit-testing use world coords; the kit composes via
 `composeWorldPose`.
+
+## Pose override
+
+A node's **pose** is document state: undoable, serialized, the answer to "where
+is this". A pose **override** is the same value for one frame — `scene.overrides`
+holds a per-node `{ pose?, alpha? }` that the render and hit-test paths read
+through, and that history and `toJSON()` never see. A 60 Hz camera, a drag
+preview, a physics settle and an animation tween all want this: motion that is
+not an edit.
+
+```ts
+const entry = { pose: { x: 0, y: 0, width: 16, height: 16 } };
+scene.overrides.set(id, entry);   // once
+
+// per frame
+entry.pose.x = simulation.x;      // mutate in place — no allocation
+scene.overrides.commit();         // publish
+```
+
+`commit()` is not bookkeeping. The painter memo keys on pose *reference*, so an
+in-place mutation without a commit paints the previous frame and reports no
+error. `commit()` drops the pose-keyed memo slots of every overridden node.
+
+To promote a frame to document state — dropping a drag, baking a settle — write
+it once through `setPose` and `clearAll()`. That is the one step that belongs in
+the undo stack.
 
 ## Descriptor
 

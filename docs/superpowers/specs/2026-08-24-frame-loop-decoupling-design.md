@@ -98,8 +98,11 @@ competing with everything else scheduled. Decoupling stops spending concurrency
 rather than starting to.
 
 **Single-commit consistency between React-rendered DOM and canvas pixels.**
-Today both come out of one commit. After, the canvas can be one frame ahead of
-DOM derived from the same scene. Three cases, worth separating:
+Today both come out of one commit. After, the two can be a frame apart in
+either direction: a view change leads with pixels, because `setView` paints
+without rendering at all, while a scene change leads with DOM, because
+`SceneCanvas` keeps its scene subscription and commits before the frame lands.
+Three cases, worth separating:
 
 - Readouts, counts, layer panels: one frame stale during motion, invisible.
 - DOM anchored to world coordinates — the text-edit overlay

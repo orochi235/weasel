@@ -14,7 +14,14 @@ export interface UseSceneTrivialOptions<TItem extends { id: string }> {
   items: readonly TItem[];
   historyLimit?: number;
   generateId?: () => NodeId;
+  /** Re-render the host on every scene mutation. Default `true`. See
+   *  {@link UseSceneOptions.subscribe}. */
+  subscribe?: boolean;
 }
+
+/** A subscribe function that never notifies. `useSyncExternalStore` still runs
+ *  (hooks are unconditional) but the host is never re-rendered by the store. */
+const NEVER_SUBSCRIBE = () => () => {};
 
 const DEFAULT_LAYER = 'default' as const;
 type DefaultLayer = typeof DEFAULT_LAYER;
@@ -32,7 +39,8 @@ function isTrivialOptions<TItem extends { id: string }>(
 
 /** React hook returning a kit-owned `Scene`. The Scene is constructed once
  *  per host component and tracked via `useSyncExternalStore`, so React re-
- *  renders on every Scene mutation (including undo/redo).
+ *  renders on every Scene mutation (including undo/redo) unless
+ *  `subscribe: false` opts out.
  *
  *  Two call shapes:
  *  - **Trivial**: `useScene({ items })` — one auto-registered system layer
@@ -73,6 +81,11 @@ export function useScene(options: unknown): unknown {
     }
   }
   const scene = sceneRef.current;
-  useSyncExternalStore(scene.subscribe, scene.getVersion, scene.getVersion);
+  const subscribed = (options as { subscribe?: boolean } | null)?.subscribe !== false;
+  useSyncExternalStore(
+    subscribed ? scene.subscribe : NEVER_SUBSCRIBE,
+    scene.getVersion,
+    scene.getVersion,
+  );
   return scene;
 }

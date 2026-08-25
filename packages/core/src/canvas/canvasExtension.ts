@@ -2,6 +2,7 @@ import type { LayerHit } from '../affordances/types';
 import type { Dims, RenderLayer } from '../core/layers/render';
 import type { View } from '../core/viewport/view';
 import type { IngestItem } from '../features/ingestion/ingestItems';
+import type { ViewAnimationOptions } from '../core/viewport/useViewAnimation';
 
 /**
  * The **base imperative ref handle** shared by the canvas components. For
@@ -27,6 +28,35 @@ export interface CanvasExtensionApi {
    *  (Replaces the pre-A2 pattern where `ref.current` directly *was* the element.) */
   readonly element: HTMLCanvasElement | null;
   requestRedraw(): void;
+  /**
+   * Run `fn` after every paint, on the frame that painted — for chrome that
+   * must observe landed pixels (a loupe readback, a frame counter). Returns
+   * an unsubscribe.
+   */
+  subscribeFrame(fn: () => void): () => void;
+  /** The current view. Readable mid-frame — this is the value the next paint
+   *  will use, not a value from the last React commit. */
+  getView(): View;
+  /**
+   * Set the view without a React render: the ref updates now and the next
+   * frame paints with it.
+   *
+   * Not applied locally when the canvas is controlled by a `view` prop — there
+   * the prop is the authority and a local write would only desynchronize
+   * pixels from props. The value still goes out through `onViewChange`, so a
+   * controlled owner can honor it; without an `onViewChange` it is dropped.
+   * Either way the canvas warns once per mount.
+   */
+  setView(next: View | ((current: View) => View)): void;
+  /** Called after each view change, for chrome that mirrors the camera — a
+   *  zoom readout, a minimap, DOM pinned to world coordinates. Returns an
+   *  unsubscribe. */
+  subscribeView(fn: (view: View) => void): () => void;
+  /** The `contentVersion` the current pixels were painted from — on
+   *  `<SceneCanvas>`, the scene version. Chrome in lockstep with canvas
+   *  content compares this against the version it is about to render and
+   *  defers a frame when they differ. `0` until the first paint lands. */
+  getPaintedVersion(): number;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;
@@ -77,4 +107,14 @@ export interface CanvasExtensionApi {
  */
 export interface SceneCanvasApi extends CanvasExtensionApi {
   ingest(input: File[] | IngestItem[], point?: { x: number; y: number }): void;
+  /**
+   * Glide the camera to `to` rather than jumping there — a fit-to-selection, a
+   * recenter, a scripted tour. A thunk receives the pending target when an
+   * animation is already in flight, so steps compound. Any other view write
+   * cancels it.
+   */
+  animateView(to: View | ((base: View) => View), opts?: ViewAnimationOptions): void;
+  /** Cancel a camera animation. The view stays where it is. */
+  stopViewAnimation(): void;
+  isViewAnimating(): boolean;
 }

@@ -43,11 +43,12 @@ describe('viewportZoomAction descriptor', () => {
     expect(viewportZoomAction.enabled!()).toBe(true);
   });
 
-  it('has 4 gesture bindings: wheel+mod, key =, key -, key 0', () => {
+  it('has 5 gesture bindings: wheel+mod, ctrl+wheel, key =, key -, key 0', () => {
     const bindings = viewportZoomAction.defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>;
-    expect(bindings).toHaveLength(4);
+    expect(bindings).toHaveLength(5);
     const specs = bindings.map((b) => b.spec);
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
+    expect(specs).toContainEqual({ kind: 'wheel', mods: { ctrl: true } });
     expect(specs).toContainEqual({ kind: 'key', key: '=', mods: { mod: true, shift: 'optional' } });
     expect(specs).toContainEqual({ kind: 'key', key: '-', mods: { mod: true } });
     expect(specs).toContainEqual({ kind: 'key', key: '0', mods: { mod: true } });
@@ -197,6 +198,15 @@ describe('makeViewportZoomAction', () => {
     expect(specs).toContainEqual({ kind: 'wheel', mods: { mod: true } });
   });
 
+  it('binds bare ctrl+wheel in both wheel modes — a mac trackpad pinch arrives that way', () => {
+    for (const opts of [{}, { wheel: 'plain' as const }]) {
+      const specs = (makeViewportZoomAction(opts).defaultBinding as Array<{ spec: unknown; opts: { params: { kind: string } } }>);
+      const trackpad = specs.find((b) => JSON.stringify(b.spec) === JSON.stringify({ kind: 'wheel', mods: { ctrl: true } }));
+      expect(trackpad).toBeDefined();
+      expect(trackpad!.opts.params.kind).toBe('wheel');
+    }
+  });
+
   it('clamps the resulting scale to [min, max] on wheel zoom', () => {
     const action = makeViewportZoomAction({ wheel: 'plain', min: 5, max: 500 });
     const invoker = getImmediateInvoker(action);
@@ -219,5 +229,120 @@ describe('makeViewportZoomAction', () => {
     // Huge zoom-in is clamped at the kit default ceiling of 8.
     invoker.run({ view }, { kind: 'wheel', deltaY: -5000, clientX: 0, clientY: 0 });
     expect(view._value.scale.x).toBeCloseTo(8, 5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Animated discrete steps
+// ---------------------------------------------------------------------------
+
+function makeAnimatedView(initial: View = { x: 0, y: 0, scale: { x: 1, y: 1 } }) {
+  let v = initial;
+  let pending: View | null = null;
+  const calls = { animate: [] as Array<{ to: View; opts: unknown }>, set: [] as View[] };
+  const api: ViewApi = {
+    get: () => v,
+    set: (next) => { v = next; calls.set.push(next); },
+    hostSize: () => ({ width: 400, height: 200 }),
+    animate: (to, opts) => { pending = to; calls.animate.push({ to, opts }); },
+    stopAnimation: () => { pending = null; },
+    animationTarget: () => pending,
+  };
+  return { api, calls, current: () => v };
+}
+
+describe('makeViewportZoomAction with animate', () => {
+  it('animates Cmd+= instead of setting the view', () => {
+    const action = makeViewportZoomAction({ animate: { ms: 400 } });
+    const { api, calls } = makeAnimatedView();
+    getImmediateInvoker(action).run({ view: api }, { kind: 'in' });
+
+    expect(calls.set).toEqual([]);
+    expect(calls.animate).toHaveLength(1);
+    // KEY_STEP 1.25, anchored at the host center (200, 100).
+    expect(calls.animate[0].to.scale).toEqual({ x: 1.25, y: 1.25 });
+    expect(calls.animate[0].opts).toMatchObject({ ms: 400 });
+  });
+
+  it('compounds successive steps off the pending target', () => {
+    const action = makeViewportZoomAction({ animate: true });
+    const { api, calls } = makeAnimatedView();
+    const invoker = getImmediateInvoker(action);
+
+    invoker.run({ view: api }, { kind: 'in' });
+    invoker.run({ view: api }, { kind: 'in' });
+
+    expect(calls.animate[1].to.scale.x).toBeCloseTo(1.25 * 1.25, 10);
+  });
+
+  it('never animates wheel zoom — the input already samples every frame', () => {
+    const action = makeViewportZoomAction({ animate: true });
+    const { api, calls } = makeAnimatedView();
+    getImmediateInvoker(action).run({ view: api }, { kind: 'wheel', deltaY: -100, clientX: 0, clientY: 0 });
+
+    expect(calls.animate).toEqual([]);
+    expect(calls.set).toHaveLength(1);
+  });
+
+  it('sets rather than animates when the view dep has no animate', () => {
+    const action = makeViewportZoomAction({ animate: true });
+    const view = makeView();
+    view.hostSize = () => ({ width: 400, height: 200 });
+    getImmediateInvoker(action).run({ view }, { kind: 'in' });
+
+    expect(view.get().scale).toEqual({ x: 1.25, y: 1.25 });
+  });
+
+  it('sets rather than animates when animate is off', () => {
+    const action = makeViewportZoomAction();
+    const { api, calls } = makeAnimatedView();
+    getImmediateInvoker(action).run({ view: api }, { kind: 'in' });
+
+    expect(calls.animate).toEqual([]);
+    expect(calls.set).toHaveLength(1);
+  });
+
+  it('animates the reset branch to identity, honoring resetMs', () => {
+    const action = makeViewportZoomAction({ animate: { ms: 200, resetMs: 500 } });
+    const { api, calls } = makeAnimatedView({ x: 30, y: 40, scale: { x: 3, y: 3 } });
+    getImmediateInvoker(action).run({ view: api }, { kind: 'reset' });
+
+    expect(calls.animate).toHaveLength(1);
+    expect(calls.animate[0].to).toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });
+    expect(calls.animate[0].opts).toMatchObject({ ms: 500 });
+  });
+
+  it('animates to the view a recenter callback returns', () => {
+    const action = makeViewportZoomAction({ animate: true });
+    const { api, calls } = makeAnimatedView({ x: 30, y: 40, scale: { x: 3, y: 3 } });
+    api.recenter = () => ({ x: -8, y: -8, scale: { x: 0.5, y: 0.5 } });
+    getImmediateInvoker(action).run({ view: api }, { kind: 'reset' });
+
+    expect(calls.animate[0].to).toEqual({ x: -8, y: -8, scale: { x: 0.5, y: 0.5 } });
+  });
+
+  it('leaves a void-returning recenter alone — it dispatched the view itself', () => {
+    const action = makeViewportZoomAction({ animate: true });
+    const { api, calls } = makeAnimatedView();
+    const recenter = vi.fn(() => undefined);
+    api.recenter = recenter;
+    getImmediateInvoker(action).run({ view: api }, { kind: 'reset' });
+
+    expect(recenter).toHaveBeenCalledOnce();
+    expect(calls.animate).toEqual([]);
+    expect(calls.set).toEqual([]);
+  });
+
+  it('forwards every declared animate option — onDone included — and strips resetMs', () => {
+    const onDone = vi.fn();
+    const easing = (t: number) => t;
+    const interpolator = () => (t: number) => ({ x: t, y: t, scale: { x: 1, y: 1 } });
+    const action = makeViewportZoomAction({
+      animate: { ms: 300, resetMs: 500, easing, interpolator, onDone },
+    });
+    const { api, calls } = makeAnimatedView();
+    getImmediateInvoker(action).run({ view: api }, { kind: 'in' });
+
+    expect(calls.animate[0].opts).toEqual({ ms: 300, easing, interpolator, onDone });
   });
 });

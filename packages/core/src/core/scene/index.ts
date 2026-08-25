@@ -9,6 +9,8 @@ export type {
   LeafNode,
   Node,
   NodeId,
+  PoseOverride,
+  PoseOverrides,
   RegisteredOp,
   Scene,
   SceneRegistry,

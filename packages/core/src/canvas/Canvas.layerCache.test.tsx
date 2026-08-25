@@ -34,29 +34,35 @@ function makeLayer(draw: () => void, withDeps: boolean): RenderLayer<unknown> {
   };
 }
 
+const waitForFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
+
 describe('Canvas layer command cache', () => {
-  it('reuses a deps-declaring layer\'s commands across paints', () => {
+  it('reuses a deps-declaring layer\'s commands across paints', async () => {
     const draw = vi.fn();
     const layer = makeLayer(draw, true);
     const { rerender } = render(
       <Canvas width={100} height={100} layers={{ grid: null, probe: { layer } }} />,
     );
+    await waitForFrame();
     expect(draw).toHaveBeenCalledTimes(1);
 
-    // A fresh layers-map object re-runs the paint effect with the same layer.
+    // A fresh layers-map object marks the surface dirty with the same layer.
     rerender(<Canvas width={100} height={100} layers={{ grid: null, probe: { layer } }} />);
+    await waitForFrame();
     expect(draw).toHaveBeenCalledTimes(1);
   });
 
-  it('still rebuilds a layer that declares no deps', () => {
+  it('still rebuilds a layer that declares no deps', async () => {
     const draw = vi.fn();
     const layer = makeLayer(draw, false);
     const { rerender } = render(
       <Canvas width={100} height={100} layers={{ grid: null, probe: { layer } }} />,
     );
+    await waitForFrame();
     expect(draw).toHaveBeenCalledTimes(1);
 
     rerender(<Canvas width={100} height={100} layers={{ grid: null, probe: { layer } }} />);
+    await waitForFrame();
     expect(draw).toHaveBeenCalledTimes(2);
   });
 });

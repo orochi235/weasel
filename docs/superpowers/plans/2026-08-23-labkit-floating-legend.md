@@ -1,12 +1,14 @@
 # labkit FloatingPanel + Legend Implementation Plan
 
-> **⚠ TENTATIVE — re-review before executing.** This plan is written against the *planned* API of
-> `windease@1.3.0`'s `floatingStrategy`, which does not exist yet. Its plan lives at
-> `~/src/windease/docs/superpowers/plans/2026-08-23-floating-strategy.md` and has already been
-> revised once during review — motion moved from `payload.point` to `dx`/`dy`, and the drag
-> affordance gained a `handleSize` band. Anything here that names a windease export, config key, or
-> state shape is a prediction. **When windease 1.3.0 actually lands, diff its published surface
-> against Task 2 below before writing code.**
+> **Surface verified 2026-08-25 against windease `main`.** Every export Task 2 predicts exists with
+> the predicted name and value: `DEFAULT_ANCHOR` is `'bottom-left'`, `DEFAULT_INSET` is `12`, and
+> `reduce` reads `payload.dx`/`payload.dy` off a `LayoutEvent {affordanceId, kind: 'drag', payload}`
+> with context `{container, options, items}`. One drift, benign here: `FloatingPlacement` is now
+> `{x, y, anchor: Corner | null, anchorTo?: string}`. `anchorTo` is written only when `snapToPanes`
+> is set *and* an inner strategy exists, and `FloatingPanel` passes neither.
+>
+> **Task 1 (`Legend`) is done** — landed with stories, export and stylesheet registration. Tasks 3–6
+> wait on `windease@1.3.0` publishing; the source is committed, only the release is outstanding.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -24,7 +26,7 @@
 - **New `.less` files must be registered.** `src/styles.less` imports each component stylesheet explicitly; a file not listed there ships no CSS.
 - **`export * from './primitives'`** in `src/index.ts` means adding to `src/primitives/index.ts` is enough to publish a component.
 - **Imports carry no `.js` extension** in labkit (unlike windease). Follow `src/primitives/ScaleIndicator.tsx`.
-- **The ResizeObserver stub reports 1024×768 for every observed element** (`src/test-setup.ts:19`). Do **not** assert pixel positions in these tests — container and panel would both measure the same box and the numbers are meaningless. Placement math is already covered by windease's own suite; test behavior here, not geometry.
+- **Nothing measures in jsdom unless you read `entry.contentRect`.** The ResizeObserver stub (`src/test-setup.ts:19`) reports 1024×768 in the *entry*, but `clientWidth`/`offsetWidth` are `0`. An effect that ignores the entry and reads the DOM leaves `natural` at 0×0, which makes `floatingStrategy.layout` withhold the item into `unplaced` — `placements.get(id)` returns `undefined` and the panel renders at `0,0` forever. Read `entry.contentRect`, or accept that placement is untested and say so rather than writing an assertion that passes on `"0px"`.
 - **jsdom has no `setPointerCapture`.** Call it optionally (`el.setPointerCapture?.(id)`).
 
 ---
@@ -39,7 +41,21 @@
 
 ---
 
-### Task 1: Legend
+### Task 1: Legend — ✅ DONE
+
+Landed as written, with three deviations worth knowing:
+
+- **`Legend.less` uses theme tokens**, not the plan's hardcoded `font: 11px/1.4`. House style in
+  `ScaleIndicator.less` / `FpsMeter.less` is `--wzl-font-mono` / `--wzl-font-size-sm` /
+  `--wzl-fg-muted`, with `--wzl-space-sm` and `--wzl-radius-sm`.
+- **`check-class-prefix` parses template literals naively.** The planned
+  `` `lk-legend__swatch--${entry.mark ?? 'line'}` `` makes it read `??` as a class name and fail —
+  it only skips tokens containing `${`. Hoist the nullish-coalesce to a `const mark` first.
+- **The same checker scans test files**, so the extra-class test cannot pass `className="mine"`.
+  `is-` is exempt (state-modifier convention), so the test uses `is-mine`.
+
+Stories, the `src/primitives/index.ts` export and the `src/styles.less` import all landed with it,
+so Task 6 has only `FloatingPanel` left to do.
 
 **Files:**
 - Create: `src/primitives/Legend.tsx`, `src/primitives/Legend.less`
@@ -434,6 +450,17 @@ export function FloatingPanel({
 `left`/`top` are inline because they change every pointermove; a stylesheet cannot carry a per-frame
 value. Everything static lives in the `.less` file.
 
+**Handle the unmeasured first paint.** `natural` is absent until the first ResizeObserver callback,
+and `layout` withholds a 0×0 item rather than placing it — so `rect` is `undefined` on the first
+render and `rect?.x ?? 0` paints the panel at the top-left before it jumps to its anchor. Set
+`data-placed={rect ? 'true' : undefined}` and hide it until placed:
+
+```less
+.lk-floating-panel:not([data-placed='true']) {
+  visibility: hidden;
+}
+```
+
 - [ ] **Step 4: Write the stylesheet**
 
 ```less
@@ -708,6 +735,16 @@ git commit -m "remember a floating panel's placement under its storage key"
 
 ---
 
+### Task 5b: Story
+
+Every other labkit primitive has one — `Toolbar`, `Sidebar`, `FpsMeter`, `ScaleIndicator`,
+`StatusBar`. Add `src/primitives/FloatingPanel.stories.tsx` on the Storybook (**not** Ladle) pattern
+in `ScaleIndicator.stories.tsx`: `Meta<typeof FloatingPanel>` titled `labkit/Primitives/…`. The
+panel positions against its offset parent, so the story needs a `position: relative` wrapper with a
+real size or it has nothing to float in.
+
+---
+
 ### Task 6: Publish the surface
 
 **Files:**
@@ -774,23 +811,26 @@ git commit -m "export FloatingPanel and Legend from labkit"
 
 - [ ] **Step 1: Document both in `docs/`**
 
-Add a `Legend` and a `FloatingPanel` section to labkit's component docs, following the shape of the
-existing `ScaleIndicator` entry. Each needs: what it is in one sentence, the props table, and one
-copy-pastable example. `FloatingPanel`'s example must show it as a **direct child of the canvas
+There is no per-component reference doc — the "existing `ScaleIndicator` entry" is one table row in
+`packages/labkit/docs/AGENTS.md`. Add a row there for each, and put the props table and a
+copy-pastable example in `packages/labkit/docs/RECIPES.md`. `FloatingPanel`'s example must show it as a **direct child of the canvas
 stack overlay** — nested inside another absolutely-positioned overlay child it would position
 against that child's box instead of the canvas.
 
-- [ ] **Step 2: Version and publish**
+- [ ] **Step 2: Write a changeset**
+
+labkit does not release standalone: it is one of 14 packages in the changesets `fixed` group, so one
+bump moves all of them, and the repo rule is that **every changeset is `patch`** — `minor`/`major`
+are Mike's call, made explicitly. labkit is already at 1.2.0.
 
 ```bash
-npm version minor   # 1.2.0
-npm publish
+npx changeset   # @weasel-js/labkit, patch
 ```
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add -A && git commit -m "document FloatingPanel and Legend for 1.2.0"
+git add -A && git commit -m "document FloatingPanel and Legend"
 ```
 
 ---
@@ -798,7 +838,7 @@ git add -A && git commit -m "document FloatingPanel and Legend for 1.2.0"
 ## Downstream
 
 klieg's corner lab composes these two. Plan:
-`~/src/blitsklieg/docs/superpowers/plans/2026-08-23-corner-lab-legend.md`. Blocked until
+`~/src/klieg/docs/superpowers/plans/2026-08-23-corner-lab-legend.md`. Blocked until
 `@weasel-js/labkit@1.2.0` publishes, or linked with `npm link`.
 
-Design: `~/src/blitsklieg/docs/superpowers/specs/2026-08-23-legend-palette-design.md`.
+Design: `~/src/klieg/docs/superpowers/specs/2026-08-23-legend-palette-design.md`.

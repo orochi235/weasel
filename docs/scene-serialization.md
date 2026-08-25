@@ -152,6 +152,10 @@ from `createScene`.
 - **Selection.** Selection lives in `useSelection`, outside the `Scene`
   primitive. It is the caller's responsibility to restore selection state if
   needed.
+- **Pose overrides** (`scene.overrides`) — ephemeral per-node pose/alpha for a
+  frame loop. Like selection, never document content: absent from `toJSON()`,
+  never restored by `loadState`, and never recorded in history. Bake with
+  `setPose` first if a frame's positions should survive a save.
 - **Tool state.** The active tool, any in-flight gesture, and scratch state are
   not part of `Scene`.
 - **View / viewport.** Camera position and zoom are not captured. Wire those
