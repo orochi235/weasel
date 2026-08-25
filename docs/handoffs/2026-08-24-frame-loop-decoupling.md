@@ -13,11 +13,25 @@ The plans carry the detail; this file only says where things stand.
 
 ## Status
 
-Tasks 1-9 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
+Tasks 1-10 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
 painted-version stamping, syncPaint, hidden-document deferral, non-subscribing useScene, live view thunk for
 the text overlay). Tasks 1-4 were independently reviewed; 5-9 were implemented
 with per-test mutation checks but have not had a separate review pass — do one over 5-11 together.
-Task 10 in progress; running autonomously overnight 2026-08-24/25.
+Running autonomously overnight 2026-08-24/25.
+
+**What the arc actually bought, measured** (Task 10, second table in `docs/TODO.md`; the original
+table's load was never recorded so it could not be reproduced, and was left untouched rather than
+contaminated). The scene-graph platformer went 3.94 → 2.88-3.21 ms busy per frame — but only ~2% of
+that came from the kit frame loop, because the demo's own per-frame `setState` masked it; the demo's
+move to `setView` bought the other 17%. The immediate-mode twin, which never had per-frame consumer
+state, gained **44% from the kit change alone**: 1.58 → 0.89 ms/frame, and 118 `CanvasInner.setState`
+per second → **0**. GC did not move, as expected — that is the ephemeral-pose-overrides arc.
+
+**The remaining per-frame render cost is `SceneCanvas`'s own scene subscription.**
+`useSyncExternalStore` at `SceneCanvas.tsx:894` means every `scene.batch` commits even when the host
+opted out via `useScene({ subscribe: false })`, so the platformer still commits ~100-110x/s. Task 10's
+demo test had to freeze the per-frame scene sync to isolate the camera at all. The ephemeral-pose-
+overrides plan is what closes this: overrides never bump the version, so they never notify.
 
 **Two decisions from Tasks 6-7 worth a second look.** (a) The redraw tripwire and the loop's
 alive-arming are `useLayoutEffect`, not passive — `syncPaint` otherwise means "before the next frame"
@@ -25,7 +39,7 @@ rather than "before the browser paints the DOM", and passive arming makes the St
 paint nothing. (b) `document.hidden` suppresses the *sync* paint too, so a background tab does no GPU
 work per commit; the cost is that a synchronous readback taken from a hidden tab sees the pre-hide
 frame until it becomes visible.
-Task 11 not started. Baseline at branch point was 7372 tests; currently 7424, tsc and lint clean.
+Task 11 (docs/TODO/changeset) in progress. Baseline at branch point was 7372 tests; currently 7425, tsc and lint clean.
 
 **Task 3 must land before Task 4.** `usePinchZoomTool` mirrors its `view` argument into a ref per
 render, and `usePinchGesture`'s `scaleFactor` is a per-frame delta, not cumulative — so once
