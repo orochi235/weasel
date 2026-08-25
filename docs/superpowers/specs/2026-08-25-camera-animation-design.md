@@ -205,14 +205,14 @@ is. `useViewTween.animateTo(from, to)` cannot express this — its `from` is an
 argument — which is why the signature does not survive.
 
 **Any view write the runner did not make cancels it.** One predicate,
-`stopIfExternal()`, fed from the canvas's own `onViewChange`. `Canvas.setView`
-calls that on both branches — the controlled one forwards to it instead of
-writing locally — so hand tool, pinch, wheel, inertia and `handle.setView`
-cancel a glide whether or not the consumer owns the view. (`subscribeView` is
-not the feed: the controlled branch returns before notifying subscribers. Nor
-is the `view` dep's `set`, which only sees writes routed through an action;
-it feeds the predicate too, for a `view` dep wired to something other than a
-`<SceneCanvas>`.) The runner raises a flag around its own per-frame write so it
+`stopIfExternal()`, fed from the canvas's own `onViewChange` — the one channel
+`Canvas.setView` reaches on both branches, since the controlled branch forwards
+to it instead of writing locally. Hand tool, pinch, wheel, inertia and
+`handle.setView` therefore cancel a glide whether or not the consumer owns the
+view. (Not `subscribeView`, which the controlled branch returns before ever
+reaching; the `view` dep's `set` feeds the predicate as well, but sees only
+writes routed through an action, so it carries a `view` dep wired to something
+other than a `<SceneCanvas>` and nothing else.) The runner raises a flag around its own per-frame write so it
 does not cancel itself — the same re-entrancy shape `animateOnSetPose` guards
 with `isTicking()`, and it needs its own flag rather than that one, because a
 consumer's scene animation writing the camera from its `onTick` is external and
