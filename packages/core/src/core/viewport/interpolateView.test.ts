@@ -68,4 +68,46 @@ describe('interpolateView', () => {
     expect(mid.scale.x).toBeCloseTo(3, 10);
     expect(mid.scale.y).toBeCloseTo(4, 10);
   });
+
+  describe('non-positive scale endpoints', () => {
+    const finite = (v: View) => (
+      Number.isFinite(v.x) && Number.isFinite(v.y)
+      && Number.isFinite(v.scale.x) && Number.isFinite(v.scale.y)
+    );
+    const samples = [0, 0.25, 0.5, 0.75, 1];
+
+    it('stays finite and lands on the target when the scale goes to zero', () => {
+      const from = V(10, 20, 1);
+      const to = V(60, 70, 0);
+      const f = interpolateView(from, to);
+      for (const t of samples) expect(finite(f(t))).toBe(true);
+      expectViewCloseTo(f(0), from);
+      expectViewCloseTo(f(1), to);
+    });
+
+    it('stays finite and lands on the target across a mirror flip', () => {
+      const from = V(10, 20, 2);
+      const to = V(-30, 40, -2);
+      const f = interpolateView(from, to);
+      for (const t of samples) expect(finite(f(t))).toBe(true);
+      expectViewCloseTo(f(0), from);
+      expectViewCloseTo(f(1), to);
+    });
+
+    it('stays finite when the animation starts from a zero scale', () => {
+      const from = V(0, 0, 0);
+      const to = V(50, 50, 2);
+      const f = interpolateView(from, to);
+      for (const t of samples) expect(finite(f(t))).toBe(true);
+      expectViewCloseTo(f(1), to);
+    });
+
+    it('degrades only the axis that is non-positive', () => {
+      const from: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+      const to: View = { x: 0, y: 0, scale: { x: -1, y: 9 } };
+      const mid = interpolateView(from, to)(0.5);
+      expect(mid.scale.x).toBeCloseTo(0, 10);  // linear, not NaN
+      expect(mid.scale.y).toBeCloseTo(3, 10);  // still geometric
+    });
+  });
 });

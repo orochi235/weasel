@@ -157,6 +157,12 @@ point and crawls from there; the geometric path passes through 2.83×, and each
 frame changes the view by the same *ratio*. The exponential form is also why an
 overshooting easing (back, elastic) cannot invert the camera — it has no zero.
 
+That holds only between positive endpoints, which the type does not guarantee:
+`(s1/s0)^t` is NaN for a negative ratio, and at `s0 = 0` it never recovers —
+`t = 1` is NaN too, so the camera stays broken. An axis whose endpoints are not
+both positive takes the linear branch instead. A mirror flip therefore passes
+through zero scale rather than through NaN, and lands on its target.
+
 Translation follows from the fixed point rather than being lerped alongside.
 Two views that differ in scale agree at exactly one screen point per axis:
 
