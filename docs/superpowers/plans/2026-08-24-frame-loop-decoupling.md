@@ -1011,7 +1011,11 @@ cleanup into that one or drop the duplicate — and note that this task's "cance
 unmount" test therefore passes before you write a line. A green test here is not evidence the rest of
 the task is done; the hidden-document case is the part that isn't built yet.
 
-StrictMode's double-mount is covered by this teardown: the first mount's pending frame is cancelled on its cleanup, and `dirtyRef` starts `true` on the second, so the surface repaints. Nothing else in the loop is shared across mounts — `glRendererRef` already has its own dispose effect (`Canvas.tsx:1290-1295`).
+**This task's code now lives inside `useFrameLoop` (`packages/core/src/canvas/useFrameLoop.ts`), not in `Canvas.tsx`.** Task 1's fix pass extracted the loop, so `dirtyRef` / `rafRef` / `scheduleFrame` are private to the hook — write the hidden-document handling there and read `dirtyRef` at the `visibilitychange` call site (it is otherwise write-only).
+
+**Do not assume StrictMode is handled by teardown.** An earlier draft of this plan claimed the first mount's cancelled frame plus a `true` dirty flag makes the second mount repaint. That is false: `useRef` values survive a StrictMode remount, and Task 1 shipped a blank canvas in every demo because an `aliveRef` was cleared on cleanup and never re-armed on setup. Every app and example here mounts under StrictMode (`apps/site/main.tsx:47`, `apps/draw/src/main.tsx:100`, `packages/labkit/examples/*/main.tsx`). Any flag a cleanup clears must be re-armed in the effect's setup, and the test for it renders under `<StrictMode>` and asserts a probe layer's `draw` actually ran.
+
+Task 1 also already cancels the pending frame in `useFrameLoop`'s cleanup, so **keep exactly one cancel** — this task adds the visibility handling, not a second teardown. Its "cancels its pending frame on unmount" test passes before you write a line; that is not evidence the task is done.
 
 - [ ] **Step 4: Run the tests, then the full canvas suite**
 
