@@ -315,9 +315,12 @@ export function sceneToAdapter<TData, TLayer extends string, TPose>(
       return out;
     },
     getPose(id) {
-      const n = scene.get(asNodeId(id));
+      const nid = asNodeId(id);
+      const n = scene.get(nid);
       if (!n) throw new Error(`sceneToAdapter: unknown node "${id}"`);
-      return n.pose;
+      // Ephemeral overrides win here so painting and hit-testing agree: this
+      // is the pose `buildSceneTree` draws AND the one `pickEvery` tests.
+      return scene.overrides.get(nid)?.pose ?? n.pose;
     },
     getParent(id) {
       const n = scene.get(asNodeId(id));

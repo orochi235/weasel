@@ -725,6 +725,8 @@ export type {
   LeafNode,
   Node as SceneNode,
   NodeId,
+  PoseOverride,
+  PoseOverrides,
   RegisteredOp,
   Scene,
   SceneRegistry,
