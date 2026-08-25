@@ -13,11 +13,11 @@ The plans carry the detail; this file only says where things stand.
 
 ## Status
 
-Tasks 1-8 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
-painted-version stamping, syncPaint, hidden-document deferral, non-subscribing useScene). Tasks 1-4
-were independently reviewed; 5-8 were implemented
+Tasks 1-9 are committed (rAF paint loop, imperative view, pinch getter, SceneCanvas uncontrolled,
+painted-version stamping, syncPaint, hidden-document deferral, non-subscribing useScene, live view thunk for
+the text overlay). Tasks 1-4 were independently reviewed; 5-9 were implemented
 with per-test mutation checks but have not had a separate review pass — do one over 5-11 together.
-Task 9 in progress; running autonomously overnight 2026-08-24/25.
+Task 10 in progress; running autonomously overnight 2026-08-24/25.
 
 **Two decisions from Tasks 6-7 worth a second look.** (a) The redraw tripwire and the loop's
 alive-arming are `useLayoutEffect`, not passive — `syncPaint` otherwise means "before the next frame"
@@ -25,7 +25,7 @@ rather than "before the browser paints the DOM", and passive arming makes the St
 paint nothing. (b) `document.hidden` suppresses the *sync* paint too, so a background tab does no GPU
 work per commit; the cost is that a synchronous readback taken from a hidden tab sees the pre-hide
 frame until it becomes visible.
-Tasks 10-11 not started. Baseline at branch point was 7372 tests; currently 7422, tsc and lint clean.
+Task 11 not started. Baseline at branch point was 7372 tests; currently 7424, tsc and lint clean.
 
 **Task 3 must land before Task 4.** `usePinchZoomTool` mirrors its `view` argument into a ref per
 render, and `usePinchGesture`'s `scaleFactor` is a per-frame delta, not cumulative — so once
@@ -123,6 +123,14 @@ Two more things found while confirming those:
 **The main checkout is not on `main`.** `/Users/mike/src/weasel` sits on
 `feat/labkit-presentation-pass` at `b2c403b5` (a concurrent session). Do not assume that tree is on
 trunk, and do not switch it.
+
+## A pre-existing bug this arc fixed in passing
+
+**Double-click-to-edit text had been broken for twelve days.** `d6c2effa` (2026-08-13) swapped a loop
+from ids to nodes and updated the loop body but not the two `startEdit` calls, leaving
+`String(order[i])` to stringify a node as `"[object Object]"` — so every double-click started an edit
+on a nonexistent id and no overlay appeared. Fixed in Task 9's commit (`99e2f969`), because the thunk
+test could not assert anything real over a broken path. No test in the repo caught it.
 
 ## Follow-ups this arc surfaced but does not own
 
