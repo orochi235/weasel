@@ -93,3 +93,28 @@ describe('useViewDepSource with a camera runner', () => {
     expect(result.current).toBe(first);
   });
 });
+
+describe('useViewDepSource optional-member presence', () => {
+  it('leaves an unwired member falsy, and rebuilds when the wiring changes', () => {
+    const ref = { current: HOME };
+    const recenter = vi.fn((): View | void => HOME);
+    const { result, rerender } = renderHook(
+      ({ wired }: { wired: boolean }) =>
+        useViewDepSource(ref, vi.fn(), wired ? recenter : undefined),
+      { initialProps: { wired: false } },
+    );
+
+    // `viewportZoomAction` picks its reset branch off `view.recenter` being
+    // truthy, so an unwired one must not read as wired.
+    expect(result.current.recenter).toBeUndefined();
+    const unwired = result.current;
+
+    rerender({ wired: true });
+    expect(result.current).not.toBe(unwired);
+    result.current.recenter!();
+    expect(recenter).toHaveBeenCalledOnce();
+
+    rerender({ wired: false });
+    expect(result.current.recenter).toBeUndefined();
+  });
+});

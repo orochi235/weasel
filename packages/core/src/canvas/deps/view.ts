@@ -38,9 +38,9 @@ export function useViewDepSource(
   const wiring = useRef<Wiring>({ currentViewRef, onViewChange, recenter, hostSize, animation });
   wiring.current = { currentViewRef, onViewChange, recenter, hostSize, animation };
 
-  // The optional members must be *absent*, not undefined-valued, when unwired:
-  // `viewportZoomAction` branches on `view.recenter` being truthy. So the API
-  // is rebuilt only when that presence set changes.
+  // An unwired optional member must read falsy — `viewportZoomAction` branches
+  // on `view.recenter`, and a forwarder is truthy — so the identity-stable API
+  // is rebuilt whenever that presence set changes.
   const shape = `${recenter ? 'r' : ''}${hostSize ? 'h' : ''}${animation ? 'a' : ''}`;
   const shapeRef = useRef<string | null>(null);
   const viewApiRef = useRef<ViewApi | null>(null);
