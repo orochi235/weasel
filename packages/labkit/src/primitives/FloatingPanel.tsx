@@ -1,8 +1,10 @@
+import type React from 'react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type Corner,
   DEFAULT_ANCHOR,
   DEFAULT_INSET,
+  FLOATING_DRAG_PREFIX,
   type FloatingPlacement,
   floatingStrategy,
 } from 'windease';
@@ -22,6 +24,12 @@ export interface FloatingPanelProps {
   /** localStorage key to remember its position under. Omit to forget on reload. */
   storageKey?: string;
   className?: string;
+}
+
+/** A pointerdown on one of these is the child's, not a drag. */
+function isInteractive(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return target.closest('input, button, a, select, textarea, [data-no-drag]') !== null;
 }
 
 function readStored(key: string | undefined): FloatingPlacement | null {
@@ -94,10 +102,55 @@ export function FloatingPanel({
     options,
   }).placements.get(ITEM_ID);
 
+  const dragging = useRef<{ x: number; y: number } | null>(null);
+  const [isDragging, setDragging] = useState(false);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isInteractive(e.target)) return;
+    // The canvas stack underneath owns pan/zoom on the same pointer events.
+    e.stopPropagation();
+    dragging.current = { x: e.clientX, y: e.clientY };
+    setDragging(true);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const from = dragging.current;
+    if (!from) return;
+    const dx = e.clientX - from.x;
+    const dy = e.clientY - from.y;
+    if (dx === 0 && dy === 0) return;
+    dragging.current = { x: e.clientX, y: e.clientY };
+    setPlace(
+      (prev) =>
+        strategy.reduce?.(
+          { at: { [ITEM_ID]: prev }, inner: undefined },
+          {
+            affordanceId: `${FLOATING_DRAG_PREFIX}${ITEM_ID}`,
+            kind: 'drag',
+            payload: { dx, dy },
+          },
+          { container, options, items: [item] },
+        ).at[ITEM_ID] ?? prev,
+    );
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    dragging.current = null;
+    setDragging(false);
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+  };
+
   return (
     <div
       className={className ? `lk-floating-panel ${className}` : 'lk-floating-panel'}
+      data-dragging={isDragging ? 'true' : undefined}
       data-placed={rect ? 'true' : undefined}
+      onPointerCancel={endDrag}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endDrag}
       ref={ref}
       style={
         {
