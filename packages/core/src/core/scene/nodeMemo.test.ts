@@ -8,7 +8,7 @@
  * signal. Everything below pins a way that could go wrong.
  */
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { nodeMemo, bumpNodeMemoGeneration } from './nodeMemo';
+import { nodeMemo, bumpNodeMemoGeneration, dropPoseKeyedMemoSlots } from './nodeMemo';
 
 afterEach(() => {
   // Leave no cached entry visible to the next test.
@@ -119,5 +119,38 @@ describe('nodeMemo', () => {
     expect(nodeMemo(node, 'slot', POSE, derive)).toBe('x');
     expect(nodeMemo(node, 'slot', POSE, derive)).toBe('x');
     expect(derive).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('dropPoseKeyedMemoSlots', () => {
+  it('drops pose-keyed slots for one node and leaves other nodes alone', () => {
+    const a = { data: { k: 1 } };
+    const b = { data: { k: 2 } };
+    const pose = { x: 0, y: 0 };
+    let calls = 0;
+    const derive = () => { calls++; return calls; };
+
+    expect(nodeMemo(a, 'paint', pose, derive)).toBe(1);
+    expect(nodeMemo(b, 'paint', pose, derive)).toBe(2);
+    expect(nodeMemo(a, 'paint', pose, derive)).toBe(1); // cached
+
+    dropPoseKeyedMemoSlots(a);
+
+    expect(nodeMemo(a, 'paint', pose, derive)).toBe(3); // recomputed
+    expect(nodeMemo(b, 'paint', pose, derive)).toBe(2); // untouched
+  });
+
+  it('keeps pose-independent slots (the painter match)', () => {
+    const node = { data: { k: 1 } };
+    let calls = 0;
+    const derive = () => { calls++; return calls; };
+
+    expect(nodeMemo(node, 'painter', undefined, derive)).toBe(1);
+    dropPoseKeyedMemoSlots(node);
+    expect(nodeMemo(node, 'painter', undefined, derive)).toBe(1); // still cached
+  });
+
+  it('is a no-op for a node that was never memoized', () => {
+    expect(() => dropPoseKeyedMemoSlots({ data: {} })).not.toThrow();
   });
 });
