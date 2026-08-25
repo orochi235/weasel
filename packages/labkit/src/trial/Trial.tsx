@@ -263,26 +263,31 @@ function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: T
     body = instrument.render(renderCtx);
   }
 
-  const paletteNode =
-    paletteItems.length > 0 ? (
-      <Palette items={paletteItems} onDragStart={dragDropResult.startDrag} />
-    ) : null;
+  const startDrag = dragDropResult.startDrag;
+  const paletteNode = useMemo(
+    () =>
+      paletteItems.length > 0 ? <Palette items={paletteItems} onDragStart={startDrag} /> : null,
+    [paletteItems, startDrag],
+  );
 
-  const layerListNode =
-    instrument.layers && layerDescriptors.length > 0 ? (
-      <LayerList
-        layers={layerDescriptors}
-        visibility={layerVisibility}
-        onReorder={(next) => {
-          setLayerOrder(next.map((l) => l.id));
-          bus.emit('layers.reorder');
-        }}
-        onToggle={(lid, visible) => {
-          setLayerVisibility((prev) => ({ ...prev, [lid]: visible }));
-          bus.emit('layers.toggle');
-        }}
-      />
-    ) : null;
+  const layerListNode = useMemo(
+    () =>
+      instrument.layers && layerDescriptors.length > 0 ? (
+        <LayerList
+          layers={layerDescriptors}
+          visibility={layerVisibility}
+          onReorder={(next) => {
+            setLayerOrder(next.map((l) => l.id));
+            bus.emit('layers.reorder');
+          }}
+          onToggle={(lid, visible) => {
+            setLayerVisibility((prev) => ({ ...prev, [lid]: visible }));
+            bus.emit('layers.toggle');
+          }}
+        />
+      ) : null,
+    [instrument.layers, layerDescriptors, layerVisibility, bus],
+  );
 
   const extraChrome = useMemo<TrialContribution[]>(() => {
     const out: TrialContribution[] = [];
