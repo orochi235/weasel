@@ -37,6 +37,11 @@ Several tasks assert that something no longer costs a React render. **Count comm
 wrapper-render counter passes against the unfixed code and proves nothing. `Canvas.frameLoop.test.tsx`
 (Task 1) is the worked example.
 
+Test projects are not directories: `--project=kit` covers `packages/core`, but the hud suites live under
+`--project=weasel-ui`. `npx vitest run --project=kit packages/hud` matches **no files** and reports a
+cheerful pass — a review of this arc did exactly that and reported hud green without running it. Use
+`npm run test:unit` when you want all of them.
+
 A canvas test only paints if `getContext('webgl2')` returns something: `vitest.setup.ts` stubs it to
 `null`, so install the GL recorder in `beforeAll` the way `Canvas.frameLoop.test.tsx` does. Without it
 the paint bails early and every assertion about painting is vacuous.
@@ -90,7 +95,7 @@ describe('Canvas frame loop', () => {
     await frame();
 
     const painted = vi.fn();
-    apiRef.current!.subscribeFrame!(painted);
+    apiRef.current!.subscribeFrame(painted);
 
     act(() => {
       apiRef.current!.requestRedraw();
@@ -349,14 +354,14 @@ describe('imperative view', () => {
     await frame();
 
     const seen: number[] = [];
-    const stop = apiRef.current!.subscribeView!((v) => seen.push(v.x));
-    apiRef.current!.setView!((cur) => ({ ...cur, x: cur.x + 10 }));
-    apiRef.current!.setView!((cur) => ({ ...cur, x: cur.x + 10 }));
+    const stop = apiRef.current!.subscribeView((v) => seen.push(v.x));
+    apiRef.current!.setView((cur) => ({ ...cur, x: cur.x + 10 }));
+    apiRef.current!.setView((cur) => ({ ...cur, x: cur.x + 10 }));
     stop();
-    apiRef.current!.setView!((cur) => ({ ...cur, x: cur.x + 10 }));
+    apiRef.current!.setView((cur) => ({ ...cur, x: cur.x + 10 }));
 
     expect(seen).toEqual([10, 20]);
-    expect(apiRef.current!.getView!().x).toBe(30);
+    expect(apiRef.current!.getView().x).toBe(30);
   });
 
   it('fires onViewChange for every imperative write', async () => {
@@ -367,7 +372,7 @@ describe('imperative view', () => {
               defaultView={IDENTITY} onViewChange={onViewChange} />,
     );
     await frame();
-    apiRef.current!.setView!({ x: 5, y: 5, scale: { x: 1, y: 1 } });
+    apiRef.current!.setView({ x: 5, y: 5, scale: { x: 1, y: 1 } });
     expect(onViewChange).toHaveBeenCalledWith({ x: 5, y: 5, scale: { x: 1, y: 1 } });
   });
 
@@ -377,9 +382,9 @@ describe('imperative view', () => {
     render(<Canvas ref={apiRef as never} width={100} height={80} layers={{}} view={IDENTITY} />);
     await frame();
 
-    apiRef.current!.setView!({ x: 99, y: 0, scale: { x: 1, y: 1 } });
+    apiRef.current!.setView({ x: 99, y: 0, scale: { x: 1, y: 1 } });
 
-    expect(apiRef.current!.getView!()).toEqual(IDENTITY);
+    expect(apiRef.current!.getView()).toEqual(IDENTITY);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('controlled'));
     warn.mockRestore();
   });
@@ -487,7 +492,7 @@ Grep for the identifier before moving on: `grep -n effectiveView packages/core/s
   subscribeFrame(fn: () => void): () => void;
 ```
 
-All four are required members, not optional: both handle construction sites (`Canvas.tsx:829`, `SceneCanvas.tsx:1826`) populate them. Drop the `!` from the test call sites in Tasks 1 and 2 once they typecheck as required.
+All are required members, not optional: both handle construction sites (`Canvas.tsx:829`, `SceneCanvas.tsx:1826`) populate them. `subscribeFrame` was already made required during Task 1; add these three the same way, and never leave a member optional that always exists — consumers otherwise learn `?.` on a method that cannot be absent, and the no-op silently swallows real calls.
 
 - [ ] **Step 5: Run the tests**
 
