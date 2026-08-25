@@ -21,11 +21,16 @@ import { TrialChrome } from './TrialChrome';
 /** Props for `<Trial>`. */
 export interface TrialProps {
   id: string;
+  /** Contributions the lab adds to this trial's chrome, merged after the
+   *  instrument's own. */
+  chrome?: readonly TrialContribution[];
+  /** Built-in contribution ids to drop. Throws on an id that is not there. */
+  suppress?: readonly string[];
 }
 
 /** Renders one trial from the lab store: looks up its record and
  *  instrument, and mounts the instrument inside the trial chrome. */
-export function Trial({ id }: TrialProps) {
+export function Trial({ id, chrome, suppress }: TrialProps) {
   const lab = useLabContext();
   const storeCtx = useContext(LabStoreContext);
   if (!storeCtx) throw new Error('[labkit] <Trial> requires <LabStoreProvider>');
@@ -45,6 +50,8 @@ export function Trial({ id }: TrialProps) {
       instrument={instrument}
       store={storeCtx.store}
       isLast={lab.trials.length <= 1}
+      chrome={chrome}
+      suppress={suppress}
     />
   );
 }
@@ -54,9 +61,11 @@ interface TrialRuntimeProps {
   instrument: Instrument;
   store: LabStore;
   isLast: boolean;
+  chrome?: readonly TrialContribution[];
+  suppress?: readonly string[];
 }
 
-function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) {
+function TrialRuntime({ record, instrument, store, isLast, chrome, suppress }: TrialRuntimeProps) {
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const updateTrialState = useStore(store, (s) => s.updateTrialState);
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
@@ -303,6 +312,8 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
       isLastTrial={isLast}
       undoBindings={undoBindings}
       trialChrome={extraChrome}
+      chrome={chrome}
+      suppress={suppress}
       activeToolId={resolvedToolId}
       setActiveTool={setActiveTool}
     >

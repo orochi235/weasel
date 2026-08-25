@@ -1,6 +1,7 @@
 import { ThemeProvider } from '@weasel-js/theme/react';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef } from 'react';
 import { useStore } from 'zustand/react';
+import type { TrialContribution } from '../chrome/types';
 import type { InstrumentList } from '../instrument/types';
 import { noneAdapter } from '../state/adapters';
 import { LabStoreContext } from '../state/context';
@@ -36,6 +37,10 @@ export interface LabProps {
    */
   nebula?: readonly string[];
   title?: string;
+  /** Contributions added to every trial's chrome, after the instrument's own. */
+  chrome?: readonly TrialContribution[];
+  /** Built-in contribution ids to drop. Throws on an id that is not there. */
+  suppress?: readonly string[];
   children?: ReactNode;
 }
 
@@ -89,6 +94,8 @@ export function Lab({
   mode,
   nebula,
   title,
+  chrome,
+  suppress,
   children,
 }: LabProps) {
   if (process.env.NODE_ENV !== 'production' && instruments.length === 0) {
@@ -212,7 +219,7 @@ export function Lab({
               onLayoutChange={(next) => store.getState().setLayout(next)}
             >
               {trials.map((w) => (
-                <Trial key={w.id} id={w.id} />
+                <Trial key={w.id} id={w.id} chrome={chrome} suppress={suppress} />
               ))}
             </Workspace>
           </LabShell>
