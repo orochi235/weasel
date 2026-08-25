@@ -2,6 +2,7 @@ import { type KeyboardEvent, type ReactNode, useContext, useMemo } from 'react';
 import { useStore } from 'zustand/react';
 import { builtinContributions } from '../chrome/builtins';
 import { mergeContributions, suppressContributions } from '../chrome/merge';
+import { PaletteRegion } from '../chrome/regions/PaletteRegion';
 import { SidebarRegion } from '../chrome/regions/SidebarRegion';
 import { StatusRegion } from '../chrome/regions/StatusRegion';
 import { ToolbarRegion } from '../chrome/regions/ToolbarRegion';
@@ -173,6 +174,7 @@ export function TrialChrome({
         <ToolbarRegion contributions={inRegion('toolbar')} ctx={ctx} />
       </div>
       <div className="lk-trial__body">
+        <PaletteRegion contributions={inRegion('palette')} ctx={ctx} />
         <div className="lk-trial__sidebar">
           <SidebarRegion contributions={inRegion('sidebar')} ctx={ctx} />
         </div>

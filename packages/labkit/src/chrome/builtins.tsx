@@ -56,6 +56,18 @@ export function builtinContributions(
     });
   }
 
+  // A tool id shares the contribution namespace, so a tool called `close`
+  // collides with the built-in close button and throws. Both are contributions
+  // to one trial's chrome.
+  for (const t of instrument.tools?.tools ?? []) {
+    out.push({
+      id: t.id,
+      region: 'palette',
+      group: t.group,
+      item: { icon: t.icon, label: t.label, shortcut: t.shortcut },
+    });
+  }
+
   // Zoom acts on the view of the trial, so it is a viewport control. A trial
   // holding a non-2D view reports zoom as null and gets none of this.
   if (instrument.canvas != null && zoom !== null) {

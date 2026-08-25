@@ -1,0 +1,14 @@
+.lk-palette-region {
+  display: flex;
+  flex-direction: column;
+  padding: var(--wzl-space-xs);
+  border-right: var(--wzl-border-w) solid var(--wzl-line-subtle);
+  background: var(--wzl-surface-sunken);
+
+  // labkit's `:where(button)` default sets an explicit height, and because
+  // :where() carries no specificity it also wins over ToolButton, which sizes
+  // itself from padding.
+  button {
+    height: auto;
+  }
+}

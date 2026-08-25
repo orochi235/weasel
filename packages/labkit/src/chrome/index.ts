@@ -1,5 +1,7 @@
 export { builtinContributions } from './builtins';
 export { mergeContributions, suppressContributions } from './merge';
+export type { PaletteRegionProps } from './regions/PaletteRegion';
+export { PaletteRegion } from './regions/PaletteRegion';
 export type { SidebarRegionProps } from './regions/SidebarRegion';
 export { SidebarRegion } from './regions/SidebarRegion';
 export type { StatusRegionProps } from './regions/StatusRegion';
