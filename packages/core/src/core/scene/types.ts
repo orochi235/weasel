@@ -248,6 +248,11 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
    *  mode machines that depend on `scene.history`), pass nothing here and
    *  wire it after construction via `scene.setActiveJournalAccessor(fn)`. */
   getActiveJournal?: () => import('@weasel-js/history').Journal | null;
+  /** Re-render the host on every scene mutation. Default `true`. Set `false`
+   *  when the scene is read by a frame loop rather than by a render — a game
+   *  loop, a simulation — and nothing in the host's DOM derives from it.
+   *  Read by `useScene`; `createScene` ignores it. */
+  subscribe?: boolean;
 }
 
 /**
