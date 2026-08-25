@@ -23,7 +23,7 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- **labkit presentation pass** — arcs 1+2 done on `feat/labkit-arc2`; arc 3 and the tool-palette / sidebar / viewport-control regions remain → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **labkit presentation pass** — arcs 1+2 merged; arc 3 (chrome regions) specced and planned on `feat/labkit-arc3`, arc 4 (density) after it → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
@@ -1154,49 +1154,44 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
 
-- **(P1) labkit presentation pass — finish arc 2, then define a tool palette and
-  a sidebar.** In flight on `feat/labkit-presentation-pass` (committed, unpushed).
-  Design: `docs/superpowers/specs/2026-08-24-labkit-presentation-design.md`.
-  Handoff, with the traps: `docs/handoffs/2026-08-25-labkit-presentation-pass.md`.
+- **(P1) labkit presentation pass — arc 3, chrome regions.** Arcs 1 and 2 are
+  merged to main (`f77b877b`). Arc 3 is specified and planned, not started, on
+  `feat/labkit-arc3` (worktree `/Users/mike/src/weasel-arc3`).
 
-  **Arcs 1 and 2 are done**, across two branches — `feat/labkit-presentation-pass`
-  and `feat/labkit-arc2` (worktree `/Users/mike/src/weasel-arc2`), the second
-  branched from the first. Arc 1 is a 43-glyph icon set in `@weasel-js/ui`,
-  generated from `packages/ui/scripts/icons/` via `npm run gen:icons`. Arc 2 is
-  the content well, sidebar, compact toolbar, `ZoomControl`, title-bar drag,
-  `ControlPanel` rebuilt on the property rows, a default lab header, `JobProgress`,
-  a raised trial surface, and the audit's defect list.
+  Design: `docs/superpowers/specs/2026-08-25-labkit-chrome-regions-design.md`.
+  Plan: `docs/superpowers/plans/2026-08-25-labkit-chrome-regions.md` (eleven
+  tasks). Traps: `docs/handoffs/2026-08-25-labkit-presentation-pass.md`.
 
-  Arc 3 is what remains, plus the areas below. `PropertyPanel.less` still holds
-  about a dozen hardcoded `rgba()` values authored against a dark panel; two of
-  them rendered as a gray slab on the light theme and are fixed, the rest sit in
-  `EffectCard` and the toggle rows. The title bar and status bar are the heaviest
-  chrome relative to what they carry.
+  The three questions this entry used to hold open — where viewport controls
+  live, what earns the toolbar's leading slot, and how a tool palette and a real
+  sidebar become engine surface — turned out to be one question. labkit has three
+  half-built mechanisms for routing a declaration to chrome: `detectCapabilities`
+  (never called), the `toolbar`/`sidebar`/`statusBar` props on `TrialChromeProps`
+  (never passed, so no consumer of `<Lab>` can replace a region), and
+  `sidebarExtras` (live, but appends rather than lays out). Arc 3 replaces all
+  three with one region model; the leading-slot question then answers itself,
+  since nothing is pinned there any more.
 
-  **Viewport controls need their own region.** Zoom currently sits as a group in
-  the trial toolbar, which is where it landed rather than where it belongs — the
-  toolbar is for acting on the trial, and pan/zoom/fit act on the *view* of it.
-  They want a carved-out spot: an overlay anchored inside the canvas, or a region
-  of the status bar, which already shows the zoom readout. Deciding that also
-  settles whether `ScaleIndicator` and `FpsMeter` live there, since both are
-  view-scoped readouts with nowhere of their own today.
+  Arc 3 also adds labkit's own tool concept. Core's `ToolsApi` is not reusable —
+  it carries hotkey slots, ambient tools and canvas overlay layers bound to the
+  gesture dispatcher, and a labkit instrument is an arbitrary canvas or DOM tree.
 
-  **What occupies the toolbar's primary slot is unresolved.** Save/snapshot holds
-  the leading left position by default, and it should not — snapshotting is
-  occasional, and the leading slot is the most valuable real estate in the bar.
-  What earns it is an open question; it likely depends on what the instrument
-  declares, which means the slot may be a capability-driven region rather than a
-  fixed control. Do not just reshuffle the existing buttons.
+- **(P1) labkit arc 4 — density, spacing and type scale.** Follows arc 3;
+  restyling the chrome before the regions settle means restyling it twice.
+  Inventory already taken: 128 `font-size` declarations across labkit and
+  `@weasel-js/ui` with 13% tokenized, spanning 15 distinct sizes from 9px to
+  18px; six radii for what is one card family; three conventions for monospace
+  (the token, the bare keyword, an inline stack); and raw `font-weight: 600`
+  against a token set resolving to 300/500/700. `PropertyPanel.less` holds 17
+  hardcoded colors, 11 of them in `EffectCard` — including a third danger red
+  unrelated to `--wzl-danger`, and `#0a0a14` hardcoded where `--wzl-fg-inverse`
+  exists, which is illegible on the light theme.
 
-  **The two undefined areas are the bigger gap.** A lab that wants a *tool
-  palette* has nothing to reach for — `Palette` is the drag-drop source list, not
-  a tool strip, and `@weasel-js/ui` ships `ToolPalette` / `ToolGroup` /
-  `ToolButton` that labkit neither wraps nor routes through the trial's tool
-  state. The *sidebar* is a bare collapsible column: `DefaultSidebar` puts one
-  `ControlPanel` in it and anything else a lab needs is hand-assembled, with no
-  notion of sections, ordering, or which panels an instrument's capabilities
-  imply. Both should be engine surface — a trial declares what it has and the
-  chrome lays it out — not something each lab rebuilds.
+  The trial border sits at ~1.53:1 against the workspace and its box-shadow is a
+  *light* shadow on a near-black field, pointing the wrong way for elevation. The
+  title bar (24px for one word) and status bar (25px for "100%") are the heaviest
+  chrome relative to what they carry. `FpsMeter` and `ScaleIndicator` are
+  view-scoped readouts that arc 3 gives a home to but does not contribute.
 
 - **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
 
