@@ -15,5 +15,6 @@ export type {
   UndoCapability,
   ViewTransform,
 } from './types';
+export type { ToolCapability, TrialTool } from '../tools/types';
 export type { ValidationResult } from './validateConfigSchema';
 export { validateConfigSchema } from './validateConfigSchema';

@@ -59,6 +59,7 @@ function Harness() {
                 setView: () => {},
                 zoom: 1,
                 setZoom: () => {},
+                activeToolId: null,
               },
               emit: () => {},
             })}

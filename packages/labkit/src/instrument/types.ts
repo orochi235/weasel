@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ConfigField } from '../controls/types';
 import type { JobCapability, JobHandle } from '../job/types';
+import type { ToolCapability } from '../tools/types';
 
 /** What an instrument's `render` is handed: its state and config, the setters
  *  for both, the trial it is mounted in, and a way to emit named events. */
@@ -19,6 +20,9 @@ export interface RenderContext<TS = unknown, TC = unknown> {
      *  a view that is not the 2D one. */
     zoom: number;
     setZoom: (z: number) => void;
+    /** Resolved active tool: this trial's slot, or the lab's. Null when neither
+     *  holds one. */
+    activeToolId: string | null;
   };
   emit: (event: string) => void;
   /** Present only when the instrument declares a `job`. */
@@ -106,6 +110,9 @@ export interface Instrument<TS = unknown, TC = unknown> {
   layers?: LayerCapability;
   dragDrop?: DragDropCapability<TS, TC>;
   undo?: UndoCapability;
+  /** Tools this instrument offers. Declaring them gives the trial a palette
+   *  region and its own tool slot. */
+  tools?: ToolCapability;
   /** Work too slow to do during a render. The runtime starts it, aborts it on
    *  unmount and on a `key` change, and renders progress into the trial. */
   job?: JobCapability<TS, TC, never>;

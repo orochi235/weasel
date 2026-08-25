@@ -4,12 +4,7 @@ import { CanvasStack } from '../canvas/CanvasStack';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { DragOverlay, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { Palette } from '../dragdrop/Palette';
-import type {
-  Instrument,
-  LayerDescriptor,
-  PaletteItem,
-  RenderContext,
-} from '../instrument/types';
+import type { Instrument, LayerDescriptor, PaletteItem, RenderContext } from '../instrument/types';
 import { useJob } from '../job/useJob';
 import { useLabContext } from '../lab/LabContext';
 import { LayerList } from '../layers/LayerList';
@@ -66,6 +61,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
   const updateTrialConfig = useStore(store, (s) => s.updateTrialConfig);
   const updateTrialView = useStore(store, (s) => s.updateTrialView);
   const updateTrialUndoStack = useStore(store, (s) => s.updateTrialUndoStack);
+  const labToolId = useStore(store, (s) => s.activeToolId);
 
   const busRef = useRef<EventBus | null>(null);
   if (busRef.current === null) busRef.current = createEventBus();
@@ -87,6 +83,13 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
   };
 
   const setView = (v: unknown): void => updateTrialView(record.id, v);
+
+  // A trial gets its own slot when its instrument declares tools; otherwise it
+  // reads the lab's. Which slot a change writes follows from the same thing.
+  const declaresTools = instrument.tools != null;
+  const resolvedToolId = declaresTools
+    ? (record.activeToolId ?? instrument.tools?.initial ?? instrument.tools?.tools[0]?.id ?? null)
+    : labToolId;
 
   // `CanvasStack` and the zoom controls are 2D; a trial holding another view shape
   // gets the default here and simply never renders them.
@@ -127,6 +130,7 @@ function TrialRuntime({ record, instrument, store, isLast }: TrialRuntimeProps) 
         if (!view2d) return;
         updateTrialView(record.id, { ...view2d, zoom: z });
       },
+      activeToolId: resolvedToolId,
     },
     emit: (event) => {
       snapshotIfNeeded(event);

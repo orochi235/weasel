@@ -39,6 +39,8 @@ export interface LabStoreActions {
   deleteSnapshot: (snapshotId: string) => void;
   listSnapshots: (trialId?: string) => SavedSnapshot[];
   setMode: (mode: LabMode) => void;
+  setLabTool: (id: string | null) => void;
+  setTrialTool: (trialId: string, id: string | null) => void;
   setLayout: (layout: Record<string, unknown>) => void;
 }
 
@@ -70,6 +72,7 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
     savedSnapshots: hydratedSnapshots,
     mode: hydratedMode,
     layout: hydratedLayout,
+    activeToolId: null,
 
     addTrial: (record) => {
       set((s) => ({
@@ -202,6 +205,13 @@ export function createLabStore(options: CreateLabStoreOptions): LabStore {
       set({ mode });
       scheduleFlush();
     },
+
+    setLabTool: (id) => set({ activeToolId: id }),
+
+    setTrialTool: (trialId, id) =>
+      set((s) => ({
+        trials: s.trials.map((t) => (t.id === trialId ? { ...t, activeToolId: id } : t)),
+      })),
 
     setLayout: (layout) => {
       set({ layout });
