@@ -134,9 +134,10 @@ trackpad support.
 Two things the plan got wrong against this branch, both now handled in the tests:
 its Mac preamble stubs only `navigator.userAgent`, which does not reach the Mac branch while
 `IS_MAC` reads `platform ?? userAgent` and jsdom's `platform` is `''` — the tests stub `platform`;
-and its Task-7 mutation 3 (swap the camera's animator for the consumer's `animator` prop) cannot
-fail, because `useViewAnimation`'s own `useAnimator()` fallback makes the two identical when no
-prop is passed. A test that cancels the consumer's animator wholesale covers that claim instead.
+and its Task-7 mutation 3 is two mutations, only one of which is live. *Swapping in* the
+consumer's `animator` prop does fail — the test that cancels that animator wholesale catches it.
+*Dropping* the argument cannot: `useViewAnimation`'s own `useAnimator()` fallback makes the two
+identical whenever no `animator` prop is passed, which is every case in the suite.
 
 **This arc must rebase onto `mac-pinch-zoom`** — they collide in `SceneCanvasProps`' `animatedZoom`
 declaration, `viewportZoom.ts`, and the `viewport.pinchZoom` wiring. Original decision below.
