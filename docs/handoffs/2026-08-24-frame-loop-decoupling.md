@@ -115,7 +115,17 @@ must `EnterWorktree` into a tree before any agent can write there. The three bug
    `useStandardActions.ts:161`, and the flag additionally mounts the legacy hook at
    `Canvas.tsx:925`. Measured `[2]` vs `[2, 4]` — the demo's own opt-in breaks the default path.
 
-**`animatedZoom` — decided, not started.** The prop is declared (`SceneCanvas.tsx:600`), documented,
+**`animatedZoom` — specced, planned, and being implemented on this branch.** Spec
+`docs/superpowers/specs/2026-08-25-camera-animation-design.md`, plan
+`docs/superpowers/plans/2026-08-25-camera-animation.md` (9 tasks). Tasks 1-6 committed
+(`80271386`, `d619a564`, `7c9213bb`, `52848724`, `0422d350`, `4b541bce`); 7-9 in progress.
+`useViewTween` is deleted, `useViewAnimation` runs on the kit `Animator`, and the `view` dep gained
+`animate` / `stopAnimation` / `animationTarget`.
+
+**This arc must rebase onto `mac-pinch-zoom`** — they collide in `SceneCanvasProps`' `animatedZoom`
+declaration, `viewportZoom.ts`, and the `viewport.pinchZoom` wiring. Original decision below.
+
+**`animatedZoom` — the original decision.** The prop is declared (`SceneCanvas.tsx:600`), documented,
 and read by nothing; Cmd+= is a bare `view.set`. The user chose to **implement it on the animation
 system** rather than drop it: the zoom action tweens through `Animator`, and `useViewTween`'s bespoke
 rAF loop (its own `lerp`, its own private `easeOutCubic` while `animation/easings` exports that plus
