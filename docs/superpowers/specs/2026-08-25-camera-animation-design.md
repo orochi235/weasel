@@ -188,9 +188,12 @@ This lives in `core/viewport/interpolateView.ts` as an `InterpolatorFactory<View
 
 ## Interruption
 
-**One camera animation per canvas.** Everything registers under
-`cancelKey: 'view'`, so a new one displaces the old through the animator's own
-mechanism.
+**One camera animation per runner.** Each `useViewAnimation` instance registers
+under its own `view:<useId()>` cancel key, so a new animation displaces that
+instance's previous one through the animator's own mechanism, and two runners
+sharing an animator neither cancel each other nor read each other's state.
+`<SceneCanvas>` builds one runner on one animator, so per canvas this is still
+one camera animation.
 
 **A new step retargets from the pending target, not from the live view.** Three
 fast presses of Cmd+= land on 1.25³, not on 1.25× wherever the first tween had

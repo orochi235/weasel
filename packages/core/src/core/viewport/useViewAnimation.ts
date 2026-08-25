@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useId, useMemo, useRef } from 'react';
 import { useAnimator } from '../../animation/useAnimator';
 import { easeOutCubic } from '../../animation/easings';
 import type { Animator, EasingFn, InterpolatorFactory } from '../../animation/types';
@@ -7,7 +7,8 @@ import { fitViewToBounds } from './fitViewToBounds';
 import type { Bounds, FitViewToBoundsOptions, ViewportDims } from './fitViewToBounds';
 import type { View } from './view';
 
-/** Cancel-key every camera animation registers under: one per animator. */
+/** Cancel-key prefix. Each hook instance appends its own id, so two runners
+ *  sharing an animator do not cancel each other. */
 export const VIEW_ANIMATION_KEY = 'view';
 
 const DEFAULT_MS = 250;
@@ -56,12 +57,14 @@ export interface ViewAnimationApi {
  * Animate the viewport `View`. Runs on the kit's {@link Animator} — pass one to
  * share a canvas's animator, or omit it and the hook makes its own.
  *
- * Every animation registers under {@link VIEW_ANIMATION_KEY}, so starting one
- * cancels whatever was in flight, and each starts from the *live* view rather
- * than a captured value — an interrupted camera never jumps.
+ * Every animation from one instance registers under that instance's cancel key,
+ * so starting one cancels whatever *it* had in flight, and each starts from the
+ * *live* view rather than a captured value — an interrupted camera never jumps.
+ * Two instances on one animator are independent.
  */
 export function useViewAnimation(view: ViewChannel, animator?: Animator): ViewAnimationApi {
   const own = useAnimator();
+  const key = `${VIEW_ANIMATION_KEY}:${useId()}`;
   const viewRef = useRef(view);
   viewRef.current = view;
   const animatorRef = useRef<Animator>(animator ?? own);
@@ -70,10 +73,10 @@ export function useViewAnimation(view: ViewChannel, animator?: Animator): ViewAn
   const writingRef = useRef(false);
 
   return useMemo<ViewAnimationApi>(() => {
-    const isAnimating = () => animatorRef.current.isActive(VIEW_ANIMATION_KEY);
+    const isAnimating = () => animatorRef.current.isActive(key);
     const target = () => (isAnimating() ? targetRef.current : null);
     const stop = () => {
-      animatorRef.current.cancelKey(VIEW_ANIMATION_KEY);
+      animatorRef.current.cancelKey(key);
       targetRef.current = null;
     };
 
@@ -88,7 +91,7 @@ export function useViewAnimation(view: ViewChannel, animator?: Animator): ViewAn
         ms: opts.ms ?? DEFAULT_MS,
         easing: opts.easing ?? easeOutCubic,
         interpolator: opts.interpolator ?? interpolateView,
-        cancelKey: VIEW_ANIMATION_KEY,
+        cancelKey: key,
         onTick: (v) => {
           writingRef.current = true;
           try { viewRef.current.set(v); } finally { writingRef.current = false; }
@@ -113,5 +116,5 @@ export function useViewAnimation(view: ViewChannel, animator?: Animator): ViewAn
       target,
       stopIfExternal: () => { if (!writingRef.current) stop(); },
     };
-  }, []);
+  }, [key]);
 }

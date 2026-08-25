@@ -163,6 +163,32 @@ describe('useViewAnimation', () => {
     expect(current().y).toBeCloseTo(0, 10);
   });
 
+  it('does not strand a second runner sharing one animator', () => {
+    const clock = makeClock();
+    const a = makeChannel(HOME);
+    const b = makeChannel(HOME);
+    const { result } = renderHook(() => {
+      const animator = useAnimator(clock);
+      return { a: useViewAnimation(a.channel, animator), b: useViewAnimation(b.channel, animator) };
+    });
+
+    act(() => { result.current.a.animate({ x: 100, y: 0, scale: { x: 1, y: 1 } }, { ms: 200, easing: linear }); });
+    act(() => { clock.advance(100); });
+    expect(a.current().x).toBeCloseTo(50, 10);
+
+    act(() => { result.current.b.animate({ x: 20, y: 0, scale: { x: 1, y: 1 } }, { ms: 200, easing: linear }); });
+    act(() => { clock.advance(100); });
+
+    // A is nobody's business but A's: starting B must neither freeze it nor
+    // hand it B's answers.
+    expect(a.current().x).toBeCloseTo(100, 10);
+    expect(result.current.a.isAnimating()).toBe(false);
+    expect(result.current.a.target()).toBeNull();
+    expect(b.current().x).toBeCloseTo(10, 10);
+    expect(result.current.b.isAnimating()).toBe(true);
+    expect(result.current.b.target()!.x).toBeCloseTo(20, 10);
+  });
+
   it('reports isAnimating correctly through a StrictMode remount', () => {
     const clock = makeClock();
     const { channel } = makeChannel(HOME);
