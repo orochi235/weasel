@@ -139,6 +139,7 @@ export {
   viewportZoomAction,
   makeViewportZoomAction,
   type ViewportZoomOptions,
+  type ViewportZoomAnimateOptions,
 } from './interactions/actions/defaults/viewportZoom';
 export { editAnchorsAction } from './interactions/actions/defaults/editAnchors';
 export { lassoSelectAction } from './interactions/actions/defaults/lassoSelect';
