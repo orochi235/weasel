@@ -908,6 +908,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // dispatcher's `onGestureChange` only fires for legacy `tool.drag.*` hooks,
   // which the migrated actions don't provide.
   const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
+  // Set from the merged ref callback, so effects needing the handle key off it
+  // instead of assuming when React attaches it.
+  const [canvasReady, setCanvasReady] = useState(false);
 
   useEffect(() => {
     dlog('scene-canvas', 'mount');
@@ -952,25 +955,33 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     canvasApiRef.current?.requestRedraw?.();
   }), []);
 
-  // SceneCanvas owns the view state so writes from immediate-timing actions
-  // (viewport.pan / viewport.zoom via the dep registry's `view.set`) drive a
-  // re-render of the underlying Canvas. We always render Canvas in controlled
-  // mode (`view={effectiveView}`), so Canvas's own imperative view path is
-  // unreachable along here. When `viewProp` is supplied by the consumer we
-  // defer to it (true external control).
-  const [internalView, setInternalView] = useState<View>(
+  // The mirror every HUD, pick and pinch path reads synchronously. Seeded here
+  // because those reads start before the canvas's subscription lands.
+  const currentViewRef = useRef<View>(
     viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
   );
-  const effectiveView: View = viewProp ?? internalView;
+  if (viewProp !== undefined) currentViewRef.current = viewProp;
 
-  // Stable ref tracking the latest view for HUDs / picking / pinch.
-  const currentViewRef = useRef<View>(effectiveView);
-  currentViewRef.current = effectiveView;
+  useEffect(() => {
+    const api = canvasApiRef.current;
+    if (!api) return;
+    currentViewRef.current = api.getView();
+    return api.subscribeView((v) => { currentViewRef.current = v; });
+  }, [canvasReady]);
 
+  // The dep registry's `view.set`. Uncontrolled it must not also call
+  // `onViewChangeProp` — the canvas reports the write through `notifyViewChange`.
   const handleViewChange = useCallback((v: View) => {
-    if (viewProp === undefined) setInternalView(v);
+    const api = canvasApiRef.current;
+    if (viewProp === undefined && api) { api.setView(v); return; }
     onViewChangeProp?.(v);
   }, [viewProp, onViewChangeProp]);
+
+  // Canvas fires its `onViewChange` from inside `setView`, so this one must
+  // never write back to the canvas — `handleViewChange` here would recurse.
+  const notifyViewChange = useCallback((v: View) => {
+    onViewChangeProp?.(v);
+  }, [onViewChangeProp]);
 
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
@@ -1827,6 +1838,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
         ? { ...node, ingest: ingestImpl }
         : null;
       canvasApiRef.current = extended;
+      setCanvasReady(extended !== null);
       if (typeof ref === 'function') ref(extended);
       else if (ref) (ref as React.MutableRefObject<SceneCanvasApi | null>).current = extended;
     },
@@ -1869,8 +1881,8 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       pickHud={pickHud}
       modalityHud={modalityHud}
       pickBest={internalPickBest}
-      view={effectiveView}
-      onViewChange={handleViewChange}
+      {...(viewProp !== undefined ? { view: viewProp } : { defaultView })}
+      onViewChange={notifyViewChange}
       shaders={shaders}
       // onBackgroundClick is intentionally NOT wired here. The `clearSelection`
       // action binding in the select tool handles "click on empty background clears
