@@ -33,6 +33,22 @@ export interface CanvasExtensionApi {
    * an unsubscribe.
    */
   subscribeFrame(fn: () => void): () => void;
+  /** The current view. Readable mid-frame — this is the value the next paint
+   *  will use, not a value from the last React commit. */
+  getView(): View;
+  /**
+   * Set the view without a React render: the ref updates now and the next
+   * frame paints with it.
+   *
+   * Ignored, with a console warning, when the canvas is controlled by a `view`
+   * prop — there the prop is the authority and this would only desynchronize
+   * pixels from props. `onViewChange` still fires either way.
+   */
+  setView(next: View | ((current: View) => View)): void;
+  /** Called after each view change, for chrome that mirrors the camera — a
+   *  zoom readout, a minimap, DOM pinned to world coordinates. Returns an
+   *  unsubscribe. */
+  subscribeView(fn: (view: View) => void): () => void;
   /** Register an externally-owned RenderLayer. The layer participates in the
    *  draw stack and, if it implements `hitTest`, in {@link hitTestExtras}. */
   registerLayer(layer: RenderLayer<unknown>): () => void;

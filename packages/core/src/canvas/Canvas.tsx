@@ -834,39 +834,65 @@ function CanvasInner<TNode extends { id: string }, TPose>(
     helpersForLayersRef.current,
   ), [hitTestExtrasIn]);
 
+  // Viewport state: hybrid uncontrolled/controlled. Controlled (`view` prop
+  // supplied) is unchanged — the consumer owns the value and every write goes
+  // out through `onViewChange`. Uncontrolled state lives in a ref rather than
+  // `useState`, so a camera moving at 60 Hz costs no React render; whatever
+  // renders the view as DOM subscribes instead.
+  const viewRef = useRef<View>(viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
+  const isControlled = viewProp !== undefined;
+  if (isControlled) viewRef.current = viewProp;
+  const viewSubsRef = useRef<Set<(v: View) => void>>(new Set());
+  const onViewChangeRef = useRef(onViewChange);
+  onViewChangeRef.current = onViewChange;
+  const viewBoundsRef = useRef(viewBounds);
+  viewBoundsRef.current = viewBounds;
+  const isControlledRef = useRef(isControlled);
+  isControlledRef.current = isControlled;
+  const dimsForClampRef = useRef({ width, height });
+  dimsForClampRef.current = { width, height };
+
+  const setView = useCallback((next: View | ((current: View) => View)) => {
+    const resolved = typeof next === 'function' ? next(viewRef.current) : next;
+    const bounds = viewBoundsRef.current;
+    const clamped = bounds ? clampView(resolved, bounds, dimsForClampRef.current) : resolved;
+    if (isControlledRef.current) {
+      // The prop is the authority; writing the ref would put pixels and props
+      // out of step with nothing to reconcile them.
+      console.warn('[weasel] setView ignored: this canvas is controlled by its `view` prop. Update that prop, or drop it to take the imperative path.');
+      onViewChangeRef.current?.(clamped);
+      return;
+    }
+    viewRef.current = clamped;
+    for (const fn of viewSubsRef.current) fn(clamped);
+    onViewChangeRef.current?.(clamped);
+    requestRedraw();
+  }, [requestRedraw]);
+  const setViewRef = useRef(setView);
+  setViewRef.current = setView;
+
+  const getView = useCallback(() => viewRef.current, []);
+  const subscribeView = useCallback((fn: (v: View) => void) => {
+    viewSubsRef.current.add(fn);
+    return () => { viewSubsRef.current.delete(fn); };
+  }, []);
+
   useImperativeHandle(ref, () => ({
     element: canvasRef.current,
     requestRedraw,
     subscribeFrame,
     registerLayer,
     hitTestExtras,
-  }), [canvasRef, requestRedraw, subscribeFrame, registerLayer, hitTestExtras]);
+    getView,
+    setView,
+    subscribeView,
+  }), [canvasRef, requestRedraw, subscribeFrame, registerLayer, hitTestExtras,
+       getView, setView, subscribeView]);
 
   // GL renderer (lazy-instantiated on first paint).
   const glRendererRef = useRef<WeaselRenderer | null>(null);
   const layerCacheRef = useRef<LayerCommandCache>(new Map());
   const lastResizeRef = useRef<{ w: number; h: number; dpr: number } | null>(null);
-
-  // Viewport state: hybrid uncontrolled/controlled. When `viewProp` is
-  // supplied we are controlled (consumer owns state). Otherwise we keep
-  // internal state seeded from `defaultView`. `setView` always fires
-  // `onViewChange` so consumers can persist regardless of mode.
-  const [internalView, setInternalView] = useState<View>(defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } });
-  const effectiveView: View = viewProp ?? internalView;
-  const viewRef = useRef<View>(effectiveView);
-  viewRef.current = effectiveView;
-  const onViewChangeRef = useRef(onViewChange);
-  onViewChangeRef.current = onViewChange;
-  const viewBoundsRef = useRef(viewBounds);
-  viewBoundsRef.current = viewBounds;
-  const setView = useCallback((next: View) => {
-    const bounds = viewBoundsRef.current;
-    const clamped = bounds ? clampView(next, bounds, { width, height }) : next;
-    if (viewProp === undefined) setInternalView(clamped);
-    onViewChangeRef.current?.(clamped);
-  }, [viewProp, width, height]);
-  const setViewRef = useRef(setView);
-  setViewRef.current = setView;
 
   // Pinch-zoom: Canvas owns the DOM listener because it needs canvasRef.
   // usePinchZoomTool is a no-op when viewport?.pinchZoom is falsy. Hand tool,
@@ -896,7 +922,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
 
   usePinchZoomTool(
     canvasRef,
-    effectiveView,
+    viewRef.current,
     setView,
     { ...(pinchConfig ?? {}), enabled: pinchConfig !== null, resolveTarget: resolvePinchTarget },
   );
@@ -1317,7 +1343,7 @@ function CanvasInner<TNode extends { id: string }, TPose>(
   // reads must appear here, or changing it paints stale.
   useEffect(() => {
     requestRedraw();
-  }, [layersWithDebug, width, height, effectiveView, debugSink, dprProp,
+  }, [layersWithDebug, width, height, viewProp, debugSink, dprProp,
       layerVisibility, layerOrder, shaderIdKey, requestRedraw]);
 
   // The GL context and everything it owns (programs, texture caches, VBOs)

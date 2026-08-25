@@ -11,6 +11,8 @@ import type {
 import { DEFAULT_WIDGET_CLAIMS, type Widget } from './widget';
 import { _resetFontRegistryForTests } from '@weasel-js/font/test-seams';
 
+const IDENTITY_VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
 function makeApi(): CanvasExtensionApi & { _layer?: RenderLayer<unknown> } {
   const api = {
     element: null,
@@ -125,6 +127,9 @@ describe('attachHud', () => {
         subscribeFrame: vi.fn(() => () => {}),
         hitTestExtras: vi.fn(() => null),
         registerLayer: vi.fn(() => () => {}),
+        getView: vi.fn(() => IDENTITY_VIEW),
+        setView: vi.fn(),
+        subscribeView: vi.fn(() => () => {}),
       };
       const theme = { ...resolveTheme(weaselTheme, 'dark'), '--wzl-surface-raised': '#123456' };
       attachHud(api, hud, { theme });
