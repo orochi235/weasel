@@ -584,8 +584,8 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Viewport feature wiring.
      *
-     *  - `inertia` and `animatedZoom` are opt-in: pass `true` for defaults or
-     *    an object to tune. Omitted means off.
+     *  - `inertia` is opt-in: pass `true` for defaults or an object to tune.
+     *    Omitted means off. (`animatedZoom` is declared but unimplemented.)
      *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0) and `pinchZoom`
      *    (two-finger pinch) are opt-OUT: on by default; pass `false` to
      *    disable. All three are wired by registering the kit's `viewport.*`
@@ -602,6 +602,9 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
        *  clamp; `false` disables. An object sets the scale clamp. */
       pinchZoom?: boolean | PinchZoomOptions;
+      /** Tweened keyboard zoom. Declared but not yet wired — Cmd+=/-/0 is a
+       *  bare `view.set`, and nothing reads this. Held for the arc that
+       *  implements it on the animation system. */
       animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
       pan?: boolean;
       /** Wheel/keyboard zoom. `true`/omitted = default Cmd+wheel zoom with the
