@@ -29,6 +29,23 @@
 - `packages/core/src/canvas/Canvas.frameLoop.test.tsx` — the loop's own contract: coalescing, no-render-per-paint, lifecycle.
 - `packages/core/src/canvas/Canvas.imperativeView.test.tsx` — `setView` / `getView` / `subscribeView`, controlled-mode refusal.
 
+## How to test "costs no render"
+
+Several tasks assert that something no longer costs a React render. **Count commits with
+`<Profiler>` wrapped around the component under test, not renders of an outer wrapper** — a
+`setState` inside `Canvas` (or `SceneCanvas`, or a demo) never re-renders its parent, so a
+wrapper-render counter passes against the unfixed code and proves nothing. `Canvas.frameLoop.test.tsx`
+(Task 1) is the worked example.
+
+Test projects are not directories: `--project=kit` covers `packages/core`, but the hud suites live under
+`--project=weasel-ui`. `npx vitest run --project=kit packages/hud` matches **no files** and reports a
+cheerful pass — a review of this arc did exactly that and reported hud green without running it. Use
+`npm run test:unit` when you want all of them.
+
+A canvas test only paints if `getContext('webgl2')` returns something: `vitest.setup.ts` stubs it to
+`null`, so install the GL recorder in `beforeAll` the way `Canvas.frameLoop.test.tsx` does. Without it
+the paint bails early and every assertion about painting is vacuous.
+
 **Deliberately not created:** a dev-mode warning for scene-derived DOM inside `startTransition`. The spec asks for one "if that is detectable" — React exposes no way to ask whether the current render is a transition, so this ships as a documented rule (Task 11) rather than a check that would give false confidence.
 
 ---
@@ -64,7 +81,7 @@ function Host({ apiRef }: { apiRef: React.MutableRefObject<CanvasExtensionApi | 
       ref={apiRef as never}
       width={100}
       height={80}
-      layers={[]}
+      layers={{}}
       debug
       debugSinkRef={sinkRef}
     />
@@ -78,7 +95,7 @@ describe('Canvas frame loop', () => {
     await frame();
 
     const painted = vi.fn();
-    apiRef.current!.subscribeFrame!(painted);
+    apiRef.current!.subscribeFrame(painted);
 
     act(() => {
       apiRef.current!.requestRedraw();
@@ -297,6 +314,7 @@ Create `packages/core/src/canvas/Canvas.imperativeView.test.tsx`:
 ```tsx
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
+import { Profiler } from 'react';
 import { Canvas } from './Canvas';
 import type { CanvasExtensionApi } from './canvasExtension';
 import { makeGLRecorder } from '../renderer/test-utils/glRecorder';
@@ -308,65 +326,65 @@ const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 const IDENTITY = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 describe('imperative view', () => {
-  it('setView updates getView and paints without a host render', async () => {
+  it('setView updates getView and paints without a render', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
-    let renders = 0;
-    function Host() {
-      renders++;
-      return <Canvas ref={apiRef as never} width={100} height={80} layers={[]} defaultView={IDENTITY} />;
-    }
-    render(<Host />);
+    let commits = 0;
+    render(
+      <Profiler id="canvas" onRender={() => { commits++; }}>
+        <Canvas ref={apiRef} width={100} height={80} layers={{}} defaultView={IDENTITY} />
+      </Profiler>,
+    );
     await frame();
-    const before = renders;
+    const before = commits;
 
     const painted = vi.fn();
-    apiRef.current!.subscribeFrame!(painted);
-    apiRef.current!.setView!({ x: 40, y: 0, scale: { x: 2, y: 2 } });
+    apiRef.current!.subscribeFrame(painted);
+    apiRef.current!.setView({ x: 40, y: 0, scale: { x: 2, y: 2 } });
 
-    expect(apiRef.current!.getView!()).toEqual({ x: 40, y: 0, scale: { x: 2, y: 2 } });
+    expect(apiRef.current!.getView()).toEqual({ x: 40, y: 0, scale: { x: 2, y: 2 } });
     await frame();
     await frame();
     expect(painted).toHaveBeenCalledTimes(1);
-    expect(renders).toBe(before);
+    expect(commits).toBe(before);
   });
 
   it('setView accepts an updater and notifies subscribeView', async () => {
     const apiRef = { current: null as CanvasExtensionApi | null };
-    render(<Canvas ref={apiRef as never} width={100} height={80} layers={[]} defaultView={IDENTITY} />);
+    render(<Canvas ref={apiRef as never} width={100} height={80} layers={{}} defaultView={IDENTITY} />);
     await frame();
 
     const seen: number[] = [];
-    const stop = apiRef.current!.subscribeView!((v) => seen.push(v.x));
-    apiRef.current!.setView!((cur) => ({ ...cur, x: cur.x + 10 }));
-    apiRef.current!.setView!((cur) => ({ ...cur, x: cur.x + 10 }));
+    const stop = apiRef.current!.subscribeView((v) => seen.push(v.x));
+    apiRef.current!.setView((cur) => ({ ...cur, x: cur.x + 10 }));
+    apiRef.current!.setView((cur) => ({ ...cur, x: cur.x + 10 }));
     stop();
-    apiRef.current!.setView!((cur) => ({ ...cur, x: cur.x + 10 }));
+    apiRef.current!.setView((cur) => ({ ...cur, x: cur.x + 10 }));
 
     expect(seen).toEqual([10, 20]);
-    expect(apiRef.current!.getView!().x).toBe(30);
+    expect(apiRef.current!.getView().x).toBe(30);
   });
 
   it('fires onViewChange for every imperative write', async () => {
     const onViewChange = vi.fn();
     const apiRef = { current: null as CanvasExtensionApi | null };
     render(
-      <Canvas ref={apiRef as never} width={100} height={80} layers={[]}
+      <Canvas ref={apiRef as never} width={100} height={80} layers={{}}
               defaultView={IDENTITY} onViewChange={onViewChange} />,
     );
     await frame();
-    apiRef.current!.setView!({ x: 5, y: 5, scale: { x: 1, y: 1 } });
+    apiRef.current!.setView({ x: 5, y: 5, scale: { x: 1, y: 1 } });
     expect(onViewChange).toHaveBeenCalledWith({ x: 5, y: 5, scale: { x: 1, y: 1 } });
   });
 
   it('refuses setView while controlled, and says why', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const apiRef = { current: null as CanvasExtensionApi | null };
-    render(<Canvas ref={apiRef as never} width={100} height={80} layers={[]} view={IDENTITY} />);
+    render(<Canvas ref={apiRef as never} width={100} height={80} layers={{}} view={IDENTITY} />);
     await frame();
 
-    apiRef.current!.setView!({ x: 99, y: 0, scale: { x: 1, y: 1 } });
+    apiRef.current!.setView({ x: 99, y: 0, scale: { x: 1, y: 1 } });
 
-    expect(apiRef.current!.getView!()).toEqual(IDENTITY);
+    expect(apiRef.current!.getView()).toEqual(IDENTITY);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('controlled'));
     warn.mockRestore();
   });
@@ -408,7 +426,12 @@ In `Canvas.tsx`, replace `:845-860`:
     if (isControlledRef.current) {
       // The prop is the authority; writing the ref would put pixels and props
       // out of step with nothing to reconcile them.
-      console.warn('[weasel] setView ignored: this canvas is controlled by its `view` prop. Update that prop, or drop it to take the imperative path.');
+      if (!warnedControlledRef.current) {
+        warnedControlledRef.current = true;
+        console.warn(onViewChangeRef.current
+          ? '[weasel] setView: this canvas is controlled by its `view` prop, so the value was forwarded to `onViewChange` rather than applied locally.'
+          : '[weasel] setView ignored: this canvas is controlled by its `view` prop and has no `onViewChange`, so the value went nowhere. Update the prop, or drop it to take the imperative path.');
+      }
       onViewChangeRef.current?.(clamped);
       return;
     }
@@ -432,6 +455,13 @@ In `Canvas.tsx`, replace `:845-860`:
 - `usePinchZoomTool(canvasRef, effectiveView, setView, …)` at `:888-893` — Task 3.
 
 Grep for the identifier before moving on: `grep -n effectiveView packages/core/src/canvas/Canvas.tsx` must come back empty.
+
+**Warn once per mount, and only say "ignored" when it is true.** `Canvas` is not exported and
+`SceneCanvas` renders it controlled unconditionally, so every canvas in existence takes this branch,
+and `usePinchZoomTool` reaches it on every pointermove — ~60 warnings a second. When `onViewChange`
+is present the write is *forwarded*, not ignored; claiming otherwise sends a consumer hunting a bug
+that isn't there while their camera moves correctly. Cover both strings, and the once-per-mount
+behavior, with tests.
 
 - [ ] **Step 4: Put the new members on the handle**
 
@@ -474,7 +504,7 @@ Grep for the identifier before moving on: `grep -n effectiveView packages/core/s
   subscribeFrame(fn: () => void): () => void;
 ```
 
-All four are required members, not optional: both handle construction sites (`Canvas.tsx:829`, `SceneCanvas.tsx:1826`) populate them. Drop the `!` from the test call sites in Tasks 1 and 2 once they typecheck as required.
+All are required members, not optional: both handle construction sites (`Canvas.tsx:829`, `SceneCanvas.tsx:1826`) populate them. `subscribeFrame` was already made required during Task 1; add these three the same way, and never leave a member optional that always exists — consumers otherwise learn `?.` on a method that cannot be absent, and the no-op silently swallows real calls.
 
 - [ ] **Step 5: Run the tests**
 
@@ -592,6 +622,7 @@ Create `packages/core/src/canvas/SceneCanvas.view.test.tsx`:
 ```tsx
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { render, act, cleanup } from '@testing-library/react';
+import { Profiler } from 'react';
 import { SceneCanvas } from './SceneCanvas';
 import { createScene } from 'core/scene/scene';
 import type { SceneCanvasApi } from './canvasExtension';
@@ -606,20 +637,20 @@ describe('SceneCanvas view', () => {
   it('pans through the handle without re-rendering the host', async () => {
     const scene = createScene<{ fill: string }, string, { x: number; y: number; width: number; height: number }>({ nodes: [] });
     const apiRef = { current: null as SceneCanvasApi | null };
-    let renders = 0;
-    function Host() {
-      renders++;
-      return <SceneCanvas ref={apiRef as never} scene={scene} width={200} height={150} />;
-    }
-    render(<Host />);
+    let commits = 0;
+    render(
+      <Profiler id="scene-canvas" onRender={() => { commits++; }}>
+        <SceneCanvas ref={apiRef as never} scene={scene} width={200} height={150} />
+      </Profiler>,
+    );
     await frame();
-    const before = renders;
+    const before = commits;
 
     act(() => { apiRef.current!.setView({ x: 25, y: 0, scale: { x: 1, y: 1 } }); });
     await frame();
 
     expect(apiRef.current!.getView().x).toBe(25);
-    expect(renders).toBe(before);
+    expect(commits).toBe(before);
   });
 
   it('still honors a controlled view prop', async () => {
@@ -663,7 +694,9 @@ Expected: FAIL on the first case — the host re-renders, because `handleViewCha
   // land on the canvas imperatively. Controlled consumers get the callback and
   // nothing else — the same contract Canvas enforces.
   const handleViewChange = useCallback((v: View) => {
-    if (viewProp === undefined) canvasApiRef.current?.setView(v);
+    // Early return, not a fall-through: the canvas fires `onViewChange` from
+    // inside `setView`, so reporting here too double-fires every dep write.
+    if (viewProp === undefined) { canvasApiRef.current?.setView(v); return; }
     onViewChangeProp?.(v);
   }, [viewProp, onViewChangeProp]);
 ```
@@ -735,7 +768,7 @@ it('reports the scene version the pixels were painted from', async () => {
   const apiRef = { current: null as CanvasExtensionApi | null };
   let version = 3;
   render(
-    <Canvas ref={apiRef as never} width={100} height={80} layers={[]}
+    <Canvas ref={apiRef as never} width={100} height={80} layers={{}}
             defaultView={IDENTITY} contentVersion={() => version} />,
   );
   await frame();
@@ -824,12 +857,12 @@ Append to `Canvas.frameLoop.test.tsx`:
 it('paints during the commit when syncPaint is set', async () => {
   const sinkRef = { current: null as DebugSink | null };
   const { rerender } = render(
-    <Canvas width={100} height={80} layers={[]} debug debugSinkRef={sinkRef} syncPaint />,
+    <Canvas width={100} height={80} layers={{}} debug debugSinkRef={sinkRef} syncPaint />,
   );
   await frame();
   const spy = vi.spyOn(sinkRef.current!, 'beginFrame');
 
-  act(() => { rerender(<Canvas width={120} height={80} layers={[]} debug debugSinkRef={sinkRef} syncPaint />); });
+  act(() => { rerender(<Canvas width={120} height={80} layers={{}} debug debugSinkRef={sinkRef} syncPaint />); });
 
   // No frame awaited: the paint already happened inside the commit.
   expect(spy).toHaveBeenCalled();
@@ -986,7 +1019,17 @@ and add the resume plus the teardown:
   }, [scheduleFrame]);
 ```
 
-StrictMode's double-mount is covered by this teardown: the first mount's pending frame is cancelled on its cleanup, and `dirtyRef` starts `true` on the second, so the surface repaints. Nothing else in the loop is shared across mounts — `glRendererRef` already has its own dispose effect (`Canvas.tsx:1290-1295`).
+**Task 1 already added a `cancelAnimationFrame` to the existing unmount dispose effect**, to stop a
+post-unmount subscriber fire it introduced. Keep exactly one cancel — either fold this effect's
+cleanup into that one or drop the duplicate — and note that this task's "cancels its pending frame on
+unmount" test therefore passes before you write a line. A green test here is not evidence the rest of
+the task is done; the hidden-document case is the part that isn't built yet.
+
+**This task's code now lives inside `useFrameLoop` (`packages/core/src/canvas/useFrameLoop.ts`), not in `Canvas.tsx`.** Task 1's fix pass extracted the loop, so `dirtyRef` / `rafRef` / `scheduleFrame` are private to the hook — write the hidden-document handling there and read `dirtyRef` at the `visibilitychange` call site (it is otherwise write-only).
+
+**Do not assume StrictMode is handled by teardown.** An earlier draft of this plan claimed the first mount's cancelled frame plus a `true` dirty flag makes the second mount repaint. That is false: `useRef` values survive a StrictMode remount, and Task 1 shipped a blank canvas in every demo because an `aliveRef` was cleared on cleanup and never re-armed on setup. Every app and example here mounts under StrictMode (`apps/site/main.tsx:47`, `apps/draw/src/main.tsx:100`, `packages/labkit/examples/*/main.tsx`). Any flag a cleanup clears must be re-armed in the effect's setup, and the test for it renders under `<StrictMode>` and asserts a probe layer's `draw` actually ran.
+
+Task 1 also already cancels the pending frame in `useFrameLoop`'s cleanup, so **keep exactly one cancel** — this task adds the visibility handling, not a second teardown. Its "cancels its pending frame on unmount" test passes before you write a line; that is not evidence the task is done.
 
 - [ ] **Step 4: Run the tests, then the full canvas suite**
 
@@ -1171,18 +1214,21 @@ Add to `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx`:
 
 ```tsx
 it('advances the camera without re-rendering the demo', async () => {
-  let renders = 0;
-  function Counting() { renders++; return <SceneScrollerDemo />; }
-  render(<Counting />);
+  let commits = 0;
+  render(
+    <Profiler id="scroller" onRender={() => { commits++; }}>
+      <SceneScrollerDemo />
+    </Profiler>,
+  );
   await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  const before = renders;
+  const before = commits;
 
   // Six simulated frames.
   for (let i = 0; i < 6; i++) {
     await new Promise<void>((r) => requestAnimationFrame(() => r()));
   }
 
-  expect(renders).toBe(before);
+  expect(commits).toBe(before);
 });
 ```
 
@@ -1268,12 +1314,20 @@ longer holds it in React state, so a camera moving at 60 Hz costs no renders.
 Consumers passing a `view` prop stay controlled and are unaffected.
 
 Canvas pixels may now be one frame ahead of DOM rendered from the same data.
+Anything reading the GL buffer back outside a paint — the hud loupe's pixel mode
+is the one in-tree case — can likewise see a buffer one frame older; subscribe
+with `subscribeFrame` to read immediately after pixels land.
 Position world-anchored DOM from `subscribeView`; compare `getPaintedVersion()`
 when chrome must be in lockstep; set `syncPaint` to paint at commit time as
 before. Do not render scene-derived DOM inside `startTransition` — React defers
 it and nothing forces it to catch up.
 EOF
 ```
+
+Name the two public signature changes in the prose: `usePinchZoomTool`'s third parameter is now
+`getView: () => View` rather than a `View` (it is exported from `packages/core/src/index.ts`; nothing
+in-tree but `Canvas` calls it), and `CanvasExtensionApi` gained four required members, so any external
+code hand-constructing that interface stops typechecking.
 
 The level is `patch`. Every changeset in this repo is `patch` regardless of what the change does (`CLAUDE.md`, "Releases: always write `patch`"), and a `bump-approved` marker is never written by an implementer.
 

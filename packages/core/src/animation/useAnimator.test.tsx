@@ -80,6 +80,48 @@ describe('useAnimator.tween', () => {
     expect(result.current.isActive()).toBe(false);
   });
 
+  it('skips onDone when the final onTick cancels the tween', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const onDone = vi.fn();
+    let handle!: ReturnType<typeof result.current.tween>;
+    act(() => {
+      handle = result.current.tween<number>({
+        from: 0,
+        to: 1,
+        ms: 100,
+        easing: linear,
+        onTick: (v) => { if (v >= 1) handle.cancel(); },
+        onDone,
+      });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(100));
+    expect(onDone).not.toHaveBeenCalled();
+    expect(result.current.isActive()).toBe(false);
+  });
+
+  it('skips onDone when the final onTick cancels by key', () => {
+    const clock = makeClock();
+    const { result } = renderHook(() => useAnimator(clock));
+    const onDone = vi.fn();
+    act(() => {
+      result.current.tween<number>({
+        from: 0,
+        to: 1,
+        ms: 100,
+        easing: linear,
+        cancelKey: 'k',
+        onTick: (v) => { if (v >= 1) result.current.cancelKey('k'); },
+        onDone,
+      });
+    });
+    act(() => clock.advance(0));
+    act(() => clock.advance(100));
+    expect(onDone).not.toHaveBeenCalled();
+    expect(result.current.isActive()).toBe(false);
+  });
+
   it('cancelKey collisions cancel the prior animation', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));

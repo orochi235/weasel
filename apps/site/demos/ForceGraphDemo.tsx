@@ -22,6 +22,7 @@ import type {
   View,
 } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
+import { bakeGraphPoses, syncGraphPoses } from './forceGraph/overrides';
 
 const W = 600, H = 400;
 const NODE_R = 8;
@@ -175,9 +176,8 @@ export function ForceGraphDemo() {
   const [view, setView] = useState<View>({ x: 0, y: 0, scale: { x: 1, y: 1 } });
 
   // Scene mirrors the sim's nodes: one leaf per graph node, pose = AABB around
-  // the node center. Sim writes positions via scene.setPose each tick;
-  // SceneCanvas re-renders on scene mutations (no React-state churn from the
-  // host component).
+  // the node center. The sim writes per-frame positions as ephemeral pose
+  // overrides and bakes the settled layout into the document once.
   const scene = useScene<NodeData, LayerId, Pose>({
     systemLayers: [{ id: 'graph' }],
     initial: initial.nodes.map((n) => ({
@@ -207,21 +207,12 @@ export function ForceGraphDemo() {
     nodes: nodesRef.current,
     forces,
     onTick: () => {
-      // Sync sim positions into the scene. Wrap in a batch so the 24 setPose
-      // calls coalesce into one history entry per tick — without batching,
-      // a 5-second settle produces ~7000 undo entries (24 nodes × 60Hz × 5s).
-      scene.batch('sim-tick', () => {
-        for (const n of nodesRef.current) {
-          scene.setPose(n.id as never, {
-            x: n.x - NODE_R,
-            y: n.y - NODE_R,
-            width: NODE_R * 2,
-            height: NODE_R * 2,
-          });
-        }
-      });
+      // Per-frame positions are presentation, not a document edit: they go in
+      // as ephemeral overrides, so a settle records nothing.
+      syncGraphPoses(scene, nodesRef.current, NODE_R);
     },
     onEnd: () => {
+      bakeGraphPoses(scene, nodesRef.current, NODE_R);
       setSettled(true);
     },
   });
@@ -245,6 +236,7 @@ export function ForceGraphDemo() {
           const fresh = makeInitial();
           nodesRef.current = fresh.nodes;
           linksRef.current = fresh.links;
+          scene.overrides.clearAll();
           // Rebuild scene leaves to mirror the new nodes.
           for (const oldId of Array.from(scene.nodes.keys())) {
             scene.remove(oldId);

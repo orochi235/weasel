@@ -16,6 +16,8 @@ A map of the library so agents can find what they need quickly.
 | `<StatusBar>` | `src/primitives/StatusBar.tsx` |
 | `<FpsMeter>` | `src/primitives/FpsMeter.tsx` |
 | `<ScaleIndicator>` | `src/primitives/ScaleIndicator.tsx` |
+| `<Legend>` | `src/primitives/Legend.tsx` |
+| `<FloatingPanel>` | `src/primitives/FloatingPanel.tsx` |
 | Theme tokens | `src/theme/tokens.less` |
 | Theme overrides | `src/theme/light.less`, `src/theme/dark.less` |
 | Class-prefix enforcement | `scripts/check-class-prefix.ts` |

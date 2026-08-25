@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { SceneCanvas, useScene } from '@weasel-js/core';
 import type { RenderLayer, CanvasHelpers } from '@weasel-js/core';
-import { viewToMat3, type DrawCommand } from '@weasel-js/core/renderer';
+import type { DrawCommand } from '@weasel-js/core/renderer';
 
 interface Rect { id: string; x: number; y: number; width: number; height: number; color: string }
 
@@ -64,7 +64,7 @@ function createQuadtreeLayer(
   return {
     id: 'quadtree',
     label: 'Quadtree',
-    draw: (_data, view) => {
+    draw: () => {
       const tree = buildLiveTree();
       const cmds: DrawCommand[] = [];
       function walk(n: QuadNode) {
@@ -78,7 +78,7 @@ function createQuadtreeLayer(
         for (const c of n.children) walk(c);
       }
       walk(tree);
-      return cmds.length === 0 ? [] : [{ kind: 'group', transform: viewToMat3(view), children: cmds }];
+      return cmds;
     },
   };
 }

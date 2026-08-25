@@ -1,5 +1,5 @@
 /**
- * The GL renderer is created lazily inside the paint effect and owns the
+ * The GL renderer is created lazily on the first paint and owns the
  * WebGL2 context, its program registry, texture caches and VBOs. Nothing in
  * React state frees those, so unmount has to.
  */
@@ -22,11 +22,14 @@ beforeAll(() => {
   proto.releasePointerCapture = vi.fn();
 });
 
+const waitForFrame = () => new Promise<void>(r => requestAnimationFrame(() => r()));
+
 describe('Canvas GL lifecycle', () => {
-  it('disposes the renderer on unmount', () => {
+  it('disposes the renderer on unmount', async () => {
     const dispose = vi.spyOn(WeaselRenderer.prototype, 'dispose');
     const { unmount } = render(<Canvas width={100} height={100} layers={{}} />);
-    // The renderer is only built once the paint effect has run with a real ctx.
+    // The renderer is only built once a frame has painted with a real ctx.
+    await waitForFrame();
     expect(dispose).not.toHaveBeenCalled();
     unmount();
     expect(dispose).toHaveBeenCalledOnce();

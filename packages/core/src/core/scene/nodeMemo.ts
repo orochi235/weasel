@@ -123,3 +123,22 @@ export function nodeMemo<T>(
 export function bumpNodeMemoGeneration(): void {
   generation++;
 }
+
+/**
+ * Drop the slots of `node` that were keyed on a pose, keeping the ones that
+ * weren't (the painter match passes `undefined`, and re-matching it is a
+ * registry scan).
+ *
+ * For per-frame pose overrides, which mutate one buffer in place rather than
+ * replacing the reference: the `(pose, data)` key cannot see that, so the
+ * override's `commit()` calls this for each node it holds.
+ * {@link bumpNodeMemoGeneration} is the wrong tool there — it would drop every
+ * static node's slots too, every frame.
+ */
+export function dropPoseKeyedMemoSlots(node: MemoizableNode): void {
+  const record = MEMO.get(node);
+  if (record === undefined) return;
+  for (const [slot, entry] of record.slots) {
+    if (entry.pose !== undefined) record.slots.delete(slot);
+  }
+}

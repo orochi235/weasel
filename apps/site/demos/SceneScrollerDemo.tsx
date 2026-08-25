@@ -9,7 +9,7 @@ import {
   useScene,
   useTools,
 } from '@weasel-js/core';
-import type { Dims, DrawCommand, RectPose, RenderLayer, View } from '@weasel-js/core';
+import type { Dims, DrawCommand, RectPose, RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import { CAM_SCALE, cameraView, followCamera } from './platformer/camera';
 import { WORLD } from './platformer/worldLevel';
 import { COLORS, drawBackdrop, drawCallouts, drawEnding } from './platformer/skin';
@@ -68,6 +68,9 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     // A frame is one batch, so this is a second of undo — enough to be a real
     // history, short enough that a running game can't grow it without bound.
     historyLimit: 60,
+    // The loop rewrites poses every frame; re-rendering this component for
+    // each of those writes would undo the point of the imperative camera.
+    subscribe: false,
   });
 
   // A minimal registry so SceneCanvas doesn't auto-mount select/resize/rotate:
@@ -77,7 +80,8 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   const tools = useTools({ active: 'hand', registry: useMemo(() => ({ hand }), [hand]) });
 
   const [running, setRunning] = useState(false);
-  const [view, setView] = useState<View>(() => cameraView(game.current.camera, DIMS));
+  const canvas = useRef<SceneCanvasApi | null>(null);
+  const initialView = useMemo(() => cameraView(game.current.camera, DIMS), []);
 
   const frameMs = useRef(0);
   const [stats, setStats] = useState({ frame: 0, nodes: 0, writes: 0 });
@@ -128,7 +132,7 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
       // camera, keeping the follow state clean.
       const v = cameraView(g.camera, DIMS);
       const shake = g.shake;
-      setView(shake > 0
+      canvas.current?.setView(shake > 0
         ? {
             ...v,
             x: v.x + Math.sin(g.elapsed * 53) * SHAKE_MAGNITUDE * (shake / SHAKE_DURATION),
@@ -231,8 +235,8 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
         selectionMode="none"
         animator={animator}
         tools={tools}
-        view={view}
-        onViewChange={setView}
+        ref={canvas}
+        defaultView={initialView}
         layers={{
           far: { layer: layers.far, before: 'scene' },
           mid: { layer: layers.mid, before: 'scene' },

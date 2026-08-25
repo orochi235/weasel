@@ -248,6 +248,58 @@ export interface UseSceneOptions<TData, TLayer extends string, TPose = RectPose>
    *  mode machines that depend on `scene.history`), pass nothing here and
    *  wire it after construction via `scene.setActiveJournalAccessor(fn)`. */
   getActiveJournal?: () => import('@weasel-js/history').Journal | null;
+  /** Re-render the host on every scene mutation. Default `true`. Set `false`
+   *  when the scene is read by a frame loop rather than by a render — a game
+   *  loop, a simulation — and nothing in the host's DOM derives from it.
+   *  Read by `useScene`; `createScene` ignores it. */
+  subscribe?: boolean;
+}
+
+/**
+ * One node's ephemeral presentation override — what a frame loop wants to say
+ * about a node without saying it about the document.
+ *
+ * Not document content: never recorded in history, never in `toJSON`, and
+ * writing one does not bump `Scene.getVersion()`. Hoist one entry per node and
+ * mutate it in place on a frame loop; `PoseOverrides.commit()` is what makes a
+ * mutation visible.
+ */
+export interface PoseOverride<TPose> {
+  /** Replaces the node's document pose everywhere the render and hit-test
+   *  paths read one, including the clip a container derives from its pose. */
+  pose?: TPose;
+  /** Multiplied into the node's painted alpha, on top of any `alphaFor`. */
+  alpha?: number;
+}
+
+/**
+ * The scene's ephemeral per-node overrides — see {@link PoseOverride}.
+ *
+ * The intended shape of a frame is: `set` each node once, mutate the entries
+ * in place per frame, `commit()` once. `commit` is not optional bookkeeping —
+ * the painter memo keys on pose *reference*, so a mutation without a commit
+ * paints the previous frame with no error.
+ *
+ * To promote a frame to document state (dropping a drag, baking an animation),
+ * write it once through `Scene.setPose` and `clear` the override.
+ */
+export interface PoseOverrides<TPose> {
+  /** Store `entry` for `id` **by reference**; the caller keeps mutating it. */
+  set(id: NodeId, entry: PoseOverride<TPose>): void;
+  get(id: NodeId): PoseOverride<TPose> | undefined;
+  has(id: NodeId): boolean;
+  /** The overridden ids, as a snapshot array. */
+  ids(): readonly NodeId[];
+  clear(id: NodeId): void;
+  clearAll(): void;
+  /** Publish this frame's in-place mutations: invalidate the painter memo for
+   *  every overridden node, then notify subscribers. */
+  commit(): void;
+  /** Notified after every write. The canvas uses this to repaint without a
+   *  scene version bump. */
+  subscribe(fn: () => void): () => void;
+  /** Monotonic write counter. A snapshot for observers that poll. */
+  getGeneration(): number;
 }
 
 /**
@@ -365,6 +417,14 @@ export interface Scene<TData, TLayer extends string, TPose = RectPose> {
    *  undo step of its own. */
   getSelection(): readonly NodeId[];
   setSelection(ids: readonly NodeId[]): void;
+
+  // Ephemeral presentation state
+
+  /** Per-node pose / alpha overrides the render and hit-test paths read
+   *  through. Like {@link Scene.getSelection} this is not document content:
+   *  writes are never recorded, never serialized, and do not bump
+   *  {@link Scene.getVersion}. See {@link PoseOverrides}. */
+  readonly overrides: PoseOverrides<TPose>;
 
   // History
   undo(): boolean;

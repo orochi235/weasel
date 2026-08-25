@@ -49,6 +49,51 @@ import { StatusBar, FpsMeter } from '@weasel-js/labkit';
 </StatusBar>
 ```
 
+### A legend in a panel the user can move
+
+`<Legend>` is a color key: one row per entry, each swatch drawn the way its ink
+is drawn on the canvas — `line` (the default), `dash`, `dot` or `band`. It is
+presentational, with no handlers and no state.
+
+`<FloatingPanel>` floats over its offset parent, snaps to the corners it is
+allowed, and can remember where it was left. Drag it from anywhere that is not a
+control; `input`, `button`, `a`, `select`, `textarea` and any `[data-no-drag]`
+element pass their pointer through instead.
+
+**Parent it to the canvas stack's overlay.** It positions against its offset
+parent, so nested inside another absolutely-positioned overlay child it would
+measure that child's box rather than the canvas.
+
+```tsx
+import { FloatingPanel, Legend } from '@weasel-js/labkit';
+
+<div className="lk-canvas-stack__overlay">
+  <FloatingPanel anchor="bottom-right" storageKey="mylab.legend">
+    <Legend
+      entries={[
+        { key: 'contour', label: 'contour', color: '#7d7f86' },
+        { key: 'floor', label: 'bend floor', color: '#9a9ca3', mark: 'dash' },
+        { key: 'authored', label: 'authored', color: '#2aa87a', mark: 'dot' },
+      ]}
+    />
+  </FloatingPanel>
+</div>;
+```
+
+| `FloatingPanel` prop | Default | |
+|---|---|---|
+| `anchor` | `'bottom-left'` | corner it rests in until dragged |
+| `snapCorners` | all four | corners allowed to capture it |
+| `inset` | `12` | pixels in from a corner when snapped |
+| `storageKey` | — | `localStorage` key; omit to forget on reload |
+
+| `Legend` entry field | | |
+|---|---|---|
+| `key` | required | React key |
+| `label` | required | the text |
+| `color` | required | swatch ink |
+| `mark` | `'line'` | `line` \| `dash` \| `dot` \| `band` |
+
 ## Plan 5 recipes — capabilities
 
 ### Build a drag-and-drop layout lab

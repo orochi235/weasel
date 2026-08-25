@@ -23,7 +23,7 @@ Priority tags:
 - **Side-scroller demo** — after the two above, as a load test on both → [Animation](#animation)
 - **Per-command draw cost** — solid geometry batches; what is left is the flush itself, which stalls on rewriting its own buffer. Plan + traps in `docs/handoffs/2026-08-14-batched-dispatch.md` → [Release-gate & build hygiene](#release-gate--build-hygiene)
 - **Audit for duplicated-then-drifted cascades** — two implementations of one lookup, agreeing by coincidence → [Selection, actions & UI panels](#selection-actions--ui-panels)
-- **labkit presentation pass** — arcs 1+2 done on `feat/labkit-arc2`; arc 3 and the tool-palette / sidebar / viewport-control regions remain → [Selection, actions & UI panels](#selection-actions--ui-panels)
+- **labkit presentation pass** — arcs 1+2 merged; arc 3 (chrome regions) specced and planned on `feat/labkit-arc3`, arc 4 (density) after it → [Selection, actions & UI panels](#selection-actions--ui-panels)
 - **labkit: generate instrument controls from a schema or a TypeScript type** → [Selection, actions & UI panels](#selection-actions--ui-panels)
 
 ### P2 — broad reuse / friction-likely
@@ -301,6 +301,26 @@ From `docs/superpowers/specs/2026-06-17-slice-tool-design.md` (shipped 2026-06-1
 
 ## Viewport
 
+- **(P3) `useViewAnimation` builds an animator it never uses.** The hook calls
+  `useAnimator()` unconditionally so it can fall back to its own animator when
+  the caller passes none — hooks cannot be conditional — so `<SceneCanvas>`,
+  which always passes `cameraAnimator`, constructs a second idle `Animator` per
+  canvas. It registers nothing and its rAF loop never starts, so the cost is one
+  object plus a no-op unmount effect, but it is dead weight and it makes
+  "SceneCanvas runs the camera on its own animator" untestable by swapping the
+  argument: `useViewAnimation(channel, undefined)` behaves identically. Fixing
+  it wants either a positional-animator variant or a `useAnimatorOrNull` seam.
+
+- **(P3) A controlled consumer's own `setState` cannot interrupt a glide.**
+  Every view write that goes through the canvas cancels the camera runner, via
+  the `onViewChange` it fires on both branches. A consumer who owns `view` in
+  state and writes it directly does not go through the canvas: the prop change
+  arrives asynchronously, after the runner has lowered the flag that
+  distinguishes its own frames, so it is indistinguishable from one. Comparing
+  the incoming prop against the last value written would work only for
+  consumers who store the view by reference — one who normalizes or clamps it
+  would have every frame of their own glide cancelled. Wants a real design.
+
 - **(P2) Viewports as a first-class canvas concept.** `createViewportLayer`
   re-projects on request (`layer.reproject(outer, dims, screen)`, `viewportsAt`
   for the topmost of several, shipped 2026-08-15), but the dispatcher knows
@@ -412,6 +432,133 @@ Core five + Crop shipped. Remaining:
 ---
 
 ## Rendering & paint
+
+- **(P2) Detached views never repaint on a pose override.** `<SceneViewCanvas>`
+  and `<MinimapCanvas>` re-render off `scene.getVersion()`, and an override
+  deliberately does not bump it, so they keep painting document poses while the
+  main canvas shows the overridden ones — a minimap that disagrees with the
+  scene beside it, with nothing logged. `<SceneCanvas>` avoids this by
+  subscribing to `scene.overrides` directly
+  (`packages/core/src/canvas/SceneCanvas.tsx`); the same subscription here would
+  cost these views a React render per frame, which is the cost the arc exists to
+  remove. Wants the frame-loop treatment first, or an opt-in prop.
+
+- **(P2) `createParallaxLayer` bypasses `drawOneLayer`, so a source layer's
+  `space` is silently ignored.** `packages/core/src/features/parallax/createParallaxLayer.ts:36`
+  calls `layer.draw(...)` directly where `viewportLayer.ts` calls `drawOneLayer(...)`.
+  ParallaxDemo's four layers therefore declare `space: 'world'` while their bodies
+  pre-project — harmless today because nothing applies the transform, but the
+  labels are lies, and changing that one line to `drawOneLayer` converts all four
+  into a double-applied view transform (the bug fixed in `6eec0d88`).
+  `apps/draw/src/useLoupe.ts:49` has the same shape. Fix the bypass and the
+  demos together, or neither.
+
+- **(P3) A comment in `SceneCanvas` contradicts the line beneath it.**
+  `packages/core/src/canvas/SceneCanvas.tsx:1199-1200` says "SceneCanvas's default
+  is pan+zoom enabled even when the consumer omits the viewport prop (undefined
+  !== false)" directly above `const viewportRegistered = !!viewport;` — and
+  `!!undefined` is `false`. Browser behavior agrees with the code, not the
+  comment. Either the default is wrong or the comment is; decide which.
+
+- **(P1) `curve-lab` renders in an infinite loop.** 62 x `Maximum update depth
+  exceeded` at load. `usePublishSelection`'s effect
+  (`packages/core/src/canvas/SelectionContext.tsx:117`) has deps `[ctx, serialized]`,
+  and `ctx` takes a new identity on every `setState` — so N canvases holding
+  *different* selections in one provider thrash forever. curve-lab's four panels
+  each call `useSelection({ initial: [nodeId], lock: true })` with a different id.
+  The panels still paint correctly; this is a console and CPU defect, not a
+  visual one. Predates the frame-loop arc, which touched neither file.
+
+- **(P1) A second `<SceneCanvas>` under one `ActionsProvider` unregisters the
+  first's viewport actions.** In `vertex-widths` and `boolean-ops` — and
+  `curve-lab` and `rotated-resize-math` — wheel pan and Cmd+wheel/Cmd+-/Cmd+0 do
+  nothing at all; the canvas is pixel-identical after six zoom notches, with no
+  `view` or `viewport` prop set, where the documented default is that they stay
+  wired. `useViewportActions.ts` registers `viewport.pan` / `viewport.zoom` by
+  **action id** into the shared registry and unregisters them on cleanup, so
+  sibling canvases collide on those ids and one instance's teardown takes the
+  registration out from under the others. Predates the frame-loop arc.
+
+- **(P2) The text-edit overlay does not scale with the canvas.** `#text` at ~2x
+  renders the DOM overlay at 1x font size in a 240x80 box while the selection
+  frame around it is correctly zoomed — the text sits detached from the glyphs it
+  is editing (`fontSize: 16px, transform: none` at both 1x and 2x). The demo
+  (`apps/site/demos/TextDemo.tsx:38`) calls `useSceneTextEdit(scene, container)`
+  with no `options.view`, so `getScreenPose` resolves `zoom = 1`. Documented hook
+  behavior, so this is a demo gap — but the demo enables Cmd+wheel zoom by
+  default, putting the broken state one gesture away. The live-view thunk added in
+  `99e2f969` is the surface that fixes it: pass the canvas handle's `getView`.
+
+- **(P2) The canvas's repaint tripwire has a blind spot: `helpersForLayersRef`.**
+  `Canvas` marks itself dirty from a `useEffect` whose dep array is meant to
+  name every input the paint reads. `helpersForLayersRef` — selection, preview
+  poses, chrome state, `getIsVisible` — is written during render and appears in
+  neither that array nor an imperative redraw of its own. It works today only
+  because `SceneCanvas` calls `requestRedraw()` by hand at six sites
+  (`SceneCanvas.tsx:936, 946, 952, 1082, 1087, 1622`), which means the primitive
+  is trusting its wrapper to remember. A bare `<Canvas>` consumer changing
+  selection gets no repaint, and the comment above the dep array claims the
+  opposite ("every input the paint reads must appear here"). Either fold the
+  helpers into the tripwire or make the comment tell the truth about who owns
+  the redraw.
+
+- **(P2) A throwing layer takes down the whole frame, as an uncaught error.**
+  Since the paint moved onto the frame loop, a `draw` that throws surfaces as an
+  uncaught `requestAnimationFrame` error on the window; before, it ran inside a
+  `useEffect` and reached the nearest React error boundary. Neither is the
+  behavior worth wanting. `drawLayers` is the place that can do better — it
+  already iterates layers holding the layer id, the debug sink and the command
+  cache, so a per-layer `try`/`catch` can drop that layer's commands, report
+  `{ layerId, error }` to the sink, and paint the rest. A canvas visibly missing
+  one layer, with a console error naming it, beats both a blank canvas and a
+  silently-vanished layer. Open questions: whether a throwing layer stays
+  evicted until its `deps` change, whether the sink grows an error channel, and
+  what the headless `renderSceneToPixels` path does with a failure. Do **not**
+  put the `catch` in `useFrameLoop` — scheduling has no information about what a
+  draw failure means, and the granularity is wrong there.
+
+- **(P1) The hud loupe's pixel mode reads back a stale buffer.** `refreshPixels`
+  calls `readbackRegion` — `gl.readPixels` — straight off an aim change
+  (`packages/hud/src/loupe/createLoupe.ts:152`), which since the frame loop
+  landed is a moment with no paint behind it: the buffer holds the previous
+  frame, so the magnifier shows the scene as it was one frame ago while dragging.
+  The changeset names the remedy and nothing in `packages/hud/src` implements it
+  — no call to `subscribeFrame` exists there. Fix shape: `HudHost`
+  (`packages/hud/src/host.ts`) gains `subscribeFrame`, which `attachHud` already
+  has on the `api` it shims from (`attach.ts:144`), and the loupe defers the
+  readback to the next landed paint instead of taking it inline.
+
+- **(P1) `SceneCanvas` re-renders on every scene mutation.** Its own
+  `useSyncExternalStore` (`SceneCanvas.tsx:894`) commits the canvas for every
+  version bump, whether or not the host passed
+  `useScene(..., { subscribe: false })` — the ~100–110 commits/s the scene
+  side-scroller still pays. The ephemeral-pose-overrides arc does not close
+  this: it only stops *pose overrides* bumping the version, and a demo's own
+  `scene.add` / `scene.batch` still notifies. The shape worth trying is that the
+  subscription call `requestRedraw()` rather than commit — `Canvas` already
+  takes `contentVersion` as a getter, so the paint can sample the version
+  without a render. What that costs is real design work: some chrome genuinely
+  needs a commit on a scene change (layer panels, counts, anything rendering
+  node data as DOM), and deciding which is the whole question.
+
+- **(P3) Sync paints do not coalesce.** `CanvasProps.syncPaint`
+  (`Canvas.tsx:234-242`) promises "a synchronous paint per commit", singular,
+  but the loop paints per *request*: one commit carrying a sibling
+  layout-effect `requestRedraw` produced two full GL paints where the async
+  path produced one. Coalescing would mean deferring to a microtask at the end
+  of the commit, which gives up the "pixels land before the surrounding layout
+  effects read the DOM" ordering that `syncPaint` exists for. Either the
+  ordering guarantee or the singular paint — the doc currently claims both.
+
+- **(P3) `paintInputsRef` is written during render.** `Canvas.tsx:1295` assigns
+  it in the render body, so a concurrent render React starts and abandons still
+  leaves its inputs in the ref, and the next `requestRedraw` from any source —
+  a gesture, a HUD, the view — paints inputs that were never committed. This is
+  a second `startTransition` hazard, distinct from the documented one (that one
+  is about DOM lagging the canvas; this one is about the canvas painting a
+  render that does not exist), and it is documented nowhere. Writing the ref
+  from a layout effect instead would fix it and cost the sync-paint ordering,
+  which is the same trade as the entry above.
 
 - **(P2) `before` and `after` layer chains do not compose.** In
   `packages/core/src/canvas/layerOrder.ts`, `emitBefore` recurses only into a
@@ -790,30 +937,72 @@ milliseconds are inflated by the tracing, the ratios are the signal):
 | | immediate | scene graph |
 |---|---|---|
 | frames committed / s | 109 | 76 |
-| main-thread busy / s | 1.00× | **1.27×** |
+| main-thread busy / s, immediate = 1.00× | 1.00× | **1.27×** |
 | main-thread busy / committed frame | 6.31 ms | **11.57 ms** |
 | major GC over the window | 57 ms | **549 ms** |
 
 Unloaded, both peg the 120 Hz display and neither drops a frame. The costs only
 separate under load — which is the honest read: the retained tree is affordable
-here, and it is not free.
+here, and it is not free. That load was never written down, so the table below
+is a different, recorded measurement rather than a fifth column here.
+
+Re-measured after the frame-loop arc, same machine and browser: both demos with
+the run started and no player input, ten-second windows, DevTools tracing on.
+"main" is the tree before the arc, "frame loop" after. Busy is the sum of
+renderer-main `RunTask`; the scene twin's frame count is its own readout, the
+immediate twin's a `requestAnimationFrame` counter. The scene-graph "frame loop"
+column shows two runs, which is the run-to-run spread.
+
+| | immediate, main | immediate, frame loop | scene graph, main | scene graph, frame loop |
+|---|---|---|---|---|
+| frames / s | 120 | 120 | 120 | 120 |
+| main-thread busy / s, busy seconds per wall second | 0.19× | **0.11×** | 0.47× | **0.35–0.38×** |
+| busy / committed frame | 1.58 ms | **0.89 ms** | 3.94 ms | **2.88–3.21 ms** |
+| major GC over 10 s | 0 ms | 2 ms | 10 ms | 4–10 ms |
+| `CanvasInner` setState / s | 118 | **0** | 120 | 100–110 |
+
+The last row counts `CanvasInner`'s own state writes, not React commits: both
+demos commit at roughly 5 Hz besides, from the readout interval in
+`SideScrollerDemo.tsx:110-125`, which is what the React Profiler will show.
+
+Both twins hold 120 Hz at this load, so the frame rate says nothing and busy per
+frame is the number that moves. The immediate twin drops 44%, and `118 → 0` is
+firm for structural rather than statistical reasons: that twin renders an empty
+scene at a constant view and the branch never touched it, so those writes were
+`CanvasInner`'s per-paint `setState` and they are gone by construction.
+
+The scene twin drops 18–27% — its two runs spread 2.88–3.21 ms, about 11%, at
+n=1 per configuration — and effectively all of that is the demo's own switch to
+`setView` on the handle. With the camera left in `useState`, the frame loop alone
+measured 3.86 ms/frame against main's 3.94: a 0.08 ms difference inside a 0.33 ms
+spread, which is no measurable timing difference at all. Read the mechanism
+instead of the number — a consumer calling `setState` every frame pays for that
+render whatever the canvas does underneath it, so decoupling paint from render
+cannot show up until the consumer stops.
+
+Major GC did not move, as expected — per-frame pose allocation belongs to the
+ephemeral-pose-overrides arc.
 
 What it surfaced:
 
-- **(P1) A per-frame camera costs a React render per frame.** `view` is a prop
-  or `SceneCanvas`'s own `useState` (`SceneCanvas.tsx:961`), the paint is a
-  `useEffect` keyed on it (`Canvas.tsx:1284`), and `requestRedraw` is
-  `setRedrawNonce(n => n + 1)` (`Canvas.tsx:780`) — so every repaint is a React
-  render by construction. This is the seam that made the load-test twin pin
-  `view` to identity and hand-project every layer, which in turn is what forced
-  the scene graph off entirely. Decoupling the paint loop from the React render
-  cycle is the fix: `requestRedraw` marks a dirty ref, a rAF loop paints, and
-  `view` becomes a ref with a subscription for whatever DOM chrome renders it.
-  Note `useSyncExternalStore` already de-opts scene mutations from concurrent
-  rendering, so this spends concurrency rather than buying it; what decoupling
-  actually trades away is single-commit consistency between React-rendered DOM
-  and canvas pixels (one frame of skew, unbounded only for scene-derived DOM
-  inside a `startTransition`).
+- **(P1) A per-frame camera costs a React render per frame — landed
+  2026-08-25.** The canvas paints from its own animation frame
+  (`packages/core/src/canvas/useFrameLoop.ts`) and the view lives in a ref with
+  `getView` / `setView` / `subscribeView` / `subscribeFrame` on the canvas
+  handle, so a camera driven through `setView` costs no render. The second table
+  above is what it bought. Design:
+  `docs/superpowers/specs/2026-08-24-frame-loop-decoupling-design.md`, Part 1.
+
+- **(P1) `SceneCanvas` commits on every scene mutation, even when the host opted
+  out** — those are the ~100–110 commits/s the scene twin still pays above.
+  Carried under Rendering & paint, since it is not this demo's problem. The
+  ephemeral-pose-overrides arc
+  (`docs/superpowers/plans/2026-08-24-ephemeral-pose-overrides.md`) narrows it
+  but does not close it: an override never bumps the version, while this demo's
+  `scene.add` / `scene.batch` still does. Measuring anything else per-frame
+  means stopping the scene writes first —
+  `apps/site/demos/__tests__/SceneScrollerDemo.test.tsx` freezes `syncScene` to
+  isolate the camera at all.
 
 - **(P1) `setPose` demands a fresh pose object per node per frame, and the GC
   bill is visible.** `nodeMemo` keys painter output on pose *reference*
@@ -965,49 +1154,44 @@ Design: `docs/superpowers/specs/2026-08-22-audio-engine-design.md`.
 
   Versioning stays a caret range, not lockstep: windease is a separate repo with its own release cadence, and a changesets `fixed` group cannot span repos anyway. The risk a range carries is the one to watch — windease shipping a breaking major that labkit's `^` silently declines to follow.
 
-- **(P1) labkit presentation pass — finish arc 2, then define a tool palette and
-  a sidebar.** In flight on `feat/labkit-presentation-pass` (committed, unpushed).
-  Design: `docs/superpowers/specs/2026-08-24-labkit-presentation-design.md`.
-  Handoff, with the traps: `docs/handoffs/2026-08-25-labkit-presentation-pass.md`.
+- **(P1) labkit presentation pass — arc 3, chrome regions.** Arcs 1 and 2 are
+  merged to main (`f77b877b`). Arc 3 is specified and planned, not started, on
+  `feat/labkit-arc3` (worktree `/Users/mike/src/weasel-arc3`).
 
-  **Arcs 1 and 2 are done**, across two branches — `feat/labkit-presentation-pass`
-  and `feat/labkit-arc2` (worktree `/Users/mike/src/weasel-arc2`), the second
-  branched from the first. Arc 1 is a 43-glyph icon set in `@weasel-js/ui`,
-  generated from `packages/ui/scripts/icons/` via `npm run gen:icons`. Arc 2 is
-  the content well, sidebar, compact toolbar, `ZoomControl`, title-bar drag,
-  `ControlPanel` rebuilt on the property rows, a default lab header, `JobProgress`,
-  a raised trial surface, and the audit's defect list.
+  Design: `docs/superpowers/specs/2026-08-25-labkit-chrome-regions-design.md`.
+  Plan: `docs/superpowers/plans/2026-08-25-labkit-chrome-regions.md` (eleven
+  tasks). Traps: `docs/handoffs/2026-08-25-labkit-presentation-pass.md`.
 
-  Arc 3 is what remains, plus the areas below. `PropertyPanel.less` still holds
-  about a dozen hardcoded `rgba()` values authored against a dark panel; two of
-  them rendered as a gray slab on the light theme and are fixed, the rest sit in
-  `EffectCard` and the toggle rows. The title bar and status bar are the heaviest
-  chrome relative to what they carry.
+  The three questions this entry used to hold open — where viewport controls
+  live, what earns the toolbar's leading slot, and how a tool palette and a real
+  sidebar become engine surface — turned out to be one question. labkit has three
+  half-built mechanisms for routing a declaration to chrome: `detectCapabilities`
+  (never called), the `toolbar`/`sidebar`/`statusBar` props on `TrialChromeProps`
+  (never passed, so no consumer of `<Lab>` can replace a region), and
+  `sidebarExtras` (live, but appends rather than lays out). Arc 3 replaces all
+  three with one region model; the leading-slot question then answers itself,
+  since nothing is pinned there any more.
 
-  **Viewport controls need their own region.** Zoom currently sits as a group in
-  the trial toolbar, which is where it landed rather than where it belongs — the
-  toolbar is for acting on the trial, and pan/zoom/fit act on the *view* of it.
-  They want a carved-out spot: an overlay anchored inside the canvas, or a region
-  of the status bar, which already shows the zoom readout. Deciding that also
-  settles whether `ScaleIndicator` and `FpsMeter` live there, since both are
-  view-scoped readouts with nowhere of their own today.
+  Arc 3 also adds labkit's own tool concept. Core's `ToolsApi` is not reusable —
+  it carries hotkey slots, ambient tools and canvas overlay layers bound to the
+  gesture dispatcher, and a labkit instrument is an arbitrary canvas or DOM tree.
 
-  **What occupies the toolbar's primary slot is unresolved.** Save/snapshot holds
-  the leading left position by default, and it should not — snapshotting is
-  occasional, and the leading slot is the most valuable real estate in the bar.
-  What earns it is an open question; it likely depends on what the instrument
-  declares, which means the slot may be a capability-driven region rather than a
-  fixed control. Do not just reshuffle the existing buttons.
+- **(P1) labkit arc 4 — density, spacing and type scale.** Follows arc 3;
+  restyling the chrome before the regions settle means restyling it twice.
+  Inventory already taken: 128 `font-size` declarations across labkit and
+  `@weasel-js/ui` with 13% tokenized, spanning 15 distinct sizes from 9px to
+  18px; six radii for what is one card family; three conventions for monospace
+  (the token, the bare keyword, an inline stack); and raw `font-weight: 600`
+  against a token set resolving to 300/500/700. `PropertyPanel.less` holds 17
+  hardcoded colors, 11 of them in `EffectCard` — including a third danger red
+  unrelated to `--wzl-danger`, and `#0a0a14` hardcoded where `--wzl-fg-inverse`
+  exists, which is illegible on the light theme.
 
-  **The two undefined areas are the bigger gap.** A lab that wants a *tool
-  palette* has nothing to reach for — `Palette` is the drag-drop source list, not
-  a tool strip, and `@weasel-js/ui` ships `ToolPalette` / `ToolGroup` /
-  `ToolButton` that labkit neither wraps nor routes through the trial's tool
-  state. The *sidebar* is a bare collapsible column: `DefaultSidebar` puts one
-  `ControlPanel` in it and anything else a lab needs is hand-assembled, with no
-  notion of sections, ordering, or which panels an instrument's capabilities
-  imply. Both should be engine surface — a trial declares what it has and the
-  chrome lays it out — not something each lab rebuilds.
+  The trial border sits at ~1.53:1 against the workspace and its box-shadow is a
+  *light* shadow on a near-black field, pointing the wrong way for elevation. The
+  title bar (24px for one word) and status bar (25px for "100%") are the heaviest
+  chrome relative to what they carry. `FpsMeter` and `ScaleIndicator` are
+  view-scoped readouts that arc 3 gives a home to but does not contribute.
 
 - **(P1) labkit: generate an instrument's controls from a schema or its config type.** An instrument declares its config twice. `defaultConfig(): TC` gives the values and, through `TC`, their types; `configSchema(): ConfigField[]` (`packages/labkit/src/controls/types.ts`) hand-repeats every key as a `slider` / `select` / `color` field with a label, bounds and a second default. Nothing holds the two to one answer — rename a key in `TC` and the panel keeps editing a field the instrument no longer reads, which `validateConfigSchema` cannot catch because it only ever sees the schema. An instance of the P1 above.
 

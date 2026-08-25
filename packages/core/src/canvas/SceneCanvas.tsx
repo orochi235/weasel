@@ -33,6 +33,9 @@ import { Canvas } from './Canvas';
 import type { CanvasProps, LayersMap, CanvasSelectionMode, SelectionOverlaySlotConfig } from './Canvas';
 import type { CanvasExtensionApi, SceneCanvasApi } from './canvasExtension';
 import type { Animator } from '../animation/types';
+import { useAnimator } from '../animation/useAnimator';
+import { useViewAnimation } from 'core/viewport/useViewAnimation';
+import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { SceneToAdapterOptions } from './sceneAdapter';
 import type { PanBounds } from 'core/viewport/useDecayLoop';
 import type { View } from 'core/viewport/view';
@@ -103,7 +106,8 @@ import { resolveEditablePathOf } from './deps/editAnchors';
 import type { PolygonPath } from 'features/paths/types';
 import { useActionsPropResolver } from './SceneCanvas/useActionsPropResolver';
 import { useViewportActions } from './SceneCanvas/useViewportActions';
-import type { ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
+import type { ViewportZoomAnimateOptions, ViewportZoomOptions } from 'interactions/actions/defaults/viewportZoom';
+import type { PinchZoomOptions } from 'interactions/actions/defaults/pinchZoom';
 import { ActiveToolContextProviderIfRoot } from 'interactions/actions/activeToolContext';
 import { useGestureDispatcher } from 'interactions/dispatcher/useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from 'interactions/dispatcher/dispatcher';
@@ -299,6 +303,7 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
     | 'layers'          // stripped so we can re-add as optional below
     | 'onBackgroundClick' // SceneCanvas synthesizes this; not a consumer prop
     | 'getIsVisible'    // SceneCanvas synthesizes this from chromeVisibility
+    | 'contentVersion'  // SceneCanvas wires this to the scene's own version
   >
   & {
     /** A `Scene` (typically from `useScene`) — or a `SerializedScene`
@@ -583,21 +588,29 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
 
     /** Viewport feature wiring.
      *
-     *  - `inertia`, `pinchZoom`, `animatedZoom` are opt-in: pass `true`
-     *    for defaults or an object to tune. Omitted means off.
-     *  - `pan` (wheel pan) and `zoom` (Cmd+wheel + Cmd+=/-/0) are opt-OUT:
-     *    on by default; pass `false` to disable. They are wired by registering
-     *    the kit's `viewport.pan` / `viewport.zoom` action descriptors with
-     *    the actions registry — disabling via the `actions` prop
-     *    (`actions: { 'viewport.wheelPan': null }`) also works and runs after this.
+     *  - `inertia` and `animatedZoom` are opt-in: pass `true` for defaults or
+     *    an object to tune. Omitted means off.
+     *  - `pan` (wheel pan), `zoom` (Cmd+wheel + Cmd+=/-/0) and `pinchZoom`
+     *    (two-finger pinch) are opt-OUT: on by default; pass `false` to
+     *    disable. All three are wired by registering the kit's `viewport.*`
+     *    action descriptors with the actions registry — disabling via the
+     *    `actions` prop (`actions: { 'viewport.wheelPan': null }`) also works
+     *    and runs after this.
      *
-     *  When omitted entirely, no hand/pinch tools are registered but the
-     *  default wheel pan + Cmd+wheel/key zoom remain wired (canvas-first
-     *  default). Pass `{ pan: false, zoom: false }` to opt out entirely. */
+     *  When omitted entirely, no hand tool is registered but the default wheel
+     *  pan, Cmd+wheel/key zoom and pinch zoom remain wired (canvas-first
+     *  default). Pass `{ pan: false, zoom: false, pinchZoom: false }` to opt
+     *  out entirely. */
     viewport?: {
       inertia?: boolean | { friction?: number; minSpeed?: number; boundary?: 'stop' | 'bounce' | 'spring'; bounds?: PanBounds };
-      pinchZoom?: boolean | { min?: number; max?: number };
-      animatedZoom?: boolean | { duration?: number; resetDuration?: number; easing?: (t: number) => number };
+      /** Two-finger pinch zoom. `true`/omitted = on with the kit's 0.1–8
+       *  clamp; `false` disables. An object sets the scale clamp. */
+      pinchZoom?: boolean | PinchZoomOptions;
+      /** Glide Cmd+=/-/0 instead of jumping. `true` uses the kit defaults
+       *  (250 ms, ease-out-cubic); a {@link ViewportZoomAnimateOptions} tunes
+       *  duration, easing, interpolator and the reset-branch duration. Wheel
+       *  and pinch are unaffected — their input already samples every frame. */
+      animatedZoom?: boolean | ViewportZoomAnimateOptions;
       pan?: boolean;
       /** Wheel/keyboard zoom. `true`/omitted = default Cmd+wheel zoom with the
        *  kit's 0.1–8 clamp; `false` disables. Pass a {@link ViewportZoomOptions}
@@ -606,10 +619,11 @@ export type SceneCanvasProps<TData, TLayer extends string, TPose> =
       zoom?: boolean | ViewportZoomOptions;
       /** Callback invoked by Cmd-0 (`viewport.zoom` action's `reset` branch).
        *  When supplied, replaces the default reset-to-identity behavior —
-       *  consumers typically refit the document page into the workspace
-       *  via `fitViewToBounds`. The callback owns its own bounds + host
-       *  dims and dispatches the resulting view via `onViewChange`. */
-      recenter?: () => void;
+       *  consumers typically refit the document page into the workspace via
+       *  `fitViewToBounds`. Return the target `View` to let the kit animate
+       *  there when `animatedZoom` is on; return nothing to dispatch it
+       *  yourself, which is what a controlled canvas does. */
+      recenter?: () => View | void;
     };
 
     /**
@@ -908,6 +922,9 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
   // dispatcher's `onGestureChange` only fires for legacy `tool.drag.*` hooks,
   // which the migrated actions don't provide.
   const canvasApiRef = useRef<CanvasExtensionApi | null>(null);
+  // Set from the merged ref callback, so effects needing the handle key off it
+  // instead of assuming when React attaches it.
+  const [canvasReady, setCanvasReady] = useState(false);
 
   useEffect(() => {
     dlog('scene-canvas', 'mount');
@@ -952,25 +969,63 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     canvasApiRef.current?.requestRedraw?.();
   }), []);
 
-  // SceneCanvas owns the view state so writes from immediate-timing actions
-  // (viewport.pan / viewport.zoom via the dep registry's `view.set`) drive a
-  // re-render of the underlying Canvas. We always render Canvas in controlled
-  // mode (`view={effectiveView}`); Canvas's own internal useState is unused
-  // along this path. When `viewProp` is supplied by the consumer we defer to
-  // it (true external control).
-  const [internalView, setInternalView] = useState<View>(
+  // Override writes deliberately don't bump the scene version — that fanout is
+  // what a frame loop is trying to avoid — so the repaint has to come from
+  // here instead.
+  useEffect(() => scene.overrides.subscribe(() => {
+    canvasApiRef.current?.requestRedraw?.();
+  }), [scene]);
+
+  // The mirror every HUD, pick and pinch path reads synchronously. Seeded here
+  // because those reads start before the canvas's subscription lands.
+  const currentViewRef = useRef<View>(
     viewProp ?? defaultView ?? { x: 0, y: 0, scale: { x: 1, y: 1 } },
   );
-  const effectiveView: View = viewProp ?? internalView;
+  if (viewProp !== undefined) currentViewRef.current = viewProp;
 
-  // Stable ref tracking the latest view for HUDs / picking / pinch.
-  const currentViewRef = useRef<View>(effectiveView);
-  currentViewRef.current = effectiveView;
+  useEffect(() => {
+    const api = canvasApiRef.current;
+    if (!api) return;
+    currentViewRef.current = api.getView();
+    return api.subscribeView((v) => { currentViewRef.current = v; });
+  }, [canvasReady]);
 
+  // The dep registry's `view.set`. Uncontrolled it must not also call
+  // `onViewChangeProp` — the canvas reports the write through `notifyViewChange`.
   const handleViewChange = useCallback((v: View) => {
-    if (viewProp === undefined) setInternalView(v);
+    const api = canvasApiRef.current;
+    if (viewProp === undefined && api) { api.setView(v); return; }
     onViewChangeProp?.(v);
   }, [viewProp, onViewChangeProp]);
+
+  // The camera runs on its own animator, never the `animator` prop's: that prop
+  // is the consumer's scene animator, and their `cancelAll()` or `pause()` must
+  // not strand a zoom half-finished or freeze the camera.
+  const cameraAnimator = useAnimator();
+  const viewChannel = useMemo(
+    () => ({ get: () => currentViewRef.current, set: handleViewChange }),
+    [handleViewChange],
+  );
+  const viewAnimation = useViewAnimation(viewChannel, cameraAnimator);
+
+  // Never writes back to the canvas — `handleViewChange` would recurse. Every
+  // `Canvas.setView` lands here on both branches, so it is also the runner's
+  // one interrupt feed.
+  const notifyViewChange = useCallback((v: View) => {
+    viewAnimation.stopIfExternal();
+    onViewChangeProp?.(v);
+  }, [onViewChangeProp, viewAnimation]);
+
+  // `animatedZoom` is the SceneCanvas-level spelling of the zoom action's
+  // `animate` option, the way `pinchZoom` is of the pinch tool's clamp.
+  const animatedZoom = viewport?.animatedZoom;
+  const viewportZoomProp = viewport?.zoom ?? true;
+  const resolvedViewportZoom = useMemo<boolean | ViewportZoomOptions>(() => {
+    if (viewportZoomProp === false) return false;
+    const base = typeof viewportZoomProp === 'object' ? viewportZoomProp : {};
+    if (!animatedZoom) return base;
+    return { ...base, animate: animatedZoom === true ? {} : animatedZoom };
+  }, [viewportZoomProp, animatedZoom]);
 
   // Selection: caller-supplied wins; otherwise build from selectionOptions.
   // Hooks always run unconditionally — when a caller supplies `selection`,
@@ -1742,20 +1797,28 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     });
   }, [mergedLayers.selectionOverlay, getSuppressedSelectionIds]);
 
-  // When alphaFor is supplied, patch it into the scene slot config so
-  // buildSceneLayer (called inside Canvas) wraps per-node commands with the
-  // returned alpha multiplier. Only non-custom, non-null slots are patched.
+  // When alphaFor is supplied — or any node carries an override alpha — patch
+  // a composed multiplier into the scene slot config so buildSceneLayer
+  // (called inside Canvas) wraps per-node commands with it. Canvas has no
+  // scene, so the override half has to be folded in here.
+  const overrideAlphaFor = useCallback(
+    (id: string) => scene.overrides.get(id as never)?.alpha ?? 1,
+    [scene],
+  );
   const sceneSlotWithAlpha = useMemo(() => {
-    if (!alphaFor) return mergedLayers.scene;
     const slot = mergedLayers.scene;
     if (!slot || 'layer' in slot) return slot; // null or CustomLayerEntry — leave alone
-    return { ...slot, alphaFor };
-  }, [mergedLayers.scene, alphaFor]);
+    const composed = alphaFor
+      ? (id: string) => alphaFor(id) * overrideAlphaFor(id)
+      : overrideAlphaFor;
+    return { ...slot, alphaFor: composed };
+  }, [mergedLayers.scene, alphaFor, overrideAlphaFor]);
 
   const wiredLayers = useMemo<LayersMap<Node<TData, TLayer, TPose>, TPose>>(() => ({
     ...mergedLayers,
-    // Inject alphaFor into the scene slot when supplied (scoping-dim).
-    ...(alphaFor != null ? { scene: sceneSlotWithAlpha } : {}),
+    // Inject the composed alphaFor into the scene slot (scoping-dim, plus any
+    // per-node override alpha).
+    ...(sceneSlotWithAlpha ? { scene: sceneSlotWithAlpha } : {}),
     // Pass the pre-built selection overlay layer so Canvas receives a
     // CustomLayerEntry and skips its own factory construction for this slot.
     selectionOverlay: selectionOverlayLayer
@@ -1766,7 +1829,7 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     ...(penPreviewLayer ? { penPreview: { layer: penPreviewLayer, after: 'dispatcherOverlay' } } : {}),
     pathEditingOverlay: { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(debug?.slops ? { slopsDebug: { layer: slopsLayer, after: 'pathEditingOverlay' } } : {}),
-  }), [mergedLayers, sceneSlotWithAlpha, alphaFor, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
+  }), [mergedLayers, sceneSlotWithAlpha, selectionOverlayLayer, previewLayer, dispatcherOverlay, penPreviewLayer, pathEditingOverlayLayer, debug?.slops, slopsLayer]);
 
   // Standard-action deps: closures over the live scene / selection / adapter
   // so the resolved actions always read current state. `useStandardActions`
@@ -1824,13 +1887,20 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
     (node: CanvasExtensionApi | null) => {
       internalCanvasRef.current = node?.element ?? null;
       const extended: SceneCanvasApi | null = node
-        ? { ...node, ingest: ingestImpl }
+        ? {
+            ...node,
+            ingest: ingestImpl,
+            animateView: viewAnimation.animate,
+            stopViewAnimation: viewAnimation.stop,
+            isViewAnimating: viewAnimation.isAnimating,
+          }
         : null;
       canvasApiRef.current = extended;
+      setCanvasReady(extended !== null);
       if (typeof ref === 'function') ref(extended);
       else if (ref) (ref as React.MutableRefObject<SceneCanvasApi | null>).current = extended;
     },
-    [ref, ingestImpl],
+    [ref, ingestImpl, viewAnimation],
   );
 
   // What a view needs to build its own overlay-aware state. `geometry` is the
@@ -1863,14 +1933,17 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
       // `subscribeGestures()` — Canvas has no dispatcher of its own.
       gestureSource={gestureSource}
       previewPoseExtra={previewPoseExtra}
-      viewport={viewport}
+      // No `viewport`: Canvas reads it only to attach `usePinchZoomTool`, which
+      // predates the `viewport.pinchZoom` action wired above. Both applied the
+      // same gesture's factor. The hook stays the bare-`<Canvas>` pinch path.
       backgroundFill={backgroundFill}
       cursorCoordsHud={cursorCoordsHud}
       pickHud={pickHud}
       modalityHud={modalityHud}
       pickBest={internalPickBest}
-      view={effectiveView}
-      onViewChange={handleViewChange}
+      contentVersion={scene.getVersion}
+      {...(viewProp !== undefined ? { view: viewProp } : { defaultView })}
+      onViewChange={notifyViewChange}
       shaders={shaders}
       // onBackgroundClick is intentionally NOT wired here. The `clearSelection`
       // action binding in the select tool handles "click on empty background clears
@@ -1931,8 +2004,10 @@ function SceneCanvasInner<TData, TLayer extends string, TPose>(
                 getActionRef={getActionRef}
                 pickEvery={internalPickEvery}
                 viewportPanEnabled={viewport?.pan !== false}
-                viewportZoom={viewport?.zoom ?? true}
+                viewportZoom={resolvedViewportZoom}
+                viewportPinchZoom={viewport?.pinchZoom ?? true}
                 viewportRecenter={viewport?.recenter}
+                viewAnimation={viewAnimation}
                 editAnchorsExternalState={editAnchorsExternalState}
                 anchorEditingAllowed={anchorEditingAllowed}
                 layouts={layouts as SceneCanvasProps<unknown, string, unknown>['layouts']}
@@ -2285,7 +2360,9 @@ function StandardActionsRegistrar({
   pickEvery,
   viewportPanEnabled,
   viewportZoom,
+  viewportPinchZoom,
   viewportRecenter,
+  viewAnimation,
   editAnchorsExternalState,
   anchorEditingAllowed,
   layouts,
@@ -2328,10 +2405,17 @@ function StandardActionsRegistrar({
   /** Resolved `viewport.zoom` setting — `true` (default Cmd+wheel zoom),
    *  `false` (disabled), or a {@link ViewportZoomOptions} config. */
   viewportZoom: boolean | ViewportZoomOptions;
+  /** Resolved `viewport.pinchZoom` setting — `true` (default two-finger pinch),
+   *  `false` (disabled), or a {@link PinchZoomOptions} scale clamp. */
+  viewportPinchZoom: boolean | PinchZoomOptions;
   /** Optional recenter callback. When supplied, wires through to the
    *  `view` dep so `viewport.zoom` reset (Cmd-0) calls it instead of
-   *  snapping to identity. */
-  viewportRecenter?: () => void;
+   *  snapping to identity. A returned `View` is a target the kit may
+   *  animate to; `void` means the callback dispatched it itself. */
+  viewportRecenter?: () => View | void;
+  /** The canvas's camera runner, published on the `view` dep so
+   *  `viewport.zoom`'s discrete branches can animate. */
+  viewAnimation: ViewAnimationApi;
   /** Lifted edit-mode state so the `pathEditingOverlay` chrome (rendered
    *  outside this subtree) can read the same `editingId` the dep does. */
   editAnchorsExternalState: import('./deps/editAnchors').EditAnchorsStateRef;
@@ -2406,10 +2490,16 @@ function StandardActionsRegistrar({
   // useStandardActions (which publishes the `view` dep along with selection,
   // scene, history, pointer, activeTool). `hostSize` reads the live canvas
   // element so keyboard zoom (Cmd+=/-) can anchor at the visible center.
-  const view = useViewDepSource(currentViewRef, onViewChange, viewportRecenter, () => {
-    const el = canvasRef.current;
-    return el ? { width: el.clientWidth, height: el.clientHeight } : null;
-  });
+  const view = useViewDepSource(
+    currentViewRef,
+    onViewChange,
+    viewportRecenter,
+    () => {
+      const el = canvasRef.current;
+      return el ? { width: el.clientWidth, height: el.clientHeight } : null;
+    },
+    viewAnimation,
+  );
   // Scene owns its own undo/redo stacks via `useScene`. `undoAction` /
   // `redoAction` only call `history.undo()` / `history.redo()`, so the scene
   // satisfies the runtime contract — cast through `unknown` since `Scene`'s
@@ -2422,7 +2512,7 @@ function StandardActionsRegistrar({
   // published just above), so they're registered here rather than in
   // KIT_STANDARD_DESCRIPTORS. Both default ON; consumer opts out via
   // `viewport={{ pan: false }}` / `viewport={{ zoom: false }}`.
-  useViewportActions({ pan: viewportPanEnabled, zoom: viewportZoom });
+  useViewportActions({ pan: viewportPanEnabled, zoom: viewportZoom, pinchZoom: viewportPinchZoom });
 
   // Per-dep wiring modules under `src/canvas/deps/`. See each file for the
   // dep's contract and trade-offs.

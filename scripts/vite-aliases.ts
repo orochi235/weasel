@@ -112,6 +112,7 @@ export function weaselAliases(repoRoot: string, overrides: ViteAlias[] = []): Vi
     { find: /^interactions\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/interactions/$1') },
     { find: /^tools\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/tools/$1') },
     { find: /^canvas\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/canvas/$1') },
+    { find: /^renderer\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/renderer/$1') },
     { find: /^debug\/(.*)$/, replacement: resolve(repoRoot, 'packages/core/src/debug/$1') },
   ];
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { SceneCanvas, useHandleDrag, useScene } from '@weasel-js/core';
 import type { RenderLayer } from '@weasel-js/core';
 import {
-  registerProgram, registerTexture, viewToMat3,
+  registerProgram, registerTexture,
   type DrawCommand, type ShaderProgramHandle, type TextureHandle,
 } from '@weasel-js/core/renderer';
 import weaselMarkUrl from '../assets/weasel-mark.png';
@@ -156,15 +156,11 @@ function Panel({
   const layer: RenderLayer<unknown> = useMemo(() => ({
     id: `shader-${title.toLowerCase()}`,
     label: title,
-    draw: (_d, view): DrawCommand[] => disabled ? [] : [{
-      kind: 'group',
-      transform: viewToMat3(view),
-      children: [{
-        kind: 'shader',
-        program,
-        bounds: { x: 0, y: 0, w: PANEL_W, h: PANEL_H },
-        uniforms: uniformsRef.current,
-      }],
+    draw: (): DrawCommand[] => disabled ? [] : [{
+      kind: 'shader',
+      program,
+      bounds: { x: 0, y: 0, w: PANEL_W, h: PANEL_H },
+      uniforms: uniformsRef.current,
     }],
   }), [program, disabled, title]);
 
